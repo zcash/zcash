@@ -142,6 +142,7 @@ Thanks to who contributed to this release, at least:
 - Philip Kaufmann
 - Pieter Wuille
 - Rav3nPL
+- R E Broadley
 - regergregregerrge
 - Robert Backhaus
 - Roman Mindalev
