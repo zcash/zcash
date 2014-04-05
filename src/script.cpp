@@ -206,10 +206,11 @@ const char* GetOpName(opcodetype opcode)
     case OP_CHECKMULTISIG          : return "OP_CHECKMULTISIG";
     case OP_CHECKMULTISIGVERIFY    : return "OP_CHECKMULTISIGVERIFY";
 
+    case FLAG_ZC_MINT              : return "FLAG_ZC_MINT";
+    case FLAG_ZC_POUR              : return "FLAG_ZC_POUR";
+    case FLAG_ZC_POUR_INTERMEDIATE : return "FLAG_ZC_POUR_INTERMEDIATE";
+
     // expanson
-    case OP_NOP1                   : return "OP_NOP1";
-    case OP_NOP2                   : return "OP_NOP2";
-    case OP_NOP3                   : return "OP_NOP3";
     case OP_NOP4                   : return "OP_NOP4";
     case OP_NOP5                   : return "OP_NOP5";
     case OP_NOP6                   : return "OP_NOP6";
@@ -390,7 +391,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
                 // Control
                 //
                 case OP_NOP:
-                case OP_NOP1: case OP_NOP2: case OP_NOP3: case OP_NOP4: case OP_NOP5:
+                case OP_NOP4: case OP_NOP5:
                 case OP_NOP6: case OP_NOP7: case OP_NOP8: case OP_NOP9: case OP_NOP10:
                 break;
 
@@ -444,6 +445,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
                 break;
 
                 case OP_RETURN:
+                case FLAG_ZC_MINT: case FLAG_ZC_POUR: case FLAG_ZC_POUR_INTERMEDIATE:
                 {
                     return false;
                 }
@@ -1879,6 +1881,22 @@ bool CScript::IsPushOnly() const
             return false;
     }
     return true;
+}
+
+bool  CScript::IsZCMint() const
+{
+	return (this->size() >=1 &&
+			this->at(0) == FLAG_ZC_MINT);
+}
+bool  CScript::IsZCPour() const
+{
+	return (this->size() >=1 &&
+			this->at(0) == FLAG_ZC_POUR);
+}
+bool  CScript::isZCPourIntermediate() const
+{
+	return (this->size() >= 1 &&
+			this->at(0) == FLAG_ZC_POUR_INTERMEDIATE);
 }
 
 bool CScript::HasCanonicalPushes() const
