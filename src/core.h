@@ -94,6 +94,14 @@ public:
         return (nSequence == std::numeric_limits<unsigned int>::max());
     }
 
+    bool IsZCPour() const{
+    	return(scriptSig.IsZCPour());
+    }
+
+    bool IsZCMint() const{
+    	return (scriptSig.IsZCMint());
+    }
+
     friend bool operator==(const CTxIn& a, const CTxIn& b)
     {
         return (a.prevout   == b.prevout &&
