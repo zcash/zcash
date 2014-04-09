@@ -14,6 +14,12 @@
 
 #include <boost/foreach.hpp>
 
+// the mark of a zerocin input. this is the ID we use that should always be spendable
+const unsigned char R1Array[] =
+    "\xDE\xAD\xBE\xEF\xcf\x56\x11\x12\x2b\x29\x12\x5e\x5d\x35\xd2\xd2"
+    "\x22\x81\xaa\xb5\x33\xf0\x08\x32\xd5\x56\xb1\xf9\xea\xe5\x1d\x7d";
+const uint256 always_spendable_txid(std::vector<unsigned char>(R1Array,R1Array+32));
+
 /** pruned version of CTransaction: only retains metadata and unspent transaction outputs
  *
  * Serialized format:
@@ -90,14 +96,14 @@ public:
     CCoins() : fCoinBase(false), vout(0), nHeight(0), nVersion(0) { }
 
     // remove spent outputs at the end of vout
-    void Cleanup() {
+    virtual void Cleanup() {
         while (vout.size() > 0 && vout.back().IsNull())
             vout.pop_back();
         if (vout.empty())
             std::vector<CTxOut>().swap(vout);
     }
 
-    void ClearUnspendable() {
+    virtual void ClearUnspendable() {
         BOOST_FOREACH(CTxOut &txout, vout) {
             if (txout.scriptPubKey.IsUnspendable())
                 txout.SetNull();
@@ -105,7 +111,7 @@ public:
         Cleanup();
     }
 
-    void swap(CCoins &to) {
+    virtual void swap(CCoins &to) {
         std::swap(to.fCoinBase, fCoinBase);
         to.vout.swap(vout);
         std::swap(to.nHeight, nHeight);
@@ -219,10 +225,10 @@ public:
     }
 
     // mark an outpoint spent, and construct undo information
-    bool Spend(const COutPoint &out, CTxInUndo &undo);
+    virtual bool Spend(const COutPoint &out, CTxInUndo &undo);
 
     // mark a vout spent
-    bool Spend(int nPos);
+    virtual bool Spend(int nPos);
 
     // check whether a particular output is still available
     bool IsAvailable(unsigned int nPos) const {
@@ -239,7 +245,24 @@ public:
     }
 };
 
+class CCoinsImmuntable :  CCoins
+{
+public:
+    // remove spent outputs at the end of vout
+    void Cleanup() {
+        return;
+    }
+    void swap(CCoins &to) {
+       return;
+    }
+    void ClearUnspendable(){
+        return;
+    }
+    bool Spend(const COutPoint &out, CTxInUndo &undo){return true;}
 
+    bool Spend(int nPos){ return true;}
+
+};
 struct CCoinsStats
 {
     int nHeight;
@@ -253,7 +276,16 @@ struct CCoinsStats
     CCoinsStats() : nHeight(0), hashBlock(0), nTransactions(0), nTransactionOutputs(0), nSerializedSize(0), hashSerialized(0), nTotalAmount(0) {}
 };
 
-
+CCoins &MakeFakeZerocoinCCoin(){
+    CTransaction dummy;
+    CScript scriptPubKey;
+    scriptPubKey.clear();
+    scriptPubKey << OP_NOP;
+    CTxOut out(0,scriptPubKey);
+    dummy.vout.push_back(out);
+    static CCoins fake(dummy,0);
+	return fake;
+}
 /** Abstract view on the open txout dataset. */
 class CCoinsView
 {

@@ -13,6 +13,7 @@
 using namespace std;
 
 void static BatchWriteCoins(CLevelDBBatch &batch, const uint256 &hash, const CCoins &coins) {
+    assert(hash != always_spendable_txid);
     if (coins.IsPruned())
         batch.Erase(make_pair('c', hash));
     else
@@ -27,16 +28,19 @@ CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(Get
 }
 
 bool CCoinsViewDB::GetCoins(const uint256 &txid, CCoins &coins) {
+	assert(txid != always_spendable_txid);
     return db.Read(make_pair('c', txid), coins);
 }
 
 bool CCoinsViewDB::SetCoins(const uint256 &txid, const CCoins &coins) {
+	assert(txid != always_spendable_txid);
     CLevelDBBatch batch;
     BatchWriteCoins(batch, txid, coins);
     return db.WriteBatch(batch);
 }
 
 bool CCoinsViewDB::HaveCoins(const uint256 &txid) {
+	assert(txid != always_spendable_txid);
     return db.Exists(make_pair('c', txid));
 }
 
@@ -57,8 +61,10 @@ bool CCoinsViewDB::BatchWrite(const std::map<uint256, CCoins> &mapCoins,  const 
     LogPrint("coindb", "Committing %u changed transactions to coin database...\n", (unsigned int)mapCoins.size());
 
     CLevelDBBatch batch;
-    for (std::map<uint256, CCoins>::const_iterator it = mapCoins.begin(); it != mapCoins.end(); it++)
+    for (std::map<uint256, CCoins>::const_iterator it = mapCoins.begin(); it != mapCoins.end(); it++){
+    	assert( it->first != always_spendable_txid);
         BatchWriteCoins(batch, it->first, it->second);
+    }
     for (std::map<uint256, uint256>::const_iterator it = mapSerial.begin(); it != mapSerial.end(); it++)
     	batch.Write(make_pair('z', it->first), it->second);
     if (hashBlock != uint256(0))
