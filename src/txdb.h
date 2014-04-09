@@ -32,13 +32,14 @@ protected:
     CLevelDBWrapper db;
 public:
     CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
-
     bool GetCoins(const uint256 &txid, CCoins &coins);
+    bool GetSerial(const uint256 &serial, uint256 &txid);
     bool SetCoins(const uint256 &txid, const CCoins &coins);
+    bool SetSerial(const uint256 &serial, const uint256 &txid);
     bool HaveCoins(const uint256 &txid);
     uint256 GetBestBlock();
     bool SetBestBlock(const uint256 &hashBlock);
-    bool BatchWrite(const std::map<uint256, CCoins> &mapCoins, const uint256 &hashBlock);
+    bool BatchWrite(const std::map<uint256, CCoins> &mapCoins, const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock);
     bool GetStats(CCoinsStats &stats);
 };
 
