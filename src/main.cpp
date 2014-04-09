@@ -669,6 +669,9 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     set<COutPoint> vInOutPoints;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
+        if(txin.prevout.hash == always_spendable_txid){
+            continue; /// never a duplicate.
+        }
         if (vInOutPoints.count(txin.prevout))
             return state.DoS(100, error("CheckTransaction() : duplicate inputs"),
                              REJECT_INVALID, "bad-txns-inputs-duplicate");
