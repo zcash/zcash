@@ -53,12 +53,14 @@ bool CCoinsViewDB::SetBestBlock(const uint256 &hashBlock) {
     return db.WriteBatch(batch);
 }
 
-bool CCoinsViewDB::BatchWrite(const std::map<uint256, CCoins> &mapCoins, const uint256 &hashBlock) {
+bool CCoinsViewDB::BatchWrite(const std::map<uint256, CCoins> &mapCoins,  const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock) {
     LogPrint("coindb", "Committing %u changed transactions to coin database...\n", (unsigned int)mapCoins.size());
 
     CLevelDBBatch batch;
     for (std::map<uint256, CCoins>::const_iterator it = mapCoins.begin(); it != mapCoins.end(); it++)
         BatchWriteCoins(batch, it->first, it->second);
+    for (std::map<uint256, uint256>::const_iterator it = mapSerial.begin(); it != mapSerial.end(); it++)
+    	batch.Write(make_pair('z', it->first), it->second);
     if (hashBlock != uint256(0))
         BatchWriteHashBestChain(batch, hashBlock);
 
@@ -105,6 +107,25 @@ bool CBlockTreeDB::ReadReindexing(bool &fReindexing) {
 
 bool CBlockTreeDB::ReadLastBlockFile(int &nFile) {
     return Read('l', nFile);
+}
+
+bool CCoinsViewDB::GetSerial(const uint256& serial, uint256& txid) {
+  // Technically, read can return false either if the key was not found or if the
+  // de-serialization of the value failed. We need to ensure such an error never happens.
+  // since it's unlikely that any given serial number will be in the db, we do the exist check first.
+  // only if it does exist, do we pay the double look up penalty.
+  if(db.Exists(make_pair('z', serial))){
+	  return db.Read(make_pair('z', serial), txid);
+  }else{
+	  return false;
+  }
+
+}
+
+bool CCoinsViewDB::SetSerial(const uint256& serial, const uint256& txid) {
+    CLevelDBBatch batch;
+    batch.Write(make_pair('z', serial), txid);
+    return db.WriteBatch(batch);
 }
 
 bool CCoinsViewDB::GetStats(CCoinsStats &stats) {
