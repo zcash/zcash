@@ -669,6 +669,15 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     set<COutPoint> vInOutPoints;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
+        // Check for duplicate zerocoin serial numbers
+        set<uint256> zerocoinSerialNumbers;
+        BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()){
+            if (zerocoinSerialNumbers.count(serial)){
+                return state.DoS(100, error("CheckTransaction() : duplicate serial numbers"),
+                                 REJECT_INVALID, "bad-txns-inputs-duplicate");
+            }
+            zerocoinSerialNumbers.insert(serial);
+        }
         if(txin.prevout.hash == always_spendable_txid){
             continue; /// never a duplicate.
         }
@@ -761,11 +770,19 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     LOCK(pool.cs); // protect pool.mapNextTx
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
-        COutPoint outpoint = tx.vin[i].prevout;
-        if (pool.mapNextTx.count(outpoint))
-        {
-            // Disable replacement feature for now
-            return false;
+        if(tx.vin[i].isZC()){ // if the input is a zerocoin one, check for duplicate serial numbers, not duplicate tx inputs since all zerocoin tx's have the same input
+            BOOST_FOREACH(const uint256 serial, tx.vin[i].GetZerocoinSerialNumbers()){
+                if(pool.mapZerocoinSerialNumbers.count(serial)){ // check for duplicate zerocoin serail numbers.s
+                    return false;
+                }
+            }
+        }else{ // otherwise do normal checks
+            COutPoint outpoint = tx.vin[i].prevout;
+            if (pool.mapNextTx.count(outpoint))
+            {
+                // Disable replacement feature for now
+                return false;
+            }
         }
     }
     }
@@ -1396,12 +1413,18 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
     // mark inputs spent
     if (!tx.IsCoinBase()) {
         BOOST_FOREACH(const CTxIn &txin, tx.vin) {
+            if(txin.IsZCPour()){
+                BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()){
+                    inputs.SetSerial(serial,tx.GetHash());
+                }
+            }
             CCoins &coins = inputs.GetCoins(txin.prevout.hash);
             CTxInUndo undo;
             ret = coins.Spend(txin.prevout, undo);
             assert(ret);
             txundo.vprevout.push_back(undo);
         }
+
     }
 
     // add outputs
@@ -1433,33 +1456,71 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, CCoinsViewCach
         if (!inputs.HaveInputs(tx))
             return state.Invalid(error("CheckInputs() : %s inputs unavailable", tx.GetHash().ToString()));
 
+
         // While checking, GetBestBlock() refers to the parent block.
         // This is also true for mempool checks.
         CBlockIndex *pindexPrev = mapBlockIndex.find(inputs.GetBestBlock())->second;
         int nSpendHeight = pindexPrev->nHeight + 1;
         int64_t nValueIn = 0;
+        int64_t mintDeduction = 0; // the funds used by any mint transaction
         int64_t nFees = 0;
         for (unsigned int i = 0; i < tx.vin.size(); i++)
         {
             const COutPoint &prevout = tx.vin[i].prevout;
             const CCoins &coins = inputs.GetCoins(prevout.hash);
-
-            // If prev is coinbase, check that it's matured
-            if (coins.IsCoinBase()) {
-                if (nSpendHeight - coins.nHeight < COINBASE_MATURITY)
-                    return state.Invalid(
-                        error("CheckInputs() : tried to spend coinbase at depth %d", nSpendHeight - coins.nHeight),
-                        REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
+            uint256 txid;
+            BOOST_FOREACH(const uint256 serial, tx.vin[i].GetZerocoinSerialNumbers()){
+                if(!inputs.GetSerial(serial,txid)){
+                    return state.Invalid(error("CheckInputs() : %s serial number spent by %s", tx.GetHash().ToString(),txid.ToString()));
+                }
             }
 
-            // Check for negative or overflow input values
-            nValueIn += coins.vout[prevout.n].nValue;
-            if (!MoneyRange(coins.vout[prevout.n].nValue) || !MoneyRange(nValueIn))
-                return state.DoS(100, error("CheckInputs() : txin values out of range"),
-                                 REJECT_INVALID, "bad-txns-inputvalues-outofrange");
+            // There are three types of inputs now 
+            // 1) standard bitcoin inputs that are a refrence to a previous transaction. 
+            // These provide the funds output by the previous transaction
+            // 2) Zerocash pours. These provide the amount of funds declared in vpub, the public
+            // output of the pour transaction.
+            // 3) Zerocoin mints. These actually consume funds. There are only an input 
+            // in the prespective of the underlying bitcoin protocol.
+            
+            // get the funds contributed by the zerocoin input. If this is a mint,
+            // the amount should be counted as negative.
+            int64_t contribution = tx.vin[i].GetBtcContributionOfZerocoinTransaction();
+            if(tx.vin[i].IsZCMint()){
+                int64_t tmp = mintDeduction;
+                mintDeduction += contribution;
+                if (!MoneyRange(contribution) || !MoneyRange(mintDeduction) || mintDeduction >= tmp)
+                                    return state.DoS(100, error("CheckInputs() : txin zc values out of range"),
+                                                     REJECT_INVALID, "bad-txns-inputvalues-outofrange");
+            }
+            else if(tx.vin[i].IsZCPour()){
+                nValueIn +=contribution;
+                if (!MoneyRange(contribution) || !MoneyRange(nValueIn))
+                                              return state.DoS(100, error("CheckInputs() : txin zc values out of range"),
+                                                               REJECT_INVALID, "bad-txns-inputvalues-outofrange");
+            }else{
+                // If prev is coinbase, check that it's matured
+                if (coins.IsCoinBase()) {
+                    if (nSpendHeight - coins.nHeight < COINBASE_MATURITY)
+                        return state.Invalid(
+                            error("CheckInputs() : tried to spend coinbase at depth %d", nSpendHeight - coins.nHeight),
+                            REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
+                }
 
+                // Check for negative or overflow input values
+                nValueIn += coins.vout[prevout.n].nValue;
+                if (!MoneyRange(coins.vout[prevout.n].nValue) || !MoneyRange(nValueIn))
+                    return state.DoS(100, error("CheckInputs() : txin values out of range"),
+                                     REJECT_INVALID, "bad-txns-inputvalues-outofrange");
+            }
         }
 
+        // Check that we actually have the money to pay the cost of any zerocoin mints
+        if(nValueIn < mintDeduction){
+            return state.DoS(100, error("CheckInputs() : %s insufficient inputs to pay for cost of zerocoin mint", tx.GetHash().ToString()),
+                             REJECT_INVALID, "bad-txns-in-belowout");
+        }
+        nValueIn -= mintDeduction; // actually debt the cost of the mints
         if (nValueIn < tx.GetValueOut())
             return state.DoS(100, error("CheckInputs() : %s value in < value out", tx.GetHash().ToString()),
                              REJECT_INVALID, "bad-txns-in-belowout");
