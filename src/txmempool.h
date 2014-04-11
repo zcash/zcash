@@ -61,6 +61,7 @@ public:
     mutable CCriticalSection cs;
     std::map<uint256, CTxMemPoolEntry> mapTx;
     std::map<COutPoint, CInPoint> mapNextTx;
+    std::map<uint256,CInPoint> mapZerocoinSerialNumbers;
 
     CTxMemPool();
 
