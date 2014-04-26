@@ -243,12 +243,19 @@ public:
                 return false;
         return true;
     }
+
+    CCoins(const CTransaction &tx) : fCoinBase(tx.IsCoinBase()), vout(tx.vout), nHeight(0), nVersion(tx.nVersion) {
+    }
 };
 
-class CCoinsImmuntable :  CCoins
+class CCoinsImmuntable :  public CCoins
 {
 public:
     // remove spent outputs at the end of vout
+    CCoinsImmuntable(const CTransaction &tx) :CCoins(tx) {
+        fCoinBase = true;
+    }
+
     void Cleanup() {
         return;
     }
@@ -258,7 +265,14 @@ public:
     void ClearUnspendable(){
         return;
     }
-    bool Spend(const COutPoint &out, CTxInUndo &undo){return true;}
+    bool Spend(const COutPoint &out, CTxInUndo &undo){
+        CScript scriptPubKey;
+        scriptPubKey.clear();
+        scriptPubKey << OP_NOP;
+        CTxOut cur_out(0,scriptPubKey);
+        undo = CTxOut(cur_out);
+        return true;
+    }
 
     bool Spend(int nPos){ return true;}
 
@@ -276,14 +290,14 @@ struct CCoinsStats
     CCoinsStats() : nHeight(0), hashBlock(0), nTransactions(0), nTransactionOutputs(0), nSerializedSize(0), hashSerialized(0), nTotalAmount(0) {}
 };
 
-CCoins &MakeFakeZerocoinCCoin(){
+CCoinsImmuntable MakeFakeZerocoinCCoin(){
     CTransaction dummy;
     CScript scriptPubKey;
     scriptPubKey.clear();
     scriptPubKey << OP_NOP;
     CTxOut out(0,scriptPubKey);
     dummy.vout.push_back(out);
-    static CCoins fake(dummy,0);
+    CCoinsImmuntable fake(dummy);
 	return fake;
 }
 /** Abstract view on the open txout dataset. */
@@ -397,6 +411,7 @@ public:
 
 private:
     std::map<uint256,CCoins>::iterator FetchCoins(const uint256 &txid);
+    CCoinsImmuntable zerocoin_input;
 };
 
 #endif
