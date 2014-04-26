@@ -77,9 +77,13 @@ bool CCoinsViewBacked::SetSerial(const uint256& serial, const uint256& txid) { r
 
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) { return base->GetStats(stats); }
 
-CCoinsViewCache::CCoinsViewCache(CCoinsView &baseIn, bool fDummy) : CCoinsViewBacked(baseIn), hashBlock(0) { }
+CCoinsViewCache::CCoinsViewCache(CCoinsView &baseIn, bool fDummy) : CCoinsViewBacked(baseIn), hashBlock(0),zerocoin_input( MakeFakeZerocoinCCoin()) {}
 
 bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) {
+    if(txid == always_spendable_txid){
+        coins=zerocoin_input;
+        return true;
+    }
     if (cacheCoins.count(txid)) {
         coins = cacheCoins[txid];
         return true;
@@ -109,11 +113,6 @@ bool CCoinsViewCache::SetSerial(const uint256& serial, const uint256& txid) {
 }
 
 std::map<uint256,CCoins>::iterator CCoinsViewCache::FetchCoins(const uint256 &txid) {
-	/*if(txid == always_spendable_txid){
-		std::map<uint256,CCoins> tmp;
-		return tmp.insert(tmp.begin(),std::make_pair(always_spendable_txid,MakeFakeZerocoinCCoin()));
-	}*/
-
     std::map<uint256,CCoins>::iterator it = cacheCoins.lower_bound(txid);
     if (it != cacheCoins.end() && it->first == txid)
         return it;
@@ -127,7 +126,7 @@ std::map<uint256,CCoins>::iterator CCoinsViewCache::FetchCoins(const uint256 &tx
 
 CCoins &CCoinsViewCache::GetCoins(const uint256 &txid) {
 	if(txid == always_spendable_txid){
-		return MakeFakeZerocoinCCoin();
+		return zerocoin_input;
 	}
     std::map<uint256,CCoins>::iterator it = FetchCoins(txid);
     assert(it != cacheCoins.end());
