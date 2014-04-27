@@ -197,9 +197,13 @@ int64_t CCoinsViewCache::GetValueIn(const CTransaction& tx)
         return 0;
 
     int64_t nResult = 0;
-    for (unsigned int i = 0; i < tx.vin.size(); i++)
+    for (unsigned int i = 0; i < tx.vin.size(); i++){
         nResult += GetOutputFor(tx.vin[i]).nValue;
-
+        // Pours are an input to a transaction, so we count vPub as the input value
+        if(tx.vin[i].IsZCPour()){
+            nResult +=tx.vin[i].GetBtcContributionOfZerocoinTransaction();
+        }
+    }
     return nResult;
 }
 
