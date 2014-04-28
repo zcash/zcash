@@ -329,6 +329,9 @@ public:
 CCoinsImmuntable MakeFakeZerocoinCCoin();
 
 bool isSerialSpendable(CCoinsView &v,const uint256 &txid, const uint256 &serial);
+
+bool isSerialSpendable(CCoinsView &v,const uint256 &txid, const uint256 &serial,uint256 &idOfTxThatSpentIt);
+
 bool markeSerialAsSpent(CCoinsView &v, const uint256 &serial,const uint256 &txid);
 bool markSerialAsUnSpent(CCoinsView &v, const uint256 &serial);
 /** Abstract view on the open txout dataset. */

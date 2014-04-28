@@ -1059,6 +1059,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     //// debug print
     LogPrintf("mapBlockIndex.size() = %"PRIszu"\n",   mapBlockIndex.size());
     LogPrintf("nBestHeight = %d\n",                   chainActive.Height());
+    LogPrint("zerocoin","zerocoin debugging enabled\n");
 #ifdef ENABLE_WALLET
     LogPrintf("setKeyPool.size() = %"PRIszu"\n",      pwalletMain ? pwalletMain->setKeyPool.size() : 0);
     LogPrintf("mapWallet.size() = %"PRIszu"\n",       pwalletMain ? pwalletMain->mapWallet.size() : 0);

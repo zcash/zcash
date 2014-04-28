@@ -673,7 +673,8 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
         set<uint256> zerocoinSerialNumbers;
         BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()){
             if (zerocoinSerialNumbers.count(serial)){
-                return state.DoS(100, error("CheckTransaction() : duplicate serial numbers"),
+                LogPrint("zerocoin","zerocoin check transaction: checking for duplicate serial number %s for tx %s\n",serial.ToString(),tx.GetHash().ToString());
+                return state.DoS(100, error("CheckTransaction() : duplicate serial number %s in tx %s. Already used previously in block. ", serial.ToString(),tx.GetHash().ToString()),
                                  REJECT_INVALID, "bad-txns-inputs-duplicate");
             }
             zerocoinSerialNumbers.insert(serial);
@@ -765,18 +766,25 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     if (pool.exists(hash))
         return false;
 
-    // Check for conflicts with in-memory transactions
+    // Check for conflicts with in-memory transactions and for spent serial numbers
+
+    // Because check inputs is conducted against a dummy coinview, we CANNOT rely on it to do the serial number checl
+    // as a result it happens here
     {
     LOCK(pool.cs); // protect pool.mapNextTx
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
         if(tx.vin[i].isZC()){ // if the input is a zerocoin one, check for duplicate serial numbers, not duplicate tx inputs since all zerocoin tx's have the same input
             BOOST_FOREACH(const uint256 serial, tx.vin[i].GetZerocoinSerialNumbers()){
+                LogPrint("zerocoin","zerocoin AcceptToMemPool: checking for duplicate serial number %s for tx %s\n",serial.ToString(),tx.GetHash().ToString());
                 if(pool.mapZerocoinSerialNumbers.count(serial)){ // check for duplicate zerocoin serail numbers.s
-                    return false;
+                    return state.Invalid(error("AcceptToMemoryPool : serial number  conflicts with mempool: txid %s has serial %s which was spent by %s",
+                            tx.GetHash().ToString(),serial.ToString(),pool.mapZerocoinSerialNumbers[serial].ptx->GetHash().ToString()),
+                            REJECT_DUPLICATE, "bad-txns-serial-conflict-mempool");
                 }
             }
-        }else{ // otherwise do normal checks
+        }else{ // otherwise do normal checks. We need to explicitly ignore transactions spending the same input for zerocash transactions.
+            // since the zerocash always spendable input must always be spendable
             COutPoint outpoint = tx.vin[i].prevout;
             if (pool.mapNextTx.count(outpoint))
             {
@@ -809,13 +817,22 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                     *pfMissingInputs = true;
                 return false;
             }
+            // Because
+            BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()){
+                uint256 conflict;
+                LogPrint("zerocoin","zerocoin check transaction: checking for already spent serial number %s for tx %s\n",serial.ToString(),tx.GetHash().ToString());
+                if(!isSerialSpendable(view,serial,tx.GetHash(),conflict)){
+                    return state.Invalid(error("AcceptToMemoryPool : serial already spent. txid %s has serial %s which was spent by %s",
+                            tx.GetHash().ToString(),serial.ToString(),conflict.ToString()),
+                            REJECT_DUPLICATE, "bad-txns-serial-spent");
+                }
+            }
         }
 
         // are the actual inputs available?
         if (!view.HaveInputs(tx))
             return state.Invalid(error("AcceptToMemoryPool : inputs already spent"),
                                  REJECT_DUPLICATE, "bad-txns-inputs-spent");
-
         // Bring the best block into scope
         view.GetBestBlock();
 
@@ -1468,9 +1485,11 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, CCoinsViewCach
             const CCoins &coins = inputs.GetCoins(prevout.hash);
             uint256 txid;
             BOOST_FOREACH(const uint256 serial, tx.vin[i].GetZerocoinSerialNumbers()){
-                cout << "CheckInputs, checking serial number" << serial.GetHex() << " for tx" << tx.GetHash().GetHex() << endl;
-                if(isSerialSpendable(inputs,serial,txid)){
-                    return state.Invalid(error("CheckInputs() : %s serial number spent by %s", tx.GetHash().ToString(),txid.ToString()));
+                LogPrint("zerocoin","zerocoin CheckInputs: checking if serial number %s of tx %s is spent\n",serial.ToString(),tx.GetHash().ToString());
+                uint256 conflict;
+                if(!isSerialSpendable(inputs,serial,txid,conflict)){
+                    return state.Invalid(error("CheckInputs() : serial already spent. txid %s has serial %s which was spent by %s",
+                            tx.GetHash().ToString(),serial.ToString(),conflict.ToString()));
                 }
             }
 
