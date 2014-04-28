@@ -107,8 +107,12 @@ void CTxMemPool::remove(const CTransaction &tx, std::list<CTransaction>& removed
         if (mapTx.count(hash))
         {
             removed.push_front(tx);
-            BOOST_FOREACH(const CTxIn& txin, tx.vin)
+            BOOST_FOREACH(const CTxIn& txin, tx.vin){
                 mapNextTx.erase(txin.prevout);
+                BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()){
+                    mapZerocoinSerialNumbers.erase(serial);
+                }
+            }
             mapTx.erase(hash);
             nTransactionsUpdated++;
         }
@@ -137,6 +141,7 @@ void CTxMemPool::clear()
     LOCK(cs);
     mapTx.clear();
     mapNextTx.clear();
+    mapZerocoinSerialNumbers.clear();
     ++nTransactionsUpdated;
 }
 
@@ -214,5 +219,14 @@ bool CCoinsViewMemPool::GetCoins(const uint256 &txid, CCoins &coins) {
 
 bool CCoinsViewMemPool::HaveCoins(const uint256 &txid) {
     return mempool.exists(txid) || base->HaveCoins(txid);
+}
+
+bool CCoinsViewMemPool::GetSerial(const uint256 &serial, uint256 &txid){
+    if(mempool.mapZerocoinSerialNumbers.count(serial)){
+        txid = mempool.mapZerocoinSerialNumbers[serial].ptx->GetHash();
+        return true;
+    }else{
+        return base->GetSerial(serial,txid);
+    }
 }
 

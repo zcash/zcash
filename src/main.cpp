@@ -1415,7 +1415,7 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
         BOOST_FOREACH(const CTxIn &txin, tx.vin) {
             if(txin.IsZCPour()){
                 BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()){
-                    inputs.SetSerial(serial,tx.GetHash());
+                    markeSerialAsSpent(inputs,serial,tx.GetHash());
                 }
             }
             CCoins &coins = inputs.GetCoins(txin.prevout.hash);
@@ -1469,7 +1469,7 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, CCoinsViewCach
             uint256 txid;
             BOOST_FOREACH(const uint256 serial, tx.vin[i].GetZerocoinSerialNumbers()){
                 cout << "CheckInputs, checking serial number" << serial.GetHex() << " for tx" << tx.GetHash().GetHex() << endl;
-                if(inputs.GetSerial(serial,txid)){
+                if(isSerialSpendable(inputs,serial,txid)){
                     return state.Invalid(error("CheckInputs() : %s serial number spent by %s", tx.GetHash().ToString(),txid.ToString()));
                 }
             }
@@ -1602,25 +1602,32 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
                 const CTxInUndo &undo = txundo.vprevout[j];
                 CCoins coins;
                 view.GetCoins(out.hash, coins); // this can fail if the prevout was already entirely spent
-                if (undo.nHeight != 0) {
-                    // undo data contains height: this is the last output of the prevout tx being spent
-                    if (!coins.IsPruned())
-                        fClean = fClean && error("DisconnectBlock() : undo data overwriting existing transaction");
-                    coins = CCoins();
-                    coins.fCoinBase = undo.fCoinBase;
-                    coins.nHeight = undo.nHeight;
-                    coins.nVersion = undo.nVersion;
-                } else {
-                    if (coins.IsPruned())
-                        fClean = fClean && error("DisconnectBlock() : undo data adding output to missing transaction");
+                // the undo operations for a zerocoin transction are to make the serial numbers in the database not be marked as spent.
+                if(tx.vin[j].isZC()){
+                    BOOST_FOREACH(const uint256 serial, tx.vin[j].GetZerocoinSerialNumbers()){
+                        markSerialAsUnSpent(view,serial);
+                    }
+                }else{
+                    if (undo.nHeight != 0) {
+                        // undo data contains height: this is the last output of the prevout tx being spent
+                        if (!coins.IsPruned())
+                            fClean = fClean && error("DisconnectBlock() : undo data overwriting existing transaction");
+                        coins = CCoins();
+                        coins.fCoinBase = undo.fCoinBase;
+                        coins.nHeight = undo.nHeight;
+                        coins.nVersion = undo.nVersion;
+                    } else {
+                        if (coins.IsPruned())
+                            fClean = fClean && error("DisconnectBlock() : undo data adding output to missing transaction");
+                    }
+                    if (coins.IsAvailable(out.n))
+                        fClean = fClean && error("DisconnectBlock() : undo data overwriting existing output");
+                    if (coins.vout.size() < out.n+1)
+                        coins.vout.resize(out.n+1);
+                    coins.vout[out.n] = undo.txout;
+                    if (!view.SetCoins(out.hash, coins))
+                        return error("DisconnectBlock() : cannot restore coin inputs");
                 }
-                if (coins.IsAvailable(out.n))
-                    fClean = fClean && error("DisconnectBlock() : undo data overwriting existing output");
-                if (coins.vout.size() < out.n+1)
-                    coins.vout.resize(out.n+1);
-                coins.vout[out.n] = undo.txout;
-                if (!view.SetCoins(out.hash, coins))
-                    return error("DisconnectBlock() : cannot restore coin inputs");
             }
         }
     }

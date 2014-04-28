@@ -19,6 +19,14 @@ void static BatchWriteCoins(CLevelDBBatch &batch, const uint256 &hash, const CCo
     else
         batch.Write(make_pair('c', hash), coins);
 }
+void static BatchWriteSerial(CLevelDBBatch &batch, const uint256 &serial, const uint256 txid) {
+    if (serial == always_spendable_txid){
+        batch.Erase(make_pair('z', serial));
+    }
+    else{
+        batch.Write(make_pair('z', serial), txid);
+    }
+}
 
 void static BatchWriteHashBestChain(CLevelDBBatch &batch, const uint256 &hash) {
     batch.Write('B', hash);
@@ -65,8 +73,9 @@ bool CCoinsViewDB::BatchWrite(const std::map<uint256, CCoins> &mapCoins,  const 
     	assert( it->first != always_spendable_txid);
         BatchWriteCoins(batch, it->first, it->second);
     }
-    for (std::map<uint256, uint256>::const_iterator it = mapSerial.begin(); it != mapSerial.end(); it++)
-    	batch.Write(make_pair('z', it->first), it->second);
+    for (std::map<uint256, uint256>::const_iterator it = mapSerial.begin(); it != mapSerial.end(); it++){
+    	BatchWriteSerial(batch,it->first,it->second);
+    }
     if (hashBlock != uint256(0))
         BatchWriteHashBestChain(batch, hashBlock);
 
@@ -130,7 +139,7 @@ bool CCoinsViewDB::GetSerial(const uint256& serial, uint256& txid) {
 
 bool CCoinsViewDB::SetSerial(const uint256& serial, const uint256& txid) {
     CLevelDBBatch batch;
-    batch.Write(make_pair('z', serial), txid);
+    BatchWriteSerial(batch,serial, txid);
     return db.WriteBatch(batch);
 }
 

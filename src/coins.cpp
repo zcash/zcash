@@ -6,6 +6,45 @@
 
 #include <assert.h>
 
+// Zerocoin changes
+CCoinsImmuntable MakeFakeZerocoinCCoin(){
+    CTransaction dummy;
+    CScript scriptPubKey;
+    scriptPubKey.clear();
+    scriptPubKey << OP_NOP;
+    CTxOut out(0,scriptPubKey);
+    dummy.vout.push_back(out);
+    CCoinsImmuntable fake(dummy);
+    return fake;
+}
+bool isSerialSpendable(CCoinsView &v,const uint256 &txid, const uint256 &serial){
+    uint256 value;
+    if(v.GetSerial(txid,value)){
+        return value == always_spendable_txid;
+    }else{
+        return true;
+    }
+}
+bool markeSerialAsSpent(CCoinsView &v, const uint256 &serial,const uint256 &txid){
+    return v.SetSerial(serial,txid);
+}
+bool markSerialAsUnSpent(CCoinsView &v, const uint256 &serial){
+    return v.SetSerial(serial,always_spendable_txid);
+}
+bool CCoinsViewCache::GetSerial(const uint256& serial, uint256& txid) {
+    if (cacheSerial.count(serial)) {
+        txid = cacheSerial[serial];
+        return false;
+    }
+    if (base->GetSerial(serial, txid)) {
+        // since always spendable is the marker for deleting a txid,
+        // the base code should NEVER actually return a value wit that in it.
+        assert(txid != always_spendable_txid);
+        cacheSerial[serial] = txid;
+        return true;
+    }
+    return false;
+}
 
 
 // calculate number of bytes for the bitmask, and its number of non-zero bytes
@@ -79,6 +118,12 @@ bool CCoinsViewBacked::GetStats(CCoinsStats &stats) { return base->GetStats(stat
 
 CCoinsViewCache::CCoinsViewCache(CCoinsView &baseIn, bool fDummy) : CCoinsViewBacked(baseIn), hashBlock(0),zerocoin_input( MakeFakeZerocoinCCoin()) {}
 
+bool CCoinsViewCache::SetSerial(const uint256& serial, const uint256& txid) {
+    cacheSerial[serial]=txid;
+    return true;
+}
+
+
 bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) {
     if(txid == always_spendable_txid){
         coins=zerocoin_input;
@@ -95,22 +140,7 @@ bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) {
     return false;
 }
 
-bool CCoinsViewCache::GetSerial(const uint256& serial, uint256& txid) {
-    if (cacheSerial.count(serial)) {
-        txid = cacheSerial[serial];
-        return true;
-    }
-    if (base->GetSerial(serial, txid)) {
-        cacheSerial[serial] = txid;
-        return true;
-    }
-    return false;
-}
 
-bool CCoinsViewCache::SetSerial(const uint256& serial, const uint256& txid) {
-	cacheSerial[serial]=txid;
-	return true;
-}
 
 std::map<uint256,CCoins>::iterator CCoinsViewCache::FetchCoins(const uint256 &txid) {
     std::map<uint256,CCoins>::iterator it = cacheCoins.lower_bound(txid);
