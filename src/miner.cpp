@@ -150,6 +150,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
         bool fPrintPriority = GetBoolArg("-printpriority", false);
+        fakeMerkleThing zerocoinMerkleTree = getZerocoinMerkleTree(pindexPrev);
+        LogPrint("zerocoin","CreateNewBlock :Got prevous zerocoin merkle tree from block %s\n",zerocoinMerkleTree.root.ToString());
 
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
@@ -315,6 +317,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     }
                 }
             }
+            BOOST_FOREACH(uint256 coin, tx.getNewZerocoinsInTx()){
+                zerocoinMerkleTree.add(coin);
+            }
+
         }
 
         nLastBlockTx = nBlockTx;
@@ -331,7 +337,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->nNonce         = 0;
         pblock->vtx[0].vin[0].scriptSig = CScript() << OP_0 << OP_0;
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
-
+        pblock->hashZerocoinMerkleRoot = zerocoinMerkleTree.root;
         CBlockIndex indexDummy(*pblock);
         indexDummy.pprev = pindexPrev;
         indexDummy.nHeight = pindexPrev->nHeight + 1;
@@ -377,6 +383,7 @@ void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash
             unsigned int nTime;
             unsigned int nBits;
             unsigned int nNonce;
+            uint256 hashZerocoinMerkleRoot;
         }
         block;
         unsigned char pchPadding0[64];
@@ -392,6 +399,7 @@ void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash
     tmp.block.nTime          = pblock->nTime;
     tmp.block.nBits          = pblock->nBits;
     tmp.block.nNonce         = pblock->nNonce;
+    tmp.block.hashZerocoinMerkleRoot = pblock->hashZerocoinMerkleRoot;
 
     FormatHashBlocks(&tmp.block, sizeof(tmp.block));
     FormatHashBlocks(&tmp.hash1, sizeof(tmp.hash1));
