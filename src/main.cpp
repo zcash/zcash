@@ -1746,6 +1746,9 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
     unsigned int flags = SCRIPT_VERIFY_NOCACHE |
                          (fStrictPayToScriptHash ? SCRIPT_VERIFY_P2SH : SCRIPT_VERIFY_NONE);
 
+    fakeMerkleThing zerocoinMerkleTree = getZerocoinMerkleTree(pindex->pprev);
+    LogPrint("zerocoin","CreateNewBlock :Got prevous zerocoin merkle tree from block %s\n",zerocoinMerkleTree.root.ToString());
+
     CBlockUndo blockundo;
 
     CCheckQueueControl<CScriptCheck> control(fScriptChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
@@ -1799,6 +1802,13 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
 
         vPos.push_back(std::make_pair(block.GetTxHash(i), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
+        BOOST_FOREACH(uint256 coin, tx.getNewZerocoinsInTx()){
+              zerocoinMerkleTree.add(coin);
+        }
+    }
+    if(block.hashZerocoinMerkleRoot != zerocoinMerkleTree.root){
+        return state.DoS(100, error("ConnectBlock(): for block %s, calculated zerocash merkle tree root %s, not same as specifed one %s\n",block.GetHash().ToString(),zerocoinMerkleTree.root.ToString(),block.hashZerocoinMerkleRoot.ToString()),
+                                        REJECT_INVALID, "bad-txns-inputs-missingorspent");
     }
     int64_t nTime = GetTimeMicros() - nStart;
     if (fBenchmark)
