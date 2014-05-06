@@ -16,7 +16,6 @@
 #include "txmempool.h"
 #include "ui_interface.h"
 #include "util.h"
-
 #include <sstream>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -2430,6 +2429,25 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CDiskBlockPos* dbp)
     }
 
     return true;
+}
+
+fakeMerkleThing getZerocoinMerkleTree(CBlockIndex* pindex){
+    if(pindex->nHeight == 0 ){
+        return fakeMerkleThing();
+    }else{
+        CBlockUndo blockUndo ;
+        CDiskBlockPos pos = pindex->GetUndoPos();
+        if (pos.IsNull()){
+            error("getZerocinMerkelTree: no undo data available");
+            return fakeMerkleThing();
+        }
+        if (!blockUndo.ReadFromDisk(pos, pindex->pprev->GetBlockHash())){
+            error("getZerocinMerkelTree: failure reading undo data");
+            return fakeMerkleThing();
+        }
+        return blockUndo.previousPrunedZerocoinMerkleTree;
+
+    }
 }
 
 bool CBlockIndex::IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned int nRequired, unsigned int nToCheck)
