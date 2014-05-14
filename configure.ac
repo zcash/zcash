@@ -155,7 +155,7 @@ if test "x$enable_debug" = xyes; then
 fi 
 
 ## TODO: Remove these hard-coded paths and flags. They are here for the sake of
-##       compatibility with the legacy buildsystem.
+##       compatibility with the legacy buildsystem.¶ze
 ##
 if test "x$CXXFLAGS_overridden" = "xno"; then
   CXXFLAGS="$CXXFLAGS -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter"
@@ -492,6 +492,13 @@ if test x$use_pkgconfig = xyes; then
     [PKG_CHECK_MODULES],
     [
       PKG_CHECK_MODULES([SSL], [libssl], [INCLUDES="$INCLUDES $SSL_CFLAGS"; LIBS="$LIBS $SSL_LIBS"], [AC_MSG_ERROR(openssl  not found.)])
+   #   PKG_CHECK_MODULES([zerocash], [libzerocash], [INCLUDES="$INCLUDES $ZEROCASH_CFLAGS"; LIBS="$LIBS $ZEROCASH_LIBS"], [AC_MSG_ERROR(zerocash  not found.)])
+   #   PKG_CHECK_MODULES([GMP], [libgmp], [INCLUDES="$INCLUDES $GMP_CFLAGS"; LIBS="$LIBS $GMP_LIBS"], [AC_MSG_ERROR(GMP  not found.)])
+   #   PKG_CHECK_MODULES([CRYPTOPP], [lcryptopp], [INCLUDES="$INCLUDES $CRYPTOPP_CFLAGS"; LIBS="$LIBS $CRYPTOPP_LIBS"], [AC_MSG_ERROR(CRYPTOPP  not found.)])
+   #   PKG_CHECK_MODULES([LIBZM], [libzm], [INCLUDES="$INCLUDES $LIBZM_CFLAGS"; LIBS="$LIBS $LIBZM_LIBS"], [AC_MSG_ERROR(LIBZM  not found.)])
+   #   PKG_CHECK_MODULES([GMP], [libgmp], [INCLUDES="$INCLUDES $GMP_CFLAGS"; LIBS="$LIBS $GMP_LIBS"], [AC_MSG_ERROR(GMP  not found.)])
+   #   PKG_CHECK_MODULES([GOMP], [libgomp], [INCLUDES="$INCLUDES $GOMP_CFLAGS"; LIBS="$LIBS $GOMP_LIBS"], [AC_MSG_ERROR(GOMP  not found.)])
+      
       PKG_CHECK_MODULES([CRYPTO], [libcrypto], [INCLUDES="$INCLUDES $CRYPTO_CFLAGS"; LIBS="$LIBS $CRYPTO_LIBS"], [AC_MSG_ERROR(libcrypto  not found.)])
       BITCOIN_QT_CHECK([PKG_CHECK_MODULES([PROTOBUF], [protobuf], [have_protobuf=yes], [BITCOIN_QT_FAIL(libprotobuf not found)])])
       if test x$use_qr != xno; then

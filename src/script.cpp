@@ -13,10 +13,12 @@
 #include "sync.h"
 #include "uint256.h"
 #include "util.h"
+#include "main.h"
 
 #include <boost/foreach.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
+#include <libzerocash/PourTransaction.h>
 
 using namespace std;
 using namespace boost;
@@ -315,7 +317,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
     valtype vchPushValue;
     vector<bool> vfExec;
     vector<valtype> altstack;
-    if (script.size() > 10000)
+    if (script.size() > 100000)
         return false;
     int nOpCount = 0;
 
@@ -450,11 +452,66 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
                 }
                 break;
 
-                case FLAG_ZC_MINT: case FLAG_ZC_POUR: case FLAG_ZC_POUR_INTERMEDIATE:
+                case FLAG_ZC_MINT:
                 {
-                    LogPrint("zerocoin","zerocoin CheckInputs: placeholder evaluating script\n");
-                    stack.push_back(vchTrue);
-                    return true;
+                	return false;
+                }
+                case  FLAG_ZC_POUR_INTERMEDIATE:
+                {
+                	return false;
+                }
+                case FLAG_ZC_POUR:
+                {
+                    LogPrint("zerocoin","zerocoin EvalScript: placeholder evaluating script\n");
+                    if(stack.size()!=4){
+                        LogPrint("zerocoin","EvalScript: wrong arguments count. expected 4 got %d\n",stack.size());
+                        return false;
+                    }
+                    valtype& vchSig = stacktop(-1);
+                    valtype& vchRoot  = stacktop(-2);
+                    valtype& vchPubKey = stacktop(-3);
+                    valtype& vchPour = stacktop(-4);
+
+                    CScript scriptCode(txTo.vin[nIn].scriptSig);
+                    scriptCode.FindAndDelete(CScript(vchSig));
+                    uint256 hash = SignatureHash(scriptCode, txTo , nIn, SIGHASH_ALL);
+                    LogPrint("zerocoin","EvalScript: signature hash %s\n",hash.ToString());
+
+
+                    CPubKey pubkey(vchPubKey);
+                    if (!pubkey.IsValid()){
+                        LogPrint("zerocoin","zerocoin EvalScript: pbulic key invalid.\n");
+                        return false;
+                    }
+                    if(!pubkey.Verify(hash,vchSig)){
+                        LogPrint("zerocoin","zerocoin EvalScript: signatue invalid.\n");
+                        return false;
+                    }
+                    const uint256 keyhash=pubkey.GetHash();
+                    vector<unsigned char> keyahshv(keyhash.begin(),keyhash.end());
+
+                    // deserialize pour
+                    libzerocash::PourTransaction pour;
+                    CDataStream ss(vchPour,SER_NETWORK, PROTOCOL_VERSION);
+                    ss >> pour;
+
+
+                    bool ret = true;
+
+                    CHashWriter hh(SER_GETHASH, 0);
+                    hh << pour;
+                    LogPrint("zerocoin","EvalScript: pour deserialized with hash %s\n",hash.ToString());
+
+                    ret = ret & pour.verify(*pzerocashParams,keyahshv,vchRoot);
+
+                    popstack(stack);
+                    popstack(stack);
+                    popstack(stack);
+                    popstack(stack);
+
+                    LogPrint("zerocoin","zerocoin EvalScript: %s. \n", ret? "passed":"failed");
+                    stack.push_back(ret ? vchTrue: vchFalse);
+                    return ret;
                 }
                 break;
 
