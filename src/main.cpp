@@ -21,6 +21,7 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include<libzerocash/ZerocashParams.h>
 
 using namespace std;
 using namespace boost;
@@ -405,6 +406,8 @@ CBlockIndex *CChain::FindFork(const CBlockLocator &locator) const {
 
 CCoinsViewCache *pcoinsTip = NULL;
 CBlockTreeDB *pblocktree = NULL;
+libzerocash::ZerocashParams *pzerocashParams = NULL;
+
 
 //////////////////////////////////////////////////////////////////////////////
 //

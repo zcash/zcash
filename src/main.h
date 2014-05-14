@@ -28,6 +28,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include<libzerocash/ZerocashParams.h>
 
 class CBlockIndex;
 class CBloomFilter;
@@ -82,6 +83,7 @@ static const unsigned char REJECT_NONSTANDARD = 0x40;
 static const unsigned char REJECT_DUST = 0x41;
 static const unsigned char REJECT_INSUFFICIENTFEE = 0x42;
 static const unsigned char REJECT_CHECKPOINT = 0x43;
+
 
 
 extern CScript COINBASE_FLAGS;
@@ -1068,6 +1070,8 @@ extern CCoinsViewCache *pcoinsTip;
 
 /** Global variable that points to the active block tree (protected by cs_main) */
 extern CBlockTreeDB *pblocktree;
+
+extern libzerocash::ZerocashParams *pzerocashParams;
 
 struct CBlockTemplate
 {
