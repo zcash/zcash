@@ -34,6 +34,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <openssl/crypto.h>
+#include<libzerocash/ZerocashParams.h>
 
 using namespace std;
 using namespace boost;
@@ -905,6 +906,8 @@ bool AppInit2(boost::thread_group& threadGroup)
             LogPrintf("No blocks matching %s were found\n", strMatch);
         return false;
     }
+    // ******************************************************** Step 7i: Load zerocash keys
+    	pzerocashParams = new libzerocash::ZerocashParams(4);
 
     // ********************************************************* Step 8: load wallet
 #ifdef ENABLE_WALLET
