@@ -21,7 +21,7 @@ class CCoins;
 class CKeyStore;
 class CTransaction;
 
-static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
+static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 6000; // bytes
 static const unsigned int MAX_OP_RETURN_RELAY = 40;      // bytes
 
 class scriptnum_error : public std::runtime_error
@@ -715,7 +715,7 @@ public:
         return CScriptID(Hash160(*this));
     }
 };
-
+uint256 SignatureHash(const CScript &scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType);
 /** Compact serializer for scripts.
  *
  *  It detects common cases and encodes them much more efficiently.
