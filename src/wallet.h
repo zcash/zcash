@@ -23,6 +23,15 @@
 #include <utility>
 #include <vector>
 
+
+#include <libzerocash/Address.h>
+#include <libzerocash/Coin.h>
+#include <libzerocash/ZerocashParams.h>
+#include <libzerocash/IncrementalMerkleTree.h>
+#include <libzerocash/PourTransaction.h>
+#include <libzerocash/MintTransaction.h>
+#include <libzerocash/Zerocash.h>
+
 // Settings
 extern int64_t nTransactionFee;
 extern bool bSpendZeroConfChange;
@@ -160,6 +169,8 @@ public:
         nLastResend = 0;
     }
 
+    std::map<uint256, libzerocash::Coin> mapCoins;
+    std::map<uint256, libzerocash::Address> mapAddress;
     std::map<uint256, CWalletTx> mapWallet;
 
     int64_t nOrderPosNext;
@@ -175,6 +186,12 @@ public:
 
     const CWalletTx* GetWalletTx(const uint256& hash) const;
 
+    libzerocash::IncrementalMerkleTree BuildZercoinMerkleTree();
+    CTransaction MakePour(uint16_t version,uint256 coinhash1,uint256 coinhash2,CKey key,
+    		libzerocash::Coin newcoin1, libzerocash::Coin newcoin2,
+    		libzerocash::Address newAddress1, libzerocash::Address newAddress2);
+
+    CTransaction MakePourTx(const libzerocash::PourTransaction &pour,const  vector<unsigned char> &rt, const CKey &key);
     // check whether we are allowed to upgrade (or already support) to the named feature
     bool CanSupportFeature(enum WalletFeature wf) { AssertLockHeld(cs_wallet); return nWalletMaxVersion >= wf; }
 

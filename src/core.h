@@ -11,8 +11,13 @@
 #include "uint256.h"
 
 #include <stdint.h>
+#include <libzerocash/PourTransaction.h>
+#include <libzerocash/MintTransaction.h>
 
 class CTransaction;
+// the mark of a zerocin input. this is the ID we use that should always be spendable
+
+const uint256 always_spendable_txid("0xDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF");
 
 /** No amount larger than this (in satoshi) is valid */
 static const int64_t MAX_MONEY = 21000000 * COIN;
@@ -62,25 +67,35 @@ public:
     void SetNull() { ptx = NULL; n = (unsigned int) -1; }
     bool IsNull() const { return (ptx == NULL && n == (unsigned int) -1); }
 };
-class fakeMerkleThing{
+
+
+/** This stores the data embeaded in a zerocash pour scriptSig.
+ * Because we don't want to pay the cost of deserialization every time we want the
+ * serial number, we store it here.
+ */
+class CTxInZerocoinPourDataCacheEntry
+{
 public:
-    uint256 root;
-    uint256 foo;
-    fakeMerkleThing(){
-        foo=42;
-    }
-    IMPLEMENT_SERIALIZE
-       (
-           READWRITE(root);
-           READWRITE(foo);
-       )
-    void add(const uint256 &cointhing){
-        LogPrint("zerocoin","fakeMerkleThing add %s ",cointhing.ToString());
-        CHashWriter ss(SER_GETHASH,PROTOCOL_VERSION);
-        ss << root;
-        ss <<cointhing;
-        root = ss.GetHash();
-    }
+	CTxInZerocoinPourDataCacheEntry():empty(true){
+	}
+	CTxInZerocoinPourDataCacheEntry(const CScript& scriptSig);
+	bool empty;
+	std::vector<uint256> serails;
+	std::vector<uint256> coinCommitmentHashes;
+	int64_t pour_monetary_value;
+	libzerocash::PourTransaction rawPour;
+};
+
+class CTxInZerocoinMintDataCacheEntry
+{
+public:
+	CTxInZerocoinMintDataCacheEntry():empty(true){
+	}
+	CTxInZerocoinMintDataCacheEntry(const CScript& scriptSig);
+	bool empty;
+	std::vector<uint256> coinCommitmentHashes;
+	int64_t mint_monetary_value;
+	libzerocash::MintTransaction rawMint;
 };
 
 /** An input of a transaction.  It contains the location of the previous
@@ -115,11 +130,11 @@ public:
     }
 
     bool IsZCPour() const{
-    	return(scriptSig.IsZCPour());
+    	return( this->prevout.hash == always_spendable_txid && this->prevout.n == 0);
     }
 
     bool IsZCMint() const{
-    	return (scriptSig.IsZCMint());
+    	return( this->prevout.hash == always_spendable_txid && this->prevout.n == 1);
     }
     
     bool isZC() const{
@@ -131,33 +146,37 @@ public:
      * In the case of pour it is the value of vpub.
      *     */
     int64_t GetBtcContributionOfZerocoinTransaction() const {
-        // TODO add actually pull value
-            return 42; // dummy values
+    	if(IsZCPour()){
+    		CTxInZerocoinPourDataCacheEntry foo(this->scriptSig);
+			return foo.pour_monetary_value;
+    	}else{
+    		CTxInZerocoinMintDataCacheEntry foo(this->scriptSig);
+    		return foo.mint_monetary_value;
+    	}
     }
 
     /**Gets the serial numbers used in a zerocoin transaction
      *
      */
     std::vector<uint256> GetZerocoinSerialNumbers() const{
-        static const unsigned char R1Array[] =
-            "\xDE\xAD\xBE\xEF\xcf\x56\x11\x12\x2b\x29\x12\x5e\x5d\x35\xd2\xd2"
-            "\x22\x81\xaa\xb5\x33\xf0\x08\x32\xd5\x56\xb1\xf9\xea\xe5\x1d\x7d";
-        static const uint256 always_spendable_txid(std::vector<unsigned char>(R1Array,R1Array+32));
-        std::vector<uint256> ret;
-        if(IsZCPour()){ //TODO actually pull serial numbers
-            ret.push_back(GetRandHash());// always_spendable_txid+10);
-            ret.push_back(GetRandHash());//always_spendable_txid+20);
-        }
-        return ret;
+        static  std::vector<uint256> ret;
+    	if(IsZCPour()){
+    		CTxInZerocoinPourDataCacheEntry foo(this->scriptSig);
+    		return foo.serails;
+    	}
+    	return ret;
     }
     /**Gets the coins output by a zerocoin transaction
      *
      */
     std::vector<uint256> GetNewZeroCoinHashes() const{
         static  std::vector<uint256> ret;
-        if(isZC()){
-            ret.push_back(GetRandHash());
-            ret.push_back(GetRandHash());
+        if(IsZCPour()){
+    		CTxInZerocoinPourDataCacheEntry foo(this->scriptSig);
+    		return foo.coinCommitmentHashes;
+        }else if (IsZCMint()){
+        	CTxInZerocoinMintDataCacheEntry foo(this->scriptSig);
+        	return foo.coinCommitmentHashes;
         }
         return ret;
 
@@ -291,12 +310,13 @@ public:
 
     std::vector<uint256> getNewZerocoinsInTx() const{
         std::vector<uint256> ret;
-        int i=0;
+
         BOOST_FOREACH(const CTxIn in,vin){
             if(in.isZC()){
-                uint256 f = this->GetHash();
-                ret.push_back(f+i);
-                i++;
+                std::vector<uint256> hashes = in.GetNewZeroCoinHashes();
+            	BOOST_FOREACH(uint256 hash,hashes){
+            		ret.push_back(hash);
+            	}
             }
         }
         return ret;

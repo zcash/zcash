@@ -15,8 +15,9 @@
 #include <libzerocash/Address.h>
 #include <libzerocash/Coin.h>
 #include <libzerocash/ZerocashParams.h>
-#include <libzerocash/MerkleTree.h>
+#include <libzerocash/IncrementalMerkleTree.h>
 #include <libzerocash/PourTransaction.h>
+#include <libzerocash/MintTransaction.h>
 #include <libzerocash/Zerocash.h>
 
 #include <stdint.h>
@@ -32,6 +33,11 @@ using namespace json_spirit;
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
+
+extern std::vector<libzerocash::Coin> zccoins;
+extern std::vector<libzerocash::Address> zcaddrs;
+
+
 
 std::string HelpRequiringPassphrase()
 {
@@ -354,19 +360,149 @@ Value sendtoaddress(const Array& params, bool fHelp)
 
     return wtx.GetHash().GetHex();
 }
+Value zerocoinmint(const Array& params, bool fHelp){
+	if (fHelp || params.size() < 1)
+	        throw runtime_error(
+	            "claim_zerocoin address_to_pay_to \n"
+	            "wallet must be unlocked."
+	       );
 
+
+
+	    EnsureWalletIsUnlocked();
+	    //params[1].get_int()
+	    int64_t nAmount = AmountFromValue(params[0]);
+	    int64_t nAmountChange = AmountFromValue(params[1]);
+
+	 //   cout << "nAmount " << nAmount << " zcaddrs " << zcaddrs.size() << " zccoins" << zccoins.size() <<  " i" << ictr <<endl;;
+
+	    if (!pwalletMain->IsLocked())
+	        pwalletMain->TopUpKeyPool();
+
+	    CReserveKey reservekey(pwalletMain);
+	    CPubKey vchPubKey;
+	    if (!reservekey.GetReservedKey(vchPubKey))
+	        throw JSONRPCError(RPC_WALLET_ERROR, "Error: Unable to obtain key for change");
+
+	    reservekey.KeepKey();
+
+	    CKeyID keyID = vchPubKey.GetID();
+
+	    CBitcoinAddress chageaddress(keyID);
+	    uint256 hash;
+	    hash.SetHex(params[2].get_str());
+	    CTransaction tx;
+	    uint256 hashBlock = 0;
+	    if (!GetTransaction(hash, tx, hashBlock, true))
+	        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
+
+	    //zcaddrs.at(zcaddrs.size()) = libzerocash::Address();
+	    //zccoins.at(i) = libzerocash::Coin(zcaddrs.at(i).getPublicAddress(), i)
+
+		libzerocash::Address zcaddr_f;
+		zcaddrs.push_back(zcaddr_f);
+		libzerocash::Coin coina(zcaddr_f.getPublicAddress(),1);
+		zccoins.push_back(coina);
+		uint256 cid(coina.getCoinCommitment().getCommitmentValue());
+		pwalletMain->mapAddress[cid]= zcaddr_f;
+		pwalletMain->mapCoins[cid]= coina;
+
+		libzerocash::MintTransaction minttx(coina);
+		 CDataStream sss(SER_NETWORK, PROTOCOL_VERSION);
+		 sss<< coina;
+		 std::string coinhex =  HexStr(sss.begin(), sss.end());
+
+		 CDataStream ssss(SER_NETWORK, PROTOCOL_VERSION);
+	     ssss << zcaddr_f;
+		 std::string addresshex =  HexStr(ssss.begin(), ssss.end());
+
+		// cout << "XXXX coin " << cid.ToString() << " :\n\thex\n\t" << coinhex << "\n\taddress\n\t " << addresshex << endl;
+
+	    CTransaction rawTx; // the tx we are constructing
+		{
+			 CTxIn in(hash,0);
+		     rawTx.vin.push_back(in);
+		}
+	    {
+	        CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
+	        std::vector<unsigned char> vchSig(32);
+
+	        dd << minttx;
+	        std::vector<unsigned char> vector_mint(dd.begin(),dd.end());
+
+	        CScript scriptSig;
+	        scriptSig.clear();
+	        scriptSig << vector_mint;
+	        CTxIn in(always_spendable_txid,1,scriptSig);
+	        rawTx.vin.push_back(in);
+	    }
+
+	    vector<std::vector<bool> > coinValues;
+	      vector<bool> temp_comVal(cm_size * 8);
+	      for(size_t i = 0; i < zccoins.size(); i++) {
+	          libzerocash::convertBytesVectorToVector(zccoins.at(i).getCoinCommitment().getCommitmentValue(), temp_comVal);
+	          coinValues.push_back( temp_comVal);
+	          uint256 cc(zccoins.at(i).getCoinCommitment().getCommitmentValue());
+//	          LogPrint("zerocoin","mint : adding coin %s to tree \n \n ",cc.ToString());
+	      }
+	    libzerocash::IncrementalMerkleTree merkleTree(coinValues,4);
+	    std::vector<unsigned char> ignored;
+	    std::vector<unsigned char> rt;
+	    merkleTree.getRootValue(rt);
+	    uint256 rtt(rt);
+	//    cout << "current root "  << rtt.ToString() << endl;
+	    uint256 coincm(minttx.getMintedCoinCommitmentValue());
+	//    cout << "coinash of new coin " << coincm.ToString() << endl;
+
+
+	    { // change
+	    CScript scriptPubKey;
+	    scriptPubKey.SetDestination(chageaddress.Get());
+	    CTxOut out(nAmountChange,scriptPubKey);
+	    rawTx.vout.push_back(out);
+		}
+
+
+	  /*  CCoins coins;
+	    CCoinsView viewDummy;
+		CCoinsViewCache view(viewDummy);
+		{
+			LOCK(mempool.cs);
+			CCoinsViewCache &viewChain = *pcoinsTip;
+			CCoinsViewMemPool viewMempool(viewChain, mempool);
+			view.SetBackend(viewMempool); // temporarily switch cache backend to db+mempool view
+			CCoins coins;
+			view.GetCoins(hash, coins); // this is certainly allowed to fail
+			view.SetBackend(viewDummy); // switch back to avoid locking mempool for too long
+		}
+		const CScript& prevPubKey = coins.vout[0].scriptPubKey;
+		SignSignature(*pwalletMain,prevPubKey, rawTx,0, SIGHASH_ALL);
+        CValidationState state;
+		if (!AcceptToMemoryPool(mempool, state, rawTx, false, NULL, true))
+			throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX rejected"); // TODO: report validation state
+	    RelayTransaction(tx, tx.GetHash());
+	    return tx.GetHash().GetHex(); */
+
+	    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+	    ss << rawTx;
+
+	    return HexStr(ss.begin(), ss.end());
+}
 Value zerocoinpour(const Array& params, bool fHelp){
-    if (fHelp || params.size() < 1)
+    if (fHelp || params.size() < 4)
         throw runtime_error(
             "claim_zerocoin address_to_pay_to \n"
-            "wallet must be unlocked."
+            "use real pour."
        );
+    cout << "coins " << zccoins.size() <<  "addr " << zcaddrs.size() << endl;
     EnsureWalletIsUnlocked();
 
-    const int version = (params.size() >1 ? 1 : 0);
-    CTransaction rawTx; // the tx we are constructing
-
     CBitcoinAddress  address = CBitcoinAddress(params[0].get_str()); // output destination for vpub
+    const int version = (params[1].get_bool() ? 1 : 0); // 0 is a pour with no snark in it.
+    uint256 inputCoinhash1;
+    inputCoinhash1.SetHex(params[2].get_str());
+    uint256 inputCoinhash2;
+    inputCoinhash2.SetHex(params[3].get_str());
 
     if (!address.IsValid())
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
@@ -378,138 +514,23 @@ Value zerocoinpour(const Array& params, bool fHelp){
     CKey key;
     if (!pwalletMain->GetKey(keyID, key))
         throw JSONRPCError(RPC_WALLET_ERROR, "Private key not available");
-
-    // compose output portion of transaction
-    int64_t nAmount = 41; //FIXME don't assume fixed value coins
-    CScript scriptPubKey;
-    scriptPubKey.SetDestination(address.Get());
-    CTxOut out(nAmount,scriptPubKey);
-    rawTx.vout.push_back(out);
     
-    //FIXME tx fees.
+    libzerocash::Address destinationAddress1;
+    libzerocash::PublicAddress pubdestinationAddress1 = destinationAddress1.getPublicAddress();
 
-    // FAKE pour for testing
-    int tree_depth = 4;
+    libzerocash::Address destinationAddress2;
+    libzerocash::PublicAddress pubdestinationAddress2 = destinationAddress2.getPublicAddress();
 
+    libzerocash::Coin outputCoin1(pubdestinationAddress1, 1);
+    libzerocash::Coin outputCoin2(pubdestinationAddress2, 1);
+    CTransaction rawTx;
+    rawTx = pwalletMain->MakePour(version,inputCoinhash1,inputCoinhash2,key,
+            outputCoin1,outputCoin2,
+            destinationAddress1,destinationAddress2);
 
-    vector<libzerocash::Coin> coins(5);
-    vector<libzerocash::Address> addrs(5);
-
-    //     cout << "Creating Addresses and Coins...\n" << endl;
-    for(size_t i = 0; i < coins.size(); i++) {
-        addrs.at(i) = libzerocash::Address();
-        coins.at(i) = libzerocash::Coin(addrs.at(i).getPublicAddress(), i);
-    }
-    //     cout << "Successfully created address and coins.\n" << endl;
-
-
-    vector<std::vector<bool> > coinValues(5);
-    vector<bool> temp_comVal(cm_size * 8);
-    for(size_t i = 0; i < coinValues.size(); i++) {
-        libzerocash::convertBytesVectorToVector(coins.at(i).getCoinCommitment().getCommitmentValue(), temp_comVal);
-        coinValues.at(i) = temp_comVal;
-    }
-
-    //      cout << "Creating Merkle Tree...\n" << endl;
-    libzerocash::MerkleTree merkleTree(coinValues, tree_depth);
-    //      cout << "Successfully created Merkle Tree.\n" << endl;
-
-    //    cout << "Creating Witness 1...\n" << endl;
-    auth_path witness_1(tree_depth);
-    merkleTree.getWitness(coinValues.at(1), witness_1);
-    //   cout << "Successfully created Witness 1.\n" << endl;
-
-    //     cout << "Creating Witness 2...\n" << endl;
-    auth_path witness_2(tree_depth);
-    merkleTree.getWitness(coinValues.at(3), witness_2);
-    //   cout << "Successfully created Witness 2.\n" << endl;
-
-    //      cout << "Creating coins to spend...\n" << endl;
-    libzerocash::Address newAddress3;
-    libzerocash::PublicAddress pubAddress3 = newAddress3.getPublicAddress();
-
-    libzerocash::Address newAddress4;
-    libzerocash::PublicAddress pubAddress4 = newAddress4.getPublicAddress();
-
-    libzerocash::Coin c_1_new(pubAddress3, 2);
-    libzerocash::Coin c_2_new(pubAddress4, 2);
-    //      cout << "Successfully created coins to spend.\n" << endl;
-
-    vector<bool> root_bv(root_size * 8);
-    merkleTree.getRootValue(root_bv);
-    vector<unsigned char> rt(root_size);
-    libzerocash::convertVectorToBytesVector(root_bv, rt);
-
-
-
-    uint256 keyhash = key.GetPubKey().GetHash();
-    vector<unsigned char> keyahshv(keyhash.begin(),keyhash.end());
-    //    cout << "Creating a pour transaction...\n" << endl;
-    libzerocash::PourTransaction pourtx(version, *pzerocashParams,
-            rt,
-            coins.at(1), coins.at(3),
-            addrs.at(1), addrs.at(3),
-            witness_1, witness_2,
-            pubAddress3, pubAddress4,
-            0,
-            keyahshv,
-            c_1_new, c_2_new);
-    //      cout << "Successfully created a pour transaction.\n" << endl;
-    //
-    //      cout << "Serializing a pour transaction...\n" << endl;
-    CDataStream serializedPourTx(SER_NETWORK, 7002);
-    serializedPourTx << pourtx;
-    //      cout << "Successfully serialized a pour transaction.\n" << endl;
-
-    libzerocash::PourTransaction pourtxNew;
-    serializedPourTx >> pourtxNew;
-
-    //cout << "does tx verify "  << pourtxNew.verify(*pzerocashParams,keyahshv,rt) << endl;
-
-   // END FAKE Pour. Now actually serialize.
-
-    CHashWriter hh(SER_GETHASH, 0);
-    hh << pourtxNew;
-
-
-    CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
-    std::vector<unsigned char> vchSig(32);
-
-    dd << pourtxNew;
-    std::vector<unsigned char> pour_vector(dd.begin(),dd.end());
-
-    CScript scriptSig;
-    scriptSig.clear();
-    scriptSig << pour_vector;
-    scriptSig << key.GetPubKey();
-    scriptSig << rt;
-
-    CTxIn in(always_spendable_txid,0,scriptSig);
-    rawTx.vin.push_back(in);
-
-    // XXX FIXME don't assume the zerocash transaction is the first one
-
-
-    uint256 hash = SignatureHash(scriptSig, rawTx , 0, SIGHASH_ALL);
-    LogPrint("zerocoin","zerocoin pour: rawTx size %d, signnatue hash %s\n",pour_vector.size(),hash.ToString());
-
-    if(!key.Sign(hash,vchSig)){
-        throw JSONRPCError(RPC_TYPE_ERROR, "Cannot sign transaction");
-    }
-    scriptSig << vchSig;
-    rawTx.vin[0].scriptSig = scriptSig;
-
-    // test transaction verification
-    CCoinsViewCache v(*pcoinsTip,false);
-    LogPrint("zerocoin","zerocoin pour: transaciton created. Verifying\n");
-    if(VerifyScript(scriptSig,v.GetCoins(always_spendable_txid).vout[0].scriptPubKey,rawTx,0,0,SIGHASH_ALL))
-    {
-       CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-       ss << rawTx;
-       return HexStr(ss.begin(), ss.end());
-    } else{
-        return "false";
-    }
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << rawTx;
+    return HexStr(ss.begin(), ss.end());
 }
 
 Value listaddressgroupings(const Array& params, bool fHelp)
