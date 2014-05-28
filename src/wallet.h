@@ -191,7 +191,7 @@ public:
     		libzerocash::Coin newcoin1, libzerocash::Coin newcoin2,
     		libzerocash::Address newAddress1, libzerocash::Address newAddress2);
 
-    CTransaction MakePourTx(const libzerocash::PourTransaction &pour,const  vector<unsigned char> &rt, const CKey &key);
+    CTransaction MakePourTx(const libzerocash::PourTransaction &pour,const  uint256 &blockhash, const CKey &key);
     // check whether we are allowed to upgrade (or already support) to the named feature
     bool CanSupportFeature(enum WalletFeature wf) { AssertLockHeld(cs_wallet); return nWalletMaxVersion >= wf; }
 
