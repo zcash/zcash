@@ -731,6 +731,7 @@ public:
     unsigned int nTime;
     unsigned int nBits;
     unsigned int nNonce;
+    uint256 hashZerocoinMerkleRoot;
 
     // (memory only) Sequencial id assigned to distinguish order in which blocks are received.
     uint32_t nSequenceId;
@@ -775,6 +776,8 @@ public:
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
+        hashZerocoinMerkleRoot = block.hashZerocoinMerkleRoot;
+
     }
 
     CDiskBlockPos GetBlockPos() const {
@@ -805,6 +808,7 @@ public:
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
+        block.hashZerocoinMerkleRoot = hashZerocoinMerkleRoot;
         return block;
     }
 
