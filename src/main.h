@@ -746,6 +746,7 @@ public:
         nTime          = 0;
         nBits          = 0;
         nNonce         = 0;
+        hashZerocoinMerkleRoot = 0;
     }
 
     CBlockIndex(CBlockHeader& block)
@@ -905,6 +906,7 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
+        READWRITE(hashZerocoinMerkleRoot);
     )
 
     uint256 GetBlockHash() const
@@ -916,6 +918,7 @@ public:
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;
+        block.hashZerocoinMerkleRoot = hashZerocoinMerkleRoot;
         return block.GetHash();
     }
 
