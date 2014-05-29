@@ -35,6 +35,17 @@ struct CompareValueOnly
     }
 };
 
+std::vector<bool> convertIntToVector(uint64_t val) {
+   std::vector<bool> ret;
+
+   for(unsigned int i = 0; i < sizeof(val) * 8; ++i, val >>= 1) {
+       ret.push_back(val & 0x01);
+   }
+
+   std::reverse(ret.begin(), ret.end());
+   return ret;
+}
+
 const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
 {
     LOCK(cs_wallet);
@@ -1049,8 +1060,8 @@ CTransaction CWallet::MakePour(uint16_t version,uint256 coinhash1,uint256 coinha
      auth_path witness_1(ZC_MERKLE_DEPTH);
 	 auth_path witness_2(ZC_MERKLE_DEPTH);
 
-	 zerocoinMerkleTree.getWitness(libzerocash::convertIntToVector(coinIndex[coinhash1]), witness_1);
-	 zerocoinMerkleTree.getWitness(libzerocash::convertIntToVector(coinIndex[coinhash2]), witness_2);
+	 zerocoinMerkleTree.getWitness(convertIntToVector(coinIndex[coinhash1]), witness_1);
+	 zerocoinMerkleTree.getWitness(convertIntToVector(coinIndex[coinhash2]), witness_2);
 
 
      uint256 keyhash = key.GetPubKey().GetHash();
