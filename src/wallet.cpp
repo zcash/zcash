@@ -1077,13 +1077,20 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
     CTransaction rawTx;
 
     // compose output portion of transaction
-    int64_t nAmount = 1; //FIXME don't assume fixed value coins
-    CScript scriptPubKey;
-    CBitcoinAddress aa(key.GetPubKey().GetID());
-    scriptPubKey.SetDestination(aa.Get());
-    CTxOut out(nAmount,scriptPubKey);
-    rawTx.vout.push_back(out);
-
+    if(pour.getMonetaryValueOut() == 0 ){
+        CScript scriptPubKey;
+        scriptPubKey << OP_RETURN;
+        scriptPubKey << blockhash;
+        CTxOut out(0,scriptPubKey);
+        rawTx.vout.push_back(out);
+    }else{
+        int64_t nAmount = pour.getMonetaryValueOut();
+        CScript scriptPubKey;
+        CBitcoinAddress aa(key.GetPubKey().GetID());
+        scriptPubKey.SetDestination(aa.Get());
+        CTxOut out(nAmount,scriptPubKey);
+        rawTx.vout.push_back(out);
+    }
     CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
 
     dd << pour;
