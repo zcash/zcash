@@ -423,6 +423,7 @@ endif
 
 zcash_cli_LDADD = \
   $(LIBBITCOIN_CLI) \
+  $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(BOOST_LIBS) \
   $(SSL_LIBS) \
