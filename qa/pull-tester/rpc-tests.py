@@ -58,6 +58,7 @@ BASE_SCRIPTS= [
     'wallet_persistence.py',
     'wallet_listnotes.py',
     # vv Tests less than 60s vv
+    'sendheaders.py',
     'fundrawtransaction.py',
     'reorg_limit.py',
     'mempool_limit.py',
