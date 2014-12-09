@@ -16,6 +16,7 @@
 #include "bignum.h"
 #include "chainparams.h"
 #include "coins.h"
+#include "globalblockmap.h"
 #include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "net.h"
@@ -26,21 +27,17 @@
 #include "sync.h"
 #include "tinyformat.h"
 #include "txmempool.h"
-#include "uint256.h"
 #include "undo.h"
 
 #include <algorithm>
 #include <exception>
 #include <map>
 #include <set>
-#include <stdint.h>
 #include <string>
 #include <utility>
 #include <vector>
-#include<libzerocash/ZerocashParams.h>
-#include<libzerocash/IncrementalMerkleTree.h>
+#include <libzerocash/IncrementalMerkleTree.h>
 
-#include <boost/unordered_map.hpp>
 
 class CBlockIndex;
 class CBlockTreeDB;
@@ -109,16 +106,9 @@ static const unsigned char REJECT_DUST = 0x41;
 static const unsigned char REJECT_INSUFFICIENTFEE = 0x42;
 static const unsigned char REJECT_CHECKPOINT = 0x43;
 
-struct BlockHasher
-{
-    size_t operator()(const uint256& hash) const { return hash.GetLow64(); }
-};
-
 extern CScript COINBASE_FLAGS;
 extern CCriticalSection cs_main;
 extern CTxMemPool mempool;
-typedef boost::unordered_map<uint256, CBlockIndex*, BlockHasher> BlockMap;
-extern BlockMap mapBlockIndex;
 extern uint64_t nLastBlockTx;
 extern uint64_t nLastBlockSize;
 extern const std::string strMessageMagic;
@@ -539,8 +529,6 @@ extern CCoinsViewCache *pcoinsTip;
 
 /** Global variable that points to the active block tree (protected by cs_main) */
 extern CBlockTreeDB *pblocktree;
-
-extern libzerocash::ZerocashParams *pzerocashParams;
 
 struct CBlockTemplate
 {

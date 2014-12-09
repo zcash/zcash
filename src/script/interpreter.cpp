@@ -14,6 +14,8 @@
 #include "script/script.h"
 #include "uint256.h"
 #include "main.h"
+#include "globalblockmap.h"
+#include "globalzcparams.h"
 #include "util.h"
 #include <libzerocash/PourTransaction.h>
 

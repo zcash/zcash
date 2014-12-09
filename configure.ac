@@ -37,6 +37,12 @@ if test "x${CXXFLAGS+set}" = "xset"; then
 else
   CXXFLAGS_overridden=no
 fi
+
+# Zerocash requries C++11 compatibility; set it early:
+CXXFLAGS="-std=c++11 $CXXFLAGS"
+# Zerocash uses this libsnark curve:
+CPPFLAGS="-DCURVE_ALT_BN128 $CPPFLAGS"
+
 AC_PROG_CXX
 m4_ifdef([AC_PROG_OBJCXX],[AC_PROG_OBJCXX])
 
@@ -532,7 +538,10 @@ fi
 if test x$use_boost = xyes; then
 
 dnl Check for boost libs
-AX_BOOST_BASE
+# Boost >= 1.57.0 is required for -std=c++11 compatibility:
+# https://svn.boost.org/trac/boost/ticket/6779#comment:10
+AX_BOOST_BASE([[1.57.0]],,
+    [AC_MSG_ERROR([[cannot find libboost version >= 1.57.0.]])])
 AX_BOOST_SYSTEM
 AX_BOOST_FILESYSTEM
 AX_BOOST_PROGRAM_OPTIONS
@@ -681,12 +690,11 @@ if test x$use_pkgconfig = xyes; then
     [
       PKG_CHECK_MODULES([SSL], [libssl],, [AC_MSG_ERROR(openssl  not found.)])
       PKG_CHECK_MODULES([CRYPTO], [libcrypto],,[AC_MSG_ERROR(libcrypto  not found.)])
-   #   PKG_CHECK_MODULES([zerocash], [libzerocash],, [AC_MSG_ERROR(zerocash  not found.)])
-   #   PKG_CHECK_MODULES([GMP], [libgmp],, [AC_MSG_ERROR(GMP  not found.)])
-   #   PKG_CHECK_MODULES([CRYPTOPP], [lcryptopp],, [AC_MSG_ERROR(CRYPTOPP  not found.)])
-   #   PKG_CHECK_MODULES([LIBZM], [libzm],, [AC_MSG_ERROR(LIBZM  not found.)])
-   #   PKG_CHECK_MODULES([GMP], [libgmp],, [AC_MSG_ERROR(GMP  not found.)])
-   #   PKG_CHECK_MODULES([GOMP], [libgomp],, [AC_MSG_ERROR(GOMP  not found.)])
+      # BUG: On my debian system, libgmp-dev does not include pkg-config
+      # metadata, so we use the header/lib checkers below.
+      #PKG_CHECK_MODULES([GMP], [libgmp],, [AC_MSG_ERROR(GMP  not found.)])
+      #PKG_CHECK_MODULES([LIBZM], [libzm],, [AC_MSG_ERROR(LIBZM  not found.)])
+      #PKG_CHECK_MODULES([GOMP], [libgomp],, [AC_MSG_ERROR(GOMP  not found.)])
 
       BITCOIN_QT_CHECK([PKG_CHECK_MODULES([PROTOBUF], [protobuf], [have_protobuf=yes], [BITCOIN_QT_FAIL(libprotobuf not found)])])
       if test x$use_qr != xno; then
@@ -695,6 +703,9 @@ if test x$use_pkgconfig = xyes; then
     ]
   )
 else
+  # BUG: Fix this:
+  echo 'BUG: configure does not yet check for the following dependencies if pkg-config is not on the system: libcrypto++, libgmp'
+
   AC_CHECK_HEADER([openssl/crypto.h],,AC_MSG_ERROR(libcrypto headers missing))
   AC_CHECK_LIB([crypto],      [main],CRYPTO_LIBS=-lcrypto, AC_MSG_ERROR(libcrypto missing))
 
@@ -708,10 +719,63 @@ else
   fi
 fi
 
+# These packages don't provide pkgconfig config files across all
+# platforms, so we use older autoconf detection mechanisms:
+AC_CHECK_HEADER([gmp.h],,AC_MSG_ERROR(libgmp headers missing))
+AC_CHECK_LIB([gmp],[[__gmpn_sub_n]],GMP_LIBS=-lgmp, [AC_MSG_ERROR(libgmp missing)])
+
+AC_CHECK_HEADER([gmpxx.h],,AC_MSG_ERROR(libgmpxx headers missing))
+AC_CHECK_LIB([gmpxx],[main],GMPXX_LIBS=-lgmpxx, [AC_MSG_ERROR(libgmpxx missing)])
+
+AC_CHECK_HEADER([cryptopp/eccrypto.h],,AC_MSG_ERROR(libcryptopp headers missing))
+# We link against "main" as a stop-gap; crypto++ is full of template
+# classes whose library symbols are mangled by some black alchemy.
+AC_CHECK_LIB([cryptopp],[main],CRYPTOPP_LIBS=-lcryptopp, [AC_MSG_ERROR(libcryptopp missing)])
+
+echo 'Checking for libsnark installation...'
+ZCDEP_INST="$(readlink -f ./zcdep/inst)"
+ZCDEP_INCDIR="${ZCDEP_INST}/include"
+LIBSNARK_INCDIR="${ZCDEP_INCDIR}/libsnark"
+
+if ! test -d "$LIBSNARK_INCDIR"
+then
+    cat <<EOF
+=======
+libsnark does not appear to be configured; not a directory: $LIBSNARK_INCDIR
+Run this to fetch libsnark and build it:
+
+  ./zcutil/get-libsnark
+
+EOF
+    exit 1
+fi
+
+
+# Now check for libsnark compilability using traditional autoconf tests:
+LIBSNARK_INCLUDES_CANDIDATE="-I${ZCDEP_INCDIR} -I${LIBSNARK_INCDIR}"
+CPPFLAGS_TEMP="$CPPFLAGS"
+CPPFLAGS="${LIBSNARK_INCLUDES_CANDIDATE} $CPPFLAGS"
+AC_CHECK_HEADER(
+    [libsnark/gadgetlib1/gadget.hpp],
+    [[LIBSNARK_INCLUDES="$LIBSNARK_INCLUDES_CANDIDATE"]],
+    [AC_MSG_ERROR(libsnark headers missing)])
+CPPFLAGS="$CPPFLAGS_TEMP"
+
+LIBSNARK_LDFLAGS_CANDIDATE="-L${ZCDEP_INST}/lib"
+LDFLAGS_TEMP="$LDFLAGS"
+LDFLAGS="${LIBSNARK_LDFLAGS_CANDIDATE} $LDFLAGS"
+AC_CHECK_LIB(
+    [snark],
+    [main],
+    [[LIBSNARK_LIBS="${LIBSNARK_LDFLAGS_CANDIDATE} -lsnark"]],
+    [AC_MSG_ERROR(libsnark missing)])
+LDFLAGS="$LDFLAGS_TEMP"
+
+
 CFLAGS_TEMP="$CFLAGS"
 LIBS_TEMP="$LIBS"
 CFLAGS="$CFLAGS $SSL_CFLAGS $CRYPTO_CFLAGS"
-LIBS="$LIBS $SSL_LIBS $CRYPTO_LIBS"
+LIBS="$LIBS $SSL_LIBS $CRYPTO_LIBS $GMP_LIBS $GMPXX_LIBS"
 AC_CHECK_HEADER([openssl/ec.h],, AC_MSG_ERROR(OpenSSL ec header missing),)
 CFLAGS="$CFLAGS_TEMP"
 LIBS="$LIBS_TEMP"
@@ -889,6 +953,11 @@ AC_SUBST(BUILD_QT)
 AC_SUBST(BUILD_TEST_QT)
 AC_SUBST(MINIUPNPC_CPPFLAGS)
 AC_SUBST(MINIUPNPC_LIBS)
+AC_SUBST(GMP_LIBS)
+AC_SUBST(GMPXX_LIBS)
+AC_SUBST(CRYPTOPP_LIBS)
+AC_SUBST(LIBSNARK_INCLUDES)
+AC_SUBST(LIBSNARK_LIBS)
 AC_CONFIG_FILES([Makefile src/Makefile share/setup.nsi share/qt/Info.plist src/test/buildenv.py])
 AC_CONFIG_FILES([qa/pull-tester/run-bitcoind-for-test.sh],[chmod +x qa/pull-tester/run-bitcoind-for-test.sh])
 AC_CONFIG_FILES([qa/pull-tester/tests-config.sh],[chmod +x qa/pull-tester/tests-config.sh])

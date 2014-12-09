@@ -13,6 +13,7 @@
 #include "amount.h"
 #include "checkpoints.h"
 #include "compat/sanity.h"
+#include "globalzcparams.h"
 #include "key.h"
 #include "main.h"
 #include "miner.h"

@@ -1,0 +1,33 @@
+#!/bin/bash
+#
+# BUG: This should probably be implemented in the ./depends tree to
+# support deterministic gitian builds, and for consistency.
+
+if [[ `uname -s` == "Darwin" ]]; then
+    LIBSNARK_FLAGS="NO_PROCPS=1 NO_GTEST=1 NO_DOCS=1"
+fi
+
+set -x -e
+
+TARGET_COMMIT='2474695'
+
+DEPSRC=./zcdep/src
+DEPINST=./zcdep/inst
+
+mkdir -p $DEPINST
+DEPINST="$(readlink -f "$DEPINST")"  # remember absolute path
+
+mkdir -p $DEPSRC
+cd $DEPSRC
+
+[ ! -d libsnark ] && git clone git@github.com:scipr-lab/libsnark.git libsnark
+cd libsnark
+git fetch
+git checkout "$TARGET_COMMIT"
+./prepare-depends.sh
+make clean
+make CURVE=ALT_BN128 $LIBSNARK_FLAGS
+make install PREFIX=$DEPINST CURVE=ALT_BN128 $LIBSNARK_FLAGS
+cd ..
+
+cd ..

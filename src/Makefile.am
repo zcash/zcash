@@ -18,7 +18,7 @@ $(LIBLEVELDB) $(LIBMEMENV):
 endif
 
 BITCOIN_CONFIG_INCLUDES=-I$(builddir)/config
-BITCOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS) $(CRYPTO_CFLAGS) $(SSL_CFLAGS)
+BITCOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS) $(LIBSNARK_INCLUDES) $(CRYPTO_CFLAGS) $(SSL_CFLAGS)
 
 BITCOIN_INCLUDES += -I$(srcdir)/secp256k1/include
 
@@ -31,9 +31,36 @@ LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBBITCOIN_UNIVALUE=univalue/libbitcoin_univalue.a
 LIBBITCOINQT=qt/libbitcoinqt.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
+LIBZEROCASH=libzerocash/libzerocash.a
+
+# These flags must be in a specific order and are reused multiple places,
+# so define the order once, here:
+LIBZEROCASH_AND_DEPS_LIBS = \
+  $(LIBZEROCASH) \
+  $(LIBSNARK_LIBS) \
+  $(CRYPTOPP_LIBS) \
+  $(GMP_LIBS) \
+  $(GMPXX_LIBS)
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
+
+$(LIBZEROCASH): $(LIBZEROCASH_HEADER_FILES) $(LIBZEROCASH_SOURCES)
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F) \
+		CPPFLAGS='-I.. $(CPPFLAGS) $(LIBSNARK_INCLUDES)' \
+		CXXFLAGS='$(CXXFLAGS)'
+
+LIBZEROCASH_HEADER_FILES = \
+  $(wildcard libzerocash/*.h) \
+  $(wildcard libzerocash/utils/*.h) \
+  $(wildcard libzerocash/pour_ppzksnark/*.hpp) \
+  $(wildcard libzerocash/pour_ppzksnark/*.tcc) \
+  $(wildcard libzerocash/pour_ppzksnark/hashes/*.hpp) \
+  $(wildcard libzerocash/pour_ppzksnark/hashes/*.tcc)
+
+LIBZEROCASH_SOURCES = \
+  $(wildcard libzerocash/*.cpp) \
+  $(wildcard libzerocash/utils/*.cpp)
 
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
@@ -75,6 +102,7 @@ BITCOIN_CORE_H = \
   allocators.h \
   amount.h \
   base58.h \
+  bignum.h \
   bloom.h \
   chain.h \
   chainparams.h \
@@ -87,6 +115,8 @@ BITCOIN_CORE_H = \
   coins.h \
   compat.h \
   compressor.h \
+  globalblockmap.h \
+  globalzcparams.h \
   primitives/block.h \
   primitives/transaction.h \
   core_io.h \
@@ -139,6 +169,7 @@ BITCOIN_CORE_H = \
   wallet.h \
   wallet_ismine.h \
   walletdb.h \
+  zc_export_symbol.h \
   compat/sanity.h
 
 JSON_H = \
@@ -243,6 +274,8 @@ libbitcoin_common_a_SOURCES = \
   core_write.cpp \
   eccryptoverify.cpp \
   ecwrapper.cpp \
+  globalblockmap.cpp \
+  globalzcparams.cpp \
   hash.cpp \
   key.cpp \
   keystore.cpp \
@@ -254,6 +287,8 @@ libbitcoin_common_a_SOURCES = \
   script/sign.cpp \
   script/standard.cpp \
   script/script_error.cpp \
+  $(LIBZEROCASH_SOURCES) \
+  $(LIBZEROCASH_HEADER_FILES) \
   $(BITCOIN_CORE_H)
 
 # util: shared between all executables.
@@ -311,7 +346,14 @@ if TARGET_WINDOWS
 bitcoind_SOURCES += bitcoind-res.rc
 endif
 
-bitcoind_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS)
+bitcoind_LDADD += \
+  $(BOOST_LIBS) \
+  $(BDB_LIBS) \
+  $(SSL_LIBS) \
+  $(CRYPTO_LIBS) \
+  $(MINIUPNPC_LIBS) \
+  $(LIBZEROCASH_AND_DEPS_LIBS)
+
 bitcoind_CPPFLAGS = $(BITCOIN_INCLUDES)
 bitcoind_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
@@ -337,7 +379,8 @@ bitcoin_tx_LDADD = \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBSECP256K1) \
   $(BOOST_LIBS) \
-  $(CRYPTO_LIBS)
+  $(CRYPTO_LIBS) \
+  $(LIBZEROCASH_AND_DEPS_LIBS)
 
 bitcoin_tx_SOURCES = bitcoin-tx.cpp
 bitcoin_tx_CPPFLAGS = $(BITCOIN_INCLUDES)
@@ -375,7 +418,7 @@ endif
 
 libbitcoinconsensus_la_LDFLAGS = -no-undefined $(RELDFLAGS)
 libbitcoinconsensus_la_LIBADD = $(CRYPTO_LIBS)
-libbitcoinconsensus_la_CPPFLAGS = $(CRYPTO_CFLAGS) -I$(builddir)/obj -DBUILD_BITCOIN_INTERNAL
+libbitcoinconsensus_la_CPPFLAGS = $(BOOST_CPPFLAGS) $(LIBSNARK_INCLUDES) $(CRYPTO_CFLAGS) -I$(builddir)/obj -DBUILD_BITCOIN_INTERNAL
 if USE_LIBSECP256K1
 libbitcoinconsensus_la_LIBADD += secp256k1/libsecp256k1.la
 endif
@@ -385,7 +428,7 @@ CLEANFILES = leveldb/libleveldb.a leveldb/libmemenv.a *.gcda *.gcno
 
 DISTCLEANFILES = obj/build.h
 
-EXTRA_DIST = leveldb
+EXTRA_DIST = leveldb libzerocash/Makefile
 
 clean-local:
 	-$(MAKE) -C leveldb clean

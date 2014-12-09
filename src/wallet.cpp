@@ -9,6 +9,7 @@
 #include "base58.h"
 #include "checkpoints.h"
 #include "coincontrol.h"
+#include "globalzcparams.h"
 #include "net.h"
 #include "script/script.h"
 #include "script/sign.h"

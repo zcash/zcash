@@ -26,7 +26,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/thread.hpp>
-#include <libzerocash/ZerocashParams.h>
 
 using namespace boost;
 using namespace std;
@@ -41,7 +40,6 @@ using namespace std;
 
 CCriticalSection cs_main;
 
-BlockMap mapBlockIndex;
 CChain chainActive;
 CBlockIndex *pindexBestHeader = NULL;
 int64_t nTimeBestReceived = 0;
@@ -531,7 +529,6 @@ CBlockIndex* FindForkInGlobalIndex(const CChain& chain, const CBlockLocator& loc
 
 CCoinsViewCache *pcoinsTip = NULL;
 CBlockTreeDB *pblocktree = NULL;
-libzerocash::ZerocashParams *pzerocashParams = NULL;
 
 
 //////////////////////////////////////////////////////////////////////////////
