@@ -372,7 +372,11 @@ if test x$use_upnp != xno; then
 fi
 
 dnl Check for boost libs
-AX_BOOST_BASE
+
+# Require boost-filesystem >= 1.57
+# https://github.com/Electric-Coin-Company/zerocashd/issues/56
+
+AX_BOOST_BASE([1.57])
 AX_BOOST_SYSTEM
 AX_BOOST_FILESYSTEM
 AX_BOOST_PROGRAM_OPTIONS
