@@ -306,7 +306,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
     valtype vchPushValue;
     vector<bool> vfExec;
     vector<valtype> altstack;
-    if (script.size() > 100000)
+    if (script.size() > 100000) // FIXME fine tune this
         return false;
     int nOpCount = 0;
 
@@ -443,15 +443,30 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
 
                 case FLAG_ZC_MINT:
                 {
-                	return false;
+                    LogPrint("zerocoin","zerocoin EvalScript: mint\n");
+					if(stack.size()!=1){
+						LogPrint("zerocoin","EvalScript:mintL wrong arguments count. expected 1 got %d\n",stack.size());
+						return false;
+					}
+                    valtype& vchMint = stacktop(-1);
+                    libzerocash::MintTransaction mint;
+                    CDataStream ss(vchMint,SER_NETWORK, PROTOCOL_VERSION);
+                    ss >> mint;
+                    bool ret = mint.verify();
+                    popstack(stack);
+                    LogPrint("zerocoin","zerocoin EvalScrip:Mint: %s. \n", ret? "passed":"failed");
+                    stack.push_back(ret ? vchTrue: vchFalse);
+                    return ret;
+
                 }
+                break;
                 case  FLAG_ZC_POUR_INTERMEDIATE:
                 {
                 	return false;
                 }
                 case FLAG_ZC_POUR:
                 {
-                    LogPrint("zerocoin","zerocoin EvalScript: placeholder evaluating script\n");
+                    LogPrint("zerocoin","zerocoin EvalScript: pour\n");
                     if(stack.size()!=4){
                         LogPrint("zerocoin","EvalScript: wrong arguments count. expected 4 got %d\n",stack.size());
                         return false;

@@ -14,11 +14,7 @@
 
 #include <boost/foreach.hpp>
 
-// the mark of a zerocin input. this is the ID we use that should always be spendable
-const unsigned char R1Array[] =
-    "\xDE\xAD\xBE\xEF\xcf\x56\x11\x12\x2b\x29\x12\x5e\x5d\x35\xd2\xd2"
-    "\x22\x81\xaa\xb5\x33\xf0\x08\x32\xd5\x56\xb1\xf9\xea\xe5\x1d\x7d";
-const uint256 always_spendable_txid(std::vector<unsigned char>(R1Array,R1Array+32));
+
 
 /** pruned version of CTransaction: only retains metadata and unspent transaction outputs
  *

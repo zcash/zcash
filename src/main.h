@@ -10,6 +10,7 @@
 #include "bitcoin-config.h"
 #endif
 
+#define ZC_MERKLE_DEPTH 4
 #include "bignum.h"
 #include "chainparams.h"
 #include "coins.h"
@@ -29,6 +30,7 @@
 #include <utility>
 #include <vector>
 #include<libzerocash/ZerocashParams.h>
+#include<libzerocash/IncrementalMerkleTree.h>
 
 class CBlockIndex;
 class CBloomFilter;
@@ -331,7 +333,7 @@ class CBlockUndo
 {
 public:
     std::vector<CTxUndo> vtxundo; // for all but the coinbase
-    fakeMerkleThing previousPrunedZerocoinMerkleTree;
+    libzerocash::IncrementalMerkleTreeCompact previousPrunedZerocoinMerkleTree;
     IMPLEMENT_SERIALIZE(
         READWRITE(vtxundo);
         READWRITE(previousPrunedZerocoinMerkleTree);
@@ -869,7 +871,7 @@ public:
     }
 };
 
-fakeMerkleThing getZerocoinMerkleTree(CBlockIndex* pindex);
+libzerocash::IncrementalMerkleTree getZerocoinMerkleTree(CBlockIndex* pindex);
 
 
 /** Used to marshal pointers into hashes for db storage. */

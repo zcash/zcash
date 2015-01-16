@@ -268,6 +268,9 @@ static const CRPCCommand vRPCCommands[] =
     { "validateaddress",        &validateaddress,        true,      false,      false }, /* uses wallet if enabled */
     { "verifymessage",          &verifymessage,          false,     false,      false },
 
+    { "zerocoinpour",           &zerocoinpour,           false,     false,      true },
+    { "zerocoinmint",           &zerocoinmint,           false,     false,      true },
+
 #ifdef ENABLE_WALLET
     /* Wallet */
     { "addmultisigaddress",     &addmultisigaddress,     false,     false,      true },
@@ -278,7 +281,6 @@ static const CRPCCommand vRPCCommands[] =
     { "getaccountaddress",      &getaccountaddress,      true,      false,      true },
     { "getaccount",             &getaccount,             false,     false,      true },
     { "getaddressesbyaccount",  &getaddressesbyaccount,  true,      false,      true },
-    { "zerocoinpour",           &zerocoinpour,           false,     false,      true },
     { "getbalance",             &getbalance,             false,     false,      true },
     { "getnewaddress",          &getnewaddress,          true,      false,      true },
     { "getrawchangeaddress",    &getrawchangeaddress,    true,      false,      true },

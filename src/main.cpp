@@ -75,6 +75,10 @@ CScript COINBASE_FLAGS;
 
 const string strMessageMagic = "Bitcoin Signed Message:\n";
 
+std::vector<libzerocash::Coin> zccoins;
+std::vector<libzerocash::Address> zcaddrs;
+
+
 // Internal stuff
 namespace {
     struct CBlockIndexWorkComparator
@@ -1866,11 +1870,15 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
     unsigned int flags = SCRIPT_VERIFY_NOCACHE |
                          (fStrictPayToScriptHash ? SCRIPT_VERIFY_P2SH : SCRIPT_VERIFY_NONE);
 
-    fakeMerkleThing zerocoinMerkleTree = getZerocoinMerkleTree(pindex->pprev);
-    LogPrint("zerocoin","CreateNewBlock :Got prevous zerocoin merkle tree from block %s\n",zerocoinMerkleTree.root.ToString());
+    libzerocash::IncrementalMerkleTree zerocoinMerkleTreetest = getZerocoinMerkleTree(pindex->pprev); // a test to ensure getZerocoinMerkleTree does the right thing
+    libzerocash::IncrementalMerkleTree zerocoinMerkleTree(4);//getZerocoinMerkleTree(pindex->pprev);
+
+    vector<unsigned char> rtold(root_size);
+    zerocoinMerkleTree.getRootValue(rtold);
+	uint256 oldroot(rtold);
+    LogPrint("zerocoin","CreateNewBlock :Got prevous zerocoin merkle tree from block %s\n",oldroot.ToString());
 
     CBlockUndo blockundo;
-
     CCheckQueueControl<CScriptCheck> control(fScriptChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
 
     int64_t nStart = GetTimeMicros();
@@ -1923,13 +1931,38 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
         vPos.push_back(std::make_pair(block.GetTxHash(i), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
         BOOST_FOREACH(uint256 coin, tx.getNewZerocoinsInTx()){
-              zerocoinMerkleTree.add(coin);
+        	  {std::vector<unsigned char> ignored;
+        	  std::vector<unsigned char> coinv(coin.begin(),coin.end());
+              zerocoinMerkleTree.insertElement(coinv,ignored);
+        	  }
+        	  {
+              std::vector<unsigned char> ignored;
+        	  std::vector<unsigned char> coinv(coin.begin(),coin.end());
+              zerocoinMerkleTreetest.insertElement(coinv,ignored);
+        	  }
+              LogPrint("zerocoin","ConnectBlock : adding coin %s to block %s\n",coin.ToString(),block.GetHash().ToString());
+
         }
     }
-    if(block.hashZerocoinMerkleRoot != zerocoinMerkleTree.root){
-        return state.DoS(100, error("ConnectBlock(): for block %s, calculated zerocash merkle tree root %s, not same as specifed one %s\n",block.GetHash().ToString(),zerocoinMerkleTree.root.ToString(),block.hashZerocoinMerkleRoot.ToString()),
+
+    vector<unsigned char> rt1(root_size);
+    zerocoinMerkleTreetest.getRootValue(rt1);
+	uint256 newroot(rt1);
+
+
+
+    vector<unsigned char> rt(root_size);
+    zerocoinMerkleTree.getRootValue(rt);
+	uint256 testroot(rt);
+    LogPrint("zerocoin","ConnectBlock: TEST ROOT  %s\n", testroot.ToString());
+
+    if(block.hashZerocoinMerkleRoot != newroot){
+        return state.DoS(100, error("ConnectBlock(): for block %s, calculated zerocash merkle tree root %s, not same as specifed one %s\n",block.GetHash().ToString(),newroot.ToString(),block.hashZerocoinMerkleRoot.ToString()),
                                         REJECT_INVALID, "bad-txns-inputs-missingorspent");
     }
+    LogPrint("zerocoin","ConnectBlock:\n\tComputed root:%s\n\t Given root: %s\n\t for block %s \n\n",newroot.ToString(),block.hashZerocoinMerkleRoot.ToString(),block.GetHash().ToString());
+    blockundo.previousPrunedZerocoinMerkleTree = zerocoinMerkleTree.getCompactRepresentation();
+
     int64_t nTime = GetTimeMicros() - nStart;
     if (fBenchmark)
         LogPrintf("- Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin)\n", (unsigned)block.vtx.size(), 0.001 * nTime, 0.001 * nTime / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * nTime / (nInputs-1));
@@ -2554,21 +2587,28 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CDiskBlockPos* dbp)
     return true;
 }
 
-fakeMerkleThing getZerocoinMerkleTree(CBlockIndex* pindex){
+libzerocash::IncrementalMerkleTree getZerocoinMerkleTree(CBlockIndex* pindex){
     if(pindex->nHeight == 0 ){
-        return fakeMerkleThing();
+        LogPrint("zerocoin","getZerocoinMerkleTree: new tree of depth %d\n",ZC_MERKLE_DEPTH);
+        return libzerocash::IncrementalMerkleTree(ZC_MERKLE_DEPTH);
     }else{
         CBlockUndo blockUndo ;
         CDiskBlockPos pos = pindex->GetUndoPos();
         if (pos.IsNull()){
             error("getZerocinMerkelTree: no undo data available");
-            return fakeMerkleThing();
+            LogPrint("zerocoin","getZerocoinMerkleTree: ERROR new tree of depth %d\n",ZC_MERKLE_DEPTH);
+
+            return libzerocash::IncrementalMerkleTree(ZC_MERKLE_DEPTH);
         }
         if (!blockUndo.ReadFromDisk(pos, pindex->pprev->GetBlockHash())){
             error("getZerocinMerkelTree: failure reading undo data");
-            return fakeMerkleThing();
+            LogPrint("zerocoin","getZerocoinMerkleTree: ERROR new tree of depth %d\n",ZC_MERKLE_DEPTH);
+
+            return libzerocash::IncrementalMerkleTree(ZC_MERKLE_DEPTH);
         }
-        return blockUndo.previousPrunedZerocoinMerkleTree;
+        LogPrint("zerocoin","getZerocoinMerkleTree: existing tree tree of depth %d\n",ZC_MERKLE_DEPTH);
+
+        return libzerocash::IncrementalMerkleTree(blockUndo.previousPrunedZerocoinMerkleTree);
 
     }
 }
