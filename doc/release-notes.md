@@ -88,12 +88,14 @@ Thanks to who contributed to this release, at least:
 - Brandon Dahler
 - Calvin Tam
 - Christian Decker
+- Christian von Roques
 - Christopher Latham
 - Chuck
 - coblee
 - constantined
 - Cory Fields
 - Cozz Lovan
+- daniel
 - Daniel Larimer
 - David Hill
 - Dmitry Smirnov
@@ -133,6 +135,7 @@ Thanks to who contributed to this release, at least:
 - Olivier Langlois
 - patrick s
 - Patrick Strateman
+- paveljanik
 - Peter Todd
 - phantomcircuit
 - phelixbtc
@@ -159,6 +162,8 @@ Thanks to who contributed to this release, at least:
 - Thomas Holenstein
 - Timon Rapp
 - Timothy Stranex
+- Tom Geller
+- Torstein Husebø
 - Vaclav Vobornik
 - vhf / victor felder
 - Vinnie Falco
