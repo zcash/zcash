@@ -81,15 +81,95 @@ Credits
 
 Thanks to who contributed to this release, at least:
 
+- Andrey
+- Ashley Holman
+- b6393ce9-d324-4fe1-996b-acf82dbc3d53
+- bitsofproof
+- Brandon Dahler
+- Calvin Tam
+- Christian Decker
+- Christian von Roques
+- Christopher Latham
+- Chuck
+- coblee
+- constantined
 - Cory Fields
+- Cozz Lovan
+- daniel
+- Daniel Larimer
+- David Hill
+- Dmitry Smirnov
+- Drak
+- Eric Lombrozo
+- fanquake
+- fcicq
+- Florin
+- frewil
 - Gavin Andresen
 - Gregory Maxwell
+- gubatron
+- Guillermo Céspedes Tabárez
+- Haakon Nilsen
+- HaltingState
+- Han Lin Yap
+- harry
+- Ian Kelling
 - Jeff Garzik
+- Johnathan Corgan
+- Jonas Schnelli
+- Josh Lehan
+- Josh Triplett
+- Julian Langschaedel
+- Kangmo
+- Lake Denman
 - Luke Dashjr
+- Mark Friedenbach
 - Matt Corallo
+- Michael Bauer
+- Michael Ford
+- Michagogo
+- Midnight Magic
+- Mike Hearn
+- Nils Schneider
+- Noel Tiernan
+- Olivier Langlois
+- patrick s
+- Patrick Strateman
+- paveljanik
+- Peter Todd
+- phantomcircuit
+- phelixbtc
+- Philip Kaufmann
 - Pieter Wuille
+- Rav3nPL
+- R E Broadley
+- regergregregerrge
+- Robert Backhaus
+- Roman Mindalev
+- Rune K. Svendsen
+- Ryan Niebur
 - Saivann
+- Scott Ellis
+- Scott Willeke
+- Sergey Kazenyuk
 - Sergio Demian Lerner
+- Shawn Wilkinson
+- Sined
+- sje
+- Subo1978
+- super3
+- Tamas Blummer
+- theuni
+- Thomas Holenstein
+- Timon Rapp
+- Timothy Stranex
+- Tom Geller
+- Torstein Husebø
+- Vaclav Vobornik
+- vhf / victor felder
+- Vinnie Falco
+- Warren Togami
+- Wil Bown
 - Wladimir J. van der Laan
 
 As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoin/).

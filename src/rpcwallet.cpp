@@ -12,6 +12,16 @@
 #include "wallet.h"
 #include "walletdb.h"
 
+#ifdef ZEROCASH
+#include <libzerocash/Address.h>
+#include <libzerocash/Coin.h>
+#include <libzerocash/ZerocashParams.h>
+#include <libzerocash/IncrementalMerkleTree.h>
+#include <libzerocash/PourTransaction.h>
+#include <libzerocash/MintTransaction.h>
+#include <libzerocash/Zerocash.h>
+#endif /* ZEROCASH */
+
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
@@ -347,6 +357,160 @@ Value sendtoaddress(const Array& params, bool fHelp)
 
     return wtx.GetHash().GetHex();
 }
+
+#ifdef ZEROCASH
+Value zerocoinmint(const Array& params, bool fHelp){
+	if (fHelp || params.size() < 1)
+	        throw runtime_error(
+	            "claim_zerocoin address_to_pay_to \n"
+	            "wallet must be unlocked."
+	       );
+
+
+
+	    EnsureWalletIsUnlocked();
+	    //params[1].get_int()
+	    int64_t nAmount = AmountFromValue(params[0]);
+	    int64_t nAmountChange = AmountFromValue(params[1]);
+
+	 //   cout << "nAmount " << nAmount << " zcaddrs " << zcaddrs.size() << " zccoins" << zccoins.size() <<  " i" << ictr <<endl;;
+
+	    if (!pwalletMain->IsLocked())
+	        pwalletMain->TopUpKeyPool();
+
+	    CReserveKey reservekey(pwalletMain);
+	    CPubKey vchPubKey;
+	    if (!reservekey.GetReservedKey(vchPubKey))
+	        throw JSONRPCError(RPC_WALLET_ERROR, "Error: Unable to obtain key for change");
+
+	    reservekey.KeepKey();
+
+	    CKeyID keyID = vchPubKey.GetID();
+
+	    CBitcoinAddress chageaddress(keyID);
+	    uint256 hash;
+	    hash.SetHex(params[2].get_str());
+	    CTransaction tx;
+	    uint256 hashBlock = 0;
+	    if (!GetTransaction(hash, tx, hashBlock, true))
+	        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
+
+	    //zcaddrs.at(zcaddrs.size()) = libzerocash::Address();
+	    //zccoins.at(i) = libzerocash::Coin(zcaddrs.at(i).getPublicAddress(), i)
+
+		libzerocash::Address zcaddr_f;
+		libzerocash::Coin coina(zcaddr_f.getPublicAddress(),1);
+		uint256 cid(coina.getCoinCommitment().getCommitmentValue());
+		pwalletMain->mapAddress[cid]= zcaddr_f;
+		pwalletMain->mapCoins[cid]= coina;
+
+		libzerocash::MintTransaction minttx(coina);
+		 CDataStream sss(SER_NETWORK, PROTOCOL_VERSION);
+		 sss<< coina;
+		 std::string coinhex =  HexStr(sss.begin(), sss.end());
+
+		 CDataStream ssss(SER_NETWORK, PROTOCOL_VERSION);
+	     ssss << zcaddr_f;
+		 std::string addresshex =  HexStr(ssss.begin(), ssss.end());
+
+		// cout << "XXXX coin " << cid.ToString() << " :\n\thex\n\t" << coinhex << "\n\taddress\n\t " << addresshex << endl;
+
+	    CTransaction rawTx; // the tx we are constructing
+		{
+			 CTxIn in(hash,0);
+		     rawTx.vin.push_back(in);
+		}
+	    {
+	        CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
+	        std::vector<unsigned char> vchSig(32);
+
+	        dd << minttx;
+	        std::vector<unsigned char> vector_mint(dd.begin(),dd.end());
+
+	        CScript scriptSig;
+	        scriptSig.clear();
+	        scriptSig << vector_mint;
+	        CTxIn in(always_spendable_txid,1,scriptSig);
+	        rawTx.vin.push_back(in);
+	    }
+
+	    { // change
+	    CScript scriptPubKey;
+	    scriptPubKey.SetDestination(chageaddress.Get());
+	    CTxOut out(nAmountChange,scriptPubKey);
+	    rawTx.vout.push_back(out);
+		}
+
+
+	  /*  CCoins coins;
+	    CCoinsView viewDummy;
+		CCoinsViewCache view(viewDummy);
+		{
+			LOCK(mempool.cs);
+			CCoinsViewCache &viewChain = *pcoinsTip;
+			CCoinsViewMemPool viewMempool(viewChain, mempool);
+			view.SetBackend(viewMempool); // temporarily switch cache backend to db+mempool view
+			CCoins coins;
+			view.GetCoins(hash, coins); // this is certainly allowed to fail
+			view.SetBackend(viewDummy); // switch back to avoid locking mempool for too long
+		}
+		const CScript& prevPubKey = coins.vout[0].scriptPubKey;
+		SignSignature(*pwalletMain,prevPubKey, rawTx,0, SIGHASH_ALL);
+        CValidationState state;
+		if (!AcceptToMemoryPool(mempool, state, rawTx, false, NULL, true))
+			throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX rejected"); // TODO: report validation state
+	    RelayTransaction(tx, tx.GetHash());
+	    return tx.GetHash().GetHex(); */
+
+	    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+	    ss << rawTx;
+
+	    return HexStr(ss.begin(), ss.end());
+}
+Value zerocoinpour(const Array& params, bool fHelp){
+    if (fHelp || params.size() < 4)
+        throw runtime_error(
+            "claim_zerocoin address_to_pay_to \n"
+            "use real pour."
+       );
+    EnsureWalletIsUnlocked();
+
+    CBitcoinAddress  address = CBitcoinAddress(params[0].get_str()); // output destination for vpub
+    const int version = (params[1].get_bool() ? 1 : 0); // 0 is a pour with no snark in it.
+    uint256 inputCoinhash1;
+    inputCoinhash1.SetHex(params[2].get_str());
+    uint256 inputCoinhash2;
+    inputCoinhash2.SetHex(params[3].get_str());
+
+    if (!address.IsValid())
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
+
+    CKeyID keyID;
+    if (!address.GetKeyID(keyID))
+        throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to key");
+
+    CKey key;
+    if (!pwalletMain->GetKey(keyID, key))
+        throw JSONRPCError(RPC_WALLET_ERROR, "Private key not available");
+    
+    libzerocash::Address destinationAddress1;
+    libzerocash::PublicAddress pubdestinationAddress1 = destinationAddress1.getPublicAddress();
+
+    libzerocash::Address destinationAddress2;
+    libzerocash::PublicAddress pubdestinationAddress2 = destinationAddress2.getPublicAddress();
+
+    libzerocash::Coin outputCoin1(pubdestinationAddress1, 1);
+    libzerocash::Coin outputCoin2(pubdestinationAddress2, 1);
+    CTransaction rawTx;
+    rawTx = pwalletMain->MakePour(version,inputCoinhash1,inputCoinhash2,key,
+            outputCoin1,outputCoin2,
+            destinationAddress1,destinationAddress2);
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << rawTx;
+    return HexStr(ss.begin(), ss.end());
+}
+#endif /* ZEROCASH */
 
 Value listaddressgroupings(const Array& params, bool fHelp)
 {

@@ -12,7 +12,18 @@
 
 #include <stdint.h>
 
+#ifdef ZEROCASH
+#include <libzerocash/PourTransaction.h>
+#include <libzerocash/MintTransaction.h>
+#endif /* ZEROCASH */
+
 class CTransaction;
+
+#ifdef ZEROCASH
+// the mark of a zerocin input. this is the ID we use that should always be spendable
+
+const uint256 always_spendable_txid("0xDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF");
+#endif /* ZEROCASH */
 
 /** No amount larger than this (in satoshi) is valid */
 static const int64_t MAX_MONEY = 21000000 * COIN;
@@ -63,6 +74,38 @@ public:
     bool IsNull() const { return (ptx == NULL && n == (unsigned int) -1); }
 };
 
+#ifdef ZEROCASH
+
+/** This stores the data embeaded in a zerocash pour scriptSig.
+ * Because we don't want to pay the cost of deserialization every time we want the
+ * serial number, we store it here.
+ */
+class CTxInZerocoinPourDataCacheEntry
+{
+public:
+	CTxInZerocoinPourDataCacheEntry():empty(true){
+	}
+	CTxInZerocoinPourDataCacheEntry(const CScript& scriptSig);
+	bool empty;
+	std::vector<uint256> serails;
+	std::vector<uint256> coinCommitmentHashes;
+	int64_t pour_monetary_value;
+	libzerocash::PourTransaction rawPour;
+};
+
+class CTxInZerocoinMintDataCacheEntry
+{
+public:
+	CTxInZerocoinMintDataCacheEntry():empty(true){
+	}
+	CTxInZerocoinMintDataCacheEntry(const CScript& scriptSig);
+	bool empty;
+	std::vector<uint256> coinCommitmentHashes;
+	int64_t mint_monetary_value;
+	libzerocash::MintTransaction rawMint;
+};
+
+#endif /* ZEROCASH */
 /** An input of a transaction.  It contains the location of the previous
  * transaction's output that it claims and a signature that matches the
  * output's public key.
@@ -94,6 +137,61 @@ public:
         return (nSequence == std::numeric_limits<unsigned int>::max());
     }
 
+#ifdef ZEROCASH
+    bool IsZCPour() const{
+    	return( this->prevout.hash == always_spendable_txid && this->prevout.n == 0);
+    }
+
+    bool IsZCMint() const{
+    	return( this->prevout.hash == always_spendable_txid && this->prevout.n == 1);
+    }
+    
+    bool isZC() const{
+        return (IsZCPour() || IsZCMint());
+    }
+
+    /** Returns the amount of btc, in sitoshi, needed for the zerocoin transaction or contributed by it.
+     * This value is always positve. However,in the case of Mint, it's the amount the transaction needs, not that it contributes.
+     * In the case of pour it is the value of vpub.
+     *     */
+    int64_t GetBtcContributionOfZerocoinTransaction() const {
+    	if(IsZCPour()){
+    		CTxInZerocoinPourDataCacheEntry foo(this->scriptSig);
+			return foo.pour_monetary_value;
+    	}else{
+    		CTxInZerocoinMintDataCacheEntry foo(this->scriptSig);
+    		return foo.mint_monetary_value;
+    	}
+    }
+
+    /**Gets the serial numbers used in a zerocoin transaction
+     *
+     */
+    std::vector<uint256> GetZerocoinSerialNumbers() const{
+        static  std::vector<uint256> ret;
+    	if(IsZCPour()){
+    		CTxInZerocoinPourDataCacheEntry foo(this->scriptSig);
+    		return foo.serails;
+    	}
+    	return ret;
+    }
+    /**Gets the coins output by a zerocoin transaction
+     *
+     */
+    std::vector<uint256> GetNewZeroCoinHashes() const{
+        static  std::vector<uint256> ret;
+        if(IsZCPour()){
+    		CTxInZerocoinPourDataCacheEntry foo(this->scriptSig);
+    		return foo.coinCommitmentHashes;
+        }else if (IsZCMint()){
+        	CTxInZerocoinMintDataCacheEntry foo(this->scriptSig);
+        	return foo.coinCommitmentHashes;
+        }
+        return ret;
+
+    }
+
+#endif /* ZEROCASH */
     friend bool operator==(const CTxIn& a, const CTxIn& b)
     {
         return (a.prevout   == b.prevout &&
@@ -219,6 +317,23 @@ public:
     }
 
     uint256 GetHash() const;
+#ifdef ZEROCASH
+
+    std::vector<uint256> getNewZerocoinsInTx() const{
+        std::vector<uint256> ret;
+
+        BOOST_FOREACH(const CTxIn in,vin){
+            if(in.isZC()){
+                std::vector<uint256> hashes = in.GetNewZeroCoinHashes();
+            	BOOST_FOREACH(uint256 hash,hashes){
+            		ret.push_back(hash);
+            	}
+            }
+        }
+        return ret;
+    }
+
+#endif /* ZEROCASH */
     bool IsNewerThan(const CTransaction& old) const;
 
     // Return sum of txouts.
@@ -345,13 +460,21 @@ class CBlockHeader
 {
 public:
     // header
+#ifndef ZEROCASH
     static const int CURRENT_VERSION=2;
+#else /* ZEROCASH */
+    static const int CURRENT_VERSION=3;
+#endif /* ZEROCASH */
     int nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
     unsigned int nTime;
     unsigned int nBits;
     unsigned int nNonce;
+
+#ifdef ZEROCASH
+    uint256 hashZerocoinMerkleRoot;
+#endif /* ZEROCASH */
 
     CBlockHeader()
     {
@@ -367,6 +490,9 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
+#ifdef ZEROCASH
+        READWRITE(hashZerocoinMerkleRoot);
+#endif /* ZEROCASH */
     )
 
     void SetNull()
@@ -377,6 +503,9 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
+#ifdef ZEROCASH
+        hashZerocoinMerkleRoot = 0;
+#endif /* ZEROCASH */
     }
 
     bool IsNull() const
@@ -435,6 +564,9 @@ public:
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
+#ifdef ZEROCASH
+        block.hashZerocoinMerkleRoot = hashZerocoinMerkleRoot;
+#endif /* ZEROCASH */
         return block;
     }
 

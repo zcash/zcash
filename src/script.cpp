@@ -13,9 +13,17 @@
 #include "uint256.h"
 #include "util.h"
 
+#ifdef ZEROCASH
+#include "main.h"
+#endif /* ZEROCASH */
+
 #include <boost/foreach.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
+
+#ifdef ZEROCASH
+#include <libzerocash/PourTransaction.h>
+#endif /* ZEROCASH */
 
 using namespace std;
 using namespace boost;
@@ -196,10 +204,18 @@ const char* GetOpName(opcodetype opcode)
     case OP_CHECKMULTISIG          : return "OP_CHECKMULTISIG";
     case OP_CHECKMULTISIGVERIFY    : return "OP_CHECKMULTISIGVERIFY";
 
+#ifdef ZEROCASH
+    case FLAG_ZC_MINT              : return "FLAG_ZC_MINT";
+    case FLAG_ZC_POUR              : return "FLAG_ZC_POUR";
+    case FLAG_ZC_POUR_INTERMEDIATE : return "FLAG_ZC_POUR_INTERMEDIATE";
+
+#endif /* ZEROCASH */
     // expanson
+#ifndef ZEROCASH
     case OP_NOP1                   : return "OP_NOP1";
     case OP_NOP2                   : return "OP_NOP2";
     case OP_NOP3                   : return "OP_NOP3";
+#endif /* ! ZEROCASH */
     case OP_NOP4                   : return "OP_NOP4";
     case OP_NOP5                   : return "OP_NOP5";
     case OP_NOP6                   : return "OP_NOP6";
@@ -303,7 +319,11 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
     valtype vchPushValue;
     vector<bool> vfExec;
     vector<valtype> altstack;
+#ifndef ZEROCASH
     if (script.size() > 10000)
+#else /* ZEROCASH */
+    if (script.size() > 100000) // FIXME fine tune this
+#endif /* ZEROCASH */
         return false;
     int nOpCount = 0;
 
@@ -379,7 +399,11 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
                 // Control
                 //
                 case OP_NOP:
+#ifndef ZEROCASH
                 case OP_NOP1: case OP_NOP2: case OP_NOP3: case OP_NOP4: case OP_NOP5:
+#else /* ZEROCASH */
+                                                          case OP_NOP4: case OP_NOP5:
+#endif /* ZEROCASH */
                 case OP_NOP6: case OP_NOP7: case OP_NOP8: case OP_NOP9: case OP_NOP10:
                 break;
 
@@ -437,6 +461,95 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
                     return false;
                 }
                 break;
+
+#ifdef ZEROCASH
+                case FLAG_ZC_MINT:
+                {
+                    LogPrint("zerocoin","zerocoin EvalScript: mint\n");
+                    if(stack.size()!=1){
+                        LogPrint("zerocoin","EvalScript:mintL wrong arguments count. expected 1 got %d\n",stack.size());
+                        return false;
+                    }
+                    valtype& vchMint = stacktop(-1);
+                    libzerocash::MintTransaction mint;
+                    CDataStream ss(vchMint,SER_NETWORK, PROTOCOL_VERSION);
+                    ss >> mint;
+                    bool ret = mint.verify();
+                    popstack(stack);
+                    LogPrint("zerocoin","zerocoin EvalScrip:Mint: %s. \n", ret? "passed":"failed");
+                    stack.push_back(ret ? vchTrue: vchFalse);
+                    return ret;
+
+                }
+                break;
+                case  FLAG_ZC_POUR_INTERMEDIATE:
+                {
+                    return false;
+                }
+                case FLAG_ZC_POUR:
+                {
+                    LogPrint("zerocoin","zerocoin EvalScript: pour\n");
+                    if(stack.size()!=4){
+                        LogPrint("zerocoin","EvalScript: wrong arguments count. expected 4 got %d\n",stack.size());
+                        return false;
+                    }
+                    valtype& vchSig = stacktop(-1);
+                    valtype& vchBlockHash  = stacktop(-2);
+                    valtype& vchPubKey = stacktop(-3);
+                    valtype& vchPour = stacktop(-4);
+
+                    uint256 blockhash(vchBlockHash);
+
+                    CScript scriptCode(txTo.vin[nIn].scriptSig);
+                    scriptCode.FindAndDelete(CScript(vchSig));
+                    uint256 hash = SignatureHash(scriptCode, txTo , nIn, SIGHASH_ALL);
+                    LogPrint("zerocoin","EvalScript: signature hash %s\n",hash.ToString());
+
+                    if (mapBlockIndex.count(blockhash) == 0){
+                        LogPrint("zerocoin","zerocoin EvalScript: block not found %s.\n",blockhash.ToString());
+                        return false;
+                    }
+                    uint256 merkleroot =mapBlockIndex[blockhash]->GetBlockHeader().hashZerocoinMerkleRoot;
+                    std::vector<unsigned char> vchRoot(merkleroot.begin(),merkleroot.end());
+                    LogPrint("zerocoin","zerocoin EvalScript: goot root  %s from block %s.\n",merkleroot.ToString(),hash.ToString());
+
+                    CPubKey pubkey(vchPubKey);
+                    if (!pubkey.IsValid()){
+                        LogPrint("zerocoin","zerocoin EvalScript: pbulic key invalid.\n");
+                        return false;
+                    }
+                    if(!pubkey.Verify(hash,vchSig)){
+                        LogPrint("zerocoin","zerocoin EvalScript: signatue invalid.\n");
+                        return false;
+                    }
+                    const uint256 keyhash=pubkey.GetHash();
+                    vector<unsigned char> keyahshv(keyhash.begin(),keyhash.end());
+
+                    // deserialize pour
+                    libzerocash::PourTransaction pour;
+                    CDataStream ss(vchPour,SER_NETWORK, PROTOCOL_VERSION);
+                    ss >> pour;
+
+
+                    bool ret = true;
+
+                    CHashWriter hh(SER_GETHASH, 0);
+                    hh << pour;
+                    LogPrint("zerocoin","EvalScript: pour deserialized with hash %s\n",hash.ToString());
+
+                    ret = ret & pour.verify(*pzerocashParams,keyahshv,vchRoot);
+
+                    popstack(stack);
+                    popstack(stack);
+                    popstack(stack);
+                    popstack(stack);
+
+                    LogPrint("zerocoin","zerocoin EvalScript: %s. \n", ret? "passed":"failed");
+                    stack.push_back(ret ? vchTrue: vchFalse);
+                    return ret;
+                }
+                break;
+#endif /* ZEROCASH */
 
 
                 //
@@ -1869,6 +1982,24 @@ bool CScript::IsPushOnly() const
     }
     return true;
 }
+
+#ifdef ZEROCASH
+bool  CScript::IsZCMint() const
+{
+    return (this->size() >=1 &&
+            this->at(0) == FLAG_ZC_MINT);
+}
+bool  CScript::IsZCPour() const
+{
+    return (this->size() >=1 &&
+            this->at(0) == FLAG_ZC_POUR);
+}
+bool  CScript::isZCPourIntermediate() const
+{
+    return (this->size() >= 1 &&
+            this->at(0) == FLAG_ZC_POUR_INTERMEDIATE);
+}
+#endif /* ZEROCASH */
 
 bool CScript::HasCanonicalPushes() const
 {

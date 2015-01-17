@@ -21,7 +21,11 @@ class CCoins;
 class CKeyStore;
 class CTransaction;
 
+#ifndef ZEROCASH
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
+#else /* ZEROCASH */
+static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 6000; // bytes //FIXME fine tune this
+#endif /* ZEROCASH */
 static const unsigned int MAX_OP_RETURN_RELAY = 40;      // bytes
 
 class scriptnum_error : public std::runtime_error
@@ -342,10 +346,18 @@ enum opcodetype
     OP_CHECKMULTISIG = 0xae,
     OP_CHECKMULTISIGVERIFY = 0xaf,
 
+#ifdef ZEROCASH
+    FLAG_ZC_MINT = 0xb0,
+    FLAG_ZC_POUR = 0xb1,
+    FLAG_ZC_POUR_INTERMEDIATE = 0xb2,
+#endif /* ZEROCASH */
+
     // expansion
+#ifndef ZEROCASH
     OP_NOP1 = 0xb0,
     OP_NOP2 = 0xb1,
     OP_NOP3 = 0xb2,
+#endif /* ! ZEROCASH */
     OP_NOP4 = 0xb3,
     OP_NOP5 = 0xb4,
     OP_NOP6 = 0xb5,
@@ -657,6 +669,12 @@ public:
     // Called by IsStandardTx and P2SH VerifyScript (which makes it consensus-critical).
     bool IsPushOnly() const;
 
+#ifdef ZEROCASH
+    bool IsZCMint() const;
+    bool IsZCPour() const;
+    bool isZCPourIntermediate() const;
+#endif /* ZEROCASH */
+
     // Called by IsStandardTx.
     bool HasCanonicalPushes() const;
 
@@ -710,6 +728,10 @@ public:
         return CScriptID(Hash160(*this));
     }
 };
+
+#ifdef ZEROCASH
+uint256 SignatureHash(const CScript &scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType);
+#endif /* ZEROCASH */
 
 /** Compact serializer for scripts.
  *

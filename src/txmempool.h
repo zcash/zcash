@@ -62,6 +62,10 @@ public:
     std::map<uint256, CTxMemPoolEntry> mapTx;
     std::map<COutPoint, CInPoint> mapNextTx;
 
+#ifdef ZEROCASH
+    std::map<uint256,CInPoint> mapZerocoinSerialNumbers;
+#endif /* ZEROCASH */
+
     CTxMemPool();
 
     /*
@@ -108,6 +112,9 @@ public:
     CCoinsViewMemPool(CCoinsView &baseIn, CTxMemPool &mempoolIn);
     bool GetCoins(const uint256 &txid, CCoins &coins);
     bool HaveCoins(const uint256 &txid);
+#ifdef ZEROCASH
+    bool GetSerial(const uint256 &serial, uint256 &txid);
+#endif /* ZEROCASH */
 };
 
 #endif /* BITCOIN_TXMEMPOOL_H */

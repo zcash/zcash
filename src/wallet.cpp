@@ -1,3 +1,6 @@
+#ifdef ZEROCASH
+    void ZerocoinPour();
+#endif /* ZEROCASH */
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
@@ -32,6 +35,19 @@ struct CompareValueOnly
         return t1.first < t2.first;
     }
 };
+
+#ifdef ZEROCASH
+std::vector<bool> convertIntToVector(uint64_t val) {
+   std::vector<bool> ret;
+
+   for(unsigned int i = 0; i < sizeof(val) * 8; ++i, val >>= 1) {
+       ret.push_back(val & 0x01);
+   }
+
+   std::reverse(ret.begin(), ret.end());
+   return ret;
+}
+#endif /* ZEROCASH */
 
 const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
 {
@@ -968,6 +984,208 @@ void CWallet::ResendWalletTransactions()
 
 
 
+
+#ifdef ZEROCASH
+libzerocash::IncrementalMerkleTree CWallet::BuildZercoinMerkleTree(){
+    LogPrint("zerocoin","WALLETPOUR starting\n\n");
+
+    libzerocash::IncrementalMerkleTree zerocoinMerkleTree(ZC_MERKLE_DEPTH);
+    for(int i = 0; i<= chainActive.Height();i++){
+        CBlock block;
+
+        CBlockIndex* pblockindex = chainActive[i];
+        ReadBlockFromDisk(block, pblockindex);
+        //LogPrint("zerocoin","WALLETPOUR in block %s",block.GetHash().ToString());
+        for (unsigned int i = 0; i < block.vtx.size(); i++){
+           // LogPrint("zerocoin","tx %s\n",block.vtx[i].GetHash().ToString());
+
+            BOOST_FOREACH(uint256 coin, block.vtx[i].getNewZerocoinsInTx()){
+                  std::vector<unsigned char> ignored;
+                  std::vector<unsigned char> coinv(coin.begin(),coin.end());
+                  zerocoinMerkleTree.insertElement(coinv,ignored);
+                  LogPrint("zerocoin","WALLETPOUR : adding coin %s to block %s\n",coin.ToString(),block.GetHash().ToString());
+
+            }
+        }
+    }
+    vector<unsigned char> rt(root_size);
+    zerocoinMerkleTree.getRootValue(rt);
+    uint256 newroot(rt);
+
+    LogPrint("zerocoin","WALLETPOUR : root %s\n",newroot.ToString());
+    return zerocoinMerkleTree;
+}
+
+CTransaction CWallet::MakePour(uint16_t version,uint256 coinhash1,uint256 coinhash2,CKey key,
+        libzerocash::Coin newcoin1, libzerocash::Coin newcoin2,
+        libzerocash::Address newAddress1, libzerocash::Address newAddress2){
+    LogPrint("zerocoin","MakePour : constructing pour of coins %s,%s",coinhash1.ToString(),coinhash2.ToString());
+
+    std::map<uint256, int> coinIndex;
+    // build merkletree and complete with location of coins
+    libzerocash::IncrementalMerkleTree zerocoinMerkleTree(ZC_MERKLE_DEPTH);
+    int ctr = 0;
+    int blocks = chainActive.Height();
+    uint256 blockhash = chainActive.Tip()->GetBlockHash();
+    for(int i = 0; i<= blocks;i++){
+        CBlock block;
+
+        CBlockIndex* pblockindex = chainActive[i];
+        ReadBlockFromDisk(block, pblockindex);
+        //LogPrint("zerocoin","WALLETPOUR in block %s",block.GetHash().ToString());
+        for (unsigned int i = 0; i < block.vtx.size(); i++){
+            // LogPrint("zerocoin","tx %s\n",block.vtx[i].GetHash().ToString());
+
+            BOOST_FOREACH(uint256 coin, block.vtx[i].getNewZerocoinsInTx()){
+                std::vector<unsigned char> ignored;
+                std::vector<unsigned char> coinv(coin.begin(),coin.end());
+                zerocoinMerkleTree.insertElement(coinv,ignored);
+                coinIndex[coin] = ctr;
+                ctr++;
+                // LogPrint("zerocoin","WALLETPOUR : adding coin %s to block %s\n",coin.ToString(),block.GetHash().ToString());
+            }
+        }
+    }
+
+    vector<unsigned char> rt(root_size);
+    zerocoinMerkleTree.getRootValue(rt);
+    uint256 newroot(rt);
+    LogPrint("zerocoin","MakePour : root %s\n",newroot.ToString());
+
+
+    //get witnesses
+    libsnark::auth_path witness_1(ZC_MERKLE_DEPTH);
+    libsnark::auth_path witness_2(ZC_MERKLE_DEPTH);
+
+    zerocoinMerkleTree.getWitness(convertIntToVector(coinIndex[coinhash1]), witness_1);
+    zerocoinMerkleTree.getWitness(convertIntToVector(coinIndex[coinhash2]), witness_2);
+
+
+    uint256 keyhash = key.GetPubKey().GetHash();
+    vector<unsigned char> keyahshv(keyhash.begin(),keyhash.end());
+
+    // Pull coins and addresses
+    libzerocash::Coin c1 = mapCoins[coinhash1];
+    libzerocash::Coin c2 =  mapCoins[coinhash2];
+    libzerocash::Address a1 = mapAddress[coinhash1];
+    libzerocash::Address a2 = mapAddress[coinhash2];
+    assert(c1.getPublicAddress() == a1.getPublicAddress());
+    assert(c2.getPublicAddress() == a2.getPublicAddress());
+
+    // Make pour
+    libzerocash::PourTransaction pourtx(version, *pzerocashParams,
+        rt,
+        c1,c2,
+        a1,a2,
+        witness_1, witness_2,
+        newAddress1.getPublicAddress(), newAddress2.getPublicAddress(),
+        0,
+        keyahshv,
+        newcoin1, newcoin2);
+    // bool v = pourtx.verify(*pzerocashParams,keyahshv,rt);
+    if(chainActive.Tip()->GetBlockHeader().hashZerocoinMerkleRoot != newroot){
+        LogPrint("zerocoin","wallet : got %s from block %s \n",chainActive.Tip()->GetBlockHeader().hashZerocoinMerkleRoot.ToString(),chainActive.Tip()->GetBlockHash().ToString());
+
+        throw runtime_error("computed merkle root not in block tip");
+    }
+    //put pour in transaction
+    return this->MakePourTx(pourtx,blockhash,key);
+}
+
+CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
+        const uint256 &blockhash, const CKey &key){
+    CTransaction rawTx;
+
+    // compose output portion of transaction
+    if(pour.getMonetaryValueOut() == 0 ){
+        CScript scriptPubKey;
+        scriptPubKey << OP_RETURN;
+        scriptPubKey << blockhash;
+        CTxOut out(0,scriptPubKey);
+        rawTx.vout.push_back(out);
+    }else{
+        int64_t nAmount = pour.getMonetaryValueOut();
+        CScript scriptPubKey;
+        CBitcoinAddress aa(key.GetPubKey().GetID());
+        scriptPubKey.SetDestination(aa.Get());
+        CTxOut out(nAmount,scriptPubKey);
+        rawTx.vout.push_back(out);
+    }
+    CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
+
+    dd << pour;
+    std::vector<unsigned char> pour_vector(dd.begin(),dd.end());
+
+    CScript scriptSig;
+    scriptSig.clear();
+    scriptSig << pour_vector;
+    scriptSig << key.GetPubKey();
+    scriptSig << blockhash;
+
+    CTxIn in(always_spendable_txid,0,scriptSig);
+    rawTx.vin.push_back(in);
+
+    uint256 hash = SignatureHash(scriptSig, rawTx , 0, SIGHASH_ALL);
+    LogPrint("zerocoin","MakePourTx: rawTx size %d, signnatue hash %s\n",pour_vector.size(),hash.ToString());
+
+
+    std::vector<unsigned char> vchSig(32);
+    if(!key.Sign(hash,vchSig)){
+        throw runtime_error( "Cannot sign transaction");
+    }
+    scriptSig << vchSig;
+
+    rawTx.vin[0].scriptSig = scriptSig;
+    CCoinsViewCache v(*pcoinsTip,false);
+    LogPrint("zerocoin","MakePourTx: transaciton created. Verifying\n");
+    if(VerifyScript(scriptSig,v.GetCoins(always_spendable_txid).vout[0].scriptPubKey,rawTx,0,0,SIGHASH_ALL))
+    {
+        LogPrint("zerocoin","MakePourTx: Verified \n");
+        return rawTx;
+    } else{
+        throw runtime_error( "invalid transaction");
+    }
+}
+
+#if 0
+CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pourtxNew,const CKey &key,){
+    //cout << "does tx verify "  << pourtxNew.verify(*pzerocashParams,keyahshv,rt) << endl;
+
+    // END FAKE Pour. Now actually serialize.
+
+    CHashWriter hh(SER_GETHASH, 0);
+    hh << pourtxNew;
+
+    CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
+    std::vector<unsigned char> vchSig(32);
+
+    dd << pourtxNew;
+    std::vector<unsigned char> pour_vector(dd.begin(),dd.end());
+
+    CScript scriptSig;
+    scriptSig.clear();
+    scriptSig << pour_vector;
+    scriptSig << key.GetPubKey();
+    scriptSig << rt;
+
+    CTxIn in(always_spendable_txid,0,scriptSig);
+    rawTx.vin.push_back(in);
+
+    // XXX FIXME don't assume the zerocash transaction is the first one
+
+    uint256 hash = SignatureHash(scriptSig, rawTx , 0, SIGHASH_ALL);
+    LogPrint("zerocoin","zerocoin pour: rawTx size %d, signnatue hash %s\n",pour_vector.size(),hash.ToString());
+
+    if(!key.Sign(hash,vchSig)){
+        throw JSONRPCError(RPC_TYPE_ERROR, "Cannot sign transaction");
+    }
+    scriptSig << vchSig;
+    rawTx.vin[0].scriptSig = scriptSig;
+
+    return CTransaction();
+}
+#endif
+#endif /* ZEROCASH */
 
 
 

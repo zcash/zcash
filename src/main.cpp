@@ -23,6 +23,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
+#ifdef ZEROCASH
+#include<libzerocash/ZerocashParams.h>
+#endif /* ZEROCASH */
+
 using namespace std;
 using namespace boost;
 
@@ -407,6 +411,10 @@ CBlockIndex *CChain::FindFork(const CBlockLocator &locator) const {
 CCoinsViewCache *pcoinsTip = NULL;
 CBlockTreeDB *pblocktree = NULL;
 
+#ifdef ZEROCASH
+libzerocash::ZerocashParams *pzerocashParams = NULL;
+#endif /* ZEROCASH */
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // mapOrphanTransactions
@@ -785,6 +793,21 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     set<COutPoint> vInOutPoints;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
+#ifdef ZEROCASH
+        // Check for duplicate zerocoin serial numbers
+        set<uint256> zerocoinSerialNumbers;
+        BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()){
+            if (zerocoinSerialNumbers.count(serial)){
+                LogPrint("zerocoin","zerocoin check transaction: checking for duplicate serial number %s for tx %s\n",serial.ToString(),tx.GetHash().ToString());
+                return state.DoS(100, error("CheckTransaction() : duplicate serial number %s in tx %s. Already used previously in block. ", serial.ToString(),tx.GetHash().ToString()),
+                                 REJECT_INVALID, "bad-txns-inputs-duplicate");
+            }
+            zerocoinSerialNumbers.insert(serial);
+        }
+        if(txin.prevout.hash == always_spendable_txid){
+            continue; /// never a duplicate.
+        }
+#endif /* ZEROCASH */
         if (vInOutPoints.count(txin.prevout))
             return state.DoS(100, error("CheckTransaction() : duplicate inputs"),
                              REJECT_INVALID, "bad-txns-inputs-duplicate");
@@ -870,11 +893,33 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     if (pool.exists(hash))
         return false;
 
+#ifndef ZEROCASH
     // Check for conflicts with in-memory transactions
+#else /* ZEROCASH */
+    // Check for conflicts with in-memory transactions and for spent serial numbers
+
+    // Because check inputs is conducted against a dummy coinview, we CANNOT rely on it to do the serial number checl
+    // as a result it happens here
+#endif /* ZEROCASH */
     {
     LOCK(pool.cs); // protect pool.mapNextTx
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
+#ifdef ZEROCASH
+        if(tx.vin[i].isZC()){ // if the input is a zerocoin one, check for duplicate serial numbers, not duplicate tx inputs since all zerocoin tx's have the same input
+            BOOST_FOREACH(const uint256 serial, tx.vin[i].GetZerocoinSerialNumbers()){
+                LogPrint("zerocoin","zerocoin AcceptToMemPool: checking for duplicate in mempool serial number %s for tx %s\n",serial.ToString(),tx.GetHash().ToString());
+                if(pool.mapZerocoinSerialNumbers.count(serial)){ // check for duplicate zerocoin serail numbers.s
+                    return state.Invalid(error("AcceptToMemoryPool : serial number  conflicts with mempool: txid %s has serial %s which was spent by %s",
+                            tx.GetHash().ToString(),serial.ToString(),pool.mapZerocoinSerialNumbers[serial].ptx->GetHash().ToString()),
+                            REJECT_DUPLICATE, "bad-txns-serial-conflict-mempool");
+                }
+            }
+            continue;
+        }
+        // otherwise do normal checks. We need to explicitly ignore transactions spending the same input for zerocash transactions.
+        // since the zerocash always spendable input must always be spendable
+#endif /* ZEROCASH */
         COutPoint outpoint = tx.vin[i].prevout;
         if (pool.mapNextTx.count(outpoint))
         {
@@ -906,6 +951,20 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                     *pfMissingInputs = true;
                 return false;
             }
+#ifdef ZEROCASH
+            // Because check_inputs below is run with a CoinViewCache that doesn't have access to
+            // the txdb (it' gets a dummy) and we can't load the the non-spendness of a transaction
+            // into the cache easily, we explicitly run the spent check here
+            BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()){
+                uint256 conflict;
+                LogPrint("zerocoin","zerocoin AcceptToMemoryPool: checking for already spent serial number %s for tx %s\n",serial.ToString(),tx.GetHash().ToString());
+                if(!isSerialSpendable(view,serial,tx.GetHash(),conflict)){
+                    return state.Invalid(error("AcceptToMemoryPool : serial already spent. txid %s has serial %s which was spent by %s",
+                            tx.GetHash().ToString(),serial.ToString(),conflict.ToString()),
+                            REJECT_DUPLICATE, "bad-txns-serial-spent");
+                }
+            }
+#endif /* ZEROCASH */
         }
 
         // are the actual inputs available?
@@ -1510,6 +1569,13 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
     // mark inputs spent
     if (!tx.IsCoinBase()) {
         BOOST_FOREACH(const CTxIn &txin, tx.vin) {
+#ifdef ZEROCASH
+            if(txin.IsZCPour()){
+                BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()){
+                    markeSerialAsSpent(inputs,serial,tx.GetHash());
+                }
+            }
+#endif /* ZEROCASH */
             CCoins &coins = inputs.GetCoins(txin.prevout.hash);
             CTxInUndo undo;
             ret = coins.Spend(txin.prevout, undo);
@@ -1558,6 +1624,18 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, CCoinsViewCach
             const COutPoint &prevout = tx.vin[i].prevout;
             const CCoins &coins = inputs.GetCoins(prevout.hash);
 
+#ifdef ZEROCASH
+            uint256 txid;
+            BOOST_FOREACH(const uint256 serial, tx.vin[i].GetZerocoinSerialNumbers()){
+                LogPrint("zerocoin","zerocoin CheckInputs: checking if serial number %s of tx %s is spent\n",serial.ToString(),tx.GetHash().ToString());
+                uint256 conflict;
+                if(!isSerialSpendable(inputs,serial,txid,conflict)){
+                    return state.Invalid(error("CheckInputs() : serial already spent. txid %s has serial %s which was spent by %s",
+                            tx.GetHash().ToString(),serial.ToString(),conflict.ToString()));
+                }
+            }
+#endif /* ZEROCASH */
+
             // If prev is coinbase, check that it's matured
             if (coins.IsCoinBase()) {
                 if (nSpendHeight - coins.nHeight < COINBASE_MATURITY)
@@ -1568,6 +1646,15 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 
             // Check for negative or overflow input values
             nValueIn += coins.vout[prevout.n].nValue;
+#ifdef ZEROCASH
+            if(tx.vin[i].IsZCPour()){
+                const int64_t contribution = tx.vin[0].GetBtcContributionOfZerocoinTransaction();
+                nValueIn +=contribution;
+                if (!MoneyRange(contribution) || !MoneyRange(nValueIn))
+                    return state.DoS(100, error("CheckInputs() : txin zc values out of range"),
+                            REJECT_INVALID, "bad-txns-inputvalues-outofrange");
+            }
+#endif /* ZEROCASH */
             if (!MoneyRange(coins.vout[prevout.n].nValue) || !MoneyRange(nValueIn))
                 return state.DoS(100, error("CheckInputs() : txin values out of range"),
                                  REJECT_INVALID, "bad-txns-inputvalues-outofrange");
@@ -1577,6 +1664,10 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, CCoinsViewCach
         if (nValueIn < tx.GetValueOut())
             return state.DoS(100, error("CheckInputs() : %s value in < value out", tx.GetHash().ToString()),
                              REJECT_INVALID, "bad-txns-in-belowout");
+
+#ifdef ZEROCASH
+        assert(nValueIn == inputs.GetValueIn(tx));
+#endif /* ZEROCASH */
 
         // Tally transaction fees
         int64_t nTxFee = nValueIn - tx.GetValueOut();
@@ -1678,6 +1769,15 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
                 const CTxInUndo &undo = txundo.vprevout[j];
                 CCoins coins;
                 view.GetCoins(out.hash, coins); // this can fail if the prevout was already entirely spent
+#ifdef ZEROCASH
+                // the undo operations for a zerocoin transction are to make the serial numbers in the database not be marked as spent.
+                if(tx.vin[j].isZC()){
+                    BOOST_FOREACH(const uint256 serial, tx.vin[j].GetZerocoinSerialNumbers()){
+                        markSerialAsUnSpent(view,serial);
+                    }
+                    continue;
+                }
+#endif /* ZEROCASH */
                 if (undo.nHeight != 0) {
                     // undo data contains height: this is the last output of the prevout tx being spent
                     if (!coins.IsPruned())
@@ -1795,6 +1895,16 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
     unsigned int flags = SCRIPT_VERIFY_NOCACHE |
                          (fStrictPayToScriptHash ? SCRIPT_VERIFY_P2SH : SCRIPT_VERIFY_NONE);
 
+#ifdef ZEROCASH
+    libzerocash::IncrementalMerkleTree zerocoinMerkleTreetest = getZerocoinMerkleTree(pindex->pprev); // a test to ensure getZerocoinMerkleTree does the right thing
+    libzerocash::IncrementalMerkleTree zerocoinMerkleTree(4);//getZerocoinMerkleTree(pindex->pprev);
+
+    vector<unsigned char> rtold(root_size);
+    zerocoinMerkleTree.getRootValue(rtold);
+    uint256 oldroot(rtold);
+    LogPrint("zerocoin","CreateNewBlock :Got prevous zerocoin merkle tree from block %s\n",oldroot.ToString());
+#endif /* ZEROCASH */
+
     CBlockUndo blockundo;
 
     CCheckQueueControl<CScriptCheck> control(fScriptChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
@@ -1848,7 +1958,40 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
 
         vPos.push_back(std::make_pair(block.GetTxHash(i), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
+#ifdef ZEROCASH
+        BOOST_FOREACH(uint256 coin, tx.getNewZerocoinsInTx()){
+            {
+            std::vector<unsigned char> ignored;
+            std::vector<unsigned char> coinv(coin.begin(),coin.end());
+            zerocoinMerkleTree.insertElement(coinv,ignored);
+            }
+            {
+            std::vector<unsigned char> ignored;
+            std::vector<unsigned char> coinv(coin.begin(),coin.end());
+            zerocoinMerkleTreetest.insertElement(coinv,ignored);
+            }
+            LogPrint("zerocoin","ConnectBlock : adding coin %s to block %s\n",coin.ToString(),block.GetHash().ToString());
+        }
+#endif /* ZEROCASH */
     }
+#ifdef ZEROCASH
+    vector<unsigned char> rt1(root_size);
+    zerocoinMerkleTreetest.getRootValue(rt1);
+    uint256 newroot(rt1);
+
+    vector<unsigned char> rt(root_size);
+    zerocoinMerkleTree.getRootValue(rt);
+    uint256 testroot(rt);
+    LogPrint("zerocoin","ConnectBlock: TEST ROOT  %s\n", testroot.ToString());
+
+    if(block.hashZerocoinMerkleRoot != newroot){
+        return state.DoS(100, error("ConnectBlock(): for block %s, calculated zerocash merkle tree root %s, not same as specifed one %s\n",block.GetHash().ToString(),newroot.ToString(),block.hashZerocoinMerkleRoot.ToString()),
+                                        REJECT_INVALID, "bad-txns-inputs-missingorspent");
+    }
+    LogPrint("zerocoin","ConnectBlock:\n\tComputed root:%s\n\t Given root: %s\n\t for block %s \n\n",newroot.ToString(),block.hashZerocoinMerkleRoot.ToString(),block.GetHash().ToString());
+    blockundo.previousPrunedZerocoinMerkleTree = zerocoinMerkleTree.getCompactRepresentation();
+#endif /* ZEROCASH */
+
     int64_t nTime = GetTimeMicros() - nStart;
     if (fBenchmark)
         LogPrintf("- Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin)\n", (unsigned)block.vtx.size(), 0.001 * nTime, 0.001 * nTime / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * nTime / (nInputs-1));
@@ -2472,6 +2615,34 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CDiskBlockPos* dbp)
 
     return true;
 }
+
+#ifdef ZEROCASH
+libzerocash::IncrementalMerkleTree getZerocoinMerkleTree(CBlockIndex* pindex){
+    if(pindex->nHeight == 0 ){
+        LogPrint("zerocoin","getZerocoinMerkleTree: new tree of depth %d\n",ZC_MERKLE_DEPTH);
+        return libzerocash::IncrementalMerkleTree(ZC_MERKLE_DEPTH);
+    }else{
+        CBlockUndo blockUndo ;
+        CDiskBlockPos pos = pindex->GetUndoPos();
+        if (pos.IsNull()){
+            error("getZerocinMerkelTree: no undo data available");
+            LogPrint("zerocoin","getZerocoinMerkleTree: ERROR new tree of depth %d\n",ZC_MERKLE_DEPTH);
+
+            return libzerocash::IncrementalMerkleTree(ZC_MERKLE_DEPTH);
+        }
+        if (!blockUndo.ReadFromDisk(pos, pindex->pprev->GetBlockHash())){
+            error("getZerocinMerkelTree: failure reading undo data");
+            LogPrint("zerocoin","getZerocoinMerkleTree: ERROR new tree of depth %d\n",ZC_MERKLE_DEPTH);
+
+            return libzerocash::IncrementalMerkleTree(ZC_MERKLE_DEPTH);
+        }
+        LogPrint("zerocoin","getZerocoinMerkleTree: existing tree tree of depth %d\n",ZC_MERKLE_DEPTH);
+
+        return libzerocash::IncrementalMerkleTree(blockUndo.previousPrunedZerocoinMerkleTree);
+
+    }
+}
+#endif /* ZEROCASH */
 
 bool CBlockIndex::IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned int nRequired, unsigned int nToCheck)
 {

@@ -1,5 +1,7 @@
 *.tar.gz
-
+.settings
+.cproject
+.project
 *.exe
 src/bitcoin
 src/bitcoind
@@ -83,3 +85,6 @@ qa/pull-tester/run-bitcoind-for-test.sh
 qa/pull-tester/build-tests.sh
 
 !src/leveldb*/Makefile
+
+1/
+2/
