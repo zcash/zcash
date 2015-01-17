@@ -150,11 +150,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
         bool fPrintPriority = GetBoolArg("-printpriority", false);
+
+#ifdef ZEROCASH
         libzerocash::IncrementalMerkleTree zerocoinMerkleTree = getZerocoinMerkleTree(pindexPrev);
         std::vector<unsigned char> rt(root_size);
         zerocoinMerkleTree.getRootValue(rt);
-       	uint256 oldroot(rt);
+        uint256 oldroot(rt);
         LogPrint("zerocoin","CreateNewBlock :Got prevous zerocoin merkle tree from block %s\n",oldroot.ToString());
+#endif /* ZEROCASH */
 
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
@@ -320,13 +323,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     }
                 }
             }
+#ifdef ZEROCASH
             BOOST_FOREACH(uint256 coin, tx.getNewZerocoinsInTx()){
                 std::vector<unsigned char> ignored;
-           	    std::vector<unsigned char> coinv(coin.begin(),coin.end());
+                std::vector<unsigned char> coinv(coin.begin(),coin.end());
                 LogPrint("zerocoin","CreateNewBlock: adding coin %s in block %s \n",coin.ToString(), pblock->GetHash().ToString());
                 zerocoinMerkleTree.insertElement(coinv,ignored);
             }
-
+#endif /* ZEROCASH */
         }
 
         nLastBlockTx = nBlockTx;
@@ -343,11 +347,15 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->nNonce         = 0;
         pblock->vtx[0].vin[0].scriptSig = CScript() << OP_0 << OP_0;
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
+
+#ifdef ZEROCASH
         std::vector<unsigned char> rtt(root_size);
         zerocoinMerkleTree.getRootValue(rtt);
        	uint256 newroot(rtt);
         LogPrint("zerocoin","CreateNewBlock: zerocoin root %s for block %s\n",newroot.ToString(), pblock->GetHash().ToString());
        	pblock->hashZerocoinMerkleRoot = newroot;
+#endif /* ZEROCASH */
+
         CBlockIndex indexDummy(*pblock);
         indexDummy.pprev = pindexPrev;
         indexDummy.nHeight = pindexPrev->nHeight + 1;
@@ -393,7 +401,9 @@ void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash
             unsigned int nTime;
             unsigned int nBits;
             unsigned int nNonce;
+#ifdef ZEROCASH
             uint256 hashZerocoinMerkleRoot;
+#endif /* ZEROCASH */
         }
         block;
         unsigned char pchPadding0[64];
@@ -409,7 +419,10 @@ void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash
     tmp.block.nTime          = pblock->nTime;
     tmp.block.nBits          = pblock->nBits;
     tmp.block.nNonce         = pblock->nNonce;
+
+#ifdef ZEROCASH
     tmp.block.hashZerocoinMerkleRoot = pblock->hashZerocoinMerkleRoot;
+#endif /* ZEROCASH */
 
     FormatHashBlocks(&tmp.block, sizeof(tmp.block));
     FormatHashBlocks(&tmp.hash1, sizeof(tmp.hash1));

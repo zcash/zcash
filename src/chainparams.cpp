@@ -137,7 +137,9 @@ public:
         genesis.nNonce   = 2083236893;
 
         hashGenesisBlock = genesis.GetHash();
-        //assert(hashGenesisBlock == uint256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
+#ifndef ZEROCASH
+        assert(hashGenesisBlock == uint256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
+#endif /* ! ZEROCASH */
         assert(genesis.hashMerkleRoot == uint256("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
         vSeeds.push_back(CDNSSeedData("bitcoin.sipa.be", "seed.bitcoin.sipa.be"));
@@ -147,11 +149,19 @@ public:
         vSeeds.push_back(CDNSSeedData("bitnodes.io", "seed.bitnodes.io"));
         vSeeds.push_back(CDNSSeedData("xf2.org", "bitseed.xf2.org"));
 
+#ifndef ZEROCASH
+        base58Prefixes[PUBKEY_ADDRESS] = list_of(0);
+        base58Prefixes[SCRIPT_ADDRESS] = list_of(5);
+        base58Prefixes[SECRET_KEY] =     list_of(128);
+        base58Prefixes[EXT_PUBLIC_KEY] = list_of(0x04)(0x88)(0xB2)(0x1E);
+        base58Prefixes[EXT_SECRET_KEY] = list_of(0x04)(0x88)(0xAD)(0xE4);
+#else /* ZEROCASH */
         base58Prefixes[PUBKEY_ADDRESS] = { 0 };
         base58Prefixes[SCRIPT_ADDRESS] = { 5 };
         base58Prefixes[SECRET_KEY] =     { 128 };
         base58Prefixes[EXT_PUBLIC_KEY] = { 0x04, 0x88, 0xB2, 0x1E };
         base58Prefixes[EXT_SECRET_KEY] = { 0x04, 0x88, 0xAD, 0xE4 };
+#endif /* ZEROCASH */
 
         // Convert the pnSeeds array into usable address objects.
         for (unsigned int i = 0; i < ARRAYLEN(pnSeed); i++)
@@ -204,18 +214,29 @@ public:
         genesis.nTime = 1296688602;
         genesis.nNonce = 414098458;
         hashGenesisBlock = genesis.GetHash();
-        //assert(hashGenesisBlock == uint256("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
+#ifndef ZEROCASH
+        assert(hashGenesisBlock == uint256("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
+#endif /* ! ZEROCASH */
+
 
         vFixedSeeds.clear();
         vSeeds.clear();
         vSeeds.push_back(CDNSSeedData("bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"));
         vSeeds.push_back(CDNSSeedData("bluematt.me", "testnet-seed.bluematt.me"));
 
+#ifndef ZEROCASH
+        base58Prefixes[PUBKEY_ADDRESS] = list_of(111);
+        base58Prefixes[SCRIPT_ADDRESS] = list_of(196);
+        base58Prefixes[SECRET_KEY]     = list_of(239);
+        base58Prefixes[EXT_PUBLIC_KEY] = list_of(0x04)(0x35)(0x87)(0xCF);
+        base58Prefixes[EXT_SECRET_KEY] = list_of(0x04)(0x35)(0x83)(0x94);
+#else /* ZEROCASH */
         base58Prefixes[PUBKEY_ADDRESS] = { 111 };
         base58Prefixes[SCRIPT_ADDRESS] = { 196 };
         base58Prefixes[SECRET_KEY]     = { 239 };
         base58Prefixes[EXT_PUBLIC_KEY] = { 0x04, 0x35, 0x87, 0xCF };
         base58Prefixes[EXT_SECRET_KEY] = { 0x04, 0x35, 0x83, 0x94 };
+#endif /* ZEROCASH */
     }
     virtual Network NetworkID() const { return CChainParams::TESTNET; }
 };
@@ -236,19 +257,18 @@ public:
         bnProofOfWorkLimit = CBigNum(~uint256(0) >> 1);
         genesis.nTime = 1296688602;
         genesis.nBits = 0x207fffff;
+#ifndef ZEROCASH
+        genesis.nNonce = 2;
+#else /* ZEROCASH */
         genesis.nNonce = 5;
+#endif /* ZEROCASH */
         hashGenesisBlock = genesis.GetHash();
-
-        /*uint256 target = CBigNum().SetCompact(genesis.nBits).getuint256();
-        while(hashGenesisBlock > target){
-            genesis.nNonce++;
-            hashGenesisBlock = genesis.GetHash();
-        }
-        cout << " \n \n \n nonce " << genesis.nNonce << "\n\n\n"  << endl;
-        assert(2 == genesis.nNonce ); */
         nDefaultPort = 18444;
         strDataDir = "regtest";
-        //assert(hashGenesisBlock == uint256("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
+#ifndef ZEROCASH
+        assert(hashGenesisBlock == uint256("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
+#endif /* ! ZEROCASH */
+
 
         vSeeds.clear();  // Regtest mode doesn't have any DNS seeds.
     }

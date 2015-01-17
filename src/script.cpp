@@ -12,12 +12,18 @@
 #include "sync.h"
 #include "uint256.h"
 #include "util.h"
+
+#ifdef ZEROCASH
 #include "main.h"
+#endif /* ZEROCASH */
 
 #include <boost/foreach.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
+
+#ifdef ZEROCASH
 #include <libzerocash/PourTransaction.h>
+#endif /* ZEROCASH */
 
 using namespace std;
 using namespace boost;
@@ -198,11 +204,18 @@ const char* GetOpName(opcodetype opcode)
     case OP_CHECKMULTISIG          : return "OP_CHECKMULTISIG";
     case OP_CHECKMULTISIGVERIFY    : return "OP_CHECKMULTISIGVERIFY";
 
+#ifdef ZEROCASH
     case FLAG_ZC_MINT              : return "FLAG_ZC_MINT";
     case FLAG_ZC_POUR              : return "FLAG_ZC_POUR";
     case FLAG_ZC_POUR_INTERMEDIATE : return "FLAG_ZC_POUR_INTERMEDIATE";
 
+#endif /* ZEROCASH */
     // expanson
+#ifndef ZEROCASH
+    case OP_NOP1                   : return "OP_NOP1";
+    case OP_NOP2                   : return "OP_NOP2";
+    case OP_NOP3                   : return "OP_NOP3";
+#endif /* ! ZEROCASH */
     case OP_NOP4                   : return "OP_NOP4";
     case OP_NOP5                   : return "OP_NOP5";
     case OP_NOP6                   : return "OP_NOP6";
@@ -306,7 +319,11 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
     valtype vchPushValue;
     vector<bool> vfExec;
     vector<valtype> altstack;
+#ifndef ZEROCASH
+    if (script.size() > 10000)
+#else /* ZEROCASH */
     if (script.size() > 100000) // FIXME fine tune this
+#endif /* ZEROCASH */
         return false;
     int nOpCount = 0;
 
@@ -382,7 +399,11 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
                 // Control
                 //
                 case OP_NOP:
-                case OP_NOP4: case OP_NOP5:
+#ifndef ZEROCASH
+                case OP_NOP1: case OP_NOP2: case OP_NOP3: case OP_NOP4: case OP_NOP5:
+#else /* ZEROCASH */
+                                                          case OP_NOP4: case OP_NOP5:
+#endif /* ZEROCASH */
                 case OP_NOP6: case OP_NOP7: case OP_NOP8: case OP_NOP9: case OP_NOP10:
                 break;
 
@@ -441,13 +462,14 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
                 }
                 break;
 
+#ifdef ZEROCASH
                 case FLAG_ZC_MINT:
                 {
                     LogPrint("zerocoin","zerocoin EvalScript: mint\n");
-					if(stack.size()!=1){
-						LogPrint("zerocoin","EvalScript:mintL wrong arguments count. expected 1 got %d\n",stack.size());
-						return false;
-					}
+                    if(stack.size()!=1){
+                        LogPrint("zerocoin","EvalScript:mintL wrong arguments count. expected 1 got %d\n",stack.size());
+                        return false;
+                    }
                     valtype& vchMint = stacktop(-1);
                     libzerocash::MintTransaction mint;
                     CDataStream ss(vchMint,SER_NETWORK, PROTOCOL_VERSION);
@@ -462,7 +484,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
                 break;
                 case  FLAG_ZC_POUR_INTERMEDIATE:
                 {
-                	return false;
+                    return false;
                 }
                 case FLAG_ZC_POUR:
                 {
@@ -527,6 +549,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, co
                     return ret;
                 }
                 break;
+#endif /* ZEROCASH */
 
 
                 //
@@ -1960,21 +1983,23 @@ bool CScript::IsPushOnly() const
     return true;
 }
 
+#ifdef ZEROCASH
 bool  CScript::IsZCMint() const
 {
-	return (this->size() >=1 &&
-			this->at(0) == FLAG_ZC_MINT);
+    return (this->size() >=1 &&
+            this->at(0) == FLAG_ZC_MINT);
 }
 bool  CScript::IsZCPour() const
 {
-	return (this->size() >=1 &&
-			this->at(0) == FLAG_ZC_POUR);
+    return (this->size() >=1 &&
+            this->at(0) == FLAG_ZC_POUR);
 }
 bool  CScript::isZCPourIntermediate() const
 {
-	return (this->size() >= 1 &&
-			this->at(0) == FLAG_ZC_POUR_INTERMEDIATE);
+    return (this->size() >= 1 &&
+            this->at(0) == FLAG_ZC_POUR_INTERMEDIATE);
 }
+#endif /* ZEROCASH */
 
 bool CScript::HasCanonicalPushes() const
 {

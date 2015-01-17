@@ -6,7 +6,7 @@
 
 #include <assert.h>
 
-// Zerocoin changes
+#ifdef ZEROCASH
 CCoinsImmuntable MakeFakeZerocoinCCoin(){
     CTransaction dummy;
     {
@@ -59,7 +59,7 @@ bool CCoinsViewCache::GetSerial(const uint256& serial, uint256& txid) {
     }
     return false;
 }
-
+#endif /* ZEROCASH */
 
 // calculate number of bytes for the bitmask, and its number of non-zero bytes
 // each bit in the bitmask represents the availability of one output, but the
@@ -108,12 +108,18 @@ bool CCoins::Spend(int nPos) {
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) { return false; }
 bool CCoinsView::SetCoins(const uint256 &txid, const CCoins &coins) { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) { return false; }
+#ifdef ZEROCASH
 bool CCoinsView::SetSerial(const uint256 &serial, const uint256 &txid) {return false;}
 bool CCoinsView::GetSerial(const uint256 &serial, uint256 &txid) {return false;}
+#endif /* ZEROCASH */
 
 uint256 CCoinsView::GetBestBlock() { return uint256(0); }
 bool CCoinsView::SetBestBlock(const uint256 &hashBlock) { return false; }
+#ifndef ZEROCASH
+bool CCoinsView::BatchWrite(const std::map<uint256, CCoins> &mapCoins, const uint256 &hashBlock) { return false; }
+#else /* ZEROCASH */
 bool CCoinsView::BatchWrite(const std::map<uint256, CCoins> &mapCoins,  const  std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock) { return false; }
+#endif /* ZEROCASH */
 bool CCoinsView::GetStats(CCoinsStats &stats) { return false; }
 
 
@@ -124,25 +130,33 @@ bool CCoinsViewBacked::HaveCoins(const uint256 &txid) { return base->HaveCoins(t
 uint256 CCoinsViewBacked::GetBestBlock() { return base->GetBestBlock(); }
 bool CCoinsViewBacked::SetBestBlock(const uint256 &hashBlock) { return base->SetBestBlock(hashBlock); }
 void CCoinsViewBacked::SetBackend(CCoinsView &viewIn) { base = &viewIn; }
+#ifndef ZEROCASH
+bool CCoinsViewBacked::BatchWrite(const std::map<uint256, CCoins> &mapCoins, const uint256 &hashBlock) { return base->BatchWrite(mapCoins, hashBlock); }
+#else /* ZEROCASH */
 bool CCoinsViewBacked::BatchWrite(const std::map<uint256, CCoins> &mapCoins, const  std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock) { return base->BatchWrite(mapCoins,mapSerial, hashBlock); }
 bool CCoinsViewBacked::GetSerial(const uint256& serial, uint256& txid) { return base->GetSerial(serial,txid); }
 bool CCoinsViewBacked::SetSerial(const uint256& serial, const uint256& txid) { return base->SetSerial(serial,txid); }
-
+#endif /* ZEROCASH */
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) { return base->GetStats(stats); }
 
+#ifndef ZEROCASH
+CCoinsViewCache::CCoinsViewCache(CCoinsView &baseIn, bool fDummy) : CCoinsViewBacked(baseIn), hashBlock(0) { }
+#else /* ZEROCASH */
 CCoinsViewCache::CCoinsViewCache(CCoinsView &baseIn, bool fDummy) : CCoinsViewBacked(baseIn), hashBlock(0),zerocoin_input( MakeFakeZerocoinCCoin()) {}
 
 bool CCoinsViewCache::SetSerial(const uint256& serial, const uint256& txid) {
     cacheSerial[serial]=txid;
     return true;
 }
-
+#endif /* ZEROCASH */
 
 bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) {
+#ifdef ZEROCASH
     if(txid == always_spendable_txid){
         coins=zerocoin_input;
         return true;
     }
+#endif /* ZEROCASH */
     if (cacheCoins.count(txid)) {
         coins = cacheCoins[txid];
         return true;
@@ -153,8 +167,6 @@ bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) {
     }
     return false;
 }
-
-
 
 std::map<uint256,CCoins>::iterator CCoinsViewCache::FetchCoins(const uint256 &txid) {
     std::map<uint256,CCoins>::iterator it = cacheCoins.lower_bound(txid);
@@ -169,26 +181,33 @@ std::map<uint256,CCoins>::iterator CCoinsViewCache::FetchCoins(const uint256 &tx
 }
 
 CCoins &CCoinsViewCache::GetCoins(const uint256 &txid) {
-	if(txid == always_spendable_txid){
-		return zerocoin_input;
-	}
+#ifdef ZEROCASH
+    if(txid == always_spendable_txid){
+        return zerocoin_input;
+    }
+#endif /* ZEROCASH */
     std::map<uint256,CCoins>::iterator it = FetchCoins(txid);
     assert(it != cacheCoins.end());
     return it->second;
 }
 
 bool CCoinsViewCache::SetCoins(const uint256 &txid, const CCoins &coins) {
-	//the fake CCoins can never be spent, so ignore all attempts to modify it.
-	if(txid != always_spendable_txid){
-		cacheCoins[txid] = coins;
-	}
+#ifdef ZEROCASH
+    // The fake CCoins can never be spent, so ignore all attempts to modify it.
+    if(txid == always_spendable_txid){
+        return true;
+    }
+#endif /* ZEROCASH */
+    cacheCoins[txid] = coins;
     return true;
 }
 
 bool CCoinsViewCache::HaveCoins(const uint256 &txid) {
-	if(txid == always_spendable_txid){
-		return true;
-	}
+#ifdef ZEROCASH
+    if(txid == always_spendable_txid){
+        return true;
+    }
+#endif /* ZEROCASH */
     return FetchCoins(txid) != cacheCoins.end();
 }
 
@@ -203,9 +222,17 @@ bool CCoinsViewCache::SetBestBlock(const uint256 &hashBlockIn) {
     return true;
 }
 
+#ifndef ZEROCASH
+bool CCoinsViewCache::BatchWrite(const std::map<uint256, CCoins> &mapCoins, const uint256 &hashBlockIn) {
+    for (std::map<uint256, CCoins>::const_iterator it = mapCoins.begin(); it != mapCoins.end(); it++)
+        cacheCoins[it->first] = it->second;
+    hashBlock = hashBlockIn;
+    return true;
+}
+#else /* ZEROCASH */
 bool CCoinsViewCache::BatchWrite(const std::map<uint256, CCoins> &mapCoins, const  std::map<uint256, uint256> &mapSerial, const uint256 &hashBlockIn) {
     for (std::map<uint256, CCoins>::const_iterator it = mapCoins.begin(); it != mapCoins.end(); it++){
-    	assert(it->first != always_spendable_txid);
+        assert(it->first != always_spendable_txid);
         cacheCoins[it->first] = it->second;
     }
     for (std::map<uint256, uint256>::const_iterator it = mapSerial.begin(); it != mapSerial.end(); it++){
@@ -214,18 +241,29 @@ bool CCoinsViewCache::BatchWrite(const std::map<uint256, CCoins> &mapCoins, cons
     hashBlock = hashBlockIn;
     return true;
 }
+#endif /* ZEROCASH */
 
 bool CCoinsViewCache::Flush() {
+#ifndef ZEROCASH
+    bool fOk = base->BatchWrite(cacheCoins, hashBlock);
+    if (fOk)
+        cacheCoins.clear();
+#else /* ZEROCASH */
     bool fOk = base->BatchWrite(cacheCoins,cacheSerial, hashBlock);
     if (fOk) {
         cacheCoins.clear();
         cacheSerial.clear();
     }
+#endif /* ZEROCASH */
     return fOk;
 }
 
 unsigned int CCoinsViewCache::GetCacheSize() {
+#ifndef ZEROCASH
+    return cacheCoins.size();
+#else /* ZEROCASH */
     return cacheCoins.size() + cacheSerial.size();
+#endif /* ZEROCASH */
 }
 
 const CTxOut &CCoinsViewCache::GetOutputFor(const CTxIn& input)
@@ -241,13 +279,20 @@ int64_t CCoinsViewCache::GetValueIn(const CTransaction& tx)
         return 0;
 
     int64_t nResult = 0;
+#ifndef ZEROCASH
+    for (unsigned int i = 0; i < tx.vin.size(); i++)
+        nResult += GetOutputFor(tx.vin[i]).nValue;
+#else /* ZEROCASH */
     for (unsigned int i = 0; i < tx.vin.size(); i++){
         nResult += GetOutputFor(tx.vin[i]).nValue;
+
         // Pours are an input to a transaction, so we count vPub as the input value
         if(tx.vin[i].IsZCPour()){
             nResult +=tx.vin[i].GetBtcContributionOfZerocoinTransaction();
         }
     }
+#endif /* ZEROCASH */
+
     return nResult;
 }
 

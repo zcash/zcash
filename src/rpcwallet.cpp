@@ -12,6 +12,7 @@
 #include "wallet.h"
 #include "walletdb.h"
 
+#ifdef ZEROCASH
 #include <libzerocash/Address.h>
 #include <libzerocash/Coin.h>
 #include <libzerocash/ZerocashParams.h>
@@ -19,6 +20,7 @@
 #include <libzerocash/PourTransaction.h>
 #include <libzerocash/MintTransaction.h>
 #include <libzerocash/Zerocash.h>
+#endif /* ZEROCASH */
 
 #include <stdint.h>
 
@@ -355,6 +357,8 @@ Value sendtoaddress(const Array& params, bool fHelp)
 
     return wtx.GetHash().GetHex();
 }
+
+#ifdef ZEROCASH
 Value zerocoinmint(const Array& params, bool fHelp){
 	if (fHelp || params.size() < 1)
 	        throw runtime_error(
@@ -506,6 +510,7 @@ Value zerocoinpour(const Array& params, bool fHelp){
     ss << rawTx;
     return HexStr(ss.begin(), ss.end());
 }
+#endif /* ZEROCASH */
 
 Value listaddressgroupings(const Array& params, bool fHelp)
 {

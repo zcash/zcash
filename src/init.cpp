@@ -36,7 +36,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <openssl/crypto.h>
+
+#ifdef ZEROCASH
 #include<libzerocash/ZerocashParams.h>
+#endif /* ZEROCASH */
 
 using namespace std;
 using namespace boost;
@@ -953,8 +956,11 @@ bool AppInit2(boost::thread_group& threadGroup)
             LogPrintf("No blocks matching %s were found\n", strMatch);
         return false;
     }
+
+#ifdef ZEROCASH
     // ******************************************************** Step 7i: Load zerocash keys
     	pzerocashParams = new libzerocash::ZerocashParams(4);
+#endif /* ZEROCASH */
 
     // ********************************************************* Step 8: load wallet
 #ifdef ENABLE_WALLET
@@ -1109,7 +1115,9 @@ bool AppInit2(boost::thread_group& threadGroup)
     //// debug print
     LogPrintf("mapBlockIndex.size() = %u\n",   mapBlockIndex.size());
     LogPrintf("nBestHeight = %d\n",                   chainActive.Height());
+#ifdef ZEROCASH
     LogPrint("zerocoin","zerocoin debugging enabled\n");
+#endif /* ZEROCASH */
 #ifdef ENABLE_WALLET
     LogPrintf("setKeyPool.size() = %u\n",      pwalletMain ? pwalletMain->setKeyPool.size() : 0);
     LogPrintf("mapWallet.size() = %u\n",       pwalletMain ? pwalletMain->mapWallet.size() : 0);

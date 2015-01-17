@@ -13,12 +13,16 @@
 using namespace std;
 
 void static BatchWriteCoins(CLevelDBBatch &batch, const uint256 &hash, const CCoins &coins) {
+#ifdef ZEROCASH
     assert(hash != always_spendable_txid);
+#endif /* ZEROCASH */
     if (coins.IsPruned())
         batch.Erase(make_pair('c', hash));
     else
         batch.Write(make_pair('c', hash), coins);
 }
+
+#ifdef ZEROCASH
 void static BatchWriteSerial(CLevelDBBatch &batch, const uint256 &serial, const uint256 txid) {
     if (serial == always_spendable_txid){
         LogPrint("zerocoin","zerocoin BatchWriteSerial: in batch to erase from  disk ((z, serial = %s), tx = %s) \n",serial.ToString(),txid.ToString());
@@ -29,6 +33,7 @@ void static BatchWriteSerial(CLevelDBBatch &batch, const uint256 &serial, const 
         batch.Write(make_pair('z', serial), txid);
     }
 }
+#endif /* ZEROCASH */
 
 void static BatchWriteHashBestChain(CLevelDBBatch &batch, const uint256 &hash) {
     batch.Write('B', hash);
@@ -38,19 +43,25 @@ CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(Get
 }
 
 bool CCoinsViewDB::GetCoins(const uint256 &txid, CCoins &coins) {
-	assert(txid != always_spendable_txid);
+#ifdef ZEROCASH
+    assert(txid != always_spendable_txid);
+#endif /* ZEROCASH */
     return db.Read(make_pair('c', txid), coins);
 }
 
 bool CCoinsViewDB::SetCoins(const uint256 &txid, const CCoins &coins) {
-	assert(txid != always_spendable_txid);
+#ifdef ZEROCASH
+    assert(txid != always_spendable_txid);
+#endif /* ZEROCASH */
     CLevelDBBatch batch;
     BatchWriteCoins(batch, txid, coins);
     return db.WriteBatch(batch);
 }
 
 bool CCoinsViewDB::HaveCoins(const uint256 &txid) {
-	assert(txid != always_spendable_txid);
+#ifdef ZEROCASH
+    assert(txid != always_spendable_txid);
+#endif /* ZEROCASH */
     return db.Exists(make_pair('c', txid));
 }
 
@@ -67,17 +78,26 @@ bool CCoinsViewDB::SetBestBlock(const uint256 &hashBlock) {
     return db.WriteBatch(batch);
 }
 
+#ifndef ZEROCASH
+bool CCoinsViewDB::BatchWrite(const std::map<uint256, CCoins> &mapCoins, const uint256 &hashBlock) {
+#else /* ZEROCASH */
 bool CCoinsViewDB::BatchWrite(const std::map<uint256, CCoins> &mapCoins,  const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock) {
+#endif /* ZEROCASH */
     LogPrint("coindb", "Committing %u changed transactions to coin database...\n", (unsigned int)mapCoins.size());
 
     CLevelDBBatch batch;
+#ifndef ZEROCASH
+    for (std::map<uint256, CCoins>::const_iterator it = mapCoins.begin(); it != mapCoins.end(); it++)
+        BatchWriteCoins(batch, it->first, it->second);
+#else /* ZEROCASH */
     for (std::map<uint256, CCoins>::const_iterator it = mapCoins.begin(); it != mapCoins.end(); it++){
-    	assert( it->first != always_spendable_txid);
+        assert( it->first != always_spendable_txid);
         BatchWriteCoins(batch, it->first, it->second);
     }
     for (std::map<uint256, uint256>::const_iterator it = mapSerial.begin(); it != mapSerial.end(); it++){
-    	BatchWriteSerial(batch,it->first,it->second);
+        BatchWriteSerial(batch,it->first,it->second);
     }
+#endif /* ZEROCASH */
     if (hashBlock != uint256(0))
         BatchWriteHashBestChain(batch, hashBlock);
 
@@ -126,17 +146,17 @@ bool CBlockTreeDB::ReadLastBlockFile(int &nFile) {
     return Read('l', nFile);
 }
 
+#ifdef ZEROCASH
 bool CCoinsViewDB::GetSerial(const uint256& serial, uint256& txid) {
-  // Technically, read can return false either if the key was not found or if the
-  // de-serialization of the value failed. We need to ensure such an error never happens.
-  // since it's unlikely that any given serial number will be in the db, we do the exist check first.
-  // only if it does exist, do we pay the double look up penalty.
-  if(db.Exists(make_pair('z', serial))){
-	  return db.Read(make_pair('z', serial), txid);
-  }else{
-	  return false;
-  }
-
+    // Technically, read can return false either if the key was not found or if the
+    // de-serialization of the value failed. We need to ensure such an error never happens.
+    // since it's unlikely that any given serial number will be in the db, we do the exist check first.
+    // only if it does exist, do we pay the double look up penalty.
+    if(db.Exists(make_pair('z', serial))){
+        return db.Read(make_pair('z', serial), txid);
+    }else{
+        return false;
+    }
 }
 
 bool CCoinsViewDB::SetSerial(const uint256& serial, const uint256& txid) {
@@ -144,6 +164,7 @@ bool CCoinsViewDB::SetSerial(const uint256& serial, const uint256& txid) {
     BatchWriteSerial(batch,serial, txid);
     return db.WriteBatch(batch);
 }
+#endif /* ZEROCASH */
 
 bool CCoinsViewDB::GetStats(CCoinsStats &stats) {
     leveldb::Iterator *pcursor = db.NewIterator();

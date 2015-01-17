@@ -60,7 +60,9 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex)
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", block.nVersion));
     result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
+#ifdef ZEROCASH
     result.push_back(Pair("zerocoinmerkleroot", block.hashZerocoinMerkleRoot.GetHex()));
+#endif /* ZEROCASH */
     Array txs;
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
         txs.push_back(tx.GetHash().GetHex());

@@ -14,8 +14,6 @@
 
 #include <boost/foreach.hpp>
 
-
-
 /** pruned version of CTransaction: only retains metadata and unspent transaction outputs
  *
  * Serialized format:
@@ -92,14 +90,22 @@ public:
     CCoins() : fCoinBase(false), vout(0), nHeight(0), nVersion(0) { }
 
     // remove spent outputs at the end of vout
+#ifndef ZEROCASH
+    void Cleanup() {
+#else /* ZEROCASH */
     virtual void Cleanup() {
+#endif /* ZEROCASH */
         while (vout.size() > 0 && vout.back().IsNull())
             vout.pop_back();
         if (vout.empty())
             std::vector<CTxOut>().swap(vout);
     }
 
+#ifndef ZEROCASH
+    void ClearUnspendable() {
+#else /* ZEROCASH */
     virtual void ClearUnspendable() {
+#endif /* ZEROCASH */
         BOOST_FOREACH(CTxOut &txout, vout) {
             if (txout.scriptPubKey.IsUnspendable())
                 txout.SetNull();
@@ -107,7 +113,11 @@ public:
         Cleanup();
     }
 
+#ifndef ZEROCASH
+    void swap(CCoins &to) {
+#else /* ZEROCASH */
     virtual void swap(CCoins &to) {
+#endif /* ZEROCASH */
         std::swap(to.fCoinBase, fCoinBase);
         to.vout.swap(vout);
         std::swap(to.nHeight, nHeight);
@@ -221,10 +231,18 @@ public:
     }
 
     // mark an outpoint spent, and construct undo information
+#ifndef ZEROCASH
+    bool Spend(const COutPoint &out, CTxInUndo &undo);
+#else /* ZEROCASH */
     virtual bool Spend(const COutPoint &out, CTxInUndo &undo);
+#endif /* ZEROCASH */
 
     // mark a vout spent
+#ifndef ZEROCASH
+    bool Spend(int nPos);
+#else /* ZEROCASH */
     virtual bool Spend(int nPos);
+#endif /* ZEROCASH */
 
     // check whether a particular output is still available
     bool IsAvailable(unsigned int nPos) const {
@@ -239,11 +257,13 @@ public:
                 return false;
         return true;
     }
-
+#ifdef ZEROCASH
     CCoins(const CTransaction &tx) : fCoinBase(tx.IsCoinBase()), vout(tx.vout), nHeight(0), nVersion(tx.nVersion) {
     }
+#endif /* ZEROCASH */
 };
 
+#ifdef ZEROCASH
 class CCoinsImmuntable :  public CCoins
 {
 public:
@@ -273,6 +293,9 @@ public:
     bool Spend(int nPos){ return true;}
 
 };
+#endif /* ZEROCASH */
+
+
 struct CCoinsStats
 {
     int nHeight;
@@ -286,6 +309,7 @@ struct CCoinsStats
     CCoinsStats() : nHeight(0), hashBlock(0), nTransactions(0), nTransactionOutputs(0), nSerializedSize(0), hashSerialized(0), nTotalAmount(0) {}
 };
 
+
 /** Abstract view on the open txout dataset. */
 class CCoinsView
 {
@@ -293,14 +317,18 @@ public:
     // Retrieve the CCoins (unspent transaction outputs) for a given txid
     virtual bool GetCoins(const uint256 &txid, CCoins &coins);
 
+#ifdef ZEROCASH
     // Retrieve the txid for a given serial number
     virtual bool GetSerial(const uint256 &serial, uint256 &txid);
+#endif /* ZEROCASH */
 
     // Modify the CCoins for a given txid
     virtual bool SetCoins(const uint256 &txid, const CCoins &coins);
 
+#ifdef ZEROCASH
     // Mark a given serial number as spent
     virtual bool SetSerial(const uint256 &serial,const uint256 &txid);
+#endif /* ZEROCASH */
 
     // Just check whether we have data for a given txid.
     // This may (but cannot always) return true for fully spent transactions
@@ -313,7 +341,11 @@ public:
     virtual bool SetBestBlock(const uint256 &hashBlock);
 
     // Do a bulk modification (multiple SetCoins + one SetBestBlock)
+#ifndef ZEROCASH
+    virtual bool BatchWrite(const std::map<uint256, CCoins> &mapCoins, const uint256 &hashBlock);
+#else /* ZEROCASH */
     virtual bool BatchWrite(const std::map<uint256, CCoins> &mapCoins, const  std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock);
+#endif /* ZEROCASH */
 
     // Calculate statistics about the unspent transaction output set
     virtual bool GetStats(CCoinsStats &stats);
@@ -322,15 +354,18 @@ public:
     virtual ~CCoinsView() {}
 };
 
+#ifdef ZEROCASH
 CCoinsImmuntable MakeFakeZerocoinCCoin();
 
 bool isSerialSpendable(CCoinsView &v,const uint256 &txid, const uint256 &serial);
-
 bool isSerialSpendable(CCoinsView &v,const uint256 &txid, const uint256 &serial,uint256 &idOfTxThatSpentIt);
 
 bool markeSerialAsSpent(CCoinsView &v, const uint256 &serial,const uint256 &txid);
 bool markSerialAsUnSpent(CCoinsView &v, const uint256 &serial);
 /** Abstract view on the open txout dataset. */
+#endif /* ZEROCASH */
+
+
 /** CCoinsView backed by another CCoinsView */
 class CCoinsViewBacked : public CCoinsView
 {
@@ -340,14 +375,20 @@ protected:
 public:
     CCoinsViewBacked(CCoinsView &viewIn);
     bool GetCoins(const uint256 &txid, CCoins &coins);
-    bool GetSerial(const uint256 &serial, uint256 &txid);
     bool SetCoins(const uint256 &txid, const CCoins &coins);
-    bool SetSerial(const uint256 &serial,const uint256 &txid);
     bool HaveCoins(const uint256 &txid);
+#ifdef ZEROCASH
+    bool GetSerial(const uint256 &serial, uint256 &txid);
+    bool SetSerial(const uint256 &serial,const uint256 &txid);
+#endif /* ZEROCASH */
     uint256 GetBestBlock();
     bool SetBestBlock(const uint256 &hashBlock);
     void SetBackend(CCoinsView &viewIn);
+#ifndef ZEROCASH
+    bool BatchWrite(const std::map<uint256, CCoins> &mapCoins, const uint256 &hashBlock);
+#else /* ZEROCASH */
     bool BatchWrite(const std::map<uint256, CCoins> &mapCoins, const  std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock);
+#endif /* ZEROCASH */
     bool GetStats(CCoinsStats &stats);
 };
 
@@ -358,21 +399,29 @@ class CCoinsViewCache : public CCoinsViewBacked
 protected:
     uint256 hashBlock;
     std::map<uint256,CCoins> cacheCoins;
+#ifdef ZEROCASH
     std::map<uint256,uint256> cacheSerial;
+#endif /* ZEROCASH */
+
 
 public:
     CCoinsViewCache(CCoinsView &baseIn, bool fDummy = false);
 
     // Standard CCoinsView methods
     bool GetCoins(const uint256 &txid, CCoins &coins);
-    bool GetSerial(const uint256 &serial, uint256 &txid);
     bool SetCoins(const uint256 &txid, const CCoins &coins);
-    bool SetSerial(const uint256 &serial, const uint256 &txid);
     bool HaveCoins(const uint256 &txid);
+#ifdef ZEROCASH
+    bool GetSerial(const uint256 &serial, uint256 &txid);
+    bool SetSerial(const uint256 &serial, const uint256 &txid);
+#endif /* ZEROCASH */
     uint256 GetBestBlock();
     bool SetBestBlock(const uint256 &hashBlock);
+#ifndef ZEROCASH
+    bool BatchWrite(const std::map<uint256, CCoins> &mapCoins, const uint256 &hashBlock);
+#else /* ZEROCASH */
     bool BatchWrite(const std::map<uint256, CCoins> &mapCoins, const  std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock);
-
+#endif /* ZEROCASH */
 
     // Return a modifiable reference to a CCoins. Check HaveCoins first.
     // Many methods explicitly require a CCoinsViewCache because of this method, to reduce
@@ -405,7 +454,9 @@ public:
 
 private:
     std::map<uint256,CCoins>::iterator FetchCoins(const uint256 &txid);
+#ifdef ZEROCASH
     CCoinsImmuntable zerocoin_input;
+#endif /* ZEROCASH */
 };
 
 #endif
