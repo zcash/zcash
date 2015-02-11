@@ -35,8 +35,11 @@ public:
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
-    bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock);
+    bool BatchWrite(CCoinsMap &mapCoins, const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock);
     bool GetStats(CCoinsStats &stats) const;
+
+    bool GetSerial(const uint256 &serial, uint256 &txid);
+    bool SetSerial(const uint256 &serial, const uint256 &txid);
 };
 
 /** Access to the block database (blocks/index/) */

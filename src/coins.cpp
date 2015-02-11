@@ -57,17 +57,22 @@ bool CCoins::Spend(int nPos) {
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
 uint256 CCoinsView::GetBestBlock() const { return uint256(0); }
-bool CCoinsView::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) { return false; }
+bool CCoinsView::BatchWrite(CCoinsMap &mapCoins, const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock) { return false; }
 bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 
+bool CCoinsView::GetSerial(const uint256 &serial, uint256 &txid) { return false; }
+bool CCoinsView::SetSerial(const uint256 &serial, const uint256 &txid) { return false; }
 
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
 bool CCoinsViewBacked::GetCoins(const uint256 &txid, CCoins &coins) const { return base->GetCoins(txid, coins); }
 bool CCoinsViewBacked::HaveCoins(const uint256 &txid) const { return base->HaveCoins(txid); }
 uint256 CCoinsViewBacked::GetBestBlock() const { return base->GetBestBlock(); }
 void CCoinsViewBacked::SetBackend(CCoinsView &viewIn) { base = &viewIn; }
-bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) { return base->BatchWrite(mapCoins, hashBlock); }
+bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins, const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock) { return base->BatchWrite(mapCoins, mapSerial, hashBlock); }
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
+
+bool CCoinsViewBacked::GetSerial(const uint256 &serial, uint256 &txid) { return base->GetSerial(serial, txid); }
+bool CCoinsViewBacked::SetSerial(const uint256 &serial, const uint256 &txid) { return base->SetSerial(serial, txid); }
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
 
@@ -76,6 +81,27 @@ CCoinsViewCache::CCoinsViewCache(CCoinsView *baseIn) : CCoinsViewBacked(baseIn),
 CCoinsViewCache::~CCoinsViewCache()
 {
     assert(!hasModifier);
+}
+
+bool CCoinsViewCache::GetSerial(const uint256 &serial, uint256 &txid)
+{
+    if (cacheSerial.count(serial))
+    {
+        txid = cacheSerial[serial];
+        return true;
+    }
+    if (base->GetSerial(serial, txid))
+    {
+        cacheSerial[serial] = txid;
+        return true;
+    }
+    return false;
+}
+
+bool CCoinsViewCache::SetSerial(const uint256 &serial, const uint256 &txid)
+{
+    cacheSerial[serial] = txid;
+    return true;
 }
 
 CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const {
@@ -150,7 +176,7 @@ void CCoinsViewCache::SetBestBlock(const uint256 &hashBlockIn) {
     hashBlock = hashBlockIn;
 }
 
-bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlockIn) {
+bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins, const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlockIn) {
     assert(!hasModifier);
     for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end();) {
         if (it->second.flags & CCoinsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
@@ -182,18 +208,22 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlockIn
         CCoinsMap::iterator itOld = it++;
         mapCoins.erase(itOld);
     }
+    for (std::map<uint256, uint256>::const_iterator it = mapSerial.begin(); it != mapSerial.end(); it++) {
+        cacheSerial[it->first] = it->second;
+    }
     hashBlock = hashBlockIn;
     return true;
 }
 
 bool CCoinsViewCache::Flush() {
-    bool fOk = base->BatchWrite(cacheCoins, hashBlock);
+    bool fOk = base->BatchWrite(cacheCoins, cacheSerial, hashBlock);
     cacheCoins.clear();
+    cacheSerial.clear();
     return fOk;
 }
 
 unsigned int CCoinsViewCache::GetCacheSize() const {
-    return cacheCoins.size();
+    return cacheCoins.size() + cacheSerial.size();
 }
 
 const CTxOut &CCoinsViewCache::GetOutputFor(const CTxIn& input) const

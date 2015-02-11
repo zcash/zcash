@@ -316,12 +316,18 @@ public:
     //! This may (but cannot always) return true for fully spent transactions
     virtual bool HaveCoins(const uint256 &txid) const;
 
+    //! Retrieve the txid for a given serial number
+    virtual bool GetSerial(const uint256 &serial, uint256 &txid);
+
+    //! Mark a given serial number as spent
+    virtual bool SetSerial(const uint256 &serial, const uint256 &txid);
+
     //! Retrieve the block hash whose state this CCoinsView currently represents
     virtual uint256 GetBestBlock() const;
 
     //! Do a bulk modification (multiple CCoins changes + BestBlock change).
     //! The passed mapCoins can be modified.
-    virtual bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock);
+    virtual bool BatchWrite(CCoinsMap &mapCoins, const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock);
 
     //! Calculate statistics about the unspent transaction output set
     virtual bool GetStats(CCoinsStats &stats) const;
@@ -343,8 +349,11 @@ public:
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
     void SetBackend(CCoinsView &viewIn);
-    bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock);
+    bool BatchWrite(CCoinsMap &mapCoins, const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock);
     bool GetStats(CCoinsStats &stats) const;
+
+    bool GetSerial(const uint256 &serial, uint256 &txid);
+    bool SetSerial(const uint256 &serial, const uint256 &txid);
 };
 
 
@@ -383,6 +392,8 @@ protected:
     mutable uint256 hashBlock;
     mutable CCoinsMap cacheCoins;
 
+    std::map<uint256, uint256> cacheSerial;
+
 public:
     CCoinsViewCache(CCoinsView *baseIn);
     ~CCoinsViewCache();
@@ -392,7 +403,10 @@ public:
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
     void SetBestBlock(const uint256 &hashBlock);
-    bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock);
+    bool BatchWrite(CCoinsMap &mapCoins, const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock);
+
+    bool GetSerial(const uint256 &serial, uint256 &txid);
+    bool SetSerial(const uint256 &serial, const uint256 &txid);
 
     /**
      * Return a pointer to CCoins in the cache, or NULL if not found. This is
