@@ -337,7 +337,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 case OP_NOP:
                 break;
 
-                case OP_NOP1: case OP_NOP2: case OP_NOP3: case OP_NOP4: case OP_NOP5:
+                case OP_NOP4: case OP_NOP5:
                 case OP_NOP6: case OP_NOP7: case OP_NOP8: case OP_NOP9: case OP_NOP10:
                 {
                     if (flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS)
@@ -395,7 +395,9 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 break;
 
                 case OP_RETURN:
+                case FLAG_ZC_MINT: case FLAG_ZC_POUR: case FLAG_ZC_POUR_INTERMEDIATE:
                 {
+                    // We're not sure this is correct for FLAG_ZC_*.
                     return set_error(serror, SCRIPT_ERR_OP_RETURN);
                 }
                 break;

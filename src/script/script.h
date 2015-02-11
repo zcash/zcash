@@ -146,10 +146,11 @@ enum opcodetype
     OP_CHECKMULTISIG = 0xae,
     OP_CHECKMULTISIGVERIFY = 0xaf,
 
+    FLAG_ZC_MINT = 0xb0,
+    FLAG_ZC_POUR = 0xb1,
+    FLAG_ZC_POUR_INTERMEDIATE = 0xb2,
+
     // expansion
-    OP_NOP1 = 0xb0,
-    OP_NOP2 = 0xb1,
-    OP_NOP3 = 0xb2,
     OP_NOP4 = 0xb3,
     OP_NOP5 = 0xb4,
     OP_NOP6 = 0xb5,
@@ -591,6 +592,13 @@ public:
     {
         return (size() > 0 && *begin() == OP_RETURN);
     }
+
+    bool IsZCMint() const;
+    bool IsZCPour() const;
+    bool isZCPourIntermediate() const;
+
+    /** Called by IsStandardTx. */
+    bool HasCanonicalPushes() const;
 
     std::string ToString() const;
     void clear()
