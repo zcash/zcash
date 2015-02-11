@@ -98,6 +98,7 @@ public:
     std::map<uint256, CTxMemPoolEntry> mapTx;
     std::map<COutPoint, CInPoint> mapNextTx;
     std::map<uint256, std::pair<double, CAmount> > mapDeltas;
+    std::map<uint256,CInPoint> mapZerocoinSerialNumbers;
 
     CTxMemPool(const CFeeRate& _minRelayFee);
     ~CTxMemPool();

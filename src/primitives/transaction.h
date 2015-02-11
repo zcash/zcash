@@ -92,6 +92,43 @@ public:
         return (scriptSig.IsZCMint());
     }
 
+    bool isZC() const{
+        return (IsZCPour() || IsZCMint());
+    }
+
+    /**
+     * Returns the amount of btc, in satoshi, needed for the zerocoin transaction or contributed by it.
+     * This value is always positve. However,in the case of Mint, it's the amount the transaction needs, not that it contributes.
+     * In the case of pour it is the value of vpub.
+     */
+    CAmount GetBtcContributionOfZerocoinTransaction() const {
+        // TODO add actually pull value
+        return 42; // dummy values
+    }
+
+    /**
+     * Gets the serial numbers used in a zerocoin transaction.
+     */
+    std::vector<uint256> GetZerocoinSerialNumbers() const {
+        std::vector<uint256> ret;
+        if (IsZCPour()) { // TODO actually pull serial numbers
+            ret.push_back(GetRandHash());
+            ret.push_back(GetRandHash());
+        }
+        return ret;
+    }
+
+    /**
+     * Gets the coins output by a zerocoin transaction.
+     */
+    std::vector<uint256> GetNewZeroCoinHashes() const {
+        static  std::vector<uint256> ret;
+        ret.push_back(GetRandHash());
+        ret.push_back(GetRandHash());
+        return ret;
+
+    }
+
     friend bool operator==(const CTxIn& a, const CTxIn& b)
     {
         return (a.prevout   == b.prevout &&
