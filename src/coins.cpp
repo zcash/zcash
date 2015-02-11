@@ -105,6 +105,13 @@ bool CCoinsViewCache::SetSerial(const uint256 &serial, const uint256 &txid)
 }
 
 CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const {
+    /*
+    if (txid == always_spendable_txid) {
+        std::map<uint256, CCoins> tmp;
+        return tmp.insert(tmp.begin(), std::make_pair(always_spendable_txid, MakeFakeZerocoinCCoin()));
+    }
+    */
+
     CCoinsMap::iterator it = cacheCoins.find(txid);
     if (it != cacheCoins.end())
         return it;
@@ -122,6 +129,9 @@ CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const
 }
 
 bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) const {
+    if (txid == always_spendable_txid) {
+        return MakeFakeZerocoinCCoin();
+    }
     CCoinsMap::const_iterator it = FetchCoins(txid);
     if (it != cacheCoins.end()) {
         coins = it->second.coins;
@@ -158,6 +168,9 @@ const CCoins* CCoinsViewCache::AccessCoins(const uint256 &txid) const {
 }
 
 bool CCoinsViewCache::HaveCoins(const uint256 &txid) const {
+    if (txid == always_spendable_txid) {
+        return true;
+    }
     CCoinsMap::const_iterator it = FetchCoins(txid);
     // We're using vtx.empty() instead of IsPruned here for performance reasons,
     // as we only care about the case where a transaction was replaced entirely
@@ -209,6 +222,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins, const std::map<uint256, ui
         mapCoins.erase(itOld);
     }
     for (std::map<uint256, uint256>::const_iterator it = mapSerial.begin(); it != mapSerial.end(); it++) {
+        assert(it->first != always_spendable_txid);
         cacheSerial[it->first] = it->second;
     }
     hashBlock = hashBlockIn;

@@ -15,6 +15,7 @@
 using namespace std;
 
 void static BatchWriteCoins(CLevelDBBatch &batch, const uint256 &hash, const CCoins &coins) {
+    assert(hash != always_spendable_txid);
     if (coins.IsPruned())
         batch.Erase(make_pair('c', hash));
     else
@@ -29,10 +30,12 @@ CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(Get
 }
 
 bool CCoinsViewDB::GetCoins(const uint256 &txid, CCoins &coins) const {
+    assert(txid != always_spendable_txid);
     return db.Read(make_pair('c', txid), coins);
 }
 
 bool CCoinsViewDB::HaveCoins(const uint256 &txid) const {
+    assert(txid != always_spendable_txid);
     return db.Exists(make_pair('c', txid));
 }
 
@@ -49,6 +52,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const std::map<uint256, uint2
     size_t changed = 0;
     for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end();) {
         if (it->second.flags & CCoinsCacheEntry::DIRTY) {
+            assert(it->first != always_spendable_txid);
             BatchWriteCoins(batch, it->first, it->second.coins);
             changed++;
         }
