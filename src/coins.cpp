@@ -76,11 +76,28 @@ bool CCoinsViewBacked::SetSerial(const uint256 &serial, const uint256 &txid) { r
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
 
-CCoinsViewCache::CCoinsViewCache(CCoinsView *baseIn) : CCoinsViewBacked(baseIn), hasModifier(false), hashBlock(0) { }
+CCoinsViewCache::CCoinsViewCache(CCoinsView *baseIn) : CCoinsViewBacked(baseIn), hasModifier(false),
+                                                       hashBlock(0), zerocoin_input(MakeFakeZerocoinCCoin()) { }
 
 CCoinsViewCache::~CCoinsViewCache()
 {
     assert(!hasModifier);
+}
+
+bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) {
+    if(txid == always_spendable_txid){
+        coins=zerocoin_input;
+        return true;
+    }
+    if (cacheCoins.count(txid)) {
+        coins = cacheCoins[txid];
+        return true;
+    }
+    if (base->GetCoins(txid, coins)) {
+        cacheCoins[txid] = coins;
+        return true;
+    }
+    return false;
 }
 
 bool CCoinsViewCache::GetSerial(const uint256 &serial, uint256 &txid)
@@ -105,13 +122,6 @@ bool CCoinsViewCache::SetSerial(const uint256 &serial, const uint256 &txid)
 }
 
 CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const {
-    /*
-    if (txid == always_spendable_txid) {
-        std::map<uint256, CCoins> tmp;
-        return tmp.insert(tmp.begin(), std::make_pair(always_spendable_txid, MakeFakeZerocoinCCoin()));
-    }
-    */
-
     CCoinsMap::iterator it = cacheCoins.find(txid);
     if (it != cacheCoins.end())
         return it;
@@ -130,7 +140,7 @@ CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const
 
 bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) const {
     if (txid == always_spendable_txid) {
-        return MakeFakeZerocoinCCoin();
+        return zerocoin_input;
     }
     CCoinsMap::const_iterator it = FetchCoins(txid);
     if (it != cacheCoins.end()) {
