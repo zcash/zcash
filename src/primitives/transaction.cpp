@@ -96,6 +96,17 @@ CAmount CTransaction::GetValueOut() const
         if (!MoneyRange(it->nValue) || !MoneyRange(nValueOut))
             throw std::runtime_error("CTransaction::GetValueOut() : value out of range");
     }
+
+    BOOST_FOREACH(const CTxIn& txin, vin)
+    {
+        if (txin.IsZCMint()) {  // since mints consume funds, they count as an output
+            CAmount contribution = txin.GetBtcContributionOfZerocoinTransaction();
+            nValueOut += contribution;
+            if (!MoneyRange(contribution) || !MoneyRange(nValueOut)) {
+                throw std::runtime_error("CTransaction::GetValueOut() : value out of range");
+            }
+        }
+    }
     return nValueOut;
 }
 
