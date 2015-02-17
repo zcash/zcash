@@ -388,6 +388,57 @@ Value sendtoaddress(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
+Value zerocoinpour(const Array& params, bool fHelp){
+    if (fHelp || params.size() != 2)
+        throw runtime_error(
+            "claim_zerocoin address_to_pay_to \n"
+            "wallet must be unlocked."
+       );
+    EnsureWalletIsUnlocked();
+
+    CTransaction rawTx; // the tx we are constructing
+
+    CBitcoinAddress  address = CBitcoinAddress(params[0].get_str()); // output destination for vpub
+
+    if (!address.IsValid())
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
+
+    CKeyID keyID;
+    if (!address.GetKeyID(keyID))
+        throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to key");
+
+    CKey key;
+    if (!pwalletMain->GetKey(keyID, key))
+        throw JSONRPCError(RPC_WALLET_ERROR, "Private key not available");
+
+    // compose output portion of transaction
+    int64_t nAmount = 41; //FIXME don't assume fixed value coins
+    CScript scriptPubKey;
+    scriptPubKey.SetDestination(address.Get());
+    CTxOut out(nAmount,scriptPubKey);
+    rawTx.vout.push_back(out);
+
+    //FIXME tx fees.
+
+    // compose input portion of transaction
+    CScript scriptSig;
+    scriptSig.clear();
+    scriptSig << FLAG_ZC_POUR;
+    CTxIn in(always_spendable_txid,0,scriptSig);
+    rawTx.vin.push_back(in);
+
+    // test transaction verification
+    CCoinsViewCache v(*pcoinsTip,false);
+    if(VerifyScript(scriptSig,v.GetCoins(always_spendable_txid).vout[0].scriptPubKey,rawTx,0,0,0))
+    {
+       CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+       ss << rawTx;
+       return HexStr(ss.begin(), ss.end());
+    } else{
+        return "false";
+    }
+}
+
 Value listaddressgroupings(const Array& params, bool fHelp)
 {
     if (fHelp)
