@@ -395,10 +395,17 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 break;
 
                 case OP_RETURN:
+                {
+                    return set_error(serror, SCRIPT_ERR_OP_RETURN);
+                }
+                break;
+
                 case FLAG_ZC_MINT: case FLAG_ZC_POUR: case FLAG_ZC_POUR_INTERMEDIATE:
                 {
+                    LogPrint("zerocoin", "zerocoin CheckInputs: placeholder evaluating script\n");
+                    stack.push_back(vchTrue);
                     // We're not sure this is correct for FLAG_ZC_*.
-                    return set_error(serror, SCRIPT_ERR_OP_RETURN);
+                    return set_success(serror);
                 }
                 break;
 

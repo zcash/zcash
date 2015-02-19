@@ -971,7 +971,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         if (tx.vin[i].isZC()) {
             // if the input is a zerocoin one, check for duplicate serial numbers, not duplicate tx inputs since all zerocoin tx's have the same input
             BOOST_FOREACH(const uint256 serial, tx.vin[i].GetZerocoinSerialNumbers()) {
-                LogPrint("zerocoin","zerocoin AcceptToMemPool: checking for duplicate serial number %s for tx %s\n",
+                LogPrint("zerocoin", "zerocoin AcceptToMemPool: checking for duplicate in mempool serial number %s for tx %s\n",
                          serial.ToString(), tx.GetHash().ToString());
                 if (pool.mapZerocoinSerialNumbers.count(serial)) { // check for duplicate zerocoin serial numbers
                     return state.Invalid(error("AcceptToMemoryPool : serial number  conflicts with mempool: txid %s has serial %s which was spent by %s",
@@ -1015,10 +1015,12 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                     *pfMissingInputs = true;
                 return false;
             }
-            // Because
+            // Because check_inputs below is run with a CoinViewCache that doesn't have access to
+            // the txdb (it gets a dummy) and we can't load the the non-spendness of a transaction
+            // into the cache easily, we explicitly run the spent check here
             BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()) {
                 uint256 conflict;
-                LogPrint("zerocoin", "zerocoin check transaction: checking for already spent serial number %s for tx %s\n",
+                LogPrint("zerocoin", "zerocoin AcceptToMemoryPool: checking for already spent serial number %s for tx %s\n",
                          serial.ToString(), tx.GetHash().ToString());
                 if (!isSerialSpendable(view, serial, tx.GetHash(), conflict)) {
                     return state.Invalid(error("AcceptToMemoryPool : serial already spent. txid %s has serial %s which was spent by %s",
