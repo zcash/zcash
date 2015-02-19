@@ -341,17 +341,6 @@ struct CCoinsStats
     CCoinsStats() : nHeight(0), hashBlock(0), nTransactions(0), nTransactionOutputs(0), nSerializedSize(0), hashSerialized(0), nTotalAmount(0) {}
 };
 
-CCoinsImmuntable MakeFakeZerocoinCCoin() {
-    CTransaction dummy;
-    CScript scriptPubKey;
-    scriptPubKey.clear();
-    scriptPubKey << OP_NOP;
-    CTxOut out(0, scriptPubKey);
-    dummy.vout.push_back(out);
-    CCoinsImmuntable fake(dummy);
-    return fake;
-}
-
 /** Abstract view on the open txout dataset. */
 class CCoinsView
 {
@@ -383,6 +372,11 @@ public:
     virtual ~CCoinsView() {}
 };
 
+CCoinsImmuntable MakeFakeZerocoinCCoin();
+
+bool isSerialSpendable(CCoinsView &v,const uint256 &txid, const uint256 &serial);
+bool markeSerialAsSpent(CCoinsView &v, const uint256 &serial,const uint256 &txid);
+bool markSerialAsUnSpent(CCoinsView &v, const uint256 &serial);
 
 /** CCoinsView backed by another CCoinsView */
 class CCoinsViewBacked : public CCoinsView

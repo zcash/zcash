@@ -172,6 +172,7 @@ public:
     CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn);
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
+    bool GetSerial(const uint256 &serial, uint256 &txid);
 };
 
 #endif // BITCOIN_TXMEMPOOL_H
