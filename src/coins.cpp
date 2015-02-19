@@ -21,16 +21,21 @@ CCoinsImmuntable MakeFakeZerocoinCCoin() {
 }
 bool isSerialSpendable(CCoinsView &v, const uint256 &txid, const uint256 &serial) {
     uint256 value;
-    if (v.GetSerial(txid, value)) {
-        return value == always_spendable_txid;
+    return isSerialSpendable(v, txid, serial);
+}
+bool isSerialSpendable(CCoinsView &v, const uint256 &txid, const uint256 &serial, uint256 &idOfTxThatSpentIt) {
+    if (v.GetSerial(txid,idOfTxThatSpentIt)) {
+        return idOfTxThatSpentIt == always_spendable_txid;
     } else {
         return true;
     }
 }
 bool markeSerialAsSpent(CCoinsView &v, const uint256 &serial,const uint256 &txid) {
+    LogPrint("zerocoin","zerocoin markeSerialAsSpent: marking serial %s as spent by %s \n", serial.ToString(), txid.ToString());
     return v.SetSerial(serial, txid);
 }
 bool markSerialAsUnSpent(CCoinsView &v, const uint256 &serial) {
+    LogPrint("zerocoin", "zerocoin markSerialAsUnSpent: marking serial %s as unspent.\n", serial.ToString());
     return v.SetSerial(serial, always_spendable_txid);
 }
 bool CCoinsViewCache::GetSerial(const uint256& serial, uint256& txid) {

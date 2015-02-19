@@ -24,8 +24,10 @@ void static BatchWriteCoins(CLevelDBBatch &batch, const uint256 &hash, const CCo
 
 void static BatchWriteSerial(CLevelDBBatch &batch, const uint256 &serial, const uint256 txid) {
     if (serial == always_spendable_txid) {
+        LogPrint("zerocoin", "zerocoin BatchWriteSerial: in batch to erase from  disk ((z, serial = %s), tx = %s) \n", serial.ToString(), txid.ToString());
         batch.Erase(make_pair('z', serial));
     } else {
+        LogPrint("zerocoin", "zerocoin BatchWriteSerial: in batch to write to disk ((z, serial = %s), tx = %s) \n", serial.ToString(), txid.ToString());
         batch.Write(make_pair('z', serial), txid);
     }
 }
