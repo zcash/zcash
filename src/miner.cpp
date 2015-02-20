@@ -141,6 +141,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
         bool fPrintPriority = GetBoolArg("-printpriority", false);
+        fakeMerkleThing zerocoinMerkleTree = getZerocoinMerkleTree(pindexPrev);
+        LogPrint("zerocoin","CreateNewBlock :Got prevous zerocoin merkle tree from block %s\n",zerocoinMerkleTree.root.ToString());
 
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
@@ -313,6 +315,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     }
                 }
             }
+            BOOST_FOREACH(uint256 coin, tx.getNewZerocoinsInTx()) {
+                zerocoinMerkleTree.add(coin);
+            }
         }
 
         nLastBlockTx = nBlockTx;
@@ -331,7 +336,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock);
         pblock->nNonce         = 0;
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
-
+        pblock->hashZerocoinMerkleRoot = zerocoinMerkleTree.root;
         CValidationState state;
         if (!TestBlockValidity(state, *pblock, pindexPrev, false, false))
             throw std::runtime_error("CreateNewBlock() : TestBlockValidity failed");

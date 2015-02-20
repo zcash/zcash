@@ -49,6 +49,27 @@ public:
     std::string ToString() const;
 };
 
+class fakeMerkleThing {
+public:
+    uint256 root;
+    uint256 foo;
+    fakeMerkleThing() {
+        foo=42;
+    }
+    IMPLEMENT_SERIALIZE
+       (
+           READWRITE(root);
+           READWRITE(foo);
+       )
+    void add(const uint256 &cointhing) {
+        LogPrint("zerocoin","fakeMerkleThing add %s ", cointhing.ToString());
+        CHashWriter ss(SER_GETHASH, PROTOCOL_VERSION);
+        ss << root;
+        ss << cointhing;
+        root = ss.GetHash();
+    }
+};
+
 /** An input of a transaction.  It contains the location of the previous
  * transaction's output that it claims and a signature that matches the
  * output's public key.
@@ -110,10 +131,14 @@ public:
      * Gets the serial numbers used in a zerocoin transaction.
      */
     std::vector<uint256> GetZerocoinSerialNumbers() const {
+        static const unsigned char R1Array[] =
+            "\xDE\xAD\xBE\xEF\xcf\x56\x11\x12\x2b\x29\x12\x5e\x5d\x35\xd2\xd2"
+            "\x22\x81\xaa\xb5\x33\xf0\x08\x32\xd5\x56\xb1\xf9\xea\xe5\x1d\x7d";
+        static const uint256 always_spendable_txid(std::vector<unsigned char>(R1Array,R1Array+32));
         std::vector<uint256> ret;
-        if (IsZCPour()) { // TODO actually pull serial numbers
-            ret.push_back(GetRandHash());
-            ret.push_back(GetRandHash());
+        if (IsZCPour()) { //TODO actually pull serial numbers
+            ret.push_back(GetRandHash()); //always_spendable_txid+10);
+            ret.push_back(GetRandHash()); //always_spendable_txid+20);
         }
         return ret;
     }
@@ -123,8 +148,10 @@ public:
      */
     std::vector<uint256> GetNewZeroCoinHashes() const {
         static  std::vector<uint256> ret;
-        ret.push_back(GetRandHash());
-        ret.push_back(GetRandHash());
+        if (isZC()) {
+            ret.push_back(GetRandHash());
+            ret.push_back(GetRandHash());
+        }
         return ret;
 
     }
@@ -180,6 +207,20 @@ public:
     }
 
     uint256 GetHash() const;
+
+    std::vector<uint256> getNewZerocoinsInTx() const
+    {
+        std::vector<uint256> ret;
+        int i = 0;
+        BOOST_FOREACH(const CTxIn in, vin) {
+            if (in.isZC()) {
+                uint256 f = this->GetHash();
+                ret.push_back(f+i);
+                i++;
+            }
+        }
+        return ret;
+    }
 
     bool IsDust(CFeeRate minRelayTxFee) const
     {
