@@ -1,5 +1,7 @@
 *.tar.gz
-
+.settings
+.cproject
+.project
 *.exe
 src/bitcoin
 src/bitcoind
@@ -111,3 +113,5 @@ qa/pull-tester/test.*/*
 !src/leveldb*/Makefile
 
 /doc/doxygen/
+1/
+2/

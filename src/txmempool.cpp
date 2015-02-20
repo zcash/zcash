@@ -585,9 +585,17 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             }
             // Check whether its inputs are marked in mapNextTx.
             std::map<COutPoint, CInPoint>::const_iterator it3 = mapNextTx.find(txin.prevout);
-            assert(it3 != mapNextTx.end());
-            assert(it3->second.ptx == &tx);
-            assert(it3->second.n == i);
+            if(txin.isZC()){// we the always spendable  transaction may be mapped to many things. this is fine
+                // we only want to check that we have it's serial numbers somewhere.
+                /// XXX FIXME ... redo this when we are not using random serial numbers
+                /*BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()){
+                     assert(mapZerocoinSerialNumbers.count(serial));
+                 }; */
+            }else{
+                assert(it3 != mapNextTx.end()); //
+                assert(it3->second.ptx == &tx);
+                assert(it3->second.n == i);
+            }
             i++;
         }
         if (fDependsWait)
@@ -619,9 +627,11 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         map<uint256, CTxMemPoolEntry>::const_iterator it2 = mapTx.find(hash);
         const CTransaction& tx = it2->second.GetTx();
         assert(it2 != mapTx.end());
-        assert(&tx == it->second.ptx);
-        assert(tx.vin.size() > it->second.n);
-        assert(it->first == it->second.ptx->vin[it->second.n].prevout);
+        if(it->first.hash != always_spendable_txid){ // if it's the always spendable transaction, the mapping data may have been overwritten
+            assert(&tx == it->second.ptx);
+            assert(tx.vin.size() > it->second.n);
+            assert(it->first == it->second.ptx->vin[it->second.n].prevout);
+        }
     }
 
     assert(totalTxSize == checkTotal);
