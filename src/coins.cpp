@@ -13,7 +13,7 @@ CCoinsImmuntable MakeFakeZerocoinCCoin() {
     CTransaction dummy;
     CScript scriptPubKey;
     scriptPubKey.clear();
-    scriptPubKey << OP_NOP;
+    scriptPubKey << FLAG_ZC_POUR;
     CTxOut out(0,scriptPubKey);
     dummy.vout.push_back(out);
     CCoinsImmuntable fake(dummy);

@@ -13,6 +13,8 @@
 #include "pubkey.h"
 #include "script/script.h"
 #include "uint256.h"
+#include "main.h"
+#include <libzerocash/PourTransaction.h>
 
 using namespace std;
 
@@ -253,7 +255,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
     vector<bool> vfExec;
     vector<valtype> altstack;
     set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
-    if (script.size() > 10000)
+    if (script.size() > 100000)
         return set_error(serror, SCRIPT_ERR_SCRIPT_SIZE);
     int nOpCount = 0;
     bool fRequireMinimal = (flags & SCRIPT_VERIFY_MINIMALDATA) != 0;
@@ -400,7 +402,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 }
                 break;
 
-                case FLAG_ZC_MINT: case FLAG_ZC_POUR: case FLAG_ZC_POUR_INTERMEDIATE:
+                case FLAG_ZC_MINT:
                 {
                     LogPrint("zerocoin", "zerocoin CheckInputs: placeholder evaluating script\n");
                     stack.push_back(vchTrue);
@@ -409,6 +411,70 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 }
                 break;
 
+                case FLAG_ZC_POUR_INTERMEDIATE:
+                {
+                    return set_error(serror, SCRIPT_ERR_OP_RETURN);
+                }
+                break;
+
+                case FLAG_ZC_POUR:
+                {
+                    LogPrint("zerocoin","zerocoin EvalScript: placeholder evaluating script\n");
+                    if(stack.size()!=4){
+                        LogPrint("zerocoin","EvalScript: wrong arguments count. expected 4 got %d\n",stack.size());
+                        return set_error(serror, SCRIPT_ERR_OP_RETURN);
+                    }
+                    valtype& vchSig = stacktop(-1);
+                    valtype& vchRoot  = stacktop(-2);
+                    valtype& vchPubKey = stacktop(-3);
+                    valtype& vchPour = stacktop(-4);
+
+                    CScript scriptCode(txTo.vin[nIn].scriptSig);
+                    scriptCode.FindAndDelete(CScript(vchSig));
+                    uint256 hash = SignatureHash(scriptCode, txTo , nIn, SIGHASH_ALL);
+                    LogPrint("zerocoin","EvalScript: signature hash %s\n",hash.ToString());
+
+
+                    CPubKey pubkey(vchPubKey);
+                    if (!pubkey.IsValid()){
+                        LogPrint("zerocoin","zerocoin EvalScript: pbulic key invalid.\n");
+                        return set_error(serror, SCRIPT_ERR_OP_RETURN);
+                    }
+                    if(!pubkey.Verify(hash,vchSig)){
+                        LogPrint("zerocoin","zerocoin EvalScript: signatue invalid.\n");
+                        return set_error(serror, SCRIPT_ERR_OP_RETURN);
+                    }
+                    const uint256 keyhash=pubkey.GetHash();
+                    vector<unsigned char> keyahshv(keyhash.begin(),keyhash.end());
+
+                    // deserialize pour
+                    libzerocash::PourTransaction pour;
+                    CDataStream ss(vchPour,SER_NETWORK, PROTOCOL_VERSION);
+                    ss >> pour;
+
+
+                    bool ret = true;
+
+                    CHashWriter hh(SER_GETHASH, 0);
+                    hh << pour;
+                    LogPrint("zerocoin","EvalScript: pour deserialized with hash %s\n",hash.ToString());
+
+                    ret = ret & pour.verify(*pzerocashParams,keyahshv,vchRoot);
+
+                    popstack(stack);
+                    popstack(stack);
+                    popstack(stack);
+                    popstack(stack);
+
+                    LogPrint("zerocoin","zerocoin EvalScript: %s. \n", ret? "passed":"failed");
+                    stack.push_back(ret ? vchTrue: vchFalse);
+                    if (ret) {
+                        return set_success(serror);
+                    } else {
+                        return set_error(serror, SCRIPT_ERR_OP_RETURN);
+                    }
+                }
+                break;
 
                 //
                 // Stack ops

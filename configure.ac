@@ -681,6 +681,13 @@ if test x$use_pkgconfig = xyes; then
     [
       PKG_CHECK_MODULES([SSL], [libssl],, [AC_MSG_ERROR(openssl  not found.)])
       PKG_CHECK_MODULES([CRYPTO], [libcrypto],,[AC_MSG_ERROR(libcrypto  not found.)])
+   #   PKG_CHECK_MODULES([zerocash], [libzerocash],, [AC_MSG_ERROR(zerocash  not found.)])
+   #   PKG_CHECK_MODULES([GMP], [libgmp],, [AC_MSG_ERROR(GMP  not found.)])
+   #   PKG_CHECK_MODULES([CRYPTOPP], [lcryptopp],, [AC_MSG_ERROR(CRYPTOPP  not found.)])
+   #   PKG_CHECK_MODULES([LIBZM], [libzm],, [AC_MSG_ERROR(LIBZM  not found.)])
+   #   PKG_CHECK_MODULES([GMP], [libgmp],, [AC_MSG_ERROR(GMP  not found.)])
+   #   PKG_CHECK_MODULES([GOMP], [libgomp],, [AC_MSG_ERROR(GOMP  not found.)])
+
       BITCOIN_QT_CHECK([PKG_CHECK_MODULES([PROTOBUF], [protobuf], [have_protobuf=yes], [BITCOIN_QT_FAIL(libprotobuf not found)])])
       if test x$use_qr != xno; then
         BITCOIN_QT_CHECK([PKG_CHECK_MODULES([QR], [libqrencode], [have_qrencode=yes], [have_qrencode=no])])
