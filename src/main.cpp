@@ -2740,6 +2740,25 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     return true;
 }
 
+fakeMerkleThing getZerocoinMerkleTree(CBlockIndex* pindex) {
+    if (pindex->nHeight == 0) {
+        return fakeMerkleThing();
+    } else {
+        CBlockUndo blockUndo;
+        CDiskBlockPos pos = pindex->GetUndoPos();
+        if (pos.IsNull()) {
+            error("getZerocinMerkelTree: no undo data available");
+            return fakeMerkleThing();
+        }
+        if (!blockUndo.ReadFromDisk(pos, pindex->pprev->GetBlockHash())) {
+            error("getZerocinMerkelTree: failure reading undo data");
+            return fakeMerkleThing();
+        }
+        return blockUndo.previousPrunedZerocoinMerkleTree;
+
+    }
+}
+
 bool CBlockIndex::IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned int nRequired)
 {
     unsigned int nToCheck = Params().ToCheckBlockUpgradeMajority();

@@ -302,25 +302,7 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason);
 
 bool IsFinalTx(const CTransaction &tx, int nBlockHeight = 0, int64_t nBlockTime = 0);
 
-
-fakeMerkleThing getZerocoinMerkleTree(CBlockIndex* pindex){
-    if(pindex->nHeight == 0 ){
-        return fakeMerkleThing();
-    }else{
-        CBlockUndo blockUndo;
-        CDiskBlockPos pos = pindex->GetUndoPos();
-        if (pos.IsNull()){
-            error("getZerocinMerkelTree: no undo data available");
-            return fakeMerkleThing();
-        }
-        if (!blockUndo.ReadFromDisk(pos, pindex->pprev->GetBlockHash())){
-            error("getZerocinMerkelTree: failure reading undo data");
-            return fakeMerkleThing();
-        }
-        return blockUndo.previousPrunedZerocoinMerkleTree;
-
-    }
-}
+fakeMerkleThing getZerocoinMerkleTree(CBlockIndex* pindex);
 
 /** Undo information for a CBlock */
 class CBlockUndo
