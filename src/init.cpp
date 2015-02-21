@@ -42,6 +42,7 @@
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/thread.hpp>
 #include <openssl/crypto.h>
+#include <libzerocash/ZerocashParams.h>
 
 using namespace boost;
 using namespace std;
@@ -1093,6 +1094,9 @@ bool AppInit2(boost::thread_group& threadGroup)
     if (!est_filein.IsNull())
         mempool.ReadFeeEstimates(est_filein);
     fFeeEstimatesInitialized = true;
+
+    // ********************************************************* Step 7i: Load zerocash keys
+    pzerocashParams = new libzerocash::ZerocashParams(4);
 
     // ********************************************************* Step 8: load wallet
 #ifdef ENABLE_WALLET
