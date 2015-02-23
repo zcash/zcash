@@ -14,6 +14,7 @@
 #include "script/script.h"
 #include "uint256.h"
 #include "main.h"
+#include "util.h"
 #include <libzerocash/PourTransaction.h>
 
 using namespace std;
@@ -448,9 +449,12 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                     uint256 blockhash(vchBlockHash);
 
+#if 0
                     CScript scriptCode(txTo.vin[nIn].scriptSig);
                     scriptCode.FindAndDelete(CScript(vchSig));
                     uint256 hash = SignatureHash(scriptCode, txTo , nIn, SIGHASH_ALL);
+#endif
+                    uint256 hash = 0; // FIXME
                     LogPrint("zerocoin","EvalScript: signature hash %s\n",hash.ToString());
 
                     if (mapBlockIndex.count(blockhash) == 0) {

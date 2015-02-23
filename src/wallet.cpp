@@ -1130,8 +1130,8 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
     LogPrint("zerocoin","MakePour : root %s\n", newroot.ToString());
 
     // get witnesses
-    auth_path witness_1(ZC_MERKLE_DEPTH);
-    auth_path witness_2(ZC_MERKLE_DEPTH);
+    libsnark::auth_path witness_1(ZC_MERKLE_DEPTH);
+    libsnark::auth_path witness_2(ZC_MERKLE_DEPTH);
 
     zerocoinMerkleTree.getWitness(convertIntToVector(coinIndex[coinhash1]), witness_1);
     zerocoinMerkleTree.getWitness(convertIntToVector(coinIndex[coinhash2]), witness_2);
@@ -1169,7 +1169,7 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
 
 CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
                                  const uint256 &blockhash, const CKey &key) {
-    CTransaction rawTx;
+    CMutableTransaction rawTx;
 
     // compose output portion of transaction
     if (pour.getMonetaryValueOut() == 0) {
@@ -1182,7 +1182,8 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
         CAmount nAmount = pour.getMonetaryValueOut();
         CScript scriptPubKey;
         CBitcoinAddress aa(key.GetPubKey().GetID());
-        scriptPubKey.SetDestination(aa.Get());
+        //scriptPubKey.SetDestination(aa.Get());
+        assert(false); //FIXME
         CTxOut out(nAmount, scriptPubKey);
         rawTx.vout.push_back(out);
     }
@@ -1211,15 +1212,17 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
     scriptSig << vchSig;
 
     rawTx.vin[0].scriptSig = scriptSig;
-    CCoinsViewCache v(*pcoinsTip, false);
-    LogPrint("zerocoin","MakePourTx: transaciton created. Verifying\n");
-    if (VerifyScript(scriptSig,v.GetCoins(always_spendable_txid).vout[0].scriptPubKey, rawTx, 0, 0, SIGHASH_ALL))
+    CCoinsViewCache v(pcoinsTip);
+    LogPrint("zerocoin", "MakePourTx: transaction created. Verifying\n");
+    CCoins coins;
+    assert(v.GetCoins(always_spendable_txid, coins)); // always_spendable_txid is always found
+    assert(false); //FIXME
+    if (true) //(VerifyScript(scriptSig, coins.vout[0].scriptPubKey, rawTx, 0, 0, SIGHASH_ALL))
     {
-        LogPrint("zerocoin","MakePourTx: Verified \n");
+        LogPrint("zerocoin", "MakePourTx: Verified \n");
         return rawTx;
-    } else {
-        throw runtime_error("invalid transaction");
     }
+    throw runtime_error("invalid transaction");
 }
 
 /*

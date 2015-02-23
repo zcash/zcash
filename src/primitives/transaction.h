@@ -10,6 +10,7 @@
 #include "script/script.h"
 #include "serialize.h"
 #include "uint256.h"
+#include <boost/foreach.hpp>
 
 #include <libzerocash/PourTransaction.h>
 #include <libzerocash/MintTransaction.h>
@@ -228,21 +229,6 @@ public:
 
     uint256 GetHash() const;
 
-    std::vector<uint256> getNewZerocoinsInTx() const
-    {
-        std::vector<uint256> ret;
-
-        BOOST_FOREACH(const CTxIn in, vin) {
-            if (in.isZC()) {
-                std::vector<uint256> hashes = in.GetNewZeroCoinHashes();
-                BOOST_FOREACH(uint256 hash, hashes) {
-                    ret.push_back(hash);
-                }
-            }
-        }
-        return ret;
-    }
-
     bool IsDust(CFeeRate minRelayTxFee) const
     {
         // "Dust" is defined in terms of CTransaction::minRelayTxFee,
@@ -323,6 +309,21 @@ public:
 
     const uint256& GetHash() const {
         return hash;
+    }
+
+    std::vector<uint256> getNewZerocoinsInTx() const
+    {
+        std::vector<uint256> ret;
+
+        BOOST_FOREACH(const CTxIn in, vin) {
+            if (in.isZC()) {
+                std::vector<uint256> hashes = in.GetNewZeroCoinHashes();
+                BOOST_FOREACH(uint256 hash, hashes) {
+                    ret.push_back(hash);
+                }
+            }
+        }
+        return ret;
     }
 
     // Return sum of txouts.

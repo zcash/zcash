@@ -452,7 +452,7 @@ Value zerocoinmint(const Array& params, bool fHelp){
 
     // cout << "XXXX coin " << cid.ToString() << " :\n\thex\n\t" << coinhex << "\n\taddress\n\t " << addresshex << endl;
 
-    CTransaction rawTx; // the tx we are constructing
+    CMutableTransaction rawTx; // the tx we are constructing
     {
         CTxIn in(hash,0);
         rawTx.vin.push_back(in);
@@ -473,7 +473,8 @@ Value zerocoinmint(const Array& params, bool fHelp){
 
     { // change
     CScript scriptPubKey;
-    scriptPubKey.SetDestination(chageaddress.Get());
+    //scriptPubKey.SetDestination(chageaddress.Get());
+    assert(false); //FIXME
     CTxOut out(nAmountChange,scriptPubKey);
     rawTx.vout.push_back(out);
     }

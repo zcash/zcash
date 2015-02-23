@@ -17,12 +17,6 @@
 #include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
 
-// The mark of a zerocoin input. This is the ID we use that should always be spendable.
-const unsigned char R1Array[] =
-    "\xDE\xAD\xBE\xEF\xcf\x56\x11\x12\x2b\x29\x12\x5e\x5d\x35\xd2\xd2"
-    "\x22\x81\xaa\xb5\x33\xf0\x08\x32\xd5\x56\xb1\xf9\xea\xe5\x1d\x7d";
-const uint256 always_spendable_txid(std::vector<unsigned char>(R1Array, R1Array+32));
-
 /** 
  * Pruned version of CTransaction: only retains metadata and unspent transaction outputs
  *
@@ -353,7 +347,7 @@ public:
     virtual bool HaveCoins(const uint256 &txid) const;
 
     //! Retrieve the txid for a given serial number
-    virtual bool GetSerial(const uint256 &serial, uint256 &txid);
+    virtual bool GetSerial(const uint256 &serial, uint256 &txid) const;
 
     //! Mark a given serial number as spent
     virtual bool SetSerial(const uint256 &serial, const uint256 &txid);
@@ -374,9 +368,7 @@ public:
 
 CCoinsImmuntable MakeFakeZerocoinCCoin();
 
-bool isSerialSpendable(CCoinsView &v,const uint256 &txid, const uint256 &serial);
-
-bool isSerialSpendable(CCoinsView &v,const uint256 &txid, const uint256 &serial,uint256 &idOfTxThatSpentIt);
+bool isSerialSpendable(const CCoinsView &v,const uint256 &txid, const uint256 &serial,uint256 &idOfTxThatSpentIt);
 
 bool markeSerialAsSpent(CCoinsView &v, const uint256 &serial,const uint256 &txid);
 bool markSerialAsUnSpent(CCoinsView &v, const uint256 &serial);
@@ -396,7 +388,7 @@ public:
     bool BatchWrite(CCoinsMap &mapCoins, const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock);
     bool GetStats(CCoinsStats &stats) const;
 
-    bool GetSerial(const uint256 &serial, uint256 &txid);
+    bool GetSerial(const uint256 &serial, uint256 &txid) const;
     bool SetSerial(const uint256 &serial, const uint256 &txid);
 };
 
@@ -435,11 +427,10 @@ protected:
      */
     mutable uint256 hashBlock;
     mutable CCoinsMap cacheCoins;
-
-    std::map<uint256, uint256> cacheSerial;
+    mutable std::map<uint256, uint256> cacheSerial;
 
 public:
-    CCoinsViewCache(CCoinsView *baseIn);
+    explicit CCoinsViewCache(CCoinsView *baseIn);
     ~CCoinsViewCache();
 
     // Standard CCoinsView methods
@@ -449,7 +440,7 @@ public:
     void SetBestBlock(const uint256 &hashBlock);
     bool BatchWrite(CCoinsMap &mapCoins, const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock);
 
-    bool GetSerial(const uint256 &serial, uint256 &txid);
+    bool GetSerial(const uint256 &serial, uint256 &txid) const;
     bool SetSerial(const uint256 &serial, const uint256 &txid);
 
     /**

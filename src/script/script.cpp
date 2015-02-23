@@ -18,6 +18,17 @@ inline std::string ValueString(const std::vector<unsigned char>& vch)
 }
 } // anon namespace
 
+#include "hash.h"
+#include "key.h"
+#include "keystore.h"
+#include "sync.h"
+#include "uint256.h"
+#include "util.h"
+
+#include <boost/foreach.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
+
 using namespace std;
 
 const char* GetOpName(opcodetype opcode)

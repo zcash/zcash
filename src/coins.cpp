@@ -3,6 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "coins.h"
+#include "util.h"
 
 #include "random.h"
 
@@ -10,7 +11,7 @@
 
 // Zerocoin changes
 CCoinsImmuntable MakeFakeZerocoinCCoin() {
-    CTransaction dummy;
+    CMutableTransaction dummy;
     {
     CScript scriptPubKey;
     scriptPubKey.clear();
@@ -28,11 +29,8 @@ CCoinsImmuntable MakeFakeZerocoinCCoin() {
     CCoinsImmuntable fake(dummy);
     return fake;
 }
-bool isSerialSpendable(CCoinsView &v, const uint256 &txid, const uint256 &serial) {
-    uint256 value;
-    return isSerialSpendable(v, txid, serial);
-}
-bool isSerialSpendable(CCoinsView &v, const uint256 &txid, const uint256 &serial, uint256 &idOfTxThatSpentIt) {
+
+bool isSerialSpendable(const CCoinsView &v, const uint256 &txid, const uint256 &serial, uint256 &idOfTxThatSpentIt) {
     if (v.GetSerial(txid,idOfTxThatSpentIt)) {
         return idOfTxThatSpentIt == always_spendable_txid;
     } else {
@@ -47,7 +45,7 @@ bool markSerialAsUnSpent(CCoinsView &v, const uint256 &serial) {
     LogPrint("zerocoin", "zerocoin markSerialAsUnSpent: marking serial %s as unspent.\n", serial.ToString());
     return v.SetSerial(serial, always_spendable_txid);
 }
-bool CCoinsViewCache::GetSerial(const uint256& serial, uint256& txid) {
+bool CCoinsViewCache::GetSerial(const uint256& serial, uint256& txid) const {
     if (cacheSerial.count(serial)) {
         txid = cacheSerial[serial];
         return false;
@@ -114,7 +112,7 @@ uint256 CCoinsView::GetBestBlock() const { return uint256(0); }
 bool CCoinsView::BatchWrite(CCoinsMap &mapCoins, const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock) { return false; }
 bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 
-bool CCoinsView::GetSerial(const uint256 &serial, uint256 &txid) { return false; }
+bool CCoinsView::GetSerial(const uint256 &serial, uint256 &txid) const { return false; }
 bool CCoinsView::SetSerial(const uint256 &serial, const uint256 &txid) { return false; }
 
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
@@ -125,7 +123,7 @@ void CCoinsViewBacked::SetBackend(CCoinsView &viewIn) { base = &viewIn; }
 bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins, const std::map<uint256, uint256> &mapSerial, const uint256 &hashBlock) { return base->BatchWrite(mapCoins, mapSerial, hashBlock); }
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
-bool CCoinsViewBacked::GetSerial(const uint256 &serial, uint256 &txid) { return base->GetSerial(serial, txid); }
+bool CCoinsViewBacked::GetSerial(const uint256 &serial, uint256 &txid) const { return base->GetSerial(serial, txid); }
 bool CCoinsViewBacked::SetSerial(const uint256 &serial, const uint256 &txid) { return base->SetSerial(serial, txid); }
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
@@ -142,23 +140,6 @@ bool CCoinsViewCache::SetSerial(const uint256& serial, const uint256& txid) {
     cacheSerial[serial] = txid;
     return true;
 }
-
-bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) {
-    if(txid == always_spendable_txid){
-        coins=zerocoin_input;
-        return true;
-    }
-    if (cacheCoins.count(txid)) {
-        coins = cacheCoins[txid];
-        return true;
-    }
-    if (base->GetCoins(txid, coins)) {
-        cacheCoins[txid] = coins;
-        return true;
-    }
-    return false;
-}
-
 
 CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const {
     CCoinsMap::iterator it = cacheCoins.find(txid);
@@ -179,7 +160,8 @@ CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const
 
 bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) const {
     if (txid == always_spendable_txid) {
-        return zerocoin_input;
+        coins = zerocoin_input;
+        return true;
     }
     CCoinsMap::const_iterator it = FetchCoins(txid);
     if (it != cacheCoins.end()) {

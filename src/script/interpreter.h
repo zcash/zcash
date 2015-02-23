@@ -27,6 +27,8 @@ enum
     SIGHASH_ANYONECANPAY = 0x80,
 };
 
+#include "sign.h"
+
 /** Script verification flags */
 enum
 {

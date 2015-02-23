@@ -14,6 +14,9 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include "uint256.h"
+#include "pubkey.h"
+//#include "script/standard.h"
 
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 6000; // bytes //FIXME fine tune this
 
@@ -394,6 +397,28 @@ public:
         if (opcode < 0 || opcode > 0xff)
             throw std::runtime_error("CScript::operator<<() : invalid opcode");
         insert(end(), (unsigned char)opcode);
+        return *this;
+    }
+
+    CScript& operator<<(const uint160 &b)
+    {
+        insert(end(), sizeof(b));
+        insert(end(), (unsigned char*)&b, (unsigned char*)&b + sizeof(b));
+        return *this;
+    }
+
+    CScript& operator<<(const uint256 &b)
+    {
+        insert(end(), sizeof(b));
+        insert(end(), (unsigned char*)&b, (unsigned char*)&b + sizeof(b));
+        return *this;
+    }
+
+    CScript& operator<<(const CPubKey &key)
+    {
+        assert(key.size() < OP_PUSHDATA1);
+        insert(end(), (unsigned char)key.size());
+        insert(end(), key.begin(), key.end());
         return *this;
     }
 

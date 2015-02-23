@@ -5,6 +5,7 @@
 
 #include "primitives/transaction.h"
 
+#include "streams.h"
 #include "hash.h"
 #include "tinyformat.h"
 #include "utilstrencodings.h"
