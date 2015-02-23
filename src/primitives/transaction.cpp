@@ -14,6 +14,48 @@ std::string COutPoint::ToString() const
     return strprintf("COutPoint(%s, %u)", hash.ToString().substr(0,10), n);
 }
 
+CTxInZerocoinPourDataCacheEntry::CTxInZerocoinPourDataCacheEntry(const CScript &scriptSig) {
+    std::vector<unsigned char> vchPour;
+    opcodetype ignored;
+    CScript::const_iterator pc = scriptSig.begin();
+    scriptSig.GetOp(pc, ignored, vchPour);
+    CDataStream ss(vchPour, SER_NETWORK, PROTOCOL_VERSION);
+    ss >> this->rawPour;
+    {
+    uint256 hash(this->rawPour.getSpentSerial1());
+    serails.push_back(hash);
+    }
+    {
+    uint256 hash(this->rawPour.getSpentSerial2());
+    serails.push_back(hash);
+    }
+    {
+    uint256 hash(rawPour.getNewCoinCommitmentValue1());
+    coinCommitmentHashes.push_back(hash);
+    }
+    {
+    uint256 hash(rawPour.getNewCoinCommitmentValue2());
+    coinCommitmentHashes.push_back(hash);
+    }
+    this->pour_monetary_value = 20; //rawPour.getMonetaryValueOut();
+    this->empty = false;
+}
+
+CTxInZerocoinMintDataCacheEntry::CTxInZerocoinMintDataCacheEntry(const CScript &scriptSig) {
+    std::vector<unsigned char> vchMint;
+    opcodetype ignored;
+    CScript::const_iterator pc = scriptSig.begin();
+    scriptSig.GetOp(pc, ignored, vchMint);
+    CDataStream ss(vchMint, SER_NETWORK, PROTOCOL_VERSION);
+    ss >> this->rawMint;
+    {
+    uint256 hash(rawMint.getMintedCoinCommitmentValue());
+    coinCommitmentHashes.push_back(hash);
+    }
+    this->mint_monetary_value = rawMint.getMonetaryValue();
+    this->empty = false;
+}
+
 CTxIn::CTxIn(COutPoint prevoutIn, CScript scriptSigIn, uint32_t nSequenceIn)
 {
     prevout = prevoutIn;

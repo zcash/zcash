@@ -141,8 +141,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
         bool fPrintPriority = GetBoolArg("-printpriority", false);
-        fakeMerkleThing zerocoinMerkleTree = getZerocoinMerkleTree(pindexPrev);
-        LogPrint("zerocoin","CreateNewBlock :Got prevous zerocoin merkle tree from block %s\n",zerocoinMerkleTree.root.ToString());
+        libzerocash::IncrementalMerkleTree zerocoinMerkleTree = getZerocoinMerkleTree(pindexPrev);
+        std::vector<unsigned char> rt(root_size);
+        zerocoinMerkleTree.getRootValue(rt);
+        uint256 oldroot(rt);
+        LogPrint("zerocoin", "CreateNewBlock :Got prevous zerocoin merkle tree from block %s\n", oldroot.ToString());
 
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
@@ -316,7 +319,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 }
             }
             BOOST_FOREACH(uint256 coin, tx.getNewZerocoinsInTx()) {
-                zerocoinMerkleTree.add(coin);
+                std::vector<unsigned char> ignored;
+                std::vector<unsigned char> coinv(coin.begin(), coin.end());
+                LogPrint("zerocoin","CreateNewBlock: adding coin %s in block %s \n", coin.ToString(), pblock->GetHash().ToString());
+                zerocoinMerkleTree.insertElement(coinv, ignored);
             }
         }
 
@@ -336,7 +342,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock);
         pblock->nNonce         = 0;
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
-        pblock->hashZerocoinMerkleRoot = zerocoinMerkleTree.root;
+        std::vector<unsigned char> rtt(root_size);
+        zerocoinMerkleTree.getRootValue(rtt);
+        uint256 newroot(rtt);
+        LogPrint("zerocoin","CreateNewBlock: zerocoin root %s for block %s\n", newroot.ToString(), pblock->GetHash().ToString());
+        pblock->hashZerocoinMerkleRoot = newroot;
         CValidationState state;
         if (!TestBlockValidity(state, *pblock, pindexPrev, false, false))
             throw std::runtime_error("CreateNewBlock() : TestBlockValidity failed");

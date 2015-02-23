@@ -12,6 +12,8 @@
 
 #include "amount.h"
 #include "chain.h"
+#define ZC_MERKLE_DEPTH 4
+#include "bignum.h"
 #include "chainparams.h"
 #include "coins.h"
 #include "primitives/block.h"
@@ -36,6 +38,7 @@
 #include <utility>
 #include <vector>
 #include<libzerocash/ZerocashParams.h>
+#include<libzerocash/IncrementalMerkleTree.h>
 
 #include <boost/unordered_map.hpp>
 
@@ -303,14 +306,14 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason);
 
 bool IsFinalTx(const CTransaction &tx, int nBlockHeight = 0, int64_t nBlockTime = 0);
 
-fakeMerkleThing getZerocoinMerkleTree(CBlockIndex* pindex);
+libzerocash::IncrementalMerkleTree getZerocoinMerkleTree(CBlockIndex* pindex);
 
 /** Undo information for a CBlock */
 class CBlockUndo
 {
 public:
     std::vector<CTxUndo> vtxundo; // for all but the coinbase
-    fakeMerkleThing previousPrunedZerocoinMerkleTree;
+    libzerocash::IncrementalMerkleTreeCompact previousPrunedZerocoinMerkleTree;
 
     ADD_SERIALIZE_METHODS;
 

@@ -255,7 +255,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
     vector<bool> vfExec;
     vector<valtype> altstack;
     set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
-    if (script.size() > 100000)
+    if (script.size() > 100000) // FIXME fine tune this
         return set_error(serror, SCRIPT_ERR_SCRIPT_SIZE);
     int nOpCount = 0;
     bool fRequireMinimal = (flags & SCRIPT_VERIFY_MINIMALDATA) != 0;
@@ -407,7 +407,24 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     LogPrint("zerocoin", "zerocoin CheckInputs: placeholder evaluating script\n");
                     stack.push_back(vchTrue);
                     // We're not sure this is correct for FLAG_ZC_*.
-                    return set_success(serror);
+                    LogPrint("zerocoin", "zerocoin EvalScript: mint\n");
+                    if (stack.size()!=1) {
+                        LogPrint("zerocoin", "EvalScript:mintL wrong arguments count. expected 1 got %d\n", stack.size());
+                        return false;
+                    }
+                    valtype& vchMint = stacktop(-1);
+                    libzerocash::MintTransaction mint;
+                    CDataStream ss(vchMint, SER_NETWORK, PROTOCOL_VERSION);
+                    ss >> mint;
+                    bool ret = mint.verify();
+                    popstack(stack);
+                    LogPrint("zerocoin", "zerocoin EvalScrip:Mint: %s. \n", ret ? "passed" : "failed");
+                    stack.push_back(ret ? vchTrue : vchFalse);
+                    if (ret) {
+                        return set_success(serror);
+                    } else {
+                        return set_error(serror, SCRIPT_ERR_OP_RETURN);
+                    }
                 }
                 break;
 
@@ -419,7 +436,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                 case FLAG_ZC_POUR:
                 {
-                    LogPrint("zerocoin","zerocoin EvalScript: placeholder evaluating script\n");
+                    LogPrint("zerocoin", "zerocoin EvalScript: pour\n");
                     if(stack.size()!=4){
                         LogPrint("zerocoin","EvalScript: wrong arguments count. expected 4 got %d\n",stack.size());
                         return set_error(serror, SCRIPT_ERR_OP_RETURN);

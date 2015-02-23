@@ -11,11 +11,20 @@
 // Zerocoin changes
 CCoinsImmuntable MakeFakeZerocoinCCoin() {
     CTransaction dummy;
+    {
     CScript scriptPubKey;
     scriptPubKey.clear();
     scriptPubKey << FLAG_ZC_POUR;
     CTxOut out(0,scriptPubKey);
     dummy.vout.push_back(out);
+    }
+    {
+    CScript scriptPubKey;
+    scriptPubKey.clear();
+    scriptPubKey << FLAG_ZC_MINT;
+    CTxOut out(1,scriptPubKey);
+    dummy.vout.push_back(out);
+    }
     CCoinsImmuntable fake(dummy);
     return fake;
 }
