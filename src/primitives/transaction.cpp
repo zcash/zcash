@@ -37,7 +37,7 @@ CTxInZerocoinPourDataCacheEntry::CTxInZerocoinPourDataCacheEntry(const CScript &
     uint256 hash(rawPour.getNewCoinCommitmentValue2());
     coinCommitmentHashes.push_back(hash);
     }
-    this->pour_monetary_value = 20; //rawPour.getMonetaryValueOut();
+    this->pour_monetary_value = rawPour.getMonetaryValueOut();
     this->empty = false;
 }
 
