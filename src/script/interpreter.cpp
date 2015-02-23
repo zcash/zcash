@@ -438,19 +438,28 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 {
                     LogPrint("zerocoin", "zerocoin EvalScript: pour\n");
                     if(stack.size()!=4){
-                        LogPrint("zerocoin","EvalScript: wrong arguments count. expected 4 got %d\n",stack.size());
+                        LogPrint("zerocoin","EvalScript: wrong arguments count. expected 4 got %d\n", stack.size());
                         return set_error(serror, SCRIPT_ERR_OP_RETURN);
                     }
                     valtype& vchSig = stacktop(-1);
-                    valtype& vchRoot  = stacktop(-2);
+                    valtype& vchBlockHash = stacktop(-2);
                     valtype& vchPubKey = stacktop(-3);
                     valtype& vchPour = stacktop(-4);
+
+                    uint256 blockhash(vchBlockHash);
 
                     CScript scriptCode(txTo.vin[nIn].scriptSig);
                     scriptCode.FindAndDelete(CScript(vchSig));
                     uint256 hash = SignatureHash(scriptCode, txTo , nIn, SIGHASH_ALL);
                     LogPrint("zerocoin","EvalScript: signature hash %s\n",hash.ToString());
 
+                    if (mapBlockIndex.count(blockhash) == 0) {
+                        LogPrint("zerocoin", "zerocoin EvalScript: block not found %s.\n", blockhash.ToString());
+                        return false;
+                    }
+                    uint256 merkleroot = mapBlockIndex[blockhash]->GetBlockHeader().hashZerocoinMerkleRoot;
+                    std::vector<unsigned char> vchRoot(merkleroot.begin(), merkleroot.end());
+                    LogPrint("zerocoin", "zerocoin EvalScript: goot root  %s from block %s.\n", merkleroot.ToString(), hash.ToString());
 
                     CPubKey pubkey(vchPubKey);
                     if (!pubkey.IsValid()){

@@ -1088,12 +1088,12 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
     LogPrint("zerocoin", "MakePour : constructing pour of coins %s,%s", coinhash1.ToString(), coinhash2.ToString());
 
     std::map<uint256, int> coinIndex;
-    // build merkletree and get coin indexs
-    LogPrint("zerocoin", "WALLETPOUR starting\n\n");
-
+    // build merkletree and complete with location of coins
     libzerocash::IncrementalMerkleTree zerocoinMerkleTree(ZC_MERKLE_DEPTH);
     int ctr = 0;
-    for (int i = 0; i <= chainActive.Height(); i++) {
+    int blocks = chainActive.Height();
+    uint256 blockhash = chainActive.Tip()->GetBlockHash();
+    for (int i = 0; i <= blocks; i++) {
         CBlock block;
 
         CBlockIndex* pblockindex = chainActive[i];
@@ -1108,7 +1108,7 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
                 zerocoinMerkleTree.insertElement(coinv, ignored);
                 coinIndex[coin] = ctr;
                 ctr++;
-                LogPrint("zerocoin", "WALLETPOUR : adding coin %s to block %s\n", coin.ToString(), block.GetHash().ToString());
+                //LogPrint("zerocoin", "WALLETPOUR : adding coin %s to block %s\n", coin.ToString(), block.GetHash().ToString());
             }
         }
     }
@@ -1128,12 +1128,15 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
     uint256 keyhash = key.GetPubKey().GetHash();
     vector<unsigned char> keyahshv(keyhash.begin(), keyhash.end());
 
+    // Pull coins and addresses
     libzerocash::Coin c1 = mapCoins[coinhash1];
     libzerocash::Coin c2 =  mapCoins[coinhash2];
     libzerocash::Address a1 = mapAddress[coinhash1];
     libzerocash::Address a2 = mapAddress[coinhash2];
     assert(c1.getPublicAddress() == a1.getPublicAddress());
     assert(c2.getPublicAddress() == a2.getPublicAddress());
+
+    // Make pour
     libzerocash::PourTransaction pourtx(version, *pzerocashParams,
                                         rt,
                                         c1, c2,
@@ -1144,11 +1147,19 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
                                         keyahshv,
                                         newcoin1, newcoin2);
     // bool v = pourtx.verify(*pzerocashParams, keyahshv, rt);
-    return this->MakePourTx(pourtx, rt, key);
+    if (chainActive.Tip()->GetBlockHeader().hashZerocoinMerkleRoot != newroot) {
+        LogPrint("zerocoin", "wallet : got %s from block %s \n",
+                 chainActive.Tip()->GetBlockHeader().hashZerocoinMerkleRoot.ToString(),
+                 chainActive.Tip()->GetBlockHash().ToString());
+
+        throw runtime_error("computed merkle root not in block tip");
+    }
+    //put pour in transaction
+    return this->MakePourTx(pourtx,blockhash,key);
 }
 
 CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
-                                 const vector<unsigned char> &rt, const CKey &key){
+                                 const uint256 &blockhash, const CKey &key) {
     CTransaction rawTx;
 
     // compose output portion of transaction
@@ -1168,7 +1179,7 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
     scriptSig.clear();
     scriptSig << pour_vector;
     scriptSig << key.GetPubKey();
-    scriptSig << rt;
+    scriptSig << blockhash;
 
     CTxIn in(always_spendable_txid, 0, scriptSig);
     rawTx.vin.push_back(in);
