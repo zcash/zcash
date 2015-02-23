@@ -38,11 +38,6 @@ using namespace json_spirit;
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
 
-extern std::vector<libzerocash::Coin> zccoins;
-extern std::vector<libzerocash::Address> zcaddrs;
-
-
-
 std::string HelpRequiringPassphrase()
 {
     return pwalletMain && pwalletMain->IsCrypted()
@@ -411,8 +406,8 @@ Value zerocoinmint(const Array& params, bool fHelp){
 
     EnsureWalletIsUnlocked();
     //params[1].get_int()
-    int64_t nAmount = AmountFromValue(params[0]);
-    int64_t nAmountChange = AmountFromValue(params[1]);
+    CAmount nAmount = AmountFromValue(params[0]);
+    CAmount nAmountChange = AmountFromValue(params[1]);
 
     // cout << "nAmount " << nAmount << " zcaddrs " << zcaddrs.size() << " zccoins" << zccoins.size() <<  " i" << ictr <<endl;;
 
@@ -441,9 +436,7 @@ Value zerocoinmint(const Array& params, bool fHelp){
     //zccoins.at(i) = libzerocash::Coin(zcaddrs.at(i).getPublicAddress(), i)
 
     libzerocash::Address zcaddr_f;
-    zcaddrs.push_back(zcaddr_f);
     libzerocash::Coin coina(zcaddr_f.getPublicAddress(), 1);
-    zccoins.push_back(coina);
     uint256 cid(coina.getCoinCommitment().getCommitmentValue());
     pwalletMain->mapAddress[cid] = zcaddr_f;
     pwalletMain->mapCoins[cid] = coina;
@@ -477,23 +470,6 @@ Value zerocoinmint(const Array& params, bool fHelp){
         CTxIn in(always_spendable_txid, 1, scriptSig);
         rawTx.vin.push_back(in);
     }
-
-    vector<std::vector<bool> > coinValues;
-    vector<bool> temp_comVal(cm_size * 8);
-    for (size_t i = 0; i < zccoins.size(); i++) {
-        libzerocash::convertBytesVectorToVector(zccoins.at(i).getCoinCommitment().getCommitmentValue(), temp_comVal);
-        coinValues.push_back(temp_comVal);
-        uint256 cc(zccoins.at(i).getCoinCommitment().getCommitmentValue());
-        // LogPrint("zerocoin", "mint : adding coin %s to tree \n \n ", cc.ToString());
-    }
-    libzerocash::IncrementalMerkleTree merkleTree(coinValues, 4);
-    std::vector<unsigned char> ignored;
-    std::vector<unsigned char> rt;
-    merkleTree.getRootValue(rt);
-    uint256 rtt(rt);
-    // cout << "current root " << rtt.ToString() << endl;
-    uint256 coincm(minttx.getMintedCoinCommitmentValue());
-    // cout << "coinash of new coin " << coincm.ToString() << endl;
 
     { // change
     CScript scriptPubKey;
@@ -536,7 +512,6 @@ Value zerocoinpour(const Array& params, bool fHelp){
             "claim_zerocoin address_to_pay_to \n"
             "use real pour."
        );
-    cout << "coins " << zccoins.size() <<  "addr " << zcaddrs.size() << endl;
     EnsureWalletIsUnlocked();
 
     CBitcoinAddress  address = CBitcoinAddress(params[0].get_str()); // output destination for vpub

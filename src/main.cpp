@@ -73,10 +73,6 @@ CScript COINBASE_FLAGS;
 
 const string strMessageMagic = "Bitcoin Signed Message:\n";
 
-std::vector<libzerocash::Coin> zccoins;
-std::vector<libzerocash::Address> zcaddrs;
-
-
 // Internal stuff
 namespace {
 
