@@ -1931,11 +1931,10 @@ bool AcceptToMemoryPool(
         }
 
         if (fRejectAbsurdFee && nFees > maxTxFee) {
-            string errmsg = strprintf("absurdly high fees %s, %d > %d",
-                                      hash.ToString(),
-                                      nFees, maxTxFee);
-            LogPrint("mempool", errmsg.c_str());
-            return state.Error("AcceptToMemoryPool: " + errmsg);
+            return state.Invalid(error("AcceptToMemoryPool: absurdly high fees %s, %d > %d",
+                                       hash.ToString(),
+                                       nFees, maxTxFee),
+                                 REJECT_HIGHFEE, "absurdly-high-fee");
         }
 
         // Check Orchard bundle authorizations.
