@@ -407,9 +407,9 @@ UniValue verifytxoutproof(const UniValue& params, bool fHelp)
 
 UniValue createrawtransaction(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 2)
+    if (fHelp || params.size() < 2 || params.size() > 3)
         throw runtime_error(
-            "createrawtransaction [{\"txid\":\"id\",\"vout\":n},...] {\"address\":amount,...}\n"
+            "createrawtransaction [{\"txid\":\"id\",\"vout\":n},...] {\"address\":amount,...} ( locktime )\n"
             "\nCreate a transaction spending the given inputs and sending to the given addresses.\n"
             "Returns hex-encoded raw transaction.\n"
             "Note that the transaction's inputs are not signed, and\n"
@@ -429,7 +429,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             "      \"address\": x.xxx   (numeric, required) The key is the Zcash address, the value is the " + CURRENCY_UNIT + " amount\n"
             "      ,...\n"
             "    }\n"
-
+            "3. locktime                (numeric, optional, default=0) Raw locktime. Non-0 value also locktime-activates inputs\n"
             "\nResult:\n"
             "\"transaction\"            (string) hex string of the transaction\n"
 
@@ -439,7 +439,9 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
         );
 
     LOCK(cs_main);
-    RPCTypeCheck(params, boost::assign::list_of(UniValue::VARR)(UniValue::VOBJ));
+    RPCTypeCheck(params, boost::assign::list_of(UniValue::VARR)(UniValue::VOBJ)(UniValue::VNUM), true);
+    if (params[0].isNull() || params[1].isNull())
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, arguments 1 and 2 must be non-null");
 
     UniValue inputs = params[0].get_array();
     UniValue sendTo = params[1].get_obj();
@@ -455,6 +457,13 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
         }
     }
 
+    if (params.size() > 2 && !params[2].isNull()) {
+        int64_t nLockTime = params[2].get_int64();
+        if (nLockTime < 0 || nLockTime > std::numeric_limits<uint32_t>::max())
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, locktime out of range");
+        rawTx.nLockTime = nLockTime;
+    }
+
     for (size_t idx = 0; idx < inputs.size(); idx++) {
         const UniValue& input = inputs[idx];
         const UniValue& o = input.get_obj();
@@ -468,7 +477,9 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
         if (nOutput < 0)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, vout must be positive");
 
-        CTxIn in(COutPoint(txid, nOutput));
+        uint32_t nSequence = (rawTx.nLockTime ? std::numeric_limits<uint32_t>::max() - 1 : std::numeric_limits<uint32_t>::max());
+        CTxIn in(COutPoint(txid, nOutput), CScript(), nSequence);
+
         rawTx.vin.push_back(in);
     }
 
