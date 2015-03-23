@@ -16,7 +16,7 @@
 #include <vector>
 #include "uint256.h"
 #include "pubkey.h"
-#include "script/standard.h"
+//#include "script/standard.h"
 
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 6000; // bytes //FIXME fine tune this
 
