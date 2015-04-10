@@ -13,6 +13,7 @@
 class CBlock;
 class CBlockIndex;
 struct CBlockLocator;
+class CScript;
 class CTransaction;
 class CValidationInterface;
 class CValidationState;
@@ -40,6 +41,8 @@ protected:
     virtual void Inventory(const uint256 &hash) {}
     virtual void ResendWalletTransactions(int64_t nBestBlockTime) {}
     virtual void BlockChecked(const CBlock&, const CValidationState&) {}
+    virtual void GetScriptForMining(CScript &script) {};
+    virtual void UpdateRequestCount(const CBlock&) {};
     friend void ::RegisterValidationInterface(CValidationInterface*);
     friend void ::UnregisterValidationInterface(CValidationInterface*);
     friend void ::UnregisterAllValidationInterfaces();
@@ -64,6 +67,10 @@ struct CMainSignals {
     boost::signals2::signal<void (int64_t nBestBlockTime)> Broadcast;
     /** Notifies listeners of a block validation result */
     boost::signals2::signal<void (const CBlock&, const CValidationState&)> BlockChecked;
+    /** Notifies listeners that a key for mining is required (coinbase) */
+    boost::signals2::signal<void (CScript &script)> ScriptForMining;
+    /** Notifies listeners that a block has been successfully mined */
+    boost::signals2::signal<void (const CBlock&)> BlockFound;
 };
 
 CMainSignals& GetMainSignals();

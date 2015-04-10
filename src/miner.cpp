@@ -28,9 +28,7 @@
 #include "ui_interface.h"
 #include "util.h"
 #include "utilmoneystr.h"
-#ifdef ENABLE_WALLET
-#include "wallet/wallet.h"
-#endif
+#include "validationinterface.h"
 
 #include "sodium.h"
 
@@ -400,54 +398,23 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     return pblocktemplate.release();
 }
 
-#ifdef ENABLE_WALLET
-boost::optional<CScript> GetMinerScriptPubKey(CReserveKey& reservekey)
-#else
-boost::optional<CScript> GetMinerScriptPubKey()
-#endif
-{
-    CKeyID keyID;
-    CTxDestination addr = DecodeDestination(GetArg("-mineraddress", ""));
-    if (IsValidDestination(addr)) {
-        keyID = boost::get<CKeyID>(addr);
-    } else {
-#ifdef ENABLE_WALLET
-        CPubKey pubkey;
-        if (!reservekey.GetReservedKey(pubkey)) {
-            return boost::optional<CScript>();
-        }
-        keyID = pubkey.GetID();
-#else
-        return boost::optional<CScript>();
-#endif
-    }
-
-    CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
-    return scriptPubKey;
-}
-
-#ifdef ENABLE_WALLET
-CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
-{
-    boost::optional<CScript> scriptPubKey = GetMinerScriptPubKey(reservekey);
-#else
-CBlockTemplate* CreateNewBlockWithKey()
-{
-    boost::optional<CScript> scriptPubKey = GetMinerScriptPubKey();
-#endif
-
-    if (!scriptPubKey) {
-        return NULL;
-    }
-    return CreateNewBlock(*scriptPubKey);
-}
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // Internal miner
 //
 
 #ifdef ENABLE_MINING
+
+void GetScriptForMinerAddress(CScript &script)
+{
+    CTxDestination addr = DecodeDestination(GetArg("-mineraddress", ""));
+    if (!IsValidDestination(addr)) {
+        return;
+    }
+
+    CKeyID keyID = boost::get<CKeyID>(addr);
+    script = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
+}
 
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
 {
@@ -468,11 +435,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
     pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 }
 
-#ifdef ENABLE_WALLET
-static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
-#else
-static bool ProcessBlockFound(CBlock* pblock)
-#endif // ENABLE_WALLET
+static bool ProcessBlockFound(CBlock* pblock, const CChainParams& chainparams)
 {
     LogPrintf("%s\n", pblock->ToString());
     LogPrintf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue));
@@ -484,18 +447,8 @@ static bool ProcessBlockFound(CBlock* pblock)
             return error("ZcashMiner: generated block is stale");
     }
 
-#ifdef ENABLE_WALLET
-    if (GetArg("-mineraddress", "").empty()) {
-        // Remove key from key pool
-        reservekey.KeepKey();
-    }
-
-    // Track how many getdata requests this block gets
-    {
-        LOCK(wallet.cs_wallet);
-        wallet.mapRequestCount[pblock->GetHash()] = 0;
-    }
-#endif
+    // Inform about the new block
+    GetMainSignals().BlockFound(*pblock);
 
     // Process this block the same as if we had received it from another node
     CValidationState state;
@@ -507,21 +460,11 @@ static bool ProcessBlockFound(CBlock* pblock)
     return true;
 }
 
-#ifdef ENABLE_WALLET
-void static BitcoinMiner(CWallet *pwallet)
-#else
-void static BitcoinMiner()
-#endif
+void static BitcoinMiner(const CChainParams& chainparams, const CScript& coinbaseScript)
 {
     LogPrintf("ZcashMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("zcash-miner");
-    const CChainParams& chainparams = Params();
-
-#ifdef ENABLE_WALLET
-    // Each thread has its own key
-    CReserveKey reservekey(pwallet);
-#endif
 
     // Each thread has its own counter
     unsigned int nExtraNonce = 0;
@@ -568,11 +511,7 @@ void static BitcoinMiner()
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
 
-#ifdef ENABLE_WALLET
-            unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
-#else
-            unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey());
-#endif
+            unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(coinbaseScript));
             if (!pblocktemplate.get())
             {
                 if (GetArg("-mineraddress", "").empty()) {
@@ -620,11 +559,7 @@ void static BitcoinMiner()
                          solver, pblock->nNonce.ToString());
 
                 std::function<bool(std::vector<unsigned char>)> validBlock =
-#ifdef ENABLE_WALLET
-                        [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
-#else
-                        [&pblock, &hashTarget, &m_cs, &cancelSolver, &chainparams]
-#endif
+                        [&pblock, &hashTarget, &chainparams, &m_cs, &cancelSolver]
                         (std::vector<unsigned char> soln) {
                     // Write the solution to the hash and compute the result.
                     LogPrint("pow", "- Checking solution against target\n");
@@ -639,12 +574,7 @@ void static BitcoinMiner()
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     LogPrintf("ZcashMiner:\n");
                     LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
-#ifdef ENABLE_WALLET
-                    if (ProcessBlockFound(pblock, *pwallet, reservekey))
-#else
-                    if (ProcessBlockFound(pblock))
-#endif
-                    {
+                    if (ProcessBlockFound(pblock, chainparams)) {
                         // Ignore chain updates caused by us
                         std::lock_guard<std::mutex> lock{m_cs};
                         cancelSolver = false;
@@ -754,11 +684,7 @@ void static BitcoinMiner()
     c.disconnect();
 }
 
-#ifdef ENABLE_WALLET
-void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
-#else
-void GenerateBitcoins(bool fGenerate, int nThreads)
-#endif
+void GenerateBitcoins(bool fGenerate, int nThreads, const CChainParams& chainparams)
 {
     static boost::thread_group* minerThreads = NULL;
 
@@ -776,13 +702,16 @@ void GenerateBitcoins(bool fGenerate, int nThreads)
     if (nThreads == 0 || !fGenerate)
         return;
 
+    CScript coinbaseScript;
+    GetMainSignals().ScriptForMining(coinbaseScript);
+
+    //throw an error if no script was provided
+    if (!coinbaseScript.size())
+        throw std::runtime_error("No coinbase script available (mining requires a wallet or -mineraddress)");
+
     minerThreads = new boost::thread_group();
     for (int i = 0; i < nThreads; i++) {
-#ifdef ENABLE_WALLET
-        minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet));
-#else
-        minerThreads->create_thread(&BitcoinMiner);
-#endif
+        minerThreads->create_thread(boost::bind(&BitcoinMiner, boost::cref(chainparams), coinbaseScript));
     }
 }
 
