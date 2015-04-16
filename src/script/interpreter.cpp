@@ -426,14 +426,14 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     if (ret) {
                         return set_success(serror);
                     } else {
-                        return set_error(serror, SCRIPT_ERR_OP_RETURN);
+                        return set_error(serror, SCRIPT_ERR_VERIFY);
                     }
                 }
                 break;
 
                 case FLAG_ZC_POUR_INTERMEDIATE:
                 {
-                    return set_error(serror, SCRIPT_ERR_OP_RETURN);
+                    return set_error(serror, SCRIPT_ERR_DISABLED_OPCODE);
                 }
                 break;
 
@@ -442,7 +442,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     LogPrint("zerocoin", "zerocoin EvalScript: pour\n");
                     if(stack.size()!=4){
                         LogPrint("zerocoin","EvalScript: wrong arguments count. expected 4 got %d\n", stack.size());
-                        return set_error(serror, SCRIPT_ERR_OP_RETURN);
+                        return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
                     }
                     valtype& vchSig = stacktop(-1);
                     valtype& vchBlockHash = stacktop(-2);
@@ -451,33 +451,28 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                     uint256 blockhash(vchBlockHash);
 
-#if 0
-                    CScript scriptCode(txTo.vin[nIn].scriptSig);
+                    // Copy the whole script
+                    CScript scriptCode(script.begin(), script.end());
+
+                    // Drop the signature, since there's no way for a signature to sign itself
                     scriptCode.FindAndDelete(CScript(vchSig));
-                    uint256 hash = SignatureHash(scriptCode, txTo , nIn, SIGHASH_ALL);
-#endif
-                    uint256 hash = 0; // FIXME
-                    LogPrint("zerocoin","EvalScript: signature hash %s\n",hash.ToString());
+
+                    if (!CheckSignatureEncoding(vchSig, flags, serror) || !CheckPubKeyEncoding(vchPubKey, flags, serror)) {
+                        //serror is set
+                        return false;
+                    }
+                    bool fSuccess = checker.CheckSig(vchSig, vchPubKey, scriptCode);
 
                     if (mapBlockIndex.count(blockhash) == 0) {
                         LogPrint("zerocoin", "zerocoin EvalScript: block not found %s.\n", blockhash.ToString());
-                        return false;
+                        return set_error(serror, SCRIPT_ERR_VERIFY);
                     }
                     uint256 merkleroot = mapBlockIndex[blockhash]->GetBlockHeader().hashZerocoinMerkleRoot;
                     std::vector<unsigned char> vchRoot(merkleroot.begin(), merkleroot.end());
                     LogPrint("zerocoin", "zerocoin EvalScript: goot root  %s from block %s.\n", merkleroot.ToString(), hash.ToString());
 
-                    CPubKey pubkey(vchPubKey);
-                    if (!pubkey.IsValid()){
-                        LogPrint("zerocoin","zerocoin EvalScript: pbulic key invalid.\n");
-                        return set_error(serror, SCRIPT_ERR_OP_RETURN);
-                    }
-                    if(!pubkey.Verify(hash,vchSig)){
-                        LogPrint("zerocoin","zerocoin EvalScript: signatue invalid.\n");
-                        return set_error(serror, SCRIPT_ERR_OP_RETURN);
-                    }
                     const uint256 keyhash=pubkey.GetHash();
-                    vector<unsigned char> keyahshv(keyhash.begin(),keyhash.end());
+                    vector<unsigned char> vchKeyhash(keyhash.begin(), keyhash.end());
 
                     // deserialize pour
                     libzerocash::PourTransaction pour;
@@ -485,13 +480,11 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     ss >> pour;
 
 
-                    bool ret = true;
-
                     CHashWriter hh(SER_GETHASH, 0);
                     hh << pour;
-                    LogPrint("zerocoin","EvalScript: pour deserialized with hash %s\n",hash.ToString());
+                    LogPrint("zerocoin", "EvalScript: pour deserialized\n");
 
-                    ret = ret & pour.verify(*pzerocashParams,keyahshv,vchRoot);
+                    bool ret = pour.verify(*pzerocashParams, vchKeyhash, vchRoot);
 
                     popstack(stack);
                     popstack(stack);
@@ -503,7 +496,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     if (ret) {
                         return set_success(serror);
                     } else {
-                        return set_error(serror, SCRIPT_ERR_OP_RETURN);
+                        return set_error(serror, SCRIPT_ERR_VERIFY);
                     }
                 }
                 break;
