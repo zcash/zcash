@@ -462,6 +462,10 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                         return false;
                     }
                     bool fSuccess = checker.CheckSig(vchSig, vchPubKey, scriptCode);
+                    if (!fSuccess) {
+                        LogPrint("zerocoin", "zerocoin EvalScript: signature invalid.\n");
+                        return set_error(serror, SCRIPT_ERR_VERIFY);
+                    }
 
                     if (mapBlockIndex.count(blockhash) == 0) {
                         LogPrint("zerocoin", "zerocoin EvalScript: block not found %s.\n", blockhash.ToString());
@@ -469,8 +473,9 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     }
                     uint256 merkleroot = mapBlockIndex[blockhash]->GetBlockHeader().hashZerocoinMerkleRoot;
                     std::vector<unsigned char> vchRoot(merkleroot.begin(), merkleroot.end());
-                    LogPrint("zerocoin", "zerocoin EvalScript: goot root  %s from block %s.\n", merkleroot.ToString(), hash.ToString());
+                    LogPrint("zerocoin", "zerocoin EvalScript: got root %s from block %s.\n", merkleroot.ToString(), blockhash.ToString());
 
+                    CPubKey pubkey(vchPubKey);
                     const uint256 keyhash=pubkey.GetHash();
                     vector<unsigned char> vchKeyhash(keyhash.begin(), keyhash.end());
 
