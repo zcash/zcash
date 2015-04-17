@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     for (unsigned int i = 0; i < sizeof(blockinfo)/sizeof(*blockinfo); ++i)
     {
         // Simple block creation, nothing special yet:
-        BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
+        BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
 
         CBlock *pblock = &pblocktemplate->block; // pointer for convenience
         pblock->nVersion = 4;
@@ -274,7 +274,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     }
 
     // Just to make sure we can still make simple blocks
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     delete pblocktemplate;
 
     // block sigops > limit: 1000 CHECKMULTISIG + 1
@@ -293,7 +293,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         mempool.addUnchecked(hash, entry.Time(GetTime()).SpendsCoinbase(spendsCoinbase).FromTx(tx));
         tx.vin[0].prevout.hash = hash;
     }
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     delete pblocktemplate;
     mempool.clear();
 
@@ -314,14 +314,14 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         mempool.addUnchecked(hash, entry.Time(GetTime()).SpendsCoinbase(spendsCoinbase).FromTx(tx));
         tx.vin[0].prevout.hash = hash;
     }
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     delete pblocktemplate;
     mempool.clear();
 
     // orphan in mempool
     hash = tx.GetHash();
     mempool.addUnchecked(hash, entry.Time(GetTime()).FromTx(tx));
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     delete pblocktemplate;
     mempool.clear();
 
@@ -339,7 +339,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vout[0].nValue = 49000LL;
     hash = tx.GetHash();
     mempool.addUnchecked(hash, entry.Time(GetTime()).SpendsCoinbase(true).FromTx(tx));
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     delete pblocktemplate;
     mempool.clear();
 
@@ -350,7 +350,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vout[0].nValue = 0;
     hash = tx.GetHash();
     mempool.addUnchecked(hash, entry.Time(GetTime()).SpendsCoinbase(false).FromTx(tx));
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     delete pblocktemplate;
     mempool.clear();
 
@@ -368,7 +368,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vout[0].nValue -= 10000;
     hash = tx.GetHash();
     mempool.addUnchecked(hash, entry.Time(GetTime()).SpendsCoinbase(false).FromTx(tx));
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     delete pblocktemplate;
     mempool.clear();
 
@@ -382,17 +382,17 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vout[0].scriptPubKey = CScript() << OP_2;
     hash = tx.GetHash();
     mempool.addUnchecked(hash, entry.Time(GetTime()).SpendsCoinbase(true).FromTx(tx));
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     delete pblocktemplate;
     mempool.clear();
 
     // subsidy changing
     int nHeight = chainActive.Height();
     chainActive.Tip()->nHeight = 209999;
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     delete pblocktemplate;
     chainActive.Tip()->nHeight = 210000;
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     delete pblocktemplate;
     chainActive.Tip()->nHeight = nHeight;
 
@@ -424,7 +424,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     mempool.addUnchecked(hash, entry.Time(GetTime()).SpendsCoinbase(true).FromTx(tx2));
     BOOST_CHECK(!CheckFinalTx(tx2, LOCKTIME_MEDIAN_TIME_PAST));
 
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
 
     // Neither tx should have made it into the template.
     BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 1);
@@ -439,7 +439,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     //BOOST_CHECK(CheckFinalTx(tx));
     //BOOST_CHECK(CheckFinalTx(tx2));
 
-    BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 2);
     delete pblocktemplate;
 

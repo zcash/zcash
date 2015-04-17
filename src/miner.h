@@ -24,7 +24,7 @@ struct CBlockTemplate
 };
 
 /** Generate a new block, without valid proof-of-work */
-CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn);
+CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& scriptPubKeyIn);
 
 #ifdef ENABLE_MINING
 /** Get script for -mineraddress */

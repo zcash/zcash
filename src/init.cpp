@@ -1868,7 +1868,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
 #ifdef ENABLE_MINING
     // Generate coins in the background
-    GenerateBitcoins(GetBoolArg("-gen", false), GetArg("-genproclimit", 1), Params());
+    GenerateBitcoins(GetBoolArg("-gen", false), GetArg("-genproclimit", 1), chainparams);
 #endif
 
     // ********************************************************* Step 11: finished
