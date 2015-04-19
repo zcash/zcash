@@ -171,8 +171,8 @@ public:
 #define ADDRMAN_NEW_BUCKET_COUNT (1 << ADDRMAN_NEW_BUCKET_COUNT_LOG2)
 #define ADDRMAN_BUCKET_SIZE (1 << ADDRMAN_BUCKET_SIZE_LOG2)
 
-/** 
- * Stochastical (IP) address manager 
+/**
+ * Stochastical (IP) address manager
  */
 class CAddrMan
 {
@@ -237,7 +237,7 @@ protected:
     bool Add_(const CAddress &addr, const CNetAddr& source, int64_t nTimePenalty);
 
     //! Mark an entry as attempted to connect.
-    void Attempt_(const CService &addr, int64_t nTime);
+    void Attempt_(const CService &addr, bool fCountFailure, int64_t nTime);
 
     //! Select an address to connect to, if newOnly is set to true, only the new table is selected from.
     CAddrInfo Select_(bool newOnly);
@@ -532,11 +532,11 @@ public:
     }
 
     //! Mark an entry as connection attempted to.
-    void Attempt(const CService &addr, int64_t nTime = GetTime())
+    void Attempt(const CService &addr, bool fCountFailure, int64_t nTime = GetTime())
     {
         LOCK(cs);
         Check();
-        Attempt_(addr, nTime);
+        Attempt_(addr, fCountFailure, nTime);
         Check();
     }
 
