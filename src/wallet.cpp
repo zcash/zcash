@@ -1215,13 +1215,17 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
     LogPrint("zerocoin", "MakePourTx: transaction created. Verifying\n");
     CCoins coins;
     assert(v.GetCoins(always_spendable_txid, coins)); // always_spendable_txid is always found
-    assert(false); //FIXME
-    if (true) //(VerifyScript(scriptSig, coins.vout[0].scriptPubKey, rawTx, 0, 0, SIGHASH_ALL))
+
+    // TODO FIXME: in v0.9.4 this used to pass nHashType=SIGHASH_ALL,
+    // what's the v0.10.0 equivalent of that?
+    ScriptError err;
+    if (VerifyScript(scriptSig, coins.vout[0].scriptPubKey, 0,
+                     MutableTransactionSignatureChecker(&rawTx, 0), &err))
     {
         LogPrint("zerocoin", "MakePourTx: Verified \n");
         return rawTx;
     }
-    throw runtime_error("invalid transaction");
+    throw runtime_error(strprintf("invalid transaction: %s", ScriptErrorString(err)));
 }
 
 /*
