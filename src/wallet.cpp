@@ -1181,10 +1181,8 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
         rawTx.vout.push_back(out);
     } else {
         CAmount nAmount = pour.getMonetaryValueOut();
-        CScript scriptPubKey;
         CBitcoinAddress aa(key.GetPubKey().GetID());
-        //scriptPubKey.SetDestination(aa.Get());
-        assert(false); //FIXME
+        CScript scriptPubKey = GetScriptForDestination(aa.Get());
         CTxOut out(nAmount, scriptPubKey);
         rawTx.vout.push_back(out);
     }
