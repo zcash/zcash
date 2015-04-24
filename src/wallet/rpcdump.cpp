@@ -99,6 +99,9 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             + HelpExampleRpc("importprivkey", "\"mykey\", \"testing\", false")
         );
 
+    if (fPruneMode)
+        throw JSONRPCError(RPC_WALLET_ERROR, "Importing keys is disabled in pruned mode");
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
@@ -166,6 +169,9 @@ UniValue importaddress(const UniValue& params, bool fHelp)
             "\nAs a JSON-RPC call\n"
             + HelpExampleRpc("importaddress", "\"myaddress\", \"testing\", false")
         );
+
+    if (fPruneMode)
+        throw JSONRPCError(RPC_WALLET_ERROR, "Importing addresses is disabled in pruned mode");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -265,6 +271,9 @@ UniValue importwallet(const UniValue& params, bool fHelp)
 
 UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys)
 {
+    if (fPruneMode)
+        throw JSONRPCError(RPC_WALLET_ERROR, "Importing wallets is disabled in pruned mode");
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
@@ -598,6 +607,9 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
             "\nAs a JSON-RPC call\n"
             + HelpExampleRpc("z_importkey", "\"mykey\", \"no\"")
         );
+
+    if (fPruneMode)
+        throw JSONRPCError(RPC_WALLET_ERROR, "Importing keys is disabled in pruned mode");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
