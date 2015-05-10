@@ -904,7 +904,7 @@ void JSONRequest::parse(const Value& valRequest)
 
 static Object JSONRPCExecOne(const Value& req)
 {
-    Object rpc_result;
+    UniValue rpc_result(UniValue::VOBJ);
 
     JSONRequest jreq;
     try {

@@ -201,7 +201,7 @@ Value generate(const Array& params, bool fHelp)
         nHeightEnd = nHeightStart+nGenerate;
     }
     unsigned int nExtraNonce = 0;
-    Array blockHashes;
+    UniValue blockHashes(UniValue::VARR);
     unsigned int n = Params().EquihashN();
     unsigned int k = Params().EquihashK();
     while (nHeight < nHeightEnd)
@@ -355,7 +355,7 @@ Value getmininginfo(const Array& params, bool fHelp)
 
     LOCK(cs_main);
 
-    Object obj;
+    UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("blocks",           (int)chainActive.Height()));
     obj.push_back(Pair("currentblocksize", (uint64_t)nLastBlockSize));
     obj.push_back(Pair("currentblocktx",   (uint64_t)nLastBlockTx));
@@ -646,10 +646,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
     UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
     pblock->nNonce = uint256();
 
-    Array aCaps; aCaps.push_back("proposal");
+    UniValue aCaps(UniValue::VARR); aCaps.push_back("proposal");
 
-    Value txCoinbase = Value::null;
-    Array transactions;
+    Value txCoinbase = NullUniValue;
+    UniValue transactions(UniValue::VARR);
     map<uint256, int64_t> setTxIndex;
     int i = 0;
     BOOST_FOREACH (CTransaction& tx, pblock->vtx)
@@ -660,13 +660,13 @@ Value getblocktemplate(const Array& params, bool fHelp)
         if (tx.IsCoinBase() && !coinbasetxn)
             continue;
 
-        Object entry;
+        UniValue entry(UniValue::VOBJ);
 
         entry.push_back(Pair("data", EncodeHexTx(tx)));
 
         entry.push_back(Pair("hash", txHash.GetHex()));
 
-        Array deps;
+        UniValue deps(UniValue::VARR);
         BOOST_FOREACH (const CTxIn &in, tx.vin)
         {
             if (setTxIndex.count(in.prevout.hash))
@@ -691,12 +691,12 @@ Value getblocktemplate(const Array& params, bool fHelp)
         }
     }
 
-    Object aux;
+    UniValue aux(UniValue::VOBJ);
     aux.push_back(Pair("flags", HexStr(COINBASE_FLAGS.begin(), COINBASE_FLAGS.end())));
 
     arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
 
-    static Array aMutable;
+    static UniValue aMutable(UniValue::VARR);
     if (aMutable.empty())
     {
         aMutable.push_back("time");
@@ -704,7 +704,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
         aMutable.push_back("prevblock");
     }
 
-    Object result;
+    UniValue result(UniValue::VOBJ);
     result.push_back(Pair("capabilities", aCaps));
     result.push_back(Pair("version", pblock->nVersion));
     result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
