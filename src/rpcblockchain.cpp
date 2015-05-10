@@ -757,7 +757,7 @@ Value invalidateblock(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_DATABASE_ERROR, state.GetRejectReason());
     }
 
-    return Value::null;
+    return NullUniValue;
 }
 
 Value reconsiderblock(const Array& params, bool fHelp)
@@ -796,5 +796,5 @@ Value reconsiderblock(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_DATABASE_ERROR, state.GetRejectReason());
     }
 
-    return Value::null;
+    return NullUniValue;
 }
