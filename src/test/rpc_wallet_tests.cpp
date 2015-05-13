@@ -34,7 +34,7 @@
 using namespace std;
 using namespace json_spirit;
 
-extern Array createArgs(int nRequired, const char* address1 = NULL, const char* address2 = NULL);
+extern UniValue createArgs(int nRequired, const char* address1 = NULL, const char* address2 = NULL);
 extern Value CallRPC(string args);
 
 extern CWallet* pwalletMain;
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      *********************************/
     BOOST_CHECK_THROW(CallRPC("getaddressesbyaccount"), runtime_error);
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getaddressesbyaccount " + strAccount));
-    Array arr = retValue.get_array();
+    UniValue arr = retValue.get_array();
     BOOST_CHECK_EQUAL(4, arr.size());
     bool notFound = true;
     for (auto a : arr) {

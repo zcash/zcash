@@ -40,7 +40,7 @@ Value CallRPC(string args)
             vArgs[i] = "";
         }
     }
-    Array params = RPCConvertValues(strMethod, vArgs);
+    UniValue params = RPCConvertValues(strMethod, vArgs);
 
     rpcfn_type method = tableRPC[strMethod]->actor;
     try {

@@ -74,7 +74,7 @@ std::string DecodeDumpString(const std::string &str) {
     return ret.str();
 }
 
-Value importprivkey(const Array& params, bool fHelp)
+UniValue importprivkey(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -148,7 +148,7 @@ Value importprivkey(const Array& params, bool fHelp)
     return NullUniValue;
 }
 
-Value importaddress(const Array& params, bool fHelp)
+UniValue importaddress(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -244,7 +244,7 @@ Value z_importwallet(const Array& params, bool fHelp)
 	return importwallet_impl(params, fHelp, true);
 }
 
-Value importwallet(const Array& params, bool fHelp)
+UniValue importwallet(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -381,7 +381,7 @@ Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys)
     return NullUniValue;
 }
 
-Value dumpprivkey(const Array& params, bool fHelp)
+UniValue dumpprivkey(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -441,7 +441,7 @@ Value z_exportwallet(const Array& params, bool fHelp)
 	return dumpwallet_impl(params, fHelp, true);
 }
 
-Value dumpwallet(const Array& params, bool fHelp)
+UniValue dumpwallet(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
