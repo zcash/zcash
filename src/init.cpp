@@ -767,6 +767,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     fLogTimestamps = GetBoolArg("-logtimestamps", true);
     fLogIPs = GetBoolArg("-logips", false);
 
+    LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    LogPrintf("Zcash version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
+
     // when specifying an explicit binding address, you want to listen on it
     // even when -connect or -proxy is specified
     if (mapArgs.count("-bind")) {
@@ -1031,8 +1034,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #endif
     if (GetBoolArg("-shrinkdebugfile", !fDebug))
         ShrinkDebugFile();
-    LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-    LogPrintf("Zcash version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
+
+    if (fPrintToDebugLog)
+        OpenDebugLog();
+
     LogPrintf("Using OpenSSL version %s\n", SSLeay_version(SSLEAY_VERSION));
 #ifdef ENABLE_WALLET
     LogPrintf("Using BerkeleyDB version %s\n", DbEnv::version(0, 0, 0));
