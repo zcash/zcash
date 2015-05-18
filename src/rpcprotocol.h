@@ -16,7 +16,7 @@
 #include <boost/asio/ssl.hpp>
 #include <boost/filesystem.hpp>
 
-#include "json_spirit_wrapper.h"
+#include "univalue/univalue.h"
 
 //! HTTP status codes
 enum HTTPStatusCode

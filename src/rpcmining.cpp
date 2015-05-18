@@ -28,9 +28,8 @@
 
 #include <boost/assign/list_of.hpp>
 
-#include "json_spirit_wrapper.h"
+#include "univalue/univalue.h"
 
-using namespace json_spirit;
 using namespace std;
 
 /**
@@ -115,7 +114,7 @@ Value getnetworksolps(const Array& params, bool fHelp)
     return GetNetworkHashPS(params.size() > 0 ? params[0].get_int() : 120, params.size() > 1 ? params[1].get_int() : -1);
 }
 
-UniValue getnetworkhashps(const Array& params, bool fHelp)
+UniValue getnetworkhashps(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() > 2)
         throw runtime_error(
@@ -139,7 +138,7 @@ UniValue getnetworkhashps(const Array& params, bool fHelp)
 }
 
 #ifdef ENABLE_MINING
-UniValue getgenerate(const Array& params, bool fHelp)
+UniValue getgenerate(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
@@ -158,7 +157,7 @@ UniValue getgenerate(const Array& params, bool fHelp)
     return GetBoolArg("-gen", false);
 }
 
-UniValue generate(const Array& params, bool fHelp)
+UniValue generate(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 1)
         throw runtime_error(
@@ -267,7 +266,7 @@ endloop:
 }
 
 
-UniValue setgenerate(const Array& params, bool fHelp)
+UniValue setgenerate(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
@@ -326,7 +325,7 @@ UniValue setgenerate(const Array& params, bool fHelp)
 #endif
 
 
-UniValue getmininginfo(const Array& params, bool fHelp)
+UniValue getmininginfo(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
@@ -376,7 +375,7 @@ UniValue getmininginfo(const Array& params, bool fHelp)
 
 
 // NOTE: Unlike wallet RPC (which use BTC values), mining RPCs follow GBT (BIP 22) in using satoshi amounts
-UniValue prioritisetransaction(const Array& params, bool fHelp)
+UniValue prioritisetransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 3)
         throw runtime_error(
@@ -411,7 +410,7 @@ UniValue prioritisetransaction(const Array& params, bool fHelp)
 static UniValue BIP22ValidationResult(const CValidationState& state)
 {
     if (state.IsValid())
-        return Value::null;
+        return NullUniValue;
 
     std::string strRejectReason = state.GetRejectReason();
     if (state.IsError())
@@ -426,7 +425,7 @@ static UniValue BIP22ValidationResult(const CValidationState& state)
     return "valid?";
 }
 
-UniValue getblocktemplate(const Array& params, bool fHelp)
+UniValue getblocktemplate(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -507,8 +506,8 @@ UniValue getblocktemplate(const Array& params, bool fHelp)
     bool coinbasetxn = true;
     if (params.size() > 0)
     {
-        const Object& oparam = params[0].get_obj();
-        const Value& modeval = find_value(oparam, "mode");
+        const UniValue& oparam = params[0].get_obj();
+        const UniValue& modeval = find_value(oparam, "mode");
         if (modeval.isStr())
             strMode = modeval.get_str();
         else if (modeval.isNull())
@@ -521,7 +520,7 @@ UniValue getblocktemplate(const Array& params, bool fHelp)
 
         if (strMode == "proposal")
         {
-            const Value& dataval = find_value(oparam, "data");
+            const UniValue& dataval = find_value(oparam, "data");
             if (dataval.isStr())
                 throw JSONRPCError(RPC_TYPE_ERROR, "Missing data String key for proposal");
 
@@ -748,7 +747,7 @@ protected:
     };
 };
 
-UniValue submitblock(const Array& params, bool fHelp)
+UniValue submitblock(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
@@ -809,7 +808,7 @@ UniValue submitblock(const Array& params, bool fHelp)
     return BIP22ValidationResult(state);
 }
 
-UniValue estimatefee(const Array& params, bool fHelp)
+UniValue estimatefee(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -841,7 +840,7 @@ UniValue estimatefee(const Array& params, bool fHelp)
     return ValueFromAmount(feeRate.GetFeePerK());
 }
 
-UniValue estimatepriority(const Array& params, bool fHelp)
+UniValue estimatepriority(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(

@@ -20,11 +20,10 @@
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
-#include "json_spirit_wrapper.h"
+#include "univalue/univalue.h"
 
 #include "zcash/Address.hpp"
 
-using namespace json_spirit;
 using namespace std;
 
 /**
@@ -40,7 +39,7 @@ using namespace std;
  *
  * Or alternatively, create a specific query method for the information.
  **/
-UniValue getinfo(const Array& params, bool fHelp)
+UniValue getinfo(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
@@ -109,7 +108,7 @@ UniValue getinfo(const Array& params, bool fHelp)
 }
 
 #ifdef ENABLE_WALLET
-class DescribeAddressVisitor : public boost::static_visitor<Object>
+class DescribeAddressVisitor : public boost::static_visitor<UniValue>
 {
 private:
     isminetype mine;
@@ -117,7 +116,7 @@ private:
 public:
     DescribeAddressVisitor(isminetype mineIn) : mine(mineIn) {}
 
-    UniValue operator()(const CNoDestination &dest) const { return Object(); }
+    UniValue operator()(const CNoDestination &dest) const { return UniValue(UniValue::VOBJ); }
 
     UniValue operator()(const CKeyID &keyID) const {
         UniValue obj(UniValue::VOBJ);
@@ -155,7 +154,7 @@ public:
 };
 #endif
 
-UniValue validateaddress(const Array& params, bool fHelp)
+UniValue validateaddress(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -280,10 +279,10 @@ Value z_validateaddress(const Array& params, bool fHelp)
 /**
  * Used by addmultisigaddress / createmultisig:
  */
-CScript _createmultisig_redeemScript(const Array& params)
+CScript _createmultisig_redeemScript(const UniValue& params)
 {
     int nRequired = params[0].get_int();
-    const Array& keys = params[1].get_array();
+    const UniValue& keys = params[1].get_array();
 
     // Gather public keys
     if (nRequired < 1)
@@ -341,7 +340,7 @@ CScript _createmultisig_redeemScript(const Array& params)
     return result;
 }
 
-UniValue createmultisig(const Array& params, bool fHelp)
+UniValue createmultisig(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 2 || params.size() > 2)
     {
@@ -384,7 +383,7 @@ UniValue createmultisig(const Array& params, bool fHelp)
     return result;
 }
 
-UniValue verifymessage(const Array& params, bool fHelp)
+UniValue verifymessage(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 3)
         throw runtime_error(
@@ -438,7 +437,7 @@ UniValue verifymessage(const Array& params, bool fHelp)
     return (pubkey.GetID() == keyID);
 }
 
-UniValue setmocktime(const Array& params, bool fHelp)
+UniValue setmocktime(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(

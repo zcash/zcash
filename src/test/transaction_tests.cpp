@@ -27,14 +27,13 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/assign/list_of.hpp>
 
-#include "json_spirit_wrapper.h"
+#include "univalue/univalue.h"
 
 #include "zcash/Note.hpp"
 #include "zcash/Address.hpp"
 #include "zcash/Proof.hpp"
 
 using namespace std;
-using namespace json_spirit;
 
 // In script_tests.cpp
 extern UniValue read_json(const std::string& jsondata);
@@ -101,19 +100,11 @@ BOOST_AUTO_TEST_CASE(tx_valid)
     UniValue tests = read_json(std::string(json_tests::tx_valid, json_tests::tx_valid + sizeof(json_tests::tx_valid)));
 
     auto verifier = libzcash::ProofVerifier::Strict();
-<<<<<<< HEAD
     ScriptError err;
-    BOOST_FOREACH(Value& tv, tests)
-    {
-        Array test = tv.get_array();
-        string strTest = write_string(tv, false);
-        if (test[0].type() == array_type)
-=======
     for (unsigned int idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
         string strTest = test.write();
         if (test[0].isArray())
->>>>>>> Convert tree to using univalue. Eliminate all json_spirit uses.
         {
             if (test.size() != 3 || !test[1].isStr() || !test[2].isStr())
             {
@@ -125,7 +116,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
             UniValue inputs = test[0].get_array();
             bool fValid = true;
 	    for (unsigned int inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
-	        const Value& input = inputs[inpIdx];
+	        const UniValue& input = inputs[inpIdx];
                 if (!input.isArray())
                 {
                     fValid = false;
@@ -185,19 +176,11 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
     UniValue tests = read_json(std::string(json_tests::tx_invalid, json_tests::tx_invalid + sizeof(json_tests::tx_invalid)));
 
     auto verifier = libzcash::ProofVerifier::Strict();
-<<<<<<< HEAD
     ScriptError err;
-    BOOST_FOREACH(Value& tv, tests)
-    {
-        Array test = tv.get_array();
-        string strTest = write_string(tv, false);
-        if (test[0].type() == array_type)
-=======
     for (unsigned int idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
         string strTest = test.write();
         if (test[0].isArray())
->>>>>>> Convert tree to using univalue. Eliminate all json_spirit uses.
         {
             if (test.size() != 3 || !test[1].isStr() || !test[2].isStr())
             {
@@ -209,7 +192,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
             UniValue inputs = test[0].get_array();
             bool fValid = true;
 	    for (unsigned int inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
-	        const Value& input = inputs[inpIdx];
+	        const UniValue& input = inputs[inpIdx];
                 if (!input.isArray())
                 {
                     fValid = false;

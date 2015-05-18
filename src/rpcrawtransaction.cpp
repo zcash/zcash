@@ -25,12 +25,12 @@
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
-#include "json_spirit_wrapper.h"
 
-using namespace json_spirit;
+#include "univalue/univalue.h"
+
 using namespace std;
 
-void ScriptPubKeyToJSON(const CScript& scriptPubKey, Object& out, bool fIncludeHex)
+void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex)
 {
     txnouttype type;
     vector<CTxDestination> addresses;
@@ -110,7 +110,7 @@ Array TxJoinSplitToJSON(const CTransaction& tx) {
     return vjoinsplit;
 }
 
-void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
+void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 {
     entry.push_back(Pair("txid", tx.GetHash().GetHex()));
     entry.push_back(Pair("version", tx.nVersion));
@@ -164,7 +164,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
     }
 }
 
-UniValue getrawtransaction(const Array& params, bool fHelp)
+UniValue getrawtransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
@@ -281,7 +281,7 @@ UniValue getrawtransaction(const Array& params, bool fHelp)
     return result;
 }
 
-UniValue gettxoutproof(const Array& params, bool fHelp)
+UniValue gettxoutproof(const UniValue& params, bool fHelp)
 {
     if (fHelp || (params.size() != 1 && params.size() != 2))
         throw runtime_error(
@@ -307,7 +307,7 @@ UniValue gettxoutproof(const Array& params, bool fHelp)
     uint256 oneTxid;
     UniValue txids = params[0].get_array();
     for (unsigned int idx = 0; idx < txids.size(); idx++) {
-        const Value& txid = txids[idx];
+        const UniValue& txid = txids[idx];
         if (txid.get_str().length() != 64 || !IsHex(txid.get_str()))
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid txid ")+txid.get_str());
         uint256 hash(uint256S(txid.get_str()));
@@ -362,7 +362,7 @@ UniValue gettxoutproof(const Array& params, bool fHelp)
     return strHex;
 }
 
-UniValue verifytxoutproof(const Array& params, bool fHelp)
+UniValue verifytxoutproof(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -395,7 +395,7 @@ UniValue verifytxoutproof(const Array& params, bool fHelp)
     return res;
 }
 
-UniValue createrawtransaction(const Array& params, bool fHelp)
+UniValue createrawtransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 2)
         throw runtime_error(
@@ -437,12 +437,12 @@ UniValue createrawtransaction(const Array& params, bool fHelp)
     CMutableTransaction rawTx;
 
     for (unsigned int idx = 0; idx < inputs.size(); idx++) {
-        const Value& input = inputs[idx];
-        const Object& o = input.get_obj();
+        const UniValue& input = inputs[idx];
+        const UniValue& o = input.get_obj();
 
         uint256 txid = ParseHashO(o, "txid");
 
-        const Value& vout_v = find_value(o, "vout");
+        const UniValue& vout_v = find_value(o, "vout");
         if (!vout_v.isNum())
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, missing vout key");
         int nOutput = vout_v.get_int();
@@ -474,7 +474,7 @@ UniValue createrawtransaction(const Array& params, bool fHelp)
     return EncodeHexTx(rawTx);
 }
 
-UniValue decoderawtransaction(const Array& params, bool fHelp)
+UniValue decoderawtransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -566,7 +566,7 @@ UniValue decoderawtransaction(const Array& params, bool fHelp)
     return result;
 }
 
-UniValue decodescript(const Array& params, bool fHelp)
+UniValue decodescript(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -609,7 +609,7 @@ UniValue decodescript(const Array& params, bool fHelp)
 }
 
 /** Pushes a JSON object for script verification or signing errors to vErrorsRet. */
-static void TxInErrorToJSON(const CTxIn& txin, Array& vErrorsRet, const std::string& strMessage)
+static void TxInErrorToJSON(const CTxIn& txin, UniValue& vErrorsRet, const std::string& strMessage)
 {
     UniValue entry(UniValue::VOBJ);
     entry.push_back(Pair("txid", txin.prevout.hash.ToString()));
@@ -620,7 +620,7 @@ static void TxInErrorToJSON(const CTxIn& txin, Array& vErrorsRet, const std::str
     vErrorsRet.push_back(entry);
 }
 
-UniValue signrawtransaction(const Array& params, bool fHelp)
+UniValue signrawtransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 4)
         throw runtime_error(
@@ -752,7 +752,7 @@ UniValue signrawtransaction(const Array& params, bool fHelp)
     if (params.size() > 1 && !params[1].isNull()) {
         UniValue prevTxs = params[1].get_array();
         for (unsigned int idx = 0; idx < prevTxs.size(); idx++) {
-            const Value& p = prevTxs[idx];
+            const UniValue& p = prevTxs[idx];
             if (!p.isObject())
                 throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "expected object with {\"txid'\",\"vout\",\"scriptPubKey\"}");
 
@@ -862,7 +862,7 @@ UniValue signrawtransaction(const Array& params, bool fHelp)
     return result;
 }
 
-UniValue sendrawtransaction(const Array& params, bool fHelp)
+UniValue sendrawtransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
