@@ -284,6 +284,13 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         BOOST_CHECK_MESSAGE(state.IsValid(), state.GetRejectReason());
         pblock->hashPrevBlock = pblock->GetHash();
     }
+
+    // Set the clock to be just ahead of the last "mined" block, to ensure we satisfy the
+    // future timestamp soft fork rule.
+    auto curTime = GetTime();
+    OffsetClock::SetGlobal();
+    OffsetClock::Instance()->Set(std::chrono::seconds(-curTime + pblocktemplate->block.nTime));
+
     delete pblocktemplate;
 
     // Just to make sure we can still make simple blocks

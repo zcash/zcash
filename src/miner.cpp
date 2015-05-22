@@ -104,20 +104,25 @@ public:
     }
 };
 
-void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
+int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
+    int64_t nOldTime = pblock->nTime;
     auto medianTimePast = pindexPrev->GetMedianTimePast();
-    auto nTime = std::max(medianTimePast + 1, GetTime());
+    int64_t nNewTime = std::max(medianTimePast + 1, GetTime());
     // See the comment in ContextualCheckBlockHeader() for background.
     if (consensusParams.FutureTimestampSoftForkActive(pindexPrev->nHeight + 1)) {
-        nTime = std::min(nTime, medianTimePast + MAX_FUTURE_BLOCK_TIME_MTP);
+        nNewTime = std::min(nNewTime, medianTimePast + MAX_FUTURE_BLOCK_TIME_MTP);
     }
-    pblock->nTime = nTime;
+
+    if (nOldTime < nNewTime)
+        pblock->nTime = nNewTime;
 
     // Updating time can change work required on testnet:
     if (consensusParams.nPowAllowMinDifficultyBlocksAfterHeight != std::nullopt) {
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
     }
+
+    return nNewTime - nOldTime;
 }
 
 bool IsShieldedMinerAddress(const MinerAddress& minerAddr) {
@@ -1103,7 +1108,9 @@ void static BitcoinMiner(const CChainParams& chainparams)
 
                 // Update nNonce and nTime
                 pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
-                UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
+                if (UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev) < 0)
+                    break; // Recreate the block if the clock has run backwards,
+                           // so that we can use the correct time.
                 if (chainparams.GetConsensus().nPowAllowMinDifficultyBlocksAfterHeight != std::nullopt)
                 {
                     // Changing pblock->nTime can change work required on testnet:
