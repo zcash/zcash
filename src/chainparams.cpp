@@ -563,16 +563,6 @@ void SelectParams(const std::string& network)
     }
 }
 
-bool SelectParamsFromCommandLine()
-{
-    std::string network = ChainNameFromCommandLine();
-    if (network == CBaseChainParams::MAX_NETWORK_TYPES)
-        return false;
-
-    SelectParams(network);
-    return true;
-}
-
 
 // Block height must be >0 and <=last founders reward block height
 // Index variable i ranges from 0 - (vFoundersRewardAddress.size()-1)
