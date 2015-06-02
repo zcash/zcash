@@ -165,6 +165,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         // will be closer to the tip, and blocks will appear slower.
         pblock->nTime = chainActive.Tip()->GetMedianTimePast()+6*Params().GetConsensus().nPowTargetSpacing;
         CMutableTransaction txCoinbase(pblock->vtx[0]);
+        txCoinbase.nVersion = 1;
         txCoinbase.vin[0].scriptSig = CScript() << (chainActive.Height()+1) << OP_0;
         txCoinbase.vout[0].scriptPubKey = CScript();
         pblock->vtx[0] = CTransaction(txCoinbase);
