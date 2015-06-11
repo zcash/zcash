@@ -144,6 +144,26 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     return EncodeDestination(vchAddress);
 }
 
+void ImportScript(const CScript& script)
+{
+    if (::IsMine(*pwalletMain, script) == ISMINE_SPENDABLE)
+        throw JSONRPCError(RPC_WALLET_ERROR, "The wallet already contains the private key for this address or script");
+
+    pwalletMain->MarkDirty();
+
+    if (!pwalletMain->HaveWatchOnly(script) && !pwalletMain->AddWatchOnly(script))
+        throw JSONRPCError(RPC_WALLET_ERROR, "Error adding address to wallet");
+}
+
+void ImportAddress(const CBitcoinAddress& address, const string& strLabel)
+{
+    CScript script = GetScriptForDestination(address.Get());
+    ImportScript(script, false);
+    // add to address book or update label
+    if (address.IsValid())
+        pwalletMain->SetAddressBook(address.Get(), strLabel, "receive");
+}
+
 UniValue importaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -167,19 +187,8 @@ UniValue importaddress(const UniValue& params, bool fHelp)
             + HelpExampleRpc("importaddress", "\"myaddress\", \"testing\", false")
         );
 
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    CScript script;
-
-    CTxDestination dest = DecodeDestination(params[0].get_str());
-    if (IsValidDestination(dest)) {
-        script = GetScriptForDestination(dest);
-    } else if (IsHex(params[0].get_str())) {
-        std::vector<unsigned char> data(ParseHex(params[0].get_str()));
-        script = CScript(data.begin(), data.end());
-    } else {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Zcash address or script");
-    }
+    if (fPruneMode)
+        throw JSONRPCError(RPC_WALLET_ERROR, "Importing addresses is disabled in pruned mode");
 
     string strLabel = "";
     if (params.size() > 1)
@@ -190,28 +199,23 @@ UniValue importaddress(const UniValue& params, bool fHelp)
     if (params.size() > 2)
         fRescan = params[2].get_bool();
 
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    CBitcoinAddress address(params[0].get_str());
+    if (address.IsValid()) {
+        ImportAddress(address, strLabel);
+    } else if (IsHex(params[0].get_str())) {
+        std::vector<unsigned char> data(ParseHex(params[0].get_str()));
+        ImportScript(CScript(data.begin(), data.end()));
+    } else {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address or script");
+    }
+
+    if (fRescan)
     {
-        if (::IsMine(*pwalletMain, script) == ISMINE_SPENDABLE)
-            throw JSONRPCError(RPC_WALLET_ERROR, "The wallet already contains the private key for this address or script");
-
-        // add to address book or update label
-        if (IsValidDestination(dest))
-            pwalletMain->SetAddressBook(dest, strLabel, "receive");
-
-        // Don't throw error in case an address is already there
-        if (pwalletMain->HaveWatchOnly(script))
-            return NullUniValue;
-
-        pwalletMain->MarkDirty();
-
-        if (!pwalletMain->AddWatchOnly(script))
-            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding address to wallet");
-
-        if (fRescan)
-        {
-            pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
-            pwalletMain->ReacceptWalletTransactions();
-        }
+        pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
+        pwalletMain->ReacceptWalletTransactions();
     }
 
     return NullUniValue;
