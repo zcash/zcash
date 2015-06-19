@@ -981,6 +981,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     fAlerts = GetBoolArg("-alerts", DEFAULT_ALERTS);
 
+    // Option to startup with mocktime set (used for regression testing):
+    SetMockTime(GetArg("-mocktime", 0)); // SetMockTime(0) is a no-op
+
 #ifdef ENABLE_MINING
     if (mapArgs.count("-mineraddress")) {
         CBitcoinAddress addr;
