@@ -604,7 +604,6 @@ UniValue clearbanned(const UniValue& params, bool fHelp)
 
     CNode::ClearBanned();
     DumpBanlist(); //store banlist to disk
-    
     uiInterface.BannedListChanged();
 
     return NullUniValue;
