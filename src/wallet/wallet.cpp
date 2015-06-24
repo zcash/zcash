@@ -4046,12 +4046,11 @@ void CWallet::GetScriptForMining(CScript &script)
     }
 
     CReserveKey reservekey(this);
-    reservekey.KeepKey();
-
     CPubKey pubkey;
     if (!reservekey.GetReservedKey(pubkey))
         return;
     script = CScript() << OP_DUP << OP_HASH160 << ToByteVector(pubkey.GetID()) << OP_EQUALVERIFY << OP_CHECKSIG;
+    reservekey.KeepKey();
 }
 
 void CWallet::LockCoin(COutPoint& output)
