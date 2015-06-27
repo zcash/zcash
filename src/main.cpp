@@ -1563,7 +1563,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
 
         // Require that free transactions have sufficient priority to be mined in the next block.
-        if (GetBoolArg("-relaypriority", false) && nFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
+        if (GetBoolArg("-relaypriority", DEFAULT_RELAYPRIORITY) && nFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
         }
 
@@ -1584,7 +1584,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             nLastTime = nNow;
             // -limitfreerelay unit is thousand-bytes-per-minute
             // At default rate it would take over a month to fill 1GB
-            if (dFreeCount >= GetArg("-limitfreerelay", 15)*10*1000)
+            if (dFreeCount >= GetArg("-limitfreerelay", DEFAULT_LIMITFREERELAY) * 10 * 1000)
                 return state.DoS(0, error("AcceptToMemoryPool: free transaction rejected by rate limiter"),
                                  REJECT_INSUFFICIENTFEE, "rate limited free transaction");
             LogPrint("mempool", "Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
@@ -2002,7 +2002,7 @@ void Misbehaving(NodeId pnode, int howmuch)
         return;
 
     state->nMisbehavior += howmuch;
-    int banscore = GetArg("-banscore", 100);
+    int banscore = GetArg("-banscore", DEFAULT_BANSCORE_THRESHOLD);
     if (state->nMisbehavior >= banscore && state->nMisbehavior - howmuch < banscore)
     {
         LogPrintf("%s: %s (%d -> %d) BAN THRESHOLD EXCEEDED\n", __func__, state->name, state->nMisbehavior-howmuch, state->nMisbehavior);
@@ -4840,7 +4840,7 @@ bool InitBlockIndex(const CChainParams& chainparams)
         return true;
 
     // Use the provided setting for -txindex in the new database
-    fTxIndex = GetBoolArg("-txindex", false);
+    fTxIndex = GetBoolArg("-txindex", DEFAULT_TXINDEX);
     pblocktree->WriteFlag("txindex", fTxIndex);
 
     // Use the provided setting for -insightexplorer in the new database
@@ -5179,7 +5179,7 @@ std::string GetWarnings(const std::string& strFor)
     if (!CLIENT_VERSION_IS_RELEASE)
         strStatusBar = _("This is a pre-release test build - use at your own risk - do not use for mining or merchant applications");
 
-    if (GetBoolArg("-testsafemode", false))
+    if (GetBoolArg("-testsafemode", DEFAULT_TESTSAFEMODE))
         strStatusBar = strRPC = "testsafemode enabled";
 
     // Misc warnings like out of disk space and clock is wrong

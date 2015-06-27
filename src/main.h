@@ -106,7 +106,14 @@ static const unsigned int DATABASE_WRITE_INTERVAL = 60 * 60;
 static const unsigned int DATABASE_FLUSH_INTERVAL = 24 * 60 * 60;
 /** Maximum length of reject messages. */
 static const unsigned int MAX_REJECT_MESSAGE_LENGTH = 111;
+static const unsigned int DEFAULT_LIMITFREERELAY = 15;
+static const bool DEFAULT_RELAYPRIORITY = false;
 static const int64_t DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
+
+static const bool DEFAULT_TXINDEX = false;
+static const unsigned int DEFAULT_BANSCORE_THRESHOLD = 100;
+
+static const bool DEFAULT_TESTSAFEMODE = false;
 
 // Sanity check the magic numbers when we change them
 BOOST_STATIC_ASSERT(DEFAULT_BLOCK_MAX_SIZE <= MAX_BLOCK_SIZE);

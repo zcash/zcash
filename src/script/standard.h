@@ -26,6 +26,7 @@ public:
 };
 
 static const unsigned int MAX_OP_RETURN_RELAY = 80; //!< bytes
+extern bool fAcceptDatacarrier;
 extern unsigned nMaxDatacarrierBytes;
 
 /**
