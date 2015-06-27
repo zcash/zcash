@@ -1,0 +1,19 @@
+commit 15c2b26e752809b990b95b1741c0fa1917df1e5b
+Author: Nathan Wilcox <nejucomo@gmail.com>
+Date:   Tue May 12 13:05:13 2015 -0700
+
+    Add an ``LDFLAGS_PREFIX`` for a similar purpose as ``CXXFLAGS_PREFIX``.
+
+diff --git a/Makefile b/Makefile
+index e69c36f..93ef3b2 100644
+--- a/Makefile
++++ b/Makefile
+@@ -12,7 +12,7 @@ CXXFLAGS += $(CXXFLAGS_PREFIX) -O2 -Wall -Wextra -Wno-unused-parameter -Wno-comm
+ DEPSRC=depsrc
+ DEPINST=depinst
+ 
+-LDFLAGS += -L $(DEPINST)/lib -Wl,-rpath,$(DEPINST)/lib
++LDFLAGS += $(LDFLAGS_PREFIX) -L $(DEPINST)/lib -Wl,-rpath,$(DEPINST)/lib
+ LDLIBS += -lgmpxx -lgmp
+ CXXFLAGS += -I $(DEPINST)/include -I src -DUSE_ASM
+ DEFAULT_CURVE=BN128

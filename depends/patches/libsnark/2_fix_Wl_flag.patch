@@ -1,0 +1,19 @@
+commit d3a67a316bdc7f2347a70f8c29d7afa585eb8feb
+Author: Nathan Wilcox <nejucomo@gmail.com>
+Date:   Tue May 12 12:44:17 2015 -0700
+
+    g++-4.9 requires commas to include the argument to ``rpath`` as a linker flag.
+
+diff --git a/Makefile b/Makefile
+index cdfd9fa..e69c36f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -12,7 +12,7 @@ CXXFLAGS += $(CXXFLAGS_PREFIX) -O2 -Wall -Wextra -Wno-unused-parameter -Wno-comm
+ DEPSRC=depsrc
+ DEPINST=depinst
+ 
+-LDFLAGS += -L $(DEPINST)/lib -Wl,-rpath $(DEPINST)/lib
++LDFLAGS += -L $(DEPINST)/lib -Wl,-rpath,$(DEPINST)/lib
+ LDLIBS += -lgmpxx -lgmp
+ CXXFLAGS += -I $(DEPINST)/include -I src -DUSE_ASM
+ DEFAULT_CURVE=BN128
