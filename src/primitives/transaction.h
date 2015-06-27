@@ -12,8 +12,8 @@
 #include "uint256.h"
 #include <boost/foreach.hpp>
 
-#include <libzerocash/PourTransaction.h>
-#include <libzerocash/MintTransaction.h>
+#include "libzerocash/PourTransaction.h"
+#include "libzerocash/MintTransaction.h"
 
 // the mark of a zerocoin input. this is the ID we use that should always be spendable
 

@@ -16,13 +16,13 @@
 #include "wallet.h"
 #include "walletdb.h"
 
-#include <libzerocash/Address.h>
-#include <libzerocash/Coin.h>
-#include <libzerocash/ZerocashParams.h>
-#include <libzerocash/IncrementalMerkleTree.h>
-#include <libzerocash/PourTransaction.h>
-#include <libzerocash/MintTransaction.h>
-#include <libzerocash/Zerocash.h>
+#include "libzerocash/Address.h"
+#include "libzerocash/Coin.h"
+#include "libzerocash/ZerocashParams.h"
+#include "libzerocash/IncrementalMerkleTree.h"
+#include "libzerocash/PourTransaction.h"
+#include "libzerocash/MintTransaction.h"
+#include "libzerocash/Zerocash.h"
 
 #include <stdint.h>
 

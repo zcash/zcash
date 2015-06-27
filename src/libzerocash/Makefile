@@ -1,15 +1,20 @@
-CXXFLAGS += -g -Wall -Wextra -Werror -Wfatal-errors -Wno-unused-parameter -march=native -mtune=native -std=c++11 -fPIC
-LDFLAGS += -flto
+# Don't set "user variables" such as CXXFLAGS, LDFLAGS, etc... Instead,
+# incorporate those user variables into *_ACTUAL variables with internally
+# dictated flags. This is an attempt to emulate autotools and to allow
+# ./configure to customize the build:
+CXXFLAGS_ACTUAL = $(CXXFLAGS)
+LDFLAGS_ACTUAL = $(LDFLAGS)
+LDLIBS_ACTUAL = $(LDLIBS)
 
-ZCDEP = ../../zcdep
-DEPSRC = $(ZCDEP)/src
-DEPINST = $(ZCDEP)/inst
+
+CXXFLAGS_ACTUAL += -g -Wall -Wextra -Werror -Wfatal-errors -Wno-unused-parameter -march=native -mtune=native -std=c++11 -fPIC
+LDFLAGS_ACTUAL += -flto
 
 #TESTUTILS=tests # BUG: Re-enable tests in the appropriate location.
 
-LDLIBS += -L $(DEPINST)/lib -Wl,-rpath $(DEPINST)/lib -L . -lsnark -lzm -lgmpxx -lgmp
-LDLIBS += -lboost_system -lcrypto -lcryptopp
-CXXFLAGS += -I $(DEPINST)/include -I $(DEPINST)/include/libsnark -I . -DUSE_ASM -DCURVE_ALT_BN128
+LDLIBS_ACTUAL += -L . -lsnark -lzm -lgmpxx -lgmp
+LDLIBS_ACTUAL += -lboost_system -lcrypto -lcryptopp
+CXXFLAGS_ACTUAL += -I . -DUSE_ASM -DCURVE_ALT_BN128
 
 LIBPATH = /usr/local/lib
 
@@ -39,46 +44,46 @@ EXECUTABLES= \
 OBJS=$(patsubst %.cpp,%.o,$(SRCS))
 
 ifeq ($(MINDEPS),1)
-	CXXFLAGS += -DMINDEPS
+	CXXFLAGS_ACTUAL += -DMINDEPS
 else
-	LDLIBS += -lboost_program_options
-	LDLIBS += -lprocps
+	LDLIBS_ACTUAL += -lboost_program_options
+	LDLIBS_ACTUAL += -lprocps
 endif
 
 ifeq ($(LOWMEM),1)
-	CXXFLAGS += -DLOWMEM
+	CXXFLAGS_ACTUAL += -DLOWMEM
 endif
 
 ifeq ($(STATIC),1)
-	CXXFLAGS += -static -DSTATIC
+	CXXFLAGS_ACTUAL += -static -DSTATIC
 endif
 
 ifeq ($(PROFILE_CURVE),1)
-	CXXFLAGS += -static -DPROFILE_CURVE
+	CXXFLAGS_ACTUAL += -static -DPROFILE_CURVE
 endif
 
 ifeq ($(MULTICORE),1)
-	CXXFLAGS += -static -DMULTICORE
+	CXXFLAGS_ACTUAL += -static -DMULTICORE
 endif
 
 all: $(EXECUTABLES) libzerocash.a
 
-cppdebug: CXXFLAGS += -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
+cppdebug: CXXFLAGS_ACTUAL += -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 cppdebug: debug
 
-debug: CXXFLAGS += -DDEBUG -ggdb3
+debug: CXXFLAGS_ACTUAL += -DDEBUG -ggdb3
 debug: all
 
-noasserts: CXXFLAGS += -DNDEBUG -Wno-unused-variable -Wno-unused-but-set-variable
+noasserts: CXXFLAGS_ACTUAL += -DNDEBUG -Wno-unused-variable -Wno-unused-but-set-variable
 noasserts: all
 
 $(EXECUTABLES): %: %.o $(OBJS)
-	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) -o $@ $^ $(CXXFLAGS_ACTUAL) $(LDFLAGS_ACTUAL) $(LDLIBS_ACTUAL)
 
 libzerocash: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Cross G++ Linker'
-	$(CXX) -shared -o "libzerocash.so" $(OBJS) $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) -shared -o "libzerocash.so" $(OBJS) $(CXXFLAGS_ACTUAL) $(LDFLAGS_ACTUAL) $(LDLIBS_ACTUAL)
 	@echo 'Finished building target: $@'
 	@echo 'Copying libzerocash.so'
 	sudo cp libzerocash.so $(LIBPATH)/libzerocash.so
@@ -98,13 +103,13 @@ libzerocash.a: $(OBJS) $(USER_OBJS)
 	@echo ' '
 
 test_library: %: tests/zerocashTest.o $(OBJS) 
-	$(CXX) -o tests/$@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -lzerocash
+	$(CXX) -o tests/$@ $^ $(CXXFLAGS_ACTUAL) $(LDFLAGS_ACTUAL) $(LDLIBS_ACTUAL) -lzerocash
 
 banktest_library: %: bankTest.o $(OBJS) 
-	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -lzerocash
+	$(CXX) -o $@ $^ $(CXXFLAGS_ACTUAL) $(LDFLAGS_ACTUAL) $(LDLIBS_ACTUAL) -lzerocash
 
 merkletest_library: %: merkleTest.o $(OBJS) 
-	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -lzerocash
+	$(CXX) -o $@ $^ $(CXXFLAGS_ACTUAL) $(LDFLAGS_ACTUAL) $(LDLIBS_ACTUAL) -lzerocash
 
 .PHONY: clean
 

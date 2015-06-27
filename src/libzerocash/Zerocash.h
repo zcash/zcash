@@ -15,7 +15,7 @@
 
 #include <stdexcept>
 #include <vector>
-#include "pour_ppzksnark/hashes/hash_io.hpp"
+#include "libzerocash/pour_ppzksnark/hashes/hash_io.hpp"
 
 #define ZEROCASH_VERSION_STRING             "0.1"
 #define ZEROCASH_VERSION_INT				1

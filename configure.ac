@@ -732,44 +732,21 @@ AC_CHECK_HEADER([cryptopp/eccrypto.h],,AC_MSG_ERROR(libcryptopp headers missing)
 # classes whose library symbols are mangled by some black alchemy.
 AC_CHECK_LIB([cryptopp],[main],CRYPTOPP_LIBS=-lcryptopp, [AC_MSG_ERROR(libcryptopp missing)])
 
-echo 'Checking for libsnark installation...'
-ZCDEP_INST="$(readlink -f ./zcdep/inst)"
-ZCDEP_INCDIR="${ZCDEP_INST}/include"
-LIBSNARK_INCDIR="${ZCDEP_INCDIR}/libsnark"
-
-if ! test -d "$LIBSNARK_INCDIR"
-then
-    cat <<EOF
-=======
-libsnark does not appear to be configured; not a directory: $LIBSNARK_INCDIR
-Run this to fetch libsnark and build it:
-
-  ./zcutil/get-libsnark
-
-EOF
-    exit 1
+# libsnark header layout is broken unless cpp's -I is passed with the
+# libsnark directory, so for now we use this hideous workaround:
+echo 'Hunting for libsnark include directory...'
+[LIBSNARK_INCDIR="$(echo "$CPPFLAGS" | sed 's,^.*-I\([^ ]*/include\).*$,\1/libsnark,')"]
+if test -d "$LIBSNARK_INCDIR"; then
+   echo "Found libsnark include directory: $LIBSNARK_INCDIR"
+else
+    AC_MSG_ERROR(libsnark include directory not found)
 fi
 
+CPPFLAGS="-I$LIBSNARK_INCDIR $CPPFLAGS"
 
 # Now check for libsnark compilability using traditional autoconf tests:
-LIBSNARK_INCLUDES_CANDIDATE="-I${ZCDEP_INCDIR} -I${LIBSNARK_INCDIR}"
-CPPFLAGS_TEMP="$CPPFLAGS"
-CPPFLAGS="${LIBSNARK_INCLUDES_CANDIDATE} $CPPFLAGS"
-AC_CHECK_HEADER(
-    [libsnark/gadgetlib1/gadget.hpp],
-    [[LIBSNARK_INCLUDES="$LIBSNARK_INCLUDES_CANDIDATE"]],
-    [AC_MSG_ERROR(libsnark headers missing)])
-CPPFLAGS="$CPPFLAGS_TEMP"
-
-LIBSNARK_LDFLAGS_CANDIDATE="-L${ZCDEP_INST}/lib"
-LDFLAGS_TEMP="$LDFLAGS"
-LDFLAGS="${LIBSNARK_LDFLAGS_CANDIDATE} $LDFLAGS"
-AC_CHECK_LIB(
-    [snark],
-    [main],
-    [[LIBSNARK_LIBS="${LIBSNARK_LDFLAGS_CANDIDATE} -lsnark"]],
-    [AC_MSG_ERROR(libsnark missing)])
-LDFLAGS="$LDFLAGS_TEMP"
+AC_CHECK_HEADER([libsnark/gadgetlib1/gadget.hpp],,AC_MSG_ERROR(libsnark headers missing))
+AC_CHECK_LIB([snark],[main],LIBSNARK_LIBS=-lsnark, [AC_MSG_ERROR(libsnark missing)])
 
 
 CFLAGS_TEMP="$CFLAGS"
@@ -956,7 +933,6 @@ AC_SUBST(MINIUPNPC_LIBS)
 AC_SUBST(GMP_LIBS)
 AC_SUBST(GMPXX_LIBS)
 AC_SUBST(CRYPTOPP_LIBS)
-AC_SUBST(LIBSNARK_INCLUDES)
 AC_SUBST(LIBSNARK_LIBS)
 AC_CONFIG_FILES([Makefile src/Makefile share/setup.nsi share/qt/Info.plist src/test/buildenv.py])
 AC_CONFIG_FILES([qa/pull-tester/run-bitcoind-for-test.sh],[chmod +x qa/pull-tester/run-bitcoind-for-test.sh])
