@@ -1,22 +1,12 @@
 #!/bin/sh
-#
-# Build zerocash.
-#
-# Note: A prior version assumed boost was installed in a sibling directory
-# of the checkout. In this version, if you use a non-system-installed boost,
-# pass a configure flag like this:
-#
-# ./zcutil/build.sh --with-boost=/path/to/installed/boost
-
 set -ex
 
+cd "$(dirname "$(readlink -f "$0")")/.."
+
+# BUG: parameterize the platform/host directory:
+PREFIX="$(pwd)/depends/x86_64-unknown-linux-gnu/"
+
+make -C ./depends/ V=1
 ./autogen.sh
-
-CPPFLAGS='-DCURVE_ALT_BN128 -Wno-literal-suffix' \
-    ./configure \
-    --enable-hardening \
-    --with-incompatible-bdb \
-    --with-gui=no \
-    "$@"
-
+./configure --prefix="${PREFIX}"
 make V=1
