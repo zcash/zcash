@@ -16,13 +16,13 @@
 struct BasicTestingSetup {
     ECCVerifyHandle globalVerifyHandle;
 
-    BasicTestingSetup(CBaseChainParams::Network network = CBaseChainParams::MAIN);
+    BasicTestingSetup(const std::string& chainName = CBaseChainParams::MAIN);
     ~BasicTestingSetup();
 };
 
 // Setup w.r.t. zk-SNARK API
 struct JoinSplitTestingSetup: public BasicTestingSetup {
-    JoinSplitTestingSetup(CBaseChainParams::Network network = CBaseChainParams::MAIN);
+    JoinSplitTestingSetup(const std::string& chainName = CBaseChainParams::MAIN);
     ~JoinSplitTestingSetup();
 };
 
@@ -36,7 +36,7 @@ struct TestingSetup: public JoinSplitTestingSetup {
     boost::filesystem::path pathTemp;
     boost::thread_group threadGroup;
 
-    TestingSetup(CBaseChainParams::Network network = CBaseChainParams::MAIN);
+    TestingSetup(const std::string& chainName = CBaseChainParams::MAIN);
     ~TestingSetup();
 };
 

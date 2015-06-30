@@ -40,7 +40,7 @@ ZCJoinSplit *pzcashParams;
 extern bool fPrintToConsole;
 extern void noui_connect();
 
-JoinSplitTestingSetup::JoinSplitTestingSetup(CBaseChainParams::Network network) : BasicTestingSetup(network)
+JoinSplitTestingSetup::JoinSplitTestingSetup(const std::string& chainName) : BasicTestingSetup(chainName)
 {
     pzcashParams = ZCJoinSplit::Prepared();
 
@@ -73,7 +73,7 @@ JoinSplitTestingSetup::~JoinSplitTestingSetup()
     delete pzcashParams;
 }
 
-BasicTestingSetup::BasicTestingSetup(CBaseChainParams::Network network)
+BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
 {
     assert(init_and_check_sodium() != -1);
     ECC_Start();
@@ -81,7 +81,7 @@ BasicTestingSetup::BasicTestingSetup(CBaseChainParams::Network network)
     SetupNetworking();
     fPrintToDebugLog = false; // don't want to write to debug.log file
     fCheckBlockIndex = true;
-    SelectParams(network);
+    SelectParams(chainName);
     noui_connect();
 }
 
@@ -90,7 +90,7 @@ BasicTestingSetup::~BasicTestingSetup()
     ECC_Stop();
 }
 
-TestingSetup::TestingSetup(CBaseChainParams::Network network) : JoinSplitTestingSetup(network)
+TestingSetup::TestingSetup(const std::string& chainName) : JoinSplitTestingSetup(chainName)
 {
     const CChainParams& chainparams = Params();
         // Ideally we'd move all the RPC tests to the functional testing framework
