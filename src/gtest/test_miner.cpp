@@ -10,28 +10,35 @@
 TEST(Miner, GetScriptForMinerAddress) {
     SelectParams(CBaseChainParams::MAIN);
 
-    CScript coinbaseScript;
-
     // No miner address set
-    GetScriptForMinerAddress(coinbaseScript);
-    EXPECT_EQ(0, coinbaseScript.size());
+    {
+        boost::shared_ptr<CReserveScript> coinbaseScript;
+        GetScriptForMinerAddress(coinbaseScript);
+        EXPECT_FALSE((bool) coinbaseScript);
+    }
 
     mapArgs["-mineraddress"] = "notAnAddress";
-    coinbaseScript.clear();
-    GetScriptForMinerAddress(coinbaseScript);
-    EXPECT_EQ(0, coinbaseScript.size());
+    {
+        boost::shared_ptr<CReserveScript> coinbaseScript;
+        GetScriptForMinerAddress(coinbaseScript);
+        EXPECT_FALSE((bool) coinbaseScript);
+    }
 
     // Partial address
     mapArgs["-mineraddress"] = "t1T8yaLVhNqxA5KJcmiqq";
-    coinbaseScript.clear();
-    GetScriptForMinerAddress(coinbaseScript);
-    EXPECT_EQ(0, coinbaseScript.size());
+    {
+        boost::shared_ptr<CReserveScript> coinbaseScript;
+        GetScriptForMinerAddress(coinbaseScript);
+        EXPECT_FALSE((bool) coinbaseScript);
+    }
 
     // Typo in address
     mapArgs["-mineraddress"] = "t1TByaLVhNqxA5KJcmiqqFN88e8DNp2PBfF";
-    coinbaseScript.clear();
-    GetScriptForMinerAddress(coinbaseScript);
-    EXPECT_EQ(0, coinbaseScript.size());
+    {
+        boost::shared_ptr<CReserveScript> coinbaseScript;
+        GetScriptForMinerAddress(coinbaseScript);
+        EXPECT_FALSE((bool) coinbaseScript);
+    }
 
     // Set up expected scriptPubKey for t1T8yaLVhNqxA5KJcmiqqFN88e8DNp2PBfF
     CKeyID keyID;
@@ -40,19 +47,28 @@ TEST(Miner, GetScriptForMinerAddress) {
 
     // Valid address
     mapArgs["-mineraddress"] = "t1T8yaLVhNqxA5KJcmiqqFN88e8DNp2PBfF";
-    coinbaseScript.clear();
-    GetScriptForMinerAddress(coinbaseScript);
-    EXPECT_EQ(expectedCoinbaseScript, coinbaseScript);
+    {
+        boost::shared_ptr<CReserveScript> coinbaseScript;
+        GetScriptForMinerAddress(coinbaseScript);
+        EXPECT_TRUE((bool) coinbaseScript);
+        EXPECT_EQ(expectedCoinbaseScript, coinbaseScript->reserveScript);
+    }
 
     // Valid address with leading whitespace
     mapArgs["-mineraddress"] = "  t1T8yaLVhNqxA5KJcmiqqFN88e8DNp2PBfF";
-    coinbaseScript.clear();
-    GetScriptForMinerAddress(coinbaseScript);
-    EXPECT_EQ(expectedCoinbaseScript, coinbaseScript);
+    {
+        boost::shared_ptr<CReserveScript> coinbaseScript;
+        GetScriptForMinerAddress(coinbaseScript);
+        EXPECT_TRUE((bool) coinbaseScript);
+        EXPECT_EQ(expectedCoinbaseScript, coinbaseScript->reserveScript);
+    }
 
     // Valid address with trailing whitespace
     mapArgs["-mineraddress"] = "t1T8yaLVhNqxA5KJcmiqqFN88e8DNp2PBfF  ";
-    coinbaseScript.clear();
-    GetScriptForMinerAddress(coinbaseScript);
-    EXPECT_EQ(expectedCoinbaseScript, coinbaseScript);
+    {
+        boost::shared_ptr<CReserveScript> coinbaseScript;
+        GetScriptForMinerAddress(coinbaseScript);
+        EXPECT_TRUE((bool) coinbaseScript);
+        EXPECT_EQ(expectedCoinbaseScript, coinbaseScript->reserveScript);
+    }
 }
