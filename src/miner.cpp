@@ -753,7 +753,7 @@ void GenerateBitcoins(bool fGenerate, int nThreads)
         if (Params().DefaultMinerThreads())
             nThreads = Params().DefaultMinerThreads();
         else
-            nThreads = boost::thread::hardware_concurrency();
+            nThreads = GetNumCores();
     }
 
     if (minerThreads != NULL)
