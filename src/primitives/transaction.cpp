@@ -159,6 +159,11 @@ void CTransaction::UpdateHash() const
     *const_cast<uint256*>(&hash) = SerializeHash(*this);
 }
 
+size_t CTransaction::DynamicMemoryUsage() const
+{
+    return memusage::RecursiveDynamicUsage(vin) + memusage::RecursiveDynamicUsage(vout);
+}
+
 CTransaction::CTransaction() : nVersion(CTransaction::MIN_CURRENT_VERSION), vin(), vout(), nLockTime(0), vjoinsplit(), joinSplitPubKey(), joinSplitSig() { }
 
 CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), vjoinsplit(tx.vjoinsplit),
