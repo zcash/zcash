@@ -348,6 +348,9 @@ UniValue mempoolToJSON(bool fVerbose = false)
             info.pushKV("height", (int)e.GetHeight());
             info.pushKV("startingpriority", e.GetPriority(e.GetHeight()));
             info.pushKV("currentpriority", e.GetPriority(chainActive.Height()));
+            info.pushKV("descendantcount", e.GetCountWithDescendants());
+            info.pushKV("descendantsize", e.GetSizeWithDescendants());
+            info.pushKV("descendantfees", e.GetFeesWithDescendants());
             const CTransaction& tx = e.GetTx();
             set<string> setDepends;
             for (const CTxIn& txin : tx.vin)
@@ -403,6 +406,9 @@ UniValue getrawmempool(const UniValue& params, bool fHelp)
             "    \"height\" : n,           (numeric) block height when transaction entered pool\n"
             "    \"startingpriority\" : n, (numeric) priority when transaction entered pool\n"
             "    \"currentpriority\" : n,  (numeric) transaction priority now\n"
+            "    \"descendantcount\" : n,  (numeric) number of in-mempool descendant transactions (including this one)\n"
+            "    \"descendantsize\" : n,   (numeric) size of in-mempool descendants (including this one)\n"
+            "    \"descendantfees\" : n,   (numeric) fees of in-mempool descendants (including this one)\n"
             "    \"depends\" : [           (array) unconfirmed transactions used as inputs for this transaction\n"
             "        \"transactionid\",    (string) parent transaction id\n"
             "       ... ]\n"
