@@ -6,6 +6,7 @@
 #include "zcashconsensus.h"
 
 #include "primitives/transaction.h"
+#include "pubkey.h"
 #include "script/interpreter.h"
 #include "version.h"
 
@@ -60,7 +61,13 @@ inline int set_error(zcashconsensus_error* ret, zcashconsensus_error serror)
     return 0;
 }
 
-} // anon namespace
+struct ECCryptoClosure
+{
+    ECCVerifyHandle handle;
+};
+
+ECCryptoClosure instance_of_eccryptoclosure;
+}
 
 int zcashconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
                                     const unsigned char *txTo        , unsigned int txToLen,
