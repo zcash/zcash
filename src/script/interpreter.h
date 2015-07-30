@@ -88,6 +88,8 @@ enum
     SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9),
 };
 
+bool CheckSignatureEncoding(const std::vector<unsigned char> &vchSig, unsigned int flags, ScriptError* serror);
+
 struct PrecomputedTransactionData
 {
     uint256 hashPrevouts, hashSequence, hashOutputs, hashJoinSplits;
