@@ -63,6 +63,7 @@ class BIP65Test(ComparisonTestFramework):
     def get_tests(self):
         self.coinbase_blocks = self.nodes[0].generate(1)
         self.nodes[0].generate(100)
+        height = 102  # height of the next block to build
         hashTip = self.nodes[0].getbestblockhash()
         hashFinalSaplingRoot = int("0x" + self.nodes[0].getblock(hashTip)['finalsaplingroot'] , 0)
         self.tip = int ("0x" + hashTip , 0)
@@ -81,7 +82,7 @@ class BIP65Test(ComparisonTestFramework):
             self.block_time = gbt["mintime"] + 1
             self.block_bits = int("0x" + gbt["bits"], 0)
 
-            block = create_block(self.tip, create_coinbase(101),
+            block = create_block(self.tip, create_coinbase(height),
                                  self.block_time, self.block_bits,
                                  hashFinalSaplingRoot)
             block.nVersion = 4

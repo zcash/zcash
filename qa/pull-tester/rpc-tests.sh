@@ -63,6 +63,7 @@ testScripts=(
     'spentindex.py'
     'timestampindex.py'
     'decodescript.py'
+    'p2p-fullblocktest.py'
     'blockchain.py'
     'disablewallet.py'
     'zcjoinsplit.py'

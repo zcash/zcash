@@ -22,7 +22,7 @@ if sys.version > '3':
 from pyblake2 import blake2b
 import struct
 
-from test_framework import bignum
+from test_framework.bignum import bn2vch
 from test_framework.mininode import (CTransaction, CTxOut, hash256, ser_string, ser_uint256)
 
 MAX_SCRIPT_SIZE = 10000
@@ -659,7 +659,7 @@ class CScript(bytes):
             elif other == -1:
                 other = bytes([OP_1NEGATE])
             else:
-                other = CScriptOp.encode_op_pushdata(bignum.bn2vch(other))
+                other = CScriptOp.encode_op_pushdata(bn2vch(other))
         elif isinstance(other, (bytes, bytearray)):
             other = bytes(CScriptOp.encode_op_pushdata(other))
         return other
