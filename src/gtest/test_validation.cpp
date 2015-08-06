@@ -97,11 +97,13 @@ public:
 
 class MockCValidationState : public CValidationState {
 public:
-    MOCK_METHOD5(DoS, bool(int level, bool ret,
-             unsigned int chRejectCodeIn, std::string strRejectReasonIn,
-             bool corruptionIn));
-    MOCK_METHOD3(Invalid, bool(bool ret,
-                 unsigned int _chRejectCode, std::string _strRejectReason));
+    MOCK_METHOD6(DoS, bool(int level, bool ret,
+             unsigned int chRejectCodeIn, const std::string strRejectReasonIn,
+             bool corruptionIn,
+             const std::string &strDebugMessageIn));
+    MOCK_METHOD4(Invalid, bool(bool ret,
+                 unsigned int _chRejectCode, const std::string _strRejectReason,
+                 const std::string &_strDebugMessage));
     MOCK_METHOD1(Error, bool(std::string strRejectReasonIn));
     MOCK_CONST_METHOD0(IsValid, bool());
     MOCK_CONST_METHOD0(IsInvalid, bool());
@@ -110,6 +112,7 @@ public:
     MOCK_CONST_METHOD0(CorruptionPossible, bool());
     MOCK_CONST_METHOD0(GetRejectCode, unsigned int());
     MOCK_CONST_METHOD0(GetRejectReason, std::string());
+    MOCK_CONST_METHOD0(GetDebugMessage, std::string());
 };
 
 TEST(Validation, ContextualCheckInputsPassesWithCoinbase) {
@@ -190,7 +193,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
         strprintf("old-consensus-branch-id (Expected %s, found %s)",
             HexInt(saplingBranchId),
             HexInt(overwinterBranchId)),
-        false)).Times(1);
+        false, "")).Times(1);
     EXPECT_FALSE(ContextualCheckInputs(
         tx, mockState, view, true, 0, false, txdata,
         consensusParams, saplingBranchId));
@@ -201,7 +204,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
     EXPECT_CALL(mockState, DoS(
         100, false, REJECT_INVALID,
         "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
-        false)).Times(1);
+        false, "")).Times(1);
     EXPECT_FALSE(ContextualCheckInputs(
         tx, mockState, view, true, 0, false, txdata,
         consensusParams, blossomBranchId));
