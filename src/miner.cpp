@@ -477,7 +477,7 @@ void GetScriptForMinerAddress(boost::shared_ptr<CReserveScript> &script)
     script->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
 }
 
-void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
+void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
 {
     // Update nExtraNonce
     static uint256 hashPrevBlock;
@@ -496,7 +496,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
     pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 }
 
-static bool ProcessBlockFound(CBlock* pblock, const CChainParams& chainparams)
+static bool ProcessBlockFound(const CBlock* pblock, const CChainParams& chainparams)
 {
     LogPrintf("%s\n", pblock->ToString());
     LogPrintf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue));
