@@ -37,7 +37,7 @@ uint256 CBlockHeader::GetHash() const
     return SerializeHash(*this);
 }
 
-uint256 CBlock::BuildMerkleTree(bool* fMutated) const
+uint256 CBlock::ComputeMerkleRoot(bool* fMutated) const
 {
     /* WARNING! If you're reading this because you're learning about crypto
        and/or designing a new system that will use merkle trees, keep in mind
@@ -74,7 +74,7 @@ uint256 CBlock::BuildMerkleTree(bool* fMutated) const
        known ways of changing the transactions without affecting the merkle
        root.
     */
-    vMerkleTree.clear();
+    std::vector<uint256> vMerkleTree;
     vMerkleTree.reserve(vtx.size() * 2 + 16); // Safe upper bound for the number of total nodes.
     for (std::vector<CTransaction>::const_iterator it(vtx.begin()); it != vtx.end(); ++it)
         vMerkleTree.push_back(it->GetHash());
@@ -98,37 +98,6 @@ uint256 CBlock::BuildMerkleTree(bool* fMutated) const
         *fMutated = mutated;
     }
     return (vMerkleTree.empty() ? uint256() : vMerkleTree.back());
-}
-
-std::vector<uint256> CBlock::GetMerkleBranch(int nIndex) const
-{
-    if (vMerkleTree.empty())
-        BuildMerkleTree();
-    std::vector<uint256> vMerkleBranch;
-    int j = 0;
-    for (int nSize = vtx.size(); nSize > 1; nSize = (nSize + 1) / 2)
-    {
-        int i = std::min(nIndex^1, nSize-1);
-        vMerkleBranch.push_back(vMerkleTree[j+i]);
-        nIndex >>= 1;
-        j += nSize;
-    }
-    return vMerkleBranch;
-}
-
-uint256 CBlock::CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex)
-{
-    if (nIndex == -1)
-        return uint256();
-    for (std::vector<uint256>::const_iterator it(vMerkleBranch.begin()); it != vMerkleBranch.end(); ++it)
-    {
-        if (nIndex & 1)
-            hash = Hash(BEGIN(*it), END(*it), BEGIN(hash), END(hash));
-        else
-            hash = Hash(BEGIN(hash), END(hash), BEGIN(*it), END(*it));
-        nIndex >>= 1;
-    }
-    return hash;
 }
 
 // Return 0 if x == 0, otherwise the smallest power of 2 greater than or equal to x.
@@ -193,9 +162,5 @@ std::string CBlock::ToString() const
     {
         s << "  " << vtx[i].ToString() << "\n";
     }
-    s << "  vMerkleTree: ";
-    for (unsigned int i = 0; i < vMerkleTree.size(); i++)
-        s << " " << vMerkleTree[i].ToString();
-    s << "\n";
     return s.str();
 }

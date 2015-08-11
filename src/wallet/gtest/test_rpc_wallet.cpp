@@ -271,7 +271,7 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     EXPECT_EQ(-1, chainActive.Height());
     CBlock block;
     block.vtx.push_back(wtx);
-    block.hashMerkleRoot = block.BuildMerkleTree();
+    block.hashMerkleRoot = block.ComputeMerkleRoot();
     auto blockHash = block.GetHash();
     CBlockIndex fakeIndex {block};
     mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));

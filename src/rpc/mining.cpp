@@ -789,7 +789,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         // block template returned by this RPC is used unmodified. Otherwise,
         // these values must be recomputed.
         UniValue defaults(UniValue::VOBJ);
-        defaults.pushKV("merkleroot", pblock->BuildMerkleTree().GetHex());
+        defaults.pushKV("merkleroot", pblock->ComputeMerkleRoot().GetHex());
         defaults.pushKV("chainhistoryroot", pblocktemplate->hashChainHistoryRoot.GetHex());
         if (consensus.NetworkUpgradeActive(pindexPrev->nHeight+1, Consensus::UPGRADE_NU5)) {
             defaults.pushKV("authdataroot", pblocktemplate->hashAuthDataRoot.GetHex());

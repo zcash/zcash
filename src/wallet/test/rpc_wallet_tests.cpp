@@ -1696,7 +1696,7 @@ void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
         BOOST_CHECK_EQUAL(height, chainActive.Height());
         CBlock block;
         if (has_trx) block.vtx.push_back(wtx);
-        block.hashMerkleRoot = block.BuildMerkleTree();
+        block.hashMerkleRoot = block.ComputeMerkleRoot();
         auto blockHash = block.GetHash();
         CBlockIndex fakeIndex {block};
         fakeIndex.nHeight = height+1;
