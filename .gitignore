@@ -9,6 +9,7 @@ src/bitcoin-cli
 src/bitcoin-tx
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
+depends/x86_64-unknown-linux-gnu/
 
 # autoreconf
 Makefile.in
