@@ -17,7 +17,7 @@ define $(package)_preprocess_cmds
 endef
 
 define $(package)_build_cmds
-  $(MAKE) lib CURVE=ALT_BN128 NO_PROCPS=1 NO_GTEST=1 NO_DOCS=1 CXXFLAGS_PREFIX='$($(package)_cppflags)' LDFLAGS_PREFIX='$($(package)_ldflags)'
+  $(MAKE) lib CURVE=ALT_BN128 NO_PROCPS=1 NO_GTEST=1 NO_DOCS=1 STATIC=1 CXXFLAGS_PREFIX='$($(package)_cppflags)' LDFLAGS_PREFIX='$($(package)_ldflags)'
 endef
 
 define $(package)_stage_cmds
