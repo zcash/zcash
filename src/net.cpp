@@ -706,6 +706,13 @@ static void AcceptConnection(const ListenSocket& hListenSocket) {
         return;
     }
 
+    if (CNode::IsBanned(addr) && !whitelisted)
+    {
+        LogPrintf("connection from %s dropped (banned)\n", addr.ToString());
+        CloseSocket(hSocket);
+        return;
+    }
+
     if (nInbound >= nMaxInbound)
     {
         LogPrint("net", "connection from %s dropped (full)\n", addr.ToString());
@@ -716,13 +723,6 @@ static void AcceptConnection(const ListenSocket& hListenSocket) {
     if (!whitelisted && (nInbound >= (nMaxInbound - nWhiteConnections)))
     {
         LogPrint("net", "connection from %s dropped (non-whitelisted)\n", addr.ToString());
-        CloseSocket(hSocket);
-        return;
-    }
-
-    if (CNode::IsBanned(addr) && !whitelisted)
-    {
-        LogPrintf("connection from %s dropped (banned)\n", addr.ToString());
         CloseSocket(hSocket);
         return;
     }
