@@ -671,6 +671,76 @@ void SocketSendData(CNode *pnode)
 
 static list<CNode*> vNodesDisconnected;
 
+static void AcceptConnection(const ListenSocket& hListenSocket) {
+    struct sockaddr_storage sockaddr;
+    socklen_t len = sizeof(sockaddr);
+    SOCKET hSocket = accept(hListenSocket.socket, (struct sockaddr*)&sockaddr, &len);
+    CAddress addr;
+    int nInbound = 0;
+    int nMaxInbound = nMaxConnections - MAX_OUTBOUND_CONNECTIONS;
+
+    if (hSocket != INVALID_SOCKET)
+        if (!addr.SetSockAddr((const struct sockaddr*)&sockaddr))
+            LogPrintf("Warning: Unknown socket family\n");
+
+    bool whitelisted = hListenSocket.whitelisted || CNode::IsWhitelistedRange(addr);
+    {
+        LOCK(cs_vNodes);
+        BOOST_FOREACH(CNode* pnode, vNodes)
+            if (pnode->fInbound)
+                nInbound++;
+    }
+
+    if (hSocket == INVALID_SOCKET)
+    {
+        int nErr = WSAGetLastError();
+        if (nErr != WSAEWOULDBLOCK)
+            LogPrintf("socket error accept failed: %s\n", NetworkErrorString(nErr));
+    }
+    else if (!IsSelectableSocket(hSocket))
+    {
+        LogPrintf("connection from %s dropped: non-selectable socket\n", addr.ToString());
+        CloseSocket(hSocket);
+    }
+    else if (nInbound >= nMaxInbound)
+    {
+        LogPrint("net", "connection from %s dropped (full)\n", addr.ToString());
+        CloseSocket(hSocket);
+    }
+    else if (!whitelisted && (nInbound >= (nMaxInbound - nWhiteConnections)))
+    {
+        LogPrint("net", "connection from %s dropped (non-whitelisted)\n", addr.ToString());
+        CloseSocket(hSocket);
+    }
+    else if (CNode::IsBanned(addr) && !whitelisted)
+    {
+        LogPrintf("connection from %s dropped (banned)\n", addr.ToString());
+        CloseSocket(hSocket);
+    }
+    else
+    {
+        // According to the internet TCP_NODELAY is not carried into accepted sockets
+        // on all platforms.  Set it again here just to be sure.
+        int set = 1;
+#ifdef WIN32
+        setsockopt(hSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&set, sizeof(int));
+#else
+        setsockopt(hSocket, IPPROTO_TCP, TCP_NODELAY, (void*)&set, sizeof(int));
+#endif
+
+        CNode* pnode = new CNode(hSocket, addr, "", true);
+        pnode->AddRef();
+        pnode->fWhitelisted = whitelisted;
+
+        LogPrint("net", "connection from %s accepted\n", addr.ToString());
+
+        {
+            LOCK(cs_vNodes);
+            vNodes.push_back(pnode);
+        }
+    }
+}
+
 void ThreadSocketHandler()
 {
     unsigned int nPrevNodeCount = 0;
@@ -828,65 +898,7 @@ void ThreadSocketHandler()
         {
             if (hListenSocket.socket != INVALID_SOCKET && FD_ISSET(hListenSocket.socket, &fdsetRecv))
             {
-                struct sockaddr_storage sockaddr;
-                socklen_t len = sizeof(sockaddr);
-                SOCKET hSocket = accept(hListenSocket.socket, (struct sockaddr*)&sockaddr, &len);
-                CAddress addr;
-                int nInbound = 0;
-
-                if (hSocket != INVALID_SOCKET)
-                    if (!addr.SetSockAddr((const struct sockaddr*)&sockaddr))
-                        LogPrintf("Warning: Unknown socket family\n");
-
-                bool whitelisted = hListenSocket.whitelisted || CNode::IsWhitelistedRange(addr);
-                {
-                    LOCK(cs_vNodes);
-                    BOOST_FOREACH(CNode* pnode, vNodes)
-                        if (pnode->fInbound)
-                            nInbound++;
-                }
-
-                if (hSocket == INVALID_SOCKET)
-                {
-                    int nErr = WSAGetLastError();
-                    if (nErr != WSAEWOULDBLOCK)
-                        LogPrintf("socket error accept failed: %s\n", NetworkErrorString(nErr));
-                }
-                else if (!IsSelectableSocket(hSocket))
-                {
-                    LogPrintf("connection from %s dropped: non-selectable socket\n", addr.ToString());
-                    CloseSocket(hSocket);
-                }
-                else if (nInbound >= nMaxConnections - MAX_OUTBOUND_CONNECTIONS)
-                {
-                    LogPrint("net", "connection from %s dropped (full)\n", addr.ToString());
-                    CloseSocket(hSocket);
-                }
-                else if (CNode::IsBanned(addr) && !whitelisted)
-                {
-                    LogPrintf("connection from %s dropped (banned)\n", addr.ToString());
-                    CloseSocket(hSocket);
-                }
-                else
-                {
-                    // According to the internet TCP_NODELAY is not carried into accepted sockets
-                    // on all platforms.  Set it again here just to be sure.
-                    int set = 1;
-#ifdef WIN32
-                    setsockopt(hSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&set, sizeof(int));
-#else
-                    setsockopt(hSocket, IPPROTO_TCP, TCP_NODELAY, (void*)&set, sizeof(int));
-#endif
-
-                    CNode* pnode = new CNode(hSocket, addr, "", true);
-                    pnode->AddRef();
-                    pnode->fWhitelisted = whitelisted;
-
-                    {
-                        LOCK(cs_vNodes);
-                        vNodes.push_back(pnode);
-                    }
-                }
+                AcceptConnection(hListenSocket);
             }
         }
 
