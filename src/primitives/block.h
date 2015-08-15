@@ -89,6 +89,9 @@ public:
     // network and disk
     std::vector<CTransaction> vtx;
 
+    // memory only
+    mutable bool fChecked;
+
     CBlock()
     {
         SetNull();
@@ -112,6 +115,7 @@ public:
     {
         CBlockHeader::SetNull();
         vtx.clear();
+        fChecked = false;
     }
 
     CBlockHeader GetBlockHeader() const
