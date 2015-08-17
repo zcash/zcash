@@ -268,6 +268,36 @@ bool CScript::isZCPourIntermediate() const
            this->at(0) == FLAG_ZC_POUR_INTERMEDIATE);
 }
 
+class CScriptVisitor : public boost::static_visitor<bool>
+{
+private:
+    CScript *script;
+public:
+    CScriptVisitor(CScript *scriptin) { script = scriptin; }
+
+    bool operator()(const CNoDestination &dest) const {
+        script->clear();
+        return false;
+    }
+
+    bool operator()(const CKeyID &keyID) const {
+        script->clear();
+        *script << OP_DUP << OP_HASH160 << keyID << OP_EQUALVERIFY << OP_CHECKSIG;
+        return true;
+    }
+
+    bool operator()(const CScriptID &scriptID) const {
+        script->clear();
+        *script << OP_HASH160 << scriptID << OP_EQUAL;
+        return true;
+    }
+};
+
+void CScript::SetDestination(const CTxDestination& dest)
+{
+    boost::apply_visitor(CScriptVisitor(this), dest);
+}
+
 std::string CScript::ToString() const
 {
     std::string str;
