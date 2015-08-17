@@ -32,8 +32,9 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "getnetworkhashps", 0 },
     { "getnetworkhashps", 1 },
     { "sendtoaddress", 1 },
-    { "zerocoinpour", 3 }, // TODO: Is this correct? Not sure how to translate 'ConvertTo<bool>(params[1], true);'
-    { "zerocoinmint", 1 },
+    { "zerocoinmint", 0 }, // amount
+    { "zerocoinmint", 1 }, // change amount
+    { "zerocoinpour", 1 }, // bool - include snark proof?
     { "settxfee", 0 },
     { "getreceivedbyaddress", 1 },
     { "getreceivedbyaccount", 1 },
