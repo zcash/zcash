@@ -472,9 +472,7 @@ Value zerocoinmint(const Array& params, bool fHelp){
     }
 
     { // change
-    CScript scriptPubKey;
-    //scriptPubKey.SetDestination(chageaddress.Get());
-    assert(false); //FIXME
+    CScript scriptPubKey = GetScriptForDestination(chageaddress.Get());
     CTxOut out(nAmountChange,scriptPubKey);
     rawTx.vout.push_back(out);
     }
