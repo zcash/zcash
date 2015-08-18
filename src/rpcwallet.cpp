@@ -397,7 +397,7 @@ Value sendtoaddress(const Array& params, bool fHelp)
 }
 
 Value zerocoinmint(const Array& params, bool fHelp){
-    if (fHelp || params.size() < 1) {
+    if (fHelp || params.size() < 3) {
         throw runtime_error(
             "claim_zerocoin address_to_pay_to \n"
             "wallet must be unlocked."
@@ -472,9 +472,7 @@ Value zerocoinmint(const Array& params, bool fHelp){
     }
 
     { // change
-    CScript scriptPubKey;
-    //scriptPubKey.SetDestination(chageaddress.Get());
-    assert(false); //FIXME
+    CScript scriptPubKey = GetScriptForDestination(chageaddress.Get());
     CTxOut out(nAmountChange,scriptPubKey);
     rawTx.vout.push_back(out);
     }
