@@ -67,5 +67,5 @@ script:
     - if [ "$RUN_TESTS" = "true" ]; then make check; fi
     - if [ "$RUN_TESTS" = "true" ]; then qa/pull-tester/rpc-tests.sh; fi
     - if [ "$RUN_TESTS" = "true" ]; then python qa/zerocash/zc-system-test.py --exec-dir ./src --log-level DEBUG; echo '=== daemon 0 log (tail 400) ==='; tail -400 ~/.zc-system-test/0/stdout.log; fi
-after_script:
-    - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then (echo "Upload goes here. Something like: scp -r $BASE_OUTDIR server" || echo "upload failed"); fi
+#after_script:
+    #- if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then (echo "Upload goes here. Something like: scp -r $BASE_OUTDIR server" || echo "upload failed"); fi
