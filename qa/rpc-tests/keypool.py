@@ -8,7 +8,7 @@
 # Add python-bitcoinrpc to module search path:
 
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import check_json_precision, initialize_chain, \
+from test_framework.util import assert_equal, check_json_precision, initialize_chain, \
     start_nodes, start_node, stop_nodes, wait_bitcoinds, bitcoind_processes
 
 import os
@@ -72,6 +72,21 @@ def run_test(nodes, tmpdir):
     except JSONRPCException as e:
         assert(e.error['code']==-12)
 
+    # refill keypool with three new addresses
+    nodes[0].walletpassphrase('test', 12000)
+    nodes[0].keypoolrefill(3)
+    nodes[0].walletlock()
+
+    # drain them by mining
+    nodes[0].generate(1)
+    nodes[0].generate(1)
+    nodes[0].generate(1)
+    nodes[0].generate(1)
+    try:
+        nodes[0].generate(1)
+        raise AssertionError('Keypool should be exhausted after three addesses')
+    except JSONRPCException as e:
+        assert_equal(e.error['code'], -12)
 
 def main():
     import optparse

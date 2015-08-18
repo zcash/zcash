@@ -4418,8 +4418,12 @@ void CWallet::GetAddressForMining(MinerAddress &minerAddress)
 
     boost::shared_ptr<CReserveKey> rKey(new CReserveKey(this));
     CPubKey pubkey;
-    if (!rKey->GetReservedKey(pubkey))
+    if (!rKey->GetReservedKey(pubkey)) {
+        // Explicitly return nullptr to indicate that the keypool is empty.
+        rKey = nullptr;
+        minerAddress = rKey;
         return;
+    }
 
     rKey->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(pubkey.GetID()) << OP_EQUALVERIFY << OP_CHECKSIG;
     minerAddress = rKey;

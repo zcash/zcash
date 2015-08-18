@@ -116,10 +116,6 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
     }
 }
 
-bool IsValidMinerAddress(const MinerAddress& minerAddr) {
-    return minerAddr.which() != 0;
-}
-
 class AddFundingStreamValueToTx : public boost::static_visitor<bool>
 {
 private:
@@ -742,7 +738,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
 
     try {
         // Throw an error if no address valid for mining was provided.
-        if (!IsValidMinerAddress(minerAddress)) {
+        if (!boost::apply_visitor(IsValidMinerAddress(), minerAddress)) {
             throw std::runtime_error("No miner address available (mining requires a wallet or -mineraddress)");
         }
 
