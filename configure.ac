@@ -746,7 +746,7 @@ CPPFLAGS="-I$LIBSNARK_INCDIR $CPPFLAGS"
 
 # Now check for libsnark compilability using traditional autoconf tests:
 AC_CHECK_HEADER([libsnark/gadgetlib1/gadget.hpp],,AC_MSG_ERROR(libsnark headers missing))
-AC_CHECK_LIB([snark],[main],LIBSNARK_LIBS=-lsnark, [AC_MSG_ERROR(libsnark missing)])
+AC_CHECK_LIB([snark],[main],LIBSNARK_LIBS=-lsnark, [AC_MSG_ERROR(libsnark missing)], [-lgmpxx])
 
 
 CFLAGS_TEMP="$CFLAGS"
