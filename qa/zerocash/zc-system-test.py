@@ -136,7 +136,7 @@ def initialize_basedir(log, basedir, nodecount=2, baseport=19000):
 def ensure_dir_exists(log, path):
     try:
         os.mkdir(path)
-    except os.error, e:
+    except os.error as e:
         if e.errno == errno.EEXIST:
             pass # It already exists, postcondition fulfilled.
         else:
