@@ -31,6 +31,12 @@ def curry_log(f):
 
 @curry_log
 def main(log, args = sys.argv[1:]):
+
+    if sys.version_info >= (3, 0):
+        print("Sorry, you must run this script with Python 2.x, not Python 3.x.")
+        print("To run this script with Python 2.x, do: python2 " + sys.argv[0])
+        sys.exit(1)
+
     opts = parse_args(args)
     initialize_basedir(opts.basedir)
 
