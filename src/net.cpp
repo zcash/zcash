@@ -673,8 +673,15 @@ static list<CNode*> vNodesDisconnected;
 
 class CNodeRef {
 public:
-    CNodeRef(CNode *pnode) : _pnode(pnode)  {_pnode->AddRef();}
-    ~CNodeRef() {_pnode->Release();}
+    CNodeRef(CNode *pnode) : _pnode(pnode) {
+        LOCK(cs_vNodes);
+        _pnode->AddRef();
+    }
+
+    ~CNodeRef() {
+        LOCK(cs_vNodes);
+        _pnode->Release();
+    }
 
     CNode& operator *() const {return *_pnode;};
     CNode* operator ->() const {return _pnode;};
@@ -682,6 +689,8 @@ public:
     CNodeRef& operator =(const CNodeRef& other)
     {
         if (this != &other) {
+            LOCK(cs_vNodes);
+
             _pnode->Release();
             _pnode = other._pnode;
             _pnode->AddRef();
@@ -692,6 +701,7 @@ public:
     CNodeRef(const CNodeRef& other):
         _pnode(other._pnode)
     {
+        LOCK(cs_vNodes);
         _pnode->AddRef();
     }
 private:
