@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python2
 
 import os
 import re
@@ -31,6 +31,12 @@ def curry_log(f):
 
 @curry_log
 def main(log, args = sys.argv[1:]):
+
+    if sys.version_info >= (3, 0):
+        print("Sorry, you must run this script with Python 2.x, not Python 3.x.")
+        print("To run this script with Python 2.x, do: python2 " + sys.argv[0])
+        sys.exit(1)
+
     opts = parse_args(args)
     initialize_basedir(opts.basedir)
 
@@ -136,7 +142,7 @@ def initialize_basedir(log, basedir, nodecount=2, baseport=19000):
 def ensure_dir_exists(log, path):
     try:
         os.mkdir(path)
-    except os.error, e:
+    except os.error as e:
         if e.errno == errno.EEXIST:
             pass # It already exists, postcondition fulfilled.
         else:
