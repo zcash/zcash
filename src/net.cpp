@@ -678,6 +678,22 @@ public:
 
     CNode& operator *() const {return *_pnode;};
     CNode* operator ->() const {return _pnode;};
+
+    CNodeRef& operator =(const CNodeRef& other)
+    {
+        if (this != &other) {
+            _pnode->Release();
+            _pnode = other._pnode;
+            _pnode->AddRef();
+        }
+        return *this;
+    }
+
+    CNodeRef(const CNodeRef& other):
+        _pnode(other._pnode)
+    {
+        _pnode->AddRef();
+    }
 private:
     CNode *_pnode;
 };
