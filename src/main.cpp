@@ -2549,7 +2549,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             // in which case we don't want to evict from the mempool yet!
             mempool.removeWithAnchor(anchorBeforeDisconnect);
         }
-        mempool.removeCoinbaseSpends(pcoinsTip, pindexDelete->nHeight);
+        mempool.removeForReorg(pcoinsTip, pindexDelete->nHeight);
         mempool.check(pcoinsTip);
     }
 
