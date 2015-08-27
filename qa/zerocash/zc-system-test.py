@@ -56,7 +56,18 @@ def main(log, args = sys.argv[1:]):
     cliout = partial(check_output, clientexecutable, clientbaseopt)
 
     with DaemonNodeProcesses(daemonexecutable, opts.basedir):
-        sleep(2)
+
+        # Wait for the daemon to load the wallet.
+        walletloaded = False
+        while not walletloaded:
+            sleep(1)
+            try:
+                cliexec('getwalletinfo')
+                walletloaded = True
+            except subprocess.CalledProcessError:
+                # Wait some more.
+                pass
+
         cliexec('setgenerate', 'true', '200')
 
         addr = cliout('getnewaddress')
