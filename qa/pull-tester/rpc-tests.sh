@@ -28,7 +28,7 @@ testScripts=(
     'rawtransactions.py'
     'rest.py'
     'mempool_spendcoinbase.py'
-    'mempool_coinbase_spends.py'
+    'mempool_reorg.py'
     'mempool_tx_input_limit.py'
     'httpbasics.py'
     'zapwallettxes.py'
