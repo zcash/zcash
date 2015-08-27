@@ -7,6 +7,7 @@ import errno
 import argparse
 import logging
 import subprocess
+import shutil
 from functools import wraps, partial
 from time import sleep
 import json
@@ -86,7 +87,7 @@ def parse_args(log, args):
                    choices=['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'],
                    help='Set logging level.')
 
-    basedirdefault = os.path.expanduser('~/.zc-system-test')
+    basedirdefault = os.path.realpath('./.zc-system-test')
     p.add_argument('--basedir',
                    dest='basedir',
                    default=basedirdefault,
@@ -116,7 +117,7 @@ def parse_args(log, args):
 
 @curry_log
 def initialize_basedir(log, basedir, nodecount=2, baseport=19000):
-    ensure_dir_exists(basedir)
+    create_new_dir_saving_existing_dir(basedir)
 
     # Algorithmically generate the config for each subdirectory:
     for n in range(nodecount):
@@ -149,6 +150,27 @@ def ensure_dir_exists(log, path):
             raise # Some other error.
     else:
         log.debug('Created: %r', path)
+
+@curry_log
+def create_new_dir_saving_existing_dir(log, path):
+    saved_path = path + ".saved"
+    try:
+        os.mkdir(path)
+    except os.error as e:
+        if e.errno == errno.EEXIST:
+            # Directory exists, save it and create a new one.
+            log.debug('Saving old directory at %r', path)
+            # Only save one level of history.
+            if os.path.exists(saved_path):
+                shutil.rmtree(saved_path)
+            shutil.move(path, saved_path)
+            # Retry, now that we've moved the old one out of the way.
+            create_new_dir_saving_existing_dir(path)
+        else:
+            # Something else went wrong.
+            raise
+    else:
+        log.debug('Created %r', path)
 
 
 @curry_log
