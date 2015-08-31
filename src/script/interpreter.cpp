@@ -408,8 +408,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 case FLAG_ZC_MINT:
                 {
                     LogPrint("zerocoin", "zerocoin CheckInputs: placeholder evaluating script\n");
-                    stack.push_back(vchTrue);
-                    // We're not sure this is correct for FLAG_ZC_*.
                     LogPrint("zerocoin", "zerocoin EvalScript: mint\n");
                     if (stack.size()!=1) {
                         LogPrint("zerocoin", "EvalScript:mintL wrong arguments count. expected 1 got %d\n", stack.size());

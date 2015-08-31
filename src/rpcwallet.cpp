@@ -450,7 +450,8 @@ Value zerocoinmint(const Array& params, bool fHelp){
     ssss << zcaddr_f;
     std::string addresshex =  HexStr(ssss.begin(), ssss.end());
 
-    // cout << "XXXX coin " << cid.ToString() << " :\n\thex\n\t" << coinhex << "\n\taddress\n\t " << addresshex << endl;
+    // NOTE: This is currently parsed by ./qa/zerocash/zc-system-test.py:
+    cout << "XXXX coin " << cid.ToString() << " :\n\thex\n\t" << coinhex << "\n\taddress\n\t " << addresshex << endl;
 
     CMutableTransaction rawTx; // the tx we are constructing
     {
