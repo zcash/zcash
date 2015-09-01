@@ -170,12 +170,12 @@ def ensure_dir_exists(log, path):
         log.debug('Created: %r', path)
 
 @curry_log
-def create_new_dir_saving_existing_dir(log, path):
+def create_new_dir_saving_existing_dir(log, path, first_try = True):
     saved_path = path + ".saved"
     try:
         os.mkdir(path)
     except os.error as e:
-        if e.errno == errno.EEXIST:
+        if first_try and e.errno == errno.EEXIST:
             # Directory exists, save it and create a new one.
             log.debug('Saving old directory at %r', path)
             # Only save one level of history.
@@ -183,7 +183,7 @@ def create_new_dir_saving_existing_dir(log, path):
                 shutil.rmtree(saved_path)
             shutil.move(path, saved_path)
             # Retry, now that we've moved the old one out of the way.
-            create_new_dir_saving_existing_dir(path)
+            create_new_dir_saving_existing_dir(path, False)
         else:
             # Something else went wrong.
             raise
