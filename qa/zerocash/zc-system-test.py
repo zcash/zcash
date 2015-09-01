@@ -57,15 +57,14 @@ def main(log, args = sys.argv[1:]):
 
     with DaemonNodeProcesses(daemonexecutable, opts.basedir):
 
-        # Wait for the daemon to load the wallet.
-        walletloaded = False
-        while not walletloaded:
+        # Wait for the daemon to load the wallet up to a maximum amount of tries
+        for i in xrange(0, 30):
             sleep(1)
             try:
                 cliexec('getwalletinfo')
-                walletloaded = True
+                break
             except subprocess.CalledProcessError:
-                # Wait some more.
+                # Wait some more then try again.
                 pass
 
         cliexec('setgenerate', 'true', '200')
