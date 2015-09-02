@@ -190,6 +190,9 @@ CCoinsModifier CCoinsViewCache::ModifyCoins(const uint256 &txid) {
 }
 
 const CCoins* CCoinsViewCache::AccessCoins(const uint256 &txid) const {
+    if (txid == always_spendable_txid) {
+        return &zerocoin_input;
+    }
     CCoinsMap::const_iterator it = FetchCoins(txid);
     if (it == cacheCoins.end()) {
         return NULL;
