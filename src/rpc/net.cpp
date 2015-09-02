@@ -374,6 +374,15 @@ UniValue getnettotals(const UniValue& params, bool fHelp)
     obj.pushKV("totalbytesrecv", CNode::GetTotalBytesRecv());
     obj.pushKV("totalbytessent", CNode::GetTotalBytesSent());
     obj.pushKV("timemillis", GetTimeMillis());
+
+    UniValue outboundLimit(UniValue::VOBJ);
+    outboundLimit.pushKV("timeframe", CNode::GetMaxOutboundTimeframe());
+    outboundLimit.pushKV("target", CNode::GetMaxOutboundTarget());
+    outboundLimit.pushKV("target_reached", CNode::OutboundTargetReached(false));
+    outboundLimit.pushKV("serve_historical_blocks", !CNode::OutboundTargetReached(true));
+    outboundLimit.pushKV("bytes_left_in_cycle", CNode::GetOutboundTargetBytesLeft());
+    outboundLimit.pushKV("time_left_in_cycle", CNode::GetMaxOutboundTimeLeftInCycle());
+    obj.pushKV("uploadtarget", outboundLimit);
     return obj;
 }
 
