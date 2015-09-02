@@ -1439,13 +1439,15 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
              * system! Therefore, ZC probably breaks during block reorgs.
              */
             if (txin.IsZCPour()) {
+                assert(txin.prevout.hash == always_spendable_txid);
                 BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()) {
                     markeSerialAsSpent(inputs, serial, tx.GetHash());
                 }
-            } else {
-              txundo.vprevout.push_back(CTxInUndo());
-              bool ret = inputs.ModifyCoins(txin.prevout.hash)->Spend(txin.prevout, txundo.vprevout.back());
-              assert(ret);
+            } else if (!txin.IsZCMint()) {
+                assert(txin.prevout.hash != always_spendable_txid);
+                txundo.vprevout.push_back(CTxInUndo());
+                bool ret = inputs.ModifyCoins(txin.prevout.hash)->Spend(txin.prevout, txundo.vprevout.back());
+                assert(ret);
             }
         }
     }
