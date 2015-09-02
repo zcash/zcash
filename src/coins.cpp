@@ -172,6 +172,7 @@ bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) const {
 }
 
 CCoinsModifier CCoinsViewCache::ModifyCoins(const uint256 &txid) {
+    assert(txid != always_spendable_txid); // This magic txid should never be written to.
     assert(!hasModifier);
     std::pair<CCoinsMap::iterator, bool> ret = cacheCoins.insert(std::make_pair(txid, CCoinsCacheEntry()));
     if (ret.second) {
@@ -190,6 +191,9 @@ CCoinsModifier CCoinsViewCache::ModifyCoins(const uint256 &txid) {
 }
 
 const CCoins* CCoinsViewCache::AccessCoins(const uint256 &txid) const {
+    if (txid == always_spendable_txid) {
+        return &zerocoin_input;
+    }
     CCoinsMap::const_iterator it = FetchCoins(txid);
     if (it == cacheCoins.end()) {
         return NULL;
