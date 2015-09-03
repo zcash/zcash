@@ -71,7 +71,9 @@ def main(log, args = sys.argv[1:]):
         [coin1, coin2] = parse_coins(opts.basedir, 2)
 
         cliexec('setgenerate', 'true', '1')
-        cliexec('zerocoinpour', addr, 'true', coin1, coin2)
+
+        provepour = 'false' if opts.dummypours else 'true'
+        cliexec('zerocoinpour', addr, provepour, coin1, coin2)
 
 
 @curry_log
@@ -101,6 +103,12 @@ def parse_args(log, args):
                    default=execdirdefault,
                    help=('The bin dir for zerocash-flavored bitcoin executables. '
                          + 'Default: {0!r}'.format(execdirdefault)))
+
+    p.add_argument('--dummy-pours',
+                   dest='dummypours',
+                   action='store_true',
+                   default=False,
+                   help='Skip Pour proving. Insert a dummy pad into Pour TxIns.')
 
     opts = p.parse_args(args)
 
