@@ -1200,7 +1200,8 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
     CTxIn in(always_spendable_txid, 0, scriptSig);
     rawTx.vin.push_back(in);
 
-    uint256 hash = SignatureHash(scriptSig, rawTx, 0, SIGHASH_ALL);
+    const int nHashType = SIGHASH_ALL;
+    uint256 hash = SignatureHash(scriptSig, rawTx, 0, nHashType);
     LogPrint("zerocoin", "MakePourTx: rawTx size %d, signnatue hash %s\n", pour_vector.size(), hash.ToString());
 
 
@@ -1208,6 +1209,7 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
     if (!key.Sign(hash,vchSig)) {
         throw runtime_error("Cannot sign transaction");
     }
+    vchSig.push_back((unsigned char)nHashType);
     scriptSig << vchSig;
 
     rawTx.vin[0].scriptSig = scriptSig;
