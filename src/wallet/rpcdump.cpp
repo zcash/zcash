@@ -19,7 +19,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include "univalue/univalue.h"
+#include <univalue.h>
 
 using namespace std;
 

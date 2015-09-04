@@ -31,7 +31,7 @@
 #include <boost/signals2/signal.hpp>
 #include <boost/thread.hpp>
 
-#include "univalue/univalue.h"
+#include <univalue.h>
 
 using namespace boost::asio;
 using namespace RPCServer;

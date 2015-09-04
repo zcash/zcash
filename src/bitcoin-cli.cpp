@@ -12,7 +12,7 @@
 
 #include <boost/filesystem/operations.hpp>
 
-#include "univalue/univalue.h"
+#include <univalue.h>
 
 using namespace std;
 

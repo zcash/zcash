@@ -20,7 +20,8 @@
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
-#include "univalue/univalue.h"
+
+#include <univalue.h>
 
 #include "zcash/Address.hpp"
 
