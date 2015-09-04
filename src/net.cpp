@@ -2147,6 +2147,7 @@ CNode::CNode(SOCKET hSocketIn, CAddress addrIn, std::string addrNameIn, bool fIn
     nPingUsecStart = 0;
     nPingUsecTime = 0;
     fPingQueued = false;
+    nMinPingUsecTime = std::numeric_limits<int64_t>::max();
 
     {
         LOCK(cs_nLastNodeId);
