@@ -1202,7 +1202,7 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
 
     const int nHashType = SIGHASH_ALL;
     uint256 hash = SignatureHash(scriptSig, rawTx, 0, nHashType);
-    LogPrint("zerocoin", "MakePourTx: rawTx size %d, signnatue hash %s\n", pour_vector.size(), hash.ToString());
+    LogPrint("zerocoin", "MakePourTx: rawTx size %d, signatue hash: %s\n", pour_vector.size(), hash.ToString());
 
 
     std::vector<unsigned char> vchSig(32);
@@ -1213,21 +1213,10 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
     scriptSig << vchSig;
 
     rawTx.vin[0].scriptSig = scriptSig;
-    CCoinsViewCache v(pcoinsTip);
-    LogPrint("zerocoin", "MakePourTx: transaction created. Verifying\n");
-    CCoins coins;
-    assert(v.GetCoins(always_spendable_txid, coins)); // always_spendable_txid is always found
-
-    // TODO FIXME: in v0.9.4 this used to pass nHashType=SIGHASH_ALL,
-    // what's the v0.10.0 equivalent of that?
-    ScriptError err;
-    if (VerifyScript(scriptSig, coins.vout[0].scriptPubKey, 0,
-                     MutableTransactionSignatureChecker(&rawTx, 0), &err))
-    {
-        LogPrint("zerocoin", "MakePourTx: Verified \n");
-        return rawTx;
-    }
-    throw runtime_error(strprintf("invalid transaction: %s", ScriptErrorString(err)));
+    LogPrint("zerocoin",
+             "MakePourTx: transaction created with txid hash: %s\n",
+             rawTx.GetHash().GetHex());
+    return rawTx;
 }
 
 /*
