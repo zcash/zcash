@@ -1202,7 +1202,7 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
 
     const int nHashType = SIGHASH_ALL;
     uint256 hash = SignatureHash(scriptSig, rawTx, 0, nHashType);
-    LogPrint("zerocoin", "MakePourTx: rawTx size %d, signatue hash: %s\n", pour_vector.size(), hash.ToString());
+    LogPrint("zerocoin", "MakePourTx: rawTx size %d, signature hash: %s\n", pour_vector.size(), hash.ToString());
 
 
     std::vector<unsigned char> vchSig(32);
