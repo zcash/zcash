@@ -43,7 +43,7 @@ CFeeRate payTxFee(DEFAULT_TRANSACTION_FEE);
 unsigned int nTxConfirmTarget = DEFAULT_TX_CONFIRM_TARGET;
 bool bSpendZeroConfChange = DEFAULT_SPEND_ZEROCONF_CHANGE;
 bool fSendFreeTransactions = DEFAULT_SEND_FREE_TRANSACTIONS;
-bool fPayAtLeastCustomFee = true;
+bool fPayAtLeastCustomFee = false;
 
 const char * DEFAULT_WALLET_DAT = "wallet.dat";
 
