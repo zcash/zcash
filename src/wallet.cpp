@@ -1200,75 +1200,24 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
     CTxIn in(always_spendable_txid, 0, scriptSig);
     rawTx.vin.push_back(in);
 
-    uint256 hash = SignatureHash(scriptSig, rawTx, 0, SIGHASH_ALL);
-    LogPrint("zerocoin", "MakePourTx: rawTx size %d, signnatue hash %s\n", pour_vector.size(), hash.ToString());
+    const int nHashType = SIGHASH_ALL;
+    uint256 hash = SignatureHash(scriptSig, rawTx, 0, nHashType);
+    LogPrint("zerocoin", "MakePourTx: rawTx size %d, signature hash: %s\n", pour_vector.size(), hash.ToString());
 
 
     std::vector<unsigned char> vchSig(32);
     if (!key.Sign(hash,vchSig)) {
         throw runtime_error("Cannot sign transaction");
     }
+    vchSig.push_back((unsigned char)nHashType);
     scriptSig << vchSig;
 
     rawTx.vin[0].scriptSig = scriptSig;
-    CCoinsViewCache v(pcoinsTip);
-    LogPrint("zerocoin", "MakePourTx: transaction created. Verifying\n");
-    CCoins coins;
-    assert(v.GetCoins(always_spendable_txid, coins)); // always_spendable_txid is always found
-
-    // TODO FIXME: in v0.9.4 this used to pass nHashType=SIGHASH_ALL,
-    // what's the v0.10.0 equivalent of that?
-    ScriptError err;
-    if (VerifyScript(scriptSig, coins.vout[0].scriptPubKey, 0,
-                     MutableTransactionSignatureChecker(&rawTx, 0), &err))
-    {
-        LogPrint("zerocoin", "MakePourTx: Verified \n");
-        return rawTx;
-    }
-    throw runtime_error(strprintf("invalid transaction: %s", ScriptErrorString(err)));
+    LogPrint("zerocoin",
+             "MakePourTx: transaction created with txid hash: %s\n",
+             rawTx.GetHash().GetHex());
+    return rawTx;
 }
-
-/*
-CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pourtxNew,const CKey &key,){
-
-    //cout << "does tx verify "  << pourtxNew.verify(*pzerocashParams,keyahshv,rt) << endl;
-
-    // END FAKE Pour. Now actually serialize.
-
-    CHashWriter hh(SER_GETHASH, 0);
-    hh << pourtxNew;
-
-
-    CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
-    std::vector<unsigned char> vchSig(32);
-
-    dd << pourtxNew;
-    std::vector<unsigned char> pour_vector(dd.begin(), dd.end());
-
-    CScript scriptSig;
-    scriptSig.clear();
-    scriptSig << pour_vector;
-    scriptSig << key.GetPubKey();
-    scriptSig << rt;
-
-    CTxIn in(always_spendable_txid, 0, scriptSig);
-    rawTx.vin.push_back(in);
-
-    // XXX FIXME don't assume the zerocash transaction is the first one
-
-
-    uint256 hash = SignatureHash(scriptSig, rawTx, 0, SIGHASH_ALL);
-    LogPrint("zerocoin", "zerocoin pour: rawTx size %d, signnatue hash %s\n", pour_vector.size(), hash.ToString());
-
-    if (!key.Sign(hash,vchSig)) {
-        throw JSONRPCError(RPC_TYPE_ERROR, "Cannot sign transaction");
-    }
-    scriptSig << vchSig;
-    rawTx.vin[0].scriptSig = scriptSig;
-
-    return CTransaction();
-}
-*/
 
 
 /** @defgroup Actions
