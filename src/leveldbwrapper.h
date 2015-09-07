@@ -86,6 +86,12 @@ private:
     leveldb::DB* pdb;
 
 public:
+    /**
+     * @param[in] path        Location in the filesystem where leveldb data will be stored.
+     * @param[in] nCacheSize  Configures various leveldb cache settings.
+     * @param[in] fMemory     If true, use leveldb's memory environment.
+     * @param[in] fWipe       If true, remove all existing data.
+     */
     CLevelDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory = false, bool fWipe = false);
     ~CLevelDBWrapper();
 
@@ -168,6 +174,13 @@ public:
     {
         return pdb->NewIterator(iteroptions);
     }
+
+    /**
+     * Return true if the database managed by this class contains no entries.
+     */
+    bool IsEmpty();
+
 };
 
 #endif // BITCOIN_LEVELDBWRAPPER_H
+
