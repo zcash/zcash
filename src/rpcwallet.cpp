@@ -507,7 +507,7 @@ Value zerocoinmint(const Array& params, bool fHelp){
 }
 
 Value zerocoinpour(const Array& params, bool fHelp){
-    if (fHelp || params.size() < 4)
+    if (fHelp || params.size() < 4 || params.size() > 5)
         throw runtime_error(
             "claim_zerocoin address_to_pay_to \n"
             "use real pour."
@@ -520,6 +520,11 @@ Value zerocoinpour(const Array& params, bool fHelp){
     inputCoinhash1.SetHex(params[2].get_str());
     uint256 inputCoinhash2;
     inputCoinhash2.SetHex(params[3].get_str());
+
+    CAmount fee = 0;
+    if (params.size() == 5) {
+        fee = AmountFromValue(params[4]);
+    }
 
     if (!address.IsValid())
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
@@ -543,7 +548,8 @@ Value zerocoinpour(const Array& params, bool fHelp){
     CTransaction rawTx;
     rawTx = pwalletMain->MakePour(version, inputCoinhash1, inputCoinhash2, key,
                                   outputCoin1, outputCoin2,
-                                  destinationAddress1, destinationAddress2);
+                                  destinationAddress1, destinationAddress2,
+                                  fee);
 
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << rawTx;

@@ -1096,7 +1096,8 @@ libzerocash::IncrementalMerkleTree CWallet::BuildZercoinMerkleTree() {
 
 CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coinhash2, CKey key,
                                libzerocash::Coin newcoin1, libzerocash::Coin newcoin2,
-                               libzerocash::Address newAddress1, libzerocash::Address newAddress2) {
+                               libzerocash::Address newAddress1, libzerocash::Address newAddress2,
+                               CAmount fee) {
     LogPrint("zerocoin", "MakePour : constructing pour of coins %s,%s", coinhash1.ToString(), coinhash2.ToString());
 
     std::map<uint256, int> coinIndex;
@@ -1165,15 +1166,17 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
         throw runtime_error("computed merkle root not in block tip");
     }
     //put pour in transaction
-    return this->MakePourTx(pourtx,blockhash,key);
+    return this->MakePourTx(pourtx, blockhash, key, fee);
 }
 
 CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
-                                 const uint256 &blockhash, const CKey &key) {
+                                 const uint256 &blockhash, const CKey &key,
+                                 CAmount fee) {
     CMutableTransaction rawTx;
 
     // compose output portion of transaction
     if (pour.getMonetaryValueOut() == 0) {
+        LogPrint("zerocoin", "MakePourTx: vpub is 0...\n");
         CScript scriptPubKey;
         scriptPubKey << OP_RETURN;
         scriptPubKey << blockhash;
@@ -1181,9 +1184,16 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
         rawTx.vout.push_back(out);
     } else {
         CAmount nAmount = pour.getMonetaryValueOut();
+        if (nAmount < fee) {
+            /* BUG: Instead of silently clipping the fee, we should
+             * signal an error to the caller. ref #235
+             */
+            LogPrint("zerocoin", "MakePourTx: clipping fee from %d to vpub amount %d.\n", fee, nAmount);
+            fee = nAmount;
+        }
         CBitcoinAddress aa(key.GetPubKey().GetID());
         CScript scriptPubKey = GetScriptForDestination(aa.Get());
-        CTxOut out(nAmount, scriptPubKey);
+        CTxOut out(nAmount - fee, scriptPubKey);
         rawTx.vout.push_back(out);
     }
     CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);

@@ -34,7 +34,8 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "sendtoaddress", 1 },
     { "zerocoinmint", 0 }, // amount
     { "zerocoinmint", 1 }, // change amount
-    { "zerocoinpour", 1 }, // bool - include snark proof?
+    { "zerocoinpour", 1 }, // bool - generate snark proof on true; dummy otherwise
+    { "zerocoinpour", 4 }, // fee amount
     { "settxfee", 0 },
     { "getreceivedbyaddress", 1 },
     { "getreceivedbyaccount", 1 },
