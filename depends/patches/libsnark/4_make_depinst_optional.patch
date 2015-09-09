@@ -1,14 +1,14 @@
-commit 871dac7fcea001b9c7f88a86fd6cce424ebeb068
-Author: Nathan Wilcox <nejucomo@gmail.com>
-Date:   Tue May 12 14:07:26 2015 -0700
+commit 85e660ec91d4fce84a6e1eb1b5ad757d6d645344
+Author: Taylor Hornby <havoc@defuse.ca>
+Date:   Wed Sep 9 16:48:36 2015 -0600
 
     Do not assume DEPINST is in use during install.
 
 diff --git a/Makefile b/Makefile
-index 93ef3b2..c2226a0 100644
+index daf7d26..cb9b751 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -193,8 +193,8 @@ $(HEADERS_DEST): $(PREFIX)/include/libsnark/%: src/%
+@@ -247,8 +247,8 @@ $(HEADERS_DEST): $(PREFIX)/include/libsnark/%: src/%
  install: lib $(HEADERS_DEST)
  	mkdir -p $(PREFIX)/lib
  	cp $(LIBOBJ) $(PREFIX)/lib/$(LIBOBJ)
