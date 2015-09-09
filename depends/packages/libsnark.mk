@@ -3,8 +3,8 @@ $(package)_version=0.1
 $(package)_download_path=https://github.com/scipr-lab/$(package)/archive/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
-$(package)_sha256_hash=5876588a523fd033d6928f46452512327a75b32533e980daa800730446edd28c
-$(package)_git_commit=2474695678b3529841eced49ea97ca683e91996c
+$(package)_sha256_hash=3203a037e6020c929f7da99fcefd6de5e363224c955586d22575c57e6345be59
+$(package)_git_commit=c9c0d51f74816ea8e6db052410acafbdb0d31a64
 
 $(package)_dependencies=crypto++ libgmp xbyak ate-pairing
 $(package)_patches=1_cxxflags_prefix.patch 2_fix_Wl_flag.patch 3_ldflags_prefix.patch 4_make_depinst_optional.patch
