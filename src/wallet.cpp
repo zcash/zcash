@@ -1173,9 +1173,15 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
                                  const uint256 &blockhash, const CKey &key,
                                  CAmount fee) {
     CMutableTransaction rawTx;
+    CAmount nAmount = pour.getMonetaryValueOut();
+
+    if (nAmount < fee) {
+        LogPrint("zerocoin", "MakePourTx: vpub amount %d is insufficient to cover fee %d.\n", nAmount, fee);
+        throw new runtime_error("vpub amount is insufficient to cover fee");
+    }
 
     // compose output portion of transaction
-    if (pour.getMonetaryValueOut() == 0) {
+    if (nAmount == 0) {
         LogPrint("zerocoin", "MakePourTx: vpub is 0...\n");
         CScript scriptPubKey;
         scriptPubKey << OP_RETURN;
@@ -1183,14 +1189,7 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
         CTxOut out(0, scriptPubKey);
         rawTx.vout.push_back(out);
     } else {
-        CAmount nAmount = pour.getMonetaryValueOut();
-        if (nAmount < fee) {
-            /* BUG: Instead of silently clipping the fee, we should
-             * signal an error to the caller. ref #235
-             */
-            LogPrint("zerocoin", "MakePourTx: clipping fee from %d to vpub amount %d.\n", fee, nAmount);
-            fee = nAmount;
-        }
+        LogPrint("zerocoin", "MakePourTx: vpub is not 0...\n");
         CBitcoinAddress aa(key.GetPubKey().GetID());
         CScript scriptPubKey = GetScriptForDestination(aa.Get());
         CTxOut out(nAmount - fee, scriptPubKey);
