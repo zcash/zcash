@@ -507,10 +507,10 @@ Value zerocoinmint(const Array& params, bool fHelp){
 }
 
 Value zerocoinpour(const Array& params, bool fHelp){
-    if (fHelp || params.size() < 4 || params.size() > 5)
+    if (fHelp || params.size() != 5)
         throw runtime_error(
             "claim_zerocoin address_to_pay_to \n"
-            "use real pour."
+            "use real pour." // FIXME correct this usage string
        );
     EnsureWalletIsUnlocked();
 
@@ -521,10 +521,7 @@ Value zerocoinpour(const Array& params, bool fHelp){
     uint256 inputCoinhash2;
     inputCoinhash2.SetHex(params[3].get_str());
 
-    CAmount fee = 0;
-    if (params.size() == 5) {
-        fee = AmountFromValue(params[4]);
-    }
+    CAmount fee = AmountFromValue(params[4]);
 
     if (!address.IsValid())
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
