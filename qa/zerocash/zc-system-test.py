@@ -56,7 +56,7 @@ def main(log, args = sys.argv[1:]):
     cliexec = partial(check_call, clientexecutable, clientbaseopt)
     cliout = partial(check_output, clientexecutable, clientbaseopt)
 
-    with DaemonNodeProcesses(daemonexecutable, opts.basedir):
+    with DaemonNodeProcesses(daemonexecutable, opts.basedir, opts.debugpause):
 
         # Wait for the daemon to load the wallet up to a maximum amount of tries
         for i in xrange(0, 30):
@@ -120,6 +120,12 @@ def parse_args(log, args):
                    action='store_true',
                    default=False,
                    help='Skip Pour proving. Insert a dummy pad into Pour TxIns.')
+
+    p.add_argument('--debug-pause',
+                   dest='debugpause',
+                   action='store_true',
+                   default=False,
+                   help='Pause after launching nodes to facilitate attaching gdb.')
 
     opts = p.parse_args(args)
 
@@ -207,10 +213,11 @@ def check_output(log, *args):
 
 @curry_log
 class DaemonNodeProcesses (object):
-    def __init__(self, log, executable, basedir):
+    def __init__(self, log, executable, basedir, debugpause):
         self._log = log
         self._executable = executable
         self._basedir = basedir
+        self._debugpause = debugpause
         self._procs = []
 
     def __enter__(self):
@@ -231,6 +238,12 @@ class DaemonNodeProcesses (object):
             proc = subprocess.Popen(args, stdout=outf, stderr=subprocess.STDOUT)
             self._log.info('Launched %r PID %r Log %r', args, proc.pid, outf.name)
             self._procs.append( (proc, outf) )
+
+        if self._debugpause:
+            print('*** blocking so you can attach gdb in another terminal ***')
+            print('You probably want this command:\n')
+            print('  gdb -p {}\n'.format(self._procs[0][0].pid))
+            raw_input('press enter here after you have executed "continue" in gdb...')
 
     def __exit__(self, type, value, traceback):
         self._log.debug('Terminating subprocesses...')
