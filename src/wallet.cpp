@@ -1156,7 +1156,7 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
                                         a1, a2,
                                         witness_1, witness_2,
                                         newAddress1.getPublicAddress(), newAddress2.getPublicAddress(),
-                                        0,
+                                        (uint64_t) fee,
                                         keyahshv,
                                         newcoin1, newcoin2);
     // bool v = pourtx.verify(*pzerocashParams, keyahshv, rt);
