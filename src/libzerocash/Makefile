@@ -33,6 +33,12 @@ SRCS= \
 
 #	$(TESTUTILS)/timer.cpp # BUG: Re-enable tests in the appropriate location.
 
+TEMPLATES= \
+	$(wildcard pour_ppzksnark/*.hpp) \
+	$(wildcard pour_ppzksnark/*.tcc) \
+	$(wildcard pour_ppzksnark/hashes/*.hpp) \
+	$(wildcard pour_ppzksnark/hashes/*.tcc)
+
 EXECUTABLES= \
 	tests/test_hash \
 	tests/test_pour_ppzksnark \
@@ -110,6 +116,18 @@ banktest_library: %: bankTest.o $(OBJS)
 
 merkletest_library: %: merkleTest.o $(OBJS) 
 	$(CXX) -o $@ $^ $(CXXFLAGS_ACTUAL) $(LDFLAGS_ACTUAL) $(LDLIBS_ACTUAL) -lzerocash
+
+utils/sha256.o: utils/sha256.cpp utils/sha256.h $(TEMPLATES)
+utils/util.o: utils/util.cpp utils/util.h $(TEMPLATES)
+Node.o: Node.cpp Node.h $(TEMPLATES)
+IncrementalMerkleTree.o: IncrementalMerkleTree.cpp IncrementalMerkleTree.h $(TEMPLATES)
+MerkleTree.o: MerkleTree.cpp MerkleTree.h $(TEMPLATES)
+Address.o: Address.cpp Address.h $(TEMPLATES)
+CoinCommitment.o: CoinCommitment.cpp CoinCommitment.h $(TEMPLATES)
+Coin.o: Coin.cpp Coin.h $(TEMPLATES)
+MintTransaction.o: MintTransaction.cpp MintTransaction.h $(TEMPLATES)
+PourTransaction.o: PourTransaction.cpp PourTransaction.h $(TEMPLATES)
+ZerocashParams.o: ZerocashParams.cpp ZerocashParams.h $(TEMPLATES)
 
 .PHONY: clean
 
