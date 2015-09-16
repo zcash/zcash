@@ -1098,7 +1098,7 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
                                libzerocash::Coin newcoin1, libzerocash::Coin newcoin2,
                                libzerocash::Address newAddress1, libzerocash::Address newAddress2,
                                CAmount fee) {
-    LogPrint("zerocoin", "MakePour : constructing pour of coins %s,%s", coinhash1.ToString(), coinhash2.ToString());
+    LogPrint("zerocoin", "MakePour : constructing pour of coins %s,%s\n", coinhash1.ToString(), coinhash2.ToString());
 
     std::map<uint256, int> coinIndex;
     // build merkletree and complete with location of coins
