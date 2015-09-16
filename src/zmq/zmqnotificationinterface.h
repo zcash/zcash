@@ -9,6 +9,7 @@
 #include <string>
 #include <map>
 
+class CBlockIndex;
 class CZMQAbstractNotifier;
 
 class CZMQNotificationInterface : public CValidationInterface
@@ -24,7 +25,7 @@ protected:
 
     // CValidationInterface
     void SyncTransaction(const CTransaction &tx, const CBlock *pblock);
-    void UpdatedBlockTip(const uint256 &newHashTip);
+    void UpdatedBlockTip(const CBlockIndex *pindex);
 
 private:
     CZMQNotificationInterface();
