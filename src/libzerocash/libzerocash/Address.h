@@ -15,7 +15,7 @@
 #include <vector>
 #include <string>
 
-#include "serialize.h"
+#include "libzerocash/libzerocash/serialize.h"
 
 namespace libzerocash {
 
@@ -34,11 +34,13 @@ public:
 	bool operator==(const PublicAddress& rhs) const;
 	bool operator!=(const PublicAddress& rhs) const;
 
-	IMPLEMENT_SERIALIZE
-	(
+	ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
 	    READWRITE(a_pk);
 	    READWRITE(pk_enc);
-	)
+    }
 
 private:
 	std::vector<unsigned char> a_pk;
@@ -65,12 +67,14 @@ public:
 	bool operator==(const Address& rhs) const;
 	bool operator!=(const Address& rhs) const;
 
-	IMPLEMENT_SERIALIZE
-	(
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
 	    READWRITE(addr_pk);
 	    READWRITE(a_sk);
         READWRITE(sk_enc);
-	)
+    }
 
 private:
 	PublicAddress addr_pk;

@@ -14,7 +14,7 @@
 
 #include <vector>
 
-#include "serialize.h"
+#include "libzerocash/libzerocash/serialize.h"
 
 namespace libzerocash {
 
@@ -38,10 +38,12 @@ public:
 	bool operator==(const CoinCommitment& rhs) const;
 	bool operator!=(const CoinCommitment& rhs) const;
 
-	IMPLEMENT_SERIALIZE
-	(
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(commitmentValue);
-	)
+    }
 
 private:
     std::vector<unsigned char> commitmentValue;

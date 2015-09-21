@@ -12,7 +12,7 @@
 #ifndef POURTRANSACTION_H_
 #define POURTRANSACTION_H_
 
-#include "serialize.h"
+#include "libzerocash/libzerocash/serialize.h"
 #include "Coin.h"
 #include "ZerocashParams.h"
 #include "Zerocash.h"
@@ -101,8 +101,10 @@ public:
 	 */
 	uint64_t getMonetaryValueOut() const;
 
-    IMPLEMENT_SERIALIZE
-    (
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
 		READWRITE(version);
         READWRITE(publicValue);
         READWRITE(serialNumber_1);
@@ -114,7 +116,7 @@ public:
         READWRITE(ciphertext_1);
         READWRITE(ciphertext_2);
 		READWRITE(zkSNARK);
-    )
+    }
 
 
 private:
