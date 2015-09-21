@@ -1,42 +1,35 @@
-# Don't set "user variables" such as CXXFLAGS, LDFLAGS, etc... Instead,
-# incorporate those user variables into *_ACTUAL variables with internally
-# dictated flags. This is an attempt to emulate autotools and to allow
-# ./configure to customize the build:
-CXXFLAGS_ACTUAL = $(CXXFLAGS)
-LDFLAGS_ACTUAL = $(LDFLAGS)
-LDLIBS_ACTUAL = $(LDLIBS)
+CXXFLAGS += -g -Wall -Wextra -Werror -Wfatal-errors -Wno-unused-parameter -march=native -mtune=native -std=c++11 -fPIC -Wno-unused-variable
+LDFLAGS += -flto
 
+DEPSRC=depsrc
+DEPINST=depinst
 
-CXXFLAGS_ACTUAL += -g -Wall -Wextra -Werror -Wfatal-errors -Wno-unused-parameter -march=native -mtune=native -std=c++11 -fPIC
-LDFLAGS_ACTUAL += -flto
-
-#TESTUTILS=tests # BUG: Re-enable tests in the appropriate location.
-
-LDLIBS_ACTUAL += -L . -lsnark -lzm -lgmpxx -lgmp
-LDLIBS_ACTUAL += -lboost_system -lcrypto -lcryptopp
-CXXFLAGS_ACTUAL += -I . -DUSE_ASM -DCURVE_ALT_BN128
+LIBZEROCASH=libzerocash
+UTILS=$(LIBZEROCASH)/utils
+TESTUTILS=tests
+LDLIBS += -L $(DEPINST)/lib -Wl,-rpath $(DEPINST)/lib -L . -lsnark -lzm -lgmpxx -lgmp
+LDLIBS += -lboost_system -lcrypto -lcryptopp
+CXXFLAGS += -I $(DEPINST)/include -I $(DEPINST)/include/libsnark -I . -DUSE_ASM -DCURVE_ALT_BN128
 
 LIBPATH = /usr/local/lib
 
 SRCS= \
-	./utils/sha256.cpp \
-	./utils/util.cpp \
-	Node.cpp \
-	IncrementalMerkleTree.cpp \
-	MerkleTree.cpp \
-	Address.cpp \
-	CoinCommitment.cpp \
-	Coin.cpp \
-	MintTransaction.cpp \
-	PourTransaction.cpp \
-	ZerocashParams.cpp
-
-#	$(TESTUTILS)/timer.cpp # BUG: Re-enable tests in the appropriate location.
+	$(UTILS)/sha256.cpp \
+	$(UTILS)/util.cpp \
+	$(LIBZEROCASH)/Node.cpp \
+	$(LIBZEROCASH)/IncrementalMerkleTree.cpp \
+	$(LIBZEROCASH)/MerkleTree.cpp \
+	$(LIBZEROCASH)/Address.cpp \
+	$(LIBZEROCASH)/CoinCommitment.cpp \
+	$(LIBZEROCASH)/Coin.cpp \
+	$(LIBZEROCASH)/MintTransaction.cpp \
+	$(LIBZEROCASH)/PourTransaction.cpp \
+	$(LIBZEROCASH)/ZerocashParams.cpp \
+	$(TESTUTILS)/timer.cpp
 
 EXECUTABLES= \
-	tests/test_hash \
-	tests/test_pour_ppzksnark \
-	tests/profile_pour_gadget \
+	zerocash_pour_ppzksnark/tests/test_zerocash_pour_ppzksnark \
+	zerocash_pour_ppzksnark/profiling/profile_zerocash_pour_gadget \
 	tests/zerocashTest \
 	tests/merkleTest \
 	libzerocash/GenerateParamsForFiles
@@ -44,46 +37,46 @@ EXECUTABLES= \
 OBJS=$(patsubst %.cpp,%.o,$(SRCS))
 
 ifeq ($(MINDEPS),1)
-	CXXFLAGS_ACTUAL += -DMINDEPS
+	CXXFLAGS += -DMINDEPS
 else
-	LDLIBS_ACTUAL += -lboost_program_options
-	LDLIBS_ACTUAL += -lprocps
+	LDLIBS += -lboost_program_options
+	LDLIBS += -lprocps
 endif
 
 ifeq ($(LOWMEM),1)
-	CXXFLAGS_ACTUAL += -DLOWMEM
+	CXXFLAGS += -DLOWMEM
 endif
 
 ifeq ($(STATIC),1)
-	CXXFLAGS_ACTUAL += -static -DSTATIC
+	CXXFLAGS += -static -DSTATIC
 endif
 
 ifeq ($(PROFILE_CURVE),1)
-	CXXFLAGS_ACTUAL += -static -DPROFILE_CURVE
+	CXXFLAGS += -static -DPROFILE_CURVE
 endif
 
 ifeq ($(MULTICORE),1)
-	CXXFLAGS_ACTUAL += -static -DMULTICORE
+	CXXFLAGS += -static -DMULTICORE
 endif
 
 all: $(EXECUTABLES) libzerocash.a
 
-cppdebug: CXXFLAGS_ACTUAL += -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
+cppdebug: CXXFLAGS += -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 cppdebug: debug
 
-debug: CXXFLAGS_ACTUAL += -DDEBUG -ggdb3
+debug: CXXFLAGS += -DDEBUG -g -ggdb3
 debug: all
 
-noasserts: CXXFLAGS_ACTUAL += -DNDEBUG -Wno-unused-variable -Wno-unused-but-set-variable
+noasserts: CXXFLAGS += -DNDEBUG -Wno-unused-variable -Wno-unused-but-set-variable
 noasserts: all
 
 $(EXECUTABLES): %: %.o $(OBJS)
-	$(CXX) -o $@ $^ $(CXXFLAGS_ACTUAL) $(LDFLAGS_ACTUAL) $(LDLIBS_ACTUAL)
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 
 libzerocash: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Cross G++ Linker'
-	$(CXX) -shared -o "libzerocash.so" $(OBJS) $(CXXFLAGS_ACTUAL) $(LDFLAGS_ACTUAL) $(LDLIBS_ACTUAL)
+	$(CXX) -shared -o "libzerocash.so" $(OBJS) $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 	@echo 'Finished building target: $@'
 	@echo 'Copying libzerocash.so'
 	sudo cp libzerocash.so $(LIBPATH)/libzerocash.so
@@ -103,13 +96,13 @@ libzerocash.a: $(OBJS) $(USER_OBJS)
 	@echo ' '
 
 test_library: %: tests/zerocashTest.o $(OBJS) 
-	$(CXX) -o tests/$@ $^ $(CXXFLAGS_ACTUAL) $(LDFLAGS_ACTUAL) $(LDLIBS_ACTUAL) -lzerocash
-
+	$(CXX) -o tests/$@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -lzerocash
+	
 banktest_library: %: bankTest.o $(OBJS) 
-	$(CXX) -o $@ $^ $(CXXFLAGS_ACTUAL) $(LDFLAGS_ACTUAL) $(LDLIBS_ACTUAL) -lzerocash
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -lzerocash
 
 merkletest_library: %: merkleTest.o $(OBJS) 
-	$(CXX) -o $@ $^ $(CXXFLAGS_ACTUAL) $(LDFLAGS_ACTUAL) $(LDLIBS_ACTUAL) -lzerocash
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -lzerocash
 
 .PHONY: clean
 
