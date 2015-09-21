@@ -14,8 +14,8 @@
 #include "Zerocash.h"
 #include "libsnark/common/default_types/r1cs_ppzksnark_pp.hpp"
 #include "libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp"
-#include "zerocash_pour_ppzksnark/zerocash_pour_gadget.hpp"
-#include "zerocash_pour_ppzksnark/zerocash_pour_ppzksnark.hpp"
+#include "libzerocash/zerocash_pour_ppzksnark/zerocash_pour_gadget.hpp"
+#include "libzerocash/zerocash_pour_ppzksnark/zerocash_pour_ppzksnark.hpp"
 
 using namespace libzerocash;
 

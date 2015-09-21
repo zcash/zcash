@@ -13,7 +13,7 @@
 #define MERKLETREE_H_
 
 #include "Node.h"
-#include "libzerocash/utils/sha256.h"
+#include "libzerocash/libzerocash/utils/sha256.h"
 #include "Zerocash.h"
 
 #include <vector>
