@@ -21,7 +21,7 @@
 #include <map>
 #include <cstring>
 
-#include "serialize.h"
+#include "libzerocash/libzerocash/serialize.h"
 
 #include "libsnark/common/data_structures/merkle_tree.hpp"
 
@@ -40,12 +40,14 @@ public:
     void		clear() { hashVec.clear(); hashList.clear(); hashListBytes.clear(); treeHeight = 0; }
     uint32_t	getHeight() { return this->treeHeight; }
 
-    IMPLEMENT_SERIALIZE
-	(
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
 	 READWRITE(treeHeight);
      READWRITE(hashVec);
      READWRITE(hashListBytes);
-    )
+    }
 };
 
 /********************* Incremental Merkle tree node **************************/

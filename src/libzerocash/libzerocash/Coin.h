@@ -14,7 +14,7 @@
 
 #include <vector>
 
-#include "serialize.h"
+#include "libzerocash/libzerocash/serialize.h"
 #include "Address.h"
 #include "CoinCommitment.h"
 
@@ -48,15 +48,17 @@ public:
 	bool operator==(const Coin& rhs) const;
 	bool operator!=(const Coin& rhs) const;
 
-	IMPLEMENT_SERIALIZE
-	(
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
 	    READWRITE(addr_pk);
 	    READWRITE(cm);
         READWRITE(rho);
         READWRITE(r);
 		READWRITE(k);
 		READWRITE(coinValue);
-	)
+	}
 
 private:
 	PublicAddress addr_pk;
