@@ -1131,8 +1131,8 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
     LogPrint("zerocoin","MakePour : root %s\n", newroot.ToString());
 
     // get witnesses
-    libsnark::auth_path witness_1(ZC_MERKLE_DEPTH);
-    libsnark::auth_path witness_2(ZC_MERKLE_DEPTH);
+    libsnark::merkle_authentication_path witness_1(ZC_MERKLE_DEPTH);
+    libsnark::merkle_authentication_path witness_2(ZC_MERKLE_DEPTH);
 
     zerocoinMerkleTree.getWitness(convertIntToVector(coinIndex[coinhash1]), witness_1);
     zerocoinMerkleTree.getWitness(convertIntToVector(coinIndex[coinhash2]), witness_2);
@@ -1153,6 +1153,7 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
                                         rt,
                                         c1, c2,
                                         a1, a2,
+                                        0,  0, // XXX: what is this?
                                         witness_1, witness_2,
                                         newAddress1.getPublicAddress(), newAddress2.getPublicAddress(),
                                         0,
