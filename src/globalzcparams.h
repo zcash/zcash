@@ -1,7 +1,7 @@
 #ifndef GLOBALZCPARAMS_H
 #define GLOBALZCPARAMS_H
 
-#include "libzerocash/ZerocashParams.h"
+#include "libzerocash/libzerocash/ZerocashParams.h"
 
 
 extern libzerocash::ZerocashParams *pzerocashParams;

@@ -50,6 +50,7 @@ $(LIBZEROCASH): $(LIBZEROCASH_HEADER_FILES) $(LIBZEROCASH_SOURCES)
 		CPPFLAGS='-I.. $(CPPFLAGS)' \
 		CXXFLAGS='$(CXXFLAGS)'
 
+# FIXME: update these
 LIBZEROCASH_HEADER_FILES = \
   $(wildcard libzerocash/*.h) \
   $(wildcard libzerocash/utils/*.h) \
