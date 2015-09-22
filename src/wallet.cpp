@@ -1153,7 +1153,7 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
                                         rt,
                                         c1, c2,
                                         a1, a2,
-                                        0,  0, // XXX: what is this?
+                                        coinIndex[coinhash1],  coinIndex[coinhash2],
                                         witness_1, witness_2,
                                         newAddress1.getPublicAddress(), newAddress2.getPublicAddress(),
                                         0,
