@@ -12,7 +12,7 @@
 #ifndef MINTTRANSACTION_H_
 #define MINTTRANSACTION_H_
 
-#include "libzerocash/libzerocash/serialize.h"
+#include "serialize.h"
 #include "CoinCommitment.h"
 #include "Coin.h"
 

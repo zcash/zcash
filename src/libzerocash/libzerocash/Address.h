@@ -15,7 +15,7 @@
 #include <vector>
 #include <string>
 
-#include "libzerocash/libzerocash/serialize.h"
+#include "serialize.h"
 
 namespace libzerocash {
 
