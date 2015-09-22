@@ -12,7 +12,7 @@
 #ifndef POURTRANSACTION_H_
 #define POURTRANSACTION_H_
 
-#include "libzerocash/libzerocash/serialize.h"
+#include "serialize.h"
 #include "Coin.h"
 #include "ZerocashParams.h"
 #include "Zerocash.h"

@@ -21,7 +21,7 @@
 #include <map>
 #include <cstring>
 
-#include "libzerocash/libzerocash/serialize.h"
+#include "serialize.h"
 
 #include "libsnark/common/data_structures/merkle_tree.hpp"
 
