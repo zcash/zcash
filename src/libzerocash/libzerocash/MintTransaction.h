@@ -60,17 +60,17 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-		READWRITE(externalCommitment);
+        READWRITE(externalCommitment);
         READWRITE(coinValue);
-		READWRITE(internalCommitment);
+        READWRITE(internalCommitment);
     }
 
 private:
-	std::vector<unsigned char>	coinValue;			// coin value
-	std::vector<unsigned char>	internalCommitment; // "k" in paper notation
-    CoinCommitment				externalCommitment; // "cm" in paper notation
+    std::vector<unsigned char>    coinValue;          // coin value
+    std::vector<unsigned char>    internalCommitment; // "k" in paper notation
+    CoinCommitment                externalCommitment; // "cm" in paper notation
 
-	const CoinCommitment& getCoinCommitment() const { return this->externalCommitment; }
+    const CoinCommitment& getCoinCommitment() const { return this->externalCommitment; }
 };
 
 } /* namespace libzerocash */

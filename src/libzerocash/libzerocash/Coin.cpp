@@ -36,18 +36,18 @@ Coin::Coin(const PublicAddress& addr, uint64_t value): addr_pk(addr), cm(), rho(
     getRandBytes(r_bytes, zc_r_size);
     convertBytesToBytesVector(r_bytes, this->r);
 
-	this->computeCommitments(a_pk);
+    this->computeCommitments(a_pk);
 }
 
 
 Coin::Coin(const PublicAddress& addr, uint64_t value,
-		   const std::vector<unsigned char>& rho, const std::vector<unsigned char>& r): addr_pk(addr), rho(rho), r(r), k(k_size), coinValue(v_size)
+           const std::vector<unsigned char>& rho, const std::vector<unsigned char>& r): addr_pk(addr), rho(rho), r(r), k(k_size), coinValue(v_size)
 {
     convertIntToBytesVector(value, this->coinValue);
 
     std::vector<unsigned char> a_pk = addr.getPublicAddressSecret();
 
-	this->computeCommitments(a_pk);
+    this->computeCommitments(a_pk);
 }
 
 void
@@ -71,23 +71,23 @@ Coin::computeCommitments(std::vector<unsigned char>& a_pk)
 }
 
 bool Coin::operator==(const Coin& rhs) const {
-	return ((this->cm == rhs.cm) && (this->rho == rhs.rho) && (this->r == rhs.r) && (this->k == rhs.k) && (this->coinValue == rhs.coinValue) && (this->addr_pk == rhs.addr_pk));
+    return ((this->cm == rhs.cm) && (this->rho == rhs.rho) && (this->r == rhs.r) && (this->k == rhs.k) && (this->coinValue == rhs.coinValue) && (this->addr_pk == rhs.addr_pk));
 }
 
 bool Coin::operator!=(const Coin& rhs) const {
-	return !(*this == rhs);
+    return !(*this == rhs);
 }
 
 const PublicAddress& Coin::getPublicAddress() const {
-	return this->addr_pk;
+    return this->addr_pk;
 }
 
 const CoinCommitment& Coin::getCoinCommitment() const {
-	return this->cm;
+    return this->cm;
 }
 
 const std::vector<unsigned char>& Coin::getInternalCommitment() const {
-	return this->k;
+    return this->k;
 }
 
 const std::vector<unsigned char>& Coin::getRho() const {

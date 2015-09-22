@@ -74,11 +74,11 @@ const std::vector<unsigned char>& PublicAddress::getPublicAddressSecret() const 
 }
 
 bool PublicAddress::operator==(const PublicAddress& rhs) const {
-	return ((this->a_pk == rhs.a_pk) && (this->pk_enc == rhs.pk_enc));
+    return ((this->a_pk == rhs.a_pk) && (this->pk_enc == rhs.pk_enc));
 }
 
 bool PublicAddress::operator!=(const PublicAddress& rhs) const {
-	return !(*this == rhs);
+    return !(*this == rhs);
 }
 
 
@@ -103,7 +103,7 @@ Address::Address(): addr_pk(), a_sk(a_sk_size) {
 }
 
 const PublicAddress& Address::getPublicAddress() const {
-	return this->addr_pk;
+    return this->addr_pk;
 }
 
 const std::string Address::getEncryptionSecretKey() const {
@@ -115,11 +115,11 @@ const std::vector<unsigned char>& Address::getAddressSecret() const {
 }
 
 bool Address::operator==(const Address& rhs) const {
-	return ((this->a_sk == rhs.a_sk) && (this->sk_enc == rhs.sk_enc) && (this->addr_pk == rhs.addr_pk));
+    return ((this->a_sk == rhs.a_sk) && (this->sk_enc == rhs.sk_enc) && (this->addr_pk == rhs.addr_pk));
 }
 
 bool Address::operator!=(const Address& rhs) const {
-	return !(*this == rhs);
+    return !(*this == rhs);
 }
 
 } /* namespace libzerocash */

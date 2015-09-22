@@ -69,7 +69,7 @@ PourTransaction::PourTransaction(uint16_t version_num,
     this->cm_1 = c_1_new.getCoinCommitment();
     this->cm_2 = c_2_new.getCoinCommitment();
 
-	std::vector<bool> root_bv(root_size * 8);
+    std::vector<bool> root_bv(root_size * 8);
     std::vector<bool> addr_pk_new_1_bv(a_pk_size * 8);
     std::vector<bool> addr_pk_new_2_bv(a_pk_size * 8);
     std::vector<bool> addr_sk_old_1_bv(a_sk_size * 8);
@@ -90,7 +90,7 @@ PourTransaction::PourTransaction(uint16_t version_num,
     std::vector<bool> cm_new_1_bv(cm_size * 8);
     std::vector<bool> cm_new_2_bv(cm_size * 8);
 
-	convertBytesVectorToVector(rt, root_bv);
+    convertBytesVectorToVector(rt, root_bv);
 
     convertBytesVectorToVector(c_1_new.getCoinCommitment().getCommitmentValue(), cm_new_1_bv);
     convertBytesVectorToVector(c_2_new.getCoinCommitment().getCommitmentValue(), cm_new_2_bv);
@@ -215,7 +215,7 @@ PourTransaction::PourTransaction(uint16_t version_num,
         ss << proofObj;
         this->zkSNARK = ss.str();
     }else{
- 	   this->zkSNARK = std::string(1235,'A');
+        this->zkSNARK = std::string(1235,'A');
     }
 
     unsigned char val_new_1_bytes[v_size];
@@ -272,22 +272,22 @@ bool PourTransaction::verify(ZerocashParams& params,
                              std::vector<unsigned char> &pubkeyHash,
                              const MerkleRootType &merkleRoot) const
 {
-	if(this->version == 0){
-		return true;
-	}
+    if(this->version == 0){
+        return true;
+    }
 
     zerocash_pour_proof<ZerocashParams::zerocash_pp> proof_SNARK;
     std::stringstream ss;
     ss.str(this->zkSNARK);
     ss >> proof_SNARK;
 
-	if (merkleRoot.size() != root_size) { return false; }
-	if (pubkeyHash.size() != h_size)	{ return false; }
-	if (this->serialNumber_1.size() != sn_size)	{ return false; }
-	if (this->serialNumber_2.size() != sn_size)	{ return false; }
-	if (this->publicValue.size() != v_size) { return false; }
-	if (this->MAC_1.size() != h_size)	{ return false; }
-	if (this->MAC_2.size() != h_size)	{ return false; }
+    if (merkleRoot.size() != root_size) { return false; }
+    if (pubkeyHash.size() != h_size)    { return false; }
+    if (this->serialNumber_1.size() != sn_size)    { return false; }
+    if (this->serialNumber_2.size() != sn_size)    { return false; }
+    if (this->publicValue.size() != v_size) { return false; }
+    if (this->MAC_1.size() != h_size)    { return false; }
+    if (this->MAC_2.size() != h_size)    { return false; }
 
     std::vector<bool> root_bv(root_size * 8);
     std::vector<bool> sn_old_1_bv(sn_size * 8);
@@ -337,32 +337,32 @@ bool PourTransaction::verify(ZerocashParams& params,
 }
 
 const std::vector<unsigned char>& PourTransaction::getSpentSerial1() const{
-	return this->serialNumber_1;
+    return this->serialNumber_1;
 }
 
 const std::vector<unsigned char>& PourTransaction::getSpentSerial2() const{
-	return this->serialNumber_2;
+    return this->serialNumber_2;
 }
 
 /**
  * Returns the hash of the first new coin commitment  output  by this Pour.
  */
 const CoinCommitmentValue& PourTransaction::getNewCoinCommitmentValue1() const{
-	return this->cm_1.getCommitmentValue();
+    return this->cm_1.getCommitmentValue();
 }
 
 /**
  * Returns the hash of the second new coin  commitment  output  by this Pour.
  */
 const CoinCommitmentValue& PourTransaction::getNewCoinCommitmentValue2() const{
-	return this->cm_2.getCommitmentValue();
+    return this->cm_2.getCommitmentValue();
 }
 
 /**
  * Returns the amount of money this transaction converts back into basecoin.
  */
 uint64_t PourTransaction::getMonetaryValueOut() const{
-	return convertBytesVectorToInt(this->publicValue);
+    return convertBytesVectorToInt(this->publicValue);
 }
 
 } /* namespace libzerocash */

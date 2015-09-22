@@ -34,7 +34,7 @@ MerkleTree::MerkleTree() {
 }
 
 MerkleTree::MerkleTree(unsigned int d) {
-	sha256_init(&ctx256);
+    sha256_init(&ctx256);
 
     root = new Node();
 
@@ -48,7 +48,7 @@ MerkleTree::MerkleTree(unsigned int d) {
 }
 
 MerkleTree::MerkleTree(std::vector< std::vector<bool> > coinList, unsigned int d) {
-	sha256_init(&ctx256);
+    sha256_init(&ctx256);
 
     root = new Node();
 

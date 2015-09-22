@@ -31,20 +31,20 @@ namespace libzerocash {
 
 class IncrementalMerkleTreeCompact {
 public:
-	uint32_t										treeHeight;
-    std::vector< std::vector<unsigned char> >   	hashVec;
-    std::vector< bool >								hashList;
-    std::vector< unsigned char >					hashListBytes;
+    uint32_t                                        treeHeight;
+    std::vector< std::vector<unsigned char> >       hashVec;
+    std::vector< bool >                             hashList;
+    std::vector< unsigned char >                    hashListBytes;
 
-	IncrementalMerkleTreeCompact() : treeHeight(0) {}
-    void		clear() { hashVec.clear(); hashList.clear(); hashListBytes.clear(); treeHeight = 0; }
-    uint32_t	getHeight() { return this->treeHeight; }
+    IncrementalMerkleTreeCompact() : treeHeight(0) {}
+    void        clear() { hashVec.clear(); hashList.clear(); hashListBytes.clear(); treeHeight = 0; }
+    uint32_t    getHeight() { return this->treeHeight; }
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-	 READWRITE(treeHeight);
+     READWRITE(treeHeight);
      READWRITE(hashVec);
      READWRITE(hashListBytes);
     }
@@ -55,7 +55,7 @@ public:
 class IncrementalMerkleNode {
 public:
     SHA256_CTX_mod ctx256;
-	IncrementalMerkleNode* left;
+    IncrementalMerkleNode* left;
     IncrementalMerkleNode* right;
     std::vector<bool> value;
     uint32_t nodeDepth;
@@ -85,7 +85,7 @@ public:
     bool checkIfNodeFull();
     void updateHashValue();
 
-	IncrementalMerkleNode	operator=(const IncrementalMerkleNode &rhs);
+    IncrementalMerkleNode    operator=(const IncrementalMerkleNode &rhs);
 };
 
 /************************ Incremental Merkle tree ****************************/
@@ -93,21 +93,21 @@ public:
 class IncrementalMerkleTree {
 protected:
 
-	IncrementalMerkleNode	 root;
-    uint32_t   				 treeHeight;
+    IncrementalMerkleNode       root;
+    uint32_t                    treeHeight;
 
 public:
     IncrementalMerkleTree(uint32_t height = ZEROCASH_DEFAULT_TREE_SIZE);
     IncrementalMerkleTree(std::vector< std::vector<bool> > &valueVector, uint32_t height);
-	IncrementalMerkleTree(IncrementalMerkleTreeCompact &compact);
+    IncrementalMerkleTree(IncrementalMerkleTreeCompact &compact);
 
     bool insertElement(const std::vector<bool> &hashV, std::vector<bool> &index);
-	bool insertElement(const std::vector<unsigned char> &hashV, std::vector<unsigned char> &index);
+    bool insertElement(const std::vector<unsigned char> &hashV, std::vector<unsigned char> &index);
     bool insertVector(std::vector< std::vector<bool> > &valueVector);
     bool getWitness(const std::vector<bool> &index, merkle_authentication_path &witness);
     bool getRootValue(std::vector<bool>& r);
-	bool getRootValue(std::vector<unsigned char>& r);
-	std::vector<unsigned char>getRoot();
+    bool getRootValue(std::vector<unsigned char>& r);
+    std::vector<unsigned char>getRoot();
     bool prune();
     bool getCompactRepresentation(IncrementalMerkleTreeCompact &rep);
     IncrementalMerkleTreeCompact getCompactRepresentation();

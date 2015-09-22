@@ -38,28 +38,28 @@ namespace libzerocash {
 
         // Load the tree with all the given values
         if (this->insertVector(valueVector) == false) {
-			throw std::runtime_error("Could not insert vector into Merkle Tree: too many elements");
-		}
+            throw std::runtime_error("Could not insert vector into Merkle Tree: too many elements");
+        }
     }
 
     // Custom tree constructor (initialize tree from compact representation)
     //
     IncrementalMerkleTree::IncrementalMerkleTree(IncrementalMerkleTreeCompact &compact) : root(0, 0)
-	{
+    {
 
-		// Initialize the tree
-		this->treeHeight = compact.getHeight();
-		root.treeHeight = treeHeight;
+        // Initialize the tree
+        this->treeHeight = compact.getHeight();
+        root.treeHeight = treeHeight;
 
-		// Make sure we convert from the integer vector to the bool vector
-		libzerocash::convertBytesVectorToVector(compact.hashListBytes, compact.hashList);
+        // Make sure we convert from the integer vector to the bool vector
+        libzerocash::convertBytesVectorToVector(compact.hashListBytes, compact.hashList);
 
-		// Size the vector to the tree depth
-		if (compact.hashList.size() > this->treeHeight) {
-			compact.hashList.erase(compact.hashList.begin(), compact.hashList.begin() + (compact.hashList.size() - this->treeHeight));
-		} else if (compact.hashList.size() < this->treeHeight) {
-			compact.hashList.insert(compact.hashList.begin(), (this->treeHeight) - compact.hashList.size(), false);
-		}
+        // Size the vector to the tree depth
+        if (compact.hashList.size() > this->treeHeight) {
+            compact.hashList.erase(compact.hashList.begin(), compact.hashList.begin() + (compact.hashList.size() - this->treeHeight));
+        } else if (compact.hashList.size() < this->treeHeight) {
+            compact.hashList.insert(compact.hashList.begin(), (this->treeHeight) - compact.hashList.size(), false);
+        }
 
         // Reconstitute tree from compact representation
         this->fromCompactRepresentation(compact);
@@ -75,47 +75,47 @@ namespace libzerocash {
         return this->root.insertElement(hashV, index);
     }
 
-	bool
+    bool
     IncrementalMerkleTree::insertElement(const std::vector<unsigned char> &hashV, std::vector<unsigned char> &index) {
 
-		// Create a temporary vector to hold hashV
-		std::vector<bool> hashVBool(hashV.size() * 8);
-		convertBytesVectorToVector(hashV, hashVBool);
+        // Create a temporary vector to hold hashV
+        std::vector<bool> hashVBool(hashV.size() * 8);
+        convertBytesVectorToVector(hashV, hashVBool);
 
         // Create a temporary vector to hold the index
-		std::vector<bool> indexBool(this->treeHeight, 0);
+        std::vector<bool> indexBool(this->treeHeight, 0);
 
         // Insert the element
         bool result = this->insertElement(hashVBool, indexBool);
 
-		// Convert the returned vector
-		index.resize(index.size() / 8); // this might need to include a ceil
-		convertVectorToBytesVector(indexBool, index);
+        // Convert the returned vector
+        index.resize(index.size() / 8); // this might need to include a ceil
+        convertVectorToBytesVector(indexBool, index);
 
-		return result;
+        return result;
     }
 
     bool
     IncrementalMerkleTree::getWitness(const std::vector<bool> &index, merkle_authentication_path &witness) {
 
-		// Resize the witness if necessary
-		if (witness.size() < this->treeHeight) {
-			witness.resize(treeHeight);
-		}
+        // Resize the witness if necessary
+        if (witness.size() < this->treeHeight) {
+            witness.resize(treeHeight);
+        }
 
-		std::vector<bool> indexPadded = index;
+        std::vector<bool> indexPadded = index;
 
-		// Discard leading bits of the index if necessary
-		if (indexPadded.size() > this->treeHeight) {
-			indexPadded.erase(indexPadded.begin(), indexPadded.begin() + (indexPadded.size() - this->treeHeight));
-		}
+        // Discard leading bits of the index if necessary
+        if (indexPadded.size() > this->treeHeight) {
+            indexPadded.erase(indexPadded.begin(), indexPadded.begin() + (indexPadded.size() - this->treeHeight));
+        }
 
-		// If the index vector is less than 'treeHeight' bits, pad the leftmost bits with 0 (false)
-		// This is to deal with the situation where somebody encodes e.g., a 32-bit integer as an index
-		// into a 64 height tree and does not explicitly pad to length.
-		if (indexPadded.size() < this->treeHeight) {
-			indexPadded.insert(indexPadded.begin(), (this->treeHeight - 1) - indexPadded.size(), false);
-		}
+        // If the index vector is less than 'treeHeight' bits, pad the leftmost bits with 0 (false)
+        // This is to deal with the situation where somebody encodes e.g., a 32-bit integer as an index
+        // into a 64 height tree and does not explicitly pad to length.
+        if (indexPadded.size() < this->treeHeight) {
+            indexPadded.insert(indexPadded.begin(), (this->treeHeight - 1) - indexPadded.size(), false);
+        }
 
         return this->root.getWitness(indexPadded, witness);
     }
@@ -129,8 +129,8 @@ namespace libzerocash {
              iter != valueVector.end(); ++iter) {
 
             if (this->insertElement(*iter, index) == false) {
-				return false;
-			}
+                return false;
+            }
 
         }
 
@@ -145,31 +145,31 @@ namespace libzerocash {
         return true;
     }
 
-	bool
+    bool
     IncrementalMerkleTree::getRootValue(std::vector<unsigned char>& r) {
 
-		// Create a temporary byte vector
-		std::vector<bool> tempR(r.size() * 8, 0);
+        // Create a temporary byte vector
+        std::vector<bool> tempR(r.size() * 8, 0);
 
         // Query the root for its hash
         this->root.getValue(tempR);
 
-		// Convert the result back into the given vector
-		convertVectorToBytesVector(tempR, r);
+        // Convert the result back into the given vector
+        convertVectorToBytesVector(tempR, r);
 
         return true;
     }
-	std::vector<unsigned char>
-	IncrementalMerkleTree::getRoot(){
-		std::vector<unsigned char> temp(8);
-		this->getRootValue(temp);
-		return temp;
-	}
+    std::vector<unsigned char>
+    IncrementalMerkleTree::getRoot(){
+        std::vector<unsigned char> temp(8);
+        this->getRootValue(temp);
+        return temp;
+    }
 
     bool
     IncrementalMerkleTree::prune()
     {
-		return this->root.prune();
+        return this->root.prune();
 
         return false;
     }
@@ -181,31 +181,31 @@ namespace libzerocash {
 
         rep.clear();
         rep.hashList.resize(this->treeHeight);
-		rep.treeHeight = this->treeHeight;
+        rep.treeHeight = this->treeHeight;
         std::fill (rep.hashList.begin(), rep.hashList.end(), false);
 
-		result = this->root.getCompactRepresentation(rep);
+        result = this->root.getCompactRepresentation(rep);
 
-		// Convert the hashList into a bytesVector. First pad it to a multiple of 8 bits.
-		if (rep.hashList.size() % 8 != 0) {
-			rep.hashList.insert(rep.hashList.begin(), 8 - (rep.hashList.size() % 8), false);
-		}
-		rep.hashListBytes.resize(ceil(rep.hashList.size() / 8.0));
-		convertVectorToBytesVector(rep.hashList, rep.hashListBytes);
+        // Convert the hashList into a bytesVector. First pad it to a multiple of 8 bits.
+        if (rep.hashList.size() % 8 != 0) {
+            rep.hashList.insert(rep.hashList.begin(), 8 - (rep.hashList.size() % 8), false);
+        }
+        rep.hashListBytes.resize(ceil(rep.hashList.size() / 8.0));
+        convertVectorToBytesVector(rep.hashList, rep.hashListBytes);
 
         return result;
     }
     IncrementalMerkleTreeCompact IncrementalMerkleTree::getCompactRepresentation(){
-    	IncrementalMerkleTreeCompact rep;
-    	this->getCompactRepresentation(rep);
-    	return rep;
+        IncrementalMerkleTreeCompact rep;
+        this->getCompactRepresentation(rep);
+        return rep;
     }
 
     bool
     IncrementalMerkleTree::fromCompactRepresentation(IncrementalMerkleTreeCompact &rep)
     {
-		return this->root.fromCompactRepresentation(rep, 0);
-	}
+        return this->root.fromCompactRepresentation(rep, 0);
+    }
 
     /////////////////////////////////////////////
     // IncrementalMerkleNode class
@@ -214,7 +214,7 @@ namespace libzerocash {
     // Standard constructor
     //
     IncrementalMerkleNode::IncrementalMerkleNode(uint32_t depth, uint32_t height) : left(NULL), right(NULL), value(SHA256_BLOCK_SIZE * 8, 0), nodeDepth(depth), treeHeight(height),
-				subtreeFull(false), subtreePruned(false)
+                subtreeFull(false), subtreePruned(false)
     {
         sha256_init(&ctx256);
     }
@@ -228,16 +228,16 @@ namespace libzerocash {
         this->subtreePruned = toCopy.subtreePruned;
         this->subtreeFull = toCopy.subtreeFull;
         this->value = toCopy.value;
-		this->treeHeight = toCopy.treeHeight;
+        this->treeHeight = toCopy.treeHeight;
 
         // Recursively copy the subtrees
         if (toCopy.left) {
-			this->left = new IncrementalMerkleNode(toCopy.left->nodeDepth, toCopy.left->treeHeight);
+            this->left = new IncrementalMerkleNode(toCopy.left->nodeDepth, toCopy.left->treeHeight);
             *(this->left) = *(toCopy.left);
         }
 
         if (toCopy.right) {
-			this->right = new IncrementalMerkleNode(toCopy.right->nodeDepth, toCopy.right->treeHeight);
+            this->right = new IncrementalMerkleNode(toCopy.right->nodeDepth, toCopy.right->treeHeight);
             *(this->right) = *(toCopy.right);
         }
     }
@@ -318,23 +318,23 @@ namespace libzerocash {
             return true;
         }
 
-		// If this node is pruned, we can't fetch a witness. Return failure.
-		if (this->isPruned()) {
-			return false;
-		}
+        // If this node is pruned, we can't fetch a witness. Return failure.
+        if (this->isPruned()) {
+            return false;
+        }
 
         // If the index path leads to the left, we grab the hash value on the
         // right -- then recurse on the left node.
         if (index.at(nodeDepth) == false) {
 
-			// Make sure there is a value on the right. If not we put the 'null' hash (0) into that element.
-			if (this->right == NULL) {
-				witness.at(nodeDepth).resize(SHA256_BLOCK_SIZE * 8);
-				std::fill (witness.at(nodeDepth).begin(), witness.at(nodeDepth).end(), false);
-			} else {
-				this->right->getValue(witness.at(nodeDepth));
-				printVectorAsHex(witness.at(nodeDepth));
-			}
+            // Make sure there is a value on the right. If not we put the 'null' hash (0) into that element.
+            if (this->right == NULL) {
+                witness.at(nodeDepth).resize(SHA256_BLOCK_SIZE * 8);
+                std::fill (witness.at(nodeDepth).begin(), witness.at(nodeDepth).end(), false);
+            } else {
+                this->right->getValue(witness.at(nodeDepth));
+                printVectorAsHex(witness.at(nodeDepth));
+            }
 
             // Recurse on the left node
             if (this->left) {
@@ -407,27 +407,27 @@ namespace libzerocash {
         std::vector<bool> zero(SHA256_BLOCK_SIZE * 8);
         std::fill (zero.begin(), zero.end(), false);
 
-		// The following code is ugly and should be refactored. It runs
-		// four special cases depending on whether left/right is NULL.
-		// It also ensures that the "hash" of (0 || 0) is 0.
+        // The following code is ugly and should be refactored. It runs
+        // four special cases depending on whether left/right is NULL.
+        // It also ensures that the "hash" of (0 || 0) is 0.
         if (this->left && !(this->right)) {
-			if (VectorIsZero(this->left->getValue())) {
-				hash = zero;
-			} else {
-				hashVectors(&ctx256, this->left->getValue(), zero, hash);
-			}
+            if (VectorIsZero(this->left->getValue())) {
+                hash = zero;
+            } else {
+                hashVectors(&ctx256, this->left->getValue(), zero, hash);
+            }
         } else if (!(this->left) && this->right) {
-			if (VectorIsZero(this->right->getValue())) {
-				hash = zero;
-			} else {
-				hashVectors(&ctx256, zero, this->left->getValue(), hash);
-			}
+            if (VectorIsZero(this->right->getValue())) {
+                hash = zero;
+            } else {
+                hashVectors(&ctx256, zero, this->left->getValue(), hash);
+            }
         } else if (this->left && this->right) {
-			if (VectorIsZero(this->left->getValue()) && VectorIsZero(this->right->getValue())) {
-				hash = zero;
-			} else {
-				hashVectors(&ctx256, this->left->getValue(), this->right->getValue(), hash);
-			}
+            if (VectorIsZero(this->left->getValue()) && VectorIsZero(this->right->getValue())) {
+                hash = zero;
+            } else {
+                hashVectors(&ctx256, this->left->getValue(), this->right->getValue(), hash);
+            }
         } else {
             hash = zero;
         }
@@ -506,8 +506,8 @@ namespace libzerocash {
         // If the hashList[nodeDepth] is true, insert the next hash into the left tree
         // and mark it full AND pruned. Then recurse to the right.
         if (rep.hashList.at(this->nodeDepth) == true) {
-			// Create a left node
-			this->left = new IncrementalMerkleNode(this->nodeDepth + 1, this->treeHeight);
+            // Create a left node
+            this->left = new IncrementalMerkleNode(this->nodeDepth + 1, this->treeHeight);
 
             // Fill the left node with the value and mark it full/pruned
             std::vector<bool> hash(SHA256_BLOCK_SIZE * 8, 0);
@@ -519,10 +519,10 @@ namespace libzerocash {
             this->right = new IncrementalMerkleNode(this->nodeDepth + 1, this->treeHeight);
             result = this->right->fromCompactRepresentation(rep, pos + 1);
         } else if (this->nodeDepth < (this->treeHeight - 1)) {
-			// Otherwise --
-			// * If we're about to create a leaf level, do nothing.
-			// * Else create a left node and recurse on it.
-			this->left = new IncrementalMerkleNode(this->nodeDepth + 1, this->treeHeight);
+            // Otherwise --
+            // * If we're about to create a leaf level, do nothing.
+            // * Else create a left node and recurse on it.
+            this->left = new IncrementalMerkleNode(this->nodeDepth + 1, this->treeHeight);
 
             // Otherwise recurse on the left node. Do not increment pos.
             result = this->left->fromCompactRepresentation(rep, pos);
@@ -534,10 +534,10 @@ namespace libzerocash {
         return result;
     }
 
-	IncrementalMerkleNode
-	IncrementalMerkleNode::operator=(const IncrementalMerkleNode &rhs) {
-		IncrementalMerkleNode dup(rhs);
-		return dup;
-	}
+    IncrementalMerkleNode
+    IncrementalMerkleNode::operator=(const IncrementalMerkleNode &rhs) {
+        IncrementalMerkleNode dup(rhs);
+        return dup;
+    }
 
 } /* namespace libzerocash */

@@ -37,7 +37,7 @@ private:
         }
     };
 
-	SHA256_CTX_mod ctx256;
+    SHA256_CTX_mod ctx256;
     Node *root;
     std::map<std::vector<bool>, int> coinlist;
     unsigned int actualSize;
