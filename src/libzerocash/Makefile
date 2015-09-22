@@ -2,7 +2,7 @@ CXXFLAGS += -g -Wall -Wextra -Werror -Wfatal-errors -Wno-unused-parameter -march
 LDFLAGS += -flto
 
 DEPSRC=depsrc
-DEPINST=depinst
+DEPINST=../../depends/x86_64-unknown-linux-gnu
 
 LIBZEROCASH=libzerocash
 UTILS=$(LIBZEROCASH)/utils
