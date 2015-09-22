@@ -129,7 +129,7 @@ void convertBytesVectorToBytes(const std::vector<unsigned char>& v, unsigned cha
 }
 
 void convertBytesVectorToVector(const std::vector<unsigned char>& bytes, std::vector<bool>& v) {
-	v.resize(bytes.size() * 8);
+    v.resize(bytes.size() * 8);
     unsigned char bytesArr[bytes.size()];
     convertBytesVectorToBytes(bytes, bytesArr);
     convertBytesToVector(bytesArr, v);
@@ -184,17 +184,17 @@ void concatenateVectors(const std::vector<unsigned char>& A, const std::vector<u
 }
 
 void sha256(unsigned char* input, unsigned char* hash, int len) {
-	SHA256_CTX_mod ctx256;
+    SHA256_CTX_mod ctx256;
 
-	sha256_init(&ctx256);
-	sha256_update(&ctx256, input, len);
-	sha256_final(&ctx256, hash);
+    sha256_init(&ctx256);
+    sha256_update(&ctx256, input, len);
+    sha256_final(&ctx256, hash);
 }
 
 void sha256(SHA256_CTX_mod* ctx256, unsigned char* input, unsigned char* hash, int len) {
-	sha256_init(ctx256);
-	sha256_update(ctx256, input, len);
-	sha256_final(ctx256, hash);
+    sha256_init(ctx256);
+    sha256_update(ctx256, input, len);
+    sha256_final(ctx256, hash);
 }
 
 void hashVector(SHA256_CTX_mod* ctx256, const std::vector<bool> input, std::vector<bool>& output) {
@@ -220,7 +220,7 @@ void hashVector(SHA256_CTX_mod* ctx256, const std::vector<unsigned char> input, 
 }
 
 void hashVector(const std::vector<bool> input, std::vector<bool>& output) {
-	SHA256_CTX_mod ctx256;
+    SHA256_CTX_mod ctx256;
 
     int size = int(input.size() / 8);
     unsigned char bytes[size];
@@ -233,7 +233,7 @@ void hashVector(const std::vector<bool> input, std::vector<bool>& output) {
 }
 
 void hashVector(const std::vector<unsigned char> input, std::vector<unsigned char>& output) {
-	SHA256_CTX_mod ctx256;
+    SHA256_CTX_mod ctx256;
 
     int size = int(input.size());
     unsigned char bytes[size];
@@ -274,7 +274,7 @@ void hashVectors(SHA256_CTX_mod* ctx256, const std::vector<unsigned char> left, 
 }
 
 void hashVectors(const std::vector<bool> left, const std::vector<bool> right, std::vector<bool>& output) {
-	std::cout << std::endl;
+    std::cout << std::endl;
 
     std::vector<bool> concat;
     concatenateVectors(left, right, concat);
@@ -304,7 +304,7 @@ void hashVectors(const std::vector<unsigned char> left, const std::vector<unsign
 }
 
 bool VectorIsZero(const std::vector<bool> test) {
-	return (test.end() == std::find(test.begin(), test.end(), true));
+    return (test.end() == std::find(test.begin(), test.end(), true));
 }
 
 } /* namespace libzerocash */

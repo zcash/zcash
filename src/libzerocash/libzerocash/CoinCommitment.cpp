@@ -25,21 +25,21 @@ CoinCommitment::CoinCommitment() : commitmentValue(cm_size)
 CoinCommitment::CoinCommitment(const std::vector<unsigned char>& val,
                                const std::vector<unsigned char>& k) : commitmentValue(cm_size)
 {
-	this->constructCommitment(val, k);
+    this->constructCommitment(val, k);
 }
 
 void
 CoinCommitment::constructCommitment(const std::vector<unsigned char>& val,
                                     const std::vector<unsigned char>& k)
 {
-	std::vector<bool> zeros_192(192, 0);
+    std::vector<bool> zeros_192(192, 0);
     std::vector<bool> cm_internal;
     std::vector<bool> value_bool(v_size * 8, 0);
     std::vector<bool> k_bool(k_size * 8, 0);
 
-	if (val.size() > v_size || k.size() > k_size) {
-		throw std::runtime_error("CoinCommitment: inputs are too large");
-	}
+    if (val.size() > v_size || k.size() > k_size) {
+        throw std::runtime_error("CoinCommitment: inputs are too large");
+    }
 
     libzerocash::convertBytesVectorToVector(val, value_bool);
     libzerocash::convertBytesVectorToVector(k, k_bool);
@@ -51,11 +51,11 @@ CoinCommitment::constructCommitment(const std::vector<unsigned char>& val,
 }
 
 bool CoinCommitment::operator==(const CoinCommitment& rhs) const {
-	return (this->commitmentValue == rhs.commitmentValue);
+    return (this->commitmentValue == rhs.commitmentValue);
 }
 
 bool CoinCommitment::operator!=(const CoinCommitment& rhs) const {
-	return !(*this == rhs);
+    return !(*this == rhs);
 }
 
 const std::vector<unsigned char>& CoinCommitment::getCommitmentValue() const {

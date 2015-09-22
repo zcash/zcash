@@ -29,12 +29,12 @@ MintTransaction::MintTransaction(const Coin& c): coinValue(v_size)
 {
     convertIntToBytesVector(c.getValue(), this->coinValue);
 
-	internalCommitment = c.getInternalCommitment();
-	externalCommitment = c.getCoinCommitment();
+    internalCommitment = c.getInternalCommitment();
+    externalCommitment = c.getCoinCommitment();
 }
 
 /// \brief
-/// \return	A true/false result
+/// \return    A true/false result
 ///
 /**
  * Verify the correctness of a Mint transaction.
@@ -43,33 +43,33 @@ MintTransaction::MintTransaction(const Coin& c): coinValue(v_size)
  */
 bool MintTransaction::verify() const{
 
-	// Check that the internal commitment is the right size
-	if (this->internalCommitment.size() != k_size) {
-		return false;
-	}
+    // Check that the internal commitment is the right size
+    if (this->internalCommitment.size() != k_size) {
+        return false;
+    }
 
-	// The external commitment should formulated as:
-	// H( internalCommitment || 0^192 || coinValue)
-	//
-	// To check the structure of our proof we simply reconstruct
-	// a version of the external commitment and check that it's
-	// equal to the value we store.
-	//
-	// We use the constructor for CoinCommitment to do this.
+    // The external commitment should formulated as:
+    // H( internalCommitment || 0^192 || coinValue)
+    //
+    // To check the structure of our proof we simply reconstruct
+    // a version of the external commitment and check that it's
+    // equal to the value we store.
+    //
+    // We use the constructor for CoinCommitment to do this.
 
-	try {
-		CoinCommitment comp(this->coinValue, this->internalCommitment);
+    try {
+        CoinCommitment comp(this->coinValue, this->internalCommitment);
 
-		return (comp == this->externalCommitment);
-	} catch (std::runtime_error) {
-		return false;
-	}
+        return (comp == this->externalCommitment);
+    } catch (std::runtime_error) {
+        return false;
+    }
 
-	return false;
+    return false;
 }
 
 const CoinCommitmentValue& MintTransaction::getMintedCoinCommitmentValue() const{
-	return this->externalCommitment.getCommitmentValue();
+    return this->externalCommitment.getCommitmentValue();
 }
 
 uint64_t MintTransaction::getMonetaryValue() const {
