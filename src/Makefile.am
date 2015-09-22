@@ -46,7 +46,7 @@ $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
 
 $(LIBZEROCASH): $(LIBZEROCASH_HEADER_FILES) $(LIBZEROCASH_SOURCES)
-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F) \
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) all \
 		CPPFLAGS='-I.. $(CPPFLAGS)' \
 		CXXFLAGS='$(CXXFLAGS)'
 
