@@ -1176,7 +1176,7 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
     CAmount nAmount = pour.getMonetaryValueOut();
 
     if (nAmount < fee) {
-        LogPrint("zerocoin", "MakePourTx: vpub amount %d is insufficient to cover fee %d.\n", nAmount, fee);
+        LogPrint("zerocoin", "MakePourTx: vpub amount %" PRIu64 " is insufficient to cover fee %" PRIu64 ".\n", nAmount, fee);
         throw new runtime_error("vpub amount is insufficient to cover fee");
     }
 
@@ -1211,7 +1211,7 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
 
     const int nHashType = SIGHASH_ALL;
     uint256 hash = SignatureHash(scriptSig, rawTx, 0, nHashType);
-    LogPrint("zerocoin", "MakePourTx: rawTx size %d, signature hash: %s\n", pour_vector.size(), hash.ToString());
+    LogPrint("zerocoin", "MakePourTx: rawTx size %lu signature hash: %s\n", (unsigned long) (pour_vector.size()), hash.ToString());
 
 
     std::vector<unsigned char> vchSig(32);
