@@ -331,7 +331,7 @@ void CAddrMan::Attempt_(const CService& addr, int64_t nTime)
     info.nAttempts++;
 }
 
-CAddrInfo CAddrMan::Select_()
+CAddrInfo CAddrMan::Select_(bool newOnly)
 {
     if (size() == 0)
         return CAddrInfo();
@@ -339,8 +339,12 @@ CAddrInfo CAddrMan::Select_()
     // Track number of attempts to find a table entry, before giving up
     int nRetries = 0;
 
+    if (newOnly && nNew == 0)
+        return CAddrInfo();
+
     // Use a 50% chance for choosing between tried and new table entries.
-    if (nTried > 0 && (nNew == 0 || GetRandInt(2) == 0)) {
+    if (!newOnly &&
+       (nTried > 0 && (nNew == 0 || GetRandInt(2) == 0))) { 
         // use a tried node
         double fChanceFactor = 1.0;
         while (nRetries++ < ADDRMAN_TRIED_BUCKET_COUNT) {
