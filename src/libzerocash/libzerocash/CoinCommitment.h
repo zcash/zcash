@@ -25,18 +25,18 @@ class CoinCommitment {
 friend class PourTransaction;
 
 public:
-	CoinCommitment();
+    CoinCommitment();
 
-	CoinCommitment(const std::vector<unsigned char>& val,
+    CoinCommitment(const std::vector<unsigned char>& val,
                    const std::vector<unsigned char>& k);
 
-	void constructCommitment(const std::vector<unsigned char>& val,
+    void constructCommitment(const std::vector<unsigned char>& val,
                              const std::vector<unsigned char>& k);
 
     const std::vector<unsigned char>& getCommitmentValue() const;
 
-	bool operator==(const CoinCommitment& rhs) const;
-	bool operator!=(const CoinCommitment& rhs) const;
+    bool operator==(const CoinCommitment& rhs) const;
+    bool operator!=(const CoinCommitment& rhs) const;
 
     ADD_SERIALIZE_METHODS;
 

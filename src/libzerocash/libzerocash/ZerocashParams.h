@@ -24,8 +24,8 @@ class ZerocashParams {
 public:
     typedef default_r1cs_ppzksnark_pp zerocash_pp;
 
-	ZerocashParams(const unsigned int tree_depth);
-	ZerocashParams(zerocash_pour_proving_key<zerocash_pp>* p_pk_1,
+    ZerocashParams(const unsigned int tree_depth);
+    ZerocashParams(zerocash_pour_proving_key<zerocash_pp>* p_pk_1,
                    zerocash_pour_verification_key<zerocash_pp>* p_vk_1);
 
     ZerocashParams(const unsigned int tree_depth,

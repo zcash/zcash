@@ -22,7 +22,7 @@ ZerocashParams::ZerocashParams(zerocash_pour_proving_key<ZerocashParams::zerocas
                                zerocash_pour_verification_key<ZerocashParams::zerocash_pp>* p_vk_1) :
     params_pk_v1(p_pk_1), params_vk_v1(p_vk_1)
 {
-	kp_v1 = NULL;
+    kp_v1 = NULL;
     params_pk_v1 = NULL;
     params_vk_v1 = NULL;
 }
@@ -30,7 +30,7 @@ ZerocashParams::ZerocashParams(zerocash_pour_proving_key<ZerocashParams::zerocas
 ZerocashParams::ZerocashParams(const unsigned int tree_depth) :
     treeDepth(tree_depth)
 {
-	kp_v1 = NULL;
+    kp_v1 = NULL;
     params_pk_v1 = NULL;
     params_vk_v1 = NULL;
 }
@@ -40,7 +40,7 @@ ZerocashParams::ZerocashParams(const unsigned int tree_depth,
                                std::string pathToVerificationParams="") :
     treeDepth(tree_depth)
 {
-	kp_v1 = NULL;
+    kp_v1 = NULL;
 
     ZerocashParams::zerocash_pp::init_public_params();
 
@@ -101,13 +101,13 @@ void ZerocashParams::initV1Params()
                                                                                                                                   this->numPourOutputs,
                                                                                                                                   this->treeDepth));
 
-	params_pk_v1 = &kp_v1->pk;
-	params_vk_v1 = &kp_v1->vk;
+    params_pk_v1 = &kp_v1->pk;
+    params_vk_v1 = &kp_v1->vk;
 }
 
 ZerocashParams::~ZerocashParams()
 {
-	delete kp_v1;
+    delete kp_v1;
 }
 
 const zerocash_pour_proving_key<ZerocashParams::zerocash_pp>& ZerocashParams::getProvingKey(const int version)

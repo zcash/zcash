@@ -16,13 +16,13 @@
 #include <vector>
 
 #define ZEROCASH_VERSION_STRING             "0.1"
-#define ZEROCASH_VERSION_INT				1
+#define ZEROCASH_VERSION_INT                1
 #define ZEROCASH_PROTOCOL_VERSION           "1"
 #define ZEROCASH_DEFAULT_TREE_SIZE          64
 
 #define a_pk_size       32
 #define pk_enc_size     311
-#define sig_pk_size		32
+#define sig_pk_size     32
 #define addr_pk_size    a_pk_size+pk_enc_size
 
 #define a_sk_size       32
@@ -56,7 +56,7 @@ typedef std::vector<unsigned char> MerkleRootType;
 class ZerocashException : public std::runtime_error
 {
 public:
-	explicit ZerocashException(const std::string& str) : std::runtime_error(str) {}
+    explicit ZerocashException(const std::string& str) : std::runtime_error(str) {}
 };
 
 namespace libsnark {
