@@ -46,21 +46,19 @@ $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
 
 $(LIBZEROCASH): $(LIBZEROCASH_HEADER_FILES) $(LIBZEROCASH_SOURCES)
-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F) \
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) all \
 		CPPFLAGS='-I.. $(CPPFLAGS)' \
 		CXXFLAGS='$(CXXFLAGS)'
 
 LIBZEROCASH_HEADER_FILES = \
-  $(wildcard libzerocash/*.h) \
-  $(wildcard libzerocash/utils/*.h) \
-  $(wildcard libzerocash/pour_ppzksnark/*.hpp) \
-  $(wildcard libzerocash/pour_ppzksnark/*.tcc) \
-  $(wildcard libzerocash/pour_ppzksnark/hashes/*.hpp) \
-  $(wildcard libzerocash/pour_ppzksnark/hashes/*.tcc)
+  $(wildcard libzerocash/libzerocash/*.h) \
+  $(wildcard libzerocash/libzerocash/utils/*.h) \
+  $(wildcard libzerocash/zerocash_pour_ppzksnark/*.hpp) \
+  $(wildcard libzerocash/zerocash_pour_ppzksnark/*.tcc)
 
 LIBZEROCASH_SOURCES = \
-  $(wildcard libzerocash/*.cpp) \
-  $(wildcard libzerocash/utils/*.cpp)
+  $(wildcard libzerocash/libzerocash/*.cpp) \
+  $(wildcard libzerocash/libzerocash/utils/*.cpp)
 
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:

@@ -1,11 +1,11 @@
-commit a46e3ccd6fa1e1d3f8d453e324490ad1cc8f69bc
-Author: Nathan Wilcox <nejucomo@gmail.com>
-Date:   Tue May 12 11:22:09 2015 -0700
+commit ce76851f4092e523578264e95c64eeef6adf83fe
+Author: Taylor Hornby <havoc@defuse.ca>
+Date:   Wed Sep 9 16:45:53 2015 -0600
 
     Add a hook for prepending to CXXFLAGS which will greatly simplify zerocashd depends packaging.
 
 diff --git a/Makefile b/Makefile
-index ef196cc..cdfd9fa 100644
+index cbabc5c..7bb5f67 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -6,7 +6,8 @@

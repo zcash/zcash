@@ -1,0 +1,27 @@
+#!/bin/bash
+if [[ `uname -s` == "Darwin" ]]; then
+    LIBSNARK_FLAGS="NO_PROCPS=1 NO_GTEST=1 NO_DOCS=1"
+fi
+
+set -x -e
+
+DEPSRC=./depsrc
+DEPINST=./depinst
+
+mkdir -p $DEPINST
+DEPINST=`pwd -P`/$DEPINST  # remember absolute path
+
+mkdir -p $DEPSRC
+cd $DEPSRC
+
+[ ! -d libsnark ] && git clone https://github.com/scipr-lab/libsnark libsnark
+cd libsnark
+git pull
+# TODO: submit -fPIC patch to ate-pairing
+INC_DIR=-fPIC ./prepare-depends.sh
+make clean
+make $LIBSNARK_FLAGS
+make install PREFIX=$DEPINST $LIBSNARK_FLAGS
+cd ..
+
+cd ..
