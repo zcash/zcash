@@ -86,6 +86,11 @@ def main(log, args = sys.argv[1:]):
         provepour = 'false' if opts.dummypours else 'true'
         cliexec('zerocoinpour', addr, provepour, coin1, coin2)
 
+    # Run the libzerocash tests.
+    zerocashtestexecutable = os.path.join('.', 'libzerocash', 'tests', 'zerocashTest')
+    merkletestexecutable = os.path.join('.', 'libzerocash', 'tests', 'merkleTest')
+    check_call(zerocashtestexecutable)
+    check_call(merkletestexecutable)
 
 @curry_log
 def parse_args(log, args):
