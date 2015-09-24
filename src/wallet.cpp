@@ -1096,8 +1096,9 @@ libzerocash::IncrementalMerkleTree CWallet::BuildZercoinMerkleTree() {
 
 CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coinhash2, CKey key,
                                libzerocash::Coin newcoin1, libzerocash::Coin newcoin2,
-                               libzerocash::Address newAddress1, libzerocash::Address newAddress2) {
-    LogPrint("zerocoin", "MakePour : constructing pour of coins %s,%s", coinhash1.ToString(), coinhash2.ToString());
+                               libzerocash::Address newAddress1, libzerocash::Address newAddress2,
+                               CAmount fee) {
+    LogPrint("zerocoin", "MakePour : constructing pour of coins %s,%s\n", coinhash1.ToString(), coinhash2.ToString());
 
     std::map<uint256, int> coinIndex;
     // build merkletree and complete with location of coins
@@ -1155,7 +1156,7 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
                                         a1, a2,
                                         witness_1, witness_2,
                                         newAddress1.getPublicAddress(), newAddress2.getPublicAddress(),
-                                        0,
+                                        (uint64_t) fee,
                                         keyahshv,
                                         newcoin1, newcoin2);
     // bool v = pourtx.verify(*pzerocashParams, keyahshv, rt);
@@ -1165,25 +1166,33 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
         throw runtime_error("computed merkle root not in block tip");
     }
     //put pour in transaction
-    return this->MakePourTx(pourtx,blockhash,key);
+    return this->MakePourTx(pourtx, blockhash, key, fee);
 }
 
 CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
-                                 const uint256 &blockhash, const CKey &key) {
+                                 const uint256 &blockhash, const CKey &key,
+                                 CAmount fee) {
     CMutableTransaction rawTx;
+    CAmount nAmount = pour.getMonetaryValueOut();
+
+    if (nAmount < fee) {
+        LogPrint("zerocoin", "MakePourTx: vpub amount %" PRIu64 " is insufficient to cover fee %" PRIu64 ".\n", nAmount, fee);
+        throw new runtime_error("vpub amount is insufficient to cover fee");
+    }
 
     // compose output portion of transaction
-    if (pour.getMonetaryValueOut() == 0) {
+    if (nAmount == 0) {
+        LogPrint("zerocoin", "MakePourTx: vpub is 0...\n");
         CScript scriptPubKey;
         scriptPubKey << OP_RETURN;
         scriptPubKey << blockhash;
         CTxOut out(0, scriptPubKey);
         rawTx.vout.push_back(out);
     } else {
-        CAmount nAmount = pour.getMonetaryValueOut();
+        LogPrint("zerocoin", "MakePourTx: vpub is not 0...\n");
         CBitcoinAddress aa(key.GetPubKey().GetID());
         CScript scriptPubKey = GetScriptForDestination(aa.Get());
-        CTxOut out(nAmount, scriptPubKey);
+        CTxOut out(nAmount - fee, scriptPubKey);
         rawTx.vout.push_back(out);
     }
     CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
@@ -1202,7 +1211,7 @@ CTransaction CWallet::MakePourTx(const libzerocash::PourTransaction &pour,
 
     const int nHashType = SIGHASH_ALL;
     uint256 hash = SignatureHash(scriptSig, rawTx, 0, nHashType);
-    LogPrint("zerocoin", "MakePourTx: rawTx size %d, signature hash: %s\n", pour_vector.size(), hash.ToString());
+    LogPrint("zerocoin", "MakePourTx: rawTx size %lu signature hash: %s\n", (unsigned long) (pour_vector.size()), hash.ToString());
 
 
     std::vector<unsigned char> vchSig(32);

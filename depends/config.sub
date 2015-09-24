@@ -50,6 +50,8 @@ timestamp='2014-05-01'
 #	CPU_TYPE-MANUFACTURER-KERNEL-OPERATING_SYSTEM
 # It is wrong to echo any other type of specification.
 
+echo "config.sub args: $0 $*"
+
 me=`echo "$0" | sed -e 's,.*/,,'`
 
 usage="\
