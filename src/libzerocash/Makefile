@@ -69,6 +69,12 @@ debug: all
 noasserts: CXXFLAGS += -DNDEBUG -Wno-unused-variable -Wno-unused-but-set-variable
 noasserts: all
 
+# In order to detect changes to #include dependencies. -MMD below generates a .d file for .cpp file. Include the .d file.
+-include $(SRCS:.cpp=.d)
+
+$(OBJS) ${patsubst %,%.o,${EXECUTABLES}}: %.o: %.cpp
+	$(CXX) -o $@ $< -c -MMD $(CXXFLAGS)
+
 $(EXECUTABLES): %: %.o $(OBJS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 
@@ -94,13 +100,13 @@ libzerocash.a: $(OBJS) $(USER_OBJS)
 	#@echo 'Finished copying libzerocash.a'
 	@echo ' '
 
-test_library: %: tests/zerocashTest.o $(OBJS) 
+test_library: %: tests/zerocashTest.o $(OBJS)
 	$(CXX) -o tests/$@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -lzerocash
-	
-banktest_library: %: bankTest.o $(OBJS) 
+
+banktest_library: %: bankTest.o $(OBJS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -lzerocash
 
-merkletest_library: %: merkleTest.o $(OBJS) 
+merkletest_library: %: merkleTest.o $(OBJS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -lzerocash
 
 .PHONY: clean
@@ -110,6 +116,6 @@ clean:
 		$(OBJS) \
 		$(EXECUTABLES) \
 		${patsubst %,%.o,${EXECUTABLES}} \
-		${patsubst %,%.o,${SRCS}} \
+		${patsubst %.cpp,%.d,${SRCS}} \
 		libzerocash.a \
 		tests/test_library
