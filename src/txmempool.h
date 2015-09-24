@@ -95,8 +95,8 @@ public:
     bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b)
     {
         if (a.GetFeeRate() == b.GetFeeRate())
-            return a.GetTime() < b.GetTime();
-        return a.GetFeeRate() > b.GetFeeRate();
+            return a.GetTime() >= b.GetTime();
+        return a.GetFeeRate() < b.GetFeeRate();
     }
 };
 
