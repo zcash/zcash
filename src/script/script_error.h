@@ -47,6 +47,12 @@ typedef enum ScriptError_t
     /* softfork safeness */
     SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS,
 
+    /* zerocash-specific failures */
+    SCRIPT_ERR_ZC_PROTECT_INVALID,
+    SCRIPT_ERR_ZC_POUR_SIG_INVALID,
+    SCRIPT_ERR_ZC_POUR_BLOCK_UNKNOWN,
+    SCRIPT_ERR_ZC_POUR_INVALID_PROOF,
+
     SCRIPT_ERR_ERROR_COUNT
 } ScriptError;
 

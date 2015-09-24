@@ -215,9 +215,10 @@ public:
     libzerocash::IncrementalMerkleTree BuildZercoinMerkleTree();
     CTransaction MakePour(uint16_t version, uint256 coinhash1, uint256 coinhash2, CKey key,
                           libzerocash::Coin newcoin1, libzerocash::Coin newcoin2,
-                          libzerocash::Address newAddress1, libzerocash::Address newAddress2);
+                          libzerocash::Address newAddress1, libzerocash::Address newAddress2,
+                          CAmount fee);
 
-    CTransaction MakePourTx(const libzerocash::PourTransaction &pour, const uint256 &blockhash, const CKey &key);
+    CTransaction MakePourTx(const libzerocash::PourTransaction &pour, const uint256 &blockhash, const CKey &key, CAmount fee);
 
     //! check whether we are allowed to upgrade (or already support) to the named feature
     bool CanSupportFeature(enum WalletFeature wf) { AssertLockHeld(cs_wallet); return nWalletMaxVersion >= wf; }

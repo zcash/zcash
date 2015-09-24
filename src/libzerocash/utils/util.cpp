@@ -154,7 +154,7 @@ uint64_t convertBytesVectorToInt(const std::vector<unsigned char>& bytes) {
     uint64_t val_int = 0;
 
     for(size_t i = 0; i < bytes.size(); i++) {
-        val_int = val_int + (bytes[i] << ((bytes.size()-1-i) * 8));
+        val_int = val_int + (((uint64_t) bytes[i]) << ((bytes.size()-1-i) * 8));
     }
 
     return val_int;

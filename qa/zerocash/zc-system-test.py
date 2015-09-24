@@ -84,7 +84,12 @@ def main(log, args = sys.argv[1:]):
         cliexec('setgenerate', 'true', '1')
 
         provepour = 'false' if opts.dummypours else 'true'
-        cliexec('zerocoinpour', addr, provepour, coin1, coin2)
+        fee = '1234'
+        pour = cliout('zerocoinpour', addr, provepour, coin1, coin2, fee)
+        cliexec('sendrawtransaction', pour)
+
+        # Now that we've generated a pour, mine it:
+        cliexec('setgenerate', 'true', '1')
 
 
 @curry_log
