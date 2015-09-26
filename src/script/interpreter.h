@@ -99,6 +99,13 @@ protected:
 public:
     TransactionSignatureChecker(const CTransaction* txToIn, unsigned int nInIn) : txTo(txToIn), nIn(nInIn) {}
     bool CheckSig(const std::vector<unsigned char>& scriptSig, const std::vector<unsigned char>& vchPubKey, const CScript& scriptCode) const;
+
+    /* ZC Note: This is a hack to verify Pour signatures when evaluating
+     * FLAG_ZC_POUR in EvalSCript:
+     */
+    void ZCBorrowTransaction(const CTransaction** txToOut, unsigned int* nInOut) const {
+        *txToOut = txTo; *nInOut = nIn;
+    }
 };
 
 class MutableTransactionSignatureChecker : public TransactionSignatureChecker

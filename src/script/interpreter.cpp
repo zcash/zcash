@@ -438,6 +438,28 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 case FLAG_ZC_POUR:
                 {
                     LogPrint("zerocoin", "zerocoin EvalScript: pour\n");
+
+                    const CTransaction *txTo;
+                    unsigned int nIn;
+
+                    {
+                        const TransactionSignatureChecker *tsc = dynamic_cast<const TransactionSignatureChecker*>(&checker);
+
+                        if (tsc) {
+                            tsc->ZCBorrowTransaction(&txTo, &nIn);
+                        } else {
+                            /*
+                               Note: From code review and discussion on #bitcoin-dev around
+                               2015-09-24, I don't believe this case can trigger in the current
+                               codebase, but it may trigger when we adopt future upstream
+                               changes. --nwilcox
+
+                             */
+                            LogPrint("zerocoin","EvalScript: internal error, cannot operate with non-TransactionSignatureChecker\n", stack.size());
+                            return set_error(serror, SCRIPT_ERR_ZC_POUR_INTERNAL_CHECKER_TYPE_ERROR);
+                        }
+                    }
+
                     if(stack.size()!=4){
                         LogPrint("zerocoin","EvalScript: wrong arguments count. expected 4 got %d\n", stack.size());
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
@@ -449,22 +471,31 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
 
                     uint256 blockhash(vchBlockHash);
 
-                    // Copy the whole script
-                    CScript scriptCode(script.begin(), script.end());
-
-                    // Drop the signature, since there's no way for a signature to sign itself
+                    CScript scriptCode(txTo->vin[nIn].scriptSig);
                     scriptCode.FindAndDelete(CScript(vchSig));
 
+                    uint256 hash = SignatureHash(scriptCode, *txTo , nIn, SIGHASH_ALL);
+                    LogPrint("zerocoin","EvalScript: signature hash %s\n", hash.ToString());
                     if (!CheckSignatureEncoding(vchSig, flags, serror) || !CheckPubKeyEncoding(vchPubKey, flags, serror)) {
-                        //serror is set
+                        // serror is set
                         return false;
                     }
-                    bool fSuccess = checker.CheckSig(vchSig, vchPubKey, scriptCode);
-                    if (!fSuccess) {
-                        LogPrint("zerocoin", "zerocoin EvalScript: signature invalid.\n");
+
+                    CPubKey pubkey(vchPubKey);
+
+                    if (!pubkey.IsValid()){
+                        LogPrint("zerocoin","zerocoin EvalScript: public key invalid.\n");
+                        return SCRIPT_ERR_ZC_POUR_PUBKEY_INVALID;
+                    }
+                    if(!pubkey.Verify(hash,vchSig)){
+                        LogPrint("zerocoin","zerocoin EvalScript: signature invalid.\n");
                         return set_error(serror, SCRIPT_ERR_ZC_POUR_SIG_INVALID);
                     }
 
+                    const uint256 keyhash=pubkey.GetHash();
+                    vector<unsigned char> vchKeyhash(keyhash.begin(), keyhash.end());
+
+                    // Find the bucket commitment root for the associated blockhash:
                     if (mapBlockIndex.count(blockhash) == 0) {
                         LogPrint("zerocoin", "zerocoin EvalScript: block not found %s.\n", blockhash.ToString());
                         return set_error(serror, SCRIPT_ERR_ZC_POUR_BLOCK_UNKNOWN);
@@ -472,10 +503,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     uint256 merkleroot = mapBlockIndex[blockhash]->GetBlockHeader().hashZerocoinMerkleRoot;
                     std::vector<unsigned char> vchRoot(merkleroot.begin(), merkleroot.end());
                     LogPrint("zerocoin", "zerocoin EvalScript: got root %s from block %s.\n", merkleroot.ToString(), blockhash.ToString());
-
-                    CPubKey pubkey(vchPubKey);
-                    const uint256 keyhash=pubkey.GetHash();
-                    vector<unsigned char> vchKeyhash(keyhash.begin(), keyhash.end());
 
                     // deserialize pour
                     libzerocash::PourTransaction pour;
