@@ -63,18 +63,18 @@ const char* ScriptErrorString(const ScriptError serror)
             return "NOPx reserved for soft-fork upgrades";
         case SCRIPT_ERR_PUBKEYTYPE:
             return "Public key is neither compressed or uncompressed";
-        case SCRIPT_ERR_ZC_PROTECT_INVALID:
-            return "Zerocash Protect operation is invalid";
-        case SCRIPT_ERR_ZC_POUR_INTERNAL_CHECKER_TYPE_ERROR:
-            return "Zerocash Pour cannot operate with non-TransactionSignatureChecker";
-        case SCRIPT_ERR_ZC_POUR_SIG_INVALID:
-            return "Zerocash Pour operation has an invalid signature";
         case SCRIPT_ERR_ZC_POUR_BLOCK_UNKNOWN:
             return "Zerocash Pour operation anchored to unknown block hash";
+        case SCRIPT_ERR_ZC_POUR_INTERNAL_CHECKER_TYPE_ERROR:
+            return "Zerocash Pour cannot operate with non-TransactionSignatureChecker";
         case SCRIPT_ERR_ZC_POUR_INVALID_PROOF:
             return "Zerocash Pour operation zkSNARK proof is invalid";
         case SCRIPT_ERR_ZC_POUR_PUBKEY_INVALID:
             return "Zerocash Pour operation invalid public key";
+        case SCRIPT_ERR_ZC_POUR_SIG_INVALID:
+            return "Zerocash Pour operation has an invalid signature";
+        case SCRIPT_ERR_ZC_PROTECT_INVALID:
+            return "Zerocash Protect operation is invalid";
         case SCRIPT_ERR_UNKNOWN_ERROR:
         case SCRIPT_ERR_ERROR_COUNT:
         default: break;
