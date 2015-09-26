@@ -90,11 +90,6 @@ def main(log, args = sys.argv[1:]):
         # Now that we've generated a pour, mine it:
         cliexec('setgenerate', 'true', '1')
 
-    # Run the libzerocash tests.
-    zerocashtestexecutable = os.path.join('.', 'libzerocash', 'tests', 'zerocashTest')
-    merkletestexecutable = os.path.join('.', 'libzerocash', 'tests', 'merkleTest')
-    check_call(zerocashtestexecutable)
-    check_call(merkletestexecutable)
 
 @curry_log
 def parse_args(log, args):
