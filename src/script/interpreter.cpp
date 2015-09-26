@@ -508,8 +508,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     ss >> pour;
 
 
-                    CHashWriter hh(SER_GETHASH, 0);
-                    hh << pour;
                     LogPrint("zerocoin", "EvalScript: pour deserialized\n");
 
                     bool ret = pour.verify(*pzerocashParams, vchKeyhash, vchRoot);
