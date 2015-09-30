@@ -308,6 +308,9 @@ CoinCommitmentLogRgx = re.compile(r'^XXXX coin ([a-f0-9]{64}) :$')
 
 
 ConfigValues = {
+    # disable fee requirements, since fees do not yet work for Pours:
+    'relaypriority': 0,
+
     # testnet-box functionality:
     'regtest': '1',
     'dnsseed': '0',
