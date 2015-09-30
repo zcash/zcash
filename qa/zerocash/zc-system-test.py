@@ -79,7 +79,7 @@ def main(log, args = sys.argv[1:]):
             tx = json.loads(signedtx)['hex']
             cliexec('sendrawtransaction', tx)
 
-        [coin1, coin2] = parse_coins(opts.basedir, 2)
+        [coin1, coin2, coin3] = parse_coins(opts.basedir, 3, 'protect')
 
         cliexec('setgenerate', 'true', '1')
 
@@ -89,6 +89,16 @@ def main(log, args = sys.argv[1:]):
 
         # Now that we've generated a pour, mine it:
         cliexec('setgenerate', 'true', '1')
+
+        # Now create a new Pour using a Poured bucket as input:
+        [pourcoin] = parse_coins(opts.basedir, 1, 'pour')
+
+        pour2 = cliout('zerocoinpour', addr, provepour, coin3, pourcoin)
+        cliexec('sendrawtransaction', pour2)
+
+        # Now that we've generated a second pour, mine it:
+        cliexec('setgenerate', 'true', '1')
+
 
 
 @curry_log
@@ -288,18 +298,22 @@ def describe_process_status(status):
         return 'exited with status {!r}'.format(status)
 
 
-def parse_coins(basedir, count):
+def parse_coins(basedir, count, kind):
+    assert kind in ('protect', 'pour'), repr(kind)
+
     with file(os.path.join(basedir, '0', LOGNAME), 'r') as f:
         for line in f:
             m = CoinCommitmentLogRgx.match(line)
-            if m:
-                yield m.group(1)
+            if m and m.group(1) == kind:
+                yield m.group(2)
                 count -= 1
                 if count == 0:
                     break
 
 
-CoinCommitmentLogRgx = re.compile(r'^XXXX coin ([a-f0-9]{64}) :$')
+CoinCommitmentLogRgx = re.compile(
+    r'^XXXX (pour|protect) commitment ([a-f0-9]{64})$'
+)
 
 
 ConfigValues = {

@@ -396,6 +396,49 @@ Value sendtoaddress(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
+/* Helper function for updating mapAddress/mapCoins memory map.
+ * BUG: These maps are a hack and should be removed in favor of a
+ * "stateless yet functional interface" that places responsibility of
+ * storing secret state fully in the hands of the caller. Later when we
+ * build a real wallet (and need features like backup/restore) we can do
+ * state management the Right Way(tm).
+ *
+ * param isPour - true for Pour, false for Protect/Mint (only affects debug log).
+ */
+void zc_track_and_dump_coin(bool isPour,
+                              libzerocash::Address addr,
+                              libzerocash::Coin coin)
+{
+    uint256 cid(coin.getCoinCommitment().getCommitmentValue());
+    pwalletMain->mapAddress[cid] = addr;
+    pwalletMain->mapCoins[cid] = coin;
+
+    CDataStream addrstream(SER_NETWORK, PROTOCOL_VERSION);
+    addrstream << addr;
+    std::string addrhex = HexStr(addrstream.begin(), addrstream.end());
+
+    CDataStream coinstream(SER_NETWORK, PROTOCOL_VERSION);
+    coinstream << coin;
+    std::string coinhex = HexStr(coinstream.begin(), coinstream.end());
+
+    /* NOTE: This is currently parsed by ./qa/zerocash/zc-system-test.py,
+     * and thus required for the system test to pass. When we switch
+     * to the "stateless RPC interface" this kind of hack will no longer
+     * be necessary.
+     *
+     * BUG: We need to clarify the address is SECRET. Actually we
+     * need better terminology. The term "secret address" is nonsensical,
+     * and easy to confuse with "public address" and "address" becomes
+     * ambiguous. (Also, this collides w/ Bitcoin "address".)
+     */
+    const char* prefix = isPour ? "XXXX pour" : "XXXX protect";
+
+    cout << prefix << " commitment " << cid.ToString() << endl;
+    cout << prefix << " address " << addrhex << endl;
+    cout << prefix << " bucket/coin " << coinhex << endl;
+}
+
+
 Value zerocoinmint(const Array& params, bool fHelp){
     if (fHelp || params.size() < 3) {
         throw runtime_error(
@@ -432,26 +475,10 @@ Value zerocoinmint(const Array& params, bool fHelp){
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
     }
 
-    //zcaddrs.at(zcaddrs.size()) = libzerocash::Address();
-    //zccoins.at(i) = libzerocash::Coin(zcaddrs.at(i).getPublicAddress(), i)
-
     libzerocash::Address zcaddr_f;
     libzerocash::Coin coina(zcaddr_f.getPublicAddress(), 1);
-    uint256 cid(coina.getCoinCommitment().getCommitmentValue());
-    pwalletMain->mapAddress[cid] = zcaddr_f;
-    pwalletMain->mapCoins[cid] = coina;
 
-    libzerocash::MintTransaction minttx(coina);
-    CDataStream sss(SER_NETWORK, PROTOCOL_VERSION);
-    sss << coina;
-    std::string coinhex = HexStr(sss.begin(), sss.end());
-
-    CDataStream ssss(SER_NETWORK, PROTOCOL_VERSION);
-    ssss << zcaddr_f;
-    std::string addresshex =  HexStr(ssss.begin(), ssss.end());
-
-    // NOTE: This is currently parsed by ./qa/zerocash/zc-system-test.py:
-    cout << "XXXX coin " << cid.ToString() << " :\n\thex\n\t" << coinhex << "\n\taddress\n\t " << addresshex << endl;
+    zc_track_and_dump_coin(false, zcaddr_f, coina);
 
     CMutableTransaction rawTx; // the tx we are constructing
     {
@@ -462,6 +489,7 @@ Value zerocoinmint(const Array& params, bool fHelp){
         CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
         std::vector<unsigned char> vchSig(32);
 
+        libzerocash::MintTransaction minttx(coina);
         dd << minttx;
         std::vector<unsigned char> vector_mint(dd.begin(), dd.end());
 
@@ -518,6 +546,10 @@ Value zerocoinpour(const Array& params, bool fHelp){
 
     libzerocash::Coin outputCoin1(pubdestinationAddress1, 1);
     libzerocash::Coin outputCoin2(pubdestinationAddress2, 1);
+
+    zc_track_and_dump_coin(true, destinationAddress1, outputCoin1);
+    zc_track_and_dump_coin(true, destinationAddress2, outputCoin2);
+
     CTransaction rawTx;
     rawTx = pwalletMain->MakePour(version, inputCoinhash1, inputCoinhash2, key,
                                   outputCoin1, outputCoin2,
