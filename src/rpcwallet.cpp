@@ -478,28 +478,6 @@ Value zerocoinmint(const Array& params, bool fHelp){
     rawTx.vout.push_back(out);
     }
 
-    /*
-    CCoins coins;
-    CCoinsView viewDummy;
-    CCoinsViewCache view(viewDummy);
-    {
-        LOCK(mempool.cs);
-        CCoinsViewCache &viewChain = *pcoinsTip;
-        CCoinsViewMemPool viewMempool(viewChain, mempool);
-        view.SetBackend(viewMempool); // temporarily switch cache backend to db+mempool view
-        CCoins coins;
-        view.GetCoins(hash, coins); // this is certainly allowed to fail
-        view.SetBackend(viewDummy); // switch back to avoid locking mempool for too long
-    }
-    const CScript& prevPubKey = coins.vout[0].scriptPubKey;
-    SignSignature(*pwalletMain,prevPubKey, rawTx,0, SIGHASH_ALL);
-    CValidationState state;
-    if (!AcceptToMemoryPool(mempool, state, rawTx, false, NULL, true))
-        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX rejected"); // TODO: report validation state
-    RelayTransaction(tx, tx.GetHash());
-    return tx.GetHash().GetHex();
-    */
-
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << rawTx;
 
