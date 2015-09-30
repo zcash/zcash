@@ -39,7 +39,7 @@ def main(log, args = sys.argv[1:]):
         sys.exit(1)
 
     opts = parse_args(args)
-    initialize_basedir(opts.basedir)
+    initialize_basedir(opts.basedir, opts.NODECONFIG)
 
     # Our convention is to build zc-flavored bitcoind with relative
     # .so paths, which is brittle and requires running it in the cwd that
@@ -136,6 +136,20 @@ def parse_args(log, args):
                    default=False,
                    help='Pause after launching nodes to facilitate attaching gdb.')
 
+    def node_config_arg(argstr):
+        try:
+            [key, value] = argstr.split('=',1)
+        except ValueError as e:
+            e.args += (argstr,)
+            raise
+        else:
+            return (key, value)
+
+    p.add_argument('NODECONFIG',
+                   type=node_config_arg,
+                   nargs='*',
+                   help='Node config settings of the form KEY=VALUE.')
+
     opts = p.parse_args(args)
 
     logging.basicConfig(
@@ -149,7 +163,7 @@ def parse_args(log, args):
 
 
 @curry_log
-def initialize_basedir(log, basedir, nodecount=2, baseport=19000):
+def initialize_basedir(log, basedir, clconfigs, nodecount=2, baseport=19000):
     create_new_dir_saving_existing_dir(basedir)
 
     # Algorithmically generate the config for each subdirectory:
@@ -162,14 +176,20 @@ def initialize_basedir(log, basedir, nodecount=2, baseport=19000):
         # Only overwrite config if non-existent to allow tinkering:
         if not os.path.exists(confpath):
             log.info('Writing: %r', confpath)
+
+            k = (n+1) % nodecount # The next node's index.
+
+            configvals = ConfigValues.copy()
+            configvals.update({
+                'connect': '127.0.0.1:' + str(baseport + (k*2)),
+                'port': baseport + (n*2),
+                'rpcport': baseport + (n*2)+1,
+            })
+            configvals.update(clconfigs)
+
             with file(confpath, 'w') as f:
-                k = (n+1) % nodecount # The next node's index.
-                f.write(
-                    ConfigTemplate.format(
-                        PORT = baseport + (n*2),
-                        RPCPORT = baseport + (n*2)+1,
-                        PEERPORT = baseport + (k*2),
-                        ))
+                for (key, value) in sorted(configvals.items()):
+                    f.write('{}={}\n'.format(key, value))
 
 
 @curry_log
@@ -287,27 +307,25 @@ def parse_coins(basedir, count):
 CoinCommitmentLogRgx = re.compile(r'^XXXX coin ([a-f0-9]{64}) :$')
 
 
-ConfigTemplate = """
-# testnet-box functionality
-regtest=1
-dnsseed=0
-upnp=0
-listen=1
-connect=127.0.0.1:{PEERPORT}
-keypool=10
-# listen on different ports than default testnet
-port={PORT}
-rpcport={RPCPORT}
+ConfigValues = {
+    # testnet-box functionality:
+    'regtest': '1',
+    'dnsseed': '0',
+    'upnp': '0',
+    'listen': '1',
+    'connect': '127.0.0.1:{PEERPORT}',
+    'keypool': '10',
 
-# always run a server, even with bitcoin-qt
-server=1
+    # listen on different ports than default testnet
+    'port': '{PORT}',
+    'rpcport': '{RPCPORT}',
 
-# enable SSL for RPC server
-#rpcssl=1
+    # always run a server, even with bitcoin-qt
+    'server': '1',
 
-rpcuser=admin
-rpcpassword=123
-"""
+    'rpcuser': 'admin',
+    'rpcpassword': '123',
+}
 
 
 
