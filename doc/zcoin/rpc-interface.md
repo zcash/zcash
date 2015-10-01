@@ -13,11 +13,11 @@ following the normal default upstream fee rules.
   of commandline users wouldn't be blocked on anything.
 * "minimally" - this excludes *everything else* unneccessary for the Goal:
   no backup/restore, no smart caching of incremental merkle trees, no GUI,
-  no "account management", etc...  * "stateless" - The node doesn't store
-  anything as a side effect of handling these requests. The resulting
-  transactions can be submitted via ``sendrawtransaction`` and that will
-  store something (to the mempool), but this ticket shouldn't alter that
-  codepath at all.
+  no "account management", etc...
+* "stateless" - The node doesn't store anything as a side effect of
+  handling these requests. The resulting transactions can be submitted
+  via ``sendrawtransaction`` and that will store something (to the
+  mempool), but this ticket shouldn't alter that codepath at all.
 * "off-chain-Bucket-transmission" - The sending user
   must send the recipient the Bucket (Coin) secrets out-of-band. They are
   not decrypted from the blockchain by anything.
@@ -60,7 +60,7 @@ description in-place as it evolves:
 
 ``zc-stateless-pour SECRETKEY1 BUCKET1 SECRETKEY2 BUCKET2 ZCDEST1 AMT1 ZCDEST2 AMT2 CLEARDEST CLEARAMT FEE``
 - **Returns:** ``{ "commitment1": <hex>, "commitment2": <hex>,
-  "bucketsecret1": <hex>, "bucketsecret2": <hex>, "rawtxn":#
+  "bucketsecret1": <hex>, "bucketsecret2": <hex>, "rawtxn":
   <hex of unsigned txn containing a Pour> }``
 - **Synopsis:** Create a rawtxn for a Pour given the secrets necessary
   to spend the two buckets, sending the results to the two ``ZCDEST<N>``
