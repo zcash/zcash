@@ -47,7 +47,7 @@ $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 
 $(LIBZEROCASH): $(LIBZEROCASH_HEADER_FILES) $(LIBZEROCASH_SOURCES)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) all \
-		CXXFLAGS='-I.. $(CPPFLAGS) $(CXXFLAGS)'
+		CXXFLAGS='-I.. $(CPPFLAGS) $(CXXFLAGS)' MINDEPS=1
 
 LIBZEROCASH_HEADER_FILES = \
   $(wildcard libzerocash/libzerocash/*.h) \
