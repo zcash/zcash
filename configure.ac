@@ -85,8 +85,8 @@ AC_PATH_TOOL(CPPFILT,c++filt)
 
 # Enable wallet
 AC_ARG_ENABLE([wallet],
-  [AS_HELP_STRING([--enable-wallet],
-  [enable wallet (default is yes)])],
+  [AS_HELP_STRING([--disable-wallet],
+  [disable wallet (enabled by default)])],
   [enable_wallet=$enableval],
   [enable_wallet=yes])
 
@@ -103,7 +103,7 @@ AC_ARG_ENABLE([proton],
   [use_proton=yes])
 
 AC_ARG_ENABLE(tests,
-    AS_HELP_STRING([--enable-tests],[compile tests (default is yes)]),
+    AS_HELP_STRING([--disable-tests],[do not compile tests (default is to compile)]),
     [use_tests=$enableval],
     [use_tests=yes])
 
@@ -114,8 +114,8 @@ AC_ARG_ENABLE([fuzz-main],
   [use_fuzz_main=no])
 
 AC_ARG_ENABLE([hardening],
-  [AS_HELP_STRING([--enable-hardening],
-  [attempt to harden the resulting executables (default is yes)])],
+  [AS_HELP_STRING([--disable-hardening],
+  [do not attempt to harden the resulting executables (default is to harden)])],
   [use_hardening=$enableval],
   [use_hardening=yes])
 
@@ -126,8 +126,8 @@ AC_ARG_ENABLE([reduce-exports],
   [use_reduce_exports=no])
 
 AC_ARG_ENABLE([ccache],
-  [AS_HELP_STRING([--enable-ccache],
-  [use ccache for building (default is yes if ccache is found)])],
+  [AS_HELP_STRING([--disable-ccache],
+  [do not use ccache for building (default is to use if found)])],
   [use_ccache=$enableval],
   [use_ccache=auto])
 
