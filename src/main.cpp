@@ -1689,17 +1689,14 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     return true;
 }
 
-CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree)
+CAmount GetMinRelayFee(const CTransaction& tx, const CTxMemPool& pool, unsigned int nBytes, bool fAllowFree)
 {
-    {
-        LOCK(mempool.cs);
-        uint256 hash = tx.GetHash();
-        double dPriorityDelta = 0;
-        CAmount nFeeDelta = 0;
-        mempool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
-        if (dPriorityDelta > 0 || nFeeDelta > 0)
-            return 0;
-    }
+    uint256 hash = tx.GetHash();
+    double dPriorityDelta = 0;
+    CAmount nFeeDelta = 0;
+    pool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
+    if (dPriorityDelta > 0 || nFeeDelta > 0)
+        return 0;
 
     CAmount nMinFee = ::minRelayTxFee.GetFeeForRelay(nBytes);
 
@@ -1889,7 +1886,7 @@ bool AcceptToMemoryPool(
         // For v1-v4 transactions, we don't yet know if the transaction commits
         // to consensusBranchId, but if the entry gets added to the mempool, then
         // it has passed ContextualCheckInputs and therefore this is correct.
-        CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height(), mempool.HasNoInputsOf(tx), fSpendsCoinbase, consensusBranchId);
+        CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height(), pool.HasNoInputsOf(tx), fSpendsCoinbase, consensusBranchId);
         unsigned int nSize = entry.GetTxSize();
 
         // Before zcashd 4.2.0, we had a condition here to always accept a tx if it contained
@@ -1897,7 +1894,7 @@ bool AcceptToMemoryPool(
         // that as a special case, because the fee returned by GetMinRelayFee is always at
         // most DEFAULT_FEE.
 
-        CAmount txMinFee = GetMinRelayFee(tx, nSize, true);
+        CAmount txMinFee = GetMinRelayFee(tx, pool, nSize, true);
         if (fLimitFree && nFees < txMinFee) {
             return state.DoS(0, error("AcceptToMemoryPool: not enough fees %s, %d < %d",
                                       hash.ToString(), nFees, txMinFee),
@@ -1986,14 +1983,14 @@ bool AcceptToMemoryPool(
 
             pool.EnsureSizeLimit();
 
-            MetricsGauge("zcash.mempool.size.transactions", mempool.size());
-            MetricsGauge("zcash.mempool.size.bytes", mempool.GetTotalTxSize());
-            MetricsGauge("zcash.mempool.usage.bytes", mempool.DynamicMemoryUsage());
+            MetricsGauge("zcash.mempool.size.transactions", pool.size());
+            MetricsGauge("zcash.mempool.size.bytes", pool.GetTotalTxSize());
+            MetricsGauge("zcash.mempool.usage.bytes", pool.DynamicMemoryUsage());
         }
     }
 
     auto txid = tx.GetHash().ToString();
-    auto poolsz = tfm::format("%u", mempool.mapTx.size());
+    auto poolsz = tfm::format("%u", pool.mapTx.size());
 
     TracingInfo("mempool", "Accepted",
         "txid", txid.c_str(),
