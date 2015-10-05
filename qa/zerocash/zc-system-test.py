@@ -12,7 +12,6 @@ from functools import wraps, partial
 from time import sleep
 import json
 
-
 DESCRIPTION = """
 Run various system tests, which involve running multiple zerocash nodes and interacting with them.
 """
