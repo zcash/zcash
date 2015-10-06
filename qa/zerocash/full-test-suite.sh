@@ -27,8 +27,8 @@ function run_test_phase
 # Test phases:
 run_test_phase "${REPOROOT}/src/libzerocash/tests/zerocashTest"
 run_test_phase "${REPOROOT}/src/libzerocash/tests/merkleTest"
+run_test_phase "${REPOROOT}/src/libzerocash/zerocash_pour_ppzksnark/tests/test_zerocash_pour_ppzksnark"
 run_test_phase "${REPOROOT}/qa/zerocash/zc-system-test.py"
-
 
 exit $SUITE_EXIT_STATUS
 
