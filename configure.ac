@@ -732,7 +732,6 @@ AC_CHECK_HEADER([cryptopp/eccrypto.h],,AC_MSG_ERROR(libcryptopp headers missing)
 # classes whose library symbols are mangled by some black alchemy.
 AC_CHECK_LIB([cryptopp],[main],CRYPTOPP_LIBS=-lcryptopp, [AC_MSG_ERROR(libcryptopp missing)])
 
-
 # libsnark header layout is broken unless cpp's -I is passed with the
 # libsnark directory, so for now we use this hideous workaround:
 echo 'Hunting for libsnark include directory...'
