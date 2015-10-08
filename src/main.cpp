@@ -6675,10 +6675,10 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             RelayTransaction(tx);
             vWorkQueue.push_back(inv.hash);
 
-            LogPrint("mempool", "AcceptToMemoryPool: peer=%d %s: accepted %s (poolsz %u)\n",
+            LogPrint("mempool", "AcceptToMemoryPool: peer=%d %s: accepted %s (poolsz %u txn, %u kB)\n",
                 pfrom->id, pfrom->cleanSubVer,
                 tx.GetHash().ToString(),
-                mempool.mapTx.size());
+                mempool.size(), mempool.DynamicMemoryUsage() / 1000);
 
             // Recursively process any orphan transactions that depended on this one
             set<NodeId> setMisbehaving;
