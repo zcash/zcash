@@ -91,7 +91,14 @@ bool CLevelDBWrapper::WriteBatch(CLevelDBBatch& batch, bool fSync)
 
 bool CLevelDBWrapper::IsEmpty()
 {
-    boost::scoped_ptr<leveldb::Iterator> it(NewIterator());
+    boost::scoped_ptr<CLevelDBIterator> it(NewIterator());
     it->SeekToFirst();
     return !(it->Valid());
 }
+ 
+CLevelDBIterator::~CLevelDBIterator() { delete piter; }
+bool CLevelDBIterator::Valid() { return piter->Valid(); }
+void CLevelDBIterator::SeekToFirst() { piter->SeekToFirst(); }
+void CLevelDBIterator::SeekToLast() { piter->SeekToLast(); }
+void CLevelDBIterator::Next() { piter->Next(); }
+void CLevelDBIterator::Prev() { piter->Prev(); }
