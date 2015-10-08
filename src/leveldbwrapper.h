@@ -67,7 +67,12 @@ private:
     leveldb::Iterator *piter;
 
 public:
-    CLevelDBIterator(leveldb::Iterator *piterIn) : piter(piterIn) {}
+
+    /**
+     * @param[in] piterIn          The original leveldb iterator.
+     */
+    CLevelDBIterator(leveldb::Iterator *piterIn) : 
+        piter(piterIn) { };
     ~CLevelDBIterator();
 
     bool Valid();
@@ -229,7 +234,7 @@ public:
     CLevelDBIterator *NewIterator() 
     {
         return new CLevelDBIterator(pdb->NewIterator(iteroptions));
-    {
+    }
 
     /**
      * Return true if the database managed by this class contains no entries.

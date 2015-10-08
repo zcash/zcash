@@ -95,7 +95,7 @@ bool CLevelDBWrapper::IsEmpty()
     it->SeekToFirst();
     return !(it->Valid());
 }
- 
+
 CLevelDBIterator::~CLevelDBIterator() { delete piter; }
 bool CLevelDBIterator::Valid() { return piter->Valid(); }
 void CLevelDBIterator::SeekToFirst() { piter->SeekToFirst(); }
