@@ -1,16 +1,8 @@
 diff --git a/Makefile b/Makefile
-index 7d82a06..6074391 100644
+index 7d82a06..699f203 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -36,6 +36,7 @@ EXECUTABLES= \
- 
- OBJS=$(patsubst %.cpp,%.o,$(SRCS))
- 
-+
- ifeq ($(MINDEPS),1)
- 	CXXFLAGS += -DMINDEPS
- else
-@@ -110,7 +111,7 @@ banktest_library: %: bankTest.o $(OBJS)
+@@ -110,7 +110,7 @@ banktest_library: %: bankTest.o $(OBJS)
  merkletest_library: %: merkleTest.o $(OBJS)
  	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -lzerocash
  
@@ -19,12 +11,11 @@ index 7d82a06..6074391 100644
  
  clean:
  	$(RM) \
-@@ -120,3 +121,17 @@ clean:
+@@ -120,3 +120,16 @@ clean:
  		${patsubst %.cpp,%.d,${SRCS}} \
  		libzerocash.a \
  		tests/test_library
 +
-+# FIXME: Copied crudely from libsnark...
 +HEADERS_SRC=$(shell find . -name '*.hpp' -o -name '*.tcc' -o -name '*.h')
 +HEADERS_DEST=$(patsubst %,$(PREFIX)/include/libzerocash/%,$(HEADERS_SRC))
 +
@@ -32,8 +23,8 @@ index 7d82a06..6074391 100644
 +	mkdir -p $(shell dirname $@)
 +	cp $< $@
 +
-+# TODO: install the test executables into the bin/ directory.
 +install: all $(HEADERS_DEST)
 +	mkdir -p $(PREFIX)/lib
 +	install -m 0755 libzerocash.a $(PREFIX)/lib/
-+
++	mkdir -p $(PREFIX)/bin
++	install -m 0755 -t $(PREFIX)/bin/ $(EXECUTABLES)
