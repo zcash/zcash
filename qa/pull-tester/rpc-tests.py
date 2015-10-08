@@ -156,10 +156,10 @@ if(ENABLE_WALLET == 1 and ENABLE_UTILS == 1 and ENABLE_BITCOIND == 1):
     rpcTestDir = buildDir + '/qa/rpc-tests/'
     #Run Tests
     for i in range(len(testScripts)):
-       if (len(opts) == 0 or (len(opts) == 1 and "-win" in opts ) or '-extended' in opts 
+       if (len(opts) == 0 or (len(opts) == 1 and "-win" in opts ) or '-extended' in opts
            or testScripts[i] in opts or  re.sub(".py$", "", testScripts[i]) in opts ):
-            print  "Running testscript " + testScripts[i] + "..." 
-            subprocess.call(rpcTestDir + testScripts[i] + " --srcdir " + buildDir + '/src ' + passOn,shell=True) 
+            print  "Running testscript " + testScripts[i] + "..."
+            subprocess.call(rpcTestDir + testScripts[i] + " --srcdir " + buildDir + '/src ' + passOn,shell=True)
 	    #exit if help is called so we print just one set of instructions
             p = re.compile(" -h| --help")
             if p.match(passOn):
@@ -167,9 +167,9 @@ if(ENABLE_WALLET == 1 and ENABLE_UTILS == 1 and ENABLE_BITCOIND == 1):
 
     #Run Extended Tests
     for i in range(len(testScriptsExt)):
-        if ('-extended' in opts or testScriptsExt[i] in opts 
+        if ('-extended' in opts or testScriptsExt[i] in opts
            or re.sub(".py$", "", testScriptsExt[i]) in opts):
-            print  "Running 2nd level testscript " + testScriptsExt[i] + "..." 
-            subprocess.call(rpcTestDir + testScriptsExt[i] + " --srcdir " + buildDir + '/src ' + passOn,shell=True) 
+            print  "Running 2nd level testscript " + testScriptsExt[i] + "..."
+            subprocess.call(rpcTestDir + testScriptsExt[i] + " --srcdir " + buildDir + '/src ' + passOn,shell=True)
 else:
     print "No rpc tests to run. Wallet, utils, and bitcoind must all be enabled"
