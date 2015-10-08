@@ -26,13 +26,13 @@
 #include <utility>
 #include <vector>
 
-#include "libzerocash/libzerocash/Address.h"
-#include "libzerocash/libzerocash/Coin.h"
-#include "libzerocash/libzerocash/ZerocashParams.h"
-#include "libzerocash/libzerocash/IncrementalMerkleTree.h"
-#include "libzerocash/libzerocash/PourTransaction.h"
-#include "libzerocash/libzerocash/MintTransaction.h"
-#include "libzerocash/libzerocash/Zerocash.h"
+#include <libzerocash/libzerocash/Address.h>
+#include <libzerocash/libzerocash/Coin.h>
+#include <libzerocash/libzerocash/ZerocashParams.h>
+#include <libzerocash/libzerocash/IncrementalMerkleTree.h>
+#include <libzerocash/libzerocash/PourTransaction.h>
+#include <libzerocash/libzerocash/MintTransaction.h>
+#include <libzerocash/libzerocash/Zerocash.h>
 
 /**
  * Settings

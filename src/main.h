@@ -36,7 +36,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "libzerocash/libzerocash/IncrementalMerkleTree.h"
+#include <libzerocash/libzerocash/IncrementalMerkleTree.h>
 
 
 class CBlockIndex;

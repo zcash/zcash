@@ -31,33 +31,9 @@ LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBBITCOIN_UNIVALUE=univalue/libbitcoin_univalue.a
 LIBBITCOINQT=qt/libbitcoinqt.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
-LIBZEROCASH=libzerocash/libzerocash.a
-
-# These flags must be in a specific order and are reused multiple places,
-# so define the order once, here:
-LIBZEROCASH_AND_DEPS_LIBS = \
-  $(LIBZEROCASH) \
-  $(LIBSNARK_LIBS) \
-  $(CRYPTOPP_LIBS) \
-  $(GMP_LIBS) \
-  $(GMPXX_LIBS)
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
-
-$(LIBZEROCASH): $(LIBZEROCASH_HEADER_FILES) $(LIBZEROCASH_SOURCES)
-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) all \
-		CXXFLAGS='-I.. $(CPPFLAGS) $(CXXFLAGS)' MINDEPS=1
-
-LIBZEROCASH_HEADER_FILES = \
-  $(wildcard libzerocash/libzerocash/*.h) \
-  $(wildcard libzerocash/libzerocash/utils/*.h) \
-  $(wildcard libzerocash/zerocash_pour_ppzksnark/*.hpp) \
-  $(wildcard libzerocash/zerocash_pour_ppzksnark/*.tcc)
-
-LIBZEROCASH_SOURCES = \
-  $(wildcard libzerocash/libzerocash/*.cpp) \
-  $(wildcard libzerocash/libzerocash/utils/*.cpp)
 
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
@@ -284,8 +260,6 @@ libbitcoin_common_a_SOURCES = \
   script/sign.cpp \
   script/standard.cpp \
   script/script_error.cpp \
-  $(LIBZEROCASH_SOURCES) \
-  $(LIBZEROCASH_HEADER_FILES) \
   $(BITCOIN_CORE_H)
 
 # util: shared between all executables.
@@ -349,7 +323,7 @@ bitcoind_LDADD += \
   $(SSL_LIBS) \
   $(CRYPTO_LIBS) \
   $(MINIUPNPC_LIBS) \
-  $(LIBZEROCASH_AND_DEPS_LIBS)
+  $(LIBZEROCASH_LIBS)
 
 bitcoind_CPPFLAGS = $(BITCOIN_INCLUDES)
 bitcoind_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
@@ -360,7 +334,8 @@ bitcoin_cli_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(BOOST_LIBS) \
   $(SSL_LIBS) \
-  $(CRYPTO_LIBS)
+  $(CRYPTO_LIBS) \
+  $(LIBZEROCASH_LIBS)
 
 bitcoin_cli_SOURCES = \
   bitcoin-cli.cpp
@@ -377,7 +352,7 @@ bitcoin_tx_LDADD = \
   $(LIBSECP256K1) \
   $(BOOST_LIBS) \
   $(CRYPTO_LIBS) \
-  $(LIBZEROCASH_AND_DEPS_LIBS)
+  $(LIBZEROCASH_LIBS)
 
 bitcoin_tx_SOURCES = bitcoin-tx.cpp
 bitcoin_tx_CPPFLAGS = $(BITCOIN_INCLUDES)

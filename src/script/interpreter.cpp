@@ -17,7 +17,7 @@
 #include "globalblockmap.h"
 #include "globalzcparams.h"
 #include "util.h"
-#include "libzerocash/libzerocash/PourTransaction.h"
+#include <libzerocash/libzerocash/PourTransaction.h>
 
 using namespace std;
 

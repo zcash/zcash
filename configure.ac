@@ -748,6 +748,18 @@ CPPFLAGS="-I$LIBSNARK_INCDIR $CPPFLAGS"
 AC_CHECK_HEADER([libsnark/gadgetlib1/gadget.hpp],,AC_MSG_ERROR(libsnark headers missing))
 AC_CHECK_LIB([snark],[main],LIBSNARK_LIBS=-lsnark, [AC_MSG_ERROR(libsnark missing)], [-lgmpxx])
 
+# Abuse the ugly libsnark hack above further to get the libzerocash directory
+[LIBZEROCASH_INCDIR=$(echo "$LIBSNARK_INCDIR" | sed 's,libsnark$,libzerocash,')]
+if test -d "$LIBZEROCASH_INCDIR"; then
+   echo "Found libzerocash include directory: $LIBZEROCASH_INCDIR"
+else
+    AC_MSG_ERROR(libzerocash include directory not found)
+fi
+
+CPPFLAGS="-I$LIBZEROCASH_INCDIR $CPPFLAGS"
+
+AC_CHECK_HEADER([libzerocash/libzerocash/Zerocash.h],,AC_MSG_ERROR(libzerocash headers missing))
+AC_CHECK_LIB([zerocash], [main],LIBZEROCASH_LIBS="-lzerocash -lsnark -lcryptopp -lgmp -lgmpxx -lzm -lboost_system -lcrypto", [AC_MSG_ERROR(libzerocash missing)], [-lsnark -lcryptopp -lgmp -lgmpxx -lzm -lboost_system -lcrypto])
 
 CFLAGS_TEMP="$CFLAGS"
 LIBS_TEMP="$LIBS"
@@ -934,6 +946,7 @@ AC_SUBST(GMP_LIBS)
 AC_SUBST(GMPXX_LIBS)
 AC_SUBST(CRYPTOPP_LIBS)
 AC_SUBST(LIBSNARK_LIBS)
+AC_SUBST(LIBZEROCASH_LIBS)
 AC_CONFIG_FILES([Makefile src/Makefile share/setup.nsi share/qt/Info.plist src/test/buildenv.py])
 AC_CONFIG_FILES([qa/pull-tester/run-bitcoind-for-test.sh],[chmod +x qa/pull-tester/run-bitcoind-for-test.sh])
 AC_CONFIG_FILES([qa/pull-tester/tests-config.sh],[chmod +x qa/pull-tester/tests-config.sh])
