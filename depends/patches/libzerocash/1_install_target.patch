@@ -1,7 +1,16 @@
 diff --git a/Makefile b/Makefile
-index 7d82a06..699f203 100644
+index 7d82a06..9aa8c43 100644
 --- a/Makefile
 +++ b/Makefile
+@@ -8,7 +8,7 @@ LIBZEROCASH=libzerocash
+ UTILS=$(LIBZEROCASH)/utils
+ TESTUTILS=tests
+ LDLIBS += -L $(DEPINST)/lib -Wl,-rpath $(DEPINST)/lib -L . -lsnark -lzm -lgmpxx -lgmp
+-LDLIBS += -lboost_system -lcrypto -lcryptopp
++LDLIBS += -lboost_system-mt -lcrypto -lcryptopp
+ CXXFLAGS += -I $(DEPINST)/include -I $(DEPINST)/include/libsnark -I . -DUSE_ASM -DCURVE_ALT_BN128
+ 
+ LIBPATH = /usr/local/lib
 @@ -110,7 +110,7 @@ banktest_library: %: bankTest.o $(OBJS)
  merkletest_library: %: merkleTest.o $(OBJS)
  	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -lzerocash
