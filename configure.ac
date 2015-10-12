@@ -759,7 +759,7 @@ fi
 CPPFLAGS="-I$LIBZEROCASH_INCDIR $CPPFLAGS"
 
 AC_CHECK_HEADER([libzerocash/libzerocash/Zerocash.h],,AC_MSG_ERROR(libzerocash headers missing))
-AC_CHECK_LIB([zerocash], [main],LIBZEROCASH_LIBS="-lzerocash -lsnark -lcryptopp -lgmp -lgmpxx -lzm -lboost_system -lcrypto", [AC_MSG_ERROR(libzerocash missing)], [-lsnark -lcryptopp -lgmp -lgmpxx -lzm -lboost_system -lcrypto])
+AC_CHECK_LIB([zerocash], [main],LIBZEROCASH_LIBS="-lzerocash -lsnark -lcryptopp -lgmp -lgmpxx -lzm -lboost_system-mt -lcrypto", [AC_MSG_ERROR(libzerocash missing)], [-lsnark -lcryptopp -lgmp -lgmpxx -lzm -lboost_system-mt -lcrypto])
 
 CFLAGS_TEMP="$CFLAGS"
 LIBS_TEMP="$LIBS"
