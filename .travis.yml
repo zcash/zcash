@@ -40,4 +40,4 @@ script:
     - ./zcutil/build.sh
     - make check
     - python qa/zerocash/zc-system-test.py
-    - echo '=== daemon 0 log (tail 400) ==='; tail -400 ~/.zc-system-test/0/stdout.log
+    - echo '=== daemon 0 log (tail 400) ==='; tail -400 ./.zc-system-test/0/stdout.log
