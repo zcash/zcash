@@ -9,12 +9,13 @@ $(package)_git_commit=89aded7b2a59d5d589e053cd4ebc2b06b29aa5cf
 
 
 $(package)_dependencies=libsnark crypto++ openssl boost libgmp
-$(package)_patches=1_install_target.patch 2_new_serialize_interface.patch 3_add_streams.patch
+$(package)_patches=1_install_target.patch 2_new_serialize_interface.patch 3_add_streams.patch 4_remove_curses.patch
 
 define $(package)_preprocess_cmds
   patch -p1 < $($(package)_patch_dir)/1_install_target.patch && \
   patch -p1 < $($(package)_patch_dir)/2_new_serialize_interface.patch && \
   patch -p1 < $($(package)_patch_dir)/3_add_streams.patch && \
+  patch -p1 < $($(package)_patch_dir)/4_remove_curses.patch && \
   rm libzerocash/allocators.h libzerocash/serialize.h
 endef
 

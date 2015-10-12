@@ -1,0 +1,12 @@
+diff --git a/libzerocash/utils/util.cpp b/libzerocash/utils/util.cpp
+index c7ed915..199c776 100644
+--- a/libzerocash/utils/util.cpp
++++ b/libzerocash/utils/util.cpp
+@@ -4,7 +4,6 @@
+ #include <string>
+ #include <iostream>
+ #include <fstream>
+-#include <curses.h>
+ #include <exception>
+ #include <cstring>
+ #include <iomanip>
