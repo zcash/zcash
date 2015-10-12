@@ -40,13 +40,6 @@ def main(log, args = sys.argv[1:]):
     opts = parse_args(args)
     initialize_basedir(opts.basedir, opts.NODECONFIG)
 
-    # Our convention is to build zc-flavored bitcoind with relative
-    # .so paths, which is brittle and requires running it in the cwd that
-    # contains it (ie as: './bitcoind'), so we change our whole process
-    # working directory there:
-    log.debug('chdir(%r)', opts.execdir)
-    os.chdir(opts.execdir)
-
     # Explicitly specify relative directory in case '.' not in PATH:
     daemonexecutable = os.path.join('.', 'bitcoind')
     clientexecutable = os.path.join('.', 'bitcoin-cli')
@@ -118,15 +111,6 @@ def parse_args(log, args):
                    default=basedirdefault,
                    help=('Base directory for system test state and configuration. '
                          + 'Default: {0!r}'.format(basedirdefault)))
-
-    execdirdefault = os.path.abspath(
-        os.path.join(sys.argv[0], '..', '..', '..', 'src'))
-
-    p.add_argument('--exec-dir',
-                   dest='execdir',
-                   default=execdirdefault,
-                   help=('The bin dir for zerocash-flavored bitcoin executables. '
-                         + 'Default: {0!r}'.format(execdirdefault)))
 
     p.add_argument('--dummy-pours',
                    dest='dummypours',
