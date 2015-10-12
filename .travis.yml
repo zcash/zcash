@@ -7,6 +7,7 @@
 os: linux
 language: cpp
 compiler: gcc
+
 env:
   global:
     - MAKEJOBS=-j3
