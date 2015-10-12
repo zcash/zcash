@@ -38,7 +38,7 @@ install:
     - if [ -n "$PACKAGES" ]; then travis_retry sudo apt-get update; fi
     - if [ -n "$PACKAGES" ]; then travis_retry sudo apt-get install --no-install-recommends --no-upgrade -qq $PACKAGES; fi
 script:
-    - ./zcutil/build.sh
+    - python ./qa/zerocash/zc-system-test.py
     - make check
     - ./qa/zerocash/full-test-suite.sh
     - echo '=== daemon 0 log (tail 400) ==='; tail -400 ./.zc-system-test/0/stdout.log
