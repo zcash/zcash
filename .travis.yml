@@ -26,6 +26,8 @@ matrix:
   include:
     - compiler: ": bitcoind"
       env: HOST=x86_64-unknown-linux-gnu PACKAGES="bc"
+  exclude:
+    - compiler: gcc
 install:
     - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y # For g++-4.9
     - sudo apt-get update -qq
