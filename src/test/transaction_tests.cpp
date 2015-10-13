@@ -768,11 +768,26 @@ BOOST_AUTO_TEST_CASE(test_IsStandard)
     string reason;
     BOOST_CHECK(IsStandardTx(t, reason, chainparams));
 
-    t.vout[0].nValue = 53; // dust
+    // Check dust with default relay fee:
+    CAmount nDustThreshold = 182 * minRelayTxFee.GetFeePerK()/1000 * 3;
+    BOOST_CHECK_EQUAL(nDustThreshold, 54);
+    // dust:
+    t.vout[0].nValue = nDustThreshold - 1;
     BOOST_CHECK(!IsStandardTx(t, reason, chainparams));
-
-    t.vout[0].nValue = 2730; // not dust
+    // not dust:
+    t.vout[0].nValue = nDustThreshold;
     BOOST_CHECK(IsStandardTx(t, reason, chainparams));
+
+    // Check dust with odd relay fee to verify rounding:
+    // nDustThreshold = 182 * 1234 / 1000 * 3
+    minRelayTxFee = CFeeRate(1234);
+    // dust:
+    t.vout[0].nValue = 672 - 1;
+    BOOST_CHECK(!IsStandardTx(t, reason, chainparams));
+    // not dust:
+    t.vout[0].nValue = 672;
+    BOOST_CHECK(IsStandardTx(t, reason, chainparams));
+    minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
 
     t.vout[0].scriptPubKey = CScript() << OP_1;
     BOOST_CHECK(!IsStandardTx(t, reason, chainparams));
