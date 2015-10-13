@@ -1,21 +1,14 @@
 package=libzerocash
-# FIXME: what is the correct version number?
-$(package)_version=0.1
 $(package)_download_path=https://github.com/Electric-Coin-Company/$(package)/archive/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
-$(package)_sha256_hash=0f157cc145844b21dbd601f2da6bdba887b4204699eee347b48918ee726b3cb4
-$(package)_git_commit=89aded7b2a59d5d589e053cd4ebc2b06b29aa5cf
-
+$(package)_sha256_hash=0799bb825da5b1f53ae6a828c6e847827c73b775b884ab0a2beb726894b37069
+$(package)_git_commit=1be43ecee4cf4e809dec4fa365b89ce6ecf43d67
 
 $(package)_dependencies=libsnark crypto++ openssl boost libgmp
-$(package)_patches=1_install_target.patch 2_new_serialize_interface.patch 3_add_streams.patch 4_remove_curses.patch
+$(package)_patches=
 
 define $(package)_preprocess_cmds
-  patch -p1 < $($(package)_patch_dir)/1_install_target.patch && \
-  patch -p1 < $($(package)_patch_dir)/2_new_serialize_interface.patch && \
-  patch -p1 < $($(package)_patch_dir)/3_add_streams.patch && \
-  patch -p1 < $($(package)_patch_dir)/4_remove_curses.patch && \
   rm libzerocash/allocators.h libzerocash/serialize.h
 endef
 
