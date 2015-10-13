@@ -56,8 +56,8 @@ $(LIBSNARK): $(wildcard snark/src/*)
 libsnark-tests: $(wildcard snark/src/*)
 	$(AM_V_at) CXXFLAGS="$(LIBSNARK_CXXFLAGS)" $(MAKE) $(AM_MAKEFLAGS) -C snark/ check DEPINST="$(LIBSNARK_DEPINST)" $(LIBSNARK_CONFIG_FLAGS) OPTFLAGS="-O2 -march=x86-64"
 
-$(LIBUNIVALUE): $(wildcard univalue/lib/*)
-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C univalue/
+$(LIBUNIVALUE): $(wildcard univalue/lib/*) $(wildcard univalue/include/*)
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
 
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
@@ -577,6 +577,7 @@ clean-local:
 	-$(MAKE) -C leveldb clean
 	-$(MAKE) -C secp256k1 clean
 	-$(MAKE) -C snark clean
+	-$(MAKE) -C univalue clean
 	rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
 	-rm -f config.h
 
