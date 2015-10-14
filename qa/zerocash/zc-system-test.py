@@ -40,10 +40,8 @@ def main(log, args = sys.argv[1:]):
     opts = parse_args(args)
     initialize_basedir(opts.basedir, opts.NODECONFIG)
 
-    # Our convention is to build zc-flavored bitcoind with relative
-    # .so paths, which is brittle and requires running it in the cwd that
-    # contains it (ie as: './bitcoind'), so we change our whole process
-    # working directory there:
+    # The paths below are relative to the current directory, which is expected
+    # to be the 'src/' directory containing bitcoind and bitcoin-cli.
     log.debug('chdir(%r)', opts.execdir)
     os.chdir(opts.execdir)
 
