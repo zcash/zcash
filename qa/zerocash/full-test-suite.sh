@@ -13,6 +13,7 @@ REPOROOT="$(readlink -f "$(dirname "$0")"/../../)"
 function run_test_phase
 {
     echo "===== BEGIN: $*"
+    set +e
     eval "$@"
     if [ $? -eq 0 ]
     then
@@ -21,6 +22,7 @@ function run_test_phase
         echo "===== FAILED: $*"
         SUITE_EXIT_STATUS=1
     fi
+    set -e
 }
 
 cd "${REPOROOT}"
