@@ -1097,7 +1097,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     fFeeEstimatesInitialized = true;
 
     // ********************************************************* Step 7i: Load zerocash keys
-    pzerocashParams = new libzerocash::ZerocashParams(4);
+    pzerocashParams = new libzerocash::ZerocashParams(ZC_MERKLE_DEPTH);
 
     // ********************************************************* Step 8: load wallet
 #ifdef ENABLE_WALLET

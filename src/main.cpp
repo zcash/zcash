@@ -1777,7 +1777,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     libzerocash::IncrementalMerkleTree zerocoinMerkleTreetest = getZerocoinMerkleTree(pindex->pprev); // a test to ensure getZerocoinMerkleTree does the right thing
-    libzerocash::IncrementalMerkleTree zerocoinMerkleTree(4);//getZerocoinMerkleTree(pindex->pprev); // BUG: Remove magic numbers; grok the commented out code and remove it or implement it correctly.
+    libzerocash::IncrementalMerkleTree zerocoinMerkleTree(ZC_MERKLE_DEPTH);//getZerocoinMerkleTree(pindex->pprev); // BUG: Remove magic numbers; grok the commented out code and remove it or implement it correctly.
 
     vector<unsigned char> rtold(root_size);
     zerocoinMerkleTree.getRootValue(rtold);
