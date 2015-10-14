@@ -12,7 +12,7 @@
 
 #include "amount.h"
 #include "chain.h"
-#define ZC_MERKLE_DEPTH 4
+#define ZC_MERKLE_DEPTH 20
 #include "bignum.h"
 #include "chainparams.h"
 #include "coins.h"
