@@ -10,7 +10,7 @@
 #include <assert.h>
 
 // Zerocoin changes
-CCoinsImmuntable MakeFakeZerocoinCCoin() {
+CCoinsImmutable MakeFakeZerocoinCCoin() {
     CMutableTransaction dummy;
     {
     CScript scriptPubKey;
@@ -26,7 +26,7 @@ CCoinsImmuntable MakeFakeZerocoinCCoin() {
     CTxOut out(1,scriptPubKey);
     dummy.vout.push_back(out);
     }
-    CCoinsImmuntable fake(dummy);
+    CCoinsImmutable fake(dummy);
     return fake;
 }
 
@@ -37,8 +37,8 @@ bool isSerialSpendable(const CCoinsView &v, const uint256 &txid, const uint256 &
         return true;
     }
 }
-bool markeSerialAsSpent(CCoinsView &v, const uint256 &serial,const uint256 &txid) {
-    LogPrint("zerocoin","zerocoin markeSerialAsSpent: marking serial %s as spent by %s \n", serial.ToString(), txid.ToString());
+bool markSerialAsSpent(CCoinsView &v, const uint256 &serial,const uint256 &txid) {
+    LogPrint("zerocoin","zerocoin markSerialAsSpent: marking serial %s as spent by %s \n", serial.ToString(), txid.ToString());
     return v.SetSerial(serial, txid);
 }
 bool markSerialAsUnSpent(CCoinsView &v, const uint256 &serial) {
