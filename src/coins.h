@@ -294,11 +294,11 @@ struct CCoinsCacheEntry
 
 typedef boost::unordered_map<uint256, CCoinsCacheEntry, CCoinsKeyHasher> CCoinsMap;
 
-class CCoinsImmuntable : public CCoins
+class CCoinsImmutable : public CCoins
 {
 public:
     // remove spent outputs at the end of vout
-    CCoinsImmuntable(const CTransaction &tx) :CCoins(tx) {
+    CCoinsImmutable(const CTransaction &tx) :CCoins(tx) {
         fCoinBase = true;
     }
 
@@ -366,11 +366,11 @@ public:
     virtual ~CCoinsView() {}
 };
 
-CCoinsImmuntable MakeFakeZerocoinCCoin();
+CCoinsImmutable MakeFakeZerocoinCCoin();
 
 bool isSerialSpendable(const CCoinsView &v,const uint256 &txid, const uint256 &serial,uint256 &idOfTxThatSpentIt);
 
-bool markeSerialAsSpent(CCoinsView &v, const uint256 &serial,const uint256 &txid);
+bool markSerialAsSpent(CCoinsView &v, const uint256 &serial,const uint256 &txid);
 bool markSerialAsUnSpent(CCoinsView &v, const uint256 &serial);
 
 /** CCoinsView backed by another CCoinsView */
@@ -491,7 +491,7 @@ private:
     CCoinsMap::iterator FetchCoins(const uint256 &txid);
     CCoinsMap::const_iterator FetchCoins(const uint256 &txid) const;
 
-    CCoinsImmuntable zerocoin_input;
+    CCoinsImmutable zerocoin_input;
 };
 
 #endif // BITCOIN_COINS_H
