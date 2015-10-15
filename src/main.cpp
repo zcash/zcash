@@ -1449,7 +1449,7 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 
                 if (txin.IsZCPour()) {
                     BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()) {
-                        markeSerialAsSpent(inputs, serial, tx.GetHash());
+                        markSerialAsSpent(inputs, serial, tx.GetHash());
                     }
                 }
             } else {
