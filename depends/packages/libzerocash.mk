@@ -2,8 +2,8 @@ package=libzerocash
 $(package)_download_path=https://github.com/Electric-Coin-Company/$(package)/archive/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
-$(package)_sha256_hash=0799bb825da5b1f53ae6a828c6e847827c73b775b884ab0a2beb726894b37069
-$(package)_git_commit=1be43ecee4cf4e809dec4fa365b89ce6ecf43d67
+$(package)_sha256_hash=efe7bcace34236b6aba31765a8deb702437cf2f578e8168eb0119d874529165b
+$(package)_git_commit=c64e4af60bca3ffd17e05b0b0aa47b47442be604
 
 $(package)_dependencies=libsnark crypto++ openssl boost libgmp
 $(package)_patches=
@@ -30,9 +30,9 @@ $(package)_cppflags += -I$(BASEDIR)/../src -I. -I$(host_prefix)/include -I$(host
 $(package)_cppflags += -I$(BASEDIR)/../src -I. -I$(host_prefix)/include -I$(host_prefix)/include/libsnark -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -std=c++11 -pipe -O2 -O0 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -fPIC
 
 define $(package)_build_cmds
-  $(MAKE) all DEPINST=$(host_prefix) CXXFLAGS="$($(package)_cppflags)" MINDEPS=1
+  $(MAKE) all DEPINST=$(host_prefix) CXXFLAGS="$($(package)_cppflags)" MINDEPS=1 USE_MT=1
 endef
 
 define $(package)_stage_cmds
-  $(MAKE) install STATIC=1 DEPINST=$(host_prefix) PREFIX=$($(package)_staging_dir)$(host_prefix) MINDEPS=1
+  $(MAKE) install STATIC=1 DEPINST=$(host_prefix) PREFIX=$($(package)_staging_dir)$(host_prefix) MINDEPS=1 USE_MT=1
 endef
