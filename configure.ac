@@ -758,6 +758,9 @@ fi
 
 CPPFLAGS="-I$LIBZEROCASH_INCDIR $CPPFLAGS"
 
+# libzerocash depends on headers in ./src/, so for the following
+# AC_CHECK_HEADER, that has to be on the include path list.
+CPPFLAGS="-I ./src/ $CPPFLAGS"
 AC_CHECK_HEADER([libzerocash/libzerocash/Zerocash.h],,AC_MSG_ERROR(libzerocash headers missing))
 AC_CHECK_LIB([zerocash], [main],LIBZEROCASH_LIBS="-lzerocash -lsnark -lcryptopp -lgmp -lgmpxx -lzm -lboost_system-mt -lcrypto", [AC_MSG_ERROR(libzerocash missing)], [-lsnark -lcryptopp -lgmp -lgmpxx -lzm -lboost_system-mt -lcrypto])
 
