@@ -60,21 +60,33 @@ description in-place as it evolves:
 
 ``zc-raw-pour SECRETKEY1 BUCKET1 SECRETKEY2 BUCKET2 ZCDEST1 AMT1 ZCDEST2 AMT2 CLEARDEST CLEARAMT FEE``
 - **Returns:** ``{ "commitment1": <hex>, "commitment2": <hex>,
-  "bucketsecret1": <hex>, "bucketsecret2": <hex>, "rawtxn":
+  "encryptedbucket1": <hex>, "encryptedbucket2": <hex>, "rawtxn":
   <hex of unsigned txn containing a Pour> }``
 - **Synopsis:** Create a rawtxn for a Pour given the secrets necessary
   to spend the two buckets, sending the results to the two ``ZCDEST<N>``
   ZC addresses in the given amounts, and a cleartext value to ``CLEARDEST``
   (which is a Bitcoin-style address), and pay a (clear) ``FEE``.
 - **Security UX Note:** The caller *must* confidentially transmit the
-  returned ``bucketsecret<N>`` values to the necessary recipients. If
+  returned ``encryptedbucket<N>`` values to the necessary recipients. If
   either are to self, the caller *must* confidentially store the secret.
   Losing these secrets results in losing the encapsulated value.
-- **Performance Note:** The initial implementation will
-  *scan the entire blockchain* and *create the commitment merkletree in memory*
+- **Performance Note:** The initial implementation will *scan the entire
+  blockchain* and *create the commitment merkletree in memory*
   in order to find the (secret) commitment paths for both ``BUCKET<N>``.
   It will also do a Pour proof, so this operation will be slow and
   potentially require a lot of memory.
+
+``zc-raw-receive SECRETKEY ENCRYPTEDBUCKET``
+- **Returns:** ``{ "bucket": <hex>, "amount": <amount> }``
+- **Synopsis:** The ``zc-raw-pour`` operations provides two output
+  ``encryptedbucket<N>`` fields. When a sender delivers one of these
+  values to a recipient, the recipient uses this method to decrypt and
+  verify the bucket, and then returns the bucket secrets blob and the
+  represented value. The ``bucket`` output can then be passed to a
+  ``zc-raw-pour`` as one of the ``BUCKET<N>`` inputs.
+- **UX Note:** This may fail in several ways: decryption may fail, the
+  resulting proof may be invalid, the commitment not present in the
+  block chain, etc...
 
 **Design Flaw:** These return "raw transactions", but the Pour has no
 meaningful TxIns to sign, so what does the node do when asked to sign
