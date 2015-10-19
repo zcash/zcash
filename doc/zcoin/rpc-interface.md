@@ -34,7 +34,7 @@ I think it'll be cleaner to implement these new RPC operations separately
 Here's a proposed interface with lots of hand-waving. Please update this
 description in-place as it evolves:
 
-``zc-stateless-keygen``
+``zc-raw-keygen``
 - **Synopsis:** Generate a ZC address and return the public and private
   parts.
 - **Returns:** ``{ "zcaddress": <public address hex>, "zcsecretkey":
@@ -44,7 +44,7 @@ description in-place as it evolves:
   can be recovered and the value is lost. If the confidentiality is
   compromised, a thief can steal past or future payments to ``zcaddress``.
 
-``zc-stateless-protect ZCADDRESS AMOUNT FEE [ CLEARFROMACCT ]``
+``zc-raw-protect ZCADDRESS AMOUNT FEE [ CLEARFROMACCT ]``
 - **Returns:** ``{ "commitment": <hex>, "bucketsecret":
   <hex of bucket/coin>, "rawtxn": <hex of raw/unsigned transaction> }``
 - **Synopsis:** Protect ``AMOUNT - FEE`` currency units to ``ZCADDRESS``,
@@ -58,7 +58,7 @@ description in-place as it evolves:
   (*FIXME:* Which data? The value? The timing/block in which it was
   submitted. The recipient address. Anything else?)
 
-``zc-stateless-pour SECRETKEY1 BUCKET1 SECRETKEY2 BUCKET2 ZCDEST1 AMT1 ZCDEST2 AMT2 CLEARDEST CLEARAMT FEE``
+``zc-raw-pour SECRETKEY1 BUCKET1 SECRETKEY2 BUCKET2 ZCDEST1 AMT1 ZCDEST2 AMT2 CLEARDEST CLEARAMT FEE``
 - **Returns:** ``{ "commitment1": <hex>, "commitment2": <hex>,
   "bucketsecret1": <hex>, "bucketsecret2": <hex>, "rawtxn":
   <hex of unsigned txn containing a Pour> }``
