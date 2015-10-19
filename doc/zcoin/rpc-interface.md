@@ -22,17 +22,14 @@ following the normal default upstream fee rules.
   must send the recipient the Bucket (Coin) secrets out-of-band. They are
   not decrypted from the blockchain by anything.
 
-**Approach Suggestion:**
+**Deprecation:**
 
-From my experience with ``zerocoinmint`` and ``zerocoinpour`` operations,
-I think it'll be cleaner to implement these new RPC operations separately
-(without altering the older two operations). Removing those methods
-(and associated state tracking) will be a follow up ticket.
+These RPC methods will deprecate the older ``zerocoinmint`` and
+``zerocoinpour`` operations.
 
 **Interface Outline:**
 
-Here's a proposed interface with lots of hand-waving. Please update this
-description in-place as it evolves:
+All operations begin with the ``zc-raw-`` prefix.
 
 ``zc-raw-keygen``
 - **Synopsis:** Generate a ZC address and return the public and private
