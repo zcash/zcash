@@ -271,13 +271,6 @@ public:
         hashGenesisBlock = genesis.GetHash();
         assert(CheckProofOfWorkDirectly(hashGenesisBlock, genesis.nBits, bnProofOfWorkLimit));
 
-        /*uint256 target = CBigNum().SetCompact(genesis.nBits).getuint256();
-        while(hashGenesisBlock > target){
-            genesis.nNonce++;
-            hashGenesisBlock = genesis.GetHash();
-        }
-        cout << " \n \n \n nonce " << genesis.nNonce << "\n\n\n"  << endl;
-        assert(2 == genesis.nNonce ); */
         nDefaultPort = 18444;
         //assert(hashGenesisBlock == uint256("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
 
