@@ -177,7 +177,6 @@ libbitcoin_server_a_SOURCES = \
   miner.cpp \
   net.cpp \
   noui.cpp \
-  pow.cpp \
   rest.cpp \
   rpcblockchain.cpp \
   rpcmining.cpp \
@@ -253,6 +252,7 @@ libbitcoin_common_a_SOURCES = \
   key.cpp \
   keystore.cpp \
   netbase.cpp \
+  pow.cpp \
   protocol.cpp \
   pubkey.cpp \
   script/interpreter.cpp \

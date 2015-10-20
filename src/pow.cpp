@@ -77,17 +77,25 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
 bool CheckProofOfWork(uint256 hash, unsigned int nBits)
 {
+    const CChainParams &params = Params();
+
+    if (params.SkipProofOfWorkCheck()) {
+       return true;
+    } else {
+        return CheckProofOfWorkDirectly(hash, nBits, params.ProofOfWorkLimit());
+    }
+}
+
+bool CheckProofOfWorkDirectly(uint256 hash, unsigned int nBits, uint256 powLimit)
+{
     bool fNegative;
     bool fOverflow;
     uint256 bnTarget;
 
-    if (Params().SkipProofOfWorkCheck())
-       return true;
-
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
 
     // Check range
-    if (fNegative || bnTarget == 0 || fOverflow || bnTarget > Params().ProofOfWorkLimit())
+    if (fNegative || bnTarget == 0 || fOverflow || bnTarget > powLimit)
         return error("CheckProofOfWork() : nBits below minimum work");
 
     // Check proof of work matches claimed amount
