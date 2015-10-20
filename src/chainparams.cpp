@@ -8,6 +8,7 @@
 #include "random.h"
 #include "util.h"
 #include "utilstrencodings.h"
+#include "pow.h"
 
 #include <assert.h>
 
@@ -149,6 +150,7 @@ public:
         genesis.nNonce   = 2083236893;
 
         hashGenesisBlock = genesis.GetHash();
+        assert(CheckProofOfWorkDirectly(hashGenesisBlock, genesis.nBits, bnProofOfWorkLimit));
         //assert(hashGenesisBlock == uint256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         assert(genesis.hashMerkleRoot == uint256("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
@@ -207,7 +209,9 @@ public:
         //! Modify the testnet genesis block so the timestamp is valid for a later start.
         genesis.nTime = 1296688602;
         genesis.nNonce = 414098458;
+
         hashGenesisBlock = genesis.GetHash();
+        assert(CheckProofOfWorkDirectly(hashGenesisBlock, genesis.nBits, bnProofOfWorkLimit));
         //assert(hashGenesisBlock == uint256("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
 
         vFixedSeeds.clear();
@@ -263,7 +267,9 @@ public:
         genesis.nTime = 1296688602;
         genesis.nBits = 0x207fffff;
         genesis.nNonce = 5;
+
         hashGenesisBlock = genesis.GetHash();
+        assert(CheckProofOfWorkDirectly(hashGenesisBlock, genesis.nBits, bnProofOfWorkLimit));
 
         /*uint256 target = CBigNum().SetCompact(genesis.nBits).getuint256();
         while(hashGenesisBlock > target){
