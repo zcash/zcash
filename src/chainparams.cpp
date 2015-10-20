@@ -24,6 +24,27 @@ struct SeedSpec6 {
 
 #include "chainparamsseeds.h"
 
+static void FindAndVerifyNonce(string id, CBlock &genesis, uint256 bnProofOfWorkLimit)
+{
+    uint256 h = genesis.GetHash();
+    if (!CheckProofOfWorkDirectly(h, genesis.nBits, bnProofOfWorkLimit)) {
+        cout << "\nWARNING: "
+             << id << " genesis block nonce is invalid for PoW requirements"
+             << "; nBits: " << hex << genesis.nBits
+             << "; bnProofOfWorkLimit: " << bnProofOfWorkLimit.ToString()
+             << "\n.. Now mining to find a valid nonce!\n\n";
+
+        while (!CheckProofOfWorkDirectly(h, genesis.nBits, bnProofOfWorkLimit)) {
+            genesis.nNonce++;
+            h = genesis.GetHash();
+        }
+
+        cout << "Found valid nNonce: " << genesis.nNonce
+             << "\n\n*** Edit chainparams.cpp to use this nonce!\n\n";
+    }
+}
+
+
 /**
  * Main network
  */
@@ -115,7 +136,7 @@ public:
         pchMessageStart[3] = 0xd9;
         vAlertPubKey = ParseHex("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284");
         nDefaultPort = 8333;
-        bnProofOfWorkLimit = ~uint256(0) >> 32;
+        bnProofOfWorkLimit = ~uint256(0) >> 1; // FIXME: We've relaxed PoW requirements for now.
         nSubsidyHalvingInterval = 210000;
         nEnforceBlockUpgradeMajority = 750;
         nRejectBlockOutdatedMajority = 950;
@@ -146,11 +167,12 @@ public:
         genesis.hashMerkleRoot = genesis.BuildMerkleTree();
         genesis.nVersion = 1;
         genesis.nTime    = 1231006505;
-        genesis.nBits    = 0x1d00ffff;
-        genesis.nNonce   = 2083236893;
+        genesis.nBits    = 0x1e4fffff; // FIXME: We've relaxed PoW requirements for now.
+        genesis.nNonce   = 0x7c320d36;
+
+        FindAndVerifyNonce(strNetworkID, genesis, bnProofOfWorkLimit);
 
         hashGenesisBlock = genesis.GetHash();
-        assert(CheckProofOfWorkDirectly(hashGenesisBlock, genesis.nBits, bnProofOfWorkLimit));
         //assert(hashGenesisBlock == uint256("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         assert(genesis.hashMerkleRoot == uint256("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
@@ -208,10 +230,11 @@ public:
 
         //! Modify the testnet genesis block so the timestamp is valid for a later start.
         genesis.nTime = 1296688602;
-        genesis.nNonce = 414098458;
+        genesis.nNonce = 0x18aec6b5;
+
+        FindAndVerifyNonce(strNetworkID, genesis, bnProofOfWorkLimit);
 
         hashGenesisBlock = genesis.GetHash();
-        assert(CheckProofOfWorkDirectly(hashGenesisBlock, genesis.nBits, bnProofOfWorkLimit));
         //assert(hashGenesisBlock == uint256("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
 
         vFixedSeeds.clear();
@@ -268,8 +291,9 @@ public:
         genesis.nBits = 0x207fffff;
         genesis.nNonce = 5;
 
+        FindAndVerifyNonce(strNetworkID, genesis, bnProofOfWorkLimit);
+
         hashGenesisBlock = genesis.GetHash();
-        assert(CheckProofOfWorkDirectly(hashGenesisBlock, genesis.nBits, bnProofOfWorkLimit));
 
         nDefaultPort = 18444;
         //assert(hashGenesisBlock == uint256("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
