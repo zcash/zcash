@@ -184,11 +184,11 @@ cov: test_bitcoin.coverage/.dirstamp total.coverage/.dirstamp
 
 endif
 
-if USE_COMPARISON_TOOL
-check-local:
-	$(MKDIR_P) qa/tmp
-	@qa/pull-tester/run-bitcoind-for-test.sh $(JAVA) -jar $(JAVA_COMPARISON_TOOL) qa/tmp/compTool $(COMPARISON_TOOL_REORG_TESTS) 2>&1
-endif
+# TODO: removed this, consider adding again (probably not)
+#check-local:
+#	$(MKDIR_P) qa/tmp
+#	@qa/pull-tester/run-bitcoind-for-test.sh $(JAVA) -jar $(JAVA_COMPARISON_TOOL) qa/tmp/compTool $(COMPARISON_TOOL_REORG_TESTS) 2>&1
+#endif
 
 EXTRA_DIST = $(top_srcdir)/share/genbuild.sh qa/pull-tester/rpc-tests.sh qa/pull-tester/run-bitcoin-cli qa/rpc-tests qa/zerocash $(DIST_DOCS) $(WINDOWS_PACKAGING) $(OSX_PACKAGING)
 
