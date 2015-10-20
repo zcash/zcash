@@ -6,9 +6,10 @@ $(package)_sha256_hash=082c27aed53a743a3041b3dc2cdba5bdd23839626dead0425517df613
 $(package)_git_commit=846e838a564f44d09866645cc3265ff39bc91804
 
 $(package)_dependencies=libsnark crypto++ openssl boost libgmp
-$(package)_patches=
+$(package)_patches=1_raw_keygen_api.patch
 
 define $(package)_preprocess_cmds
+  patch -p1 < $($(package)_patch_dir)/1_raw_keygen_api.patch && \
   rm libzerocash/allocators.h libzerocash/serialize.h libzerocash/streams.h
 endef
 

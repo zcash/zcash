@@ -1,0 +1,157 @@
+diff --git a/libzerocash/Address.cpp b/libzerocash/Address.cpp
+index ce560c1..f0b7f3c 100644
+--- a/libzerocash/Address.cpp
++++ b/libzerocash/Address.cpp
+@@ -30,6 +30,31 @@ using CryptoPP::StringStore;
+ 
+ namespace libzerocash {
+ 
++PrivateAddress::PrivateAddress() {
++    this->sk_enc = "";
++}
++
++void PrivateAddress::createPrivateAddress(const std::vector<unsigned char> a_sk, const std::string sk_enc) {
++    this->a_sk = a_sk;
++    this->sk_enc = sk_enc;
++}
++
++bool PrivateAddress::operator==(const PrivateAddress& rhs) const {
++	return ((this->a_sk == rhs.a_sk) && (this->sk_enc == rhs.sk_enc));
++}
++
++bool PrivateAddress::operator!=(const PrivateAddress& rhs) const {
++	return !(*this == rhs);
++}
++
++const std::string PrivateAddress::getEncryptionSecretKey() const {
++    return this->sk_enc;
++}
++
++const std::vector<unsigned char>& PrivateAddress::getAddressSecret() const {
++    return this->a_sk;
++}
++
+ PublicAddress::PublicAddress(): a_pk(a_pk_size) {
+     this->pk_enc = "";
+ }
+@@ -82,11 +107,12 @@ bool PublicAddress::operator!=(const PublicAddress& rhs) const {
+ }
+ 
+ 
++Address::Address(): addr_pk(), addr_sk() {
++    std::vector<unsigned char> a_sk(a_sk_size);
+ 
+-Address::Address(): addr_pk(), a_sk(a_sk_size) {
+     unsigned char a_sk_bytes[a_sk_size];
+     getRandBytes(a_sk_bytes, a_sk_size);
+-    convertBytesToBytesVector(a_sk_bytes, this->a_sk);
++    convertBytesToBytesVector(a_sk_bytes, a_sk);
+ 
+     AutoSeededRandomPool prng;
+ 
+@@ -97,25 +123,28 @@ Address::Address(): addr_pk(), a_sk(a_sk_size) {
+ 
+     privateKey.Save(StringSink(encodedPrivateKey).Ref());
+ 
+-    this->sk_enc = encodedPrivateKey;
+-
+-    addr_pk.createPublicAddress(this->a_sk, this->sk_enc);
++    addr_pk.createPublicAddress(a_sk, encodedPrivateKey);
++    addr_sk.createPrivateAddress(a_sk, encodedPrivateKey);
+ }
+ 
+ const PublicAddress& Address::getPublicAddress() const {
+ 	return this->addr_pk;
+ }
+ 
++const PrivateAddress& Address::getPrivateAddress() const {
++    return this->addr_sk;
++}
++
+ const std::string Address::getEncryptionSecretKey() const {
+-    return this->sk_enc;
++    return this->addr_sk.getEncryptionSecretKey();
+ }
+ 
+ const std::vector<unsigned char>& Address::getAddressSecret() const {
+-    return this->a_sk;
++    return this->addr_sk.getAddressSecret();
+ }
+ 
+ bool Address::operator==(const Address& rhs) const {
+-	return ((this->a_sk == rhs.a_sk) && (this->sk_enc == rhs.sk_enc) && (this->addr_pk == rhs.addr_pk));
++	return ((this->addr_sk == rhs.addr_sk) && (this->addr_pk == rhs.addr_pk));
+ }
+ 
+ bool Address::operator!=(const Address& rhs) const {
+diff --git a/libzerocash/Address.h b/libzerocash/Address.h
+index 2fd96a1..2ad029c 100644
+--- a/libzerocash/Address.h
++++ b/libzerocash/Address.h
+@@ -19,6 +19,38 @@
+ 
+ namespace libzerocash {
+ 
++/***************************** Private address ********************************/
++
++class PrivateAddress {
++
++    friend class Address;
++    friend class Coin;
++    friend class PourTransaction;
++
++public:
++    PrivateAddress();
++
++	bool operator==(const PrivateAddress& rhs) const;
++	bool operator!=(const PrivateAddress& rhs) const;
++
++	ADD_SERIALIZE_METHODS;
++
++    template <typename Stream, typename Operation>
++    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
++	    READWRITE(a_sk);
++	    READWRITE(sk_enc);
++    }
++
++    void createPrivateAddress(const std::vector<unsigned char> a_sk, const std::string sk_enc);
++
++private:
++    std::vector<unsigned char> a_sk;
++    std::string sk_enc;
++
++    const std::vector<unsigned char>& getAddressSecret() const;
++    const std::string getEncryptionSecretKey() const;
++};
++
+ /***************************** Public address ********************************/
+ 
+ class PublicAddress {
+@@ -63,6 +95,7 @@ public:
+ 	Address();
+ 
+ 	const PublicAddress& getPublicAddress() const;
++	const PrivateAddress& getPrivateAddress() const;
+ 
+ 	bool operator==(const Address& rhs) const;
+ 	bool operator!=(const Address& rhs) const;
+@@ -72,17 +105,14 @@ public:
+     template <typename Stream, typename Operation>
+     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+ 	    READWRITE(addr_pk);
+-	    READWRITE(a_sk);
+-        READWRITE(sk_enc);
++        READWRITE(addr_sk);
+     }
+ 
+ private:
+ 	PublicAddress addr_pk;
+-	std::vector<unsigned char> a_sk;
+-    std::string sk_enc;
++    PrivateAddress addr_sk;
+ 
+     const std::vector<unsigned char>& getAddressSecret() const;
+-
+ 	const std::string getEncryptionSecretKey() const;
+ };
+ 

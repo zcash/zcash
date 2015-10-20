@@ -438,6 +438,31 @@ void zc_track_and_dump_coin(bool isPour,
     cout << prefix << " bucket/coin " << coinhex << endl;
 }
 
+Value zc_raw_keygen(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0) {
+        // TODO: better message (and make it the same as others)
+        throw runtime_error(
+            "no arguments \n"
+        );
+    }
+
+    libzerocash::Address zcaddr_f;
+
+    CDataStream pub(SER_NETWORK, PROTOCOL_VERSION);
+    CDataStream priv(SER_NETWORK, PROTOCOL_VERSION);
+
+    pub << zcaddr_f.getPublicAddress();
+    priv << zcaddr_f.getPrivateAddress();
+
+    std::string pub_hex = HexStr(pub.begin(), pub.end());
+    std::string priv_hex = HexStr(priv.begin(), priv.end());
+
+    Object result;
+    result.push_back(Pair("zcaddress", pub_hex));
+    result.push_back(Pair("zcsecretkey", priv_hex));
+    return result;
+}
 
 Value zerocoinmint(const Array& params, bool fHelp){
     if (fHelp || params.size() < 3) {
