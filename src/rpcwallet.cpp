@@ -438,6 +438,117 @@ void zc_track_and_dump_coin(bool isPour,
     cout << prefix << " bucket/coin " << coinhex << endl;
 }
 
+Value zc_raw_protect(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 3 || params.size() > 4) {
+        throw runtime_error(
+            "ZCADDRESS AMOUNT FEE [ CLEARFROMACCT ]\n"
+            "wallet must be unlocked."
+        );
+    }
+
+    /* TODO: get the zcoin address in zcaddr_f. */
+
+    CAmount nAmount = AmountFromValue(params[1]);
+    CAmount nFee = AmountFromValue(params[2]);
+
+    /* TODO: use the right wallet based on params[3] */
+
+    /* Collect txouts to get the value we need. */
+    CAmount nCollectedAmount;
+    std::set<std::pair<const CWalletTx*, unsigned int> > setCoinsRet;
+    /* XXX: what happens when we don't have enough coins? */
+    pwalletMain->SelectCoins(nAmount, setCoinsRet, nCollectedAmount);
+
+    /* BEGIN doing stuff to get a change address */
+    if (!pwalletMain->IsLocked()) {
+        pwalletMain->TopUpKeyPool();
+    }
+    CReserveKey reservekey(pwalletMain);
+    CPubKey vchPubKey;
+    if (!reservekey.GetReservedKey(vchPubKey)) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Error: Unable to obtain key for change");
+    }
+    reservekey.KeepKey();
+
+    CKeyID keyID = vchPubKey.GetID();
+
+    CBitcoinAddress chageaddress(keyID);
+    /* END doing stuff to get a change address. */
+
+    /* XXX: looks like we need to get the transaction hashes and construct
+     * CTxIn's or someshit. */
+
+    uint256 hash;
+    hash.SetHex(params[2].get_str());
+    CTransaction tx;
+    uint256 hashBlock = 0;
+    if (!GetTransaction(hash, tx, hashBlock, true)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
+    }
+
+    libzerocash::Address zcaddr_f;
+    libzerocash::Coin coina(zcaddr_f.getPublicAddress(), 1);
+
+    zc_track_and_dump_coin(false, zcaddr_f, coina);
+
+    CMutableTransaction rawTx; // the tx we are constructing
+    {
+        CTxIn in(hash,0);
+        rawTx.vin.push_back(in);
+    }
+    {
+        CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
+        std::vector<unsigned char> vchSig(32);
+
+        libzerocash::MintTransaction minttx(coina);
+        dd << minttx;
+        std::vector<unsigned char> vector_mint(dd.begin(), dd.end());
+
+        CScript scriptSig;
+        scriptSig.clear();
+        scriptSig << vector_mint;
+        CTxIn in(always_spendable_txid, 1, scriptSig);
+        rawTx.vin.push_back(in);
+    }
+
+    { // change
+    CScript scriptPubKey = GetScriptForDestination(chageaddress.Get());
+    CTxOut out(nAmountChange,scriptPubKey);
+    rawTx.vout.push_back(out);
+    }
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << rawTx;
+
+    return HexStr(ss.begin(), ss.end());
+}
+
+Value zc_raw_keygen(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0) {
+        // TODO: better message (and make it the same as others)
+        throw runtime_error(
+            "no arguments \n"
+        );
+    }
+
+    libzerocash::Address zcaddr_f;
+
+    CDataStream pub(SER_NETWORK, PROTOCOL_VERSION);
+    CDataStream priv(SER_NETWORK, PROTOCOL_VERSION);
+
+    pub << zcaddr_f.getPublicAddress();
+    priv << zcaddr_f.getPrivateAddress();
+
+    std::string pub_hex = HexStr(pub.begin(), pub.end());
+    std::string priv_hex = HexStr(priv.begin(), priv.end());
+
+    Object result;
+    result.push_back(Pair("zcaddress", pub_hex));
+    result.push_back(Pair("zcsecretkey", priv_hex));
+    return result;
+}
 
 Value zerocoinmint(const Array& params, bool fHelp){
     if (fHelp || params.size() < 3) {
