@@ -446,13 +446,13 @@ Value zc_raw_keygen(const Array& params, bool fHelp)
         );
     }
 
-    libzerocash::Address zcaddr_f;
+    libzerocash::Address zckeypair;
 
     CDataStream pub(SER_NETWORK, PROTOCOL_VERSION);
     CDataStream priv(SER_NETWORK, PROTOCOL_VERSION);
 
-    pub << zcaddr_f.getPublicAddress();
-    priv << zcaddr_f.getPrivateAddress();
+    pub << zckeypair.getPublicAddress();
+    priv << zckeypair.getPrivateAddress();
 
     std::string pub_hex = HexStr(pub.begin(), pub.end());
     std::string priv_hex = HexStr(priv.begin(), priv.end());
