@@ -441,9 +441,8 @@ void zc_track_and_dump_coin(bool isPour,
 Value zc_raw_keygen(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0) {
-        // TODO: better message (and make it the same as others)
         throw runtime_error(
-            "no arguments \n"
+            "zc-raw-keygen \n"
         );
     }
 
