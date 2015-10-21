@@ -1438,12 +1438,21 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
             /* BUG: We don't track ZC serial modifications with the undo
              * system! Therefore, ZC probably breaks during block reorgs.
              */
-            if (txin.IsZCPour()) {
+
+            if (txin.IsZCPour() || txin.IsZCMint()) {
                 assert(txin.prevout.hash == always_spendable_txid);
-                BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()) {
-                    markeSerialAsSpent(inputs, serial, tx.GetHash());
+
+                CTxInUndo undo;
+                undo.txout = MakeFakeZerocoinCCoin().vout[0];
+
+                txundo.vprevout.push_back(undo);
+
+                if (txin.IsZCPour()) {
+                    BOOST_FOREACH(const uint256 serial, txin.GetZerocoinSerialNumbers()) {
+                        markSerialAsSpent(inputs, serial, tx.GetHash());
+                    }
                 }
-            } else if (!txin.IsZCMint()) {
+            } else {
                 assert(txin.prevout.hash != always_spendable_txid);
                 txundo.vprevout.push_back(CTxInUndo());
                 bool ret = inputs.ModifyCoins(txin.prevout.hash)->Spend(txin.prevout, txundo.vprevout.back());
@@ -1640,16 +1649,16 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
             if (txundo.vprevout.size() != tx.vin.size())
                 return error("DisconnectBlock() : transaction and undo data inconsistent");
             for (unsigned int j = tx.vin.size(); j-- > 0;) {
-                const COutPoint &out = tx.vin[j].prevout;
-                const CTxInUndo &undo = txundo.vprevout[j];
-                CCoinsModifier coins = view.ModifyCoins(out.hash);
-
                 // the undo operations for a zerocoin transction are to make the serial numbers in the database not be marked as spent.
                 if (tx.vin[j].isZC()) {
                     BOOST_FOREACH(const uint256 serial, tx.vin[j].GetZerocoinSerialNumbers()) {
                         markSerialAsUnSpent(view, serial);
                     }
                 } else {
+                    const COutPoint &out = tx.vin[j].prevout;
+                    const CTxInUndo &undo = txundo.vprevout[j];
+                    CCoinsModifier coins = view.ModifyCoins(out.hash);
+
                     if (undo.nHeight != 0) {
                         // undo data contains height: this is the last output of the prevout tx being spent
                         if (!coins->IsPruned())
