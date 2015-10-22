@@ -173,6 +173,7 @@ extern json_spirit::Value sendtoaddress(const json_spirit::Array& params, bool f
 extern json_spirit::Value zerocoinpour(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value zerocoinmint(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value zc_raw_protect(const json_spirit::Array& params, bool fHelp);
 
 extern json_spirit::Value signmessage(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value verifymessage(const json_spirit::Array& params, bool fHelp);
