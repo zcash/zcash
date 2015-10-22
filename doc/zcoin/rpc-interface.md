@@ -54,7 +54,7 @@ All operations begin with the ``zc-raw-`` prefix.
 
 ## ``zc-raw-protect``
 
-**Usage:** ``zc-raw-protect ZCADDRESS AMOUNT FEE [ CLEARFROMACCT ]``
+**Usage:** ``zc-raw-protect TRANSACTION ZCADDRESS AMOUNT``
 
 **Return Value:**
 
@@ -66,10 +66,13 @@ All operations begin with the ``zc-raw-`` prefix.
 }
 ```
 
-**Synopsis:** Protect ``AMOUNT - FEE`` currency units to ``ZCADDRESS``,
-  sending ``FEE`` as a cleartext miner fee, optionally using the
-  ``CLEARFROMACCT`` if given, which is of the same type that upstream
-  commandline interface calls an "account".
+**Synopsis:** Given a hex-encoded TRANSACTION created with
+``createrawtransaction``, add a Protect of ``AMOUNT`` currency units to
+``ZCADDRESS``. Any remaining currency units are sent as a cleartext miner fee.
+The caller is responsible for ensuring AMOUNT is of low enough value that the
+remaining fee is sufficient for the transaction to be processed. Note that the
+resulting transaction will be bigger than the input transaction, as it now
+includes a Protect.
 
 **Security UX Note:** The caller *must* confidentially store
   ``bucketsecret`` for later use in a Pour. If they lose this data, the
