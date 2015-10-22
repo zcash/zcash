@@ -2,15 +2,14 @@ package=libzerocash
 $(package)_download_path=https://github.com/Electric-Coin-Company/$(package)/archive/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
-$(package)_sha256_hash=082c27aed53a743a3041b3dc2cdba5bdd23839626dead0425517df613f5fc449
-$(package)_git_commit=846e838a564f44d09866645cc3265ff39bc91804
+$(package)_sha256_hash=998353703c375d13d3b989f54747f308b105134effb31ba652d67737001ede98
+$(package)_git_commit=5d53028d7febbe3054cc7a0434d5e784ac67c2e1
 
 $(package)_dependencies=libsnark crypto++ openssl boost libgmp
-$(package)_patches=1_raw_keygen_api.patch
+$(package)_patches=
 
 define $(package)_preprocess_cmds
-  patch -p1 < $($(package)_patch_dir)/1_raw_keygen_api.patch && \
-  rm libzerocash/allocators.h libzerocash/serialize.h libzerocash/streams.h
+  	rm libzerocash/allocators.h libzerocash/serialize.h libzerocash/streams.h
 endef
 
 # FIXME: How do we know, at the point where the _build_cms are run, that the

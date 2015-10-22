@@ -438,6 +438,79 @@ void zc_track_and_dump_coin(bool isPour,
     cout << prefix << " bucket/coin " << coinhex << endl;
 }
 
+Value zc_raw_protect(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 3) {
+        throw runtime_error(
+            "zc-raw-keygen RAWTX ZCADDRESS VALUE_TO_PROTECT\n"
+        );
+    }
+
+    CAmount nAmount = AmountFromValue(params[2]);
+
+    if (nAmount < 0) {
+        throw runtime_error(
+            "Amount to protect cannot be negative"
+        );
+    }
+
+    libzerocash::PublicAddress zcaddr_pub;
+    {
+        vector<unsigned char> decoded(ParseHex(params[1].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> zcaddr_pub;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "ZCADDRESS was not valid"
+            );
+        }
+    }
+
+    CTransaction tx;
+
+    if (!DecodeHexTx(tx, params[0].get_str()))
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+
+    CMutableTransaction txNew(tx);
+
+    libzerocash::Coin coina(zcaddr_pub, nAmount);
+    libzerocash::MintTransaction minttx(coina);
+
+
+    {
+        CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
+        std::vector<unsigned char> vchSig(32);
+
+        dd << minttx;
+        std::vector<unsigned char> vector_mint(dd.begin(), dd.end());
+
+        CScript scriptSig;
+        scriptSig.clear();
+        scriptSig << vector_mint;
+        CTxIn in(always_spendable_txid, 1, scriptSig);
+        txNew.vin.push_back(in);
+    }
+
+    CDataStream bucketstream(SER_NETWORK, PROTOCOL_VERSION);
+    bucketstream << coina;
+
+    std::string bucket_hex = HexStr(bucketstream.begin(), bucketstream.end());
+
+    CDataStream txstream(SER_NETWORK, PROTOCOL_VERSION);;
+    txstream << txNew;
+
+    std::string tx_hex = HexStr(txstream.begin(), txstream.end());
+
+    uint256 cid(coina.getCoinCommitment().getCommitmentValue());
+
+    Object result;
+    result.push_back(Pair("commitment", cid.ToString()));
+    result.push_back(Pair("bucketsecret", bucket_hex));
+    result.push_back(Pair("rawtxn", tx_hex));
+    return result;
+}
+
 Value zc_raw_keygen(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0) {
@@ -534,6 +607,221 @@ Value zerocoinmint(const Array& params, bool fHelp){
     ss << rawTx;
 
     return HexStr(ss.begin(), ss.end());
+}
+
+Value zc_raw_receive(const Array& params, bool fHelp) {
+    if (fHelp || params.size() != 2)
+        throw runtime_error(
+            "zc-raw-receive SECRETKEY ENCRYPTED_BUCKET\n"
+       );
+
+    libzerocash::PrivateAddress zcaddr_priv;
+    {
+        vector<unsigned char> decoded(ParseHex(params[0].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> zcaddr_priv;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "SECRETKEY was not valid"
+            );
+        }
+    }
+
+    std::vector<unsigned char> encrypted_bucket_vec = ParseHex(params[1].get_str());
+    std::string encrypted_bucket(encrypted_bucket_vec.begin(), encrypted_bucket_vec.end());
+
+    libzerocash::Address addr(zcaddr_priv);
+
+    libzerocash::Coin decrypted_bucket(encrypted_bucket, addr);
+
+    // TODO: verify that the commitment exists on the blockchain
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << decrypted_bucket;
+
+    CAmount value_of_bucket(decrypted_bucket.getValue());
+
+    Object result;
+    result.push_back(Pair("bucket", HexStr(ss.begin(), ss.end())));
+    result.push_back(Pair("amount", value_of_bucket));
+    return result;
+}
+
+Value zc_raw_pour_begin(libzerocash::Address input_addr_1,
+                        libzerocash::Coin input_coin_1,
+                        libzerocash::Address input_addr_2,
+                        libzerocash::Coin input_coin_2,
+                        libzerocash::PublicAddress output_address_1,
+                        CAmount output_value_1,
+                        libzerocash::Coin output_coin_1,
+                        libzerocash::PublicAddress output_address_2,
+                        CAmount output_value_2,
+                        libzerocash::Coin output_coin_2,
+                        CKey vpub_key,
+                        CAmount vpub_amt) {
+    // The process of building a pour:
+    //  1. We have to get the "coinhash" or commitment value of the input
+    //     coin.
+    //  2. We have to iterate through the blockchain, constructing an
+    //     incremental merkle tree, keeping track of the index of the
+    //     entries which correspond to our commitment values.
+    //  3. We have to construct witnesses within the merkle tree at that
+    //     blockchain root.
+    //  4. We direct the rest of the work to MakePourTx.
+
+    uint256 input_cid_1(input_coin_1.getCoinCommitment().getCommitmentValue());
+    uint256 input_cid_2(input_coin_2.getCoinCommitment().getCommitmentValue());
+
+    CTransaction rawTx;
+    auto res = pwalletMain->RawMakePour(0, input_cid_1, input_cid_2,
+                                         vpub_key, output_coin_1, output_coin_2,
+                                         output_address_1, output_address_2,
+                                         input_addr_1, input_addr_2,
+                                         input_coin_1, input_coin_2,
+                                         vpub_amt
+                                        );
+
+    rawTx = std::get<0>(res);
+
+    libzerocash::PourTransaction pourtx = std::get<1>(res);
+
+    std::string ciphertext_1 = pourtx.getCiphertext1();
+    std::string ciphertext_2 = pourtx.getCiphertext2();
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << rawTx;
+
+    Object result;
+    // TODO: return the encrypted buckets
+    result.push_back(Pair("encryptedbucket1", HexStr(ciphertext_1.begin(), ciphertext_1.end())));
+    result.push_back(Pair("encryptedbucket2", HexStr(ciphertext_2.begin(), ciphertext_2.end())));
+    result.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
+    return result;
+}
+
+Value zc_raw_pour(const Array& params, bool fHelp) {
+    if (fHelp || params.size() < 10)
+        throw runtime_error(
+            "zc-raw-pour SECRETKEY1 BUCKET1 SECRETKEY2 BUCKET2 ZCDEST1 AMT1 ZCDEST2 AMT2 CLEARDEST CLEARAMT\n"
+       );
+
+    libzerocash::PrivateAddress zcaddr_priv_1;
+    {
+        vector<unsigned char> decoded(ParseHex(params[0].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> zcaddr_priv_1;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "SECRETKEY1 was not valid"
+            );
+        }
+    }
+
+    libzerocash::Coin bucket1;
+    {
+        vector<unsigned char> decoded(ParseHex(params[1].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> bucket1;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "BUCKET1 is not valid"
+            );
+        }
+    }
+
+    libzerocash::PrivateAddress zcaddr_priv_2;
+    {
+        vector<unsigned char> decoded(ParseHex(params[2].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> zcaddr_priv_2;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "SECRETKEY2 was not valid"
+            );
+        }
+    }
+
+    libzerocash::Coin bucket2;
+    {
+        vector<unsigned char> decoded(ParseHex(params[3].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> bucket2;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "BUCKET2 is not valid"
+            );
+        }
+    }
+
+    libzerocash::PublicAddress zcaddr_destination_1;
+    {
+        vector<unsigned char> decoded(ParseHex(params[4].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> zcaddr_destination_1;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "ZCDEST1 was not valid"
+            );
+        }
+    }
+
+    CAmount nAmount_destination_1 = AmountFromValue(params[5]);
+
+    libzerocash::PublicAddress zcaddr_destination_2;
+    {
+        vector<unsigned char> decoded(ParseHex(params[6].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> zcaddr_destination_2;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "ZCDEST2 was not valid"
+            );
+        }
+    }
+
+    CAmount nAmount_destination_2 = AmountFromValue(params[7]);
+
+    CBitcoinSecret vchSecret;
+    bool fGood = vchSecret.SetString(params[8].get_str());
+
+    if (!fGood) {
+        throw runtime_error(
+            "CLEARDEST private key was not valid."
+        );
+    }
+
+    CKey vpub_key = vchSecret.GetKey();
+    if (!vpub_key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Private key outside allowed range");
+
+    CAmount vPub_value = AmountFromValue(params[9]);
+
+    libzerocash::Coin outputCoin1(zcaddr_destination_1, nAmount_destination_1);
+    libzerocash::Coin outputCoin2(zcaddr_destination_2, nAmount_destination_2);
+
+    libzerocash::Address input_addr_1(zcaddr_priv_1);
+    libzerocash::Address input_addr_2(zcaddr_priv_2);
+
+    return zc_raw_pour_begin(
+        input_addr_1,
+        bucket1,
+        input_addr_2,
+        bucket2,
+        zcaddr_destination_1,
+        nAmount_destination_1,
+        outputCoin1,
+        zcaddr_destination_2,
+        nAmount_destination_2,
+        outputCoin2,
+        vpub_key,
+        vPub_value
+    );
 }
 
 Value zerocoinpour(const Array& params, bool fHelp){
