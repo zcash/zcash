@@ -531,13 +531,10 @@ Value zc_raw_protect(const Array& params, bool fHelp)
 
         std::string bucket_hex = HexStr(bucketstream.begin(), bucketstream.end());
 
-        CDataStream commitmentstream(SER_NETWORK, PROTOCOL_VERSION);
-        commitmentstream << minttx; // TODO: not sure what exactly we need to provide the user here
-
-        std::string commitment_hex = HexStr(commitmentstream.begin(), commitmentstream.end());
+        uint256 cid(coina.getCoinCommitment().getCommitmentValue());
 
         Object result;
-        result.push_back(Pair("commitment", commitment_hex));
+        result.push_back(Pair("commitment", cid.ToString()));
         result.push_back(Pair("bucketsecret", bucket_hex));
         result.push_back(Pair("rawtxn", tx_hex));
         return result;
