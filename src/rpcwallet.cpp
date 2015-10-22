@@ -438,6 +438,116 @@ void zc_track_and_dump_coin(bool isPour,
     cout << prefix << " bucket/coin " << coinhex << endl;
 }
 
+Value zc_raw_protect(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 3 || params.size() > 4) {
+        throw runtime_error(
+            "ZCADDRESS AMOUNT FEE [ CLEARFROMACCT ]\n"
+            "wallet must be unlocked."
+        );
+    }
+
+    EnsureWalletIsUnlocked();
+
+    libzerocash::PublicAddress zcaddr_pub;
+    {
+        vector<unsigned char> decoded(ParseHex(params[0].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> zcaddr_pub;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "ZCADDRESS was not valid."
+            );
+        }
+    }
+
+    CAmount nAmount = AmountFromValue(params[1]);
+
+    CWalletTx wtx;
+
+    if (params.size() == 4) {
+        string strAccount = AccountFromValue(params[3]);
+
+        wtx.strFromAccount = strAccount;
+    }
+
+    vector<pair<CScript, CAmount> > vecSend;
+    CScript scriptPubKey;
+    scriptPubKey << OP_RETURN;
+    vecSend.push_back(make_pair(scriptPubKey, nAmount));
+
+    CReserveKey keyChange(pwalletMain);
+    CAmount nFeeRequired = AmountFromValue(params[2]);
+
+    if (nFeeRequired < 0) {
+        throw runtime_error(
+            "Fee cannot be negative."
+        );
+    }
+
+    string strFailReason;
+    CMutableTransaction txNew;
+
+    libzerocash::Coin coina(zcaddr_pub, nAmount);
+    libzerocash::MintTransaction minttx(coina);
+
+    {
+        CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
+        std::vector<unsigned char> vchSig(32);
+
+        dd << minttx;
+        std::vector<unsigned char> vector_mint(dd.begin(), dd.end());
+
+        CScript scriptSig;
+        scriptSig.clear();
+        scriptSig << vector_mint;
+        CTxIn in(always_spendable_txid, 1, scriptSig);
+        txNew.vin.push_back(in);
+    }
+
+    bool fCreated = pwalletMain->CreateTransactionSign(vecSend, txNew, wtx, keyChange, nFeeRequired, strFailReason, NULL, false);
+    if (!fCreated)
+        throw JSONRPCError(RPC_WALLET_ERROR, "Error creating transaction");
+    else {
+        CTxOut changeOut;
+
+        // there should be our txout and the change txout
+        // if there's more we could end up throwing way too much
+        // away in fees...
+        assert(txNew.vout.size() == 2);
+
+        BOOST_FOREACH(const CTxOut& txout, txNew.vout) {
+            if (!txout.scriptPubKey.IsUnspendable()) {
+                // This must be the change output.
+                changeOut = txout;
+                break;
+            }
+        }
+
+        txNew.vout.clear();
+        txNew.vout.push_back(changeOut);
+
+        CDataStream txstream(SER_NETWORK, PROTOCOL_VERSION);;
+        txstream << txNew;
+
+        std::string tx_hex = HexStr(txstream.begin(), txstream.end());
+
+        CDataStream bucketstream(SER_NETWORK, PROTOCOL_VERSION);
+        bucketstream << coina;
+
+        std::string bucket_hex = HexStr(bucketstream.begin(), bucketstream.end());
+
+        uint256 cid(coina.getCoinCommitment().getCommitmentValue());
+
+        Object result;
+        result.push_back(Pair("commitment", cid.ToString()));
+        result.push_back(Pair("bucketsecret", bucket_hex));
+        result.push_back(Pair("rawtxn", tx_hex));
+        return result;
+    }
+}
+
 Value zc_raw_keygen(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0) {

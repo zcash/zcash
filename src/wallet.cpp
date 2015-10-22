@@ -1526,10 +1526,19 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
 }
 
 
-
-
 bool CWallet::CreateTransaction(const vector<pair<CScript, CAmount> >& vecSend,
                                 CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, std::string& strFailReason, const CCoinControl* coinControl)
+{
+    CMutableTransaction txNew;
+    nFeeRet = 0;
+
+    CreateTransactionSign(vecSend, txNew, wtxNew, reservekey, nFeeRet, strFailReason, coinControl, true);
+}
+
+
+bool CWallet::CreateTransactionSign(const vector<pair<CScript, CAmount> >& vecSend, CMutableTransaction& txNew,
+                                CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, std::string& strFailReason, const CCoinControl* coinControl,
+                                bool sign_it)
 {
     CAmount nValue = 0;
     BOOST_FOREACH (const PAIRTYPE(CScript, CAmount)& s, vecSend)
@@ -1549,12 +1558,10 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, CAmount> >& vecSend,
 
     wtxNew.fTimeReceivedIsTxTime = true;
     wtxNew.BindWallet(this);
-    CMutableTransaction txNew;
 
     {
         LOCK2(cs_main, cs_wallet);
         {
-            nFeeRet = 0;
             while (true)
             {
                 txNew.vin.clear();
@@ -1651,14 +1658,16 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, CAmount> >& vecSend,
                 BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins)
                     txNew.vin.push_back(CTxIn(coin.first->GetHash(),coin.second));
 
-                // Sign
-                int nIn = 0;
-                BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins)
-                    if (!SignSignature(*this, *coin.first, txNew, nIn++))
-                    {
-                        strFailReason = _("Signing transaction failed");
-                        return false;
-                    }
+                if (sign_it) {
+                    // Sign
+                    int nIn = 0;
+                    BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins)
+                        if (!SignSignature(*this, *coin.first, txNew, nIn++))
+                        {
+                            strFailReason = _("Signing transaction failed");
+                            return false;
+                        }
+                }
 
                 // Embed the constructed transaction data in wtxNew.
                 *static_cast<CTransaction*>(&wtxNew) = CTransaction(txNew);
