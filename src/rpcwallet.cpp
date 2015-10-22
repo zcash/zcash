@@ -438,6 +438,79 @@ void zc_track_and_dump_coin(bool isPour,
     cout << prefix << " bucket/coin " << coinhex << endl;
 }
 
+Value zc_raw_protect(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 3) {
+        throw runtime_error(
+            "zc-raw-keygen RAWTX ZCADDRESS VALUE_TO_PROTECT\n"
+        );
+    }
+
+    CAmount nAmount = AmountFromValue(params[2]);
+
+    if (nAmount < 0) {
+        throw runtime_error(
+            "Amount to protect cannot be negative"
+        );
+    }
+
+    libzerocash::PublicAddress zcaddr_pub;
+    {
+        vector<unsigned char> decoded(ParseHex(params[1].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> zcaddr_pub;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "ZCADDRESS was not valid"
+            );
+        }
+    }
+
+    CTransaction tx;
+
+    if (!DecodeHexTx(tx, params[0].get_str()))
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+
+    CMutableTransaction txNew(tx);
+
+    libzerocash::Coin coina(zcaddr_pub, nAmount);
+    libzerocash::MintTransaction minttx(coina);
+
+
+    {
+        CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
+        std::vector<unsigned char> vchSig(32);
+
+        dd << minttx;
+        std::vector<unsigned char> vector_mint(dd.begin(), dd.end());
+
+        CScript scriptSig;
+        scriptSig.clear();
+        scriptSig << vector_mint;
+        CTxIn in(always_spendable_txid, 1, scriptSig);
+        txNew.vin.push_back(in);
+    }
+
+    CDataStream bucketstream(SER_NETWORK, PROTOCOL_VERSION);
+    bucketstream << coina;
+
+    std::string bucket_hex = HexStr(bucketstream.begin(), bucketstream.end());
+
+    CDataStream txstream(SER_NETWORK, PROTOCOL_VERSION);;
+    txstream << txNew;
+
+    std::string tx_hex = HexStr(txstream.begin(), txstream.end());
+
+    uint256 cid(coina.getCoinCommitment().getCommitmentValue());
+
+    Object result;
+    result.push_back(Pair("commitment", cid.ToString()));
+    result.push_back(Pair("bucketsecret", bucket_hex));
+    result.push_back(Pair("rawtxn", tx_hex));
+    return result;
+}
+
 Value zc_raw_keygen(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0) {
