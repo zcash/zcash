@@ -463,7 +463,6 @@ Value zc_raw_protect(const Array& params, bool fHelp)
     }
 
     CAmount nAmount = AmountFromValue(params[1]);
-    // TODO: figure out what to do with the fee stuff.
 
     CWalletTx wtx;
 
@@ -479,9 +478,34 @@ Value zc_raw_protect(const Array& params, bool fHelp)
     vecSend.push_back(make_pair(scriptPubKey, nAmount));
 
     CReserveKey keyChange(pwalletMain);
-    CAmount nFeeRequired = 0;  // TODO: ?
+    CAmount nFeeRequired = AmountFromValue(params[2]);
+
+    if (nFeeRequired < 0) {
+        throw runtime_error(
+            "Fee cannot be negative."
+        );
+    }
+
     string strFailReason;
     CMutableTransaction txNew;
+
+    libzerocash::Coin coina(zcaddr_pub, nAmount);
+    libzerocash::MintTransaction minttx(coina);
+
+    {
+        CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
+        std::vector<unsigned char> vchSig(32);
+
+        dd << minttx;
+        std::vector<unsigned char> vector_mint(dd.begin(), dd.end());
+
+        CScript scriptSig;
+        scriptSig.clear();
+        scriptSig << vector_mint;
+        CTxIn in(always_spendable_txid, 1, scriptSig);
+        txNew.vin.push_back(in);
+    }
+
     bool fCreated = pwalletMain->CreateTransactionSign(vecSend, txNew, wtx, keyChange, nFeeRequired, strFailReason, NULL, false);
     if (!fCreated)
         throw JSONRPCError(RPC_WALLET_ERROR, "Error creating transaction");
@@ -503,23 +527,6 @@ Value zc_raw_protect(const Array& params, bool fHelp)
 
         txNew.vout.clear();
         txNew.vout.push_back(changeOut);
-
-        libzerocash::Coin coina(zcaddr_pub, nAmount);
-        libzerocash::MintTransaction minttx(coina);
-
-        {
-            CDataStream dd(SER_NETWORK, PROTOCOL_VERSION);
-            std::vector<unsigned char> vchSig(32);
-
-            dd << minttx;
-            std::vector<unsigned char> vector_mint(dd.begin(), dd.end());
-
-            CScript scriptSig;
-            scriptSig.clear();
-            scriptSig << vector_mint;
-            CTxIn in(always_spendable_txid, 1, scriptSig);
-            txNew.vin.push_back(in);
-        }
 
         CDataStream txstream(SER_NETWORK, PROTOCOL_VERSION);;
         txstream << txNew;

@@ -1530,6 +1530,7 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, CAmount> >& vecSend,
                                 CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, std::string& strFailReason, const CCoinControl* coinControl)
 {
     CMutableTransaction txNew;
+    nFeeRet = 0;
 
     CreateTransactionSign(vecSend, txNew, wtxNew, reservekey, nFeeRet, strFailReason, coinControl, true);
 }
@@ -1561,7 +1562,6 @@ bool CWallet::CreateTransactionSign(const vector<pair<CScript, CAmount> >& vecSe
     {
         LOCK2(cs_main, cs_wallet);
         {
-            nFeeRet = 0;
             while (true)
             {
                 txNew.vin.clear();
@@ -1658,7 +1658,7 @@ bool CWallet::CreateTransactionSign(const vector<pair<CScript, CAmount> >& vecSe
                 BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins)
                     txNew.vin.push_back(CTxIn(coin.first->GetHash(),coin.second));
 
-                if (!sign_it) {
+                if (sign_it) {
                     // Sign
                     int nIn = 0;
                     BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins)
