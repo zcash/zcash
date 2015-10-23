@@ -99,6 +99,4 @@ bool CLevelDBWrapper::IsEmpty()
 CLevelDBIterator::~CLevelDBIterator() { delete piter; }
 bool CLevelDBIterator::Valid() { return piter->Valid(); }
 void CLevelDBIterator::SeekToFirst() { piter->SeekToFirst(); }
-void CLevelDBIterator::SeekToLast() { piter->SeekToLast(); }
 void CLevelDBIterator::Next() { piter->Next(); }
-void CLevelDBIterator::Prev() { piter->Prev(); }
