@@ -20,12 +20,12 @@ void HandleError(const leveldb::Status& status)
         return;
     LogPrintf("%s\n", status.ToString());
     if (status.IsCorruption())
-        throw leveldb_error("Database corrupted");
+        throw dbwrapper_error("Database corrupted");
     if (status.IsIOError())
-        throw leveldb_error("Database I/O error");
+        throw dbwrapper_error("Database I/O error");
     if (status.IsNotFound())
-        throw leveldb_error("Database entry missing");
-    throw leveldb_error("Unknown database error");
+        throw dbwrapper_error("Database entry missing");
+    throw dbwrapper_error("Unknown database error");
 }
 
 static leveldb::Options GetOptions(size_t nCacheSize)
@@ -44,7 +44,7 @@ static leveldb::Options GetOptions(size_t nCacheSize)
     return options;
 }
 
-CLevelDBWrapper::CLevelDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory, bool fWipe)
+CDBWrapper::CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory, bool fWipe)
 {
     penv = NULL;
     readoptions.verify_checksums = true;
@@ -70,7 +70,7 @@ CLevelDBWrapper::CLevelDBWrapper(const boost::filesystem::path& path, size_t nCa
     LogPrintf("Opened LevelDB successfully\n");
 }
 
-CLevelDBWrapper::~CLevelDBWrapper()
+CDBWrapper::~CDBWrapper()
 {
     delete pdb;
     pdb = NULL;
@@ -82,21 +82,21 @@ CLevelDBWrapper::~CLevelDBWrapper()
     options.env = NULL;
 }
 
-bool CLevelDBWrapper::WriteBatch(CLevelDBBatch& batch, bool fSync)
+bool CDBWrapper::WriteBatch(CDBBatch& batch, bool fSync)
 {
     leveldb::Status status = pdb->Write(fSync ? syncoptions : writeoptions, &batch.batch);
     HandleError(status);
     return true;
 }
 
-bool CLevelDBWrapper::IsEmpty()
+bool CDBWrapper::IsEmpty()
 {
-    boost::scoped_ptr<CLevelDBIterator> it(NewIterator());
+    boost::scoped_ptr<CDBIterator> it(NewIterator());
     it->SeekToFirst();
     return !(it->Valid());
 }
 
-CLevelDBIterator::~CLevelDBIterator() { delete piter; }
-bool CLevelDBIterator::Valid() { return piter->Valid(); }
-void CLevelDBIterator::SeekToFirst() { piter->SeekToFirst(); }
-void CLevelDBIterator::Next() { piter->Next(); }
+CDBIterator::~CDBIterator() { delete piter; }
+bool CDBIterator::Valid() { return piter->Valid(); }
+void CDBIterator::SeekToFirst() { piter->SeekToFirst(); }
+void CDBIterator::Next() { piter->Next(); }

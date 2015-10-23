@@ -25,13 +25,13 @@ bool is_null_key(const vector<unsigned char>& key) {
     return isnull;
 }
  
-BOOST_FIXTURE_TEST_SUITE(leveldbwrapper_tests, BasicTestingSetup)
+BOOST_FIXTURE_TEST_SUITE(dbwrapper_tests, BasicTestingSetup)
                        
-BOOST_AUTO_TEST_CASE(leveldbwrapper)
+BOOST_AUTO_TEST_CASE(dbwrapper)
 {
     {
         path ph = temp_directory_path() / unique_path();
-        CLevelDBWrapper dbw(ph, (1 << 20), true, false);
+        CDBWrapper dbw(ph, (1 << 20), true, false);
         char key = 'k';
         uint256 in = GetRandHash();
         uint256 res;
@@ -43,11 +43,11 @@ BOOST_AUTO_TEST_CASE(leveldbwrapper)
 }
 
 // Test batch operations
-BOOST_AUTO_TEST_CASE(leveldbwrapper_batch)
+BOOST_AUTO_TEST_CASE(dbwrapper_batch)
 {
     {
         path ph = temp_directory_path() / unique_path();
-        CLevelDBWrapper dbw(ph, (1 << 20), true, false);
+        CDBWrapper dbw(ph, (1 << 20), true, false);
 
         char key = 'i';
         uint256 in = GetRandHash();
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(leveldbwrapper_batch)
         uint256 in3 = GetRandHash();
 
         uint256 res;
-        CLevelDBBatch batch;
+        CDBBatch batch;
 
         batch.Write(key, in);
         batch.Write(key2, in2);
@@ -78,11 +78,11 @@ BOOST_AUTO_TEST_CASE(leveldbwrapper_batch)
     }
 }
 
-BOOST_AUTO_TEST_CASE(leveldbwrapper_iterator)
+BOOST_AUTO_TEST_CASE(dbwrapper_iterator)
 {
     {
         path ph = temp_directory_path() / unique_path();
-        CLevelDBWrapper dbw(ph, (1 << 20), true, false);
+        CDBWrapper dbw(ph, (1 << 20), true, false);
 
         // The two keys are intentionally chosen for ordering
         char key = 'j';
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(leveldbwrapper_iterator)
         uint256 in2 = GetRandHash();
         BOOST_CHECK(dbw.Write(key2, in2));
 
-        boost::scoped_ptr<CLevelDBIterator> it(const_cast<CLevelDBWrapper*>(&dbw)->NewIterator());
+        boost::scoped_ptr<CDBIterator> it(const_cast<CDBWrapper*>(&dbw)->NewIterator());
 
         // Be sure to seek past any earlier key (if it exists)
         it->Seek(key);
