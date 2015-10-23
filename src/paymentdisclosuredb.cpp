@@ -5,7 +5,7 @@
 #include "paymentdisclosuredb.h"
 
 #include "util.h"
-#include "leveldbwrapper.h"
+#include "dbwrapper.h"
 
 #include <boost/filesystem.hpp>
 
