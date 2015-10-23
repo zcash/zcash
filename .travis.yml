@@ -4,6 +4,9 @@
 #   replacing the "compilers" with a build name prefixed by the no-op ":"
 #   command. See: https://github.com/travis-ci/casher/issues/6
 
+sudo: required
+dist: trusty
+
 os: linux
 language: cpp
 compiler: gcc
