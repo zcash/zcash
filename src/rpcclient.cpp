@@ -35,6 +35,12 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "zerocoinmint", 0 }, // amount
     { "zerocoinmint", 1 }, // change amount
     { "zerocoinpour", 1 }, // bool - include snark proof?
+    { "zc-raw-protect", 2 }, // amount to first zerocoin
+
+    { "zc-raw-pour", 5 }, // amount to first zerocoin
+    { "zc-raw-pour", 7 }, // amount to second zercoin
+    { "zc-raw-pour", 9 }, // clearamount
+
     { "settxfee", 0 },
     { "getreceivedbyaddress", 1 },
     { "getreceivedbyaccount", 1 },
