@@ -56,12 +56,14 @@ private:
     unsigned int nHeight;      //!< Chain height when entering the mempool
     bool hadNoDependencies;    //!< Not dependent on any other txs when it entered the mempool
     bool spendsCoinbase;       //!< keep track of transactions that spend a coinbase
+    unsigned int sigOpCount;   //!< Legacy sig ops plus P2SH sig op count
     uint32_t nBranchId;        //!< Branch ID this transaction is known to commit to, cached for efficiency
 
 public:
     CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
                     int64_t _nTime, double _dPriority, unsigned int _nHeight,
-                    bool poolHasNoInputsOf, bool spendsCoinbase, uint32_t nBranchId);
+                    bool poolHasNoInputsOf, bool spendsCoinbase,
+                    unsigned int nSigOps, uint32_t nBranchId);
     CTxMemPoolEntry();
     CTxMemPoolEntry(const CTxMemPoolEntry& other);
 
@@ -73,6 +75,7 @@ public:
     int64_t GetTime() const { return nTime; }
     unsigned int GetHeight() const { return nHeight; }
     bool WasClearAtEntry() const { return hadNoDependencies; }
+    unsigned int GetSigOpCount() const { return sigOpCount; }
     size_t DynamicMemoryUsage() const { return nUsageSize; }
 
     bool GetSpendsCoinbase() const { return spendsCoinbase; }
