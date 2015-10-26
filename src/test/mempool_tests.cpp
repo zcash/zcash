@@ -155,6 +155,30 @@ BOOST_AUTO_TEST_CASE(MempoolIndexingTest)
     BOOST_CHECK_EQUAL(it++->GetTx().GetHash().ToString(), tx4.GetHash().ToString());
     BOOST_CHECK_EQUAL(it++->GetTx().GetHash().ToString(), tx2.GetHash().ToString());
     BOOST_CHECK(it == pool.mapTx.get<1>().end());
+
+    /* Now check the sort on the mining score index.
+     * Final order should be:
+     *
+     * tx2 (20k)
+     * tx4 (15000)
+     * tx1/tx5 (10000)
+     * tx3 (0)
+     * (Ties resolved by hash)
+     */
+    {
+        CTxMemPool::indexed_transaction_set::nth_index<2>::type::iterator it = pool.mapTx.get<2>().begin();
+        BOOST_CHECK_EQUAL(it++->GetTx().GetHash().ToString(), tx2.GetHash().ToString());
+        BOOST_CHECK_EQUAL(it++->GetTx().GetHash().ToString(), tx4.GetHash().ToString());
+        if (tx1.GetHash() < tx5.GetHash()) {
+            BOOST_CHECK_EQUAL(it++->GetTx().GetHash().ToString(), tx5.GetHash().ToString());
+            BOOST_CHECK_EQUAL(it++->GetTx().GetHash().ToString(), tx1.GetHash().ToString());
+        } else {
+            BOOST_CHECK_EQUAL(it++->GetTx().GetHash().ToString(), tx1.GetHash().ToString());
+            BOOST_CHECK_EQUAL(it++->GetTx().GetHash().ToString(), tx5.GetHash().ToString());
+        }
+        BOOST_CHECK_EQUAL(it++->GetTx().GetHash().ToString(), tx3.GetHash().ToString());
+        BOOST_CHECK(it == pool.mapTx.get<2>().end());
+    }
 }
 
 BOOST_AUTO_TEST_CASE(RemoveWithoutBranchId) {

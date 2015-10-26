@@ -57,6 +57,7 @@ private:
     bool hadNoDependencies;    //!< Not dependent on any other txs when it entered the mempool
     bool spendsCoinbase;       //!< keep track of transactions that spend a coinbase
     unsigned int sigOpCount;   //!< Legacy sig ops plus P2SH sig op count
+    int64_t feeDelta;          //!< Used for determining the priority of the transaction for mining in a block
     uint32_t nBranchId;        //!< Branch ID this transaction is known to commit to, cached for efficiency
 
 public:
@@ -76,10 +77,24 @@ public:
     unsigned int GetHeight() const { return nHeight; }
     bool WasClearAtEntry() const { return hadNoDependencies; }
     unsigned int GetSigOpCount() const { return sigOpCount; }
+    int64_t GetModifiedFee() const { return nFee + feeDelta; }
     size_t DynamicMemoryUsage() const { return nUsageSize; }
+
+    // Updates the fee delta used for mining priority score
+    void UpdateFeeDelta(int64_t feeDelta);
 
     bool GetSpendsCoinbase() const { return spendsCoinbase; }
     uint32_t GetValidatedBranchId() const { return nBranchId; }
+};
+
+struct update_fee_delta
+{
+    update_fee_delta(int64_t _feeDelta) : feeDelta(_feeDelta) { }
+
+    void operator() (CTxMemPoolEntry &e) { e.UpdateFeeDelta(feeDelta); }
+
+private:
+    int64_t feeDelta;
 };
 
 // extracts a TxMemPoolEntry's transaction hash
@@ -95,11 +110,29 @@ struct mempoolentry_txid
 class CompareTxMemPoolEntryByFee
 {
 public:
-    bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b)
+    bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b) const
     {
         if (a.GetFeeRate() == b.GetFeeRate())
             return a.GetTime() >= b.GetTime();
         return a.GetFeeRate() < b.GetFeeRate();
+    }
+};
+
+/** \class CompareTxMemPoolEntryByScore
+ *
+ *  Sort by score of entry ((fee+delta)/size) in descending order
+ */
+class CompareTxMemPoolEntryByScore
+{
+public:
+    bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b) const
+    {
+        double f1 = (double)a.GetModifiedFee() * b.GetTxSize();
+        double f2 = (double)b.GetModifiedFee() * a.GetTxSize();
+        if (f1 == f2) {
+            return b.GetTx().GetHash() < a.GetTx().GetHash();
+        }
+        return f1 > f2;
     }
 };
 
@@ -128,6 +161,14 @@ public:
  * are added to the pool: if a new transaction double-spends
  * an input of a transaction in the pool, it is dropped,
  * as are non-standard transactions.
+ *
+ * CTxMemPool::mapTx, and CTxMemPoolEntry bookkeeping:
+ *
+ * mapTx is a boost::multi_index that sorts the mempool on 3 criteria:
+ * - transaction hash
+ * - feerate
+ * - mining score (feerate modified by any fee deltas from PrioritiseTransaction)
+ *
  */
 class CTxMemPool
 {
@@ -163,12 +204,18 @@ public:
             boost::multi_index::ordered_non_unique<
                 boost::multi_index::identity<CTxMemPoolEntry>,
                 CompareTxMemPoolEntryByFee
+            >,
+            // sorted by score (for mining prioritization)
+            boost::multi_index::ordered_unique<
+                boost::multi_index::identity<CTxMemPoolEntry>,
+                CompareTxMemPoolEntryByScore
             >
         >
     > indexed_transaction_set;
 
     mutable CCriticalSection cs;
     indexed_transaction_set mapTx;
+    typedef indexed_transaction_set::nth_index<0>::type::iterator txiter;
 
 private:
     // insightexplorer
