@@ -621,7 +621,31 @@ Value zc_raw_pour_begin(libzerocash::Address input_addr_1,
                         libzerocash::Coin output_coin_2,
                         CKey vpub_key,
                         CAmount vpub_amt) {
-    return "Great job!";
+    // The process of building a pour:
+    //  1. We have to get the "coinhash" or commitment value of the input
+    //     coin.
+    //  2. We have to iterate through the blockchain, constructing an
+    //     incremental merkle tree, keeping track of the index of the
+    //     entries which correspond to our commitment values.
+    //  3. We have to construct witnesses within the merkle tree at that
+    //     blockchain root.
+    //  4. We direct the rest of the work to MakePourTx.
+
+    uint256 input_cid_1(input_coin_1.getCoinCommitment().getCommitmentValue());
+    uint256 input_cid_2(input_coin_2.getCoinCommitment().getCommitmentValue());
+
+    CTransaction rawTx;
+    rawTx = pwalletMain->RawMakePour(0, input_cid_1, input_cid_2,
+                                         vpub_key, output_coin_1, output_coin_2,
+                                         output_address_1, output_address_2,
+                                         input_addr_1, input_addr_2,
+                                         input_coin_1, input_coin_2,
+                                         vpub_amt
+                                        );
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << rawTx;
+    return HexStr(ss.begin(), ss.end());
 }
 
 Value zc_raw_pour(const Array& params, bool fHelp) {
