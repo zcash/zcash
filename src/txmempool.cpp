@@ -59,6 +59,8 @@ CTxMemPoolEntry::GetPriority(unsigned int currentHeight) const
 CTxMemPool::CTxMemPool(const CFeeRate& _minRelayFee) :
     nTransactionsUpdated(0)
 {
+    _clear(); //lock free clear
+
     // Sanity checks off by default for performance, because otherwise
     // accepting transactions becomes O(N^2) where N is the number
     // of transactions in the pool
@@ -494,14 +496,19 @@ void CTxMemPool::removeWithoutBranchId(uint32_t nMemPoolBranchId)
     }
 }
 
-void CTxMemPool::clear()
+void CTxMemPool::_clear()
 {
-    LOCK(cs);
     mapTx.clear();
     mapNextTx.clear();
     totalTxSize = 0;
     cachedInnerUsage = 0;
     ++nTransactionsUpdated;
+}
+
+void CTxMemPool::clear()
+{
+    LOCK(cs);
+    _clear();
 }
 
 void CTxMemPool::check(const CCoinsViewCache *pcoins) const
