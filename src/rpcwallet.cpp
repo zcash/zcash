@@ -609,6 +609,152 @@ Value zerocoinmint(const Array& params, bool fHelp){
     return HexStr(ss.begin(), ss.end());
 }
 
+Value zc_raw_pour_begin(libzerocash::Address input_addr_1,
+                        libzerocash::Coin input_coin_1,
+                        libzerocash::Address input_addr_2,
+                        libzerocash::Coin input_coin_2,
+                        libzerocash::PublicAddress output_address_1,
+                        CAmount output_value_1,
+                        libzerocash::Coin output_coin_1,
+                        libzerocash::PublicAddress output_address_2,
+                        CAmount output_value_2,
+                        libzerocash::Coin output_coin_2,
+                        CKey vpub_key,
+                        CAmount vpub_amt) {
+    return "Great job!";
+}
+
+Value zc_raw_pour(const Array& params, bool fHelp) {
+    if (fHelp || params.size() < 10)
+        throw runtime_error(
+            "zc-raw-pour SECRETKEY1 BUCKET1 SECRETKEY2 BUCKET2 ZCDEST1 AMT1 ZCDEST2 AMT2 CLEARDEST CLEARAMT\n"
+       );
+
+    libzerocash::PrivateAddress zcaddr_priv_1;
+    {
+        vector<unsigned char> decoded(ParseHex(params[0].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> zcaddr_priv_1;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "SECRETKEY1 was not valid"
+            );
+        }
+    }
+
+    libzerocash::Coin bucket1;
+    {
+        vector<unsigned char> decoded(ParseHex(params[1].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> bucket1;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "BUCKET1 is not valid"
+            );
+        }
+    }
+
+    libzerocash::PrivateAddress zcaddr_priv_2;
+    {
+        vector<unsigned char> decoded(ParseHex(params[2].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> zcaddr_priv_2;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "SECRETKEY2 was not valid"
+            );
+        }
+    }
+
+    libzerocash::Coin bucket2;
+    {
+        vector<unsigned char> decoded(ParseHex(params[3].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> bucket2;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "BUCKET2 is not valid"
+            );
+        }
+    }
+
+    libzerocash::PublicAddress zcaddr_destination_1;
+    {
+        vector<unsigned char> decoded(ParseHex(params[4].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> zcaddr_destination_1;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "ZCDEST1 was not valid"
+            );
+        }
+    }
+
+    CAmount nAmount_destination_1 = AmountFromValue(params[5]);
+
+    libzerocash::PublicAddress zcaddr_destination_2;
+    {
+        vector<unsigned char> decoded(ParseHex(params[6].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> zcaddr_destination_2;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "ZCDEST2 was not valid"
+            );
+        }
+    }
+
+    CAmount nAmount_destination_2 = AmountFromValue(params[7]);
+
+    CBitcoinAddress vPub_address(params[8].get_str());
+
+    if (!vPub_address.IsValid()) {
+        throw runtime_error(
+            "CLEARDEST address not valid."
+        );
+    }
+
+    CAmount vPub_value = AmountFromValue(params[9]);
+
+    libzerocash::Coin outputCoin1(zcaddr_destination_1, nAmount_destination_1);
+    libzerocash::Coin outputCoin2(zcaddr_destination_2, nAmount_destination_2);
+
+    libzerocash::Address input_addr_1(zcaddr_priv_1);
+    libzerocash::Address input_addr_2(zcaddr_priv_2);
+
+    if (!vPub_address.IsValid())
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
+
+    CKeyID keyID;
+    if (!vPub_address.GetKeyID(keyID))
+        throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to key");
+
+    CKey key;
+    if (!pwalletMain->GetKey(keyID, key))
+        throw JSONRPCError(RPC_WALLET_ERROR, "Private key not available");
+
+    return zc_raw_pour_begin(
+        input_addr_1,
+        bucket1,
+        input_addr_2,
+        bucket2,
+        zcaddr_destination_1,
+        nAmount_destination_1,
+        outputCoin1,
+        zcaddr_destination_2,
+        nAmount_destination_2,
+        outputCoin2,
+        key,
+        vPub_value
+    );
+}
+
 Value zerocoinpour(const Array& params, bool fHelp){
     if (fHelp || params.size() < 4)
         throw runtime_error(
