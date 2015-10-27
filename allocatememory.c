@@ -15,6 +15,7 @@ int main(int argc, char **argv) {
         x = malloc(STEP);
         if (x == NULL) {
             printf("null result!\n");
+            break;
         }
         for (i = 0; i < STEP; i++) {
             x[i] = i;
