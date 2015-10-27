@@ -610,7 +610,7 @@ Value zerocoinmint(const Array& params, bool fHelp){
 }
 
 Value zc_raw_receive(const Array& params, bool fHelp) {
-    if (fHelp || params.size() < 10)
+    if (fHelp || params.size() != 2)
         throw runtime_error(
             "zc-raw-receive SECRETKEY ENCRYPTED_BUCKET\n"
        );
@@ -632,7 +632,12 @@ Value zc_raw_receive(const Array& params, bool fHelp) {
     std::string bucket(bucket_v.begin(),bucket_v.end());
     libzerocash::Address addr(zcaddr_priv);
 
-    return "test: " + addr.decryptBucket(bucket);
+    auto plaintext = addr.decryptBucket(bucket);
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << plaintext;;
+
+    return HexStr(ss.begin(), ss.end());
 }
 
 Value zc_raw_pour_begin(libzerocash::Address input_addr_1,
@@ -661,7 +666,7 @@ Value zc_raw_pour_begin(libzerocash::Address input_addr_1,
     uint256 input_cid_2(input_coin_2.getCoinCommitment().getCommitmentValue());
 
     CTransaction rawTx;
-    rawTx = pwalletMain->RawMakePour(0, input_cid_1, input_cid_2,
+    auto res = pwalletMain->RawMakePour(0, input_cid_1, input_cid_2,
                                          vpub_key, output_coin_1, output_coin_2,
                                          output_address_1, output_address_2,
                                          input_addr_1, input_addr_2,
@@ -669,11 +674,20 @@ Value zc_raw_pour_begin(libzerocash::Address input_addr_1,
                                          vpub_amt
                                         );
 
+    rawTx = std::get<0>(res);
+
+    libzerocash::PourTransaction pourtx = std::get<1>(res);
+
+    std::string enc_bucket_1 = pourtx.getCiphertext1();
+    std::string enc_bucket_2 = pourtx.getCiphertext2();
+
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << rawTx;
 
     Object result;
     // TODO: return the encrypted buckets
+    result.push_back(Pair("encryptedbucket1", HexStr(enc_bucket_1.begin(), enc_bucket_1.end())));
+    result.push_back(Pair("encryptedbucket2", HexStr(enc_bucket_2.begin(), enc_bucket_2.end())));
     result.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
     return result;
 }

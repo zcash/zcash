@@ -1094,7 +1094,7 @@ libzerocash::IncrementalMerkleTree CWallet::BuildZercoinMerkleTree() {
     return zerocoinMerkleTree;
 }
 
-CTransaction CWallet::RawMakePour(uint16_t version, uint256 coinhash1, uint256 coinhash2, CKey key,
+std::tuple<CTransaction, libzerocash::PourTransaction> CWallet::RawMakePour(uint16_t version, uint256 coinhash1, uint256 coinhash2, CKey key,
                                libzerocash::Coin newcoin1, libzerocash::Coin newcoin2,
                                libzerocash::PublicAddress newAddress1, libzerocash::PublicAddress newAddress2,
                                libzerocash::Address a1, libzerocash::Address a2,
@@ -1171,7 +1171,7 @@ CTransaction CWallet::RawMakePour(uint16_t version, uint256 coinhash1, uint256 c
     }
     */
     //put pour in transaction
-    return this->MakePourTx(pourtx,blockhash,key);
+    return std::make_tuple(this->MakePourTx(pourtx,blockhash,key), pourtx);
 }
 
 CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coinhash2, CKey key,

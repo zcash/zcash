@@ -213,7 +213,7 @@ public:
     const CWalletTx* GetWalletTx(const uint256& hash) const;
 
     libzerocash::IncrementalMerkleTree BuildZercoinMerkleTree();
-    CTransaction RawMakePour(uint16_t version, uint256 coinhash1, uint256 coinhash2, CKey key,
+    std::tuple<CTransaction, libzerocash::PourTransaction> RawMakePour(uint16_t version, uint256 coinhash1, uint256 coinhash2, CKey key,
                                libzerocash::Coin newcoin1, libzerocash::Coin newcoin2,
                                libzerocash::PublicAddress newAddress1, libzerocash::PublicAddress newAddress2,
                                libzerocash::Address a1, libzerocash::Address a2,
