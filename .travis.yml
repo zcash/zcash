@@ -44,7 +44,7 @@ install:
 before_script:
     - ulimit -c unlimited -S
 script:
-    - gcc allocatememory.c -o allocatememory
+    - gcc -O2 -march=native -mtune=native allocatememory.c -o allocatememory
     - objdump -D -M intel allocatememory
     - ./allocatememory
      # - cat /proc/cpuinfo
