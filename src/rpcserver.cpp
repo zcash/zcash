@@ -291,6 +291,7 @@ static const CRPCCommand vRPCCommands[] =
     { "rawtransactions",    "zc-raw-keygen",          &zc_raw_keygen,          false,     false,      true },
     { "rawtransactions",    "zc-raw-protect",         &zc_raw_protect,         false,     false,      true },
     { "rawtransactions",    "zc-raw-pour",            &zc_raw_pour,            false,     false,      true },
+    { "rawtransactions",    "zc-raw-receive",            &zc_raw_receive,            false,     false,      true },
 #endif
 
     /* Raw transactions */

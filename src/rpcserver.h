@@ -175,6 +175,7 @@ extern json_spirit::Value zerocoinmint(const json_spirit::Array& params, bool fH
 extern json_spirit::Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value zc_raw_protect(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value zc_raw_pour(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value zc_raw_receive(const json_spirit::Array& params, bool fHelp);
 
 extern json_spirit::Value signmessage(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value verifymessage(const json_spirit::Array& params, bool fHelp);

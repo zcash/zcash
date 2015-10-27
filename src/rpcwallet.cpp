@@ -609,6 +609,32 @@ Value zerocoinmint(const Array& params, bool fHelp){
     return HexStr(ss.begin(), ss.end());
 }
 
+Value zc_raw_receive(const Array& params, bool fHelp) {
+    if (fHelp || params.size() < 10)
+        throw runtime_error(
+            "zc-raw-receive SECRETKEY ENCRYPTED_BUCKET\n"
+       );
+
+    libzerocash::PrivateAddress zcaddr_priv;
+    {
+        vector<unsigned char> decoded(ParseHex(params[0].get_str()));
+        CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> zcaddr_priv;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "SECRETKEY was not valid"
+            );
+        }
+    }
+
+    vector<unsigned char> bucket_v(ParseHex(params[1].get_str()));
+    std::string bucket(bucket_v.begin(),bucket_v.end());
+    libzerocash::Address addr(zcaddr_priv);
+
+    return "test: " + addr.decryptBucket(bucket);
+}
+
 Value zc_raw_pour_begin(libzerocash::Address input_addr_1,
                         libzerocash::Coin input_coin_1,
                         libzerocash::Address input_addr_2,
@@ -645,7 +671,11 @@ Value zc_raw_pour_begin(libzerocash::Address input_addr_1,
 
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << rawTx;
-    return HexStr(ss.begin(), ss.end());
+
+    Object result;
+    // TODO: return the encrypted buckets
+    result.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
+    return result;
 }
 
 Value zc_raw_pour(const Array& params, bool fHelp) {

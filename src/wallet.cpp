@@ -1160,12 +1160,16 @@ CTransaction CWallet::RawMakePour(uint16_t version, uint256 coinhash1, uint256 c
                                         newcoin1, newcoin2);
 
     assert(pourtx.verify(*pzerocashParams, keyahshv, rt));
-    
+    /*
+
+    // TODO: figure out why blocks don't have the merkle roots. bug upstream libzerocash?
+
     if (chainActive.Tip()->GetBlockHeader().hashZerocoinMerkleRoot != newroot) {
         LogPrint("zerocoin", "wallet : got %s from block %s \n", chainActive.Tip()->GetBlockHeader().hashZerocoinMerkleRoot.ToString(),chainActive.Tip()->GetBlockHash().ToString());
 
         throw runtime_error("computed merkle root not in block tip");
     }
+    */
     //put pour in transaction
     return this->MakePourTx(pourtx,blockhash,key);
 }
