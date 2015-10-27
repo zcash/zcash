@@ -50,4 +50,4 @@ script:
     - ./qa/zerocash/full-test-suite.sh
     - echo '=== daemon 0 log (tail 400) ==='; tail -400 ./.zc-system-test/0/stdout.log
     - find ./ -maxdepth 5 -name 'core*' -print
-    - for i in $(find ./ -maxdepth 5 -name 'core*' -print); do gdb $(pwd)/src/bitcoind src/core -ex "thread apply all bt" -ex "set pagination 0" -ex "thread apply all x/5i $pc" -batch; done;
+    - for i in $(find ./ -maxdepth 5 -name 'core*' -print); do gdb $(pwd)/src/bitcoind src/core -ex "thread apply all bt" -ex "set pagination 0" -ex 'thread apply all x/5i $pc' -batch; done;
