@@ -2,31 +2,26 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-// Allocate 10GB
-#define MAX_MEMORY (10L*1024*1024*1024)
-// ... in 100MB steps.
-#define STEP (100*1024*1024)
+size_t log2mine(size_t n)
+/* returns ceil(log2(n)), so 1ul<<log2(n) is the smallest power of 2,
+   that is not less than n. */
+{
+    size_t r = ((n & (n-1)) == 0 ? 0 : 1); // add 1 if n is not power of 2
+
+    while (n > 1)
+    {
+        n >>= 1;
+        r++;
+    }
+
+    return r;
+}
 
 int main(int argc, char **argv) {
-    unsigned long long allocated = 0;
-    unsigned char *x;
-    int i;
-    while (allocated < MAX_MEMORY) {
-        x = malloc(STEP);
-        if (x == NULL) {
-            printf("null result!\n");
-            break;
-        }
-        for (i = 0; i < STEP; i++) {
-            x[i] = i;
-        }
-        allocated += STEP;
-        sleep(1);
-        printf("Allocated %llu\n", allocated);
+    size_t i = 0;
+    size_t j = 0;
+    for(i = 0; i < 1000; i++) {
+        j += log2mine(i);
     }
-
-    while(1) {
-        printf("Waiting to die...\n");
-        sleep(1);
-    }
+    return j;
 }
