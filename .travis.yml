@@ -20,12 +20,12 @@ env:
     - CCACHE_COMPRESS=1
     - BASE_OUTDIR=$TRAVIS_BUILD_DIR/out
     - SDK_URL=https://bitcoincore.org/depends-sources/sdks
-cache:
-  apt: true
-  directories:
-  - depends/built
-  - depends/sdk-sources
-  - $HOME/.ccache
+#cache:
+#  apt: true
+#  directories:
+#  - depends/built
+#  - depends/sdk-sources
+#  - $HOME/.ccache
 matrix:
   fast_finish: true
   include:
@@ -44,12 +44,12 @@ install:
 before_script:
     - ulimit -c unlimited -S
 script:
-    - g++ -O2 -march=native -mtune=native -std=c++11 allocatememory.cpp -o allocatememory
-    - objdump -D -M intel allocatememory
-    - ./allocatememory
-     # - cat /proc/cpuinfo
-     # - ./zcutil/build.sh -j2
-     # - ./qa/zerocash/full-test-suite.sh
-     # - echo '=== daemon 0 log (tail 400) ==='; tail -400 ./.zc-system-test/0/stdout.log
-     # - find ./ -maxdepth 5 -name 'core*' -print
-     # - for i in $(find ./ -maxdepth 5 -name 'core*' -print); do gdb $(pwd)/src/bitcoind src/core -ex "thread apply all bt" -ex "set pagination 0" -ex 'thread apply all x/5i $pc' -batch; done;
+    #- g++ -O2 -march=native -mtune=native -std=c++11 allocatememory.cpp -o allocatememory
+    #- objdump -D -M intel allocatememory
+    #- ./allocatememory
+     - cat /proc/cpuinfo
+     - ./zcutil/build.sh -j2
+     - ./qa/zerocash/full-test-suite.sh
+     - echo '=== daemon 0 log (tail 400) ==='; tail -400 ./.zc-system-test/0/stdout.log
+     - find ./ -maxdepth 5 -name 'core*' -print
+     - for i in $(find ./ -maxdepth 5 -name 'core*' -print); do gdb $(pwd)/src/bitcoind src/core -ex "thread apply all bt" -ex "set pagination 0" -ex 'thread apply all x/5i $pc' -batch; done;
