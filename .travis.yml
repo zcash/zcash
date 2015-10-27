@@ -46,6 +46,7 @@ before_script:
 script:
     #- gcc allocatememory.c -o allocatememory
     #- ./allocatememory & ./allocatememory & ./allocatememory & ./allocatememory ; watch "ps aux | grep allocatememory"
+    - cat /proc/cpuinfo
     - ./zcutil/build.sh -j2
     - ./qa/zerocash/full-test-suite.sh
     - echo '=== daemon 0 log (tail 400) ==='; tail -400 ./.zc-system-test/0/stdout.log
