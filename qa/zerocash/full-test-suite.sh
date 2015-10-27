@@ -29,7 +29,6 @@ cd "${REPOROOT}"
 
 # Test phases:
 run_test_phase "${REPOROOT}/qa/zerocash/ensure-no-dot-so-in-depends.py"
-run_test_phase make check
 run_test_phase "${REPOROOT}/qa/zerocash/zc-system-test.py"
 
 exit $SUITE_EXIT_STATUS
