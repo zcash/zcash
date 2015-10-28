@@ -633,11 +633,19 @@ Value zc_raw_receive(const Array& params, bool fHelp) {
 
     libzerocash::Address addr(zcaddr_priv);
 
-    libzerocash::Coin woohoo(encrypted_bucket, addr);
+    libzerocash::Coin decrypted_bucket(encrypted_bucket, addr);
 
-    cout << "value of coin: " << woohoo.getValue() << endl;
+    // TODO: verify that the commitment exists on the blockchain
 
-    return "cool";
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << decrypted_bucket;
+
+    CAmount value_of_bucket(decrypted_bucket.getValue());
+
+    Object result;
+    result.push_back(Pair("bucket", HexStr(ss.begin(), ss.end())));
+    result.push_back(Pair("amount", value_of_bucket));
+    return result;
 }
 
 Value zc_raw_pour_begin(libzerocash::Address input_addr_1,
