@@ -628,16 +628,16 @@ Value zc_raw_receive(const Array& params, bool fHelp) {
         }
     }
 
-    vector<unsigned char> bucket_v(ParseHex(params[1].get_str()));
-    std::string bucket(bucket_v.begin(),bucket_v.end());
+    std::vector<unsigned char> encrypted_bucket_vec = ParseHex(params[1].get_str());
+    std::string encrypted_bucket(encrypted_bucket_vec.begin(), encrypted_bucket_vec.end());
+
     libzerocash::Address addr(zcaddr_priv);
 
-    auto plaintext = addr.decryptBucket(bucket);
+    libzerocash::Coin woohoo(encrypted_bucket, addr);
 
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << plaintext;;
+    cout << "value of coin: " << woohoo.getValue() << endl;
 
-    return HexStr(ss.begin(), ss.end());
+    return "cool";
 }
 
 Value zc_raw_pour_begin(libzerocash::Address input_addr_1,
@@ -678,16 +678,16 @@ Value zc_raw_pour_begin(libzerocash::Address input_addr_1,
 
     libzerocash::PourTransaction pourtx = std::get<1>(res);
 
-    std::string enc_bucket_1 = pourtx.getCiphertext1();
-    std::string enc_bucket_2 = pourtx.getCiphertext2();
+    std::string ciphertext_1 = pourtx.getCiphertext1();
+    std::string ciphertext_2 = pourtx.getCiphertext2();
 
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << rawTx;
 
     Object result;
     // TODO: return the encrypted buckets
-    result.push_back(Pair("encryptedbucket1", HexStr(enc_bucket_1.begin(), enc_bucket_1.end())));
-    result.push_back(Pair("encryptedbucket2", HexStr(enc_bucket_2.begin(), enc_bucket_2.end())));
+    result.push_back(Pair("encryptedbucket1", HexStr(ciphertext_1.begin(), ciphertext_1.end())));
+    result.push_back(Pair("encryptedbucket2", HexStr(ciphertext_2.begin(), ciphertext_2.end())));
     result.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
     return result;
 }
