@@ -348,6 +348,8 @@ bool AcceptToMemoryPool(
         CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
         bool* pfMissingInputs, bool fRejectAbsurdFee=false);
 
+/** Convert CValidationState to a human-readable message for logging */
+std::string FormatStateMessage(const CValidationState &state);
 
 struct CNodeStateStats {
     int nMisbehavior;
