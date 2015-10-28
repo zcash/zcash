@@ -788,13 +788,17 @@ Value zc_raw_pour(const Array& params, bool fHelp) {
 
     CAmount nAmount_destination_2 = AmountFromValue(params[7]);
 
-    CBitcoinAddress vPub_address(params[8].get_str());
+    CBitcoinSecret vchSecret;
+    bool fGood = vchSecret.SetString(params[8].get_str());
 
-    if (!vPub_address.IsValid()) {
+    if (!fGood) {
         throw runtime_error(
-            "CLEARDEST address not valid."
+            "CLEARDEST private key was not valid."
         );
     }
+
+    CKey vpub_key = vchSecret.GetKey();
+    if (!vpub_key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Private key outside allowed range");
 
     CAmount vPub_value = AmountFromValue(params[9]);
 
@@ -803,17 +807,6 @@ Value zc_raw_pour(const Array& params, bool fHelp) {
 
     libzerocash::Address input_addr_1(zcaddr_priv_1);
     libzerocash::Address input_addr_2(zcaddr_priv_2);
-
-    if (!vPub_address.IsValid())
-        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
-
-    CKeyID keyID;
-    if (!vPub_address.GetKeyID(keyID))
-        throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to key");
-
-    CKey key;
-    if (!pwalletMain->GetKey(keyID, key))
-        throw JSONRPCError(RPC_WALLET_ERROR, "Private key not available");
 
     return zc_raw_pour_begin(
         input_addr_1,
@@ -826,7 +819,7 @@ Value zc_raw_pour(const Array& params, bool fHelp) {
         zcaddr_destination_2,
         nAmount_destination_2,
         outputCoin2,
-        key,
+        vpub_key,
         vPub_value
     );
 }
