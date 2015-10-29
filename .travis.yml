@@ -42,4 +42,4 @@ script:
     - ./qa/zerocash/full-test-suite.sh
     - echo '=== daemon 0 log (tail 400) ==='; tail -400 ./.zc-system-test/0/stdout.log
 
-#AAAA
+#AAAAA
