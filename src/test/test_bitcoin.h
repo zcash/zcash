@@ -47,10 +47,11 @@ struct TestMemPoolEntryHelper
     double dPriority;
     unsigned int nHeight;
     bool hadNoDependencies;
+    bool spendsCoinbase;
 
     TestMemPoolEntryHelper() :
         nFee(0), nTime(0), dPriority(0.0), nHeight(1),
-        hadNoDependencies(false) { }
+        hadNoDependencies(false), spendsCoinbase(false) { }
 
     CTxMemPoolEntry FromTx(CMutableTransaction &tx, CTxMemPool *pool = NULL);
 
@@ -60,5 +61,6 @@ struct TestMemPoolEntryHelper
     TestMemPoolEntryHelper &Priority(double _priority) { dPriority = _priority; return *this; }
     TestMemPoolEntryHelper &Height(unsigned int _height) { nHeight = _height; return *this; }
     TestMemPoolEntryHelper &HadNoDependencies(bool _hnd) { hadNoDependencies = _hnd; return *this; }
+    TestMemPoolEntryHelper &SpendsCoinbase(bool _flag) { spendsCoinbase = _flag; return *this; }
 };
 #endif
