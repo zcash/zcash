@@ -50,10 +50,12 @@ private:
     double dPriority; //! Priority when entering the mempool
     unsigned int nHeight; //! Chain height when entering the mempool
     bool hadNoDependencies; //! Not dependent on any other txs when it entered the mempool
+    bool spendsCoinbase; //! keep track of transactions that spend a coinbase
 
 public:
     CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
-                    int64_t _nTime, double _dPriority, unsigned int _nHeight, bool poolHasNoInputsOf = false);
+                    int64_t _nTime, double _dPriority, unsigned int _nHeight,
+                    bool poolHasNoInputsOf, bool spendsCoinbase);
     CTxMemPoolEntry();
     CTxMemPoolEntry(const CTxMemPoolEntry& other);
 
@@ -66,6 +68,8 @@ public:
     unsigned int GetHeight() const { return nHeight; }
     bool WasClearAtEntry() const { return hadNoDependencies; }
     size_t DynamicMemoryUsage() const { return nUsageSize; }
+
+    bool GetSpendsCoinbase() const { return spendsCoinbase; }
 };
 
 // extracts a TxMemPoolEntry's transaction hash

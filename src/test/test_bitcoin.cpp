@@ -106,7 +106,7 @@ TestingSetup::~TestingSetup()
 
 CTxMemPoolEntry TestMemPoolEntryHelper::FromTx(CMutableTransaction &tx, CTxMemPool *pool) {
     return CTxMemPoolEntry(tx, nFee, nTime, dPriority, nHeight,
-                           pool ? pool->HasNoInputsOf(tx) : hadNoDependencies);
+                           pool ? pool->HasNoInputsOf(tx) : hadNoDependencies, spendsCoinbase);
 }
 
 void Shutdown(void* parg)
