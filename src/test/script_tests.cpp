@@ -264,7 +264,7 @@ public:
 
     TestBuilder& PushRedeem()
     {
-        DoPush(static_cast<std::vector<unsigned char> >(scriptPubKey));
+        DoPush(std::vector<unsigned char>(scriptPubKey.begin(), scriptPubKey.end()));
         return *this;
     }
 
@@ -864,7 +864,7 @@ BOOST_DATA_TEST_CASE(script_combineSigs, boost::unit_test::data::xrange(static_c
     combined = CombineSignatures(scriptPubKey, MutableTransactionSignatureChecker(&txTo, 0, amount), SignatureData(scriptSigCopy), SignatureData(scriptSig), consensusBranchId);
     BOOST_CHECK(combined.scriptSig == scriptSigCopy || combined.scriptSig == scriptSig);
     // dummy scriptSigCopy with placeholder, should always choose non-placeholder:
-    scriptSigCopy = CScript() << OP_0 << static_cast<vector<unsigned char> >(pkSingle);
+    scriptSigCopy = CScript() << OP_0 << vector<unsigned char>(pkSingle.begin(), pkSingle.end());
     combined = CombineSignatures(scriptPubKey, MutableTransactionSignatureChecker(&txTo, 0, amount), SignatureData(scriptSigCopy), SignatureData(scriptSig), consensusBranchId);
     BOOST_CHECK(combined.scriptSig == scriptSig);
     combined = CombineSignatures(scriptPubKey, MutableTransactionSignatureChecker(&txTo, 0, amount), SignatureData(scriptSig), SignatureData(scriptSigCopy), consensusBranchId);
