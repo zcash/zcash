@@ -54,22 +54,20 @@ All operations begin with the ``zc-raw-`` prefix.
 
 ## ``zc-raw-protect``
 
-**Usage:** ``zc-raw-protect ZCADDRESS AMOUNT FEE [ CLEARFROMACCT ]``
+**Usage:** ``zc-raw-protect RAWTX ZCADDRESS VALUE_TO_PROTECT``
 
 **Return Value:**
 
 ```
 {
-  "commitment": <hex>,
   "bucketsecret": <hex of bucket/coin>,
   "rawtxn": <hex of raw/unsigned transaction>
 }
 ```
 
-**Synopsis:** Protect ``AMOUNT - FEE`` currency units to ``ZCADDRESS``,
-  sending ``FEE`` as a cleartext miner fee, optionally using the
-  ``CLEARFROMACCT`` if given, which is of the same type that upstream
-  commandline interface calls an "account".
+**Synopsis:** Given a raw transaction, add a protect input which protects
+``VALUE_TO_PROTECT`` to ``ZCADDRESS``. Returns the bucket, and the unsigned
+raw transaction.
 
 **Security UX Note:** The caller *must* confidentially store
   ``bucketsecret`` for later use in a Pour. If they lose this data, the
@@ -80,14 +78,12 @@ All operations begin with the ``zc-raw-`` prefix.
 
 ## ``zc-raw-pour``
 
-**Usage:** ``zc-raw-pour SECRETKEY1 BUCKET1 SECRETKEY2 BUCKET2 ZCDEST1 AMT1 ZCDEST2 AMT2 CLEARDEST CLEARAMT FEE``
+**Usage:** ``zc-raw-pour SECRETKEY1 BUCKET1 SECRETKEY2 BUCKET2 ZCDEST1 AMT1 ZCDEST2 AMT2 CLEARDEST CLEARAMT``
 
 **Return Value:**
 
 ```
 {
-  "commitment1": <hex>,
-  "commitment2": <hex>,
   "encryptedbucket1": <hex>,
   "encryptedbucket2": <hex>,
   "rawtxn": <hex of unsigned txn containing a Pour>
@@ -97,7 +93,8 @@ All operations begin with the ``zc-raw-`` prefix.
 **Synopsis:** Create a rawtxn for a Pour given the secrets necessary
   to spend the two buckets, sending the results to the two ``ZCDEST<N>``
   ZC addresses in the given amounts, and a cleartext value to ``CLEARDEST``
-  (which is a Bitcoin-style address), and pay a (clear) ``FEE``.
+  (which is a Bitcoin-style secret key) of value ``CLEARAMT``. The remaining
+  value will be sent as a fee.
 
 **Security UX Note:** The caller *must* confidentially transmit the
   returned ``encryptedbucket<N>`` values to the necessary recipients. If

@@ -1094,6 +1094,86 @@ libzerocash::IncrementalMerkleTree CWallet::BuildZercoinMerkleTree() {
     return zerocoinMerkleTree;
 }
 
+std::tuple<CTransaction, libzerocash::PourTransaction> CWallet::RawMakePour(uint16_t version, uint256 coinhash1, uint256 coinhash2, CKey key,
+                               libzerocash::Coin newcoin1, libzerocash::Coin newcoin2,
+                               libzerocash::PublicAddress newAddress1, libzerocash::PublicAddress newAddress2,
+                               libzerocash::Address a1, libzerocash::Address a2,
+                               libzerocash::Coin c1, libzerocash::Coin c2,
+                               CAmount vpub_amt) {
+    LogPrint("zerocoin", "MakePour : constructing pour of coins %s,%s\n", coinhash1.ToString(), coinhash2.ToString());
+
+    std::map<uint256, int> coinIndex;
+    // build merkletree and complete with location of coins
+    libzerocash::IncrementalMerkleTree zerocoinMerkleTree(ZC_MERKLE_DEPTH);
+    int ctr = 0;
+    int blocks = chainActive.Height();
+    uint256 blockhash = chainActive.Tip()->GetBlockHash();
+    for (int i = 0; i <= blocks; i++) {
+        CBlock block;
+
+        CBlockIndex* pblockindex = chainActive[i];
+        ReadBlockFromDisk(block, pblockindex);
+        //LogPrint("zerocoin", "WALLETPOUR in block %s", block.GetHash().ToString());
+        for (unsigned int i = 0; i < block.vtx.size(); i++) {
+            //LogPrint("zerocoin", "tx %s\n", block.vtx[i].GetHash().ToString());
+
+            BOOST_FOREACH(uint256 coin, block.vtx[i].getNewZerocoinsInTx()) {
+                std::vector<unsigned char> ignored;
+                std::vector<unsigned char> coinv(coin.begin(), coin.end());
+                zerocoinMerkleTree.insertElement(coinv, ignored);
+                coinIndex[coin] = ctr;
+                ctr++;
+                //LogPrint("zerocoin", "WALLETPOUR : adding coin %s to block %s\n", coin.ToString(), block.GetHash().ToString());
+            }
+        }
+    }
+
+    vector<unsigned char> rt(root_size);
+    zerocoinMerkleTree.getRootValue(rt);
+    uint256 newroot(rt);
+    LogPrint("zerocoin","MakePour : root %s\n", newroot.ToString());
+
+    // get witnesses
+    libsnark::merkle_authentication_path witness_1(ZC_MERKLE_DEPTH);
+    libsnark::merkle_authentication_path witness_2(ZC_MERKLE_DEPTH);
+
+    zerocoinMerkleTree.getWitness(convertIntToVector(coinIndex[coinhash1]), witness_1);
+    zerocoinMerkleTree.getWitness(convertIntToVector(coinIndex[coinhash2]), witness_2);
+
+    uint256 keyhash = key.GetPubKey().GetHash();
+    vector<unsigned char> keyahshv(keyhash.begin(), keyhash.end());
+
+    // Pull coins and addresses
+    assert(c1.getPublicAddress() == a1.getPublicAddress());
+    assert(c2.getPublicAddress() == a2.getPublicAddress());
+
+    // Make pour
+    libzerocash::PourTransaction pourtx(version, *pzerocashParams,
+                                        rt,
+                                        c1, c2,
+                                        a1, a2,
+                                        coinIndex[coinhash1],  coinIndex[coinhash2],
+                                        witness_1, witness_2,
+                                        newAddress1, newAddress2,
+                                        vpub_amt,
+                                        keyahshv,
+                                        newcoin1, newcoin2);
+
+    assert(pourtx.verify(*pzerocashParams, keyahshv, rt));
+    /*
+
+    // TODO: figure out why blocks don't have the merkle roots. bug upstream libzerocash?
+
+    if (chainActive.Tip()->GetBlockHeader().hashZerocoinMerkleRoot != newroot) {
+        LogPrint("zerocoin", "wallet : got %s from block %s \n", chainActive.Tip()->GetBlockHeader().hashZerocoinMerkleRoot.ToString(),chainActive.Tip()->GetBlockHash().ToString());
+
+        throw runtime_error("computed merkle root not in block tip");
+    }
+    */
+    //put pour in transaction
+    return std::make_tuple(this->MakePourTx(pourtx,blockhash,key), pourtx);
+}
+
 CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coinhash2, CKey key,
                                libzerocash::Coin newcoin1, libzerocash::Coin newcoin2,
                                libzerocash::Address newAddress1, libzerocash::Address newAddress2) {
