@@ -4,8 +4,12 @@
 #   replacing the "compilers" with a build name prefixed by the no-op ":"
 #   command. See: https://github.com/travis-ci/casher/issues/6
 
+<<<<<<< Updated upstream
 sudo: required
 dist: trusty
+=======
+# trivial change to test buildbot detection
+>>>>>>> Stashed changes
 
 os: linux
 language: cpp
