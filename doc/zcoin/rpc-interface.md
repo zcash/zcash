@@ -86,15 +86,17 @@ raw transaction.
 {
   "encryptedbucket1": <hex>,
   "encryptedbucket2": <hex>,
-  "rawtxn": <hex of unsigned txn containing a Pour>
+  "rawtxn": <hex of signed txn containing a Pour>
 }
 ```
 
 **Synopsis:** Create a rawtxn for a Pour given the secrets necessary
   to spend the two buckets, sending the results to the two ``ZCDEST<N>``
   ZC addresses in the given amounts, and a cleartext value to ``CLEARDEST``
-  (which is a Bitcoin-style secret key) of value ``CLEARAMT``. The remaining
-  value will be sent as a fee.
+  (which is a Bitcoin-style secret key) of value ``CLEARAMT``.
+  The remaining value will be sent as a fee. The value is balanced such
+  that the input pour value equals the amount of the output pours plus
+  `vpub`. `vpub` is CLEARAMT plus the remaining implicit fee.
 
 **Security UX Note:** The caller *must* confidentially transmit the
   returned ``encryptedbucket<N>`` values to the necessary recipients. If
