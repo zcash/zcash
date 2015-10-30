@@ -1141,7 +1141,7 @@ std::tuple<CTransaction, libzerocash::PourTransaction> CWallet::RawMakePour(uint
     zerocoinMerkleTree.getWitness(convertIntToVector(coinIndex[coinhash2]), witness_2);
 
     uint256 keyhash = key.GetPubKey().GetHash();
-    vector<unsigned char> keyahshv(keyhash.begin(), keyhash.end());
+    vector<unsigned char> pkeyhash(keyhash.begin(), keyhash.end());
 
     // Pull coins and addresses
     assert(c1.getPublicAddress() == a1.getPublicAddress());
@@ -1156,10 +1156,10 @@ std::tuple<CTransaction, libzerocash::PourTransaction> CWallet::RawMakePour(uint
                                         witness_1, witness_2,
                                         newAddress1, newAddress2,
                                         vpub_amt,
-                                        keyahshv,
+                                        pkeyhash,
                                         newcoin1, newcoin2);
 
-    assert(pourtx.verify(*pzerocashParams, keyahshv, rt));
+    assert(pourtx.verify(*pzerocashParams, pkeyhash, rt));
     /*
 
     // TODO: figure out why blocks don't have the merkle roots. bug upstream libzerocash?
@@ -1218,7 +1218,7 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
     zerocoinMerkleTree.getWitness(convertIntToVector(coinIndex[coinhash2]), witness_2);
 
     uint256 keyhash = key.GetPubKey().GetHash();
-    vector<unsigned char> keyahshv(keyhash.begin(), keyhash.end());
+    vector<unsigned char> pkeyhash(keyhash.begin(), keyhash.end());
 
     // Pull coins and addresses
     libzerocash::Coin c1 = mapCoins[coinhash1];
@@ -1237,9 +1237,9 @@ CTransaction CWallet::MakePour(uint16_t version, uint256 coinhash1, uint256 coin
                                         witness_1, witness_2,
                                         newAddress1.getPublicAddress(), newAddress2.getPublicAddress(),
                                         0,
-                                        keyahshv,
+                                        pkeyhash,
                                         newcoin1, newcoin2);
-    // bool v = pourtx.verify(*pzerocashParams, keyahshv, rt);
+    // bool v = pourtx.verify(*pzerocashParams, pkeyhash, rt);
     if (chainActive.Tip()->GetBlockHeader().hashZerocoinMerkleRoot != newroot) {
         LogPrint("zerocoin", "wallet : got %s from block %s \n", chainActive.Tip()->GetBlockHeader().hashZerocoinMerkleRoot.ToString(),chainActive.Tip()->GetBlockHash().ToString());
 

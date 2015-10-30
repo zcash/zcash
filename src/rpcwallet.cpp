@@ -462,7 +462,7 @@ Value zc_raw_protect(const Array& params, bool fHelp)
             ssData >> zcaddr_pub;
         } catch(const std::exception &) {
             throw runtime_error(
-                "ZCADDRESS was not valid"
+                "ZCADDRESS could not be decoded"
             );
         }
     }
@@ -486,7 +486,6 @@ Value zc_raw_protect(const Array& params, bool fHelp)
         std::vector<unsigned char> vector_mint(dd.begin(), dd.end());
 
         CScript scriptSig;
-        scriptSig.clear();
         scriptSig << vector_mint;
         CTxIn in(always_spendable_txid, 1, scriptSig);
         txNew.vin.push_back(in);
@@ -502,10 +501,7 @@ Value zc_raw_protect(const Array& params, bool fHelp)
 
     std::string tx_hex = HexStr(txstream.begin(), txstream.end());
 
-    uint256 cid(coina.getCoinCommitment().getCommitmentValue());
-
     Object result;
-    result.push_back(Pair("commitment", cid.ToString()));
     result.push_back(Pair("bucketsecret", bucket_hex));
     result.push_back(Pair("rawtxn", tx_hex));
     return result;
@@ -623,7 +619,7 @@ Value zc_raw_receive(const Array& params, bool fHelp) {
             ssData >> zcaddr_priv;
         } catch(const std::exception &) {
             throw runtime_error(
-                "SECRETKEY was not valid"
+                "SECRETKEY could not be decoded"
             );
         }
     }
@@ -714,7 +710,7 @@ Value zc_raw_pour(const Array& params, bool fHelp) {
             ssData >> zcaddr_priv_1;
         } catch(const std::exception &) {
             throw runtime_error(
-                "SECRETKEY1 was not valid"
+                "SECRETKEY1 could not be decoded"
             );
         }
     }
@@ -727,7 +723,7 @@ Value zc_raw_pour(const Array& params, bool fHelp) {
             ssData >> bucket1;
         } catch(const std::exception &) {
             throw runtime_error(
-                "BUCKET1 is not valid"
+                "BUCKET1 could not be decoded"
             );
         }
     }
@@ -740,7 +736,7 @@ Value zc_raw_pour(const Array& params, bool fHelp) {
             ssData >> zcaddr_priv_2;
         } catch(const std::exception &) {
             throw runtime_error(
-                "SECRETKEY2 was not valid"
+                "SECRETKEY2 could not be decoded"
             );
         }
     }
@@ -753,7 +749,7 @@ Value zc_raw_pour(const Array& params, bool fHelp) {
             ssData >> bucket2;
         } catch(const std::exception &) {
             throw runtime_error(
-                "BUCKET2 is not valid"
+                "BUCKET2 could not be decoded"
             );
         }
     }
@@ -766,7 +762,7 @@ Value zc_raw_pour(const Array& params, bool fHelp) {
             ssData >> zcaddr_destination_1;
         } catch(const std::exception &) {
             throw runtime_error(
-                "ZCDEST1 was not valid"
+                "ZCDEST1 could not be decoded"
             );
         }
     }
@@ -781,7 +777,7 @@ Value zc_raw_pour(const Array& params, bool fHelp) {
             ssData >> zcaddr_destination_2;
         } catch(const std::exception &) {
             throw runtime_error(
-                "ZCDEST2 was not valid"
+                "ZCDEST2 could not be decoded"
             );
         }
     }
