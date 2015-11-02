@@ -4,6 +4,13 @@
 #   replacing the "compilers" with a build name prefixed by the no-op ":"
 #   command. See: https://github.com/travis-ci/casher/issues/6
 
+<<<<<<< Updated upstream
+sudo: required
+dist: trusty
+=======
+# trivial change to test buildbot detection
+>>>>>>> Stashed changes
+
 os: linux
 language: cpp
 compiler: gcc
@@ -17,12 +24,12 @@ env:
     - CCACHE_COMPRESS=1
     - BASE_OUTDIR=$TRAVIS_BUILD_DIR/out
     - SDK_URL=https://bitcoincore.org/depends-sources/sdks
-cache:
-  apt: true
-  directories:
-  - depends/built
-  - depends/sdk-sources
-  - $HOME/.ccache
+#cache:
+#  apt: true
+#  directories:
+#  - depends/built
+#  - depends/sdk-sources
+#  - $HOME/.ccache
 matrix:
   fast_finish: true
   include:
@@ -35,9 +42,18 @@ install:
     - sudo apt-get update -qq
     - sudo apt-get install -qq g++-4.9
     - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.9 90
+    - sudo apt-get install -qq gdb
     - if [ -n "$PACKAGES" ]; then travis_retry sudo apt-get update; fi
     - if [ -n "$PACKAGES" ]; then travis_retry sudo apt-get install --no-install-recommends --no-upgrade -qq $PACKAGES; fi
+before_script:
+    - ulimit -c unlimited -S
 script:
-    - ./zcutil/build.sh -j2
-    - ./qa/zerocash/full-test-suite.sh
-    - echo '=== daemon 0 log (tail 400) ==='; tail -400 ./.zc-system-test/0/stdout.log
+    #- g++ -O2 -march=native -mtune=native -std=c++11 allocatememory.cpp -o allocatememory
+    #- objdump -D -M intel allocatememory
+    #- ./allocatememory
+     - cat /proc/cpuinfo
+     - ./zcutil/build.sh -j2
+     - ./qa/zerocash/full-test-suite.sh
+     - echo '=== daemon 0 log (tail 400) ==='; tail -400 ./.zc-system-test/0/stdout.log
+     - find ./ -maxdepth 5 -name 'core*' -print
+     - for i in $(find ./ -maxdepth 5 -name 'core*' -print); do gdb $(pwd)/src/bitcoind src/core -ex "thread apply all bt" -ex "set pagination 0" -ex 'thread apply all x/5i $pc' -batch; done;
