@@ -670,7 +670,7 @@ Value zc_raw_pour_begin(libzerocash::Address input_addr_1,
     uint256 input_cid_2(input_coin_2.getCoinCommitment().getCommitmentValue());
 
     CTransaction rawTx;
-    auto res = pwalletMain->RawMakePour(0, input_cid_1, input_cid_2,
+    auto res = pwalletMain->RawMakePour(1, input_cid_1, input_cid_2,
                                          vpub_key, output_coin_1, output_coin_2,
                                          output_address_1, output_address_2,
                                          input_addr_1, input_addr_2,
