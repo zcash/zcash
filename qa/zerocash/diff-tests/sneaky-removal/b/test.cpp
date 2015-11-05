@@ -1,0 +1,5 @@
+FOO
+#ifndef ZEROCASH_CHANGES
+#endif /* ZEROCASH_CHANGES */
+BAZ
+BOP
