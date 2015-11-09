@@ -36,6 +36,7 @@ testScripts=(
     'nodehandling.py'
     'reindex.py'
     'decodescript.py'
+    'disablewallet.py'
     'zcjoinsplit.py'
     'zcjoinsplitdoublespend.py'
     'getblocktemplate.py'
