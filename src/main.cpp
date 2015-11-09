@@ -6059,10 +6059,10 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         vRecv >> locator >> hashStop;
 
         LOCK(cs_main);
-
-        if (IsInitialBlockDownload(chainparams.GetConsensus()))
+        if (IsInitialBlockDownload(chainparams.GetConsensus()) && !pfrom->fWhitelisted) {
+            LogPrint("net", "Ignoring getheaders from peer=%d because node is in initial block download\n", pfrom->id);
             return true;
-
+        }
         CBlockIndex* pindex = NULL;
         if (locator.IsNull())
         {
