@@ -1785,13 +1785,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         flags |= SCRIPT_VERIFY_DERSIG;
     }
 
-    libzerocash::IncrementalMerkleTree zerocoinMerkleTreetest = getZerocoinMerkleTree(pindex->pprev); // a test to ensure getZerocoinMerkleTree does the right thing
-    libzerocash::IncrementalMerkleTree zerocoinMerkleTree(ZC_MERKLE_DEPTH);//getZerocoinMerkleTree(pindex->pprev); // BUG: Remove magic numbers; grok the commented out code and remove it or implement it correctly.
+    libzerocash::IncrementalMerkleTree zerocoinMerkleTree = getZerocoinMerkleTree(pindex->pprev);
 
-    vector<unsigned char> rtold(root_size);
-    zerocoinMerkleTree.getRootValue(rtold);
-	uint256 oldroot(rtold);
-    LogPrint("zerocoin","CreateNewBlock :Got prevous zerocoin merkle tree from block %s\n",oldroot.ToString());
+    {
+        vector<unsigned char> rtold(root_size);
+        zerocoinMerkleTree.getRootValue(rtold);
+        uint256 oldroot(rtold);
+        LogPrint("zerocoin","ConnectBlock: Got prevous zerocoin merkle tree from block %s\n",oldroot.ToString());
+    }
 
     CBlockUndo blockundo;
     CCheckQueueControl<CScriptCheck> control(fScriptChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
@@ -1853,25 +1854,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             std::vector<unsigned char> coinv(coin.begin(), coin.end());
             zerocoinMerkleTree.insertElement(coinv, ignored);
             }
-            {
-            std::vector<unsigned char> ignored;
-            std::vector<unsigned char> coinv(coin.begin(), coin.end());
-            zerocoinMerkleTreetest.insertElement(coinv, ignored);
-            }
             LogPrint("zerocoin","ConnectBlock : adding coin %s to block %s\n", coin.ToString(), block.GetHash().ToString());
         }
     }
 
     vector<unsigned char> rt1(root_size);
-    zerocoinMerkleTreetest.getRootValue(rt1);
+    zerocoinMerkleTree.getRootValue(rt1);
 	uint256 newroot(rt1);
 
-
-
-    vector<unsigned char> rt(root_size);
-    zerocoinMerkleTree.getRootValue(rt);
-	uint256 testroot(rt);
-    LogPrint("zerocoin","ConnectBlock: TEST ROOT  %s\n", testroot.ToString());
+    LogPrint("zerocoin","ConnectBlock: NEW ROOT  %s\n", newroot.ToString());
 
     if(block.hashZerocoinMerkleRoot != newroot){
         return state.DoS(100, error("ConnectBlock(): for block %s, calculated zerocash merkle tree root %s, not same as specifed one %s\n",block.GetHash().ToString(),newroot.ToString(),block.hashZerocoinMerkleRoot.ToString()),
