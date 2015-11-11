@@ -132,25 +132,32 @@ public:
     void BatchWriteNullifiers(CNullifiersMap& mapNullifiers, std::map<uint256, bool>& cacheNullifiers)
     {
         for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end(); ) {
-            if (it->second.entered) {
-                cacheNullifiers[it->first] = true;
-            } else {
-                cacheNullifiers.erase(it->first);
+            if (it->second.flags & CNullifiersCacheEntry::DIRTY) {
+                // Same optimization used in CCoinsViewDB is to only write dirty entries.
+                if (it->second.entered) {
+                    cacheNullifiers[it->first] = true;
+                } else {
+                    cacheNullifiers.erase(it->first);
+                }
             }
             mapNullifiers.erase(it++);
         }
-        mapNullifiers.clear();
     }
 
-    template<typename Tree, typename Map>
+    template<typename Tree, typename Map, typename MapEntry>
     void BatchWriteAnchors(Map& mapAnchors, std::map<uint256, Tree>& cacheAnchors)
     {
         for (auto it = mapAnchors.begin(); it != mapAnchors.end(); ) {
-            if (it->second.entered) {
-                auto ret = cacheAnchors.insert(std::make_pair(it->first, Tree())).first;
-                ret->second = it->second.tree;
-            } else {
-                cacheAnchors.erase(it->first);
+            if (it->second.flags & MapEntry::DIRTY) {
+                // Same optimization used in CCoinsViewDB is to only write dirty entries.
+                if (it->second.entered) {
+                    if (it->first != Tree::empty_root()) {
+                        auto ret = cacheAnchors.insert(std::make_pair(it->first, Tree())).first;
+                        ret->second = it->second.tree;
+                    }
+                } else {
+                    cacheAnchors.erase(it->first);
+                }
             }
             mapAnchors.erase(it++);
         }
@@ -166,26 +173,29 @@ public:
                     CNullifiersMap& mapSaplingNullifiers)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
-            map_[it->first] = it->second.coins;
-            if (it->second.coins.IsPruned() && insecure_rand() % 3 == 0) {
-                // Randomly delete empty entries on write.
-                map_.erase(it->first);
+            if (it->second.flags & CCoinsCacheEntry::DIRTY) {
+                // Same optimization used in CCoinsViewDB is to only write dirty entries.
+                map_[it->first] = it->second.coins;
+                if (it->second.coins.IsPruned() && insecure_rand() % 3 == 0) {
+                    // Randomly delete empty entries on write.
+                    map_.erase(it->first);
+                }
             }
             mapCoins.erase(it++);
         }
 
-        BatchWriteAnchors<SproutMerkleTree, CAnchorsSproutMap>(mapSproutAnchors, mapSproutAnchors_);
-        BatchWriteAnchors<SaplingMerkleTree, CAnchorsSaplingMap>(mapSaplingAnchors, mapSaplingAnchors_);
+        BatchWriteAnchors<SproutMerkleTree, CAnchorsSproutMap, CAnchorsSproutCacheEntry>(mapSproutAnchors, mapSproutAnchors_);
+        BatchWriteAnchors<SaplingMerkleTree, CAnchorsSaplingMap, CAnchorsSaplingCacheEntry>(mapSaplingAnchors, mapSaplingAnchors_);
 
         BatchWriteNullifiers(mapSproutNullifiers, mapSproutNullifiers_);
         BatchWriteNullifiers(mapSaplingNullifiers, mapSaplingNullifiers_);
 
-        mapCoins.clear();
-        mapSproutAnchors.clear();
-        mapSaplingAnchors.clear();
-        hashBestBlock_ = hashBlock;
-        hashBestSproutAnchor_ = hashSproutAnchor;
-        hashBestSaplingAnchor_ = hashSaplingAnchor;
+        if (!hashBlock.IsNull())
+            hashBestBlock_ = hashBlock;
+        if (!hashSproutAnchor.IsNull())
+            hashBestSproutAnchor_ = hashSproutAnchor;
+        if (!hashSaplingAnchor.IsNull())
+            hashBestSaplingAnchor_ = hashSaplingAnchor;
         return true;
     }
 
