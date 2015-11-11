@@ -1097,7 +1097,28 @@ bool AppInit2(boost::thread_group& threadGroup)
     fFeeEstimatesInitialized = true;
 
     // ********************************************************* Step 7i: Load zerocash keys
-    pzerocashParams = new libzerocash::ZerocashParams(ZC_MERKLE_DEPTH);
+
+    // XXX: make those strings a constant like the fee estimates one
+    boost::filesystem::path pk_path = GetDataDir() / "zc-testnet-alpha-proving.key";
+    boost::filesystem::path vk_path = GetDataDir() / "zc-testnet-alpha-verification.key";
+
+    LogPrintf("Loading proving key from %s\n", pk_path.string().c_str());
+    LogPrintf("Loading verification key from %s\n", vk_path.string().c_str());
+
+    libzerocash::ZerocashParams::zerocash_pp::init_public_params();
+    auto pk_loaded = libzerocash::ZerocashParams::LoadProvingKeyFromFile(
+        pk_path.string(),
+        ZC_MERKLE_DEPTH
+    );
+    auto vk_loaded = libzerocash::ZerocashParams::LoadVerificationKeyFromFile(
+        vk_path.string(),
+        ZC_MERKLE_DEPTH
+    );
+    pzerocashParams = new libzerocash::ZerocashParams(
+        ZC_MERKLE_DEPTH,
+        &pk_loaded,
+        &vk_loaded
+    );
 
     // ********************************************************* Step 8: load wallet
 #ifdef ENABLE_WALLET
