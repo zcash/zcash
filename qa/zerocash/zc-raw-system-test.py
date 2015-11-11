@@ -185,12 +185,12 @@ def parse_args(log, args):
 
     p.add_argument('--pk-path',
                    dest='pkpath',
-                   default='./zc-testnet-alpha-proving.key',
+                   required=True,
                    help='The path to the Pour proving key.')
 
     p.add_argument('--vk-path',
                    dest='vkpath',
-                   default='./zc-testnet-alpha-verification.key',
+                   required=True,
                    help='The path to the Pour verification key.')
 
     def node_config_arg(argstr):
@@ -253,8 +253,8 @@ def initialize_basedir(log, basedir, clconfigs, pkpath, vkpath, nodecount=2, bas
         pk_link_path = os.path.join(nodedir, "regtest", "zc-testnet-alpha-proving.key")
         vk_link_path = os.path.join(nodedir, "regtest", "zc-testnet-alpha-verification.key")
 
-        os.symlink(pkpath, pk_link_path)
-        os.symlink(vkpath, vk_link_path)
+        os.symlink(os.path.abspath(pkpath), pk_link_path)
+        os.symlink(os.path.abspath(vkpath), vk_link_path)
 
 @curry_log
 def ensure_dir_exists(log, path):
