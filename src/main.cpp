@@ -2640,11 +2640,8 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     // Disconnect active blocks which are no longer in the best chain.
     bool fBlocksDisconnected = false;
     while (chainActive.Tip() && chainActive.Tip() != pindexFork) {
-        if (!DisconnectTip(state)) {
-            // Probably an AbortNode() error, but try to keep mempool consistent anyway
-            mempool.removeForReorg(pcoinsTip, chainActive.Tip()->nHeight + 1);
+        if (!DisconnectTip(state))
             return false;
-        }
         fBlocksDisconnected = true;
     }
 
@@ -2678,9 +2675,6 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
                     break;
                 } else {
                     // A system error occurred (disk space, database error, ...).
-                    // Probably gonna shut down ASAP, but try to keep mempool consistent anyway
-                    if (fBlocksDisconnected)
-                        mempool.removeForReorg(pcoinsTip, chainActive.Tip()->nHeight + 1);
                     return false;
                 }
             } else {
