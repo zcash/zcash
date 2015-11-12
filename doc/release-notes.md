@@ -18,7 +18,7 @@ Moreover, any SPV peer is disconnected when they request a filtered block.
 
 This option can be specified in MiB per day and is turned off by default
 (`-maxuploadtarget=0`).
-The recommended minimum is 144 * MAX_BLOCK_SIZE (currently 144MB) per day.
+The recommended minimum is 1152 * MAX_BLOCK_SIZE (currently 2304MB) per day.
 
 Whitelisted peers will never be disconnected, although their traffic counts for
 calculating the target.
