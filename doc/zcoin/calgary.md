@@ -1,4 +1,5 @@
 # Calgary Design
+
 ## Motivation
 Calgary is a reimplementation of Zerocash in Bitcoin meant to address a number of shortcomings and design flaws in the original academic implementation. This gives us an opportunity to rework the implementation from scratch, 
 setting out rigorous guidelines for how we interact with upstream code.
@@ -74,3 +75,37 @@ enforced. Each `ZCOperation` cannot be independently verified as the verificatio
 
 In the previous design, blocks stored the root of the commitment merkle tree. This isn't really necessary as the commitment tree, like the UTXO, is derived from the transactions in the block.
 
+
+# Out of Scope
+
+This design does *not* address some crucial issues. Here are the ones we know about, currently:
+
+## Circuit Changes
+
+For this design we're assuming no change to the Pour circuit. In followup design work we expect this to change, as we may choose to alter this circuit to take a public input symmetric with the public output, to use a different hash, to have different numbers of inputs/outputs, etc...
+
+## Block header changes
+
+For this design we'll ignore chagnes to the block header, and in fact assume the block header structure is unaltered. (This implies the commitments and spent serials are tracked-per-block by all full nodes, with no commitment to those structures in the block headers.)
+
+## Systemic Incentives for Fungibility
+
+All other things being equal, *if* cleartext transactions tend to be lower cost for users, then the whole system may migrate to mostly cleartext. Anonymity set size is a system-wide property, and the currency is only generally fungible if the vast majority of coins are Protected.
+
+We may try to incentivize fungibility system-wide by specific consensus rule constraints, or default fee policy, or other mechanisms.
+
+## relaypriority
+
+Related to the last issue, we may alter the "relay priority" stuff. It sounds like bitcoin-core plans to phase it out. For this design we'll just follow whatever upstream does and "make it work".
+
+## Wallet Fee or Merge/Split Behavior
+
+In the long run, we need to be careful when considering wallet designs in how fees are chosen and when a wallet merges or splits buckets. These decisions have privacy and security impacts. In this design, we assume those decisions are completely "at a higher stack layer" and have no bearing on this design's CTransaction changes.
+
+## PoW
+
+This doesn't interact with PoW in any way of which we're currently aware.
+
+## Other?
+
+And probably a thousand other things...
