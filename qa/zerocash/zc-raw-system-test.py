@@ -54,7 +54,7 @@ def main(log, args = sys.argv[1:]):
     cliout = partial(check_output, clientexecutable, clientbaseopt)
 
     with DaemonNodeProcesses(daemonexecutable, opts.basedir, opts.debugpause):
-        for i in xrange(0, 30):
+        for i in xrange(0, 100):
             sleep(1)
             try:
                 cliexec('getwalletinfo')
@@ -62,6 +62,9 @@ def main(log, args = sys.argv[1:]):
             except subprocess.CalledProcessError:
                 # Wait some more then try again.
                 pass
+
+        # Ensure the wallet has been loaded by now.
+        cliexec('getwalletinfo')
 
         cliexec('setgenerate', 'true', '200')
 
