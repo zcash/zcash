@@ -5891,7 +5891,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                     LogPrint("net", "getheaders (%d) %s to peer=%d\n", pindexBestHeader->nHeight, inv.hash.ToString(), pfrom->id);
                 }
             } else {
-                if (!fAlreadyHave && !IsInitialBlockDownload(chainparams.GetConsensus()) && !GetBoolArg("-blocksonly", false))
+                if (!fAlreadyHave && !IsInitialBlockDownload(chainparams.GetConsensus()) && !GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY))
                     pfrom->AskFor(inv);
             }
 
