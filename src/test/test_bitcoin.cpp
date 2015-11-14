@@ -12,6 +12,7 @@
 #include "main.h"
 #include "random.h"
 #include "txdb.h"
+#include "txmempool.h"
 #include "ui_interface.h"
 #include "util.h"
 #ifdef ENABLE_WALLET
@@ -100,6 +101,12 @@ TestingSetup::~TestingSetup()
         bitdb.Reset();
 #endif
         boost::filesystem::remove_all(pathTemp);
+}
+
+
+CTxMemPoolEntry TestMemPoolEntryHelper::FromTx(CMutableTransaction &tx, CTxMemPool *pool) {
+    return CTxMemPoolEntry(tx, nFee, nTime, dPriority, nHeight,
+                           pool ? pool->HasNoInputsOf(tx) : hadNoDependencies);
 }
 
 void Shutdown(void* parg)
