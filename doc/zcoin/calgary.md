@@ -37,15 +37,14 @@ We would like to place Protect and Pour operations *outside* of the `vin` and `v
 
 #### Versioning
 
-`CTransaction`'s `nVersion` field is used by upstream to make changes to Bitcoin's transaction system. It's currently at version `3`. Ideally we would like to "track" upstream transaction system changes. However, we are making 
-changes to the transaction structure which *require* us to interact with `nVersion` to avoid breaking tests. We also need to discriminate transactions between protects, pours or new kinds of zerocash operations in the future, 
-meaning that some versioning scheme is needed.
+`CTransaction`'s `nVersion` field is used by upstream to make changes to Bitcoin's transaction system. It's currently at version `3`. It is certainly necessary to increment the latest `CTransaction` version to avoid breaking old 
+transactions and semantics, especially tests. There are two approaches:
+
 ##### Approach 1: Increment `nVersion` and carefully track upstream changes
 This effectively punts long-term decisions about tracking upstream `CTransaction` changes to when those version changes are actually made. This is a nice solution, because it's unclear when or whether upstream Bitcoin will 
 increment this version, and it's not clear how upstream will use `nVersion`. (Will they use it purely as an incrementing version, or place bitflags in it?) Additionally, the version number has to be changed anyway, and if in the 
 future we cannot use `nVersion` without messy interactions with upstream code, we can *then* implement a versioning scheme with as much fuss as now.
 
-As part of this approach, some meaningful work can be done to introduce upstream-downstream versioning semantics. [insert nathan's idea here]
 ##### Approach 2: Increment `nVersion` and place small versioning data into bitflags.
 This is a variant of approach 1 which assumes upstream will not place bitflags into higher-order bits of `nVersion`. The benefit is that `nVersion` changes in upstream (and the tests that introduce them) *never* intrude on our 
 versioning changes. That is, if upstream increments to version `4` and adds tests for version 4 transactions they *should* behave the same, as our bits indicating zerocash structure changes will not be set.
@@ -71,41 +70,52 @@ A variant of approach 1. This places the above invariants and discriminants into
 A variant of approach 2. Add a new field `zcOperations` of type `std::vector<ZCOperation>` which permits multiple operations. The `NOP` case is represented by this vector being size `0`. Presumably some kind of size limit is 
 enforced. Each `ZCOperation` cannot be independently verified as the verification depends on the previous `ZCOperation`'s interactions. (As an example, two Protects should not be able to protect the same value from the input!)
 
+##### Approach 4: Chained `ZCoperation`s
+A variant of approach 3. If support for chained `ZCOperation`s (or "intermediate pours") is added early, then unification of a Protect and Pour can be done now instead of later. A `ZCOperation` would then be a 
+`libzerocash::ProtectTransaction` added to a `libzerocash::PourTransaction`. The vector of `ZCOperation`s would be evaluated in order.
+
+Open questions include:
+* It may not be necessary for a `ZCOperation` to include the anchor, because the witness would (surely?) be obtained from the intermediate merkle tree. As a result, it solicits more attention to the overall structure.
+
 ### CBlock
 
 In the previous design, blocks stored the root of the commitment merkle tree. This isn't really necessary as the commitment tree, like the UTXO, is derived from the transactions in the block.
 
-
-# Out of Scope
+## Out of Scope
 
 This design does *not* address some crucial issues. Here are the ones we know about, currently:
 
-## Circuit Changes
+### Circuit Changes
 
-For this design we're assuming no change to the Pour circuit. In followup design work we expect this to change, as we may choose to alter this circuit to take a public input symmetric with the public output, to use a different hash, to have different numbers of inputs/outputs, etc...
+For this design we're assuming no change to the Pour circuit. In followup design work we expect this to change, as we may choose to alter this circuit to take a public input symmetric with the public output, to use a different 
+hash, to have different numbers of inputs/outputs, etc...
 
-## Block header changes
+### Block header changes
 
-For this design we'll ignore chagnes to the block header, and in fact assume the block header structure is unaltered. (This implies the commitments and spent serials are tracked-per-block by all full nodes, with no commitment to those structures in the block headers.)
+For this design we'll ignore chagnes to the block header, and in fact assume the block header structure is unaltered. (This implies the commitments and spent serials are tracked-per-block by all full nodes, with no commitment to 
+those structures in the block headers.)
 
-## Systemic Incentives for Fungibility
+### Systemic Incentives for Fungibility
 
-All other things being equal, *if* cleartext transactions tend to be lower cost for users, then the whole system may migrate to mostly cleartext. Anonymity set size is a system-wide property, and the currency is only generally fungible if the vast majority of coins are Protected.
+All other things being equal, *if* cleartext transactions tend to be lower cost for users, then the whole system may migrate to mostly cleartext. Anonymity set size is a system-wide property, and the currency is only generally 
+fungible if the vast majority of coins are Protected.
 
 We may try to incentivize fungibility system-wide by specific consensus rule constraints, or default fee policy, or other mechanisms.
 
-## relaypriority
+### relaypriority
 
 Related to the last issue, we may alter the "relay priority" stuff. It sounds like bitcoin-core plans to phase it out. For this design we'll just follow whatever upstream does and "make it work".
 
-## Wallet Fee or Merge/Split Behavior
+### Wallet Fee or Merge/Split Behavior
 
-In the long run, we need to be careful when considering wallet designs in how fees are chosen and when a wallet merges or splits buckets. These decisions have privacy and security impacts. In this design, we assume those decisions are completely "at a higher stack layer" and have no bearing on this design's CTransaction changes.
+In the long run, we need to be careful when considering wallet designs in how fees are chosen and when a wallet merges or splits buckets. These decisions have privacy and security impacts. In this design, we assume those 
+decisions are completely "at a higher stack layer" and have no bearing on this design's CTransaction changes.
 
-## PoW
+### PoW
 
 This doesn't interact with PoW in any way of which we're currently aware.
 
-## Other?
+### Other?
 
 And probably a thousand other things...
+
