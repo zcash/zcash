@@ -13,7 +13,32 @@ The obvious advantage of the original implementation was avoiding structural cha
 * We should rigorously practice our [design policy](https://github.com/Electric-Coin-Company/zerocashd/wiki/design). This includes avoiding changes to upstream's scripting system wherever possible, and only modifying structures with proper versioning plans.
 * We should strive to preserve the semantics of our private alpha implementation such that the `zc-raw-*` RPC commands still work properly.
 
-## Implementation strategy
+## Scope
+
+* **Chained pours** (#121) mean that we should anticipate multiple pours in a transaction, specifically because the pours may require commitments from previous pours.
+* **Symmetric pours** (#338) mean that instead of separate Protect / Pour operations, a *single* Pour operation exists which takes a `vpub_in` and `vpub_out`, unifying the two operations. This requires a circuit change.
+* **Versioning semantics** (#114) require us to avoid breaking upstream tests whenever possible. We need to anticipate both changes to our own structures after launch to support new features (such as circuit changes, see #152) and potential changes to upstream transaction structures we will eventually need to rebase on top of.
+* **Cryptographic binding of pours** (#336) is necessary to ensure that (in the most common situation) it is not possible to move a pour from one transaction to another, or replace pours in a transaction without the authorization of its inputs.
+
+### Not in Scope
+
+#### PoW and other block header changes
+
+It should not be necessary to make any block header changes yet in the design. We anticipate to change the PoW scheme, which may affect how nonces appear in coinbases. However, this doesn't appear to have a significant affect on the overall design, so we do not specify its implications here.
+
+#### Systemic incentives for fungibility
+
+It will be necessary to make a number of modifications to the fee calculation and priority system, because pours will introduce larger transactions. We must be careful to avoid a "tragedy of the commons" scenario which would make protected transactions more expensive to process, producing adverse incentives for the network.
+
+Upstream bitcoin appears to be phasing out `relaypriority` and other priority systems.
+
+#### Anonymity set partitioning (#425)
+
+Any place in our design where multiple structural decisions can be made, especially by wallet software, allows not only particular wallet software to be identified but potentially users as well. This is most pronounced when determining how to split and merge buckets. (Depending on when and how the buckets are merged, it may be possible to identify users.)
+
+Additionally, the merkle root anchor indicates to others your "view" of the network state, which could be used to identify users.
+
+## Design
 
 ### CTransaction
 
@@ -28,80 +53,54 @@ The heart of zerocash modifications is in `CTransaction`. The current layout is 
 }
 ```
 
-We would like to place Protect and Pour operations *outside* of the `vin` and `vout` fields. There are a number of concerns surrounding such a modification
-
 #### Versioning
 
-`CTransaction`'s `nVersion` field is used by upstream to make changes to Bitcoin's transaction system. It's currently at version `3`. It is certainly necessary to increment the latest `CTransaction` version to avoid breaking old transactions and semantics, especially tests. There are two approaches:
+In our design, we will increment the latest `nVersion` for transactions, adding new fields to the end to encapsulate our zerocash operations. Our fields must anticipate the case that no zerocash operations occur, such as in traditional or "purely cleartext" transactions.
 
-##### Approach 1: Increment `nVersion` and carefully track upstream changes
-This effectively punts long-term decisions about tracking upstream `CTransaction` changes to when those version changes are actually made. This is a nice solution, because it's unclear when or whether upstream Bitcoin will increment this version, and it's not clear how upstream will use `nVersion`. (Will they use it purely as an incrementing version, or place bitflags in it?) Additionally, the version number has to be changed anyway, and if in the future we cannot use `nVersion` without messy interactions with upstream code, we can *then* implement a versioning scheme with as much fuss as now.
+##### Alternative: Use bitflags to indicate the presence of zerocash fields
+In this alternative, we use bitflags in the `nVersion` field to indicate the presence of zerocash fields at the end. This would allow us to track upstream CTransaction changes seamlessly, *but* would indefinitely require that upstream `nVersion` bits are available to us for this purpose. Additionally, the absence of these bitflags would conflict in purpose with an empty vector of `ZCOperation` structures as outlined later.
 
-##### Approach 2: Increment `nVersion` and place small versioning data into bitflags.
-This is a variant of approach 1 which assumes upstream will not place bitflags into higher-order bits of `nVersion`. Some bits in `nVersion` are used to indicate the presence of additional zerocash fields at the end of the transaction, which the serialization operations are aware of. Since these are typically not set, tests should not fail and we should be able to track upstream changes without much effort.
+#### ZCOperation
 
-#### Structure of zerocash operations
+We add an additional field to the end of a `CTransaction`, a vector of `ZCOperation` structures called `vZCop`. This vector is merely empty in the case of traditional transactions. Operations are allowed to reference the (commitment tree) merkle root produced by a previous operation or block for verification purposes.
 
-* Pours are cryptographically bound, with a one-time key, to the entire transaction using a `SIGHASH_ALL`-style signature. The signature is provided and verified as part of the transaction validation, and so mechanisms which exclude these components during serialization must be extended to support our transactions.
-* Protects paired with Pours virtually behave like "symmetric Pours" and so the existence of Protects can potentially be abstracted away from our implementation.
-* Pours are *individually* anchored to merkle roots. This is somewhat at odds with intermediate pours, where every pour will reference the root produced by a previous pour.
+The ultimate structure of a `ZCOperation` is as follows:
 
-##### Approach 1: Minimal pour/protect behaviors
+```
+struct ZCOperation {
+	anchor, // merkle root this operation is anchored to
+	scriptPubKey, // CScript which is hashed and provided as an input to the snark verifier/prover
+	scriptSig, // CScript which is verified against scriptPubKey
+	vpub_in, // the value to draw from the public value pool
+	vpub_out, // the value to provide to the public value pool
+	pour // libzerocash::PourTransaction (modified slightly)
+}
+```
 
-Add a new field `zcType` which indicates either `NOP`, `PROTECT` or `POUR`.
+The `CTransactionSignatureSerializer` (and perhaps other components) will need to be modified so that the inputs are cryptographically bound to the `ZCOperation`s.
 
-* `NOP` is a traditional transaction and has no interaction with the zerocash system.
-* `PROTECT` implies another field is added (`zcProtect`) of type `libzerocash::ProtectTransaction`.
-* `POUR` implies new fields are added (`zcPourKey`, `zcPourSig`, `zcPour`,`zcAnchor`). `zcPourKey` is a one-time key used to sign the transaction (`SIGHASH_ALL`-style) alongside changes to the scripting system which avoid hashing the `zcPourSig` similar to how transaction input `scriptSig`s are not serialized. `zcPour` is of type `libzerocash::PourTransaction`.
-
-The `zcAnchor` field of the pour must reference a merkle root, either by specifying a block hash to obtain the merkle root from (assuming the existence of a mapping), or a merkle root which validators ensure exists within the active chain.
-
-##### Approach 2: Sum types
-A variant of approach 1. This places the above invariants and discriminants into a single field `zcOperation` of type `ZCOperation` and includes the necessary subfields, serialization routines and `SIGHASH_*` interactions.
-
-##### Approach 3: Sum types and vectors
-A variant of approach 2. Add a new field `zcOperations` of type `std::vector<ZCOperation>` which permits multiple operations. The `NOP` case is represented by this vector being size `0`. Presumably some kind of size limit is enforced. Each `ZCOperation` cannot be independently verified as the verification depends on the previous `ZCOperation`'s interactions. (As an example, two Protects should not be able to protect the same value from the input!)
-
-##### Approach 4: Chained `ZCoperation`s
-A variant of approach 3. If support for chained `ZCOperation`s (or "intermediate pours") is added early, then unification of a Protect and Pour can be done now instead of later. A `ZCOperation` would then be a `libzerocash::ProtectTransaction` added to a `libzerocash::PourTransaction`. The vector of `ZCOperation`s would be evaluated in order.
-
-##### Approach 5: `CScript` bindings pours with other transaction fields
-A variant of either approach 3 or approach 4. Instead of cryptographically binding a ECDSA public key as a Pour input, and using that public key later (along with a signature) to confirm the pour is authenticated, we bind Pours with `CScript`s which gives us enormous flexibility -- such as Pour crowdfunding or crowdfunding *from* Pours. Initially we could use `OP_RETURN` scripts and worry about the binding *later*.
+##### Alternative: `SIGHASH_ALL` binding
+In this alternative, instead of using `CScript`s to offer flexible binding semantics to users, we force `SIGHASH_ALL`-style signature checking on the transaction. This is safer if we discover that scripts in this context have strange interactions that cannot be bridged, or that malleability issues are unavoidable.
 
 ### CBlock
 
-In the previous design, blocks stored the root of the commitment merkle tree. This isn't really necessary as the commitment tree, like the UTXO, is derived from the transactions in the block.
+In the previous design, blocks stored the root of the commitment merkle tree. This isn't really necessary as the commitment tree, like the UTXO, is derived from the transactions in the block. It will likely be necessary to retain a mapping between merkle roots and block hashes.
 
-## Out of Scope
+## Implementation strategy
 
-This design does *not* address some crucial issues. Here are the ones we know about, currently:
+Various parts of this design can be implemented concurrently and iteratively.
 
-### Circuit Changes
+### Stage 1: Foundations
 
-For this design we're assuming no change to the Pour circuit. In followup design work we expect this to change, as we may choose to alter this circuit to take a public input symmetric with the public output, to use a different hash, to have different numbers of inputs/outputs, etc...
+1. `CTransaction` should be modified so that additional fields are supported.
+2. An additional vector of `ZCOperation`s should be added. Only allow size `0` and size `1` for now, to avoid implementation of chained pours in the mean time.
+3. `ZCOperation` should initially encapsulate Protect and Pour operations before unification is implemented in the circuit.
+4. Implement a simple `OP_RETURN`-style binding scheme for the `CScripts`.
 
-### Block header changes
+### Stage 2: Concurrent tasks
+Each of the following tasks to complete the redesign can be done independently.
 
-For this design we'll ignore chagnes to the block header, and in fact assume the block header structure is unaltered. (This implies the commitments and spent serials are tracked-per-block by all full nodes, with no commitment to those structures in the block headers.)
-
-### Systemic Incentives for Fungibility
-
-All other things being equal, *if* cleartext transactions tend to be lower cost for users, then the whole system may migrate to mostly cleartext. Anonymity set size is a system-wide property, and the currency is only generally fungible if the vast majority of coins are Protected.
-
-We may try to incentivize fungibility system-wide by specific consensus rule constraints, or default fee policy, or other mechanisms.
-
-### relaypriority
-
-Related to the last issue, we may alter the "relay priority" stuff. It sounds like bitcoin-core plans to phase it out. For this design we'll just follow whatever upstream does and "make it work".
-
-### Wallet Fee or Merge/Split Behavior
-
-In the long run, we need to be careful when considering wallet designs in how fees are chosen and when a wallet merges or splits buckets. These decisions have privacy and security impacts. In this design, we assume those decisions are completely "at a higher stack layer" and have no bearing on this design's CTransaction changes.
-
-### PoW
-
-This doesn't interact with PoW in any way of which we're currently aware.
-
-### Other?
-
-And probably a thousand other things...
+* `CScript` scheme to enforce cryptographic binding of the transaction to the pour.
+* Chained pours which allow pours to reference merkle roots produced by other pours.
+* Circuit unification of Protect/Pour semantics would allow us to refactor the `ZCOperation` structure.
+* A zerocash-specific versioning field can be added, along with upstream interaction semantics.
