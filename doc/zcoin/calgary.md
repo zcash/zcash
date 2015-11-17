@@ -94,15 +94,18 @@ Various parts of this design can be implemented concurrently and iteratively.
 
 ### Stage 1: Foundations
 
-1. `CTransaction` should be modified so that additional fields are supported.
-2. An additional vector of `ZCOperation`s should be added. Only allow size `0` and size `1` for now, to avoid implementation of chained pours in the mean time.
-3. `ZCOperation` should initially encapsulate Protect and Pour operations before unification is implemented in the circuit.
-4. Implement a simple `OP_RETURN`-style binding scheme for the `CScripts`.
+1. Integrate libzerocash into the repository.
+2. Make changes to ConnectBlock and BlockUndo infrastructure to support our incremental merkle trees and commit to those trees via our transactions as appropriate.
+3. `CTransaction` should be modified so that additional fields are supported.
+4. An additional vector of `ZCOperation`s should be added. Only allow size `0` and size `1` for now, to avoid implementation of chained pours in the mean time.
+5. `ZCOperation` should initially encapsulate Protect and Pour operations before unification is implemented in the circuit.
+6. Implement a simple `OP_RETURN`-style binding scheme for the `CScripts`.
 
 ### Stage 2: Concurrent tasks
 Each of the following tasks to complete the redesign can be done independently.
 
 * Add old RPC commands.
+* Prevent double-spends of serials, including in the mempool.
 * `CScript` scheme to enforce cryptographic binding of the transaction to the pour.
 * Chained pours which allow pours to reference merkle roots produced by other pours.
 * Circuit unification of Protect/Pour semantics would allow us to refactor the `ZCOperation` structure.
