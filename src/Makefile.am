@@ -212,6 +212,7 @@ BITCOIN_CORE_H = \
   compressor.h \
   consensus/consensus.h \
   consensus/funding.h \
+  consensus/merkle.h \
   consensus/params.h \
   consensus/upgrades.h \
   consensus/validation.h \
@@ -449,6 +450,7 @@ libbitcoin_common_a_SOURCES = \
   coins.cpp \
   compressor.cpp \
   consensus/funding.cpp \
+  consensus/merkle.cpp \
   consensus/params.cpp \
   consensus/upgrades.cpp \
   core_read.cpp \
