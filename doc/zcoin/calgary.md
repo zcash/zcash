@@ -102,6 +102,7 @@ Various parts of this design can be implemented concurrently and iteratively.
 ### Stage 2: Concurrent tasks
 Each of the following tasks to complete the redesign can be done independently.
 
+* Add old RPC commands.
 * `CScript` scheme to enforce cryptographic binding of the transaction to the pour.
 * Chained pours which allow pours to reference merkle roots produced by other pours.
 * Circuit unification of Protect/Pour semantics would allow us to refactor the `ZCOperation` structure.
