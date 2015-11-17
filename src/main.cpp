@@ -14,6 +14,7 @@
 #include "checkqueue.h"
 #include "consensus/consensus.h"
 #include "consensus/funding.h"
+#include "consensus/merkle.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "deprecation.h"
@@ -4741,7 +4742,7 @@ bool CheckBlock(const CBlock& block,
     // Check the merkle root.
     if (fCheckMerkleRoot) {
         bool mutated;
-        uint256 hashMerkleRoot2 = block.ComputeMerkleRoot(&mutated);
+        uint256 hashMerkleRoot2 = BlockMerkleRoot(block, &mutated);
         if (block.hashMerkleRoot != hashMerkleRoot2)
             return state.DoS(100, error("CheckBlock(): hashMerkleRoot mismatch"),
                              REJECT_INVALID, "bad-txnmrklroot", true);

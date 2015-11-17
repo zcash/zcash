@@ -123,5 +123,4 @@ BOOST_AUTO_TEST_CASE(test_combiner_all)
     Test.disconnect(&ReturnTrue);
     BOOST_CHECK(Test());
 }
-
 BOOST_AUTO_TEST_SUITE_END()
