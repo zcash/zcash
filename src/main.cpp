@@ -5853,6 +5853,12 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             return error("message inv size() = %u", vInv.size());
         }
 
+        bool fBlocksOnly = GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY);
+
+        // Allow whitelisted peers to send data other than blocks in blocks only mode if whitelistalwaysrelay is true
+        if (pfrom->fWhitelisted && GetBoolArg("-whitelistalwaysrelay", DEFAULT_WHITELISTALWAYSRELAY))
+            fBlocksOnly = false;
+
         LOCK(cs_main);
 
         std::vector<CInv> vToFetch;
@@ -5890,8 +5896,12 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                     }
                     LogPrint("net", "getheaders (%d) %s to peer=%d\n", pindexBestHeader->nHeight, inv.hash.ToString(), pfrom->id);
                 }
-            } else {
-                if (!fAlreadyHave && !IsInitialBlockDownload(chainparams.GetConsensus()) && !GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY))
+            }
+            else
+            {
+                if (fBlocksOnly)
+                    LogPrint("net", "peer sent inv %s in violation of protocol peer=%d\n", inv.ToString(), pfrom->id);
+                else if (!fAlreadyHave && !IsInitialBlockDownload(chainparams.GetConsensus()))
                     pfrom->AskFor(inv);
             }
 
