@@ -6028,6 +6028,14 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "tx" && !IsInitialBlockDownload(chainparams.GetConsensus()))
     {
+        // Stop processing the transaction early if
+        // We are in blocks only mode and peer is either not whitelisted or whitelistalwaysrelay is off
+        if (GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY) && (!pfrom->fWhitelisted || !GetBoolArg("-whitelistalwaysrelay", DEFAULT_WHITELISTALWAYSRELAY)))
+        {
+            LogPrint("net", "peer sent transaction in violation of protocol peer=%d\n", pfrom->id);
+            return true;
+        }
+
         vector<uint256> vWorkQueue;
         vector<uint256> vEraseQueue;
         CTransaction tx;
