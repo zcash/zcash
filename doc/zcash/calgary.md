@@ -99,7 +99,9 @@ In this alternative, instead of using `CScript`s to offer flexible binding seman
 
 ### CBlock
 
-In the previous design, blocks stored the root of the commitment merkle tree. This isn't really necessary as the commitment tree, like the UTXO, is derived from the transactions in the block. It will likely be necessary to retain a mapping between merkle roots and block hashes.
+In the previous design, blocks stored the root of the commitment merkle tree. This isn't strictly necessary for consensus as the commitment tree, like the UTXO set, is derived from the transactions in the block. It will likely be necessary to retain a mapping between merkle roots and block hashes.
+
+We will revisit this aspect of the design later when we incorporate improvements for light clients, "light full nodes", and some other potential use cases.
 
 ## Implementation strategy
 
