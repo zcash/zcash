@@ -20,10 +20,10 @@ The obvious advantage of the original implementation was avoiding structural cha
 * **Versioning semantics** ([#114] [ticket114]) require us to avoid breaking upstream tests whenever possible. We need to anticipate both changes to our own structures after launch to support new features (such as circuit changes, see #152) and potential changes to upstream transaction structures we will eventually need to rebase on top of.
 * **Cryptographic binding of pours** ([#336] [ticket336]) is necessary to ensure that (in the most common situation) it is not possible to move a pour from one transaction to another, or replace pours in a transaction without the authorization of its inputs.
 
-[ticket121]: https://github.com/Electric-Coin-Company/zerocashdzerocashd/issues/121
-[ticket338]: https://github.com/Electric-Coin-Company/zerocashdzerocashd/issues/338
-[ticket114]: https://github.com/Electric-Coin-Company/zerocashdzerocashd/issues/114
-[ticket336]: https://github.com/Electric-Coin-Company/zerocashdzerocashd/issues/336
+[ticket121]: https://github.com/Electric-Coin-Company/zerocashd/issues/121
+[ticket338]: https://github.com/Electric-Coin-Company/zerocashd/issues/338
+[ticket114]: https://github.com/Electric-Coin-Company/zerocashd/issues/114
+[ticket336]: https://github.com/Electric-Coin-Company/zerocashd/issues/336
 
 ### Not in Scope
 
