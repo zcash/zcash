@@ -60,7 +60,7 @@ The heart of zerocash modifications is in `CTransaction`. The current layout is 
 
 #### Versioning
 
-In our design, we will increment the latest `nVersion` for transactions, adding new fields to the end to encapsulate our zerocash operations. Our fields must anticipate the case that no zerocash operations occur, such as in traditional or "purely cleartext" transactions.
+In this design, we will increment the latest `nVersion` for transactions, adding new fields to the end to encapsulate our zerocash operations ([#114] [ticket114]). Our fields must anticipate the case that no zerocash operations occur, such as in traditional or "purely cleartext" transactions.
 
 ##### Alternative: Use bitflags to indicate the presence of zerocash fields
 In this alternative, we use bitflags in the `nVersion` field to indicate the presence of zerocash fields at the end. This would allow us to track upstream CTransaction changes seamlessly, *but* would indefinitely require that upstream `nVersion` bits are available to us for this purpose. Additionally, the absence of these bitflags would conflict in purpose with an empty vector of `ZCOperation` structures as outlined later.
@@ -82,7 +82,9 @@ struct ZCOperation {
 }
 ```
 
-The `CTransactionSignatureSerializer` (and perhaps other components) will need to be modified so that the inputs are cryptographically bound to the `ZCOperation`s.
+The `CTransactionSignatureSerializer` (and perhaps other components) will need to be modified so that the inputs are cryptographically bound to the `ZCOperation`s ([#366] [ticket366]).
+
+Note that this general operation has both `vpub_in` and `vpub_out` which is a generalization from the academic prototype which has separate `Protect` (with public input) and `Pour` (with public output) operations ([#338] [ticket338]).
 
 The `vin` and `vout` fields can be empty if there exist some well-formed ZCOperations, *in contrast* to Bitcoin's invariants on these vectors.
 
