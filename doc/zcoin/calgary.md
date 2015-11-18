@@ -64,6 +64,8 @@ In this alternative, we use bitflags in the `nVersion` field to indicate the pre
 
 We add an additional field to the end of a `CTransaction`, a vector of `ZCOperation` structures called `vZCop`. This vector is merely empty in the case of traditional transactions. Operations are allowed to reference the (commitment tree) merkle root produced by a previous operation or block for verification purposes.
 
+The `vin` and `vout` fields can be empty if there exist some well-formed ZCOperations.
+
 In the original academic implementation, an ephemeral ECDSA keypair is generated and used to sign the rest of the transaction, binding it to the Pour as the public key is provided as an input to the prover/verifier. We can reuse Bitcoin's scripting system to abstract this behavior further, allowing for more flexible binding behaviors between pours and the rest of the transaction. As an example of a future use of this flexibility, crowdfunding pours would be possible by allowing users to bind their pours to nothing else in the transaction.
 
 The ultimate structure of a `ZCOperation` is as follows:
