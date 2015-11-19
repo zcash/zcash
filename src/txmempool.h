@@ -56,12 +56,12 @@ class CTxMemPool;
  * ("descendant" transactions).
  *
  * When a new entry is added to the mempool, we update the descendant state
- * (nCountWithDescendants, nSizeWithDescendants, and nFeesWithDescendants) for
+ * (nCountWithDescendants, nSizeWithDescendants, and nModFeesWithDescendants) for
  * all ancestors of the newly added transaction.
  *
  * If updating the descendant state is skipped, we can mark the entry as
- * "dirty", and set nSizeWithDescendants/nFeesWithDescendants to equal nTxSize/
- * nTxFee. (This can potentially happen during a reorg, where we limit the
+ * "dirty", and set nSizeWithDescendants/nModFeesWithDescendants to equal nTxSize/
+ * nFee+feeDelta. (This can potentially happen during a reorg, where we limit the
  * amount of work we're willing to do to avoid consuming too much CPU.)
  *
  */
@@ -86,11 +86,11 @@ private:
     // Information about descendants of this transaction that are in the
     // mempool; if we remove this transaction we must remove all of these
     // descendants as well.  if nCountWithDescendants is 0, treat this entry as
-    // dirty, and nSizeWithDescendants and nFeesWithDescendants will not be
+    // dirty, and nSizeWithDescendants and nModFeesWithDescendants will not be
     // correct.
     uint64_t nCountWithDescendants;  //! number of descendant transactions
     uint64_t nSizeWithDescendants;   //! ... and size
-    CAmount nFeesWithDescendants;    //! ... and total fees (all including us)
+    CAmount nModFeesWithDescendants; //! ... and total fees (all including us)
 
 public:
     CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
@@ -113,7 +113,8 @@ public:
 
     // Adjusts the descendant state, if this entry is not dirty.
     void UpdateState(int64_t modifySize, CAmount modifyFee, int64_t modifyCount);
-    // Updates the fee delta used for mining priority score
+    // Updates the fee delta used for mining priority score, and the
+    // modified fees with descendants.
     void UpdateFeeDelta(int64_t feeDelta);
 
     /** We can set the entry to be dirty if doing the full calculation of in-
@@ -125,7 +126,7 @@ public:
 
     uint64_t GetCountWithDescendants() const { return nCountWithDescendants; }
     uint64_t GetSizeWithDescendants() const { return nSizeWithDescendants; }
-    CAmount GetFeesWithDescendants() const { return nFeesWithDescendants; }
+    CAmount GetModFeesWithDescendants() const { return nModFeesWithDescendants; }
 
     bool GetSpendsCoinbase() const { return spendsCoinbase; }
     uint32_t GetValidatedBranchId() const { return nBranchId; }
@@ -173,27 +174,27 @@ struct mempoolentry_txid
     }
 };
 
-/** \class CompareTxMemPoolEntryByFee
+/** \class CompareTxMemPoolEntryByDescendantScore
  *
- *  Sort an entry by max(feerate of entry's tx, feerate with all descendants).
+ *  Sort an entry by max(score/size of entry's tx, score/size with all descendants).
  */
-class CompareTxMemPoolEntryByFee
+class CompareTxMemPoolEntryByDescendantScore
 {
 public:
     bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b) const
     {
-        bool fUseADescendants = UseDescendantFeeRate(a);
-        bool fUseBDescendants = UseDescendantFeeRate(b);
+        bool fUseADescendants = UseDescendantScore(a);
+        bool fUseBDescendants = UseDescendantScore(b);
 
-        double aFees = fUseADescendants ? a.GetFeesWithDescendants() : a.GetFee();
+        double aModFee = fUseADescendants ? a.GetModFeesWithDescendants() : a.GetModifiedFee();
         double aSize = fUseADescendants ? a.GetSizeWithDescendants() : a.GetTxSize();
 
-        double bFees = fUseBDescendants ? b.GetFeesWithDescendants() : b.GetFee();
+        double bModFee = fUseBDescendants ? b.GetModFeesWithDescendants() : b.GetModifiedFee();
         double bSize = fUseBDescendants ? b.GetSizeWithDescendants() : b.GetTxSize();
 
         // Avoid division by rewriting (a/b > c/d) as (a*d > c*b).
-        double f1 = aFees * bSize;
-        double f2 = aSize * bFees;
+        double f1 = aModFee * bSize;
+        double f2 = aSize * bModFee;
 
         if (f1 == f2) {
             return a.GetTime() >= b.GetTime();
@@ -201,11 +202,11 @@ public:
         return f1 < f2;
     }
 
-    // Calculate which feerate to use for an entry (avoiding division).
-    bool UseDescendantFeeRate(const CTxMemPoolEntry &a) const
+    // Calculate which score to use for an entry (avoiding division).
+    bool UseDescendantScore(const CTxMemPoolEntry &a) const
     {
-        double f1 = (double)a.GetFee() * a.GetSizeWithDescendants();
-        double f2 = (double)a.GetFeesWithDescendants() * a.GetTxSize();
+        double f1 = (double)a.GetModifiedFee() * a.GetSizeWithDescendants();
+        double f2 = (double)a.GetModFeesWithDescendants() * a.GetTxSize();
         return f2 > f1;
     }
 };
@@ -382,7 +383,7 @@ public:
             boost::multi_index::ordered_non_unique<
                 boost::multi_index::tag<descendant_score>,
                 boost::multi_index::identity<CTxMemPoolEntry>,
-                CompareTxMemPoolEntryByFee
+                CompareTxMemPoolEntryByDescendantScore
             >,
             // sorted by score (for mining prioritization)
             boost::multi_index::ordered_unique<
