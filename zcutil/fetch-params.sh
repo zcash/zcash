@@ -20,7 +20,12 @@ function fetch_params {
     fi
 }
 
-# First create PARAMS_DIR and insert a README if necessary:
+cat <<EOF
+zcash - fetch-params.sh
+
+EOF
+
+# Now create PARAMS_DIR and insert a README if necessary:
 if ! [ -d "$PARAMS_DIR" ]
 then
     mkdir -p "$PARAMS_DIR"
@@ -31,11 +36,22 @@ distinct from the daemon's -datadir argument, which defaults to ~/.zcash/
 because the parameters are large and may be shared across multiple
 distinct -datadir's such as when setting up test networks.
 EOF
-    echo "Creating params directory. See $README_PATH for details."
-fi
 
-mkdir -p "$REGTEST_DIR"
-echo "Placing regtest parameters in: $REGTEST_DIR"
+    # This may be the first time the user's run this script, so give
+    # them some info, especially about bandwidth usage:
+    cat <<EOF
+This script will fetch the zerocash zkSNARK parameters and verify their
+integrity with sha256sum.
+
+The parameters currently are about 2GiB in size, so plan accordingly
+for your bandwidth constraints. If the files are already present and
+have the correct sha256sum, no networking is used.
+
+Creating params directory. For details about this directory, see:
+$README_PATH
+
+EOF
+fi
 
 mkdir -p "$REGTEST_DIR"
 cd "$REGTEST_DIR"
