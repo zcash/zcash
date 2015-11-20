@@ -9,7 +9,7 @@ $(package)_dependencies=libsnark crypto++ openssl boost libgmp
 $(package)_patches=
 
 define $(package)_preprocess_cmds
-  	rm libzerocash/allocators.h libzerocash/serialize.h libzerocash/streams.h
+	rm libzerocash/allocators.h libzerocash/serialize.h libzerocash/streams.h
 endef
 
 # FIXME: How do we know, at the point where the _build_cms are run, that the
