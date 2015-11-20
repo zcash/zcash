@@ -23,6 +23,7 @@ BITCOIN_INCLUDES += -I$(srcdir)/univalue/include
 
 LIBBITCOIN_SERVER=libbitcoin_server.a
 LIBBITCOIN_COMMON=libbitcoin_common.a
+LIBBITCOIN_CONSENSUS=libbitcoin_consensus.a
 LIBBITCOIN_CLI=libbitcoin_cli.a
 LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
@@ -156,6 +157,7 @@ EXTRA_LIBRARIES += \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_COMMON) \
+  $(LIBBITCOIN_CONSENSUS) \
   $(LIBBITCOIN_SERVER) \
   $(LIBBITCOIN_CLI) \
   $(LIBBITCOIN_WALLET) \
@@ -208,7 +210,6 @@ BITCOIN_CORE_H = \
   addressindex.h \
   addrman.h \
   alert.h \
-  amount.h \
   arith_uint256.h \
   asyncrpcoperation.h \
   asyncrpcqueue.h \
@@ -241,7 +242,6 @@ BITCOIN_CORE_H = \
   deprecation.h \
   experimental_features.h \
   fs.h \
-  hash.h \
   httprpc.h \
   httpserver.h \
   init.h \
@@ -263,13 +263,10 @@ BITCOIN_CORE_H = \
   noui.h \
   policy/policy.h \
   pow.h \
-  prevector.h \
   primitives/block.h \
   primitives/orchard.h \
-  primitives/transaction.h \
   proof_verifier.h \
   protocol.h \
-  pubkey.h \
   random.h \
   reverse_iterator.h \
   reverselock.h \
@@ -278,17 +275,12 @@ BITCOIN_CORE_H = \
   rpc/server.h \
   rpc/register.h \
   scheduler.h \
-  script/interpreter.h \
-  script/script.h \
-  script/script_error.h \
   script/sigcache.h \
   script/sign.h \
   script/standard.h \
   script/ismine.h \
-  serialize.h \
   spentindex.h \
   streams.h \
-  streams_rust.h \
   support/allocators/secure.h \
   support/allocators/zeroafterfree.h \
   support/cleanse.h \
@@ -298,7 +290,6 @@ BITCOIN_CORE_H = \
   threadsafety.h \
   timedata.h \
   timestampindex.h \
-  tinyformat.h \
   torcontrol.h \
   transaction_builder.h \
   txdb.h \
@@ -311,12 +302,10 @@ BITCOIN_CORE_H = \
   util/system.h \
   util/match.h \
   util/moneystr.h \
-  util/strencodings.h \
   util/string.h \
   util/test.h \
   util/time.h \
   validationinterface.h \
-  version.h \
   wallet/asyncrpcoperation_common.h \
   wallet/asyncrpcoperation_mergetoaddress.h \
   wallet/asyncrpcoperation_saplingmigration.h \
@@ -498,11 +487,39 @@ crypto_libbitcoin_crypto_shani_a_CXXFLAGS += $(SHANI_CXXFLAGS)
 crypto_libbitcoin_crypto_shani_a_CPPFLAGS += -DENABLE_SHANI
 crypto_libbitcoin_crypto_shani_a_SOURCES = crypto/sha256_shani.cpp
 
+# consensus: shared between all executables that validate any consensus rules.
+libbitcoin_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libbitcoin_consensus_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libbitcoin_consensus_a_SOURCES = \
+  amount.cpp \
+  amount.h \
+  hash.cpp \
+  hash.h \
+  prevector.h \
+  primitives/transaction.cpp \
+  primitives/transaction.h \
+  pubkey.cpp \
+  pubkey.h \
+  script/interpreter.cpp \
+  script/interpreter.h \
+  script/script.cpp \
+  script/script.h \
+  script/script_error.cpp \
+  script/script_error.h \
+  script/zcash_script.cpp \
+  serialize.h \
+  streams_rust.cpp \
+  streams_rust.h \
+  tinyformat.h \
+  util/strencodings.cpp \
+  util/strencodings.h \
+  version.h \
+  zip317.cpp
+
 # common: shared between zcashd and non-server tools
 libbitcoin_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_common_a_SOURCES = \
-  amount.cpp \
   arith_uint256.cpp \
   base58.cpp \
   bech32.cpp \
@@ -515,28 +532,20 @@ libbitcoin_common_a_SOURCES = \
   consensus/upgrades.cpp \
   core_read.cpp \
   core_write.cpp \
-  hash.cpp \
   key.cpp \
   key_io.cpp \
   keystore.cpp \
   netbase.cpp \
   primitives/block.cpp \
-  primitives/transaction.cpp \
   primitives/tx_version_info.cpp \
   proof_verifier.cpp \
   protocol.cpp \
-  pubkey.cpp \
   scheduler.cpp \
-  script/interpreter.cpp \
-  script/script.cpp \
-  script/script_error.cpp \
   script/sign.cpp \
   script/standard.cpp \
-  streams_rust.cpp \
   transaction_builder.cpp \
   util/test.cpp \
   warnings.cpp \
-  zip317.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
@@ -599,6 +608,7 @@ zcashd_LDADD = \
   $(LIBUNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_ZMQ) \
+  $(LIBBITCOIN_CONSENSUS) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBRUSTZCASH) \
   $(LIBZCASH) \
@@ -654,6 +664,7 @@ zcash_tx_LDADD = \
   $(LIBUNIVALUE) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
+  $(LIBBITCOIN_CONSENSUS) \
   $(LIBCXXBRIDGE) \
   $(LIBSECP256K1) \
   $(LIBRUSTZCASH) \
@@ -696,16 +707,8 @@ libzcash_script_la_SOURCES = \
   crypto/sha1.cpp \
   crypto/sha256.cpp \
   crypto/sha512.cpp \
-  hash.cpp \
-  primitives/transaction.cpp \
-  primitives/tx_version_info.cpp \
-  pubkey.cpp \
-  script/zcash_script.cpp \
-  script/interpreter.cpp \
-  script/script.cpp \
   uint256.cpp \
-  util/strencodings.cpp \
-  zip317.cpp
+  $(libbitcoin_consensus_a_SOURCES)
 
 if GLIBC_BACK_COMPAT
   libzcash_script_la_SOURCES += compat/glibc_compat.cpp
