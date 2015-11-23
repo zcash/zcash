@@ -701,14 +701,7 @@ libzcash_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 # zcash_script library #
 if BUILD_BITCOIN_LIBS
 include_HEADERS = script/zcash_script.h
-libzcash_script_la_SOURCES = \
-  crypto/hmac_sha512.cpp \
-  crypto/ripemd160.cpp \
-  crypto/sha1.cpp \
-  crypto/sha256.cpp \
-  crypto/sha512.cpp \
-  uint256.cpp \
-  $(libbitcoin_consensus_a_SOURCES)
+libzcash_script_la_SOURCES = $(crypto_libbitcoin_crypto_a_SOURCES) $(libbitcoin_consensus_a_SOURCES) uint256.cpp
 
 if GLIBC_BACK_COMPAT
   libzcash_script_la_SOURCES += compat/glibc_compat.cpp
