@@ -100,8 +100,9 @@ Zcash has been updated to make use of this.
 
 This means that if Tor is running (and proper authorization is available),
 Zcash automatically creates a hidden service to listen on, without
-manual configuration. This will positively affect the number of available
-.onion nodes.
+manual configuration. Zcash will also use Tor automatically to connect
+to other .onion nodes if the control socket can be successfully opened. This
+will positively affect the number of available .onion nodes and their usage.
 
 This new feature is enabled by default if Zcash is listening, and
 a connection to Tor can be made. It can be configured with the `-listenonion`,
