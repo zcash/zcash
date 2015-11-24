@@ -22,6 +22,6 @@ It is safe to run that script even if you have already installed the
 parameters (it will just verify their integrity).
 
 Once parameters are installed, you can run our thorough suite of tests
-with: $(readlink -f ./qa/zcash/full-test-suite.sh)
+with: $(readlink -f ./qa/zerocash/full-test-suite.sh)
 
 EOF
