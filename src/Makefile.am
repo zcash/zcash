@@ -210,7 +210,6 @@ BITCOIN_CORE_H = \
   addressindex.h \
   addrman.h \
   alert.h \
-  arith_uint256.h \
   asyncrpcoperation.h \
   asyncrpcqueue.h \
   base58.h \
@@ -231,11 +230,6 @@ BITCOIN_CORE_H = \
   compat/sanity.h \
   compressor.h \
   consensus/consensus.h \
-  consensus/funding.h \
-  consensus/merkle.h \
-  consensus/params.h \
-  consensus/upgrades.h \
-  consensus/validation.h \
   core_io.h \
   core_memusage.h \
   cuckoocache.h \
@@ -263,8 +257,6 @@ BITCOIN_CORE_H = \
   noui.h \
   policy/policy.h \
   pow.h \
-  primitives/block.h \
-  primitives/orchard.h \
   proof_verifier.h \
   protocol.h \
   random.h \
@@ -493,9 +485,23 @@ libbitcoin_consensus_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_consensus_a_SOURCES = \
   amount.cpp \
   amount.h \
+  arith_uint256.cpp \
+  arith_uint256.h \
+  consensus/funding.cpp \
+  consensus/funding.h \
+  consensus/merkle.cpp \
+  consensus/merkle.h \
+  consensus/params.cpp \
+  consensus/params.h \
+  consensus/upgrades.cpp \
+  consensus/upgrades.h \
+  consensus/validation.h \
   hash.cpp \
   hash.h \
   prevector.h \
+  primitives/block.cpp \
+  primitives/block.h \
+  primitives/orchard.h \
   primitives/transaction.cpp \
   primitives/transaction.h \
   pubkey.cpp \
@@ -520,23 +526,17 @@ libbitcoin_consensus_a_SOURCES = \
 libbitcoin_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_common_a_SOURCES = \
-  arith_uint256.cpp \
   base58.cpp \
   bech32.cpp \
   chainparams.cpp \
   coins.cpp \
   compressor.cpp \
-  consensus/funding.cpp \
-  consensus/merkle.cpp \
-  consensus/params.cpp \
-  consensus/upgrades.cpp \
   core_read.cpp \
   core_write.cpp \
   key.cpp \
   key_io.cpp \
   keystore.cpp \
   netbase.cpp \
-  primitives/block.cpp \
   primitives/tx_version_info.cpp \
   proof_verifier.cpp \
   protocol.cpp \
