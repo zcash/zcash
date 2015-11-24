@@ -6791,6 +6791,21 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
     }
 
 
+    if (!(nLocalServices & NODE_BLOOM) &&
+              (strCommand == "filterload" ||
+               strCommand == "filteradd"))
+    {
+        if (pfrom->nVersion >= NO_BLOOM_VERSION) {
+            LOCK(cs_main);
+            Misbehaving(pfrom->GetId(), 100);
+            return false;
+        } else if (GetBoolArg("-enforcenodebloom", DEFAULT_ENFORCENODEBLOOM)) {
+            pfrom->fDisconnect = true;
+            return false;
+        }
+    }
+
+
     if (strCommand == "version")
     {
         // Each connection can only send one version message
@@ -7691,21 +7706,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 LOCK(cs_main);
                 Misbehaving(pfrom->GetId(), 10);
             }
-        }
-    }
-
-
-    else if (!(nLocalServices & NODE_BLOOM) &&
-              (strCommand == "filterload" ||
-               strCommand == "filteradd"))
-    {
-        if (pfrom->nVersion >= NO_BLOOM_VERSION) {
-            LOCK(cs_main);
-            Misbehaving(pfrom->GetId(), 100);
-            return false;
-        } else if (GetBoolArg("-enforcenodebloom", DEFAULT_ENFORCENODEBLOOM)) {
-            pfrom->fDisconnect = true;
-            return false;
         }
     }
 
