@@ -29,12 +29,12 @@ EOF
 if ! [ -d "$PARAMS_DIR" ]
 then
     mkdir -p "$PARAMS_DIR"
-    README_PATH="$PARAMS_DIR/readme.txt"
+    README_PATH="$PARAMS_DIR/README"
     cat >> "$README_PATH" <<EOF
-This directory stores common zcash SNARK parameters. Note that is is
-distinct from the daemon's -datadir argument, which defaults to ~/.zcash/
-because the parameters are large and may be shared across multiple
-distinct -datadir's such as when setting up test networks.
+This directory stores common zcash zkSNARK parameters. Note that is is
+distinct from the daemon's -datadir argument because the parameters are
+large and may be shared across multiple distinct -datadir's such as when
+setting up test networks.
 EOF
 
     # This may be the first time the user's run this script, so give
