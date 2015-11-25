@@ -32,6 +32,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/time.h>
 
 #ifndef WIN32
 #include <signal.h>
@@ -505,21 +506,34 @@ bool InitSanityCheck(void)
 
 static void ZC_LoadParams()
 {
+    struct timeval tv_start, tv_end;
+    float elapsed;
+
     boost::filesystem::path pk_path = ZC_GetParamsDir() / "zc-testnet-alpha-proving.key";
     boost::filesystem::path vk_path = ZC_GetParamsDir() / "zc-testnet-alpha-verification.key";
 
     LogPrintf("Loading proving key from %s\n", pk_path.string().c_str());
+    gettimeofday(&tv_start, 0);
     libzerocash::ZerocashParams::zerocash_pp::init_public_params();
     auto pk_loaded = libzerocash::ZerocashParams::LoadProvingKeyFromFile(
         pk_path.string(),
         ZC_MERKLE_DEPTH
     );
+    gettimeofday(&tv_end, 0);
+    elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
+    LogPrintf("Loaded proving key in %fs seconds.\n", elapsed);
+
 
     LogPrintf("Loading verification key from %s\n", vk_path.string().c_str());
+    gettimeofday(&tv_start, 0);
     auto vk_loaded = libzerocash::ZerocashParams::LoadVerificationKeyFromFile(
         vk_path.string(),
         ZC_MERKLE_DEPTH
     );
+    gettimeofday(&tv_end, 0);
+    elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
+    LogPrintf("Loaded verification key in %fs seconds.\n", elapsed);
+
     pzerocashParams = new libzerocash::ZerocashParams(
         ZC_MERKLE_DEPTH,
         &pk_loaded,
