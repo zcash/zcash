@@ -7,6 +7,12 @@
 
 set -eu
 
+if [ $# -gt 0 ]
+then
+    # Buildbot may still pass us params paths, so ignore, don't fail:
+    echo "Warning, ignoring unexpected arguments: $*"
+fi
+
 SUITE_EXIT_STATUS=0
 REPOROOT="$(readlink -f "$(dirname "$0")"/../../)"
 
@@ -30,8 +36,8 @@ cd "${REPOROOT}"
 # Test phases:
 run_test_phase "${REPOROOT}/qa/zerocash/ensure-no-dot-so-in-depends.py"
 run_test_phase make check
-run_test_phase "${REPOROOT}/qa/zerocash/zc-system-test.py" --pk-path=$1 --vk-path=$2
-run_test_phase "${REPOROOT}/qa/zerocash/zc-raw-system-test.py" --pk-path=$1 --vk-path=$2
+run_test_phase "${REPOROOT}/qa/zerocash/zc-system-test.py"
+run_test_phase "${REPOROOT}/qa/zerocash/zc-raw-system-test.py"
 
 exit $SUITE_EXIT_STATUS
 

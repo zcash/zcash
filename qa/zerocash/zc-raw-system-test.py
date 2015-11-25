@@ -38,7 +38,7 @@ def main(log, args = sys.argv[1:]):
         sys.exit(1)
 
     opts = parse_args(args)
-    initialize_basedir(opts.basedir, opts.NODECONFIG, opts.pkpath, opts.vkpath)
+    initialize_basedir(opts.basedir, opts.NODECONFIG)
 
     # The paths below are relative to the current directory, which is expected
     # to be the 'src/' directory containing bitcoind and bitcoin-cli.
@@ -158,7 +158,7 @@ def parse_args(log, args):
                    choices=['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'],
                    help='Set logging level.')
 
-    basedirdefault = os.path.realpath('./.zc-system-test')
+    basedirdefault = os.path.realpath('./.zc-raw-system-test')
     p.add_argument('--basedir',
                    dest='basedir',
                    default=basedirdefault,
@@ -185,16 +185,6 @@ def parse_args(log, args):
                    action='store_true',
                    default=False,
                    help='Pause after launching nodes to facilitate attaching gdb.')
-
-    p.add_argument('--pk-path',
-                   dest='pkpath',
-                   required=True,
-                   help='The path to the Pour proving key.')
-
-    p.add_argument('--vk-path',
-                   dest='vkpath',
-                   required=True,
-                   help='The path to the Pour verification key.')
 
     def node_config_arg(argstr):
         try:
@@ -223,7 +213,7 @@ def parse_args(log, args):
 
 
 @curry_log
-def initialize_basedir(log, basedir, clconfigs, pkpath, vkpath, nodecount=2, baseport=19000):
+def initialize_basedir(log, basedir, clconfigs, nodecount=2, baseport=19000):
     create_new_dir_saving_existing_dir(basedir)
 
     # Algorithmically generate the config for each subdirectory:
@@ -250,14 +240,6 @@ def initialize_basedir(log, basedir, clconfigs, pkpath, vkpath, nodecount=2, bas
             with file(confpath, 'w') as f:
                 for (key, value) in sorted(configvals.items()):
                     f.write('{}={}\n'.format(key, value))
-
-        # Add symlinks to the proving and verification keys.
-        os.mkdir(os.path.join(nodedir, "regtest"))
-        pk_link_path = os.path.join(nodedir, "regtest", "zc-testnet-alpha-proving.key")
-        vk_link_path = os.path.join(nodedir, "regtest", "zc-testnet-alpha-verification.key")
-
-        os.symlink(os.path.abspath(pkpath), pk_link_path)
-        os.symlink(os.path.abspath(vkpath), vk_link_path)
 
 @curry_log
 def ensure_dir_exists(log, path):
