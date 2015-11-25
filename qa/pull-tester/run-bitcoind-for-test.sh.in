@@ -3,6 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
+ZCASH_LOAD_TIMEOUT=240 # Loading parameter files takes ~1 min on my machine.
 DATADIR="@abs_top_builddir@/.bitcoin"
 rm -rf "$DATADIR"
 mkdir -p "$DATADIR"/regtest
@@ -14,7 +15,7 @@ PORT=`expr 10000 + $$ % 55536`
 BITCOIND=$!
 
 #Install a watchdog.
-(sleep 10 && kill -0 $WAITER 2>/dev/null && kill -9 $BITCOIND $$)&
+(sleep "$ZCASH_LOAD_TIMEOUT" && kill -0 $WAITER 2>/dev/null && kill -9 $BITCOIND $$)&
 wait $WAITER
 
 if [ -n "$TIMEOUT" ]; then
