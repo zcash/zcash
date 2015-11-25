@@ -60,11 +60,11 @@ bin_PROGRAMS =
 TESTS =
 
 if BUILD_BITCOIND
-  bin_PROGRAMS += bitcoind
+  bin_PROGRAMS += zerocashd
 endif
 
 if BUILD_BITCOIN_UTILS
-  bin_PROGRAMS += bitcoin-cli bitcoin-tx
+  bin_PROGRAMS += zerocash-cli bitcoin-tx
 endif
 
 .PHONY: FORCE
@@ -297,7 +297,7 @@ nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
 #
 
 # bitcoind binary #
-bitcoind_LDADD = \
+zerocashd_LDADD = \
   $(LIBBITCOIN_SERVER) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UNIVALUE) \
@@ -308,16 +308,16 @@ bitcoind_LDADD = \
   $(LIBSECP256K1)
 
 if ENABLE_WALLET
-bitcoind_LDADD += libbitcoin_wallet.a
+zerocashd_LDADD += libbitcoin_wallet.a
 endif
-bitcoind_SOURCES = bitcoind.cpp
+zerocashd_SOURCES = bitcoind.cpp
 #
 
 if TARGET_WINDOWS
-bitcoind_SOURCES += bitcoind-res.rc
+zerocashd_SOURCES += bitcoind-res.rc
 endif
 
-bitcoind_LDADD += \
+zerocashd_LDADD += \
   $(BOOST_LIBS) \
   $(BDB_LIBS) \
   $(SSL_LIBS) \
@@ -325,11 +325,11 @@ bitcoind_LDADD += \
   $(MINIUPNPC_LIBS) \
   $(LIBZEROCASH_LIBS)
 
-bitcoind_CPPFLAGS = $(BITCOIN_INCLUDES)
-bitcoind_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+zerocashd_CPPFLAGS = $(BITCOIN_INCLUDES)
+zerocashd_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 # bitcoin-cli binary #
-bitcoin_cli_LDADD = \
+zerocash_cli_LDADD = \
   $(LIBBITCOIN_CLI) \
   $(LIBBITCOIN_UTIL) \
   $(BOOST_LIBS) \
@@ -337,10 +337,10 @@ bitcoin_cli_LDADD = \
   $(CRYPTO_LIBS) \
   $(LIBZEROCASH_LIBS)
 
-bitcoin_cli_SOURCES = \
+zerocash_cli_SOURCES = \
   bitcoin-cli.cpp
 
-bitcoin_cli_CPPFLAGS = $(BITCOIN_INCLUDES)
+zerocash_cli_CPPFLAGS = $(BITCOIN_INCLUDES)
 #
 
 # bitcoin-tx binary #
@@ -360,9 +360,9 @@ bitcoin_tx_CPPFLAGS = $(BITCOIN_INCLUDES)
 bitcoin_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
-bitcoin_cli_SOURCES += bitcoin-cli-res.rc
+zerocash_cli_SOURCES += bitcoin-cli-res.rc
 endif
-bitcoin_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+zerocash_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if BUILD_BITCOIN_LIBS
 include_HEADERS = script/bitcoinconsensus.h
