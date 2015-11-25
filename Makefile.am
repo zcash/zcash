@@ -156,12 +156,18 @@ test_bitcoin.info: baseline_filtered_combined.info
 test_bitcoin_filtered.info: test_bitcoin.info
 	$(LCOV) -r $< "/usr/include/*" -o $@
 
+if USE_COMPARISON_TOOL
 block_test.info: test_bitcoin_filtered.info
 	$(MKDIR_P) qa/tmp
 	-@TIMEOUT=15 qa/pull-tester/run-bitcoind-for-test.sh $(JAVA) -jar $(JAVA_COMPARISON_TOOL) qa/tmp/compTool 0
 	$(LCOV) -c -d $(abs_builddir)/src --t BitcoinJBlockTest -o $@
 	$(LCOV) -z -d $(abs_builddir)/src
 	$(LCOV) -z -d $(abs_builddir)/src/leveldb
+else
+block_test.info: test_bitcoin_filtered.info
+	echo 'block_test.info disabled. USE_COMPARISON_TOOL disabled.'
+	echo 'See ./configure --with-comparison-tool help.'
+endif
 
 block_test_filtered.info: block_test.info
 	$(LCOV) -r $< "/usr/include/*" -o $@
