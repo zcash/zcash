@@ -16,7 +16,7 @@ function fetch_params {
     if ! [ -f "$filename" ]
     then
         echo "Retrieving: $url"
-        wget "$url"
+        wget --progress=dot:giga "$url"
     fi
 }
 
