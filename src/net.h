@@ -11,7 +11,6 @@
 #include "compat.h"
 #include "fs.h"
 #include "limitedmap.h"
-#include "mruset.h"
 #include "netbase.h"
 #include "protocol.h"
 #include "random.h"
