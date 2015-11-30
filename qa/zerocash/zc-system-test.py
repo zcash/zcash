@@ -41,13 +41,13 @@ def main(log, args = sys.argv[1:]):
     initialize_basedir(opts.basedir, opts.NODECONFIG, opts.pkpath, opts.vkpath)
 
     # The paths below are relative to the current directory, which is expected
-    # to be the 'src/' directory containing bitcoind and bitcoin-cli.
+    # to be the 'src/' directory containing zerocashd and zerocash-cli.
     log.debug('chdir(%r)', opts.execdir)
     os.chdir(opts.execdir)
 
     # Explicitly specify relative directory in case '.' not in PATH:
-    daemonexecutable = os.path.join('.', 'bitcoind')
-    clientexecutable = os.path.join('.', 'bitcoin-cli')
+    daemonexecutable = os.path.join('.', 'zerocashd')
+    clientexecutable = os.path.join('.', 'zerocash-cli')
     clientbaseopt = '-datadir=' + os.path.join(opts.basedir, '0')
 
     cliexec = partial(check_call, clientexecutable, clientbaseopt)
