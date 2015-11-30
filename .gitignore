@@ -4,8 +4,8 @@
 .project
 *.exe
 src/bitcoin
-src/bitcoind
-src/bitcoin-cli
+src/zcashd
+src/zcash-cli
 src/bitcoin-tx
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
