@@ -2,8 +2,8 @@
 
 *.exe
 src/bitcoin
-src/bitcoind
-src/bitcoin-cli
+src/zerocashd
+src/zerocash-cli
 src/bitcoin-tx
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
@@ -55,7 +55,7 @@ src/qt/test/moc*.cpp
 *.o
 *.o-*
 *.patch
-.bitcoin
+.zerocash
 *.a
 *.pb.cc
 *.pb.h
