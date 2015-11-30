@@ -55,7 +55,7 @@ src/qt/test/moc*.cpp
 *.o
 *.o-*
 *.patch
-.bitcoin
+.zerocash
 *.a
 *.pb.cc
 *.pb.h
