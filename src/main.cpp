@@ -3628,6 +3628,8 @@ bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams,
         // When we reach this point, we switched to a new tip (stored in pindexNewTip).
 
         // Notifications/callbacks that can run without cs_main
+        // Always notify the UI if a new block tip was connected
+        uiInterface.NotifyBlockTip(fInitialDownload, pindexNewTip);
         if (!fInitialDownload) {
             uint256 hashNewTip = pindexNewTip->GetBlockHash();
             // Relay inventory, but don't relay old inventory during initial block download.
@@ -3643,8 +3645,6 @@ bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams,
             // Notify external listeners about the new tip.
             GetMainSignals().UpdatedBlockTip(pindexNewTip);
         }
-        // Always notify the UI if a new block tip was connected
-        uiInterface.NotifyBlockTip(fInitialDownload, pindexNewTip);
     } while(pindexMostWork != chainActive.Tip());
     CheckBlockIndex(chainparams.GetConsensus());
 
