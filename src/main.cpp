@@ -1940,6 +1940,11 @@ bool AcceptToMemoryPool(
 
         CAmount nValueOut = tx.GetValueOut();
         CAmount nFees = nValueIn-nValueOut;
+        // nModifiedFees includes any fee deltas from PrioritiseTransaction
+        CAmount nModifiedFees = nFees;
+        double nPriorityDummy = 0;
+        pool.ApplyDeltas(hash, nPriorityDummy, nModifiedFees);
+
         double dPriority = view.GetPriority(tx, chainActive.Height());
 
         // Keep track of transactions that spend a coinbase, which we re-scan
@@ -1965,20 +1970,23 @@ bool AcceptToMemoryPool(
         // most DEFAULT_FEE.
 
         CAmount txMinFee = GetMinRelayFee(tx, pool, nSize, true);
+
+        // txMinFee takes into account priority/fee deltas, so compare using
+        // nFees rather than nModifiedFees
         if (fLimitFree && nFees < txMinFee) {
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient fee", false,
                 strprintf("%d < %d", nFees, txMinFee));
         }
 
         // Require that free transactions have sufficient priority to be mined in the next block.
-        if (GetBoolArg("-relaypriority", DEFAULT_RELAYPRIORITY) && nFees < ::minRelayTxFee.GetFeeForRelay(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
+        if (GetBoolArg("-relaypriority", DEFAULT_RELAYPRIORITY) && nModifiedFees < ::minRelayTxFee.GetFeeForRelay(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
         }
 
         // Continuously rate-limit free (really, very-low-fee) transactions
         // This mitigates 'penny-flooding' -- sending thousands of free transactions just to
         // be annoying or make others' transactions take longer to confirm.
-        if (fLimitFree && nFees < ::minRelayTxFee.GetFeeForRelay(nSize))
+        if (fLimitFree && nModifiedFees < ::minRelayTxFee.GetFeeForRelay(nSize))
         {
             static CCriticalSection csFreeLimiter;
             static double dFreeCount;
