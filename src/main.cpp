@@ -6354,6 +6354,12 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
     else if (strCommand == "mempool")
     {
         int currentHeight = GetHeight();
+        if (CNode::OutboundTargetReached(chainparams.GetConsensus().PoWTargetSpacing(currentHeight), false) && !pfrom->fWhitelisted)
+        {
+            LogPrint("net", "mempool request with bandwidth limit reached, disconnect peer=%d\n", pfrom->GetId());
+            pfrom->fDisconnect = true;
+            return true;
+        }
 
         LOCK2(cs_main, pfrom->cs_filter);
 
