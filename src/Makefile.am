@@ -329,7 +329,13 @@ if ENABLE_WALLET
 zcashd_LDADD += libbitcoin_wallet.a
 endif
 
-zcashd_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS)
+zcashd_LDADD += \
+  $(BOOST_LIBS) \
+  $(BDB_LIBS) \
+  $(SSL_LIBS) \
+  $(CRYPTO_LIBS) \
+  $(MINIUPNPC_LIBS) \
+  $(LIBZEROCASH_LIBS)
 #
 
 # bitcoin-cli binary #
@@ -343,9 +349,11 @@ endif
 
 zcash_cli_LDADD = \
   $(LIBBITCOIN_CLI) \
-  $(LIBBITCOIN_UTIL)
-
-zcash_cli_LDADD += $(BOOST_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS)
+  $(LIBBITCOIN_UTIL) \
+  $(BOOST_LIBS) \
+  $(SSL_LIBS) \
+  $(CRYPTO_LIBS) \
+  $(LIBZEROCASH_LIBS)
 #
 
 # bitcoin-tx binary #
@@ -357,12 +365,14 @@ if TARGET_WINDOWS
 bitcoin_tx_SOURCES += bitcoin-tx-res.rc
 endif
 
+# FIXME: Is libzerocash needed for bitcoin_tx?
 bitcoin_tx_LDADD = \
   $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBSECP256K1)
+  $(LIBSECP256K1) \
+  $(LIBZEROCASH_LIBS)
 
 bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 #
@@ -402,7 +412,7 @@ CLEANFILES = leveldb/libleveldb.a leveldb/libmemenv.a *.gcda *.gcno
 
 DISTCLEANFILES = obj/build.h
 
-EXTRA_DIST = leveldb
+EXTRA_DIST = leveldb libzerocash/Makefile
 
 clean-local:
 	-$(MAKE) -C leveldb clean

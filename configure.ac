@@ -37,6 +37,12 @@ if test "x${CXXFLAGS+set}" = "xset"; then
 else
   CXXFLAGS_overridden=no
 fi
+
+# Zerocash requries C++11 compatibility; set it early:
+CXXFLAGS="-std=c++11 $CXXFLAGS"
+# Zerocash uses this libsnark curve:
+CPPFLAGS="-DCURVE_ALT_BN128 $CPPFLAGS"
+
 AC_PROG_CXX
 m4_ifdef([AC_PROG_OBJCXX],[AC_PROG_OBJCXX])
 
@@ -666,6 +672,9 @@ if test x$use_pkgconfig = xyes; then
     ]
   )
 else
+  # BUG: Fix this:
+  echo 'BUG: configure does not yet check for the following dependencies if pkg-config is not on the system: libcrypto++, libgmp'
+
   AC_CHECK_HEADER([openssl/crypto.h],,AC_MSG_ERROR(libcrypto headers missing))
   AC_CHECK_LIB([crypto],      [main],CRYPTO_LIBS=-lcrypto, AC_MSG_ERROR(libcrypto missing))
 
@@ -679,6 +688,53 @@ else
   fi
 fi
 
+# These packages don't provide pkgconfig config files across all
+# platforms, so we use older autoconf detection mechanisms:
+AC_CHECK_HEADER([gmp.h],,AC_MSG_ERROR(libgmp headers missing))
+AC_CHECK_LIB([gmp],[[__gmpn_sub_n]],GMP_LIBS=-lgmp, [AC_MSG_ERROR(libgmp missing)])
+
+AC_CHECK_HEADER([gmpxx.h],,AC_MSG_ERROR(libgmpxx headers missing))
+AC_CHECK_LIB([gmpxx],[main],GMPXX_LIBS=-lgmpxx, [AC_MSG_ERROR(libgmpxx missing)])
+
+AC_CHECK_HEADER([cryptopp/eccrypto.h],,AC_MSG_ERROR(libcryptopp headers missing))
+# We link against "main" as a stop-gap; crypto++ is full of template
+# classes whose library symbols are mangled by some black alchemy.
+AC_CHECK_LIB([cryptopp],[main],CRYPTOPP_LIBS=-lcryptopp, [AC_MSG_ERROR(libcryptopp missing)])
+
+# libsnark header layout is broken unless cpp's -I is passed with the
+# libsnark directory, so for now we use this hideous workaround:
+echo 'Hunting for libsnark include directory...'
+[LIBSNARK_INCDIR="$(echo "$CPPFLAGS" | sed 's,^.*-I\([^ ]*/include\).*$,\1/libsnark,')"]
+if test -d "$LIBSNARK_INCDIR"; then
+   echo "Found libsnark include directory: $LIBSNARK_INCDIR"
+else
+    AC_MSG_ERROR(libsnark include directory not found)
+fi
+
+CPPFLAGS="-I$LIBSNARK_INCDIR $CPPFLAGS"
+
+# Now check for libsnark compilability using traditional autoconf tests:
+AC_CHECK_HEADER([libsnark/gadgetlib1/gadget.hpp],,AC_MSG_ERROR(libsnark headers missing))
+AC_CHECK_LIB([snark],[main],LIBSNARK_LIBS=-lsnark, [AC_MSG_ERROR(libsnark missing)], [-lgmpxx])
+
+# Abuse the ugly libsnark hack above further to get the libzerocash directory
+[LIBZEROCASH_INCDIR=$(echo "$LIBSNARK_INCDIR" | sed 's,libsnark$,libzerocash,')]
+if test -d "$LIBZEROCASH_INCDIR"; then
+   echo "Found libzerocash include directory: $LIBZEROCASH_INCDIR"
+else
+    AC_MSG_ERROR(libzerocash include directory not found)
+fi
+
+CPPFLAGS="-I$LIBZEROCASH_INCDIR $CPPFLAGS"
+
+# libzerocash depends on headers in ./src/, so for the following
+# AC_CHECK_HEADER, that has to be on the include path list.
+CPPFLAGS_TEMP="$CPPFLAGS"
+CPPFLAGS="-I ./src/ $CPPFLAGS"
+AC_CHECK_HEADER([libzerocash/libzerocash/Zerocash.h],,AC_MSG_ERROR(libzerocash headers missing))
+AC_CHECK_LIB([zerocash], [main],LIBZEROCASH_LIBS="-lzerocash -lsnark -lcryptopp -lgmp -lgmpxx -lboost_system-mt -lcrypto", [AC_MSG_ERROR(libzerocash missing)], [-lsnark -lcryptopp -lgmp -lgmpxx -lboost_system-mt -lcrypto])
+CPPFLAGS="$CPPFLAGS_TEMP"
+
 AC_CHECK_LIB([crypto],[RAND_egd],[],[
   AC_ARG_WITH([libressl],
     [AS_HELP_STRING([--with-libressl],[Build with system LibreSSL (default is no; DANGEROUS; NOT SUPPORTED)])],
@@ -690,7 +746,7 @@ AC_CHECK_LIB([crypto],[RAND_egd],[],[
 CFLAGS_TEMP="$CFLAGS"
 LIBS_TEMP="$LIBS"
 CFLAGS="$CFLAGS $SSL_CFLAGS $CRYPTO_CFLAGS"
-LIBS="$LIBS $SSL_LIBS $CRYPTO_LIBS"
+LIBS="$LIBS $SSL_LIBS $CRYPTO_LIBS $GMP_LIBS $GMPXX_LIBS"
 AC_CHECK_HEADER([openssl/ec.h],, AC_MSG_ERROR(OpenSSL ec header missing),)
 
 AC_MSG_CHECKING(for a supported OpenSSL version)
@@ -883,6 +939,11 @@ AC_SUBST(BUILD_QT)
 AC_SUBST(BUILD_TEST_QT)
 AC_SUBST(MINIUPNPC_CPPFLAGS)
 AC_SUBST(MINIUPNPC_LIBS)
+AC_SUBST(GMP_LIBS)
+AC_SUBST(GMPXX_LIBS)
+AC_SUBST(CRYPTOPP_LIBS)
+AC_SUBST(LIBSNARK_LIBS)
+AC_SUBST(LIBZEROCASH_LIBS)
 AC_CONFIG_FILES([Makefile src/Makefile share/setup.nsi share/qt/Info.plist src/test/buildenv.py])
 AC_CONFIG_FILES([qa/pull-tester/run-bitcoind-for-test.sh],[chmod +x qa/pull-tester/run-bitcoind-for-test.sh])
 AC_CONFIG_FILES([qa/pull-tester/tests-config.sh],[chmod +x qa/pull-tester/tests-config.sh])
