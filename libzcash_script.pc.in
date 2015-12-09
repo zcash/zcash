@@ -3,7 +3,7 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: Zcash transparent script verification library
+Name: @PACKAGE_NAME@ transparent script verification library
 Description: Library for verifying scripts against the Zcash consensus protocol.
 Version: @PACKAGE_VERSION@
 Libs: -L${libdir} -lzcash_script
