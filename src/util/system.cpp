@@ -662,7 +662,7 @@ std::string LicenseInfo()
 {
     return "\n" +
            FormatParagraph(strprintf(_("Copyright (C) 2009-%i The Bitcoin Core Developers"), COPYRIGHT_YEAR)) + "\n" +
-           FormatParagraph(strprintf(_("Copyright (C) 2015-%i The %s Developers"), COPYRIGHT_YEAR, _(PACKAGE_NAME))) + "\n" +
+           FormatParagraph(strprintf(_("Copyright (C) %i-%i The %s Developers"), 2015, COPYRIGHT_YEAR, _(PACKAGE_NAME))) + "\n" +
            "\n" +
            FormatParagraph(_("This is experimental software.")) + "\n" +
            "\n" +
