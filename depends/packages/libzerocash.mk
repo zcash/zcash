@@ -6,7 +6,11 @@ $(package)_sha256_hash=b79290e4ef412c07d519995caa1016d78d8263c6805a8ecfa1f42f875
 $(package)_git_commit=29df1b8bb28dff1c3e7b5952944aa55b42c36f7b
 
 $(package)_dependencies=libsnark crypto++ openssl boost libgmp
-$(package)_patches=
+$(package)_patches=0_remove_bitcoin_copy_code
+
+define $(package)_preprocess_cmds
+    patch -p1 < $($(package)_patch_dir)/0_remove_bitcoin_copy_code
+endef
 
 # FIXME: How do we know, at the point where the _build_cms are run, that the
 # $(host_prefix)/include/libsnark folder is there? The lifecycle of that folder

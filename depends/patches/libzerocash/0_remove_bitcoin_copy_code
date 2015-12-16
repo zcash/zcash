@@ -1,0 +1,2189 @@
+diff --git a/libzerocash/Address.h b/libzerocash/Address.h
+index 4d7cded..db96e8b 100644
+--- a/libzerocash/Address.h
++++ b/libzerocash/Address.h
+@@ -15,7 +15,6 @@
+ #include <vector>
+ #include <string>
+ 
+-#include "serialize.h"
+ 
+ namespace libzerocash {
+ 
+@@ -33,14 +32,6 @@ public:
+     bool operator==(const PrivateAddress& rhs) const;
+     bool operator!=(const PrivateAddress& rhs) const;
+ 
+-    ADD_SERIALIZE_METHODS;
+-
+-    template <typename Stream, typename Operation>
+-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+-        READWRITE(a_sk);
+-        READWRITE(sk_enc);
+-    }
+-
+     void createPrivateAddress(const std::vector<unsigned char> a_sk, const std::string sk_enc);
+ 
+ private:
+@@ -66,13 +57,6 @@ public:
+     bool operator==(const PublicAddress& rhs) const;
+     bool operator!=(const PublicAddress& rhs) const;
+ 
+-    ADD_SERIALIZE_METHODS;
+-
+-    template <typename Stream, typename Operation>
+-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+-        READWRITE(a_pk);
+-        READWRITE(pk_enc);
+-    }
+ 
+ private:
+     std::vector<unsigned char> a_pk;
+@@ -102,13 +86,6 @@ public:
+     bool operator==(const Address& rhs) const;
+     bool operator!=(const Address& rhs) const;
+ 
+-    ADD_SERIALIZE_METHODS;
+-
+-    template <typename Stream, typename Operation>
+-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+-        READWRITE(addr_pk);
+-        READWRITE(addr_sk);
+-    }
+ 
+ private:
+     PublicAddress addr_pk;
+diff --git a/libzerocash/Coin.h b/libzerocash/Coin.h
+index 6492bfc..bc09a13 100644
+--- a/libzerocash/Coin.h
++++ b/libzerocash/Coin.h
+@@ -14,7 +14,6 @@
+ 
+ #include <vector>
+ 
+-#include "serialize.h"
+ #include "Address.h"
+ #include "CoinCommitment.h"
+ 
+@@ -50,18 +49,6 @@ public:
+ 	bool operator==(const Coin& rhs) const;
+ 	bool operator!=(const Coin& rhs) const;
+ 
+-    ADD_SERIALIZE_METHODS;
+-
+-    template <typename Stream, typename Operation>
+-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+-	    READWRITE(addr_pk);
+-	    READWRITE(cm);
+-        READWRITE(rho);
+-        READWRITE(r);
+-		READWRITE(k);
+-		READWRITE(coinValue);
+-	}
+-
+ 	uint64_t getValue() const;
+ 
+ private:
+diff --git a/libzerocash/CoinCommitment.h b/libzerocash/CoinCommitment.h
+index e261a17..241c82d 100644
+--- a/libzerocash/CoinCommitment.h
++++ b/libzerocash/CoinCommitment.h
+@@ -14,8 +14,6 @@
+ 
+ #include <vector>
+ 
+-#include "serialize.h"
+-
+ namespace libzerocash {
+ 
+ /****************************** Coin commitment ******************************/
+@@ -38,12 +36,6 @@ public:
+ 	bool operator==(const CoinCommitment& rhs) const;
+ 	bool operator!=(const CoinCommitment& rhs) const;
+ 
+-    ADD_SERIALIZE_METHODS;
+-
+-    template <typename Stream, typename Operation>
+-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+-        READWRITE(commitmentValue);
+-    }
+ 
+ private:
+     std::vector<unsigned char> commitmentValue;
+diff --git a/libzerocash/IncrementalMerkleTree.h b/libzerocash/IncrementalMerkleTree.h
+index 1cd8029..c2b8e7f 100644
+--- a/libzerocash/IncrementalMerkleTree.h
++++ b/libzerocash/IncrementalMerkleTree.h
+@@ -21,8 +21,6 @@
+ #include <map>
+ #include <cstring>
+ 
+-#include "serialize.h"
+-
+ #include "libsnark/common/data_structures/merkle_tree.hpp"
+ 
+ namespace libzerocash {
+@@ -39,15 +37,6 @@ public:
+ 	IncrementalMerkleTreeCompact() : treeHeight(0) {}
+     void		clear() { hashVec.clear(); hashList.clear(); hashListBytes.clear(); treeHeight = 0; }
+     uint32_t	getHeight() { return this->treeHeight; }
+-
+-    ADD_SERIALIZE_METHODS;
+-
+-    template <typename Stream, typename Operation>
+-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+-	 READWRITE(treeHeight);
+-     READWRITE(hashVec);
+-     READWRITE(hashListBytes);
+-    }
+ };
+ 
+ /********************* Incremental Merkle tree node **************************/
+diff --git a/libzerocash/MintTransaction.h b/libzerocash/MintTransaction.h
+index 00a19b3..0c1d316 100644
+--- a/libzerocash/MintTransaction.h
++++ b/libzerocash/MintTransaction.h
+@@ -12,7 +12,6 @@
+ #ifndef MINTTRANSACTION_H_
+ #define MINTTRANSACTION_H_
+ 
+-#include "serialize.h"
+ #include "CoinCommitment.h"
+ #include "Coin.h"
+ 
+@@ -56,14 +55,6 @@ public:
+      */
+     uint64_t getMonetaryValue() const;
+ 
+-    ADD_SERIALIZE_METHODS;
+-
+-    template <typename Stream, typename Operation>
+-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+-		READWRITE(externalCommitment);
+-        READWRITE(coinValue);
+-		READWRITE(internalCommitment);
+-    }
+ 
+ private:
+ 	std::vector<unsigned char>	coinValue;			// coin value
+diff --git a/libzerocash/PourTransaction.h b/libzerocash/PourTransaction.h
+index c819643..66826a1 100644
+--- a/libzerocash/PourTransaction.h
++++ b/libzerocash/PourTransaction.h
+@@ -12,7 +12,6 @@
+ #ifndef POURTRANSACTION_H_
+ #define POURTRANSACTION_H_
+ 
+-#include "serialize.h"
+ #include "Coin.h"
+ #include "ZerocashParams.h"
+ #include "Zerocash.h"
+@@ -103,23 +102,6 @@ public:
+      */
+     uint64_t getMonetaryValueOut() const;
+ 
+-    ADD_SERIALIZE_METHODS;
+-
+-    template <typename Stream, typename Operation>
+-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+-        READWRITE(version);
+-        READWRITE(publicValue);
+-        READWRITE(serialNumber_1);
+-        READWRITE(serialNumber_2);
+-        READWRITE(cm_1);
+-        READWRITE(cm_2);
+-        READWRITE(MAC_1);
+-        READWRITE(MAC_2);
+-        READWRITE(ciphertext_1);
+-        READWRITE(ciphertext_2);
+-        READWRITE(zkSNARK);
+-    }
+-
+ 
+ private:
+ 
+diff --git a/libzerocash/Zerocash.h b/libzerocash/Zerocash.h
+index 7df190d..90819a0 100644
+--- a/libzerocash/Zerocash.h
++++ b/libzerocash/Zerocash.h
+@@ -67,6 +67,5 @@ namespace libzerocash {
+ };
+ 
+ #include "libzerocash/utils/util.h"
+-#include "streams.h"
+ 
+ #endif /* ZEROCASH_H_ */
+diff --git a/libzerocash/allocators.cpp b/libzerocash/allocators.cpp
+deleted file mode 100644
+index 15f34aa..0000000
+--- a/libzerocash/allocators.cpp
++++ /dev/null
+@@ -1,67 +0,0 @@
+-// Copyright (c) 2009-2013 The Bitcoin developers
+-// Distributed under the MIT/X11 software license, see the accompanying
+-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+-
+-#include "allocators.h"
+-
+-#ifdef WIN32
+-#ifdef _WIN32_WINNT
+-#undef _WIN32_WINNT
+-#endif
+-#define _WIN32_WINNT 0x0501
+-#define WIN32_LEAN_AND_MEAN 1
+-#ifndef NOMINMAX
+-#define NOMINMAX
+-#endif
+-#include <windows.h>
+-// This is used to attempt to keep keying material out of swap
+-// Note that VirtualLock does not provide this as a guarantee on Windows,
+-// but, in practice, memory that has been VirtualLock'd almost never gets written to
+-// the pagefile except in rare circumstances where memory is extremely low.
+-#else
+-#include <sys/mman.h>
+-#include <limits.h> // for PAGESIZE
+-#include <unistd.h> // for sysconf
+-#endif
+-
+-LockedPageManager* LockedPageManager::_instance = NULL;
+-boost::once_flag LockedPageManager::init_flag = BOOST_ONCE_INIT;
+-
+-/** Determine system page size in bytes */
+-static inline size_t GetSystemPageSize()
+-{
+-    size_t page_size;
+-#if defined(WIN32)
+-    SYSTEM_INFO sSysInfo;
+-    GetSystemInfo(&sSysInfo);
+-    page_size = sSysInfo.dwPageSize;
+-#elif defined(PAGESIZE) // defined in limits.h
+-    page_size = PAGESIZE;
+-#else // assume some POSIX OS
+-    page_size = sysconf(_SC_PAGESIZE);
+-#endif
+-    return page_size;
+-}
+-
+-bool MemoryPageLocker::Lock(const void *addr, size_t len)
+-{
+-#ifdef WIN32
+-    return VirtualLock(const_cast<void*>(addr), len);
+-#else
+-    return mlock(addr, len) == 0;
+-#endif
+-}
+-
+-bool MemoryPageLocker::Unlock(const void *addr, size_t len)
+-{
+-#ifdef WIN32
+-    return VirtualUnlock(const_cast<void*>(addr), len);
+-#else
+-    return munlock(addr, len) == 0;
+-#endif
+-}
+-
+-LockedPageManager::LockedPageManager() : LockedPageManagerBase<MemoryPageLocker>(GetSystemPageSize())
+-{
+-}
+-
+diff --git a/libzerocash/allocators.h b/libzerocash/allocators.h
+deleted file mode 100644
+index 78a3b76..0000000
+--- a/libzerocash/allocators.h
++++ /dev/null
+@@ -1,268 +0,0 @@
+-// Copyright (c) 2009-2010 Satoshi Nakamoto
+-// Copyright (c) 2009-2013 The Bitcoin developers
+-// Distributed under the MIT/X11 software license, see the accompanying
+-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+-
+-#ifndef BITCOIN_ALLOCATORS_H
+-#define BITCOIN_ALLOCATORS_H
+-
+-#include <map>
+-#include <string>
+-#include <string.h>
+-#include <vector>
+-
+-#include <boost/thread/mutex.hpp>
+-#include <boost/thread/once.hpp>
+-
+-#include <openssl/crypto.h> // for OPENSSL_cleanse()
+-
+-/**
+- * Thread-safe class to keep track of locked (ie, non-swappable) memory pages.
+- *
+- * Memory locks do not stack, that is, pages which have been locked several times by calls to mlock()
+- * will be unlocked by a single call to munlock(). This can result in keying material ending up in swap when
+- * those functions are used naively. This class simulates stacking memory locks by keeping a counter per page.
+- *
+- * @note By using a map from each page base address to lock count, this class is optimized for
+- * small objects that span up to a few pages, mostly smaller than a page. To support large allocations,
+- * something like an interval tree would be the preferred data structure.
+- */
+-template <class Locker>
+-class LockedPageManagerBase
+-{
+-public:
+-    LockedPageManagerBase(size_t page_size) : page_size(page_size)
+-    {
+-        // Determine bitmask for extracting page from address
+-        assert(!(page_size & (page_size - 1))); // size must be power of two
+-        page_mask = ~(page_size - 1);
+-    }
+-
+-    ~LockedPageManagerBase()
+-    {
+-        assert(this->GetLockedPageCount() == 0);
+-    }
+-
+-
+-    // For all pages in affected range, increase lock count
+-    void LockRange(void* p, size_t size)
+-    {
+-        boost::mutex::scoped_lock lock(mutex);
+-        if (!size)
+-            return;
+-        const size_t base_addr = reinterpret_cast<size_t>(p);
+-        const size_t start_page = base_addr & page_mask;
+-        const size_t end_page = (base_addr + size - 1) & page_mask;
+-        for (size_t page = start_page; page <= end_page; page += page_size) {
+-            Histogram::iterator it = histogram.find(page);
+-            if (it == histogram.end()) // Newly locked page
+-            {
+-                locker.Lock(reinterpret_cast<void*>(page), page_size);
+-                histogram.insert(std::make_pair(page, 1));
+-            } else // Page was already locked; increase counter
+-            {
+-                it->second += 1;
+-            }
+-        }
+-    }
+-
+-    // For all pages in affected range, decrease lock count
+-    void UnlockRange(void* p, size_t size)
+-    {
+-        boost::mutex::scoped_lock lock(mutex);
+-        if (!size)
+-            return;
+-        const size_t base_addr = reinterpret_cast<size_t>(p);
+-        const size_t start_page = base_addr & page_mask;
+-        const size_t end_page = (base_addr + size - 1) & page_mask;
+-        for (size_t page = start_page; page <= end_page; page += page_size) {
+-            Histogram::iterator it = histogram.find(page);
+-            assert(it != histogram.end()); // Cannot unlock an area that was not locked
+-            // Decrease counter for page, when it is zero, the page will be unlocked
+-            it->second -= 1;
+-            if (it->second == 0) // Nothing on the page anymore that keeps it locked
+-            {
+-                // Unlock page and remove the count from histogram
+-                locker.Unlock(reinterpret_cast<void*>(page), page_size);
+-                histogram.erase(it);
+-            }
+-        }
+-    }
+-
+-    // Get number of locked pages for diagnostics
+-    int GetLockedPageCount()
+-    {
+-        boost::mutex::scoped_lock lock(mutex);
+-        return histogram.size();
+-    }
+-
+-private:
+-    Locker locker;
+-    boost::mutex mutex;
+-    size_t page_size, page_mask;
+-    // map of page base address to lock count
+-    typedef std::map<size_t, int> Histogram;
+-    Histogram histogram;
+-};
+-
+-
+-/**
+- * OS-dependent memory page locking/unlocking.
+- * Defined as policy class to make stubbing for test possible.
+- */
+-class MemoryPageLocker
+-{
+-public:
+-    /** Lock memory pages.
+-     * addr and len must be a multiple of the system page size
+-     */
+-    bool Lock(const void* addr, size_t len);
+-    /** Unlock memory pages.
+-     * addr and len must be a multiple of the system page size
+-     */
+-    bool Unlock(const void* addr, size_t len);
+-};
+-
+-/**
+- * Singleton class to keep track of locked (ie, non-swappable) memory pages, for use in
+- * std::allocator templates.
+- *
+- * Some implementations of the STL allocate memory in some constructors (i.e., see
+- * MSVC's vector<T> implementation where it allocates 1 byte of memory in the allocator.)
+- * Due to the unpredictable order of static initializers, we have to make sure the
+- * LockedPageManager instance exists before any other STL-based objects that use
+- * secure_allocator are created. So instead of having LockedPageManager also be
+- * static-initialized, it is created on demand.
+- */
+-class LockedPageManager : public LockedPageManagerBase<MemoryPageLocker>
+-{
+-public:
+-    static LockedPageManager& Instance()
+-    {
+-        boost::call_once(LockedPageManager::CreateInstance, LockedPageManager::init_flag);
+-        return *LockedPageManager::_instance;
+-    }
+-
+-private:
+-    LockedPageManager();
+-
+-    static void CreateInstance()
+-    {
+-        // Using a local static instance guarantees that the object is initialized
+-        // when it's first needed and also deinitialized after all objects that use
+-        // it are done with it.  I can think of one unlikely scenario where we may
+-        // have a static deinitialization order/problem, but the check in
+-        // LockedPageManagerBase's destructor helps us detect if that ever happens.
+-        static LockedPageManager instance;
+-        LockedPageManager::_instance = &instance;
+-    }
+-
+-    static LockedPageManager* _instance;
+-    static boost::once_flag init_flag;
+-};
+-
+-//
+-// Functions for directly locking/unlocking memory objects.
+-// Intended for non-dynamically allocated structures.
+-//
+-template <typename T>
+-void LockObject(const T& t)
+-{
+-    LockedPageManager::Instance().LockRange((void*)(&t), sizeof(T));
+-}
+-
+-template <typename T>
+-void UnlockObject(const T& t)
+-{
+-    OPENSSL_cleanse((void*)(&t), sizeof(T));
+-    LockedPageManager::Instance().UnlockRange((void*)(&t), sizeof(T));
+-}
+-
+-//
+-// Allocator that locks its contents from being paged
+-// out of memory and clears its contents before deletion.
+-//
+-template <typename T>
+-struct secure_allocator : public std::allocator<T> {
+-    // MSVC8 default copy constructor is broken
+-    typedef std::allocator<T> base;
+-    typedef typename base::size_type size_type;
+-    typedef typename base::difference_type difference_type;
+-    typedef typename base::pointer pointer;
+-    typedef typename base::const_pointer const_pointer;
+-    typedef typename base::reference reference;
+-    typedef typename base::const_reference const_reference;
+-    typedef typename base::value_type value_type;
+-    secure_allocator() throw() {}
+-    secure_allocator(const secure_allocator& a) throw() : base(a) {}
+-    template <typename U>
+-    secure_allocator(const secure_allocator<U>& a) throw() : base(a)
+-    {
+-    }
+-    ~secure_allocator() throw() {}
+-    template <typename _Other>
+-    struct rebind {
+-        typedef secure_allocator<_Other> other;
+-    };
+-
+-    T* allocate(std::size_t n, const void* hint = 0)
+-    {
+-        T* p;
+-        p = std::allocator<T>::allocate(n, hint);
+-        if (p != NULL)
+-            LockedPageManager::Instance().LockRange(p, sizeof(T) * n);
+-        return p;
+-    }
+-
+-    void deallocate(T* p, std::size_t n)
+-    {
+-        if (p != NULL) {
+-            OPENSSL_cleanse(p, sizeof(T) * n);
+-            LockedPageManager::Instance().UnlockRange(p, sizeof(T) * n);
+-        }
+-        std::allocator<T>::deallocate(p, n);
+-    }
+-};
+-
+-
+-//
+-// Allocator that clears its contents before deletion.
+-//
+-template <typename T>
+-struct zero_after_free_allocator : public std::allocator<T> {
+-    // MSVC8 default copy constructor is broken
+-    typedef std::allocator<T> base;
+-    typedef typename base::size_type size_type;
+-    typedef typename base::difference_type difference_type;
+-    typedef typename base::pointer pointer;
+-    typedef typename base::const_pointer const_pointer;
+-    typedef typename base::reference reference;
+-    typedef typename base::const_reference const_reference;
+-    typedef typename base::value_type value_type;
+-    zero_after_free_allocator() throw() {}
+-    zero_after_free_allocator(const zero_after_free_allocator& a) throw() : base(a) {}
+-    template <typename U>
+-    zero_after_free_allocator(const zero_after_free_allocator<U>& a) throw() : base(a)
+-    {
+-    }
+-    ~zero_after_free_allocator() throw() {}
+-    template <typename _Other>
+-    struct rebind {
+-        typedef zero_after_free_allocator<_Other> other;
+-    };
+-
+-    void deallocate(T* p, std::size_t n)
+-    {
+-        if (p != NULL)
+-            OPENSSL_cleanse(p, sizeof(T) * n);
+-        std::allocator<T>::deallocate(p, n);
+-    }
+-};
+-
+-// This is exactly like std::string, but with a custom allocator.
+-typedef std::basic_string<char, std::char_traits<char>, secure_allocator<char> > SecureString;
+-
+-// Byte-vector that clears its contents before deletion.
+-typedef std::vector<char, zero_after_free_allocator<char> > CSerializeData;
+-
+-#endif // BITCOIN_ALLOCATORS_H
+diff --git a/libzerocash/serialize.h b/libzerocash/serialize.h
+deleted file mode 100644
+index ad38a3f..0000000
+--- a/libzerocash/serialize.h
++++ /dev/null
+@@ -1,811 +0,0 @@
+-// Copyright (c) 2009-2010 Satoshi Nakamoto
+-// Copyright (c) 2009-2014 The Bitcoin developers
+-// Distributed under the MIT software license, see the accompanying
+-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+-
+-#ifndef BITCOIN_SERIALIZE_H
+-#define BITCOIN_SERIALIZE_H
+-
+-#include <algorithm>
+-#include <assert.h>
+-#include <ios>
+-#include <limits>
+-#include <map>
+-#include <set>
+-#include <stdint.h>
+-#include <string>
+-#include <string.h>
+-#include <utility>
+-#include <vector>
+-
+-class CScript;
+-
+-static const unsigned int MAX_SIZE = 0x02000000;
+-
+-/**
+- * Used to bypass the rule against non-const reference to temporary
+- * where it makes sense with wrappers such as CFlatData or CTxDB
+- */
+-template<typename T>
+-inline T& REF(const T& val)
+-{
+-    return const_cast<T&>(val);
+-}
+-
+-/**
+- * Used to acquire a non-const pointer "this" to generate bodies
+- * of const serialization operations from a template
+- */
+-template<typename T>
+-inline T* NCONST_PTR(const T* val)
+-{
+-    return const_cast<T*>(val);
+-}
+-
+-/** 
+- * Get begin pointer of vector (non-const version).
+- * @note These functions avoid the undefined case of indexing into an empty
+- * vector, as well as that of indexing after the end of the vector.
+- */
+-template <class T, class TAl>
+-inline T* begin_ptr(std::vector<T,TAl>& v)
+-{
+-    return v.empty() ? NULL : &v[0];
+-}
+-/** Get begin pointer of vector (const version) */
+-template <class T, class TAl>
+-inline const T* begin_ptr(const std::vector<T,TAl>& v)
+-{
+-    return v.empty() ? NULL : &v[0];
+-}
+-/** Get end pointer of vector (non-const version) */
+-template <class T, class TAl>
+-inline T* end_ptr(std::vector<T,TAl>& v)
+-{
+-    return v.empty() ? NULL : (&v[0] + v.size());
+-}
+-/** Get end pointer of vector (const version) */
+-template <class T, class TAl>
+-inline const T* end_ptr(const std::vector<T,TAl>& v)
+-{
+-    return v.empty() ? NULL : (&v[0] + v.size());
+-}
+-
+-/////////////////////////////////////////////////////////////////
+-//
+-// Templates for serializing to anything that looks like a stream,
+-// i.e. anything that supports .read(char*, size_t) and .write(char*, size_t)
+-//
+-
+-enum
+-{
+-    // primary actions
+-    SER_NETWORK         = (1 << 0),
+-    SER_DISK            = (1 << 1),
+-    SER_GETHASH         = (1 << 2),
+-};
+-
+-#define READWRITE(obj)      (::SerReadWrite(s, (obj), nType, nVersion, ser_action))
+-
+-/** 
+- * Implement three methods for serializable objects. These are actually wrappers over
+- * "SerializationOp" template, which implements the body of each class' serialization
+- * code. Adding "ADD_SERIALIZE_METHODS" in the body of the class causes these wrappers to be
+- * added as members. 
+- */
+-#define ADD_SERIALIZE_METHODS                                                          \
+-    size_t GetSerializeSize(int nType, int nVersion) const {                         \
+-        CSizeComputer s(nType, nVersion);                                            \
+-        NCONST_PTR(this)->SerializationOp(s, CSerActionSerialize(), nType, nVersion);\
+-        return s.size();                                                             \
+-    }                                                                                \
+-    template<typename Stream>                                                        \
+-    void Serialize(Stream& s, int nType, int nVersion) const {                       \
+-        NCONST_PTR(this)->SerializationOp(s, CSerActionSerialize(), nType, nVersion);\
+-    }                                                                                \
+-    template<typename Stream>                                                        \
+-    void Unserialize(Stream& s, int nType, int nVersion) {                           \
+-        SerializationOp(s, CSerActionUnserialize(), nType, nVersion);                \
+-    }
+-
+-
+-
+-/*
+- * Basic Types
+- */
+-#define WRITEDATA(s, obj)   s.write((char*)&(obj), sizeof(obj))
+-#define READDATA(s, obj)    s.read((char*)&(obj), sizeof(obj))
+-
+-inline unsigned int GetSerializeSize(char a,               int, int=0) { return sizeof(a); }
+-inline unsigned int GetSerializeSize(signed char a,        int, int=0) { return sizeof(a); }
+-inline unsigned int GetSerializeSize(unsigned char a,      int, int=0) { return sizeof(a); }
+-inline unsigned int GetSerializeSize(signed short a,       int, int=0) { return sizeof(a); }
+-inline unsigned int GetSerializeSize(unsigned short a,     int, int=0) { return sizeof(a); }
+-inline unsigned int GetSerializeSize(signed int a,         int, int=0) { return sizeof(a); }
+-inline unsigned int GetSerializeSize(unsigned int a,       int, int=0) { return sizeof(a); }
+-inline unsigned int GetSerializeSize(signed long a,        int, int=0) { return sizeof(a); }
+-inline unsigned int GetSerializeSize(unsigned long a,      int, int=0) { return sizeof(a); }
+-inline unsigned int GetSerializeSize(signed long long a,   int, int=0) { return sizeof(a); }
+-inline unsigned int GetSerializeSize(unsigned long long a, int, int=0) { return sizeof(a); }
+-inline unsigned int GetSerializeSize(float a,              int, int=0) { return sizeof(a); }
+-inline unsigned int GetSerializeSize(double a,             int, int=0) { return sizeof(a); }
+-
+-template<typename Stream> inline void Serialize(Stream& s, char a,               int, int=0) { WRITEDATA(s, a); }
+-template<typename Stream> inline void Serialize(Stream& s, signed char a,        int, int=0) { WRITEDATA(s, a); }
+-template<typename Stream> inline void Serialize(Stream& s, unsigned char a,      int, int=0) { WRITEDATA(s, a); }
+-template<typename Stream> inline void Serialize(Stream& s, signed short a,       int, int=0) { WRITEDATA(s, a); }
+-template<typename Stream> inline void Serialize(Stream& s, unsigned short a,     int, int=0) { WRITEDATA(s, a); }
+-template<typename Stream> inline void Serialize(Stream& s, signed int a,         int, int=0) { WRITEDATA(s, a); }
+-template<typename Stream> inline void Serialize(Stream& s, unsigned int a,       int, int=0) { WRITEDATA(s, a); }
+-template<typename Stream> inline void Serialize(Stream& s, signed long a,        int, int=0) { WRITEDATA(s, a); }
+-template<typename Stream> inline void Serialize(Stream& s, unsigned long a,      int, int=0) { WRITEDATA(s, a); }
+-template<typename Stream> inline void Serialize(Stream& s, signed long long a,   int, int=0) { WRITEDATA(s, a); }
+-template<typename Stream> inline void Serialize(Stream& s, unsigned long long a, int, int=0) { WRITEDATA(s, a); }
+-template<typename Stream> inline void Serialize(Stream& s, float a,              int, int=0) { WRITEDATA(s, a); }
+-template<typename Stream> inline void Serialize(Stream& s, double a,             int, int=0) { WRITEDATA(s, a); }
+-
+-template<typename Stream> inline void Unserialize(Stream& s, char& a,               int, int=0) { READDATA(s, a); }
+-template<typename Stream> inline void Unserialize(Stream& s, signed char& a,        int, int=0) { READDATA(s, a); }
+-template<typename Stream> inline void Unserialize(Stream& s, unsigned char& a,      int, int=0) { READDATA(s, a); }
+-template<typename Stream> inline void Unserialize(Stream& s, signed short& a,       int, int=0) { READDATA(s, a); }
+-template<typename Stream> inline void Unserialize(Stream& s, unsigned short& a,     int, int=0) { READDATA(s, a); }
+-template<typename Stream> inline void Unserialize(Stream& s, signed int& a,         int, int=0) { READDATA(s, a); }
+-template<typename Stream> inline void Unserialize(Stream& s, unsigned int& a,       int, int=0) { READDATA(s, a); }
+-template<typename Stream> inline void Unserialize(Stream& s, signed long& a,        int, int=0) { READDATA(s, a); }
+-template<typename Stream> inline void Unserialize(Stream& s, unsigned long& a,      int, int=0) { READDATA(s, a); }
+-template<typename Stream> inline void Unserialize(Stream& s, signed long long& a,   int, int=0) { READDATA(s, a); }
+-template<typename Stream> inline void Unserialize(Stream& s, unsigned long long& a, int, int=0) { READDATA(s, a); }
+-template<typename Stream> inline void Unserialize(Stream& s, float& a,              int, int=0) { READDATA(s, a); }
+-template<typename Stream> inline void Unserialize(Stream& s, double& a,             int, int=0) { READDATA(s, a); }
+-
+-inline unsigned int GetSerializeSize(bool a, int, int=0)                          { return sizeof(char); }
+-template<typename Stream> inline void Serialize(Stream& s, bool a, int, int=0)    { char f=a; WRITEDATA(s, f); }
+-template<typename Stream> inline void Unserialize(Stream& s, bool& a, int, int=0) { char f; READDATA(s, f); a=f; }
+-
+-
+-
+-
+-
+-
+-/**
+- * Compact Size
+- * size <  253        -- 1 byte
+- * size <= USHRT_MAX  -- 3 bytes  (253 + 2 bytes)
+- * size <= UINT_MAX   -- 5 bytes  (254 + 4 bytes)
+- * size >  UINT_MAX   -- 9 bytes  (255 + 8 bytes)
+- */
+-inline unsigned int GetSizeOfCompactSize(uint64_t nSize)
+-{
+-    if (nSize < 253)             return sizeof(unsigned char);
+-    else if (nSize <= std::numeric_limits<unsigned short>::max()) return sizeof(unsigned char) + sizeof(unsigned short);
+-    else if (nSize <= std::numeric_limits<unsigned int>::max())  return sizeof(unsigned char) + sizeof(unsigned int);
+-    else                         return sizeof(unsigned char) + sizeof(uint64_t);
+-}
+-
+-template<typename Stream>
+-void WriteCompactSize(Stream& os, uint64_t nSize)
+-{
+-    if (nSize < 253)
+-    {
+-        unsigned char chSize = nSize;
+-        WRITEDATA(os, chSize);
+-    }
+-    else if (nSize <= std::numeric_limits<unsigned short>::max())
+-    {
+-        unsigned char chSize = 253;
+-        unsigned short xSize = nSize;
+-        WRITEDATA(os, chSize);
+-        WRITEDATA(os, xSize);
+-    }
+-    else if (nSize <= std::numeric_limits<unsigned int>::max())
+-    {
+-        unsigned char chSize = 254;
+-        unsigned int xSize = nSize;
+-        WRITEDATA(os, chSize);
+-        WRITEDATA(os, xSize);
+-    }
+-    else
+-    {
+-        unsigned char chSize = 255;
+-        uint64_t xSize = nSize;
+-        WRITEDATA(os, chSize);
+-        WRITEDATA(os, xSize);
+-    }
+-    return;
+-}
+-
+-template<typename Stream>
+-uint64_t ReadCompactSize(Stream& is)
+-{
+-    unsigned char chSize;
+-    READDATA(is, chSize);
+-    uint64_t nSizeRet = 0;
+-    if (chSize < 253)
+-    {
+-        nSizeRet = chSize;
+-    }
+-    else if (chSize == 253)
+-    {
+-        unsigned short xSize;
+-        READDATA(is, xSize);
+-        nSizeRet = xSize;
+-        if (nSizeRet < 253)
+-            throw std::ios_base::failure("non-canonical ReadCompactSize()");
+-    }
+-    else if (chSize == 254)
+-    {
+-        unsigned int xSize;
+-        READDATA(is, xSize);
+-        nSizeRet = xSize;
+-        if (nSizeRet < 0x10000u)
+-            throw std::ios_base::failure("non-canonical ReadCompactSize()");
+-    }
+-    else
+-    {
+-        uint64_t xSize;
+-        READDATA(is, xSize);
+-        nSizeRet = xSize;
+-        if (nSizeRet < 0x100000000ULL)
+-            throw std::ios_base::failure("non-canonical ReadCompactSize()");
+-    }
+-    if (nSizeRet > (uint64_t)MAX_SIZE)
+-        throw std::ios_base::failure("ReadCompactSize() : size too large");
+-    return nSizeRet;
+-}
+-
+-/**
+- * Variable-length integers: bytes are a MSB base-128 encoding of the number.
+- * The high bit in each byte signifies whether another digit follows. To make
+- * sure the encoding is one-to-one, one is subtracted from all but the last digit.
+- * Thus, the byte sequence a[] with length len, where all but the last byte
+- * has bit 128 set, encodes the number:
+- * 
+- *  (a[len-1] & 0x7F) + sum(i=1..len-1, 128^i*((a[len-i-1] & 0x7F)+1))
+- * 
+- * Properties:
+- * * Very small (0-127: 1 byte, 128-16511: 2 bytes, 16512-2113663: 3 bytes)
+- * * Every integer has exactly one encoding
+- * * Encoding does not depend on size of original integer type
+- * * No redundancy: every (infinite) byte sequence corresponds to a list
+- *   of encoded integers.
+- * 
+- * 0:         [0x00]  256:        [0x81 0x00]
+- * 1:         [0x01]  16383:      [0xFE 0x7F]
+- * 127:       [0x7F]  16384:      [0xFF 0x00]
+- * 128:  [0x80 0x00]  16511: [0x80 0xFF 0x7F]
+- * 255:  [0x80 0x7F]  65535: [0x82 0xFD 0x7F]
+- * 2^32:           [0x8E 0xFE 0xFE 0xFF 0x00]
+- */
+-
+-template<typename I>
+-inline unsigned int GetSizeOfVarInt(I n)
+-{
+-    int nRet = 0;
+-    while(true) {
+-        nRet++;
+-        if (n <= 0x7F)
+-            break;
+-        n = (n >> 7) - 1;
+-    }
+-    return nRet;
+-}
+-
+-template<typename Stream, typename I>
+-void WriteVarInt(Stream& os, I n)
+-{
+-    unsigned char tmp[(sizeof(n)*8+6)/7];
+-    int len=0;
+-    while(true) {
+-        tmp[len] = (n & 0x7F) | (len ? 0x80 : 0x00);
+-        if (n <= 0x7F)
+-            break;
+-        n = (n >> 7) - 1;
+-        len++;
+-    }
+-    do {
+-        WRITEDATA(os, tmp[len]);
+-    } while(len--);
+-}
+-
+-template<typename Stream, typename I>
+-I ReadVarInt(Stream& is)
+-{
+-    I n = 0;
+-    while(true) {
+-        unsigned char chData;
+-        READDATA(is, chData);
+-        n = (n << 7) | (chData & 0x7F);
+-        if (chData & 0x80)
+-            n++;
+-        else
+-            return n;
+-    }
+-}
+-
+-#define FLATDATA(obj) REF(CFlatData((char*)&(obj), (char*)&(obj) + sizeof(obj)))
+-#define VARINT(obj) REF(WrapVarInt(REF(obj)))
+-#define LIMITED_STRING(obj,n) REF(LimitedString< n >(REF(obj)))
+-
+-/** 
+- * Wrapper for serializing arrays and POD.
+- */
+-class CFlatData
+-{
+-protected:
+-    char* pbegin;
+-    char* pend;
+-public:
+-    CFlatData(void* pbeginIn, void* pendIn) : pbegin((char*)pbeginIn), pend((char*)pendIn) { }
+-    template <class T, class TAl>
+-    explicit CFlatData(std::vector<T,TAl> &v)
+-    {
+-        pbegin = (char*)begin_ptr(v);
+-        pend = (char*)end_ptr(v);
+-    }
+-    char* begin() { return pbegin; }
+-    const char* begin() const { return pbegin; }
+-    char* end() { return pend; }
+-    const char* end() const { return pend; }
+-
+-    unsigned int GetSerializeSize(int, int=0) const
+-    {
+-        return pend - pbegin;
+-    }
+-
+-    template<typename Stream>
+-    void Serialize(Stream& s, int, int=0) const
+-    {
+-        s.write(pbegin, pend - pbegin);
+-    }
+-
+-    template<typename Stream>
+-    void Unserialize(Stream& s, int, int=0)
+-    {
+-        s.read(pbegin, pend - pbegin);
+-    }
+-};
+-
+-template<typename I>
+-class CVarInt
+-{
+-protected:
+-    I &n;
+-public:
+-    CVarInt(I& nIn) : n(nIn) { }
+-
+-    unsigned int GetSerializeSize(int, int) const {
+-        return GetSizeOfVarInt<I>(n);
+-    }
+-
+-    template<typename Stream>
+-    void Serialize(Stream &s, int, int) const {
+-        WriteVarInt<Stream,I>(s, n);
+-    }
+-
+-    template<typename Stream>
+-    void Unserialize(Stream& s, int, int) {
+-        n = ReadVarInt<Stream,I>(s);
+-    }
+-};
+-
+-template<size_t Limit>
+-class LimitedString
+-{
+-protected:
+-    std::string& string;
+-public:
+-    LimitedString(std::string& string) : string(string) {}
+-
+-    template<typename Stream>
+-    void Unserialize(Stream& s, int, int=0)
+-    {
+-        size_t size = ReadCompactSize(s);
+-        if (size > Limit) {
+-            throw std::ios_base::failure("String length limit exceeded");
+-        }
+-        string.resize(size);
+-        if (size != 0)
+-            s.read((char*)&string[0], size);
+-    }
+-
+-    template<typename Stream>
+-    void Serialize(Stream& s, int, int=0) const
+-    {
+-        WriteCompactSize(s, string.size());
+-        if (!string.empty())
+-            s.write((char*)&string[0], string.size());
+-    }
+-
+-    unsigned int GetSerializeSize(int, int=0) const
+-    {
+-        return GetSizeOfCompactSize(string.size()) + string.size();
+-    }
+-};
+-
+-template<typename I>
+-CVarInt<I> WrapVarInt(I& n) { return CVarInt<I>(n); }
+-
+-/**
+- * Forward declarations
+- */
+-
+-/**
+- *  string
+- */
+-template<typename C> unsigned int GetSerializeSize(const std::basic_string<C>& str, int, int=0);
+-template<typename Stream, typename C> void Serialize(Stream& os, const std::basic_string<C>& str, int, int=0);
+-template<typename Stream, typename C> void Unserialize(Stream& is, std::basic_string<C>& str, int, int=0);
+-
+-/**
+- * vector
+- * vectors of unsigned char are a special case and are intended to be serialized as a single opaque blob.
+- */
+-template<typename T, typename A> unsigned int GetSerializeSize_impl(const std::vector<T, A>& v, int nType, int nVersion, const unsigned char&);
+-template<typename T, typename A, typename V> unsigned int GetSerializeSize_impl(const std::vector<T, A>& v, int nType, int nVersion, const V&);
+-template<typename T, typename A> inline unsigned int GetSerializeSize(const std::vector<T, A>& v, int nType, int nVersion);
+-template<typename Stream, typename T, typename A> void Serialize_impl(Stream& os, const std::vector<T, A>& v, int nType, int nVersion, const unsigned char&);
+-template<typename Stream, typename T, typename A, typename V> void Serialize_impl(Stream& os, const std::vector<T, A>& v, int nType, int nVersion, const V&);
+-template<typename Stream, typename T, typename A> inline void Serialize(Stream& os, const std::vector<T, A>& v, int nType, int nVersion);
+-template<typename Stream, typename T, typename A> void Unserialize_impl(Stream& is, std::vector<T, A>& v, int nType, int nVersion, const unsigned char&);
+-template<typename Stream, typename T, typename A, typename V> void Unserialize_impl(Stream& is, std::vector<T, A>& v, int nType, int nVersion, const V&);
+-template<typename Stream, typename T, typename A> inline void Unserialize(Stream& is, std::vector<T, A>& v, int nType, int nVersion);
+-
+-/**
+- * others derived from vector
+- */
+-extern inline unsigned int GetSerializeSize(const CScript& v, int nType, int nVersion);
+-template<typename Stream> void Serialize(Stream& os, const CScript& v, int nType, int nVersion);
+-template<typename Stream> void Unserialize(Stream& is, CScript& v, int nType, int nVersion);
+-
+-/**
+- * pair
+- */
+-template<typename K, typename T> unsigned int GetSerializeSize(const std::pair<K, T>& item, int nType, int nVersion);
+-template<typename Stream, typename K, typename T> void Serialize(Stream& os, const std::pair<K, T>& item, int nType, int nVersion);
+-template<typename Stream, typename K, typename T> void Unserialize(Stream& is, std::pair<K, T>& item, int nType, int nVersion);
+-
+-/**
+- * map
+- */
+-template<typename K, typename T, typename Pred, typename A> unsigned int GetSerializeSize(const std::map<K, T, Pred, A>& m, int nType, int nVersion);
+-template<typename Stream, typename K, typename T, typename Pred, typename A> void Serialize(Stream& os, const std::map<K, T, Pred, A>& m, int nType, int nVersion);
+-template<typename Stream, typename K, typename T, typename Pred, typename A> void Unserialize(Stream& is, std::map<K, T, Pred, A>& m, int nType, int nVersion);
+-
+-/**
+- * set
+- */
+-template<typename K, typename Pred, typename A> unsigned int GetSerializeSize(const std::set<K, Pred, A>& m, int nType, int nVersion);
+-template<typename Stream, typename K, typename Pred, typename A> void Serialize(Stream& os, const std::set<K, Pred, A>& m, int nType, int nVersion);
+-template<typename Stream, typename K, typename Pred, typename A> void Unserialize(Stream& is, std::set<K, Pred, A>& m, int nType, int nVersion);
+-
+-
+-
+-
+-
+-/**
+- * If none of the specialized versions above matched, default to calling member function.
+- * "int nType" is changed to "long nType" to keep from getting an ambiguous overload error.
+- * The compiler will only cast int to long if none of the other templates matched.
+- * Thanks to Boost serialization for this idea.
+- */
+-template<typename T>
+-inline unsigned int GetSerializeSize(const T& a, long nType, int nVersion)
+-{
+-    return a.GetSerializeSize((int)nType, nVersion);
+-}
+-
+-template<typename Stream, typename T>
+-inline void Serialize(Stream& os, const T& a, long nType, int nVersion)
+-{
+-    a.Serialize(os, (int)nType, nVersion);
+-}
+-
+-template<typename Stream, typename T>
+-inline void Unserialize(Stream& is, T& a, long nType, int nVersion)
+-{
+-    a.Unserialize(is, (int)nType, nVersion);
+-}
+-
+-
+-
+-
+-
+-/**
+- * string
+- */
+-template<typename C>
+-unsigned int GetSerializeSize(const std::basic_string<C>& str, int, int)
+-{
+-    return GetSizeOfCompactSize(str.size()) + str.size() * sizeof(str[0]);
+-}
+-
+-template<typename Stream, typename C>
+-void Serialize(Stream& os, const std::basic_string<C>& str, int, int)
+-{
+-    WriteCompactSize(os, str.size());
+-    if (!str.empty())
+-        os.write((char*)&str[0], str.size() * sizeof(str[0]));
+-}
+-
+-template<typename Stream, typename C>
+-void Unserialize(Stream& is, std::basic_string<C>& str, int, int)
+-{
+-    unsigned int nSize = ReadCompactSize(is);
+-    str.resize(nSize);
+-    if (nSize != 0)
+-        is.read((char*)&str[0], nSize * sizeof(str[0]));
+-}
+-
+-
+-
+-/**
+- * vector
+- */
+-template<typename T, typename A>
+-unsigned int GetSerializeSize_impl(const std::vector<T, A>& v, int nType, int nVersion, const unsigned char&)
+-{
+-    return (GetSizeOfCompactSize(v.size()) + v.size() * sizeof(T));
+-}
+-
+-template<typename T, typename A, typename V>
+-unsigned int GetSerializeSize_impl(const std::vector<T, A>& v, int nType, int nVersion, const V&)
+-{
+-    unsigned int nSize = GetSizeOfCompactSize(v.size());
+-    for (typename std::vector<T, A>::const_iterator vi = v.begin(); vi != v.end(); ++vi)
+-        nSize += GetSerializeSize((*vi), nType, nVersion);
+-    return nSize;
+-}
+-
+-template<typename T, typename A>
+-inline unsigned int GetSerializeSize(const std::vector<T, A>& v, int nType, int nVersion)
+-{
+-    return GetSerializeSize_impl(v, nType, nVersion, T());
+-}
+-
+-
+-template<typename Stream, typename T, typename A>
+-void Serialize_impl(Stream& os, const std::vector<T, A>& v, int nType, int nVersion, const unsigned char&)
+-{
+-    WriteCompactSize(os, v.size());
+-    if (!v.empty())
+-        os.write((char*)&v[0], v.size() * sizeof(T));
+-}
+-
+-template<typename Stream, typename T, typename A, typename V>
+-void Serialize_impl(Stream& os, const std::vector<T, A>& v, int nType, int nVersion, const V&)
+-{
+-    WriteCompactSize(os, v.size());
+-    for (typename std::vector<T, A>::const_iterator vi = v.begin(); vi != v.end(); ++vi)
+-        ::Serialize(os, (*vi), nType, nVersion);
+-}
+-
+-template<typename Stream, typename T, typename A>
+-inline void Serialize(Stream& os, const std::vector<T, A>& v, int nType, int nVersion)
+-{
+-    Serialize_impl(os, v, nType, nVersion, T());
+-}
+-
+-
+-template<typename Stream, typename T, typename A>
+-void Unserialize_impl(Stream& is, std::vector<T, A>& v, int nType, int nVersion, const unsigned char&)
+-{
+-    // Limit size per read so bogus size value won't cause out of memory
+-    v.clear();
+-    unsigned int nSize = ReadCompactSize(is);
+-    unsigned int i = 0;
+-    while (i < nSize)
+-    {
+-        unsigned int blk = std::min(nSize - i, (unsigned int)(1 + 4999999 / sizeof(T)));
+-        v.resize(i + blk);
+-        is.read((char*)&v[i], blk * sizeof(T));
+-        i += blk;
+-    }
+-}
+-
+-template<typename Stream, typename T, typename A, typename V>
+-void Unserialize_impl(Stream& is, std::vector<T, A>& v, int nType, int nVersion, const V&)
+-{
+-    v.clear();
+-    unsigned int nSize = ReadCompactSize(is);
+-    unsigned int i = 0;
+-    unsigned int nMid = 0;
+-    while (nMid < nSize)
+-    {
+-        nMid += 5000000 / sizeof(T);
+-        if (nMid > nSize)
+-            nMid = nSize;
+-        v.resize(nMid);
+-        for (; i < nMid; i++)
+-            Unserialize(is, v[i], nType, nVersion);
+-    }
+-}
+-
+-template<typename Stream, typename T, typename A>
+-inline void Unserialize(Stream& is, std::vector<T, A>& v, int nType, int nVersion)
+-{
+-    Unserialize_impl(is, v, nType, nVersion, T());
+-}
+-
+-
+-
+-/**
+- * others derived from vector
+- */
+-inline unsigned int GetSerializeSize(const CScript& v, int nType, int nVersion)
+-{
+-    return GetSerializeSize((const std::vector<unsigned char>&)v, nType, nVersion);
+-}
+-
+-template<typename Stream>
+-void Serialize(Stream& os, const CScript& v, int nType, int nVersion)
+-{
+-    Serialize(os, (const std::vector<unsigned char>&)v, nType, nVersion);
+-}
+-
+-template<typename Stream>
+-void Unserialize(Stream& is, CScript& v, int nType, int nVersion)
+-{
+-    Unserialize(is, (std::vector<unsigned char>&)v, nType, nVersion);
+-}
+-
+-
+-
+-/**
+- * pair
+- */
+-template<typename K, typename T>
+-unsigned int GetSerializeSize(const std::pair<K, T>& item, int nType, int nVersion)
+-{
+-    return GetSerializeSize(item.first, nType, nVersion) + GetSerializeSize(item.second, nType, nVersion);
+-}
+-
+-template<typename Stream, typename K, typename T>
+-void Serialize(Stream& os, const std::pair<K, T>& item, int nType, int nVersion)
+-{
+-    Serialize(os, item.first, nType, nVersion);
+-    Serialize(os, item.second, nType, nVersion);
+-}
+-
+-template<typename Stream, typename K, typename T>
+-void Unserialize(Stream& is, std::pair<K, T>& item, int nType, int nVersion)
+-{
+-    Unserialize(is, item.first, nType, nVersion);
+-    Unserialize(is, item.second, nType, nVersion);
+-}
+-
+-
+-
+-/**
+- * map
+- */
+-template<typename K, typename T, typename Pred, typename A>
+-unsigned int GetSerializeSize(const std::map<K, T, Pred, A>& m, int nType, int nVersion)
+-{
+-    unsigned int nSize = GetSizeOfCompactSize(m.size());
+-    for (typename std::map<K, T, Pred, A>::const_iterator mi = m.begin(); mi != m.end(); ++mi)
+-        nSize += GetSerializeSize((*mi), nType, nVersion);
+-    return nSize;
+-}
+-
+-template<typename Stream, typename K, typename T, typename Pred, typename A>
+-void Serialize(Stream& os, const std::map<K, T, Pred, A>& m, int nType, int nVersion)
+-{
+-    WriteCompactSize(os, m.size());
+-    for (typename std::map<K, T, Pred, A>::const_iterator mi = m.begin(); mi != m.end(); ++mi)
+-        Serialize(os, (*mi), nType, nVersion);
+-}
+-
+-template<typename Stream, typename K, typename T, typename Pred, typename A>
+-void Unserialize(Stream& is, std::map<K, T, Pred, A>& m, int nType, int nVersion)
+-{
+-    m.clear();
+-    unsigned int nSize = ReadCompactSize(is);
+-    typename std::map<K, T, Pred, A>::iterator mi = m.begin();
+-    for (unsigned int i = 0; i < nSize; i++)
+-    {
+-        std::pair<K, T> item;
+-        Unserialize(is, item, nType, nVersion);
+-        mi = m.insert(mi, item);
+-    }
+-}
+-
+-
+-
+-/**
+- * set
+- */
+-template<typename K, typename Pred, typename A>
+-unsigned int GetSerializeSize(const std::set<K, Pred, A>& m, int nType, int nVersion)
+-{
+-    unsigned int nSize = GetSizeOfCompactSize(m.size());
+-    for (typename std::set<K, Pred, A>::const_iterator it = m.begin(); it != m.end(); ++it)
+-        nSize += GetSerializeSize((*it), nType, nVersion);
+-    return nSize;
+-}
+-
+-template<typename Stream, typename K, typename Pred, typename A>
+-void Serialize(Stream& os, const std::set<K, Pred, A>& m, int nType, int nVersion)
+-{
+-    WriteCompactSize(os, m.size());
+-    for (typename std::set<K, Pred, A>::const_iterator it = m.begin(); it != m.end(); ++it)
+-        Serialize(os, (*it), nType, nVersion);
+-}
+-
+-template<typename Stream, typename K, typename Pred, typename A>
+-void Unserialize(Stream& is, std::set<K, Pred, A>& m, int nType, int nVersion)
+-{
+-    m.clear();
+-    unsigned int nSize = ReadCompactSize(is);
+-    typename std::set<K, Pred, A>::iterator it = m.begin();
+-    for (unsigned int i = 0; i < nSize; i++)
+-    {
+-        K key;
+-        Unserialize(is, key, nType, nVersion);
+-        it = m.insert(it, key);
+-    }
+-}
+-
+-
+-
+-/**
+- * Support for ADD_SERIALIZE_METHODS and READWRITE macro
+- */
+-struct CSerActionSerialize
+-{
+-    bool ForRead() const { return false; }
+-};
+-struct CSerActionUnserialize
+-{
+-    bool ForRead() const { return true; }
+-};
+-
+-template<typename Stream, typename T>
+-inline void SerReadWrite(Stream& s, const T& obj, int nType, int nVersion, CSerActionSerialize ser_action)
+-{
+-    ::Serialize(s, obj, nType, nVersion);
+-}
+-
+-template<typename Stream, typename T>
+-inline void SerReadWrite(Stream& s, T& obj, int nType, int nVersion, CSerActionUnserialize ser_action)
+-{
+-    ::Unserialize(s, obj, nType, nVersion);
+-}
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-class CSizeComputer
+-{
+-protected:
+-    size_t nSize;
+-
+-public:
+-    int nType;
+-    int nVersion;
+-
+-    CSizeComputer(int nTypeIn, int nVersionIn) : nSize(0), nType(nTypeIn), nVersion(nVersionIn) {}
+-
+-    CSizeComputer& write(const char *psz, size_t nSize)
+-    {
+-        this->nSize += nSize;
+-        return *this;
+-    }
+-
+-    template<typename T>
+-    CSizeComputer& operator<<(const T& obj)
+-    {
+-        ::Serialize(*this, obj, nType, nVersion);
+-        return (*this);
+-    }
+-
+-    size_t size() const {
+-        return nSize;
+-    }
+-};
+-
+-#endif // BITCOIN_SERIALIZE_H
+diff --git a/libzerocash/streams.h b/libzerocash/streams.h
+deleted file mode 100644
+index b07b11e..0000000
+--- a/libzerocash/streams.h
++++ /dev/null
+@@ -1,571 +0,0 @@
+-// Copyright (c) 2009-2010 Satoshi Nakamoto
+-// Copyright (c) 2009-2013 The Bitcoin developers
+-// Distributed under the MIT/X11 software license, see the accompanying
+-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+-
+-#ifndef BITCOIN_STREAMS_H
+-#define BITCOIN_STREAMS_H
+-
+-#include "allocators.h"
+-#include "serialize.h"
+-
+-#include <algorithm>
+-#include <assert.h>
+-#include <ios>
+-#include <limits>
+-#include <map>
+-#include <set>
+-#include <stdint.h>
+-#include <string>
+-#include <string.h>
+-#include <utility>
+-#include <vector>
+-
+-/** Double ended buffer combining vector and stream-like interfaces.
+- *
+- * >> and << read and write unformatted data using the above serialization templates.
+- * Fills with data in linear time; some stringstream implementations take N^2 time.
+- */
+-class CDataStream
+-{
+-protected:
+-    typedef CSerializeData vector_type;
+-    vector_type vch;
+-    unsigned int nReadPos;
+-public:
+-    int nType;
+-    int nVersion;
+-
+-    typedef vector_type::allocator_type   allocator_type;
+-    typedef vector_type::size_type        size_type;
+-    typedef vector_type::difference_type  difference_type;
+-    typedef vector_type::reference        reference;
+-    typedef vector_type::const_reference  const_reference;
+-    typedef vector_type::value_type       value_type;
+-    typedef vector_type::iterator         iterator;
+-    typedef vector_type::const_iterator   const_iterator;
+-    typedef vector_type::reverse_iterator reverse_iterator;
+-
+-    explicit CDataStream(int nTypeIn, int nVersionIn)
+-    {
+-        Init(nTypeIn, nVersionIn);
+-    }
+-
+-    CDataStream(const_iterator pbegin, const_iterator pend, int nTypeIn, int nVersionIn) : vch(pbegin, pend)
+-    {
+-        Init(nTypeIn, nVersionIn);
+-    }
+-
+-#if !defined(_MSC_VER) || _MSC_VER >= 1300
+-    CDataStream(const char* pbegin, const char* pend, int nTypeIn, int nVersionIn) : vch(pbegin, pend)
+-    {
+-        Init(nTypeIn, nVersionIn);
+-    }
+-#endif
+-
+-    CDataStream(const vector_type& vchIn, int nTypeIn, int nVersionIn) : vch(vchIn.begin(), vchIn.end())
+-    {
+-        Init(nTypeIn, nVersionIn);
+-    }
+-
+-    CDataStream(const std::vector<char>& vchIn, int nTypeIn, int nVersionIn) : vch(vchIn.begin(), vchIn.end())
+-    {
+-        Init(nTypeIn, nVersionIn);
+-    }
+-
+-    CDataStream(const std::vector<unsigned char>& vchIn, int nTypeIn, int nVersionIn) : vch(vchIn.begin(), vchIn.end())
+-    {
+-        Init(nTypeIn, nVersionIn);
+-    }
+-
+-    void Init(int nTypeIn, int nVersionIn)
+-    {
+-        nReadPos = 0;
+-        nType = nTypeIn;
+-        nVersion = nVersionIn;
+-    }
+-
+-    CDataStream& operator+=(const CDataStream& b)
+-    {
+-        vch.insert(vch.end(), b.begin(), b.end());
+-        return *this;
+-    }
+-
+-    friend CDataStream operator+(const CDataStream& a, const CDataStream& b)
+-    {
+-        CDataStream ret = a;
+-        ret += b;
+-        return (ret);
+-    }
+-
+-    std::string str() const
+-    {
+-        return (std::string(begin(), end()));
+-    }
+-
+-
+-    //
+-    // Vector subset
+-    //
+-    const_iterator begin() const                     { return vch.begin() + nReadPos; }
+-    iterator begin()                                 { return vch.begin() + nReadPos; }
+-    const_iterator end() const                       { return vch.end(); }
+-    iterator end()                                   { return vch.end(); }
+-    size_type size() const                           { return vch.size() - nReadPos; }
+-    bool empty() const                               { return vch.size() == nReadPos; }
+-    void resize(size_type n, value_type c=0)         { vch.resize(n + nReadPos, c); }
+-    void reserve(size_type n)                        { vch.reserve(n + nReadPos); }
+-    const_reference operator[](size_type pos) const  { return vch[pos + nReadPos]; }
+-    reference operator[](size_type pos)              { return vch[pos + nReadPos]; }
+-    void clear()                                     { vch.clear(); nReadPos = 0; }
+-    iterator insert(iterator it, const char& x=char()) { return vch.insert(it, x); }
+-    void insert(iterator it, size_type n, const char& x) { vch.insert(it, n, x); }
+-
+-    void insert(iterator it, std::vector<char>::const_iterator first, std::vector<char>::const_iterator last)
+-    {
+-        assert(last - first >= 0);
+-        if (it == vch.begin() + nReadPos && (unsigned int)(last - first) <= nReadPos)
+-        {
+-            // special case for inserting at the front when there's room
+-            nReadPos -= (last - first);
+-            memcpy(&vch[nReadPos], &first[0], last - first);
+-        }
+-        else
+-            vch.insert(it, first, last);
+-    }
+-
+-#if !defined(_MSC_VER) || _MSC_VER >= 1300
+-    void insert(iterator it, const char* first, const char* last)
+-    {
+-        assert(last - first >= 0);
+-        if (it == vch.begin() + nReadPos && (unsigned int)(last - first) <= nReadPos)
+-        {
+-            // special case for inserting at the front when there's room
+-            nReadPos -= (last - first);
+-            memcpy(&vch[nReadPos], &first[0], last - first);
+-        }
+-        else
+-            vch.insert(it, first, last);
+-    }
+-#endif
+-
+-    iterator erase(iterator it)
+-    {
+-        if (it == vch.begin() + nReadPos)
+-        {
+-            // special case for erasing from the front
+-            if (++nReadPos >= vch.size())
+-            {
+-                // whenever we reach the end, we take the opportunity to clear the buffer
+-                nReadPos = 0;
+-                return vch.erase(vch.begin(), vch.end());
+-            }
+-            return vch.begin() + nReadPos;
+-        }
+-        else
+-            return vch.erase(it);
+-    }
+-
+-    iterator erase(iterator first, iterator last)
+-    {
+-        if (first == vch.begin() + nReadPos)
+-        {
+-            // special case for erasing from the front
+-            if (last == vch.end())
+-            {
+-                nReadPos = 0;
+-                return vch.erase(vch.begin(), vch.end());
+-            }
+-            else
+-            {
+-                nReadPos = (last - vch.begin());
+-                return last;
+-            }
+-        }
+-        else
+-            return vch.erase(first, last);
+-    }
+-
+-    inline void Compact()
+-    {
+-        vch.erase(vch.begin(), vch.begin() + nReadPos);
+-        nReadPos = 0;
+-    }
+-
+-    bool Rewind(size_type n)
+-    {
+-        // Rewind by n characters if the buffer hasn't been compacted yet
+-        if (n > nReadPos)
+-            return false;
+-        nReadPos -= n;
+-        return true;
+-    }
+-
+-
+-    //
+-    // Stream subset
+-    //
+-    bool eof() const             { return size() == 0; }
+-    CDataStream* rdbuf()         { return this; }
+-    int in_avail()               { return size(); }
+-
+-    void SetType(int n)          { nType = n; }
+-    int GetType()                { return nType; }
+-    void SetVersion(int n)       { nVersion = n; }
+-    int GetVersion()             { return nVersion; }
+-    void ReadVersion()           { *this >> nVersion; }
+-    void WriteVersion()          { *this << nVersion; }
+-
+-    CDataStream& read(char* pch, size_t nSize)
+-    {
+-        // Read from the beginning of the buffer
+-        unsigned int nReadPosNext = nReadPos + nSize;
+-        if (nReadPosNext >= vch.size())
+-        {
+-            if (nReadPosNext > vch.size())
+-            {
+-                throw std::ios_base::failure("CDataStream::read() : end of data");
+-            }
+-            memcpy(pch, &vch[nReadPos], nSize);
+-            nReadPos = 0;
+-            vch.clear();
+-            return (*this);
+-        }
+-        memcpy(pch, &vch[nReadPos], nSize);
+-        nReadPos = nReadPosNext;
+-        return (*this);
+-    }
+-
+-    CDataStream& ignore(int nSize)
+-    {
+-        // Ignore from the beginning of the buffer
+-        assert(nSize >= 0);
+-        unsigned int nReadPosNext = nReadPos + nSize;
+-        if (nReadPosNext >= vch.size())
+-        {
+-            if (nReadPosNext > vch.size())
+-                throw std::ios_base::failure("CDataStream::ignore() : end of data");
+-            nReadPos = 0;
+-            vch.clear();
+-            return (*this);
+-        }
+-        nReadPos = nReadPosNext;
+-        return (*this);
+-    }
+-
+-    CDataStream& write(const char* pch, size_t nSize)
+-    {
+-        // Write to the end of the buffer
+-        vch.insert(vch.end(), pch, pch + nSize);
+-        return (*this);
+-    }
+-
+-    template<typename Stream>
+-    void Serialize(Stream& s, int nType, int nVersion) const
+-    {
+-        // Special case: stream << stream concatenates like stream += stream
+-        if (!vch.empty())
+-            s.write((char*)&vch[0], vch.size() * sizeof(vch[0]));
+-    }
+-
+-    template<typename T>
+-    unsigned int GetSerializeSize(const T& obj)
+-    {
+-        // Tells the size of the object if serialized to this stream
+-        return ::GetSerializeSize(obj, nType, nVersion);
+-    }
+-
+-    template<typename T>
+-    CDataStream& operator<<(const T& obj)
+-    {
+-        // Serialize to this stream
+-        ::Serialize(*this, obj, nType, nVersion);
+-        return (*this);
+-    }
+-
+-    template<typename T>
+-    CDataStream& operator>>(T& obj)
+-    {
+-        // Unserialize from this stream
+-        ::Unserialize(*this, obj, nType, nVersion);
+-        return (*this);
+-    }
+-
+-    void GetAndClear(CSerializeData &data) {
+-        data.insert(data.end(), begin(), end());
+-        clear();
+-    }
+-};
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-/** Non-refcounted RAII wrapper for FILE*
+- *
+- * Will automatically close the file when it goes out of scope if not null.
+- * If you're returning the file pointer, return file.release().
+- * If you need to close the file early, use file.fclose() instead of fclose(file).
+- */
+-class CAutoFile
+-{
+-private:
+-    // Disallow copies
+-    CAutoFile(const CAutoFile&);
+-    CAutoFile& operator=(const CAutoFile&);
+-
+-    int nType;
+-    int nVersion;
+-	
+-    FILE* file;	
+-
+-public:
+-    CAutoFile(FILE* filenew, int nTypeIn, int nVersionIn)
+-    {
+-        file = filenew;
+-        nType = nTypeIn;
+-        nVersion = nVersionIn;
+-    }
+-
+-    ~CAutoFile()
+-    {
+-        fclose();
+-    }
+-
+-    void fclose()
+-    {
+-        if (file) {
+-            ::fclose(file);
+-            file = NULL;
+-        }
+-    }
+-
+-    /** Get wrapped FILE* with transfer of ownership.
+-     * @note This will invalidate the CAutoFile object, and makes it the responsibility of the caller
+-     * of this function to clean up the returned FILE*.
+-     */
+-    FILE* release()             { FILE* ret = file; file = NULL; return ret; }
+-
+-    /** Get wrapped FILE* without transfer of ownership.
+-     * @note Ownership of the FILE* will remain with this class. Use this only if the scope of the
+-     * CAutoFile outlives use of the passed pointer.
+-     */
+-    FILE* Get() const           { return file; }
+-
+-    /** Return true if the wrapped FILE* is NULL, false otherwise.
+-     */
+-    bool IsNull() const         { return (file == NULL); }
+-
+-    //
+-    // Stream subset
+-    //
+-    void SetType(int n)          { nType = n; }
+-    int GetType()                { return nType; }
+-    void SetVersion(int n)       { nVersion = n; }
+-    int GetVersion()             { return nVersion; }
+-    void ReadVersion()           { *this >> nVersion; }
+-    void WriteVersion()          { *this << nVersion; }
+-
+-    CAutoFile& read(char* pch, size_t nSize)
+-    {
+-        if (!file)
+-            throw std::ios_base::failure("CAutoFile::read : file handle is NULL");
+-        if (fread(pch, 1, nSize, file) != nSize)
+-            throw std::ios_base::failure(feof(file) ? "CAutoFile::read : end of file" : "CAutoFile::read : fread failed");
+-        return (*this);
+-    }
+-
+-    CAutoFile& write(const char* pch, size_t nSize)
+-    {
+-        if (!file)
+-            throw std::ios_base::failure("CAutoFile::write : file handle is NULL");
+-        if (fwrite(pch, 1, nSize, file) != nSize)
+-            throw std::ios_base::failure("CAutoFile::write : write failed");
+-        return (*this);
+-    }
+-
+-    template<typename T>
+-    unsigned int GetSerializeSize(const T& obj)
+-    {
+-        // Tells the size of the object if serialized to this stream
+-        return ::GetSerializeSize(obj, nType, nVersion);
+-    }
+-
+-    template<typename T>
+-    CAutoFile& operator<<(const T& obj)
+-    {
+-        // Serialize to this stream
+-        if (!file)
+-            throw std::ios_base::failure("CAutoFile::operator<< : file handle is NULL");
+-        ::Serialize(*this, obj, nType, nVersion);
+-        return (*this);
+-    }
+-
+-    template<typename T>
+-    CAutoFile& operator>>(T& obj)
+-    {
+-        // Unserialize from this stream
+-        if (!file)
+-            throw std::ios_base::failure("CAutoFile::operator>> : file handle is NULL");
+-        ::Unserialize(*this, obj, nType, nVersion);
+-        return (*this);
+-    }
+-};
+-
+-/** Non-refcounted RAII wrapper around a FILE* that implements a ring buffer to
+- *  deserialize from. It guarantees the ability to rewind a given number of bytes.
+- *
+- *  Will automatically close the file when it goes out of scope if not null.
+- *  If you need to close the file early, use file.fclose() instead of fclose(file).
+- */
+-class CBufferedFile
+-{
+-private:
+-    // Disallow copies
+-    CBufferedFile(const CBufferedFile&);
+-    CBufferedFile& operator=(const CBufferedFile&);
+-
+-    int nType;
+-    int nVersion;
+-
+-    FILE *src;            // source file
+-    uint64_t nSrcPos;     // how many bytes have been read from source
+-    uint64_t nReadPos;    // how many bytes have been read from this
+-    uint64_t nReadLimit;  // up to which position we're allowed to read
+-    uint64_t nRewind;     // how many bytes we guarantee to rewind
+-    std::vector<char> vchBuf; // the buffer
+-
+-protected:
+-    // read data from the source to fill the buffer
+-    bool Fill() {
+-        unsigned int pos = nSrcPos % vchBuf.size();
+-        unsigned int readNow = vchBuf.size() - pos;
+-        unsigned int nAvail = vchBuf.size() - (nSrcPos - nReadPos) - nRewind;
+-        if (nAvail < readNow)
+-            readNow = nAvail;
+-        if (readNow == 0)
+-            return false;
+-        size_t read = fread((void*)&vchBuf[pos], 1, readNow, src);
+-        if (read == 0) {
+-            throw std::ios_base::failure(feof(src) ? "CBufferedFile::Fill : end of file" : "CBufferedFile::Fill : fread failed");
+-        } else {
+-            nSrcPos += read;
+-            return true;
+-        }
+-    }
+-
+-public:
+-    CBufferedFile(FILE *fileIn, uint64_t nBufSize, uint64_t nRewindIn, int nTypeIn, int nVersionIn) :
+-        nSrcPos(0), nReadPos(0), nReadLimit((uint64_t)(-1)), nRewind(nRewindIn), vchBuf(nBufSize, 0)
+-    {
+-        src = fileIn;
+-        nType = nTypeIn;
+-        nVersion = nVersionIn;
+-    }
+-
+-    ~CBufferedFile()
+-    {
+-        fclose();
+-    }
+-
+-    void fclose()
+-    {
+-        if (src) {
+-            ::fclose(src);
+-            src = NULL;
+-        }
+-    }
+-
+-    // check whether we're at the end of the source file
+-    bool eof() const {
+-        return nReadPos == nSrcPos && feof(src);
+-    }
+-
+-    // read a number of bytes
+-    CBufferedFile& read(char *pch, size_t nSize) {
+-        if (nSize + nReadPos > nReadLimit)
+-            throw std::ios_base::failure("Read attempted past buffer limit");
+-        if (nSize + nRewind > vchBuf.size())
+-            throw std::ios_base::failure("Read larger than buffer size");
+-        while (nSize > 0) {
+-            if (nReadPos == nSrcPos)
+-                Fill();
+-            unsigned int pos = nReadPos % vchBuf.size();
+-            size_t nNow = nSize;
+-            if (nNow + pos > vchBuf.size())
+-                nNow = vchBuf.size() - pos;
+-            if (nNow + nReadPos > nSrcPos)
+-                nNow = nSrcPos - nReadPos;
+-            memcpy(pch, &vchBuf[pos], nNow);
+-            nReadPos += nNow;
+-            pch += nNow;
+-            nSize -= nNow;
+-        }
+-        return (*this);
+-    }
+-
+-    // return the current reading position
+-    uint64_t GetPos() {
+-        return nReadPos;
+-    }
+-
+-    // rewind to a given reading position
+-    bool SetPos(uint64_t nPos) {
+-        nReadPos = nPos;
+-        if (nReadPos + nRewind < nSrcPos) {
+-            nReadPos = nSrcPos - nRewind;
+-            return false;
+-        } else if (nReadPos > nSrcPos) {
+-            nReadPos = nSrcPos;
+-            return false;
+-        } else {
+-            return true;
+-        }
+-    }
+-
+-    bool Seek(uint64_t nPos) {
+-        long nLongPos = nPos;
+-        if (nPos != (uint64_t)nLongPos)
+-            return false;
+-        if (fseek(src, nLongPos, SEEK_SET))
+-            return false;
+-        nLongPos = ftell(src);
+-        nSrcPos = nLongPos;
+-        nReadPos = nLongPos;
+-        return true;
+-    }
+-
+-    // prevent reading beyond a certain position
+-    // no argument removes the limit
+-    bool SetLimit(uint64_t nPos = (uint64_t)(-1)) {
+-        if (nPos < nReadPos)
+-            return false;
+-        nReadLimit = nPos;
+-        return true;
+-    }
+-
+-    template<typename T>
+-    CBufferedFile& operator>>(T& obj) {
+-        // Unserialize from this stream
+-        ::Unserialize(*this, obj, nType, nVersion);
+-        return (*this);
+-    }
+-
+-    // search for a given byte in the stream, and remain positioned on it
+-    void FindByte(char ch) {
+-        while (true) {
+-            if (nReadPos == nSrcPos)
+-                Fill();
+-            if (vchBuf[nReadPos % vchBuf.size()] == ch)
+-                break;
+-            nReadPos++;
+-        }
+-    }
+-};
+-
+-#endif // BITCOIN_STREAMS_H
+diff --git a/tests/zerocashTest.cpp b/tests/zerocashTest.cpp
+index 68dd4b8..6b2d349 100644
+--- a/tests/zerocashTest.cpp
++++ b/tests/zerocashTest.cpp
+@@ -39,39 +39,6 @@ vector<bool> convertIntToVector(uint64_t val) {
+ 	return ret;
+ }
+ 
+-int AddressTest() {
+-    cout << "\nADDRESS TEST\n" << endl;
+-
+-    libzerocash::timer_start("Address");
+-    libzerocash::Address newAddress;
+-    libzerocash::timer_stop("Address");
+-
+-    cout << "Successfully created an address.\n" << endl;
+-
+-    CDataStream serializedAddress(SER_NETWORK, 7002);
+-    serializedAddress << newAddress;
+-
+-    cout << "Successfully serialized an address.\n" << endl;
+-
+-    libzerocash::Address addressNew;
+-    serializedAddress >> addressNew;
+-    cout << "Successfully deserialized an address.\n" << endl;
+-
+-    libzerocash::PublicAddress pubAddress = newAddress.getPublicAddress();
+-
+-    CDataStream serializedPubAddress(SER_NETWORK, 7002);
+-    serializedPubAddress << pubAddress;
+-
+-    cout << "Successfully serialized a public address.\n" << endl;
+-
+-    libzerocash::PublicAddress pubAddressNew;
+-    serializedPubAddress >> pubAddressNew;
+-    cout << "Successfully deserialized a public address.\n" << endl;
+-
+-    bool result = ((newAddress == addressNew) && (pubAddress == pubAddressNew));
+-
+-    return result;
+-}
+ 
+ int SaveAndLoadKeysFromFiles(int tree_depth) {
+     cout << "\nSaveAndLoadKeysFromFiles TEST\n" << endl;
+@@ -138,18 +105,6 @@ int SaveAndLoadKeysFromFiles(int tree_depth) {
+     libzerocash::MintTransaction minttx(coins.at(0));
+     cout << "Successfully created a Mint Transaction.\n" << endl;
+ 
+-    cout << "Serializing a mint transaction...\n" << endl;
+-    CDataStream serializedMintTx(SER_NETWORK, 7002);
+-    serializedMintTx << minttx;
+-    cout << "Successfully serialized a mint transaction.\n" << endl;
+-
+-    libzerocash::MintTransaction minttxNew;
+-    serializedMintTx >> minttxNew;
+-    cout << "Successfully deserialized a mint transaction.\n" << endl;
+-
+-    cout << "Verifying a Mint Transaction...\n" << endl;
+-    bool minttx_res = minttxNew.verify();
+-
+     vector<std::vector<bool>> coinValues(5);
+     vector<bool> temp_comVal(cm_size * 8);
+     for(size_t i = 0; i < coinValues.size(); i++) {
+@@ -203,21 +158,12 @@ int SaveAndLoadKeysFromFiles(int tree_depth) {
+     		c_1_new, c_2_new);
+     cout << "Successfully created a pour transaction.\n" << endl;
+ 
+-    cout << "Serializing a pour transaction...\n" << endl;
+-    CDataStream serializedPourTx(SER_NETWORK, 7002);
+-    serializedPourTx << pourtx;
+-    cout << "Successfully serialized a pour transaction.\n" << endl;
+-
+-    libzerocash::PourTransaction pourtxNew;
+-    serializedPourTx >> pourtxNew;
+-    cout << "Successfully deserialized a pour transaction.\n" << endl;
+-
+ 	std::vector<unsigned char> pubkeyHash(sig_pk_size, 'a');
+ 
+     cout << "Verifying a pour transaction...\n" << endl;
+-    bool pourtx_res = pourtxNew.verify(p, pubkeyHash, rt);
++    bool pourtx_res = pourtx.verify(p, pubkeyHash, rt);
+ 
+-    return (minttx_res && pourtx_res);
++    return pourtx_res;
+ }
+ 
+ int CoinTest() {
+@@ -230,16 +176,6 @@ int CoinTest() {
+ 
+     cout << "Successfully created a coin.\n" << endl;
+ 
+-    CDataStream serializedCoin(SER_NETWORK, 7002);
+-    serializedCoin << coin;
+-
+-    cout << "Successfully serialized a coin.\n" << endl;
+-
+-    libzerocash::Coin coinNew;
+-    serializedCoin >> coinNew;
+-
+-    cout << "Successfully deserialized a coin.\n" << endl;
+-
+     ///////////////////////////////////////////////////////////////////////////
+ 
+     libzerocash::timer_start("Coin");
+@@ -248,19 +184,7 @@ int CoinTest() {
+ 
+     cout << "Successfully created a coin.\n" << endl;
+ 
+-    CDataStream serializedCoin2(SER_NETWORK, 7002);
+-    serializedCoin2 << coin2;
+-
+-    cout << "Successfully serialized a coin.\n" << endl;
+-
+-    libzerocash::Coin coinNew2;
+-    serializedCoin2 >> coinNew2;
+-
+-    cout << "Successfully deserialized a coin.\n" << endl;
+-
+-    bool result = ((coin == coinNew) && (coin2 == coinNew2));
+-
+-    return result;
++    return true;
+ }
+ 
+ bool MintTxTest() {
+@@ -281,19 +205,8 @@ bool MintTxTest() {
+ 
+     cout << "Successfully created a mint transaction.\n" << endl;
+ 
+-    CDataStream serializedMintTx(SER_NETWORK, 7002);
+-    serializedMintTx << minttx;
+-
+-    cout << "Successfully serialized a mint transaction.\n" << endl;
+-
+-    libzerocash::MintTransaction minttxNew;
+-
+-    serializedMintTx >> minttxNew;
+-
+-    cout << "Successfully deserialized a mint transaction.\n" << endl;
+-
+     libzerocash::timer_start("Mint Transaction Verify");
+-    bool minttx_res = minttxNew.verify();
++    bool minttx_res = minttx.verify();
+     libzerocash::timer_stop("Mint Transaction Verify");
+ 
+     return minttx_res;
+@@ -395,20 +308,10 @@ bool PourTxTest(const size_t tree_depth) {
+ 
+     cout << "Successfully created a pour transaction.\n" << endl;
+ 
+-    CDataStream serializedPourTx(SER_NETWORK, 7002);
+-    serializedPourTx << pourtx;
+-
+-    cout << "Successfully serialized a pour transaction.\n" << endl;
+-
+-    libzerocash::PourTransaction pourtxNew;
+-    serializedPourTx >> pourtxNew;
+-
+-    cout << "Successfully deserialized a pour transaction.\n" << endl;
+-
+ 	std::vector<unsigned char> pubkeyHash(sig_pk_size, 'a');
+ 
+     libzerocash::timer_start("Pour Transaction Verify");
+-    bool pourtx_res = pourtxNew.verify(p, pubkeyHash, rt);
++    bool pourtx_res = pourtx.verify(p, pubkeyHash, rt);
+     libzerocash::timer_stop("Pour Transaction Verify");
+ 
+     return pourtx_res;
+@@ -554,17 +457,8 @@ bool SimpleTxTest(const size_t tree_depth) {
+     libzerocash::MintTransaction minttx(coins.at(0));
+     cout << "Successfully created a Mint Transaction.\n" << endl;
+ 
+-    cout << "Serializing a mint transaction...\n" << endl;
+-    CDataStream serializedMintTx(SER_NETWORK, 7002);
+-    serializedMintTx << minttx;
+-    cout << "Successfully serialized a mint transaction.\n" << endl;
+-
+-    libzerocash::MintTransaction minttxNew;
+-    serializedMintTx >> minttxNew;
+-    cout << "Successfully deserialized a mint transaction.\n" << endl;
+-
+     cout << "Verifying a Mint Transaction...\n" << endl;
+-    bool minttx_res = minttxNew.verify();
++    bool minttx_res = minttx.verify();
+ 
+     vector<std::vector<bool>> coinValues(5);
+     vector<bool> temp_comVal(cm_size * 8);
+@@ -624,19 +518,10 @@ bool SimpleTxTest(const size_t tree_depth) {
+     		c_1_new, c_2_new);
+     cout << "Successfully created a pour transaction.\n" << endl;
+ 
+-    cout << "Serializing a pour transaction...\n" << endl;
+-    CDataStream serializedPourTx(SER_NETWORK, 7002);
+-    serializedPourTx << pourtx;
+-    cout << "Successfully serialized a pour transaction.\n" << endl;
+-
+-    libzerocash::PourTransaction pourtxNew;
+-    serializedPourTx >> pourtxNew;
+-    cout << "Successfully deserialized a pour transaction.\n" << endl;
+-
+ 	std::vector<unsigned char> pubkeyHash(sig_pk_size, 'a');
+ 
+     cout << "Verifying a pour transaction...\n" << endl;
+-    bool pourtx_res = pourtxNew.verify(p, pubkeyHash, rt);
++    bool pourtx_res = pourtx.verify(p, pubkeyHash, rt);
+ 
+     return (minttx_res && pourtx_res);
+ }
+@@ -649,7 +534,6 @@ int main(int argc, char **argv)
+ 
+     start_profiling();
+ 	bool merkleSimpleResult = MerkleTreeSimpleTest();
+-    bool addressResult = AddressTest();
+     bool coinResult = CoinTest();
+     bool mintTxResult = MintTxTest();
+     bool saveAndLoadKeysFromFiles = SaveAndLoadKeysFromFiles(tree_depth);
+@@ -658,7 +542,6 @@ int main(int argc, char **argv)
+     bool simpleTxResult = SimpleTxTest(tree_depth);
+ 
+     cout << "\n" << endl;
+-    std::cout << "\nAddressTest result => " << addressResult << std::endl;
+     std::cout << "\nCoinTest result => " << coinResult << std::endl;
+     std::cout << "\nMerkleTreeSimpleTest result => " << merkleSimpleResult << std::endl;
+     std::cout << "\nMintTxTest result => " << mintTxResult << std::endl;
+@@ -666,7 +549,7 @@ int main(int argc, char **argv)
+     std::cout << "\nSimpleTxTest result => " << simpleTxResult << std::endl;
+     std::cout << "\nSaveAndLoadKeysFromFiles result => " << saveAndLoadKeysFromFiles << std::endl;
+ 
+-    return !(merkleSimpleResult && addressResult &&
++    return !(merkleSimpleResult &&
+         coinResult && mintTxResult && saveAndLoadKeysFromFiles
+         && pourTxResult && simpleTxResult);
+ }
