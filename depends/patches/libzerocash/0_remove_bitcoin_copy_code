@@ -1,5 +1,5 @@
 diff --git a/libzerocash/Address.h b/libzerocash/Address.h
-index 4d7cded..db96e8b 100644
+index 73d6695..c5045c9 100644
 --- a/libzerocash/Address.h
 +++ b/libzerocash/Address.h
 @@ -15,7 +15,6 @@
@@ -10,7 +10,7 @@ index 4d7cded..db96e8b 100644
  
  namespace libzerocash {
  
-@@ -33,14 +32,6 @@ public:
+@@ -30,14 +29,6 @@ public:
      bool operator==(const PrivateAddress& rhs) const;
      bool operator!=(const PrivateAddress& rhs) const;
  
@@ -22,10 +22,10 @@ index 4d7cded..db96e8b 100644
 -        READWRITE(sk_enc);
 -    }
 -
-     void createPrivateAddress(const std::vector<unsigned char> a_sk, const std::string sk_enc);
+     const std::vector<unsigned char>& getAddressSecret() const;
+     const std::string getEncryptionSecretKey() const;
  
- private:
-@@ -66,13 +57,6 @@ public:
+@@ -58,13 +49,6 @@ public:
      bool operator==(const PublicAddress& rhs) const;
      bool operator!=(const PublicAddress& rhs) const;
  
@@ -37,9 +37,9 @@ index 4d7cded..db96e8b 100644
 -        READWRITE(pk_enc);
 -    }
  
- private:
-     std::vector<unsigned char> a_pk;
-@@ -102,13 +86,6 @@ public:
+     const std::vector<unsigned char>& getPublicAddressSecret() const;
+     const std::string getEncryptionPublicKey() const;
+@@ -88,13 +72,6 @@ public:
      bool operator==(const Address& rhs) const;
      bool operator!=(const Address& rhs) const;
  
@@ -51,10 +51,10 @@ index 4d7cded..db96e8b 100644
 -        READWRITE(addr_sk);
 -    }
  
- private:
-     PublicAddress addr_pk;
+     static Address CreateNewRandomAddress();
+ 
 diff --git a/libzerocash/Coin.h b/libzerocash/Coin.h
-index 6492bfc..bc09a13 100644
+index 7ad50c9..1aa1635 100644
 --- a/libzerocash/Coin.h
 +++ b/libzerocash/Coin.h
 @@ -14,7 +14,6 @@
@@ -65,7 +65,7 @@ index 6492bfc..bc09a13 100644
  #include "Address.h"
  #include "CoinCommitment.h"
  
-@@ -50,18 +49,6 @@ public:
+@@ -51,18 +50,6 @@ public:
  	bool operator==(const Coin& rhs) const;
  	bool operator!=(const Coin& rhs) const;
  
@@ -85,7 +85,7 @@ index 6492bfc..bc09a13 100644
  
  private:
 diff --git a/libzerocash/CoinCommitment.h b/libzerocash/CoinCommitment.h
-index e261a17..241c82d 100644
+index 0bdfafd..f14f0cc 100644
 --- a/libzerocash/CoinCommitment.h
 +++ b/libzerocash/CoinCommitment.h
 @@ -14,8 +14,6 @@
@@ -97,7 +97,7 @@ index e261a17..241c82d 100644
  namespace libzerocash {
  
  /****************************** Coin commitment ******************************/
-@@ -38,12 +36,6 @@ public:
+@@ -35,12 +33,6 @@ public:
  	bool operator==(const CoinCommitment& rhs) const;
  	bool operator!=(const CoinCommitment& rhs) const;
  
@@ -111,7 +111,7 @@ index e261a17..241c82d 100644
  private:
      std::vector<unsigned char> commitmentValue;
 diff --git a/libzerocash/IncrementalMerkleTree.h b/libzerocash/IncrementalMerkleTree.h
-index 1cd8029..c2b8e7f 100644
+index 4057cca..1591463 100644
 --- a/libzerocash/IncrementalMerkleTree.h
 +++ b/libzerocash/IncrementalMerkleTree.h
 @@ -21,8 +21,6 @@
@@ -123,22 +123,21 @@ index 1cd8029..c2b8e7f 100644
  #include "libsnark/common/data_structures/merkle_tree.hpp"
  
  namespace libzerocash {
-@@ -39,15 +37,6 @@ public:
- 	IncrementalMerkleTreeCompact() : treeHeight(0) {}
-     void		clear() { hashVec.clear(); hashList.clear(); hashListBytes.clear(); treeHeight = 0; }
-     uint32_t	getHeight() { return this->treeHeight; }
--
+@@ -43,14 +41,6 @@ class IncrementalMerkleTreeCompact {
+ public:
+     uint32_t getHeight() { return this->treeHeight; }
+ 
 -    ADD_SERIALIZE_METHODS;
--
 -    template <typename Stream, typename Operation>
 -    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
--	 READWRITE(treeHeight);
--     READWRITE(hashVec);
--     READWRITE(hashListBytes);
+-        READWRITE(treeHeight);
+-        READWRITE(hashVec);
+-        READWRITE(hashListBytes);
 -    }
- };
- 
- /********************* Incremental Merkle tree node **************************/
+-
+     uint32_t getTreeHeight() { return treeHeight; }
+     std::vector< std::vector<unsigned char> > const& getHashVec() { return hashVec; }
+     std::vector< bool > const& getHashList() { return hashList; }
 diff --git a/libzerocash/MintTransaction.h b/libzerocash/MintTransaction.h
 index 00a19b3..0c1d316 100644
 --- a/libzerocash/MintTransaction.h
@@ -167,7 +166,7 @@ index 00a19b3..0c1d316 100644
  private:
  	std::vector<unsigned char>	coinValue;			// coin value
 diff --git a/libzerocash/PourTransaction.h b/libzerocash/PourTransaction.h
-index c819643..66826a1 100644
+index 792905a..9b0991d 100644
 --- a/libzerocash/PourTransaction.h
 +++ b/libzerocash/PourTransaction.h
 @@ -12,7 +12,6 @@
@@ -178,16 +177,17 @@ index c819643..66826a1 100644
  #include "Coin.h"
  #include "ZerocashParams.h"
  #include "Zerocash.h"
-@@ -103,23 +102,6 @@ public:
-      */
-     uint64_t getMonetaryValueOut() const;
+@@ -131,24 +130,6 @@ public:
+ 
+     uint64_t getPublicValueOut() const;
  
 -    ADD_SERIALIZE_METHODS;
 -
 -    template <typename Stream, typename Operation>
 -    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
 -        READWRITE(version);
--        READWRITE(publicValue);
+-        READWRITE(publicOldValue);
+-        READWRITE(publicNewValue);
 -        READWRITE(serialNumber_1);
 -        READWRITE(serialNumber_2);
 -        READWRITE(cm_1);
@@ -203,10 +203,10 @@ index c819643..66826a1 100644
  private:
  
 diff --git a/libzerocash/Zerocash.h b/libzerocash/Zerocash.h
-index 7df190d..90819a0 100644
+index 39f9ad5..a9d533e 100644
 --- a/libzerocash/Zerocash.h
 +++ b/libzerocash/Zerocash.h
-@@ -67,6 +67,5 @@ namespace libzerocash {
+@@ -60,6 +60,5 @@ namespace libzerocash {
  };
  
  #include "libzerocash/utils/util.h"
@@ -1955,18 +1955,18 @@ index b07b11e..0000000
 -
 -#endif // BITCOIN_STREAMS_H
 diff --git a/tests/zerocashTest.cpp b/tests/zerocashTest.cpp
-index 68dd4b8..6b2d349 100644
+index 1ffb04d..186073a 100644
 --- a/tests/zerocashTest.cpp
 +++ b/tests/zerocashTest.cpp
-@@ -39,39 +39,6 @@ vector<bool> convertIntToVector(uint64_t val) {
- 	return ret;
- }
+@@ -34,40 +34,6 @@ using namespace libsnark;
  
--int AddressTest() {
+ #define TEST_TREE_DEPTH 4
+ 
+-BOOST_AUTO_TEST_CASE( AddressTest ) {
 -    cout << "\nADDRESS TEST\n" << endl;
 -
 -    libzerocash::timer_start("Address");
--    libzerocash::Address newAddress;
+-    libzerocash::Address newAddress = libzerocash::Address::CreateNewRandomAddress();
 -    libzerocash::timer_stop("Address");
 -
 -    cout << "Successfully created an address.\n" << endl;
@@ -1976,7 +1976,7 @@ index 68dd4b8..6b2d349 100644
 -
 -    cout << "Successfully serialized an address.\n" << endl;
 -
--    libzerocash::Address addressNew;
+-    libzerocash::Address addressNew = libzerocash::Address::CreateNewRandomAddress();
 -    serializedAddress >> addressNew;
 -    cout << "Successfully deserialized an address.\n" << endl;
 -
@@ -1993,12 +1993,13 @@ index 68dd4b8..6b2d349 100644
 -
 -    bool result = ((newAddress == addressNew) && (pubAddress == pubAddressNew));
 -
--    return result;
+-    BOOST_CHECK(result);
 -}
- 
- int SaveAndLoadKeysFromFiles(int tree_depth) {
+-
+ BOOST_AUTO_TEST_CASE( SaveAndLoadKeysFromFiles ) {
      cout << "\nSaveAndLoadKeysFromFiles TEST\n" << endl;
-@@ -138,18 +105,6 @@ int SaveAndLoadKeysFromFiles(int tree_depth) {
+ 
+@@ -133,18 +99,6 @@ BOOST_AUTO_TEST_CASE( SaveAndLoadKeysFromFiles ) {
      libzerocash::MintTransaction minttx(coins.at(0));
      cout << "Successfully created a Mint Transaction.\n" << endl;
  
@@ -2015,9 +2016,9 @@ index 68dd4b8..6b2d349 100644
 -    bool minttx_res = minttxNew.verify();
 -
      vector<std::vector<bool>> coinValues(5);
-     vector<bool> temp_comVal(cm_size * 8);
+     vector<bool> temp_comVal(ZC_CM_SIZE * 8);
      for(size_t i = 0; i < coinValues.size(); i++) {
-@@ -203,21 +158,12 @@ int SaveAndLoadKeysFromFiles(int tree_depth) {
+@@ -205,21 +159,12 @@ BOOST_AUTO_TEST_CASE( SaveAndLoadKeysFromFiles ) {
      		c_1_new, c_2_new);
      cout << "Successfully created a pour transaction.\n" << endl;
  
@@ -2030,18 +2031,29 @@ index 68dd4b8..6b2d349 100644
 -    serializedPourTx >> pourtxNew;
 -    cout << "Successfully deserialized a pour transaction.\n" << endl;
 -
- 	std::vector<unsigned char> pubkeyHash(sig_pk_size, 'a');
+ 	std::vector<unsigned char> pubkeyHash(ZC_SIG_PK_SIZE, 'a');
  
      cout << "Verifying a pour transaction...\n" << endl;
 -    bool pourtx_res = pourtxNew.verify(p, pubkeyHash, rt);
 +    bool pourtx_res = pourtx.verify(p, pubkeyHash, rt);
  
--    return (minttx_res && pourtx_res);
-+    return pourtx_res;
+-    BOOST_CHECK(minttx_res && pourtx_res);
++    BOOST_CHECK(pourtx_res);
  }
  
- int CoinTest() {
-@@ -230,16 +176,6 @@ int CoinTest() {
+ BOOST_AUTO_TEST_CASE( PourInputOutputTest ) {
+@@ -301,9 +246,7 @@ bool test_pour(libzerocash::ZerocashParams& p,
+ 
+     libzerocash::PourTransaction pourtx(p, as, rt, pour_inputs, pour_outputs, vpub_in, vpub_out);
+ 
+-    assert(pourtx.verify(p, as, rt));
+-
+-    return true;
++    BOOST_CHECK(pourtx.verify(p, as, rt));
+ }
+ 
+ BOOST_AUTO_TEST_CASE( PourVpubInTest ) {
+@@ -348,16 +291,6 @@ BOOST_AUTO_TEST_CASE( CoinTest ) {
  
      cout << "Successfully created a coin.\n" << endl;
  
@@ -2058,10 +2070,11 @@ index 68dd4b8..6b2d349 100644
      ///////////////////////////////////////////////////////////////////////////
  
      libzerocash::timer_start("Coin");
-@@ -248,19 +184,7 @@ int CoinTest() {
+@@ -365,20 +298,6 @@ BOOST_AUTO_TEST_CASE( CoinTest ) {
+     libzerocash::timer_stop("Coin");
  
      cout << "Successfully created a coin.\n" << endl;
- 
+-
 -    CDataStream serializedCoin2(SER_NETWORK, 7002);
 -    serializedCoin2 << coin2;
 -
@@ -2074,12 +2087,11 @@ index 68dd4b8..6b2d349 100644
 -
 -    bool result = ((coin == coinNew) && (coin2 == coinNew2));
 -
--    return result;
-+    return true;
+-    BOOST_CHECK(result);
  }
  
- bool MintTxTest() {
-@@ -281,19 +205,8 @@ bool MintTxTest() {
+ BOOST_AUTO_TEST_CASE( MintTxTest ) {
+@@ -399,19 +318,8 @@ BOOST_AUTO_TEST_CASE( MintTxTest ) {
  
      cout << "Successfully created a mint transaction.\n" << endl;
  
@@ -2099,8 +2111,8 @@ index 68dd4b8..6b2d349 100644
 +    bool minttx_res = minttx.verify();
      libzerocash::timer_stop("Mint Transaction Verify");
  
-     return minttx_res;
-@@ -395,20 +308,10 @@ bool PourTxTest(const size_t tree_depth) {
+     BOOST_CHECK(minttx_res);
+@@ -515,20 +423,10 @@ BOOST_AUTO_TEST_CASE( PourTxTest ) {
  
      cout << "Successfully created a pour transaction.\n" << endl;
  
@@ -2114,15 +2126,15 @@ index 68dd4b8..6b2d349 100644
 -
 -    cout << "Successfully deserialized a pour transaction.\n" << endl;
 -
- 	std::vector<unsigned char> pubkeyHash(sig_pk_size, 'a');
+ 	std::vector<unsigned char> pubkeyHash(ZC_SIG_PK_SIZE, 'a');
  
      libzerocash::timer_start("Pour Transaction Verify");
 -    bool pourtx_res = pourtxNew.verify(p, pubkeyHash, rt);
 +    bool pourtx_res = pourtx.verify(p, pubkeyHash, rt);
      libzerocash::timer_stop("Pour Transaction Verify");
  
-     return pourtx_res;
-@@ -554,17 +457,8 @@ bool SimpleTxTest(const size_t tree_depth) {
+     BOOST_CHECK(pourtx_res);
+@@ -663,17 +561,8 @@ BOOST_AUTO_TEST_CASE( SimpleTxTest ) {
      libzerocash::MintTransaction minttx(coins.at(0));
      cout << "Successfully created a Mint Transaction.\n" << endl;
  
@@ -2140,8 +2152,8 @@ index 68dd4b8..6b2d349 100644
 +    bool minttx_res = minttx.verify();
  
      vector<std::vector<bool>> coinValues(5);
-     vector<bool> temp_comVal(cm_size * 8);
-@@ -624,19 +518,10 @@ bool SimpleTxTest(const size_t tree_depth) {
+     vector<bool> temp_comVal(ZC_CM_SIZE * 8);
+@@ -737,19 +626,10 @@ BOOST_AUTO_TEST_CASE( SimpleTxTest ) {
      		c_1_new, c_2_new);
      cout << "Successfully created a pour transaction.\n" << endl;
  
@@ -2154,36 +2166,11 @@ index 68dd4b8..6b2d349 100644
 -    serializedPourTx >> pourtxNew;
 -    cout << "Successfully deserialized a pour transaction.\n" << endl;
 -
- 	std::vector<unsigned char> pubkeyHash(sig_pk_size, 'a');
+ 	std::vector<unsigned char> pubkeyHash(ZC_SIG_PK_SIZE, 'a');
  
      cout << "Verifying a pour transaction...\n" << endl;
 -    bool pourtx_res = pourtxNew.verify(p, pubkeyHash, rt);
 +    bool pourtx_res = pourtx.verify(p, pubkeyHash, rt);
  
-     return (minttx_res && pourtx_res);
- }
-@@ -649,7 +534,6 @@ int main(int argc, char **argv)
- 
-     start_profiling();
- 	bool merkleSimpleResult = MerkleTreeSimpleTest();
--    bool addressResult = AddressTest();
-     bool coinResult = CoinTest();
-     bool mintTxResult = MintTxTest();
-     bool saveAndLoadKeysFromFiles = SaveAndLoadKeysFromFiles(tree_depth);
-@@ -658,7 +542,6 @@ int main(int argc, char **argv)
-     bool simpleTxResult = SimpleTxTest(tree_depth);
- 
-     cout << "\n" << endl;
--    std::cout << "\nAddressTest result => " << addressResult << std::endl;
-     std::cout << "\nCoinTest result => " << coinResult << std::endl;
-     std::cout << "\nMerkleTreeSimpleTest result => " << merkleSimpleResult << std::endl;
-     std::cout << "\nMintTxTest result => " << mintTxResult << std::endl;
-@@ -666,7 +549,7 @@ int main(int argc, char **argv)
-     std::cout << "\nSimpleTxTest result => " << simpleTxResult << std::endl;
-     std::cout << "\nSaveAndLoadKeysFromFiles result => " << saveAndLoadKeysFromFiles << std::endl;
- 
--    return !(merkleSimpleResult && addressResult &&
-+    return !(merkleSimpleResult &&
-         coinResult && mintTxResult && saveAndLoadKeysFromFiles
-         && pourTxResult && simpleTxResult);
+     BOOST_CHECK(minttx_res && pourtx_res);
  }
