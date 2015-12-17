@@ -117,6 +117,8 @@ AC_ARG_ENABLE([online-rust],
   [enable_online_rust=no])
 AM_CONDITIONAL(ENABLE_ONLINE_RUST, test "$enable_online_rust" != no)
 
+AC_ARG_VAR(PYTHONPATH, Augments the default search path for python module files)
+
 # Enable wallet
 AC_ARG_ENABLE([wallet],
   [AS_HELP_STRING([--disable-wallet],
