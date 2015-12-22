@@ -42,7 +42,7 @@ EOF
     # This may be the first time the user's run this script, so give
     # them some info, especially about bandwidth usage:
     cat <<EOF
-This script will fetch the zerocash zkSNARK parameters and verify their
+This script will fetch the Zcash zkSNARK parameters and verify their
 integrity with sha256sum.
 
 The parameters currently are about 2GiB in size, so plan accordingly
