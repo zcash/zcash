@@ -29,7 +29,15 @@ cd "${REPOROOT}"
 
 # Test phases:
 run_test_phase "${REPOROOT}/qa/zerocash/ensure-no-dot-so-in-depends.py"
-run_test_phase make check
+
+# If make check fails, show test-suite.log as part of our run_test_phase
+# output (and fail the phase with false):
+run_test_phase make check '||' \
+               '{' \
+               echo '=== ./src/test-suite.log ===' ';' \
+               cat './src/test-suite.log' ';' \
+               false ';' \
+               '}'
 
 exit $SUITE_EXIT_STATUS
 
