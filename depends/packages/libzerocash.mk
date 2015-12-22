@@ -2,15 +2,10 @@ package=libzerocash
 $(package)_download_path=https://github.com/Electric-Coin-Company/$(package)/archive/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
-$(package)_sha256_hash=87a83b1a21d5df7afb004798ae06c2e71a2f19a2698630672ab8505f2d4f3af2
-$(package)_git_commit=c191197a906eeb4c9c46ca6f5e27c6e94a763709
+$(package)_sha256_hash=c758b1f2b3372fb0e228442745668d0498a183cd0a4bcc423271e4ff3ddde85e
+$(package)_git_commit=69df6c95d97a1f1ee1fece0a6a7eef7d6a577dbc
 
 $(package)_dependencies=libsnark crypto++ openssl boost libgmp
-$(package)_patches=0_remove_bitcoin_copy_code
-
-define $(package)_preprocess_cmds
-    patch -p1 < $($(package)_patch_dir)/0_remove_bitcoin_copy_code
-endef
 
 # FIXME: How do we know, at the point where the _build_cms are run, that the
 # $(host_prefix)/include/libsnark folder is there? The lifecycle of that folder
