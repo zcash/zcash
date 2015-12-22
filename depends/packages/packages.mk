@@ -1,4 +1,5 @@
-packages:=boost openssl
+zerocash_packages := libsnark crypto++ libgmp xbyak ate-pairing libzerocash
+packages:=boost openssl $(zerocash_packages)
 native_packages := native_ccache native_comparisontool
 
 qt_native_packages = native_protobuf

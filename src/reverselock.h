@@ -17,7 +17,7 @@ public:
         lock.unlock();
     }
 
-    ~reverse_lock() {
+    ~reverse_lock() noexcept(false) {
         lock.lock();
     }
 
