@@ -662,7 +662,7 @@ std::string LicenseInfo()
 {
     return "\n" +
            FormatParagraph(strprintf(_("Copyright (C) 2009-%i The Bitcoin Core Developers"), COPYRIGHT_YEAR)) + "\n" +
-           FormatParagraph(strprintf(_("Copyright (C) %i-%i The %s Developers"), 2015, COPYRIGHT_YEAR, _(PACKAGE_NAME))) + "\n" +
+           FormatParagraph(strprintf(_("Copyright (C) %i-%i %s"), 2015, COPYRIGHT_YEAR, CopyrightHolders())) + "\n" +
            "\n" +
            FormatParagraph(_("This is experimental software.")) + "\n" +
            "\n" +
@@ -673,6 +673,14 @@ std::string LicenseInfo()
 int GetNumCores()
 {
     return boost::thread::physical_concurrency();
+}
+
+std::string CopyrightHolders()
+{
+    std::string strCopyrightHolders = _(COPYRIGHT_HOLDERS);
+    if (strCopyrightHolders.find("%s") == strCopyrightHolders.npos)
+        return strCopyrightHolders;
+    return strprintf(strCopyrightHolders, _(PACKAGE_NAME));
 }
 
 fs::path AbsPathForConfigVal(const fs::path& path, bool net_specific)
