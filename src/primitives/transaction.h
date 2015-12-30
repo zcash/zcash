@@ -13,6 +13,15 @@
 
 #include <boost/array.hpp>
 
+#include "libzerocash/ZerocashParams.h"
+#include "libzerocash/PourInput.h"
+#include "libzerocash/PourOutput.h"
+
+using namespace libzerocash;
+
+static const unsigned int NUM_POUR_INPUTS = 2;
+static const unsigned int NUM_POUR_OUTPUTS = 2;
+
 class CPourTx
 {
 public:
@@ -39,25 +48,25 @@ public:
     // are derived from the secrets placed in the bucket
     // and the secret spend-authority key known by the
     // spender.
-    boost::array<uint256, 2> serials;
+    boost::array<uint256, NUM_POUR_INPUTS> serials;
 
     // Bucket commitments are introduced into the commitment
     // tree, blinding the public about the values and
     // destinations involved in the Pour. The presence of a
     // commitment in the bucket commitment tree is required
     // to spend it.
-    boost::array<uint256, 2> commitments;
+    boost::array<uint256, NUM_POUR_OUTPUTS> commitments;
 
     // Ciphertexts
     // These are encrypted using ECIES. They are used to
     // transfer metadata and seeds to generate trapdoors
     // for the recipient to spend the value.
-    boost::array<std::vector<unsigned char>, 2> ciphertexts;
+    boost::array<std::string, NUM_POUR_OUTPUTS> ciphertexts;
 
     // MACs
     // The verification of the pour requires these MACs
     // to be provided as an input.
-    boost::array<uint256, 2> macs;
+    boost::array<uint256, NUM_POUR_INPUTS> macs;
 
     // Pour proof
     // This is a zk-SNARK which ensures that this pour is valid.
@@ -66,6 +75,18 @@ public:
     CPourTx(): vpub_old(0), vpub_new(0), scriptPubKey(), scriptSig(), anchor(), serials(), commitments(), ciphertexts(), macs(), proof() {
         
     }
+
+    CPourTx(ZerocashParams& params,
+            const CScript& scriptPubKey,
+            const uint256& rt,
+            const boost::array<PourInput, NUM_POUR_INPUTS>& inputs,
+            const boost::array<PourOutput, NUM_POUR_OUTPUTS>& outputs,
+            CAmount vpub_old,
+            CAmount vpub_new
+    );
+
+    // Verifies that the pour proof is correct.
+    bool Verify(ZerocashParams& params) const;
 
     ADD_SERIALIZE_METHODS;
 
