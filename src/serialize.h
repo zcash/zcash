@@ -20,6 +20,8 @@
 #include <utility>
 #include <vector>
 
+#include <boost/array.hpp>
+
 class CScript;
 
 static const unsigned int MAX_SIZE = 0x02000000;
@@ -507,6 +509,13 @@ template<typename Stream> void Serialize(Stream& os, const CScript& v, int nType
 template<typename Stream> void Unserialize(Stream& is, CScript& v, int nType, int nVersion);
 
 /**
+ * array
+ */
+template<typename T, std::size_t N> unsigned int GetSerializeSize(const boost::array<T, N> &item, int nType, int nVersion);
+template<typename Stream, typename T, std::size_t N> void Serialize(Stream& os, const boost::array<T, N>& item, int nType, int nVersion);
+template<typename Stream, typename T, std::size_t N> void Unserialize(Stream& is, boost::array<T, N>& item, int nType, int nVersion);
+
+/**
  * pair
  */
 template<typename K, typename T> unsigned int GetSerializeSize(const std::pair<K, T>& item, int nType, int nVersion);
@@ -697,6 +706,35 @@ void Unserialize(Stream& is, CScript& v, int nType, int nVersion)
     Unserialize(is, (std::vector<unsigned char>&)v, nType, nVersion);
 }
 
+
+/**
+ * array
+ */
+template<typename T, std::size_t N>
+unsigned int GetSerializeSize(const boost::array<T, N> &item, int nType, int nVersion)
+{
+    unsigned int size = 0;
+    for (size_t i = 0; i < N; i++) {
+        size += GetSerializeSize(item[0], nType, nVersion);
+    }
+    return size;
+}
+
+template<typename Stream, typename T, std::size_t N>
+void Serialize(Stream& os, const boost::array<T, N>& item, int nType, int nVersion)
+{
+    for (size_t i = 0; i < N; i++) {
+        Serialize(os, item[i], nType, nVersion);
+    }
+}
+
+template<typename Stream, typename T, std::size_t N>
+void Unserialize(Stream& is, boost::array<T, N>& item, int nType, int nVersion)
+{
+    for (size_t i = 0; i < N; i++) {
+        Unserialize(is, item[i], nType, nVersion);
+    }
+}
 
 
 /**
