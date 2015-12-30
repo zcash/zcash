@@ -285,6 +285,117 @@ SetupDummyInputs(CBasicKeyStore& keystoreRet, CCoinsViewCache& coinsRet)
     return dummyTransactions;
 }
 
+BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
+{
+    CMutableTransaction tx;
+    tx.nVersion = 2;
+    {
+        // Ensure that empty vin/vout remain invalid without
+        // pours.
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+        // No pours, vin and vout, means it should be invalid.
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vin-empty");
+
+        newTx.vin.push_back(CTxIn(uint256S("0000000000000000000000000000000000000000000000000000000000000001"), 0));
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vout-empty");
+
+        newTx.vpour.push_back(CPourTx());
+        CPourTx *pourtx = &newTx.vpour[0];
+
+        pourtx->serials[0] = GetRandHash();
+        pourtx->serials[1] = GetRandHash();
+
+        BOOST_CHECK_MESSAGE(CheckTransaction(newTx, state), state.GetRejectReason());
+    }
+    {
+        // Ensure that values within the pour are well-formed.
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+
+        newTx.vpour.push_back(CPourTx());
+        
+        CPourTx *pourtx = &newTx.vpour[0];
+        pourtx->vpub_old = -1;
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_old-negative");
+
+        pourtx->vpub_old = MAX_MONEY + 1;
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_old-toolarge");
+
+        pourtx->vpub_old = 0;
+        pourtx->vpub_new = -1;
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_new-negative");
+
+        pourtx->vpub_new = MAX_MONEY + 1;
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_new-toolarge");
+
+        pourtx->vpub_new = (MAX_MONEY / 2) + 10;
+
+        newTx.vpour.push_back(CPourTx());
+
+        CPourTx *pourtx2 = &newTx.vpour[1];
+        pourtx2->vpub_new = (MAX_MONEY / 2) + 10;
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-txouttotal-toolarge");
+    }
+    {
+        // Ensure that serials are never duplicated within a transaction.
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+
+        newTx.vpour.push_back(CPourTx());
+        CPourTx *pourtx = &newTx.vpour[0];
+
+        pourtx->serials[0] = GetRandHash();
+        pourtx->serials[1] = pourtx->serials[0];
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-pours-serials-duplicate");
+
+        pourtx->serials[1] = GetRandHash();
+
+        newTx.vpour.push_back(CPourTx());
+        CPourTx *pourtx2 = &newTx.vpour[1];
+
+        pourtx2->serials[0] = GetRandHash();
+        pourtx2->serials[1] = pourtx->serials[0];
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-pours-serials-duplicate");
+    }
+    {
+        // Ensure that coinbase transactions do not have pours.
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+
+        newTx.vpour.push_back(CPourTx());
+        CPourTx *pourtx = &newTx.vpour[0];
+        pourtx->serials[0] = GetRandHash();
+        pourtx->serials[1] = GetRandHash();
+
+        newTx.vin.push_back(CTxIn(uint256(), -1));
+
+        {
+            CTransaction finalNewTx(newTx);
+            BOOST_CHECK(finalNewTx.IsCoinBase());
+        }
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-cb-has-pours");
+    }
+}
+
 BOOST_AUTO_TEST_CASE(test_Get)
 {
     CBasicKeyStore keystore;
