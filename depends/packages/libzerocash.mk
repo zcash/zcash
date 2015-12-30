@@ -2,8 +2,8 @@ package=libzerocash
 $(package)_download_path=https://github.com/Electric-Coin-Company/$(package)/archive/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
-$(package)_sha256_hash=c758b1f2b3372fb0e228442745668d0498a183cd0a4bcc423271e4ff3ddde85e
-$(package)_git_commit=69df6c95d97a1f1ee1fece0a6a7eef7d6a577dbc
+$(package)_sha256_hash=ef9cd53db6eedea3a5d24551d16d9f23dd52277e91296a14539faa027770ad23
+$(package)_git_commit=e79cd2dfee8213d49b6c2a8b2353a38d7563c965
 
 $(package)_dependencies=libsnark crypto++ openssl boost libgmp
 $(package)_patches=
