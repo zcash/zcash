@@ -376,6 +376,8 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "walletlock",             &walletlock,             true  },
     { "wallet",             "walletpassphrasechange", &walletpassphrasechange, true  },
     { "wallet",             "walletpassphrase",       &walletpassphrase,       true  },
+    { "wallet",             "zcrawkeygen",            &zc_raw_keygen,          true  },
+    { "wallet",             "zcrawpour",              &zc_raw_pour,            true  },
 #endif // ENABLE_WALLET
 };
 
