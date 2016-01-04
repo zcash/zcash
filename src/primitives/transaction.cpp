@@ -178,7 +178,31 @@ CAmount CTransaction::GetValueOut() const
         if (!MoneyRange(it->nValue) || !MoneyRange(nValueOut))
             throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
     }
+
+    for (std::vector<CPourTx>::const_iterator it(vpour.begin()); it != vpour.end(); ++it)
+    {
+        // NB: vpub_old "takes" money from the value pool just as outputs do
+        nValueOut += it->vpub_old;
+
+        if (!MoneyRange(it->vpub_old) || !MoneyRange(nValueOut))
+            throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
+    }
     return nValueOut;
+}
+
+CAmount CTransaction::GetPourValueIn() const
+{
+    CAmount nValue = 0;
+    for (std::vector<CPourTx>::const_iterator it(vpour.begin()); it != vpour.end(); ++it)
+    {
+        // NB: vpub_old "gives" money to the value pool just as inputs do
+        nValue += it->vpub_new;
+
+        if (!MoneyRange(it->vpub_new) || !MoneyRange(nValue))
+            throw std::runtime_error("CTransaction::GetPourValueIn(): value out of range");
+    }
+
+    return nValue;
 }
 
 double CTransaction::ComputePriority(double dPriorityInputs, unsigned int nTxSize) const
