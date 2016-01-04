@@ -382,6 +382,8 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         nResult += GetOutputFor(tx.vin[i]).nValue;
 
+    nResult += tx.GetPourValueIn();
+
     return nResult;
 }
 
