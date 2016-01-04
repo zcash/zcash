@@ -2343,3 +2343,122 @@ Value listunspent(const Array& params, bool fHelp)
 
     return results;
 }
+
+Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
+{
+    /*
+        zcrawpour <rawtx> {<bucket>: <zcsecretkey>, ...} {<zcaddress>: <value>, ...} vpub_old vpub_new
+    */
+    
+    //RPCTypeCheck(params, boost::assign::list_of(str_type)(obj_type)(obj_type)(int_type)(int_type));
+
+    CTransaction tx;
+    if (!DecodeHexTx(tx, params[0].get_str()))
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+
+    Object inputs = params[1].get_obj();
+    Object outputs = params[2].get_obj();
+
+    CAmount vpub_old(0);
+    CAmount vpub_new(0);
+
+    if (params[3].get_real() != 0.0)
+        vpub_old = AmountFromValue(params[3]);
+
+    if (params[4].get_real() != 0.0)
+        vpub_new = AmountFromValue(params[4]);
+
+    std::vector<PourInput> vpourin;
+    std::vector<PourOutput> vpourout;
+
+    /*
+    BOOST_FOREACH(const Pair& s, inputs)
+    {
+        // TODO
+    }
+    */
+
+    // TODO
+    vpourin.push_back(PourInput(INCREMENTAL_MERKLE_TREE_DEPTH));
+    vpourin.push_back(PourInput(INCREMENTAL_MERKLE_TREE_DEPTH));
+
+    BOOST_FOREACH(const Pair& s, outputs)
+    {
+        libzerocash::PublicAddress addrTo;
+
+        {
+            vector<unsigned char> decoded(ParseHex(s.name_));
+            CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+
+            std::vector<unsigned char> pubAddressSecret;
+            std::string encryptionPublicKey;
+
+            ssData >> pubAddressSecret;
+            ssData >> encryptionPublicKey;
+
+            addrTo = libzerocash::PublicAddress(pubAddressSecret, encryptionPublicKey);
+        }
+        CAmount nAmount = AmountFromValue(s.value_);
+
+        libzerocash::Coin coin(addrTo, nAmount);
+        libzerocash::PourOutput output(coin, addrTo);
+
+        vpourout.push_back(output);
+    }
+
+    while (vpourout.size() < 2) {
+        vpourout.push_back(PourOutput(0));
+    }
+
+    // TODO
+    if (vpourout.size() > 2 || vpourin.size() > 2) {
+        throw runtime_error("unsupported");
+    }
+
+    uint256 anchor; // TODO
+    CScript scriptPubKey;
+    CPourTx pourtx(*pzerocashParams,
+                   scriptPubKey,
+                   anchor,
+                   {vpourin[0], vpourin[1]},
+                   {vpourout[0], vpourout[1]},
+                   vpub_old,
+                   vpub_new);
+
+    CMutableTransaction mtx(tx);
+    mtx.nVersion = 2;
+    mtx.vpour.push_back(pourtx);
+
+    CTransaction rawTx(mtx);
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << rawTx;
+
+    Object result;
+    result.push_back(Pair("encryptedbucket1", HexStr(pourtx.ciphertexts[0].begin(), pourtx.ciphertexts[0].end())));
+    result.push_back(Pair("encryptedbucket2", HexStr(pourtx.ciphertexts[1].begin(), pourtx.ciphertexts[1].end())));
+    result.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
+    return result;
+}
+
+Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp)
+{
+    auto zckeypair = libzerocash::Address::CreateNewRandomAddress();
+
+    CDataStream pub(SER_NETWORK, PROTOCOL_VERSION);
+    CDataStream priv(SER_NETWORK, PROTOCOL_VERSION);
+
+    pub << zckeypair.getPublicAddress().getPublicAddressSecret(); // a_pk
+    pub << zckeypair.getPublicAddress().getEncryptionPublicKey(); // pk_enc
+
+    priv << zckeypair.getPrivateAddress().getAddressSecret(); // a_sk
+    priv << zckeypair.getPrivateAddress().getEncryptionSecretKey(); // sk_enc
+
+    std::string pub_hex = HexStr(pub.begin(), pub.end());
+    std::string priv_hex = HexStr(priv.begin(), priv.end());
+
+    Object result;
+    result.push_back(Pair("zcaddress", pub_hex));
+    result.push_back(Pair("zcsecretkey", priv_hex));
+    return result;
+}
