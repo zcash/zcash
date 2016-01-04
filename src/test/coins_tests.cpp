@@ -21,6 +21,7 @@ class CCoinsViewTest : public CCoinsView
     uint256 hashBestAnchor_;
     std::map<uint256, CCoins> map_;
     std::map<uint256, libzerocash::IncrementalMerkleTree> mapAnchors_;
+    std::map<uint256, bool> mapSerials_;
 
 public:
     bool GetAnchorAt(const uint256& rt, libzerocash::IncrementalMerkleTree &tree) const {
@@ -35,6 +36,19 @@ public:
             return false;
         } else {
             tree.setTo(it->second);
+            return true;
+        }
+    }
+
+    bool GetSerial(const uint256 &serial) const
+    {
+        std::map<uint256, bool>::const_iterator it = mapSerials_.find(serial);
+
+        if (it == mapSerials_.end()) {
+            return false;
+        } else {
+            // The map shouldn't contain any false entries.
+            assert(it->second);
             return true;
         }
     }
@@ -66,7 +80,8 @@ public:
     bool BatchWrite(CCoinsMap& mapCoins,
                     const uint256& hashBlock,
                     const uint256& hashAnchor,
-                    CAnchorsMap& mapAnchors)
+                    CAnchorsMap& mapAnchors,
+                    CSerialsMap& mapSerials)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             map_[it->first] = it->second.coins;
@@ -84,8 +99,17 @@ public:
             }
             mapAnchors.erase(it++);
         }
+        for (CSerialsMap::iterator it = mapSerials.begin(); it != mapSerials.end(); ) {
+            if (it->second.entered) {
+                mapSerials_[it->first] = true;
+            } else {
+                mapSerials_.erase(it->first);
+            }
+            mapSerials.erase(it++);
+        }
         mapCoins.clear();
         mapAnchors.clear();
+        mapSerials.clear();
         hashBestBlock_ = hashBlock;
         hashBestAnchor_ = hashAnchor;
         return true;
@@ -111,6 +135,30 @@ public:
 
 };
 
+}
+
+BOOST_AUTO_TEST_CASE(serials_test)
+{
+    CCoinsViewTest base;
+    CCoinsViewCacheTest cache(&base);
+
+    uint256 myserial = GetRandHash();
+
+    BOOST_CHECK(!cache.GetSerial(myserial));
+    cache.SetSerial(myserial, true);
+    BOOST_CHECK(cache.GetSerial(myserial));
+    cache.Flush();
+
+    CCoinsViewCacheTest cache2(&base);
+
+    BOOST_CHECK(cache2.GetSerial(myserial));
+    cache2.SetSerial(myserial, false);
+    BOOST_CHECK(!cache2.GetSerial(myserial));
+    cache2.Flush();
+
+    CCoinsViewCacheTest cache3(&base);
+
+    BOOST_CHECK(!cache3.GetSerial(myserial));
 }
 
 void appendRandomCommitment(IncrementalMerkleTree &tree)
