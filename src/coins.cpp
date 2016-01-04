@@ -41,6 +41,7 @@ bool CCoins::Spend(uint32_t nPos)
     return true;
 }
 bool CCoinsView::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const { return false; }
+bool CCoinsView::GetSerial(const uint256 &serial) const { return false; }
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
 uint256 CCoinsView::GetBestBlock() const { return uint256(); }
@@ -48,13 +49,15 @@ uint256 CCoinsView::GetBestAnchor() const { return uint256(); };
 bool CCoinsView::BatchWrite(CCoinsMap &mapCoins,
                             const uint256 &hashBlock,
                             const uint256 &hashAnchor,
-                            CAnchorsMap &mapAnchors) { return false; }
+                            CAnchorsMap &mapAnchors,
+                            CSerialsMap &mapSerials) { return false; }
 bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 
 
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
 
 bool CCoinsViewBacked::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const { return base->GetAnchorAt(rt, tree); }
+bool CCoinsViewBacked::GetSerial(const uint256 &serial) const { return base->GetSerial(serial); }
 bool CCoinsViewBacked::GetCoins(const uint256 &txid, CCoins &coins) const { return base->GetCoins(txid, coins); }
 bool CCoinsViewBacked::HaveCoins(const uint256 &txid) const { return base->HaveCoins(txid); }
 uint256 CCoinsViewBacked::GetBestBlock() const { return base->GetBestBlock(); }
@@ -63,7 +66,8 @@ void CCoinsViewBacked::SetBackend(CCoinsView &viewIn) { base = &viewIn; }
 bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
                                   const uint256 &hashBlock,
                                   const uint256 &hashAnchor,
-                                  CAnchorsMap &mapAnchors) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapAnchors); }
+                                  CAnchorsMap &mapAnchors,
+                                  CSerialsMap &mapSerials) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapAnchors, mapSerials); }
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
@@ -121,6 +125,21 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMer
     return true;
 }
 
+bool CCoinsViewCache::GetSerial(const uint256 &serial) const {
+    CSerialsMap::iterator it = cacheSerials.find(serial);
+    if (it != cacheSerials.end())
+        return it->second.entered;
+
+    CSerialsCacheEntry entry;
+    bool tmp = base->GetSerial(serial);
+    entry.entered = tmp;
+
+    cacheSerials.insert(std::make_pair(serial, entry));
+
+    // TODO: cache usage
+
+    return tmp;
+}
 
 void CCoinsViewCache::PushAnchor(const libzerocash::IncrementalMerkleTree &tree) {
     std::vector<unsigned char> newrt_v(32);
@@ -159,6 +178,12 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
 
         hashAnchor = newrt;
     }
+}
+
+void CCoinsViewCache::SetSerial(const uint256 &serial, bool spent) {
+    std::pair<CSerialsMap::iterator, bool> ret = cacheSerials.insert(std::make_pair(serial, CSerialsCacheEntry()));
+    ret.first->second.entered = spent;
+    ret.first->second.flags |= CSerialsCacheEntry::DIRTY;
 }
 
 bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) const {
@@ -229,7 +254,8 @@ void CCoinsViewCache::SetBestBlock(const uint256 &hashBlockIn) {
 bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                                  const uint256 &hashBlockIn,
                                  const uint256 &hashAnchorIn,
-                                 CAnchorsMap &mapAnchors) {
+                                 CAnchorsMap &mapAnchors,
+                                 CSerialsMap &mapSerials) {
     assert(!hasModifier);
     for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end();) {
         if (it->second.flags & CCoinsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
@@ -294,15 +320,44 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
         CAnchorsMap::iterator itOld = child_it++;
         mapAnchors.erase(itOld);
     }
+
+    for (CSerialsMap::iterator child_it = mapSerials.begin(); child_it != mapSerials.end();)
+    {
+        if (child_it->second.flags & CSerialsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
+            CSerialsMap::iterator parent_it = cacheSerials.find(child_it->first);
+
+            if (parent_it == cacheSerials.end()) {
+                if (child_it->second.entered) {
+                    // Parent doesn't have an entry, but child has a SPENT serial.
+                    // Move the spent serial up.
+
+                    CSerialsCacheEntry& entry = cacheSerials[child_it->first];
+                    entry.entered = true;
+                    entry.flags = CSerialsCacheEntry::DIRTY;
+
+                    // TODO: cache usage
+                }
+            } else {
+                if (parent_it->second.entered != child_it->second.entered) {
+                    parent_it->second.entered = child_it->second.entered;
+                    parent_it->second.flags |= CSerialsCacheEntry::DIRTY;
+                }
+            }
+        }
+        CSerialsMap::iterator itOld = child_it++;
+        mapSerials.erase(itOld);
+    }
+
     hashAnchor = hashAnchorIn;
     hashBlock = hashBlockIn;
     return true;
 }
 
 bool CCoinsViewCache::Flush() {
-    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashAnchor, cacheAnchors);
+    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashAnchor, cacheAnchors, cacheSerials);
     cacheCoins.clear();
     cacheAnchors.clear();
+    cacheSerials.clear();
     cachedCoinsUsage = 0;
     return fOk;
 }
