@@ -18,6 +18,7 @@
 using namespace std;
 
 static const char DB_ANCHOR = 'A';
+static const char DB_SERIAL = 's';
 static const char DB_COINS = 'c';
 static const char DB_BLOCK_FILES = 'f';
 static const char DB_TXINDEX = 't';
@@ -40,6 +41,13 @@ void static BatchWriteAnchor(CLevelDBBatch &batch,
     else {
         batch.Write(make_pair(DB_ANCHOR, croot), tree.serialize());
     }
+}
+
+void static BatchWriteSerial(CLevelDBBatch &batch, const uint256 &serial, const bool &entered) {
+    if (!entered)
+        batch.Erase(make_pair(DB_SERIAL, serial));
+    else
+        batch.Write(make_pair(DB_SERIAL, serial), true);
 }
 
 void static BatchWriteCoins(CLevelDBBatch &batch, const uint256 &hash, const CCoins &coins) {
@@ -81,6 +89,16 @@ bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkle
     return true;
 }
 
+bool CCoinsViewDB::GetSerial(const uint256 &serial) const {
+    bool spent = false;
+    bool read = db.Read(make_pair(DB_SERIAL, serial), spent);
+
+    // We should never read false from the database.
+    assert(spent != read);
+
+    return spent;
+}
+
 bool CCoinsViewDB::GetCoins(const uint256 &txid, CCoins &coins) const {
     return db.Read(make_pair(DB_COINS, txid), coins);
 }
@@ -106,7 +124,8 @@ uint256 CCoinsViewDB::GetBestAnchor() const {
 bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               const uint256 &hashBlock,
                               const uint256 &hashAnchor,
-                              CAnchorsMap &mapAnchors) {
+                              CAnchorsMap &mapAnchors,
+                              CSerialsMap &mapSerials) {
     CLevelDBBatch batch;
     size_t count = 0;
     size_t changed = 0;
@@ -127,6 +146,15 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
         }
         CAnchorsMap::iterator itOld = it++;
         mapAnchors.erase(itOld);
+    }
+
+    for (CSerialsMap::iterator it = mapSerials.begin(); it != mapSerials.end();) {
+        if (it->second.flags & CSerialsCacheEntry::DIRTY) {
+            BatchWriteSerial(batch, it->first, it->second.entered);
+            // TODO: changed++?
+        }
+        CSerialsMap::iterator itOld = it++;
+        mapSerials.erase(itOld);
     }
 
     if (!hashBlock.IsNull())

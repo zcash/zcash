@@ -311,8 +311,21 @@ struct CAnchorsCacheEntry
     CAnchorsCacheEntry() : entered(false), flags(0), tree(INCREMENTAL_MERKLE_TREE_DEPTH) {}
 };
 
+struct CSerialsCacheEntry
+{
+    bool entered; // If the serial is spent or not
+    unsigned char flags;
+
+    enum Flags {
+        DIRTY = (1 << 0), // This cache entry is potentially different from the version in the parent view.
+    };
+
+    CSerialsCacheEntry() : entered(false), flags(0) {}
+};
+
 typedef boost::unordered_map<uint256, CCoinsCacheEntry, CCoinsKeyHasher> CCoinsMap;
 typedef boost::unordered_map<uint256, CAnchorsCacheEntry, CCoinsKeyHasher> CAnchorsMap;
+typedef boost::unordered_map<uint256, CSerialsCacheEntry, CCoinsKeyHasher> CSerialsMap;
 
 struct CCoinsStats
 {
@@ -335,6 +348,9 @@ public:
     //! Retrieve the tree at a particular anchored root in the chain
     virtual bool GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const;
 
+    //! Determine whether a serial is spent or not
+    virtual bool GetSerial(const uint256 &serial) const;
+
     //! Retrieve the CCoins (unspent transaction outputs) for a given txid
     virtual bool GetCoins(const uint256 &txid, CCoins &coins) const;
 
@@ -353,7 +369,8 @@ public:
     virtual bool BatchWrite(CCoinsMap &mapCoins,
                             const uint256 &hashBlock,
                             const uint256 &hashAnchor,
-                            CAnchorsMap &mapAnchors);
+                            CAnchorsMap &mapAnchors,
+                            CSerialsMap &mapSerials);
 
     //! Calculate statistics about the unspent transaction output set
     virtual bool GetStats(CCoinsStats &stats) const;
@@ -372,6 +389,7 @@ protected:
 public:
     CCoinsViewBacked(CCoinsView *viewIn);
     bool GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const;
+    bool GetSerial(const uint256 &serial) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
@@ -380,7 +398,8 @@ public:
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
-                    CAnchorsMap &mapAnchors);
+                    CAnchorsMap &mapAnchors,
+                    CSerialsMap &mapSerials);
     bool GetStats(CCoinsStats &stats) const;
 };
 
@@ -423,6 +442,7 @@ protected:
     mutable CCoinsMap cacheCoins;
     mutable uint256 hashAnchor;
     mutable CAnchorsMap cacheAnchors;
+    mutable CSerialsMap cacheSerials;
 
     /* Cached dynamic memory usage for the inner CCoins objects. */
     mutable size_t cachedCoinsUsage;
@@ -433,6 +453,7 @@ public:
 
     // Standard CCoinsView methods
     bool GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const;
+    bool GetSerial(const uint256 &serial) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
@@ -441,7 +462,8 @@ public:
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
-                    CAnchorsMap &mapAnchors);
+                    CAnchorsMap &mapAnchors,
+                    CSerialsMap &mapSerials);
 
 
     // Adds the tree to mapAnchors and sets the current commitment
@@ -451,6 +473,9 @@ public:
     // Removes the current commitment root from mapAnchors and sets
     // the new current root.
     void PopAnchor(const uint256 &rt);
+
+    // Marks a serial as spent or not.
+    void SetSerial(const uint256 &serial, bool spent);
 
     /**
      * Return a pointer to CCoins in the cache, or NULL if not found. This is
