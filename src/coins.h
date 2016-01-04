@@ -16,6 +16,9 @@
 
 #include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
+#include "libzerocash/IncrementalMerkleTree.h"
+
+static const unsigned int INCREMENTAL_MERKLE_TREE_DEPTH = 20;
 
 /** 
  * Pruned version of CTransaction: only retains metadata and unspent transaction outputs
@@ -295,7 +298,21 @@ struct CCoinsCacheEntry
     CCoinsCacheEntry() : coins(), flags(0) {}
 };
 
+struct CAnchorsCacheEntry
+{
+    bool entered; // This will be false if the anchor is removed from the cache
+    libzerocash::IncrementalMerkleTree tree; // The tree itself
+    unsigned char flags;
+
+    enum Flags {
+        DIRTY = (1 << 0), // This cache entry is potentially different from the version in the parent view.
+    };
+
+    CAnchorsCacheEntry() : entered(false), flags(0), tree(INCREMENTAL_MERKLE_TREE_DEPTH) {}
+};
+
 typedef boost::unordered_map<uint256, CCoinsCacheEntry, CCoinsKeyHasher> CCoinsMap;
+typedef boost::unordered_map<uint256, CAnchorsCacheEntry, CCoinsKeyHasher> CAnchorsMap;
 
 struct CCoinsStats
 {
@@ -315,6 +332,9 @@ struct CCoinsStats
 class CCoinsView
 {
 public:
+    //! Retrieve the tree at a particular anchored root in the chain
+    virtual bool GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const;
+
     //! Retrieve the CCoins (unspent transaction outputs) for a given txid
     virtual bool GetCoins(const uint256 &txid, CCoins &coins) const;
 
@@ -325,9 +345,15 @@ public:
     //! Retrieve the block hash whose state this CCoinsView currently represents
     virtual uint256 GetBestBlock() const;
 
+    //! Get the current "tip" or the latest anchored tree root in the chain
+    virtual uint256 GetBestAnchor() const;
+
     //! Do a bulk modification (multiple CCoins changes + BestBlock change).
     //! The passed mapCoins can be modified.
-    virtual bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock);
+    virtual bool BatchWrite(CCoinsMap &mapCoins,
+                            const uint256 &hashBlock,
+                            const uint256 &hashAnchor,
+                            CAnchorsMap &mapAnchors);
 
     //! Calculate statistics about the unspent transaction output set
     virtual bool GetStats(CCoinsStats &stats) const;
@@ -345,11 +371,16 @@ protected:
 
 public:
     CCoinsViewBacked(CCoinsView *viewIn);
+    bool GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
+    uint256 GetBestAnchor() const;
     void SetBackend(CCoinsView &viewIn);
-    bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock);
+    bool BatchWrite(CCoinsMap &mapCoins,
+                    const uint256 &hashBlock,
+                    const uint256 &hashAnchor,
+                    CAnchorsMap &mapAnchors);
     bool GetStats(CCoinsStats &stats) const;
 };
 
@@ -390,6 +421,8 @@ protected:
      */
     mutable uint256 hashBlock;
     mutable CCoinsMap cacheCoins;
+    mutable uint256 hashAnchor;
+    mutable CAnchorsMap cacheAnchors;
 
     /* Cached dynamic memory usage for the inner CCoins objects. */
     mutable size_t cachedCoinsUsage;
@@ -399,11 +432,25 @@ public:
     ~CCoinsViewCache();
 
     // Standard CCoinsView methods
+    bool GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
+    uint256 GetBestAnchor() const;
     void SetBestBlock(const uint256 &hashBlock);
-    bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock);
+    bool BatchWrite(CCoinsMap &mapCoins,
+                    const uint256 &hashBlock,
+                    const uint256 &hashAnchor,
+                    CAnchorsMap &mapAnchors);
+
+
+    // Adds the tree to mapAnchors and sets the current commitment
+    // root to this root.
+    void PushAnchor(const libzerocash::IncrementalMerkleTree &tree);
+
+    // Removes the current commitment root from mapAnchors and sets
+    // the new current root.
+    void PopAnchor(const uint256 &rt);
 
     /**
      * Return a pointer to CCoins in the cache, or NULL if not found. This is
