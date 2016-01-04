@@ -11,15 +11,36 @@
 #include <map>
 
 #include <boost/test/unit_test.hpp>
+#include "libzerocash/IncrementalMerkleTree.h"
 
 namespace
 {
 class CCoinsViewTest : public CCoinsView
 {
     uint256 hashBestBlock_;
+    uint256 hashBestAnchor_;
     std::map<uint256, CCoins> map_;
+    std::map<uint256, libzerocash::IncrementalMerkleTree> mapAnchors_;
 
 public:
+    bool GetAnchorAt(const uint256& rt, libzerocash::IncrementalMerkleTree &tree) const {
+        if (rt.IsNull()) {
+            IncrementalMerkleTree new_tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+            tree.setTo(new_tree);
+            return true;
+        }
+
+        std::map<uint256, libzerocash::IncrementalMerkleTree>::const_iterator it = mapAnchors_.find(rt);
+        if (it == mapAnchors_.end()) {
+            return false;
+        } else {
+            tree.setTo(it->second);
+            return true;
+        }
+    }
+
+    uint256 GetBestAnchor() const { return hashBestAnchor_; }
+
     bool GetCoins(const uint256& txid, CCoins& coins) const
     {
         std::map<uint256, CCoins>::const_iterator it = map_.find(txid);
@@ -42,7 +63,10 @@ public:
 
     uint256 GetBestBlock() const { return hashBestBlock_; }
 
-    bool BatchWrite(CCoinsMap& mapCoins, const uint256& hashBlock)
+    bool BatchWrite(CCoinsMap& mapCoins,
+                    const uint256& hashBlock,
+                    const uint256& hashAnchor,
+                    CAnchorsMap& mapAnchors)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             map_[it->first] = it->second.coins;
@@ -52,8 +76,18 @@ public:
             }
             mapCoins.erase(it++);
         }
+        for (CAnchorsMap::iterator it = mapAnchors.begin(); it != mapAnchors.end(); ) {
+            if (it->second.entered) {
+                mapAnchors_[it->first] = it->second.tree;
+            } else {
+                mapAnchors_.erase(it->first);
+            }
+            mapAnchors.erase(it++);
+        }
         mapCoins.clear();
+        mapAnchors.clear();
         hashBestBlock_ = hashBlock;
+        hashBestAnchor_ = hashAnchor;
         return true;
     }
 
@@ -77,6 +111,133 @@ public:
 
 };
 
+}
+
+void appendRandomCommitment(IncrementalMerkleTree &tree)
+{
+    Address addr = Address::CreateNewRandomAddress();
+    Coin coin(addr.getPublicAddress(), 100);
+
+    std::vector<bool> commitment(ZC_CM_SIZE * 8);
+    convertBytesVectorToVector(coin.getCoinCommitment().getCommitmentValue(), commitment);
+
+    std::vector<bool> index;
+    tree.insertElement(commitment, index);
+}
+
+BOOST_AUTO_TEST_CASE(anchors_test)
+{
+    // TODO: These tests should be more methodical.
+    //       Or, integrate with Bitcoin's tests later.
+
+    CCoinsViewTest base;
+    CCoinsViewCacheTest cache(&base);
+
+    BOOST_CHECK(cache.GetBestAnchor() == uint256());
+
+    {
+        IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+
+        BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), tree));
+        appendRandomCommitment(tree);
+        appendRandomCommitment(tree);
+        appendRandomCommitment(tree);
+        appendRandomCommitment(tree);
+        appendRandomCommitment(tree);
+        appendRandomCommitment(tree);
+        appendRandomCommitment(tree);
+        tree.prune();
+
+        IncrementalMerkleTree save_tree_for_later(INCREMENTAL_MERKLE_TREE_DEPTH);
+        save_tree_for_later.setTo(tree);
+
+        uint256 newrt;
+        uint256 newrt2;
+        {
+            std::vector<unsigned char> newrt_v(32);
+            tree.getRootValue(newrt_v);
+
+            newrt = uint256(newrt_v);
+        }
+
+        cache.PushAnchor(tree);
+        BOOST_CHECK(cache.GetBestAnchor() == newrt);
+
+        {
+            IncrementalMerkleTree confirm_same(INCREMENTAL_MERKLE_TREE_DEPTH);
+            BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), confirm_same));
+
+            uint256 confirm_rt;
+            {
+                std::vector<unsigned char> newrt_v(32);
+                confirm_same.getRootValue(newrt_v);
+
+                confirm_rt = uint256(newrt_v);
+            }
+
+            BOOST_CHECK(confirm_rt == newrt);
+        }
+
+        appendRandomCommitment(tree);
+        appendRandomCommitment(tree);
+        tree.prune();
+
+        {
+            std::vector<unsigned char> newrt_v(32);
+            tree.getRootValue(newrt_v);
+
+            newrt2 = uint256(newrt_v);
+        }
+
+        cache.PushAnchor(tree);
+        BOOST_CHECK(cache.GetBestAnchor() == newrt2);
+
+        IncrementalMerkleTree test_tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+        BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), test_tree));
+
+        {
+            std::vector<unsigned char> a(32);
+            std::vector<unsigned char> b(32);
+            tree.getRootValue(a);
+            test_tree.getRootValue(b);
+
+            BOOST_CHECK(a == b);
+        }
+
+        {
+            std::vector<unsigned char> a(32);
+            std::vector<unsigned char> b(32);
+            IncrementalMerkleTree test_tree2(INCREMENTAL_MERKLE_TREE_DEPTH);
+            cache.GetAnchorAt(newrt, test_tree2);
+            
+            uint256 recovered_rt;
+            {
+                std::vector<unsigned char> newrt_v(32);
+                test_tree2.getRootValue(newrt_v);
+
+                recovered_rt = uint256(newrt_v);
+            }
+
+            BOOST_CHECK(recovered_rt == newrt);
+        }
+
+        {
+            cache.PopAnchor(newrt);
+            IncrementalMerkleTree obtain_tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+            assert(!cache.GetAnchorAt(newrt2, obtain_tree)); // should have been popped off
+            assert(cache.GetAnchorAt(newrt, obtain_tree));
+
+            uint256 recovered_rt;
+            {
+                std::vector<unsigned char> newrt_v(32);
+                obtain_tree.getRootValue(newrt_v);
+
+                recovered_rt = uint256(newrt_v);
+            }
+
+            assert(recovered_rt == newrt);
+        }
+    }
 }
 
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
