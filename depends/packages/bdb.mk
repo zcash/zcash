@@ -11,6 +11,11 @@ $(package)_config_opts_mingw32=--enable-mingw
 $(package)_config_opts_linux=--with-pic
 endef
 
+define $(package)_preprocess_cmds
+  sed -i.old 's/__atomic_compare_exchange\\(/__atomic_compare_exchange_db(/' src/dbinc/atomic.h && \
+  sed -i.old 's/atomic_init/atomic_init_db/' src/dbinc/atomic.h src/mp/mp_region.c src/mp/mp_mvcc.c src/mp/mp_fget.c src/mutex/mut_method.c src/mutex/mut_tas.c
+endef
+
 define $(package)_config_cmds
   ../dist/$($(package)_autoconf)
 endef
