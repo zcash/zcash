@@ -64,6 +64,6 @@ fetch_params "$REGTEST_VKEY_URL"
 # Now verify their hashes:
 echo 'Verifying parameter file integrity via sha256sum...'
 sha256sum --check - <<EOF
-bc03442cc53fa53a681809afa64c91e8c37d2db1f51eb2355e4fe181d24ce878  $REGTEST_PKEY_NAME
-67d60eeb10541ec2086e56d8dffa850e371b69ddb82fc5686c26921ad2b0f654  $REGTEST_VKEY_NAME
+7844a96933979158886a5b69fb163f49de76120fa1dcfc33b16c83c134e61817  $REGTEST_PKEY_NAME
+6902fd687bface72e572a7cda57f6da5a0c606c7b9769f30becd255e57924f41  $REGTEST_VKEY_NAME
 EOF
