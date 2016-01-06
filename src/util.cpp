@@ -430,7 +430,58 @@ boost::filesystem::path GetDefaultDataDir()
 
 static boost::filesystem::path pathCached;
 static boost::filesystem::path pathCachedNetSpecific;
+static boost::filesystem::path zc_paramsPathCached;
 static CCriticalSection csPathCached;
+
+static boost::filesystem::path ZC_GetBaseParamsDir()
+{
+    // Copied from GetDefaultDataDir and adapter for zcash params.
+
+    namespace fs = boost::filesystem;
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\ZcashParams
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\ZcashParams
+    // Mac: ~/Library/Application Support/ZcashParams
+    // Unix: ~/.zcash-params
+#ifdef WIN32
+    // Windows
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "ZcashParams";
+#else
+    fs::path pathRet;
+    char* pszHome = getenv("HOME");
+    if (pszHome == NULL || strlen(pszHome) == 0)
+        pathRet = fs::path("/");
+    else
+        pathRet = fs::path(pszHome);
+#ifdef MAC_OSX
+    // Mac
+    pathRet /= "Library/Application Support";
+    TryCreateDirectory(pathRet);
+    return pathRet / "ZcashParams";
+#else
+    // Unix
+    return pathRet / ".zcash-params";
+#endif
+#endif
+}
+
+const boost::filesystem::path &ZC_GetParamsDir()
+{
+    namespace fs = boost::filesystem;
+
+    LOCK(csPathCached); // Reuse the same lock as upstream.
+
+    fs::path &path = zc_paramsPathCached;
+
+    // This can be called during exceptions by LogPrintf(), so we cache the
+    // value so we don't have to do memory allocations after that.
+    if (!path.empty())
+        return path;
+
+    path = ZC_GetBaseParamsDir();
+    path /= BaseParams().DataDir();
+
+    return path;
+}
 
 const boost::filesystem::path &GetDataDir(bool fNetSpecific)
 {

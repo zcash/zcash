@@ -847,12 +847,16 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 {
     // Basic checks that don't depend on any context
-    if (tx.vin.empty())
+
+    // Transactions can contain empty `vin` and `vout` so long as
+    // `vpour` is non-empty.
+    if (tx.vin.empty() && tx.vpour.empty())
         return state.DoS(10, error("CheckTransaction(): vin empty"),
                          REJECT_INVALID, "bad-txns-vin-empty");
-    if (tx.vout.empty())
+    if (tx.vout.empty() && tx.vpour.empty())
         return state.DoS(10, error("CheckTransaction(): vout empty"),
                          REJECT_INVALID, "bad-txns-vout-empty");
+
     // Size limits
     if (::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) > MAX_BLOCK_SIZE)
         return state.DoS(100, error("CheckTransaction(): size limits failed"),
@@ -874,6 +878,32 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
                              REJECT_INVALID, "bad-txns-txouttotal-toolarge");
     }
 
+    // Ensure that pour values are well-formed
+    BOOST_FOREACH(const CPourTx& pour, tx.vpour)
+    {
+        if (pour.vpub_old < 0)
+            return state.DoS(100, error("CheckTransaction(): pour.vpub_old negative"),
+                             REJECT_INVALID, "bad-txns-vpub_old-negative");
+
+        if (pour.vpub_new < 0)
+            return state.DoS(100, error("CheckTransaction(): pour.vpub_new negative"),
+                             REJECT_INVALID, "bad-txns-vpub_new-negative");
+
+        if (pour.vpub_old > MAX_MONEY)
+            return state.DoS(100, error("CheckTransaction(): pour.vpub_old too high"),
+                             REJECT_INVALID, "bad-txns-vpub_old-toolarge");
+
+        if (pour.vpub_new > MAX_MONEY)
+            return state.DoS(100, error("CheckTransaction(): pour.vpub_new too high"),
+                             REJECT_INVALID, "bad-txns-vpub_new-toolarge");
+
+        nValueOut += pour.vpub_new;
+        if (!MoneyRange(nValueOut))
+            return state.DoS(100, error("CheckTransaction(): txout total out of range"),
+                             REJECT_INVALID, "bad-txns-txouttotal-toolarge");
+    }
+
+
     // Check for duplicate inputs
     set<COutPoint> vInOutPoints;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
@@ -884,8 +914,27 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
         vInOutPoints.insert(txin.prevout);
     }
 
+    // Check for duplicate pour serials
+    set<uint256> vPourSerials;
+    BOOST_FOREACH(const CPourTx& pour, tx.vpour)
+    {
+        BOOST_FOREACH(const uint256& serial, pour.serials)
+        {
+            if (vPourSerials.count(serial))
+                return state.DoS(100, error("CheckTransaction(): duplicate serials"),
+                             REJECT_INVALID, "bad-pours-serials-duplicate");
+
+            vPourSerials.insert(serial);
+        }
+    }
+
     if (tx.IsCoinBase())
     {
+        // There should be no pours in a coinbase transaction
+        if (tx.vpour.size() > 0)
+            return state.DoS(100, error("CheckTransaction(): coinbase has pours"),
+                             REJECT_INVALID, "bad-cb-has-pours");
+
         if (tx.vin[0].scriptSig.size() < 2 || tx.vin[0].scriptSig.size() > 100)
             return state.DoS(100, error("CheckTransaction(): coinbase script size"),
                              REJECT_INVALID, "bad-cb-length");
@@ -1483,6 +1532,11 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsVi
                                  REJECT_INVALID, "bad-txns-inputvalues-outofrange");
 
         }
+
+        nValueIn += tx.GetPourValueIn();
+        if (!MoneyRange(nValueIn))
+            return state.DoS(100, error("CheckInputs(): vpub_old values out of range"),
+                             REJECT_INVALID, "bad-txns-inputvalues-outofrange");
 
         if (nValueIn < tx.GetValueOut())
             return state.DoS(100, error("CheckInputs(): %s value in (%s) < value out (%s)",

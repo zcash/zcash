@@ -15,6 +15,34 @@ using namespace std;
 
 BOOST_FIXTURE_TEST_SUITE(serialize_tests, BasicTestingSetup)
 
+BOOST_AUTO_TEST_CASE(boost_arrays)
+{
+    boost::array<std::string, 2> test_case = {string("zub"), string("baz")};
+    CDataStream ss(SER_DISK, 0);
+    ss << test_case;
+
+    auto hash = Hash(ss.begin(), ss.end());
+
+    BOOST_CHECK_MESSAGE(hash == uint256S("13cb12b2dd098dced0064fe4897c97f907ba3ed36ae470c2e7fc2b1111eba35a"), "actually got: " << hash.ToString());
+
+    {
+        // note: boost array of size 2 should serialize to be the same as a tuple
+        std::pair<std::string, std::string> test_case_2 = {string("zub"), string("baz")};
+
+        CDataStream ss2(SER_DISK, 0);
+        ss2 << test_case_2;
+
+        auto hash2 = Hash(ss2.begin(), ss2.end());
+
+        BOOST_CHECK(hash == hash2);
+    }
+
+    boost::array<std::string, 2> decoded_test_case;
+    ss >> decoded_test_case;
+
+    BOOST_CHECK(decoded_test_case == test_case);
+}
+
 BOOST_AUTO_TEST_CASE(sizes)
 {
     BOOST_CHECK_EQUAL(sizeof(char), GetSerializeSize(char(0), 0));
