@@ -318,9 +318,6 @@ static const CRPCCommand vRPCCommands[] =
     { "rawtransactions",    "getrawtransaction",      &getrawtransaction,      true  },
     { "rawtransactions",    "sendrawtransaction",     &sendrawtransaction,     false },
     { "rawtransactions",    "signrawtransaction",     &signrawtransaction,     false }, /* uses wallet if enabled */
-#ifdef ENABLE_WALLET
-    { "rawtransactions",    "fundrawtransaction",     &fundrawtransaction,     false },
-#endif
 
     /* Utility functions */
     { "util",               "createmultisig",         &createmultisig,         true  },
@@ -334,79 +331,6 @@ static const CRPCCommand vRPCCommands[] =
     { "hidden",             "invalidateblock",        &invalidateblock,        true  },
     { "hidden",             "reconsiderblock",        &reconsiderblock,        true  },
     { "hidden",             "setmocktime",            &setmocktime,            true  },
-#ifdef ENABLE_WALLET
-    { "hidden",             "resendwallettransactions", &resendwallettransactions, true},
-#endif
-
-#ifdef ENABLE_WALLET
-    /* Wallet */
-    { "wallet",             "addmultisigaddress",     &addmultisigaddress,     true  },
-    { "wallet",             "backupwallet",           &backupwallet,           true  },
-    { "wallet",             "dumpprivkey",            &dumpprivkey,            true  },
-    { "wallet",             "dumpwallet",             &dumpwallet,             true  },
-    { "wallet",             "encryptwallet",          &encryptwallet,          true  },
-    { "wallet",             "getaccountaddress",      &getaccountaddress,      true  },
-    { "wallet",             "getaccount",             &getaccount,             true  },
-    { "wallet",             "getaddressesbyaccount",  &getaddressesbyaccount,  true  },
-    { "wallet",             "getbalance",             &getbalance,             false },
-    { "wallet",             "getnewaddress",          &getnewaddress,          true  },
-    { "wallet",             "getrawchangeaddress",    &getrawchangeaddress,    true  },
-    { "wallet",             "getreceivedbyaccount",   &getreceivedbyaccount,   false },
-    { "wallet",             "getreceivedbyaddress",   &getreceivedbyaddress,   false },
-    { "wallet",             "gettransaction",         &gettransaction,         false },
-    { "wallet",             "getunconfirmedbalance",  &getunconfirmedbalance,  false },
-    { "wallet",             "getwalletinfo",          &getwalletinfo,          false },
-    { "wallet",             "importprivkey",          &importprivkey,          true  },
-    { "wallet",             "importwallet",           &importwallet,           true  },
-    { "wallet",             "importaddress",          &importaddress,          true  },
-    { "wallet",             "keypoolrefill",          &keypoolrefill,          true  },
-    { "wallet",             "listaccounts",           &listaccounts,           false },
-    { "wallet",             "listaddressgroupings",   &listaddressgroupings,   false },
-    { "wallet",             "listlockunspent",        &listlockunspent,        false },
-    { "wallet",             "listreceivedbyaccount",  &listreceivedbyaccount,  false },
-    { "wallet",             "listreceivedbyaddress",  &listreceivedbyaddress,  false },
-    { "wallet",             "listsinceblock",         &listsinceblock,         false },
-    { "wallet",             "listtransactions",       &listtransactions,       false },
-    { "wallet",             "listunspent",            &listunspent,            false },
-    { "wallet",             "lockunspent",            &lockunspent,            true  },
-    { "wallet",             "move",                   &movecmd,                false },
-    { "wallet",             "sendfrom",               &sendfrom,               false },
-    { "wallet",             "sendmany",               &sendmany,               false },
-    { "wallet",             "sendtoaddress",          &sendtoaddress,          false },
-    { "wallet",             "setaccount",             &setaccount,             true  },
-    { "wallet",             "settxfee",               &settxfee,               true  },
-    { "wallet",             "signmessage",            &signmessage,            true  },
-    { "wallet",             "walletlock",             &walletlock,             true  },
-    { "wallet",             "walletpassphrasechange", &walletpassphrasechange, true  },
-    { "wallet",             "walletpassphrase",       &walletpassphrase,       true  },
-    { "wallet",             "zcbenchmark",            &zc_benchmark,           true  },
-    { "wallet",             "zcrawkeygen",            &zc_raw_keygen,          true  },
-    { "wallet",             "zcrawjoinsplit",         &zc_raw_joinsplit,       true  },
-    { "wallet",             "zcrawreceive",           &zc_raw_receive,         true  },
-    { "wallet",             "zcsamplejoinsplit",      &zc_sample_joinsplit,    true  },
-    { "wallet",             "z_listreceivedbyaddress",&z_listreceivedbyaddress,false },
-    { "wallet",             "z_listunspent",          &z_listunspent,          false },
-    { "wallet",             "z_getbalance",           &z_getbalance,           false },
-    { "wallet",             "z_gettotalbalance",      &z_gettotalbalance,      false },
-    { "wallet",             "z_mergetoaddress",       &z_mergetoaddress,       false },
-    { "wallet",             "z_sendmany",             &z_sendmany,             false },
-    { "wallet",             "z_shieldcoinbase",       &z_shieldcoinbase,       false },
-    { "wallet",             "z_getoperationstatus",   &z_getoperationstatus,   true  },
-    { "wallet",             "z_getoperationresult",   &z_getoperationresult,   true  },
-    { "wallet",             "z_listoperationids",     &z_listoperationids,     true  },
-    { "wallet",             "z_getnewaddress",        &z_getnewaddress,        true  },
-    { "wallet",             "z_listaddresses",        &z_listaddresses,        true  },
-    { "wallet",             "z_exportkey",            &z_exportkey,            true  },
-    { "wallet",             "z_importkey",            &z_importkey,            true  },
-    { "wallet",             "z_exportviewingkey",     &z_exportviewingkey,     true  },
-    { "wallet",             "z_importviewingkey",     &z_importviewingkey,     true  },
-    { "wallet",             "z_exportwallet",         &z_exportwallet,         true  },
-    { "wallet",             "z_importwallet",         &z_importwallet,         true  },
-
-    // TODO: rearrange into another category
-    { "disclosure",         "z_getpaymentdisclosure", &z_getpaymentdisclosure, true  },
-    { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }
-#endif // ENABLE_WALLET
 };
 
 CRPCTable::CRPCTable()
@@ -427,6 +351,20 @@ const CRPCCommand *CRPCTable::operator[](const std::string &name) const
     if (it == mapCommands.end())
         return NULL;
     return (*it).second;
+}
+
+bool CRPCTable::appendCommand(const std::string& name, const CRPCCommand* pcmd)
+{
+    if (IsRPCRunning())
+        return false;
+
+    // don't allow overwriting for now
+    map<string, const CRPCCommand*>::const_iterator it = mapCommands.find(name);
+    if (it != mapCommands.end())
+        return false;
+
+    mapCommands[name] = pcmd;
+    return true;
 }
 
 bool StartRPC()
@@ -631,7 +569,7 @@ void RPCRunLater(const std::string& name, boost::function<void(void)> func, int6
     deadlineTimers.insert(std::make_pair(name, boost::shared_ptr<RPCTimerBase>(timerInterface->NewTimer(func, nSeconds*1000))));
 }
 
-const CRPCTable tableRPC;
+CRPCTable tableRPC;
 
 // Return async rpc queue
 std::shared_ptr<AsyncRPCQueue> getAsyncRPCQueue()

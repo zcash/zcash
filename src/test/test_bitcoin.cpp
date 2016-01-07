@@ -77,6 +77,7 @@ TestingSetup::TestingSetup()
 {
 #ifdef ENABLE_WALLET
         bitdb.MakeMock();
+        walletRegisterRPCCommands();
 #endif
         ClearDatadirCache();
         pathTemp = GetTempPath() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));

@@ -431,6 +431,9 @@ double benchmark_connectblock_slow()
     return duration;
 }
 
+extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp
+extern UniValue sendtoaddress(const UniValue& params, bool fHelp);
+
 double benchmark_sendtoaddress(CAmount amount)
 {
     UniValue params(UniValue::VARR);
