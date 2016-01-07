@@ -387,6 +387,21 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
     return nResult;
 }
 
+bool CCoinsViewCache::HavePourRequirements(const CTransaction& tx) const
+{
+    BOOST_FOREACH(const CPourTx &pour, tx.vpour)
+    {
+        libzerocash::IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+        if (!GetAnchorAt(pour.anchor, tree)) {
+            // If we do not have the anchor for the pour,
+            // it is invalid.
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool CCoinsViewCache::HaveInputs(const CTransaction& tx) const
 {
     if (!tx.IsCoinBase()) {

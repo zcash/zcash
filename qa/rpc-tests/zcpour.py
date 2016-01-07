@@ -16,6 +16,35 @@ class PourTxTest(BitcoinTestFramework):
         # Start with split network:
         return super(PourTxTest, self).setup_network(True)
 
+    def send_pours_around(self):
+        zckeypair = self.nodes[0].zcrawkeygen()
+        zcsecretkey = zckeypair["zcsecretkey"]
+        zcaddress = zckeypair["zcaddress"]
+
+        (total_in, inputs) = gather_inputs(self.nodes[1], 50)
+        protect_tx = self.nodes[1].createrawtransaction(inputs, {})
+        pour_result = self.nodes[1].zcrawpour(protect_tx, {}, {zcaddress:49.9}, 50, 0.1)
+
+        receive_result = self.nodes[1].zcrawreceive(zcsecretkey, pour_result["encryptedbucket1"])
+        assert_equal(receive_result["exists"], False)
+
+        protect_tx = self.nodes[1].signrawtransaction(pour_result["rawtxn"])
+        self.nodes[1].sendrawtransaction(protect_tx["hex"])
+        self.nodes[1].generate(1)
+
+        receive_result = self.nodes[1].zcrawreceive(zcsecretkey, pour_result["encryptedbucket1"])
+        assert_equal(receive_result["exists"], True)
+
+        pour_tx = self.nodes[1].createrawtransaction([], {})
+        pour_result = self.nodes[1].zcrawpour(pour_tx, {receive_result["bucket"] : zcsecretkey}, {zcaddress: 49.8}, 0, 0.1)
+
+        self.nodes[1].sendrawtransaction(pour_result["rawtxn"])
+        self.nodes[1].generate(1)
+        sync_blocks(self.nodes)
+
+        receive_result = self.nodes[0].zcrawreceive(zcsecretkey, pour_result["encryptedbucket1"])
+        assert_equal(receive_result["exists"], True)
+
     def run_test(self):
         # All nodes should start with 1,250 BTC:
         starting_balance = 1250
@@ -66,6 +95,8 @@ class PourTxTest(BitcoinTestFramework):
         print signed_tx_pour
 
         self.nodes[0].sendrawtransaction(signed_tx_pour["hex"])
+        
+        self.send_pours_around()
 
 if __name__ == '__main__':
     PourTxTest().main()

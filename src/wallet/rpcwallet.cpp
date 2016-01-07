@@ -2344,13 +2344,68 @@ Value listunspent(const Array& params, bool fHelp)
     return results;
 }
 
+Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
+{
+    /*
+        zcrawreceive <zcsecretkey> <encrypted_bucket>
+    */
+    RPCTypeCheck(params, boost::assign::list_of(str_type)(str_type));
+    LOCK(cs_main);
+
+    std::vector<unsigned char> a_sk;
+    std::string sk_enc;
+
+    {
+        CDataStream ssData(ParseHexV(params[0], "zcsecretkey"), SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> a_sk;
+            ssData >> sk_enc;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "zcsecretkey could not be decoded"
+            );
+        }
+    }
+
+    libzerocash::PrivateAddress zcsecretkey(a_sk, sk_enc);
+    libzerocash::Address zcaddress(zcsecretkey);
+
+    auto encrypted_bucket_vec = ParseHexV(params[1], "encrypted_bucket");
+    std::string encrypted_bucket(encrypted_bucket_vec.begin(), encrypted_bucket_vec.end());
+    libzerocash::Coin decrypted_bucket(encrypted_bucket, zcaddress);
+
+    std::vector<unsigned char> commitment_v = decrypted_bucket.getCoinCommitment().getCommitmentValue();
+    uint256 commitment = uint256(commitment_v);
+
+    assert(pwalletMain != NULL);
+    merkle_authentication_path path(INCREMENTAL_MERKLE_TREE_DEPTH); // We don't care during receive... yet! :)
+    size_t path_index = 0;
+    uint256 anchor;
+    auto found_in_chain = pwalletMain->WitnessBucketCommitment(commitment, path, path_index, anchor);
+
+    CAmount value_of_bucket = decrypted_bucket.getValue();
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    {
+        ss << decrypted_bucket.getValue();
+        ss << decrypted_bucket.getRho();
+        ss << decrypted_bucket.getR();
+    }
+
+    Object result;
+    result.push_back(Pair("amount", ValueFromAmount(value_of_bucket)));
+    result.push_back(Pair("bucket", HexStr(ss.begin(), ss.end())));
+    result.push_back(Pair("exists", found_in_chain));
+    return result;
+}
+
 Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
 {
     /*
         zcrawpour <rawtx> {<bucket>: <zcsecretkey>, ...} {<zcaddress>: <value>, ...} vpub_old vpub_new
     */
-    
-    //RPCTypeCheck(params, boost::assign::list_of(str_type)(obj_type)(obj_type)(int_type)(int_type));
+
+    LOCK(cs_main);
 
     CTransaction tx;
     if (!DecodeHexTx(tx, params[0].get_str()))
@@ -2371,24 +2426,61 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
     std::vector<PourInput> vpourin;
     std::vector<PourOutput> vpourout;
 
-    /*
+    uint256 anchor;
+
     BOOST_FOREACH(const Pair& s, inputs)
     {
-        // TODO
-    }
-    */
+        CDataStream ssData(ParseHexV(s.name_, "bucket"), SER_NETWORK, PROTOCOL_VERSION);
+        uint64_t value;
+        std::vector<unsigned char> rho;
+        std::vector<unsigned char> r;
 
-    // TODO
-    vpourin.push_back(PourInput(INCREMENTAL_MERKLE_TREE_DEPTH));
-    vpourin.push_back(PourInput(INCREMENTAL_MERKLE_TREE_DEPTH));
+        ssData >> value;
+        ssData >> rho;
+        ssData >> r;
+
+        std::vector<unsigned char> a_sk;
+        std::string sk_enc;
+
+        {
+            CDataStream ssData2(ParseHexV(s.value_, "zcsecretkey"), SER_NETWORK, PROTOCOL_VERSION);
+            try {
+                ssData2 >> a_sk;
+                ssData2 >> sk_enc;
+            } catch(const std::exception &) {
+                throw runtime_error(
+                    "zcsecretkey could not be decoded"
+                );
+            }
+        }
+
+        libzerocash::PrivateAddress zcsecretkey(a_sk, sk_enc);
+        libzerocash::Address zcaddress(zcsecretkey);
+        libzerocash::Coin input_coin(zcaddress.getPublicAddress(), value, rho, r);
+
+        std::vector<unsigned char> commitment_v = input_coin.getCoinCommitment().getCommitmentValue();
+        uint256 commitment = uint256(commitment_v);
+
+        merkle_authentication_path path(INCREMENTAL_MERKLE_TREE_DEPTH);
+        size_t path_index = 0;
+        assert(pwalletMain != NULL);
+        if (!pwalletMain->WitnessBucketCommitment(commitment, path, path_index, anchor)) {
+            throw std::runtime_error("Couldn't find bucket in the blockchain");
+        }
+
+        vpourin.push_back(PourInput(input_coin, zcaddress, path_index, path));
+    }
+
+    while (vpourin.size() < 2) {
+        vpourin.push_back(PourInput(INCREMENTAL_MERKLE_TREE_DEPTH));
+    }
 
     BOOST_FOREACH(const Pair& s, outputs)
     {
         libzerocash::PublicAddress addrTo;
 
         {
-            vector<unsigned char> decoded(ParseHex(s.name_));
-            CDataStream ssData(decoded, SER_NETWORK, PROTOCOL_VERSION);
+            CDataStream ssData(ParseHexV(s.name_, "to_address"), SER_NETWORK, PROTOCOL_VERSION);
 
             std::vector<unsigned char> pubAddressSecret;
             std::string encryptionPublicKey;
@@ -2415,7 +2507,6 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         throw runtime_error("unsupported");
     }
 
-    uint256 anchor; // TODO
     CScript scriptPubKey;
     CPourTx pourtx(*pzerocashParams,
                    scriptPubKey,
@@ -2424,6 +2515,8 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
                    {vpourout[0], vpourout[1]},
                    vpub_old,
                    vpub_new);
+
+    assert(pourtx.Verify(*pzerocashParams));
 
     CMutableTransaction mtx(tx);
     mtx.nVersion = 2;

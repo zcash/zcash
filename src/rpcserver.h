@@ -210,6 +210,7 @@ extern json_spirit::Value setmocktime(const json_spirit::Array& params, bool fHe
 extern json_spirit::Value resendwallettransactions(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value zc_raw_pour(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value zc_raw_receive(const json_spirit::Array& params, bool fHelp);
 
 extern json_spirit::Value getrawtransaction(const json_spirit::Array& params, bool fHelp); // in rcprawtransaction.cpp
 extern json_spirit::Value listunspent(const json_spirit::Array& params, bool fHelp);

@@ -28,6 +28,8 @@
 #include <utility>
 #include <vector>
 
+using namespace libsnark;
+
 /**
  * Settings
  */
@@ -616,6 +618,7 @@ public:
     void SyncTransaction(const CTransaction& tx, const CBlock* pblock);
     bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate);
     void EraseFromWallet(const uint256 &hash);
+    bool WitnessBucketCommitment(uint256 &commitment, merkle_authentication_path& path, size_t &path_index, uint256 &final_anchor);
     int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
     void ReacceptWalletTransactions();
     void ResendWalletTransactions(int64_t nBestBlockTime);

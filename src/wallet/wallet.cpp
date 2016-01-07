@@ -1051,6 +1051,68 @@ bool CWalletTx::WriteToDisk(CWalletDB *pwalletdb)
     return pwalletdb->WriteTx(GetHash(), *this);
 }
 
+bool CWallet::WitnessBucketCommitment(uint256 &commitment,
+                                      merkle_authentication_path& path,
+                                      size_t &path_index,
+                                      uint256 &final_anchor)
+{
+    bool res = false;
+    std::vector<bool> commitment_index;
+
+    CBlockIndex* pindex = chainActive.Genesis();
+    libzerocash::IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+    uint256 current_anchor;
+
+    while (pindex) {
+        CBlock block;
+        ReadBlockFromDisk(block, pindex);
+
+        BOOST_FOREACH(const CTransaction& tx, block.vtx)
+        {
+            BOOST_FOREACH(const CPourTx& pour, tx.vpour)
+            {
+                BOOST_FOREACH(const uint256 &bucket_commitment, pour.commitments)
+                {
+                    std::vector<bool> commitment_bv(ZC_CM_SIZE * 8);
+                    std::vector<bool> index;
+                    std::vector<unsigned char> commitment_value(bucket_commitment.begin(), bucket_commitment.end());
+                    libzerocash::convertBytesVectorToVector(commitment_value, commitment_bv);
+                    tree.insertElement(commitment_bv, index);
+
+                    if (bucket_commitment == commitment) {
+                        // We've found it! Now, we construct a witness.
+                        res = true;
+                        tree.prune();
+                        commitment_index = index;
+                    }
+                }
+            }
+        }
+
+        {
+            std::vector<unsigned char> newrt_v(32);
+            tree.getRootValue(newrt_v);
+            current_anchor = uint256(newrt_v);
+        }
+
+        // Consistency check: we should be able to find the current tree
+        // in our CCoins view.
+        libzerocash::IncrementalMerkleTree dummy_tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+        assert(pcoinsTip->GetAnchorAt(current_anchor, dummy_tree));
+
+        pindex = chainActive.Next(pindex);
+    }
+
+    if (res) {
+        assert(tree.getWitness(commitment_index, path));
+    }
+
+    path_index = libzerocash::convertVectorToInt(commitment_index);
+    final_anchor = current_anchor;
+
+    return res;
+}
+
 /**
  * Scan the block chain (starting in pindexStart) for transactions
  * from or to us. If fUpdate is true, found transactions that already

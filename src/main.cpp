@@ -1057,6 +1057,11 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             return state.Invalid(error("AcceptToMemoryPool: inputs already spent"),
                                  REJECT_DUPLICATE, "bad-txns-inputs-spent");
 
+        // are the pour's requirements met?
+        if (!view.HavePourRequirements(tx))
+            return state.Invalid(error("AcceptToMemoryPool: pour requirements not met"),
+                                 REJECT_DUPLICATE, "bad-txns-pour-requirements-not-met");
+
         // Bring the best block into scope
         view.GetBestBlock();
 
@@ -1505,6 +1510,10 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsVi
         if (!inputs.HaveInputs(tx))
             return state.Invalid(error("CheckInputs(): %s inputs unavailable", tx.GetHash().ToString()));
 
+        // are the pour's requirements met?
+        if (!inputs.HavePourRequirements(tx))
+            return state.Invalid(error("CheckInputs(): %s pour requirements not met", tx.GetHash().ToString()));
+
         // While checking, GetBestBlock() refers to the parent block.
         // This is also true for mempool checks.
         CBlockIndex *pindexPrev = mapBlockIndex.find(inputs.GetBestBlock())->second;
@@ -1766,6 +1775,9 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         }
     }
 
+    // set the old best anchor back
+    view.PopAnchor(blockUndo.old_tree_root);
+
     // move best block pointer to prevout block
     view.SetBestBlock(pindex->pprev->GetBlockHash());
 
@@ -1953,6 +1965,25 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     std::vector<std::pair<uint256, CDiskTxPos> > vPos;
     vPos.reserve(block.vtx.size());
     blockundo.vtxundo.reserve(block.vtx.size() - 1);
+
+    // Construct the incremental merkle tree at the current
+    // block position,
+    auto old_tree_root = view.GetBestAnchor();
+    libzerocash::IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+    // This should never fail: we should always be able to get the root
+    // that is on the tip of our chain
+    assert(view.GetAnchorAt(old_tree_root, tree));
+
+    {
+        // Consistency check: the root of the tree we're given should
+        // match what we asked for.
+        std::vector<unsigned char> newrt_v(32);
+        tree.getRootValue(newrt_v);
+        uint256 anchor_received = uint256(newrt_v);
+
+        assert(anchor_received == old_tree_root);
+    }
+
     for (unsigned int i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction &tx = block.vtx[i];
@@ -1968,6 +1999,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             if (!view.HaveInputs(tx))
                 return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
+
+            // are the pour's requirements met?
+            if (!view.HavePourRequirements(tx))
+                return state.DoS(100, error("ConnectBlock(): pour requirements not met"),
+                                 REJECT_INVALID, "bad-txns-pour-requirements-not-met");
 
             if (fStrictPayToScriptHash)
             {
@@ -1994,9 +2030,26 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
         UpdateCoins(tx, state, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
 
+        BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+            BOOST_FOREACH(const uint256 &bucket_commitment, pour.commitments) {
+                // Insert the bucket commitments into our temporary tree.
+
+                std::vector<bool> index;
+                std::vector<unsigned char> commitment_value(bucket_commitment.begin(), bucket_commitment.end());
+                std::vector<bool> commitment_bv(ZC_CM_SIZE * 8);
+                libzerocash::convertBytesVectorToVector(commitment_value, commitment_bv);
+                tree.insertElement(commitment_bv, index);
+            }
+        }
+
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
+
+    tree.prune(); // prune it, so we don't cache intermediate states we don't need
+    view.PushAnchor(tree);
+    blockundo.old_tree_root = old_tree_root;
+
     int64_t nTime1 = GetTimeMicros(); nTimeConnect += nTime1 - nTimeStart;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
@@ -2225,6 +2278,7 @@ bool static DisconnectTip(CValidationState &state) {
     if (!ReadBlockFromDisk(block, pindexDelete))
         return AbortNode(state, "Failed to read block");
     // Apply the block atomically to the chain state.
+    uint256 anchorBeforeDisconnect = pcoinsTip->GetBestAnchor();
     int64_t nStart = GetTimeMicros();
     {
         CCoinsViewCache view(pcoinsTip);
@@ -2233,6 +2287,7 @@ bool static DisconnectTip(CValidationState &state) {
         assert(view.Flush());
     }
     LogPrint("bench", "- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
+    uint256 anchorAfterDisconnect = pcoinsTip->GetBestAnchor();
     // Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED))
         return false;
@@ -2243,6 +2298,11 @@ bool static DisconnectTip(CValidationState &state) {
         CValidationState stateDummy;
         if (tx.IsCoinBase() || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
             mempool.remove(tx, removed, true);
+    }
+    if (anchorBeforeDisconnect != anchorAfterDisconnect) {
+        // The anchor may not change between block disconnects,
+        // in which case we don't want to evict from the mempool yet!
+        mempool.removeWithAnchor(anchorBeforeDisconnect);
     }
     mempool.removeCoinbaseSpends(pcoinsTip, pindexDelete->nHeight);
     mempool.check(pcoinsTip);
@@ -4536,7 +4596,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             BOOST_FOREACH(uint256 hash, vEraseQueue)
                 EraseOrphanTx(hash);
         }
-        else if (fMissingInputs)
+        // TODO: currently, prohibit pours from entering mapOrphans
+        else if (fMissingInputs && tx.vpour.size() == 0)
         {
             AddOrphanTx(tx, pfrom->GetId());
 
