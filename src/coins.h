@@ -517,6 +517,9 @@ public:
     //! Check whether all prevouts of the transaction are present in the UTXO set represented by this view
     bool HaveInputs(const CTransaction& tx) const;
 
+    //! Check whether all pour requirements (anchors/serials) are satisfied
+    bool HavePourRequirements(const CTransaction& tx) const;
+
     //! Return priority of tx at height nHeight
     double GetPriority(const CTransaction &tx, int nHeight) const;
 
