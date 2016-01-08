@@ -99,6 +99,11 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     const CTransaction& tx = mapTx[hash].GetTx();
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
+    BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+        BOOST_FOREACH(const uint256 &serial, pour.serials) {
+            mapSerials[serial] = &tx;
+        }
+    }
     nTransactionsUpdated++;
     totalTxSize += entry.GetTxSize();
     minerPolicyEstimator->processTransaction(entry, fCurrentEstimate);
@@ -143,6 +148,11 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
             }
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
                 mapNextTx.erase(txin.prevout);
+            BOOST_FOREACH(const CPourTx& pour, tx.vpour) {
+                BOOST_FOREACH(const uint256& serial, pour.serials) {
+                    mapSerials.erase(serial);
+                }
+            }
 
             removed.push_back(tx);
             totalTxSize -= mapTx[hash].GetTxSize();
@@ -219,6 +229,19 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
             }
         }
     }
+
+    BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+        BOOST_FOREACH(const uint256 &serial, pour.serials) {
+            std::map<uint256, const CTransaction*>::iterator it = mapSerials.find(serial);
+            if (it != mapSerials.end()) {
+                const CTransaction &txConflict = *it->second;
+                if (txConflict != tx)
+                {
+                    remove(txConflict, removed, true);
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -291,6 +314,15 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             assert(it3->second.n == i);
             i++;
         }
+        BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+            BOOST_FOREACH(const uint256 &serial, pour.serials) {
+                assert(!pcoins->GetSerial(serial));
+            }
+
+            // TODO: chained pours
+            libzerocash::IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+            assert(pcoins->GetAnchorAt(pour.anchor, tree));
+        }
         if (fDependsWait)
             waitingOnDependants.push_back(&it->second);
         else {
@@ -322,6 +354,14 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         assert(&tx == it->second.ptx);
         assert(tx.vin.size() > it->second.n);
         assert(it->first == it->second.ptx->vin[it->second.n].prevout);
+    }
+
+    for (std::map<uint256, const CTransaction*>::const_iterator it = mapSerials.begin(); it != mapSerials.end(); it++) {
+        uint256 hash = it->second->GetHash();
+        map<uint256, CTxMemPoolEntry>::const_iterator it2 = mapTx.find(hash);
+        const CTransaction& tx = it2->second.GetTx();
+        assert(it2 != mapTx.end());
+        assert(&tx == it->second);
     }
 
     assert(totalTxSize == checkTotal);
@@ -429,6 +469,13 @@ bool CTxMemPool::HasNoInputsOf(const CTransaction &tx) const
 }
 
 CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn), mempool(mempoolIn) { }
+
+bool CCoinsViewMemPool::GetSerial(const uint256 &serial) const {
+    if (mempool.mapSerials.count(serial))
+        return true;
+
+    return base->GetSerial(serial);
+}
 
 bool CCoinsViewMemPool::GetCoins(const uint256 &txid, CCoins &coins) const {
     // If an entry in the mempool exists, always return that one, as it's guaranteed to never

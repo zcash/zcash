@@ -391,6 +391,15 @@ bool CCoinsViewCache::HavePourRequirements(const CTransaction& tx) const
 {
     BOOST_FOREACH(const CPourTx &pour, tx.vpour)
     {
+        BOOST_FOREACH(const uint256& serial, pour.serials)
+        {
+            if (GetSerial(serial)) {
+                // If the serial is set, this transaction
+                // double-spends!
+                return false;
+            }
+        }
+
         libzerocash::IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
         if (!GetAnchorAt(pour.anchor, tree)) {
             // If we do not have the anchor for the pour,
