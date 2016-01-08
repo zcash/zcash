@@ -17,7 +17,7 @@ class PourTxTest(BitcoinTestFramework):
         return super(PourTxTest, self).setup_network(True)
 
     def send_pours_around(self):
-        zckeypair = self.nodes[0].zcrawkeygen()
+        zckeypair = self.nodes[1].zcrawkeygen()
         zcsecretkey = zckeypair["zcsecretkey"]
         zcaddress = zckeypair["zcaddress"]
 
@@ -40,8 +40,12 @@ class PourTxTest(BitcoinTestFramework):
 
         self.nodes[1].sendrawtransaction(pour_result["rawtxn"])
         self.nodes[1].generate(1)
-        sync_blocks(self.nodes)
 
+        print "Syncing blocks..."
+        connect_nodes(self.nodes[1], 0)
+        sync_blocks(self.nodes[0:2])
+
+        print "Done!"
         receive_result = self.nodes[0].zcrawreceive(zcsecretkey, pour_result["encryptedbucket1"])
         assert_equal(receive_result["exists"], True)
 
