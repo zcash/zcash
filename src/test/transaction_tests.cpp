@@ -391,6 +391,9 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         // pours.
         CMutableTransaction newTx(tx);
         CValidationState state;
+
+        state.SetPerformPourVerification(false); // don't verify the snark
+
         // No pours, vin and vout, means it should be invalid.
         BOOST_CHECK(!CheckTransaction(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vin-empty");
