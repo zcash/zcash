@@ -93,10 +93,7 @@ bool CCoinsViewDB::GetSerial(const uint256 &serial) const {
     bool spent = false;
     bool read = db.Read(make_pair(DB_SERIAL, serial), spent);
 
-    // We should never read false from the database.
-    assert(spent != read);
-
-    return spent;
+    return read;
 }
 
 bool CCoinsViewDB::GetCoins(const uint256 &txid, CCoins &coins) const {

@@ -47,6 +47,8 @@
 #include <boost/thread.hpp>
 #include <openssl/crypto.h>
 
+#include "libsnark/common/profiling.hpp"
+
 using namespace std;
 
 libzerocash::ZerocashParams *pzerocashParams = NULL;
@@ -1265,6 +1267,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // ********************************************************* Step 7i: Load zcash params
     ZC_LoadParams();
+
+    // These must be disabled for now, they are buggy and we probably don't
+    // want any of libsnark's profiling in production anyway.
+    libsnark::inhibit_profiling_info = true;
+    libsnark::inhibit_profiling_counters = true;
 
     // ********************************************************* Step 8: load wallet
 #ifdef ENABLE_WALLET

@@ -1036,6 +1036,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             return false;
         }
     }
+    BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+        BOOST_FOREACH(const uint256 &serial, pour.serials) {
+            if (pool.mapSerials.count(serial))
+            {
+                return false;
+            }
+        }
+    }
     }
 
     {
@@ -1491,6 +1499,13 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
         }
     }
 
+    // spend serials
+    BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+        BOOST_FOREACH(const uint256 &serial, pour.serials) {
+            inputs.SetSerial(serial, true);
+        }
+    }
+
     // add outputs
     inputs.ModifyCoins(tx.GetHash())->FromTx(tx, nHeight);
 }
@@ -1770,6 +1785,13 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
 
         // remove outputs
         outs->Clear();
+        }
+
+        // unspend serials
+        BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+            BOOST_FOREACH(const uint256 &serial, pour.serials) {
+                view.SetSerial(serial, false);
+            }
         }
 
         // restore inputs
