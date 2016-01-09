@@ -475,7 +475,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-logtimestamps", strprintf(_("Prepend debug output with timestamp (default: %u)"), DEFAULT_LOGTIMESTAMPS));
     if (showDebug)
     {
-        strUsage += HelpMessageOpt("-mocktime=<n>", "Replace actual time with <n> (default: 0)");
+        strUsage += HelpMessageOpt("-mocktime=<n>", "Replace actual time with <n> seconds since epoch (default: 0)");
         strUsage += HelpMessageOpt("-limitfreerelay=<n>", strprintf("Continuously rate-limit free transactions to <n>*1000 bytes per minute (default: %u)", DEFAULT_LIMITFREERELAY));
         strUsage += HelpMessageOpt("-relaypriority", strprintf("Require high priority for relaying free or low-fee transactions (default: %u)", DEFAULT_RELAYPRIORITY));
         strUsage += HelpMessageOpt("-maxsigcachesize=<n>", strprintf("Limit total size of signature and bundle caches to <n> MiB (default: %u)", DEFAULT_MAX_SIG_CACHE_SIZE));
