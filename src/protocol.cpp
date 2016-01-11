@@ -12,14 +12,6 @@
 # include <arpa/inet.h>
 #endif
 
-static const char* ppszTypeName[] =
-{
-    "ERROR",
-    "tx",
-    "block",
-    "filtered block"
-};
-
 CMessageHeader::CMessageHeader(const MessageStartChars& pchMessageStartIn)
 {
     memcpy(pchMessageStart, pchMessageStartIn, MESSAGE_START_SIZE);
@@ -105,17 +97,13 @@ CInv::CInv(int typeIn, const uint256& hashIn)
 
 CInv::CInv(const std::string& strType, const uint256& hashIn)
 {
-    unsigned int i;
-    for (i = 1; i < ARRAYLEN(ppszTypeName); i++)
-    {
-        if (strType == ppszTypeName[i])
-        {
-            type = i;
-            break;
-        }
-    }
-    if (i == ARRAYLEN(ppszTypeName))
+    if (strType == "tx")
+        type = MSG_TX;
+    else if (strType == "block")
+        type = MSG_BLOCK;
+    else
         throw std::out_of_range(strprintf("CInv::CInv(string, uint256): unknown type '%s'", strType));
+
     hash = hashIn;
 }
 
@@ -126,14 +114,18 @@ bool operator<(const CInv& a, const CInv& b)
 
 bool CInv::IsKnownType() const
 {
-    return (type >= 1 && type < (int)ARRAYLEN(ppszTypeName));
+    return (type >= 1 && type <= MSG_TYPE_MAX);
 }
 
 const char* CInv::GetCommand() const
 {
-    if (!IsKnownType())
+    switch (type)
+    {
+    case MSG_TX:    return "tx";
+    case MSG_BLOCK: return "block";
+    default:
         throw std::out_of_range(strprintf("CInv::GetCommand(): type=%d unknown type", type));
-    return ppszTypeName[type];
+    }
 }
 
 std::string CInv::ToString() const

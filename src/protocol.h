@@ -119,6 +119,17 @@ public:
     unsigned int nTime;
 };
 
+/** getdata message types */
+enum GetDataMsg
+{
+    MSG_TX = 1,
+    MSG_BLOCK,
+    MSG_TYPE_MAX = MSG_BLOCK,
+    // The following can only occur in getdata. Invs always use TX or BLOCK.
+    MSG_FILTERED_BLOCK,
+    UNDEFINED,
+};
+
 /** inv message data */
 class CInv
 {
@@ -146,14 +157,6 @@ public:
 public:
     int type;
     uint256 hash;
-};
-
-enum {
-    MSG_TX = 1,
-    MSG_BLOCK,
-    // Nodes may always request a MSG_FILTERED_BLOCK in a getdata, however,
-    // MSG_FILTERED_BLOCK should not appear in any invs except as a part of getdata.
-    MSG_FILTERED_BLOCK,
 };
 
 #endif // BITCOIN_PROTOCOL_H
