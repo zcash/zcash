@@ -638,6 +638,9 @@ static void ZC_LoadParams()
  */
 bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 {
+    // ********************************************************* Step 0: Load zcash params
+    ZC_LoadParams();
+
     // ********************************************************* Step 1: setup
 #ifdef _MSC_VER
     // Turn off Microsoft heap dump noise
@@ -1264,9 +1267,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (!est_filein.IsNull())
         mempool.ReadFeeEstimates(est_filein);
     fFeeEstimatesInitialized = true;
-
-    // ********************************************************* Step 7i: Load zcash params
-    ZC_LoadParams();
 
     // These must be disabled for now, they are buggy and we probably don't
     // want any of libsnark's profiling in production anyway.
