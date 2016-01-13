@@ -140,6 +140,7 @@ public:
         consensus.nMajorityEnforceBlockUpgrade = 51;
         consensus.nMajorityRejectBlockOutdated = 75;
         consensus.nMajorityWindow = 100;
+        consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.fPowAllowMinDifficultyBlocks = true;
         pchMessageStart[0] = 0x0b;
         pchMessageStart[1] = 0x11;
@@ -153,9 +154,10 @@ public:
 
         //! Modify the testnet genesis block so the timestamp is valid for a later start.
         genesis.nTime = 1296688602;
-        genesis.nNonce = 414098458;
+        genesis.nBits = 0x207fffff;
+        genesis.nNonce = 2;
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
+        assert(consensus.hashGenesisBlock == uint256S("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -181,10 +183,10 @@ public:
 
         checkpointData = (Checkpoints::CCheckpointData) {
             boost::assign::map_list_of
-            ( 546, uint256S("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")),
-            1337966069,
-            1488,
-            300
+            ( 0, consensus.hashGenesisBlock),
+            genesis.nTime,
+            0,
+            0
         };
 
     }
