@@ -1077,12 +1077,11 @@ bool CWallet::WitnessBucketCommitment(uint256 &commitment,
                     std::vector<bool> index;
                     std::vector<unsigned char> commitment_value(bucket_commitment.begin(), bucket_commitment.end());
                     libzerocash::convertBytesVectorToVector(commitment_value, commitment_bv);
-                    tree.insertElement(commitment_bv, index);
+                    assert(tree.insertElement(commitment_bv, index));
 
                     if (bucket_commitment == commitment) {
                         // We've found it! Now, we construct a witness.
                         res = true;
-                        tree.prune();
                         commitment_index = index;
                     }
                 }
