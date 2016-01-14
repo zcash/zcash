@@ -113,14 +113,13 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMer
         }
     }
 
-    CAnchorsCacheEntry entry;
     if (!base->GetAnchorAt(rt, tree)) {
         return false;
     }
 
-    entry.entered = true;
-    entry.tree.setTo(tree);
-    cacheAnchors.insert(std::make_pair(rt, entry));
+    CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(rt, CAnchorsCacheEntry())).first;
+    ret->second.entered = true;
+    ret->second.tree.setTo(tree);
 
     return true;
 }
