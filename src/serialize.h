@@ -511,7 +511,7 @@ template<typename Stream> void Unserialize(Stream& is, CScript& v, int nType, in
 /**
  * array
  */
-template<typename T, std::size_t N> unsigned int GetSerializeSize_impl(const boost::array<T, N> &item, int nType, int nVersion);
+template<typename T, std::size_t N> unsigned int GetSerializeSize(const boost::array<T, N> &item, int nType, int nVersion);
 template<typename Stream, typename T, std::size_t N> void Serialize(Stream& os, const boost::array<T, N>& item, int nType, int nVersion);
 template<typename Stream, typename T, std::size_t N> void Unserialize(Stream& is, boost::array<T, N>& item, int nType, int nVersion);
 
@@ -711,7 +711,7 @@ void Unserialize(Stream& is, CScript& v, int nType, int nVersion)
  * array
  */
 template<typename T, std::size_t N>
-unsigned int GetSerializeSize_impl(const boost::array<T, N> &item, int nType, int nVersion)
+unsigned int GetSerializeSize(const boost::array<T, N> &item, int nType, int nVersion)
 {
     unsigned int size = 0;
     for (size_t i = 0; i < N; i++) {

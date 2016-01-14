@@ -43,6 +43,10 @@ BOOST_AUTO_TEST_CASE(boost_arrays)
     ss >> decoded_test_case;
 
     BOOST_CHECK(decoded_test_case == test_case);
+
+    boost::array<int32_t, 2> test = {100, 200};
+
+    BOOST_CHECK_EQUAL(GetSerializeSize(test, 0, 0), 8);
 }
 
 BOOST_AUTO_TEST_CASE(sizes)
