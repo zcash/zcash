@@ -4,7 +4,8 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #
-# Test RPC calls related to blockchain state.
+# Test RPC calls related to blockchain state. Tests correspond to code in
+# rpc/blockchain.cpp.
 #
 
 import decimal
