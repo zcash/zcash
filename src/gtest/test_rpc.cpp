@@ -5,7 +5,7 @@
 #include "chainparams.h"
 #include "clientversion.h"
 #include "primitives/block.h"
-#include "rpcserver.h"
+#include "rpc/server.h"
 #include "streams.h"
 #include "utilstrencodings.h"
 

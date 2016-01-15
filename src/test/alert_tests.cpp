@@ -13,8 +13,8 @@
 #include "data/alertTests.raw.h"
 
 #include "main.h"
-#include "rpcprotocol.h"
-#include "rpcserver.h"
+#include "rpc/protocol.h"
+#include "rpc/server.h"
 #include "serialize.h"
 #include "streams.h"
 #include "util.h"

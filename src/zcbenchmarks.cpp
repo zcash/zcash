@@ -18,7 +18,7 @@
 #include "main.h"
 #include "miner.h"
 #include "pow.h"
-#include "rpcserver.h"
+#include "rpc/server.h"
 #include "script/sign.h"
 #include "sodium.h"
 #include "streams.h"
