@@ -122,12 +122,12 @@ public:
 /** getdata message types */
 enum GetDataMsg
 {
-    MSG_TX = 1,
+    UNDEFINED = 0,
+    MSG_TX,
     MSG_BLOCK,
     MSG_TYPE_MAX = MSG_BLOCK,
     // The following can only occur in getdata. Invs always use TX or BLOCK.
     MSG_FILTERED_BLOCK,
-    UNDEFINED,
 };
 
 /** inv message data */
