@@ -1052,7 +1052,7 @@ bool CWalletTx::WriteToDisk(CWalletDB *pwalletdb)
 }
 
 bool CWallet::WitnessBucketCommitment(uint256 &commitment,
-                                      merkle_authentication_path& path,
+                                      libsnark::merkle_authentication_path& path,
                                       size_t &path_index,
                                       uint256 &final_anchor)
 {

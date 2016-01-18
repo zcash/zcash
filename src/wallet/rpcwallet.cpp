@@ -2378,7 +2378,7 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
     uint256 commitment = uint256(commitment_v);
 
     assert(pwalletMain != NULL);
-    merkle_authentication_path path(INCREMENTAL_MERKLE_TREE_DEPTH); // We don't care during receive... yet! :)
+    libsnark::merkle_authentication_path path(INCREMENTAL_MERKLE_TREE_DEPTH); // We don't care during receive... yet! :)
     size_t path_index = 0;
     uint256 anchor;
     auto found_in_chain = pwalletMain->WitnessBucketCommitment(commitment, path, path_index, anchor);
@@ -2461,7 +2461,7 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         std::vector<unsigned char> commitment_v = input_coin.getCoinCommitment().getCommitmentValue();
         uint256 commitment = uint256(commitment_v);
 
-        merkle_authentication_path path(INCREMENTAL_MERKLE_TREE_DEPTH);
+        libsnark::merkle_authentication_path path(INCREMENTAL_MERKLE_TREE_DEPTH);
         size_t path_index = 0;
         assert(pwalletMain != NULL);
         if (!pwalletMain->WitnessBucketCommitment(commitment, path, path_index, anchor)) {
