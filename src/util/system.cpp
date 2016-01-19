@@ -680,7 +680,7 @@ std::string CopyrightHolders()
     std::string strCopyrightHolders = _(COPYRIGHT_HOLDERS);
     if (strCopyrightHolders.find("%s") == strCopyrightHolders.npos)
         return strCopyrightHolders;
-    return strprintf(strCopyrightHolders, _(PACKAGE_NAME));
+    return strprintf(strCopyrightHolders, _(COPYRIGHT_HOLDERS_SUBSTITUTION));
 }
 
 fs::path AbsPathForConfigVal(const fs::path& path, bool net_specific)
