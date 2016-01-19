@@ -14,6 +14,7 @@
 #include "main.h"
 #include "script/script.h"
 #include "script/script_error.h"
+#include "primitives/transaction.h"
 
 #include <map>
 #include <string>
@@ -345,11 +346,11 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
 
     // create CPourTx
     CScript scriptPubKey;
-    boost::array<PourInput, 2> inputs = {
+    boost::array<PourInput, NUM_POUR_INPUTS> inputs = {
         PourInput(coin, addr, convertVectorToInt(index), path),
         PourInput(TEST_TREE_DEPTH) // dummy input of zero value
     };
-    boost::array<PourOutput, 2> outputs = {
+    boost::array<PourOutput, NUM_POUR_OUTPUTS> outputs = {
         PourOutput(50),
         PourOutput(50)
     };
