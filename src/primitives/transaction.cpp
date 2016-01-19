@@ -195,7 +195,7 @@ CAmount CTransaction::GetPourValueIn() const
     CAmount nValue = 0;
     for (std::vector<CPourTx>::const_iterator it(vpour.begin()); it != vpour.end(); ++it)
     {
-        // NB: vpub_old "gives" money to the value pool just as inputs do
+        // NB: vpub_new "gives" money to the value pool just as inputs do
         nValue += it->vpub_new;
 
         if (!MoneyRange(it->vpub_new) || !MoneyRange(nValue))
