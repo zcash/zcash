@@ -2346,10 +2346,27 @@ Value listunspent(const Array& params, bool fHelp)
 
 Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
 {
-    /*
-        zcrawreceive <zcsecretkey> <encrypted_bucket>
-    */
+    if (!EnsureWalletIsAvailable(fHelp)) {
+        return Value::null;
+    }
+
+    if (fHelp || params.size() != 2) {
+        throw runtime_error(
+            "zcrawreceive zcsecretkey encryptedbucket\n"
+            "\n"
+            "Decrypts encryptedbucket and checks if the coin commitments\n"
+            "are in the blockchain as indicated by the \"exists\" result.\n"
+            "\n"
+            "Output: {\n"
+            "  \"amount\": value,\n"
+            "  \"bucket\": cleartextbucket,\n"
+            "  \"exists\": exists\n"
+            "}\n"
+            );
+    }
+
     RPCTypeCheck(params, boost::assign::list_of(str_type)(str_type));
+
     LOCK(cs_main);
 
     std::vector<unsigned char> a_sk;
@@ -2401,9 +2418,35 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
 
 Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
 {
-    /*
-        zcrawpour <rawtx> {<bucket>: <zcsecretkey>, ...} {<zcaddress>: <value>, ...} vpub_old vpub_new
-    */
+    if (!EnsureWalletIsAvailable(fHelp)) {
+        return Value::null;
+    }
+
+    if (fHelp || params.size() != 5) {
+        throw runtime_error(
+            "zcrawpour rawtx inputs outputs vpub_old vpub_new\n"
+            "  inputs: a JSON object mapping {bucket: zcsecretkey, ...}\n"
+            "  outputs: a JSON object mapping {zcaddr: value, ...}\n"
+            "\n"
+            "Splices a Pour into rawtx. Inputs are unilaterally confidential.\n"
+            "Outputs are confidential between sender/receiver. The vpub_old and\n"
+            "vpub_new values are globally public and move transparent value into\n"
+            "or out of the confidential value store, respectively.\n"
+            "\n"
+            "Note: The caller is responsible for delivering the output enc1 and\n"
+            "enc2 to the appropriate recipients, as well as signing rawtxout and\n"
+            "ensuring it is mined. (A future RPC call will deliver the confidential\n"
+            "payments in-band on the blockchain.)\n"
+            "\n"
+            "Output: {\n"
+            "  \"encryptedbucket1\": enc1,\n"
+            "  \"encryptedbucket2\": enc2,\n"
+            "  \"rawtxn\": rawtxout\n"
+            "}\n"
+            );
+    }
+
+    RPCTypeCheck(params, boost::assign::list_of(str_type)(obj_type)(obj_type)(int_type)(int_type));
 
     LOCK(cs_main);
 
@@ -2536,6 +2579,23 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
 
 Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp)
 {
+    if (!EnsureWalletIsAvailable(fHelp)) {
+        return Value::null;
+    }
+
+    if (fHelp || params.size() != 0) {
+        throw runtime_error(
+            "zcrawkeygen\n"
+            "\n"
+            "Generate a zcaddr which can send and receive confidential values.\n"
+            "\n"
+            "Output: {\n"
+            "  \"zcaddress\": zcaddr,\n"
+            "  \"zcsecretkey\": zcsecretkey,\n"
+            "}\n"
+            );
+    }
+
     auto zckeypair = libzerocash::Address::CreateNewRandomAddress();
 
     CDataStream pub(SER_NETWORK, PROTOCOL_VERSION);
