@@ -16,6 +16,7 @@
 #include "utilmoneystr.h"
 #include "wallet.h"
 #include "walletdb.h"
+#include "primitives/transaction.h"
 
 #include <stdint.h>
 
@@ -2514,7 +2515,7 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         vpourin.push_back(PourInput(input_coin, zcaddress, path_index, path));
     }
 
-    while (vpourin.size() < 2) {
+    while (vpourin.size() < NUM_POUR_INPUTS) {
         vpourin.push_back(PourInput(INCREMENTAL_MERKLE_TREE_DEPTH));
     }
 
@@ -2541,13 +2542,13 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         vpourout.push_back(output);
     }
 
-    while (vpourout.size() < 2) {
+    while (vpourout.size() < NUM_POUR_OUTPUTS) {
         vpourout.push_back(PourOutput(0));
     }
 
     // TODO
-    if (vpourout.size() > 2 || vpourin.size() > 2) {
-        throw runtime_error("unsupported");
+    if (vpourout.size() != NUM_POUR_INPUTS || vpourin.size() != NUM_POUR_OUTPUTS) {
+        throw runtime_error("unsupported pour input/output counts");
     }
 
     CScript scriptPubKey;
