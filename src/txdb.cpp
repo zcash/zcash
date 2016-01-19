@@ -17,16 +17,38 @@
 
 using namespace std;
 
+static const char DB_ANCHOR = 'A';
+static const char DB_SERIAL = 's';
 static const char DB_COINS = 'c';
 static const char DB_BLOCK_FILES = 'f';
 static const char DB_TXINDEX = 't';
 static const char DB_BLOCK_INDEX = 'b';
 
 static const char DB_BEST_BLOCK = 'B';
+static const char DB_BEST_ANCHOR = 'a';
 static const char DB_FLAG = 'F';
 static const char DB_REINDEX_FLAG = 'R';
 static const char DB_LAST_BLOCK = 'l';
 
+
+void static BatchWriteAnchor(CLevelDBBatch &batch,
+                             const uint256 &croot,
+                             const libzerocash::IncrementalMerkleTree &tree,
+                             const bool &entered)
+{
+    if (!entered)
+        batch.Erase(make_pair(DB_ANCHOR, croot));
+    else {
+        batch.Write(make_pair(DB_ANCHOR, croot), tree.serialize());
+    }
+}
+
+void static BatchWriteSerial(CLevelDBBatch &batch, const uint256 &serial, const bool &entered) {
+    if (!entered)
+        batch.Erase(make_pair(DB_SERIAL, serial));
+    else
+        batch.Write(make_pair(DB_SERIAL, serial), true);
+}
 
 void static BatchWriteCoins(CLevelDBBatch &batch, const uint256 &hash, const CCoins &coins) {
     if (coins.IsPruned())
@@ -39,7 +61,39 @@ void static BatchWriteHashBestChain(CLevelDBBatch &batch, const uint256 &hash) {
     batch.Write(DB_BEST_BLOCK, hash);
 }
 
+void static BatchWriteHashBestAnchor(CLevelDBBatch &batch, const uint256 &hash) {
+    batch.Write(DB_BEST_ANCHOR, hash);
+}
+
 CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe) {
+}
+
+
+bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const {
+    if (rt.IsNull()) {
+        IncrementalMerkleTree new_tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+        tree.setTo(new_tree);
+        return true;
+    }
+
+    std::vector<unsigned char> tree_serialized;
+
+    bool read = db.Read(make_pair(DB_ANCHOR, rt), tree_serialized);
+
+    if (!read) return read;
+
+    auto tree_deserialized = IncrementalMerkleTreeCompact::deserialize(tree_serialized);
+
+    tree.fromCompactRepresentation(tree_deserialized);
+
+    return true;
+}
+
+bool CCoinsViewDB::GetSerial(const uint256 &serial) const {
+    bool spent = false;
+    bool read = db.Read(make_pair(DB_SERIAL, serial), spent);
+
+    return read;
 }
 
 bool CCoinsViewDB::GetCoins(const uint256 &txid, CCoins &coins) const {
@@ -57,7 +111,18 @@ uint256 CCoinsViewDB::GetBestBlock() const {
     return hashBestChain;
 }
 
-bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) {
+uint256 CCoinsViewDB::GetBestAnchor() const {
+    uint256 hashBestAnchor;
+    if (!db.Read(DB_BEST_ANCHOR, hashBestAnchor))
+        return uint256();
+    return hashBestAnchor;
+}
+
+bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
+                              const uint256 &hashBlock,
+                              const uint256 &hashAnchor,
+                              CAnchorsMap &mapAnchors,
+                              CSerialsMap &mapSerials) {
     CLevelDBBatch batch;
     size_t count = 0;
     size_t changed = 0;
@@ -70,8 +135,29 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) {
         CCoinsMap::iterator itOld = it++;
         mapCoins.erase(itOld);
     }
+
+    for (CAnchorsMap::iterator it = mapAnchors.begin(); it != mapAnchors.end();) {
+        if (it->second.flags & CAnchorsCacheEntry::DIRTY) {
+            BatchWriteAnchor(batch, it->first, it->second.tree, it->second.entered);
+            // TODO: changed++?
+        }
+        CAnchorsMap::iterator itOld = it++;
+        mapAnchors.erase(itOld);
+    }
+
+    for (CSerialsMap::iterator it = mapSerials.begin(); it != mapSerials.end();) {
+        if (it->second.flags & CSerialsCacheEntry::DIRTY) {
+            BatchWriteSerial(batch, it->first, it->second.entered);
+            // TODO: changed++?
+        }
+        CSerialsMap::iterator itOld = it++;
+        mapSerials.erase(itOld);
+    }
+
     if (!hashBlock.IsNull())
         BatchWriteHashBestChain(batch, hashBlock);
+    if (!hashAnchor.IsNull())
+        BatchWriteHashBestAnchor(batch, hashAnchor);
 
     LogPrint("coindb", "Committing %u changed transactions (out of %u) to coin database...\n", (unsigned int)changed, (unsigned int)count);
     return db.WriteBatch(batch);

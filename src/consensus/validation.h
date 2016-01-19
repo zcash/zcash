@@ -30,8 +30,9 @@ private:
     std::string strRejectReason;
     unsigned char chRejectCode;
     bool corruptionPossible;
+    bool pourVerify;
 public:
-    CValidationState() : mode(MODE_VALID), nDoS(0), chRejectCode(0), corruptionPossible(false) {}
+    CValidationState() : mode(MODE_VALID), nDoS(0), chRejectCode(0), corruptionPossible(false), pourVerify(true) {}
     bool DoS(int level, bool ret = false,
              unsigned char chRejectCodeIn=0, std::string strRejectReasonIn="",
              bool corruptionIn=false) {
@@ -43,6 +44,12 @@ public:
         nDoS += level;
         mode = MODE_INVALID;
         return ret;
+    }
+    bool SetPerformPourVerification(bool pourVerifyIn) {
+        pourVerify = pourVerifyIn;
+    }
+    bool PerformPourVerification() {
+        return pourVerify;
     }
     bool Invalid(bool ret = false,
                  unsigned char _chRejectCode=0, std::string _strRejectReason="") {

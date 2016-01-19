@@ -47,7 +47,11 @@
 #include <boost/thread.hpp>
 #include <openssl/crypto.h>
 
+#include "libsnark/common/profiling.hpp"
+
 using namespace std;
+
+libzerocash::ZerocashParams *pzerocashParams = NULL;
 
 #ifdef ENABLE_WALLET
 CWallet* pwalletMain = NULL;
@@ -591,11 +595,52 @@ bool InitSanityCheck(void)
     return true;
 }
 
+
+static void ZC_LoadParams()
+{
+    struct timeval tv_start, tv_end;
+    float elapsed;
+
+    boost::filesystem::path pk_path = ZC_GetParamsDir() / "zc-testnet-public-alpha-proving.key";
+    boost::filesystem::path vk_path = ZC_GetParamsDir() / "zc-testnet-public-alpha-verification.key";
+
+    LogPrintf("Loading proving key from %s\n", pk_path.string().c_str());
+    gettimeofday(&tv_start, 0);
+    libzerocash::ZerocashParams::zerocash_pp::init_public_params();
+    auto pk_loaded = libzerocash::ZerocashParams::LoadProvingKeyFromFile(
+        pk_path.string(),
+        INCREMENTAL_MERKLE_TREE_DEPTH
+    );
+    gettimeofday(&tv_end, 0);
+    elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
+    LogPrintf("Loaded proving key in %fs seconds.\n", elapsed);
+
+
+    LogPrintf("Loading verification key from %s\n", vk_path.string().c_str());
+    gettimeofday(&tv_start, 0);
+    auto vk_loaded = libzerocash::ZerocashParams::LoadVerificationKeyFromFile(
+        vk_path.string(),
+        INCREMENTAL_MERKLE_TREE_DEPTH
+    );
+    gettimeofday(&tv_end, 0);
+    elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
+    LogPrintf("Loaded verification key in %fs seconds.\n", elapsed);
+
+    pzerocashParams = new libzerocash::ZerocashParams(
+        INCREMENTAL_MERKLE_TREE_DEPTH,
+        &pk_loaded,
+        &vk_loaded
+    );
+}
+
 /** Initialize bitcoin.
  *  @pre Parameters should be parsed and config file should be read.
  */
 bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 {
+    // ********************************************************* Step 0: Load zcash params
+    ZC_LoadParams();
+
     // ********************************************************* Step 1: setup
 #ifdef _MSC_VER
     // Turn off Microsoft heap dump noise
@@ -1222,6 +1267,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (!est_filein.IsNull())
         mempool.ReadFeeEstimates(est_filein);
     fFeeEstimatesInitialized = true;
+
+    // These must be disabled for now, they are buggy and we probably don't
+    // want any of libsnark's profiling in production anyway.
+    libsnark::inhibit_profiling_info = true;
+    libsnark::inhibit_profiling_counters = true;
 
     // ********************************************************* Step 8: load wallet
 #ifdef ENABLE_WALLET
