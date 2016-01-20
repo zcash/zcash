@@ -2447,8 +2447,6 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
             );
     }
 
-    RPCTypeCheck(params, boost::assign::list_of(str_type)(obj_type)(obj_type)(int_type)(int_type));
-
     LOCK(cs_main);
 
     CTransaction tx;
