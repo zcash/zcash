@@ -1070,6 +1070,26 @@ public:
              SerializeOutput(s, nOutput, nType, nVersion);
         // Serialize nLockTime
         ::Serialize(s, txTo.nLockTime, nType, nVersion);
+
+        // Serialize vpour
+        if (txTo.nVersion >= 2) {
+            // TODO:
+            //
+            // SIGHASH_* functions will hash portions of
+            // the transaction for use in signatures. This
+            // keeps the pour cryptographically bound to
+            // the transaction from the perspective of the
+            // inputs (but not from the perspective of the
+            // pour).
+            //
+            // This must be rectified in the future.
+            // See zcash/#529
+            //
+            // It will be necessary to change this API to
+            // be abstract over whether an input script is
+            // being skipped or a pour is being skipped.
+            ::Serialize(s, txTo.vpour, nType, nVersion);
+        }
     }
 };
 

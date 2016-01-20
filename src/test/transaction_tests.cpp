@@ -14,6 +14,7 @@
 #include "main.h"
 #include "script/script.h"
 #include "script/script_error.h"
+#include "primitives/transaction.h"
 
 #include <map>
 #include <string>
@@ -24,8 +25,16 @@
 #include <boost/assign/list_of.hpp>
 #include "json/json_spirit_writer_template.h"
 
+#include "libzerocash/ZerocashParams.h"
+#include "libzerocash/IncrementalMerkleTree.h"
+#include "libzerocash/PourInput.h"
+#include "libzerocash/PourOutput.h"
+#include "libzerocash/Address.h"
+#include "libzerocash/Coin.h"
+
 using namespace std;
 using namespace json_spirit;
+using namespace libzerocash;
 
 // In script_tests.cpp
 extern Array read_json(const std::string& jsondata);
@@ -283,6 +292,209 @@ SetupDummyInputs(CBasicKeyStore& keystoreRet, CCoinsViewCache& coinsRet)
     coinsRet.ModifyCoins(dummyTransactions[1].GetHash())->FromTx(dummyTransactions[1], 0);
 
     return dummyTransactions;
+}
+
+BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
+{
+    // We only check that pours are constructed properly
+    // and verify properly here. libsnark tends to segfault
+    // when our snarks or what-have-you are invalid, so
+    // we can't really catch everything here.
+    //
+    // See #471, #520, #459 and probably others.
+    //
+    // There may be ways to use boost tests to catch failing
+    // threads or processes (?) but they appear to not work
+    // on all platforms and would gently push us down an ugly
+    // path. We should just fix the assertions.
+    //
+    // Also, it's generally libzerocash's job to ensure
+    // the integrity of the scheme through its own tests.
+
+    static const unsigned int TEST_TREE_DEPTH = 3;
+
+    // construct the r1cs keypair
+    auto keypair = ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH);
+    ZerocashParams p(
+        TEST_TREE_DEPTH,
+        &keypair
+    );
+
+    // construct a merkle tree
+    IncrementalMerkleTree merkleTree(TEST_TREE_DEPTH);
+    Address addr = Address::CreateNewRandomAddress();
+    Coin coin(addr.getPublicAddress(), 100);
+
+    // commitment from coin
+    std::vector<bool> commitment(ZC_CM_SIZE * 8);
+    convertBytesVectorToVector(coin.getCoinCommitment().getCommitmentValue(), commitment);
+
+    // insert commitment into the merkle tree
+    std::vector<bool> index;
+    merkleTree.insertElement(commitment, index);
+
+    // compute the merkle root we will be working with
+    vector<unsigned char> rt(ZC_ROOT_SIZE);
+    {
+        vector<bool> root_bv(ZC_ROOT_SIZE * 8);
+        merkleTree.getRootValue(root_bv);
+        convertVectorToBytesVector(root_bv, rt);
+    }
+
+    merkle_authentication_path path(TEST_TREE_DEPTH);
+    merkleTree.getWitness(index, path);
+
+    // create CPourTx
+    CScript scriptPubKey;
+    boost::array<PourInput, NUM_POUR_INPUTS> inputs = {
+        PourInput(coin, addr, convertVectorToInt(index), path),
+        PourInput(TEST_TREE_DEPTH) // dummy input of zero value
+    };
+    boost::array<PourOutput, NUM_POUR_OUTPUTS> outputs = {
+        PourOutput(50),
+        PourOutput(50)
+    };
+
+    {
+        CPourTx pourtx(p, scriptPubKey, uint256(rt), inputs, outputs, 0, 0);
+        BOOST_CHECK(pourtx.Verify(p));
+
+        CDataStream ss(SER_DISK, CLIENT_VERSION);
+        ss << pourtx;
+
+        CPourTx pourtx_deserialized;
+        ss >> pourtx_deserialized;
+
+        BOOST_CHECK(pourtx_deserialized == pourtx);
+        BOOST_CHECK(pourtx_deserialized.Verify(p));
+    }
+
+    {
+        // Ensure that the balance equation is working.
+        BOOST_CHECK_THROW(CPourTx(p, scriptPubKey, uint256(rt), inputs, outputs, 10, 0), std::invalid_argument);
+        BOOST_CHECK_THROW(CPourTx(p, scriptPubKey, uint256(rt), inputs, outputs, 0, 10), std::invalid_argument);
+    }
+
+    {
+        // Ensure that it won't verify if the root is changed.
+        auto test = CPourTx(p, scriptPubKey, uint256(rt), inputs, outputs, 0, 0);
+        test.anchor = GetRandHash();
+        BOOST_CHECK(!test.Verify(p));
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
+{
+    CMutableTransaction tx;
+    tx.nVersion = 2;
+    {
+        // Ensure that empty vin/vout remain invalid without
+        // pours.
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+
+        state.SetPerformPourVerification(false); // don't verify the snark
+
+        // No pours, vin and vout, means it should be invalid.
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vin-empty");
+
+        newTx.vin.push_back(CTxIn(uint256S("0000000000000000000000000000000000000000000000000000000000000001"), 0));
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vout-empty");
+
+        newTx.vpour.push_back(CPourTx());
+        CPourTx *pourtx = &newTx.vpour[0];
+
+        pourtx->serials[0] = GetRandHash();
+        pourtx->serials[1] = GetRandHash();
+
+        BOOST_CHECK_MESSAGE(CheckTransaction(newTx, state), state.GetRejectReason());
+    }
+    {
+        // Ensure that values within the pour are well-formed.
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+
+        newTx.vpour.push_back(CPourTx());
+        
+        CPourTx *pourtx = &newTx.vpour[0];
+        pourtx->vpub_old = -1;
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_old-negative");
+
+        pourtx->vpub_old = MAX_MONEY + 1;
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_old-toolarge");
+
+        pourtx->vpub_old = 0;
+        pourtx->vpub_new = -1;
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_new-negative");
+
+        pourtx->vpub_new = MAX_MONEY + 1;
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_new-toolarge");
+
+        pourtx->vpub_new = (MAX_MONEY / 2) + 10;
+
+        newTx.vpour.push_back(CPourTx());
+
+        CPourTx *pourtx2 = &newTx.vpour[1];
+        pourtx2->vpub_new = (MAX_MONEY / 2) + 10;
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-txouttotal-toolarge");
+    }
+    {
+        // Ensure that serials are never duplicated within a transaction.
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+
+        newTx.vpour.push_back(CPourTx());
+        CPourTx *pourtx = &newTx.vpour[0];
+
+        pourtx->serials[0] = GetRandHash();
+        pourtx->serials[1] = pourtx->serials[0];
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-pours-serials-duplicate");
+
+        pourtx->serials[1] = GetRandHash();
+
+        newTx.vpour.push_back(CPourTx());
+        CPourTx *pourtx2 = &newTx.vpour[1];
+
+        pourtx2->serials[0] = GetRandHash();
+        pourtx2->serials[1] = pourtx->serials[0];
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-pours-serials-duplicate");
+    }
+    {
+        // Ensure that coinbase transactions do not have pours.
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+
+        newTx.vpour.push_back(CPourTx());
+        CPourTx *pourtx = &newTx.vpour[0];
+        pourtx->serials[0] = GetRandHash();
+        pourtx->serials[1] = GetRandHash();
+
+        newTx.vin.push_back(CTxIn(uint256(), -1));
+
+        {
+            CTransaction finalNewTx(newTx);
+            BOOST_CHECK(finalNewTx.IsCoinBase());
+        }
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-cb-has-pours");
+    }
 }
 
 BOOST_AUTO_TEST_CASE(test_Get)

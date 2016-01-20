@@ -16,6 +16,7 @@
 #include "utilmoneystr.h"
 #include "wallet.h"
 #include "walletdb.h"
+#include "primitives/transaction.h"
 
 #include <stdint.h>
 
@@ -2342,4 +2343,276 @@ Value listunspent(const Array& params, bool fHelp)
     }
 
     return results;
+}
+
+Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp)) {
+        return Value::null;
+    }
+
+    if (fHelp || params.size() != 2) {
+        throw runtime_error(
+            "zcrawreceive zcsecretkey encryptedbucket\n"
+            "\n"
+            "Decrypts encryptedbucket and checks if the coin commitments\n"
+            "are in the blockchain as indicated by the \"exists\" result.\n"
+            "\n"
+            "Output: {\n"
+            "  \"amount\": value,\n"
+            "  \"bucket\": cleartextbucket,\n"
+            "  \"exists\": exists\n"
+            "}\n"
+            );
+    }
+
+    RPCTypeCheck(params, boost::assign::list_of(str_type)(str_type));
+
+    LOCK(cs_main);
+
+    std::vector<unsigned char> a_sk;
+    std::string sk_enc;
+
+    {
+        CDataStream ssData(ParseHexV(params[0], "zcsecretkey"), SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> a_sk;
+            ssData >> sk_enc;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "zcsecretkey could not be decoded"
+            );
+        }
+    }
+
+    libzerocash::PrivateAddress zcsecretkey(a_sk, sk_enc);
+    libzerocash::Address zcaddress(zcsecretkey);
+
+    auto encrypted_bucket_vec = ParseHexV(params[1], "encrypted_bucket");
+    std::string encrypted_bucket(encrypted_bucket_vec.begin(), encrypted_bucket_vec.end());
+    libzerocash::Coin decrypted_bucket(encrypted_bucket, zcaddress);
+
+    std::vector<unsigned char> commitment_v = decrypted_bucket.getCoinCommitment().getCommitmentValue();
+    uint256 commitment = uint256(commitment_v);
+
+    assert(pwalletMain != NULL);
+    libsnark::merkle_authentication_path path(INCREMENTAL_MERKLE_TREE_DEPTH); // We don't care during receive... yet! :)
+    size_t path_index = 0;
+    uint256 anchor;
+    auto found_in_chain = pwalletMain->WitnessBucketCommitment(commitment, path, path_index, anchor);
+
+    CAmount value_of_bucket = decrypted_bucket.getValue();
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    {
+        ss << decrypted_bucket.getValue();
+        ss << decrypted_bucket.getRho();
+        ss << decrypted_bucket.getR();
+    }
+
+    Object result;
+    result.push_back(Pair("amount", ValueFromAmount(value_of_bucket)));
+    result.push_back(Pair("bucket", HexStr(ss.begin(), ss.end())));
+    result.push_back(Pair("exists", found_in_chain));
+    return result;
+}
+
+Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp)) {
+        return Value::null;
+    }
+
+    if (fHelp || params.size() != 5) {
+        throw runtime_error(
+            "zcrawpour rawtx inputs outputs vpub_old vpub_new\n"
+            "  inputs: a JSON object mapping {bucket: zcsecretkey, ...}\n"
+            "  outputs: a JSON object mapping {zcaddr: value, ...}\n"
+            "\n"
+            "Splices a Pour into rawtx. Inputs are unilaterally confidential.\n"
+            "Outputs are confidential between sender/receiver. The vpub_old and\n"
+            "vpub_new values are globally public and move transparent value into\n"
+            "or out of the confidential value store, respectively.\n"
+            "\n"
+            "Note: The caller is responsible for delivering the output enc1 and\n"
+            "enc2 to the appropriate recipients, as well as signing rawtxout and\n"
+            "ensuring it is mined. (A future RPC call will deliver the confidential\n"
+            "payments in-band on the blockchain.)\n"
+            "\n"
+            "Output: {\n"
+            "  \"encryptedbucket1\": enc1,\n"
+            "  \"encryptedbucket2\": enc2,\n"
+            "  \"rawtxn\": rawtxout\n"
+            "}\n"
+            );
+    }
+
+    RPCTypeCheck(params, boost::assign::list_of(str_type)(obj_type)(obj_type)(int_type)(int_type));
+
+    LOCK(cs_main);
+
+    CTransaction tx;
+    if (!DecodeHexTx(tx, params[0].get_str()))
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+
+    Object inputs = params[1].get_obj();
+    Object outputs = params[2].get_obj();
+
+    CAmount vpub_old(0);
+    CAmount vpub_new(0);
+
+    if (params[3].get_real() != 0.0)
+        vpub_old = AmountFromValue(params[3]);
+
+    if (params[4].get_real() != 0.0)
+        vpub_new = AmountFromValue(params[4]);
+
+    std::vector<PourInput> vpourin;
+    std::vector<PourOutput> vpourout;
+
+    uint256 anchor;
+
+    BOOST_FOREACH(const Pair& s, inputs)
+    {
+        CDataStream ssData(ParseHexV(s.name_, "bucket"), SER_NETWORK, PROTOCOL_VERSION);
+        uint64_t value;
+        std::vector<unsigned char> rho;
+        std::vector<unsigned char> r;
+
+        ssData >> value;
+        ssData >> rho;
+        ssData >> r;
+
+        std::vector<unsigned char> a_sk;
+        std::string sk_enc;
+
+        {
+            CDataStream ssData2(ParseHexV(s.value_, "zcsecretkey"), SER_NETWORK, PROTOCOL_VERSION);
+            try {
+                ssData2 >> a_sk;
+                ssData2 >> sk_enc;
+            } catch(const std::exception &) {
+                throw runtime_error(
+                    "zcsecretkey could not be decoded"
+                );
+            }
+        }
+
+        libzerocash::PrivateAddress zcsecretkey(a_sk, sk_enc);
+        libzerocash::Address zcaddress(zcsecretkey);
+        libzerocash::Coin input_coin(zcaddress.getPublicAddress(), value, rho, r);
+
+        std::vector<unsigned char> commitment_v = input_coin.getCoinCommitment().getCommitmentValue();
+        uint256 commitment = uint256(commitment_v);
+
+        libsnark::merkle_authentication_path path(INCREMENTAL_MERKLE_TREE_DEPTH);
+        size_t path_index = 0;
+        assert(pwalletMain != NULL);
+        if (!pwalletMain->WitnessBucketCommitment(commitment, path, path_index, anchor)) {
+            throw std::runtime_error("Couldn't find bucket in the blockchain");
+        }
+
+        vpourin.push_back(PourInput(input_coin, zcaddress, path_index, path));
+    }
+
+    while (vpourin.size() < NUM_POUR_INPUTS) {
+        vpourin.push_back(PourInput(INCREMENTAL_MERKLE_TREE_DEPTH));
+    }
+
+    BOOST_FOREACH(const Pair& s, outputs)
+    {
+        libzerocash::PublicAddress addrTo;
+
+        {
+            CDataStream ssData(ParseHexV(s.name_, "to_address"), SER_NETWORK, PROTOCOL_VERSION);
+
+            std::vector<unsigned char> pubAddressSecret;
+            std::string encryptionPublicKey;
+
+            ssData >> pubAddressSecret;
+            ssData >> encryptionPublicKey;
+
+            addrTo = libzerocash::PublicAddress(pubAddressSecret, encryptionPublicKey);
+        }
+        CAmount nAmount = AmountFromValue(s.value_);
+
+        libzerocash::Coin coin(addrTo, nAmount);
+        libzerocash::PourOutput output(coin, addrTo);
+
+        vpourout.push_back(output);
+    }
+
+    while (vpourout.size() < NUM_POUR_OUTPUTS) {
+        vpourout.push_back(PourOutput(0));
+    }
+
+    // TODO
+    if (vpourout.size() != NUM_POUR_INPUTS || vpourin.size() != NUM_POUR_OUTPUTS) {
+        throw runtime_error("unsupported pour input/output counts");
+    }
+
+    CScript scriptPubKey;
+    CPourTx pourtx(*pzerocashParams,
+                   scriptPubKey,
+                   anchor,
+                   {vpourin[0], vpourin[1]},
+                   {vpourout[0], vpourout[1]},
+                   vpub_old,
+                   vpub_new);
+
+    assert(pourtx.Verify(*pzerocashParams));
+
+    CMutableTransaction mtx(tx);
+    mtx.nVersion = 2;
+    mtx.vpour.push_back(pourtx);
+
+    CTransaction rawTx(mtx);
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << rawTx;
+
+    Object result;
+    result.push_back(Pair("encryptedbucket1", HexStr(pourtx.ciphertexts[0].begin(), pourtx.ciphertexts[0].end())));
+    result.push_back(Pair("encryptedbucket2", HexStr(pourtx.ciphertexts[1].begin(), pourtx.ciphertexts[1].end())));
+    result.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
+    return result;
+}
+
+Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp)) {
+        return Value::null;
+    }
+
+    if (fHelp || params.size() != 0) {
+        throw runtime_error(
+            "zcrawkeygen\n"
+            "\n"
+            "Generate a zcaddr which can send and receive confidential values.\n"
+            "\n"
+            "Output: {\n"
+            "  \"zcaddress\": zcaddr,\n"
+            "  \"zcsecretkey\": zcsecretkey,\n"
+            "}\n"
+            );
+    }
+
+    auto zckeypair = libzerocash::Address::CreateNewRandomAddress();
+
+    CDataStream pub(SER_NETWORK, PROTOCOL_VERSION);
+    CDataStream priv(SER_NETWORK, PROTOCOL_VERSION);
+
+    pub << zckeypair.getPublicAddress().getPublicAddressSecret(); // a_pk
+    pub << zckeypair.getPublicAddress().getEncryptionPublicKey(); // pk_enc
+
+    priv << zckeypair.getPrivateAddress().getAddressSecret(); // a_sk
+    priv << zckeypair.getPrivateAddress().getEncryptionSecretKey(); // sk_enc
+
+    std::string pub_hex = HexStr(pub.begin(), pub.end());
+    std::string priv_hex = HexStr(priv.begin(), priv.end());
+
+    Object result;
+    result.push_back(Pair("zcaddress", pub_hex));
+    result.push_back(Pair("zcsecretkey", priv_hex));
+    return result;
 }

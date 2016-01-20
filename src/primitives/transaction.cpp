@@ -9,6 +9,87 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
+#include "libzerocash/PourProver.h"
+#include "libzerocash/PourTransaction.h"
+
+template<std::size_t N>
+boost::array<std::vector<unsigned char>, N> uint256_to_array(const boost::array<uint256, N>& in) {
+    boost::array<std::vector<unsigned char>, N> result;
+    for (size_t i = 0; i < N; i++) {
+        result[i] = std::vector<unsigned char>(in[i].begin(), in[i].end());
+    }
+
+    return result;
+}
+
+template<std::size_t N>
+boost::array<uint256, N> unsigned_char_vector_array_to_uint256_array(const boost::array<std::vector<unsigned char>, N>& in) {
+    boost::array<uint256, N> result;
+    for (size_t i = 0; i < N; i++) {
+        result[i] = uint256(in[i]);
+    }
+
+    return result;
+}
+
+CPourTx::CPourTx(ZerocashParams& params,
+            const CScript& scriptPubKey,
+            const uint256& anchor,
+            const boost::array<PourInput, NUM_POUR_INPUTS>& inputs,
+            const boost::array<PourOutput, NUM_POUR_OUTPUTS>& outputs,
+            CAmount vpub_old,
+            CAmount vpub_new) : scriptSig(), scriptPubKey(scriptPubKey), vpub_old(vpub_old), vpub_new(vpub_new), anchor(anchor)
+{
+    uint256 scriptPubKeyHash;
+    {
+        CHashWriter ss(SER_GETHASH, 0);
+        ss << scriptPubKey;
+        scriptPubKeyHash = ss.GetHash();
+    }
+
+    PourTransaction pourtx(params,
+                           std::vector<unsigned char>(scriptPubKeyHash.begin(), scriptPubKeyHash.end()),
+                           std::vector<unsigned char>(anchor.begin(), anchor.end()),
+                           std::vector<PourInput>(inputs.begin(), inputs.end()),
+                           std::vector<PourOutput>(outputs.begin(), outputs.end()),
+                           vpub_old,
+                           vpub_new);
+
+    boost::array<std::vector<unsigned char>, NUM_POUR_INPUTS> serials_bv;
+    boost::array<std::vector<unsigned char>, NUM_POUR_OUTPUTS> commitments_bv;
+    boost::array<std::vector<unsigned char>, NUM_POUR_INPUTS> macs_bv;
+    boost::array<std::string, NUM_POUR_OUTPUTS> ciphertexts_bv;
+
+    proof = pourtx.unpack(serials_bv, commitments_bv, macs_bv, ciphertexts_bv);
+    serials = unsigned_char_vector_array_to_uint256_array(serials_bv);
+    commitments = unsigned_char_vector_array_to_uint256_array(commitments_bv);
+    macs = unsigned_char_vector_array_to_uint256_array(macs_bv);
+
+    ciphertexts = ciphertexts_bv;
+}
+
+bool CPourTx::Verify(ZerocashParams& params) const {
+    // Compute the hash of the scriptPubKey.
+    uint256 scriptPubKeyHash;
+    {
+        CHashWriter ss(SER_GETHASH, 0);
+        ss << scriptPubKey;
+        scriptPubKeyHash = ss.GetHash();
+    }
+
+    return PourProver::VerifyProof(
+        params,
+        std::vector<unsigned char>(scriptPubKeyHash.begin(), scriptPubKeyHash.end()),
+        std::vector<unsigned char>(anchor.begin(), anchor.end()),
+        vpub_old,
+        vpub_new,
+        uint256_to_array<NUM_POUR_INPUTS>(serials),
+        uint256_to_array<NUM_POUR_OUTPUTS>(commitments),
+        uint256_to_array<NUM_POUR_INPUTS>(macs),
+        proof
+    );
+}
+
 std::string COutPoint::ToString() const
 {
     return strprintf("COutPoint(%s, %u)", hash.ToString().substr(0,10), n);
@@ -60,7 +141,7 @@ std::string CTxOut::ToString() const
 }
 
 CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::CURRENT_VERSION), nLockTime(0) {}
-CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime) {}
+CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), vpour(tx.vpour) {}
 
 uint256 CMutableTransaction::GetHash() const
 {
@@ -72,9 +153,9 @@ void CTransaction::UpdateHash() const
     *const_cast<uint256*>(&hash) = SerializeHash(*this);
 }
 
-CTransaction::CTransaction() : nVersion(CTransaction::CURRENT_VERSION), vin(), vout(), nLockTime(0) { }
+CTransaction::CTransaction() : nVersion(CTransaction::CURRENT_VERSION), vin(), vout(), nLockTime(0), vpour() { }
 
-CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime) {
+CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), vpour(tx.vpour) {
     UpdateHash();
 }
 
@@ -83,6 +164,7 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<std::vector<CTxIn>*>(&vin) = tx.vin;
     *const_cast<std::vector<CTxOut>*>(&vout) = tx.vout;
     *const_cast<unsigned int*>(&nLockTime) = tx.nLockTime;
+    *const_cast<std::vector<CPourTx>*>(&vpour) = tx.vpour;
     *const_cast<uint256*>(&hash) = tx.hash;
     return *this;
 }
@@ -96,7 +178,31 @@ CAmount CTransaction::GetValueOut() const
         if (!MoneyRange(it->nValue) || !MoneyRange(nValueOut))
             throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
     }
+
+    for (std::vector<CPourTx>::const_iterator it(vpour.begin()); it != vpour.end(); ++it)
+    {
+        // NB: vpub_old "takes" money from the value pool just as outputs do
+        nValueOut += it->vpub_old;
+
+        if (!MoneyRange(it->vpub_old) || !MoneyRange(nValueOut))
+            throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
+    }
     return nValueOut;
+}
+
+CAmount CTransaction::GetPourValueIn() const
+{
+    CAmount nValue = 0;
+    for (std::vector<CPourTx>::const_iterator it(vpour.begin()); it != vpour.end(); ++it)
+    {
+        // NB: vpub_new "gives" money to the value pool just as inputs do
+        nValue += it->vpub_new;
+
+        if (!MoneyRange(it->vpub_new) || !MoneyRange(nValue))
+            throw std::runtime_error("CTransaction::GetPourValueIn(): value out of range");
+    }
+
+    return nValue;
 }
 
 double CTransaction::ComputePriority(double dPriorityInputs, unsigned int nTxSize) const

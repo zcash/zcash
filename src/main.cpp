@@ -847,12 +847,16 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 {
     // Basic checks that don't depend on any context
-    if (tx.vin.empty())
+
+    // Transactions can contain empty `vin` and `vout` so long as
+    // `vpour` is non-empty.
+    if (tx.vin.empty() && tx.vpour.empty())
         return state.DoS(10, error("CheckTransaction(): vin empty"),
                          REJECT_INVALID, "bad-txns-vin-empty");
-    if (tx.vout.empty())
+    if (tx.vout.empty() && tx.vpour.empty())
         return state.DoS(10, error("CheckTransaction(): vout empty"),
                          REJECT_INVALID, "bad-txns-vout-empty");
+
     // Size limits
     if (::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) > MAX_BLOCK_SIZE)
         return state.DoS(100, error("CheckTransaction(): size limits failed"),
@@ -874,6 +878,32 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
                              REJECT_INVALID, "bad-txns-txouttotal-toolarge");
     }
 
+    // Ensure that pour values are well-formed
+    BOOST_FOREACH(const CPourTx& pour, tx.vpour)
+    {
+        if (pour.vpub_old < 0)
+            return state.DoS(100, error("CheckTransaction(): pour.vpub_old negative"),
+                             REJECT_INVALID, "bad-txns-vpub_old-negative");
+
+        if (pour.vpub_new < 0)
+            return state.DoS(100, error("CheckTransaction(): pour.vpub_new negative"),
+                             REJECT_INVALID, "bad-txns-vpub_new-negative");
+
+        if (pour.vpub_old > MAX_MONEY)
+            return state.DoS(100, error("CheckTransaction(): pour.vpub_old too high"),
+                             REJECT_INVALID, "bad-txns-vpub_old-toolarge");
+
+        if (pour.vpub_new > MAX_MONEY)
+            return state.DoS(100, error("CheckTransaction(): pour.vpub_new too high"),
+                             REJECT_INVALID, "bad-txns-vpub_new-toolarge");
+
+        nValueOut += pour.vpub_new;
+        if (!MoneyRange(nValueOut))
+            return state.DoS(100, error("CheckTransaction(): txout total out of range"),
+                             REJECT_INVALID, "bad-txns-txouttotal-toolarge");
+    }
+
+
     // Check for duplicate inputs
     set<COutPoint> vInOutPoints;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
@@ -884,8 +914,27 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
         vInOutPoints.insert(txin.prevout);
     }
 
+    // Check for duplicate pour serials in this transaction
+    set<uint256> vPourSerials;
+    BOOST_FOREACH(const CPourTx& pour, tx.vpour)
+    {
+        BOOST_FOREACH(const uint256& serial, pour.serials)
+        {
+            if (vPourSerials.count(serial))
+                return state.DoS(100, error("CheckTransaction(): duplicate serials"),
+                             REJECT_INVALID, "bad-pours-serials-duplicate");
+
+            vPourSerials.insert(serial);
+        }
+    }
+
     if (tx.IsCoinBase())
     {
+        // There should be no pours in a coinbase transaction
+        if (tx.vpour.size() > 0)
+            return state.DoS(100, error("CheckTransaction(): coinbase has pours"),
+                             REJECT_INVALID, "bad-cb-has-pours");
+
         if (tx.vin[0].scriptSig.size() < 2 || tx.vin[0].scriptSig.size() > 100)
             return state.DoS(100, error("CheckTransaction(): coinbase script size"),
                              REJECT_INVALID, "bad-cb-length");
@@ -896,6 +945,17 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
             if (txin.prevout.IsNull())
                 return state.DoS(10, error("CheckTransaction(): prevout is null"),
                                  REJECT_INVALID, "bad-txns-prevout-null");
+
+        // Ensure that zk-SNARKs verify
+
+        if (state.PerformPourVerification()) {
+            BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+                if (!pour.Verify(*pzerocashParams)) {
+                    return state.DoS(100, error("CheckTransaction(): pour does not verify"),
+                                     REJECT_INVALID, "bad-txns-pour-verification-failed");
+                }
+            }
+        }
     }
 
     return true;
@@ -976,6 +1036,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             return false;
         }
     }
+    BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+        BOOST_FOREACH(const uint256 &serial, pour.serials) {
+            if (pool.mapSerials.count(serial))
+            {
+                return false;
+            }
+        }
+    }
     }
 
     {
@@ -1007,6 +1075,11 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         if (!view.HaveInputs(tx))
             return state.Invalid(error("AcceptToMemoryPool: inputs already spent"),
                                  REJECT_DUPLICATE, "bad-txns-inputs-spent");
+
+        // are the pour's requirements met?
+        if (!view.HavePourRequirements(tx))
+            return state.Invalid(error("AcceptToMemoryPool: pour requirements not met"),
+                                 REJECT_DUPLICATE, "bad-txns-pour-requirements-not-met");
 
         // Bring the best block into scope
         view.GetBestBlock();
@@ -1426,6 +1499,13 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
         }
     }
 
+    // spend serials
+    BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+        BOOST_FOREACH(const uint256 &serial, pour.serials) {
+            inputs.SetSerial(serial, true);
+        }
+    }
+
     // add outputs
     inputs.ModifyCoins(tx.GetHash())->FromTx(tx, nHeight);
 }
@@ -1456,6 +1536,10 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsVi
         if (!inputs.HaveInputs(tx))
             return state.Invalid(error("CheckInputs(): %s inputs unavailable", tx.GetHash().ToString()));
 
+        // are the pour's requirements met?
+        if (!inputs.HavePourRequirements(tx))
+            return state.Invalid(error("CheckInputs(): %s pour requirements not met", tx.GetHash().ToString()));
+
         // While checking, GetBestBlock() refers to the parent block.
         // This is also true for mempool checks.
         CBlockIndex *pindexPrev = mapBlockIndex.find(inputs.GetBestBlock())->second;
@@ -1483,6 +1567,11 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsVi
                                  REJECT_INVALID, "bad-txns-inputvalues-outofrange");
 
         }
+
+        nValueIn += tx.GetPourValueIn();
+        if (!MoneyRange(nValueIn))
+            return state.DoS(100, error("CheckInputs(): vpub_old values out of range"),
+                             REJECT_INVALID, "bad-txns-inputvalues-outofrange");
 
         if (nValueIn < tx.GetValueOut())
             return state.DoS(100, error("CheckInputs(): %s value in (%s) < value out (%s)",
@@ -1698,6 +1787,13 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         outs->Clear();
         }
 
+        // unspend serials
+        BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+            BOOST_FOREACH(const uint256 &serial, pour.serials) {
+                view.SetSerial(serial, false);
+            }
+        }
+
         // restore inputs
         if (i > 0) { // not coinbases
             const CTxUndo &txundo = blockUndo.vtxundo[i-1];
@@ -1711,6 +1807,9 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
             }
         }
     }
+
+    // set the old best anchor back
+    view.PopAnchor(blockUndo.old_tree_root);
 
     // move best block pointer to prevout block
     view.SetBestBlock(pindex->pprev->GetBlockHash());
@@ -1899,6 +1998,25 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     std::vector<std::pair<uint256, CDiskTxPos> > vPos;
     vPos.reserve(block.vtx.size());
     blockundo.vtxundo.reserve(block.vtx.size() - 1);
+
+    // Construct the incremental merkle tree at the current
+    // block position,
+    auto old_tree_root = view.GetBestAnchor();
+    libzerocash::IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+    // This should never fail: we should always be able to get the root
+    // that is on the tip of our chain
+    assert(view.GetAnchorAt(old_tree_root, tree));
+
+    {
+        // Consistency check: the root of the tree we're given should
+        // match what we asked for.
+        std::vector<unsigned char> newrt_v(32);
+        tree.getRootValue(newrt_v);
+        uint256 anchor_received = uint256(newrt_v);
+
+        assert(anchor_received == old_tree_root);
+    }
+
     for (unsigned int i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction &tx = block.vtx[i];
@@ -1914,6 +2032,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             if (!view.HaveInputs(tx))
                 return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
+
+            // are the pour's requirements met?
+            if (!view.HavePourRequirements(tx))
+                return state.DoS(100, error("ConnectBlock(): pour requirements not met"),
+                                 REJECT_INVALID, "bad-txns-pour-requirements-not-met");
 
             if (fStrictPayToScriptHash)
             {
@@ -1940,9 +2063,26 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
         UpdateCoins(tx, state, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
 
+        BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+            BOOST_FOREACH(const uint256 &bucket_commitment, pour.commitments) {
+                // Insert the bucket commitments into our temporary tree.
+
+                std::vector<bool> index;
+                std::vector<unsigned char> commitment_value(bucket_commitment.begin(), bucket_commitment.end());
+                std::vector<bool> commitment_bv(ZC_CM_SIZE * 8);
+                libzerocash::convertBytesVectorToVector(commitment_value, commitment_bv);
+                tree.insertElement(commitment_bv, index);
+            }
+        }
+
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
+
+    tree.prune(); // prune it, so we don't cache intermediate states we don't need
+    view.PushAnchor(tree);
+    blockundo.old_tree_root = old_tree_root;
+
     int64_t nTime1 = GetTimeMicros(); nTimeConnect += nTime1 - nTimeStart;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
@@ -2171,6 +2311,7 @@ bool static DisconnectTip(CValidationState &state) {
     if (!ReadBlockFromDisk(block, pindexDelete))
         return AbortNode(state, "Failed to read block");
     // Apply the block atomically to the chain state.
+    uint256 anchorBeforeDisconnect = pcoinsTip->GetBestAnchor();
     int64_t nStart = GetTimeMicros();
     {
         CCoinsViewCache view(pcoinsTip);
@@ -2179,6 +2320,7 @@ bool static DisconnectTip(CValidationState &state) {
         assert(view.Flush());
     }
     LogPrint("bench", "- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
+    uint256 anchorAfterDisconnect = pcoinsTip->GetBestAnchor();
     // Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED))
         return false;
@@ -2189,6 +2331,11 @@ bool static DisconnectTip(CValidationState &state) {
         CValidationState stateDummy;
         if (tx.IsCoinBase() || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
             mempool.remove(tx, removed, true);
+    }
+    if (anchorBeforeDisconnect != anchorAfterDisconnect) {
+        // The anchor may not change between block disconnects,
+        // in which case we don't want to evict from the mempool yet!
+        mempool.removeWithAnchor(anchorBeforeDisconnect);
     }
     mempool.removeCoinbaseSpends(pcoinsTip, pindexDelete->nHeight);
     mempool.check(pcoinsTip);
@@ -4482,7 +4629,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             BOOST_FOREACH(uint256 hash, vEraseQueue)
                 EraseOrphanTx(hash);
         }
-        else if (fMissingInputs)
+        // TODO: currently, prohibit pours from entering mapOrphans
+        else if (fMissingInputs && tx.vpour.size() == 0)
         {
             AddOrphanTx(tx, pfrom->GetId());
 

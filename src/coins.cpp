@@ -40,20 +40,34 @@ bool CCoins::Spend(uint32_t nPos)
     Cleanup();
     return true;
 }
-
+bool CCoinsView::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const { return false; }
+bool CCoinsView::GetSerial(const uint256 &serial) const { return false; }
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
 uint256 CCoinsView::GetBestBlock() const { return uint256(); }
-bool CCoinsView::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) { return false; }
+uint256 CCoinsView::GetBestAnchor() const { return uint256(); };
+bool CCoinsView::BatchWrite(CCoinsMap &mapCoins,
+                            const uint256 &hashBlock,
+                            const uint256 &hashAnchor,
+                            CAnchorsMap &mapAnchors,
+                            CSerialsMap &mapSerials) { return false; }
 bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 
 
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
+
+bool CCoinsViewBacked::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const { return base->GetAnchorAt(rt, tree); }
+bool CCoinsViewBacked::GetSerial(const uint256 &serial) const { return base->GetSerial(serial); }
 bool CCoinsViewBacked::GetCoins(const uint256 &txid, CCoins &coins) const { return base->GetCoins(txid, coins); }
 bool CCoinsViewBacked::HaveCoins(const uint256 &txid) const { return base->HaveCoins(txid); }
 uint256 CCoinsViewBacked::GetBestBlock() const { return base->GetBestBlock(); }
+uint256 CCoinsViewBacked::GetBestAnchor() const { return base->GetBestAnchor(); }
 void CCoinsViewBacked::SetBackend(CCoinsView &viewIn) { base = &viewIn; }
-bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) { return base->BatchWrite(mapCoins, hashBlock); }
+bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
+                                  const uint256 &hashBlock,
+                                  const uint256 &hashAnchor,
+                                  CAnchorsMap &mapAnchors,
+                                  CSerialsMap &mapSerials) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapAnchors, mapSerials); }
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
@@ -85,6 +99,90 @@ CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const
     }
     cachedCoinsUsage += memusage::DynamicUsage(ret->second.coins);
     return ret;
+}
+
+
+bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const {
+    CAnchorsMap::const_iterator it = cacheAnchors.find(rt);
+    if (it != cacheAnchors.end()) {
+        if (it->second.entered) {
+            tree.setTo(it->second.tree);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    if (!base->GetAnchorAt(rt, tree)) {
+        return false;
+    }
+
+    CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(rt, CAnchorsCacheEntry())).first;
+    ret->second.entered = true;
+    ret->second.tree.setTo(tree);
+
+    return true;
+}
+
+bool CCoinsViewCache::GetSerial(const uint256 &serial) const {
+    CSerialsMap::iterator it = cacheSerials.find(serial);
+    if (it != cacheSerials.end())
+        return it->second.entered;
+
+    CSerialsCacheEntry entry;
+    bool tmp = base->GetSerial(serial);
+    entry.entered = tmp;
+
+    cacheSerials.insert(std::make_pair(serial, entry));
+
+    // TODO: cache usage
+
+    return tmp;
+}
+
+void CCoinsViewCache::PushAnchor(const libzerocash::IncrementalMerkleTree &tree) {
+    std::vector<unsigned char> newrt_v(32);
+    tree.getRootValue(newrt_v);
+    uint256 newrt(newrt_v);
+
+    auto currentRoot = GetBestAnchor();
+
+    // We don't want to overwrite an anchor we already have.
+    // This occurs when a block doesn't modify mapAnchors at all,
+    // because there are no pours. We could get around this a
+    // different way (make all blocks modify mapAnchors somehow)
+    // but this is simpler to reason about.
+    if (currentRoot != newrt) {
+        CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(newrt, CAnchorsCacheEntry())).first;
+
+        ret->second.entered = true;
+        ret->second.tree.setTo(tree);
+        ret->second.flags = CAnchorsCacheEntry::DIRTY;
+
+        hashAnchor = newrt;
+    }
+}
+
+void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
+    auto currentRoot = GetBestAnchor();
+
+    // Blocks might not change the commitment tree, in which
+    // case restoring the "old" anchor during a reorg must
+    // have no effect.
+    if (currentRoot != newrt) {
+        CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(currentRoot, CAnchorsCacheEntry())).first;
+
+        ret->second.entered = false;
+        ret->second.flags = CAnchorsCacheEntry::DIRTY;
+
+        hashAnchor = newrt;
+    }
+}
+
+void CCoinsViewCache::SetSerial(const uint256 &serial, bool spent) {
+    std::pair<CSerialsMap::iterator, bool> ret = cacheSerials.insert(std::make_pair(serial, CSerialsCacheEntry()));
+    ret.first->second.entered = spent;
+    ret.first->second.flags |= CSerialsCacheEntry::DIRTY;
 }
 
 bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) const {
@@ -141,11 +239,22 @@ uint256 CCoinsViewCache::GetBestBlock() const {
     return hashBlock;
 }
 
+
+uint256 CCoinsViewCache::GetBestAnchor() const {
+    if (hashAnchor.IsNull())
+        hashAnchor = base->GetBestAnchor();
+    return hashAnchor;
+}
+
 void CCoinsViewCache::SetBestBlock(const uint256 &hashBlockIn) {
     hashBlock = hashBlockIn;
 }
 
-bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlockIn) {
+bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
+                                 const uint256 &hashBlockIn,
+                                 const uint256 &hashAnchorIn,
+                                 CAnchorsMap &mapAnchors,
+                                 CSerialsMap &mapSerials) {
     assert(!hasModifier);
     for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end();) {
         if (it->second.flags & CCoinsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
@@ -181,13 +290,73 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlockIn
         CCoinsMap::iterator itOld = it++;
         mapCoins.erase(itOld);
     }
+
+    for (CAnchorsMap::iterator child_it = mapAnchors.begin(); child_it != mapAnchors.end();)
+    {
+        if (child_it->second.flags & CAnchorsCacheEntry::DIRTY) {
+            CAnchorsMap::iterator parent_it = cacheAnchors.find(child_it->first);
+
+            if (parent_it == cacheAnchors.end()) {
+                if (child_it->second.entered) {
+                    // Parent doesn't have an entry, but child has a new commitment root.
+
+                    CAnchorsCacheEntry& entry = cacheAnchors[child_it->first];
+                    entry.entered = true;
+                    entry.tree.setTo(child_it->second.tree);
+                    entry.flags = CAnchorsCacheEntry::DIRTY;
+
+                    // TODO: cache usage
+                }
+            } else {
+                if (parent_it->second.entered != child_it->second.entered) {
+                    // The parent may have removed the entry.
+                    parent_it->second.entered = child_it->second.entered;
+                    parent_it->second.flags |= CAnchorsCacheEntry::DIRTY;
+                }
+            }
+        }
+
+        CAnchorsMap::iterator itOld = child_it++;
+        mapAnchors.erase(itOld);
+    }
+
+    for (CSerialsMap::iterator child_it = mapSerials.begin(); child_it != mapSerials.end();)
+    {
+        if (child_it->second.flags & CSerialsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
+            CSerialsMap::iterator parent_it = cacheSerials.find(child_it->first);
+
+            if (parent_it == cacheSerials.end()) {
+                if (child_it->second.entered) {
+                    // Parent doesn't have an entry, but child has a SPENT serial.
+                    // Move the spent serial up.
+
+                    CSerialsCacheEntry& entry = cacheSerials[child_it->first];
+                    entry.entered = true;
+                    entry.flags = CSerialsCacheEntry::DIRTY;
+
+                    // TODO: cache usage
+                }
+            } else {
+                if (parent_it->second.entered != child_it->second.entered) {
+                    parent_it->second.entered = child_it->second.entered;
+                    parent_it->second.flags |= CSerialsCacheEntry::DIRTY;
+                }
+            }
+        }
+        CSerialsMap::iterator itOld = child_it++;
+        mapSerials.erase(itOld);
+    }
+
+    hashAnchor = hashAnchorIn;
     hashBlock = hashBlockIn;
     return true;
 }
 
 bool CCoinsViewCache::Flush() {
-    bool fOk = base->BatchWrite(cacheCoins, hashBlock);
+    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashAnchor, cacheAnchors, cacheSerials);
     cacheCoins.clear();
+    cacheAnchors.clear();
+    cacheSerials.clear();
     cachedCoinsUsage = 0;
     return fOk;
 }
@@ -212,7 +381,33 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         nResult += GetOutputFor(tx.vin[i]).nValue;
 
+    nResult += tx.GetPourValueIn();
+
     return nResult;
+}
+
+bool CCoinsViewCache::HavePourRequirements(const CTransaction& tx) const
+{
+    BOOST_FOREACH(const CPourTx &pour, tx.vpour)
+    {
+        BOOST_FOREACH(const uint256& serial, pour.serials)
+        {
+            if (GetSerial(serial)) {
+                // If the serial is set, this transaction
+                // double-spends!
+                return false;
+            }
+        }
+
+        libzerocash::IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+        if (!GetAnchorAt(pour.anchor, tree)) {
+            // If we do not have the anchor for the pour,
+            // it is invalid.
+            return false;
+        }
+    }
+
+    return true;
 }
 
 bool CCoinsViewCache::HaveInputs(const CTransaction& tx) const

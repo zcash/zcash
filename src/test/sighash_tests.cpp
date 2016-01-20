@@ -101,6 +101,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
     tx.nLockTime = (insecure_rand() % 2) ? insecure_rand() : 0;
     int ins = (insecure_rand() % 4) + 1;
     int outs = fSingle ? ins : (insecure_rand() % 4) + 1;
+    int pours = (insecure_rand() % 4);
     for (int in = 0; in < ins; in++) {
         tx.vin.push_back(CTxIn());
         CTxIn &txin = tx.vin.back();
@@ -114,6 +115,32 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
         CTxOut &txout = tx.vout.back();
         txout.nValue = insecure_rand() % 100000000;
         RandomScript(txout.scriptPubKey);
+    }
+    if (tx.nVersion >= 2) {
+        for (int pour = 0; pour < pours; pour++) {
+            CPourTx pourtx;
+            pourtx.vpub_old = insecure_rand() % 100000000;
+            pourtx.vpub_new = insecure_rand() % 100000000;
+            RandomScript(pourtx.scriptPubKey);
+            RandomScript(pourtx.scriptSig);
+            pourtx.anchor = GetRandHash();
+            pourtx.serials[0] = GetRandHash();
+            pourtx.serials[1] = GetRandHash();
+            pourtx.ciphertexts[0] = {insecure_rand() % 100, insecure_rand() % 100};
+            pourtx.ciphertexts[1] = {insecure_rand() % 100, insecure_rand() % 100};
+            pourtx.macs[0] = GetRandHash();
+            pourtx.macs[1] = GetRandHash();
+            {
+                std::vector<unsigned char> txt;
+                int prooflen = insecure_rand() % 1000;
+                for (int i = 0; i < prooflen; i++) {
+                    txt.push_back(insecure_rand() % 256);
+                }
+                pourtx.proof = std::string(txt.begin(), txt.end());
+            }
+
+            tx.vpour.push_back(pourtx);
+        }
     }
 }
 
@@ -200,6 +227,7 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           stream >> tx;
 
           CValidationState state;
+          state.SetPerformPourVerification(false); // don't verify the snark
           BOOST_CHECK_MESSAGE(CheckTransaction(tx, state), strTest);
           BOOST_CHECK(state.IsValid());
 

@@ -27,6 +27,8 @@ testScripts=(
     'merkle_blocks.py'
     'signrawtransactions.py'
     'walletbackup.py'
+    'zcpour.py'
+    'zcpourdoublespend.py'
 );
 testScriptsExt=(
     'bipdersig-p2p.py'
