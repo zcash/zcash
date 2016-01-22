@@ -18,6 +18,8 @@ TESTNET3_DIR="$PARAMS_DIR/testnet3"
 function fetch_params {
     local url="$1"
     local filename="$(echo "$url" | sed 's,^.*/,,')"
+    local dlname="${filename}.dl"
+
     if ! [ -f "$filename" ]
     then
         echo "Retrieving: $url"
@@ -28,7 +30,12 @@ function fetch_params {
         wget \
             --progress=dot:giga \
             --no-check-certificate \
+            --output-document="$dlname" \
+            --continue \
             "$url"
+
+        # Only after successful download do we update the parameter load path:
+        mv -v "$dlname" "$filename"
     fi
 }
 
