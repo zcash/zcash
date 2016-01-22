@@ -49,7 +49,11 @@ have the correct sha256sum, no networking is used.
 
 
 def which(name):
-    p = subprocess.Popen(['which', name], stdout=subprocess.PIPE)
+    p = subprocess.Popen(
+        ['which', name],
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+    )
     p.wait()
     if not p.returncode == 0:
         return None
