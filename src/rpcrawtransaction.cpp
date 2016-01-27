@@ -90,6 +90,59 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
     }
     entry.push_back(Pair("vout", vout));
 
+    Array vpour;
+    for (unsigned int i = 0; i < tx.vpour.size(); i++) {
+        const CPourTx& pourtx = tx.vpour[i];
+        Object pour;
+
+        pour.push_back(Pair("anchor", pourtx.anchor.GetHex()));
+
+        {
+            Array serials;
+            BOOST_FOREACH(const uint256 serial, pourtx.serials) {
+                serials.push_back(serial.GetHex());
+            }
+            pour.push_back(Pair("serials", serials));
+        }
+
+        {
+            Array commitments;
+            BOOST_FOREACH(const uint256 commitment, pourtx.commitments) {
+                commitments.push_back(commitment.GetHex());
+            }
+            pour.push_back(Pair("commitments", commitments));
+        }
+
+        {
+            Array macs;
+            BOOST_FOREACH(const uint256 mac, pourtx.macs) {
+                macs.push_back(mac.GetHex());
+            }
+            pour.push_back(Pair("macs", macs));
+        }
+
+        pour.push_back(Pair("vpub_old", ValueFromAmount(pourtx.vpub_old)));
+        pour.push_back(Pair("vpub_new", ValueFromAmount(pourtx.vpub_new)));
+
+        {
+            Object o;
+            ScriptPubKeyToJSON(pourtx.scriptPubKey, o, true);
+            pour.push_back(Pair("scriptPubKey", o));
+        }
+
+        {
+            Object o;
+            ScriptPubKeyToJSON(pourtx.scriptSig, o, true);
+            pour.push_back(Pair("scriptSig", o));
+        }
+
+        pour.push_back(Pair("valid", pourtx.Verify(*pzerocashParams)));
+
+        vpour.push_back(pour);
+    }
+
+    entry.push_back(Pair("vpour", vpour));
+
     if (!hashBlock.IsNull()) {
         entry.push_back(Pair("blockhash", hashBlock.GetHex()));
         BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
