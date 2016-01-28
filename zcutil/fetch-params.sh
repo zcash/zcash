@@ -14,13 +14,12 @@ REGTEST_DIR="$PARAMS_DIR/regtest"
 TESTNET3_DIR="$PARAMS_DIR/testnet3"
 
 
-# Note: This assumes cwd is set appropriately!
 function fetch_params {
     local url="$1"
-    local filename="$(echo "$url" | sed 's,^.*/,,')"
-    local dlname="${filename}.dl"
+    local output="$2"
+    local dlname="${output}.dl"
 
-    if ! [ -f "$filename" ]
+    if ! [ -f "$output" ]
     then
         echo "Retrieving: $url"
         # Note: --no-check-certificate should be ok, since we rely on
@@ -35,7 +34,7 @@ function fetch_params {
             "$url"
 
         # Only after successful download do we update the parameter load path:
-        mv -v "$dlname" "$filename"
+        mv -v "$dlname" "$output"
     fi
 }
 
@@ -73,17 +72,16 @@ EOF
 fi
 
 mkdir -p "$REGTEST_DIR"
-cd "$REGTEST_DIR"
 
-fetch_params "$REGTEST_PKEY_URL"
-fetch_params "$REGTEST_VKEY_URL"
-
-cd ..
+fetch_params "$REGTEST_PKEY_URL" "$REGTEST_DIR/$REGTEST_PKEY_NAME"
+fetch_params "$REGTEST_VKEY_URL" "$REGTEST_DIR/$REGTEST_VKEY_NAME"
 
 echo 'Updating testnet3 symlinks to regtest parameters.'
 mkdir -p "$TESTNET3_DIR"
 ln -sf "../regtest/$REGTEST_PKEY_NAME" "$TESTNET3_DIR/$REGTEST_PKEY_NAME"
 ln -sf "../regtest/$REGTEST_VKEY_NAME" "$TESTNET3_DIR/$REGTEST_VKEY_NAME"
+
+cd "$PARAMS_DIR"
 
 # Now verify their hashes:
 echo 'Verifying parameter file integrity via sha256sum...'
