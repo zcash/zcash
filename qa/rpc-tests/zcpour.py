@@ -96,8 +96,6 @@ class PourTxTest(BitcoinTestFramework):
 
         signed_tx_pour = self.nodes[0].signrawtransaction(pour_result["rawtxn"])
 
-        print signed_tx_pour
-
         self.nodes[0].sendrawtransaction(signed_tx_pour["hex"])
         
         self.send_pours_around()
