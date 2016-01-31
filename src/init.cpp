@@ -803,7 +803,7 @@ void InitParameterInteraction()
             LogPrintf("%s: parameter interaction: -zapwallettxes=<mode> -> setting -rescan=1\n", __func__);
     }
 
-    // disable walletbroadcast and whitelistalwaysrelay in blocksonly mode
+    // disable walletbroadcast and whitelistrelay in blocksonly mode
     if (GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY)) {
         if (SoftSetBoolArg("-whitelistrelay", false))
             LogPrintf("%s: parameter interaction: -blocksonly=1 -> setting -whitelistrelay=0\n", __func__);
