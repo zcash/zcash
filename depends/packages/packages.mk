@@ -1,4 +1,4 @@
-zerocash_packages := libsnark crypto++ libgmp xbyak ate-pairing libzerocash
+zerocash_packages := libsnark crypto++ libgmp
 packages:=boost openssl $(zerocash_packages)
 native_packages := native_ccache native_comparisontool
 
