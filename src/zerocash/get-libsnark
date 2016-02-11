@@ -1,0 +1,39 @@
+#!/bin/bash
+# To pass options options to libsnark Makefile, put them in env var LIBSNARK_FLAGS.
+# To clone libsnark from an alternate location, set env var LIBSNARK_SRC. For example:
+#  LIBSNARK_SRC="$HOME/libsnark.git --branch master" ./get-libsnark
+# To use curve ALT_BN128 instead of BN128 (which is x64-only), use:
+#  CURVE=ALT_BN128 ./get-libsnark
+
+set -e
+
+LIBSNARK_SRC=${LIBSNARK_SRC:-https://github.com/scipr-lab/libsnark}
+
+CURVE=${CURVE:-BN128}
+
+LIBSNARK_FLAGS="$LIBSNARK_FLAGS NO_SUPERCOP=1 NO_GTEST=1 NO_DOCS=1 CURVE=$CURVE"
+if [[ `uname -s` == "Darwin" ]]; then
+    LIBSNARK_FLAGS="$LIBSNARK_FLAGS NO_PROCPS=1"
+fi
+
+set -x
+
+DEPSRC=./depsrc
+DEPINST=./depinst
+
+mkdir -p $DEPINST
+DEPINST=`pwd -P`/$DEPINST  # remember absolute path
+
+mkdir -p $DEPSRC
+cd $DEPSRC
+
+[ ! -d libsnark ] && git clone $LIBSNARK_SRC libsnark
+cd libsnark
+git pull
+if [ "$CURVE" == "BN128" ]; then
+    # TODO: submit -fPIC patch to ate-pairing
+    INC_DIR=-fPIC ./prepare-depends.sh
+fi
+make clean
+CXXFLAGS="-DNO_PT_COMPRESSION=1" make lib $LIBSNARK_FLAGS
+make install PREFIX=$DEPINST $LIBSNARK_FLAGS
