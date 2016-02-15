@@ -717,23 +717,7 @@ CPPFLAGS="-I$LIBSNARK_INCDIR $CPPFLAGS"
 AC_CHECK_HEADER([libsnark/gadgetlib1/gadget.hpp],,AC_MSG_ERROR(libsnark headers missing))
 AC_CHECK_LIB([snark],[main],LIBSNARK_LIBS=-lsnark, [AC_MSG_ERROR(libsnark missing)], [-lgmpxx])
 
-# Abuse the ugly libsnark hack above further to get the libzerocash directory
-[LIBZEROCASH_INCDIR=$(echo "$LIBSNARK_INCDIR" | sed 's,libsnark$,libzerocash,')]
-if test -d "$LIBZEROCASH_INCDIR"; then
-   echo "Found libzerocash include directory: $LIBZEROCASH_INCDIR"
-else
-    AC_MSG_ERROR(libzerocash include directory not found)
-fi
-
-CPPFLAGS="-I$LIBZEROCASH_INCDIR $CPPFLAGS"
-
-# libzerocash depends on headers in ./src/, so for the following
-# AC_CHECK_HEADER, that has to be on the include path list.
-CPPFLAGS_TEMP="$CPPFLAGS"
-CPPFLAGS="-I ./src/ $CPPFLAGS"
-AC_CHECK_HEADER([libzerocash/libzerocash/Zerocash.h],,AC_MSG_ERROR(libzerocash headers missing))
-AC_CHECK_LIB([zerocash], [main],LIBZEROCASH_LIBS="-lzerocash -lsnark -lcryptopp -lgmp -lgmpxx -lboost_system-mt -lcrypto", [AC_MSG_ERROR(libzerocash missing)], [-lsnark -lcryptopp -lgmp -lgmpxx -lboost_system-mt -lcrypto])
-CPPFLAGS="$CPPFLAGS_TEMP"
+LIBZEROCASH_LIBS="-lsnark -lcryptopp -lgmp -lgmpxx -lboost_system-mt -lcrypto"
 
 AC_CHECK_LIB([crypto],[RAND_egd],[],[
   AC_ARG_WITH([libressl],
@@ -782,6 +766,7 @@ if test x$build_bitcoin_libs = xyes; then
   AC_DEFINE(HAVE_CONSENSUS_LIB, 1, [Define this symbol if the consensus lib has been built])
   AC_CONFIG_FILES([libbitcoinconsensus.pc:libbitcoinconsensus.pc.in])
 fi
+
 AC_MSG_RESULT($build_bitcoin_libs)
 
 AC_LANG_POP
