@@ -14,7 +14,7 @@
 #ifndef ZEROCASH_POUR_PPZKSNARK_TCC_
 #define ZEROCASH_POUR_PPZKSNARK_TCC_
 
-#include "zerocash_pour_ppzksnark/zerocash_pour_gadget.hpp"
+#include "zerocash_pour_gadget.hpp"
 #include "common/profiling.hpp"
 
 namespace libzerocash {

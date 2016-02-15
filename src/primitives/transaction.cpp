@@ -9,8 +9,8 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
-#include "libzerocash/PourProver.h"
-#include "libzerocash/PourTransaction.h"
+#include "zerocash/PourProver.h"
+#include "zerocash/PourTransaction.h"
 
 template<std::size_t N>
 boost::array<std::vector<unsigned char>, N> uint256_to_array(const boost::array<uint256, N>& in) {

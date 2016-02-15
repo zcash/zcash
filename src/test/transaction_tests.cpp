@@ -25,12 +25,12 @@
 #include <boost/assign/list_of.hpp>
 #include "json/json_spirit_writer_template.h"
 
-#include "libzerocash/ZerocashParams.h"
-#include "libzerocash/IncrementalMerkleTree.h"
-#include "libzerocash/PourInput.h"
-#include "libzerocash/PourOutput.h"
-#include "libzerocash/Address.h"
-#include "libzerocash/Coin.h"
+#include "zerocash/ZerocashParams.h"
+#include "zerocash/IncrementalMerkleTree.h"
+#include "zerocash/PourInput.h"
+#include "zerocash/PourOutput.h"
+#include "zerocash/Address.h"
+#include "zerocash/Coin.h"
 
 using namespace std;
 using namespace json_spirit;

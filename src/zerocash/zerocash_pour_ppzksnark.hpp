@@ -227,6 +227,6 @@ bool zerocash_pour_ppzksnark_verifier(const zerocash_pour_verification_key<ppzks
 
 } // libzerocash
 
-#include "zerocash_pour_ppzksnark/zerocash_pour_ppzksnark.tcc"
+#include "zerocash_pour_ppzksnark.tcc"
 
 #endif // ZEROCASH_POUR_PPZKSNARK_HPP_

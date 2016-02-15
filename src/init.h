@@ -8,7 +8,7 @@
 
 #include <string>
 
-#include "libzerocash/ZerocashParams.h"
+#include "zerocash/ZerocashParams.h"
 
 class CScheduler;
 class CWallet;

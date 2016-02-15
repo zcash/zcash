@@ -16,7 +16,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
-#include "libzerocash/IncrementalMerkleTree.h"
+#include "zerocash/IncrementalMerkleTree.h"
 
 static const unsigned int INCREMENTAL_MERKLE_TREE_DEPTH = 20;
 

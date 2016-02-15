@@ -59,6 +59,6 @@ namespace libzerocash {
     using namespace libsnark;
 };
 
-#include "libzerocash/utils/util.h"
+#include "zerocash/utils/util.h"
 
 #endif /* ZEROCASH_H_ */

@@ -23,7 +23,7 @@
 #ifndef ZEROCASH_POUR_GADGET_HPP_
 #define ZEROCASH_POUR_GADGET_HPP_
 
-#include "zerocash_pour_ppzksnark/zerocash_pour_params.hpp"
+#include "zerocash_pour_params.hpp"
 #include "libsnark/gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp"
 #include "libsnark/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.hpp"
 
@@ -183,6 +183,6 @@ r1cs_primary_input<FieldT> zerocash_pour_input_map(const size_t num_old_coins,
 
 } // libzerocash
 
-#include "zerocash_pour_ppzksnark/zerocash_pour_gadget.tcc"
+#include "zerocash_pour_gadget.tcc"
 
 #endif // ZEROCASH_POUR_GADGET_HPP_

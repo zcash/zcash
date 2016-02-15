@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "libzerocash/IncrementalMerkleTree.h"
+#include "zerocash/IncrementalMerkleTree.h"
 
 class CBlockFileInfo;
 class CBlockIndex;

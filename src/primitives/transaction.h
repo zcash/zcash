@@ -13,9 +13,9 @@
 
 #include <boost/array.hpp>
 
-#include "libzerocash/ZerocashParams.h"
-#include "libzerocash/PourInput.h"
-#include "libzerocash/PourOutput.h"
+#include "zerocash/ZerocashParams.h"
+#include "zerocash/PourInput.h"
+#include "zerocash/PourOutput.h"
 
 using namespace libzerocash;
 

@@ -36,8 +36,8 @@ using CryptoPP::PK_EncryptorFilter;
 #include "PourOutput.h"
 
 #include "libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp"
-#include "zerocash_pour_ppzksnark/zerocash_pour_gadget.hpp"
-#include "zerocash_pour_ppzksnark/zerocash_pour_ppzksnark.hpp"
+#include "zerocash_pour_gadget.hpp"
+#include "zerocash_pour_ppzksnark.hpp"
 
 namespace libzerocash {
 
