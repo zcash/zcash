@@ -85,11 +85,6 @@ LIBZEROCASH_H = \
   zerocash/utils/sha256.h \
   zerocash/utils/util.h
 
-#  zerocash/zerocash_pour_gadget.hpp
-#  zerocash/zerocash_pour_gadget.tcc
-#  zerocash/zerocash_pour_ppzksnark.hpp
-#  zerocash/zerocash_pour_ppzksnark.tcc
-
 .PHONY: FORCE
 # bitcoin core #
 BITCOIN_CORE_H = \
@@ -424,9 +419,7 @@ libzerocash_a_SOURCES = \
   zerocash/utils/sha256.cpp \
   zerocash/utils/util.cpp
 
-#libzerocash_a_LIBADD = $(LIBZEROCASH_LIBS)
 libzerocash_a_CPPFLAGS = -fPIC -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -std=c++11 -pipe -O2 -O0 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
-#libzerocash_a_CPPFLAGS = -std=c++11 -fPIC -I$(builddir)/obj -DCURVE_ALT_BN128 -DSTATIC $(BITCOIN_INCLUDES)
 
 # bitcoinconsensus library #
 if BUILD_BITCOIN_LIBS
