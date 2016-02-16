@@ -417,7 +417,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
             std::make_heap(vecPriority.begin(), vecPriority.end(), pricomparer);
         }
 
-        CTxMemPool::indexed_transaction_set::nth_index<2>::type::iterator mi = mempool.mapTx.get<2>().begin();
+        CTxMemPool::indexed_transaction_set::index<mining_score>::type::iterator mi = mempool.mapTx.get<mining_score>().begin();
         CTxMemPool::txiter iter;
 
         // We want to track the value pool, but if the miner gets
@@ -448,7 +448,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
             }
         }
 
-        while (nonEmptyBlock && (mi != mempool.mapTx.get<2>().end() || !clearedTxs.empty()))
+        while (nonEmptyBlock && (mi != mempool.mapTx.get<mining_score>().end() || !clearedTxs.empty()))
         {
             bool priorityTx = false;
             if (fPriorityBlock && !vecPriority.empty()) { // add a tx from priority queue to fill the blockprioritysize
