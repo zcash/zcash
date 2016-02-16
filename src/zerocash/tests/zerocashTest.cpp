@@ -17,17 +17,17 @@
 
 #include "timer.h"
 
-#include "libzerocash/Zerocash.h"
-#include "libzerocash/ZerocashParams.h"
-#include "libzerocash/Address.h"
-#include "libzerocash/CoinCommitment.h"
-#include "libzerocash/Coin.h"
-#include "libzerocash/IncrementalMerkleTree.h"
-#include "libzerocash/MintTransaction.h"
-#include "libzerocash/PourTransaction.h"
-#include "libzerocash/PourInput.h"
-#include "libzerocash/PourOutput.h"
-#include "libzerocash/utils/util.h"
+#include "zerocash/Zerocash.h"
+#include "zerocash/ZerocashParams.h"
+#include "zerocash/Address.h"
+#include "zerocash/CoinCommitment.h"
+#include "zerocash/Coin.h"
+#include "zerocash/IncrementalMerkleTree.h"
+#include "zerocash/MintTransaction.h"
+#include "zerocash/PourTransaction.h"
+#include "zerocash/PourInput.h"
+#include "zerocash/PourOutput.h"
+#include "zerocash/utils/util.h"
 
 using namespace std;
 using namespace libsnark;

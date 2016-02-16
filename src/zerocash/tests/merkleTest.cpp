@@ -9,7 +9,7 @@
  * @copyright  MIT license (see LICENSE file)
  *****************************************************************************/
 
-#include "libzerocash/IncrementalMerkleTree.h"
+#include "zerocash/IncrementalMerkleTree.h"
 
 #include <iostream>
 #include <vector>

@@ -2,8 +2,8 @@
 #define BOOST_TEST_MODULE utilTest
 #include <boost/test/included/unit_test.hpp>
 
-#include "libzerocash/utils/util.h"
-#include "libzerocash/utils/sha256.h"
+#include "zerocash/utils/util.h"
+#include "zerocash/utils/sha256.h"
 
 #define SHA256_PREIMAGE_BYTES 3
 const unsigned char sha256_preimage[SHA256_PREIMAGE_BYTES] = { 'a', 'b', 'c' };

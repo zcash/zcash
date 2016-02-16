@@ -15,8 +15,8 @@
 #include "libsnark/common/utils.hpp"
 #include "libsnark/common/profiling.hpp"
 #include "libsnark/gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp"
-#include "zerocash_pour_ppzksnark/zerocash_pour_gadget.hpp"
-#include "zerocash_pour_ppzksnark/zerocash_pour_ppzksnark.hpp"
+#include "zerocash/zerocash_pour_gadget.hpp"
+#include "zerocash/zerocash_pour_ppzksnark.hpp"
 
 using namespace libzerocash;
 

@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 
-#include "tests/timer.h"
+#include "zerocash/tests/timer.h"
 
 namespace libzerocash {
 
