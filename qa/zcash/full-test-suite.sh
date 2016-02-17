@@ -29,8 +29,8 @@ cd "${REPOROOT}"
 
 # Test phases:
 run_test_phase "${REPOROOT}/qa/zcash/ensure-no-dot-so-in-depends.py"
-run_test_phase "${REPOROOT}/src/zerocash/merkleTest"
-run_test_phase "${REPOROOT}/src/zerocash/utilTest"
+run_test_phase "${REPOROOT}/src/zerocash/tests/merkleTest"
+run_test_phase "${REPOROOT}/src/zerocash/tests/utilTest"
 
 # If make check fails, show test-suite.log as part of our run_test_phase
 # output (and fail the phase with false):
