@@ -1,0 +1,46 @@
+bin_PROGRAMS += \
+  zerocash/GenerateParamsForFiles \
+  zerocash/tests/merkleTest \
+  zerocash/tests/utilTest \
+  zerocash/tests/zerocashTest \
+  zerocash/tests/test_zerocash_pour_ppzksnark
+
+# tool for generating our public parameters
+zerocash_GenerateParamsForFiles_SOURCES = zerocash/GenerateParamsForFiles.cpp
+zerocash_GenerateParamsForFiles_LDADD = \
+  $(BOOST_LIBS) \
+  $(LIBZEROCASH) \
+  $(LIBZEROCASH_LIBS)
+
+# tests for our incremental merkle tree
+zerocash_tests_merkleTest_SOURCES = zerocash/tests/merkleTest.cpp
+zerocash_tests_merkleTest_LDADD = \
+  $(BOOST_LIBS) \
+  $(LIBZEROCASH) \
+  $(LIBZEROCASH_LIBS)
+
+# tests for utilities that come with zerocash
+zerocash_tests_utilTest_SOURCES = zerocash/tests/utilTest.cpp
+zerocash_tests_utilTest_LDADD = \
+  $(BOOST_LIBS) \
+  $(LIBZEROCASH) \
+  $(LIBZEROCASH_LIBS)
+
+# tests for libzerocash APIs
+zerocash_tests_zerocashTest_SOURCES = \
+  zerocash/tests/zerocashTest.cpp \
+  zerocash/tests/timer.cpp
+
+zerocash_tests_zerocashTest_LDADD = \
+  $(BOOST_LIBS) \
+  $(LIBZEROCASH) \
+  $(LIBZEROCASH_LIBS)
+
+# tests for our zkSNARK circuit
+
+zerocash_tests_test_zerocash_pour_ppzksnark_SOURCES = zerocash/tests/test_zerocash_pour_ppzksnark.cpp
+zerocash_tests_test_zerocash_pour_ppzksnark_LDADD = \
+  $(BOOST_LIBS) \
+  $(LIBZEROCASH) \
+  $(LIBZEROCASH_LIBS)
+

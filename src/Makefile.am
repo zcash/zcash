@@ -31,6 +31,7 @@ LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBBITCOIN_UNIVALUE=univalue/libbitcoin_univalue.a
 LIBBITCOINQT=qt/libbitcoinqt.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
+LIBZEROCASH=libzerocash.a
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
@@ -43,7 +44,8 @@ EXTRA_LIBRARIES = \
   libbitcoin_common.a \
   univalue/libbitcoin_univalue.a \
   libbitcoin_server.a \
-  libbitcoin_cli.a
+  libbitcoin_cli.a \
+  libzerocash.a
 if ENABLE_WALLET
 BITCOIN_INCLUDES += $(BDB_CPPFLAGS)
 EXTRA_LIBRARIES += libbitcoin_wallet.a
@@ -66,6 +68,22 @@ endif
 if BUILD_BITCOIN_UTILS
   bin_PROGRAMS += zcash-cli bitcoin-tx
 endif
+
+LIBZEROCASH_H = \
+  zerocash/Address.h \
+  zerocash/CoinCommitment.h \
+  zerocash/Coin.h \
+  zerocash/IncrementalMerkleTree.h \
+  zerocash/MintTransaction.h \
+  zerocash/PourInput.h \
+  zerocash/PourOutput.h \
+  zerocash/PourProver.h \
+  zerocash/PourTransaction.h \
+  zerocash/Zerocash.h \
+  zerocash/ZerocashParams.h \
+  zerocash/zerocash_pour_params.hpp \
+  zerocash/utils/sha256.h \
+  zerocash/utils/util.h
 
 .PHONY: FORCE
 # bitcoin core #
@@ -202,7 +220,8 @@ libbitcoin_server_a_SOURCES = \
   txmempool.cpp \
   validationinterface.cpp \
   $(JSON_H) \
-  $(BITCOIN_CORE_H)
+  $(BITCOIN_CORE_H) \
+  $(LIBZEROCASH_H)
 
 # wallet: shared between bitcoind and bitcoin-qt, but only linked
 # when wallet enabled
@@ -215,7 +234,8 @@ libbitcoin_wallet_a_SOURCES = \
   wallet/wallet.cpp \
   wallet/wallet_ismine.cpp \
   wallet/walletdb.cpp \
-  $(BITCOIN_CORE_H)
+  $(BITCOIN_CORE_H) \
+  $(LIBZEROCASH_H)
 
 # crypto primitives library
 crypto_libbitcoin_crypto_a_CPPFLAGS = $(BITCOIN_CONFIG_INCLUDES)
@@ -269,7 +289,8 @@ libbitcoin_common_a_SOURCES = \
   script/script_error.cpp \
   script/sign.cpp \
   script/standard.cpp \
-  $(BITCOIN_CORE_H)
+  $(BITCOIN_CORE_H) \
+  $(LIBZEROCASH_H)
 
 # util: shared between all executables.
 # This library *must* be included to make sure that the glibc
@@ -291,7 +312,8 @@ libbitcoin_util_a_SOURCES = \
   utilmoneystr.cpp \
   utilstrencodings.cpp \
   utiltime.cpp \
-  $(BITCOIN_CORE_H)
+  $(BITCOIN_CORE_H) \
+  $(LIBZEROCASH_H)
 
 if GLIBC_BACK_COMPAT
 libbitcoin_util_a_SOURCES += compat/glibc_compat.cpp
@@ -301,7 +323,8 @@ endif
 libbitcoin_cli_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_cli_a_SOURCES = \
   rpcclient.cpp \
-  $(BITCOIN_CORE_H)
+  $(BITCOIN_CORE_H) \
+  $(LIBZEROCASH_H)
 
 nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
 #
@@ -321,6 +344,7 @@ zcashd_LDADD = \
   $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
+  $(LIBZEROCASH) \
   $(LIBLEVELDB) \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
@@ -335,6 +359,7 @@ zcashd_LDADD += \
   $(SSL_LIBS) \
   $(CRYPTO_LIBS) \
   $(MINIUPNPC_LIBS) \
+  $(LIBZEROCASH) \
   $(LIBZEROCASH_LIBS)
 #
 
@@ -353,6 +378,7 @@ zcash_cli_LDADD = \
   $(BOOST_LIBS) \
   $(SSL_LIBS) \
   $(CRYPTO_LIBS) \
+  $(LIBZEROCASH) \
   $(LIBZEROCASH_LIBS)
 #
 
@@ -372,10 +398,28 @@ bitcoin_tx_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBSECP256K1) \
+  $(LIBZEROCASH) \
   $(LIBZEROCASH_LIBS)
 
 bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 #
+
+# zerocash protocol primitives #
+libzerocash_a_SOURCES = \
+  zerocash/Address.cpp \
+  zerocash/CoinCommitment.cpp \
+  zerocash/Coin.cpp \
+  zerocash/IncrementalMerkleTree.cpp \
+  zerocash/MintTransaction.cpp \
+  zerocash/PourInput.cpp \
+  zerocash/PourOutput.cpp \
+  zerocash/PourProver.cpp \
+  zerocash/PourTransaction.cpp \
+  zerocash/ZerocashParams.cpp \
+  zerocash/utils/sha256.cpp \
+  zerocash/utils/util.cpp
+
+libzerocash_a_CPPFLAGS = -fPIC -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -std=c++11 -pipe -O2 -O0 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
 
 # bitcoinconsensus library #
 if BUILD_BITCOIN_LIBS
@@ -443,3 +487,5 @@ endif
 if ENABLE_QT_TESTS
 include Makefile.qttest.include
 endif
+
+include Makefile.zcash.include

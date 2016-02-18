@@ -8,6 +8,13 @@ src/bitcoin-tx
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
 
+# zerocash tests and utilities
+src/zerocash/GenerateParamsForFiles
+src/zerocash/tests/merkleTest
+src/zerocash/tests/utilTest
+src/zerocash/tests/zerocashTest
+src/zerocash/tests/test_zerocash_pour_ppzksnark
+
 # autoreconf
 Makefile.in
 aclocal.m4

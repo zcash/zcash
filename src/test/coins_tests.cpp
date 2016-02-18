@@ -11,7 +11,7 @@
 #include <map>
 
 #include <boost/test/unit_test.hpp>
-#include "libzerocash/IncrementalMerkleTree.h"
+#include "zerocash/IncrementalMerkleTree.h"
 
 namespace
 {
