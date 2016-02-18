@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE( PourInputOutputTest ) {
 }
 
 // testing with general situational setup
-bool test_pour(libzerocash::ZerocashParams& p,
+void test_pour(libzerocash::ZerocashParams& p,
           uint64_t vpub_in,
           uint64_t vpub_out,
           std::vector<uint64_t> inputs, // values of the inputs (max 2)
@@ -257,15 +257,15 @@ BOOST_AUTO_TEST_CASE( PourVpubInTest ) {
     );
 
     // Things that should work..
-    BOOST_CHECK(test_pour(p, 0, 0, {1}, {1}));
-    BOOST_CHECK(test_pour(p, 0, 0, {2}, {1, 1}));
-    BOOST_CHECK(test_pour(p, 0, 0, {2, 2}, {3, 1}));
-    BOOST_CHECK(test_pour(p, 0, 1, {1}, {}));
-    BOOST_CHECK(test_pour(p, 0, 1, {2}, {1}));
-    BOOST_CHECK(test_pour(p, 0, 1, {2, 2}, {2, 1}));
-    BOOST_CHECK(test_pour(p, 1, 0, {}, {1}));
-    BOOST_CHECK(test_pour(p, 1, 0, {1}, {1, 1}));
-    BOOST_CHECK(test_pour(p, 1, 0, {2, 2}, {2, 3}));
+    test_pour(p, 0, 0, {1}, {1});
+    test_pour(p, 0, 0, {2}, {1, 1});
+    test_pour(p, 0, 0, {2, 2}, {3, 1});
+    test_pour(p, 0, 1, {1}, {});
+    test_pour(p, 0, 1, {2}, {1});
+    test_pour(p, 0, 1, {2, 2}, {2, 1});
+    test_pour(p, 1, 0, {}, {1});
+    test_pour(p, 1, 0, {1}, {1, 1});
+    test_pour(p, 1, 0, {2, 2}, {2, 3});
 
     // Things that should not work...
     BOOST_CHECK_THROW(test_pour(p, 0, 1, {1}, {1}), std::invalid_argument);
