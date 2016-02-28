@@ -145,15 +145,33 @@ double base_uint<BITS>::getdouble() const
 }
 
 template <unsigned int BITS>
+base_blob<BITS> ArithToUint(const base_uint<BITS> &a)
+{
+    base_blob<BITS> b;
+    for(int x=0; x<a.WIDTH; ++x)
+        WriteLE32(b.begin() + x*4, a.pn[x]);
+    return b;
+}
+
+template <unsigned int BITS>
+base_uint<BITS> UintToArith(const base_blob<BITS> &a)
+{
+    base_uint<BITS> b;
+    for(int x=0; x<b.WIDTH; ++x)
+        b.pn[x] = ReadLE32(a.begin() + x*4);
+    return b;
+}
+
+template <unsigned int BITS>
 std::string base_uint<BITS>::GetHex() const
 {
-    return ArithToUint256(*this).GetHex();
+    return ArithToUint(*this).GetHex();
 }
 
 template <unsigned int BITS>
 void base_uint<BITS>::SetHex(const char* psz)
 {
-    *this = UintToArith256(uint256S(psz));
+    *this = UintToArith(uintS<BITS>(psz));
 }
 
 template <unsigned int BITS>
@@ -183,6 +201,25 @@ unsigned int base_uint<BITS>::bits() const
     return 0;
 }
 
+// Explicit instantiations for base_uint<160>
+template base_uint<160>::base_uint(const std::string&);
+template base_uint<160>& base_uint<160>::operator<<=(unsigned int);
+template base_uint<160>& base_uint<160>::operator>>=(unsigned int);
+template base_uint<160>& base_uint<160>::operator*=(uint32_t b32);
+template base_uint<160>& base_uint<160>::operator*=(const base_uint<160>& b);
+template base_uint<160>& base_uint<160>::operator/=(const base_uint<160>& b);
+template int base_uint<160>::CompareTo(const base_uint<160>&) const;
+template bool base_uint<160>::EqualTo(uint64_t) const;
+template double base_uint<160>::getdouble() const;
+template std::string base_uint<160>::GetHex() const;
+template std::string base_uint<160>::ToString() const;
+template void base_uint<160>::SetHex(const char*);
+template void base_uint<160>::SetHex(const std::string&);
+template unsigned int base_uint<160>::bits() const;
+template unsigned int base_uint<160>::GetSerializeSize(int nType, int nVersion) const;
+template<> template<typename Stream> void base_uint<160>::Serialize(Stream& s, int nType, int nVersion) const;
+template<> template<typename Stream> void base_uint<160>::Unserialize(Stream& s, int nType, int nVersion);
+
 // Explicit instantiations for base_uint<256>
 template base_uint<256>::base_uint(const std::string&);
 template base_uint<256>& base_uint<256>::operator<<=(unsigned int);
@@ -198,6 +235,9 @@ template std::string base_uint<256>::ToString() const;
 template void base_uint<256>::SetHex(const char*);
 template void base_uint<256>::SetHex(const std::string&);
 template unsigned int base_uint<256>::bits() const;
+template unsigned int base_uint<256>::GetSerializeSize(int nType, int nVersion) const;
+template<> template<typename Stream> void base_uint<256>::Serialize(Stream& s, int nType, int nVersion) const;
+template<> template<typename Stream> void base_uint<256>::Unserialize(Stream& s, int nType, int nVersion);
 
 // This implementation directly uses shifts instead of going
 // through an intermediate MPI representation.
@@ -246,15 +286,10 @@ uint32_t arith_uint256::GetCompact(bool fNegative) const
 
 uint256 ArithToUint256(const arith_uint256 &a)
 {
-    uint256 b;
-    for(int x=0; x<a.WIDTH; ++x)
-        WriteLE32(b.begin() + x*4, a.pn[x]);
-    return b;
+    return ArithToUint(a);
 }
+
 arith_uint256 UintToArith256(const uint256 &a)
 {
-    arith_uint256 b;
-    for(int x=0; x<b.WIDTH; ++x)
-        b.pn[x] = ReadLE32(a.begin() + x*4);
-    return b;
+    return UintToArith(a);
 }

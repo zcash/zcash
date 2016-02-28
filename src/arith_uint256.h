@@ -13,6 +13,9 @@
 #include <string>
 #include <vector>
 
+template<unsigned int BITS>
+class base_blob;
+
 class uint256;
 
 class uint_error : public std::runtime_error {
@@ -226,6 +229,11 @@ public:
     friend inline bool operator==(const base_uint& a, uint64_t b) { return a.EqualTo(b); }
     friend inline bool operator!=(const base_uint& a, uint64_t b) { return !a.EqualTo(b); }
 
+    template<unsigned int BITZ>
+    friend base_blob<BITZ> ArithToUint(const base_uint<BITZ> &);
+    template<unsigned int BITZ>
+    friend base_uint<BITZ> UintToArith(const base_blob<BITZ> &);
+
     std::string GetHex() const;
     void SetHex(const char* psz);
     void SetHex(const std::string& str);
@@ -247,6 +255,44 @@ public:
         assert(WIDTH >= 2);
         return pn[0] | (uint64_t)pn[1] << 32;
     }
+
+    unsigned int GetSerializeSize(int nType, int nVersion) const;
+    template<typename Stream>
+    void Serialize(Stream& s, int nType, int nVersion) const;
+    template<typename Stream>
+    void Unserialize(Stream& s, int nType, int nVersion);
+};
+
+template <unsigned int BITS>
+unsigned int base_uint<BITS>::GetSerializeSize(int nType, int nVersion) const
+{
+    return 4*sizeof(pn);
+}
+
+template <unsigned int BITS> template <typename Stream>
+void base_uint<BITS>::Serialize(Stream& s, int nType, int nVersion) const
+{
+    s.write((char*)pn, 4*sizeof(pn));
+}
+
+template<unsigned int BITS> template <typename Stream>
+void base_uint<BITS>::Unserialize(Stream& s, int nType, int nVersion)
+{
+    s.read((char*)pn, 4*sizeof(pn));
+}
+
+template <unsigned int BITS>
+base_blob<BITS> ArithToUint(const base_uint<BITS> &);
+template <unsigned int BITS>
+base_uint<BITS> UintToArith(const base_blob<BITS> &);
+
+/** 160-bit unsigned big integer. */
+class arith_uint160 : public base_uint<160> {
+public:
+    arith_uint160() {}
+    arith_uint160(const base_uint<160>& b) : base_uint<160>(b) {}
+    arith_uint160(uint64_t b) : base_uint<160>(b) {}
+    explicit arith_uint160(const std::string& str) : base_uint<160>(str) {}
 };
 
 /** 256-bit unsigned big integer. */
@@ -279,9 +325,6 @@ public:
      */
     arith_uint256& SetCompact(uint32_t nCompact, bool *pfNegative = NULL, bool *pfOverflow = NULL);
     uint32_t GetCompact(bool fNegative = false) const;
-
-    friend uint256 ArithToUint256(const arith_uint256 &);
-    friend arith_uint256 UintToArith256(const uint256 &);
 };
 
 uint256 ArithToUint256(const arith_uint256 &);
