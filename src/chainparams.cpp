@@ -53,6 +53,8 @@ public:
         nMinerThreads = 0;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
+        nEquihashN = 96;
+        nEquihashK = 5;
 
         /**
          * Build the genesis block. Note that the output of its generation
@@ -212,6 +214,8 @@ public:
         pchMessageStart[3] = 0xda;
         nMinerThreads = 1;
         nMaxTipAge = 24 * 60 * 60;
+        nEquihashN = 48;
+        nEquihashK = 5;
         genesis.nTime = 1296688602;
         genesis.nBits = 0x207fffff;
         genesis.nNonce = 2;

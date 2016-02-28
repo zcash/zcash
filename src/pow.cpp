@@ -7,9 +7,14 @@
 
 #include "arith_uint256.h"
 #include "chain.h"
+#include "chainparams.h"
+#include "crypto/equihash.h"
 #include "primitives/block.h"
+#include "streams.h"
 #include "uint256.h"
 #include "util.h"
+
+#include "sodium.h"
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
@@ -79,6 +84,30 @@ unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nF
     LogPrintf("After:  %08x  %s\n", bnNew.GetCompact(), bnNew.ToString());
 
     return bnNew.GetCompact();
+}
+
+bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& params)
+{
+    Equihash eh {params.EquihashN(), params.EquihashK()};
+
+    // Hash state
+    crypto_generichash_blake2b_state state;
+    eh.InitialiseState(state);
+
+    // I = the block header minus nonce and solution.
+    CEquihashInput I{*pblock};
+    // I||V
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << I;
+    ss << pblock->nNonce;
+
+    // H(I||V||...
+    crypto_generichash_blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
+
+    if (!eh.IsValidSolution(state, pblock->nSolution))
+        return error("CheckEquihashSolution(): invalid solution");
+
+    return true;
 }
 
 bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params& params)

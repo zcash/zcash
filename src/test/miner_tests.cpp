@@ -2,6 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "arith_uint256.h"
 #include "consensus/validation.h"
 #include "main.h"
 #include "miner.h"
@@ -82,7 +83,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         if (txFirst.size() < 2)
             txFirst.push_back(new CTransaction(pblock->vtx[0]));
         pblock->hashMerkleRoot = pblock->BuildMerkleTree();
-        pblock->nNonce = blockinfo[i].nonce;
+        pblock->nNonce = ArithToUint256(blockinfo[i].nonce);
         CValidationState state;
         BOOST_CHECK(ProcessNewBlock(state, NULL, pblock, true, NULL));
         BOOST_CHECK(state.IsValid());
