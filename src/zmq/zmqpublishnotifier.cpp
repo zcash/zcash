@@ -68,6 +68,7 @@ bool CZMQAbstractPublishNotifier::Initialize(void *pcontext)
         if (rc!=0)
         {
             zmqError("Failed to bind address");
+            zmq_close(psocket);
             return false;
         }
 
