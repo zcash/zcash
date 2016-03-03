@@ -6,7 +6,7 @@ https://z.cash/
 Where do I begin?
 -----------------
 
-We have a guide for joining the public testnet: https://github.com/Electric-Coin-Company/zcash/wiki/Public-Alpha-Guide
+We have a guide for joining the public testnet: https://github.com/zcash/zcash/wiki/Public-Alpha-Guide
 
 What is Zcash?
 ----------------
