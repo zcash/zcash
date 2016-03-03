@@ -2,8 +2,6 @@
 #
 # Execute all of the automated tests related to Zcash.
 #
-# This script will someday define part of our acceptance criteria for
-# pull requests.
 
 set -eu
 
