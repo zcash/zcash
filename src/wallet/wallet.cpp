@@ -4416,6 +4416,7 @@ CWallet* CWallet::InitLoadWallet(
         CWallet *tempWallet = new CWallet(strWalletFile);
         DBErrors nZapWalletRet = tempWallet->ZapWalletTx(vWtx);
         if (nZapWalletRet != DB_LOAD_OK) {
+            errorString = _("Error loading wallet.dat: Wallet corrupted");
             uiInterface.InitMessage(_("Error loading wallet.dat: Wallet corrupted"));
             return NULL;
         }
@@ -4445,10 +4446,12 @@ CWallet* CWallet::InitLoadWallet(
         {
             errorString += strprintf(_("Wallet needed to be rewritten: restart %s to complete"), _(PACKAGE_NAME)) + "\n";
             LogPrintf("%s", errorString);
-            return walletInstance;
         }
         else
             errorString += _("Error loading wallet.dat") + "\n";
+
+        if (!errorString.empty())
+            return NULL;
     }
 
     if (GetBoolArg("-upgradewallet", fFirstRun))
@@ -4463,7 +4466,10 @@ CWallet* CWallet::InitLoadWallet(
         else
             LogPrintf("Allowing wallet upgrade up to %i\n", nMaxVersion);
         if (nMaxVersion < walletInstance->GetVersion())
+        {
             errorString += _("Cannot downgrade wallet") + "\n";
+            return NULL;
+        }
         walletInstance->SetMaxVersion(nMaxVersion);
     }
 
@@ -4487,13 +4493,15 @@ CWallet* CWallet::InitLoadWallet(
         if (walletInstance->GetKeyFromPool(newDefaultKey)) {
             walletInstance->SetDefaultKey(newDefaultKey);
             if (!walletInstance->SetAddressBook(walletInstance->vchDefaultKey.GetID(), "", "receive"))
+            {
                 errorString += _("Cannot write default address") += "\n";
+                return NULL;
+            }
         }
 
         walletInstance->SetBestChain(chainActive.GetLocator());
     }
 
-    LogPrintf("%s", errorString);
     LogPrintf(" wallet      %15dms\n", GetTimeMillis() - nStart);
 
     RegisterValidationInterface(walletInstance);
@@ -4527,7 +4535,7 @@ CWallet* CWallet::InitLoadWallet(
             if (pindexRescan != block)
             {
                 errorString = _("Prune: last wallet synchronisation goes beyond pruned data. You need to -reindex (download the whole blockchain again in case of pruned node)");
-                return walletInstance;
+                return NULL;
             }
         }
 
