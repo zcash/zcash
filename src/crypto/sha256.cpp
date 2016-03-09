@@ -6,6 +6,7 @@
 
 #include "crypto/common.h"
 
+#include <algorithm>
 #include <string.h>
 
 // Internal implementation code.
@@ -136,6 +137,12 @@ void Transform(uint32_t* s, const unsigned char* chunk)
 CSHA256::CSHA256() : bytes(0)
 {
     sha256::Initialize(s);
+}
+
+CSHA256::CSHA256(const CSHA256 &h) : bytes(h.bytes)
+{
+    std::copy(h.s,   h.s+8,    s);
+    std::copy(h.buf, h.buf+64, buf);
 }
 
 CSHA256& CSHA256::Write(const unsigned char* data, size_t len)
