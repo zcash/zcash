@@ -426,6 +426,8 @@ void static BitcoinMiner(CWallet *pwallet)
     CReserveKey reservekey(pwallet);
     unsigned int nExtraNonce = 0;
 
+    EquiHash solver {96, 5};
+
     try {
         while (true) {
             if (chainparams.MiningRequiresPeers()) {
@@ -464,7 +466,6 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             // Search
             //
-            EquiHash solver {96, 5};
             int64_t nStart = GetTime();
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
             uint256 hash;
@@ -473,8 +474,7 @@ void static BitcoinMiner(CWallet *pwallet)
             // I = the first 76 bytes of the block header.
             CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
             ss << *pblock;
-            // TODO depends on size of solution array
-            assert(ss.size() == 96);
+            assert(ss.size() >= 96);
 
             // H(I||...
             CSHA256 hasher;
