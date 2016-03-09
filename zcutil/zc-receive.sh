@@ -29,6 +29,7 @@ then
     exit 0
 fi
 
+echo "$2" > "$BUCKETS_DIR/zcash-encbucket-$1.$(echo $2 | sha1sum | sed -e 's/\s.*//')"
 echo "Received $COINVAL ZEC."
 if [ "$EXISTS" == 'false' ]
 then
