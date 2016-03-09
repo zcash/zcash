@@ -7,16 +7,42 @@
 #define BITCOIN_EQUIHASH_H
 
 #include "crypto/sha256.h"
+#include "utilstrencodings.h"
 
+#include <cstring>
 #include <vector>
 
-struct StepRow
+struct invalid_params { };
+
+class StepRow
 {
+private:
     unsigned char* hash;
+    unsigned int len;
     std::vector<uint32_t> indices;
+
+public:
+    StepRow(unsigned int n, const CSHA256& base_hasher, uint32_t i);
+    ~StepRow();
+
+    StepRow(const StepRow& a);
+    StepRow& operator=(const StepRow& a);
+    StepRow& operator^=(const StepRow& a);
+
+    bool IsZero();
+    std::vector<uint32_t> GetSolution() { return std::vector<uint32_t>(indices); }
+    std::string GetHex() { return HexStr(hash, hash+len); }
+
+    friend inline const StepRow operator^(const StepRow& a, const StepRow& b) { return StepRow(a) ^= b; }
+    friend inline bool operator==(const StepRow& a, const StepRow& b) { return memcmp(a.hash, b.hash, a.len) == 0; }
+    friend inline bool operator<(const StepRow& a, const StepRow& b) { return memcmp(a.hash, b.hash, a.len) < 0; }
+
+    friend bool HasCollision(StepRow& a, StepRow& b, int i, int l);
+    friend bool DistinctIndices(const StepRow& a, const StepRow& b);
 };
 
-struct invalid_params { };
+bool HasCollision(StepRow& a, StepRow& b, int i, int l);
+bool DistinctIndices(const StepRow& a, const StepRow& b);
 
 class EquiHash
 {
@@ -26,7 +52,7 @@ private:
 
 public:
     EquiHash(unsigned int n, unsigned int k);
-    std::vector<std::vector<uint32_t>> Solve(const CSHA256 base_hasher);
+    std::vector<std::vector<uint32_t>> Solve(const CSHA256& base_hasher);
 };
 
 #endif // BITCOIN_EQUIHASH_H

@@ -15,63 +15,100 @@ void validate_params(int n, int k)
         std::cerr << "n must be larger than k\n";
         throw invalid_params();
     }
+    if (n % 8 != 0) {
+        std::cerr << "Parameters must satisfy n = 0 mod 8\n";
+        throw invalid_params();
+    }
     if ((n/(k+1)) % 8 != 0) {
         std::cerr << "Parameters must satisfy n/(k+1) = 0 mod 8\n";
         throw invalid_params();
     }
 }
 
-bool stepRowSorter(StepRow &lhs, StepRow &rhs)
+StepRow::StepRow(unsigned int n, const CSHA256& hasher, uint32_t i) :
+        hash {new unsigned char[n/8]},
+        len {n/8},
+        indices {i}
 {
-    return lhs.hash < rhs.hash;
+    unsigned char tmp[hasher.OUTPUT_SIZE];
+    CSHA256(hasher)
+            .Write((unsigned char*) &i, sizeof(uint32_t))
+            .Finalize(tmp);
+    // TODO generate correct size instead?
+    std::copy(tmp, tmp+(n/8), hash);
+
+    assert(indices.size() == 1);
 }
 
-bool hasCollision(const unsigned char* ha, const unsigned char* hb, int i, int l)
+StepRow::~StepRow()
 {
-    bool res = true;
-    for (int j = (i - 1) * l / 8; j < i * l / 8; j++)
-        res &= ha[j] == hb[j];
-    return res;
+    delete[] hash;
 }
 
-bool distinctIndices(const std::vector<uint32_t>& ia,
-        const std::vector<uint32_t>& ib)
+StepRow::StepRow(const StepRow& a) :
+        hash {new unsigned char[a.len]},
+        len {a.len},
+        indices(a.indices)
 {
-    unsigned int i = 0, j = 0;
-    while (i < ia.size() && j < ib.size()) {
-        while (ia[i] < ia[j])
-            i++;
-        while (ia[i] > ia[j])
-            j++;
-        if (ia[i] == ib[j])
-            return false;
-    }
-    return true;
-}
-
-unsigned char* xorHashes(const unsigned char* ha, const unsigned char* hb, int len)
-{
-    unsigned char res[len];
     for (int i = 0; i < len; i++)
-        res[i] = ha[i] ^ hb[i];
-    return res;
+        hash[i] = a.hash[i];
 }
 
-void combineIndices(const std::vector<uint32_t>& ia,
-        const std::vector<uint32_t>& ib, std::vector<uint32_t> &ic)
+StepRow& StepRow::operator=(const StepRow& a)
 {
-    ic.reserve(ia.size() + ib.size());
-    ic.insert(ic.end(), ia.begin(), ia.end());
-    ic.insert(ic.end(), ib.begin(), ib.end());
-    std::sort(ic.begin(), ic.end());
+    unsigned char* p = new unsigned char[a.len];
+    for (int i = 0; i < a.len; i++)
+        p[i] = a.hash[i];
+    delete[] hash;
+    hash = p;
+    len = a.len;
+    indices = a.indices;
+    return *this;
 }
 
-bool isZero(unsigned char* hash, int len)
+StepRow& StepRow::operator^=(const StepRow& a)
+{
+    if (a.len != len)
+        throw 1; // TODO throw better error
+    unsigned char* p = new unsigned char[len];
+    for (int i = 0; i < len; i++)
+        p[i] = hash[i] ^ a.hash[i];
+    delete[] hash;
+    hash = p;
+    indices.reserve(indices.size() + a.indices.size());
+    indices.insert(indices.end(), a.indices.begin(), a.indices.end());
+    std::sort(indices.begin(), indices.end());
+    return *this;
+}
+
+bool StepRow::IsZero()
 {
     char res = 0;
     for (int i = 0; i < len; i++)
         res |= hash[i];
     return res == 0;
+}
+
+bool HasCollision(StepRow& a, StepRow& b, int i, int l)
+{
+    bool res = true;
+    for (int j = (i - 1) * l / 8; j < i * l / 8; j++)
+        res &= a.hash[j] == b.hash[j];
+    return res;
+}
+
+bool DistinctIndices(const StepRow& a, const StepRow& b)
+{
+    unsigned int i = 0, j = 0;
+    while (i < a.indices.size() && j < b.indices.size()) {
+        while (i < a.indices.size() && a.indices[i] < b.indices[j])
+            i++;
+        while (j < b.indices.size() && a.indices[i] > b.indices[j])
+            j++;
+        if (a.indices[i] == b.indices[j])
+            return false;
+    }
+    return true;
 }
 
 EquiHash::EquiHash(unsigned int n, unsigned int k) :
@@ -80,7 +117,7 @@ EquiHash::EquiHash(unsigned int n, unsigned int k) :
     validate_params(n, k);
 }
 
-std::vector<std::vector<uint32_t>> EquiHash::Solve(const CSHA256 base_hasher)
+std::vector<std::vector<uint32_t>> EquiHash::Solve(const CSHA256& base_hasher)
 {
     unsigned int collision_length { n / (k + 1) };
     unsigned int init_size { pow(2, (collision_length + 1)) };
@@ -89,42 +126,30 @@ std::vector<std::vector<uint32_t>> EquiHash::Solve(const CSHA256 base_hasher)
     std::vector<StepRow> X;
     X.reserve(init_size);
     for (uint32_t i = 0; i < init_size; i++) {
-        StepRow Xi;
-        // TODO truncate first list or generate correct size
-        CSHA256(base_hasher).Write((unsigned char*) &i, sizeof(uint32_t)).Finalize(
-                Xi.hash);
-        Xi.indices.push_back(i);
-        X[i] = Xi;
+        X.push_back(StepRow(n, base_hasher, i));
     }
 
     // 3) Repeat step 2 until 2n/(k+1) bits remain
     for (int i = 1; i < k; i++) {
         // 2a) Sort the list
-        std::sort(X.begin(), X.end(), stepRowSorter);
+        std::sort(X.begin(), X.end());
 
         std::vector<StepRow> Xc;
         Xc.reserve(X.size());
         while (X.size() > 0) {
+            int end = X.size()-1;
             // 2b) Find next set of unordered pairs with collisions on first n/(k+1) bits
             int j = 1;
-            while (j < X.size()) {
-                if (!hasCollision(X[X.size() - 1].hash,
-                        X[X.size() - 1 - j].hash, i, collision_length))
-                    break;
+            while (j < X.size() &&
+                    HasCollision(X[end], X[end - j], i, collision_length)) {
                 j++;
             }
 
             // 2c) Store tuples (X_i ^ X_j, (i, j)) on the table
             for (int l = 0; l < j - 1; l++) {
                 for (int m = l + 1; m < j; m++) {
-                    StepRow *Xl = &X[X.size() - 1 - l];
-                    StepRow *Xm = &X[X.size() - 1 - m];
-                    if (distinctIndices(Xl->indices, Xm->indices)) {
-                        StepRow Xi;
-                        Xi.hash = xorHashes(Xl->hash, Xm->hash, n);
-                        combineIndices(Xl->indices, Xm->indices, Xi.indices);
-                        Xc.push_back(Xi);
-                    }
+                    if (DistinctIndices(X[end-l], X[end-m]))
+                        Xc.push_back(X[end-l] ^ X[end-m]);
                 }
             }
 
@@ -138,14 +163,11 @@ std::vector<std::vector<uint32_t>> EquiHash::Solve(const CSHA256 base_hasher)
 
     // k+1) Find a collision on last 2n(k+1) bits
     std::vector<std::vector<uint32_t>> solns;
-    std::sort(X.begin(), X.end(), stepRowSorter);
-    for (int i = 0; i < sizeof(X) - 1; i++) {
-        unsigned char* res = xorHashes(X[i].hash, X[i + 1].hash, n);
-        if (isZero(res, n) && X[i].indices != X[i + 1].indices) {
-            std::vector<uint32_t> soln;
-            combineIndices(X[i].indices, X[i + 1].indices, soln);
-            solns.push_back(soln);
-        }
+    std::sort(X.begin(), X.end());
+    for (int i = 0; i < X.size() - 1; i++) {
+        StepRow res = X[i] ^ X[i+1];
+        if (res.IsZero())
+            solns.push_back(res.GetSolution());
     }
 
     return solns;
