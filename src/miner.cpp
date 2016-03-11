@@ -468,8 +468,6 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             int64_t nStart = GetTime();
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
-            uint256 hash;
-            std::vector<unsigned int> soln;
 
             // I = the first 76 bytes of the block header.
             CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
@@ -482,6 +480,7 @@ void static BitcoinMiner(CWallet *pwallet)
 
             while (true) {
                 // Find valid nonce
+                [&] {
                 while (true)
                 {
                     // H(I||V||...
@@ -495,20 +494,15 @@ void static BitcoinMiner(CWallet *pwallet)
 
                     // Write the solution to the hash and compute the result.
                     for (auto soln : solns) {
-                        for (uint32_t xi : soln)
-                            curr_hasher.Write((unsigned char*)&xi, 4);
-                        curr_hasher.Finalize((unsigned char*)&hash);
+                        pblock->nSoln = soln;
 
                         // Leave next block unindented for easier diff
-                    if (UintToArith256(hash) <= hashTarget)
+                    if (UintToArith256(pblock->GetHash()) <= hashTarget)
                     {
                         // Found a solution
-                        pblock->nSoln = soln;
-                        assert(hash == pblock->GetHash());
-
                         SetThreadPriority(THREAD_PRIORITY_NORMAL);
                         LogPrintf("ZcashMiner:\n");
-                        LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", hash.GetHex(), hashTarget.GetHex());
+                        LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
                         ProcessBlockFound(pblock, *pwallet, reservekey);
                         SetThreadPriority(THREAD_PRIORITY_LOWEST);
 
@@ -516,13 +510,14 @@ void static BitcoinMiner(CWallet *pwallet)
                         if (chainparams.MineBlocksOnDemand())
                             throw boost::thread_interrupted();
 
-                        break;
+                        return;
                     }
                     }
                     pblock->nNonce += 1;
                     if ((pblock->nNonce & 0xfff) == 0)
                         break;
                 }
+                }();
 
                 // Check for stop or if block needs to be rebuilt
                 boost::this_thread::interruption_point();
