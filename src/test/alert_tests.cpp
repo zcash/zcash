@@ -17,11 +17,11 @@
 #include "rpc/server.h"
 #include "serialize.h"
 #include "streams.h"
-#include "util.h"
 #include "utilstrencodings.h"
 #include "utiltest.h"
 #include "warnings.h"
 
+#include "test/testutil.h"
 #include "test/test_bitcoin.h"
 
 #include <fstream>

@@ -95,7 +95,6 @@ void ReadConfigFile(const std::string& confPath, std::map<std::string, std::stri
 #ifdef WIN32
 boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
-boost::filesystem::path GetTempPath();
 void runCommand(const std::string& strCommand);
 const boost::filesystem::path GetExportDir();
 

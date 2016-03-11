@@ -9,6 +9,8 @@
 #include "util.h"
 #include "utilstrencodings.h"
 
+#include "test/testutil.h"
+
 #include <boost/filesystem/operations.hpp>
 #include <fstream>
 
