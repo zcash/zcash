@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "crypto/equihash.h"
+#include "util.h"
 
 #include <algorithm>
 #include <cmath>
@@ -123,6 +124,7 @@ std::vector<std::vector<uint32_t>> EquiHash::Solve(const CSHA256& base_hasher)
     unsigned int init_size { pow(2, (collision_length + 1)) };
 
     // 1) Generate first list
+    LogPrint("pow", "Generating first list\n");
     std::vector<StepRow> X;
     X.reserve(init_size);
     for (uint32_t i = 0; i < init_size; i++) {
@@ -131,9 +133,12 @@ std::vector<std::vector<uint32_t>> EquiHash::Solve(const CSHA256& base_hasher)
 
     // 3) Repeat step 2 until 2n/(k+1) bits remain
     for (int i = 1; i < k; i++) {
+        LogPrint("pow", "Round %d:\n", i);
         // 2a) Sort the list
+        LogPrint("pow", "- Sorting list\n");
         std::sort(X.begin(), X.end());
 
+        LogPrint("pow", "- Finding collisions\n");
         std::vector<StepRow> Xc;
         Xc.reserve(X.size());
         while (X.size() > 0) {
@@ -162,8 +167,11 @@ std::vector<std::vector<uint32_t>> EquiHash::Solve(const CSHA256& base_hasher)
     }
 
     // k+1) Find a collision on last 2n(k+1) bits
+    LogPrint("pow", "Final round:\n");
     std::vector<std::vector<uint32_t>> solns;
+    LogPrint("pow", "- Sorting list\n");
     std::sort(X.begin(), X.end());
+    LogPrint("pow", "- Finding collisions\n");
     for (int i = 0; i < X.size() - 1; i++) {
         StepRow res = X[i] ^ X[i+1];
         if (res.IsZero())
