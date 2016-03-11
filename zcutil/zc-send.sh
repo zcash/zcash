@@ -71,10 +71,18 @@ RAWTX=$("$ZCASH_CLI" createrawtransaction '[]' '{}')
 RESULT=$("$ZCASH_CLI" zcrawpour "$RAWTX" "{\"$BUCKET\":\"$ZCSECRETKEY\"}" "{\"$TO_ADDRESS\":$AMOUNT,\"$ZCADDRESS\":$CHANGE}" 0 "$FEE")
 TO_BUCKET=$(parse_result "$RESULT" 'encryptedbucket1')
 CHANGE_BUCKET=$(parse_result "$RESULT" 'encryptedbucket2')
+RAWTXN=$(parse_result "$RESULT" 'rawtxn')
 
+RESULT=$("$ZCASH_CLI" signrawtransaction "$RAWTXN")
+SIGNEDRAWTXN=$(parse_result "$RESULT" 'hex')
+
+echo 'Sending transaction...'
+RESULT=$("$ZCASH_CLI" sendrawtransaction "$SIGNEDRAWTXN")
+POUR_TXID=$(parse_result "$RESULT" 'hex')
 echo "$CHANGE_BUCKET" > "$BUCKETS_DIR/zcash-encbucket-$1.$(echo $CHANGE_BUCKET | sha1sum | sed -e 's/\s.*//')"
 mv $BUCKETFILE $SPENT_BUCKETS_DIR
 
-echo "Transaction complete. Send the following encrypted bucket to the recipient:"
+echo "Transaction complete: $POUR_TXID"
+echo 'Send the following encrypted bucket to the recipient:'
 echo
 echo "$TO_BUCKET"
