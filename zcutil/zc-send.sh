@@ -30,14 +30,15 @@ do
     RESULT=$("$ZCASH_CLI" zcrawreceive "$ZCSECRETKEY" "$(cat "$BUCKETS_DIR/$bucketfile")")
     COINVAL=$(parse_result "$RESULT" 'amount')
     BUCKET=$(parse_result "$RESULT" 'bucket')
-    if [ "$COINVAL" > "$AMOUNT" ]
+    EXISTS=$(parse_result "$RESULT" 'exists')
+    if [ "$EXISTS" == 'true' ] && [ "$(python -c "print 1 if $COINVAL > $AMOUNT else 0")" == 1 ]
     then
         BUCKETFILE="$BUCKETS_DIR/$bucketfile"
         break
     fi
 done
 
-if [ "$(python -c "print 1 if $COINVAL < $AMOUNT else 0")" == 1 ]
+if [ "$EXISTS" == 'false' ] || [ "$(python -c "print 1 if $COINVAL < $AMOUNT else 0")" == 1 ]
 then
     echo 'No suitable coin found'
     exit

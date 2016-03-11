@@ -19,14 +19,21 @@ fi
 ZCSECRETKEY=$(cat $PRIVKEYFILE)
 
 TOT=0
+SPENDABLE=0
 if [ -e "$BUCKETS_DIR" ]
 then
     for bucketfile in $(ls "$BUCKETS_DIR" | grep "zcash-encbucket-$1")
     do
         RESULT=$("$ZCASH_CLI" zcrawreceive "$ZCSECRETKEY" "$(cat "$BUCKETS_DIR/$bucketfile")")
         COINVAL=$(parse_result "$RESULT" 'amount')
+        EXISTS=$(parse_result "$RESULT" 'exists')
         TOT=$(python -c "print $TOT+$COINVAL")
+        if [ "$EXISTS" == 'true' ]
+        then
+            SPENDABLE=$(python -c "print $SPENDABLE+$COINVAL")
+        fi
     done
 fi
 
-echo "$TOT ZEC"
+echo "Total: $TOT ZEC"
+echo "Spendable: $SPENDABLE ZEC"
