@@ -37,7 +37,6 @@
 #include "librustzcash.h"
 
 CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
-CWallet* pwalletMain;
 ZCJoinSplit *pzcashParams;
 
 extern bool fPrintToConsole;
