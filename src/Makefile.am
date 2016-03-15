@@ -74,6 +74,7 @@ LIBZEROCASH_H = \
   zerocash/CoinCommitment.h \
   zerocash/Coin.h \
   zerocash/IncrementalMerkleTree.h \
+  zerocash/NewIncrementalMerkleTree.hpp \
   zerocash/MintTransaction.h \
   zerocash/PourInput.h \
   zerocash/PourOutput.h \
@@ -410,6 +411,7 @@ libzerocash_a_SOURCES = \
   zerocash/CoinCommitment.cpp \
   zerocash/Coin.cpp \
   zerocash/IncrementalMerkleTree.cpp \
+  zerocash/NewIncrementalMerkleTree.cpp \
   zerocash/MintTransaction.cpp \
   zerocash/PourInput.cpp \
   zerocash/PourOutput.cpp \
