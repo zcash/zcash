@@ -605,7 +605,7 @@ static void ZC_LoadParams()
     boost::filesystem::path vk_path = ZC_GetParamsDir() / "zc-testnet-public-alpha-verification.key";
 
     libzerocash::ZerocashParams::zerocash_pp::init_public_params();
-    
+
 
     LogPrintf("Loading verification key from %s\n", vk_path.string().c_str());
     gettimeofday(&tv_start, 0);
@@ -619,8 +619,8 @@ static void ZC_LoadParams()
 
     pzerocashParams = new libzerocash::ZerocashParams(
         INCREMENTAL_MERKLE_TREE_DEPTH,
-        &vk_loaded,
-        pk_path.string()
+        pk_path.string(),
+        &vk_loaded
     );
 }
 
