@@ -132,6 +132,7 @@ void PourTransaction::init(uint16_t version_num,
                      const Coin& c_1_new,
                      const Coin& c_2_new)
 {
+    params.loadProvingKey();
     this->version = version_num;
 
     convertIntToBytesVector(v_pub_old, this->publicOldValue);

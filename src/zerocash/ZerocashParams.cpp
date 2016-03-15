@@ -129,6 +129,17 @@ ZerocashParams::ZerocashParams(
 
 ZerocashParams::ZerocashParams(
     const unsigned int tree_depth,
+    zerocash_pour_verification_key<ZerocashParams::zerocash_pp>* p_vk_1,
+    std::string proving_key_path
+) : 
+    treeDepth(tree_depth), provingKeyPath(proving_key_path)
+{
+    params_vk_v1 = new zerocash_pour_verification_key<ZerocashParams::zerocash_pp>(*p_vk_1);
+    params_pk_v1 = NULL;
+}
+
+ZerocashParams::ZerocashParams(
+    const unsigned int tree_depth,
     zerocash_pour_proving_key<ZerocashParams::zerocash_pp>* p_pk_1,
     zerocash_pour_verification_key<ZerocashParams::zerocash_pp>* p_vk_1
 ) :

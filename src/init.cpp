@@ -604,17 +604,8 @@ static void ZC_LoadParams()
     boost::filesystem::path pk_path = ZC_GetParamsDir() / "zc-testnet-public-alpha-proving.key";
     boost::filesystem::path vk_path = ZC_GetParamsDir() / "zc-testnet-public-alpha-verification.key";
 
-    LogPrintf("Loading proving key from %s\n", pk_path.string().c_str());
-    gettimeofday(&tv_start, 0);
     libzerocash::ZerocashParams::zerocash_pp::init_public_params();
-    auto pk_loaded = libzerocash::ZerocashParams::LoadProvingKeyFromFile(
-        pk_path.string(),
-        INCREMENTAL_MERKLE_TREE_DEPTH
-    );
-    gettimeofday(&tv_end, 0);
-    elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
-    LogPrintf("Loaded proving key in %fs seconds.\n", elapsed);
-
+    
 
     LogPrintf("Loading verification key from %s\n", vk_path.string().c_str());
     gettimeofday(&tv_start, 0);
@@ -628,8 +619,8 @@ static void ZC_LoadParams()
 
     pzerocashParams = new libzerocash::ZerocashParams(
         INCREMENTAL_MERKLE_TREE_DEPTH,
-        &pk_loaded,
-        &vk_loaded
+        &vk_loaded,
+        pk_path.string()
     );
 }
 
