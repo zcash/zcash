@@ -93,6 +93,29 @@ public:
     }
 };
 
+/* base_blob<BITS> from const char *.
+ * This is a separate function because the constructor base_blob<BITS>(const char*) can result
+ * in dangerously catching base_blob<BITS>(0).
+ */
+template <unsigned int BITS>
+inline base_blob<BITS> uintS(const char *str)
+{
+    base_blob<BITS> rv;
+    rv.SetHex(str);
+    return rv;
+}
+/* base_blob<BITS> from std::string.
+ * This is a separate function because the constructor base_blob<BITS>(const std::string &str) can result
+ * in dangerously catching base_blob<BITS>(0) via std::string(const char*).
+ */
+template <unsigned int BITS>
+inline base_blob<BITS> uintS(const std::string& str)
+{
+    base_blob<BITS> rv;
+    rv.SetHex(str);
+    return rv;
+}
+
 /** 160-bit opaque blob.
  * @note This type is called uint160 for historical reasons only. It is an opaque
  * blob of 160 bits and has no integer operations.

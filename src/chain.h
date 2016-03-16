@@ -143,7 +143,8 @@ public:
     uint256 hashMerkleRoot;
     unsigned int nTime;
     unsigned int nBits;
-    unsigned int nNonce;
+    arith_uint160 nNonce;
+    std::vector<uint32_t> nSoln;
 
     //! (memory only) Sequential id assigned to distinguish order in which blocks are received.
     uint32_t nSequenceId;
@@ -167,7 +168,8 @@ public:
         hashMerkleRoot = uint256();
         nTime          = 0;
         nBits          = 0;
-        nNonce         = 0;
+        nNonce         = arith_uint160();
+        nSoln          = std::vector<uint32_t>();
     }
 
     CBlockIndex()
@@ -184,6 +186,7 @@ public:
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
+        nSoln          = block.nSoln;
     }
 
     CDiskBlockPos GetBlockPos() const {
@@ -214,6 +217,7 @@ public:
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
+        block.nSoln          = nSoln;
         return block;
     }
 
@@ -320,6 +324,7 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
+        READWRITE(nSoln);
     }
 
     uint256 GetBlockHash() const
@@ -331,6 +336,7 @@ public:
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;
+        block.nSoln           = nSoln;
         return block.GetHash();
     }
 

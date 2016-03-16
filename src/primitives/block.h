@@ -6,6 +6,7 @@
 #ifndef BITCOIN_PRIMITIVES_BLOCK_H
 #define BITCOIN_PRIMITIVES_BLOCK_H
 
+#include "arith_uint256.h"
 #include "primitives/transaction.h"
 #include "serialize.h"
 #include "uint256.h"
@@ -27,7 +28,8 @@ public:
     uint256 hashMerkleRoot;
     uint32_t nTime;
     uint32_t nBits;
-    uint32_t nNonce;
+    arith_uint160 nNonce;
+    std::vector<uint32_t> nSoln;
 
     CBlockHeader()
     {
@@ -45,6 +47,7 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
+        READWRITE(nSoln);
     }
 
     void SetNull()
@@ -54,7 +57,8 @@ public:
         hashMerkleRoot.SetNull();
         nTime = 0;
         nBits = 0;
-        nNonce = 0;
+        nNonce = arith_uint160();
+        nSoln.clear();
     }
 
     bool IsNull() const
@@ -115,6 +119,7 @@ public:
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
+        block.nSoln          = nSoln;
         return block;
     }
 
