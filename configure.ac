@@ -717,7 +717,7 @@ CPPFLAGS="-I$LIBSNARK_INCDIR $CPPFLAGS"
 AC_CHECK_HEADER([libsnark/gadgetlib1/gadget.hpp],,AC_MSG_ERROR(libsnark headers missing))
 AC_CHECK_LIB([snark],[main],LIBSNARK_LIBS=-lsnark, [AC_MSG_ERROR(libsnark missing)], [-lgmpxx])
 
-LIBZEROCASH_LIBS="-lsnark -lcryptopp -lgmp -lgmpxx -lboost_system-mt -lcrypto"
+LIBZEROCASH_LIBS="-lsnark -lcryptopp -lgmp -lgmpxx -lboost_system-mt -lcrypto -lsodium"
 
 AC_CHECK_LIB([crypto],[RAND_egd],[],[
   AC_ARG_WITH([libressl],

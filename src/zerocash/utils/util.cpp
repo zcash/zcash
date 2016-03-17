@@ -9,6 +9,8 @@
 #include <iomanip>
 #include <algorithm>
 
+#include <sodium.h>
+
 #include "util.h"
 
 namespace libzerocash {
@@ -82,9 +84,7 @@ void printBytesVectorAsHex(const std::string str, const std::vector<unsigned cha
 }
 
 void getRandBytes(unsigned char* bytes, int num) {
-    int ret = RAND_bytes(bytes, num);
-    if(ret != 1)
-        std::cout << "rand_bytes error!" << ERR_get_error() << std::endl;
+    randombytes_buf(bytes, num);
 }
 
 void convertBytesToVector(const unsigned char* bytes, std::vector<bool>& v) {
