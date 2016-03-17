@@ -1,4 +1,4 @@
-zerocash_packages := libsnark crypto++ libgmp
+zerocash_packages := libsnark crypto++ libgmp libsodium
 packages:=boost openssl $(zerocash_packages)
 native_packages := native_ccache native_comparisontool
 
