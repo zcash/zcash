@@ -8,6 +8,7 @@
 #endif
 
 #include "init.h"
+#include "sodium.h"
 
 #include "addrman.h"
 #include "amount.h"
@@ -631,6 +632,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 {
     // ********************************************************* Step 0: Load zcash params
     ZC_LoadParams();
+
+    // Perform libsodium initialization
+    if (sodium_init() == -1) {
+        return false;
+    }
 
     // ********************************************************* Step 1: setup
 #ifdef _MSC_VER
