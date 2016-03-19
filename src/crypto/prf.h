@@ -8,19 +8,16 @@ within the zkSNARK circuit.
 #include <boost/static_assert.hpp>
 
 uint256 PRF(bool a, bool b, bool c, bool d,
-            uint248 x,
+            uint256 x,
             uint256 y)
 {
     uint256 res;
     unsigned char blob[64];
 
-    if (a) blob[0] |= 0x80;
-    if (b) blob[0] |= 0x40;
-    if (c) blob[0] |= 0x20;
-    if (d) blob[0] |= 0x10;
-
-    memcpy(&blob[1], x.begin(), 31);
+    memcpy(&blob[0], x.begin(), 32);
     memcpy(&blob[32], y.begin(), 32);
+
+    blob[0] = (a ? 1 << 7 : 0) | (b ? 1 << 6 : 0) | (c ? 1 << 5 : 0) | (d ? 1 << 4 : 0);
 
     CSHA256 hasher;
     hasher.Write(blob, 64);
@@ -30,12 +27,12 @@ uint256 PRF(bool a, bool b, bool c, bool d,
 }
 
 template<unsigned char T>
-uint256 PRF_addr(uint248 a_sk)
+uint256 PRF_addr(uint256 a_sk)
 {
     BOOST_STATIC_ASSERT(T <= 7);
 
     uint256 y;
     *(y.end() - 1) = T;
 
-    return PRF(false, false, false, false, a_sk, y);
+    return PRF(0, 0, 0, 0, a_sk, y);
 }

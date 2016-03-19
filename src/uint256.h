@@ -155,29 +155,4 @@ inline uint256 uint256S(const std::string& str)
     return rv;
 }
 
-
-
-
-
-class uint248 : public base_blob<248> {
-public:
-    uint248() {}
-    uint248(const base_blob<248>& b) : base_blob<248>(b) {}
-    explicit uint248(const std::vector<unsigned char>& vch) : base_blob<248>(vch) {}
-};
-
-inline uint248 uint248S(const char *str)
-{
-    uint248 rv;
-    rv.SetHex(str);
-    return rv;
-}
-
-inline uint248 uint248S(const std::string& str)
-{
-    uint248 rv;
-    rv.SetHex(str);
-    return rv;
-}
-
 #endif // BITCOIN_UINT256_H

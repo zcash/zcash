@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(bort)
     // 64 + 32 + 24 + 8
     typedef Bort<128> MyBort;
 
-    uint256 sk_enc = MyBort::generate_privkey(uint248S("21035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a"));
+    uint256 sk_enc = MyBort::generate_privkey(uint256S("21035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a77"));
     uint256 pk_enc = MyBort::generate_pubkey(sk_enc);
 
     MyBort b;
@@ -37,11 +37,11 @@ BOOST_AUTO_TEST_CASE(bort)
     BOOST_CHECK_THROW(MyBort::decrypt(sk_enc, ciphertext, b.get_epk(), 0x01), std::runtime_error);
 
     // Test wrong private key
-    uint256 sk_enc_2 = MyBort::generate_privkey(uint248());
+    uint256 sk_enc_2 = MyBort::generate_privkey(uint256());
     BOOST_CHECK_THROW(MyBort::decrypt(sk_enc_2, ciphertext, b.get_epk(), 0x00), std::runtime_error);
 
     // Test wrong ephemeral key
-    BOOST_CHECK_THROW(MyBort::decrypt(sk_enc, ciphertext, MyBort::generate_privkey(uint248()), 0x00), std::runtime_error);
+    BOOST_CHECK_THROW(MyBort::decrypt(sk_enc, ciphertext, MyBort::generate_privkey(uint256()), 0x00), std::runtime_error);
 
     // Test corrupted ciphertext
     ciphertext[10] ^= 0xff;

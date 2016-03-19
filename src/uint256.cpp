@@ -81,13 +81,6 @@ template std::string base_blob<256>::ToString() const;
 template void base_blob<256>::SetHex(const char*);
 template void base_blob<256>::SetHex(const std::string&);
 
-// Explicit instantiations for base_blob<248>
-template base_blob<248>::base_blob(const std::vector<unsigned char>&);
-template std::string base_blob<248>::GetHex() const;
-template std::string base_blob<248>::ToString() const;
-template void base_blob<248>::SetHex(const char*);
-template void base_blob<248>::SetHex(const std::string&);
-
 static void inline HashMix(uint32_t& a, uint32_t& b, uint32_t& c)
 {
     // Taken from lookup3, by Bob Jenkins.

@@ -70,7 +70,7 @@ public:
                             );
 
     // Creates a bort private key
-    static uint256 generate_privkey(const uint248 &a_sk);
+    static uint256 generate_privkey(const uint256 &a_sk);
 
     // Creates a bort public key from a private key
     static uint256 generate_pubkey(const uint256 &sk_enc);

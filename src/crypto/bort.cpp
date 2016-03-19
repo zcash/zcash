@@ -116,7 +116,7 @@ typename Bort<MLEN>::Plaintext Bort<MLEN>::decrypt(const uint256 &sk_enc,
 }
 
 template<size_t MLEN>
-uint256 Bort<MLEN>::generate_privkey(const uint248 &a_sk)
+uint256 Bort<MLEN>::generate_privkey(const uint256 &a_sk)
 {
     uint256 sk = PRF_addr<0x01>(a_sk);
 
