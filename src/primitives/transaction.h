@@ -63,6 +63,9 @@ public:
     // for the recipient to spend the value.
     boost::array<std::string, NUM_POUR_OUTPUTS> ciphertexts;
 
+    // Ephemeral key
+    uint256 ephemeralKey;
+
     // MACs
     // The verification of the pour requires these MACs
     // to be provided as an input.
@@ -72,7 +75,7 @@ public:
     // This is a zk-SNARK which ensures that this pour is valid.
     std::string proof;
 
-    CPourTx(): vpub_old(0), vpub_new(0), scriptPubKey(), scriptSig(), anchor(), serials(), commitments(), ciphertexts(), macs(), proof() {
+    CPourTx(): vpub_old(0), vpub_new(0), scriptPubKey(), scriptSig(), anchor(), serials(), commitments(), ciphertexts(), ephemeralKey(), macs(), proof() {
         
     }
 
@@ -100,6 +103,7 @@ public:
         READWRITE(serials);
         READWRITE(commitments);
         READWRITE(ciphertexts);
+        READWRITE(ephemeralKey);
         READWRITE(macs);
         READWRITE(proof);
     }
@@ -115,6 +119,7 @@ public:
             a.serials == b.serials &&
             a.commitments == b.commitments &&
             a.ciphertexts == b.ciphertexts &&
+            a.ephemeralKey == b.ephemeralKey &&
             a.macs == b.macs &&
             a.proof == b.proof
             );

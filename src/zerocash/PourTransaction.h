@@ -22,6 +22,8 @@
 
 #include <boost/array.hpp>
 
+#include "uint256.h"
+
 typedef std::vector<unsigned char> CoinCommitmentValue;
 
 namespace libzerocash {
@@ -137,7 +139,8 @@ public:
     std::string unpack(boost::array<std::vector<unsigned char>, 2>& serials,
                 boost::array<std::vector<unsigned char>, 2>& commitments,
                 boost::array<std::vector<unsigned char>, 2>& macs,
-                boost::array<std::string, 2>& ciphertexts
+                boost::array<std::string, 2>& ciphertexts,
+                uint256& epk
                ) const {
         serials[0] = this->serialNumber_1;
         serials[1] = this->serialNumber_2;
@@ -147,6 +150,7 @@ public:
         macs[1] = this->MAC_2;
         ciphertexts[0] = this->ciphertext_1;
         ciphertexts[1] = this->ciphertext_2;
+        epk = this->ephemeralKey;
 
         return this->zkSNARK;
     }
@@ -189,6 +193,7 @@ private:
     std::vector<unsigned char>  MAC_2;              // second MAC   (h_2 in paper notation)
     std::string                 ciphertext_1;       // ciphertext #1
     std::string                 ciphertext_2;       // ciphertext #2
+    uint256                     ephemeralKey;       // epk
     std::string                 zkSNARK;            // contents of the zkSNARK proof itself
     uint16_t                    version;            // version for the Pour transaction
 };

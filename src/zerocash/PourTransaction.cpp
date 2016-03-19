@@ -352,6 +352,8 @@ void PourTransaction::init(uint16_t version_num,
 
     std::string C_2_string(gEncryptBuf_2, gEncryptBuf_2 + sizeof gEncryptBuf_2 / sizeof gEncryptBuf_2[0]);
     this->ciphertext_2 = C_2_string;
+
+    this->ephemeralKey = uint256();
 }
 
 bool PourTransaction::verify(ZerocashParams& params,
