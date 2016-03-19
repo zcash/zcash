@@ -78,3 +78,5 @@ public:
     // Creates a NoteEncryption public key from a private key
     static uint256 generate_pubkey(const uint256 &sk_enc);
 };
+
+typedef NoteEncryption<152> ZCNoteEncryption;

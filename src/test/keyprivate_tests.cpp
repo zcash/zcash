@@ -13,16 +13,13 @@ BOOST_FIXTURE_TEST_SUITE(keyprivate_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(noteencryption)
 {
-    // 64 + 32 + 24 + 8
-    typedef NoteEncryption<128> MyBort;
+    uint256 sk_enc = ZCNoteEncryption::generate_privkey(uint256S("21035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a77"));
+    uint256 pk_enc = ZCNoteEncryption::generate_pubkey(sk_enc);
 
-    uint256 sk_enc = MyBort::generate_privkey(uint256S("21035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a77"));
-    uint256 pk_enc = MyBort::generate_pubkey(sk_enc);
+    ZCNoteEncryption b;
 
-    MyBort b;
-
-    boost::array<unsigned char, 128> message;
-    for (unsigned char i = 0; i < 128; i++) {
+    boost::array<unsigned char, 152> message;
+    for (unsigned char i = 0; i < 152; i++) {
         // Fill the message with dummy data
         message[i] = (unsigned char) i;
     }
@@ -31,23 +28,23 @@ BOOST_AUTO_TEST_CASE(noteencryption)
     for (unsigned char i = 0x00; i < 0xff; i++) {
         auto ciphertext = b.encrypt(pk_enc, message);
 
-        auto plaintext = MyBort::decrypt(sk_enc, ciphertext, b.get_epk(), i);
+        auto plaintext = ZCNoteEncryption::decrypt(sk_enc, ciphertext, b.get_epk(), i);
 
         BOOST_CHECK(plaintext == message);
 
         // Test wrong nonce
-        BOOST_CHECK_THROW(MyBort::decrypt(sk_enc, ciphertext, b.get_epk(), i + 1), std::runtime_error);
+        BOOST_CHECK_THROW(ZCNoteEncryption::decrypt(sk_enc, ciphertext, b.get_epk(), i + 1), std::runtime_error);
 
         // Test wrong private key
-        uint256 sk_enc_2 = MyBort::generate_privkey(uint256());
-        BOOST_CHECK_THROW(MyBort::decrypt(sk_enc_2, ciphertext, b.get_epk(), i), std::runtime_error);
+        uint256 sk_enc_2 = ZCNoteEncryption::generate_privkey(uint256());
+        BOOST_CHECK_THROW(ZCNoteEncryption::decrypt(sk_enc_2, ciphertext, b.get_epk(), i), std::runtime_error);
 
         // Test wrong ephemeral key
-        BOOST_CHECK_THROW(MyBort::decrypt(sk_enc, ciphertext, MyBort::generate_privkey(uint256()), i), std::runtime_error);
+        BOOST_CHECK_THROW(ZCNoteEncryption::decrypt(sk_enc, ciphertext, ZCNoteEncryption::generate_privkey(uint256()), i), std::runtime_error);
 
         // Test corrupted ciphertext
         ciphertext[10] ^= 0xff;
-        BOOST_CHECK_THROW(MyBort::decrypt(sk_enc, ciphertext, b.get_epk(), i), std::runtime_error);
+        BOOST_CHECK_THROW(ZCNoteEncryption::decrypt(sk_enc, ciphertext, b.get_epk(), i), std::runtime_error);
     }
 
     // Nonce space should run out here

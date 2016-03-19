@@ -147,6 +147,6 @@ uint256 NoteEncryption<MLEN>::generate_pubkey(const uint256 &sk_enc)
 // 128-byte message for Zcash
 // 8-byte value
 // 32-byte rho
-// 24-byte r
+// 48-byte r
 // 64-byte memo
-template class NoteEncryption<128>;
+template class NoteEncryption<152>;
