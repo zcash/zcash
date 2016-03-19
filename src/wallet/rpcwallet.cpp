@@ -2370,8 +2370,8 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
 
     LOCK(cs_main);
 
-    std::vector<unsigned char> a_sk;
-    std::string sk_enc;
+    uint256 a_sk;
+    uint256 sk_enc;
 
     {
         CDataStream ssData(ParseHexV(params[0], "zcsecretkey"), SER_NETWORK, PROTOCOL_VERSION);
@@ -2481,8 +2481,8 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         ssData >> rho;
         ssData >> r;
 
-        std::vector<unsigned char> a_sk;
-        std::string sk_enc;
+        uint256 a_sk;
+        uint256 sk_enc;
 
         {
             CDataStream ssData2(ParseHexV(s.value_, "zcsecretkey"), SER_NETWORK, PROTOCOL_VERSION);
@@ -2524,8 +2524,8 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         {
             CDataStream ssData(ParseHexV(s.name_, "to_address"), SER_NETWORK, PROTOCOL_VERSION);
 
-            std::vector<unsigned char> pubAddressSecret;
-            std::string encryptionPublicKey;
+            uint256 pubAddressSecret;
+            uint256 encryptionPublicKey;
 
             ssData >> pubAddressSecret;
             ssData >> encryptionPublicKey;

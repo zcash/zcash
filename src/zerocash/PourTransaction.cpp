@@ -94,6 +94,11 @@ PourTransaction::PourTransaction(uint16_t version_num,
          patMAC_1, patMAC_2, addr_1_new, addr_2_new, v_pub_old, v_pub_new, pubkeyHash, c_1_new, c_2_new);
 }
 
+std::vector<unsigned char> from_uint256(const uint256 &in)
+{
+    return std::vector<unsigned char>(in.begin(), in.end());
+}
+
 void PourTransaction::init(uint16_t version_num,
                      ZerocashParams& params,
                      const MerkleRootType& rt,
@@ -149,11 +154,21 @@ void PourTransaction::init(uint16_t version_num,
     convertBytesVectorToVector(c_1_new.getCoinCommitment().getCommitmentValue(), cm_new_1_bv);
     convertBytesVectorToVector(c_2_new.getCoinCommitment().getCommitmentValue(), cm_new_2_bv);
 
-    convertBytesVectorToVector(addr_1_old.getPrivateAddress().getAddressSecret(), addr_sk_old_1_bv);
-    convertBytesVectorToVector(addr_2_old.getPrivateAddress().getAddressSecret(), addr_sk_old_2_bv);
+    {
+        auto a = from_uint256(addr_1_old.getPrivateAddress().getAddressSecret());
+        auto b = from_uint256(addr_2_old.getPrivateAddress().getAddressSecret());
 
-    convertBytesVectorToVector(addr_1_new.getPublicAddressSecret(), addr_pk_new_1_bv);
-    convertBytesVectorToVector(addr_2_new.getPublicAddressSecret(), addr_pk_new_2_bv);
+        convertBytesVectorToVector(a, addr_sk_old_1_bv);
+        convertBytesVectorToVector(b, addr_sk_old_2_bv);
+    }
+
+    {
+        auto a = from_uint256(addr_1_new.getPublicAddressSecret());
+        auto b = from_uint256(addr_2_new.getPublicAddressSecret());
+
+        convertBytesVectorToVector(a, addr_pk_new_1_bv);
+        convertBytesVectorToVector(b, addr_pk_new_2_bv);
+    }
 
     convertBytesVectorToVector(c_1_old.getR(), rand_old_1_bv);
     convertBytesVectorToVector(c_2_old.getR(), rand_old_2_bv);

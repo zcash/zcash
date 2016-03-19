@@ -71,7 +71,8 @@ Coin::Coin(const PublicAddress& addr, uint64_t value): addr_pk(addr), cm(), rho(
 {
     convertIntToBytesVector(value, this->coinValue);
 
-    std::vector<unsigned char> a_pk = addr.getPublicAddressSecret();
+    std::vector<unsigned char> a_pk(addr.getPublicAddressSecret().begin(),
+                                    addr.getPublicAddressSecret().end());
 
     unsigned char rho_bytes[ZC_RHO_SIZE];
     getRandBytes(rho_bytes, ZC_RHO_SIZE);
@@ -90,7 +91,7 @@ Coin::Coin(const PublicAddress& addr, uint64_t value,
 {
     convertIntToBytesVector(value, this->coinValue);
 
-    std::vector<unsigned char> a_pk = addr.getPublicAddressSecret();
+    std::vector<unsigned char> a_pk(addr.getPublicAddressSecret().begin(), addr.getPublicAddressSecret().end());
 
 	this->computeCommitments(a_pk);
 }
