@@ -22,31 +22,17 @@ Coin::Coin(): addr_pk(), cm(), rho(ZC_RHO_SIZE), r(ZC_R_SIZE), coinValue(ZC_V_SI
 
 }
 
-Coin::Coin(const std::string bucket, Address& addr): addr_pk(), cm(), rho(ZC_RHO_SIZE), r(ZC_R_SIZE), k(ZC_K_SIZE), coinValue(ZC_V_SIZE) {
-    // TODO
-    /*
-    // Retreive and decode the private key
-    ECIES<ECP>::PrivateKey decodedPrivateKey;
-    decodedPrivateKey.Load(StringStore(addr.getPrivateAddress().getEncryptionSecretKey()).Ref());
+Coin::Coin(const ZCNoteEncryption::Ciphertext& bucket,
+           Address& addr,
+           uint256& epk,
+           unsigned char nonce
+           ): addr_pk(), cm(), rho(ZC_RHO_SIZE), r(ZC_R_SIZE), k(ZC_K_SIZE), coinValue(ZC_V_SIZE) {
 
-    // Create the decryption session
-    AutoSeededRandomPool prng;
-    ECIES<ECP>::Decryptor decrypt(decodedPrivateKey);
-
-    // Convert the input string into a vector of bytes
-    std::vector<byte> bucket_bytes(bucket.begin(), bucket.end());
-
-    // Construct a temporary object to store the plaintext, large enough
-    // to store the plaintext if it were extended beyond the real size.
-    std::vector<unsigned char> plaintext;
-    // Size as needed, filling with zeros.
-    plaintext.resize(decrypt.MaxPlaintextLength(decrypt.CiphertextLength(ZC_V_SIZE + ZC_R_SIZE + ZC_RHO_SIZE)), 0);
-
-    // Perform the decryption
-    decrypt.Decrypt(prng,
-                    &bucket_bytes[0],
-                    decrypt.CiphertextLength(ZC_V_SIZE + ZC_R_SIZE + ZC_RHO_SIZE),
-                    &plaintext[0]);
+    auto plaintext = ZCNoteEncryption::decrypt(addr.getPrivateAddress().getEncryptionSecretKey(),
+                                               bucket,
+                                               epk,
+                                               nonce
+                                              );
 
     // Grab the byte vectors
     std::vector<unsigned char> value_v(plaintext.begin(),
@@ -61,10 +47,10 @@ Coin::Coin(const std::string bucket, Address& addr): addr_pk(), cm(), rho(ZC_RHO
     this->rho = rho_v;
     this->addr_pk = addr.getPublicAddress();
 
-    std::vector<unsigned char> a_pk = addr.getPublicAddress().getPublicAddressSecret();
+    std::vector<unsigned char> a_pk(addr.getPublicAddress().getPublicAddressSecret().begin(),
+                                    addr.getPublicAddress().getPublicAddressSecret().end());
 
     this->computeCommitments(a_pk);
-    */
 }
 
 Coin::Coin(const PublicAddress& addr, uint64_t value): addr_pk(addr), cm(), rho(ZC_RHO_SIZE), r(ZC_R_SIZE), k(ZC_K_SIZE), coinValue(ZC_V_SIZE)
