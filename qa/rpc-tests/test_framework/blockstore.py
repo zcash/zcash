@@ -6,7 +6,7 @@
 from .mininode import CBlock, CBlockHeader, CBlockLocator, CTransaction, msg_block, msg_headers, msg_tx
 
 import sys
-import io
+from io import BytesIO
 import dbm.dumb as dbm
 
 class BlockStore():
@@ -24,7 +24,7 @@ class BlockStore():
             serialized_block = self.blockDB[repr(blockhash)]
         except KeyError:
             return None
-        f = io.BytesIO(serialized_block)
+        f = BytesIO(serialized_block)
         ret = CBlock()
         ret.deserialize(f)
         ret.calc_sha256()
@@ -118,7 +118,7 @@ class TxStore(object):
             serialized_tx = self.txDB[repr(txhash)]
         except KeyError:
             return None
-        f = io.BytesIO(serialized_tx)
+        f = BytesIO(serialized_tx)
         ret = CTransaction()
         ret.deserialize(f)
         ret.calc_sha256()

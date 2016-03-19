@@ -14,7 +14,7 @@ from test_framework.util import assert_equal, assert_greater_than, \
 import struct
 import binascii
 import json
-import io
+from io import BytesIO
 from codecs import encode
 from decimal import Decimal
 
@@ -145,7 +145,7 @@ class RESTTest (BitcoinTestFramework):
         binaryRequest += struct.pack("i", 0);
 
         bin_response = http_post_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'bin', binaryRequest)
-        output = io.BytesIO()
+        output = BytesIO()
         output.write(bin_response)
         output.seek(0)
         chainHeight = struct.unpack("i", output.read(4))[0]
