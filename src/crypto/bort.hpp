@@ -42,6 +42,7 @@ private:
     enum { CLEN=MLEN+BORT_AUTH_BYTES };
     uint256 epk;
     uint256 esk;
+    unsigned char ciphertext_nonce;
 
     typedef boost::array<unsigned char, CLEN> Ciphertext;
     typedef boost::array<unsigned char, MLEN> Plaintext;
@@ -56,10 +57,12 @@ public:
     }
 
     // Encrypts `message` with `pk_enc` and returns the ciphertext.
-    // Provide a nonce if you encrypt multiple messages.
+    // This can only be called 255 times for a given instantiation
+    // before the nonce-space runs out. In practice, we only need
+    // two nonces, since for a given pour we should only have two
+    // outputs.
     Ciphertext encrypt(const uint256 &pk_enc,
-                       const Plaintext &message,
-                       unsigned char in_nonce
+                       const Plaintext &message
                       );
 
     // Decrypts `ciphertext` with `sk_enc` and the ephemeral public key `epk`.

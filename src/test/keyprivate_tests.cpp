@@ -27,25 +27,31 @@ BOOST_AUTO_TEST_CASE(bort)
         message[i] = (unsigned char) i;
     }
 
-    auto ciphertext = b.encrypt(pk_enc, message, 0x00);
+    // Test nonce space
+    for (unsigned char i = 0x00; i < 0xff; i++) {
+        auto ciphertext = b.encrypt(pk_enc, message);
 
-    auto plaintext = MyBort::decrypt(sk_enc, ciphertext, b.get_epk(), 0x00);
+        auto plaintext = MyBort::decrypt(sk_enc, ciphertext, b.get_epk(), i);
 
-    BOOST_CHECK(plaintext == message);
+        BOOST_CHECK(plaintext == message);
 
-    // Test wrong nonce
-    BOOST_CHECK_THROW(MyBort::decrypt(sk_enc, ciphertext, b.get_epk(), 0x01), std::runtime_error);
+        // Test wrong nonce
+        BOOST_CHECK_THROW(MyBort::decrypt(sk_enc, ciphertext, b.get_epk(), i + 1), std::runtime_error);
 
-    // Test wrong private key
-    uint256 sk_enc_2 = MyBort::generate_privkey(uint256());
-    BOOST_CHECK_THROW(MyBort::decrypt(sk_enc_2, ciphertext, b.get_epk(), 0x00), std::runtime_error);
+        // Test wrong private key
+        uint256 sk_enc_2 = MyBort::generate_privkey(uint256());
+        BOOST_CHECK_THROW(MyBort::decrypt(sk_enc_2, ciphertext, b.get_epk(), i), std::runtime_error);
 
-    // Test wrong ephemeral key
-    BOOST_CHECK_THROW(MyBort::decrypt(sk_enc, ciphertext, MyBort::generate_privkey(uint256()), 0x00), std::runtime_error);
+        // Test wrong ephemeral key
+        BOOST_CHECK_THROW(MyBort::decrypt(sk_enc, ciphertext, MyBort::generate_privkey(uint256()), i), std::runtime_error);
 
-    // Test corrupted ciphertext
-    ciphertext[10] ^= 0xff;
-    BOOST_CHECK_THROW(MyBort::decrypt(sk_enc, ciphertext, b.get_epk(), 0x00), std::runtime_error);
+        // Test corrupted ciphertext
+        ciphertext[10] ^= 0xff;
+        BOOST_CHECK_THROW(MyBort::decrypt(sk_enc, ciphertext, b.get_epk(), i), std::runtime_error);
+    }
+
+    // Nonce space should run out here
+    BOOST_CHECK_THROW(b.encrypt(pk_enc, message), std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(migration_of_sha256compress)

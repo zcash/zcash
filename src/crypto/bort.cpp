@@ -31,7 +31,7 @@ void KDF(unsigned char *K,
 }
 
 template<size_t MLEN>
-Bort<MLEN>::Bort() {
+Bort<MLEN>::Bort() : ciphertext_nonce(0) {
     // All of this code assumes crypto_scalarmult_BYTES is 32
     // There's no reason that will _ever_ change, but for
     // completeness purposes, let's check anyway.
@@ -51,8 +51,7 @@ Bort<MLEN>::~Bort() {
 
 template<size_t MLEN>
 typename Bort<MLEN>::Ciphertext Bort<MLEN>::encrypt(const uint256 &pk_enc,
-                                                    const Bort<MLEN>::Plaintext &message,
-                                                    unsigned char in_nonce
+                                                    const Bort<MLEN>::Plaintext &message
                                                    )
 {
     uint256 dhsecret;
@@ -61,9 +60,17 @@ typename Bort<MLEN>::Ciphertext Bort<MLEN>::encrypt(const uint256 &pk_enc,
         throw std::logic_error("Could not create DH secret");
     }
 
+    // Nonce space runs out after this, let's just stop now.
+    if (ciphertext_nonce == 0xff) {
+        throw std::runtime_error("Bort encryption called more times than supported");
+    }
+
     // Construct the symmetric key
     unsigned char K[32];
-    KDF(K, dhsecret, epk, pk_enc, in_nonce);
+    KDF(K, dhsecret, epk, pk_enc, ciphertext_nonce);
+
+    // Increment nonce
+    ciphertext_nonce++;
 
     // The nonce is null for our purposes
     unsigned char nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
