@@ -171,6 +171,11 @@ void CSHA256::Finalize(unsigned char hash[OUTPUT_SIZE])
     WriteBE64(sizedesc, bytes << 3);
     Write(pad, 1 + ((119 - (bytes % 64)) % 64));
     Write(sizedesc, 8);
+    FinalizeNoPadding(hash);
+}
+
+void CSHA256::FinalizeNoPadding(unsigned char hash[OUTPUT_SIZE])
+{
     WriteBE32(hash, s[0]);
     WriteBE32(hash + 4, s[1]);
     WriteBE32(hash + 8, s[2]);
