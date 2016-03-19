@@ -1,4 +1,4 @@
-#include "bort.hpp"
+#include "NoteEncryption.hpp"
 #include "crypto/sha256.h"
 #include <stdexcept>
 #include "sodium.h"
@@ -31,12 +31,12 @@ void KDF(unsigned char *K,
 }
 
 template<size_t MLEN>
-Bort<MLEN>::Bort() : ciphertext_nonce(0) {
+NoteEncryption<MLEN>::NoteEncryption() : ciphertext_nonce(0) {
     // All of this code assumes crypto_scalarmult_BYTES is 32
     // There's no reason that will _ever_ change, but for
     // completeness purposes, let's check anyway.
     BOOST_STATIC_ASSERT(32 == crypto_scalarmult_BYTES);
-    BOOST_STATIC_ASSERT(BORT_AUTH_BYTES == crypto_aead_chacha20poly1305_ABYTES);
+    BOOST_STATIC_ASSERT(NOTEENCRYPTION_AUTH_BYTES == crypto_aead_chacha20poly1305_ABYTES);
 
     // Create the ephemeral keypair
     randombytes_buf(esk.begin(), crypto_scalarmult_BYTES);
@@ -44,14 +44,14 @@ Bort<MLEN>::Bort() : ciphertext_nonce(0) {
 }
 
 template<size_t MLEN>
-Bort<MLEN>::~Bort() {
+NoteEncryption<MLEN>::~NoteEncryption() {
     sodium_memzero(epk.begin(), crypto_scalarmult_BYTES);
     sodium_memzero(esk.begin(), crypto_scalarmult_BYTES);
 }
 
 template<size_t MLEN>
-typename Bort<MLEN>::Ciphertext Bort<MLEN>::encrypt(const uint256 &pk_enc,
-                                                    const Bort<MLEN>::Plaintext &message
+typename NoteEncryption<MLEN>::Ciphertext NoteEncryption<MLEN>::encrypt(const uint256 &pk_enc,
+                                                    const NoteEncryption<MLEN>::Plaintext &message
                                                    )
 {
     uint256 dhsecret;
@@ -62,7 +62,7 @@ typename Bort<MLEN>::Ciphertext Bort<MLEN>::encrypt(const uint256 &pk_enc,
 
     // Nonce space runs out after this, let's just stop now.
     if (ciphertext_nonce == 0xff) {
-        throw std::runtime_error("Bort encryption called more times than supported");
+        throw std::runtime_error("NoteEncryption encryption called more times than supported");
     }
 
     // Construct the symmetric key
@@ -76,7 +76,7 @@ typename Bort<MLEN>::Ciphertext Bort<MLEN>::encrypt(const uint256 &pk_enc,
     unsigned char nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
     sodium_memzero(nonce, sizeof nonce);
 
-    Bort<MLEN>::Ciphertext ciphertext;
+    NoteEncryption<MLEN>::Ciphertext ciphertext;
 
     crypto_aead_chacha20poly1305_encrypt(ciphertext.begin(), NULL,
                                          message.begin(), MLEN,
@@ -87,8 +87,8 @@ typename Bort<MLEN>::Ciphertext Bort<MLEN>::encrypt(const uint256 &pk_enc,
 }
 
 template<size_t MLEN>
-typename Bort<MLEN>::Plaintext Bort<MLEN>::decrypt(const uint256 &sk_enc,
-                                                   const Bort<MLEN>::Ciphertext &ciphertext,
+typename NoteEncryption<MLEN>::Plaintext NoteEncryption<MLEN>::decrypt(const uint256 &sk_enc,
+                                                   const NoteEncryption<MLEN>::Ciphertext &ciphertext,
                                                    const uint256 &epk,
                                                    unsigned char in_nonce
                                                   )
@@ -108,11 +108,11 @@ typename Bort<MLEN>::Plaintext Bort<MLEN>::decrypt(const uint256 &sk_enc,
     unsigned char nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
     sodium_memzero(nonce, sizeof nonce);
 
-    Bort<MLEN>::Plaintext plaintext;
+    NoteEncryption<MLEN>::Plaintext plaintext;
 
     if (crypto_aead_chacha20poly1305_decrypt(plaintext.begin(), NULL,
                                      NULL,
-                                     ciphertext.begin(), Bort<MLEN>::CLEN,
+                                     ciphertext.begin(), NoteEncryption<MLEN>::CLEN,
                                      NULL,
                                      0,
                                      nonce, K) != 0) {
@@ -123,7 +123,7 @@ typename Bort<MLEN>::Plaintext Bort<MLEN>::decrypt(const uint256 &sk_enc,
 }
 
 template<size_t MLEN>
-uint256 Bort<MLEN>::generate_privkey(const uint256 &a_sk)
+uint256 NoteEncryption<MLEN>::generate_privkey(const uint256 &a_sk)
 {
     uint256 sk = PRF_addr<0x01>(a_sk);
 
@@ -133,7 +133,7 @@ uint256 Bort<MLEN>::generate_privkey(const uint256 &a_sk)
 }
 
 template<size_t MLEN>
-uint256 Bort<MLEN>::generate_pubkey(const uint256 &sk_enc)
+uint256 NoteEncryption<MLEN>::generate_pubkey(const uint256 &sk_enc)
 {
     uint256 pk;
 
@@ -149,4 +149,4 @@ uint256 Bort<MLEN>::generate_pubkey(const uint256 &sk_enc)
 // 32-byte rho
 // 24-byte r
 // 64-byte memo
-template class Bort<128>;
+template class NoteEncryption<128>;

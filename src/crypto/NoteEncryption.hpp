@@ -34,12 +34,12 @@ multiplication and decrypt the plaintext.
 #include <boost/array.hpp>
 #include "uint256.h"
 
-#define BORT_AUTH_BYTES 16
+#define NOTEENCRYPTION_AUTH_BYTES 16
 
 template<size_t MLEN>
-class Bort {
+class NoteEncryption {
 private:
-    enum { CLEN=MLEN+BORT_AUTH_BYTES };
+    enum { CLEN=MLEN+NOTEENCRYPTION_AUTH_BYTES };
     uint256 epk;
     uint256 esk;
     unsigned char ciphertext_nonce;
@@ -48,8 +48,8 @@ private:
     typedef boost::array<unsigned char, MLEN> Plaintext;
 
 public:
-    Bort();
-    ~Bort();
+    NoteEncryption();
+    ~NoteEncryption();
 
     // Gets the ephemeral public key
     uint256 get_epk() {
@@ -72,9 +72,9 @@ public:
                              unsigned char in_nonce
                             );
 
-    // Creates a bort private key
+    // Creates a NoteEncryption private key
     static uint256 generate_privkey(const uint256 &a_sk);
 
-    // Creates a bort public key from a private key
+    // Creates a NoteEncryption public key from a private key
     static uint256 generate_pubkey(const uint256 &sk_enc);
 };

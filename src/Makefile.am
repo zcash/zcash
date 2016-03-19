@@ -253,7 +253,7 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha256.h \
   crypto/sha512.cpp \
   crypto/sha512.h \
-  crypto/bort.cpp
+  crypto/NoteEncryption.cpp
 
 # univalue JSON library
 univalue_libbitcoin_univalue_a_SOURCES = \

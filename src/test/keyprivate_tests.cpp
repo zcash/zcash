@@ -3,7 +3,7 @@
 #include "zerocash/utils/sha256.h"
 #include "crypto/sha256.h"
 
-#include "crypto/bort.hpp"
+#include "crypto/NoteEncryption.hpp"
 
 #include <iostream>
 
@@ -11,10 +11,10 @@
 
 BOOST_FIXTURE_TEST_SUITE(keyprivate_tests, BasicTestingSetup)
 
-BOOST_AUTO_TEST_CASE(bort)
+BOOST_AUTO_TEST_CASE(noteencryption)
 {
     // 64 + 32 + 24 + 8
-    typedef Bort<128> MyBort;
+    typedef NoteEncryption<128> MyBort;
 
     uint256 sk_enc = MyBort::generate_privkey(uint256S("21035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a77"));
     uint256 pk_enc = MyBort::generate_pubkey(sk_enc);
