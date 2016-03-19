@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-#
+# Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-#
 
 from test_framework.mininode import NodeConn, NodeConnCB, NetworkThread, \
     EarlyDisconnectError, CInv, msg_inv, mininode_lock

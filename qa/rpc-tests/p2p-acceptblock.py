@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-#
+# Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-#
 
 from test_framework.mininode import CBlockHeader, CInv, NodeConn, NodeConnCB, \
     NetworkThread, msg_block, msg_headers, msg_inv, msg_ping, msg_pong, \
@@ -151,7 +150,7 @@ class AcceptBlockTest(BitcoinTestFramework):
 
         # 1. Have both nodes mine a block (leave IBD)
         [ n.generate(1) for n in self.nodes ]
-        tips = [ int ("0x" + n.getbestblockhash(), 0) for n in self.nodes ]
+        tips = [ int("0x" + n.getbestblockhash(), 0) for n in self.nodes ]
 
         # 2. Send one block that builds on each tip.
         # This should be accepted.

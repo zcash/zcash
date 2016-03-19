@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014 The Bitcoin Core developers
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -18,9 +18,8 @@ from io import BytesIO
 from codecs import encode
 from decimal import Decimal
 
-from http.client import HTTPConnection
-from urllib.parse import urlparse
-
+import http.client
+import urllib.parse
 
 def deser_uint256(f):
     r = 0
@@ -31,7 +30,7 @@ def deser_uint256(f):
 
 # allows simple http get calls
 def http_get_call(host, port, path, response_object = 0):
-    conn = HTTPConnection(host, port)
+    conn = http.client.HTTPConnection(host, port)
     conn.request('GET', path)
 
     if response_object:
@@ -41,7 +40,7 @@ def http_get_call(host, port, path, response_object = 0):
 
 # allows simple http post calls with a request body
 def http_post_call(host, port, path, requestdata = '', response_object = 0):
-    conn = HTTPConnection(host, port)
+    conn = http.client.HTTPConnection(host, port)
     conn.request('POST', path, requestdata)
 
     if response_object:
@@ -65,7 +64,7 @@ class RESTTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
-        url = urlparse(self.nodes[0].url)
+        url = urllib.parse.urlparse(self.nodes[0].url)
         print("Mining blocks...")
 
         self.nodes[0].generate(1)

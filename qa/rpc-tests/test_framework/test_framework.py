@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014 The Bitcoin Core developers
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -140,7 +140,7 @@ class BitcoinTestFramework(object):
             print("JSONRPC error: "+e.error['message'])
             traceback.print_tb(sys.exc_info()[2])
         except AssertionError as e:
-            print("Assertion failed: "+ str(e))
+            print("Assertion failed: " + str(e))
             traceback.print_tb(sys.exc_info()[2])
         except KeyError as e:
             print("key not found: "+ str(e))

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-#
+# Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-#
 
 from test_framework.test_framework import ComparisonTestFramework
 from test_framework.util import assert_equal
@@ -40,7 +39,7 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
 
     def get_tests(self):
         if self.tip is None:
-            self.tip = int ("0x" + self.nodes[0].getbestblockhash() + "L", 0)
+            self.tip = int("0x" + self.nodes[0].getbestblockhash(), 0)
         self.block_time = int(time.time())+1
 
         '''

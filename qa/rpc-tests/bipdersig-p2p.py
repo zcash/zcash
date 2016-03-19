@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-#
+# Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-#
 
 from test_framework.test_framework import ComparisonTestFramework
 from test_framework.util import start_nodes
@@ -74,7 +73,7 @@ class BIP66Test(ComparisonTestFramework):
         height = 102  # height of the next block to build
         hashTip = self.nodes[0].getbestblockhash()
         hashFinalSaplingRoot = int("0x" + self.nodes[0].getblock(hashTip)['finalsaplingroot'], 0)
-        self.tip = int ("0x"+hashTip , 0)
+        self.tip = int("0x"+hashTip , 0)
         self.nodeaddress = self.nodes[0].getnewaddress()
 
         '''Check that the rules are enforced.'''

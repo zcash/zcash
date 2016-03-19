@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014 The Bitcoin Core developers
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -126,7 +126,7 @@ class PruneTest(BitcoinTestFramework):
 
             # Reorg back with 25 block chain from node 0
             self.utxo = self.nodes[0].listunspent()
-            for i in range(25): 
+            for i in range(25):
                 self.mine_full_block(self.nodes[0],self.address[0])
 
             # Create connections in the order so both nodes can see the reorg at the same time
