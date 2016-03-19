@@ -31,6 +31,9 @@ Recipients can recover the Diffie-Hellman secret using a scalar
 multiplication and decrypt the plaintext.
 */
 
+#ifndef ZC_NOTE_ENCRYPTION_H_
+#define ZC_NOTE_ENCRYPTION_H_
+
 #include <boost/array.hpp>
 #include "uint256.h"
 
@@ -44,10 +47,10 @@ private:
     uint256 esk;
     unsigned char ciphertext_nonce;
 
+public:
     typedef boost::array<unsigned char, CLEN> Ciphertext;
     typedef boost::array<unsigned char, MLEN> Plaintext;
 
-public:
     NoteEncryption();
     ~NoteEncryption();
 
@@ -80,3 +83,5 @@ public:
 };
 
 typedef NoteEncryption<152> ZCNoteEncryption;
+
+#endif /* ZC_NOTE_ENCRYPTION_H_ */

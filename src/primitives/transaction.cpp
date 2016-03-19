@@ -58,16 +58,14 @@ CPourTx::CPourTx(ZerocashParams& params,
     boost::array<std::vector<unsigned char>, NUM_POUR_INPUTS> serials_bv;
     boost::array<std::vector<unsigned char>, NUM_POUR_OUTPUTS> commitments_bv;
     boost::array<std::vector<unsigned char>, NUM_POUR_INPUTS> macs_bv;
-    boost::array<std::string, NUM_POUR_OUTPUTS> ciphertexts_bv;
     uint256 epk;
 
-    proof = pourtx.unpack(serials_bv, commitments_bv, macs_bv, ciphertexts_bv, epk);
+    proof = pourtx.unpack(serials_bv, commitments_bv, macs_bv, ciphertexts, epk);
     serials = unsigned_char_vector_array_to_uint256_array(serials_bv);
     commitments = unsigned_char_vector_array_to_uint256_array(commitments_bv);
     macs = unsigned_char_vector_array_to_uint256_array(macs_bv);
 
     ephemeralKey = epk;
-    ciphertexts = ciphertexts_bv;
 }
 
 bool CPourTx::Verify(ZerocashParams& params) const {

@@ -50,9 +50,10 @@ NoteEncryption<MLEN>::~NoteEncryption() {
 }
 
 template<size_t MLEN>
-typename NoteEncryption<MLEN>::Ciphertext NoteEncryption<MLEN>::encrypt(const uint256 &pk_enc,
-                                                    const NoteEncryption<MLEN>::Plaintext &message
-                                                   )
+typename NoteEncryption<MLEN>::Ciphertext NoteEncryption<MLEN>::encrypt
+                                          (const uint256 &pk_enc,
+                                           const NoteEncryption<MLEN>::Plaintext &message
+                                          )
 {
     uint256 dhsecret;
 
@@ -87,11 +88,12 @@ typename NoteEncryption<MLEN>::Ciphertext NoteEncryption<MLEN>::encrypt(const ui
 }
 
 template<size_t MLEN>
-typename NoteEncryption<MLEN>::Plaintext NoteEncryption<MLEN>::decrypt(const uint256 &sk_enc,
-                                                   const NoteEncryption<MLEN>::Ciphertext &ciphertext,
-                                                   const uint256 &epk,
-                                                   unsigned char in_nonce
-                                                  )
+typename NoteEncryption<MLEN>::Plaintext NoteEncryption<MLEN>::decrypt
+                                         (const uint256 &sk_enc,
+                                          const NoteEncryption<MLEN>::Ciphertext &ciphertext,
+                                          const uint256 &epk,
+                                          unsigned char in_nonce
+                                         )
 {
     uint256 pk_enc = generate_pubkey(sk_enc);
 
@@ -111,11 +113,11 @@ typename NoteEncryption<MLEN>::Plaintext NoteEncryption<MLEN>::decrypt(const uin
     NoteEncryption<MLEN>::Plaintext plaintext;
 
     if (crypto_aead_chacha20poly1305_decrypt(plaintext.begin(), NULL,
-                                     NULL,
-                                     ciphertext.begin(), NoteEncryption<MLEN>::CLEN,
-                                     NULL,
-                                     0,
-                                     nonce, K) != 0) {
+                                             NULL,
+                                             ciphertext.begin(), NoteEncryption<MLEN>::CLEN,
+                                             NULL,
+                                             0,
+                                             nonce, K) != 0) {
         throw std::runtime_error("Could not decrypt message");
     }
 

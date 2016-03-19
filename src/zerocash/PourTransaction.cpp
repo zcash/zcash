@@ -11,25 +11,6 @@
  * @copyright  MIT license (see LICENSE file)
  *****************************************************************************/
 
-#include <cryptopp/osrng.h>
-using CryptoPP::AutoSeededRandomPool;
-
-#include <cryptopp/eccrypto.h>
-using CryptoPP::ECP;
-using CryptoPP::ECIES;
-
-#include <cryptopp/filters.h>
-using CryptoPP::StringSource;
-using CryptoPP::StringStore;
-using CryptoPP::StringSink;
-using CryptoPP::PK_EncryptorFilter;
-
-#include <openssl/ec.h>
-#include <openssl/ecdsa.h>
-#include <openssl/obj_mac.h>
-#include <openssl/bn.h>
-#include <openssl/sha.h>
-
 #include "Zerocash.h"
 #include "PourTransaction.h"
 #include "PourInput.h"
@@ -314,6 +295,8 @@ void PourTransaction::init(uint16_t version_num,
     std::string rand_new_1_string(rand_new_1_bytes, rand_new_1_bytes + ZC_R_SIZE);
     std::string rand_new_2_string(rand_new_2_bytes, rand_new_2_bytes + ZC_R_SIZE);
 
+    // TODO
+    /*
     AutoSeededRandomPool prng_1;
     AutoSeededRandomPool prng_2;
 
@@ -352,6 +335,7 @@ void PourTransaction::init(uint16_t version_num,
 
     std::string C_2_string(gEncryptBuf_2, gEncryptBuf_2 + sizeof gEncryptBuf_2 / sizeof gEncryptBuf_2[0]);
     this->ciphertext_2 = C_2_string;
+    */
 
     this->ephemeralKey = uint256();
 }
@@ -436,11 +420,11 @@ const std::vector<unsigned char>& PourTransaction::getSpentSerial2() const{
 	return this->serialNumber_2;
 }
 
-const std::string& PourTransaction::getCiphertext1() const {
+const ZCNoteEncryption::Ciphertext& PourTransaction::getCiphertext1() const {
     return this->ciphertext_1;
 }
 
-const std::string& PourTransaction::getCiphertext2() const {
+const ZCNoteEncryption::Ciphertext& PourTransaction::getCiphertext2() const {
     return this->ciphertext_2;
 }
 

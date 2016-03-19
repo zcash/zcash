@@ -17,6 +17,8 @@
 #include "zerocash/PourInput.h"
 #include "zerocash/PourOutput.h"
 
+#include "crypto/NoteEncryption.hpp"
+
 using namespace libzerocash;
 
 static const unsigned int NUM_POUR_INPUTS = 2;
@@ -61,7 +63,7 @@ public:
     // These are encrypted using ECIES. They are used to
     // transfer metadata and seeds to generate trapdoors
     // for the recipient to spend the value.
-    boost::array<std::string, NUM_POUR_OUTPUTS> ciphertexts;
+    boost::array<ZCNoteEncryption::Ciphertext, NUM_POUR_OUTPUTS> ciphertexts;
 
     // Ephemeral key
     uint256 ephemeralKey;

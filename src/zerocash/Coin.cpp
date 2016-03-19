@@ -11,20 +11,6 @@
  * @copyright  MIT license (see LICENSE file)
  *****************************************************************************/
 
-#include <cryptopp/osrng.h>
-using CryptoPP::AutoSeededRandomPool;
-
-#include <cryptopp/eccrypto.h>
-using CryptoPP::ECP;
-using CryptoPP::ECIES;
-
-#include <cryptopp/oids.h>
-namespace ASN1 = CryptoPP::ASN1;
-
-#include <cryptopp/filters.h>
-using CryptoPP::StringSink;
-using CryptoPP::StringStore;
-
 #include <stdexcept>
 
 #include "Zerocash.h"
@@ -37,6 +23,8 @@ Coin::Coin(): addr_pk(), cm(), rho(ZC_RHO_SIZE), r(ZC_R_SIZE), coinValue(ZC_V_SI
 }
 
 Coin::Coin(const std::string bucket, Address& addr): addr_pk(), cm(), rho(ZC_RHO_SIZE), r(ZC_R_SIZE), k(ZC_K_SIZE), coinValue(ZC_V_SIZE) {
+    // TODO
+    /*
     // Retreive and decode the private key
     ECIES<ECP>::PrivateKey decodedPrivateKey;
     decodedPrivateKey.Load(StringStore(addr.getPrivateAddress().getEncryptionSecretKey()).Ref());
@@ -76,6 +64,7 @@ Coin::Coin(const std::string bucket, Address& addr): addr_pk(), cm(), rho(ZC_RHO
     std::vector<unsigned char> a_pk = addr.getPublicAddress().getPublicAddressSecret();
 
     this->computeCommitments(a_pk);
+    */
 }
 
 Coin::Coin(const PublicAddress& addr, uint64_t value): addr_pk(addr), cm(), rho(ZC_RHO_SIZE), r(ZC_R_SIZE), k(ZC_K_SIZE), coinValue(ZC_V_SIZE)
