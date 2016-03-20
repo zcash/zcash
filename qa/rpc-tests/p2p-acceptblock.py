@@ -156,7 +156,7 @@ class AcceptBlockTest(BitcoinTestFramework):
         # 2. Send one block that builds on each tip.
         # This should be accepted.
         blocks_h2 = []  # the height 2 blocks on each node's chain
-        block_time = time.time() + 1
+        block_time = int(time.time()) + 1
         for i in range(2):
             blocks_h2.append(create_block(tips[i], create_coinbase(2), block_time))
             blocks_h2[i].solve()
