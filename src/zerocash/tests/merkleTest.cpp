@@ -880,6 +880,29 @@ BOOST_AUTO_TEST_CASE( testConsistency ) {
     }
 }
 
+BOOST_AUTO_TEST_CASE( testZeroElements ) {
+    for (int start = 0; start < 20; start++) {
+        NewTree::IncrementalMerkleTree<20, NewTree::SHA256Compress> newTree;
+
+        BOOST_CHECK(newTree.root() == uint256());
+
+        for (int i = start; i > 0; i--) {
+            newTree.append(uint256S("54d626e08c1c802b305dad30b7e54a82f102390cc92c7d4db112048935236e9c"));
+        }
+
+        uint256 oldroot = newTree.root();
+
+        // At this point, appending tons of null objects to the tree
+        // should preserve its root.
+
+        for (int i = 0; i < 100; i++) {
+            newTree.append(uint256());
+        }
+
+        BOOST_CHECK(newTree.root() == oldroot);
+    }
+}
+
 BOOST_AUTO_TEST_CASE( testRootOfTreeOfZerosIsZero ) {
     IncrementalMerkleTree incTree;
     std::vector< std::vector<bool> > values;
