@@ -109,7 +109,7 @@ Hash IncrementalMerkleTree<Depth, Hash>::root(size_t depth,
                                               std::deque<Hash> filler_hashes) const {
     PathFiller<Hash> filler(filler_hashes);
 
-    Hash combine_left = left  ? *left  : filler.next();
+    Hash combine_left =  left  ? *left  : filler.next();
     Hash combine_right = right ? *right : filler.next();
 
     Hash root = Hash::combine(combine_left, combine_right);
@@ -126,8 +126,9 @@ Hash IncrementalMerkleTree<Depth, Hash>::root(size_t depth,
         d++;
     }
 
-    for (; d < depth; d++) {
+    while (d < depth) {
         root = Hash::combine(root, filler.next());
+        d++;
     }
 
     return root;

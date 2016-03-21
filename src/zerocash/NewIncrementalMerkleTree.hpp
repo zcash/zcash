@@ -36,14 +36,18 @@ private:
     boost::optional<Hash> right;
     std::vector<boost::optional<Hash>> parents;
 
+    MerklePath path(std::deque<Hash> filler_hashes = std::deque<Hash>()) const;
+    Hash root(size_t depth, std::deque<Hash> filler_hashes = std::deque<Hash>()) const;
+
 public:
     BOOST_STATIC_ASSERT(Depth >= 1);
 
     IncrementalMerkleTree() { }
 
     void append(Hash obj);
-    Hash root(size_t depth = Depth, std::deque<Hash> filler_hashes = std::deque<Hash>()) const;
-    MerklePath path(std::deque<Hash> filler_hashes = std::deque<Hash>()) const;
+    Hash root() const {
+        return root(Depth, std::deque<Hash>());
+    }
 
     bool is_complete(size_t depth = Depth) const;
     size_t next_depth(size_t skip) const;
