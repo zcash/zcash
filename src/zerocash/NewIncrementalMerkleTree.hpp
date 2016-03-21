@@ -2,7 +2,6 @@
 #define ZCINCREMENTALMERKLETREE_H_
 
 #include <deque>
-#include <boost/variant.hpp>
 #include <boost/foreach.hpp>
 #include <boost/optional.hpp>
 
@@ -10,8 +9,6 @@
 #include "serialize.h"
 #include "zerocash/utils/util.h"
 #include <boost/static_assert.hpp>
-
-#include <iostream>
 
 using namespace libzerocash;
 
