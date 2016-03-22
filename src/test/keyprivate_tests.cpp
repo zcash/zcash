@@ -43,12 +43,12 @@ BOOST_AUTO_TEST_CASE(noteencryption)
         // Test wrong ephemeral key
         BOOST_CHECK_THROW(ZCNoteEncryption::decrypt(sk_enc, ciphertext, ZCNoteEncryption::generate_privkey(uint256()), uint256(), i), std::runtime_error);
 
+        // Test wrong seed
+        BOOST_CHECK_THROW(ZCNoteEncryption::decrypt(sk_enc, ciphertext, b.get_epk(), uint256S("11035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a77"), i), std::runtime_error);
+
         // Test corrupted ciphertext
         ciphertext[10] ^= 0xff;
         BOOST_CHECK_THROW(ZCNoteEncryption::decrypt(sk_enc, ciphertext, b.get_epk(), uint256(), i), std::runtime_error);
-
-        // Test wrong seed
-        BOOST_CHECK_THROW(ZCNoteEncryption::decrypt(sk_enc, ciphertext, b.get_epk(), uint256S("11035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a77"), i), std::runtime_error);
     }
 
     // Nonce space should run out here
