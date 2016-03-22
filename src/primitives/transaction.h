@@ -60,9 +60,9 @@ public:
     boost::array<uint256, NUM_POUR_OUTPUTS> commitments;
 
     // Ciphertexts
-    // These are encrypted using ECIES. They are used to
-    // transfer metadata and seeds to generate trapdoors
-    // for the recipient to spend the value.
+    // These contain trapdoors, values and other information
+    // that the recipient needs, including a memo field. It
+    // is encrypted using the scheme implemented in crypto/NoteEncryption.cpp
     boost::array<ZCNoteEncryption::Ciphertext, NUM_POUR_OUTPUTS> ciphertexts;
 
     // Ephemeral key

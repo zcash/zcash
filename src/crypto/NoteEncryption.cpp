@@ -156,7 +156,7 @@ uint256 NoteEncryption<MLEN>::generate_pubkey(const uint256 &sk_enc)
     return pk;
 }
 
-// 128-byte message for Zcash
+// 152-byte message for Zcash
 // 8-byte value
 // 32-byte rho
 // 48-byte r
