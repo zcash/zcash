@@ -45,13 +45,14 @@ private:
     enum { CLEN=MLEN+NOTEENCRYPTION_AUTH_BYTES };
     uint256 epk;
     uint256 esk;
-    unsigned char ciphertext_nonce;
+    size_t times_ran;
+    uint256 seed;
 
 public:
     typedef boost::array<unsigned char, CLEN> Ciphertext;
     typedef boost::array<unsigned char, MLEN> Plaintext;
 
-    NoteEncryption();
+    NoteEncryption(uint256 seed);
     ~NoteEncryption();
 
     // Gets the ephemeral public key
@@ -72,7 +73,8 @@ public:
     static Plaintext decrypt(const uint256 &sk_enc,
                              const Ciphertext &ciphertext,
                              const uint256 &epk,
-                             unsigned char in_nonce
+                             const uint256 &seed,
+                             bool in_nonce
                             );
 
     // Creates a NoteEncryption private key

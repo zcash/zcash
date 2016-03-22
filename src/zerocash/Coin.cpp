@@ -31,7 +31,8 @@ Coin::Coin(const ZCNoteEncryption::Ciphertext& bucket,
     auto plaintext = ZCNoteEncryption::decrypt(addr.getPrivateAddress().getEncryptionSecretKey(),
                                                bucket,
                                                epk,
-                                               nonce
+                                               uint256(),
+                                               nonce ? true : false
                                               );
 
     // Grab the byte vectors

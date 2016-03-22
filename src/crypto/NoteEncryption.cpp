@@ -1,5 +1,5 @@
 #include "NoteEncryption.hpp"
-#include "crypto/sha256.h"
+#include "crypto/sha512.h"
 #include <stdexcept>
 #include "sodium.h"
 #include <boost/static_assert.hpp>
@@ -14,24 +14,34 @@ void clamp_curve25519(unsigned char *key)
 
 void KDF(unsigned char *K,
     const uint256 &dhsecret,
-    const uint256 &in_epk,
+    const uint256 &epk,
     const uint256 &pk_enc,
-    unsigned char in_nonce
+    const uint256 &seed,
+    bool nonce_bit
    )
 {
-    unsigned char distinguisher = 0xC2;
+    unsigned char K_tmp[64];
+    CSHA512 hasher;
 
-    CSHA256 hasher;
-    hasher.Write(&distinguisher, 1);
+    // Trim the first byte from seed
+    std::vector<unsigned char> first_248(seed.begin() + 1, seed.end());
+
+    // First bit is the 'nonce' bit or `i`
+    // Second bit is zero
+    first_248[0] &= 0x3f;
+    first_248[0] |= (nonce_bit ? 1 : 0 << 7);
+
+    hasher.Write(&first_248[0], 31);
     hasher.Write(dhsecret.begin(), crypto_scalarmult_BYTES);
-    hasher.Write(in_epk.begin(), crypto_scalarmult_BYTES);
+    hasher.Write(epk.begin(), crypto_scalarmult_BYTES);
     hasher.Write(pk_enc.begin(), crypto_scalarmult_BYTES);
-    hasher.Write(&in_nonce, 1);
-    hasher.Finalize(K);
+    hasher.Finalize(K_tmp);
+
+    memcpy(K, K_tmp + 32, 32);
 }
 
 template<size_t MLEN>
-NoteEncryption<MLEN>::NoteEncryption() : ciphertext_nonce(0) {
+NoteEncryption<MLEN>::NoteEncryption(uint256 seed) : times_ran(0), seed(seed) {
     // All of this code assumes crypto_scalarmult_BYTES is 32
     // There's no reason that will _ever_ change, but for
     // completeness purposes, let's check anyway.
@@ -61,17 +71,16 @@ typename NoteEncryption<MLEN>::Ciphertext NoteEncryption<MLEN>::encrypt
         throw std::logic_error("Could not create DH secret");
     }
 
-    // Nonce space runs out after this, let's just stop now.
-    if (ciphertext_nonce == 0xff) {
-        throw std::runtime_error("NoteEncryption encryption called more times than supported");
+    if (times_ran == 2) {
+        throw std::runtime_error("NoteEncryption::encrypt performed more times than supported");
     }
 
     // Construct the symmetric key
     unsigned char K[32];
-    KDF(K, dhsecret, epk, pk_enc, ciphertext_nonce);
+    KDF(K, dhsecret, epk, pk_enc, seed, times_ran ? true : false);
 
-    // Increment nonce
-    ciphertext_nonce++;
+    // Increment the number of encryptions we've performed
+    times_ran++;
 
     // The nonce is null for our purposes
     unsigned char nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
@@ -92,7 +101,8 @@ typename NoteEncryption<MLEN>::Plaintext NoteEncryption<MLEN>::decrypt
                                          (const uint256 &sk_enc,
                                           const NoteEncryption<MLEN>::Ciphertext &ciphertext,
                                           const uint256 &epk,
-                                          unsigned char in_nonce
+                                          const uint256 &seed,
+                                          bool in_nonce
                                          )
 {
     uint256 pk_enc = generate_pubkey(sk_enc);
@@ -104,7 +114,7 @@ typename NoteEncryption<MLEN>::Plaintext NoteEncryption<MLEN>::decrypt
     }
 
     unsigned char K[32];
-    KDF(K, dhsecret, epk, pk_enc, in_nonce);
+    KDF(K, dhsecret, epk, pk_enc, seed, in_nonce);
 
     // The nonce is null for our purposes
     unsigned char nonce[crypto_aead_chacha20poly1305_NPUBBYTES];

@@ -289,7 +289,9 @@ void PourTransaction::init(uint16_t version_num,
  	   this->zkSNARK = std::string(1235,'A');
     }
 
-    ZCNoteEncryption encryptor;
+    // TODO: when h_Sig is constructed properly as per spec
+    //       replace uint256() with it
+    ZCNoteEncryption encryptor = ZCNoteEncryption(uint256());
     {
         std::vector<unsigned char> plaintext_internals;
         plaintext_internals.insert(plaintext_internals.end(), c_1_new.coinValue.begin(), c_1_new.coinValue.end());
