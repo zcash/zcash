@@ -25,8 +25,6 @@ BOOST_AUTO_TEST_CASE(noteencryption)
     }
 
     for (int i = 0; i < 2; i++) {
-        bool nonce = i;
-
         auto ciphertext = b.encrypt(pk_enc, message);
 
         auto plaintext = ZCNoteEncryption::decrypt(sk_enc, ciphertext, b.get_epk(), uint256(), i);
@@ -34,7 +32,7 @@ BOOST_AUTO_TEST_CASE(noteencryption)
         BOOST_CHECK(plaintext == message);
 
         // Test wrong nonce
-        BOOST_CHECK_THROW(ZCNoteEncryption::decrypt(sk_enc, ciphertext, b.get_epk(), uint256(), !i), std::runtime_error);
+        BOOST_CHECK_THROW(ZCNoteEncryption::decrypt(sk_enc, ciphertext, b.get_epk(), uint256(), 1 - i), std::runtime_error);
 
         // Test wrong private key
         uint256 sk_enc_2 = ZCNoteEncryption::generate_privkey(uint256());

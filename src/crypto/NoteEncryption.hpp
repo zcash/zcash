@@ -22,7 +22,7 @@ construct a Diffie-Hellman secret with the recipient public key.
 This secret, the public ephemeral key, the public key of the
 recipient and a nonce (for indistinguishability of ciphertexts
 using the same ephemeral key) are used for a KDF. The key is then
-used to encrypt the message using AEAD_CHACHA20_POLY1309
+used to encrypt the message using AEAD_CHACHA20_POLY1305
 authenticated, symmetric encryption.
 
 The transaction contains the ciphertexts and the ephemeral key.
@@ -45,7 +45,7 @@ private:
     enum { CLEN=MLEN+NOTEENCRYPTION_AUTH_BYTES };
     uint256 epk;
     uint256 esk;
-    size_t times_ran;
+    unsigned char nonce;
     uint256 seed;
 
 public:
@@ -74,7 +74,7 @@ public:
                              const Ciphertext &ciphertext,
                              const uint256 &epk,
                              const uint256 &seed,
-                             bool in_nonce
+                             unsigned char nonce
                             );
 
     // Creates a NoteEncryption private key

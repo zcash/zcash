@@ -17,7 +17,7 @@ void KDF(unsigned char *K,
     const uint256 &epk,
     const uint256 &pk_enc,
     const uint256 &seed,
-    bool nonce_bit
+    unsigned char nonce
    )
 {
     unsigned char K_tmp[64];
@@ -28,8 +28,8 @@ void KDF(unsigned char *K,
 
     // First bit is the 'nonce' bit or `i`
     // Second bit is zero
-    first_248[0] &= 0x3f;
-    first_248[0] |= (nonce_bit ? 1 : 0) << 7;
+    first_248[0] &= 0xFC;
+    first_248[0] |= nonce ? 1 : 0;
 
     hasher.Write(&first_248[0], 31);
     hasher.Write(dhsecret.begin(), crypto_scalarmult_BYTES);
@@ -41,7 +41,7 @@ void KDF(unsigned char *K,
 }
 
 template<size_t MLEN>
-NoteEncryption<MLEN>::NoteEncryption(uint256 seed) : times_ran(0), seed(seed) {
+NoteEncryption<MLEN>::NoteEncryption(uint256 seed) : nonce(0), seed(seed) {
     // All of this code assumes crypto_scalarmult_BYTES is 32
     // There's no reason that will _ever_ change, but for
     // completeness purposes, let's check anyway.
@@ -71,27 +71,27 @@ typename NoteEncryption<MLEN>::Ciphertext NoteEncryption<MLEN>::encrypt
         throw std::logic_error("Could not create DH secret");
     }
 
-    if (times_ran == 2) {
+    if (nonce == 2) {
         throw std::runtime_error("NoteEncryption::encrypt performed more times than supported");
     }
 
     // Construct the symmetric key
     unsigned char K[32];
-    KDF(K, dhsecret, epk, pk_enc, seed, times_ran ? true : false);
+    KDF(K, dhsecret, epk, pk_enc, seed, nonce);
 
     // Increment the number of encryptions we've performed
-    times_ran++;
+    nonce++;
 
     // The nonce is null for our purposes
-    unsigned char nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
-    sodium_memzero(nonce, sizeof nonce);
+    unsigned char cipher_nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
+    sodium_memzero(cipher_nonce, sizeof cipher_nonce);
 
     NoteEncryption<MLEN>::Ciphertext ciphertext;
 
     crypto_aead_chacha20poly1305_encrypt(ciphertext.begin(), NULL,
                                          message.begin(), MLEN,
                                          NULL, 0, // no "additional data"
-                                         NULL, nonce, K);
+                                         NULL, cipher_nonce, K);
 
     return ciphertext;
 }
@@ -102,7 +102,7 @@ typename NoteEncryption<MLEN>::Plaintext NoteEncryption<MLEN>::decrypt
                                           const NoteEncryption<MLEN>::Ciphertext &ciphertext,
                                           const uint256 &epk,
                                           const uint256 &seed,
-                                          bool in_nonce
+                                          unsigned char nonce
                                          )
 {
     uint256 pk_enc = generate_pubkey(sk_enc);
@@ -114,11 +114,11 @@ typename NoteEncryption<MLEN>::Plaintext NoteEncryption<MLEN>::decrypt
     }
 
     unsigned char K[32];
-    KDF(K, dhsecret, epk, pk_enc, seed, in_nonce);
+    KDF(K, dhsecret, epk, pk_enc, seed, nonce);
 
     // The nonce is null for our purposes
-    unsigned char nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
-    sodium_memzero(nonce, sizeof nonce);
+    unsigned char cipher_nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
+    sodium_memzero(cipher_nonce, sizeof cipher_nonce);
 
     NoteEncryption<MLEN>::Plaintext plaintext;
 
@@ -127,7 +127,7 @@ typename NoteEncryption<MLEN>::Plaintext NoteEncryption<MLEN>::decrypt
                                              ciphertext.begin(), NoteEncryption<MLEN>::CLEN,
                                              NULL,
                                              0,
-                                             nonce, K) != 0) {
+                                             cipher_nonce, K) != 0) {
         throw std::runtime_error("Could not decrypt message");
     }
 

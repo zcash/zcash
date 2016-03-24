@@ -32,7 +32,7 @@ Coin::Coin(const ZCNoteEncryption::Ciphertext& bucket,
                                                bucket,
                                                epk,
                                                uint256(),
-                                               nonce ? true : false
+                                               nonce
                                               );
 
     // Grab the byte vectors
