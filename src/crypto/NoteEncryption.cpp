@@ -29,7 +29,7 @@ void KDF(unsigned char *K,
     // First bit is the 'nonce' bit or `i`
     // Second bit is zero
     first_248[0] &= 0x3f;
-    first_248[0] |= (nonce_bit ? 1 : 0 << 7);
+    first_248[0] |= (nonce_bit ? 1 : 0) << 7;
 
     hasher.Write(&first_248[0], 31);
     hasher.Write(dhsecret.begin(), crypto_scalarmult_BYTES);
