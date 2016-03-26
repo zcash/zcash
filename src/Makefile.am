@@ -252,7 +252,8 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha256.cpp \
   crypto/sha256.h \
   crypto/sha512.cpp \
-  crypto/sha512.h
+  crypto/sha512.h \
+  crypto/NoteEncryption.cpp
 
 # univalue JSON library
 univalue_libbitcoin_univalue_a_SOURCES = \
@@ -360,6 +361,7 @@ zcashd_LDADD += \
   $(CRYPTO_LIBS) \
   $(MINIUPNPC_LIBS) \
   $(LIBZEROCASH) \
+  $(LIBBITCOIN_CRYPTO) \
   $(LIBZEROCASH_LIBS)
 #
 
@@ -396,9 +398,9 @@ bitcoin_tx_LDADD = \
   $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CRYPTO) \
   $(LIBSECP256K1) \
   $(LIBZEROCASH) \
+  $(LIBBITCOIN_CRYPTO) \
   $(LIBZEROCASH_LIBS)
 
 bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)

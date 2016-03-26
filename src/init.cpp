@@ -638,6 +638,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // ********************************************************* Step 0: Load zcash params
     ZC_LoadParams();
 
+    // Perform libsodium initialization
+    if (sodium_init() == -1) {
+        return false;
+    }
+
     // ********************************************************* Step 1: setup
 #ifdef _MSC_VER
     // Turn off Microsoft heap dump noise
