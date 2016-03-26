@@ -15,6 +15,7 @@ zerocash_GenerateParamsForFiles_LDADD = \
 # tests for our incremental merkle tree
 zerocash_tests_merkleTest_SOURCES = zerocash/tests/merkleTest.cpp
 zerocash_tests_merkleTest_LDADD = \
+  $(LIBBITCOIN_UTIL) \
   $(BOOST_LIBS) \
   $(LIBZEROCASH) \
   $(LIBZEROCASH_LIBS)
