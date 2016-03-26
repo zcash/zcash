@@ -29,7 +29,7 @@ void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
     std::vector<unsigned char> first_248(seed.begin() + 1, seed.end());
 
     if (nonce >= 2) {
-        throw std::runtime_error("KDF nonce space exceeded");
+        throw std::logic_error("KDF nonce space exceeded");
     }
 
     // First bit is the 'nonce' bit or `i`
@@ -112,7 +112,7 @@ typename NoteEncryption<MLEN>::Plaintext NoteEncryption<MLEN>::decrypt
     uint256 dhsecret;
 
     if (crypto_scalarmult(dhsecret.begin(), sk_enc.begin(), epk.begin()) != 0) {
-        throw std::runtime_error("Could not create DH secret");
+        throw std::logic_error("Could not create DH secret");
     }
 
     unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
