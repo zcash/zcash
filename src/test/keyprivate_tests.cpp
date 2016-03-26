@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(noteencryption)
     }
 
     // Nonce space should run out here
-    BOOST_CHECK_THROW(b.encrypt(pk_enc, message), std::runtime_error);
+    BOOST_CHECK_THROW(b.encrypt(pk_enc, message), std::logic_error);
 }
 
 BOOST_AUTO_TEST_CASE(migration_of_sha256compress)
