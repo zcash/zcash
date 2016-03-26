@@ -31,8 +31,6 @@ uint256 PRF(bool a, bool b, bool c, bool d,
 template<unsigned char T>
 uint256 PRF_addr(uint256 a_sk)
 {
-    BOOST_STATIC_ASSERT(T <= 7);
-
     uint256 y;
     *(y.end() - 1) = T;
 
