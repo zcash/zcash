@@ -8,7 +8,7 @@ public, and for verification purposes, is cryptographically
 commited. This commitment is public, and lives in the transaction.
 
 However, recipients must be able to obtain values of the note,
-including the value `v`, the trapdoor `r`, and a secret `rho`,
+including the value `v`, a secret `rho`, and the trapdoor `r`
 otherwise they will be unable to spend it. In addition, we would
 like to send a 64-byte memo to the recipient in the transaction.
 
@@ -61,10 +61,8 @@ public:
     }
 
     // Encrypts `message` with `pk_enc` and returns the ciphertext.
-    // This can only be called 255 times for a given instantiation
-    // before the nonce-space runs out. In practice, we only need
-    // two nonces, since for a given pour we should only have two
-    // outputs.
+    // This can only be called twice for a given instantiation before
+    // the nonce-space runs out.
     Ciphertext encrypt(const uint256 &pk_enc,
                        const Plaintext &message
                       );
