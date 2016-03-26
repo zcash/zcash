@@ -26,10 +26,14 @@ void KDF(unsigned char *K,
     // Trim the first byte from seed
     std::vector<unsigned char> first_248(seed.begin() + 1, seed.end());
 
+    if (nonce >= 2) {
+        throw std::runtime_error("KDF nonce space exceeded");
+    }
+
     // First bit is the 'nonce' bit or `i`
     // Second bit is zero
     first_248[0] &= 0xFC;
-    first_248[0] |= nonce ? 1 : 0;
+    first_248[0] |= nonce;
 
     hasher.Write(&first_248[0], 31);
     hasher.Write(dhsecret.begin(), crypto_scalarmult_BYTES);
@@ -69,10 +73,6 @@ typename NoteEncryption<MLEN>::Ciphertext NoteEncryption<MLEN>::encrypt
 
     if (crypto_scalarmult(dhsecret.begin(), esk.begin(), pk_enc.begin()) != 0) {
         throw std::logic_error("Could not create DH secret");
-    }
-
-    if (nonce == 2) {
-        throw std::runtime_error("NoteEncryption::encrypt performed more times than supported");
     }
 
     // Construct the symmetric key
