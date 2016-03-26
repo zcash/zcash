@@ -2,10 +2,10 @@
 See the Zcash protocol specification for more information.
 https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
 
-Zcash allows users to send and recieve value using notes. In order
+Zcash allows users to send and receive value using notes. In order
 to protect the privacy of the parties involved, this note is not
 public, and for verification purposes, is cryptographically
-commited. This commitment is public, and lives in the transaction.
+committed. This commitment is public, and lives in the transaction.
 
 However, recipients must be able to obtain values of the note,
 including the value `v`, a secret `rho`, and the trapdoor `r`

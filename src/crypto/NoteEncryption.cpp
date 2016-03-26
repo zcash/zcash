@@ -4,6 +4,7 @@
 #include "sodium.h"
 #include <boost/static_assert.hpp>
 #include "prf.h"
+#include "zerocash/Zerocash.h"
 
 #define NOTEENCRYPTION_CIPHER_KEYSIZE 32
 
@@ -157,9 +158,4 @@ uint256 NoteEncryption<MLEN>::generate_pubkey(const uint256 &sk_enc)
     return pk;
 }
 
-// 152-byte message for Zcash
-// 8-byte value
-// 32-byte rho
-// 48-byte r
-// 64-byte memo
-template class NoteEncryption<152>;
+template class NoteEncryption<ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE>;
