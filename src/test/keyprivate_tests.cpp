@@ -55,10 +55,10 @@ BOOST_AUTO_TEST_CASE(noteencryption)
 
 BOOST_AUTO_TEST_CASE(migration_of_sha256compress)
 {
-    unsigned char digest_1[32];
-    unsigned char digest_2[32];
+    unsigned char digest_1[32] = {};
+    unsigned char digest_2[32] = {};
 
-    unsigned char preimage[64];
+    unsigned char preimage[64] = {};
 
     {
         CSHA256 hasher;
