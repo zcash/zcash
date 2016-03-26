@@ -5,6 +5,8 @@
 #include <boost/static_assert.hpp>
 #include "prf.h"
 
+#define NOTEENCRYPTION_CIPHER_KEYSIZE 32
+
 void clamp_curve25519(unsigned char *key)
 {
     key[0] &= 248;
@@ -12,7 +14,7 @@ void clamp_curve25519(unsigned char *key)
     key[31] |= 64;
 }
 
-void KDF(unsigned char *K,
+void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
     const uint256 &dhsecret,
     const uint256 &epk,
     const uint256 &pk_enc,
@@ -50,17 +52,18 @@ NoteEncryption<MLEN>::NoteEncryption(uint256 seed) : nonce(0), seed(seed) {
     // There's no reason that will _ever_ change, but for
     // completeness purposes, let's check anyway.
     BOOST_STATIC_ASSERT(32 == crypto_scalarmult_BYTES);
+    BOOST_STATIC_ASSERT(32 == crypto_scalarmult_SCALARBYTES);
     BOOST_STATIC_ASSERT(NOTEENCRYPTION_AUTH_BYTES == crypto_aead_chacha20poly1305_ABYTES);
 
     // Create the ephemeral keypair
-    randombytes_buf(esk.begin(), crypto_scalarmult_BYTES);
+    randombytes_buf(esk.begin(), crypto_scalarmult_SCALARBYTES);
     epk = generate_pubkey(esk);
 }
 
 template<size_t MLEN>
 NoteEncryption<MLEN>::~NoteEncryption() {
     sodium_memzero(epk.begin(), crypto_scalarmult_BYTES);
-    sodium_memzero(esk.begin(), crypto_scalarmult_BYTES);
+    sodium_memzero(esk.begin(), crypto_scalarmult_SCALARBYTES);
 }
 
 template<size_t MLEN>
@@ -76,13 +79,13 @@ typename NoteEncryption<MLEN>::Ciphertext NoteEncryption<MLEN>::encrypt
     }
 
     // Construct the symmetric key
-    unsigned char K[32];
+    unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
     KDF(K, dhsecret, epk, pk_enc, seed, nonce);
 
     // Increment the number of encryptions we've performed
     nonce++;
 
-    // The nonce is null for our purposes
+    // The nonce is zero for our purposes
     unsigned char cipher_nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
     sodium_memzero(cipher_nonce, sizeof cipher_nonce);
 
@@ -113,10 +116,10 @@ typename NoteEncryption<MLEN>::Plaintext NoteEncryption<MLEN>::decrypt
         throw std::runtime_error("Could not create DH secret");
     }
 
-    unsigned char K[32];
+    unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
     KDF(K, dhsecret, epk, pk_enc, seed, nonce);
 
-    // The nonce is null for our purposes
+    // The nonce is zero for our purposes
     unsigned char cipher_nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
     sodium_memzero(cipher_nonce, sizeof cipher_nonce);
 
