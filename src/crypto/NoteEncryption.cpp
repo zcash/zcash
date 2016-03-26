@@ -86,8 +86,7 @@ typename NoteEncryption<MLEN>::Ciphertext NoteEncryption<MLEN>::encrypt
     nonce++;
 
     // The nonce is zero for our purposes
-    unsigned char cipher_nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
-    sodium_memzero(cipher_nonce, sizeof cipher_nonce);
+    unsigned char cipher_nonce[crypto_aead_chacha20poly1305_NPUBBYTES] = {};
 
     NoteEncryption<MLEN>::Ciphertext ciphertext;
 
@@ -120,8 +119,7 @@ typename NoteEncryption<MLEN>::Plaintext NoteEncryption<MLEN>::decrypt
     KDF(K, dhsecret, epk, pk_enc, seed, nonce);
 
     // The nonce is zero for our purposes
-    unsigned char cipher_nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
-    sodium_memzero(cipher_nonce, sizeof cipher_nonce);
+    unsigned char cipher_nonce[crypto_aead_chacha20poly1305_NPUBBYTES] = {};
 
     NoteEncryption<MLEN>::Plaintext plaintext;
 
