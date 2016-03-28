@@ -752,10 +752,12 @@ void Unserialize(Stream& is, boost::optional<T>& item, int nType, int nVersion)
 
     if (discriminant == 0x00) {
         item = boost::none;
-    } else {
+    } else if (discriminant == 0x01) {
         T object;
         Unserialize(is, object, nType, nVersion);
         item = object;
+    } else {
+        throw std::ios_base::failure("non-canonical optional discriminant");
     }
 }
 

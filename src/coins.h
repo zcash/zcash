@@ -17,8 +17,7 @@
 #include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
 #include "zerocash/IncrementalMerkleTree.h"
-
-static const unsigned int INCREMENTAL_MERKLE_TREE_DEPTH = 20;
+#include "zcash/IncrementalMerkleTree.hpp"
 
 /** 
  * Pruned version of CTransaction: only retains metadata and unspent transaction outputs
