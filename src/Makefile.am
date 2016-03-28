@@ -69,7 +69,9 @@ if BUILD_BITCOIN_UTILS
   bin_PROGRAMS += zcash-cli bitcoin-tx
 endif
 
+# TODO: rename to libzcash
 LIBZEROCASH_H = \
+  zcash/IncrementalMerkleTree.h \
   zerocash/Address.h \
   zerocash/CoinCommitment.h \
   zerocash/Coin.h \
@@ -411,6 +413,7 @@ bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 
 # zerocash protocol primitives #
 libzerocash_a_SOURCES = \
+  zcash/IncrementalMerkleTree.cpp \
   zerocash/Address.cpp \
   zerocash/CoinCommitment.cpp \
   zerocash/Coin.cpp \

@@ -25,7 +25,11 @@ JSON_TEST_FILES = \
   test/data/script_invalid.json \
   test/data/tx_invalid.json \
   test/data/tx_valid.json \
-  test/data/sighash.json
+  test/data/sighash.json \
+  test/data/merkle_roots.json \
+  test/data/merkle_serialization.json \
+  test/data/merkle_witness_serialization.json \
+  test/data/merkle_path.json
 
 RAW_TEST_FILES = test/data/alertTests.raw
 
@@ -78,7 +82,8 @@ BITCOIN_TESTS =\
   test/uint256_tests.cpp \
   test/univalue_tests.cpp \
   test/util_tests.cpp \
-  test/sha256compress_tests.cpp
+  test/sha256compress_tests.cpp \
+  test/merkle_tests.cpp
 
 if ENABLE_WALLET
 BITCOIN_TESTS += \
