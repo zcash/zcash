@@ -21,6 +21,7 @@
 #include <vector>
 
 #include <boost/array.hpp>
+#include <boost/optional.hpp>
 
 class CScript;
 
@@ -509,6 +510,13 @@ template<typename Stream> void Serialize(Stream& os, const CScript& v, int nType
 template<typename Stream> void Unserialize(Stream& is, CScript& v, int nType, int nVersion);
 
 /**
+ * optional
+ */
+template<typename T> unsigned int GetSerializeSize(const boost::optional<T> &item, int nType, int nVersion);
+template<typename Stream, typename T> void Serialize(Stream& os, const boost::optional<T>& item, int nType, int nVersion);
+template<typename Stream, typename T> void Unserialize(Stream& is, boost::optional<T>& item, int nType, int nVersion);
+
+/**
  * array
  */
 template<typename T, std::size_t N> unsigned int GetSerializeSize(const boost::array<T, N> &item, int nType, int nVersion);
@@ -705,6 +713,52 @@ void Unserialize(Stream& is, CScript& v, int nType, int nVersion)
 {
     Unserialize(is, (std::vector<unsigned char>&)v, nType, nVersion);
 }
+
+
+
+/**
+ * optional
+ */
+template<typename T>
+unsigned int GetSerializeSize(const boost::optional<T> &item, int nType, int nVersion)
+{
+    if (item) {
+        return 1 + GetSerializeSize(*item, nType, nVersion);
+    } else {
+        return 1;
+    }
+}
+
+template<typename Stream, typename T>
+void Serialize(Stream& os, const boost::optional<T>& item, int nType, int nVersion)
+{
+    // If the value is there, put 0x01 and then serialize the value.
+    // If it's not, put 0x00.
+    if (item) {
+        unsigned char discriminant = 0x01;
+        Serialize(os, discriminant, nType, nVersion);
+        Serialize(os, *item, nType, nVersion);
+    } else {
+        unsigned char discriminant = 0x00;
+        Serialize(os, discriminant, nType, nVersion);
+    }
+}
+
+template<typename Stream, typename T>
+void Unserialize(Stream& is, boost::optional<T>& item, int nType, int nVersion)
+{
+    unsigned char discriminant = 0x00;
+    Unserialize(is, discriminant, nType, nVersion);
+
+    if (discriminant == 0x00) {
+        item = boost::none;
+    } else {
+        T object;
+        Unserialize(is, object, nType, nVersion);
+        item = object;
+    }
+}
+
 
 
 /**
