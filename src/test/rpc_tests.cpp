@@ -43,7 +43,7 @@ UniValue CallRPC(string args)
         }
     }
     UniValue params = RPCConvertValues(strMethod, vArgs);
-
+    BOOST_CHECK(tableRPC[strMethod]);
     rpcfn_type method = tableRPC[strMethod]->actor;
     try {
         UniValue result = (*method)(params, false);

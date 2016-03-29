@@ -461,6 +461,8 @@ double benchmark_loadwallet()
     return res;
 }
 
+extern UniValue listunspent(const UniValue& params, bool fHelp);
+
 double benchmark_listunspent()
 {
     UniValue params(UniValue::VARR);

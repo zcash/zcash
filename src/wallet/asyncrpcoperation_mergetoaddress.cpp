@@ -623,6 +623,9 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 }
 
 
+extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
+extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
+
 /**
  * Sign and send a raw transaction.
  * Raw transaction as hex string should be in object field "rawtxn"
