@@ -252,7 +252,7 @@ double benchmark_large_tx()
 
     // Sign for all the inputs
     for (size_t i = 0; i < NUM_INPUTS; i++) {
-        SignSignature(tempKeystore, prevPubKey, spending_tx, i, SIGHASH_ALL);
+        SignSignature(tempKeystore, prevPubKey, spending_tx, i, 1000000, SIGHASH_ALL);
     }
 
     // Serialize:
