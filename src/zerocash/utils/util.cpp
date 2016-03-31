@@ -209,8 +209,11 @@ void sha256(const unsigned char* input, unsigned char* hash, int len) {
 }
 
 void sha256(CSHA256& hasher, const unsigned char* input, unsigned char* hash, int len) {
-	hasher.Write(input, len);
-    hasher.FinalizeNoPadding(hash);
+    // Ignore the one that's passed in; this optimization is useless
+    // for all of our code, and this code is all being removed anyway.
+    CSHA256 new_hasher;
+	new_hasher.Write(input, len);
+    new_hasher.FinalizeNoPadding(hash);
 }
 
 void hashVector(CSHA256& hasher, const std::vector<bool> input, std::vector<bool>& output) {
