@@ -6,7 +6,7 @@
 #include <vector>
 #include <cstdint>
 
-#include "sha256.h"
+#include "crypto/sha256.h"
 
 namespace libzerocash {
 
@@ -60,19 +60,19 @@ void concatenateVectors(const std::vector<unsigned char>& A, const std::vector<u
 
 void sha256(const unsigned char* input, unsigned char* hash, int len);
 
-void sha256(SHA256_CTX_mod* ctx256, const unsigned char* input, unsigned char* hash, int len);
+void sha256(CSHA256& ctx256, const unsigned char* input, unsigned char* hash, int len);
 
-void hashVector(SHA256_CTX_mod* ctx256, const std::vector<bool> input, std::vector<bool>& output);
+void hashVector(CSHA256& ctx256, const std::vector<bool> input, std::vector<bool>& output);
 
-void hashVector(SHA256_CTX_mod* ctx256, const std::vector<unsigned char> input, std::vector<unsigned char>& output);
+void hashVector(CSHA256& ctx256, const std::vector<unsigned char> input, std::vector<unsigned char>& output);
 
 void hashVector(const std::vector<bool> input, std::vector<bool>& output);
 
 void hashVector(const std::vector<unsigned char> input, std::vector<unsigned char>& output);
 
-void hashVectors(SHA256_CTX_mod* ctx256, const std::vector<bool> left, const std::vector<bool> right, std::vector<bool>& output);
+void hashVectors(CSHA256& ctx256, const std::vector<bool> left, const std::vector<bool> right, std::vector<bool>& output);
 
-void hashVectors(SHA256_CTX_mod* ctx256, const std::vector<unsigned char> left, const std::vector<unsigned char> right, std::vector<unsigned char>& output);
+void hashVectors(CSHA256& ctx256, const std::vector<unsigned char> left, const std::vector<unsigned char> right, std::vector<unsigned char>& output);
 
 void hashVectors(const std::vector<bool> left, const std::vector<bool> right, std::vector<bool>& output);
 

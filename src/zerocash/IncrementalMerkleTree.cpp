@@ -263,17 +263,16 @@ namespace libzerocash {
 
     // Standard constructor
     //
-    IncrementalMerkleNode::IncrementalMerkleNode(uint32_t depth, uint32_t height) : left(NULL), right(NULL), value(SHA256_BLOCK_SIZE * 8, 0), nodeDepth(depth), treeHeight(height),
+    IncrementalMerkleNode::IncrementalMerkleNode(uint32_t depth, uint32_t height) : left(NULL), right(NULL), value(CSHA256::OUTPUT_SIZE * 8, 0), nodeDepth(depth), treeHeight(height),
 				subtreeFull(false), subtreePruned(false)
     {
-        sha256_init(&ctx256);
+        
     }
 
     // Copy constructor
     //
-    IncrementalMerkleNode::IncrementalMerkleNode(const IncrementalMerkleNode& toCopy) : left(NULL), right(NULL), value(SHA256_BLOCK_SIZE * 8, 0)
+    IncrementalMerkleNode::IncrementalMerkleNode(const IncrementalMerkleNode& toCopy) : left(NULL), right(NULL), value(CSHA256::OUTPUT_SIZE * 8, 0)
     {
-        sha256_init(&ctx256);
         this->nodeDepth = toCopy.nodeDepth;
         this->subtreePruned = toCopy.subtreePruned;
         this->subtreeFull = toCopy.subtreeFull;
@@ -379,7 +378,7 @@ namespace libzerocash {
 
 			// Make sure there is a value on the right. If not we put the 'null' hash (0) into that element.
 			if (this->right == NULL) {
-				witness.at(nodeDepth).resize(SHA256_BLOCK_SIZE * 8);
+				witness.at(nodeDepth).resize(CSHA256::OUTPUT_SIZE * 8);
 				std::fill (witness.at(nodeDepth).begin(), witness.at(nodeDepth).end(), false);
 			} else {
 				this->right->getValue(witness.at(nodeDepth));
@@ -453,8 +452,8 @@ namespace libzerocash {
 
         // Obtain the hash of the two subtrees and hash the
         // concatenation of the two.
-        std::vector<bool> hash(SHA256_BLOCK_SIZE * 8);
-        std::vector<bool> zero(SHA256_BLOCK_SIZE * 8);
+        std::vector<bool> hash(CSHA256::OUTPUT_SIZE * 8);
+        std::vector<bool> zero(CSHA256::OUTPUT_SIZE * 8);
         std::fill (zero.begin(), zero.end(), false);
 
 		// The following code is ugly and should be refactored. It runs
@@ -464,19 +463,19 @@ namespace libzerocash {
 			if (VectorIsZero(this->left->getValue())) {
 				hash = zero;
 			} else {
-				hashVectors(&ctx256, this->left->getValue(), zero, hash);
+				hashVectors(this->left->getValue(), zero, hash);
 			}
         } else if (!(this->left) && this->right) {
 			if (VectorIsZero(this->right->getValue())) {
 				hash = zero;
 			} else {
-				hashVectors(&ctx256, zero, this->left->getValue(), hash);
+				hashVectors(zero, this->left->getValue(), hash);
 			}
         } else if (this->left && this->right) {
 			if (VectorIsZero(this->left->getValue()) && VectorIsZero(this->right->getValue())) {
 				hash = zero;
 			} else {
-				hashVectors(&ctx256, this->left->getValue(), this->right->getValue(), hash);
+				hashVectors(this->left->getValue(), this->right->getValue(), hash);
 			}
         } else {
             hash = zero;
@@ -521,7 +520,7 @@ namespace libzerocash {
 
         // Otherwise: Add our left child hash to the tree.
         rep.hashList.at(this->nodeDepth) = true;
-        std::vector<unsigned char> hash(SHA256_BLOCK_SIZE, 0);
+        std::vector<unsigned char> hash(CSHA256::OUTPUT_SIZE, 0);
         convertVectorToBytesVector(this->left->getValue(), hash);
         rep.hashVec.push_back(hash);
 
@@ -574,7 +573,7 @@ namespace libzerocash {
 			this->left = new IncrementalMerkleNode(this->nodeDepth + 1, this->treeHeight);
 
             // Fill the left node with the value and mark it full/pruned
-            std::vector<bool> hash(SHA256_BLOCK_SIZE * 8, 0);
+            std::vector<bool> hash(CSHA256::OUTPUT_SIZE * 8, 0);
             convertBytesVectorToVector(rep.hashVec.at(pos), hash);
             this->left->value = hash;
             this->left->subtreePruned = this->left->subtreeFull = true;

@@ -511,12 +511,12 @@ BOOST_AUTO_TEST_CASE( MerkleTreeSimpleTest ) {
     }
     cout << "\n" << endl;
 
-    vector<bool> wit1(SHA256_BLOCK_SIZE * 8);
-    vector<bool> wit2(SHA256_BLOCK_SIZE * 8);
-    vector<bool> wit3(SHA256_BLOCK_SIZE * 8);
-    vector<bool> inter_1(SHA256_BLOCK_SIZE * 8);
-    vector<bool> inter_2(SHA256_BLOCK_SIZE * 8);
-    std::vector<bool> zeros(SHA256_BLOCK_SIZE * 8, 0);
+    vector<bool> wit1(CSHA256::OUTPUT_SIZE * 8);
+    vector<bool> wit2(CSHA256::OUTPUT_SIZE * 8);
+    vector<bool> wit3(CSHA256::OUTPUT_SIZE * 8);
+    vector<bool> inter_1(CSHA256::OUTPUT_SIZE * 8);
+    vector<bool> inter_2(CSHA256::OUTPUT_SIZE * 8);
+    std::vector<bool> zeros(CSHA256::OUTPUT_SIZE * 8, 0);
 
     wit1 = coinValues.at(2);
     libzerocash::hashVectors(coinValues.at(0), coinValues.at(1), wit2);

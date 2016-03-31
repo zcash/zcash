@@ -203,68 +203,65 @@ void concatenateVectors(const std::vector<unsigned char>& A, const std::vector<u
 }
 
 void sha256(const unsigned char* input, unsigned char* hash, int len) {
-	SHA256_CTX_mod ctx256;
-
-	sha256_init(&ctx256);
-	sha256_update(&ctx256, input, len);
-	sha256_final_no_padding(&ctx256, hash);
+	CSHA256 hasher;
+    hasher.Write(input, len);
+    hasher.FinalizeNoPadding(hash);
 }
 
-void sha256(SHA256_CTX_mod* ctx256, const unsigned char* input, unsigned char* hash, int len) {
-	sha256_init(ctx256);
-	sha256_update(ctx256, input, len);
-	sha256_final_no_padding(ctx256, hash);
+void sha256(CSHA256& hasher, const unsigned char* input, unsigned char* hash, int len) {
+	hasher.Write(input, len);
+    hasher.FinalizeNoPadding(hash);
 }
 
-void hashVector(SHA256_CTX_mod* ctx256, const std::vector<bool> input, std::vector<bool>& output) {
+void hashVector(CSHA256& hasher, const std::vector<bool> input, std::vector<bool>& output) {
     int size = int(input.size() / 8);
     unsigned char bytes[size];
     convertVectorToBytes(input, bytes);
 
-    unsigned char hash[SHA256_BLOCK_SIZE];
-    sha256(ctx256, bytes, hash, (int)size);
+    unsigned char hash[CSHA256::OUTPUT_SIZE];
+    sha256(hasher, bytes, hash, (int)size);
 
     convertBytesToVector(hash, output);
 }
 
-void hashVector(SHA256_CTX_mod* ctx256, const std::vector<unsigned char> input, std::vector<unsigned char>& output) {
+void hashVector(CSHA256& hasher, const std::vector<unsigned char> input, std::vector<unsigned char>& output) {
     int size = int(input.size());
     unsigned char bytes[size];
     convertBytesVectorToBytes(input, bytes);
 
-    unsigned char hash[SHA256_BLOCK_SIZE];
-    sha256(ctx256, bytes, hash, (int)size);
+    unsigned char hash[CSHA256::OUTPUT_SIZE];
+    sha256(hasher, bytes, hash, (int)size);
 
     convertBytesToBytesVector(hash, output);
 }
 
 void hashVector(const std::vector<bool> input, std::vector<bool>& output) {
-	SHA256_CTX_mod ctx256;
+	CSHA256 hasher;
 
     int size = int(input.size() / 8);
     unsigned char bytes[size];
     convertVectorToBytes(input, bytes);
 
-    unsigned char hash[SHA256_BLOCK_SIZE];
-    sha256(&ctx256, bytes, hash, (int)size);
+    unsigned char hash[CSHA256::OUTPUT_SIZE];
+    sha256(hasher, bytes, hash, (int)size);
 
     convertBytesToVector(hash, output);
 }
 
 void hashVector(const std::vector<unsigned char> input, std::vector<unsigned char>& output) {
-	SHA256_CTX_mod ctx256;
+	CSHA256 hasher;
 
     int size = int(input.size());
     unsigned char bytes[size];
     convertBytesVectorToBytes(input, bytes);
 
-    unsigned char hash[SHA256_BLOCK_SIZE];
-    sha256(&ctx256, bytes, hash, (int)size);
+    unsigned char hash[CSHA256::OUTPUT_SIZE];
+    sha256(hasher, bytes, hash, (int)size);
 
     convertBytesToBytesVector(hash, output);
 }
 
-void hashVectors(SHA256_CTX_mod* ctx256, const std::vector<bool> left, const std::vector<bool> right, std::vector<bool>& output) {
+void hashVectors(CSHA256& hasher, const std::vector<bool> left, const std::vector<bool> right, std::vector<bool>& output) {
     std::vector<bool> concat;
     concatenateVectors(left, right, concat);
 
@@ -272,13 +269,13 @@ void hashVectors(SHA256_CTX_mod* ctx256, const std::vector<bool> left, const std
     unsigned char bytes[size];
     convertVectorToBytes(concat, bytes);
 
-    unsigned char hash[SHA256_BLOCK_SIZE];
-    sha256(ctx256, bytes, hash, (int)size);
+    unsigned char hash[CSHA256::OUTPUT_SIZE];
+    sha256(hasher, bytes, hash, (int)size);
 
     convertBytesToVector(hash, output);
 }
 
-void hashVectors(SHA256_CTX_mod* ctx256, const std::vector<unsigned char> left, const std::vector<unsigned char> right, std::vector<unsigned char>& output) {
+void hashVectors(CSHA256& hasher, const std::vector<unsigned char> left, const std::vector<unsigned char> right, std::vector<unsigned char>& output) {
     std::vector<unsigned char> concat;
     concatenateVectors(left, right, concat);
 
@@ -286,23 +283,21 @@ void hashVectors(SHA256_CTX_mod* ctx256, const std::vector<unsigned char> left, 
     unsigned char bytes[size];
     convertBytesVectorToBytes(concat, bytes);
 
-    unsigned char hash[SHA256_BLOCK_SIZE];
-    sha256(ctx256, bytes, hash, (int)size);
+    unsigned char hash[CSHA256::OUTPUT_SIZE];
+    sha256(hasher, bytes, hash, (int)size);
 
     convertBytesToBytesVector(hash, output);
 }
 
 void hashVectors(const std::vector<bool> left, const std::vector<bool> right, std::vector<bool>& output) {
-	std::cout << std::endl;
-
-    std::vector<bool> concat;
+	std::vector<bool> concat;
     concatenateVectors(left, right, concat);
 
     int size = int(concat.size() / 8);
     unsigned char bytes[size];
     convertVectorToBytes(concat, bytes);
 
-    unsigned char hash[SHA256_BLOCK_SIZE];
+    unsigned char hash[CSHA256::OUTPUT_SIZE];
     sha256(bytes, hash, (int)size);
 
     convertBytesToVector(hash, output);
@@ -316,7 +311,7 @@ void hashVectors(const std::vector<unsigned char> left, const std::vector<unsign
     unsigned char bytes[size];
     convertBytesVectorToBytes(concat, bytes);
 
-    unsigned char hash[SHA256_BLOCK_SIZE];
+    unsigned char hash[CSHA256::OUTPUT_SIZE];
     sha256(bytes, hash, (int)size);
 
     convertBytesToBytesVector(hash, output);

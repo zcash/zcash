@@ -13,7 +13,7 @@
 #ifndef INCREMENTALMERKLETREE_H_
 #define INCREMENTALMERKLETREE_H_
 
-#include "utils/sha256.h"
+#include "crypto/sha256.h"
 
 #include "Zerocash.h"
 #include <vector>
@@ -59,7 +59,7 @@ private:
 
 class IncrementalMerkleNode {
 public:
-    SHA256_CTX_mod ctx256;
+    CSHA256 ctx256;
 	IncrementalMerkleNode* left;
     IncrementalMerkleNode* right;
     std::vector<bool> value;

@@ -82,7 +82,6 @@ LIBZEROCASH_H = \
   zerocash/Zerocash.h \
   zerocash/ZerocashParams.h \
   zerocash/zerocash_pour_params.hpp \
-  zerocash/utils/sha256.h \
   zerocash/utils/util.h
 
 .PHONY: FORCE
@@ -360,6 +359,7 @@ zcashd_LDADD += \
   $(CRYPTO_LIBS) \
   $(MINIUPNPC_LIBS) \
   $(LIBZEROCASH) \
+  $(LIBBITCOIN_CRYPTO) \
   $(LIBZEROCASH_LIBS)
 #
 
@@ -379,6 +379,7 @@ zcash_cli_LDADD = \
   $(SSL_LIBS) \
   $(CRYPTO_LIBS) \
   $(LIBZEROCASH) \
+  $(LIBBITCOIN_CRYPTO) \
   $(LIBZEROCASH_LIBS)
 #
 
@@ -399,6 +400,7 @@ bitcoin_tx_LDADD = \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBSECP256K1) \
   $(LIBZEROCASH) \
+  $(LIBBITCOIN_CRYPTO) \
   $(LIBZEROCASH_LIBS)
 
 bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
@@ -416,7 +418,6 @@ libzerocash_a_SOURCES = \
   zerocash/PourProver.cpp \
   zerocash/PourTransaction.cpp \
   zerocash/ZerocashParams.cpp \
-  zerocash/utils/sha256.cpp \
   zerocash/utils/util.cpp
 
 libzerocash_a_CPPFLAGS = -fPIC -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -std=c++11 -pipe -O2 -O0 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
