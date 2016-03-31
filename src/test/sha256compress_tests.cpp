@@ -30,6 +30,28 @@ BOOST_AUTO_TEST_CASE(compression)
 		uint256 digest;
 		BOOST_CHECK_THROW(hasher.FinalizeNoPadding(digest.begin()), std::length_error);
 	}
+
+	{
+		unsigned char preimage[65] = {};
+		CSHA256 hasher;
+		hasher.Write(&preimage[0], 65);
+		uint256 digest;
+		BOOST_CHECK_THROW(hasher.FinalizeNoPadding(digest.begin()), std::length_error);
+	}
+
+	{
+		unsigned char n = 0x00;
+		CSHA256 hasher;
+		for (size_t i = 0; i < 64; i++) {
+			hasher.Write(&n, 1);
+		}
+		uint256 digest;
+
+		hasher.FinalizeNoPadding(digest.begin());
+
+		BOOST_CHECK_MESSAGE(digest == uint256S("d8a93718eaf9feba4362d2c091d4e58ccabe9f779957336269b4b917be9856da"),
+			                digest.GetHex());
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()
