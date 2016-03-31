@@ -284,7 +284,8 @@ void PourTransaction::init(uint16_t version_num,
             val_old_pub_bv,
             val_new_pub_bv,
             { val_old_1_bv, val_old_2_bv },
-            h_S_bv);
+            h_S_bv,
+            params.unsafe_speedup);
 
         std::stringstream ss;
         ss << proofObj;

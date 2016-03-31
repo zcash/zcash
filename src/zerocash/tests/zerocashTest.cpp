@@ -32,7 +32,7 @@
 using namespace std;
 using namespace libsnark;
 
-#define TEST_TREE_DEPTH 4
+#define TEST_TREE_DEPTH 32
 
 BOOST_AUTO_TEST_CASE( SaveAndLoadKeysFromFiles ) {
     cout << "\nSaveAndLoadKeysFromFiles TEST\n" << endl;
@@ -40,10 +40,10 @@ BOOST_AUTO_TEST_CASE( SaveAndLoadKeysFromFiles ) {
     cout << "Creating Params...\n" << endl;
 
     libzerocash::timer_start("Param Generation");
-    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH);
+    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH, true);
     libzerocash::ZerocashParams p(
         TEST_TREE_DEPTH,
-        &keypair
+        &keypair, true
     );
     libzerocash::timer_stop("Param Generation");
     print_mem("after param generation");
@@ -250,10 +250,11 @@ void test_pour(libzerocash::ZerocashParams& p,
 }
 
 BOOST_AUTO_TEST_CASE( PourVpubInTest ) {
-    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH);
+    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH, true);
     libzerocash::ZerocashParams p(
         TEST_TREE_DEPTH,
-        &keypair
+        &keypair,
+        true
     );
 
     // Things that should work..
@@ -331,10 +332,11 @@ BOOST_AUTO_TEST_CASE( PourTxTest ) {
     cout << "Creating Params...\n" << endl;
 
     libzerocash::timer_start("Param Generation");
-    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH);
+    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH, true);
     libzerocash::ZerocashParams p(
         TEST_TREE_DEPTH,
-        &keypair
+        &keypair,
+        true
     );
     libzerocash::timer_stop("Param Generation");
     print_mem("after param generation");
@@ -539,10 +541,11 @@ BOOST_AUTO_TEST_CASE( SimpleTxTest ) {
     cout << "\nSIMPLE TRANSACTION TEST\n" << endl;
 
     libzerocash::timer_start("Param Generation");
-    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH);
+    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH, true);
     libzerocash::ZerocashParams p(
         TEST_TREE_DEPTH,
-        &keypair
+        &keypair,
+        true
     );
     libzerocash::timer_stop("Param Generation");
 

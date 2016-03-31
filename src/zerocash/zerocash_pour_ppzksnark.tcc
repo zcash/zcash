@@ -111,12 +111,14 @@ std::istream& operator>>(std::istream &in, zerocash_pour_keypair<ppzksnark_ppT> 
 template<typename ppzksnark_ppT>
 zerocash_pour_keypair<ppzksnark_ppT> zerocash_pour_ppzksnark_generator(const size_t num_old_coins,
                                                                        const size_t num_new_coins,
-                                                                       const size_t tree_depth)
+                                                                       const size_t tree_depth,
+                                                                       bool unsafe_speedup)
 {
     typedef Fr<ppzksnark_ppT> FieldT;
     enter_block("Call to zerocash_pour_ppzksnark_generator");
 
     protoboard<FieldT> pb;
+    pb.unsafe_speedup = unsafe_speedup;
     zerocash_pour_gadget<FieldT> g(pb, num_old_coins, num_new_coins, tree_depth, "zerocash_pour");
     g.generate_r1cs_constraints();
     const r1cs_constraint_system<FieldT> constraint_system = pb.get_constraint_system();
@@ -143,13 +145,15 @@ zerocash_pour_proof<ppzksnark_ppT> zerocash_pour_ppzksnark_prover(const zerocash
                                                                   const bit_vector &public_old_value,
                                                                   const bit_vector &public_new_value,
                                                                   const std::vector<bit_vector> &old_coin_values,
-                                                                  const bit_vector &signature_public_key_hash)
+                                                                  const bit_vector &signature_public_key_hash,
+                                                                  bool unsafe_speedup)
 {
     typedef Fr<ppzksnark_ppT> FieldT;
 
     enter_block("Call to zerocash_pour_ppzksnark_prover");
 
     protoboard<FieldT> pb;
+    pb.unsafe_speedup = unsafe_speedup;
     zerocash_pour_gadget<FieldT > g(pb, pk.num_old_coins, pk.num_new_coins, pk.tree_depth, "zerocash_pour");
     g.generate_r1cs_constraints();
     g.generate_r1cs_witness(old_coin_authentication_paths,

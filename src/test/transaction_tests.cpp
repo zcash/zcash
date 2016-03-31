@@ -314,10 +314,11 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
     static const unsigned int TEST_TREE_DEPTH = 3;
 
     // construct the r1cs keypair
-    auto keypair = ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH);
+    auto keypair = ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH, true);
     ZerocashParams p(
         TEST_TREE_DEPTH,
-        &keypair
+        &keypair,
+        true
     );
 
     // construct a merkle tree
