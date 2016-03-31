@@ -31,14 +31,15 @@ int ZerocashParams::getTreeDepth()
     return treeDepth;
 }
 
-zerocash_pour_keypair<ZerocashParams::zerocash_pp> ZerocashParams::GenerateNewKeyPair(const unsigned int tree_depth)
+zerocash_pour_keypair<ZerocashParams::zerocash_pp> ZerocashParams::GenerateNewKeyPair(const unsigned int tree_depth, bool unsafe_speedup)
 {
     libzerocash::ZerocashParams::zerocash_pp::init_public_params();
     libzerocash::zerocash_pour_keypair<libzerocash::ZerocashParams::zerocash_pp> kp_v1 =
         libzerocash::zerocash_pour_ppzksnark_generator<libzerocash::ZerocashParams::zerocash_pp>(
             libzerocash::ZerocashParams::numPourInputs,
             libzerocash::ZerocashParams::numPourOutputs,
-            tree_depth
+            tree_depth,
+            unsafe_speedup
         );
     return kp_v1;
 }
@@ -119,9 +120,10 @@ zerocash_pour_verification_key<ZerocashParams::zerocash_pp> ZerocashParams::Load
 
 ZerocashParams::ZerocashParams(
     const unsigned int tree_depth,
-    zerocash_pour_keypair<ZerocashParams::zerocash_pp> *keypair
+    zerocash_pour_keypair<ZerocashParams::zerocash_pp> *keypair,
+    bool unsafe_speedup
 ) :
-    treeDepth(tree_depth)
+    treeDepth(tree_depth), unsafe_speedup(unsafe_speedup)
 {
     params_pk_v1 = new zerocash_pour_proving_key<ZerocashParams::zerocash_pp>(keypair->pk);
     params_vk_v1 = new zerocash_pour_verification_key<ZerocashParams::zerocash_pp>(keypair->vk);
@@ -132,7 +134,7 @@ ZerocashParams::ZerocashParams(
     std::string proving_key_path,
     zerocash_pour_verification_key<ZerocashParams::zerocash_pp>* p_vk_1
 ) : 
-    treeDepth(tree_depth), provingKeyPath(proving_key_path)
+    treeDepth(tree_depth), provingKeyPath(proving_key_path), unsafe_speedup(false)
 {
     params_vk_v1 = new zerocash_pour_verification_key<ZerocashParams::zerocash_pp>(*p_vk_1);
     params_pk_v1 = NULL;
@@ -143,7 +145,7 @@ ZerocashParams::ZerocashParams(
     zerocash_pour_proving_key<ZerocashParams::zerocash_pp>* p_pk_1,
     zerocash_pour_verification_key<ZerocashParams::zerocash_pp>* p_vk_1
 ) :
-    treeDepth(tree_depth)
+    treeDepth(tree_depth), unsafe_speedup(false)
 {
     assert(p_pk_1 != NULL || p_vk_1 != NULL);
 
