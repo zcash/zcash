@@ -17,6 +17,8 @@
 #include "zerocash/PourInput.h"
 #include "zerocash/PourOutput.h"
 
+#include "zcash/NoteEncryption.hpp"
+
 using namespace libzerocash;
 
 static const unsigned int NUM_POUR_INPUTS = 2;
@@ -58,10 +60,13 @@ public:
     boost::array<uint256, NUM_POUR_OUTPUTS> commitments;
 
     // Ciphertexts
-    // These are encrypted using ECIES. They are used to
-    // transfer metadata and seeds to generate trapdoors
-    // for the recipient to spend the value.
-    boost::array<std::string, NUM_POUR_OUTPUTS> ciphertexts;
+    // These contain trapdoors, values and other information
+    // that the recipient needs, including a memo field. It
+    // is encrypted using the scheme implemented in crypto/NoteEncryption.cpp
+    boost::array<ZCNoteEncryption::Ciphertext, NUM_POUR_OUTPUTS> ciphertexts;
+
+    // Ephemeral key
+    uint256 ephemeralKey;
 
     // MACs
     // The verification of the pour requires these MACs
@@ -72,9 +77,7 @@ public:
     // This is a zk-SNARK which ensures that this pour is valid.
     std::string proof;
 
-    CPourTx(): vpub_old(0), vpub_new(0), scriptPubKey(), scriptSig(), anchor(), serials(), commitments(), ciphertexts(), macs(), proof() {
-        
-    }
+    CPourTx(): vpub_old(0), vpub_new(0) { }
 
     CPourTx(ZerocashParams& params,
             const CScript& scriptPubKey,
@@ -100,6 +103,7 @@ public:
         READWRITE(serials);
         READWRITE(commitments);
         READWRITE(ciphertexts);
+        READWRITE(ephemeralKey);
         READWRITE(macs);
         READWRITE(proof);
     }
@@ -115,6 +119,7 @@ public:
             a.serials == b.serials &&
             a.commitments == b.commitments &&
             a.ciphertexts == b.ciphertexts &&
+            a.ephemeralKey == b.ephemeralKey &&
             a.macs == b.macs &&
             a.proof == b.proof
             );
