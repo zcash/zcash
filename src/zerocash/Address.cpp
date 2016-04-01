@@ -11,26 +11,14 @@
  * @copyright  MIT license (see LICENSE file)
  *****************************************************************************/
 
-#include <cryptopp/osrng.h>
-using CryptoPP::AutoSeededRandomPool;
-
-#include <cryptopp/eccrypto.h>
-using CryptoPP::ECP;
-using CryptoPP::ECIES;
-
-#include <cryptopp/oids.h>
-namespace ASN1 = CryptoPP::ASN1;
-
-#include <cryptopp/filters.h>
-using CryptoPP::StringSink;
-using CryptoPP::StringStore;
+#include "zcash/NoteEncryption.hpp"
 
 #include "Zerocash.h"
 #include "Address.h"
 
 namespace libzerocash {
 
-PrivateAddress::PrivateAddress(const std::vector<unsigned char> a_sk, const std::string sk_enc) {
+PrivateAddress::PrivateAddress(const uint256 &a_sk, const uint256 &sk_enc) {
     this->a_sk = a_sk;
     this->sk_enc = sk_enc;
 }
@@ -47,23 +35,27 @@ bool PrivateAddress::operator!=(const PrivateAddress& rhs) const {
 	return !(*this == rhs);
 }
 
-const std::string PrivateAddress::getEncryptionSecretKey() const {
+const uint256& PrivateAddress::getEncryptionSecretKey() const {
     return this->sk_enc;
 }
 
-const std::vector<unsigned char>& PrivateAddress::getAddressSecret() const {
+const uint256& PrivateAddress::getAddressSecret() const {
     return this->a_sk;
 }
 
-PublicAddress::PublicAddress(): a_pk(ZC_A_PK_SIZE) {
-    this->pk_enc = "";
+PublicAddress::PublicAddress() {
+    
 }
 
-PublicAddress::PublicAddress(const std::vector<unsigned char>& a_pk, std::string& pk_enc) : a_pk(a_pk), pk_enc(pk_enc) {}
+PublicAddress::PublicAddress(const uint256& a_pk, uint256& pk_enc) : a_pk(a_pk), pk_enc(pk_enc) {}
 
-PublicAddress::PublicAddress(const PrivateAddress& addr_sk): a_pk(ZC_A_PK_SIZE) {
+PublicAddress::PublicAddress(const PrivateAddress& addr_sk) {
     std::vector<bool> a_sk_bool(ZC_A_SK_SIZE * 8);
-    convertBytesVectorToVector(addr_sk.getAddressSecret(), a_sk_bool);
+
+    std::vector<unsigned char> a_sk_v(addr_sk.getAddressSecret().begin(),
+                                      addr_sk.getAddressSecret().end());
+
+    convertBytesVectorToVector(a_sk_v, a_sk_bool);
 
     std::vector<bool> zeros_256(256, 0);
 
@@ -73,26 +65,20 @@ PublicAddress::PublicAddress(const PrivateAddress& addr_sk): a_pk(ZC_A_PK_SIZE) 
     std::vector<bool> a_pk_bool(ZC_A_PK_SIZE * 8);
     hashVector(a_pk_internal, a_pk_bool);
 
-    convertVectorToBytesVector(a_pk_bool, this->a_pk);
+    std::vector<unsigned char> a_pk_vv(ZC_A_PK_SIZE);
 
-    ECIES<ECP>::PublicKey publicKey;
+    convertVectorToBytesVector(a_pk_bool, a_pk_vv);
 
-    ECIES<ECP>::PrivateKey decodedPrivateKey;
-    decodedPrivateKey.Load(StringStore(addr_sk.getEncryptionSecretKey()).Ref());
+    this->a_pk = uint256(a_pk_vv);
 
-    decodedPrivateKey.MakePublicKey(publicKey);
-
-    std::string encodedPublicKey;
-    publicKey.Save(StringSink(encodedPublicKey).Ref());
-
-    this->pk_enc = encodedPublicKey;
+    this->pk_enc = ZCNoteEncryption::generate_pubkey(addr_sk.getEncryptionSecretKey());
 }
 
-const std::string PublicAddress::getEncryptionPublicKey() const {
+const uint256& PublicAddress::getEncryptionPublicKey() const {
     return this->pk_enc;
 }
 
-const std::vector<unsigned char>& PublicAddress::getPublicAddressSecret() const {
+const uint256& PublicAddress::getPublicAddressSecret() const {
     return this->a_pk;
 }
 
@@ -135,16 +121,11 @@ Address Address::CreateNewRandomAddress() {
     getRandBytes(a_sk_bytes, ZC_A_SK_SIZE);
     convertBytesToBytesVector(a_sk_bytes, a_sk);
 
-    AutoSeededRandomPool prng;
+    uint256 a_sk_u(a_sk);
 
-    ECIES<ECP>::PrivateKey privateKey;
-    privateKey.Initialize(prng, ASN1::secp256r1());
+    uint256 sk_enc = ZCNoteEncryption::generate_privkey(a_sk_u);
 
-    std::string encodedPrivateKey;
-
-    privateKey.Save(StringSink(encodedPrivateKey).Ref());
-
-    PrivateAddress addr_sk(a_sk, encodedPrivateKey);
+    PrivateAddress addr_sk(a_sk_u, sk_enc);
     return Address(addr_sk);
 }
 
