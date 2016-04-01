@@ -17,6 +17,8 @@
 #include "Address.h"
 #include "CoinCommitment.h"
 
+#include "zcash/NoteEncryption.hpp"
+
 namespace libzerocash {
 
 /********************************* Coin **************************************/
@@ -41,7 +43,7 @@ public:
 		 const std::vector<unsigned char>& rho,
          const std::vector<unsigned char>& r);
 
-   	Coin(const std::string bucket, Address& addr);
+   	Coin(const ZCNoteEncryption::Ciphertext&, Address& addr, uint256& epk, unsigned char nonce);
 
 	const PublicAddress& getPublicAddress() const;
 

@@ -11,20 +11,6 @@
  * @copyright  MIT license (see LICENSE file)
  *****************************************************************************/
 
-#include <cryptopp/osrng.h>
-using CryptoPP::AutoSeededRandomPool;
-
-#include <cryptopp/eccrypto.h>
-using CryptoPP::ECP;
-using CryptoPP::ECIES;
-
-#include <cryptopp/oids.h>
-namespace ASN1 = CryptoPP::ASN1;
-
-#include <cryptopp/filters.h>
-using CryptoPP::StringSink;
-using CryptoPP::StringStore;
-
 #include <stdexcept>
 
 #include "Zerocash.h"
@@ -36,29 +22,17 @@ Coin::Coin(): addr_pk(), cm(), rho(ZC_RHO_SIZE), r(ZC_R_SIZE), coinValue(ZC_V_SI
 
 }
 
-Coin::Coin(const std::string bucket, Address& addr): addr_pk(), cm(), rho(ZC_RHO_SIZE), r(ZC_R_SIZE), k(ZC_K_SIZE), coinValue(ZC_V_SIZE) {
-    // Retreive and decode the private key
-    ECIES<ECP>::PrivateKey decodedPrivateKey;
-    decodedPrivateKey.Load(StringStore(addr.getPrivateAddress().getEncryptionSecretKey()).Ref());
+Coin::Coin(const ZCNoteEncryption::Ciphertext& bucket,
+           Address& addr,
+           uint256& epk,
+           unsigned char nonce
+           ): addr_pk(), cm(), rho(ZC_RHO_SIZE), r(ZC_R_SIZE), k(ZC_K_SIZE), coinValue(ZC_V_SIZE) {
 
-    // Create the decryption session
-    AutoSeededRandomPool prng;
-    ECIES<ECP>::Decryptor decrypt(decodedPrivateKey);
-
-    // Convert the input string into a vector of bytes
-    std::vector<byte> bucket_bytes(bucket.begin(), bucket.end());
-
-    // Construct a temporary object to store the plaintext, large enough
-    // to store the plaintext if it were extended beyond the real size.
-    std::vector<unsigned char> plaintext;
-    // Size as needed, filling with zeros.
-    plaintext.resize(decrypt.MaxPlaintextLength(decrypt.CiphertextLength(ZC_V_SIZE + ZC_R_SIZE + ZC_RHO_SIZE)), 0);
-
-    // Perform the decryption
-    decrypt.Decrypt(prng,
-                    &bucket_bytes[0],
-                    decrypt.CiphertextLength(ZC_V_SIZE + ZC_R_SIZE + ZC_RHO_SIZE),
-                    &plaintext[0]);
+    ZCNoteDecryption decrypter(addr.getPrivateAddress().getEncryptionSecretKey());
+    auto plaintext = decrypter.decrypt(bucket,
+                                       epk,
+                                       uint256(),
+                                       nonce);
 
     // Grab the byte vectors
     std::vector<unsigned char> value_v(plaintext.begin(),
@@ -73,7 +47,8 @@ Coin::Coin(const std::string bucket, Address& addr): addr_pk(), cm(), rho(ZC_RHO
     this->rho = rho_v;
     this->addr_pk = addr.getPublicAddress();
 
-    std::vector<unsigned char> a_pk = addr.getPublicAddress().getPublicAddressSecret();
+    std::vector<unsigned char> a_pk(addr.getPublicAddress().getPublicAddressSecret().begin(),
+                                    addr.getPublicAddress().getPublicAddressSecret().end());
 
     this->computeCommitments(a_pk);
 }
@@ -82,7 +57,8 @@ Coin::Coin(const PublicAddress& addr, uint64_t value): addr_pk(addr), cm(), rho(
 {
     convertIntToBytesVector(value, this->coinValue);
 
-    std::vector<unsigned char> a_pk = addr.getPublicAddressSecret();
+    std::vector<unsigned char> a_pk(addr.getPublicAddressSecret().begin(),
+                                    addr.getPublicAddressSecret().end());
 
     unsigned char rho_bytes[ZC_RHO_SIZE];
     getRandBytes(rho_bytes, ZC_RHO_SIZE);
@@ -101,7 +77,7 @@ Coin::Coin(const PublicAddress& addr, uint64_t value,
 {
     convertIntToBytesVector(value, this->coinValue);
 
-    std::vector<unsigned char> a_pk = addr.getPublicAddressSecret();
+    std::vector<unsigned char> a_pk(addr.getPublicAddressSecret().begin(), addr.getPublicAddressSecret().end());
 
 	this->computeCommitments(a_pk);
 }

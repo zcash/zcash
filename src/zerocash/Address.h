@@ -15,6 +15,7 @@
 #include <vector>
 #include <string>
 
+#include "uint256.h"
 
 namespace libzerocash {
 
@@ -24,17 +25,17 @@ class PrivateAddress {
 public:
     /* This constructor is to be used ONLY for deserialization. */
     PrivateAddress();
-    PrivateAddress(const std::vector<unsigned char> a_sk, const std::string sk_enc);
+    PrivateAddress(const uint256 &a_sk, const uint256 &sk_enc);
 
     bool operator==(const PrivateAddress& rhs) const;
     bool operator!=(const PrivateAddress& rhs) const;
 
-    const std::vector<unsigned char>& getAddressSecret() const;
-    const std::string getEncryptionSecretKey() const;
+    const uint256& getAddressSecret() const;
+    const uint256& getEncryptionSecretKey() const;
 
 private:
-    std::vector<unsigned char> a_sk;
-    std::string sk_enc;
+    uint256 a_sk;
+    uint256 sk_enc;
 
 };
 
@@ -44,19 +45,19 @@ class PublicAddress {
 public:
     /* This constructor is to be used ONLY for deserialization. */
     PublicAddress();
-    PublicAddress(const std::vector<unsigned char>& a_pk, std::string& pk_enc);
+    PublicAddress(const uint256& a_pk, uint256& pk_enc);
     PublicAddress(const PrivateAddress& addr_sk);
 
     bool operator==(const PublicAddress& rhs) const;
     bool operator!=(const PublicAddress& rhs) const;
 
 
-    const std::vector<unsigned char>& getPublicAddressSecret() const;
-    const std::string getEncryptionPublicKey() const;
+    const uint256& getPublicAddressSecret() const;
+    const uint256& getEncryptionPublicKey() const;
 
 private:
-    std::vector<unsigned char> a_pk;
-    std::string pk_enc;
+    uint256 a_pk;
+    uint256 pk_enc;
 };
 
 /******************************** Address ************************************/
