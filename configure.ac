@@ -323,6 +323,9 @@ case $host in
 esac
 
 if test x$use_comparison_tool != xno; then
+  if test x$JAVA = x; then
+    AC_MSG_ERROR("comparison tool set but java not found")
+  fi
   AC_SUBST(JAVA_COMPARISON_TOOL, $use_comparison_tool)
 fi
 
