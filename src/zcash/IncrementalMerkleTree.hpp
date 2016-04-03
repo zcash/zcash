@@ -26,6 +26,8 @@ public:
         READWRITE(index);
     }
 
+    MerklePath() { }
+
     MerklePath(std::vector<std::vector<bool>> authentication_path, std::vector<bool> index)
     : authentication_path(authentication_path), index(index) { }
 };
