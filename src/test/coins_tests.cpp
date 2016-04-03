@@ -11,7 +11,7 @@
 #include <map>
 
 #include <boost/test/unit_test.hpp>
-#include "zerocash/IncrementalMerkleTree.h"
+#include "zcash/IncrementalMerkleTree.hpp"
 
 namespace
 {
@@ -20,22 +20,22 @@ class CCoinsViewTest : public CCoinsView
     uint256 hashBestBlock_;
     uint256 hashBestAnchor_;
     std::map<uint256, CCoins> map_;
-    std::map<uint256, libzerocash::IncrementalMerkleTree> mapAnchors_;
+    std::map<uint256, ZCIncrementalMerkleTree> mapAnchors_;
     std::map<uint256, bool> mapSerials_;
 
 public:
-    bool GetAnchorAt(const uint256& rt, libzerocash::IncrementalMerkleTree &tree) const {
+    bool GetAnchorAt(const uint256& rt, ZCIncrementalMerkleTree &tree) const {
         if (rt.IsNull()) {
-            IncrementalMerkleTree new_tree(INCREMENTAL_MERKLE_TREE_DEPTH);
-            tree.setTo(new_tree);
+            ZCIncrementalMerkleTree new_tree;
+            tree = new_tree;
             return true;
         }
 
-        std::map<uint256, libzerocash::IncrementalMerkleTree>::const_iterator it = mapAnchors_.find(rt);
+        std::map<uint256, ZCIncrementalMerkleTree>::const_iterator it = mapAnchors_.find(rt);
         if (it == mapAnchors_.end()) {
             return false;
         } else {
-            tree.setTo(it->second);
+            tree = it->second;
             return true;
         }
     }
@@ -93,10 +93,10 @@ public:
         }
         for (CAnchorsMap::iterator it = mapAnchors.begin(); it != mapAnchors.end(); ) {
             if (it->second.entered) {
-                std::map<uint256, libzerocash::IncrementalMerkleTree>::iterator ret =
-                    mapAnchors_.insert(std::make_pair(it->first, IncrementalMerkleTree(INCREMENTAL_MERKLE_TREE_DEPTH))).first;
+                std::map<uint256, ZCIncrementalMerkleTree>::iterator ret =
+                    mapAnchors_.insert(std::make_pair(it->first, ZCIncrementalMerkleTree())).first;
 
-                ret->second.setTo(it->second.tree);
+                ret->second = it->second.tree;
             } else {
                 mapAnchors_.erase(it->first);
             }
@@ -164,16 +164,12 @@ BOOST_AUTO_TEST_CASE(serials_test)
     BOOST_CHECK(!cache3.GetSerial(myserial));
 }
 
-void appendRandomCommitment(IncrementalMerkleTree &tree)
+void appendRandomCommitment(ZCIncrementalMerkleTree &tree)
 {
     Address addr = Address::CreateNewRandomAddress();
     Coin coin(addr.getPublicAddress(), 100);
 
-    std::vector<bool> commitment(ZC_CM_SIZE * 8);
-    convertBytesVectorToVector(coin.getCoinCommitment().getCommitmentValue(), commitment);
-
-    std::vector<bool> index;
-    tree.insertElement(commitment, index);
+    tree.append(uint256(coin.getCoinCommitment().getCommitmentValue()));
 }
 
 BOOST_AUTO_TEST_CASE(anchors_flush_test)
@@ -182,15 +178,11 @@ BOOST_AUTO_TEST_CASE(anchors_flush_test)
     uint256 newrt;
     {
         CCoinsViewCacheTest cache(&base);
-        IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+        ZCIncrementalMerkleTree tree;
         BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), tree));
         appendRandomCommitment(tree);
 
-        {
-            std::vector<unsigned char> newrt_v(32);
-            tree.getRootValue(newrt_v);
-            newrt = uint256(newrt_v);
-        }
+        newrt = tree.root();
 
         cache.PushAnchor(tree);
         cache.Flush();
@@ -198,18 +190,13 @@ BOOST_AUTO_TEST_CASE(anchors_flush_test)
     
     {
         CCoinsViewCacheTest cache(&base);
-        IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+        ZCIncrementalMerkleTree tree;
         BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), tree));
 
         // Get the cached entry.
         BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), tree));
 
-        uint256 check_rt;
-        {
-            std::vector<unsigned char> newrt_v(32);
-            tree.getRootValue(newrt_v);
-            check_rt = uint256(newrt_v);
-        }
+        uint256 check_rt = tree.root();
 
         BOOST_CHECK(check_rt == newrt);
     }
@@ -226,7 +213,7 @@ BOOST_AUTO_TEST_CASE(anchors_test)
     BOOST_CHECK(cache.GetBestAnchor() == uint256());
 
     {
-        IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+        ZCIncrementalMerkleTree tree;
 
         BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), tree));
         appendRandomCommitment(tree);
@@ -236,96 +223,50 @@ BOOST_AUTO_TEST_CASE(anchors_test)
         appendRandomCommitment(tree);
         appendRandomCommitment(tree);
         appendRandomCommitment(tree);
-        tree.prune();
 
-        IncrementalMerkleTree save_tree_for_later(INCREMENTAL_MERKLE_TREE_DEPTH);
-        save_tree_for_later.setTo(tree);
+        ZCIncrementalMerkleTree save_tree_for_later;
+        save_tree_for_later = tree;
 
-        uint256 newrt;
+        uint256 newrt = tree.root();
         uint256 newrt2;
-        {
-            std::vector<unsigned char> newrt_v(32);
-            tree.getRootValue(newrt_v);
-
-            newrt = uint256(newrt_v);
-        }
 
         cache.PushAnchor(tree);
         BOOST_CHECK(cache.GetBestAnchor() == newrt);
 
         {
-            IncrementalMerkleTree confirm_same(INCREMENTAL_MERKLE_TREE_DEPTH);
+            ZCIncrementalMerkleTree confirm_same;
             BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), confirm_same));
 
-            uint256 confirm_rt;
-            {
-                std::vector<unsigned char> newrt_v(32);
-                confirm_same.getRootValue(newrt_v);
-
-                confirm_rt = uint256(newrt_v);
-            }
-
-            BOOST_CHECK(confirm_rt == newrt);
+            BOOST_CHECK(confirm_same.root() == newrt);
         }
 
         appendRandomCommitment(tree);
         appendRandomCommitment(tree);
-        tree.prune();
 
-        {
-            std::vector<unsigned char> newrt_v(32);
-            tree.getRootValue(newrt_v);
-
-            newrt2 = uint256(newrt_v);
-        }
+        newrt2 = tree.root();
 
         cache.PushAnchor(tree);
         BOOST_CHECK(cache.GetBestAnchor() == newrt2);
 
-        IncrementalMerkleTree test_tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+        ZCIncrementalMerkleTree test_tree;
         BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), test_tree));
 
-        {
-            std::vector<unsigned char> a(32);
-            std::vector<unsigned char> b(32);
-            tree.getRootValue(a);
-            test_tree.getRootValue(b);
-
-            BOOST_CHECK(a == b);
-        }
+        BOOST_CHECK(tree.root() == test_tree.root());
 
         {
-            std::vector<unsigned char> a(32);
-            std::vector<unsigned char> b(32);
-            IncrementalMerkleTree test_tree2(INCREMENTAL_MERKLE_TREE_DEPTH);
+            ZCIncrementalMerkleTree test_tree2;
             cache.GetAnchorAt(newrt, test_tree2);
             
-            uint256 recovered_rt;
-            {
-                std::vector<unsigned char> newrt_v(32);
-                test_tree2.getRootValue(newrt_v);
-
-                recovered_rt = uint256(newrt_v);
-            }
-
-            BOOST_CHECK(recovered_rt == newrt);
+            BOOST_CHECK(test_tree2.root() == newrt);
         }
 
         {
             cache.PopAnchor(newrt);
-            IncrementalMerkleTree obtain_tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+            ZCIncrementalMerkleTree obtain_tree;
             assert(!cache.GetAnchorAt(newrt2, obtain_tree)); // should have been popped off
             assert(cache.GetAnchorAt(newrt, obtain_tree));
 
-            uint256 recovered_rt;
-            {
-                std::vector<unsigned char> newrt_v(32);
-                obtain_tree.getRootValue(newrt_v);
-
-                recovered_rt = uint256(newrt_v);
-            }
-
-            assert(recovered_rt == newrt);
+            assert(obtain_tree.root() == newrt);
         }
     }
 }

@@ -40,7 +40,7 @@ bool CCoins::Spend(uint32_t nPos)
     Cleanup();
     return true;
 }
-bool CCoinsView::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const { return false; }
+bool CCoinsView::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return false; }
 bool CCoinsView::GetSerial(const uint256 &serial) const { return false; }
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
@@ -56,7 +56,7 @@ bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
 
-bool CCoinsViewBacked::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const { return base->GetAnchorAt(rt, tree); }
+bool CCoinsViewBacked::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return base->GetAnchorAt(rt, tree); }
 bool CCoinsViewBacked::GetSerial(const uint256 &serial) const { return base->GetSerial(serial); }
 bool CCoinsViewBacked::GetCoins(const uint256 &txid, CCoins &coins) const { return base->GetCoins(txid, coins); }
 bool CCoinsViewBacked::HaveCoins(const uint256 &txid) const { return base->HaveCoins(txid); }
@@ -102,11 +102,11 @@ CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const
 }
 
 
-bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const {
+bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
     CAnchorsMap::const_iterator it = cacheAnchors.find(rt);
     if (it != cacheAnchors.end()) {
         if (it->second.entered) {
-            tree.setTo(it->second.tree);
+            tree = it->second.tree;
             return true;
         } else {
             return false;
@@ -119,7 +119,7 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMer
 
     CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(rt, CAnchorsCacheEntry())).first;
     ret->second.entered = true;
-    ret->second.tree.setTo(tree);
+    ret->second.tree = tree;
 
     return true;
 }
@@ -140,10 +140,8 @@ bool CCoinsViewCache::GetSerial(const uint256 &serial) const {
     return tmp;
 }
 
-void CCoinsViewCache::PushAnchor(const libzerocash::IncrementalMerkleTree &tree) {
-    std::vector<unsigned char> newrt_v(32);
-    tree.getRootValue(newrt_v);
-    uint256 newrt(newrt_v);
+void CCoinsViewCache::PushAnchor(const ZCIncrementalMerkleTree &tree) {
+    uint256 newrt = tree.root();
 
     auto currentRoot = GetBestAnchor();
 
@@ -156,7 +154,7 @@ void CCoinsViewCache::PushAnchor(const libzerocash::IncrementalMerkleTree &tree)
         CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(newrt, CAnchorsCacheEntry())).first;
 
         ret->second.entered = true;
-        ret->second.tree.setTo(tree);
+        ret->second.tree = tree;
         ret->second.flags = CAnchorsCacheEntry::DIRTY;
 
         hashAnchor = newrt;
@@ -302,7 +300,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
 
                     CAnchorsCacheEntry& entry = cacheAnchors[child_it->first];
                     entry.entered = true;
-                    entry.tree.setTo(child_it->second.tree);
+                    entry.tree = child_it->second.tree;
                     entry.flags = CAnchorsCacheEntry::DIRTY;
 
                     // TODO: cache usage
@@ -399,7 +397,7 @@ bool CCoinsViewCache::HavePourRequirements(const CTransaction& tx) const
             }
         }
 
-        libzerocash::IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+        ZCIncrementalMerkleTree tree;
         if (!GetAnchorAt(pour.anchor, tree)) {
             // If we do not have the anchor for the pour,
             // it is invalid.
