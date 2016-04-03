@@ -15,6 +15,8 @@
 #include "Coin.h"
 #include "ZerocashParams.h"
 
+#include "zcash/IncrementalMerkleTree.hpp"
+
 namespace libzerocash {
 
 class PourInput {
@@ -23,8 +25,7 @@ public:
 
     PourInput(Coin old_coin,
               Address old_address,
-              size_t merkle_index,
-              merkle_authentication_path path);
+              const libzcash::MerklePath& path);
 
     Coin old_coin;
     Address old_address;

@@ -14,8 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "zerocash/IncrementalMerkleTree.h"
-
 class CBlockFileInfo;
 class CBlockIndex;
 struct CDiskTxPos;

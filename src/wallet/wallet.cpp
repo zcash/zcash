@@ -1052,15 +1052,12 @@ bool CWalletTx::WriteToDisk(CWalletDB *pwalletdb)
 }
 
 bool CWallet::WitnessBucketCommitment(uint256 &commitment,
-                                      libsnark::merkle_authentication_path& path,
-                                      size_t &path_index,
+                                      libzcash::MerklePath &path,
                                       uint256 &final_anchor)
 {
-    bool res = false;
-    std::vector<bool> commitment_index;
-
     CBlockIndex* pindex = chainActive.Genesis();
-    libzerocash::IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+    ZCIncrementalMerkleTree tree;
+    boost::optional<ZCIncrementalWitness> witness = boost::none;
     uint256 current_anchor;
 
     while (pindex) {
@@ -1073,25 +1070,23 @@ bool CWallet::WitnessBucketCommitment(uint256 &commitment,
             {
                 BOOST_FOREACH(const uint256 &bucket_commitment, pour.commitments)
                 {
-                    std::vector<bool> commitment_bv(ZC_CM_SIZE * 8);
-                    std::vector<bool> index;
-                    std::vector<unsigned char> commitment_value(bucket_commitment.begin(), bucket_commitment.end());
-                    libzerocash::convertBytesVectorToVector(commitment_value, commitment_bv);
-                    assert(tree.insertElement(commitment_bv, index));
+                    if (witness) {
+                        witness->append(bucket_commitment);
+                    } else {
+                        tree.append(bucket_commitment);
 
-                    if (bucket_commitment == commitment) {
-                        // We've found it! Now, we construct a witness.
-                        res = true;
-                        commitment_index = index;
+                        if (bucket_commitment == commitment) {
+                            witness = tree.witness();
+                        }
                     }
                 }
             }
         }
 
-        {
-            std::vector<unsigned char> newrt_v(32);
-            tree.getRootValue(newrt_v);
-            current_anchor = uint256(newrt_v);
+        if (witness) {
+            current_anchor = witness->root();
+        } else {
+            current_anchor = tree.root();
         }
 
         // Consistency check: we should be able to find the current tree
@@ -1102,14 +1097,14 @@ bool CWallet::WitnessBucketCommitment(uint256 &commitment,
         pindex = chainActive.Next(pindex);
     }
 
-    if (res) {
-        assert(tree.getWitness(commitment_index, path));
+    if (witness) {
+        path = witness->path();
+        final_anchor = current_anchor;
+
+        return true;
     }
 
-    path_index = libzerocash::convertVectorToInt(commitment_index);
-    final_anchor = current_anchor;
-
-    return res;
+    return false;
 }
 
 /**
