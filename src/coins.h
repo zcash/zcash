@@ -300,14 +300,14 @@ struct CCoinsCacheEntry
 struct CAnchorsCacheEntry
 {
     bool entered; // This will be false if the anchor is removed from the cache
-    libzerocash::IncrementalMerkleTree tree; // The tree itself
+    ZCIncrementalMerkleTree tree; // The tree itself
     unsigned char flags;
 
     enum Flags {
         DIRTY = (1 << 0), // This cache entry is potentially different from the version in the parent view.
     };
 
-    CAnchorsCacheEntry() : entered(false), flags(0), tree(INCREMENTAL_MERKLE_TREE_DEPTH) {}
+    CAnchorsCacheEntry() : entered(false), flags(0) {}
 };
 
 struct CSerialsCacheEntry
@@ -345,7 +345,7 @@ class CCoinsView
 {
 public:
     //! Retrieve the tree at a particular anchored root in the chain
-    virtual bool GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const;
+    virtual bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
 
     //! Determine whether a serial is spent or not
     virtual bool GetSerial(const uint256 &serial) const;
@@ -387,7 +387,7 @@ protected:
 
 public:
     CCoinsViewBacked(CCoinsView *viewIn);
-    bool GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const;
+    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
     bool GetSerial(const uint256 &serial) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
@@ -451,7 +451,7 @@ public:
     ~CCoinsViewCache();
 
     // Standard CCoinsView methods
-    bool GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const;
+    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
     bool GetSerial(const uint256 &serial) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
@@ -467,7 +467,7 @@ public:
 
     // Adds the tree to mapAnchors and sets the current commitment
     // root to this root.
-    void PushAnchor(const libzerocash::IncrementalMerkleTree &tree);
+    void PushAnchor(const ZCIncrementalMerkleTree &tree);
 
     // Removes the current commitment root from mapAnchors and sets
     // the new current root.

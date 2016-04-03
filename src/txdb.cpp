@@ -33,13 +33,13 @@ static const char DB_LAST_BLOCK = 'l';
 
 void static BatchWriteAnchor(CLevelDBBatch &batch,
                              const uint256 &croot,
-                             const libzerocash::IncrementalMerkleTree &tree,
+                             const ZCIncrementalMerkleTree &tree,
                              const bool &entered)
 {
     if (!entered)
         batch.Erase(make_pair(DB_ANCHOR, croot));
     else {
-        batch.Write(make_pair(DB_ANCHOR, croot), tree.serialize());
+        batch.Write(make_pair(DB_ANCHOR, croot), tree);
     }
 }
 
@@ -69,24 +69,16 @@ CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(Get
 }
 
 
-bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const {
+bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
     if (rt.IsNull()) {
-        IncrementalMerkleTree new_tree(INCREMENTAL_MERKLE_TREE_DEPTH);
-        tree.setTo(new_tree);
+        ZCIncrementalMerkleTree new_tree;
+        tree = new_tree;
         return true;
     }
 
-    std::vector<unsigned char> tree_serialized;
+    bool read = db.Read(make_pair(DB_ANCHOR, rt), tree);
 
-    bool read = db.Read(make_pair(DB_ANCHOR, rt), tree_serialized);
-
-    if (!read) return read;
-
-    auto tree_deserialized = IncrementalMerkleTreeCompact::deserialize(tree_serialized);
-
-    tree.fromCompactRepresentation(tree_deserialized);
-
-    return true;
+    return read;
 }
 
 bool CCoinsViewDB::GetSerial(const uint256 &serial) const {

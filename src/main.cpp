@@ -2003,7 +2003,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // Construct the incremental merkle tree at the current
     // block position,
     auto old_tree_root = view.GetBestAnchor();
-    libzerocash::IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+    ZCIncrementalMerkleTree tree;
     // This should never fail: we should always be able to get the root
     // that is on the tip of our chain
     assert(view.GetAnchorAt(old_tree_root, tree));
@@ -2011,11 +2011,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     {
         // Consistency check: the root of the tree we're given should
         // match what we asked for.
-        std::vector<unsigned char> newrt_v(32);
-        tree.getRootValue(newrt_v);
-        uint256 anchor_received = uint256(newrt_v);
-
-        assert(anchor_received == old_tree_root);
+        assert(tree.root() == old_tree_root);
     }
 
     for (unsigned int i = 0; i < block.vtx.size(); i++)
@@ -2068,11 +2064,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             BOOST_FOREACH(const uint256 &bucket_commitment, pour.commitments) {
                 // Insert the bucket commitments into our temporary tree.
 
-                std::vector<bool> index;
-                std::vector<unsigned char> commitment_value(bucket_commitment.begin(), bucket_commitment.end());
-                std::vector<bool> commitment_bv(ZC_CM_SIZE * 8);
-                libzerocash::convertBytesVectorToVector(commitment_value, commitment_bv);
-                tree.insertElement(commitment_bv, index);
+                tree.append(bucket_commitment);
             }
         }
 
@@ -2080,7 +2072,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
 
-    tree.prune(); // prune it, so we don't cache intermediate states we don't need
     view.PushAnchor(tree);
     blockundo.old_tree_root = old_tree_root;
 

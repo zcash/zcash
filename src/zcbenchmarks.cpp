@@ -1,3 +1,5 @@
+#include "zerocash/IncrementalMerkleTree.h"
+
 #include <unistd.h>
 #include <boost/filesystem.hpp>
 #include "zerocash/ZerocashParams.h"

@@ -320,7 +320,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             }
 
             // TODO: chained pours
-            libzerocash::IncrementalMerkleTree tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+            ZCIncrementalMerkleTree tree;
             assert(pcoins->GetAnchorAt(pour.anchor, tree));
         }
         if (fDependsWait)
