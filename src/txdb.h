@@ -36,7 +36,7 @@ protected:
 public:
     CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 
-    bool GetAnchorAt(const uint256 &rt, libzerocash::IncrementalMerkleTree &tree) const;
+    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
     bool GetSerial(const uint256 &serial) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;

@@ -1096,7 +1096,7 @@ bool CWallet::WitnessBucketCommitment(uint256 &commitment,
 
         // Consistency check: we should be able to find the current tree
         // in our CCoins view.
-        libzerocash::IncrementalMerkleTree dummy_tree(INCREMENTAL_MERKLE_TREE_DEPTH);
+        ZCIncrementalMerkleTree dummy_tree;
         assert(pcoinsTip->GetAnchorAt(current_anchor, dummy_tree));
 
         pindex = chainActive.Next(pindex);
