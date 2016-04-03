@@ -16,7 +16,6 @@
 
 #include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
-#include "zerocash/IncrementalMerkleTree.h"
 #include "zcash/IncrementalMerkleTree.hpp"
 
 /** 
