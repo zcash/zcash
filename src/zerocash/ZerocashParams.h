@@ -23,10 +23,12 @@ class ZerocashParams {
 
 public:
     typedef default_r1cs_ppzksnark_pp zerocash_pp;
+    bool unsafe_speedup;
 
     ZerocashParams(
         const unsigned int tree_depth,
-        zerocash_pour_keypair<ZerocashParams::zerocash_pp> *keypair
+        zerocash_pour_keypair<ZerocashParams::zerocash_pp> *keypair,
+        bool unsafe_speedup = false
     );
 
     ZerocashParams(
@@ -49,7 +51,7 @@ public:
     static const size_t numPourInputs = 2;
     static const size_t numPourOutputs = 2;
 
-    static zerocash_pour_keypair<ZerocashParams::zerocash_pp> GenerateNewKeyPair(const unsigned int tree_depth);
+    static zerocash_pour_keypair<ZerocashParams::zerocash_pp> GenerateNewKeyPair(const unsigned int tree_depth, bool unsafe_speedup = false);
 
     static void SaveProvingKeyToFile(const zerocash_pour_proving_key<ZerocashParams::zerocash_pp>* p_pk_1, std::string path);
     static void SaveVerificationKeyToFile(const zerocash_pour_verification_key<ZerocashParams::zerocash_pp>* p_vk_1, std::string path);

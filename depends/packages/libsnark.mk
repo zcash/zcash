@@ -7,10 +7,11 @@ $(package)_sha256_hash=b5ec84a836d0d305407d5f39c8176bae2bb448abe802a8d11ba0f88f1
 $(package)_git_commit=69f312f149cc4bd8def8e2fed26a7941ff41251d
 
 $(package)_dependencies=libgmp
-$(package)_patches=1_fix_Wl_flag.patch
+$(package)_patches=1_fix_Wl_flag.patch 2_unsafe_sha256_speedup.patch
 
 define $(package)_preprocess_cmds
-    patch -p1 < $($(package)_patch_dir)/1_fix_Wl_flag.patch
+    patch -p1 < $($(package)_patch_dir)/1_fix_Wl_flag.patch && \
+    patch -p1 < $($(package)_patch_dir)/2_unsafe_sha256_speedup.patch
 endef
 
 define $(package)_build_cmds
