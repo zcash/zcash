@@ -3,6 +3,7 @@ bin_PROGRAMS += \
   zerocash/tests/merkleTest \
   zerocash/tests/utilTest \
   zerocash/tests/zerocashTest \
+  zerocash/tests/zerocashPerformance \
   zerocash/tests/test_zerocash_pour_ppzksnark
 
 # tool for generating our public parameters
@@ -37,6 +38,16 @@ zerocash_tests_zerocashTest_SOURCES = \
 
 zerocash_tests_zerocashTest_LDADD = \
   $(BOOST_LIBS) \
+  $(LIBZEROCASH) \
+  $(LIBBITCOIN_CRYPTO) \
+  $(LIBZEROCASH_LIBS)
+
+# zerocash performance measurement tool
+zerocash_tests_zerocashPerformance_SOURCES = \
+  zerocash/tests/zerocashPerformance.cpp \
+  zerocash/tests/timer.cpp
+
+zerocash_tests_zerocashPerformance_LDADD = \
   $(LIBZEROCASH) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZEROCASH_LIBS)
