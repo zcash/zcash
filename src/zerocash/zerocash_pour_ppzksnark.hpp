@@ -187,7 +187,8 @@ using zerocash_pour_proof = r1cs_ppzksnark_proof<ppzksnark_ppT>;
 template<typename ppzksnark_ppT>
 zerocash_pour_keypair<ppzksnark_ppT> zerocash_pour_ppzksnark_generator(const size_t num_old_coins,
                                                                        const size_t num_new_coins,
-                                                                       const size_t tree_depth);
+                                                                       const size_t tree_depth,
+                                                                       bool unsafe_speedup = false);
 
 /**
  * A prover algorithm for the Pour ppzkSNARK.
@@ -209,7 +210,8 @@ zerocash_pour_proof<ppzksnark_ppT> zerocash_pour_ppzksnark_prover(const zerocash
                                                                   const bit_vector &public_old_value,
                                                                   const bit_vector &public_new_value,
                                                                   const std::vector<bit_vector> &old_coin_values,
-                                                                  const bit_vector &signature_public_key_hash);
+                                                                  const bit_vector &signature_public_key_hash,
+                                                                  bool unsafe_speedup = false);
 
 /**
  * A verifier algorithm for the Pour ppzkSNARK.
