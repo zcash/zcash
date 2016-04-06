@@ -356,7 +356,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vout[0].nValue = BLOCKSUBSIDY;
     for (unsigned int i = 0; i < 128; ++i)
     {
-        tx.vout[0].nValue -= 10*LOWFEE;
+        tx.vout[0].nValue -= LOWFEE;
         hash = tx.GetHash();
         bool spendsCoinbase = (i == 0) ? true : false; // only first tx spends coinbase
         mempool.addUnchecked(hash, entry.Fee(LOWFEE).Time(GetTime()).SpendsCoinbase(spendsCoinbase).FromTx(tx));
@@ -397,7 +397,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vout[0].nValue = 0;
     hash = tx.GetHash();
     // give it a fee so it'll get mined
-    mempool.addUnchecked(hash, entry.Fee(LOWFEE/10).Time(GetTime()).SpendsCoinbase(false).FromTx(tx));
+    mempool.addUnchecked(hash, entry.Fee(LOWFEE).Time(GetTime()).SpendsCoinbase(false).FromTx(tx));
     BOOST_CHECK_EXCEPTION(CreateNewBlock(chainparams, scriptPubKey), std::runtime_error, err_is("bad-cb-multiple"));
     mempool.clear();
 
