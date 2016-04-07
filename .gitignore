@@ -13,6 +13,7 @@ src/zerocash/GenerateParamsForFiles
 src/zerocash/tests/merkleTest
 src/zerocash/tests/utilTest
 src/zerocash/tests/zerocashTest
+src/zerocash/tests/zerocashPerformance
 src/zerocash/tests/test_zerocash_pour_ppzksnark
 
 # autoreconf
