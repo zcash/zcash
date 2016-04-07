@@ -2345,6 +2345,36 @@ Value listunspent(const Array& params, bool fHelp)
     return results;
 }
 
+Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp)) {
+        return Value::null;
+    }
+
+    if (fHelp || params.size() != 2) {
+        throw runtime_error(
+            "zcrawreceive zcsecretkey encryptedbucket\n"
+            "\n"
+            "Decrypts encryptedbucket and checks if the coin commitments\n"
+            "are in the blockchain as indicated by the \"exists\" result.\n"
+            "\n"
+            "Output: {\n"
+            "  \"amount\": value,\n"
+            "  \"bucket\": cleartextbucket,\n"
+            "  \"exists\": exists\n"
+            "}\n"
+            );
+    }
+
+    RPCTypeCheck(params, boost::assign::list_of(str_type)(str_type));
+
+    LOCK(cs_main);
+
+    Object result;
+    result.push_back(Pair("hello", std::string("Hello, world!") ));
+    return result;
+}
+
 Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {
