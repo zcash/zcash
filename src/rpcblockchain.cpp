@@ -80,7 +80,12 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDe
     }
     result.push_back(Pair("tx", txs));
     result.push_back(Pair("time", block.GetBlockTime()));
-    result.push_back(Pair("nonce", (uint64_t)block.nNonce));
+    result.push_back(Pair("nonce", block.nNonce.GetHex()));
+    Array equihash_solution;
+    BOOST_FOREACH(uint32_t solution_index, block.nSolution) {
+        equihash_solution.push_back((size_t)(solution_index));
+    }
+    result.push_back(Pair("solution", equihash_solution));
     result.push_back(Pair("bits", strprintf("%08x", block.nBits)));
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));

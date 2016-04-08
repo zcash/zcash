@@ -8,6 +8,7 @@
 #include "consensus/consensus.h"
 #include "consensus/validation.h"
 #include "core_io.h"
+#include "crypto/equihash.h"
 #include "init.h"
 #include "main.h"
 #include "miner.h"
@@ -149,6 +150,7 @@ Value generate(const Array& params, bool fHelp)
     }
     unsigned int nExtraNonce = 0;
     Array blockHashes;
+    Equihash eh {Params().EquihashN(), Params().EquihashK()};
     while (nHeight < nHeightEnd)
     {
         auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
@@ -159,11 +161,44 @@ Value generate(const Array& params, bool fHelp)
             LOCK(cs_main);
             IncrementExtraNonce(pblock, chainActive.Tip(), nExtraNonce);
         }
-        while (!CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus())) {
+
+        // Hash state
+        crypto_generichash_blake2b_state eh_state;
+        eh.InitialiseState(eh_state);
+
+        // I = the block header minus nonce and solution.
+        CEquihashInput I{*pblock};
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << I;
+
+        // H(I||...
+        crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
+
+        while (true) {
             // Yes, there is a chance every nonce could fail to satisfy the -regtest
-            // target -- 1 in 2^(2^32). That ain't gonna happen.
-            ++pblock->nNonce;
+            // target -- 1 in 2^(2^256). That ain't gonna happen
+            pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
+
+            // H(I||V||...
+            crypto_generichash_blake2b_state curr_state;
+            curr_state = eh_state;
+            crypto_generichash_blake2b_update(&curr_state,
+                                              pblock->nNonce.begin(),
+                                              pblock->nNonce.size());
+
+            // (x_1, x_2, ...) = A(I, V, n, k)
+            std::set<std::vector<unsigned int>> solns = eh.BasicSolve(curr_state);
+
+            for (auto soln : solns) {
+                assert(eh.IsValidSolution(curr_state, soln));
+                pblock->nSolution = soln;
+
+                if (CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus())) {
+                    goto endloop;
+                }
+            }
         }
+endloop:
         CValidationState state;
         if (!ProcessNewBlock(state, NULL, pblock, true, NULL))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
@@ -519,7 +554,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     // Update nTime
     UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
-    pblock->nNonce = 0;
+    pblock->nNonce = uint256();
 
     static const Array aCaps = boost::assign::list_of("proposal");
 
