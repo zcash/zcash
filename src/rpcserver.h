@@ -208,6 +208,7 @@ extern json_spirit::Value getblockchaininfo(const json_spirit::Array& params, bo
 extern json_spirit::Value getnetworkinfo(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value setmocktime(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value resendwallettransactions(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value zc_benchmark(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value zc_raw_pour(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value zc_raw_receive(const json_spirit::Array& params, bool fHelp);

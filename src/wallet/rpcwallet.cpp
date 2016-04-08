@@ -17,6 +17,7 @@
 #include "wallet.h"
 #include "walletdb.h"
 #include "primitives/transaction.h"
+#include "benchmarks.h"
 
 #include <stdint.h>
 
@@ -2345,6 +2346,74 @@ Value listunspent(const Array& params, bool fHelp)
     return results;
 }
 
+Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp)) {
+        return Value::null;
+    }
+
+    if (fHelp || params.size() < 2) {
+        throw runtime_error(
+            "zcbenchmark benchmarktype samplecount\n"
+            "\n"
+            "Runs a benchmark of the selected type samplecount times,\n"
+            "returning the the running times of each sample.\n"
+            "\n"
+            "Output: [\n"
+            "  {\n"
+            "    \"runningtime\": runningtime\n"
+            "  },\n"
+            "  {\n"
+            "    \"runningtime\": runningtime\n"
+            "  }\n"
+            "  ...\n"
+            "]\n"
+            );
+    }
+
+    LOCK(cs_main);
+
+    std::string benchmarktype = params[0].get_str();
+    int samplecount = params[1].get_int();
+
+    if (samplecount <= 0) {
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid samplecount");
+    }
+
+    double *sample_times = new double[samplecount];
+
+    if (benchmarktype == "createjoinsplit") {
+        // HACK: Do a JoinSplit to get the proving key loaded as a side-effect.
+        benchmark_create_joinsplit();
+    }
+
+    for (int i = 0; i < samplecount; i++) {
+        if (benchmarktype == "sleep") {
+            sample_times[i] = benchmark_sleep();
+        } else if (benchmarktype == "parameterloading") {
+            sample_times[i] = benchmark_parameter_loading();
+        } else if (benchmarktype == "createjoinsplit") {
+            sample_times[i] = benchmark_create_joinsplit();
+        } else if (benchmarktype == "verifyjoinsplit") {
+            throw JSONRPCError(RPC_TYPE_ERROR, "Unimplemented");
+        } else if (benchmarktype == "equihashsolve") {
+            throw JSONRPCError(RPC_TYPE_ERROR, "Unimplemented");
+        } else if (benchmarktype == "equihashverify") {
+            throw JSONRPCError(RPC_TYPE_ERROR, "Unimplemented");
+        } else {
+            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
+        }
+    }
+
+    Array results;
+    for (int i = 0; i < samplecount; i++) {
+        Object result;
+        result.push_back(Pair("runningtime", sample_times[i]));
+        results.push_back(result);
+    }
+    return results;
+}
+
 Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {
@@ -2359,7 +2428,7 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
             "are in the blockchain as indicated by the \"exists\" result.\n"
             "\n"
             "Output: {\n"
-            "  \"amount\": value,\n"
+            "  \"runningtime\": value,\n"
             "  \"bucket\": cleartextbucket,\n"
             "  \"exists\": exists\n"
             "}\n"
