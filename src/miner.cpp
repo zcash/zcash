@@ -107,13 +107,6 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if (Params().MineBlocksOnDemand())
         pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
 
-    // Create coinbase tx
-    CMutableTransaction txNew;
-    txNew.vin.resize(1);
-    txNew.vin[0].prevout.SetNull();
-    txNew.vout.resize(1);
-    txNew.vout[0].scriptPubKey = scriptPubKeyIn;
-
     // Add dummy coinbase tx as first transaction
     pblock->vtx.push_back(CTransaction());
     pblocktemplate->vTxFees.push_back(-1); // updated at end
@@ -331,9 +324,31 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         nLastBlockSize = nBlockSize;
         LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
 
-        // Compute final coinbase transaction.
-        txNew.vout[0].nValue = nFees + GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+        // Create coinbase tx
+        CMutableTransaction txNew;
+        txNew.vin.resize(1);
+        txNew.vin[0].prevout.SetNull();
+        txNew.vout.resize(1);
+        txNew.vout[0].scriptPubKey = scriptPubKeyIn;
+        txNew.vout[0].nValue = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+
+        if ((nHeight > 0) && (nHeight < chainparams.GetConsensus().nSubsidyHalvingInterval)) {
+            // Founders reward is 20% of the block subsidy
+            auto vFoundersReward = txNew.vout[0].nValue / 5;
+            // Take some reward away from us
+            txNew.vout[0].nValue -= vFoundersReward;
+
+            auto rewardScript = ParseHex(FOUNDERS_REWARD_SCRIPT);
+
+            // And give it to the founders
+            txNew.vout.push_back(CTxOut(vFoundersReward, CScript(rewardScript.begin(),
+                                                                 rewardScript.end())));
+        }
+
+        // Add fees
+        txNew.vout[0].nValue += nFees;
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
+
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
 
