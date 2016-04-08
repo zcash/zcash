@@ -84,8 +84,3 @@ double benchmark_create_joinsplit()
     assert(pourtx.Verify(*pzerocashParams));
     return ret;
 }
-
-extern double benchmark_equihash_solve()
-{
-
-}
