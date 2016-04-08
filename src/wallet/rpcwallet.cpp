@@ -2373,12 +2373,6 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
 
     LOCK(cs_main);
 
-    /*
-       e.g.
-    if (!DecodeHexTx(tx, params[0].get_str()))
-        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
-    */
-
     std::string benchmarktype = params[0].get_str();
     int samplecount = params[1].get_int();
 
