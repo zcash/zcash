@@ -94,7 +94,8 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "zcrawpour", 1 },
     { "zcrawpour", 2 },
     { "zcrawpour", 3 },
-    { "zcrawpour", 4 }
+    { "zcrawpour", 4 },
+    { "zcbenchmark", 1 }
 };
 
 class CRPCConvertTable
