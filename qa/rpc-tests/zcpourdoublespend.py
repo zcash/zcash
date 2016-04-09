@@ -41,8 +41,7 @@ class PourTxTest(BitcoinTestFramework):
         assert_equal(self.cannot_pour(node, txn), True)
 
     def run_test(self):
-        # All nodes should start with 1,250 BTC:
-        starting_balance = 1250
+        starting_balance = 1000
         for i in range(4):
             assert_equal(self.nodes[i].getbalance(), starting_balance)
             self.nodes[i].getnewaddress("")  # bug workaround, coins generated assigned to first getnewaddress!
@@ -54,9 +53,9 @@ class PourTxTest(BitcoinTestFramework):
 
         pool = [0, 1, 2, 3]
         for i in range(4):
-            (total_in, inputs) = gather_inputs(self.nodes[i], 50)
+            (total_in, inputs) = gather_inputs(self.nodes[i], 40)
             pool[i] = self.nodes[i].createrawtransaction(inputs, {})
-            pool[i] = self.nodes[i].zcrawpour(pool[i], {}, {zcaddress:49.9}, 50, 0.1)
+            pool[i] = self.nodes[i].zcrawpour(pool[i], {}, {zcaddress:49.9}, 40, 0.1)
             signed = self.nodes[i].signrawtransaction(pool[i]["rawtxn"])
 
             # send the tx to both halves of the network
@@ -181,3 +180,4 @@ class PourTxTest(BitcoinTestFramework):
 
 if __name__ == '__main__':
     PourTxTest().main()
+

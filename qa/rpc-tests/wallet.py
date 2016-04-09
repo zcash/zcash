@@ -3,21 +3,6 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#
-# Exercise the wallet.  Ported from wallet.sh.  
-# Does the following:
-#   a) creates 3 nodes, with an empty chain (no blocks).
-#   b) node0 mines a block
-#   c) node1 mines 101 blocks, so now nodes 0 and 1 have 50btc, node2 has none. 
-#   d) node0 sends 21 btc to node2, in two transactions (11 btc, then 10 btc).
-#   e) node0 mines a block, collects the fee on the second transaction
-#   f) node1 mines 100 blocks, to mature node0's just-mined block
-#   g) check that node0 has 100-21, node2 has 21
-#   h) node0 should now have 2 unspent outputs;  send these to node2 via raw tx broadcast by node1
-#   i) have node1 mine a block
-#   j) check balances - node0 should have 0, node2 should have 100
-#   k) test ResendWalletTransactions - create transactions, startup fourth node, make sure it syncs
-#
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
