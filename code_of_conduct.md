@@ -47,7 +47,7 @@ If you wish to contact specific maintainers directly, the following have made
 themselves available for conduct issues:
 
 - Daira Hopwood (daira at leastauthority.com)
-- TODO: second volunteer
+- Sean Bowe (sean at z.cash)
 
 
 This Code of Conduct is adapted from the [Contributor Covenant][homepage],
