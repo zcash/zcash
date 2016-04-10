@@ -28,8 +28,9 @@ import asyncore
 import time
 import sys
 import random
-from binascii import hexlify
+from binascii import hexlify, unhexlify
 from io import BytesIO
+from codecs import encode
 import hashlib
 from threading import RLock
 from threading import Thread
@@ -627,7 +628,7 @@ class CTxIn(object):
 
     def __repr__(self):
         return "CTxIn(prevout=%s scriptSig=%s nSequence=%i)" \
-            % (self.prevout, hexlify(self.scriptSig),
+            % (repr(self.prevout), hexlify(self.scriptSig),
                self.nSequence)
 
 
@@ -764,7 +765,7 @@ class CTransaction(object):
     def calc_sha256(self):
         if self.sha256 is None:
             self.sha256 = uint256_from_str(hash256(self.serialize()))
-        self.hash = hash256(self.serialize())[::-1].hex()
+        self.hash = encode(hash256(self.serialize())[::-1], 'hex_codec').decode('ascii')
 
     def is_valid(self):
         self.calc_sha256()
@@ -856,7 +857,7 @@ class CBlockHeader(object):
             r += ser_uint256(self.nNonce)
             r += ser_char_vector(self.nSolution)
             self.sha256 = uint256_from_str(hash256(r))
-            self.hash = hash256(r)[::-1].hex()
+            self.hash = encode(hash256(r)[::-1], 'hex_codec').decode('ascii')
 
     def rehash(self):
         self.sha256 = None

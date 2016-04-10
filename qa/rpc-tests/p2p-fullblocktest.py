@@ -79,7 +79,7 @@ class FullBlockTest(ComparisonTestFramework):
         block = create_block(base_block_hash, coinbase, self.block_time)
         if (spend != None):
             tx = CTransaction()
-            tx.vin.append(CTxIn(COutPoint(spend.tx.sha256, spend.n), "", 0xffffffff))  # no signature yet
+            tx.vin.append(CTxIn(COutPoint(spend.tx.sha256, spend.n), b"", 0xffffffff))  # no signature yet
             # This copies the java comparison tool testing behavior: the first
             # txout has a garbage scriptPubKey, "to make sure we're not
             # pre-verifying too much" (?)
@@ -89,7 +89,7 @@ class FullBlockTest(ComparisonTestFramework):
             else:
                 tx.vout.append(CTxOut(1, script))
             # Now sign it if necessary
-            scriptSig = ""
+            scriptSig = b""
             scriptPubKey = bytearray(spend.tx.vout[spend.n].scriptPubKey)
             if (scriptPubKey[0] == OP_TRUE):  # looks like an anyone-can-spend
                 scriptSig = CScript([OP_TRUE])
