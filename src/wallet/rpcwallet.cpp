@@ -2397,9 +2397,9 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
             sample_times.push_back(benchmark_create_joinsplit());
         } else if (benchmarktype == "verifyjoinsplit") {
             throw JSONRPCError(RPC_TYPE_ERROR, "Unimplemented");
-        } else if (benchmarktype == "equihashsolve") {
-            throw JSONRPCError(RPC_TYPE_ERROR, "Unimplemented");
-        } else if (benchmarktype == "equihashverify") {
+        } else if (benchmarktype == "solveequihash") {
+            sample_times.push_back(benchmark_solve_equihash());
+        } else if (benchmarktype == "verifyequihash") {
             throw JSONRPCError(RPC_TYPE_ERROR, "Unimplemented");
         } else {
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");

@@ -3,12 +3,12 @@
 set -e
 
 function zcash_rpc {
-    ./src/zcash-cli -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5001 "$@"
+    ./src/zcash-cli -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 "$@"
 }
 
 
 function zcashd_start {
-    ./src/zcashd -regtest -rpcuser=user -rpcpassword=password -rpcport=5001 &
+    ./src/zcashd -regtest -rpcuser=user -rpcpassword=password -rpcport=5983 &
     ZCASHD_PID=$!
 }
 
@@ -19,7 +19,7 @@ function zcashd_stop {
 
 function zcashd_massif_start {
     rm -f massif.out
-    valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/zcashd -regtest -rpcuser=user -rpcpassword=password -rpcport=5001 &
+    valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/zcashd -regtest -rpcuser=user -rpcpassword=password -rpcport=5983 &
     ZCASHD_PID=$!
 }
 
@@ -55,6 +55,13 @@ zcash_rpc zcbenchmark createjoinsplit 10
 zcashd_stop
 
 echo ""
+echo "Solve Equihash"
+echo "------------------"
+zcashd_start
+zcash_rpc zcbenchmark solveequihash 10
+zcashd_stop
+
+echo ""
 echo ""
 echo "Memory"
 echo "=============================="
@@ -78,4 +85,11 @@ echo "Create JoinSplit"
 echo "------------------"
 zcashd_massif_start
 zcash_rpc zcbenchmark createjoinsplit 1
+zcashd_massif_stop
+
+echo ""
+echo "Solve Equihash"
+echo "------------------"
+zcashd_massif_start
+zcash_rpc zcbenchmark solveequihash 10
 zcashd_massif_stop

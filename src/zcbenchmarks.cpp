@@ -5,6 +5,8 @@
 #include "util.h"
 #include "init.h"
 #include "primitives/transaction.h"
+#include "crypto/equihash.h"
+#include "chainparams.h"
 
 #include "zcbenchmarks.h"
 
@@ -87,4 +89,16 @@ double benchmark_create_joinsplit()
     double ret = timer_stop();
     assert(pourtx.Verify(*pzerocashParams));
     return ret;
+}
+
+double benchmark_solve_equihash()
+{
+    const char *testing = "testing";
+    Equihash eh {Params(CBaseChainParams::MAIN).EquihashN(), Params(CBaseChainParams::MAIN).EquihashK()};
+    crypto_generichash_blake2b_state eh_state;
+    eh.InitialiseState(eh_state);
+    crypto_generichash_blake2b_update(&eh_state, (const unsigned char*)testing, strlen(testing));
+    timer_start();
+    eh.BasicSolve(eh_state);
+    return timer_stop();
 }
