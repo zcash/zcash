@@ -102,3 +102,10 @@ double benchmark_solve_equihash()
     eh.BasicSolve(eh_state);
     return timer_stop();
 }
+
+double benchmark_verify_joinsplit(const CPourTx &joinsplit)
+{
+    timer_start();
+    joinsplit.Verify(*pzerocashParams);
+    return timer_stop();
+}

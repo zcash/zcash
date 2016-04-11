@@ -2396,7 +2396,20 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         } else if (benchmarktype == "createjoinsplit") {
             sample_times.push_back(benchmark_create_joinsplit());
         } else if (benchmarktype == "verifyjoinsplit") {
-            throw JSONRPCError(RPC_TYPE_ERROR, "Unimplemented");
+            if (params.size() != 3) {
+                throw JSONRPCError(RPC_TYPE_ERROR, "Please provide a transaction with a JoinSplit.");
+            }
+
+            CTransaction tx;
+            if (!DecodeHexTx(tx, params[2].get_str())) {
+                throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+            }
+
+            if (tx.vpour.size() != 1) {
+                throw JSONRPCError(RPC_TYPE_ERROR, "The transaction must have exactly one JoinSplit.");
+            }
+
+            sample_times.push_back(benchmark_verify_joinsplit(tx.vpour[0]));
         } else if (benchmarktype == "solveequihash") {
             sample_times.push_back(benchmark_solve_equihash());
         } else if (benchmarktype == "verifyequihash") {
