@@ -2413,7 +2413,7 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         } else if (benchmarktype == "solveequihash") {
             sample_times.push_back(benchmark_solve_equihash());
         } else if (benchmarktype == "verifyequihash") {
-            throw JSONRPCError(RPC_TYPE_ERROR, "Unimplemented");
+            sample_times.push_back(benchmark_verify_equihash());
         } else {
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
         }

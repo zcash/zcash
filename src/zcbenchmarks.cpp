@@ -7,6 +7,7 @@
 #include "primitives/transaction.h"
 #include "crypto/equihash.h"
 #include "chainparams.h"
+#include "pow.h"
 
 #include "zcbenchmarks.h"
 
@@ -91,6 +92,13 @@ double benchmark_create_joinsplit()
     return ret;
 }
 
+double benchmark_verify_joinsplit(const CPourTx &joinsplit)
+{
+    timer_start();
+    joinsplit.Verify(*pzerocashParams);
+    return timer_stop();
+}
+
 double benchmark_solve_equihash()
 {
     const char *testing = "testing";
@@ -103,9 +111,13 @@ double benchmark_solve_equihash()
     return timer_stop();
 }
 
-double benchmark_verify_joinsplit(const CPourTx &joinsplit)
+double benchmark_verify_equihash()
 {
+    CChainParams params = Params(CBaseChainParams::MAIN);
+    CBlock genesis = Params(CBaseChainParams::MAIN).GenesisBlock();
+    CBlockHeader genesis_header = genesis.GetBlockHeader();
     timer_start();
-    joinsplit.Verify(*pzerocashParams);
+    CheckEquihashSolution(&genesis_header, params);
     return timer_stop();
 }
+

@@ -71,6 +71,13 @@ zcash_rpc zcbenchmark solveequihash 10
 zcashd_stop
 
 echo ""
+echo "Verify Equihash"
+echo "------------------"
+zcashd_start
+zcash_rpc zcbenchmark verifyequihash 1000
+zcashd_stop
+
+echo ""
 echo ""
 echo "Memory"
 echo "=============================="
@@ -108,4 +115,11 @@ echo "Verify JoinSplit"
 echo "------------------"
 zcashd_massif_start
 zcash_rpc zcbenchmark verifyjoinsplit 1 "$RAWTXWITHPOUR"
+zcashd_massif_stop
+
+echo ""
+echo "Verify Equihash"
+echo "------------------"
+zcashd_massif_start
+zcash_rpc zcbenchmark verifyequihash 1
 zcashd_massif_stop
