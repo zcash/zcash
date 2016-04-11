@@ -17,6 +17,7 @@
 #include "wallet.h"
 #include "walletdb.h"
 #include "primitives/transaction.h"
+#include "zcbenchmarks.h"
 
 #include <stdint.h>
 
@@ -2340,6 +2341,89 @@ Value listunspent(const Array& params, bool fHelp)
         entry.push_back(Pair("confirmations",out.nDepth));
         entry.push_back(Pair("spendable", out.fSpendable));
         results.push_back(entry);
+    }
+
+    return results;
+}
+
+Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp)) {
+        return Value::null;
+    }
+
+    if (fHelp || params.size() < 2) {
+        throw runtime_error(
+            "zcbenchmark benchmarktype samplecount\n"
+            "\n"
+            "Runs a benchmark of the selected type samplecount times,\n"
+            "returning the running times of each sample.\n"
+            "\n"
+            "Output: [\n"
+            "  {\n"
+            "    \"runningtime\": runningtime\n"
+            "  },\n"
+            "  {\n"
+            "    \"runningtime\": runningtime\n"
+            "  }\n"
+            "  ...\n"
+            "]\n"
+            );
+    }
+
+    LOCK(cs_main);
+
+    std::string benchmarktype = params[0].get_str();
+    int samplecount = params[1].get_int();
+
+    if (samplecount <= 0) {
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid samplecount");
+    }
+
+    std::vector<double> sample_times;
+
+    if (benchmarktype == "createjoinsplit") {
+        /* Load the proving now key so that it doesn't happen as part of the
+         * first joinsplit. */
+        pzerocashParams->loadProvingKey();
+    }
+
+    for (int i = 0; i < samplecount; i++) {
+        if (benchmarktype == "sleep") {
+            sample_times.push_back(benchmark_sleep());
+        } else if (benchmarktype == "parameterloading") {
+            sample_times.push_back(benchmark_parameter_loading());
+        } else if (benchmarktype == "createjoinsplit") {
+            sample_times.push_back(benchmark_create_joinsplit());
+        } else if (benchmarktype == "verifyjoinsplit") {
+            if (params.size() != 3) {
+                throw JSONRPCError(RPC_TYPE_ERROR, "Please provide a transaction with a JoinSplit.");
+            }
+
+            CTransaction tx;
+            if (!DecodeHexTx(tx, params[2].get_str())) {
+                throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+            }
+
+            if (tx.vpour.size() != 1) {
+                throw JSONRPCError(RPC_TYPE_ERROR, "The transaction must have exactly one JoinSplit.");
+            }
+
+            sample_times.push_back(benchmark_verify_joinsplit(tx.vpour[0]));
+        } else if (benchmarktype == "solveequihash") {
+            sample_times.push_back(benchmark_solve_equihash());
+        } else if (benchmarktype == "verifyequihash") {
+            sample_times.push_back(benchmark_verify_equihash());
+        } else {
+            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
+        }
+    }
+
+    Array results;
+    for (int i = 0; i < samplecount; i++) {
+        Object result;
+        result.push_back(Pair("runningtime", sample_times.at(i)));
+        results.push_back(result);
     }
 
     return results;
