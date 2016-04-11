@@ -46,10 +46,10 @@ public:
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
          */
-        pchMessageStart[0] = 0xf9;
-        pchMessageStart[1] = 0xbe;
-        pchMessageStart[2] = 0xb4;
-        pchMessageStart[3] = 0xd9;
+        pchMessageStart[0] = 0x9f;
+        pchMessageStart[1] = 0xee;
+        pchMessageStart[2] = 0x4e;
+        pchMessageStart[3] = 0xd8;
         vAlertPubKey = ParseHex("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284");
         nDefaultPort = 8333;
         nMinerThreads = 0;
@@ -149,10 +149,10 @@ public:
         consensus.nMajorityWindow = 100;
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.fPowAllowMinDifficultyBlocks = true;
-        pchMessageStart[0] = 0x0c;
-        pchMessageStart[1] = 0x12;
-        pchMessageStart[2] = 0x99;
-        pchMessageStart[3] = 0x17;
+        pchMessageStart[0] = 0x01;
+        pchMessageStart[1] = 0x22;
+        pchMessageStart[2] = 0xaa;
+        pchMessageStart[3] = 0x1a;
         vAlertPubKey = ParseHex("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
         nDefaultPort = 18333;
         nMinerThreads = 0;
@@ -214,10 +214,10 @@ public:
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        pchMessageStart[0] = 0xfa;
-        pchMessageStart[1] = 0xbf;
-        pchMessageStart[2] = 0xb5;
-        pchMessageStart[3] = 0xda;
+        pchMessageStart[0] = 0xaa;
+        pchMessageStart[1] = 0xe8;
+        pchMessageStart[2] = 0x3f;
+        pchMessageStart[3] = 0x5f;
         nMinerThreads = 1;
         nMaxTipAge = 24 * 60 * 60;
         nEquihashN = 48;

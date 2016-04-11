@@ -3010,6 +3010,26 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         }
     }
 
+    // Coinbase transaction must include an output sending 20% of
+    // the block reward to `FOUNDERS_REWARD_SCRIPT` until the first
+    // subsidy halving block, with exception to the genesis block.
+    if ((nHeight > 0) && (nHeight < consensusParams.nSubsidyHalvingInterval)) {
+        bool found = false;
+
+        BOOST_FOREACH(const CTxOut& output, block.vtx[0].vout) {
+            if (output.scriptPubKey == ParseHex(FOUNDERS_REWARD_SCRIPT)) {
+                if (output.nValue == (GetBlockSubsidy(nHeight, consensusParams) / 5)) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if (!found) {
+            return state.DoS(100, error("%s: founders reward missing", __func__), REJECT_INVALID, "cb-no-founders-reward");
+        }
+    }
+
     return true;
 }
 
