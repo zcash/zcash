@@ -24,29 +24,28 @@ class TxnMallTest(BitcoinTestFramework):
         return super(TxnMallTest, self).setup_network(True)
 
     def run_test(self):
-        starting_balance = 1000
+        mining_reward = 40
+        starting_balance = mining_reward * 25
+
         for i in range(4):
             assert_equal(self.nodes[i].getbalance(), starting_balance)
             self.nodes[i].getnewaddress("")  # bug workaround, coins generated assigned to first getnewaddress!
         
         # Assign coins to foo and bar accounts:
-        amtfoo = 970
-        amtbar = starting_balance - amtfoo
-        self.nodes[0].move("", "foo", amtfoo)
-        self.nodes[0].move("", "bar", amtbar)
+        self.nodes[0].move("", "foo", (starting_balance - (mining_reward - 20)))
+        self.nodes[0].move("", "bar", (mining_reward - 20))
         assert_equal(self.nodes[0].getbalance(""), 0)
 
         # Coins are sent to node1_address
         node1_address = self.nodes[1].getnewaddress("from0")
 
-        # First: use raw transaction API to send amtqux BTC to node1_address,
+        # First: use raw transaction API to send (starting_balance - (mining_reward - 10)) BTC to node1_address,
         # but don't broadcast:
-        amtqux = 713
-        (total_in, inputs) = gather_inputs(self.nodes[0], amtqux)
+        (total_in, inputs) = gather_inputs(self.nodes[0], (starting_balance - (mining_reward - 10)))
         change_address = self.nodes[0].getnewaddress("foo")
         outputs = {}
-        outputs[change_address] = starting_balance - amtqux
-        outputs[node1_address] = amtqux
+        outputs[change_address] = (mining_reward - 10)
+        outputs[node1_address] = (starting_balance - (mining_reward - 10))
         rawtx = self.nodes[0].createrawtransaction(inputs, outputs)
         doublespend = self.nodes[0].signrawtransaction(rawtx)
         assert_equal(doublespend["complete"], True)
@@ -54,9 +53,8 @@ class TxnMallTest(BitcoinTestFramework):
         # Create two transaction from node[0] to node[1]; the
         # second must spend change from the first because the first
         # spends all mature inputs:
-        txid1 = self.nodes[0].sendfrom("foo", node1_address, amtqux, 0)
-        amtbar2 = 20
-        txid2 = self.nodes[0].sendfrom("bar", node1_address, amtbar2, 0)
+        txid1 = self.nodes[0].sendfrom("foo", node1_address, (starting_balance - (mining_reward - 10)), 0)
+        txid2 = self.nodes[0].sendfrom("bar", node1_address, 20, 0)
         
         # Have node0 mine a block:
         if (self.options.mine_block):
@@ -66,17 +64,17 @@ class TxnMallTest(BitcoinTestFramework):
         tx1 = self.nodes[0].gettransaction(txid1)
         tx2 = self.nodes[0].gettransaction(txid2)
 
-        # Node0's balance should be starting balance, plus 40BTC for another
-        # matured block, minus amtqux, minus amtbar2, and minus transaction fees:
+        # Node0's balance should be starting balance, plus mining_reward for another
+        # matured block, minus (starting_balance - (mining_reward - 10)), minus 20, and minus transaction fees:
         expected = starting_balance
-        if self.options.mine_block: expected += 40
+        if self.options.mine_block: expected += mining_reward
         expected += tx1["amount"] + tx1["fee"]
         expected += tx2["amount"] + tx2["fee"]
         assert_equal(self.nodes[0].getbalance(), expected)
 
         # foo and bar accounts should be debited:
-        assert_equal(self.nodes[0].getbalance("foo"), amtfoo+tx1["amount"]+tx1["fee"])
-        assert_equal(self.nodes[0].getbalance("bar"), amtbar+tx2["amount"]+tx2["fee"])
+        assert_equal(self.nodes[0].getbalance("foo"), (starting_balance - (mining_reward - 20))+tx1["amount"]+tx1["fee"])
+        assert_equal(self.nodes[0].getbalance("bar"), (mining_reward - 20)+tx2["amount"]+tx2["fee"])
 
         if self.options.mine_block:
             assert_equal(tx1["confirmations"], 1)
@@ -105,18 +103,18 @@ class TxnMallTest(BitcoinTestFramework):
         assert_equal(tx1["confirmations"], -1)
         assert_equal(tx2["confirmations"], -1)
 
-        # Node0's total balance should be starting balance, plus 80BTC for
-        # two more matured blocks, minus amtqux for the double-spend:
-        expected = starting_balance + 80 - amtqux
+        # Node0's total balance should be starting balance, plus 100BTC for 
+        # two more matured blocks, minus (starting_balance - (mining_reward - 10)) for the double-spend:
+        expected = starting_balance + (mining_reward * 2) - (starting_balance - (mining_reward - 10))
         assert_equal(self.nodes[0].getbalance(), expected)
         assert_equal(self.nodes[0].getbalance("*"), expected)
 
         # foo account should be debited, but bar account should not:
-        assert_equal(self.nodes[0].getbalance("foo"), amtfoo-amtqux)
-        assert_equal(self.nodes[0].getbalance("bar"), amtbar)
+        assert_equal(self.nodes[0].getbalance("foo"), (starting_balance - (mining_reward - 20))-(starting_balance - (mining_reward - 10)))
+        assert_equal(self.nodes[0].getbalance("bar"), (mining_reward - 20))
 
         # Node1's "from" account balance should be just the mutated send:
-        assert_equal(self.nodes[1].getbalance("from0"), amtqux)
+        assert_equal(self.nodes[1].getbalance("from0"), (starting_balance - (mining_reward - 10)))
 
 if __name__ == '__main__':
     TxnMallTest().main()
