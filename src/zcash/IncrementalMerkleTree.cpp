@@ -51,6 +51,16 @@ void IncrementalMerkleTree<Depth, Hash>::wfcheck() const {
     if (parents.size() >= Depth) {
         throw std::ios_base::failure("tree has too many parents");
     }
+
+    // The last parent cannot be null.
+    bool wasnull = false;
+    BOOST_FOREACH(const boost::optional<Hash>& parent, parents) {
+        wasnull = !parent;
+    }
+
+    if (wasnull) {
+        throw std::ios_base::failure("tree has non-canonical representation of parent");
+    }
 }
 
 template<size_t Depth, typename Hash>
