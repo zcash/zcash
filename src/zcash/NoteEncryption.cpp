@@ -137,7 +137,7 @@ typename NoteDecryption<MLEN>::Plaintext NoteDecryption<MLEN>::decrypt
 template<size_t MLEN>
 uint256 NoteEncryption<MLEN>::generate_privkey(const uint256 &a_sk)
 {
-    uint256 sk = PRF_addr<1>(a_sk);
+    uint256 sk = PRF_addr_sk_enc(a_sk);
 
     clamp_curve25519(sk.begin());
 
