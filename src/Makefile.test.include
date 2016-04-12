@@ -78,7 +78,7 @@ BITCOIN_TESTS =\
   test/univalue_tests.cpp \
   test/util_tests.cpp \
   test/sha256compress_tests.cpp \
-  test/keyprivate_tests.cpp
+  test/noteencryption_tests.cpp
 
 if ENABLE_WALLET
 BITCOIN_TESTS += \
