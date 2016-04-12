@@ -268,6 +268,8 @@ BOOST_FIXTURE_TEST_SUITE(merkle_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(tree_test_vectors)
 {
+    libsnark::default_r1cs_ppzksnark_pp::init_public_params();
+
     Array root_tests = read_json(std::string(json_tests::merkle_roots, json_tests::merkle_roots + sizeof(json_tests::merkle_roots)));
     Array ser_tests = read_json(std::string(json_tests::merkle_serialization, json_tests::merkle_serialization + sizeof(json_tests::merkle_serialization)));
     Array witness_ser_tests = read_json(std::string(json_tests::merkle_witness_serialization, json_tests::merkle_witness_serialization + sizeof(json_tests::merkle_witness_serialization)));
