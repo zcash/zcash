@@ -24,9 +24,48 @@ extern Array read_json(const std::string& jsondata);
 
 using namespace std;
 
+template<typename T>
+void expect_deser_same(const T& expected)
+{
+    CDataStream ss1(SER_NETWORK, PROTOCOL_VERSION);
+    ss1 << expected;
+
+    auto serialized_size = ss1.size();
+
+    T object;
+    ss1 >> object;
+
+    CDataStream ss2(SER_NETWORK, PROTOCOL_VERSION);
+    ss2 << object;
+
+    BOOST_CHECK(serialized_size == ss2.size());
+    BOOST_CHECK(memcmp(&*ss1.begin(), &*ss2.begin(), serialized_size) == 0);
+}
+
+template<>
+void expect_deser_same(const ZCTestingIncrementalWitness& expected)
+{
+    // Cannot check this; IncrementalWitness cannot be
+    // deserialized because it can only be constructed by
+    // IncrementalMerkleTree, and it does not yet have a
+    // canonical serialized representation.
+}
+
+template<>
+void expect_deser_same(const libzcash::MerklePath& expected)
+{
+    // This deserialization check is pointless for MerklePath,
+    // since we only serialize it to check it against test
+    // vectors. See `expect_test_vector` for that. Also,
+    // it doesn't seem that vector<bool> can be properly
+    // deserialized by Bitcoin's serialization code.
+}
+
 template<typename T, typename U>
 void expect_test_vector(T& it, const U& expected)
 {
+    expect_deser_same(expected);
+
     CDataStream ss1(SER_NETWORK, PROTOCOL_VERSION);
     ss1 << expected;
 
@@ -292,7 +331,7 @@ BOOST_AUTO_TEST_CASE( deserializeInvalid ) {
     ss << newTree;
 
     ZCTestingIncrementalMerkleTree newTreeSmall;
-    BOOST_CHECK_THROW(ss >> newTreeSmall, std::ios_base::failure);
+    BOOST_CHECK_THROW({ss >> newTreeSmall;}, std::ios_base::failure);
 }
 
 BOOST_AUTO_TEST_CASE( testZeroElements ) {
