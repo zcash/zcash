@@ -7,7 +7,7 @@
 
 #define NOTEENCRYPTION_CIPHER_KEYSIZE 32
 
-void clamp_curve25519(unsigned char *key)
+void clamp_curve25519(unsigned char key[crypto_scalarmult_SCALARBYTES])
 {
     key[0] &= 248;
     key[31] &= 127;

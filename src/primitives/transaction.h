@@ -77,9 +77,7 @@ public:
     // This is a zk-SNARK which ensures that this pour is valid.
     std::string proof;
 
-    CPourTx(): vpub_old(0), vpub_new(0), scriptPubKey(), scriptSig(), anchor(), serials(), commitments(), ciphertexts(), ephemeralKey(), macs(), proof() {
-        
-    }
+    CPourTx(): vpub_old(0), vpub_new(0) { }
 
     CPourTx(ZerocashParams& params,
             const CScript& scriptPubKey,
