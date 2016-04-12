@@ -486,19 +486,19 @@ void static BitcoinMiner(CWallet *pwallet)
             int64_t nStart = GetTime();
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
 
-            // Hash state
-            crypto_generichash_blake2b_state state;
-            eh.InitialiseState(state);
-
-            // I = the block header minus nonce and solution.
-            CEquihashInput I{*pblock};
-            CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-            ss << I;
-
-            // H(I||...
-            crypto_generichash_blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
-
             while (true) {
+                // Hash state
+                crypto_generichash_blake2b_state state;
+                eh.InitialiseState(state);
+
+                // I = the block header minus nonce and solution.
+                CEquihashInput I{*pblock};
+                CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                ss << I;
+
+                // H(I||...
+                crypto_generichash_blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
+
                 // Find valid nonce
                 while (true)
                 {
