@@ -15,7 +15,7 @@ namespace libzcash {
 
 template<size_t MLEN>
 class NoteEncryption {
-private:
+protected:
     enum { CLEN=MLEN+NOTEENCRYPTION_AUTH_BYTES };
     uint256 epk;
     uint256 esk;
@@ -49,7 +49,7 @@ public:
 
 template<size_t MLEN>
 class NoteDecryption {
-private:
+protected:
     enum { CLEN=MLEN+NOTEENCRYPTION_AUTH_BYTES };
     uint256 sk_enc;
     uint256 pk_enc;

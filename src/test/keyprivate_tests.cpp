@@ -5,6 +5,15 @@
 
 #include <boost/test/unit_test.hpp>
 
+class TestNoteDecryption : public ZCNoteDecryption {
+public:
+    TestNoteDecryption(uint256 sk_enc) : ZCNoteDecryption(sk_enc) {}
+
+    void change_pk_enc(uint256 to) {
+        pk_enc = to;
+    }
+};
+
 BOOST_FIXTURE_TEST_SUITE(keyprivate_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(noteencryption)
@@ -50,6 +59,18 @@ BOOST_AUTO_TEST_CASE(noteencryption)
             uint256 sk_enc_2 = ZCNoteEncryption::generate_privkey(uint256());
             ZCNoteDecryption decrypter(sk_enc_2);
 
+            BOOST_CHECK_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i), std::runtime_error);
+        }
+
+        {
+            TestNoteDecryption decrypter(sk_enc);
+
+            // Test decryption
+            auto plaintext = decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i);
+            BOOST_CHECK(plaintext == message);
+
+            // Test wrong public key (test of KDF)
+            decrypter.change_pk_enc(uint256());
             BOOST_CHECK_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i), std::runtime_error);
         }
     }
