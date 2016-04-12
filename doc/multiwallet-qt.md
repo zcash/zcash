@@ -1,3 +1,5 @@
+*** Warning: This document has not been updated for Zcash and may be inaccurate. ***
+
 Multiwallet Qt Development and Integration Strategy
 ===================================================
 
