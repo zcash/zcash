@@ -17,6 +17,8 @@ proving scheme which preserves confidentiality of transaction metadata.
 
 **Zcash is unfinished and highly experimental.** Use at your own risk.
 
+Participation in the Zcash project is subject to a [Code of Conduct](code_of_conduct.md).
+
 License
 -------
 

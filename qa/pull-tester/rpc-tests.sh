@@ -55,7 +55,7 @@ extArg="-extended"
 passOn=${@#$extArg}
 
 successCount=0
-failCount=0
+declare -a failures
 
 function runTestScript
 {
@@ -69,7 +69,7 @@ function runTestScript
         successCount=$(expr $successCount + 1)
         echo "--- Success: ${testName} ---"
     else
-        failCount=$(expr $failCount + 1)
+        failures[${#failures[@]}]="$testName"
         echo "!!! FAIL: ${testName} !!!"
     fi
 
@@ -98,9 +98,16 @@ if [ "x${ENABLE_BITCOIND}${ENABLE_UTILS}${ENABLE_WALLET}" = "x111" ]; then
         fi
     done
 
-    echo -e "\n\nTests completed: $(expr $successCount + $failCount)"
-    echo "successes $successCount; failures: $failCount"
-    exit $failCount
+    echo -e "\n\nTests completed: $(expr $successCount + ${#failures[@]})"
+    echo "successes $successCount; failures: ${#failures[@]}"
+
+    if [ ${#failures[@]} -gt 0 ]
+    then
+        echo -e "\nFailing tests: ${failures[*]}"
+        exit 1
+    else
+        exit 0
+    fi
 else
   echo "No rpc tests to run. Wallet, utils, and bitcoind must all be enabled"
 fi

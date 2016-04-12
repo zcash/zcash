@@ -1295,7 +1295,8 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
     }
 
     // Check the header
-    if (!CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus()))
+    if (!(CheckEquihashSolution(&block, Params()) &&
+          CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())))
         return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
 
     return true;
@@ -2851,6 +2852,11 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
 {
+    // Check Equihash solution is valid
+    if (fCheckPOW && !CheckEquihashSolution(&block, Params()))
+        return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
+                         REJECT_INVALID, "invalid-solution");
+
     // Check proof of work matches claimed amount
     if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus()))
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
@@ -3001,6 +3007,26 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         if (block.vtx[0].vin[0].scriptSig.size() < expect.size() ||
             !std::equal(expect.begin(), expect.end(), block.vtx[0].vin[0].scriptSig.begin())) {
             return state.DoS(100, error("%s: block height mismatch in coinbase", __func__), REJECT_INVALID, "bad-cb-height");
+        }
+    }
+
+    // Coinbase transaction must include an output sending 20% of
+    // the block reward to `FOUNDERS_REWARD_SCRIPT` until the first
+    // subsidy halving block, with exception to the genesis block.
+    if ((nHeight > 0) && (nHeight < consensusParams.nSubsidyHalvingInterval)) {
+        bool found = false;
+
+        BOOST_FOREACH(const CTxOut& output, block.vtx[0].vout) {
+            if (output.scriptPubKey == ParseHex(FOUNDERS_REWARD_SCRIPT)) {
+                if (output.nValue == (GetBlockSubsidy(nHeight, consensusParams) / 5)) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if (!found) {
+            return state.DoS(100, error("%s: founders reward missing", __func__), REJECT_INVALID, "cb-no-founders-reward");
         }
     }
 

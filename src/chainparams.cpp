@@ -35,7 +35,9 @@ public:
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;
-        consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        // TODO generate harder genesis block
+        //consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // two weeks
         consensus.nPowTargetSpacing = 10 * 60;
         consensus.fPowAllowMinDifficultyBlocks = false;
@@ -44,15 +46,17 @@ public:
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
          */
-        pchMessageStart[0] = 0xf9;
-        pchMessageStart[1] = 0xbe;
-        pchMessageStart[2] = 0xb4;
-        pchMessageStart[3] = 0xd9;
+        pchMessageStart[0] = 0x9f;
+        pchMessageStart[1] = 0xee;
+        pchMessageStart[2] = 0x4e;
+        pchMessageStart[3] = 0xd8;
         vAlertPubKey = ParseHex("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284");
         nDefaultPort = 8333;
         nMinerThreads = 0;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
+        nEquihashN = 96;
+        nEquihashK = 5;
 
         /**
          * Build the genesis block. Note that the output of its generation
@@ -77,11 +81,14 @@ public:
         genesis.hashMerkleRoot = genesis.BuildMerkleTree();
         genesis.nVersion = 1;
         genesis.nTime    = 1231006505;
-        genesis.nBits    = 0x1d00ffff;
-        genesis.nNonce   = 2083236893;
+        // TODO generate harder genesis block
+        //genesis.nBits    = 0x1d00ffff;
+        genesis.nBits    = 0x207fffff;
+        genesis.nNonce   = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000");
+        genesis.nSolution = {12086, 55325, 46176, 106974, 82517, 108378, 84300, 100525, 23123, 36333, 52322, 130869, 74855, 115049, 83442, 93016, 12365, 21290, 28394, 50877, 15539, 130505, 108306, 129604, 29629, 88959, 72868, 85109, 52899, 128625, 72371, 130024};
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
+        assert(consensus.hashGenesisBlock == uint256S("0x29c03e7632293609304ca665a7925df282bca276cd9536bf753255c788f3f14f"));
         assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
         vSeeds.push_back(CDNSSeedData("bitcoin.sipa.be", "seed.bitcoin.sipa.be")); // Pieter Wuille
@@ -142,10 +149,10 @@ public:
         consensus.nMajorityWindow = 100;
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.fPowAllowMinDifficultyBlocks = true;
-        pchMessageStart[0] = 0x0c;
-        pchMessageStart[1] = 0x12;
-        pchMessageStart[2] = 0x99;
-        pchMessageStart[3] = 0x17;
+        pchMessageStart[0] = 0x01;
+        pchMessageStart[1] = 0x22;
+        pchMessageStart[2] = 0xaa;
+        pchMessageStart[3] = 0x1a;
         vAlertPubKey = ParseHex("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
         nDefaultPort = 18333;
         nMinerThreads = 0;
@@ -155,9 +162,10 @@ public:
         //! Modify the testnet genesis block so the timestamp is valid for a later start.
         genesis.nTime = 1296688602;
         genesis.nBits = 0x207fffff;
-        genesis.nNonce = 2;
+        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000");
+        genesis.nSolution = {2461, 50717, 47695, 123428, 26341, 33143, 72062, 77602, 3698, 124246, 70379, 103049, 15704, 26158, 85636, 130587, 3279, 10889, 9205, 26873, 28311, 31643, 30534, 121007, 3517, 25943, 36612, 45442, 9578, 67150, 61295, 82248};
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
+        assert(consensus.hashGenesisBlock == uint256S("0x27d1f4ce03fc473c9dd6e1e307c682c8f802eae1f5a2f61402aa1ae8702ed3b6"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -206,18 +214,21 @@ public:
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        pchMessageStart[0] = 0xfa;
-        pchMessageStart[1] = 0xbf;
-        pchMessageStart[2] = 0xb5;
-        pchMessageStart[3] = 0xda;
+        pchMessageStart[0] = 0xaa;
+        pchMessageStart[1] = 0xe8;
+        pchMessageStart[2] = 0x3f;
+        pchMessageStart[3] = 0x5f;
         nMinerThreads = 1;
         nMaxTipAge = 24 * 60 * 60;
+        nEquihashN = 48;
+        nEquihashK = 5;
         genesis.nTime = 1296688602;
         genesis.nBits = 0x207fffff;
-        genesis.nNonce = 2;
+        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000006");
+        genesis.nSolution = {1, 360, 104, 158, 157, 305, 325, 392, 57, 353, 78, 444, 65, 89, 167, 418, 8, 381, 79, 123, 63, 417, 242, 306, 60, 342, 107, 269, 270, 413, 272, 464};
         consensus.hashGenesisBlock = genesis.GetHash();
         nDefaultPort = 18444;
-        assert(consensus.hashGenesisBlock == uint256S("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
+        assert(consensus.hashGenesisBlock == uint256S("0x3fbae336aedaa2f4a3b8a77d8b65d48820bb820db8e5838ee8182790e1d1e0fa"));
         nPruneAfterHeight = 1000;
 
         vFixedSeeds.clear(); //! Regtest mode doesn't have any fixed seeds.
