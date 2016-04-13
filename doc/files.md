@@ -1,3 +1,4 @@
+*** Warning: This document has not been updated for Zcash and may be inaccurate. ***
 
 * bitcoin.conf: contains configuration settings for bitcoind or bitcoin-qt
 * bitcoind.pid: stores the process id of bitcoind while running
