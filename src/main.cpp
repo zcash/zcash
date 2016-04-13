@@ -897,6 +897,11 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
             return state.DoS(100, error("CheckTransaction(): pour.vpub_new too high"),
                              REJECT_INVALID, "bad-txns-vpub_new-toolarge");
 
+        if (pour.vpub_new =! 0 && pour.vpub_old != 0) {
+            return state.DoS(100, error("CheckTransaction(): pour.vpub_new and pour.vpub_old both nonzero"),
+                             REJECT_INVALID, "bad-txns-vpubs-both-nonzero");
+        }
+
         nValueOut += pour.vpub_new;
         if (!MoneyRange(nValueOut))
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
