@@ -59,7 +59,7 @@ NoteEncryption<MLEN>::NoteEncryption(uint256 hSig) : nonce(0), hSig(hSig) {
     BOOST_STATIC_ASSERT(NOTEENCRYPTION_AUTH_BYTES == crypto_aead_chacha20poly1305_ABYTES);
 
     // Create the ephemeral keypair
-    randombytes_buf(esk.begin(), crypto_scalarmult_SCALARBYTES);
+    esk = random_uint256();
     epk = generate_pubkey(esk);
 }
 
@@ -154,6 +154,14 @@ uint256 NoteEncryption<MLEN>::generate_pubkey(const uint256 &sk_enc)
     }
 
     return pk;
+}
+
+uint256 random_uint256()
+{
+    uint256 ret;
+    randombytes_buf(ret.begin(), 32);
+
+    return ret;
 }
 
 template class NoteEncryption<ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE>;

@@ -67,6 +67,8 @@ public:
                      ) const;
 };
 
+uint256 random_uint256();
+
 }
 
 typedef libzcash::NoteEncryption<216> ZCNoteEncryption;
