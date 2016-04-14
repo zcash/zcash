@@ -106,7 +106,7 @@ typename NoteDecryption<MLEN>::Plaintext NoteDecryption<MLEN>::decrypt
                                           const uint256 &epk,
                                           const uint256 &hSig,
                                           unsigned char nonce
-                                         )
+                                         ) const
 {
     uint256 dhsecret;
 

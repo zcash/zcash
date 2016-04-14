@@ -64,7 +64,7 @@ public:
                       const uint256 &epk,
                       const uint256 &hSig,
                       unsigned char nonce
-                     );
+                     ) const;
 };
 
 }
