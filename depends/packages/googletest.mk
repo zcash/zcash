@@ -11,7 +11,6 @@ define $(package)_build_cmds
 endef
 
 define $(package)_stage_cmds
-  LIBDIR='$($(package)_staging_dir)/lib/' \
-	mkdir "$LIBDIR" && \
-	cp -v ./make/gtest_main.a "$LIBDIR"
+  install -vD ./make/gtest_main.a $($(package)_staging_dir)$(host_prefix)/lib/gtest_main.a && \
+  cp -va ./include $($(package)_staging_dir)$(host_prefix)/include
 endef
