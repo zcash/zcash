@@ -1,0 +1,10 @@
+bin_PROGRAMS += zcash-gtest
+
+# tool for generating our public parameters
+zcash_gtest_SOURCES = \
+	gtest/main.cpp \
+	gtest/test_version.cpp
+
+zcash_gtest_LDADD = \
+  -lgtest \
+  $(LIBBITCOIN_UTIL)
