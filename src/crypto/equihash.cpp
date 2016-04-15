@@ -50,15 +50,12 @@ int Equihash::InitialiseState(eh_HashState& base_state)
 
 StepRow::StepRow(unsigned int n, const eh_HashState& base_state, eh_index i) :
         hash {new unsigned char[n/8]},
-        len {n/8},
-        indices {i}
+        len {n/8}
 {
     eh_HashState state;
     state = base_state;
     crypto_generichash_blake2b_update(&state, (unsigned char*) &i, sizeof(eh_index));
     crypto_generichash_blake2b_final(&state, hash, n/8);
-
-    assert(indices.size() == 1);
 }
 
 StepRow::~StepRow()
@@ -68,14 +65,20 @@ StepRow::~StepRow()
 
 StepRow::StepRow(const StepRow& a) :
         hash {new unsigned char[a.len]},
-        len {a.len},
-        indices(a.indices)
+        len {a.len}
 {
     for (int i = 0; i < len; i++)
         hash[i] = a.hash[i];
 }
 
-StepRow& StepRow::operator=(const StepRow& a)
+FullStepRow::FullStepRow(unsigned int n, const eh_HashState& base_state, eh_index i) :
+        StepRow {n, base_state, i},
+        indices {i}
+{
+    assert(indices.size() == 1);
+}
+
+FullStepRow& FullStepRow::operator=(const FullStepRow& a)
 {
     unsigned char* p = new unsigned char[a.len];
     for (int i = 0; i < a.len; i++)
@@ -87,7 +90,7 @@ StepRow& StepRow::operator=(const StepRow& a)
     return *this;
 }
 
-StepRow& StepRow::operator^=(const StepRow& a)
+FullStepRow& FullStepRow::operator^=(const FullStepRow& a)
 {
     if (a.len != len) {
         throw std::invalid_argument("Hash length differs");
@@ -105,7 +108,7 @@ StepRow& StepRow::operator^=(const StepRow& a)
     return *this;
 }
 
-void StepRow::TrimHash(int l)
+void FullStepRow::TrimHash(int l)
 {
     unsigned char* p = new unsigned char[len-l];
     for (int i = 0; i < len-l; i++)
@@ -132,7 +135,7 @@ bool HasCollision(StepRow& a, StepRow& b, int l)
 }
 
 // Checks if the intersection of a.indices and b.indices is empty
-bool DistinctIndices(const StepRow& a, const StepRow& b)
+bool DistinctIndices(const FullStepRow& a, const FullStepRow& b)
 {
     std::vector<eh_index> aSrt(a.indices);
     std::vector<eh_index> bSrt(b.indices);
@@ -165,7 +168,7 @@ std::set<std::vector<eh_index>> Equihash::BasicSolve(const eh_HashState& base_st
 
     // 1) Generate first list
     LogPrint("pow", "Generating first list\n");
-    std::vector<StepRow> X;
+    std::vector<FullStepRow> X;
     X.reserve(init_size);
     for (eh_index i = 0; i < init_size; i++) {
         X.emplace_back(n, base_state, i);
@@ -181,7 +184,7 @@ std::set<std::vector<eh_index>> Equihash::BasicSolve(const eh_HashState& base_st
         LogPrint("pow", "- Finding collisions\n");
         int i = 0;
         int posFree = 0;
-        std::vector<StepRow> Xc;
+        std::vector<FullStepRow> Xc;
         while (i < X.size() - 1) {
             // 2b) Find next set of unordered pairs with collisions on the next n/(k+1) bits
             int j = 1;
@@ -233,7 +236,7 @@ std::set<std::vector<eh_index>> Equihash::BasicSolve(const eh_HashState& base_st
         std::sort(X.begin(), X.end());
         LogPrint("pow", "- Finding collisions\n");
         for (int i = 0; i < X.size() - 1; i++) {
-            StepRow res = X[i] ^ X[i+1];
+            FullStepRow res = X[i] ^ X[i+1];
             if (res.IsZero() && DistinctIndices(X[i], X[i+1])) {
                 solns.insert(res.GetSolution());
             }
@@ -252,14 +255,14 @@ bool Equihash::IsValidSolution(const eh_HashState& base_state, std::vector<eh_in
         return false;
     }
 
-    std::vector<StepRow> X;
+    std::vector<FullStepRow> X;
     X.reserve(soln_size);
     for (eh_index i : soln) {
         X.emplace_back(n, base_state, i);
     }
 
     while (X.size() > 1) {
-        std::vector<StepRow> Xc;
+        std::vector<FullStepRow> Xc;
         for (int i = 0; i < X.size(); i += 2) {
             if (!HasCollision(X[i], X[i+1], CollisionByteLength())) {
                 LogPrint("pow", "Invalid solution: invalid collision length between StepRows\n");
