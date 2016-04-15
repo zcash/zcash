@@ -44,20 +44,20 @@ uint256 PRF_nf(const uint256& a_sk, const uint256& rho)
     return PRF(1, 1, 1, 0, a_sk, rho);
 }
 
-uint256 PRF_pk(const uint256& a_sk, size_t i, const uint256& h_sig)
+uint256 PRF_pk(const uint256& a_sk, size_t i0, const uint256& h_sig)
 {
-    if ((i != 0) && (i != 1)) {
+    if ((i0 != 0) && (i0 != 1)) {
         throw std::domain_error("PRF_pk invoked with index out of bounds");
     }
 
-    return PRF(0, i, 0, 0, a_sk, h_sig);
+    return PRF(0, i0, 0, 0, a_sk, h_sig);
 }
 
-uint256 PRF_rho(const uint256& phi, size_t i, const uint256& h_sig)
+uint256 PRF_rho(const uint256& phi, size_t i0, const uint256& h_sig)
 {
-    if ((i != 0) && (i != 1)) {
+    if ((i0 != 0) && (i0 != 1)) {
         throw std::domain_error("PRF_rho invoked with index out of bounds");
     }
 
-    return PRF(0, i, 1, 0, phi, h_sig);
+    return PRF(0, i0, 1, 0, phi, h_sig);
 }
