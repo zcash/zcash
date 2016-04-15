@@ -2454,8 +2454,8 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
 
     LOCK(cs_main);
 
-    std::vector<unsigned char> a_sk;
-    std::string sk_enc;
+    uint256 a_sk;
+    uint256 sk_enc;
 
     {
         CDataStream ssData(ParseHexV(params[0], "zcsecretkey"), SER_NETWORK, PROTOCOL_VERSION);
@@ -2472,9 +2472,24 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
     libzerocash::PrivateAddress zcsecretkey(a_sk, sk_enc);
     libzerocash::Address zcaddress(zcsecretkey);
 
-    auto encrypted_bucket_vec = ParseHexV(params[1], "encrypted_bucket");
-    std::string encrypted_bucket(encrypted_bucket_vec.begin(), encrypted_bucket_vec.end());
-    libzerocash::Coin decrypted_bucket(encrypted_bucket, zcaddress);
+    uint256 epk;
+    unsigned char nonce;
+    ZCNoteEncryption::Ciphertext ct;
+
+    {
+        CDataStream ssData(ParseHexV(params[1], "encrypted_bucket"), SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            ssData >> nonce;
+            ssData >> epk;
+            ssData >> ct;
+        } catch(const std::exception &) {
+            throw runtime_error(
+                "encrypted_bucket could not be decoded"
+            );
+        }
+    }
+
+    libzerocash::Coin decrypted_bucket(ct, zcaddress, epk, nonce);
 
     std::vector<unsigned char> commitment_v = decrypted_bucket.getCoinCommitment().getCommitmentValue();
     uint256 commitment = uint256(commitment_v);
@@ -2565,8 +2580,8 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         ssData >> rho;
         ssData >> r;
 
-        std::vector<unsigned char> a_sk;
-        std::string sk_enc;
+        uint256 a_sk;
+        uint256 sk_enc;
 
         {
             CDataStream ssData2(ParseHexV(s.value_, "zcsecretkey"), SER_NETWORK, PROTOCOL_VERSION);
@@ -2608,8 +2623,8 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         {
             CDataStream ssData(ParseHexV(s.name_, "to_address"), SER_NETWORK, PROTOCOL_VERSION);
 
-            std::vector<unsigned char> pubAddressSecret;
-            std::string encryptionPublicKey;
+            uint256 pubAddressSecret;
+            uint256 encryptionPublicKey;
 
             ssData >> pubAddressSecret;
             ssData >> encryptionPublicKey;
@@ -2653,9 +2668,28 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << rawTx;
 
+    std::string encryptedBucket1;
+    std::string encryptedBucket2;
+    {
+        CDataStream ss2(SER_NETWORK, PROTOCOL_VERSION);
+        ss2 << ((unsigned char) 0x00);
+        ss2 << pourtx.ephemeralKey;
+        ss2 << pourtx.ciphertexts[0];
+
+        encryptedBucket1 = HexStr(ss2.begin(), ss2.end());
+    }
+    {
+        CDataStream ss2(SER_NETWORK, PROTOCOL_VERSION);
+        ss2 << ((unsigned char) 0x01);
+        ss2 << pourtx.ephemeralKey;
+        ss2 << pourtx.ciphertexts[1];
+
+        encryptedBucket2 = HexStr(ss2.begin(), ss2.end());
+    }
+
     Object result;
-    result.push_back(Pair("encryptedbucket1", HexStr(pourtx.ciphertexts[0].begin(), pourtx.ciphertexts[0].end())));
-    result.push_back(Pair("encryptedbucket2", HexStr(pourtx.ciphertexts[1].begin(), pourtx.ciphertexts[1].end())));
+    result.push_back(Pair("encryptedbucket1", encryptedBucket1));
+    result.push_back(Pair("encryptedbucket2", encryptedBucket2));
     result.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
     return result;
 }
