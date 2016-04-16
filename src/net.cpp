@@ -453,7 +453,7 @@ void CNode::CloseSocketDisconnect()
 
 void CNode::PushVersion()
 {
-    int nBestHeight = g_signals.GetHeight().get_value_or(0);
+    int nBestHeight = GetNodeSignals().GetHeight().get_value_or(0);
 
     int64_t nTime = GetTime();
     CAddress addrYou = (addr.IsRoutable() && !IsProxy(addr) ? addr : CAddress(CService("0.0.0.0",0)));
@@ -1620,7 +1620,7 @@ void ThreadMessageHandler()
                 TRY_LOCK(pnode->cs_vRecvMsg, lockRecv);
                 if (lockRecv)
                 {
-                    if (!g_signals.ProcessMessages(chainparams, pnode))
+                    if (!GetNodeSignals().ProcessMessages(chainparams, pnode))
                         pnode->CloseSocketDisconnect();
 
                     if (pnode->nSendSize < SendBufferSize())
@@ -1638,7 +1638,7 @@ void ThreadMessageHandler()
             {
                 TRY_LOCK(pnode->cs_vSend, lockSend);
                 if (lockSend)
-                    g_signals.SendMessages(chainparams.GetConsensus(), pnode);
+                    GetNodeSignals().SendMessages(chainparams.GetConsensus(), pnode);
             }
             boost::this_thread::interruption_point();
         }
