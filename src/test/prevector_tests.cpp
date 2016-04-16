@@ -20,9 +20,11 @@ template<unsigned int N, typename T>
 class prevector_tester {
     typedef std::vector<T> realtype;
     realtype real_vector;
+    realtype real_vector_alt;
 
     typedef prevector<N, T> pretype;
     pretype pre_vector;
+    pretype pre_vector_alt;
 
     typedef typename pretype::size_type Size;
     FastRandomContext rand_cache;
@@ -152,6 +154,12 @@ public:
         test();
     }
 
+    void swap() {
+        real_vector.swap(real_vector_alt);
+        pre_vector.swap(pre_vector_alt);
+        test();
+    }
+
     prevector_tester() {
         seed_insecure_rand();
         rand_cache = insecure_rand_ctx;
@@ -211,11 +219,14 @@ BOOST_AUTO_TEST_CASE(PrevectorTestInt)
             if (test.size() > 0) {
                 test.update(insecure_rand() % test.size(), insecure_rand());
             }
-            if (((r >> 11) & 1024) == 11) {
+            if (((r >> 11) % 1024) == 11) {
                 test.clear();
             }
-            if (((r >> 21) & 512) == 12) {
+            if (((r >> 21) % 512) == 12) {
                 test.assign(insecure_rand() % 32, insecure_rand());
+            }
+            if (((r >> 15) % 64) == 3) {
+                test.swap();
             }
         }
     }
