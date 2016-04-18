@@ -102,8 +102,10 @@ build
 
 #lcov
 *.gcno
+*.gcda
 /*.info
 test_bitcoin.coverage/
+zcash-gtest.coverage/
 total.coverage/
 coverage_percent.txt
 
