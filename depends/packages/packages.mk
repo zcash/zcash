@@ -1,5 +1,5 @@
 zerocash_packages := libsnark crypto++ libgmp libsodium
-packages:=boost openssl $(zerocash_packages)
+packages := boost openssl $(zerocash_packages) googletest
 native_packages := native_ccache native_comparisontool
 
 qt_native_packages = native_protobuf
