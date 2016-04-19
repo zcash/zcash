@@ -95,34 +95,19 @@ CInv::CInv(int typeIn, const uint256& hashIn)
     hash = hashIn;
 }
 
-CInv::CInv(const std::string& strType, const uint256& hashIn)
-{
-    if (strType == "tx")
-        type = MSG_TX;
-    else if (strType == "block")
-        type = MSG_BLOCK;
-    else
-        throw std::out_of_range(strprintf("CInv::CInv(string, uint256): unknown type '%s'", strType));
-
-    hash = hashIn;
-}
-
 bool operator<(const CInv& a, const CInv& b)
 {
     return (a.type < b.type || (a.type == b.type && a.hash < b.hash));
 }
 
-bool CInv::IsKnownType() const
+std::string CInv::GetCommand() const
 {
-    return (type >= 1 && type <= MSG_TYPE_MAX);
-}
-
-const char* CInv::GetCommand() const
-{
+    std::string cmd;
     switch (type)
     {
-    case MSG_TX:    return "tx";
-    case MSG_BLOCK: return "block";
+    case MSG_TX:             return cmd.append("tx");
+    case MSG_BLOCK:          return cmd.append("block");
+    case MSG_FILTERED_BLOCK: return cmd.append("merkleblock");
     default:
         throw std::out_of_range(strprintf("CInv::GetCommand(): type=%d unknown type", type));
     }
