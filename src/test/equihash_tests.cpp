@@ -56,6 +56,15 @@ void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, c
     PrintSolutions(strm, ret);
     BOOST_TEST_MESSAGE(strm.str());
     BOOST_CHECK(ret == solns);
+
+    // The optimised solver should have the exact same result
+    std::set<std::vector<uint32_t>> retOpt = eh.OptimisedSolve(state);
+    BOOST_TEST_MESSAGE("[Optimised] Number of solutions: " << retOpt.size());
+    strm.str("");
+    PrintSolutions(strm, retOpt);
+    BOOST_TEST_MESSAGE(strm.str());
+    BOOST_CHECK(retOpt == solns);
+    BOOST_CHECK(retOpt == ret);
 }
 
 void TestEquihashValidator(unsigned int n, unsigned int k, const std::string &I, const arith_uint256 &nonce, std::vector<uint32_t> soln, bool expected) {
