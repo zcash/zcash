@@ -24,15 +24,23 @@ public:
 
 void HandleError(const leveldb::Status& status);
 
+class CDBWrapper;
+
 /** Batch of changes queued to be written to a CDBWrapper */
 class CDBBatch
 {
     friend class CDBWrapper;
 
 private:
+    const CDBWrapper &parent;
     leveldb::WriteBatch batch;
 
 public:
+    /**
+     * @param[in] parent    CDBWrapper that this batch is to be submitted to
+     */
+    CDBBatch(const CDBWrapper &parent) : parent(parent) { };
+
     template <typename K, typename V>
     void Write(const K& key, const V& value)
     {
@@ -64,15 +72,17 @@ public:
 class CDBIterator
 {
 private:
+    const CDBWrapper &parent;
     leveldb::Iterator *piter;
 
 public:
 
     /**
+     * @param[in] parent           Parent CDBWrapper instance.
      * @param[in] piterIn          The original leveldb iterator.
      */
-    CDBIterator(leveldb::Iterator *piterIn) :
-        piter(piterIn) { };
+    CDBIterator(const CDBWrapper &parent, leveldb::Iterator *piterIn) :
+        parent(parent), piter(piterIn) { };
     ~CDBIterator();
 
     bool Valid();
@@ -183,7 +193,7 @@ public:
     template <typename K, typename V>
     bool Write(const K& key, const V& value, bool fSync = false)
     {
-        CDBBatch batch;
+        CDBBatch batch(*this);
         batch.Write(key, value);
         return WriteBatch(batch, fSync);
     }
@@ -210,7 +220,7 @@ public:
     template <typename K>
     bool Erase(const K& key, bool fSync = false)
     {
-        CDBBatch batch;
+        CDBBatch batch(*this);
         batch.Erase(key);
         return WriteBatch(batch, fSync);
     }
@@ -225,20 +235,19 @@ public:
 
     bool Sync()
     {
-        CDBBatch batch;
+        CDBBatch batch(*this);
         return WriteBatch(batch, true);
     }
 
     CDBIterator *NewIterator()
     {
-        return new CDBIterator(pdb->NewIterator(iteroptions));
+        return new CDBIterator(*this, pdb->NewIterator(iteroptions));
     }
 
     /**
      * Return true if the database managed by this class contains no entries.
      */
     bool IsEmpty();
-
 };
 
 #endif // BITCOIN_DBWRAPPER_H
