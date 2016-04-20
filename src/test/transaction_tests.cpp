@@ -26,7 +26,6 @@
 #include "json/json_spirit_writer_template.h"
 
 #include "zerocash/ZerocashParams.h"
-#include "zerocash/IncrementalMerkleTree.h"
 #include "zerocash/PourInput.h"
 #include "zerocash/PourOutput.h"
 #include "zerocash/Address.h"
@@ -311,44 +310,35 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
     // Also, it's generally libzerocash's job to ensure
     // the integrity of the scheme through its own tests.
 
-    static const unsigned int TEST_TREE_DEPTH = 3;
-
     // construct the r1cs keypair
-    auto keypair = ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH);
+    auto keypair = ZerocashParams::GenerateNewKeyPair(INCREMENTAL_MERKLE_TREE_DEPTH);
     ZerocashParams p(
-        TEST_TREE_DEPTH,
+        INCREMENTAL_MERKLE_TREE_DEPTH,
         &keypair
     );
 
     // construct a merkle tree
-    IncrementalMerkleTree merkleTree(TEST_TREE_DEPTH);
+    ZCIncrementalMerkleTree merkleTree;
     Address addr = Address::CreateNewRandomAddress();
     Coin coin(addr.getPublicAddress(), 100);
 
     // commitment from coin
-    std::vector<bool> commitment(ZC_CM_SIZE * 8);
-    convertBytesVectorToVector(coin.getCoinCommitment().getCommitmentValue(), commitment);
+    uint256 commitment(coin.getCoinCommitment().getCommitmentValue());
 
     // insert commitment into the merkle tree
-    std::vector<bool> index;
-    merkleTree.insertElement(commitment, index);
+    merkleTree.append(commitment);
 
     // compute the merkle root we will be working with
-    vector<unsigned char> rt(ZC_ROOT_SIZE);
-    {
-        vector<bool> root_bv(ZC_ROOT_SIZE * 8);
-        merkleTree.getRootValue(root_bv);
-        convertVectorToBytesVector(root_bv, rt);
-    }
+    uint256 rt = merkleTree.root();
 
-    merkle_authentication_path path(TEST_TREE_DEPTH);
-    merkleTree.getWitness(index, path);
+    auto witness = merkleTree.witness();
+    auto path = witness.path();
 
     // create CPourTx
     CScript scriptPubKey;
     boost::array<PourInput, NUM_POUR_INPUTS> inputs = {
-        PourInput(coin, addr, convertVectorToInt(index), path),
-        PourInput(TEST_TREE_DEPTH) // dummy input of zero value
+        PourInput(coin, addr, path),
+        PourInput(INCREMENTAL_MERKLE_TREE_DEPTH) // dummy input of zero value
     };
     boost::array<PourOutput, NUM_POUR_OUTPUTS> outputs = {
         PourOutput(50),
