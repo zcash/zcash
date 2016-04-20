@@ -67,8 +67,7 @@ StepRow::StepRow(const StepRow& a) :
         hash {new unsigned char[a.len]},
         len {a.len}
 {
-    for (int i = 0; i < len; i++)
-        hash[i] = a.hash[i];
+    std::copy(a.hash, a.hash+a.len, hash);
 }
 
 FullStepRow::FullStepRow(unsigned int n, const eh_HashState& base_state, eh_index i) :
@@ -81,8 +80,7 @@ FullStepRow::FullStepRow(unsigned int n, const eh_HashState& base_state, eh_inde
 FullStepRow& FullStepRow::operator=(const FullStepRow& a)
 {
     unsigned char* p = new unsigned char[a.len];
-    for (int i = 0; i < a.len; i++)
-        p[i] = a.hash[i];
+    std::copy(a.hash, a.hash+a.len, p);
     delete[] hash;
     hash = p;
     len = a.len;
@@ -111,8 +109,7 @@ FullStepRow& FullStepRow::operator^=(const FullStepRow& a)
 void FullStepRow::TrimHash(int l)
 {
     unsigned char* p = new unsigned char[len-l];
-    for (int i = 0; i < len-l; i++)
-        p[i] = hash[i+l];
+    std::copy(hash+l, hash+len, p);
     delete[] hash;
     hash = p;
     len -= l;
@@ -164,7 +161,7 @@ Equihash::Equihash(unsigned int n, unsigned int k) :
 std::set<std::vector<eh_index>> Equihash::BasicSolve(const eh_HashState& base_state)
 {
     assert(CollisionBitLength() + 1 < 8*sizeof(eh_index));
-    eh_index init_size { ((eh_index) 1) << (CollisionBitLength() + 1) };
+    eh_index init_size { 1 << (CollisionBitLength() + 1) };
 
     // 1) Generate first list
     LogPrint("pow", "Generating first list\n");
