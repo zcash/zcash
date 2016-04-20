@@ -2050,16 +2050,7 @@ void RelayTransaction(const CTransaction& tx)
     LOCK(cs_vNodes);
     for (CNode* pnode : vNodes)
     {
-        if(!pnode->fRelayTxes)
-            continue;
-        LOCK(pnode->cs_filter);
-        auto spanGuard = pnode->span.Enter();
-        if (pnode->pfilter)
-        {
-            if (pnode->pfilter->IsRelevantAndUpdate(tx))
-                pnode->PushInventory(inv);
-        } else
-            pnode->PushInventory(inv);
+        pnode->PushInventory(inv);
     }
 }
 

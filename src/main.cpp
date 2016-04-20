@@ -6258,10 +6258,13 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             vRecv >> nStartingHeight;
             pfrom->nStartingHeight = nStartingHeight;
         }
-        if (!vRecv.empty())
-            vRecv >> pfrom->fRelayTxes; // set to true after we get the first filter* message
-        else
-            pfrom->fRelayTxes = true;
+        {
+            LOCK(pfrom->cs_filter);
+            if (!vRecv.empty())
+                vRecv >> pfrom->fRelayTxes; // set to true after we get the first filter* message
+            else
+                pfrom->fRelayTxes = true;
+        }
 
         // Disconnect if we connected to ourself
         if (nNonce == nLocalHostNonce && nNonce > 1)
@@ -7060,6 +7063,8 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         CBloomFilter filter;
         vRecv >> filter;
 
+        LOCK(pfrom->cs_filter);
+
         if (!filter.IsWithinSizeConstraints())
         {
             // There is no excuse for sending a too-large filter
@@ -7068,7 +7073,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         }
         else
         {
-            LOCK(pfrom->cs_filter);
             delete pfrom->pfilter;
             pfrom->pfilter = new CBloomFilter(filter);
             pfrom->fRelayTxes = true;
@@ -7439,6 +7443,12 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                 pto->nNextInvSend = PoissonNextSend(nNow, INVENTORY_BROADCAST_INTERVAL >> !pto->fInbound);
             }
 
+            // Time to send but the peer has requested we not relay transactions.
+            if (fSendTrickle) {
+                LOCK(pto->cs_filter);
+                if (!pto->fRelayTxes) pto->setInventoryTxToSend.clear();
+            }
+
             // Respond to BIP35 mempool requests
             if (fSendTrickle && pto->fSendMempool) {
                 std::vector<uint256> vtxid;
@@ -7485,6 +7495,7 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                 // No reason to drain out at many times the network's capacity,
                 // especially since we have many peers and some will draw much shorter delays.
                 unsigned int nRelayedTransactions = 0;
+                LOCK(pto->cs_filter);
                 while (!vInvTx.empty() && nRelayedTransactions < INVENTORY_BROADCAST_MAX) {
                     // Fetch the top element from the heap
                     std::pop_heap(vInvTx.begin(), vInvTx.end(), compareInvMempoolOrder);
@@ -7496,6 +7507,12 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                     // Check if not in the filter already
                     if (pto->filterInventoryKnown.contains(hash)) {
                         continue;
+                    }
+                    // Not in the mempool anymore? don't bother sending it.
+                    if (pto->pfilter) {
+                        CTransaction tx;
+                        if (!mempool.lookup(hash, tx)) continue;
+                        if (!pto->pfilter->IsRelevantAndUpdate(tx)) continue;
                     }
                     // Send
                     vInv.push_back(CInv(MSG_TX, hash));
