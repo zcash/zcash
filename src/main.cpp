@@ -4787,7 +4787,7 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
  * caller of AcceptBlock (ProcessNewBlock) later invokes ActivateBestChain,
  * which ultimately calls ConnectBlock in a manner that can verify the proofs.
  */
-static bool AcceptBlock(const CBlock& block, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex, bool fRequested, CDiskBlockPos* dbp)
+static bool AcceptBlock(const CBlock& block, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex, bool fRequested, const CDiskBlockPos* dbp)
 {
     AssertLockHeld(cs_main);
 
@@ -4869,7 +4869,7 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 }
 
 
-bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, const CNode* pfrom, const CBlock* pblock, bool fForceProcessing, CDiskBlockPos* dbp)
+bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, const CNode* pfrom, const CBlock* pblock, bool fForceProcessing, const CDiskBlockPos* dbp)
 {
     auto span = TracingSpan("info", "main", "ProcessNewBlock");
     auto spanGuard = span.Enter();
