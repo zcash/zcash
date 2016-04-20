@@ -601,9 +601,10 @@ void CleanupBlockRevFiles()
 void ThreadImport(std::vector<fs::path> vImportFiles, const CChainParams& chainparams)
 {
     RenameThread("zcash-loadblk");
+    CImportingNow imp;
+
     // -reindex
     if (fReindex) {
-        CImportingNow imp;
         nSizeReindexed = 0;  // will be modified inside LoadExternalBlockFile
         // Find the summary size of all block files first
         int nFile = 0;
@@ -643,7 +644,6 @@ void ThreadImport(std::vector<fs::path> vImportFiles, const CChainParams& chainp
     if (fs::exists(pathBootstrap)) {
         FILE *file = fsbridge::fopen(pathBootstrap, "rb");
         if (file) {
-            CImportingNow imp;
             fs::path pathBootstrapOld = GetDataDir() / "bootstrap.dat.old";
             LogPrintf("Importing bootstrap.dat...\n");
             LoadExternalBlockFile(chainparams, file);
@@ -657,12 +657,18 @@ void ThreadImport(std::vector<fs::path> vImportFiles, const CChainParams& chainp
     for (const fs::path& path : vImportFiles) {
         FILE *file = fsbridge::fopen(path, "rb");
         if (file) {
-            CImportingNow imp;
             LogPrintf("Importing blocks file %s...\n", path.string());
             LoadExternalBlockFile(chainparams, file);
         } else {
             LogPrintf("Warning: Could not open blocks file %s\n", path.string());
         }
+    }
+
+    // scan for better chains in the block chain database, that are not yet connected in the active best chain
+    CValidationState state;
+    if (!ActivateBestChain(state, chainparams)) {
+        LogPrintf("Failed to connect best block");
+        StartShutdown();
     }
 
     if (GetBoolArg("-stopafterblockimport", DEFAULT_STOPAFTERBLOCKIMPORT)) {
@@ -1719,12 +1725,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (mapArgs.count("-txexpirynotify"))
         uiInterface.NotifyTxExpiration.connect(TxExpiryNotifyCallback);
-
-    uiInterface.InitMessage(_("Activating best chain..."));
-    // scan for better chains in the block chain database, that are not yet connected in the active best chain
-    CValidationState state;
-    if (!ActivateBestChain(state, chainparams))
-        strErrors << "Failed to connect best block";
 
     std::vector<fs::path> vImportFiles;
     if (mapArgs.count("-loadblock"))
