@@ -3,7 +3,21 @@ bin_PROGRAMS += \
   zerocash/tests/merkleTest \
   zerocash/tests/utilTest \
   zerocash/tests/zerocashTest \
-  zerocash/tests/test_zerocash_pour_ppzksnark
+  zerocash/tests/test_zerocash_pour_ppzksnark \
+  equihash_solver_standalone
+
+equihash_solver_standalone_SOURCES = equihash_solver_standalone.cpp
+equihash_solver_standalone_LDADD = \
+  $(LIBBITCOIN_UNIVALUE) \
+  $(LIBBITCOIN_COMMON) \
+  $(LIBBITCOIN_UTIL) \
+  $(LIBBITCOIN_CRYPTO) \
+  $(LIBSECP256K1) \
+  $(LIBZEROCASH) \
+  $(LIBBITCOIN_CRYPTO) \
+  $(LIBZEROCASH_LIBS)
+
+equihash_solver_standalone_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 
 # tool for generating our public parameters
 zerocash_GenerateParamsForFiles_SOURCES = zerocash/GenerateParamsForFiles.cpp
