@@ -61,6 +61,16 @@ void IncrementalMerkleTree<Depth, Hash>::wfcheck() const {
     if (wasnull) {
         throw std::ios_base::failure("tree has non-canonical representation of parent");
     }
+
+    // Left cannot be empty when right exists.
+    if (!left && right) {
+        throw std::ios_base::failure("tree has non-canonical representation of tree");
+    }
+
+    // Left cannot be empty when parents is nonempty.
+    if (!left && parents.size() > 0) {
+        throw std::ios_base::failure("tree has non-canonical representation of tree");
+    }
 }
 
 template<size_t Depth, typename Hash>
