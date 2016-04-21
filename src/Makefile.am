@@ -82,7 +82,9 @@ LIBZEROCASH_H = \
   zerocash/Zerocash.h \
   zerocash/ZerocashParams.h \
   zerocash/zerocash_pour_params.hpp \
-  zerocash/utils/util.h
+  zerocash/utils/util.h \
+  zcash/NoteEncryption.hpp \
+  zcash/prf.h
 
 .PHONY: FORCE
 # bitcoin core #
@@ -400,7 +402,6 @@ bitcoin_tx_LDADD = \
   $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CRYPTO) \
   $(LIBSECP256K1) \
   $(LIBZEROCASH) \
   $(LIBBITCOIN_CRYPTO) \
@@ -421,7 +422,9 @@ libzerocash_a_SOURCES = \
   zerocash/PourProver.cpp \
   zerocash/PourTransaction.cpp \
   zerocash/ZerocashParams.cpp \
-  zerocash/utils/util.cpp
+  zerocash/utils/util.cpp \
+  zcash/NoteEncryption.cpp \
+  zcash/prf.cpp
 
 libzerocash_a_CPPFLAGS = -fPIC -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -std=c++11 -pipe -O2 -O0 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
 

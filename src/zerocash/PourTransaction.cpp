@@ -11,25 +11,6 @@
  * @copyright  MIT license (see LICENSE file)
  *****************************************************************************/
 
-#include <cryptopp/osrng.h>
-using CryptoPP::AutoSeededRandomPool;
-
-#include <cryptopp/eccrypto.h>
-using CryptoPP::ECP;
-using CryptoPP::ECIES;
-
-#include <cryptopp/filters.h>
-using CryptoPP::StringSource;
-using CryptoPP::StringStore;
-using CryptoPP::StringSink;
-using CryptoPP::PK_EncryptorFilter;
-
-#include <openssl/ec.h>
-#include <openssl/ecdsa.h>
-#include <openssl/obj_mac.h>
-#include <openssl/bn.h>
-#include <openssl/sha.h>
-
 #include "Zerocash.h"
 #include "PourTransaction.h"
 #include "PourInput.h"
@@ -113,6 +94,11 @@ PourTransaction::PourTransaction(uint16_t version_num,
          patMAC_1, patMAC_2, addr_1_new, addr_2_new, v_pub_old, v_pub_new, pubkeyHash, c_1_new, c_2_new);
 }
 
+std::vector<unsigned char> from_uint256(const uint256 &in)
+{
+    return std::vector<unsigned char>(in.begin(), in.end());
+}
+
 void PourTransaction::init(uint16_t version_num,
                      ZerocashParams& params,
                      const MerkleRootType& rt,
@@ -168,11 +154,21 @@ void PourTransaction::init(uint16_t version_num,
     convertBytesVectorToVector(c_1_new.getCoinCommitment().getCommitmentValue(), cm_new_1_bv);
     convertBytesVectorToVector(c_2_new.getCoinCommitment().getCommitmentValue(), cm_new_2_bv);
 
-    convertBytesVectorToVector(addr_1_old.getPrivateAddress().getAddressSecret(), addr_sk_old_1_bv);
-    convertBytesVectorToVector(addr_2_old.getPrivateAddress().getAddressSecret(), addr_sk_old_2_bv);
+    {
+        auto a = from_uint256(addr_1_old.getPrivateAddress().getAddressSecret());
+        auto b = from_uint256(addr_2_old.getPrivateAddress().getAddressSecret());
 
-    convertBytesVectorToVector(addr_1_new.getPublicAddressSecret(), addr_pk_new_1_bv);
-    convertBytesVectorToVector(addr_2_new.getPublicAddressSecret(), addr_pk_new_2_bv);
+        convertBytesVectorToVector(a, addr_sk_old_1_bv);
+        convertBytesVectorToVector(b, addr_sk_old_2_bv);
+    }
+
+    {
+        auto a = from_uint256(addr_1_new.getPublicAddressSecret());
+        auto b = from_uint256(addr_2_new.getPublicAddressSecret());
+
+        convertBytesVectorToVector(a, addr_pk_new_1_bv);
+        convertBytesVectorToVector(b, addr_pk_new_2_bv);
+    }
 
     convertBytesVectorToVector(c_1_old.getR(), rand_old_1_bv);
     convertBytesVectorToVector(c_2_old.getR(), rand_old_2_bv);
@@ -293,65 +289,45 @@ void PourTransaction::init(uint16_t version_num,
  	   this->zkSNARK = std::string(1235,'A');
     }
 
-    unsigned char val_new_1_bytes[ZC_V_SIZE];
-    unsigned char val_new_2_bytes[ZC_V_SIZE];
-    unsigned char nonce_new_1_bytes[ZC_RHO_SIZE];
-    unsigned char nonce_new_2_bytes[ZC_RHO_SIZE];
-    unsigned char rand_new_1_bytes[ZC_R_SIZE];
-    unsigned char rand_new_2_bytes[ZC_R_SIZE];
+    // TODO: when h_Sig is constructed properly as per spec
+    //       replace uint256() with it
+    ZCNoteEncryption encryptor = ZCNoteEncryption(uint256());
+    {
+        std::vector<unsigned char> plaintext_internals;
+        plaintext_internals.insert(plaintext_internals.end(), c_1_new.coinValue.begin(), c_1_new.coinValue.end());
+        plaintext_internals.insert(plaintext_internals.end(), c_1_new.r.begin(), c_1_new.r.end());
+        plaintext_internals.insert(plaintext_internals.end(), c_1_new.rho.begin(), c_1_new.rho.end());
 
-    convertVectorToBytes(val_new_1_bv, val_new_1_bytes);
-    convertVectorToBytes(val_new_2_bv, val_new_2_bytes);
-    convertVectorToBytes(rand_new_1_bv, rand_new_1_bytes);
-    convertVectorToBytes(rand_new_2_bv, rand_new_2_bytes);
-    convertVectorToBytes(nonce_new_1_bv, nonce_new_1_bytes);
-    convertVectorToBytes(nonce_new_2_bv, nonce_new_2_bytes);
+        std::vector<unsigned char> memo(ZC_MEMO_SIZE, 0x00);
+        plaintext_internals.insert(plaintext_internals.end(), memo.begin(), memo.end());
 
-    std::string val_new_1_string(val_new_1_bytes, val_new_1_bytes + ZC_V_SIZE);
-    std::string val_new_2_string(val_new_2_bytes, val_new_2_bytes + ZC_V_SIZE);
-    std::string nonce_new_1_string(nonce_new_1_bytes, nonce_new_1_bytes + ZC_RHO_SIZE);
-    std::string nonce_new_2_string(nonce_new_2_bytes, nonce_new_2_bytes + ZC_RHO_SIZE);
-    std::string rand_new_1_string(rand_new_1_bytes, rand_new_1_bytes + ZC_R_SIZE);
-    std::string rand_new_2_string(rand_new_2_bytes, rand_new_2_bytes + ZC_R_SIZE);
+        assert(plaintext_internals.size() == 216);
 
-    AutoSeededRandomPool prng_1;
-    AutoSeededRandomPool prng_2;
+        boost::array<unsigned char, 216> pt;
+        memcpy(&pt[0], &plaintext_internals[0], 216);
 
-    ECIES<ECP>::PublicKey publicKey_1;
-    publicKey_1.Load(StringStore(addr_1_new.getEncryptionPublicKey()).Ref());
-    ECIES<ECP>::Encryptor encryptor_1(publicKey_1);
+        this->ciphertext_1 = encryptor.encrypt(addr_1_new.getEncryptionPublicKey(),
+                                               pt);
+    }
+    {
+        std::vector<unsigned char> plaintext_internals;
+        plaintext_internals.insert(plaintext_internals.end(), c_2_new.coinValue.begin(), c_2_new.coinValue.end());
+        plaintext_internals.insert(plaintext_internals.end(), c_2_new.r.begin(), c_2_new.r.end());
+        plaintext_internals.insert(plaintext_internals.end(), c_2_new.rho.begin(), c_2_new.rho.end());
 
-    std::vector<unsigned char> ciphertext_1_internals;
-    ciphertext_1_internals.insert(ciphertext_1_internals.end(), c_1_new.coinValue.begin(), c_1_new.coinValue.end());
-    ciphertext_1_internals.insert(ciphertext_1_internals.end(), c_1_new.r.begin(), c_1_new.r.end());
-    ciphertext_1_internals.insert(ciphertext_1_internals.end(), c_1_new.rho.begin(), c_1_new.rho.end());
+        std::vector<unsigned char> memo(ZC_MEMO_SIZE, 0x00);
+        plaintext_internals.insert(plaintext_internals.end(), memo.begin(), memo.end());
 
-    assert(ciphertext_1_internals.size() == (ZC_V_SIZE + ZC_R_SIZE + ZC_RHO_SIZE));
+        assert(plaintext_internals.size() == 216);
 
-    byte gEncryptBuf[encryptor_1.CiphertextLength(ZC_V_SIZE + ZC_R_SIZE + ZC_RHO_SIZE)];
+        boost::array<unsigned char, 216> pt;
+        memcpy(&pt[0], &plaintext_internals[0], 216);
 
-    encryptor_1.Encrypt(prng_1, &ciphertext_1_internals[0], ZC_V_SIZE + ZC_R_SIZE + ZC_RHO_SIZE, gEncryptBuf);
+        this->ciphertext_2 = encryptor.encrypt(addr_2_new.getEncryptionPublicKey(),
+                                               pt);
+    }
 
-    std::string C_1_string(gEncryptBuf, gEncryptBuf + sizeof gEncryptBuf / sizeof gEncryptBuf[0]);
-    this->ciphertext_1 = C_1_string;
-
-    ECIES<ECP>::PublicKey publicKey_2;
-    publicKey_2.Load(StringStore(addr_2_new.getEncryptionPublicKey()).Ref());
-    ECIES<ECP>::Encryptor encryptor_2(publicKey_2);
-
-    std::vector<unsigned char> ciphertext_2_internals;
-    ciphertext_2_internals.insert(ciphertext_2_internals.end(), c_2_new.coinValue.begin(), c_2_new.coinValue.end());
-    ciphertext_2_internals.insert(ciphertext_2_internals.end(), c_2_new.r.begin(), c_2_new.r.end());
-    ciphertext_2_internals.insert(ciphertext_2_internals.end(), c_2_new.rho.begin(), c_2_new.rho.end());
-
-    assert(ciphertext_2_internals.size() == (ZC_V_SIZE + ZC_R_SIZE + ZC_RHO_SIZE));
-
-    byte gEncryptBuf_2[encryptor_2.CiphertextLength(ZC_V_SIZE + ZC_R_SIZE + ZC_RHO_SIZE)];
-
-    encryptor_2.Encrypt(prng_1, &ciphertext_2_internals[0], ZC_V_SIZE + ZC_R_SIZE + ZC_RHO_SIZE, gEncryptBuf_2);
-
-    std::string C_2_string(gEncryptBuf_2, gEncryptBuf_2 + sizeof gEncryptBuf_2 / sizeof gEncryptBuf_2[0]);
-    this->ciphertext_2 = C_2_string;
+    this->ephemeralKey = encryptor.get_epk();
 }
 
 bool PourTransaction::verify(ZerocashParams& params,
@@ -434,11 +410,11 @@ const std::vector<unsigned char>& PourTransaction::getSpentSerial2() const{
 	return this->serialNumber_2;
 }
 
-const std::string& PourTransaction::getCiphertext1() const {
+const ZCNoteEncryption::Ciphertext& PourTransaction::getCiphertext1() const {
     return this->ciphertext_1;
 }
 
-const std::string& PourTransaction::getCiphertext2() const {
+const ZCNoteEncryption::Ciphertext& PourTransaction::getCiphertext2() const {
     return this->ciphertext_2;
 }
 

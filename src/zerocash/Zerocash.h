@@ -33,6 +33,7 @@
 #define ZC_V_SIZE          8
 #define ZC_RHO_SIZE        32
 #define ZC_R_SIZE          48
+#define ZC_MEMO_SIZE       128
 #define ZC_S_SIZE          0
 #define ZC_K_SIZE          32
 #define ZC_CM_SIZE         32
