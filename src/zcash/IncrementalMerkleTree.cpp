@@ -93,21 +93,19 @@ void IncrementalMerkleTree<Depth, Hash>::append(Hash obj) {
         left = obj;
         right = boost::none;
 
-        // Propagate up the tree as much as needed
-        BOOST_FOREACH(boost::optional<Hash>& parent, parents) {
-            if (parent) {
-                combined = Hash::combine(*parent, *combined);
-                parent = boost::none;
+        for (size_t i = 0; i < Depth; i++) {
+            if (i < parents.size()) {
+                if (parents[i]) {
+                    combined = Hash::combine(*parents[i], *combined);
+                    parents[i] = boost::none;
+                } else {
+                    parents[i] = *combined;
+                    break;
+                }
             } else {
-                parent = *combined;
-                combined = boost::none;
+                parents.push_back(combined);
                 break;
             }
-        }
-
-        if (combined) {
-            // Create a new parent
-            parents.push_back(combined);
         }
     }
 }
