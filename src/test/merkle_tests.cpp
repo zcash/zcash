@@ -7,6 +7,8 @@
 
 #include <iostream>
 
+#include <stdexcept>
+
 #include "utilstrencodings.h"
 #include "version.h"
 
@@ -319,6 +321,8 @@ BOOST_AUTO_TEST_CASE(tree_test_vectors)
 }
 
 BOOST_AUTO_TEST_CASE( deserializeInvalid ) {
+    // attempt to deserialize a small tree from a serialized large tree
+    // (exceeds depth well-formedness check)
     ZCIncrementalMerkleTree newTree;
 
     for (size_t i = 0; i < 16; i++) {
@@ -332,6 +336,42 @@ BOOST_AUTO_TEST_CASE( deserializeInvalid ) {
 
     ZCTestingIncrementalMerkleTree newTreeSmall;
     BOOST_CHECK_THROW({ss >> newTreeSmall;}, std::ios_base::failure);
+}
+
+BOOST_AUTO_TEST_CASE( deserializeInvalid2 ) {
+    // the most ancestral parent is empty
+    CDataStream ss(
+        ParseHex("0155b852781b9995a44c939b64e441ae2724b96f99c8f4fb9a141cfc9842c4b0e3000100"),
+        SER_NETWORK,
+        PROTOCOL_VERSION
+    );
+
+    ZCIncrementalMerkleTree tree;
+    BOOST_CHECK_THROW(ss >> tree, std::ios_base::failure);
+}
+
+BOOST_AUTO_TEST_CASE( deserializeInvalid3 ) {
+    // left doesn't exist but right does
+    CDataStream ss(
+        ParseHex("000155b852781b9995a44c939b64e441ae2724b96f99c8f4fb9a141cfc9842c4b0e300"),
+        SER_NETWORK,
+        PROTOCOL_VERSION
+    );
+
+    ZCIncrementalMerkleTree tree;
+    BOOST_CHECK_THROW(ss >> tree, std::ios_base::failure);
+}
+
+BOOST_AUTO_TEST_CASE( deserializeInvalid4 ) {
+    // left doesn't exist but a parent does
+    CDataStream ss(
+        ParseHex("000001018695873d63ec0bceeadb5bf4ccc6723ac803c1826fc7cfb34fc76180305ae27d"),
+        SER_NETWORK,
+        PROTOCOL_VERSION
+    );
+
+    ZCIncrementalMerkleTree tree;
+    BOOST_CHECK_THROW(ss >> tree, std::ios_base::failure);
 }
 
 BOOST_AUTO_TEST_CASE( testZeroElements ) {
