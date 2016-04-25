@@ -1,6 +1,7 @@
 #include "zcash/circuit/utils.tcc"
 #include "zcash/circuit/prfs.tcc"
 #include "zcash/circuit/commitment.tcc"
+#include "zcash/circuit/merkle.tcc"
 #include "zcash/circuit/note.tcc"
 
 template<typename FieldT, size_t NumInputs, size_t NumOutputs>
@@ -90,7 +91,8 @@ public:
             zk_input_notes[i].reset(new input_note_gadget<FieldT>(
                 pb,
                 ZERO,
-                zk_input_nullifiers[i]
+                zk_input_nullifiers[i],
+                *zk_merkle_root
             ));
 
             // The input keys authenticate h_sig to prevent
@@ -176,6 +178,16 @@ public:
         // Witness `zero`
         this->pb.val(ZERO) = FieldT::zero();
 
+        // Witness rt. This is not a sanity check.
+        //
+        // This ensures the read gadget constrains
+        // the intended root in the event that
+        // both inputs are zero-valued.
+        zk_merkle_root->bits.fill_with_bits(
+            this->pb,
+            uint256_to_bool_vector(rt)
+        );
+
         // Witness public balance values
         zk_vpub_old.fill_with_bits(
             this->pb,
@@ -200,7 +212,12 @@ public:
 
         for (size_t i = 0; i < NumInputs; i++) {
             // Witness the input information.
-            zk_input_notes[i]->generate_r1cs_witness(inputs[i].key, inputs[i].note);
+            auto merkle_path = inputs[i].witness.path();
+            zk_input_notes[i]->generate_r1cs_witness(
+                merkle_path,
+                inputs[i].key,
+                inputs[i].note
+            );
 
             // Witness hmacs
             zk_hmac_authentication[i]->generate_r1cs_witness();
@@ -210,6 +227,17 @@ public:
             // Witness the output information.
             zk_output_notes[i]->generate_r1cs_witness(outputs[i]);
         }
+
+        // [SANITY CHECK] Ensure that the intended root
+        // was witnessed by the inputs, even if the read
+        // gadget overwrote it. This allows the prover to
+        // fail instead of the verifier, in the event that
+        // the roots of the inputs do not match the
+        // treestate provided to the proving API.
+        zk_merkle_root->bits.fill_with_bits(
+            this->pb,
+            uint256_to_bool_vector(rt)
+        );
 
         // This happens last, because only by now are all the
         // verifier inputs resolved.
@@ -227,7 +255,7 @@ public:
     ) {
         std::vector<bool> verify_inputs;
 
-        insert_uint256(verify_inputs, uint256()); // TODO: rt
+        insert_uint256(verify_inputs, rt);
         insert_uint256(verify_inputs, h_sig);
         
         for (size_t i = 0; i < NumInputs; i++) {
