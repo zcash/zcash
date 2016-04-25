@@ -20,14 +20,18 @@ private:
 
     // Aux inputs
     pb_variable<FieldT> ZERO;
+    std::shared_ptr<digest_variable<FieldT>> zk_phi;
 
     // Input note gadgets
     boost::array<std::shared_ptr<input_note_gadget<FieldT>>, NumInputs> zk_input_notes;
     boost::array<std::shared_ptr<PRF_pk_gadget<FieldT>>, NumInputs> zk_hmac_authentication;
 
+    // Output note gadgets
+    boost::array<std::shared_ptr<output_note_gadget<FieldT>>, NumOutputs> zk_output_notes;
+
 public:
-    // PRF_pk only has a 1-bit domain separation "nonce"
-    // for different hmacs.
+    // PRF_pk and PRF_rho each only have a 1-bit
+    // domain separation "nonce" for different hmacs.
     BOOST_STATIC_ASSERT(NumInputs <= 2);
 
     joinsplit_gadget(protoboard<FieldT> &pb) : gadget<FieldT>(pb) {
@@ -77,6 +81,8 @@ public:
         // to be one automatically for us, and is known as `ONE`.
         ZERO.allocate(pb);
 
+        zk_phi.reset(new digest_variable<FieldT>(pb, 252, ""));
+
         for (size_t i = 0; i < NumInputs; i++) {
             // Input note gadget for commitments, hmacs, nullifiers,
             // and spend authority.
@@ -97,6 +103,16 @@ public:
                 zk_input_hmacs[i]
             ));
         }
+
+        for (size_t i = 0; i < NumOutputs; i++) {
+            zk_output_notes[i].reset(new output_note_gadget<FieldT>(
+                pb,
+                ZERO,
+                zk_phi->bits,
+                zk_h_sig->bits,
+                i ? true : false
+            ));
+        }
     }
 
     void generate_r1cs_constraints() {
@@ -107,12 +123,20 @@ public:
         // Constrain `ZERO`
         generate_r1cs_equals_const_constraint<FieldT>(this->pb, ZERO, FieldT::zero(), "ZERO");
 
+        // Constrain bitness of phi
+        zk_phi->generate_r1cs_constraints();
+
         for (size_t i = 0; i < NumInputs; i++) {
             // Constrain the JoinSplit input constraints.
             zk_input_notes[i]->generate_r1cs_constraints();
 
             // Authenticate h_sig with a_sk
             zk_hmac_authentication[i]->generate_r1cs_constraints();
+        }
+
+        for (size_t i = 0; i < NumOutputs; i++) {
+            // Constrain the JoinSplit output constraints.
+            zk_output_notes[i]->generate_r1cs_constraints();
         }
     }
 
@@ -128,6 +152,12 @@ public:
         // Witness `zero`
         this->pb.val(ZERO) = FieldT::zero();
 
+        // Witness phi
+        zk_phi->bits.fill_with_bits(
+            this->pb,
+            trailing252(uint256_to_bool_vector(phi))
+        );
+
         // Witness h_sig
         zk_h_sig->bits.fill_with_bits(
             this->pb,
@@ -140,6 +170,11 @@ public:
 
             // Witness hmacs
             zk_hmac_authentication[i]->generate_r1cs_witness();
+        }
+
+        for (size_t i = 0; i < NumOutputs; i++) {
+            // Witness the output information.
+            zk_output_notes[i]->generate_r1cs_witness(outputs[i]);
         }
 
         // This happens last, because only by now are all the

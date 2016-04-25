@@ -105,3 +105,58 @@ public:
         expose_nullifiers->generate_r1cs_witness();
     }
 };
+
+template<typename FieldT>
+class output_note_gadget : public note_gadget<FieldT> {
+private:
+    std::shared_ptr<digest_variable<FieldT>> rho;
+
+    std::shared_ptr<PRF_rho_gadget<FieldT>> prevent_faerie_gold;
+
+public:
+    output_note_gadget(
+        protoboard<FieldT>& pb,
+        pb_variable<FieldT>& ZERO,
+        pb_variable_array<FieldT>& phi,
+        pb_variable_array<FieldT>& h_sig,
+        bool nonce
+    ) : note_gadget<FieldT>(pb) {
+        rho.reset(new digest_variable<FieldT>(pb, 256, ""));
+
+        // Do not allow the caller to choose the same "rho"
+        // for any two valid notes in a given view of the
+        // blockchain. See protocol specification for more
+        // details.
+        prevent_faerie_gold.reset(new PRF_rho_gadget<FieldT>(
+            pb,
+            ZERO,
+            phi,
+            h_sig,
+            nonce,
+            rho
+        ));
+    }
+
+    void generate_r1cs_constraints() {
+        note_gadget<FieldT>::generate_r1cs_constraints();
+
+        // TODO: This constraint may not be necessary if SHA256
+        // already boolean constrains its outputs.
+        rho->generate_r1cs_constraints();
+
+        prevent_faerie_gold->generate_r1cs_constraints();
+    }
+
+    void generate_r1cs_witness(const Note& note) {
+        note_gadget<FieldT>::generate_r1cs_witness(note);
+
+        prevent_faerie_gold->generate_r1cs_witness();
+
+        // [SANITY CHECK] Witness rho ourselves with the
+        // note information.
+        rho->bits.fill_with_bits(
+            this->pb,
+            uint256_to_bool_vector(note.rho)
+        );
+    }
+};
