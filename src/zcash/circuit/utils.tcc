@@ -46,3 +46,10 @@ void insert_uint64(std::vector<bool>& into, uint64_t from) {
     std::vector<bool> num = uint64_to_bool_vector(from);
     into.insert(into.end(), num.begin(), num.end());
 }
+
+template<typename FieldT>
+linear_combination<FieldT> packed_addition(pb_variable_array<FieldT>& input) {
+    return pb_packing_sum<FieldT>(pb_variable_array<FieldT>(
+        input.rbegin(), input.rend()
+    ));
+}

@@ -140,6 +140,28 @@ public:
             // Constrain the JoinSplit output constraints.
             zk_output_notes[i]->generate_r1cs_constraints();
         }
+
+        // Value balance
+        {
+            linear_combination<FieldT> left_side = packed_addition(zk_vpub_old);
+            for (size_t i = 0; i < NumInputs; i++) {
+                left_side = left_side + packed_addition(zk_input_notes[i]->value);
+            }
+
+            linear_combination<FieldT> right_side = packed_addition(zk_vpub_new);
+            for (size_t i = 0; i < NumOutputs; i++) {
+                right_side = right_side + packed_addition(zk_output_notes[i]->value);
+            }
+
+            // Ensure that both sides are equal
+            this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(
+                1,
+                left_side,
+                right_side
+            ));
+
+            // TODO: #854
+        }
     }
 
     void generate_r1cs_witness(
@@ -153,6 +175,16 @@ public:
     ) {
         // Witness `zero`
         this->pb.val(ZERO) = FieldT::zero();
+
+        // Witness public balance values
+        zk_vpub_old.fill_with_bits(
+            this->pb,
+            uint64_to_bool_vector(vpub_old)
+        );
+        zk_vpub_new.fill_with_bits(
+            this->pb,
+            uint64_to_bool_vector(vpub_new)
+        );
 
         // Witness phi
         zk_phi->bits.fill_with_bits(
@@ -207,8 +239,8 @@ public:
             insert_uint256(verify_inputs, commitments[i]);
         }
 
-        insert_uint64(verify_inputs, 0); // TODO: vpub_old
-        insert_uint64(verify_inputs, 0); // TODO: vpub_new
+        insert_uint64(verify_inputs, vpub_old);
+        insert_uint64(verify_inputs, vpub_new);
 
         assert(verify_inputs.size() == verifying_input_bit_size());
         auto verify_field_elements = pack_bit_vector_into_field_element_vector<FieldT>(verify_inputs);
