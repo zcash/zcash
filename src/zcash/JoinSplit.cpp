@@ -2,6 +2,10 @@
 #include "prf.h"
 #include "sodium.h"
 
+#include "zerocash/utils/util.h"
+
+#include <memory>
+
 #include <boost/format.hpp>
 #include <boost/optional.hpp>
 #include <fstream>
