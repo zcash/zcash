@@ -16,6 +16,9 @@ private:
     pb_variable_array<FieldT> zk_vpub_old;
     pb_variable_array<FieldT> zk_vpub_new;
 
+    // Aux inputs
+    pb_variable<FieldT> ZERO;
+
 public:
     joinsplit_gadget(protoboard<FieldT> &pb) : gadget<FieldT>(pb) {
         // Verification
@@ -55,12 +58,25 @@ public:
                 "unpacker"
             ));
         }
+
+        // We need a constant "zero" variable in some contexts. In theory
+        // it should never be necessary, but libsnark does not synthesize
+        // optimal circuits.
+        // 
+        // The first variable of our constraint system is constrained
+        // to be one automatically for us, and is known as `ONE`.
+        ZERO.allocate(pb);
+
+
     }
 
     void generate_r1cs_constraints() {
         // The true passed here ensures all the inputs
         // are boolean constrained.
         unpacker->generate_r1cs_constraints(true);
+
+        // Constrain `ZERO`
+        generate_r1cs_equals_const_constraint<FieldT>(this->pb, ZERO, FieldT::zero(), "ZERO");
     }
 
     void generate_r1cs_witness(
@@ -72,6 +88,9 @@ public:
         uint64_t vpub_old,
         uint64_t vpub_new
     ) {
+        // Witness `zero`
+        this->pb.val(ZERO) = FieldT::zero();
+
         // This happens last, because only by now are all the
         // verifier inputs resolved.
         unpacker->generate_r1cs_witness_from_bits();
