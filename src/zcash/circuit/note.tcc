@@ -29,13 +29,14 @@ public:
 
 template<typename FieldT>
 class input_note_gadget : public note_gadget<FieldT> {
-public:
-    std::shared_ptr<digest_variable<FieldT>> a_sk;
+private:
     std::shared_ptr<digest_variable<FieldT>> a_pk;
     std::shared_ptr<digest_variable<FieldT>> rho;
 
     std::shared_ptr<PRF_addr_a_pk_gadget<FieldT>> spend_authority;
     std::shared_ptr<PRF_nf_gadget<FieldT>> expose_nullifiers;
+public:
+    std::shared_ptr<digest_variable<FieldT>> a_sk;
 
     input_note_gadget(
         protoboard<FieldT>& pb,
