@@ -126,7 +126,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 
         // TODO: #808
         uint256 pubKeyHash;
-        pour.push_back(Pair("valid", pourtx.Verify(*pzerocashParams, pubKeyHash)));
+        pour.push_back(Pair("valid", pourtx.Verify(*pzcashParams, pubKeyHash)));
 
         vpour.push_back(pour);
     }

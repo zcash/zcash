@@ -1,9 +1,5 @@
-#include "zerocash/IncrementalMerkleTree.h"
-
 #include <unistd.h>
 #include <boost/filesystem.hpp>
-#include "zcash/Zcash.h"
-#include "zerocash/ZerocashParams.h"
 #include "coins.h"
 #include "util.h"
 #include "init.h"
@@ -15,6 +11,11 @@
 #include "streams.h"
 
 #include "zcbenchmarks.h"
+
+#include "zcash/Zcash.h"
+#include "zcash/IncrementalMerkleTree.hpp"
+
+using namespace libzcash;
 
 struct timeval tv_start;
 
@@ -47,20 +48,18 @@ double benchmark_parameter_loading()
     boost::filesystem::path vk_path = ZC_GetParamsDir() / "zc-testnet-public-alpha-verification.key";
 
     timer_start();
-    auto vk_loaded = libzerocash::ZerocashParams::LoadVerificationKeyFromFile(
-        vk_path.string(),
-        INCREMENTAL_MERKLE_TREE_DEPTH
-    );
-    auto pk_loaded = libzerocash::ZerocashParams::LoadProvingKeyFromFile(
-        pk_path.string(),
-        INCREMENTAL_MERKLE_TREE_DEPTH
-    );
-    libzerocash::ZerocashParams zerocashParams = libzerocash::ZerocashParams(
-        INCREMENTAL_MERKLE_TREE_DEPTH,
-        &pk_loaded,
-        &vk_loaded
-    );
-    return timer_stop();
+
+    auto newParams = ZCJoinSplit::Unopened();
+
+    newParams->loadVerifyingKey(vk_path.string());
+    newParams->preloadProvingKey(pk_path.string());
+    newParams->loadProvingKey();
+
+    double ret = timer_stop();
+
+    delete newParams;
+
+    return ret;
 }
 
 double benchmark_create_joinsplit()
@@ -68,31 +67,20 @@ double benchmark_create_joinsplit()
     // TODO: #808
     uint256 pubKeyHash;
 
-    std::vector<PourInput> vpourin;
-    std::vector<PourOutput> vpourout;
-
-    while (vpourin.size() < ZC_NUM_JS_INPUTS) {
-        vpourin.push_back(PourInput(INCREMENTAL_MERKLE_TREE_DEPTH));
-    }
-
-    while (vpourout.size() < ZC_NUM_JS_OUTPUTS) {
-        vpourout.push_back(PourOutput(0));
-    }
-
     /* Get the anchor of an empty commitment tree. */
     uint256 anchor = ZCIncrementalMerkleTree().root();
 
     timer_start();
-    CPourTx pourtx(*pzerocashParams,
+    CPourTx pourtx(*pzcashParams,
                    pubKeyHash,
                    anchor,
-                   {vpourin[0], vpourin[1]},
-                   {vpourout[0], vpourout[1]},
+                   {JSInput(), JSInput()},
+                   {JSOutput(), JSOutput()},
                    0,
                    0);
     double ret = timer_stop();
 
-    assert(pourtx.Verify(*pzerocashParams, pubKeyHash));
+    assert(pourtx.Verify(*pzcashParams, pubKeyHash));
     return ret;
 }
 
@@ -101,7 +89,7 @@ double benchmark_verify_joinsplit(const CPourTx &joinsplit)
     timer_start();
     // TODO: #808
     uint256 pubKeyHash;
-    joinsplit.Verify(*pzerocashParams, pubKeyHash);
+    joinsplit.Verify(*pzcashParams, pubKeyHash);
     return timer_stop();
 }
 

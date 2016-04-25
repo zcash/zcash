@@ -13,14 +13,9 @@
 
 #include <boost/array.hpp>
 
-#include "zerocash/ZerocashParams.h"
-#include "zerocash/PourInput.h"
-#include "zerocash/PourOutput.h"
-
 #include "zcash/NoteEncryption.hpp"
 #include "zcash/Zcash.h"
-
-using namespace libzerocash;
+#include "zcash/JoinSplit.hpp"
 
 class CPourTx
 {
@@ -72,17 +67,20 @@ public:
 
     CPourTx(): vpub_old(0), vpub_new(0) { }
 
-    CPourTx(ZerocashParams& params,
+    CPourTx(ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& rt,
-            const boost::array<PourInput, ZC_NUM_JS_INPUTS>& inputs,
-            const boost::array<PourOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+            const boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+            const boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             CAmount vpub_old,
             CAmount vpub_new
     );
 
     // Verifies that the pour proof is correct.
-    bool Verify(ZerocashParams& params, const uint256& pubKeyHash) const;
+    bool Verify(ZCJoinSplit& params, const uint256& pubKeyHash) const;
+
+    // Returns the calculated h_sig
+    uint256 h_sig(ZCJoinSplit& params, const uint256& pubKeyHash) const;
 
     ADD_SERIALIZE_METHODS;
 

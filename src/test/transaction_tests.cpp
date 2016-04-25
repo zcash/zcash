@@ -25,15 +25,11 @@
 #include <boost/assign/list_of.hpp>
 #include "json/json_spirit_writer_template.h"
 
-#include "zerocash/ZerocashParams.h"
-#include "zerocash/PourInput.h"
-#include "zerocash/PourOutput.h"
-#include "zerocash/Address.h"
-#include "zerocash/Coin.h"
+#include "zcash/Note.hpp"
+#include "zcash/Address.hpp"
 
 using namespace std;
 using namespace json_spirit;
-using namespace libzerocash;
 
 // In script_tests.cpp
 extern Array read_json(const std::string& jsondata);
@@ -311,19 +307,18 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
     // the integrity of the scheme through its own tests.
 
     // construct the r1cs keypair
-    auto keypair = ZerocashParams::GenerateNewKeyPair(INCREMENTAL_MERKLE_TREE_DEPTH);
-    ZerocashParams p(
-        INCREMENTAL_MERKLE_TREE_DEPTH,
-        &keypair
-    );
+    auto p = ZCJoinSplit::Generate();
 
     // construct a merkle tree
     ZCIncrementalMerkleTree merkleTree;
-    Address addr = Address::CreateNewRandomAddress();
-    Coin coin(addr.getPublicAddress(), 100);
+
+    libzcash::SpendingKey k = libzcash::SpendingKey::random();
+    libzcash::PaymentAddress addr = k.address();
+
+    libzcash::Note note(addr.a_pk, 100, uint256(), uint256());
 
     // commitment from coin
-    uint256 commitment(coin.getCoinCommitment().getCommitmentValue());
+    uint256 commitment = note.cm();
 
     // insert commitment into the merkle tree
     merkleTree.append(commitment);
@@ -332,22 +327,21 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
     uint256 rt = merkleTree.root();
 
     auto witness = merkleTree.witness();
-    auto path = witness.path();
 
     // create CPourTx
     uint256 pubKeyHash;
-    boost::array<PourInput, ZC_NUM_JS_INPUTS> inputs = {
-        PourInput(coin, addr, path),
-        PourInput(INCREMENTAL_MERKLE_TREE_DEPTH) // dummy input of zero value
+    boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
+        libzcash::JSInput(witness, note, k),
+        libzcash::JSInput() // dummy input of zero value
     };
-    boost::array<PourOutput, ZC_NUM_JS_OUTPUTS> outputs = {
-        PourOutput(50),
-        PourOutput(50)
+    boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs = {
+        libzcash::JSOutput(addr, 50),
+        libzcash::JSOutput(addr, 50)
     };
 
     {
-        CPourTx pourtx(p, pubKeyHash, uint256(rt), inputs, outputs, 0, 0);
-        BOOST_CHECK(pourtx.Verify(p, pubKeyHash));
+        CPourTx pourtx(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
+        BOOST_CHECK(pourtx.Verify(*p, pubKeyHash));
 
         CDataStream ss(SER_DISK, CLIENT_VERSION);
         ss << pourtx;
@@ -356,21 +350,23 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
         ss >> pourtx_deserialized;
 
         BOOST_CHECK(pourtx_deserialized == pourtx);
-        BOOST_CHECK(pourtx_deserialized.Verify(p, pubKeyHash));
+        BOOST_CHECK(pourtx_deserialized.Verify(*p, pubKeyHash));
     }
 
     {
         // Ensure that the balance equation is working.
-        BOOST_CHECK_THROW(CPourTx(p, pubKeyHash, uint256(rt), inputs, outputs, 10, 0), std::invalid_argument);
-        BOOST_CHECK_THROW(CPourTx(p, pubKeyHash, uint256(rt), inputs, outputs, 0, 10), std::invalid_argument);
+        BOOST_CHECK_THROW(CPourTx(*p, pubKeyHash, rt, inputs, outputs, 10, 0), std::invalid_argument);
+        BOOST_CHECK_THROW(CPourTx(*p, pubKeyHash, rt, inputs, outputs, 0, 10), std::invalid_argument);
     }
 
     {
         // Ensure that it won't verify if the root is changed.
-        auto test = CPourTx(p, pubKeyHash, uint256(rt), inputs, outputs, 0, 0);
+        auto test = CPourTx(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
         test.anchor = GetRandHash();
-        BOOST_CHECK(!test.Verify(p, pubKeyHash));
+        BOOST_CHECK(!test.Verify(*p, pubKeyHash));
     }
+
+    delete p;
 }
 
 BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)

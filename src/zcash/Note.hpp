@@ -40,10 +40,10 @@ private:
     uint256 rho;
     uint256 r;
 
-    NotePlaintext() {}
-
 public:
     boost::array<unsigned char, ZCASH_MEMO_SIZE> memo;
+    
+    NotePlaintext() {}
 
     NotePlaintext(const Note& note, boost::array<unsigned char, ZCASH_MEMO_SIZE> memo);
 

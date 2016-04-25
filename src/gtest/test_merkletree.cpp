@@ -45,6 +45,11 @@ read_json(const std::string& jsondata)
 
 //#define PRINT_JSON 1
 
+#include "libsnark/common/default_types/r1cs_ppzksnark_pp.hpp"
+#include "libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp"
+#include "libsnark/gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp"
+#include "libsnark/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.hpp"
+
 using namespace std;
 using namespace libzerocash;
 using namespace libsnark;
