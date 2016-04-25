@@ -16,6 +16,9 @@ src/zerocash/tests/utilTest
 src/zerocash/tests/zerocashTest
 src/zerocash/tests/test_zerocash_pour_ppzksnark
 
+*zcashTest.pk
+*zcashTest.vk
+
 # autoreconf
 Makefile.in
 aclocal.m4
