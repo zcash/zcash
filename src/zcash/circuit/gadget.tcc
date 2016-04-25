@@ -1,5 +1,6 @@
 #include "zcash/circuit/utils.tcc"
 #include "zcash/circuit/prfs.tcc"
+#include "zcash/circuit/commitment.tcc"
 #include "zcash/circuit/note.tcc"
 
 template<typename FieldT, size_t NumInputs, size_t NumOutputs>
@@ -110,7 +111,8 @@ public:
                 ZERO,
                 zk_phi->bits,
                 zk_h_sig->bits,
-                i ? true : false
+                i ? true : false,
+                zk_output_commitments[i]
             ));
         }
     }
@@ -202,7 +204,7 @@ public:
         }
 
         for (size_t i = 0; i < NumOutputs; i++) {
-            insert_uint256(verify_inputs, uint256()); // TODO: commitment
+            insert_uint256(verify_inputs, commitments[i]);
         }
 
         insert_uint64(verify_inputs, 0); // TODO: vpub_old

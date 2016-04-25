@@ -1,3 +1,14 @@
+template<typename FieldT>
+pb_variable_array<FieldT> from_bits(std::vector<bool> bits, pb_variable<FieldT>& ZERO) {
+    pb_variable_array<FieldT> acc;
+
+    BOOST_FOREACH(bool bit, bits) {
+        acc.emplace_back(bit ? ONE : ZERO);
+    }
+
+    return acc;
+}
+
 std::vector<bool> trailing252(std::vector<bool> input) {
     if (input.size() != 256) {
         throw std::length_error("trailing252 input invalid length");
