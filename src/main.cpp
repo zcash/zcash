@@ -3672,6 +3672,7 @@ bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams,
         boost::this_thread::interruption_point();
 
         bool fInitialDownload;
+        int nNewHeight;
         {
             LOCK(cs_main);
             pindexMostWork = FindMostWorkChain();
@@ -3685,6 +3686,7 @@ bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams,
 
             pindexNewTip = chainActive.Tip();
             fInitialDownload = IsInitialBlockDownload(chainparams.GetConsensus());
+            nNewHeight = chainActive.Height();
         }
         // When we reach this point, we switched to a new tip (stored in pindexNewTip).
 
@@ -3700,13 +3702,13 @@ bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams,
             {
                 LOCK(cs_vNodes);
                 for (CNode* pnode : vNodes)
-                    if (chainActive.Height() > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate))
+                    if (nNewHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate))
                         pnode->PushInventory(CInv(MSG_BLOCK, hashNewTip));
             }
             // Notify external listeners about the new tip.
             GetMainSignals().UpdatedBlockTip(pindexNewTip);
         }
-    } while(pindexMostWork != chainActive.Tip());
+    } while (pindexNewTip != pindexMostWork);
     CheckBlockIndex(chainparams.GetConsensus());
 
     // Write changes periodically to disk, after relay.
