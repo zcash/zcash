@@ -1,14 +1,15 @@
 bin_PROGRAMS += \
-  zerocash/GenerateParamsForFiles \
+  zcash/GenerateParams \
   zerocash/tests/utilTest \
   zerocash/tests/zerocashTest \
   zerocash/tests/test_zerocash_pour_ppzksnark
 
 # tool for generating our public parameters
-zerocash_GenerateParamsForFiles_SOURCES = zerocash/GenerateParamsForFiles.cpp
-zerocash_GenerateParamsForFiles_LDADD = \
+zcash_GenerateParams_SOURCES = zcash/GenerateParams.cpp
+zcash_GenerateParams_LDADD = \
   $(BOOST_LIBS) \
   $(LIBZEROCASH) \
+  $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZEROCASH_LIBS)
 
