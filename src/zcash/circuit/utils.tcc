@@ -1,3 +1,11 @@
+std::vector<bool> trailing252(std::vector<bool> input) {
+    if (input.size() != 256) {
+        throw std::length_error("trailing252 input invalid length");
+    }
+
+    return std::vector<bool>(input.begin() + 4, input.end());
+}
+
 std::vector<bool> uint256_to_bool_vector(uint256 input) {
     std::vector<unsigned char> input_v(input.begin(), input.end());
     std::vector<bool> output_bv(256, 0);
