@@ -23,6 +23,7 @@ private:
     // Aux inputs
     pb_variable<FieldT> ZERO;
     std::shared_ptr<digest_variable<FieldT>> zk_phi;
+    pb_variable_array<FieldT> zk_total_uint64;
 
     // Input note gadgets
     boost::array<std::shared_ptr<input_note_gadget<FieldT>>, NumInputs> zk_input_notes;
@@ -84,6 +85,8 @@ public:
         ZERO.allocate(pb);
 
         zk_phi.reset(new digest_variable<FieldT>(pb, 252, ""));
+
+        zk_total_uint64.allocate(pb, 64);
 
         for (size_t i = 0; i < NumInputs; i++) {
             // Input note gadget for commitments, hmacs, nullifiers,
@@ -162,7 +165,20 @@ public:
                 right_side
             ));
 
-            // TODO: #854
+            // #854: Ensure that left_side is a 64-bit integer.
+            for (size_t i = 0; i < 64; i++) {
+                generate_boolean_r1cs_constraint<FieldT>(
+                    this->pb,
+                    zk_total_uint64[i],
+                    ""
+                );
+            }
+
+            this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(
+                1,
+                left_side,
+                packed_addition(zk_total_uint64)
+            ));
         }
     }
 
@@ -197,6 +213,19 @@ public:
             this->pb,
             uint64_to_bool_vector(vpub_new)
         );
+
+        {
+            // Witness total_uint64 bits
+            uint64_t left_side_acc = vpub_old;
+            for (size_t i = 0; i < NumInputs; i++) {
+                left_side_acc += inputs[i].note.value;
+            }
+
+            zk_total_uint64.fill_with_bits(
+                this->pb,
+                uint64_to_bool_vector(left_side_acc)
+            );
+        }
 
         // Witness phi
         zk_phi->bits.fill_with_bits(
