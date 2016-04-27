@@ -32,6 +32,7 @@
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 
 #include <algorithm>
+#include <atomic>
 #include <sstream>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -1727,18 +1728,24 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 bool IsInitialBlockDownload()
 {
     const CChainParams& chainParams = Params();
+
+    // Once this function has returned false, it must remain false.
+    static std::atomic<bool> latchToFalse{false};
+    // Optimization: pre-test latch before taking the lock.
+    if (latchToFalse.load(std::memory_order_relaxed))
+        return false;
+
     LOCK(cs_main);
+    if (latchToFalse.load(std::memory_order_relaxed))
+        return false;
     if (fImporting || fReindex)
         return true;
     if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
         return true;
-    static bool lockIBDState = false;
-    if (lockIBDState)
-        return false;
     bool state = (chainActive.Height() < pindexBestHeader->nHeight - 24 * 6 ||
             pindexBestHeader->GetBlockTime() < GetTime() - nMaxTipAge);
     if (!state)
-        lockIBDState = true;
+        latchToFalse.store(true, std::memory_order_relaxed);
     return state;
 }
 
