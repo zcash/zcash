@@ -44,8 +44,9 @@ import shutil
 from random import randint
 from decimal import Decimal
 import logging
+import sys
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO, stream=sys.stdout)
 
 class WalletBackupTest(BitcoinTestFramework):
 
