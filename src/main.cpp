@@ -4076,6 +4076,28 @@ static bool ActivateBestChainStep(CValidationState& state, const CChainParams& c
     return true;
 }
 
+static void NotifyHeaderTip(const Consensus::Params& params) {
+    bool fNotify = false;
+    bool fInitialBlockDownload = false;
+    static CBlockIndex* pindexHeaderOld = NULL;
+    CBlockIndex* pindexHeader = NULL;
+    {
+        LOCK(cs_main);
+        if (!setBlockIndexCandidates.empty()) {
+            pindexHeader = *setBlockIndexCandidates.rbegin();
+        }
+        if (pindexHeader != pindexHeaderOld) {
+            fNotify = true;
+            fInitialBlockDownload = IsInitialBlockDownload(params);
+            pindexHeaderOld = pindexHeader;
+        }
+    }
+    // Send block tip changed notifications without cs_main
+    if (fNotify) {
+        uiInterface.NotifyHeaderTip(fInitialBlockDownload, pindexHeader);
+    }
+}
+
 /**
  * Make the best chain active, in multiple steps. The result is either failure
  * or an activated best chain. pblock is either NULL or a pointer to a block
@@ -4895,6 +4917,8 @@ bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, c
         if (!ret)
             return error("%s: AcceptBlock FAILED", __func__);
     }
+
+    NotifyHeaderTip(chainparams.GetConsensus());
 
     if (!ActivateBestChain(state, chainparams, pblock))
         return error("%s: ActivateBestChain failed", __func__);
@@ -5735,6 +5759,16 @@ bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskB
                     LogPrint("reindex", "Block Import: already had block %s at height %d\n", hash.ToString(), mapBlockIndex[hash]->nHeight);
                 }
 
+                // Activate the genesis block so normal node progress can continue
+                if (hash == chainparams.GetConsensus().hashGenesisBlock) {
+                    CValidationState state;
+                    if (!ActivateBestChain(state, chainparams)) {
+                        break;
+                    }
+                }
+
+                NotifyHeaderTip(chainparams.GetConsensus());
+
                 // Recursively process earlier encountered successors of this block
                 deque<uint256> queue;
                 queue.push_back(hash);
@@ -5756,6 +5790,7 @@ bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskB
                             }
                         }
                         range.first = mapBlocksUnknownParent.erase(range.first);
+                        NotifyHeaderTip(chainparams.GetConsensus());
                     }
                 }
             } catch (const std::exception& e) {
@@ -6772,6 +6807,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
         }
 
+        {
         LOCK(cs_main);
 
         if (nCount == 0) {
@@ -6825,6 +6861,9 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         }
 
         CheckBlockIndex(chainparams.GetConsensus());
+        }
+
+        NotifyHeaderTip(chainparams.GetConsensus());
     }
 
     else if (strCommand == "block" && !fImporting && !fReindex) // Ignore blocks received while importing
