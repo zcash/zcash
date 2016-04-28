@@ -4,7 +4,9 @@ bin_PROGRAMS += zcash-gtest
 zcash_gtest_SOURCES = \
 	gtest/main.cpp \
 	gtest/test_tautology.cpp \
-	gtest/test_checktransaction.cpp
+	gtest/test_checktransaction.cpp \
+	gtest/test_noteencryption.cpp \
+	gtest/test_merkletree.cpp
 
 zcash_gtest_LDADD = -lgtest $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CRYPTO) $(LIBBITCOIN_UNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
   $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1)
