@@ -21,6 +21,12 @@ TEST(noteencryption, api)
     uint256 pk_enc = ZCNoteEncryption::generate_pubkey(sk_enc);
 
     ZCNoteEncryption b = ZCNoteEncryption(uint256());
+    for (size_t i = 0; i < 100; i++)
+    {
+        ZCNoteEncryption c = ZCNoteEncryption(uint256());
+
+        ASSERT_TRUE(b.get_epk() != c.get_epk());
+    }
 
     boost::array<unsigned char, 216> message;
     for (unsigned char i = 0; i < 216; i++) {
@@ -42,7 +48,11 @@ TEST(noteencryption, api)
             ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), (i == 0) ? 1 : (i - 1)), std::runtime_error);
         
             // Test wrong ephemeral key
-            ASSERT_THROW(decrypter.decrypt(ciphertext, ZCNoteEncryption::generate_privkey(uint256()), uint256(), i), std::runtime_error);
+            {
+                ZCNoteEncryption c = ZCNoteEncryption(uint256());
+
+                ASSERT_THROW(decrypter.decrypt(ciphertext, c.get_epk(), uint256(), i), std::runtime_error);
+            }
         
             // Test wrong seed
             ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256S("11035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a77"), i), std::runtime_error);
