@@ -56,7 +56,7 @@ class PourTxTest(BitcoinTestFramework):
         for i in range(4):
             (total_in, inputs) = gather_inputs(self.nodes[i], 40)
             pool[i] = self.nodes[i].createrawtransaction(inputs, {})
-            pool[i] = self.nodes[i].zcrawpour(pool[i], {}, {zcaddress:39.9}, 40, 0.1)
+            pool[i] = self.nodes[i].zcrawpour(pool[i], {}, {zcaddress:39.9}, 39.9, 0)
             signed = self.nodes[i].signrawtransaction(pool[i]["rawtxn"])
 
             # send the tx to both halves of the network

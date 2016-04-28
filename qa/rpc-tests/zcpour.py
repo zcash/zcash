@@ -24,7 +24,7 @@ class PourTxTest(BitcoinTestFramework):
 
         (total_in, inputs) = gather_inputs(self.nodes[0], 40)
         protect_tx = self.nodes[0].createrawtransaction(inputs, {})
-        pour_result = self.nodes[0].zcrawpour(protect_tx, {}, {zcaddress:39.9}, 40, 0.1)
+        pour_result = self.nodes[0].zcrawpour(protect_tx, {}, {zcaddress:39.9}, 39.9, 0)
 
         receive_result = self.nodes[0].zcrawreceive(zcsecretkey, pour_result["encryptedbucket1"])
         assert_equal(receive_result["exists"], False)
