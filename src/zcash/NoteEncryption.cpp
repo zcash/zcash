@@ -121,6 +121,8 @@ typename NoteDecryption<MLEN>::Plaintext NoteDecryption<MLEN>::decrypt
 
     NoteDecryption<MLEN>::Plaintext plaintext;
 
+    // Message length is always NOTEENCRYPTION_AUTH_BYTES less than
+    // the ciphertext length.
     if (crypto_aead_chacha20poly1305_ietf_decrypt(plaintext.begin(), NULL,
                                              NULL,
                                              ciphertext.begin(), NoteDecryption<MLEN>::CLEN,
