@@ -119,8 +119,11 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
     if (tx.nVersion >= 2) {
         for (int pour = 0; pour < pours; pour++) {
             CPourTx pourtx;
-            pourtx.vpub_old = insecure_rand() % 100000000;
-            pourtx.vpub_new = insecure_rand() % 100000000;
+            if (insecure_rand() % 2 == 0) {
+                pourtx.vpub_old = insecure_rand() % 100000000;
+            } else {
+                pourtx.vpub_new = insecure_rand() % 100000000;
+            }
             RandomScript(pourtx.scriptPubKey);
             RandomScript(pourtx.scriptSig);
             pourtx.anchor = GetRandHash();
