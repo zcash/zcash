@@ -85,7 +85,16 @@ TEST(noteencryption, api)
     }
 
     // Nonce space should run out here
-    ASSERT_THROW(b.encrypt(pk_enc, message), std::logic_error);
+    try {
+        b.encrypt(pk_enc, message);
+        FAIL() << "Expected std::logic_error";
+    }
+    catch(std::logic_error const & err) {
+        EXPECT_EQ(err.what(), std::string("no additional nonce space for KDF"));
+    }
+    catch(...) {
+        FAIL() << "Expected std::logic_error";
+    }
 }
 
 uint256 test_prf(
