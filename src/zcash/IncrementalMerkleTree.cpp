@@ -53,12 +53,7 @@ void IncrementalMerkleTree<Depth, Hash>::wfcheck() const {
     }
 
     // The last parent cannot be null.
-    bool wasnull = false;
-    BOOST_FOREACH(const boost::optional<Hash>& parent, parents) {
-        wasnull = !parent;
-    }
-
-    if (wasnull) {
+    if (!(parents.empty()) && !(parents.back())) {
         throw std::ios_base::failure("tree has non-canonical representation of parent");
     }
 
@@ -89,7 +84,7 @@ void IncrementalMerkleTree<Depth, Hash>::append(Hash obj) {
         // Combine the leaves and propagate it up the tree
         boost::optional<Hash> combined = Hash::combine(*left, *right);
 
-        // Set the left leaf to the object and make the right object none
+        // Set the "left" leaf to the object and make the "right" leaf none
         left = obj;
         right = boost::none;
 
@@ -261,7 +256,7 @@ MerklePath IncrementalMerkleTree<Depth, Hash>::path(std::deque<Hash> filler_hash
 }
 
 template<size_t Depth, typename Hash>
-std::deque<Hash> IncrementalWitness<Depth, Hash>::uncle_train() const {
+std::deque<Hash> IncrementalWitness<Depth, Hash>::partial_path() const {
     std::deque<Hash> uncles(filled.begin(), filled.end());
 
     if (cursor) {

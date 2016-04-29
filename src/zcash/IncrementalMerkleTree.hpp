@@ -68,6 +68,8 @@ public:
 private:
     boost::optional<Hash> left;
     boost::optional<Hash> right;
+
+    // Collapsed "left" subtrees ordered toward the root of the tree.
     std::vector<boost::optional<Hash>> parents;
     MerklePath path(std::deque<Hash> filler_hashes = std::deque<Hash>()) const;
     Hash root(size_t depth, std::deque<Hash> filler_hashes = std::deque<Hash>()) const;
@@ -82,11 +84,11 @@ friend class IncrementalMerkleTree<Depth, Hash>;
 
 public:
     MerklePath path() const {
-        return tree.path(uncle_train());
+        return tree.path(partial_path());
     }
 
     Hash root() const {
-        return tree.root(Depth, uncle_train());
+        return tree.root(Depth, partial_path());
     }
 
     void append(Hash obj);
@@ -107,7 +109,7 @@ private:
     std::vector<Hash> filled;
     boost::optional<IncrementalMerkleTree<Depth, Hash>> cursor;
     size_t cursor_depth;
-    std::deque<Hash> uncle_train() const;
+    std::deque<Hash> partial_path() const;
     IncrementalWitness(IncrementalMerkleTree<Depth, Hash> tree) : tree(tree) {}
 };
 
