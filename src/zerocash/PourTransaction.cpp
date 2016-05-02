@@ -301,10 +301,11 @@ void PourTransaction::init(uint16_t version_num,
         std::vector<unsigned char> memo(ZC_MEMO_SIZE, 0x00);
         plaintext_internals.insert(plaintext_internals.end(), memo.begin(), memo.end());
 
-        assert(plaintext_internals.size() == 216);
+        // This is all going away.
+        assert(plaintext_internals.size() >= 201);
 
-        boost::array<unsigned char, 216> pt;
-        memcpy(&pt[0], &plaintext_internals[0], 216);
+        boost::array<unsigned char, 201> pt;
+        memcpy(&pt[0], &plaintext_internals[0], 201);
 
         this->ciphertext_1 = encryptor.encrypt(addr_1_new.getEncryptionPublicKey(),
                                                pt);
@@ -318,10 +319,11 @@ void PourTransaction::init(uint16_t version_num,
         std::vector<unsigned char> memo(ZC_MEMO_SIZE, 0x00);
         plaintext_internals.insert(plaintext_internals.end(), memo.begin(), memo.end());
 
-        assert(plaintext_internals.size() == 216);
+        // This is all going away.
+        assert(plaintext_internals.size() >= 201);
 
-        boost::array<unsigned char, 216> pt;
-        memcpy(&pt[0], &plaintext_internals[0], 216);
+        boost::array<unsigned char, 201> pt;
+        memcpy(&pt[0], &plaintext_internals[0], 201);
 
         this->ciphertext_2 = encryptor.encrypt(addr_2_new.getEncryptionPublicKey(),
                                                pt);

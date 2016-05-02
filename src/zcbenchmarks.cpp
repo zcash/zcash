@@ -2,6 +2,7 @@
 
 #include <unistd.h>
 #include <boost/filesystem.hpp>
+#include "zcash/Zcash.h"
 #include "zerocash/ZerocashParams.h"
 #include "coins.h"
 #include "util.h"
@@ -69,19 +70,16 @@ double benchmark_create_joinsplit()
     std::vector<PourInput> vpourin;
     std::vector<PourOutput> vpourout;
 
-    while (vpourin.size() < NUM_POUR_INPUTS) {
+    while (vpourin.size() < ZC_NUM_JS_INPUTS) {
         vpourin.push_back(PourInput(INCREMENTAL_MERKLE_TREE_DEPTH));
     }
 
-    while (vpourout.size() < NUM_POUR_OUTPUTS) {
+    while (vpourout.size() < ZC_NUM_JS_OUTPUTS) {
         vpourout.push_back(PourOutput(0));
     }
 
     /* Get the anchor of an empty commitment tree. */
-    IncrementalMerkleTree blank_tree(INCREMENTAL_MERKLE_TREE_DEPTH);
-    std::vector<unsigned char> newrt_v(32);
-    blank_tree.getRootValue(newrt_v);
-    uint256 anchor = uint256(newrt_v);
+    uint256 anchor = ZCIncrementalMerkleTree().root();
 
     timer_start();
     CPourTx pourtx(*pzerocashParams,
