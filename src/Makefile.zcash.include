@@ -1,8 +1,6 @@
 bin_PROGRAMS += \
   zcash/GenerateParams \
-  zerocash/tests/utilTest \
-  zerocash/tests/zerocashTest \
-  zerocash/tests/test_zerocash_pour_ppzksnark
+  zerocash/tests/utilTest
 
 # tool for generating our public parameters
 zcash_GenerateParams_SOURCES = zcash/GenerateParams.cpp
@@ -21,26 +19,3 @@ zerocash_tests_utilTest_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZEROCASH_LIBS)
-
-# tests for libzerocash APIs
-zerocash_tests_zerocashTest_SOURCES = \
-  zerocash/tests/zerocashTest.cpp \
-  zerocash/tests/timer.cpp
-
-zerocash_tests_zerocashTest_LDADD = \
-  $(BOOST_LIBS) \
-  $(LIBZEROCASH) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CRYPTO) \
-  $(LIBZEROCASH_LIBS)
-
-# tests for our zkSNARK circuit
-
-zerocash_tests_test_zerocash_pour_ppzksnark_SOURCES = zerocash/tests/test_zerocash_pour_ppzksnark.cpp
-zerocash_tests_test_zerocash_pour_ppzksnark_LDADD = \
-  $(BOOST_LIBS) \
-  $(LIBZEROCASH) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CRYPTO) \
-  $(LIBZEROCASH_LIBS)
-
