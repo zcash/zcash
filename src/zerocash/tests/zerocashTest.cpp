@@ -29,10 +29,10 @@
 #include "zerocash/PourOutput.h"
 #include "zerocash/utils/util.h"
 
+#include "uint256.h"
+
 using namespace std;
 using namespace libsnark;
-
-#define TEST_TREE_DEPTH 4
 
 BOOST_AUTO_TEST_CASE( SaveAndLoadKeysFromFiles ) {
     cout << "\nSaveAndLoadKeysFromFiles TEST\n" << endl;
@@ -40,9 +40,9 @@ BOOST_AUTO_TEST_CASE( SaveAndLoadKeysFromFiles ) {
     cout << "Creating Params...\n" << endl;
 
     libzerocash::timer_start("Param Generation");
-    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH);
+    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(INCREMENTAL_MERKLE_TREE_DEPTH);
     libzerocash::ZerocashParams p(
-        TEST_TREE_DEPTH,
+        INCREMENTAL_MERKLE_TREE_DEPTH,
         &keypair
     );
     libzerocash::timer_stop("Param Generation");
@@ -72,11 +72,11 @@ BOOST_AUTO_TEST_CASE( SaveAndLoadKeysFromFiles ) {
     libzerocash::timer_stop("Saving Verification Key");
 
     libzerocash::timer_start("Loading Proving Key");
-    auto pk_loaded = libzerocash::ZerocashParams::LoadProvingKeyFromFile(pk_path, TEST_TREE_DEPTH);
+    auto pk_loaded = libzerocash::ZerocashParams::LoadProvingKeyFromFile(pk_path, INCREMENTAL_MERKLE_TREE_DEPTH);
     libzerocash::timer_stop("Loading Proving Key");
 
     libzerocash::timer_start("Loading Verification Key");
-    auto vk_loaded = libzerocash::ZerocashParams::LoadVerificationKeyFromFile(vk_path, TEST_TREE_DEPTH);
+    auto vk_loaded = libzerocash::ZerocashParams::LoadVerificationKeyFromFile(vk_path, INCREMENTAL_MERKLE_TREE_DEPTH);
     libzerocash::timer_stop("Loading Verification Key");
 
     cout << "Comparing Proving and Verification key.\n" << endl;
@@ -107,19 +107,19 @@ BOOST_AUTO_TEST_CASE( SaveAndLoadKeysFromFiles ) {
     }
 
     cout << "Creating Merkle Tree...\n" << endl;
-    libzerocash::IncrementalMerkleTree merkleTree(coinValues, TEST_TREE_DEPTH);
+    libzerocash::IncrementalMerkleTree merkleTree(coinValues, INCREMENTAL_MERKLE_TREE_DEPTH);
     cout << "Successfully created Merkle Tree.\n" << endl;
 
     std::vector<bool> index;
 
     cout << "Creating Witness 1...\n" << endl;
-    merkle_authentication_path witness_1(TEST_TREE_DEPTH);
+    merkle_authentication_path witness_1(INCREMENTAL_MERKLE_TREE_DEPTH);
     libzerocash::convertIntToVector(1, index);
     merkleTree.getWitness(index, witness_1);
     cout << "Successfully created Witness 1.\n" << endl;
 
     cout << "Creating Witness 2...\n" << endl;
-    merkle_authentication_path witness_2(TEST_TREE_DEPTH);
+    merkle_authentication_path witness_2(INCREMENTAL_MERKLE_TREE_DEPTH);
     libzerocash::convertIntToVector(3, index);
     merkleTree.getWitness(index, witness_2);
     cout << "Successfully created Witness 2.\n" << endl;
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE( SaveAndLoadKeysFromFiles ) {
 BOOST_AUTO_TEST_CASE( PourInputOutputTest ) {
     // dummy input
     {
-        libzerocash::PourInput input(TEST_TREE_DEPTH);
+        libzerocash::PourInput input(INCREMENTAL_MERKLE_TREE_DEPTH);
 
         BOOST_CHECK(input.old_coin.getValue() == 0);
         BOOST_CHECK(input.old_address.getPublicAddress() == input.old_coin.getPublicAddress());
@@ -192,10 +192,10 @@ void test_pour(libzerocash::ZerocashParams& p,
           std::vector<uint64_t> inputs, // values of the inputs (max 2)
           std::vector<uint64_t> outputs) // values of the outputs (max 2)
 {
-    using pour_input_state = std::tuple<libzerocash::Address, libzerocash::Coin, std::vector<bool>>;
+    using pour_input_state = std::tuple<libzerocash::Address, libzerocash::Coin, ZCIncrementalWitness>;
 
     // Construct incremental merkle tree
-    libzerocash::IncrementalMerkleTree merkleTree(TEST_TREE_DEPTH);
+    ZCIncrementalMerkleTree merkleTree;
 
     // Dummy sig_pk
     vector<unsigned char> as(ZC_SIG_PK_SIZE, 'a');
@@ -210,33 +210,30 @@ void test_pour(libzerocash::ZerocashParams& p,
         libzerocash::Coin coin(addr.getPublicAddress(), *it);
 
         // commitment from coin
-        std::vector<bool> commitment(ZC_CM_SIZE * 8);
-        libzerocash::convertBytesVectorToVector(coin.getCoinCommitment().getCommitmentValue(), commitment);
+        uint256 commitment(coin.getCoinCommitment().getCommitmentValue());
 
         // insert commitment into the merkle tree
-        std::vector<bool> index;
-        merkleTree.insertElement(commitment, index);
+        merkleTree.append(commitment);
+
+        // and append to any witnesses
+        for(vector<pour_input_state>::iterator wit = input_state.begin(); wit != input_state.end(); ++wit) {
+            std::get<2>(*wit).append(commitment);
+        }
 
         // store the state temporarily
-        input_state.push_back(std::make_tuple(addr, coin, index));
+        input_state.push_back(std::make_tuple(addr, coin, merkleTree.witness()));
     }
 
     // compute the merkle root we will be working with
-    vector<unsigned char> rt(ZC_ROOT_SIZE);
-    {
-        vector<bool> root_bv(ZC_ROOT_SIZE * 8);
-        merkleTree.getRootValue(root_bv);
-        libzerocash::convertVectorToBytesVector(root_bv, rt);
-    }
+    auto rt_u = merkleTree.root();
+    std::vector<unsigned char> rt(rt_u.begin(), rt_u.end());
 
     // get witnesses for all the input coins and construct the pours
     for(vector<pour_input_state>::iterator it = input_state.begin(); it != input_state.end(); ++it) {
-        merkle_authentication_path path(TEST_TREE_DEPTH);
+        auto witness = std::get<2>(*it);
+        auto path = witness.path();
 
-        auto index = std::get<2>(*it);
-        merkleTree.getWitness(index, path);
-
-        pour_inputs.push_back(libzerocash::PourInput(std::get<1>(*it), std::get<0>(*it), libzerocash::convertVectorToInt(index), path));
+        pour_inputs.push_back(libzerocash::PourInput(std::get<1>(*it), std::get<0>(*it), path));
     }
 
     // construct dummy outputs with the given values
@@ -250,9 +247,9 @@ void test_pour(libzerocash::ZerocashParams& p,
 }
 
 BOOST_AUTO_TEST_CASE( PourVpubInTest ) {
-    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH);
+    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(INCREMENTAL_MERKLE_TREE_DEPTH);
     libzerocash::ZerocashParams p(
-        TEST_TREE_DEPTH,
+        INCREMENTAL_MERKLE_TREE_DEPTH,
         &keypair
     );
 
@@ -331,9 +328,9 @@ BOOST_AUTO_TEST_CASE( PourTxTest ) {
     cout << "Creating Params...\n" << endl;
 
     libzerocash::timer_start("Param Generation");
-    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH);
+    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(INCREMENTAL_MERKLE_TREE_DEPTH);
     libzerocash::ZerocashParams p(
-        TEST_TREE_DEPTH,
+        INCREMENTAL_MERKLE_TREE_DEPTH,
         &keypair
     );
     libzerocash::timer_stop("Param Generation");
@@ -363,12 +360,12 @@ BOOST_AUTO_TEST_CASE( PourTxTest ) {
     cout << "Creating Merkle Tree...\n" << endl;
 
     libzerocash::timer_start("Merkle Tree");
-    libzerocash::IncrementalMerkleTree merkleTree(coinValues, TEST_TREE_DEPTH);
+    libzerocash::IncrementalMerkleTree merkleTree(coinValues, INCREMENTAL_MERKLE_TREE_DEPTH);
     libzerocash::timer_stop("Merkle Tree");
 
     cout << "Successfully created Merkle Tree.\n" << endl;
 
-    merkle_authentication_path witness_1(TEST_TREE_DEPTH);
+    merkle_authentication_path witness_1(INCREMENTAL_MERKLE_TREE_DEPTH);
 
     libzerocash::timer_start("Witness");
     std::vector<bool> index;
@@ -384,7 +381,7 @@ BOOST_AUTO_TEST_CASE( PourTxTest ) {
     }
     cout << "\n" << endl;
 
-    merkle_authentication_path witness_2(TEST_TREE_DEPTH);
+    merkle_authentication_path witness_2(INCREMENTAL_MERKLE_TREE_DEPTH);
     libzerocash::convertIntToVector(3, index);
     if (merkleTree.getWitness(index, witness_2) == false) {
 		cout << "Could not get witness" << endl;
@@ -539,9 +536,9 @@ BOOST_AUTO_TEST_CASE( SimpleTxTest ) {
     cout << "\nSIMPLE TRANSACTION TEST\n" << endl;
 
     libzerocash::timer_start("Param Generation");
-    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(TEST_TREE_DEPTH);
+    auto keypair = libzerocash::ZerocashParams::GenerateNewKeyPair(INCREMENTAL_MERKLE_TREE_DEPTH);
     libzerocash::ZerocashParams p(
-        TEST_TREE_DEPTH,
+        INCREMENTAL_MERKLE_TREE_DEPTH,
         &keypair
     );
     libzerocash::timer_stop("Param Generation");
@@ -571,13 +568,13 @@ BOOST_AUTO_TEST_CASE( SimpleTxTest ) {
     }
 
     cout << "Creating Merkle Tree...\n" << endl;
-    libzerocash::IncrementalMerkleTree merkleTree(coinValues, TEST_TREE_DEPTH);
+    libzerocash::IncrementalMerkleTree merkleTree(coinValues, INCREMENTAL_MERKLE_TREE_DEPTH);
     cout << "Successfully created Merkle Tree.\n" << endl;
 
     std::vector<bool> index;
 
     cout << "Creating Witness 1...\n" << endl;
-    merkle_authentication_path witness_1(TEST_TREE_DEPTH);
+    merkle_authentication_path witness_1(INCREMENTAL_MERKLE_TREE_DEPTH);
     libzerocash::convertIntToVector(1, index);
     if (merkleTree.getWitness(index, witness_1) == false) {
 		BOOST_ERROR("Could not get witness");
@@ -585,7 +582,7 @@ BOOST_AUTO_TEST_CASE( SimpleTxTest ) {
     cout << "Successfully created Witness 1.\n" << endl;
 
     cout << "Creating Witness 2...\n" << endl;
-    merkle_authentication_path witness_2(TEST_TREE_DEPTH);
+    merkle_authentication_path witness_2(INCREMENTAL_MERKLE_TREE_DEPTH);
     libzerocash::convertIntToVector(3, index);
     if (merkleTree.getWitness(index, witness_2) == false) {
 		cout << "Could not get witness" << endl;

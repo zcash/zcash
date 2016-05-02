@@ -11,7 +11,6 @@
  * @copyright  MIT license (see LICENSE file)
  *****************************************************************************/
 
-#include "IncrementalMerkleTree.h"
 #include "PourInput.h"
 
 namespace libzerocash {
@@ -21,27 +20,20 @@ PourInput::PourInput(int tree_depth): old_coin(), merkle_index(), path() {
 
 	this->old_coin = Coin(this->old_address.getPublicAddress(), 0);
 
-	// dummy merkle tree
-	IncrementalMerkleTree merkleTree(tree_depth);
+	ZCIncrementalMerkleTree merkleTree;
+	merkleTree.append(uint256(this->old_coin.getCoinCommitment().getCommitmentValue()));
 
-	// commitment from coin
-	std::vector<bool> commitment(ZC_CM_SIZE * 8);
-	convertBytesVectorToVector(this->old_coin.getCoinCommitment().getCommitmentValue(), commitment);
+	auto witness = merkleTree.witness();
+	auto merkle_path = witness.path();
 
-	// insert commitment into the merkle tree
-	std::vector<bool> index;
-	merkleTree.insertElement(commitment, index);
-
-	merkleTree.getWitness(index, this->path);
-
-	this->merkle_index = 1;
+	this->path = merkle_path.authentication_path;
+	this->merkle_index = convertVectorToInt(merkle_path.index);
 }
 
 PourInput::PourInput(Coin old_coin,
           Address old_address,
-          size_t merkle_index,
-          merkle_authentication_path path) : old_coin(old_coin), merkle_index(merkle_index), path(path) {
-		this->old_address = old_address;
+          const libzcash::MerklePath &path) : old_address(old_address), old_coin(old_coin), path(path.authentication_path) {
+		this->merkle_index = convertVectorToInt(path.index);
 };
 
 } /* namespace libzerocash */
