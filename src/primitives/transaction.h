@@ -30,14 +30,6 @@ public:
     CAmount vpub_old;
     CAmount vpub_new;
 
-    // These scripts are used to bind a Pour to the outer
-    // transaction it is placed in. The Pour will
-    // authenticate the hash of the scriptPubKey, and the
-    // provided scriptSig with be appended during
-    // transaction verification.
-    CScript scriptPubKey;
-    CScript scriptSig;
-
     // Pours are always anchored to a root in the bucket
     // commitment tree at some point in the blockchain
     // history or in the history of the current
@@ -66,6 +58,9 @@ public:
     // Ephemeral key
     uint256 ephemeralKey;
 
+    // Random seed
+    uint256 randomSeed;
+
     // MACs
     // The verification of the pour requires these MACs
     // to be provided as an input.
@@ -78,7 +73,7 @@ public:
     CPourTx(): vpub_old(0), vpub_new(0) { }
 
     CPourTx(ZerocashParams& params,
-            const CScript& scriptPubKey,
+            const uint256& pubKeyHash,
             const uint256& rt,
             const boost::array<PourInput, ZC_NUM_JS_INPUTS>& inputs,
             const boost::array<PourOutput, ZC_NUM_JS_OUTPUTS>& outputs,
@@ -87,7 +82,7 @@ public:
     );
 
     // Verifies that the pour proof is correct.
-    bool Verify(ZerocashParams& params) const;
+    bool Verify(ZerocashParams& params, const uint256& pubKeyHash) const;
 
     ADD_SERIALIZE_METHODS;
 
@@ -95,13 +90,12 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(vpub_old);
         READWRITE(vpub_new);
-        READWRITE(scriptPubKey);
-        READWRITE(scriptSig);
         READWRITE(anchor);
         READWRITE(serials);
         READWRITE(commitments);
         READWRITE(ciphertexts);
         READWRITE(ephemeralKey);
+        READWRITE(randomSeed);
         READWRITE(macs);
         READWRITE(proof);
     }
@@ -111,13 +105,12 @@ public:
         return (
             a.vpub_old == b.vpub_old &&
             a.vpub_new == b.vpub_new &&
-            a.scriptPubKey == b.scriptPubKey &&
-            a.scriptSig == b.scriptSig &&
             a.anchor == b.anchor &&
             a.serials == b.serials &&
             a.commitments == b.commitments &&
             a.ciphertexts == b.ciphertexts &&
             a.ephemeralKey == b.ephemeralKey &&
+            a.randomSeed == b.randomSeed &&
             a.macs == b.macs &&
             a.proof == b.proof
             );

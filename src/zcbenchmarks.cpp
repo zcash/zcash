@@ -65,7 +65,8 @@ double benchmark_parameter_loading()
 
 double benchmark_create_joinsplit()
 {
-    CScript scriptPubKey;
+    // TODO: #808
+    uint256 pubKeyHash;
 
     std::vector<PourInput> vpourin;
     std::vector<PourOutput> vpourout;
@@ -83,21 +84,24 @@ double benchmark_create_joinsplit()
 
     timer_start();
     CPourTx pourtx(*pzerocashParams,
-                   scriptPubKey,
+                   pubKeyHash,
                    anchor,
                    {vpourin[0], vpourin[1]},
                    {vpourout[0], vpourout[1]},
                    0,
                    0);
     double ret = timer_stop();
-    assert(pourtx.Verify(*pzerocashParams));
+
+    assert(pourtx.Verify(*pzerocashParams, pubKeyHash));
     return ret;
 }
 
 double benchmark_verify_joinsplit(const CPourTx &joinsplit)
 {
     timer_start();
-    joinsplit.Verify(*pzerocashParams);
+    // TODO: #808
+    uint256 pubKeyHash;
+    joinsplit.Verify(*pzerocashParams, pubKeyHash);
     return timer_stop();
 }
 
