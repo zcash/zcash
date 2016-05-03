@@ -25,7 +25,11 @@ JSON_TEST_FILES = \
   test/data/script_invalid.json \
   test/data/tx_invalid.json \
   test/data/tx_valid.json \
-  test/data/sighash.json
+  test/data/sighash.json \
+  test/data/merkle_roots.json \
+  test/data/merkle_serialization.json \
+  test/data/merkle_witness_serialization.json \
+  test/data/merkle_path.json
 
 RAW_TEST_FILES = test/data/alertTests.raw
 

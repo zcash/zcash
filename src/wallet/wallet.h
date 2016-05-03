@@ -616,7 +616,7 @@ public:
     void SyncTransaction(const CTransaction& tx, const CBlock* pblock);
     bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate);
     void EraseFromWallet(const uint256 &hash);
-    bool WitnessBucketCommitment(uint256 &commitment, libsnark::merkle_authentication_path& path, size_t &path_index, uint256 &final_anchor);
+    bool WitnessBucketCommitment(uint256 &commitment, libzcash::MerklePath& path, uint256 &final_anchor);
     int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
     void ReacceptWalletTransactions();
     void ResendWalletTransactions(int64_t nBestBlockTime);
