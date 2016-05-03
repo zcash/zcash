@@ -1,3 +1,4 @@
+TESTS += zcash-gtest
 bin_PROGRAMS += zcash-gtest
 
 # tool for generating our public parameters
