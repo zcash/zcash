@@ -8,7 +8,7 @@
 
 #include <string>
 
-#include "zerocash/ZerocashParams.h"
+#include "zcash/JoinSplit.hpp"
 
 class CScheduler;
 class CWallet;
@@ -19,7 +19,7 @@ class thread_group;
 } // namespace boost
 
 extern CWallet* pwalletMain;
-extern libzerocash::ZerocashParams* pzerocashParams;
+extern ZCJoinSplit* pzcashParams;
 
 void StartShutdown();
 bool ShutdownRequested();

@@ -9,7 +9,7 @@ https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
 #include <boost/array.hpp>
 #include "uint256.h"
 
-#include "zerocash/Zerocash.h"
+#include "zcash/Zcash.h"
 
 namespace libzcash {
 
@@ -73,7 +73,7 @@ uint256 random_uint256();
 
 }
 
-typedef libzcash::NoteEncryption<ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE> ZCNoteEncryption;
-typedef libzcash::NoteDecryption<ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE> ZCNoteDecryption;
+typedef libzcash::NoteEncryption<ZCASH_NOTEPLAINTEXT_LEADING + ZCASH_V_SIZE + ZCASH_RHO_SIZE + ZCASH_R_SIZE + ZCASH_MEMO_SIZE> ZCNoteEncryption;
+typedef libzcash::NoteDecryption<ZCASH_NOTEPLAINTEXT_LEADING + ZCASH_V_SIZE + ZCASH_RHO_SIZE + ZCASH_R_SIZE + ZCASH_MEMO_SIZE> ZCNoteDecryption;
 
 #endif /* ZC_NOTE_ENCRYPTION_H_ */
