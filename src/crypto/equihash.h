@@ -76,21 +76,22 @@ bool IsValidBranch(const FullStepRow& a, const unsigned int ilen, const eh_trunc
 class TruncatedStepRow : public StepRow
 {
 private:
-    std::vector<eh_trunc> indices;
+    unsigned int lenIndices;
 
 public:
     TruncatedStepRow(unsigned int n, const eh_HashState& base_state, eh_index i, unsigned int ilen);
     ~TruncatedStepRow() { }
 
-    TruncatedStepRow(const TruncatedStepRow& a) : StepRow {a}, indices(a.indices) { }
+    TruncatedStepRow(const TruncatedStepRow& a);
     TruncatedStepRow& operator=(const TruncatedStepRow& a);
     TruncatedStepRow& operator^=(const TruncatedStepRow& a);
 
-    bool IndicesBefore(const TruncatedStepRow& a) { return indices[0] < a.indices[0]; }
-    std::vector<eh_trunc> GetPartialSolution() { return std::vector<eh_trunc>(indices); }
+    void TrimHash(int l);
+    inline bool IndicesBefore(const TruncatedStepRow& a) const { return memcmp(hash+len, a.hash+a.len, lenIndices) < 0; }
+    eh_trunc* GetPartialSolution(eh_index soln_size) const;
 
     friend inline const TruncatedStepRow operator^(const TruncatedStepRow& a, const TruncatedStepRow& b) {
-        if (a.indices[0] < b.indices[0]) { return TruncatedStepRow(a) ^= b; }
+        if (a.IndicesBefore(b)) { return TruncatedStepRow(a) ^= b; }
         else { return TruncatedStepRow(b) ^= a; }
     }
 };

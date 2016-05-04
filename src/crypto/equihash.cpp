@@ -172,19 +172,33 @@ bool IsValidBranch(const FullStepRow& a, const unsigned int ilen, const eh_trunc
 
 TruncatedStepRow::TruncatedStepRow(unsigned int n, const eh_HashState& base_state, eh_index i, unsigned int ilen) :
         StepRow {n, base_state, i},
-        indices {TruncateIndex(i, ilen)}
+        lenIndices {1}
 {
-    assert(indices.size() == 1);
+    unsigned char* p = new unsigned char[len+lenIndices];
+    std::copy(hash, hash+len, p);
+    p[len] = TruncateIndex(i, ilen);
+    delete[] hash;
+    hash = p;
+}
+
+TruncatedStepRow::TruncatedStepRow(const TruncatedStepRow& a) :
+        StepRow {a},
+        lenIndices {a.lenIndices}
+{
+    unsigned char* p = new unsigned char[a.len+a.lenIndices];
+    std::copy(a.hash, a.hash+a.len+a.lenIndices, p);
+    delete[] hash;
+    hash = p;
 }
 
 TruncatedStepRow& TruncatedStepRow::operator=(const TruncatedStepRow& a)
 {
-    unsigned char* p = new unsigned char[a.len];
-    std::copy(a.hash, a.hash+a.len, p);
+    unsigned char* p = new unsigned char[a.len+a.lenIndices];
+    std::copy(a.hash, a.hash+a.len+a.lenIndices, p);
     delete[] hash;
     hash = p;
     len = a.len;
-    indices = a.indices;
+    lenIndices = a.lenIndices;
     return *this;
 }
 
@@ -193,17 +207,35 @@ TruncatedStepRow& TruncatedStepRow::operator^=(const TruncatedStepRow& a)
     if (a.len != len) {
         throw std::invalid_argument("Hash length differs");
     }
-    if (a.indices.size() != indices.size()) {
+    if (a.lenIndices != lenIndices) {
         throw std::invalid_argument("Number of indices differs");
     }
-    unsigned char* p = new unsigned char[len];
+    unsigned char* p = new unsigned char[len+lenIndices+a.lenIndices];
     for (int i = 0; i < len; i++)
         p[i] = hash[i] ^ a.hash[i];
+    std::copy(hash+len, hash+len+lenIndices, p+len);
+    std::copy(a.hash+a.len, a.hash+a.len+a.lenIndices, p+len+lenIndices);
     delete[] hash;
     hash = p;
-    indices.reserve(indices.size() + a.indices.size());
-    indices.insert(indices.end(), a.indices.begin(), a.indices.end());
+    lenIndices += a.lenIndices;
     return *this;
+}
+
+void TruncatedStepRow::TrimHash(int l)
+{
+    unsigned char* p = new unsigned char[len-l+lenIndices];
+    std::copy(hash+l, hash+len+lenIndices, p);
+    delete[] hash;
+    hash = p;
+    len -= l;
+}
+
+eh_trunc* TruncatedStepRow::GetPartialSolution(eh_index soln_size) const
+{
+    assert(lenIndices == soln_size);
+    eh_trunc* p = new eh_trunc[lenIndices];
+    std::copy(hash+len, hash+len+lenIndices, p);
+    return p;
 }
 
 Equihash::Equihash(unsigned int n, unsigned int k) :
@@ -358,7 +390,8 @@ std::set<std::vector<eh_index>> Equihash::OptimisedSolve(const eh_HashState& bas
 
     // First run the algorithm with truncated indices
 
-    std::vector<std::vector<eh_trunc>> partialSolns;
+    eh_index soln_size { 1 << k };
+    std::vector<eh_trunc*> partialSolns;
     {
 
         // 1) Generate first list
@@ -431,7 +464,7 @@ std::set<std::vector<eh_index>> Equihash::OptimisedSolve(const eh_HashState& bas
             for (int i = 0; i < Xt.size() - 1; i++) {
                 TruncatedStepRow res = Xt[i] ^ Xt[i+1];
                 if (res.IsZero()) {
-                    partialSolns.push_back(res.GetPartialSolution());
+                    partialSolns.push_back(res.GetPartialSolution(soln_size));
                 }
             }
         } else
@@ -446,11 +479,11 @@ std::set<std::vector<eh_index>> Equihash::OptimisedSolve(const eh_HashState& bas
     std::set<std::vector<eh_index>> solns;
     eh_index recreate_size { UntruncateIndex(1, 0, CollisionBitLength() + 1) };
     int invalidCount = 0;
-    for (std::vector<eh_trunc> partialSoln : partialSolns) {
+    for (eh_trunc* partialSoln : partialSolns) {
         // 1) Generate first list of possibilities
         std::vector<std::vector<FullStepRow>> X;
-        X.reserve(partialSoln.size());
-        for (int i = 0; i < partialSoln.size(); i++) {
+        X.reserve(soln_size);
+        for (eh_index i = 0; i < soln_size; i++) {
             std::vector<FullStepRow> ic;
             ic.reserve(recreate_size);
             for (eh_index j = 0; j < recreate_size; j++) {
@@ -489,10 +522,13 @@ std::set<std::vector<eh_index>> Equihash::OptimisedSolve(const eh_HashState& bas
         for (FullStepRow row : X[0]) {
             solns.insert(row.GetSolution());
         }
-        continue;
+        goto deletesolution;
 
 invalidsolution:
         invalidCount++;
+
+deletesolution:
+        delete[] partialSoln;
     }
     LogPrint("pow", "- Number of invalid solutions found: %d\n", invalidCount);
 
