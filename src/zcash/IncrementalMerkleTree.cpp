@@ -10,11 +10,6 @@ namespace libzcash {
 
 SHA256Compress SHA256Compress::combine(const SHA256Compress& a, const SHA256Compress& b)
 {
-    // This is a performance optimization.
-    if (a.IsNull() && b.IsNull()) {
-        return a;
-    }
-
     SHA256Compress res = SHA256Compress();
 
     CSHA256 hasher;
@@ -25,26 +20,33 @@ SHA256Compress SHA256Compress::combine(const SHA256Compress& a, const SHA256Comp
     return res;
 }
 
-
-template <typename Hash>
+template <size_t Depth, typename Hash>
 class PathFiller {
 private:
     std::deque<Hash> queue;
+    static EmptyMerkleRoots<Depth, Hash> emptyroots;
 public:
     PathFiller() : queue() { }
     PathFiller(std::deque<Hash> queue) : queue(queue) { }
 
-    Hash next() {
+    Hash next(size_t depth) {
         if (queue.size() > 0) {
             Hash h = queue.front();
             queue.pop_front();
 
             return h;
         } else {
-            return Hash();
+            return emptyroots.empty_root(depth);
         }
     }
+
 };
+
+template<size_t Depth, typename Hash>
+EmptyMerkleRoots<Depth, Hash> PathFiller<Depth, Hash>::emptyroots;
+
+template<size_t Depth, typename Hash>
+EmptyMerkleRoots<Depth, Hash> IncrementalMerkleTree<Depth, Hash>::emptyroots;
 
 template<size_t Depth, typename Hash>
 void IncrementalMerkleTree<Depth, Hash>::wfcheck() const {
@@ -132,7 +134,7 @@ bool IncrementalMerkleTree<Depth, Hash>::is_complete(size_t depth) const {
 template<size_t Depth, typename Hash>
 size_t IncrementalMerkleTree<Depth, Hash>::next_depth(size_t skip) const {
     if (!left) {
-        if (skip) { 
+        if (skip) {
             skip--;
         } else {
             return 0;
@@ -140,7 +142,7 @@ size_t IncrementalMerkleTree<Depth, Hash>::next_depth(size_t skip) const {
     }
 
     if (!right) {
-        if (skip) { 
+        if (skip) {
             skip--;
         } else {
             return 0;
@@ -168,10 +170,10 @@ size_t IncrementalMerkleTree<Depth, Hash>::next_depth(size_t skip) const {
 template<size_t Depth, typename Hash>
 Hash IncrementalMerkleTree<Depth, Hash>::root(size_t depth,
                                               std::deque<Hash> filler_hashes) const {
-    PathFiller<Hash> filler(filler_hashes);
+    PathFiller<Depth, Hash> filler(filler_hashes);
 
-    Hash combine_left =  left  ? *left  : filler.next();
-    Hash combine_right = right ? *right : filler.next();
+    Hash combine_left =  left  ? *left  : filler.next(0);
+    Hash combine_right = right ? *right : filler.next(0);
 
     Hash root = Hash::combine(combine_left, combine_right);
 
@@ -181,7 +183,7 @@ Hash IncrementalMerkleTree<Depth, Hash>::root(size_t depth,
         if (parent) {
             root = Hash::combine(*parent, root);
         } else {
-            root = Hash::combine(root, filler.next());
+            root = Hash::combine(root, filler.next(d));
         }
 
         d++;
@@ -190,7 +192,7 @@ Hash IncrementalMerkleTree<Depth, Hash>::root(size_t depth,
     // We may not have parents for ancestor trees, so we fill
     // the rest in here.
     while (d < depth) {
-        root = Hash::combine(root, filler.next());
+        root = Hash::combine(root, filler.next(d));
         d++;
     }
 
@@ -205,7 +207,7 @@ MerklePath IncrementalMerkleTree<Depth, Hash>::path(std::deque<Hash> filler_hash
         throw std::runtime_error("can't create an authentication path for the beginning of the tree");
     }
 
-    PathFiller<Hash> filler(filler_hashes);
+    PathFiller<Depth, Hash> filler(filler_hashes);
 
     std::vector<Hash> path;
     std::vector<bool> index;
@@ -215,7 +217,7 @@ MerklePath IncrementalMerkleTree<Depth, Hash>::path(std::deque<Hash> filler_hash
         path.push_back(*left);
     } else {
         index.push_back(false);
-        path.push_back(filler.next());
+        path.push_back(filler.next(0));
     }
 
     size_t d = 1;
@@ -226,7 +228,7 @@ MerklePath IncrementalMerkleTree<Depth, Hash>::path(std::deque<Hash> filler_hash
             path.push_back(*parent);
         } else {
             index.push_back(false);
-            path.push_back(filler.next());
+            path.push_back(filler.next(d));
         }
 
         d++;
@@ -234,7 +236,7 @@ MerklePath IncrementalMerkleTree<Depth, Hash>::path(std::deque<Hash> filler_hash
 
     while (d < Depth) {
         index.push_back(false);
-        path.push_back(filler.next());
+        path.push_back(filler.next(d));
         d++;
     }
 

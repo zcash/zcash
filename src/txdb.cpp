@@ -70,7 +70,7 @@ CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(Get
 
 
 bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
-    if (rt.IsNull()) {
+    if (rt == ZCIncrementalMerkleTree::empty_root()) {
         ZCIncrementalMerkleTree new_tree;
         tree = new_tree;
         return true;
@@ -106,7 +106,7 @@ uint256 CCoinsViewDB::GetBestBlock() const {
 uint256 CCoinsViewDB::GetBestAnchor() const {
     uint256 hashBestAnchor;
     if (!db.Read(DB_BEST_ANCHOR, hashBestAnchor))
-        return uint256();
+        return ZCIncrementalMerkleTree::empty_root();
     return hashBestAnchor;
 }
 
