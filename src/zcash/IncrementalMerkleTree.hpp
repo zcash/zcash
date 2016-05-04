@@ -65,6 +65,8 @@ public:
         wfcheck();
     }
 
+    static Hash rootOfEmptyTree(size_t depth = Depth);
+
 private:
     boost::optional<Hash> left;
     boost::optional<Hash> right;
@@ -121,13 +123,22 @@ public:
     static SHA256Compress combine(const SHA256Compress& a, const SHA256Compress& b);
 };
 
+/* The old performance optimization, compatible with the libzerocash tree. */
+class SHA256CompressFixedPoint : public uint256 {
+public:
+    SHA256CompressFixedPoint() : uint256() {}
+    SHA256CompressFixedPoint(uint256 contents) : uint256(contents) { }
+
+    static SHA256CompressFixedPoint combine(const SHA256CompressFixedPoint& a, const SHA256CompressFixedPoint& b);
+};
+
 } // end namespace `libzcash`
 
-typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::SHA256Compress> ZCIncrementalMerkleTree;
-typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::SHA256Compress> ZCTestingIncrementalMerkleTree;
+typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::SHA256CompressFixedPoint> ZCIncrementalMerkleTree;
+typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::SHA256CompressFixedPoint> ZCTestingIncrementalMerkleTree;
 
-typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::SHA256Compress> ZCIncrementalWitness;
-typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::SHA256Compress> ZCTestingIncrementalWitness;
+typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::SHA256CompressFixedPoint> ZCIncrementalWitness;
+typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::SHA256CompressFixedPoint> ZCTestingIncrementalWitness;
 
 #endif /* ZCINCREMENTALMERKLETREE_H_ */
 
