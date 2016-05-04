@@ -1,9 +1,11 @@
 #include <gtest/gtest.h>
 
 #include "test/data/merkle_roots.json.h"
+#include "test/data/merkle_roots_new.json.h"
 #include "test/data/merkle_serialization.json.h"
 #include "test/data/merkle_witness_serialization.json.h"
 #include "test/data/merkle_path.json.h"
+#include "test/data/merkle_path_new.json.h"
 
 #include <iostream>
 
@@ -49,6 +51,7 @@ using namespace std;
 using namespace libzerocash;
 using namespace libsnark;
 
+
 template<typename T>
 void expect_deser_same(const T& expected)
 {
@@ -69,6 +72,15 @@ void expect_deser_same(const T& expected)
 
 template<>
 void expect_deser_same(const ZCTestingIncrementalWitness& expected)
+{
+    // Cannot check this; IncrementalWitness cannot be
+    // deserialized because it can only be constructed by
+    // IncrementalMerkleTree, and it does not yet have a
+    // canonical serialized representation.
+}
+
+template<>
+void expect_deser_same(const ZCTestingFixedPointIncrementalWitness& expected)
 {
     // Cannot check this; IncrementalWitness cannot be
     // deserialized because it can only be constructed by
@@ -195,6 +207,10 @@ public:
 
         return ret;
     }
+
+    static uint256 rootOfEmptyTree(size_t depth = 0) {
+        return uint256();
+    }
 };
 
 template<typename A, typename B, typename C>
@@ -218,8 +234,9 @@ void test_tree(Array root_tests, Array ser_tests, Array witness_ser_tests, Array
 
     Tree tree;
 
-    // The root of the tree at this point is expected to be null.
-    ASSERT_TRUE(tree.root().IsNull());
+    // The root of the tree at this point is expected to be the root of the
+    // empty tree.
+    ASSERT_TRUE(tree.root() == Tree::rootOfEmptyTree());
 
     // We need to witness at every single point in the tree, so
     // that the consistency of the tree and the merkle paths can
@@ -331,13 +348,19 @@ void test_tree(Array root_tests, Array ser_tests, Array witness_ser_tests, Array
 TEST(merkletree, vectors) {
     libsnark::default_r1cs_ppzksnark_pp::init_public_params();
 
+
     Array root_tests = read_json(std::string(json_tests::merkle_roots, json_tests::merkle_roots + sizeof(json_tests::merkle_roots)));
     Array ser_tests = read_json(std::string(json_tests::merkle_serialization, json_tests::merkle_serialization + sizeof(json_tests::merkle_serialization)));
     Array witness_ser_tests = read_json(std::string(json_tests::merkle_witness_serialization, json_tests::merkle_witness_serialization + sizeof(json_tests::merkle_witness_serialization)));
     Array path_tests = read_json(std::string(json_tests::merkle_path, json_tests::merkle_path + sizeof(json_tests::merkle_path)));
 
-    test_tree<ZCTestingIncrementalMerkleTree, ZCTestingIncrementalWitness>(root_tests, ser_tests, witness_ser_tests, path_tests);
+    test_tree<ZCTestingFixedPointIncrementalMerkleTree, ZCTestingFixedPointIncrementalWitness>(root_tests, ser_tests, witness_ser_tests, path_tests);
     test_tree<OldIncrementalMerkleTree, OldIncrementalMerkleTree>(root_tests, ser_tests, witness_ser_tests, path_tests);
+
+    Array root_tests_new = read_json(std::string(json_tests::merkle_roots_new, json_tests::merkle_roots_new + sizeof(json_tests::merkle_roots_new)));
+    Array path_tests_new = read_json(std::string(json_tests::merkle_path_new, json_tests::merkle_path_new + sizeof(json_tests::merkle_path_new)));
+
+    test_tree<ZCTestingIncrementalMerkleTree, ZCTestingIncrementalWitness>(root_tests_new, ser_tests, witness_ser_tests, path_tests_new);
 }
 
 TEST(merkletree, deserializeInvalid) {
@@ -398,7 +421,7 @@ TEST(merkletree, testZeroElements) {
     for (int start = 0; start < 20; start++) {
         ZCIncrementalMerkleTree newTree;
 
-        ASSERT_TRUE(newTree.root() == uint256());
+        ASSERT_TRUE(newTree.root() == ZCIncrementalMerkleTree::rootOfEmptyTree());
 
         for (int i = start; i > 0; i--) {
             newTree.append(uint256S("54d626e08c1c802b305dad30b7e54a82f102390cc92c7d4db112048935236e9c"));

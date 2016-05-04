@@ -317,10 +317,12 @@ void IncrementalWitness<Depth, Hash>::append(Hash obj) {
     }
 }
 
-template class IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH, SHA256CompressFixedPoint>;
+template class IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH, SHA256Compress>;
+template class IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA256Compress>;
 template class IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA256CompressFixedPoint>;
 
-template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, SHA256CompressFixedPoint>;
+template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, SHA256Compress>;
+template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA256Compress>;
 template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA256CompressFixedPoint>;
 
 } // end namespace `libzcash`
