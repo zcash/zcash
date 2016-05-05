@@ -489,6 +489,7 @@ clean-local:
 
 if ENABLE_TESTS
 include Makefile.test.include
+include Makefile.gtest.include
 endif
 
 if ENABLE_QT
@@ -500,4 +501,3 @@ include Makefile.qttest.include
 endif
 
 include Makefile.zcash.include
-include Makefile.gtest.include
