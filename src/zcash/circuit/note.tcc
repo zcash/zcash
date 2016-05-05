@@ -110,8 +110,10 @@ template<typename FieldT>
 class output_note_gadget : public note_gadget<FieldT> {
 private:
     std::shared_ptr<digest_variable<FieldT>> rho;
+    std::shared_ptr<digest_variable<FieldT>> a_pk;
 
     std::shared_ptr<PRF_rho_gadget<FieldT>> prevent_faerie_gold;
+    std::shared_ptr<note_commitment_gadget<FieldT>> commit_to_outputs;
 
 public:
     output_note_gadget(
@@ -119,9 +121,11 @@ public:
         pb_variable<FieldT>& ZERO,
         pb_variable_array<FieldT>& phi,
         pb_variable_array<FieldT>& h_sig,
-        bool nonce
+        bool nonce,
+        std::shared_ptr<digest_variable<FieldT>> commitment
     ) : note_gadget<FieldT>(pb) {
         rho.reset(new digest_variable<FieldT>(pb, 256, ""));
+        a_pk.reset(new digest_variable<FieldT>(pb, 256, ""));
 
         // Do not allow the caller to choose the same "rho"
         // for any two valid notes in a given view of the
@@ -135,16 +139,32 @@ public:
             nonce,
             rho
         ));
+
+        // Commit to the output notes publicly without
+        // disclosing them.
+        commit_to_outputs.reset(new note_commitment_gadget<FieldT>(
+            pb,
+            ZERO,
+            a_pk->bits,
+            this->value,
+            rho->bits,
+            this->r->bits,
+            commitment
+        ));
     }
 
     void generate_r1cs_constraints() {
         note_gadget<FieldT>::generate_r1cs_constraints();
+
+        a_pk->generate_r1cs_constraints();
 
         // TODO: This constraint may not be necessary if SHA256
         // already boolean constrains its outputs.
         rho->generate_r1cs_constraints();
 
         prevent_faerie_gold->generate_r1cs_constraints();
+
+        commit_to_outputs->generate_r1cs_constraints();
     }
 
     void generate_r1cs_witness(const Note& note) {
@@ -158,5 +178,12 @@ public:
             this->pb,
             uint256_to_bool_vector(note.rho)
         );
+
+        a_pk->bits.fill_with_bits(
+            this->pb,
+            uint256_to_bool_vector(note.a_pk)
+        );
+
+        commit_to_outputs->generate_r1cs_witness();
     }
 };
