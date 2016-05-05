@@ -9,70 +9,54 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
-#include "zerocash/PourProver.h"
-#include "zerocash/PourTransaction.h"
-
-template<std::size_t N>
-boost::array<std::vector<unsigned char>, N> uint256_to_array(const boost::array<uint256, N>& in) {
-    boost::array<std::vector<unsigned char>, N> result;
-    for (size_t i = 0; i < N; i++) {
-        result[i] = std::vector<unsigned char>(in[i].begin(), in[i].end());
-    }
-
-    return result;
-}
-
-template<std::size_t N>
-boost::array<uint256, N> unsigned_char_vector_array_to_uint256_array(const boost::array<std::vector<unsigned char>, N>& in) {
-    boost::array<uint256, N> result;
-    for (size_t i = 0; i < N; i++) {
-        result[i] = uint256(in[i]);
-    }
-
-    return result;
-}
-
-CPourTx::CPourTx(ZerocashParams& params,
+CPourTx::CPourTx(ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& anchor,
-            const boost::array<PourInput, ZC_NUM_JS_INPUTS>& inputs,
-            const boost::array<PourOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+            const boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+            const boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             CAmount vpub_old,
             CAmount vpub_new) : vpub_old(vpub_old), vpub_new(vpub_new), anchor(anchor)
 {
-    PourTransaction pourtx(params,
-                           std::vector<unsigned char>(pubKeyHash.begin(), pubKeyHash.end()),
-                           std::vector<unsigned char>(anchor.begin(), anchor.end()),
-                           std::vector<PourInput>(inputs.begin(), inputs.end()),
-                           std::vector<PourOutput>(outputs.begin(), outputs.end()),
-                           vpub_old,
-                           vpub_new);
+    boost::array<libzcash::Note, ZC_NUM_JS_OUTPUTS> notes;
 
-    boost::array<std::vector<unsigned char>, ZC_NUM_JS_INPUTS> serials_bv;
-    boost::array<std::vector<unsigned char>, ZC_NUM_JS_OUTPUTS> commitments_bv;
-    boost::array<std::vector<unsigned char>, ZC_NUM_JS_INPUTS> macs_bv;
-
-    proof = pourtx.unpack(serials_bv, commitments_bv, macs_bv, ciphertexts, ephemeralKey);
-    serials = unsigned_char_vector_array_to_uint256_array(serials_bv);
-    commitments = unsigned_char_vector_array_to_uint256_array(commitments_bv);
-    macs = unsigned_char_vector_array_to_uint256_array(macs_bv);
+    params.loadProvingKey();
+    proof = params.prove(
+        inputs,
+        outputs,
+        notes,
+        ciphertexts,
+        ephemeralKey,
+        pubKeyHash,
+        randomSeed,
+        macs,
+        serials,
+        commitments,
+        vpub_old,
+        vpub_new,
+        anchor
+    );
 }
 
 bool CPourTx::Verify(
-    ZerocashParams& params,
+    ZCJoinSplit& params,
     const uint256& pubKeyHash
 ) const {
-    return PourProver::VerifyProof(
-        params,
-        std::vector<unsigned char>(pubKeyHash.begin(), pubKeyHash.end()),
-        std::vector<unsigned char>(anchor.begin(), anchor.end()),
+    return params.verify(
+        proof,
+        pubKeyHash,
+        randomSeed,
+        macs,
+        serials,
+        commitments,
         vpub_old,
         vpub_new,
-        uint256_to_array<ZC_NUM_JS_INPUTS>(serials),
-        uint256_to_array<ZC_NUM_JS_OUTPUTS>(commitments),
-        uint256_to_array<ZC_NUM_JS_INPUTS>(macs),
-        proof
+        anchor
     );
+}
+
+uint256 CPourTx::h_sig(ZCJoinSplit& params, const uint256& pubKeyHash) const
+{
+    return params.h_sig(randomSeed, serials, pubKeyHash);
 }
 
 std::string COutPoint::ToString() const

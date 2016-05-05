@@ -166,10 +166,12 @@ BOOST_AUTO_TEST_CASE(serials_test)
 
 void appendRandomCommitment(ZCIncrementalMerkleTree &tree)
 {
-    Address addr = Address::CreateNewRandomAddress();
-    Coin coin(addr.getPublicAddress(), 100);
+    libzcash::SpendingKey k = libzcash::SpendingKey::random();
+    libzcash::PaymentAddress addr = k.address();
 
-    tree.append(uint256(coin.getCoinCommitment().getCommitmentValue()));
+    libzcash::Note note(addr.a_pk, 0, uint256(), uint256());
+
+    tree.append(note.cm());
 }
 
 BOOST_AUTO_TEST_CASE(anchors_flush_test)
