@@ -33,22 +33,15 @@ boost::array<uint256, N> unsigned_char_vector_array_to_uint256_array(const boost
 }
 
 CPourTx::CPourTx(ZerocashParams& params,
-            const CScript& scriptPubKey,
+            const uint256& pubKeyHash,
             const uint256& anchor,
             const boost::array<PourInput, ZC_NUM_JS_INPUTS>& inputs,
             const boost::array<PourOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             CAmount vpub_old,
-            CAmount vpub_new) : scriptSig(), scriptPubKey(scriptPubKey), vpub_old(vpub_old), vpub_new(vpub_new), anchor(anchor)
+            CAmount vpub_new) : vpub_old(vpub_old), vpub_new(vpub_new), anchor(anchor)
 {
-    uint256 scriptPubKeyHash;
-    {
-        CHashWriter ss(SER_GETHASH, 0);
-        ss << scriptPubKey;
-        scriptPubKeyHash = ss.GetHash();
-    }
-
     PourTransaction pourtx(params,
-                           std::vector<unsigned char>(scriptPubKeyHash.begin(), scriptPubKeyHash.end()),
+                           std::vector<unsigned char>(pubKeyHash.begin(), pubKeyHash.end()),
                            std::vector<unsigned char>(anchor.begin(), anchor.end()),
                            std::vector<PourInput>(inputs.begin(), inputs.end()),
                            std::vector<PourOutput>(outputs.begin(), outputs.end()),
@@ -65,18 +58,13 @@ CPourTx::CPourTx(ZerocashParams& params,
     macs = unsigned_char_vector_array_to_uint256_array(macs_bv);
 }
 
-bool CPourTx::Verify(ZerocashParams& params) const {
-    // Compute the hash of the scriptPubKey.
-    uint256 scriptPubKeyHash;
-    {
-        CHashWriter ss(SER_GETHASH, 0);
-        ss << scriptPubKey;
-        scriptPubKeyHash = ss.GetHash();
-    }
-
+bool CPourTx::Verify(
+    ZerocashParams& params,
+    const uint256& pubKeyHash
+) const {
     return PourProver::VerifyProof(
         params,
-        std::vector<unsigned char>(scriptPubKeyHash.begin(), scriptPubKeyHash.end()),
+        std::vector<unsigned char>(pubKeyHash.begin(), pubKeyHash.end()),
         std::vector<unsigned char>(anchor.begin(), anchor.end()),
         vpub_old,
         vpub_new,

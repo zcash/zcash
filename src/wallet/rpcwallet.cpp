@@ -2646,16 +2646,17 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         throw runtime_error("unsupported pour input/output counts");
     }
 
-    CScript scriptPubKey;
+    // TODO: #808
+    uint256 pubKeyHash;
     CPourTx pourtx(*pzerocashParams,
-                   scriptPubKey,
+                   pubKeyHash,
                    anchor,
                    {vpourin[0], vpourin[1]},
                    {vpourout[0], vpourout[1]},
                    vpub_old,
                    vpub_new);
 
-    assert(pourtx.Verify(*pzerocashParams));
+    assert(pourtx.Verify(*pzerocashParams, pubKeyHash));
 
     CMutableTransaction mtx(tx);
     mtx.nVersion = 2;

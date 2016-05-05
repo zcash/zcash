@@ -335,7 +335,7 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
     auto path = witness.path();
 
     // create CPourTx
-    CScript scriptPubKey;
+    uint256 pubKeyHash;
     boost::array<PourInput, ZC_NUM_JS_INPUTS> inputs = {
         PourInput(coin, addr, path),
         PourInput(INCREMENTAL_MERKLE_TREE_DEPTH) // dummy input of zero value
@@ -346,8 +346,8 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
     };
 
     {
-        CPourTx pourtx(p, scriptPubKey, uint256(rt), inputs, outputs, 0, 0);
-        BOOST_CHECK(pourtx.Verify(p));
+        CPourTx pourtx(p, pubKeyHash, uint256(rt), inputs, outputs, 0, 0);
+        BOOST_CHECK(pourtx.Verify(p, pubKeyHash));
 
         CDataStream ss(SER_DISK, CLIENT_VERSION);
         ss << pourtx;
@@ -356,20 +356,20 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
         ss >> pourtx_deserialized;
 
         BOOST_CHECK(pourtx_deserialized == pourtx);
-        BOOST_CHECK(pourtx_deserialized.Verify(p));
+        BOOST_CHECK(pourtx_deserialized.Verify(p, pubKeyHash));
     }
 
     {
         // Ensure that the balance equation is working.
-        BOOST_CHECK_THROW(CPourTx(p, scriptPubKey, uint256(rt), inputs, outputs, 10, 0), std::invalid_argument);
-        BOOST_CHECK_THROW(CPourTx(p, scriptPubKey, uint256(rt), inputs, outputs, 0, 10), std::invalid_argument);
+        BOOST_CHECK_THROW(CPourTx(p, pubKeyHash, uint256(rt), inputs, outputs, 10, 0), std::invalid_argument);
+        BOOST_CHECK_THROW(CPourTx(p, pubKeyHash, uint256(rt), inputs, outputs, 0, 10), std::invalid_argument);
     }
 
     {
         // Ensure that it won't verify if the root is changed.
-        auto test = CPourTx(p, scriptPubKey, uint256(rt), inputs, outputs, 0, 0);
+        auto test = CPourTx(p, pubKeyHash, uint256(rt), inputs, outputs, 0, 0);
         test.anchor = GetRandHash();
-        BOOST_CHECK(!test.Verify(p));
+        BOOST_CHECK(!test.Verify(p, pubKeyHash));
     }
 }
 
