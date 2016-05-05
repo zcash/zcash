@@ -33,6 +33,9 @@ private:
     std::shared_ptr<digest_variable<FieldT>> a_pk;
     std::shared_ptr<digest_variable<FieldT>> rho;
 
+    std::shared_ptr<digest_variable<FieldT>> commitment;
+    std::shared_ptr<note_commitment_gadget<FieldT>> commit_to_inputs;
+
     std::shared_ptr<PRF_addr_a_pk_gadget<FieldT>> spend_authority;
     std::shared_ptr<PRF_nf_gadget<FieldT>> expose_nullifiers;
 public:
@@ -46,6 +49,7 @@ public:
         a_sk.reset(new digest_variable<FieldT>(pb, 252, ""));
         a_pk.reset(new digest_variable<FieldT>(pb, 256, ""));
         rho.reset(new digest_variable<FieldT>(pb, 256, ""));
+        commitment.reset(new digest_variable<FieldT>(pb, 256, ""));
 
         spend_authority.reset(new PRF_addr_a_pk_gadget<FieldT>(
             pb,
@@ -61,6 +65,16 @@ public:
             rho->bits,
             nullifier
         ));
+
+        commit_to_inputs.reset(new note_commitment_gadget<FieldT>(
+            pb,
+            ZERO,
+            a_pk->bits,
+            this->value,
+            rho->bits,
+            this->r->bits,
+            commitment
+        ));
     }
 
     void generate_r1cs_constraints() {
@@ -69,12 +83,15 @@ public:
         a_sk->generate_r1cs_constraints();
         rho->generate_r1cs_constraints();
 
-        // TODO: This constraint may not be necessary if SHA256
+        // TODO: These constraints may not be necessary if SHA256
         // already boolean constrains its outputs.
         a_pk->generate_r1cs_constraints();
+        commitment->generate_r1cs_constraints();
 
         spend_authority->generate_r1cs_constraints();
         expose_nullifiers->generate_r1cs_constraints();
+
+        commit_to_inputs->generate_r1cs_constraints();
     }
 
     void generate_r1cs_witness(const SpendingKey& key, const Note& note) {
@@ -103,6 +120,16 @@ public:
 
         // Witness the nullifier for the input note
         expose_nullifiers->generate_r1cs_witness();
+
+        // Witness the commitment of the input note
+        commit_to_inputs->generate_r1cs_witness();
+
+        // [SANITY CHECK] Ensure the commitment is
+        // valid.
+        commitment->bits.fill_with_bits(
+            this->pb,
+            uint256_to_bool_vector(note.cm())
+        );
     }
 };
 
