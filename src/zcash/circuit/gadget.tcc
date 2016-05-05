@@ -1,4 +1,6 @@
 #include "zcash/circuit/utils.tcc"
+#include "zcash/circuit/prfs.tcc"
+#include "zcash/circuit/note.tcc"
 
 template<typename FieldT, size_t NumInputs, size_t NumOutputs>
 class joinsplit_gadget : gadget<FieldT> {
@@ -18,6 +20,9 @@ private:
 
     // Aux inputs
     pb_variable<FieldT> ZERO;
+
+    // Input note gadgets
+    boost::array<std::shared_ptr<input_note_gadget<FieldT>>, NumInputs> zk_input_notes;
 
 public:
     joinsplit_gadget(protoboard<FieldT> &pb) : gadget<FieldT>(pb) {
@@ -67,7 +72,14 @@ public:
         // to be one automatically for us, and is known as `ONE`.
         ZERO.allocate(pb);
 
-
+        for (size_t i = 0; i < NumInputs; i++) {
+            // Input note gadget for commitments, hmacs, nullifiers,
+            // and spend authority.
+            zk_input_notes[i].reset(new input_note_gadget<FieldT>(
+                pb,
+                ZERO
+            ));
+        }
     }
 
     void generate_r1cs_constraints() {
@@ -77,6 +89,11 @@ public:
 
         // Constrain `ZERO`
         generate_r1cs_equals_const_constraint<FieldT>(this->pb, ZERO, FieldT::zero(), "ZERO");
+
+        for (size_t i = 0; i < NumInputs; i++) {
+            // Constrain the JoinSplit input constraints.
+            zk_input_notes[i]->generate_r1cs_constraints();
+        }
     }
 
     void generate_r1cs_witness(
@@ -90,6 +107,11 @@ public:
     ) {
         // Witness `zero`
         this->pb.val(ZERO) = FieldT::zero();
+
+        for (size_t i = 0; i < NumInputs; i++) {
+            // Witness the input information.
+            zk_input_notes[i]->generate_r1cs_witness(inputs[i].key, inputs[i].note);
+        }
 
         // This happens last, because only by now are all the
         // verifier inputs resolved.
