@@ -100,9 +100,10 @@ double benchmark_solve_equihash()
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << I;
 
-    Equihash eh {Params(CBaseChainParams::MAIN).EquihashN(), Params(CBaseChainParams::MAIN).EquihashK()};
+    unsigned int n = Params(CBaseChainParams::MAIN).EquihashN();
+    unsigned int k = Params(CBaseChainParams::MAIN).EquihashK();
     crypto_generichash_blake2b_state eh_state;
-    eh.InitialiseState(eh_state);
+    EhInitialiseState(n, k, eh_state);
     crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
 
     uint256 nonce;
@@ -112,7 +113,8 @@ double benchmark_solve_equihash()
                                     nonce.size());
 
     timer_start();
-    eh.BasicSolve(eh_state);
+    std::set<std::vector<unsigned int>> solns;
+    EhBasicSolve(n, k, eh_state, solns);
     return timer_stop();
 }
 

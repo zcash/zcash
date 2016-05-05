@@ -41,16 +41,16 @@ void PrintSolutions(std::stringstream &strm, std::set<std::vector<uint32_t>> sol
 }
 
 void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, const arith_uint256 &nonce, const std::set<std::vector<uint32_t>> &solns) {
-    Equihash eh {n, k};
     crypto_generichash_blake2b_state state;
-    eh.InitialiseState(state);
+    EhInitialiseState(n, k, state);
     uint256 V = ArithToUint256(nonce);
     BOOST_TEST_MESSAGE("Running solver: n = " << n << ", k = " << k << ", I = " << I << ", V = " << V.GetHex());
     crypto_generichash_blake2b_update(&state, (unsigned char*)&I[0], I.size());
     crypto_generichash_blake2b_update(&state, V.begin(), V.size());
 
     // First test the basic solver
-    std::set<std::vector<uint32_t>> ret = eh.BasicSolve(state);
+    std::set<std::vector<uint32_t>> ret;
+    EhBasicSolve(n, k, state, ret);
     BOOST_TEST_MESSAGE("[Basic] Number of solutions: " << ret.size());
     std::stringstream strm;
     PrintSolutions(strm, ret);
@@ -58,7 +58,8 @@ void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, c
     BOOST_CHECK(ret == solns);
 
     // The optimised solver should have the exact same result
-    std::set<std::vector<uint32_t>> retOpt = eh.OptimisedSolve(state);
+    std::set<std::vector<uint32_t>> retOpt;
+    EhOptimisedSolve(n, k, state, retOpt);
     BOOST_TEST_MESSAGE("[Optimised] Number of solutions: " << retOpt.size());
     strm.str("");
     PrintSolutions(strm, retOpt);
@@ -68,9 +69,8 @@ void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, c
 }
 
 void TestEquihashValidator(unsigned int n, unsigned int k, const std::string &I, const arith_uint256 &nonce, std::vector<uint32_t> soln, bool expected) {
-    Equihash eh {n, k};
     crypto_generichash_blake2b_state state;
-    eh.InitialiseState(state);
+    EhInitialiseState(n, k, state);
     uint256 V = ArithToUint256(nonce);
     crypto_generichash_blake2b_update(&state, (unsigned char*)&I[0], I.size());
     crypto_generichash_blake2b_update(&state, V.begin(), V.size());
@@ -78,7 +78,9 @@ void TestEquihashValidator(unsigned int n, unsigned int k, const std::string &I,
     std::stringstream strm;
     PrintSolution(strm, soln);
     BOOST_TEST_MESSAGE(strm.str());
-    BOOST_CHECK(eh.IsValidSolution(state, soln) == expected);
+    bool isValid;
+    EhIsValidSolution(n, k, state, soln, isValid);
+    BOOST_CHECK(isValid == expected);
 }
 
 BOOST_AUTO_TEST_CASE(solver_testvectors) {

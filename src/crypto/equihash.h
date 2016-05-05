@@ -15,11 +15,11 @@
 #include <set>
 #include <vector>
 
+#include <boost/static_assert.hpp>
+
 typedef crypto_generichash_blake2b_state eh_HashState;
 typedef uint32_t eh_index;
 typedef uint8_t eh_trunc;
-
-struct invalid_params { };
 
 class StepRow
 {
@@ -96,22 +96,64 @@ public:
     }
 };
 
+template<unsigned int N, unsigned int K>
 class Equihash
 {
 private:
-    unsigned int n;
-    unsigned int k;
+    BOOST_STATIC_ASSERT(K < N);
+    BOOST_STATIC_ASSERT(N % 8 == 0);
+    BOOST_STATIC_ASSERT((N/(K+1)) % 8 == 0);
+    BOOST_STATIC_ASSERT((N/(K+1)) + 1 < 8*sizeof(eh_index));
 
 public:
-    Equihash(unsigned int n, unsigned int k);
+    enum { CollisionBitLength=N/(K+1) };
+    enum { CollisionByteLength=CollisionBitLength/8 };
 
-    inline unsigned int CollisionBitLength() { return n/(k+1); }
-    inline unsigned int CollisionByteLength() { return CollisionBitLength()/8; }
+    Equihash() { }
 
     int InitialiseState(eh_HashState& base_state);
     std::set<std::vector<eh_index>> BasicSolve(const eh_HashState& base_state);
     std::set<std::vector<eh_index>> OptimisedSolve(const eh_HashState& base_state);
     bool IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln);
 };
+
+static Equihash<96,5> Eh965;
+static Equihash<48,5> Eh485;
+
+#define EhInitialiseState(n, k, base_state) \
+    if (n == 96 && k == 5) {                \
+        Eh965.InitialiseState(base_state);  \
+    } else if (n == 48 && k == 5) {         \
+        Eh485.InitialiseState(base_state);  \
+    } else {                                \
+        throw std::invalid_argument("Unsupported Equihash parameters"); \
+    }
+
+#define EhBasicSolve(n, k, base_state, solns) \
+    if (n == 96 && k == 5) {                  \
+        solns = Eh965.BasicSolve(base_state); \
+    } else if (n == 48 && k == 5) {           \
+        solns = Eh485.BasicSolve(base_state); \
+    } else {                                  \
+        throw std::invalid_argument("Unsupported Equihash parameters"); \
+    }
+
+#define EhOptimisedSolve(n, k, base_state, solns) \
+    if (n == 96 && k == 5) {                      \
+        solns = Eh965.OptimisedSolve(base_state); \
+    } else if (n == 48 && k == 5) {               \
+        solns = Eh485.OptimisedSolve(base_state); \
+    } else {                                      \
+        throw std::invalid_argument("Unsupported Equihash parameters"); \
+    }
+
+#define EhIsValidSolution(n, k, base_state, soln, ret) \
+    if (n == 96 && k == 5) {                           \
+        ret = Eh965.IsValidSolution(base_state, soln); \
+    } else if (n == 48 && k == 5) {                    \
+        ret = Eh485.IsValidSolution(base_state, soln); \
+    } else {                                           \
+        throw std::invalid_argument("Unsupported Equihash parameters"); \
+    }
 
 #endif // BITCOIN_EQUIHASH_H
