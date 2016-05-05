@@ -36,6 +36,9 @@ private:
     std::shared_ptr<digest_variable<FieldT>> commitment;
     std::shared_ptr<note_commitment_gadget<FieldT>> commit_to_inputs;
 
+    pb_variable<FieldT> value_enforce;
+    std::shared_ptr<merkle_tree_gadget<FieldT>> witness_input;
+
     std::shared_ptr<PRF_addr_a_pk_gadget<FieldT>> spend_authority;
     std::shared_ptr<PRF_nf_gadget<FieldT>> expose_nullifiers;
 public:
@@ -44,7 +47,8 @@ public:
     input_note_gadget(
         protoboard<FieldT>& pb,
         pb_variable<FieldT>& ZERO,
-        std::shared_ptr<digest_variable<FieldT>> nullifier
+        std::shared_ptr<digest_variable<FieldT>> nullifier,
+        digest_variable<FieldT> rt
     ) : note_gadget<FieldT>(pb) {
         a_sk.reset(new digest_variable<FieldT>(pb, 252, ""));
         a_pk.reset(new digest_variable<FieldT>(pb, 256, ""));
@@ -75,6 +79,15 @@ public:
             this->r->bits,
             commitment
         ));
+
+        value_enforce.allocate(pb);
+
+        witness_input.reset(new merkle_tree_gadget<FieldT>(
+            pb,
+            *commitment,
+            rt,
+            value_enforce
+        ));
     }
 
     void generate_r1cs_constraints() {
@@ -92,9 +105,27 @@ public:
         expose_nullifiers->generate_r1cs_constraints();
 
         commit_to_inputs->generate_r1cs_constraints();
+
+        // value * (1 - enforce) = 0
+        // Given `enforce` is boolean constrained:
+        // If `value` is zero, `enforce` _can_ be zero.
+        // If `value` is nonzero, `enforce` _must_ be one.
+        generate_boolean_r1cs_constraint<FieldT>(this->pb, value_enforce,"");
+
+        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(
+            packed_addition(this->value),
+            (1 - value_enforce),
+            0
+        ), "");
+
+        witness_input->generate_r1cs_constraints();
     }
 
-    void generate_r1cs_witness(const SpendingKey& key, const Note& note) {
+    void generate_r1cs_witness(
+        const MerklePath& path,
+        const SpendingKey& key,
+        const Note& note
+    ) {
         note_gadget<FieldT>::generate_r1cs_witness(note);
 
         // Witness a_sk for the input
@@ -130,6 +161,12 @@ public:
             this->pb,
             uint256_to_bool_vector(note.cm())
         );
+
+        // Set enforce flag for nonzero input value
+        this->pb.val(value_enforce) = (note.value != 0) ? FieldT::one() : FieldT::zero();
+
+        // Witness merkle tree authentication path
+        witness_input->generate_r1cs_witness(path);
     }
 };
 
