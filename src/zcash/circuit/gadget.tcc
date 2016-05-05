@@ -77,7 +77,8 @@ public:
             // and spend authority.
             zk_input_notes[i].reset(new input_note_gadget<FieldT>(
                 pb,
-                ZERO
+                ZERO,
+                zk_input_nullifiers[i]
             ));
         }
     }
@@ -133,7 +134,7 @@ public:
         insert_uint256(verify_inputs, uint256()); // TODO: h_sig
         
         for (size_t i = 0; i < NumInputs; i++) {
-            insert_uint256(verify_inputs, uint256()); // TODO: nullifier
+            insert_uint256(verify_inputs, nullifiers[i]);
             insert_uint256(verify_inputs, uint256()); // TODO: hmac
         }
 
