@@ -165,7 +165,7 @@ uint256 random_uint256()
     return ret;
 }
 
-template class NoteEncryption<ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE>;
-template class NoteDecryption<ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE>;
+template class NoteEncryption<ZCASH_NOTEPLAINTEXT_LEADING + ZCASH_V_SIZE + ZCASH_RHO_SIZE + ZCASH_R_SIZE + ZCASH_MEMO_SIZE>;
+template class NoteDecryption<ZCASH_NOTEPLAINTEXT_LEADING + ZCASH_V_SIZE + ZCASH_RHO_SIZE + ZCASH_R_SIZE + ZCASH_MEMO_SIZE>;
 
 }

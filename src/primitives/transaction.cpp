@@ -35,8 +35,8 @@ boost::array<uint256, N> unsigned_char_vector_array_to_uint256_array(const boost
 CPourTx::CPourTx(ZerocashParams& params,
             const CScript& scriptPubKey,
             const uint256& anchor,
-            const boost::array<PourInput, NUM_POUR_INPUTS>& inputs,
-            const boost::array<PourOutput, NUM_POUR_OUTPUTS>& outputs,
+            const boost::array<PourInput, ZC_NUM_JS_INPUTS>& inputs,
+            const boost::array<PourOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             CAmount vpub_old,
             CAmount vpub_new) : scriptSig(), scriptPubKey(scriptPubKey), vpub_old(vpub_old), vpub_new(vpub_new), anchor(anchor)
 {
@@ -55,9 +55,9 @@ CPourTx::CPourTx(ZerocashParams& params,
                            vpub_old,
                            vpub_new);
 
-    boost::array<std::vector<unsigned char>, NUM_POUR_INPUTS> serials_bv;
-    boost::array<std::vector<unsigned char>, NUM_POUR_OUTPUTS> commitments_bv;
-    boost::array<std::vector<unsigned char>, NUM_POUR_INPUTS> macs_bv;
+    boost::array<std::vector<unsigned char>, ZC_NUM_JS_INPUTS> serials_bv;
+    boost::array<std::vector<unsigned char>, ZC_NUM_JS_OUTPUTS> commitments_bv;
+    boost::array<std::vector<unsigned char>, ZC_NUM_JS_INPUTS> macs_bv;
 
     proof = pourtx.unpack(serials_bv, commitments_bv, macs_bv, ciphertexts, ephemeralKey);
     serials = unsigned_char_vector_array_to_uint256_array(serials_bv);
@@ -80,9 +80,9 @@ bool CPourTx::Verify(ZerocashParams& params) const {
         std::vector<unsigned char>(anchor.begin(), anchor.end()),
         vpub_old,
         vpub_new,
-        uint256_to_array<NUM_POUR_INPUTS>(serials),
-        uint256_to_array<NUM_POUR_OUTPUTS>(commitments),
-        uint256_to_array<NUM_POUR_INPUTS>(macs),
+        uint256_to_array<ZC_NUM_JS_INPUTS>(serials),
+        uint256_to_array<ZC_NUM_JS_OUTPUTS>(commitments),
+        uint256_to_array<ZC_NUM_JS_INPUTS>(macs),
         proof
     );
 }

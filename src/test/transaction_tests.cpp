@@ -336,11 +336,11 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
 
     // create CPourTx
     CScript scriptPubKey;
-    boost::array<PourInput, NUM_POUR_INPUTS> inputs = {
+    boost::array<PourInput, ZC_NUM_JS_INPUTS> inputs = {
         PourInput(coin, addr, path),
         PourInput(INCREMENTAL_MERKLE_TREE_DEPTH) // dummy input of zero value
     };
-    boost::array<PourOutput, NUM_POUR_OUTPUTS> outputs = {
+    boost::array<PourOutput, ZC_NUM_JS_OUTPUTS> outputs = {
         PourOutput(50),
         PourOutput(50)
     };

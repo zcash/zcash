@@ -5,6 +5,7 @@
 
 #include "zcash/NoteEncryption.hpp"
 #include "zcash/prf.h"
+#include "crypto/sha256.h"
 
 class TestNoteDecryption : public ZCNoteDecryption {
 public:
@@ -28,8 +29,8 @@ TEST(noteencryption, api)
         ASSERT_TRUE(b.get_epk() != c.get_epk());
     }
 
-    boost::array<unsigned char, 216> message;
-    for (unsigned char i = 0; i < 216; i++) {
+    boost::array<unsigned char, 201> message;
+    for (unsigned char i = 0; i < 201; i++) {
         // Fill the message with dummy data
         message[i] = (unsigned char) i;
     }

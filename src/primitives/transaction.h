@@ -18,11 +18,9 @@
 #include "zerocash/PourOutput.h"
 
 #include "zcash/NoteEncryption.hpp"
+#include "zcash/Zcash.h"
 
 using namespace libzerocash;
-
-static const unsigned int NUM_POUR_INPUTS = 2;
-static const unsigned int NUM_POUR_OUTPUTS = 2;
 
 class CPourTx
 {
@@ -50,20 +48,20 @@ public:
     // are derived from the secrets placed in the bucket
     // and the secret spend-authority key known by the
     // spender.
-    boost::array<uint256, NUM_POUR_INPUTS> serials;
+    boost::array<uint256, ZC_NUM_JS_INPUTS> serials;
 
     // Bucket commitments are introduced into the commitment
     // tree, blinding the public about the values and
     // destinations involved in the Pour. The presence of a
     // commitment in the bucket commitment tree is required
     // to spend it.
-    boost::array<uint256, NUM_POUR_OUTPUTS> commitments;
+    boost::array<uint256, ZC_NUM_JS_OUTPUTS> commitments;
 
     // Ciphertexts
     // These contain trapdoors, values and other information
     // that the recipient needs, including a memo field. It
     // is encrypted using the scheme implemented in crypto/NoteEncryption.cpp
-    boost::array<ZCNoteEncryption::Ciphertext, NUM_POUR_OUTPUTS> ciphertexts;
+    boost::array<ZCNoteEncryption::Ciphertext, ZC_NUM_JS_OUTPUTS> ciphertexts;
 
     // Ephemeral key
     uint256 ephemeralKey;
@@ -71,7 +69,7 @@ public:
     // MACs
     // The verification of the pour requires these MACs
     // to be provided as an input.
-    boost::array<uint256, NUM_POUR_INPUTS> macs;
+    boost::array<uint256, ZC_NUM_JS_INPUTS> macs;
 
     // Pour proof
     // This is a zk-SNARK which ensures that this pour is valid.
@@ -82,8 +80,8 @@ public:
     CPourTx(ZerocashParams& params,
             const CScript& scriptPubKey,
             const uint256& rt,
-            const boost::array<PourInput, NUM_POUR_INPUTS>& inputs,
-            const boost::array<PourOutput, NUM_POUR_OUTPUTS>& outputs,
+            const boost::array<PourInput, ZC_NUM_JS_INPUTS>& inputs,
+            const boost::array<PourOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             CAmount vpub_old,
             CAmount vpub_new
     );

@@ -2610,7 +2610,7 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         vpourin.push_back(PourInput(input_coin, zcaddress, path));
     }
 
-    while (vpourin.size() < NUM_POUR_INPUTS) {
+    while (vpourin.size() < ZC_NUM_JS_INPUTS) {
         vpourin.push_back(PourInput(INCREMENTAL_MERKLE_TREE_DEPTH));
     }
 
@@ -2637,12 +2637,12 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         vpourout.push_back(output);
     }
 
-    while (vpourout.size() < NUM_POUR_OUTPUTS) {
+    while (vpourout.size() < ZC_NUM_JS_OUTPUTS) {
         vpourout.push_back(PourOutput(0));
     }
 
     // TODO
-    if (vpourout.size() != NUM_POUR_INPUTS || vpourin.size() != NUM_POUR_OUTPUTS) {
+    if (vpourout.size() != ZC_NUM_JS_INPUTS || vpourin.size() != ZC_NUM_JS_OUTPUTS) {
         throw runtime_error("unsupported pour input/output counts");
     }
 
