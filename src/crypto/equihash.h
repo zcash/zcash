@@ -54,17 +54,11 @@ public:
     ~FullStepRow() { }
 
     FullStepRow(const FullStepRow& a) : StepRow {a}, indices(a.indices) { }
+    FullStepRow(const FullStepRow& a, const FullStepRow& b, int trim);
     FullStepRow& operator=(const FullStepRow& a);
-    FullStepRow& operator^=(const FullStepRow& a);
 
-    void TrimHash(int l);
-    bool IndicesBefore(const FullStepRow& a) { return indices[0] < a.indices[0]; }
+    inline bool IndicesBefore(const FullStepRow& a) const { return indices[0] < a.indices[0]; }
     std::vector<eh_index> GetSolution() { return std::vector<eh_index>(indices); }
-
-    friend inline const FullStepRow operator^(const FullStepRow& a, const FullStepRow& b) {
-        if (a.indices[0] < b.indices[0]) { return FullStepRow(a) ^= b; }
-        else { return FullStepRow(b) ^= a; }
-    }
 
     friend bool DistinctIndices(const FullStepRow& a, const FullStepRow& b);
     friend bool IsValidBranch(const FullStepRow& a, const unsigned int ilen, const eh_trunc t);
@@ -83,17 +77,11 @@ public:
     ~TruncatedStepRow() { }
 
     TruncatedStepRow(const TruncatedStepRow& a);
+    TruncatedStepRow(const TruncatedStepRow& a, const TruncatedStepRow& b, int trim);
     TruncatedStepRow& operator=(const TruncatedStepRow& a);
-    TruncatedStepRow& operator^=(const TruncatedStepRow& a);
 
-    void TrimHash(int l);
     inline bool IndicesBefore(const TruncatedStepRow& a) const { return memcmp(hash+len, a.hash+a.len, lenIndices) < 0; }
     eh_trunc* GetPartialSolution(eh_index soln_size) const;
-
-    friend inline const TruncatedStepRow operator^(const TruncatedStepRow& a, const TruncatedStepRow& b) {
-        if (a.IndicesBefore(b)) { return TruncatedStepRow(a) ^= b; }
-        else { return TruncatedStepRow(b) ^= a; }
-    }
 };
 
 template<unsigned int N, unsigned int K>
