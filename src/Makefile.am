@@ -72,18 +72,6 @@ endif
 # TODO: rename to libzcash
 LIBZEROCASH_H = \
   zcash/IncrementalMerkleTree.h \
-  zerocash/Address.h \
-  zerocash/CoinCommitment.h \
-  zerocash/Coin.h \
-  zerocash/IncrementalMerkleTree.h \
-  zerocash/MintTransaction.h \
-  zerocash/PourInput.h \
-  zerocash/PourOutput.h \
-  zerocash/PourProver.h \
-  zerocash/PourTransaction.h \
-  zerocash/Zerocash.h \
-  zerocash/ZerocashParams.h \
-  zerocash/zerocash_pour_params.hpp \
   zerocash/utils/util.h \
   zcash/NoteEncryption.hpp \
   zcash/Address.hpp \
@@ -418,16 +406,6 @@ bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 # zerocash protocol primitives #
 libzerocash_a_SOURCES = \
   zcash/IncrementalMerkleTree.cpp \
-  zerocash/Address.cpp \
-  zerocash/CoinCommitment.cpp \
-  zerocash/Coin.cpp \
-  zerocash/IncrementalMerkleTree.cpp \
-  zerocash/MintTransaction.cpp \
-  zerocash/PourInput.cpp \
-  zerocash/PourOutput.cpp \
-  zerocash/PourProver.cpp \
-  zerocash/PourTransaction.cpp \
-  zerocash/ZerocashParams.cpp \
   zerocash/utils/util.cpp \
   zcash/NoteEncryption.cpp \
   zcash/Address.cpp \
@@ -473,7 +451,7 @@ CLEANFILES = leveldb/libleveldb.a leveldb/libmemenv.a *.gcda *.gcno
 
 DISTCLEANFILES = obj/build.h
 
-EXTRA_DIST = leveldb libzerocash/Makefile
+EXTRA_DIST = leveldb
 
 clean-local:
 	-$(MAKE) -C leveldb clean
