@@ -86,6 +86,9 @@ LIBZEROCASH_H = \
   zerocash/zerocash_pour_params.hpp \
   zerocash/utils/util.h \
   zcash/NoteEncryption.hpp \
+  zcash/Address.hpp \
+  zcash/JoinSplit.hpp \
+  zcash/Note.hpp \
   zcash/prf.h
 
 .PHONY: FORCE
@@ -427,6 +430,9 @@ libzerocash_a_SOURCES = \
   zerocash/ZerocashParams.cpp \
   zerocash/utils/util.cpp \
   zcash/NoteEncryption.cpp \
+  zcash/Address.cpp \
+  zcash/JoinSplit.cpp \
+  zcash/Note.cpp \
   zcash/prf.cpp
 
 libzerocash_a_CPPFLAGS = -fPIC -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -std=c++11 -pipe -O2 -O0 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
