@@ -10,6 +10,7 @@ src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
 
 # zerocash tests and utilities
+src/zcash/GenerateParams
 src/zerocash/GenerateParamsForFiles
 src/zerocash/tests/merkleTest
 src/zerocash/tests/utilTest
