@@ -23,8 +23,13 @@ private:
 
     // Input note gadgets
     boost::array<std::shared_ptr<input_note_gadget<FieldT>>, NumInputs> zk_input_notes;
+    boost::array<std::shared_ptr<PRF_pk_gadget<FieldT>>, NumInputs> zk_hmac_authentication;
 
 public:
+    // PRF_pk only has a 1-bit domain separation "nonce"
+    // for different hmacs.
+    BOOST_STATIC_ASSERT(NumInputs <= 2);
+
     joinsplit_gadget(protoboard<FieldT> &pb) : gadget<FieldT>(pb) {
         // Verification
         {
@@ -80,6 +85,17 @@ public:
                 ZERO,
                 zk_input_nullifiers[i]
             ));
+
+            // The input keys authenticate h_sig to prevent
+            // malleability.
+            zk_hmac_authentication[i].reset(new PRF_pk_gadget<FieldT>(
+                pb,
+                ZERO,
+                zk_input_notes[i]->a_sk->bits,
+                zk_h_sig->bits,
+                i ? true : false,
+                zk_input_hmacs[i]
+            ));
         }
     }
 
@@ -94,6 +110,9 @@ public:
         for (size_t i = 0; i < NumInputs; i++) {
             // Constrain the JoinSplit input constraints.
             zk_input_notes[i]->generate_r1cs_constraints();
+
+            // Authenticate h_sig with a_sk
+            zk_hmac_authentication[i]->generate_r1cs_constraints();
         }
     }
 
@@ -109,9 +128,18 @@ public:
         // Witness `zero`
         this->pb.val(ZERO) = FieldT::zero();
 
+        // Witness h_sig
+        zk_h_sig->bits.fill_with_bits(
+            this->pb,
+            uint256_to_bool_vector(h_sig)
+        );
+
         for (size_t i = 0; i < NumInputs; i++) {
             // Witness the input information.
             zk_input_notes[i]->generate_r1cs_witness(inputs[i].key, inputs[i].note);
+
+            // Witness hmacs
+            zk_hmac_authentication[i]->generate_r1cs_witness();
         }
 
         // This happens last, because only by now are all the
@@ -131,11 +159,11 @@ public:
         std::vector<bool> verify_inputs;
 
         insert_uint256(verify_inputs, uint256()); // TODO: rt
-        insert_uint256(verify_inputs, uint256()); // TODO: h_sig
+        insert_uint256(verify_inputs, h_sig);
         
         for (size_t i = 0; i < NumInputs; i++) {
             insert_uint256(verify_inputs, nullifiers[i]);
-            insert_uint256(verify_inputs, uint256()); // TODO: hmac
+            insert_uint256(verify_inputs, hmacs[i]);
         }
 
         for (size_t i = 0; i < NumOutputs; i++) {

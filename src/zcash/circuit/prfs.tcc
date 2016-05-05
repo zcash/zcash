@@ -95,3 +95,24 @@ public:
         PRF_gadget<FieldT>::generate_r1cs_witness();
     }
 };
+
+template<typename FieldT>
+class PRF_pk_gadget : public PRF_gadget<FieldT> {
+public:
+    PRF_pk_gadget(
+        protoboard<FieldT>& pb,
+        pb_variable<FieldT>& ZERO,
+        pb_variable_array<FieldT>& a_sk,
+        pb_variable_array<FieldT>& h_sig,
+        bool nonce,
+        std::shared_ptr<digest_variable<FieldT>> result
+    ) : PRF_gadget<FieldT>(pb, ZERO, 0, nonce, 0, 0, a_sk, h_sig, result) {}
+
+    void generate_r1cs_constraints() {
+        PRF_gadget<FieldT>::generate_r1cs_constraints();
+    }
+
+    void generate_r1cs_witness() {
+        PRF_gadget<FieldT>::generate_r1cs_witness();
+    }
+};
