@@ -23,6 +23,8 @@ typedef uint8_t eh_trunc;
 
 class StepRow
 {
+    friend class CompareSR;
+
 protected:
     unsigned char* hash;
     unsigned int len;
@@ -36,10 +38,18 @@ public:
     bool IsZero();
     std::string GetHex() { return HexStr(hash, hash+len); }
 
-    friend inline bool operator==(const StepRow& a, const StepRow& b) { return memcmp(a.hash, b.hash, a.len) == 0; }
-    friend inline bool operator<(const StepRow& a, const StepRow& b) { return memcmp(a.hash, b.hash, a.len) < 0; }
-
     friend bool HasCollision(StepRow& a, StepRow& b, int l);
+};
+
+class CompareSR
+{
+private:
+    size_t len;
+
+public:
+    CompareSR(size_t l) : len {l} { }
+
+    inline bool operator()(const StepRow& a, const StepRow& b) { return memcmp(a.hash, b.hash, len) < 0; }
 };
 
 bool HasCollision(StepRow& a, StepRow& b, int l);
