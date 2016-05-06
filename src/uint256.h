@@ -142,11 +142,6 @@ public:
         memcpy((void*)&result, (void*)data, 8);
         return result;
     }
-
-    /** A more secure, salted hash function.
-     * @note This hash is not stable between little and big endian.
-     */
-    uint64_t GetHash(const uint256& salt) const;
 };
 
 /* uint256 from const char *.

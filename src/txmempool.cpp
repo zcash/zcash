@@ -532,7 +532,9 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             i++;
         }
 
-        boost::unordered_map<uint256, SproutMerkleTree, CCoinsKeyHasher> intermediates;
+        // The SaltedTxidHasher is fine to use here; it salts the map keys automatically
+        // with randomness generated on construction.
+        boost::unordered_map<uint256, SproutMerkleTree, SaltedTxidHasher> intermediates;
 
         for (const JSDescription &joinsplit : tx.vJoinSplit) {
             for (const uint256 &nf : joinsplit.nullifiers) {
