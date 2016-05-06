@@ -21,6 +21,8 @@ typedef crypto_generichash_blake2b_state eh_HashState;
 typedef uint32_t eh_index;
 typedef uint8_t eh_trunc;
 
+eh_index ArrayToEhIndex(unsigned char* array);
+
 class StepRow
 {
     friend class CompareSR;
@@ -57,20 +59,19 @@ bool HasCollision(StepRow& a, StepRow& b, int l);
 class FullStepRow : public StepRow
 {
 private:
-    std::vector<eh_index> indices;
+    unsigned int lenIndices;
 
 public:
     FullStepRow(unsigned int n, const eh_HashState& base_state, eh_index i);
     ~FullStepRow() { }
 
-    FullStepRow(const FullStepRow& a) : StepRow {a}, indices(a.indices) { }
+    FullStepRow(const FullStepRow& a);
     FullStepRow(const FullStepRow& a, const FullStepRow& b, int trim);
     FullStepRow& operator=(const FullStepRow& a);
 
-    inline bool IndicesBefore(const FullStepRow& a) const { return indices[0] < a.indices[0]; }
-    std::vector<eh_index> GetSolution() { return std::vector<eh_index>(indices); }
+    inline bool IndicesBefore(const FullStepRow& a) const { return ArrayToEhIndex(hash+len) < ArrayToEhIndex(a.hash+a.len); }
+    std::vector<eh_index> GetIndices() const;
 
-    friend bool DistinctIndices(const FullStepRow& a, const FullStepRow& b);
     friend bool IsValidBranch(const FullStepRow& a, const unsigned int ilen, const eh_trunc t);
 };
 

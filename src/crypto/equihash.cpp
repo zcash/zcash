@@ -35,6 +35,28 @@ int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
                                                          personalization);
 }
 
+void EhIndexToArray(eh_index i, unsigned char* array)
+{
+    assert(sizeof(eh_index) == 4);
+    array[0] = (i >> 24) & 0xFF;
+    array[1] = (i >> 16) & 0xFF;
+    array[2] = (i >>  8) & 0xFF;
+    array[3] =  i        & 0xFF;
+}
+
+eh_index ArrayToEhIndex(unsigned char* array)
+{
+    assert(sizeof(eh_index) == 4);
+    eh_index ret {array[0]};
+    ret <<= 8;
+    ret |= array[1];
+    ret <<= 8;
+    ret |= array[2];
+    ret <<= 8;
+    ret |= array[3];
+    return ret;
+}
+
 eh_trunc TruncateIndex(eh_index i, unsigned int ilen)
 {
     // Truncate to 8 bits
@@ -72,44 +94,58 @@ StepRow::StepRow(const StepRow& a) :
 
 FullStepRow::FullStepRow(unsigned int n, const eh_HashState& base_state, eh_index i) :
         StepRow {n, base_state, i},
-        indices {i}
+        lenIndices {sizeof(eh_index)}
 {
-    assert(indices.size() == 1);
+    unsigned char* p = new unsigned char[len+lenIndices];
+    std::copy(hash, hash+len, p);
+    EhIndexToArray(i, p+len);
+    delete[] hash;
+    hash = p;
+}
+
+FullStepRow::FullStepRow(const FullStepRow& a) :
+        StepRow {a},
+        lenIndices {a.lenIndices}
+{
+    unsigned char* p = new unsigned char[a.len+a.lenIndices];
+    std::copy(a.hash, a.hash+a.len+a.lenIndices, p);
+    delete[] hash;
+    hash = p;
 }
 
 FullStepRow::FullStepRow(const FullStepRow& a, const FullStepRow& b, int trim) :
-        StepRow {a}
+        StepRow {a},
+        lenIndices {a.lenIndices+b.lenIndices}
 {
     if (a.len != b.len) {
         throw std::invalid_argument("Hash length differs");
     }
-    if (a.indices.size() != b.indices.size()) {
+    if (a.lenIndices != b.lenIndices) {
         throw std::invalid_argument("Number of indices differs");
     }
-    unsigned char* p = new unsigned char[a.len-trim];
+    unsigned char* p = new unsigned char[a.len-trim+a.lenIndices+b.lenIndices];
     for (int i = trim; i < a.len; i++)
         p[i-trim] = a.hash[i] ^ b.hash[i];
+    len = a.len-trim;
+    if (a.IndicesBefore(b)) {
+        std::copy(a.hash+a.len, a.hash+a.len+a.lenIndices, p+len);
+        std::copy(b.hash+b.len, b.hash+b.len+b.lenIndices, p+len+a.lenIndices);
+    } else {
+        std::copy(b.hash+b.len, b.hash+b.len+b.lenIndices, p+len);
+        std::copy(a.hash+a.len, a.hash+a.len+a.lenIndices, p+len+b.lenIndices);
+    }
     delete[] hash;
     hash = p;
-    len = a.len-trim;
-    indices.reserve(a.indices.size() + b.indices.size());
-    if (a.IndicesBefore(b)) {
-        indices.insert(indices.end(), a.indices.begin(), a.indices.end());
-        indices.insert(indices.end(), b.indices.begin(), b.indices.end());
-    } else {
-        indices.insert(indices.end(), b.indices.begin(), b.indices.end());
-        indices.insert(indices.end(), a.indices.begin(), a.indices.end());
-    }
 }
 
 FullStepRow& FullStepRow::operator=(const FullStepRow& a)
 {
-    unsigned char* p = new unsigned char[a.len];
-    std::copy(a.hash, a.hash+a.len, p);
+    unsigned char* p = new unsigned char[a.len+a.lenIndices];
+    std::copy(a.hash, a.hash+a.len+a.lenIndices, p);
     delete[] hash;
     hash = p;
     len = a.len;
-    indices = a.indices;
+    lenIndices = a.lenIndices;
     return *this;
 }
 
@@ -119,6 +155,15 @@ bool StepRow::IsZero()
     for (int i = 0; i < len; i++)
         res |= hash[i];
     return res == 0;
+}
+
+std::vector<eh_index> FullStepRow::GetIndices() const
+{
+    std::vector<eh_index> ret;
+    for (int i = 0; i < lenIndices; i += sizeof(eh_index)) {
+        ret.push_back(ArrayToEhIndex(hash+len+i));
+    }
+    return ret;
 }
 
 bool HasCollision(StepRow& a, StepRow& b, int l)
@@ -132,8 +177,8 @@ bool HasCollision(StepRow& a, StepRow& b, int l)
 // Checks if the intersection of a.indices and b.indices is empty
 bool DistinctIndices(const FullStepRow& a, const FullStepRow& b)
 {
-    std::vector<eh_index> aSrt(a.indices);
-    std::vector<eh_index> bSrt(b.indices);
+    std::vector<eh_index> aSrt = a.GetIndices();
+    std::vector<eh_index> bSrt = b.GetIndices();
 
     std::sort(aSrt.begin(), aSrt.end());
     std::sort(bSrt.begin(), bSrt.end());
@@ -152,7 +197,7 @@ bool DistinctIndices(const FullStepRow& a, const FullStepRow& b)
 
 bool IsValidBranch(const FullStepRow& a, const unsigned int ilen, const eh_trunc t)
 {
-    return TruncateIndex(a.indices[0], ilen) == t;
+    return TruncateIndex(ArrayToEhIndex(a.hash+a.len), ilen) == t;
 }
 
 TruncatedStepRow::TruncatedStepRow(unsigned int n, const eh_HashState& base_state, eh_index i, unsigned int ilen) :
@@ -299,7 +344,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& ba
         for (int i = 0; i < X.size() - 1; i++) {
             FullStepRow res(X[i], X[i+1], 0);
             if (res.IsZero() && DistinctIndices(X[i], X[i+1])) {
-                solns.insert(res.GetSolution());
+                solns.insert(res.GetIndices());
             }
         }
     } else
@@ -500,7 +545,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
         // We are at the top of the tree
         assert(X.size() == 1);
         for (FullStepRow row : X[0]) {
-            solns.insert(row.GetSolution());
+            solns.insert(row.GetIndices());
         }
         goto deletesolution;
 
