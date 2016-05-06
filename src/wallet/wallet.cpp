@@ -1058,7 +1058,6 @@ void CWallet::WitnessBucketCommitment(std::vector<uint256> commitments,
     witnesses.resize(commitments.size());
     CBlockIndex* pindex = chainActive.Genesis();
     ZCIncrementalMerkleTree tree;
-    uint256 current_anchor;
 
     while (pindex) {
         CBlock block;
@@ -1089,7 +1088,7 @@ void CWallet::WitnessBucketCommitment(std::vector<uint256> commitments,
             }
         }
 
-        current_anchor = tree.root();
+        uint256 current_anchor = tree.root();
 
         // Consistency check: we should be able to find the current tree
         // in our CCoins view.
@@ -1099,7 +1098,8 @@ void CWallet::WitnessBucketCommitment(std::vector<uint256> commitments,
         pindex = chainActive.Next(pindex);
     }
 
-    final_anchor = current_anchor;
+    // TODO: #93; Select a root via some heuristic.
+    final_anchor = tree.root();
 
     BOOST_FOREACH(boost::optional<ZCIncrementalWitness>& wit, witnesses) {
         if (wit) {
