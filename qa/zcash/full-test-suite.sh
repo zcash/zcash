@@ -38,9 +38,6 @@ run_test_phase make check '||' \
                false ';' \
                '}'
 
-run_test_phase "${REPOROOT}/src/zerocash/tests/zerocashTest"
-run_test_phase "${REPOROOT}/src/zerocash/tests/test_zerocash_pour_ppzksnark"
-
 exit $SUITE_EXIT_STATUS
 
 
