@@ -21,26 +21,31 @@ typedef crypto_generichash_blake2b_state eh_HashState;
 typedef uint32_t eh_index;
 typedef uint8_t eh_trunc;
 
-eh_index ArrayToEhIndex(unsigned char* array);
+eh_index ArrayToEhIndex(const unsigned char* array);
+eh_trunc TruncateIndex(const eh_index i, const unsigned int ilen);
 
+template<size_t WIDTH>
 class StepRow
 {
+    template<size_t W>
+    friend class StepRow;
     friend class CompareSR;
 
 protected:
-    unsigned char* hash;
-    unsigned int len;
+    unsigned char hash[WIDTH];
 
 public:
     StepRow(unsigned int n, const eh_HashState& base_state, eh_index i);
-    ~StepRow();
+    ~StepRow() { }
 
-    StepRow(const StepRow& a);
+    template<size_t W>
+    StepRow(const StepRow<W>& a);
 
-    bool IsZero();
-    std::string GetHex() { return HexStr(hash, hash+len); }
+    bool IsZero(size_t len);
+    std::string GetHex(size_t len) { return HexStr(hash, hash+len); }
 
-    friend bool HasCollision(StepRow& a, StepRow& b, int l);
+    template<size_t W>
+    friend bool HasCollision(StepRow<W>& a, StepRow<W>& b, int l);
 };
 
 class CompareSR
@@ -51,48 +56,56 @@ private:
 public:
     CompareSR(size_t l) : len {l} { }
 
-    inline bool operator()(const StepRow& a, const StepRow& b) { return memcmp(a.hash, b.hash, len) < 0; }
+    template<size_t W>
+    inline bool operator()(const StepRow<W>& a, const StepRow<W>& b) { return memcmp(a.hash, b.hash, len) < 0; }
 };
 
-bool HasCollision(StepRow& a, StepRow& b, int l);
+template<size_t WIDTH>
+bool HasCollision(StepRow<WIDTH>& a, StepRow<WIDTH>& b, int l);
 
-class FullStepRow : public StepRow
+template<size_t WIDTH>
+class FullStepRow : public StepRow<WIDTH>
 {
-private:
-    unsigned int lenIndices;
+    template<size_t W>
+    friend class FullStepRow;
+
+    using StepRow<WIDTH>::hash;
 
 public:
     FullStepRow(unsigned int n, const eh_HashState& base_state, eh_index i);
     ~FullStepRow() { }
 
-    FullStepRow(const FullStepRow& a);
-    FullStepRow(const FullStepRow& a, const FullStepRow& b, int trim);
-    FullStepRow& operator=(const FullStepRow& a);
+    FullStepRow(const FullStepRow<WIDTH>& a) : StepRow<WIDTH> {a} { }
+    template<size_t W>
+    FullStepRow(const FullStepRow<W>& a, const FullStepRow<W>& b, size_t len, size_t lenIndices, int trim);
+    FullStepRow& operator=(const FullStepRow<WIDTH>& a);
 
-    inline bool IndicesBefore(const FullStepRow& a) const { return ArrayToEhIndex(hash+len) < ArrayToEhIndex(a.hash+a.len); }
-    std::vector<eh_index> GetIndices() const;
+    inline bool IndicesBefore(const FullStepRow<WIDTH>& a, size_t len) const { return ArrayToEhIndex(hash+len) < ArrayToEhIndex(a.hash+len); }
+    std::vector<eh_index> GetIndices(size_t len, size_t lenIndices) const;
 
-    friend bool IsValidBranch(const FullStepRow& a, const unsigned int ilen, const eh_trunc t);
+    template<size_t W>
+    friend bool IsValidBranch(const FullStepRow<W>& a, const size_t len, const unsigned int ilen, const eh_trunc t);
 };
 
-bool DistinctIndices(const FullStepRow& a, const FullStepRow& b);
-bool IsValidBranch(const FullStepRow& a, const unsigned int ilen, const eh_trunc t);
-
-class TruncatedStepRow : public StepRow
+template<size_t WIDTH>
+class TruncatedStepRow : public StepRow<WIDTH>
 {
-private:
-    unsigned int lenIndices;
+    template<size_t W>
+    friend class TruncatedStepRow;
+
+    using StepRow<WIDTH>::hash;
 
 public:
     TruncatedStepRow(unsigned int n, const eh_HashState& base_state, eh_index i, unsigned int ilen);
     ~TruncatedStepRow() { }
 
-    TruncatedStepRow(const TruncatedStepRow& a);
-    TruncatedStepRow(const TruncatedStepRow& a, const TruncatedStepRow& b, int trim);
-    TruncatedStepRow& operator=(const TruncatedStepRow& a);
+    TruncatedStepRow(const TruncatedStepRow<WIDTH>& a) : StepRow<WIDTH> {a} { }
+    template<size_t W>
+    TruncatedStepRow(const TruncatedStepRow<W>& a, const TruncatedStepRow<W>& b, size_t len, size_t lenIndices, int trim);
+    TruncatedStepRow& operator=(const TruncatedStepRow<WIDTH>& a);
 
-    inline bool IndicesBefore(const TruncatedStepRow& a) const { return memcmp(hash+len, a.hash+a.len, lenIndices) < 0; }
-    eh_trunc* GetPartialSolution(eh_index soln_size) const;
+    inline bool IndicesBefore(const TruncatedStepRow<WIDTH>& a, size_t len, size_t lenIndices) const { return memcmp(hash+len, a.hash+len, lenIndices) < 0; }
+    eh_trunc* GetTruncatedIndices(size_t len, size_t lenIndices) const;
 };
 
 template<unsigned int N, unsigned int K>
@@ -107,6 +120,10 @@ private:
 public:
     enum { CollisionBitLength=N/(K+1) };
     enum { CollisionByteLength=CollisionBitLength/8 };
+    enum : size_t { FullWidth=2*CollisionByteLength+sizeof(eh_index)*(1 << (K-1)) };
+    enum : size_t { FinalFullWidth=2*CollisionByteLength+sizeof(eh_index)*(1 << (K)) };
+    enum : size_t { TruncatedWidth=2*CollisionByteLength+sizeof(eh_trunc)*(1 << (K-1)) };
+    enum : size_t { FinalTruncatedWidth=2*CollisionByteLength+sizeof(eh_trunc)*(1 << (K)) };
 
     Equihash() { }
 
@@ -115,6 +132,8 @@ public:
     std::set<std::vector<eh_index>> OptimisedSolve(const eh_HashState& base_state);
     bool IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln);
 };
+
+#include "equihash.tcc"
 
 static Equihash<96,5> Eh965;
 static Equihash<48,5> Eh485;
