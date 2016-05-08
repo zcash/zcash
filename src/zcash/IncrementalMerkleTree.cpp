@@ -20,24 +20,6 @@ SHA256Compress SHA256Compress::combine(const SHA256Compress& a, const SHA256Comp
     return res;
 }
 
-SHA256CompressFixedPoint SHA256CompressFixedPoint::combine(const SHA256CompressFixedPoint& a, const SHA256CompressFixedPoint& b)
-{
-    // This is a performance optimization.
-    if (a.IsNull() && b.IsNull()) {
-        return a;
-    }
-
-    SHA256CompressFixedPoint res = SHA256CompressFixedPoint();
-
-    CSHA256 hasher;
-    hasher.Write(a.begin(), 32);
-    hasher.Write(b.begin(), 32);
-    hasher.FinalizeNoPadding(res.begin());
-
-    return res;
-}
-
-
 template <size_t Depth, typename Hash>
 class PathFiller {
 private:
@@ -319,10 +301,8 @@ void IncrementalWitness<Depth, Hash>::append(Hash obj) {
 
 template class IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH, SHA256Compress>;
 template class IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA256Compress>;
-template class IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA256CompressFixedPoint>;
 
 template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, SHA256Compress>;
 template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA256Compress>;
-template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA256CompressFixedPoint>;
 
 } // end namespace `libzcash`
