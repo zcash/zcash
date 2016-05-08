@@ -61,7 +61,7 @@ public:
 
 template<size_t Depth, typename Hash>
 Hash IncrementalMerkleTree<Depth, Hash>::rootOfEmptyTree(size_t depth) {
-    boost::optional<boost::array<Hash, Depth+1>> empty_roots;
+    static boost::optional<boost::array<Hash, Depth+1>> empty_roots;
     if (!empty_roots) {
         empty_roots = boost::array<Hash, Depth+1>();
         empty_roots->at(0) = Hash();
