@@ -8,7 +8,6 @@
 # Helpful routines for regression testing
 #
 
-# Add python-bitcoinrpc to module search path:
 import os
 import sys
 
@@ -46,6 +45,11 @@ PORT_MIN = 11000
 # The number of ports to "reserve" for p2p and rpc, each
 PORT_RANGE = 5000
 
+
+class PortSeed:
+    # Must be initialized with a unique integer for each process
+    n = None
+
 def enable_coverage(dirname):
     """Maintain a log of which RPC calls are made during testing."""
     global COVERAGE_DIR
@@ -80,10 +84,10 @@ def get_rpc_proxy(url, node_number, timeout=None):
 
 def p2p_port(n):
     assert(n <= MAX_NODES)
-    return PORT_MIN + n + (MAX_NODES * os.getpid()) % (PORT_RANGE - 1 - MAX_NODES)
+    return PORT_MIN + n + (MAX_NODES * PortSeed.n) % (PORT_RANGE - 1 - MAX_NODES)
 
 def rpc_port(n):
-    return PORT_MIN + PORT_RANGE + n + (MAX_NODES * os.getpid()) % (PORT_RANGE -1 - MAX_NODES)
+    return PORT_MIN + PORT_RANGE + n + (MAX_NODES * PortSeed.n) % (PORT_RANGE - 1 - MAX_NODES)
 
 def check_json_precision():
     """Make sure json library being used does not lose precision converting BTC values"""
