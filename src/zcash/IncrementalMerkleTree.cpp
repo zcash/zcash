@@ -24,6 +24,7 @@ template <size_t Depth, typename Hash>
 class PathFiller {
 private:
     std::deque<Hash> queue;
+    static EmptyMerkleRoots<Depth, Hash> emptyroots;
 public:
     PathFiller() : queue() { }
     PathFiller(std::deque<Hash> queue) : queue(queue) { }
@@ -35,24 +36,17 @@ public:
 
             return h;
         } else {
-            return IncrementalMerkleTree<Depth, Hash>::empty_root(depth);
+            return emptyroots.empty_root(depth);
         }
     }
 
 };
 
 template<size_t Depth, typename Hash>
-Hash IncrementalMerkleTree<Depth, Hash>::empty_root(size_t depth) {
-    static boost::optional<boost::array<Hash, Depth+1>> empty_roots;
-    if (!empty_roots) {
-        empty_roots = boost::array<Hash, Depth+1>();
-        empty_roots->at(0) = Hash();
-        for (size_t d = 1; d <= Depth; d++) {
-            empty_roots->at(d) = Hash::combine(empty_roots->at(d-1), empty_roots->at(d-1));
-        }
-    }
-    return empty_roots->at(depth);
-}
+EmptyMerkleRoots<Depth, Hash> PathFiller<Depth, Hash>::emptyroots;
+
+template<size_t Depth, typename Hash>
+EmptyMerkleRoots<Depth, Hash> IncrementalMerkleTree<Depth, Hash>::emptyroots;
 
 template<size_t Depth, typename Hash>
 void IncrementalMerkleTree<Depth, Hash>::wfcheck() const {

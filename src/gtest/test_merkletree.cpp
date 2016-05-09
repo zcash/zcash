@@ -349,8 +349,11 @@ TEST(merkletree, vectors) {
 TEST(merkletree, emptyroots) {
     Array empty_roots = read_json(std::string(json_tests::merkle_roots_empty, json_tests::merkle_roots_empty + sizeof(json_tests::merkle_roots_empty)));
     Array::iterator root_iterator = empty_roots.begin();
+
+    libzcash::EmptyMerkleRoots<64, libzcash::SHA256Compress> emptyroots;
+
     for (size_t depth = 0; depth <= INCREMENTAL_MERKLE_TREE_DEPTH; depth++) {
-        expect_test_vector(root_iterator, ZCIncrementalMerkleTree::empty_root(depth));
+        expect_test_vector(root_iterator, emptyroots.empty_root(depth));
     }
 }
 
