@@ -198,7 +198,7 @@ public:
         return ret;
     }
 
-    static uint256 empty_root(size_t depth = 0) {
+    static uint256 empty_root() {
         return uint256();
     }
 };
@@ -352,9 +352,12 @@ TEST(merkletree, emptyroots) {
 
     libzcash::EmptyMerkleRoots<64, libzcash::SHA256Compress> emptyroots;
 
-    for (size_t depth = 0; depth <= INCREMENTAL_MERKLE_TREE_DEPTH; depth++) {
+    for (size_t depth = 0; depth <= 64; depth++) {
         expect_test_vector(root_iterator, emptyroots.empty_root(depth));
     }
+
+    // Double check that we're testing (at least) all the empty roots we'll use.
+    ASSERT_TRUE(INCREMENTAL_MERKLE_TREE_DEPTH <= 64);
 }
 
 TEST(merkletree, deserializeInvalid) {
