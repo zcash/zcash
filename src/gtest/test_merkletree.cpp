@@ -360,6 +360,15 @@ TEST(merkletree, emptyroots) {
     ASSERT_TRUE(INCREMENTAL_MERKLE_TREE_DEPTH <= 64);
 }
 
+TEST(merkletree, emptyroot) {
+    // This literal is the depth-20 empty tree root with the bytes reversed to
+    // account for the fact that uint256S() loads a big-endian representation of
+    // an integer which converted to little-endian internally.
+    uint256 expected = uint256S("6af0c4cedfb34a98469ecb5af4909116c77e05a6095c4c4b4f44f30b85f22303");
+
+    ASSERT_TRUE(ZCIncrementalMerkleTree::empty_root() == expected);
+}
+
 TEST(merkletree, deserializeInvalid) {
     // attempt to deserialize a small tree from a serialized large tree
     // (exceeds depth well-formedness check)
