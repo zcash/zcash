@@ -47,7 +47,7 @@ Hash IncrementalMerkleTree<Depth, Hash>::rootOfEmptyTree(size_t depth) {
     if (!empty_roots) {
         empty_roots = boost::array<Hash, Depth+1>();
         empty_roots->at(0) = Hash();
-        for (size_t d = 1; d <= depth; d++) {
+        for (size_t d = 1; d <= Depth; d++) {
             empty_roots->at(d) = Hash::combine(empty_roots->at(d-1), empty_roots->at(d-1));
         }
     }

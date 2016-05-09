@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "test/data/merkle_roots.json.h"
+#include "test/data/merkle_roots_empty.json.h"
 #include "test/data/merkle_serialization.json.h"
 #include "test/data/merkle_witness_serialization.json.h"
 #include "test/data/merkle_path.json.h"
@@ -343,6 +344,14 @@ TEST(merkletree, vectors) {
     Array path_tests = read_json(std::string(json_tests::merkle_path, json_tests::merkle_path + sizeof(json_tests::merkle_path)));
 
     test_tree<ZCTestingIncrementalMerkleTree, ZCTestingIncrementalWitness>(root_tests, ser_tests, witness_ser_tests, path_tests);
+}
+
+TEST(merkletree, emptyroots) {
+    Array empty_roots = read_json(std::string(json_tests::merkle_roots_empty, json_tests::merkle_roots_empty + sizeof(json_tests::merkle_roots_empty)));
+    Array::iterator root_iterator = empty_roots.begin();
+    for (size_t depth = 0; depth <= INCREMENTAL_MERKLE_TREE_DEPTH; depth++) {
+        expect_test_vector(root_iterator, ZCIncrementalMerkleTree::rootOfEmptyTree(depth));
+    }
 }
 
 TEST(merkletree, deserializeInvalid) {
