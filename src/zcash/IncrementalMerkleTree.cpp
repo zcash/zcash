@@ -35,14 +35,14 @@ public:
 
             return h;
         } else {
-            return IncrementalMerkleTree<Depth, Hash>::rootOfEmptyTree(depth);
+            return IncrementalMerkleTree<Depth, Hash>::empty_root(depth);
         }
     }
 
 };
 
 template<size_t Depth, typename Hash>
-Hash IncrementalMerkleTree<Depth, Hash>::rootOfEmptyTree(size_t depth) {
+Hash IncrementalMerkleTree<Depth, Hash>::empty_root(size_t depth) {
     static boost::optional<boost::array<Hash, Depth+1>> empty_roots;
     if (!empty_roots) {
         empty_roots = boost::array<Hash, Depth+1>();

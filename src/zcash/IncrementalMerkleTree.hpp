@@ -65,7 +65,7 @@ public:
         wfcheck();
     }
 
-    static Hash rootOfEmptyTree(size_t depth = Depth);
+    static Hash empty_root(size_t depth = Depth);
 
 private:
     boost::optional<Hash> left;

@@ -198,7 +198,7 @@ public:
         return ret;
     }
 
-    static uint256 rootOfEmptyTree(size_t depth = 0) {
+    static uint256 empty_root(size_t depth = 0) {
         return uint256();
     }
 };
@@ -226,7 +226,7 @@ void test_tree(Array root_tests, Array ser_tests, Array witness_ser_tests, Array
 
     // The root of the tree at this point is expected to be the root of the
     // empty tree.
-    ASSERT_TRUE(tree.root() == Tree::rootOfEmptyTree());
+    ASSERT_TRUE(tree.root() == Tree::empty_root());
 
     // We need to witness at every single point in the tree, so
     // that the consistency of the tree and the merkle paths can
@@ -350,7 +350,7 @@ TEST(merkletree, emptyroots) {
     Array empty_roots = read_json(std::string(json_tests::merkle_roots_empty, json_tests::merkle_roots_empty + sizeof(json_tests::merkle_roots_empty)));
     Array::iterator root_iterator = empty_roots.begin();
     for (size_t depth = 0; depth <= INCREMENTAL_MERKLE_TREE_DEPTH; depth++) {
-        expect_test_vector(root_iterator, ZCIncrementalMerkleTree::rootOfEmptyTree(depth));
+        expect_test_vector(root_iterator, ZCIncrementalMerkleTree::empty_root(depth));
     }
 }
 
@@ -412,7 +412,7 @@ TEST(merkletree, testZeroElements) {
     for (int start = 0; start < 20; start++) {
         ZCIncrementalMerkleTree newTree;
 
-        ASSERT_TRUE(newTree.root() == ZCIncrementalMerkleTree::rootOfEmptyTree());
+        ASSERT_TRUE(newTree.root() == ZCIncrementalMerkleTree::empty_root());
 
         for (int i = start; i > 0; i--) {
             newTree.append(uint256S("54d626e08c1c802b305dad30b7e54a82f102390cc92c7d4db112048935236e9c"));
