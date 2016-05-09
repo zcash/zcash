@@ -1680,7 +1680,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
 
         // Write to disk
         if (fInsertedNew || fUpdated)
-            if (!wtx.WriteToDisk(pwalletdb))
+            if (!pwalletdb->WriteTx(wtx))
                 return false;
 
         // Break debit/credit balance caches:
@@ -2689,11 +2689,6 @@ void CWalletTx::GetAccountAmounts(const string& strAccount, CAmount& nReceived,
 }
 
 
-bool CWalletTx::WriteToDisk(CWalletDB *pwalletdb)
-{
-    return pwalletdb->WriteTx(GetHash(), *this);
-}
-
 void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
                                     std::vector<std::optional<SproutWitness>>& witnesses,
                                     uint256 &final_anchor)
@@ -2820,7 +2815,7 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
         for (auto hash : myTxHashes) {
             CWalletTx wtx = mapWallet[hash];
             if (!wtx.mapSaplingNoteData.empty()) {
-                if (!wtx.WriteToDisk(&walletdb)) {
+                if (!walletdb.WriteTx(wtx)) {
                     LogPrintf("Rescanning... WriteToDisk failed to update Sapling note data for: %s\n", hash.ToString());
                 }
             }
@@ -4859,7 +4854,7 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
                     copyTo->fFromMe = copyFrom->fFromMe;
                     copyTo->strFromAccount = copyFrom->strFromAccount;
                     copyTo->nOrderPos = copyFrom->nOrderPos;
-                    copyTo->WriteToDisk(&walletdb);
+                    walletdb.WriteTx(*copyTo);
                 }
             }
         }
