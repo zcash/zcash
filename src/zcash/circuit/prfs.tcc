@@ -66,14 +66,6 @@ public:
         pb_variable_array<FieldT>& a_sk,
         std::shared_ptr<digest_variable<FieldT>> result
     ) : PRF_gadget<FieldT>(pb, ZERO, 1, 1, 0, 0, a_sk, boost::none, result) {}
-
-    void generate_r1cs_constraints() {
-        PRF_gadget<FieldT>::generate_r1cs_constraints();
-    }
-
-    void generate_r1cs_witness() {
-        PRF_gadget<FieldT>::generate_r1cs_witness();
-    }
 };
 
 template<typename FieldT>
@@ -86,14 +78,6 @@ public:
         pb_variable_array<FieldT>& rho,
         std::shared_ptr<digest_variable<FieldT>> result
     ) : PRF_gadget<FieldT>(pb, ZERO, 1, 1, 1, 0, a_sk, rho, result) {}
-
-    void generate_r1cs_constraints() {
-        PRF_gadget<FieldT>::generate_r1cs_constraints();
-    }
-
-    void generate_r1cs_witness() {
-        PRF_gadget<FieldT>::generate_r1cs_witness();
-    }
 };
 
 template<typename FieldT>
@@ -107,14 +91,6 @@ public:
         bool nonce,
         std::shared_ptr<digest_variable<FieldT>> result
     ) : PRF_gadget<FieldT>(pb, ZERO, 0, nonce, 0, 0, a_sk, h_sig, result) {}
-
-    void generate_r1cs_constraints() {
-        PRF_gadget<FieldT>::generate_r1cs_constraints();
-    }
-
-    void generate_r1cs_witness() {
-        PRF_gadget<FieldT>::generate_r1cs_witness();
-    }
 };
 
 template<typename FieldT>
@@ -128,12 +104,4 @@ public:
         bool nonce,
         std::shared_ptr<digest_variable<FieldT>> result
     ) : PRF_gadget<FieldT>(pb, ZERO, 0, nonce, 1, 0, phi, h_sig, result) {}
-
-    void generate_r1cs_constraints() {
-        PRF_gadget<FieldT>::generate_r1cs_constraints();
-    }
-
-    void generate_r1cs_witness() {
-        PRF_gadget<FieldT>::generate_r1cs_witness();
-    }
 };
