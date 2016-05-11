@@ -11,7 +11,7 @@ We have a guide for joining the public testnet: https://github.com/zcash/zcash/w
 What is Zcash?
 ----------------
 
-Zcash is an implementation of the "zerocash" protocol. Based on Bitcoin's code, it intends to
+Zcash is an implementation of the "Zerocash" protocol. Based on Bitcoin's code, it intends to
 offer a far higher standard of privacy and anonymity through a sophisticiated zero-knowledge
 proving scheme which preserves confidentiality of transaction metadata.
 
