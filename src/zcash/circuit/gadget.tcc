@@ -15,7 +15,7 @@ private:
     std::shared_ptr<digest_variable<FieldT>> zk_merkle_root;
     std::shared_ptr<digest_variable<FieldT>> zk_h_sig;
     boost::array<std::shared_ptr<digest_variable<FieldT>>, NumInputs> zk_input_nullifiers;
-    boost::array<std::shared_ptr<digest_variable<FieldT>>, NumInputs> zk_input_hmacs;
+    boost::array<std::shared_ptr<digest_variable<FieldT>>, NumInputs> zk_input_macs;
     boost::array<std::shared_ptr<digest_variable<FieldT>>, NumOutputs> zk_output_commitments;
     pb_variable_array<FieldT> zk_vpub_old;
     pb_variable_array<FieldT> zk_vpub_new;
@@ -27,7 +27,7 @@ private:
 
     // Input note gadgets
     boost::array<std::shared_ptr<input_note_gadget<FieldT>>, NumInputs> zk_input_notes;
-    boost::array<std::shared_ptr<PRF_pk_gadget<FieldT>>, NumInputs> zk_hmac_authentication;
+    boost::array<std::shared_ptr<PRF_pk_gadget<FieldT>>, NumInputs> zk_mac_authentication;
 
     // Output note gadgets
     boost::array<std::shared_ptr<output_note_gadget<FieldT>>, NumOutputs> zk_output_notes;
@@ -57,7 +57,7 @@ public:
 
             for (size_t i = 0; i < NumInputs; i++) {
                 alloc_uint256(zk_unpacked_inputs, zk_input_nullifiers[i]);
-                alloc_uint256(zk_unpacked_inputs, zk_input_hmacs[i]);
+                alloc_uint256(zk_unpacked_inputs, zk_input_macs[i]);
             }
 
             for (size_t i = 0; i < NumOutputs; i++) {
@@ -93,7 +93,7 @@ public:
         zk_total_uint64.allocate(pb, 64);
 
         for (size_t i = 0; i < NumInputs; i++) {
-            // Input note gadget for commitments, hmacs, nullifiers,
+            // Input note gadget for commitments, macs, nullifiers,
             // and spend authority.
             zk_input_notes[i].reset(new input_note_gadget<FieldT>(
                 pb,
@@ -104,13 +104,13 @@ public:
 
             // The input keys authenticate h_sig to prevent
             // malleability.
-            zk_hmac_authentication[i].reset(new PRF_pk_gadget<FieldT>(
+            zk_mac_authentication[i].reset(new PRF_pk_gadget<FieldT>(
                 pb,
                 ZERO,
                 zk_input_notes[i]->a_sk->bits,
                 zk_h_sig->bits,
                 i ? true : false,
-                zk_input_hmacs[i]
+                zk_input_macs[i]
             ));
         }
 
@@ -142,7 +142,7 @@ public:
             zk_input_notes[i]->generate_r1cs_constraints();
 
             // Authenticate h_sig with a_sk
-            zk_hmac_authentication[i]->generate_r1cs_constraints();
+            zk_mac_authentication[i]->generate_r1cs_constraints();
         }
 
         for (size_t i = 0; i < NumOutputs; i++) {
@@ -252,8 +252,8 @@ public:
                 inputs[i].note
             );
 
-            // Witness hmacs
-            zk_hmac_authentication[i]->generate_r1cs_witness();
+            // Witness macs
+            zk_mac_authentication[i]->generate_r1cs_witness();
         }
 
         for (size_t i = 0; i < NumOutputs; i++) {
@@ -280,7 +280,7 @@ public:
     static r1cs_primary_input<FieldT> witness_map(
         const uint256& rt,
         const uint256& h_sig,
-        const boost::array<uint256, NumInputs>& hmacs,
+        const boost::array<uint256, NumInputs>& macs,
         const boost::array<uint256, NumInputs>& nullifiers,
         const boost::array<uint256, NumOutputs>& commitments,
         uint64_t vpub_old,
@@ -293,7 +293,7 @@ public:
         
         for (size_t i = 0; i < NumInputs; i++) {
             insert_uint256(verify_inputs, nullifiers[i]);
-            insert_uint256(verify_inputs, hmacs[i]);
+            insert_uint256(verify_inputs, macs[i]);
         }
 
         for (size_t i = 0; i < NumOutputs; i++) {
@@ -316,7 +316,7 @@ public:
         acc += 256; // h_sig
         for (size_t i = 0; i < NumInputs; i++) {
             acc += 256; // nullifier
-            acc += 256; // hmac
+            acc += 256; // mac
         }
         for (size_t i = 0; i < NumOutputs; i++) {
             acc += 256; // new commitment

@@ -128,7 +128,7 @@ public:
         const std::string& proof,
         const uint256& pubKeyHash,
         const uint256& randomSeed,
-        const boost::array<uint256, NumInputs>& hmacs,
+        const boost::array<uint256, NumInputs>& macs,
         const boost::array<uint256, NumInputs>& nullifiers,
         const boost::array<uint256, NumOutputs>& commitments,
         uint64_t vpub_old,
@@ -149,7 +149,7 @@ public:
         auto witness = joinsplit_gadget<FieldT, NumInputs, NumOutputs>::witness_map(
             rt,
             h_sig,
-            hmacs,
+            macs,
             nullifiers,
             commitments,
             vpub_old,
