@@ -6,13 +6,10 @@
 #define INCREMENTAL_MERKLE_TREE_DEPTH 20
 #define INCREMENTAL_MERKLE_TREE_DEPTH_TESTING 4
 
-// TODO: these constants should be 'ZC'
-// for consistency, but I didn't want to
-// interfere with the old constants
-#define ZCASH_NOTEPLAINTEXT_LEADING 1
-#define ZCASH_V_SIZE 8
-#define ZCASH_RHO_SIZE 32
-#define ZCASH_R_SIZE 32
-#define ZCASH_MEMO_SIZE 128
+#define ZC_NOTEPLAINTEXT_LEADING 1
+#define ZC_V_SIZE 8
+#define ZC_RHO_SIZE 32
+#define ZC_R_SIZE 32
+#define ZC_MEMO_SIZE 128
 
 #endif // _ZCCONSTANTS_H_

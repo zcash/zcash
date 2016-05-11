@@ -41,7 +41,7 @@ uint256 Note::nullifier(const SpendingKey& a_sk) const {
 
 NotePlaintext::NotePlaintext(
     const Note& note,
-    boost::array<unsigned char, ZCASH_MEMO_SIZE> memo) : memo(memo)
+    boost::array<unsigned char, ZC_MEMO_SIZE> memo) : memo(memo)
 {
     value = note.value;
     rho = note.rho;

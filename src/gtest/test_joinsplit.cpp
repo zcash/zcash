@@ -193,7 +193,7 @@ TEST(joinsplit, note_plaintexts)
               random_uint256()
              );
 
-    boost::array<unsigned char, ZCASH_MEMO_SIZE> memo;
+    boost::array<unsigned char, ZC_MEMO_SIZE> memo;
 
     NotePlaintext note_pt(note, memo);
 
