@@ -3,6 +3,7 @@
 #include "sodium.h"
 
 #include "zerocash/utils/util.h"
+#include "zcash/util.h"
 
 #include <memory>
 

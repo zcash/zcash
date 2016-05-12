@@ -77,7 +77,8 @@ LIBZEROCASH_H = \
   zcash/Address.hpp \
   zcash/JoinSplit.hpp \
   zcash/Note.hpp \
-  zcash/prf.h
+  zcash/prf.h \
+  zcash/util.h
 
 .PHONY: FORCE
 # bitcoin core #
@@ -411,7 +412,8 @@ libzerocash_a_SOURCES = \
   zcash/Address.cpp \
   zcash/JoinSplit.cpp \
   zcash/Note.cpp \
-  zcash/prf.cpp
+  zcash/prf.cpp \
+  zcash/util.cpp
 
 libzerocash_a_CPPFLAGS = -fPIC -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -std=c++11 -pipe -O2 -O0 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
 

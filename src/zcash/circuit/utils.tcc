@@ -29,8 +29,7 @@ std::vector<bool> uint256_to_bool_vector(uint256 input) {
 }
 
 std::vector<bool> uint64_to_bool_vector(uint64_t input) {
-    std::vector<unsigned char> num_bv(8, 0);
-    libzerocash::convertIntToBytesVector(input, num_bv);
+    auto num_bv = convertIntToVectorLE(input);
     std::vector<bool> num_v(64, 0);
     libzerocash::convertBytesVectorToVector(num_bv, num_v);
 
@@ -47,9 +46,26 @@ void insert_uint64(std::vector<bool>& into, uint64_t from) {
     into.insert(into.end(), num.begin(), num.end());
 }
 
+template<typename T>
+T swap_endianness_u64(T v) {
+    if (v.size() != 64) {
+        throw std::length_error("invalid bit length for 64-bit unsigned integer");
+    }
+
+    for (size_t i = 0; i < 4; i++) {
+        for (size_t j = 0; j < 8; j++) {
+            std::swap(v[i*8 + j], v[((7-i)*8)+j]);
+        }
+    }
+
+    return v;
+}
+
 template<typename FieldT>
-linear_combination<FieldT> packed_addition(pb_variable_array<FieldT>& input) {
+linear_combination<FieldT> packed_addition(pb_variable_array<FieldT> input) {
+    auto input_swapped = swap_endianness_u64(input);
+
     return pb_packing_sum<FieldT>(pb_variable_array<FieldT>(
-        input.rbegin(), input.rend()
+        input_swapped.rbegin(), input_swapped.rend()
     ));
 }

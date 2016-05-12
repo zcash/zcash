@@ -1,10 +1,11 @@
 #include "Note.hpp"
 #include "prf.h"
 #include "crypto/sha256.h"
-#include "zerocash/utils/util.h"
 
 #include "version.h"
 #include "streams.h"
+
+#include "zcash/util.h"
 
 namespace libzcash {
 
@@ -22,8 +23,7 @@ uint256 Note::cm() const {
     hasher.Write(&discriminant, 1);
     hasher.Write(a_pk.begin(), 32);
 
-    std::vector<unsigned char> value_vec(sizeof(value), 0);
-    libzerocash::convertIntToBytesVector(value, value_vec);
+    auto value_vec = convertIntToVectorLE(value);
 
     hasher.Write(&value_vec[0], value_vec.size());
     hasher.Write(rho.begin(), 32);
