@@ -463,6 +463,7 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp)
             "  \"subversion\": \"/MagicBean:x.y.z[-v]/\",     (string) the server subversion string\n"
             "  \"protocolversion\": xxxxx,              (numeric) the protocol version\n"
             "  \"localservices\": \"xxxxxxxxxxxxxxxx\", (string) the services we offer to the network\n"
+            "  \"localrelay\": true|false,              (bool) true if transaction relay is requested from peers\n"
             "  \"timeoffset\": xxxxx,                   (numeric) the time offset (deprecated; always 0)\n"
             "  \"connections\": xxxxx,                  (numeric) the number of connections\n"
             "  \"networks\": [                          (array) information per network\n"
@@ -496,7 +497,8 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp)
     obj.pushKV("version",       CLIENT_VERSION);
     obj.pushKV("subversion",    strSubVersion);
     obj.pushKV("protocolversion",PROTOCOL_VERSION);
-    obj.pushKV("localservices",       strprintf("%016x", nLocalServices));
+    obj.pushKV("localservices", strprintf("%016x", nLocalServices));
+    obj.pushKV("localrelay",    fRelayTxes);
     obj.pushKV("timeoffset",    0);
     obj.pushKV("connections",   (int)vNodes.size());
     obj.pushKV("networks",      GetNetworksInfo());
