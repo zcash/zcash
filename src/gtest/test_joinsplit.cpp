@@ -2,6 +2,8 @@
 
 #include "utilstrencodings.h"
 
+#include <boost/foreach.hpp>
+
 #include "zcash/prf.h"
 
 #include "zcash/JoinSplit.hpp"
@@ -150,6 +152,85 @@ void test_full_api(ZCJoinSplit* js)
         vpub_new,
         rt
     ));
+}
+
+TEST(joinsplit, h_sig)
+{
+    auto js = ZCJoinSplit::Unopened();
+
+/*
+// by Taylor Hornby
+
+import pyblake2
+import binascii
+
+def hSig(randomSeed, nf1, nf2, pubKeyHash):
+    return pyblake2.blake2b(
+        data=(randomSeed + nf1 + nf2 + pubKeyHash),
+        digest_size=32,
+        person=b"ZcashComputehSig"
+    ).digest()
+
+INCREASING = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F"
+
+TEST_VECTORS = [
+    [b"a" * 32, b"b" * 32, b"c" * 32, b"d" * 32],
+    [b"\x00" * 32, b"\x00" * 32, b"\x00" * 32, b"\x00" * 32],
+    [b"\xFF" * 32, b"\xFF" * 32, b"\xFF" * 32, b"\xFF" * 32],
+    [INCREASING, INCREASING, INCREASING, INCREASING]
+]
+
+for test_input in TEST_VECTORS:
+    print "---"
+    print "\"" + binascii.hexlify(test_input[0][::-1]) + "\""
+    print "\"" + binascii.hexlify(test_input[1][::-1]) + "\""
+    print "\"" + binascii.hexlify(test_input[2][::-1]) + "\""
+    print "\"" + binascii.hexlify(test_input[3][::-1]) + "\""
+    print "\"" + binascii.hexlify(hSig(test_input[0], test_input[1], test_input[2], test_input[3])[::-1]) + "\""
+*/
+
+    std::vector<std::vector<std::string>> tests = {
+        {
+            "6161616161616161616161616161616161616161616161616161616161616161",
+            "6262626262626262626262626262626262626262626262626262626262626262",
+            "6363636363636363636363636363636363636363636363636363636363636363",
+            "6464646464646464646464646464646464646464646464646464646464646464",
+            "a8cba69f1fa329c055756b4af900f8a00b61e44f4cb8a1824ceb58b90a5b8113"
+        },
+        {
+            "0000000000000000000000000000000000000000000000000000000000000000",
+            "0000000000000000000000000000000000000000000000000000000000000000",
+            "0000000000000000000000000000000000000000000000000000000000000000",
+            "0000000000000000000000000000000000000000000000000000000000000000",
+            "697322276b5dd93b12fb1fcbd2144b2960f24c73aac6c6a0811447be1e7f1e19"
+        },
+        {
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "4961048919f0ca79d49c9378c36a91a8767060001f4212fe6f7d426f3ccf9f32"
+        },
+        {
+            "1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100",
+            "1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100",
+            "1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100",
+            "1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100",
+            "b61110ec162693bc3d9ca7fb0eec3afd2e278e2f41394b3ff11d7cb761ad4b27"
+        }
+    };
+
+    BOOST_FOREACH(std::vector<std::string>& v, tests) {
+        auto expected = js->h_sig(
+            uint256S(v[0]),
+            {uint256S(v[1]), uint256S(v[2])},
+            uint256S(v[3])
+        );
+
+        EXPECT_EQ(expected, uint256S(v[4]));
+    }
+
+    delete js;
 }
 
 TEST(joinsplit, full_api_test)
