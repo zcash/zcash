@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "test/data/merkle_roots.json.h"
+#include "test/data/merkle_roots_empty.json.h"
 #include "test/data/merkle_serialization.json.h"
 #include "test/data/merkle_witness_serialization.json.h"
 #include "test/data/merkle_path.json.h"
@@ -48,6 +49,7 @@ read_json(const std::string& jsondata)
 using namespace std;
 using namespace libzerocash;
 using namespace libsnark;
+
 
 template<typename T>
 void expect_deser_same(const T& expected)
@@ -195,6 +197,10 @@ public:
 
         return ret;
     }
+
+    static uint256 empty_root() {
+        return uint256();
+    }
 };
 
 template<typename A, typename B, typename C>
@@ -218,8 +224,9 @@ void test_tree(Array root_tests, Array ser_tests, Array witness_ser_tests, Array
 
     Tree tree;
 
-    // The root of the tree at this point is expected to be null.
-    ASSERT_TRUE(tree.root().IsNull());
+    // The root of the tree at this point is expected to be the root of the
+    // empty tree.
+    ASSERT_TRUE(tree.root() == Tree::empty_root());
 
     // We need to witness at every single point in the tree, so
     // that the consistency of the tree and the merkle paths can
@@ -337,7 +344,29 @@ TEST(merkletree, vectors) {
     Array path_tests = read_json(std::string(json_tests::merkle_path, json_tests::merkle_path + sizeof(json_tests::merkle_path)));
 
     test_tree<ZCTestingIncrementalMerkleTree, ZCTestingIncrementalWitness>(root_tests, ser_tests, witness_ser_tests, path_tests);
-    test_tree<OldIncrementalMerkleTree, OldIncrementalMerkleTree>(root_tests, ser_tests, witness_ser_tests, path_tests);
+}
+
+TEST(merkletree, emptyroots) {
+    Array empty_roots = read_json(std::string(json_tests::merkle_roots_empty, json_tests::merkle_roots_empty + sizeof(json_tests::merkle_roots_empty)));
+    Array::iterator root_iterator = empty_roots.begin();
+
+    libzcash::EmptyMerkleRoots<64, libzcash::SHA256Compress> emptyroots;
+
+    for (size_t depth = 0; depth <= 64; depth++) {
+        expect_test_vector(root_iterator, emptyroots.empty_root(depth));
+    }
+
+    // Double check that we're testing (at least) all the empty roots we'll use.
+    ASSERT_TRUE(INCREMENTAL_MERKLE_TREE_DEPTH <= 64);
+}
+
+TEST(merkletree, emptyroot) {
+    // This literal is the depth-20 empty tree root with the bytes reversed to
+    // account for the fact that uint256S() loads a big-endian representation of
+    // an integer which converted to little-endian internally.
+    uint256 expected = uint256S("6af0c4cedfb34a98469ecb5af4909116c77e05a6095c4c4b4f44f30b85f22303");
+
+    ASSERT_TRUE(ZCIncrementalMerkleTree::empty_root() == expected);
 }
 
 TEST(merkletree, deserializeInvalid) {
@@ -398,7 +427,7 @@ TEST(merkletree, testZeroElements) {
     for (int start = 0; start < 20; start++) {
         ZCIncrementalMerkleTree newTree;
 
-        ASSERT_TRUE(newTree.root() == uint256());
+        ASSERT_TRUE(newTree.root() == ZCIncrementalMerkleTree::empty_root());
 
         for (int i = start; i > 0; i--) {
             newTree.append(uint256S("54d626e08c1c802b305dad30b7e54a82f102390cc92c7d4db112048935236e9c"));

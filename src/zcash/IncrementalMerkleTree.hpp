@@ -33,6 +33,22 @@ public:
 };
 
 template<size_t Depth, typename Hash>
+class EmptyMerkleRoots {
+public:
+    EmptyMerkleRoots() {
+        empty_roots.at(0) = Hash();
+        for (size_t d = 1; d <= Depth; d++) {
+            empty_roots.at(d) = Hash::combine(empty_roots.at(d-1), empty_roots.at(d-1));
+        }
+    }
+    Hash empty_root(size_t depth) {
+        return empty_roots.at(depth);
+    }
+private:
+    boost::array<Hash, Depth+1> empty_roots;
+};
+
+template<size_t Depth, typename Hash>
 class IncrementalWitness;
 
 template<size_t Depth, typename Hash>
@@ -65,7 +81,12 @@ public:
         wfcheck();
     }
 
+    static Hash empty_root() {
+        return emptyroots.empty_root(Depth);
+    }
+
 private:
+    static EmptyMerkleRoots<Depth, Hash> emptyroots;
     boost::optional<Hash> left;
     boost::optional<Hash> right;
 
