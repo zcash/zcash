@@ -6,7 +6,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
-    initialize_chain_clean, start_nodes, start_node, connect_nodes_bi, \
+    start_nodes, start_node, connect_nodes_bi, \
     stop_nodes, sync_blocks, sync_mempools, wait_and_assert_operationid_status, \
     wait_bitcoinds
 
@@ -14,9 +14,10 @@ from decimal import Decimal
 
 class WalletTest (BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.setup_clean_chain = True
+        self.num_nodes = 4
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(3, self.options.tmpdir)

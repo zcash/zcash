@@ -31,6 +31,10 @@ def check_array_result(object_array, to_match, expected):
         raise AssertionError("No objects matched %s"%(str(to_match)))
 
 class ListTransactionsTest(BitcoinTestFramework):
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = False
 
     def run_test(self):
         # Simple send, 0 to 1:

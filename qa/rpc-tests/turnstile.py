@@ -32,7 +32,7 @@ from test_framework.util import (
     get_coinbase_address,
     start_node, start_nodes,
     sync_blocks, sync_mempools,
-    initialize_chain_clean, connect_nodes_bi,
+    connect_nodes_bi,
     wait_and_assert_operationid_status,
     bitcoind_processes,
     check_node_log
@@ -44,12 +44,13 @@ TURNSTILE_ARGS = ['-experimentalfeatures',
 
 class TurnstileTest (BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory " + self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 3)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 3
+        self.setup_clean_chain = True
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         self.is_network_split=False

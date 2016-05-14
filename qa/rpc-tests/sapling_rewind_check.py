@@ -28,7 +28,7 @@ length computation (40b5d5e3ea4b602c34c4efaba0b9f6171dddfef5) corrects the issue
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (assert_equal, assert_true,
-    initialize_chain_clean, start_nodes, start_node, connect_nodes_bi,
+    start_nodes, start_node, connect_nodes_bi,
     bitcoind_processes,
     nuparams, OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID)
 
@@ -39,14 +39,15 @@ HAS_SAPLING = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 1
 NO_SAPLING = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 150)]
 
 class SaplingRewindTest(BitcoinTestFramework):
-    def setup_chain(self):
-        logging.info("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 3
+        self.setup_clean_chain = True
 
     # This mirrors how the network was setup in the bash test
     def setup_network(self, split=False):
         logging.info("Initializing the network in "+self.options.tmpdir)
-        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[
                 HAS_SAPLING, # The first two nodes have a correct view of the network,
                 HAS_SAPLING, # the third will rewind after upgrading.
                 NO_SAPLING

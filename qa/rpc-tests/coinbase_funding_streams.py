@@ -12,7 +12,6 @@ from test_framework.util import (
     assert_equal,
     bitcoind_processes,
     connect_nodes,
-    initialize_chain_clean,
     start_node,
     BLOSSOM_BRANCH_ID,
     HEARTWOOD_BRANCH_ID,
@@ -20,9 +19,10 @@ from test_framework.util import (
 )
 
 class CoinbaseFundingStreamsTest (BitcoinTestFramework):
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 2
+        self.setup_clean_chain = True
 
     def start_node_with(self, index, extra_args=[]):
         args = [

@@ -12,7 +12,6 @@ from test_framework.util import (
     assert_equal,
     bitcoind_processes,
     connect_nodes_bi,
-    initialize_chain,
     nuparams,
     start_node,
     start_nodes,
@@ -29,12 +28,8 @@ NO_CANOPY  = [nuparams(BLOSSOM_BRANCH_ID, 205), nuparams(HEARTWOOD_BRANCH_ID, 21
 
 class PostHeartwoodRollbackTest (BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain(self.options.tmpdir)
-
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, extra_args=[
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[
             HAS_CANOPY,
             HAS_CANOPY,
             NO_CANOPY,

@@ -6,7 +6,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
-    initialize_chain_clean, start_nodes, connect_nodes_bi, stop_nodes, \
+    start_nodes, connect_nodes_bi, stop_nodes, \
     wait_bitcoinds
 
 from decimal import Decimal
@@ -14,12 +14,13 @@ from decimal import Decimal
 # Create one-input, one-output, no-fee transaction:
 class RawTransactionsTest(BitcoinTestFramework):
 
-    def setup_chain(self):
-        print(("Initializing test directory "+self.options.tmpdir))
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.setup_clean_chain = True
+        self.num_nodes = 4
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(4, self.options.tmpdir,
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir,
                            extra_args=[['-experimentalfeatures', '-developerencryptwallet']] * 4)
 
         connect_nodes_bi(self.nodes,0,1)
@@ -450,7 +451,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         stop_nodes(self.nodes)
         wait_bitcoinds()
 
-        self.nodes = start_nodes(4, self.options.tmpdir)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
 
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)

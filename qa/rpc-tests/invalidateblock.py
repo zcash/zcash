@@ -8,15 +8,16 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import initialize_chain_clean, start_node, \
+from test_framework.util import start_node, \
     connect_nodes_bi, sync_blocks
 
 import time
 
 class InvalidateTest(BitcoinTestFramework):
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 3)
+    def __init__(self):
+        super().__init__()
+        self.setup_clean_chain = True
+        self.num_nodes = 3
 
     def setup_network(self):
         self.nodes = []

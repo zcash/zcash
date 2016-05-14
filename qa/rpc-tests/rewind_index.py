@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import assert_equal, \
     start_nodes, start_node, connect_nodes_bi, bitcoind_processes, \
     nuparams, OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID
 
@@ -15,15 +15,16 @@ FAKE_OVERWINTER = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_I
 
 class RewindBlockIndexTest (BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 3)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 3
+        self.setup_clean_chain = True
 
     def setup_network(self, split=False):
         # Node 0 - Overwinter, then Sprout, then Overwinter again
         # Node 1 - Sprout
         # Node 2 - Overwinter
-        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[
             FAKE_OVERWINTER,
             FAKE_SPROUT,
             FAKE_OVERWINTER,

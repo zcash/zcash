@@ -22,6 +22,11 @@ from test_framework.util import assert_equal, assert_greater_than, assert_raises
 # Create one-input, one-output, no-fee transaction:
 class MempoolSpendCoinbaseTest(BitcoinTestFramework):
 
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 1
+        self.setup_clean_chain = False
+
     def setup_network(self):
         # Just need one node for this test
         args = ["-checkmempool", "-debug=mempool"]

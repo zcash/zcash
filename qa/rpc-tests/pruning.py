@@ -13,7 +13,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import initialize_chain_clean, start_node, \
+from test_framework.util import start_node, \
     connect_nodes, stop_node, sync_blocks
 
 import os.path
@@ -25,6 +25,10 @@ def calc_usage(blockdir):
 class PruneTest(BitcoinTestFramework):
 
     def __init__(self):
+        super().__init__()
+        self.setup_clean_chain = True
+        self.num_nodes = 3
+
         self.utxo = []
         self.address = ["",""]
 
@@ -45,10 +49,6 @@ class PruneTest(BitcoinTestFramework):
             # add script_pubkey
             self.txouts = self.txouts + script_pubkey
 
-
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 3)
 
     def setup_network(self):
         self.nodes = []

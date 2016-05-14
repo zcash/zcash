@@ -10,6 +10,10 @@ from test_framework.util import assert_equal, start_node, \
 
 
 class JoinSplitTest(BitcoinTestFramework):
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 1
+
     def setup_network(self):
         self.nodes = []
         self.is_network_split = False

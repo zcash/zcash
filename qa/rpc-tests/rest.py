@@ -9,7 +9,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_greater_than, \
-    initialize_chain_clean, start_nodes, connect_nodes_bi
+    start_nodes, connect_nodes_bi
 
 import struct
 import binascii
@@ -51,12 +51,13 @@ def http_post_call(host, port, path, requestdata = '', response_object = 0):
 class RESTTest (BitcoinTestFramework):
     FORMAT_SEPARATOR = "."
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 3)
+    def __init__(self):
+        super().__init__()
+        self.setup_clean_chain = True
+        self.num_nodes = 3
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)

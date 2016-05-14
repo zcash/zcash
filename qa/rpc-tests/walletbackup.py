@@ -35,7 +35,7 @@ and confirm again balances are correct.
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import assert_equal, \
     start_nodes, start_node, connect_nodes, stop_node, \
     sync_blocks, sync_mempools
 
@@ -50,9 +50,10 @@ logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO, str
 
 class WalletBackupTest(BitcoinTestFramework):
 
-    def setup_chain(self):
-        logging.info("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.setup_clean_chain = True
+        self.num_nodes = 4
 
     # This mirrors how the network was setup in the bash test
     def setup_network(self, split=False):
@@ -63,7 +64,7 @@ class WalletBackupTest(BitcoinTestFramework):
 
         # nodes 1, 2,3 are spenders, let's give them a keypool=100
         extra_args = [["-keypool=100", ed0], ["-keypool=100", ed1], ["-keypool=100", ed2], []]
-        self.nodes = start_nodes(4, self.options.tmpdir, extra_args)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args)
         connect_nodes(self.nodes[0], 3)
         connect_nodes(self.nodes[1], 3)
         connect_nodes(self.nodes[2], 3)

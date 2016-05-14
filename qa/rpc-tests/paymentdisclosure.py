@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import assert_equal, \
     start_node, connect_nodes_bi, wait_and_assert_operationid_status, \
     get_coinbase_address
 
@@ -13,9 +13,10 @@ from decimal import Decimal
 
 class PaymentDisclosureTest (BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 3
+        self.setup_clean_chain = True
 
     def setup_network(self, split=False):
         args = ['-debug=zrpcunsafe,paymentdisclosure', '-experimentalfeatures', '-paymentdisclosure', '-txindex=1']

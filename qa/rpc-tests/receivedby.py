@@ -53,6 +53,11 @@ def check_array_result(object_array, to_match, expected, should_not_find = False
 
 class ReceivedByTest(BitcoinTestFramework):
 
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = False
+
     def run_test(self):
         '''
         listreceivedbyaddress Test
