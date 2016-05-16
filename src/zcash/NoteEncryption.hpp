@@ -8,6 +8,7 @@ https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
 
 #include <boost/array.hpp>
 #include "uint256.h"
+#include "uint252.h"
 
 #include "zcash/Zcash.h"
 
@@ -43,7 +44,7 @@ public:
                       );
 
     // Creates a NoteEncryption private key
-    static uint256 generate_privkey(const uint256 &a_sk);
+    static uint256 generate_privkey(const uint252 &a_sk);
 
     // Creates a NoteEncryption public key from a private key
     static uint256 generate_pubkey(const uint256 &sk_enc);
@@ -70,6 +71,7 @@ public:
 };
 
 uint256 random_uint256();
+uint252 random_uint252();
 
 }
 

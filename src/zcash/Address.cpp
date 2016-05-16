@@ -13,7 +13,7 @@ ViewingKey SpendingKey::viewing_key() {
 }
 
 SpendingKey SpendingKey::random() {
-    return SpendingKey(random_uint256());
+    return SpendingKey(random_uint252());
 }
 
 PaymentAddress SpendingKey::address() {

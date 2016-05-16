@@ -2,6 +2,7 @@
 #define _ZCADDRESS_H_
 
 #include "uint256.h"
+#include "uint252.h"
 #include "serialize.h"
 
 namespace libzcash {
@@ -37,10 +38,10 @@ public:
     uint256 pk_enc();
 };
 
-class SpendingKey : public uint256 {
+class SpendingKey : public uint252 {
 public:
-    SpendingKey() : uint256() { }
-    SpendingKey(uint256 a_sk) : uint256(a_sk) { }
+    SpendingKey() : uint252() { }
+    SpendingKey(uint252 a_sk) : uint252(a_sk) { }
 
     static SpendingKey random();
 

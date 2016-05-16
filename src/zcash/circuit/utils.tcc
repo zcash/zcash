@@ -1,3 +1,5 @@
+#include "uint252.h"
+
 template<typename FieldT>
 pb_variable_array<FieldT> from_bits(std::vector<bool> bits, pb_variable<FieldT>& ZERO) {
     pb_variable_array<FieldT> acc;
@@ -17,7 +19,8 @@ std::vector<bool> trailing252(std::vector<bool> input) {
     return std::vector<bool>(input.begin() + 4, input.end());
 }
 
-std::vector<bool> uint256_to_bool_vector(uint256 input) {
+template<typename T>
+std::vector<bool> to_bool_vector(T input) {
     std::vector<unsigned char> input_v(input.begin(), input.end());
     std::vector<bool> output_bv(256, 0);
     libzerocash::convertBytesVectorToVector(
@@ -26,6 +29,14 @@ std::vector<bool> uint256_to_bool_vector(uint256 input) {
     );
 
     return output_bv;
+}
+
+std::vector<bool> uint256_to_bool_vector(uint256 input) {
+    return to_bool_vector(input);
+}
+
+std::vector<bool> uint252_to_bool_vector(uint252 input) {
+    return trailing252(to_bool_vector(input));
 }
 
 std::vector<bool> uint64_to_bool_vector(uint64_t input) {

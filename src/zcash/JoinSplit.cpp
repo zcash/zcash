@@ -191,7 +191,7 @@ public:
         uint256 h_sig = this->h_sig(out_randomSeed, out_nullifiers, pubKeyHash);
 
         // Sample phi
-        uint256 phi = random_uint256();
+        uint252 phi = random_uint252();
 
         // Compute notes for outputs
         for (size_t i = 0; i < NumOutputs; i++) {
@@ -320,19 +320,19 @@ uint256 JoinSplit<NumInputs, NumOutputs>::h_sig(
     return output;
 }
 
-Note JSOutput::note(const uint256& phi, const uint256& r, size_t i, const uint256& h_sig) const {
+Note JSOutput::note(const uint252& phi, const uint256& r, size_t i, const uint256& h_sig) const {
     uint256 rho = PRF_rho(phi, i, h_sig);
 
     return Note(addr.a_pk, value, rho, r);
 }
 
 JSOutput::JSOutput() : addr(uint256(), uint256()), value(0) {
-    SpendingKey a_sk(random_uint256());
+    SpendingKey a_sk = SpendingKey::random();
     addr = a_sk.address();
 }
 
 JSInput::JSInput() : witness(ZCIncrementalMerkleTree().witness()),
-                     key(random_uint256()) {
+                     key(SpendingKey::random()) {
     note = Note(key.address().a_pk, 0, random_uint256(), random_uint256());
     ZCIncrementalMerkleTree dummy_tree;
     dummy_tree.append(note.cm());
