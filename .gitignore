@@ -8,6 +8,7 @@ src/zcash-gtest
 src/bitcoin-tx
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
+src/equihash_solver_standalone
 
 # zerocash tests and utilities
 src/zerocash/GenerateParamsForFiles
