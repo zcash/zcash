@@ -10,11 +10,15 @@ src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
 
 # zerocash tests and utilities
+src/zcash/GenerateParams
 src/zerocash/GenerateParamsForFiles
 src/zerocash/tests/merkleTest
 src/zerocash/tests/utilTest
 src/zerocash/tests/zerocashTest
 src/zerocash/tests/test_zerocash_pour_ppzksnark
+
+*zcashTest.pk
+*zcashTest.vk
 
 # autoreconf
 Makefile.in

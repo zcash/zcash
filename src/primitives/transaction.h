@@ -13,16 +13,9 @@
 
 #include <boost/array.hpp>
 
-#include "zerocash/ZerocashParams.h"
-#include "zerocash/PourInput.h"
-#include "zerocash/PourOutput.h"
-
 #include "zcash/NoteEncryption.hpp"
-
-using namespace libzerocash;
-
-static const unsigned int NUM_POUR_INPUTS = 2;
-static const unsigned int NUM_POUR_OUTPUTS = 2;
+#include "zcash/Zcash.h"
+#include "zcash/JoinSplit.hpp"
 
 class CPourTx
 {
@@ -31,14 +24,6 @@ public:
     // pool, respectively.
     CAmount vpub_old;
     CAmount vpub_new;
-
-    // These scripts are used to bind a Pour to the outer
-    // transaction it is placed in. The Pour will
-    // authenticate the hash of the scriptPubKey, and the
-    // provided scriptSig with be appended during
-    // transaction verification.
-    CScript scriptPubKey;
-    CScript scriptSig;
 
     // Pours are always anchored to a root in the bucket
     // commitment tree at some point in the blockchain
@@ -50,28 +35,31 @@ public:
     // are derived from the secrets placed in the bucket
     // and the secret spend-authority key known by the
     // spender.
-    boost::array<uint256, NUM_POUR_INPUTS> serials;
+    boost::array<uint256, ZC_NUM_JS_INPUTS> serials;
 
     // Bucket commitments are introduced into the commitment
     // tree, blinding the public about the values and
     // destinations involved in the Pour. The presence of a
     // commitment in the bucket commitment tree is required
     // to spend it.
-    boost::array<uint256, NUM_POUR_OUTPUTS> commitments;
+    boost::array<uint256, ZC_NUM_JS_OUTPUTS> commitments;
 
     // Ciphertexts
     // These contain trapdoors, values and other information
     // that the recipient needs, including a memo field. It
     // is encrypted using the scheme implemented in crypto/NoteEncryption.cpp
-    boost::array<ZCNoteEncryption::Ciphertext, NUM_POUR_OUTPUTS> ciphertexts;
+    boost::array<ZCNoteEncryption::Ciphertext, ZC_NUM_JS_OUTPUTS> ciphertexts;
 
     // Ephemeral key
     uint256 ephemeralKey;
 
+    // Random seed
+    uint256 randomSeed;
+
     // MACs
     // The verification of the pour requires these MACs
     // to be provided as an input.
-    boost::array<uint256, NUM_POUR_INPUTS> macs;
+    boost::array<uint256, ZC_NUM_JS_INPUTS> macs;
 
     // Pour proof
     // This is a zk-SNARK which ensures that this pour is valid.
@@ -79,17 +67,20 @@ public:
 
     CPourTx(): vpub_old(0), vpub_new(0) { }
 
-    CPourTx(ZerocashParams& params,
-            const CScript& scriptPubKey,
+    CPourTx(ZCJoinSplit& params,
+            const uint256& pubKeyHash,
             const uint256& rt,
-            const boost::array<PourInput, NUM_POUR_INPUTS>& inputs,
-            const boost::array<PourOutput, NUM_POUR_OUTPUTS>& outputs,
+            const boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+            const boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             CAmount vpub_old,
             CAmount vpub_new
     );
 
     // Verifies that the pour proof is correct.
-    bool Verify(ZerocashParams& params) const;
+    bool Verify(ZCJoinSplit& params, const uint256& pubKeyHash) const;
+
+    // Returns the calculated h_sig
+    uint256 h_sig(ZCJoinSplit& params, const uint256& pubKeyHash) const;
 
     ADD_SERIALIZE_METHODS;
 
@@ -97,13 +88,12 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(vpub_old);
         READWRITE(vpub_new);
-        READWRITE(scriptPubKey);
-        READWRITE(scriptSig);
         READWRITE(anchor);
         READWRITE(serials);
         READWRITE(commitments);
         READWRITE(ciphertexts);
         READWRITE(ephemeralKey);
+        READWRITE(randomSeed);
         READWRITE(macs);
         READWRITE(proof);
     }
@@ -113,13 +103,12 @@ public:
         return (
             a.vpub_old == b.vpub_old &&
             a.vpub_new == b.vpub_new &&
-            a.scriptPubKey == b.scriptPubKey &&
-            a.scriptSig == b.scriptSig &&
             a.anchor == b.anchor &&
             a.serials == b.serials &&
             a.commitments == b.commitments &&
             a.ciphertexts == b.ciphertexts &&
             a.ephemeralKey == b.ephemeralKey &&
+            a.randomSeed == b.randomSeed &&
             a.macs == b.macs &&
             a.proof == b.proof
             );

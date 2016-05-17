@@ -52,7 +52,7 @@
 
 using namespace std;
 
-libzerocash::ZerocashParams *pzerocashParams = NULL;
+ZCJoinSplit* pzcashParams = NULL;
 
 #ifdef ENABLE_WALLET
 CWallet* pwalletMain = NULL;
@@ -602,27 +602,21 @@ static void ZC_LoadParams()
     struct timeval tv_start, tv_end;
     float elapsed;
 
-    boost::filesystem::path pk_path = ZC_GetParamsDir() / "zc-testnet-public-alpha-proving.key";
-    boost::filesystem::path vk_path = ZC_GetParamsDir() / "zc-testnet-public-alpha-verification.key";
+    boost::filesystem::path pk_path = ZC_GetParamsDir() / "z3-proving.key";
+    boost::filesystem::path vk_path = ZC_GetParamsDir() / "z3-verification.key";
 
-    libzerocash::ZerocashParams::zerocash_pp::init_public_params();
-
+    pzcashParams = ZCJoinSplit::Unopened();
 
     LogPrintf("Loading verification key from %s\n", vk_path.string().c_str());
     gettimeofday(&tv_start, 0);
-    auto vk_loaded = libzerocash::ZerocashParams::LoadVerificationKeyFromFile(
-        vk_path.string(),
-        INCREMENTAL_MERKLE_TREE_DEPTH
-    );
+
+    pzcashParams->loadVerifyingKey(vk_path.string());
+
     gettimeofday(&tv_end, 0);
     elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
     LogPrintf("Loaded verification key in %fs seconds.\n", elapsed);
 
-    pzerocashParams = new libzerocash::ZerocashParams(
-        INCREMENTAL_MERKLE_TREE_DEPTH,
-        pk_path.string(),
-        &vk_loaded
-    );
+    pzcashParams->setProvingKeyPath(pk_path.string());
 }
 
 /** Initialize bitcoin.

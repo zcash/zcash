@@ -1051,14 +1051,13 @@ bool CWalletTx::WriteToDisk(CWalletDB *pwalletdb)
     return pwalletdb->WriteTx(GetHash(), *this);
 }
 
-bool CWallet::WitnessBucketCommitment(uint256 &commitment,
-                                      libzcash::MerklePath &path,
+void CWallet::WitnessBucketCommitment(std::vector<uint256> commitments,
+                                      std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
                                       uint256 &final_anchor)
 {
+    witnesses.resize(commitments.size());
     CBlockIndex* pindex = chainActive.Genesis();
     ZCIncrementalMerkleTree tree;
-    boost::optional<ZCIncrementalWitness> witness = boost::none;
-    uint256 current_anchor;
 
     while (pindex) {
         CBlock block;
@@ -1070,24 +1069,26 @@ bool CWallet::WitnessBucketCommitment(uint256 &commitment,
             {
                 BOOST_FOREACH(const uint256 &bucket_commitment, pour.commitments)
                 {
-                    if (witness) {
-                        witness->append(bucket_commitment);
-                    } else {
-                        tree.append(bucket_commitment);
+                    tree.append(bucket_commitment);
 
-                        if (bucket_commitment == commitment) {
-                            witness = tree.witness();
+                    BOOST_FOREACH(boost::optional<ZCIncrementalWitness>& wit, witnesses) {
+                        if (wit) {
+                            wit->append(bucket_commitment);
                         }
+                    }
+
+                    size_t i = 0;
+                    BOOST_FOREACH(uint256& commitment, commitments) {
+                        if (bucket_commitment == commitment) {
+                            witnesses.at(i) = tree.witness();
+                        }
+                        i++;
                     }
                 }
             }
         }
 
-        if (witness) {
-            current_anchor = witness->root();
-        } else {
-            current_anchor = tree.root();
-        }
+        uint256 current_anchor = tree.root();
 
         // Consistency check: we should be able to find the current tree
         // in our CCoins view.
@@ -1097,14 +1098,14 @@ bool CWallet::WitnessBucketCommitment(uint256 &commitment,
         pindex = chainActive.Next(pindex);
     }
 
-    if (witness) {
-        path = witness->path();
-        final_anchor = current_anchor;
+    // TODO: #93; Select a root via some heuristic.
+    final_anchor = tree.root();
 
-        return true;
+    BOOST_FOREACH(boost::optional<ZCIncrementalWitness>& wit, witnesses) {
+        if (wit) {
+            assert(final_anchor == wit->root());
+        }
     }
-
-    return false;
 }
 
 /**

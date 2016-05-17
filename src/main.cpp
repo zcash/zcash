@@ -960,7 +960,10 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 
         if (state.PerformPourVerification()) {
             BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
-                if (!pour.Verify(*pzerocashParams)) {
+                // TODO: #808
+                uint256 pubKeyHash;
+
+                if (!pour.Verify(*pzcashParams, pubKeyHash)) {
                     return state.DoS(100, error("CheckTransaction(): pour does not verify"),
                                      REJECT_INVALID, "bad-txns-pour-verification-failed");
                 }

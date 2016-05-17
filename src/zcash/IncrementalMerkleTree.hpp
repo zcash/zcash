@@ -8,8 +8,7 @@
 #include "uint256.h"
 #include "serialize.h"
 
-static const unsigned int INCREMENTAL_MERKLE_TREE_DEPTH = 20;
-static const unsigned int INCREMENTAL_MERKLE_TREE_DEPTH_TESTING = 4;
+#include "Zcash.h"
 
 namespace libzcash {
 

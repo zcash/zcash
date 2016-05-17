@@ -40,7 +40,6 @@ read_json(const std::string& jsondata)
 }
 
 #include "zcash/IncrementalMerkleTree.hpp"
-#include "zerocash/IncrementalMerkleTree.h"
 #include "zerocash/utils/util.h"
 
 //#define PRINT_JSON 1
@@ -106,105 +105,9 @@ void expect_test_vector(T& it, const U& expected)
     #endif
 }
 
-/*
-This is a wrapper around the old incremental merkle tree which
-attempts to mimic the new API as much as possible so that its
-behavior can be compared with the test vectors we use.
-*/
-class OldIncrementalMerkleTree {
-private:
-    libzerocash::IncrementalMerkleTree* tree;
-    boost::optional<std::vector<bool>> index;
-    bool witnessed;
-
-public:
-    OldIncrementalMerkleTree() : index(boost::none), witnessed(false) {
-        this->tree = new IncrementalMerkleTree(INCREMENTAL_MERKLE_TREE_DEPTH_TESTING);
-    }
-
-    ~OldIncrementalMerkleTree()
-    {
-        delete tree;
-    }
-
-    OldIncrementalMerkleTree (const OldIncrementalMerkleTree& other) : index(boost::none), witnessed(false)
-    {
-        this->tree = new IncrementalMerkleTree(INCREMENTAL_MERKLE_TREE_DEPTH_TESTING);
-        this->tree->setTo(*other.tree);
-        index = other.index;
-        witnessed = other.witnessed;
-    }
-
-    OldIncrementalMerkleTree& operator= (const OldIncrementalMerkleTree& other)
-    {
-        OldIncrementalMerkleTree tmp(other);         // re-use copy-constructor
-        *this = std::move(tmp); // re-use move-assignment
-        return *this;
-    }
-
-    OldIncrementalMerkleTree& operator= (OldIncrementalMerkleTree&& other)
-    {
-        tree->setTo(*other.tree);
-        index = other.index;
-        witnessed = other.witnessed;
-        return *this;
-    }
-
-    libzcash::MerklePath path() {
-        assert(witnessed);
-
-        if (!index) {
-            throw std::runtime_error("can't create an authentication path for the beginning of the tree");
-        }
-
-        merkle_authentication_path path(INCREMENTAL_MERKLE_TREE_DEPTH_TESTING);
-        tree->getWitness(*index, path);
-
-        libzcash::MerklePath ret;
-        ret.authentication_path = path;
-        ret.index = *index;
-
-        return ret;
-    }
-
-    uint256 root() {
-        std::vector<unsigned char> newrt_v(32);
-        tree->getRootValue(newrt_v);
-        return uint256(newrt_v);
-    }
-
-    void append(uint256 obj) {
-        std::vector<bool> new_index;
-        std::vector<unsigned char> obj_bv(obj.begin(), obj.end());
-
-        std::vector<bool> commitment_bv(256);
-        libzerocash::convertBytesVectorToVector(obj_bv, commitment_bv);
-
-        tree->insertElement(commitment_bv, new_index);
-
-        if (!witnessed) {
-            index = new_index;
-        }
-    }
-
-    OldIncrementalMerkleTree witness() {
-        OldIncrementalMerkleTree ret;
-        ret.tree->setTo(*tree);
-        ret.index = index;
-        ret.witnessed = true;
-
-        return ret;
-    }
-};
-
 template<typename A, typename B, typename C>
 void expect_ser_test_vector(B& b, const C& c, const A& tree) {
     expect_test_vector<B, C>(b, c);
-}
-
-template<typename B, typename C>
-void expect_ser_test_vector(B& b, const C& c, const OldIncrementalMerkleTree& tree) {
-    // Don't perform serialization tests on the old tree.
 }
 
 template<typename Tree, typename Witness>
@@ -250,13 +153,7 @@ void test_tree(Array root_tests, Array ser_tests, Array witness_ser_tests, Array
             } else {
                 auto path = wit.path();
 
-                // The old tree has some serious bugs which make it 
-                // fail some of these test vectors.
-                //
-                // The new tree is strictly more correct in its
-                // behavior, as we demonstrate by constructing and
-                // evaluating the tree over a dummy circuit.
-                if (typeid(Tree) != typeid(OldIncrementalMerkleTree)) {
+                {
                     expect_test_vector(path_iterator, path);
                     
                     typedef Fr<default_r1cs_ppzksnark_pp> FieldT;
@@ -316,8 +213,7 @@ void test_tree(Array root_tests, Array ser_tests, Array witness_ser_tests, Array
         }
     }
 
-    // The old tree would silently ignore appending when it was full.
-    if (typeid(Tree) != typeid(OldIncrementalMerkleTree)) {
+    {
         // Tree should be full now
         ASSERT_THROW(tree.append(uint256()), std::runtime_error);
 
@@ -337,7 +233,6 @@ TEST(merkletree, vectors) {
     Array path_tests = read_json(std::string(json_tests::merkle_path, json_tests::merkle_path + sizeof(json_tests::merkle_path)));
 
     test_tree<ZCTestingIncrementalMerkleTree, ZCTestingIncrementalWitness>(root_tests, ser_tests, witness_ser_tests, path_tests);
-    test_tree<OldIncrementalMerkleTree, OldIncrementalMerkleTree>(root_tests, ser_tests, witness_ser_tests, path_tests);
 }
 
 TEST(merkletree, deserializeInvalid) {
