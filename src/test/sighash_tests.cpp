@@ -12,6 +12,7 @@
 #include "test/test_bitcoin.h"
 #include "util.h"
 #include "version.h"
+#include "sodium.h"
 
 #include <iostream>
 
@@ -130,8 +131,8 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
             pourtx.serials[1] = GetRandHash();
             pourtx.ephemeralKey = GetRandHash();
             pourtx.randomSeed = GetRandHash();
-            pourtx.ciphertexts[0] = {insecure_rand() % 100, insecure_rand() % 100};
-            pourtx.ciphertexts[1] = {insecure_rand() % 100, insecure_rand() % 100};
+            randombytes_buf(pourtx.ciphertexts[0].begin(), pourtx.ciphertexts[0].size());
+            randombytes_buf(pourtx.ciphertexts[1].begin(), pourtx.ciphertexts[1].size());
             pourtx.macs[0] = GetRandHash();
             pourtx.macs[1] = GetRandHash();
             {
