@@ -149,10 +149,10 @@ public:
         consensus.nMajorityWindow = 100;
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.fPowAllowMinDifficultyBlocks = true;
-        pchMessageStart[0] = 0x01;
-        pchMessageStart[1] = 0x22;
-        pchMessageStart[2] = 0xaa;
-        pchMessageStart[3] = 0x1a;
+        pchMessageStart[0] = 0xf1;
+        pchMessageStart[1] = 0x2d;
+        pchMessageStart[2] = 0xea;
+        pchMessageStart[3] = 0x1c;
         vAlertPubKey = ParseHex("04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a");
         nDefaultPort = 18333;
         nMinerThreads = 0;
