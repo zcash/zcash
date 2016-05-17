@@ -30,7 +30,7 @@ void validate_params(int n, int k)
         std::cerr << "Parameters must satisfy n = 0 mod 8\n";
         throw invalid_params();
     }
-    if ((n/(k+1)) % 8 != 0) {
+    if ((n/(k + 1)) % 8 != 0) {
         std::cerr << "Parameters must satisfy n/(k+1) = 0 mod 8\n";
         throw invalid_params();
     }
@@ -44,20 +44,20 @@ int Equihash::InitialiseState(eh_HashState& base_state)
     memcpy(personalization+12, &k, 4);
     return crypto_generichash_blake2b_init_salt_personal(&base_state,
                                                          NULL, 0, // No key.
-                                                         n/8,
+                                                         n / 8,
                                                          NULL,    // No salt.
                                                          personalization);
 }
 
 StepRow::StepRow(unsigned int n, const eh_HashState& base_state, eh_index i) :
-        hash {new unsigned char[n/8]},
-        len {n/8},
+        hash {new unsigned char[n / 8]},
+        len {n / 8},
         indices {i}
 {
     eh_HashState state;
     state = base_state;
     crypto_generichash_blake2b_update(&state, (unsigned char*) &i, sizeof(eh_index));
-    crypto_generichash_blake2b_final(&state, hash, n/8);
+    crypto_generichash_blake2b_final(&state, hash, n / 8);
 
     assert(indices.size() == 1);
 }
@@ -108,9 +108,9 @@ StepRow& StepRow::operator^=(const StepRow& a)
 
 void StepRow::TrimHash(int l)
 {
-    unsigned char* p = new unsigned char[len-l];
-    for (int i = 0; i < len-l; i++)
-        p[i] = hash[i+l];
+    unsigned char* p = new unsigned char[len - l];
+    for (int i = 0; i < len - l; i++)
+        p[i] = hash[i + l];
     delete[] hash;
     hash = p;
     len -= l;
@@ -187,15 +187,15 @@ std::set<std::vector<eh_index>> Equihash::BasicSolve(const eh_HashState& base_st
             // 2b) Find next set of unordered pairs with collisions on the next n/(k+1) bits
             int j = 1;
             while (i+j < X.size() &&
-                    HasCollision(X[i], X[i+j], CollisionByteLength())) {
+                    HasCollision(X[i], X[i + j], CollisionByteLength())) {
                 j++;
             }
 
             // 2c) Calculate tuples (X_i ^ X_j, (i, j))
             for (int l = 0; l < j - 1; l++) {
                 for (int m = l + 1; m < j; m++) {
-                    if (DistinctIndices(X[i+l], X[i+m])) {
-                        Xc.push_back(X[i+l] ^ X[i+m]);
+                    if (DistinctIndices(X[i + l], X[i + m])) {
+                        Xc.push_back(X[i + l] ^ X[i + m]);
                         Xc.back().TrimHash(CollisionByteLength());
                     }
                 }
@@ -234,8 +234,8 @@ std::set<std::vector<eh_index>> Equihash::BasicSolve(const eh_HashState& base_st
         std::sort(X.begin(), X.end());
         LogPrint("pow", "- Finding collisions\n");
         for (int i = 0; i < X.size() - 1; i++) {
-            StepRow res = X[i] ^ X[i+1];
-            if (res.IsZero() && DistinctIndices(X[i], X[i+1])) {
+            StepRow res = X[i] ^ X[i + 1];
+            if (res.IsZero() && DistinctIndices(X[i], X[i + 1])) {
                 solns.insert(res.GetSolution());
             }
         }
@@ -262,21 +262,21 @@ bool Equihash::IsValidSolution(const eh_HashState& base_state, std::vector<eh_in
     while (X.size() > 1) {
         std::vector<StepRow> Xc;
         for (int i = 0; i < X.size(); i += 2) {
-            if (!HasCollision(X[i], X[i+1], CollisionByteLength())) {
+            if (!HasCollision(X[i], X[i + 1], CollisionByteLength())) {
                 LogPrint("pow", "Invalid solution: invalid collision length between StepRows\n");
                 LogPrint("pow", "X[i]   = %s\n", X[i].GetHex());
-                LogPrint("pow", "X[i+1] = %s\n", X[i+1].GetHex());
+                LogPrint("pow", "X[i+1] = %s\n", X[i + 1].GetHex());
                 return false;
             }
             if (X[i+1].IndicesBefore(X[i])) {
                 return false;
                 LogPrint("pow", "Invalid solution: Index tree incorrectly ordered\n");
             }
-            if (!DistinctIndices(X[i], X[i+1])) {
+            if (!DistinctIndices(X[i], X[i + 1])) {
                 LogPrint("pow", "Invalid solution: duplicate indices\n");
                 return false;
             }
-            Xc.push_back(X[i] ^ X[i+1]);
+            Xc.push_back(X[i] ^ X[i + 1]);
             Xc.back().TrimHash(CollisionByteLength());
         }
         X = Xc;
