@@ -16,7 +16,6 @@
 #include "util.h"
 
 #include <algorithm>
-#include <cmath>
 #include <iostream>
 #include <stdexcept>
 
@@ -247,7 +246,7 @@ std::set<std::vector<eh_index>> Equihash::BasicSolve(const eh_HashState& base_st
 
 bool Equihash::IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln)
 {
-    eh_index soln_size { pow(2, k) };
+    eh_index soln_size { 1u << k };
     if (soln.size() != soln_size) {
         LogPrint("pow", "Invalid solution size: %d\n", soln.size());
         return false;
