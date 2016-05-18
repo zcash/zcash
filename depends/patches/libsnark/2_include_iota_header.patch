@@ -1,0 +1,31 @@
+commit c437365ec98ec77754287594d2d3748901d0d176
+Author: Taylor Hornby <taylor@defuse.ca>
+Date:   Wed May 18 10:49:58 2016 -0600
+
+    Include header required for std::iota.
+
+diff --git a/src/common/data_structures/integer_permutation.cpp b/src/common/data_structures/integer_permutation.cpp
+index f9f9327..378ea7e 100644
+--- a/src/common/data_structures/integer_permutation.cpp
++++ b/src/common/data_structures/integer_permutation.cpp
+@@ -15,6 +15,7 @@
+ 
+ #include <algorithm>
+ #include <cassert>
++#include <numeric>
+ #include <unordered_set>
+ 
+ namespace libsnark {
+diff --git a/src/common/data_structures/sparse_vector.tcc b/src/common/data_structures/sparse_vector.tcc
+index 26429a5..cfc5d75 100644
+--- a/src/common/data_structures/sparse_vector.tcc
++++ b/src/common/data_structures/sparse_vector.tcc
+@@ -16,6 +16,8 @@
+ 
+ #include "algebra/scalar_multiplication/multiexp.hpp"
+ 
++#include <numeric>
++
+ namespace libsnark {
+ 
+ template<typename T>
