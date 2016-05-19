@@ -38,7 +38,7 @@ function zcashd_valgrind_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
     rm -f valgrind.out
-    valgrind --leak-check=yes --error-limit=no --log-file="valgrind.out" ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
+    valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
     ZCASHD_PID=$!
 }
 
