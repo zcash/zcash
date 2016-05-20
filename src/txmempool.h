@@ -309,6 +309,7 @@ public:
     }
 
     bool lookup(uint256 hash, CTransaction& result) const;
+    bool lookup(uint256 hash, CTransaction& result, int64_t& time) const;
 
     /** Estimate fee rate needed to get into the next nBlocks */
     CFeeRate estimateFee(int nBlocks) const;

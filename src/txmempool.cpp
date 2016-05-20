@@ -711,13 +711,21 @@ void CTxMemPool::queryHashes(std::vector<uint256>& vtxid)
     std::sort(vtxid.begin(), vtxid.end(), DepthAndScoreComparator(this));
 }
 
-bool CTxMemPool::lookup(uint256 hash, CTransaction& result) const
+
+bool CTxMemPool::lookup(uint256 hash, CTransaction& result, int64_t& time) const
 {
     LOCK(cs);
     indexed_transaction_set::const_iterator i = mapTx.find(hash);
     if (i == mapTx.end()) return false;
     result = i->GetTx();
+    time = i->GetTime();
     return true;
+}
+
+bool CTxMemPool::lookup(uint256 hash, CTransaction& result) const
+{
+    int64_t time;
+    return CTxMemPool::lookup(hash, result, time);
 }
 
 CFeeRate CTxMemPool::estimateFee(int nBlocks) const
