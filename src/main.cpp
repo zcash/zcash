@@ -89,6 +89,10 @@ int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
 
 std::optional<unsigned int> expiryDeltaArg = std::nullopt;
 
+std::map<uint256, CTransaction> mapRelay;
+std::deque<std::pair<int64_t, uint256> > vRelayExpiration;
+CCriticalSection cs_mapRelay;
+
 CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
 CAmount maxTxFee = DEFAULT_TRANSACTION_MAXFEE;
 
@@ -6132,28 +6136,29 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
             }
             else if (inv.IsKnownType())
             {
+                CTransaction tx;
                 // Send stream from relay memory
-                bool pushed = false;
+                bool push = false;
                 {
                     LOCK(cs_mapRelay);
                     map<uint256, CTransaction>::iterator mi = mapRelay.find(inv.hash);
                     if (mi != mapRelay.end() && !IsExpiringSoonTx((*mi).second, currentHeight + 1)) {
-                        pfrom->PushMessage(inv.GetCommand(), (*mi).second);
-                        pushed = true;
+                        tx = (*mi).second;
+                        push = true;
                     }
                 }
-                if (!pushed && inv.type == MSG_TX) {
-                    CTransaction tx;
+                if (!push && inv.type == MSG_TX) {
                     int64_t txtime;
                     // To protect privacy, do not answer getdata using the mempool when
                     // that TX couldn't have been INVed in reply to a MEMPOOL request.
                     if (mempool.lookup(inv.hash, tx, txtime) && txtime <= pfrom->timeLastMempoolReq && !IsExpiringSoonTx(tx, currentHeight + 1)) {
-                        pfrom->PushMessage("tx", tx);
-                        pushed = true;
+                        push = true;
                     }
                 }
 
-                if (!pushed) {
+                if (push) {
+                    pfrom->PushMessage(inv.GetCommand(), tx);
+                } else {
                     vNotFound.push_back(inv);
                 }
             }
@@ -7502,14 +7507,26 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                         continue;
                     }
                     // Not in the mempool anymore? don't bother sending it.
-                    if (pto->pfilter) {
-                        CTransaction tx;
-                        if (!mempool.lookup(hash, tx)) continue;
-                        if (!pto->pfilter->IsRelevantAndUpdate(tx)) continue;
-                    }
+                    CTransaction tx;
+                    if (!mempool.lookup(hash, tx)) continue;
+                    if (pto->pfilter && !pto->pfilter->IsRelevantAndUpdate(tx)) continue;
                     // Send
                     vInv.push_back(CInv(MSG_TX, hash));
                     nRelayedTransactions++;
+                    {
+                        LOCK(cs_mapRelay);
+                        // Expire old relay messages
+                        while (!vRelayExpiration.empty() && vRelayExpiration.front().first < GetTime())
+                        {
+                            mapRelay.erase(vRelayExpiration.front().second);
+                            vRelayExpiration.pop_front();
+                        }
+
+                        auto ret = mapRelay.insert(std::make_pair(hash, tx));
+                        if (ret.second) {
+                            vRelayExpiration.push_back(std::make_pair(GetTime() + 15 * 60, hash));
+                        }
+                    }
                     if (vInv.size() == MAX_INV_SZ) {
                         pto->PushMessage("inv", vInv);
                         vInv.clear();
