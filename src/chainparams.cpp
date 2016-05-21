@@ -20,6 +20,14 @@
 
 #include "chainparamsseeds.h"
 
+std::string CDNSSeedData::getHost(uint64_t requiredServiceBits) const {
+    //use default host for non-filter-capable seeds or if we use the default service bits (NODE_NETWORK)
+    if (!supportsServiceBitsFiltering || requiredServiceBits == NODE_NETWORK)
+        return host;
+
+    return strprintf("x%x.%s", requiredServiceBits, host);
+}
+
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, const uint256& nNonce, const std::vector<unsigned char>& nSolution, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
     // To create a genesis block for a new chain which is Overwintered:
@@ -558,6 +566,7 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
+        // nodes with support for servicebits filtering should be at the top
         vSeeds.push_back(CDNSSeedData("z.cash", "dnsseed.testnet.z.cash")); // Zcash
         vSeeds.push_back(CDNSSeedData("zfnd.org", "testnet.seeder.zfnd.org")); // Zcash Foundation
         vSeeds.push_back(CDNSSeedData("yolo.money", "testnet.is.yolo.money")); // gtank
