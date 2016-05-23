@@ -603,8 +603,8 @@ static void ZC_LoadParams()
     struct timeval tv_start, tv_end;
     float elapsed;
 
-    boost::filesystem::path pk_path = ZC_GetParamsDir() / "z3-proving.key";
-    boost::filesystem::path vk_path = ZC_GetParamsDir() / "z3-verification.key";
+    boost::filesystem::path pk_path = ZC_GetParamsDir() / "z4-proving.key";
+    boost::filesystem::path vk_path = ZC_GetParamsDir() / "z4-verification.key";
 
     pzcashParams = ZCJoinSplit::Unopened();
 

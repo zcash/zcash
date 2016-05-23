@@ -133,6 +133,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
             pourtx.randomSeed = GetRandHash();
             randombytes_buf(pourtx.ciphertexts[0].begin(), pourtx.ciphertexts[0].size());
             randombytes_buf(pourtx.ciphertexts[1].begin(), pourtx.ciphertexts[1].size());
+            randombytes_buf(pourtx.proof.begin(), pourtx.proof.size());
             pourtx.macs[0] = GetRandHash();
             pourtx.macs[1] = GetRandHash();
 
