@@ -126,7 +126,7 @@ public:
     JoinSplitCircuit() {}
 
     bool verify(
-        const std::string& proof,
+        const boost::array<unsigned char, ZKSNARK_PROOF_SIZE>& proof,
         const uint256& pubKeyHash,
         const uint256& randomSeed,
         const boost::array<uint256, NumInputs>& macs,
@@ -142,7 +142,8 @@ public:
 
         r1cs_ppzksnark_proof<ppzksnark_ppT> r1cs_proof;
         std::stringstream ss;
-        ss.str(proof);
+        std::string proof_str(proof.begin(), proof.end());
+        ss.str(proof_str);
         ss >> r1cs_proof;
 
         uint256 h_sig = this->h_sig(randomSeed, nullifiers, pubKeyHash);
@@ -160,7 +161,7 @@ public:
         return r1cs_ppzksnark_verifier_strong_IC<ppzksnark_ppT>(*vk, witness, r1cs_proof);
     }
 
-    std::string prove(
+    boost::array<unsigned char, ZKSNARK_PROOF_SIZE> prove(
         const boost::array<JSInput, NumInputs>& inputs,
         const boost::array<JSOutput, NumOutputs>& outputs,
         boost::array<Note, NumOutputs>& out_notes,
@@ -266,8 +267,14 @@ public:
 
         std::stringstream ss;
         ss << proof;
+        std::string serialized_proof = ss.str();
 
-        return ss.str();
+        boost::array<unsigned char, ZKSNARK_PROOF_SIZE> result_proof;
+        //std::cout << "proof size in bytes when serialized: " << serialized_proof.size() << std::endl;
+        assert(serialized_proof.size() == ZKSNARK_PROOF_SIZE);
+        memcpy(&result_proof[0], &serialized_proof[0], ZKSNARK_PROOF_SIZE);
+
+        return result_proof;
     }
 };
 

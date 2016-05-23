@@ -39,10 +39,8 @@ else
   CXXFLAGS_overridden=no
 fi
 
-# Zerocash requries C++11 compatibility; set it early:
+# Zcash requries C++11 compatibility; set it early:
 CXXFLAGS="-std=c++11 $CXXFLAGS"
-# Zerocash uses this libsnark curve:
-CPPFLAGS="-DCURVE_ALT_BN128 $CPPFLAGS"
 
 AC_PROG_CXX
 m4_ifdef([AC_PROG_OBJCXX],[AC_PROG_OBJCXX])
