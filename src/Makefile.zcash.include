@@ -6,16 +6,16 @@ bin_PROGRAMS += \
 zcash_GenerateParams_SOURCES = zcash/GenerateParams.cpp
 zcash_GenerateParams_LDADD = \
   $(BOOST_LIBS) \
-  $(LIBZEROCASH) \
+  $(LIBZCASH) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZEROCASH_LIBS)
+  $(LIBZCASH_LIBS)
 
 # tests for utilities that come with zerocash
 zerocash_tests_utilTest_SOURCES = zerocash/tests/utilTest.cpp
 zerocash_tests_utilTest_LDADD = \
   $(BOOST_LIBS) \
-  $(LIBZEROCASH) \
+  $(LIBZCASH) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZEROCASH_LIBS)
+  $(LIBZCASH_LIBS)
