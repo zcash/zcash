@@ -14,7 +14,7 @@ public:
         bool c,
         bool d,
         pb_variable_array<FieldT> x,
-        boost::optional<pb_variable_array<FieldT>> y,
+        pb_variable_array<FieldT> y,
         std::shared_ptr<digest_variable<FieldT>> result
     ) : gadget<FieldT>(pb), result(result) {
 
@@ -26,18 +26,10 @@ public:
         discriminants.emplace_back(c ? ONE : ZERO);
         discriminants.emplace_back(d ? ONE : ZERO);
 
-        if (!y) {
-            // Create y and pad it with zeroes.
-            y = pb_variable_array<FieldT>();
-            while (y->size() < 256) {
-                y->emplace_back(ZERO);
-            }
-        }
-
         block.reset(new block_variable<FieldT>(pb, {
             discriminants,
             x,
-            *y
+            y
         }, "PRF_block"));
 
         hasher.reset(new sha256_compression_function_gadget<FieldT>(
@@ -58,6 +50,16 @@ public:
 };
 
 template<typename FieldT>
+pb_variable_array<FieldT> gen256zeroes(pb_variable<FieldT>& ZERO) {
+    pb_variable_array<FieldT> ret;
+    while (ret.size() < 256) {
+        ret.emplace_back(ZERO);
+    }
+
+    return ret;
+}
+
+template<typename FieldT>
 class PRF_addr_a_pk_gadget : public PRF_gadget<FieldT> {
 public:
     PRF_addr_a_pk_gadget(
@@ -65,7 +67,7 @@ public:
         pb_variable<FieldT>& ZERO,
         pb_variable_array<FieldT>& a_sk,
         std::shared_ptr<digest_variable<FieldT>> result
-    ) : PRF_gadget<FieldT>(pb, ZERO, 1, 1, 0, 0, a_sk, boost::none, result) {}
+    ) : PRF_gadget<FieldT>(pb, ZERO, 1, 1, 0, 0, a_sk, gen256zeroes(ZERO), result) {}
 };
 
 template<typename FieldT>
