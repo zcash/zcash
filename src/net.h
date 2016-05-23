@@ -10,6 +10,8 @@
 #include "compat.h"
 #include "fs.h"
 #include "hash.h"
+#include "crypto/common.h"
+#include "crypto/sha256.h"
 #include "limitedmap.h"
 #include "mruset.h"
 #include "netbase.h"
@@ -299,6 +301,9 @@ public:
     CBloomFilter* pfilter;
     int nRefCount;
     NodeId id;
+
+    std::vector<unsigned char> vchKeyedNetGroup;
+
     // Stored so we can pass a pointer to it across the Rust FFI for span.
     std::string idStr;
 
@@ -360,6 +365,22 @@ private:
     CNode(const CNode&);
     void operator=(const CNode&);
 
+    void CalculateKeyedNetGroup() {
+        static std::vector<unsigned char> vchSecretKey;
+        if (vchSecretKey.empty()) {
+            vchSecretKey.resize(32, 0);
+            GetRandBytes(vchSecretKey.data(), vchSecretKey.size());
+        }
+
+        std::vector<unsigned char> vchNetGroup(this->addr.GetGroup());
+
+        CSHA256 hash;
+        hash.Write(begin_ptr(vchNetGroup), vchNetGroup.size());
+        hash.Write(begin_ptr(vchSecretKey), vchSecretKey.size());
+
+        vchKeyedNetGroup.resize(32, 0);
+        hash.Finalize(begin_ptr(vchKeyedNetGroup));
+    }
 public:
 
     // Regenerate the span for this CNode. This re-queries the log filter to see
