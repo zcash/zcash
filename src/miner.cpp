@@ -514,7 +514,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     LogPrint("pow", "Running Equihash solver with nNonce = %s\n",
                              pblock->nNonce.ToString());
                     std::set<std::vector<unsigned int>> solns;
-                    EhBasicSolve(n, k, curr_state, solns);
+                    EhOptimisedSolve(n, k, curr_state, solns);
                     LogPrint("pow", "Solutions: %d\n", solns.size());
 
                     // Write the solution to the hash and compute the result.

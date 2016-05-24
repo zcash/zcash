@@ -114,7 +114,7 @@ double benchmark_solve_equihash()
 
     timer_start();
     std::set<std::vector<unsigned int>> solns;
-    EhBasicSolve(n, k, eh_state, solns);
+    EhOptimisedSolve(n, k, eh_state, solns);
     return timer_stop();
 }
 
