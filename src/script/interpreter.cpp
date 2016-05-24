@@ -14,6 +14,8 @@
 #include "script/script.h"
 #include "uint256.h"
 
+#include "sodium.h"
+
 using namespace std;
 
 typedef vector<unsigned char> valtype;
@@ -1030,6 +1032,7 @@ public:
         // Serialize the prevout
         ::Serialize(s, txTo.vin[nInput].prevout, nType, nVersion);
         // Serialize the script
+        assert(nInput != NOT_AN_INPUT);
         if (nInput != nIn)
             // Blank out other inputs' signatures
             ::Serialize(s, CScript(), nType, nVersion);
@@ -1073,22 +1076,14 @@ public:
 
         // Serialize vpour
         if (txTo.nVersion >= 2) {
-            // TODO:
             //
             // SIGHASH_* functions will hash portions of
             // the transaction for use in signatures. This
-            // keeps the pour cryptographically bound to
-            // the transaction from the perspective of the
-            // inputs (but not from the perspective of the
-            // pour).
+            // keeps the JoinSplit cryptographically bound
+            // to the transaction.
             //
-            // This must be rectified in the future.
-            // See zcash/#529
-            //
-            // It will be necessary to change this API to
-            // be abstract over whether an input script is
-            // being skipped or a pour is being skipped.
             ::Serialize(s, txTo.vpour, nType, nVersion);
+            ::Serialize(s, txTo.joinSplitPubKey, nType, nVersion);
         }
     }
 };
