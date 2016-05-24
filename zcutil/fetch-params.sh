@@ -85,7 +85,7 @@ cd "$PARAMS_DIR"
 
 # Now verify their hashes:
 echo 'Verifying parameter file integrity via sha256sum...'
-sha256sum --check - <<EOF
+shasum -a 256 --check <<EOF
 1f16beeafe4f0a22cc6d0ea07bdacb083dd10bfd5ce755f72fb5eaeba0ba7286  regtest/$REGTEST_PKEY_NAME
 1f16beeafe4f0a22cc6d0ea07bdacb083dd10bfd5ce755f72fb5eaeba0ba7286  testnet3/$REGTEST_PKEY_NAME
 3840f3192c987a032fc1855e0a6081b62ae9df98172c9d68e7ecf8bb38b18426  regtest/$REGTEST_VKEY_NAME
