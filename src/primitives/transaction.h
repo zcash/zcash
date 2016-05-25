@@ -44,14 +44,14 @@ public:
     // to spend it.
     boost::array<uint256, ZC_NUM_JS_OUTPUTS> commitments;
 
+    // Ephemeral key
+    uint256 ephemeralKey;
+
     // Ciphertexts
     // These contain trapdoors, values and other information
     // that the recipient needs, including a memo field. It
     // is encrypted using the scheme implemented in crypto/NoteEncryption.cpp
     boost::array<ZCNoteEncryption::Ciphertext, ZC_NUM_JS_OUTPUTS> ciphertexts;
-
-    // Ephemeral key
-    uint256 ephemeralKey;
 
     // Random seed
     uint256 randomSeed;
@@ -63,7 +63,7 @@ public:
 
     // Pour proof
     // This is a zk-SNARK which ensures that this pour is valid.
-    std::string proof;
+    boost::array<unsigned char, ZKSNARK_PROOF_SIZE> proof;
 
     CPourTx(): vpub_old(0), vpub_new(0) { }
 
@@ -91,8 +91,8 @@ public:
         READWRITE(anchor);
         READWRITE(serials);
         READWRITE(commitments);
-        READWRITE(ciphertexts);
         READWRITE(ephemeralKey);
+        READWRITE(ciphertexts);
         READWRITE(randomSeed);
         READWRITE(macs);
         READWRITE(proof);
@@ -106,8 +106,8 @@ public:
             a.anchor == b.anchor &&
             a.serials == b.serials &&
             a.commitments == b.commitments &&
-            a.ciphertexts == b.ciphertexts &&
             a.ephemeralKey == b.ephemeralKey &&
+            a.ciphertexts == b.ciphertexts &&
             a.randomSeed == b.randomSeed &&
             a.macs == b.macs &&
             a.proof == b.proof

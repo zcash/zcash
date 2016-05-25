@@ -33,7 +33,7 @@ void test_full_api(ZCJoinSplit* js)
     boost::array<uint256, 2> commitments;
     uint256 rt = tree.root();
     boost::array<ZCNoteEncryption::Ciphertext, 2> ciphertexts;
-    std::string proof;
+    boost::array<unsigned char, ZKSNARK_PROOF_SIZE> proof;
 
     {
         boost::array<JSInput, 2> inputs = {
