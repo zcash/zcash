@@ -8,6 +8,7 @@
 #include "NoteEncryption.hpp"
 
 #include "uint256.h"
+#include "uint252.h"
 
 #include <boost/array.hpp>
 
@@ -37,7 +38,7 @@ public:
     JSOutput();
     JSOutput(PaymentAddress addr, uint64_t value) : addr(addr), value(value) { }
 
-    Note note(const uint256& phi, const uint256& r, size_t i, const uint256& h_sig) const;
+    Note note(const uint252& phi, const uint256& r, size_t i, const uint256& h_sig) const;
 };
 
 template<size_t NumInputs, size_t NumOutputs>

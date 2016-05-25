@@ -2,7 +2,7 @@
 #include "crypto/sha256.h"
 
 uint256 PRF(bool a, bool b, bool c, bool d,
-            const uint256& x,
+            const uint252& x,
             const uint256& y)
 {
     uint256 res;
@@ -21,7 +21,7 @@ uint256 PRF(bool a, bool b, bool c, bool d,
     return res;
 }
 
-uint256 PRF_addr(const uint256& a_sk, unsigned char t)
+uint256 PRF_addr(const uint252& a_sk, unsigned char t)
 {
     uint256 y;
     *(y.begin()) = t;
@@ -29,22 +29,22 @@ uint256 PRF_addr(const uint256& a_sk, unsigned char t)
     return PRF(1, 1, 0, 0, a_sk, y);
 }
 
-uint256 PRF_addr_a_pk(const uint256& a_sk)
+uint256 PRF_addr_a_pk(const uint252& a_sk)
 {
     return PRF_addr(a_sk, 0);
 }
 
-uint256 PRF_addr_sk_enc(const uint256& a_sk)
+uint256 PRF_addr_sk_enc(const uint252& a_sk)
 {
     return PRF_addr(a_sk, 1);
 }
 
-uint256 PRF_nf(const uint256& a_sk, const uint256& rho)
+uint256 PRF_nf(const uint252& a_sk, const uint256& rho)
 {
     return PRF(1, 1, 1, 0, a_sk, rho);
 }
 
-uint256 PRF_pk(const uint256& a_sk, size_t i0, const uint256& h_sig)
+uint256 PRF_pk(const uint252& a_sk, size_t i0, const uint256& h_sig)
 {
     if ((i0 != 0) && (i0 != 1)) {
         throw std::domain_error("PRF_pk invoked with index out of bounds");
@@ -53,7 +53,7 @@ uint256 PRF_pk(const uint256& a_sk, size_t i0, const uint256& h_sig)
     return PRF(0, i0, 0, 0, a_sk, h_sig);
 }
 
-uint256 PRF_rho(const uint256& phi, size_t i0, const uint256& h_sig)
+uint256 PRF_rho(const uint252& phi, size_t i0, const uint256& h_sig)
 {
     if ((i0 != 0) && (i0 != 1)) {
         throw std::domain_error("PRF_rho invoked with index out of bounds");

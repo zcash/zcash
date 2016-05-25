@@ -131,7 +131,7 @@ public:
         // Witness a_sk for the input
         a_sk->bits.fill_with_bits(
             this->pb,
-            trailing252(uint256_to_bool_vector(key))
+            uint252_to_bool_vector(key)
         );
 
         // Witness a_pk for a_sk with PRF_addr

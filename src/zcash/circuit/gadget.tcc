@@ -187,7 +187,7 @@ public:
     }
 
     void generate_r1cs_witness(
-        const uint256& phi,
+        const uint252& phi,
         const uint256& rt,
         const uint256& h_sig,
         const boost::array<JSInput, NumInputs>& inputs,
@@ -234,7 +234,7 @@ public:
         // Witness phi
         zk_phi->bits.fill_with_bits(
             this->pb,
-            trailing252(uint256_to_bool_vector(phi))
+            uint252_to_bool_vector(phi)
         );
 
         // Witness h_sig
