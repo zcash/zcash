@@ -334,8 +334,10 @@ CAddrInfo CAddrMan::Select_(bool newOnly)
     if (size() == 0)
         return CAddrInfo();
 
-    // Track number of attempts to find a table entry, before giving up
-    int nRetries = 0;
+    // Track number of attempts to find a table entry, before giving up to avoid infinite loop
+    const int kMaxRetries = 200000;         // magic number so unit tests can pass
+    const int kRetriesBetweenSleep = 1000;
+    const int kRetrySleepInterval = 100;    // milliseconds
 
     if (newOnly && nNew == 0)
         return CAddrInfo();
@@ -345,12 +347,17 @@ CAddrInfo CAddrMan::Select_(bool newOnly)
        (nTried > 0 && (nNew == 0 || RandomInt(2) == 0))) { 
         // use a tried node
         double fChanceFactor = 1.0;
-        while (nRetries++ < ADDRMAN_TRIED_BUCKET_COUNT) {
+        while (1) {
+            int i = 0;
             int nKBucket = RandomInt(ADDRMAN_TRIED_BUCKET_COUNT);
             int nKBucketPos = RandomInt(ADDRMAN_BUCKET_SIZE);
             while (vvTried[nKBucket][nKBucketPos] == -1) {
                 nKBucket = (nKBucket + insecure_rand()) % ADDRMAN_TRIED_BUCKET_COUNT;
                 nKBucketPos = (nKBucketPos + insecure_rand()) % ADDRMAN_BUCKET_SIZE;
+                if (i++ > kMaxRetries)
+                    return CAddrInfo();
+                if (i % kRetriesBetweenSleep == 0)
+                    MilliSleep(kRetrySleepInterval);
             }
             int nId = vvTried[nKBucket][nKBucketPos];
             assert(mapInfo.count(nId) == 1);
@@ -358,17 +365,21 @@ CAddrInfo CAddrMan::Select_(bool newOnly)
             if (RandomInt(1 << 30) < fChanceFactor * info.GetChance() * (1 << 30))
                 return info;
             fChanceFactor *= 1.2;
-            MilliSleep(100);
         }
     } else {
         // use a new node
         double fChanceFactor = 1.0;
-        while (nRetries++ < ADDRMAN_NEW_BUCKET_COUNT) {
+        while (1) {
+            int i = 0;
             int nUBucket = RandomInt(ADDRMAN_NEW_BUCKET_COUNT);
             int nUBucketPos = RandomInt(ADDRMAN_BUCKET_SIZE);
             while (vvNew[nUBucket][nUBucketPos] == -1) {
                 nUBucket = (nUBucket + insecure_rand()) % ADDRMAN_NEW_BUCKET_COUNT;
                 nUBucketPos = (nUBucketPos + insecure_rand()) % ADDRMAN_BUCKET_SIZE;
+                if (i++ > kMaxRetries)
+                    return CAddrInfo();
+                if (i % kRetriesBetweenSleep == 0)
+                    MilliSleep(kRetrySleepInterval);
             }
             int nId = vvNew[nUBucket][nUBucketPos];
             assert(mapInfo.count(nId) == 1);
@@ -376,7 +387,6 @@ CAddrInfo CAddrMan::Select_(bool newOnly)
             if (RandomInt(1 << 30) < fChanceFactor * info.GetChance() * (1 << 30))
                 return info;
             fChanceFactor *= 1.2;
-            MilliSleep(100);
         }
     }
     
