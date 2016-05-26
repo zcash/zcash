@@ -144,7 +144,7 @@ public:
 
 }
 
-void appendRandomCommitment(ZCIncrementalMerkleTree &tree)
+uint256 appendRandomCommitment(ZCIncrementalMerkleTree &tree)
 {
     libzcash::SpendingKey k = libzcash::SpendingKey::random();
     libzcash::PaymentAddress addr = k.address();
@@ -152,6 +152,8 @@ void appendRandomCommitment(ZCIncrementalMerkleTree &tree)
     libzcash::Note note(addr.a_pk, 0, uint256(), uint256());
 
     tree.append(note.cm());
+
+    return note.cm();
 }
 
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
@@ -207,6 +209,65 @@ BOOST_AUTO_TEST_CASE(anchors_flush_test)
         uint256 check_rt = tree.root();
 
         BOOST_CHECK(check_rt == newrt);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(chained_pours)
+{
+    CCoinsViewTest base;
+    CCoinsViewCacheTest cache(&base);
+
+    ZCIncrementalMerkleTree tree;
+
+    CPourTx ptx1;
+    ptx1.anchor = tree.root();
+    ptx1.commitments[0] = appendRandomCommitment(tree);
+    ptx1.commitments[1] = appendRandomCommitment(tree);
+
+    // Although it's not possible given our assumptions, if
+    // two pours create the same treestate twice, we should
+    // still be able to anchor to it.
+    CPourTx ptx1b;
+    ptx1b.anchor = tree.root();
+    ptx1b.commitments[0] = ptx1.commitments[0];
+    ptx1b.commitments[1] = ptx1.commitments[1];
+
+    CPourTx ptx2;
+    CPourTx ptx3;
+
+    ptx2.anchor = tree.root();
+    ptx3.anchor = tree.root();
+
+    ptx2.commitments[0] = appendRandomCommitment(tree);
+    ptx2.commitments[1] = appendRandomCommitment(tree);
+
+    ptx3.commitments[0] = appendRandomCommitment(tree);
+    ptx3.commitments[1] = appendRandomCommitment(tree);
+
+    {
+        CMutableTransaction mtx;
+        mtx.vpour.push_back(ptx2);
+
+        BOOST_CHECK(!cache.HavePourRequirements(mtx));
+    }
+
+    {
+        CMutableTransaction mtx;
+        mtx.vpour.push_back(ptx1);
+        mtx.vpour.push_back(ptx2);
+        mtx.vpour.push_back(ptx3);
+
+        BOOST_CHECK(cache.HavePourRequirements(mtx));
+    }
+
+    {
+        CMutableTransaction mtx;
+        mtx.vpour.push_back(ptx1);
+        mtx.vpour.push_back(ptx1b);
+        mtx.vpour.push_back(ptx2);
+        mtx.vpour.push_back(ptx3);
+
+        BOOST_CHECK(cache.HavePourRequirements(mtx));
     }
 }
 
