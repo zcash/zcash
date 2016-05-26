@@ -140,6 +140,18 @@ public:
 
 }
 
+void appendRandomCommitment(ZCIncrementalMerkleTree &tree)
+{
+    libzcash::SpendingKey k = libzcash::SpendingKey::random();
+    libzcash::PaymentAddress addr = k.address();
+
+    libzcash::Note note(addr.a_pk, 0, uint256(), uint256());
+
+    tree.append(note.cm());
+}
+
+BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
+
 BOOST_AUTO_TEST_CASE(serials_test)
 {
     CCoinsViewTest base;
@@ -162,16 +174,6 @@ BOOST_AUTO_TEST_CASE(serials_test)
     CCoinsViewCacheTest cache3(&base);
 
     BOOST_CHECK(!cache3.GetSerial(myserial));
-}
-
-void appendRandomCommitment(ZCIncrementalMerkleTree &tree)
-{
-    libzcash::SpendingKey k = libzcash::SpendingKey::random();
-    libzcash::PaymentAddress addr = k.address();
-
-    libzcash::Note note(addr.a_pk, 0, uint256(), uint256());
-
-    tree.append(note.cm());
 }
 
 BOOST_AUTO_TEST_CASE(anchors_flush_test)
@@ -272,8 +274,6 @@ BOOST_AUTO_TEST_CASE(anchors_test)
         }
     }
 }
-
-BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
 
 static const unsigned int NUM_SIMULATION_ITERATIONS = 40000;
 
