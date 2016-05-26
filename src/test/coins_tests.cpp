@@ -24,8 +24,12 @@ class CCoinsViewTest : public CCoinsView
     std::map<uint256, bool> mapSerials_;
 
 public:
+    CCoinsViewTest() {
+        hashBestAnchor_ = ZCIncrementalMerkleTree::empty_root();
+    }
+
     bool GetAnchorAt(const uint256& rt, ZCIncrementalMerkleTree &tree) const {
-        if (rt.IsNull()) {
+        if (rt == ZCIncrementalMerkleTree::empty_root()) {
             ZCIncrementalMerkleTree new_tree;
             tree = new_tree;
             return true;
@@ -214,12 +218,13 @@ BOOST_AUTO_TEST_CASE(anchors_test)
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
-    BOOST_CHECK(cache.GetBestAnchor() == uint256());
+    BOOST_CHECK(cache.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
 
     {
         ZCIncrementalMerkleTree tree;
 
         BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), tree));
+        BOOST_CHECK(cache.GetBestAnchor() == tree.root());
         appendRandomCommitment(tree);
         appendRandomCommitment(tree);
         appendRandomCommitment(tree);
