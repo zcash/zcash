@@ -251,13 +251,12 @@ public:
         return hash;
     }
 
-    // TODO: implement this to verify the shorter kind of signature
-    // TODO: make sure to check the s value thing etc.
-    // TODO: this used to have "const" at  the end, what does that mean??
-    bool Verify(const uint256& hash, const std::vector<unsigned char>& vchSig)
+    bool Verify(const uint256& hash, const std::vector<unsigned char>& vchSig) const
     {
-        // TODO implement signature verification.
-        return false;
+        // TODO: make sure to check the s < 0xffff.... value thing etc.
+        // TODO: use compact signatures (maybe just use the secp256k1 API
+        // instead of these classes).
+        return pubKey.Verify(hash, vchSig);
     }
 
 };

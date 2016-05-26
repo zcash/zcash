@@ -1083,7 +1083,9 @@ public:
             // to the transaction.
             //
             ::Serialize(s, txTo.vpour, nType, nVersion);
-            ::Serialize(s, txTo.joinSplitPubKey, nType, nVersion);
+            if (txTo.vpour.size() > 0) {
+                ::Serialize(s, txTo.joinSplitPubKey, nType, nVersion);
+            }
         }
     }
 };
@@ -1093,7 +1095,7 @@ public:
 uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType)
 {
     static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
-    if (nIn >= txTo.vin.size()) {
+    if (nIn >= txTo.vin.size() && nIn != NOT_AN_INPUT) {
         //  nIn out of range
         return one;
     }

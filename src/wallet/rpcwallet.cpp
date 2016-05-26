@@ -2682,7 +2682,7 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
     }
 
     // Add the signature
-    joinSplitPrivKey.SignCompact(dataToBeSigned, mtx.joinSplitSig);
+    joinSplitPrivKey.Sign(dataToBeSigned, mtx.joinSplitSig);
 
     CTransaction rawTx(mtx);
 

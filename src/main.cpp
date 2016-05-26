@@ -956,13 +956,26 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
                 return state.DoS(10, error("CheckTransaction(): prevout is null"),
                                  REJECT_INVALID, "bad-txns-prevout-null");
 
+        // TODO: #966.
+        if (tx.vpour.size() > 0) {
+            static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
+            // Empty output script.
+            CScript scriptCode;
+            uint256 dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL);
+            if (dataToBeSigned == one) {
+                return state.DoS(100, error("CheckTransaction(): error computing signature hash"),
+                                REJECT_INVALID, "error-computing-signature-hash");
+            }
+
+            // Add the signature
+            tx.joinSplitPubKey.Verify(dataToBeSigned, tx.joinSplitSig);
+        }
+
         // Ensure that zk-SNARKs verify
 
         if (state.PerformPourVerification()) {
             BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
-                // TODO: #808
-                uint256 pubKeyHash;
-
+                uint256 pubKeyHash = tx.joinSplitPubKey.GetZcashHash();
                 if (!pour.Verify(*pzcashParams, pubKeyHash)) {
                     return state.DoS(100, error("CheckTransaction(): pour does not verify"),
                                      REJECT_INVALID, "bad-txns-pour-verification-failed");
