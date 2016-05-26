@@ -105,31 +105,41 @@ def hex_str_to_bytes(hex_str):
 def str_to_b64str(string):
     return b64encode(string.encode('utf-8')).decode('ascii')
 
-def sync_blocks(rpc_connections, wait=1):
+def sync_blocks(rpc_connections, wait=1, timeout=60, allow_different_tips=False):
     """
-    Wait until everybody has the same block count, and has notified
-    all internal listeners of them
+    Wait until everybody has the same tip, and has notified
+    all internal listeners of them.
+
+    If allow_different_tips is True, waits until everyone has
+    the same block count.
     """
-    while True:
-        counts = [ x.getblockcount() for x in rpc_connections ]
-        if counts == [ counts[0] ]*len(counts):
+    while timeout > 0:
+        if allow_different_tips:
+            tips = [ x.getblockcount() for x in rpc_connections ]
+        else:
+            tips = [ x.getbestblockhash() for x in rpc_connections ]
+        if tips == [ tips[0] ]*len(tips):
             break
         time.sleep(wait)
+        timeout -= wait
 
     # Now that the block counts are in sync, wait for the internal
     # notifications to finish
-    while True:
+    while timeout > 0:
         notified = [ x.getblockchaininfo()['fullyNotified'] for x in rpc_connections ]
         if notified == [ True ] * len(notified):
-            break
+            return True
         time.sleep(wait)
+        timeout -= wait
 
-def sync_mempools(rpc_connections, wait=1):
+    raise AssertionError("Block sync failed")
+
+def sync_mempools(rpc_connections, wait=1, timeout=60):
     """
     Wait until everybody has the same transactions in their memory
     pools, and has notified all internal listeners of them
     """
-    while True:
+    while timeout > 0:
         pool = set(rpc_connections[0].getrawmempool())
         num_match = 1
         for i in range(1, len(rpc_connections)):
@@ -138,14 +148,18 @@ def sync_mempools(rpc_connections, wait=1):
         if num_match == len(rpc_connections):
             break
         time.sleep(wait)
+        timeout -= wait
 
     # Now that the mempools are in sync, wait for the internal
     # notifications to finish
-    while True:
+    while timeout > 0:
         notified = [ x.getmempoolinfo()['fullyNotified'] for x in rpc_connections ]
         if notified == [ True ] * len(notified):
-            break
+            return True
         time.sleep(wait)
+        timeout -= wait
+
+    raise AssertionError("Mempool sync failed")
 
 bitcoind_processes = {}
 

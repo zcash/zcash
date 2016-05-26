@@ -6,7 +6,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, \
     start_nodes, start_node, connect_nodes_bi, bitcoind_processes, \
-    nuparams, OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID
+    nuparams, sync_blocks, OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID
 
 import time
 
@@ -48,7 +48,7 @@ class RewindBlockIndexTest (BitcoinTestFramework):
         print("Mining diverging blocks")
         block10s = self.nodes[1].generate(1)[0]
         block10o = self.nodes[2].generate(1)[0]
-        self.sync_all()
+        sync_blocks(self.nodes, allow_different_tips=True)
 
         assert_equal(self.nodes[0].getbestblockhash(), block10o)
         assert_equal(self.nodes[1].getbestblockhash(), block10s)
