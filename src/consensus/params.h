@@ -19,8 +19,8 @@ struct Params {
     /**
      * Shift based on a linear ramp for slow start:
      *
-     * MAX_SUBSIDY*(t_s/2 + t/r) = MAX_SUBSIDY*t_h  Coin balance
-     *                 t_s + t_r = t_h + t_c        Block balance
+     * MAX_SUBSIDY*(t_s/2 + t_r) = MAX_SUBSIDY*t_h  Coin balance
+     *              t_s   + t_r  = t_h + t_c        Block balance
      *
      * t_s = nSubsidySlowStartInterval
      * t_r = number of blocks between end of slow start and first halving
