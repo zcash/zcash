@@ -135,14 +135,14 @@ bool HasCollision(StepRow& a, StepRow& b, int l)
 // Checks if the intersection of a.indices and b.indices is empty
 bool DistinctIndices(const StepRow& a, const StepRow& b)
 {
-	for(auto const& value1: a.indices) {
-		for(auto const& value2: b.indices) {
-			if (value1==value2) {
-				return false;
-			}
-		}
-	}
-	return true;
+    for(auto const& value1: a.indices) {
+        for(auto const& value2: b.indices) {
+            if (value1==value2) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 Equihash::Equihash(unsigned int n, unsigned int k) :
