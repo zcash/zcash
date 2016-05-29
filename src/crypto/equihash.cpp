@@ -135,22 +135,14 @@ bool HasCollision(StepRow& a, StepRow& b, int l)
 // Checks if the intersection of a.indices and b.indices is empty
 bool DistinctIndices(const StepRow& a, const StepRow& b)
 {
-    std::vector<eh_index> aSrt(a.indices);
-    std::vector<eh_index> bSrt(b.indices);
-
-    std::sort(aSrt.begin(), aSrt.end());
-    std::sort(bSrt.begin(), bSrt.end());
-
-    unsigned int i = 0;
-    for (unsigned int j = 0; j < bSrt.size(); j++) {
-        while (aSrt[i] < bSrt[j]) {
-            i++;
-            if (i == aSrt.size()) { return true; }
-        }
-        assert(aSrt[i] >= bSrt[j]);
-        if (aSrt[i] == bSrt[j]) { return false; }
-    }
-    return true;
+	for(auto const& value1: a.indices) {
+		for(auto const& value2: b.indices) {
+			if (value1==value2) {
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 Equihash::Equihash(unsigned int n, unsigned int k) :
