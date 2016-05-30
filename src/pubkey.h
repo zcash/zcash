@@ -9,7 +9,6 @@
 #include "hash.h"
 #include "serialize.h"
 #include "uint256.h"
-#include "sodium.h"
 
 #include <stdexcept>
 #include <vector>
@@ -187,77 +186,6 @@ public:
     //! Derive BIP32 child pubkey.
     bool Derive(CPubKey& pubkeyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const;
 };
-
-class CCompressedPubKey {
-private:
-    CPubKey pubKey;
-public:
-
-    CCompressedPubKey()
-    {
-        // pubKey's 0-argument constructor invalidates it.
-    }
-
-    CCompressedPubKey(const CPubKey &pubKey)
-    {
-        this->pubKey = pubKey;
-        // TODO: check that it's compressed and valid and throw exception if
-        // not.
-    }
-
-    unsigned int GetSerializeSize(int nType, int nVersion) const
-    {
-        assert(pubKey.size() == 33);
-        return pubKey.size();
-    }
-
-    template <typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const
-    {
-        unsigned int len = pubKey.size();
-        s.write((char*)pubKey.begin(), len);
-    }
-
-    template <typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion)
-    {
-        unsigned int len = 33;
-        s.read((char*)pubKey.begin(), len);
-        // TODO: check that it's compressed and valid.
-    }
-
-    //! Get the 256-bit hash of this public key for the Zcash protocol.
-    uint256 GetZcashHash() const
-    {
-        // TODO: is the thing in vch actually the right thing to hash/encode?
-
-        const unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES]
-        = {'Z','c','a','s','h','E','C','D','S','A','P','u','b','K','e','y'};
-
-        uint256 hash;
-        if (crypto_generichash_blake2b_salt_personal(hash.begin(), 32,
-                                                    pubKey.begin(), pubKey.size(),
-                                                    NULL, 0, // No key.
-                                                    NULL,    // No salt.
-                                                    personalization
-                                                    ) != 0)
-        {
-            throw std::logic_error("hash function failure");
-        }
-
-        return hash;
-    }
-
-    bool Verify(const uint256& hash, const std::vector<unsigned char>& vchSig) const
-    {
-        // TODO: make sure to check the s < 0xffff.... value thing etc.
-        // TODO: use compact signatures (maybe just use the secp256k1 API
-        // instead of these classes).
-        return pubKey.Verify(hash, vchSig);
-    }
-
-};
-
 
 struct CExtPubKey {
     unsigned char nDepth;

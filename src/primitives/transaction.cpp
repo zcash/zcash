@@ -134,8 +134,8 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<std::vector<CTxOut>*>(&vout) = tx.vout;
     *const_cast<unsigned int*>(&nLockTime) = tx.nLockTime;
     *const_cast<std::vector<CPourTx>*>(&vpour) = tx.vpour;
-    *const_cast<CCompressedPubKey*>(&joinSplitPubKey) = tx.joinSplitPubKey;
-    *const_cast<std::vector<unsigned char>*>(&joinSplitSig) = tx.joinSplitSig;
+    *const_cast<uint256*>(&joinSplitPubKey) = tx.joinSplitPubKey;
+    *const_cast<joinsplit_sig_t*>(&joinSplitSig) = tx.joinSplitSig;
     *const_cast<uint256*>(&hash) = tx.hash;
     return *this;
 }

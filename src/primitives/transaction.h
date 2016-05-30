@@ -10,7 +10,6 @@
 #include "script/script.h"
 #include "serialize.h"
 #include "uint256.h"
-#include "pubkey.h"
 
 #include <boost/array.hpp>
 
@@ -291,6 +290,8 @@ private:
     void UpdateHash() const;
 
 public:
+    typedef boost::array<unsigned char, 64> joinsplit_sig_t;
+
     static const int32_t CURRENT_VERSION=1;
 
     // The local variables are made const to prevent unintended modification
@@ -303,10 +304,8 @@ public:
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
     const std::vector<CPourTx> vpour;
-    // TODO: This should be an unsigned char[33] (or boost array)
-    const CCompressedPubKey joinSplitPubKey;
-    // TODO: This should be an unsigned char[64] (or boost array)
-    const std::vector<unsigned char> joinSplitSig;
+    const uint256 joinSplitPubKey;
+    const joinsplit_sig_t joinSplitSig;
 
     /** Construct a CTransaction that qualifies as IsNull() */
     CTransaction();
@@ -328,8 +327,8 @@ public:
         if (nVersion >= 2) {
             READWRITE(*const_cast<std::vector<CPourTx>*>(&vpour));
             if (vpour.size() > 0) {
-                READWRITE(*const_cast<CCompressedPubKey*>(&joinSplitPubKey));
-                READWRITE(*const_cast<std::vector<unsigned char>*>(&joinSplitSig));
+                READWRITE(*const_cast<uint256*>(&joinSplitPubKey));
+                READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
             }
         }
         if (ser_action.ForRead())
@@ -384,10 +383,8 @@ struct CMutableTransaction
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
     std::vector<CPourTx> vpour;
-    // TODO: This should be an unsigned char[33] (or boost array)
-    CCompressedPubKey joinSplitPubKey;
-    // TODO: This should be an unsigned char[64] (or boost array)
-    std::vector<unsigned char> joinSplitSig;
+    uint256 joinSplitPubKey;
+    boost::array<unsigned char, 64> joinSplitSig;
 
     CMutableTransaction();
     CMutableTransaction(const CTransaction& tx);

@@ -5,6 +5,8 @@
 
 #include "main.h"
 
+#include "sodium.h"
+
 #include "addrman.h"
 #include "alert.h"
 #include "arith_uint256.h"
@@ -967,19 +969,20 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
                                 REJECT_INVALID, "error-computing-signature-hash");
             }
 
-            // Verify the signature
-            if (!tx.joinSplitPubKey.Verify(dataToBeSigned, tx.joinSplitSig)) {
-                return state.DoS(100, error("CheckTransaction(): JoinSplit signature does not verify"),
+            if (crypto_sign_verify_detached(&tx.joinSplitSig[0],
+                                            dataToBeSigned.begin(), 32,
+                                            tx.joinSplitPubKey.begin()
+                                           ) != 0) {
+                return state.DoS(100, error("CheckTransaction(): invalid joinsplit signature"),
                                 REJECT_INVALID, "invalid-joinsplit-signature");
             }
 
-            // Ensure that zk-SNARKs verify
-            uint256 pubKeyHash = tx.joinSplitPubKey.GetZcashHash();
             if (state.PerformPourVerification()) {
+                // Ensure that zk-SNARKs verify
                 BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
-                    if (!pour.Verify(*pzcashParams, pubKeyHash)) {
+                    if (!pour.Verify(*pzcashParams, tx.joinSplitPubKey)) {
                         return state.DoS(100, error("CheckTransaction(): pour does not verify"),
-                                        REJECT_INVALID, "bad-txns-pour-verification-failed");
+                                         REJECT_INVALID, "bad-txns-pour-verification-failed");
                     }
                 }
             }
