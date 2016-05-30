@@ -956,8 +956,8 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
                 return state.DoS(10, error("CheckTransaction(): prevout is null"),
                                  REJECT_INVALID, "bad-txns-prevout-null");
 
-        // TODO: #966.
         if (tx.vpour.size() > 0) {
+            // TODO: #966.
             static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
             // Empty output script.
             CScript scriptCode;
@@ -967,18 +967,20 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
                                 REJECT_INVALID, "error-computing-signature-hash");
             }
 
-            // Add the signature
-            tx.joinSplitPubKey.Verify(dataToBeSigned, tx.joinSplitSig);
-        }
+            // Verify the signature
+            if (!tx.joinSplitPubKey.Verify(dataToBeSigned, tx.joinSplitSig)) {
+                return state.DoS(100, error("CheckTransaction(): JoinSplit signature does not verify"),
+                                REJECT_INVALID, "invalid-joinsplit-signature");
+            }
 
-        // Ensure that zk-SNARKs verify
-
-        if (state.PerformPourVerification()) {
-            BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
-                uint256 pubKeyHash = tx.joinSplitPubKey.GetZcashHash();
-                if (!pour.Verify(*pzcashParams, pubKeyHash)) {
-                    return state.DoS(100, error("CheckTransaction(): pour does not verify"),
-                                     REJECT_INVALID, "bad-txns-pour-verification-failed");
+            // Ensure that zk-SNARKs verify
+            uint256 pubKeyHash = tx.joinSplitPubKey.GetZcashHash();
+            if (state.PerformPourVerification()) {
+                BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+                    if (!pour.Verify(*pzcashParams, pubKeyHash)) {
+                        return state.DoS(100, error("CheckTransaction(): pour does not verify"),
+                                        REJECT_INVALID, "bad-txns-pour-verification-failed");
+                    }
                 }
             }
         }

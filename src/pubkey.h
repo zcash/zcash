@@ -215,7 +215,6 @@ public:
     void Serialize(Stream& s, int nType, int nVersion) const
     {
         unsigned int len = pubKey.size();
-        assert(len == 33);
         s.write((char*)pubKey.begin(), len);
     }
 
@@ -236,8 +235,6 @@ public:
         = {'Z','c','a','s','h','E','C','D','S','A','P','u','b','K','e','y'};
 
         uint256 hash;
-        assert(pubKey[0] == 2 || pubKey[0] == 3);
-        assert(pubKey.size() == 33);
         if (crypto_generichash_blake2b_salt_personal(hash.begin(), 32,
                                                     pubKey.begin(), pubKey.size(),
                                                     NULL, 0, // No key.

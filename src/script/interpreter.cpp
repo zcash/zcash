@@ -1085,6 +1085,8 @@ public:
             ::Serialize(s, txTo.vpour, nType, nVersion);
             if (txTo.vpour.size() > 0) {
                 ::Serialize(s, txTo.joinSplitPubKey, nType, nVersion);
+                std::vector<unsigned char> nullSig = {};
+                ::Serialize(s, nullSig, nType, nVersion);
             }
         }
     }

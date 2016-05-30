@@ -396,7 +396,27 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         pourtx->serials[0] = GetRandHash();
         pourtx->serials[1] = GetRandHash();
 
-        BOOST_CHECK_MESSAGE(CheckTransaction(newTx, state), state.GetRejectReason());
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "invalid-joinsplit-signature");
+
+
+        CKey joinSplitPrivKey;
+        joinSplitPrivKey.MakeNewKey(true);
+        CCompressedPubKey joinSplitPubKey(joinSplitPrivKey.GetPubKey());
+
+        newTx.joinSplitPubKey = joinSplitPubKey;
+        CTransaction signTx(newTx);
+
+        // TODO: #966
+        static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
+        CScript scriptCode;
+        uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
+        BOOST_CHECK(dataToBeSigned != one);
+
+        // Add the signature
+        joinSplitPrivKey.Sign(dataToBeSigned, newTx.joinSplitSig);
+
+        BOOST_CHECK(CheckTransaction(newTx, state));
     }
     {
         // Ensure that values within the pour are well-formed.
