@@ -301,7 +301,7 @@ uint256 JoinSplit<NumInputs, NumOutputs>::h_sig(
     const boost::array<uint256, NumInputs>& nullifiers,
     const uint256& pubKeyHash
 ) {
-    unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES]
+    const unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES]
         = {'Z','c','a','s','h','C','o','m','p','u','t','e','h','S','i','g'};
 
     std::vector<unsigned char> block(randomSeed.begin(), randomSeed.end());

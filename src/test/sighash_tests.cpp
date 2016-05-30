@@ -13,6 +13,7 @@
 #include "util.h"
 #include "version.h"
 #include "sodium.h"
+#include "key.h"
 
 #include <iostream>
 
@@ -81,6 +82,8 @@ uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, un
         txTmp.vin.resize(1);
     }
 
+    txTmp.joinSplitSig = {};
+
     // Serialize and hash
     CHashWriter ss(SER_GETHASH, 0);
     ss << txTmp << nHashType;
@@ -139,6 +142,21 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
 
             tx.vpour.push_back(pourtx);
         }
+
+        CKey joinSplitPrivKey;
+        joinSplitPrivKey.MakeNewKey(true);
+        CCompressedPubKey joinSplitPubKey(joinSplitPrivKey.GetPubKey());
+        tx.joinSplitPubKey = joinSplitPubKey;
+        CTransaction signTx(tx);
+
+        // TODO: #966
+        static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
+        CScript scriptCode;
+        uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
+        BOOST_CHECK(dataToBeSigned != one);
+
+        // Add the signature
+        joinSplitPrivKey.Sign(dataToBeSigned, tx.joinSplitSig);
     }
 }
 
