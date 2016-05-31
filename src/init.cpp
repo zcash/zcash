@@ -1354,8 +1354,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     if (mapArgs.count("-whitelist")) {
-        for (const std::string& net : mapMultiArgs["-whitelist"]) {
-            CSubNet subnet(net);
+        BOOST_FOREACH(const std::string& net, mapMultiArgs["-whitelist"]) {
+            CSubNet subnet;
+            LookupSubNet(net.c_str(), subnet);
             if (!subnet.IsValid())
                 return InitError(strprintf(_("Invalid netmask specified in -whitelist: '%s'"), net));
             CNode::AddWhitelistedRange(subnet);
