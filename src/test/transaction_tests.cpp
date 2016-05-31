@@ -16,6 +16,8 @@
 #include "script/script_error.h"
 #include "primitives/transaction.h"
 
+#include "sodium.h"
+
 #include <map>
 #include <string>
 
@@ -379,6 +381,9 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         CMutableTransaction newTx(tx);
         CValidationState state;
 
+        unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
+        crypto_sign_keypair(newTx.joinSplitPubKey.begin(), joinSplitPrivKey);
+
         state.SetPerformPourVerification(false); // don't verify the snark
 
         // No pours, vin and vout, means it should be invalid.
@@ -396,7 +401,23 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         pourtx->serials[0] = GetRandHash();
         pourtx->serials[1] = GetRandHash();
 
-        BOOST_CHECK_MESSAGE(CheckTransaction(newTx, state), state.GetRejectReason());
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-invalid-joinsplit-signature");
+
+        // TODO: #966.
+        static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
+        // Empty output script.
+        CScript scriptCode;
+        CTransaction signTx(newTx);
+        uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
+        BOOST_CHECK(dataToBeSigned != one);
+
+        assert(crypto_sign_detached(&newTx.joinSplitSig[0], NULL,
+                                    dataToBeSigned.begin(), 32,
+                                    joinSplitPrivKey
+                                    ) == 0);
+
+        BOOST_CHECK(CheckTransaction(newTx, state));
     }
     {
         // Ensure that values within the pour are well-formed.

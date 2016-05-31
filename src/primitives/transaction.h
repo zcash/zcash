@@ -290,6 +290,8 @@ private:
     void UpdateHash() const;
 
 public:
+    typedef boost::array<unsigned char, 64> joinsplit_sig_t;
+
     static const int32_t CURRENT_VERSION=1;
 
     // The local variables are made const to prevent unintended modification
@@ -302,6 +304,8 @@ public:
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
     const std::vector<CPourTx> vpour;
+    const uint256 joinSplitPubKey;
+    const joinsplit_sig_t joinSplitSig;
 
     /** Construct a CTransaction that qualifies as IsNull() */
     CTransaction();
@@ -322,6 +326,10 @@ public:
         READWRITE(*const_cast<uint32_t*>(&nLockTime));
         if (nVersion >= 2) {
             READWRITE(*const_cast<std::vector<CPourTx>*>(&vpour));
+            if (vpour.size() > 0) {
+                READWRITE(*const_cast<uint256*>(&joinSplitPubKey));
+                READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
+            }
         }
         if (ser_action.ForRead())
             UpdateHash();
@@ -375,6 +383,8 @@ struct CMutableTransaction
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
     std::vector<CPourTx> vpour;
+    uint256 joinSplitPubKey;
+    CTransaction::joinsplit_sig_t joinSplitSig;
 
     CMutableTransaction();
     CMutableTransaction(const CTransaction& tx);
@@ -390,6 +400,10 @@ struct CMutableTransaction
         READWRITE(nLockTime);
         if (nVersion >= 2) {
             READWRITE(vpour);
+            if (vpour.size() > 0) {
+                READWRITE(joinSplitPubKey);
+                READWRITE(joinSplitSig);
+            }
         }
     }
 

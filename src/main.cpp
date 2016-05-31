@@ -5,6 +5,8 @@
 
 #include "main.h"
 
+#include "sodium.h"
+
 #include "addrman.h"
 #include "alert.h"
 #include "arith_uint256.h"
@@ -31,6 +33,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/math/distributions/poisson.hpp>
 #include <boost/thread.hpp>
+#include <boost/static_assert.hpp>
 
 using namespace std;
 
@@ -840,7 +843,30 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 
 
 
+// Taken from
+//   https://github.com/jedisct1/libsodium/commit/4099618de2cce5099ac2ec5ce8f2d80f4585606e
+// which was removed to maintain backwards compatibility in
+//   https://github.com/jedisct1/libsodium/commit/cb07df046f19ee0d5ad600c579df97aaa4295cc3
+static int
+crypto_sign_check_S_lt_l(const unsigned char *S)
+{
+    static const unsigned char l[32] =
+      { 0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
+        0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 };
+    unsigned char c = 0;
+    unsigned char n = 1;
+    unsigned int  i = 32;
 
+    do {
+        i--;
+        c |= ((S[i] - l[i]) >> 8) & n;
+        n &= ((S[i] ^ l[i]) - 1) >> 8;
+    } while (i != 0);
+
+    return -(c == 0);
+}
 
 
 
@@ -956,16 +982,39 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
                 return state.DoS(10, error("CheckTransaction(): prevout is null"),
                                  REJECT_INVALID, "bad-txns-prevout-null");
 
-        // Ensure that zk-SNARKs verify
+        if (tx.vpour.size() > 0) {
+            // TODO: #966.
+            static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
+            // Empty output script.
+            CScript scriptCode;
+            uint256 dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL);
+            if (dataToBeSigned == one) {
+                return state.DoS(100, error("CheckTransaction(): error computing signature hash"),
+                                 REJECT_INVALID, "error-computing-signature-hash");
+            }
 
-        if (state.PerformPourVerification()) {
-            BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
-                // TODO: #808
-                uint256 pubKeyHash;
+            BOOST_STATIC_ASSERT(crypto_sign_PUBLICKEYBYTES == 32);
 
-                if (!pour.Verify(*pzcashParams, pubKeyHash)) {
-                    return state.DoS(100, error("CheckTransaction(): pour does not verify"),
-                                     REJECT_INVALID, "bad-txns-pour-verification-failed");
+            if (crypto_sign_verify_detached(&tx.joinSplitSig[0],
+                                            dataToBeSigned.begin(), 32,
+                                            tx.joinSplitPubKey.begin()
+                                           ) != 0) {
+                return state.DoS(100, error("CheckTransaction(): invalid joinsplit signature"),
+                                 REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
+            }
+
+            if (crypto_sign_check_S_lt_l(&tx.joinSplitSig[32]) != 0) {
+                return state.DoS(100, error("CheckTransaction(): non-canonical ed25519 signature"),
+                                 REJECT_INVALID, "non-canonical-ed25519-signature");
+            }
+
+            if (state.PerformPourVerification()) {
+                // Ensure that zk-SNARKs verify
+                BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+                    if (!pour.Verify(*pzcashParams, tx.joinSplitPubKey)) {
+                        return state.DoS(100, error("CheckTransaction(): pour does not verify"),
+                                         REJECT_INVALID, "bad-txns-pour-verification-failed");
+                    }
                 }
             }
         }

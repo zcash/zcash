@@ -64,7 +64,6 @@ double benchmark_parameter_loading()
 
 double benchmark_create_joinsplit()
 {
-    // TODO: #808
     uint256 pubKeyHash;
 
     /* Get the anchor of an empty commitment tree. */
@@ -87,7 +86,6 @@ double benchmark_create_joinsplit()
 double benchmark_verify_joinsplit(const CPourTx &joinsplit)
 {
     timer_start();
-    // TODO: #808
     uint256 pubKeyHash;
     joinsplit.Verify(*pzcashParams, pubKeyHash);
     return timer_stop();

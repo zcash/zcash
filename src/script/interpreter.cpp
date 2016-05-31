@@ -1030,6 +1030,7 @@ public:
         // Serialize the prevout
         ::Serialize(s, txTo.vin[nInput].prevout, nType, nVersion);
         // Serialize the script
+        assert(nInput != NOT_AN_INPUT);
         if (nInput != nIn)
             // Blank out other inputs' signatures
             ::Serialize(s, CScript(), nType, nVersion);
@@ -1073,22 +1074,19 @@ public:
 
         // Serialize vpour
         if (txTo.nVersion >= 2) {
-            // TODO:
             //
             // SIGHASH_* functions will hash portions of
             // the transaction for use in signatures. This
-            // keeps the pour cryptographically bound to
-            // the transaction from the perspective of the
-            // inputs (but not from the perspective of the
-            // pour).
+            // keeps the JoinSplit cryptographically bound
+            // to the transaction.
             //
-            // This must be rectified in the future.
-            // See zcash/#529
-            //
-            // It will be necessary to change this API to
-            // be abstract over whether an input script is
-            // being skipped or a pour is being skipped.
             ::Serialize(s, txTo.vpour, nType, nVersion);
+            if (txTo.vpour.size() > 0) {
+                ::Serialize(s, txTo.joinSplitPubKey, nType, nVersion);
+
+                CTransaction::joinsplit_sig_t nullSig = {};
+                ::Serialize(s, nullSig, nType, nVersion);
+            }
         }
     }
 };
@@ -1098,7 +1096,7 @@ public:
 uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType)
 {
     static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
-    if (nIn >= txTo.vin.size()) {
+    if (nIn >= txTo.vin.size() && nIn != NOT_AN_INPUT) {
         //  nIn out of range
         return one;
     }

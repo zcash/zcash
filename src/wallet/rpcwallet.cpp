@@ -18,6 +18,9 @@
 #include "walletdb.h"
 #include "primitives/transaction.h"
 #include "zcbenchmarks.h"
+#include "script/interpreter.h"
+
+#include "sodium.h"
 
 #include <stdint.h>
 
@@ -2650,21 +2653,47 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         throw runtime_error("unsupported pour input/output counts");
     }
 
-    // TODO: #808
-    uint256 pubKeyHash;
+    uint256 joinSplitPubKey;
+    unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
+    crypto_sign_keypair(joinSplitPubKey.begin(), joinSplitPrivKey);
+
+    CMutableTransaction mtx(tx);
+    mtx.nVersion = 2;
+    mtx.joinSplitPubKey = joinSplitPubKey;
+
     CPourTx pourtx(*pzcashParams,
-                   pubKeyHash,
+                   joinSplitPubKey,
                    anchor,
                    {vpourin[0], vpourin[1]},
                    {vpourout[0], vpourout[1]},
                    vpub_old,
                    vpub_new);
 
-    assert(pourtx.Verify(*pzcashParams, pubKeyHash));
+    assert(pourtx.Verify(*pzcashParams, joinSplitPubKey));
 
-    CMutableTransaction mtx(tx);
-    mtx.nVersion = 2;
     mtx.vpour.push_back(pourtx);
+
+    // TODO: #966.
+    static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
+    // Empty output script.
+    CScript scriptCode;
+    CTransaction signTx(mtx);
+    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
+    if (dataToBeSigned == one) {
+        throw runtime_error("SignatureHash failed");
+    }
+
+    // Add the signature
+    assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
+                         dataToBeSigned.begin(), 32,
+                         joinSplitPrivKey
+                        ) == 0);
+
+    // Sanity check
+    assert(crypto_sign_verify_detached(&mtx.joinSplitSig[0],
+                                       dataToBeSigned.begin(), 32,
+                                       mtx.joinSplitPubKey.begin()
+                                      ) == 0);
 
     CTransaction rawTx(mtx);
 
@@ -2678,7 +2707,7 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         ss2 << ((unsigned char) 0x00);
         ss2 << pourtx.ephemeralKey;
         ss2 << pourtx.ciphertexts[0];
-        ss2 << pourtx.h_sig(*pzcashParams, pubKeyHash);
+        ss2 << pourtx.h_sig(*pzcashParams, joinSplitPubKey);
 
         encryptedBucket1 = HexStr(ss2.begin(), ss2.end());
     }
@@ -2687,7 +2716,7 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         ss2 << ((unsigned char) 0x01);
         ss2 << pourtx.ephemeralKey;
         ss2 << pourtx.ciphertexts[1];
-        ss2 << pourtx.h_sig(*pzcashParams, pubKeyHash);
+        ss2 << pourtx.h_sig(*pzcashParams, joinSplitPubKey);
 
         encryptedBucket2 = HexStr(ss2.begin(), ss2.end());
     }
