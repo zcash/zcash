@@ -33,6 +33,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/math/distributions/poisson.hpp>
 #include <boost/thread.hpp>
+#include <boost/static_assert.hpp>
 
 using namespace std;
 
@@ -991,6 +992,8 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
                 return state.DoS(100, error("CheckTransaction(): error computing signature hash"),
                                  REJECT_INVALID, "error-computing-signature-hash");
             }
+
+            BOOST_STATIC_ASSERT(crypto_sign_PUBLICKEYBYTES == 32);
 
             if (crypto_sign_verify_detached(&tx.joinSplitSig[0],
                                             dataToBeSigned.begin(), 32,

@@ -82,7 +82,7 @@ uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, un
     }
 
     // Blank out the joinsplit signature.
-    memset(&txTmp.joinSplitSig[0], 0, 64);
+    memset(&txTmp.joinSplitSig[0], 0, txTmp.joinSplitSig.size());
 
     // Serialize and hash
     CHashWriter ss(SER_GETHASH, 0);
