@@ -286,16 +286,16 @@ class CTransaction
 {
 private:
     /** Memory only. */
-    const uint256 hash;
-    void UpdateHash() const;
+    uint256 hash;
+    void UpdateHash();
 
 public:
     typedef boost::array<unsigned char, 64> joinsplit_sig_t;
 
     static const int32_t CURRENT_VERSION=1;
 
-    // The user of this class MUST NOT modify these variables. The cached
-    // hash value will not be updated if you do so.
+    // The user of this class MUST NOT directly modify these variables.
+    // The cached hash value will not be updated if you do so.
     int32_t nVersion;
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
@@ -316,16 +316,16 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(*const_cast<int32_t*>(&this->nVersion));
+        READWRITE(this->nVersion);
         nVersion = this->nVersion;
-        READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
-        READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
-        READWRITE(*const_cast<uint32_t*>(&nLockTime));
+        READWRITE(vin);
+        READWRITE(vout);
+        READWRITE(nLockTime);
         if (nVersion >= 2) {
-            READWRITE(*const_cast<std::vector<CPourTx>*>(&vpour));
+            READWRITE(vpour);
             if (vpour.size() > 0) {
-                READWRITE(*const_cast<uint256*>(&joinSplitPubKey));
-                READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
+                READWRITE(joinSplitPubKey);
+                READWRITE(joinSplitSig);
             }
         }
         if (ser_action.ForRead())
@@ -336,7 +336,7 @@ public:
         return vin.empty() && vout.empty();
     }
 
-    const uint256& GetHash() const {
+    uint256 GetHash() const {
         return hash;
     }
 
