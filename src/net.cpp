@@ -1518,7 +1518,9 @@ void ThreadOpenConnections()
             static bool done = false;
             if (!done) {
                 LogPrintf("Adding fixed seed nodes as DNS doesn't seem to be available.\n");
-                addrman.Add(convertSeed6(Params().FixedSeeds()), CNetAddr("127.0.0.1"));
+                CNetAddr local;
+                LookupHost("127.0.0.1", local, false);
+                addrman.Add(convertSeed6(Params().FixedSeeds()), local);
                 done = true;
             }
         }
