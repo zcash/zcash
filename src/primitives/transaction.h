@@ -289,6 +289,12 @@ private:
     const uint256 hash;
     void UpdateHash() const;
 
+    int32_t _nVersion;
+    std::vector<CTxIn> _vin;
+    std::vector<CTxOut> _vout;
+    uint32_t _nLockTime;
+    std::vector<CPourTx> _vpour;
+
 public:
     static const int32_t CURRENT_VERSION=1;
 
@@ -297,11 +303,11 @@ public:
     // actually immutable; deserialization and assignment are implemented,
     // and bypass the constness. This is safe, as they update the entire
     // structure, including the hash.
-    const int32_t nVersion;
-    const std::vector<CTxIn> vin;
-    const std::vector<CTxOut> vout;
-    const uint32_t nLockTime;
-    const std::vector<CPourTx> vpour;
+    const int32_t &nVersion = _nVersion;
+    const std::vector<CTxIn> &vin = _vin;
+    const std::vector<CTxOut> &vout = _vout;
+    const uint32_t &nLockTime = _nLockTime;
+    const std::vector<CPourTx> &vpour = _vpour;
 
     /** Construct a CTransaction that qualifies as IsNull() */
     CTransaction();
@@ -315,13 +321,13 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(*const_cast<int32_t*>(&this->nVersion));
-        nVersion = this->nVersion;
-        READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
-        READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
-        READWRITE(*const_cast<uint32_t*>(&nLockTime));
+        READWRITE(this->_nVersion);
+        nVersion = this->_nVersion;
+        READWRITE(_vin);
+        READWRITE(_vout);
+        READWRITE(_nLockTime);
         if (nVersion >= 2) {
-            READWRITE(*const_cast<std::vector<CPourTx>*>(&vpour));
+            READWRITE(_vpour);
         }
         if (ser_action.ForRead())
             UpdateHash();
