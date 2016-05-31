@@ -6145,7 +6145,7 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
                 if (mi != mapRelay.end() && !IsExpiringSoonTx(*mi->second, currentHeight + 1)) {
                     pfrom->PushMessage("tx", *mi->second);
                     push = true;
-                } else {
+                } else if (pfrom->timeLastMempoolReq) {
                     auto txinfo = mempool.info(inv.hash);
                     // To protect privacy, do not answer getdata using the mempool when
                     // that TX couldn't have been INVed in reply to a MEMPOOL request.
