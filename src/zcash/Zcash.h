@@ -12,6 +12,6 @@
 #define ZC_R_SIZE 32
 #define ZC_MEMO_SIZE 128
 
-#define ZKSNARK_PROOF_SIZE 584
+#define ZKSNARK_PROOF_SIZE 304
 
 #endif // _ZCCONSTANTS_H_
