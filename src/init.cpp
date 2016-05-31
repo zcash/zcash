@@ -26,6 +26,7 @@
 #include "mempool_limit.h"
 #include "metrics.h"
 #include "miner.h"
+#include "netbase.h"
 #include "net.h"
 #include "policy/policy.h"
 #include "rpc/server.h"

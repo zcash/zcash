@@ -11,7 +11,7 @@
 #include "compat.h"
 #include "fs.h"
 #include "limitedmap.h"
-#include "netbase.h"
+#include "netaddress.h"
 #include "protocol.h"
 #include "random.h"
 #include "streams.h"
