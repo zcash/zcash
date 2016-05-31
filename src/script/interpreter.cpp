@@ -1084,7 +1084,7 @@ public:
             if (txTo.vpour.size() > 0) {
                 ::Serialize(s, txTo.joinSplitPubKey, nType, nVersion);
 
-                boost::array<unsigned char, 64> nullSig = {};
+                CTransaction::joinsplit_sig_t nullSig = {};
                 ::Serialize(s, nullSig, nType, nVersion);
             }
         }

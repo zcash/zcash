@@ -384,7 +384,7 @@ struct CMutableTransaction
     uint32_t nLockTime;
     std::vector<CPourTx> vpour;
     uint256 joinSplitPubKey;
-    boost::array<unsigned char, 64> joinSplitSig;
+    CTransaction::joinsplit_sig_t joinSplitSig;
 
     CMutableTransaction();
     CMutableTransaction(const CTransaction& tx);
