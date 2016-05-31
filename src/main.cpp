@@ -989,7 +989,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
             uint256 dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL);
             if (dataToBeSigned == one) {
                 return state.DoS(100, error("CheckTransaction(): error computing signature hash"),
-                                REJECT_INVALID, "error-computing-signature-hash");
+                                 REJECT_INVALID, "error-computing-signature-hash");
             }
 
             if (crypto_sign_verify_detached(&tx.joinSplitSig[0],
@@ -997,12 +997,12 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
                                             tx.joinSplitPubKey.begin()
                                            ) != 0) {
                 return state.DoS(100, error("CheckTransaction(): invalid joinsplit signature"),
-                                REJECT_INVALID, "invalid-joinsplit-signature");
+                                 REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
             }
 
             if (crypto_sign_check_S_lt_l(&tx.joinSplitSig[32]) != 0) {
                 return state.DoS(100, error("CheckTransaction(): non-canonical ed25519 signature"),
-                                REJECT_INVALID, "non-canonical-ed25519-signature");
+                                 REJECT_INVALID, "non-canonical-ed25519-signature");
             }
 
             if (state.PerformPourVerification()) {

@@ -402,7 +402,7 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         pourtx->serials[1] = GetRandHash();
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
-        BOOST_CHECK(state.GetRejectReason() == "invalid-joinsplit-signature");
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-invalid-joinsplit-signature");
 
         // TODO: #966.
         static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
