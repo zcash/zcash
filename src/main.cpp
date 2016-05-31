@@ -7509,7 +7509,7 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                     nRelayedTransactions++;
                     {
                         // Expire old relay messages
-                        while (!vRelayExpiration.empty() && vRelayExpiration.front().first < GetTime())
+                        while (!vRelayExpiration.empty() && vRelayExpiration.front().first < nNow)
                         {
                             mapRelay.erase(vRelayExpiration.front().second);
                             vRelayExpiration.pop_front();
@@ -7517,7 +7517,7 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
 
                         auto ret = mapRelay.insert(std::make_pair(hash, std::move(txinfo.tx)));
                         if (ret.second) {
-                            vRelayExpiration.push_back(std::make_pair(GetTime() + 15 * 60, ret.first));
+                            vRelayExpiration.push_back(std::make_pair(nNow + 15 * 60 * 1000000, ret.first));
                         }
                     }
                     if (vInv.size() == MAX_INV_SZ) {
