@@ -120,10 +120,12 @@ FullStepRow<WIDTH>& FullStepRow<WIDTH>::operator=(const FullStepRow<WIDTH>& a)
 template<size_t WIDTH>
 bool StepRow<WIDTH>::IsZero(size_t len)
 {
-    char res = 0;
-    for (int i = 0; i < len; i++)
-        res |= hash[i];
-    return res == 0;
+    // This doesn't need to be constant time.
+    for (int i = 0; i < len; i++) {
+        if (hash[i] != 0)
+            return false;
+    }
+    return true;
 }
 
 template<size_t WIDTH>
@@ -139,10 +141,12 @@ std::vector<eh_index> FullStepRow<WIDTH>::GetIndices(size_t len, size_t lenIndic
 template<size_t WIDTH>
 bool HasCollision(StepRow<WIDTH>& a, StepRow<WIDTH>& b, int l)
 {
-    bool res = true;
-    for (int j = 0; j < l; j++)
-        res &= a.hash[j] == b.hash[j];
-    return res;
+    // This doesn't need to be constant time.
+    for (int j = 0; j < l; j++) {
+        if (a.hash[j] != b.hash[j])
+            return false;
+    }
+    return true;
 }
 
 template<size_t WIDTH>
@@ -334,6 +338,8 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
     // First run the algorithm with truncated indices
 
     eh_index soln_size { 1 << K };
+    // Each element of partialSolns is dynamically allocated in a call to
+    // GetTruncatedIndices(), and freed at the end of this function.
     std::vector<eh_trunc*> partialSolns;
     {
 

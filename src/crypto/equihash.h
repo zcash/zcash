@@ -135,42 +135,42 @@ public:
 
 #include "equihash.tcc"
 
-static Equihash<96,5> Eh965;
-static Equihash<48,5> Eh485;
+static Equihash<96,5> Eh96_5;
+static Equihash<48,5> Eh48_5;
 
-#define EhInitialiseState(n, k, base_state) \
-    if (n == 96 && k == 5) {                \
-        Eh965.InitialiseState(base_state);  \
-    } else if (n == 48 && k == 5) {         \
-        Eh485.InitialiseState(base_state);  \
-    } else {                                \
+#define EhInitialiseState(n, k, base_state)  \
+    if (n == 96 && k == 5) {                 \
+        Eh96_5.InitialiseState(base_state);  \
+    } else if (n == 48 && k == 5) {          \
+        Eh48_5.InitialiseState(base_state);  \
+    } else {                                 \
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
 
-#define EhBasicSolve(n, k, base_state, solns) \
-    if (n == 96 && k == 5) {                  \
-        solns = Eh965.BasicSolve(base_state); \
-    } else if (n == 48 && k == 5) {           \
-        solns = Eh485.BasicSolve(base_state); \
-    } else {                                  \
+#define EhBasicSolve(n, k, base_state, solns)   \
+    if (n == 96 && k == 5) {                    \
+        solns = Eh96_5.BasicSolve(base_state);  \
+    } else if (n == 48 && k == 5) {             \
+        solns = Eh48_5.BasicSolve(base_state);  \
+    } else {                                    \
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
 
-#define EhOptimisedSolve(n, k, base_state, solns) \
-    if (n == 96 && k == 5) {                      \
-        solns = Eh965.OptimisedSolve(base_state); \
-    } else if (n == 48 && k == 5) {               \
-        solns = Eh485.OptimisedSolve(base_state); \
-    } else {                                      \
+#define EhOptimisedSolve(n, k, base_state, solns)   \
+    if (n == 96 && k == 5) {                        \
+        solns = Eh96_5.OptimisedSolve(base_state);  \
+    } else if (n == 48 && k == 5) {                 \
+        solns = Eh48_5.OptimisedSolve(base_state);  \
+    } else {                                        \
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
 
-#define EhIsValidSolution(n, k, base_state, soln, ret) \
-    if (n == 96 && k == 5) {                           \
-        ret = Eh965.IsValidSolution(base_state, soln); \
-    } else if (n == 48 && k == 5) {                    \
-        ret = Eh485.IsValidSolution(base_state, soln); \
-    } else {                                           \
+#define EhIsValidSolution(n, k, base_state, soln, ret)   \
+    if (n == 96 && k == 5) {                             \
+        ret = Eh96_5.IsValidSolution(base_state, soln);  \
+    } else if (n == 48 && k == 5) {                      \
+        ret = Eh48_5.IsValidSolution(base_state, soln);  \
+    } else {                                             \
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
 
