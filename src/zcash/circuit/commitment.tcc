@@ -89,10 +89,6 @@ public:
     }
 
     void generate_r1cs_constraints() {
-        // TODO: This may not be necessary if SHA256 constrains
-        // its output digests to be boolean anyway.
-        intermediate_hash->generate_r1cs_constraints();
-
         hasher1->generate_r1cs_constraints();
         hasher2->generate_r1cs_constraints();
     }
