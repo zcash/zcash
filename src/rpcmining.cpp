@@ -150,7 +150,8 @@ Value generate(const Array& params, bool fHelp)
     }
     unsigned int nExtraNonce = 0;
     Array blockHashes;
-    Equihash eh {Params().EquihashN(), Params().EquihashK()};
+    unsigned int n = Params().EquihashN();
+    unsigned int k = Params().EquihashK();
     while (nHeight < nHeightEnd)
     {
         auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
@@ -164,7 +165,7 @@ Value generate(const Array& params, bool fHelp)
 
         // Hash state
         crypto_generichash_blake2b_state eh_state;
-        eh.InitialiseState(eh_state);
+        EhInitialiseState(n, k, eh_state);
 
         // I = the block header minus nonce and solution.
         CEquihashInput I{*pblock};
@@ -187,10 +188,13 @@ Value generate(const Array& params, bool fHelp)
                                               pblock->nNonce.size());
 
             // (x_1, x_2, ...) = A(I, V, n, k)
-            std::set<std::vector<unsigned int>> solns = eh.BasicSolve(curr_state);
+            std::set<std::vector<unsigned int>> solns;
+            EhBasicSolve(n, k, curr_state, solns);
 
             for (auto soln : solns) {
-                assert(eh.IsValidSolution(curr_state, soln));
+                bool isValid;
+                EhIsValidSolution(n, k, curr_state, soln, isValid);
+                assert(isValid);
                 pblock->nSolution = soln;
 
                 if (CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus())) {

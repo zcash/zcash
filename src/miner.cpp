@@ -443,7 +443,8 @@ void static BitcoinMiner(CWallet *pwallet)
     CReserveKey reservekey(pwallet);
     unsigned int nExtraNonce = 0;
 
-    Equihash eh {chainparams.EquihashN(), chainparams.EquihashK()};
+    unsigned int n = chainparams.EquihashN();
+    unsigned int k = chainparams.EquihashK();
 
     try {
         while (true) {
@@ -489,7 +490,7 @@ void static BitcoinMiner(CWallet *pwallet)
             while (true) {
                 // Hash state
                 crypto_generichash_blake2b_state state;
-                eh.InitialiseState(state);
+                EhInitialiseState(n, k, state);
 
                 // I = the block header minus nonce and solution.
                 CEquihashInput I{*pblock};
@@ -512,7 +513,8 @@ void static BitcoinMiner(CWallet *pwallet)
                     // (x_1, x_2, ...) = A(I, V, n, k)
                     LogPrint("pow", "Running Equihash solver with nNonce = %s\n",
                              pblock->nNonce.ToString());
-                    std::set<std::vector<unsigned int>> solns = eh.BasicSolve(curr_state);
+                    std::set<std::vector<unsigned int>> solns;
+                    EhOptimisedSolve(n, k, curr_state, solns);
                     LogPrint("pow", "Solutions: %d\n", solns.size());
 
                     // Write the solution to the hash and compute the result.

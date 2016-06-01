@@ -88,11 +88,12 @@ unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nF
 
 bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& params)
 {
-    Equihash eh {params.EquihashN(), params.EquihashK()};
+    unsigned int n = params.EquihashN();
+    unsigned int k = params.EquihashK();
 
     // Hash state
     crypto_generichash_blake2b_state state;
-    eh.InitialiseState(state);
+    EhInitialiseState(n, k, state);
 
     // I = the block header minus nonce and solution.
     CEquihashInput I{*pblock};
@@ -104,7 +105,9 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
     // H(I||V||...
     crypto_generichash_blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
 
-    if (!eh.IsValidSolution(state, pblock->nSolution))
+    bool isValid;
+    EhIsValidSolution(n, k, state, pblock->nSolution, isValid);
+    if (!isValid)
         return error("CheckEquihashSolution(): invalid solution");
 
     return true;
