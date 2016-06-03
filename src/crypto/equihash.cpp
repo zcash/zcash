@@ -19,6 +19,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <boost/optional.hpp>
+
 template<unsigned int N, unsigned int K>
 int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
 {
@@ -433,50 +435,62 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
     eh_index recreate_size { UntruncateIndex(1, 0, CollisionBitLength + 1) };
     int invalidCount = 0;
     for (eh_trunc* partialSoln : partialSolns) {
-        // 1) Generate first list of possibilities
-        size_t hashLen = N/8;
-        size_t lenIndices = sizeof(eh_index);
-        std::vector<std::vector<FullStepRow<FinalFullWidth>>> X;
-        X.reserve(soln_size);
+        size_t hashLen;
+        size_t lenIndices;
+        std::vector<boost::optional<std::vector<FullStepRow<FinalFullWidth>>>> X;
+        X.reserve(K+1);
+
+        // 3) Repeat steps 1 and 2 for each partial index
         for (eh_index i = 0; i < soln_size; i++) {
-            std::vector<FullStepRow<FinalFullWidth>> ic;
-            ic.reserve(recreate_size);
+            // 1) Generate first list of possibilities
+            std::vector<FullStepRow<FinalFullWidth>> icv;
+            icv.reserve(recreate_size);
             for (eh_index j = 0; j < recreate_size; j++) {
                 eh_index newIndex { UntruncateIndex(partialSoln[i], j, CollisionBitLength + 1) };
-                ic.emplace_back(N, base_state, newIndex);
+                icv.emplace_back(N, base_state, newIndex);
             }
-            X.push_back(ic);
-        }
-
-        // 3) Repeat step 2 for each level of the tree
-        for (int r = 0; X.size() > 1; r++) {
-            std::vector<std::vector<FullStepRow<FinalFullWidth>>> Xc;
-            Xc.reserve(X.size()/2);
+            boost::optional<std::vector<FullStepRow<FinalFullWidth>>> ic = icv;
 
             // 2a) For each pair of lists:
-            for (int v = 0; v < X.size(); v += 2) {
-                // 2b) Merge the lists
-                std::vector<FullStepRow<FinalFullWidth>> ic(X[v]);
-                ic.reserve(X[v].size() + X[v+1].size());
-                ic.insert(ic.end(), X[v+1].begin(), X[v+1].end());
-                std::sort(ic.begin(), ic.end(), CompareSR(hashLen));
-                CollideBranches(ic, hashLen, lenIndices, CollisionByteLength, CollisionBitLength + 1, partialSoln[(1<<r)*v], partialSoln[(1<<r)*(v+1)]);
+            hashLen = N/8;
+            lenIndices = sizeof(eh_index);
+            size_t rti = i;
+            for (size_t r = 0; r <= K; r++) {
+                // 2b) Until we are at the top of a subtree:
+                if (r < X.size()) {
+                    if (X[r]) {
+                        // 2c) Merge the lists
+                        ic->reserve(ic->size() + X[r]->size());
+                        ic->insert(ic->end(), X[r]->begin(), X[r]->end());
+                        std::sort(ic->begin(), ic->end(), CompareSR(hashLen));
+                        size_t lti = rti-(1<<r);
+                        CollideBranches(*ic, hashLen, lenIndices,
+                                        CollisionByteLength,
+                                        CollisionBitLength + 1,
+                                        partialSoln[lti], partialSoln[rti]);
 
-                // 2v) Check if this has become an invalid solution
-                if (ic.size() == 0)
-                    goto invalidsolution;
+                        // 2d) Check if this has become an invalid solution
+                        if (ic->size() == 0)
+                            goto invalidsolution;
 
-                Xc.push_back(ic);
+                        X[r] = boost::none;
+                        hashLen -= CollisionByteLength;
+                        lenIndices *= 2;
+                        rti = lti;
+                    } else {
+                        X[r] = *ic;
+                        break;
+                    }
+                } else {
+                    X.push_back(ic);
+                    break;
+                }
             }
-
-            X = Xc;
-            hashLen -= CollisionByteLength;
-            lenIndices *= 2;
         }
 
         // We are at the top of the tree
-        assert(X.size() == 1);
-        for (FullStepRow<FinalFullWidth> row : X[0]) {
+        assert(X.size() == K+1);
+        for (FullStepRow<FinalFullWidth> row : *X[K]) {
             solns.insert(row.GetIndices(hashLen, lenIndices));
         }
         goto deletesolution;
