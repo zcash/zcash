@@ -4,8 +4,8 @@ set -eu
 
 PARAMS_DIR="$HOME/.zcash-params"
 
-REGTEST_PKEY_NAME='z4-proving.key'
-REGTEST_VKEY_NAME='z4-verification.key'
+REGTEST_PKEY_NAME='z5-proving.key'
+REGTEST_VKEY_NAME='z5-verifying.key'
 REGTEST_PKEY_URL="https://z.cash/downloads/$REGTEST_PKEY_NAME"
 REGTEST_VKEY_URL="https://z.cash/downloads/$REGTEST_VKEY_NAME"
 REGTEST_DIR="$PARAMS_DIR/regtest"
@@ -86,9 +86,9 @@ cd "$PARAMS_DIR"
 # Now verify their hashes:
 echo 'Verifying parameter file integrity via sha256sum...'
 shasum -a 256 --check <<EOF
-25014d1a836b180b9afc847b98feb9fadf43afd2875ecf1a026c2aed0d74f5d0  regtest/$REGTEST_PKEY_NAME
-25014d1a836b180b9afc847b98feb9fadf43afd2875ecf1a026c2aed0d74f5d0  testnet3/$REGTEST_PKEY_NAME
-e6b1afb87d24b41a9abc9e3500c0758f377c172505cd5795bac713b5de737388  regtest/$REGTEST_VKEY_NAME
-e6b1afb87d24b41a9abc9e3500c0758f377c172505cd5795bac713b5de737388  testnet3/$REGTEST_VKEY_NAME
+72bd11091a1747de09fcfcddabbb1b4b6146a68ae2025bf732c1bee160366b75  regtest/$REGTEST_PKEY_NAME
+72bd11091a1747de09fcfcddabbb1b4b6146a68ae2025bf732c1bee160366b75  testnet3/$REGTEST_PKEY_NAME
+239ddba9249bdd1f4ba7654b17a960bd319c1cefcd3cd79883b422d0f4a806da  regtest/$REGTEST_VKEY_NAME
+239ddba9249bdd1f4ba7654b17a960bd319c1cefcd3cd79883b422d0f4a806da  testnet3/$REGTEST_VKEY_NAME
 EOF
 
