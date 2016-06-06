@@ -356,7 +356,7 @@ CAddrInfo CAddrMan::Select_(bool newOnly)
                 nKBucketPos = (nKBucketPos + insecure_rand()) % ADDRMAN_BUCKET_SIZE;
                 if (i++ > kMaxRetries)
                     return CAddrInfo();
-                if (i % kRetriesBetweenSleep == 0)
+                if (i % kRetriesBetweenSleep == 0 && !nKey.IsNull())
                     MilliSleep(kRetrySleepInterval);
             }
             int nId = vvTried[nKBucket][nKBucketPos];
@@ -378,7 +378,7 @@ CAddrInfo CAddrMan::Select_(bool newOnly)
                 nUBucketPos = (nUBucketPos + insecure_rand()) % ADDRMAN_BUCKET_SIZE;
                 if (i++ > kMaxRetries)
                     return CAddrInfo();
-                if (i % kRetriesBetweenSleep == 0)
+                if (i % kRetriesBetweenSleep == 0 && !nKey.IsNull())
                     MilliSleep(kRetrySleepInterval);
             }
             int nId = vvNew[nUBucket][nUBucketPos];
