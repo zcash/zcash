@@ -65,7 +65,7 @@ class RESTTest (BitcoinTestFramework):
         self.nodes[2].generate(100)
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbalance(), 40)
+        assert_equal(self.nodes[0].getbalance(), 10)
 
         txid = self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
         self.sync_all()
@@ -262,9 +262,9 @@ class RESTTest (BitcoinTestFramework):
         # check block tx details
         # let's make 3 tx and mine them on node 1
         txs = []
-        txs.append(self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 11))
-        txs.append(self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 11))
-        txs.append(self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 11))
+        txs.append(self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 1))
+        txs.append(self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 1))
+        txs.append(self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 1))
         self.sync_all()
 
         # now mine the transactions

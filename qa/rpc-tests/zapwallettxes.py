@@ -23,7 +23,7 @@ class ZapWalletTXesTest (BitcoinTestFramework):
 
     def run_test (self):
         print "Mining blocks..."
-        self.nodes[0].generate(1)
+        self.nodes[0].generate(4)
         self.sync_all()
         self.nodes[1].generate(101)
         self.sync_all()
