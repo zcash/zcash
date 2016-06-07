@@ -4,11 +4,17 @@
 #include "util.h"
 #include "init.h"
 #include "primitives/transaction.h"
+#include "base58.h"
 #include "crypto/equihash.h"
 #include "chainparams.h"
+#include "consensus/validation.h"
+#include "main.h"
+#include "miner.h"
 #include "pow.h"
+#include "script/sign.h"
 #include "sodium.h"
 #include "streams.h"
+#include "wallet/wallet.h"
 
 #include "zcbenchmarks.h"
 
@@ -124,5 +130,123 @@ double benchmark_verify_equihash()
     timer_start();
     CheckEquihashSolution(&genesis_header, params);
     return timer_stop();
+}
+
+double benchmark_large_tx(bool testValidate)
+{
+    // Note that the transaction size is checked against the splitting
+    // transaction, not the merging one. Thus we are assuming that transactions
+    // with 1 input and N outputs are about the same size as transactions with
+    // N inputs and 1 output.
+    mapArgs["-blockmaxsize"] = itostr(MAX_BLOCK_SIZE);
+    int nBlockSizeRemaining = MAX_BLOCK_SIZE-1000;
+
+    std::vector<COutput> vCoins;
+    pwalletMain->AvailableCoins(vCoins, true);
+
+    // 1) Create a transaction splitting the first coinbase to many outputs
+    CMutableTransaction mtx;
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.hash = vCoins[0].tx->GetHash();
+    mtx.vin[0].prevout.n = 0;
+    mtx.vout.resize(1);
+    mtx.vout[0].scriptPubKey = vCoins[0].tx->vout[0].scriptPubKey;
+    mtx.vout[0].nValue = 1000;
+    SignSignature(*pwalletMain, *vCoins[0].tx, mtx, 0);
+
+    // 1a) While the transaction is smaller than the maximum:
+    CTransaction tx {mtx};
+    unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+    while (nTxSize < nBlockSizeRemaining) {
+        // 1b) Add another output
+        size_t oldSize = mtx.vout.size();
+        mtx.vout.resize(oldSize+1);
+        mtx.vout[oldSize].scriptPubKey = vCoins[0].tx->vout[0].scriptPubKey;
+        mtx.vout[oldSize].nValue = 1000;
+
+        tx = mtx;
+        nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+    }
+
+    // 1c) Sign the splitting transaction
+    SignSignature(*pwalletMain, *vCoins[0].tx, mtx, 0);
+    uint256 hash = mtx.GetHash();
+    mempool.addUnchecked(hash, CTxMemPoolEntry(mtx, 11, GetTime(), 111.0, 11));
+
+    // 2) Mine the splitting transaction into a block
+    CScript scriptDummy = CScript() << OP_TRUE;
+    CBlockTemplate* pblocktemplate = CreateNewBlock(scriptDummy);
+    CBlock *pblock = &pblocktemplate->block;
+    CBlockIndex* pindexPrev = chainActive.Tip();
+    unsigned int nExtraNonce = 0;
+    IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
+
+    arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
+    unsigned int n = Params().EquihashN();
+    unsigned int k = Params().EquihashK();
+    crypto_generichash_blake2b_state eh_state;
+    EhInitialiseState(n, k, eh_state);
+    CEquihashInput I{*pblock};
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << I;
+    crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
+    while (true) {
+        crypto_generichash_blake2b_state curr_state;
+        curr_state = eh_state;
+        crypto_generichash_blake2b_update(&curr_state,
+                                          pblock->nNonce.begin(),
+                                          pblock->nNonce.size());
+        std::set<std::vector<unsigned int>> solns;
+        EhOptimisedSolve(n, k, curr_state, solns);
+        for (auto soln : solns) {
+            pblock->nSolution = soln;
+            if (UintToArith256(pblock->GetHash()) > hashTarget) {
+                continue;
+            }
+            goto processblock;
+        }
+        pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
+    }
+processblock:
+    CValidationState state;
+    assert(ProcessNewBlock(state, NULL, pblock, true, NULL));
+
+    timer_start();
+
+    // 3) Create a transaction that merges all of the inputs
+    CMutableTransaction mtx2;
+    mtx2.vin.resize(mtx.vout.size());
+    mtx2.vout.resize(1);
+    mtx2.vout[0].scriptPubKey = vCoins[0].tx->vout[0].scriptPubKey;
+    mtx2.vout[0].nValue = 0;
+
+    for (int i = 0; i < mtx2.vin.size(); i++) {
+        mtx2.vin[i].prevout.hash = hash;
+        mtx2.vin[i].prevout.n = i;
+    }
+
+    for (int i = 0; i < mtx2.vin.size(); i++) {
+        SignSignature(*pwalletMain, mtx, mtx2, i);
+    }
+
+    double ret = timer_stop();
+    if (!testValidate)
+        return ret;
+
+    hash = mtx2.GetHash();
+    mempool.addUnchecked(hash, CTxMemPoolEntry(mtx2, 11, GetTime(), 111.0, 11));
+
+    // 4) Call CreateNewBlock (which itself calls TestBlockValidity)
+    delete pblocktemplate;
+    pblocktemplate = CreateNewBlock(scriptDummy);
+    pblock = &pblocktemplate->block;
+
+    // 5) Call TestBlockValidity again under timing
+    timer_start();
+    assert(TestBlockValidity(state, *pblock, pindexPrev, false, false));
+    ret = timer_stop();
+    delete pblocktemplate;
+    mempool.clear();
+    return ret;
 }
 
