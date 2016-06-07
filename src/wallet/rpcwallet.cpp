@@ -2419,6 +2419,10 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
             sample_times.push_back(benchmark_solve_equihash());
         } else if (benchmarktype == "verifyequihash") {
             sample_times.push_back(benchmark_verify_equihash());
+        } else if (benchmarktype == "validatefullblock") {
+            sample_times.push_back(benchmark_validate_full_block_transparent());
+        } else if (benchmarktype == "validatefullblockacs") {
+            sample_times.push_back(benchmark_validate_full_block_transparent_acs());
         } else {
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
         }

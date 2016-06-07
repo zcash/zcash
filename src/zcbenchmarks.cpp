@@ -4,11 +4,17 @@
 #include "util.h"
 #include "init.h"
 #include "primitives/transaction.h"
+#include "base58.h"
 #include "crypto/equihash.h"
 #include "chainparams.h"
+#include "consensus/validation.h"
+#include "main.h"
+#include "miner.h"
 #include "pow.h"
+#include "script/sign.h"
 #include "sodium.h"
 #include "streams.h"
+#include "wallet/wallet.h"
 
 #include "zcbenchmarks.h"
 
@@ -124,5 +130,109 @@ double benchmark_verify_equihash()
     timer_start();
     CheckEquihashSolution(&genesis_header, params);
     return timer_stop();
+}
+
+double benchmark_validate_full_block_transparent()
+{
+    // 1) Generate enough unique txs to fill a block
+    mapArgs["-blockmaxsize"] = itostr(MAX_BLOCK_SIZE);
+    int nBlockSizeRemaining = MAX_BLOCK_SIZE-1000;
+
+    // 1a) Get coinbases
+    std::vector<COutput> vCoins;
+    pwalletMain->AvailableCoins(vCoins, true);
+
+    // 1b) Create a transaction sending the first coinbase to itself
+    CMutableTransaction mtx;
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.hash = vCoins[0].tx->GetHash();
+    mtx.vin[0].prevout.n = 0;
+    mtx.vout.resize(1);
+    mtx.vout[0].scriptPubKey = vCoins[0].tx->vout[0].scriptPubKey;
+    mtx.vout[0].nValue = 1 * COIN;
+    SignSignature(*pwalletMain, *vCoins[0].tx, mtx, 0);
+
+    uint256 hash;
+    while (nBlockSizeRemaining > 0) {
+        // 1c) Add this transaction to the mempool
+        hash = mtx.GetHash();
+        mempool.addUnchecked(hash, CTxMemPoolEntry(mtx, 11, GetTime(), 111.0, 11));
+        CTransaction tx {mtx};
+        unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+        nBlockSizeRemaining -= nTxSize;
+
+        // 1d) Use this transaction as the input for the next one
+        mtx.vin[0].prevout.hash = hash;
+        mtx.vout[0].nValue -= 1000;
+        SignSignature(*pwalletMain, tx, mtx, 0);
+    }
+
+    // 2) Call CreateNewBlock (which itself calls TestBlockValidity)
+    CScript scriptDummy = CScript() << OP_TRUE;
+    CBlockTemplate* pblocktemplate = CreateNewBlock(scriptDummy);
+    CBlock *pblock = &pblocktemplate->block;
+
+    // 3) Call TestBlockValidity again under timing
+    CBlockIndex* pindexPrev = chainActive.Tip();
+    CValidationState state;
+    timer_start();
+    assert(TestBlockValidity(state, *pblock, pindexPrev, false, false));
+    double ret = timer_stop();
+    delete pblocktemplate;
+    mempool.clear();
+    return ret;
+}
+
+double benchmark_validate_full_block_transparent_acs()
+{
+    // 1) Generate enough unique txs to fill a block
+    mapArgs["-blockmaxsize"] = itostr(MAX_BLOCK_SIZE);
+    int nBlockSizeRemaining = MAX_BLOCK_SIZE-1000;
+
+    // 1a) Get coinbases
+    std::vector<COutput> vCoins;
+    pwalletMain->AvailableCoins(vCoins, true);
+    // 1b) Create an anyone-can-spend transaction signed by the coinbase
+    CMutableTransaction mtx;
+    mtx.vin.resize(1);
+    mtx.vin[0].scriptSig = CScript();
+    mtx.vin[0].prevout.hash = vCoins[0].tx->GetHash();
+    mtx.vin[0].prevout.n = 0;
+    mtx.vout.resize(1);
+    mtx.vout[0].scriptPubKey = CScript();
+    mtx.vout[0].nValue = 1 * COIN;
+    SignSignature(*pwalletMain, *vCoins[0].tx, mtx, 0);
+
+    uint256 hash;
+    while (nBlockSizeRemaining > 0) {
+        // 1c) Add this transaction to the mempool
+        hash = mtx.GetHash();
+        mempool.addUnchecked(hash, CTxMemPoolEntry(mtx, 11, GetTime(), 111.0, 11));
+        CTransaction tx {mtx};
+        unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+        nBlockSizeRemaining -= nTxSize;
+
+        // 1d) The transaction no longer needs a signature
+        mtx.vin[0].scriptSig = CScript() << OP_TRUE;
+
+        // 1e) Use this transaction as the input for the next one
+        mtx.vin[0].prevout.hash = hash;
+        mtx.vout[0].nValue -= 1000;
+    }
+
+    // 2) Call CreateNewBlock (which itself calls TestBlockValidity)
+    CScript scriptDummy = CScript() << OP_TRUE;
+    CBlockTemplate* pblocktemplate = CreateNewBlock(scriptDummy);
+    CBlock *pblock = &pblocktemplate->block;
+
+    // 3) Call TestBlockValidity again under timing
+    CBlockIndex* pindexPrev = chainActive.Tip();
+    CValidationState state;
+    timer_start();
+    assert(TestBlockValidity(state, *pblock, pindexPrev, false, false));
+    double ret = timer_stop();
+    delete pblocktemplate;
+    mempool.clear();
+    return ret;
 }
 
