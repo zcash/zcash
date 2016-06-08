@@ -386,6 +386,8 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
 
 bool CCoinsViewCache::HavePourRequirements(const CTransaction& tx) const
 {
+    boost::unordered_map<uint256, ZCIncrementalMerkleTree, CCoinsKeyHasher> intermediates;
+
     BOOST_FOREACH(const CPourTx &pour, tx.vpour)
     {
         BOOST_FOREACH(const uint256& serial, pour.serials)
@@ -398,11 +400,19 @@ bool CCoinsViewCache::HavePourRequirements(const CTransaction& tx) const
         }
 
         ZCIncrementalMerkleTree tree;
-        if (!GetAnchorAt(pour.anchor, tree)) {
-            // If we do not have the anchor for the pour,
-            // it is invalid.
+        auto it = intermediates.find(pour.anchor);
+        if (it != intermediates.end()) {
+            tree = it->second;
+        } else if (!GetAnchorAt(pour.anchor, tree)) {
             return false;
         }
+
+        BOOST_FOREACH(const uint256& commitment, pour.commitments)
+        {
+            tree.append(commitment);
+        }
+
+        intermediates.insert(std::make_pair(tree.root(), tree));
     }
 
     return true;

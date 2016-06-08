@@ -24,8 +24,12 @@ class CCoinsViewTest : public CCoinsView
     std::map<uint256, bool> mapSerials_;
 
 public:
+    CCoinsViewTest() {
+        hashBestAnchor_ = ZCIncrementalMerkleTree::empty_root();
+    }
+
     bool GetAnchorAt(const uint256& rt, ZCIncrementalMerkleTree &tree) const {
-        if (rt.IsNull()) {
+        if (rt == ZCIncrementalMerkleTree::empty_root()) {
             ZCIncrementalMerkleTree new_tree;
             tree = new_tree;
             return true;
@@ -140,6 +144,20 @@ public:
 
 }
 
+uint256 appendRandomCommitment(ZCIncrementalMerkleTree &tree)
+{
+    libzcash::SpendingKey k = libzcash::SpendingKey::random();
+    libzcash::PaymentAddress addr = k.address();
+
+    libzcash::Note note(addr.a_pk, 0, uint256(), uint256());
+
+    auto cm = note.cm();
+    tree.append(cm);
+    return cm;
+}
+
+BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
+
 BOOST_AUTO_TEST_CASE(serials_test)
 {
     CCoinsViewTest base;
@@ -162,16 +180,6 @@ BOOST_AUTO_TEST_CASE(serials_test)
     CCoinsViewCacheTest cache3(&base);
 
     BOOST_CHECK(!cache3.GetSerial(myserial));
-}
-
-void appendRandomCommitment(ZCIncrementalMerkleTree &tree)
-{
-    libzcash::SpendingKey k = libzcash::SpendingKey::random();
-    libzcash::PaymentAddress addr = k.address();
-
-    libzcash::Note note(addr.a_pk, 0, uint256(), uint256());
-
-    tree.append(note.cm());
 }
 
 BOOST_AUTO_TEST_CASE(anchors_flush_test)
@@ -204,6 +212,83 @@ BOOST_AUTO_TEST_CASE(anchors_flush_test)
     }
 }
 
+BOOST_AUTO_TEST_CASE(chained_pours)
+{
+    CCoinsViewTest base;
+    CCoinsViewCacheTest cache(&base);
+
+    ZCIncrementalMerkleTree tree;
+
+    CPourTx ptx1;
+    ptx1.anchor = tree.root();
+    ptx1.commitments[0] = appendRandomCommitment(tree);
+    ptx1.commitments[1] = appendRandomCommitment(tree);
+
+    // Although it's not possible given our assumptions, if
+    // two pours create the same treestate twice, we should
+    // still be able to anchor to it.
+    CPourTx ptx1b;
+    ptx1b.anchor = tree.root();
+    ptx1b.commitments[0] = ptx1.commitments[0];
+    ptx1b.commitments[1] = ptx1.commitments[1];
+
+    CPourTx ptx2;
+    CPourTx ptx3;
+
+    ptx2.anchor = tree.root();
+    ptx3.anchor = tree.root();
+
+    ptx2.commitments[0] = appendRandomCommitment(tree);
+    ptx2.commitments[1] = appendRandomCommitment(tree);
+
+    ptx3.commitments[0] = appendRandomCommitment(tree);
+    ptx3.commitments[1] = appendRandomCommitment(tree);
+
+    {
+        CMutableTransaction mtx;
+        mtx.vpour.push_back(ptx2);
+
+        BOOST_CHECK(!cache.HavePourRequirements(mtx));
+    }
+
+    {
+        // ptx2 is trying to anchor to ptx1 but ptx1
+        // appears afterwards -- not a permitted ordering
+        CMutableTransaction mtx;
+        mtx.vpour.push_back(ptx2);
+        mtx.vpour.push_back(ptx1);
+
+        BOOST_CHECK(!cache.HavePourRequirements(mtx));
+    }
+
+    {
+        CMutableTransaction mtx;
+        mtx.vpour.push_back(ptx1);
+        mtx.vpour.push_back(ptx2);
+
+        BOOST_CHECK(cache.HavePourRequirements(mtx));
+    }
+
+    {
+        CMutableTransaction mtx;
+        mtx.vpour.push_back(ptx1);
+        mtx.vpour.push_back(ptx2);
+        mtx.vpour.push_back(ptx3);
+
+        BOOST_CHECK(cache.HavePourRequirements(mtx));
+    }
+
+    {
+        CMutableTransaction mtx;
+        mtx.vpour.push_back(ptx1);
+        mtx.vpour.push_back(ptx1b);
+        mtx.vpour.push_back(ptx2);
+        mtx.vpour.push_back(ptx3);
+
+        BOOST_CHECK(cache.HavePourRequirements(mtx));
+    }
+}
+
 BOOST_AUTO_TEST_CASE(anchors_test)
 {
     // TODO: These tests should be more methodical.
@@ -212,12 +297,13 @@ BOOST_AUTO_TEST_CASE(anchors_test)
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
-    BOOST_CHECK(cache.GetBestAnchor() == uint256());
+    BOOST_CHECK(cache.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
 
     {
         ZCIncrementalMerkleTree tree;
 
         BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), tree));
+        BOOST_CHECK(cache.GetBestAnchor() == tree.root());
         appendRandomCommitment(tree);
         appendRandomCommitment(tree);
         appendRandomCommitment(tree);
@@ -272,8 +358,6 @@ BOOST_AUTO_TEST_CASE(anchors_test)
         }
     }
 }
-
-BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
 
 static const unsigned int NUM_SIMULATION_ITERATIONS = 40000;
 
