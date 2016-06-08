@@ -253,6 +253,22 @@ BOOST_AUTO_TEST_CASE(chained_pours)
 
     {
         CMutableTransaction mtx;
+        mtx.vpour.push_back(ptx2);
+        mtx.vpour.push_back(ptx1);
+
+        BOOST_CHECK(!cache.HavePourRequirements(mtx));
+    }
+
+    {
+        CMutableTransaction mtx;
+        mtx.vpour.push_back(ptx1);
+        mtx.vpour.push_back(ptx2);
+
+        BOOST_CHECK(cache.HavePourRequirements(mtx));
+    }
+
+    {
+        CMutableTransaction mtx;
         mtx.vpour.push_back(ptx1);
         mtx.vpour.push_back(ptx2);
         mtx.vpour.push_back(ptx3);
