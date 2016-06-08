@@ -362,6 +362,37 @@ BOOST_AUTO_TEST_CASE(test_ParseInt64)
     BOOST_CHECK(!ParseInt64("32482348723847471234", NULL));
 }
 
+BOOST_AUTO_TEST_CASE(test_ParseUInt32)
+{
+    uint32_t n;
+    // Valid values
+    BOOST_CHECK(ParseUInt32("1234", NULL));
+    BOOST_CHECK(ParseUInt32("0", &n) && n == 0);
+    BOOST_CHECK(ParseUInt32("1234", &n) && n == 1234);
+    BOOST_CHECK(ParseUInt32("01234", &n) && n == 1234); // no octal
+    BOOST_CHECK(ParseUInt32("2147483647", &n) && n == 2147483647);
+    BOOST_CHECK(ParseUInt32("2147483648", &n) && n == (uint32_t)2147483648);
+    BOOST_CHECK(ParseUInt32("4294967295", &n) && n == (uint32_t)4294967295);
+    // Invalid values
+    BOOST_CHECK(!ParseUInt32("", &n));
+    BOOST_CHECK(!ParseUInt32(" 1", &n)); // no padding inside
+    BOOST_CHECK(!ParseUInt32(" -1", &n));
+    BOOST_CHECK(!ParseUInt32("1 ", &n));
+    BOOST_CHECK(!ParseUInt32("1a", &n));
+    BOOST_CHECK(!ParseUInt32("aap", &n));
+    BOOST_CHECK(!ParseUInt32("0x1", &n)); // no hex
+    BOOST_CHECK(!ParseUInt32("0x1", &n)); // no hex
+    const char test_bytes[] = {'1', 0, '1'};
+    std::string teststr(test_bytes, sizeof(test_bytes));
+    BOOST_CHECK(!ParseUInt32(teststr, &n)); // no embedded NULs
+    // Overflow and underflow
+    BOOST_CHECK(!ParseUInt32("-2147483648", &n));
+    BOOST_CHECK(!ParseUInt32("4294967296", &n));
+    BOOST_CHECK(!ParseUInt32("-1234", &n));
+    BOOST_CHECK(!ParseUInt32("-32482348723847471234", NULL));
+    BOOST_CHECK(!ParseUInt32("32482348723847471234", NULL));
+}
+
 BOOST_AUTO_TEST_CASE(test_ParseDouble)
 {
     double n;
