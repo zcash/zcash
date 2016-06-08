@@ -10,10 +10,10 @@
 template<size_t WIDTH>
 bool DistinctIndices(const FullStepRow<WIDTH>& a, const FullStepRow<WIDTH>& b, size_t len, size_t lenIndices)
 {
-    std::vector<eh_index> aSrt = a.GetIndices(len, lenIndices);
-    std::vector<eh_index> bSrt = b.GetIndices(len, lenIndices);
-    for(auto const& value1: aSrt) {
-        for(auto const& value2: bSrt) {
+    std::vector<eh_index> vIndicesA = a.GetIndices(len, lenIndices);
+    std::vector<eh_index> vIndicesB = b.GetIndices(len, lenIndices);
+    for(auto const& value1: vIndicesA) {
+        for(auto const& value2: vIndicesB) {
             if (value1==value2) {
                 return false;
             }
