@@ -108,6 +108,8 @@ public:
     eh_trunc* GetTruncatedIndices(size_t len, size_t lenIndices) const;
 };
 
+inline constexpr const size_t max(const size_t A, const size_t B) { return A > B ? A : B; }
+
 template<unsigned int N, unsigned int K>
 class Equihash
 {
@@ -122,8 +124,8 @@ public:
     enum { CollisionByteLength=CollisionBitLength/8 };
     enum : size_t { FullWidth=2*CollisionByteLength+sizeof(eh_index)*(1 << (K-1)) };
     enum : size_t { FinalFullWidth=2*CollisionByteLength+sizeof(eh_index)*(1 << (K)) };
-    enum : size_t { TruncatedWidth=2*CollisionByteLength+sizeof(eh_trunc)*(1 << (K-1)) };
-    enum : size_t { FinalTruncatedWidth=2*CollisionByteLength+sizeof(eh_trunc)*(1 << (K)) };
+    enum : size_t { TruncatedWidth=max((N/8)+sizeof(eh_trunc), 2*CollisionByteLength+sizeof(eh_trunc)*(1 << (K-1))) };
+    enum : size_t { FinalTruncatedWidth=max((N/8)+sizeof(eh_trunc), 2*CollisionByteLength+sizeof(eh_trunc)*(1 << (K))) };
 
     Equihash() { }
 
@@ -135,11 +137,14 @@ public:
 
 #include "equihash.tcc"
 
+static Equihash<96,3> Eh96_3;
 static Equihash<96,5> Eh96_5;
 static Equihash<48,5> Eh48_5;
 
 #define EhInitialiseState(n, k, base_state)  \
-    if (n == 96 && k == 5) {                 \
+    if (n == 96 && k == 3) {                 \
+        Eh96_3.InitialiseState(base_state);  \
+    } else if (n == 96 && k == 5) {          \
         Eh96_5.InitialiseState(base_state);  \
     } else if (n == 48 && k == 5) {          \
         Eh48_5.InitialiseState(base_state);  \
@@ -148,7 +153,9 @@ static Equihash<48,5> Eh48_5;
     }
 
 #define EhBasicSolve(n, k, base_state, solns)   \
-    if (n == 96 && k == 5) {                    \
+    if (n == 96 && k == 3) {                    \
+        solns = Eh96_3.BasicSolve(base_state);  \
+    } else if (n == 96 && k == 5) {             \
         solns = Eh96_5.BasicSolve(base_state);  \
     } else if (n == 48 && k == 5) {             \
         solns = Eh48_5.BasicSolve(base_state);  \
@@ -157,7 +164,9 @@ static Equihash<48,5> Eh48_5;
     }
 
 #define EhOptimisedSolve(n, k, base_state, solns)   \
-    if (n == 96 && k == 5) {                        \
+    if (n == 96 && k == 3) {                        \
+        solns = Eh96_3.OptimisedSolve(base_state);  \
+    } else if (n == 96 && k == 5) {                 \
         solns = Eh96_5.OptimisedSolve(base_state);  \
     } else if (n == 48 && k == 5) {                 \
         solns = Eh48_5.OptimisedSolve(base_state);  \
@@ -166,7 +175,9 @@ static Equihash<48,5> Eh48_5;
     }
 
 #define EhIsValidSolution(n, k, base_state, soln, ret)   \
-    if (n == 96 && k == 5) {                             \
+    if (n == 96 && k == 3) {                             \
+        ret = Eh96_3.IsValidSolution(base_state, soln);  \
+    } else if (n == 96 && k == 5) {                      \
         ret = Eh96_5.IsValidSolution(base_state, soln);  \
     } else if (n == 48 && k == 5) {                      \
         ret = Eh48_5.IsValidSolution(base_state, soln);  \

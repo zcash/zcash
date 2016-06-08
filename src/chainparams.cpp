@@ -57,7 +57,7 @@ public:
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
         nEquihashN = 96;
-        nEquihashK = 5;
+        nEquihashK = 3;
 
         /**
          * Build the genesis block. Note that the output of its generation
@@ -85,11 +85,11 @@ public:
         // TODO generate harder genesis block
         //genesis.nBits    = 0x1d00ffff;
         genesis.nBits    = 0x207fffff;
-        genesis.nNonce   = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000");
-        genesis.nSolution = {773, 46853, 54408, 65156, 29285, 44102, 84988, 128460, 5860, 111278, 95422, 129486, 54642, 125867, 57543, 96097, 6078, 6558, 43915, 99542, 10589, 52817, 28411, 63634, 17935, 94053, 50292, 64483, 22825, 62674, 69078, 121059};
+        genesis.nNonce   = uint256S("0x0000000000000000000000000000000000000000000000000000000000000001");
+        genesis.nSolution = {587569, 8525894, 21341434, 29850428, 1031007, 14893603, 13508924, 18130124};
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x1a856940aa2b37400e4d889b2c0316eccfc122e59964e74f9d5fc98cc47d3699"));
+        assert(consensus.hashGenesisBlock == uint256S("0x684925e346301a043b8f00ff81e2f96b0aab01ca177c72a29684cb682fb4f91e"));
         assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
         vSeeds.push_back(CDNSSeedData("bitcoin.sipa.be", "seed.bitcoin.sipa.be")); // Pieter Wuille
@@ -164,9 +164,9 @@ public:
         genesis.nTime = 1296688602;
         genesis.nBits = 0x207fffff;
         genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000");
-        genesis.nSolution = {2184, 77353, 22195, 83183, 8583, 109239, 67980, 100293, 42343, 118176, 48012, 76297, 50185, 118569, 78836, 127080, 4206, 16928, 112292, 130288, 17661, 41103, 69659, 114244, 14046, 116389, 17114, 42365, 47122, 58879, 56126, 129086};
+        genesis.nSolution = {580051, 20198535, 25959899, 26476684, 6432082, 23053925, 18828144, 32724963};
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x2121b53914dbfe110c5521c5bb81ff86bde4c0dd94f332f72e2c35ffa391b46e"));
+        assert(consensus.hashGenesisBlock == uint256S("0x260cf174620023182937d89aa5fa5f08df2193e9f775bab7de02f3d1f6eba4c2"));
 
         vFixedSeeds.clear();
         vSeeds.clear();

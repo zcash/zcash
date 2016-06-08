@@ -551,6 +551,12 @@ bool Equihash<N,K>::IsValidSolution(const eh_HashState& base_state, std::vector<
     return X[0].IsZero(hashLen);
 }
 
+// Explicit instantiations for Equihash<96,3>
+template int Equihash<96,3>::InitialiseState(eh_HashState& base_state);
+template std::set<std::vector<eh_index>> Equihash<96,3>::BasicSolve(const eh_HashState& base_state);
+template std::set<std::vector<eh_index>> Equihash<96,3>::OptimisedSolve(const eh_HashState& base_state);
+template bool Equihash<96,3>::IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln);
+
 // Explicit instantiations for Equihash<96,5>
 template int Equihash<96,5>::InitialiseState(eh_HashState& base_state);
 template std::set<std::vector<eh_index>> Equihash<96,5>::BasicSolve(const eh_HashState& base_state);
