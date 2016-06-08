@@ -151,9 +151,9 @@ uint256 appendRandomCommitment(ZCIncrementalMerkleTree &tree)
 
     libzcash::Note note(addr.a_pk, 0, uint256(), uint256());
 
-    tree.append(note.cm());
-
-    return note.cm();
+    auto cm = note.cm();
+    tree.append(cm);
+    return cm;
 }
 
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
@@ -252,6 +252,8 @@ BOOST_AUTO_TEST_CASE(chained_pours)
     }
 
     {
+        // ptx2 is trying to anchor to ptx1 but ptx1
+        // appears afterwards -- not a permitted ordering
         CMutableTransaction mtx;
         mtx.vpour.push_back(ptx2);
         mtx.vpour.push_back(ptx1);
