@@ -12,18 +12,12 @@ bool DistinctIndices(const FullStepRow<WIDTH>& a, const FullStepRow<WIDTH>& b, s
 {
     std::vector<eh_index> aSrt = a.GetIndices(len, lenIndices);
     std::vector<eh_index> bSrt = b.GetIndices(len, lenIndices);
-
-    std::sort(aSrt.begin(), aSrt.end());
-    std::sort(bSrt.begin(), bSrt.end());
-
-    unsigned int i = 0;
-    for (unsigned int j = 0; j < bSrt.size(); j++) {
-        while (aSrt[i] < bSrt[j]) {
-            i++;
-            if (i == aSrt.size()) { return true; }
+    for(auto const& value1: aSrt) {
+        for(auto const& value2: bSrt) {
+            if (value1==value2) {
+                return false;
+            }
         }
-        assert(aSrt[i] >= bSrt[j]);
-        if (aSrt[i] == bSrt[j]) { return false; }
     }
     return true;
 }
