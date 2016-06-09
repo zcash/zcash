@@ -37,6 +37,7 @@ testScriptsExt=(
     'getblocktemplate_proposals.py'
     'pruning.py'
     'forknotify.py'
+    'hardforkdetection.py'
     'invalidateblock.py'
     'keypool.py'
     'receivedby.py'

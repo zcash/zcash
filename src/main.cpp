@@ -1454,7 +1454,9 @@ void CheckForkWarningConditions()
         }
         else
         {
-            LogPrintf("%s: Warning: Found invalid chain at least ~6 blocks longer than our best chain.\nChain state database corruption likely.\n", __func__);
+            std::string warning = std::string("Warning: Found invalid chain at least ~6 blocks longer than our best chain.\nChain state database corruption likely.");
+            LogPrintf("%s: %s\n", warning.c_str(), __func__);
+            CAlert::Notify(warning, true);
             fLargeWorkInvalidChainFound = true;
         }
     }
