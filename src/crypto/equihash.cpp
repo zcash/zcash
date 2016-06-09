@@ -37,6 +37,7 @@ int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
                                                          personalization);
 }
 
+// Big-endian so that array comparison is equivalent to integer comparison
 void EhIndexToArray(const eh_index i, unsigned char* array)
 {
     assert(sizeof(eh_index) == 4);
@@ -46,6 +47,7 @@ void EhIndexToArray(const eh_index i, unsigned char* array)
     array[3] =  i        & 0xFF;
 }
 
+// Big-endian so that array comparison is equivalent to integer comparison
 eh_index ArrayToEhIndex(const unsigned char* array)
 {
     assert(sizeof(eh_index) == 4);
@@ -103,7 +105,7 @@ FullStepRow<WIDTH>::FullStepRow(const FullStepRow<W>& a, const FullStepRow<W>& b
     assert(len-trim+(2*lenIndices) <= WIDTH);
     for (int i = trim; i < len; i++)
         hash[i-trim] = a.hash[i] ^ b.hash[i];
-    if (a.IndicesBefore(b, len)) {
+    if (a.IndicesBefore(b, len, lenIndices)) {
         std::copy(a.hash+len, a.hash+len+lenIndices, hash+len-trim);
         std::copy(b.hash+len, b.hash+len+lenIndices, hash+len-trim+lenIndices);
     } else {
@@ -532,7 +534,7 @@ bool Equihash<N,K>::IsValidSolution(const eh_HashState& base_state, std::vector<
                 LogPrint("pow", "X[i+1] = %s\n", X[i+1].GetHex(hashLen));
                 return false;
             }
-            if (X[i+1].IndicesBefore(X[i], hashLen)) {
+            if (X[i+1].IndicesBefore(X[i], hashLen, lenIndices)) {
                 return false;
                 LogPrint("pow", "Invalid solution: Index tree incorrectly ordered\n");
             }
