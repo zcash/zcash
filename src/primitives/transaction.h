@@ -294,18 +294,15 @@ public:
 
     static const int32_t CURRENT_VERSION=1;
 
-    // The local variables are made const to prevent unintended modification
-    // without updating the cached hash value. However, CTransaction is not
-    // actually immutable; deserialization and assignment are implemented,
-    // and bypass the constness. This is safe, as they update the entire
-    // structure, including the hash.
-    const int32_t nVersion;
-    const std::vector<CTxIn> vin;
-    const std::vector<CTxOut> vout;
-    const uint32_t nLockTime;
-    const std::vector<CPourTx> vpour;
-    const uint256 joinSplitPubKey;
-    const joinsplit_sig_t joinSplitSig;
+    // The user of this class MUST NOT modify these variables. The cached
+    // hash value will not be updated if you do so.
+    int32_t nVersion;
+    std::vector<CTxIn> vin;
+    std::vector<CTxOut> vout;
+    uint32_t nLockTime;
+    std::vector<CPourTx> vpour;
+    uint256 joinSplitPubKey;
+    joinsplit_sig_t joinSplitSig;
 
     /** Construct a CTransaction that qualifies as IsNull() */
     CTransaction();
