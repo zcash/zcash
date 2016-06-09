@@ -24,12 +24,16 @@
 template<unsigned int N, unsigned int K>
 int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
 {
-    unsigned int n = N;
-    unsigned int k = K;
     unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES] = {};
-    memcpy(personalization, "ZcashPOW", 8);
-    memcpy(personalization+8,  &n, 4);
-    memcpy(personalization+12, &k, 4);
+    memcpy(personalization, "ZcashPoW", 8);
+    personalization[8]  =  N        & 0xFF;
+    personalization[9]  = (N >>  8) & 0xFF;
+    personalization[10] = (N >> 16) & 0xFF;
+    personalization[11] = (N >> 24) & 0xFF;
+    personalization[12] =  K        & 0xFF;
+    personalization[13] = (K >>  8) & 0xFF;
+    personalization[14] = (K >> 16) & 0xFF;
+    personalization[15] = (K >> 24) & 0xFF;
     return crypto_generichash_blake2b_init_salt_personal(&base_state,
                                                          NULL, 0, // No key.
                                                          N/8,
@@ -79,7 +83,12 @@ StepRow<WIDTH>::StepRow(unsigned int n, const eh_HashState& base_state, eh_index
 {
     eh_HashState state;
     state = base_state;
-    crypto_generichash_blake2b_update(&state, (unsigned char*) &i, sizeof(eh_index));
+    unsigned char array[sizeof(eh_index)];
+    array[0] =  i        & 0xFF;
+    array[1] = (i >>  8) & 0xFF;
+    array[2] = (i >> 16) & 0xFF;
+    array[3] = (i >> 24) & 0xFF;
+    crypto_generichash_blake2b_update(&state, array, sizeof(eh_index));
     crypto_generichash_blake2b_final(&state, hash, n/8);
 }
 
