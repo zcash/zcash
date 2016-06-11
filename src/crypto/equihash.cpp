@@ -24,16 +24,12 @@
 template<unsigned int N, unsigned int K>
 int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
 {
+    uint32_t n = htole32(N);
+    uint32_t k = htole32(K);
     unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES] = {};
     memcpy(personalization, "ZcashPoW", 8);
-    personalization[8]  =  N        & 0xFF;
-    personalization[9]  = (N >>  8) & 0xFF;
-    personalization[10] = (N >> 16) & 0xFF;
-    personalization[11] = (N >> 24) & 0xFF;
-    personalization[12] =  K        & 0xFF;
-    personalization[13] = (K >>  8) & 0xFF;
-    personalization[14] = (K >> 16) & 0xFF;
-    personalization[15] = (K >> 24) & 0xFF;
+    memcpy(personalization+8,  &n, 4);
+    memcpy(personalization+12, &k, 4);
     return crypto_generichash_blake2b_init_salt_personal(&base_state,
                                                          NULL, 0, // No key.
                                                          N/8,
@@ -45,24 +41,17 @@ int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
 void EhIndexToArray(const eh_index i, unsigned char* array)
 {
     assert(sizeof(eh_index) == 4);
-    array[0] = (i >> 24) & 0xFF;
-    array[1] = (i >> 16) & 0xFF;
-    array[2] = (i >>  8) & 0xFF;
-    array[3] =  i        & 0xFF;
+    eh_index bei = htobe32(i);
+    memcpy(array, &bei, sizeof(eh_index));
 }
 
 // Big-endian so that array comparison is equivalent to integer comparison
 eh_index ArrayToEhIndex(const unsigned char* array)
 {
     assert(sizeof(eh_index) == 4);
-    eh_index ret {array[0]};
-    ret <<= 8;
-    ret |= array[1];
-    ret <<= 8;
-    ret |= array[2];
-    ret <<= 8;
-    ret |= array[3];
-    return ret;
+    eh_index bei;
+    memcpy(&bei, array, sizeof(eh_index));
+    return be32toh(bei);
 }
 
 eh_trunc TruncateIndex(const eh_index i, const unsigned int ilen)
@@ -84,10 +73,8 @@ StepRow<WIDTH>::StepRow(unsigned int n, const eh_HashState& base_state, eh_index
     eh_HashState state;
     state = base_state;
     unsigned char array[sizeof(eh_index)];
-    array[0] =  i        & 0xFF;
-    array[1] = (i >>  8) & 0xFF;
-    array[2] = (i >> 16) & 0xFF;
-    array[3] = (i >> 24) & 0xFF;
+    eh_index lei = htole32(i);
+    memcpy(array, &lei, sizeof(eh_index));
     crypto_generichash_blake2b_update(&state, array, sizeof(eh_index));
     crypto_generichash_blake2b_final(&state, hash, n/8);
 }
