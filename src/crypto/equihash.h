@@ -80,7 +80,7 @@ public:
     FullStepRow(const FullStepRow<W>& a, const FullStepRow<W>& b, size_t len, size_t lenIndices, int trim);
     FullStepRow& operator=(const FullStepRow<WIDTH>& a);
 
-    inline bool IndicesBefore(const FullStepRow<WIDTH>& a, size_t len) const { return ArrayToEhIndex(hash+len) < ArrayToEhIndex(a.hash+len); }
+    inline bool IndicesBefore(const FullStepRow<WIDTH>& a, size_t len, size_t lenIndices) const { return memcmp(hash+len, a.hash+len, lenIndices) < 0; }
     std::vector<eh_index> GetIndices(size_t len, size_t lenIndices) const;
 
     template<size_t W>

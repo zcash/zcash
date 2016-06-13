@@ -24,12 +24,12 @@
 template<unsigned int N, unsigned int K>
 int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
 {
-    unsigned int n = N;
-    unsigned int k = K;
+    uint32_t le_N = htole32(N);
+    uint32_t le_K = htole32(K);
     unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES] = {};
-    memcpy(personalization, "ZcashPOW", 8);
-    memcpy(personalization+8,  &n, 4);
-    memcpy(personalization+12, &k, 4);
+    memcpy(personalization, "ZcashPoW", 8);
+    memcpy(personalization+8,  &le_N, 4);
+    memcpy(personalization+12, &le_K, 4);
     return crypto_generichash_blake2b_init_salt_personal(&base_state,
                                                          NULL, 0, // No key.
                                                          N/8,
@@ -37,26 +37,23 @@ int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
                                                          personalization);
 }
 
+// Big-endian so that lexicographic array comparison is equivalent to integer
+// comparison
 void EhIndexToArray(const eh_index i, unsigned char* array)
 {
     assert(sizeof(eh_index) == 4);
-    array[0] = (i >> 24) & 0xFF;
-    array[1] = (i >> 16) & 0xFF;
-    array[2] = (i >>  8) & 0xFF;
-    array[3] =  i        & 0xFF;
+    eh_index bei = htobe32(i);
+    memcpy(array, &bei, sizeof(eh_index));
 }
 
+// Big-endian so that lexicographic array comparison is equivalent to integer
+// comparison
 eh_index ArrayToEhIndex(const unsigned char* array)
 {
     assert(sizeof(eh_index) == 4);
-    eh_index ret {array[0]};
-    ret <<= 8;
-    ret |= array[1];
-    ret <<= 8;
-    ret |= array[2];
-    ret <<= 8;
-    ret |= array[3];
-    return ret;
+    eh_index bei;
+    memcpy(&bei, array, sizeof(eh_index));
+    return be32toh(bei);
 }
 
 eh_trunc TruncateIndex(const eh_index i, const unsigned int ilen)
@@ -77,7 +74,10 @@ StepRow<WIDTH>::StepRow(unsigned int n, const eh_HashState& base_state, eh_index
 {
     eh_HashState state;
     state = base_state;
-    crypto_generichash_blake2b_update(&state, (unsigned char*) &i, sizeof(eh_index));
+    unsigned char array[sizeof(eh_index)];
+    eh_index lei = htole32(i);
+    memcpy(array, &lei, sizeof(eh_index));
+    crypto_generichash_blake2b_update(&state, array, sizeof(eh_index));
     crypto_generichash_blake2b_final(&state, hash, n/8);
 }
 
@@ -103,7 +103,7 @@ FullStepRow<WIDTH>::FullStepRow(const FullStepRow<W>& a, const FullStepRow<W>& b
     assert(len-trim+(2*lenIndices) <= WIDTH);
     for (int i = trim; i < len; i++)
         hash[i-trim] = a.hash[i] ^ b.hash[i];
-    if (a.IndicesBefore(b, len)) {
+    if (a.IndicesBefore(b, len, lenIndices)) {
         std::copy(a.hash+len, a.hash+len+lenIndices, hash+len-trim);
         std::copy(b.hash+len, b.hash+len+lenIndices, hash+len-trim+lenIndices);
     } else {
@@ -532,7 +532,7 @@ bool Equihash<N,K>::IsValidSolution(const eh_HashState& base_state, std::vector<
                 LogPrint("pow", "X[i+1] = %s\n", X[i+1].GetHex(hashLen));
                 return false;
             }
-            if (X[i+1].IndicesBefore(X[i], hashLen)) {
+            if (X[i+1].IndicesBefore(X[i], hashLen, lenIndices)) {
                 return false;
                 LogPrint("pow", "Invalid solution: Index tree incorrectly ordered\n");
             }
