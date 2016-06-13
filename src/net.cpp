@@ -1486,7 +1486,7 @@ void ThreadOpenConnections()
                 continue;
 
             // only connect to full nodes
-            if (!(addr.nServices & NODE_NETWORK))
+            if ((addr.nServices & REQUIRED_SERVICES) != REQUIRED_SERVICES)
                 continue;
 
             // only consider very recently tried nodes after 30 failed attempts
