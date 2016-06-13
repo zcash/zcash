@@ -24,12 +24,12 @@
 template<unsigned int N, unsigned int K>
 int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
 {
-    uint32_t n = htole32(N);
-    uint32_t k = htole32(K);
+    uint32_t le_N = htole32(N);
+    uint32_t le_K = htole32(K);
     unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES] = {};
     memcpy(personalization, "ZcashPoW", 8);
-    memcpy(personalization+8,  &n, 4);
-    memcpy(personalization+12, &k, 4);
+    memcpy(personalization+8,  &le_N, 4);
+    memcpy(personalization+12, &le_K, 4);
     return crypto_generichash_blake2b_init_salt_personal(&base_state,
                                                          NULL, 0, // No key.
                                                          N/8,
@@ -37,7 +37,8 @@ int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
                                                          personalization);
 }
 
-// Big-endian so that array comparison is equivalent to integer comparison
+// Big-endian so that lexicographic array comparison is equivalent to integer
+// comparison
 void EhIndexToArray(const eh_index i, unsigned char* array)
 {
     assert(sizeof(eh_index) == 4);
@@ -45,7 +46,8 @@ void EhIndexToArray(const eh_index i, unsigned char* array)
     memcpy(array, &bei, sizeof(eh_index));
 }
 
-// Big-endian so that array comparison is equivalent to integer comparison
+// Big-endian so that lexicographic array comparison is equivalent to integer
+// comparison
 eh_index ArrayToEhIndex(const unsigned char* array)
 {
     assert(sizeof(eh_index) == 4);
