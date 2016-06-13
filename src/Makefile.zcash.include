@@ -7,6 +7,7 @@ zcash_GenerateParams_SOURCES = zcash/GenerateParams.cpp
 zcash_GenerateParams_LDADD = \
   $(BOOST_LIBS) \
   $(LIBZCASH) \
+  $(LIBSNARK) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZCASH_LIBS)
@@ -16,6 +17,7 @@ zerocash_tests_utilTest_SOURCES = zerocash/tests/utilTest.cpp
 zerocash_tests_utilTest_LDADD = \
   $(BOOST_LIBS) \
   $(LIBZCASH) \
+  $(LIBSNARK) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZCASH_LIBS)

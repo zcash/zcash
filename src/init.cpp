@@ -48,7 +48,7 @@
 #include <boost/thread.hpp>
 #include <openssl/crypto.h>
 
-#include "libsnark/common/profiling.hpp"
+#include "libsnark/src/common/profiling.hpp"
 
 using namespace std;
 

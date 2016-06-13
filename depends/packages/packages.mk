@@ -1,4 +1,4 @@
-zerocash_packages := libsnark libgmp libsodium
+zerocash_packages := libgmp libsodium
 packages := boost openssl $(zerocash_packages) googletest googlemock
 native_packages := native_ccache native_comparisontool
 
