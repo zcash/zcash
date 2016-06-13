@@ -1629,7 +1629,12 @@ bool NonContextualCheckInputs(const CTransaction& tx, CValidationState &state, c
             assert(coins);
 
             if (coins->IsCoinBase()) {
-                
+                // Ensure that coinbases cannot be spent to transparent outputs
+                if (!tx.vout.empty()) {
+                    return state.Invalid(
+                        error("CheckInputs(): tried to spend coinbase with transparent outputs"),
+                        REJECT_INVALID, "bad-txns-coinbase-spend-has-transparent-outputs");
+                }
             }
 
             // Check for negative or overflow input values
