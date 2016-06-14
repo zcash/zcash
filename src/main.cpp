@@ -1715,6 +1715,10 @@ bool NonContextualCheckInputs(const CTransaction& tx, CValidationState &state, c
 
 bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, const Consensus::Params& consensusParams, std::vector<CScriptCheck> *pvChecks)
 {
+    if (!NonContextualCheckInputs(tx, state, inputs, fScriptChecks, flags, cacheStore, consensusParams, pvChecks)) {
+        return false;
+    }
+
     if (!tx.IsCoinBase())
     {
         // While checking, GetBestBlock() refers to the parent block.
@@ -1725,21 +1729,22 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
         {
             const COutPoint &prevout = tx.vin[i].prevout;
             const CCoins *coins = inputs.AccessCoins(prevout.hash);
+            // Assertion is okay because NonContextualCheckInputs ensures the inputs
+            // are available.
             assert(coins);
 
             // If prev is coinbase, check that it's matured
             if (coins->IsCoinBase()) {
-                if (nSpendHeight - coins->nHeight < COINBASE_MATURITY)
+                if (nSpendHeight - coins->nHeight < COINBASE_MATURITY) {
                     return state.Invalid(
                         error("CheckInputs(): tried to spend coinbase at depth %d", nSpendHeight - coins->nHeight),
                         REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
+                }
             }
         }
     }
 
-    return NonContextualCheckInputs(
-        tx, state, inputs, fScriptChecks, flags, cacheStore, consensusParams, pvChecks
-    );
+    return true;
 }
 
 namespace {
