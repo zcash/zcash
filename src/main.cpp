@@ -1631,7 +1631,7 @@ bool NonContextualCheckInputs(const CTransaction& tx, CValidationState &state, c
             if (coins->IsCoinBase()) {
                 // Ensure that coinbases cannot be spent to transparent outputs
                 // Disabled on regtest
-                if (consensusParams.coinbaseMustBeProtected && !tx.vout.empty()) {
+                if (consensusParams.fCoinbaseMustBeProtected && !tx.vout.empty()) {
                     return state.Invalid(
                         error("CheckInputs(): tried to spend coinbase with transparent outputs"),
                         REJECT_INVALID, "bad-txns-coinbase-spend-has-transparent-outputs");
