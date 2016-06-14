@@ -13,7 +13,6 @@
 #include "fs.h"
 #include "test/data/alertTests.raw.h"
 
-#include "main.h"
 #include "rpc/protocol.h"
 #include "rpc/server.h"
 #include "serialize.h"
@@ -407,101 +406,6 @@ BOOST_AUTO_TEST_CASE(AlertDisablesRPC)
 
     SetMockTime(0);
     mapAlerts.clear();
-}
-
-static bool falseFunc(const Consensus::Params&) { return false; }
-
-void PartitionAlertTestImpl(const Consensus::Params& params, int startTime, int expectedTotal, int expectedSlow, int expectedFast)
-{
-    // Test PartitionCheck
-    CCriticalSection csDummy;
-    CBlockIndex indexDummy[800];
-
-    // Generate fake blockchain timestamps relative to
-    // an arbitrary time:
-    int64_t start = startTime;
-    for (int i = 0; i < 800; i++)
-    {
-        indexDummy[i].phashBlock = NULL;
-        indexDummy[i].pprev = i ? &indexDummy[i-1] : NULL;
-        indexDummy[i].nHeight = i;
-        indexDummy[i].nTime = i ? indexDummy[i - 1].nTime + params.PoWTargetSpacing(i) : start;
-        // Other members don't matter, the partition check code doesn't
-        // use them
-    }
-    int64_t now = indexDummy[799].nTime + params.PoWTargetSpacing(800);
-    SetMockTime(now);
-
-    // Test 1: chain with blocks every nPowTargetSpacing seconds,
-    // as normal, no worries:
-    SetMiscWarning("", 0);
-    PartitionCheck(falseFunc, params, csDummy, &indexDummy[799]);
-    BOOST_CHECK_EQUAL("", GetMiscWarning().first);
-
-    // Test 2: go 3.5 hours without a block, expect a warning:
-    now += 3*60*60+30*60;
-    SetMockTime(now);
-    SetMiscWarning("", 0);
-    PartitionCheck(falseFunc, params, csDummy, &indexDummy[799]);
-    std::string expectedSlowErr = strprintf("WARNING: Check your network connection, %d blocks received in the last 4 hours (%d expected)", expectedSlow, expectedTotal);
-    auto warning = GetMiscWarning();
-    // advance 5 seconds so alert time will be in the past
-    SetMockTime(now + 5);
-    BOOST_CHECK_EQUAL(GetTime() - 5, warning.second);
-    BOOST_CHECK_EQUAL(expectedSlowErr, warning.first);
-    BOOST_TEST_MESSAGE(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", warning.second) + " - Got alert text: " + warning.first);
-
-    // Test 3: test the "partition alerts only go off once per day"
-    // code:
-    now += 60*10;
-    SetMockTime(now);
-    SetMiscWarning("", 0);
-    PartitionCheck(falseFunc, params, csDummy, &indexDummy[799]);
-    BOOST_CHECK_EQUAL("", GetMiscWarning().first);
-
-    // Test 4: get 2.5 times as many blocks as expected:
-    start = now + 60*60*24; // Pretend it is a day later
-    for (int i = 0; i < 800; i++) {
-        // Tweak chain timestamps:
-        indexDummy[i].nTime = i ? indexDummy[i - 1].nTime + params.PoWTargetSpacing(i) * 2/5 : start;
-    }
-    now = indexDummy[799].nTime + params.PoWTargetSpacing(0) * 2/5;
-    SetMockTime(now);
-
-    SetMiscWarning("", 0);
-    PartitionCheck(falseFunc, params, csDummy, &indexDummy[799]);
-    std::string expectedFastErr = strprintf("WARNING: Abnormally high number of blocks generated, %d blocks received in the last 4 hours (%d expected)", expectedFast, expectedTotal);
-    warning = GetMiscWarning();
-    // advance 5 seconds so alert time will be in the past
-    SetMockTime(now + 5);
-    BOOST_CHECK_EQUAL(GetTime() - 5, warning.second);
-    BOOST_CHECK_EQUAL(expectedFastErr, warning.first);
-    BOOST_TEST_MESSAGE(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", warning.second) + " - Got alert text: " + warning.first);
-    SetMiscWarning("", 0);
-
-    SetMockTime(0);
-}
-
-BOOST_AUTO_TEST_CASE(PartitionAlert)
-{
-    CChainParams& params = Params(CBaseChainParams::MAIN);
-    PartitionAlertTestImpl(params.GetConsensus(), 1000000000, 96, 12, 240);
-}
-
-BOOST_AUTO_TEST_CASE(PartitionAlertBlossomOnly)
-{
-    PartitionAlertTestImpl(RegtestActivateBlossom(false).GetConsensus(), 1500000000, 96 * 2, 12 * 2, 240 * 2);
-    RegtestDeactivateBlossom();
-}
-
-BOOST_AUTO_TEST_CASE(PartitionAlertBlossomActivates)
-{
-    // 48 pre blossom blocks, 96 blossom blocks will take 48 * 150s + 96 * 75s = 4hrs
-    // in the slow case, all of the blocks will be blossom blocks
-    // in the fast case, 96 blocks will be blossom => 96 * 75s * 2/5 = 2880s spent on blossom
-    // => (14400 - 2880) / (150 * 2/5) = 11520 / 60 = 192 pre blossom blocks
-    PartitionAlertTestImpl(RegtestActivateBlossom(false, 799 - 96).GetConsensus(), 2000000000, 144, 12 * 2, 192 + 96);
-    RegtestDeactivateBlossom();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
