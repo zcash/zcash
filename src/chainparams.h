@@ -42,6 +42,8 @@ public:
         EXT_PUBLIC_KEY,
         EXT_SECRET_KEY,
 
+        ZCPAYMENT_ADDRRESS,
+
         MAX_BASE58_TYPES
     };
 

@@ -2634,11 +2634,8 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
 
     BOOST_FOREACH(const Pair& s, outputs)
     {
-        PaymentAddress addrTo;
-        {
-            CDataStream ssData(ParseHexV(s.name_, "to_address"), SER_NETWORK, PROTOCOL_VERSION);
-            ssData >> addrTo;
-        }
+        CZCPaymentAddress pubaddr(s.name_);
+        PaymentAddress addrTo = pubaddr.Get();
         CAmount nAmount = AmountFromValue(s.value_);
 
         vpourout.push_back(JSOutput(addrTo, nAmount));
@@ -2751,20 +2748,18 @@ Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp)
     auto addr = k.address();
     auto viewing_key = k.viewing_key();
 
-    CDataStream pub(SER_NETWORK, PROTOCOL_VERSION);
     CDataStream priv(SER_NETWORK, PROTOCOL_VERSION);
     CDataStream viewing(SER_NETWORK, PROTOCOL_VERSION);
 
-    pub << addr;
     priv << k;
     viewing << viewing_key;
 
-    std::string pub_hex = HexStr(pub.begin(), pub.end());
+    CZCPaymentAddress pubaddr(addr);
     std::string priv_hex = HexStr(priv.begin(), priv.end());
     std::string viewing_hex = HexStr(viewing.begin(), viewing.end());
 
     Object result;
-    result.push_back(Pair("zcaddress", pub_hex));
+    result.push_back(Pair("zcaddress", pubaddr.ToString()));
     result.push_back(Pair("zcsecretkey", priv_hex));
     result.push_back(Pair("zcviewingkey", viewing_hex));
     return result;
