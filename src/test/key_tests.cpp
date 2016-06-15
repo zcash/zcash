@@ -198,6 +198,10 @@ BOOST_AUTO_TEST_CASE(zc_address_test)
         {
             CZCSpendingKey spendingkey(sk);
             string sk_string = spendingkey.ToString();
+
+            BOOST_CHECK(sk_string[0] == 'S');
+            BOOST_CHECK(sk_string[1] == 'K');
+
             CZCSpendingKey spendingkey2(sk_string);
             SpendingKey sk2 = spendingkey2.Get();
             BOOST_CHECK(sk.inner() == sk2.inner());
