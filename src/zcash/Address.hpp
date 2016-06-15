@@ -19,13 +19,6 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        unsigned char leadingByte = 0x92;
-        READWRITE(leadingByte);
-
-        if (leadingByte != 0x92) {
-            throw std::ios_base::failure("unrecognized payment address lead byte");
-        }
-
         READWRITE(a_pk);
         READWRITE(pk_enc);
     }
