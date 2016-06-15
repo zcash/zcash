@@ -649,13 +649,15 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
         std::string strAddr = keyIO.EncodeDestination(keyid);
         CKey key;
         if (pwalletMain->GetKey(keyid, key)) {
+            file << strprintf("%s %s ", keyIO.EncodeSecret(key), strTime);
             if (pwalletMain->mapAddressBook.count(keyid)) {
-                file << strprintf("%s %s label=%s # addr=%s\n", keyIO.EncodeSecret(key), strTime, EncodeDumpString(pwalletMain->mapAddressBook[keyid].name), strAddr);
+                file << strprintf("label=%s", EncodeDumpString(pwalletMain->mapAddressBook[keyid].name));
             } else if (setKeyPool.count(keyid)) {
-                file << strprintf("%s %s reserve=1 # addr=%s\n", keyIO.EncodeSecret(key), strTime, strAddr);
+                file << "reserve=1";
             } else {
-                file << strprintf("%s %s change=1 # addr=%s\n", keyIO.EncodeSecret(key), strTime, strAddr);
+                file << "change=1";
             }
+            file << strprintf(" # addr=%s%s\n", strAddr, (pwalletMain->mapKeyMetadata[keyid].hdKeypath.size() > 0 ? " hdkeypath="+pwalletMain->mapKeyMetadata[keyid].hdKeypath : ""));
         }
     }
     file << "\n";
