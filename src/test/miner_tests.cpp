@@ -147,6 +147,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 
     LOCK(cs_main);
     fCheckpointsEnabled = false;
+    fCoinbaseEnforcedProtectionEnabled = false;
 
     // We can't make transactions until we have inputs
     // Therefore, load 100 blocks :)
@@ -415,6 +416,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         delete tx;
 
     fCheckpointsEnabled = true;
+    fCoinbaseEnforcedProtectionEnabled = true;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
