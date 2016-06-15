@@ -43,6 +43,7 @@ public:
         EXT_SECRET_KEY,
 
         ZCPAYMENT_ADDRRESS,
+        ZCSPENDING_KEY,
 
         MAX_BASE58_TYPES
     };

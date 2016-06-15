@@ -195,19 +195,28 @@ BOOST_AUTO_TEST_CASE(zc_address_test)
 {
     for (size_t i = 0; i < 1000; i++) {
         auto sk = SpendingKey::random();
-        auto addr = sk.address();
+        {
+            CZCSpendingKey spendingkey(sk);
+            string sk_string = spendingkey.ToString();
+            CZCSpendingKey spendingkey2(sk_string);
+            SpendingKey sk2 = spendingkey2.Get();
+            BOOST_CHECK(sk.inner() == sk2.inner());
+        }
+        {
+            auto addr = sk.address();
 
-        CZCPaymentAddress paymentaddr(addr);
-        string addr_string = paymentaddr.ToString();
+            CZCPaymentAddress paymentaddr(addr);
+            string addr_string = paymentaddr.ToString();
 
-        BOOST_CHECK(addr_string[0] == 'z');
-        BOOST_CHECK(addr_string[1] == 'c');
+            BOOST_CHECK(addr_string[0] == 'z');
+            BOOST_CHECK(addr_string[1] == 'c');
 
-        CZCPaymentAddress paymentaddr2(addr_string);
+            CZCPaymentAddress paymentaddr2(addr_string);
 
-        PaymentAddress addr2 = paymentaddr2.Get();
-        BOOST_CHECK(addr.a_pk == addr2.a_pk);
-        BOOST_CHECK(addr.pk_enc == addr2.pk_enc);
+            PaymentAddress addr2 = paymentaddr2.Get();
+            BOOST_CHECK(addr.a_pk == addr2.a_pk);
+            BOOST_CHECK(addr.pk_enc == addr2.pk_enc);
+        }
     }
 }
 

@@ -107,6 +107,17 @@ public:
     libzcash::PaymentAddress Get() const;
 };
 
+class CZCSpendingKey : public CBase58Data {
+public:
+    bool Set(const libzcash::SpendingKey& addr);
+    CZCSpendingKey() {}
+
+    CZCSpendingKey(const std::string& strAddress) { SetString(strAddress.c_str(), 2); }
+    CZCSpendingKey(const libzcash::SpendingKey& addr) { Set(addr); }
+
+    libzcash::SpendingKey Get() const;
+};
+
 /** base58-encoded Bitcoin addresses.
  * Public-key-hash-addresses have version 0 (or 111 testnet).
  * The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key.

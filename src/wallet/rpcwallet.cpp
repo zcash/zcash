@@ -2459,18 +2459,8 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
 
     LOCK(cs_main);
 
-    SpendingKey k;
-
-    {
-        CDataStream ssData(ParseHexV(params[0], "zcsecretkey"), SER_NETWORK, PROTOCOL_VERSION);
-        try {
-            ssData >> k;
-        } catch(const std::exception &) {
-            throw runtime_error(
-                "zcsecretkey could not be decoded"
-            );
-        }
-    }
+    CZCSpendingKey spendingkey(params[0].get_str());
+    SpendingKey k = spendingkey.Get();
 
     uint256 epk;
     unsigned char nonce;
@@ -2581,18 +2571,8 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
 
     BOOST_FOREACH(const Pair& s, inputs)
     {
-        SpendingKey k;
-
-        {
-            CDataStream ssData(ParseHexV(s.value_, "zcsecretkey"), SER_NETWORK, PROTOCOL_VERSION);
-            try {
-                ssData >> k;
-            } catch(const std::exception &) {
-                throw runtime_error(
-                    "zcsecretkey could not be decoded"
-                );
-            }
-        }
+        CZCSpendingKey spendingkey(s.value_.get_str());
+        SpendingKey k = spendingkey.Get();
 
         keys.push_back(k);
 
@@ -2748,19 +2728,17 @@ Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp)
     auto addr = k.address();
     auto viewing_key = k.viewing_key();
 
-    CDataStream priv(SER_NETWORK, PROTOCOL_VERSION);
     CDataStream viewing(SER_NETWORK, PROTOCOL_VERSION);
 
-    priv << k;
     viewing << viewing_key;
 
     CZCPaymentAddress pubaddr(addr);
-    std::string priv_hex = HexStr(priv.begin(), priv.end());
+    CZCSpendingKey spendingkey(k);
     std::string viewing_hex = HexStr(viewing.begin(), viewing.end());
 
     Object result;
     result.push_back(Pair("zcaddress", pubaddr.ToString()));
-    result.push_back(Pair("zcsecretkey", priv_hex));
+    result.push_back(Pair("zcsecretkey", spendingkey.ToString()));
     result.push_back(Pair("zcviewingkey", viewing_hex));
     return result;
 }
