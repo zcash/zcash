@@ -158,7 +158,11 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 
         CBlock *pblock = &pblocktemplate->block; // pointer for convenience
         pblock->nVersion = 4;
-        // Fake the blocks taking at least nPowTargetSpacing
+        // Fake the blocks taking at least nPowTargetSpacing to be mined.
+        // GetMedianTimePast() returns the median of 11 blocks, so the timestamp
+        // of the next block must be six spacings ahead of that to be at least
+        // one spacing ahead of the tip. Within 11 blocks of genesis, the median
+        // will be closer to the tip, and blocks will appear slower.
         pblock->nTime = chainActive.Tip()->GetMedianTimePast()+6*Params().GetConsensus().nPowTargetSpacing;
         CMutableTransaction txCoinbase(pblock->vtx[0]);
         txCoinbase.vin[0].scriptSig = CScript() << (chainActive.Height()+1) << OP_0;

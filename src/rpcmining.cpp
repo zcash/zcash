@@ -45,16 +45,13 @@ Value GetNetworkHashPS(int lookup, int height) {
     if (pb == NULL || !pb->nHeight)
         return 0;
 
-    // If lookup is -1, then use difficulty averaging window.
+    // If lookup is nonpositive, then use difficulty averaging window.
     if (lookup <= 0)
         lookup = pb->nHeight - Params().GetConsensus().nPowAveragingWindow;
 
-    // If lookup is still negative, then use blocks since genesis.
-    if (lookup <= 0)
-        lookup = pb->nHeight;
-
-    // If lookup is larger than chain, then set it to chain length.
-    if (lookup > pb->nHeight)
+    // If lookup is still nonpositive, or is larger than chain, then set it to
+    // chain length.
+    if (lookup <= 0 || lookup > pb->nHeight)
         lookup = pb->nHeight;
 
     CBlockIndex *pb0 = pb;
