@@ -33,7 +33,7 @@ private:
     bool pourVerify;
 public:
     CValidationState() : mode(MODE_VALID), nDoS(0), chRejectCode(0), corruptionPossible(false), pourVerify(true) {}
-    bool DoS(int level, bool ret = false,
+    virtual bool DoS(int level, bool ret = false,
              unsigned char chRejectCodeIn=0, std::string strRejectReasonIn="",
              bool corruptionIn=false) {
         chRejectCode = chRejectCodeIn;
@@ -45,43 +45,43 @@ public:
         mode = MODE_INVALID;
         return ret;
     }
-    bool SetPerformPourVerification(bool pourVerifyIn) {
+    virtual bool SetPerformPourVerification(bool pourVerifyIn) {
         pourVerify = pourVerifyIn;
     }
-    bool PerformPourVerification() {
+    virtual bool PerformPourVerification() {
         return pourVerify;
     }
-    bool Invalid(bool ret = false,
+    virtual bool Invalid(bool ret = false,
                  unsigned char _chRejectCode=0, std::string _strRejectReason="") {
         return DoS(0, ret, _chRejectCode, _strRejectReason);
     }
-    bool Error(std::string strRejectReasonIn="") {
+    virtual bool Error(std::string strRejectReasonIn="") {
         if (mode == MODE_VALID)
             strRejectReason = strRejectReasonIn;
         mode = MODE_ERROR;
         return false;
     }
-    bool IsValid() const {
+    virtual bool IsValid() const {
         return mode == MODE_VALID;
     }
-    bool IsInvalid() const {
+    virtual bool IsInvalid() const {
         return mode == MODE_INVALID;
     }
-    bool IsError() const {
+    virtual bool IsError() const {
         return mode == MODE_ERROR;
     }
-    bool IsInvalid(int &nDoSOut) const {
+    virtual bool IsInvalid(int &nDoSOut) const {
         if (IsInvalid()) {
             nDoSOut = nDoS;
             return true;
         }
         return false;
     }
-    bool CorruptionPossible() const {
+    virtual bool CorruptionPossible() const {
         return corruptionPossible;
     }
-    unsigned char GetRejectCode() const { return chRejectCode; }
-    std::string GetRejectReason() const { return strRejectReason; }
+    virtual unsigned char GetRejectCode() const { return chRejectCode; }
+    virtual std::string GetRejectReason() const { return strRejectReason; }
 };
 
 #endif // BITCOIN_CONSENSUS_VALIDATION_H
