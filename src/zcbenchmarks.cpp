@@ -44,8 +44,8 @@ double benchmark_sleep()
 double benchmark_parameter_loading()
 {
     // FIXME: this is duplicated with the actual loading code
-    boost::filesystem::path pk_path = ZC_GetParamsDir() / "z4-proving.key";
-    boost::filesystem::path vk_path = ZC_GetParamsDir() / "z4-verification.key";
+    boost::filesystem::path pk_path = ZC_GetParamsDir() / "z5-proving.key";
+    boost::filesystem::path vk_path = ZC_GetParamsDir() / "z5-verifying.key";
 
     timer_start();
 

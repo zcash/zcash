@@ -96,11 +96,6 @@ public:
         a_sk->generate_r1cs_constraints();
         rho->generate_r1cs_constraints();
 
-        // TODO: These constraints may not be necessary if SHA256
-        // already boolean constrains its outputs.
-        a_pk->generate_r1cs_constraints();
-        commitment->generate_r1cs_constraints();
-
         spend_authority->generate_r1cs_constraints();
         expose_nullifiers->generate_r1cs_constraints();
 
@@ -221,10 +216,6 @@ public:
         note_gadget<FieldT>::generate_r1cs_constraints();
 
         a_pk->generate_r1cs_constraints();
-
-        // TODO: This constraint may not be necessary if SHA256
-        // already boolean constrains its outputs.
-        rho->generate_r1cs_constraints();
 
         prevent_faerie_gold->generate_r1cs_constraints();
 
