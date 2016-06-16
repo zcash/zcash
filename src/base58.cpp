@@ -7,6 +7,9 @@
 #include "hash.h"
 #include "uint256.h"
 
+#include "version.h"
+#include "streams.h"
+
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
@@ -309,3 +312,72 @@ bool CBitcoinSecret::SetString(const std::string& strSecret)
 {
     return SetString(strSecret.c_str());
 }
+
+const size_t serializedPaymentAddressSize = 64;
+
+bool CZCPaymentAddress::Set(const libzcash::PaymentAddress& addr)
+{
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << addr;
+    std::vector<unsigned char> addrSerialized(ss.begin(), ss.end());
+    assert(addrSerialized.size() == serializedPaymentAddressSize);
+    SetData(Params().Base58Prefix(CChainParams::ZCPAYMENT_ADDRRESS), &addrSerialized[0], serializedPaymentAddressSize);
+    return true;
+}
+
+libzcash::PaymentAddress CZCPaymentAddress::Get() const
+{
+    if (vchData.size() != serializedPaymentAddressSize) {
+        throw std::runtime_error(
+            "payment address is invalid"
+        );
+    }
+
+    if (vchVersion != Params().Base58Prefix(CChainParams::ZCPAYMENT_ADDRRESS)) {
+        throw std::runtime_error(
+            "payment address is for wrong network type"
+        );
+    }
+
+    std::vector<unsigned char> serialized(vchData.begin(), vchData.end());
+
+    CDataStream ss(serialized, SER_NETWORK, PROTOCOL_VERSION);
+    libzcash::PaymentAddress ret;
+    ss >> ret;
+    return ret;
+}
+
+const size_t serializedSpendingKeySize = 32;
+
+bool CZCSpendingKey::Set(const libzcash::SpendingKey& addr)
+{
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << addr;
+    std::vector<unsigned char> addrSerialized(ss.begin(), ss.end());
+    assert(addrSerialized.size() == serializedSpendingKeySize);
+    SetData(Params().Base58Prefix(CChainParams::ZCSPENDING_KEY), &addrSerialized[0], serializedSpendingKeySize);
+    return true;
+}
+
+libzcash::SpendingKey CZCSpendingKey::Get() const
+{
+    if (vchData.size() != serializedSpendingKeySize) {
+        throw std::runtime_error(
+            "spending key is invalid"
+        );
+    }
+
+    if (vchVersion != Params().Base58Prefix(CChainParams::ZCSPENDING_KEY)) {
+        throw std::runtime_error(
+            "spending key is for wrong network type"
+        );
+    }
+
+    std::vector<unsigned char> serialized(vchData.begin(), vchData.end());
+
+    CDataStream ss(serialized, SER_NETWORK, PROTOCOL_VERSION);
+    libzcash::SpendingKey ret;
+    ss >> ret;
+    return ret;
+}
+
