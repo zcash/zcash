@@ -30,8 +30,14 @@ git shortlog helps a lot, for example:
 
     $ git shortlog --no-merges v${ZCASH_RELEASE_PREV}..HEAD \
         > ./doc/release-notes/release-notes-${ZCASH_RELEASE}.md
+
+### B3. change the network magics
+
+If this release breaks backwards compatibility, change the network magic
+numbers. Set the four `pchMessageStart` in `CTestNetParams` in `chainparams.cpp`
+to random values.
         
-### B3. merge the previous changes
+### B4. merge the previous changes
 
 Do the normal pull-request, review, testing process for this release PR.
 
