@@ -18,9 +18,11 @@ Also, the following commands use the ZCASH_RELEASE_PREV bash variable for the pr
 ### B1. update (commit) version in sources
 
     doc/README.md
+    src/clientversion.h
+    configure.ac
     
-In `clientversion.h` change CLIENT_VERSION_IS_RELEASE to false while Zcash
-is in alpha-test phase.
+In `configure.ac` and `clientversion.h` change CLIENT_VERSION_IS_RELEASE to
+false while Zcash is in alpha-test phase.
 
 ### B2. write release notes
 
