@@ -33,9 +33,6 @@ double GetDifficulty(const CBlockIndex* blockindex)
             blockindex = chainActive.Tip();
     }
 
-    int nShift = (blockindex->nBits >> 24) & 0xff;
-
-
     bool fNegative;
     bool fOverflow;
     arith_uint256 bnDiff;
@@ -49,7 +46,7 @@ double GetDifficulty(const CBlockIndex* blockindex)
     if (fNegative || fOverflow)
         dDiff = 0.0;
 
-    bnDiff /= ArithToUint256(bnCurr);
+    bnDiff /= bnCurr;
 
     dDiff = bnDiff.getdouble();
 
