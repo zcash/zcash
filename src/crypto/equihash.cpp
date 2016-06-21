@@ -268,11 +268,24 @@ std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& ba
         LogPrint("pow", "- Sorting list\n");
         std::sort(X.begin(), X.end(), CompareSR(hashLen));
         LogPrint("pow", "- Finding collisions\n");
-        for (int i = 0; i < X.size() - 1; i++) {
-            FullStepRow<FinalFullWidth> res(X[i], X[i+1], hashLen, lenIndices, 0);
-            if (res.IsZero(hashLen) && DistinctIndices(X[i], X[i+1], hashLen, lenIndices)) {
-                solns.insert(res.GetIndices(hashLen, 2*lenIndices));
+        int i = 0;
+        while (i < X.size() - 1) {
+            int j = 1;
+            while (i+j < X.size() &&
+                    HasCollision(X[i], X[i+j], hashLen)) {
+                j++;
             }
+
+            for (int l = 0; l < j - 1; l++) {
+                for (int m = l + 1; m < j; m++) {
+                    FullStepRow<FinalFullWidth> res(X[i+l], X[i+m], hashLen, lenIndices, 0);
+                    if (DistinctIndices(X[i+l], X[i+m], hashLen, lenIndices)) {
+                        solns.insert(res.GetIndices(hashLen, 2*lenIndices));
+                    }
+                }
+            }
+
+            i += j;
         }
     } else
         LogPrint("pow", "- List is empty\n");
@@ -416,11 +429,22 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
             LogPrint("pow", "- Sorting list\n");
             std::sort(Xt.begin(), Xt.end(), CompareSR(hashLen));
             LogPrint("pow", "- Finding collisions\n");
-            for (int i = 0; i < Xt.size() - 1; i++) {
-                TruncatedStepRow<FinalTruncatedWidth> res(Xt[i], Xt[i+1], hashLen, lenIndices, 0);
-                if (res.IsZero(hashLen)) {
-                    partialSolns.push_back(res.GetTruncatedIndices(hashLen, 2*lenIndices));
+            int i = 0;
+            while (i < Xt.size() - 1) {
+                int j = 1;
+                while (i+j < Xt.size() &&
+                        HasCollision(Xt[i], Xt[i+j], hashLen)) {
+                    j++;
                 }
+
+                for (int l = 0; l < j - 1; l++) {
+                    for (int m = l + 1; m < j; m++) {
+                        TruncatedStepRow<FinalTruncatedWidth> res(Xt[i+l], Xt[i+m], hashLen, lenIndices, 0);
+                        partialSolns.push_back(res.GetTruncatedIndices(hashLen, 2*lenIndices));
+                    }
+                }
+
+                i += j;
             }
         } else
             LogPrint("pow", "- List is empty\n");
