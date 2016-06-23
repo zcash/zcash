@@ -870,8 +870,23 @@ crypto_sign_check_S_lt_l(const unsigned char *S)
 }
 
 
-
 bool CheckTransaction(const CTransaction& tx, CValidationState &state)
+{
+    if (!CheckTransactionWithoutProofVerification(tx, state)) {
+        return false;
+    } else {
+        // Ensure that zk-SNARKs verify
+        BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+            if (!pour.Verify(*pzcashParams, tx.joinSplitPubKey)) {
+                return state.DoS(100, error("CheckTransaction(): pour does not verify"),
+                                    REJECT_INVALID, "bad-txns-pour-verification-failed");
+            }
+        }
+        return true;
+    }
+}
+
+bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidationState &state)
 {
     // Basic checks that don't depend on any context
 
@@ -1007,16 +1022,6 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
             if (crypto_sign_check_S_lt_l(&tx.joinSplitSig[32]) != 0) {
                 return state.DoS(100, error("CheckTransaction(): non-canonical ed25519 signature"),
                                  REJECT_INVALID, "non-canonical-ed25519-signature");
-            }
-
-            if (state.PerformPourVerification()) {
-                // Ensure that zk-SNARKs verify
-                BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
-                    if (!pour.Verify(*pzcashParams, tx.joinSplitPubKey)) {
-                        return state.DoS(100, error("CheckTransaction(): pour does not verify"),
-                                         REJECT_INVALID, "bad-txns-pour-verification-failed");
-                    }
-                }
             }
         }
     }
