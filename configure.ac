@@ -443,6 +443,7 @@ if test x$use_hardening != xno; then
     # These are only available on Windows.
     AX_CHECK_LINK_FLAG([[-Wl,--dynamicbase]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,--dynamicbase"],[AC_MSG_ERROR(Cannot enable --dynamicbase)])
     AX_CHECK_LINK_FLAG([[-Wl,--nxcompat]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,--nxcompat"],[AC_MSG_ERROR(Cannot enable --nxcompat)])
+    AX_CHECK_LINK_FLAG([[-Wl,--high-entropy-va]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,--high-entropy-va"],[AC_MSG_ERROR(Cannot enable ASLR)])
   fi
 
   case $host in
