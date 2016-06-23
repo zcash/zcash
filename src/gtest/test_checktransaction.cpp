@@ -47,9 +47,9 @@ public:
 CMutableTransaction GetValidTransaction() {
     CMutableTransaction mtx;
     mtx.vin.resize(2);
-    mtx.vin[0].prevout.hash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+    mtx.vin[0].prevout.hash = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
     mtx.vin[0].prevout.n = 0;
-    mtx.vin[1].prevout.hash = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
+    mtx.vin[1].prevout.hash = uint256S("0000000000000000000000000000000000000000000000000000000000000002");
     mtx.vin[1].prevout.n = 0;
     mtx.vout.resize(2);
     // mtx.vout[0].scriptPubKey = 
@@ -233,5 +233,95 @@ TEST(checktransaction_tests, bad_txns_vpubs_both_nonzero) {
 
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpubs-both-nonzero", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+TEST(checktransaction_tests, bad_txns_inputs_duplicate) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vin[1].prevout.hash = mtx.vin[0].prevout.hash;
+    mtx.vin[1].prevout.n = mtx.vin[0].prevout.n;
+
+    CTransaction tx(mtx);
+
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-inputs-duplicate", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+TEST(checktransaction_tests, bad_pours_serials_duplicate_same_pour) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vpour[0].serials.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+    mtx.vpour[0].serials.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+
+    CTransaction tx(mtx);
+
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-pours-serials-duplicate", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+TEST(checktransaction_tests, bad_pours_serials_duplicate_different_pour) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vpour[0].serials.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+    mtx.vpour[1].serials.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+
+    CTransaction tx(mtx);
+
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-pours-serials-duplicate", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+TEST(checktransaction_tests, bad_cb_has_pours) {
+    CMutableTransaction mtx = GetValidTransaction();
+    // Make it a coinbase.
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+
+    mtx.vpour.resize(1);
+
+    CTransaction tx(mtx);
+    EXPECT_TRUE(tx.IsCoinBase());
+
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-has-pours", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+TEST(checktransaction_tests, bad_cb_empty_scriptsig) {
+    CMutableTransaction mtx = GetValidTransaction();
+    // Make it a coinbase.
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+
+    mtx.vpour.resize(0);
+
+    CTransaction tx(mtx);
+    EXPECT_TRUE(tx.IsCoinBase());
+
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-length", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+TEST(checktransaction_tests, bad_txns_prevout_null) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vin[1].prevout.SetNull();
+
+    CTransaction tx(mtx);
+    EXPECT_FALSE(tx.IsCoinBase());
+
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-prevout-null", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+TEST(checktransaction_tests, bad_txns_invalid_joinsplit_signature) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.joinSplitSig[0] += 1;
+    CTransaction tx(mtx);
+
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
