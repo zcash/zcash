@@ -325,3 +325,27 @@ TEST(checktransaction_tests, bad_txns_invalid_joinsplit_signature) {
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
+
+TEST(checktransaction_tests, non_canonical_ed25519_signature) {
+    CMutableTransaction mtx = GetValidTransaction();
+
+    // Copied from libsodium/crypto_sign/ed25519/ref10/open.c
+    static const unsigned char L[32] =
+      { 0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
+        0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 };
+
+    // Add L to S, which starts at mtx.joinSplitSig[32].
+    unsigned int s = 0;
+    for (size_t i = 0; i < 32; i++) {
+        s = mtx.joinSplitSig[32 + i] + L[i] + (s >> 8);
+        mtx.joinSplitSig[32 + i] = s & 0xff;
+    }
+
+    CTransaction tx(mtx);
+
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "non-canonical-ed25519-signature", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
