@@ -8,6 +8,7 @@ src/zcash-gtest
 src/bitcoin-tx
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
+src/standaloneminer
 
 # Zcash utilities
 src/zcash/GenerateParams
