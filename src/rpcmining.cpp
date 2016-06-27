@@ -766,3 +766,27 @@ Value estimatepriority(const Array& params, bool fHelp)
 
     return mempool.estimatePriority(nBlocks);
 }
+
+Value getblocksubsidy(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "getblocksubsidy index\n"
+            "\nReturns block subsidy reward, taking into account the mining slow start, of block at index provided.\n"
+            "\nArguments:\n"
+            "1. index         (numeric, required) The block index\n"
+            "\nResult:\n"
+            "amount           (numeric) The block reward amount in ZEC.\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getblocksubsidy", "1000")
+            + HelpExampleRpc("getblockubsidy", "1000")
+        );
+
+    LOCK(cs_main);
+    int nHeight = params[0].get_int();
+    if (nHeight < 0 || nHeight > chainActive.Height())
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+
+    CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
+    return ValueFromAmount(nReward);
+}
