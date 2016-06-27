@@ -80,7 +80,10 @@ CCoinsViewCache::~CCoinsViewCache()
 }
 
 size_t CCoinsViewCache::DynamicMemoryUsage() const {
-    return memusage::DynamicUsage(cacheCoins) + cachedCoinsUsage;
+    return memusage::DynamicUsage(cacheCoins) +
+           memusage::DynamicUsage(cacheAnchors) +
+           memusage::DynamicUsage(cacheSerials) +
+           cachedCoinsUsage;
 }
 
 CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const {
@@ -120,6 +123,7 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tr
     CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(rt, CAnchorsCacheEntry())).first;
     ret->second.entered = true;
     ret->second.tree = tree;
+    cachedCoinsUsage += memusage::DynamicUsage(ret->second.tree);
 
     return true;
 }
@@ -135,8 +139,6 @@ bool CCoinsViewCache::GetSerial(const uint256 &serial) const {
 
     cacheSerials.insert(std::make_pair(serial, entry));
 
-    // TODO: cache usage
-
     return tmp;
 }
 
@@ -151,11 +153,17 @@ void CCoinsViewCache::PushAnchor(const ZCIncrementalMerkleTree &tree) {
     // different way (make all blocks modify mapAnchors somehow)
     // but this is simpler to reason about.
     if (currentRoot != newrt) {
-        CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(newrt, CAnchorsCacheEntry())).first;
+        auto insertRet = cacheAnchors.insert(std::make_pair(newrt, CAnchorsCacheEntry()));
+        CAnchorsMap::iterator ret = insertRet.first;
 
         ret->second.entered = true;
         ret->second.tree = tree;
         ret->second.flags = CAnchorsCacheEntry::DIRTY;
+
+        if (insertRet.second) {
+            // An insert took place
+            cachedCoinsUsage += memusage::DynamicUsage(ret->second.tree);
+        }
 
         hashAnchor = newrt;
     }
@@ -303,7 +311,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                     entry.tree = child_it->second.tree;
                     entry.flags = CAnchorsCacheEntry::DIRTY;
 
-                    // TODO: cache usage
+                    cachedCoinsUsage += memusage::DynamicUsage(entry.tree);
                 }
             } else {
                 if (parent_it->second.entered != child_it->second.entered) {
@@ -331,8 +339,6 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                     CSerialsCacheEntry& entry = cacheSerials[child_it->first];
                     entry.entered = true;
                     entry.flags = CSerialsCacheEntry::DIRTY;
-
-                    // TODO: cache usage
                 }
             } else {
                 if (parent_it->second.entered != child_it->second.entered) {
