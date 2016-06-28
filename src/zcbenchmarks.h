@@ -10,5 +10,7 @@ extern double benchmark_create_joinsplit();
 extern double benchmark_solve_equihash();
 extern double benchmark_verify_joinsplit(const CPourTx &joinsplit);
 extern double benchmark_verify_equihash();
+extern double benchmark_validate_full_block_transparent();
+extern double benchmark_validate_full_block_transparent_acs();
 
 #endif
