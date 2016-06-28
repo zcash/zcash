@@ -139,7 +139,7 @@ double benchmark_large_tx(bool testValidate)
     // with 1 input and N outputs are about the same size as transactions with
     // N inputs and 1 output.
     mapArgs["-blockmaxsize"] = itostr(MAX_BLOCK_SIZE);
-    int nBlockSizeRemaining = MAX_BLOCK_SIZE-1000;
+    int nMaxBlockSize = MAX_BLOCK_SIZE-1000;
 
     std::vector<COutput> vCoins;
     pwalletMain->AvailableCoins(vCoins, true);
@@ -157,7 +157,7 @@ double benchmark_large_tx(bool testValidate)
     // 1a) While the transaction is smaller than the maximum:
     CTransaction tx {mtx};
     unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
-    while (nTxSize < nBlockSizeRemaining) {
+    while (nTxSize < nMaxBlockSize) {
         // 1b) Add another output
         size_t oldSize = mtx.vout.size();
         mtx.vout.resize(oldSize+1);
@@ -171,6 +171,7 @@ double benchmark_large_tx(bool testValidate)
     // 1c) Sign the splitting transaction
     SignSignature(*pwalletMain, *vCoins[0].tx, mtx, 0);
     uint256 hash = mtx.GetHash();
+    mempool.clear();
     mempool.addUnchecked(hash, CTxMemPoolEntry(mtx, 11, GetTime(), 111.0, 11));
 
     // 2) Mine the splitting transaction into a block
