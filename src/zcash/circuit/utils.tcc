@@ -22,13 +22,8 @@ std::vector<bool> trailing252(std::vector<bool> input) {
 template<typename T>
 std::vector<bool> to_bool_vector(T input) {
     std::vector<unsigned char> input_v(input.begin(), input.end());
-    std::vector<bool> output_bv(256, 0);
-    libzerocash::convertBytesVectorToVector(
-        input_v,
-        output_bv
-    );
 
-    return output_bv;
+    return convertBytesVectorToVector(input_v);
 }
 
 std::vector<bool> uint256_to_bool_vector(uint256 input) {
@@ -41,10 +36,8 @@ std::vector<bool> uint252_to_bool_vector(uint252 input) {
 
 std::vector<bool> uint64_to_bool_vector(uint64_t input) {
     auto num_bv = convertIntToVectorLE(input);
-    std::vector<bool> num_v(64, 0);
-    libzerocash::convertBytesVectorToVector(num_bv, num_v);
-
-    return num_v;
+    
+    return convertBytesVectorToVector(num_bv);
 }
 
 void insert_uint256(std::vector<bool>& into, uint256 from) {

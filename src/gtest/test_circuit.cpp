@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include "uint256.h"
 
-#include "zerocash/utils/util.h"
 #include "zcash/util.h"
 
 #include <boost/foreach.hpp>
@@ -14,7 +13,6 @@
 #include "libsnark/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.hpp"
 
 using namespace libsnark;
-using namespace libzerocash;
 
 #include "zcash/circuit/utils.tcc"
 

@@ -15,6 +15,9 @@
 #include "serialize.h"
 #include "streams.h"
 
+#include "zcash/IncrementalMerkleTree.hpp"
+#include "zcash/util.h"
+
 #include "libsnark/common/default_types/r1cs_ppzksnark_pp.hpp"
 #include "libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp"
 #include "libsnark/gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp"
@@ -40,13 +43,9 @@ read_json(const std::string& jsondata)
     return v.get_array();
 }
 
-#include "zcash/IncrementalMerkleTree.hpp"
-#include "zerocash/utils/util.h"
-
 //#define PRINT_JSON 1
 
 using namespace std;
-using namespace libzerocash;
 using namespace libsnark;
 
 
@@ -178,10 +177,10 @@ void test_tree(Array root_tests, Array ser_tests, Array witness_ser_tests, Array
                     std::vector<bool> commitment_bv;
                     {
                         std::vector<unsigned char> commitment_v(test_commitment.begin(), test_commitment.end());
-                        convertBytesVectorToVector(commitment_v, commitment_bv);
+                        commitment_bv = convertBytesVectorToVector(commitment_v);
                     }
 
-                    size_t path_index = libzerocash::convertVectorToInt(path.index);
+                    size_t path_index = convertVectorToInt(path.index);
 
                     commitment.bits.fill_with_bits(pb, bit_vector(commitment_bv));
                     positions.fill_with_bits_of_ulong(pb, path_index);
@@ -193,7 +192,7 @@ void test_tree(Array root_tests, Array ser_tests, Array witness_ser_tests, Array
                     {
                         uint256 witroot = wit.root();
                         std::vector<unsigned char> root_v(witroot.begin(), witroot.end());
-                        convertBytesVectorToVector(root_v, root_bv);
+                        root_bv = convertBytesVectorToVector(root_v);
                     }
 
                     root.bits.fill_with_bits(pb, bit_vector(root_bv));

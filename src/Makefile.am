@@ -72,7 +72,6 @@ endif
 # TODO: rename to libzcash
 LIBZCASH_H = \
   zcash/IncrementalMerkleTree.h \
-  zerocash/utils/util.h \
   zcash/NoteEncryption.hpp \
   zcash/Address.hpp \
   zcash/JoinSplit.hpp \
@@ -408,7 +407,6 @@ bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 # zerocash protocol primitives #
 libzcash_a_SOURCES = \
   zcash/IncrementalMerkleTree.cpp \
-  zerocash/utils/util.cpp \
   zcash/NoteEncryption.cpp \
   zcash/Address.cpp \
   zcash/JoinSplit.cpp \

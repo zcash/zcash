@@ -4,7 +4,7 @@
 
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "crypto/sha256.h"
-#include "zerocash/utils/util.h" // TODO: remove these utilities
+#include "zcash/util.h"
 
 namespace libzcash {
 
@@ -244,11 +244,8 @@ MerklePath IncrementalMerkleTree<Depth, Hash>::path(std::deque<Hash> filler_hash
     BOOST_FOREACH(Hash b, path)
     {
         std::vector<unsigned char> hashv(b.begin(), b.end());
-        std::vector<bool> tmp_b;
 
-        libzerocash::convertBytesVectorToVector(hashv, tmp_b);
-
-        merkle_path.push_back(tmp_b);
+        merkle_path.push_back(convertBytesVectorToVector(hashv));
     }
 
     std::reverse(merkle_path.begin(), merkle_path.end());

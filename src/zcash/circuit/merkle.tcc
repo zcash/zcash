@@ -50,7 +50,7 @@ public:
     void generate_r1cs_witness(const MerklePath& path) {
         // TODO: Change libsnark so that it doesn't require this goofy
         // number thing in its API.
-        size_t path_index = libzerocash::convertVectorToInt(path.index);
+        size_t path_index = convertVectorToInt(path.index);
 
         positions.fill_with_bits_of_ulong(this->pb, path_index);
 
