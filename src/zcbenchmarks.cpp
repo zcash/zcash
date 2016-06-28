@@ -231,6 +231,7 @@ processblock:
     }
 
     double ret = timer_stop();
+    delete pblocktemplate;
     if (!testValidate)
         return ret;
 
@@ -238,7 +239,6 @@ processblock:
     mempool.addUnchecked(hash, CTxMemPoolEntry(mtx2, 11, GetTime(), 111.0, 11));
 
     // 4) Call CreateNewBlock (which itself calls TestBlockValidity)
-    delete pblocktemplate;
     pblocktemplate = CreateNewBlock(scriptDummy);
     pblock = &pblocktemplate->block;
 
