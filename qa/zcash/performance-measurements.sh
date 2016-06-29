@@ -8,6 +8,10 @@ function zcash_rpc {
     ./src/zcash-cli -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 "$@"
 }
 
+function zcashd_generate {
+    zcash_rpc generate 101 > /dev/null
+}
+
 function zcashd_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
@@ -28,6 +32,19 @@ function zcashd_massif_start {
     ZCASHD_PID=$!
 }
 
+function zcashd_massif_start_chain {
+    rm -rf "$DATADIR"
+    mkdir -p "$DATADIR"
+    rm -f massif.out
+    ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
+    ZCASHD_PID=$!
+    zcashd_generate
+    zcash_rpc stop > /dev/null
+    wait $ZCASHD_PID
+    valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
+    ZCASHD_PID=$!
+}
+
 function zcashd_massif_stop {
     zcash_rpc stop > /dev/null
     wait $ZCASHD_PID
@@ -38,6 +55,19 @@ function zcashd_valgrind_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
     rm -f valgrind.out
+    valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
+    ZCASHD_PID=$!
+}
+
+function zcashd_valgrind_start_chain {
+    rm -rf "$DATADIR"
+    mkdir -p "$DATADIR"
+    rm -f valgrind.out
+    ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
+    ZCASHD_PID=$!
+    zcashd_generate
+    zcash_rpc stop > /dev/null
+    wait $ZCASHD_PID
     valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
     ZCASHD_PID=$!
 }
@@ -72,6 +102,14 @@ case "$1" in
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1000
                 ;;
+            createlargetx)
+                zcashd_generate
+                zcash_rpc zcbenchmark createlargetx 10
+                ;;
+            validatelargetx)
+                zcashd_generate
+                zcash_rpc zcbenchmark validatelargetx 10
+                ;;
             *)
                 zcashd_stop
                 echo "Bad arguments."
@@ -80,7 +118,13 @@ case "$1" in
         zcashd_stop
         ;;
     memory)
-        zcashd_massif_start
+        case "$2" in
+            createlargetx|validatelargetx)
+                zcashd_massif_start_chain
+                ;;
+            *)
+                zcashd_massif_start
+        esac
         case "$2" in
             sleep)
                 zcash_rpc zcbenchmark sleep 1
@@ -99,6 +143,12 @@ case "$1" in
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1
+                ;;
+            createlargetx)
+                zcash_rpc zcbenchmark validatelargetx 1
+                ;;
+            validatelargetx)
+                zcash_rpc zcbenchmark validatelargetx 1
                 ;;
             *)
                 zcashd_massif_stop
@@ -109,7 +159,13 @@ case "$1" in
         rm -f massif.out
         ;;
     valgrind)
-        zcashd_valgrind_start
+        case "$2" in
+            createlargetx|validatelargetx)
+                zcashd_valgrind_start_chain
+                ;;
+            *)
+                zcashd_valgrind_start
+        esac
         case "$2" in
             sleep)
                 zcash_rpc zcbenchmark sleep 1
@@ -128,6 +184,12 @@ case "$1" in
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1
+                ;;
+            createlargetx)
+                zcash_rpc zcbenchmark validatelargetx 1
+                ;;
+            validatelargetx)
+                zcash_rpc zcbenchmark validatelargetx 1
                 ;;
             *)
                 zcashd_valgrind_stop
