@@ -18,6 +18,8 @@ using namespace std;
 
 BOOST_FIXTURE_TEST_SUITE(Checkpoints_tests, BasicTestingSetup)
 
+// TODO: checkpoints have been removed for now.
+/*
 BOOST_AUTO_TEST_CASE(sanity)
 {
     const Checkpoints::CCheckpointData& checkpoints = Params(CBaseChainParams::MAIN).Checkpoints();
@@ -37,5 +39,5 @@ BOOST_AUTO_TEST_CASE(sanity)
 
     BOOST_CHECK(Checkpoints::GetTotalBlocksEstimate(checkpoints) >= 134444);
 }    
-
+*/
 BOOST_AUTO_TEST_SUITE_END()
