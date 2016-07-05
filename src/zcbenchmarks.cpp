@@ -241,6 +241,7 @@ processblock:
     // 4) Call CreateNewBlock (which itself calls TestBlockValidity)
     pblocktemplate = CreateNewBlock(scriptDummy);
     pblock = &pblocktemplate->block;
+    pindexPrev = chainActive.Tip();
 
     // 5) Call TestBlockValidity again under timing
     timer_start();

@@ -108,7 +108,7 @@ case "$1" in
                 ;;
             validatelargetx)
                 zcashd_generate
-                zcash_rpc zcbenchmark validatelargetx 10
+                zcash_rpc zcbenchmark validatelargetx 2
                 ;;
             *)
                 zcashd_stop
