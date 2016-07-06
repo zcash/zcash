@@ -132,123 +132,61 @@ double benchmark_verify_equihash()
     return timer_stop();
 }
 
-double benchmark_large_tx(bool testValidate)
+double benchmark_large_tx()
 {
-    // Note that the transaction size is checked against the splitting
-    // transaction, not the merging one. Thus we are assuming that transactions
-    // with 1 input and N outputs are about the same size as transactions with
-    // N inputs and 1 output.
-    mapArgs["-blockmaxsize"] = itostr(MAX_BLOCK_SIZE);
-    int nMaxBlockSize = MAX_BLOCK_SIZE-1000;
+    // Number of inputs in the spending transaction that we will simulate
+    const size_t NUM_INPUTS = 5550;
 
-    std::vector<COutput> vCoins;
-    pwalletMain->AvailableCoins(vCoins, true);
+    // Create priv/pub key
+    CKey priv;
+    priv.MakeNewKey(false);
+    auto pub = priv.GetPubKey();
+    CBasicKeyStore tempKeystore;
+    tempKeystore.AddKey(priv);
 
-    // 1) Create a transaction splitting the first coinbase to many outputs
-    CMutableTransaction mtx;
-    mtx.vin.resize(1);
-    mtx.vin[0].prevout.hash = vCoins[0].tx->GetHash();
-    mtx.vin[0].prevout.n = 0;
-    mtx.vout.resize(1);
-    mtx.vout[0].scriptPubKey = vCoins[0].tx->vout[0].scriptPubKey;
-    mtx.vout[0].nValue = 1000;
-    SignSignature(*pwalletMain, *vCoins[0].tx, mtx, 0);
+    // The "original" transaction that the spending transaction will spend
+    // from.
+    CMutableTransaction m_orig_tx;
+    m_orig_tx.vout.resize(1);
+    m_orig_tx.vout[0].nValue = 1000000;
+    CScript prevPubKey = GetScriptForDestination(pub.GetID());
+    m_orig_tx.vout[0].scriptPubKey = prevPubKey;
 
-    // 1a) While the transaction is smaller than the maximum:
-    CTransaction tx {mtx};
-    unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
-    while (nTxSize < nMaxBlockSize) {
-        // 1b) Add another output
-        size_t oldSize = mtx.vout.size();
-        mtx.vout.resize(oldSize+1);
-        mtx.vout[oldSize].scriptPubKey = vCoins[0].tx->vout[0].scriptPubKey;
-        mtx.vout[oldSize].nValue = 1000;
+    auto orig_tx = CTransaction(m_orig_tx);
 
-        tx = mtx;
-        nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+    CMutableTransaction spending_tx;
+    auto input_hash = orig_tx.GetHash();
+    // Add NUM_INPUTS inputs
+    for (size_t i = 0; i < NUM_INPUTS; i++) {
+        spending_tx.vin.emplace_back(input_hash, 0);
     }
 
-    // 1c) Sign the splitting transaction
-    SignSignature(*pwalletMain, *vCoins[0].tx, mtx, 0);
-    uint256 hash = mtx.GetHash();
-    mempool.clear();
-    mempool.addUnchecked(hash, CTxMemPoolEntry(mtx, 11, GetTime(), 111.0, 11));
-
-    // 2) Mine the splitting transaction into a block
-    CScript scriptDummy = CScript() << OP_TRUE;
-    CBlockTemplate* pblocktemplate = CreateNewBlock(scriptDummy);
-    CBlock *pblock = &pblocktemplate->block;
-    CBlockIndex* pindexPrev = chainActive.Tip();
-    unsigned int nExtraNonce = 0;
-    IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
-
-    arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
-    unsigned int n = Params().EquihashN();
-    unsigned int k = Params().EquihashK();
-    crypto_generichash_blake2b_state eh_state;
-    EhInitialiseState(n, k, eh_state);
-    CEquihashInput I{*pblock};
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << I;
-    crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
-    while (true) {
-        crypto_generichash_blake2b_state curr_state;
-        curr_state = eh_state;
-        crypto_generichash_blake2b_update(&curr_state,
-                                          pblock->nNonce.begin(),
-                                          pblock->nNonce.size());
-        std::set<std::vector<unsigned int>> solns;
-        EhOptimisedSolve(n, k, curr_state, solns);
-        for (auto soln : solns) {
-            pblock->nSolution = soln;
-            if (UintToArith256(pblock->GetHash()) > hashTarget) {
-                continue;
-            }
-            goto processblock;
-        }
-        pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
+    // Sign for all the inputs
+    for (size_t i = 0; i < NUM_INPUTS; i++) {
+        SignSignature(tempKeystore, prevPubKey, spending_tx, i, SIGHASH_ALL);
     }
-processblock:
-    CValidationState state;
-    assert(ProcessNewBlock(state, NULL, pblock, true, NULL));
 
+    // Serialize:
+    {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << spending_tx;
+        //std::cout << "SIZE OF SPENDING TX: " << ss.size() << std::endl;
+
+        auto error = MAX_BLOCK_SIZE / 20; // 5% error
+        assert(ss.size() < MAX_BLOCK_SIZE + error);
+        assert(ss.size() > MAX_BLOCK_SIZE - error);
+    }
+
+    // Benchmark signature verification costs:
     timer_start();
-
-    // 3) Create a transaction that merges all of the inputs
-    CMutableTransaction mtx2;
-    mtx2.vin.resize(mtx.vout.size());
-    mtx2.vout.resize(1);
-    mtx2.vout[0].scriptPubKey = vCoins[0].tx->vout[0].scriptPubKey;
-    mtx2.vout[0].nValue = 0;
-
-    for (int i = 0; i < mtx2.vin.size(); i++) {
-        mtx2.vin[i].prevout.hash = hash;
-        mtx2.vin[i].prevout.n = i;
+    for (size_t i = 0; i < NUM_INPUTS; i++) {
+        ScriptError serror = SCRIPT_ERR_OK;
+        assert(VerifyScript(spending_tx.vin[i].scriptSig,
+                            prevPubKey,
+                            STANDARD_SCRIPT_VERIFY_FLAGS,
+                            MutableTransactionSignatureChecker(&spending_tx, i),
+                            &serror));
     }
-
-    for (int i = 0; i < mtx2.vin.size(); i++) {
-        SignSignature(*pwalletMain, mtx, mtx2, i);
-    }
-
-    double ret = timer_stop();
-    delete pblocktemplate;
-    if (!testValidate)
-        return ret;
-
-    hash = mtx2.GetHash();
-    mempool.addUnchecked(hash, CTxMemPoolEntry(mtx2, 11, GetTime(), 111.0, 11));
-
-    // 4) Call CreateNewBlock (which itself calls TestBlockValidity)
-    pblocktemplate = CreateNewBlock(scriptDummy);
-    pblock = &pblocktemplate->block;
-    pindexPrev = chainActive.Tip();
-
-    // 5) Call TestBlockValidity again under timing
-    timer_start();
-    assert(TestBlockValidity(state, *pblock, pindexPrev, false, false));
-    ret = timer_stop();
-    delete pblocktemplate;
-    mempool.clear();
-    return ret;
+    return timer_stop();
 }
 
