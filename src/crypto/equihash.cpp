@@ -210,7 +210,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& ba
         LogPrint("pow", "Round %d:\n", r);
         // 2a) Sort the list
         LogPrint("pow", "- Sorting list\n");
-        std::sort(X.begin(), X.end(), CompareSR(hashLen));
+        std::sort(X.begin(), X.end(), CompareSR(CollisionByteLength));
 
         LogPrint("pow", "- Finding collisions\n");
         int i = 0;
@@ -360,7 +360,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
             LogPrint("pow", "Round %d:\n", r);
             // 2a) Sort the list
             LogPrint("pow", "- Sorting list\n");
-            std::sort(Xt.begin(), Xt.end(), CompareSR(hashLen));
+            std::sort(Xt.begin(), Xt.end(), CompareSR(CollisionByteLength));
 
             LogPrint("pow", "- Finding collisions\n");
             int i = 0;
