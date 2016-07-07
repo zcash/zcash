@@ -135,7 +135,7 @@ double benchmark_verify_equihash()
 double benchmark_large_tx()
 {
     // Number of inputs in the spending transaction that we will simulate
-    const size_t NUM_INPUTS = 5550;
+    const size_t NUM_INPUTS = 11100;
 
     // Create priv/pub key
     CKey priv;
