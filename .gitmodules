@@ -1,0 +1,3 @@
+[submodule "src/libsnark"]
+	path = src/libsnark
+	url = https://github.com/ebfull/libsnark.git
