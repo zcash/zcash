@@ -105,7 +105,7 @@ def hex_str_to_bytes(hex_str):
 def str_to_b64str(string):
     return b64encode(string.encode('utf-8')).decode('ascii')
 
-def sync_blocks(rpc_connections, wait=1, timeout=60, allow_different_tips=False):
+def sync_blocks(rpc_connections, wait=0.125, timeout=60, allow_different_tips=False):
     """
     Wait until everybody has the same tip, and has notified
     all internal listeners of them.
@@ -134,7 +134,7 @@ def sync_blocks(rpc_connections, wait=1, timeout=60, allow_different_tips=False)
 
     raise AssertionError("Block sync failed")
 
-def sync_mempools(rpc_connections, wait=1, timeout=60):
+def sync_mempools(rpc_connections, wait=0.5, timeout=60):
     """
     Wait until everybody has the same transactions in their memory
     pools, and has notified all internal listeners of them
