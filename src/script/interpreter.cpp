@@ -1125,6 +1125,7 @@ bool TransactionSignatureChecker::VerifySignature(const std::vector<unsigned cha
 
 bool TransactionSignatureChecker::CheckSig(const vector<unsigned char>& vchSigIn, const vector<unsigned char>& vchPubKey, const CScript& scriptCode) const
 {
+    static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
     CPubKey pubkey(vchPubKey);
     if (!pubkey.IsValid())
         return false;
@@ -1137,6 +1138,10 @@ bool TransactionSignatureChecker::CheckSig(const vector<unsigned char>& vchSigIn
     vchSig.pop_back();
 
     uint256 sighash = SignatureHash(scriptCode, *txTo, nIn, nHashType);
+
+    if (sighash == one) {
+        return false;
+    }
 
     if (!VerifySignature(vchSig, pubkey, sighash))
         return false;
