@@ -2393,6 +2393,20 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         pzcashParams->loadProvingKey();
     }
 
+    CPourTx* samplepour = NULL;
+
+    if (benchmarktype == "verifyjoinsplit") {
+        uint256 pubKeyHash;
+        uint256 anchor = ZCIncrementalMerkleTree().root();
+        samplepour = new CPourTx(*pzcashParams,
+                                 pubKeyHash,
+                                 anchor,
+                                 {JSInput(), JSInput()},
+                                 {JSOutput(), JSOutput()},
+                                 0,
+                                 0);
+    }
+
     for (int i = 0; i < samplecount; i++) {
         if (benchmarktype == "sleep") {
             sample_times.push_back(benchmark_sleep());
@@ -2401,20 +2415,7 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         } else if (benchmarktype == "createjoinsplit") {
             sample_times.push_back(benchmark_create_joinsplit());
         } else if (benchmarktype == "verifyjoinsplit") {
-            if (params.size() != 3) {
-                throw JSONRPCError(RPC_TYPE_ERROR, "Please provide a transaction with a JoinSplit.");
-            }
-
-            CTransaction tx;
-            if (!DecodeHexTx(tx, params[2].get_str())) {
-                throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
-            }
-
-            if (tx.vpour.size() != 1) {
-                throw JSONRPCError(RPC_TYPE_ERROR, "The transaction must have exactly one JoinSplit.");
-            }
-
-            sample_times.push_back(benchmark_verify_joinsplit(tx.vpour[0]));
+            sample_times.push_back(benchmark_verify_joinsplit(*samplepour));
         } else if (benchmarktype == "solveequihash") {
             sample_times.push_back(benchmark_solve_equihash());
         } else if (benchmarktype == "verifyequihash") {
@@ -2422,9 +2423,12 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         } else if (benchmarktype == "validatelargetx") {
             sample_times.push_back(benchmark_large_tx());
         } else {
+            delete samplepour;
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
         }
     }
+
+    delete samplepour;
 
     Array results;
     for (int i = 0; i < samplecount; i++) {
