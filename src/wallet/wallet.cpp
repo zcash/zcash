@@ -117,18 +117,21 @@ SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
         throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): HD seed not found");
 
     auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    uint32_t bip44CoinType = Params().BIP44CoinType();
 
     // We use a fixed keypath scheme of m/32'/coin_type'/account'
     // Derive m/32'
     auto m_32h = m.Derive(32 | ZIP32_HARDENED_KEY_LIMIT);
     // Derive m/32'/coin_type'
-    auto m_32h_cth = m_32h.Derive(Params().BIP44CoinType() | ZIP32_HARDENED_KEY_LIMIT);
+    auto m_32h_cth = m_32h.Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
 
     // Derive account key at next index, skip keys already known to the wallet
     libzcash::SaplingExtendedSpendingKey xsk;
     do
     {
         xsk = m_32h_cth.Derive(hdChain.saplingAccountCounter | ZIP32_HARDENED_KEY_LIMIT);
+        metadata.hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(hdChain.saplingAccountCounter) + "'";
+        metadata.seedFp = hdChain.seedFp;
         // Increment childkey index
         hdChain.saplingAccountCounter++;
     } while (HaveSaplingSpendingKey(xsk.expsk.full_viewing_key()));
