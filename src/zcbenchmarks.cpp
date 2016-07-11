@@ -76,7 +76,7 @@ double benchmark_create_joinsplit()
     uint256 anchor = ZCIncrementalMerkleTree().root();
 
     timer_start();
-    CPourTx pourtx(*pzcashParams,
+    JSDescription pourtx(*pzcashParams,
                    pubKeyHash,
                    anchor,
                    {JSInput(), JSInput()},
@@ -89,7 +89,7 @@ double benchmark_create_joinsplit()
     return ret;
 }
 
-double benchmark_verify_joinsplit(const CPourTx &joinsplit)
+double benchmark_verify_joinsplit(const JSDescription &joinsplit)
 {
     timer_start();
     uint256 pubKeyHash;

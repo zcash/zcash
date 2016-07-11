@@ -99,7 +99,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     const CTransaction& tx = mapTx[hash].GetTx();
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
-    BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+    BOOST_FOREACH(const JSDescription &pour, tx.vpour) {
         BOOST_FOREACH(const uint256 &serial, pour.serials) {
             mapSerials[serial] = &tx;
         }
@@ -148,7 +148,7 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
             }
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
                 mapNextTx.erase(txin.prevout);
-            BOOST_FOREACH(const CPourTx& pour, tx.vpour) {
+            BOOST_FOREACH(const JSDescription& pour, tx.vpour) {
                 BOOST_FOREACH(const uint256& serial, pour.serials) {
                     mapSerials.erase(serial);
                 }
@@ -200,7 +200,7 @@ void CTxMemPool::removeWithAnchor(const uint256 &invalidRoot)
 
     for (std::map<uint256, CTxMemPoolEntry>::const_iterator it = mapTx.begin(); it != mapTx.end(); it++) {
         const CTransaction& tx = it->second.GetTx();
-        BOOST_FOREACH(const CPourTx& pour, tx.vpour) {
+        BOOST_FOREACH(const JSDescription& pour, tx.vpour) {
             if (pour.anchor == invalidRoot) {
                 transactionsToRemove.push_back(tx);
                 break;
@@ -230,7 +230,7 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
         }
     }
 
-    BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+    BOOST_FOREACH(const JSDescription &pour, tx.vpour) {
         BOOST_FOREACH(const uint256 &serial, pour.serials) {
             std::map<uint256, const CTransaction*>::iterator it = mapSerials.find(serial);
             if (it != mapSerials.end()) {
@@ -317,7 +317,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 
         boost::unordered_map<uint256, ZCIncrementalMerkleTree, CCoinsKeyHasher> intermediates;
 
-        BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+        BOOST_FOREACH(const JSDescription &pour, tx.vpour) {
             BOOST_FOREACH(const uint256 &serial, pour.serials) {
                 assert(!pcoins->GetSerial(serial));
             }

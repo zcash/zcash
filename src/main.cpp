@@ -876,7 +876,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
         return false;
     } else {
         // Ensure that zk-SNARKs verify
-        BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+        BOOST_FOREACH(const JSDescription &pour, tx.vpour) {
             if (!pour.Verify(*pzcashParams, tx.joinSplitPubKey)) {
                 return state.DoS(100, error("CheckTransaction(): pour does not verify"),
                                     REJECT_INVALID, "bad-txns-pour-verification-failed");
@@ -921,7 +921,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Ensure that pour values are well-formed
-    BOOST_FOREACH(const CPourTx& pour, tx.vpour)
+    BOOST_FOREACH(const JSDescription& pour, tx.vpour)
     {
         if (pour.vpub_old < 0) {
             return state.DoS(100, error("CheckTransaction(): pour.vpub_old negative"),
@@ -968,7 +968,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
 
     // Check for duplicate pour serials in this transaction
     set<uint256> vPourSerials;
-    BOOST_FOREACH(const CPourTx& pour, tx.vpour)
+    BOOST_FOREACH(const JSDescription& pour, tx.vpour)
     {
         BOOST_FOREACH(const uint256& serial, pour.serials)
         {
@@ -1104,7 +1104,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             return false;
         }
     }
-    BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+    BOOST_FOREACH(const JSDescription &pour, tx.vpour) {
         BOOST_FOREACH(const uint256 &serial, pour.serials) {
             if (pool.mapSerials.count(serial))
             {
@@ -1586,7 +1586,7 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
     }
 
     // spend serials
-    BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+    BOOST_FOREACH(const JSDescription &pour, tx.vpour) {
         BOOST_FOREACH(const uint256 &serial, pour.serials) {
             inputs.SetSerial(serial, true);
         }
@@ -1908,7 +1908,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         }
 
         // unspend serials
-        BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+        BOOST_FOREACH(const JSDescription &pour, tx.vpour) {
             BOOST_FOREACH(const uint256 &serial, pour.serials) {
                 view.SetSerial(serial, false);
             }
@@ -2157,7 +2157,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
         UpdateCoins(tx, state, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
 
-        BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
+        BOOST_FOREACH(const JSDescription &pour, tx.vpour) {
             BOOST_FOREACH(const uint256 &bucket_commitment, pour.commitments) {
                 // Insert the bucket commitments into our temporary tree.
 

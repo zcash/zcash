@@ -92,7 +92,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 
     Array vpour;
     for (unsigned int i = 0; i < tx.vpour.size(); i++) {
-        const CPourTx& pourtx = tx.vpour[i];
+        const JSDescription& pourtx = tx.vpour[i];
         Object pour;
 
         pour.push_back(Pair("anchor", pourtx.anchor.GetHex()));

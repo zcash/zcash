@@ -2393,18 +2393,18 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         pzcashParams->loadProvingKey();
     }
 
-    CPourTx* samplejoinsplit = NULL;
+    JSDescription* samplejoinsplit = NULL;
 
     if (benchmarktype == "verifyjoinsplit") {
         uint256 pubKeyHash;
         uint256 anchor = ZCIncrementalMerkleTree().root();
-        samplejoinsplit = new CPourTx(*pzcashParams,
-                                 pubKeyHash,
-                                 anchor,
-                                 {JSInput(), JSInput()},
-                                 {JSOutput(), JSOutput()},
-                                 0,
-                                 0);
+        samplejoinsplit = new JSDescription(*pzcashParams,
+                                            pubKeyHash,
+                                            anchor,
+                                            {JSInput(), JSInput()},
+                                            {JSOutput(), JSOutput()},
+                                            0,
+                                            0);
     }
 
     for (int i = 0; i < samplecount; i++) {
@@ -2644,7 +2644,7 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
     mtx.nVersion = 2;
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    CPourTx pourtx(*pzcashParams,
+    JSDescription pourtx(*pzcashParams,
                    joinSplitPubKey,
                    anchor,
                    {vpourin[0], vpourin[1]},

@@ -9,7 +9,7 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
-CPourTx::CPourTx(ZCJoinSplit& params,
+JSDescription::JSDescription(ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& anchor,
             const boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
@@ -37,7 +37,7 @@ CPourTx::CPourTx(ZCJoinSplit& params,
     );
 }
 
-bool CPourTx::Verify(
+bool JSDescription::Verify(
     ZCJoinSplit& params,
     const uint256& pubKeyHash
 ) const {
@@ -54,7 +54,7 @@ bool CPourTx::Verify(
     );
 }
 
-uint256 CPourTx::h_sig(ZCJoinSplit& params, const uint256& pubKeyHash) const
+uint256 JSDescription::h_sig(ZCJoinSplit& params, const uint256& pubKeyHash) const
 {
     return params.h_sig(randomSeed, serials, pubKeyHash);
 }
@@ -139,7 +139,7 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<std::vector<CTxIn>*>(&vin) = tx.vin;
     *const_cast<std::vector<CTxOut>*>(&vout) = tx.vout;
     *const_cast<unsigned int*>(&nLockTime) = tx.nLockTime;
-    *const_cast<std::vector<CPourTx>*>(&vpour) = tx.vpour;
+    *const_cast<std::vector<JSDescription>*>(&vpour) = tx.vpour;
     *const_cast<uint256*>(&joinSplitPubKey) = tx.joinSplitPubKey;
     *const_cast<joinsplit_sig_t*>(&joinSplitSig) = tx.joinSplitSig;
     *const_cast<uint256*>(&hash) = tx.hash;
@@ -156,7 +156,7 @@ CAmount CTransaction::GetValueOut() const
             throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
     }
 
-    for (std::vector<CPourTx>::const_iterator it(vpour.begin()); it != vpour.end(); ++it)
+    for (std::vector<JSDescription>::const_iterator it(vpour.begin()); it != vpour.end(); ++it)
     {
         // NB: vpub_old "takes" money from the value pool just as outputs do
         nValueOut += it->vpub_old;
@@ -170,7 +170,7 @@ CAmount CTransaction::GetValueOut() const
 CAmount CTransaction::GetPourValueIn() const
 {
     CAmount nValue = 0;
-    for (std::vector<CPourTx>::const_iterator it(vpour.begin()); it != vpour.end(); ++it)
+    for (std::vector<JSDescription>::const_iterator it(vpour.begin()); it != vpour.end(); ++it)
     {
         // NB: vpub_new "gives" money to the value pool just as inputs do
         nValue += it->vpub_new;

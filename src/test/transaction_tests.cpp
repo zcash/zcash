@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
 
     auto witness = merkleTree.witness();
 
-    // create CPourTx
+    // create JSDescription
     uint256 pubKeyHash;
     boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
         libzcash::JSInput(witness, note, k),
@@ -342,13 +342,13 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
     };
 
     {
-        CPourTx pourtx(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
+        JSDescription pourtx(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
         BOOST_CHECK(pourtx.Verify(*p, pubKeyHash));
 
         CDataStream ss(SER_DISK, CLIENT_VERSION);
         ss << pourtx;
 
-        CPourTx pourtx_deserialized;
+        JSDescription pourtx_deserialized;
         ss >> pourtx_deserialized;
 
         BOOST_CHECK(pourtx_deserialized == pourtx);
@@ -357,13 +357,13 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
 
     {
         // Ensure that the balance equation is working.
-        BOOST_CHECK_THROW(CPourTx(*p, pubKeyHash, rt, inputs, outputs, 10, 0), std::invalid_argument);
-        BOOST_CHECK_THROW(CPourTx(*p, pubKeyHash, rt, inputs, outputs, 0, 10), std::invalid_argument);
+        BOOST_CHECK_THROW(JSDescription(*p, pubKeyHash, rt, inputs, outputs, 10, 0), std::invalid_argument);
+        BOOST_CHECK_THROW(JSDescription(*p, pubKeyHash, rt, inputs, outputs, 0, 10), std::invalid_argument);
     }
 
     {
         // Ensure that it won't verify if the root is changed.
-        auto test = CPourTx(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
+        auto test = JSDescription(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
         test.anchor = GetRandHash();
         BOOST_CHECK(!test.Verify(*p, pubKeyHash));
     }
@@ -393,8 +393,8 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vout-empty");
 
-        newTx.vpour.push_back(CPourTx());
-        CPourTx *pourtx = &newTx.vpour[0];
+        newTx.vpour.push_back(JSDescription());
+        JSDescription *pourtx = &newTx.vpour[0];
 
         pourtx->serials[0] = GetRandHash();
         pourtx->serials[1] = GetRandHash();
@@ -422,9 +422,9 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vpour.push_back(CPourTx());
+        newTx.vpour.push_back(JSDescription());
         
-        CPourTx *pourtx = &newTx.vpour[0];
+        JSDescription *pourtx = &newTx.vpour[0];
         pourtx->vpub_old = -1;
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
@@ -448,9 +448,9 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
 
         pourtx->vpub_new = (MAX_MONEY / 2) + 10;
 
-        newTx.vpour.push_back(CPourTx());
+        newTx.vpour.push_back(JSDescription());
 
-        CPourTx *pourtx2 = &newTx.vpour[1];
+        JSDescription *pourtx2 = &newTx.vpour[1];
         pourtx2->vpub_new = (MAX_MONEY / 2) + 10;
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
@@ -461,8 +461,8 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vpour.push_back(CPourTx());
-        CPourTx *pourtx = &newTx.vpour[0];
+        newTx.vpour.push_back(JSDescription());
+        JSDescription *pourtx = &newTx.vpour[0];
 
         pourtx->serials[0] = GetRandHash();
         pourtx->serials[1] = pourtx->serials[0];
@@ -472,8 +472,8 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
 
         pourtx->serials[1] = GetRandHash();
 
-        newTx.vpour.push_back(CPourTx());
-        CPourTx *pourtx2 = &newTx.vpour[1];
+        newTx.vpour.push_back(JSDescription());
+        JSDescription *pourtx2 = &newTx.vpour[1];
 
         pourtx2->serials[0] = GetRandHash();
         pourtx2->serials[1] = pourtx->serials[0];
@@ -486,8 +486,8 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vpour.push_back(CPourTx());
-        CPourTx *pourtx = &newTx.vpour[0];
+        newTx.vpour.push_back(JSDescription());
+        JSDescription *pourtx = &newTx.vpour[0];
         pourtx->serials[0] = GetRandHash();
         pourtx->serials[1] = GetRandHash();
 

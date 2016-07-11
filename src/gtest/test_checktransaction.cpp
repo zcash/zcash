@@ -15,9 +15,9 @@ TEST(checktransaction_tests, check_vpub_not_both_nonzero) {
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vpour.push_back(CPourTx());
+        newTx.vpour.push_back(JSDescription());
 
-        CPourTx *pourtx = &newTx.vpour[0];
+        JSDescription *pourtx = &newTx.vpour[0];
         pourtx->vpub_old = 1;
         pourtx->vpub_new = 1;
 

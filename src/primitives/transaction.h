@@ -17,7 +17,7 @@
 #include "zcash/Zcash.h"
 #include "zcash/JoinSplit.hpp"
 
-class CPourTx
+class JSDescription
 {
 public:
     // These values 'enter from' and 'exit to' the value
@@ -65,9 +65,9 @@ public:
     // This is a zk-SNARK which ensures that this pour is valid.
     boost::array<unsigned char, ZKSNARK_PROOF_SIZE> proof;
 
-    CPourTx(): vpub_old(0), vpub_new(0) { }
+    JSDescription(): vpub_old(0), vpub_new(0) { }
 
-    CPourTx(ZCJoinSplit& params,
+    JSDescription(ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& rt,
             const boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
@@ -98,7 +98,7 @@ public:
         READWRITE(proof);
     }
 
-    friend bool operator==(const CPourTx& a, const CPourTx& b)
+    friend bool operator==(const JSDescription& a, const JSDescription& b)
     {
         return (
             a.vpub_old == b.vpub_old &&
@@ -114,7 +114,7 @@ public:
             );
     }
 
-    friend bool operator!=(const CPourTx& a, const CPourTx& b)
+    friend bool operator!=(const JSDescription& a, const JSDescription& b)
     {
         return !(a == b);
     }
@@ -303,7 +303,7 @@ public:
     const std::vector<CTxIn> vin;
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
-    const std::vector<CPourTx> vpour;
+    const std::vector<JSDescription> vpour;
     const uint256 joinSplitPubKey;
     const joinsplit_sig_t joinSplitSig;
 
@@ -325,7 +325,7 @@ public:
         READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
         READWRITE(*const_cast<uint32_t*>(&nLockTime));
         if (nVersion >= 2) {
-            READWRITE(*const_cast<std::vector<CPourTx>*>(&vpour));
+            READWRITE(*const_cast<std::vector<JSDescription>*>(&vpour));
             if (vpour.size() > 0) {
                 READWRITE(*const_cast<uint256*>(&joinSplitPubKey));
                 READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
@@ -382,7 +382,7 @@ struct CMutableTransaction
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
-    std::vector<CPourTx> vpour;
+    std::vector<JSDescription> vpour;
     uint256 joinSplitPubKey;
     CTransaction::joinsplit_sig_t joinSplitSig;
 

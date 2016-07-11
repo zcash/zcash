@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE(chained_pours)
 
     ZCIncrementalMerkleTree tree;
 
-    CPourTx ptx1;
+    JSDescription ptx1;
     ptx1.anchor = tree.root();
     ptx1.commitments[0] = appendRandomCommitment(tree);
     ptx1.commitments[1] = appendRandomCommitment(tree);
@@ -232,13 +232,13 @@ BOOST_AUTO_TEST_CASE(chained_pours)
     // Although it's not possible given our assumptions, if
     // two pours create the same treestate twice, we should
     // still be able to anchor to it.
-    CPourTx ptx1b;
+    JSDescription ptx1b;
     ptx1b.anchor = tree.root();
     ptx1b.commitments[0] = ptx1.commitments[0];
     ptx1b.commitments[1] = ptx1.commitments[1];
 
-    CPourTx ptx2;
-    CPourTx ptx3;
+    JSDescription ptx2;
+    JSDescription ptx3;
 
     ptx2.anchor = tree.root();
     ptx3.anchor = tree.root();
