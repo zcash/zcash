@@ -60,6 +60,12 @@ public:
 
     IncrementalMerkleTree() { }
 
+    size_t DynamicMemoryUsage() const {
+        return 32 + // left
+               32 + // right
+               parents.size() * 32; // parents
+    }
+
     void append(Hash obj);
     Hash root() const {
         return root(Depth, std::deque<Hash>());
