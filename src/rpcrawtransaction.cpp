@@ -98,11 +98,11 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
         pour.push_back(Pair("anchor", pourtx.anchor.GetHex()));
 
         {
-            Array serials;
-            BOOST_FOREACH(const uint256 serial, pourtx.serials) {
-                serials.push_back(serial.GetHex());
+            Array nullifiers;
+            BOOST_FOREACH(const uint256 serial, pourtx.nullifiers) {
+                nullifiers.push_back(serial.GetHex());
             }
-            pour.push_back(Pair("serials", serials));
+            pour.push_back(Pair("nullifiers", nullifiers));
         }
 
         {

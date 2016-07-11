@@ -100,7 +100,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
     BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
-        BOOST_FOREACH(const uint256 &serial, pour.serials) {
+        BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
             mapSerials[serial] = &tx;
         }
     }
@@ -149,7 +149,7 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
                 mapNextTx.erase(txin.prevout);
             BOOST_FOREACH(const JSDescription& pour, tx.vjoinsplit) {
-                BOOST_FOREACH(const uint256& serial, pour.serials) {
+                BOOST_FOREACH(const uint256& serial, pour.nullifiers) {
                     mapSerials.erase(serial);
                 }
             }
@@ -231,7 +231,7 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
     }
 
     BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
-        BOOST_FOREACH(const uint256 &serial, pour.serials) {
+        BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
             std::map<uint256, const CTransaction*>::iterator it = mapSerials.find(serial);
             if (it != mapSerials.end()) {
                 const CTransaction &txConflict = *it->second;
@@ -318,7 +318,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         boost::unordered_map<uint256, ZCIncrementalMerkleTree, CCoinsKeyHasher> intermediates;
 
         BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
-            BOOST_FOREACH(const uint256 &serial, pour.serials) {
+            BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
                 assert(!pcoins->GetSerial(serial));
             }
 

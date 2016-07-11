@@ -29,7 +29,7 @@ JSDescription::JSDescription(ZCJoinSplit& params,
         pubKeyHash,
         randomSeed,
         macs,
-        serials,
+        nullifiers,
         commitments,
         vpub_old,
         vpub_new,
@@ -46,7 +46,7 @@ bool JSDescription::Verify(
         pubKeyHash,
         randomSeed,
         macs,
-        serials,
+        nullifiers,
         commitments,
         vpub_old,
         vpub_new,
@@ -56,7 +56,7 @@ bool JSDescription::Verify(
 
 uint256 JSDescription::h_sig(ZCJoinSplit& params, const uint256& pubKeyHash) const
 {
-    return params.h_sig(randomSeed, serials, pubKeyHash);
+    return params.h_sig(randomSeed, nullifiers, pubKeyHash);
 }
 
 std::string COutPoint::ToString() const

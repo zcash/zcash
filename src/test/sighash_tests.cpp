@@ -130,8 +130,8 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
             }
 
             pourtx.anchor = GetRandHash();
-            pourtx.serials[0] = GetRandHash();
-            pourtx.serials[1] = GetRandHash();
+            pourtx.nullifiers[0] = GetRandHash();
+            pourtx.nullifiers[1] = GetRandHash();
             pourtx.ephemeralKey = GetRandHash();
             pourtx.randomSeed = GetRandHash();
             randombytes_buf(pourtx.ciphertexts[0].begin(), pourtx.ciphertexts[0].size());

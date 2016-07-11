@@ -966,17 +966,17 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         vInOutPoints.insert(txin.prevout);
     }
 
-    // Check for duplicate pour serials in this transaction
-    set<uint256> vPourSerials;
+    // Check for duplicate pour nullifiers in this transaction
+    set<uint256> vJoinSplitNullifiers;
     BOOST_FOREACH(const JSDescription& pour, tx.vjoinsplit)
     {
-        BOOST_FOREACH(const uint256& serial, pour.serials)
+        BOOST_FOREACH(const uint256& serial, pour.nullifiers)
         {
-            if (vPourSerials.count(serial))
-                return state.DoS(100, error("CheckTransaction(): duplicate serials"),
-                             REJECT_INVALID, "bad-pours-serials-duplicate");
+            if (vJoinSplitNullifiers.count(serial))
+                return state.DoS(100, error("CheckTransaction(): duplicate nullifiers"),
+                             REJECT_INVALID, "bad-pours-nullifiers-duplicate");
 
-            vPourSerials.insert(serial);
+            vJoinSplitNullifiers.insert(serial);
         }
     }
 
@@ -1105,7 +1105,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
     }
     BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
-        BOOST_FOREACH(const uint256 &serial, pour.serials) {
+        BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
             if (pool.mapSerials.count(serial))
             {
                 return false;
@@ -1585,9 +1585,9 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
         }
     }
 
-    // spend serials
+    // spend nullifiers
     BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
-        BOOST_FOREACH(const uint256 &serial, pour.serials) {
+        BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
             inputs.SetSerial(serial, true);
         }
     }
@@ -1907,9 +1907,9 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         outs->Clear();
         }
 
-        // unspend serials
+        // unspend nullifiers
         BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
-            BOOST_FOREACH(const uint256 &serial, pour.serials) {
+            BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
                 view.SetSerial(serial, false);
             }
         }

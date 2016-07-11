@@ -396,7 +396,7 @@ bool CCoinsViewCache::HavePourRequirements(const CTransaction& tx) const
 
     BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit)
     {
-        BOOST_FOREACH(const uint256& serial, pour.serials)
+        BOOST_FOREACH(const uint256& serial, pour.nullifiers)
         {
             if (GetSerial(serial)) {
                 // If the serial is set, this transaction

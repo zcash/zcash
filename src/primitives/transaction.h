@@ -31,11 +31,11 @@ public:
     // transaction.
     uint256 anchor;
 
-    // Serials are used to prevent double-spends. They
+    // Nullifiers are used to prevent double-spends. They
     // are derived from the secrets placed in the bucket
     // and the secret spend-authority key known by the
     // spender.
-    boost::array<uint256, ZC_NUM_JS_INPUTS> serials;
+    boost::array<uint256, ZC_NUM_JS_INPUTS> nullifiers;
 
     // Bucket commitments are introduced into the commitment
     // tree, blinding the public about the values and
@@ -89,7 +89,7 @@ public:
         READWRITE(vpub_old);
         READWRITE(vpub_new);
         READWRITE(anchor);
-        READWRITE(serials);
+        READWRITE(nullifiers);
         READWRITE(commitments);
         READWRITE(ephemeralKey);
         READWRITE(ciphertexts);
@@ -104,7 +104,7 @@ public:
             a.vpub_old == b.vpub_old &&
             a.vpub_new == b.vpub_new &&
             a.anchor == b.anchor &&
-            a.serials == b.serials &&
+            a.nullifiers == b.nullifiers &&
             a.commitments == b.commitments &&
             a.ephemeralKey == b.ephemeralKey &&
             a.ciphertexts == b.ciphertexts &&

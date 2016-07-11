@@ -396,8 +396,8 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         newTx.vjoinsplit.push_back(JSDescription());
         JSDescription *pourtx = &newTx.vjoinsplit[0];
 
-        pourtx->serials[0] = GetRandHash();
-        pourtx->serials[1] = GetRandHash();
+        pourtx->nullifiers[0] = GetRandHash();
+        pourtx->nullifiers[1] = GetRandHash();
 
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-invalid-joinsplit-signature");
@@ -457,29 +457,29 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-txouttotal-toolarge");
     }
     {
-        // Ensure that serials are never duplicated within a transaction.
+        // Ensure that nullifiers are never duplicated within a transaction.
         CMutableTransaction newTx(tx);
         CValidationState state;
 
         newTx.vjoinsplit.push_back(JSDescription());
         JSDescription *pourtx = &newTx.vjoinsplit[0];
 
-        pourtx->serials[0] = GetRandHash();
-        pourtx->serials[1] = pourtx->serials[0];
+        pourtx->nullifiers[0] = GetRandHash();
+        pourtx->nullifiers[1] = pourtx->nullifiers[0];
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
-        BOOST_CHECK(state.GetRejectReason() == "bad-pours-serials-duplicate");
+        BOOST_CHECK(state.GetRejectReason() == "bad-pours-nullifiers-duplicate");
 
-        pourtx->serials[1] = GetRandHash();
+        pourtx->nullifiers[1] = GetRandHash();
 
         newTx.vjoinsplit.push_back(JSDescription());
         JSDescription *pourtx2 = &newTx.vjoinsplit[1];
 
-        pourtx2->serials[0] = GetRandHash();
-        pourtx2->serials[1] = pourtx->serials[0];
+        pourtx2->nullifiers[0] = GetRandHash();
+        pourtx2->nullifiers[1] = pourtx->nullifiers[0];
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
-        BOOST_CHECK(state.GetRejectReason() == "bad-pours-serials-duplicate");
+        BOOST_CHECK(state.GetRejectReason() == "bad-pours-nullifiers-duplicate");
     }
     {
         // Ensure that coinbase transactions do not have pours.
@@ -488,8 +488,8 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
 
         newTx.vjoinsplit.push_back(JSDescription());
         JSDescription *pourtx = &newTx.vjoinsplit[0];
-        pourtx->serials[0] = GetRandHash();
-        pourtx->serials[1] = GetRandHash();
+        pourtx->nullifiers[0] = GetRandHash();
+        pourtx->nullifiers[1] = GetRandHash();
 
         newTx.vin.push_back(CTxIn(uint256(), -1));
 
