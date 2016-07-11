@@ -146,13 +146,10 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
         unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
         crypto_sign_keypair(tx.joinSplitPubKey.begin(), joinSplitPrivKey);
 
-        // TODO: #966.
-        static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
         // Empty output script.
         CScript scriptCode;
         CTransaction signTx(tx);
         uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
-        BOOST_CHECK(dataToBeSigned != one);
 
         assert(crypto_sign_detached(&tx.joinSplitSig[0], NULL,
                                     dataToBeSigned.begin(), 32,

@@ -2656,15 +2656,10 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
 
     mtx.vjoinsplit.push_back(jsdesc);
 
-    // TODO: #966.
-    static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
     // Empty output script.
     CScript scriptCode;
     CTransaction signTx(mtx);
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
-    if (dataToBeSigned == one) {
-        throw runtime_error("SignatureHash failed");
-    }
 
     // Add the signature
     assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,

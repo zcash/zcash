@@ -402,13 +402,10 @@ BOOST_AUTO_TEST_CASE(test_simple_joinsplit_invalidity)
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-invalid-joinsplit-signature");
 
-        // TODO: #966.
-        static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
         // Empty output script.
         CScript scriptCode;
         CTransaction signTx(newTx);
         uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
-        BOOST_CHECK(dataToBeSigned != one);
 
         assert(crypto_sign_detached(&newTx.joinSplitSig[0], NULL,
                                     dataToBeSigned.begin(), 32,
