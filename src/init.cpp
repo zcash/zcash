@@ -608,14 +608,14 @@ static void ZC_LoadParams()
 
     pzcashParams = ZCJoinSplit::Unopened();
 
-    LogPrintf("Loading verification key from %s\n", vk_path.string().c_str());
+    LogPrintf("Loading verifying key from %s\n", vk_path.string().c_str());
     gettimeofday(&tv_start, 0);
 
     pzcashParams->loadVerifyingKey(vk_path.string());
 
     gettimeofday(&tv_end, 0);
     elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
-    LogPrintf("Loaded verification key in %fs seconds.\n", elapsed);
+    LogPrintf("Loaded verifying key in %fs seconds.\n", elapsed);
 
     pzcashParams->setProvingKeyPath(pk_path.string());
 }
@@ -625,18 +625,6 @@ static void ZC_LoadParams()
  */
 bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 {
-    // Perform libsodium initialization
-    if (sodium_init() == -1) {
-        return false;
-    }
-
-    // ********************************************************* Step 0: Load zcash params
-    ZC_LoadParams();
-    // These must be disabled for now, they are buggy and we probably don't
-    // want any of libsnark's profiling in production anyway.
-    libsnark::inhibit_profiling_info = true;
-    libsnark::inhibit_profiling_counters = true;
-
     // ********************************************************* Step 1: setup
 #ifdef _MSC_VER
     // Turn off Microsoft heap dump noise
@@ -916,6 +904,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 
+    // Initialize libsodium
+    if (sodium_init() == -1) {
+        return false;
+    }
+
     // Initialize elliptic curve code
     ECC_Start();
 
@@ -970,6 +963,13 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Start the lightweight task scheduler thread
     CScheduler::Function serviceLoop = boost::bind(&CScheduler::serviceQueue, &scheduler);
     threadGroup.create_thread(boost::bind(&TraceThread<CScheduler::Function>, "scheduler", serviceLoop));
+
+    // Initialize Zcash circuit parameters
+    ZC_LoadParams();
+    // These must be disabled for now, they are buggy and we probably don't
+    // want any of libsnark's profiling in production anyway.
+    libsnark::inhibit_profiling_info = true;
+    libsnark::inhibit_profiling_counters = true;
 
     /* Start the RPC server already.  It will be started in "warmup" mode
      * and not really process calls already (but it will signify connections
