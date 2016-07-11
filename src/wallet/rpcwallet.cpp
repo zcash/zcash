@@ -2654,7 +2654,7 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
 
     assert(pourtx.Verify(*pzcashParams, joinSplitPubKey));
 
-    mtx.vpour.push_back(pourtx);
+    mtx.vjoinsplit.push_back(pourtx);
 
     // TODO: #966.
     static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));

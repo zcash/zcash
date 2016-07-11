@@ -303,7 +303,7 @@ public:
     const std::vector<CTxIn> vin;
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
-    const std::vector<JSDescription> vpour;
+    const std::vector<JSDescription> vjoinsplit;
     const uint256 joinSplitPubKey;
     const joinsplit_sig_t joinSplitSig;
 
@@ -325,8 +325,8 @@ public:
         READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
         READWRITE(*const_cast<uint32_t*>(&nLockTime));
         if (nVersion >= 2) {
-            READWRITE(*const_cast<std::vector<JSDescription>*>(&vpour));
-            if (vpour.size() > 0) {
+            READWRITE(*const_cast<std::vector<JSDescription>*>(&vjoinsplit));
+            if (vjoinsplit.size() > 0) {
                 READWRITE(*const_cast<uint256*>(&joinSplitPubKey));
                 READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
             }
@@ -382,7 +382,7 @@ struct CMutableTransaction
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
-    std::vector<JSDescription> vpour;
+    std::vector<JSDescription> vjoinsplit;
     uint256 joinSplitPubKey;
     CTransaction::joinsplit_sig_t joinSplitSig;
 
@@ -399,8 +399,8 @@ struct CMutableTransaction
         READWRITE(vout);
         READWRITE(nLockTime);
         if (nVersion >= 2) {
-            READWRITE(vpour);
-            if (vpour.size() > 0) {
+            READWRITE(vjoinsplit);
+            if (vjoinsplit.size() > 0) {
                 READWRITE(joinSplitPubKey);
                 READWRITE(joinSplitSig);
             }

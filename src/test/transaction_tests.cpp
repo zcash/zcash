@@ -393,8 +393,8 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vout-empty");
 
-        newTx.vpour.push_back(JSDescription());
-        JSDescription *pourtx = &newTx.vpour[0];
+        newTx.vjoinsplit.push_back(JSDescription());
+        JSDescription *pourtx = &newTx.vjoinsplit[0];
 
         pourtx->serials[0] = GetRandHash();
         pourtx->serials[1] = GetRandHash();
@@ -422,9 +422,9 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vpour.push_back(JSDescription());
+        newTx.vjoinsplit.push_back(JSDescription());
         
-        JSDescription *pourtx = &newTx.vpour[0];
+        JSDescription *pourtx = &newTx.vjoinsplit[0];
         pourtx->vpub_old = -1;
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
@@ -448,9 +448,9 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
 
         pourtx->vpub_new = (MAX_MONEY / 2) + 10;
 
-        newTx.vpour.push_back(JSDescription());
+        newTx.vjoinsplit.push_back(JSDescription());
 
-        JSDescription *pourtx2 = &newTx.vpour[1];
+        JSDescription *pourtx2 = &newTx.vjoinsplit[1];
         pourtx2->vpub_new = (MAX_MONEY / 2) + 10;
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
@@ -461,8 +461,8 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vpour.push_back(JSDescription());
-        JSDescription *pourtx = &newTx.vpour[0];
+        newTx.vjoinsplit.push_back(JSDescription());
+        JSDescription *pourtx = &newTx.vjoinsplit[0];
 
         pourtx->serials[0] = GetRandHash();
         pourtx->serials[1] = pourtx->serials[0];
@@ -472,8 +472,8 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
 
         pourtx->serials[1] = GetRandHash();
 
-        newTx.vpour.push_back(JSDescription());
-        JSDescription *pourtx2 = &newTx.vpour[1];
+        newTx.vjoinsplit.push_back(JSDescription());
+        JSDescription *pourtx2 = &newTx.vjoinsplit[1];
 
         pourtx2->serials[0] = GetRandHash();
         pourtx2->serials[1] = pourtx->serials[0];
@@ -486,8 +486,8 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vpour.push_back(JSDescription());
-        JSDescription *pourtx = &newTx.vpour[0];
+        newTx.vjoinsplit.push_back(JSDescription());
+        JSDescription *pourtx = &newTx.vjoinsplit[0];
         pourtx->serials[0] = GetRandHash();
         pourtx->serials[1] = GetRandHash();
 

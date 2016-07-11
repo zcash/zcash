@@ -876,7 +876,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
         return false;
     } else {
         // Ensure that zk-SNARKs verify
-        BOOST_FOREACH(const JSDescription &pour, tx.vpour) {
+        BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
             if (!pour.Verify(*pzcashParams, tx.joinSplitPubKey)) {
                 return state.DoS(100, error("CheckTransaction(): pour does not verify"),
                                     REJECT_INVALID, "bad-txns-pour-verification-failed");
@@ -891,11 +891,11 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     // Basic checks that don't depend on any context
 
     // Transactions can contain empty `vin` and `vout` so long as
-    // `vpour` is non-empty.
-    if (tx.vin.empty() && tx.vpour.empty())
+    // `vjoinsplit` is non-empty.
+    if (tx.vin.empty() && tx.vjoinsplit.empty())
         return state.DoS(10, error("CheckTransaction(): vin empty"),
                          REJECT_INVALID, "bad-txns-vin-empty");
-    if (tx.vout.empty() && tx.vpour.empty())
+    if (tx.vout.empty() && tx.vjoinsplit.empty())
         return state.DoS(10, error("CheckTransaction(): vout empty"),
                          REJECT_INVALID, "bad-txns-vout-empty");
 
@@ -921,7 +921,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Ensure that pour values are well-formed
-    BOOST_FOREACH(const JSDescription& pour, tx.vpour)
+    BOOST_FOREACH(const JSDescription& pour, tx.vjoinsplit)
     {
         if (pour.vpub_old < 0) {
             return state.DoS(100, error("CheckTransaction(): pour.vpub_old negative"),
@@ -968,7 +968,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
 
     // Check for duplicate pour serials in this transaction
     set<uint256> vPourSerials;
-    BOOST_FOREACH(const JSDescription& pour, tx.vpour)
+    BOOST_FOREACH(const JSDescription& pour, tx.vjoinsplit)
     {
         BOOST_FOREACH(const uint256& serial, pour.serials)
         {
@@ -983,7 +983,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     if (tx.IsCoinBase())
     {
         // There should be no pours in a coinbase transaction
-        if (tx.vpour.size() > 0)
+        if (tx.vjoinsplit.size() > 0)
             return state.DoS(100, error("CheckTransaction(): coinbase has pours"),
                              REJECT_INVALID, "bad-cb-has-pours");
 
@@ -998,7 +998,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                 return state.DoS(10, error("CheckTransaction(): prevout is null"),
                                  REJECT_INVALID, "bad-txns-prevout-null");
 
-        if (tx.vpour.size() > 0) {
+        if (tx.vjoinsplit.size() > 0) {
             // TODO: #966.
             static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
             // Empty output script.
@@ -1104,7 +1104,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             return false;
         }
     }
-    BOOST_FOREACH(const JSDescription &pour, tx.vpour) {
+    BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
         BOOST_FOREACH(const uint256 &serial, pour.serials) {
             if (pool.mapSerials.count(serial))
             {
@@ -1586,7 +1586,7 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
     }
 
     // spend serials
-    BOOST_FOREACH(const JSDescription &pour, tx.vpour) {
+    BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
         BOOST_FOREACH(const uint256 &serial, pour.serials) {
             inputs.SetSerial(serial, true);
         }
@@ -1908,7 +1908,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         }
 
         // unspend serials
-        BOOST_FOREACH(const JSDescription &pour, tx.vpour) {
+        BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
             BOOST_FOREACH(const uint256 &serial, pour.serials) {
                 view.SetSerial(serial, false);
             }
@@ -2157,7 +2157,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
         UpdateCoins(tx, state, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
 
-        BOOST_FOREACH(const JSDescription &pour, tx.vpour) {
+        BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
             BOOST_FOREACH(const uint256 &bucket_commitment, pour.commitments) {
                 // Insert the bucket commitments into our temporary tree.
 
@@ -4734,7 +4734,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 EraseOrphanTx(hash);
         }
         // TODO: currently, prohibit pours from entering mapOrphans
-        else if (fMissingInputs && tx.vpour.size() == 0)
+        else if (fMissingInputs && tx.vjoinsplit.size() == 0)
         {
             AddOrphanTx(tx, pfrom->GetId());
 

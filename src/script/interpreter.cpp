@@ -1072,7 +1072,7 @@ public:
         // Serialize nLockTime
         ::Serialize(s, txTo.nLockTime, nType, nVersion);
 
-        // Serialize vpour
+        // Serialize vjoinsplit
         if (txTo.nVersion >= 2) {
             //
             // SIGHASH_* functions will hash portions of
@@ -1080,8 +1080,8 @@ public:
             // keeps the JoinSplit cryptographically bound
             // to the transaction.
             //
-            ::Serialize(s, txTo.vpour, nType, nVersion);
-            if (txTo.vpour.size() > 0) {
+            ::Serialize(s, txTo.vjoinsplit, nType, nVersion);
+            if (txTo.vjoinsplit.size() > 0) {
                 ::Serialize(s, txTo.joinSplitPubKey, nType, nVersion);
 
                 CTransaction::joinsplit_sig_t nullSig = {};

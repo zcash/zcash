@@ -140,7 +140,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
             pourtx.macs[0] = GetRandHash();
             pourtx.macs[1] = GetRandHash();
 
-            tx.vpour.push_back(pourtx);
+            tx.vjoinsplit.push_back(pourtx);
         }
 
         unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];

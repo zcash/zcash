@@ -1065,7 +1065,7 @@ void CWallet::WitnessBucketCommitment(std::vector<uint256> commitments,
 
         BOOST_FOREACH(const CTransaction& tx, block.vtx)
         {
-            BOOST_FOREACH(const JSDescription& pour, tx.vpour)
+            BOOST_FOREACH(const JSDescription& pour, tx.vjoinsplit)
             {
                 BOOST_FOREACH(const uint256 &bucket_commitment, pour.commitments)
                 {

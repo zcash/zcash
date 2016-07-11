@@ -90,9 +90,9 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
     }
     entry.push_back(Pair("vout", vout));
 
-    Array vpour;
-    for (unsigned int i = 0; i < tx.vpour.size(); i++) {
-        const JSDescription& pourtx = tx.vpour[i];
+    Array vjoinsplit;
+    for (unsigned int i = 0; i < tx.vjoinsplit.size(); i++) {
+        const JSDescription& pourtx = tx.vjoinsplit[i];
         Object pour;
 
         pour.push_back(Pair("anchor", pourtx.anchor.GetHex()));
@@ -128,10 +128,10 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
         uint256 pubKeyHash;
         pour.push_back(Pair("valid", pourtx.Verify(*pzcashParams, pubKeyHash)));
 
-        vpour.push_back(pour);
+        vjoinsplit.push_back(pour);
     }
 
-    entry.push_back(Pair("vpour", vpour));
+    entry.push_back(Pair("vjoinsplit", vjoinsplit));
 
     if (!hashBlock.IsNull()) {
         entry.push_back(Pair("blockhash", hashBlock.GetHex()));

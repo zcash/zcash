@@ -394,7 +394,7 @@ bool CCoinsViewCache::HavePourRequirements(const CTransaction& tx) const
 {
     boost::unordered_map<uint256, ZCIncrementalMerkleTree, CCoinsKeyHasher> intermediates;
 
-    BOOST_FOREACH(const JSDescription &pour, tx.vpour)
+    BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit)
     {
         BOOST_FOREACH(const uint256& serial, pour.serials)
         {

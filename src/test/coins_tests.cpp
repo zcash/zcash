@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE(chained_pours)
 
     {
         CMutableTransaction mtx;
-        mtx.vpour.push_back(ptx2);
+        mtx.vjoinsplit.push_back(ptx2);
 
         BOOST_CHECK(!cache.HavePourRequirements(mtx));
     }
@@ -260,35 +260,35 @@ BOOST_AUTO_TEST_CASE(chained_pours)
         // ptx2 is trying to anchor to ptx1 but ptx1
         // appears afterwards -- not a permitted ordering
         CMutableTransaction mtx;
-        mtx.vpour.push_back(ptx2);
-        mtx.vpour.push_back(ptx1);
+        mtx.vjoinsplit.push_back(ptx2);
+        mtx.vjoinsplit.push_back(ptx1);
 
         BOOST_CHECK(!cache.HavePourRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vpour.push_back(ptx1);
-        mtx.vpour.push_back(ptx2);
+        mtx.vjoinsplit.push_back(ptx1);
+        mtx.vjoinsplit.push_back(ptx2);
 
         BOOST_CHECK(cache.HavePourRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vpour.push_back(ptx1);
-        mtx.vpour.push_back(ptx2);
-        mtx.vpour.push_back(ptx3);
+        mtx.vjoinsplit.push_back(ptx1);
+        mtx.vjoinsplit.push_back(ptx2);
+        mtx.vjoinsplit.push_back(ptx3);
 
         BOOST_CHECK(cache.HavePourRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vpour.push_back(ptx1);
-        mtx.vpour.push_back(ptx1b);
-        mtx.vpour.push_back(ptx2);
-        mtx.vpour.push_back(ptx3);
+        mtx.vjoinsplit.push_back(ptx1);
+        mtx.vjoinsplit.push_back(ptx1b);
+        mtx.vjoinsplit.push_back(ptx2);
+        mtx.vjoinsplit.push_back(ptx3);
 
         BOOST_CHECK(cache.HavePourRequirements(mtx));
     }
