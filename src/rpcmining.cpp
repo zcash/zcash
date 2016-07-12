@@ -782,8 +782,8 @@ Value getblocksubsidy(const Array& params, bool fHelp)
             + HelpExampleRpc("getblockubsidy", "1000")
         );
 
-    LOCK(cs_main);
     int nHeight = params[0].get_int();
+    LOCK(cs_main);
     if (nHeight < 0 || nHeight > chainActive.Height())
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
