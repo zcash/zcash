@@ -771,10 +771,10 @@ Value getblocksubsidy(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "getblocksubsidy index\n"
+            "getblocksubsidy height\n"
             "\nReturns block subsidy reward, taking into account the mining slow start, of block at index provided.\n"
             "\nArguments:\n"
-            "1. index         (numeric, required) The block index\n"
+            "1. height        (numeric, required) The block height.\n"
             "\nResult:\n"
             "amount           (numeric) The block reward amount in ZEC.\n"
             "\nExamples:\n"
