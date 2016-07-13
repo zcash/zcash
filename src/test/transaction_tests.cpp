@@ -305,8 +305,8 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
     // on all platforms and would gently push us down an ugly
     // path. We should just fix the assertions.
     //
-    // Also, it's generally libzerocash's job to ensure
-    // the integrity of the scheme through its own tests.
+    // Also, it's generally libzcash's job to ensure the
+    // integrity of the scheme through its own tests.
 
     // construct the r1cs keypair
     auto p = ZCJoinSplit::Generate();
