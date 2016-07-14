@@ -384,15 +384,13 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
         crypto_sign_keypair(newTx.joinSplitPubKey.begin(), joinSplitPrivKey);
 
-        state.SetPerformPourVerification(false); // don't verify the snark
-
         // No pours, vin and vout, means it should be invalid.
-        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vin-empty");
 
         newTx.vin.push_back(CTxIn(uint256S("0000000000000000000000000000000000000000000000000000000000000001"), 0));
 
-        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vout-empty");
 
         newTx.vpour.push_back(CPourTx());
@@ -401,7 +399,7 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         pourtx->serials[0] = GetRandHash();
         pourtx->serials[1] = GetRandHash();
 
-        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-invalid-joinsplit-signature");
 
         // TODO: #966.
@@ -417,7 +415,7 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
                                     joinSplitPrivKey
                                     ) == 0);
 
-        BOOST_CHECK(CheckTransaction(newTx, state));
+        BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
     }
     {
         // Ensure that values within the pour are well-formed.
