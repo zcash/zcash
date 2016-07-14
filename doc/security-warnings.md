@@ -29,6 +29,9 @@ should assume other unprivileged users running on the same hardware as your
 - Determine which notes you own by observing cache side-channel information
   leakage from the incremental witnesses as they are updated with new notes.
 
+- Determine which notes you own by observing the trial decryption process of
+  each note ciphertext on the blockchain.
+
 You should ensure no other users have the ability to execute code (even
 unprivileged) on the hardware your `zcashd` process runs on until these
 vulnerabilities are fully analyzed and fixed.
