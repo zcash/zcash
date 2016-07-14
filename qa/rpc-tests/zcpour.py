@@ -26,14 +26,14 @@ class PourTxTest(BitcoinTestFramework):
         protect_tx = self.nodes[0].createrawtransaction(inputs, {})
         pour_result = self.nodes[0].zcrawjoinsplit(protect_tx, {}, {zcaddress:39.9}, 39.9, 0)
 
-        receive_result = self.nodes[0].zcrawreceive(zcsecretkey, pour_result["encryptedbucket1"])
+        receive_result = self.nodes[0].zcrawreceive(zcsecretkey, pour_result["encryptednote1"])
         assert_equal(receive_result["exists"], False)
 
         protect_tx = self.nodes[0].signrawtransaction(pour_result["rawtxn"])
         self.nodes[0].sendrawtransaction(protect_tx["hex"])
         self.nodes[0].generate(1)
 
-        receive_result = self.nodes[0].zcrawreceive(zcsecretkey, pour_result["encryptedbucket1"])
+        receive_result = self.nodes[0].zcrawreceive(zcsecretkey, pour_result["encryptednote1"])
         assert_equal(receive_result["exists"], True)
 
         pour_tx = self.nodes[0].createrawtransaction([], {})
@@ -43,7 +43,7 @@ class PourTxTest(BitcoinTestFramework):
         self.nodes[0].generate(1)
 
         print "Done!"
-        receive_result = self.nodes[0].zcrawreceive(zcsecretkey, pour_result["encryptedbucket1"])
+        receive_result = self.nodes[0].zcrawreceive(zcsecretkey, pour_result["encryptednote1"])
         assert_equal(receive_result["exists"], True)
 
 if __name__ == '__main__':

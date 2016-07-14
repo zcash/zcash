@@ -64,7 +64,7 @@ class PourTxTest(BitcoinTestFramework):
             self.nodes[0].generate(1)
             self.nodes[2].sendrawtransaction(signed["hex"])
             self.nodes[2].generate(1)
-            pool[i] = pool[i]["encryptedbucket1"]
+            pool[i] = pool[i]["encryptednote1"]
 
         sync_blocks(self.nodes[0:2])
         sync_blocks(self.nodes[2:4])
