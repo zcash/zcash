@@ -25,22 +25,22 @@ public:
     CAmount vpub_old;
     CAmount vpub_new;
 
-    // JoinSplits are always anchored to a root in the bucket
+    // JoinSplits are always anchored to a root in the note
     // commitment tree at some point in the blockchain
     // history or in the history of the current
     // transaction.
     uint256 anchor;
 
     // Nullifiers are used to prevent double-spends. They
-    // are derived from the secrets placed in the bucket
+    // are derived from the secrets placed in the note
     // and the secret spend-authority key known by the
     // spender.
     boost::array<uint256, ZC_NUM_JS_INPUTS> nullifiers;
 
-    // Bucket commitments are introduced into the commitment
+    // Note commitments are introduced into the commitment
     // tree, blinding the public about the values and
-    // destinations involved in the JoinSplit. The presence of a
-    // commitment in the bucket commitment tree is required
+    // destinations involved in the JoinSplit. The presence of
+    // a commitment in the note commitment tree is required
     // to spend it.
     boost::array<uint256, ZC_NUM_JS_OUTPUTS> commitments;
 

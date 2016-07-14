@@ -2158,10 +2158,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         UpdateCoins(tx, state, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
 
         BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-            BOOST_FOREACH(const uint256 &bucket_commitment, joinsplit.commitments) {
-                // Insert the bucket commitments into our temporary tree.
+            BOOST_FOREACH(const uint256 &note_commitment, joinsplit.commitments) {
+                // Insert the note commitments into our temporary tree.
 
-                tree.append(bucket_commitment);
+                tree.append(note_commitment);
             }
         }
 
