@@ -347,7 +347,7 @@ public:
     virtual bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
 
     //! Determine whether a serial is spent or not
-    virtual bool GetSerial(const uint256 &serial) const;
+    virtual bool GetNullifier(const uint256 &serial) const;
 
     //! Retrieve the CCoins (unspent transaction outputs) for a given txid
     virtual bool GetCoins(const uint256 &txid, CCoins &coins) const;
@@ -387,7 +387,7 @@ protected:
 public:
     CCoinsViewBacked(CCoinsView *viewIn);
     bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
-    bool GetSerial(const uint256 &serial) const;
+    bool GetNullifier(const uint256 &serial) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
@@ -451,7 +451,7 @@ public:
 
     // Standard CCoinsView methods
     bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
-    bool GetSerial(const uint256 &serial) const;
+    bool GetNullifier(const uint256 &serial) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;

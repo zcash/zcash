@@ -47,7 +47,7 @@ public:
         }
     }
 
-    bool GetSerial(const uint256 &serial) const
+    bool GetNullifier(const uint256 &serial) const
     {
         std::map<uint256, bool>::const_iterator it = mapSerials_.find(serial);
 
@@ -170,21 +170,21 @@ BOOST_AUTO_TEST_CASE(serials_test)
 
     uint256 myserial = GetRandHash();
 
-    BOOST_CHECK(!cache.GetSerial(myserial));
+    BOOST_CHECK(!cache.GetNullifier(myserial));
     cache.SetSerial(myserial, true);
-    BOOST_CHECK(cache.GetSerial(myserial));
+    BOOST_CHECK(cache.GetNullifier(myserial));
     cache.Flush();
 
     CCoinsViewCacheTest cache2(&base);
 
-    BOOST_CHECK(cache2.GetSerial(myserial));
+    BOOST_CHECK(cache2.GetNullifier(myserial));
     cache2.SetSerial(myserial, false);
-    BOOST_CHECK(!cache2.GetSerial(myserial));
+    BOOST_CHECK(!cache2.GetNullifier(myserial));
     cache2.Flush();
 
     CCoinsViewCacheTest cache3(&base);
 
-    BOOST_CHECK(!cache3.GetSerial(myserial));
+    BOOST_CHECK(!cache3.GetNullifier(myserial));
 }
 
 BOOST_AUTO_TEST_CASE(anchors_flush_test)

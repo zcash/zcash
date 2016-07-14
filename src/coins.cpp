@@ -41,7 +41,7 @@ bool CCoins::Spend(uint32_t nPos)
     return true;
 }
 bool CCoinsView::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return false; }
-bool CCoinsView::GetSerial(const uint256 &serial) const { return false; }
+bool CCoinsView::GetNullifier(const uint256 &serial) const { return false; }
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
 uint256 CCoinsView::GetBestBlock() const { return uint256(); }
@@ -57,7 +57,7 @@ bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
 
 bool CCoinsViewBacked::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return base->GetAnchorAt(rt, tree); }
-bool CCoinsViewBacked::GetSerial(const uint256 &serial) const { return base->GetSerial(serial); }
+bool CCoinsViewBacked::GetNullifier(const uint256 &serial) const { return base->GetNullifier(serial); }
 bool CCoinsViewBacked::GetCoins(const uint256 &txid, CCoins &coins) const { return base->GetCoins(txid, coins); }
 bool CCoinsViewBacked::HaveCoins(const uint256 &txid) const { return base->HaveCoins(txid); }
 uint256 CCoinsViewBacked::GetBestBlock() const { return base->GetBestBlock(); }
@@ -128,13 +128,13 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tr
     return true;
 }
 
-bool CCoinsViewCache::GetSerial(const uint256 &serial) const {
+bool CCoinsViewCache::GetNullifier(const uint256 &serial) const {
     CSerialsMap::iterator it = cacheSerials.find(serial);
     if (it != cacheSerials.end())
         return it->second.entered;
 
     CSerialsCacheEntry entry;
-    bool tmp = base->GetSerial(serial);
+    bool tmp = base->GetNullifier(serial);
     entry.entered = tmp;
 
     cacheSerials.insert(std::make_pair(serial, entry));
@@ -398,7 +398,7 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
     {
         BOOST_FOREACH(const uint256& serial, pour.nullifiers)
         {
-            if (GetSerial(serial)) {
+            if (GetNullifier(serial)) {
                 // If the serial is set, this transaction
                 // double-spends!
                 return false;

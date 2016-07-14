@@ -319,7 +319,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 
         BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
             BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
-                assert(!pcoins->GetSerial(serial));
+                assert(!pcoins->GetNullifier(serial));
             }
 
             ZCIncrementalMerkleTree tree;
@@ -484,11 +484,11 @@ bool CTxMemPool::HasNoInputsOf(const CTransaction &tx) const
 
 CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn), mempool(mempoolIn) { }
 
-bool CCoinsViewMemPool::GetSerial(const uint256 &serial) const {
+bool CCoinsViewMemPool::GetNullifier(const uint256 &serial) const {
     if (mempool.mapSerials.count(serial))
         return true;
 
-    return base->GetSerial(serial);
+    return base->GetNullifier(serial);
 }
 
 bool CCoinsViewMemPool::GetCoins(const uint256 &txid, CCoins &coins) const {

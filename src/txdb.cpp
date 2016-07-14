@@ -81,7 +81,7 @@ bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree)
     return read;
 }
 
-bool CCoinsViewDB::GetSerial(const uint256 &serial) const {
+bool CCoinsViewDB::GetNullifier(const uint256 &serial) const {
     bool spent = false;
     bool read = db.Read(make_pair(DB_SERIAL, serial), spent);
 
