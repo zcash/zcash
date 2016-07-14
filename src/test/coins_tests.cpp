@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(chained_pours)
         CMutableTransaction mtx;
         mtx.vjoinsplit.push_back(ptx2);
 
-        BOOST_CHECK(!cache.HavePourRequirements(mtx));
+        BOOST_CHECK(!cache.HaveJoinSplitRequirements(mtx));
     }
 
     {
@@ -263,7 +263,7 @@ BOOST_AUTO_TEST_CASE(chained_pours)
         mtx.vjoinsplit.push_back(ptx2);
         mtx.vjoinsplit.push_back(ptx1);
 
-        BOOST_CHECK(!cache.HavePourRequirements(mtx));
+        BOOST_CHECK(!cache.HaveJoinSplitRequirements(mtx));
     }
 
     {
@@ -271,7 +271,7 @@ BOOST_AUTO_TEST_CASE(chained_pours)
         mtx.vjoinsplit.push_back(ptx1);
         mtx.vjoinsplit.push_back(ptx2);
 
-        BOOST_CHECK(cache.HavePourRequirements(mtx));
+        BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
     }
 
     {
@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE(chained_pours)
         mtx.vjoinsplit.push_back(ptx2);
         mtx.vjoinsplit.push_back(ptx3);
 
-        BOOST_CHECK(cache.HavePourRequirements(mtx));
+        BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
     }
 
     {
@@ -290,7 +290,7 @@ BOOST_AUTO_TEST_CASE(chained_pours)
         mtx.vjoinsplit.push_back(ptx2);
         mtx.vjoinsplit.push_back(ptx3);
 
-        BOOST_CHECK(cache.HavePourRequirements(mtx));
+        BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
     }
 }
 

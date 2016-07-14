@@ -516,7 +516,7 @@ public:
     bool HaveInputs(const CTransaction& tx) const;
 
     //! Check whether all pour requirements (anchors/serials) are satisfied
-    bool HavePourRequirements(const CTransaction& tx) const;
+    bool HaveJoinSplitRequirements(const CTransaction& tx) const;
 
     //! Return priority of tx at height nHeight
     double GetPriority(const CTransaction &tx, int nHeight) const;

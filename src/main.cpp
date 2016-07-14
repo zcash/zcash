@@ -1145,7 +1145,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                                  REJECT_DUPLICATE, "bad-txns-inputs-spent");
 
         // are the pour's requirements met?
-        if (!view.HavePourRequirements(tx))
+        if (!view.HaveJoinSplitRequirements(tx))
             return state.Invalid(error("AcceptToMemoryPool: pour requirements not met"),
                                  REJECT_DUPLICATE, "bad-txns-pour-requirements-not-met");
 
@@ -1623,7 +1623,7 @@ bool NonContextualCheckInputs(const CTransaction& tx, CValidationState &state, c
             return state.Invalid(error("CheckInputs(): %s inputs unavailable", tx.GetHash().ToString()));
 
         // are the pour's requirements met?
-        if (!inputs.HavePourRequirements(tx))
+        if (!inputs.HaveJoinSplitRequirements(tx))
             return state.Invalid(error("CheckInputs(): %s pour requirements not met", tx.GetHash().ToString()));
 
         CAmount nValueIn = 0;
@@ -2131,7 +2131,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
 
             // are the pour's requirements met?
-            if (!view.HavePourRequirements(tx))
+            if (!view.HaveJoinSplitRequirements(tx))
                 return state.DoS(100, error("ConnectBlock(): pour requirements not met"),
                                  REJECT_INVALID, "bad-txns-pour-requirements-not-met");
 
