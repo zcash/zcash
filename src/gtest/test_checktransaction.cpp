@@ -11,15 +11,15 @@ TEST(checktransaction_tests, check_vpub_not_both_nonzero) {
     tx.nVersion = 2;
 
     {
-        // Ensure that values within the pour are well-formed.
+        // Ensure that values within the joinsplit are well-formed.
         CMutableTransaction newTx(tx);
         CValidationState state;
 
         newTx.vjoinsplit.push_back(JSDescription());
 
-        JSDescription *pourtx = &newTx.vjoinsplit[0];
-        pourtx->vpub_old = 1;
-        pourtx->vpub_new = 1;
+        JSDescription *jsdesc = &newTx.vjoinsplit[0];
+        jsdesc->vpub_old = 1;
+        jsdesc->vpub_new = 1;
 
         EXPECT_FALSE(CheckTransactionWithoutProofVerification(newTx, state));
         EXPECT_EQ(state.GetRejectReason(), "bad-txns-vpubs-both-nonzero");
@@ -248,7 +248,7 @@ TEST(checktransaction_tests, bad_txns_inputs_duplicate) {
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
-TEST(checktransaction_tests, bad_pours_nullifiers_duplicate_same_pour) {
+TEST(checktransaction_tests, bad_joinsplits_nullifiers_duplicate_same_joinsplit) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vjoinsplit[0].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
     mtx.vjoinsplit[0].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
@@ -256,11 +256,11 @@ TEST(checktransaction_tests, bad_pours_nullifiers_duplicate_same_pour) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-pours-nullifiers-duplicate", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-joinsplits-nullifiers-duplicate", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
-TEST(checktransaction_tests, bad_pours_nullifiers_duplicate_different_pour) {
+TEST(checktransaction_tests, bad_joinsplits_nullifiers_duplicate_different_joinsplit) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vjoinsplit[0].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
     mtx.vjoinsplit[1].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
@@ -268,11 +268,11 @@ TEST(checktransaction_tests, bad_pours_nullifiers_duplicate_different_pour) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-pours-nullifiers-duplicate", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-joinsplits-nullifiers-duplicate", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
-TEST(checktransaction_tests, bad_cb_has_pours) {
+TEST(checktransaction_tests, bad_cb_has_joinsplits) {
     CMutableTransaction mtx = GetValidTransaction();
     // Make it a coinbase.
     mtx.vin.resize(1);
@@ -284,7 +284,7 @@ TEST(checktransaction_tests, bad_cb_has_pours) {
     EXPECT_TRUE(tx.IsCoinBase());
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-has-pours", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-has-joinsplits", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 

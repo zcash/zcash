@@ -138,7 +138,7 @@ public:
         // Manually recompute the dynamic usage of the whole data, and compare it.
         size_t ret = memusage::DynamicUsage(cacheCoins) +
                      memusage::DynamicUsage(cacheAnchors) +
-                     memusage::DynamicUsage(cacheSerials);
+                     memusage::DynamicUsage(cacheNullifiers);
         for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
             ret += memusage::DynamicUsage(it->second.coins);
         }

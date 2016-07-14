@@ -440,7 +440,7 @@ protected:
     mutable CCoinsMap cacheCoins;
     mutable uint256 hashAnchor;
     mutable CAnchorsMap cacheAnchors;
-    mutable CNullifiersMap cacheSerials;
+    mutable CNullifiersMap cacheNullifiers;
 
     /* Cached dynamic memory usage for the inner CCoins objects. */
     mutable size_t cachedCoinsUsage;

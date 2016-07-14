@@ -82,7 +82,7 @@ CCoinsViewCache::~CCoinsViewCache()
 size_t CCoinsViewCache::DynamicMemoryUsage() const {
     return memusage::DynamicUsage(cacheCoins) +
            memusage::DynamicUsage(cacheAnchors) +
-           memusage::DynamicUsage(cacheSerials) +
+           memusage::DynamicUsage(cacheNullifiers) +
            cachedCoinsUsage;
 }
 
@@ -129,15 +129,15 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tr
 }
 
 bool CCoinsViewCache::GetNullifier(const uint256 &serial) const {
-    CNullifiersMap::iterator it = cacheSerials.find(serial);
-    if (it != cacheSerials.end())
+    CNullifiersMap::iterator it = cacheNullifiers.find(serial);
+    if (it != cacheNullifiers.end())
         return it->second.entered;
 
     CSerialsCacheEntry entry;
     bool tmp = base->GetNullifier(serial);
     entry.entered = tmp;
 
-    cacheSerials.insert(std::make_pair(serial, entry));
+    cacheNullifiers.insert(std::make_pair(serial, entry));
 
     return tmp;
 }
@@ -186,7 +186,7 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
 }
 
 void CCoinsViewCache::SetNullifier(const uint256 &serial, bool spent) {
-    std::pair<CNullifiersMap::iterator, bool> ret = cacheSerials.insert(std::make_pair(serial, CSerialsCacheEntry()));
+    std::pair<CNullifiersMap::iterator, bool> ret = cacheNullifiers.insert(std::make_pair(serial, CSerialsCacheEntry()));
     ret.first->second.entered = spent;
     ret.first->second.flags |= CSerialsCacheEntry::DIRTY;
 }
@@ -329,14 +329,14 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
     for (CNullifiersMap::iterator child_it = mapNullifiers.begin(); child_it != mapNullifiers.end();)
     {
         if (child_it->second.flags & CSerialsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
-            CNullifiersMap::iterator parent_it = cacheSerials.find(child_it->first);
+            CNullifiersMap::iterator parent_it = cacheNullifiers.find(child_it->first);
 
-            if (parent_it == cacheSerials.end()) {
+            if (parent_it == cacheNullifiers.end()) {
                 if (child_it->second.entered) {
                     // Parent doesn't have an entry, but child has a SPENT serial.
                     // Move the spent serial up.
 
-                    CSerialsCacheEntry& entry = cacheSerials[child_it->first];
+                    CSerialsCacheEntry& entry = cacheNullifiers[child_it->first];
                     entry.entered = true;
                     entry.flags = CSerialsCacheEntry::DIRTY;
                 }
@@ -357,10 +357,10 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
 }
 
 bool CCoinsViewCache::Flush() {
-    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashAnchor, cacheAnchors, cacheSerials);
+    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashAnchor, cacheAnchors, cacheNullifiers);
     cacheCoins.clear();
     cacheAnchors.clear();
-    cacheSerials.clear();
+    cacheNullifiers.clear();
     cachedCoinsUsage = 0;
     return fOk;
 }
