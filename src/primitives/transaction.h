@@ -183,7 +183,9 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(prevout);
-        READWRITE(scriptSig);
+        if (!(nType & SER_SKIP_TXIN_SIGSCRIPT)) {
+            READWRITE(scriptSig);
+        }
         READWRITE(nSequence);
     }
 
