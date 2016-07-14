@@ -23,6 +23,7 @@ namespace libzcash {
 
 #include "zcash/circuit/gadget.tcc"
 
+CCriticalSection cs_PointCompression;
 CCriticalSection cs_ParamsIO;
 CCriticalSection cs_InitializeParams;
 
@@ -140,10 +141,26 @@ public:
         }
 
         r1cs_ppzksnark_proof<ppzksnark_ppT> r1cs_proof;
-        std::stringstream ss;
-        std::string proof_str(proof.begin(), proof.end());
-        ss.str(proof_str);
-        ss >> r1cs_proof;
+        {
+            LOCK(cs_PointCompression);
+            libsnark::g1_enable_point_compression = true;
+            libsnark::g2_enable_point_compression = true;
+
+            try {
+                std::stringstream ss;
+                std::string proof_str(proof.begin(), proof.end());
+                ss.str(proof_str);
+                ss >> r1cs_proof;
+            } catch(...) {
+                libsnark::g1_enable_point_compression = false;
+                libsnark::g2_enable_point_compression = false;
+
+                throw std::ios_base::failure("failed to deserialize zkSNARK proof");
+            }
+
+            libsnark::g1_enable_point_compression = false;
+            libsnark::g2_enable_point_compression = false;
+        }
 
         uint256 h_sig = this->h_sig(randomSeed, nullifiers, pubKeyHash);
 
@@ -264,9 +281,20 @@ public:
             aux_input
         );
 
-        std::stringstream ss;
-        ss << proof;
-        std::string serialized_proof = ss.str();
+        std::string serialized_proof;
+
+        {
+            LOCK(cs_PointCompression);
+            libsnark::g1_enable_point_compression = true;
+            libsnark::g2_enable_point_compression = true;
+
+            std::stringstream ss;
+            ss << proof;
+            serialized_proof = ss.str();
+
+            libsnark::g1_enable_point_compression = false;
+            libsnark::g2_enable_point_compression = false;
+        }
 
         boost::array<unsigned char, ZKSNARK_PROOF_SIZE> result_proof;
         //std::cout << "proof size in bytes when serialized: " << serialized_proof.size() << std::endl;

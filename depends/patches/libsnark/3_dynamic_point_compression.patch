@@ -1,0 +1,214 @@
+diff --git a/src/algebra/curves/alt_bn128/alt_bn128_g1.cpp b/src/algebra/curves/alt_bn128/alt_bn128_g1.cpp
+index bf7f43d..381d357 100644
+--- a/src/algebra/curves/alt_bn128/alt_bn128_g1.cpp
++++ b/src/algebra/curves/alt_bn128/alt_bn128_g1.cpp
+@@ -19,6 +19,12 @@ std::vector<size_t> alt_bn128_G1::fixed_base_exp_window_table;
+ alt_bn128_G1 alt_bn128_G1::G1_zero;
+ alt_bn128_G1 alt_bn128_G1::G1_one;
+ 
++#ifdef NO_PT_COMPRESSION
++bool g1_enable_point_compression = false;
++#else
++bool g1_enable_point_compression = true;
++#endif
++
+ alt_bn128_G1::alt_bn128_G1()
+ {
+     this->X = G1_zero.X;
+@@ -407,12 +413,12 @@ std::ostream& operator<<(std::ostream &out, const alt_bn128_G1 &g)
+     copy.to_affine_coordinates();
+ 
+     out << (copy.is_zero() ? 1 : 0) << OUTPUT_SEPARATOR;
+-#ifdef NO_PT_COMPRESSION
+-    out << copy.X << OUTPUT_SEPARATOR << copy.Y;
+-#else
+-    /* storing LSB of Y */
+-    out << copy.X << OUTPUT_SEPARATOR << (copy.Y.as_bigint().data[0] & 1);
+-#endif
++    if(!g1_enable_point_compression) {
++        out << copy.X << OUTPUT_SEPARATOR << copy.Y;
++    } else {
++        /* storing LSB of Y */
++        out << copy.X << OUTPUT_SEPARATOR << (copy.Y.as_bigint().data[0] & 1);
++    }
+ 
+     return out;
+ }
+@@ -422,33 +428,33 @@ std::istream& operator>>(std::istream &in, alt_bn128_G1 &g)
+     char is_zero;
+     alt_bn128_Fq tX, tY;
+ 
+-#ifdef NO_PT_COMPRESSION
+-    in >> is_zero >> tX >> tY;
+-    is_zero -= '0';
+-#else
+-    in.read((char*)&is_zero, 1); // this reads is_zero;
+-    is_zero -= '0';
+-    consume_OUTPUT_SEPARATOR(in);
+-
+-    unsigned char Y_lsb;
+-    in >> tX;
+-    consume_OUTPUT_SEPARATOR(in);
+-    in.read((char*)&Y_lsb, 1);
+-    Y_lsb -= '0';
+-
+-    // y = +/- sqrt(x^3 + b)
+-    if (!is_zero)
+-    {
+-        alt_bn128_Fq tX2 = tX.squared();
+-        alt_bn128_Fq tY2 = tX2*tX + alt_bn128_coeff_b;
+-        tY = tY2.sqrt();
+-
+-        if ((tY.as_bigint().data[0] & 1) != Y_lsb)
++    if (!g1_enable_point_compression) {
++        in >> is_zero >> tX >> tY;
++        is_zero -= '0';
++    } else {
++        in.read((char*)&is_zero, 1); // this reads is_zero;
++        is_zero -= '0';
++        consume_OUTPUT_SEPARATOR(in);
++
++        unsigned char Y_lsb;
++        in >> tX;
++        consume_OUTPUT_SEPARATOR(in);
++        in.read((char*)&Y_lsb, 1);
++        Y_lsb -= '0';
++
++        // y = +/- sqrt(x^3 + b)
++        if (!is_zero)
+         {
+-            tY = -tY;
++            alt_bn128_Fq tX2 = tX.squared();
++            alt_bn128_Fq tY2 = tX2*tX + alt_bn128_coeff_b;
++            tY = tY2.sqrt();
++
++            if ((tY.as_bigint().data[0] & 1) != Y_lsb)
++            {
++                tY = -tY;
++            }
+         }
+     }
+-#endif
+     // using Jacobian coordinates
+     if (!is_zero)
+     {
+diff --git a/src/algebra/curves/alt_bn128/alt_bn128_g1.hpp b/src/algebra/curves/alt_bn128/alt_bn128_g1.hpp
+index da11a2e..1cba511 100644
+--- a/src/algebra/curves/alt_bn128/alt_bn128_g1.hpp
++++ b/src/algebra/curves/alt_bn128/alt_bn128_g1.hpp
+@@ -13,6 +13,8 @@
+ 
+ namespace libsnark {
+ 
++extern bool g1_enable_point_compression;
++
+ class alt_bn128_G1;
+ std::ostream& operator<<(std::ostream &, const alt_bn128_G1&);
+ std::istream& operator>>(std::istream &, alt_bn128_G1&);
+diff --git a/src/algebra/curves/alt_bn128/alt_bn128_g2.cpp b/src/algebra/curves/alt_bn128/alt_bn128_g2.cpp
+index c4152e4..f3519f5 100644
+--- a/src/algebra/curves/alt_bn128/alt_bn128_g2.cpp
++++ b/src/algebra/curves/alt_bn128/alt_bn128_g2.cpp
+@@ -19,6 +19,12 @@ std::vector<size_t> alt_bn128_G2::fixed_base_exp_window_table;
+ alt_bn128_G2 alt_bn128_G2::G2_zero;
+ alt_bn128_G2 alt_bn128_G2::G2_one;
+ 
++#ifdef NO_PT_COMPRESSION
++bool g2_enable_point_compression = false;
++#else
++bool g2_enable_point_compression = true;
++#endif
++
+ alt_bn128_G2::alt_bn128_G2()
+ {
+     this->X = G2_zero.X;
+@@ -420,12 +426,12 @@ std::ostream& operator<<(std::ostream &out, const alt_bn128_G2 &g)
+     alt_bn128_G2 copy(g);
+     copy.to_affine_coordinates();
+     out << (copy.is_zero() ? 1 : 0) << OUTPUT_SEPARATOR;
+-#ifdef NO_PT_COMPRESSION
+-    out << copy.X << OUTPUT_SEPARATOR << copy.Y;
+-#else
+-    /* storing LSB of Y */
+-    out << copy.X << OUTPUT_SEPARATOR << (copy.Y.c0.as_bigint().data[0] & 1);
+-#endif
++    if (!g2_enable_point_compression) {
++        out << copy.X << OUTPUT_SEPARATOR << copy.Y;
++    } else {
++        /* storing LSB of Y */
++        out << copy.X << OUTPUT_SEPARATOR << (copy.Y.c0.as_bigint().data[0] & 1);
++    }
+ 
+     return out;
+ }
+@@ -435,33 +441,33 @@ std::istream& operator>>(std::istream &in, alt_bn128_G2 &g)
+     char is_zero;
+     alt_bn128_Fq2 tX, tY;
+ 
+-#ifdef NO_PT_COMPRESSION
+-    in >> is_zero >> tX >> tY;
+-    is_zero -= '0';
+-#else
+-    in.read((char*)&is_zero, 1); // this reads is_zero;
+-    is_zero -= '0';
+-    consume_OUTPUT_SEPARATOR(in);
+-
+-    unsigned char Y_lsb;
+-    in >> tX;
+-    consume_OUTPUT_SEPARATOR(in);
+-    in.read((char*)&Y_lsb, 1);
+-    Y_lsb -= '0';
+-
+-    // y = +/- sqrt(x^3 + b)
+-    if (!is_zero)
+-    {
+-        alt_bn128_Fq2 tX2 = tX.squared();
+-        alt_bn128_Fq2 tY2 = tX2 * tX + alt_bn128_twist_coeff_b;
+-        tY = tY2.sqrt();
+-
+-        if ((tY.c0.as_bigint().data[0] & 1) != Y_lsb)
++    if (!g2_enable_point_compression) {
++        in >> is_zero >> tX >> tY;
++        is_zero -= '0';
++    } else {
++        in.read((char*)&is_zero, 1); // this reads is_zero;
++        is_zero -= '0';
++        consume_OUTPUT_SEPARATOR(in);
++
++        unsigned char Y_lsb;
++        in >> tX;
++        consume_OUTPUT_SEPARATOR(in);
++        in.read((char*)&Y_lsb, 1);
++        Y_lsb -= '0';
++
++        // y = +/- sqrt(x^3 + b)
++        if (!is_zero)
+         {
+-            tY = -tY;
++            alt_bn128_Fq2 tX2 = tX.squared();
++            alt_bn128_Fq2 tY2 = tX2 * tX + alt_bn128_twist_coeff_b;
++            tY = tY2.sqrt();
++
++            if ((tY.c0.as_bigint().data[0] & 1) != Y_lsb)
++            {
++                tY = -tY;
++            }
+         }
+     }
+-#endif
+     // using projective coordinates
+     if (!is_zero)
+     {
+diff --git a/src/algebra/curves/alt_bn128/alt_bn128_g2.hpp b/src/algebra/curves/alt_bn128/alt_bn128_g2.hpp
+index a996a2d..c2c58b5 100644
+--- a/src/algebra/curves/alt_bn128/alt_bn128_g2.hpp
++++ b/src/algebra/curves/alt_bn128/alt_bn128_g2.hpp
+@@ -13,6 +13,8 @@
+ 
+ namespace libsnark {
+ 
++extern bool g2_enable_point_compression;
++
+ class alt_bn128_G2;
+ std::ostream& operator<<(std::ostream &, const alt_bn128_G2&);
+ std::istream& operator>>(std::istream &, alt_bn128_G2&);
