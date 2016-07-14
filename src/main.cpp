@@ -970,13 +970,13 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     set<uint256> vJoinSplitNullifiers;
     BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit)
     {
-        BOOST_FOREACH(const uint256& serial, joinsplit.nullifiers)
+        BOOST_FOREACH(const uint256& nf, joinsplit.nullifiers)
         {
-            if (vJoinSplitNullifiers.count(serial))
+            if (vJoinSplitNullifiers.count(nf))
                 return state.DoS(100, error("CheckTransaction(): duplicate nullifiers"),
                              REJECT_INVALID, "bad-joinsplits-nullifiers-duplicate");
 
-            vJoinSplitNullifiers.insert(serial);
+            vJoinSplitNullifiers.insert(nf);
         }
     }
 
@@ -1105,8 +1105,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
     }
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-        BOOST_FOREACH(const uint256 &serial, joinsplit.nullifiers) {
-            if (pool.mapNullifiers.count(serial))
+        BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
+            if (pool.mapNullifiers.count(nf))
             {
                 return false;
             }
@@ -1587,8 +1587,8 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 
     // spend nullifiers
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-        BOOST_FOREACH(const uint256 &serial, joinsplit.nullifiers) {
-            inputs.SetNullifier(serial, true);
+        BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
+            inputs.SetNullifier(nf, true);
         }
     }
 
@@ -1909,8 +1909,8 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
 
         // unspend nullifiers
         BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-            BOOST_FOREACH(const uint256 &serial, joinsplit.nullifiers) {
-                view.SetNullifier(serial, false);
+            BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
+                view.SetNullifier(nf, false);
             }
         }
 
