@@ -88,12 +88,12 @@ public:
         // TODO generate harder genesis block
         //genesis.nBits    = 0x1d00ffff;
         genesis.nBits    = 0x207fffff;
-        genesis.nNonce   = uint256S("0x0000000000000000000000000000000000000000000000000000000000000001");
-        genesis.nSolution = {400496, 12965800, 7933378, 26516310, 3573504, 12897574, 9332739, 12534918};
+        genesis.nNonce   = uint256S("0x0000000000000000000000000000000000000000000000000000000000000002");
+        genesis.nSolution = {918752, 8440521, 7677426, 12612505, 3560731, 21856130, 9052091, 24514575};
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x5ff8e250c158c0694814582883343e8a0de5b7e7a5236324d4bf3293a56b6bc5"));
-        assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+        assert(consensus.hashGenesisBlock == uint256S("0x7edf12f4379f8a400c0837b1eff75584e748e40120913a3051bca9d4d97ba17d"));
+        assert(genesis.hashMerkleRoot == uint256S("0x0e23da24f8ca65956fa92a61290188abe7f85b564dfce6cd5b56f0d851d284a6"));
 
         vSeeds.push_back(CDNSSeedData("bitcoin.sipa.be", "seed.bitcoin.sipa.be")); // Pieter Wuille
         vSeeds.push_back(CDNSSeedData("bluematt.me", "dnsseed.bluematt.me")); // Matt Corallo
@@ -158,10 +158,10 @@ public:
         //! Modify the testnet genesis block so the timestamp is valid for a later start.
         genesis.nTime = 1296688602;
         genesis.nBits = 0x207fffff;
-        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000");
-        genesis.nSolution = {830051, 14471730, 2076450, 21556280, 12194645, 22042975, 16221394, 24048626};
+        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000002");
+        genesis.nSolution = {1319569, 17263914, 6443458, 29553939, 1986834, 19491754, 12659685, 28423345};
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x69675325ac7fb1f5a6bebb7fc8581f9160cbf970817f50b5199df7ff7b2833bd"));
+        assert(consensus.hashGenesisBlock == uint256S("0x44bb60dbeb8b3bbb7357a602b3dcf000b88114594aeb6eb184dd2c8e0b56715c"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -226,11 +226,11 @@ public:
         nEquihashK = 5;
         genesis.nTime = 1296688602;
         genesis.nBits = 0x207fffff;
-        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000003");
-        genesis.nSolution = {21, 374, 135, 192, 103, 221, 198, 303, 87, 330, 306, 464, 98, 239, 146, 471, 35, 137, 53, 387, 97, 454, 412, 434, 75, 352, 180, 367, 121, 480, 158, 482};
+        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000");
+        genesis.nSolution = {9, 239, 76, 389, 70, 454, 373, 374, 40, 398, 113, 241, 75, 450, 453, 462, 22, 279, 300, 427, 233, 343, 318, 501, 36, 363, 73, 171, 111, 217, 281, 415};
         consensus.hashGenesisBlock = genesis.GetHash();
         nDefaultPort = 18444;
-        assert(consensus.hashGenesisBlock == uint256S("0x37e57b7047e1a59918a8f98b9bbebc0b6e16e246211ad1f5c664d7e8f7d8d709"));
+        assert(consensus.hashGenesisBlock == uint256S("0x59d5887d60a3b292a35c93c5d2db23fd4ccbe52bfe94e19e2daa95f4ca666bcb"));
         nPruneAfterHeight = 1000;
 
         vFixedSeeds.clear(); //! Regtest mode doesn't have any fixed seeds.
