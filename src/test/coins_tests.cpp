@@ -171,14 +171,14 @@ BOOST_AUTO_TEST_CASE(serials_test)
     uint256 myserial = GetRandHash();
 
     BOOST_CHECK(!cache.GetNullifier(myserial));
-    cache.SetSerial(myserial, true);
+    cache.SetNullifier(myserial, true);
     BOOST_CHECK(cache.GetNullifier(myserial));
     cache.Flush();
 
     CCoinsViewCacheTest cache2(&base);
 
     BOOST_CHECK(cache2.GetNullifier(myserial));
-    cache2.SetSerial(myserial, false);
+    cache2.SetNullifier(myserial, false);
     BOOST_CHECK(!cache2.GetNullifier(myserial));
     cache2.Flush();
 

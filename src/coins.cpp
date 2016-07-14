@@ -185,7 +185,7 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
     }
 }
 
-void CCoinsViewCache::SetSerial(const uint256 &serial, bool spent) {
+void CCoinsViewCache::SetNullifier(const uint256 &serial, bool spent) {
     std::pair<CSerialsMap::iterator, bool> ret = cacheSerials.insert(std::make_pair(serial, CSerialsCacheEntry()));
     ret.first->second.entered = spent;
     ret.first->second.flags |= CSerialsCacheEntry::DIRTY;

@@ -1588,7 +1588,7 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
     // spend nullifiers
     BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
         BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
-            inputs.SetSerial(serial, true);
+            inputs.SetNullifier(serial, true);
         }
     }
 
@@ -1910,7 +1910,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         // unspend nullifiers
         BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
             BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
-                view.SetSerial(serial, false);
+                view.SetNullifier(serial, false);
             }
         }
 

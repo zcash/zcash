@@ -473,7 +473,7 @@ public:
     void PopAnchor(const uint256 &rt);
 
     // Marks a serial as spent or not.
-    void SetSerial(const uint256 &serial, bool spent);
+    void SetNullifier(const uint256 &serial, bool spent);
 
     /**
      * Return a pointer to CCoins in the cache, or NULL if not found. This is
