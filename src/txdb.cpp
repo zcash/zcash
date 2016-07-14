@@ -138,7 +138,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
     }
 
     for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end();) {
-        if (it->second.flags & CSerialsCacheEntry::DIRTY) {
+        if (it->second.flags & CNullifiersCacheEntry::DIRTY) {
             BatchWriteSerial(batch, it->first, it->second.entered);
             // TODO: changed++?
         }

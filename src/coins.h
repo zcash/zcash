@@ -309,21 +309,21 @@ struct CAnchorsCacheEntry
     CAnchorsCacheEntry() : entered(false), flags(0) {}
 };
 
-struct CSerialsCacheEntry
+struct CNullifiersCacheEntry
 {
-    bool entered; // If the serial is spent or not
+    bool entered; // If the nullifier is spent or not
     unsigned char flags;
 
     enum Flags {
         DIRTY = (1 << 0), // This cache entry is potentially different from the version in the parent view.
     };
 
-    CSerialsCacheEntry() : entered(false), flags(0) {}
+    CNullifiersCacheEntry() : entered(false), flags(0) {}
 };
 
 typedef boost::unordered_map<uint256, CCoinsCacheEntry, CCoinsKeyHasher> CCoinsMap;
 typedef boost::unordered_map<uint256, CAnchorsCacheEntry, CCoinsKeyHasher> CAnchorsMap;
-typedef boost::unordered_map<uint256, CSerialsCacheEntry, CCoinsKeyHasher> CNullifiersMap;
+typedef boost::unordered_map<uint256, CNullifiersCacheEntry, CCoinsKeyHasher> CNullifiersMap;
 
 struct CCoinsStats
 {
@@ -346,8 +346,8 @@ public:
     //! Retrieve the tree at a particular anchored root in the chain
     virtual bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
 
-    //! Determine whether a serial is spent or not
-    virtual bool GetNullifier(const uint256 &serial) const;
+    //! Determine whether a nullifier is spent or not
+    virtual bool GetNullifier(const uint256 &nullifier) const;
 
     //! Retrieve the CCoins (unspent transaction outputs) for a given txid
     virtual bool GetCoins(const uint256 &txid, CCoins &coins) const;
@@ -387,7 +387,7 @@ protected:
 public:
     CCoinsViewBacked(CCoinsView *viewIn);
     bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
-    bool GetNullifier(const uint256 &serial) const;
+    bool GetNullifier(const uint256 &nullifier) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
@@ -451,7 +451,7 @@ public:
 
     // Standard CCoinsView methods
     bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
-    bool GetNullifier(const uint256 &serial) const;
+    bool GetNullifier(const uint256 &nullifier) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
@@ -472,8 +472,8 @@ public:
     // the new current root.
     void PopAnchor(const uint256 &rt);
 
-    // Marks a serial as spent or not.
-    void SetNullifier(const uint256 &serial, bool spent);
+    // Marks a nullifier as spent or not.
+    void SetNullifier(const uint256 &nullifier, bool spent);
 
     /**
      * Return a pointer to CCoins in the cache, or NULL if not found. This is
@@ -515,7 +515,7 @@ public:
     //! Check whether all prevouts of the transaction are present in the UTXO set represented by this view
     bool HaveInputs(const CTransaction& tx) const;
 
-    //! Check whether all joinsplit requirements (anchors/serials) are satisfied
+    //! Check whether all joinsplit requirements (anchors/nullifiers) are satisfied
     bool HaveJoinSplitRequirements(const CTransaction& tx) const;
 
     //! Return priority of tx at height nHeight

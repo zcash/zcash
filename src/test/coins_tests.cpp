@@ -163,28 +163,28 @@ uint256 appendRandomCommitment(ZCIncrementalMerkleTree &tree)
 
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
 
-BOOST_AUTO_TEST_CASE(serials_test)
+BOOST_AUTO_TEST_CASE(nullifiers_test)
 {
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
-    uint256 myserial = GetRandHash();
+    uint256 nf = GetRandHash();
 
-    BOOST_CHECK(!cache.GetNullifier(myserial));
-    cache.SetNullifier(myserial, true);
-    BOOST_CHECK(cache.GetNullifier(myserial));
+    BOOST_CHECK(!cache.GetNullifier(nf));
+    cache.SetNullifier(nf, true);
+    BOOST_CHECK(cache.GetNullifier(nf));
     cache.Flush();
 
     CCoinsViewCacheTest cache2(&base);
 
-    BOOST_CHECK(cache2.GetNullifier(myserial));
-    cache2.SetNullifier(myserial, false);
-    BOOST_CHECK(!cache2.GetNullifier(myserial));
+    BOOST_CHECK(cache2.GetNullifier(nf));
+    cache2.SetNullifier(nf, false);
+    BOOST_CHECK(!cache2.GetNullifier(nf));
     cache2.Flush();
 
     CCoinsViewCacheTest cache3(&base);
 
-    BOOST_CHECK(!cache3.GetNullifier(myserial));
+    BOOST_CHECK(!cache3.GetNullifier(nf));
 }
 
 BOOST_AUTO_TEST_CASE(anchors_flush_test)
