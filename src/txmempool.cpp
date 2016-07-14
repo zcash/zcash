@@ -101,7 +101,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
         mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
     BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
         BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
-            mapSerials[serial] = &tx;
+            mapNullifiers[serial] = &tx;
         }
     }
     nTransactionsUpdated++;
@@ -150,7 +150,7 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
                 mapNextTx.erase(txin.prevout);
             BOOST_FOREACH(const JSDescription& pour, tx.vjoinsplit) {
                 BOOST_FOREACH(const uint256& serial, pour.nullifiers) {
-                    mapSerials.erase(serial);
+                    mapNullifiers.erase(serial);
                 }
             }
 
@@ -232,8 +232,8 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
 
     BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
         BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
-            std::map<uint256, const CTransaction*>::iterator it = mapSerials.find(serial);
-            if (it != mapSerials.end()) {
+            std::map<uint256, const CTransaction*>::iterator it = mapNullifiers.find(serial);
+            if (it != mapNullifiers.end()) {
                 const CTransaction &txConflict = *it->second;
                 if (txConflict != tx)
                 {
@@ -370,7 +370,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         assert(it->first == it->second.ptx->vin[it->second.n].prevout);
     }
 
-    for (std::map<uint256, const CTransaction*>::const_iterator it = mapSerials.begin(); it != mapSerials.end(); it++) {
+    for (std::map<uint256, const CTransaction*>::const_iterator it = mapNullifiers.begin(); it != mapNullifiers.end(); it++) {
         uint256 hash = it->second->GetHash();
         map<uint256, CTxMemPoolEntry>::const_iterator it2 = mapTx.find(hash);
         const CTransaction& tx = it2->second.GetTx();
@@ -485,7 +485,7 @@ bool CTxMemPool::HasNoInputsOf(const CTransaction &tx) const
 CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn), mempool(mempoolIn) { }
 
 bool CCoinsViewMemPool::GetNullifier(const uint256 &serial) const {
-    if (mempool.mapSerials.count(serial))
+    if (mempool.mapNullifiers.count(serial))
         return true;
 
     return base->GetNullifier(serial);

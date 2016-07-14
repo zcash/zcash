@@ -368,7 +368,7 @@ public:
                             const uint256 &hashBlock,
                             const uint256 &hashAnchor,
                             CAnchorsMap &mapAnchors,
-                            CNullifiersMap &mapSerials);
+                            CNullifiersMap &mapNullifiers);
 
     //! Calculate statistics about the unspent transaction output set
     virtual bool GetStats(CCoinsStats &stats) const;
@@ -397,7 +397,7 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
                     CAnchorsMap &mapAnchors,
-                    CNullifiersMap &mapSerials);
+                    CNullifiersMap &mapNullifiers);
     bool GetStats(CCoinsStats &stats) const;
 };
 
@@ -461,7 +461,7 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
                     CAnchorsMap &mapAnchors,
-                    CNullifiersMap &mapSerials);
+                    CNullifiersMap &mapNullifiers);
 
 
     // Adds the tree to mapAnchors and sets the current commitment

@@ -50,7 +50,7 @@ bool CCoinsView::BatchWrite(CCoinsMap &mapCoins,
                             const uint256 &hashBlock,
                             const uint256 &hashAnchor,
                             CAnchorsMap &mapAnchors,
-                            CNullifiersMap &mapSerials) { return false; }
+                            CNullifiersMap &mapNullifiers) { return false; }
 bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 
 
@@ -67,7 +67,7 @@ bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
                                   const uint256 &hashBlock,
                                   const uint256 &hashAnchor,
                                   CAnchorsMap &mapAnchors,
-                                  CNullifiersMap &mapSerials) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapAnchors, mapSerials); }
+                                  CNullifiersMap &mapNullifiers) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapAnchors, mapNullifiers); }
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
@@ -260,7 +260,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                                  const uint256 &hashBlockIn,
                                  const uint256 &hashAnchorIn,
                                  CAnchorsMap &mapAnchors,
-                                 CNullifiersMap &mapSerials) {
+                                 CNullifiersMap &mapNullifiers) {
     assert(!hasModifier);
     for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end();) {
         if (it->second.flags & CCoinsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
@@ -326,7 +326,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
         mapAnchors.erase(itOld);
     }
 
-    for (CNullifiersMap::iterator child_it = mapSerials.begin(); child_it != mapSerials.end();)
+    for (CNullifiersMap::iterator child_it = mapNullifiers.begin(); child_it != mapNullifiers.end();)
     {
         if (child_it->second.flags & CSerialsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
             CNullifiersMap::iterator parent_it = cacheSerials.find(child_it->first);
@@ -348,7 +348,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
             }
         }
         CNullifiersMap::iterator itOld = child_it++;
-        mapSerials.erase(itOld);
+        mapNullifiers.erase(itOld);
     }
 
     hashAnchor = hashAnchorIn;

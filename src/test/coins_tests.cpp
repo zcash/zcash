@@ -24,7 +24,7 @@ class CCoinsViewTest : public CCoinsView
     uint256 hashBestAnchor_;
     std::map<uint256, CCoins> map_;
     std::map<uint256, ZCIncrementalMerkleTree> mapAnchors_;
-    std::map<uint256, bool> mapSerials_;
+    std::map<uint256, bool> mapNullifiers_;
 
 public:
     CCoinsViewTest() {
@@ -49,9 +49,9 @@ public:
 
     bool GetNullifier(const uint256 &serial) const
     {
-        std::map<uint256, bool>::const_iterator it = mapSerials_.find(serial);
+        std::map<uint256, bool>::const_iterator it = mapNullifiers_.find(serial);
 
-        if (it == mapSerials_.end()) {
+        if (it == mapNullifiers_.end()) {
             return false;
         } else {
             // The map shouldn't contain any false entries.
@@ -88,7 +88,7 @@ public:
                     const uint256& hashBlock,
                     const uint256& hashAnchor,
                     CAnchorsMap& mapAnchors,
-                    CNullifiersMap& mapSerials)
+                    CNullifiersMap& mapNullifiers)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             map_[it->first] = it->second.coins;
@@ -109,17 +109,17 @@ public:
             }
             mapAnchors.erase(it++);
         }
-        for (CNullifiersMap::iterator it = mapSerials.begin(); it != mapSerials.end(); ) {
+        for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end(); ) {
             if (it->second.entered) {
-                mapSerials_[it->first] = true;
+                mapNullifiers_[it->first] = true;
             } else {
-                mapSerials_.erase(it->first);
+                mapNullifiers_.erase(it->first);
             }
-            mapSerials.erase(it++);
+            mapNullifiers.erase(it++);
         }
         mapCoins.clear();
         mapAnchors.clear();
-        mapSerials.clear();
+        mapNullifiers.clear();
         hashBestBlock_ = hashBlock;
         hashBestAnchor_ = hashAnchor;
         return true;

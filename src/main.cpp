@@ -1106,7 +1106,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
     BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
         BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
-            if (pool.mapSerials.count(serial))
+            if (pool.mapNullifiers.count(serial))
             {
                 return false;
             }

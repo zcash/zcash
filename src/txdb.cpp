@@ -114,7 +114,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               const uint256 &hashBlock,
                               const uint256 &hashAnchor,
                               CAnchorsMap &mapAnchors,
-                              CNullifiersMap &mapSerials) {
+                              CNullifiersMap &mapNullifiers) {
     CLevelDBBatch batch;
     size_t count = 0;
     size_t changed = 0;
@@ -137,13 +137,13 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
         mapAnchors.erase(itOld);
     }
 
-    for (CNullifiersMap::iterator it = mapSerials.begin(); it != mapSerials.end();) {
+    for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end();) {
         if (it->second.flags & CSerialsCacheEntry::DIRTY) {
             BatchWriteSerial(batch, it->first, it->second.entered);
             // TODO: changed++?
         }
         CNullifiersMap::iterator itOld = it++;
-        mapSerials.erase(itOld);
+        mapNullifiers.erase(itOld);
     }
 
     if (!hashBlock.IsNull())
