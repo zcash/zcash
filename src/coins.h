@@ -323,7 +323,7 @@ struct CSerialsCacheEntry
 
 typedef boost::unordered_map<uint256, CCoinsCacheEntry, CCoinsKeyHasher> CCoinsMap;
 typedef boost::unordered_map<uint256, CAnchorsCacheEntry, CCoinsKeyHasher> CAnchorsMap;
-typedef boost::unordered_map<uint256, CSerialsCacheEntry, CCoinsKeyHasher> CSerialsMap;
+typedef boost::unordered_map<uint256, CSerialsCacheEntry, CCoinsKeyHasher> CNullifiersMap;
 
 struct CCoinsStats
 {
@@ -368,7 +368,7 @@ public:
                             const uint256 &hashBlock,
                             const uint256 &hashAnchor,
                             CAnchorsMap &mapAnchors,
-                            CSerialsMap &mapSerials);
+                            CNullifiersMap &mapSerials);
 
     //! Calculate statistics about the unspent transaction output set
     virtual bool GetStats(CCoinsStats &stats) const;
@@ -397,7 +397,7 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
                     CAnchorsMap &mapAnchors,
-                    CSerialsMap &mapSerials);
+                    CNullifiersMap &mapSerials);
     bool GetStats(CCoinsStats &stats) const;
 };
 
@@ -440,7 +440,7 @@ protected:
     mutable CCoinsMap cacheCoins;
     mutable uint256 hashAnchor;
     mutable CAnchorsMap cacheAnchors;
-    mutable CSerialsMap cacheSerials;
+    mutable CNullifiersMap cacheSerials;
 
     /* Cached dynamic memory usage for the inner CCoins objects. */
     mutable size_t cachedCoinsUsage;
@@ -461,7 +461,7 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
                     CAnchorsMap &mapAnchors,
-                    CSerialsMap &mapSerials);
+                    CNullifiersMap &mapSerials);
 
 
     // Adds the tree to mapAnchors and sets the current commitment

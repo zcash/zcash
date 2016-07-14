@@ -88,7 +88,7 @@ public:
                     const uint256& hashBlock,
                     const uint256& hashAnchor,
                     CAnchorsMap& mapAnchors,
-                    CSerialsMap& mapSerials)
+                    CNullifiersMap& mapSerials)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             map_[it->first] = it->second.coins;
@@ -109,7 +109,7 @@ public:
             }
             mapAnchors.erase(it++);
         }
-        for (CSerialsMap::iterator it = mapSerials.begin(); it != mapSerials.end(); ) {
+        for (CNullifiersMap::iterator it = mapSerials.begin(); it != mapSerials.end(); ) {
             if (it->second.entered) {
                 mapSerials_[it->first] = true;
             } else {

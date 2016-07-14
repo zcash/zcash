@@ -50,7 +50,7 @@ bool CCoinsView::BatchWrite(CCoinsMap &mapCoins,
                             const uint256 &hashBlock,
                             const uint256 &hashAnchor,
                             CAnchorsMap &mapAnchors,
-                            CSerialsMap &mapSerials) { return false; }
+                            CNullifiersMap &mapSerials) { return false; }
 bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 
 
@@ -67,7 +67,7 @@ bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
                                   const uint256 &hashBlock,
                                   const uint256 &hashAnchor,
                                   CAnchorsMap &mapAnchors,
-                                  CSerialsMap &mapSerials) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapAnchors, mapSerials); }
+                                  CNullifiersMap &mapSerials) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapAnchors, mapSerials); }
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
@@ -129,7 +129,7 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tr
 }
 
 bool CCoinsViewCache::GetNullifier(const uint256 &serial) const {
-    CSerialsMap::iterator it = cacheSerials.find(serial);
+    CNullifiersMap::iterator it = cacheSerials.find(serial);
     if (it != cacheSerials.end())
         return it->second.entered;
 
@@ -186,7 +186,7 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
 }
 
 void CCoinsViewCache::SetNullifier(const uint256 &serial, bool spent) {
-    std::pair<CSerialsMap::iterator, bool> ret = cacheSerials.insert(std::make_pair(serial, CSerialsCacheEntry()));
+    std::pair<CNullifiersMap::iterator, bool> ret = cacheSerials.insert(std::make_pair(serial, CSerialsCacheEntry()));
     ret.first->second.entered = spent;
     ret.first->second.flags |= CSerialsCacheEntry::DIRTY;
 }
@@ -260,7 +260,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                                  const uint256 &hashBlockIn,
                                  const uint256 &hashAnchorIn,
                                  CAnchorsMap &mapAnchors,
-                                 CSerialsMap &mapSerials) {
+                                 CNullifiersMap &mapSerials) {
     assert(!hasModifier);
     for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end();) {
         if (it->second.flags & CCoinsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
@@ -326,10 +326,10 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
         mapAnchors.erase(itOld);
     }
 
-    for (CSerialsMap::iterator child_it = mapSerials.begin(); child_it != mapSerials.end();)
+    for (CNullifiersMap::iterator child_it = mapSerials.begin(); child_it != mapSerials.end();)
     {
         if (child_it->second.flags & CSerialsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
-            CSerialsMap::iterator parent_it = cacheSerials.find(child_it->first);
+            CNullifiersMap::iterator parent_it = cacheSerials.find(child_it->first);
 
             if (parent_it == cacheSerials.end()) {
                 if (child_it->second.entered) {
@@ -347,7 +347,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                 }
             }
         }
-        CSerialsMap::iterator itOld = child_it++;
+        CNullifiersMap::iterator itOld = child_it++;
         mapSerials.erase(itOld);
     }
 

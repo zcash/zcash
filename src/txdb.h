@@ -44,7 +44,7 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
                     CAnchorsMap &mapAnchors,
-                    CSerialsMap &mapSerials);
+                    CNullifiersMap &mapSerials);
     bool GetStats(CCoinsStats &stats) const;
 };
 
