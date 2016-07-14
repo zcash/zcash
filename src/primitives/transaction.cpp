@@ -167,7 +167,7 @@ CAmount CTransaction::GetValueOut() const
     return nValueOut;
 }
 
-CAmount CTransaction::GetPourValueIn() const
+CAmount CTransaction::GetJoinSplitValueIn() const
 {
     CAmount nValue = 0;
     for (std::vector<JSDescription>::const_iterator it(vjoinsplit.begin()); it != vjoinsplit.end(); ++it)
@@ -176,7 +176,7 @@ CAmount CTransaction::GetPourValueIn() const
         nValue += it->vpub_new;
 
         if (!MoneyRange(it->vpub_new) || !MoneyRange(nValue))
-            throw std::runtime_error("CTransaction::GetPourValueIn(): value out of range");
+            throw std::runtime_error("CTransaction::GetJoinSplitValueIn(): value out of range");
     }
 
     return nValue;

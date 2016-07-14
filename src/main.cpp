@@ -1654,7 +1654,7 @@ bool NonContextualCheckInputs(const CTransaction& tx, CValidationState &state, c
 
         }
 
-        nValueIn += tx.GetPourValueIn();
+        nValueIn += tx.GetJoinSplitValueIn();
         if (!MoneyRange(nValueIn))
             return state.DoS(100, error("CheckInputs(): vpub_old values out of range"),
                              REJECT_INVALID, "bad-txns-inputvalues-outofrange");
