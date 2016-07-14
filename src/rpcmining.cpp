@@ -772,11 +772,14 @@ Value getblocksubsidy(const Array& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "getblocksubsidy height\n"
-            "\nReturns block subsidy reward, taking into account the mining slow start, of block at index provided.\n"
+            "\nReturns block subsidy reward, taking into account the mining slow start and the founders reward, of block at index provided.\n"
             "\nArguments:\n"
             "1. height        (numeric, required) The block height.\n"
             "\nResult:\n"
-            "amount           (numeric) The block reward amount in ZEC.\n"
+            "{\n"
+            "  \"miner\" : x.xxx           (numeric) The mining reward amount in ZEC.\n"
+            "  \"founders\" : x.xxx        (numeric) The founders reward amount in ZEC.\n"
+            "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")
             + HelpExampleRpc("getblockubsidy", "1000")
@@ -788,5 +791,13 @@ Value getblocksubsidy(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
-    return ValueFromAmount(nReward);
+    CAmount nFoundersReward = 0;
+    if ((nHeight > 0) && (nHeight < Params().GetConsensus().nSubsidyHalvingInterval)) {
+        nFoundersReward = nReward/5;
+        nReward -= nFoundersReward;
+    }
+    Object result;
+    result.push_back(Pair("miner", ValueFromAmount(nReward)));
+    result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));
+    return result;
 }
