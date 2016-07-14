@@ -99,8 +99,8 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     const CTransaction& tx = mapTx[hash].GetTx();
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
-    BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
-        BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
+    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
+        BOOST_FOREACH(const uint256 &serial, joinsplit.nullifiers) {
             mapNullifiers[serial] = &tx;
         }
     }
@@ -148,8 +148,8 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
             }
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
                 mapNextTx.erase(txin.prevout);
-            BOOST_FOREACH(const JSDescription& pour, tx.vjoinsplit) {
-                BOOST_FOREACH(const uint256& serial, pour.nullifiers) {
+            BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit) {
+                BOOST_FOREACH(const uint256& serial, joinsplit.nullifiers) {
                     mapNullifiers.erase(serial);
                 }
             }
@@ -200,8 +200,8 @@ void CTxMemPool::removeWithAnchor(const uint256 &invalidRoot)
 
     for (std::map<uint256, CTxMemPoolEntry>::const_iterator it = mapTx.begin(); it != mapTx.end(); it++) {
         const CTransaction& tx = it->second.GetTx();
-        BOOST_FOREACH(const JSDescription& pour, tx.vjoinsplit) {
-            if (pour.anchor == invalidRoot) {
+        BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit) {
+            if (joinsplit.anchor == invalidRoot) {
                 transactionsToRemove.push_back(tx);
                 break;
             }
@@ -230,8 +230,8 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
         }
     }
 
-    BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
-        BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
+    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
+        BOOST_FOREACH(const uint256 &serial, joinsplit.nullifiers) {
             std::map<uint256, const CTransaction*>::iterator it = mapNullifiers.find(serial);
             if (it != mapNullifiers.end()) {
                 const CTransaction &txConflict = *it->second;
@@ -317,20 +317,20 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 
         boost::unordered_map<uint256, ZCIncrementalMerkleTree, CCoinsKeyHasher> intermediates;
 
-        BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit) {
-            BOOST_FOREACH(const uint256 &serial, pour.nullifiers) {
+        BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
+            BOOST_FOREACH(const uint256 &serial, joinsplit.nullifiers) {
                 assert(!pcoins->GetNullifier(serial));
             }
 
             ZCIncrementalMerkleTree tree;
-            auto it = intermediates.find(pour.anchor);
+            auto it = intermediates.find(joinsplit.anchor);
             if (it != intermediates.end()) {
                 tree = it->second;
             } else {
-                assert(pcoins->GetAnchorAt(pour.anchor, tree));
+                assert(pcoins->GetAnchorAt(joinsplit.anchor, tree));
             }
 
-            BOOST_FOREACH(const uint256& commitment, pour.commitments)
+            BOOST_FOREACH(const uint256& commitment, joinsplit.commitments)
             {
                 tree.append(commitment);
             }

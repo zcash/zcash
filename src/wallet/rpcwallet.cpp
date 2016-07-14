@@ -2521,7 +2521,7 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
 
 
 
-Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
+Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {
         return Value::null;
@@ -2529,11 +2529,11 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
 
     if (fHelp || params.size() != 5) {
         throw runtime_error(
-            "zcrawpour rawtx inputs outputs vpub_old vpub_new\n"
+            "zcrawjoinsplit rawtx inputs outputs vpub_old vpub_new\n"
             "  inputs: a JSON object mapping {bucket: zcsecretkey, ...}\n"
             "  outputs: a JSON object mapping {zcaddr: value, ...}\n"
             "\n"
-            "Splices a Pour into rawtx. Inputs are unilaterally confidential.\n"
+            "Splices a joinsplit into rawtx. Inputs are unilaterally confidential.\n"
             "Outputs are confidential between sender/receiver. The vpub_old and\n"
             "vpub_new values are globally public and move transparent value into\n"
             "or out of the confidential value store, respectively.\n"
@@ -2569,8 +2569,8 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
     if (params[4].get_real() != 0.0)
         vpub_new = AmountFromValue(params[4]);
 
-    std::vector<JSInput> vpourin;
-    std::vector<JSOutput> vpourout;
+    std::vector<JSInput> vjsin;
+    std::vector<JSOutput> vjsout;
     std::vector<Note> notes;
     std::vector<SpendingKey> keys;
     std::vector<uint256> commitments;
@@ -2606,16 +2606,16 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         for (size_t i = 0; i < witnesses.size(); i++) {
             if (!witnesses[i]) {
                 throw runtime_error(
-                    "pour input could not be found in tree"
+                    "joinsplit input could not be found in tree"
                 );
             }
 
-            vpourin.push_back(JSInput(*witnesses[i], notes[i], keys[i]));
+            vjsin.push_back(JSInput(*witnesses[i], notes[i], keys[i]));
         }
     }
 
-    while (vpourin.size() < ZC_NUM_JS_INPUTS) {
-        vpourin.push_back(JSInput());
+    while (vjsin.size() < ZC_NUM_JS_INPUTS) {
+        vjsin.push_back(JSInput());
     }
 
     BOOST_FOREACH(const Pair& s, outputs)
@@ -2624,16 +2624,16 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         PaymentAddress addrTo = pubaddr.Get();
         CAmount nAmount = AmountFromValue(s.value_);
 
-        vpourout.push_back(JSOutput(addrTo, nAmount));
+        vjsout.push_back(JSOutput(addrTo, nAmount));
     }
 
-    while (vpourout.size() < ZC_NUM_JS_OUTPUTS) {
-        vpourout.push_back(JSOutput());
+    while (vjsout.size() < ZC_NUM_JS_OUTPUTS) {
+        vjsout.push_back(JSOutput());
     }
 
     // TODO
-    if (vpourout.size() != ZC_NUM_JS_INPUTS || vpourin.size() != ZC_NUM_JS_OUTPUTS) {
-        throw runtime_error("unsupported pour input/output counts");
+    if (vjsout.size() != ZC_NUM_JS_INPUTS || vjsin.size() != ZC_NUM_JS_OUTPUTS) {
+        throw runtime_error("unsupported joinsplit input/output counts");
     }
 
     uint256 joinSplitPubKey;
@@ -2644,17 +2644,17 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
     mtx.nVersion = 2;
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    JSDescription pourtx(*pzcashParams,
+    JSDescription jsdescription(*pzcashParams,
                    joinSplitPubKey,
                    anchor,
-                   {vpourin[0], vpourin[1]},
-                   {vpourout[0], vpourout[1]},
+                   {vjsin[0], vjsin[1]},
+                   {vjsout[0], vjsout[1]},
                    vpub_old,
                    vpub_new);
 
-    assert(pourtx.Verify(*pzcashParams, joinSplitPubKey));
+    assert(jsdescription.Verify(*pzcashParams, joinSplitPubKey));
 
-    mtx.vjoinsplit.push_back(pourtx);
+    mtx.vjoinsplit.push_back(jsdescription);
 
     // TODO: #966.
     static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
@@ -2688,18 +2688,18 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
     {
         CDataStream ss2(SER_NETWORK, PROTOCOL_VERSION);
         ss2 << ((unsigned char) 0x00);
-        ss2 << pourtx.ephemeralKey;
-        ss2 << pourtx.ciphertexts[0];
-        ss2 << pourtx.h_sig(*pzcashParams, joinSplitPubKey);
+        ss2 << jsdescription.ephemeralKey;
+        ss2 << jsdescription.ciphertexts[0];
+        ss2 << jsdescription.h_sig(*pzcashParams, joinSplitPubKey);
 
         encryptedBucket1 = HexStr(ss2.begin(), ss2.end());
     }
     {
         CDataStream ss2(SER_NETWORK, PROTOCOL_VERSION);
         ss2 << ((unsigned char) 0x01);
-        ss2 << pourtx.ephemeralKey;
-        ss2 << pourtx.ciphertexts[1];
-        ss2 << pourtx.h_sig(*pzcashParams, joinSplitPubKey);
+        ss2 << jsdescription.ephemeralKey;
+        ss2 << jsdescription.ciphertexts[1];
+        ss2 << jsdescription.h_sig(*pzcashParams, joinSplitPubKey);
 
         encryptedBucket2 = HexStr(ss2.begin(), ss2.end());
     }

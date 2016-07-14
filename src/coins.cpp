@@ -149,7 +149,7 @@ void CCoinsViewCache::PushAnchor(const ZCIncrementalMerkleTree &tree) {
 
     // We don't want to overwrite an anchor we already have.
     // This occurs when a block doesn't modify mapAnchors at all,
-    // because there are no pours. We could get around this a
+    // because there are no joinsplits. We could get around this a
     // different way (make all blocks modify mapAnchors somehow)
     // but this is simpler to reason about.
     if (currentRoot != newrt) {
@@ -394,9 +394,9 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
 {
     boost::unordered_map<uint256, ZCIncrementalMerkleTree, CCoinsKeyHasher> intermediates;
 
-    BOOST_FOREACH(const JSDescription &pour, tx.vjoinsplit)
+    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit)
     {
-        BOOST_FOREACH(const uint256& serial, pour.nullifiers)
+        BOOST_FOREACH(const uint256& serial, joinsplit.nullifiers)
         {
             if (GetNullifier(serial)) {
                 // If the serial is set, this transaction
@@ -406,14 +406,14 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
         }
 
         ZCIncrementalMerkleTree tree;
-        auto it = intermediates.find(pour.anchor);
+        auto it = intermediates.find(joinsplit.anchor);
         if (it != intermediates.end()) {
             tree = it->second;
-        } else if (!GetAnchorAt(pour.anchor, tree)) {
+        } else if (!GetAnchorAt(joinsplit.anchor, tree)) {
             return false;
         }
 
-        BOOST_FOREACH(const uint256& commitment, pour.commitments)
+        BOOST_FOREACH(const uint256& commitment, joinsplit.commitments)
         {
             tree.append(commitment);
         }

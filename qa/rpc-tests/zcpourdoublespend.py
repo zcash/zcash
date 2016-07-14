@@ -56,7 +56,7 @@ class PourTxTest(BitcoinTestFramework):
         for i in range(4):
             (total_in, inputs) = gather_inputs(self.nodes[i], 40)
             pool[i] = self.nodes[i].createrawtransaction(inputs, {})
-            pool[i] = self.nodes[i].zcrawpour(pool[i], {}, {zcaddress:39.9}, 39.9, 0)
+            pool[i] = self.nodes[i].zcrawjoinsplit(pool[i], {}, {zcaddress:39.9}, 39.9, 0)
             signed = self.nodes[i].signrawtransaction(pool[i]["rawtxn"])
 
             # send the tx to both halves of the network
@@ -88,25 +88,25 @@ class PourTxTest(BitcoinTestFramework):
 
         blank_tx = self.nodes[0].createrawtransaction([], {})
         # Create pour {A, B}->{*}
-        pour_AB = self.nodes[0].zcrawpour(blank_tx,
+        pour_AB = self.nodes[0].zcrawjoinsplit(blank_tx,
                                           {pool[0] : zcsecretkey, pool[1] : zcsecretkey},
                                           {zcaddress:(39.9*2)-0.1},
                                           0, 0.1)
 
         # Create pour {B, C}->{*}
-        pour_BC = self.nodes[0].zcrawpour(blank_tx,
+        pour_BC = self.nodes[0].zcrawjoinsplit(blank_tx,
                                           {pool[1] : zcsecretkey, pool[2] : zcsecretkey},
                                           {zcaddress:(39.9*2)-0.1},
                                           0, 0.1)
 
         # Create pour {C, D}->{*}
-        pour_CD = self.nodes[0].zcrawpour(blank_tx,
+        pour_CD = self.nodes[0].zcrawjoinsplit(blank_tx,
                                           {pool[2] : zcsecretkey, pool[3] : zcsecretkey},
                                           {zcaddress:(39.9*2)-0.1},
                                           0, 0.1)
 
         # Create pour {A, D}->{*}
-        pour_AD = self.nodes[0].zcrawpour(blank_tx,
+        pour_AD = self.nodes[0].zcrawjoinsplit(blank_tx,
                                           {pool[0] : zcsecretkey, pool[3] : zcsecretkey},
                                           {zcaddress:(39.9*2)-0.1},
                                           0, 0.1)

@@ -25,7 +25,7 @@ public:
     CAmount vpub_old;
     CAmount vpub_new;
 
-    // Pours are always anchored to a root in the bucket
+    // JoinSplits are always anchored to a root in the bucket
     // commitment tree at some point in the blockchain
     // history or in the history of the current
     // transaction.
@@ -39,7 +39,7 @@ public:
 
     // Bucket commitments are introduced into the commitment
     // tree, blinding the public about the values and
-    // destinations involved in the Pour. The presence of a
+    // destinations involved in the JoinSplit. The presence of a
     // commitment in the bucket commitment tree is required
     // to spend it.
     boost::array<uint256, ZC_NUM_JS_OUTPUTS> commitments;
@@ -57,12 +57,12 @@ public:
     uint256 randomSeed;
 
     // MACs
-    // The verification of the pour requires these MACs
+    // The verification of the JoinSplit requires these MACs
     // to be provided as an input.
     boost::array<uint256, ZC_NUM_JS_INPUTS> macs;
 
-    // Pour proof
-    // This is a zk-SNARK which ensures that this pour is valid.
+    // JoinSplit proof
+    // This is a zk-SNARK which ensures that this JoinSplit is valid.
     boost::array<unsigned char, ZKSNARK_PROOF_SIZE> proof;
 
     JSDescription(): vpub_old(0), vpub_new(0) { }
@@ -76,7 +76,7 @@ public:
             CAmount vpub_new
     );
 
-    // Verifies that the pour proof is correct.
+    // Verifies that the JoinSplit proof is correct.
     bool Verify(ZCJoinSplit& params, const uint256& pubKeyHash) const;
 
     // Returns the calculated h_sig
@@ -348,7 +348,7 @@ public:
     // GetValueIn() is a method on CCoinsViewCache, because
     // inputs must be known to compute value in.
 
-    // Return sum of pour vpub_new
+    // Return sum of JoinSplit vpub_new
     CAmount GetJoinSplitValueIn() const;
 
     // Compute priority, given priority of inputs and (optionally) tx size

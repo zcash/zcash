@@ -76,7 +76,7 @@ double benchmark_create_joinsplit()
     uint256 anchor = ZCIncrementalMerkleTree().root();
 
     timer_start();
-    JSDescription pourtx(*pzcashParams,
+    JSDescription jsdescription(*pzcashParams,
                    pubKeyHash,
                    anchor,
                    {JSInput(), JSInput()},
@@ -85,7 +85,7 @@ double benchmark_create_joinsplit()
                    0);
     double ret = timer_stop();
 
-    assert(pourtx.Verify(*pzcashParams, pubKeyHash));
+    assert(jsdescription.Verify(*pzcashParams, pubKeyHash));
     return ret;
 }
 
