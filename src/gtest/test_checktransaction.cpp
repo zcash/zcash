@@ -123,7 +123,7 @@ TEST(checktransaction_tests, bad_txns_oversize) {
     mtx.vin[0].scriptSig = CScript();
     // 18 * (520char + DROP) + OP_1 = 9433 bytes
     std::vector<unsigned char> vchData(520);
-    for (unsigned int i = 0; i < 2000; ++i)
+    for (unsigned int i = 0; i < 4000; ++i)
         mtx.vin[0].scriptSig << vchData << OP_DROP;
     mtx.vin[0].scriptSig << OP_1;
 
