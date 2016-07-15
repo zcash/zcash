@@ -37,7 +37,7 @@ class PourTxTest(BitcoinTestFramework):
         assert_equal(receive_result["exists"], True)
 
         pour_tx = self.nodes[0].createrawtransaction([], {})
-        pour_result = self.nodes[0].zcrawjoinsplit(pour_tx, {receive_result["bucket"] : zcsecretkey}, {zcaddress: 39.8}, 0, 0.1)
+        pour_result = self.nodes[0].zcrawjoinsplit(pour_tx, {receive_result["note"] : zcsecretkey}, {zcaddress: 39.8}, 0, 0.1)
 
         self.nodes[0].sendrawtransaction(pour_result["rawtxn"])
         self.nodes[0].generate(1)

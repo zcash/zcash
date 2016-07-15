@@ -71,19 +71,19 @@ class PourTxTest(BitcoinTestFramework):
 
         # Confirm that the protects have taken place
         for i in range(4):
-            enc_bucket = pool[i]
-            receive_result = self.nodes[0].zcrawreceive(zcsecretkey, enc_bucket)
+            enc_note = pool[i]
+            receive_result = self.nodes[0].zcrawreceive(zcsecretkey, enc_note)
             assert_equal(receive_result["exists"], True)
-            pool[i] = receive_result["bucket"]
+            pool[i] = receive_result["note"]
 
             # Extra confirmations
-            receive_result = self.nodes[1].zcrawreceive(zcsecretkey, enc_bucket)
+            receive_result = self.nodes[1].zcrawreceive(zcsecretkey, enc_note)
             assert_equal(receive_result["exists"], True)
 
-            receive_result = self.nodes[2].zcrawreceive(zcsecretkey, enc_bucket)
+            receive_result = self.nodes[2].zcrawreceive(zcsecretkey, enc_note)
             assert_equal(receive_result["exists"], True)
 
-            receive_result = self.nodes[3].zcrawreceive(zcsecretkey, enc_bucket)
+            receive_result = self.nodes[3].zcrawreceive(zcsecretkey, enc_note)
             assert_equal(receive_result["exists"], True)
 
         blank_tx = self.nodes[0].createrawtransaction([], {})
