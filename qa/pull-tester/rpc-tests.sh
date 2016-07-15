@@ -27,8 +27,8 @@ testScripts=(
     'merkle_blocks.py'
     'signrawtransactions.py'
     'walletbackup.py'
-    'zcpour.py'
-    'zcpourdoublespend.py'
+    'zcjoinsplit.py'
+    'zcjoinsplitdoublespend.py'
 );
 testScriptsExt=(
     'bipdersig-p2p.py'
