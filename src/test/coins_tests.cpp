@@ -47,9 +47,9 @@ public:
         }
     }
 
-    bool GetNullifier(const uint256 &serial) const
+    bool GetNullifier(const uint256 &nf) const
     {
-        std::map<uint256, bool>::const_iterator it = mapNullifiers_.find(serial);
+        std::map<uint256, bool>::const_iterator it = mapNullifiers_.find(nf);
 
         if (it == mapNullifiers_.end()) {
             return false;
