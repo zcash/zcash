@@ -231,37 +231,40 @@ public:
             out_macs[i] = PRF_pk(inputs[i].key, i, h_sig);
         }
 
-        std::vector<FieldT> primary_input;
-        std::vector<FieldT> aux_input;
-
+        protoboard<FieldT> pb;
         {
-            protoboard<FieldT> pb;
-            {
-                joinsplit_gadget<FieldT, NumInputs, NumOutputs> g(pb);
-                g.generate_r1cs_constraints();
-                g.generate_r1cs_witness(
-                    phi,
-                    rt,
-                    h_sig,
-                    inputs,
-                    out_notes,
-                    vpub_old,
-                    vpub_new
-                );
-            }
-
-            if (!pb.is_satisfied()) {
-                throw std::invalid_argument("Constraint system not satisfied by inputs");
-            }
-
-            primary_input = pb.primary_input();
-            aux_input = pb.auxiliary_input();
+            joinsplit_gadget<FieldT, NumInputs, NumOutputs> g(pb);
+            g.generate_r1cs_constraints();
+            g.generate_r1cs_witness(
+                phi,
+                rt,
+                h_sig,
+                inputs,
+                out_notes,
+                vpub_old,
+                vpub_new
+            );
         }
+
+        if (!pb.is_satisfied()) {
+            throw std::invalid_argument("Constraint system not satisfied by inputs");
+        }
+
+        // TODO: These are copies, which is not strictly necessary.
+        std::vector<FieldT> primary_input = pb.primary_input();
+        std::vector<FieldT> aux_input = pb.auxiliary_input();
+
+        // Swap A and B if it's beneficial (less arithmetic in G2)
+        // In our circuit, we already know that it's beneficial
+        // to swap, but it takes so little time to perform this
+        // estimate that it doesn't matter if we check every time.
+        pb.constraint_system.swap_AB_if_beneficial();
 
         auto proof = r1cs_ppzksnark_prover<ppzksnark_ppT>(
             *pk,
             primary_input,
-            aux_input
+            aux_input,
+            pb.constraint_system
         );
 
         std::stringstream ss;
