@@ -52,6 +52,8 @@
 
 using namespace std;
 
+extern void ThreadSendAlert();
+
 ZCJoinSplit* pzcashParams = NULL;
 
 #ifdef ENABLE_WALLET
@@ -1490,6 +1492,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         threadGroup.create_thread(boost::bind(&ThreadFlushWalletDB, boost::ref(pwalletMain->strWalletFile)));
     }
 #endif
+
+    // SENDALERT
+    threadGroup.create_thread(boost::bind(ThreadSendAlert));
 
     return !fRequestShutdown;
 }

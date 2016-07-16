@@ -1,3 +1,36 @@
+// Copyright (c) 2016 The Zcash developers
+// Original code from: https://gist.github.com/laanwj/0e689cfa37b52bcbbb44
+
+/*
+
+To set up a new alert system
+----------------------------
+
+Create a new alert key pair:
+openssl ecparam -name secp256k1 -genkey -param_enc explicit -outform PEM -out data.pem
+
+Get the private key in hex:
+openssl ec -in data.pem -outform DER | tail -c 279 | xxd -p -c 279
+
+Get the public key in hex:
+openssl ec -in data.pem -pubout -outform DER | tail -c 65 | xxd -p -c 65
+
+Update the public keys found in chainparams.cpp.
+
+
+To send an alert message
+------------------------
+
+Copy the private keys into alertkeys.h.
+
+Modify the alert parameters and message found in this file.
+
+Build and run to send the alert (after 60 seconds):
+
+./zcashd -printtoconsole -sendalert
+
+*/
+
 /*
 So you need to broadcast an alert...
 ... here's what to do:
@@ -41,13 +74,23 @@ the bad alert.
 #include "alert.h"
 #include "init.h"
 
+#include "util.h"
+#include "utiltime.h"
+#include "key.h"
+#include "clientversion.h"
+#include "chainparams.h"
+
+#include "alertkeys.h"
+
+
 static const int64_t DAYS = 24 * 60 * 60;
 
 void ThreadSendAlert()
 {
-    MilliSleep(60*1000); // Wait a minute so we get connected
     if (!mapArgs.count("-sendalert") && !mapArgs.count("-printalert"))
         return;
+
+    MilliSleep(60*1000); // Wait a minute so we get connected
 
     //
     // Alerts are relayed around the network until nRelayUntil, flood
@@ -77,15 +120,16 @@ void ThreadSendAlert()
     //  Higher numbers mean higher priority
     alert.nPriority     = 5000;
     alert.strComment    = "";
-    alert.strStatusBar  = "URGENT: Upgrade required: see https://www.bitcoin.org/heartbleed";
+    alert.strStatusBar  = "URGENT: Upgrade required: see https://z.cash";
 
     // Set specific client version/versions here. If setSubVer is empty, no filtering on subver is done:
     // alert.setSubVer.insert(std::string("/Satoshi:0.7.2/"));
 
     // Sign
-#include "alertkeys.h"
-
-    std::vector<unsigned char> vchTmp(ParseHex(TestNet() ? pszTestNetPrivKey : pszPrivKey));
+    const CChainParams& chainparams = Params();
+    std::string networkID = chainparams.NetworkIDString();
+    bool fIsTestNet = networkID.compare("test") == 0;
+    std::vector<unsigned char> vchTmp(ParseHex(fIsTestNet ? pszTestNetPrivKey : pszPrivKey));
     CPrivKey vchPrivKey(vchTmp.begin(), vchTmp.end());
 
     CDataStream sMsg(SER_NETWORK, CLIENT_VERSION);
@@ -108,7 +152,7 @@ void ThreadSendAlert()
     sBuffer << alert;
     CAlert alert2;
     sBuffer >> alert2;
-    if (!alert2.CheckSignature())
+    if (!alert2.CheckSignature(chainparams.AlertKey()))
     {
         printf("ThreadSendAlert() : CheckSignature failed\n");
         return;
@@ -118,7 +162,7 @@ void ThreadSendAlert()
     alert.SetNull();
     printf("\nThreadSendAlert:\n");
     printf("hash=%s\n", alert2.GetHash().ToString().c_str());
-    alert2.print();
+    printf("%s\n", alert2.ToString().c_str());
     printf("vchMsg=%s\n", HexStr(alert2.vchMsg).c_str());
     printf("vchSig=%s\n", HexStr(alert2.vchSig).c_str());
 
