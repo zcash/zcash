@@ -217,78 +217,78 @@ BOOST_AUTO_TEST_CASE(anchors_flush_test)
     }
 }
 
-BOOST_AUTO_TEST_CASE(chained_pours)
+BOOST_AUTO_TEST_CASE(chained_joinsplits)
 {
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
     ZCIncrementalMerkleTree tree;
 
-    JSDescription ptx1;
-    ptx1.anchor = tree.root();
-    ptx1.commitments[0] = appendRandomCommitment(tree);
-    ptx1.commitments[1] = appendRandomCommitment(tree);
+    JSDescription js1;
+    js1.anchor = tree.root();
+    js1.commitments[0] = appendRandomCommitment(tree);
+    js1.commitments[1] = appendRandomCommitment(tree);
 
     // Although it's not possible given our assumptions, if
-    // two pours create the same treestate twice, we should
+    // two joinsplits create the same treestate twice, we should
     // still be able to anchor to it.
-    JSDescription ptx1b;
-    ptx1b.anchor = tree.root();
-    ptx1b.commitments[0] = ptx1.commitments[0];
-    ptx1b.commitments[1] = ptx1.commitments[1];
+    JSDescription js1b;
+    js1b.anchor = tree.root();
+    js1b.commitments[0] = js1.commitments[0];
+    js1b.commitments[1] = js1.commitments[1];
 
-    JSDescription ptx2;
-    JSDescription ptx3;
+    JSDescription js2;
+    JSDescription js3;
 
-    ptx2.anchor = tree.root();
-    ptx3.anchor = tree.root();
+    js2.anchor = tree.root();
+    js3.anchor = tree.root();
 
-    ptx2.commitments[0] = appendRandomCommitment(tree);
-    ptx2.commitments[1] = appendRandomCommitment(tree);
+    js2.commitments[0] = appendRandomCommitment(tree);
+    js2.commitments[1] = appendRandomCommitment(tree);
 
-    ptx3.commitments[0] = appendRandomCommitment(tree);
-    ptx3.commitments[1] = appendRandomCommitment(tree);
+    js3.commitments[0] = appendRandomCommitment(tree);
+    js3.commitments[1] = appendRandomCommitment(tree);
 
     {
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(ptx2);
+        mtx.vjoinsplit.push_back(js2);
 
         BOOST_CHECK(!cache.HaveJoinSplitRequirements(mtx));
     }
 
     {
-        // ptx2 is trying to anchor to ptx1 but ptx1
+        // js2 is trying to anchor to js1 but js1
         // appears afterwards -- not a permitted ordering
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(ptx2);
-        mtx.vjoinsplit.push_back(ptx1);
+        mtx.vjoinsplit.push_back(js2);
+        mtx.vjoinsplit.push_back(js1);
 
         BOOST_CHECK(!cache.HaveJoinSplitRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(ptx1);
-        mtx.vjoinsplit.push_back(ptx2);
+        mtx.vjoinsplit.push_back(js1);
+        mtx.vjoinsplit.push_back(js2);
 
         BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(ptx1);
-        mtx.vjoinsplit.push_back(ptx2);
-        mtx.vjoinsplit.push_back(ptx3);
+        mtx.vjoinsplit.push_back(js1);
+        mtx.vjoinsplit.push_back(js2);
+        mtx.vjoinsplit.push_back(js3);
 
         BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(ptx1);
-        mtx.vjoinsplit.push_back(ptx1b);
-        mtx.vjoinsplit.push_back(ptx2);
-        mtx.vjoinsplit.push_back(ptx3);
+        mtx.vjoinsplit.push_back(js1);
+        mtx.vjoinsplit.push_back(js1b);
+        mtx.vjoinsplit.push_back(js2);
+        mtx.vjoinsplit.push_back(js3);
 
         BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
     }

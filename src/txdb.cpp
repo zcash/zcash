@@ -18,7 +18,7 @@
 using namespace std;
 
 static const char DB_ANCHOR = 'A';
-static const char DB_SERIAL = 's';
+static const char DB_NULLIFIER = 's';
 static const char DB_COINS = 'c';
 static const char DB_BLOCK_FILES = 'f';
 static const char DB_TXINDEX = 't';
@@ -43,11 +43,11 @@ void static BatchWriteAnchor(CLevelDBBatch &batch,
     }
 }
 
-void static BatchWriteSerial(CLevelDBBatch &batch, const uint256 &serial, const bool &entered) {
+void static BatchWriteNullifier(CLevelDBBatch &batch, const uint256 &nf, const bool &entered) {
     if (!entered)
-        batch.Erase(make_pair(DB_SERIAL, serial));
+        batch.Erase(make_pair(DB_NULLIFIER, nf));
     else
-        batch.Write(make_pair(DB_SERIAL, serial), true);
+        batch.Write(make_pair(DB_NULLIFIER, nf), true);
 }
 
 void static BatchWriteCoins(CLevelDBBatch &batch, const uint256 &hash, const CCoins &coins) {
@@ -81,9 +81,9 @@ bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree)
     return read;
 }
 
-bool CCoinsViewDB::GetNullifier(const uint256 &serial) const {
+bool CCoinsViewDB::GetNullifier(const uint256 &nf) const {
     bool spent = false;
-    bool read = db.Read(make_pair(DB_SERIAL, serial), spent);
+    bool read = db.Read(make_pair(DB_NULLIFIER, nf), spent);
 
     return read;
 }
@@ -139,7 +139,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
 
     for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end();) {
         if (it->second.flags & CNullifiersCacheEntry::DIRTY) {
-            BatchWriteSerial(batch, it->first, it->second.entered);
+            BatchWriteNullifier(batch, it->first, it->second.entered);
             // TODO: changed++?
         }
         CNullifiersMap::iterator itOld = it++;

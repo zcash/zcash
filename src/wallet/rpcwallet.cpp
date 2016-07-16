@@ -2644,17 +2644,17 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
     mtx.nVersion = 2;
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    JSDescription jsdescription(*pzcashParams,
-                   joinSplitPubKey,
-                   anchor,
-                   {vjsin[0], vjsin[1]},
-                   {vjsout[0], vjsout[1]},
-                   vpub_old,
-                   vpub_new);
+    JSDescription jsdesc(*pzcashParams,
+                         joinSplitPubKey,
+                         anchor,
+                         {vjsin[0], vjsin[1]},
+                         {vjsout[0], vjsout[1]},
+                         vpub_old,
+                         vpub_new);
 
-    assert(jsdescription.Verify(*pzcashParams, joinSplitPubKey));
+    assert(jsdesc.Verify(*pzcashParams, joinSplitPubKey));
 
-    mtx.vjoinsplit.push_back(jsdescription);
+    mtx.vjoinsplit.push_back(jsdesc);
 
     // TODO: #966.
     static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
@@ -2688,18 +2688,18 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
     {
         CDataStream ss2(SER_NETWORK, PROTOCOL_VERSION);
         ss2 << ((unsigned char) 0x00);
-        ss2 << jsdescription.ephemeralKey;
-        ss2 << jsdescription.ciphertexts[0];
-        ss2 << jsdescription.h_sig(*pzcashParams, joinSplitPubKey);
+        ss2 << jsdesc.ephemeralKey;
+        ss2 << jsdesc.ciphertexts[0];
+        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey);
 
         encryptedNote1 = HexStr(ss2.begin(), ss2.end());
     }
     {
         CDataStream ss2(SER_NETWORK, PROTOCOL_VERSION);
         ss2 << ((unsigned char) 0x01);
-        ss2 << jsdescription.ephemeralKey;
-        ss2 << jsdescription.ciphertexts[1];
-        ss2 << jsdescription.h_sig(*pzcashParams, joinSplitPubKey);
+        ss2 << jsdesc.ephemeralKey;
+        ss2 << jsdesc.ciphertexts[1];
+        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey);
 
         encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }

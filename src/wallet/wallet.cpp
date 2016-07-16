@@ -1065,9 +1065,9 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
 
         BOOST_FOREACH(const CTransaction& tx, block.vtx)
         {
-            BOOST_FOREACH(const JSDescription& pour, tx.vjoinsplit)
+            BOOST_FOREACH(const JSDescription& jsdesc, tx.vjoinsplit)
             {
-                BOOST_FOREACH(const uint256 &note_commitment, pour.commitments)
+                BOOST_FOREACH(const uint256 &note_commitment, jsdesc.commitments)
                 {
                     tree.append(note_commitment);
 

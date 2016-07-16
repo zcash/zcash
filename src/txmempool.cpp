@@ -100,8 +100,8 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-        BOOST_FOREACH(const uint256 &serial, joinsplit.nullifiers) {
-            mapNullifiers[serial] = &tx;
+        BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
+            mapNullifiers[nf] = &tx;
         }
     }
     nTransactionsUpdated++;
@@ -149,8 +149,8 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
                 mapNextTx.erase(txin.prevout);
             BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit) {
-                BOOST_FOREACH(const uint256& serial, joinsplit.nullifiers) {
-                    mapNullifiers.erase(serial);
+                BOOST_FOREACH(const uint256& nf, joinsplit.nullifiers) {
+                    mapNullifiers.erase(nf);
                 }
             }
 
@@ -231,8 +231,8 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
     }
 
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-        BOOST_FOREACH(const uint256 &serial, joinsplit.nullifiers) {
-            std::map<uint256, const CTransaction*>::iterator it = mapNullifiers.find(serial);
+        BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
+            std::map<uint256, const CTransaction*>::iterator it = mapNullifiers.find(nf);
             if (it != mapNullifiers.end()) {
                 const CTransaction &txConflict = *it->second;
                 if (txConflict != tx)
@@ -318,8 +318,8 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         boost::unordered_map<uint256, ZCIncrementalMerkleTree, CCoinsKeyHasher> intermediates;
 
         BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-            BOOST_FOREACH(const uint256 &serial, joinsplit.nullifiers) {
-                assert(!pcoins->GetNullifier(serial));
+            BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
+                assert(!pcoins->GetNullifier(nf));
             }
 
             ZCIncrementalMerkleTree tree;
@@ -484,11 +484,11 @@ bool CTxMemPool::HasNoInputsOf(const CTransaction &tx) const
 
 CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn), mempool(mempoolIn) { }
 
-bool CCoinsViewMemPool::GetNullifier(const uint256 &serial) const {
-    if (mempool.mapNullifiers.count(serial))
+bool CCoinsViewMemPool::GetNullifier(const uint256 &nf) const {
+    if (mempool.mapNullifiers.count(nf))
         return true;
 
-    return base->GetNullifier(serial);
+    return base->GetNullifier(nf);
 }
 
 bool CCoinsViewMemPool::GetCoins(const uint256 &txid, CCoins &coins) const {

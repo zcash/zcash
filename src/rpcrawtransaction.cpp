@@ -99,8 +99,8 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 
         {
             Array nullifiers;
-            BOOST_FOREACH(const uint256 serial, jsdescription.nullifiers) {
-                nullifiers.push_back(serial.GetHex());
+            BOOST_FOREACH(const uint256 nf, jsdescription.nullifiers) {
+                nullifiers.push_back(nf.GetHex());
             }
             joinsplit.push_back(Pair("nullifiers", nullifiers));
         }

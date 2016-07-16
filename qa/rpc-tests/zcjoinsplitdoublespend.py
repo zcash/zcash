@@ -12,10 +12,10 @@ import shutil
 import sys
 import time
 
-class PourTxTest(BitcoinTestFramework):
+class JoinSplitTest(BitcoinTestFramework):
     def setup_network(self):
         # Start with split network:
-        return super(PourTxTest, self).setup_network(True)
+        return super(JoinSplitTest, self).setup_network(True)
 
     def txid_in_mempool(self, node, txid):
         exception_triggered = False
@@ -89,27 +89,27 @@ class PourTxTest(BitcoinTestFramework):
         blank_tx = self.nodes[0].createrawtransaction([], {})
         # Create pour {A, B}->{*}
         pour_AB = self.nodes[0].zcrawjoinsplit(blank_tx,
-                                          {pool[0] : zcsecretkey, pool[1] : zcsecretkey},
-                                          {zcaddress:(39.9*2)-0.1},
-                                          0, 0.1)
+                                               {pool[0] : zcsecretkey, pool[1] : zcsecretkey},
+                                               {zcaddress:(39.9*2)-0.1},
+                                               0, 0.1)
 
         # Create pour {B, C}->{*}
         pour_BC = self.nodes[0].zcrawjoinsplit(blank_tx,
-                                          {pool[1] : zcsecretkey, pool[2] : zcsecretkey},
-                                          {zcaddress:(39.9*2)-0.1},
-                                          0, 0.1)
+                                               {pool[1] : zcsecretkey, pool[2] : zcsecretkey},
+                                               {zcaddress:(39.9*2)-0.1},
+                                               0, 0.1)
 
         # Create pour {C, D}->{*}
         pour_CD = self.nodes[0].zcrawjoinsplit(blank_tx,
-                                          {pool[2] : zcsecretkey, pool[3] : zcsecretkey},
-                                          {zcaddress:(39.9*2)-0.1},
-                                          0, 0.1)
+                                               {pool[2] : zcsecretkey, pool[3] : zcsecretkey},
+                                               {zcaddress:(39.9*2)-0.1},
+                                               0, 0.1)
 
         # Create pour {A, D}->{*}
         pour_AD = self.nodes[0].zcrawjoinsplit(blank_tx,
-                                          {pool[0] : zcsecretkey, pool[3] : zcsecretkey},
-                                          {zcaddress:(39.9*2)-0.1},
-                                          0, 0.1)
+                                               {pool[0] : zcsecretkey, pool[3] : zcsecretkey},
+                                               {zcaddress:(39.9*2)-0.1},
+                                               0, 0.1)
 
         # (a)    Node 0 will spend pour AB, then attempt to
         # double-spend it with BC. It should fail before and
@@ -180,4 +180,4 @@ class PourTxTest(BitcoinTestFramework):
         sync_blocks(self.nodes)
 
 if __name__ == '__main__':
-    PourTxTest().main()
+    JoinSplitTest().main()

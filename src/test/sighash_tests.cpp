@@ -105,7 +105,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
     tx.nLockTime = (insecure_rand() % 2) ? insecure_rand() : 0;
     int ins = (insecure_rand() % 4) + 1;
     int outs = fSingle ? ins : (insecure_rand() % 4) + 1;
-    int pours = (insecure_rand() % 4);
+    int joinsplits = (insecure_rand() % 4);
     for (int in = 0; in < ins; in++) {
         tx.vin.push_back(CTxIn());
         CTxIn &txin = tx.vin.back();
@@ -121,26 +121,26 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
         RandomScript(txout.scriptPubKey);
     }
     if (tx.nVersion >= 2) {
-        for (int pour = 0; pour < pours; pour++) {
-            JSDescription pourtx;
+        for (int js = 0; js < joinsplits; js++) {
+            JSDescription jsdesc;
             if (insecure_rand() % 2 == 0) {
-                pourtx.vpub_old = insecure_rand() % 100000000;
+                jsdesc.vpub_old = insecure_rand() % 100000000;
             } else {
-                pourtx.vpub_new = insecure_rand() % 100000000;
+                jsdesc.vpub_new = insecure_rand() % 100000000;
             }
 
-            pourtx.anchor = GetRandHash();
-            pourtx.nullifiers[0] = GetRandHash();
-            pourtx.nullifiers[1] = GetRandHash();
-            pourtx.ephemeralKey = GetRandHash();
-            pourtx.randomSeed = GetRandHash();
-            randombytes_buf(pourtx.ciphertexts[0].begin(), pourtx.ciphertexts[0].size());
-            randombytes_buf(pourtx.ciphertexts[1].begin(), pourtx.ciphertexts[1].size());
-            randombytes_buf(pourtx.proof.begin(), pourtx.proof.size());
-            pourtx.macs[0] = GetRandHash();
-            pourtx.macs[1] = GetRandHash();
+            jsdesc.anchor = GetRandHash();
+            jsdesc.nullifiers[0] = GetRandHash();
+            jsdesc.nullifiers[1] = GetRandHash();
+            jsdesc.ephemeralKey = GetRandHash();
+            jsdesc.randomSeed = GetRandHash();
+            randombytes_buf(jsdesc.ciphertexts[0].begin(), jsdesc.ciphertexts[0].size());
+            randombytes_buf(jsdesc.ciphertexts[1].begin(), jsdesc.ciphertexts[1].size());
+            randombytes_buf(jsdesc.proof.begin(), jsdesc.proof.size());
+            jsdesc.macs[0] = GetRandHash();
+            jsdesc.macs[1] = GetRandHash();
 
-            tx.vjoinsplit.push_back(pourtx);
+            tx.vjoinsplit.push_back(jsdesc);
         }
 
         unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];

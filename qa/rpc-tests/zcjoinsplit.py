@@ -11,7 +11,7 @@ import os
 import shutil
 import sys
 
-class PourTxTest(BitcoinTestFramework):
+class JoinSplitTest(BitcoinTestFramework):
     def setup_network(self):
         self.nodes = []
         self.is_network_split = False
@@ -47,4 +47,4 @@ class PourTxTest(BitcoinTestFramework):
         assert_equal(receive_result["exists"], True)
 
 if __name__ == '__main__':
-    PourTxTest().main()
+    JoinSplitTest().main()
