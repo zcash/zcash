@@ -76,9 +76,7 @@ void ThreadSendAlert()
     alert.nCancel       = 0;   // cancels previous messages up to this ID number
 
     // These versions are protocol versions
-    // 60002 : 0.7.*
-    // 70001 : 0.8.*
-    // 70002 : 0.9.*
+    // 70002 : 0.11.2.*
     alert.nMinVer       = 70002;
     alert.nMaxVer       = 70002;
 
