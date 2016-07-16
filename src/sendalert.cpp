@@ -23,52 +23,21 @@ To send an alert message
 
 Copy the private keys into alertkeys.h.
 
-Modify the alert parameters and message found in this file.
+Modify the alert parameters, id and message found in this file.
 
-Build and run to send the alert (after 60 seconds):
+Build and run with -sendalert or -printalert.
 
 ./zcashd -printtoconsole -sendalert
 
-*/
-
-/*
-So you need to broadcast an alert...
-... here's what to do:
-
-1. Copy sendalert.cpp into your bitcoind build directory
-
-2. Decrypt the alert keys
-  copy the decrypted file as alertkeys.h into the src/ directory.
-
-3. Modify the alert parameters in sendalert.cpp
-  See the comments in the code for what does what.
-
-4. Add sendalert.cpp to the src/Makefile.am so it gets built:
-
-    libbitcoin_server_a_SOURCES = \
-      sendalert.cpp \
-      ... etc
-
-5. Update init.cpp to launch the send alert thread. 
-  Define the thread function as external at the top of init.cpp:
-
-    extern void ThreadSendAlert();
-
-  Add this call at the end of AppInit2:
-
-    threadGroup.create_thread(boost::bind(ThreadSendAlert));
-
-6. build bitcoind, then run it with -printalert or -sendalert
-  I usually run it like this:
-   ./bitcoind -printtoconsole -sendalert
-
-One minute after starting up the alert will be broadcast. It is then
+One minute after starting up, the alert will be broadcast. It is then
 flooded through the network until the nRelayUntil time, and will be
 active until nExpiration OR the alert is cancelled.
 
-If you screw up something, send another alert with nCancel set to cancel
+If you make a mistake, send another alert with nCancel set to cancel
 the bad alert.
+
 */
+
 #include "main.h"
 #include "net.h"
 #include "alert.h"
