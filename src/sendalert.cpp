@@ -140,17 +140,7 @@ void ThreadSendAlert()
         MilliSleep(500);
     if (ShutdownRequested())
         return;
-#if 0
-#ifdef QT_GUI
-    if (ThreadSafeMessageBox("Send alert?", "ThreadSendAlert", wxYES_NO | wxNO_DEFAULT) != wxYES)
-        return;
-    if (ThreadSafeMessageBox("Send alert, are you sure?", "ThreadSendAlert", wxYES_NO | wxNO_DEFAULT) != wxYES)
-    {
-        ThreadSafeMessageBox("Nothing sent", "ThreadSendAlert", wxOK);
-        return;
-    }
-#endif
-#endif
+
     // Send
     printf("ThreadSendAlert() : Sending alert\n");
     int nSent = 0;
