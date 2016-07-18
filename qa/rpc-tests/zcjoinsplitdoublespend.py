@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 
 #
-# Tests a Pour double-spend and a subsequent reorg.
+# Tests a joinsplit double-spend and a subsequent reorg.
 #
 
 from test_framework.test_framework import BitcoinTestFramework
@@ -27,7 +27,7 @@ class JoinSplitTest(BitcoinTestFramework):
 
         return not exception_triggered
 
-    def cannot_pour(self, node, txn):
+    def cannot_joinsplit(self, node, txn):
         exception_triggered = False
 
         try:
@@ -37,8 +37,8 @@ class JoinSplitTest(BitcoinTestFramework):
 
         return exception_triggered
 
-    def expect_cannot_pour(self, node, txn):
-        assert_equal(self.cannot_pour(node, txn), True)
+    def expect_cannot_joinsplit(self, node, txn):
+        assert_equal(self.cannot_joinsplit(node, txn), True)
 
     def run_test(self):
         # All nodes should start with 250 BTC:
@@ -87,31 +87,31 @@ class JoinSplitTest(BitcoinTestFramework):
             assert_equal(receive_result["exists"], True)
 
         blank_tx = self.nodes[0].createrawtransaction([], {})
-        # Create pour {A, B}->{*}
-        pour_AB = self.nodes[0].zcrawjoinsplit(blank_tx,
+        # Create joinsplit {A, B}->{*}
+        joinsplit_AB = self.nodes[0].zcrawjoinsplit(blank_tx,
                                                {pool[0] : zcsecretkey, pool[1] : zcsecretkey},
                                                {zcaddress:(39.9*2)-0.1},
                                                0, 0.1)
 
-        # Create pour {B, C}->{*}
-        pour_BC = self.nodes[0].zcrawjoinsplit(blank_tx,
+        # Create joinsplit {B, C}->{*}
+        joinsplit_BC = self.nodes[0].zcrawjoinsplit(blank_tx,
                                                {pool[1] : zcsecretkey, pool[2] : zcsecretkey},
                                                {zcaddress:(39.9*2)-0.1},
                                                0, 0.1)
 
-        # Create pour {C, D}->{*}
-        pour_CD = self.nodes[0].zcrawjoinsplit(blank_tx,
+        # Create joinsplit {C, D}->{*}
+        joinsplit_CD = self.nodes[0].zcrawjoinsplit(blank_tx,
                                                {pool[2] : zcsecretkey, pool[3] : zcsecretkey},
                                                {zcaddress:(39.9*2)-0.1},
                                                0, 0.1)
 
-        # Create pour {A, D}->{*}
-        pour_AD = self.nodes[0].zcrawjoinsplit(blank_tx,
+        # Create joinsplit {A, D}->{*}
+        joinsplit_AD = self.nodes[0].zcrawjoinsplit(blank_tx,
                                                {pool[0] : zcsecretkey, pool[3] : zcsecretkey},
                                                {zcaddress:(39.9*2)-0.1},
                                                0, 0.1)
 
-        # (a)    Node 0 will spend pour AB, then attempt to
+        # (a)    Node 0 will spend joinsplit AB, then attempt to
         # double-spend it with BC. It should fail before and
         # after Node 0 mines blocks.
         #
@@ -126,9 +126,9 @@ class JoinSplitTest(BitcoinTestFramework):
 
         # (a)
 
-        AB_txid = self.nodes[0].sendrawtransaction(pour_AB["rawtxn"])
+        AB_txid = self.nodes[0].sendrawtransaction(joinsplit_AB["rawtxn"])
 
-        self.expect_cannot_pour(self.nodes[0], pour_BC["rawtxn"])
+        self.expect_cannot_joinsplit(self.nodes[0], joinsplit_BC["rawtxn"])
 
         # Wait until node[1] receives AB before we attempt to double-spend
         # with BC.
@@ -139,17 +139,17 @@ class JoinSplitTest(BitcoinTestFramework):
             time.sleep(0.2)
         print "Done!\n"
 
-        self.expect_cannot_pour(self.nodes[1], pour_BC["rawtxn"])
+        self.expect_cannot_joinsplit(self.nodes[1], joinsplit_BC["rawtxn"])
 
         # Generate a block
         self.nodes[0].generate(1)
         sync_blocks(self.nodes[0:2])
 
-        self.expect_cannot_pour(self.nodes[0], pour_BC["rawtxn"])
-        self.expect_cannot_pour(self.nodes[1], pour_BC["rawtxn"])
+        self.expect_cannot_joinsplit(self.nodes[0], joinsplit_BC["rawtxn"])
+        self.expect_cannot_joinsplit(self.nodes[1], joinsplit_BC["rawtxn"])
 
         # (b)
-        self.nodes[2].sendrawtransaction(pour_BC["rawtxn"])
+        self.nodes[2].sendrawtransaction(joinsplit_BC["rawtxn"])
         self.nodes[2].generate(5)
 
         # Connect the two nodes
@@ -158,23 +158,23 @@ class JoinSplitTest(BitcoinTestFramework):
         sync_blocks(self.nodes)
 
         # AB and CD should all be impossible to spend for each node.
-        self.expect_cannot_pour(self.nodes[0], pour_AB["rawtxn"])
-        self.expect_cannot_pour(self.nodes[0], pour_CD["rawtxn"])
+        self.expect_cannot_joinsplit(self.nodes[0], joinsplit_AB["rawtxn"])
+        self.expect_cannot_joinsplit(self.nodes[0], joinsplit_CD["rawtxn"])
 
-        self.expect_cannot_pour(self.nodes[1], pour_AB["rawtxn"])
-        self.expect_cannot_pour(self.nodes[1], pour_CD["rawtxn"])
+        self.expect_cannot_joinsplit(self.nodes[1], joinsplit_AB["rawtxn"])
+        self.expect_cannot_joinsplit(self.nodes[1], joinsplit_CD["rawtxn"])
 
-        self.expect_cannot_pour(self.nodes[2], pour_AB["rawtxn"])
-        self.expect_cannot_pour(self.nodes[2], pour_CD["rawtxn"])
+        self.expect_cannot_joinsplit(self.nodes[2], joinsplit_AB["rawtxn"])
+        self.expect_cannot_joinsplit(self.nodes[2], joinsplit_CD["rawtxn"])
 
-        self.expect_cannot_pour(self.nodes[3], pour_AB["rawtxn"])
-        self.expect_cannot_pour(self.nodes[3], pour_CD["rawtxn"])
+        self.expect_cannot_joinsplit(self.nodes[3], joinsplit_AB["rawtxn"])
+        self.expect_cannot_joinsplit(self.nodes[3], joinsplit_CD["rawtxn"])
 
         # (c)
         # AD should be possible to send due to the reorg that
         # tossed out AB.
 
-        self.nodes[0].sendrawtransaction(pour_AD["rawtxn"])
+        self.nodes[0].sendrawtransaction(joinsplit_AD["rawtxn"])
         self.nodes[0].generate(1)
 
         sync_blocks(self.nodes)
