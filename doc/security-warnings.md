@@ -19,8 +19,9 @@ Side-Channel Attacks
 --------------------
 
 This implementation of Zcash is not resistant to side-channel attacks. You
-should assume other unprivileged users running on the same hardware as your
-`zcashd` process will be able to:
+should assume (even unprivileged) users who are running on the hardware, or who
+are physically near the hardware, that your `zcashd` process is running on will
+be able to:
 
 - Determine the values of your secret spending keys, as well as which notes you
   are spending, by observing cache side-channels as you perform a JoinSplit
