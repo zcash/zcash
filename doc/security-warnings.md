@@ -22,9 +22,10 @@ This implementation of Zcash is not resistant to side-channel attacks. You
 should assume other unprivileged users running on the same hardware as your
 `zcashd` process will be able to:
 
-- Determine which note your are spending by observing cache side-channels as you
-  perform a JoinSplit operation. This is due to probable side-channel leakage in
-  the libsnark proving machinery.
+- Determine the values of your secret spending keys, as well as which notes you
+  are spending, by observing cache side-channels as you perform a JoinSplit
+  operation. This is due to probable side-channel leakage in the libsnark
+  proving machinery.
 
 - Determine which notes you own by observing cache side-channel information
   leakage from the incremental witnesses as they are updated with new notes.
