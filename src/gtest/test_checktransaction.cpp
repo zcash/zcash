@@ -11,15 +11,15 @@ TEST(checktransaction_tests, check_vpub_not_both_nonzero) {
     tx.nVersion = 2;
 
     {
-        // Ensure that values within the pour are well-formed.
+        // Ensure that values within the joinsplit are well-formed.
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vpour.push_back(CPourTx());
+        newTx.vjoinsplit.push_back(JSDescription());
 
-        CPourTx *pourtx = &newTx.vpour[0];
-        pourtx->vpub_old = 1;
-        pourtx->vpub_new = 1;
+        JSDescription *jsdesc = &newTx.vjoinsplit[0];
+        jsdesc->vpub_old = 1;
+        jsdesc->vpub_new = 1;
 
         EXPECT_FALSE(CheckTransactionWithoutProofVerification(newTx, state));
         EXPECT_EQ(state.GetRejectReason(), "bad-txns-vpubs-both-nonzero");
@@ -55,11 +55,11 @@ CMutableTransaction GetValidTransaction() {
     // mtx.vout[0].scriptPubKey = 
     mtx.vout[0].nValue = 0;
     mtx.vout[1].nValue = 0;
-    mtx.vpour.resize(2);
-    mtx.vpour[0].serials.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
-    mtx.vpour[0].serials.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
-    mtx.vpour[1].serials.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000002");
-    mtx.vpour[1].serials.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000003");
+    mtx.vjoinsplit.resize(2);
+    mtx.vjoinsplit[0].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+    mtx.vjoinsplit[0].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
+    mtx.vjoinsplit[1].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000002");
+    mtx.vjoinsplit[1].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000003");
 
 
     // Generate an ephemeral keypair.
@@ -96,7 +96,7 @@ TEST(checktransaction_tests, valid_transaction) {
 
 TEST(checktransaction_tests, bad_txns_vin_empty) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vpour.resize(0);
+    mtx.vjoinsplit.resize(0);
     mtx.vin.resize(0);
 
     CTransaction tx(mtx);
@@ -107,7 +107,7 @@ TEST(checktransaction_tests, bad_txns_vin_empty) {
 
 TEST(checktransaction_tests, bad_txns_vout_empty) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vpour.resize(0);
+    mtx.vjoinsplit.resize(0);
     mtx.vout.resize(0);
 
     CTransaction tx(mtx);
@@ -171,7 +171,7 @@ TEST(checktransaction_tests, bad_txns_txouttotal_toolarge_outputs) {
 TEST(checktransaction_tests, bad_txns_txouttotal_toolarge_joinsplit) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vout[0].nValue = 1;
-    mtx.vpour[0].vpub_new = MAX_MONEY;
+    mtx.vjoinsplit[0].vpub_new = MAX_MONEY;
 
     CTransaction tx(mtx);
 
@@ -182,7 +182,7 @@ TEST(checktransaction_tests, bad_txns_txouttotal_toolarge_joinsplit) {
 
 TEST(checktransaction_tests, bad_txns_vpub_old_negative) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vpour[0].vpub_old = -1;
+    mtx.vjoinsplit[0].vpub_old = -1;
 
     CTransaction tx(mtx);
 
@@ -193,7 +193,7 @@ TEST(checktransaction_tests, bad_txns_vpub_old_negative) {
 
 TEST(checktransaction_tests, bad_txns_vpub_new_negative) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vpour[0].vpub_new = -1;
+    mtx.vjoinsplit[0].vpub_new = -1;
 
     CTransaction tx(mtx);
 
@@ -204,7 +204,7 @@ TEST(checktransaction_tests, bad_txns_vpub_new_negative) {
 
 TEST(checktransaction_tests, bad_txns_vpub_old_toolarge) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vpour[0].vpub_old = MAX_MONEY + 1;
+    mtx.vjoinsplit[0].vpub_old = MAX_MONEY + 1;
 
     CTransaction tx(mtx);
 
@@ -215,7 +215,7 @@ TEST(checktransaction_tests, bad_txns_vpub_old_toolarge) {
 
 TEST(checktransaction_tests, bad_txns_vpub_new_toolarge) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vpour[0].vpub_new = MAX_MONEY + 1;
+    mtx.vjoinsplit[0].vpub_new = MAX_MONEY + 1;
 
     CTransaction tx(mtx);
 
@@ -226,8 +226,8 @@ TEST(checktransaction_tests, bad_txns_vpub_new_toolarge) {
 
 TEST(checktransaction_tests, bad_txns_vpubs_both_nonzero) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vpour[0].vpub_old = 1;
-    mtx.vpour[0].vpub_new = 1;
+    mtx.vjoinsplit[0].vpub_old = 1;
+    mtx.vjoinsplit[0].vpub_new = 1;
 
     CTransaction tx(mtx);
 
@@ -248,43 +248,43 @@ TEST(checktransaction_tests, bad_txns_inputs_duplicate) {
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
-TEST(checktransaction_tests, bad_pours_serials_duplicate_same_pour) {
+TEST(checktransaction_tests, bad_joinsplits_nullifiers_duplicate_same_joinsplit) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vpour[0].serials.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
-    mtx.vpour[0].serials.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+    mtx.vjoinsplit[0].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+    mtx.vjoinsplit[0].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
 
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-pours-serials-duplicate", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-joinsplits-nullifiers-duplicate", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
-TEST(checktransaction_tests, bad_pours_serials_duplicate_different_pour) {
+TEST(checktransaction_tests, bad_joinsplits_nullifiers_duplicate_different_joinsplit) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vpour[0].serials.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
-    mtx.vpour[1].serials.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+    mtx.vjoinsplit[0].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+    mtx.vjoinsplit[1].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
 
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-pours-serials-duplicate", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-joinsplits-nullifiers-duplicate", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
-TEST(checktransaction_tests, bad_cb_has_pours) {
+TEST(checktransaction_tests, bad_cb_has_joinsplits) {
     CMutableTransaction mtx = GetValidTransaction();
     // Make it a coinbase.
     mtx.vin.resize(1);
     mtx.vin[0].prevout.SetNull();
 
-    mtx.vpour.resize(1);
+    mtx.vjoinsplit.resize(1);
 
     CTransaction tx(mtx);
     EXPECT_TRUE(tx.IsCoinBase());
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-has-pours", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-has-joinsplits", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -294,7 +294,7 @@ TEST(checktransaction_tests, bad_cb_empty_scriptsig) {
     mtx.vin.resize(1);
     mtx.vin[0].prevout.SetNull();
 
-    mtx.vpour.resize(0);
+    mtx.vjoinsplit.resize(0);
 
     CTransaction tx(mtx);
     EXPECT_TRUE(tx.IsCoinBase());

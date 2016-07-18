@@ -91,10 +91,10 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "estimatepriority", 0 },
     { "prioritisetransaction", 1 },
     { "prioritisetransaction", 2 },
-    { "zcrawpour", 1 },
-    { "zcrawpour", 2 },
-    { "zcrawpour", 3 },
-    { "zcrawpour", 4 },
+    { "zcrawjoinsplit", 1 },
+    { "zcrawjoinsplit", 2 },
+    { "zcrawjoinsplit", 3 },
+    { "zcrawjoinsplit", 4 },
     { "zcbenchmark", 1 },
     { "getblocksubsidy", 0}
 };

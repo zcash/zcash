@@ -876,10 +876,10 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
         return false;
     } else {
         // Ensure that zk-SNARKs verify
-        BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
-            if (!pour.Verify(*pzcashParams, tx.joinSplitPubKey)) {
-                return state.DoS(100, error("CheckTransaction(): pour does not verify"),
-                                    REJECT_INVALID, "bad-txns-pour-verification-failed");
+        BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
+            if (!joinsplit.Verify(*pzcashParams, tx.joinSplitPubKey)) {
+                return state.DoS(100, error("CheckTransaction(): joinsplit does not verify"),
+                                    REJECT_INVALID, "bad-txns-joinsplit-verification-failed");
             }
         }
         return true;
@@ -891,11 +891,11 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     // Basic checks that don't depend on any context
 
     // Transactions can contain empty `vin` and `vout` so long as
-    // `vpour` is non-empty.
-    if (tx.vin.empty() && tx.vpour.empty())
+    // `vjoinsplit` is non-empty.
+    if (tx.vin.empty() && tx.vjoinsplit.empty())
         return state.DoS(10, error("CheckTransaction(): vin empty"),
                          REJECT_INVALID, "bad-txns-vin-empty");
-    if (tx.vout.empty() && tx.vpour.empty())
+    if (tx.vout.empty() && tx.vjoinsplit.empty())
         return state.DoS(10, error("CheckTransaction(): vout empty"),
                          REJECT_INVALID, "bad-txns-vout-empty");
 
@@ -920,35 +920,35 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                              REJECT_INVALID, "bad-txns-txouttotal-toolarge");
     }
 
-    // Ensure that pour values are well-formed
-    BOOST_FOREACH(const CPourTx& pour, tx.vpour)
+    // Ensure that joinsplit values are well-formed
+    BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit)
     {
-        if (pour.vpub_old < 0) {
-            return state.DoS(100, error("CheckTransaction(): pour.vpub_old negative"),
+        if (joinsplit.vpub_old < 0) {
+            return state.DoS(100, error("CheckTransaction(): joinsplit.vpub_old negative"),
                              REJECT_INVALID, "bad-txns-vpub_old-negative");
         }
 
-        if (pour.vpub_new < 0) {
-            return state.DoS(100, error("CheckTransaction(): pour.vpub_new negative"),
+        if (joinsplit.vpub_new < 0) {
+            return state.DoS(100, error("CheckTransaction(): joinsplit.vpub_new negative"),
                              REJECT_INVALID, "bad-txns-vpub_new-negative");
         }
 
-        if (pour.vpub_old > MAX_MONEY) {
-            return state.DoS(100, error("CheckTransaction(): pour.vpub_old too high"),
+        if (joinsplit.vpub_old > MAX_MONEY) {
+            return state.DoS(100, error("CheckTransaction(): joinsplit.vpub_old too high"),
                              REJECT_INVALID, "bad-txns-vpub_old-toolarge");
         }
 
-        if (pour.vpub_new > MAX_MONEY) {
-            return state.DoS(100, error("CheckTransaction(): pour.vpub_new too high"),
+        if (joinsplit.vpub_new > MAX_MONEY) {
+            return state.DoS(100, error("CheckTransaction(): joinsplit.vpub_new too high"),
                              REJECT_INVALID, "bad-txns-vpub_new-toolarge");
         }
 
-        if (pour.vpub_new != 0 && pour.vpub_old != 0) {
-            return state.DoS(100, error("CheckTransaction(): pour.vpub_new and pour.vpub_old both nonzero"),
+        if (joinsplit.vpub_new != 0 && joinsplit.vpub_old != 0) {
+            return state.DoS(100, error("CheckTransaction(): joinsplit.vpub_new and joinsplit.vpub_old both nonzero"),
                              REJECT_INVALID, "bad-txns-vpubs-both-nonzero");
         }
 
-        nValueOut += pour.vpub_new;
+        nValueOut += joinsplit.vpub_new;
         if (!MoneyRange(nValueOut)) {
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
                              REJECT_INVALID, "bad-txns-txouttotal-toolarge");
@@ -966,26 +966,26 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         vInOutPoints.insert(txin.prevout);
     }
 
-    // Check for duplicate pour serials in this transaction
-    set<uint256> vPourSerials;
-    BOOST_FOREACH(const CPourTx& pour, tx.vpour)
+    // Check for duplicate joinsplit nullifiers in this transaction
+    set<uint256> vJoinSplitNullifiers;
+    BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit)
     {
-        BOOST_FOREACH(const uint256& serial, pour.serials)
+        BOOST_FOREACH(const uint256& nf, joinsplit.nullifiers)
         {
-            if (vPourSerials.count(serial))
-                return state.DoS(100, error("CheckTransaction(): duplicate serials"),
-                             REJECT_INVALID, "bad-pours-serials-duplicate");
+            if (vJoinSplitNullifiers.count(nf))
+                return state.DoS(100, error("CheckTransaction(): duplicate nullifiers"),
+                             REJECT_INVALID, "bad-joinsplits-nullifiers-duplicate");
 
-            vPourSerials.insert(serial);
+            vJoinSplitNullifiers.insert(nf);
         }
     }
 
     if (tx.IsCoinBase())
     {
-        // There should be no pours in a coinbase transaction
-        if (tx.vpour.size() > 0)
-            return state.DoS(100, error("CheckTransaction(): coinbase has pours"),
-                             REJECT_INVALID, "bad-cb-has-pours");
+        // There should be no joinsplits in a coinbase transaction
+        if (tx.vjoinsplit.size() > 0)
+            return state.DoS(100, error("CheckTransaction(): coinbase has joinsplits"),
+                             REJECT_INVALID, "bad-cb-has-joinsplits");
 
         if (tx.vin[0].scriptSig.size() < 2 || tx.vin[0].scriptSig.size() > 100)
             return state.DoS(100, error("CheckTransaction(): coinbase script size"),
@@ -998,7 +998,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                 return state.DoS(10, error("CheckTransaction(): prevout is null"),
                                  REJECT_INVALID, "bad-txns-prevout-null");
 
-        if (tx.vpour.size() > 0) {
+        if (tx.vjoinsplit.size() > 0) {
             // TODO: #966.
             static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
             // Empty output script.
@@ -1104,9 +1104,9 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             return false;
         }
     }
-    BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
-        BOOST_FOREACH(const uint256 &serial, pour.serials) {
-            if (pool.mapSerials.count(serial))
+    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
+        BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
+            if (pool.mapNullifiers.count(nf))
             {
                 return false;
             }
@@ -1144,10 +1144,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             return state.Invalid(error("AcceptToMemoryPool: inputs already spent"),
                                  REJECT_DUPLICATE, "bad-txns-inputs-spent");
 
-        // are the pour's requirements met?
-        if (!view.HavePourRequirements(tx))
-            return state.Invalid(error("AcceptToMemoryPool: pour requirements not met"),
-                                 REJECT_DUPLICATE, "bad-txns-pour-requirements-not-met");
+        // are the joinsplit's requirements met?
+        if (!view.HaveJoinSplitRequirements(tx))
+            return state.Invalid(error("AcceptToMemoryPool: joinsplit requirements not met"),
+                                 REJECT_DUPLICATE, "bad-txns-joinsplit-requirements-not-met");
 
         // Bring the best block into scope
         view.GetBestBlock();
@@ -1585,10 +1585,10 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
         }
     }
 
-    // spend serials
-    BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
-        BOOST_FOREACH(const uint256 &serial, pour.serials) {
-            inputs.SetSerial(serial, true);
+    // spend nullifiers
+    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
+        BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
+            inputs.SetNullifier(nf, true);
         }
     }
 
@@ -1622,9 +1622,9 @@ bool NonContextualCheckInputs(const CTransaction& tx, CValidationState &state, c
         if (!inputs.HaveInputs(tx))
             return state.Invalid(error("CheckInputs(): %s inputs unavailable", tx.GetHash().ToString()));
 
-        // are the pour's requirements met?
-        if (!inputs.HavePourRequirements(tx))
-            return state.Invalid(error("CheckInputs(): %s pour requirements not met", tx.GetHash().ToString()));
+        // are the JoinSplit's requirements met?
+        if (!inputs.HaveJoinSplitRequirements(tx))
+            return state.Invalid(error("CheckInputs(): %s JoinSplit requirements not met", tx.GetHash().ToString()));
 
         CAmount nValueIn = 0;
         CAmount nFees = 0;
@@ -1654,7 +1654,7 @@ bool NonContextualCheckInputs(const CTransaction& tx, CValidationState &state, c
 
         }
 
-        nValueIn += tx.GetPourValueIn();
+        nValueIn += tx.GetJoinSplitValueIn();
         if (!MoneyRange(nValueIn))
             return state.DoS(100, error("CheckInputs(): vpub_old values out of range"),
                              REJECT_INVALID, "bad-txns-inputvalues-outofrange");
@@ -1907,10 +1907,10 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         outs->Clear();
         }
 
-        // unspend serials
-        BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
-            BOOST_FOREACH(const uint256 &serial, pour.serials) {
-                view.SetSerial(serial, false);
+        // unspend nullifiers
+        BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
+            BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
+                view.SetNullifier(nf, false);
             }
         }
 
@@ -2130,10 +2130,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
 
-            // are the pour's requirements met?
-            if (!view.HavePourRequirements(tx))
-                return state.DoS(100, error("ConnectBlock(): pour requirements not met"),
-                                 REJECT_INVALID, "bad-txns-pour-requirements-not-met");
+            // are the JoinSplit's requirements met?
+            if (!view.HaveJoinSplitRequirements(tx))
+                return state.DoS(100, error("ConnectBlock(): JoinSplit requirements not met"),
+                                 REJECT_INVALID, "bad-txns-joinsplit-requirements-not-met");
 
             // Add in sigops done by pay-to-script-hash inputs;
             // this is to prevent a "rogue miner" from creating
@@ -2157,11 +2157,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
         UpdateCoins(tx, state, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
 
-        BOOST_FOREACH(const CPourTx &pour, tx.vpour) {
-            BOOST_FOREACH(const uint256 &bucket_commitment, pour.commitments) {
-                // Insert the bucket commitments into our temporary tree.
+        BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
+            BOOST_FOREACH(const uint256 &note_commitment, joinsplit.commitments) {
+                // Insert the note commitments into our temporary tree.
 
-                tree.append(bucket_commitment);
+                tree.append(note_commitment);
             }
         }
 
@@ -4733,8 +4733,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             BOOST_FOREACH(uint256 hash, vEraseQueue)
                 EraseOrphanTx(hash);
         }
-        // TODO: currently, prohibit pours from entering mapOrphans
-        else if (fMissingInputs && tx.vpour.size() == 0)
+        // TODO: currently, prohibit joinsplits from entering mapOrphans
+        else if (fMissingInputs && tx.vjoinsplit.size() == 0)
         {
             AddOrphanTx(tx, pfrom->GetId());
 

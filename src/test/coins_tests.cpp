@@ -24,7 +24,7 @@ class CCoinsViewTest : public CCoinsView
     uint256 hashBestAnchor_;
     std::map<uint256, CCoins> map_;
     std::map<uint256, ZCIncrementalMerkleTree> mapAnchors_;
-    std::map<uint256, bool> mapSerials_;
+    std::map<uint256, bool> mapNullifiers_;
 
 public:
     CCoinsViewTest() {
@@ -47,11 +47,11 @@ public:
         }
     }
 
-    bool GetSerial(const uint256 &serial) const
+    bool GetNullifier(const uint256 &nf) const
     {
-        std::map<uint256, bool>::const_iterator it = mapSerials_.find(serial);
+        std::map<uint256, bool>::const_iterator it = mapNullifiers_.find(nf);
 
-        if (it == mapSerials_.end()) {
+        if (it == mapNullifiers_.end()) {
             return false;
         } else {
             // The map shouldn't contain any false entries.
@@ -88,7 +88,7 @@ public:
                     const uint256& hashBlock,
                     const uint256& hashAnchor,
                     CAnchorsMap& mapAnchors,
-                    CSerialsMap& mapSerials)
+                    CNullifiersMap& mapNullifiers)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             map_[it->first] = it->second.coins;
@@ -109,17 +109,17 @@ public:
             }
             mapAnchors.erase(it++);
         }
-        for (CSerialsMap::iterator it = mapSerials.begin(); it != mapSerials.end(); ) {
+        for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end(); ) {
             if (it->second.entered) {
-                mapSerials_[it->first] = true;
+                mapNullifiers_[it->first] = true;
             } else {
-                mapSerials_.erase(it->first);
+                mapNullifiers_.erase(it->first);
             }
-            mapSerials.erase(it++);
+            mapNullifiers.erase(it++);
         }
         mapCoins.clear();
         mapAnchors.clear();
-        mapSerials.clear();
+        mapNullifiers.clear();
         hashBestBlock_ = hashBlock;
         hashBestAnchor_ = hashAnchor;
         return true;
@@ -138,7 +138,7 @@ public:
         // Manually recompute the dynamic usage of the whole data, and compare it.
         size_t ret = memusage::DynamicUsage(cacheCoins) +
                      memusage::DynamicUsage(cacheAnchors) +
-                     memusage::DynamicUsage(cacheSerials);
+                     memusage::DynamicUsage(cacheNullifiers);
         for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
             ret += memusage::DynamicUsage(it->second.coins);
         }
@@ -163,28 +163,28 @@ uint256 appendRandomCommitment(ZCIncrementalMerkleTree &tree)
 
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
 
-BOOST_AUTO_TEST_CASE(serials_test)
+BOOST_AUTO_TEST_CASE(nullifiers_test)
 {
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
-    uint256 myserial = GetRandHash();
+    uint256 nf = GetRandHash();
 
-    BOOST_CHECK(!cache.GetSerial(myserial));
-    cache.SetSerial(myserial, true);
-    BOOST_CHECK(cache.GetSerial(myserial));
+    BOOST_CHECK(!cache.GetNullifier(nf));
+    cache.SetNullifier(nf, true);
+    BOOST_CHECK(cache.GetNullifier(nf));
     cache.Flush();
 
     CCoinsViewCacheTest cache2(&base);
 
-    BOOST_CHECK(cache2.GetSerial(myserial));
-    cache2.SetSerial(myserial, false);
-    BOOST_CHECK(!cache2.GetSerial(myserial));
+    BOOST_CHECK(cache2.GetNullifier(nf));
+    cache2.SetNullifier(nf, false);
+    BOOST_CHECK(!cache2.GetNullifier(nf));
     cache2.Flush();
 
     CCoinsViewCacheTest cache3(&base);
 
-    BOOST_CHECK(!cache3.GetSerial(myserial));
+    BOOST_CHECK(!cache3.GetNullifier(nf));
 }
 
 BOOST_AUTO_TEST_CASE(anchors_flush_test)
@@ -217,80 +217,80 @@ BOOST_AUTO_TEST_CASE(anchors_flush_test)
     }
 }
 
-BOOST_AUTO_TEST_CASE(chained_pours)
+BOOST_AUTO_TEST_CASE(chained_joinsplits)
 {
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
     ZCIncrementalMerkleTree tree;
 
-    CPourTx ptx1;
-    ptx1.anchor = tree.root();
-    ptx1.commitments[0] = appendRandomCommitment(tree);
-    ptx1.commitments[1] = appendRandomCommitment(tree);
+    JSDescription js1;
+    js1.anchor = tree.root();
+    js1.commitments[0] = appendRandomCommitment(tree);
+    js1.commitments[1] = appendRandomCommitment(tree);
 
     // Although it's not possible given our assumptions, if
-    // two pours create the same treestate twice, we should
+    // two joinsplits create the same treestate twice, we should
     // still be able to anchor to it.
-    CPourTx ptx1b;
-    ptx1b.anchor = tree.root();
-    ptx1b.commitments[0] = ptx1.commitments[0];
-    ptx1b.commitments[1] = ptx1.commitments[1];
+    JSDescription js1b;
+    js1b.anchor = tree.root();
+    js1b.commitments[0] = js1.commitments[0];
+    js1b.commitments[1] = js1.commitments[1];
 
-    CPourTx ptx2;
-    CPourTx ptx3;
+    JSDescription js2;
+    JSDescription js3;
 
-    ptx2.anchor = tree.root();
-    ptx3.anchor = tree.root();
+    js2.anchor = tree.root();
+    js3.anchor = tree.root();
 
-    ptx2.commitments[0] = appendRandomCommitment(tree);
-    ptx2.commitments[1] = appendRandomCommitment(tree);
+    js2.commitments[0] = appendRandomCommitment(tree);
+    js2.commitments[1] = appendRandomCommitment(tree);
 
-    ptx3.commitments[0] = appendRandomCommitment(tree);
-    ptx3.commitments[1] = appendRandomCommitment(tree);
+    js3.commitments[0] = appendRandomCommitment(tree);
+    js3.commitments[1] = appendRandomCommitment(tree);
 
     {
         CMutableTransaction mtx;
-        mtx.vpour.push_back(ptx2);
+        mtx.vjoinsplit.push_back(js2);
 
-        BOOST_CHECK(!cache.HavePourRequirements(mtx));
+        BOOST_CHECK(!cache.HaveJoinSplitRequirements(mtx));
     }
 
     {
-        // ptx2 is trying to anchor to ptx1 but ptx1
+        // js2 is trying to anchor to js1 but js1
         // appears afterwards -- not a permitted ordering
         CMutableTransaction mtx;
-        mtx.vpour.push_back(ptx2);
-        mtx.vpour.push_back(ptx1);
+        mtx.vjoinsplit.push_back(js2);
+        mtx.vjoinsplit.push_back(js1);
 
-        BOOST_CHECK(!cache.HavePourRequirements(mtx));
+        BOOST_CHECK(!cache.HaveJoinSplitRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vpour.push_back(ptx1);
-        mtx.vpour.push_back(ptx2);
+        mtx.vjoinsplit.push_back(js1);
+        mtx.vjoinsplit.push_back(js2);
 
-        BOOST_CHECK(cache.HavePourRequirements(mtx));
+        BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vpour.push_back(ptx1);
-        mtx.vpour.push_back(ptx2);
-        mtx.vpour.push_back(ptx3);
+        mtx.vjoinsplit.push_back(js1);
+        mtx.vjoinsplit.push_back(js2);
+        mtx.vjoinsplit.push_back(js3);
 
-        BOOST_CHECK(cache.HavePourRequirements(mtx));
+        BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vpour.push_back(ptx1);
-        mtx.vpour.push_back(ptx1b);
-        mtx.vpour.push_back(ptx2);
-        mtx.vpour.push_back(ptx3);
+        mtx.vjoinsplit.push_back(js1);
+        mtx.vjoinsplit.push_back(js1b);
+        mtx.vjoinsplit.push_back(js2);
+        mtx.vjoinsplit.push_back(js3);
 
-        BOOST_CHECK(cache.HavePourRequirements(mtx));
+        BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
     }
 }
 

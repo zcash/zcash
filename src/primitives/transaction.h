@@ -17,7 +17,7 @@
 #include "zcash/Zcash.h"
 #include "zcash/JoinSplit.hpp"
 
-class CPourTx
+class JSDescription
 {
 public:
     // These values 'enter from' and 'exit to' the value
@@ -25,22 +25,22 @@ public:
     CAmount vpub_old;
     CAmount vpub_new;
 
-    // Pours are always anchored to a root in the bucket
+    // JoinSplits are always anchored to a root in the note
     // commitment tree at some point in the blockchain
     // history or in the history of the current
     // transaction.
     uint256 anchor;
 
-    // Serials are used to prevent double-spends. They
-    // are derived from the secrets placed in the bucket
+    // Nullifiers are used to prevent double-spends. They
+    // are derived from the secrets placed in the note
     // and the secret spend-authority key known by the
     // spender.
-    boost::array<uint256, ZC_NUM_JS_INPUTS> serials;
+    boost::array<uint256, ZC_NUM_JS_INPUTS> nullifiers;
 
-    // Bucket commitments are introduced into the commitment
+    // Note commitments are introduced into the commitment
     // tree, blinding the public about the values and
-    // destinations involved in the Pour. The presence of a
-    // commitment in the bucket commitment tree is required
+    // destinations involved in the JoinSplit. The presence of
+    // a commitment in the note commitment tree is required
     // to spend it.
     boost::array<uint256, ZC_NUM_JS_OUTPUTS> commitments;
 
@@ -57,17 +57,17 @@ public:
     uint256 randomSeed;
 
     // MACs
-    // The verification of the pour requires these MACs
+    // The verification of the JoinSplit requires these MACs
     // to be provided as an input.
     boost::array<uint256, ZC_NUM_JS_INPUTS> macs;
 
-    // Pour proof
-    // This is a zk-SNARK which ensures that this pour is valid.
+    // JoinSplit proof
+    // This is a zk-SNARK which ensures that this JoinSplit is valid.
     boost::array<unsigned char, ZKSNARK_PROOF_SIZE> proof;
 
-    CPourTx(): vpub_old(0), vpub_new(0) { }
+    JSDescription(): vpub_old(0), vpub_new(0) { }
 
-    CPourTx(ZCJoinSplit& params,
+    JSDescription(ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& rt,
             const boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
@@ -76,7 +76,7 @@ public:
             CAmount vpub_new
     );
 
-    // Verifies that the pour proof is correct.
+    // Verifies that the JoinSplit proof is correct.
     bool Verify(ZCJoinSplit& params, const uint256& pubKeyHash) const;
 
     // Returns the calculated h_sig
@@ -89,7 +89,7 @@ public:
         READWRITE(vpub_old);
         READWRITE(vpub_new);
         READWRITE(anchor);
-        READWRITE(serials);
+        READWRITE(nullifiers);
         READWRITE(commitments);
         READWRITE(ephemeralKey);
         READWRITE(ciphertexts);
@@ -98,13 +98,13 @@ public:
         READWRITE(proof);
     }
 
-    friend bool operator==(const CPourTx& a, const CPourTx& b)
+    friend bool operator==(const JSDescription& a, const JSDescription& b)
     {
         return (
             a.vpub_old == b.vpub_old &&
             a.vpub_new == b.vpub_new &&
             a.anchor == b.anchor &&
-            a.serials == b.serials &&
+            a.nullifiers == b.nullifiers &&
             a.commitments == b.commitments &&
             a.ephemeralKey == b.ephemeralKey &&
             a.ciphertexts == b.ciphertexts &&
@@ -114,7 +114,7 @@ public:
             );
     }
 
-    friend bool operator!=(const CPourTx& a, const CPourTx& b)
+    friend bool operator!=(const JSDescription& a, const JSDescription& b)
     {
         return !(a == b);
     }
@@ -303,7 +303,7 @@ public:
     const std::vector<CTxIn> vin;
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
-    const std::vector<CPourTx> vpour;
+    const std::vector<JSDescription> vjoinsplit;
     const uint256 joinSplitPubKey;
     const joinsplit_sig_t joinSplitSig;
 
@@ -325,8 +325,8 @@ public:
         READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
         READWRITE(*const_cast<uint32_t*>(&nLockTime));
         if (nVersion >= 2) {
-            READWRITE(*const_cast<std::vector<CPourTx>*>(&vpour));
-            if (vpour.size() > 0) {
+            READWRITE(*const_cast<std::vector<JSDescription>*>(&vjoinsplit));
+            if (vjoinsplit.size() > 0) {
                 READWRITE(*const_cast<uint256*>(&joinSplitPubKey));
                 READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
             }
@@ -348,8 +348,8 @@ public:
     // GetValueIn() is a method on CCoinsViewCache, because
     // inputs must be known to compute value in.
 
-    // Return sum of pour vpub_new
-    CAmount GetPourValueIn() const;
+    // Return sum of JoinSplit vpub_new
+    CAmount GetJoinSplitValueIn() const;
 
     // Compute priority, given priority of inputs and (optionally) tx size
     double ComputePriority(double dPriorityInputs, unsigned int nTxSize=0) const;
@@ -382,7 +382,7 @@ struct CMutableTransaction
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
-    std::vector<CPourTx> vpour;
+    std::vector<JSDescription> vjoinsplit;
     uint256 joinSplitPubKey;
     CTransaction::joinsplit_sig_t joinSplitSig;
 
@@ -399,8 +399,8 @@ struct CMutableTransaction
         READWRITE(vout);
         READWRITE(nLockTime);
         if (nVersion >= 2) {
-            READWRITE(vpour);
-            if (vpour.size() > 0) {
+            READWRITE(vjoinsplit);
+            if (vjoinsplit.size() > 0) {
                 READWRITE(joinSplitPubKey);
                 READWRITE(joinSplitSig);
             }

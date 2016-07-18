@@ -2393,18 +2393,18 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         pzcashParams->loadProvingKey();
     }
 
-    CPourTx* samplejoinsplit = NULL;
+    JSDescription* samplejoinsplit = NULL;
 
     if (benchmarktype == "verifyjoinsplit") {
         uint256 pubKeyHash;
         uint256 anchor = ZCIncrementalMerkleTree().root();
-        samplejoinsplit = new CPourTx(*pzcashParams,
-                                 pubKeyHash,
-                                 anchor,
-                                 {JSInput(), JSInput()},
-                                 {JSOutput(), JSOutput()},
-                                 0,
-                                 0);
+        samplejoinsplit = new JSDescription(*pzcashParams,
+                                            pubKeyHash,
+                                            anchor,
+                                            {JSInput(), JSInput()},
+                                            {JSOutput(), JSOutput()},
+                                            0,
+                                            0);
     }
 
     for (int i = 0; i < samplecount; i++) {
@@ -2448,14 +2448,14 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
 
     if (fHelp || params.size() != 2) {
         throw runtime_error(
-            "zcrawreceive zcsecretkey encryptedbucket\n"
+            "zcrawreceive zcsecretkey encryptednote\n"
             "\n"
-            "Decrypts encryptedbucket and checks if the coin commitments\n"
+            "Decrypts encryptednote and checks if the coin commitments\n"
             "are in the blockchain as indicated by the \"exists\" result.\n"
             "\n"
             "Output: {\n"
             "  \"amount\": value,\n"
-            "  \"bucket\": cleartextbucket,\n"
+            "  \"note\": noteplaintext,\n"
             "  \"exists\": exists\n"
             "}\n"
             );
@@ -2474,7 +2474,7 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
     uint256 h_sig;
 
     {
-        CDataStream ssData(ParseHexV(params[1], "encrypted_bucket"), SER_NETWORK, PROTOCOL_VERSION);
+        CDataStream ssData(ParseHexV(params[1], "encrypted_note"), SER_NETWORK, PROTOCOL_VERSION);
         try {
             ssData >> nonce;
             ssData >> epk;
@@ -2482,7 +2482,7 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
             ssData >> h_sig;
         } catch(const std::exception &) {
             throw runtime_error(
-                "encrypted_bucket could not be decoded"
+                "encrypted_note could not be decoded"
             );
         }
     }
@@ -2503,7 +2503,7 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
     std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
     uint256 anchor;
     uint256 commitment = decrypted_note.cm();
-    pwalletMain->WitnessBucketCommitment(
+    pwalletMain->WitnessNoteCommitment(
         {commitment},
         witnesses,
         anchor
@@ -2514,14 +2514,14 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
 
     Object result;
     result.push_back(Pair("amount", ValueFromAmount(decrypted_note.value)));
-    result.push_back(Pair("bucket", HexStr(ss.begin(), ss.end())));
+    result.push_back(Pair("note", HexStr(ss.begin(), ss.end())));
     result.push_back(Pair("exists", (bool) witnesses[0]));
     return result;
 }
 
 
 
-Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
+Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {
         return Value::null;
@@ -2529,11 +2529,11 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
 
     if (fHelp || params.size() != 5) {
         throw runtime_error(
-            "zcrawpour rawtx inputs outputs vpub_old vpub_new\n"
-            "  inputs: a JSON object mapping {bucket: zcsecretkey, ...}\n"
+            "zcrawjoinsplit rawtx inputs outputs vpub_old vpub_new\n"
+            "  inputs: a JSON object mapping {note: zcsecretkey, ...}\n"
             "  outputs: a JSON object mapping {zcaddr: value, ...}\n"
             "\n"
-            "Splices a Pour into rawtx. Inputs are unilaterally confidential.\n"
+            "Splices a joinsplit into rawtx. Inputs are unilaterally confidential.\n"
             "Outputs are confidential between sender/receiver. The vpub_old and\n"
             "vpub_new values are globally public and move transparent value into\n"
             "or out of the confidential value store, respectively.\n"
@@ -2544,8 +2544,8 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
             "payments in-band on the blockchain.)\n"
             "\n"
             "Output: {\n"
-            "  \"encryptedbucket1\": enc1,\n"
-            "  \"encryptedbucket2\": enc2,\n"
+            "  \"encryptednote1\": enc1,\n"
+            "  \"encryptednote2\": enc2,\n"
             "  \"rawtxn\": rawtxout\n"
             "}\n"
             );
@@ -2569,8 +2569,8 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
     if (params[4].get_real() != 0.0)
         vpub_new = AmountFromValue(params[4]);
 
-    std::vector<JSInput> vpourin;
-    std::vector<JSOutput> vpourout;
+    std::vector<JSInput> vjsin;
+    std::vector<JSOutput> vjsout;
     std::vector<Note> notes;
     std::vector<SpendingKey> keys;
     std::vector<uint256> commitments;
@@ -2585,7 +2585,7 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         NotePlaintext npt;
 
         {
-            CDataStream ssData(ParseHexV(s.name_, "bucket"), SER_NETWORK, PROTOCOL_VERSION);
+            CDataStream ssData(ParseHexV(s.name_, "note"), SER_NETWORK, PROTOCOL_VERSION);
             ssData >> npt;
         }
 
@@ -2597,7 +2597,7 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
 
     uint256 anchor;
     std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
-    pwalletMain->WitnessBucketCommitment(commitments, witnesses, anchor);
+    pwalletMain->WitnessNoteCommitment(commitments, witnesses, anchor);
 
     assert(witnesses.size() == notes.size());
     assert(notes.size() == keys.size());
@@ -2606,16 +2606,16 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         for (size_t i = 0; i < witnesses.size(); i++) {
             if (!witnesses[i]) {
                 throw runtime_error(
-                    "pour input could not be found in tree"
+                    "joinsplit input could not be found in tree"
                 );
             }
 
-            vpourin.push_back(JSInput(*witnesses[i], notes[i], keys[i]));
+            vjsin.push_back(JSInput(*witnesses[i], notes[i], keys[i]));
         }
     }
 
-    while (vpourin.size() < ZC_NUM_JS_INPUTS) {
-        vpourin.push_back(JSInput());
+    while (vjsin.size() < ZC_NUM_JS_INPUTS) {
+        vjsin.push_back(JSInput());
     }
 
     BOOST_FOREACH(const Pair& s, outputs)
@@ -2624,16 +2624,16 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
         PaymentAddress addrTo = pubaddr.Get();
         CAmount nAmount = AmountFromValue(s.value_);
 
-        vpourout.push_back(JSOutput(addrTo, nAmount));
+        vjsout.push_back(JSOutput(addrTo, nAmount));
     }
 
-    while (vpourout.size() < ZC_NUM_JS_OUTPUTS) {
-        vpourout.push_back(JSOutput());
+    while (vjsout.size() < ZC_NUM_JS_OUTPUTS) {
+        vjsout.push_back(JSOutput());
     }
 
     // TODO
-    if (vpourout.size() != ZC_NUM_JS_INPUTS || vpourin.size() != ZC_NUM_JS_OUTPUTS) {
-        throw runtime_error("unsupported pour input/output counts");
+    if (vjsout.size() != ZC_NUM_JS_INPUTS || vjsin.size() != ZC_NUM_JS_OUTPUTS) {
+        throw runtime_error("unsupported joinsplit input/output counts");
     }
 
     uint256 joinSplitPubKey;
@@ -2644,17 +2644,17 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
     mtx.nVersion = 2;
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    CPourTx pourtx(*pzcashParams,
-                   joinSplitPubKey,
-                   anchor,
-                   {vpourin[0], vpourin[1]},
-                   {vpourout[0], vpourout[1]},
-                   vpub_old,
-                   vpub_new);
+    JSDescription jsdesc(*pzcashParams,
+                         joinSplitPubKey,
+                         anchor,
+                         {vjsin[0], vjsin[1]},
+                         {vjsout[0], vjsout[1]},
+                         vpub_old,
+                         vpub_new);
 
-    assert(pourtx.Verify(*pzcashParams, joinSplitPubKey));
+    assert(jsdesc.Verify(*pzcashParams, joinSplitPubKey));
 
-    mtx.vpour.push_back(pourtx);
+    mtx.vjoinsplit.push_back(jsdesc);
 
     // TODO: #966.
     static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
@@ -2683,30 +2683,30 @@ Value zc_raw_pour(const json_spirit::Array& params, bool fHelp)
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << rawTx;
 
-    std::string encryptedBucket1;
-    std::string encryptedBucket2;
+    std::string encryptedNote1;
+    std::string encryptedNote2;
     {
         CDataStream ss2(SER_NETWORK, PROTOCOL_VERSION);
         ss2 << ((unsigned char) 0x00);
-        ss2 << pourtx.ephemeralKey;
-        ss2 << pourtx.ciphertexts[0];
-        ss2 << pourtx.h_sig(*pzcashParams, joinSplitPubKey);
+        ss2 << jsdesc.ephemeralKey;
+        ss2 << jsdesc.ciphertexts[0];
+        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey);
 
-        encryptedBucket1 = HexStr(ss2.begin(), ss2.end());
+        encryptedNote1 = HexStr(ss2.begin(), ss2.end());
     }
     {
         CDataStream ss2(SER_NETWORK, PROTOCOL_VERSION);
         ss2 << ((unsigned char) 0x01);
-        ss2 << pourtx.ephemeralKey;
-        ss2 << pourtx.ciphertexts[1];
-        ss2 << pourtx.h_sig(*pzcashParams, joinSplitPubKey);
+        ss2 << jsdesc.ephemeralKey;
+        ss2 << jsdesc.ciphertexts[1];
+        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey);
 
-        encryptedBucket2 = HexStr(ss2.begin(), ss2.end());
+        encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }
 
     Object result;
-    result.push_back(Pair("encryptedbucket1", encryptedBucket1));
-    result.push_back(Pair("encryptedbucket2", encryptedBucket2));
+    result.push_back(Pair("encryptednote1", encryptedNote1));
+    result.push_back(Pair("encryptednote2", encryptedNote2));
     result.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
     return result;
 }

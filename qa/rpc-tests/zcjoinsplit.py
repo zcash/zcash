@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 
 #
-# Test Pour semantics
+# Test joinsplit semantics
 #
 
 from test_framework.test_framework import BitcoinTestFramework
@@ -11,7 +11,7 @@ import os
 import shutil
 import sys
 
-class PourTxTest(BitcoinTestFramework):
+class JoinSplitTest(BitcoinTestFramework):
     def setup_network(self):
         self.nodes = []
         self.is_network_split = False
@@ -24,27 +24,27 @@ class PourTxTest(BitcoinTestFramework):
 
         (total_in, inputs) = gather_inputs(self.nodes[0], 40)
         protect_tx = self.nodes[0].createrawtransaction(inputs, {})
-        pour_result = self.nodes[0].zcrawpour(protect_tx, {}, {zcaddress:39.9}, 39.9, 0)
+        joinsplit_result = self.nodes[0].zcrawjoinsplit(protect_tx, {}, {zcaddress:39.9}, 39.9, 0)
 
-        receive_result = self.nodes[0].zcrawreceive(zcsecretkey, pour_result["encryptedbucket1"])
+        receive_result = self.nodes[0].zcrawreceive(zcsecretkey, joinsplit_result["encryptednote1"])
         assert_equal(receive_result["exists"], False)
 
-        protect_tx = self.nodes[0].signrawtransaction(pour_result["rawtxn"])
+        protect_tx = self.nodes[0].signrawtransaction(joinsplit_result["rawtxn"])
         self.nodes[0].sendrawtransaction(protect_tx["hex"])
         self.nodes[0].generate(1)
 
-        receive_result = self.nodes[0].zcrawreceive(zcsecretkey, pour_result["encryptedbucket1"])
+        receive_result = self.nodes[0].zcrawreceive(zcsecretkey, joinsplit_result["encryptednote1"])
         assert_equal(receive_result["exists"], True)
 
-        pour_tx = self.nodes[0].createrawtransaction([], {})
-        pour_result = self.nodes[0].zcrawpour(pour_tx, {receive_result["bucket"] : zcsecretkey}, {zcaddress: 39.8}, 0, 0.1)
+        joinsplit_tx = self.nodes[0].createrawtransaction([], {})
+        joinsplit_result = self.nodes[0].zcrawjoinsplit(joinsplit_tx, {receive_result["note"] : zcsecretkey}, {zcaddress: 39.8}, 0, 0.1)
 
-        self.nodes[0].sendrawtransaction(pour_result["rawtxn"])
+        self.nodes[0].sendrawtransaction(joinsplit_result["rawtxn"])
         self.nodes[0].generate(1)
 
         print "Done!"
-        receive_result = self.nodes[0].zcrawreceive(zcsecretkey, pour_result["encryptedbucket1"])
+        receive_result = self.nodes[0].zcrawreceive(zcsecretkey, joinsplit_result["encryptednote1"])
         assert_equal(receive_result["exists"], True)
 
 if __name__ == '__main__':
-    PourTxTest().main()
+    JoinSplitTest().main()

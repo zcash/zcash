@@ -18,7 +18,7 @@
 using namespace std;
 
 static const char DB_ANCHOR = 'A';
-static const char DB_SERIAL = 's';
+static const char DB_NULLIFIER = 's';
 static const char DB_COINS = 'c';
 static const char DB_BLOCK_FILES = 'f';
 static const char DB_TXINDEX = 't';
@@ -43,11 +43,11 @@ void static BatchWriteAnchor(CLevelDBBatch &batch,
     }
 }
 
-void static BatchWriteSerial(CLevelDBBatch &batch, const uint256 &serial, const bool &entered) {
+void static BatchWriteNullifier(CLevelDBBatch &batch, const uint256 &nf, const bool &entered) {
     if (!entered)
-        batch.Erase(make_pair(DB_SERIAL, serial));
+        batch.Erase(make_pair(DB_NULLIFIER, nf));
     else
-        batch.Write(make_pair(DB_SERIAL, serial), true);
+        batch.Write(make_pair(DB_NULLIFIER, nf), true);
 }
 
 void static BatchWriteCoins(CLevelDBBatch &batch, const uint256 &hash, const CCoins &coins) {
@@ -81,9 +81,9 @@ bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree)
     return read;
 }
 
-bool CCoinsViewDB::GetSerial(const uint256 &serial) const {
+bool CCoinsViewDB::GetNullifier(const uint256 &nf) const {
     bool spent = false;
-    bool read = db.Read(make_pair(DB_SERIAL, serial), spent);
+    bool read = db.Read(make_pair(DB_NULLIFIER, nf), spent);
 
     return read;
 }
@@ -114,7 +114,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               const uint256 &hashBlock,
                               const uint256 &hashAnchor,
                               CAnchorsMap &mapAnchors,
-                              CSerialsMap &mapSerials) {
+                              CNullifiersMap &mapNullifiers) {
     CLevelDBBatch batch;
     size_t count = 0;
     size_t changed = 0;
@@ -137,13 +137,13 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
         mapAnchors.erase(itOld);
     }
 
-    for (CSerialsMap::iterator it = mapSerials.begin(); it != mapSerials.end();) {
-        if (it->second.flags & CSerialsCacheEntry::DIRTY) {
-            BatchWriteSerial(batch, it->first, it->second.entered);
+    for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end();) {
+        if (it->second.flags & CNullifiersCacheEntry::DIRTY) {
+            BatchWriteNullifier(batch, it->first, it->second.entered);
             // TODO: changed++?
         }
-        CSerialsMap::iterator itOld = it++;
-        mapSerials.erase(itOld);
+        CNullifiersMap::iterator itOld = it++;
+        mapNullifiers.erase(itOld);
     }
 
     if (!hashBlock.IsNull())

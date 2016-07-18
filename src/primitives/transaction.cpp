@@ -9,7 +9,7 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
-CPourTx::CPourTx(ZCJoinSplit& params,
+JSDescription::JSDescription(ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& anchor,
             const boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
@@ -29,7 +29,7 @@ CPourTx::CPourTx(ZCJoinSplit& params,
         pubKeyHash,
         randomSeed,
         macs,
-        serials,
+        nullifiers,
         commitments,
         vpub_old,
         vpub_new,
@@ -37,7 +37,7 @@ CPourTx::CPourTx(ZCJoinSplit& params,
     );
 }
 
-bool CPourTx::Verify(
+bool JSDescription::Verify(
     ZCJoinSplit& params,
     const uint256& pubKeyHash
 ) const {
@@ -46,7 +46,7 @@ bool CPourTx::Verify(
         pubKeyHash,
         randomSeed,
         macs,
-        serials,
+        nullifiers,
         commitments,
         vpub_old,
         vpub_new,
@@ -54,9 +54,9 @@ bool CPourTx::Verify(
     );
 }
 
-uint256 CPourTx::h_sig(ZCJoinSplit& params, const uint256& pubKeyHash) const
+uint256 JSDescription::h_sig(ZCJoinSplit& params, const uint256& pubKeyHash) const
 {
-    return params.h_sig(randomSeed, serials, pubKeyHash);
+    return params.h_sig(randomSeed, nullifiers, pubKeyHash);
 }
 
 std::string COutPoint::ToString() const
@@ -111,7 +111,7 @@ std::string CTxOut::ToString() const
 
 CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::CURRENT_VERSION), nLockTime(0) {}
 CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
-                                                                   vpour(tx.vpour), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
+                                                                   vjoinsplit(tx.vjoinsplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
 {
     
 }
@@ -126,9 +126,9 @@ void CTransaction::UpdateHash() const
     *const_cast<uint256*>(&hash) = SerializeHash(*this);
 }
 
-CTransaction::CTransaction() : nVersion(CTransaction::CURRENT_VERSION), vin(), vout(), nLockTime(0), vpour(), joinSplitPubKey(), joinSplitSig() { }
+CTransaction::CTransaction() : nVersion(CTransaction::CURRENT_VERSION), vin(), vout(), nLockTime(0), vjoinsplit(), joinSplitPubKey(), joinSplitSig() { }
 
-CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), vpour(tx.vpour),
+CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), vjoinsplit(tx.vjoinsplit),
                                                             joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
 {
     UpdateHash();
@@ -139,7 +139,7 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<std::vector<CTxIn>*>(&vin) = tx.vin;
     *const_cast<std::vector<CTxOut>*>(&vout) = tx.vout;
     *const_cast<unsigned int*>(&nLockTime) = tx.nLockTime;
-    *const_cast<std::vector<CPourTx>*>(&vpour) = tx.vpour;
+    *const_cast<std::vector<JSDescription>*>(&vjoinsplit) = tx.vjoinsplit;
     *const_cast<uint256*>(&joinSplitPubKey) = tx.joinSplitPubKey;
     *const_cast<joinsplit_sig_t*>(&joinSplitSig) = tx.joinSplitSig;
     *const_cast<uint256*>(&hash) = tx.hash;
@@ -156,7 +156,7 @@ CAmount CTransaction::GetValueOut() const
             throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
     }
 
-    for (std::vector<CPourTx>::const_iterator it(vpour.begin()); it != vpour.end(); ++it)
+    for (std::vector<JSDescription>::const_iterator it(vjoinsplit.begin()); it != vjoinsplit.end(); ++it)
     {
         // NB: vpub_old "takes" money from the value pool just as outputs do
         nValueOut += it->vpub_old;
@@ -167,16 +167,16 @@ CAmount CTransaction::GetValueOut() const
     return nValueOut;
 }
 
-CAmount CTransaction::GetPourValueIn() const
+CAmount CTransaction::GetJoinSplitValueIn() const
 {
     CAmount nValue = 0;
-    for (std::vector<CPourTx>::const_iterator it(vpour.begin()); it != vpour.end(); ++it)
+    for (std::vector<JSDescription>::const_iterator it(vjoinsplit.begin()); it != vjoinsplit.end(); ++it)
     {
         // NB: vpub_new "gives" money to the value pool just as inputs do
         nValue += it->vpub_new;
 
         if (!MoneyRange(it->vpub_new) || !MoneyRange(nValue))
-            throw std::runtime_error("CTransaction::GetPourValueIn(): value out of range");
+            throw std::runtime_error("CTransaction::GetJoinSplitValueIn(): value out of range");
     }
 
     return nValue;

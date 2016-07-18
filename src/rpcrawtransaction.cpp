@@ -90,48 +90,48 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
     }
     entry.push_back(Pair("vout", vout));
 
-    Array vpour;
-    for (unsigned int i = 0; i < tx.vpour.size(); i++) {
-        const CPourTx& pourtx = tx.vpour[i];
-        Object pour;
+    Array vjoinsplit;
+    for (unsigned int i = 0; i < tx.vjoinsplit.size(); i++) {
+        const JSDescription& jsdescription = tx.vjoinsplit[i];
+        Object joinsplit;
 
-        pour.push_back(Pair("anchor", pourtx.anchor.GetHex()));
+        joinsplit.push_back(Pair("anchor", jsdescription.anchor.GetHex()));
 
         {
-            Array serials;
-            BOOST_FOREACH(const uint256 serial, pourtx.serials) {
-                serials.push_back(serial.GetHex());
+            Array nullifiers;
+            BOOST_FOREACH(const uint256 nf, jsdescription.nullifiers) {
+                nullifiers.push_back(nf.GetHex());
             }
-            pour.push_back(Pair("serials", serials));
+            joinsplit.push_back(Pair("nullifiers", nullifiers));
         }
 
         {
             Array commitments;
-            BOOST_FOREACH(const uint256 commitment, pourtx.commitments) {
+            BOOST_FOREACH(const uint256 commitment, jsdescription.commitments) {
                 commitments.push_back(commitment.GetHex());
             }
-            pour.push_back(Pair("commitments", commitments));
+            joinsplit.push_back(Pair("commitments", commitments));
         }
 
         {
             Array macs;
-            BOOST_FOREACH(const uint256 mac, pourtx.macs) {
+            BOOST_FOREACH(const uint256 mac, jsdescription.macs) {
                 macs.push_back(mac.GetHex());
             }
-            pour.push_back(Pair("macs", macs));
+            joinsplit.push_back(Pair("macs", macs));
         }
 
-        pour.push_back(Pair("vpub_old", ValueFromAmount(pourtx.vpub_old)));
-        pour.push_back(Pair("vpub_new", ValueFromAmount(pourtx.vpub_new)));
+        joinsplit.push_back(Pair("vpub_old", ValueFromAmount(jsdescription.vpub_old)));
+        joinsplit.push_back(Pair("vpub_new", ValueFromAmount(jsdescription.vpub_new)));
 
         // TODO: #808
         uint256 pubKeyHash;
-        pour.push_back(Pair("valid", pourtx.Verify(*pzcashParams, pubKeyHash)));
+        joinsplit.push_back(Pair("valid", jsdescription.Verify(*pzcashParams, pubKeyHash)));
 
-        vpour.push_back(pour);
+        vjoinsplit.push_back(joinsplit);
     }
 
-    entry.push_back(Pair("vpour", vpour));
+    entry.push_back(Pair("vjoinsplit", vjoinsplit));
 
     if (!hashBlock.IsNull()) {
         entry.push_back(Pair("blockhash", hashBlock.GetHex()));

@@ -291,9 +291,9 @@ SetupDummyInputs(CBasicKeyStore& keystoreRet, CCoinsViewCache& coinsRet)
     return dummyTransactions;
 }
 
-BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
+BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
 {
-    // We only check that pours are constructed properly
+    // We only check that joinsplits are constructed properly
     // and verify properly here. libsnark tends to segfault
     // when our snarks or what-have-you are invalid, so
     // we can't really catch everything here.
@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
 
     auto witness = merkleTree.witness();
 
-    // create CPourTx
+    // create JSDescription
     uint256 pubKeyHash;
     boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
         libzcash::JSInput(witness, note, k),
@@ -342,28 +342,28 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
     };
 
     {
-        CPourTx pourtx(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
-        BOOST_CHECK(pourtx.Verify(*p, pubKeyHash));
+        JSDescription jsdesc(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
+        BOOST_CHECK(jsdesc.Verify(*p, pubKeyHash));
 
         CDataStream ss(SER_DISK, CLIENT_VERSION);
-        ss << pourtx;
+        ss << jsdesc;
 
-        CPourTx pourtx_deserialized;
-        ss >> pourtx_deserialized;
+        JSDescription jsdesc_deserialized;
+        ss >> jsdesc_deserialized;
 
-        BOOST_CHECK(pourtx_deserialized == pourtx);
-        BOOST_CHECK(pourtx_deserialized.Verify(*p, pubKeyHash));
+        BOOST_CHECK(jsdesc_deserialized == jsdesc);
+        BOOST_CHECK(jsdesc_deserialized.Verify(*p, pubKeyHash));
     }
 
     {
         // Ensure that the balance equation is working.
-        BOOST_CHECK_THROW(CPourTx(*p, pubKeyHash, rt, inputs, outputs, 10, 0), std::invalid_argument);
-        BOOST_CHECK_THROW(CPourTx(*p, pubKeyHash, rt, inputs, outputs, 0, 10), std::invalid_argument);
+        BOOST_CHECK_THROW(JSDescription(*p, pubKeyHash, rt, inputs, outputs, 10, 0), std::invalid_argument);
+        BOOST_CHECK_THROW(JSDescription(*p, pubKeyHash, rt, inputs, outputs, 0, 10), std::invalid_argument);
     }
 
     {
         // Ensure that it won't verify if the root is changed.
-        auto test = CPourTx(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
+        auto test = JSDescription(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
         test.anchor = GetRandHash();
         BOOST_CHECK(!test.Verify(*p, pubKeyHash));
     }
@@ -371,20 +371,20 @@ BOOST_AUTO_TEST_CASE(test_basic_pour_verification)
     delete p;
 }
 
-BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
+BOOST_AUTO_TEST_CASE(test_simple_joinsplit_invalidity)
 {
     CMutableTransaction tx;
     tx.nVersion = 2;
     {
         // Ensure that empty vin/vout remain invalid without
-        // pours.
+        // joinsplits.
         CMutableTransaction newTx(tx);
         CValidationState state;
 
         unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
         crypto_sign_keypair(newTx.joinSplitPubKey.begin(), joinSplitPrivKey);
 
-        // No pours, vin and vout, means it should be invalid.
+        // No joinsplits, vin and vout, means it should be invalid.
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vin-empty");
 
@@ -393,11 +393,11 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vout-empty");
 
-        newTx.vpour.push_back(CPourTx());
-        CPourTx *pourtx = &newTx.vpour[0];
+        newTx.vjoinsplit.push_back(JSDescription());
+        JSDescription *jsdesc = &newTx.vjoinsplit[0];
 
-        pourtx->serials[0] = GetRandHash();
-        pourtx->serials[1] = GetRandHash();
+        jsdesc->nullifiers[0] = GetRandHash();
+        jsdesc->nullifiers[1] = GetRandHash();
 
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-invalid-joinsplit-signature");
@@ -418,78 +418,78 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
     }
     {
-        // Ensure that values within the pour are well-formed.
+        // Ensure that values within the joinsplit are well-formed.
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vpour.push_back(CPourTx());
+        newTx.vjoinsplit.push_back(JSDescription());
         
-        CPourTx *pourtx = &newTx.vpour[0];
-        pourtx->vpub_old = -1;
+        JSDescription *jsdesc = &newTx.vjoinsplit[0];
+        jsdesc->vpub_old = -1;
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_old-negative");
 
-        pourtx->vpub_old = MAX_MONEY + 1;
+        jsdesc->vpub_old = MAX_MONEY + 1;
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_old-toolarge");
 
-        pourtx->vpub_old = 0;
-        pourtx->vpub_new = -1;
+        jsdesc->vpub_old = 0;
+        jsdesc->vpub_new = -1;
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_new-negative");
 
-        pourtx->vpub_new = MAX_MONEY + 1;
+        jsdesc->vpub_new = MAX_MONEY + 1;
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_new-toolarge");
 
-        pourtx->vpub_new = (MAX_MONEY / 2) + 10;
+        jsdesc->vpub_new = (MAX_MONEY / 2) + 10;
 
-        newTx.vpour.push_back(CPourTx());
+        newTx.vjoinsplit.push_back(JSDescription());
 
-        CPourTx *pourtx2 = &newTx.vpour[1];
-        pourtx2->vpub_new = (MAX_MONEY / 2) + 10;
+        JSDescription *jsdesc2 = &newTx.vjoinsplit[1];
+        jsdesc2->vpub_new = (MAX_MONEY / 2) + 10;
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-txouttotal-toolarge");
     }
     {
-        // Ensure that serials are never duplicated within a transaction.
+        // Ensure that nullifiers are never duplicated within a transaction.
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vpour.push_back(CPourTx());
-        CPourTx *pourtx = &newTx.vpour[0];
+        newTx.vjoinsplit.push_back(JSDescription());
+        JSDescription *jsdesc = &newTx.vjoinsplit[0];
 
-        pourtx->serials[0] = GetRandHash();
-        pourtx->serials[1] = pourtx->serials[0];
-
-        BOOST_CHECK(!CheckTransaction(newTx, state));
-        BOOST_CHECK(state.GetRejectReason() == "bad-pours-serials-duplicate");
-
-        pourtx->serials[1] = GetRandHash();
-
-        newTx.vpour.push_back(CPourTx());
-        CPourTx *pourtx2 = &newTx.vpour[1];
-
-        pourtx2->serials[0] = GetRandHash();
-        pourtx2->serials[1] = pourtx->serials[0];
+        jsdesc->nullifiers[0] = GetRandHash();
+        jsdesc->nullifiers[1] = jsdesc->nullifiers[0];
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
-        BOOST_CHECK(state.GetRejectReason() == "bad-pours-serials-duplicate");
+        BOOST_CHECK(state.GetRejectReason() == "bad-joinsplits-nullifiers-duplicate");
+
+        jsdesc->nullifiers[1] = GetRandHash();
+
+        newTx.vjoinsplit.push_back(JSDescription());
+        JSDescription *jsdesc2 = &newTx.vjoinsplit[1];
+
+        jsdesc2->nullifiers[0] = GetRandHash();
+        jsdesc2->nullifiers[1] = jsdesc->nullifiers[0];
+
+        BOOST_CHECK(!CheckTransaction(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-joinsplits-nullifiers-duplicate");
     }
     {
-        // Ensure that coinbase transactions do not have pours.
+        // Ensure that coinbase transactions do not have joinsplits.
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vpour.push_back(CPourTx());
-        CPourTx *pourtx = &newTx.vpour[0];
-        pourtx->serials[0] = GetRandHash();
-        pourtx->serials[1] = GetRandHash();
+        newTx.vjoinsplit.push_back(JSDescription());
+        JSDescription *jsdesc = &newTx.vjoinsplit[0];
+        jsdesc->nullifiers[0] = GetRandHash();
+        jsdesc->nullifiers[1] = GetRandHash();
 
         newTx.vin.push_back(CTxIn(uint256(), -1));
 
@@ -498,7 +498,7 @@ BOOST_AUTO_TEST_CASE(test_simple_pour_invalidity)
             BOOST_CHECK(finalNewTx.IsCoinBase());
         }
         BOOST_CHECK(!CheckTransaction(newTx, state));
-        BOOST_CHECK(state.GetRejectReason() == "bad-cb-has-pours");
+        BOOST_CHECK(state.GetRejectReason() == "bad-cb-has-joinsplits");
     }
 }
 
