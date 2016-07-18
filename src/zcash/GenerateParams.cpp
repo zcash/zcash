@@ -1,9 +1,14 @@
 #include "zcash/JoinSplit.hpp"
 
 #include <iostream>
+#include "sodium.h"
 
 int main(int argc, char **argv)
 {
+    if (sodium_init() == -1) {
+        return 1;
+    }
+
     if(argc != 3) {
         std::cerr << "Usage: " << argv[0] << " provingKeyFileName verificationKeyFileName" << std::endl;
         return 1;
