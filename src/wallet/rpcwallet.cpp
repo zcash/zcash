@@ -2351,6 +2351,34 @@ Value listunspent(const Array& params, bool fHelp)
     return results;
 }
 
+Value zc_sample_joinsplit(const json_spirit::Array& params, bool fHelp)
+{
+    if (fHelp) {
+        throw runtime_error(
+            "zcsamplejoinsplit\n"
+            "\n"
+            "Perform a joinsplit and return the JSDescription.\n"
+            );
+    }
+
+    LOCK(cs_main);
+
+    uint256 pubKeyHash;
+    uint256 anchor = ZCIncrementalMerkleTree().root();
+    JSDescription samplejoinsplit(*pzcashParams,
+                                  pubKeyHash,
+                                  anchor,
+                                  {JSInput(), JSInput()},
+                                  {JSOutput(), JSOutput()},
+                                  0,
+                                  0);
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << samplejoinsplit;
+
+    return HexStr(ss.begin(), ss.end());
+}
+
 Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {
@@ -2393,18 +2421,11 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         pzcashParams->loadProvingKey();
     }
 
-    JSDescription* samplejoinsplit = NULL;
+    JSDescription samplejoinsplit;
 
     if (benchmarktype == "verifyjoinsplit") {
-        uint256 pubKeyHash;
-        uint256 anchor = ZCIncrementalMerkleTree().root();
-        samplejoinsplit = new JSDescription(*pzcashParams,
-                                            pubKeyHash,
-                                            anchor,
-                                            {JSInput(), JSInput()},
-                                            {JSOutput(), JSOutput()},
-                                            0,
-                                            0);
+        CDataStream ss(ParseHexV(params[2].get_str(), "js"), SER_NETWORK, PROTOCOL_VERSION);
+        ss >> samplejoinsplit;
     }
 
     for (int i = 0; i < samplecount; i++) {
@@ -2415,7 +2436,7 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         } else if (benchmarktype == "createjoinsplit") {
             sample_times.push_back(benchmark_create_joinsplit());
         } else if (benchmarktype == "verifyjoinsplit") {
-            sample_times.push_back(benchmark_verify_joinsplit(*samplejoinsplit));
+            sample_times.push_back(benchmark_verify_joinsplit(samplejoinsplit));
         } else if (benchmarktype == "solveequihash") {
             sample_times.push_back(benchmark_solve_equihash());
         } else if (benchmarktype == "verifyequihash") {
@@ -2423,12 +2444,9 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         } else if (benchmarktype == "validatelargetx") {
             sample_times.push_back(benchmark_large_tx());
         } else {
-            delete samplejoinsplit;
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
         }
     }
-
-    delete samplejoinsplit;
 
     Array results;
     for (int i = 0; i < samplecount; i++) {

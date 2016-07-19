@@ -52,6 +52,17 @@ function zcashd_valgrind_stop {
     cat valgrind.out
 }
 
+# Precomputation
+case "$1" in
+    *)
+        case "$2" in
+            verifyjoinsplit)
+                zcashd_start
+                RAWJOINSPLIT=$(zcash_rpc zcsamplejoinsplit)
+                zcashd_stop
+        esac
+esac
+
 case "$1" in
     time)
         zcashd_start
@@ -66,7 +77,7 @@ case "$1" in
                 zcash_rpc zcbenchmark createjoinsplit 10
                 ;;
             verifyjoinsplit)
-                zcash_rpc zcbenchmark verifyjoinsplit 1000
+                zcash_rpc zcbenchmark verifyjoinsplit 1000 "$RAWJOINSPLIT"
                 ;;
             solveequihash)
                 zcash_rpc zcbenchmark solveequihash 10
@@ -97,7 +108,7 @@ case "$1" in
                 zcash_rpc zcbenchmark createjoinsplit 1
                 ;;
             verifyjoinsplit)
-                zcash_rpc zcbenchmark verifyjoinsplit 1
+                zcash_rpc zcbenchmark verifyjoinsplit 1 "$RAWJOINSPLIT"
                 ;;
             solveequihash)
                 zcash_rpc zcbenchmark solveequihash 1
@@ -126,7 +137,7 @@ case "$1" in
                 zcash_rpc zcbenchmark createjoinsplit 1
                 ;;
             verifyjoinsplit)
-                zcash_rpc zcbenchmark verifyjoinsplit 1
+                zcash_rpc zcbenchmark verifyjoinsplit 1 "$RAWJOINSPLIT"
                 ;;
             solveequihash)
                 zcash_rpc zcbenchmark solveequihash 1
