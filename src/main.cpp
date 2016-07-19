@@ -999,12 +999,12 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                                  REJECT_INVALID, "bad-txns-prevout-null");
 
         if (tx.vjoinsplit.size() > 0) {
-            // TODO: #966.
-            static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
             // Empty output script.
             CScript scriptCode;
-            uint256 dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL);
-            if (dataToBeSigned == one) {
+            uint256 dataToBeSigned;
+            try {
+                dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL);
+            } catch (std::logic_error ex) {
                 return state.DoS(100, error("CheckTransaction(): error computing signature hash"),
                                  REJECT_INVALID, "error-computing-signature-hash");
             }
