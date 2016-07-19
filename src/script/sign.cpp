@@ -21,13 +21,22 @@ TransactionSignatureCreator::TransactionSignatureCreator(const CKeyStore* keysto
 
 bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, const CKeyID& address, const CScript& scriptCode) const
 {
+    static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
     CKey key;
-    if (!keystore->GetKey(address, key))
+    if (!keystore->GetKey(address, key)) {
         return false;
+    }
 
     uint256 hash = SignatureHash(scriptCode, *txTo, nIn, nHashType);
-    if (!key.Sign(hash, vchSig))
+
+    if (hash == one) {
         return false;
+    }
+
+    if (!key.Sign(hash, vchSig)) {
+        return false;
+    }
+
     vchSig.push_back((unsigned char)nHashType);
     return true;
 }
