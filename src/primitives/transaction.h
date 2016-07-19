@@ -330,7 +330,9 @@ public:
             READWRITE(*const_cast<std::vector<CPourTx>*>(&vpour));
             if (vpour.size() > 0) {
                 READWRITE(*const_cast<uint256*>(&joinSplitPubKey));
-                READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
+                if (!(nType & SER_SKIP_TXIN_SIGSCRIPT)) {
+                    READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
+                }
             }
         }
         if (ser_action.ForRead())
