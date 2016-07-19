@@ -183,7 +183,7 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(prevout);
-        if (!(nType & SER_SKIP_TXIN_SIGSCRIPT)) {
+        if (!(nType & SER_SKIP_SIGSCRIPT)) {
             READWRITE(scriptSig);
         }
         READWRITE(nSequence);
@@ -330,7 +330,7 @@ public:
             READWRITE(*const_cast<std::vector<CPourTx>*>(&vpour));
             if (vpour.size() > 0) {
                 READWRITE(*const_cast<uint256*>(&joinSplitPubKey));
-                if (!(nType & SER_SKIP_TXIN_SIGSCRIPT)) {
+                if (!(nType & SER_SKIP_SIGSCRIPT)) {
                     READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
                 }
             }
