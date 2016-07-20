@@ -189,7 +189,7 @@ Value generate(const Array& params, bool fHelp)
 
             // (x_1, x_2, ...) = A(I, V, n, k)
             std::set<std::vector<unsigned int>> solns;
-            EhBasicSolve(n, k, curr_state, solns);
+            EhBasicSolveUncancellable(n, k, curr_state, solns);
 
             for (auto soln : solns) {
                 bool isValid;

@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 
             // (x_1, x_2, ...) = A(I, V, n, k)
             std::set<std::vector<unsigned int>> solns;
-            EhOptimisedSolve(n, k, curr_state, solns);
+            EhOptimisedSolveUncancellable(n, k, curr_state, solns);
 
             bool ret;
             for (auto soln : solns) {

@@ -12,6 +12,8 @@
 #include "sodium.h"
 
 #include <cstring>
+#include <exception>
+#include <functional>
 #include <set>
 #include <vector>
 
@@ -108,6 +110,14 @@ public:
     eh_trunc* GetTruncatedIndices(size_t len, size_t lenIndices) const;
 };
 
+class EhSolverCancelledException : public std::exception
+{
+  virtual const char* what() const throw()
+  {
+    return "Equihash solver was cancelled";
+  }
+};
+
 inline constexpr const size_t max(const size_t A, const size_t B) { return A > B ? A : B; }
 
 template<unsigned int N, unsigned int K>
@@ -130,8 +140,8 @@ public:
     Equihash() { }
 
     int InitialiseState(eh_HashState& base_state);
-    std::set<std::vector<eh_index>> BasicSolve(const eh_HashState& base_state);
-    std::set<std::vector<eh_index>> OptimisedSolve(const eh_HashState& base_state);
+    std::set<std::vector<eh_index>> BasicSolve(const eh_HashState& base_state, const std::function<bool()> cancelled);
+    std::set<std::vector<eh_index>> OptimisedSolve(const eh_HashState& base_state, const std::function<bool()> cancelled);
     bool IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln);
 };
 
@@ -152,27 +162,31 @@ static Equihash<48,5> Eh48_5;
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
 
-#define EhBasicSolve(n, k, base_state, solns)   \
-    if (n == 96 && k == 3) {                    \
-        solns = Eh96_3.BasicSolve(base_state);  \
-    } else if (n == 96 && k == 5) {             \
-        solns = Eh96_5.BasicSolve(base_state);  \
-    } else if (n == 48 && k == 5) {             \
-        solns = Eh48_5.BasicSolve(base_state);  \
-    } else {                                    \
+#define EhBasicSolve(n, k, base_state, solns, cancelled)   \
+    if (n == 96 && k == 3) {                               \
+        solns = Eh96_3.BasicSolve(base_state, cancelled);  \
+    } else if (n == 96 && k == 5) {                        \
+        solns = Eh96_5.BasicSolve(base_state, cancelled);  \
+    } else if (n == 48 && k == 5) {                        \
+        solns = Eh48_5.BasicSolve(base_state, cancelled);  \
+    } else {                                               \
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
+#define EhBasicSolveUncancellable(n, k, base_state, solns)  \
+    EhBasicSolve(n, k, base_state, solns, [] { return false; })
 
-#define EhOptimisedSolve(n, k, base_state, solns)   \
-    if (n == 96 && k == 3) {                        \
-        solns = Eh96_3.OptimisedSolve(base_state);  \
-    } else if (n == 96 && k == 5) {                 \
-        solns = Eh96_5.OptimisedSolve(base_state);  \
-    } else if (n == 48 && k == 5) {                 \
-        solns = Eh48_5.OptimisedSolve(base_state);  \
-    } else {                                        \
+#define EhOptimisedSolve(n, k, base_state, solns, cancelled)   \
+    if (n == 96 && k == 3) {                                   \
+        solns = Eh96_3.OptimisedSolve(base_state, cancelled);  \
+    } else if (n == 96 && k == 5) {                            \
+        solns = Eh96_5.OptimisedSolve(base_state, cancelled);  \
+    } else if (n == 48 && k == 5) {                            \
+        solns = Eh48_5.OptimisedSolve(base_state, cancelled);  \
+    } else {                                                   \
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
+#define EhOptimisedSolveUncancellable(n, k, base_state, solns) \
+    EhOptimisedSolve(n, k, base_state, solns, [] { return false; })
 
 #define EhIsValidSolution(n, k, base_state, soln, ret)   \
     if (n == 96 && k == 3) {                             \

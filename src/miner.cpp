@@ -21,6 +21,7 @@
 #ifdef ENABLE_WALLET
 #include "crypto/equihash.h"
 #include "wallet/wallet.h"
+#include <functional>
 #endif
 
 #include "sodium.h"
@@ -519,7 +520,12 @@ void static BitcoinMiner(CWallet *pwallet)
                 LogPrint("pow", "Running Equihash solver with nNonce = %s\n",
                          pblock->nNonce.ToString());
                 std::set<std::vector<unsigned int>> solns;
-                EhOptimisedSolve(n, k, curr_state, solns);
+                try {
+                    std::function<bool()> cancelled = [pindexPrev] { return pindexPrev != chainActive.Tip(); };
+                    EhOptimisedSolve(n, k, curr_state, solns, cancelled);
+                } catch (EhSolverCancelledException&) {
+                    LogPrint("pow", "Equihash solver cancelled\n");
+                }
                 LogPrint("pow", "Solutions: %d\n", solns.size());
 
                 // Write the solution to the hash and compute the result.
