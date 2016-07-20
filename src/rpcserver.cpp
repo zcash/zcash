@@ -380,7 +380,8 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "zcbenchmark",            &zc_benchmark,           true  },
     { "wallet",             "zcrawkeygen",            &zc_raw_keygen,          true  },
     { "wallet",             "zcrawjoinsplit",         &zc_raw_joinsplit,       true  },
-    { "wallet",             "zcrawreceive",           &zc_raw_receive,         true  }
+    { "wallet",             "zcrawreceive",           &zc_raw_receive,         true  },
+    { "wallet",             "zcsamplejoinsplit",      &zc_sample_joinsplit,    true  }
 #endif // ENABLE_WALLET
 };
 
