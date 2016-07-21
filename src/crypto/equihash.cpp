@@ -205,8 +205,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& ba
     X.reserve(init_size);
     for (eh_index i = 0; i < init_size; i++) {
         X.emplace_back(N, base_state, i);
-        // Slow down checking to prevent segfaults (??)
-        if (i % 10000 == 0 && cancelled(ListGeneration)) throw solver_cancelled;
+        if (cancelled(ListGeneration)) throw solver_cancelled;
     }
 
     // 3) Repeat step 2 until 2n/(k+1) bits remain
@@ -375,8 +374,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
         Xt.reserve(init_size);
         for (eh_index i = 0; i < init_size; i++) {
             Xt.emplace_back(N, base_state, i, CollisionBitLength + 1);
-            // Slow down checking to prevent segfaults (??)
-            if (i % 10000 == 0 && cancelled(ListGeneration)) throw solver_cancelled;
+            if (cancelled(ListGeneration)) throw solver_cancelled;
         }
 
         // 3) Repeat step 2 until 2n/(k+1) bits remain

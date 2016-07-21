@@ -28,6 +28,7 @@
 
 #include <boost/thread.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <mutex>
 
 using namespace std;
 
@@ -455,6 +456,15 @@ void static BitcoinMiner(CWallet *pwallet)
     unsigned int n = chainparams.EquihashN();
     unsigned int k = chainparams.EquihashK();
 
+    std::mutex m_cs;
+    bool cancelSolver = false;
+    boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
+        [&m_cs, &cancelSolver](const uint256& hashNewTip) mutable {
+            std::lock_guard<std::mutex> lock{m_cs};
+            cancelSolver = true;
+        }
+    );
+
     try {
         while (true) {
             if (chainparams.MiningRequiresPeers()) {
@@ -521,12 +531,15 @@ void static BitcoinMiner(CWallet *pwallet)
                          pblock->nNonce.ToString());
                 std::set<std::vector<unsigned int>> solns;
                 try {
-                    std::function<bool(EhSolverCancelCheck)> cancelled = [pindexPrev](EhSolverCancelCheck pos) {
-                        return pindexPrev != chainActive.Tip();
+                    std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck pos) {
+                        std::lock_guard<std::mutex> lock{m_cs};
+                        return cancelSolver;
                     };
                     EhOptimisedSolve(n, k, curr_state, solns, cancelled);
                 } catch (EhSolverCancelledException&) {
                     LogPrint("pow", "Equihash solver cancelled\n");
+                    std::lock_guard<std::mutex> lock{m_cs};
+                    cancelSolver = false;
                 }
                 LogPrint("pow", "Solutions: %d\n", solns.size());
 
@@ -542,7 +555,11 @@ void static BitcoinMiner(CWallet *pwallet)
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     LogPrintf("ZcashMiner:\n");
                     LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
-                    ProcessBlockFound(pblock, *pwallet, reservekey);
+                    if (ProcessBlockFound(pblock, *pwallet, reservekey)) {
+                        // Ignore chain updates caused by us
+                        std::lock_guard<std::mutex> lock{m_cs};
+                        cancelSolver = false;
+                    }
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
 
                     // In regression test mode, stop mining after a block is found.
@@ -585,6 +602,7 @@ void static BitcoinMiner(CWallet *pwallet)
         LogPrintf("ZcashMiner runtime error: %s\n", e.what());
         return;
     }
+    c.disconnect();
 }
 
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
