@@ -110,12 +110,27 @@ public:
     eh_trunc* GetTruncatedIndices(size_t len, size_t lenIndices) const;
 };
 
+enum EhSolverCancelCheck
+{
+    ListGeneration,
+    ListSorting,
+    ListColliding,
+    RoundEnd,
+    FinalSorting,
+    FinalColliding,
+    StartCulling,
+    PartialGeneration,
+    PartialSorting,
+    PartialSubtreeEnd,
+    PartialIndexEnd,
+    PartialEnd
+};
+
 class EhSolverCancelledException : public std::exception
 {
-  virtual const char* what() const throw()
-  {
-    return "Equihash solver was cancelled";
-  }
+    virtual const char* what() const throw() {
+        return "Equihash solver was cancelled";
+    }
 };
 
 inline constexpr const size_t max(const size_t A, const size_t B) { return A > B ? A : B; }
@@ -140,8 +155,8 @@ public:
     Equihash() { }
 
     int InitialiseState(eh_HashState& base_state);
-    std::set<std::vector<eh_index>> BasicSolve(const eh_HashState& base_state, const std::function<bool()> cancelled);
-    std::set<std::vector<eh_index>> OptimisedSolve(const eh_HashState& base_state, const std::function<bool()> cancelled);
+    std::set<std::vector<eh_index>> BasicSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
+    std::set<std::vector<eh_index>> OptimisedSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
     bool IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln);
 };
 
@@ -172,8 +187,8 @@ static Equihash<48,5> Eh48_5;
     } else {                                               \
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
-#define EhBasicSolveUncancellable(n, k, base_state, solns)  \
-    EhBasicSolve(n, k, base_state, solns, [] { return false; })
+#define EhBasicSolveUncancellable(n, k, base_state, solns) \
+    EhBasicSolve(n, k, base_state, solns, [](EhSolverCancelCheck pos) { return false; })
 
 #define EhOptimisedSolve(n, k, base_state, solns, cancelled)   \
     if (n == 96 && k == 3) {                                   \
@@ -186,7 +201,7 @@ static Equihash<48,5> Eh48_5;
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
 #define EhOptimisedSolveUncancellable(n, k, base_state, solns) \
-    EhOptimisedSolve(n, k, base_state, solns, [] { return false; })
+    EhOptimisedSolve(n, k, base_state, solns, [](EhSolverCancelCheck pos) { return false; })
 
 #define EhIsValidSolution(n, k, base_state, soln, ret)   \
     if (n == 96 && k == 3) {                             \

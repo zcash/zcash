@@ -521,7 +521,9 @@ void static BitcoinMiner(CWallet *pwallet)
                          pblock->nNonce.ToString());
                 std::set<std::vector<unsigned int>> solns;
                 try {
-                    std::function<bool()> cancelled = [pindexPrev] { return pindexPrev != chainActive.Tip(); };
+                    std::function<bool(EhSolverCancelCheck)> cancelled = [pindexPrev](EhSolverCancelCheck pos) {
+                        return pindexPrev != chainActive.Tip();
+                    };
                     EhOptimisedSolve(n, k, curr_state, solns, cancelled);
                 } catch (EhSolverCancelledException&) {
                     LogPrint("pow", "Equihash solver cancelled\n");
