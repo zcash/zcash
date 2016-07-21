@@ -79,7 +79,7 @@ LIBZCASH_H = \
   zcash/prf.h \
   zcash/util.h
 
-.PHONY: FORCE
+.PHONY: FORCE check-security
 # bitcoin core #
 BITCOIN_CORE_H = \
   addrman.h \
@@ -468,6 +468,12 @@ clean-local:
 .mm.o:
 	$(AM_V_CXX) $(OBJCXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	  $(CPPFLAGS) $(AM_CXXFLAGS) $(QT_INCLUDES) $(CXXFLAGS)  -c -o $@ $<
+
+check-security: $(bin_PROGRAMS)
+if HARDEN
+	@echo "Checking binary security of [$(bin_PROGRAMS)]..."
+	$(AM_V_at) READELF=$(READELF) OBJDUMP=$(OBJDUMP) $(top_srcdir)/contrib/devtools/security-check.py < $(bin_PROGRAMS)
+endif
 
 %.pb.cc %.pb.h: %.proto
 	@test -f $(PROTOC)
