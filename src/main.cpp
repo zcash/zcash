@@ -5818,8 +5818,11 @@ bool InitBlockIndex(const CChainParams& chainparams)
             CBlockIndex *pindex = AddToBlockIndex(block, chainparams.GetConsensus());
             if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos))
                 return error("LoadBlockIndex(): genesis block not accepted");
-            if (!ActivateBestChain(state, chainparams, &block))
-                return error("LoadBlockIndex(): genesis block cannot be activated");
+            // Before the genesis block, there was an empty tree. We set its root here so
+            // that the block import thread doesn't race other methods that need to query
+            // the Sprout tree (namely CWallet::ScanForWalletTransactions).
+            SproutMerkleTree tree;
+            pindex->hashSproutAnchor = tree.root();
             // Force a chainstate write so that when we VerifyDB in a moment, it doesn't check stale data
             return FlushStateToDisk(chainparams, state, FLUSH_STATE_ALWAYS);
         } catch (const std::runtime_error& e) {
