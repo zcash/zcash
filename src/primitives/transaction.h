@@ -406,7 +406,9 @@ struct CMutableTransaction
             READWRITE(vpour);
             if (vpour.size() > 0) {
                 READWRITE(joinSplitPubKey);
-                READWRITE(joinSplitSig);
+                if (!(nType & SER_SKIP_SIGSCRIPT)) {
+                    READWRITE(joinSplitSig);
+                }
             }
         }
     }
