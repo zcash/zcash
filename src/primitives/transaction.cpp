@@ -223,3 +223,31 @@ std::string CTransaction::ToString() const
         str += "    " + vout[i].ToString() + "\n";
     return str;
 }
+
+// Return a txid which is non-malleable.
+// Signature data is cleared before the transaction is serialized and hashed.
+uint256 CTransaction::GetTxid() const
+{
+    // Create a deep copy of this transaction
+    CMutableTransaction tx(*this);
+
+    // Clear sigscript from all transaction inputs.
+    for (CTxIn & txIn : tx.vin) {
+        txIn.scriptSig.clear();
+    }
+
+    // Clear joinSplitSig by filling the buffer with zero
+    tx.joinSplitSig.assign(0);
+
+    // Return double SHA256 hash
+    return tx.GetHash();
+}
+
+
+// Return a txid which is non-malleable.
+uint256 CMutableTransaction::GetTxid() const
+{
+    CTransaction tx(*this);
+    return tx.GetTxid();
+}
+

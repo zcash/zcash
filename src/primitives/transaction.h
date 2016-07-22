@@ -373,6 +373,10 @@ public:
     }
 
     std::string ToString() const;
+
+    // Return the txid which is the double SHA256 hash of the transaction.
+    uint256 GetTxid() const;
+
 };
 
 /** A mutable version of CTransaction. */
@@ -411,6 +415,9 @@ struct CMutableTransaction
      * fly, as opposed to GetHash() in CTransaction, which uses a cached result.
      */
     uint256 GetHash() const;
+
+    // Compute a non-malleable txid on the fly.
+    uint256 GetTxid() const;
 };
 
 #endif // BITCOIN_PRIMITIVES_TRANSACTION_H
