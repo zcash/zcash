@@ -10,6 +10,25 @@
 #include <iostream>
 
 
+static uint64_t rdtsc(void) {
+#ifdef _MSC_VER
+    return __rdtsc();
+#else
+#if defined(__amd64__) || defined(__x86_64__)
+    uint64_t rax, rdx;
+    __asm__ __volatile__("rdtsc" : "=a"(rax), "=d"(rdx) : : );
+    return (rdx << 32) | rax;
+#elif defined(__i386__) || defined(__i386) || defined(__X86__)
+    uint64_t rax;
+    __asm__ __volatile__("rdtsc" : "=A"(rax) : : );
+    return rax;
+#else
+#error "Not implemented!"
+#endif
+#endif
+}
+
+
 void mine(int n, int k, uint32_t d)
 {
     CBlock pblock;
@@ -31,6 +50,7 @@ void mine(int n, int k, uint32_t d)
 
         // Find valid nonce
         int64_t nStart = GetTime();
+        uint64_t start_cycles = rdtsc();
         while (true)
         {
             // H(I||V||...
@@ -43,7 +63,10 @@ void mine(int n, int k, uint32_t d)
             // (x_1, x_2, ...) = A(I, V, n, k)
             std::cout << "Running Equihash solver with nNonce = " << pblock.nNonce.ToString() << "\n";
             std::set<std::vector<unsigned int>> solns;
+            uint64_t solve_start = rdtsc();
             EhOptimisedSolve(n, k, curr_state, solns);
+            uint64_t solve_end = rdtsc();
+            printf("Solver took %2.2f  Mcycles\n", (double)(solve_end - solve_start) / (1UL << 20));
             std::cout << "Solutions: " << solns.size() << "\n";
 
             // Write the solution to the hash and compute the result.
@@ -55,12 +78,14 @@ void mine(int n, int k, uint32_t d)
                 }
 
                 // Found a solution
+                uint64_t stop_cycles = rdtsc();
                 std::cout << "ZcashMiner:\n";
                 std::cout << "proof-of-work found\n";
                 std::cout << "prevHash: " << pblock.hashPrevBlock.GetHex() << "\n";
                 std::cout << "    hash: " << pblock.GetHash().GetHex() << "\n";
                 std::cout << "  target: " << hashTarget.GetHex() << "\n";
                 std::cout << "duration: " << (GetTime() - nStart) << "\n";
+                printf("  cycles: %2.2f  Mcycles\n\n", (double)(stop_cycles - start_cycles) / (1UL << 20));
 
                 goto updateblock;
             }
