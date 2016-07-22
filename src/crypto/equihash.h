@@ -48,23 +48,24 @@ public:
     std::string GetHex(size_t len) { return HexStr(hash, hash+len); }
 
     template<size_t W>
-    friend bool HasCollision(StepRow<W>& a, StepRow<W>& b, int l);
+    friend bool HasCollision(StepRow<W>& a, StepRow<W>& b, int o, int l);
 };
 
 class CompareSR
 {
 private:
+    size_t offset;
     size_t len;
 
 public:
-    CompareSR(size_t l) : len {l} { }
+    CompareSR(size_t o, size_t l) : offset {o}, len {l} { }
 
     template<size_t W>
-    inline bool operator()(const StepRow<W>& a, const StepRow<W>& b) { return memcmp(a.hash, b.hash, len) < 0; }
+    inline bool operator()(const StepRow<W>& a, const StepRow<W>& b) { return memcmp(a.hash+offset, b.hash+offset, len) < 0; }
 };
 
 template<size_t WIDTH>
-bool HasCollision(StepRow<WIDTH>& a, StepRow<WIDTH>& b, int l);
+bool HasCollision(StepRow<WIDTH>& a, StepRow<WIDTH>& b, int o, int l);
 
 template<size_t WIDTH>
 class FullStepRow : public StepRow<WIDTH>
@@ -99,15 +100,18 @@ class TruncatedStepRow : public StepRow<WIDTH>
     using StepRow<WIDTH>::hash;
 
 public:
-    TruncatedStepRow(unsigned int n, const eh_HashState& base_state, eh_index i, unsigned int ilen);
+    TruncatedStepRow(unsigned int n, const eh_HashState& base_state, eh_index i, size_t ilen,
+                     size_t trim, eh_index& bucket);
     ~TruncatedStepRow() { }
 
     TruncatedStepRow(const TruncatedStepRow<WIDTH>& a) : StepRow<WIDTH> {a} { }
     template<size_t W>
-    TruncatedStepRow(const TruncatedStepRow<W>& a, const TruncatedStepRow<W>& b, size_t len, size_t lenIndices, int trim);
+    TruncatedStepRow(const TruncatedStepRow<W>& a, const TruncatedStepRow<W>& b, size_t len,
+                     size_t lenIndices, size_t trim, eh_index& bucket);
     TruncatedStepRow& operator=(const TruncatedStepRow<WIDTH>& a);
 
-    inline bool IndicesBefore(const TruncatedStepRow<WIDTH>& a, size_t len, size_t lenIndices) const { return memcmp(hash+len, a.hash+len, lenIndices) < 0; }
+    inline bool InRound(const uint8_t round) const { return hash[0] == round; }
+    inline bool IndicesBefore(const TruncatedStepRow<WIDTH>& a, size_t len, size_t lenIndices) const { return memcmp(hash+1+len, a.hash+1+len, lenIndices) < 0; }
     std::shared_ptr<eh_trunc> GetTruncatedIndices(size_t len, size_t lenIndices) const;
 };
 
@@ -149,8 +153,8 @@ public:
     enum { CollisionByteLength=CollisionBitLength/8 };
     enum : size_t { FullWidth=2*CollisionByteLength+sizeof(eh_index)*(1 << (K-1)) };
     enum : size_t { FinalFullWidth=2*CollisionByteLength+sizeof(eh_index)*(1 << (K)) };
-    enum : size_t { TruncatedWidth=max((N/8)+sizeof(eh_trunc), 2*CollisionByteLength+sizeof(eh_trunc)*(1 << (K-1))) };
-    enum : size_t { FinalTruncatedWidth=max((N/8)+sizeof(eh_trunc), 2*CollisionByteLength+sizeof(eh_trunc)*(1 << (K))) };
+    enum : size_t { TruncatedWidth=1+max((N/8)-CollisionByteLength+sizeof(eh_trunc), CollisionByteLength+sizeof(eh_trunc)*(1 << (K-1))) };
+    enum : size_t { FinalTruncatedWidth=1+max((N/8)-CollisionByteLength+sizeof(eh_trunc), CollisionByteLength+sizeof(eh_trunc)*(1 << (K))) };
 
     Equihash() { }
 
