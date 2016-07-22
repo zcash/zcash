@@ -53,12 +53,6 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
 
     {
         ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](EhSolverCancelCheck pos) {
-            return pos == StartCulling;
-        }));
-    }
-
-    {
-        ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](EhSolverCancelCheck pos) {
             return pos == PartialGeneration;
         }));
     }
@@ -131,24 +125,8 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     }
 
     {
-        // More state required here, because in OptimisedSolve() the
-        // FinalColliding cancellation check can't throw because it will leak
-        // memory, and it can't goto because that steps over initialisations.
-        bool triggered = false;
-        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [=](EhSolverCancelCheck pos) mutable {
-            if (triggered)
-                return pos == StartCulling;
-            if (pos == FinalColliding) {
-                triggered = true;
-                return true;
-            }
-            return false;
-        }), EhSolverCancelledException);
-    }
-
-    {
         ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](EhSolverCancelCheck pos) {
-            return pos == StartCulling;
+            return pos == FinalColliding;
         }), EhSolverCancelledException);
     }
 

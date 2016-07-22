@@ -118,7 +118,6 @@ enum EhSolverCancelCheck
     RoundEnd,
     FinalSorting,
     FinalColliding,
-    StartCulling,
     PartialGeneration,
     PartialSorting,
     PartialSubtreeEnd,

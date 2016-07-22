@@ -357,6 +357,7 @@ template<unsigned int N, unsigned int K>
 std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled)
 {
     eh_index init_size { 1 << (CollisionBitLength + 1) };
+    eh_index recreate_size { UntruncateIndex(1, 0, CollisionBitLength + 1) };
 
     // First run the algorithm with truncated indices
 
@@ -364,6 +365,8 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
     // Each element of partialSolns is dynamically allocated in a call to
     // GetTruncatedIndices(), and freed at the end of this function.
     std::vector<eh_trunc*> partialSolns;
+    std::set<std::vector<eh_index>> solns;
+    int invalidCount = 0;
     {
 
         // 1) Generate first list
@@ -458,7 +461,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
                 }
 
                 i += j;
-                if (cancelled(FinalColliding)) break;
+                if (cancelled(FinalColliding)) goto cancelsolver;
             }
         } else
             LogPrint("pow", "- List is empty\n");
@@ -469,10 +472,6 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
 
     // Now for each solution run the algorithm again to recreate the indices
     LogPrint("pow", "Culling solutions\n");
-    std::set<std::vector<eh_index>> solns;
-    eh_index recreate_size { UntruncateIndex(1, 0, CollisionBitLength + 1) };
-    int invalidCount = 0;
-    if (cancelled(StartCulling)) goto cancelsolver;
     for (eh_trunc* partialSoln : partialSolns) {
         size_t hashLen;
         size_t lenIndices;
