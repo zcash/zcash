@@ -157,7 +157,11 @@ public:
             vpub_new
         );
 
-        return r1cs_ppzksnark_verifier_strong_IC<ppzksnark_ppT>(*vk, witness, r1cs_proof);
+        try {
+            return r1cs_ppzksnark_verifier_strong_IC<ppzksnark_ppT>(*vk, witness, r1cs_proof);
+        } catch (...) {
+            return false;
+        }
     }
 
     boost::array<unsigned char, ZKSNARK_PROOF_SIZE> prove(
