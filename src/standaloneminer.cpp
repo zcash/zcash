@@ -7,6 +7,8 @@
 #include "utiltime.h"
 #include "version.h"
 
+#include "sodium.h"
+
 #include <iostream>
 
 
@@ -101,6 +103,11 @@ updateblock:
 
 int main(int argc, char* argv[])
 {
+    // Initialise libsodium
+    if (sodium_init() == -1) {
+        return 1;
+    }
+
     mine(
         Params(CBaseChainParams::MAIN).EquihashN(),
         Params(CBaseChainParams::MAIN).EquihashK(),
