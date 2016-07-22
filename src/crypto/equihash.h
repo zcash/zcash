@@ -14,6 +14,7 @@
 #include <cstring>
 #include <exception>
 #include <functional>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -107,7 +108,7 @@ public:
     TruncatedStepRow& operator=(const TruncatedStepRow<WIDTH>& a);
 
     inline bool IndicesBefore(const TruncatedStepRow<WIDTH>& a, size_t len, size_t lenIndices) const { return memcmp(hash+len, a.hash+len, lenIndices) < 0; }
-    eh_trunc* GetTruncatedIndices(size_t len, size_t lenIndices) const;
+    std::shared_ptr<eh_trunc> GetTruncatedIndices(size_t len, size_t lenIndices) const;
 };
 
 enum EhSolverCancelCheck

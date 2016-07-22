@@ -185,10 +185,10 @@ TruncatedStepRow<WIDTH>& TruncatedStepRow<WIDTH>::operator=(const TruncatedStepR
 }
 
 template<size_t WIDTH>
-eh_trunc* TruncatedStepRow<WIDTH>::GetTruncatedIndices(size_t len, size_t lenIndices) const
+std::shared_ptr<eh_trunc> TruncatedStepRow<WIDTH>::GetTruncatedIndices(size_t len, size_t lenIndices) const
 {
-    eh_trunc* p = new eh_trunc[lenIndices];
-    std::copy(hash+len, hash+len+lenIndices, p);
+    std::shared_ptr<eh_trunc> p (new eh_trunc[lenIndices]);
+    std::copy(hash+len, hash+len+lenIndices, p.get());
     return p;
 }
 
@@ -362,9 +362,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
     // First run the algorithm with truncated indices
 
     eh_index soln_size { 1 << K };
-    // Each element of partialSolns is dynamically allocated in a call to
-    // GetTruncatedIndices(), and freed at the end of this function.
-    std::vector<eh_trunc*> partialSolns;
+    std::vector<std::shared_ptr<eh_trunc>> partialSolns;
     std::set<std::vector<eh_index>> solns;
     int invalidCount = 0;
     {
@@ -461,7 +459,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
                 }
 
                 i += j;
-                if (cancelled(FinalColliding)) goto cancelsolver;
+                if (cancelled(FinalColliding)) throw solver_cancelled;
             }
         } else
             LogPrint("pow", "- List is empty\n");
@@ -472,7 +470,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
 
     // Now for each solution run the algorithm again to recreate the indices
     LogPrint("pow", "Culling solutions\n");
-    for (eh_trunc* partialSoln : partialSolns) {
+    for (std::shared_ptr<eh_trunc> partialSoln : partialSolns) {
         size_t hashLen;
         size_t lenIndices;
         std::vector<boost::optional<std::vector<FullStepRow<FinalFullWidth>>>> X;
@@ -484,9 +482,9 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
             std::vector<FullStepRow<FinalFullWidth>> icv;
             icv.reserve(recreate_size);
             for (eh_index j = 0; j < recreate_size; j++) {
-                eh_index newIndex { UntruncateIndex(partialSoln[i], j, CollisionBitLength + 1) };
+                eh_index newIndex { UntruncateIndex(partialSoln.get()[i], j, CollisionBitLength + 1) };
                 icv.emplace_back(N, base_state, newIndex);
-                if (cancelled(PartialGeneration)) goto cancelsolver;
+                if (cancelled(PartialGeneration)) throw solver_cancelled;
             }
             boost::optional<std::vector<FullStepRow<FinalFullWidth>>> ic = icv;
 
@@ -502,12 +500,12 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
                         ic->reserve(ic->size() + X[r]->size());
                         ic->insert(ic->end(), X[r]->begin(), X[r]->end());
                         std::sort(ic->begin(), ic->end(), CompareSR(hashLen));
-                        if (cancelled(PartialSorting)) goto cancelsolver;
+                        if (cancelled(PartialSorting)) throw solver_cancelled;
                         size_t lti = rti-(1<<r);
                         CollideBranches(*ic, hashLen, lenIndices,
                                         CollisionByteLength,
                                         CollisionBitLength + 1,
-                                        partialSoln[lti], partialSoln[rti]);
+                                        partialSoln.get()[lti], partialSoln.get()[rti]);
 
                         // 2d) Check if this has become an invalid solution
                         if (ic->size() == 0)
@@ -525,9 +523,9 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
                     X.push_back(ic);
                     break;
                 }
-                if (cancelled(PartialSubtreeEnd)) goto cancelsolver;
+                if (cancelled(PartialSubtreeEnd)) throw solver_cancelled;
             }
-            if (cancelled(PartialIndexEnd)) goto cancelsolver;
+            if (cancelled(PartialIndexEnd)) throw solver_cancelled;
         }
 
         // We are at the top of the tree
@@ -535,7 +533,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
         for (FullStepRow<FinalFullWidth> row : *X[K]) {
             solns.insert(row.GetIndices(hashLen, lenIndices));
         }
-        if (cancelled(PartialEnd)) goto cancelsolver;
+        if (cancelled(PartialEnd)) throw solver_cancelled;
         continue;
 
 invalidsolution:
@@ -543,16 +541,7 @@ invalidsolution:
     }
     LogPrint("pow", "- Number of invalid solutions found: %d\n", invalidCount);
 
-    for (eh_trunc* partialSoln : partialSolns) {
-        delete[] partialSoln;
-    }
     return solns;
-
-cancelsolver:
-    for (eh_trunc* partialSoln : partialSolns) {
-        delete[] partialSoln;
-    }
-    throw solver_cancelled;
 }
 
 template<unsigned int N, unsigned int K>
