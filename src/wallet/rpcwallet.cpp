@@ -2466,7 +2466,7 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
 
     if (fHelp || params.size() != 2) {
         throw runtime_error(
-            "zcrawreceive zcsecretkey encryptednote\n"
+            "*** DEPRECATED *** zcrawreceive zcsecretkey encryptednote\n"
             "\n"
             "Decrypts encryptednote and checks if the coin commitments\n"
             "are in the blockchain as indicated by the \"exists\" result.\n"
@@ -2547,7 +2547,7 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
 
     if (fHelp || params.size() != 5) {
         throw runtime_error(
-            "zcrawjoinsplit rawtx inputs outputs vpub_old vpub_new\n"
+            "*** DEPRECATED *** zcrawjoinsplit rawtx inputs outputs vpub_old vpub_new\n"
             "  inputs: a JSON object mapping {note: zcsecretkey, ...}\n"
             "  outputs: a JSON object mapping {zcaddr: value, ...}\n"
             "\n"
@@ -2732,7 +2732,7 @@ Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp)
 
     if (fHelp || params.size() != 0) {
         throw runtime_error(
-            "zcrawkeygen\n"
+            "*** DEPRECATED *** zcrawkeygen\n"
             "\n"
             "Generate a zcaddr which can send and receive confidential values.\n"
             "\n"
