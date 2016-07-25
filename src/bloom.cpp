@@ -142,7 +142,7 @@ bool CBloomFilter::IsRelevantAndUpdate(const CTransaction& tx)
         return true;
     if (isEmpty)
         return false;
-    const uint256& hash = tx.GetHash();
+    const uint256& hash = tx.GetTxid();
     if (contains(hash))
         fFound = true;
 

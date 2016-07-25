@@ -74,7 +74,7 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
         entry.push_back(Pair("blockindex", wtx.nIndex));
         entry.push_back(Pair("blocktime", mapBlockIndex[wtx.hashBlock]->GetBlockTime()));
     }
-    uint256 hash = wtx.GetHash();
+    uint256 hash = wtx.GetTxid();
     entry.push_back(Pair("txid", hash.GetHex()));
     Array conflicts;
     BOOST_FOREACH(const uint256& conflict, wtx.GetConflicts())
@@ -439,7 +439,7 @@ Value sendtoaddress(const Array& params, bool fHelp)
 
     SendMoney(address.Get(), nAmount, fSubtractFeeFromAmount, wtx);
 
-    return wtx.GetHash().GetHex();
+    return wtx.GetTxid().GetHex();
 }
 
 Value listaddressgroupings(const Array& params, bool fHelp)
@@ -916,7 +916,7 @@ Value sendfrom(const Array& params, bool fHelp)
 
     SendMoney(address.Get(), nAmount, false, wtx);
 
-    return wtx.GetHash().GetHex();
+    return wtx.GetTxid().GetHex();
 }
 
 
@@ -1023,7 +1023,7 @@ Value sendmany(const Array& params, bool fHelp)
     if (!pwalletMain->CommitTransaction(wtx, keyChange))
         throw JSONRPCError(RPC_WALLET_ERROR, "Transaction commit failed");
 
-    return wtx.GetHash().GetHex();
+    return wtx.GetTxid().GetHex();
 }
 
 // Defined in rpcmisc.cpp
@@ -1135,7 +1135,7 @@ Value ListReceived(const Array& params, bool fByAccounts)
             tallyitem& item = mapTally[address];
             item.nAmount += txout.nValue;
             item.nConf = min(item.nConf, nDepth);
-            item.txids.push_back(wtx.GetHash());
+            item.txids.push_back(wtx.GetTxid());
             if (mine & ISMINE_WATCH_ONLY)
                 item.fIsWatchonly = true;
         }
@@ -2324,7 +2324,7 @@ Value listunspent(const Array& params, bool fHelp)
         CAmount nValue = out.tx->vout[out.i].nValue;
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
         Object entry;
-        entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
+        entry.push_back(Pair("txid", out.tx->GetTxid().GetHex()));
         entry.push_back(Pair("vout", out.i));
         CTxDestination address;
         if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {

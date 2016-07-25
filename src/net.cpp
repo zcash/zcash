@@ -1751,7 +1751,7 @@ void RelayTransaction(const CTransaction& tx)
 
 void RelayTransaction(const CTransaction& tx, const CDataStream& ss)
 {
-    CInv inv(MSG_TX, tx.GetHash());
+    CInv inv(MSG_TX, tx.GetTxid());
     {
         LOCK(cs_mapRelay);
         // Expire old relay messages

@@ -211,7 +211,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
             dPriority = tx.ComputePriority(dPriority, nTxSize);
 
-            uint256 hash = tx.GetHash();
+            uint256 hash = tx.GetTxid();
             mempool.ApplyDeltas(hash, dPriority, nTotalIn);
 
             CFeeRate feeRate(nTotalIn-tx.GetValueOut(), nTxSize);
@@ -255,7 +255,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 continue;
 
             // Skip free transactions if we're past the minimum block size:
-            const uint256& hash = tx.GetHash();
+            const uint256& hash = tx.GetTxid();
             double dPriorityDelta = 0;
             CAmount nFeeDelta = 0;
             mempool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
@@ -302,7 +302,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if (fPrintPriority)
             {
                 LogPrintf("priority %.1f fee %s txid %s\n",
-                    dPriority, feeRate.ToString(), tx.GetHash().ToString());
+                    dPriority, feeRate.ToString(), tx.GetTxid().ToString());
             }
 
             // Add transactions that depend on this one to the priority queue

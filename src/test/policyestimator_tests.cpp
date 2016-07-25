@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(BlockPolicyEstimates)
         for (int j = 0; j < 10; j++) { // For each fee/pri multiple
             for (int k = 0; k < 5; k++) { // add 4 fee txs for every priority tx
                 tx.vin[0].prevout.n = 10000*blocknum+100*j+k; // make transaction unique
-                uint256 hash = tx.GetHash();
+                uint256 hash = tx.GetTxid();
                 mpool.addUnchecked(hash, CTxMemPoolEntry(tx, feeV[k/4][j], GetTime(), priV[k/4][j], blocknum, mpool.HasNoInputsOf(tx)));
                 txHashes[j].push_back(hash);
             }
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(BlockPolicyEstimates)
         for (int j = 0; j < 10; j++) { // For each fee/pri multiple
             for (int k = 0; k < 5; k++) { // add 4 fee txs for every priority tx
                 tx.vin[0].prevout.n = 10000*blocknum+100*j+k;
-                uint256 hash = tx.GetHash();
+                uint256 hash = tx.GetTxid();
                 mpool.addUnchecked(hash, CTxMemPoolEntry(tx, feeV[k/4][j], GetTime(), priV[k/4][j], blocknum, mpool.HasNoInputsOf(tx)));
                 txHashes[j].push_back(hash);
             }
@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(BlockPolicyEstimates)
         for (int j = 0; j < 10; j++) { // For each fee/pri multiple
             for (int k = 0; k < 5; k++) { // add 4 fee txs for every priority tx
                 tx.vin[0].prevout.n = 10000*blocknum+100*j+k;
-                uint256 hash = tx.GetHash();
+                uint256 hash = tx.GetTxid();
                 mpool.addUnchecked(hash, CTxMemPoolEntry(tx, feeV[k/4][j], GetTime(), priV[k/4][j], blocknum, mpool.HasNoInputsOf(tx)));
                 CTransaction btx;
                 if (mpool.lookup(hash, btx))

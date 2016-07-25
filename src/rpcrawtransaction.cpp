@@ -57,7 +57,7 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, Object& out, bool fIncludeH
 
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 {
-    entry.push_back(Pair("txid", tx.GetHash().GetHex()));
+    entry.push_back(Pair("txid", tx.GetTxid().GetHex()));
     entry.push_back(Pair("version", tx.nVersion));
     entry.push_back(Pair("locktime", (int64_t)tx.nLockTime));
     Array vin;
@@ -307,7 +307,7 @@ Value gettxoutproof(const Array& params, bool fHelp)
 
     unsigned int ntxFound = 0;
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
-        if (setTxids.count(tx.GetHash()))
+        if (setTxids.count(tx.GetTxid()))
             ntxFound++;
     if (ntxFound != setTxids.size())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "(Not all) transactions not found in specified block");
@@ -818,7 +818,7 @@ Value sendrawtransaction(const Array& params, bool fHelp)
     CTransaction tx;
     if (!DecodeHexTx(tx, params[0].get_str()))
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
-    uint256 hashTx = tx.GetHash();
+    uint256 hashTx = tx.GetTxid();
 
     bool fOverrideFees = false;
     if (params.size() > 1)

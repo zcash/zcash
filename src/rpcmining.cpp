@@ -567,7 +567,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     int i = 0;
     BOOST_FOREACH (CTransaction& tx, pblock->vtx)
     {
-        uint256 txHash = tx.GetHash();
+        uint256 txHash = tx.GetTxid();
         setTxIndex[txHash] = i++;
 
         if (tx.IsCoinBase())
