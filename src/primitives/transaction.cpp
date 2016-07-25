@@ -116,7 +116,7 @@ CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.n
     
 }
 
-uint256 CMutableTransaction::GetHash() const
+uint256 CMutableTransaction::GetSerializeHash() const
 {
     return SerializeHash(*this);
 }
@@ -211,8 +211,9 @@ unsigned int CTransaction::CalculateModifiedSize(unsigned int nTxSize) const
 std::string CTransaction::ToString() const
 {
     std::string str;
-    str += strprintf("CTransaction(hash=%s, ver=%d, vin.size=%u, vout.size=%u, nLockTime=%u)\n",
-        GetHash().ToString().substr(0,10),
+    str += strprintf("CTransaction(txid=%s, hash=%s, ver=%d, vin.size=%u, vout.size=%u, nLockTime=%u)\n",
+        GetTxid().ToString().substr(0,10),
+        GetSerializeHash().ToString().substr(0,10),
         nVersion,
         vin.size(),
         vout.size(),
@@ -240,7 +241,7 @@ uint256 CTransaction::GetTxid() const
     tx.joinSplitSig.assign(0);
 
     // Return double SHA256 hash
-    return tx.GetHash();
+    return tx.GetSerializeHash();
 }
 
 

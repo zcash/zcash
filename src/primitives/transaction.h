@@ -339,7 +339,7 @@ public:
         return vin.empty() && vout.empty();
     }
 
-    const uint256& GetHash() const {
+    const uint256& GetSerializeHash() const {
         return hash;
     }
 
@@ -414,7 +414,7 @@ struct CMutableTransaction
     /** Compute the hash of this CMutableTransaction. This is computed on the
      * fly, as opposed to GetHash() in CTransaction, which uses a cached result.
      */
-    uint256 GetHash() const;
+    uint256 GetSerializeHash() const;
 
     // Compute a non-malleable txid on the fly.
     uint256 GetTxid() const;
