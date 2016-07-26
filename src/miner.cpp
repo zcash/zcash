@@ -335,6 +335,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
 
+        // If nLockTime is 0, coinbase txs with the same inputs and outputs may have the same non-malleable txid.
+        // So we set nLockTime to the previous block height to ensure this coinbase tx will be accepted into
+        // the next block.  This replicates the behaviour of having nLockTime of 0.
+        txNew.nLockTime = pindexPrev->nHeight;
+
         if ((nHeight > 0) && (nHeight < chainparams.GetConsensus().nSubsidyHalvingInterval)) {
             // Founders reward is 20% of the block subsidy
             auto vFoundersReward = txNew.vout[0].nValue / 5;
