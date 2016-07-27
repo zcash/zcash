@@ -288,7 +288,7 @@ private:
     /** Memory only. */
     const uint256 hash;
     void UpdateHash() const;
-    uint256 txid;
+    const uint256 txid;
     void UpdateTxid() const;
 
 public:
