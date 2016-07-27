@@ -5,6 +5,7 @@ bin_PROGRAMS += zcash-gtest
 zcash_gtest_SOURCES = \
 	gtest/main.cpp \
 	gtest/test_tautology.cpp \
+	gtest/test_univalue_crash.cpp \
 	gtest/test_checktransaction.cpp \
 	gtest/test_equihash.cpp \
 	gtest/test_joinsplit.cpp \
