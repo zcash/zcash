@@ -234,13 +234,16 @@ void CTransaction::UpdateTxid() const
     // Create a deep copy of this transaction
     CMutableTransaction tx(*this);
 
-    // Clear sigscript from all transaction inputs.
-    for (CTxIn & txIn : tx.vin) {
-        txIn.scriptSig.clear();
-    }
+    // We keep the sigscript for coinbase txs to avoid duplicate txids (BIP34 and BIP30)
+    if (!IsCoinBase()) {
+        // Clear sigscript from all transaction inputs.
+        for (CTxIn & txIn : tx.vin) {
+            txIn.scriptSig.clear();
+        }
 
-    // Clear joinSplitSig by filling the buffer with zero
-    tx.joinSplitSig.assign(0);
+        // Clear joinSplitSig by filling the buffer with zero
+        tx.joinSplitSig.assign(0);
+    }
 
     // Return double SHA256 hash
     *const_cast<uint256*>(&txid) = tx.GetSerializeHash();
