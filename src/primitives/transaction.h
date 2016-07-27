@@ -288,6 +288,8 @@ private:
     /** Memory only. */
     const uint256 hash;
     void UpdateHash() const;
+    uint256 txid;
+    void UpdateTxid() const;
 
 public:
     typedef boost::array<unsigned char, 64> joinsplit_sig_t;
@@ -331,8 +333,10 @@ public:
                 READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
             }
         }
-        if (ser_action.ForRead())
+        if (ser_action.ForRead()) {
             UpdateHash();
+            UpdateTxid();
+        }
     }
 
     bool IsNull() const {
@@ -374,9 +378,10 @@ public:
 
     std::string ToString() const;
 
-    // Return the txid which is the double SHA256 hash of the transaction.
-    uint256 GetTxid() const;
-
+    // Return the txid, which is the double SHA256 hash over portions of the transaction.
+    const uint256& GetTxid() const {
+        return txid;
+    }
 };
 
 /** A mutable version of CTransaction. */

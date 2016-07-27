@@ -132,6 +132,7 @@ CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion
                                                             joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
 {
     UpdateHash();
+    UpdateTxid();
 }
 
 CTransaction& CTransaction::operator=(const CTransaction &tx) {
@@ -143,6 +144,7 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<uint256*>(&joinSplitPubKey) = tx.joinSplitPubKey;
     *const_cast<joinsplit_sig_t*>(&joinSplitSig) = tx.joinSplitSig;
     *const_cast<uint256*>(&hash) = tx.hash;
+    *const_cast<uint256*>(&txid) = tx.txid;
     return *this;
 }
 
@@ -227,7 +229,7 @@ std::string CTransaction::ToString() const
 
 // Return a txid which is non-malleable.
 // Signature data is cleared before the transaction is serialized and hashed.
-uint256 CTransaction::GetTxid() const
+void CTransaction::UpdateTxid() const
 {
     // Create a deep copy of this transaction
     CMutableTransaction tx(*this);
@@ -241,9 +243,8 @@ uint256 CTransaction::GetTxid() const
     tx.joinSplitSig.assign(0);
 
     // Return double SHA256 hash
-    return tx.GetSerializeHash();
+    *const_cast<uint256*>(&txid) = tx.GetSerializeHash();
 }
-
 
 // Return a txid which is non-malleable.
 uint256 CMutableTransaction::GetTxid() const
