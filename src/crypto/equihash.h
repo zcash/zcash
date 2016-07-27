@@ -155,8 +155,12 @@ public:
     Equihash() { }
 
     int InitialiseState(eh_HashState& base_state);
-    std::set<std::vector<eh_index>> BasicSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
-    std::set<std::vector<eh_index>> OptimisedSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
+    bool BasicSolve(const eh_HashState& base_state,
+                    const std::function<bool(std::vector<eh_index>)> validBlock,
+                    const std::function<bool(EhSolverCancelCheck)> cancelled);
+    bool OptimisedSolve(const eh_HashState& base_state,
+                        const std::function<bool(std::vector<eh_index>)> validBlock,
+                        const std::function<bool(EhSolverCancelCheck)> cancelled);
     bool IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln);
 };
 
@@ -177,31 +181,49 @@ static Equihash<48,5> Eh48_5;
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
 
-#define EhBasicSolve(n, k, base_state, solns, cancelled)   \
-    if (n == 96 && k == 3) {                               \
-        solns = Eh96_3.BasicSolve(base_state, cancelled);  \
-    } else if (n == 96 && k == 5) {                        \
-        solns = Eh96_5.BasicSolve(base_state, cancelled);  \
-    } else if (n == 48 && k == 5) {                        \
-        solns = Eh48_5.BasicSolve(base_state, cancelled);  \
-    } else {                                               \
-        throw std::invalid_argument("Unsupported Equihash parameters"); \
+inline bool EhBasicSolve(unsigned int n, unsigned int k, const eh_HashState& base_state,
+                    const std::function<bool(std::vector<eh_index>)> validBlock,
+                    const std::function<bool(EhSolverCancelCheck)> cancelled)
+{
+    if (n == 96 && k == 3) {
+        return Eh96_3.BasicSolve(base_state, validBlock, cancelled);
+    } else if (n == 96 && k == 5) {
+        return Eh96_5.BasicSolve(base_state, validBlock, cancelled);
+    } else if (n == 48 && k == 5) {
+        return Eh48_5.BasicSolve(base_state, validBlock, cancelled);
+    } else {
+        throw std::invalid_argument("Unsupported Equihash parameters");
     }
-#define EhBasicSolveUncancellable(n, k, base_state, solns) \
-    EhBasicSolve(n, k, base_state, solns, [](EhSolverCancelCheck pos) { return false; })
+}
 
-#define EhOptimisedSolve(n, k, base_state, solns, cancelled)   \
-    if (n == 96 && k == 3) {                                   \
-        solns = Eh96_3.OptimisedSolve(base_state, cancelled);  \
-    } else if (n == 96 && k == 5) {                            \
-        solns = Eh96_5.OptimisedSolve(base_state, cancelled);  \
-    } else if (n == 48 && k == 5) {                            \
-        solns = Eh48_5.OptimisedSolve(base_state, cancelled);  \
-    } else {                                                   \
-        throw std::invalid_argument("Unsupported Equihash parameters"); \
+inline bool EhBasicSolveUncancellable(unsigned int n, unsigned int k, const eh_HashState& base_state,
+                    const std::function<bool(std::vector<eh_index>)> validBlock)
+{
+    return EhBasicSolve(n, k, base_state, validBlock,
+                        [](EhSolverCancelCheck pos) { return false; });
+}
+
+inline bool EhOptimisedSolve(unsigned int n, unsigned int k, const eh_HashState& base_state,
+                    const std::function<bool(std::vector<eh_index>)> validBlock,
+                    const std::function<bool(EhSolverCancelCheck)> cancelled)
+{
+    if (n == 96 && k == 3) {
+        return Eh96_3.OptimisedSolve(base_state, validBlock, cancelled);
+    } else if (n == 96 && k == 5) {
+        return Eh96_5.OptimisedSolve(base_state, validBlock, cancelled);
+    } else if (n == 48 && k == 5) {
+        return Eh48_5.OptimisedSolve(base_state, validBlock, cancelled);
+    } else {
+        throw std::invalid_argument("Unsupported Equihash parameters");
     }
-#define EhOptimisedSolveUncancellable(n, k, base_state, solns) \
-    EhOptimisedSolve(n, k, base_state, solns, [](EhSolverCancelCheck pos) { return false; })
+}
+
+inline bool EhOptimisedSolveUncancellable(unsigned int n, unsigned int k, const eh_HashState& base_state,
+                    const std::function<bool(std::vector<eh_index>)> validBlock)
+{
+    return EhOptimisedSolve(n, k, base_state, validBlock,
+                            [](EhSolverCancelCheck pos) { return false; });
+}
 
 #define EhIsValidSolution(n, k, base_state, soln, ret)   \
     if (n == 96 && k == 3) {                             \

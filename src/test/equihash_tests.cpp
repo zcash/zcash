@@ -50,7 +50,12 @@ void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, c
 
     // First test the basic solver
     std::set<std::vector<uint32_t>> ret;
-    EhBasicSolveUncancellable(n, k, state, ret);
+    std::function<bool(std::vector<eh_index>)> validBlock =
+            [&ret](std::vector<eh_index> soln) {
+        ret.insert(soln);
+        return false;
+    };
+    EhBasicSolveUncancellable(n, k, state, validBlock);
     BOOST_TEST_MESSAGE("[Basic] Number of solutions: " << ret.size());
     std::stringstream strm;
     PrintSolutions(strm, ret);
@@ -59,7 +64,12 @@ void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, c
 
     // The optimised solver should have the exact same result
     std::set<std::vector<uint32_t>> retOpt;
-    EhOptimisedSolveUncancellable(n, k, state, retOpt);
+    std::function<bool(std::vector<eh_index>)> validBlockOpt =
+            [&retOpt](std::vector<eh_index> soln) {
+        retOpt.insert(soln);
+        return false;
+    };
+    EhOptimisedSolveUncancellable(n, k, state, validBlockOpt);
     BOOST_TEST_MESSAGE("[Optimised] Number of solutions: " << retOpt.size());
     strm.str("");
     PrintSolutions(strm, retOpt);
