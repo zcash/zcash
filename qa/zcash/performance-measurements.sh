@@ -153,6 +153,25 @@ case "$1" in
         zcashd_valgrind_stop
         rm -f valgrind.out
         ;;
+    valgrind-tests)
+        case "$2" in
+            gtest)
+                rm -f valgrind.out
+                valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/zcash-gtest
+                cat valgrind.out
+                rm -f valgrind.out
+                ;;
+            test_bitcoin)
+                rm -f valgrind.out
+                valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/test/test_bitcoin
+                cat valgrind.out
+                rm -f valgrind.out
+                ;;
+            *)
+                echo "Bad arguments."
+                exit 1
+        esac
+        ;;
     *)
         echo "Bad arguments."
         exit 1
