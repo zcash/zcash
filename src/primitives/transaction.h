@@ -183,7 +183,9 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(prevout);
-        READWRITE(scriptSig);
+        if (!(nType & SER_SKIP_SIGSCRIPT)) {
+            READWRITE(scriptSig);
+        }
         READWRITE(nSequence);
     }
 
@@ -328,7 +330,9 @@ public:
             READWRITE(*const_cast<std::vector<JSDescription>*>(&vjoinsplit));
             if (vjoinsplit.size() > 0) {
                 READWRITE(*const_cast<uint256*>(&joinSplitPubKey));
-                READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
+                if (!(nType & SER_SKIP_SIGSCRIPT)) {
+                    READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
+                }
             }
         }
         if (ser_action.ForRead())
@@ -402,7 +406,9 @@ struct CMutableTransaction
             READWRITE(vjoinsplit);
             if (vjoinsplit.size() > 0) {
                 READWRITE(joinSplitPubKey);
-                READWRITE(joinSplitSig);
+                if (!(nType & SER_SKIP_SIGSCRIPT)) {
+                    READWRITE(joinSplitSig);
+                }
             }
         }
     }
