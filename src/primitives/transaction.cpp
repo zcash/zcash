@@ -227,7 +227,7 @@ std::string CTransaction::ToString() const
     return str;
 }
 
-// Return a txid which is non-malleable.
+// Update the txid which is non-malleable.
 // Signature data is cleared before the transaction is serialized and hashed.
 void CTransaction::UpdateTxid() const
 {
