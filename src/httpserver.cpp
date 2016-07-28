@@ -447,8 +447,10 @@ bool StartHTTPServer()
     LogPrintf("HTTP: starting %d worker threads\n", rpcThreads);
     threadHTTP = boost::thread(boost::bind(&ThreadHTTP, eventBase, eventHTTP));
 
-    for (int i = 0; i < rpcThreads; i++)
-        boost::thread(boost::bind(&HTTPWorkQueueRun, workQueue));
+    for (int i = 0; i < rpcThreads; i++) {
+        boost::thread rpc_worker(HTTPWorkQueueRun, workQueue);
+        rpc_worker.detach();
+    }
     return true;
 }
 
