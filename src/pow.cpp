@@ -33,7 +33,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             // then allow mining of a min-difficulty block.
             if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing*2)
                 return nProofOfWorkLimit;
-            else if (pindexLast->nHeight >= 43400) { // TODO remove hardfork at next chain reset
+            else {
                 // Get the last non-min-difficulty (or at worst the genesis difficulty)
                 while (pindexBits->pprev && pindexBits->nBits == nProofOfWorkLimit)
                     pindexBits = pindexBits->pprev;
