@@ -66,7 +66,7 @@ void mine(int n, int k, uint32_t d)
             std::cout << "Running Equihash solver with nNonce = " << pblock.nNonce.ToString() << "\n";
             std::set<std::vector<unsigned int>> solns;
             uint64_t solve_start = rdtsc();
-            EhOptimisedSolve(n, k, curr_state, solns);
+            EhBasicSolveUncancellable(n, k, curr_state, solns);
             uint64_t solve_end = rdtsc();
             printf("Solver took %2.2f  Mcycles\n", (double)(solve_end - solve_start) / (1UL << 20));
             std::cout << "Solutions: " << solns.size() << "\n";
