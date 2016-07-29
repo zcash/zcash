@@ -193,7 +193,7 @@ Value generate(const Array& params, bool fHelp)
                 pblock->nSolution = soln;
                 return CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus());
             };
-            if (EhBasicSolveUncancellable(n, k, curr_state, validBlock));
+            if (EhBasicSolveUncancellable(n, k, curr_state, validBlock))
                 goto endloop;
         }
 endloop:
