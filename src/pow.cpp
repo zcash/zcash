@@ -24,14 +24,20 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexLast == NULL)
         return nProofOfWorkLimit;
 
+    const CBlockIndex* pindexBits = pindexLast;
     {
         if (params.fPowAllowMinDifficultyBlocks)
         {
             // Special difficulty rule for testnet:
-            // If the new block's timestamp is more than 2* 10 minutes
+            // If the new block's timestamp is more than 2* 2.5 minutes
             // then allow mining of a min-difficulty block.
             if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing*2)
                 return nProofOfWorkLimit;
+            else if (pindexLast->nHeight >= 43400) { // TODO remove hardfork at next chain reset
+                // Get the last non-min-difficulty (or at worst the genesis difficulty)
+                while (pindexBits->pprev && pindexBits->nBits == nProofOfWorkLimit)
+                    pindexBits = pindexBits->pprev;
+            }
         }
     }
 
@@ -45,14 +51,19 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
 
-    return CalculateNextWorkRequired(pindexLast, pindexFirst->GetMedianTimePast(), params);
+    return CalculateNextWorkRequired(pindexBits->nBits, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
 }
 
 unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nFirstBlockTime, const Consensus::Params& params)
 {
+    return CalculateNextWorkRequired(pindexLast->nBits, pindexLast->GetMedianTimePast(), nFirstBlockTime, params);
+}
+
+unsigned int CalculateNextWorkRequired(uint32_t nBits, int64_t nLastBlockTime, int64_t nFirstBlockTime, const Consensus::Params& params)
+{
     // Limit adjustment step
     // Use medians to prevent time-warp attacks
-    int64_t nActualTimespan = pindexLast->GetMedianTimePast() - nFirstBlockTime;
+    int64_t nActualTimespan = nLastBlockTime - nFirstBlockTime;
     LogPrint("pow", "  nActualTimespan = %d  before dampening\n", nActualTimespan);
     nActualTimespan = params.AveragingWindowTimespan() + (nActualTimespan - params.AveragingWindowTimespan())/4;
     LogPrint("pow", "  nActualTimespan = %d  before bounds\n", nActualTimespan);
@@ -66,7 +77,7 @@ unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nF
     const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
     arith_uint256 bnNew;
     arith_uint256 bnOld;
-    bnNew.SetCompact(pindexLast->nBits);
+    bnNew.SetCompact(nBits);
     bnOld = bnNew;
     bnNew /= params.AveragingWindowTimespan();
     bnNew *= nActualTimespan;
@@ -77,7 +88,7 @@ unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nF
     /// debug print
     LogPrint("pow", "GetNextWorkRequired RETARGET\n");
     LogPrint("pow", "params.AveragingWindowTimespan() = %d    nActualTimespan = %d\n", params.AveragingWindowTimespan(), nActualTimespan);
-    LogPrint("pow", "Before: %08x  %s\n", pindexLast->nBits, bnOld.ToString());
+    LogPrint("pow", "Before: %08x  %s\n", nBits, bnOld.ToString());
     LogPrint("pow", "After:  %08x  %s\n", bnNew.GetCompact(), bnNew.ToString());
 
     return bnNew.GetCompact();

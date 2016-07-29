@@ -21,6 +21,8 @@
 
 #include <boost/optional.hpp>
 
+EhSolverCancelledException solver_cancelled;
+
 template<unsigned int N, unsigned int K>
 int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
 {
@@ -183,15 +185,15 @@ TruncatedStepRow<WIDTH>& TruncatedStepRow<WIDTH>::operator=(const TruncatedStepR
 }
 
 template<size_t WIDTH>
-eh_trunc* TruncatedStepRow<WIDTH>::GetTruncatedIndices(size_t len, size_t lenIndices) const
+std::shared_ptr<eh_trunc> TruncatedStepRow<WIDTH>::GetTruncatedIndices(size_t len, size_t lenIndices) const
 {
-    eh_trunc* p = new eh_trunc[lenIndices];
-    std::copy(hash+len, hash+len+lenIndices, p);
+    std::shared_ptr<eh_trunc> p (new eh_trunc[lenIndices]);
+    std::copy(hash+len, hash+len+lenIndices, p.get());
     return p;
 }
 
 template<unsigned int N, unsigned int K>
-std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& base_state)
+std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled)
 {
     eh_index init_size { 1 << (CollisionBitLength + 1) };
 
@@ -203,6 +205,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& ba
     X.reserve(init_size);
     for (eh_index i = 0; i < init_size; i++) {
         X.emplace_back(N, base_state, i);
+        if (cancelled(ListGeneration)) throw solver_cancelled;
     }
 
     // 3) Repeat step 2 until 2n/(k+1) bits remain
@@ -211,6 +214,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& ba
         // 2a) Sort the list
         LogPrint("pow", "- Sorting list\n");
         std::sort(X.begin(), X.end(), CompareSR(CollisionByteLength));
+        if (cancelled(ListSorting)) throw solver_cancelled;
 
         LogPrint("pow", "- Finding collisions\n");
         int i = 0;
@@ -240,6 +244,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& ba
             }
 
             i += j;
+            if (cancelled(ListColliding)) throw solver_cancelled;
         }
 
         // 2e) Handle edge case where final table entry has no collision
@@ -259,6 +264,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& ba
 
         hashLen -= CollisionByteLength;
         lenIndices *= 2;
+        if (cancelled(RoundEnd)) throw solver_cancelled;
     }
 
     // k+1) Find a collision on last 2n(k+1) bits
@@ -267,6 +273,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& ba
     if (X.size() > 1) {
         LogPrint("pow", "- Sorting list\n");
         std::sort(X.begin(), X.end(), CompareSR(hashLen));
+        if (cancelled(FinalSorting)) throw solver_cancelled;
         LogPrint("pow", "- Finding collisions\n");
         int i = 0;
         while (i < X.size() - 1) {
@@ -286,6 +293,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& ba
             }
 
             i += j;
+            if (cancelled(FinalColliding)) throw solver_cancelled;
         }
     } else
         LogPrint("pow", "- List is empty\n");
@@ -346,16 +354,17 @@ void CollideBranches(std::vector<FullStepRow<WIDTH>>& X, const size_t hlen, cons
 }
 
 template<unsigned int N, unsigned int K>
-std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state)
+std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled)
 {
     eh_index init_size { 1 << (CollisionBitLength + 1) };
+    eh_index recreate_size { UntruncateIndex(1, 0, CollisionBitLength + 1) };
 
     // First run the algorithm with truncated indices
 
     eh_index soln_size { 1 << K };
-    // Each element of partialSolns is dynamically allocated in a call to
-    // GetTruncatedIndices(), and freed at the end of this function.
-    std::vector<eh_trunc*> partialSolns;
+    std::vector<std::shared_ptr<eh_trunc>> partialSolns;
+    std::set<std::vector<eh_index>> solns;
+    int invalidCount = 0;
     {
 
         // 1) Generate first list
@@ -366,6 +375,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
         Xt.reserve(init_size);
         for (eh_index i = 0; i < init_size; i++) {
             Xt.emplace_back(N, base_state, i, CollisionBitLength + 1);
+            if (cancelled(ListGeneration)) throw solver_cancelled;
         }
 
         // 3) Repeat step 2 until 2n/(k+1) bits remain
@@ -374,6 +384,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
             // 2a) Sort the list
             LogPrint("pow", "- Sorting list\n");
             std::sort(Xt.begin(), Xt.end(), CompareSR(CollisionByteLength));
+            if (cancelled(ListSorting)) throw solver_cancelled;
 
             LogPrint("pow", "- Finding collisions\n");
             int i = 0;
@@ -402,6 +413,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
                 }
 
                 i += j;
+                if (cancelled(ListColliding)) throw solver_cancelled;
             }
 
             // 2e) Handle edge case where final table entry has no collision
@@ -421,6 +433,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
 
             hashLen -= CollisionByteLength;
             lenIndices *= 2;
+            if (cancelled(RoundEnd)) throw solver_cancelled;
         }
 
         // k+1) Find a collision on last 2n(k+1) bits
@@ -428,6 +441,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
         if (Xt.size() > 1) {
             LogPrint("pow", "- Sorting list\n");
             std::sort(Xt.begin(), Xt.end(), CompareSR(hashLen));
+            if (cancelled(FinalSorting)) throw solver_cancelled;
             LogPrint("pow", "- Finding collisions\n");
             int i = 0;
             while (i < Xt.size() - 1) {
@@ -445,6 +459,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
                 }
 
                 i += j;
+                if (cancelled(FinalColliding)) throw solver_cancelled;
             }
         } else
             LogPrint("pow", "- List is empty\n");
@@ -455,10 +470,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
 
     // Now for each solution run the algorithm again to recreate the indices
     LogPrint("pow", "Culling solutions\n");
-    std::set<std::vector<eh_index>> solns;
-    eh_index recreate_size { UntruncateIndex(1, 0, CollisionBitLength + 1) };
-    int invalidCount = 0;
-    for (eh_trunc* partialSoln : partialSolns) {
+    for (std::shared_ptr<eh_trunc> partialSoln : partialSolns) {
         size_t hashLen;
         size_t lenIndices;
         std::vector<boost::optional<std::vector<FullStepRow<FinalFullWidth>>>> X;
@@ -470,8 +482,9 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
             std::vector<FullStepRow<FinalFullWidth>> icv;
             icv.reserve(recreate_size);
             for (eh_index j = 0; j < recreate_size; j++) {
-                eh_index newIndex { UntruncateIndex(partialSoln[i], j, CollisionBitLength + 1) };
+                eh_index newIndex { UntruncateIndex(partialSoln.get()[i], j, CollisionBitLength + 1) };
                 icv.emplace_back(N, base_state, newIndex);
+                if (cancelled(PartialGeneration)) throw solver_cancelled;
             }
             boost::optional<std::vector<FullStepRow<FinalFullWidth>>> ic = icv;
 
@@ -487,11 +500,12 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
                         ic->reserve(ic->size() + X[r]->size());
                         ic->insert(ic->end(), X[r]->begin(), X[r]->end());
                         std::sort(ic->begin(), ic->end(), CompareSR(hashLen));
+                        if (cancelled(PartialSorting)) throw solver_cancelled;
                         size_t lti = rti-(1<<r);
                         CollideBranches(*ic, hashLen, lenIndices,
                                         CollisionByteLength,
                                         CollisionBitLength + 1,
-                                        partialSoln[lti], partialSoln[rti]);
+                                        partialSoln.get()[lti], partialSoln.get()[rti]);
 
                         // 2d) Check if this has become an invalid solution
                         if (ic->size() == 0)
@@ -509,7 +523,9 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
                     X.push_back(ic);
                     break;
                 }
+                if (cancelled(PartialSubtreeEnd)) throw solver_cancelled;
             }
+            if (cancelled(PartialIndexEnd)) throw solver_cancelled;
         }
 
         // We are at the top of the tree
@@ -517,13 +533,11 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
         for (FullStepRow<FinalFullWidth> row : *X[K]) {
             solns.insert(row.GetIndices(hashLen, lenIndices));
         }
-        goto deletesolution;
+        if (cancelled(PartialEnd)) throw solver_cancelled;
+        continue;
 
 invalidsolution:
         invalidCount++;
-
-deletesolution:
-        delete[] partialSoln;
     }
     LogPrint("pow", "- Number of invalid solutions found: %d\n", invalidCount);
 
@@ -577,18 +591,18 @@ bool Equihash<N,K>::IsValidSolution(const eh_HashState& base_state, std::vector<
 
 // Explicit instantiations for Equihash<96,3>
 template int Equihash<96,3>::InitialiseState(eh_HashState& base_state);
-template std::set<std::vector<eh_index>> Equihash<96,3>::BasicSolve(const eh_HashState& base_state);
-template std::set<std::vector<eh_index>> Equihash<96,3>::OptimisedSolve(const eh_HashState& base_state);
+template std::set<std::vector<eh_index>> Equihash<96,3>::BasicSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
+template std::set<std::vector<eh_index>> Equihash<96,3>::OptimisedSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
 template bool Equihash<96,3>::IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln);
 
 // Explicit instantiations for Equihash<96,5>
 template int Equihash<96,5>::InitialiseState(eh_HashState& base_state);
-template std::set<std::vector<eh_index>> Equihash<96,5>::BasicSolve(const eh_HashState& base_state);
-template std::set<std::vector<eh_index>> Equihash<96,5>::OptimisedSolve(const eh_HashState& base_state);
+template std::set<std::vector<eh_index>> Equihash<96,5>::BasicSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
+template std::set<std::vector<eh_index>> Equihash<96,5>::OptimisedSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
 template bool Equihash<96,5>::IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln);
 
 // Explicit instantiations for Equihash<48,5>
 template int Equihash<48,5>::InitialiseState(eh_HashState& base_state);
-template std::set<std::vector<eh_index>> Equihash<48,5>::BasicSolve(const eh_HashState& base_state);
-template std::set<std::vector<eh_index>> Equihash<48,5>::OptimisedSolve(const eh_HashState& base_state);
+template std::set<std::vector<eh_index>> Equihash<48,5>::BasicSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
+template std::set<std::vector<eh_index>> Equihash<48,5>::OptimisedSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
 template bool Equihash<48,5>::IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln);
