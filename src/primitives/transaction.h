@@ -417,7 +417,7 @@ struct CMutableTransaction
     }
 
     /** Compute the hash of this CMutableTransaction. This is computed on the
-     * fly, as opposed to GetHash() in CTransaction, which uses a cached result.
+     * fly, as opposed to GetSerializeHash() in CTransaction, which uses a cached result.
      */
     uint256 GetSerializeHash() const;
 
