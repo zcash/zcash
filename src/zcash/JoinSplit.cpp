@@ -139,25 +139,25 @@ public:
             throw std::runtime_error("JoinSplit verifying key not loaded");
         }
 
-        r1cs_ppzksnark_proof<ppzksnark_ppT> r1cs_proof;
-        std::stringstream ss;
-        std::string proof_str(proof.begin(), proof.end());
-        ss.str(proof_str);
-        ss >> r1cs_proof;
-
-        uint256 h_sig = this->h_sig(randomSeed, nullifiers, pubKeyHash);
-
-        auto witness = joinsplit_gadget<FieldT, NumInputs, NumOutputs>::witness_map(
-            rt,
-            h_sig,
-            macs,
-            nullifiers,
-            commitments,
-            vpub_old,
-            vpub_new
-        );
-
         try {
+            r1cs_ppzksnark_proof<ppzksnark_ppT> r1cs_proof;
+            std::stringstream ss;
+            std::string proof_str(proof.begin(), proof.end());
+            ss.str(proof_str);
+            ss >> r1cs_proof;
+
+            uint256 h_sig = this->h_sig(randomSeed, nullifiers, pubKeyHash);
+
+            auto witness = joinsplit_gadget<FieldT, NumInputs, NumOutputs>::witness_map(
+                rt,
+                h_sig,
+                macs,
+                nullifiers,
+                commitments,
+                vpub_old,
+                vpub_new
+            );
+
             return r1cs_ppzksnark_verifier_strong_IC<ppzksnark_ppT>(*vk, witness, r1cs_proof);
         } catch (...) {
             return false;
