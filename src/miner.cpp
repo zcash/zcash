@@ -529,26 +529,16 @@ void static BitcoinMiner(CWallet *pwallet)
                 // (x_1, x_2, ...) = A(I, V, n, k)
                 LogPrint("pow", "Running Equihash solver with nNonce = %s\n",
                          pblock->nNonce.ToString());
-                std::set<std::vector<unsigned int>> solns;
-                try {
-                    std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck pos) {
-                        std::lock_guard<std::mutex> lock{m_cs};
-                        return cancelSolver;
-                    };
-                    EhOptimisedSolve(n, k, curr_state, solns, cancelled);
-                } catch (EhSolverCancelledException&) {
-                    LogPrint("pow", "Equihash solver cancelled\n");
-                    std::lock_guard<std::mutex> lock{m_cs};
-                    cancelSolver = false;
-                }
-                LogPrint("pow", "Solutions: %d\n", solns.size());
 
-                // Write the solution to the hash and compute the result.
-                for (auto soln : solns) {
+                std::function<bool(std::vector<eh_index>)> validBlock =
+                        [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
+                        (std::vector<eh_index> soln) {
+                    // Write the solution to the hash and compute the result.
+                    LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
 
                     if (UintToArith256(pblock->GetHash()) > hashTarget) {
-                        continue;
+                        return false;
                     }
 
                     // Found a solution
@@ -566,7 +556,20 @@ void static BitcoinMiner(CWallet *pwallet)
                     if (chainparams.MineBlocksOnDemand())
                         throw boost::thread_interrupted();
 
-                    break;
+                    return true;
+                };
+                std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck pos) {
+                    std::lock_guard<std::mutex> lock{m_cs};
+                    return cancelSolver;
+                };
+                try {
+                    // If we find a valid block, we rebuild
+                    if (EhOptimisedSolve(n, k, curr_state, validBlock, cancelled))
+                        break;
+                } catch (EhSolverCancelledException&) {
+                    LogPrint("pow", "Equihash solver cancelled\n");
+                    std::lock_guard<std::mutex> lock{m_cs};
+                    cancelSolver = false;
                 }
 
                 // Check for stop or if block needs to be rebuilt

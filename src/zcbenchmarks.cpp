@@ -118,7 +118,8 @@ double benchmark_solve_equihash()
 
     timer_start();
     std::set<std::vector<unsigned int>> solns;
-    EhOptimisedSolveUncancellable(n, k, eh_state, solns);
+    EhOptimisedSolveUncancellable(n, k, eh_state,
+                                  [](std::vector<eh_index> soln) { return false; });
     return timer_stop();
 }
 
