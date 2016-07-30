@@ -116,11 +116,6 @@ CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.n
     
 }
 
-uint256 CMutableTransaction::GetSerializeHash() const
-{
-    return SerializeHash(*this);
-}
-
 void CTransaction::UpdateHash() const
 {
     *const_cast<uint256*>(&hash) = SerializeHash(*this);
@@ -214,8 +209,8 @@ std::string CTransaction::ToString() const
 {
     std::string str;
     str += strprintf("CTransaction(txid=%s, hash=%s, ver=%d, vin.size=%u, vout.size=%u, nLockTime=%u)\n",
-        GetTxid().ToString().substr(0,10),
-        GetSerializeHash().ToString().substr(0,10),
+        txid.ToString().substr(0,10),
+        hash.ToString().substr(0,10),
         nVersion,
         vin.size(),
         vout.size(),
@@ -245,8 +240,7 @@ void CTransaction::UpdateTxid() const
         tx.joinSplitSig.assign(0);
     }
 
-    // Return double SHA256 hash
-    *const_cast<uint256*>(&txid) = tx.GetSerializeHash();
+    *const_cast<uint256*>(&txid) = SerializeHash(tx);
 }
 
 // Return a txid which is non-malleable.

@@ -343,10 +343,6 @@ public:
         return vin.empty() && vout.empty();
     }
 
-    const uint256& GetSerializeHash() const {
-        return hash;
-    }
-
     // Return sum of txouts.
     CAmount GetValueOut() const;
     // GetValueIn() is a method on CCoinsViewCache, because
@@ -416,12 +412,9 @@ struct CMutableTransaction
         }
     }
 
-    /** Compute the hash of this CMutableTransaction. This is computed on the
-     * fly, as opposed to GetSerializeHash() in CTransaction, which uses a cached result.
+    /** Compute the non-malleable txid of this CMutableTransaction. This is computed on the
+     * fly, as opposed to GetTxid() in CTransaction, which uses a cached result.
      */
-    uint256 GetSerializeHash() const;
-
-    // Compute a non-malleable txid on the fly.
     uint256 GetTxid() const;
 };
 
