@@ -409,7 +409,11 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
         // First CollisionByteLength bytes of hash is "stored" as bucket index
         size_t hashLen = N/8 - CollisionByteLength;
         size_t lenIndices = sizeof(eh_trunc);
-        std::array<std::vector<TruncatedStepRow<TruncatedWidth>>, NumBuckets> Xt;
+        std::vector<std::vector<TruncatedStepRow<TruncatedWidth>>> Xt;
+        Xt.reserve(NumBuckets);
+        for (int i = 0; i < NumBuckets; i++) {
+            Xt[i].reserve(4);
+        }
         eh_index bucket;
         for (eh_index i = 0; i < init_size; i++) {
             TruncatedStepRow<TruncatedWidth> Xi {
