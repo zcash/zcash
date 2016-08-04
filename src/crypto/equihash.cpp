@@ -303,6 +303,28 @@ bool Equihash<N,K>::BasicSolve(const eh_HashState& base_state,
     return false;
 }
 
+bool IsProbablyDuplicate(std::shared_ptr<eh_trunc> indices, size_t lenIndices)
+{
+    bool checked_index[lenIndices] = {false};
+    for (int z = 0; z < lenIndices; z++) {
+        if (!checked_index[z]) {
+            for (int y = z+1; y < lenIndices; y++) {
+                if (!checked_index[y] && indices.get()[z] == indices.get()[y]) {
+                    // Pair found
+                    checked_index[y] = true;
+                    checked_index[z] = true;
+                    break;
+                }
+            }
+        }
+    }
+    bool is_probably_duplicate = true;
+    for (int z = 0; z < lenIndices && is_probably_duplicate; z++) {
+        is_probably_duplicate &= checked_index[z];
+    }
+    return is_probably_duplicate;
+}
+
 template<size_t WIDTH>
 void CollideBranches(std::vector<FullStepRow<WIDTH>>& X, const size_t hlen, const size_t lenIndices, const unsigned int clen, const unsigned int ilen, const eh_trunc lt, const eh_trunc rt)
 {
@@ -402,10 +424,18 @@ bool Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state,
                 }
 
                 // 2c) Calculate tuples (X_i ^ X_j, (i, j))
+                bool checking_for_zero = (i == 0 && Xt[0].IsZero(hashLen));
                 for (int l = 0; l < j - 1; l++) {
                     for (int m = l + 1; m < j; m++) {
                         // We truncated, so don't check for distinct indices here
-                        Xc.emplace_back(Xt[i+l], Xt[i+m], hashLen, lenIndices, CollisionByteLength);
+                        TruncatedStepRow<TruncatedWidth> Xi {Xt[i+l], Xt[i+m],
+                                                             hashLen, lenIndices,
+                                                             CollisionByteLength};
+                        if (!(Xi.IsZero(hashLen-CollisionByteLength) &&
+                              IsProbablyDuplicate(Xi.GetTruncatedIndices(hashLen-CollisionByteLength, 2*lenIndices),
+                                                  2*lenIndices))) {
+                            Xc.emplace_back(Xi);
+                        }
                     }
                 }
 
