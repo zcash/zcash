@@ -487,8 +487,12 @@ bool Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state,
 
                 for (int l = 0; l < j - 1; l++) {
                     for (int m = l + 1; m < j; m++) {
-                        TruncatedStepRow<FinalTruncatedWidth> res(Xt[i+l], Xt[i+m], hashLen, lenIndices, 0);
-                        partialSolns.push_back(res.GetTruncatedIndices(hashLen, 2*lenIndices));
+                        TruncatedStepRow<FinalTruncatedWidth> res(Xt[i+l], Xt[i+m],
+                                                                  hashLen, lenIndices, 0);
+                        auto soln = res.GetTruncatedIndices(hashLen, 2*lenIndices);
+                        if (!IsProbablyDuplicate<soln_size>(soln, 2*lenIndices)) {
+                            partialSolns.push_back(soln);
+                        }
                     }
                 }
 
