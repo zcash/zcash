@@ -77,10 +77,15 @@ case "$1" in
                 zcash_rpc zcbenchmark createjoinsplit 10
                 ;;
             verifyjoinsplit)
-                zcash_rpc zcbenchmark verifyjoinsplit 1000 "$RAWJOINSPLIT"
+                zcash_rpc zcbenchmark verifyjoinsplit 1000 "\"$RAWJOINSPLIT\""
                 ;;
             solveequihash)
-                zcash_rpc zcbenchmark solveequihash 10
+                if [ "$#" -ge "3" ]
+                then
+                    zcash_rpc zcbenchmark solveequihash 10 "$3"
+                else
+                    zcash_rpc zcbenchmark solveequihash 10
+                fi
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1000
@@ -108,10 +113,15 @@ case "$1" in
                 zcash_rpc zcbenchmark createjoinsplit 1
                 ;;
             verifyjoinsplit)
-                zcash_rpc zcbenchmark verifyjoinsplit 1 "$RAWJOINSPLIT"
+                zcash_rpc zcbenchmark verifyjoinsplit 1 "\"$RAWJOINSPLIT\""
                 ;;
             solveequihash)
-                zcash_rpc zcbenchmark solveequihash 1
+                if [ "$#" -ge "3" ]
+                then
+                    zcash_rpc zcbenchmark solveequihash 1 "$3"
+                else
+                    zcash_rpc zcbenchmark solveequihash 1
+                fi
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1
@@ -137,10 +147,15 @@ case "$1" in
                 zcash_rpc zcbenchmark createjoinsplit 1
                 ;;
             verifyjoinsplit)
-                zcash_rpc zcbenchmark verifyjoinsplit 1 "$RAWJOINSPLIT"
+                zcash_rpc zcbenchmark verifyjoinsplit 1 "\"$RAWJOINSPLIT\""
                 ;;
             solveequihash)
-                zcash_rpc zcbenchmark solveequihash 1
+                if [ "$#" -ge "3" ]
+                then
+                    zcash_rpc zcbenchmark solveequihash 1 "$3"
+                else
+                    zcash_rpc zcbenchmark solveequihash 1
+                fi
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1

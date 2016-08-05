@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <boost/filesystem.hpp>
+#include <boost/thread.hpp>
 #include "coins.h"
 #include "util.h"
 #include "init.h"
@@ -97,7 +98,7 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
     return timer_stop();
 }
 
-double benchmark_solve_equihash()
+double benchmark_solve_equihash(bool time)
 {
     CBlock pblock;
     CEquihashInput I{pblock};
@@ -116,10 +117,24 @@ double benchmark_solve_equihash()
                                     nonce.begin(),
                                     nonce.size());
 
-    timer_start();
+    if (time)
+        timer_start();
     std::set<std::vector<unsigned int>> solns;
     EhOptimisedSolveUncancellable(n, k, eh_state,
                                   [](std::vector<eh_index> soln) { return false; });
+    if (time)
+        return timer_stop();
+    else
+        return 0;
+}
+
+double benchmark_solve_equihash_threaded(int nThreads)
+{
+    boost::thread_group solverThreads;
+    timer_start();
+    for (int i = 0; i < nThreads; i++)
+        solverThreads.create_thread(boost::bind(&benchmark_solve_equihash, false));
+    solverThreads.join_all();
     return timer_stop();
 }
 

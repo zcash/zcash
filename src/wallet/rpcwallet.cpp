@@ -2438,7 +2438,12 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         } else if (benchmarktype == "verifyjoinsplit") {
             sample_times.push_back(benchmark_verify_joinsplit(samplejoinsplit));
         } else if (benchmarktype == "solveequihash") {
-            sample_times.push_back(benchmark_solve_equihash());
+            if (params.size() < 3) {
+                sample_times.push_back(benchmark_solve_equihash(true));
+            } else {
+                int nThreads = params[2].get_int();
+                sample_times.push_back(benchmark_solve_equihash_threaded(nThreads));
+            }
         } else if (benchmarktype == "verifyequihash") {
             sample_times.push_back(benchmark_verify_equihash());
         } else if (benchmarktype == "validatelargetx") {
