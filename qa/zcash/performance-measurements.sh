@@ -80,7 +80,7 @@ case "$1" in
                 zcash_rpc zcbenchmark verifyjoinsplit 1000 "\"$RAWJOINSPLIT\""
                 ;;
             solveequihash)
-                zcash_rpc zcbenchmark solveequihash 1 "${@:3}"
+                zcash_rpc zcbenchmark solveequihash 10 "${@:3}"
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1000
