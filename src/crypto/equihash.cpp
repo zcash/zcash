@@ -303,9 +303,10 @@ bool Equihash<N,K>::BasicSolve(const eh_HashState& base_state,
     return false;
 }
 
+template<size_t MAX_INDICES>
 bool IsProbablyDuplicate(std::shared_ptr<eh_trunc> indices, size_t lenIndices)
 {
-    bool checked_index[lenIndices] = {false};
+    bool checked_index[MAX_INDICES] = {false};
     for (int z = 0; z < lenIndices; z++) {
         if (!checked_index[z]) {
             for (int y = z+1; y < lenIndices; y++) {
@@ -387,7 +388,7 @@ bool Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state,
 
     // First run the algorithm with truncated indices
 
-    eh_index soln_size { 1 << K };
+    const eh_index soln_size { 1 << K };
     std::vector<std::shared_ptr<eh_trunc>> partialSolns;
     int invalidCount = 0;
     {
@@ -432,8 +433,8 @@ bool Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state,
                                                              hashLen, lenIndices,
                                                              CollisionByteLength};
                         if (!(Xi.IsZero(hashLen-CollisionByteLength) &&
-                              IsProbablyDuplicate(Xi.GetTruncatedIndices(hashLen-CollisionByteLength, 2*lenIndices),
-                                                  2*lenIndices))) {
+                              IsProbablyDuplicate<soln_size>(Xi.GetTruncatedIndices(hashLen-CollisionByteLength, 2*lenIndices),
+                                                             2*lenIndices))) {
                             Xc.emplace_back(Xi);
                         }
                     }
