@@ -89,7 +89,7 @@ public:
         //genesis.nBits    = 0x1d00ffff;
         genesis.nBits    = 0x207fffff;
         genesis.nNonce   = uint256S("0x0000000000000000000000000000000000000000000000000000000000000001");
-        genesis.nSolution = {400496, 12965800, 7933378, 26516310, 3573504, 12897574, 9332739, 12534918};
+        genesis.nSolution = {400496, 12965800, 7933378, 26516310, 3573504, 12897574, 9332739, 12534918 };
 
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x5ff8e250c158c0694814582883343e8a0de5b7e7a5236324d4bf3293a56b6bc5"));
@@ -158,10 +158,10 @@ public:
         //! Modify the testnet genesis block so the timestamp is valid for a later start.
         genesis.nTime = 1296688602;
         genesis.nBits = 0x207fffff;
-        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000");
-        genesis.nSolution = {830051, 14471730, 2076450, 21556280, 12194645, 22042975, 16221394, 24048626};
+        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000001");
+        genesis.nSolution = {72259, 18942116, 2293670, 7851750, 998282, 2855279, 12981515, 15324503};
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x69675325ac7fb1f5a6bebb7fc8581f9160cbf970817f50b5199df7ff7b2833bd"));
+        assert(consensus.hashGenesisBlock == uint256S("0x20a21e2f7d7079d517cb19f8db30bafd396652d34c2705093531d0172e40ebc6"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -226,11 +226,11 @@ public:
         nEquihashK = 5;
         genesis.nTime = 1296688602;
         genesis.nBits = 0x207fffff;
-        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000003");
-        genesis.nSolution = {21, 374, 135, 192, 103, 221, 198, 303, 87, 330, 306, 464, 98, 239, 146, 471, 35, 137, 53, 387, 97, 454, 412, 434, 75, 352, 180, 367, 121, 480, 158, 482};
+        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000005");
+        genesis.nSolution = {8, 205, 95, 334, 13, 385, 266, 399, 58, 389, 129, 383, 110, 284, 460, 499, 45, 496, 269, 348, 65, 242, 212, 272, 141, 477, 394, 469, 175, 185, 270, 365};
         consensus.hashGenesisBlock = genesis.GetHash();
         nDefaultPort = 18444;
-        assert(consensus.hashGenesisBlock == uint256S("0x37e57b7047e1a59918a8f98b9bbebc0b6e16e246211ad1f5c664d7e8f7d8d709"));
+        assert(consensus.hashGenesisBlock == uint256S("0x0d5badaa07ac1914c9b2429825cafe9273763f2c5d44eadabf1e333e50a9e281"));
         nPruneAfterHeight = 1000;
 
         vFixedSeeds.clear(); //! Regtest mode doesn't have any fixed seeds.

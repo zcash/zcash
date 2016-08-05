@@ -171,7 +171,7 @@ double benchmark_large_tx()
     auto orig_tx = CTransaction(m_orig_tx);
 
     CMutableTransaction spending_tx;
-    auto input_hash = orig_tx.GetHash();
+    auto input_hash = orig_tx.GetTxid();
     // Add NUM_INPUTS inputs
     for (size_t i = 0; i < NUM_INPUTS; i++) {
         spending_tx.vin.emplace_back(input_hash, 0);
