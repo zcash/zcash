@@ -306,6 +306,7 @@ bool Equihash<N,K>::BasicSolve(const eh_HashState& base_state,
 template<size_t MAX_INDICES>
 bool IsProbablyDuplicate(std::shared_ptr<eh_trunc> indices, size_t lenIndices)
 {
+    assert(lenIndices <= MAX_INDICES);
     bool checked_index[MAX_INDICES] = {false};
     bool count_checked = 0;
     for (int z = 0; z < lenIndices; z++) {
