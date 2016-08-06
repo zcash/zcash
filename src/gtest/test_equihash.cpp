@@ -3,6 +3,16 @@
 
 #include "crypto/equihash.h"
 
+TEST(equihash_tests, is_probably_duplicate) {
+    std::shared_ptr<eh_trunc> p1 (new eh_trunc[4] {0, 1, 2, 3});
+    std::shared_ptr<eh_trunc> p2 (new eh_trunc[4] {0, 1, 1, 3});
+    std::shared_ptr<eh_trunc> p3 (new eh_trunc[4] {3, 1, 1, 3});
+
+    ASSERT_FALSE(IsProbablyDuplicate<4>(p1, 4));
+    ASSERT_FALSE(IsProbablyDuplicate<4>(p2, 4));
+    ASSERT_TRUE(IsProbablyDuplicate<4>(p3, 4));
+}
+
 TEST(equihash_tests, check_basic_solver_cancelled) {
     Equihash<48,5> Eh48_5;
     crypto_generichash_blake2b_state state;

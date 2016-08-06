@@ -317,28 +317,6 @@ bool Equihash<N,K>::BasicSolve(const eh_HashState& base_state,
     return false;
 }
 
-template<size_t MAX_INDICES>
-bool IsProbablyDuplicate(std::shared_ptr<eh_trunc> indices, size_t lenIndices)
-{
-    assert(lenIndices <= MAX_INDICES);
-    bool checked_index[MAX_INDICES] = {false};
-    bool count_checked = 0;
-    for (int z = 0; z < lenIndices; z++) {
-        // Skip over indices we have already paired
-        if (!checked_index[z]) {
-            for (int y = z+1; y < lenIndices; y++) {
-                if (!checked_index[y] && indices.get()[z] == indices.get()[y]) {
-                    // Pair found
-                    checked_index[y] = true;
-                    count_checked += 2;
-                    break;
-                }
-            }
-        }
-    }
-    return count_checked == lenIndices;
-}
-
 template<size_t WIDTH>
 void CollideBranches(std::vector<FullStepRow<WIDTH>>& X, const size_t hlen, const size_t lenIndices, const unsigned int clen, const unsigned int ilen, const eh_trunc lt, const eh_trunc rt)
 {
