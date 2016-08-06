@@ -501,6 +501,7 @@ bool Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state,
     // Now for each solution run the algorithm again to recreate the indices
     LogPrint("pow", "Culling solutions\n");
     for (std::shared_ptr<eh_trunc> partialSoln : partialSolns) {
+        std::set<std::vector<eh_index>> solns;
         size_t hashLen;
         size_t lenIndices;
         std::vector<boost::optional<std::vector<FullStepRow<FinalFullWidth>>>> X;
@@ -562,7 +563,10 @@ bool Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state,
         // We are at the top of the tree
         assert(X.size() == K+1);
         for (FullStepRow<FinalFullWidth> row : *X[K]) {
-            if (validBlock(row.GetIndices(hashLen, lenIndices)))
+            solns.insert(row.GetIndices(hashLen, lenIndices));
+        }
+        for (auto soln : solns) {
+            if (validBlock(soln))
                 return true;
         }
         if (cancelled(PartialEnd)) throw solver_cancelled;
