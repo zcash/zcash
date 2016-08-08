@@ -193,6 +193,9 @@ double benchmark_large_tx()
         assert(ss.size() > MAX_BLOCK_SIZE - error);
     }
 
+    // Spending tx has all its inputs signed and does not need to be mutated anymore
+    CTransaction final_spending_tx(spending_tx);
+
     // Benchmark signature verification costs:
     timer_start();
     for (size_t i = 0; i < NUM_INPUTS; i++) {
@@ -200,7 +203,7 @@ double benchmark_large_tx()
         assert(VerifyScript(spending_tx.vin[i].scriptSig,
                             prevPubKey,
                             STANDARD_SCRIPT_VERIFY_FLAGS,
-                            MutableTransactionSignatureChecker(&spending_tx, i),
+                            TransactionSignatureChecker(&final_spending_tx, i),
                             &serror));
     }
     return timer_stop();
