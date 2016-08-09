@@ -23,6 +23,10 @@ bool CKeyStore::AddKey(const CKey &key) {
     return AddKeyPubKey(key, key.GetPubKey());
 }
 
+bool CKeyStore::AddSpendingKey(const libzcash::SpendingKey &key) {
+    return AddSpendingKeyPaymentAddress(key, key.address());
+}
+
 bool CBasicKeyStore::AddKeyPubKey(const CKey& key, const CPubKey &pubkey)
 {
     LOCK(cs_KeyStore);
@@ -82,4 +86,11 @@ bool CBasicKeyStore::HaveWatchOnly() const
 {
     LOCK(cs_KeyStore);
     return (!setWatchOnly.empty());
+}
+
+bool CBasicKeyStore::AddSpendingKeyPaymentAddress(const libzcash::SpendingKey& key, const libzcash::PaymentAddress &address)
+{
+    LOCK(cs_KeyStore);
+    mapSpendingKeys[address] = key;
+    return true;
 }

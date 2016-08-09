@@ -8,6 +8,7 @@ zcash_gtest_SOURCES = \
 	gtest/test_checktransaction.cpp \
 	gtest/test_equihash.cpp \
 	gtest/test_joinsplit.cpp \
+	gtest/test_keystore.cpp \
 	gtest/test_noteencryption.cpp \
 	gtest/test_merkletree.cpp \
 	gtest/test_circuit.cpp \

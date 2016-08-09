@@ -43,6 +43,8 @@ public:
     uint256 inner() const {
         return contents;
     }
+
+    friend inline bool operator==(const uint252& a, const uint252& b) { return a.contents == b.contents; }
 };
 
 #endif

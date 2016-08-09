@@ -22,6 +22,8 @@ public:
         READWRITE(a_pk);
         READWRITE(pk_enc);
     }
+
+    friend inline bool operator<(const PaymentAddress& a, const PaymentAddress& b) { return a.a_pk < b.a_pk; }
 };
 
 class ViewingKey : public uint256 {
@@ -38,8 +40,8 @@ public:
 
     static SpendingKey random();
 
-    ViewingKey viewing_key();
-    PaymentAddress address();
+    ViewingKey viewing_key() const;
+    PaymentAddress address() const;
 };
 
 }

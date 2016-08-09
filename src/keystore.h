@@ -11,6 +11,7 @@
 #include "script/script.h"
 #include "script/standard.h"
 #include "sync.h"
+#include "zcash/Address.hpp"
 
 #include <boost/signals2/signal.hpp>
 #include <boost/variant.hpp>
@@ -44,11 +45,21 @@ public:
     virtual bool RemoveWatchOnly(const CScript &dest) =0;
     virtual bool HaveWatchOnly(const CScript &dest) const =0;
     virtual bool HaveWatchOnly() const =0;
+
+    //! Add a spending key to the store.
+    virtual bool AddSpendingKeyPaymentAddress(const libzcash::SpendingKey &key, const libzcash::PaymentAddress &address) =0;
+    virtual bool AddSpendingKey(const libzcash::SpendingKey &key);
+
+    //! Check whether a spending key corresponding to a given payment address is present in the store.
+    virtual bool HaveSpendingKey(const libzcash::PaymentAddress &address) const =0;
+    virtual bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey& keyOut) const =0;
+    virtual void GetPaymentAddresses(std::set<libzcash::PaymentAddress> &setAddress) const =0;
 };
 
 typedef std::map<CKeyID, CKey> KeyMap;
 typedef std::map<CScriptID, CScript > ScriptMap;
 typedef std::set<CScript> WatchOnlySet;
+typedef std::map<libzcash::PaymentAddress, libzcash::SpendingKey> SpendingKeyMap;
 
 /** Basic key store, that keeps keys in an address->secret map */
 class CBasicKeyStore : public CKeyStore
@@ -57,6 +68,7 @@ protected:
     KeyMap mapKeys;
     ScriptMap mapScripts;
     WatchOnlySet setWatchOnly;
+    SpendingKeyMap mapSpendingKeys;
 
 public:
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
@@ -103,6 +115,43 @@ public:
     virtual bool RemoveWatchOnly(const CScript &dest);
     virtual bool HaveWatchOnly(const CScript &dest) const;
     virtual bool HaveWatchOnly() const;
+
+    bool AddSpendingKeyPaymentAddress(const libzcash::SpendingKey &key, const libzcash::PaymentAddress &address);
+    bool HaveSpendingKey(const libzcash::PaymentAddress &address) const
+    {
+        bool result;
+        {
+            LOCK(cs_KeyStore);
+            result = (mapSpendingKeys.count(address) > 0);
+        }
+        return result;
+    }
+    bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey &keyOut) const
+    {
+        {
+            LOCK(cs_KeyStore);
+            SpendingKeyMap::const_iterator mi = mapSpendingKeys.find(address);
+            if (mi != mapSpendingKeys.end())
+            {
+                keyOut = mi->second;
+                return true;
+            }
+        }
+        return false;
+    }
+    void GetPaymentAddresses(std::set<libzcash::PaymentAddress> &setAddress) const
+    {
+        setAddress.clear();
+        {
+            LOCK(cs_KeyStore);
+            SpendingKeyMap::const_iterator mi = mapSpendingKeys.begin();
+            while (mi != mapSpendingKeys.end())
+            {
+                setAddress.insert((*mi).first);
+                mi++;
+            }
+        }
+    }
 };
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;
