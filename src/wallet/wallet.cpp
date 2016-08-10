@@ -25,6 +25,7 @@
 #include <boost/thread.hpp>
 
 using namespace std;
+using namespace libzcash;
 
 /**
  * Settings
@@ -68,6 +69,47 @@ const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
     if (it == mapWallet.end())
         return NULL;
     return &(it->second);
+}
+
+// Generate a new spending key and return its public payment address
+CZCPaymentAddress CWallet::GenerateNewZKey()
+{
+    AssertLockHeld(cs_wallet); // mapZKeyMetadata
+    auto k = SpendingKey::random();
+    auto addr = k.address();
+
+    // Check for collision, even though it is unlikely to ever occur
+    if (CCryptoKeyStore::HaveSpendingKey(addr))
+        throw std::runtime_error("CWallet::GenerateNewSpendingKey(): Collision detected");
+
+    // Create new metadata
+    int64_t nCreationTime = GetTime();
+    mapZKeyMetadata[addr] = CKeyMetadata(nCreationTime);
+
+    CZCPaymentAddress pubaddr(addr);
+    if (!AddZKey(k))
+        throw std::runtime_error("CWallet::GenerateNewSpendingKey(): AddZKey failed");
+    return pubaddr;
+}
+
+// Add spending key to keystore and persist to disk
+bool CWallet::AddZKey(const libzcash::SpendingKey &key)
+{
+    AssertLockHeld(cs_wallet); // mapZKeyMetadata
+    auto addr = key.address();
+
+    if (!CCryptoKeyStore::AddSpendingKey(key))
+        return false;
+
+    if (!fFileBacked)
+        return true;
+
+    if (!IsCrypted()) {
+        return CWalletDB(strWalletFile).WriteZKey(addr,
+                                                  key,
+                                                  mapZKeyMetadata[addr]);
+    }
+    return true;
 }
 
 CPubKey CWallet::GenerateNewKey()
@@ -149,9 +191,21 @@ bool CWallet::LoadKeyMetadata(const CPubKey &pubkey, const CKeyMetadata &meta)
     return true;
 }
 
+bool CWallet::LoadZKeyMetadata(const PaymentAddress &addr, const CKeyMetadata &meta)
+{
+    AssertLockHeld(cs_wallet); // mapZKeyMetadata
+    mapZKeyMetadata[addr] = meta;
+    return true;
+}
+
 bool CWallet::LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret)
 {
     return CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret);
+}
+
+bool CWallet::LoadZKey(const libzcash::SpendingKey &key)
+{
+    return CCryptoKeyStore::AddSpendingKey(key);
 }
 
 bool CWallet::AddCScript(const CScript& redeemScript)
