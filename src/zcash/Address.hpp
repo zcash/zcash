@@ -23,6 +23,9 @@ public:
         READWRITE(pk_enc);
     }
 
+    //! Get the 256-bit SHA256d hash of this payment address.
+    uint256 GetHash() const;
+
     friend inline bool operator==(const PaymentAddress& a, const PaymentAddress& b) {
         return a.a_pk == b.a_pk && a.pk_enc == b.pk_enc;
     }
