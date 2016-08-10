@@ -383,6 +383,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "zcrawreceive",           &zc_raw_receive,         true  },
     { "wallet",             "zcsamplejoinsplit",      &zc_sample_joinsplit,    true  },
     { "wallet",             "z_getnewaddress",        &z_getnewaddress,        true  },
+    { "wallet",             "z_listaddresses",        &z_listaddresses,        true  },
     { "wallet",             "z_exportkey",            &z_exportkey,            true  },
     { "wallet",             "z_importkey",            &z_importkey,            true  },
     { "wallet",             "z_exportwallet",         &z_exportwallet,         true  },
