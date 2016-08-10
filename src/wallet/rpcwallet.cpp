@@ -2769,3 +2769,29 @@ Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp)
     result.push_back(Pair("zcviewingkey", viewing_hex));
     return result;
 }
+
+
+Value z_getnewaddress(const Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return Value::null;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_getnewaddress\n"
+            "\nReturns a new zaddr for receiving payments.\n"
+            "\nArguments:\n"
+            "\nResult:\n"
+            "\"zcashaddress\"    (string) The new zaddr\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_getnewaddress", "")
+            + HelpExampleRpc("z_getnewaddress", "")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    CZCPaymentAddress pubaddr = pwalletMain->GenerateNewZKey();
+    std::string result = pubaddr.ToString();
+    return result;
+}
+
