@@ -2439,10 +2439,11 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
             sample_times.push_back(benchmark_verify_joinsplit(samplejoinsplit));
         } else if (benchmarktype == "solveequihash") {
             if (params.size() < 3) {
-                sample_times.push_back(benchmark_solve_equihash(true));
+                sample_times.push_back(benchmark_solve_equihash());
             } else {
                 int nThreads = params[2].get_int();
-                sample_times.push_back(benchmark_solve_equihash_threaded(nThreads));
+                std::vector<double> vals = benchmark_solve_equihash_threaded(nThreads);
+                sample_times.insert(sample_times.end(), vals.begin(), vals.end());
             }
         } else if (benchmarktype == "verifyequihash") {
             sample_times.push_back(benchmark_verify_equihash());
