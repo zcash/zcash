@@ -14,6 +14,7 @@ zcash_gtest_SOURCES = \
 	gtest/test_merkletree.cpp \
 	gtest/test_circuit.cpp \
 	gtest/test_txid.cpp \
+	gtest/test_wallet_zkeys.cpp \
 	gtest/test_libzcash_utils.cpp \
 	gtest/test_proofs.cpp
 
