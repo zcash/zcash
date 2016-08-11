@@ -798,13 +798,17 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         AssertLockHeld(cs_wallet);
         bool fExisted = mapWallet.count(tx.GetTxid()) != 0;
         if (fExisted && !fUpdate) return false;
-        if (fExisted || IsMine(tx) || IsFromMe(tx))
+        auto noteAddrs = FindMyNotes(tx);
+        if (fExisted || IsMine(tx) || IsFromMe(tx) || noteAddrs.size() > 0)
         {
             CWalletTx wtx(this,tx);
 
             // Get merkle branch if transaction was found in a block
             if (pblock)
                 wtx.SetMerkleBranch(*pblock);
+
+            if (noteAddrs.size() > 0)
+                wtx.SetNoteAddresses(noteAddrs);
 
             // Do not flush the wallet here for performance reasons
             // this is safe, as in case of a crash, we rescan the necessary blocks on startup through our SetBestChain-mechanism
@@ -995,6 +999,17 @@ CAmount CWallet::GetChange(const CTransaction& tx) const
             throw std::runtime_error("CWallet::GetChange(): value out of range");
     }
     return nChange;
+}
+
+void CWalletTx::SetNoteAddresses(mapNoteAddrs_t &noteAddrs)
+{
+    mapNoteAddrs.clear();
+    for (const std::pair<pNoteIndex_t, libzcash::PaymentAddress> n : noteAddrs) {
+        if (n.first.first < vjoinsplit.size() &&
+                n.first.second < vjoinsplit[n.first.first].ciphertexts.size()) {
+            mapNoteAddrs[n.first] = n.second;
+        } // TODO ignore invalid note indices, or error?
+    }
 }
 
 int64_t CWalletTx::GetTxTime() const

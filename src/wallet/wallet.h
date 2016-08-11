@@ -222,6 +222,7 @@ private:
 
 public:
     mapValue_t mapValue;
+    mapNoteAddrs_t mapNoteAddrs;
     std::vector<std::pair<std::string, std::string> > vOrderForm;
     unsigned int fTimeReceivedIsTxTime;
     unsigned int nTimeReceived; //! time received by this node
@@ -274,6 +275,7 @@ public:
     {
         pwallet = pwalletIn;
         mapValue.clear();
+        mapNoteAddrs.clear();
         vOrderForm.clear();
         fTimeReceivedIsTxTime = false;
         nTimeReceived = 0;
@@ -323,6 +325,7 @@ public:
         std::vector<CMerkleTx> vUnused; //! Used to be vtxPrev
         READWRITE(vUnused);
         READWRITE(mapValue);
+        READWRITE(mapNoteAddrs);
         READWRITE(vOrderForm);
         READWRITE(fTimeReceivedIsTxTime);
         READWRITE(nTimeReceived);
@@ -363,6 +366,8 @@ public:
         pwallet = pwalletIn;
         MarkDirty();
     }
+
+    void SetNoteAddresses(mapNoteAddrs_t &noteAddrs);
 
     //! filter decides which addresses will count towards the debit
     CAmount GetDebit(const isminefilter& filter) const;
