@@ -96,5 +96,6 @@ TEST(keystore_tests, store_and_retrieve_spending_key_in_encrypted_store) {
 
     keyStore.GetPaymentAddresses(addrs);
     ASSERT_EQ(2, addrs.size());
+    ASSERT_EQ(1, addrs.count(addr));
     ASSERT_EQ(1, addrs.count(addr2));
 }
