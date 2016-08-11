@@ -565,11 +565,11 @@ Value z_importkey(const Array& params, bool fHelp)
     auto addr = key.address();
 
     {
-        pwalletMain->MarkDirty();
-
         // Don't throw error in case a key is already there
         if (pwalletMain->HaveSpendingKey(addr))
             return Value::null;
+
+        pwalletMain->MarkDirty();
 
         if (!pwalletMain-> AddZKey(key))
             throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
