@@ -10,6 +10,7 @@
 #include "coincontrol.h"
 #include "consensus/consensus.h"
 #include "consensus/validation.h"
+#include "init.h"
 #include "main.h"
 #include "net.h"
 #include "script/script.h"
@@ -17,6 +18,7 @@
 #include "timedata.h"
 #include "util.h"
 #include "utilmoneystr.h"
+#include "zcash/Note.hpp"
 
 #include <assert.h>
 
@@ -842,6 +844,37 @@ void CWallet::EraseFromWallet(const uint256 &hash)
     return;
 }
 
+
+mapNoteAddrs_t CWallet::FindMyNotes(const CTransaction& tx) const
+{
+    mapNoteAddrs_t noteAddrs;
+    std::set<libzcash::PaymentAddress> addresses;
+    GetPaymentAddresses(addresses);
+    libzcash::SpendingKey key;
+    for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {
+        auto hSig = tx.vjoinsplit[i].h_sig(*pzcashParams, tx.joinSplitPubKey);
+        for (size_t j = 0; j < tx.vjoinsplit[i].ciphertexts.size(); j++) {
+            BOOST_FOREACH(const libzcash::PaymentAddress& address, addresses)
+            {
+                GetSpendingKey(address, key);
+                ZCNoteDecryption decryptor(key.viewing_key());
+                try {
+                    libzcash::NotePlaintext::decrypt(
+                        decryptor,
+                        tx.vjoinsplit[i].ciphertexts[j],
+                        tx.vjoinsplit[i].ephemeralKey,
+                        hSig,
+                        (unsigned char) j);
+                    noteAddrs.insert(std::make_pair(pNoteIndex_t(i, j), address));
+                    break;
+                } catch (const std::exception &) {
+                    // Couldn't decrypt with this spending key
+                }
+            }
+        }
+    }
+    return noteAddrs;
+}
 
 isminetype CWallet::IsMine(const CTxIn &txin) const
 {

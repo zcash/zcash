@@ -118,7 +118,13 @@ struct CRecipient
     bool fSubtractFeeFromAmount;
 };
 
+// Index for a particular Note in a transaction
+// first:  Index into CTransaction.vjoinsplit
+// second: Index into JSDescription.ciphertexts
+typedef std::pair<unsigned int, unsigned int> pNoteIndex_t;
+
 typedef std::map<std::string, std::string> mapValue_t;
+typedef std::map<pNoteIndex_t, libzcash::PaymentAddress> mapNoteAddrs_t;
 
 
 static void ReadOrderPos(int64_t& nOrderPos, mapValue_t& mapValue)
@@ -666,6 +672,8 @@ public:
     std::map<CTxDestination, CAmount> GetAddressBalances();
 
     std::set<CTxDestination> GetAccountAddresses(std::string strAccount) const;
+
+    mapNoteAddrs_t FindMyNotes(const CTransaction& tx) const;
 
     isminetype IsMine(const CTxIn& txin) const;
     CAmount GetDebit(const CTxIn& txin, const isminefilter& filter) const;
