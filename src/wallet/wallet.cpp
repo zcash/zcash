@@ -80,7 +80,7 @@ CZCPaymentAddress CWallet::GenerateNewZKey()
 
     // Check for collision, even though it is unlikely to ever occur
     if (CCryptoKeyStore::HaveSpendingKey(addr))
-        throw std::runtime_error("CWallet::GenerateNewSpendingKey(): Collision detected");
+        throw std::runtime_error("CWallet::GenerateNewZKey(): Collision detected");
 
     // Create new metadata
     int64_t nCreationTime = GetTime();
@@ -88,7 +88,7 @@ CZCPaymentAddress CWallet::GenerateNewZKey()
 
     CZCPaymentAddress pubaddr(addr);
     if (!AddZKey(k))
-        throw std::runtime_error("CWallet::GenerateNewSpendingKey(): AddZKey failed");
+        throw std::runtime_error("CWallet::GenerateNewZKey(): AddZKey failed");
     return pubaddr;
 }
 
