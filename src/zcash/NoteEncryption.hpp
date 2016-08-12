@@ -61,6 +61,8 @@ public:
     typedef boost::array<unsigned char, CLEN> Ciphertext;
     typedef boost::array<unsigned char, MLEN> Plaintext;
 
+    // Unused default constructor to make allocators happy
+    NoteDecryption() { }
     NoteDecryption(uint256 sk_enc);
 
     Plaintext decrypt(const Ciphertext &ciphertext,

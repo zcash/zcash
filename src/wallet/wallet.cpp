@@ -855,24 +855,25 @@ mapNoteAddrs_t CWallet::FindMyNotes(const CTransaction& tx) const
     std::set<libzcash::PaymentAddress> addresses;
     GetPaymentAddresses(addresses);
     libzcash::SpendingKey key;
+    ZCNoteDecryption decryptor;
     for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {
         auto hSig = tx.vjoinsplit[i].h_sig(*pzcashParams, tx.joinSplitPubKey);
         for (size_t j = 0; j < tx.vjoinsplit[i].ciphertexts.size(); j++) {
             BOOST_FOREACH(const libzcash::PaymentAddress& address, addresses)
             {
-                GetSpendingKey(address, key);
-                ZCNoteDecryption decryptor(key.viewing_key());
-                try {
-                    libzcash::NotePlaintext::decrypt(
-                        decryptor,
-                        tx.vjoinsplit[i].ciphertexts[j],
-                        tx.vjoinsplit[i].ephemeralKey,
-                        hSig,
-                        (unsigned char) j);
-                    noteAddrs.insert(std::make_pair(pNoteIndex_t(i, j), address));
-                    break;
-                } catch (const std::exception &) {
-                    // Couldn't decrypt with this spending key
+                if (GetSpendingKey(address, key) && GetNoteDecryptor(address, decryptor)) {
+                    try {
+                        libzcash::NotePlaintext::decrypt(
+                            decryptor,
+                            tx.vjoinsplit[i].ciphertexts[j],
+                            tx.vjoinsplit[i].ephemeralKey,
+                            hSig,
+                            (unsigned char) j);
+                        noteAddrs.insert(std::make_pair(pNoteIndex_t(i, j), address));
+                        break;
+                    } catch (const std::exception &) {
+                        // Couldn't decrypt with this spending key
+                    }
                 }
             }
         }
