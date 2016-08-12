@@ -16,9 +16,9 @@ TEST(keystore_tests, store_and_retrieve_spending_key) {
     auto addr = sk.address();
     ASSERT_TRUE(keyStore.HaveSpendingKey(addr));
 
-    libzcash::SpendingKey keyOut;
-    keyStore.GetSpendingKey(addr, keyOut);
-    ASSERT_EQ(sk, keyOut);
+    libzcash::SpendingKey skOut;
+    keyStore.GetSpendingKey(addr, skOut);
+    ASSERT_EQ(sk, skOut);
 
     keyStore.GetPaymentAddresses(addrs);
     ASSERT_EQ(1, addrs.size());

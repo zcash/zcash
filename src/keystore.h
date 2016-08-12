@@ -51,7 +51,7 @@ public:
 
     //! Check whether a spending key corresponding to a given payment address is present in the store.
     virtual bool HaveSpendingKey(const libzcash::PaymentAddress &address) const =0;
-    virtual bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey& keyOut) const =0;
+    virtual bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey& skOut) const =0;
     virtual void GetPaymentAddresses(std::set<libzcash::PaymentAddress> &setAddress) const =0;
 };
 
@@ -125,14 +125,14 @@ public:
         }
         return result;
     }
-    bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey &keyOut) const
+    bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey &skOut) const
     {
         {
             LOCK(cs_KeyStore);
             SpendingKeyMap::const_iterator mi = mapSpendingKeys.find(address);
             if (mi != mapSpendingKeys.end())
             {
-                keyOut = mi->second;
+                skOut = mi->second;
                 return true;
             }
         }
