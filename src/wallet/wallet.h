@@ -472,17 +472,28 @@ private:
     int64_t nLastResend;
     bool fBroadcastTransactions;
 
+    template <class T>
+    using TxSpendMap = std::multimap<T, uint256>;
     /**
      * Used to keep track of spent outpoints, and
      * detect and report conflicts (double-spends or
      * mutated transactions where the mutant gets mined).
      */
-    typedef std::multimap<COutPoint, uint256> TxSpends;
+    typedef TxSpendMap<COutPoint> TxSpends;
     TxSpends mapTxSpends;
+    /**
+     * Used to keep track of spent Notes, and
+     * detect and report conflicts (double-spends).
+     */
+    typedef TxSpendMap<uint256> TxNullifiers;
+    TxNullifiers mapTxNullifiers;
+
     void AddToSpends(const COutPoint& outpoint, const uint256& wtxid);
+    void AddToSpends(const uint256& nullifier, const uint256& wtxid);
     void AddToSpends(const uint256& wtxid);
 
-    void SyncMetaData(std::pair<TxSpends::iterator, TxSpends::iterator>);
+    template <class T>
+    void SyncMetaData(std::pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator>);
 
 public:
     /*
@@ -560,6 +571,7 @@ public:
     bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet) const;
 
     bool IsSpent(const uint256& hash, unsigned int n) const;
+    bool IsSpent(const uint256& nullifier) const;
 
     bool IsLockedCoin(uint256 hash, unsigned int n) const;
     void LockCoin(COutPoint& output);

@@ -396,6 +396,20 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
         for (TxSpends::const_iterator it = range.first; it != range.second; ++it)
             result.insert(it->second);
     }
+
+    std::pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range_n;
+
+    BOOST_FOREACH(const JSDescription& jsdesc, wtx.vjoinsplit)
+    {
+        BOOST_FOREACH(const uint256& nullifier, jsdesc.nullifiers)
+        {
+            if (mapTxNullifiers.count(nullifier) <= 1)
+                continue;  // No conflict if zero or one spends
+            range_n = mapTxNullifiers.equal_range(nullifier);
+            for (TxNullifiers::const_iterator it = range_n.first; it != range_n.second; ++it)
+                result.insert(it->second);
+        }
+    }
     return result;
 }
 
@@ -451,7 +465,8 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
     return true;
 }
 
-void CWallet::SyncMetaData(pair<TxSpends::iterator, TxSpends::iterator> range)
+template <class T>
+void CWallet::SyncMetaData(pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator> range)
 {
     // We want all the wallet transactions in range to have the same metadata as
     // the oldest (smallest nOrderPos).
@@ -459,7 +474,7 @@ void CWallet::SyncMetaData(pair<TxSpends::iterator, TxSpends::iterator> range)
 
     int nMinOrderPos = std::numeric_limits<int>::max();
     const CWalletTx* copyFrom = NULL;
-    for (TxSpends::iterator it = range.first; it != range.second; ++it)
+    for (typename TxSpendMap<T>::iterator it = range.first; it != range.second; ++it)
     {
         const uint256& hash = it->second;
         int n = mapWallet[hash].nOrderPos;
@@ -470,7 +485,7 @@ void CWallet::SyncMetaData(pair<TxSpends::iterator, TxSpends::iterator> range)
         }
     }
     // Now copy data from copyFrom to rest:
-    for (TxSpends::iterator it = range.first; it != range.second; ++it)
+    for (typename TxSpendMap<T>::iterator it = range.first; it != range.second; ++it)
     {
         const uint256& hash = it->second;
         CWalletTx* copyTo = &mapWallet[hash];
@@ -507,15 +522,42 @@ bool CWallet::IsSpent(const uint256& hash, unsigned int n) const
     return false;
 }
 
+/**
+ * Note is spent if any non-conflicted transaction
+ * spends it:
+ */
+bool CWallet::IsSpent(const uint256& nullifier) const
+{
+    pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range;
+    range = mapTxNullifiers.equal_range(nullifier);
+
+    for (TxNullifiers::const_iterator it = range.first; it != range.second; ++it)
+    {
+        const uint256& wtxid = it->second;
+        std::map<uint256, CWalletTx>::const_iterator mit = mapWallet.find(wtxid);
+        if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= 0)
+            return true; // Spent
+    }
+    return false;
+}
+
 void CWallet::AddToSpends(const COutPoint& outpoint, const uint256& wtxid)
 {
     mapTxSpends.insert(make_pair(outpoint, wtxid));
 
     pair<TxSpends::iterator, TxSpends::iterator> range;
     range = mapTxSpends.equal_range(outpoint);
-    SyncMetaData(range);
+    SyncMetaData<COutPoint>(range);
 }
 
+void CWallet::AddToSpends(const uint256& nullifier, const uint256& wtxid)
+{
+    mapTxNullifiers.insert(make_pair(nullifier, wtxid));
+
+    pair<TxNullifiers::iterator, TxNullifiers::iterator> range;
+    range = mapTxNullifiers.equal_range(nullifier);
+    SyncMetaData<uint256>(range);
+}
 
 void CWallet::AddToSpends(const uint256& wtxid)
 {
@@ -526,6 +568,9 @@ void CWallet::AddToSpends(const uint256& wtxid)
 
     BOOST_FOREACH(const CTxIn& txin, thisTx.vin)
         AddToSpends(txin.prevout, wtxid);
+    BOOST_FOREACH(const JSDescription& jsdesc, thisTx.vjoinsplit)
+        BOOST_FOREACH(const uint256& nullifier, jsdesc.nullifiers)
+            AddToSpends(nullifier, wtxid);
 }
 
 bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
