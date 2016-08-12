@@ -47,8 +47,7 @@ public:
     virtual bool HaveWatchOnly() const =0;
 
     //! Add a spending key to the store.
-    virtual bool AddSpendingKeyPaymentAddress(const libzcash::SpendingKey &key, const libzcash::PaymentAddress &address) =0;
-    virtual bool AddSpendingKey(const libzcash::SpendingKey &key);
+    virtual bool AddSpendingKey(const libzcash::SpendingKey &sk) =0;
 
     //! Check whether a spending key corresponding to a given payment address is present in the store.
     virtual bool HaveSpendingKey(const libzcash::PaymentAddress &address) const =0;
@@ -116,7 +115,7 @@ public:
     virtual bool HaveWatchOnly(const CScript &dest) const;
     virtual bool HaveWatchOnly() const;
 
-    bool AddSpendingKeyPaymentAddress(const libzcash::SpendingKey &key, const libzcash::PaymentAddress &address);
+    bool AddSpendingKey(const libzcash::SpendingKey &sk);
     bool HaveSpendingKey(const libzcash::PaymentAddress &address) const
     {
         bool result;
