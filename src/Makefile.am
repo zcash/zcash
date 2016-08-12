@@ -173,8 +173,8 @@ BITCOIN_CORE_H = \
   metrics.h \
   miner.h \
   net.h \
-  netbase.h \
   netaddress.h \
+  netbase.h \
   noui.h \
   policy/fees.h \
   policy/policy.h \
