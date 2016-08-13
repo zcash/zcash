@@ -53,12 +53,12 @@ void GenerateHash(const eh_HashState& base_state, eh_index g,
 
 void ExpandArray(const unsigned char* in, size_t in_len,
                  unsigned char* out, size_t out_len,
-                 size_t bit_len)
+                 size_t bit_len, size_t byte_pad)
 {
     assert(bit_len >= 8);
     assert(8*sizeof(uint32_t) >= 7+bit_len);
 
-    size_t out_width { (bit_len+7)/8 };
+    size_t out_width { (bit_len+7)/8 + byte_pad };
     assert(out_len == 8*out_width*in_len/bit_len);
 
     uint32_t bit_len_mask { ((uint32_t)1 << bit_len) - 1 };
@@ -77,7 +77,10 @@ void ExpandArray(const unsigned char* in, size_t in_len,
         // output element.
         if (acc_bits >= bit_len) {
             acc_bits -= bit_len;
-            for (size_t x = 0; x < out_width; x++) {
+            for (size_t x = 0; x < byte_pad; x++) {
+                out[j+x] = 0;
+            }
+            for (size_t x = byte_pad; x < out_width; x++) {
                 out[j+x] = (
                     // Big-endian
                     acc_value >> (acc_bits+(8*(out_width-x-1)))
@@ -93,12 +96,12 @@ void ExpandArray(const unsigned char* in, size_t in_len,
 
 void CompressArray(const unsigned char* in, size_t in_len,
                    unsigned char* out, size_t out_len,
-                   size_t bit_len)
+                   size_t bit_len, size_t byte_pad)
 {
     assert(bit_len >= 8);
     assert(8*sizeof(uint32_t) >= 7+bit_len);
 
-    size_t in_width { (bit_len+7)/8 };
+    size_t in_width { (bit_len+7)/8 + byte_pad };
     assert(out_len == bit_len*in_len/(8*in_width));
 
     uint32_t bit_len_mask { ((uint32_t)1 << bit_len) - 1 };
@@ -114,7 +117,7 @@ void CompressArray(const unsigned char* in, size_t in_len,
         // input element.
         if (acc_bits < 8) {
             acc_value = acc_value << bit_len;
-            for (size_t x = 0; x < in_width; x++) {
+            for (size_t x = byte_pad; x < in_width; x++) {
                 acc_value = acc_value | (
                     (
                         // Apply bit_len_mask across byte boundaries

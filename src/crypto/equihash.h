@@ -26,10 +26,10 @@ typedef uint8_t eh_trunc;
 
 void ExpandArray(const unsigned char* in, size_t in_len,
                  unsigned char* out, size_t out_len,
-                 size_t bit_len);
+                 size_t bit_len, size_t byte_pad=0);
 void CompressArray(const unsigned char* in, size_t in_len,
                    unsigned char* out, size_t out_len,
-                   size_t bit_len);
+                   size_t bit_len, size_t byte_pad=0);
 
 eh_index ArrayToEhIndex(const unsigned char* array);
 eh_trunc TruncateIndex(const eh_index i, const unsigned int ilen);
