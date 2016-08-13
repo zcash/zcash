@@ -2,6 +2,7 @@
 #include <gmock/gmock.h>
 
 #include "crypto/equihash.h"
+#include "uint256.h"
 
 void TestExpandAndCompress(const std::string &scope, size_t bit_len,
                            std::vector<unsigned char> compact,
@@ -44,6 +45,8 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
     Equihash<48,5> Eh48_5;
     crypto_generichash_blake2b_state state;
     Eh48_5.InitialiseState(state);
+    uint256 V = uint256S("0x00");
+    crypto_generichash_blake2b_update(&state, V.begin(), V.size());
 
     {
         ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<eh_index> soln) {
@@ -146,6 +149,8 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     Equihash<48,5> Eh48_5;
     crypto_generichash_blake2b_state state;
     Eh48_5.InitialiseState(state);
+    uint256 V = uint256S("0x00");
+    crypto_generichash_blake2b_update(&state, V.begin(), V.size());
 
     {
         ASSERT_NO_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<eh_index> soln) {
