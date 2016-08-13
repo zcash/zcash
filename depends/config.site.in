@@ -7,10 +7,6 @@ ac_tool_prefix=${host_alias}-
 if test -z $with_boost; then
   with_boost=$depends_prefix
 fi
-# Disable comparison utility (#592)
-#if test -z $with_comparison_tool; then
-#  with_comparison_tool=$depends_prefix/native/share/BitcoindComparisonTool_jar/BitcoindComparisonTool.jar
-#fi
 
 
 if test -z $enable_wallet && test -n "@no_wallet@"; then
