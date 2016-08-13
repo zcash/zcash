@@ -3,6 +3,33 @@
 
 #include "crypto/equihash.h"
 
+void TestExpandAndCompress(const std::string &scope, size_t bit_len,
+                           std::vector<unsigned char> compact,
+                           std::vector<unsigned char> expanded)
+{
+    SCOPED_TRACE(scope);
+
+    std::vector<unsigned char> out(expanded.size());
+    ExpandArray(compact.data(), compact.size(), out.data(), out.size(), bit_len);
+    EXPECT_EQ(expanded, out);
+
+    out.resize(compact.size());
+    CompressArray(expanded.data(), expanded.size(), out.data(), out.size(), bit_len);
+    EXPECT_EQ(compact, out);
+}
+
+TEST(equihash_tests, expand_and_contract_arrays) {
+    TestExpandAndCompress("8 11-bit chunks, all-ones", 11,
+                          ParseHex("ffffffffffffffffffffff"),
+                          ParseHex("07ff07ff07ff07ff07ff07ff07ff07ff"));
+    TestExpandAndCompress("8 21-bit chunks, alternating 1s and 0s", 21,
+                          ParseHex("aaaaad55556aaaab55555aaaaad55556aaaab55555"),
+                          ParseHex("155555155555155555155555155555155555155555155555"));
+    TestExpandAndCompress("16 14-bit chunks, alternating 11s and 00s", 14,
+                          ParseHex("cccf333cccf333cccf333cccf333cccf333cccf333cccf333cccf333"),
+                          ParseHex("3333333333333333333333333333333333333333333333333333333333333333"));
+}
+
 TEST(equihash_tests, is_probably_duplicate) {
     std::shared_ptr<eh_trunc> p1 (new eh_trunc[4] {0, 1, 2, 3});
     std::shared_ptr<eh_trunc> p2 (new eh_trunc[4] {0, 1, 1, 3});

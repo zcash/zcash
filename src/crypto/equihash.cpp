@@ -39,6 +39,85 @@ int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
                                                          personalization);
 }
 
+void ExpandArray(const unsigned char* in, size_t in_len,
+                 unsigned char* out, size_t out_len,
+                 size_t bit_len)
+{
+    assert(bit_len >= 8);
+    assert(8*sizeof(uint32_t) >= 7+bit_len);
+
+    size_t out_width { (bit_len+7)/8 };
+    assert(out_len == 8*out_width*in_len/bit_len);
+
+    uint32_t bit_len_mask { ((uint32_t)1 << bit_len) - 1 };
+
+    // The acc_bits least-significant bits of acc_value represent a bit sequence
+    // in big-endian order.
+    size_t acc_bits = 0;
+    uint32_t acc_value = 0;
+
+    size_t j = 0;
+    for (size_t i = 0; i < in_len; i++) {
+        acc_value = (acc_value << 8) | in[i];
+        acc_bits += 8;
+
+        // When we have bit_len or more bits in the accumulator, write the next
+        // output element.
+        if (acc_bits >= bit_len) {
+            acc_bits -= bit_len;
+            for (size_t x = 0; x < out_width; x++) {
+                out[j+x] = (
+                    // Big-endian
+                    acc_value >> (acc_bits+(8*(out_width-x-1)))
+                ) & (
+                    // Apply bit_len_mask across byte boundaries
+                    (bit_len_mask >> (8*(out_width-x-1))) & 0xFF
+                );
+            }
+            j += out_width;
+        }
+    }
+}
+
+void CompressArray(const unsigned char* in, size_t in_len,
+                   unsigned char* out, size_t out_len,
+                   size_t bit_len)
+{
+    assert(bit_len >= 8);
+    assert(8*sizeof(uint32_t) >= 7+bit_len);
+
+    size_t in_width { (bit_len+7)/8 };
+    assert(out_len == bit_len*in_len/(8*in_width));
+
+    uint32_t bit_len_mask { ((uint32_t)1 << bit_len) - 1 };
+
+    // The acc_bits least-significant bits of acc_value represent a bit sequence
+    // in big-endian order.
+    size_t acc_bits = 0;
+    uint32_t acc_value = 0;
+
+    size_t j = 0;
+    for (size_t i = 0; i < out_len; i++) {
+        // When we have fewer than 8 bits left in the accumulator, read the next
+        // input element.
+        if (acc_bits < 8) {
+            acc_value = acc_value << bit_len;
+            for (size_t x = 0; x < in_width; x++) {
+                acc_value = acc_value | (
+                    (
+                        // Apply bit_len_mask across byte boundaries
+                        in[j+x] & ((bit_len_mask >> (8*(in_width-x-1))) & 0xFF)
+                    ) << (8*(in_width-x-1))); // Big-endian
+            }
+            j += in_width;
+            acc_bits += bit_len;
+        }
+
+        acc_bits -= 8;
+        out[i] = (acc_value >> acc_bits) & 0xFF;
+    }
+}
+
 // Big-endian so that lexicographic array comparison is equivalent to integer
 // comparison
 void EhIndexToArray(const eh_index i, unsigned char* array)

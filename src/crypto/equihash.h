@@ -24,6 +24,13 @@ typedef crypto_generichash_blake2b_state eh_HashState;
 typedef uint32_t eh_index;
 typedef uint8_t eh_trunc;
 
+void ExpandArray(const unsigned char* in, size_t in_len,
+                 unsigned char* out, size_t out_len,
+                 size_t bit_len);
+void CompressArray(const unsigned char* in, size_t in_len,
+                   unsigned char* out, size_t out_len,
+                   size_t bit_len);
+
 eh_index ArrayToEhIndex(const unsigned char* array);
 eh_trunc TruncateIndex(const eh_index i, const unsigned int ilen);
 
