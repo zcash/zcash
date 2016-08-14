@@ -34,6 +34,11 @@ void CompressArray(const unsigned char* in, size_t in_len,
 eh_index ArrayToEhIndex(const unsigned char* array);
 eh_trunc TruncateIndex(const eh_index i, const unsigned int ilen);
 
+std::vector<eh_index> GetIndicesFromMinimal(std::vector<unsigned char> minimal,
+                                            size_t cBitLen);
+std::vector<unsigned char> GetMinimalFromIndices(std::vector<eh_index> indices,
+                                                 size_t cBitLen);
+
 template<size_t WIDTH>
 class StepRow
 {
@@ -93,8 +98,12 @@ public:
     FullStepRow& operator=(const FullStepRow<WIDTH>& a);
 
     inline bool IndicesBefore(const FullStepRow<WIDTH>& a, size_t len, size_t lenIndices) const { return memcmp(hash+len, a.hash+len, lenIndices) < 0; }
-    std::vector<eh_index> GetIndices(size_t len, size_t lenIndices) const;
+    std::vector<unsigned char> GetIndices(size_t len, size_t lenIndices,
+                                          size_t cBitLen) const;
 
+    template<size_t W>
+    friend bool DistinctIndices(const FullStepRow<W>& a, const FullStepRow<W>& b,
+                                size_t len, size_t lenIndices);
     template<size_t W>
     friend bool IsValidBranch(const FullStepRow<W>& a, const size_t len, const unsigned int ilen, const eh_trunc t);
 };
@@ -164,17 +173,18 @@ public:
     enum : size_t { FinalFullWidth=2*CollisionByteLength+sizeof(eh_index)*(1 << (K)) };
     enum : size_t { TruncatedWidth=max(HashLength+sizeof(eh_trunc), 2*CollisionByteLength+sizeof(eh_trunc)*(1 << (K-1))) };
     enum : size_t { FinalTruncatedWidth=max(HashLength+sizeof(eh_trunc), 2*CollisionByteLength+sizeof(eh_trunc)*(1 << (K))) };
+    enum : size_t { SolutionWidth=(1 << K)*(CollisionBitLength+1)/8 };
 
     Equihash() { }
 
     int InitialiseState(eh_HashState& base_state);
     bool BasicSolve(const eh_HashState& base_state,
-                    const std::function<bool(std::vector<eh_index>)> validBlock,
+                    const std::function<bool(std::vector<unsigned char>)> validBlock,
                     const std::function<bool(EhSolverCancelCheck)> cancelled);
     bool OptimisedSolve(const eh_HashState& base_state,
-                        const std::function<bool(std::vector<eh_index>)> validBlock,
+                        const std::function<bool(std::vector<unsigned char>)> validBlock,
                         const std::function<bool(EhSolverCancelCheck)> cancelled);
-    bool IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln);
+    bool IsValidSolution(const eh_HashState& base_state, std::vector<unsigned char> soln);
 };
 
 #include "equihash.tcc"
@@ -198,7 +208,7 @@ static Equihash<48,5> Eh48_5;
     }
 
 inline bool EhBasicSolve(unsigned int n, unsigned int k, const eh_HashState& base_state,
-                    const std::function<bool(std::vector<eh_index>)> validBlock,
+                    const std::function<bool(std::vector<unsigned char>)> validBlock,
                     const std::function<bool(EhSolverCancelCheck)> cancelled)
 {
     if (n == 96 && k == 3) {
@@ -215,14 +225,14 @@ inline bool EhBasicSolve(unsigned int n, unsigned int k, const eh_HashState& bas
 }
 
 inline bool EhBasicSolveUncancellable(unsigned int n, unsigned int k, const eh_HashState& base_state,
-                    const std::function<bool(std::vector<eh_index>)> validBlock)
+                    const std::function<bool(std::vector<unsigned char>)> validBlock)
 {
     return EhBasicSolve(n, k, base_state, validBlock,
                         [](EhSolverCancelCheck pos) { return false; });
 }
 
 inline bool EhOptimisedSolve(unsigned int n, unsigned int k, const eh_HashState& base_state,
-                    const std::function<bool(std::vector<eh_index>)> validBlock,
+                    const std::function<bool(std::vector<unsigned char>)> validBlock,
                     const std::function<bool(EhSolverCancelCheck)> cancelled)
 {
     if (n == 96 && k == 3) {
@@ -239,7 +249,7 @@ inline bool EhOptimisedSolve(unsigned int n, unsigned int k, const eh_HashState&
 }
 
 inline bool EhOptimisedSolveUncancellable(unsigned int n, unsigned int k, const eh_HashState& base_state,
-                    const std::function<bool(std::vector<eh_index>)> validBlock)
+                    const std::function<bool(std::vector<unsigned char>)> validBlock)
 {
     return EhOptimisedSolve(n, k, base_state, validBlock,
                             [](EhSolverCancelCheck pos) { return false; });

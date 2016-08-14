@@ -41,6 +41,7 @@ void PrintSolutions(std::stringstream &strm, std::set<std::vector<uint32_t>> sol
 }
 
 void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, const arith_uint256 &nonce, const std::set<std::vector<uint32_t>> &solns) {
+    size_t cBitLen { n/(k+1) };
     crypto_generichash_blake2b_state state;
     EhInitialiseState(n, k, state);
     uint256 V = ArithToUint256(nonce);
@@ -50,9 +51,9 @@ void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, c
 
     // First test the basic solver
     std::set<std::vector<uint32_t>> ret;
-    std::function<bool(std::vector<eh_index>)> validBlock =
-            [&ret](std::vector<eh_index> soln) {
-        ret.insert(soln);
+    std::function<bool(std::vector<unsigned char>)> validBlock =
+            [&ret, cBitLen](std::vector<unsigned char> soln) {
+        ret.insert(GetIndicesFromMinimal(soln, cBitLen));
         return false;
     };
     EhBasicSolveUncancellable(n, k, state, validBlock);
@@ -64,9 +65,9 @@ void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, c
 
     // The optimised solver should have the exact same result
     std::set<std::vector<uint32_t>> retOpt;
-    std::function<bool(std::vector<eh_index>)> validBlockOpt =
-            [&retOpt](std::vector<eh_index> soln) {
-        retOpt.insert(soln);
+    std::function<bool(std::vector<unsigned char>)> validBlockOpt =
+            [&retOpt, cBitLen](std::vector<unsigned char> soln) {
+        retOpt.insert(GetIndicesFromMinimal(soln, cBitLen));
         return false;
     };
     EhOptimisedSolveUncancellable(n, k, state, validBlockOpt);
@@ -79,6 +80,7 @@ void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, c
 }
 
 void TestEquihashValidator(unsigned int n, unsigned int k, const std::string &I, const arith_uint256 &nonce, std::vector<uint32_t> soln, bool expected) {
+    size_t cBitLen { n/(k+1) };
     crypto_generichash_blake2b_state state;
     EhInitialiseState(n, k, state);
     uint256 V = ArithToUint256(nonce);
@@ -89,7 +91,7 @@ void TestEquihashValidator(unsigned int n, unsigned int k, const std::string &I,
     PrintSolution(strm, soln);
     BOOST_TEST_MESSAGE(strm.str());
     bool isValid;
-    EhIsValidSolution(n, k, state, soln, isValid);
+    EhIsValidSolution(n, k, state, GetMinimalFromIndices(soln, cBitLen), isValid);
     BOOST_CHECK(isValid == expected);
 }
 

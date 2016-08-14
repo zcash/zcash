@@ -206,40 +206,42 @@ class RESTTest (BitcoinTestFramework):
         # /rest/block/ #
         ################
 
-        # Block header length of 237 is:
-        # -  76 bytes: regular fields
+        # Block header length of 177 is:
+        # - 108 bytes: regular fields
         # -  32 bytes: nonce
-        # - 129 bytes: Equihash solution vector:
-        #              - 1 byte vector length
-        #              - 2^k 4-byte indices
+        # -  37 bytes: Equihash solution:
+        #              - 1 byte length
+        #              - 2^k ((n/(k+1))+1)-bit indices.
+        #                For regtest parameters (n = 48, k = 5),
+        #                this is 32 9-bit indices
 
         # check binary format
         response = http_get_call(url.hostname, url.port, '/rest/block/'+bb_hash+self.FORMAT_SEPARATOR+"bin", "", True)
         assert_equal(response.status, 200)
-        assert_greater_than(int(response.getheader('content-length')), 269)
+        assert_greater_than(int(response.getheader('content-length')), 177)
         response_str = response.read()
 
         # compare with block header
         response_header = http_get_call(url.hostname, url.port, '/rest/headers/1/'+bb_hash+self.FORMAT_SEPARATOR+"bin", "", True)
         assert_equal(response_header.status, 200)
-        assert_equal(int(response_header.getheader('content-length')), 269)
+        assert_equal(int(response_header.getheader('content-length')), 177)
         response_header_str = response_header.read()
-        assert_equal(response_str[0:269], response_header_str)
+        assert_equal(response_str[0:177], response_header_str)
 
         # check block hex format
         response_hex = http_get_call(url.hostname, url.port, '/rest/block/'+bb_hash+self.FORMAT_SEPARATOR+"hex", "", True)
         assert_equal(response_hex.status, 200)
-        assert_greater_than(int(response_hex.getheader('content-length')), 506)
+        assert_greater_than(int(response_hex.getheader('content-length')), 354)
         response_hex_str = response_hex.read()
-        assert_equal(response_str.encode("hex")[0:506], response_hex_str[0:506])
+        assert_equal(response_str.encode("hex")[0:354], response_hex_str[0:354])
 
         # compare with hex block header
         response_header_hex = http_get_call(url.hostname, url.port, '/rest/headers/1/'+bb_hash+self.FORMAT_SEPARATOR+"hex", "", True)
         assert_equal(response_header_hex.status, 200)
-        assert_greater_than(int(response_header_hex.getheader('content-length')), 506)
+        assert_greater_than(int(response_header_hex.getheader('content-length')), 354)
         response_header_hex_str = response_header_hex.read()
-        assert_equal(response_hex_str[0:506], response_header_hex_str[0:506])
-        assert_equal(response_header_str.encode("hex")[0:506], response_header_hex_str[0:506])
+        assert_equal(response_hex_str[0:354], response_header_hex_str[0:354])
+        assert_equal(response_header_str.encode("hex")[0:354], response_header_hex_str[0:354])
 
         # check json format
         json_string = http_get_call(url.hostname, url.port, '/rest/block/'+bb_hash+self.FORMAT_SEPARATOR+'json')

@@ -55,7 +55,7 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
     crypto_generichash_blake2b_update(&state, V.begin(), V.size());
 
     {
-        ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return false;
@@ -63,7 +63,7 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.BasicSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.BasicSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == ListGeneration;
@@ -71,7 +71,7 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.BasicSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.BasicSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == ListSorting;
@@ -79,7 +79,7 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.BasicSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.BasicSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == ListColliding;
@@ -87,7 +87,7 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.BasicSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.BasicSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == RoundEnd;
@@ -95,7 +95,7 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.BasicSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.BasicSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == FinalSorting;
@@ -103,7 +103,7 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.BasicSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.BasicSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == FinalColliding;
@@ -111,7 +111,7 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
     }
 
     {
-        ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == PartialGeneration;
@@ -119,7 +119,7 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
     }
 
     {
-        ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == PartialSorting;
@@ -127,7 +127,7 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
     }
 
     {
-        ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == PartialSubtreeEnd;
@@ -135,7 +135,7 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
     }
 
     {
-        ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == PartialIndexEnd;
@@ -143,7 +143,7 @@ TEST(equihash_tests, check_basic_solver_cancelled) {
     }
 
     {
-        ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == PartialEnd;
@@ -159,7 +159,7 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     crypto_generichash_blake2b_update(&state, V.begin(), V.size());
 
     {
-        ASSERT_NO_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_NO_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return false;
@@ -167,7 +167,7 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == ListGeneration;
@@ -175,7 +175,7 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == ListSorting;
@@ -183,7 +183,7 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == ListColliding;
@@ -191,7 +191,7 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == RoundEnd;
@@ -199,7 +199,7 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == FinalSorting;
@@ -207,7 +207,7 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == FinalColliding;
@@ -215,7 +215,7 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == PartialGeneration;
@@ -223,7 +223,7 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == PartialSorting;
@@ -231,7 +231,7 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == PartialSubtreeEnd;
@@ -239,7 +239,7 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == PartialIndexEnd;
@@ -247,7 +247,7 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
     }
 
     {
-        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<eh_index> soln) {
+        ASSERT_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<unsigned char> soln) {
             return false;
         }, [](EhSolverCancelCheck pos) {
             return pos == PartialEnd;
