@@ -447,19 +447,31 @@ bool static ConnectSocketDirectly(const CService &addrConnect, SOCKET& hSocketRe
     int set = 1;
 #ifdef SO_NOSIGPIPE
     // Different way of disabling SIGPIPE on BSD
-    setsockopt(hSocket, SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(int));
+    if (setsockopt(hSocket, SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(int)) == -1) {
+      CloseSocket(hSocket);
+      return false;
+    }
 #endif
 
     //Disable Nagle's algorithm
+    if (setsockopt(hSocket,
+	       IPPROTO_TCP,
+	       TCP_NODELAY,
 #ifdef WIN32
-    setsockopt(hSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&set, sizeof(int));
+	       (const char*)&set,
 #else
-    setsockopt(hSocket, IPPROTO_TCP, TCP_NODELAY, (void*)&set, sizeof(int));
+	       (void*)&set,
 #endif
+		  sizeof(int)) == -1) {
+            CloseSocket(hSocket);
+	    return false;
+    }
 
     // Set to non-blocking
-    if (!SetSocketNonBlocking(hSocket, true))
-        return error("ConnectSocketDirectly: Setting socket to non-blocking failed, error %s\n", NetworkErrorString(WSAGetLastError()));
+    if (!SetSocketNonBlocking(hSocket, true)) {
+      CloseSocket(hSocket);
+      return error("ConnectSocketDirectly: Setting socket to non-blocking failed, error %s\n", NetworkErrorString(WSAGetLastError()));
+    }
 
     if (connect(hSocket, (struct sockaddr*)&sockaddr, len) == SOCKET_ERROR)
     {
