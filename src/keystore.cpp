@@ -86,7 +86,7 @@ bool CBasicKeyStore::HaveWatchOnly() const
 
 bool CBasicKeyStore::AddSpendingKey(const libzcash::SpendingKey &sk)
 {
-    LOCK(cs_KeyStore);
+    LOCK(cs_SpendingKeyStore);
     mapSpendingKeys[sk.address()] = sk;
     return true;
 }

@@ -21,6 +21,7 @@ class CKeyStore
 {
 protected:
     mutable CCriticalSection cs_KeyStore;
+    mutable CCriticalSection cs_SpendingKeyStore;
 
 public:
     virtual ~CKeyStore() {}
@@ -120,7 +121,7 @@ public:
     {
         bool result;
         {
-            LOCK(cs_KeyStore);
+            LOCK(cs_SpendingKeyStore);
             result = (mapSpendingKeys.count(address) > 0);
         }
         return result;
@@ -128,7 +129,7 @@ public:
     bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey &skOut) const
     {
         {
-            LOCK(cs_KeyStore);
+            LOCK(cs_SpendingKeyStore);
             SpendingKeyMap::const_iterator mi = mapSpendingKeys.find(address);
             if (mi != mapSpendingKeys.end())
             {
@@ -142,7 +143,7 @@ public:
     {
         setAddress.clear();
         {
-            LOCK(cs_KeyStore);
+            LOCK(cs_SpendingKeyStore);
             SpendingKeyMap::const_iterator mi = mapSpendingKeys.begin();
             while (mi != mapSpendingKeys.end())
             {
