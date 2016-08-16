@@ -7,6 +7,9 @@
 
 namespace libzcash {
 
+const size_t SerializedPaymentAddressSize = 64;
+const size_t SerializedSpendingKeySize = 32;
+
 class PaymentAddress {
 public:
     uint256 a_pk;
