@@ -152,13 +152,27 @@ baseline.info:
 	$(LCOV) -c -i -d $(abs_builddir)/src -o $@
 
 baseline_filtered.info: baseline.info
-	$(LCOV) -r $< "/usr/include/*" -o $@
+	$(LCOV) -r $< "/usr/include/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
+                      "$(abs_builddir)/src/gtest/*" \
+                      "$(abs_builddir)/src/test/*" \
+                      -o $@
 
 leveldb_baseline.info: baseline_filtered.info
 	$(LCOV) -c -i -d $(abs_builddir)/src/leveldb -b $(abs_builddir)/src/leveldb -o $@
 
 leveldb_baseline_filtered.info: leveldb_baseline.info
-	$(LCOV) -r $< "/usr/include/*" -o $@
+	$(LCOV) -r $< "/usr/include/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
+                      "$(abs_builddir)/src/gtest/*" \
+                      "$(abs_builddir)/src/test/*" \
+                      -o $@
 
 baseline_filtered_combined.info: leveldb_baseline_filtered.info baseline_filtered.info
 	$(LCOV) -a leveldb_baseline_filtered.info -a baseline_filtered.info -o $@
@@ -170,7 +184,14 @@ test_bitcoin.info: baseline_filtered_combined.info
 	$(LCOV) -z -d $(abs_builddir)/src/leveldb
 
 test_bitcoin_filtered.info: test_bitcoin.info
-	$(LCOV) -r $< "/usr/include/*" -o $@
+	$(LCOV) -r $< "/usr/include/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
+                      "$(abs_builddir)/src/gtest/*" \
+                      "$(abs_builddir)/src/test/*" \
+                      -o $@
 
 zcash-gtest.info: baseline_filtered_combined.info
 	$(MAKE) -C src/ zcash-gtest_check
@@ -179,7 +200,14 @@ zcash-gtest.info: baseline_filtered_combined.info
 	$(LCOV) -z -d $(abs_builddir)/src/leveldb
 
 zcash-gtest_filtered.info: zcash-gtest.info
-	$(LCOV) -r $< "/usr/include/*" -o $@
+	$(LCOV) -r $< "/usr/include/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
+                      "$(abs_builddir)/src/gtest/*" \
+                      "$(abs_builddir)/src/test/*" \
+                      -o $@
 
 block_test.info: test_bitcoin_filtered.info
 	$(MKDIR_P) qa/tmp
@@ -189,7 +217,14 @@ block_test.info: test_bitcoin_filtered.info
 	$(LCOV) -z -d $(abs_builddir)/src/leveldb
 
 block_test_filtered.info: block_test.info
-	$(LCOV) -r $< "/usr/include/*" -o $@
+	$(LCOV) -r $< "/usr/include/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
+                      "$(abs_builddir)/src/gtest/*" \
+                      "$(abs_builddir)/src/test/*" \
+                      -o $@
 
 test_bitcoin_coverage.info: baseline_filtered_combined.info test_bitcoin_filtered.info
 	$(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a test_bitcoin_filtered.info -o $@
