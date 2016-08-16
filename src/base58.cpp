@@ -313,21 +313,19 @@ bool CBitcoinSecret::SetString(const std::string& strSecret)
     return SetString(strSecret.c_str());
 }
 
-const size_t serializedPaymentAddressSize = 64;
-
 bool CZCPaymentAddress::Set(const libzcash::PaymentAddress& addr)
 {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << addr;
     std::vector<unsigned char> addrSerialized(ss.begin(), ss.end());
-    assert(addrSerialized.size() == serializedPaymentAddressSize);
-    SetData(Params().Base58Prefix(CChainParams::ZCPAYMENT_ADDRRESS), &addrSerialized[0], serializedPaymentAddressSize);
+    assert(addrSerialized.size() == libzcash::SerializedPaymentAddressSize);
+    SetData(Params().Base58Prefix(CChainParams::ZCPAYMENT_ADDRRESS), &addrSerialized[0], libzcash::SerializedPaymentAddressSize);
     return true;
 }
 
 libzcash::PaymentAddress CZCPaymentAddress::Get() const
 {
-    if (vchData.size() != serializedPaymentAddressSize) {
+    if (vchData.size() != libzcash::SerializedPaymentAddressSize) {
         throw std::runtime_error(
             "payment address is invalid"
         );
@@ -347,21 +345,19 @@ libzcash::PaymentAddress CZCPaymentAddress::Get() const
     return ret;
 }
 
-const size_t serializedSpendingKeySize = 32;
-
 bool CZCSpendingKey::Set(const libzcash::SpendingKey& addr)
 {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << addr;
     std::vector<unsigned char> addrSerialized(ss.begin(), ss.end());
-    assert(addrSerialized.size() == serializedSpendingKeySize);
-    SetData(Params().Base58Prefix(CChainParams::ZCSPENDING_KEY), &addrSerialized[0], serializedSpendingKeySize);
+    assert(addrSerialized.size() == libzcash::SerializedSpendingKeySize);
+    SetData(Params().Base58Prefix(CChainParams::ZCSPENDING_KEY), &addrSerialized[0], libzcash::SerializedSpendingKeySize);
     return true;
 }
 
 libzcash::SpendingKey CZCSpendingKey::Get() const
 {
-    if (vchData.size() != serializedSpendingKeySize) {
+    if (vchData.size() != libzcash::SerializedSpendingKeySize) {
         throw std::runtime_error(
             "spending key is invalid"
         );

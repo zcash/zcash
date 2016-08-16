@@ -145,7 +145,7 @@ static bool DecryptSpendingKey(const CKeyingMaterial& vMasterKey,
     if(!DecryptSecret(vMasterKey, vchCryptedSecret, address.GetHash(), vchSecret))
         return false;
 
-    if (vchSecret.size() != 32)
+    if (vchSecret.size() != libzcash::SerializedSpendingKeySize)
         return false;
 
     // TODO does this undo the benefits of using CKeyingMaterial?
