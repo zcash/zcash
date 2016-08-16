@@ -43,7 +43,8 @@ OSX_PACKAGING = $(OSX_DEPLOY_SCRIPT) $(OSX_FANCY_PLIST) $(OSX_INSTALLER_ICONS) $
 COVERAGE_INFO = baseline_filtered_combined.info baseline.info block_test.info \
   leveldb_baseline.info test_bitcoin_filtered.info total_coverage.info \
   baseline_filtered.info block_test_filtered.info \
-  leveldb_baseline_filtered.info test_bitcoin_coverage.info test_bitcoin.info
+  leveldb_baseline_filtered.info test_bitcoin_coverage.info test_bitcoin.info \
+  zcash-gtest.info zcash-gtest_filtered.info zcash-gtest_coverage.info
 
 dist-hook:
 	-$(MAKE) -C $(top_distdir)/src/leveldb clean
