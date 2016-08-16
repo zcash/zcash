@@ -14,11 +14,13 @@
 #include <map>
 #include <stdint.h>
 #include <string>
+#include <memory>
 
 #include "json/json_spirit_reader_template.h"
 #include "json/json_spirit_utils.h"
 #include "json/json_spirit_writer_template.h"
 
+class AsyncRPCQueue;
 class CRPCCommand;
 
 namespace RPCServer
@@ -54,6 +56,10 @@ void StartDummyRPCThread();
 void StopRPCThreads();
 /** Query whether RPC is running */
 bool IsRPCRunning();
+
+/** Get the async queue*/
+std::shared_ptr<AsyncRPCQueue> getAsyncRPCQueue();
+
 
 /** 
  * Set the RPC warmup status.  When this is done, all RPC calls will error out
@@ -250,6 +256,9 @@ extern json_spirit::Value z_getnewaddress(const json_spirit::Array& params, bool
 extern json_spirit::Value z_listaddresses(const json_spirit::Array& params, bool fHelp); // in rpcwallet.cpp
 extern json_spirit::Value z_exportwallet(const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
 extern json_spirit::Value z_importwallet(const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
+extern json_spirit::Value z_sendmany(const json_spirit::Array& params, bool fHelp); // in rpcwallet.cpp
+extern json_spirit::Value z_getoperationstatus(const json_spirit::Array& params, bool fHelp); // in rpcwallet.cpp
+
 
 // in rest.cpp
 extern bool HTTPReq_REST(AcceptedConnection *conn,
