@@ -691,14 +691,6 @@ fi
 
 LIBZCASH_LIBS="-lgmp -lgmpxx -lboost_system-mt -lcrypto -lsodium $RUST_LIBS"
 
-CXXFLAGS_TEMP="$CXXFLAGS"
-LIBS_TEMP="$LIBS"
-CXXFLAGS="$CXXFLAGS $SSL_CFLAGS $CRYPTO_CFLAGS"
-LIBS="$LIBS $SSL_LIBS $CRYPTO_LIBS $GMP_LIBS $GMPXX_LIBS"
-AC_CHECK_HEADER([openssl/ec.h],, AC_MSG_ERROR(OpenSSL ec header missing),)
-CXXFLAGS="$CXXFLAGS_TEMP"
-LIBS="$LIBS_TEMP"
-
 AC_MSG_CHECKING([whether to build bitcoind])
 AM_CONDITIONAL([BUILD_BITCOIND], [test x$build_bitcoind = xyes])
 AC_MSG_RESULT($build_bitcoind)
