@@ -15,6 +15,9 @@
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #endif
+#include "asyncrpcqueue.h"
+
+#include <memory>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -49,6 +52,7 @@ static boost::thread_group* rpc_worker_group = NULL;
 static boost::asio::io_service::work *rpc_dummy_work = NULL;
 static std::vector<CSubNet> rpc_allow_subnets; //!< List of subnets to allow RPC connections from
 static std::vector< boost::shared_ptr<ip::tcp::acceptor> > rpc_acceptors;
+static shared_ptr<AsyncRPCQueue> async_rpc_queue;
 
 static struct CRPCSignals
 {
@@ -382,6 +386,8 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "zcrawjoinsplit",         &zc_raw_joinsplit,       true  },
     { "wallet",             "zcrawreceive",           &zc_raw_receive,         true  },
     { "wallet",             "zcsamplejoinsplit",      &zc_sample_joinsplit,    true  },
+    { "wallet",             "z_sendmany",             &z_sendmany,             true  },
+    { "wallet",             "z_getoperationstatus",   &z_getoperationstatus,   true  },
     { "wallet",             "z_getnewaddress",        &z_getnewaddress,        true  },
     { "wallet",             "z_listaddresses",        &z_listaddresses,        true  },
     { "wallet",             "z_exportkey",            &z_exportkey,            true  },
@@ -737,6 +743,13 @@ void StartRPCThreads()
         rpc_worker_group->create_thread(boost::bind(&boost::asio::io_service::run, rpc_io_service));
     fRPCRunning = true;
     g_rpcSignals.Started();
+
+    // Launch at least one async rpc worker
+    async_rpc_queue = std::make_shared<AsyncRPCQueue>();
+    async_rpc_queue->addWorker();
+    async_rpc_queue->addWorker();
+    async_rpc_queue->addWorker();
+
 }
 
 void StartDummyRPCThread()
@@ -786,6 +799,10 @@ void StopRPCThreads()
     delete rpc_worker_group; rpc_worker_group = NULL;
     delete rpc_ssl_context; rpc_ssl_context = NULL;
     delete rpc_io_service; rpc_io_service = NULL;
+
+    // Tells async queue to cancel all operations and shutdown.
+    // The async queue destructor will block and join on worker threads.
+    async_rpc_queue->close();
 }
 
 bool IsRPCRunning()
@@ -1048,3 +1065,9 @@ std::string HelpExampleRpc(string methodname, string args){
 }
 
 const CRPCTable tableRPC;
+
+// Return async rpc queue
+std::shared_ptr<AsyncRPCQueue> getAsyncRPCQueue()
+{
+    return async_rpc_queue;
+}

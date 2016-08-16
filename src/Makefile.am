@@ -86,6 +86,8 @@ BITCOIN_CORE_H = \
   alert.h \
   amount.h \
   arith_uint256.h \
+  asyncrpcoperation.h \
+  asyncrpcqueue.h \
   base58.h \
   bloom.h \
   chain.h \
@@ -162,6 +164,7 @@ BITCOIN_CORE_H = \
   utiltime.h \
   validationinterface.h \
   version.h \
+  wallet/asyncrpcoperation_sendmany.h \
   wallet/crypter.h \
   wallet/db.h \
   wallet/wallet.h \
@@ -191,6 +194,8 @@ libbitcoin_server_a_SOURCES = \
   sendalert.cpp \
   addrman.cpp \
   alert.cpp \
+  asyncrpcoperation.cpp \
+  asyncrpcqueue.cpp \
   bloom.cpp \
   chain.cpp \
   checkpoints.cpp \
@@ -224,6 +229,7 @@ libbitcoin_server_a_SOURCES = \
 libbitcoin_wallet_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_wallet_a_SOURCES = \
   zcbenchmarks.cpp \
+  wallet/asyncrpcoperation_sendmany.cpp \
   wallet/crypter.cpp \
   wallet/db.cpp \
   wallet/rpcdump.cpp \
