@@ -411,6 +411,7 @@ libzcash_a_SOURCES = \
   zcash/NoteEncryption.cpp \
   zcash/Address.cpp \
   zcash/JoinSplit.cpp \
+  zcash/Proof.cpp \
   zcash/Note.cpp \
   zcash/prf.cpp \
   zcash/util.cpp

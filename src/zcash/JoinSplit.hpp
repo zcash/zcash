@@ -2,6 +2,7 @@
 #define _ZCJOINSPLIT_H_
 
 #include "Zcash.h"
+#include "Proof.hpp"
 #include "Address.hpp"
 #include "Note.hpp"
 #include "IncrementalMerkleTree.hpp"
@@ -59,7 +60,7 @@ public:
     virtual void loadVerifyingKey(std::string path) = 0;
     virtual void saveVerifyingKey(std::string path) = 0;
 
-    virtual boost::array<unsigned char, ZKSNARK_PROOF_SIZE> prove(
+    virtual ZCProof prove(
         const boost::array<JSInput, NumInputs>& inputs,
         const boost::array<JSOutput, NumOutputs>& outputs,
         boost::array<Note, NumOutputs>& out_notes,
@@ -76,7 +77,7 @@ public:
     ) = 0;
 
     virtual bool verify(
-        const boost::array<unsigned char, ZKSNARK_PROOF_SIZE>& proof,
+        const ZCProof& proof,
         const uint256& pubKeyHash,
         const uint256& randomSeed,
         const boost::array<uint256, NumInputs>& hmacs,
