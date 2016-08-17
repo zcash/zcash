@@ -20,9 +20,4 @@ TEST(test_univalue_crash, test_crash) {
     if (valReply.empty()) {
         throw std::runtime_error("The JSON is empty.");
     }
-    //const UniValue& reply = valReply.get_obj();
-    //if (reply.empty()) {
-        //throw std::runtime_error("The JSON is empty.");
-    //}
-    ASSERT_TRUE(1==1);
 }
