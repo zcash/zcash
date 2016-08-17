@@ -393,7 +393,7 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
             vNodes.push_back(pnode);
         }
 
-        pnode->nTimeConnected = GetTime();
+        pnode->nTimeConnected = GetTime();  // #1247
 
         return pnode;
     } else if (!proxyConnectionFailed) {
@@ -964,7 +964,7 @@ void ThreadSocketHandler()
             // Inactivity checking
             //
             int64_t nTime = GetTime();
-            if (nTime - pnode->nTimeConnected > 60)
+            if (nTime - pnode->nTimeConnected > 60)  // #1247
             {
                 if (pnode->nLastRecv == 0 || pnode->nLastSend == 0)
                 {

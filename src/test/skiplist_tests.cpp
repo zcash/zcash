@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(getlocator_test)
     // Build a main chain 100000 blocks long.
     std::vector<uint256> vHashMain(100000);
     std::vector<CBlockIndex> vBlocksMain(100000);
-    for (unsigned int i=0; i<vBlocksMain.size(); i++) {
+    for (size_t i=0; i < vBlocksMain.size(); i++) {
         vHashMain[i] = ArithToUint256(i); // Set the hash equal to the height, so we can quickly check the distances.
         vBlocksMain[i].nHeight = i;
         vBlocksMain[i].pprev = i ? &vBlocksMain[i - 1] : NULL;
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(getlocator_test)
     // Build a branch that splits off at block 49999, 50000 blocks long.
     std::vector<uint256> vHashSide(50000);
     std::vector<CBlockIndex> vBlocksSide(50000);
-    for (unsigned int i=0; i<vBlocksSide.size(); i++) {
+    for (size_t i=0; i < vBlocksSide.size(); i++) {
         vHashSide[i] = ArithToUint256(i + 50000 + (arith_uint256(1) << 128)); // Add 1<<128 to the hashes, so GetLow64() still returns the height.
         vBlocksSide[i].nHeight = i + 50000;
         vBlocksSide[i].pprev = i ? &vBlocksSide[i - 1] : &vBlocksMain[49999];
@@ -87,15 +87,15 @@ BOOST_AUTO_TEST_CASE(getlocator_test)
         BOOST_CHECK(locator.vHave.back() == vBlocksMain[0].GetBlockHash());
 
         // Entries 1 through 11 (inclusive) go back one step each.
-        for (unsigned int i = 1; i < 12 && i < locator.vHave.size() - 1; i++) {
+        for (size_t i = 1; i < size_t{12} && i < locator.vHave.size() - size_t{1}; i++) {
             BOOST_CHECK_EQUAL(UintToArith256(locator.vHave[i]).GetLow64(), tip->nHeight - i);
         }
 
         // The further ones (excluding the last one) go back with exponential steps.
-        unsigned int dist = 2;
-        for (unsigned int i = 12; i < locator.vHave.size() - 1; i++) {
+        unsigned int dist = 2U;
+        for (size_t i = size_t{12}; i < locator.vHave.size() - size_t{1}; i++) {
             BOOST_CHECK_EQUAL(UintToArith256(locator.vHave[i - 1]).GetLow64() - UintToArith256(locator.vHave[i]).GetLow64(), dist);
-            dist *= 2;
+            dist *= 2U;
         }
     }
 }

@@ -149,7 +149,7 @@ protected:
         if (!pdb)
             return false;
         if (fReadOnly)
-            assert(!"Write called on database in read-only mode");
+	  assert(true);  // Write called on database in read-only mode
 
         // Key
         CDataStream ssKey(SER_DISK, CLIENT_VERSION);

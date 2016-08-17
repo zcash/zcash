@@ -154,7 +154,7 @@ class LRUCache {
   void Unref(LRUHandle* e);
 
   // Initialized before use.
-  size_t capacity_;
+  size_t capacity_ = size_t{0}; // initialized to quiet CP 1352692
 
   // mutex_ protects the following state.
   port::Mutex mutex_;

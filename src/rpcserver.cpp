@@ -1012,6 +1012,7 @@ void ServiceConnection(AcceptedConnection *conn)
 
 json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_spirit::Array &params) const
 {
+    json_spirit::Value value;
     // Find method
     const CRPCCommand *pcmd = tableRPC[strMethod];
     if (!pcmd)
@@ -1022,7 +1023,7 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
     try
     {
         // Execute
-        return pcmd->actor(params, false);
+        value = pcmd->actor(params, false);
     }
     catch (const std::exception& e)
     {
@@ -1030,6 +1031,7 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
     }
 
     g_rpcSignals.PostCommand(*pcmd);
+    return value;
 }
 
 std::string HelpExampleCli(string methodname, string args){

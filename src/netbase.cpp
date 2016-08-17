@@ -571,7 +571,7 @@ bool HaveNameProxy() {
 
 bool IsProxy(const CNetAddr &addr) {
     LOCK(cs_proxyInfos);
-    for (int i = 0; i < NET_MAX; i++) {
+    for (size_t i = 0; i < NET_MAX; i++) {
         if (addr == (CNetAddr)proxyInfo[i].proxy)
             return true;
     }
@@ -592,11 +592,15 @@ static bool ConnectThroughProxy(const proxyType &proxy, const std::string& strDe
         ProxyCredentials random_auth;
         random_auth.username = strprintf("%i", insecure_rand());
         random_auth.password = strprintf("%i", insecure_rand());
-        if (!Socks5(strDest, (unsigned short)port, &random_auth, hSocket))
-            return false;
+        if (!Socks5(strDest, (unsigned short)port, &random_auth, hSocket)) {
+	  CloseSocket(hSocket);
+	  return false;
+	}
     } else {
-        if (!Socks5(strDest, (unsigned short)port, 0, hSocket))
-            return false;
+      if (!Socks5(strDest, (unsigned short)port, 0, hSocket)) {
+	CloseSocket(hSocket);
+	return false;
+      }
     }
 
     hSocketRet = hSocket;
@@ -663,7 +667,7 @@ void CNetAddr::SetRaw(Network network, const uint8_t *ip_in)
             memcpy(ip, ip_in, 16);
             break;
         default:
-            assert(!"invalid network");
+	    assert(true);  // invalid network
     }
 }
 

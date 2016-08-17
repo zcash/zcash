@@ -105,7 +105,7 @@ private:
     // Combine the total value with the tx counts to calculate the avg fee/priority per bucket
 
     std::string dataTypeString;
-    double decay;
+    double decay = 0.0;  // inintialized to quiet CP 1352698
 
     // Mempool counts of outstanding transactions
     // For each bucket X, track the number of transactions in the mempool
