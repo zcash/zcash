@@ -200,7 +200,7 @@ TruncatedStepRow<WIDTH>& TruncatedStepRow<WIDTH>::operator=(const TruncatedStepR
 template<size_t WIDTH>
 std::shared_ptr<eh_trunc> TruncatedStepRow<WIDTH>::GetTruncatedIndices(size_t len, size_t lenIndices) const
 {
-    std::shared_ptr<eh_trunc> p (new eh_trunc[lenIndices]);
+    std::shared_ptr<eh_trunc> p (new eh_trunc[lenIndices], std::default_delete<eh_trunc[]>());
     std::copy(hash+len, hash+len+lenIndices, p.get());
     return p;
 }
