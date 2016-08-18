@@ -83,3 +83,10 @@ bool CBasicKeyStore::HaveWatchOnly() const
     LOCK(cs_KeyStore);
     return (!setWatchOnly.empty());
 }
+
+bool CBasicKeyStore::AddSpendingKey(const libzcash::SpendingKey &sk)
+{
+    LOCK(cs_SpendingKeyStore);
+    mapSpendingKeys[sk.address()] = sk;
+    return true;
+}
