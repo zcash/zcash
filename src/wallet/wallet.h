@@ -18,6 +18,8 @@
 #include "wallet/crypter.h"
 #include "wallet/wallet_ismine.h"
 #include "wallet/walletdb.h"
+#include "zcash/Address.hpp"
+#include "base58.h"
 
 #include <algorithm>
 #include <map>
@@ -486,6 +488,7 @@ public:
 
     std::set<int64_t> setKeyPool;
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
+    std::map<libzcash::PaymentAddress, CKeyMetadata> mapZKeyMetadata;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
     MasterKeyMap mapMasterKeys;
@@ -594,6 +597,19 @@ public:
     bool EncryptWallet(const SecureString& strWalletPassphrase);
 
     void GetKeyBirthTimes(std::map<CKeyID, int64_t> &mapKeyBirth) const;
+
+    /**
+      * ZKeys
+      */
+    //! Generates a new zaddr
+    CZCPaymentAddress GenerateNewZKey();
+    //! Adds spending key to the store, and saves it to disk
+    bool AddZKey(const libzcash::SpendingKey &key);
+    //! Adds spending key to the store, without saving it to disk (used by LoadWallet)
+    bool LoadZKey(const libzcash::SpendingKey &key);
+    //! Load spending key metadata (used by LoadWallet)
+    bool LoadZKeyMetadata(const libzcash::PaymentAddress &addr, const CKeyMetadata &meta);
+
 
     /** 
      * Increment the next transaction order id

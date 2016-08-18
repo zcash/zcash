@@ -20,6 +20,10 @@
 #include "zcbenchmarks.h"
 #include "script/interpreter.h"
 
+#include "utiltime.h"
+#include "asyncrpcoperation.h"
+#include "wallet/asyncrpcoperation_sendmany.h"
+
 #include "sodium.h"
 
 #include <stdint.h>
@@ -28,6 +32,7 @@
 
 #include "json/json_spirit_utils.h"
 #include "json/json_spirit_value.h"
+#include "asyncrpcqueue.h"
 
 using namespace std;
 using namespace json_spirit;
@@ -2768,4 +2773,248 @@ Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp)
     result.push_back(Pair("zcsecretkey", spendingkey.ToString()));
     result.push_back(Pair("zcviewingkey", viewing_hex));
     return result;
+}
+
+
+Value z_getnewaddress(const Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return Value::null;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_getnewaddress\n"
+            "\nReturns a new zaddr for receiving payments.\n"
+            "\nArguments:\n"
+            "\nResult:\n"
+            "\"zcashaddress\"    (string) The new zaddr\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_getnewaddress", "")
+            + HelpExampleRpc("z_getnewaddress", "")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    CZCPaymentAddress pubaddr = pwalletMain->GenerateNewZKey();
+    std::string result = pubaddr.ToString();
+    return result;
+}
+
+
+Value z_listaddresses(const Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return Value::null;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_listaddresses\n"
+            "\nReturns the list of zaddr belonging to the wallet.\n"
+            "\nArguments:\n"
+            "\nResult:\n"
+            "[                     (json array of string)\n"
+            "  \"zaddr\"           (string) a zaddr belonging to the wallet\n"
+            "  ,...\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_listaddresses", "")
+            + HelpExampleRpc("z_listaddresses", "")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    Array ret;
+    std::set<libzcash::PaymentAddress> addresses;
+    pwalletMain->GetPaymentAddresses(addresses);
+    for (auto addr : addresses ) {
+        ret.push_back(CZCPaymentAddress(addr).ToString());
+    }
+    return ret;
+}
+
+
+Value z_getoperationstatus(const Array& params, bool fHelp)
+{
+   if (!EnsureWalletIsAvailable(fHelp))
+        return Value::null;
+
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "z_getoperationstatus \"operationid\"\n"
+            "\nGet operation status and any associated result or error data."
+            + HelpRequiringPassphrase() + "\n"
+            "\nArguments:\n"
+            "1. \"operationid\"         (string, required) The operation id returned by an async operation call.\n"
+            "\nResult:\n"
+            "\"    object\"          (string) FIXME: ASYNC operation object \n"
+            "                                    with some key value pairs.\n"
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    AsyncRPCOperationId id = params[0].get_str();
+    
+    std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
+    std::shared_ptr<AsyncRPCOperation> operation = q->getOperationForId(id);
+    if (!operation) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "No operation exists for that id.");
+    }
+
+    Value status = operation->getStatus();
+
+    // Remove operation from memory when it has finished and the caller has retrieved the result and reason for finishing.
+    if (operation->isSuccess() || operation->isFailed() || operation->isCancelled()) {
+        q->popOperationForId(id);
+    }
+
+    return status;
+}
+
+
+Value z_sendmany(const Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return Value::null;
+
+    if (fHelp || params.size() < 2 || params.size() > 3)
+        throw runtime_error(
+            "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf )\n"
+            "\n*** THIS COMMAND HAS NOT BEEN IMPLEMENTED YET ***"
+            "\nSend multiple times. Amounts are double-precision floating point numbers."
+            + HelpRequiringPassphrase() + "\n"
+            "\nArguments:\n"
+            "1. \"fromaddress\"         (string, required) The taddr or zaddr to send the funds from.\n"
+            "2. \"amounts\"             (array, required) An array of json objects representing the amounts to send.\n"
+            "    [{\n"
+            "      \"address\":address  (string, required) The address is a taddr or zaddr\n"
+            "      \"amount\":amount    (numeric, required) The numeric amount in ZEC is the value\n"
+            "      \"memo\":memo        (string, optional) If the address is a zaddr, raw data represented in hexadecimal string format\n"
+            "    }, ... ]\n"
+            "3. minconf               (numeric, optional, default=1) Only use funds confirmed at least this many times.\n"
+            "\nResult:\n"
+            "\"operationid\"          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+
+    // Check that the from address is valid.
+    auto fromaddress = params[0].get_str();
+    bool fromTaddr = false;
+    CBitcoinAddress taddr(fromaddress);
+    fromTaddr = taddr.IsValid();
+    libzcash::PaymentAddress zaddr;
+    if (!fromTaddr) {
+        CZCPaymentAddress address(fromaddress);
+        try {
+            zaddr = address.Get();
+        } catch (std::runtime_error) {
+            // invalid
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
+        }
+    }
+
+    // Check that we have the spending key?
+    if (!fromTaddr) {
+        if (!pwalletMain->HaveSpendingKey(zaddr)) {
+             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key not found.");
+        }
+    }
+
+
+    Array outputs = params[1].get_array();
+
+    if (outputs.size()==0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amounts array is empty.");
+
+    // Keep track of addresses to spot duplicates
+    set<std::string> setAddress;
+
+    // Recipients
+    std::vector<SendManyRecipient> recipients;
+
+    BOOST_FOREACH(Value& output, outputs)
+    {
+        if (output.type() != obj_type)
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected object");
+        const Object& o = output.get_obj();
+
+        RPCTypeCheck(o, boost::assign::map_list_of("address", str_type)("amount", real_type));
+
+        // sanity check, report error if unknown key-value pairs
+//        for (auto& p : o) {
+        for (const Pair& p : o) {
+            std::string s = p.name_;
+            if (s != "address" && s != "amount" && s!="memo")
+                throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown key: ")+s);
+        }
+
+        string address = find_value(o, "address").get_str();
+        bool isZaddr = false;
+        CBitcoinAddress taddr(address);
+        if (!taddr.IsValid()) {
+            try {
+                CZCPaymentAddress zaddr(address);
+                zaddr.Get();
+                isZaddr = true;
+            } catch (std::runtime_error) {
+                throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
+            }
+        }
+
+        if (setAddress.count(address))
+            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+address);
+        setAddress.insert(address);
+
+        Value memoValue = find_value(o, "memo");
+        string memo;
+        if (!memoValue.is_null()) {
+            memo = memoValue.get_str();
+            if (!isZaddr) {
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Memo can not be used with a taddr.  It can only be used with a zaddr.");
+            } else if (!IsHex(memo)) {
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected memo data in hexadecimal format.");
+            }
+        }
+
+        //int nOutput = find_value(o, "amount").get_real(); // int();
+        Value av = find_value(o, "amount");
+        CAmount nAmount = AmountFromValue( av );
+        if (nAmount < 0)
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amount must be positive");
+
+        recipients.push_back( SendManyRecipient(address, nAmount, memo) );
+    }
+
+
+
+    // Minimum confirmations
+    int nMinDepth = 1;
+    if (params.size() > 2)
+        nMinDepth = params[2].get_int();
+
+
+//    std::vector<string>
+//    GetPaymentAddresses(addresses);
+//    for (auto addr : addresses ) {
+//        ret.push_back(CZCPaymentAddress(addr).ToString());
+//    }
+
+
+    std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(fromaddress, recipients, nMinDepth) );
+   // operation->
+    //std::shared_ptr<AsyncRPCOperation> operation = make_shared<AsyncRPCOperation>(AsyncRPCOperation_sendmany());
+    q->addOperation(operation);
+    AsyncRPCOperationId operationId = operation->getId();
+    return operationId;
+//    return Value::null;
+
+//    Array ret;
+//    std::set<libzcash::PaymentAddress> addresses;
+//    pwalletMain->GetPaymentAddresses(addresses);
+//    for (auto addr : addresses ) {
+//        ret.push_back(CZCPaymentAddress(addr).ToString());
+//    }
+//    return ret;
 }
