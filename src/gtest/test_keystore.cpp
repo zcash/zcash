@@ -9,21 +9,21 @@ TEST(keystore_tests, store_and_retrieve_spending_key) {
 
     std::set<libzcash::PaymentAddress> addrs;
     keyStore.GetPaymentAddresses(addrs);
-    ASSERT_EQ(0, addrs.size());
+    EXPECT_EQ(0, addrs.size());
 
     auto sk = libzcash::SpendingKey::random();
     auto addr = sk.address();
 
     // Sanity-check: we can't get a key we haven't added
-    ASSERT_FALSE(keyStore.HaveSpendingKey(addr));
-    ASSERT_FALSE(keyStore.GetSpendingKey(addr, skOut));
+    EXPECT_FALSE(keyStore.HaveSpendingKey(addr));
+    EXPECT_FALSE(keyStore.GetSpendingKey(addr, skOut));
 
     keyStore.AddSpendingKey(sk);
-    ASSERT_TRUE(keyStore.HaveSpendingKey(addr));
-    ASSERT_TRUE(keyStore.GetSpendingKey(addr, skOut));
-    ASSERT_EQ(sk, skOut);
+    EXPECT_TRUE(keyStore.HaveSpendingKey(addr));
+    EXPECT_TRUE(keyStore.GetSpendingKey(addr, skOut));
+    EXPECT_EQ(sk, skOut);
 
     keyStore.GetPaymentAddresses(addrs);
-    ASSERT_EQ(1, addrs.size());
-    ASSERT_EQ(1, addrs.count(addr));
+    EXPECT_EQ(1, addrs.size());
+    EXPECT_EQ(1, addrs.count(addr));
 }
