@@ -92,10 +92,10 @@ public:
         READWRITE(nullifiers);
         READWRITE(commitments);
         READWRITE(ephemeralKey);
-        READWRITE(ciphertexts);
         READWRITE(randomSeed);
         READWRITE(macs);
         READWRITE(proof);
+        READWRITE(ciphertexts);
     }
 
     friend bool operator==(const JSDescription& a, const JSDescription& b)

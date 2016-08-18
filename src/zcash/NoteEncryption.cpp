@@ -173,7 +173,7 @@ uint252 random_uint252()
     return uint252(rand);
 }
 
-template class NoteEncryption<ZC_NOTEPLAINTEXT_LEADING + ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE>;
-template class NoteDecryption<ZC_NOTEPLAINTEXT_LEADING + ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE>;
+template class NoteEncryption<ZC_NOTEPLAINTEXT_SIZE>;
+template class NoteDecryption<ZC_NOTEPLAINTEXT_SIZE>;
 
 }

@@ -75,7 +75,7 @@ uint252 random_uint252();
 
 }
 
-typedef libzcash::NoteEncryption<ZC_NOTEPLAINTEXT_LEADING + ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE> ZCNoteEncryption;
-typedef libzcash::NoteDecryption<ZC_NOTEPLAINTEXT_LEADING + ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE> ZCNoteDecryption;
+typedef libzcash::NoteEncryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteEncryption;
+typedef libzcash::NoteDecryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteDecryption;
 
 #endif /* ZC_NOTE_ENCRYPTION_H_ */
