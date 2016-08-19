@@ -421,6 +421,13 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     // Verify the two sets of addresses are the same
     BOOST_CHECK(listaddrs.size() == numAddrs);
     BOOST_CHECK(myaddrs == listaddrs);
+
+    // Add one more address
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getnewaddress"));
+    std::string newaddress = retValue.get_str();
+    CZCPaymentAddress pa(newaddress);
+    auto newAddr = pa.Get();
+    BOOST_CHECK(pwalletMain->HaveSpendingKey(newAddr));
 }
         
 
