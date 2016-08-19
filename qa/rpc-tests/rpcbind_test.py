@@ -23,6 +23,7 @@ from test_framework.netutil import addr_to_hex, get_bind_addrs, all_interfaces
 
 import sys
 
+
 class RPCBindTest(BitcoinTestFramework):
 
     def __init__(self):
@@ -120,4 +121,4 @@ class RPCBindTest(BitcoinTestFramework):
             pass
 
 if __name__ == '__main__':
-    RPCBindTest ().main ()
+    RPCBindTest().main()
