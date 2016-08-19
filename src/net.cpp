@@ -385,16 +385,14 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
         addrman.Attempt(addrConnect);
 
         // Add node
-        CNode* pnode = new CNode(hSocket, addrConnect, pszDest ? pszDest : "", false); // #1247 
-        pnode->AddRef();
-
+        CNode* pnode;
         {
             LOCK(cs_vNodes);
+	    pnode = new CNode(hSocket, addrConnect, pszDest ? pszDest : "", false); // #1247 
+	    pnode->AddRef();
             vNodes.push_back(pnode);
+	    pnode->nTimeConnected = GetTime();  // #1247
         }
-
-        pnode->nTimeConnected = GetTime();  // #1247
-
         return pnode;
     } else if (!proxyConnectionFailed) {
         // If connecting to the node failed, and failure is not caused by a problem connecting to
@@ -966,7 +964,7 @@ void ThreadSocketHandler()
 	    {
 	      LOCK(cs_vNodes);
 	      int64_t nTime = GetTime();
-	      if (nTime - pnode->nTimeConnected > 60)  // #1247
+	      if (nTime - pnode->nTimeConnected > 60)  // #1247 #1279
 		{
 		  if (pnode->nLastRecv == 0 || pnode->nLastSend == 0)
 		    {
