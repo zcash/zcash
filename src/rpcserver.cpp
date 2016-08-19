@@ -746,9 +746,16 @@ void StartRPCThreads()
 
     // Launch at least one async rpc worker
     async_rpc_queue = std::make_shared<AsyncRPCQueue>();
-    async_rpc_queue->addWorker();
-    async_rpc_queue->addWorker();
-    async_rpc_queue->addWorker();
+    int n = GetArg("-rpcasyncthreads", 1);
+    if (n<1) {
+        LogPrintf("ERROR: Invalid value %d for -rpcasyncthreads.  Must be at least 1.\n", n);
+        strerr = strprintf(_("An error occurred while setting up the Async RPC threads, invalid parameter value of %d (must be at least 1)."), n);
+        uiInterface.ThreadSafeMessageBox(strerr, "", CClientUIInterface::MSG_ERROR);
+        StartShutdown();
+        return;
+    }
+    for (int i = 0; i < n; i++)
+        async_rpc_queue->addWorker();
 
 }
 
