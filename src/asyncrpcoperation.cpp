@@ -28,7 +28,7 @@ std::map<OperationStatus, std::string> OperationStatusMap = {
 AsyncRPCOperation::AsyncRPCOperation() : errorCode(0), errorMessage() {
     // Set a unique reference for each operation
     boost::uuids::uuid uuid = uuidgen();
-    std::string s = boost::uuids::to_string(uuid);
+    std::string s = "opid-" + boost::uuids::to_string(uuid);
     setId(s);
     
     setState(OperationStatus::READY);
