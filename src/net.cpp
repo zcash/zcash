@@ -385,11 +385,10 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
         addrman.Attempt(addrConnect);
 
         // Add node
-        CNode* pnode;
+        CNode * pnode = new CNode(hSocket, addrConnect, pszDest ? pszDest : "", false); // #1247 
+	pnode->AddRef();
         {
             LOCK(cs_vNodes);
-	    pnode = new CNode(hSocket, addrConnect, pszDest ? pszDest : "", false); // #1247 
-	    pnode->AddRef();
             vNodes.push_back(pnode);
 	    pnode->nTimeConnected = GetTime();  // #1247
         }
