@@ -24,7 +24,7 @@
 using namespace std;
 
 
-unsigned int nWalletDBUpdated;
+std::atomic<unsigned int> nWalletDBUpdated;  // #1280
 
 
 //

@@ -68,7 +68,7 @@ bool CWalletDB::EraseTx(uint256 hash)
 
 bool CWalletDB::WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, const CKeyMetadata& keyMeta)
 {
-    nWalletDBUpdated++;
+  nWalletDBUpdated++; // #1280
 
     if (!Write(std::make_pair(std::string("keymeta"), vchPubKey),
                keyMeta, false))
