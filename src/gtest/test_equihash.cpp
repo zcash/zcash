@@ -28,6 +28,9 @@ TEST(equihash_tests, expand_and_contract_arrays) {
     TestExpandAndCompress("8 21-bit chunks, alternating 1s and 0s", 21, 0,
                           ParseHex("aaaaad55556aaaab55555aaaaad55556aaaab55555"),
                           ParseHex("155555155555155555155555155555155555155555155555"));
+    TestExpandAndCompress("8 21-bit chunks, based on example in the spec", 21, 0,
+                          ParseHex("000220000a7ffffe00123022b38226ac19bdf23456"),
+                          ParseHex("0000440000291fffff0001230045670089ab00cdef123456"));
     TestExpandAndCompress("16 14-bit chunks, alternating 11s and 00s", 14, 0,
                           ParseHex("cccf333cccf333cccf333cccf333cccf333cccf333cccf333cccf333"),
                           ParseHex("3333333333333333333333333333333333333333333333333333333333333333"));
