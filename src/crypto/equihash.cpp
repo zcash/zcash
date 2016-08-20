@@ -44,10 +44,9 @@ void GenerateHash(const eh_HashState& base_state, eh_index g,
 {
     eh_HashState state;
     state = base_state;
-    unsigned char array[sizeof(eh_index)];
     eh_index lei = htole32(g);
-    memcpy(array, &lei, sizeof(eh_index));
-    crypto_generichash_blake2b_update(&state, array, sizeof(eh_index));
+    crypto_generichash_blake2b_update(&state, (const unsigned char*) &lei,
+                                      sizeof(eh_index));
     crypto_generichash_blake2b_final(&state, hash, hLen);
 }
 
