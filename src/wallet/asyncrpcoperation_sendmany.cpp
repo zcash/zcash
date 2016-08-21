@@ -410,21 +410,23 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
         if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < mindepth_)
             continue;
 
-        mapNoteAddrs_t noteAddrs = pwalletMain->FindMyNotes(wtx);
+        mapNoteData_t mapNoteData = pwalletMain->FindMyNotes(wtx);
 
-        if (noteAddrs.size() == 0)
+        if (mapNoteData.size() == 0)
             continue;
 
-        for (auto & noteAddr : noteAddrs) {
-            pNoteIndex_t noteIndex = noteAddr.first;
-            PaymentAddress pa = noteAddr.second;
+        for (auto & pair : mapNoteData) {
+            JSOutPoint jsop = pair.first;
+            CNoteData nd = pair.second;
+
+            PaymentAddress pa = nd.address;
 
             // skip notes which belong to a different payment address in the wallet
             if (!(pa == frompaymentaddress_))
                 continue;
 
-            int i = noteIndex.first; // Index into CTransaction.vjoinsplit
-            int j = noteIndex.second; // Index into JSDescription.ciphertexts
+            int i = jsop.js; // Index into CTransaction.vjoinsplit
+            int j = jsop.n; // Index into JSDescription.ciphertexts
 
             // determine amount of funds in the note and if it has been spent
             ZCNoteDecryption decryptor(spendingkey_.viewing_key());
