@@ -2870,7 +2870,7 @@ Value z_getoperationstatus(const Array& params, bool fHelp)
     return status;
 }
 
-
+// If there is any change, it will flow back to the source taddr or zaddr.
 Value z_sendmany(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -2879,7 +2879,7 @@ Value z_sendmany(const Array& params, bool fHelp)
     if (fHelp || params.size() < 2 || params.size() > 3)
         throw runtime_error(
             "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf )\n"
-            "\n*** THIS COMMAND HAS NOT BEEN IMPLEMENTED YET ***"
+            "\n*** This alpha release supports multiple recipients, but only one of them can be a zaddr ***"
             "\nSend multiple times. Amounts are double-precision floating point numbers."
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
@@ -2897,7 +2897,6 @@ Value z_sendmany(const Array& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-
     // Check that the from address is valid.
     auto fromaddress = params[0].get_str();
     bool fromTaddr = false;
@@ -2914,13 +2913,12 @@ Value z_sendmany(const Array& params, bool fHelp)
         }
     }
 
-    // Check that we have the spending key?
+    // Check that we have the spending key
     if (!fromTaddr) {
         if (!pwalletMain->HaveSpendingKey(zaddr)) {
              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key not found.");
         }
     }
-
 
     Array outputs = params[1].get_array();
 
@@ -2931,7 +2929,8 @@ Value z_sendmany(const Array& params, bool fHelp)
     set<std::string> setAddress;
 
     // Recipients
-    std::vector<SendManyRecipient> recipients;
+    std::vector<SendManyRecipient> taddrRecipients;
+    std::vector<SendManyRecipient> zaddrRecipients;
 
     BOOST_FOREACH(Value& output, outputs)
     {
@@ -2942,7 +2941,6 @@ Value z_sendmany(const Array& params, bool fHelp)
         RPCTypeCheck(o, boost::assign::map_list_of("address", str_type)("amount", real_type));
 
         // sanity check, report error if unknown key-value pairs
-//        for (auto& p : o) {
         for (const Pair& p : o) {
             std::string s = p.name_;
             if (s != "address" && s != "amount" && s!="memo")
@@ -2975,46 +2973,37 @@ Value z_sendmany(const Array& params, bool fHelp)
             } else if (!IsHex(memo)) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected memo data in hexadecimal format.");
             }
+            std::vector<unsigned char> vMemo = ParseHex(memo);
+            if (vMemo.size() > ZC_MEMO_SIZE) {
+                throw JSONRPCError(RPC_INVALID_PARAMETER,  strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
+            }
         }
 
-        //int nOutput = find_value(o, "amount").get_real(); // int();
         Value av = find_value(o, "amount");
         CAmount nAmount = AmountFromValue( av );
         if (nAmount < 0)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amount must be positive");
 
-        recipients.push_back( SendManyRecipient(address, nAmount, memo) );
+        if (isZaddr) {
+            zaddrRecipients.push_back( SendManyRecipient(address, nAmount, memo) );
+        } else {
+            taddrRecipients.push_back( SendManyRecipient(address, nAmount, memo) );
+        }
     }
 
-
+    // Limitation of z9 alpha, only one zaddr allowed in output.
+    if (zaddrRecipients.size() > 1)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Too many zaddrs as recipients.  Alpha preview only allows one zaddr as a recipient");
 
     // Minimum confirmations
     int nMinDepth = 1;
     if (params.size() > 2)
         nMinDepth = params[2].get_int();
 
-
-//    std::vector<string>
-//    GetPaymentAddresses(addresses);
-//    for (auto addr : addresses ) {
-//        ret.push_back(CZCPaymentAddress(addr).ToString());
-//    }
-
-
+    // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(fromaddress, recipients, nMinDepth) );
-   // operation->
-    //std::shared_ptr<AsyncRPCOperation> operation = make_shared<AsyncRPCOperation>(AsyncRPCOperation_sendmany());
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(fromaddress, taddrRecipients, zaddrRecipients, nMinDepth) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
     return operationId;
-//    return Value::null;
-
-//    Array ret;
-//    std::set<libzcash::PaymentAddress> addresses;
-//    pwalletMain->GetPaymentAddresses(addresses);
-//    for (auto addr : addresses ) {
-//        ret.push_back(CZCPaymentAddress(addr).ToString());
-//    }
-//    return ret;
 }
