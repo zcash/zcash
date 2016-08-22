@@ -12,6 +12,8 @@
 #include "sync.h"
 #include "version.h"
 
+#include <atomic>
+
 #include <map>
 #include <string>
 #include <vector>
@@ -20,7 +22,7 @@
 
 #include <db_cxx.h>
 
-extern unsigned int nWalletDBUpdated;
+extern std::atomic<unsigned int> nWalletDBUpdated;
 
 class CDBEnv
 {

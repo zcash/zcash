@@ -39,6 +39,8 @@
 #include <signal.h>
 #endif
 
+#include <atomic>
+
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/bind.hpp>
@@ -111,7 +113,7 @@ CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
 // shutdown thing.
 //
 
-volatile bool fRequestShutdown = false;
+volatile std::atomic<bool>fRequestShutdown(false);
 
 void StartShutdown()
 {

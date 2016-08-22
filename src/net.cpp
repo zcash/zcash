@@ -30,6 +30,8 @@
 #include <miniupnpc/upnperrors.h>
 #endif
 
+#include <atomic>
+
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
@@ -70,6 +72,7 @@ namespace {
 bool fDiscover = true;
 bool fListen = true;
 uint64_t nLocalServices = NODE_NETWORK;
+CCriticalSection cs_pfrom;
 CCriticalSection cs_mapLocalHost;
 map<CNetAddr, LocalServiceInfo> mapLocalHost;
 static bool vfReachable[NET_MAX] = {};
@@ -99,6 +102,8 @@ CCriticalSection cs_vAddedNodes;
 
 NodeId nLastNodeId = 0;
 CCriticalSection cs_nLastNodeId;
+
+CCriticalSection cs_CNodeStatus;
 
 static CSemaphore *semOutbound = NULL;
 boost::condition_variable messageHandlerCondition;
@@ -385,12 +390,12 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
         addrman.Attempt(addrConnect);
 
         // Add node
-        CNode * pnode = new CNode(hSocket, addrConnect, pszDest ? pszDest : "", false); // #1247 
+	CNode * pnode = new CNode(hSocket, addrConnect, pszDest ? pszDest : "", false);
 	pnode->AddRef();
         {
             LOCK(cs_vNodes);
             vNodes.push_back(pnode);
-	    pnode->nTimeConnected = GetTime();  // #1247
+	    pnode->nTimeConnected = GetTime(); 
         }
         return pnode;
     } else if (!proxyConnectionFailed) {
@@ -493,8 +498,9 @@ void CNode::AddWhitelistedRange(const CSubNet &subnet) {
 #define X(name) stats.name = name
 void CNode::copyStats(CNodeStats &stats)
 {
+    LOCK(cs_CNodeStatus);
     stats.nodeid = this->GetId();
-    X(nServices);
+    X(nServices); 
     X(nLastSend);
     X(nLastRecv);
     X(nTimeConnected);
@@ -963,7 +969,7 @@ void ThreadSocketHandler()
 	    {
 	      LOCK(cs_vNodes);
 	      int64_t nTime = GetTime();
-	      if (nTime - pnode->nTimeConnected > 60)  // #1247 #1279
+	      if (nTime - pnode->nTimeConnected > 60) 
 		{
 		  if (pnode->nLastRecv == 0 || pnode->nLastSend == 0)
 		    {

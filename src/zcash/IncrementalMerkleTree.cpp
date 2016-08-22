@@ -30,7 +30,7 @@ public:
     PathFiller(std::deque<Hash> queue) : queue(queue) { }
 
     Hash next(size_t depth) {
-        if (queue.size() > 0) {
+      if (queue.size() > size_t{0}) {
             Hash h = queue.front();
             queue.pop_front();
 
@@ -90,7 +90,7 @@ void IncrementalMerkleTree<Depth, Hash>::append(Hash obj) {
         left = obj;
         right = boost::none;
 
-        for (size_t i = 0; i < Depth; i++) {
+        for (size_t i = size_t{0}; i < Depth; i++) {
             if (i < parents.size()) {
                 if (parents[i]) {
                     combined = Hash::combine(*parents[i], *combined);

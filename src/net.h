@@ -19,6 +19,8 @@
 #include "uint256.h"
 #include "utilstrencodings.h"
 
+#include <atomic>
+
 #include <deque>
 #include <stdint.h>
 
@@ -142,6 +144,7 @@ extern uint64_t nLocalHostNonce;
 extern CAddrMan addrman;
 extern int nMaxConnections;
 
+extern CCriticalSection cs_pfrom;
 extern std::vector<CNode*> vNodes;
 extern CCriticalSection cs_vNodes;
 extern std::map<CInv, CDataStream> mapRelay;
@@ -162,6 +165,8 @@ struct LocalServiceInfo {
 
 extern CCriticalSection cs_mapLocalHost;
 extern std::map<CNetAddr, LocalServiceInfo> mapLocalHost;
+
+extern CCriticalSection cs_CNodeStatus;
 
 class CNodeStats
 {
@@ -238,22 +243,22 @@ public:
     uint64_t nServices;
     SOCKET hSocket;
     CDataStream ssSend;
-    size_t nSendSize; // total size of all vSendMsg entries
-    size_t nSendOffset; // offset inside the first vSendMsg already sent
-    uint64_t nSendBytes;
+    std::atomic<size_t> nSendSize; // total size of all vSendMsg entries
+    std::atomic<size_t> nSendOffset; // offset inside the first vSendMsg already sent
+    std::atomic<uint64_t> nSendBytes;
     std::deque<CSerializeData> vSendMsg;
     CCriticalSection cs_vSend;
 
     std::deque<CInv> vRecvGetData;
     std::deque<CNetMessage> vRecvMsg;
     CCriticalSection cs_vRecvMsg;
-    uint64_t nRecvBytes;
-    int nRecvVersion;
+    std::atomic<uint64_t> nRecvBytes;
+    std::atomic<int> nRecvVersion;
 
-    int64_t nLastSend;
-    int64_t nLastRecv;
-    int64_t nTimeConnected;
-    int64_t nTimeOffset;
+    std::atomic<int64_t> nLastSend;
+    std::atomic<int64_t> nLastRecv;
+    std::atomic<int64_t> nTimeConnected;
+    std::atomic<int64_t> nTimeOffset;
     CAddress addr;
     std::string addrName;
     CService addrLocal;
@@ -263,13 +268,13 @@ public:
     // store the sanitized version in cleanSubVer. The original should be used when dealing with
     // the network or wire types and the cleaned string used when displayed or logged.
     std::string strSubVer, cleanSubVer;
-    bool fWhitelisted; // This peer can bypass DoS banning.
-    bool fOneShot;
-    bool fClient;
-    bool fInbound;
-    bool fNetworkNode;
-    bool fSuccessfullyConnected;
-    bool fDisconnect;
+    std::atomic<bool> fWhitelisted; // This peer can bypass DoS banning.
+    std::atomic<bool> fOneShot;
+    std::atomic<bool> fClient;
+    std::atomic<bool> fInbound;
+    std::atomic<bool> fNetworkNode;
+    std::atomic<bool> fSuccessfullyConnected;
+    std::atomic<bool> fDisconnect;
     // We use fRelayTxes for two purposes -
     // a) it allows us to not relay tx invs before receiving the peer's version message
     // b) the peer may tell us in its version message that we should not relay tx invs
@@ -313,13 +318,13 @@ public:
 
     // Ping time measurement:
     // The pong reply we're expecting, or 0 if no pong expected.
-    uint64_t nPingNonceSent;
+    std::atomic<uint64_t> nPingNonceSent;
     // Time (in usec) the last ping was sent, or 0 if no ping was ever sent.
-    int64_t nPingUsecStart;
+    std::atomic<int64_t> nPingUsecStart;
     // Last measured round-trip time.
-    int64_t nPingUsecTime;
+    std::atomic<int64_t> nPingUsecTime;
     // Whether a ping is requested.
-    bool fPingQueued;
+    std::atomic<bool> fPingQueued;
 
     CNode(SOCKET hSocketIn, CAddress addrIn, std::string addrNameIn = "", bool fInboundIn=false);
     ~CNode();
