@@ -71,6 +71,8 @@ public:
     Value getError() const;
     
     Value getResult() const;
+
+    std::string getStateAsString() const;
     
     int getErrorCode() const {
         return errorCode;

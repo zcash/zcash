@@ -145,3 +145,8 @@ Value AsyncRPCOperation::getStatus() const {
     return Value(obj);
 }
 
+
+std::string AsyncRPCOperation::getStateAsString() const {
+    OperationStatus status = this->getState();
+    return OperationStatusMap[status];
+}
