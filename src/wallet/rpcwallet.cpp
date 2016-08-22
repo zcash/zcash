@@ -2870,7 +2870,6 @@ Value z_getoperationstatus(const Array& params, bool fHelp)
     return status;
 }
 
-// If there is any change, it will flow back to the source taddr or zaddr.
 Value z_sendmany(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -2881,6 +2880,7 @@ Value z_sendmany(const Array& params, bool fHelp)
             "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf )\n"
             "\n*** This alpha release supports multiple recipients, but only one of them can be a zaddr ***"
             "\nSend multiple times. Amounts are double-precision floating point numbers."
+            "\nChange from a taddr flows to a new taddr address, while change from zaddr returns to itself."
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
             "1. \"fromaddress\"         (string, required) The taddr or zaddr to send the funds from.\n"

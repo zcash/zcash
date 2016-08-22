@@ -292,7 +292,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     // Miners fee will be consumed from the value pool
     fundsSpent += minersFee;
 
-    // Change will flow back to sender address
+    // Private change will flow back to sender's zaddr, while transparent change flows to a new taddr.
     CAmount change = funds - fundsSpent;
     if (change < 0)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strprintf("Insufficient funds or internal error, spent too much leaving negative change %ld", change));
@@ -301,7 +301,16 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             info.vjsout.push_back(JSOutput(frompaymentaddress_, change));
         } else if (isfromtaddr_) {
             CMutableTransaction rawTx(tx_);
-            CScript scriptPubKey = GetScriptForDestination(fromtaddr_.Get());
+
+            LOCK2(cs_main, pwalletMain->cs_wallet);
+            
+            EnsureWalletIsUnlocked();
+            CReserveKey keyChange(pwalletMain);
+            CPubKey vchPubKey;
+            bool ret = keyChange.GetReservedKey(vchPubKey);
+            if (!ret)
+                throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Could not generate a taddr to use as a change address"); // should never fail, as we just unlocked
+            CScript scriptPubKey = GetScriptForDestination(vchPubKey.GetID());
             CTxOut out(change, scriptPubKey);
             rawTx.vout.push_back(out);
             tx_ = CTransaction(rawTx);
