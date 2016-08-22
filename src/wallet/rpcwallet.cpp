@@ -2838,36 +2838,53 @@ Value z_getoperationstatus(const Array& params, bool fHelp)
    if (!EnsureWalletIsAvailable(fHelp))
         return Value::null;
 
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() > 1)
         throw runtime_error(
-            "z_getoperationstatus \"operationid\"\n"
+            "z_getoperationstatus ([\"operationid\", ... ]) \n"
             "\nGet operation status and any associated result or error data."
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
-            "1. \"operationid\"         (string, required) The operation id returned by an async operation call.\n"
+            "1. \"operationid\"         (array, optional) A list of operation ids we are interested in.\n"
             "\nResult:\n"
-            "\"    object\"          (string) FIXME: ASYNC operation object \n"
-            "                                    with some key value pairs.\n"
+            "\"    [object, ...]\"      (array) A list of JSON objects\n"
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    AsyncRPCOperationId id = params[0].get_str();
-    
+    std::set<AsyncRPCOperationId> filter;
+    if (params.size()==1) {
+        Array ids = params[0].get_array();
+        for (Value & v : ids) {
+            filter.insert(v.get_str());
+        }
+    }
+    bool useFilter = (filter.size()>0);
+
+    Array ret;
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation = q->getOperationForId(id);
-    if (!operation) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "No operation exists for that id.");
+    std::vector<AsyncRPCOperationId> ids = q->getAllOperationIds();
+
+    for (auto id : ids) {
+        if (useFilter && !filter.count(id))
+            continue;
+ 
+        std::shared_ptr<AsyncRPCOperation> operation = q->getOperationForId(id);
+        if (!operation) {
+            continue;
+            // It's possible that the operation was removed from the internal queue and map during this loop
+            // throw JSONRPCError(RPC_INVALID_PARAMETER, "No operation exists for that id.");
+        }
+        
+        Value status = operation->getStatus();
+        ret.push_back(status);
+
+        // Remove operation from memory when it has finished and the caller has retrieved the result and reason for finishing.
+        if (operation->isSuccess() || operation->isFailed() || operation->isCancelled()) {
+           q->popOperationForId(id);
+        }
     }
 
-    Value status = operation->getStatus();
-
-    // Remove operation from memory when it has finished and the caller has retrieved the result and reason for finishing.
-    if (operation->isSuccess() || operation->isFailed() || operation->isCancelled()) {
-        q->popOperationForId(id);
-    }
-
-    return status;
+    return ret;
 }
 
 Value z_sendmany(const Array& params, bool fHelp)
@@ -3007,3 +3024,52 @@ Value z_sendmany(const Array& params, bool fHelp)
     AsyncRPCOperationId operationId = operation->getId();
     return operationId;
 }
+
+
+Value z_listoperationids(const Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return Value::null;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_listoperationids\n"
+            "\nReturns the list of operation ids currently known to the wallet.\n"
+            "\nArguments:\n"
+            "1. \"status\"         (string, optional) Filter result by the operation's state state e.g. \"success\".\n"
+            "\nResult:\n"
+            "[                     (json array of string)\n"
+            "  \"operationid\"       (string) an operation id belonging to the wallet\n"
+            "  ,...\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_listoperationids", "")
+            + HelpExampleRpc("z_listoperationids", "")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    std::string filter;
+    bool useFilter = false;
+    if (params.size()==1) {
+        filter = params[0].get_str();
+        useFilter = true;
+    }
+
+    Array ret;
+    std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
+    std::vector<AsyncRPCOperationId> ids = q->getAllOperationIds();
+    for (auto id : ids) {
+        std::shared_ptr<AsyncRPCOperation> operation = q->getOperationForId(id);
+        if (!operation) {
+            continue;
+        }
+        std::string state = operation->getStateAsString();
+        if (useFilter && filter.compare(state)!=0)
+            continue;
+        ret.push_back(id);
+    }
+
+    return ret;
+}
+
