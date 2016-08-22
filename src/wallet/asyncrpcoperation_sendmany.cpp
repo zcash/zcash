@@ -358,7 +358,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         Object o;
         o.push_back(Pair("txid", txid));
-        o.push_back(Pair("hex", signedtxn));
+        //o.push_back(Pair("hex", signedtxn));
         setResult(Value(o));
     } else {
         // Test mode does not send the transaction to the network.
