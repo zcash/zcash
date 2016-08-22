@@ -841,35 +841,6 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
     return nSigOps;
 }
 
-
-
-
-// Taken from
-//   https://github.com/jedisct1/libsodium/commit/4099618de2cce5099ac2ec5ce8f2d80f4585606e
-// which was removed to maintain backwards compatibility in
-//   https://github.com/jedisct1/libsodium/commit/cb07df046f19ee0d5ad600c579df97aaa4295cc3
-static int
-crypto_sign_check_S_lt_l(const unsigned char *S)
-{
-    static const unsigned char l[32] =
-      { 0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
-        0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 };
-    unsigned char c = 0;
-    unsigned char n = 1;
-    unsigned int  i = 32;
-
-    do {
-        i--;
-        c |= ((S[i] - l[i]) >> 8) & n;
-        n &= ((S[i] ^ l[i]) - 1) >> 8;
-    } while (i != 0);
-
-    return -(c == 0);
-}
-
-
 bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 {
     if (!CheckTransactionWithoutProofVerification(tx, state)) {
@@ -1011,17 +982,14 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
 
             BOOST_STATIC_ASSERT(crypto_sign_PUBLICKEYBYTES == 32);
 
+            // We rely on libsodium to check that the signature is canonical.
+            // https://github.com/jedisct1/libsodium/commit/62911edb7ff2275cccd74bf1c8aefcc4d76924e0
             if (crypto_sign_verify_detached(&tx.joinSplitSig[0],
                                             dataToBeSigned.begin(), 32,
                                             tx.joinSplitPubKey.begin()
                                            ) != 0) {
                 return state.DoS(100, error("CheckTransaction(): invalid joinsplit signature"),
                                  REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
-            }
-
-            if (crypto_sign_check_S_lt_l(&tx.joinSplitSig[32]) != 0) {
-                return state.DoS(100, error("CheckTransaction(): non-canonical ed25519 signature"),
-                                 REJECT_INVALID, "non-canonical-ed25519-signature");
             }
         }
     }

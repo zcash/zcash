@@ -329,6 +329,13 @@ TEST(checktransaction_tests, bad_txns_invalid_joinsplit_signature) {
 TEST(checktransaction_tests, non_canonical_ed25519_signature) {
     CMutableTransaction mtx = GetValidTransaction();
 
+    // Check that the signature is valid before we add L
+    {
+        CTransaction tx(mtx);
+        MockCValidationState state;
+        EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+
     // Copied from libsodium/crypto_sign/ed25519/ref10/open.c
     static const unsigned char L[32] =
       { 0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
@@ -346,6 +353,6 @@ TEST(checktransaction_tests, non_canonical_ed25519_signature) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "non-canonical-ed25519-signature", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
