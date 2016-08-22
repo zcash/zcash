@@ -43,6 +43,7 @@ public:
     std::shared_ptr<AsyncRPCOperation> getOperationForId(AsyncRPCOperationId);
     std::shared_ptr<AsyncRPCOperation> popOperationForId(AsyncRPCOperationId);
     void addOperation(const std::shared_ptr<AsyncRPCOperation> &ptrOperation);
+    std::vector<AsyncRPCOperationId> getAllOperationIds();
 
 private:
     // addWorker() will spawn a new thread on this method

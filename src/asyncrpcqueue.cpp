@@ -145,3 +145,13 @@ void AsyncRPCQueue::addWorker() {
 int AsyncRPCQueue::getNumberOfWorkers() {
     return workers.size();
 }
+
+
+std::vector<AsyncRPCOperationId> AsyncRPCQueue::getAllOperationIds() {
+    std::unique_lock< std::mutex > guard(cs_lock);
+    std::vector<AsyncRPCOperationId> v;
+    for(auto & entry: operationMap)
+        v.push_back(entry.first);
+    return v;
+}
+
