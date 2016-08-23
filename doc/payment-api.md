@@ -56,6 +56,9 @@ z_getnewaddress | | Return a new zaddr for sending and receiving payments. The s
 z_listaddresses | | Returns a list of all the zaddrs in this node’s wallet for which you have a spending key.<br><br>Output:<br>{ [“z123…”, “z456...”, “z789...”] }
 
 ### Key Management
+
+**z9 alpha release note:** encrypted wallets are not yet fully supported.  If the wallet is protected with a passphrase, zkeys will not be persisted to disk.
+
 Command | Parameters | Description
 --- | --- | ---
 z_exportkey | zaddr | _Requires an unlocked wallet or an unencrypted wallet._<br><br>Return a zkey for a given zaddr belonging to the node’s wallet.<br><br>The key will be returned as a string formatted using Base58Check as described in the Zcash protocol spec.<br><br>Output:AKWUAkypwQjhZ6LLNaMuuuLcmZ6gt5UFyo8m3jGutvALmwZKLdR5
