@@ -456,8 +456,6 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             }
 
             wss.nZKeys++;
-
-            CZCPaymentAddress pubaddr(addr);
         }
         else if (strType == "key" || strType == "wkey")
         {
