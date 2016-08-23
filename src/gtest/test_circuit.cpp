@@ -35,7 +35,6 @@ void test_value_equals(uint64_t i) {
 
 TEST(circuit, values)
 {
-    default_r1cs_ppzksnark_pp::init_public_params();
     typedef Fr<default_r1cs_ppzksnark_pp> FieldT;
     test_value_equals<FieldT>(0);
     test_value_equals<FieldT>(1);
@@ -162,7 +161,6 @@ TEST(circuit, merkle_tree_gadget_weirdness)
     behavior.
     */
 
-    default_r1cs_ppzksnark_pp::init_public_params();
     typedef Fr<default_r1cs_ppzksnark_pp> FieldT;
 
     // Test the normal case

@@ -16,6 +16,7 @@
 #include "zcash/NoteEncryption.hpp"
 #include "zcash/Zcash.h"
 #include "zcash/JoinSplit.hpp"
+#include "zcash/Proof.hpp"
 
 class JSDescription
 {
@@ -63,7 +64,7 @@ public:
 
     // JoinSplit proof
     // This is a zk-SNARK which ensures that this JoinSplit is valid.
-    boost::array<unsigned char, ZKSNARK_PROOF_SIZE> proof;
+    libzcash::ZCProof proof;
 
     JSDescription(): vpub_old(0), vpub_new(0) { }
 
