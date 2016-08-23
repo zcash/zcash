@@ -356,7 +356,8 @@ if test x$use_lcov = xyes; then
   if test x$use_comparison_tool = x; then
     AC_MSG_ERROR("lcov testing requested but comparison tool was not specified")
   fi
-  LCOV="$LCOV --gcov-tool=$GCOV"
+  LCOV="$LCOV --gcov-tool=$GCOV --rc lcov_branch_coverage=1"
+  GENHTML="$GENHTML --branch-coverage"
   AX_CHECK_COMPILE_FLAG([--coverage],[CXXFLAGS="$CXXFLAGS --coverage"],
     [AC_MSG_ERROR("lcov testing requested but --coverage flag does not work")])
 fi
