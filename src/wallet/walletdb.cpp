@@ -117,7 +117,7 @@ bool CWalletDB::WriteZKey(const libzcash::PaymentAddress& addr, const libzcash::
     if (!Write(std::make_pair(std::string("zkeymeta"), addr), keyMeta))
         return false;
 
-    // pair is: tuple_key("spendingkey", paymentaddress) --> secretkey
+    // pair is: tuple_key("zkey", paymentaddress) --> secretkey
     return Write(std::make_pair(std::string("zkey"), addr), key, false);
 }
 
