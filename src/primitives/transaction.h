@@ -74,7 +74,8 @@ public:
             const boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
             const boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             CAmount vpub_old,
-            CAmount vpub_new
+            CAmount vpub_new,
+            bool computeProof = true // Set to false in some tests
     );
 
     // Verifies that the JoinSplit proof is correct.

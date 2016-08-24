@@ -173,9 +173,10 @@ public:
         boost::array<uint256, NumOutputs>& out_commitments,
         uint64_t vpub_old,
         uint64_t vpub_new,
-        const uint256& rt
+        const uint256& rt,
+        bool computeProof
     ) {
-        if (!pk) {
+        if (computeProof && !pk) {
             throw std::runtime_error("JoinSplit proving key not loaded");
         }
 
@@ -229,6 +230,10 @@ public:
         // against malleability.
         for (size_t i = 0; i < NumInputs; i++) {
             out_macs[i] = PRF_pk(inputs[i].key, i, h_sig);
+        }
+
+        if (!computeProof) {
+            return ZCProof();
         }
 
         protoboard<FieldT> pb;

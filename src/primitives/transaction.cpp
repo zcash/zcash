@@ -15,11 +15,14 @@ JSDescription::JSDescription(ZCJoinSplit& params,
             const boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
             const boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             CAmount vpub_old,
-            CAmount vpub_new) : vpub_old(vpub_old), vpub_new(vpub_new), anchor(anchor)
+            CAmount vpub_new,
+            bool computeProof) : vpub_old(vpub_old), vpub_new(vpub_new), anchor(anchor)
 {
     boost::array<libzcash::Note, ZC_NUM_JS_OUTPUTS> notes;
 
-    params.loadProvingKey();
+    if (computeProof) {
+        params.loadProvingKey();
+    }
     proof = params.prove(
         inputs,
         outputs,
@@ -33,7 +36,8 @@ JSDescription::JSDescription(ZCJoinSplit& params,
         commitments,
         vpub_old,
         vpub_new,
-        anchor
+        anchor,
+        computeProof
     );
 }
 
