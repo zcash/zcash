@@ -78,6 +78,35 @@ libzcash::Note GetNote(const libzcash::SpendingKey& sk,
     return note_pt.note(sk.address());
 }
 
+TEST(wallet_tests, set_note_addrs_in_cwallettx) {
+    auto sk = libzcash::SpendingKey::random();
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+    EXPECT_EQ(0, wtx.mapNoteData.size());
+
+    mapNoteData_t noteData;
+    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+    CNoteData nd {sk.address(), nullifier};
+    noteData[jsoutpt] = nd;
+
+    wtx.SetNoteData(noteData);
+    EXPECT_EQ(noteData, wtx.mapNoteData);
+}
+
+TEST(wallet_tests, set_invalid_note_addrs_in_cwallettx) {
+    CWalletTx wtx;
+    EXPECT_EQ(0, wtx.mapNoteData.size());
+
+    mapNoteData_t noteData;
+    auto sk = libzcash::SpendingKey::random();
+    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+    CNoteData nd {sk.address(), uint256()};
+    noteData[jsoutpt] = nd;
+
+    EXPECT_THROW(wtx.SetNoteData(noteData), std::runtime_error);
+}
+
 TEST(wallet_tests, find_note_in_tx) {
     CWallet wallet;
 
