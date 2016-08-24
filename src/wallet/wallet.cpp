@@ -336,6 +336,15 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
     return false;
 }
 
+void CWallet::ChainTip(const CBlockIndex *pindex, const CBlock *pblock, bool added)
+{
+    if (added) {
+        IncrementNoteWitnesses(pindex, pblock, pcoinsTip);
+    } else {
+        DecrementNoteWitnesses();
+    }
+}
+
 void CWallet::SetBestChain(const CBlockLocator& loc)
 {
     CWalletDB walletdb(strWalletFile);
