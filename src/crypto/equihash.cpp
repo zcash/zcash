@@ -136,7 +136,7 @@ void CompressArray(const unsigned char* in, size_t in_len,
 // comparison
 void EhIndexToArray(const eh_index i, unsigned char* array)
 {
-    assert(sizeof(eh_index) == 4);
+    BOOST_STATIC_ASSERT(sizeof(eh_index) == 4);
     eh_index bei = htobe32(i);
     memcpy(array, &bei, sizeof(eh_index));
 }
@@ -145,7 +145,7 @@ void EhIndexToArray(const eh_index i, unsigned char* array)
 // comparison
 eh_index ArrayToEhIndex(const unsigned char* array)
 {
-    assert(sizeof(eh_index) == 4);
+    BOOST_STATIC_ASSERT(sizeof(eh_index) == 4);
     eh_index bei;
     memcpy(&bei, array, sizeof(eh_index));
     return be32toh(bei);
@@ -154,7 +154,7 @@ eh_index ArrayToEhIndex(const unsigned char* array)
 eh_trunc TruncateIndex(const eh_index i, const unsigned int ilen)
 {
     // Truncate to 8 bits
-    assert(sizeof(eh_trunc) == 1);
+    BOOST_STATIC_ASSERT(sizeof(eh_trunc) == 1);
     return (i >> (ilen - 8)) & 0xff;
 }
 
@@ -208,7 +208,7 @@ StepRow<WIDTH>::StepRow(const unsigned char* hashIn, size_t hInLen,
 template<size_t WIDTH> template<size_t W>
 StepRow<WIDTH>::StepRow(const StepRow<W>& a)
 {
-    assert(W <= WIDTH);
+    BOOST_STATIC_ASSERT(W <= WIDTH);
     std::copy(a.hash, a.hash+W, hash);
 }
 
