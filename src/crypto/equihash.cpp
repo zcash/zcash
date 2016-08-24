@@ -419,10 +419,12 @@ bool Equihash<N,K>::BasicSolve(const eh_HashState& base_state,
             for (int l = 0; l < j - 1; l++) {
                 for (int m = l + 1; m < j; m++) {
                     FullStepRow<FinalFullWidth> res(X[i+l], X[i+m], hashLen, lenIndices, 0);
-                    if (DistinctIndices(X[i+l], X[i+m], hashLen, lenIndices) &&
-                            validBlock(res.GetIndices(hashLen, 2*lenIndices,
-                                                      CollisionBitLength))) {
-                        return true;
+                    if (DistinctIndices(X[i+l], X[i+m], hashLen, lenIndices)) {
+                        auto soln = res.GetIndices(hashLen, 2*lenIndices, CollisionBitLength);
+                        assert(soln.size() == equihash_solution_size(N, K));
+                        if (validBlock(soln)) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -691,7 +693,9 @@ bool Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state,
         // We are at the top of the tree
         assert(X.size() == K+1);
         for (FullStepRow<FinalFullWidth> row : *X[K]) {
-            solns.insert(row.GetIndices(hashLen, lenIndices, CollisionBitLength));
+            auto soln = row.GetIndices(hashLen, lenIndices, CollisionBitLength);
+            assert(soln.size() == equihash_solution_size(N, K));
+            solns.insert(soln);
         }
         for (auto soln : solns) {
             if (validBlock(soln))
