@@ -10,6 +10,7 @@
 #include "coincontrol.h"
 #include "consensus/consensus.h"
 #include "consensus/validation.h"
+#include "init.h"
 #include "main.h"
 #include "net.h"
 #include "script/script.h"
@@ -17,6 +18,7 @@
 #include "timedata.h"
 #include "util.h"
 #include "utilmoneystr.h"
+#include "zcash/Note.hpp"
 
 #include <assert.h>
 
@@ -56,6 +58,11 @@ struct CompareValueOnly
         return t1.first < t2.first;
     }
 };
+
+std::string JSOutPoint::ToString() const
+{
+    return strprintf("JSOutPoint(%s, %d, %d)", hash.ToString().substr(0,10), js, n);
+}
 
 std::string COutput::ToString() const
 {
@@ -842,6 +849,42 @@ void CWallet::EraseFromWallet(const uint256 &hash)
     return;
 }
 
+
+mapNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
+{
+    uint256 hash = tx.GetTxid();
+
+    mapNoteData_t noteData;
+    std::set<NoteDecryptorMap::value_type> decryptors;
+    GetNoteDecryptors(decryptors);
+    libzcash::SpendingKey key;
+    for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {
+        auto hSig = tx.vjoinsplit[i].h_sig(*pzcashParams, tx.joinSplitPubKey);
+        for (uint8_t j = 0; j < tx.vjoinsplit[i].ciphertexts.size(); j++) {
+            for (const NoteDecryptorMap::value_type& item : decryptors) {
+                try {
+                    auto note_pt = libzcash::NotePlaintext::decrypt(
+                        item.second,
+                        tx.vjoinsplit[i].ciphertexts[j],
+                        tx.vjoinsplit[i].ephemeralKey,
+                        hSig,
+                        (unsigned char) j);
+                    auto address = item.first;
+                    // Decryptors are only cached when SpendingKeys are added
+                    assert(GetSpendingKey(address, key));
+                    auto note = note_pt.note(address);
+                    JSOutPoint jsoutpt {hash, i, j};
+                    CNoteData nd {address, note.nullifier(key)};
+                    noteData.insert(std::make_pair(jsoutpt, nd));
+                    break;
+                } catch (const std::exception &) {
+                    // Couldn't decrypt with this spending key
+                }
+            }
+        }
+    }
+    return noteData;
+}
 
 isminetype CWallet::IsMine(const CTxIn &txin) const
 {

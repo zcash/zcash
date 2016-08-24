@@ -146,6 +146,88 @@ struct COutputEntry
     int vout;
 };
 
+/** An note outpoint */
+class JSOutPoint
+{
+public:
+    // Transaction hash
+    uint256 hash;
+    // Index into CTransaction.vjoinsplit
+    size_t js;
+    // Index into JSDescription fields of length ZC_NUM_JS_OUTPUTS
+    uint8_t n;
+
+    JSOutPoint() { SetNull(); }
+    JSOutPoint(uint256 h, size_t js, uint8_t n) : hash {h}, js {js}, n {n} { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(hash);
+        READWRITE(js);
+        READWRITE(n);
+    }
+
+    void SetNull() { hash.SetNull(); }
+    bool IsNull() const { return hash.IsNull(); }
+
+    friend bool operator<(const JSOutPoint& a, const JSOutPoint& b) {
+        return (a.hash < b.hash ||
+                (a.hash == b.hash && a.js < b.js) ||
+                (a.hash == b.hash && a.js == b.js && a.n < b.n));
+    }
+
+    friend bool operator==(const JSOutPoint& a, const JSOutPoint& b) {
+        return (a.hash == b.hash && a.js == b.js && a.n == b.n);
+    }
+
+    friend bool operator!=(const JSOutPoint& a, const JSOutPoint& b) {
+        return !(a == b);
+    }
+
+    std::string ToString() const;
+};
+
+class CNoteData
+{
+public:
+    libzcash::PaymentAddress address;
+
+    // It's okay to cache the nullifier in the wallet, because we are storing
+    // the spending key there too, which could be used to derive this.
+    // If PR #1210 is merged, we need to revisit the threat model and decide
+    // whether it is okay to store this unencrypted while the spending key is
+    // encrypted.
+    uint256 nullifier;
+
+    CNoteData() : address(), nullifier() { }
+    CNoteData(libzcash::PaymentAddress a, uint256 n) : address {a}, nullifier {n} { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(address);
+        READWRITE(nullifier);
+    }
+
+    friend bool operator<(const CNoteData& a, const CNoteData& b) {
+        return (a.address < b.address ||
+                (a.address == b.address && a.nullifier < b.nullifier));
+    }
+
+    friend bool operator==(const CNoteData& a, const CNoteData& b) {
+        return (a.address == b.address && a.nullifier == b.nullifier);
+    }
+
+    friend bool operator!=(const CNoteData& a, const CNoteData& b) {
+        return !(a == b);
+    }
+};
+
+typedef std::map<JSOutPoint, CNoteData> mapNoteData_t;
+
 /** A transaction with a merkle branch linking it to the block chain. */
 class CMerkleTx : public CTransaction
 {
@@ -666,6 +748,8 @@ public:
     std::map<CTxDestination, CAmount> GetAddressBalances();
 
     std::set<CTxDestination> GetAccountAddresses(std::string strAccount) const;
+
+    mapNoteData_t FindMyNotes(const CTransaction& tx) const;
 
     isminetype IsMine(const CTxIn& txin) const;
     CAmount GetDebit(const CTxIn& txin, const isminefilter& filter) const;
