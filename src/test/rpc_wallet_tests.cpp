@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
     
-    // wallet should by empty
+    // wallet should be empty
     std::set<libzcash::PaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
@@ -297,9 +297,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     auto testPaymentAddress = testSpendingKey.address();
     std::string testAddr = CZCPaymentAddress(testPaymentAddress).ToString();
     std::string testKey = CZCSpendingKey(testSpendingKey).ToString();
-
-//    std::cout << "testAddr = " << testAddr << std::endl;
-//    std::cout << "testKey = " << testKey << std::endl;
     
     // create test data using the random key
     std::string format_str = "# Wallet dump created by Zcash v0.11.2.0.z8-9155cc6-dirty (2016-08-11 11:37:00 -0700)\n"
@@ -315,8 +312,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     
     boost::format formatobject(format_str);
     std::string testWalletDump = (formatobject % testKey % testAddr).str();
-
-//    std::cout << "testWalletDump =\n" << testWalletDump << std::endl;
     
     // write test data to file
     boost::filesystem::path temp = boost::filesystem::temp_directory_path() /
@@ -343,19 +338,16 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     auto addr = address.Get();
     BOOST_CHECK(pwalletMain->HaveSpendingKey(addr));
     
-    // Verify the spending keys is the same as the test data
+    // Verify the spending key is the same as the test data
     libzcash::SpendingKey k;
     BOOST_CHECK(pwalletMain->GetSpendingKey(addr, k));
     CZCSpendingKey spendingkey(k);
     BOOST_CHECK_EQUAL(testKey, spendingkey.ToString());
-    
-//    std::cout << "address = " << address.ToString() << std::endl;
-//    std::cout << "spendingkey = " << spendingkey.ToString() << std::endl;
 }
 
 
 /*
- * This test covers RPC command z_listaddresses, z_importkey, z_exportkey
+ * This test covers RPC commands z_listaddresses, z_importkey, z_exportkey
  */
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 {
@@ -412,7 +404,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     arr = retValue.get_array();
     BOOST_CHECK(arr.size() == numAddrs);
   
-    // Create a set form them
+    // Create a set from them
     std::unordered_set<std::string> listaddrs;
     for (Value element : arr) {
         listaddrs.insert(element.get_str());

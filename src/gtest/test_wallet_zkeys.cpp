@@ -19,7 +19,7 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
 
     CWallet wallet;
 
-    // wallet should by empty
+    // wallet should be empty
     std::set<libzcash::PaymentAddress> addrs;
     wallet.GetPaymentAddresses(addrs);
     ASSERT_EQ(0, addrs.size());
@@ -86,7 +86,7 @@ TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
     // No default CPubKey set
     ASSERT_TRUE(fFirstRun);
 
-    // wallet should by empty
+    // wallet should be empty
     std::set<libzcash::PaymentAddress> addrs;
     wallet.GetPaymentAddresses(addrs);
     ASSERT_EQ(0, addrs.size());
