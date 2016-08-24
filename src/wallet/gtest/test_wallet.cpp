@@ -246,3 +246,29 @@ TEST(wallet_tests, nullifier_is_spent) {
     chainActive.SetTip(NULL);
     mapBlockIndex.erase(blockHash);
 }
+
+TEST(wallet_tests, navigate_from_nullifier_to_note) {
+    CWallet wallet;
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    mapNoteData_t noteData;
+    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+    CNoteData nd {sk.address(), nullifier};
+    noteData[jsoutpt] = nd;
+
+    wtx.SetNoteData(noteData);
+
+    EXPECT_EQ(0, wallet.mapNullifiers.count(nullifier));
+
+    wallet.AddToWallet(wtx, true, NULL);
+    EXPECT_EQ(1, wallet.mapNullifiers.count(nullifier));
+    EXPECT_EQ(wtx.GetTxid(), wallet.mapNullifiers[nullifier].hash);
+    EXPECT_EQ(0, wallet.mapNullifiers[nullifier].js);
+    EXPECT_EQ(1, wallet.mapNullifiers[nullifier].n);
+}

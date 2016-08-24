@@ -722,6 +722,16 @@ void CWallet::MarkDirty()
     }
 }
 
+void CWallet::UpdateNullifierNoteMap(const CWalletTx& wtx)
+{
+    {
+        LOCK(cs_wallet);
+        for (const mapNoteData_t::value_type& item : wtx.mapNoteData) {
+            mapNullifiers[item.second.nullifier] = item.first;
+        }
+    }
+}
+
 bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb)
 {
     uint256 hash = wtxIn.GetTxid();
@@ -730,6 +740,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
     {
         mapWallet[hash] = wtxIn;
         mapWallet[hash].BindWallet(this);
+        UpdateNullifierNoteMap(mapWallet[hash]);
         AddToSpends(hash);
     }
     else
@@ -739,6 +750,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
         pair<map<uint256, CWalletTx>::iterator, bool> ret = mapWallet.insert(make_pair(hash, wtxIn));
         CWalletTx& wtx = (*ret.first).second;
         wtx.BindWallet(this);
+        UpdateNullifierNoteMap(wtx);
         bool fInsertedNew = ret.second;
         if (fInsertedNew)
         {
@@ -893,6 +905,14 @@ void CWallet::SyncTransaction(const CTransaction& tx, const CBlock* pblock)
     {
         if (mapWallet.count(txin.prevout.hash))
             mapWallet[txin.prevout.hash].MarkDirty();
+    }
+    for (const JSDescription& jsdesc : tx.vjoinsplit) {
+        for (const uint256& nullifier : jsdesc.nullifiers) {
+            if (mapNullifiers.count(nullifier) &&
+                    mapWallet.count(mapNullifiers[nullifier].hash)) {
+                mapWallet[mapNullifiers[nullifier].hash].MarkDirty();
+            }
+        }
     }
 }
 
