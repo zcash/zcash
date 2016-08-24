@@ -162,6 +162,12 @@ bool CWalletDB::WriteDefaultKey(const CPubKey& vchPubKey)
     return Write(std::string("defaultkey"), vchPubKey);
 }
 
+bool CWalletDB::WriteAnchorCache(const std::list<uint256>& vAnchorCache)
+{
+    nWalletDBUpdated++;
+    return Write(std::string("anchorcache"), vAnchorCache);
+}
+
 bool CWalletDB::ReadPool(int64_t nPool, CKeyPool& keypool)
 {
     return Read(std::make_pair(std::string("pool"), nPool), keypool);
@@ -630,6 +636,10 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 strErr = "Error reading wallet database: LoadDestData failed";
                 return false;
             }
+        }
+        else if (strType == "anchorcache")
+        {
+            ssValue >> pwallet->vAnchorCache;
         }
     } catch (...)
     {

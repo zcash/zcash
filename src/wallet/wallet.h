@@ -7,6 +7,7 @@
 #define BITCOIN_WALLET_WALLET_H
 
 #include "amount.h"
+#include "coins.h"
 #include "key.h"
 #include "keystore.h"
 #include "primitives/block.h"
@@ -52,6 +53,9 @@ static const unsigned int DEFAULT_TX_CONFIRM_TARGET = 2;
 static const CAmount nHighTransactionMaxFeeWarning = 100 * nHighTransactionFeeWarning;
 //! Largest (in bytes) free transaction we're willing to create
 static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 1000;
+//! Size of witness cache
+//  Should be large enough that we can expect to never reorg beyond our cache.
+static const unsigned int WITNESS_CACHE_SIZE = 50;
 
 class CAccountingEntry;
 class CBlockIndex;
@@ -200,6 +204,12 @@ public:
     // whether it is okay to store this unencrypted while the spending key is
     // encrypted.
     uint256 nullifier;
+
+    /**
+     * Cached incremental witnesses for spendable Notes.
+     * Beginning of the list is the most recent witness.
+     */
+    std::list<ZCIncrementalWitness> witnesses;
 
     CNoteData() : address(), nullifier() { }
     CNoteData(libzcash::PaymentAddress a, uint256 n) : address {a}, nullifier {n} { }
@@ -568,6 +578,20 @@ private:
     void AddToSpends(const uint256& nullifier, const uint256& wtxid);
     void AddToSpends(const uint256& wtxid);
 
+public:
+    /*
+     * Cached anchors corresponding to the cached incremental witnesses for the
+     * notes in our wallet.
+     */
+    std::list<uint256> vAnchorCache;
+
+protected:
+    void IncrementNoteWitnesses(const CBlockIndex* pindex,
+                                const CBlock* pblock,
+                                const CCoinsViewCache* pcoins);
+    void DecrementNoteWitnesses();
+
+private:
     template <class T>
     void SyncMetaData(std::pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator>);
 
@@ -769,6 +793,10 @@ public:
     std::set<CTxDestination> GetAccountAddresses(std::string strAccount) const;
 
     mapNoteData_t FindMyNotes(const CTransaction& tx) const;
+    void GetNoteWitnesses(
+         std::vector<JSOutPoint> notes,
+         std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
+         uint256 &final_anchor);
 
     isminetype IsMine(const CTxIn& txin) const;
     CAmount GetDebit(const CTxIn& txin, const isminefilter& filter) const;

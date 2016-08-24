@@ -583,6 +583,110 @@ void CWallet::AddToSpends(const uint256& wtxid)
     }
 }
 
+void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
+                                     const CBlock* pblockIn,
+                                     const CCoinsViewCache* pcoins)
+{
+    {
+        LOCK(cs_wallet);
+        for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+            for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
+                CNoteData* nd = &(item.second);
+                // Copy the witness for the previous block if we have one
+                if (nd->witnesses.size() > 0) {
+                    nd->witnesses.push_front(nd->witnesses.front());
+                }
+                if (nd->witnesses.size() > WITNESS_CACHE_SIZE) {
+                    nd->witnesses.pop_back();
+                }
+            }
+        }
+
+        const CBlock* pblock {pblockIn};
+        CBlock block;
+        if (!pblock) {
+            ReadBlockFromDisk(block, pindex);
+            pblock = &block;
+        }
+
+        ZCIncrementalMerkleTree tree;
+        bool treeInitialised = false;
+        for (const CTransaction& tx : pblock->vtx) {
+            if (!treeInitialised && tx.vjoinsplit.size() > 0) {
+                LOCK(cs_main);
+                // vAnchorCache will only be empty at the beginning
+                if (vAnchorCache.size() && !pcoins->GetAnchorAt(vAnchorCache.front(), tree)) {
+                    // This should not happen, because IncrementNoteWitnesses()
+                    // is only called when the chain tip updates, and the
+                    // anchors for the JoinSplits in that block should still be
+                    // cached.
+                    // TODO: Calculate the anchor from scratch?
+                    throw std::runtime_error("CWallet::IncrementNoteWitnesses(): anchor not cached");
+                }
+                treeInitialised = true;
+            }
+
+            auto hash = tx.GetTxid();
+            bool txIsOurs = mapWallet.count(hash);
+            for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {
+                const JSDescription& jsdesc = tx.vjoinsplit[i];
+                for (uint8_t j = 0; j < jsdesc.commitments.size(); j++) {
+                    const uint256& note_commitment = jsdesc.commitments[j];
+                    tree.append(note_commitment);
+
+                    // Increment existing witnesses
+                    for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+                        for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
+                            CNoteData* nd = &(item.second);
+                            if (nd->witnesses.size() > 0) {
+                                nd->witnesses.front().append(note_commitment);
+                            }
+                        }
+                    }
+
+                    // If this is our note, witness it
+                    if (txIsOurs) {
+                        JSOutPoint jsoutpt {hash, i, j};
+                        if (mapWallet[hash].mapNoteData.count(jsoutpt)) {
+                            mapWallet[hash].mapNoteData[jsoutpt].witnesses.push_front(
+                                tree.witness());
+                        }
+                    }
+                }
+            }
+        }
+        vAnchorCache.push_front(tree.root());
+        if (vAnchorCache.size() > WITNESS_CACHE_SIZE) {
+            vAnchorCache.pop_back();
+        }
+        if (fFileBacked) {
+            CWalletDB(strWalletFile).WriteAnchorCache(vAnchorCache);
+        }
+    }
+}
+
+void CWallet::DecrementNoteWitnesses()
+{
+    {
+        LOCK(cs_wallet);
+        for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+            for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
+                CNoteData* nd = &(item.second);
+                if (nd->witnesses.size() > 0) {
+                    nd->witnesses.pop_front();
+                }
+            }
+        }
+        if (vAnchorCache.size() > 0) {
+            vAnchorCache.pop_front();
+        }
+        // TODO: If vAnchorCache is empty, we need to regenerate the caches (#1302)
+        if (fFileBacked) {
+            CWalletDB(strWalletFile).WriteAnchorCache(vAnchorCache);
+        }
+    }
+}
+
 bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
 {
     if (IsCrypted())
@@ -875,8 +979,9 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         {
             CWalletTx wtx(this,tx);
 
-            if (noteData.size() > 0)
+            if (noteData.size() > 0) {
                 wtx.SetNoteData(noteData);
+            }
 
             // Get merkle branch if transaction was found in a block
             if (pblock)
@@ -963,6 +1068,29 @@ mapNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
         }
     }
     return noteData;
+}
+
+void CWallet::GetNoteWitnesses(std::vector<JSOutPoint> notes,
+                               std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
+                               uint256 &final_anchor)
+{
+    {
+        LOCK(cs_wallet);
+        witnesses.resize(notes.size());
+        int i = 0;
+        for (JSOutPoint note : notes) {
+            if (mapWallet.count(note.hash) &&
+                    mapWallet[note.hash].mapNoteData.count(note) &&
+                    mapWallet[note.hash].mapNoteData[note].witnesses.size() > 0) {
+                witnesses[i] = mapWallet[note.hash].mapNoteData[note].witnesses.front();
+            }
+            i++;
+        }
+        // vAnchorCache should only be empty here before the genesis block (so, never)
+        if (vAnchorCache.size() > 0) {
+            final_anchor = vAnchorCache.front();
+        }
+    }
 }
 
 isminetype CWallet::IsMine(const CTxIn &txin) const

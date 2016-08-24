@@ -1,3 +1,4 @@
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <sodium.h>
 
@@ -10,7 +11,31 @@
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
+using ::testing::_;
+using ::testing::Return;
+
 ZCJoinSplit* params = ZCJoinSplit::Unopened();
+
+class MockCCoinsViewCache : public CCoinsViewCache {
+public:
+    MockCCoinsViewCache() : CCoinsViewCache(NULL) { };
+
+    MOCK_CONST_METHOD2(GetAnchorAt, bool(const uint256 &rt, ZCIncrementalMerkleTree &tree));
+};
+
+class TestWallet : public CWallet {
+public:
+    TestWallet() : CWallet() { }
+
+    void IncrementNoteWitnesses(const CBlockIndex* pindex,
+                                const CBlock* pblock,
+                                const CCoinsViewCache* pcoins) {
+        CWallet::IncrementNoteWitnesses(pindex, pblock, pcoins);
+    }
+    void DecrementNoteWitnesses() {
+        CWallet::DecrementNoteWitnesses();
+    }
+};
 
 CWalletTx GetValidReceive(const libzcash::SpendingKey& sk, CAmount value, bool randomInputs) {
     CMutableTransaction mtx;
@@ -271,4 +296,133 @@ TEST(wallet_tests, navigate_from_nullifier_to_note) {
     EXPECT_EQ(wtx.GetTxid(), wallet.mapNullifiers[nullifier].hash);
     EXPECT_EQ(0, wallet.mapNullifiers[nullifier].js);
     EXPECT_EQ(1, wallet.mapNullifiers[nullifier].n);
+}
+
+TEST(wallet_tests, cached_witnesses_empty_chain) {
+    TestWallet wallet;
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    mapNoteData_t noteData;
+    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+    CNoteData nd {sk.address(), nullifier};
+    noteData[jsoutpt] = nd;
+    wtx.SetNoteData(noteData);
+
+    std::vector<JSOutPoint> notes {jsoutpt};
+    std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+    uint256 anchor;
+
+    wallet.GetNoteWitnesses(notes, witnesses, anchor);
+    EXPECT_FALSE((bool) witnesses[0]);
+
+    wallet.AddToWallet(wtx, true, NULL);
+    witnesses.clear();
+    wallet.GetNoteWitnesses(notes, witnesses, anchor);
+    EXPECT_FALSE((bool) witnesses[0]);
+
+    CBlock block;
+    block.vtx.push_back(wtx);
+    MockCCoinsViewCache coins;
+    // Empty chain, so we shouldn't try to fetch an anchor
+    EXPECT_CALL(coins, GetAnchorAt(_, _)).Times(0);
+    wallet.IncrementNoteWitnesses(NULL, &block, &coins);
+    witnesses.clear();
+    wallet.GetNoteWitnesses(notes, witnesses, anchor);
+    EXPECT_TRUE((bool) witnesses[0]);
+
+    wallet.DecrementNoteWitnesses();
+    witnesses.clear();
+    wallet.GetNoteWitnesses(notes, witnesses, anchor);
+    EXPECT_FALSE((bool) witnesses[0]);
+}
+
+TEST(wallet_tests, cached_witnesses_chain_tip) {
+    TestWallet wallet;
+    MockCCoinsViewCache coins;
+    uint256 anchor1;
+    CBlock block1;
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    {
+        // First transaction (case tested in _empty_chain)
+        auto wtx = GetValidReceive(sk, 10, true);
+        auto note = GetNote(sk, wtx, 0, 1);
+        auto nullifier = note.nullifier(sk);
+
+        mapNoteData_t noteData;
+        JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+        CNoteData nd {sk.address(), nullifier};
+        noteData[jsoutpt] = nd;
+        wtx.SetNoteData(noteData);
+        wallet.AddToWallet(wtx, true, NULL);
+
+        std::vector<JSOutPoint> notes {jsoutpt};
+        std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+
+        // First block (case tested in _empty_chain)
+        block1.vtx.push_back(wtx);
+        EXPECT_CALL(coins, GetAnchorAt(_, _))
+            .Times(0);
+        wallet.IncrementNoteWitnesses(NULL, &block1, &coins);
+        // Called to fetch anchor
+        wallet.GetNoteWitnesses(notes, witnesses, anchor1);
+    }
+
+    {
+        // Second transaction
+        auto wtx = GetValidReceive(sk, 50, true);
+        auto note = GetNote(sk, wtx, 0, 1);
+        auto nullifier = note.nullifier(sk);
+
+        mapNoteData_t noteData;
+        JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+        CNoteData nd {sk.address(), nullifier};
+        noteData[jsoutpt] = nd;
+        wtx.SetNoteData(noteData);
+        wallet.AddToWallet(wtx, true, NULL);
+
+        std::vector<JSOutPoint> notes {jsoutpt};
+        std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+        uint256 anchor2;
+
+        wallet.GetNoteWitnesses(notes, witnesses, anchor2);
+        EXPECT_FALSE((bool) witnesses[0]);
+
+        // Second block
+        CBlock block2;
+        block2.hashPrevBlock = block1.GetHash();
+        block2.vtx.push_back(wtx);
+        EXPECT_CALL(coins, GetAnchorAt(anchor1, _))
+            .Times(2)
+            .WillRepeatedly(Return(true));
+        wallet.IncrementNoteWitnesses(NULL, &block2, &coins);
+        witnesses.clear();
+        wallet.GetNoteWitnesses(notes, witnesses, anchor2);
+        EXPECT_TRUE((bool) witnesses[0]);
+        EXPECT_NE(anchor1, anchor2);
+
+        // Decrementing should give us the previous anchor
+        uint256 anchor3;
+        wallet.DecrementNoteWitnesses();
+        witnesses.clear();
+        wallet.GetNoteWitnesses(notes, witnesses, anchor3);
+        EXPECT_FALSE((bool) witnesses[0]);
+        EXPECT_EQ(anchor1, anchor3);
+
+        // Re-incrementing with the same block should give the same result
+        uint256 anchor4;
+        wallet.IncrementNoteWitnesses(NULL, &block2, &coins);
+        witnesses.clear();
+        wallet.GetNoteWitnesses(notes, witnesses, anchor4);
+        EXPECT_TRUE((bool) witnesses[0]);
+        EXPECT_EQ(anchor2, anchor4);
+    }
 }
