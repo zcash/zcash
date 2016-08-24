@@ -27,8 +27,8 @@ using namespace std;
 void EnsureWalletIsUnlocked();
 bool EnsureWalletIsAvailable(bool avoidException);
 
-Value _dumpwallet(const Array& params, bool fHelp, bool fDumpZKeys);
-Value _importwallet(const Array& params, bool fHelp, bool fImportZKeys);
+Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys);
+Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys);
 
 
 std::string static EncodeDumpTime(int64_t nTime) {
@@ -241,7 +241,7 @@ Value z_importwallet(const Array& params, bool fHelp)
             + HelpExampleRpc("z_importwallet", "\"test\"")
         );
 
-	return _importwallet(params, fHelp, true);
+	return importwallet_impl(params, fHelp, true);
 }
 
 Value importwallet(const Array& params, bool fHelp)
@@ -252,7 +252,7 @@ Value importwallet(const Array& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "importwallet \"filename\"\n"
-            "\nImports keys from a wallet dump file (see dumpwallet).\n"
+            "\nImports taddr keys from a wallet dump file (see dumpwallet).\n"
             "\nArguments:\n"
             "1. \"filename\"    (string, required) The wallet file\n"
             "\nExamples:\n"
@@ -264,10 +264,10 @@ Value importwallet(const Array& params, bool fHelp)
             + HelpExampleRpc("importwallet", "\"test\"")
         );
 
-	return _importwallet(params, fHelp, false);
+	return importwallet_impl(params, fHelp, false);
 }
 
-Value _importwallet(const Array& params, bool fHelp, bool fImportZKeys)
+Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -319,7 +319,8 @@ Value _importwallet(const Array& params, bool fHelp, bool fImportZKeys)
                 pwalletMain->mapZKeyMetadata[addr].nCreateTime = nTime;
                 continue;
             }
-            catch (...) {
+            catch (const std::runtime_error &e) {
+                LogPrintf("Importing detected an error: %s\n", e.what());
                 // Not a valid spending key, so carry on and see if it's a Bitcoin style address.
             }
         }
@@ -435,7 +436,7 @@ Value z_exportwallet(const Array& params, bool fHelp)
             + HelpExampleRpc("z_exportwallet", "\"test\"")
         );
 
-	return _dumpwallet(params, fHelp, true);
+	return dumpwallet_impl(params, fHelp, true);
 }
 
 Value dumpwallet(const Array& params, bool fHelp)
@@ -446,7 +447,7 @@ Value dumpwallet(const Array& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "dumpwallet \"filename\"\n"
-            "\nDumps all wallet keys in a human-readable format.\n"
+            "\nDumps taddr wallet keys in a human-readable format.\n"
             "\nArguments:\n"
             "1. \"filename\"    (string, required) The filename\n"
             "\nExamples:\n"
@@ -454,10 +455,10 @@ Value dumpwallet(const Array& params, bool fHelp)
             + HelpExampleRpc("dumpwallet", "\"test\"")
         );
 
-	return _dumpwallet(params, fHelp, false);
+	return dumpwallet_impl(params, fHelp, false);
 }
 
-Value _dumpwallet(const Array& params, bool fHelp, bool fDumpZKeys)
+Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -482,7 +483,7 @@ Value _dumpwallet(const Array& params, bool fHelp, bool fDumpZKeys)
     std::sort(vKeyBirth.begin(), vKeyBirth.end());
 
     // produce output
-    file << strprintf("# Wallet dump created by Bitcoin %s (%s)\n", CLIENT_BUILD, CLIENT_DATE);
+    file << strprintf("# Wallet dump created by Zcash %s (%s)\n", CLIENT_BUILD, CLIENT_DATE);
     file << strprintf("# * Created on %s\n", EncodeDumpTime(GetTime()));
     file << strprintf("# * Best block at time of backup was %i (%s),\n", chainActive.Height(), chainActive.Tip()->GetBlockHash().ToString());
     file << strprintf("#   mined on %s\n", EncodeDumpTime(chainActive.Tip()->GetBlockTime()));
@@ -614,8 +615,6 @@ Value z_exportkey(const Array& params, bool fHelp)
 
     CZCPaymentAddress address(strAddress);
     auto addr = address.Get();
-    if (!pwalletMain->HaveSpendingKey(addr))
-        throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
 
     libzcash::SpendingKey k;
     if (!pwalletMain->GetSpendingKey(addr, k))
