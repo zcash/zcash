@@ -188,8 +188,8 @@ Value generate(const Array& params, bool fHelp)
                                               pblock->nNonce.size());
 
             // (x_1, x_2, ...) = A(I, V, n, k)
-            std::function<bool(std::vector<eh_index>)> validBlock =
-                    [&pblock](std::vector<eh_index> soln) {
+            std::function<bool(std::vector<unsigned char>)> validBlock =
+                    [&pblock](std::vector<unsigned char> soln) {
                 pblock->nSolution = soln;
                 return CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus());
             };

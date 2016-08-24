@@ -29,7 +29,7 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint256 nNonce;
-    std::vector<uint32_t> nSolution;
+    std::vector<unsigned char> nSolution;
 
     CBlockHeader()
     {

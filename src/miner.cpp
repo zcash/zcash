@@ -530,9 +530,9 @@ void static BitcoinMiner(CWallet *pwallet)
                 LogPrint("pow", "Running Equihash solver with nNonce = %s\n",
                          pblock->nNonce.ToString());
 
-                std::function<bool(std::vector<eh_index>)> validBlock =
+                std::function<bool(std::vector<unsigned char>)> validBlock =
                         [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
-                        (std::vector<eh_index> soln) {
+                        (std::vector<unsigned char> soln) {
                     // Write the solution to the hash and compute the result.
                     LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
