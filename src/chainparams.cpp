@@ -3,7 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "chainparams.h"
+#include "main.h"
+#include "crypto/equihash.h"
 
 #include "util.h"
 #include "utilstrencodings.h"
@@ -59,8 +60,10 @@ public:
         nMinerThreads = 0;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
-        nEquihashN = 200;
-        nEquihashK = 9;
+        const size_t N = 200, K = 9;
+        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
+        nEquihashN = N;
+        nEquihashK = K;
 
         /**
          * Build the genesis block. Note that the output of its generation
@@ -222,8 +225,10 @@ public:
         pchMessageStart[3] = 0x5f;
         nMinerThreads = 1;
         nMaxTipAge = 24 * 60 * 60;
-        nEquihashN = 48;
-        nEquihashK = 5;
+        const size_t N = 48, K = 5;
+        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
+        nEquihashN = N;
+        nEquihashK = K;
         genesis.nTime = 1296688602;
         genesis.nBits = 0x207fffff;
         genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000002");
