@@ -243,6 +243,13 @@ extern json_spirit::Value reconsiderblock(const json_spirit::Array& params, bool
 
 extern json_spirit::Value getblocksubsidy(const json_spirit::Array& params, bool fHelp);
 
+extern json_spirit::Value z_exportkey(const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
+extern json_spirit::Value z_importkey(const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
+extern json_spirit::Value z_getnewaddress(const json_spirit::Array& params, bool fHelp); // in rpcwallet.cpp
+extern json_spirit::Value z_listaddresses(const json_spirit::Array& params, bool fHelp); // in rpcwallet.cpp
+extern json_spirit::Value z_exportwallet(const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
+extern json_spirit::Value z_importwallet(const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
+
 // in rest.cpp
 extern bool HTTPReq_REST(AcceptedConnection *conn,
                   const std::string& strURI,

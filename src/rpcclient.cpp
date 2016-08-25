@@ -97,7 +97,8 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "zcrawjoinsplit", 4 },
     { "zcbenchmark", 1 },
     { "zcbenchmark", 2 },
-    { "getblocksubsidy", 0}
+    { "getblocksubsidy", 0},
+    { "z_importkey", 1 }
 };
 
 class CRPCConvertTable

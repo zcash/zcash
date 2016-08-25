@@ -10,6 +10,7 @@
 #include "wallet/db.h"
 #include "key.h"
 #include "keystore.h"
+#include "zcash/Address.hpp"
 
 #include <list>
 #include <stdint.h>
@@ -129,6 +130,9 @@ public:
     DBErrors ZapWalletTx(CWallet* pwallet, std::vector<CWalletTx>& vWtx);
     static bool Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKeys);
     static bool Recover(CDBEnv& dbenv, const std::string& filename);
+
+    /// Write spending key to wallet database, where key is payment address and value is spending key.
+    bool WriteZKey(const libzcash::PaymentAddress& addr, const libzcash::SpendingKey& key, const CKeyMetadata &keyMeta);
 
 private:
     CWalletDB(const CWalletDB&);
