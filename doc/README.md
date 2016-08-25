@@ -1,7 +1,7 @@
-Zcash Core 0.11.2.z8
+Zcash Core 0.11.2.z9
 ====================
 
-[Zcash](https://z.cash/) is the Zcash client. It downloads and stores the entire history of Zcash transactions (which is currently several GBs); depending on the speed of your computer and network connection, the synchronization process can take anywhere from a few hours to a day or more.
+[Zcash](https://z.cash/) is the Zcash client. It downloads and stores the entire history of Zcash transactions; depending on the speed of your computer and network connection, the synchronization process could take a day or more once the blockchain has reached a significant size.
 
 ### Need Help?
 
@@ -11,7 +11,7 @@ Zcash Core 0.11.2.z8
 Building
 --------
 
-Build Zcash along with most dependencies from source by running ./zcutil/build.sh. Currently only linux is supported.
+Build Zcash along with most dependencies from source by running ./zcutil/build.sh. Currently only Linux is supported.
 
 License
 ---------------------
