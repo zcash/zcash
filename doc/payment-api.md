@@ -5,8 +5,9 @@
 Zcash extends the Bitcoin Core API with new RPC calls to support private Zcash payments.
 
 Zcash payments make use of two address formats:
-taddr - an address for transparent funds (just like a Bitcoin address, value stored in UTXOs)
-zaddr - an address for private funds (value stored in objects called notes)
+
+* taddr - an address for transparent funds (just like a Bitcoin address, value stored in UTXOs)
+* zaddr - an address for private funds (value stored in objects called notes)
 
 When transferring funds from one taddr to another taddr, you can use either the existing Bitcoin RPC calls or the new Zcash RPC calls.
 
