@@ -446,7 +446,7 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
 void static BitcoinMiner(CWallet *pwallet)
 {
     LogPrintf("ZcashMiner started\n");
-    SetThreadPriority(THREAD_PRIORITY_LOWEST);
+    // SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("zcash-miner");
     const CChainParams& chainparams = Params();
 
@@ -543,7 +543,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     }
 
                     // Found a solution
-                    SetThreadPriority(THREAD_PRIORITY_NORMAL);
+		    //                    SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     LogPrintf("ZcashMiner:\n");
                     LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
                     if (ProcessBlockFound(pblock, *pwallet, reservekey)) {
@@ -551,7 +551,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         std::lock_guard<std::mutex> lock{m_cs};
                         cancelSolver = false;
                     }
-                    SetThreadPriority(THREAD_PRIORITY_LOWEST);
+		    //                    SetThreadPriority(THREAD_PRIORITY_LOWEST);
 
                     // In regression test mode, stop mining after a block is found.
                     if (chainparams.MineBlocksOnDemand())

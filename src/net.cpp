@@ -1417,7 +1417,7 @@ void ThreadMessageHandler()
     boost::mutex condition_mutex;
     boost::unique_lock<boost::mutex> lock(condition_mutex);
 
-    SetThreadPriority(THREAD_PRIORITY_BELOW_NORMAL);
+    //    SetThreadPriority(THREAD_PRIORITY_BELOW_NORMAL);
     while (true)
     {
         vector<CNode*> vNodesCopy;
@@ -1759,7 +1759,7 @@ void RelayTransaction(const CTransaction& tx, const CDataStream& ss)
 {
     CInv inv(MSG_TX, tx.GetTxid());
     {
-        LOCK(cs_mapRelay);
+      LOCK(cs_mapRelay);  // lock-order-inversion
         // Expire old relay messages
         while (!vRelayExpiration.empty() && vRelayExpiration.front().first < GetTime())
         {
@@ -2046,7 +2046,7 @@ void CNode::AskFor(const CInv& inv)
 
 void CNode::BeginMessage(const char* pszCommand) EXCLUSIVE_LOCK_FUNCTION(cs_vSend)
 {
-    ENTER_CRITICAL_SECTION(cs_vSend);
+  ENTER_CRITICAL_SECTION(cs_vSend);  // lock-order-inversion
     assert(ssSend.size() == 0);
     ssSend << CMessageHeader(Params().MessageStart(), pszCommand, 0);
     LogPrint("net", "sending: %s ", SanitizeString(pszCommand));
