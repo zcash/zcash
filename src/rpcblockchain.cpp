@@ -21,7 +21,7 @@ using namespace std;
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, Object& out, bool fIncludeHex);
 
-double GetDifficulty(const CBlockIndex* blockindex)
+double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficulty)
 {
     // Floating point number that is a multiple of the minimum difficulty,
     // minimum difficulty = 1.0.
@@ -33,9 +33,24 @@ double GetDifficulty(const CBlockIndex* blockindex)
             blockindex = chainActive.Tip();
     }
 
-    int nShift = (blockindex->nBits >> 24) & 0xff;
     uint32_t powLimit =
         UintToArith256(Params().GetConsensus().powLimit).GetCompact();;
+    {
+        if (networkDifficulty && Params().GetConsensus().fPowAllowMinDifficultyBlocks)
+        {
+            // Special difficulty rule for testnet:
+            // If a block's timestamp is more than 2*nPowTargetSpacing minutes after
+            // the previous block, then it is permitted to be min-difficulty. So
+            // get the last non-min-difficulty (or at worst the genesis difficulty).
+            auto window = Params().GetConsensus().nPowTargetSpacing*2;
+            while (blockindex->pprev && blockindex->nBits == powLimit &&
+                    blockindex->GetBlockTime() > blockindex->pprev->GetBlockTime() + window) {
+                blockindex = blockindex->pprev;
+            }
+        }
+    }
+
+    int nShift = (blockindex->nBits >> 24) & 0xff;
     int nShiftAmount = (powLimit >> 24) & 0xff;
 
     double dDiff =
@@ -54,6 +69,16 @@ double GetDifficulty(const CBlockIndex* blockindex)
     }
 
     return dDiff;
+}
+
+double GetDifficulty(const CBlockIndex* blockindex)
+{
+    return GetDifficultyINTERNAL(blockindex, false);
+}
+
+double GetNetworkDifficulty(const CBlockIndex* blockindex)
+{
+    return GetDifficultyINTERNAL(blockindex, true);
 }
 
 
@@ -147,7 +172,7 @@ Value getdifficulty(const Array& params, bool fHelp)
         );
 
     LOCK(cs_main);
-    return GetDifficulty();
+    return GetNetworkDifficulty();
 }
 
 
@@ -542,7 +567,7 @@ Value getblockchaininfo(const Array& params, bool fHelp)
     obj.push_back(Pair("blocks",                (int)chainActive.Height()));
     obj.push_back(Pair("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1));
     obj.push_back(Pair("bestblockhash",         chainActive.Tip()->GetBlockHash().GetHex()));
-    obj.push_back(Pair("difficulty",            (double)GetDifficulty()));
+    obj.push_back(Pair("difficulty",            (double)GetNetworkDifficulty()));
     obj.push_back(Pair("verificationprogress",  Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.Tip())));
     obj.push_back(Pair("chainwork",             chainActive.Tip()->nChainWork.GetHex()));
     obj.push_back(Pair("pruned",                fPruneMode));
