@@ -71,8 +71,8 @@ TEST(Validation, ContextualCheckInputsPassesWithCoinbase) {
     CCoinsViewCache view(&fakeDB);
 
     CValidationState state;
-    CachedHashes cachedHashes(tx);
-    EXPECT_TRUE(ContextualCheckInputs(tx, state, view, false, 0, false, cachedHashes, Params(CBaseChainParams::MAIN).GetConsensus()));
+    PrecomputedTransactionData txdata(tx);
+    EXPECT_TRUE(ContextualCheckInputs(tx, state, view, false, 0, false, txdata, Params(CBaseChainParams::MAIN).GetConsensus()));
 }
 
 TEST(Validation, ReceivedBlockTransactions) {
