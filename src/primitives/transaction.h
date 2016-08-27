@@ -290,8 +290,6 @@ private:
     /** Memory only. */
     const uint256 hash;
     void UpdateHash() const;
-    const uint256 txid;
-    void UpdateTxid() const;
 
 public:
     typedef boost::array<unsigned char, 64> joinsplit_sig_t;
@@ -335,14 +333,20 @@ public:
                 READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
             }
         }
-        if (ser_action.ForRead()) {
+        if (ser_action.ForRead())
             UpdateHash();
-            UpdateTxid();
-        }
     }
 
     bool IsNull() const {
         return vin.empty() && vout.empty();
+    }
+
+    const uint256& GetHash() const {
+        return hash;
+    }
+
+    const uint256& GetTxid() const {
+        return hash;
     }
 
     // Return sum of txouts.
@@ -375,11 +379,6 @@ public:
     }
 
     std::string ToString() const;
-
-    // Return the txid, which is the double SHA256 hash over portions of the transaction.
-    const uint256& GetTxid() const {
-        return txid;
-    }
 };
 
 /** A mutable version of CTransaction. */
@@ -414,10 +413,14 @@ struct CMutableTransaction
         }
     }
 
-    /** Compute the non-malleable txid of this CMutableTransaction. This is computed on the
-     * fly, as opposed to GetTxid() in CTransaction, which uses a cached result.
+    /** Compute the hash of this CMutableTransaction. This is computed on the
+     * fly, as opposed to GetHash() in CTransaction, which uses a cached result.
      */
-    uint256 GetTxid() const;
+    uint256 GetHash() const;
+
+    uint256 GetTxid() const {
+        return GetHash();
+    }
 };
 
 #endif // BITCOIN_PRIMITIVES_TRANSACTION_H
