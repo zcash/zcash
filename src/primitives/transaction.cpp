@@ -120,6 +120,11 @@ CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.n
     
 }
 
+uint256 CMutableTransaction::GetHash() const
+{
+    return SerializeHash(*this);
+}
+
 void CTransaction::UpdateHash() const
 {
     *const_cast<uint256*>(&hash) = SerializeHash(*this);
@@ -131,7 +136,6 @@ CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion
                                                             joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
 {
     UpdateHash();
-    UpdateTxid();
 }
 
 CTransaction& CTransaction::operator=(const CTransaction &tx) {
@@ -143,7 +147,6 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<uint256*>(&joinSplitPubKey) = tx.joinSplitPubKey;
     *const_cast<joinsplit_sig_t*>(&joinSplitSig) = tx.joinSplitSig;
     *const_cast<uint256*>(&hash) = tx.hash;
-    *const_cast<uint256*>(&txid) = tx.txid;
     return *this;
 }
 
@@ -212,9 +215,8 @@ unsigned int CTransaction::CalculateModifiedSize(unsigned int nTxSize) const
 std::string CTransaction::ToString() const
 {
     std::string str;
-    str += strprintf("CTransaction(txid=%s, hash=%s, ver=%d, vin.size=%u, vout.size=%u, nLockTime=%u)\n",
-        txid.ToString().substr(0,10),
-        hash.ToString().substr(0,10),
+    str += strprintf("CTransaction(hash=%s, ver=%d, vin.size=%u, vout.size=%u, nLockTime=%u)\n",
+        GetHash().ToString().substr(0,10),
         nVersion,
         vin.size(),
         vout.size(),
@@ -225,32 +227,3 @@ std::string CTransaction::ToString() const
         str += "    " + vout[i].ToString() + "\n";
     return str;
 }
-
-// Update the txid which is non-malleable.
-// Signature data is cleared before the transaction is serialized and hashed.
-void CTransaction::UpdateTxid() const
-{
-    // Create a deep copy of this transaction
-    CMutableTransaction tx(*this);
-
-    // We keep the sigscript for coinbase txs to avoid duplicate txids (BIP34 and BIP30)
-    if (!IsCoinBase()) {
-        // Clear sigscript from all transaction inputs.
-        for (CTxIn & txIn : tx.vin) {
-            txIn.scriptSig.clear();
-        }
-
-        // Clear joinSplitSig by filling the buffer with zero
-        tx.joinSplitSig.assign(0);
-    }
-
-    *const_cast<uint256*>(&txid) = SerializeHash(tx);
-}
-
-// Return a txid which is non-malleable.
-uint256 CMutableTransaction::GetTxid() const
-{
-    CTransaction tx(*this);
-    return tx.GetTxid();
-}
-
