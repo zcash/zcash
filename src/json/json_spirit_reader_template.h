@@ -310,7 +310,7 @@ namespace json_spirit
             {
                 // ZCASH: Prevent potential stack overflow by setting a limit on the number of nested compound elements
                 if (stack_.size() > 128) {
-                    throw "too many nested elements";
+                    throw std::domain_error("too many nested elements");
                 }
                 // ENDZCASH
 
