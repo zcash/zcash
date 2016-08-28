@@ -222,6 +222,24 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     Array arr = retValue.get_array();
     BOOST_CHECK(arr.size() > 0);
     BOOST_CHECK(CBitcoinAddress(arr[0].get_str()).Get() == demoAddress.Get());
+
+    /*
+     * getblocksubsidy
+     */
+    BOOST_CHECK_THROW(CallRPC("getblocksubsidy too many args"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("getblocksubsidy -1"), runtime_error);
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 50000"));
+    Object obj = retValue.get_obj();
+    BOOST_CHECK(find_value(obj, "miner") == 10.0);
+    BOOST_CHECK(find_value(obj, "founders") == 2.5);
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1000000"));
+    obj = retValue.get_obj();
+    BOOST_CHECK(find_value(obj, "miner") == 6.25);
+    BOOST_CHECK(find_value(obj, "founders") == 0.0);
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2000000"));
+    obj = retValue.get_obj();
+    BOOST_CHECK(find_value(obj, "miner") == 3.125);
+    BOOST_CHECK(find_value(obj, "founders") == 0.0);
 }
 
 /*

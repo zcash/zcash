@@ -763,12 +763,12 @@ Value estimatepriority(const Array& params, bool fHelp)
 
 Value getblocksubsidy(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() > 1)
         throw runtime_error(
             "getblocksubsidy height\n"
             "\nReturns block subsidy reward, taking into account the mining slow start and the founders reward, of block at index provided.\n"
             "\nArguments:\n"
-            "1. height        (numeric, required) The block height.\n"
+            "1. height         (numeric, optional) The block height.  If not provided, defaults to the current height of the chain.\n"
             "\nResult:\n"
             "{\n"
             "  \"miner\" : x.xxx           (numeric) The mining reward amount in ZEC.\n"
@@ -779,9 +779,9 @@ Value getblocksubsidy(const Array& params, bool fHelp)
             + HelpExampleRpc("getblockubsidy", "1000")
         );
 
-    int nHeight = params[0].get_int();
     LOCK(cs_main);
-    if (nHeight < 0 || nHeight > chainActive.Height())
+    int nHeight = (params.size()==1) ? params[0].get_int() : chainActive.Height();
+    if (nHeight < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
