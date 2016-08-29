@@ -20,11 +20,11 @@ using namespace std;
 using namespace json_spirit;
 
 /**
- * AsyncRPCOperations are given to the AsyncRPCQueue for processing.
+ * AsyncRPCOperation objects are submitted to the AsyncRPCQueue for processing.
  * 
- * How to subclass:
- * Implement the main() method, this is where work is performed.
+ * To subclass AsyncRPCOperation, implement the main() method.
  * Update the operation status as work is underway and completes.
+ * If main() can be interrupted, inmplement the cancel() method.
  */
 
 typedef std::string AsyncRPCOperationId;
@@ -40,30 +40,26 @@ typedef enum class operationStateEnum {
 class AsyncRPCOperation {
 public:
     AsyncRPCOperation();
-    
-    // Todo: keep or delete copy constructors and assignment?
-    AsyncRPCOperation(const AsyncRPCOperation& orig);
-    AsyncRPCOperation& operator=( const AsyncRPCOperation& other );
-
     virtual ~AsyncRPCOperation();
 
-    // Implement this method in your subclass.
+    // You must implement this method in your subclass.
     virtual void main();
 
+    // Override this method if you can interrupt execution of main() in your subclass.
     void cancel();
     
     // Getters and setters
 
     OperationStatus getState() const {
-        return state.load();
+        return state_.load();
     }
         
     AsyncRPCOperationId getId() const {
-        return id;
+        return id_;
     }
    
     int64_t getCreationTime() const {
-        return creationTime;
+        return creation_time_;
     }
 
     Value getStatus() const;
@@ -75,11 +71,11 @@ public:
     std::string getStateAsString() const;
     
     int getErrorCode() const {
-        return errorCode;
+        return error_code_;
     }
 
     std::string getErrorMessage() const {
-        return errorMessage;
+        return error_message_;
     }
 
     bool isCancelled() const {
@@ -104,46 +100,47 @@ public:
 
 protected:
 
-    Value resultValue;
-    int errorCode;
-    std::string errorMessage;
-    std::atomic<OperationStatus> state;
-    std::chrono::time_point<std::chrono::system_clock> startTime, endTime;  
+    Value result_;
+    int error_code_;
+    std::string error_message_;
+    std::atomic<OperationStatus> state_;
+    std::chrono::time_point<std::chrono::system_clock> start_time_, end_time_;  
 
-    void startExecutionClock();
-    void stopExecutionClock();
+    void start_execution_clock();
+    void stop_execution_clock();
 
-    void setState(OperationStatus state) {
-        this->state.store(state);
+    void set_state(OperationStatus state) {
+        this->state_.store(state);
     }
 
-    void setErrorCode(int errorCode) {
-        this->errorCode = errorCode;
+    void set_error_code(int errorCode) {
+        this->error_code_ = errorCode;
     }
 
-    void setErrorMessage(std::string errorMessage) {
-        this->errorMessage = errorMessage;
+    void set_error_message(std::string errorMessage) {
+        this->error_message_ = errorMessage;
     }
     
-    void setResult(Value v) {
-        this->resultValue = v;
+    void set_result(Value v) {
+        this->result_ = v;
     }
     
 private:
+
+    // Derived classes should write their own copy constructor and assignment operators
+    AsyncRPCOperation(const AsyncRPCOperation& orig);
+    AsyncRPCOperation& operator=( const AsyncRPCOperation& other );
     
-    // Todo: Private for now.  If copying an operation is possible, should it
-    // receive a new id and a new creation time?
-    void setId(AsyncRPCOperationId id) {
-        this->id = id;
+    void set_id(AsyncRPCOperationId id) {
+        this->id_ = id;
     }
     
-    // Todo: Ditto above.
-    void setCreationTime(int64_t creationTime) {
-        this->creationTime = creationTime;
+    void set_creation_time(int64_t creationTime) {
+        this->creation_time_ = creationTime;
     }
 
-    AsyncRPCOperationId id;
-    int64_t creationTime;
+    AsyncRPCOperationId id_;
+    int64_t creation_time_;
 };
 
 #endif /* ASYNCRPCOPERATION_H */

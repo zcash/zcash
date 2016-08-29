@@ -16,7 +16,6 @@
 #include <future>
 #include <thread>
 #include <utility>
-
 #include <memory>
 
 
@@ -35,26 +34,28 @@ public:
     AsyncRPCQueue& operator=(AsyncRPCQueue &&) = delete;      // Move assign
 
     void addWorker();
-    int getNumberOfWorkers();
-    bool isClosed();
+    size_t getNumberOfWorkers() const;
+    bool isClosed() const;
     void close();
+    void closeAndWait();
     void cancelAllOperations();
-    int getOperationCount();
-    std::shared_ptr<AsyncRPCOperation> getOperationForId(AsyncRPCOperationId);
+    size_t getOperationCount() const;
+    std::shared_ptr<AsyncRPCOperation> getOperationForId(AsyncRPCOperationId) const;
     std::shared_ptr<AsyncRPCOperation> popOperationForId(AsyncRPCOperationId);
     void addOperation(const std::shared_ptr<AsyncRPCOperation> &ptrOperation);
-    std::vector<AsyncRPCOperationId> getAllOperationIds();
+    std::vector<AsyncRPCOperationId> getAllOperationIds() const;
 
 private:
     // addWorker() will spawn a new thread on this method
-    void run(int workerId);
+    void run(size_t workerId);
 
-    std::mutex cs_lock;
-    std::condition_variable cs_condition;
-    bool closed;
-    AsyncRPCOperationMap operationMap;
-    std::queue <AsyncRPCOperationId> operationIdQueue;
-    std::vector<std::thread> workers;
+    // Why this is not a recursive lock: http://www.zaval.org/resources/library/butenhof1.html
+    mutable std::mutex lock_;
+    std::condition_variable condition_;
+    bool closed_;
+    AsyncRPCOperationMap operation_map_;
+    std::queue <AsyncRPCOperationId> operation_id_queue_;
+    std::vector<std::thread> workers_;
 };
 
 #endif

@@ -809,8 +809,8 @@ void StopRPCThreads()
     delete rpc_io_service; rpc_io_service = NULL;
 
     // Tells async queue to cancel all operations and shutdown.
-    // The async queue destructor will block and join on worker threads.
-    async_rpc_queue->close();
+    LogPrintf("%s: waiting for async rpc workers to stop\n", __func__);
+    async_rpc_queue->closeAndWait();
 }
 
 bool IsRPCRunning()
