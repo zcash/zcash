@@ -96,10 +96,6 @@ unsigned int CalculateNextWorkRequired(uint32_t nBits, int64_t nLastBlockTime, i
 
 bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& params)
 {
-    // Don't validate genesis
-    if (pblock->hashPrevBlock.IsNull())
-        return true;
-
     unsigned int n = params.EquihashN();
     unsigned int k = params.EquihashK();
 
