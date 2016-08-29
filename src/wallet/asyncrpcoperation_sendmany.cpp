@@ -36,15 +36,18 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         int minDepth) :
         fromaddress_(fromAddress), t_outputs_(tOutputs), z_outputs_(zOutputs), mindepth_(minDepth)
 {
-    if (minDepth < 0)
+    if (minDepth < 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be negative");
-
-    if (fromAddress.size() == 0)
+    }
+    
+    if (fromAddress.size() == 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "From address parameter missing");
-
-    if (tOutputs.size() == 0 && zOutputs.size() == 0)
+    }
+    
+    if (tOutputs.size() == 0 && zOutputs.size() == 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "No recipients");
-
+    }
+    
     fromtaddr_ = CBitcoinAddress(fromAddress);
     isfromtaddr_ = fromtaddr_.IsValid();
     isfromzaddr_ = false;
@@ -56,13 +59,15 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
             PaymentAddress addr = address.Get();
 
             // We don't need to lock on the wallet as spending key related methods are thread-safe
-            if (!pwalletMain->HaveSpendingKey(addr))
+            if (!pwalletMain->HaveSpendingKey(addr)) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
-
+            }
+            
             SpendingKey key;
-            if (!pwalletMain->GetSpendingKey(addr, key))
+            if (!pwalletMain->GetSpendingKey(addr, key)) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, no spending key found for zaddr");
-
+            }
+            
             isfromzaddr_ = true;
             frompaymentaddress_ = addr;
             spendingkey_ = key;
@@ -79,8 +84,8 @@ void AsyncRPCOperation_sendmany::main() {
     if (isCancelled())
         return;
 
-    setState(OperationStatus::EXECUTING);
-    startExecutionClock();
+    set_state(OperationStatus::EXECUTING);
+    start_execution_clock();
 
     bool success = false;
 
@@ -89,25 +94,25 @@ void AsyncRPCOperation_sendmany::main() {
     } catch (Object objError) {
         int code = find_value(objError, "code").get_int();
         std::string message = find_value(objError, "message").get_str();
-        setErrorCode(code);
-        setErrorMessage(message);
+        set_error_code(code);
+        set_error_message(message);
     } catch (runtime_error e) {
-        setErrorCode(-1);
-        setErrorMessage("runtime error: " + string(e.what()));
+        set_error_code(-1);
+        set_error_message("runtime error: " + string(e.what()));
     } catch (logic_error e) {
-        setErrorCode(-1);
-        setErrorMessage("logic error: " + string(e.what()));
+        set_error_code(-1);
+        set_error_message("logic error: " + string(e.what()));
     } catch (...) {
-        setErrorCode(-2);
-        setErrorMessage("unknown error");
+        set_error_code(-2);
+        set_error_message("unknown error");
     }
 
-    stopExecutionClock();
+    stop_execution_clock();
 
     if (success) {
-        setState(OperationStatus::SUCCESS);
+        set_state(OperationStatus::SUCCESS);
     } else {
-        setState(OperationStatus::FAILED);
+        set_state(OperationStatus::FAILED);
     }
 
 }
@@ -124,12 +129,14 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     CAmount minersFee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE;
 
     // Regardless of the from address, add all taddr outputs to the raw transaction.
-    if (isfromtaddr_ && !find_utxos())
+    if (isfromtaddr_ && !find_utxos()) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds, no UTXOs found for taddr from address.");
-
-    if (isfromzaddr_ && !find_unspent_notes())
+    }
+    
+    if (isfromzaddr_ && !find_unspent_notes()) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds, no unspent notes found for zaddr from address.");
-
+    }
+    
     CAmount t_inputs_total = 0;
     for (SendManyInputUTXO & t : t_inputs_) {
         t_inputs_total += std::get<2>(t);
@@ -163,12 +170,13 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     std::cout << "targetAmount: " << targetAmount << std::endl;
 #endif
 
-    if (isfromtaddr_ && (t_inputs_total < targetAmount))
+    if (isfromtaddr_ && (t_inputs_total < targetAmount)) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strprintf("Insufficient transparent funds, have %ld, need %ld plus fee %ld", t_inputs_total, t_outputs_total, minersFee));
-
-    if (isfromzaddr_ && (z_inputs_total < targetAmount))
+    }
+    
+    if (isfromzaddr_ && (z_inputs_total < targetAmount)) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strprintf("Insufficient protected funds, have %ld, need %ld plus fee %ld", z_inputs_total, t_outputs_total, minersFee));
-
+    }
 
     // If from address is a taddr, select UTXOs to spend
     CAmount selectedUTXOAmount = 0;
@@ -177,8 +185,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         for (SendManyInputUTXO & t : t_inputs_) {
             selectedUTXOAmount += std::get<2>(t);
             selectedTInputs.push_back(t);
-            if (selectedUTXOAmount >= targetAmount)
+            if (selectedUTXOAmount >= targetAmount) {
                 break;
+            }
         }
         t_inputs_ = selectedTInputs;
         t_inputs_total = selectedUTXOAmount;
@@ -273,9 +282,10 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         if (hexMemo.size() > 0) {
             std::vector<unsigned char> rawMemo = ParseHex(hexMemo.c_str());
             boost::array<unsigned char, ZC_MEMO_SIZE> memo = {{0x00}};
-            if (rawMemo.size() > ZC_MEMO_SIZE)
+            if (rawMemo.size() > ZC_MEMO_SIZE) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Memo size of %d is too big, maximum allowed is %d", rawMemo.size(), ZC_MEMO_SIZE));
-
+            }
+            
             int lenMemo = rawMemo.size();
             for (int i = 0; i < ZC_MEMO_SIZE && i < lenMemo; i++) {
                 memo[i] = rawMemo[i];
@@ -294,9 +304,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
     // Private change will flow back to sender's zaddr, while transparent change flows to a new taddr.
     CAmount change = funds - fundsSpent;
-    if (change < 0)
+    if (change < 0) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strprintf("Insufficient funds or internal error, spent too much leaving negative change %ld", change));
-    if (change > 0) {
+    } else if (change > 0) {
         if (isfromzaddr_) {
             info.vjsout.push_back(JSOutput(frompaymentaddress_, change));
         } else if (isfromtaddr_) {
@@ -308,8 +318,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             CReserveKey keyChange(pwalletMain);
             CPubKey vchPubKey;
             bool ret = keyChange.GetReservedKey(vchPubKey);
-            if (!ret)
+            if (!ret) {
                 throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Could not generate a taddr to use as a change address"); // should never fail, as we just unlocked
+            }
             CScript scriptPubKey = GetScriptForDestination(vchPubKey.GetID());
             CTxOut out(change, scriptPubKey);
             rawTx.vout.push_back(out);
@@ -359,7 +370,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         Object o;
         o.push_back(Pair("txid", txid));
         //o.push_back(Pair("hex", signedtxn));
-        setResult(Value(o));
+        set_result(Value(o));
     } else {
         // Test mode does not send the transaction to the network.
 
@@ -371,7 +382,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         o.push_back(Pair("test", 1));
         o.push_back(Pair("txid", tx.GetTxid().ToString()));
         o.push_back(Pair("hex", signedtxn));
-        setResult(Value(o));
+        set_result(Value(o));
     }
 
     return true;
@@ -387,16 +398,19 @@ bool AsyncRPCOperation_sendmany::find_utxos() {
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
 
     BOOST_FOREACH(const COutput& out, vecOutputs) {
-        if (out.nDepth < mindepth_)
+        if (out.nDepth < mindepth_) {
             continue;
+        }
 
         if (setAddress.size()) {
             CTxDestination address;
-            if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+            if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
                 continue;
+            }
 
-            if (!setAddress.count(address))
+            if (!setAddress.count(address)) {
                 continue;
+            }
         }
 
         // TODO: Also examine out.fSpendable ?
@@ -416,13 +430,15 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
         CWalletTx wtx = p.second;
 
         // Filter the transactions before checking for notes
-        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < mindepth_)
+        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < mindepth_) {
             continue;
+        }
 
         mapNoteData_t mapNoteData = pwalletMain->FindMyNotes(wtx);
 
-        if (mapNoteData.size() == 0)
+        if (mapNoteData.size() == 0) {
             continue;
+        }
 
         for (auto & pair : mapNoteData) {
             JSOutPoint jsop = pair.first;
@@ -431,8 +447,9 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
             PaymentAddress pa = nd.address;
 
             // skip notes which belong to a different payment address in the wallet
-            if (!(pa == frompaymentaddress_))
+            if (!(pa == frompaymentaddress_)) {
                 continue;
+            }
 
             int i = jsop.js; // Index into CTransaction.vjoinsplit
             int j = jsop.n; // Index into JSDescription.ciphertexts
@@ -451,8 +468,9 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
                 uint256 nullifier = plaintext.note(frompaymentaddress_).nullifier(spendingkey_);
                 bool isSpent = pwalletMain->IsSpent(nullifier);
 
-                if (isSpent)
+                if (isSpent) {
                     continue;
+                }
 
                 z_inputs_.push_back(SendManyInputNPT(plaintext, CAmount(plaintext.value)));
 
@@ -473,8 +491,9 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
         }
     }
 
-    if (z_inputs_.size() == 0)
+    if (z_inputs_.size() == 0) {
         return false;
+    }
 
     // sort in descending order, so big notes appear first
     std::sort(z_inputs_.begin(), z_inputs_.end(), [](SendManyInputNPT i, SendManyInputNPT j) -> bool {
@@ -496,8 +515,9 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info) 
     // Unlock critical section
 
 
-    if (!(witnesses.size() == info.notes.size()) || !(info.notes.size() == info.keys.size()))
+    if (!(witnesses.size() == info.notes.size()) || !(info.notes.size() == info.keys.size())) {
         throw runtime_error("number of notes and witnesses and keys do not match");
+    }
 
     for (size_t i = 0; i < witnesses.size(); i++) {
         if (!witnesses[i]) {
@@ -548,8 +568,9 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info) 
             info.vpub_old,
             info.vpub_new);
 
-    if (!(jsdesc.Verify(*pzcashParams, joinSplitPubKey)))
+    if (!(jsdesc.Verify(*pzcashParams, joinSplitPubKey))) {
         throw std::runtime_error("error verifying joinsplt");
+    }
 
     mtx.vjoinsplit.push_back(jsdesc);
 
@@ -563,14 +584,18 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info) 
             dataToBeSigned.begin(), 32,
             joinSplitPrivKey
             ) == 0))
+    {
         throw std::runtime_error("crypto_sign_detached failed");
+    }
 
     // Sanity check
     if (!(crypto_sign_verify_detached(&mtx.joinSplitSig[0],
             dataToBeSigned.begin(), 32,
             mtx.joinSplitPubKey.begin()
             ) == 0))
+    {
         throw std::runtime_error("crypto_sign_verify_detached failed");
+    }
 
     CTransaction rawTx(mtx);
     tx_ = rawTx;
@@ -615,8 +640,9 @@ void AsyncRPCOperation_sendmany::add_taddr_outputs_to_tx() {
         CAmount nAmount = std::get<1>(r);
 
         CBitcoinAddress address(outputAddress);
-        if (!address.IsValid())
+        if (!address.IsValid()) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid output address, not a valid taddr.");
+        }
 
         CScript scriptPubKey = GetScriptForDestination(address.Get());
 
