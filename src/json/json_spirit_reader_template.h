@@ -308,6 +308,12 @@ namespace json_spirit
             }
             else
             {
+                // ZCASH: Prevent potential stack overflow by setting a limit on the number of nested compound elements
+                if (stack_.size() > 128) {
+                    throw std::domain_error("too many nested elements");
+                }
+                // ENDZCASH
+
                 stack_.push_back( current_p_ );
 
                 Array_or_obj new_array_or_obj;   // avoid copy by building new array or object in place
