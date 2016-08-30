@@ -336,10 +336,11 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
     return false;
 }
 
-void CWallet::ChainTip(const CBlockIndex *pindex, const CBlock *pblock, bool added)
+void CWallet::ChainTip(const CBlockIndex *pindex, const CBlock *pblock,
+                       ZCIncrementalMerkleTree tree, bool added)
 {
     if (added) {
-        IncrementNoteWitnesses(pindex, pblock, pcoinsTip);
+        IncrementNoteWitnesses(pindex, pblock, tree);
     } else {
         DecrementNoteWitnesses();
     }
@@ -594,7 +595,7 @@ void CWallet::AddToSpends(const uint256& wtxid)
 
 void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                                      const CBlock* pblockIn,
-                                     const CCoinsViewCache* pcoins)
+                                     ZCIncrementalMerkleTree tree)
 {
     {
         LOCK(cs_wallet);
@@ -618,23 +619,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
             pblock = &block;
         }
 
-        ZCIncrementalMerkleTree tree;
-        bool treeInitialised = false;
         for (const CTransaction& tx : pblock->vtx) {
-            if (!treeInitialised && tx.vjoinsplit.size() > 0) {
-                LOCK(cs_main);
-                // vAnchorCache will only be empty at the beginning
-                if (vAnchorCache.size() && !pcoins->GetAnchorAt(vAnchorCache.front(), tree)) {
-                    // This should not happen, because IncrementNoteWitnesses()
-                    // is only called when the chain tip updates, and the
-                    // anchors for the JoinSplits in that block should still be
-                    // cached.
-                    // TODO: Calculate the anchor from scratch?
-                    throw std::runtime_error("CWallet::IncrementNoteWitnesses(): anchor not cached");
-                }
-                treeInitialised = true;
-            }
-
             auto hash = tx.GetTxid();
             bool txIsOurs = mapWallet.count(hash);
             for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {

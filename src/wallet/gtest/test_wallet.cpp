@@ -29,8 +29,8 @@ public:
 
     void IncrementNoteWitnesses(const CBlockIndex* pindex,
                                 const CBlock* pblock,
-                                const CCoinsViewCache* pcoins) {
-        CWallet::IncrementNoteWitnesses(pindex, pblock, pcoins);
+                                ZCIncrementalMerkleTree tree) {
+        CWallet::IncrementNoteWitnesses(pindex, pblock, tree);
     }
     void DecrementNoteWitnesses() {
         CWallet::DecrementNoteWitnesses();
@@ -328,10 +328,8 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
 
     CBlock block;
     block.vtx.push_back(wtx);
-    MockCCoinsViewCache coins;
-    // Empty chain, so we shouldn't try to fetch an anchor
-    EXPECT_CALL(coins, GetAnchorAt(_, _)).Times(0);
-    wallet.IncrementNoteWitnesses(NULL, &block, &coins);
+    ZCIncrementalMerkleTree tree;
+    wallet.IncrementNoteWitnesses(NULL, &block, tree);
     witnesses.clear();
     wallet.GetNoteWitnesses(notes, witnesses, anchor);
     EXPECT_TRUE((bool) witnesses[0]);
@@ -344,9 +342,9 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
 
 TEST(wallet_tests, cached_witnesses_chain_tip) {
     TestWallet wallet;
-    MockCCoinsViewCache coins;
     uint256 anchor1;
     CBlock block1;
+    ZCIncrementalMerkleTree tree;
 
     auto sk = libzcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
@@ -369,9 +367,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
 
         // First block (case tested in _empty_chain)
         block1.vtx.push_back(wtx);
-        EXPECT_CALL(coins, GetAnchorAt(_, _))
-            .Times(0);
-        wallet.IncrementNoteWitnesses(NULL, &block1, &coins);
+        wallet.IncrementNoteWitnesses(NULL, &block1, tree);
         // Called to fetch anchor
         wallet.GetNoteWitnesses(notes, witnesses, anchor1);
     }
@@ -400,10 +396,8 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         CBlock block2;
         block2.hashPrevBlock = block1.GetHash();
         block2.vtx.push_back(wtx);
-        EXPECT_CALL(coins, GetAnchorAt(anchor1, _))
-            .Times(2)
-            .WillRepeatedly(Return(true));
-        wallet.IncrementNoteWitnesses(NULL, &block2, &coins);
+        ZCIncrementalMerkleTree tree2 {tree};
+        wallet.IncrementNoteWitnesses(NULL, &block2, tree2);
         witnesses.clear();
         wallet.GetNoteWitnesses(notes, witnesses, anchor2);
         EXPECT_TRUE((bool) witnesses[0]);
@@ -419,7 +413,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
 
         // Re-incrementing with the same block should give the same result
         uint256 anchor4;
-        wallet.IncrementNoteWitnesses(NULL, &block2, &coins);
+        wallet.IncrementNoteWitnesses(NULL, &block2, tree);
         witnesses.clear();
         wallet.GetNoteWitnesses(notes, witnesses, anchor4);
         EXPECT_TRUE((bool) witnesses[0]);
