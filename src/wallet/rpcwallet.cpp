@@ -42,6 +42,9 @@ using namespace libzcash;
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
 
+// Private method:
+Value z_getoperationstatus_IMPL(const Array&, bool);
+
 std::string HelpRequiringPassphrase()
 {
     return pwalletMain && pwalletMain->IsCrypted()
@@ -2832,6 +2835,25 @@ Value z_listaddresses(const Array& params, bool fHelp)
     return ret;
 }
 
+Value z_getoperationresult(const Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return Value::null;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_getoperationresult ([\"operationid\", ... ]) \n"
+            "\nRetrieve the result and status of an operation which has finished, and then remove the operation from memory."
+            + HelpRequiringPassphrase() + "\n"
+            "\nArguments:\n"
+            "1. \"operationid\"         (array, optional) A list of operation ids we are interested in.  If not provided, examine all operations known to the node.\n"
+            "\nResult:\n"
+            "\"    [object, ...]\"      (array) A list of JSON objects\n"
+        );
+   
+    // This call will remove finished operations
+    return z_getoperationstatus_IMPL(params, true);
+}
 
 Value z_getoperationstatus(const Array& params, bool fHelp)
 {
@@ -2841,14 +2863,20 @@ Value z_getoperationstatus(const Array& params, bool fHelp)
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "z_getoperationstatus ([\"operationid\", ... ]) \n"
-            "\nGet operation status and any associated result or error data."
+            "\nGet operation status and any associated result or error data.  The operation will remain in memory."
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
-            "1. \"operationid\"         (array, optional) A list of operation ids we are interested in.\n"
+            "1. \"operationid\"         (array, optional) A list of operation ids we are interested in.  If not provided, examine all operations known to the node.\n"
             "\nResult:\n"
             "\"    [object, ...]\"      (array) A list of JSON objects\n"
         );
+   
+   // This call is idempotent so we don't want to remove finished operations
+   return z_getoperationstatus_IMPL(params, false);
+}
 
+Value z_getoperationstatus_IMPL(const Array& params, bool fRemoveFinishedOperations=false)
+{
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     std::set<AsyncRPCOperationId> filter;
@@ -2876,11 +2904,15 @@ Value z_getoperationstatus(const Array& params, bool fHelp)
         }
         
         Value status = operation->getStatus();
-        ret.push_back(status);
 
-        // Remove operation from memory when it has finished and the caller has retrieved the result and reason for finishing.
-        if (operation->isSuccess() || operation->isFailed() || operation->isCancelled()) {
-           q->popOperationForId(id);
+        if (fRemoveFinishedOperations) {
+            // Caller is only interested in retrieving finished results
+            if (operation->isSuccess() || operation->isFailed() || operation->isCancelled()) {
+                ret.push_back(status);
+                q->popOperationForId(id);
+            }
+        } else {
+            ret.push_back(status);
         }
     }
 
