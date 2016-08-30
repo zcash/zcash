@@ -16,13 +16,6 @@ using ::testing::Return;
 
 ZCJoinSplit* params = ZCJoinSplit::Unopened();
 
-class MockCCoinsViewCache : public CCoinsViewCache {
-public:
-    MockCCoinsViewCache() : CCoinsViewCache(NULL) { };
-
-    MOCK_CONST_METHOD2(GetAnchorAt, bool(const uint256 &rt, ZCIncrementalMerkleTree &tree));
-};
-
 class TestWallet : public CWallet {
 public:
     TestWallet() : CWallet() { }

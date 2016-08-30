@@ -145,7 +145,7 @@ public:
     bool GetNoteDecryptor(const libzcash::PaymentAddress &address, ZCNoteDecryption &decOut) const
     {
         {
-            LOCK(cs_KeyStore);
+            LOCK(cs_SpendingKeyStore);
             NoteDecryptorMap::const_iterator mi = mapNoteDecryptors.find(address);
             if (mi != mapNoteDecryptors.end())
             {
@@ -154,19 +154,6 @@ public:
             }
         }
         return false;
-    }
-    void GetNoteDecryptors(std::set<NoteDecryptorMap::value_type> &setDec) const
-    {
-        setDec.clear();
-        {
-            LOCK(cs_SpendingKeyStore);
-            NoteDecryptorMap::const_iterator mi = mapNoteDecryptors.begin();
-            while (mi != mapNoteDecryptors.end())
-            {
-                setDec.insert(*mi);
-                mi++;
-            }
-        }
     }
     void GetPaymentAddresses(std::set<libzcash::PaymentAddress> &setAddress) const
     {

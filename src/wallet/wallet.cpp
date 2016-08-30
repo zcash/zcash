@@ -1030,16 +1030,15 @@ void CWallet::EraseFromWallet(const uint256 &hash)
 
 mapNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
 {
+    LOCK(cs_SpendingKeyStore);
     uint256 hash = tx.GetTxid();
 
     mapNoteData_t noteData;
-    std::set<NoteDecryptorMap::value_type> decryptors;
-    GetNoteDecryptors(decryptors);
     libzcash::SpendingKey key;
     for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {
         auto hSig = tx.vjoinsplit[i].h_sig(*pzcashParams, tx.joinSplitPubKey);
         for (uint8_t j = 0; j < tx.vjoinsplit[i].ciphertexts.size(); j++) {
-            for (const NoteDecryptorMap::value_type& item : decryptors) {
+            for (const NoteDecryptorMap::value_type& item : mapNoteDecryptors) {
                 try {
                     auto note_pt = libzcash::NotePlaintext::decrypt(
                         item.second,
