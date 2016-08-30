@@ -498,7 +498,7 @@ static void OutputTxJSON(const CTransaction& tx)
 
 static void OutputTxHash(const CTransaction& tx)
 {
-    string strHexHash = tx.GetTxid().GetHex(); // the hex-encoded transaction hash (aka the transaction id)
+    string strHexHash = tx.GetHash().GetHex(); // the hex-encoded transaction hash (aka the transaction id)
 
     fprintf(stdout, "%s\n", strHexHash.c_str());
 }

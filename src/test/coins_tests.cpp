@@ -504,7 +504,7 @@ BOOST_AUTO_TEST_CASE(coins_coinbase_spends)
     // Create coinbase spend
     CMutableTransaction mtx2;
     mtx2.vin.resize(1);
-    mtx2.vin[0].prevout = COutPoint(tx.GetTxid(), 0);
+    mtx2.vin[0].prevout = COutPoint(tx.GetHash(), 0);
     mtx2.vin[0].scriptSig = CScript() << OP_1;
     mtx2.vin[0].nSequence = 0;
 
