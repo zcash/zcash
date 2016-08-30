@@ -345,10 +345,6 @@ public:
         return hash;
     }
 
-    const uint256& GetTxid() const {
-        return hash;
-    }
-
     // Return sum of txouts.
     CAmount GetValueOut() const;
     // GetValueIn() is a method on CCoinsViewCache, because
@@ -417,10 +413,6 @@ struct CMutableTransaction
      * fly, as opposed to GetHash() in CTransaction, which uses a cached result.
      */
     uint256 GetHash() const;
-
-    uint256 GetTxid() const {
-        return GetHash();
-    }
 };
 
 #endif // BITCOIN_PRIMITIVES_TRANSACTION_H
