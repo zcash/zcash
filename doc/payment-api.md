@@ -31,7 +31,7 @@ RPC calls by category:
 * Accounting: z_getbalance, z_gettotalbalance
 * Addresses : z_getnewaddress, z_listaddresses
 * Keys : z_exportkey, z_importkey, z_exportwallet, z_importwallet
-* Operation: z_getoperationstatus, z_listoperationids
+* Operation: z_getoperationresult, z_getoperationstatus, z_listoperationids
 * Payment : z_listreceivedbyaddress, z_sendmany
 
 RPC parameter conventions:
@@ -72,13 +72,13 @@ z_importwallet | filename | _Requires an unlocked wallet or an unencrypted walle
 Command | Parameters | Description
 --- | --- | ---
 z_listreceivedbyaddress<br>**(NOT IN Z9 ALPHA)** | zaddr [minconf=1] | Return a list of amounts received by a zaddr belonging to the node’s wallet.<br><br>Optionally set the minimum number of confirmations which a received amount must have in order to be included in the result.  Use 0 to count unconfirmed transactions.<br><br>Output:<br>[{<br>“txid”: “4a0f…”,<br>“amount”: 0.54,<br>“memo”:”F0FF…”,}, {...}, {...}<br>]
-z_sendmany<br>**(NOT IN Z9 ALPHA)** | fromaddress amounts [minconf=1] | _This is an Asynchronous RPC call_<br><br>Send funds from an address to multiple outputs.  The address can be either a taddr or a zaddr.<br><br>Amounts is a list containing key/value pairs corresponding to the addresses and amount to pay.  Each output address can be in taddr or zaddr format.<br><br>When sending to a zaddr, you also have the option of attaching a memo in hexadecimal format.<br><br>Example of Outputs parameter:<br>[{“address”:”t123…”, “amount”:0.005},<br>,{“address”:”z010…”,”amount”:0.03, “memo”:”f508af…”}]<br><br>Optionally set the minimum number of confirmations which a private or transparent transaction must have in order to be used as an input.<br><br>The transaction fee will be determined by the node’s wallet.  Any transparent change will be sent to a new transparent address.  Any private change will be sent back to the zaddr being used as the source of funds.<br><br>Returns an operationid.  You use the operationid value to poll z_getoperationstatus for the result of sending funds, which if successful, will be a txid.
+z_sendmany<br>**(NOT IN Z9 ALPHA)** | fromaddress amounts [minconf=1] | _This is an Asynchronous RPC call_<br><br>Send funds from an address to multiple outputs.  The address can be either a taddr or a zaddr.<br><br>Amounts is a list containing key/value pairs corresponding to the addresses and amount to pay.  Each output address can be in taddr or zaddr format.<br><br>When sending to a zaddr, you also have the option of attaching a memo in hexadecimal format.<br><br>Example of Outputs parameter:<br>[{“address”:”t123…”, “amount”:0.005},<br>,{“address”:”z010…”,”amount”:0.03, “memo”:”f508af…”}]<br><br>Optionally set the minimum number of confirmations which a private or transparent transaction must have in order to be used as an input.<br><br>The transaction fee will be determined by the node’s wallet.  Any transparent change will be sent to a new transparent address.  Any private change will be sent back to the zaddr being used as the source of funds.<br><br>Returns an operationid.  You use the operationid value with z_getoperationstatus and z_getoperationresult to obtain the result of sending funds, which if successful, will be a txid.
 
 ### Operations
 
 Asynchronous calls return an OperationStatus object which is a JSON object with the following defined key-value pairs:
 
-* operationid : unique identifier for the async operation.  Use this value with z_getoperationstatus to poll and query the operation and obtain its result.
+* operationid : unique identifier for the async operation.  Use this value with z_getoperationstatus or z_getoperationresult to poll and query the operation and obtain its result.
 * status : current status of operation
   * queued : operation is pending execution
   * executing : operation is currently being executed
@@ -96,5 +96,6 @@ It is currently not possible to cancel operations.
 
 Command | Parameters | Description
 --- | --- | ---
+z_getoperationresult <br>**(NOT IN Z9 ALPHA)**| [operationids] | Return OperationStatus JSON objects for all completed operations the node is currently aware of, and then remove the operation from memory.<br><br>Operationids is an optional array to filter which operations you want to receive status objects for.<br><br>Output is a list of operation status objects, where the status is either "failed", "cancelled" or "success".<br>[<br>{“operationid”: “opid-11ee…”,<br>“status”: “cancelled”},<br>{“operationid”: “opid-9876”, “status”: ”failed”},<br>{“operationid”: “opid-0e0e”,<br>“status”:”success”,<br>“execution_time”:”25”,<br>“result”: {“txid”:”af3887654…”,...}<br>},<br>]
 z_getoperationstatus <br>**(NOT IN Z9 ALPHA)**| [operationids] | Return OperationStatus JSON objects for all operations the node is currently aware of.<br><br>Operationids is an optional array to filter which operations you want to receive status objects for.<br><br>Output is a list of operation status objects.<br>[<br>{“operationid”: “opid-12ee…”,<br>“status”: “queued”},<br>{“operationid”: “opd-098a…”, “status”: ”executing”},<br>{“operationid”: “opid-9876”, “status”: ”failed”}<br>]<br><br>When the operation succeeds, the status object will also include the result.<br><br>{“operationid”: “opid-0e0e”,<br>“status”:”success”,<br>“execution_time”:”25”,<br>“result”: {“txid”:”af3887654…”,...}<br>}
 z_listoperationids <br>**(NOT IN Z9 ALPHA)**| [state] | Return a list of operationids for all operations which the node is currently aware of.<br><br>State is an optional string parameter to filter the operations you want listed by their state.  Acceptable parameter values are ‘queued’, ‘executing’, ‘success’, ‘failed’, ‘cancelled’.<br><br>[“opid-0e0e…”, “opid-1af4…”, … ]
