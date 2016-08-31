@@ -172,7 +172,7 @@ TEST(wallet_tests, set_invalid_note_addrs_in_cwallettx) {
     CNoteData nd {sk.address(), uint256()};
     noteData[jsoutpt] = nd;
 
-    EXPECT_THROW(wtx.SetNoteData(noteData), std::runtime_error);
+    EXPECT_THROW(wtx.SetNoteData(noteData), std::logic_error);
 }
 
 TEST(wallet_tests, find_note_in_tx) {

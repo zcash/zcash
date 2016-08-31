@@ -55,7 +55,8 @@ static const CAmount nHighTransactionMaxFeeWarning = 100 * nHighTransactionFeeWa
 //! Largest (in bytes) free transaction we're willing to create
 static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 1000;
 //! Size of witness cache
-//  Should be large enough that we can expect to never reorg beyond our cache.
+//  Should be large enough that we can expect not to reorg beyond our cache
+//  unless there is some exceptional network disruption.
 static const unsigned int WITNESS_CACHE_SIZE = COINBASE_MATURITY;
 
 class CAccountingEntry;

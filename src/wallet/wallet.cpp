@@ -601,6 +601,8 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                 CNoteData* nd = &(item.second);
+                // Check the validity of the cache
+                assert(nWitnessCacheSize >= nd->witnesses.size());
                 // Copy the witness for the previous block if we have one
                 if (nd->witnesses.size() > 0) {
                     nd->witnesses.push_front(nd->witnesses.front());
@@ -1060,8 +1062,12 @@ mapNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
                     CNoteData nd {address, note.nullifier(key)};
                     noteData.insert(std::make_pair(jsoutpt, nd));
                     break;
-                } catch (const std::exception &) {
+                } catch (const std::runtime_error &) {
                     // Couldn't decrypt with this spending key
+                } catch (const std::exception &exc) {
+                    // Unexpected failure
+                    LogPrintf("FindMyNotes(): Unexpected error while testing decrypt:\n");
+                    LogPrintf("%s\n", exc.what());
                 }
             }
         }
@@ -1252,7 +1258,7 @@ void CWalletTx::SetNoteData(mapNoteData_t &noteData)
         } else {
             // If FindMyNotes() was used to obtain noteData,
             // this should never happen
-            throw std::runtime_error("CWalletTc::SetNoteData(): Invalid note");
+            throw std::logic_error("CWalletTx::SetNoteData(): Invalid note");
         }
     }
 }
