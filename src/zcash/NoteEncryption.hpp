@@ -71,6 +71,7 @@ public:
                       unsigned char nonce
                      ) const;
 
+    friend inline bool operator==(const NoteDecryption& a, const NoteDecryption& b) { return a.sk_enc == b.sk_enc && a.pk_enc == b.pk_enc; }
     friend inline bool operator<(const NoteDecryption& a, const NoteDecryption& b) { return a.pk_enc < b.pk_enc; }
 };
 
