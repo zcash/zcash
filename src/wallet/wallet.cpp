@@ -917,7 +917,16 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
             }
             if (!wtxIn.mapNoteData.empty() && wtxIn.mapNoteData != wtx.mapNoteData)
             {
-                wtx.mapNoteData = wtxIn.mapNoteData;
+                auto tmp = wtxIn.mapNoteData;
+                // Ensure we keep any cached witnesses we may already have
+                for (const std::pair<JSOutPoint, CNoteData> nd : wtx.mapNoteData) {
+                    if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
+                        tmp.at(nd.first).witnesses.assign(
+                            nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+                    }
+                }
+                // Now copy over the updated note data
+                wtx.mapNoteData = tmp;
                 fUpdated = true;
             }
             if (wtxIn.fFromMe && wtxIn.fFromMe != wtx.fFromMe)
