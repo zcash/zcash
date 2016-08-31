@@ -106,7 +106,7 @@ public:
 
     bool WriteDefaultKey(const CPubKey& vchPubKey);
 
-    bool WriteAnchorCache(const std::list<uint256>& vAnchorCache);
+    bool WriteWitnessCacheSize(int64_t nWitnessCacheSize);
 
     bool ReadPool(int64_t nPool, CKeyPool& keypool);
     bool WritePool(int64_t nPool, const CKeyPool& keypool);

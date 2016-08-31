@@ -162,10 +162,10 @@ bool CWalletDB::WriteDefaultKey(const CPubKey& vchPubKey)
     return Write(std::string("defaultkey"), vchPubKey);
 }
 
-bool CWalletDB::WriteAnchorCache(const std::list<uint256>& vAnchorCache)
+bool CWalletDB::WriteWitnessCacheSize(int64_t nWitnessCacheSize)
 {
     nWalletDBUpdated++;
-    return Write(std::string("anchorcache"), vAnchorCache);
+    return Write(std::string("witnesscachesize"), nWitnessCacheSize);
 }
 
 bool CWalletDB::ReadPool(int64_t nPool, CKeyPool& keypool)
@@ -637,9 +637,9 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 return false;
             }
         }
-        else if (strType == "anchorcache")
+        else if (strType == "witnesscachesize")
         {
-            ssValue >> pwallet->vAnchorCache;
+            ssValue >> pwallet->nWitnessCacheSize;
         }
     } catch (...)
     {

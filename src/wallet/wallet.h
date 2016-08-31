@@ -580,10 +580,11 @@ private:
 
 public:
     /*
-     * Cached anchors corresponding to the cached incremental witnesses for the
-     * notes in our wallet.
+     * Size of the incremental witness cache for the notes in our wallet.
+     * This will always be greater than or equal to the size of the largest
+     * incremental witness cache in any transaction in mapWallet.
      */
-    std::list<uint256> vAnchorCache;
+    int64_t nWitnessCacheSize;
 
 protected:
     void IncrementNoteWitnesses(const CBlockIndex* pindex,

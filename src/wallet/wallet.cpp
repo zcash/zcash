@@ -649,12 +649,11 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                 }
             }
         }
-        vAnchorCache.push_front(tree.root());
-        if (vAnchorCache.size() > WITNESS_CACHE_SIZE) {
-            vAnchorCache.pop_back();
+        if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
+            nWitnessCacheSize += 1;
         }
         if (fFileBacked) {
-            CWalletDB(strWalletFile).WriteAnchorCache(vAnchorCache);
+            CWalletDB(strWalletFile).WriteWitnessCacheSize(nWitnessCacheSize);
         }
     }
 }
@@ -671,12 +670,11 @@ void CWallet::DecrementNoteWitnesses()
                 }
             }
         }
-        if (vAnchorCache.size() > 0) {
-            vAnchorCache.pop_front();
-        }
-        // TODO: If vAnchorCache is empty, we need to regenerate the caches (#1302)
+        nWitnessCacheSize -= 1;
+        // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
+        assert(nWitnessCacheSize > 0);
         if (fFileBacked) {
-            CWalletDB(strWalletFile).WriteAnchorCache(vAnchorCache);
+            CWalletDB(strWalletFile).WriteWitnessCacheSize(nWitnessCacheSize);
         }
     }
 }
@@ -1070,18 +1068,24 @@ void CWallet::GetNoteWitnesses(std::vector<JSOutPoint> notes,
     {
         LOCK(cs_wallet);
         witnesses.resize(notes.size());
+        boost::optional<uint256> rt;
         int i = 0;
         for (JSOutPoint note : notes) {
             if (mapWallet.count(note.hash) &&
                     mapWallet[note.hash].mapNoteData.count(note) &&
                     mapWallet[note.hash].mapNoteData[note].witnesses.size() > 0) {
                 witnesses[i] = mapWallet[note.hash].mapNoteData[note].witnesses.front();
+                if (!rt) {
+                    rt = witnesses[i]->root();
+                } else {
+                    assert(*rt == witnesses[i]->root());
+                }
             }
             i++;
         }
-        // vAnchorCache should only be empty here before the genesis block (so, never)
-        if (vAnchorCache.size() > 0) {
-            final_anchor = vAnchorCache.front();
+        // All returned witnesses have the same anchor
+        if (rt) {
+            final_anchor = *rt;
         }
     }
 }

@@ -402,7 +402,8 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         witnesses.clear();
         wallet.GetNoteWitnesses(notes, witnesses, anchor3);
         EXPECT_FALSE((bool) witnesses[0]);
-        EXPECT_EQ(anchor1, anchor3);
+        // Should not equal first anchor because none of these notes had witnesses
+        EXPECT_NE(anchor1, anchor3);
 
         // Re-incrementing with the same block should give the same result
         uint256 anchor4;
