@@ -8,6 +8,7 @@
 
 #include "amount.h"
 #include "coins.h"
+#include "consensus/consensus.h"
 #include "key.h"
 #include "keystore.h"
 #include "primitives/block.h"
@@ -55,7 +56,7 @@ static const CAmount nHighTransactionMaxFeeWarning = 100 * nHighTransactionFeeWa
 static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 1000;
 //! Size of witness cache
 //  Should be large enough that we can expect to never reorg beyond our cache.
-static const unsigned int WITNESS_CACHE_SIZE = 50;
+static const unsigned int WITNESS_CACHE_SIZE = COINBASE_MATURITY;
 
 class CAccountingEntry;
 class CBlockIndex;
