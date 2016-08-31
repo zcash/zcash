@@ -1060,6 +1060,18 @@ mapNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
     return noteData;
 }
 
+bool CWallet::IsFromMe(const uint256& nullifier) const
+{
+    {
+        LOCK(cs_wallet);
+        if (mapNullifiersToNotes.count(nullifier) &&
+                mapWallet.count(mapNullifiersToNotes.at(nullifier).hash)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void CWallet::GetNoteWitnesses(std::vector<JSOutPoint> notes,
                                std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
                                uint256 &final_anchor)
@@ -1171,7 +1183,17 @@ bool CWallet::IsMine(const CTransaction& tx) const
 
 bool CWallet::IsFromMe(const CTransaction& tx) const
 {
-    return (GetDebit(tx, ISMINE_ALL) > 0);
+    if (GetDebit(tx, ISMINE_ALL) > 0) {
+        return true;
+    }
+    for (const JSDescription& jsdesc : tx.vjoinsplit) {
+        for (const uint256& nullifier : jsdesc.nullifiers) {
+            if (IsFromMe(nullifier)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 CAmount CWallet::GetDebit(const CTransaction& tx, const isminefilter& filter) const

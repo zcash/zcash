@@ -291,6 +291,34 @@ TEST(wallet_tests, navigate_from_nullifier_to_note) {
     EXPECT_EQ(1, wallet.mapNullifiersToNotes[nullifier].n);
 }
 
+TEST(wallet_tests, spent_note_is_from_me) {
+    CWallet wallet;
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+    auto wtx2 = GetValidSpend(sk, note, 5);
+
+    EXPECT_FALSE(wallet.IsFromMe(wtx));
+    EXPECT_FALSE(wallet.IsFromMe(wtx2));
+
+    mapNoteData_t noteData;
+    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+    CNoteData nd {sk.address(), nullifier};
+    noteData[jsoutpt] = nd;
+
+    wtx.SetNoteData(noteData);
+    EXPECT_FALSE(wallet.IsFromMe(wtx));
+    EXPECT_FALSE(wallet.IsFromMe(wtx2));
+
+    wallet.AddToWallet(wtx, true, NULL);
+    EXPECT_FALSE(wallet.IsFromMe(wtx));
+    EXPECT_TRUE(wallet.IsFromMe(wtx2));
+}
+
 TEST(wallet_tests, cached_witnesses_empty_chain) {
     TestWallet wallet;
 

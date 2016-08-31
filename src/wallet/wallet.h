@@ -795,6 +795,7 @@ public:
     std::set<CTxDestination> GetAccountAddresses(std::string strAccount) const;
 
     mapNoteData_t FindMyNotes(const CTransaction& tx) const;
+    bool IsFromMe(const uint256& nullifier) const;
     void GetNoteWitnesses(
          std::vector<JSOutPoint> notes,
          std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
