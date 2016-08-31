@@ -823,7 +823,7 @@ void CWallet::UpdateNullifierNoteMap(const CWalletTx& wtx)
     {
         LOCK(cs_wallet);
         for (const mapNoteData_t::value_type& item : wtx.mapNoteData) {
-            mapNullifiers[item.second.nullifier] = item.first;
+            mapNullifiersToNotes[item.second.nullifier] = item.first;
         }
     }
 }
@@ -1005,9 +1005,9 @@ void CWallet::SyncTransaction(const CTransaction& tx, const CBlock* pblock)
     }
     for (const JSDescription& jsdesc : tx.vjoinsplit) {
         for (const uint256& nullifier : jsdesc.nullifiers) {
-            if (mapNullifiers.count(nullifier) &&
-                    mapWallet.count(mapNullifiers[nullifier].hash)) {
-                mapWallet[mapNullifiers[nullifier].hash].MarkDirty();
+            if (mapNullifiersToNotes.count(nullifier) &&
+                    mapWallet.count(mapNullifiersToNotes[nullifier].hash)) {
+                mapWallet[mapNullifiersToNotes[nullifier].hash].MarkDirty();
             }
         }
     }

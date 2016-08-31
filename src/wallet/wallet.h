@@ -650,7 +650,7 @@ public:
         fBroadcastTransactions = false;
     }
 
-    std::map<uint256, JSOutPoint> mapNullifiers;
+    std::map<uint256, JSOutPoint> mapNullifiersToNotes;
     std::map<uint256, CWalletTx> mapWallet;
 
     int64_t nOrderPosNext;

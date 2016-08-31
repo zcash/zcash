@@ -282,13 +282,13 @@ TEST(wallet_tests, navigate_from_nullifier_to_note) {
 
     wtx.SetNoteData(noteData);
 
-    EXPECT_EQ(0, wallet.mapNullifiers.count(nullifier));
+    EXPECT_EQ(0, wallet.mapNullifiersToNotes.count(nullifier));
 
     wallet.AddToWallet(wtx, true, NULL);
-    EXPECT_EQ(1, wallet.mapNullifiers.count(nullifier));
-    EXPECT_EQ(wtx.GetTxid(), wallet.mapNullifiers[nullifier].hash);
-    EXPECT_EQ(0, wallet.mapNullifiers[nullifier].js);
-    EXPECT_EQ(1, wallet.mapNullifiers[nullifier].n);
+    EXPECT_EQ(1, wallet.mapNullifiersToNotes.count(nullifier));
+    EXPECT_EQ(wtx.GetTxid(), wallet.mapNullifiersToNotes[nullifier].hash);
+    EXPECT_EQ(0, wallet.mapNullifiersToNotes[nullifier].js);
+    EXPECT_EQ(1, wallet.mapNullifiersToNotes[nullifier].n);
 }
 
 TEST(wallet_tests, cached_witnesses_empty_chain) {
