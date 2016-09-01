@@ -131,6 +131,9 @@ class IncrementalWitness {
 friend class IncrementalMerkleTree<Depth, Hash>;
 
 public:
+    // Required for Unserialize()
+    IncrementalWitness() {}
+
     MerklePath path() const {
         return tree.path(partial_path());
     }

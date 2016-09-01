@@ -222,6 +222,7 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(address);
         READWRITE(nullifier);
+        READWRITE(witnesses);
     }
 
     friend bool operator<(const CNoteData& a, const CNoteData& b) {
