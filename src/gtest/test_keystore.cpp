@@ -34,8 +34,10 @@ TEST(keystore_tests, store_and_retrieve_note_decryptor) {
 
     auto sk = libzcash::SpendingKey::random();
     auto addr = sk.address();
-    keyStore.AddSpendingKey(sk);
 
-    keyStore.GetNoteDecryptor(addr, decOut);
+    EXPECT_FALSE(keyStore.GetNoteDecryptor(addr, decOut));
+
+    keyStore.AddSpendingKey(sk);
+    EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
     EXPECT_EQ(ZCNoteDecryption(sk.viewing_key()), decOut);
 }
