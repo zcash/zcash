@@ -63,7 +63,8 @@ void mine(int n, int k, uint32_t d)
                                               pblock.nNonce.size());
 
             // (x_1, x_2, ...) = A(I, V, n, k)
-            std::cout << "Running Equihash solver with nNonce = " << pblock.nNonce.ToString() << "\n";
+            LogPrint("pow", "Running Equihash solver with nNonce = %s\n",
+                     pblock.nNonce.ToString());
 
             std::function<bool(std::vector<unsigned char>)> validBlock =
                     [&pblock, &hashTarget, &nStart, &start_cycles]
@@ -77,13 +78,13 @@ void mine(int n, int k, uint32_t d)
 
                 // Found a solution
                 uint64_t stop_cycles = rdtsc();
-                std::cout << "ZcashMiner:\n";
-                std::cout << "proof-of-work found\n";
-                std::cout << "prevHash: " << pblock.hashPrevBlock.GetHex() << "\n";
-                std::cout << "    hash: " << pblock.GetHash().GetHex() << "\n";
-                std::cout << "  target: " << hashTarget.GetHex() << "\n";
-                std::cout << "duration: " << (GetTime() - nStart) << "\n";
-                printf("  cycles: %2.2f  Mcycles\n\n", (double)(stop_cycles - start_cycles) / (1UL << 20));
+                LogPrintf("ZcashMiner:\nproof-of-work found\nprevHash: %s\n    hash: %s\n  target: %s\nduration: %s\n",
+                          pblock.hashPrevBlock.GetHex(),
+                          pblock.GetHash().GetHex(),
+                          hashTarget.GetHex(),
+                          (GetTime() - nStart));
+                LogPrint("cycles", "  cycles: %2.2f Mcycles\n",
+                         (double)(stop_cycles - start_cycles) / (1UL << 20));
 
                 return true;
             };
@@ -95,14 +96,14 @@ void mine(int n, int k, uint32_t d)
                 uint64_t solve_start = rdtsc();
                 bool foundBlock = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
                 uint64_t solve_end = rdtsc();
-                printf("Solver took %2.2f  Mcycles\n",
-                       (double)(solve_end - solve_start) / (1UL << 20));
+                LogPrint("cycles", "Solver took %2.2f Mcycles\n\n",
+                         (double)(solve_end - solve_start) / (1UL << 20));
                 // If we find a valid block, we rebuild
                 if (foundBlock) {
                     break;
                 }
             } catch (EhSolverCancelledException&) {
-                std::cout << "Equihash solver cancelled\n";
+                LogPrint("pow", "Equihash solver cancelled\n");
             }
 
             if ((UintToArith256(pblock.nNonce) & 0xffff) == 0xffff) {
