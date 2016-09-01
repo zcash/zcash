@@ -53,8 +53,7 @@ void mine(int n, int k, uint32_t d)
         // Find valid nonce
         int64_t nStart = GetTime();
         uint64_t start_cycles = rdtsc();
-        while (true)
-        {
+        while (true) {
             // H(I||V||...
             crypto_generichash_blake2b_state curr_state;
             curr_state = state;
@@ -64,19 +63,15 @@ void mine(int n, int k, uint32_t d)
 
             // (x_1, x_2, ...) = A(I, V, n, k)
             std::cout << "Running Equihash solver with nNonce = " << pblock.nNonce.ToString() << "\n";
-            std::set<std::vector<unsigned int>> solns;
-            uint64_t solve_start = rdtsc();
-            EhBasicSolveUncancellable(n, k, curr_state, solns);
-            uint64_t solve_end = rdtsc();
-            printf("Solver took %2.2f  Mcycles\n", (double)(solve_end - solve_start) / (1UL << 20));
-            std::cout << "Solutions: " << solns.size() << "\n";
 
-            // Write the solution to the hash and compute the result.
-            for (auto soln : solns) {
+            std::function<bool(std::vector<unsigned char>)> validBlock =
+                    [&pblock, &hashTarget, &nStart, &start_cycles]
+                    (std::vector<unsigned char> soln) {
+                // Write the solution to the hash and compute the result.
                 pblock.nSolution = soln;
 
                 if (UintToArith256(pblock.GetHash()) > hashTarget) {
-                    continue;
+                    return false;
                 }
 
                 // Found a solution
@@ -89,14 +84,32 @@ void mine(int n, int k, uint32_t d)
                 std::cout << "duration: " << (GetTime() - nStart) << "\n";
                 printf("  cycles: %2.2f  Mcycles\n\n", (double)(stop_cycles - start_cycles) / (1UL << 20));
 
-                goto updateblock;
+                return true;
+            };
+            std::function<bool(EhSolverCancelCheck)> cancelled =
+                    [](EhSolverCancelCheck pos) {
+                return false;
+            };
+            try {
+                uint64_t solve_start = rdtsc();
+                bool foundBlock = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
+                uint64_t solve_end = rdtsc();
+                printf("Solver took %2.2f  Mcycles\n",
+                       (double)(solve_end - solve_start) / (1UL << 20));
+                // If we find a valid block, we rebuild
+                if (foundBlock) {
+                    break;
+                }
+            } catch (EhSolverCancelledException&) {
+                std::cout << "Equihash solver cancelled\n";
+            }
+
+            if ((UintToArith256(pblock.nNonce) & 0xffff) == 0xffff) {
+                break;
             }
             pblock.nNonce = ArithToUint256(UintToArith256(pblock.nNonce) + 1);
-            if ((UintToArith256(pblock.nNonce) & 0x1) == 0)
-                break;
         }
 
-updateblock:
         pblock.hashPrevBlock = pblock.GetHash();
     }
 }
