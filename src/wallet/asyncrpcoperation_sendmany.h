@@ -65,6 +65,10 @@ private:
     CBitcoinAddress fromtaddr_;
     PaymentAddress frompaymentaddress_;
     SpendingKey spendingkey_;
+    
+    uint256 joinSplitPubKey_;
+    unsigned char joinSplitPrivKey_[crypto_sign_SECRETKEYBYTES];
+
         
     std::vector<SendManyRecipient> t_outputs_;
     std::vector<SendManyRecipient> z_outputs_;
@@ -73,11 +77,18 @@ private:
     
     CTransaction tx_;
    
+    void add_taddr_change_output_to_tx(CAmount amount);
     void add_taddr_outputs_to_tx();
     bool find_unspent_notes();
     bool find_utxos();
+    boost::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s);
     bool main_impl();
     Object perform_joinsplit( AsyncJoinSplitInfo &);
+    Object perform_joinsplit(
+        AsyncJoinSplitInfo & info,
+        std::vector<boost::optional < ZCIncrementalWitness>> witnesses,
+        uint256 anchor);
+    void sign_send_raw_transaction(Object obj);     // throws exception if there was an error
 
 };
 
