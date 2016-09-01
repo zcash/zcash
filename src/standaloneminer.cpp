@@ -118,7 +118,7 @@ void mine(int n, int k, uint32_t d)
 int main(int argc, char* argv[])
 {
     // Initialise libsodium
-    if (sodium_init() == -1) {
+    if (init_and_check_sodium() == -1) {
         return 1;
     }
 
