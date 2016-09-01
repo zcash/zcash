@@ -8,8 +8,8 @@
 #include "base58.h"
 #include "checkpoints.h"
 #include "coincontrol.h"
-#include "consensus/consensus.h"
 #include "consensus/validation.h"
+#include "init.h"
 #include "main.h"
 #include "net.h"
 #include "script/script.h"
@@ -17,6 +17,7 @@
 #include "timedata.h"
 #include "util.h"
 #include "utilmoneystr.h"
+#include "zcash/Note.hpp"
 
 #include <assert.h>
 
@@ -56,6 +57,11 @@ struct CompareValueOnly
         return t1.first < t2.first;
     }
 };
+
+std::string JSOutPoint::ToString() const
+{
+    return strprintf("JSOutPoint(%s, %d, %d)", hash.ToString().substr(0,10), js, n);
+}
 
 std::string COutput::ToString() const
 {
@@ -329,6 +335,16 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
     return false;
 }
 
+void CWallet::ChainTip(const CBlockIndex *pindex, const CBlock *pblock,
+                       ZCIncrementalMerkleTree tree, bool added)
+{
+    if (added) {
+        IncrementNoteWitnesses(pindex, pblock, tree);
+    } else {
+        DecrementNoteWitnesses();
+    }
+}
+
 void CWallet::SetBestChain(const CBlockLocator& loc)
 {
     CWalletDB walletdb(strWalletFile);
@@ -394,6 +410,20 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
         for (TxSpends::const_iterator it = range.first; it != range.second; ++it)
             result.insert(it->second);
     }
+
+    std::pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range_n;
+
+    for (const JSDescription& jsdesc : wtx.vjoinsplit) {
+        for (const uint256& nullifier : jsdesc.nullifiers) {
+            if (mapTxNullifiers.count(nullifier) <= 1) {
+                continue;  // No conflict if zero or one spends
+            }
+            range_n = mapTxNullifiers.equal_range(nullifier);
+            for (TxNullifiers::const_iterator it = range_n.first; it != range_n.second; ++it) {
+                result.insert(it->second);
+            }
+        }
+    }
     return result;
 }
 
@@ -449,7 +479,8 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
     return true;
 }
 
-void CWallet::SyncMetaData(pair<TxSpends::iterator, TxSpends::iterator> range)
+template <class T>
+void CWallet::SyncMetaData(pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator> range)
 {
     // We want all the wallet transactions in range to have the same metadata as
     // the oldest (smallest nOrderPos).
@@ -457,7 +488,7 @@ void CWallet::SyncMetaData(pair<TxSpends::iterator, TxSpends::iterator> range)
 
     int nMinOrderPos = std::numeric_limits<int>::max();
     const CWalletTx* copyFrom = NULL;
-    for (TxSpends::iterator it = range.first; it != range.second; ++it)
+    for (typename TxSpendMap<T>::iterator it = range.first; it != range.second; ++it)
     {
         const uint256& hash = it->second;
         int n = mapWallet[hash].nOrderPos;
@@ -468,12 +499,14 @@ void CWallet::SyncMetaData(pair<TxSpends::iterator, TxSpends::iterator> range)
         }
     }
     // Now copy data from copyFrom to rest:
-    for (TxSpends::iterator it = range.first; it != range.second; ++it)
+    for (typename TxSpendMap<T>::iterator it = range.first; it != range.second; ++it)
     {
         const uint256& hash = it->second;
         CWalletTx* copyTo = &mapWallet[hash];
         if (copyFrom == copyTo) continue;
         copyTo->mapValue = copyFrom->mapValue;
+        // mapNoteData not copied on purpose
+        // (it is always set correctly for each CWalletTx)
         copyTo->vOrderForm = copyFrom->vOrderForm;
         // fTimeReceivedIsTxTime not copied on purpose
         // nTimeReceived not copied on purpose
@@ -505,15 +538,42 @@ bool CWallet::IsSpent(const uint256& hash, unsigned int n) const
     return false;
 }
 
+/**
+ * Note is spent if any non-conflicted transaction
+ * spends it:
+ */
+bool CWallet::IsSpent(const uint256& nullifier) const
+{
+    pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range;
+    range = mapTxNullifiers.equal_range(nullifier);
+
+    for (TxNullifiers::const_iterator it = range.first; it != range.second; ++it) {
+        const uint256& wtxid = it->second;
+        std::map<uint256, CWalletTx>::const_iterator mit = mapWallet.find(wtxid);
+        if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= 0) {
+            return true; // Spent
+        }
+    }
+    return false;
+}
+
 void CWallet::AddToSpends(const COutPoint& outpoint, const uint256& wtxid)
 {
     mapTxSpends.insert(make_pair(outpoint, wtxid));
 
     pair<TxSpends::iterator, TxSpends::iterator> range;
     range = mapTxSpends.equal_range(outpoint);
-    SyncMetaData(range);
+    SyncMetaData<COutPoint>(range);
 }
 
+void CWallet::AddToSpends(const uint256& nullifier, const uint256& wtxid)
+{
+    mapTxNullifiers.insert(make_pair(nullifier, wtxid));
+
+    pair<TxNullifiers::iterator, TxNullifiers::iterator> range;
+    range = mapTxNullifiers.equal_range(nullifier);
+    SyncMetaData<uint256>(range);
+}
 
 void CWallet::AddToSpends(const uint256& wtxid)
 {
@@ -522,8 +582,102 @@ void CWallet::AddToSpends(const uint256& wtxid)
     if (thisTx.IsCoinBase()) // Coinbases don't spend anything!
         return;
 
-    BOOST_FOREACH(const CTxIn& txin, thisTx.vin)
+    for (const CTxIn& txin : thisTx.vin) {
         AddToSpends(txin.prevout, wtxid);
+    }
+    for (const JSDescription& jsdesc : thisTx.vjoinsplit) {
+        for (const uint256& nullifier : jsdesc.nullifiers) {
+            AddToSpends(nullifier, wtxid);
+        }
+    }
+}
+
+void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
+                                     const CBlock* pblockIn,
+                                     ZCIncrementalMerkleTree tree)
+{
+    {
+        LOCK(cs_wallet);
+        for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+            for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
+                CNoteData* nd = &(item.second);
+                // Check the validity of the cache
+                assert(nWitnessCacheSize >= nd->witnesses.size());
+                // Copy the witness for the previous block if we have one
+                if (nd->witnesses.size() > 0) {
+                    nd->witnesses.push_front(nd->witnesses.front());
+                }
+                if (nd->witnesses.size() > WITNESS_CACHE_SIZE) {
+                    nd->witnesses.pop_back();
+                }
+            }
+        }
+
+        const CBlock* pblock {pblockIn};
+        CBlock block;
+        if (!pblock) {
+            ReadBlockFromDisk(block, pindex);
+            pblock = &block;
+        }
+
+        for (const CTransaction& tx : pblock->vtx) {
+            auto hash = tx.GetTxid();
+            bool txIsOurs = mapWallet.count(hash);
+            for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {
+                const JSDescription& jsdesc = tx.vjoinsplit[i];
+                for (uint8_t j = 0; j < jsdesc.commitments.size(); j++) {
+                    const uint256& note_commitment = jsdesc.commitments[j];
+                    tree.append(note_commitment);
+
+                    // Increment existing witnesses
+                    for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+                        for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
+                            CNoteData* nd = &(item.second);
+                            if (nd->witnesses.size() > 0) {
+                                nd->witnesses.front().append(note_commitment);
+                            }
+                        }
+                    }
+
+                    // If this is our note, witness it
+                    if (txIsOurs) {
+                        JSOutPoint jsoutpt {hash, i, j};
+                        if (mapWallet[hash].mapNoteData.count(jsoutpt)) {
+                            mapWallet[hash].mapNoteData[jsoutpt].witnesses.push_front(
+                                tree.witness());
+                        }
+                    }
+                }
+            }
+        }
+        if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
+            nWitnessCacheSize += 1;
+        }
+        if (fFileBacked) {
+            CWalletDB(strWalletFile).WriteWitnessCacheSize(nWitnessCacheSize);
+        }
+    }
+}
+
+void CWallet::DecrementNoteWitnesses()
+{
+    {
+        LOCK(cs_wallet);
+        for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+            for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
+                CNoteData* nd = &(item.second);
+                if (nd->witnesses.size() > 0) {
+                    nd->witnesses.pop_front();
+                }
+            }
+        }
+        nWitnessCacheSize -= 1;
+        // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
+        assert(nWitnessCacheSize > 0);
+        if (fFileBacked) {
+            CWalletDB(strWalletFile).WriteWitnessCacheSize(nWitnessCacheSize);
+        }
+    }
 }
 
 bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
@@ -665,6 +819,16 @@ void CWallet::MarkDirty()
     }
 }
 
+void CWallet::UpdateNullifierNoteMap(const CWalletTx& wtx)
+{
+    {
+        LOCK(cs_wallet);
+        for (const mapNoteData_t::value_type& item : wtx.mapNoteData) {
+            mapNullifiersToNotes[item.second.nullifier] = item.first;
+        }
+    }
+}
+
 bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb)
 {
     uint256 hash = wtxIn.GetTxid();
@@ -673,6 +837,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
     {
         mapWallet[hash] = wtxIn;
         mapWallet[hash].BindWallet(this);
+        UpdateNullifierNoteMap(mapWallet[hash]);
         AddToSpends(hash);
     }
     else
@@ -682,6 +847,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
         pair<map<uint256, CWalletTx>::iterator, bool> ret = mapWallet.insert(make_pair(hash, wtxIn));
         CWalletTx& wtx = (*ret.first).second;
         wtx.BindWallet(this);
+        UpdateNullifierNoteMap(wtx);
         bool fInsertedNew = ret.second;
         if (fInsertedNew)
         {
@@ -751,6 +917,20 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
                 wtx.nIndex = wtxIn.nIndex;
                 fUpdated = true;
             }
+            if (!wtxIn.mapNoteData.empty() && wtxIn.mapNoteData != wtx.mapNoteData)
+            {
+                auto tmp = wtxIn.mapNoteData;
+                // Ensure we keep any cached witnesses we may already have
+                for (const std::pair<JSOutPoint, CNoteData> nd : wtx.mapNoteData) {
+                    if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
+                        tmp.at(nd.first).witnesses.assign(
+                            nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+                    }
+                }
+                // Now copy over the updated note data
+                wtx.mapNoteData = tmp;
+                fUpdated = true;
+            }
             if (wtxIn.fFromMe && wtxIn.fFromMe != wtx.fFromMe)
             {
                 wtx.fFromMe = wtxIn.fFromMe;
@@ -796,9 +976,14 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         AssertLockHeld(cs_wallet);
         bool fExisted = mapWallet.count(tx.GetTxid()) != 0;
         if (fExisted && !fUpdate) return false;
-        if (fExisted || IsMine(tx) || IsFromMe(tx))
+        auto noteData = FindMyNotes(tx);
+        if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
             CWalletTx wtx(this,tx);
+
+            if (noteData.size() > 0) {
+                wtx.SetNoteData(noteData);
+            }
 
             // Get merkle branch if transaction was found in a block
             if (pblock)
@@ -828,6 +1013,14 @@ void CWallet::SyncTransaction(const CTransaction& tx, const CBlock* pblock)
         if (mapWallet.count(txin.prevout.hash))
             mapWallet[txin.prevout.hash].MarkDirty();
     }
+    for (const JSDescription& jsdesc : tx.vjoinsplit) {
+        for (const uint256& nullifier : jsdesc.nullifiers) {
+            if (mapNullifiersToNotes.count(nullifier) &&
+                    mapWallet.count(mapNullifiersToNotes[nullifier].hash)) {
+                mapWallet[mapNullifiersToNotes[nullifier].hash].MarkDirty();
+            }
+        }
+    }
 }
 
 void CWallet::EraseFromWallet(const uint256 &hash)
@@ -842,6 +1035,86 @@ void CWallet::EraseFromWallet(const uint256 &hash)
     return;
 }
 
+
+mapNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
+{
+    LOCK(cs_SpendingKeyStore);
+    uint256 hash = tx.GetTxid();
+
+    mapNoteData_t noteData;
+    libzcash::SpendingKey key;
+    for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {
+        auto hSig = tx.vjoinsplit[i].h_sig(*pzcashParams, tx.joinSplitPubKey);
+        for (uint8_t j = 0; j < tx.vjoinsplit[i].ciphertexts.size(); j++) {
+            for (const NoteDecryptorMap::value_type& item : mapNoteDecryptors) {
+                try {
+                    auto note_pt = libzcash::NotePlaintext::decrypt(
+                        item.second,
+                        tx.vjoinsplit[i].ciphertexts[j],
+                        tx.vjoinsplit[i].ephemeralKey,
+                        hSig,
+                        (unsigned char) j);
+                    auto address = item.first;
+                    // Decryptors are only cached when SpendingKeys are added
+                    assert(GetSpendingKey(address, key));
+                    auto note = note_pt.note(address);
+                    JSOutPoint jsoutpt {hash, i, j};
+                    CNoteData nd {address, note.nullifier(key)};
+                    noteData.insert(std::make_pair(jsoutpt, nd));
+                    break;
+                } catch (const std::runtime_error &) {
+                    // Couldn't decrypt with this spending key
+                } catch (const std::exception &exc) {
+                    // Unexpected failure
+                    LogPrintf("FindMyNotes(): Unexpected error while testing decrypt:\n");
+                    LogPrintf("%s\n", exc.what());
+                }
+            }
+        }
+    }
+    return noteData;
+}
+
+bool CWallet::IsFromMe(const uint256& nullifier) const
+{
+    {
+        LOCK(cs_wallet);
+        if (mapNullifiersToNotes.count(nullifier) &&
+                mapWallet.count(mapNullifiersToNotes.at(nullifier).hash)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void CWallet::GetNoteWitnesses(std::vector<JSOutPoint> notes,
+                               std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
+                               uint256 &final_anchor)
+{
+    {
+        LOCK(cs_wallet);
+        witnesses.resize(notes.size());
+        boost::optional<uint256> rt;
+        int i = 0;
+        for (JSOutPoint note : notes) {
+            if (mapWallet.count(note.hash) &&
+                    mapWallet[note.hash].mapNoteData.count(note) &&
+                    mapWallet[note.hash].mapNoteData[note].witnesses.size() > 0) {
+                witnesses[i] = mapWallet[note.hash].mapNoteData[note].witnesses.front();
+                if (!rt) {
+                    rt = witnesses[i]->root();
+                } else {
+                    assert(*rt == witnesses[i]->root());
+                }
+            }
+            i++;
+        }
+        // All returned witnesses have the same anchor
+        if (rt) {
+            final_anchor = *rt;
+        }
+    }
+}
 
 isminetype CWallet::IsMine(const CTxIn &txin) const
 {
@@ -925,7 +1198,17 @@ bool CWallet::IsMine(const CTransaction& tx) const
 
 bool CWallet::IsFromMe(const CTransaction& tx) const
 {
-    return (GetDebit(tx, ISMINE_ALL) > 0);
+    if (GetDebit(tx, ISMINE_ALL) > 0) {
+        return true;
+    }
+    for (const JSDescription& jsdesc : tx.vjoinsplit) {
+        for (const uint256& nullifier : jsdesc.nullifiers) {
+            if (IsFromMe(nullifier)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 CAmount CWallet::GetDebit(const CTransaction& tx, const isminefilter& filter) const
@@ -962,6 +1245,22 @@ CAmount CWallet::GetChange(const CTransaction& tx) const
             throw std::runtime_error("CWallet::GetChange(): value out of range");
     }
     return nChange;
+}
+
+void CWalletTx::SetNoteData(mapNoteData_t &noteData)
+{
+    mapNoteData.clear();
+    for (const std::pair<JSOutPoint, CNoteData> nd : noteData) {
+        if (nd.first.js < vjoinsplit.size() &&
+                nd.first.n < vjoinsplit[nd.first.js].ciphertexts.size()) {
+            // Store the address and nullifier for the Note
+            mapNoteData[nd.first] = nd.second;
+        } else {
+            // If FindMyNotes() was used to obtain noteData,
+            // this should never happen
+            throw std::logic_error("CWalletTx::SetNoteData(): Invalid note");
+        }
+    }
 }
 
 int64_t CWalletTx::GetTxTime() const

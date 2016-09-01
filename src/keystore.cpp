@@ -87,6 +87,8 @@ bool CBasicKeyStore::HaveWatchOnly() const
 bool CBasicKeyStore::AddSpendingKey(const libzcash::SpendingKey &sk)
 {
     LOCK(cs_SpendingKeyStore);
-    mapSpendingKeys[sk.address()] = sk;
+    auto address = sk.address();
+    mapSpendingKeys[address] = sk;
+    mapNoteDecryptors.insert(std::make_pair(address, ZCNoteDecryption(sk.viewing_key())));
     return true;
 }

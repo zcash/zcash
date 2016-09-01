@@ -73,7 +73,8 @@ public:
         boost::array<uint256, NumOutputs>& out_commitments,
         uint64_t vpub_old,
         uint64_t vpub_new,
-        const uint256& rt
+        const uint256& rt,
+        bool computeProof = true
     ) = 0;
 
     virtual bool verify(

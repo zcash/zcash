@@ -27,3 +27,17 @@ TEST(keystore_tests, store_and_retrieve_spending_key) {
     EXPECT_EQ(1, addrs.size());
     EXPECT_EQ(1, addrs.count(addr));
 }
+
+TEST(keystore_tests, store_and_retrieve_note_decryptor) {
+    CBasicKeyStore keyStore;
+    ZCNoteDecryption decOut;
+
+    auto sk = libzcash::SpendingKey::random();
+    auto addr = sk.address();
+
+    EXPECT_FALSE(keyStore.GetNoteDecryptor(addr, decOut));
+
+    keyStore.AddSpendingKey(sk);
+    EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
+    EXPECT_EQ(ZCNoteDecryption(sk.viewing_key()), decOut);
+}

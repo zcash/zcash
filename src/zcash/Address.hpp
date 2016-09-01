@@ -23,7 +23,13 @@ public:
         READWRITE(pk_enc);
     }
 
-    friend inline bool operator<(const PaymentAddress& a, const PaymentAddress& b) { return a.a_pk < b.a_pk; }
+    friend inline bool operator==(const PaymentAddress& a, const PaymentAddress& b) {
+        return a.a_pk == b.a_pk && a.pk_enc == b.pk_enc;
+    }
+    friend inline bool operator<(const PaymentAddress& a, const PaymentAddress& b) {
+        return (a.a_pk < b.a_pk ||
+                (a.a_pk == b.a_pk && a.pk_enc < b.pk_enc));
+    }
 };
 
 class ViewingKey : public uint256 {

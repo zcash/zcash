@@ -7,6 +7,8 @@
 #define BITCOIN_WALLET_WALLET_H
 
 #include "amount.h"
+#include "coins.h"
+#include "consensus/consensus.h"
 #include "key.h"
 #include "keystore.h"
 #include "primitives/block.h"
@@ -52,6 +54,10 @@ static const unsigned int DEFAULT_TX_CONFIRM_TARGET = 2;
 static const CAmount nHighTransactionMaxFeeWarning = 100 * nHighTransactionFeeWarning;
 //! Largest (in bytes) free transaction we're willing to create
 static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 1000;
+//! Size of witness cache
+//  Should be large enough that we can expect not to reorg beyond our cache
+//  unless there is some exceptional network disruption.
+static const unsigned int WITNESS_CACHE_SIZE = COINBASE_MATURITY;
 
 class CAccountingEntry;
 class CBlockIndex;
@@ -146,6 +152,95 @@ struct COutputEntry
     int vout;
 };
 
+/** An note outpoint */
+class JSOutPoint
+{
+public:
+    // Transaction hash
+    uint256 hash;
+    // Index into CTransaction.vjoinsplit
+    size_t js;
+    // Index into JSDescription fields of length ZC_NUM_JS_OUTPUTS
+    uint8_t n;
+
+    JSOutPoint() { SetNull(); }
+    JSOutPoint(uint256 h, size_t js, uint8_t n) : hash {h}, js {js}, n {n} { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(hash);
+        READWRITE(js);
+        READWRITE(n);
+    }
+
+    void SetNull() { hash.SetNull(); }
+    bool IsNull() const { return hash.IsNull(); }
+
+    friend bool operator<(const JSOutPoint& a, const JSOutPoint& b) {
+        return (a.hash < b.hash ||
+                (a.hash == b.hash && a.js < b.js) ||
+                (a.hash == b.hash && a.js == b.js && a.n < b.n));
+    }
+
+    friend bool operator==(const JSOutPoint& a, const JSOutPoint& b) {
+        return (a.hash == b.hash && a.js == b.js && a.n == b.n);
+    }
+
+    friend bool operator!=(const JSOutPoint& a, const JSOutPoint& b) {
+        return !(a == b);
+    }
+
+    std::string ToString() const;
+};
+
+class CNoteData
+{
+public:
+    libzcash::PaymentAddress address;
+
+    // It's okay to cache the nullifier in the wallet, because we are storing
+    // the spending key there too, which could be used to derive this.
+    // If PR #1210 is merged, we need to revisit the threat model and decide
+    // whether it is okay to store this unencrypted while the spending key is
+    // encrypted.
+    uint256 nullifier;
+
+    /**
+     * Cached incremental witnesses for spendable Notes.
+     * Beginning of the list is the most recent witness.
+     */
+    std::list<ZCIncrementalWitness> witnesses;
+
+    CNoteData() : address(), nullifier() { }
+    CNoteData(libzcash::PaymentAddress a, uint256 n) : address {a}, nullifier {n} { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(address);
+        READWRITE(nullifier);
+        READWRITE(witnesses);
+    }
+
+    friend bool operator<(const CNoteData& a, const CNoteData& b) {
+        return (a.address < b.address ||
+                (a.address == b.address && a.nullifier < b.nullifier));
+    }
+
+    friend bool operator==(const CNoteData& a, const CNoteData& b) {
+        return (a.address == b.address && a.nullifier == b.nullifier);
+    }
+
+    friend bool operator!=(const CNoteData& a, const CNoteData& b) {
+        return !(a == b);
+    }
+};
+
+typedef std::map<JSOutPoint, CNoteData> mapNoteData_t;
+
 /** A transaction with a merkle branch linking it to the block chain. */
 class CMerkleTx : public CTransaction
 {
@@ -216,6 +311,7 @@ private:
 
 public:
     mapValue_t mapValue;
+    mapNoteData_t mapNoteData;
     std::vector<std::pair<std::string, std::string> > vOrderForm;
     unsigned int fTimeReceivedIsTxTime;
     unsigned int nTimeReceived; //! time received by this node
@@ -268,6 +364,7 @@ public:
     {
         pwallet = pwalletIn;
         mapValue.clear();
+        mapNoteData.clear();
         vOrderForm.clear();
         fTimeReceivedIsTxTime = false;
         nTimeReceived = 0;
@@ -317,6 +414,7 @@ public:
         std::vector<CMerkleTx> vUnused; //! Used to be vtxPrev
         READWRITE(vUnused);
         READWRITE(mapValue);
+        READWRITE(mapNoteData);
         READWRITE(vOrderForm);
         READWRITE(fTimeReceivedIsTxTime);
         READWRITE(nTimeReceived);
@@ -357,6 +455,8 @@ public:
         pwallet = pwalletIn;
         MarkDirty();
     }
+
+    void SetNoteData(mapNoteData_t &noteData);
 
     //! filter decides which addresses will count towards the debit
     CAmount GetDebit(const isminefilter& filter) const;
@@ -461,17 +561,43 @@ private:
     int64_t nLastResend;
     bool fBroadcastTransactions;
 
+    template <class T>
+    using TxSpendMap = std::multimap<T, uint256>;
     /**
      * Used to keep track of spent outpoints, and
      * detect and report conflicts (double-spends or
      * mutated transactions where the mutant gets mined).
      */
-    typedef std::multimap<COutPoint, uint256> TxSpends;
+    typedef TxSpendMap<COutPoint> TxSpends;
     TxSpends mapTxSpends;
+    /**
+     * Used to keep track of spent Notes, and
+     * detect and report conflicts (double-spends).
+     */
+    typedef TxSpendMap<uint256> TxNullifiers;
+    TxNullifiers mapTxNullifiers;
+
     void AddToSpends(const COutPoint& outpoint, const uint256& wtxid);
+    void AddToSpends(const uint256& nullifier, const uint256& wtxid);
     void AddToSpends(const uint256& wtxid);
 
-    void SyncMetaData(std::pair<TxSpends::iterator, TxSpends::iterator>);
+public:
+    /*
+     * Size of the incremental witness cache for the notes in our wallet.
+     * This will always be greater than or equal to the size of the largest
+     * incremental witness cache in any transaction in mapWallet.
+     */
+    int64_t nWitnessCacheSize;
+
+protected:
+    void IncrementNoteWitnesses(const CBlockIndex* pindex,
+                                const CBlock* pblock,
+                                ZCIncrementalMerkleTree tree);
+    void DecrementNoteWitnesses();
+
+private:
+    template <class T>
+    void SyncMetaData(std::pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator>);
 
 public:
     /*
@@ -525,8 +651,10 @@ public:
         nLastResend = 0;
         nTimeFirstKey = 0;
         fBroadcastTransactions = false;
+        nWitnessCacheSize = 0;
     }
 
+    std::map<uint256, JSOutPoint> mapNullifiersToNotes;
     std::map<uint256, CWalletTx> mapWallet;
 
     int64_t nOrderPosNext;
@@ -549,6 +677,7 @@ public:
     bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet) const;
 
     bool IsSpent(const uint256& hash, unsigned int n) const;
+    bool IsSpent(const uint256& nullifier) const;
 
     bool IsLockedCoin(uint256 hash, unsigned int n) const;
     void LockCoin(COutPoint& output);
@@ -628,6 +757,7 @@ public:
     TxItems OrderedTxItems(std::list<CAccountingEntry>& acentries, std::string strAccount = "");
 
     void MarkDirty();
+    void UpdateNullifierNoteMap(const CWalletTx& wtx);
     bool AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb);
     void SyncTransaction(const CTransaction& tx, const CBlock* pblock);
     bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate);
@@ -667,6 +797,13 @@ public:
 
     std::set<CTxDestination> GetAccountAddresses(std::string strAccount) const;
 
+    mapNoteData_t FindMyNotes(const CTransaction& tx) const;
+    bool IsFromMe(const uint256& nullifier) const;
+    void GetNoteWitnesses(
+         std::vector<JSOutPoint> notes,
+         std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
+         uint256 &final_anchor);
+
     isminetype IsMine(const CTxIn& txin) const;
     CAmount GetDebit(const CTxIn& txin, const isminefilter& filter) const;
     isminetype IsMine(const CTxOut& txout) const;
@@ -679,6 +816,7 @@ public:
     CAmount GetDebit(const CTransaction& tx, const isminefilter& filter) const;
     CAmount GetCredit(const CTransaction& tx, const isminefilter& filter) const;
     CAmount GetChange(const CTransaction& tx) const;
+    void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, ZCIncrementalMerkleTree tree, bool added);
     void SetBestChain(const CBlockLocator& loc);
 
     DBErrors LoadWallet(bool& fFirstRunRet);

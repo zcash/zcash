@@ -12,6 +12,7 @@
 #include "script/standard.h"
 #include "sync.h"
 #include "zcash/Address.hpp"
+#include "zcash/NoteEncryption.hpp"
 
 #include <boost/signals2/signal.hpp>
 #include <boost/variant.hpp>
@@ -60,6 +61,7 @@ typedef std::map<CKeyID, CKey> KeyMap;
 typedef std::map<CScriptID, CScript > ScriptMap;
 typedef std::set<CScript> WatchOnlySet;
 typedef std::map<libzcash::PaymentAddress, libzcash::SpendingKey> SpendingKeyMap;
+typedef std::map<libzcash::PaymentAddress, ZCNoteDecryption> NoteDecryptorMap;
 
 /** Basic key store, that keeps keys in an address->secret map */
 class CBasicKeyStore : public CKeyStore
@@ -69,6 +71,7 @@ protected:
     ScriptMap mapScripts;
     WatchOnlySet setWatchOnly;
     SpendingKeyMap mapSpendingKeys;
+    NoteDecryptorMap mapNoteDecryptors;
 
 public:
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
@@ -134,6 +137,19 @@ public:
             if (mi != mapSpendingKeys.end())
             {
                 skOut = mi->second;
+                return true;
+            }
+        }
+        return false;
+    }
+    bool GetNoteDecryptor(const libzcash::PaymentAddress &address, ZCNoteDecryption &decOut) const
+    {
+        {
+            LOCK(cs_SpendingKeyStore);
+            NoteDecryptorMap::const_iterator mi = mapNoteDecryptors.find(address);
+            if (mi != mapNoteDecryptors.end())
+            {
+                decOut = mi->second;
                 return true;
             }
         }
