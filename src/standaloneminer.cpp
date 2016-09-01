@@ -4,6 +4,7 @@
 #include "primitives/block.h"
 #include "serialize.h"
 #include "streams.h"
+#include "util.h"
 #include "utiltime.h"
 #include "version.h"
 
@@ -121,6 +122,13 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    ParseParameters(argc, argv);
+
+    // Zcash debugging
+    fDebug = !mapMultiArgs["-debug"].empty();
+    fPrintToConsole = GetBoolArg("-printtoconsole", false);
+
+    // Start the mining operation
     mine(
         Params(CBaseChainParams::MAIN).EquihashN(),
         Params(CBaseChainParams::MAIN).EquihashK(),
