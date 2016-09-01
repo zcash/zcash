@@ -146,6 +146,29 @@ CWalletTx GetValidSpend(const libzcash::SpendingKey& sk,
     return wtx;
 }
 
+TEST(wallet_tests, note_data_serialisation) {
+    auto sk = libzcash::SpendingKey::random();
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    mapNoteData_t noteData;
+    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+    CNoteData nd {sk.address(), nullifier};
+    ZCIncrementalMerkleTree tree;
+    nd.witnesses.push_front(tree.witness());
+    noteData[jsoutpt] = nd;
+
+    CDataStream ss(SER_DISK, CLIENT_VERSION);
+    ss << noteData;
+
+    mapNoteData_t noteData2;
+    ss >> noteData2;
+
+    EXPECT_EQ(noteData, noteData2);
+    EXPECT_EQ(noteData[jsoutpt].witnesses, noteData2[jsoutpt].witnesses);
+}
+
 TEST(wallet_tests, set_note_addrs_in_cwallettx) {
     auto sk = libzcash::SpendingKey::random();
     auto wtx = GetValidReceive(sk, 10, true);
