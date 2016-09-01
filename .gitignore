@@ -5,10 +5,10 @@ src/bitcoin
 src/zcashd
 src/zcash-cli
 src/zcash-gtest
+src/zcash-miner
 src/bitcoin-tx
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
-src/standaloneminer
 
 # Zcash utilities
 src/zcash/GenerateParams

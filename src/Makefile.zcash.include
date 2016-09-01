@@ -1,6 +1,6 @@
 bin_PROGRAMS += \
   zcash/GenerateParams \
-  standaloneminer
+  zcash-miner
 
 # tool for generating our public parameters
 zcash_GenerateParams_SOURCES = zcash/GenerateParams.cpp
@@ -11,8 +11,8 @@ zcash_GenerateParams_LDADD = \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZCASH_LIBS)
 
-standaloneminer_SOURCES = standaloneminer.cpp
-standaloneminer_LDADD = \
+zcash_miner_SOURCES = standaloneminer.cpp
+zcash_miner_LDADD = \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBBITCOIN_UTIL) \
