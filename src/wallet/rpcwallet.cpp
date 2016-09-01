@@ -2927,7 +2927,6 @@ Value z_sendmany(const Array& params, bool fHelp)
     if (fHelp || params.size() < 2 || params.size() > 3)
         throw runtime_error(
             "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf )\n"
-            "\n*** This alpha release supports multiple recipients, but only one of them can be a zaddr ***"
             "\nSend multiple times. Amounts are double-precision floating point numbers."
             "\nChange from a taddr flows to a new taddr address, while change from zaddr returns to itself."
             + HelpRequiringPassphrase() + "\n"
@@ -3039,10 +3038,6 @@ Value z_sendmany(const Array& params, bool fHelp)
             taddrRecipients.push_back( SendManyRecipient(address, nAmount, memo) );
         }
     }
-
-    // Limitation of z9 alpha, only one zaddr allowed in output.
-    if (zaddrRecipients.size() > 1)
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Too many zaddrs as recipients.  Alpha preview only allows one zaddr as a recipient");
 
     // Minimum confirmations
     int nMinDepth = 1;
