@@ -11,8 +11,14 @@
 
 #include "test/test_bitcoin.h"
 
+#include "zcash/Address.hpp"
+
+#include <fstream>
+#include <unordered_set>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/test/unit_test.hpp>
+#include <boost/format.hpp>
 
 using namespace std;
 using namespace json_spirit;
@@ -217,5 +223,204 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK(arr.size() > 0);
     BOOST_CHECK(CBitcoinAddress(arr[0].get_str()).Get() == demoAddress.Get());
 }
+
+/*
+ * This test covers RPC command z_exportwallet
+ */
+BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
+{
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    
+    // wallet should be empty
+    std::set<libzcash::PaymentAddress> addrs;
+    pwalletMain->GetPaymentAddresses(addrs);
+    BOOST_CHECK(addrs.size()==0);
+
+    // wallet should have one key
+    CZCPaymentAddress paymentAddress = pwalletMain->GenerateNewZKey();
+    pwalletMain->GetPaymentAddresses(addrs);
+    BOOST_CHECK(addrs.size()==1);
+    
+    BOOST_CHECK_THROW(CallRPC("z_exportwallet"), runtime_error);
+    
+   
+    boost::filesystem::path temp = boost::filesystem::temp_directory_path() /
+            boost::filesystem::unique_path();
+    const std::string path = temp.native();
+
+    BOOST_CHECK_NO_THROW(CallRPC(string("z_exportwallet ") + path));
+
+    auto addr = paymentAddress.Get();
+    libzcash::SpendingKey key;
+    BOOST_CHECK(pwalletMain->GetSpendingKey(addr, key));
+
+    std::string s1 = paymentAddress.ToString();
+    std::string s2 = CZCSpendingKey(key).ToString();
+    
+    // There's no way to really delete a private key so we will read in the
+    // exported wallet file and search for the spending key and payment address.
+    
+    EnsureWalletIsUnlocked();
+
+    ifstream file;
+    file.open(path.c_str(), std::ios::in | std::ios::ate);
+    BOOST_CHECK(file.is_open());
+    bool fVerified = false;
+    int64_t nFilesize = std::max((int64_t)1, (int64_t)file.tellg());
+    file.seekg(0, file.beg);
+    while (file.good()) {
+        std::string line;
+        std::getline(file, line);
+        if (line.empty() || line[0] == '#')
+            continue;
+        if (line.find(s1) != std::string::npos && line.find(s2) != std::string::npos) {
+            fVerified = true;
+            break;
+        }
+    }
+    BOOST_CHECK(fVerified);
+}
+
+
+/*
+ * This test covers RPC command z_importwallet
+ */
+BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
+{
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    
+    // error if no args
+    BOOST_CHECK_THROW(CallRPC("z_importwallet"), runtime_error);
+
+    // create a random key locally
+    auto testSpendingKey = libzcash::SpendingKey::random();
+    auto testPaymentAddress = testSpendingKey.address();
+    std::string testAddr = CZCPaymentAddress(testPaymentAddress).ToString();
+    std::string testKey = CZCSpendingKey(testSpendingKey).ToString();
+    
+    // create test data using the random key
+    std::string format_str = "# Wallet dump created by Zcash v0.11.2.0.z8-9155cc6-dirty (2016-08-11 11:37:00 -0700)\n"
+            "# * Created on 2016-08-12T21:55:36Z\n"
+            "# * Best block at time of backup was 0 (0de0a3851fef2d433b9b4f51d4342bdd24c5ddd793eb8fba57189f07e9235d52),\n"
+            "#   mined on 2009-01-03T18:15:05Z\n"
+            "\n"
+            "# Zkeys\n"
+            "\n"
+            "%s 2016-08-12T21:55:36Z # zaddr=%s\n"
+            "\n"
+            "\n# End of dump";
+    
+    boost::format formatobject(format_str);
+    std::string testWalletDump = (formatobject % testKey % testAddr).str();
+    
+    // write test data to file
+    boost::filesystem::path temp = boost::filesystem::temp_directory_path() /
+            boost::filesystem::unique_path();
+    const std::string path = temp.native();
+    std::ofstream file(path);
+    file << testWalletDump;
+    file << std::flush;
+
+    // wallet should currently be empty
+    std::set<libzcash::PaymentAddress> addrs;
+    pwalletMain->GetPaymentAddresses(addrs);
+    BOOST_CHECK(addrs.size()==0);
+    
+    // import test data from file into wallet
+    BOOST_CHECK_NO_THROW(CallRPC(string("z_importwallet ") + path));
+        
+    // wallet should now have one zkey
+    pwalletMain->GetPaymentAddresses(addrs);
+    BOOST_CHECK(addrs.size()==1);
+    
+    // check that we have the spending key for the address
+    CZCPaymentAddress address(testAddr);
+    auto addr = address.Get();
+    BOOST_CHECK(pwalletMain->HaveSpendingKey(addr));
+    
+    // Verify the spending key is the same as the test data
+    libzcash::SpendingKey k;
+    BOOST_CHECK(pwalletMain->GetSpendingKey(addr, k));
+    CZCSpendingKey spendingkey(k);
+    BOOST_CHECK_EQUAL(testKey, spendingkey.ToString());
+}
+
+
+/*
+ * This test covers RPC commands z_listaddresses, z_importkey, z_exportkey
+ */
+BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
+{
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    Value retValue;
+    int n1 = 1000; // number of times to import/export
+    int n2 = 1000; // number of addresses to create and list
+   
+    // error if no args
+    BOOST_CHECK_THROW(CallRPC("z_importkey"), runtime_error);   
+    BOOST_CHECK_THROW(CallRPC("z_exportkey"), runtime_error);   
+
+    // wallet should currently be empty
+    std::set<libzcash::PaymentAddress> addrs;
+    pwalletMain->GetPaymentAddresses(addrs);
+    BOOST_CHECK(addrs.size()==0);
+
+    // verify import and export key
+    for (int i = 0; i < n1; i++) {
+        // create a random key locally
+        auto testSpendingKey = libzcash::SpendingKey::random();
+        auto testPaymentAddress = testSpendingKey.address();
+        std::string testAddr = CZCPaymentAddress(testPaymentAddress).ToString();
+        std::string testKey = CZCSpendingKey(testSpendingKey).ToString();
+        BOOST_CHECK_NO_THROW(CallRPC(string("z_importkey ") + testKey));
+        BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportkey ") + testAddr));
+        BOOST_CHECK_EQUAL(retValue.get_str(), testKey);
+    }
+
+    // Verify we can list the keys imported
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
+    Array arr = retValue.get_array();
+    BOOST_CHECK(arr.size() == n1);
+
+    // Put addresses into a set
+    std::unordered_set<std::string> myaddrs;
+    for (Value element : arr) {
+        myaddrs.insert(element.get_str());
+    }
+    
+    // Make new addresses for the set
+    for (int i=0; i<n2; i++) {
+        myaddrs.insert((pwalletMain->GenerateNewZKey()).ToString());
+    }
+
+    // Verify number of addresses stored in wallet is n1+n2
+    int numAddrs = myaddrs.size();
+    BOOST_CHECK(numAddrs == n1+n2);
+    pwalletMain->GetPaymentAddresses(addrs);
+    BOOST_CHECK(addrs.size()==numAddrs);  
+    
+    // Ask wallet to list addresses
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
+    arr = retValue.get_array();
+    BOOST_CHECK(arr.size() == numAddrs);
+  
+    // Create a set from them
+    std::unordered_set<std::string> listaddrs;
+    for (Value element : arr) {
+        listaddrs.insert(element.get_str());
+    }
+    
+    // Verify the two sets of addresses are the same
+    BOOST_CHECK(listaddrs.size() == numAddrs);
+    BOOST_CHECK(myaddrs == listaddrs);
+
+    // Add one more address
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getnewaddress"));
+    std::string newaddress = retValue.get_str();
+    CZCPaymentAddress pa(newaddress);
+    auto newAddr = pa.Get();
+    BOOST_CHECK(pwalletMain->HaveSpendingKey(newAddr));
+}
+        
 
 BOOST_AUTO_TEST_SUITE_END()

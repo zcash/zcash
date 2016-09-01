@@ -74,7 +74,7 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
         entry.push_back(Pair("blockindex", wtx.nIndex));
         entry.push_back(Pair("blocktime", mapBlockIndex[wtx.hashBlock]->GetBlockTime()));
     }
-    uint256 hash = wtx.GetHash();
+    uint256 hash = wtx.GetTxid();
     entry.push_back(Pair("txid", hash.GetHex()));
     Array conflicts;
     BOOST_FOREACH(const uint256& conflict, wtx.GetConflicts())
@@ -439,7 +439,7 @@ Value sendtoaddress(const Array& params, bool fHelp)
 
     SendMoney(address.Get(), nAmount, fSubtractFeeFromAmount, wtx);
 
-    return wtx.GetHash().GetHex();
+    return wtx.GetTxid().GetHex();
 }
 
 Value listaddressgroupings(const Array& params, bool fHelp)
@@ -916,7 +916,7 @@ Value sendfrom(const Array& params, bool fHelp)
 
     SendMoney(address.Get(), nAmount, false, wtx);
 
-    return wtx.GetHash().GetHex();
+    return wtx.GetTxid().GetHex();
 }
 
 
@@ -1023,7 +1023,7 @@ Value sendmany(const Array& params, bool fHelp)
     if (!pwalletMain->CommitTransaction(wtx, keyChange))
         throw JSONRPCError(RPC_WALLET_ERROR, "Transaction commit failed");
 
-    return wtx.GetHash().GetHex();
+    return wtx.GetTxid().GetHex();
 }
 
 // Defined in rpcmisc.cpp
@@ -1135,7 +1135,7 @@ Value ListReceived(const Array& params, bool fByAccounts)
             tallyitem& item = mapTally[address];
             item.nAmount += txout.nValue;
             item.nConf = min(item.nConf, nDepth);
-            item.txids.push_back(wtx.GetHash());
+            item.txids.push_back(wtx.GetTxid());
             if (mine & ISMINE_WATCH_ONLY)
                 item.fIsWatchonly = true;
         }
@@ -2324,7 +2324,7 @@ Value listunspent(const Array& params, bool fHelp)
         CAmount nValue = out.tx->vout[out.i].nValue;
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
         Object entry;
-        entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
+        entry.push_back(Pair("txid", out.tx->GetTxid().GetHex()));
         entry.push_back(Pair("vout", out.i));
         CTxDestination address;
         if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
@@ -2438,7 +2438,12 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         } else if (benchmarktype == "verifyjoinsplit") {
             sample_times.push_back(benchmark_verify_joinsplit(samplejoinsplit));
         } else if (benchmarktype == "solveequihash") {
-            sample_times.push_back(benchmark_solve_equihash());
+            if (params.size() < 3) {
+                sample_times.push_back(benchmark_solve_equihash(true));
+            } else {
+                int nThreads = params[2].get_int();
+                sample_times.push_back(benchmark_solve_equihash_threaded(nThreads));
+            }
         } else if (benchmarktype == "verifyequihash") {
             sample_times.push_back(benchmark_verify_equihash());
         } else if (benchmarktype == "validatelargetx") {
@@ -2764,3 +2769,61 @@ Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp)
     result.push_back(Pair("zcviewingkey", viewing_hex));
     return result;
 }
+
+
+Value z_getnewaddress(const Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return Value::null;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_getnewaddress\n"
+            "\nReturns a new zaddr for receiving payments.\n"
+            "\nArguments:\n"
+            "\nResult:\n"
+            "\"zcashaddress\"    (string) The new zaddr\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_getnewaddress", "")
+            + HelpExampleRpc("z_getnewaddress", "")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    CZCPaymentAddress pubaddr = pwalletMain->GenerateNewZKey();
+    std::string result = pubaddr.ToString();
+    return result;
+}
+
+
+Value z_listaddresses(const Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return Value::null;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_listaddresses\n"
+            "\nReturns the list of zaddr belonging to the wallet.\n"
+            "\nArguments:\n"
+            "\nResult:\n"
+            "[                     (json array of string)\n"
+            "  \"zaddr\"           (string) a zaddr belonging to the wallet\n"
+            "  ,...\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_listaddresses", "")
+            + HelpExampleRpc("z_listaddresses", "")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    Array ret;
+    std::set<libzcash::PaymentAddress> addresses;
+    pwalletMain->GetPaymentAddresses(addresses);
+    for (auto addr : addresses ) {
+        ret.push_back(CZCPaymentAddress(addr).ToString());
+    }
+    return ret;
+}
+

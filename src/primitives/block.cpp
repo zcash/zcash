@@ -55,7 +55,7 @@ uint256 CBlock::BuildMerkleTree(bool* fMutated) const
     vMerkleTree.clear();
     vMerkleTree.reserve(vtx.size() * 2 + 16); // Safe upper bound for the number of total nodes.
     for (std::vector<CTransaction>::const_iterator it(vtx.begin()); it != vtx.end(); ++it)
-        vMerkleTree.push_back(it->GetHash());
+        vMerkleTree.push_back(it->GetTxid());
     int j = 0;
     bool mutated = false;
     for (int nSize = vtx.size(); nSize > 1; nSize = (nSize + 1) / 2)

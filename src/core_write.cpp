@@ -88,7 +88,7 @@ void ScriptPubKeyToUniv(const CScript& scriptPubKey,
 
 void TxToUniv(const CTransaction& tx, const uint256& hashBlock, UniValue& entry)
 {
-    entry.pushKV("txid", tx.GetHash().GetHex());
+    entry.pushKV("txid", tx.GetTxid().GetHex());
     entry.pushKV("version", tx.nVersion);
     entry.pushKV("locktime", (int64_t)tx.nLockTime);
 

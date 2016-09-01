@@ -25,6 +25,7 @@
 #include <boost/thread.hpp>
 
 using namespace std;
+using namespace libzcash;
 
 /**
  * Settings
@@ -58,7 +59,7 @@ struct CompareValueOnly
 
 std::string COutput::ToString() const
 {
-    return strprintf("COutput(%s, %d, %d) [%s]", tx->GetHash().ToString(), i, nDepth, FormatMoney(tx->vout[i].nValue));
+    return strprintf("COutput(%s, %d, %d) [%s]", tx->GetTxid().ToString(), i, nDepth, FormatMoney(tx->vout[i].nValue));
 }
 
 const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
@@ -68,6 +69,47 @@ const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
     if (it == mapWallet.end())
         return NULL;
     return &(it->second);
+}
+
+// Generate a new spending key and return its public payment address
+CZCPaymentAddress CWallet::GenerateNewZKey()
+{
+    AssertLockHeld(cs_wallet); // mapZKeyMetadata
+    auto k = SpendingKey::random();
+    auto addr = k.address();
+
+    // Check for collision, even though it is unlikely to ever occur
+    if (CCryptoKeyStore::HaveSpendingKey(addr))
+        throw std::runtime_error("CWallet::GenerateNewZKey(): Collision detected");
+
+    // Create new metadata
+    int64_t nCreationTime = GetTime();
+    mapZKeyMetadata[addr] = CKeyMetadata(nCreationTime);
+
+    CZCPaymentAddress pubaddr(addr);
+    if (!AddZKey(k))
+        throw std::runtime_error("CWallet::GenerateNewZKey(): AddZKey failed");
+    return pubaddr;
+}
+
+// Add spending key to keystore and persist to disk
+bool CWallet::AddZKey(const libzcash::SpendingKey &key)
+{
+    AssertLockHeld(cs_wallet); // mapZKeyMetadata
+    auto addr = key.address();
+
+    if (!CCryptoKeyStore::AddSpendingKey(key))
+        return false;
+
+    if (!fFileBacked)
+        return true;
+
+    if (!IsCrypted()) {
+        return CWalletDB(strWalletFile).WriteZKey(addr,
+                                                  key,
+                                                  mapZKeyMetadata[addr]);
+    }
+    return true;
 }
 
 CPubKey CWallet::GenerateNewKey()
@@ -149,9 +191,21 @@ bool CWallet::LoadKeyMetadata(const CPubKey &pubkey, const CKeyMetadata &meta)
     return true;
 }
 
+bool CWallet::LoadZKeyMetadata(const PaymentAddress &addr, const CKeyMetadata &meta)
+{
+    AssertLockHeld(cs_wallet); // mapZKeyMetadata
+    mapZKeyMetadata[addr] = meta;
+    return true;
+}
+
 bool CWallet::LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret)
 {
     return CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret);
+}
+
+bool CWallet::LoadZKey(const libzcash::SpendingKey &key)
+{
+    return CCryptoKeyStore::AddSpendingKey(key);
 }
 
 bool CWallet::AddCScript(const CScript& redeemScript)
@@ -613,7 +667,7 @@ void CWallet::MarkDirty()
 
 bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb)
 {
-    uint256 hash = wtxIn.GetHash();
+    uint256 hash = wtxIn.GetTxid();
 
     if (fFromLoadWallet)
     {
@@ -676,7 +730,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
                 }
                 else
                     LogPrintf("AddToWallet(): found %s in block %s not in index\n",
-                             wtxIn.GetHash().ToString(),
+                             wtxIn.GetTxid().ToString(),
                              wtxIn.hashBlock.ToString());
             }
             AddToSpends(hash);
@@ -705,7 +759,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
         }
 
         //// debug print
-        LogPrintf("AddToWallet %s  %s%s\n", wtxIn.GetHash().ToString(), (fInsertedNew ? "new" : ""), (fUpdated ? "update" : ""));
+        LogPrintf("AddToWallet %s  %s%s\n", wtxIn.GetTxid().ToString(), (fInsertedNew ? "new" : ""), (fUpdated ? "update" : ""));
 
         // Write to disk
         if (fInsertedNew || fUpdated)
@@ -723,7 +777,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
 
         if ( !strCmd.empty())
         {
-            boost::replace_all(strCmd, "%s", wtxIn.GetHash().GetHex());
+            boost::replace_all(strCmd, "%s", wtxIn.GetTxid().GetHex());
             boost::thread t(runCommand, strCmd); // thread runs free
         }
 
@@ -740,7 +794,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 {
     {
         AssertLockHeld(cs_wallet);
-        bool fExisted = mapWallet.count(tx.GetHash()) != 0;
+        bool fExisted = mapWallet.count(tx.GetTxid()) != 0;
         if (fExisted && !fUpdate) return false;
         if (fExisted || IsMine(tx) || IsFromMe(tx))
         {
@@ -935,7 +989,7 @@ int CWalletTx::GetRequestCount() const
         else
         {
             // Did anyone request this transaction?
-            map<uint256, int>::const_iterator mi = pwallet->mapRequestCount.find(GetHash());
+            map<uint256, int>::const_iterator mi = pwallet->mapRequestCount.find(GetTxid());
             if (mi != pwallet->mapRequestCount.end())
             {
                 nRequests = (*mi).second;
@@ -993,7 +1047,7 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
         if (!ExtractDestination(txout.scriptPubKey, address))
         {
             LogPrintf("CWalletTx::GetAmounts: Unknown transaction type found, txid %s\n",
-                     this->GetHash().ToString());
+                     this->GetTxid().ToString());
             address = CNoDestination();
         }
 
@@ -1048,7 +1102,7 @@ void CWalletTx::GetAccountAmounts(const string& strAccount, CAmount& nReceived,
 
 bool CWalletTx::WriteToDisk(CWalletDB *pwalletdb)
 {
-    return pwalletdb->WriteTx(GetHash(), *this);
+    return pwalletdb->WriteTx(GetTxid(), *this);
 }
 
 void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
@@ -1167,7 +1221,7 @@ void CWallet::ReacceptWalletTransactions()
     {
         const uint256& wtxid = item.first;
         CWalletTx& wtx = item.second;
-        assert(wtx.GetHash() == wtxid);
+        assert(wtx.GetTxid() == wtxid);
 
         int nDepth = wtx.GetDepthInMainChain();
 
@@ -1192,7 +1246,7 @@ bool CWalletTx::RelayWalletTransaction()
     if (!IsCoinBase())
     {
         if (GetDepthInMainChain() == 0) {
-            LogPrintf("Relaying wtx %s\n", GetHash().ToString());
+            LogPrintf("Relaying wtx %s\n", GetTxid().ToString());
             RelayTransaction((CTransaction)*this);
             return true;
         }
@@ -1205,7 +1259,7 @@ set<uint256> CWalletTx::GetConflicts() const
     set<uint256> result;
     if (pwallet != NULL)
     {
-        uint256 myHash = GetHash();
+        uint256 myHash = GetTxid();
         result = pwallet->GetConflicts(myHash);
         result.erase(myHash);
     }
@@ -1303,7 +1357,7 @@ CAmount CWalletTx::GetAvailableCredit(bool fUseCache) const
         return nAvailableCreditCached;
 
     CAmount nCredit = 0;
-    uint256 hashTx = GetHash();
+    uint256 hashTx = GetTxid();
     for (unsigned int i = 0; i < vout.size(); i++)
     {
         if (!pwallet->IsSpent(hashTx, i))
@@ -1349,7 +1403,7 @@ CAmount CWalletTx::GetAvailableWatchOnlyCredit(const bool& fUseCache) const
     CAmount nCredit = 0;
     for (unsigned int i = 0; i < vout.size(); i++)
     {
-        if (!pwallet->IsSpent(GetHash(), i))
+        if (!pwallet->IsSpent(GetTxid(), i))
         {
             const CTxOut &txout = vout[i];
             nCredit += pwallet->GetCredit(txout, ISMINE_WATCH_ONLY);
@@ -1418,7 +1472,7 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(int64_t nTime)
     {
         CWalletTx& wtx = *item.second;
         if (wtx.RelayWalletTransaction())
-            result.push_back(wtx.GetHash());
+            result.push_back(wtx.GetTxid());
     }
     return result;
 }
@@ -1954,7 +2008,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                 // Note how the sequence number is set to max()-1 so that the
                 // nLockTime set above actually works.
                 BOOST_FOREACH(const PAIRTYPE(const CWalletTx*,unsigned int)& coin, setCoins)
-                    txNew.vin.push_back(CTxIn(coin.first->GetHash(),coin.second,CScript(),
+                    txNew.vin.push_back(CTxIn(coin.first->GetTxid(),coin.second,CScript(),
                                               std::numeric_limits<unsigned int>::max()-1));
 
                 // Sign
@@ -2042,7 +2096,7 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
             {
                 CWalletTx &coin = mapWallet[txin.prevout.hash];
                 coin.BindWallet(this);
-                NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
+                NotifyTransactionChanged(this, coin.GetTxid(), CT_UPDATED);
             }
 
             if (fFileBacked)
@@ -2050,7 +2104,7 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
         }
 
         // Track how many getdata requests our transaction gets
-        mapRequestCount[wtxNew.GetHash()] = 0;
+        mapRequestCount[wtxNew.GetTxid()] = 0;
 
         if (fBroadcastTransactions)
         {
@@ -2781,7 +2835,7 @@ int CMerkleTx::GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet) const
     // Make sure the merkle branch connects to this block
     if (!fMerkleVerified)
     {
-        if (CBlock::CheckMerkleBranch(GetHash(), vMerkleBranch, nIndex) != pindex->hashMerkleRoot)
+        if (CBlock::CheckMerkleBranch(GetTxid(), vMerkleBranch, nIndex) != pindex->hashMerkleRoot)
             return 0;
         fMerkleVerified = true;
     }
@@ -2794,7 +2848,7 @@ int CMerkleTx::GetDepthInMainChain(const CBlockIndex* &pindexRet) const
 {
     AssertLockHeld(cs_main);
     int nResult = GetDepthInMainChainINTERNAL(pindexRet);
-    if (nResult == 0 && !mempool.exists(GetHash()))
+    if (nResult == 0 && !mempool.exists(GetTxid()))
         return -1; // Not in chain, not in mempool
 
     return nResult;

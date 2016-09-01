@@ -8,8 +8,7 @@
 #endif
 
 #include "init.h"
-#include "sodium.h"
-
+#include "crypto/common.h"
 #include "addrman.h"
 #include "amount.h"
 #include "checkpoints.h"
@@ -337,7 +336,6 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-whitebind=<addr>", _("Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6"));
     strUsage += HelpMessageOpt("-whitelist=<netmask>", _("Whitelist peers connecting from the given netmask or IP address. Can be specified multiple times.") +
         " " + _("Whitelisted peers cannot be DoS banned and their transactions are always relayed, even if they are already in the mempool, useful e.g. for a gateway"));
-        
 
 #ifdef ENABLE_WALLET
     strUsage += HelpMessageGroup(_("Wallet options:"));
@@ -605,8 +603,8 @@ static void ZC_LoadParams()
     struct timeval tv_start, tv_end;
     float elapsed;
 
-    boost::filesystem::path pk_path = ZC_GetParamsDir() / "z7-proving.key";
-    boost::filesystem::path vk_path = ZC_GetParamsDir() / "z7-verifying.key";
+    boost::filesystem::path pk_path = ZC_GetParamsDir() / "z9-proving.key";
+    boost::filesystem::path vk_path = ZC_GetParamsDir() / "z9-verifying.key";
 
     pzcashParams = ZCJoinSplit::Unopened();
 
@@ -907,7 +905,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 
     // Initialize libsodium
-    if (sodium_init() == -1) {
+    if (init_and_check_sodium() == -1) {
         return false;
     }
 
@@ -1384,7 +1382,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
                 BOOST_FOREACH(const CWalletTx& wtxOld, vWtx)
                 {
-                    uint256 hash = wtxOld.GetHash();
+                    uint256 hash = wtxOld.GetTxid();
                     std::map<uint256, CWalletTx>::iterator mi = pwalletMain->mapWallet.find(hash);
                     if (mi != pwalletMain->mapWallet.end())
                     {

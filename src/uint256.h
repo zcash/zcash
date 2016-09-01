@@ -19,7 +19,7 @@ class base_blob
 {
 protected:
     enum { WIDTH=BITS/8 };
-    uint8_t data[WIDTH];
+    alignas(uint32_t) uint8_t data[WIDTH];
 public:
     base_blob()
     {

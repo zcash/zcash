@@ -80,7 +80,7 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDe
             txs.push_back(objTx);
         }
         else
-            txs.push_back(tx.GetHash().GetHex());
+            txs.push_back(tx.GetTxid().GetHex());
     }
     result.push_back(Pair("tx", txs));
     result.push_back(Pair("time", block.GetBlockTime()));

@@ -211,7 +211,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
             dPriority = tx.ComputePriority(dPriority, nTxSize);
 
-            uint256 hash = tx.GetHash();
+            uint256 hash = tx.GetTxid();
             mempool.ApplyDeltas(hash, dPriority, nTotalIn);
 
             CFeeRate feeRate(nTotalIn-tx.GetValueOut(), nTxSize);
@@ -255,7 +255,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 continue;
 
             // Skip free transactions if we're past the minimum block size:
-            const uint256& hash = tx.GetHash();
+            const uint256& hash = tx.GetTxid();
             double dPriorityDelta = 0;
             CAmount nFeeDelta = 0;
             mempool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
@@ -302,7 +302,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if (fPrintPriority)
             {
                 LogPrintf("priority %.1f fee %s txid %s\n",
-                    dPriority, feeRate.ToString(), tx.GetHash().ToString());
+                    dPriority, feeRate.ToString(), tx.GetTxid().ToString());
             }
 
             // Add transactions that depend on this one to the priority queue
@@ -529,26 +529,16 @@ void static BitcoinMiner(CWallet *pwallet)
                 // (x_1, x_2, ...) = A(I, V, n, k)
                 LogPrint("pow", "Running Equihash solver with nNonce = %s\n",
                          pblock->nNonce.ToString());
-                std::set<std::vector<unsigned int>> solns;
-                try {
-                    std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck pos) {
-                        std::lock_guard<std::mutex> lock{m_cs};
-                        return cancelSolver;
-                    };
-                    EhOptimisedSolve(n, k, curr_state, solns, cancelled);
-                } catch (EhSolverCancelledException&) {
-                    LogPrint("pow", "Equihash solver cancelled\n");
-                    std::lock_guard<std::mutex> lock{m_cs};
-                    cancelSolver = false;
-                }
-                LogPrint("pow", "Solutions: %d\n", solns.size());
 
-                // Write the solution to the hash and compute the result.
-                for (auto soln : solns) {
+                std::function<bool(std::vector<unsigned char>)> validBlock =
+                        [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
+                        (std::vector<unsigned char> soln) {
+                    // Write the solution to the hash and compute the result.
+                    LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
 
                     if (UintToArith256(pblock->GetHash()) > hashTarget) {
-                        continue;
+                        return false;
                     }
 
                     // Found a solution
@@ -566,7 +556,20 @@ void static BitcoinMiner(CWallet *pwallet)
                     if (chainparams.MineBlocksOnDemand())
                         throw boost::thread_interrupted();
 
-                    break;
+                    return true;
+                };
+                std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck pos) {
+                    std::lock_guard<std::mutex> lock{m_cs};
+                    return cancelSolver;
+                };
+                try {
+                    // If we find a valid block, we rebuild
+                    if (EhOptimisedSolve(n, k, curr_state, validBlock, cancelled))
+                        break;
+                } catch (EhSolverCancelledException&) {
+                    LogPrint("pow", "Equihash solver cancelled\n");
+                    std::lock_guard<std::mutex> lock{m_cs};
+                    cancelSolver = false;
                 }
 
                 // Check for stop or if block needs to be rebuilt

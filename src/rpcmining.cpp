@@ -188,19 +188,13 @@ Value generate(const Array& params, bool fHelp)
                                               pblock->nNonce.size());
 
             // (x_1, x_2, ...) = A(I, V, n, k)
-            std::set<std::vector<unsigned int>> solns;
-            EhBasicSolveUncancellable(n, k, curr_state, solns);
-
-            for (auto soln : solns) {
-                bool isValid;
-                EhIsValidSolution(n, k, curr_state, soln, isValid);
-                assert(isValid);
+            std::function<bool(std::vector<unsigned char>)> validBlock =
+                    [&pblock](std::vector<unsigned char> soln) {
                 pblock->nSolution = soln;
-
-                if (CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus())) {
-                    goto endloop;
-                }
-            }
+                return CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus());
+            };
+            if (EhBasicSolveUncancellable(n, k, curr_state, validBlock))
+                goto endloop;
         }
 endloop:
         CValidationState state;
@@ -567,7 +561,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     int i = 0;
     BOOST_FOREACH (CTransaction& tx, pblock->vtx)
     {
-        uint256 txHash = tx.GetHash();
+        uint256 txHash = tx.GetTxid();
         setTxIndex[txHash] = i++;
 
         if (tx.IsCoinBase())

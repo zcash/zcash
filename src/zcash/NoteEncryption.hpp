@@ -37,8 +37,8 @@ public:
     }
 
     // Encrypts `message` with `pk_enc` and returns the ciphertext.
-    // This can only be called twice for a given instantiation before
-    // the nonce-space runs out.
+    // This is only called ZC_NUM_JS_OUTPUTS times for a given instantiation; 
+    // but can be called 255 times before the nonce-space runs out.
     Ciphertext encrypt(const uint256 &pk_enc,
                        const Plaintext &message
                       );
@@ -75,7 +75,7 @@ uint252 random_uint252();
 
 }
 
-typedef libzcash::NoteEncryption<ZC_NOTEPLAINTEXT_LEADING + ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE> ZCNoteEncryption;
-typedef libzcash::NoteDecryption<ZC_NOTEPLAINTEXT_LEADING + ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE> ZCNoteDecryption;
+typedef libzcash::NoteEncryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteEncryption;
+typedef libzcash::NoteDecryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteDecryption;
 
 #endif /* ZC_NOTE_ENCRYPTION_H_ */

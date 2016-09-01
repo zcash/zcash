@@ -145,7 +145,7 @@ public:
     unsigned int nTime;
     unsigned int nBits;
     uint256 nNonce;
-    std::vector<uint32_t> nSolution;
+    std::vector<unsigned char> nSolution;
 
     //! (memory only) Sequential id assigned to distinguish order in which blocks are received.
     uint32_t nSequenceId;

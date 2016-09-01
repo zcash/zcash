@@ -125,7 +125,7 @@ public:
     JoinSplitCircuit() {}
 
     bool verify(
-        const boost::array<unsigned char, ZKSNARK_PROOF_SIZE>& proof,
+        const ZCProof& proof,
         const uint256& pubKeyHash,
         const uint256& randomSeed,
         const boost::array<uint256, NumInputs>& macs,
@@ -139,32 +139,28 @@ public:
             throw std::runtime_error("JoinSplit verifying key not loaded");
         }
 
-        r1cs_ppzksnark_proof<ppzksnark_ppT> r1cs_proof;
-        std::stringstream ss;
-        std::string proof_str(proof.begin(), proof.end());
-        ss.str(proof_str);
-        ss >> r1cs_proof;
-
-        uint256 h_sig = this->h_sig(randomSeed, nullifiers, pubKeyHash);
-
-        auto witness = joinsplit_gadget<FieldT, NumInputs, NumOutputs>::witness_map(
-            rt,
-            h_sig,
-            macs,
-            nullifiers,
-            commitments,
-            vpub_old,
-            vpub_new
-        );
-
         try {
+            auto r1cs_proof = proof.to_libsnark_proof<r1cs_ppzksnark_proof<ppzksnark_ppT>>();
+
+            uint256 h_sig = this->h_sig(randomSeed, nullifiers, pubKeyHash);
+
+            auto witness = joinsplit_gadget<FieldT, NumInputs, NumOutputs>::witness_map(
+                rt,
+                h_sig,
+                macs,
+                nullifiers,
+                commitments,
+                vpub_old,
+                vpub_new
+            );
+
             return r1cs_ppzksnark_verifier_strong_IC<ppzksnark_ppT>(*vk, witness, r1cs_proof);
         } catch (...) {
             return false;
         }
     }
 
-    boost::array<unsigned char, ZKSNARK_PROOF_SIZE> prove(
+    ZCProof prove(
         const boost::array<JSInput, NumInputs>& inputs,
         const boost::array<JSOutput, NumOutputs>& outputs,
         boost::array<Note, NumOutputs>& out_notes,
@@ -264,23 +260,12 @@ public:
         // estimate that it doesn't matter if we check every time.
         pb.constraint_system.swap_AB_if_beneficial();
 
-        auto proof = r1cs_ppzksnark_prover<ppzksnark_ppT>(
+        return ZCProof(r1cs_ppzksnark_prover<ppzksnark_ppT>(
             *pk,
             primary_input,
             aux_input,
             pb.constraint_system
-        );
-
-        std::stringstream ss;
-        ss << proof;
-        std::string serialized_proof = ss.str();
-
-        boost::array<unsigned char, ZKSNARK_PROOF_SIZE> result_proof;
-        //std::cout << "proof size in bytes when serialized: " << serialized_proof.size() << std::endl;
-        assert(serialized_proof.size() == ZKSNARK_PROOF_SIZE);
-        memcpy(&result_proof[0], &serialized_proof[0], ZKSNARK_PROOF_SIZE);
-
-        return result_proof;
+        ));
     }
 };
 

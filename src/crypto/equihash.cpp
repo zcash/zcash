@@ -34,16 +34,109 @@ int Equihash<N,K>::InitialiseState(eh_HashState& base_state)
     memcpy(personalization+12, &le_K, 4);
     return crypto_generichash_blake2b_init_salt_personal(&base_state,
                                                          NULL, 0, // No key.
-                                                         N/8,
+                                                         (512/N)*N/8,
                                                          NULL,    // No salt.
                                                          personalization);
+}
+
+void GenerateHash(const eh_HashState& base_state, eh_index g,
+                  unsigned char* hash, size_t hLen)
+{
+    eh_HashState state;
+    state = base_state;
+    eh_index lei = htole32(g);
+    crypto_generichash_blake2b_update(&state, (const unsigned char*) &lei,
+                                      sizeof(eh_index));
+    crypto_generichash_blake2b_final(&state, hash, hLen);
+}
+
+void ExpandArray(const unsigned char* in, size_t in_len,
+                 unsigned char* out, size_t out_len,
+                 size_t bit_len, size_t byte_pad)
+{
+    assert(bit_len >= 8);
+    assert(8*sizeof(uint32_t) >= 7+bit_len);
+
+    size_t out_width { (bit_len+7)/8 + byte_pad };
+    assert(out_len == 8*out_width*in_len/bit_len);
+
+    uint32_t bit_len_mask { ((uint32_t)1 << bit_len) - 1 };
+
+    // The acc_bits least-significant bits of acc_value represent a bit sequence
+    // in big-endian order.
+    size_t acc_bits = 0;
+    uint32_t acc_value = 0;
+
+    size_t j = 0;
+    for (size_t i = 0; i < in_len; i++) {
+        acc_value = (acc_value << 8) | in[i];
+        acc_bits += 8;
+
+        // When we have bit_len or more bits in the accumulator, write the next
+        // output element.
+        if (acc_bits >= bit_len) {
+            acc_bits -= bit_len;
+            for (size_t x = 0; x < byte_pad; x++) {
+                out[j+x] = 0;
+            }
+            for (size_t x = byte_pad; x < out_width; x++) {
+                out[j+x] = (
+                    // Big-endian
+                    acc_value >> (acc_bits+(8*(out_width-x-1)))
+                ) & (
+                    // Apply bit_len_mask across byte boundaries
+                    (bit_len_mask >> (8*(out_width-x-1))) & 0xFF
+                );
+            }
+            j += out_width;
+        }
+    }
+}
+
+void CompressArray(const unsigned char* in, size_t in_len,
+                   unsigned char* out, size_t out_len,
+                   size_t bit_len, size_t byte_pad)
+{
+    assert(bit_len >= 8);
+    assert(8*sizeof(uint32_t) >= 7+bit_len);
+
+    size_t in_width { (bit_len+7)/8 + byte_pad };
+    assert(out_len == bit_len*in_len/(8*in_width));
+
+    uint32_t bit_len_mask { ((uint32_t)1 << bit_len) - 1 };
+
+    // The acc_bits least-significant bits of acc_value represent a bit sequence
+    // in big-endian order.
+    size_t acc_bits = 0;
+    uint32_t acc_value = 0;
+
+    size_t j = 0;
+    for (size_t i = 0; i < out_len; i++) {
+        // When we have fewer than 8 bits left in the accumulator, read the next
+        // input element.
+        if (acc_bits < 8) {
+            acc_value = acc_value << bit_len;
+            for (size_t x = byte_pad; x < in_width; x++) {
+                acc_value = acc_value | (
+                    (
+                        // Apply bit_len_mask across byte boundaries
+                        in[j+x] & ((bit_len_mask >> (8*(in_width-x-1))) & 0xFF)
+                    ) << (8*(in_width-x-1))); // Big-endian
+            }
+            j += in_width;
+            acc_bits += bit_len;
+        }
+
+        acc_bits -= 8;
+        out[i] = (acc_value >> acc_bits) & 0xFF;
+    }
 }
 
 // Big-endian so that lexicographic array comparison is equivalent to integer
 // comparison
 void EhIndexToArray(const eh_index i, unsigned char* array)
 {
-    assert(sizeof(eh_index) == 4);
+    BOOST_STATIC_ASSERT(sizeof(eh_index) == 4);
     eh_index bei = htobe32(i);
     memcpy(array, &bei, sizeof(eh_index));
 }
@@ -52,7 +145,7 @@ void EhIndexToArray(const eh_index i, unsigned char* array)
 // comparison
 eh_index ArrayToEhIndex(const unsigned char* array)
 {
-    assert(sizeof(eh_index) == 4);
+    BOOST_STATIC_ASSERT(sizeof(eh_index) == 4);
     eh_index bei;
     memcpy(&bei, array, sizeof(eh_index));
     return be32toh(bei);
@@ -61,7 +154,7 @@ eh_index ArrayToEhIndex(const unsigned char* array)
 eh_trunc TruncateIndex(const eh_index i, const unsigned int ilen)
 {
     // Truncate to 8 bits
-    assert(sizeof(eh_trunc) == 1);
+    BOOST_STATIC_ASSERT(sizeof(eh_trunc) == 1);
     return (i >> (ilen - 8)) & 0xff;
 }
 
@@ -71,30 +164,60 @@ eh_index UntruncateIndex(const eh_trunc t, const eh_index r, const unsigned int 
     return (i << (ilen - 8)) | r;
 }
 
-template<size_t WIDTH>
-StepRow<WIDTH>::StepRow(unsigned int n, const eh_HashState& base_state, eh_index i)
+std::vector<eh_index> GetIndicesFromMinimal(std::vector<unsigned char> minimal,
+                                            size_t cBitLen)
 {
-    eh_HashState state;
-    state = base_state;
-    unsigned char array[sizeof(eh_index)];
-    eh_index lei = htole32(i);
-    memcpy(array, &lei, sizeof(eh_index));
-    crypto_generichash_blake2b_update(&state, array, sizeof(eh_index));
-    crypto_generichash_blake2b_final(&state, hash, n/8);
+    assert(((cBitLen+1)+7)/8 <= sizeof(eh_index));
+    size_t lenIndices { 8*sizeof(eh_index)*minimal.size()/(cBitLen+1) };
+    size_t bytePad { sizeof(eh_index) - ((cBitLen+1)+7)/8 };
+    std::vector<unsigned char> array(lenIndices);
+    ExpandArray(minimal.data(), minimal.size(),
+                array.data(), lenIndices, cBitLen+1, bytePad);
+    std::vector<eh_index> ret;
+    for (int i = 0; i < lenIndices; i += sizeof(eh_index)) {
+        ret.push_back(ArrayToEhIndex(array.data()+i));
+    }
+    return ret;
+}
+
+std::vector<unsigned char> GetMinimalFromIndices(std::vector<eh_index> indices,
+                                                 size_t cBitLen)
+{
+    assert(((cBitLen+1)+7)/8 <= sizeof(eh_index));
+    size_t lenIndices { indices.size()*sizeof(eh_index) };
+    size_t minLen { (cBitLen+1)*lenIndices/(8*sizeof(eh_index)) };
+    size_t bytePad { sizeof(eh_index) - ((cBitLen+1)+7)/8 };
+    std::vector<unsigned char> array(lenIndices);
+    for (int i = 0; i < indices.size(); i++) {
+        EhIndexToArray(indices[i], array.data()+(i*sizeof(eh_index)));
+    }
+    std::vector<unsigned char> ret(minLen);
+    CompressArray(array.data(), lenIndices,
+                  ret.data(), minLen, cBitLen+1, bytePad);
+    return ret;
+}
+
+template<size_t WIDTH>
+StepRow<WIDTH>::StepRow(const unsigned char* hashIn, size_t hInLen,
+                        size_t hLen, size_t cBitLen)
+{
+    assert(hLen <= WIDTH);
+    ExpandArray(hashIn, hInLen, hash, hLen, cBitLen);
 }
 
 template<size_t WIDTH> template<size_t W>
 StepRow<WIDTH>::StepRow(const StepRow<W>& a)
 {
-    assert(W <= WIDTH);
+    BOOST_STATIC_ASSERT(W <= WIDTH);
     std::copy(a.hash, a.hash+W, hash);
 }
 
 template<size_t WIDTH>
-FullStepRow<WIDTH>::FullStepRow(unsigned int n, const eh_HashState& base_state, eh_index i) :
-        StepRow<WIDTH> {n, base_state, i}
+FullStepRow<WIDTH>::FullStepRow(const unsigned char* hashIn, size_t hInLen,
+                                size_t hLen, size_t cBitLen, eh_index i) :
+        StepRow<WIDTH> {hashIn, hInLen, hLen, cBitLen}
 {
-    EhIndexToArray(i, hash+(n/8));
+    EhIndexToArray(i, hash+hLen);
 }
 
 template<size_t WIDTH> template<size_t W>
@@ -133,12 +256,14 @@ bool StepRow<WIDTH>::IsZero(size_t len)
 }
 
 template<size_t WIDTH>
-std::vector<eh_index> FullStepRow<WIDTH>::GetIndices(size_t len, size_t lenIndices) const
+std::vector<unsigned char> FullStepRow<WIDTH>::GetIndices(size_t len, size_t lenIndices,
+                                                          size_t cBitLen) const
 {
-    std::vector<eh_index> ret;
-    for (int i = 0; i < lenIndices; i += sizeof(eh_index)) {
-        ret.push_back(ArrayToEhIndex(hash+len+i));
-    }
+    assert(((cBitLen+1)+7)/8 <= sizeof(eh_index));
+    size_t minLen { (cBitLen+1)*lenIndices/(8*sizeof(eh_index)) };
+    size_t bytePad { sizeof(eh_index) - ((cBitLen+1)+7)/8 };
+    std::vector<unsigned char> ret(minLen);
+    CompressArray(hash+len, lenIndices, ret.data(), minLen, cBitLen+1, bytePad);
     return ret;
 }
 
@@ -154,10 +279,12 @@ bool HasCollision(StepRow<WIDTH>& a, StepRow<WIDTH>& b, int l)
 }
 
 template<size_t WIDTH>
-TruncatedStepRow<WIDTH>::TruncatedStepRow(unsigned int n, const eh_HashState& base_state, eh_index i, unsigned int ilen) :
-        StepRow<WIDTH> {n, base_state, i}
+TruncatedStepRow<WIDTH>::TruncatedStepRow(const unsigned char* hashIn, size_t hInLen,
+                                          size_t hLen, size_t cBitLen,
+                                          eh_index i, unsigned int ilen) :
+        StepRow<WIDTH> {hashIn, hInLen, hLen, cBitLen}
 {
-    hash[n/8] = TruncateIndex(i, ilen);
+    hash[hLen] = TruncateIndex(i, ilen);
 }
 
 template<size_t WIDTH> template<size_t W>
@@ -187,24 +314,31 @@ TruncatedStepRow<WIDTH>& TruncatedStepRow<WIDTH>::operator=(const TruncatedStepR
 template<size_t WIDTH>
 std::shared_ptr<eh_trunc> TruncatedStepRow<WIDTH>::GetTruncatedIndices(size_t len, size_t lenIndices) const
 {
-    std::shared_ptr<eh_trunc> p (new eh_trunc[lenIndices]);
+    std::shared_ptr<eh_trunc> p (new eh_trunc[lenIndices], std::default_delete<eh_trunc[]>());
     std::copy(hash+len, hash+len+lenIndices, p.get());
     return p;
 }
 
 template<unsigned int N, unsigned int K>
-std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled)
+bool Equihash<N,K>::BasicSolve(const eh_HashState& base_state,
+                               const std::function<bool(std::vector<unsigned char>)> validBlock,
+                               const std::function<bool(EhSolverCancelCheck)> cancelled)
 {
     eh_index init_size { 1 << (CollisionBitLength + 1) };
 
     // 1) Generate first list
     LogPrint("pow", "Generating first list\n");
-    size_t hashLen = N/8;
+    size_t hashLen = HashLength;
     size_t lenIndices = sizeof(eh_index);
     std::vector<FullStepRow<FullWidth>> X;
     X.reserve(init_size);
-    for (eh_index i = 0; i < init_size; i++) {
-        X.emplace_back(N, base_state, i);
+    unsigned char tmpHash[HashOutput];
+    for (eh_index g = 0; X.size() < init_size; g++) {
+        GenerateHash(base_state, g, tmpHash, HashOutput);
+        for (eh_index i = 0; i < IndicesPerHashOutput && X.size() < init_size; i++) {
+            X.emplace_back(tmpHash+(i*N/8), N/8, HashLength,
+                           CollisionBitLength, (g*IndicesPerHashOutput)+i);
+        }
         if (cancelled(ListGeneration)) throw solver_cancelled;
     }
 
@@ -269,7 +403,6 @@ std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& ba
 
     // k+1) Find a collision on last 2n(k+1) bits
     LogPrint("pow", "Final round:\n");
-    std::set<std::vector<eh_index>> solns;
     if (X.size() > 1) {
         LogPrint("pow", "- Sorting list\n");
         std::sort(X.begin(), X.end(), CompareSR(hashLen));
@@ -287,7 +420,11 @@ std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& ba
                 for (int m = l + 1; m < j; m++) {
                     FullStepRow<FinalFullWidth> res(X[i+l], X[i+m], hashLen, lenIndices, 0);
                     if (DistinctIndices(X[i+l], X[i+m], hashLen, lenIndices)) {
-                        solns.insert(res.GetIndices(hashLen, 2*lenIndices));
+                        auto soln = res.GetIndices(hashLen, 2*lenIndices, CollisionBitLength);
+                        assert(soln.size() == equihash_solution_size(N, K));
+                        if (validBlock(soln)) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -298,7 +435,7 @@ std::set<std::vector<eh_index>> Equihash<N,K>::BasicSolve(const eh_HashState& ba
     } else
         LogPrint("pow", "- List is empty\n");
 
-    return solns;
+    return false;
 }
 
 template<size_t WIDTH>
@@ -354,27 +491,33 @@ void CollideBranches(std::vector<FullStepRow<WIDTH>>& X, const size_t hlen, cons
 }
 
 template<unsigned int N, unsigned int K>
-std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled)
+bool Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state,
+                                   const std::function<bool(std::vector<unsigned char>)> validBlock,
+                                   const std::function<bool(EhSolverCancelCheck)> cancelled)
 {
     eh_index init_size { 1 << (CollisionBitLength + 1) };
     eh_index recreate_size { UntruncateIndex(1, 0, CollisionBitLength + 1) };
 
     // First run the algorithm with truncated indices
 
-    eh_index soln_size { 1 << K };
+    const eh_index soln_size { 1 << K };
     std::vector<std::shared_ptr<eh_trunc>> partialSolns;
-    std::set<std::vector<eh_index>> solns;
     int invalidCount = 0;
     {
 
         // 1) Generate first list
         LogPrint("pow", "Generating first list\n");
-        size_t hashLen = N/8;
+        size_t hashLen = HashLength;
         size_t lenIndices = sizeof(eh_trunc);
         std::vector<TruncatedStepRow<TruncatedWidth>> Xt;
         Xt.reserve(init_size);
-        for (eh_index i = 0; i < init_size; i++) {
-            Xt.emplace_back(N, base_state, i, CollisionBitLength + 1);
+        unsigned char tmpHash[HashOutput];
+        for (eh_index g = 0; Xt.size() < init_size; g++) {
+            GenerateHash(base_state, g, tmpHash, HashOutput);
+            for (eh_index i = 0; i < IndicesPerHashOutput && Xt.size() < init_size; i++) {
+                Xt.emplace_back(tmpHash+(i*N/8), N/8, HashLength, CollisionBitLength,
+                                (g*IndicesPerHashOutput)+i, CollisionBitLength + 1);
+            }
             if (cancelled(ListGeneration)) throw solver_cancelled;
         }
 
@@ -399,10 +542,18 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
                 }
 
                 // 2c) Calculate tuples (X_i ^ X_j, (i, j))
+                bool checking_for_zero = (i == 0 && Xt[0].IsZero(hashLen));
                 for (int l = 0; l < j - 1; l++) {
                     for (int m = l + 1; m < j; m++) {
                         // We truncated, so don't check for distinct indices here
-                        Xc.emplace_back(Xt[i+l], Xt[i+m], hashLen, lenIndices, CollisionByteLength);
+                        TruncatedStepRow<TruncatedWidth> Xi {Xt[i+l], Xt[i+m],
+                                                             hashLen, lenIndices,
+                                                             CollisionByteLength};
+                        if (!(Xi.IsZero(hashLen-CollisionByteLength) &&
+                              IsProbablyDuplicate<soln_size>(Xi.GetTruncatedIndices(hashLen-CollisionByteLength, 2*lenIndices),
+                                                             2*lenIndices))) {
+                            Xc.emplace_back(Xi);
+                        }
                     }
                 }
 
@@ -453,8 +604,12 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
 
                 for (int l = 0; l < j - 1; l++) {
                     for (int m = l + 1; m < j; m++) {
-                        TruncatedStepRow<FinalTruncatedWidth> res(Xt[i+l], Xt[i+m], hashLen, lenIndices, 0);
-                        partialSolns.push_back(res.GetTruncatedIndices(hashLen, 2*lenIndices));
+                        TruncatedStepRow<FinalTruncatedWidth> res(Xt[i+l], Xt[i+m],
+                                                                  hashLen, lenIndices, 0);
+                        auto soln = res.GetTruncatedIndices(hashLen, 2*lenIndices);
+                        if (!IsProbablyDuplicate<soln_size>(soln, 2*lenIndices)) {
+                            partialSolns.push_back(soln);
+                        }
                     }
                 }
 
@@ -471,8 +626,10 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
     // Now for each solution run the algorithm again to recreate the indices
     LogPrint("pow", "Culling solutions\n");
     for (std::shared_ptr<eh_trunc> partialSoln : partialSolns) {
+        std::set<std::vector<unsigned char>> solns;
         size_t hashLen;
         size_t lenIndices;
+        unsigned char tmpHash[HashOutput];
         std::vector<boost::optional<std::vector<FullStepRow<FinalFullWidth>>>> X;
         X.reserve(K+1);
 
@@ -483,13 +640,18 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
             icv.reserve(recreate_size);
             for (eh_index j = 0; j < recreate_size; j++) {
                 eh_index newIndex { UntruncateIndex(partialSoln.get()[i], j, CollisionBitLength + 1) };
-                icv.emplace_back(N, base_state, newIndex);
+                if (j == 0 || newIndex % IndicesPerHashOutput == 0) {
+                    GenerateHash(base_state, newIndex/IndicesPerHashOutput,
+                                 tmpHash, HashOutput);
+                }
+                icv.emplace_back(tmpHash+((newIndex % IndicesPerHashOutput) * N/8),
+                                 N/8, HashLength, CollisionBitLength, newIndex);
                 if (cancelled(PartialGeneration)) throw solver_cancelled;
             }
             boost::optional<std::vector<FullStepRow<FinalFullWidth>>> ic = icv;
 
             // 2a) For each pair of lists:
-            hashLen = N/8;
+            hashLen = HashLength;
             lenIndices = sizeof(eh_index);
             size_t rti = i;
             for (size_t r = 0; r <= K; r++) {
@@ -531,7 +693,13 @@ std::set<std::vector<eh_index>> Equihash<N,K>::OptimisedSolve(const eh_HashState
         // We are at the top of the tree
         assert(X.size() == K+1);
         for (FullStepRow<FinalFullWidth> row : *X[K]) {
-            solns.insert(row.GetIndices(hashLen, lenIndices));
+            auto soln = row.GetIndices(hashLen, lenIndices, CollisionBitLength);
+            assert(soln.size() == equihash_solution_size(N, K));
+            solns.insert(soln);
+        }
+        for (auto soln : solns) {
+            if (validBlock(soln))
+                return true;
         }
         if (cancelled(PartialEnd)) throw solver_cancelled;
         continue;
@@ -541,25 +709,28 @@ invalidsolution:
     }
     LogPrint("pow", "- Number of invalid solutions found: %d\n", invalidCount);
 
-    return solns;
+    return false;
 }
 
 template<unsigned int N, unsigned int K>
-bool Equihash<N,K>::IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln)
+bool Equihash<N,K>::IsValidSolution(const eh_HashState& base_state, std::vector<unsigned char> soln)
 {
-    eh_index soln_size { 1u << K };
-    if (soln.size() != soln_size) {
-        LogPrint("pow", "Invalid solution size: %d\n", soln.size());
+    if (soln.size() != SolutionWidth) {
+        LogPrint("pow", "Invalid solution length: %d (expected %d)\n",
+                 soln.size(), SolutionWidth);
         return false;
     }
 
     std::vector<FullStepRow<FinalFullWidth>> X;
-    X.reserve(soln_size);
-    for (eh_index i : soln) {
-        X.emplace_back(N, base_state, i);
+    X.reserve(1 << K);
+    unsigned char tmpHash[HashOutput];
+    for (eh_index i : GetIndicesFromMinimal(soln, CollisionBitLength)) {
+        GenerateHash(base_state, i/IndicesPerHashOutput, tmpHash, HashOutput);
+        X.emplace_back(tmpHash+((i % IndicesPerHashOutput) * N/8),
+                       N/8, HashLength, CollisionBitLength, i);
     }
 
-    size_t hashLen = N/8;
+    size_t hashLen = HashLength;
     size_t lenIndices = sizeof(eh_index);
     while (X.size() > 1) {
         std::vector<FullStepRow<FinalFullWidth>> Xc;
@@ -591,18 +762,40 @@ bool Equihash<N,K>::IsValidSolution(const eh_HashState& base_state, std::vector<
 
 // Explicit instantiations for Equihash<96,3>
 template int Equihash<96,3>::InitialiseState(eh_HashState& base_state);
-template std::set<std::vector<eh_index>> Equihash<96,3>::BasicSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
-template std::set<std::vector<eh_index>> Equihash<96,3>::OptimisedSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
-template bool Equihash<96,3>::IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln);
+template bool Equihash<96,3>::BasicSolve(const eh_HashState& base_state,
+                                         const std::function<bool(std::vector<unsigned char>)> validBlock,
+                                         const std::function<bool(EhSolverCancelCheck)> cancelled);
+template bool Equihash<96,3>::OptimisedSolve(const eh_HashState& base_state,
+                                             const std::function<bool(std::vector<unsigned char>)> validBlock,
+                                             const std::function<bool(EhSolverCancelCheck)> cancelled);
+template bool Equihash<96,3>::IsValidSolution(const eh_HashState& base_state, std::vector<unsigned char> soln);
+
+// Explicit instantiations for Equihash<200,9>
+template int Equihash<200,9>::InitialiseState(eh_HashState& base_state);
+template bool Equihash<200,9>::BasicSolve(const eh_HashState& base_state,
+                                          const std::function<bool(std::vector<unsigned char>)> validBlock,
+                                          const std::function<bool(EhSolverCancelCheck)> cancelled);
+template bool Equihash<200,9>::OptimisedSolve(const eh_HashState& base_state,
+                                              const std::function<bool(std::vector<unsigned char>)> validBlock,
+                                              const std::function<bool(EhSolverCancelCheck)> cancelled);
+template bool Equihash<200,9>::IsValidSolution(const eh_HashState& base_state, std::vector<unsigned char> soln);
 
 // Explicit instantiations for Equihash<96,5>
 template int Equihash<96,5>::InitialiseState(eh_HashState& base_state);
-template std::set<std::vector<eh_index>> Equihash<96,5>::BasicSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
-template std::set<std::vector<eh_index>> Equihash<96,5>::OptimisedSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
-template bool Equihash<96,5>::IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln);
+template bool Equihash<96,5>::BasicSolve(const eh_HashState& base_state,
+                                         const std::function<bool(std::vector<unsigned char>)> validBlock,
+                                         const std::function<bool(EhSolverCancelCheck)> cancelled);
+template bool Equihash<96,5>::OptimisedSolve(const eh_HashState& base_state,
+                                             const std::function<bool(std::vector<unsigned char>)> validBlock,
+                                             const std::function<bool(EhSolverCancelCheck)> cancelled);
+template bool Equihash<96,5>::IsValidSolution(const eh_HashState& base_state, std::vector<unsigned char> soln);
 
 // Explicit instantiations for Equihash<48,5>
 template int Equihash<48,5>::InitialiseState(eh_HashState& base_state);
-template std::set<std::vector<eh_index>> Equihash<48,5>::BasicSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
-template std::set<std::vector<eh_index>> Equihash<48,5>::OptimisedSolve(const eh_HashState& base_state, const std::function<bool(EhSolverCancelCheck)> cancelled);
-template bool Equihash<48,5>::IsValidSolution(const eh_HashState& base_state, std::vector<eh_index> soln);
+template bool Equihash<48,5>::BasicSolve(const eh_HashState& base_state,
+                                         const std::function<bool(std::vector<unsigned char>)> validBlock,
+                                         const std::function<bool(EhSolverCancelCheck)> cancelled);
+template bool Equihash<48,5>::OptimisedSolve(const eh_HashState& base_state,
+                                             const std::function<bool(std::vector<unsigned char>)> validBlock,
+                                             const std::function<bool(EhSolverCancelCheck)> cancelled);
+template bool Equihash<48,5>::IsValidSolution(const eh_HashState& base_state, std::vector<unsigned char> soln);

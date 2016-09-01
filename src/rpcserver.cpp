@@ -254,10 +254,10 @@ Value stop(const Array& params, bool fHelp)
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "stop\n"
-            "\nStop Bitcoin server.");
+            "\nStop Zcash server.");
     // Shutdown will take long enough that the response should get back
     StartShutdown();
-    return "Bitcoin server stopping";
+    return "Zcash server stopping";
 }
 
 
@@ -381,7 +381,13 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "zcrawkeygen",            &zc_raw_keygen,          true  },
     { "wallet",             "zcrawjoinsplit",         &zc_raw_joinsplit,       true  },
     { "wallet",             "zcrawreceive",           &zc_raw_receive,         true  },
-    { "wallet",             "zcsamplejoinsplit",      &zc_sample_joinsplit,    true  }
+    { "wallet",             "zcsamplejoinsplit",      &zc_sample_joinsplit,    true  },
+    { "wallet",             "z_getnewaddress",        &z_getnewaddress,        true  },
+    { "wallet",             "z_listaddresses",        &z_listaddresses,        true  },
+    { "wallet",             "z_exportkey",            &z_exportkey,            true  },
+    { "wallet",             "z_importkey",            &z_importkey,            true  },
+    { "wallet",             "z_exportwallet",         &z_exportwallet,         true  },
+    { "wallet",             "z_importwallet",         &z_importwallet,         true  }
 #endif // ENABLE_WALLET
 };
 

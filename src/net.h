@@ -140,6 +140,7 @@ extern bool fListen;
 extern uint64_t nLocalServices;
 extern uint64_t nLocalHostNonce;
 extern CAddrMan addrman;
+/** Maximum number of connections to simultaneously allow (aka connection slots) */
 extern int nMaxConnections;
 
 extern std::vector<CNode*> vNodes;
@@ -318,6 +319,8 @@ public:
     int64_t nPingUsecStart;
     // Last measured round-trip time.
     int64_t nPingUsecTime;
+    // Best measured round-trip time.
+    int64_t nMinPingUsecTime;
     // Whether a ping is requested.
     bool fPingQueued;
 

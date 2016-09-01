@@ -1,11 +1,11 @@
 #include "zcash/JoinSplit.hpp"
 
 #include <iostream>
-#include "sodium.h"
+#include "crypto/common.h"
 
 int main(int argc, char **argv)
 {
-    if (sodium_init() == -1) {
+    if (init_and_check_sodium() == -1) {
         return 1;
     }
 

@@ -344,7 +344,7 @@ bool CBlockPolicyEstimator::isPriDataPoint(const CFeeRate &fee, double pri)
 void CBlockPolicyEstimator::processTransaction(const CTxMemPoolEntry& entry, bool fCurrentEstimate)
 {
     unsigned int txHeight = entry.GetHeight();
-    uint256 hash = entry.GetTx().GetHash();
+    uint256 hash = entry.GetTx().GetTxid();
     if (mapMemPoolTxs[hash].stats != NULL) {
         LogPrint("estimatefee", "Blockpolicy error mempool tx %s already being tracked\n",
                  hash.ToString().c_str());

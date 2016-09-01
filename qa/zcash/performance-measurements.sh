@@ -77,10 +77,10 @@ case "$1" in
                 zcash_rpc zcbenchmark createjoinsplit 10
                 ;;
             verifyjoinsplit)
-                zcash_rpc zcbenchmark verifyjoinsplit 1000 "$RAWJOINSPLIT"
+                zcash_rpc zcbenchmark verifyjoinsplit 1000 "\"$RAWJOINSPLIT\""
                 ;;
             solveequihash)
-                zcash_rpc zcbenchmark solveequihash 10
+                zcash_rpc zcbenchmark solveequihash 10 "${@:3}"
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1000
@@ -108,10 +108,10 @@ case "$1" in
                 zcash_rpc zcbenchmark createjoinsplit 1
                 ;;
             verifyjoinsplit)
-                zcash_rpc zcbenchmark verifyjoinsplit 1 "$RAWJOINSPLIT"
+                zcash_rpc zcbenchmark verifyjoinsplit 1 "\"$RAWJOINSPLIT\""
                 ;;
             solveequihash)
-                zcash_rpc zcbenchmark solveequihash 1
+                zcash_rpc zcbenchmark solveequihash 1 "${@:3}"
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1
@@ -137,10 +137,10 @@ case "$1" in
                 zcash_rpc zcbenchmark createjoinsplit 1
                 ;;
             verifyjoinsplit)
-                zcash_rpc zcbenchmark verifyjoinsplit 1 "$RAWJOINSPLIT"
+                zcash_rpc zcbenchmark verifyjoinsplit 1 "\"$RAWJOINSPLIT\""
                 ;;
             solveequihash)
-                zcash_rpc zcbenchmark solveequihash 1
+                zcash_rpc zcbenchmark solveequihash 1 "${@:3}"
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1
@@ -152,6 +152,25 @@ case "$1" in
         esac
         zcashd_valgrind_stop
         rm -f valgrind.out
+        ;;
+    valgrind-tests)
+        case "$2" in
+            gtest)
+                rm -f valgrind.out
+                valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/zcash-gtest
+                cat valgrind.out
+                rm -f valgrind.out
+                ;;
+            test_bitcoin)
+                rm -f valgrind.out
+                valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/test/test_bitcoin
+                cat valgrind.out
+                rm -f valgrind.out
+                ;;
+            *)
+                echo "Bad arguments."
+                exit 1
+        esac
         ;;
     *)
         echo "Bad arguments."

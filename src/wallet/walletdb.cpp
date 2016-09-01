@@ -110,6 +110,17 @@ bool CWalletDB::WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey)
     return Write(std::make_pair(std::string("mkey"), nID), kMasterKey, true);
 }
 
+bool CWalletDB::WriteZKey(const libzcash::PaymentAddress& addr, const libzcash::SpendingKey& key, const CKeyMetadata &keyMeta)
+{
+    nWalletDBUpdated++;
+
+    if (!Write(std::make_pair(std::string("zkeymeta"), addr), keyMeta))
+        return false;
+
+    // pair is: tuple_key("zkey", paymentaddress) --> secretkey
+    return Write(std::make_pair(std::string("zkey"), addr), key, false);
+}
+
 bool CWalletDB::WriteCScript(const uint160& hash, const CScript& redeemScript)
 {
     nWalletDBUpdated++;
@@ -288,7 +299,7 @@ DBErrors CWalletDB::ReorderTransactions(CWallet* pwallet)
 
             if (pwtx)
             {
-                if (!WriteTx(pwtx->GetHash(), *pwtx))
+                if (!WriteTx(pwtx->GetTxid(), *pwtx))
                     return DB_LOAD_FAIL;
             }
             else
@@ -312,7 +323,7 @@ DBErrors CWalletDB::ReorderTransactions(CWallet* pwallet)
             // Since we're changing the order, write it back
             if (pwtx)
             {
-                if (!WriteTx(pwtx->GetHash(), *pwtx))
+                if (!WriteTx(pwtx->GetTxid(), *pwtx))
                     return DB_LOAD_FAIL;
             }
             else
@@ -330,13 +341,15 @@ public:
     unsigned int nKeys;
     unsigned int nCKeys;
     unsigned int nKeyMeta;
+    unsigned int nZKeys;
+    unsigned int nZKeyMeta;
     bool fIsEncrypted;
     bool fAnyUnordered;
     int nFileVersion;
     vector<uint256> vWalletUpgrade;
 
     CWalletScanState() {
-        nKeys = nCKeys = nKeyMeta = 0;
+        nKeys = nCKeys = nKeyMeta = nZKeys = nZKeyMeta = 0;
         fIsEncrypted = false;
         fAnyUnordered = false;
         nFileVersion = 0;
@@ -371,7 +384,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             CWalletTx wtx;
             ssValue >> wtx;
             CValidationState state;
-            if (!(CheckTransaction(wtx, state) && (wtx.GetHash() == hash) && state.IsValid()))
+            if (!(CheckTransaction(wtx, state) && (wtx.GetTxid() == hash) && state.IsValid()))
                 return false;
 
             // Undo serialize changes in 31600
@@ -428,6 +441,21 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             // Watch-only addresses have no birthday information for now,
             // so set the wallet birthday to the beginning of time.
             pwallet->nTimeFirstKey = 1;
+        }
+        else if (strType == "zkey")
+        {
+            libzcash::PaymentAddress addr;
+            ssKey >> addr;
+            libzcash::SpendingKey key;
+            ssValue >> key;
+
+            if (!pwallet->LoadZKey(key))
+            {
+                strErr = "Error reading wallet database: LoadZKey failed";
+                return false;
+            }
+
+            wss.nZKeys++;
         }
         else if (strType == "key" || strType == "wkey")
         {
@@ -538,6 +566,18 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 (keyMeta.nCreateTime < pwallet->nTimeFirstKey))
                 pwallet->nTimeFirstKey = keyMeta.nCreateTime;
         }
+        else if (strType == "zkeymeta")
+        {
+            libzcash::PaymentAddress addr;
+            ssKey >> addr;
+            CKeyMetadata keyMeta;
+            ssValue >> keyMeta;
+            wss.nZKeyMeta++;
+
+            pwallet->LoadZKeyMetadata(addr, keyMeta);
+
+            // ignore earliest key creation time as taddr will exist before any zaddr
+        }
         else if (strType == "defaultkey")
         {
             ssValue >> pwallet->vchDefaultKey;
@@ -601,6 +641,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
 static bool IsKeyType(string strType)
 {
     return (strType== "key" || strType == "wkey" ||
+            strType == "zkey" ||
             strType == "mkey" || strType == "ckey");
 }
 
@@ -684,6 +725,10 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
 
     LogPrintf("Keys: %u plaintext, %u encrypted, %u w/ metadata, %u total\n",
            wss.nKeys, wss.nCKeys, wss.nKeyMeta, wss.nKeys + wss.nCKeys);
+
+    // TODO: Keep track of encrypted ZKeys
+    LogPrintf("ZKeys: %u plaintext, -- encrypted, %u w/metadata, %u total\n",
+           wss.nZKeys, wss.nZKeyMeta, wss.nZKeys + 0);
 
     // nTimeFirstKey is only reliable if all keys have metadata
     if ((wss.nKeys + wss.nCKeys) != wss.nKeyMeta)

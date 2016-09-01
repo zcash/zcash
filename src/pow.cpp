@@ -33,7 +33,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             // then allow mining of a min-difficulty block.
             if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing*2)
                 return nProofOfWorkLimit;
-            else if (pindexLast->nHeight >= 43400) { // TODO remove hardfork at next chain reset
+            else {
                 // Get the last non-min-difficulty (or at worst the genesis difficulty)
                 while (pindexBits->pprev && pindexBits->nBits == nProofOfWorkLimit)
                     pindexBits = pindexBits->pprev;
@@ -96,6 +96,10 @@ unsigned int CalculateNextWorkRequired(uint32_t nBits, int64_t nLastBlockTime, i
 
 bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& params)
 {
+    // Don't validate genesis
+    if (pblock->hashPrevBlock.IsNull())
+        return true;
+
     unsigned int n = params.EquihashN();
     unsigned int k = params.EquihashK();
 

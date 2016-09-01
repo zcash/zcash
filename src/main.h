@@ -81,7 +81,7 @@ static const int MAX_BLOCKS_IN_TRANSIT_PER_PEER = 16;
 static const unsigned int BLOCK_STALLING_TIMEOUT = 2;
 /** Number of headers sent in one getheaders result. We rely on the assumption that if a peer sends
  *  less than this number, we reached its tip. Changing this value is a protocol upgrade. */
-static const unsigned int MAX_HEADERS_RESULTS = 2000;
+static const unsigned int MAX_HEADERS_RESULTS = 160;
 /** Size of the "block download window": how far ahead of our current height do we fetch?
  *  Larger windows tolerate larger download speed differences between peer, but increase the potential
  *  degree of disordering of blocks on disk (which make reindexing and in the future perhaps pruning
@@ -93,6 +93,10 @@ static const unsigned int DATABASE_WRITE_INTERVAL = 60 * 60;
 static const unsigned int DATABASE_FLUSH_INTERVAL = 24 * 60 * 60;
 /** Maximum length of reject messages. */
 static const unsigned int MAX_REJECT_MESSAGE_LENGTH = 111;
+
+#define equihash_parameters_acceptable(N, K) \
+    ((CBlockHeader::HEADER_SIZE + equihash_solution_size(N, K))*MAX_HEADERS_RESULTS < \
+     MAX_PROTOCOL_MESSAGE_LENGTH-1000)
 
 struct BlockHasher
 {
