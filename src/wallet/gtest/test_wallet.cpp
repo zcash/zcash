@@ -56,7 +56,7 @@ CWalletTx GetValidReceive(const libzcash::SpendingKey& sk, CAmount value, bool r
     };
 
     boost::array<libzcash::JSOutput, 2> outputs = {
-        libzcash::JSOutput(), // dummy output
+        libzcash::JSOutput(sk.address(), value),
         libzcash::JSOutput(sk.address(), value)
     };
 
@@ -209,7 +209,7 @@ TEST(wallet_tests, find_note_in_tx) {
     auto nullifier = note.nullifier(sk);
 
     auto noteMap = wallet.FindMyNotes(wtx);
-    EXPECT_EQ(1, noteMap.size());
+    EXPECT_EQ(2, noteMap.size());
 
     JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
     CNoteData nd {sk.address(), nullifier};
@@ -349,26 +349,33 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
     wallet.AddSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto note = GetNote(sk, wtx, 0, 0);
+    auto note2 = GetNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
+    auto nullifier2 = note2.nullifier(sk);
 
     mapNoteData_t noteData;
-    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 0};
+    JSOutPoint jsoutpt2 {wtx.GetTxid(), 0, 1};
     CNoteData nd {sk.address(), nullifier};
+    CNoteData nd2 {sk.address(), nullifier2};
     noteData[jsoutpt] = nd;
+    noteData[jsoutpt2] = nd2;
     wtx.SetNoteData(noteData);
 
-    std::vector<JSOutPoint> notes {jsoutpt};
+    std::vector<JSOutPoint> notes {jsoutpt, jsoutpt2};
     std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
     uint256 anchor;
 
     wallet.GetNoteWitnesses(notes, witnesses, anchor);
     EXPECT_FALSE((bool) witnesses[0]);
+    EXPECT_FALSE((bool) witnesses[1]);
 
     wallet.AddToWallet(wtx, true, NULL);
     witnesses.clear();
     wallet.GetNoteWitnesses(notes, witnesses, anchor);
     EXPECT_FALSE((bool) witnesses[0]);
+    EXPECT_FALSE((bool) witnesses[1]);
 
     CBlock block;
     block.vtx.push_back(wtx);
@@ -377,11 +384,13 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
     witnesses.clear();
     wallet.GetNoteWitnesses(notes, witnesses, anchor);
     EXPECT_TRUE((bool) witnesses[0]);
+    EXPECT_TRUE((bool) witnesses[1]);
 
     wallet.DecrementNoteWitnesses();
     witnesses.clear();
     wallet.GetNoteWitnesses(notes, witnesses, anchor);
     EXPECT_FALSE((bool) witnesses[0]);
+    EXPECT_FALSE((bool) witnesses[1]);
 }
 
 TEST(wallet_tests, cached_witnesses_chain_tip) {
