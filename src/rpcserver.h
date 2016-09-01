@@ -140,6 +140,7 @@ extern int64_t nWalletUnlockTime;
 extern CAmount AmountFromValue(const json_spirit::Value& value);
 extern json_spirit::Value ValueFromAmount(const CAmount& amount);
 extern double GetDifficulty(const CBlockIndex* blockindex = NULL);
+extern double GetNetworkDifficulty(const CBlockIndex* blockindex = NULL);
 extern std::string HelpRequiringPassphrase();
 extern std::string HelpExampleCli(std::string methodname, std::string args);
 extern std::string HelpExampleRpc(std::string methodname, std::string args);
