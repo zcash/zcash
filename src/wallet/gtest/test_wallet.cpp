@@ -386,11 +386,9 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
     EXPECT_TRUE((bool) witnesses[0]);
     EXPECT_TRUE((bool) witnesses[1]);
 
-    wallet.DecrementNoteWitnesses();
-    witnesses.clear();
-    wallet.GetNoteWitnesses(notes, witnesses, anchor);
-    EXPECT_FALSE((bool) witnesses[0]);
-    EXPECT_FALSE((bool) witnesses[1]);
+    // Until #1302 is implemented, this should triggger an assertion
+    EXPECT_DEATH(wallet.DecrementNoteWitnesses(),
+                 "Assertion `nWitnessCacheSize > 0' failed.");
 }
 
 TEST(wallet_tests, cached_witnesses_chain_tip) {

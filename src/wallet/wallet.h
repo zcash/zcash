@@ -651,6 +651,7 @@ public:
         nLastResend = 0;
         nTimeFirstKey = 0;
         fBroadcastTransactions = false;
+        nWitnessCacheSize = 0;
     }
 
     std::map<uint256, JSOutPoint> mapNullifiersToNotes;
