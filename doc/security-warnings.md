@@ -37,3 +37,10 @@ be able to:
 You should ensure no other users have the ability to execute code (even
 unprivileged) on the hardware your `zcashd` process runs on until these
 vulnerabilities are fully analyzed and fixed.
+
+REST Interface
+--------------
+
+The REST interface is a feature inherited from upstream Bitcoin.  By default,
+it is disabled. We do not recommend you enable it until it has undergone a
+security review.
