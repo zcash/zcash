@@ -72,6 +72,9 @@ public:
     boost::optional<r1cs_ppzksnark_verification_key<ppzksnark_ppT>> vk;
     boost::optional<std::string> pkPath;
 
+    JoinSplitCircuit() {}
+    ~JoinSplitCircuit() {}
+
     static void initialize() {
         LOCK(cs_InitializeParams);
 
@@ -121,8 +124,6 @@ public:
         pk = keypair.pk;
         vk = keypair.vk;
     }
-
-    JoinSplitCircuit() {}
 
     bool verify(
         const ZCProof& proof,

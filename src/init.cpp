@@ -208,6 +208,8 @@ void Shutdown()
     delete pwalletMain;
     pwalletMain = NULL;
 #endif
+    delete pzcashParams;
+    pzcashParams = NULL;
     ECC_Stop();
     LogPrintf("%s: done\n", __func__);
 }

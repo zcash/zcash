@@ -45,6 +45,8 @@ public:
 template<size_t NumInputs, size_t NumOutputs>
 class JoinSplit {
 public:
+    virtual ~JoinSplit() {}
+
     static JoinSplit<NumInputs, NumOutputs>* Generate();
     static JoinSplit<NumInputs, NumOutputs>* Unopened();
     static uint256 h_sig(const uint256& randomSeed,

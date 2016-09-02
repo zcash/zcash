@@ -43,6 +43,7 @@ BasicTestingSetup::BasicTestingSetup()
 BasicTestingSetup::~BasicTestingSetup()
 {
         ECC_Stop();
+        delete pzcashParams;
 }
 
 TestingSetup::TestingSetup()
