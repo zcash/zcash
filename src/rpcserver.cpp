@@ -746,8 +746,10 @@ void StartRPCThreads()
     fRPCRunning = true;
     g_rpcSignals.Started();
 
-    // Launch at least one async rpc worker
+    // Launch one async rpc worker.  The ability to launch multiple workers is not recommended at present and thus the option is disabled.
     async_rpc_queue = std::make_shared<AsyncRPCQueue>();
+    async_rpc_queue->addWorker();
+/*   
     int n = GetArg("-rpcasyncthreads", 1);
     if (n<1) {
         LogPrintf("ERROR: Invalid value %d for -rpcasyncthreads.  Must be at least 1.\n", n);
@@ -758,7 +760,7 @@ void StartRPCThreads()
     }
     for (int i = 0; i < n; i++)
         async_rpc_queue->addWorker();
-
+*/
 }
 
 void StartDummyRPCThread()
