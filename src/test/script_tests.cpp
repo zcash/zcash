@@ -208,10 +208,10 @@ public:
         spendTx = BuildSpendingTransaction(CScript(), creditTx);
     }
 
-    TestBuilder& Add(const CScript& script)
+    TestBuilder& Add(const CScript& _script)
     {
         DoPush();
-        spendTx.vin[0].scriptSig += script;
+        spendTx.vin[0].scriptSig += _script;
         return *this;
     }
 
