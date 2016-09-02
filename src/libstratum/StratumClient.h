@@ -19,77 +19,77 @@ using boost::asio::ip::tcp;
 using namespace dev;
 using namespace dev::eth;
 
-class EthStratumClientV2 : public Worker
+class StratumClient : public Worker
 {
 public:
-	EthStratumClientV2(GenericFarm<EthashProofOfWork> * f, MinerType m, string const & host, string const & port, string const & user, string const & pass, int const & retries, int const & worktimeout, int const & protocol, string const & email);
-	~EthStratumClientV2();
+    StratumClient(GenericFarm<EthashProofOfWork> * f, MinerType m, string const & host, string const & port, string const & user, string const & pass, int const & retries, int const & worktimeout, int const & protocol, string const & email);
+    ~StratumClient();
 
-	void setFailover(string const & host, string const & port);
-	void setFailover(string const & host, string const & port, string const & user, string const & pass);
+    void setFailover(string const & host, string const & port);
+    void setFailover(string const & host, string const & port, string const & user, string const & pass);
 
-	bool isRunning() { return m_running; }
-	bool isConnected() { return m_connected && m_authorized; }
-	h256 currentHeaderHash() { return m_current.headerHash; }
-	bool current() { return m_current; }
-	unsigned waitState() { return m_waitState; }
-	bool submit(EthashProofOfWork::Solution solution);
-	void reconnect();
+    bool isRunning() { return m_running; }
+    bool isConnected() { return m_connected && m_authorized; }
+    h256 currentHeaderHash() { return m_current.headerHash; }
+    bool current() { return m_current; }
+    unsigned waitState() { return m_waitState; }
+    bool submit(EthashProofOfWork::Solution solution);
+    void reconnect();
 private:
-	void workLoop() override;
-	void connect();
-	
-	void disconnect();
-	void work_timeout_handler(const boost::system::error_code& ec);
+    void workLoop() override;
+    void connect();
 
-	void processReponse(Json::Value& responseObject);
-	
-	MinerType m_minerType;
+    void disconnect();
+    void work_timeout_handler(const boost::system::error_code& ec);
 
-	cred_t * p_active;
-	cred_t m_primary;
-	cred_t m_failover;
+    void processReponse(Json::Value& responseObject);
 
-	string m_worker; // eth-proxy only;
+    MinerType m_minerType;
 
-	bool m_authorized;
-	bool m_connected;
-	bool m_running = true;
+    cred_t * p_active;
+    cred_t m_primary;
+    cred_t m_failover;
 
-	int	m_retries = 0;
-	int	m_maxRetries;
-	int m_worktimeout = 60;
+    string m_worker; // eth-proxy only;
 
-	int m_waitState = MINER_WAIT_STATE_WORK;
+    bool m_authorized;
+    bool m_connected;
+    bool m_running = true;
 
-	string m_response;
+    int    m_retries = 0;
+    int    m_maxRetries;
+    int m_worktimeout = 60;
 
-	GenericFarm<EthashProofOfWork> * p_farm;
-	mutex x_current;
-	EthashProofOfWork::WorkPackage m_current;
-	EthashProofOfWork::WorkPackage m_previous;
+    int m_waitState = MINER_WAIT_STATE_WORK;
 
-	bool m_stale = false;
+    string m_response;
 
-	string m_job;
-	string m_previousJob;
-	EthashAux::FullType m_dag;
+    GenericFarm<EthashProofOfWork> * p_farm;
+    mutex x_current;
+    EthashProofOfWork::WorkPackage m_current;
+    EthashProofOfWork::WorkPackage m_previous;
 
-	boost::asio::io_service m_io_service;
-	tcp::socket m_socket;
+    bool m_stale = false;
 
-	boost::asio::streambuf m_requestBuffer;
-	boost::asio::streambuf m_responseBuffer;
+    string m_job;
+    string m_previousJob;
+    EthashAux::FullType m_dag;
 
-	boost::asio::deadline_timer * p_worktimer;
+    boost::asio::io_service m_io_service;
+    tcp::socket m_socket;
 
-	int m_protocol;
-	string m_email;
+    boost::asio::streambuf m_requestBuffer;
+    boost::asio::streambuf m_responseBuffer;
 
-	double m_nextWorkDifficulty;
+    boost::asio::deadline_timer * p_worktimer;
 
-	h64 m_extraNonce;
-	int m_extraNonceHexSize;
+    int m_protocol;
+    string m_email;
 
-	void processExtranonce(std::string& enonce);
+    double m_nextWorkDifficulty;
+
+    h64 m_extraNonce;
+    int m_extraNonceHexSize;
+
+    void processExtranonce(std::string& enonce);
 };
