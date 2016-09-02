@@ -589,11 +589,10 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
             obj = perform_joinsplit(info, witnesses, jsAnchor);
         }
-
-        sign_send_raw_transaction(obj);
-        return true;
     }
-    
+
+    sign_send_raw_transaction(obj);
+    return true;
 }
 
 
