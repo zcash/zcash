@@ -24,8 +24,8 @@ using namespace json_spirit;
 // A recipient is a tuple of address, amount, memo (optional if zaddr)
 typedef std::tuple<std::string, CAmount, std::string> SendManyRecipient;
 
-// Input UTXO is a tuple of txid, vout, amount
-typedef std::tuple<uint256, int, CAmount> SendManyInputUTXO;
+// Input UTXO is a tuple (quadruple) of txid, vout, amount, coinbase)
+typedef std::tuple<uint256, int, CAmount, bool> SendManyInputUTXO;
 
 // Input NPT is a pair of the plaintext note and amount
 typedef std::pair<NotePlaintext, CAmount> SendManyInputNPT;
@@ -80,7 +80,7 @@ private:
     void add_taddr_change_output_to_tx(CAmount amount);
     void add_taddr_outputs_to_tx();
     bool find_unspent_notes();
-    bool find_utxos();
+    bool find_utxos(bool fAcceptCoinbase);
     boost::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s);
     bool main_impl();
     Object perform_joinsplit( AsyncJoinSplitInfo &);
