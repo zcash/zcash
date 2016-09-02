@@ -29,11 +29,15 @@ typedef struct {
 class StratumClient : public Worker
 {
 public:
-    StratumClient(GenericFarm<EthashProofOfWork> * f, MinerType m, string const & host, string const & port, string const & user, string const & pass, int const & retries, int const & worktimeout);
+    StratumClient(GenericFarm<EthashProofOfWork> * f, MinerType m,
+                  string const & host, string const & port,
+                  string const & user, string const & pass,
+                  int const & retries, int const & worktimeout);
     ~StratumClient();
 
     void setFailover(string const & host, string const & port);
-    void setFailover(string const & host, string const & port, string const & user, string const & pass);
+    void setFailover(string const & host, string const & port,
+                     string const & user, string const & pass);
 
     bool isRunning() { return m_running; }
     bool isConnected() { return m_connected && m_authorized; }
