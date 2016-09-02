@@ -123,11 +123,12 @@ void AsyncRPCOperation_sendmany::main() {
 // 3. Spendable notes are not locked, so another operation could also try to use them
 bool AsyncRPCOperation_sendmany::main_impl() {
 
+    bool isSingleZaddrOutput = (t_outputs_.size()==0 && z_outputs_.size()==1);
     bool isPureTaddrOnlyTx = (isfromtaddr_ && z_outputs_.size() == 0);
     CAmount minersFee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE;
 
     // Regardless of the from address, add all taddr outputs to the raw transaction.
-    if (isfromtaddr_ && !find_utxos()) {
+    if (isfromtaddr_ && !find_utxos(isSingleZaddrOutput)) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds, no UTXOs found for taddr from address.");
     }
     
@@ -168,9 +169,14 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
     // If from address is a taddr, select UTXOs to spend
     CAmount selectedUTXOAmount = 0;
+    bool selectedUTXOCoinbase = false;
     if (isfromtaddr_) {
         std::vector<SendManyInputUTXO> selectedTInputs;
         for (SendManyInputUTXO & t : t_inputs_) {
+            bool b = std::get<3>(t);
+            if (b) {
+                selectedUTXOCoinbase = true;
+            }
             selectedUTXOAmount += std::get<2>(t);
             selectedTInputs.push_back(t);
             if (selectedUTXOAmount >= targetAmount) {
@@ -254,7 +260,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
      * taddr -> taddrs
      *       -> zaddrs
      * 
-     * There are no notes consumed, only notes produced.
+     * Note: Consensus rule states that coinbase utxos can only be sent to a zaddr.
+     *       Any change over and above the amount specified by the user will be sent
+     *       to the same zaddr the user is sending funds to. 
      */
     if (isfromtaddr_) {
         add_taddr_outputs_to_tx();
@@ -263,8 +271,19 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         CAmount fundsSpent = t_outputs_total + minersFee + z_outputs_total;
         CAmount change = funds - fundsSpent;
         
+        // If there is a single zaddr and there are coinbase utxos, change goes to the zaddr.
         if (change > 0) {
-            add_taddr_change_output_to_tx(change);
+            if (isSingleZaddrOutput && selectedUTXOCoinbase) {
+                std::string address = std::get<0>(zOutputsDeque.front());   
+                SendManyRecipient smr(address, change, std::string());
+                zOutputsDeque.push_back(smr); 
+            } else if (!isSingleZaddrOutput && selectedUTXOCoinbase) {
+                // This should not happen and is not allowed
+                throw JSONRPCError(RPC_WALLET_ERROR, "Wallet selected Coinbase UTXOs as valid inputs when it should not have done");
+            } else {
+                // If there is a single zaddr and no coinbase utxos, just use a regular output for change.
+                add_taddr_change_output_to_tx(change);
+            }
         }
 
         // Create joinsplits, where each output represents a zaddr recipient.
@@ -635,7 +654,7 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(Object obj)
 }
 
 
-bool AsyncRPCOperation_sendmany::find_utxos() {
+bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
     set<CBitcoinAddress> setAddress = {fromtaddr_};
     vector<COutput> vecOutputs;
 
@@ -659,11 +678,21 @@ bool AsyncRPCOperation_sendmany::find_utxos() {
             }
         }
 
-        // TODO: Also examine out.fSpendable ?
+        // By default we ignore coinbase outputs
+        bool isCoinbase = out.tx->IsCoinBase();
+        if (out.tx->IsCoinBase() && fAcceptCoinbase==false) {
+            continue;
+        }
+        
         CAmount nValue = out.tx->vout[out.i].nValue;
-        SendManyInputUTXO utxo(out.tx->GetTxid(), out.i, nValue);
+        SendManyInputUTXO utxo(out.tx->GetTxid(), out.i, nValue, isCoinbase);
         t_inputs_.push_back(utxo);
     }
+    
+    if (fAcceptCoinbase==false && t_inputs_.size()==0) {
+        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any non-coinbase UTXOs to spend.");
+    }
+    
     return t_inputs_.size() > 0;
 }
 
