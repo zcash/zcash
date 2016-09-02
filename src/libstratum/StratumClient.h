@@ -1,3 +1,5 @@
+#include "clientversion.h"
+
 #include <iostream>
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
@@ -7,8 +9,6 @@
 #include <libethcore/Farm.h>
 #include <libethcore/EthashAux.h>
 #include <libethcore/Miner.h>
-
-#include "BuildInfo.h"
 
 #include "json/json_spirit_value.h"
 

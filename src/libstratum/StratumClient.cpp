@@ -311,7 +311,7 @@ void StratumClient::processReponse(const Object& responseObject)
                 LogS("Difficulty set to %s\n", m_nextWorkDifficulty);
             }
         } else if (method == "client.get_version") {
-            os << "{\"error\": null, \"id\" : " << id << ", \"result\" : \"" << ETH_PROJECT_VERSION << "\"}\n";
+            os << "{\"error\": null, \"id\" : " << id << ", \"result\" : \"" << FormatFullVersion() << "\"}\n";
             write(m_socket, m_requestBuffer);
         }
         break;
