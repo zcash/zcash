@@ -29,7 +29,7 @@ typedef struct {
 class StratumClient : public Worker
 {
 public:
-    StratumClient(GenericFarm<EthashProofOfWork> * f, MinerType m,
+    StratumClient(GenericFarm<EthashProofOfWork> * f,
                   string const & host, string const & port,
                   string const & user, string const & pass,
                   int const & retries, int const & worktimeout);
@@ -54,8 +54,6 @@ private:
     void work_timeout_handler(const boost::system::error_code& ec);
 
     void processReponse(const Object& responseObject);
-
-    MinerType m_minerType;
 
     cred_t * p_active;
     cred_t m_primary;

@@ -32,14 +32,13 @@ static void diffToTarget(uint32_t *target, double diff)
 }
 
 
-StratumClient::StratumClient(GenericFarm<EthashProofOfWork> * f, MinerType m,
+StratumClient::StratumClient(GenericFarm<EthashProofOfWork> * f,
                              string const & host, string const & port,
                              string const & user, string const & pass,
                              int const & retries, int const & worktimeout)
     : Worker("stratum"),
       m_socket(m_io_service)
 {
-    m_minerType = m;
     m_primary.host = host;
     m_primary.port = port;
     m_primary.user = user;
@@ -138,16 +137,7 @@ void StratumClient::connect()
         m_connected = true;
         if (!p_farm->isMining()) {
             LogS("Starting farm\n");
-            if (m_minerType == MinerType::CPU)
-                p_farm->start("cpu", false);
-            else if (m_minerType == MinerType::CL)
-                p_farm->start("opencl", false);
-            else if (m_minerType == MinerType::CUDA)
-                p_farm->start("cuda", false);
-            else if (m_minerType == MinerType::Mixed) {
-                p_farm->start("cuda", false);
-                p_farm->start("opencl", true);
-            }
+            p_farm->start();
         }
         std::ostream os(&m_requestBuffer);
         os << "{\"id\": 1, \"method\": \"mining.subscribe\", \"params\": []}\n";
@@ -363,7 +353,7 @@ bool StratumClient::submit(EthashProofOfWork::Solution solution) {
         return true;
     } else {
         m_stale = false;
-        LogS("[WARN] FAILURE: GPU gave incorrect result!\n");
+        LogS("[WARN] FAILURE: Miner gave incorrect result!\n");
         p_farm->failedSolution();
     }
 
