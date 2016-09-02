@@ -2,7 +2,6 @@
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
-#include <json/json.h>
 #include <libdevcore/FixedHash.h>
 #include <libdevcore/Worker.h>
 #include <libethcore/Farm.h>
@@ -11,17 +10,26 @@
 
 #include "BuildInfo.h"
 
+#include "json/json_spirit_value.h"
 
 using namespace std;
 using namespace boost::asio;
 using boost::asio::ip::tcp;
 using namespace dev;
 using namespace dev::eth;
+using namespace json_spirit;
+
+typedef struct {
+        string host;
+        string port;
+        string user;
+        string pass;
+} cred_t;
 
 class StratumClient : public Worker
 {
 public:
-    StratumClient(GenericFarm<EthashProofOfWork> * f, MinerType m, string const & host, string const & port, string const & user, string const & pass, int const & retries, int const & worktimeout, int const & protocol, string const & email);
+    StratumClient(GenericFarm<EthashProofOfWork> * f, MinerType m, string const & host, string const & port, string const & user, string const & pass, int const & retries, int const & worktimeout);
     ~StratumClient();
 
     void setFailover(string const & host, string const & port);
@@ -41,15 +49,13 @@ private:
     void disconnect();
     void work_timeout_handler(const boost::system::error_code& ec);
 
-    void processReponse(Json::Value& responseObject);
+    void processReponse(const Object& responseObject);
 
     MinerType m_minerType;
 
     cred_t * p_active;
     cred_t m_primary;
     cred_t m_failover;
-
-    string m_worker; // eth-proxy only;
 
     bool m_authorized;
     bool m_connected;
@@ -82,13 +88,5 @@ private:
 
     boost::asio::deadline_timer * p_worktimer;
 
-    int m_protocol;
-    string m_email;
-
     double m_nextWorkDifficulty;
-
-    h64 m_extraNonce;
-    int m_extraNonceHexSize;
-
-    void processExtranonce(std::string& enonce);
 };
