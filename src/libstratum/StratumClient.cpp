@@ -32,12 +32,13 @@ static void diffToTarget(uint32_t *target, double diff)
 }
 
 
-StratumClient::StratumClient(GenericFarm<EthashProofOfWork> * f,
-                             string const & host, string const & port,
-                             string const & user, string const & pass,
-                             int const & retries, int const & worktimeout)
-    : Worker("stratum"),
-      m_socket(m_io_service)
+template <typename Miner, typename Job, typename Solution>
+StratumClient<Miner, Job, Solution>::StratumClient(
+        Miner * m,
+        string const & host, string const & port,
+        string const & user, string const & pass,
+        int const & retries, int const & worktimeout)
+    : m_socket(m_io_service)
 {
     m_primary.host = host;
     m_primary.port = port;
@@ -51,23 +52,24 @@ StratumClient::StratumClient(GenericFarm<EthashProofOfWork> * f,
     m_maxRetries = retries;
     m_worktimeout = worktimeout;
 
-    p_farm = f;
+    p_miner = m;
+    p_current = nullptr;
+    p_previous = nullptr;
     p_worktimer = nullptr;
     startWorking();
 }
 
-StratumClient::~StratumClient()
-{
-
-}
-
-void StratumClient::setFailover(string const & host, string const & port)
+template <typename Miner, typename Job, typename Solution>
+void StratumClient<Miner, Job, Solution>::setFailover(
+        string const & host, string const & port)
 {
     setFailover(host, port, p_active->user, p_active->pass);
 }
 
-void StratumClient::setFailover(string const & host, string const & port,
-                                string const & user, string const & pass)
+template <typename Miner, typename Job, typename Solution>
+void StratumClient<Miner, Job, Solution>::setFailover(
+        string const & host, string const & port,
+        string const & user, string const & pass)
 {
     m_failover.host = host;
     m_failover.port = port;
@@ -75,7 +77,14 @@ void StratumClient::setFailover(string const & host, string const & port,
     m_failover.pass = pass;
 }
 
-void StratumClient::workLoop()
+template <typename Miner, typename Job, typename Solution>
+void StratumClient<Miner, Job, Solution>::startWorking()
+{
+    // TODO: implement
+}
+
+template <typename Miner, typename Job, typename Solution>
+void StratumClient<Miner, Job, Solution>::workLoop()
 {
     while (m_running) {
         try {
@@ -114,7 +123,8 @@ void StratumClient::workLoop()
 }
 
 
-void StratumClient::connect()
+template <typename Miner, typename Job, typename Solution>
+void StratumClient<Miner, Job, Solution>::connect()
 {
     LogS("Connecting to stratum server %s:%s\n", p_active->host, p_active->port);
 
@@ -135,17 +145,21 @@ void StratumClient::connect()
     } else {
         LogS("Connected!\n");
         m_connected = true;
-        if (!p_farm->isMining()) {
-            LogS("Starting farm\n");
-            p_farm->start();
+        if (!p_miner->isMining()) {
+            LogS("Starting miner\n");
+            p_miner->start();
         }
         std::ostream os(&m_requestBuffer);
-        os << "{\"id\": 1, \"method\": \"mining.subscribe\", \"params\": []}\n";
+        os << "{\"id\": 1, \"method\": \"mining.subscribe\", \"params\": [\""
+           << p_active->host << "\",\""
+           << p_active->port << "\",\""
+           << p_miner->userAgent() << "\", null]}\n";
         write(m_socket, m_requestBuffer);
     }
 }
 
-void StratumClient::reconnect()
+template <typename Miner, typename Job, typename Solution>
+void StratumClient<Miner, Job, Solution>::reconnect()
 {
     if (p_worktimer) {
         p_worktimer->cancel();
@@ -178,20 +192,22 @@ void StratumClient::reconnect()
     timer.wait();
 }
 
-void StratumClient::disconnect()
+template <typename Miner, typename Job, typename Solution>
+void StratumClient<Miner, Job, Solution>::disconnect()
 {
     LogS("Disconnecting\n");
     m_connected = false;
     m_running = false;
-    if (p_farm->isMining()) {
-        LogS("Stopping farm\n");
-        p_farm->stop();
+    if (p_miner->isMining()) {
+        LogS("Stopping miner\n");
+        p_miner->stop();
     }
     m_socket.close();
     //m_io_service.stop();
 }
 
-void StratumClient::processReponse(const Object& responseObject)
+template <typename Miner, typename Job, typename Solution>
+void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseObject)
 {
     const Value& valError = find_value(responseObject, "error");
     if (valError.type() == array_type) {
@@ -214,10 +230,16 @@ void StratumClient::processReponse(const Object& responseObject)
     bool accepted = false;
     switch (id) {
     case 1:
-        LogS("Subscribed to stratum server\n");
-        os << "{\"id\": 2, \"method\": \"mining.authorize\", \"params\": [\""
-           << p_active->user << "\",\"" << p_active->pass << "\"]}\n";
-        write(m_socket, m_requestBuffer);
+        valRes = find_value(responseObject, "result");
+        if (valRes.type() == array_type) {
+            LogS("Subscribed to stratum server\n");
+            const Array& result = valRes.get_array();
+            // Ignore session ID for now.
+            p_miner->setServerNonce(result);
+            os << "{\"id\": 2, \"method\": \"mining.authorize\", \"params\": [\""
+               << p_active->user << "\",\"" << p_active->pass << "\"]}\n";
+            write(m_socket, m_requestBuffer);
+        }
         break;
     case 2:
         valRes = find_value(responseObject, "result");
@@ -242,10 +264,10 @@ void StratumClient::processReponse(const Object& responseObject)
         }
         if (accepted) {
             LogS("B-) Submitted and accepted.\n");
-            p_farm->acceptedSolution(m_stale);
+            p_miner->acceptedSolution(m_stale);
         } else {
             LogS("[WARN] :-( Not accepted.\n");
-            p_farm->rejectedSolution(m_stale);
+            p_miner->rejectedSolution(m_stale);
         }
         break;
     default:
@@ -259,33 +281,24 @@ void StratumClient::processReponse(const Object& responseObject)
             const Value& valParams = find_value(responseObject, "params");
             if (valParams.type() == array_type) {
                 const Array& params = valParams.get_array();
-                string job = params[0].get_str();
-                string sHeaderHash = params[1].get_str();
-                string sSeedHash = params[2].get_str();
-                string sShareTarget = params[3].get_str();
+                Job* workOrder = p_miner->parseJob(params);
 
-                if (sHeaderHash != "" && sSeedHash != "" && sShareTarget != "") {
-                    LogS("Received new job #%s\n", job.substr(0, 8));
+                if (workOrder) {
+                    LogS("Received new job #%s\n", workOrder->jobId());
+                    workOrder->setDifficulty(m_nextJobDifficulty);
 
-                    h256 seedHash = h256(sSeedHash);
-                    h256 headerHash = h256(sHeaderHash);
-
-                    if (headerHash != m_current.headerHash) {
+                    if (!(p_current && *workOrder == *p_current)) {
                         //x_current.lock();
                         //if (p_worktimer)
                         //    p_worktimer->cancel();
 
-                        m_previous.headerHash = m_current.headerHash;
-                        m_previous.seedHash = m_current.seedHash;
-                        m_previous.boundary = m_current.boundary;
-                        m_previousJob = m_job;
+                        if (p_previous) {
+                            delete p_previous;
+                        }
+                        p_previous = p_current;
+                        p_current = workOrder;
 
-                        m_current.headerHash = h256(sHeaderHash);
-                        m_current.seedHash = seedHash;
-                        m_current.boundary = h256(sShareTarget);
-                        m_job = job;
-
-                        p_farm->setWork(m_current);
+                        p_miner->setJob(p_current);
                         //x_current.unlock();
                         //p_worktimer = new boost::asio::deadline_timer(m_io_service, boost::posix_time::seconds(m_worktimeout));
                         //p_worktimer->async_wait(boost::bind(&StratumClient::work_timeout_handler, this, boost::asio::placeholders::error));
@@ -296,55 +309,64 @@ void StratumClient::processReponse(const Object& responseObject)
             const Value& valParams = find_value(responseObject, "params");
             if (valParams.type() == array_type) {
                 const Array& params = valParams.get_array();
-                m_nextWorkDifficulty = params[0].get_real();
-                if (m_nextWorkDifficulty <= 0.0001) m_nextWorkDifficulty = 0.0001;
-                LogS("Difficulty set to %s\n", m_nextWorkDifficulty);
+                m_nextJobDifficulty = params[0].get_real();
+                if (m_nextJobDifficulty <= 0.0001) m_nextJobDifficulty = 0.0001;
+                LogS("Difficulty set to %s\n", m_nextJobDifficulty);
             }
-        } else if (method == "client.get_version") {
-            os << "{\"error\": null, \"id\" : " << id << ", \"result\" : \"" << FormatFullVersion() << "\"}\n";
-            write(m_socket, m_requestBuffer);
+        } else if (method == "client.reconnect") {
+            const Value& valParams = find_value(responseObject, "params");
+            if (valParams.type() == array_type) {
+                const Array& params = valParams.get_array();
+                m_primary.host = params[0].get_str();
+                m_primary.port = params[1].get_str();
+                // TODO: Handle wait time
+                LogS("Reconnection requested\n");
+                reconnect();
+            }
         }
         break;
     }
-
 }
 
-void StratumClient::work_timeout_handler(const boost::system::error_code& ec) {
+template <typename Miner, typename Job, typename Solution>
+void StratumClient<Miner, Job, Solution>::work_timeout_handler(
+        const boost::system::error_code& ec)
+{
     if (!ec) {
         LogS("No new work received in %d seconds.\n", m_worktimeout);
         reconnect();
     }
 }
 
-bool StratumClient::submit(EthashProofOfWork::Solution solution) {
+template <typename Miner, typename Job, typename Solution>
+bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution)
+{
     x_current.lock();
-    EthashProofOfWork::WorkPackage tempWork(m_current);
-    string temp_job = m_job;
-    EthashProofOfWork::WorkPackage tempPreviousWork(m_previous);
-    string temp_previous_job = m_previousJob;
+    Job* tempJob = p_current->clone();
+    Job* tempPreviousJob;
+    if (p_previous) {
+        tempPreviousJob = p_previous->clone();
+    }
     x_current.unlock();
 
     LogS("Solution found; Submitting to %s...\n", p_active->host);
 
-    LogS("  Nonce: 0x%s\n", solution.nonce.hex());
+    LogS("  %s\n", solution->toString());
 
 
-    if (EthashAux::eval(tempWork.seedHash, tempWork.headerHash, solution.nonce).value < tempWork.boundary) {
+    if (tempJob->evalSolution(solution)) {
         string json = "{\"id\": 4, \"method\": \"mining.submit\", \"params\": [\"" +
-                      p_active->user + "\",\"" + temp_job + "\",\"0x" +
-                      solution.nonce.hex() + "\",\"0x" + tempWork.headerHash.hex() +
-                      "\",\"0x" + solution.mixHash.hex() + "\"]}\n";
+                      p_active->user + "\",\"" +
+                      tempJob->getSubmission(solution) + "\"]}\n";
         std::ostream os(&m_requestBuffer);
         os << json;
         m_stale = false;
         write(m_socket, m_requestBuffer);
         return true;
-    } else if (EthashAux::eval(tempPreviousWork.seedHash, tempPreviousWork.headerHash, solution.nonce).value < tempPreviousWork.boundary) {
+    } else if (tempPreviousJob && tempPreviousJob->evalSolution(solution)) {
         string json = "{\"id\": 4, \"method\": \"mining.submit\", \"params\": [\"" +
-                      p_active->user + "\",\"" + temp_previous_job + "\",\"0x" +
-                      solution.nonce.hex() + "\",\"0x" +
-                      tempPreviousWork.headerHash.hex() + "\",\"0x" +
-                      solution.mixHash.hex() + "\"]}\n";
+                      p_active->user + "\",\"" +
+                      tempPreviousJob->getSubmission(solution) + "\"]}\n";
         std::ostream os(&m_requestBuffer);
         os << json;
         m_stale = true;
@@ -354,7 +376,7 @@ bool StratumClient::submit(EthashProofOfWork::Solution solution) {
     } else {
         m_stale = false;
         LogS("[WARN] FAILURE: Miner gave incorrect result!\n");
-        p_farm->failedSolution();
+        p_miner->failedSolution();
     }
 
     return false;
