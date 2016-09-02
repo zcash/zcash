@@ -3,7 +3,6 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <json/json.h>
-#include <libdevcore/Log.h>
 #include <libdevcore/FixedHash.h>
 #include <libdevcore/Worker.h>
 #include <libethcore/Farm.h>
