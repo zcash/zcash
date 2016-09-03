@@ -11,7 +11,12 @@ zcash_GenerateParams_LDADD = \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZCASH_LIBS)
 
-zcash_miner_SOURCES = standaloneminer.cpp
+zcash_miner_SOURCES = \
+  libstratum/StratumClient.cpp \
+  libstratum/StratumClient.h \
+  standaloneminer.cpp
+zcash_miner_CPPFLAGS = $(BITCOIN_INCLUDES)
+zcash_miner_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 zcash_miner_LDADD = \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_CRYPTO) \
