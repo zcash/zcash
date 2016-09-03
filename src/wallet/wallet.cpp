@@ -654,7 +654,11 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
             nWitnessCacheSize += 1;
         }
         if (fFileBacked) {
-            CWalletDB(strWalletFile).WriteWitnessCacheSize(nWitnessCacheSize);
+            CWalletDB walletdb(strWalletFile);
+            for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+                walletdb.WriteTx(wtxItem.first, wtxItem.second);
+            }
+            walletdb.WriteWitnessCacheSize(nWitnessCacheSize);
         }
     }
 }
@@ -675,7 +679,11 @@ void CWallet::DecrementNoteWitnesses()
         // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
         assert(nWitnessCacheSize > 0);
         if (fFileBacked) {
-            CWalletDB(strWalletFile).WriteWitnessCacheSize(nWitnessCacheSize);
+            CWalletDB walletdb(strWalletFile);
+            for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+                walletdb.WriteTx(wtxItem.first, wtxItem.second);
+            }
+            walletdb.WriteWitnessCacheSize(nWitnessCacheSize);
         }
     }
 }
