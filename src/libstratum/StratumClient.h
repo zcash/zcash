@@ -4,7 +4,7 @@
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
-#include <boost/thread.hpp>
+#include <thread>
 
 #include "json/json_spirit_value.h"
 
@@ -40,12 +40,13 @@ public:
     bool current() { return p_current; }
     bool submit(const Solution* solution);
     void reconnect();
+    void disconnect();
+
 private:
     void startWorking();
     void workLoop();
     void connect();
 
-    void disconnect();
     void work_timeout_handler(const boost::system::error_code& ec);
 
     void processReponse(const Object& responseObject);
@@ -70,6 +71,8 @@ private:
     Job * p_previous;
 
     bool m_stale = false;
+
+    std::unique_ptr<std::thread> m_work;
 
     boost::asio::io_service m_io_service;
     tcp::socket m_socket;

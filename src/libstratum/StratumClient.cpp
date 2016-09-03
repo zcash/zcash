@@ -80,7 +80,9 @@ void StratumClient<Miner, Job, Solution>::setFailover(
 template <typename Miner, typename Job, typename Solution>
 void StratumClient<Miner, Job, Solution>::startWorking()
 {
-    // TODO: implement
+    m_work.reset(new std::thread([&]() {
+        workLoop();
+    }));
 }
 
 template <typename Miner, typename Job, typename Solution>
@@ -195,6 +197,7 @@ void StratumClient<Miner, Job, Solution>::reconnect()
 template <typename Miner, typename Job, typename Solution>
 void StratumClient<Miner, Job, Solution>::disconnect()
 {
+    if (!m_connected) return;
     LogS("Disconnecting\n");
     m_connected = false;
     m_running = false;
@@ -204,6 +207,10 @@ void StratumClient<Miner, Job, Solution>::disconnect()
     }
     m_socket.close();
     //m_io_service.stop();
+    if (m_work) {
+        m_work->join();
+        m_work.reset();
+    }
 }
 
 template <typename Miner, typename Job, typename Solution>
