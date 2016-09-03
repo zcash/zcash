@@ -5,14 +5,94 @@
 #include "metrics.h"
 
 #include "chainparams.h"
+#include "ui_interface.h"
 #include "util.h"
 #include "utiltime.h"
 
 #include <boost/thread.hpp>
+#include <boost/thread/synchronized_value.hpp>
+#include <string>
 
 AtomicCounter transactionsValidated;
 AtomicCounter ehSolverRuns;
 AtomicCounter minedBlocks;
+
+boost::synchronized_value<std::list<std::string>> messageBox;
+boost::synchronized_value<std::string> initMessage;
+bool loaded = false;
+
+static bool metrics_ThreadSafeMessageBox(const std::string& message,
+                                      const std::string& caption,
+                                      unsigned int style)
+{
+    std::string strCaption;
+    // Check for usage of predefined caption
+    switch (style) {
+    case CClientUIInterface::MSG_ERROR:
+        strCaption += _("Error");
+        break;
+    case CClientUIInterface::MSG_WARNING:
+        strCaption += _("Warning");
+        break;
+    case CClientUIInterface::MSG_INFORMATION:
+        strCaption += _("Information");
+        break;
+    default:
+        strCaption += caption; // Use supplied caption (can be empty)
+    }
+
+    boost::strict_lock_ptr<std::list<std::string>> u = messageBox.synchronize();
+    u->push_back(strCaption + ": " + message);
+    if (u->size() > 5) {
+        u->pop_back();
+    }
+}
+
+static void metrics_InitMessage(const std::string& message)
+{
+    *initMessage = message;
+}
+
+void ConnectMetricsScreen()
+{
+    uiInterface.ThreadSafeMessageBox.disconnect_all_slots();
+    uiInterface.ThreadSafeMessageBox.connect(metrics_ThreadSafeMessageBox);
+    uiInterface.InitMessage.disconnect_all_slots();
+    uiInterface.InitMessage.connect(metrics_InitMessage);
+}
+
+int printMessageBox()
+{
+    boost::strict_lock_ptr<std::list<std::string>> u = messageBox.synchronize();
+
+    if (u->size() == 0) {
+        return 0;
+    }
+
+    std::cout << std::endl;
+    std::cout << "Messages:" << std::endl;
+    for (auto it = u->cbegin(); it != u->cend(); ++it) {
+        std::cout << *it << std::endl;
+    }
+    return 2 + u->size();
+}
+
+int printInitMessage()
+{
+    if (loaded) {
+        return 0;
+    }
+
+    std::string msg = *initMessage;
+    std::cout << std::endl;
+    std::cout << "Init message: " << msg << std::endl;
+
+    if (msg == "Done loading") {
+        loaded = true;
+    }
+
+    return 2;
+}
 
 void ThreadShowMetricsScreen()
 {
@@ -53,6 +133,7 @@ void ThreadShowMetricsScreen()
     int64_t nStart = GetTime();
 
     while (true) {
+        // Number of lines that are always displayed
         int lines = 4;
 
         // Erase below current position
@@ -90,6 +171,10 @@ void ThreadShowMetricsScreen()
                 lines++;
             }
         }
+
+        // Messages
+        lines += printMessageBox();
+        lines += printInitMessage();
 
         // Explain how to exit
         std::cout << std::endl;
