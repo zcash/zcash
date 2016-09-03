@@ -11,6 +11,7 @@
 #include "crypto/equihash.h"
 #include "init.h"
 #include "main.h"
+#include "metrics.h"
 #include "miner.h"
 #include "net.h"
 #include "pow.h"
@@ -193,13 +194,17 @@ Value generate(const Array& params, bool fHelp)
                 pblock->nSolution = soln;
                 return CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus());
             };
-            if (EhBasicSolveUncancellable(n, k, curr_state, validBlock))
+            bool found = EhBasicSolveUncancellable(n, k, curr_state, validBlock);
+            ehSolverRuns.increment();
+            if (found) {
                 goto endloop;
+            }
         }
 endloop:
         CValidationState state;
         if (!ProcessNewBlock(state, NULL, pblock, true, NULL))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
+        minedBlocks.increment();
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
     }
