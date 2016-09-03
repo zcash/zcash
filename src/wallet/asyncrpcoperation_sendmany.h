@@ -12,6 +12,7 @@
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Address.hpp"
 #include "json/json_spirit_value.h"
+#include "wallet.h"
 
 #include <tuple>
 
@@ -27,17 +28,15 @@ typedef std::tuple<std::string, CAmount, std::string> SendManyRecipient;
 // Input UTXO is a tuple (quadruple) of txid, vout, amount, coinbase)
 typedef std::tuple<uint256, int, CAmount, bool> SendManyInputUTXO;
 
-// Input NPT is a pair of the plaintext note and amount
-typedef std::pair<NotePlaintext, CAmount> SendManyInputNPT;
+// Input JSOP is a tuple of JSOutpoint, note and amount
+typedef std::tuple<JSOutPoint, Note, CAmount> SendManyInputJSOP;
 
-// Package of info needed to perform a joinsplit
+// Package of info which is passed to perform_joinsplit methods.
 struct AsyncJoinSplitInfo
 {
     std::vector<JSInput> vjsin;
     std::vector<JSOutput> vjsout;
     std::vector<Note> notes;
-    std::vector<SpendingKey> keys;
-    std::vector<uint256> commitments;
     CAmount vpub_old = 0;
     CAmount vpub_new = 0;
 };
@@ -73,7 +72,7 @@ private:
     std::vector<SendManyRecipient> t_outputs_;
     std::vector<SendManyRecipient> z_outputs_;
     std::vector<SendManyInputUTXO> t_inputs_;
-    std::vector<SendManyInputNPT> z_inputs_;
+    std::vector<SendManyInputJSOP> z_inputs_;
     
     CTransaction tx_;
    
@@ -83,11 +82,19 @@ private:
     bool find_utxos(bool fAcceptCoinbase);
     boost::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s);
     bool main_impl();
-    Object perform_joinsplit( AsyncJoinSplitInfo &);
+
+    // JoinSplit without any input notes to spend
+    Object perform_joinsplit(AsyncJoinSplitInfo &);
+
+    // JoinSplit with input notes to spend (JSOutPoints))
+    Object perform_joinsplit(AsyncJoinSplitInfo &, std::vector<JSOutPoint> & );
+
+    // JoinSplit where you have the witnesses and anchor
     Object perform_joinsplit(
         AsyncJoinSplitInfo & info,
         std::vector<boost::optional < ZCIncrementalWitness>> witnesses,
         uint256 anchor);
+
     void sign_send_raw_transaction(Object obj);     // throws exception if there was an error
 
 };
