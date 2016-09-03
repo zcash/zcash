@@ -120,7 +120,7 @@ void AsyncRPCOperation_sendmany::main() {
 // Notes:
 // 1. Currently there is no limit set on the number of joinsplits, so size of tx could be invalid.
 // 2. Note selection is not optimal
-// 3. Spendable notes are not locked, so another operation could also try to use them
+// 3. Spendable notes are not locked, so an operation running in parallel could also try to use them
 bool AsyncRPCOperation_sendmany::main_impl() {
 
     bool isSingleZaddrOutput = (t_outputs_.size()==0 && z_outputs_.size()==1);
@@ -142,8 +142,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     }
 
     CAmount z_inputs_total = 0;
-    for (SendManyInputNPT & p : z_inputs_) {
-        z_inputs_total += p.second;
+    for (SendManyInputJSOP & t : z_inputs_) {
+        z_inputs_total += std::get<2>(t);
     }
 
     CAmount t_outputs_total = 0;
@@ -198,6 +198,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         tx_ = CTransaction(rawTx);
     }
 
+    // TODO: Replace with logging to debug.log
 #if 1
     std::cout << "t_inputs_total: " << t_inputs_total << std::endl;
     std::cout << "z_inputs_total: " << z_inputs_total << std::endl;
@@ -244,7 +245,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     tx_ = CTransaction(mtx);
 
     // Copy zinputs and zoutputs to more flexible containers
-    std::deque<SendManyInputNPT> zInputsDeque;
+    std::deque<SendManyInputJSOP> zInputsDeque;
     for (auto o : z_inputs_) {
         zInputsDeque.push_back(o);
     }
@@ -348,18 +349,17 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             AsyncJoinSplitInfo info;
             info.vpub_old = 0;
             info.vpub_new = 0;
+            std::vector<JSOutPoint> outPoints;
             int n = 0;
             while (n++ < 2 && taddrTargetAmount > 0) {
-                SendManyInputNPT o = zInputsDeque.front();
-                NotePlaintext npt = o.first;
-                CAmount noteFunds = o.second;
+                SendManyInputJSOP o = zInputsDeque.front();
+                JSOutPoint outPoint = std::get<0>(o);
+                Note note = std::get<1>(o);
+                CAmount noteFunds = std::get<2>(o);
                 zInputsDeque.pop_front();
 
-                libzcash::Note inputNote = npt.note(frompaymentaddress_);
-                uint256 inputCommitment = inputNote.cm();
-                info.notes.push_back(inputNote);
-                info.commitments.push_back(inputCommitment);
-                info.keys.push_back(spendingkey_);
+                info.notes.push_back(note);
+                outPoints.push_back(outPoint);
 
                 // Put value back into the value pool
                 if (noteFunds >= taddrTargetAmount) {
@@ -380,7 +380,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 info.vjsout.push_back(JSOutput(frompaymentaddress_, jsChange));
             }
 
-            obj = perform_joinsplit(info);
+            obj = perform_joinsplit(info, outPoints);
         }
     }
 
@@ -444,10 +444,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 jsAnchor = changeWitness.root();
                 uint256 changeCommitment = prevJoinSplit.commitments[changeOutputIndex];
                 intermediates.insert(std::make_pair(tree.root(), tree));
-
-                // Update info with this change
-                info.commitments.push_back(changeCommitment);
-                info.keys.push_back(spendingkey_);
                 witnesses.push_back(changeWitness);
 
                 // Decrypt the change note's ciphertext to retrieve some data we need
@@ -466,8 +462,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                     
                     jsInputValue += plaintext.value;
                 } catch (const std::exception e) {
-                    std::cout << "exception: " << e.what() << std::endl;
-                    throw JSONRPCError(RPC_WALLET_ERROR, "Could not decrypt output note of previous join split in chain");
+                    throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Error decrypting output note of previous JoinSplit: %s", e.what()));
                 }
             }
 
@@ -476,21 +471,18 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             // Consume spendable non-change notes
             //
             std::vector<Note> vInputNotes;
-            std::vector<uint256> vInputCommitments;
-            std::vector<SpendingKey> vInputSpendingKey;
+            std::vector<JSOutPoint> vOutPoints;
             uint256 inputAnchor;
             int numInputsNeeded = (jsChange>0) ? 1 : 0;
             while (numInputsNeeded++ < 2 && zInputsDeque.size() > 0) {
-                SendManyInputNPT o = zInputsDeque.front();
-                NotePlaintext npt = o.first;
-                CAmount noteFunds = o.second;
+                SendManyInputJSOP t = zInputsDeque.front();
+                JSOutPoint jso = std::get<0>(t);
+                Note note = std::get<1>(t);
+                CAmount noteFunds = std::get<2>(t);
                 zInputsDeque.pop_front();
 
-                libzcash::Note inputNote = npt.note(frompaymentaddress_);
-                uint256 inputCommitment = inputNote.cm();
-                vInputNotes.push_back(inputNote);
-                vInputCommitments.push_back(inputCommitment);
-                vInputSpendingKey.push_back(spendingkey_);
+                vOutPoints.push_back(jso);
+                vInputNotes.push_back(note);
                 
                 jsInputValue += noteFunds;
             }
@@ -500,7 +492,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
                 {
                     LOCK(cs_main);
-                    pwalletMain->WitnessNoteCommitment(vInputCommitments, vInputWitnesses, inputAnchor);
+                    pwalletMain->GetNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
                 }
        
                 if (vInputWitnesses.size()==0) {
@@ -527,11 +519,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 if (jsAnchor.IsNull()) {                   
                     jsAnchor = inputAnchor;                   
                 }
-                
-                // Populate info struct with note inputs
-                std::copy(vInputCommitments.begin(), vInputCommitments.end(), std::back_inserter(info.commitments));
+
+                // Add spendable notes as inputs
                 std::copy(vInputNotes.begin(), vInputNotes.end(), std::back_inserter(info.notes));
-                std::copy(vInputSpendingKey.begin(), vInputSpendingKey.end(), std::back_inserter(info.keys));
             }
 
             
@@ -717,7 +707,6 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
         for (auto & pair : mapNoteData) {
             JSOutPoint jsop = pair.first;
             CNoteData nd = pair.second;
-
             PaymentAddress pa = nd.address;
 
             // skip notes which belong to a different payment address in the wallet
@@ -725,11 +714,22 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
                 continue;
             }
 
+            // skip note which has been spent
+            if (pwalletMain->IsSpent(nd.nullifier)) {
+                continue;
+            }
+
             int i = jsop.js; // Index into CTransaction.vjoinsplit
             int j = jsop.n; // Index into JSDescription.ciphertexts
 
-            // determine amount of funds in the note and if it has been spent
-            ZCNoteDecryption decryptor(spendingkey_.viewing_key());
+            // Get cached decryptor
+            ZCNoteDecryption decryptor;
+            if (!pwalletMain->GetNoteDecryptor(pa, decryptor)) {
+                // Note decryptors are created when the wallet is loaded, so it should always exist
+                throw JSONRPCError(RPC_WALLET_ERROR, "Could not find note decryptor");
+            }
+
+             // determine amount of funds in the note
             auto hSig = wtx.vjoinsplit[i].h_sig(*pzcashParams, wtx.joinSplitPubKey);
             try {
                 NotePlaintext plaintext = NotePlaintext::decrypt(
@@ -739,28 +739,15 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
                         hSig,
                         (unsigned char) j);
 
-                uint256 nullifier = plaintext.note(frompaymentaddress_).nullifier(spendingkey_);
-                bool isSpent = pwalletMain->IsSpent(nullifier);
+                z_inputs_.push_back(SendManyInputJSOP(jsop, plaintext.note(pa), CAmount(plaintext.value)));
 
-                if (isSpent) {
-                    
-                std::cout << "Found SPENT note at txid : " << wtx.GetTxid().ToString() << std::endl;
-                std::cout << "...    vjoinsplit index: " << i << std::endl;
-                std::cout << "... jsdescription index: " << j << std::endl;
-                std::cout << "...              amount: " << FormatMoney(plaintext.value, false) << std::endl;
-
-                    
-                    continue;
-                }
-
-                z_inputs_.push_back(SendManyInputNPT(plaintext, CAmount(plaintext.value)));
-
+                // TODO: Replace with logging to debug.log
 #if 1
                 std::cout << "Found note at txid     : " << wtx.GetTxid().ToString() << std::endl;
                 std::cout << "...    vjoinsplit index: " << i << std::endl;
                 std::cout << "... jsdescription index: " << j << std::endl;
                 std::cout << "...     payment address: " << CZCPaymentAddress(pa).ToString() << std::endl;
-                std::cout << "...               spent: " << isSpent << std::endl;
+                std::cout << "...               spent: " << pwalletMain->IsSpent(nd.nullifier) << std::endl;
                 std::string data(plaintext.memo.begin(), plaintext.memo.end());
                 std::cout << "...                memo: " << HexStr(data) << std::endl;
                 std::cout << "...              amount: " << FormatMoney(plaintext.value, false) << std::endl;
@@ -777,8 +764,8 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     }
 
     // sort in descending order, so big notes appear first
-    std::sort(z_inputs_.begin(), z_inputs_.end(), [](SendManyInputNPT i, SendManyInputNPT j) -> bool {
-        return (i.second > j.second);
+    std::sort(z_inputs_.begin(), z_inputs_.end(), [](SendManyInputJSOP i, SendManyInputJSOP j) -> bool {
+        return ( std::get<2>(i) > std::get<2>(j));
     });
 
     return true;
@@ -787,14 +774,21 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
 Object AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info) {
     std::vector<boost::optional < ZCIncrementalWitness>> witnesses;
     uint256 anchor;
+    {
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        anchor = pcoinsTip->GetBestAnchor();    // As there are no inputs, ask the wallet for the best anchor
+    }
+    return perform_joinsplit(info, witnesses, anchor);
+}
 
-    // Lock critical section (accesses blockchain)
+
+Object AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info, std::vector<JSOutPoint> & outPoints) {
+    std::vector<boost::optional < ZCIncrementalWitness>> witnesses;
+    uint256 anchor;
     {
         LOCK(cs_main);
-        pwalletMain->WitnessNoteCommitment(info.commitments, witnesses, anchor);
+        pwalletMain->GetNoteWitnesses(outPoints, witnesses, anchor);
     }
-    // Unlock critical section
-    
     return perform_joinsplit(info, witnesses, anchor);
 }
 
@@ -803,15 +797,19 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
         std::vector<boost::optional < ZCIncrementalWitness>> witnesses,
         uint256 anchor)
 {
-    if (!(witnesses.size() == info.notes.size()) || !(info.notes.size() == info.keys.size())) {
-        throw runtime_error("number of notes and witnesses and keys do not match");
+    if (anchor.IsNull()) {
+        throw std::runtime_error("anchor is null");
+    }
+
+    if (!(witnesses.size() == info.notes.size())) {
+        throw runtime_error("number of notes and witnesses do not match");
     }
 
     for (size_t i = 0; i < witnesses.size(); i++) {
         if (!witnesses[i]) {
             throw runtime_error("joinsplit input could not be found in tree");
         }
-        info.vjsin.push_back(JSInput(*witnesses[i], info.notes[i], info.keys[i]));
+        info.vjsin.push_back(JSInput(*witnesses[i], info.notes[i], spendingkey_));
     }
 
     // Make sure there are two inputs and two outputs
@@ -829,6 +827,7 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
 
     CMutableTransaction mtx(tx_);
 
+    // TODO: Replace with logging to debug.log
 #if 1
     std::cout << "joinsplit chain length = " << tx_.vjoinsplit.size() << std::endl;
     std::cout << "vpub_old: " << info.vpub_old << std::endl;
