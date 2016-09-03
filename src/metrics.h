@@ -27,6 +27,7 @@ extern AtomicCounter transactionsValidated;
 extern AtomicCounter ehSolverRuns;
 extern AtomicCounter minedBlocks;
 
+void ConnectMetricsScreen();
 void ThreadShowMetricsScreen();
 
 /**

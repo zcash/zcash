@@ -969,6 +969,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (GetBoolArg("-showmetrics", true) && !fPrintToConsole && !GetBoolArg("-daemon", false)) {
         // Start the persistent metrics interface
+        ConnectMetricsScreen();
         threadGroup.create_thread(&ThreadShowMetricsScreen);
     }
 
