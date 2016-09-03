@@ -16,6 +16,7 @@
 #include "consensus/validation.h"
 #include "init.h"
 #include "merkleblock.h"
+#include "metrics.h"
 #include "net.h"
 #include "pow.h"
 #include "txdb.h"
@@ -843,6 +844,11 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 
 bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 {
+    // Don't count coinbase transactions because mining skews the count
+    if (!tx.IsCoinBase()) {
+        transactionsValidated.increment();
+    }
+
     if (!CheckTransactionWithoutProofVerification(tx, state)) {
         return false;
     } else {
