@@ -6,7 +6,7 @@
 
 static std::atomic<size_t> workerCounter(0);
 
-AsyncRPCQueue::AsyncRPCQueue() : closed_(false) {
+AsyncRPCQueue::AsyncRPCQueue() : closed_(false), finish_(false) {
 }
 
 AsyncRPCQueue::~AsyncRPCQueue() {
@@ -18,13 +18,18 @@ AsyncRPCQueue::~AsyncRPCQueue() {
  */
 void AsyncRPCQueue::run(size_t workerId) {
 
-    while (!isClosed()) {
+    while (true) {
         AsyncRPCOperationId key;
         std::shared_ptr<AsyncRPCOperation> operation;
         {
             std::unique_lock< std::mutex > guard(lock_);
-            while (operation_id_queue_.empty() && !isClosed()) {
+            while (operation_id_queue_.empty() && !isClosed() && !isFinishing()) {
                 this->condition_.wait(guard);
+            }
+
+            // Exit if the queue is empty and we are finishing up
+            if ( isFinishing() && operation_id_queue_.empty() ) {
+                break;
             }
 
             // Exit if the queue is closing.
@@ -66,8 +71,8 @@ void AsyncRPCQueue::run(size_t workerId) {
  */
 void AsyncRPCQueue::addOperation(const std::shared_ptr<AsyncRPCOperation> &ptrOperation) {
 
-    // Don't add if queue is closed
-    if (isClosed()) {
+    // Don't add if queue is closed or finishing
+    if (isClosed() || isFinishing()) {
         return;
     }
 
@@ -110,15 +115,29 @@ std::shared_ptr<AsyncRPCOperation> AsyncRPCQueue::popOperationForId(AsyncRPCOper
  * Return true if the queue is closed to new operations.
  */
 bool AsyncRPCQueue::isClosed() const {
-    return closed_;
+    return closed_.load();
 }
 
 /**
  * Close the queue and cancel all existing operations
  */
 void AsyncRPCQueue::close() {
-    this->closed_ = true;
+    closed_.store(true);
     cancelAllOperations();
+}
+
+/**
+ * Return true if the queue is finishing up
+ */
+bool AsyncRPCQueue::isFinishing() const {
+    return finish_.load();
+}
+
+/**
+ * Close the queue but finish existing operations. Do not accept new operations.
+ */
+void AsyncRPCQueue::finish() {
+    finish_.store(true);
 }
 
 /**
@@ -171,9 +190,28 @@ std::vector<AsyncRPCOperationId> AsyncRPCQueue::getAllOperationIds() const {
  * Calling thread will close and wait for worker threads to join.
  */
 void AsyncRPCQueue::closeAndWait() {
-    if (!this->closed_) {
-        close();
+    close();
+    wait_for_worker_threads();
+}
+
+/**
+ * Block current thread until all workers have finished their tasks.
+ */
+void AsyncRPCQueue::finishAndWait() {
+    finish();
+    wait_for_worker_threads();
+}
+
+/**
+ * Block current thread until all operations are finished or the queue has closed.
+ */
+void AsyncRPCQueue::wait_for_worker_threads() {
+    // Notify any workers who are waiting, so they see the updated queue state
+    {
+        std::unique_lock< std::mutex > guard(lock_);
+        this->condition_.notify_all();
     }
+        
     for (std::thread & t : this->workers_) {
         if (t.joinable()) {
             t.join();
