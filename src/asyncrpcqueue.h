@@ -24,6 +24,8 @@ typedef std::unordered_map<AsyncRPCOperationId, std::shared_ptr<AsyncRPCOperatio
 
 class AsyncRPCQueue {
 public:
+    static shared_ptr<AsyncRPCQueue> sharedInstance();
+
     AsyncRPCQueue();
     virtual ~AsyncRPCQueue();
 
