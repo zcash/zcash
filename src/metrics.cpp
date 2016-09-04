@@ -109,7 +109,7 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
     std::cout << strDuration << std::endl;
     lines += (strDuration.size() / cols);
 
-    std::cout << "- " << strprintf(_("You have validated %d transactions."), transactionsValidated.get()) << std::endl;
+    std::cout << "- " << strprintf(_("You have validated %d transactions!"), transactionsValidated.get()) << std::endl;
 
     if (mining) {
         double hps = uptime > 0 ? (double)solutionTargetChecks.get() / uptime : 0;
