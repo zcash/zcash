@@ -72,10 +72,10 @@ void printMiningStatus(bool mining)
             else
                 nThreads = boost::thread::hardware_concurrency();
         }
-        std::cout << "You are running " << nThreads << " mining threads." << std::endl;
+        std::cout << strprintf(_("You are running %d mining threads."), nThreads) << std::endl;
     } else {
-        std::cout << "You are currently not mining." << std::endl;
-        std::cout << "To enable mining, add 'gen=1' to your zcash.conf and restart." << std::endl;
+        std::cout << _("You are currently not mining.") << std::endl;
+        std::cout << _("To enable mining, add 'gen=1' to your zcash.conf and restart.") << std::endl;
     }
     std::cout << std::endl;
 }
@@ -93,27 +93,27 @@ int printMetrics(int64_t nStart, bool mining)
     int seconds = uptime - (((((days * 24) + hours) * 60) + minutes) * 60);
 
     // Display uptime
-    std::cout << "Since starting this node ";
+    std::string duration;
     if (days > 0) {
-        std::cout << days << " days, ";
+        duration = strprintf(_("%d days, %d hours, %d minutes, %d seconds"), days, hours, minutes, seconds);
+    } else if (hours > 0) {
+        duration = strprintf(_("%d hours, %d minutes, %d seconds"), hours, minutes, seconds);
+    } else if (minutes > 0) {
+        duration = strprintf(_("%d minutes, %d seconds"), minutes, seconds);
+    } else {
+        duration = strprintf(_("%d seconds"), seconds);
     }
-    if (hours > 0) {
-        std::cout << hours << " hours, ";
-    }
-    if (minutes > 0) {
-        std::cout << minutes << " minutes, ";
-    }
-    std::cout << seconds << " seconds ago:" << std::endl;
+    std::cout << strprintf(_("Since starting this node %s ago:"), duration) << std::endl;
 
-    std::cout << "- You have validated " << transactionsValidated.get() << " transactions." << std::endl;
+    std::cout << "- " << strprintf(_("You have validated %d transactions."), transactionsValidated.get()) << std::endl;
 
     if (mining) {
-        std::cout << "- You have completed " << ehSolverRuns.get() << " Equihash solver runs." << std::endl;
+        std::cout << "- " << strprintf(_("You have completed %d Equihash solver runs."), ehSolverRuns.get()) << std::endl;
         lines++;
 
         int mined = minedBlocks.get();
         if (mined > 0) {
-            std::cout << "- You have mined " << mined << " blocks!" << std::endl;
+            std::cout << "- " << strprintf(_("You have mined %d blocks!"), mined) << std::endl;
             lines++;
         }
     }
@@ -130,7 +130,7 @@ int printMessageBox()
         return 0;
     }
 
-    std::cout << "Messages:" << std::endl;
+    std::cout << _("Messages:") << std::endl;
     for (auto it = u->cbegin(); it != u->cend(); ++it) {
         std::cout << *it << std::endl;
     }
@@ -145,10 +145,10 @@ int printInitMessage()
     }
 
     std::string msg = *initMessage;
-    std::cout << "Init message: " << msg << std::endl;
+    std::cout << _("Init message:") << " " << msg << std::endl;
     std::cout << std::endl;
 
-    if (msg == "Done loading") {
+    if (msg == _("Done loading")) {
         loaded = true;
     }
 
@@ -168,8 +168,8 @@ void ThreadShowMetricsScreen()
     std::cout << std::endl;
 
     // Thank you text
-    std::cout << "Thank you for running a Zcash node!" << std::endl;
-    std::cout << "You're helping to strengthen the network and contributing to a social good :)" << std::endl;
+    std::cout << _("Thank you for running a Zcash node!") << std::endl;
+    std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
     std::cout << std::endl;
 
     // Miner status
@@ -191,7 +191,7 @@ void ThreadShowMetricsScreen()
         lines += printInitMessage();
 
         // Explain how to exit
-        std::cout << "[Press Ctrl+C to exit] [Set 'showmetrics=0' to hide]" << std::endl;;
+        std::cout << "[" << _("Press Ctrl+C to exit") << "] [" << _("Set 'showmetrics=0' to hide") << "]" << std::endl;;
 
         boost::this_thread::interruption_point();
         MilliSleep(1000);
