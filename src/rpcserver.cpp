@@ -52,7 +52,6 @@ static boost::thread_group* rpc_worker_group = NULL;
 static boost::asio::io_service::work *rpc_dummy_work = NULL;
 static std::vector<CSubNet> rpc_allow_subnets; //!< List of subnets to allow RPC connections from
 static std::vector< boost::shared_ptr<ip::tcp::acceptor> > rpc_acceptors;
-static shared_ptr<AsyncRPCQueue> async_rpc_queue;
 
 static struct CRPCSignals
 {
@@ -747,8 +746,7 @@ void StartRPCThreads()
     g_rpcSignals.Started();
 
     // Launch one async rpc worker.  The ability to launch multiple workers is not recommended at present and thus the option is disabled.
-    async_rpc_queue = std::make_shared<AsyncRPCQueue>();
-    async_rpc_queue->addWorker();
+    getAsyncRPCQueue()->addWorker();
 /*   
     int n = GetArg("-rpcasyncthreads", 1);
     if (n<1) {
@@ -759,7 +757,7 @@ void StartRPCThreads()
         return;
     }
     for (int i = 0; i < n; i++)
-        async_rpc_queue->addWorker();
+        getAsyncRPCQueue()->addWorker();
 */
 }
 
@@ -813,7 +811,7 @@ void StopRPCThreads()
 
     // Tells async queue to cancel all operations and shutdown.
     LogPrintf("%s: waiting for async rpc workers to stop\n", __func__);
-    async_rpc_queue->closeAndWait();
+    getAsyncRPCQueue()->closeAndWait();
 }
 
 bool IsRPCRunning()
@@ -1080,5 +1078,5 @@ const CRPCTable tableRPC;
 // Return async rpc queue
 std::shared_ptr<AsyncRPCQueue> getAsyncRPCQueue()
 {
-    return async_rpc_queue;
+    return AsyncRPCQueue::sharedInstance();
 }
