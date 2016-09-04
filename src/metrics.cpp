@@ -16,6 +16,7 @@
 
 AtomicCounter transactionsValidated;
 AtomicCounter ehSolverRuns;
+AtomicCounter solutionTargetChecks;
 AtomicCounter minedBlocks;
 
 boost::synchronized_value<std::list<std::string>> messageBox;
@@ -111,8 +112,11 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
     std::cout << "- " << strprintf(_("You have validated %d transactions."), transactionsValidated.get()) << std::endl;
 
     if (mining) {
+        double hps = uptime > 0 ? (double)solutionTargetChecks.get() / uptime : 0;
+        std::string strHps = strprintf("%.4f H/s", hps);
+        std::cout << "- " << strprintf(_("You have contributed %s on average to the network hash rate."), strHps) << std::endl;
         std::cout << "- " << strprintf(_("You have completed %d Equihash solver runs."), ehSolverRuns.get()) << std::endl;
-        lines++;
+        lines += 2;
 
         int mined = minedBlocks.get();
         if (mined > 0) {

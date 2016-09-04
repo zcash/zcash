@@ -541,6 +541,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     // Write the solution to the hash and compute the result.
                     LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
+                    solutionTargetChecks.increment();
 
                     if (UintToArith256(pblock->GetHash()) > hashTarget) {
                         return false;
