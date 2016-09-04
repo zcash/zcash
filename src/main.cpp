@@ -4052,6 +4052,9 @@ string GetWarnings(string strFor)
             {
                 nPriority = alert.nPriority;
                 strStatusBar = alert.strStatusBar;
+                if (alert.nPriority >= ALERT_PRIORITY_SAFE_MODE) {
+                    strRPC = alert.strRPCError;
+                }
             }
         }
     }
