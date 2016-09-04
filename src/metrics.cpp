@@ -61,6 +61,67 @@ void ConnectMetricsScreen()
     uiInterface.InitMessage.connect(metrics_InitMessage);
 }
 
+void printMiningStatus(bool mining)
+{
+    if (mining) {
+        int nThreads = GetArg("-genproclimit", 1);
+        if (nThreads < 0) {
+            // In regtest threads defaults to 1
+            if (Params().DefaultMinerThreads())
+                nThreads = Params().DefaultMinerThreads();
+            else
+                nThreads = boost::thread::hardware_concurrency();
+        }
+        std::cout << "You are running " << nThreads << " mining threads." << std::endl;
+    } else {
+        std::cout << "You are currently not mining." << std::endl;
+        std::cout << "To enable mining, add 'gen=1' to your zcash.conf and restart." << std::endl;
+    }
+    std::cout << std::endl;
+}
+
+int printMetrics(int64_t nStart, bool mining)
+{
+    // Number of lines that are always displayed
+    int lines = 3;
+
+    // Calculate uptime
+    int64_t uptime = GetTime() - nStart;
+    int days = uptime / (24 * 60 * 60);
+    int hours = (uptime - (days * 24 * 60 * 60)) / (60 * 60);
+    int minutes = (uptime - (((days * 24) + hours) * 60 * 60)) / 60;
+    int seconds = uptime - (((((days * 24) + hours) * 60) + minutes) * 60);
+
+    // Display uptime
+    std::cout << "Since starting this node ";
+    if (days > 0) {
+        std::cout << days << " days, ";
+    }
+    if (hours > 0) {
+        std::cout << hours << " hours, ";
+    }
+    if (minutes > 0) {
+        std::cout << minutes << " minutes, ";
+    }
+    std::cout << seconds << " seconds ago:" << std::endl;
+
+    std::cout << "- You have validated " << transactionsValidated.get() << " transactions." << std::endl;
+
+    if (mining) {
+        std::cout << "- You have completed " << ehSolverRuns.get() << " Equihash solver runs." << std::endl;
+        lines++;
+
+        int mined = minedBlocks.get();
+        if (mined > 0) {
+            std::cout << "- You have mined " << mined << " blocks!" << std::endl;
+            lines++;
+        }
+    }
+    std::cout << std::endl;
+
+    return lines;
+}
+
 int printMessageBox()
 {
     boost::strict_lock_ptr<std::list<std::string>> u = messageBox.synchronize();
@@ -69,11 +130,11 @@ int printMessageBox()
         return 0;
     }
 
-    std::cout << std::endl;
     std::cout << "Messages:" << std::endl;
     for (auto it = u->cbegin(); it != u->cend(); ++it) {
         std::cout << *it << std::endl;
     }
+    std::cout << std::endl;
     return 2 + u->size();
 }
 
@@ -84,8 +145,8 @@ int printInitMessage()
     }
 
     std::string msg = *initMessage;
-    std::cout << std::endl;
     std::cout << "Init message: " << msg << std::endl;
+    std::cout << std::endl;
 
     if (msg == "Done loading") {
         loaded = true;
@@ -113,71 +174,23 @@ void ThreadShowMetricsScreen()
 
     // Miner status
     bool mining = GetBoolArg("-gen", false);
-    if (mining) {
-        int nThreads = GetArg("-genproclimit", 1);
-        if (nThreads < 0) {
-            // In regtest threads defaults to 1
-            if (Params().DefaultMinerThreads())
-                nThreads = Params().DefaultMinerThreads();
-            else
-                nThreads = boost::thread::hardware_concurrency();
-        }
-        std::cout  << "You are running " << nThreads << " mining threads." << std::endl;
-    } else {
-        std::cout  << "You are currently not mining." << std::endl;
-        std::cout  << "To enable mining, add 'gen=1' to your zcash.conf and restart." << std::endl;
-    }
-    std::cout << std::endl;
+    printMiningStatus(mining);
 
     // Count uptime
     int64_t nStart = GetTime();
 
     while (true) {
         // Number of lines that are always displayed
-        int lines = 4;
+        int lines = 1;
 
         // Erase below current position
         std::cout << "\e[J";
 
-        // Calculate uptime
-        int64_t uptime = GetTime() - nStart;
-        int days = uptime / (24 * 60 * 60);
-        int hours = (uptime - (days * 24 * 60 * 60)) / (60 * 60);
-        int minutes = (uptime - (((days * 24) + hours) * 60 * 60)) / 60;
-        int seconds = uptime - (((((days * 24) + hours) * 60) + minutes) * 60);
-
-        // Display uptime
-        std::cout  << "Since starting this node ";
-        if (days > 0) {
-            std::cout << days << " days, ";
-        }
-        if (hours > 0) {
-            std::cout << hours << " hours, ";
-        }
-        if (minutes > 0) {
-            std::cout << minutes << " minutes, ";
-        }
-        std::cout << seconds << " seconds ago:" << std::endl;
-
-        std::cout  << "- You have validated " << transactionsValidated.get() << " transactions." << std::endl;
-
-        if (mining) {
-            std::cout  << "- You have completed " << ehSolverRuns.get() << " Equihash solver runs." << std::endl;
-            lines++;
-
-            int mined = minedBlocks.get();
-            if (mined > 0) {
-                std::cout  << "- You have mined " << mined << " blocks!" << std::endl;
-                lines++;
-            }
-        }
-
-        // Messages
+        lines += printMetrics(nStart, mining);
         lines += printMessageBox();
         lines += printInitMessage();
 
         // Explain how to exit
-        std::cout << std::endl;
         std::cout << "[Press Ctrl+C to exit] [Set 'showmetrics=0' to hide]" << std::endl;;
 
         boost::this_thread::interruption_point();
