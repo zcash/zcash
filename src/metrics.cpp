@@ -12,6 +12,7 @@
 #include <boost/thread.hpp>
 #include <boost/thread/synchronized_value.hpp>
 #include <string>
+#include <sys/ioctl.h>
 
 AtomicCounter transactionsValidated;
 AtomicCounter ehSolverRuns;
@@ -80,7 +81,7 @@ void printMiningStatus(bool mining)
     std::cout << std::endl;
 }
 
-int printMetrics(int64_t nStart, bool mining)
+int printMetrics(size_t cols, int64_t nStart, bool mining)
 {
     // Number of lines that are always displayed
     int lines = 3;
@@ -103,7 +104,9 @@ int printMetrics(int64_t nStart, bool mining)
     } else {
         duration = strprintf(_("%d seconds"), seconds);
     }
-    std::cout << strprintf(_("Since starting this node %s ago:"), duration) << std::endl;
+    std::string strDuration = strprintf(_("Since starting this node %s ago:"), duration);
+    std::cout << strDuration << std::endl;
+    lines += (strDuration.size() / cols);
 
     std::cout << "- " << strprintf(_("You have validated %d transactions."), transactionsValidated.get()) << std::endl;
 
@@ -122,7 +125,7 @@ int printMetrics(int64_t nStart, bool mining)
     return lines;
 }
 
-int printMessageBox()
+int printMessageBox(size_t cols)
 {
     boost::strict_lock_ptr<std::list<std::string>> u = messageBox.synchronize();
 
@@ -130,12 +133,15 @@ int printMessageBox()
         return 0;
     }
 
+    int lines = 2 + u->size();
     std::cout << _("Messages:") << std::endl;
     for (auto it = u->cbegin(); it != u->cend(); ++it) {
         std::cout << *it << std::endl;
+        // Handle wrapped lines
+        lines += (it->size() / cols);
     }
     std::cout << std::endl;
-    return 2 + u->size();
+    return lines;
 }
 
 int printInitMessage()
@@ -183,11 +189,15 @@ void ThreadShowMetricsScreen()
         // Number of lines that are always displayed
         int lines = 1;
 
+        // Get current window size
+        struct winsize w;
+        ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+
         // Erase below current position
         std::cout << "\e[J";
 
-        lines += printMetrics(nStart, mining);
-        lines += printMessageBox();
+        lines += printMetrics(w.ws_col, nStart, mining);
+        lines += printMessageBox(w.ws_col);
         lines += printInitMessage();
 
         // Explain how to exit
