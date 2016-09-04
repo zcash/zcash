@@ -107,8 +107,8 @@ void ThreadShowMetricsScreen()
     std::cout << std::endl;
 
     // Thank you text
-    std::cout << OFFSET << "Thank you for running a Zcash node!" << std::endl;
-    std::cout << OFFSET << "By running this node, you're contributing to the social good :)" << std::endl;
+    std::cout  << "Thank you for running a Zcash node!" << std::endl;
+    std::cout  << "By running this node, you're contributing to the social good :)" << std::endl;
     std::cout << std::endl;
 
     // Miner status
@@ -122,10 +122,10 @@ void ThreadShowMetricsScreen()
             else
                 nThreads = boost::thread::hardware_concurrency();
         }
-        std::cout << OFFSET << "You are running " << nThreads << " mining threads." << std::endl;
+        std::cout  << "You are running " << nThreads << " mining threads." << std::endl;
     } else {
-        std::cout << OFFSET << "You are currently not mining." << std::endl;
-        std::cout << OFFSET << "To enable mining, add 'gen=1' to your zcash.conf and restart." << std::endl;
+        std::cout  << "You are currently not mining." << std::endl;
+        std::cout  << "To enable mining, add 'gen=1' to your zcash.conf and restart." << std::endl;
     }
     std::cout << std::endl;
 
@@ -147,7 +147,7 @@ void ThreadShowMetricsScreen()
         int seconds = uptime - (((((days * 24) + hours) * 60) + minutes) * 60);
 
         // Display uptime
-        std::cout << OFFSET << "Since starting this node ";
+        std::cout  << "Since starting this node ";
         if (days > 0) {
             std::cout << days << " days, ";
         }
@@ -159,15 +159,15 @@ void ThreadShowMetricsScreen()
         }
         std::cout << seconds << " seconds ago:" << std::endl;
 
-        std::cout << OFFSET << "- You have validated " << transactionsValidated.get() << " transactions." << std::endl;
+        std::cout  << "- You have validated " << transactionsValidated.get() << " transactions." << std::endl;
 
         if (mining) {
-            std::cout << OFFSET << "- You have completed " << ehSolverRuns.get() << " Equihash solver runs." << std::endl;
+            std::cout  << "- You have completed " << ehSolverRuns.get() << " Equihash solver runs." << std::endl;
             lines++;
 
             int mined = minedBlocks.get();
             if (mined > 0) {
-                std::cout << OFFSET << "- You have mined " << mined << " blocks!" << std::endl;
+                std::cout  << "- You have mined " << mined << " blocks!" << std::endl;
                 lines++;
             }
         }
