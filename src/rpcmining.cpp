@@ -192,6 +192,7 @@ Value generate(const Array& params, bool fHelp)
             std::function<bool(std::vector<unsigned char>)> validBlock =
                     [&pblock](std::vector<unsigned char> soln) {
                 pblock->nSolution = soln;
+                solutionTargetChecks.increment();
                 return CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus());
             };
             bool found = EhBasicSolveUncancellable(n, k, curr_state, validBlock);

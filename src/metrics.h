@@ -25,6 +25,7 @@ struct AtomicCounter {
 
 extern AtomicCounter transactionsValidated;
 extern AtomicCounter ehSolverRuns;
+extern AtomicCounter solutionTargetChecks;
 extern AtomicCounter minedBlocks;
 
 void ConnectMetricsScreen();
