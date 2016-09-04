@@ -34,6 +34,9 @@ void AsyncRPCQueue::run(size_t workerId) {
 
             // Exit if the queue is closing.
             if (isClosed()) {
+                while (!operation_id_queue_.empty()) {
+                    operation_id_queue_.pop();
+                }
                 break;
             }
 
