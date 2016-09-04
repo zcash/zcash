@@ -107,8 +107,8 @@ void ThreadShowMetricsScreen()
     std::cout << std::endl;
 
     // Thank you text
-    std::cout  << "Thank you for running a Zcash node!" << std::endl;
-    std::cout  << "By running this node, you're contributing to the social good :)" << std::endl;
+    std::cout << "Thank you for running a Zcash node!" << std::endl;
+    std::cout << "You're helping to strengthen the network and contributing to a social good :)" << std::endl;
     std::cout << std::endl;
 
     // Miner status
@@ -178,7 +178,7 @@ void ThreadShowMetricsScreen()
 
         // Explain how to exit
         std::cout << std::endl;
-        std::cout << "[Hit Ctrl+C to exit] [Set 'showmetrics=0' to hide]" << std::endl;;
+        std::cout << "[Press Ctrl+C to exit] [Set 'showmetrics=0' to hide]" << std::endl;;
 
         boost::this_thread::interruption_point();
         MilliSleep(1000);
