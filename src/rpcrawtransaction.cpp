@@ -124,10 +124,6 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
         joinsplit.push_back(Pair("vpub_old", ValueFromAmount(jsdescription.vpub_old)));
         joinsplit.push_back(Pair("vpub_new", ValueFromAmount(jsdescription.vpub_new)));
 
-        // TODO: #808
-        uint256 pubKeyHash;
-        joinsplit.push_back(Pair("valid", jsdescription.Verify(*pzcashParams, pubKeyHash)));
-
         vjoinsplit.push_back(joinsplit);
     }
 
