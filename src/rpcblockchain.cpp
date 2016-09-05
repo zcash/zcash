@@ -33,29 +33,21 @@ double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficul
             blockindex = chainActive.Tip();
     }
 
-    uint32_t powLimit =
-        UintToArith256(Params().GetConsensus().powLimit).GetCompact();;
-    {
-        if (networkDifficulty && Params().GetConsensus().fPowAllowMinDifficultyBlocks)
-        {
-            // Special difficulty rule for testnet:
-            // If a block's timestamp is more than 2*nPowTargetSpacing minutes after
-            // the previous block, then it is permitted to be min-difficulty. So
-            // get the last non-min-difficulty (or at worst the genesis difficulty).
-            auto window = Params().GetConsensus().nPowTargetSpacing*2;
-            while (blockindex->pprev && blockindex->nBits == powLimit &&
-                    blockindex->GetBlockTime() > blockindex->pprev->GetBlockTime() + window) {
-                blockindex = blockindex->pprev;
-            }
-        }
+    uint32_t bits;
+    if (networkDifficulty) {
+        bits = GetNextWorkRequired(blockindex, nullptr, Params().GetConsensus());
+    } else {
+        bits = blockindex->nBits;
     }
 
-    int nShift = (blockindex->nBits >> 24) & 0xff;
+    uint32_t powLimit =
+        UintToArith256(Params().GetConsensus().powLimit).GetCompact();;
+    int nShift = (bits >> 24) & 0xff;
     int nShiftAmount = (powLimit >> 24) & 0xff;
 
     double dDiff =
         (double)(powLimit & 0x00ffffff) / 
-        (double)(blockindex->nBits & 0x00ffffff);
+        (double)(bits & 0x00ffffff);
 
     while (nShift < nShiftAmount)
     {

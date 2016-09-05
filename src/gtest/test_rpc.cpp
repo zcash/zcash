@@ -10,33 +10,6 @@
 #include "streams.h"
 #include "utilstrencodings.h"
 
-TEST(rpc, GetDifficultyTestnetRules) {
-    SelectParams(CBaseChainParams::TESTNET);
-
-    CBlockIndex prev;
-    prev.nTime = 1472700000;
-    prev.nBits = 0x201fffff;
-
-    CBlockIndex curr;
-    curr.pprev = &prev;
-    curr.nTime = 1472700300;
-    curr.nBits = 0x207fffff;
-
-    // Time interval is within 5 minutes, so the min-difficulty block should be
-    // interpreted as a valid network difficulty.
-    EXPECT_EQ(1, GetDifficulty(&curr));
-    EXPECT_EQ(1, GetNetworkDifficulty(&curr));
-
-    curr.nTime += 1;
-
-    // Time interval is over 5 minutes, so the min-difficulty block should be
-    // ignored for network difficulty determination.
-    EXPECT_EQ(1, GetDifficulty(&curr));
-    // We have to check this directly, because of some combination of rounding
-    // and truncation issues that result in Google Test displaying 4 != 4
-    EXPECT_EQ((double)0x7fffff/(double)0x1fffff, GetNetworkDifficulty(&curr));
-}
-
 extern json_spirit::Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails = false);
 
 TEST(rpc, check_blockToJSON_returns_minified_solution) {

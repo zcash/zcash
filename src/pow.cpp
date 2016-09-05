@@ -24,23 +24,6 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexLast == NULL)
         return nProofOfWorkLimit;
 
-    const CBlockIndex* pindexBits = pindexLast;
-    {
-        if (params.fPowAllowMinDifficultyBlocks)
-        {
-            // Special difficulty rule for testnet:
-            // If the new block's timestamp is more than 2* 2.5 minutes
-            // then allow mining of a min-difficulty block.
-            if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing*2)
-                return nProofOfWorkLimit;
-            else {
-                // Get the last non-min-difficulty (or at worst the genesis difficulty)
-                while (pindexBits->pprev && pindexBits->nBits == nProofOfWorkLimit)
-                    pindexBits = pindexBits->pprev;
-            }
-        }
-    }
-
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
     arith_uint256 bnAvg;
