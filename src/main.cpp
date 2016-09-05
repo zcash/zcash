@@ -919,10 +919,27 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                              REJECT_INVALID, "bad-txns-vpubs-both-nonzero");
         }
 
-        nValueOut += joinsplit.vpub_new;
+        nValueOut += joinsplit.vpub_old;
         if (!MoneyRange(nValueOut)) {
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
                              REJECT_INVALID, "bad-txns-txouttotal-toolarge");
+        }
+    }
+
+    // Ensure input values do not exceed MAX_MONEY
+    // We have not resolved the txin values at this stage,
+    // but we do know what the joinsplits claim to add
+    // to the value pool.
+    {
+        CAmount nValueIn = 0;
+        for (std::vector<JSDescription>::const_iterator it(tx.vjoinsplit.begin()); it != tx.vjoinsplit.end(); ++it)
+        {
+            nValueIn += it->vpub_new;
+
+            if (!MoneyRange(it->vpub_new) || !MoneyRange(nValueIn)) {
+                return state.DoS(100, error("CheckTransaction(): txin total out of range"),
+                                 REJECT_INVALID, "bad-txns-txintotal-toolarge");
+            }
         }
     }
 
