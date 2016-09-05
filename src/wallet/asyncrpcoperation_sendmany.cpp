@@ -111,6 +111,13 @@ void AsyncRPCOperation_sendmany::main() {
         set_state(OperationStatus::FAILED);
     }
 
+    std::string s = strprintf("async rpc %s finished (status=%s", getId(), getStateAsString());
+    if (success) {
+        s += strprintf(", tx=%s)\n", tx_.ToString());
+    } else {
+        s += strprintf(", error=%s)\n", getErrorMessage());
+    }
+    LogPrintf("%s",s);
 }
 
 // Notes:
@@ -160,7 +167,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     }
     
     if (isfromzaddr_ && (z_inputs_total < targetAmount)) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strprintf("Insufficient protected funds, have %ld, need %ld plus fee %ld", z_inputs_total, t_outputs_total, minersFee));
+        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strprintf("Insufficient protected funds, have %ld, need %ld plus fee %ld", z_inputs_total, z_outputs_total, minersFee));
     }
 
     // If from address is a taddr, select UTXOs to spend
@@ -194,16 +201,12 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         tx_ = CTransaction(rawTx);
     }
 
-    // TODO: Replace with logging to debug.log
-#if 1
-    std::cout << "t_inputs_total: " << t_inputs_total << std::endl;
-    std::cout << "z_inputs_total: " << z_inputs_total << std::endl;
-    std::cout << "t_outputs_total: " << t_outputs_total << std::endl;
-    std::cout << "z_outputs_total: " << z_outputs_total << std::endl;
-    std::cout << "sendAmount: " << sendAmount << std::endl;
-    std::cout << "feeAmount: " << minersFee << std::endl;
-    std::cout << "targetAmount: " << targetAmount << std::endl;
-#endif
+    LogPrint("asyncrpc", "%s: spending %s to send %s with fee %s\n",
+            getId().substr(0,10), FormatMoney(targetAmount, false), FormatMoney(sendAmount, false), FormatMoney(minersFee, false));
+    LogPrint("asyncrpc", " -  transparent input: %s\n", FormatMoney(t_inputs_total, false));
+    LogPrint("asyncrpc", " -      private input: %s\n", FormatMoney(z_inputs_total, false));
+    LogPrint("asyncrpc", " - transparent output: %s\n", FormatMoney(t_outputs_total, false));
+    LogPrint("asyncrpc", " -     private output: %s\n", FormatMoney(z_outputs_total, false));
     
     /**
      * SCENARIO #1
@@ -737,17 +740,14 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
 
                 z_inputs_.push_back(SendManyInputJSOP(jsop, plaintext.note(pa), CAmount(plaintext.value)));
 
-                // TODO: Replace with logging to debug.log
-#if 1
-                std::cout << "Found note at txid     : " << wtx.GetTxid().ToString() << std::endl;
-                std::cout << "...    vjoinsplit index: " << i << std::endl;
-                std::cout << "... jsdescription index: " << j << std::endl;
-                std::cout << "...     payment address: " << CZCPaymentAddress(pa).ToString() << std::endl;
-                std::cout << "...               spent: " << pwalletMain->IsSpent(nd.nullifier) << std::endl;
                 std::string data(plaintext.memo.begin(), plaintext.memo.end());
-                std::cout << "...                memo: " << HexStr(data) << std::endl;
-                std::cout << "...              amount: " << FormatMoney(plaintext.value, false) << std::endl;
-#endif
+                LogPrint("asyncrpc", "%s: found unspent note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
+                        getId().substr(0,10),
+                        wtx.GetTxid().ToString().substr(0,10),
+                        i, j,
+                        FormatMoney(plaintext.value, false),
+                        HexStr(data).substr(0,10)
+                        );
 
             } catch (const std::exception &) {
                 // Couldn't decrypt with this spending key
@@ -823,16 +823,13 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
 
     CMutableTransaction mtx(tx_);
 
-    // TODO: Replace with logging to debug.log
-#if 1
-    std::cout << "joinsplit chain length = " << tx_.vjoinsplit.size() << std::endl;
-    std::cout << "vpub_old: " << info.vpub_old << std::endl;
-    std::cout << "vpub_new: " << info.vpub_new << std::endl;
-    for (JSInput & o : info.vjsin)
-        std::cout << " in: " << o.note.value << std::endl;
-    for (JSOutput & o : info.vjsout)
-        std::cout << "out: " << o.value << std::endl;
-#endif
+    LogPrint("asyncrpc", "%s: creating joinsplit at index %d (vpub_old=%s, vpub_new=%s, in[0]=%s, in[1]=%s, out[0]=%s, out[1]=%s)\n",
+            getId().substr(0,10),
+            tx_.vjoinsplit.size(),
+            FormatMoney(info.vpub_old, false), FormatMoney(info.vpub_new, false),
+            FormatMoney(info.vjsin[0].note.value, false), FormatMoney(info.vjsin[1].note.value, false),
+            FormatMoney(info.vjsout[0].value, false), FormatMoney(info.vjsout[1].value, false)
+            );
 
     // Generate the proof, this can take over a minute.
     JSDescription jsdesc(*pzcashParams,
