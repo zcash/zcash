@@ -17,6 +17,7 @@
 #include "asyncrpcqueue.h"
 #include "asyncrpcoperation.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
+#include "rpcprotocol.h"
 
 #include <chrono>
 #include <thread>
@@ -451,10 +452,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 
 
 /**
- * Testing Async RPC operations.
- *
+ * Test Async RPC operations.
  * Tip: Create mock operations by subclassing AsyncRPCOperation.
  */
+
 class MockSleepOperation : public AsyncRPCOperation {
 public:
     std::chrono::milliseconds naptime;
@@ -607,7 +608,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations_parallel_cancel)
     q->addWorker();
     BOOST_CHECK(q->getNumberOfWorkers() == 2);
 
-    int numOperations = 10000;
+    int numOperations = 10000;  // 10000 seconds to complete
     for (int i=0; i<numOperations; i++) {
         std::shared_ptr<AsyncRPCOperation> op(new CountOperation());
         q->addOperation(op);
@@ -616,6 +617,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations_parallel_cancel)
     BOOST_CHECK(ids.size()==numOperations);
     q->closeAndWait();
     
+    // the shared counter should equal the number of successful operations.
     BOOST_CHECK_NE(numOperations, gCounter.load());
 
     int numSuccess = 0;
@@ -634,6 +636,183 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations_parallel_cancel)
     BOOST_CHECK(q->getOperationCount() == 0);
     ids = q->getAllOperationIds();
     BOOST_CHECK(ids.size()==0);
+}
+
+// This tests z_getoperationstatus, z_getoperationresult, z_listoperationids
+BOOST_AUTO_TEST_CASE(rpc_z_getoperations)
+{
+    std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
+    std::shared_ptr<AsyncRPCQueue> sharedInstance = AsyncRPCQueue::sharedInstance();
+    BOOST_CHECK(q == sharedInstance);
+
+    BOOST_CHECK_NO_THROW(CallRPC("z_getoperationstatus"));
+    BOOST_CHECK_NO_THROW(CallRPC("z_getoperationstatus []"));
+    BOOST_CHECK_NO_THROW(CallRPC("z_getoperationstatus [\"opid-1234\"]"));
+    BOOST_CHECK_THROW(CallRPC("z_getoperationstatus [] toomanyargs"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_getoperationstatus not_an_array"), runtime_error);
+
+    BOOST_CHECK_NO_THROW(CallRPC("z_getoperationresult"));
+    BOOST_CHECK_NO_THROW(CallRPC("z_getoperationresult []"));
+    BOOST_CHECK_NO_THROW(CallRPC("z_getoperationresult [\"opid-1234\"]"));
+    BOOST_CHECK_THROW(CallRPC("z_getoperationresult [] toomanyargs"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_getoperationresult not_an_array"), runtime_error);
+    
+    std::shared_ptr<AsyncRPCOperation> op1 = std::make_shared<AsyncRPCOperation>();
+    q->addOperation(op1);
+    std::shared_ptr<AsyncRPCOperation> op2 = std::make_shared<AsyncRPCOperation>();
+    q->addOperation(op2);
+    
+    BOOST_CHECK(q->getOperationCount() == 2);
+    BOOST_CHECK(q->getNumberOfWorkers() == 0);
+    q->addWorker();
+    BOOST_CHECK(q->getNumberOfWorkers() == 1);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    BOOST_CHECK(q->getOperationCount() == 0);
+    
+    Value retValue;
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listoperationids"));
+    BOOST_CHECK(retValue.get_array().size() == 2);
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getoperationstatus"));
+    Array array = retValue.get_array();
+    BOOST_CHECK(array.size() == 2);
+
+    // idempotent
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getoperationstatus"));
+    array = retValue.get_array();
+    BOOST_CHECK(array.size() == 2);   
+    
+    for (Value v : array) {
+        Object obj = v.get_obj();
+        Value id = find_value(obj, "id");
+        
+        Value result;
+        // removes result from internal storage
+        BOOST_CHECK_NO_THROW(result = CallRPC("z_getoperationresult [\"" + id.get_str() + "\"]"));
+        Array resultArray = result.get_array();
+        BOOST_CHECK(resultArray.size() == 1);
+        
+        Object resultObj = resultArray.front().get_obj();
+        Value resultId = find_value(resultObj, "id");
+        BOOST_CHECK_EQUAL(id.get_str(), resultId.get_str());
+    }
+    
+    // operations removed
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getoperationstatus"));
+    array = retValue.get_array();
+    BOOST_CHECK(array.size() == 0);
+
+    q->close();
+}
+
+BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
+{
+    SelectParams(CBaseChainParams::TESTNET);
+
+    LOCK(pwalletMain->cs_wallet);
+
+    BOOST_CHECK_THROW(CallRPC("z_sendmany"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_sendmany toofewargs"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_sendmany too many args here"), runtime_error);
+
+    // bad from address
+    BOOST_CHECK_THROW(CallRPC("z_sendmany INVALIDmwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs []"), runtime_error);
+    // empty amounts
+    BOOST_CHECK_THROW(CallRPC("z_sendmany mwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs []"), runtime_error);
+
+    // don't have the spending key for this address
+    BOOST_CHECK_THROW(CallRPC("z_sendmany tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkBUkJ1oSfbhTJhm72WiZizvkZz5aH1 []"), runtime_error);
+
+    // duplicate address
+    BOOST_CHECK_THROW(CallRPC("z_sendmany mwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs [{\"address\":\"mvBkHw3UTeV2ivipmSA6uo8yjN4DqZ5KoG\", \"amount\":50.0}, {\"address\":\"mvBkHw3UTeV2ivipmSA6uo8yjN4DqZ5KoG\", \"amount\":12.0} ]"), runtime_error);
+
+    // memo bigger than allowed length of ZC_MEMO_SIZE
+    std::vector<char> v (ZC_MEMO_SIZE*2);
+    std::fill(v.begin(),v.end(), 0xFF);
+    std::string badmemo(v.begin(), v.end());
+    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
+    std::string zaddr1 = pa.ToString();
+    BOOST_CHECK_THROW(CallRPC(string("z_sendmany mwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs ") + "[{\"address\":\"" + zaddr1 + "\", \"amount\":123.456}]"), runtime_error);
+    
+    // Test constructor of AsyncRPCOperation_sendmany 
+    try {
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany("",{}, {}, -1));
+    } catch (const Object& objError) {
+        BOOST_CHECK( find_value(objError, "message").get_str().find("Minconf cannot be negative") != string::npos);
+    }
+
+    try {
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany("",{}, {}, 1));
+    } catch (const Object& objError) {
+        BOOST_CHECK( find_value(objError, "message").get_str().find("From address parameter missing")!= string::npos);
+    }
+
+    try {
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany("mwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs", {}, {}, 1) );
+    } catch (const Object& objError) {
+        BOOST_CHECK( find_value(objError, "message").get_str().find("No recipients")!= string::npos);
+    }
+
+    try {
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy",1.0, "") };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany("INVALID", recipients, {}, 1) );
+    } catch (const Object& objError) {
+        BOOST_CHECK( find_value(objError, "message").get_str().find("payment address is invalid")!= string::npos);
+    }
+
+    // This test is for testnet addresses which begin with 't' not 'z'.
+    try {
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy",1.0, "") };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany("zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U", recipients, {}, 1) );
+    } catch (const Object& objError) {
+        BOOST_CHECK( find_value(objError, "message").get_str().find("payment address is for wrong network type")!= string::npos);
+    }
+
+    // Note: The following will crash as a google test because AsyncRPCOperation_sendmany
+    // invokes a method on pwalletMain, which is undefined in the google test environment.
+    try {
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy",1.0, "") };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany("tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkBUkJ1oSfbhTJhm72WiZizvkZz5aH1", recipients, {}, 1) );
+    } catch (const Object& objError) {
+        BOOST_CHECK( find_value(objError, "message").get_str().find("no spending key found for zaddr")!= string::npos);
+    }
+}
+
+// TODO: test private methods
+BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
+{
+    SelectParams(CBaseChainParams::TESTNET);
+
+    LOCK(pwalletMain->cs_wallet);
+
+    Value retValue;
+ 
+    // add keys manually
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
+    std::string taddr1 = retValue.get_str();
+    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
+    std::string zaddr1 = pa.ToString();
+    
+    // there are no utxos to spend
+    {
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1,100.0, "DEADBEEF") };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(taddr1, {}, recipients, 1) );
+        operation->main();
+        BOOST_CHECK(operation->isFailed());
+        std::string msg = operation->getErrorMessage();
+        BOOST_CHECK( msg.find("Insufficient funds, no UTXOs found") != string::npos);
+    }
+    
+    // there are no unspent notes to spend
+    {
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient(taddr1,100.0, "DEADBEEF") };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(zaddr1, recipients, {}, 1) );
+        operation->main();
+        BOOST_CHECK(operation->isFailed());
+        std::string msg = operation->getErrorMessage();
+        BOOST_CHECK( msg.find("Insufficient funds, no unspent notes") != string::npos);
+    }
+
 }
 
 
