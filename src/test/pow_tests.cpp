@@ -23,6 +23,7 @@ BOOST_AUTO_TEST_CASE(get_next_work)
     CBlockIndex pindexLast;
     pindexLast.nHeight = 32255;
     pindexLast.nTime = 1262152739;  // Block #32255 of Bitcoin
+    // This represents an average difficulty in the current algorithm
     pindexLast.nBits = 0x1d00ffff;
     BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1d011998);
 }
@@ -37,6 +38,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_pow_limit)
     CBlockIndex pindexLast;
     pindexLast.nHeight = 2015;
     pindexLast.nTime = 1233061996;  // Block #2015 of Bitcoin
+    // This represents an average difficulty in the current algorithm
     // TODO change once the harder genesis block is generated
     pindexLast.nBits = 0x207fffff;
     BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x207fffff);
@@ -52,6 +54,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual)
     CBlockIndex pindexLast;
     pindexLast.nHeight = 68543;
     pindexLast.nTime = 1279297671;  // Block #68543 of Bitcoin
+    // This represents an average difficulty in the current algorithm
     pindexLast.nBits = 0x1c05a3f4;
     BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1c05306f);
 }
@@ -66,6 +69,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual)
     CBlockIndex pindexLast;
     pindexLast.nHeight = 46367;
     pindexLast.nTime = 1269211443;  // Block #46367 of Bitcoin
+    // This represents an average difficulty in the current algorithm
     pindexLast.nBits = 0x1c387f6f;
     BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1c418995);
 }
