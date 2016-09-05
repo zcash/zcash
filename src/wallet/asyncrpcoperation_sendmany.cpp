@@ -665,7 +665,7 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
 
         // By default we ignore coinbase outputs
         bool isCoinbase = out.tx->IsCoinBase();
-        if (out.tx->IsCoinBase() && fAcceptCoinbase==false) {
+        if (isCoinbase && fAcceptCoinbase==false) {
             continue;
         }
         
