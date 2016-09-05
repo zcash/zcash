@@ -22,6 +22,12 @@ typedef libsnark::default_r1cs_ppzksnark_pp::Fqe_type curve_Fq2;
 #include "version.h"
 #include "utilstrencodings.h"
 
+TEST(proofs, sqrt_zero)
+{
+    ASSERT_TRUE(curve_Fq::zero() == curve_Fq::zero().sqrt());
+    ASSERT_TRUE(curve_Fq2::zero() == curve_Fq2::zero().sqrt());
+}
+
 TEST(proofs, sqrt_fq)
 {
     // Poor man's PRNG
