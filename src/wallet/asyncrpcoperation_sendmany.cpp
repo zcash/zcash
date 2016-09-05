@@ -59,10 +59,6 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
             PaymentAddress addr = address.Get();
 
             // We don't need to lock on the wallet as spending key related methods are thread-safe
-            if (!pwalletMain->HaveSpendingKey(addr)) {
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
-            }
-            
             SpendingKey key;
             if (!pwalletMain->GetSpendingKey(addr, key)) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, no spending key found for zaddr");
@@ -71,8 +67,8 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
             isfromzaddr_ = true;
             frompaymentaddress_ = addr;
             spendingkey_ = key;
-        } catch (std::runtime_error) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
+        } catch (std::runtime_error e) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("runtime error: ") + e.what());
         }
     }
 }
