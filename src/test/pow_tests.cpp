@@ -50,13 +50,13 @@ BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual)
     SelectParams(CBaseChainParams::MAIN);
     const Consensus::Params& params = Params().GetConsensus();
 
-    int64_t nLastRetargetTime = 1279295950; // NOTE: Not an actual block time
+    int64_t nLastRetargetTime = 1279296753; // NOTE: Not an actual block time
     CBlockIndex pindexLast;
     pindexLast.nHeight = 68543;
     pindexLast.nTime = 1279297671;  // Block #68543 of Bitcoin
     // This represents an average difficulty in the current algorithm
     pindexLast.nBits = 0x1c05a3f4;
-    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1c05306f);
+    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1c04bceb);
 }
 
 /* Test the constraint on the upper bound for actual time taken */
@@ -65,13 +65,13 @@ BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual)
     SelectParams(CBaseChainParams::MAIN);
     const Consensus::Params& params = Params().GetConsensus();
 
-    int64_t nLastRetargetTime = 1269207250; // NOTE: Not an actual block time
+    int64_t nLastRetargetTime = 1269205629; // NOTE: Not an actual block time
     CBlockIndex pindexLast;
     pindexLast.nHeight = 46367;
     pindexLast.nTime = 1269211443;  // Block #46367 of Bitcoin
     // This represents an average difficulty in the current algorithm
     pindexLast.nBits = 0x1c387f6f;
-    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1c418995);
+    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1c4a93bb);
 }
 
 BOOST_AUTO_TEST_CASE(GetBlockProofEquivalentTime_test)
