@@ -28,6 +28,12 @@ public:
     void DecrementNoteWitnesses() {
         CWallet::DecrementNoteWitnesses();
     }
+    bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx) {
+        return CWallet::UpdatedNoteData(wtxIn, wtx);
+    }
+    void MarkAffectedTransactionsDirty(const CTransaction& tx) {
+        CWallet::MarkAffectedTransactionsDirty(tx);
+    }
 };
 
 CWalletTx GetValidReceive(const libzcash::SpendingKey& sk, CAmount value, bool randomInputs) {
@@ -471,4 +477,79 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         EXPECT_TRUE((bool) witnesses[0]);
         EXPECT_EQ(anchor2, anchor4);
     }
+}
+
+TEST(wallet_tests, UpdatedNoteData) {
+    TestWallet wallet;
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 0);
+    auto note2 = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+    auto nullifier2 = note2.nullifier(sk);
+    auto wtx2 = wtx;
+
+    // First pretend we added the tx to the wallet and
+    // we don't have the key for the second note
+    mapNoteData_t noteData;
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 0};
+    CNoteData nd {sk.address(), nullifier};
+    noteData[jsoutpt] = nd;
+    wtx.SetNoteData(noteData);
+
+    // Pretend we mined the tx by adding a fake witness
+    ZCIncrementalMerkleTree tree;
+    wtx.mapNoteData[jsoutpt].witnesses.push_front(tree.witness());
+
+    // Now pretend we added the key for the second note, and
+    // the tx was "added" to the wallet again to update it.
+    // This happens via the 'z_importkey' RPC method.
+    JSOutPoint jsoutpt2 {wtx2.GetHash(), 0, 1};
+    CNoteData nd2 {sk.address(), nullifier2};
+    noteData[jsoutpt2] = nd2;
+    wtx2.SetNoteData(noteData);
+
+    // The txs should initially be different
+    EXPECT_NE(wtx.mapNoteData, wtx2.mapNoteData);
+    EXPECT_NE(wtx.mapNoteData[jsoutpt].witnesses, wtx2.mapNoteData[jsoutpt].witnesses);
+
+    // After updating, they should be the same
+    EXPECT_TRUE(wallet.UpdatedNoteData(wtx, wtx2));
+    EXPECT_EQ(wtx.mapNoteData, wtx2.mapNoteData);
+    EXPECT_EQ(wtx.mapNoteData[jsoutpt].witnesses, wtx2.mapNoteData[jsoutpt].witnesses);
+    // TODO: The new note should get witnessed (but maybe not here) (#1350)
+}
+
+TEST(wallet_tests, MarkAffectedTransactionsDirty) {
+    TestWallet wallet;
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto hash = wtx.GetHash();
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+    auto wtx2 = GetValidSpend(sk, note, 5);
+
+    mapNoteData_t noteData;
+    JSOutPoint jsoutpt {hash, 0, 1};
+    CNoteData nd {sk.address(), nullifier};
+    noteData[jsoutpt] = nd;
+
+    wtx.SetNoteData(noteData);
+    wallet.AddToWallet(wtx, true, NULL);
+    wallet.MarkAffectedTransactionsDirty(wtx);
+
+    // After getting a cached value, the first tx should be clean
+    wallet.mapWallet[hash].GetDebit(ISMINE_ALL);
+    EXPECT_TRUE(wallet.mapWallet[hash].fDebitCached);
+
+    // After adding the note spend, the first tx should be dirty
+    wallet.AddToWallet(wtx2, true, NULL);
+    wallet.MarkAffectedTransactionsDirty(wtx2);
+    EXPECT_FALSE(wallet.mapWallet[hash].fDebitCached);
 }
