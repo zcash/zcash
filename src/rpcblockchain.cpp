@@ -41,7 +41,7 @@ double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficul
     }
 
     uint32_t powLimit =
-        UintToArith256(Params().GetConsensus().powLimit).GetCompact();;
+        UintToArith256(Params().GetConsensus().powLimit).GetCompact();
     int nShift = (bits >> 24) & 0xff;
     int nShiftAmount = (powLimit >> 24) & 0xff;
 
