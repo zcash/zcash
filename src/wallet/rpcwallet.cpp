@@ -2835,6 +2835,222 @@ Value z_listaddresses(const Array& params, bool fHelp)
     return ret;
 }
 
+CAmount getBalanceTaddr(std::string transparentAddress, size_t minDepth=1) {
+    set<CBitcoinAddress> setAddress;
+    vector<COutput> vecOutputs;
+    CAmount balance = 0;   
+    
+    if (transparentAddress.length() > 0) {
+        CBitcoinAddress taddr = CBitcoinAddress(transparentAddress);
+        if (!taddr.IsValid()) {
+            throw std::runtime_error("invalid transparent address");
+        }
+        setAddress.insert(taddr);
+    }
+    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+
+    BOOST_FOREACH(const COutput& out, vecOutputs) {
+        if (out.nDepth < minDepth) {
+            continue;
+        }
+
+        if (setAddress.size()) {
+            CTxDestination address;
+            if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
+                continue;
+            }
+
+            if (!setAddress.count(address)) {
+                continue;
+            }
+        }
+        
+        CAmount nValue = out.tx->vout[out.i].nValue;
+        balance += nValue;
+    }
+    return balance;
+}
+
+CAmount getBalanceZaddr(std::string address, size_t minDepth=1)
+{
+    CAmount balance = 0;
+    bool fFilterAddress = false;
+    PaymentAddress filterPaymentAddress;
+    if (address.length()>0) {
+        filterPaymentAddress = CZCPaymentAddress(address).Get();
+        fFilterAddress = true;
+    }
+            
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    for (auto & p : pwalletMain->mapWallet) {
+        CWalletTx wtx = p.second;
+
+        // Filter the transactions before checking for notes
+        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < minDepth) {
+            continue;
+        }
+
+        mapNoteData_t mapNoteData = pwalletMain->FindMyNotes(wtx);
+
+        if (mapNoteData.size() == 0) {
+            continue;
+        }
+
+        for (auto & pair : mapNoteData) {
+            JSOutPoint jsop = pair.first;
+            CNoteData nd = pair.second;
+            PaymentAddress pa = nd.address;
+
+            // skip notes which belong to a different payment address in the wallet
+            if (fFilterAddress && !(pa == filterPaymentAddress)) {
+                continue;
+            }
+
+            // skip note which has been spent
+            if (pwalletMain->IsSpent(nd.nullifier)) {
+                continue;
+            }
+
+            int i = jsop.js; // Index into CTransaction.vjoinsplit
+            int j = jsop.n; // Index into JSDescription.ciphertexts
+
+            // Get cached decryptor
+            ZCNoteDecryption decryptor;
+            if (!pwalletMain->GetNoteDecryptor(pa, decryptor)) {
+                // Note decryptors are created when the wallet is loaded, so it should always exist
+                throw std::runtime_error(strprintf("Could not find note decryptor for payment address %s", CZCPaymentAddress(pa).ToString()));
+            }
+
+             // determine amount of funds in the note
+            auto hSig = wtx.vjoinsplit[i].h_sig(*pzcashParams, wtx.joinSplitPubKey);
+            try {
+                NotePlaintext plaintext = NotePlaintext::decrypt(
+                        decryptor,
+                        wtx.vjoinsplit[i].ciphertexts[j],
+                        wtx.vjoinsplit[i].ephemeralKey,
+                        hSig,
+                        (unsigned char) j);
+
+                balance += CAmount(plaintext.value);
+
+            } catch (const std::exception &) {
+                // Couldn't decrypt with this spending key
+                throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", CZCPaymentAddress(pa).ToString()));
+            }
+        }
+    }
+
+    return balance;
+}
+
+
+Value z_getbalance(const Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return Value::null;
+
+    if (fHelp || params.size()==0 || params.size() >2)
+        throw runtime_error(
+            "z_getbalance \"address\" ( minconf )\n"
+            "\nReturns the balance of a taddr or zaddr belonging to the node’s wallet.\n"
+            "\nArguments:\n"
+            "1. \"address\"      (string) The selected address. It may be a transparent or private address.\n"
+            "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
+            "\nResult:\n"
+            "amount              (numeric) The total amount in ZEC received for this address.\n"
+            "\nExamples:\n"
+            "\nThe total amount received by address \"myaddress\"\n"
+            + HelpExampleCli("z_getbalance", "\"myaddress\"") +
+            "\nThe total amount received by address \"myaddress\" at least 5 blocks confirmed\n"
+            + HelpExampleCli("z_getbalance", "\"myaddress\" 5") +
+            "\nAs a json rpc call\n"
+            + HelpExampleRpc("z_getbalance", "\"myaddress\", 5")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    int nMinDepth = 1;
+    if (params.size() > 1) {
+        nMinDepth = params[1].get_int();
+    }
+    
+    // Check that the from address is valid.
+    auto fromaddress = params[0].get_str();
+    bool fromTaddr = false;
+    CBitcoinAddress taddr(fromaddress);
+    fromTaddr = taddr.IsValid();
+    libzcash::PaymentAddress zaddr;
+    if (!fromTaddr) {
+        CZCPaymentAddress address(fromaddress);
+        try {
+            zaddr = address.Get();
+        } catch (std::runtime_error) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
+        }
+    }
+
+    CAmount nBalance = 0;
+    if (fromTaddr) {
+        nBalance = getBalanceTaddr(fromaddress, nMinDepth);
+    } else {
+        nBalance = getBalanceZaddr(fromaddress, nMinDepth);
+    }
+
+    return ValueFromAmount(nBalance);
+}
+
+
+Value z_gettotalbalance(const Array& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return Value::null;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_gettotalbalance ( minconf )\n"
+            "\nReturn the total value of funds stored in the node’s wallet.\n"
+            "\nArguments:\n"
+            "1. minconf          (numeric, optional, default=1) Only include private and transparent transactions confirmed at least this many times.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"transparent\": xxxxx,     (numeric) the total balance of transparent funds\n"
+            "  \"private\": xxxxx,         (numeric) the total balance of private funds\n"
+            "  \"total\": xxxxx,           (numeric) the total balance of both transparent and private funds\n"
+            "}\n"
+            "\nExamples:\n"
+            "\nThe total amount in the wallet\n"
+            + HelpExampleCli("z_gettotalbalance", "") +
+            "\nThe total amount in the wallet at least 5 blocks confirmed\n"
+            + HelpExampleCli("z_gettotalbalance", "5") +
+            "\nAs a json rpc call\n"
+            + HelpExampleRpc("z_gettotalbalance", "5")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    int nMinDepth = 1;
+    if (params.size() == 1) {
+        nMinDepth = params[0].get_int();
+    }
+
+    // getbalance and "getbalance * 1 true" should return the same number
+    // but they don't because wtx.GetAmounts() does not handle tx where there are no outputs 
+    // pwalletMain->GetBalance() does not accept min depth parameter
+    // so we use our own method to get balance of utxos.
+    CAmount nBalance = getBalanceTaddr("", nMinDepth);
+    CAmount nPrivateBalance = getBalanceZaddr("", nMinDepth);
+    CAmount nTotalBalance = nBalance + nPrivateBalance;
+    Object result;
+    result.push_back(Pair("transparent", FormatMoney(nBalance, false)));
+    result.push_back(Pair("private", FormatMoney(nPrivateBalance, false)));
+    result.push_back(Pair("total", FormatMoney(nTotalBalance, false)));
+    return result;
+}
+
 Value z_getoperationresult(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))

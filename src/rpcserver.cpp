@@ -385,6 +385,8 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "zcrawjoinsplit",         &zc_raw_joinsplit,       true  },
     { "wallet",             "zcrawreceive",           &zc_raw_receive,         true  },
     { "wallet",             "zcsamplejoinsplit",      &zc_sample_joinsplit,    true  },
+    { "wallet",             "z_getbalance",           &z_getbalance,           false },
+    { "wallet",             "z_gettotalbalance",      &z_gettotalbalance,      false },
     { "wallet",             "z_sendmany",             &z_sendmany,             true  },
     { "wallet",             "z_getoperationstatus",   &z_getoperationstatus,   true  },
     { "wallet",             "z_getoperationresult",   &z_getoperationresult,   true  },
