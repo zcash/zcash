@@ -26,21 +26,19 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
-    arith_uint256 bnAvg;
-    arith_uint256 bnTmp;
+    arith_uint256 bnTot {0};
     for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++) {
-        if (i == 0) {
-            bnAvg.SetCompact(pindexFirst->nBits);
-        } else {
-            bnTmp.SetCompact(pindexFirst->nBits);
-            bnAvg = ((bnAvg * i) + bnTmp) / (i + 1);
-        }
+        arith_uint256 bnTmp;
+        bnTmp.SetCompact(pindexFirst->nBits);
+        bnTot += bnTmp;
         pindexFirst = pindexFirst->pprev;
     }
 
     // Check we have enough blocks
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
+
+    arith_uint256 bnAvg {bnTot / params.nPowAveragingWindow};
 
     return CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
 }
