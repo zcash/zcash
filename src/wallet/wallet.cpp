@@ -917,18 +917,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
                 wtx.nIndex = wtxIn.nIndex;
                 fUpdated = true;
             }
-            if (!wtxIn.mapNoteData.empty() && wtxIn.mapNoteData != wtx.mapNoteData)
-            {
-                auto tmp = wtxIn.mapNoteData;
-                // Ensure we keep any cached witnesses we may already have
-                for (const std::pair<JSOutPoint, CNoteData> nd : wtx.mapNoteData) {
-                    if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
-                        tmp.at(nd.first).witnesses.assign(
-                            nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
-                    }
-                }
-                // Now copy over the updated note data
-                wtx.mapNoteData = tmp;
+            if (UpdatedNoteData(wtxIn, wtx)) {
                 fUpdated = true;
             }
             if (wtxIn.fFromMe && wtxIn.fFromMe != wtx.fFromMe)
@@ -962,6 +951,24 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
         }
 
     }
+    return true;
+}
+
+bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
+{
+    if (wtxIn.mapNoteData.empty() || wtxIn.mapNoteData == wtx.mapNoteData) {
+        return false;
+    }
+    auto tmp = wtxIn.mapNoteData;
+    // Ensure we keep any cached witnesses we may already have
+    for (const std::pair<JSOutPoint, CNoteData> nd : wtx.mapNoteData) {
+        if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
+            tmp.at(nd.first).witnesses.assign(
+                nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+        }
+    }
+    // Now copy over the updated note data
+    wtx.mapNoteData = tmp;
     return true;
 }
 
@@ -1005,6 +1012,11 @@ void CWallet::SyncTransaction(const CTransaction& tx, const CBlock* pblock)
     if (!AddToWalletIfInvolvingMe(tx, pblock, true))
         return; // Not one of ours
 
+    MarkAffectedTransactionsDirty(tx);
+}
+
+void CWallet::MarkAffectedTransactionsDirty(const CTransaction& tx)
+{
     // If a transaction changes 'conflicted' state, that changes the balance
     // available of the outputs it spends. So force those to be
     // recomputed, also:

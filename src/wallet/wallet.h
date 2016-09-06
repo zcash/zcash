@@ -599,6 +599,10 @@ private:
     template <class T>
     void SyncMetaData(std::pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator>);
 
+protected:
+    bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);
+    void MarkAffectedTransactionsDirty(const CTransaction& tx);
+
 public:
     /*
      * Main wallet lock.
