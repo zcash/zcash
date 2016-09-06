@@ -57,6 +57,8 @@ public:
     bool testmode = false;  // Set this to true to disable sending transactions to the network
 
 private:
+    friend class TEST_FRIEND_AsyncRPCOperation_sendmany;    // class for unit testing
+
     int mindepth_;
     std::string fromaddress_;
     bool isfromtaddr_;
@@ -98,6 +100,70 @@ private:
     void sign_send_raw_transaction(Object obj);     // throws exception if there was an error
 
 };
+
+
+// To test private methods, a friend class can act as a proxy
+class TEST_FRIEND_AsyncRPCOperation_sendmany {
+public:
+    std::shared_ptr<AsyncRPCOperation_sendmany> delegate;
+    
+    TEST_FRIEND_AsyncRPCOperation_sendmany(std::shared_ptr<AsyncRPCOperation_sendmany> ptr) : delegate(ptr) {}
+    
+    CTransaction getTx() {
+        return delegate->tx_;
+    }
+    
+    void setTx(CTransaction tx) {
+        delegate->tx_ = tx;
+    }
+    
+    // Delegated methods
+    
+    void add_taddr_change_output_to_tx(CAmount amount) {
+        delegate->add_taddr_change_output_to_tx(amount);
+    }
+    
+    void add_taddr_outputs_to_tx() {
+        delegate->add_taddr_outputs_to_tx();
+    }
+    
+    bool find_unspent_notes() {
+        return delegate->find_unspent_notes();
+    }
+
+    bool find_utxos(bool fAcceptCoinbase) {
+        return delegate->find_utxos(fAcceptCoinbase);
+    }
+    
+    boost::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s) {
+        return delegate->get_memo_from_hex_string(s);
+    }
+    
+    bool main_impl() {
+        return delegate->main_impl();
+    }
+
+    Object perform_joinsplit(AsyncJoinSplitInfo &info) {
+        return delegate->perform_joinsplit(info);
+    }
+
+    Object perform_joinsplit(AsyncJoinSplitInfo &info, std::vector<JSOutPoint> &v ) {
+        return delegate->perform_joinsplit(info, v);
+    }
+
+    Object perform_joinsplit(
+        AsyncJoinSplitInfo & info,
+        std::vector<boost::optional < ZCIncrementalWitness>> witnesses,
+        uint256 anchor)
+    {
+        return delegate->perform_joinsplit(info, witnesses, anchor);
+    }
+
+    void sign_send_raw_transaction(Object obj) {
+        delegate->sign_send_raw_transaction(obj);
+    }
+};
+
 
 #endif /* ASYNCRPCOPERATION_SENDMANY_H */
 
