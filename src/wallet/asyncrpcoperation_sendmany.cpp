@@ -945,10 +945,15 @@ void AsyncRPCOperation_sendmany::add_taddr_change_output_to_tx(CAmount amount) {
 }
 
 boost::array<unsigned char, ZC_MEMO_SIZE> AsyncRPCOperation_sendmany::get_memo_from_hex_string(std::string s) {
-    
     boost::array<unsigned char, ZC_MEMO_SIZE> memo = {{0x00}};
     
-    std::vector<unsigned char> rawMemo = ParseHex(s.c_str());    
+    std::vector<unsigned char> rawMemo = ParseHex(s.c_str());
+
+    // If ParseHex comes across a non-hex char, it will stop but still return results so far.
+    size_t slen = s.length();
+    if (slen % 2 !=0 || (slen>0 && rawMemo.size()!=slen/2)) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Memo must be in hexadecimal format");
+    }
     
     if (rawMemo.size() > ZC_MEMO_SIZE) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Memo size of %d is too big, maximum allowed is %d", rawMemo.size(), ZC_MEMO_SIZE));
