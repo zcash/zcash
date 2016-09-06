@@ -40,8 +40,8 @@ BOOST_AUTO_TEST_CASE(get_next_work_pow_limit)
     pindexLast.nTime = 1233061996;  // Block #2015 of Bitcoin
     // This represents an average difficulty in the current algorithm
     // TODO change once the harder genesis block is generated
-    pindexLast.nBits = 0x207fffff;
-    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x207fffff);
+    pindexLast.nBits = 0x200f0f0f;
+    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x200f0f0f);
 }
 
 /* Test the constraint on the lower bound for actual time taken */
