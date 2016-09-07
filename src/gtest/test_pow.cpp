@@ -31,9 +31,8 @@ TEST(PoW, DifficultyAveraging) {
     //       returns, it is. Somehow it ends up off by one....
     EXPECT_EQ(0x1e7ffffe, GetNextWorkRequired(&blocks[lastBlk], nullptr, params));
 
-    // Randomise the final block time
-    blocks[lastBlk].nTime += GetRand(params.nPowTargetSpacing)
-                           - GetRand(params.nPowTargetSpacing/2);
+    // Randomise the final block time (plus 1 to ensure it is always different)
+    blocks[lastBlk].nTime += GetRand(params.nPowTargetSpacing/2) + 1;
 
     // Result should be the same as if last difficulty was used
     EXPECT_EQ(CalculateNextWorkRequired(&blocks[lastBlk],
