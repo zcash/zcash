@@ -54,7 +54,7 @@ public:
     
     virtual void main();
 
-    bool testmode = false;  // Set this to true to disable sending transactions to the network
+    bool testmode = false;  // Set to true to disable sending txs and generating proofs
 
 private:
     friend class TEST_FRIEND_AsyncRPCOperation_sendmany;    // class for unit testing
