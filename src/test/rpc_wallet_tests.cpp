@@ -18,6 +18,7 @@
 #include "asyncrpcoperation.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "rpcprotocol.h"
+#include "init.h"
 
 #include <chrono>
 #include <thread>
@@ -930,6 +931,61 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         // No taddr inputs, so signed tx is the same as unsigned.
         BOOST_CHECK_NO_THROW( proxy.sign_send_raw_transaction(obj) );
     }
+    
+    
+    // Test the perform_joinsplit methods.
+    {
+        // Dummy input so the operation object can be instantiated.
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 0.0005, "ABCD") };
+        
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(zaddr1, {}, recipients, 1) );
+        std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
+        TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr); 
+
+        // Enable test mode so tx is not sent and proofs are not generated
+        static_cast<AsyncRPCOperation_sendmany *>(operation.get())->testmode = true;
+        
+        AsyncJoinSplitInfo info;        
+        std::vector<boost::optional < ZCIncrementalWitness>> witnesses;
+        uint256 anchor;
+        try {
+            proxy.perform_joinsplit(info, witnesses, anchor);
+        } catch (const std::runtime_error & e) {
+            BOOST_CHECK( string(e.what()).find("anchor is null")!= string::npos);
+        }
+
+        try {
+            std::vector<JSOutPoint> v;
+            proxy.perform_joinsplit(info, v);
+        } catch (const std::runtime_error & e) {
+            BOOST_CHECK( string(e.what()).find("anchor is null")!= string::npos);
+        }
+
+        info.notes.push_back(Note());
+        try {
+            proxy.perform_joinsplit(info);
+        } catch (const std::runtime_error & e) {
+            BOOST_CHECK( string(e.what()).find("number of notes")!= string::npos);
+        }
+        
+        info.notes.clear();
+        info.vjsin.push_back(JSInput());
+        info.vjsin.push_back(JSInput());
+        info.vjsin.push_back(JSInput());
+        try {
+            proxy.perform_joinsplit(info);
+        } catch (const std::runtime_error & e) {
+            BOOST_CHECK( string(e.what()).find("unsupported joinsplit input")!= string::npos);
+        }
+        
+        info.vjsin.clear();
+        try {
+            proxy.perform_joinsplit(info);
+        } catch (const std::runtime_error & e) {
+            BOOST_CHECK( string(e.what()).find("JoinSplit verifying key not loaded")!= string::npos);
+        }
+    }
+    
 }
 
 
