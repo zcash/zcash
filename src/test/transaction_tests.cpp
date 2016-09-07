@@ -451,7 +451,7 @@ BOOST_AUTO_TEST_CASE(test_simple_joinsplit_invalidity)
         jsdesc2->vpub_new = (MAX_MONEY / 2) + 10;
 
         BOOST_CHECK(!CheckTransaction(newTx, state));
-        BOOST_CHECK(state.GetRejectReason() == "bad-txns-txouttotal-toolarge");
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-txintotal-toolarge");
     }
     {
         // Ensure that nullifiers are never duplicated within a transaction.
