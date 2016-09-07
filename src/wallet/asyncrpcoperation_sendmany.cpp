@@ -686,75 +686,25 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
 
 
 bool AsyncRPCOperation_sendmany::find_unspent_notes() {
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    for (auto & p : pwalletMain->mapWallet) {
-        CWalletTx wtx = p.second;
-
-        // Filter the transactions before checking for notes
-        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < mindepth_) {
-            continue;
-        }
-
-        mapNoteData_t mapNoteData = pwalletMain->FindMyNotes(wtx);
-
-        if (mapNoteData.size() == 0) {
-            continue;
-        }
-
-        for (auto & pair : mapNoteData) {
-            JSOutPoint jsop = pair.first;
-            CNoteData nd = pair.second;
-            PaymentAddress pa = nd.address;
-
-            // skip notes which belong to a different payment address in the wallet
-            if (!(pa == frompaymentaddress_)) {
-                continue;
-            }
-
-            // skip note which has been spent
-            if (pwalletMain->IsSpent(nd.nullifier)) {
-                continue;
-            }
-
-            int i = jsop.js; // Index into CTransaction.vjoinsplit
-            int j = jsop.n; // Index into JSDescription.ciphertexts
-
-            // Get cached decryptor
-            ZCNoteDecryption decryptor;
-            if (!pwalletMain->GetNoteDecryptor(pa, decryptor)) {
-                // Note decryptors are created when the wallet is loaded, so it should always exist
-                throw JSONRPCError(RPC_WALLET_ERROR, "Could not find note decryptor");
-            }
-
-             // determine amount of funds in the note
-            auto hSig = wtx.vjoinsplit[i].h_sig(*pzcashParams, wtx.joinSplitPubKey);
-            try {
-                NotePlaintext plaintext = NotePlaintext::decrypt(
-                        decryptor,
-                        wtx.vjoinsplit[i].ciphertexts[j],
-                        wtx.vjoinsplit[i].ephemeralKey,
-                        hSig,
-                        (unsigned char) j);
-
-                z_inputs_.push_back(SendManyInputJSOP(jsop, plaintext.note(pa), CAmount(plaintext.value)));
-
-                std::string data(plaintext.memo.begin(), plaintext.memo.end());
-                LogPrint("asyncrpc", "%s: found unspent note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
-                        getId().substr(0,10),
-                        wtx.GetTxid().ToString().substr(0,10),
-                        i, j,
-                        FormatMoney(plaintext.value, false),
-                        HexStr(data).substr(0,10)
-                        );
-
-            } catch (const std::exception &) {
-                // Couldn't decrypt with this spending key
-            }
-        }
+    std::vector<CNotePlaintextEntry> entries;
+    {
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        pwalletMain->GetUnspentNotes(entries, fromaddress_, mindepth_);
     }
 
+    for (CNotePlaintextEntry & entry : entries) {
+        z_inputs_.push_back(SendManyInputJSOP(entry.jsop, entry.plaintext.note(frompaymentaddress_), CAmount(entry.plaintext.value)));
+        std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
+        LogPrint("asyncrpc", "%s: found unspent note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
+                getId().substr(0, 10),
+                entry.jsop.hash.ToString().substr(0, 10),
+                entry.jsop.js,
+                int(entry.jsop.n),  // uint8_t
+                FormatMoney(entry.plaintext.value, false),
+                HexStr(data).substr(0, 10)
+                );
+    }
+    
     if (z_inputs_.size() == 0) {
         return false;
     }
