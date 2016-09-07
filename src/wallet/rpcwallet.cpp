@@ -2878,7 +2878,7 @@ CAmount getBalanceZaddr(std::string address, size_t minDepth = 1) {
     CAmount balance = 0;
     std::vector<CNotePlaintextEntry> entries;
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    pwalletMain->GetUnspentNotes(entries, address, minDepth);
+    pwalletMain->GetFilteredNotes(entries, address, minDepth);
     for (auto & entry : entries) {
         balance += CAmount(entry.plaintext.value);
     }

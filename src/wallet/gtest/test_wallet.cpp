@@ -199,7 +199,7 @@ TEST(wallet_tests, find_unspent_notes) {
     
     // two notes, one is spent but wallet doesn't see it as spent yet until mined
     std::vector<CNotePlaintextEntry> entries;
-    wallet.GetUnspentNotes(entries, "", 0);
+    wallet.GetFilteredNotes(entries, "", 0);
     EXPECT_EQ(2, entries.size());
     
     // Create new payment address, add new note, and filter
@@ -215,10 +215,10 @@ TEST(wallet_tests, find_unspent_notes) {
 
     // 4 notes in wallet, 1 spent (not seen), 1 is the new payment address
     entries.clear();
-    wallet.GetUnspentNotes(entries, "", 0);
+    wallet.GetFilteredNotes(entries, "", 0);
     EXPECT_EQ(4, entries.size());
     entries.clear();
-    wallet.GetUnspentNotes(entries, user2_payment_address, 0);
+    wallet.GetFilteredNotes(entries, user2_payment_address, 0);
     EXPECT_EQ(2, entries.size());
     
     // Fake-mine the transaction
@@ -240,11 +240,11 @@ TEST(wallet_tests, find_unspent_notes) {
 
     // 4 notes, 1 spent (now seen)
     entries.clear();
-    wallet.GetUnspentNotes(entries, "", 0);
+    wallet.GetFilteredNotes(entries, "", 0);
     EXPECT_EQ(3, entries.size());
     entries.clear();
     // no change to user2 and their two notes.
-    wallet.GetUnspentNotes(entries, user2_payment_address, 0);
+    wallet.GetFilteredNotes(entries, user2_payment_address, 0);
     EXPECT_EQ(2, entries.size());
  
     // Tear down
