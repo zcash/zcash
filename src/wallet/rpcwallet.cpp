@@ -2874,76 +2874,14 @@ CAmount getBalanceTaddr(std::string transparentAddress, size_t minDepth=1) {
     return balance;
 }
 
-CAmount getBalanceZaddr(std::string address, size_t minDepth=1)
-{
+CAmount getBalanceZaddr(std::string address, size_t minDepth = 1) {
     CAmount balance = 0;
-    bool fFilterAddress = false;
-    PaymentAddress filterPaymentAddress;
-    if (address.length()>0) {
-        filterPaymentAddress = CZCPaymentAddress(address).Get();
-        fFilterAddress = true;
-    }
-            
+    std::vector<CNotePlaintextEntry> entries;
     LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    for (auto & p : pwalletMain->mapWallet) {
-        CWalletTx wtx = p.second;
-
-        // Filter the transactions before checking for notes
-        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < minDepth) {
-            continue;
-        }
-
-        mapNoteData_t mapNoteData = pwalletMain->FindMyNotes(wtx);
-
-        if (mapNoteData.size() == 0) {
-            continue;
-        }
-
-        for (auto & pair : mapNoteData) {
-            JSOutPoint jsop = pair.first;
-            CNoteData nd = pair.second;
-            PaymentAddress pa = nd.address;
-
-            // skip notes which belong to a different payment address in the wallet
-            if (fFilterAddress && !(pa == filterPaymentAddress)) {
-                continue;
-            }
-
-            // skip note which has been spent
-            if (pwalletMain->IsSpent(nd.nullifier)) {
-                continue;
-            }
-
-            int i = jsop.js; // Index into CTransaction.vjoinsplit
-            int j = jsop.n; // Index into JSDescription.ciphertexts
-
-            // Get cached decryptor
-            ZCNoteDecryption decryptor;
-            if (!pwalletMain->GetNoteDecryptor(pa, decryptor)) {
-                // Note decryptors are created when the wallet is loaded, so it should always exist
-                throw std::runtime_error(strprintf("Could not find note decryptor for payment address %s", CZCPaymentAddress(pa).ToString()));
-            }
-
-             // determine amount of funds in the note
-            auto hSig = wtx.vjoinsplit[i].h_sig(*pzcashParams, wtx.joinSplitPubKey);
-            try {
-                NotePlaintext plaintext = NotePlaintext::decrypt(
-                        decryptor,
-                        wtx.vjoinsplit[i].ciphertexts[j],
-                        wtx.vjoinsplit[i].ephemeralKey,
-                        hSig,
-                        (unsigned char) j);
-
-                balance += CAmount(plaintext.value);
-
-            } catch (const std::exception &) {
-                // Couldn't decrypt with this spending key
-                throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", CZCPaymentAddress(pa).ToString()));
-            }
-        }
+    pwalletMain->GetUnspentNotes(entries, address, minDepth);
+    for (auto & entry : entries) {
+        balance += CAmount(entry.plaintext.value);
     }
-
     return balance;
 }
 
