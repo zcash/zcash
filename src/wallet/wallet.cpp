@@ -3175,7 +3175,7 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
     return ::AcceptToMemoryPool(mempool, state, *this, fLimitFree, NULL, fRejectAbsurdFee);
 }
 
-bool CWallet::GetUnspentNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, size_t minDepth = 1)
+bool CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, size_t minDepth = 1, bool ignoreSpent)
 {
     bool fFilterAddress = false;
     libzcash::PaymentAddress filterPaymentAddress;
@@ -3211,7 +3211,7 @@ bool CWallet::GetUnspentNotes(std::vector<CNotePlaintextEntry> & outEntries, std
             }
 
             // skip note which has been spent
-            if (IsSpent(nd.nullifier)) {
+            if (ignoreSpent && IsSpent(nd.nullifier)) {
                 continue;
             }
 

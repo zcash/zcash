@@ -901,7 +901,7 @@ public:
     void SetBroadcastTransactions(bool broadcast) { fBroadcastTransactions = broadcast; }
     
     /* Find unspent notes, filter by payment address, min depth */
-    bool GetUnspentNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, size_t minDepth);
+    bool GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, size_t minDepth, bool ignoreSpent=false);
     
 };
 

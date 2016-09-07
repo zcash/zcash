@@ -739,7 +739,7 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     std::vector<CNotePlaintextEntry> entries;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
-        pwalletMain->GetUnspentNotes(entries, fromaddress_, mindepth_);
+        pwalletMain->GetFilteredNotes(entries, fromaddress_, mindepth_);
     }
 
     for (CNotePlaintextEntry & entry : entries) {
