@@ -840,8 +840,8 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
             info.vpub_old,
             info.vpub_new);
 
-    if (!(jsdesc.Verify(*pzcashParams, joinSplitPubKey_))) {
-        throw std::runtime_error("error verifying joinsplt");
+    if (!(jsdesc.Verify(*zcashParams_, joinSplitPubKey_))) {
+        throw std::runtime_error("error verifying joinsplit");
     }
 
     mtx.vjoinsplit.push_back(jsdesc);
