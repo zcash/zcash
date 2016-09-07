@@ -171,12 +171,24 @@ TEST(checktransaction_tests, bad_txns_txouttotal_toolarge_outputs) {
 TEST(checktransaction_tests, bad_txns_txouttotal_toolarge_joinsplit) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vout[0].nValue = 1;
-    mtx.vjoinsplit[0].vpub_new = MAX_MONEY;
+    mtx.vjoinsplit[0].vpub_old = MAX_MONEY;
 
     CTransaction tx(mtx);
 
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+TEST(checktransaction_tests, bad_txns_txintotal_toolarge_joinsplit) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vjoinsplit[0].vpub_new = MAX_MONEY - 1;
+    mtx.vjoinsplit[1].vpub_new = MAX_MONEY - 1;
+
+    CTransaction tx(mtx);
+
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txintotal-toolarge", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
