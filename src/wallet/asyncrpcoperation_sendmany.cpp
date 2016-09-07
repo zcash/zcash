@@ -71,6 +71,8 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("runtime error: ") + e.what());
         }
     }
+    
+    zcashParams_ = pzcashParams; // global
 }
 
 AsyncRPCOperation_sendmany::~AsyncRPCOperation_sendmany() {
@@ -447,7 +449,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
                 // Decrypt the change note's ciphertext to retrieve some data we need
                 ZCNoteDecryption decryptor(spendingkey_.viewing_key());
-                auto hSig = prevJoinSplit.h_sig(*pzcashParams, tx_.joinSplitPubKey);
+                auto hSig = prevJoinSplit.h_sig(*zcashParams_, tx_.joinSplitPubKey);
                 try {
                     NotePlaintext plaintext = NotePlaintext::decrypt(
                             decryptor,
@@ -729,7 +731,7 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
             }
 
              // determine amount of funds in the note
-            auto hSig = wtx.vjoinsplit[i].h_sig(*pzcashParams, wtx.joinSplitPubKey);
+            auto hSig = wtx.vjoinsplit[i].h_sig(*zcashParams_, wtx.joinSplitPubKey);
             try {
                 NotePlaintext plaintext = NotePlaintext::decrypt(
                         decryptor,
@@ -832,7 +834,7 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
             );
 
     // Generate the proof, this can take over a minute.
-    JSDescription jsdesc(*pzcashParams,
+    JSDescription jsdesc(*zcashParams_,
             joinSplitPubKey_,
             anchor,
             {info.vjsin[0], info.vjsin[1]},
@@ -883,7 +885,7 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
         ss2 << ((unsigned char) 0x00);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[0];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey_);
+        ss2 << jsdesc.h_sig(*zcashParams_, joinSplitPubKey_);
 
         encryptedNote1 = HexStr(ss2.begin(), ss2.end());
     }
@@ -892,7 +894,7 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
         ss2 << ((unsigned char) 0x01);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[1];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey_);
+        ss2 << jsdesc.h_sig(*zcashParams_, joinSplitPubKey_);
 
         encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }
