@@ -224,6 +224,11 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         
         if (change > 0) {
             add_taddr_change_output_to_tx(change);
+
+            LogPrint("asyncrpc", "%s: transparent change in transaction output (amount=%s)\n",
+                    getId().substr(0, 10),
+                    FormatMoney(change, false)
+                    );
         }
         
         Object obj;
@@ -276,13 +281,24 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             if (isSingleZaddrOutput && selectedUTXOCoinbase) {
                 std::string address = std::get<0>(zOutputsDeque.front());   
                 SendManyRecipient smr(address, change, std::string());
-                zOutputsDeque.push_back(smr); 
+                zOutputsDeque.push_back(smr);
+
+                LogPrint("asyncrpc", "%s: change from coinbase utxo is also sent to the recipient (amount=%s)\n",
+                        getId().substr(0, 10),
+                        FormatMoney(change, false)
+                        );
+
             } else if (!isSingleZaddrOutput && selectedUTXOCoinbase) {
                 // This should not happen and is not allowed
                 throw JSONRPCError(RPC_WALLET_ERROR, "Wallet selected Coinbase UTXOs as valid inputs when it should not have done");
             } else {
                 // If there is a single zaddr and no coinbase utxos, just use a regular output for change.
                 add_taddr_change_output_to_tx(change);
+
+                LogPrint("asyncrpc", "%s: transparent change in transaction output (amount=%s)\n",
+                        getId().substr(0, 10),
+                        FormatMoney(change, false)
+                        );
             }
         }
 
@@ -360,6 +376,16 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 info.notes.push_back(note);
                 outPoints.push_back(outPoint);
 
+
+                LogPrint("asyncrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s)\n",
+                        getId().substr(0, 10),
+                        outPoint.hash.ToString().substr(0, 10),
+                        outPoint.js,
+                        int(outPoint.n), // uint8_t
+                        FormatMoney(noteFunds, false)
+                        );
+
+                
                 // Put value back into the value pool
                 if (noteFunds >= taddrTargetAmount) {
                     jsChange = noteFunds - taddrTargetAmount;
@@ -377,6 +403,11 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             if (jsChange > 0) {
                 info.vjsout.push_back(JSOutput());
                 info.vjsout.push_back(JSOutput(frompaymentaddress_, jsChange));
+                
+                LogPrint("asyncrpc", "%s: generating note for change (amount=%s)\n",
+                        getId().substr(0, 10),
+                        FormatMoney(jsChange, false)
+                        );
             }
 
             obj = perform_joinsplit(info, outPoints);
@@ -460,6 +491,12 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                     info.notes.push_back(note);
                     
                     jsInputValue += plaintext.value;
+                    
+                    LogPrint("asyncrpc", "%s: spending change (amount=%s)\n",
+                        getId().substr(0, 10),
+                        FormatMoney(plaintext.value, false)
+                        );
+
                 } catch (const std::exception e) {
                     throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Error decrypting output note of previous JoinSplit: %s", e.what()));
                 }
@@ -484,6 +521,14 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 vInputNotes.push_back(note);
                 
                 jsInputValue += noteFunds;
+                
+                LogPrint("asyncrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s)\n",
+                        getId().substr(0, 10),
+                        jso.hash.ToString().substr(0, 10),
+                        jso.js,
+                        int(jso.n), // uint8_t
+                        FormatMoney(noteFunds, false)
+                        );
             }
                         
             // Add history of previous commitments to witness 
@@ -573,7 +618,12 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                         
             // create output for any change
             if (jsChange>0) {
-                info.vjsout.push_back(JSOutput(frompaymentaddress_, jsChange));    
+                info.vjsout.push_back(JSOutput(frompaymentaddress_, jsChange));
+
+                LogPrint("asyncrpc", "%s: generating note for change (amount=%s)\n",
+                        getId().substr(0, 10),
+                        FormatMoney(jsChange, false)
+                        );
             }
 
             obj = perform_joinsplit(info, witnesses, jsAnchor);
