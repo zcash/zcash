@@ -241,6 +241,15 @@ public:
 
 typedef std::map<JSOutPoint, CNoteData> mapNoteData_t;
 
+
+struct CNotePlaintextEntry
+{
+    JSOutPoint jsop;
+    libzcash::NotePlaintext plaintext;
+};
+
+
+
 /** A transaction with a merkle branch linking it to the block chain. */
 class CMerkleTx : public CTransaction
 {
@@ -894,6 +903,10 @@ public:
     bool GetBroadcastTransactions() const { return fBroadcastTransactions; }
     /** Set whether this wallet broadcasts transactions. */
     void SetBroadcastTransactions(bool broadcast) { fBroadcastTransactions = broadcast; }
+    
+    /* Find unspent notes, filter by payment address, min depth */
+    bool GetUnspentNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, size_t minDepth);
+    
 };
 
 /** A key allocated from the key pool. */
