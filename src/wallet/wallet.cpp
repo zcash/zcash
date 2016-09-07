@@ -621,7 +621,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
         }
 
         for (const CTransaction& tx : pblock->vtx) {
-            auto hash = tx.GetTxid();
+            auto hash = tx.GetHash();
             bool txIsOurs = mapWallet.count(hash);
             for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {
                 const JSDescription& jsdesc = tx.vjoinsplit[i];
@@ -1039,7 +1039,7 @@ void CWallet::EraseFromWallet(const uint256 &hash)
 mapNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
 {
     LOCK(cs_SpendingKeyStore);
-    uint256 hash = tx.GetTxid();
+    uint256 hash = tx.GetHash();
 
     mapNoteData_t noteData;
     libzcash::SpendingKey key;

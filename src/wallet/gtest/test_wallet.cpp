@@ -153,7 +153,7 @@ TEST(wallet_tests, note_data_serialisation) {
     auto nullifier = note.nullifier(sk);
 
     mapNoteData_t noteData;
-    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
     CNoteData nd {sk.address(), nullifier};
     ZCIncrementalMerkleTree tree;
     nd.witnesses.push_front(tree.witness());
@@ -177,7 +177,7 @@ TEST(wallet_tests, set_note_addrs_in_cwallettx) {
     EXPECT_EQ(0, wtx.mapNoteData.size());
 
     mapNoteData_t noteData;
-    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
     CNoteData nd {sk.address(), nullifier};
     noteData[jsoutpt] = nd;
 
@@ -191,7 +191,7 @@ TEST(wallet_tests, set_invalid_note_addrs_in_cwallettx) {
 
     mapNoteData_t noteData;
     auto sk = libzcash::SpendingKey::random();
-    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
     CNoteData nd {sk.address(), uint256()};
     noteData[jsoutpt] = nd;
 
@@ -211,7 +211,7 @@ TEST(wallet_tests, find_note_in_tx) {
     auto noteMap = wallet.FindMyNotes(wtx);
     EXPECT_EQ(2, noteMap.size());
 
-    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
     CNoteData nd {sk.address(), nullifier};
     EXPECT_EQ(1, noteMap.count(jsoutpt));
     EXPECT_EQ(nd, noteMap[jsoutpt]);
@@ -229,8 +229,8 @@ TEST(wallet_tests, get_conflicted_notes) {
 
     auto wtx2 = GetValidSpend(sk, note, 5);
     auto wtx3 = GetValidSpend(sk, note, 10);
-    auto hash2 = wtx2.GetTxid();
-    auto hash3 = wtx3.GetTxid();
+    auto hash2 = wtx2.GetHash();
+    auto hash3 = wtx3.GetHash();
 
     // No conflicts for no spends
     EXPECT_EQ(0, wallet.GetConflicts(hash2).size());
@@ -299,7 +299,7 @@ TEST(wallet_tests, navigate_from_nullifier_to_note) {
     auto nullifier = note.nullifier(sk);
 
     mapNoteData_t noteData;
-    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
     CNoteData nd {sk.address(), nullifier};
     noteData[jsoutpt] = nd;
 
@@ -309,7 +309,7 @@ TEST(wallet_tests, navigate_from_nullifier_to_note) {
 
     wallet.AddToWallet(wtx, true, NULL);
     EXPECT_EQ(1, wallet.mapNullifiersToNotes.count(nullifier));
-    EXPECT_EQ(wtx.GetTxid(), wallet.mapNullifiersToNotes[nullifier].hash);
+    EXPECT_EQ(wtx.GetHash(), wallet.mapNullifiersToNotes[nullifier].hash);
     EXPECT_EQ(0, wallet.mapNullifiersToNotes[nullifier].js);
     EXPECT_EQ(1, wallet.mapNullifiersToNotes[nullifier].n);
 }
@@ -329,7 +329,7 @@ TEST(wallet_tests, spent_note_is_from_me) {
     EXPECT_FALSE(wallet.IsFromMe(wtx2));
 
     mapNoteData_t noteData;
-    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
     CNoteData nd {sk.address(), nullifier};
     noteData[jsoutpt] = nd;
 
@@ -355,8 +355,8 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
     auto nullifier2 = note2.nullifier(sk);
 
     mapNoteData_t noteData;
-    JSOutPoint jsoutpt {wtx.GetTxid(), 0, 0};
-    JSOutPoint jsoutpt2 {wtx.GetTxid(), 0, 1};
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 0};
+    JSOutPoint jsoutpt2 {wtx.GetHash(), 0, 1};
     CNoteData nd {sk.address(), nullifier};
     CNoteData nd2 {sk.address(), nullifier2};
     noteData[jsoutpt] = nd;
@@ -407,7 +407,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         auto nullifier = note.nullifier(sk);
 
         mapNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
         CNoteData nd {sk.address(), nullifier};
         noteData[jsoutpt] = nd;
         wtx.SetNoteData(noteData);
@@ -430,7 +430,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         auto nullifier = note.nullifier(sk);
 
         mapNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetTxid(), 0, 1};
+        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
         CNoteData nd {sk.address(), nullifier};
         noteData[jsoutpt] = nd;
         wtx.SetNoteData(noteData);
