@@ -252,6 +252,35 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK(find_value(obj, "founders") == 0.0);
 }
 
+BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
+{
+    SelectParams(CBaseChainParams::TESTNET);
+
+    LOCK(pwalletMain->cs_wallet);
+
+    
+    BOOST_CHECK_THROW(CallRPC("z_getbalance too many args"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_getbalance invalidaddress"), runtime_error);
+    BOOST_CHECK_NO_THROW(CallRPC("z_getbalance mhu9XfNv9o9JfTmEoTA6xKJHBfH2BVF8qG"));
+    BOOST_CHECK_THROW(CallRPC("z_getbalance mhu9XfNv9o9JfTmEoTA6xKJHBfH2BVF8qG -1"), runtime_error);
+    BOOST_CHECK_NO_THROW(CallRPC("z_getbalance mhu9XfNv9o9JfTmEoTA6xKJHBfH2BVF8qG 0"));
+    BOOST_CHECK_THROW(CallRPC("z_getbalance tnRZ8bPq2pff3xBWhTJhNkVUkm2uhzksDeW5PvEa7aFKGT9Qi3YgTALZfjaY4jU3HLVKBtHdSXxoPoLA3naMPcHBcY88FcF 1"), runtime_error);
+   
+    
+    BOOST_CHECK_THROW(CallRPC("z_gettotalbalance too manyargs"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_gettotalbalance -1"), runtime_error);
+    BOOST_CHECK_NO_THROW(CallRPC("z_gettotalbalance 0"));
+    
+    
+    BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress too many args"), runtime_error);
+    // negative minconf not allowed
+    BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress mhu9XfNv9o9JfTmEoTA6xKJHBfH2BVF8qG -1"), runtime_error);
+    // invalid zaddr, taddr not allowed
+    BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress mhu9XfNv9o9JfTmEoTA6xKJHBfH2BVF8qG 0"), runtime_error);
+    // don't have the spending key
+    BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress tnRZ8bPq2pff3xBWhTJhNkVUkm2uhzksDeW5PvEa7aFKGT9Qi3YgTALZfjaY4jU3HLVKBtHdSXxoPoLA3naMPcHBcY88FcF 1"), runtime_error);
+}
+
 /*
  * This test covers RPC command z_exportwallet
  */
