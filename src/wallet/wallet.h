@@ -904,8 +904,8 @@ public:
     /** Set whether this wallet broadcasts transactions. */
     void SetBroadcastTransactions(bool broadcast) { fBroadcastTransactions = broadcast; }
     
-    /* Find unspent notes, filter by payment address, min depth */
-    bool GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, size_t minDepth, bool ignoreSpent=false);
+    /* Find notes filtered by payment address, min depth, ability to spend */
+    bool GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, size_t minDepth, bool ignoreSpent=true);
     
 };
 
