@@ -156,7 +156,7 @@ void AsyncRPCQueue::finish() {
  *  Call cancel() on all operations
  */
 void AsyncRPCQueue::cancelAllOperations() {
-    std::unique_lock< std::mutex > guard(lock_);
+    std::lock_guard<std::mutex> guard(lock_);
     for (auto key : operation_map_) {
         key.second->cancel();
     }
@@ -167,7 +167,7 @@ void AsyncRPCQueue::cancelAllOperations() {
  * Return the number of operations in the queue
  */
 size_t AsyncRPCQueue::getOperationCount() const {
-    std::unique_lock< std::mutex > guard(lock_);
+    std::lock_guard<std::mutex> guard(lock_);
     return operation_id_queue_.size();
 }
 
@@ -175,7 +175,7 @@ size_t AsyncRPCQueue::getOperationCount() const {
  * Spawn a worker thread
  */
 void AsyncRPCQueue::addWorker() {
-    std::unique_lock< std::mutex > guard(lock_); // Todo: could just have a lock on the vector
+    std::lock_guard<std::mutex> guard(lock_);
     workers_.emplace_back( std::thread(&AsyncRPCQueue::run, this, ++workerCounter) );
 }
 
@@ -191,7 +191,7 @@ size_t AsyncRPCQueue::getNumberOfWorkers() const {
  * Return a list of all known operation ids found in internal storage.
  */
 std::vector<AsyncRPCOperationId> AsyncRPCQueue::getAllOperationIds() const {
-    std::unique_lock< std::mutex > guard(lock_);
+    std::lock_guard<std::mutex> guard(lock_);
     std::vector<AsyncRPCOperationId> v;
     for(auto & entry: operation_map_) {
         v.push_back(entry.first);
@@ -221,7 +221,7 @@ void AsyncRPCQueue::finishAndWait() {
 void AsyncRPCQueue::wait_for_worker_threads() {
     // Notify any workers who are waiting, so they see the updated queue state
     {
-        std::unique_lock< std::mutex > guard(lock_);
+        std::lock_guard<std::mutex> guard(lock_);
         this->condition_.notify_all();
     }
         
