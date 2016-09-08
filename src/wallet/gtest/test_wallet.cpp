@@ -175,6 +175,84 @@ TEST(wallet_tests, note_data_serialisation) {
     EXPECT_EQ(noteData[jsoutpt].witnesses, noteData2[jsoutpt].witnesses);
 }
 
+TEST(wallet_tests, find_unspent_notes) {
+    
+    SelectParams(CBaseChainParams::TESTNET);
+
+    CWallet wallet;
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    auto noteMap = wallet.FindMyNotes(wtx);
+    EXPECT_EQ(2, noteMap.size());  
+    
+    wallet.AddToWallet(wtx, true, NULL);
+    EXPECT_FALSE(wallet.IsSpent(nullifier));
+
+    auto wtx2 = GetValidSpend(sk, note, 5);
+    wallet.AddToWallet(wtx2, true, NULL);
+    
+    // two notes, one is spent but wallet doesn't see it as spent yet until mined
+    std::vector<CNotePlaintextEntry> entries;
+    wallet.GetFilteredNotes(entries, "", 0);
+    EXPECT_EQ(2, entries.size());
+    
+    // Create new payment address, add new note, and filter
+    auto user2_sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(user2_sk);
+    auto user2_pa = user2_sk.address();
+    auto user2_payment_address = CZCPaymentAddress(user2_pa).ToString();
+    auto wtx3 = GetValidReceive(user2_sk, 15, true); // adds 2 more notes
+    auto note2 = GetNote(user2_sk, wtx3, 0, 1);
+    auto nullifier2 = note2.nullifier(user2_sk);
+    wallet.AddToWallet(wtx3, true, NULL);
+    EXPECT_FALSE(wallet.IsSpent(nullifier2));
+
+    // 4 notes in wallet, 1 spent (not seen), 1 is the new payment address
+    entries.clear();
+    wallet.GetFilteredNotes(entries, "", 0);
+    EXPECT_EQ(4, entries.size());
+    entries.clear();
+    wallet.GetFilteredNotes(entries, user2_payment_address, 0);
+    EXPECT_EQ(2, entries.size());
+    
+    // Fake-mine the transaction
+    EXPECT_EQ(-1, chainActive.Height());
+    
+    CBlock block;
+    block.vtx.push_back(wtx2);
+    block.hashMerkleRoot = block.BuildMerkleTree();
+    auto blockHash = block.GetHash();
+    CBlockIndex fakeIndex {block};
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+    EXPECT_TRUE(chainActive.Contains(&fakeIndex));
+    EXPECT_EQ(0, chainActive.Height());
+
+    wtx2.SetMerkleBranch(block);
+    wallet.AddToWallet(wtx2, true, NULL);
+    EXPECT_TRUE(wallet.IsSpent(nullifier));
+
+    // 4 notes, 1 spent (now seen)
+    entries.clear();
+    wallet.GetFilteredNotes(entries, "", 0);
+    EXPECT_EQ(3, entries.size());
+    entries.clear();
+    // no change to user2 and their two notes.
+    wallet.GetFilteredNotes(entries, user2_payment_address, 0);
+    EXPECT_EQ(2, entries.size());
+ 
+    // Tear down
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
+}
+
+
 TEST(wallet_tests, set_note_addrs_in_cwallettx) {
     auto sk = libzcash::SpendingKey::random();
     auto wtx = GetValidReceive(sk, 10, true);

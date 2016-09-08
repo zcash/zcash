@@ -35,6 +35,7 @@ class JSOutput {
 public:
     PaymentAddress addr;
     uint64_t value;
+    boost::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};  // 0xF6 is invalid UTF8 as per spec, rest of array is 0x00
 
     JSOutput();
     JSOutput(PaymentAddress addr, uint64_t value) : addr(addr), value(value) { }
