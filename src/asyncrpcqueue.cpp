@@ -101,7 +101,7 @@ void AsyncRPCQueue::addOperation(const std::shared_ptr<AsyncRPCOperation> &ptrOp
 std::shared_ptr<AsyncRPCOperation> AsyncRPCQueue::getOperationForId(AsyncRPCOperationId id) const {
     std::shared_ptr<AsyncRPCOperation> ptr;
 
-    std::lock_guard< std::mutex > guard(lock_);
+    std::lock_guard<std::mutex> guard(lock_);
     AsyncRPCOperationMap::const_iterator iter = operation_map_.find(id);
     if (iter != operation_map_.end()) {
         ptr = iter->second;
@@ -115,7 +115,7 @@ std::shared_ptr<AsyncRPCOperation> AsyncRPCQueue::getOperationForId(AsyncRPCOper
 std::shared_ptr<AsyncRPCOperation> AsyncRPCQueue::popOperationForId(AsyncRPCOperationId id) {
     std::shared_ptr<AsyncRPCOperation> ptr = getOperationForId(id);
     if (ptr) {
-        std::lock_guard< std::mutex > guard(lock_);
+        std::lock_guard<std::mutex> guard(lock_);
         // Note: if the id still exists in the operationIdQueue, when it gets processed by a worker
         // there will no operation in the map to execute, so nothing will happen.
         operation_map_.erase(id);
