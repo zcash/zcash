@@ -120,9 +120,9 @@ void AsyncRPCOperation_sendmany::main() {
 }
 
 // Notes:
-// 1. Currently there is no limit set on the number of joinsplits, so size of tx could be invalid.
-// 2. Note selection is not optimal
-// 3. Spendable notes are not locked, so an operation running in parallel could also try to use them
+// 1. #1159 Currently there is no limit set on the number of joinsplits, so size of tx could be invalid.
+// 2. #1360 Note selection is not optimal
+// 3. #1277 Spendable notes are not locked, so an operation running in parallel could also try to use them
 bool AsyncRPCOperation_sendmany::main_impl() {
 
     bool isSingleZaddrOutput = (t_outputs_.size()==0 && z_outputs_.size()==1);
