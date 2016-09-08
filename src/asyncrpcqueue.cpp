@@ -183,6 +183,7 @@ void AsyncRPCQueue::addWorker() {
  * Return the number of worker threads spawned by the queue
  */
 size_t AsyncRPCQueue::getNumberOfWorkers() const {
+    std::lock_guard<std::mutex> guard(lock_);
     return workers_.size();
 }
 
