@@ -79,27 +79,33 @@ public:
     }
 
     bool isCancelled() const {
-        return OperationStatus::CANCELLED==getState();
+        return OperationStatus::CANCELLED == getState();
     }
 
     bool isExecuting() const {
-        return OperationStatus::EXECUTING==getState();
+        return OperationStatus::EXECUTING == getState();
     }
 
     bool isReady() const {
-        return OperationStatus::READY==getState();
+        return OperationStatus::READY == getState();
     }
 
     bool isFailed() const {
-        return OperationStatus::FAILED==getState();
+        return OperationStatus::FAILED == getState();
     }
     
     bool isSuccess() const {
-        return OperationStatus::SUCCESS==getState();
+        return OperationStatus::SUCCESS == getState();
     }
 
 protected:
-
+    // The state_ is atomic because only it can be mutated externally.
+    // For example, the user initiates a shut down of the application, which closes
+    // the AsyncRPCQueue, which in turn invokes cancel() on all operations.
+    // The member variables below are protected rather than private in order to
+    // allow subclasses of AsyncRPCOperation the ability to access and update
+    // internal state.  Currently, all operations are executed in a single-thread
+    // by a single worker.
     Value result_;
     int error_code_;
     std::string error_message_;
