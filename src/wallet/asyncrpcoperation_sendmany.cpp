@@ -377,7 +377,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     if (t_outputs_total > 0) {
         add_taddr_outputs_to_tx();
         CAmount taddrTargetAmount = t_outputs_total + minersFee;
-        minersFeeProcessed  = true;
+        minersFeeProcessed = true;
         while (zInputsDeque.size() > 0 && taddrTargetAmount > 0) {
             AsyncJoinSplitInfo info;
             info.vpub_old = 0;
