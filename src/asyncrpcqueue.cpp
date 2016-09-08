@@ -37,7 +37,7 @@ void AsyncRPCQueue::run(size_t workerId) {
             }
 
             // Exit if the queue is empty and we are finishing up
-            if ( isFinishing() && operation_id_queue_.empty() ) {
+            if (isFinishing() && operation_id_queue_.empty()) {
                 break;
             }
 

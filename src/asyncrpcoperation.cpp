@@ -38,7 +38,8 @@ AsyncRPCOperation::AsyncRPCOperation() : error_code_(0), error_message_() {
     creation_time_ = (int64_t)time(NULL);
 }
 
-AsyncRPCOperation::AsyncRPCOperation(const AsyncRPCOperation& o) : id_(o.id_), creation_time_(o.creation_time_), state_(o.state_.load())
+AsyncRPCOperation::AsyncRPCOperation(const AsyncRPCOperation& o) :
+    id_(o.id_), creation_time_(o.creation_time_), state_(o.state_.load())
 {
 }
 
@@ -107,6 +108,7 @@ void AsyncRPCOperation::main() {
 
 /**
  * Return the error of the completed operation as a Value object.
+ * If there is no error, return null Value.
  */
 Value AsyncRPCOperation::getError() const {
     if (!isFailed()) {
@@ -121,6 +123,7 @@ Value AsyncRPCOperation::getError() const {
 
 /**
  * Return the result of the completed operation as a Value object.
+ * If the operation did not succeed, return null Value.
  */
 Value AsyncRPCOperation::getResult() const {
     if (!isSuccess()) {
@@ -135,6 +138,7 @@ Value AsyncRPCOperation::getResult() const {
  * Returns a status Value object.
  * If the operation has failed, it will include an error object.
  * If the operation has succeeded, it will include the result value.
+ * If the operation was cancelled, there will be no error object or result value.
  */
 Value AsyncRPCOperation::getStatus() const {
     OperationStatus status = this->getState();
@@ -142,7 +146,7 @@ Value AsyncRPCOperation::getStatus() const {
     obj.push_back(Pair("id", this->getId()));
     obj.push_back(Pair("status", OperationStatusMap[status]));
     obj.push_back(Pair("creation_time", this->creation_time_));
-    // creation, exec time, duration, exec end, etc.
+    // TODO: Issue #1354: There may be other useful metadata to return to the user.
     Value err = this->getError();
     if (!err.is_null()) {
         obj.push_back(Pair("error", err.get_obj()));
