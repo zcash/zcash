@@ -10,6 +10,10 @@
 #include <atomic>
 #include <map>
 #include <chrono>
+#include <memory>
+#include <thread>
+#include <utility>
+#include <future>
 
 #include "json/json_spirit_value.h"
 #include "json/json_spirit_utils.h"
@@ -71,10 +75,12 @@ public:
     std::string getStateAsString() const;
     
     int getErrorCode() const {
+        std::lock_guard<std::mutex> guard(lock_);
         return error_code_;
     }
 
     std::string getErrorMessage() const {
+        std::lock_guard<std::mutex> guard(lock_);
         return error_message_;
     }
 
@@ -106,6 +112,7 @@ protected:
     // allow subclasses of AsyncRPCOperation the ability to access and update
     // internal state.  Currently, all operations are executed in a single-thread
     // by a single worker.
+    mutable std::mutex lock_;   // lock on this when read/writing non-atomics
     Value result_;
     int error_code_;
     std::string error_message_;
@@ -120,14 +127,17 @@ protected:
     }
 
     void set_error_code(int errorCode) {
+        std::lock_guard<std::mutex> guard(lock_);
         this->error_code_ = errorCode;
     }
 
     void set_error_message(std::string errorMessage) {
+        std::lock_guard<std::mutex> guard(lock_);
         this->error_message_ = errorMessage;
     }
     
     void set_result(Value v) {
+        std::lock_guard<std::mutex> guard(lock_);
         this->result_ = v;
     }
     
@@ -136,15 +146,8 @@ private:
     // Derived classes should write their own copy constructor and assignment operators
     AsyncRPCOperation(const AsyncRPCOperation& orig);
     AsyncRPCOperation& operator=( const AsyncRPCOperation& other );
-    
-    void set_id(AsyncRPCOperationId id) {
-        this->id_ = id;
-    }
-    
-    void set_creation_time(int64_t creationTime) {
-        this->creation_time_ = creationTime;
-    }
 
+    // Initialized in the operation constructor, never to be modified again.
     AsyncRPCOperationId id_;
     int64_t creation_time_;
 };

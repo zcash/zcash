@@ -31,22 +31,28 @@ std::map<OperationStatus, std::string> OperationStatusMap = {
 AsyncRPCOperation::AsyncRPCOperation() : error_code_(0), error_message_() {
     // Set a unique reference for each operation
     boost::uuids::uuid uuid = uuidgen();
-    std::string s = "opid-" + boost::uuids::to_string(uuid);
-    set_id(s);
-    
-    set_state(OperationStatus::READY);
+    id_ = "opid-" + boost::uuids::to_string(uuid);
     creation_time_ = (int64_t)time(NULL);
+    set_state(OperationStatus::READY);
 }
 
 AsyncRPCOperation::AsyncRPCOperation(const AsyncRPCOperation& o) :
-    id_(o.id_), creation_time_(o.creation_time_), state_(o.state_.load())
+        id_(o.id_), creation_time_(o.creation_time_), state_(o.state_.load()),
+        start_time_(o.start_time_), end_time_(o.end_time_),
+        error_code_(o.error_code_), error_message_(o.error_message_),
+        result_(o.result_)
 {
 }
 
 AsyncRPCOperation& AsyncRPCOperation::operator=( const AsyncRPCOperation& other ) {
-    this->id_ = other.getId();
+    this->id_ = other.id_;
     this->creation_time_ = other.creation_time_;
     this->state_.store(other.state_.load());
+    this->start_time_ = other.start_time_;
+    this->end_time_ = other.end_time_;
+    this->error_code_ = other.error_code_;
+    this->error_message_ = other.error_message_;
+    this->result_ = other.result_;
     return *this;
 }
 
@@ -67,6 +73,7 @@ void AsyncRPCOperation::cancel() {
  * Start timing the execution run of the code you're interested in
  */
 void AsyncRPCOperation::start_execution_clock() {
+    std::lock_guard<std::mutex> guard(lock_);
     start_time_ = std::chrono::system_clock::now();
 }
 
@@ -74,6 +81,7 @@ void AsyncRPCOperation::start_execution_clock() {
  * Stop timing the execution run
  */
 void AsyncRPCOperation::stop_execution_clock() {
+    std::lock_guard<std::mutex> guard(lock_);
     end_time_ = std::chrono::system_clock::now();
 }
 
@@ -115,6 +123,7 @@ Value AsyncRPCOperation::getError() const {
         return Value::null;
     }
 
+    std::lock_guard<std::mutex> guard(lock_);
     Object error;
     error.push_back(Pair("code", this->error_code_));
     error.push_back(Pair("message", this->error_message_));
@@ -130,6 +139,7 @@ Value AsyncRPCOperation::getResult() const {
         return Value::null;
     }
 
+    std::lock_guard<std::mutex> guard(lock_);
     return this->result_;
 }
 
@@ -143,7 +153,7 @@ Value AsyncRPCOperation::getResult() const {
 Value AsyncRPCOperation::getStatus() const {
     OperationStatus status = this->getState();
     Object obj;
-    obj.push_back(Pair("id", this->getId()));
+    obj.push_back(Pair("id", this->id_));
     obj.push_back(Pair("status", OperationStatusMap[status]));
     obj.push_back(Pair("creation_time", this->creation_time_));
     // TODO: Issue #1354: There may be other useful metadata to return to the user.
