@@ -52,7 +52,6 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     isfromtaddr_ = fromtaddr_.IsValid();
     isfromzaddr_ = false;
 
-    libzcash::PaymentAddress addr;
     if (!isfromtaddr_) {
         CZCPaymentAddress address(fromAddress);
         try {
