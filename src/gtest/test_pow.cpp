@@ -29,10 +29,12 @@ TEST(PoW, DifficultyAveraging) {
                                         blocks[firstBlk].GetMedianTimePast(),
                                         params),
               GetNextWorkRequired(&blocks[lastBlk], nullptr, params));
-    // Result should be unchanged
-    // TODO: This should be 0x1e7fffff, and just before GetNextWorkRequired()
-    //       returns, it is. Somehow it ends up off by one....
-    EXPECT_EQ(0x1e7ffffe, GetNextWorkRequired(&blocks[lastBlk], nullptr, params));
+    // Result should be unchanged, modulo integer division precision loss
+    arith_uint256 bnRes;
+    bnRes.SetCompact(0x1e7fffff);
+    bnRes /= params.AveragingWindowTimespan();
+    bnRes *= params.AveragingWindowTimespan();
+    EXPECT_EQ(bnRes.GetCompact(), GetNextWorkRequired(&blocks[lastBlk], nullptr, params));
 
     // Randomise the final block time (plus 1 to ensure it is always different)
     blocks[lastBlk].nTime += GetRand(params.nPowTargetSpacing/2) + 1;
