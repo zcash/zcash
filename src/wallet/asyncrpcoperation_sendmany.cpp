@@ -203,11 +203,12 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
     LogPrint("asyncrpc", "%s: spending %s to send %s with fee %s\n",
             getId().substr(0,10), FormatMoney(targetAmount, false), FormatMoney(sendAmount, false), FormatMoney(minersFee, false));
-    LogPrint("asyncrpc", " -  transparent input: %s\n", FormatMoney(t_inputs_total, false));
-    LogPrint("asyncrpc", " -      private input: %s\n", FormatMoney(z_inputs_total, false));
+    LogPrint("asyncrpc", " -  transparent input: %s (to choose from)\n", FormatMoney(t_inputs_total, false));
+    LogPrint("asyncrpc", " -      private input: %s (to choose from)\n", FormatMoney(z_inputs_total, false));
     LogPrint("asyncrpc", " - transparent output: %s\n", FormatMoney(t_outputs_total, false));
     LogPrint("asyncrpc", " -     private output: %s\n", FormatMoney(z_outputs_total, false));
-    
+    LogPrint("asyncrpc", " -                fee: %s\n", FormatMoney(minersFee, false));
+
     /**
      * SCENARIO #1
      * 
