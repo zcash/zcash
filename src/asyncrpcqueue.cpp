@@ -31,7 +31,7 @@ void AsyncRPCQueue::run(size_t workerId) {
         AsyncRPCOperationId key;
         std::shared_ptr<AsyncRPCOperation> operation;
         {
-            std::unique_lock< std::mutex > guard(lock_);
+            std::unique_lock<std::mutex> guard(lock_);
             while (operation_id_queue_.empty() && !isClosed() && !isFinishing()) {
                 this->condition_.wait(guard);
             }
