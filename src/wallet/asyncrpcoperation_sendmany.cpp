@@ -125,6 +125,8 @@ void AsyncRPCOperation_sendmany::main() {
 // 3. #1277 Spendable notes are not locked, so an operation running in parallel could also try to use them
 bool AsyncRPCOperation_sendmany::main_impl() {
 
+    assert(isfromtaddr_ != isfromzaddr_);
+
     bool isSingleZaddrOutput = (t_outputs_.size()==0 && z_outputs_.size()==1);
     bool isPureTaddrOnlyTx = (isfromtaddr_ && z_outputs_.size() == 0);
     CAmount minersFee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE;
