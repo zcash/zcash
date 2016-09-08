@@ -38,6 +38,10 @@ extern Value CallRPC(string args);
 
 extern CWallet* pwalletMain;
 
+bool find_error(const Object& objError, const std::string& expected) {
+    return find_value(objError, "message").get_str().find(expected) != string::npos;
+}
+
 BOOST_FIXTURE_TEST_SUITE(rpc_wallet_tests, TestingSetup)
 
 BOOST_AUTO_TEST_CASE(rpc_addmultisig)
@@ -646,9 +650,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations_parallel_cancel)
     std::vector<AsyncRPCOperationId> ids = q->getAllOperationIds();
     BOOST_CHECK(ids.size()==numOperations);
     q->closeAndWait();
-    
-    // the shared counter should equal the number of successful operations.
-    BOOST_CHECK_NE(numOperations, gCounter.load());
 
     int numSuccess = 0;
     int numCancelled = 0; 
@@ -725,6 +726,11 @@ BOOST_AUTO_TEST_CASE(rpc_z_getoperations)
         Object resultObj = resultArray.front().get_obj();
         Value resultId = find_value(resultObj, "id");
         BOOST_CHECK_EQUAL(id.get_str(), resultId.get_str());
+        
+        // verify the operation has been removed 
+        BOOST_CHECK_NO_THROW(result = CallRPC("z_getoperationresult [\"" + id.get_str() + "\"]"));
+        resultArray = result.get_array();
+        BOOST_CHECK(resultArray.size() == 0);
     }
     
     // operations removed
@@ -746,15 +752,23 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     BOOST_CHECK_THROW(CallRPC("z_sendmany too many args here"), runtime_error);
 
     // bad from address
-    BOOST_CHECK_THROW(CallRPC("z_sendmany INVALIDmwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs []"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_sendmany "
+            "INVALIDmwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs []"), runtime_error);
     // empty amounts
-    BOOST_CHECK_THROW(CallRPC("z_sendmany mwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs []"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_sendmany "
+            "mwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs []"), runtime_error);
 
     // don't have the spending key for this address
-    BOOST_CHECK_THROW(CallRPC("z_sendmany tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkBUkJ1oSfbhTJhm72WiZizvkZz5aH1 []"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_sendmany "
+            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"
+            "UkJ1oSfbhTJhm72WiZizvkZz5aH1 []"), runtime_error);
 
     // duplicate address
-    BOOST_CHECK_THROW(CallRPC("z_sendmany mwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs [{\"address\":\"mvBkHw3UTeV2ivipmSA6uo8yjN4DqZ5KoG\", \"amount\":50.0}, {\"address\":\"mvBkHw3UTeV2ivipmSA6uo8yjN4DqZ5KoG\", \"amount\":12.0} ]"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_sendmany "
+            "mwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs "
+            "[{\"address\":\"mvBkHw3UTeV2ivipmSA6uo8yjN4DqZ5KoG\", \"amount\":50.0},"
+            " {\"address\":\"mvBkHw3UTeV2ivipmSA6uo8yjN4DqZ5KoG\", \"amount\":12.0} ]"
+            ), runtime_error);
 
     // memo bigger than allowed length of ZC_MEMO_SIZE
     std::vector<char> v (2 * (ZC_MEMO_SIZE+1));     // x2 for hexadecimal string format
@@ -762,32 +776,33 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     std::string badmemo(v.begin(), v.end());
     CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
     std::string zaddr1 = pa.ToString();
-    BOOST_CHECK_THROW(CallRPC(string("z_sendmany mwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs ") + "[{\"address\":\"" + zaddr1 + "\", \"amount\":123.456}]"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC(string("z_sendmany mwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs ")
+            + "[{\"address\":\"" + zaddr1 + "\", \"amount\":123.456}]"), runtime_error);
     
     // Test constructor of AsyncRPCOperation_sendmany 
     try {
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany("",{}, {}, -1));
     } catch (const Object& objError) {
-        BOOST_CHECK( find_value(objError, "message").get_str().find("Minconf cannot be negative") != string::npos);
+        BOOST_CHECK( find_error(objError, "Minconf cannot be negative"));
     }
 
     try {
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany("",{}, {}, 1));
     } catch (const Object& objError) {
-        BOOST_CHECK( find_value(objError, "message").get_str().find("From address parameter missing")!= string::npos);
+        BOOST_CHECK( find_error(objError, "From address parameter missing"));
     }
 
     try {
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany("mwehwBzEHJTB5hiyxjmVkuFu9CHD2Cojjs", {}, {}, 1) );
     } catch (const Object& objError) {
-        BOOST_CHECK( find_value(objError, "message").get_str().find("No recipients")!= string::npos);
+        BOOST_CHECK( find_error(objError, "No recipients"));
     }
 
     try {
         std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy",1.0, "") };
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany("INVALID", recipients, {}, 1) );
     } catch (const Object& objError) {
-        BOOST_CHECK( find_value(objError, "message").get_str().find("payment address is invalid")!= string::npos);
+        BOOST_CHECK( find_error(objError, "payment address is invalid"));
     }
 
     // This test is for testnet addresses which begin with 't' not 'z'.
@@ -795,7 +810,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
         std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy",1.0, "") };
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany("zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U", recipients, {}, 1) );
     } catch (const Object& objError) {
-        BOOST_CHECK( find_value(objError, "message").get_str().find("payment address is for wrong network type")!= string::npos);
+        BOOST_CHECK( find_error(objError, "payment address is for wrong network type"));
     }
 
     // Note: The following will crash as a google test because AsyncRPCOperation_sendmany
@@ -804,7 +819,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
         std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy",1.0, "") };
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany("tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkBUkJ1oSfbhTJhm72WiZizvkZz5aH1", recipients, {}, 1) );
     } catch (const Object& objError) {
-        BOOST_CHECK( find_value(objError, "message").get_str().find("no spending key found for zaddr")!= string::npos);
+        BOOST_CHECK( find_error(objError, "no spending key found for zaddr"));
     }
 }
 
@@ -869,7 +884,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         try {
             proxy.get_memo_from_hex_string(bigmemo);
         } catch (const Object& objError) {
-            BOOST_CHECK( find_value(objError, "message").get_str().find("too big")!= string::npos);
+            BOOST_CHECK( find_error(objError, "too big"));
         }
         
         // invalid hexadecimal string
@@ -879,18 +894,18 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         try {
             proxy.get_memo_from_hex_string(badmemo);
         } catch (const Object& objError) {
-            BOOST_CHECK( find_value(objError, "message").get_str().find("hexadecimal format")!= string::npos);
+            BOOST_CHECK( find_error(objError, "hexadecimal format"));
         }
         
         // odd length hexadecimal string
         std::fill(v.begin(),v.end(), 'A');
         v.resize(v.size() - 1);
-        BOOST_CHECK(v.size() %2 == 1); // odd length
+        assert(v.size() %2 == 1); // odd length
         std::string oddmemo(v.begin(), v.end());
         try {
             proxy.get_memo_from_hex_string(oddmemo);
         } catch (const Object& objError) {
-            BOOST_CHECK( find_value(objError, "message").get_str().find("hexadecimal format")!= string::npos);
+            BOOST_CHECK( find_error(objError, "hexadecimal format"));
         }
     }
     
@@ -956,9 +971,17 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         
         // Enable test mode so tx is not sent
         static_cast<AsyncRPCOperation_sendmany *>(operation.get())->testmode = true;
+        
+        // Pretend that the operation completed successfully
+        proxy.set_state(OperationStatus::SUCCESS);
 
-        // No taddr inputs, so signed tx is the same as unsigned.
+        // Verify test mode is returning output (since no input taddrs, signed and unsigned are the same).
         BOOST_CHECK_NO_THROW( proxy.sign_send_raw_transaction(obj) );
+        Value result = operation->getResult();
+        BOOST_CHECK(!result.is_null());
+        Object resultObj = result.get_obj();
+        std::string hex = find_value(resultObj, "hex").get_str();
+        BOOST_CHECK_EQUAL(hex, raw);
     }
     
     

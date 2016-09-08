@@ -162,6 +162,10 @@ public:
     void sign_send_raw_transaction(Object obj) {
         delegate->sign_send_raw_transaction(obj);
     }
+    
+    void set_state(OperationStatus state) {
+        delegate->state_.store(state);
+    }
 };
 
 
