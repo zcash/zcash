@@ -82,6 +82,7 @@ void AsyncRPCQueue::run(size_t workerId) {
  * Don't use std::make_shared<AsyncRPCOperation>().
  */
 void AsyncRPCQueue::addOperation(const std::shared_ptr<AsyncRPCOperation> &ptrOperation) {
+    std::lock_guard<std::mutex> guard(lock_);
 
     // Don't add if queue is closed or finishing
     if (isClosed() || isFinishing()) {
@@ -89,7 +90,6 @@ void AsyncRPCQueue::addOperation(const std::shared_ptr<AsyncRPCOperation> &ptrOp
     }
 
     AsyncRPCOperationId id = ptrOperation->getId();
-    std::lock_guard< std::mutex > guard(lock_);
     operation_map_.emplace(id, ptrOperation);
     operation_id_queue_.push(id);
     this->condition_.notify_one();
