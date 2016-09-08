@@ -327,7 +327,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             info.vpub_old = 0;
             info.vpub_new = 0;
             int n = 0;
-            while (n++<2 && zOutputsDeque.size() > 0) {
+            while (n++<ZC_NUM_JS_OUTPUTS && zOutputsDeque.size() > 0) {
                 SendManyRecipient smr = zOutputsDeque.front();
                 std::string address = std::get<0>(smr);
                 CAmount value = std::get<1>(smr);
@@ -384,7 +384,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             info.vpub_new = 0;
             std::vector<JSOutPoint> outPoints;
             int n = 0;
-            while (n++ < 2 && taddrTargetAmount > 0) {
+            while (n++ < ZC_NUM_JS_INPUTS && taddrTargetAmount > 0) {
                 SendManyInputJSOP o = zInputsDeque.front();
                 JSOutPoint outPoint = std::get<0>(o);
                 Note note = std::get<1>(o);
@@ -528,7 +528,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             std::vector<JSOutPoint> vOutPoints;
             uint256 inputAnchor;
             int numInputsNeeded = (jsChange>0) ? 1 : 0;
-            while (numInputsNeeded++ < 2 && zInputsDeque.size() > 0) {
+            while (numInputsNeeded++ < ZC_NUM_JS_INPUTS && zInputsDeque.size() > 0) {
                 SendManyInputJSOP t = zInputsDeque.front();
                 JSOutPoint jso = std::get<0>(t);
                 Note note = std::get<1>(t);
