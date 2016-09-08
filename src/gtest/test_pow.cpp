@@ -22,7 +22,10 @@ TEST(PoW, DifficultyAveraging) {
     }
 
     // Result should be the same as if last difficulty was used
-    EXPECT_EQ(CalculateNextWorkRequired(&blocks[lastBlk],
+    arith_uint256 bnAvg;
+    bnAvg.SetCompact(blocks[lastBlk].nBits);
+    EXPECT_EQ(CalculateNextWorkRequired(bnAvg,
+                                        blocks[lastBlk].GetMedianTimePast(),
                                         blocks[firstBlk].GetMedianTimePast(),
                                         params),
               GetNextWorkRequired(&blocks[lastBlk], nullptr, params));
@@ -35,7 +38,9 @@ TEST(PoW, DifficultyAveraging) {
     blocks[lastBlk].nTime += GetRand(params.nPowTargetSpacing/2) + 1;
 
     // Result should be the same as if last difficulty was used
-    EXPECT_EQ(CalculateNextWorkRequired(&blocks[lastBlk],
+    bnAvg.SetCompact(blocks[lastBlk].nBits);
+    EXPECT_EQ(CalculateNextWorkRequired(bnAvg,
+                                        blocks[lastBlk].GetMedianTimePast(),
                                         blocks[firstBlk].GetMedianTimePast(),
                                         params),
               GetNextWorkRequired(&blocks[lastBlk], nullptr, params));
@@ -46,7 +51,9 @@ TEST(PoW, DifficultyAveraging) {
     blocks[lastBlk].nBits = 0x1e0fffff;
 
     // Result should not be the same as if last difficulty was used
-    EXPECT_NE(CalculateNextWorkRequired(&blocks[lastBlk],
+    bnAvg.SetCompact(blocks[lastBlk].nBits);
+    EXPECT_NE(CalculateNextWorkRequired(bnAvg,
+                                        blocks[lastBlk].GetMedianTimePast(),
                                         blocks[firstBlk].GetMedianTimePast(),
                                         params),
               GetNextWorkRequired(&blocks[lastBlk], nullptr, params));

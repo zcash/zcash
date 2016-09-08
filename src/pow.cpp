@@ -43,14 +43,6 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     return CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
 }
 
-// Left for testing purposes
-unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nFirstBlockTime, const Consensus::Params& params)
-{
-    arith_uint256 bnAvg;
-    bnAvg.SetCompact(pindexLast->nBits);
-    return CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), nFirstBlockTime, params);
-}
-
 unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
                                        int64_t nLastBlockTime, int64_t nFirstBlockTime,
                                        const Consensus::Params& params)

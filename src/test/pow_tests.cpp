@@ -20,12 +20,11 @@ BOOST_AUTO_TEST_CASE(get_next_work)
     const Consensus::Params& params = Params().GetConsensus();
 
     int64_t nLastRetargetTime = 1262149169; // NOTE: Not an actual block time
-    CBlockIndex pindexLast;
-    pindexLast.nHeight = 32255;
-    pindexLast.nTime = 1262152739;  // Block #32255 of Bitcoin
-    // This represents an average difficulty in the current algorithm
-    pindexLast.nBits = 0x1d00ffff;
-    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1d011998);
+    int64_t nThisTime = 1262152739;  // Block #32255 of Bitcoin
+    arith_uint256 bnAvg;
+    bnAvg.SetCompact(0x1d00ffff);
+    BOOST_CHECK_EQUAL(0x1d011998,
+                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params));
 }
 
 /* Test the constraint on the upper bound for next work */
@@ -35,13 +34,12 @@ BOOST_AUTO_TEST_CASE(get_next_work_pow_limit)
     const Consensus::Params& params = Params().GetConsensus();
 
     int64_t nLastRetargetTime = 1231006505; // Block #0 of Bitcoin
-    CBlockIndex pindexLast;
-    pindexLast.nHeight = 2015;
-    pindexLast.nTime = 1233061996;  // Block #2015 of Bitcoin
-    // This represents an average difficulty in the current algorithm
+    int64_t nThisTime = 1233061996;  // Block #2015 of Bitcoin
+    arith_uint256 bnAvg;
     // TODO change once the harder genesis block is generated
-    pindexLast.nBits = 0x200f0f0f;
-    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x200f0f0f);
+    bnAvg.SetCompact(0x200f0f0f);
+    BOOST_CHECK_EQUAL(0x200f0f0f,
+                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params));
 }
 
 /* Test the constraint on the lower bound for actual time taken */
@@ -51,12 +49,11 @@ BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual)
     const Consensus::Params& params = Params().GetConsensus();
 
     int64_t nLastRetargetTime = 1279296753; // NOTE: Not an actual block time
-    CBlockIndex pindexLast;
-    pindexLast.nHeight = 68543;
-    pindexLast.nTime = 1279297671;  // Block #68543 of Bitcoin
-    // This represents an average difficulty in the current algorithm
-    pindexLast.nBits = 0x1c05a3f4;
-    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1c04bceb);
+    int64_t nThisTime = 1279297671;  // Block #68543 of Bitcoin
+    arith_uint256 bnAvg;
+    bnAvg.SetCompact(0x1c05a3f4);
+    BOOST_CHECK_EQUAL(0x1c04bceb,
+                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params));
 }
 
 /* Test the constraint on the upper bound for actual time taken */
@@ -66,12 +63,11 @@ BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual)
     const Consensus::Params& params = Params().GetConsensus();
 
     int64_t nLastRetargetTime = 1269205629; // NOTE: Not an actual block time
-    CBlockIndex pindexLast;
-    pindexLast.nHeight = 46367;
-    pindexLast.nTime = 1269211443;  // Block #46367 of Bitcoin
-    // This represents an average difficulty in the current algorithm
-    pindexLast.nBits = 0x1c387f6f;
-    BOOST_CHECK_EQUAL(CalculateNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1c4a93bb);
+    int64_t nThisTime = 1269211443;  // Block #46367 of Bitcoin
+    arith_uint256 bnAvg;
+    bnAvg.SetCompact(0x1c387f6f);
+    BOOST_CHECK_EQUAL(0x1c4a93bb,
+                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params));
 }
 
 BOOST_AUTO_TEST_CASE(GetBlockProofEquivalentTime_test)
