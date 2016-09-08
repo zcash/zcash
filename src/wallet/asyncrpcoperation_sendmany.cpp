@@ -308,7 +308,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
             } else if (!isSingleZaddrOutput && selectedUTXOCoinbase) {
                 // This should not happen and is not allowed
-                throw JSONRPCError(RPC_WALLET_ERROR, "Wallet selected Coinbase UTXOs as valid inputs when it should not have done");
+                assert(false);
             } else {
                 // If there is a single zaddr and no coinbase utxos, just use a regular output for change.
                 add_taddr_change_output_to_tx(change);
