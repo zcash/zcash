@@ -2973,6 +2973,9 @@ Value z_getbalance(const Array& params, bool fHelp)
     if (params.size() > 1) {
         nMinDepth = params[1].get_int();
     }
+    if (nMinDepth < 0) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
+    }
     
     // Check that the from address is valid.
     auto fromaddress = params[0].get_str();
@@ -2986,6 +2989,9 @@ Value z_getbalance(const Array& params, bool fHelp)
             zaddr = address.Get();
         } catch (std::runtime_error) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
+        }
+        if (!pwalletMain->HaveSpendingKey(zaddr)) {
+             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key not found.");
         }
     }
 
@@ -3031,6 +3037,9 @@ Value z_gettotalbalance(const Array& params, bool fHelp)
     int nMinDepth = 1;
     if (params.size() == 1) {
         nMinDepth = params[0].get_int();
+    }
+    if (nMinDepth < 0) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
     }
 
     // getbalance and "getbalance * 1 true" should return the same number
@@ -3253,8 +3262,12 @@ Value z_sendmany(const Array& params, bool fHelp)
 
     // Minimum confirmations
     int nMinDepth = 1;
-    if (params.size() > 2)
+    if (params.size() > 2) {
         nMinDepth = params[2].get_int();
+    }
+    if (nMinDepth < 0) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
+    }
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
