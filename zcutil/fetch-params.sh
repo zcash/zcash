@@ -59,7 +59,7 @@ function main() {
     || exit_locked_error
 
     cat <<EOF
-zcash - fetch-params.sh
+Zcash - fetch-params.sh
 
 EOF
 
@@ -69,7 +69,7 @@ EOF
         mkdir -p "$PARAMS_DIR"
         README_PATH="$PARAMS_DIR/README"
         cat >> "$README_PATH" <<EOF
-This directory stores common zcash zkSNARK parameters. Note that is is
+This directory stores common Zcash zkSNARK parameters. Note that is is
 distinct from the daemon's -datadir argument because the parameters are
 large and may be shared across multiple distinct -datadir's such as when
 setting up test networks.
@@ -96,21 +96,26 @@ fi
     fetch_params "$REGTEST_PKEY_URL" "$REGTEST_DIR/$REGTEST_PKEY_NAME"
     fetch_params "$REGTEST_VKEY_URL" "$REGTEST_DIR/$REGTEST_VKEY_NAME"
 
-    echo 'Updating testnet3 symlinks to regtest parameters.'
-    mkdir -p "$TESTNET3_DIR"
-    ln -sf "../regtest/$REGTEST_PKEY_NAME" "$TESTNET3_DIR/$REGTEST_PKEY_NAME"
-    ln -sf "../regtest/$REGTEST_VKEY_NAME" "$TESTNET3_DIR/$REGTEST_VKEY_NAME"
-
     cd "$PARAMS_DIR"
 
     # Now verify their hashes:
     echo 'Verifying parameter file integrity via sha256sum...'
     shasum -a 256 --check <<EOF
 226913bbdc48b70834f8e044d194ddb61c8e15329f67cdc6014f4e5ac11a82ab  regtest/$REGTEST_PKEY_NAME
-226913bbdc48b70834f8e044d194ddb61c8e15329f67cdc6014f4e5ac11a82ab  testnet3/$REGTEST_PKEY_NAME
 4c151c562fce2cdee55ac0a0f8bd9454eb69e6a0db9a8443b58b770ec29b37f5  regtest/$REGTEST_VKEY_NAME
-4c151c562fce2cdee55ac0a0f8bd9454eb69e6a0db9a8443b58b770ec29b37f5  testnet3/$REGTEST_VKEY_NAME
 EOF
+
+    # Check the exit code of the shasum command:
+    CHECKSUM_RESULT=$?
+    if [ $CHECKSUM_RESULT -eq 0 ]; then
+        echo 'Updating testnet3 symlinks to regtest parameters.'
+        mkdir -p "$TESTNET3_DIR"
+        ln -sf "../regtest/$REGTEST_PKEY_NAME" "$TESTNET3_DIR/$REGTEST_PKEY_NAME"
+        ln -sf "../regtest/$REGTEST_VKEY_NAME" "$TESTNET3_DIR/$REGTEST_VKEY_NAME"
+    else
+       exit 1
+    fi
+
 }
 
 main
