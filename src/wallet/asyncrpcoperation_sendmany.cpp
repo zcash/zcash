@@ -128,12 +128,28 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     assert(isfromtaddr_ != isfromzaddr_);
 
     bool isSingleZaddrOutput = (t_outputs_.size()==0 && z_outputs_.size()==1);
+    bool isMultipleZaddrOutput = (t_outputs_.size()==0 && z_outputs_.size()>=1);
     bool isPureTaddrOnlyTx = (isfromtaddr_ && z_outputs_.size() == 0);
     CAmount minersFee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE;
-
-    // Regardless of the from address, add all taddr outputs to the raw transaction.
-    if (isfromtaddr_ && !find_utxos(isSingleZaddrOutput)) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds, no UTXOs found for taddr from address.");
+    
+    // When spending coinbase utxos, you can only specify a single zaddr as the change must go somewhere
+    // and if there are multiple zaddrs, we don't know where to send it.
+    if (isfromtaddr_) {
+        if (isSingleZaddrOutput) {
+            bool b = find_utxos(true);
+            if (!b) {
+                throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds, no UTXOs found for taddr from address.");
+            }
+        } else {
+            bool b = find_utxos(false);
+            if (!b) {
+                if (isMultipleZaddrOutput) {
+                    throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any non-coinbase UTXOs to spend. Coinbase UTXOs can only be sent to a single zaddr recipient.");
+                } else {
+                    throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any non-coinbase UTXOs to spend.");
+                }
+            }
+        }        
     }
     
     if (isfromzaddr_ && !find_unspent_notes()) {
@@ -728,11 +744,7 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
         SendManyInputUTXO utxo(out.tx->GetTxid(), out.i, nValue, isCoinbase);
         t_inputs_.push_back(utxo);
     }
-    
-    if (fAcceptCoinbase==false && t_inputs_.size()==0) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any non-coinbase UTXOs to spend.");
-    }
-    
+
     return t_inputs_.size() > 0;
 }
 
