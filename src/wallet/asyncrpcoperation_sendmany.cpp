@@ -671,7 +671,7 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(Object obj)
     Value completeValue = find_value(signResultObject, "complete");
     bool complete = completeValue.get_bool();
     if (!complete) {
-        // TODO: Maybe get "errors" and print array vErrors into a string
+        // TODO: #1366 Maybe get "errors" and print array vErrors into a string
         throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Failed to sign transaction");
     }
 
