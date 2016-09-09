@@ -103,7 +103,7 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
-        // TODO: set up bootstrapping
+        // TODO: set up bootstrapping for mainnet
         //vSeeds.push_back(CDNSSeedData("bitcoin.sipa.be", "seed.bitcoin.sipa.be")); // Pieter Wuille
         //vSeeds.push_back(CDNSSeedData("bluematt.me", "dnsseed.bluematt.me")); // Matt Corallo
         //vSeeds.push_back(CDNSSeedData("dashjr.org", "dnsseed.bitcoin.dashjr.org")); // Luke Dashjr
@@ -155,10 +155,10 @@ public:
         consensus.powLimit = uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
         assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
         consensus.fPowAllowMinDifficultyBlocks = true;
-        pchMessageStart[0] = 0x26;
-        pchMessageStart[1] = 0xA7;
-        pchMessageStart[2] = 0x24;
-        pchMessageStart[3] = 0xB6;
+        pchMessageStart[0] = 0xA5;
+        pchMessageStart[1] = 0xF1;
+        pchMessageStart[2] = 0xE7;
+        pchMessageStart[3] = 0x26;
         vAlertPubKey = ParseHex("044e7a1553392325c871c5ace5d6ad73501c66f4c185d6b0453cf45dec5a1322e705c672ac1a27ef7cdaf588c10effdf50ed5f95f85f2f54a5f6159fca394ed0c6");
         nDefaultPort = 18233;
         nMinerThreads = 0;
@@ -175,11 +175,7 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
-        // TODO: set up bootstrapping
-        //vSeeds.push_back(CDNSSeedData("alexykot.me", "testnet-seed.alexykot.me"));
-        //vSeeds.push_back(CDNSSeedData("bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"));
-        //vSeeds.push_back(CDNSSeedData("bluematt.me", "testnet-seed.bluematt.me"));
-        //vSeeds.push_back(CDNSSeedData("bitcoin.schildbach.de", "testnet-seed.bitcoin.schildbach.de"));
+        vSeeds.push_back(CDNSSeedData("z.cash", "dns.testnet.z.cash")); // Zcash
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196);
