@@ -692,7 +692,6 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(Object obj)
 
         Object o;
         o.push_back(Pair("txid", txid));
-        //o.push_back(Pair("hex", signedtxn));
         set_result(Value(o));
     } else {
         // Test mode does not send the transaction to the network.
