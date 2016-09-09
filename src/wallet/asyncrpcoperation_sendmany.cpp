@@ -702,7 +702,7 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(Object obj)
 
         Object o;
         o.push_back(Pair("test", 1));
-        o.push_back(Pair("txid", tx.GetTxid().ToString()));
+        o.push_back(Pair("txid", tx.GetHash().ToString()));
         o.push_back(Pair("hex", signedtxn));
         set_result(Value(o));
     }
@@ -740,7 +740,7 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
         }
         
         CAmount nValue = out.tx->vout[out.i].nValue;
-        SendManyInputUTXO utxo(out.tx->GetTxid(), out.i, nValue, isCoinbase);
+        SendManyInputUTXO utxo(out.tx->GetHash(), out.i, nValue, isCoinbase);
         t_inputs_.push_back(utxo);
     }
 
