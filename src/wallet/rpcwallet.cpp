@@ -3242,8 +3242,7 @@ Value z_sendmany(const Array& params, bool fHelp)
             } else if (!IsHex(memo)) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected memo data in hexadecimal format.");
             }
-            std::vector<unsigned char> vMemo = ParseHex(memo);
-            if (vMemo.size() > ZC_MEMO_SIZE) {
+            if (memo.length() > ZC_MEMO_SIZE*2) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER,  strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
             }
         }
