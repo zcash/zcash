@@ -1166,6 +1166,7 @@ public:
      * @warning Returned pointers are *only* valid within the scope of passed acentries
      */
     TxItems OrderedTxItems(std::list<CAccountingEntry>& acentries, std::string strAccount = "");
+    DBErrors ReorderTransactions();
 
     void MarkDirty();
     bool UpdateNullifierNoteMap();
