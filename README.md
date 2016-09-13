@@ -31,3 +31,26 @@ License
 Zcash is released under the terms of the MIT license. See [COPYING](COPYING) for more
 information or see http://opensource.org/licenses/MIT.
 
+
+>>>>>>>>>>>>>>>>>>>> Komodo specific notes:
+
+git clone https://github.com/jl777/komodo
+cd komodo
+./autoconf
+./configure
+./zcutil/fetch-params.sh
+cp ~/.zcash-params/testnet3/z9* ~/.zcash-params
+./zcutil/build.sh -j8  # -j8 uses 8 threads
+
+In ~/.komodo/komodo.conf:
+
+rpcuser=bitcoinrpc
+rpcpassword=6cPEhaAvRk6w5MPAopJJbjucKRyDCapqC1JWzx15zLH2
+addnode="5.9.102.210"
+addnode="78.47.196.146"
+
+
+komodo/src/komodod -gen=1 -genproclimit=1
+komodo/src/komodo-cli getinfo
+
+

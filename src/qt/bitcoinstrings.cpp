@@ -114,7 +114,7 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 "the OpenSSL Toolkit <https://www.openssl.org/> and cryptographic software "
 "written by Eric Young and UPnP software written by Thomas Bernard."),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
-"To use bitcoind, or the -server option to bitcoin-qt, you must set an "
+"To use bitcoind, or the -server option to komodo-qt, you must set an "
 "rpcpassword in the configuration file:\n"
 "%s\n"
 "It is recommended you use the following random password:\n"
