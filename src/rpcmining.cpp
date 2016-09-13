@@ -785,13 +785,13 @@ Value getblocksubsidy(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
-    CAmount nFoundersReward = 0;
+    /*CAmount nFoundersReward = 0;
     if ((nHeight > 0) && (nHeight < Params().GetConsensus().nSubsidyHalvingInterval)) {
         nFoundersReward = nReward/5;
         nReward -= nFoundersReward;
-    }
+    }*/
     Object result;
     result.push_back(Pair("miner", ValueFromAmount(nReward)));
-    result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));
+    //result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));
     return result;
 }
