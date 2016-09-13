@@ -485,7 +485,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 } while (true);
                 fprintf(stderr,"Found peers\n");
             }
-
+            fprintf(stderr,"create new block\n");
             //
             // Create new block
             //
