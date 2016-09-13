@@ -603,6 +603,7 @@ protected:
                                 const CBlock* pblock,
                                 ZCIncrementalMerkleTree tree);
     void DecrementNoteWitnesses();
+    void WriteWitnessCache();
 
 private:
     template <class T>

@@ -654,11 +654,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
             nWitnessCacheSize += 1;
         }
         if (fFileBacked) {
-            CWalletDB walletdb(strWalletFile);
-            for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-                walletdb.WriteTx(wtxItem.first, wtxItem.second);
-            }
-            walletdb.WriteWitnessCacheSize(nWitnessCacheSize);
+            WriteWitnessCache();
         }
     }
 }
@@ -679,12 +675,34 @@ void CWallet::DecrementNoteWitnesses()
         // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
         assert(nWitnessCacheSize > 0);
         if (fFileBacked) {
-            CWalletDB walletdb(strWalletFile);
-            for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-                walletdb.WriteTx(wtxItem.first, wtxItem.second);
-            }
-            walletdb.WriteWitnessCacheSize(nWitnessCacheSize);
+            WriteWitnessCache();
         }
+    }
+}
+
+void CWallet::WriteWitnessCache() {
+    CWalletDB walletdb(strWalletFile);
+    if (!walletdb.TxnBegin()) {
+        // This needs to be done atomically, so don't do it at all
+        LogPrintf("WriteWitnessCache(): Couldn't start atomic write\n");
+        return;
+    }
+    for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+        if (!walletdb.WriteTx(wtxItem.first, wtxItem.second)) {
+            LogPrintf("WriteWitnessCache(): Failed to write CWalletTx, aborting atomic write\n");
+            walletdb.TxnAbort();
+            return;
+        }
+    }
+    if (!walletdb.WriteWitnessCacheSize(nWitnessCacheSize)) {
+        LogPrintf("WriteWitnessCache(): Failed to write nWitnessCacheSize, aborting atomic write\n");
+        walletdb.TxnAbort();
+        return;
+    }
+    if (!walletdb.TxnCommit()) {
+        // Couldn't commit all to db, but in-memory state is fine
+        LogPrintf("WriteWitnessCache(): Couldn't commit atomic write\n");
+        return;
     }
 }
 
