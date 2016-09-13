@@ -1369,7 +1369,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
     CAmount nSubsidy = 3 * COIN;
     if ( nHeight == 1 )
-        return(100000000 * COIN);
+        return(100000000 * COIN); // ICO allocation
 /*
     // Mining slow start
     // The subsidy is ramped up linearly, skipping the middle payout of
