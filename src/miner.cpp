@@ -466,10 +466,13 @@ void static BitcoinMiner(CWallet *pwallet)
     );
 
     try {
-        while (true) {
-            if (chainparams.MiningRequiresPeers()) {
+        while (true)
+        {
+            if (chainparams.MiningRequiresPeers())
+            {
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
+                fprintf(stderr,"Wait for peers...\n");
                 do {
                     bool fvNodesEmpty;
                     {
@@ -480,6 +483,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         break;
                     MilliSleep(1000);
                 } while (true);
+                fprintf(stderr,"Found peers\n");
             }
 
             //
@@ -506,7 +510,8 @@ void static BitcoinMiner(CWallet *pwallet)
             int64_t nStart = GetTime();
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
 
-            while (true) {
+            while (true)
+            {
                 // Hash state
                 crypto_generichash_blake2b_state state;
                 EhInitialiseState(n, k, state);
