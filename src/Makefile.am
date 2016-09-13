@@ -62,11 +62,11 @@ bin_PROGRAMS =
 TESTS =
 
 if BUILD_BITCOIND
-  bin_PROGRAMS += zcashd
+  bin_PROGRAMS += komodod
 endif
 
 if BUILD_BITCOIN_UTILS
-  bin_PROGRAMS += zcash-cli bitcoin-tx
+  bin_PROGRAMS += komodo-cli bitcoin-tx
 endif
 
 # TODO: rename to libzcash
@@ -335,15 +335,15 @@ nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
 #
 
 # bitcoind binary #
-zcashd_SOURCES = bitcoind.cpp
-zcashd_CPPFLAGS = $(BITCOIN_INCLUDES)
-zcashd_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+komodod_SOURCES = bitcoind.cpp
+komodod_CPPFLAGS = $(BITCOIN_INCLUDES)
+komodod_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
-zcashd_SOURCES += bitcoind-res.rc
+komodod_SOURCES += bitcoind-res.rc
 endif
 
-zcashd_LDADD = \
+komodod_LDADD = \
   $(LIBBITCOIN_SERVER) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UNIVALUE) \
@@ -355,10 +355,10 @@ zcashd_LDADD = \
   $(LIBSECP256K1)
 
 if ENABLE_WALLET
-zcashd_LDADD += libbitcoin_wallet.a
+komodod_LDADD += libbitcoin_wallet.a
 endif
 
-zcashd_LDADD += \
+komodod_LDADD += \
   $(BOOST_LIBS) \
   $(BDB_LIBS) \
   $(SSL_LIBS) \
@@ -370,15 +370,15 @@ zcashd_LDADD += \
 #
 
 # bitcoin-cli binary #
-zcash_cli_SOURCES = bitcoin-cli.cpp
-zcash_cli_CPPFLAGS = $(BITCOIN_INCLUDES)
-zcash_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+komodo_cli_SOURCES = bitcoin-cli.cpp
+komodo_cli_CPPFLAGS = $(BITCOIN_INCLUDES)
+komodo_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
-zcash_cli_SOURCES += bitcoin-cli-res.rc
+komodo_cli_SOURCES += bitcoin-cli-res.rc
 endif
 
-zcash_cli_LDADD = \
+komodo_cli_LDADD = \
   $(LIBBITCOIN_CLI) \
   $(LIBBITCOIN_UTIL) \
   $(BOOST_LIBS) \

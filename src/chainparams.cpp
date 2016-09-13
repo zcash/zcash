@@ -168,7 +168,7 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
-        //vSeeds.push_back(CDNSSeedData("z.cash", "dns.testnet.z.cash")); // Zcash
+        //vSeeds.push_back(CDNSSeedData("z.cash", "dns.testnet.z.cash")); // Komodo
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,0);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
