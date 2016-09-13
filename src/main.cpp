@@ -90,7 +90,7 @@ static void CheckBlockIndex();
 /** Constant stuff for coinbase transactions we create: */
 CScript COINBASE_FLAGS;
 
-const string strMessageMagic = "Bitcoin Signed Message:\n";
+const string strMessageMagic = "Komodo Signed Message:\n";
 
 // Internal stuff
 namespace {
@@ -1368,6 +1368,8 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
     CAmount nSubsidy = 3 * COIN;
+    if ( nHeight == 1 )
+        return(100000000 * COIN);
 /*
     // Mining slow start
     // The subsidy is ramped up linearly, skipping the middle payout of
