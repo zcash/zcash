@@ -3,7 +3,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "komodo.h"
 #include "main.h"
 
 #include "sodium.h"
@@ -41,6 +40,8 @@ using namespace std;
 #if defined(NDEBUG)
 # error "Bitcoin cannot be compiled without assertions."
 #endif
+
+extern "C" int32_t komodo_blockcheck(void *block);
 
 /**
  * Global state
@@ -1349,10 +1350,12 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
     }
 
     // Check the header
-    if (!(CheckEquihashSolution(&block, Params()) &&
-          CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())))
-        return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
-
+    if ( komodo_blockcheck((void *)&block) < 0 )
+    {
+        if (!(CheckEquihashSolution(&block, Params()) &&
+              CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())))
+            return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+    }
     return true;
 }
 
@@ -2939,21 +2942,22 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
 {
-    // Check Equihash solution is valid
-    if (fCheckPOW && !CheckEquihashSolution(&block, Params()))
-        return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
-                         REJECT_INVALID, "invalid-solution");
-
-    // Check proof of work matches claimed amount
-    if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus()))
-        return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
-                         REJECT_INVALID, "high-hash");
-
+    if ( komodo_blockcheck((void *)&block) < 0 )
+    {
+        // Check Equihash solution is valid
+        if (fCheckPOW && !CheckEquihashSolution(&block, Params()))
+            return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
+                             REJECT_INVALID, "invalid-solution");
+        
+        // Check proof of work matches claimed amount
+        if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus()))
+            return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
+                             REJECT_INVALID, "high-hash");
+    }
     // Check timestamp
     if (block.GetBlockTime() > GetAdjustedTime() + 600)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),
                              REJECT_INVALID, "time-too-new");
-
     return true;
 }
 
@@ -4096,6 +4100,7 @@ string GetWarnings(string strFor)
 //
 // Messages
 //
+#include "komodo.h"
 
 
 bool static AlreadyHave(const CInv& inv)
