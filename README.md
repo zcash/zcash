@@ -36,7 +36,7 @@ information or see http://opensource.org/licenses/MIT.
 
 git clone https://github.com/jl777/komodo
 cd komodo
-./autoconf
+./autogen.sh
 ./configure --with-incompatible-bdb --with-gui
 ./zcutil/fetch-params.sh
 cp ~/.zcash-params/testnet3/z9* ~/.zcash-params
