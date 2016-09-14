@@ -5076,13 +5076,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             }
         }
     }
-
+    else if (strCommand == "komodo")
+        komodo_checkmsg(pfrom->addr.ToString(),vRecv.begin(),vRecv.in_avail();
     else
     {
-        ostringstream ss;
-        ss << strCommand;
-        if ( komodo_checkmsg(ss.str().ToString(),pfrom->addr.ToString(),vRecv.begin(),vRecv.in_avail()) < 0 )
-            LogPrint("net", "Unknown command \"%s\" from peer=%d\n", SanitizeString(strCommand),pfrom->id);
+        LogPrint("net", "Unknown \"%s\" from peer=%d\n", SanitizeString(strCommand),pfrom->id);
     }
 
 
