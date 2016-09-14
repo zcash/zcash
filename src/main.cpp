@@ -41,6 +41,8 @@ using namespace std;
 # error "Bitcoin cannot be compiled without assertions."
 #endif
 
+extern "C" int32_t komodo_blockcheck(void *block);
+
 /**
  * Global state
  */
@@ -1348,10 +1350,12 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
     }
 
     // Check the header
-    if (!(CheckEquihashSolution(&block, Params()) &&
-          CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())))
-        return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
-
+    if ( komodo_blockcheck((void *)&block) < 0 )
+    {
+        if (!(CheckEquihashSolution(&block, Params()) &&
+              CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())))
+            return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+    }
     return true;
 }
 
@@ -2938,21 +2942,22 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
 {
-    // Check Equihash solution is valid
-    if (fCheckPOW && !CheckEquihashSolution(&block, Params()))
-        return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
-                         REJECT_INVALID, "invalid-solution");
-
-    // Check proof of work matches claimed amount
-    if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus()))
-        return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
-                         REJECT_INVALID, "high-hash");
-
+    if ( komodo_blockcheck((void *)&block) < 0 )
+    {
+        // Check Equihash solution is valid
+        if (fCheckPOW && !CheckEquihashSolution(&block, Params()))
+            return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
+                             REJECT_INVALID, "invalid-solution");
+        
+        // Check proof of work matches claimed amount
+        if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus()))
+            return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
+                             REJECT_INVALID, "high-hash");
+    }
     // Check timestamp
-    if (block.GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
+    if (block.GetBlockTime() > GetAdjustedTime() + 600)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),
                              REJECT_INVALID, "time-too-new");
-
     return true;
 }
 
@@ -4095,6 +4100,7 @@ string GetWarnings(string strFor)
 //
 // Messages
 //
+#include "komodo.h"
 
 
 bool static AlreadyHave(const CInv& inv)
@@ -5075,11 +5081,15 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             }
         }
     }
-
+    else if (strCommand == "komodo")
+    {
+        vector<unsigned char> vData;
+        vRecv >> vData;
+        komodo_checkmsg(pfrom,vData.data(),vData.size());
+    }
     else
     {
-        // Ignore unknown commands for extensibility
-        LogPrint("net", "Unknown command \"%s\" from peer=%d\n", SanitizeString(strCommand), pfrom->id);
+        LogPrint("net", "Unknown \"%s\" from peer=%d\n", SanitizeString(strCommand),pfrom->id);
     }
 
 
@@ -5486,3 +5496,91 @@ public:
         mapOrphanTransactionsByPrev.clear();
     }
 } instance_of_cmaincleanup;
+
+int32_t SuperNET_retval = 0;
+
+extern "C" const char* getDataDir()
+{
+	return GetDataDir().string().c_str();
+}
+
+#ifdef needs_to_be_ported // send komodo message
+void set_pubaddr(CPubAddr &pubaddr,std::string msg,int32_t duration)
+{
+    pubaddr.teleportMsg = msg;
+    pubaddr.nPriority = 1;
+    pubaddr.nID = rand() % 100000001;
+    pubaddr.nVersion = PROTOCOL_VERSION;
+    pubaddr.nRelayUntil = pubaddr.nExpiration = (GetAdjustedTime() + duration);
+    CDataStream sMsg(SER_NETWORK,PROTOCOL_VERSION);
+    sMsg << (CUnsignedPubAddr)pubaddr;
+    pubaddr.vchMsg = vector<unsigned char>(sMsg.begin(),sMsg.end());
+    if(!pubaddr.CheckSignature())
+        throw runtime_error("Failed to Unserialize PubAddr");
+    //if ( pubaddr.ProcessPubAddr() == 0 )
+    //  throw runtime_error("set_pubaddr: Failed to process pubaddr.\n");
+}
+
+void broadcastPubAddr(char *msg,int32_t duration)
+{
+    CPubAddr *pubaddr = new CPubAddr;
+    set_pubaddr(*pubaddr,std::string(msg),duration);
+    printf("Komodo BROADCAST.(%s)\n",msg);
+    // Relay pubaddr to all peers
+    {
+        LOCK(cs_vNodes);
+        BOOST_FOREACH(CNode *pnode,vNodes)
+        {
+            pubaddr->RelayTo(pnode);
+        }
+    }
+    delete pubaddr;
+}
+
+extern "C" int32_t SuperNET_broadcast(char *msg,int32_t duration)
+{
+    printf("inside SuperNET_broadcast.(%s) retval.%d\n",msg,SuperNET_retval);
+    if ( SuperNET_retval <= 0 )
+        return(-1);
+    broadcastPubAddr(msg,duration);
+	return(0);
+}
+
+extern "C" int32_t SuperNET_narrowcast(char *destip,unsigned char *msg,int32_t len) //Send a PubAddr message to a specific peer
+{
+    int32_t retflag = 0;
+    CPubAddr *pubaddr = new CPubAddr;
+    std::string supernetmsg = "";
+    CNode *peer;
+    if ( SuperNET_retval <= 0 )
+        return(-1);
+    peer = FindNode((CService)destip);
+    if ( peer == NULL )
+    {
+        std::cout << "<<<<<<< narrowcast sent to null peer. Trying to find node " << destip << std::endl;
+        CService *serv = new CService(destip);
+        CAddress *addrConnect = new CAddress(*serv);
+        peer = ConnectNode(*addrConnect, destip);
+        free(serv);
+        free(addrConnect);
+        // opennetworkconnection((CService)destip);
+        //   peer = FindNode((CService)destip);
+    }
+    if ( peer == NULL )
+    {
+        std::cout << destip << " could not be located for narrowcast." << std::endl;
+        return(-1); // Not a known peer
+    }
+    std::cout << destip << " was located for narrowcast." << std::endl;
+    for(int32_t i=0; i<len; i++)
+        supernetmsg += msg[i];//std::string(msg[i]);
+    set_pubaddr(*pubaddr,supernetmsg,60); // just one minute should be plenty of time
+    if ( pubaddr->RelayTo(peer) != true )
+        retflag = -2;
+    delete pubaddr;
+    //printf("SuperNET_narrowcast  relay error\n");
+    return(retflag);
+}
+#endif
+
+
