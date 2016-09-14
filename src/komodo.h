@@ -18,7 +18,7 @@
 
 #include <stdint.h>
 
-int32_t "C" komodo_checkmsg(char *command,char *ipaddr,uint8_t *data,int32_t datalen)
+int32_t komodo_checkmsg(char *command,char *ipaddr,uint8_t *data,int32_t datalen)
 {
     return(0);
 }
