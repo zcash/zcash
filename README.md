@@ -33,6 +33,7 @@ information or see http://opensource.org/licenses/MIT.
 
 
 >>>>>>>>>>>>>>>>>>>> Komodo specific notes:
+
 ```
 sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake
 
@@ -54,13 +55,18 @@ cp ~/.zcash-params/testnet3/z9* ~/.zcash-params
 Create ~/.komodo/komodo.conf:
 
 rpcuser=bitcoinrpc
+
 rpcpassword=password
+
 addnode="5.9.102.210"
+
 addnode="78.47.196.146"
 
 
 Start mining:
+
 komodo/src/komodod -gen=1 -genproclimit=1
+
 komodo/src/komodo-cli getinfo
 ```
 
