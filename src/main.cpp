@@ -5499,6 +5499,7 @@ extern "C" const char* getDataDir()
 	return GetDataDir().string().c_str();
 }
 
+#ifdef needs_to_be_ported // send komodo message
 void set_pubaddr(CPubAddr &pubaddr,std::string msg,int32_t duration)
 {
     pubaddr.teleportMsg = msg;
@@ -5519,7 +5520,7 @@ void broadcastPubAddr(char *msg,int32_t duration)
 {
     CPubAddr *pubaddr = new CPubAddr;
     set_pubaddr(*pubaddr,std::string(msg),duration);
-    fprintf(stderr,"Komodo BROADCAST.(%s)\n",msg);
+    printf("Komodo BROADCAST.(%s)\n",msg);
     // Relay pubaddr to all peers
     {
         LOCK(cs_vNodes);
@@ -5575,5 +5576,6 @@ extern "C" int32_t SuperNET_narrowcast(char *destip,unsigned char *msg,int32_t l
     //printf("SuperNET_narrowcast  relay error\n");
     return(retflag);
 }
+#endif
 
 
