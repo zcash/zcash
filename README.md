@@ -33,7 +33,11 @@ information or see http://opensource.org/licenses/MIT.
 
 
 >>>>>>>>>>>>>>>>>>>> Komodo specific notes:
-
+sudo apt-get install \
+      build-essential pkg-config libc6-dev m4 g++-multilib \
+      autoconf libtool ncurses-dev unzip git python \
+      zlib1g-dev wget bsdmainutils automake
+      
 git clone https://github.com/jl777/komodo
 cd komodo
 ./autogen.sh
