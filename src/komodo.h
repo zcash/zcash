@@ -18,8 +18,9 @@
 
 #include <stdint.h>
 
-int32_t komodo_checkmsg(int32_t peerid,uint8_t *data,int32_t datalen)
+int32_t komodo_checkmsg(void *bitcoinpeer,uint8_t *data,int32_t datalen)
 {
+    fprintf(stderr,"KOMODO.[%d] message from peer.%p\n",datalen,bitcoinpeer);
     return(0);
 }
 

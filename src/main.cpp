@@ -5080,7 +5080,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     {
         vector<unsigned char> vData;
         vRecv >> vData;
-        komodo_checkmsg(pfrom->id,vData.data(),vData.size());
+        komodo_checkmsg(pfrom,vData.data(),vData.size());
     }
     else
     {
@@ -5491,3 +5491,89 @@ public:
         mapOrphanTransactionsByPrev.clear();
     }
 } instance_of_cmaincleanup;
+
+int32_t SuperNET_retval = 0;
+
+extern "C" const char* getDataDir()
+{
+	return GetDataDir().string().c_str();
+}
+
+void set_pubaddr(CPubAddr &pubaddr,std::string msg,int32_t duration)
+{
+    pubaddr.teleportMsg = msg;
+    pubaddr.nPriority = 1;
+    pubaddr.nID = rand() % 100000001;
+    pubaddr.nVersion = PROTOCOL_VERSION;
+    pubaddr.nRelayUntil = pubaddr.nExpiration = (GetAdjustedTime() + duration);
+    CDataStream sMsg(SER_NETWORK,PROTOCOL_VERSION);
+    sMsg << (CUnsignedPubAddr)pubaddr;
+    pubaddr.vchMsg = vector<unsigned char>(sMsg.begin(),sMsg.end());
+    if(!pubaddr.CheckSignature())
+        throw runtime_error("Failed to Unserialize PubAddr");
+    //if ( pubaddr.ProcessPubAddr() == 0 )
+    //  throw runtime_error("set_pubaddr: Failed to process pubaddr.\n");
+}
+
+void broadcastPubAddr(char *msg,int32_t duration)
+{
+    CPubAddr *pubaddr = new CPubAddr;
+    set_pubaddr(*pubaddr,std::string(msg),duration);
+    fprintf(stderr,"Komodo BROADCAST.(%s)\n",msg);
+    // Relay pubaddr to all peers
+    {
+        LOCK(cs_vNodes);
+        BOOST_FOREACH(CNode *pnode,vNodes)
+        {
+            pubaddr->RelayTo(pnode);
+        }
+    }
+    delete pubaddr;
+}
+
+extern "C" int32_t SuperNET_broadcast(char *msg,int32_t duration)
+{
+    printf("inside SuperNET_broadcast.(%s) retval.%d\n",msg,SuperNET_retval);
+    if ( SuperNET_retval <= 0 )
+        return(-1);
+    broadcastPubAddr(msg,duration);
+	return(0);
+}
+
+extern "C" int32_t SuperNET_narrowcast(char *destip,unsigned char *msg,int32_t len) //Send a PubAddr message to a specific peer
+{
+    int32_t retflag = 0;
+    CPubAddr *pubaddr = new CPubAddr;
+    std::string supernetmsg = "";
+    CNode *peer;
+    if ( SuperNET_retval <= 0 )
+        return(-1);
+    peer = FindNode((CService)destip);
+    if ( peer == NULL )
+    {
+        std::cout << "<<<<<<< narrowcast sent to null peer. Trying to find node " << destip << std::endl;
+        CService *serv = new CService(destip);
+        CAddress *addrConnect = new CAddress(*serv);
+        peer = ConnectNode(*addrConnect, destip);
+        free(serv);
+        free(addrConnect);
+        // opennetworkconnection((CService)destip);
+        //   peer = FindNode((CService)destip);
+    }
+    if ( peer == NULL )
+    {
+        std::cout << destip << " could not be located for narrowcast." << std::endl;
+        return(-1); // Not a known peer
+    }
+    std::cout << destip << " was located for narrowcast." << std::endl;
+    for(int32_t i=0; i<len; i++)
+        supernetmsg += msg[i];//std::string(msg[i]);
+    set_pubaddr(*pubaddr,supernetmsg,60); // just one minute should be plenty of time
+    if ( pubaddr->RelayTo(peer) != true )
+        retflag = -2;
+    delete pubaddr;
+    //printf("SuperNET_narrowcast  relay error\n");
+    return(retflag);
+}
+
+
