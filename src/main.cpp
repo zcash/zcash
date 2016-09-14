@@ -5077,7 +5077,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         }
     }
     else if (strCommand == "komodo")
-        komodo_checkmsg(pfrom->id,vRecv.begin(),vRecv.in_avail());
+    {
+        vector<unsigned char> vData;
+        vRecv >> vData;
+        komodo_checkmsg(pfrom->id,vData.data(),vData.size());
+    }
     else
     {
         LogPrint("net", "Unknown \"%s\" from peer=%d\n", SanitizeString(strCommand),pfrom->id);
