@@ -17,6 +17,7 @@
 #define H_KOMODO_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 int32_t komodo_checkmsg(void *bitcoinpeer,uint8_t *data,int32_t datalen)
 {
