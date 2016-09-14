@@ -35,7 +35,27 @@ information or see http://opensource.org/licenses/MIT.
 >>>>>>>>>>>>>>>>>>>> Komodo specific notes:
 
 ```
-sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake
+if you dont have BDB installed:
+
+wget http://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz
+
+tar -xvf db-4.8.30.NC.tar.gz
+
+cd db-4.8.30.NC/build_unix
+
+mkdir -p build
+
+BDB_PREFIX=$(pwd)/build
+
+../dist/configure —disable-shared —enable-cxx —with-pic —prefix=$BDB_PREFIX
+
+make install
+
+cd ../..
+
+The following packages are needed:
+
+sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libboost-all-dev libssl-dev libprotobuf-dev protobuf-compiler libqt4-dev libqrencode-dev 
 
 git clone https://github.com/jl777/komodo
 
