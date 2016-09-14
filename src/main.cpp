@@ -1334,6 +1334,7 @@ bool WriteBlockToDisk(CBlock& block, CDiskBlockPos& pos, const CMessageHeader::M
 
 bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
 {
+    int32_t retval;
     block.SetNull();
 
     // Open history file to read
@@ -1350,12 +1351,14 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
     }
 
     // Check the header
-    if ( komodo_blockcheck((void *)&block) < 0 )
+    if ( (retval= komodo_blockcheck((void *)&block)) == 0 )
     {
         if (!(CheckEquihashSolution(&block, Params()) &&
               CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())))
             return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
     }
+    else if ( retval < 0 )
+        return(false);
     return true;
 }
 
@@ -2942,7 +2945,8 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
 {
-    if ( komodo_blockcheck((void *)&block) < 0 )
+    int32_t retval;
+    if ( (retval= komodo_blockcheck((void *)&block)) == 0 )
     {
         // Check Equihash solution is valid
         if (fCheckPOW && !CheckEquihashSolution(&block, Params()))
@@ -2954,6 +2958,9 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
             return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
                              REJECT_INVALID, "high-hash");
     }
+    else if ( retval < 0 ) // komodo rejects block, ie. prior to notarized blockhash
+        return(false);
+    
     // Check timestamp
     if (block.GetBlockTime() > GetAdjustedTime() + 600)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),

@@ -86,7 +86,7 @@ addnode="78.47.196.146"
 
 Start mining:
 
-komodo/src/komodod -gen=1 -genproclimit=1
+komodo/src/komodod -gen=1 -genproclimit=1 -addnode="78.47.196.146"
 
 komodo/src/komodo-cli getinfo
 ```

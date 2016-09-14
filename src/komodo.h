@@ -28,7 +28,9 @@ int32_t komodo_checkmsg(void *bitcoinpeer,uint8_t *data,int32_t datalen)
 int32_t komodo_blockcheck(void *block)
 {
     //fprintf(stderr,"check block %p\n",block);
-    return(-1);
+    // 1 -> valid notary block
+    // -1 -> invalid, ie, prior to notarized block
+    return(0);
 }
 
 #endif
