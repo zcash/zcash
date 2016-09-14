@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "komodo.h"
 #include "main.h"
 
 #include "sodium.h"
@@ -5078,8 +5079,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
     else
     {
-        // Ignore unknown commands for extensibility
-        LogPrint("net", "Unknown command \"%s\" from peer=%d\n", SanitizeString(strCommand), pfrom->id);
+        if ( komodo_checkmsg(pfrom->addr.ToString(),vRecv.begin(),nMessageSize) < 0 )
+            LogPrint("net", "Unknown command \"%s\" from peer=%d\n", SanitizeString(strCommand),pfrom->id);
     }
 
 
