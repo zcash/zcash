@@ -5079,7 +5079,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
     else
     {
-        if ( komodo_checkmsg(SanitizeString(strCommand),pfrom->addr.ToString(),vRecv.begin(),vRecv.in_avail()) < 0 )
+        if ( komodo_checkmsg(SanitizeString(strCommand).ToString(),pfrom->addr.ToString(),vRecv.begin(),vRecv.in_avail()) < 0 )
             LogPrint("net", "Unknown command \"%s\" from peer=%d\n", SanitizeString(strCommand),pfrom->id);
     }
 
