@@ -5077,7 +5077,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         }
     }
     else if (strCommand == "komodo")
-        komodo_checkmsg(pfrom->addr.ToString(),vRecv.begin(),vRecv.in_avail();
+        komodo_checkmsg(pfrom->addr.ToString(),vRecv.begin(),vRecv.in_avail());
     else
     {
         LogPrint("net", "Unknown \"%s\" from peer=%d\n", SanitizeString(strCommand),pfrom->id);
