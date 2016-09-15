@@ -61,7 +61,7 @@ EOF
 This script will fetch the Zcash zkSNARK parameters and verify their
 integrity with sha256sum.
 
-The parameters currently are about 2GiB in size, so plan accordingly
+The parameters are currently just under 911MB in size, so plan accordingly
 for your bandwidth constraints. If the files are already present and
 have the correct sha256sum, no networking is used.
 
