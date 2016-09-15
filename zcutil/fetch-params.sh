@@ -49,7 +49,7 @@ then
     mkdir -p "$PARAMS_DIR"
     README_PATH="$PARAMS_DIR/README"
     cat >> "$README_PATH" <<EOF
-This directory stores common zcash zkSNARK parameters. Note that is is
+This directory stores common zcash zkSNARK parameters. Note that it is
 distinct from the daemon's -datadir argument because the parameters are
 large and may be shared across multiple distinct -datadir's such as when
 setting up test networks.
