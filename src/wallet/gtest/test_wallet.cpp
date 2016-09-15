@@ -6,12 +6,12 @@
 #include "chainparams.h"
 #include "main.h"
 #include "random.h"
+#include "util.h"
 #include "wallet/wallet.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
-using ::testing::_;
 using ::testing::Return;
 
 ZCJoinSplit* params = ZCJoinSplit::Unopened();
@@ -599,6 +599,63 @@ TEST(wallet_tests, UpdatedNoteData) {
     EXPECT_EQ(wtx.mapNoteData, wtx2.mapNoteData);
     EXPECT_EQ(1, wtx.mapNoteData[jsoutpt].witnesses.size());
     // TODO: The new note should get witnessed (but maybe not here) (#1350)
+}
+
+TEST(wallet_tests, UpdatedNoteDataWhenReindexing) {
+    TestWallet wallet;
+
+    // Enable reindexing
+    SoftSetBoolArg("-reindex", true);
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 0);
+    auto note2 = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+    auto nullifier2 = note2.nullifier(sk);
+    auto wtx2 = wtx;
+
+    // First pretend we added the tx to the wallet and
+    // we don't have the key for the second note
+    mapNoteData_t noteData;
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 0};
+    CNoteData nd {sk.address(), nullifier};
+    noteData[jsoutpt] = nd;
+    wtx.SetNoteData(noteData);
+
+    // Pretend we mined the tx by adding a fake witness
+    ZCIncrementalMerkleTree tree;
+    wtx.mapNoteData[jsoutpt].witnesses.push_front(tree.witness());
+    EXPECT_EQ(1, wtx.mapNoteData[jsoutpt].witnesses.size());
+
+    // Pretend we added the identical transaction to the wallet
+    // again to update it, which should clear the witness cache
+    auto tmp = wtx;
+    EXPECT_TRUE(wallet.UpdatedNoteData(tmp, wtx));
+    EXPECT_EQ(0, wtx.mapNoteData[jsoutpt].witnesses.size());
+
+    // Re-add the fake witness
+    wtx.mapNoteData[jsoutpt].witnesses.push_front(tree.witness());
+    EXPECT_EQ(1, wtx.mapNoteData[jsoutpt].witnesses.size());
+
+    // Now pretend we added the key for the second note, and
+    // then reindexed the local blockchain, causing the tx to
+    // be "added" to the wallet again to update it
+    JSOutPoint jsoutpt2 {wtx2.GetHash(), 0, 1};
+    CNoteData nd2 {sk.address(), nullifier2};
+    noteData[jsoutpt2] = nd2;
+    wtx2.SetNoteData(noteData);
+
+    // The txs should initially be different
+    EXPECT_NE(wtx.mapNoteData, wtx2.mapNoteData);
+    EXPECT_EQ(1, wtx.mapNoteData[jsoutpt].witnesses.size());
+
+    // After updating, they should be the same but there should be no witnesses
+    EXPECT_TRUE(wallet.UpdatedNoteData(wtx2, wtx));
+    EXPECT_EQ(wtx.mapNoteData, wtx2.mapNoteData);
+    EXPECT_EQ(0, wtx.mapNoteData[jsoutpt].witnesses.size());
 }
 
 TEST(wallet_tests, MarkAffectedTransactionsDirty) {
