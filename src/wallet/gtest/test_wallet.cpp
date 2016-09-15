@@ -592,12 +592,12 @@ TEST(wallet_tests, UpdatedNoteData) {
 
     // The txs should initially be different
     EXPECT_NE(wtx.mapNoteData, wtx2.mapNoteData);
-    EXPECT_NE(wtx.mapNoteData[jsoutpt].witnesses, wtx2.mapNoteData[jsoutpt].witnesses);
+    EXPECT_EQ(1, wtx.mapNoteData[jsoutpt].witnesses.size());
 
     // After updating, they should be the same
-    EXPECT_TRUE(wallet.UpdatedNoteData(wtx, wtx2));
+    EXPECT_TRUE(wallet.UpdatedNoteData(wtx2, wtx));
     EXPECT_EQ(wtx.mapNoteData, wtx2.mapNoteData);
-    EXPECT_EQ(wtx.mapNoteData[jsoutpt].witnesses, wtx2.mapNoteData[jsoutpt].witnesses);
+    EXPECT_EQ(1, wtx.mapNoteData[jsoutpt].witnesses.size());
     // TODO: The new note should get witnessed (but maybe not here) (#1350)
 }
 
