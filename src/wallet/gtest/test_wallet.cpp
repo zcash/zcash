@@ -557,6 +557,46 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
     }
 }
 
+TEST(wallet_tests, ClearNoteWitnessCache) {
+    TestWallet wallet;
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 0);
+    auto nullifier = note.nullifier(sk);
+
+    mapNoteData_t noteData;
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 0};
+    JSOutPoint jsoutpt2 {wtx.GetHash(), 0, 1};
+    CNoteData nd {sk.address(), nullifier};
+    noteData[jsoutpt] = nd;
+    wtx.SetNoteData(noteData);
+
+    // Pretend we mined the tx by adding a fake witness
+    ZCIncrementalMerkleTree tree;
+    wtx.mapNoteData[jsoutpt].witnesses.push_front(tree.witness());
+
+    wallet.AddToWallet(wtx, true, NULL);
+
+    std::vector<JSOutPoint> notes {jsoutpt, jsoutpt2};
+    std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+    uint256 anchor2;
+
+    // Before clearing, we should have a witness for one note
+    wallet.GetNoteWitnesses(notes, witnesses, anchor2);
+    EXPECT_TRUE((bool) witnesses[0]);
+    EXPECT_FALSE((bool) witnesses[1]);
+
+    // After clearing, we should not have a witness for either note
+    wallet.ClearNoteWitnessCache();
+    witnesses.clear();
+    wallet.GetNoteWitnesses(notes, witnesses, anchor2);
+    EXPECT_FALSE((bool) witnesses[0]);
+    EXPECT_FALSE((bool) witnesses[1]);
+}
+
 TEST(wallet_tests, UpdatedNoteData) {
     TestWallet wallet;
 

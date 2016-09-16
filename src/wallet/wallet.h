@@ -598,6 +598,8 @@ public:
      */
     int64_t nWitnessCacheSize;
 
+    void ClearNoteWitnessCache();
+
 protected:
     void IncrementNoteWitnesses(const CBlockIndex* pindex,
                                 const CBlock* pblock,
