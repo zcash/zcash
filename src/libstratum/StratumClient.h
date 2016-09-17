@@ -82,5 +82,5 @@ private:
 
     boost::asio::deadline_timer * p_worktimer;
 
-    double m_nextJobDifficulty;
+    string m_nextJobTarget;
 };
