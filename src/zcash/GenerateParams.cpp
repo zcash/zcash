@@ -22,5 +22,7 @@ int main(int argc, char **argv)
     p->saveProvingKey(pkFile);
     p->saveVerifyingKey(vkFile);
 
+    delete p;
+
     return 0;
 }

@@ -60,12 +60,10 @@ previous merged PR, then:
     $ git branch zc.v${ZCASH_RELEASE}
     $ git push origin v${ZCASH_RELEASE}
     $ git push origin zc.v${ZCASH_RELEASE}
-    
-## E. update github default branch to this new release branch
-## F. write / publish a release announcement
-## G. deploy testnet
-## H. write and publish appropriate announcements (blog, zcash-dev, slack)
-## I. celebrate
+
+## E. deploy testnet
+## F. publish the release announcement (blog, zcash-dev, slack)
+## G. celebrate
 ## missing steps
 
 Zcash still needs:

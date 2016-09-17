@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(pmt_test1)
         uint256 merkleRoot1 = block.BuildMerkleTree();
         std::vector<uint256> vTxid(nTx, uint256());
         for (unsigned int j=0; j<nTx; j++)
-            vTxid[j] = block.vtx[j].GetTxid();
+            vTxid[j] = block.vtx[j].GetHash();
         int nHeight = 1, nTx_ = nTx;
         while (nTx_ > 1) {
             nTx_ = (nTx_+1)/2;

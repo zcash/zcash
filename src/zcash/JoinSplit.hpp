@@ -35,6 +35,7 @@ class JSOutput {
 public:
     PaymentAddress addr;
     uint64_t value;
+    boost::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};  // 0xF6 is invalid UTF8 as per spec, rest of array is 0x00
 
     JSOutput();
     JSOutput(PaymentAddress addr, uint64_t value) : addr(addr), value(value) { }
@@ -45,6 +46,8 @@ public:
 template<size_t NumInputs, size_t NumOutputs>
 class JoinSplit {
 public:
+    virtual ~JoinSplit() {}
+
     static JoinSplit<NumInputs, NumOutputs>* Generate();
     static JoinSplit<NumInputs, NumOutputs>* Unopened();
     static uint256 h_sig(const uint256& randomSeed,
@@ -73,7 +76,8 @@ public:
         boost::array<uint256, NumOutputs>& out_commitments,
         uint64_t vpub_old,
         uint64_t vpub_new,
-        const uint256& rt
+        const uint256& rt,
+        bool computeProof = true
     ) = 0;
 
     virtual bool verify(

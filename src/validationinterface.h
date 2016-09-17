@@ -8,7 +8,10 @@
 
 #include <boost/signals2/signal.hpp>
 
+#include "zcash/IncrementalMerkleTree.hpp"
+
 class CBlock;
+class CBlockIndex;
 struct CBlockLocator;
 class CTransaction;
 class CValidationInterface;
@@ -30,6 +33,7 @@ class CValidationInterface {
 protected:
     virtual void SyncTransaction(const CTransaction &tx, const CBlock *pblock) {}
     virtual void EraseFromWallet(const uint256 &hash) {}
+    virtual void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, ZCIncrementalMerkleTree tree, bool added) {}
     virtual void SetBestChain(const CBlockLocator &locator) {}
     virtual void UpdatedTransaction(const uint256 &hash) {}
     virtual void Inventory(const uint256 &hash) {}
@@ -47,6 +51,8 @@ struct CMainSignals {
     boost::signals2::signal<void (const uint256 &)> EraseTransaction;
     /** Notifies listeners of an updated transaction without new data (for now: a coinbase potentially becoming visible). */
     boost::signals2::signal<void (const uint256 &)> UpdatedTransaction;
+    /** Notifies listeners of a change to the tip of the active block chain. */
+    boost::signals2::signal<void (const CBlockIndex *, const CBlock *, ZCIncrementalMerkleTree, bool)> ChainTip;
     /** Notifies listeners of a new active block chain. */
     boost::signals2::signal<void (const CBlockLocator &)> SetBestChain;
     /** Notifies listeners about an inventory item being seen on the network. */

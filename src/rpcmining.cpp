@@ -286,7 +286,7 @@ Value getmininginfo(const Array& params, bool fHelp)
     obj.push_back(Pair("blocks",           (int)chainActive.Height()));
     obj.push_back(Pair("currentblocksize", (uint64_t)nLastBlockSize));
     obj.push_back(Pair("currentblocktx",   (uint64_t)nLastBlockTx));
-    obj.push_back(Pair("difficulty",       (double)GetDifficulty()));
+    obj.push_back(Pair("difficulty",       (double)GetNetworkDifficulty()));
     obj.push_back(Pair("errors",           GetWarnings("statusbar")));
     obj.push_back(Pair("genproclimit",     (int)GetArg("-genproclimit", -1)));
     obj.push_back(Pair("networkhashps",    getnetworkhashps(params, false)));
@@ -561,7 +561,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     int i = 0;
     BOOST_FOREACH (CTransaction& tx, pblock->vtx)
     {
-        uint256 txHash = tx.GetTxid();
+        uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
 
         if (tx.IsCoinBase())
@@ -763,12 +763,12 @@ Value estimatepriority(const Array& params, bool fHelp)
 
 Value getblocksubsidy(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() > 1)
         throw runtime_error(
             "getblocksubsidy height\n"
             "\nReturns block subsidy reward, taking into account the mining slow start and the founders reward, of block at index provided.\n"
             "\nArguments:\n"
-            "1. height        (numeric, required) The block height.\n"
+            "1. height         (numeric, optional) The block height.  If not provided, defaults to the current height of the chain.\n"
             "\nResult:\n"
             "{\n"
             "  \"miner\" : x.xxx           (numeric) The mining reward amount in ZEC.\n"
@@ -779,9 +779,9 @@ Value getblocksubsidy(const Array& params, bool fHelp)
             + HelpExampleRpc("getblockubsidy", "1000")
         );
 
-    int nHeight = params[0].get_int();
     LOCK(cs_main);
-    if (nHeight < 0 || nHeight > chainActive.Height())
+    int nHeight = (params.size()==1) ? params[0].get_int() : chainActive.Height();
+    if (nHeight < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());

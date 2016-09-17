@@ -162,6 +162,12 @@ bool CWalletDB::WriteDefaultKey(const CPubKey& vchPubKey)
     return Write(std::string("defaultkey"), vchPubKey);
 }
 
+bool CWalletDB::WriteWitnessCacheSize(int64_t nWitnessCacheSize)
+{
+    nWalletDBUpdated++;
+    return Write(std::string("witnesscachesize"), nWitnessCacheSize);
+}
+
 bool CWalletDB::ReadPool(int64_t nPool, CKeyPool& keypool)
 {
     return Read(std::make_pair(std::string("pool"), nPool), keypool);
@@ -299,7 +305,7 @@ DBErrors CWalletDB::ReorderTransactions(CWallet* pwallet)
 
             if (pwtx)
             {
-                if (!WriteTx(pwtx->GetTxid(), *pwtx))
+                if (!WriteTx(pwtx->GetHash(), *pwtx))
                     return DB_LOAD_FAIL;
             }
             else
@@ -323,7 +329,7 @@ DBErrors CWalletDB::ReorderTransactions(CWallet* pwallet)
             // Since we're changing the order, write it back
             if (pwtx)
             {
-                if (!WriteTx(pwtx->GetTxid(), *pwtx))
+                if (!WriteTx(pwtx->GetHash(), *pwtx))
                     return DB_LOAD_FAIL;
             }
             else
@@ -384,7 +390,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             CWalletTx wtx;
             ssValue >> wtx;
             CValidationState state;
-            if (!(CheckTransaction(wtx, state) && (wtx.GetTxid() == hash) && state.IsValid()))
+            if (!(CheckTransaction(wtx, state) && (wtx.GetHash() == hash) && state.IsValid()))
                 return false;
 
             // Undo serialize changes in 31600
@@ -630,6 +636,10 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 strErr = "Error reading wallet database: LoadDestData failed";
                 return false;
             }
+        }
+        else if (strType == "witnesscachesize")
+        {
+            ssValue >> pwallet->nWitnessCacheSize;
         }
     } catch (...)
     {

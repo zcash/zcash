@@ -208,6 +208,8 @@ void Shutdown()
     delete pwalletMain;
     pwalletMain = NULL;
 #endif
+    delete pzcashParams;
+    pzcashParams = NULL;
     ECC_Stop();
     LogPrintf("%s: done\n", __func__);
 }
@@ -422,6 +424,9 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-rpcallowip=<ip>", _("Allow JSON-RPC connections from specified source. Valid for <ip> are a single IP (e.g. 1.2.3.4), a network/netmask (e.g. 1.2.3.4/255.255.255.0) or a network/CIDR (e.g. 1.2.3.4/24). This option can be specified multiple times"));
     strUsage += HelpMessageOpt("-rpcthreads=<n>", strprintf(_("Set the number of threads to service RPC calls (default: %d)"), 4));
     strUsage += HelpMessageOpt("-rpckeepalive", strprintf(_("RPC support for HTTP persistent connections (default: %d)"), 1));
+
+    // Disabled until we can lock notes and also tune performance of libsnark which by default uses multiple threads
+    //strUsage += HelpMessageOpt("-rpcasyncthreads=<n>", strprintf(_("Set the number of threads to service Async RPC calls (default: %d)"), 1));
 
     strUsage += HelpMessageGroup(_("RPC SSL options: (see the Bitcoin Wiki for SSL setup instructions)"));
     strUsage += HelpMessageOpt("-rpcssl", _("Use OpenSSL (https) for JSON-RPC connections"));
@@ -1382,7 +1387,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
                 BOOST_FOREACH(const CWalletTx& wtxOld, vWtx)
                 {
-                    uint256 hash = wtxOld.GetTxid();
+                    uint256 hash = wtxOld.GetHash();
                     std::map<uint256, CWalletTx>::iterator mi = pwalletMain->mapWallet.find(hash);
                     if (mi != pwalletMain->mapWallet.end())
                     {

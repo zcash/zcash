@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(MempoolRemoveTest)
     {
         txChild[i].vin.resize(1);
         txChild[i].vin[0].scriptSig = CScript() << OP_11;
-        txChild[i].vin[0].prevout.hash = txParent.GetTxid();
+        txChild[i].vin[0].prevout.hash = txParent.GetHash();
         txChild[i].vin[0].prevout.n = i;
         txChild[i].vout.resize(1);
         txChild[i].vout[0].scriptPubKey = CScript() << OP_11 << OP_EQUAL;
@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(MempoolRemoveTest)
     {
         txGrandChild[i].vin.resize(1);
         txGrandChild[i].vin[0].scriptSig = CScript() << OP_11;
-        txGrandChild[i].vin[0].prevout.hash = txChild[i].GetTxid();
+        txGrandChild[i].vin[0].prevout.hash = txChild[i].GetHash();
         txGrandChild[i].vin[0].prevout.n = 0;
         txGrandChild[i].vout.resize(1);
         txGrandChild[i].vout[0].scriptPubKey = CScript() << OP_11 << OP_EQUAL;
@@ -60,17 +60,17 @@ BOOST_AUTO_TEST_CASE(MempoolRemoveTest)
     BOOST_CHECK_EQUAL(removed.size(), 0);
 
     // Just the parent:
-    testPool.addUnchecked(txParent.GetTxid(), CTxMemPoolEntry(txParent, 0, 0, 0.0, 1));
+    testPool.addUnchecked(txParent.GetHash(), CTxMemPoolEntry(txParent, 0, 0, 0.0, 1));
     testPool.remove(txParent, removed, true);
     BOOST_CHECK_EQUAL(removed.size(), 1);
     removed.clear();
     
     // Parent, children, grandchildren:
-    testPool.addUnchecked(txParent.GetTxid(), CTxMemPoolEntry(txParent, 0, 0, 0.0, 1));
+    testPool.addUnchecked(txParent.GetHash(), CTxMemPoolEntry(txParent, 0, 0, 0.0, 1));
     for (int i = 0; i < 3; i++)
     {
-        testPool.addUnchecked(txChild[i].GetTxid(), CTxMemPoolEntry(txChild[i], 0, 0, 0.0, 1));
-        testPool.addUnchecked(txGrandChild[i].GetTxid(), CTxMemPoolEntry(txGrandChild[i], 0, 0, 0.0, 1));
+        testPool.addUnchecked(txChild[i].GetHash(), CTxMemPoolEntry(txChild[i], 0, 0, 0.0, 1));
+        testPool.addUnchecked(txGrandChild[i].GetHash(), CTxMemPoolEntry(txGrandChild[i], 0, 0, 0.0, 1));
     }
     // Remove Child[0], GrandChild[0] should be removed:
     testPool.remove(txChild[0], removed, true);
@@ -90,8 +90,8 @@ BOOST_AUTO_TEST_CASE(MempoolRemoveTest)
     // Add children and grandchildren, but NOT the parent (simulate the parent being in a block)
     for (int i = 0; i < 3; i++)
     {
-        testPool.addUnchecked(txChild[i].GetTxid(), CTxMemPoolEntry(txChild[i], 0, 0, 0.0, 1));
-        testPool.addUnchecked(txGrandChild[i].GetTxid(), CTxMemPoolEntry(txGrandChild[i], 0, 0, 0.0, 1));
+        testPool.addUnchecked(txChild[i].GetHash(), CTxMemPoolEntry(txChild[i], 0, 0, 0.0, 1));
+        testPool.addUnchecked(txGrandChild[i].GetHash(), CTxMemPoolEntry(txGrandChild[i], 0, 0, 0.0, 1));
     }
     // Now remove the parent, as might happen if a block-re-org occurs but the parent cannot be
     // put into the mempool (maybe because it is non-standard):

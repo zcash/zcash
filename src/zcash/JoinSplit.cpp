@@ -72,6 +72,9 @@ public:
     boost::optional<r1cs_ppzksnark_verification_key<ppzksnark_ppT>> vk;
     boost::optional<std::string> pkPath;
 
+    JoinSplitCircuit() {}
+    ~JoinSplitCircuit() {}
+
     static void initialize() {
         LOCK(cs_InitializeParams);
 
@@ -122,8 +125,6 @@ public:
         vk = keypair.vk;
     }
 
-    JoinSplitCircuit() {}
-
     bool verify(
         const ZCProof& proof,
         const uint256& pubKeyHash,
@@ -173,9 +174,10 @@ public:
         boost::array<uint256, NumOutputs>& out_commitments,
         uint64_t vpub_old,
         uint64_t vpub_new,
-        const uint256& rt
+        const uint256& rt,
+        bool computeProof
     ) {
-        if (!pk) {
+        if (computeProof && !pk) {
             throw std::runtime_error("JoinSplit proving key not loaded");
         }
 
@@ -212,11 +214,8 @@ public:
             ZCNoteEncryption encryptor(h_sig);
 
             for (size_t i = 0; i < NumOutputs; i++) {
-                // TODO: expose memo in the public interface
-                // 0xF6 is invalid UTF8 as per spec
-                boost::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};
 
-                NotePlaintext pt(out_notes[i], memo);
+                NotePlaintext pt(out_notes[i], outputs[i].memo);
 
                 out_ciphertexts[i] = pt.encrypt(encryptor, outputs[i].addr.pk_enc);
             }
@@ -229,6 +228,10 @@ public:
         // against malleability.
         for (size_t i = 0; i < NumInputs; i++) {
             out_macs[i] = PRF_pk(inputs[i].key, i, h_sig);
+        }
+
+        if (!computeProof) {
+            return ZCProof();
         }
 
         protoboard<FieldT> pb;
