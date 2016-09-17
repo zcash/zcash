@@ -1,4 +1,10 @@
+// Copyright (c) 2016 Genoil <jw@meneer.net>
+// Copyright (c) 2016 Jack Grigg <jack@z.cash>
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "clientversion.h"
+#include "libstratum/ZcashStratum.h"
 
 #include <iostream>
 #include <boost/array.hpp>
@@ -84,3 +90,5 @@ private:
 
     string m_nextJobTarget;
 };
+
+typedef StratumClient<ZcashMiner, ZcashJob, EquihashSolution> ZcashStratumClient;

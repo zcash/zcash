@@ -1,3 +1,8 @@
+// Copyright (c) 2016 Genoil <jw@meneer.net>
+// Copyright (c) 2016 Jack Grigg <jack@z.cash>
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "StratumClient.h"
 #include "util.h"
 
@@ -366,3 +371,4 @@ bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution)
     return false;
 }
 
+template class StratumClient<ZcashMiner, ZcashJob, EquihashSolution>;
