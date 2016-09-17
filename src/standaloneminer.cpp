@@ -1,6 +1,7 @@
 #include "arith_uint256.h"
 #include "chainparams.h"
 #include "crypto/equihash.h"
+#include "libstratum/StratumClient.h"
 #include "primitives/block.h"
 #include "serialize.h"
 #include "streams.h"
@@ -10,6 +11,7 @@
 
 #include "sodium.h"
 
+#include <csignal>
 #include <iostream>
 
 
@@ -32,7 +34,7 @@ static uint64_t rdtsc(void) {
 }
 
 
-void mine(int n, int k, uint32_t d)
+void test_mine(int n, int k, uint32_t d)
 {
     CBlock pblock;
     pblock.nBits = d;
@@ -116,23 +118,78 @@ void mine(int n, int k, uint32_t d)
     }
 }
 
+static ZcashStratumClient* scSig;
+extern "C" void stratum_sigint_handler(int signum) {if (scSig) scSig->disconnect();}
+
 int main(int argc, char* argv[])
 {
-    // Initialise libsodium
-    if (init_and_check_sodium() == -1) {
-        return 1;
-    }
-
     ParseParameters(argc, argv);
 
     // Zcash debugging
     fDebug = !mapMultiArgs["-debug"].empty();
     fPrintToConsole = GetBoolArg("-printtoconsole", false);
 
+    // Check for -testnet or -regtest parameter
+    // (Params() calls are only valid after this clause)
+    if (!SelectParamsFromCommandLine()) {
+        std::cerr << "Error: Invalid combination of -regtest and -testnet." << std::endl;
+        return 1;
+    }
+
+    // Initialise libsodium
+    if (init_and_check_sodium() == -1) {
+        return 1;
+    }
+
+    LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    LogPrintf("Zcash Miner version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
+
     // Start the mining operation
-    mine(
-        Params(CBaseChainParams::MAIN).EquihashN(),
-        Params(CBaseChainParams::MAIN).EquihashK(),
-        0x200f0f0f);
+    std::string stratum = GetArg("-stratum", "");
+    if (!stratum.empty() || GetBoolArg("-stratum", false)) {
+        if (stratum.compare(0, 14, "stratum+tcp://") != 0) {
+            std::cerr << "Error: -stratum must be a stratum+tcp:// URL." << std::endl;
+            return false;
+        }
+
+        std::string host;
+        std::string port;
+        std::string stratumServer = stratum.substr(14);
+        size_t delim = stratumServer.find(':');
+        if (delim != std::string::npos) {
+            host = stratumServer.substr(0, delim);
+            port = stratumServer.substr(delim+1);
+        }
+        if (host.empty() || port.empty()) {
+            std::cerr << "Error: -stratum must contain a host and port." << std::endl;
+            return false;
+        }
+
+        ZcashMiner miner(GetArg("-genproclimit", 1));
+        ZcashStratumClient sc {
+            &miner, host, port,
+            GetArg("-user", "x"),
+            GetArg("-password", "x"),
+            0, 0
+        };
+
+        miner.onSolutionFound([&](const EquihashSolution& solution) {
+            return sc.submit(&solution);
+        });
+
+        scSig = &sc;
+        signal(SIGINT, stratum_sigint_handler);
+
+        while(sc.isRunning()) {
+            MilliSleep(1000);
+        }
+    } else {
+        std::cout << "Running the test miner" << std::endl;
+        test_mine(
+            Params().EquihashN(),
+            Params().EquihashK(),
+            0x200f0f0f);
+    }
+
     return 0;
 }
