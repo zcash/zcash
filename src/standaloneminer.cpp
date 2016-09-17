@@ -133,6 +133,6 @@ int main(int argc, char* argv[])
     mine(
         Params(CBaseChainParams::MAIN).EquihashN(),
         Params(CBaseChainParams::MAIN).EquihashK(),
-        0x207fffff);
+        0x200f0f0f);
     return 0;
 }
