@@ -34,6 +34,43 @@ static uint64_t rdtsc(void) {
 }
 
 
+std::string HelpMessageMiner()
+{
+    string strUsage;
+    strUsage += HelpMessageGroup(_("Options:"));
+    strUsage += HelpMessageOpt("-?", _("This help message"));
+
+    strUsage += HelpMessageGroup(_("Mining pool options:"));
+    strUsage += HelpMessageOpt("-stratum=<url>", _("Mine on the Stratum server at <url>"));
+    strUsage += HelpMessageOpt("-user=<user>",
+                               strprintf(_("Username for Stratum server (default: %u)"), "x"));
+    strUsage += HelpMessageOpt("-password=<pw>",
+                               strprintf(_("Password for Stratum server (default: %u)"), "x"));
+
+    strUsage += HelpMessageGroup(_("Debugging/Testing options:"));
+    string debugCategories = "cycles, pow, stratum"; // Don't translate these
+    strUsage += HelpMessageOpt("-debug=<category>", strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + ". " +
+        _("If <category> is not supplied, output all debugging information.") + " " + _("<category> can be:") + " " + debugCategories + ".");
+    strUsage += HelpMessageOpt("-printtoconsole", _("Send trace/debug info to console instead of debug.log file"));
+    strUsage += HelpMessageOpt("-regtest", _("Enter regression test mode, which uses a special chain in which blocks can be "
+                                             "solved instantly. This is intended for regression testing tools and app development."));
+    strUsage += HelpMessageOpt("-testnet", _("Use the test network"));
+
+    return strUsage;
+}
+
+std::string LicenseInfo()
+{
+    return FormatParagraph(_("Copyright (C) 2009-2015 The Bitcoin Core Developers")) + "\n" +
+           FormatParagraph(strprintf(_("Copyright (C) 2015-%i The Zcash Developers"), COPYRIGHT_YEAR)) + "\n" +
+           FormatParagraph(strprintf(_("Copyright (C) %i Jack Grigg <jack@z.cash>"), COPYRIGHT_YEAR)) + "\n" +
+           "\n" +
+           FormatParagraph(_("This is experimental software.")) + "\n" +
+           "\n" +
+           FormatParagraph(_("Distributed under the MIT software license, see the accompanying file COPYING or <http://www.opensource.org/licenses/mit-license.php>.")) + "\n" +
+           "\n";
+}
+
 void test_mine(int n, int k, uint32_t d)
 {
     CBlock pblock;
@@ -124,6 +161,25 @@ extern "C" void stratum_sigint_handler(int signum) {if (scSig) scSig->disconnect
 int main(int argc, char* argv[])
 {
     ParseParameters(argc, argv);
+
+    // Process help and version first
+    if (mapArgs.count("-?") || mapArgs.count("-h") ||
+        mapArgs.count("-help") || mapArgs.count("-version")) {
+        std::string strUsage = _("Zcash Miner") + " " +
+                               _("version") + " " + FormatFullVersion() + "\n";
+
+        if (mapArgs.count("-version")) {
+            strUsage += LicenseInfo();
+        } else {
+            strUsage += "\n" + _("Usage:") + "\n" +
+                  "  zcash-miner [options]                     " + _("Start Zcash Miner") + "\n";
+
+            strUsage += "\n" + HelpMessageMiner();
+        }
+
+        std::cout << strUsage;
+        return 1;
+    }
 
     // Zcash debugging
     fDebug = !mapMultiArgs["-debug"].empty();
