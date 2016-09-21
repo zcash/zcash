@@ -1,93 +1,111 @@
+
 Zcash
 =====
-
+ 
 https://z.cash/
-
+ 
 Where do I begin?
 -----------------
-
+ 
 We have a guide for joining the public testnet: https://github.com/zcash/zcash/wiki/Public-Alpha-Guide
-
+ 
 What is Zcash?
 --------------
-
+ 
 Zcash is an implementation of the "Zerocash" protocol. Based on Bitcoin's code, it intends to
 offer a far higher standard of privacy and anonymity through a sophisticiated zero-knowledge
 proving scheme which preserves confidentiality of transaction metadata.
-
+ 
 **Zcash is unfinished and highly experimental.** Use at your own risk.
-
+ 
 Participation in the Zcash project is subject to a [Code of Conduct](code_of_conduct.md).
-
+ 
 Security Warnings
 -----------------
-
+ 
 See important security warnings in
 [doc/security-warnings.md](doc/security-warnings.md).
-
+ 
 License
 -------
-
+ 
 Zcash is released under the terms of the MIT license. See [COPYING](COPYING) for more
 information or see http://opensource.org/licenses/MIT.
-
-
->>>>>>>>>>>>>>>>>>>> Komodo specific notes:
-
+ 
+ 
+Komodo Specific Notes
+=====================
+ 
+Installation of BDB
+-------------------
+ 
 ```
-if you dont have BDB installed:
-
+#If you do not have BDB installed, do the following:
 wget http://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz
-
 tar -xvf db-4.8.30.NC.tar.gz
-
-cd db-4.8.30.NC/build_unix
-
+cd db-4.8.30.NC/
 mkdir -p build
-
 BDB_PREFIX=$(pwd)/build
-
-../dist/configure —disable-shared —enable-cxx —with-pic —prefix=$BDB_PREFIX
-
+cd build
+../dist/configure --disable-shared --enable-cxx --with-pic --prefix=$BDB_PREFIX
 make install
-
 cd ../..
-
-The following packages are needed:
-
-sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libboost-all-dev libssl-dev libprotobuf-dev protobuf-compiler libqt4-dev libqrencode-dev 
-
-git clone https://github.com/jl777/komodo
-
-cd komodo
-
-./autogen.sh
-
-./configure --with-incompatible-bdb --with-gui
-
-./zcutil/fetch-params.sh
-
-cp ~/.zcash-params/testnet3/z9* ~/.zcash-params
-
-./zcutil/build.sh -j8  # -j8 uses 8 threads
-
-Once things are setup, you can build komodod with make from komodo/src directory. Also the error: configure: error: libsnark include directory not found, might appear and it looks like it can be ignored.
-
-Create ~/.komodo/komodo.conf:
-
-rpcuser=bitcoinrpc
-
-rpcpassword=password
-
-addnode="5.9.102.210"
-
-addnode="78.47.196.146"
-
-
-Start mining:
-
-komodo/src/komodod -gen=1 -genproclimit=1 -addnode="78.47.196.146"
-
-komodo/src/komodo-cli getinfo
 ```
-
+ 
+Dependencies
+------------
+ 
+```
+#The following packages are needed:
+sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libboost-all-dev libssl-dev libprotobuf-dev protobuf-compiler libqt4-dev libqrencode-dev
+```
+ 
+Komodo
+------
+ 
+```
+git clone https://github.com/jl777/komodo
+cd komodo
+./autogen.sh
+./configure --with-incompatible-bdb --with-gui
+# This command might finish with: configure: error: libgmp headers missing. This can be ignored.
+./zcutil/fetch-params.sh
+cp ~/.zcash-params/testnet3/z9* ~/.zcash-params
+./zcutil/build.sh -j8  # -j8 uses 8 threads
+#This can take some time.
+```
+ 
+Create komodo.conf
+------------------
+ 
+```
+cd ~
+mkdir .komodo
+cd .komodo
+gedit komodo.conf
+#For the above, you can use any text editor other than gedit.
+#Add the following lines to the komodo.conf file:
+ 
+rpcuser=bitcoinrpc
+rpcpassword=password
+addnode="5.9.102.210"
+addnode="78.47.196.146"
+```
+ 
+Start mining
+------------
+ 
+```
+cd ~
+cd komodo
+#Go to your komodo directory
+./src/komodod -gen=1 -genproclimit=1 &
+#This starts komodo as a process
+komodo/src/komodo-cli getinfo
+ 
+#To view the process:
+ps aux | grep komodod
+ 
+#To view komodod output:
+gedit ~/.komodo.debug.log
+```
