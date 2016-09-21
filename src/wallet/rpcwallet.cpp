@@ -2796,6 +2796,8 @@ Value z_getnewaddress(const Array& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    EnsureWalletIsUnlocked();
+
     CZCPaymentAddress pubaddr = pwalletMain->GenerateNewZKey();
     std::string result = pubaddr.ToString();
     return result;

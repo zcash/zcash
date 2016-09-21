@@ -18,6 +18,7 @@
 #include "util.h"
 #include "utilmoneystr.h"
 #include "zcash/Note.hpp"
+#include "crypter.h"
 
 #include <assert.h>
 
@@ -169,6 +170,7 @@ bool CWallet::AddKeyPubKey(const CKey& secret, const CPubKey &pubkey)
 bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
                             const vector<unsigned char> &vchCryptedSecret)
 {
+    
     if (!CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret))
         return false;
     if (!fFileBacked)
@@ -183,6 +185,28 @@ bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
             return CWalletDB(strWalletFile).WriteCryptedKey(vchPubKey,
                                                             vchCryptedSecret,
                                                             mapKeyMetadata[vchPubKey.GetID()]);
+    }
+    return false;
+}
+
+
+bool CWallet::AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
+                                    const std::vector<unsigned char> &vchCryptedSecret)
+{
+    if (!CCryptoKeyStore::AddCryptedSpendingKey(address, vchCryptedSecret))
+        return false;
+    if (!fFileBacked)
+        return true;
+    {
+        LOCK(cs_wallet);
+        if (pwalletdbEncryption)
+            return pwalletdbEncryption->WriteCryptedZKey(address,
+                                                         vchCryptedSecret,
+                                                         mapZKeyMetadata[address]);
+        else
+            return CWalletDB(strWalletFile).WriteCryptedZKey(address,
+                                                             vchCryptedSecret,
+                                                             mapZKeyMetadata[address]);
     }
     return false;
 }
@@ -207,6 +231,11 @@ bool CWallet::LoadZKeyMetadata(const PaymentAddress &addr, const CKeyMetadata &m
 bool CWallet::LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret)
 {
     return CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret);
+}
+
+bool CWallet::LoadCryptedZKey(const libzcash::PaymentAddress &addr, const std::vector<unsigned char> &vchCryptedSecret)
+{
+    return CCryptoKeyStore::AddCryptedSpendingKey(addr, vchCryptedSecret);
 }
 
 bool CWallet::LoadZKey(const libzcash::SpendingKey &key)
