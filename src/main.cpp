@@ -3086,11 +3086,11 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
     // Coinbase transaction must include an output sending 20% of
     // the block reward to `FOUNDERS_REWARD_SCRIPT` until the first
     // subsidy halving block, with exception to the genesis block.
-    if ((nHeight > 0) && (nHeight < consensusParams.nSubsidyHalvingInterval)) {
+    if ((nHeight > 0) && (nHeight <= consensusParams.GetLastFoundersRewardBlockHeight())) {
         bool found = false;
 
         BOOST_FOREACH(const CTxOut& output, block.vtx[0].vout) {
-            if (output.scriptPubKey == ParseHex(FOUNDERS_REWARD_SCRIPT)) {
+            if (output.scriptPubKey == Params().GetFoundersRewardScript(nHeight)) {
                 if (output.nValue == (GetBlockSubsidy(nHeight, consensusParams) / 5)) {
                     found = true;
                     break;

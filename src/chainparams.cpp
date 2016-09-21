@@ -13,6 +13,8 @@
 
 #include <boost/assign/list_of.hpp>
 
+#include "base58.h"
+
 using namespace std;
 
 #include "chainparamsseeds.h"
@@ -138,6 +140,23 @@ public:
                  //   (the tx=... number in the SetBestChain debug.log lines)
             0    // * estimated number of transactions per day after checkpoint
         };
+
+        // Founders reward script expects a vector of 2-of-3 multisig addresses
+        vFoundersRewardAddress = {
+            "ADDRESS1", "ADDRESS2", "ADDRESS3", "ADDRESS4",
+            "ADDRESS5", "ADDRESS6", "ADDRESS7", "ADDRESS8",
+            "ADDRESS9", "ADDRESS10", "ADDRESS11", "ADDRESS12",
+            "ADDRESS13", "ADDRESS14", "ADDRESS15", "ADDRESS16",
+            "ADDRESS17", "ADDRESS18", "ADDRESS19", "ADDRESS20",
+            "ADDRESS21", "ADDRESS22", "ADDRESS23", "ADDRESS24",
+            "ADDRESS25", "ADDRESS26", "ADDRESS27", "ADDRESS28",
+            "ADDRESS29", "ADDRESS30", "ADDRESS31", "ADDRESS32",
+            "ADDRESS33", "ADDRESS34", "ADDRESS35", "ADDRESS36",
+            "ADDRESS37", "ADDRESS38", "ADDRESS39", "ADDRESS40",
+            "ADDRESS41", "ADDRESS42", "ADDRESS43", "ADDRESS44",
+            "ADDRESS45", "ADDRESS46", "ADDRESS47", "ADDRESS48",
+            };
+        assert(vFoundersRewardAddress.size() < consensus.nSubsidyHalvingInterval + consensus.SubsidySlowStartShift());
     }
 };
 static CMainParams mainParams;
@@ -202,6 +221,22 @@ public:
             0
         };
 
+        // Founders reward script expects a vector of 2-of-3 multisig addresses
+        vFoundersRewardAddress = {
+            "2N2e2FRfP9D1dRN1oRWkH7pbFM69eGNAuQ4", "2NBW8WsA2jUussoJbRv82UXH1BYopkjYqcd", "2N1MudZmwDFTcYiLCZfrcsnhHwaSTTigbcN", "2MxfUJXWKz9D8X3mcMpVcdEJKdJ6zFukca9",
+            "2N8iUwMCpU16VYpKQ1HRM6xfut5FZwGwieM", "2N9hyafTvJVrykBvZDw79j1brozwZNySwPP", "2NFx7tRozsp3kT1M4w4tL9FfnEj8RovzbzN", "2NAqoH96V1RtmK72LEZpJNX1uxhJ5yejRiK",
+            "2MyV7hoV28KS8Uam2Z8nzY3xeo7R3T3TLUr", "2N8Tn19hMoCD4EmCwpg1V8qupVkQLVVPhav", "2NA5UeJU9zAQkSMyy3xpDcjfp4CEyKfzXKp", "2NBERNyXy46CfM9yewGeof4yzC3vkwYnhgS",
+            "2N7fnpAswHb4mnPm2ZjWX3eKkF8hABAYBtQ", "2N9MXGsz7uYaY5ciax6tSMDG7sjZUoLhJTC", "2N5PwzPQFFmLut2XWGQWAmpwKsF8VzUoPtr", "2MvZdDpNP8hWyEqg6zKW9B62YTJqcUwjHr5",
+            "2Mx4KfKJ37EDc3A43Frzof1iEjSe91JUX7d", "2NBMSdXjZ7YqREmwxEtgGryY59KBpqMSs1d", "2N9RbfE4ZCJ3Nx68vPfmvH2M6Q3qicJhagb", "2N4xwfFkFj4DR4NWNbynzP2aJmVcEFnA2DB",
+            "2Mx4TyAwedmsRuDkvMNYGqrcCZfQTfCvxAp", "2Mx4HSVsxEqXjLxn8igJzmCrFdG9XhnNvtf", "2MtLM4SP7LJbBZ5rA5ZG8kAVz9UNrNKuoFB", "2N7SPq83Cbmwuwv5rjNBzVd9QtJKAxxKj8M",
+            "2MwYkbE4U4p9XBsCrupDDkdcDH9L9xvc9Bn", "2MyaeCHpVmckokUi67YP1QK9L3Dkx3Pt86F", "2N7URNgBPXGjqnuPHiynCa6qMMhKm6YEaHr", "2N2eNwGVwj4WwbEdJg7YZDgrnYvDv1ZSNbB",
+            "2MuWAG6BqLM1mtZc67Fv1aKgGwkNQ2akDGt", "2N7XH82MbGwpzbc7PM2aK5CU14bSJvK7Etz", "2MuPX8Ke5TvDDQ1nkqpaPMgYWPyWbFp18Jn", "2NFBST7oK9yw9PaXaq5QhdyYwp5HpHz9m81",
+            "2MuSeMBUrttbjvDZAeQjTrrDeoP197qj2kG", "2N6JU8JNGGAUFknTCuLSuDEEhZJqMfFsH88", "2N4P2MrwtwbiHymQm1RASoVoiH3sFrBpmXa", "2MyhFiVXvVVxUNc8Qh9ppV7jG4NsKpnxige",
+            "2N5dLXUho2GtjuHMWuqixLrHLCwUMcYxd7s", "2N9NhfSiYBt3fhETFR6mQc3uxreEy7simSg", "2NBEEWPY3v38uuC7n1tMtviEY7ND2XzfgSG", "2NCWWj6oREJiMmfJ2bV5sbm1xchMwQfAZ5r",
+            "2N4ACsVCKMvJmtEb3Pd3xkqhJ3rLT4mYx1r", "2MtmMdabcwRJmenswaYtWA675df854KhUxD", "2N2h27Dd87eiGcm7ajvu4hJpXjTm9GkzvLZ", "2NGE19agRXU1EAK3PCLZWXERkpqyUexhk9r",
+            "2N63112wMnBsXTaBFjbCTjW9LuyTXQmvEdw", "2NBkHxgkYZbU56zsoLNsP5WZVfMtBK6X8WK", "2N5pK7NfKo6d9qBmsKggpwuvQeMxGf65SLH", "2N5jHzgCg9a9uAcLaT2jij8WKTZzWbVNC5c",
+        };
+        assert(vFoundersRewardAddress.size() < consensus.nSubsidyHalvingInterval + consensus.SubsidySlowStartShift());
     }
 };
 static CTestNetParams testNetParams;
@@ -259,6 +294,10 @@ public:
             0,
             0
         };
+
+        // Founders reward script expects a vector of 2-of-3 multisig addresses
+        vFoundersRewardAddress = { "2N2e2FRfP9D1dRN1oRWkH7pbFM69eGNAuQ4" };
+        assert(vFoundersRewardAddress.size() < consensus.nSubsidyHalvingInterval + consensus.SubsidySlowStartShift());
     }
 };
 static CRegTestParams regTestParams;
@@ -297,4 +336,30 @@ bool SelectParamsFromCommandLine()
 
     SelectParams(network);
     return true;
+}
+
+
+// Block height must be >0 and <=last founders reward block height
+// Index variable i ranges from 0 - (vFoundersRewardAddress.size()-1)
+std::string CChainParams::GetFoundersRewardAddress(int nHeight) const
+{
+    int maxHeight = consensus.GetLastFoundersRewardBlockHeight();
+    assert(nHeight>0 && nHeight<=maxHeight);
+
+    size_t i = (size_t)floor((double(nHeight-1)/maxHeight)*vFoundersRewardAddress.size());
+    return vFoundersRewardAddress[i];
+}
+
+// Block height must be >0 and <=last founders reward block height
+// The founders reward address is expected to be a multisig (P2SH) address
+CScript CChainParams::GetFoundersRewardScript(int nHeight) const
+{
+    assert(nHeight > 0 && nHeight <= consensus.GetLastFoundersRewardBlockHeight());
+
+    CBitcoinAddress address(GetFoundersRewardAddress(nHeight).c_str());
+    assert(address.IsValid());
+    assert(address.IsScript());
+    CScriptID scriptID = get<CScriptID>(address.Get()); // Get() returns a boost variant
+    CScript script = CScript() << OP_HASH160 << ToByteVector(scriptID) << OP_EQUAL;
+    return script;
 }

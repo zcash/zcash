@@ -77,6 +77,9 @@ public:
     const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
     const Checkpoints::CCheckpointData& Checkpoints() const { return checkpointData; }
+    /** Return the founder's reward address and script for a given block height */
+    std::string GetFoundersRewardAddress(int height) const;
+    CScript GetFoundersRewardScript(int height) const;
 protected:
     CChainParams() {}
 
@@ -102,6 +105,7 @@ protected:
     bool fMineBlocksOnDemand;
     bool fTestnetToBeDeprecatedFieldRPC;
     Checkpoints::CCheckpointData checkpointData;
+    std::vector<std::string> vFoundersRewardAddress;
 };
 
 /**
