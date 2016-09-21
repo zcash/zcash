@@ -2946,25 +2946,21 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
 {
     int32_t retval;
+    // Check timestamp
+    if (block.GetBlockTime() > GetAdjustedTime() + 60)
+        return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
     if ( (retval= komodo_blockcheck((void *)&block)) == 0 )
     {
         // Check Equihash solution is valid
         if (fCheckPOW && !CheckEquihashSolution(&block, Params()))
-            return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
-                             REJECT_INVALID, "invalid-solution");
+            return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
         
         // Check proof of work matches claimed amount
         if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus()))
-            return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
-                             REJECT_INVALID, "high-hash");
+            return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");
     }
     else if ( retval < 0 ) // komodo rejects block, ie. prior to notarized blockhash
         return(false);
-    
-    // Check timestamp
-    if (block.GetBlockTime() > GetAdjustedTime() + 600)
-        return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),
-                             REJECT_INVALID, "time-too-new");
     return true;
 }
 
