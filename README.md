@@ -109,3 +109,4 @@ ps aux | grep komodod
 #To view komodod output:
 gedit ~/.komodo.debug.log
 ```
+
