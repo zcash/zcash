@@ -71,6 +71,7 @@ cp ~/.zcash-params/testnet3/z9* ~/.zcash-params
 
 ./zcutil/build.sh -j8  # -j8 uses 8 threads
 
+Once things are setup, you can build komodod with make from komodo/src directory. Also the error: configure: error: libsnark include directory not found, might appear and it looks like it can be ignored.
 
 Create ~/.komodo/komodo.conf:
 
@@ -85,7 +86,7 @@ addnode="78.47.196.146"
 
 Start mining:
 
-komodo/src/komodod -gen=1 -genproclimit=1
+komodo/src/komodod -gen=1 -genproclimit=1 -addnode="78.47.196.146"
 
 komodo/src/komodo-cli getinfo
 ```
