@@ -605,6 +605,11 @@ Value getblocktemplate(const Array& params, bool fHelp)
         entry.push_back(Pair("sigops", pblocktemplate->vTxSigOps[index_in_template]));
 
         if (tx.IsCoinBase()) {
+            // Show founders' reward if it is required
+            if (pblock->vtx[0].vout.size() > 1) {
+                // Correct this if GetBlockTemplate changes the order
+                entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
+            }
             entry.push_back(Pair("required", true));
             txCoinbase = entry;
         } else {
@@ -634,7 +639,17 @@ Value getblocktemplate(const Array& params, bool fHelp)
         result.push_back(Pair("coinbasetxn", txCoinbase));
     } else {
         result.push_back(Pair("coinbaseaux", aux));
+        // Correct these if GetBlockTemplate changes the order
         result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
+        // Include founders' reward if it is required
+        if (pblock->vtx[0].vout.size() > 1) {
+            result.push_back(Pair("coinbasefrvalue",
+                                  (int64_t)pblock->vtx[0].vout[1].nValue));
+            result.push_back(Pair("coinbasefrscript",
+                                  HexStr(pblock->vtx[0].vout[1].scriptPubKey.begin(),
+                                         pblock->vtx[0].vout[1].scriptPubKey.end())
+                                 ));
+        }
     }
     result.push_back(Pair("longpollid", chainActive.Tip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast)));
     result.push_back(Pair("target", hashTarget.GetHex()));
