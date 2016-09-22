@@ -415,8 +415,14 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     LOCK(cs_main);
 
+    // Wallet is required because we support coinbasetxn
+    if (pwalletMain == NULL) {
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (disabled)");
+    }
+
     std::string strMode = "template";
     Value lpval = Value::null;
+    bool coinbasetxn = true;
     if (params.size() > 0)
     {
         const Object& oparam = params[0].get_obj();
@@ -429,6 +435,18 @@ Value getblocktemplate(const Array& params, bool fHelp)
         }
         else
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
+
+        const Value& capsval = find_value(oparam, "capabilities");
+        if (capsval.type() == array_type) {
+            const Array& caps = capsval.get_array();
+            for (size_t i = 0; i < caps.size(); i++) {
+                auto cap = caps[i].get_str();
+                if (cap == "coinbaseval") {
+                    coinbasetxn = false;
+                }
+            }
+        }
+
         lpval = find_value(oparam, "longpollid");
 
         if (strMode == "proposal")
@@ -540,8 +558,8 @@ Value getblocktemplate(const Array& params, bool fHelp)
             delete pblocktemplate;
             pblocktemplate = NULL;
         }
-        CScript scriptDummy = CScript() << OP_TRUE;
-        pblocktemplate = CreateNewBlock(scriptDummy);
+        CReserveKey reservekey(pwalletMain);
+        pblocktemplate = CreateNewBlockWithKey(reservekey);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 
@@ -556,6 +574,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     static const Array aCaps = boost::assign::list_of("proposal");
 
+    Object txCoinbase;
     Array transactions;
     map<uint256, int64_t> setTxIndex;
     int i = 0;
@@ -564,7 +583,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
 
-        if (tx.IsCoinBase())
+        if (tx.IsCoinBase() && !coinbasetxn)
             continue;
 
         Object entry;
@@ -585,7 +604,12 @@ Value getblocktemplate(const Array& params, bool fHelp)
         entry.push_back(Pair("fee", pblocktemplate->vTxFees[index_in_template]));
         entry.push_back(Pair("sigops", pblocktemplate->vTxSigOps[index_in_template]));
 
-        transactions.push_back(entry);
+        if (tx.IsCoinBase()) {
+            entry.push_back(Pair("required", true));
+            txCoinbase = entry;
+        } else {
+            transactions.push_back(entry);
+        }
     }
 
     Object aux;
@@ -606,8 +630,12 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("version", pblock->nVersion));
     result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
     result.push_back(Pair("transactions", transactions));
-    result.push_back(Pair("coinbaseaux", aux));
-    result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
+    if (coinbasetxn) {
+        result.push_back(Pair("coinbasetxn", txCoinbase));
+    } else {
+        result.push_back(Pair("coinbaseaux", aux));
+        result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
+    }
     result.push_back(Pair("longpollid", chainActive.Tip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast)));
     result.push_back(Pair("target", hashTarget.GetHex()));
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
