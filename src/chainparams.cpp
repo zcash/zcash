@@ -336,6 +336,11 @@ CChainParams &Params(CBaseChainParams::Network network) {
 void SelectParams(CBaseChainParams::Network network) {
     SelectBaseParams(network);
     pCurrentParams = &Params(network);
+
+    // Some python qa rpc tests need to enforce the coinbase consensus rule
+    if (network == CBaseChainParams::REGTEST && mapArgs.count("-regtestprotectcoinbase")) {
+        regTestParams.SetRegTestCoinbaseMustBeProtected();
+    }
 }
 
 bool SelectParamsFromCommandLine()
