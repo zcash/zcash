@@ -69,9 +69,17 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
 #endif
 
 
-#define NUM_TESTNET_FOUNDER_ADDRESSES 48
+// Utility method to check the number of unique addresses from height 1 to maxHeight
+void checkNumberOfUniqueAddresses(int maxHeight, int nUnique) {
+    std::set<std::string> addresses;
+    for (int i=1; i<=maxHeight; i++) {
+        addresses.insert(Params().GetFoundersRewardAddressAtHeight(i));
+    }
+    ASSERT_TRUE(addresses.size()==nUnique);
+}
 
-TEST(founders_reward_test, testnet) {
+
+TEST(founders_reward_test, general) {
     SelectParams(CBaseChainParams::TESTNET);
 
     CChainParams params = Params();
@@ -79,24 +87,16 @@ TEST(founders_reward_test, testnet) {
     // For Testnet, the first address is derived from the old script. 
     // FOUNDERS_REWARD_SCRIPT = a9146708e6670db0b950dac68031025cc5b63213a49187
     //                address = 2N2e2FRfP9D1dRN1oRWkH7pbFM69eGNAuQ4
-    EXPECT_EQ(params.GetFoundersRewardScript(1), ParseHex("a9146708e6670db0b950dac68031025cc5b63213a49187"));
-    EXPECT_EQ(params.GetFoundersRewardAddress(1), "2N2e2FRfP9D1dRN1oRWkH7pbFM69eGNAuQ4");
+    EXPECT_EQ(params.GetFoundersRewardScriptAtHeight(1), ParseHex("a9146708e6670db0b950dac68031025cc5b63213a49187"));
+    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(1), "2N2e2FRfP9D1dRN1oRWkH7pbFM69eGNAuQ4");
 
     int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
     
     // If the block height parameter is out of bounds, there is an assert.
-    EXPECT_DEATH(params.GetFoundersRewardScript(0), "nHeight");
-    EXPECT_DEATH(params.GetFoundersRewardScript(maxHeight+1), "nHeight");
-    EXPECT_DEATH(params.GetFoundersRewardAddress(0), "nHeight");
-    EXPECT_DEATH(params.GetFoundersRewardAddress(maxHeight+1), "nHeight"); 
-    
-    // Check that different addresses are used for testnet
-    std::set<std::string> addresses;
-    for (int i=1; i<=maxHeight; i++) {
-        addresses.insert(params.GetFoundersRewardAddress(i));
-    }
-    ASSERT_TRUE(addresses.size()==NUM_TESTNET_FOUNDER_ADDRESSES);
-
+    EXPECT_DEATH(params.GetFoundersRewardScriptAtHeight(0), "nHeight");
+    EXPECT_DEATH(params.GetFoundersRewardScriptAtHeight(maxHeight+1), "nHeight");
+    EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(0), "nHeight");
+    EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(maxHeight+1), "nHeight"); 
 }
 
 
@@ -107,11 +107,18 @@ TEST(founders_reward_test, mainnet) {
     CChainParams params = Params();
 
     int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
-    std::set<std::string> addresses;
-    for (int i=1; i<=maxHeight; i++) {
-        addresses.insert(params.GetFoundersRewardAddress(i));
-    }
-    ASSERT_TRUE(addresses.size()==NUM_MAINNET_FOUNDER_ADDRESSES);
+    checkNumberOfUniqueAddresses(maxHeight, NUM_MAINNET_FOUNDER_ADDRESSES);
+}
+
+
+#define NUM_TESTNET_FOUNDER_ADDRESSES 48
+
+TEST(founders_reward_test, testnet) {
+    SelectParams(CBaseChainParams::TESTNET);
+    CChainParams params = Params();
+
+    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
+    checkNumberOfUniqueAddresses(maxHeight, NUM_TESTNET_FOUNDER_ADDRESSES);
 }
 
 
@@ -120,13 +127,9 @@ TEST(founders_reward_test, mainnet) {
 TEST(founders_reward_test, regtest) {
     SelectParams(CBaseChainParams::REGTEST);
     CChainParams params = Params();
-    
+
     int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
-    std::set<std::string> addresses;
-    for (int i=1; i<=maxHeight; i++) {
-        addresses.insert(params.GetFoundersRewardAddress(i));
-    }
-    ASSERT_TRUE(addresses.size()==NUM_REGTEST_FOUNDER_ADDRESSES);
+    checkNumberOfUniqueAddresses(maxHeight, NUM_REGTEST_FOUNDER_ADDRESSES);
 }
 
 
@@ -146,3 +149,24 @@ TEST(founders_reward_test, slow_start_subsidy) {
     
     ASSERT_TRUE(totalSubsidy == MAX_MONEY/10.0);
 }
+
+
+// Verify the number of rewards going to each mainnet/testnet address
+TEST(founders_reward_test, per_address_reward) {
+    SelectParams(CBaseChainParams::TESTNET);
+    CChainParams params = Params();
+
+    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();    
+    std::multiset<std::string> ms;
+    for (int nHeight=1; nHeight<=maxHeight; nHeight++) {
+        ms.insert(params.GetFoundersRewardAddressAtHeight(nHeight));
+    }
+
+    ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(0)) == 17708);
+    for (int i = 1; i <= 46; i++) {
+        ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(i)) == 17709);
+    }
+    ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(47)) == 17677);
+
+}
+

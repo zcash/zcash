@@ -342,7 +342,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             txNew.vout[0].nValue -= vFoundersReward;
 
             // And give it to the founders
-            txNew.vout.push_back(CTxOut(vFoundersReward, chainparams.GetFoundersRewardScript(nHeight)));
+            txNew.vout.push_back(CTxOut(vFoundersReward, chainparams.GetFoundersRewardScriptAtHeight(nHeight)));
         }
 
         // Add fees

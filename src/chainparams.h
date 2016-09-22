@@ -78,8 +78,9 @@ public:
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
     const Checkpoints::CCheckpointData& Checkpoints() const { return checkpointData; }
     /** Return the founder's reward address and script for a given block height */
-    std::string GetFoundersRewardAddress(int height) const;
-    CScript GetFoundersRewardScript(int height) const;
+    std::string GetFoundersRewardAddressAtHeight(int height) const;
+    CScript GetFoundersRewardScriptAtHeight(int height) const;
+    std::string GetFoundersRewardAddressAtIndex(int i) const;
 protected:
     CChainParams() {}
 

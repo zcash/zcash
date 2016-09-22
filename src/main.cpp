@@ -3090,7 +3090,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         bool found = false;
 
         BOOST_FOREACH(const CTxOut& output, block.vtx[0].vout) {
-            if (output.scriptPubKey == Params().GetFoundersRewardScript(nHeight)) {
+            if (output.scriptPubKey == Params().GetFoundersRewardScriptAtHeight(nHeight)) {
                 if (output.nValue == (GetBlockSubsidy(nHeight, consensusParams) / 5)) {
                     found = true;
                     break;
