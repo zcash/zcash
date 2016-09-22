@@ -32,31 +32,6 @@
 
 using namespace std;
 
-void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex)
-{
-    txnouttype type;
-    vector<CTxDestination> addresses;
-    int nRequired;
-
-    out.push_back(Pair("asm", ScriptToAsmStr(scriptPubKey)));
-    if (fIncludeHex)
-        out.push_back(Pair("hex", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
-
-    if (!ExtractDestinations(scriptPubKey, type, addresses, nRequired)) {
-        out.push_back(Pair("type", GetTxnOutputType(type)));
-        return;
-    }
-
-    out.push_back(Pair("reqSigs", nRequired));
-    out.push_back(Pair("type", GetTxnOutputType(type)));
-
-    UniValue a(UniValue::VARR);
-    for (const CTxDestination& addr : addresses) {
-        a.push_back(EncodeDestination(addr));
-    }
-    out.push_back(Pair("addresses", a));
-}
-
 
 UniValue TxJoinSplitToJSON(const CTransaction& tx) {
     bool useGroth = tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION;
@@ -147,46 +122,12 @@ UniValue TxShieldedOutputsToJSON(const CTransaction& tx) {
 
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 {
-    entry.push_back(Pair("txid", tx.GetHash().GetHex()));
-    entry.push_back(Pair("overwintered", tx.fOverwintered));
-    entry.push_back(Pair("version", tx.nVersion));
-    if (tx.fOverwintered) {
-        entry.push_back(Pair("versiongroupid", HexInt(tx.nVersionGroupId)));
-    }
-    entry.push_back(Pair("locktime", (int64_t)tx.nLockTime));
-    if (tx.fOverwintered) {
-        entry.push_back(Pair("expiryheight", (int64_t)tx.nExpiryHeight));
-    }
-    UniValue vin(UniValue::VARR);
-    BOOST_FOREACH(const CTxIn& txin, tx.vin) {
-        UniValue in(UniValue::VOBJ);
-        if (tx.IsCoinBase())
-            in.push_back(Pair("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
-        else {
-            in.push_back(Pair("txid", txin.prevout.hash.GetHex()));
-            in.push_back(Pair("vout", (int64_t)txin.prevout.n));
-            UniValue o(UniValue::VOBJ);
-            o.push_back(Pair("asm", ScriptToAsmStr(txin.scriptSig, true)));
-            o.push_back(Pair("hex", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
-            in.push_back(Pair("scriptSig", o));
-        }
-        in.push_back(Pair("sequence", (int64_t)txin.nSequence));
-        vin.push_back(in);
-    }
-    entry.push_back(Pair("vin", vin));
-    UniValue vout(UniValue::VARR);
-    for (unsigned int i = 0; i < tx.vout.size(); i++) {
-        const CTxOut& txout = tx.vout[i];
-        UniValue out(UniValue::VOBJ);
-        out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
-        out.push_back(Pair("valueZat", txout.nValue));
-        out.push_back(Pair("n", (int64_t)i));
-        UniValue o(UniValue::VOBJ);
-        ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
-        out.push_back(Pair("scriptPubKey", o));
-        vout.push_back(out);
-    }
-    entry.push_back(Pair("vout", vout));
+    // Call into TxToUniv() in bitcoin-common to decode the transaction hex.
+    //
+    // Blockchain contextual information (confirmations and blocktime) is not
+    // available to code in bitcoin-common, so we query them here and push the
+    // data into the returned UniValue.
+    TxToUniv(tx, uint256(), entry);
 
     UniValue vjoinsplit = TxJoinSplitToJSON(tx);
     entry.push_back(Pair("vjoinsplit", vjoinsplit));
@@ -503,7 +444,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, locktime out of range");
         rawTx.nLockTime = nLockTime;
     }
-    
+
     if (params.size() > 3 && !params[3].isNull()) {
         if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
             int64_t nExpiryHeight = params[3].get_int64();
@@ -659,7 +600,7 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
 
     UniValue result(UniValue::VOBJ);
-    TxToJSON(tx, uint256(), result);
+    TxToUniv(tx, uint256(), result);
 
     return result;
 }
@@ -700,7 +641,7 @@ UniValue decodescript(const UniValue& params, bool fHelp)
     } else {
         // Empty scripts are valid
     }
-    ScriptPubKeyToJSON(script, r, false);
+    ScriptPubKeyToUniv(script, r, false);
 
     r.push_back(Pair("p2sh", EncodeDestination(CScriptID(script))));
     return r;
@@ -922,7 +863,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     }
 
     bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
-    // Use the approximate release height if it is greater so offline nodes 
+    // Use the approximate release height if it is greater so offline nodes
     // have a better estimation of the current height and will be more likely to
     // determine the correct consensus branch ID.  Regtest mode ignores release height.
     int chainHeight = chainActive.Height() + 1;
@@ -937,8 +878,8 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         if (!IsConsensusBranchId(consensusBranchId)) {
             throw runtime_error(params[4].get_str() + " is not a valid consensus branch id");
         }
-    } 
-    
+    }
+
     // Script verification errors
     UniValue vErrors(UniValue::VARR);
 

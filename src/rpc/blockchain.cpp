@@ -9,6 +9,7 @@
 #include "checkpoints.h"
 #include "consensus/validation.h"
 #include "main.h"
+#include "core_io.h"
 #include "primitives/transaction.h"
 #include "rpc/server.h"
 #include "streams.h"
@@ -51,7 +52,7 @@ double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficul
     int nShiftAmount = (powLimit >> 24) & 0xff;
 
     double dDiff =
-        (double)(powLimit & 0x00ffffff) / 
+        (double)(powLimit & 0x00ffffff) /
         (double)(bits & 0x00ffffff);
 
     while (nShift < nShiftAmount)
@@ -145,7 +146,7 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
         if(txDetails)
         {
             UniValue objTx(UniValue::VOBJ);
-            TxToJSON(tx, uint256(), objTx);
+            TxToUniv(tx, uint256(), objTx);
             txs.push_back(objTx);
         }
         else
@@ -617,7 +618,7 @@ UniValue gettxout(const UniValue& params, bool fHelp)
         ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
     UniValue o(UniValue::VOBJ);
-    ScriptPubKeyToJSON(coins.vout[n].scriptPubKey, o, true);
+    ScriptPubKeyToUniv(coins.vout[n].scriptPubKey, o, true);
     ret.push_back(Pair("scriptPubKey", o));
     ret.push_back(Pair("version", coins.nVersion));
     ret.push_back(Pair("coinbase", coins.fCoinBase));

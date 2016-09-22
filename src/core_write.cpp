@@ -152,9 +152,16 @@ void ScriptPubKeyToUniv(const CScript& scriptPubKey,
 void TxToUniv(const CTransaction& tx, const uint256& hashBlock, UniValue& entry)
 {
     entry.pushKV("txid", tx.GetHash().GetHex());
+    entry.pushKV("overwintered", UniValue(tx.fOverwintered));
     entry.pushKV("version", tx.nVersion);
+    entry.pushKV("size", (int)::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION));
+    if (tx.fOverwintered) {
+        entry.pushKV("versiongroupid", HexInt(tx.nVersionGroupId));
+    }
     entry.pushKV("locktime", (int64_t)tx.nLockTime);
-
+    if (tx.fOverwintered) {
+        entry.pushKV("expiryheight", (int64_t)tx.nExpiryHeight);
+    }
     UniValue vin(UniValue::VARR);
     BOOST_FOREACH(const CTxIn& txin, tx.vin) {
         UniValue in(UniValue::VOBJ);
@@ -176,13 +183,11 @@ void TxToUniv(const CTransaction& tx, const uint256& hashBlock, UniValue& entry)
     UniValue vout(UniValue::VARR);
     for (unsigned int i = 0; i < tx.vout.size(); i++) {
         const CTxOut& txout = tx.vout[i];
-
         UniValue out(UniValue::VOBJ);
-
         UniValue outValue(UniValue::VNUM, FormatMoney(txout.nValue));
         out.pushKV("value", outValue);
+        out.pushKV("valueZat", txout.nValue);
         out.pushKV("n", (int64_t)i);
-
         UniValue o(UniValue::VOBJ);
         ScriptPubKeyToUniv(txout.scriptPubKey, o, true);
         out.pushKV("scriptPubKey", o);
