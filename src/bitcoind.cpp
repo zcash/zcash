@@ -118,6 +118,8 @@ bool AppInit(int argc, char* argv[])
             fprintf(stderr, "Error: There is no RPC client functionality in komodod. Use the komodo-cli utility instead.\n");
             exit(1);
         }
+        extern int32_t IS_KOMODO_NOTARY;
+        IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
 #ifndef WIN32
         fDaemon = GetBoolArg("-daemon", false);
         if (fDaemon)
