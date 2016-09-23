@@ -23,7 +23,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
 
     // Genesis block
-    if (pindexLast == NULL || komodo_is_notaryblock(pblock) != 0 )
+    if (pindexLast == NULL || komodo_is_notaryblock((void *)pblock) != 0 )
         return nProofOfWorkLimit;
 
     // Find the first block in the averaging interval
