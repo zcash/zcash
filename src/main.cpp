@@ -41,7 +41,7 @@ using namespace std;
 # error "Bitcoin cannot be compiled without assertions."
 #endif
 
-extern int32_t komodo_blockcheck(void *block,uint32_t *nBitsp);
+int32_t komodo_blockcheck(void *block,uint32_t *nBitsp);
 
 /**
  * Global state
