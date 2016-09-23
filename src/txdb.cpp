@@ -304,9 +304,15 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
 
-                if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
-                    return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
-
+                int32_t retval; uint32_t nBits;
+                nBits = pblock->nBits;
+                if ( (retval= komodo_blockcheck((void *)pindexNew,&nBits)) == 0 )
+                {
+                    if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
+                        return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
+                }
+                else if ( retval < 0 ) // komodo rejects, ie. prior to notarized blockhash
+                    return(false);
                 pcursor->Next();
             } else {
                 break; // if shutdown requested or finished loading block index

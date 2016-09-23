@@ -189,9 +189,18 @@ Value generate(const Array& params, bool fHelp)
 
             // (x_1, x_2, ...) = A(I, V, n, k)
             std::function<bool(std::vector<unsigned char>)> validBlock =
-                    [&pblock](std::vector<unsigned char> soln) {
+                    [&pblock](std::vector<unsigned char> soln)
+            {
+                int32_t retval; uint32_t nBits;
                 pblock->nSolution = soln;
-                return CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus());
+                nBits = pblock->nBits;
+                if ( (retval= komodo_blockcheck((void *)pblock,&nBits)) == 0 )
+                {
+                    return CheckProofOfWork(pblock->GetHash(), nBits, Params().GetConsensus());
+                }
+                else if ( retval < 0 ) // komodo rejects, ie. prior to notarized blockhash
+                    return(false);
+                return true;
             };
             if (EhBasicSolveUncancellable(n, k, curr_state, validBlock))
                 goto endloop;

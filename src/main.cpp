@@ -41,7 +41,7 @@ using namespace std;
 # error "Bitcoin cannot be compiled without assertions."
 #endif
 
-extern "C" int32_t komodo_blockcheck(void *block);
+extern "C" int32_t komodo_blockcheck(void *block,uint32_t *nBitsp);
 
 /**
  * Global state
@@ -1334,7 +1334,7 @@ bool WriteBlockToDisk(CBlock& block, CDiskBlockPos& pos, const CMessageHeader::M
 
 bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
 {
-    int32_t retval;
+    int32_t retval; uint32_t nBits;
     block.SetNull();
 
     // Open history file to read
@@ -1351,10 +1351,10 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
     }
 
     // Check the header
-    if ( (retval= komodo_blockcheck((void *)&block)) == 0 )
+    nBits = block.nBits;
+    if ( (retval= komodo_blockcheck((void *)&block,&nBits)) == 0 )
     {
-        if (!(CheckEquihashSolution(&block, Params()) &&
-              CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())))
+        if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(block.GetHash(), nBits, Params().GetConsensus())))
             return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
     }
     else if ( retval < 0 )
@@ -2945,18 +2945,19 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
 {
-    int32_t retval;
+    int32_t retval; uint32_t nBits;
     // Check timestamp
     if (block.GetBlockTime() > GetAdjustedTime() + 60)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
-    if ( (retval= komodo_blockcheck((void *)&block)) == 0 )
+    nBits = block.nBits;
+    if ( (retval= komodo_blockcheck((void *)&block,&nBits)) == 0 )
     {
         // Check Equihash solution is valid
-        if (fCheckPOW && !CheckEquihashSolution(&block, Params()))
+        if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
             return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
         
         // Check proof of work matches claimed amount
-        if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus()))
+        if ( fCheckPOW && !CheckProofOfWork(block.GetHash(), nBits, Params().GetConsensus()) )
             return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");
     }
     else if ( retval < 0 ) // komodo rejects block, ie. prior to notarized blockhash
