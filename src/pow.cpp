@@ -16,7 +16,7 @@
 
 #include "sodium.h"
 
-extern int32_t "C" komodo_is_notaryblock(void *pblock);
+int32_t komodo_is_notaryblock(void *pblock);
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {

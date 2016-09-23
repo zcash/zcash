@@ -21,18 +21,18 @@
 
 int32_t IS_KOMODO_NOTARY;
 
-int32_t "C" komodo_is_notaryblock(void *block)
+int32_t komodo_is_notaryblock(void *block)
 {
     return(0);
 }
 
-int32_t "C" komodo_checkmsg(void *bitcoinpeer,uint8_t *data,int32_t datalen)
+int32_t komodo_checkmsg(void *bitcoinpeer,uint8_t *data,int32_t datalen)
 {
     fprintf(stderr,"KOMODO.[%d] message from peer.%p\n",datalen,bitcoinpeer);
     return(0);
 }
 
-int32_t "C" komodo_blockcheck(void *block,uint32_t *nBitsp)
+int32_t komodo_blockcheck(void *block,uint32_t *nBitsp)
 {
     //fprintf(stderr,"check block %p\n",block);
     // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS

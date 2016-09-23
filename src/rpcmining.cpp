@@ -115,6 +115,8 @@ Value getgenerate(const Array& params, bool fHelp)
     return GetBoolArg("-gen", false);
 }
 
+int32_t komodo_blockcheck(void *block,uint32_t *nBitsp);
+
 Value generate(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 1)
