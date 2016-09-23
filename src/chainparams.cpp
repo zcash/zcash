@@ -341,10 +341,9 @@ bool SelectParamsFromCommandLine()
 
 // Block height must be >0 and <=last founders reward block height
 // Index variable i ranges from 0 - (vFoundersRewardAddress.size()-1)
-std::string CChainParams::GetFoundersRewardAddressAtHeight(int nHeight) const
-{
+std::string CChainParams::GetFoundersRewardAddressAtHeight(int nHeight) const {
     int maxHeight = consensus.GetLastFoundersRewardBlockHeight();
-    assert(nHeight>0 && nHeight<=maxHeight);
+    assert(nHeight > 0 && nHeight <= maxHeight);
 
     size_t addressChangeInterval = (maxHeight + vFoundersRewardAddress.size()) / vFoundersRewardAddress.size();
     size_t i = nHeight / addressChangeInterval;
@@ -353,8 +352,7 @@ std::string CChainParams::GetFoundersRewardAddressAtHeight(int nHeight) const
 
 // Block height must be >0 and <=last founders reward block height
 // The founders reward address is expected to be a multisig (P2SH) address
-CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const
-{
+CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {
     assert(nHeight > 0 && nHeight <= consensus.GetLastFoundersRewardBlockHeight());
 
     CBitcoinAddress address(GetFoundersRewardAddressAtHeight(nHeight).c_str());
@@ -366,6 +364,6 @@ CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const
 }
 
 std::string CChainParams::GetFoundersRewardAddressAtIndex(int i) const {
-    assert(i>=0 && i<vFoundersRewardAddress.size());
+    assert(i >= 0 && i < vFoundersRewardAddress.size());
     return vFoundersRewardAddress[i];
 }

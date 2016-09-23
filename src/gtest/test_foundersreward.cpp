@@ -36,7 +36,7 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
     pubkeys.resize(3);
     CPubKey newKey;
     std::vector<std::string> addresses;
-    for (int i=0; i<numKeys; i++) {
+    for (int i = 0; i < numKeys; i++) {
         ASSERT_TRUE(pWallet->GetKeyFromPool(newKey));
         pubkeys[0] = newKey;
         ASSERT_TRUE(pWallet->GetKeyFromPool(newKey));
@@ -70,12 +70,13 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
 
 
 // Utility method to check the number of unique addresses from height 1 to maxHeight
-void checkNumberOfUniqueAddresses(int maxHeight, int nUnique) {
+void checkNumberOfUniqueAddresses(int nUnique) {
+    int maxHeight = Params().GetConsensus().GetLastFoundersRewardBlockHeight();
     std::set<std::string> addresses;
-    for (int i=1; i<=maxHeight; i++) {
+    for (int i = 1; i <= maxHeight; i++) {
         addresses.insert(Params().GetFoundersRewardAddressAtHeight(i));
     }
-    ASSERT_TRUE(addresses.size()==nUnique);
+    ASSERT_TRUE(addresses.size() == nUnique);
 }
 
 
@@ -104,10 +105,7 @@ TEST(founders_reward_test, general) {
 
 TEST(founders_reward_test, mainnet) {
     SelectParams(CBaseChainParams::MAIN);
-    CChainParams params = Params();
-
-    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
-    checkNumberOfUniqueAddresses(maxHeight, NUM_MAINNET_FOUNDER_ADDRESSES);
+    checkNumberOfUniqueAddresses(NUM_MAINNET_FOUNDER_ADDRESSES);
 }
 
 
@@ -115,10 +113,7 @@ TEST(founders_reward_test, mainnet) {
 
 TEST(founders_reward_test, testnet) {
     SelectParams(CBaseChainParams::TESTNET);
-    CChainParams params = Params();
-
-    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
-    checkNumberOfUniqueAddresses(maxHeight, NUM_TESTNET_FOUNDER_ADDRESSES);
+    checkNumberOfUniqueAddresses(NUM_TESTNET_FOUNDER_ADDRESSES);
 }
 
 
@@ -126,10 +121,7 @@ TEST(founders_reward_test, testnet) {
 
 TEST(founders_reward_test, regtest) {
     SelectParams(CBaseChainParams::REGTEST);
-    CChainParams params = Params();
-
-    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
-    checkNumberOfUniqueAddresses(maxHeight, NUM_REGTEST_FOUNDER_ADDRESSES);
+    checkNumberOfUniqueAddresses(NUM_REGTEST_FOUNDER_ADDRESSES);
 }
 
 
@@ -142,8 +134,8 @@ TEST(founders_reward_test, slow_start_subsidy) {
 
     int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();    
     CAmount totalSubsidy = 0;
-    for (int nHeight=1; nHeight<=maxHeight; nHeight++) {
-        CAmount nSubsidy = GetBlockSubsidy(nHeight, params.GetConsensus())/ 5;
+    for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
+        CAmount nSubsidy = GetBlockSubsidy(nHeight, params.GetConsensus()) / 5;
         totalSubsidy += nSubsidy;
     }
     
@@ -156,9 +148,9 @@ TEST(founders_reward_test, per_address_reward) {
     SelectParams(CBaseChainParams::TESTNET);
     CChainParams params = Params();
 
-    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();    
+    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
     std::multiset<std::string> ms;
-    for (int nHeight=1; nHeight<=maxHeight; nHeight++) {
+    for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
         ms.insert(params.GetFoundersRewardAddressAtHeight(nHeight));
     }
 
@@ -167,6 +159,5 @@ TEST(founders_reward_test, per_address_reward) {
         ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(i)) == 17709);
     }
     ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(47)) == 17677);
-
 }
 
