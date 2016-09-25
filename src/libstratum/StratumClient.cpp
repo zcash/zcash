@@ -345,8 +345,8 @@ bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution)
 
     if (tempJob->evalSolution(solution)) {
         string json = "{\"id\": 4, \"method\": \"mining.submit\", \"params\": [\"" +
-                      p_active->user + "\",\"" +
-                      tempJob->getSubmission(solution) + "\"]}\n";
+                      p_active->user + "\"," +
+                      tempJob->getSubmission(solution) + "]}\n";
         std::ostream os(&m_requestBuffer);
         os << json;
         m_stale = false;
@@ -354,8 +354,8 @@ bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution)
         return true;
     } else if (tempPreviousJob && tempPreviousJob->evalSolution(solution)) {
         string json = "{\"id\": 4, \"method\": \"mining.submit\", \"params\": [\"" +
-                      p_active->user + "\",\"" +
-                      tempPreviousJob->getSubmission(solution) + "\"]}\n";
+                      p_active->user + "\"," +
+                      tempPreviousJob->getSubmission(solution) + "]}\n";
         std::ostream os(&m_requestBuffer);
         os << json;
         m_stale = true;
