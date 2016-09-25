@@ -31,6 +31,7 @@ struct ZcashJob
 {
     std::string job;
     CBlockHeader header;
+    std::string time;
     size_t nonce1Size;
     arith_uint256 nonce2Space;
     arith_uint256 serverTarget;

@@ -170,6 +170,7 @@ ZcashJob* ZcashJob::clone() const
     ZcashJob* ret = new ZcashJob();
     ret->job = job;
     ret->header = header;
+    ret->time = time;
     ret->nonce1Size = nonce1Size;
     ret->nonce2Space = nonce2Space;
     ret->serverTarget = serverTarget;
@@ -215,7 +216,7 @@ std::string ZcashJob::getSubmission(const EquihashSolution* solution)
 {
     std::stringstream stream;
     stream << "\"" << job;
-    stream << "\",\"" << std::hex << header.nTime;
+    stream << "\",\"" << time;
     stream << "\",\"" << solution->nonce.GetHex().substr(nonce1Size);
     stream << "\",\"" << HexStr(solution->solution);
     stream << "\"";
@@ -294,8 +295,11 @@ ZcashJob* ZcashMiner::parseJob(const Array& params)
         ret->header.hashPrevBlock  = uint256S(params[2].get_str());
         ret->header.hashMerkleRoot = uint256S(params[3].get_str());
         ret->header.hashReserved   = uint256S(params[4].get_str());
+        ret->time = params[5].get_str();
+
         sscanf(params[5].get_str().c_str(), "%x", &(ret->header.nTime));
         sscanf(params[6].get_str().c_str(), "%x", &(ret->header.nBits));
+
         ret->clean = params[7].get_bool();
     } else {
         throw std::logic_error("Invalid or unsupported block header version");
