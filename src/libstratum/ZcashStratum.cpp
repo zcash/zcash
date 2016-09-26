@@ -292,14 +292,22 @@ ZcashJob* ZcashMiner::parseJob(const Array& params)
             throw std::logic_error("Invalid job params");
         }
 
-        ret->header.hashPrevBlock  = uint256S(params[2].get_str());
-        ret->header.hashMerkleRoot = uint256S(params[3].get_str());
-        ret->header.hashReserved   = uint256S(params[4].get_str());
+        std::stringstream ssHeader;
+        ssHeader << params[1].get_str()
+                 << params[2].get_str()
+                 << params[3].get_str()
+                 << params[4].get_str()
+                 << params[5].get_str()
+                 << params[6].get_str()
+                    // Empty nonce
+                 << "0000000000000000000000000000000000000000000000000000000000000000"
+                 << "00"; // Empty solution
+        auto strHexHeader = ssHeader.str();
+        std::vector<unsigned char> headerData(ParseHex(strHexHeader));
+        CDataStream ss(headerData, SER_NETWORK, PROTOCOL_VERSION);
+        ss >> ret->header;
+
         ret->time = params[5].get_str();
-
-        sscanf(params[5].get_str().c_str(), "%x", &(ret->header.nTime));
-        sscanf(params[6].get_str().c_str(), "%x", &(ret->header.nBits));
-
         ret->clean = params[7].get_bool();
     } else {
         throw std::logic_error("Invalid or unsupported block header version");
