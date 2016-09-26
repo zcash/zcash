@@ -285,7 +285,10 @@ ZcashJob* ZcashMiner::parseJob(const Array& params)
     ZcashJob* ret = new ZcashJob();
     ret->job = params[0].get_str();
 
-    sscanf(params[1].get_str().c_str(), "%x", &(ret->header.nVersion));
+    int32_t version;
+    sscanf(params[1].get_str().c_str(), "%x", &version);
+    // TODO: On a LE host shouldn't this be le32toh?
+    ret->header.nVersion = be32toh(version);
 
     if (ret->header.nVersion == 4) {
         if (params.size() < 8) {
