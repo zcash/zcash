@@ -325,12 +325,16 @@ ZcashJob* ZcashMiner::parseJob(const Array& params)
         auto strHexHeader = ssHeader.str();
         std::vector<unsigned char> headerData(ParseHex(strHexHeader));
         CDataStream ss(headerData, SER_NETWORK, PROTOCOL_VERSION);
-        ss >> ret->header;
+        try {
+            ss >> ret->header;
+        } catch (const std::ios_base::failure& _e) {
+            throw std::logic_error("ZcashMiner::parseJob(): Invalid block header parameters");
+        }
 
         ret->time = params[5].get_str();
         ret->clean = params[7].get_bool();
     } else {
-        throw std::logic_error("Invalid or unsupported block header version");
+        throw std::logic_error("ZcashMiner::parseJob(): Invalid or unsupported block header version");
     }
 
     ret->header.nNonce = nonce1;
