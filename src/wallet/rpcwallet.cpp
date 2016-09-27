@@ -2833,7 +2833,7 @@ Value z_listaddresses(const Array& params, bool fHelp)
     return ret;
 }
 
-CAmount getBalanceTaddr(std::string transparentAddress, size_t minDepth=1) {
+CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1) {
     set<CBitcoinAddress> setAddress;
     vector<COutput> vecOutputs;
     CAmount balance = 0;   
@@ -2872,7 +2872,7 @@ CAmount getBalanceTaddr(std::string transparentAddress, size_t minDepth=1) {
     return balance;
 }
 
-CAmount getBalanceZaddr(std::string address, size_t minDepth = 1) {
+CAmount getBalanceZaddr(std::string address, int minDepth = 1) {
     CAmount balance = 0;
     std::vector<CNotePlaintextEntry> entries;
     LOCK2(cs_main, pwalletMain->cs_wallet);
