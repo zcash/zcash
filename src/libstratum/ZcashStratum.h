@@ -34,6 +34,7 @@ struct ZcashJob
     std::string time;
     size_t nonce1Size;
     arith_uint256 nonce2Space;
+    arith_uint256 nonce2Inc;
     arith_uint256 serverTarget;
     bool clean;
 
@@ -72,6 +73,7 @@ class ZcashMiner
     uint256 nonce1;
     size_t nonce1Size;
     arith_uint256 nonce2Space;
+    arith_uint256 nonce2Inc;
     std::function<bool(const EquihashSolution&)> solutionFoundCallback;
 
 public:

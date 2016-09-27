@@ -24,17 +24,21 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
     std::shared_ptr<std::mutex> m_zmt(new std::mutex);
     CBlockHeader header;
     arith_uint256 space;
+    size_t offset;
+    arith_uint256 inc;
     arith_uint256 target;
     std::atomic_bool workReady {false};
     std::atomic_bool cancelSolver {false};
 
     miner->NewJob.connect(NewJob_t::slot_type(
-        [&m_zmt, &header, &space, &target, &workReady, &cancelSolver]
+        [&m_zmt, &header, &space, &offset, &inc, &target, &workReady, &cancelSolver]
         (const ZcashJob* job) mutable {
             std::lock_guard<std::mutex> lock{*m_zmt.get()};
             if (job) {
                 header = job->header;
                 space = job->nonce2Space;
+                offset = job->nonce1Size * 4; // Hex length to bit length
+                inc = job->nonce2Inc;
                 target = job->serverTarget;
                 workReady.store(true);
                 if (job->clean) {
@@ -65,8 +69,8 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
             {
                 std::lock_guard<std::mutex> lock{*m_zmt.get()};
                 arith_uint256 baseNonce = UintToArith256(header.nNonce);
-                nonce = baseNonce + (space/size)*pos;
-                nonceEnd = baseNonce + (space/size)*(pos+1);
+                nonce = baseNonce + ((space/size)*pos << offset);
+                nonceEnd = baseNonce + ((space/size)*(pos+1) << offset);
             }
 
             // Hash state
@@ -149,7 +153,7 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
                 }
 
                 // Update nonce
-                nonce++;
+                nonce += inc;
             }
         }
     }
@@ -173,6 +177,7 @@ ZcashJob* ZcashJob::clone() const
     ret->time = time;
     ret->nonce1Size = nonce1Size;
     ret->nonce2Space = nonce2Space;
+    ret->nonce2Inc = nonce2Inc;
     ret->serverTarget = serverTarget;
     ret->clean = clean;
     return ret;
@@ -214,11 +219,16 @@ bool ZcashJob::evalSolution(const EquihashSolution* solution)
 
 std::string ZcashJob::getSubmission(const EquihashSolution* solution)
 {
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << solution->nonce;
+    ss << solution->solution;
+    std::string strHex = HexStr(ss.begin(), ss.end());
+
     std::stringstream stream;
     stream << "\"" << job;
     stream << "\",\"" << time;
-    stream << "\",\"" << solution->nonce.GetHex().substr(nonce1Size);
-    stream << "\",\"" << HexStr(solution->solution);
+    stream << "\",\"" << strHex.substr(nonce1Size, 64-nonce1Size);
+    stream << "\",\"" << strHex.substr(64);
     stream << "\"";
     return stream.str();
 }
@@ -264,16 +274,23 @@ void ZcashMiner::stop()
 void ZcashMiner::setServerNonce(const Array& params)
 {
     auto n1str = params[1].get_str();
-    nonce1Size = n1str.size();
-    size_t nonce2Bits = 256 - (nonce1Size * 4); // Hex length to bit length
+    std::vector<unsigned char> nonceData(ParseHex(n1str));
+    while (nonceData.size() < 32) {
+        nonceData.push_back(0);
+    }
+    CDataStream ss(nonceData, SER_NETWORK, PROTOCOL_VERSION);
+    ss >> nonce1;
 
-    auto n1 = UintToArith256(uint256S(n1str));
-    n1 <<= nonce2Bits;
-    nonce1 = ArithToUint256(n1);
+    nonce1Size = n1str.size();
+    size_t nonce1Bits = nonce1Size * 4; // Hex length to bit length
+    size_t nonce2Bits = 256 - nonce1Bits;
 
     nonce2Space = 1;
     nonce2Space <<= nonce2Bits;
     nonce2Space -= 1;
+
+    nonce2Inc = 1;
+    nonce2Inc <<= nonce1Bits;
 }
 
 ZcashJob* ZcashMiner::parseJob(const Array& params)
@@ -319,6 +336,7 @@ ZcashJob* ZcashMiner::parseJob(const Array& params)
     ret->header.nNonce = nonce1;
     ret->nonce1Size = nonce1Size;
     ret->nonce2Space = nonce2Space;
+    ret->nonce2Inc = nonce2Inc;
 
     return ret;
 }
