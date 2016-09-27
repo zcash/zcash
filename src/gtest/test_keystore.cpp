@@ -70,6 +70,17 @@ TEST(keystore_tests, store_and_retrieve_spending_key_in_encrypted_store) {
     ASSERT_TRUE(keyStore.HaveSpendingKey(addr));
     ASSERT_FALSE(keyStore.GetSpendingKey(addr, keyOut));
 
+    // Unlocking with a random key should fail
+    uint256 r2 {GetRandHash()};
+    CKeyingMaterial vRandomKey (r2.begin(), r2.end());
+    EXPECT_FALSE(keyStore.Unlock(vRandomKey));
+
+    // Unlocking with a slightly-modified vMasterKey should fail
+    CKeyingMaterial vModifiedKey (r.begin(), r.end());
+    vModifiedKey[0] += 1;
+    EXPECT_FALSE(keyStore.Unlock(vModifiedKey));
+
+    // Unlocking with vMasterKey should succeed
     ASSERT_TRUE(keyStore.Unlock(vMasterKey));
     ASSERT_TRUE(keyStore.GetSpendingKey(addr, keyOut));
     ASSERT_EQ(sk, keyOut);
