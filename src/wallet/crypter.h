@@ -200,7 +200,9 @@ public:
             mi++;
         }
     }
-    virtual bool AddCryptedSpendingKey(const libzcash::PaymentAddress &address, const std::vector<unsigned char> &vchCryptedSecret);
+    virtual bool AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
+                                       const libzcash::ViewingKey &vk,
+                                       const std::vector<unsigned char> &vchCryptedSecret);
     bool AddSpendingKey(const libzcash::SpendingKey &sk);
     bool HaveSpendingKey(const libzcash::PaymentAddress &address) const
     {
