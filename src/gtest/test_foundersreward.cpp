@@ -143,11 +143,10 @@ TEST(founders_reward_test, slow_start_subsidy) {
 }
 
 
-// Verify the number of rewards going to each mainnet/testnet address
-TEST(founders_reward_test, per_address_reward) {
-    SelectParams(CBaseChainParams::TESTNET);
+// For use with mainnet and testnet which each have 48 addresses.
+// Verify the number of rewards each individual address receives.
+void verifyNumberOfRewards() {
     CChainParams params = Params();
-
     int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
     std::multiset<std::string> ms;
     for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
@@ -161,3 +160,14 @@ TEST(founders_reward_test, per_address_reward) {
     ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(47)) == 17677);
 }
 
+// Verify the number of rewards going to each mainnet address
+TEST(founders_reward_test, per_address_reward_mainnet) {
+    SelectParams(CBaseChainParams::MAIN);
+    verifyNumberOfRewards();
+}
+
+// Verify the number of rewards going to each testnet address
+TEST(founders_reward_test, per_address_reward_testnet) {
+    SelectParams(CBaseChainParams::TESTNET);
+    verifyNumberOfRewards();
+}
