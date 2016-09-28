@@ -148,9 +148,7 @@ static bool DecryptSpendingKey(const CKeyingMaterial& vMasterKey,
     if (vchSecret.size() != libzcash::SerializedSpendingKeySize)
         return false;
 
-    // TODO does this undo the benefits of using CKeyingMaterial?
-    std::vector<unsigned char> serialized(vchSecret.begin(), vchSecret.end());
-    CDataStream ss(serialized, SER_NETWORK, PROTOCOL_VERSION);
+    CSecureDataStream ss(vchSecret, SER_NETWORK, PROTOCOL_VERSION);
     ss >> sk;
     return sk.address() == address;
 }
@@ -313,7 +311,7 @@ bool CCryptoKeyStore::AddSpendingKey(const libzcash::SpendingKey &sk)
             return false;
 
         std::vector<unsigned char> vchCryptedSecret;
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        CSecureDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << sk;
         CKeyingMaterial vchSecret(ss.begin(), ss.end());
         auto address = sk.address();
@@ -378,7 +376,7 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
         BOOST_FOREACH(SpendingKeyMap::value_type& mSpendingKey, mapSpendingKeys)
         {
             const libzcash::SpendingKey &sk = mSpendingKey.second;
-            CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+            CSecureDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
             ss << sk;
             CKeyingMaterial vchSecret(ss.begin(), ss.end());
             libzcash::PaymentAddress address = sk.address();
