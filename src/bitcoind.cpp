@@ -99,7 +99,7 @@ bool AppInit(int argc, char* argv[])
         }
         try
         {
-            ReadConfigFile(mapArgs, mapMultiArgs);
+            ReadConfigFile(GetArg("-conf", BITCOIN_CONF_FILENAME), mapArgs, mapMultiArgs);
         } catch (const missing_zcash_conf& e) {
             fprintf(stderr,
                 (_("Before starting zcashd, you need to create a configuration file:\n"
@@ -114,7 +114,7 @@ bool AppInit(int argc, char* argv[])
                    "depending on how you installed Zcash:\n") +
                  _("- Source code:  %s\n"
                    "- .deb package: %s\n")).c_str(),
-                GetConfigFile().string().c_str(),
+                GetConfigFile(GetArg("-conf", BITCOIN_CONF_FILENAME)).string().c_str(),
                 "contrib/debian/examples/zcash.conf",
                 "/usr/share/doc/zcash/examples/zcash.conf");
             return false;
