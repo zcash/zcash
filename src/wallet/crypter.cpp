@@ -303,7 +303,7 @@ bool CCryptoKeyStore::GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) co
 bool CCryptoKeyStore::AddSpendingKey(const libzcash::SpendingKey &sk)
 {
     {
-        LOCK(cs_KeyStore);
+        LOCK(cs_SpendingKeyStore);
         if (!IsCrypted())
             return CBasicKeyStore::AddSpendingKey(sk);
 
@@ -329,7 +329,7 @@ bool CCryptoKeyStore::AddCryptedSpendingKey(const libzcash::PaymentAddress &addr
                                             const std::vector<unsigned char> &vchCryptedSecret)
 {
     {
-        LOCK(cs_KeyStore);
+        LOCK(cs_SpendingKeyStore);
         if (!SetCrypted())
             return false;
 
@@ -342,7 +342,7 @@ bool CCryptoKeyStore::AddCryptedSpendingKey(const libzcash::PaymentAddress &addr
 bool CCryptoKeyStore::GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey &skOut) const
 {
     {
-        LOCK(cs_KeyStore);
+        LOCK(cs_SpendingKeyStore);
         if (!IsCrypted())
             return CBasicKeyStore::GetSpendingKey(address, skOut);
 
@@ -359,7 +359,7 @@ bool CCryptoKeyStore::GetSpendingKey(const libzcash::PaymentAddress &address, li
 bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
 {
     {
-        LOCK(cs_KeyStore);
+        LOCK2(cs_KeyStore, cs_SpendingKeyStore);
         if (!mapCryptedKeys.empty() || IsCrypted())
             return false;
 
