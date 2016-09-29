@@ -3205,7 +3205,7 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
     return ::AcceptToMemoryPool(mempool, state, *this, fLimitFree, NULL, fRejectAbsurdFee);
 }
 
-bool CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, size_t minDepth = 1, bool ignoreSpent)
+bool CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, int minDepth, bool ignoreSpent)
 {
     bool fFilterAddress = false;
     libzcash::PaymentAddress filterPaymentAddress;
@@ -3224,13 +3224,11 @@ bool CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, st
             continue;
         }
 
-        mapNoteData_t mapNoteData = FindMyNotes(wtx);
-
-        if (mapNoteData.size() == 0) {
+        if (wtx.mapNoteData.size() == 0) {
             continue;
         }
 
-        for (auto & pair : mapNoteData) {
+        for (auto & pair : wtx.mapNoteData) {
             JSOutPoint jsop = pair.first;
             CNoteData nd = pair.second;
             PaymentAddress pa = nd.address;
