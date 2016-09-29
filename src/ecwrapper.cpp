@@ -178,11 +178,13 @@ bool CECKey::Recover(const uint256 &hash, const unsigned char *p64, int rec)
 {
     if (rec<0 || rec>=3)
         return false;
-    ECDSA_SIG *sig = ECDSA_SIG_new();
-    BIGNUM *sig_r, *sig_s;
-    if (!(sig_r = BN_bin2bn(&p64[0],  32, nullptr)) ||
+    ECDSA_SIG *sig = nullptr;
+    BIGNUM *sig_r = nullptr, *sig_s = nullptr;
+    if (!(sig = ECDSA_SIG_new()) ||
+        !(sig_r = BN_bin2bn(&p64[0],  32, nullptr)) ||
         !(sig_s = BN_bin2bn(&p64[32], 32, nullptr)) ||
         !ECDSA_SIG_set0(sig, sig_r, sig_s)) {
+        ECDSA_SIG_free(sig);
         BN_free(sig_r);
         BN_free(sig_s);
         return false;

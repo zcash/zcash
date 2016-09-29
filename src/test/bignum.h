@@ -7,6 +7,7 @@
 #define BITCOIN_TEST_BIGNUM_H
 
 #include <algorithm>
+#include <cassert>
 #include <limits>
 #include <stdexcept>
 #include <stdint.h>
@@ -30,11 +31,13 @@ public:
     CBigNum()
     {
         bn = BN_new();
+        assert(bn);
     }
 
     CBigNum(const CBigNum& b)
     {
         bn = BN_new();
+        assert(bn);
         if (!BN_copy(bn, b.bn))
         {
             BN_clear_free(bn);
@@ -54,11 +57,12 @@ public:
         BN_clear_free(bn);
     }
 
-    CBigNum(long long n)          { bn = BN_new(); setint64(n); }
+    CBigNum(long long n)          { bn = BN_new(); assert(bn); setint64(n); }
 
     explicit CBigNum(const std::vector<unsigned char>& vch)
     {
         bn = BN_new();
+        assert(bn);
         setvch(vch);
     }
 
