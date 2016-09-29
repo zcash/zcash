@@ -191,9 +191,10 @@ bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
 
 
 bool CWallet::AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
+                                    const libzcash::ViewingKey &vk,
                                     const std::vector<unsigned char> &vchCryptedSecret)
 {
-    if (!CCryptoKeyStore::AddCryptedSpendingKey(address, vchCryptedSecret))
+    if (!CCryptoKeyStore::AddCryptedSpendingKey(address, vk, vchCryptedSecret))
         return false;
     if (!fFileBacked)
         return true;
@@ -201,10 +202,12 @@ bool CWallet::AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
         LOCK(cs_wallet);
         if (pwalletdbEncryption)
             return pwalletdbEncryption->WriteCryptedZKey(address,
+                                                         vk,
                                                          vchCryptedSecret,
                                                          mapZKeyMetadata[address]);
         else
             return CWalletDB(strWalletFile).WriteCryptedZKey(address,
+                                                             vk,
                                                              vchCryptedSecret,
                                                              mapZKeyMetadata[address]);
     }
@@ -233,9 +236,9 @@ bool CWallet::LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigne
     return CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret);
 }
 
-bool CWallet::LoadCryptedZKey(const libzcash::PaymentAddress &addr, const std::vector<unsigned char> &vchCryptedSecret)
+bool CWallet::LoadCryptedZKey(const libzcash::PaymentAddress &addr, const libzcash::ViewingKey &vk, const std::vector<unsigned char> &vchCryptedSecret)
 {
-    return CCryptoKeyStore::AddCryptedSpendingKey(addr, vchCryptedSecret);
+    return CCryptoKeyStore::AddCryptedSpendingKey(addr, vk, vchCryptedSecret);
 }
 
 bool CWallet::LoadZKey(const libzcash::SpendingKey &key)
