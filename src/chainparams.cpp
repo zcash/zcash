@@ -156,7 +156,7 @@ public:
             "ADDRESS41", "ADDRESS42", "ADDRESS43", "ADDRESS44",
             "ADDRESS45", "ADDRESS46", "ADDRESS47", "ADDRESS48",
             };
-        assert(vFoundersRewardAddress.size() < consensus.nSubsidyHalvingInterval + consensus.SubsidySlowStartShift());
+        assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
     }
 };
 static CMainParams mainParams;
@@ -236,7 +236,7 @@ public:
             "2N4ACsVCKMvJmtEb3Pd3xkqhJ3rLT4mYx1r", "2MtmMdabcwRJmenswaYtWA675df854KhUxD", "2N2h27Dd87eiGcm7ajvu4hJpXjTm9GkzvLZ", "2NGE19agRXU1EAK3PCLZWXERkpqyUexhk9r",
             "2N63112wMnBsXTaBFjbCTjW9LuyTXQmvEdw", "2NBkHxgkYZbU56zsoLNsP5WZVfMtBK6X8WK", "2N5pK7NfKo6d9qBmsKggpwuvQeMxGf65SLH", "2N5jHzgCg9a9uAcLaT2jij8WKTZzWbVNC5c",
         };
-        assert(vFoundersRewardAddress.size() < consensus.nSubsidyHalvingInterval + consensus.SubsidySlowStartShift());
+        assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
     }
 };
 static CTestNetParams testNetParams;
@@ -297,7 +297,7 @@ public:
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vFoundersRewardAddress = { "2N2e2FRfP9D1dRN1oRWkH7pbFM69eGNAuQ4" };
-        assert(vFoundersRewardAddress.size() < consensus.nSubsidyHalvingInterval + consensus.SubsidySlowStartShift());
+        assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
     }
 };
 static CRegTestParams regTestParams;
