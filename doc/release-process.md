@@ -11,6 +11,7 @@ Check all of the following:
   - Boost
   - ccache
   - libgmp
+  - libsnark (upstream of our fork)
   - libsodium
   - miniupnpc
   - OpenSSL
