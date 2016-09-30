@@ -1065,7 +1065,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     Array arr = retValue.get_array();
     BOOST_CHECK(arr.size() == n);
 
-    // Encrypt the wallet (we can''t call RPC encryptwallet as that shuts down node)
+    // Encrypt the wallet (we can't call RPC encryptwallet as that shuts down node)
     SecureString strWalletPass;
     strWalletPass.reserve(100);
     strWalletPass = "hello";

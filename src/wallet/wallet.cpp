@@ -200,16 +200,17 @@ bool CWallet::AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
         return true;
     {
         LOCK(cs_wallet);
-        if (pwalletdbEncryption)
+        if (pwalletdbEncryption) {
             return pwalletdbEncryption->WriteCryptedZKey(address,
                                                          vk,
                                                          vchCryptedSecret,
                                                          mapZKeyMetadata[address]);
-        else
+        } else {
             return CWalletDB(strWalletFile).WriteCryptedZKey(address,
                                                              vk,
                                                              vchCryptedSecret,
                                                              mapZKeyMetadata[address]);
+        }
     }
     return false;
 }
