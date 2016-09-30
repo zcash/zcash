@@ -19,17 +19,19 @@
 //
 // Enable this test to generate and print 48 testnet 2-of-3 multisig addresses.
 // The output can be copied into chainparams.cpp.
+// The temporary wallet file can be renamed as wallet.dat and used for testing with zcashd.
 //
 #if 0
 TEST(founders_reward_test, create_testnet_2of3multisig) {
     ECC_Start();
     SelectParams(CBaseChainParams::TESTNET);
     boost::filesystem::path temp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    const std::string path = temp.native();
+    const std::string path = temp.native() + "-wallet.dat";
     bool fFirstRun;
     auto pWallet = std::make_shared<CWallet>(path);
     ASSERT_EQ(DB_LOAD_OK, pWallet->LoadWallet(fFirstRun));
     pWallet->TopUpKeyPool();
+    std::cout << "Test wallet file path: " << path << std::endl;
     
     int numKeys = 48;
     std::vector<CPubKey> pubkeys;
@@ -65,6 +67,8 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
     }
     s += "    };";
     std::cout << s << std::endl;
+
+    pWallet->Flush(true);
 }
 #endif
 
