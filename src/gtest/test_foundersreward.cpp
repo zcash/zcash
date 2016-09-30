@@ -89,11 +89,12 @@ TEST(founders_reward_test, general) {
 
     CChainParams params = Params();
     
-    // For Testnet, the first address is derived from the old script. 
-    // FOUNDERS_REWARD_SCRIPT = a9146708e6670db0b950dac68031025cc5b63213a49187
-    //                address = 2N2e2FRfP9D1dRN1oRWkH7pbFM69eGNAuQ4
-    EXPECT_EQ(params.GetFoundersRewardScriptAtHeight(1), ParseHex("a9146708e6670db0b950dac68031025cc5b63213a49187"));
-    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(1), "2N2e2FRfP9D1dRN1oRWkH7pbFM69eGNAuQ4");
+    // First testnet reward:
+    // address = 2NF5QVDMtYBHaUzPLTxirybjwPjm9wVwacv
+    // script = OP_HASH160 ef775f1f997f122a062fff1a2d7443abd1f9c642 OP_EQUAL
+    // raw script = a914ef775f1f997f122a062fff1a2d7443abd1f9c64287
+    EXPECT_EQ(params.GetFoundersRewardScriptAtHeight(1), ParseHex("a914ef775f1f997f122a062fff1a2d7443abd1f9c64287"));
+    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(1), "2NF5QVDMtYBHaUzPLTxirybjwPjm9wVwacv");
 
     int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
     
