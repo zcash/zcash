@@ -442,7 +442,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
             const Array& caps = capsval.get_array();
             for (size_t i = 0; i < caps.size(); i++) {
                 auto cap = caps[i].get_str();
-                if (cap == "coinbaseval") {
+                if (cap == "coinbasevalue") {
                     coinbasetxn = false;
                 }
             }
@@ -548,7 +548,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
         // Clear pindexPrev so future calls make a new block, despite any failures from here on
         pindexPrev = NULL;
 
-        // Store the pindexBest used before CreateNewBlock, to avoid races
+        // Store the pindexBest used before CreateNewBlockWithKey, to avoid races
         nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
         CBlockIndex* pindexPrevNew = chainActive.Tip();
         nStart = GetTime();
@@ -564,7 +564,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 
-        // Need to update only after we know CreateNewBlock succeeded
+        // Need to update only after we know CreateNewBlockWithKey succeeded
         pindexPrev = pindexPrevNew;
     }
     CBlock* pblock = &pblocktemplate->block; // pointer for convenience
@@ -575,7 +575,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     static const Array aCaps = boost::assign::list_of("proposal");
 
-    Object txCoinbase;
+    Value txCoinbase = Value::null;
     Array transactions;
     map<uint256, int64_t> setTxIndex;
     int i = 0;
@@ -637,6 +637,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
     result.push_back(Pair("transactions", transactions));
     if (coinbasetxn) {
+        assert(txCoinbase.type() == obj_type);
         result.push_back(Pair("coinbasetxn", txCoinbase));
     } else {
         result.push_back(Pair("coinbaseaux", aux));
