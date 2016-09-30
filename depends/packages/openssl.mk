@@ -10,8 +10,6 @@ $(package)_config_opts=--prefix=$(host_prefix) --openssldir=$(host_prefix)/etc/o
 $(package)_config_opts+=no-afalgeng
 $(package)_config_opts+=no-asm
 $(package)_config_opts+=no-async
-$(package)_config_opts+=no-autoalginit
-$(package)_config_opts+=no-autoerrinit
 $(package)_config_opts+=no-bf
 $(package)_config_opts+=no-blake2
 $(package)_config_opts+=no-camellia
