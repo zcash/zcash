@@ -182,8 +182,9 @@ bool CECKey::Recover(const uint256 &hash, const unsigned char *p64, int rec)
     BIGNUM *sig_r = BN_bin2bn(&p64[0],  32, nullptr);
     BIGNUM *sig_s = BN_bin2bn(&p64[32], 32, nullptr);
     assert(sig && sig_r && sig_s);
-    assert(ECDSA_SIG_set0(sig, sig_r, sig_s));
-    bool ret = ECDSA_SIG_recover_key_GFp(pkey, sig, (unsigned char*)&hash, sizeof(hash), rec, 0) == 1;
+    bool ret = ECDSA_SIG_set0(sig, sig_r, sig_s);
+    assert(ret);
+    ret = ECDSA_SIG_recover_key_GFp(pkey, sig, (unsigned char*)&hash, sizeof(hash), rec, 0) == 1;
     ECDSA_SIG_free(sig);
     return ret;
 }
