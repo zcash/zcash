@@ -4,8 +4,7 @@ Security Warnings
 Security Audit
 --------------
 
-Zcash has not yet been subjected to a formal third-party security review. This
-section will be updated with links to security audit reports in the future.
+Zcash has been subjected to a formal third-party security review. For high priority security announcements, check https://z.cash. 
 
 x86-64 Linux Only
 -----------------------
