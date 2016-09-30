@@ -532,6 +532,11 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
     RenameThread("bitcoin-loadblk");
     // -reindex
     if (fReindex) {
+#ifdef ENABLE_WALLET
+        if (pwalletMain) {
+            pwalletMain->ClearNoteWitnessCache();
+        }
+#endif
         CImportingNow imp;
         int nFile = 0;
         while (true) {

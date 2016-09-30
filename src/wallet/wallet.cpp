@@ -625,6 +625,16 @@ void CWallet::AddToSpends(const uint256& wtxid)
     }
 }
 
+void CWallet::ClearNoteWitnessCache()
+{
+    LOCK(cs_wallet);
+    for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+        for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
+            item.second.witnesses.clear();
+        }
+    }
+}
+
 void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                                      const CBlock* pblockIn,
                                      ZCIncrementalMerkleTree tree)
