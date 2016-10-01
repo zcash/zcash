@@ -143,19 +143,18 @@ public:
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vFoundersRewardAddress = {
-            "ADDRESS1", "ADDRESS2", "ADDRESS3", "ADDRESS4",
-            "ADDRESS5", "ADDRESS6", "ADDRESS7", "ADDRESS8",
-            "ADDRESS9", "ADDRESS10", "ADDRESS11", "ADDRESS12",
-            "ADDRESS13", "ADDRESS14", "ADDRESS15", "ADDRESS16",
-            "ADDRESS17", "ADDRESS18", "ADDRESS19", "ADDRESS20",
-            "ADDRESS21", "ADDRESS22", "ADDRESS23", "ADDRESS24",
-            "ADDRESS25", "ADDRESS26", "ADDRESS27", "ADDRESS28",
-            "ADDRESS29", "ADDRESS30", "ADDRESS31", "ADDRESS32",
-            "ADDRESS33", "ADDRESS34", "ADDRESS35", "ADDRESS36",
-            "ADDRESS37", "ADDRESS38", "ADDRESS39", "ADDRESS40",
-            "ADDRESS41", "ADDRESS42", "ADDRESS43", "ADDRESS44",
-            "ADDRESS45", "ADDRESS46", "ADDRESS47", "ADDRESS48",
-            };
+            "3G9jrP2booTPMDLpHpz5tfvUDNhhF6BXPA", "3FE1e5eAUDDJS2vuPgFCcFqAf5nswXJ3NP", "3Q6UzRpXZJM1q8QT6QWkPD4Vm33ZR3gYki", "3D3VqtdjePHgHZKZ6U6Kj9DLnK37RYkxqf",
+            "3KsyrZagqiWop27ZmStPP4v3weRMbvpU5F", "3F2RKNQZvtqcKaW36oTS2LGy37RxxshGXS", "37iaAcocxmBfnrgrcQw2n9tC2dNj16f6gu", "3JL9iA8hSnAZ9VWYoVU5rdozax9hv65XFa",
+            "3JcBvC299zBqKVvJXmvLgXEcXHCm4EY7kR", "3HNYRVzMxrtzGHSSVd9D4iQCCScs8DL7w5", "3JVMcA1Sf6NxVU5bCp8g9xDRc4U9bkJUDi", "3N5nParFFNrhdyvJAKo2qu9tF3aAS3pBVf",
+            "3GYg958NgmTfAv82rVxKaFXZygLBQqCfHC", "32uim4XvTJ93BgNtxwQn9onaW3vgbVgv42", "36QSmW19FeUTyZfV55LmPZ9gSKsykayWDj", "3CM6SAEbfi4PcdNYnWFu1CCN7cqQRUkCJ4",
+            "37BoW4U7v3zMmpjD6qsUXfsLzxGqPeNxzv", "3Jzcs4RTQYycRKUiZ1XaqkGphw3vp34yds", "32KnSrYKK7QheD2msrBnbqXCS2uQpNS43y", "3L8n5dPFYkTtkUsTqKVhdNZeYHs8GfeEYi",
+            "33n6xxNHQzwXYGbhSGEdBKUASn3JaAWB5C", "34mVHc7mPhuoaRcymEsMHRLYJZHzMTmFMH", "3Lfcdsj7G8oXsLy7PzpxYd61xsoKRTN3Qd", "3NHFaDoEMFP7kojSkPyEyFyoPz2NqaT23w",
+            "3PXoXwApPgZHWc8Mh8mE3ETBoCgD3pzcFY", "34np9aGVNWdUQXg7ZaCfK6o7L2hYPERQJW", "3H6FHDSbqEpV346pvxUTMLgGTkBxN7bHjh", "3HRTS3YWc4rzSFawH6pf2maasBK8FcUUkN",
+            "3ADiBFGpSJnZEsrpDtyHw5haYTr28PFniR", "3CMRxVdrYNGgQ4nhuFFVG1A6ZhvjEfk3YL", "36iPNEHP4dh3j7AXZHqutQRUissu9oYmAN", "3HiRQfSQfLhi65V9WuXZGK11y2xCqphka8",
+            "31vWyvVDoSSCDs17tMhscbDrvLr79SMXuk", "3LD9NqF9c7e542rYvZHRJsoA5mhsgtqgG9", "34dPRHzi1PqPB78Hvs7U4FdH7s2Xg3At67", "3FbK44VH2vzJ4t1WcTzRcvgwFY4CpPLAwK",
+            "3BSdnxeYARKZ1nDnUEMBBKnd3jh6HoGc2R", "3Kd3Fy8HnmCgybLE6ENqBt6T98Z8eAre1r", "36sPVoc9S32ZGZaDZuy66NcKCTM8CjvX83", "3EvQApCtxwLy3UwuhNPdWmDJxRwaAecCs1",
+            "3Pt8dBVuTjMEU3nsjwQxKjpN2o8jt84p7h", "357TXhYimgNg9hUWn15AXCAezhK4M2poCe", "39MRrWWudf2pkCiaTbZU3Z2SAJbuB8pC2a", "33mZ6wiv6jQcHxeMbzs9h1qst6pbRXXQoF",
+        };
         assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
     }
 };
