@@ -72,8 +72,9 @@ def template_to_bytes(tmpl, txlist):
     blkver = pack('<L', tmpl['version'])
     mrklroot = genmrklroot(list(dblsha(a) for a in txlist))
     timestamp = pack('<L', tmpl['curtime'])
-    nonce = b'\0\0\0\0'
-    blk = blkver + a2b_hex(tmpl['previousblockhash'])[::-1] + mrklroot + timestamp + a2b_hex(tmpl['bits'])[::-1] + nonce
+    nonce = b'\0'*32
+    soln = b'\0'
+    blk = blkver + a2b_hex(tmpl['previousblockhash'])[::-1] + mrklroot + a2b_hex(tmpl['reserved'])[::-1] + timestamp + a2b_hex(tmpl['bits'])[::-1] + nonce + soln
     blk += varlenEncode(len(txlist))
     for tx in txlist:
         blk += tx
