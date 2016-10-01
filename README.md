@@ -36,28 +36,12 @@ information or see http://opensource.org/licenses/MIT.
 Komodo Specific Notes
 =====================
  
-Installation of BDB
--------------------
- 
-```
-#If you do not have BDB installed, do the following:
-wget http://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz
-tar -xvf db-4.8.30.NC.tar.gz
-cd db-4.8.30.NC/
-mkdir -p build
-BDB_PREFIX=$(pwd)/build
-cd build
-../dist/configure --disable-shared --enable-cxx --with-pic --prefix=$BDB_PREFIX
-make install
-cd ../..
-```
- 
 Dependencies
 ------------
  
 ```
 #The following packages are needed:
-sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libboost-all-dev libssl-dev libprotobuf-dev protobuf-compiler libqt4-dev libqrencode-dev
+sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libboost-all-dev libssl-dev libprotobuf-dev protobuf-compiler libqt4-dev libqrencode-dev libdb++-dev
 ```
  
 Komodo
@@ -90,6 +74,10 @@ rpcuser=bitcoinrpc
 rpcpassword=password
 addnode="5.9.102.210"
 addnode="78.47.196.146"
+addnode="178.63.69.164"
+addnode="88.198.65.74"
+addnode="5.9.122.241"
+addnode="144.76.94.38"
 ```
  
 Start mining
@@ -107,6 +95,6 @@ komodo/src/komodo-cli getinfo
 ps aux | grep komodod
  
 #To view komodod output:
-gedit ~/.komodo.debug.log
+tail -f ~/.komodo/debug.log
 ```
 
