@@ -354,6 +354,14 @@ std::string CChainParams::GetFoundersRewardAddressAtHeight(int nHeight) const {
 CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {
     assert(nHeight > 0 && nHeight <= consensus.GetLastFoundersRewardBlockHeight());
 
+    // #1398 START
+    // We can remove this code when miner_tests no longer expect this script
+    if (fMinerTestModeForFoundersRewardScript) {
+        auto rewardScript = ParseHex("a9146708e6670db0b950dac68031025cc5b63213a49187");
+        return CScript(rewardScript.begin(), rewardScript.end());
+    }
+    // #1398 END
+
     CBitcoinAddress address(GetFoundersRewardAddressAtHeight(nHeight).c_str());
     assert(address.IsValid());
     assert(address.IsScript());
