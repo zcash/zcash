@@ -47,9 +47,6 @@ class CValidationState;
 
 struct CNodeStateStats;
 
-// This is a 2-of-3 multisig P2SH
-static const char *FOUNDERS_REWARD_SCRIPT = "a9146708e6670db0b950dac68031025cc5b63213a49187";
-
 /** Default for -blockmaxsize and -blockminsize, which control the range of sizes the mining code will create **/
 static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 750000;
 static const unsigned int DEFAULT_BLOCK_MIN_SIZE = 0;
