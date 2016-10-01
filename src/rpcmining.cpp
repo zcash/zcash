@@ -635,6 +635,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("capabilities", aCaps));
     result.push_back(Pair("version", pblock->nVersion));
     result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
+    result.push_back(Pair("reserved", pblock->hashReserved.GetHex()));
     result.push_back(Pair("transactions", transactions));
     if (coinbasetxn) {
         assert(txCoinbase.type() == obj_type);
