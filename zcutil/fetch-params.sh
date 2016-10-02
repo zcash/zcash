@@ -21,13 +21,8 @@ function fetch_params {
     if ! [ -f "$output" ]
     then
         echo "Retrieving: $url"
-        # Note: --no-check-certificate should be ok, since we rely on
-        # sha256 for integrity, and there's no confidentiality requirement.
-        # Our website uses letsencrypt certificates which are not supported
-        # by some wget installations, so we expect some cert failures.
         wget \
             --progress=dot:giga \
-            --no-check-certificate \
             --output-document="$dlname" \
             --continue \
             "$url"
