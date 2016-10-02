@@ -27,7 +27,7 @@ In `configure.ac` and `clientversion.h`:
 - Increment `CLIENT_VERSION_BUILD` according to the following schema:
 
   - 0-24: `1.0.0-beta1`-`1.0.0-beta25`
-  - 25-49: `1.0.0-rc1-1.0.0-rc25`
+  - 25-49: `1.0.0-rc1`-`1.0.0-rc25`
   - 50: `1.0.0`
   - 51-99: `1.0.0-1`-`1.0.0-49`
   - (`CLIENT_VERSION_REVISION` rolls over)
