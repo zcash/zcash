@@ -55,7 +55,7 @@ cd komodo
 # This command might finish with: configure: error: libgmp headers missing. This can be ignored.
 ./zcutil/fetch-params.sh
 cp ~/.zcash-params/testnet3/z9* ~/.zcash-params
-./zcutil/build.sh -j8  # -j8 uses 8 threads
+./zcutil/build.sh -j8  # -j8 uses 8 threads - replace 8 with number of threads you want to use
 #This can take some time.
 ```
  
@@ -66,18 +66,17 @@ Create komodo.conf
 cd ~
 mkdir .komodo
 cd .komodo
-gedit komodo.conf
-#For the above, you can use any text editor other than gedit.
+pico komodo.conf
 #Add the following lines to the komodo.conf file:
- 
+
 rpcuser=bitcoinrpc
 rpcpassword=password
-addnode="5.9.102.210"
-addnode="78.47.196.146"
-addnode="178.63.69.164"
-addnode="88.198.65.74"
-addnode="5.9.122.241"
-addnode="144.76.94.38"
+addnode=5.9.102.210
+addnode=78.47.196.146
+addnode=178.63.69.164
+addnode=88.198.65.74
+addnode=5.9.122.241
+addnode=144.76.94.38
 ```
  
 Start mining
@@ -86,13 +85,14 @@ Start mining
 ```
 cd ~
 cd komodo
-#Go to your komodo directory
+#This starts komodo as a process - replace genproclimit with number of threads you want to use:
 ./src/komodod -gen=1 -genproclimit=1 &
-#This starts komodo as a process
-komodo/src/komodo-cli getinfo
- 
+
+#This will get the stats:
+./src/komodo-cli getinfo
+
 #To view the process:
-ps aux | grep komodod
+ps -ef | grep komodod
  
 #To view komodod output:
 tail -f ~/.komodo/debug.log
