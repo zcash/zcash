@@ -85,9 +85,11 @@ void ThreadSendAlert()
     //  1000 for Misc warnings like out of disk space and clock is wrong
     //  2000 for longer invalid proof-of-work chain 
     //  Higher numbers mean higher priority
+    //  4000 or higher will put the RPC into safe mode
     alert.nPriority     = 5000;
     alert.strComment    = "";
     alert.strStatusBar  = "URGENT: Upgrade required: see https://z.cash";
+    alert.strRPCError   = "URGENT: Upgrade required: see https://z.cash";
 
     // Set specific client version/versions here. If setSubVer is empty, no filtering on subver is done:
     // alert.setSubVer.insert(std::string("/Satoshi:0.7.2/"));
