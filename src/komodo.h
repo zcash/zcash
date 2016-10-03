@@ -41,7 +41,7 @@ int32_t komodo_checkmsg(void *bitcoinpeer,uint8_t *data,int32_t datalen)
     return(0);
 }
 
-int32_t komodo_blockhdrcheck(CBlockHeader *blockhdr,uint32_t *nBitsp)
+int32_t komodo_blockhdrcheck(const CBlockHeader *blockhdr,uint32_t *nBitsp)
 {
     if ( komodo_is_notaryblock(blockhdr) != 0 )
         *nBitsp = KOMODO_MINDIFF_NBITS;
