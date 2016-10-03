@@ -52,8 +52,8 @@ double benchmark_sleep()
 double benchmark_parameter_loading()
 {
     // FIXME: this is duplicated with the actual loading code
-    boost::filesystem::path pk_path = ZC_GetParamsDir() / "z9-proving.key";
-    boost::filesystem::path vk_path = ZC_GetParamsDir() / "z9-verifying.key";
+    boost::filesystem::path pk_path = ZC_GetParamsDir() / "beta2-proving.key";
+    boost::filesystem::path vk_path = ZC_GetParamsDir() / "beta2-verifying.key";
 
     struct timeval tv_start;
     timer_start(tv_start);
