@@ -55,7 +55,9 @@ cd komodo
 # This command might finish with: configure: error: libgmp headers missing. This can be ignored.
 ./zcutil/fetch-params.sh
 cp ~/.zcash-params/testnet3/z9* ~/.zcash-params
-./zcutil/build.sh -j8  # -j8 uses 8 threads - replace 8 with number of threads you want to use
+
+# -j8 uses 8 threads - replace 8 with number of threads you want to use
+./zcutil/build.sh -j8
 #This can take some time.
 ```
  
@@ -93,6 +95,9 @@ cd komodo
 
 #To view the process:
 ps -ef | grep komodod
+
+#Once you have the process number (eg 25567) you can type the following to kill komodo mining:
+kill 25567 
  
 #To view komodod output:
 tail -f ~/.komodo/debug.log

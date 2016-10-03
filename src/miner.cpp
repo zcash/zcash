@@ -405,14 +405,22 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 //
 // Internal miner
 //
+extern int32_t IS_KOMODO_NOTARY;
+extern std::string NOTARY_PUBKEY;
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
     CPubKey pubkey;
-    if (!reservekey.GetReservedKey(pubkey))
-        return NULL;
-
-    CScript scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
+    if ( IS_KOMODO_NOTARY == 0 )
+    {
+        if (!reservekey.GetReservedKey(pubkey))
+            return NULL;
+        CScript scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
+    }
+    else
+    {
+        CScript scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY.get_str()) << OP_CHECKSIG;
+    }
     return CreateNewBlock(scriptPubKey);
 }
 
@@ -429,7 +437,8 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
     }
 
     // Remove key from key pool
-    reservekey.KeepKey();
+    if ( IS_KOMODO_NOTARY == 0 )
+        reservekey.KeepKey();
 
     // Track how many getdata requests this block gets
     {

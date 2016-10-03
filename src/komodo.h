@@ -20,6 +20,7 @@
 #include <stdio.h>
 
 int32_t IS_KOMODO_NOTARY;
+std::string NOTARY_PUBKEY;
 
 int32_t komodo_is_notaryblock(void *block)
 {

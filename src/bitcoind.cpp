@@ -119,7 +119,10 @@ bool AppInit(int argc, char* argv[])
             exit(1);
         }
         extern int32_t IS_KOMODO_NOTARY;
+        extern std::string NOTARY_PUBKEY;
         IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
+        NOTARY_PUBKEY = GetArg("-pubkey", "");
+
 #ifndef WIN32
         fDaemon = GetBoolArg("-daemon", false);
         if (fDaemon)
