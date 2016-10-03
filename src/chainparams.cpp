@@ -111,15 +111,19 @@ public:
         //vSeeds.push_back(CDNSSeedData("xf2.org", "bitseed.xf2.org")); // Jeff Garzik
         //vSeeds.push_back(CDNSSeedData("bitcoin.jonasschnelli.ch", "seed.bitcoin.jonasschnelli.ch")); // Jonas Schnelli
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,0);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,128);
-        base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x88)(0xB2)(0x1E).convert_to_container<std::vector<unsigned char> >();
-        base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x88)(0xAD)(0xE4).convert_to_container<std::vector<unsigned char> >();
-        // guarantees the first two characters, when base58 encoded, are "zc"
-        base58Prefixes[ZCPAYMENT_ADDRRESS] = {22,154};
-        // guarantees the first two characters, when base58 encoded, are "SK"
-        base58Prefixes[ZCSPENDING_KEY] = {171,54};
+        // guarantees the first 2 characters, when base58 encoded, are "t1"
+        base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
+        // guarantees the first 2 characters, when base58 encoded, are "t3"
+        base58Prefixes[SCRIPT_ADDRESS]     = {0x1C,0xBD};
+        // the first character, when base58 encoded, is "5" or "K" or "L" (as in Bitcoin)
+        base58Prefixes[SECRET_KEY]         = {0x80};
+        // do not rely on these BIP32 prefixes; they are not specified and may change
+        base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x88,0xB2,0x1E};
+        base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x88,0xAD,0xE4};
+        // guarantees the first 2 characters, when base58 encoded, are "zc"
+        base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x16,0x9A};
+        // guarantees the first 2 characters, when base58 encoded, are "SK"
+        base58Prefixes[ZCSPENDING_KEY]     = {0xAB,0x36};
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
@@ -177,13 +181,19 @@ public:
         vSeeds.clear();
         vSeeds.push_back(CDNSSeedData("z.cash", "dnsseed.testnet.z.cash")); // Zcash
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239);
-        base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x35)(0x87)(0xCF).convert_to_container<std::vector<unsigned char> >();
-        base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x35)(0x83)(0x94).convert_to_container<std::vector<unsigned char> >();
-        base58Prefixes[ZCPAYMENT_ADDRRESS] = {20,81};
-        base58Prefixes[ZCSPENDING_KEY] = {177,235};
+        // guarantees the first 2 characters, when base58 encoded, are "tm"
+        base58Prefixes[PUBKEY_ADDRESS]     = {0x1D,0x25};
+        // guarantees the first 2 characters, when base58 encoded, are "t2"
+        base58Prefixes[SCRIPT_ADDRESS]     = {0x1C,0xBA};
+        // the first character, when base58 encoded, is "9" or "c" (as in Bitcoin)
+        base58Prefixes[SECRET_KEY]         = {0xEF};
+        // do not rely on these BIP32 prefixes; they are not specified and may change
+        base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x35,0x87,0xCF};
+        base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x35,0x83,0x94};
+        // guarantees the first 2 characters, when base58 encoded, are "zt"
+        base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x16,0xB6};
+        // guarantees the first 2 characters, when base58 encoded, are "ST"
+        base58Prefixes[ZCSPENDING_KEY]     = {0xAC,0x08};
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
 
