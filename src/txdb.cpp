@@ -266,7 +266,7 @@ bool CBlockTreeDB::ReadFlag(const std::string &name, bool &fValue) {
     return true;
 }
 
-int32_t komodo_blockcheck(void *block,uint32_t *nBitsp);
+int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp);
 
 bool CBlockTreeDB::LoadBlockIndexGuts()
 {
@@ -308,7 +308,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 
                 int32_t retval; uint32_t nBits;
                 nBits = pindexNew->nBits;
-                if ( (retval= komodo_blockcheck((void *)pindexNew,&nBits)) == 0 )
+                if ( (retval= komodo_blockindexcheck(pindexNew,&nBits)) == 0 )
                 {
                     if (!CheckProofOfWork(pindexNew->GetBlockHash(), nBits, Params().GetConsensus()))
                         return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());

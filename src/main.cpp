@@ -41,7 +41,7 @@ using namespace std;
 # error "Bitcoin cannot be compiled without assertions."
 #endif
 
-int32_t komodo_blockcheck(void *block,uint32_t *nBitsp);
+#include "komodo.h"
 
 /**
  * Global state
@@ -1352,7 +1352,7 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
 
     // Check the header
     nBits = block.nBits;
-    if ( (retval= komodo_blockcheck((void *)&block,&nBits)) == 0 )
+    if ( (retval= komodo_blockcheck(&block,&nBits)) == 0 )
     {
         if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(block.GetHash(), nBits, Params().GetConsensus())))
             return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
@@ -2503,6 +2503,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     BOOST_FOREACH(const CTransaction &tx, pblock->vtx) {
         SyncWithWallets(tx, pblock);
     }
+    komodo_connectblock(pblock);
     // Update cached incremental witnesses
     GetMainSignals().ChainTip(pindexNew, pblock, oldTree, true);
 
@@ -2950,7 +2951,7 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
     if (block.GetBlockTime() > GetAdjustedTime() + 60)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
     nBits = block.nBits;
-    if ( (retval= komodo_blockcheck((void *)&block,&nBits)) == 0 )
+    if ( (retval= komodo_blockhdrcheck(&block,&nBits)) == 0 )
     {
         // Check Equihash solution is valid
         if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
@@ -4106,7 +4107,6 @@ string GetWarnings(string strFor)
 //
 // Messages
 //
-#include "komodo.h"
 
 
 bool static AlreadyHave(const CInv& inv)
