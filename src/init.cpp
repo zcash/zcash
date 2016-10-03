@@ -1479,6 +1479,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Generate coins in the background
     if (pwalletMain)
         GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1));
+    extern int32_t IS_KOMODO_NOTARY;
+    extern std::string NOTARY_PUBKEY;
+    IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
+    NOTARY_PUBKEY = GetArg("-pubkey", "");
+
 #endif
 
     // ********************************************************* Step 11: finished

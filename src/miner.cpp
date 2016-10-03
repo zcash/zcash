@@ -410,16 +410,16 @@ extern std::string NOTARY_PUBKEY;
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
-    CPubKey pubkey;
+    CPubKey pubkey; CScript scriptPubKey;
     if ( IS_KOMODO_NOTARY == 0 )
     {
         if (!reservekey.GetReservedKey(pubkey))
             return NULL;
-        CScript scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
+        scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
     }
     else
     {
-        CScript scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY.get_str()) << OP_CHECKSIG;
+        scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
     }
     return CreateNewBlock(scriptPubKey);
 }
