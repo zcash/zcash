@@ -414,9 +414,9 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     if (!reservekey.GetReservedKey(pubkey))
         return NULL;
     scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
-    if ( IS_KOMODO_NOTARY != 0 )
+    if ( USE_EXTERNAL_PUBKEY != 0 )
     {
-        fprintf(stderr,"use notary pubkey\n");
+        //fprintf(stderr,"use notary pubkey\n");
         scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
     }
     return CreateNewBlock(scriptPubKey);
@@ -495,7 +495,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 } while (true);
                 fprintf(stderr,"Found peers\n");
             }
-            fprintf(stderr,"create new block\n");
+            //fprintf(stderr,"create new block\n");
             //
             // Create new block
             //

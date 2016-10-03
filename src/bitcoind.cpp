@@ -53,7 +53,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 //
 // Start
 //
-extern int32_t IS_KOMODO_NOTARY;
+extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
 extern std::string NOTARY_PUBKEY;
 
 bool AppInit(int argc, char* argv[])
@@ -111,8 +111,10 @@ bool AppInit(int argc, char* argv[])
         }
         IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
         NOTARY_PUBKEY = GetArg("-pubkey", "");
+        if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
+            USE_EXTERNAL_PUBKEY = 1;
         fprintf(stderr,"IS_KOMODO_NOTARY %d %s\n",IS_KOMODO_NOTARY,NOTARY_PUBKEY.c_str());
-
+        
         // Command-line RPC
         bool fCommandLine = false;
         for (int i = 1; i < argc; i++)
