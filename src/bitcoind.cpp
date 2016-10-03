@@ -53,6 +53,9 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 //
 // Start
 //
+extern int32_t IS_KOMODO_NOTARY;
+extern std::string NOTARY_PUBKEY;
+
 bool AppInit(int argc, char* argv[])
 {
     boost::thread_group threadGroup;
@@ -106,10 +109,9 @@ bool AppInit(int argc, char* argv[])
             fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
             return false;
         }
-        extern int32_t IS_KOMODO_NOTARY;
-        extern std::string NOTARY_PUBKEY;
         IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
-        NOTARY_PUBKEY = GetArg("-pubkey", "");
+        fprintf(stderr,"IS_KOMODO_NOTARY %d\n",IS_KOMODO_NOTARY);
+        //NOTARY_PUBKEY = GetArg("-pubkey", "");
 
         // Command-line RPC
         bool fCommandLine = false;
