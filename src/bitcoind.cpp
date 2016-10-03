@@ -106,6 +106,10 @@ bool AppInit(int argc, char* argv[])
             fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
             return false;
         }
+        extern int32_t IS_KOMODO_NOTARY;
+        extern std::string NOTARY_PUBKEY;
+        IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
+        NOTARY_PUBKEY = GetArg("-pubkey", "");
 
         // Command-line RPC
         bool fCommandLine = false;
