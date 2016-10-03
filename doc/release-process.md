@@ -56,7 +56,7 @@ Do the normal pull-request, review, testing process for this release PR.
 
 ### C1. Ensure depends tree is working
 
-http://ci.leastauthority.com:8010/builders/depends-sources
+https://ci.z.cash/builders/depends-sources
 
 ### C2. Ensure public parameters work
 
@@ -73,18 +73,26 @@ previous merged PR, then:
     $ git push origin zc.v${ZCASH_RELEASE}
 
 ## E. deploy testnet
+
+Notify the Zcash DevOps engineer/sysadmin that the release has been tagged. They update some variables in the company's automation code and then run an Ansible playbook, which:
+
+* builds Zcash based on the specified branch
+* deploys it as a public service (e.g. betatestnet.z.cash, mainnet.z.cash)
+* often the same server can be re-used, and the role idempotently handles upgrades, but if not then they also need to update DNS records
+* possible manual steps: blowing away the `testnet3` dir, deleting old parameters, restarting DNS seeder
+* finally, verify that nodes can connect to the testnet server.
+
 ## F. publish the release announcement (blog, zcash-dev, slack)
 ## G. celebrate
 ## missing steps
-
 Zcash still needs:
 
-* deterministic build
+* deterministic or reproducible builds
 
-* signatured tags
+* signed git tags
 
 * thorough pre-release testing (presumably more thorough than standard PR tests)
 
 * release deployment steps (eg: updating build-depends mirror, deploying testnet, etc...)
 
-* proper zcash-specific versions and names in software and documentation.
+* proper Zcash-specific versions and names in software and documentation.
