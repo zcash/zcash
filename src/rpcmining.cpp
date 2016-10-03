@@ -115,7 +115,7 @@ Value getgenerate(const Array& params, bool fHelp)
     return GetBoolArg("-gen", false);
 }
 
-int32_t komodo_blockcheck(void *block,uint32_t *nBitsp);
+int32_t komodo_blockcheck(CBlock *block,uint32_t *nBitsp);
 
 Value generate(const Array& params, bool fHelp)
 {
@@ -196,7 +196,7 @@ Value generate(const Array& params, bool fHelp)
                 int32_t retval; uint32_t nBits;
                 pblock->nSolution = soln;
                 nBits = pblock->nBits;
-                if ( (retval= komodo_blockcheck((void *)pblock,&nBits)) == 0 )
+                if ( (retval= komodo_blockcheck(pblock,&nBits)) == 0 )
                 {
                     return CheckProofOfWork(pblock->GetHash(), nBits, Params().GetConsensus());
                 }
