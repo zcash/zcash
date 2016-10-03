@@ -22,15 +22,15 @@
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
 std::string NOTARY_PUBKEY;
 
-int32_t komodo_is_notaryblock(uint8_t *pblock,uint8_t *coinbase,uint8_t *minerout)
+int32_t komodo_is_notaryblock(uint8_t *pblock)
 {
-    int32_t i;
+    /*int32_t i;
     for (i=0; i<5; i++)
         printf("%02x",coinbase[i]);
     printf(" <- coinbase\n");
     for (i=0; i<35; i++)
         printf("%02x",minerout[i]);
-    printf(" <- minerout\n");
+    printf(" <- minerout\n");*/
     return(0);
 }
 
