@@ -110,8 +110,8 @@ bool AppInit(int argc, char* argv[])
             return false;
         }
         IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
-        fprintf(stderr,"IS_KOMODO_NOTARY %d\n",IS_KOMODO_NOTARY);
         NOTARY_PUBKEY = GetArg("-pubkey", "");
+        fprintf(stderr,"IS_KOMODO_NOTARY %d %s\n",IS_KOMODO_NOTARY,NOTARY_PUBKEY.c_str());
 
         // Command-line RPC
         bool fCommandLine = false;
