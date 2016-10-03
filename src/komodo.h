@@ -22,6 +22,12 @@
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
 std::string NOTARY_PUBKEY;
 
+int32_t komodo_checkmsg(void *bitcoinpeer,uint8_t *data,int32_t datalen)
+{
+    fprintf(stderr,"KOMODO.[%d] message from peer.%p\n",datalen,bitcoinpeer);
+    return(0);
+}
+
 void komodo_connectblock(CBlock *block)
 {
     // update voting results and official (height, notaries[])
@@ -35,17 +41,10 @@ int32_t komodo_is_notaryblock(CBlockHeader *blockhdr)
     return(0);
 }
 
-int32_t komodo_checkmsg(void *bitcoinpeer,uint8_t *data,int32_t datalen)
-{
-    fprintf(stderr,"KOMODO.[%d] message from peer.%p\n",datalen,bitcoinpeer);
-    return(0);
-}
-
 int32_t komodo_blockhdrcheck(const CBlockHeader *blockhdr,uint32_t *nBitsp)
 {
     if ( komodo_is_notaryblock((CBlockHeader *)blockhdr) != 0 )
         *nBitsp = KOMODO_MINDIFF_NBITS;
-    //fprintf(stderr,"check block %p\n",block);
     // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS
     // -1 -> invalid, ie, prior to notarized block
     return(0); // normal PoW block
@@ -53,12 +52,11 @@ int32_t komodo_blockhdrcheck(const CBlockHeader *blockhdr,uint32_t *nBitsp)
 
 int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 {
-    
+    return(0); // normal PoW block
 }
 
 int32_t komodo_blockcheck(CBlock *block,uint32_t *nBitsp)
 {
-    //fprintf(stderr,"check block %p\n",block);
     // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS
     // -1 -> invalid, ie, prior to notarized block
     return(0); // normal PoW block
