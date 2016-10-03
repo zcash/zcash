@@ -367,7 +367,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->hashReserved   = uint256();
         UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
         extern int32_t IS_KOMODO_NOTARY;
-        if ( IS_KOMODO_NOTARY != 0 )
+        if ( 0 && IS_KOMODO_NOTARY != 0 )
             pblock->nBits = KOMODO_MINDIFF_NBITS;
         else pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         pblock->nSolution.clear();
