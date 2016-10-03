@@ -405,7 +405,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 //
 // Internal miner
 //
-extern int32_t IS_KOMODO_NOTARY;
+extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
 extern std::string NOTARY_PUBKEY;
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
