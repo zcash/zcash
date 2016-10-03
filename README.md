@@ -87,8 +87,15 @@ Start mining
 ```
 cd ~
 cd komodo
-#This starts komodo as a process - replace genproclimit with number of threads you want to use:
-./src/komodod -gen=1 -genproclimit=1 &
+
+./src/komodo-cli listreceivedbyaddress 0 true
+#This will give you your wallet address
+
+./src/komodo-cli validateaddress RJeXg8vtvyC5vmB1WGsPnbHH4C6HLY42BK
+#This will return your pubkey eg. "0259e137e5594cf8287195d13aed816af75bd5c04ae673296b51f66e7e8346e8d8" for your address
+
+./src/komodod -gen -genproclimit=2 -notary -pubkey="0259e137e5594cf8287195d13aed816af75bd5c04ae673296b51f66e7e8346e8d8" &
+#This starts komodo notary - replace genproclimit with number of threads you want to use
 
 #This will get the stats:
 ./src/komodo-cli getinfo
