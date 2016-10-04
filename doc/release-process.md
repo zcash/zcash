@@ -94,7 +94,8 @@ Notify the Zcash DevOps engineer/sysadmin that the release has been tagged. They
 * deploys it as a public service (e.g. betatestnet.z.cash, mainnet.z.cash)
 * often the same server can be re-used, and the role idempotently handles upgrades, but if not then they also need to update DNS records
 * possible manual steps: blowing away the `testnet3` dir, deleting old parameters, restarting DNS seeder
-* finally, verify that nodes can connect to the testnet server.
+
+Then, verify that nodes can connect to the testnet server, and update the guide on the wiki to ensure the correct hostname is listed in the recommended zcash.conf.
 
 ## F. publish the release announcement (blog, zcash-dev, slack)
 ## G. celebrate
