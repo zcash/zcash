@@ -73,6 +73,7 @@ pico komodo.conf
 
 rpcuser=bitcoinrpc
 rpcpassword=password
+txindex=1
 addnode=5.9.102.210
 addnode=78.47.196.146
 addnode=178.63.69.164
