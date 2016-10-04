@@ -233,10 +233,7 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[2].z_getbalance(mytaddr), Decimal('10.0'));
 
         # add zaddr to node 2
-        # payment address: tneMWwNSjPkPaz7p5ed3XJbrz8XwpfBvaha3jaGU26EstNN8HKMYVyzgwMmVcmtaw7b5uuaF4Hr8P4UPZEMkuTkXQa8STzF
-        # spending key: TKWRfN47drnaFDbHBSYT2McbPjbmFjjTrGuntj3tAMnnGDg2Kp19
-        self.nodes[2].z_importkey("TKWRfN47drnaFDbHBSYT2McbPjbmFjjTrGuntj3tAMnnGDg2Kp19")
-        myzaddr = "tneMWwNSjPkPaz7p5ed3XJbrz8XwpfBvaha3jaGU26EstNN8HKMYVyzgwMmVcmtaw7b5uuaF4Hr8P4UPZEMkuTkXQa8STzF"
+        myzaddr = self.nodes[2].z_getnewaddress()
 
         # send node 2 taddr to zaddr
         recipients = []

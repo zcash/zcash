@@ -113,15 +113,19 @@ public:
         //vSeeds.push_back(CDNSSeedData("xf2.org", "bitseed.xf2.org")); // Jeff Garzik
         //vSeeds.push_back(CDNSSeedData("bitcoin.jonasschnelli.ch", "seed.bitcoin.jonasschnelli.ch")); // Jonas Schnelli
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,0);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,128);
-        base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x88)(0xB2)(0x1E).convert_to_container<std::vector<unsigned char> >();
-        base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x88)(0xAD)(0xE4).convert_to_container<std::vector<unsigned char> >();
-        // guarantees the first two characters, when base58 encoded, are "zc"
-        base58Prefixes[ZCPAYMENT_ADDRRESS] = {22,154};
-        // guarantees the first two characters, when base58 encoded, are "SK"
-        base58Prefixes[ZCSPENDING_KEY] = {171,54};
+        // guarantees the first 2 characters, when base58 encoded, are "t1"
+        base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
+        // guarantees the first 2 characters, when base58 encoded, are "t3"
+        base58Prefixes[SCRIPT_ADDRESS]     = {0x1C,0xBD};
+        // the first character, when base58 encoded, is "5" or "K" or "L" (as in Bitcoin)
+        base58Prefixes[SECRET_KEY]         = {0x80};
+        // do not rely on these BIP32 prefixes; they are not specified and may change
+        base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x88,0xB2,0x1E};
+        base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x88,0xAD,0xE4};
+        // guarantees the first 2 characters, when base58 encoded, are "zc"
+        base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x16,0x9A};
+        // guarantees the first 2 characters, when base58 encoded, are "SK"
+        base58Prefixes[ZCSPENDING_KEY]     = {0xAB,0x36};
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
@@ -143,18 +147,18 @@ public:
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vFoundersRewardAddress = {
-            "37dSC2gL2SftgVJBHemBfWtSsNwuNfeTkz", "3KENXyYPCx4SZPGqE2Qp64Vrt49JNxvCbH", "3B2t3k6oQBACSmZArbYiseYsbsxBFFsHXG", "3QuE4MQXQwuzynXJwLPuWaciKjmRqkj9Yg",
-            "3FGDxAMPbjgq2ZTSFdoeWTHUu8i3nZcENb", "3HMUFCvai1KtyJ3woLXyY5dGTWjBwmD3M2", "3Mqskxz8RexngVRBkZnGVCLp1Z7wyqFjVE", "359NbXKBNezXEUqvU1cqJkfdZTHbzfsQfV",
-            "3KGJQmUe7zjMFkTGskiBH6JBNuymJRzU3a", "36PjhjMcMkU9kjgvCocAke5VSF6JzKXuqZ", "35fucu9Bh1AKad9zMvDgDhc3kmoj6ZcFNV", "35EnKe4u16128G6j1efUT27Vwqha6MgWDH",
-            "3FWa1GEjWWY3eFuFK8ht2HBhH8ZT1zXJcR", "3ByiCPMp3vNYjq1fQrQx2LXbMJ3uyiUfH6", "3DNWVawdGNJJ3sp9aMgyjtFv74rPivPUcM", "3HKAkRbUbUTV2vs1qSoEbhpoUAjNAmGxrm",
-            "3CV41uQT2B6FU8H57rAh22d4wyDG8FrK37", "361jTn1yhDRHji9qMrwq8p2qbSxrEfcf58", "3A4hTEi36fQdvTczkiNESqdtoADRFEUGdr", "36LBGQ4CNWRtEVxdRk8Lym52rFqRx5aAy9",
-            "34Hvy7rqUToVzQKu6v6gN69Qo1M37ktKpZ", "3Qii1z7vD5EFpGx3yFAqDBLQ9kCdfpxwpC", "3HNSu7ibS7yu4FW3Sf2D36Ms8BKDhBTPQo", "36djsWiivpZwPC4eZqMAFoS87VgxkjDHen",
-            "3E7dsoe6eJavv6HEwADC7eV2JjHXZE8wx4", "3Ks5EBz94K2TgAx19vxvwX6A2cUf1AWNfJ", "3GuGkVkqD1k9wYJNikNhMxK8ci8HGnJ3HN", "3QPjeeX5FFwEbDk8RHDXCPunsgHp9YLXsV",
-            "3MY2DeyRPJaUKZwpKTGsT31vZMLtVk66FP", "36f92vZ3jo3TYBXVGv55BptKmL2MDL47ZF", "3DDUDXN3aSgXckFnTdFTV1t8HjkifNKbJM", "3ArUZmHERS6CDyNYb1DhnCZ7XCCoWEURAb",
-            "3QnJ98YuZcVZhxs49kwwDmf5BUYPbjvKRQ", "3DNdji6oCCTVbLF4iuzamAv73MGQ9LsKNb", "3Q5cGqEzkBLMac8DNSdVesZPUcucFP3jqU", "3JuQnoHp6Qm9N39ETD4yRHhj1CCKXo3deG",
-            "3EQftBB2MsZ4wNgGxKfhMREU3hNk29VZeW", "38baEewZky2kRaMSvjxh2x3eDdHt1ovVnu", "32kq15rjjtjaj1Z5dW8N6DikKxBeEbCZ5B", "34tta8VkpCZFNZyM9oWf656QcNwDB2qoRV",
-            "33nGWUV4nKjAM7XWYNTf5Fe6aBahCe22RN", "36tt5b1MDeYks6N7Zhk5gDs3sNZjkh4mG7", "32eS4cHrpJv7MkGQzkA7KwYZuNCvbpCzm4", "39Wqmd6f23mFWsMurx9d9YbaHxyEmXpw4G",
-            "32x1txo29hfy6fm5kMryX2175qz7ocU8iz", "3KR3wPnecQgpndUGAdwWCfehbEES4DES3C", "3HBPRij6s8Thv2AnRytLEZ9pW6Wqoztcr6", "3N3BPLx8rHfEdqPnEWuguYfAXtDXc8sK53",
+            "t3QW3CN6TzmTVH8M5E5aJoKzN838zAEBCuS", "t3c6yYJxXBGr3A2KjATDwDsbn8iLP9AsXfk", "t3TuV45WwNVwo3Qc4o2Mr1TenrY9FwRM18Z", "t3hmq4gpfPGhbaRaCsmD2ePidaPxWf3upsg",
+            "t3Y8pxVmXa4URdCWLC4cmeGPQ9nu8eSJMvG", "t3aE5FYLigL7VZw6qjmM6ftjBiAvGiPkjo5", "t3eiUmJQGPykPH8U5gzbPd1SjGDK2k6SFvb", "t3N1ybrjKLyn7q7tpQSRxSZmYp7UgkEgHDb",
+            "t3c8uR6tn6KWwrPWApBXJQuQ6daAr8bcaMg", "t3PGLi4mkL5FkMNjp9ERHtTBQguHPjT3yqA", "t3NYWdEZKfKwvBGCtJM2oMWhy1Rzot3yL3Q", "t3N7PKyV2yQnciu9cx5UbaqDRCVtev9qHpN",
+            "t3YPB1besUqKeEtx9FZX1A6HcXnkXq9Vc3r", "t3UrKCimx2FA9LU4ZMHE5A9dWbxEzm5MgLj", "t3WF7VvMmEh5teWs3WnW6shMqMj3UbX6p33", "t3aBmkm1cZoF5dZuumscMjWviipvSx6hFLR",
+            "t3VMf2EpazVsr4mKy4Gyp9qizCdQLrWTm9J", "t3NtLU7S7fYCtLMCjJHkxGd8kr79w7UhtpX", "t3SwJTa8B4zCEX6fth9BMaejp3pQW11DTB8", "t3PCnGjULLqDUq91XNAwU7aAx6v2WkAP12v",
+            "t3MAXyTGySnb6b3No3LuoVuFL3fY7recEin", "t3hbK2KY4BQ1rQuzwufyxLzSKQQPiP9XidW", "t3aF3uT8jQSmVetYwP5qLAuTnNqWJRNLQu7", "t3PWLsr8ru9MXyq7YWGAHPcY3N9t3Zp45uo",
+            "t3WzEt94EcdNXWjL8sb2KFTawZPUcL42MoX", "t3cjgEXQH2dp4Gozu6Mn45LC5HGfjrSAf9V", "t3ZmskqAyBLXkYBMGfBBpVmR3sNKN79anu3", "t3hGLeywDDaiqBro2Mi2eLD1i8LUttrBfbT",
+            "t3eQdDzPZMdN4vCziFt5zar7qp1XyMwgnD6", "t3PXk3FyBi7q48paPDLtCKdzF1zDS4bpjM3", "t3W65DrnBYmU8DPJgQ44acpz3YPwoNE8pc5", "t3Tj5a6hNPksnpcRSXS2pv1f2mrPtL2bqGb",
+            "t3heu9Ty3XwHAJbux6Bm4MakzS8jUL3EkFD", "t3WFEk3WwAXF6ByHxfLohtz22J1TUwsL6iu", "t3gxDHAf8iW7xBFB7JsScngfJjH6h3QBfot", "t3bn1o8hx4jYjxgC8Pdt6Z6oeFrPQPtT8pC",
+            "t3XHGtWbALCLfY1jAtkUpVELPJMZpqxBtgE", "t3RUBEzMhjHpM2DQLsAmpAm9ZUHUxnEQAtM", "t3KdS1RGsiDXBKebyZvwVE2pfacNj28KLqB", "t3MmVaTutnXLqyD2F6EKnDtCKs38HxkVAdH",
+            "t3LesWouCkeWkwkaQUoGnD4k1pqmn3AYkt4", "t3PmV5vRVByLMTjR1W8ZCp2xy82kpb6n99u", "t3KX34whzndhhxPKJwAyETkeVA2Q1TzBhor", "t3SPSmxWnzNYr7WQooNxkHMhVYdAKY6M5Dr",
+            "t3KpcuJDA82TZhJoygng6eq72LWBCYtp7W8", "t3cHewjCnajURPGXA74kdLUkcqtRWpN3QkG", "t3a3zS49EqTFJWfDgNQhTNNFjkkhveqQssP", "t3eunPgNGpcSqEUSgAwip3Mm5nYQcPvacvX",
         };
         assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
     }
@@ -196,13 +200,19 @@ public:
         vSeeds.clear();
         vSeeds.push_back(CDNSSeedData("z.cash", "dnsseed.testnet.z.cash")); // Zcash
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239);
-        base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x35)(0x87)(0xCF).convert_to_container<std::vector<unsigned char> >();
-        base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x35)(0x83)(0x94).convert_to_container<std::vector<unsigned char> >();
-        base58Prefixes[ZCPAYMENT_ADDRRESS] = {20,81};
-        base58Prefixes[ZCSPENDING_KEY] = {177,235};
+        // guarantees the first 2 characters, when base58 encoded, are "tm"
+        base58Prefixes[PUBKEY_ADDRESS]     = {0x1D,0x25};
+        // guarantees the first 2 characters, when base58 encoded, are "t2"
+        base58Prefixes[SCRIPT_ADDRESS]     = {0x1C,0xBA};
+        // the first character, when base58 encoded, is "9" or "c" (as in Bitcoin)
+        base58Prefixes[SECRET_KEY]         = {0xEF};
+        // do not rely on these BIP32 prefixes; they are not specified and may change
+        base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x35,0x87,0xCF};
+        base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x35,0x83,0x94};
+        // guarantees the first 2 characters, when base58 encoded, are "zt"
+        base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x16,0xB6};
+        // guarantees the first 2 characters, when base58 encoded, are "ST"
+        base58Prefixes[ZCSPENDING_KEY]     = {0xAC,0x08};
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
 
@@ -223,18 +233,18 @@ public:
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vFoundersRewardAddress = {
-            "2NF5QVDMtYBHaUzPLTxirybjwPjm9wVwacv", "2N8qoHsvVvdrDc89dXjpBWZHMbWdaHVc3rg", "2N8xpkGmATvu1GjgpjSjmt5L5V5fnEhW89v", "2MtTJnZRWNKJtmr5NN5jnjL9hTqP6tFBuLE",
-            "2N3Jbuca4yhcqMCa36w5Jy9NdLf7Te2BBZr", "2NAkLyEyxv1y1tvE3LawvaFXZ12GKDyXc9K", "2NEA5WxHJfpFWijWuJLwyjNmNYAKSdBFrFt", "2N68WRnm7HJYZRBL7XtqRJVQD7dCJtQx4Vg",
-            "2NAieMb6ZfC2RJ6c19Ch4JER6yqgRAd1CeG", "2Mvw6JtXth8cYPHxD2DGwF2fzL6C5g66w6w", "2N3treWEan8WhpKurCNTdsgh6JtTD8hLMEY", "2N46cPyaEBFb1MxHJWdtXKhfRjKWhoAF2VY",
-            "2N2hFwZYHvKCjqVJHCYwpy6FaBycyjcKaHB", "2N3wQ8GyAbtb4FXgymzK99ZUDdrdDVQBGNx", "2N2tq2AcVroDciF5H3WpkHraUiK6eZZgJqR", "2N6g8Q9Z6mZwQzTw1s5KoSaVTKYxBVDMeqc",
-            "2NFfPnK3jj85sn9mWe5EivUdnUPykMRXGp6", "2MwC4NhXRQSZzN9cfeg88Cdsp6DiXn2Axt9", "2MsTXMg8TBfKQvj7UJfMXKp3naKYv9ty3jv", "2MzPMV6sPt45J2qU1Uvft2U1ES1q9Cnw74J",
-            "2NEo5vX2Gvg83FbSUTfndQqkZbFHd1zJnZz", "2Mtkiihqt6wTV5uwvdmf9nTZKgEzZx6BMXB", "2MvM6urpNbfS2QFPFeUEoM14VKgBKoV8Qws", "2Mv3FDtDtyiHQA6u6kDWoiBKDkL5JFuA4Se",
-            "2MtyHB5chweTMBXXVPqSLAWHF6fgajGisi6", "2N3BU59PLVRWmPvffumGNWJdorY8ex5NKHq", "2NEiq16k9nQzYxWL1mvJVN32ticcL3b65vW", "2NB1groo8MTEAvPDbgcmzHsr56rSpbmXj48",
-            "2MwMr9dW3hrkgsmpWivobrwScfXC8hFsg4N", "2My9qRCuUBJ9aZohh8f4VQoXvBgmP9pBE11", "2MyHm9yFdm3aou91PLWzEVDeWrcrC5re4GS", "2N73XvH7vdzKr7UGHFkAeAUJFz4o8zTFeZY",
-            "2MwPLTmV6469VBcDxcsnotq4Qbf8CRX7DWz", "2MtmeB8wEGepSRodY7sq7myZVmFsBWAXYpW", "2N1WmRvcqMomQGePwvkd5QrKXQuYePDZh9Z", "2MwuBXGGBAPK2TupdoQK2Fw63vitJb7RUJZ",
-            "2Mz4XXqLy2TC5bmBczjakVeqajFo5D3jma2", "2NB19923xi5D9MPqZZvkvH5VbQ2MNRfW9e2", "2NBKhC9RJPPxA8B8bdPvvYvGGjkSoTfdrKh", "2Mzn2q4ZmReBsSQFHRscXav4Xt44wXWeo9a",
-            "2N1BqHdQV1r6NBeF3bbj3rE1by3MPrwgbbb", "2N6VpEUSwCvh1FCuVKb9eZCxcFnZuzcxB6f", "2N2Uq4i7DYaq2ngJZi4eXf9DAXuDYCDKMzc", "2MwsKBtaZeVKzD51otkAyBDoeuaDDK8wgqe",
-            "2NCajs4c2PeW8pWZxyMUiV3rDkEYyYnRAhQ", "2MuGtcBJQLfJD6GFbXy7iTtG8QasgZ8qd3Y", "2NFZ3yjeBSS3FKMy1N1zTeSEyqiRgnH35v4", "2Mvv8o9U4dbJjgWPvLDy3L6Sh74Wmynf36q",
+            "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi", "t2N9PH9Wk9xjqYg9iin1Ua3aekJqfAtE543", "t2NGQjYMQhFndDHguvUw4wZdNdsssA6K7x2", "t27ktmq1kbeCWiQ5TZ7w5npSzcdbBmTB7v6",
+            "t2GcBttAKD2WTHka8HyGc2dfvVTKYZUfHmJ", "t2Q3vxWaD9LrdqUE8Xd9Ddjpr9pUQ2aGotK", "t2TTfWDsYu998fHWzVP9Gns4fgxXXRi1Wzu", "t2KS6R4MMWdSBMjLCiw2iMyhWGRQPmyRqDn",
+            "t2Q2ELrgotWv3Eec6LEtMMiiQ8dtW38u8Tj", "t2AEgJA88vTWAKqxJDFUEJWyHUtQAZi5G1D", "t2HCSdmpq1TQKksuwPQevwAzPTgfJ2rkMbG", "t2HQCPFAUQaUdJWHPhg5pPBxit7inaJzubE",
+            "t2Fzqvq8Y9e6Mn3JNPb982aYsLmq4b5HmhH", "t2HEz7YZQqDUgC5h4y2WSD3mWneqJNVRjjJ", "t2GCR1SCk687Eeo5NEZ23MLsms7JjVWBgfG", "t2KyiPR9Lztq2w1w747X6W4nkUMAGL8M9KN",
+            "t2UxymadyxSyVihmbq7S1yxw5dCBqJ1S4jT", "t2AVeMy7fdmTcJhckqiKRG8B7F1vccEhSqU", "t26m7LwihQzD2sH7ZVhYpPJM5j7kzwbfKW9", "t2DgwUNTe7NxuyPU6fxsB5xJXap3E4yWXrN",
+            "t2U6funcXA11fC9SZehyvUL3rk3Vhuh7fzS", "t284JhyS8LGM72Tx1porSqwrcq3CejthP1p", "t29egu8QcpzKeLoPLqWS6QVMnUUPQdF6eNm", "t29LqD9p9D3B26euBwFi6mfcWu8HPA38VNs",
+            "t28GsAMCxAyLy85XaasddDzaYFTtfewr86y", "t2GV44QyaikQPLUfm6oTfZnw71LLjnR7gDG", "t2U2QzNLQ1jtAu4L6xxVnRXLBsQpQvGRR2g", "t2QKGr5PNan7nrwDgseyHMN9NFeeuUjCh8b",
+            "t2AfS8u6HwBeJpKpbuxztvRjupKQDXqnrwa", "t2CTRQUViQd3CWMhnKhFnUHqDLUyTxmWhJs", "t2CbM9EqszNURqh1UXZBXYhwp1R4GwEhWRE", "t2LM7uYiAsKDU42GNSnMwDxbZ8s1DowQzYH",
+            "t2AgvT35LHR378AE3ouz6xKMhkTLHLJC6nD", "t285EAQXUVyi4NMddJv2QqTrnv45GRMbP8e", "t2EpMRCD5b8f2DCQ37npNULcpZhkjC8muqA", "t2BCmWXrRPiCeQTpizSWKKRPM5X6PS7umDY",
+            "t2DN7X6wDFn5hYKBiBmn3Z98st419yaTVTH", "t2QJj8HeCwQ6mHwqekxxDLZntYpZTHNU62t", "t2QdHBR1Yciqn4j8gpS8DcQZZtYetKvfNj3", "t2E5cpLA1ey5VNxFNcuopeQMq2rH2NHiPdu",
+            "t2EVRGtzjFAyz8CF8ndvLuiJu7qZUfDa93H", "t2KoQDk3BSFadBkuaWdLwchFuQamzw9RE4L", "t2FnR3yhTmuiejEJeu6qpidWTghRd1HpjLt", "t2BAuBAAospDc9d1u5nNGEi6x4NRJBD2PQ2",
+            "t2RtKrLCGcyPkm4a4APg1YY9Wu2m4R2PgrB", "t28aUbSteZzBq2pFgj1K1XNZRZP5mMMyakV", "t2Urdy1ERfkvsFuy6Z4BkhvYGzWdmivfAFR", "t2ADinR4JrvCMd4Q1XGALPajzFrirqvhED6",
         };
         assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
     }
@@ -296,7 +306,7 @@ public:
         };
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
-        vFoundersRewardAddress = { "2N2e2FRfP9D1dRN1oRWkH7pbFM69eGNAuQ4" };
+        vFoundersRewardAddress = { "t2FwcEhFdNXuFMv1tcYwaBJtYVtMj8b1uTg" };
         assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
     }
 };

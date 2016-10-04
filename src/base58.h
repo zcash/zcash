@@ -84,8 +84,8 @@ protected:
     void SetData(const std::vector<unsigned char> &vchVersionIn, const unsigned char *pbegin, const unsigned char *pend);
 
 public:
-    bool SetString(const char* psz, unsigned int nVersionBytes = 1);
-    bool SetString(const std::string& str);
+    bool SetString(const char* psz, unsigned int nVersionBytes);
+    bool SetString(const std::string& str, unsigned int nVersionBytes);
     std::string ToString() const;
     int CompareTo(const CBase58Data& b58) const;
 
@@ -131,6 +131,8 @@ public:
     bool Set(const CTxDestination &dest);
     bool IsValid() const;
     bool IsValid(const CChainParams &params) const;
+    bool SetString(const char* pszSecret);
+    bool SetString(const std::string& strSecret);
 
     CBitcoinAddress() {}
     CBitcoinAddress(const CTxDestination &dest) { Set(dest); }
