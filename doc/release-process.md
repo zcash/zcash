@@ -2,6 +2,20 @@ Release Process
 ====================
 Meta: There should always be a single release engineer to disambiguate responsibility.
 
+## Pre-release
+
+Check all of the following:
+
+- All dependencies have been updated as appropriate:
+  - BDB
+  - Boost
+  - ccache
+  - libgmp
+  - libsnark (upstream of our fork)
+  - libsodium
+  - miniupnpc
+  - OpenSSL
+
 ## A. Define the release version as:
 
     $ ZCASH_RELEASE=MAJOR.MINOR.REVISION(-BUILD_STRING)
