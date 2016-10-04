@@ -70,7 +70,7 @@ noinst_PROGRAMS += tests
 tests_SOURCES = src/tests.c
 tests_CPPFLAGS = -DVERIFY $(SECP_INCLUDES) $(SECP_TEST_INCLUDES)
 tests_LDADD = $(SECP_LIBS) $(SECP_TEST_LIBS)
-tests_LDFLAGS = -static
+tests_LDFLAGS = -static -pthread
 TESTS = tests
 endif
 
