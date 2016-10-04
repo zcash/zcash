@@ -4,19 +4,16 @@ set -eu
 
 PARAMS_DIR="$HOME/.zcash-params"
 
-REGTEST_PKEY_NAME='z9-proving.key'
-REGTEST_VKEY_NAME='z9-verifying.key'
-REGTEST_PKEY_URL="https://z.cash/downloads/$REGTEST_PKEY_NAME"
-REGTEST_VKEY_URL="https://z.cash/downloads/$REGTEST_VKEY_NAME"
-REGTEST_DIR="$PARAMS_DIR/regtest"
-
-# This should have the same params as regtest. We use symlinks for now.
-TESTNET3_DIR="$PARAMS_DIR/testnet3"
+BETA2_PKEY_NAME='beta2-proving.key'
+BETA2_VKEY_NAME='beta2-verifying.key'
+BETA2_PKEY_URL="https://z.cash/downloads/$BETA2_PKEY_NAME"
+BETA2_VKEY_URL="https://z.cash/downloads/$BETA2_VKEY_NAME"
 
 function fetch_params {
     local url="$1"
     local output="$2"
     local dlname="${output}.dl"
+    local expectedhash="$3"
 
     if ! [ -f "$output" ]
     then
@@ -27,8 +24,18 @@ function fetch_params {
             --continue \
             "$url"
 
-        # Only after successful download do we update the parameter load path:
-        mv -v "$dlname" "$output"
+        shasum -a 256 --check <<EOF
+$expectedhash  $dlname
+EOF
+
+        # Check the exit code of the shasum command:
+        CHECKSUM_RESULT=$?
+        if [ $CHECKSUM_RESULT -eq 0 ]; then
+            mv -v "$dlname" "$output"
+        else
+           echo "Failed to verify parameter checksums!"
+           exit 1
+        fi
     fi
 }
 
@@ -86,30 +93,10 @@ $README_PATH
 EOF
     fi
 
-    mkdir -p "$REGTEST_DIR"
-
-    fetch_params "$REGTEST_PKEY_URL" "$REGTEST_DIR/$REGTEST_PKEY_NAME"
-    fetch_params "$REGTEST_VKEY_URL" "$REGTEST_DIR/$REGTEST_VKEY_NAME"
-
     cd "$PARAMS_DIR"
 
-    # Now verify their hashes:
-    echo 'Verifying parameter file integrity via sha256sum...'
-    shasum -a 256 --check <<EOF
-226913bbdc48b70834f8e044d194ddb61c8e15329f67cdc6014f4e5ac11a82ab  regtest/$REGTEST_PKEY_NAME
-4c151c562fce2cdee55ac0a0f8bd9454eb69e6a0db9a8443b58b770ec29b37f5  regtest/$REGTEST_VKEY_NAME
-EOF
-    # Check the exit code of the shasum command:
-    CHECKSUM_RESULT=$?
-    if [ $CHECKSUM_RESULT -eq 0 ]; then
-        echo 'Updating testnet3 symlinks to regtest parameters.'
-        mkdir -p "$TESTNET3_DIR"
-        ln -sf "../regtest/$REGTEST_PKEY_NAME" "$TESTNET3_DIR/$REGTEST_PKEY_NAME"
-        ln -sf "../regtest/$REGTEST_VKEY_NAME" "$TESTNET3_DIR/$REGTEST_VKEY_NAME"
-    else
-       exit 1
-    fi
-
+    fetch_params "$BETA2_PKEY_URL" "$PARAMS_DIR/$BETA2_PKEY_NAME" "cca9887becf803c8ca801bc9da8fcba4f5fb3ba13af9d17e8603021a150cb4b7"
+    fetch_params "$BETA2_VKEY_URL" "$PARAMS_DIR/$BETA2_VKEY_NAME" "2faffd2a5e2e67276c3471c48068a0c16f62286d2e4622a733d7cd1f82ffa860"
 }
 
 main
