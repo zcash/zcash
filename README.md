@@ -41,7 +41,7 @@ Dependencies
  
 ```
 #The following packages are needed:
-sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libboost-all-dev libssl-dev libprotobuf-dev protobuf-compiler libqt4-dev libqrencode-dev libdb++-dev
+sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libboost-all-dev libssl-dev libprotobuf-dev protobuf-compiler libqt4-dev libqrencode-dev libdb++-dev ntp ntpdate
 ```
  
 Komodo
@@ -80,6 +80,7 @@ addnode=178.63.69.164
 addnode=88.198.65.74
 addnode=5.9.122.241
 addnode=144.76.94.38
+addnode=89.248.166.91
 ```
  
 Start mining
@@ -96,12 +97,18 @@ cd komodo
 ./src/komodo-cli listreceivedbyaddress 0 true
 
 #This will return your pubkey eg. "0259e137e5594cf8287195d13aed816af75bd5c04ae673296b51f66e7e8346e8d8" for your address
-./src/komodo-cli validateaddress RJeXg8vtvyC5vmB1WGsPnbHH4C6HLY42BK
+./src/komodo-cli validateaddress <yourwalletaddres>
+
+#This will give the privkey of your wallet address
+./src/komodo-cli dumpprivkey <yourwalletaddres>
+
+#This will import the privkey to be sure the mined coins are placed into your wallet address
+./src/komodo-cli importprivkey <yourwalletprivkey>
 
 #To stop the daemon:
 ./src/komodo-cli stop
 
-#This starts komodo notary - replace genproclimit with number of threads you want to use
+#This starts komodo notary - replace genproclimit with number of threads you want to use and add your pubkey
 ./src/komodod -gen -genproclimit=2 -notary -pubkey="0259e137e5594cf8287195d13aed816af75bd5c04ae673296b51f66e7e8346e8d8" &
 
 #This will get the stats:
@@ -115,5 +122,8 @@ ps -ef | grep komodod
  
 #To view komodod output:
 tail -f ~/.komodo/debug.log
+
+#To view all command
+./src/komodo-cli help
 ```
 
