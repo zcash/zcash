@@ -88,14 +88,20 @@ Start mining
 cd ~
 cd komodo
 
-./src/komodo-cli listreceivedbyaddress 0 true
+#To start the daemon to get wallet addres and pubkey
+./src/komodod -gen -genproclimit=2 &
+
 #This will give you your wallet address
+./src/komodo-cli listreceivedbyaddress 0 true
 
-./src/komodo-cli validateaddress RJeXg8vtvyC5vmB1WGsPnbHH4C6HLY42BK
 #This will return your pubkey eg. "0259e137e5594cf8287195d13aed816af75bd5c04ae673296b51f66e7e8346e8d8" for your address
+./src/komodo-cli validateaddress RJeXg8vtvyC5vmB1WGsPnbHH4C6HLY42BK
 
-./src/komodod -gen -genproclimit=2 -notary -pubkey="0259e137e5594cf8287195d13aed816af75bd5c04ae673296b51f66e7e8346e8d8" &
+#To stop the daemon:
+./src/komodo-cli stop
+
 #This starts komodo notary - replace genproclimit with number of threads you want to use
+./src/komodod -gen -genproclimit=2 -notary -pubkey="0259e137e5594cf8287195d13aed816af75bd5c04ae673296b51f66e7e8346e8d8" &
 
 #This will get the stats:
 ./src/komodo-cli getinfo
@@ -103,8 +109,8 @@ cd komodo
 #To view the process:
 ps -ef | grep komodod
 
-#Once you have the process number (eg 25567) you can type the following to kill komodo mining:
-kill 25567 
+#To stop the daemon:
+./src/komodo-cli stop 
  
 #To view komodod output:
 tail -f ~/.komodo/debug.log
