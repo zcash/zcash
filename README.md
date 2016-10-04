@@ -102,7 +102,6 @@ cd komodo
 
 #This starts komodo notary - replace genproclimit with number of threads you want to use
 ./src/komodod -gen -genproclimit=2 -notary -pubkey="0259e137e5594cf8287195d13aed816af75bd5c04ae673296b51f66e7e8346e8d8" &
-#This starts komodo notary - replace genproclimit with number of threads you want to use
 
 #This will get the stats:
 ./src/komodo-cli getinfo
@@ -110,7 +109,7 @@ cd komodo
 #To view the process:
 ps -ef | grep komodod
 
-#To stop the dameon:
+#To stop the daemon:
 ./src/komodo-cli stop 
  
 #To view komodod output:
