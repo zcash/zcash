@@ -179,9 +179,9 @@ bool CBase58Data::SetString(const char* psz, unsigned int nVersionBytes)
     return true;
 }
 
-bool CBase58Data::SetString(const std::string& str)
+bool CBase58Data::SetString(const std::string& str, unsigned int nVersionBytes)
 {
-    return SetString(str.c_str());
+    return SetString(str.c_str(), nVersionBytes);
 }
 
 std::string CBase58Data::ToString() const
@@ -251,6 +251,16 @@ bool CBitcoinAddress::IsValid(const CChainParams& params) const
     return fCorrectSize && fKnownVersion;
 }
 
+bool CBitcoinAddress::SetString(const char* pszAddress)
+{
+    return CBase58Data::SetString(pszAddress, 2);
+}
+
+bool CBitcoinAddress::SetString(const std::string& strAddress)
+{
+    return SetString(strAddress.c_str());
+}
+
 CTxDestination CBitcoinAddress::Get() const
 {
     if (!IsValid())
@@ -305,7 +315,7 @@ bool CBitcoinSecret::IsValid() const
 
 bool CBitcoinSecret::SetString(const char* pszSecret)
 {
-    return CBase58Data::SetString(pszSecret) && IsValid();
+    return CBase58Data::SetString(pszSecret, 1) && IsValid();
 }
 
 bool CBitcoinSecret::SetString(const std::string& strSecret)
