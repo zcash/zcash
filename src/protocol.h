@@ -116,15 +116,18 @@ public:
     unsigned int nTime;
 };
 
-/** getdata message types */
+/** getdata / inv message types.
+ * These numbers are defined by the protocol. When adding a new value, be sure
+ * to mention it in the respective ZIP, as well as checking for collisions with
+ * BIPs we might want to backport.
+ */
 enum GetDataMsg
 {
     UNDEFINED = 0,
-    MSG_TX,
-    MSG_BLOCK,
-    MSG_TYPE_MAX = MSG_BLOCK,
+    MSG_TX = 1,
+    MSG_BLOCK = 2,
     // The following can only occur in getdata. Invs always use TX or BLOCK.
-    MSG_FILTERED_BLOCK,
+    MSG_FILTERED_BLOCK = 3,  //!< Defined in BIP37
 };
 
 /** inv message data */
