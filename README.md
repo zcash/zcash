@@ -73,6 +73,7 @@ pico komodo.conf
 
 rpcuser=bitcoinrpc
 rpcpassword=password
+txindex=1
 addnode=5.9.102.210
 addnode=78.47.196.146
 addnode=178.63.69.164
@@ -87,8 +88,21 @@ Start mining
 ```
 cd ~
 cd komodo
-#This starts komodo as a process - replace genproclimit with number of threads you want to use:
-./src/komodod -gen=1 -genproclimit=1 &
+
+#To start the daemon to get wallet addres and pubkey
+./src/komodod -gen -genproclimit=2 &
+
+#This will give you your wallet address
+./src/komodo-cli listreceivedbyaddress 0 true
+
+#This will return your pubkey eg. "0259e137e5594cf8287195d13aed816af75bd5c04ae673296b51f66e7e8346e8d8" for your address
+./src/komodo-cli validateaddress RJeXg8vtvyC5vmB1WGsPnbHH4C6HLY42BK
+
+#To stop the daemon:
+./src/komodo-cli stop
+
+#This starts komodo notary - replace genproclimit with number of threads you want to use
+./src/komodod -gen -genproclimit=2 -notary -pubkey="0259e137e5594cf8287195d13aed816af75bd5c04ae673296b51f66e7e8346e8d8" &
 
 #This will get the stats:
 ./src/komodo-cli getinfo
@@ -96,8 +110,8 @@ cd komodo
 #To view the process:
 ps -ef | grep komodod
 
-#Once you have the process number (eg 25567) you can type the following to kill komodo mining:
-kill 25567 
+#To stop the daemon:
+./src/komodo-cli stop 
  
 #To view komodod output:
 tail -f ~/.komodo/debug.log
