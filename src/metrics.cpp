@@ -112,9 +112,9 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
     std::cout << "- " << strprintf(_("You have validated %d transactions!"), transactionsValidated.get()) << std::endl;
 
     if (mining) {
-        double hps = uptime > 0 ? (double)solutionTargetChecks.get() / uptime : 0;
-        std::string strHps = strprintf("%.4f H/s", hps);
-        std::cout << "- " << strprintf(_("You have contributed %s on average to the network hash rate."), strHps) << std::endl;
+        double solps = uptime > 0 ? (double)solutionTargetChecks.get() / uptime : 0;
+        std::string strSolps = strprintf("%.4f Sol/s", solps);
+        std::cout << "- " << strprintf(_("You have contributed %s on average to the network solution rate."), strSolps) << std::endl;
         std::cout << "- " << strprintf(_("You have completed %d Equihash solver runs."), ehSolverRuns.get()) << std::endl;
         lines += 2;
 
