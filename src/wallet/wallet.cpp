@@ -730,15 +730,23 @@ void CWallet::WriteWitnessCache() {
         LogPrintf("WriteWitnessCache(): Couldn't start atomic write\n");
         return;
     }
-    for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-        if (!walletdb.WriteTx(wtxItem.first, wtxItem.second)) {
-            LogPrintf("WriteWitnessCache(): Failed to write CWalletTx, aborting atomic write\n");
+    try {
+        for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+            if (!walletdb.WriteTx(wtxItem.first, wtxItem.second)) {
+                LogPrintf("WriteWitnessCache(): Failed to write CWalletTx, aborting atomic write\n");
+                walletdb.TxnAbort();
+                return;
+            }
+        }
+        if (!walletdb.WriteWitnessCacheSize(nWitnessCacheSize)) {
+            LogPrintf("WriteWitnessCache(): Failed to write nWitnessCacheSize, aborting atomic write\n");
             walletdb.TxnAbort();
             return;
         }
-    }
-    if (!walletdb.WriteWitnessCacheSize(nWitnessCacheSize)) {
-        LogPrintf("WriteWitnessCache(): Failed to write nWitnessCacheSize, aborting atomic write\n");
+    } catch (const std::exception &exc) {
+        // Unexpected failure
+        LogPrintf("WriteWitnessCache(): Unexpected error during atomic write:\n");
+        LogPrintf("%s\n", exc.what());
         walletdb.TxnAbort();
         return;
     }
