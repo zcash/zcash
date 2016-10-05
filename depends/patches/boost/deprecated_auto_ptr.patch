@@ -1,0 +1,30 @@
+--- boost_1_62_0-orig/boost/spirit/home/classic/core/non_terminal/impl/grammar.ipp	2016-09-29 14:03:47.317997658 +1300
++++ boost_1_62_0/boost/spirit/home/classic/core/non_terminal/impl/grammar.ipp	2016-09-29 14:07:41.308726372 +1300
+@@ -13,10 +13,16 @@
+ 
+ #if !defined(BOOST_SPIRIT_SINGLE_GRAMMAR_INSTANCE)
+ #include <boost/spirit/home/classic/core/non_terminal/impl/object_with_id.ipp>
++#include <boost/smart_ptr/detail/sp_disable_deprecated.hpp>
+ #include <algorithm>
+ #include <functional>
+ #include <memory> // for std::auto_ptr
+ #include <boost/weak_ptr.hpp>
++
++#if defined( BOOST_SP_DISABLE_DEPRECATED )
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
++#endif
+ #endif
+ 
+ #ifdef BOOST_SPIRIT_THREADSAFE
+@@ -370,4 +376,10 @@
+ 
+ }} // namespace boost::spirit
+ 
++#if !defined(BOOST_SPIRIT_SINGLE_GRAMMAR_INSTANCE)
++#if defined( BOOST_SP_DISABLE_DEPRECATED )
++#pragma GCC diagnostic pop
++#endif
++#endif
++
+ #endif

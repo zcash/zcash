@@ -2447,10 +2447,11 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
             sample_times.push_back(benchmark_verify_joinsplit(samplejoinsplit));
         } else if (benchmarktype == "solveequihash") {
             if (params.size() < 3) {
-                sample_times.push_back(benchmark_solve_equihash(true));
+                sample_times.push_back(benchmark_solve_equihash());
             } else {
                 int nThreads = params[2].get_int();
-                sample_times.push_back(benchmark_solve_equihash_threaded(nThreads));
+                std::vector<double> vals = benchmark_solve_equihash_threaded(nThreads);
+                sample_times.insert(sample_times.end(), vals.begin(), vals.end());
             }
         } else if (benchmarktype == "verifyequihash") {
             sample_times.push_back(benchmark_verify_equihash());
@@ -2462,9 +2463,9 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
     }
 
     Array results;
-    for (int i = 0; i < samplecount; i++) {
+    for (auto time : sample_times) {
         Object result;
-        result.push_back(Pair("runningtime", sample_times.at(i)));
+        result.push_back(Pair("runningtime", time));
         results.push_back(result);
     }
 
@@ -2795,6 +2796,8 @@ Value z_getnewaddress(const Array& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    EnsureWalletIsUnlocked();
+
     CZCPaymentAddress pubaddr = pwalletMain->GenerateNewZKey();
     std::string result = pubaddr.ToString();
     return result;
@@ -2832,7 +2835,7 @@ Value z_listaddresses(const Array& params, bool fHelp)
     return ret;
 }
 
-CAmount getBalanceTaddr(std::string transparentAddress, size_t minDepth=1) {
+CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1) {
     set<CBitcoinAddress> setAddress;
     vector<COutput> vecOutputs;
     CAmount balance = 0;   
@@ -2871,7 +2874,7 @@ CAmount getBalanceTaddr(std::string transparentAddress, size_t minDepth=1) {
     return balance;
 }
 
-CAmount getBalanceZaddr(std::string address, size_t minDepth = 1) {
+CAmount getBalanceZaddr(std::string address, int minDepth = 1) {
     CAmount balance = 0;
     std::vector<CNotePlaintextEntry> entries;
     LOCK2(cs_main, pwalletMain->cs_wallet);

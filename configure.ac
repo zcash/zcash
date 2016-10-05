@@ -3,7 +3,7 @@ AC_PREREQ([2.60])
 define(_CLIENT_VERSION_MAJOR, 1)
 define(_CLIENT_VERSION_MINOR, 0)
 define(_CLIENT_VERSION_REVISION, 0)
-define(_CLIENT_VERSION_BUILD, 0)
+define(_CLIENT_VERSION_BUILD, 1)
 define(_CLIENT_VERSION_IS_RELEASE, false)
 define(_COPYRIGHT_YEAR, 2016)
 AC_INIT([Zcash],[_CLIENT_VERSION_MAJOR._CLIENT_VERSION_MINOR._CLIENT_VERSION_REVISION],[https://github.com/zcash/zcash/issues],[zcash])
@@ -263,9 +263,9 @@ case $host in
          dnl add default macports paths
          CPPFLAGS="$CPPFLAGS -isystem /opt/local/include"
          LIBS="$LIBS -L/opt/local/lib"
-         if test -d /opt/local/include/db48; then
-           CPPFLAGS="$CPPFLAGS -I/opt/local/include/db48"
-           LIBS="$LIBS -L/opt/local/lib/db48"
+         if test -d /opt/local/include/db53; then
+           CPPFLAGS="$CPPFLAGS -I/opt/local/include/db53"
+           LIBS="$LIBS -L/opt/local/lib/db53"
          fi
        fi
 
@@ -512,7 +512,7 @@ AC_SUBST(LIBMEMENV)
 
 if test x$enable_wallet != xno; then
     dnl Check for libdb_cxx only if wallet enabled
-    BITCOIN_FIND_BDB48
+    BITCOIN_FIND_BDB53
 fi
 
 dnl Check for libminiupnpc (optional)
@@ -722,35 +722,12 @@ AC_CHECK_LIB([snark],[main],LIBSNARK_LIBS=-lsnark, [AC_MSG_ERROR(libsnark missin
 
 LIBZCASH_LIBS="-lsnark -lgmp -lgmpxx -lboost_system-mt -lcrypto -lsodium -fopenmp"
 
-AC_CHECK_LIB([crypto],[RAND_egd],[],[
-  AC_ARG_WITH([libressl],
-    [AS_HELP_STRING([--with-libressl],[Build with system LibreSSL (default is no; DANGEROUS; NOT SUPPORTED)])],
-    [AC_MSG_WARN([Detected LibreSSL: This is NOT supported, and may break consensus compatibility!])],
-    [AC_MSG_ERROR([Detected LibreSSL: This is NOT supported, and may break consensus compatibility!])]
-  )
-])
-
-CFLAGS_TEMP="$CFLAGS"
+CXXFLAGS_TEMP="$CXXFLAGS"
 LIBS_TEMP="$LIBS"
-CFLAGS="$CFLAGS $SSL_CFLAGS $CRYPTO_CFLAGS"
+CXXFLAGS="$CXXFLAGS $SSL_CFLAGS $CRYPTO_CFLAGS"
 LIBS="$LIBS $SSL_LIBS $CRYPTO_LIBS $GMP_LIBS $GMPXX_LIBS"
 AC_CHECK_HEADER([openssl/ec.h],, AC_MSG_ERROR(OpenSSL ec header missing),)
-
-AC_MSG_CHECKING(for a supported OpenSSL version)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-  #include <openssl/rand.h>
-  ]],
-  [[RAND_egd(NULL);]])],
-  [AC_MSG_RESULT(yes)],
-  [
-    AC_ARG_WITH([libressl],
-    [AS_HELP_STRING([--with-libressl],[Build with system LibreSSL (default is no; DANGEROUS; NOT SUPPORTED)])],
-    [AC_MSG_WARN([Detected LibreSSL: This is NOT supported, and may break consensus compatibility!])],
-    [AC_MSG_ERROR([Detected LibreSSL: This is NOT supported, and may break consensus compatibility!])]
-    )]
-)
-
-CFLAGS="$CFLAGS_TEMP"
+CXXFLAGS="$CXXFLAGS_TEMP"
 LIBS="$LIBS_TEMP"
 
 BITCOIN_QT_PATH_PROGS([PROTOC], [protoc],$protoc_bin_path)

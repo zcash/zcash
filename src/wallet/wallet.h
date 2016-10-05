@@ -598,11 +598,14 @@ public:
      */
     int64_t nWitnessCacheSize;
 
+    void ClearNoteWitnessCache();
+
 protected:
     void IncrementNoteWitnesses(const CBlockIndex* pindex,
                                 const CBlock* pblock,
                                 ZCIncrementalMerkleTree tree);
     void DecrementNoteWitnesses();
+    void WriteWitnessCache();
 
 private:
     template <class T>
@@ -751,7 +754,10 @@ public:
     bool LoadZKey(const libzcash::SpendingKey &key);
     //! Load spending key metadata (used by LoadWallet)
     bool LoadZKeyMetadata(const libzcash::PaymentAddress &addr, const CKeyMetadata &meta);
-
+    //! Adds an encrypted spending key to the store, without saving it to disk (used by LoadWallet)
+    bool LoadCryptedZKey(const libzcash::PaymentAddress &addr, const libzcash::ViewingKey &vk, const std::vector<unsigned char> &vchCryptedSecret);
+    //! Adds an encrypted spending key to the store, and saves it to disk (virtual method, declared in crypter.h)
+    bool AddCryptedSpendingKey(const libzcash::PaymentAddress &address, const libzcash::ViewingKey &vk, const std::vector<unsigned char> &vchCryptedSecret);
 
     /** 
      * Increment the next transaction order id
@@ -905,7 +911,7 @@ public:
     void SetBroadcastTransactions(bool broadcast) { fBroadcastTransactions = broadcast; }
     
     /* Find notes filtered by payment address, min depth, ability to spend */
-    bool GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, size_t minDepth, bool ignoreSpent=true);
+    bool GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, int minDepth=1, bool ignoreSpent=true);
     
 };
 

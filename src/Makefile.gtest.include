@@ -5,6 +5,7 @@ bin_PROGRAMS += zcash-gtest
 zcash_gtest_SOURCES = \
 	gtest/main.cpp \
 	gtest/json_test_vectors.cpp \
+	gtest/test_foundersreward.cpp \
 	gtest/test_jsonspirit.cpp \
 	gtest/test_tautology.cpp \
 	gtest/test_checktransaction.cpp \
@@ -36,3 +37,6 @@ zcash_gtest_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 
 zcash-gtest_check: zcash-gtest FORCE
 	./zcash-gtest
+
+zcash-gtest-expected-failures: zcash-gtest FORCE
+	./zcash-gtest --gtest_filter=*DISABLED_* --gtest_also_run_disabled_tests

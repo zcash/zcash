@@ -100,7 +100,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
     const CChainParams& chainparams = Params();
     // Create new block
-    auto_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
+    unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
@@ -335,17 +335,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
 
-        if ((nHeight > 0) && (nHeight < chainparams.GetConsensus().nSubsidyHalvingInterval)) {
+        if ((nHeight > 0) && (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight())) {
             // Founders reward is 20% of the block subsidy
             auto vFoundersReward = txNew.vout[0].nValue / 5;
             // Take some reward away from us
             txNew.vout[0].nValue -= vFoundersReward;
 
-            auto rewardScript = ParseHex(FOUNDERS_REWARD_SCRIPT);
-
             // And give it to the founders
-            txNew.vout.push_back(CTxOut(vFoundersReward, CScript(rewardScript.begin(),
-                                                                 rewardScript.end())));
+            txNew.vout.push_back(CTxOut(vFoundersReward, chainparams.GetFoundersRewardScriptAtHeight(nHeight)));
         }
 
         // Add fees
@@ -488,7 +485,7 @@ void static BitcoinMiner(CWallet *pwallet)
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
 
-            auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
+            unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
             if (!pblocktemplate.get())
             {
                 LogPrintf("Error in ZcashMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");

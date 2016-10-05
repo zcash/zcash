@@ -90,7 +90,7 @@ static void CheckBlockIndex();
 /** Constant stuff for coinbase transactions we create: */
 CScript COINBASE_FLAGS;
 
-const string strMessageMagic = "Bitcoin Signed Message:\n";
+const string strMessageMagic = "Zcash Signed Message:\n";
 
 // Internal stuff
 namespace {
@@ -3084,13 +3084,15 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
     }
 
     // Coinbase transaction must include an output sending 20% of
-    // the block reward to `FOUNDERS_REWARD_SCRIPT` until the first
-    // subsidy halving block, with exception to the genesis block.
-    if ((nHeight > 0) && (nHeight < consensusParams.nSubsidyHalvingInterval)) {
+    // the block reward to a founders reward script, until the last founders
+    // reward block is reached, with exception of the genesis block.
+    // The last founders reward block is defined as the block just before the
+    // first subsidy halving block, which occurs at halving_interval + slow_start_shift
+    if ((nHeight > 0) && (nHeight <= consensusParams.GetLastFoundersRewardBlockHeight())) {
         bool found = false;
 
         BOOST_FOREACH(const CTxOut& output, block.vtx[0].vout) {
-            if (output.scriptPubKey == ParseHex(FOUNDERS_REWARD_SCRIPT)) {
+            if (output.scriptPubKey == Params().GetFoundersRewardScriptAtHeight(nHeight)) {
                 if (output.nValue == (GetBlockSubsidy(nHeight, consensusParams) / 5)) {
                     found = true;
                     break;
@@ -4069,6 +4071,9 @@ string GetWarnings(string strFor)
             {
                 nPriority = alert.nPriority;
                 strStatusBar = alert.strStatusBar;
+                if (alert.nPriority >= ALERT_PRIORITY_SAFE_MODE) {
+                    strRPC = alert.strRPCError;
+                }
             }
         }
     }
@@ -4657,13 +4662,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         bool fMissingInputs = false;
         CValidationState state;
 
+        pfrom->setAskFor.erase(inv.hash);
         mapAlreadyAskedFor.erase(inv);
 
-        // Check for recently rejected (and do other quick existence checks)
-        if (AlreadyHave(inv))
-            return true;
-
-        if (AcceptToMemoryPool(mempool, state, tx, true, &fMissingInputs))
+        if (!AlreadyHave(inv) && AcceptToMemoryPool(mempool, state, tx, true, &fMissingInputs))
         {
             mempool.check(pcoinsTip);
             RelayTransaction(tx);
@@ -4744,13 +4746,21 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
             if (pfrom->fWhitelisted) {
                 // Always relay transactions received from whitelisted peers, even
-                // if they were rejected from the mempool, allowing the node to
-                // function as a gateway for nodes hidden behind it.
+                // if they were already in the mempool or rejected from it due
+                // to policy, allowing the node to function as a gateway for
+                // nodes hidden behind it.
                 //
-                // FIXME: This includes invalid transactions, which means a
-                // whitelisted peer could get us banned! We may want to change
-                // that.
-                RelayTransaction(tx);
+                // Never relay transactions that we would assign a non-zero DoS
+                // score for, as we expect peers to do the same with us in that
+                // case.
+                int nDoS = 0;
+                if (!state.IsInvalid(nDoS) || nDoS == 0) {
+                    LogPrintf("Force relaying tx %s from whitelisted peer=%d\n", tx.GetHash().ToString(), pfrom->id);
+                    RelayTransaction(tx);
+                } else {
+                    LogPrintf("Not relaying invalid transaction %s from whitelisted peer=%d (%s (code %d))\n",
+                        tx.GetHash().ToString(), pfrom->id, state.GetRejectReason(), state.GetRejectCode());
+                }
             }
         }
         int nDoS = 0;
@@ -5451,6 +5461,9 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
                     pto->PushMessage("getdata", vGetData);
                     vGetData.clear();
                 }
+            } else {
+                //If we're not going to ask, don't expect a response.
+                pto->setAskFor.erase(inv.hash);
             }
             pto->mapAskFor.erase(pto->mapAskFor.begin());
         }

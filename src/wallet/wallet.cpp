@@ -18,6 +18,7 @@
 #include "util.h"
 #include "utilmoneystr.h"
 #include "zcash/Note.hpp"
+#include "crypter.h"
 
 #include <assert.h>
 
@@ -169,6 +170,7 @@ bool CWallet::AddKeyPubKey(const CKey& secret, const CPubKey &pubkey)
 bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
                             const vector<unsigned char> &vchCryptedSecret)
 {
+    
     if (!CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret))
         return false;
     if (!fFileBacked)
@@ -183,6 +185,32 @@ bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
             return CWalletDB(strWalletFile).WriteCryptedKey(vchPubKey,
                                                             vchCryptedSecret,
                                                             mapKeyMetadata[vchPubKey.GetID()]);
+    }
+    return false;
+}
+
+
+bool CWallet::AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
+                                    const libzcash::ViewingKey &vk,
+                                    const std::vector<unsigned char> &vchCryptedSecret)
+{
+    if (!CCryptoKeyStore::AddCryptedSpendingKey(address, vk, vchCryptedSecret))
+        return false;
+    if (!fFileBacked)
+        return true;
+    {
+        LOCK(cs_wallet);
+        if (pwalletdbEncryption) {
+            return pwalletdbEncryption->WriteCryptedZKey(address,
+                                                         vk,
+                                                         vchCryptedSecret,
+                                                         mapZKeyMetadata[address]);
+        } else {
+            return CWalletDB(strWalletFile).WriteCryptedZKey(address,
+                                                             vk,
+                                                             vchCryptedSecret,
+                                                             mapZKeyMetadata[address]);
+        }
     }
     return false;
 }
@@ -207,6 +235,11 @@ bool CWallet::LoadZKeyMetadata(const PaymentAddress &addr, const CKeyMetadata &m
 bool CWallet::LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret)
 {
     return CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret);
+}
+
+bool CWallet::LoadCryptedZKey(const libzcash::PaymentAddress &addr, const libzcash::ViewingKey &vk, const std::vector<unsigned char> &vchCryptedSecret)
+{
+    return CCryptoKeyStore::AddCryptedSpendingKey(addr, vk, vchCryptedSecret);
 }
 
 bool CWallet::LoadZKey(const libzcash::SpendingKey &key)
@@ -592,6 +625,16 @@ void CWallet::AddToSpends(const uint256& wtxid)
     }
 }
 
+void CWallet::ClearNoteWitnessCache()
+{
+    LOCK(cs_wallet);
+    for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+        for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
+            item.second.witnesses.clear();
+        }
+    }
+}
+
 void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                                      const CBlock* pblockIn,
                                      ZCIncrementalMerkleTree tree)
@@ -654,11 +697,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
             nWitnessCacheSize += 1;
         }
         if (fFileBacked) {
-            CWalletDB walletdb(strWalletFile);
-            for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-                walletdb.WriteTx(wtxItem.first, wtxItem.second);
-            }
-            walletdb.WriteWitnessCacheSize(nWitnessCacheSize);
+            WriteWitnessCache();
         }
     }
 }
@@ -679,12 +718,34 @@ void CWallet::DecrementNoteWitnesses()
         // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
         assert(nWitnessCacheSize > 0);
         if (fFileBacked) {
-            CWalletDB walletdb(strWalletFile);
-            for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-                walletdb.WriteTx(wtxItem.first, wtxItem.second);
-            }
-            walletdb.WriteWitnessCacheSize(nWitnessCacheSize);
+            WriteWitnessCache();
         }
+    }
+}
+
+void CWallet::WriteWitnessCache() {
+    CWalletDB walletdb(strWalletFile);
+    if (!walletdb.TxnBegin()) {
+        // This needs to be done atomically, so don't do it at all
+        LogPrintf("WriteWitnessCache(): Couldn't start atomic write\n");
+        return;
+    }
+    for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+        if (!walletdb.WriteTx(wtxItem.first, wtxItem.second)) {
+            LogPrintf("WriteWitnessCache(): Failed to write CWalletTx, aborting atomic write\n");
+            walletdb.TxnAbort();
+            return;
+        }
+    }
+    if (!walletdb.WriteWitnessCacheSize(nWitnessCacheSize)) {
+        LogPrintf("WriteWitnessCache(): Failed to write nWitnessCacheSize, aborting atomic write\n");
+        walletdb.TxnAbort();
+        return;
+    }
+    if (!walletdb.TxnCommit()) {
+        // Couldn't commit all to db, but in-memory state is fine
+        LogPrintf("WriteWitnessCache(): Couldn't commit atomic write\n");
+        return;
     }
 }
 
@@ -1328,6 +1389,7 @@ int CWalletTx::GetRequestCount() const
     return nRequests;
 }
 
+// GetAmounts will determine the transparent debits and credits for a given wallet tx.
 void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
                            list<COutputEntry>& listSent, CAmount& nFee, string& strSentAccount, const isminefilter& filter) const
 {
@@ -1336,12 +1398,77 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
     listSent.clear();
     strSentAccount = strFromAccount;
 
-    // Compute fee:
+    // Is this tx sent/signed by me?
     CAmount nDebit = GetDebit(filter);
-    if (nDebit > 0) // debit>0 means we signed/sent this transaction
-    {
-        CAmount nValueOut = GetValueOut();
-        nFee = nDebit - nValueOut;
+    bool isFromMyTaddr = nDebit > 0; // debit>0 means we signed/sent this transaction
+
+    // Does this tx spend my notes?
+    bool isFromMyZaddr = false;
+    for (const JSDescription& js : vjoinsplit) {
+        for (const uint256& nullifier : js.nullifiers) {
+            if (pwallet->IsFromMe(nullifier)) {
+                isFromMyZaddr = true;
+                break;
+            }
+        }
+        if (isFromMyZaddr) {
+            break;
+        }
+    }
+
+    // Compute fee if we sent this transaction.
+    if (isFromMyTaddr) {
+        CAmount nValueOut = GetValueOut();  // transparent outputs plus all vpub_old
+        CAmount nValueIn = 0;
+        for (const JSDescription & js : vjoinsplit) {
+            nValueIn += js.vpub_new;
+        }
+        nFee = nDebit - nValueOut + nValueIn;
+    }
+
+    // Create output entry for vpub_old/new, if we sent utxos from this transaction
+    if (isFromMyTaddr) {
+        CAmount myVpubOld = 0;
+        CAmount myVpubNew = 0;
+        for (const JSDescription& js : vjoinsplit) {
+            bool fMyJSDesc = false;
+
+            // Check input side
+            for (const uint256& nullifier : js.nullifiers) {
+                if (pwallet->IsFromMe(nullifier)) {
+                    fMyJSDesc = true;
+                    break;
+                }
+            }
+
+            // Check output side
+            if (!fMyJSDesc) {
+                for (const std::pair<JSOutPoint, CNoteData> nd : this->mapNoteData) {
+                    if (nd.first.js < vjoinsplit.size() && nd.first.n < vjoinsplit[nd.first.js].ciphertexts.size()) {
+                        fMyJSDesc = true;
+                        break;
+                    }
+                }
+            }
+
+            if (fMyJSDesc) {
+                myVpubOld += js.vpub_old;
+                myVpubNew += js.vpub_new;
+            }
+
+            if (!MoneyRange(js.vpub_old) || !MoneyRange(js.vpub_new) || !MoneyRange(myVpubOld) || !MoneyRange(myVpubNew)) {
+                 throw std::runtime_error("CWalletTx::GetAmounts: value out of range");
+            }
+        }
+
+        // Create an output for the value taken from or added to the transparent value pool by JoinSplits
+        if (myVpubOld > myVpubNew) {
+            COutputEntry output = {CNoDestination(), myVpubOld - myVpubNew, (int)vout.size()};
+            listSent.push_back(output);
+        } else if (myVpubNew > myVpubOld) {
+            COutputEntry output = {CNoDestination(), myVpubNew - myVpubOld, (int)vout.size()};
+            listReceived.push_back(output);
+        }
     }
 
     // Sent/received.
@@ -3187,7 +3314,7 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
     return ::AcceptToMemoryPool(mempool, state, *this, fLimitFree, NULL, fRejectAbsurdFee);
 }
 
-bool CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, size_t minDepth = 1, bool ignoreSpent)
+bool CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, int minDepth, bool ignoreSpent)
 {
     bool fFilterAddress = false;
     libzcash::PaymentAddress filterPaymentAddress;
@@ -3206,13 +3333,11 @@ bool CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, st
             continue;
         }
 
-        mapNoteData_t mapNoteData = FindMyNotes(wtx);
-
-        if (mapNoteData.size() == 0) {
+        if (wtx.mapNoteData.size() == 0) {
             continue;
         }
 
-        for (auto & pair : mapNoteData) {
+        for (auto & pair : wtx.mapNoteData) {
             JSOutPoint jsop = pair.first;
             CNoteData nd = pair.second;
             PaymentAddress pa = nd.address;

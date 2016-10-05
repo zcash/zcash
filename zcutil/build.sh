@@ -37,5 +37,5 @@ PREFIX="$(pwd)/depends/x86_64-unknown-linux-gnu/"
 
 make "$@" -C ./depends/ V=1 NO_QT=1
 ./autogen.sh
-./configure --prefix="${PREFIX}" --with-gui=no "$HARDENING_ARG" "$LCOV_ARG" CXXFLAGS='-fwrapv -fno-strict-aliasing -Wno-deprecated-declarations -Wno-placement-new -Wno-terminate -Werror -g'
+./configure --prefix="${PREFIX}" --with-gui=no "$HARDENING_ARG" "$LCOV_ARG" CXXFLAGS='-fwrapv -fno-strict-aliasing -Werror -g'
 make "$@" V=1

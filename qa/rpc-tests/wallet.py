@@ -6,6 +6,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
+from time import *
 
 class WalletTest (BitcoinTestFramework):
 
@@ -37,6 +38,9 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[0].getbalance(), 40)
         assert_equal(self.nodes[1].getbalance(), 10)
         assert_equal(self.nodes[2].getbalance(), 0)
+        assert_equal(self.nodes[0].getbalance("*"), 40)
+        assert_equal(self.nodes[1].getbalance("*"), 10)
+        assert_equal(self.nodes[2].getbalance("*"), 0)
 
         # Send 21 BTC from 0 to 2 using sendtoaddress call.
         # Second transaction will be child of first, and will require a fee
@@ -58,6 +62,8 @@ class WalletTest (BitcoinTestFramework):
         # minus the 21 plus fees sent to node2
         assert_equal(self.nodes[0].getbalance(), 50-21)
         assert_equal(self.nodes[2].getbalance(), 21)
+        assert_equal(self.nodes[0].getbalance("*"), 50-21)
+        assert_equal(self.nodes[2].getbalance("*"), 21)
 
         # Node0 should have three unspent outputs.
         # Create a couple of transactions to send them to node2, submit them through 
@@ -87,6 +93,8 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[0].getbalance(), 0)
         assert_equal(self.nodes[2].getbalance(), 50)
         assert_equal(self.nodes[2].getbalance("from1"), 50-21)
+        assert_equal(self.nodes[0].getbalance("*"), 0)
+        assert_equal(self.nodes[2].getbalance("*"), 50)
 
         # Send 10 BTC normal
         address = self.nodes[0].getnewaddress("test")
@@ -96,6 +104,8 @@ class WalletTest (BitcoinTestFramework):
         self.sync_all()
         assert_equal(self.nodes[2].getbalance(), Decimal('39.99900000'))
         assert_equal(self.nodes[0].getbalance(), Decimal('10.00000000'))
+        assert_equal(self.nodes[2].getbalance("*"), Decimal('39.99900000'))
+        assert_equal(self.nodes[0].getbalance("*"), Decimal('10.00000000'))
 
         # Send 10 BTC with subtract fee from amount
         txid = self.nodes[2].sendtoaddress(address, 10, "", "", True)
@@ -103,6 +113,8 @@ class WalletTest (BitcoinTestFramework):
         self.sync_all()
         assert_equal(self.nodes[2].getbalance(), Decimal('29.99900000'))
         assert_equal(self.nodes[0].getbalance(), Decimal('19.99900000'))
+        assert_equal(self.nodes[2].getbalance("*"), Decimal('29.99900000'))
+        assert_equal(self.nodes[0].getbalance("*"), Decimal('19.99900000'))
 
         # Sendmany 10 BTC
         txid = self.nodes[2].sendmany('from1', {address: 10}, 0, "", [])
@@ -110,6 +122,8 @@ class WalletTest (BitcoinTestFramework):
         self.sync_all()
         assert_equal(self.nodes[2].getbalance(), Decimal('19.99800000'))
         assert_equal(self.nodes[0].getbalance(), Decimal('29.99900000'))
+        assert_equal(self.nodes[2].getbalance("*"), Decimal('19.99800000'))
+        assert_equal(self.nodes[0].getbalance("*"), Decimal('29.99900000'))
 
         # Sendmany 10 BTC with subtract fee from amount
         txid = self.nodes[2].sendmany('from1', {address: 10}, 0, "", [address])
@@ -117,6 +131,8 @@ class WalletTest (BitcoinTestFramework):
         self.sync_all()
         assert_equal(self.nodes[2].getbalance(), Decimal('9.99800000'))
         assert_equal(self.nodes[0].getbalance(), Decimal('39.99800000'))
+        assert_equal(self.nodes[2].getbalance("*"), Decimal('9.99800000'))
+        assert_equal(self.nodes[0].getbalance("*"), Decimal('39.99800000'))
 
         # Test ResendWalletTransactions:
         # Create a couple of transactions, then start up a fourth
@@ -178,13 +194,15 @@ class WalletTest (BitcoinTestFramework):
         self.nodes[1].generate(1) #mine a block, tx should not be in there
         self.sync_all()
         assert_equal(self.nodes[2].getbalance(), Decimal('9.99800000')); #should not be changed because tx was not broadcasted
-        
+        assert_equal(self.nodes[2].getbalance("*"), Decimal('9.99800000')); #should not be changed because tx was not broadcasted
+
         #now broadcast from another node, mine a block, sync, and check the balance
         self.nodes[1].sendrawtransaction(txObjNotBroadcasted['hex'])
         self.nodes[1].generate(1)
         self.sync_all()
         txObjNotBroadcasted = self.nodes[0].gettransaction(txIdNotBroadcasted)
         assert_equal(self.nodes[2].getbalance(), Decimal('11.99800000')); #should not be
+        assert_equal(self.nodes[2].getbalance("*"), Decimal('11.99800000')); #should not be
         
         #create another tx
         txIdNotBroadcasted  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 2);
@@ -203,6 +221,90 @@ class WalletTest (BitcoinTestFramework):
         
         #tx should be added to balance because after restarting the nodes tx should be broadcastet
         assert_equal(self.nodes[2].getbalance(), Decimal('13.99800000')); #should not be
-        
+        assert_equal(self.nodes[2].getbalance("*"), Decimal('13.99800000')); #should not be
+
+        # send from node 0 to node 2 taddr
+        mytaddr = self.nodes[2].getnewaddress();
+        self.nodes[0].sendtoaddress(mytaddr, 10.0);
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        mybalance = self.nodes[2].z_getbalance(mytaddr)
+        assert_equal(self.nodes[2].z_getbalance(mytaddr), Decimal('10.0'));
+
+        # add zaddr to node 2
+        myzaddr = self.nodes[2].z_getnewaddress()
+
+        # send node 2 taddr to zaddr
+        recipients = []
+        recipients.append({"address":myzaddr, "amount":7.0})
+        myopid = self.nodes[2].z_sendmany(mytaddr, recipients)
+
+        opids = []
+        opids.append(myopid)
+
+        timeout = 120
+        status = None
+        for x in xrange(1, timeout):
+            results = self.nodes[2].z_getoperationresult(opids)
+            if len(results)==0:
+                sleep(1)
+            else:
+                status = results[0]["status"]
+                break
+
+        assert_equal("success", status)
+        self.nodes[2].generate(1)
+        self.sync_all()
+
+        # check balances
+        zsendmanynotevalue = Decimal('7.0')
+        zsendmanyfee = Decimal('0.0001')
+        node2utxobalance = Decimal('23.998') - zsendmanynotevalue - zsendmanyfee
+
+        assert_equal(self.nodes[2].getbalance(), node2utxobalance)
+        assert_equal(self.nodes[2].getbalance("*"), node2utxobalance)
+
+        # check zaddr balance
+        assert_equal(self.nodes[2].z_getbalance(myzaddr), zsendmanynotevalue);
+
+        # check via z_gettotalbalance
+        resp = self.nodes[2].z_gettotalbalance()
+        assert_equal(Decimal(resp["transparent"]), node2utxobalance)
+        assert_equal(Decimal(resp["private"]), zsendmanynotevalue)
+        assert_equal(Decimal(resp["total"]), node2utxobalance + zsendmanynotevalue)
+
+
+        # send from private note to node 0 and node 2
+        node0balance = self.nodes[0].getbalance() # 25.99794745
+        node2balance = self.nodes[2].getbalance() # 16.99790000
+
+        recipients = []
+        recipients.append({"address":self.nodes[0].getnewaddress(), "amount":1.0})
+        recipients.append({"address":self.nodes[2].getnewaddress(), "amount":1.0})
+        myopid = self.nodes[2].z_sendmany(myzaddr, recipients)
+
+        status = None
+        opids = []
+        opids.append(myopid)
+        for x in xrange(1, timeout):
+            results = self.nodes[2].z_getoperationresult(opids)
+            if len(results)==0:
+                sleep(1)
+            else:
+                status = results[0]["status"]
+                break
+
+        assert_equal("success", status)
+        self.nodes[2].generate(1)
+        self.sync_all()
+
+        node0balance += Decimal('1.0')
+        node2balance += Decimal('1.0')
+        assert_equal(Decimal(self.nodes[0].getbalance()), node0balance)
+        assert_equal(Decimal(self.nodes[0].getbalance("*")), node0balance)
+        assert_equal(Decimal(self.nodes[2].getbalance()), node2balance)
+        assert_equal(Decimal(self.nodes[2].getbalance("*")), node2balance)
+
 if __name__ == '__main__':
     WalletTest ().main ()

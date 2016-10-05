@@ -2,17 +2,32 @@ Release Process
 ====================
 Meta: There should always be a single release engineer to disambiguate responsibility.
 
+## Pre-release
+
+Check all of the following:
+
+- All dependencies have been updated as appropriate:
+  - BDB
+  - Boost
+  - ccache
+  - libgmp
+  - libsnark (upstream of our fork)
+  - libsodium
+  - miniupnpc
+  - OpenSSL
+
 ## A. Define the release version as:
 
-    $ ZCASH_RELEASE=${UPSTREAM_VERSION}.z${ZCASH_RELEASE_COUNTER}
-    
+    $ ZCASH_RELEASE=MAJOR.MINOR.REVISION(-BUILD_STRING)
+
 Example:
 
-    $ ZCASH_RELEASE=0.11.2.z2
-    
-Also, the following commands use the ZCASH_RELEASE_PREV bash variable for the previous release:
+    $ ZCASH_RELEASE=1.0.0-beta2
 
-    $ ZCASH_RELEASE_PREV=0.11.2.z1
+Also, the following commands use the `ZCASH_RELEASE_PREV` bash variable for the
+previous release:
+
+    $ ZCASH_RELEASE_PREV=1.0.0-beta1
     
 ## B. create a new release branch / github PR
 ### B1. update (commit) version in sources
@@ -21,8 +36,18 @@ Also, the following commands use the ZCASH_RELEASE_PREV bash variable for the pr
     src/clientversion.h
     configure.ac
     
-In `configure.ac` and `clientversion.h` change CLIENT_VERSION_IS_RELEASE to
-false while Zcash is in alpha-test phase.
+In `configure.ac` and `clientversion.h`:
+
+- Increment `CLIENT_VERSION_BUILD` according to the following schema:
+
+  - 0-24: `1.0.0-beta1`-`1.0.0-beta25`
+  - 25-49: `1.0.0-rc1`-`1.0.0-rc25`
+  - 50: `1.0.0`
+  - 51-99: `1.0.0-1`-`1.0.0-49`
+  - (`CLIENT_VERSION_REVISION` rolls over)
+  - 0-24: `1.0.1-beta1`-`1.0.1-beta25`
+
+- Change `CLIENT_VERSION_IS_RELEASE` to false while Zcash is in beta-test phase.
 
 ### B2. write release notes
 
@@ -45,7 +70,7 @@ Do the normal pull-request, review, testing process for this release PR.
 
 ### C1. Ensure depends tree is working
 
-http://ci.leastauthority.com:8010/builders/depends-sources
+https://ci.z.cash/builders/depends-sources
 
 ### C2. Ensure public parameters work
 
@@ -62,18 +87,27 @@ previous merged PR, then:
     $ git push origin zc.v${ZCASH_RELEASE}
 
 ## E. deploy testnet
+
+Notify the Zcash DevOps engineer/sysadmin that the release has been tagged. They update some variables in the company's automation code and then run an Ansible playbook, which:
+
+* builds Zcash based on the specified branch
+* deploys it as a public service (e.g. betatestnet.z.cash, mainnet.z.cash)
+* often the same server can be re-used, and the role idempotently handles upgrades, but if not then they also need to update DNS records
+* possible manual steps: blowing away the `testnet3` dir, deleting old parameters, restarting DNS seeder
+
+Then, verify that nodes can connect to the testnet server, and update the guide on the wiki to ensure the correct hostname is listed in the recommended zcash.conf.
+
 ## F. publish the release announcement (blog, zcash-dev, slack)
 ## G. celebrate
 ## missing steps
-
 Zcash still needs:
 
-* deterministic build
+* deterministic or reproducible builds
 
-* signatured tags
+* signed git tags
 
 * thorough pre-release testing (presumably more thorough than standard PR tests)
 
 * release deployment steps (eg: updating build-depends mirror, deploying testnet, etc...)
 
-* proper zcash-specific versions and names in software and documentation.
+* proper Zcash-specific versions and names in software and documentation.
