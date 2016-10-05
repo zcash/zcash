@@ -3,6 +3,7 @@
 #include "key.h"
 #include "pubkey.h"
 #include "random.h"
+#include "script/sigcache.h"
 #include "util/system.h"
 #include "util/test.h"
 
@@ -65,6 +66,7 @@ public:
 int main(int argc, char **argv) {
   assert(sodium_init() != -1);
   ECC_Start();
+  InitSignatureCache();
 
     // Log all errors to a common test file.
     fs::path tmpPath = fs::temp_directory_path();

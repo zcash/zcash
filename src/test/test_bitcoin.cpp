@@ -24,6 +24,7 @@
 #include "ui_interface.h"
 #include "rpc/server.h"
 #include "rpc/register.h"
+#include "script/sigcache.h"
 
 #include <boost/test/unit_test.hpp>
 #include <boost/thread.hpp>
@@ -49,6 +50,7 @@ BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
     ECC_Start();
     SetupEnvironment();
     SetupNetworking();
+    InitSignatureCache();
 
     // Uncomment this to log all errors to stdout so we see them in test output.
     // We don't enable this by default because several tests intentionally cause
