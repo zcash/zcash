@@ -76,15 +76,13 @@ https://ci.z.cash/builders/depends-sources
 
 Run `./fetch-params.sh`.
 
-## D. make tags / release-branch for the newly merged result
+## D. make tag for the newly merged result
 
-In this example, we ensure zc.v0.11.2.latest is up to date with the
+In this example, we ensure master is up to date with the
 previous merged PR, then:
 
-    $ git tag v${ZCASH_RELEASE}
-    $ git branch zc.v${ZCASH_RELEASE}
+    $ git tag -s v${ZCASH_RELEASE}
     $ git push origin v${ZCASH_RELEASE}
-    $ git push origin zc.v${ZCASH_RELEASE}
 
 ## E. deploy testnet
 
@@ -103,8 +101,6 @@ Then, verify that nodes can connect to the testnet server, and update the guide 
 Zcash still needs:
 
 * deterministic or reproducible builds
-
-* signed git tags
 
 * thorough pre-release testing (presumably more thorough than standard PR tests)
 
