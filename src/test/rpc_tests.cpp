@@ -34,6 +34,12 @@ Value CallRPC(string args)
     boost::split(vArgs, args, boost::is_any_of(" \t"));
     string strMethod = vArgs[0];
     vArgs.erase(vArgs.begin());
+    // Handle empty strings the same way as CLI
+    for (auto i = 0; i < vArgs.size(); i++) {
+        if (vArgs[i] == "\"\"") {
+            vArgs[i] = "";
+        }
+    }
     Array params = RPCConvertValues(strMethod, vArgs);
 
     rpcfn_type method = tableRPC[strMethod]->actor;
