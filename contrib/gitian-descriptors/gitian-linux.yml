@@ -1,25 +1,30 @@
 ---
-name: "bitcoin-linux-0.11"
+name: "zcash-1.0.0-rc1"
 enable_cache: true
 suites:
 - "trusty"
 architectures:
 - "amd64"
 packages:
-- "g++-multilib"
-- "git-core"
-- "pkg-config"
 - "autoconf"
-- "libtool"
 - "automake"
-- "faketime"
 - "bsdmainutils"
 - "binutils-gold"
 - "ca-certificates"
+- "g++-multilib"
+- "git-core"
+- "libc6-dev"
+- "libtool"
+- "m4"
+- "ncurses-dev"
+- "pkg-config"
 - "python"
+- "unzip"
+- "wget"
+- "zlib1g-dev"
 remotes:
-- "url": "https://github.com/bitcoin/bitcoin.git"
-  "dir": "bitcoin"
+- "url": "https://github.com/zcash/zcash.git"
+  "dir": "zcash"
 files: []
 script: |
   WRAP_DIR=$HOME/wrapped
@@ -73,7 +78,7 @@ script: |
   create_global_faketime_wrappers "2000-01-01 12:00:00"
   create_per-host_faketime_wrappers "2000-01-01 12:00:00"
 
-  cd bitcoin
+  cd zcash
   BASEPREFIX=`pwd`/depends
   # Build dependencies for each host
   for i in $HOSTS; do
@@ -88,13 +93,13 @@ script: |
   ./autogen.sh
   CONFIG_SITE=${BASEPREFIX}/`echo "${HOSTS}" | awk '{print $1;}'`/share/config.site ./configure --prefix=/
   make dist
-  SOURCEDIST=`echo bitcoin-*.tar.gz`
+  SOURCEDIST=`echo zcash-*.tar.gz`
   DISTNAME=`echo ${SOURCEDIST} | sed 's/.tar.*//'`
   # Correct tar file order
   mkdir -p temp
   pushd temp
   tar xf ../$SOURCEDIST
-  find bitcoin-* | sort | tar --no-recursion --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 -c -T - | gzip -9n > ../$SOURCEDIST
+  find zcash* | sort | tar --no-recursion --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 -c -T - | gzip -9n > ../$SOURCEDIST
   popd
 
   ORIGPATH="$PATH"
