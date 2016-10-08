@@ -164,7 +164,7 @@ double benchmark_verify_equihash()
 double benchmark_large_tx()
 {
     // Number of inputs in the spending transaction that we will simulate
-    const size_t NUM_INPUTS = 11100;
+    const size_t NUM_INPUTS = 555;
 
     // Create priv/pub key
     CKey priv;
@@ -201,9 +201,9 @@ double benchmark_large_tx()
         ss << spending_tx;
         //std::cout << "SIZE OF SPENDING TX: " << ss.size() << std::endl;
 
-        auto error = MAX_BLOCK_SIZE / 20; // 5% error
-        assert(ss.size() < MAX_BLOCK_SIZE + error);
-        assert(ss.size() > MAX_BLOCK_SIZE - error);
+        auto error = MAX_TX_SIZE / 20; // 5% error
+        assert(ss.size() < MAX_TX_SIZE + error);
+        assert(ss.size() > MAX_TX_SIZE - error);
     }
 
     // Spending tx has all its inputs signed and does not need to be mutated anymore
