@@ -87,14 +87,13 @@ Start mining
 ------------
  
 ```
+#iguana documentation shows how to get the btcpubkey and wifstrs that need to be used
+
+#bitcoin also need to be installed with txindex=1 and with rpc enabled
+
 cd ~
 cd komodo
 
-#To start the daemon to get wallet addres and pubkey
-./src/komodod -gen -genproclimit=2 &
-
-#This will give you your wallet address
-./src/komodo-cli listreceivedbyaddress 0 true
 
 #This will return your pubkey eg. "0259e137e5594cf8287195d13aed816af75bd5c04ae673296b51f66e7e8346e8d8" for your address
 ./src/komodo-cli validateaddress <yourwalletaddres>
