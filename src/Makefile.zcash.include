@@ -23,6 +23,7 @@ zcash_miner_LDADD = \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBBITCOIN_UTIL) \
+  $(LIBSECP256K1) \
   $(BOOST_LIBS) \
   $(CRYPTO_LIBS) \
   $(LIBZCASH) \
