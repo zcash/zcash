@@ -39,6 +39,8 @@ using namespace json_spirit;
 
 using namespace libzcash;
 
+extern Array TxJoinSplitToJSON(const CTransaction& tx);
+
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
 
@@ -92,6 +94,8 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
     entry.push_back(Pair("timereceived", (int64_t)wtx.nTimeReceived));
     BOOST_FOREACH(const PAIRTYPE(string,string)& item, wtx.mapValue)
         entry.push_back(Pair(item.first, item.second));
+
+    entry.push_back(Pair("vjoinsplit", TxJoinSplitToJSON(wtx)));
 }
 
 string AccountFromValue(const Value& value)
@@ -1699,6 +1703,17 @@ Value gettransaction(const Array& params, bool fHelp)
             "      \"category\" : \"send|receive\",    (string) The category, either 'send' or 'receive'\n"
             "      \"amount\" : x.xxx                  (numeric) The amount in btc\n"
             "      \"vout\" : n,                       (numeric) the vout value\n"
+            "    }\n"
+            "    ,...\n"
+            "  ],\n"
+            "  \"vjoinsplit\" : [\n"
+            "    {\n"
+            "      \"anchor\" : \"treestateref\",          (string) Merkle root of note commitment tree\n"
+            "      \"nullifiers\" : [ string, ... ]      (string) Nullifiers of input notes\n"
+            "      \"commitments\" : [ string, ... ]     (string) Note commitments for note outputs\n"
+            "      \"macs\" : [ string, ... ]            (string) Message authentication tags\n"
+            "      \"vpub_old\" : x.xxx                  (numeric) The amount removed from the transparent value pool\n"
+            "      \"vpub_new\" : x.xxx,                 (numeric) The amount added to the transparent value pool\n"
             "    }\n"
             "    ,...\n"
             "  ],\n"

@@ -225,12 +225,16 @@ class WalletTest (BitcoinTestFramework):
 
         # send from node 0 to node 2 taddr
         mytaddr = self.nodes[2].getnewaddress();
-        self.nodes[0].sendtoaddress(mytaddr, 10.0);
+        mytxid = self.nodes[0].sendtoaddress(mytaddr, 10.0);
         self.nodes[0].generate(1)
         self.sync_all()
 
         mybalance = self.nodes[2].z_getbalance(mytaddr)
         assert_equal(self.nodes[2].z_getbalance(mytaddr), Decimal('10.0'));
+
+        mytxdetails = self.nodes[2].gettransaction(mytxid)
+        myvjoinsplits = mytxdetails["vjoinsplit"]
+        assert_equal(0, len(myvjoinsplits))
 
         # add zaddr to node 2
         myzaddr = self.nodes[2].z_getnewaddress()
@@ -251,6 +255,7 @@ class WalletTest (BitcoinTestFramework):
                 sleep(1)
             else:
                 status = results[0]["status"]
+                mytxid = results[0]["result"]["txid"]
                 break
 
         assert_equal("success", status)
@@ -274,6 +279,10 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(Decimal(resp["private"]), zsendmanynotevalue)
         assert_equal(Decimal(resp["total"]), node2utxobalance + zsendmanynotevalue)
 
+        # there should be at least one joinsplit
+        mytxdetails = self.nodes[2].gettransaction(mytxid)
+        myvjoinsplits = mytxdetails["vjoinsplit"]
+        assert_greater_than(len(myvjoinsplits), 0)
 
         # send from private note to node 0 and node 2
         node0balance = self.nodes[0].getbalance() # 25.99794745
