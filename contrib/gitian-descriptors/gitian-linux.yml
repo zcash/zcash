@@ -2,7 +2,7 @@
 name: "zcash-1.0.0-rc1"
 enable_cache: true
 suites:
-- "trusty"
+- "jessie"
 architectures:
 - "amd64"
 packages:
