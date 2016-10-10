@@ -1,6 +1,7 @@
 ---
 name: "zcash-1.0.0-rc1"
 enable_cache: true
+distro: "debian"
 suites:
 - "jessie"
 architectures:
