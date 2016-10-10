@@ -77,7 +77,7 @@ class WalletTest (BitcoinTestFramework):
             inputs = []
             outputs = {}
             inputs.append({ "txid" : utxo["txid"], "vout" : utxo["vout"]})
-            outputs[self.nodes[2].getnewaddress("from1")] = utxo["amount"]
+            outputs[self.nodes[2].getnewaddress("")] = utxo["amount"]
             raw_tx = self.nodes[0].createrawtransaction(inputs, outputs)
             txns_to_send.append(self.nodes[0].signrawtransaction(raw_tx))
 
@@ -92,12 +92,11 @@ class WalletTest (BitcoinTestFramework):
 
         assert_equal(self.nodes[0].getbalance(), 0)
         assert_equal(self.nodes[2].getbalance(), 50)
-        assert_equal(self.nodes[2].getbalance("from1"), 50-21)
         assert_equal(self.nodes[0].getbalance("*"), 0)
         assert_equal(self.nodes[2].getbalance("*"), 50)
 
         # Send 10 BTC normal
-        address = self.nodes[0].getnewaddress("test")
+        address = self.nodes[0].getnewaddress("")
         self.nodes[2].settxfee(Decimal('0.001'))
         txid = self.nodes[2].sendtoaddress(address, 10, "", "", False)
         self.nodes[2].generate(1)
@@ -117,7 +116,7 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[0].getbalance("*"), Decimal('19.99900000'))
 
         # Sendmany 10 BTC
-        txid = self.nodes[2].sendmany('from1', {address: 10}, 0, "", [])
+        txid = self.nodes[2].sendmany("", {address: 10}, 0, "", [])
         self.nodes[2].generate(1)
         self.sync_all()
         assert_equal(self.nodes[2].getbalance(), Decimal('19.99800000'))
@@ -126,7 +125,7 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[0].getbalance("*"), Decimal('29.99900000'))
 
         # Sendmany 10 BTC with subtract fee from amount
-        txid = self.nodes[2].sendmany('from1', {address: 10}, 0, "", [address])
+        txid = self.nodes[2].sendmany("", {address: 10}, 0, "", [address])
         self.nodes[2].generate(1)
         self.sync_all()
         assert_equal(self.nodes[2].getbalance(), Decimal('9.99800000'))
