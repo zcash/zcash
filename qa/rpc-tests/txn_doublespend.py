@@ -75,7 +75,7 @@ class TxnMallTest(BitcoinTestFramework):
         else:
             assert_equal(tx1["confirmations"], 0)
             assert_equal(tx2["confirmations"], 0)
-        
+
         # Now give doublespend to miner:
         mutated_txid = self.nodes[2].sendrawtransaction(doublespend["hex"])
         # ... mine a block...
@@ -89,7 +89,7 @@ class TxnMallTest(BitcoinTestFramework):
         # Re-fetch transaction info:
         tx1 = self.nodes[0].gettransaction(txid1)
         tx2 = self.nodes[0].gettransaction(txid2)
-        
+
         # Both transactions should be conflicted
         assert_equal(tx1["confirmations"], -1)
         assert_equal(tx2["confirmations"], -1)
