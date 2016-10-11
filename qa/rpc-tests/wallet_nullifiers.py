@@ -45,6 +45,16 @@ class WalletNullifiersTest (BitcoinTestFramework):
         myzkey = self.nodes[2].z_exportkey(myzaddr)
         self.nodes[1].z_importkey(myzkey)
 
+        # encrypt node 1 wallet and wait to terminate
+        self.nodes[1].encryptwallet("test")
+        bitcoind_processes[1].wait()
+
+        # restart node 1
+        self.nodes[1] = start_node(1, self.options.tmpdir)
+        connect_nodes_bi(self.nodes, 0, 1)
+        connect_nodes_bi(self.nodes, 1, 2)
+        self.sync_all()
+
         # send node 0 zaddr to note 2 zaddr
         recipients = []
         recipients.append({"address":myzaddr, "amount":7.0})
@@ -108,6 +118,8 @@ class WalletNullifiersTest (BitcoinTestFramework):
         assert_equal(self.nodes[1].z_getbalance(myzaddr), zaddrremaining)
 
         # send node 2 zaddr on node 1 to taddr
+        # This requires that node 1 be unlocked
+        self.nodes[1].walletpassphrase("test", 600)
         mytaddr1 = self.nodes[1].getnewaddress();
         recipients = []
         recipients.append({"address":mytaddr1, "amount":1.0})
