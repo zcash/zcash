@@ -22,7 +22,7 @@ function fetch_params {
             --progress=dot:giga \
             --output-document="$dlname" \
             --continue \
-            --retry-connrefused --waitretry=1 --timeout=10 --tries 0 \
+            --retry-connrefused --waitretry=3 --timeout=30 \
             "$url"
 
         shasum -a 256 --check <<EOF
