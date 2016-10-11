@@ -70,8 +70,7 @@ your zcashd's P2P listen port (8233 by default).
 
 In a typical situation, where you're only reachable via Tor, this should suffice:
 
-	./zcashd -proxy=127.0.0.1:9050 -externalip=zctestseie6wxgio.onion
- -listen
+	./zcashd -proxy=127.0.0.1:9050 -externalip=zctestseie6wxgio.onion -listen
 
 (obviously, replace the Onion address with your own). If you don't care too much
 about hiding your node, and want to be reachable on IPv4 as well, additionally
