@@ -94,20 +94,20 @@ a single Zcash hidden server.
 
 Edit zcash.conf and comment out any nodes you might normally connect to.
 
-	#addnode=alphatestnet.z.cash
+	#addnode=betatestnet.z.cash
 
-Launch zcashd as follows:
+Launch zcashd as follows, adding the Zcash hidden server:
 
-	zcashd -onion=127.0.0.1:9050 -addnode=abc123.onion 
+	zcashd -onion=127.0.0.1:9050 -addnode=zctestseie6wxgio.onion
 
 Now use zcash-cli to verify there is only a single peer connection.
 
 	zcash-cli getpeerinfo
-	
+
 	[
 	    {
 	        "id" : 1,
-	        "addr" : "abc123.onion:18233",
+	        "addr" : "zctestseie6wxgio.onion:18233",
 	        ...
 	        "version" : 70002,
 	        "subver" : "/Satoshi:0.11.2/",
