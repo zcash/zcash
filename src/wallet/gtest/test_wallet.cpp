@@ -35,6 +35,14 @@ class TestWallet : public CWallet {
 public:
     TestWallet() : CWallet() { }
 
+    bool EncryptKeys(CKeyingMaterial& vMasterKeyIn) {
+        return CCryptoKeyStore::EncryptKeys(vMasterKeyIn);
+    }
+
+    bool Unlock(const CKeyingMaterial& vMasterKeyIn) {
+        return CCryptoKeyStore::Unlock(vMasterKeyIn);
+    }
+
     void IncrementNoteWitnesses(const CBlockIndex* pindex,
                                 const CBlock* pblock,
                                 ZCIncrementalMerkleTree tree) {
@@ -382,7 +390,7 @@ TEST(wallet_tests, set_invalid_note_addrs_in_cwallettx) {
     EXPECT_THROW(wtx.SetNoteData(noteData), std::logic_error);
 }
 
-TEST(wallet_tests, find_note_in_tx) {
+TEST(wallet_tests, FindMyNotes) {
     CWallet wallet;
 
     auto sk = libzcash::SpendingKey::random();
@@ -397,6 +405,36 @@ TEST(wallet_tests, find_note_in_tx) {
 
     JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
     CNoteData nd {sk.address(), nullifier};
+    EXPECT_EQ(1, noteMap.count(jsoutpt));
+    EXPECT_EQ(nd, noteMap[jsoutpt]);
+}
+
+TEST(wallet_tests, FindMyNotesInEncryptedWallet) {
+    TestWallet wallet;
+    uint256 r {GetRandHash()};
+    CKeyingMaterial vMasterKey (r.begin(), r.end());
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    ASSERT_TRUE(wallet.EncryptKeys(vMasterKey));
+
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    auto noteMap = wallet.FindMyNotes(wtx);
+    EXPECT_EQ(2, noteMap.size());
+
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+    CNoteData nd {sk.address(), nullifier};
+    EXPECT_EQ(1, noteMap.count(jsoutpt));
+    EXPECT_NE(nd, noteMap[jsoutpt]);
+
+    ASSERT_TRUE(wallet.Unlock(vMasterKey));
+
+    noteMap = wallet.FindMyNotes(wtx);
+    EXPECT_EQ(2, noteMap.size());
     EXPECT_EQ(1, noteMap.count(jsoutpt));
     EXPECT_EQ(nd, noteMap[jsoutpt]);
 }
