@@ -11,10 +11,25 @@
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
-using ::testing::_;
 using ::testing::Return;
 
 ZCJoinSplit* params = ZCJoinSplit::Unopened();
+
+ACTION(ThrowLogicError) {
+    throw std::logic_error("Boom");
+}
+
+class MockWalletDB {
+public:
+    MOCK_METHOD0(TxnBegin, bool());
+    MOCK_METHOD0(TxnCommit, bool());
+    MOCK_METHOD0(TxnAbort, bool());
+
+    MOCK_METHOD2(WriteTx, bool(uint256 hash, const CWalletTx& wtx));
+    MOCK_METHOD1(WriteWitnessCacheSize, bool(int64_t nWitnessCacheSize));
+};
+
+template void CWallet::WriteWitnessCache<MockWalletDB>(MockWalletDB& walletdb);
 
 class TestWallet : public CWallet {
 public:
@@ -27,6 +42,9 @@ public:
     }
     void DecrementNoteWitnesses() {
         CWallet::DecrementNoteWitnesses();
+    }
+    void WriteWitnessCache(MockWalletDB& walletdb) {
+        CWallet::WriteWitnessCache(walletdb);
     }
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx) {
         return CWallet::UpdatedNoteData(wtxIn, wtx);
@@ -677,6 +695,50 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     wallet.GetNoteWitnesses(notes, witnesses, anchor2);
     EXPECT_FALSE((bool) witnesses[0]);
     EXPECT_FALSE((bool) witnesses[1]);
+}
+
+TEST(wallet_tests, WriteWitnessCache) {
+    TestWallet wallet;
+    MockWalletDB walletdb;
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    auto wtx = GetValidReceive(sk, 10, true);
+    wallet.AddToWallet(wtx, true, NULL);
+
+    EXPECT_CALL(walletdb, TxnBegin())
+        .WillOnce(Return(false))
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(walletdb, TxnCommit())
+        .WillOnce(Return(false))
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(walletdb, TxnAbort())
+        .Times(4);
+
+    EXPECT_CALL(walletdb, WriteTx(wtx.GetHash(), wtx))
+        .WillOnce(Return(false))
+        .WillOnce(ThrowLogicError())
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
+        .WillOnce(Return(false))
+        .WillOnce(ThrowLogicError())
+        .WillRepeatedly(Return(true));
+
+    // TxnBegin fails
+    wallet.WriteWitnessCache(walletdb);
+    // WriteTx fails
+    wallet.WriteWitnessCache(walletdb);
+    // WriteTx throws
+    wallet.WriteWitnessCache(walletdb);
+    // WriteWitnessCacheSize fails
+    wallet.WriteWitnessCache(walletdb);
+    // WriteWitnessCacheSize throws
+    wallet.WriteWitnessCache(walletdb);
+    // TxCommit fails
+    wallet.WriteWitnessCache(walletdb);
+    // Everything succeeds
+    wallet.WriteWitnessCache(walletdb);
 }
 
 TEST(wallet_tests, UpdatedNoteData) {
