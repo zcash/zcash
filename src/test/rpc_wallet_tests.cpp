@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     CPubKey demoPubkey = pwalletMain->GenerateNewKey();
     CBitcoinAddress demoAddress = CBitcoinAddress(CTxDestination(demoPubkey.GetID()));
     Value retValue;
-    string strAccount = "walletDemoAccount";
+    string strAccount = "";
     string strPurpose = "receive";
     BOOST_CHECK_NO_THROW({ /*Initialize Wallet with an account */
         CWalletDB walletdb(pwalletMain->strWalletFile);
@@ -109,7 +109,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     /*********************************
      * 			setaccount
      *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("setaccount " + setaccountDemoAddress.ToString() + " nullaccount"));
+    BOOST_CHECK_NO_THROW(CallRPC("setaccount " + setaccountDemoAddress.ToString() + " \"\""));
+    /* Accounts are disabled */
+    BOOST_CHECK_THROW(CallRPC("setaccount " + setaccountDemoAddress.ToString() + " nullaccount"), runtime_error);
     /* t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV is not owned by the test wallet. */
     BOOST_CHECK_THROW(CallRPC("setaccount t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV nullaccount"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("setaccount"), runtime_error);
@@ -121,7 +123,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      *                  getbalance
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getbalance"));
-    BOOST_CHECK_NO_THROW(CallRPC("getbalance " + demoAddress.ToString()));
+    BOOST_CHECK_THROW(CallRPC("getbalance " + demoAddress.ToString()), runtime_error);
 
     /*********************************
      * 			listunspent
@@ -192,13 +194,16 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      * 		getnewaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getnewaddress"));
-    BOOST_CHECK_NO_THROW(CallRPC("getnewaddress getnewaddress_demoaccount"));
+    BOOST_CHECK_NO_THROW(CallRPC("getnewaddress \"\""));
+    /* Accounts are deprecated */
+    BOOST_CHECK_THROW(CallRPC("getnewaddress getnewaddress_demoaccount"), runtime_error);
 
     /*********************************
      * 		getaccountaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getaccountaddress \"\""));
-    BOOST_CHECK_NO_THROW(CallRPC("getaccountaddress accountThatDoesntExists")); // Should generate a new account
+    /* Accounts are deprecated */
+    BOOST_CHECK_THROW(CallRPC("getaccountaddress accountThatDoesntExists"), runtime_error);
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getaccountaddress " + strAccount));
     BOOST_CHECK(CBitcoinAddress(retValue.get_str()).Get() == demoAddress.Get());
 
@@ -234,8 +239,12 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_THROW(CallRPC("getaddressesbyaccount"), runtime_error);
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getaddressesbyaccount " + strAccount));
     Array arr = retValue.get_array();
-    BOOST_CHECK(arr.size() > 0);
-    BOOST_CHECK(CBitcoinAddress(arr[0].get_str()).Get() == demoAddress.Get());
+    BOOST_CHECK_EQUAL(4, arr.size());
+    bool notFound = true;
+    for (auto a : arr) {
+        notFound &= CBitcoinAddress(a.get_str()).Get() != demoAddress.Get();
+    }
+    BOOST_CHECK(!notFound);
 
     /*
      * getblocksubsidy

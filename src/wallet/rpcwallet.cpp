@@ -101,8 +101,8 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
 string AccountFromValue(const Value& value)
 {
     string strAccount = value.get_str();
-    if (strAccount == "*")
-        throw JSONRPCError(RPC_WALLET_INVALID_ACCOUNT_NAME, "Invalid account name");
+    if (strAccount != "")
+        throw JSONRPCError(RPC_WALLET_ACCOUNTS_UNSUPPORTED, "Accounts are unsupported");
     return strAccount;
 }
 
@@ -115,10 +115,8 @@ Value getnewaddress(const Array& params, bool fHelp)
         throw runtime_error(
             "getnewaddress ( \"account\" )\n"
             "\nReturns a new Bitcoin address for receiving payments.\n"
-            "If 'account' is specified (DEPRECATED), it is added to the address book \n"
-            "so payments received with the address will be credited to 'account'.\n"
             "\nArguments:\n"
-            "1. \"account\"        (string, optional) DEPRECATED. The account name for the address to be linked to. If not provided, the default account \"\" is used. It can also be set to the empty string \"\" to represent the default account. The account does not need to exist, it will be created if there is no account by the given name.\n"
+            "1. \"account\"        (string, optional) DEPRECATED. If provided, it MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "\nResult:\n"
             "\"bitcoinaddress\"    (string) The new bitcoin address\n"
             "\nExamples:\n"
@@ -195,7 +193,7 @@ Value getaccountaddress(const Array& params, bool fHelp)
             "getaccountaddress \"account\"\n"
             "\nDEPRECATED. Returns the current Bitcoin address for receiving payments to this account.\n"
             "\nArguments:\n"
-            "1. \"account\"       (string, required) The account name for the address. It can also be set to the empty string \"\" to represent the default account. The account does not need to exist, it will be created and a new address created  if there is no account by the given name.\n"
+            "1. \"account\"       (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "\nResult:\n"
             "\"bitcoinaddress\"   (string) The account bitcoin address\n"
             "\nExamples:\n"
@@ -263,7 +261,7 @@ Value setaccount(const Array& params, bool fHelp)
             "\nDEPRECATED. Sets the account associated with the given address.\n"
             "\nArguments:\n"
             "1. \"bitcoinaddress\"  (string, required) The bitcoin address to be associated with an account.\n"
-            "2. \"account\"         (string, required) The account to assign the address to.\n"
+            "2. \"account\"         (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "\nExamples:\n"
             + HelpExampleCli("setaccount", "\"1D1ZrZNe3JUo7ZycKEYQQiQAWd9y54F4XZ\" \"tabby\"")
             + HelpExampleRpc("setaccount", "\"1D1ZrZNe3JUo7ZycKEYQQiQAWd9y54F4XZ\", \"tabby\"")
@@ -340,7 +338,7 @@ Value getaddressesbyaccount(const Array& params, bool fHelp)
             "getaddressesbyaccount \"account\"\n"
             "\nDEPRECATED. Returns the list of addresses for the given account.\n"
             "\nArguments:\n"
-            "1. \"account\"  (string, required) The account name.\n"
+            "1. \"account\"  (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "\nResult:\n"
             "[                     (json array of string)\n"
             "  \"bitcoinaddress\"  (string) a bitcoin address associated with the given account\n"
@@ -629,7 +627,7 @@ Value getreceivedbyaccount(const Array& params, bool fHelp)
             "getreceivedbyaccount \"account\" ( minconf )\n"
             "\nDEPRECATED. Returns the total amount received by addresses with <account> in transactions with at least [minconf] confirmations.\n"
             "\nArguments:\n"
-            "1. \"account\"      (string, required) The selected account, may be the default account using \"\".\n"
+            "1. \"account\"      (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "\nResult:\n"
             "amount              (numeric) The total amount in btc received for this account.\n"
@@ -716,12 +714,9 @@ Value getbalance(const Array& params, bool fHelp)
     if (fHelp || params.size() > 3)
         throw runtime_error(
             "getbalance ( \"account\" minconf includeWatchonly )\n"
-            "\nIf account is not specified, returns the server's total available balance.\n"
-            "If account is specified (DEPRECATED), returns the balance in the account.\n"
-            "Note that the account \"\" is not the same as leaving the parameter out.\n"
-            "The server total may be different to the balance in the default \"\" account.\n"
+            "\nReturns the server's total available balance.\n"
             "\nArguments:\n"
-            "1. \"account\"      (string, optional) DEPRECATED. The selected account, or \"*\" for entire wallet. It may be the default account using \"\".\n"
+            "1. \"account\"      (string, optional) DEPRECATED. If provided, it MUST be set to the empty string \"\" or to the string \"*\", either of which will give the total available balance. Passing any other string will result in an error.\n"
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "3. includeWatchonly (bool, optional, default=false) Also include balance in watchonly addresses (see 'importaddress')\n"
             "\nResult:\n"
@@ -809,8 +804,8 @@ Value movecmd(const Array& params, bool fHelp)
             "move \"fromaccount\" \"toaccount\" amount ( minconf \"comment\" )\n"
             "\nDEPRECATED. Move a specified amount from one account in your wallet to another.\n"
             "\nArguments:\n"
-            "1. \"fromaccount\"   (string, required) The name of the account to move funds from. May be the default account using \"\".\n"
-            "2. \"toaccount\"     (string, required) The name of the account to move funds to. May be the default account using \"\".\n"
+            "1. \"fromaccount\"   (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
+            "2. \"toaccount\"     (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "3. minconf           (numeric, optional, default=1) Only use funds with at least this many confirmations.\n"
             "4. \"comment\"       (string, optional) An optional comment, stored in the wallet only.\n"
             "\nResult:\n"
@@ -881,7 +876,7 @@ Value sendfrom(const Array& params, bool fHelp)
             "The amount is a real and is rounded to the nearest 0.00000001."
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
-            "1. \"fromaccount\"       (string, required) The name of the account to send funds from. May be the default account using \"\".\n"
+            "1. \"fromaccount\"       (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "2. \"tobitcoinaddress\"  (string, required) The bitcoin address to send funds to.\n"
             "3. amount                (numeric, required) The amount in btc. (transaction fee is added on top).\n"
             "4. minconf               (numeric, optional, default=1) Only use funds with at least this many confirmations.\n"
@@ -943,7 +938,7 @@ Value sendmany(const Array& params, bool fHelp)
             "\nSend multiple times. Amounts are double-precision floating point numbers."
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
-            "1. \"fromaccount\"         (string, required) DEPRECATED. The account to send the funds from. Should be \"\" for the default account\n"
+            "1. \"fromaccount\"         (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "2. \"amounts\"             (string, required) A json object with addresses and amounts\n"
             "    {\n"
             "      \"address\":amount   (numeric) The bitcoin address is the key, the numeric amount in btc is the value\n"
@@ -1060,7 +1055,7 @@ Value addmultisigaddress(const Array& params, bool fHelp)
             "       \"address\"  (string) bitcoin address or hex-encoded public key\n"
             "       ...,\n"
             "     ]\n"
-            "3. \"account\"      (string, optional) DEPRECATED. An account to assign the addresses to.\n"
+            "3. \"account\"      (string, optional) DEPRECATED. If provided, MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
 
             "\nResult:\n"
             "\"bitcoinaddress\"  (string) A bitcoin address associated with the keys.\n"
