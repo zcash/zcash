@@ -64,8 +64,8 @@ class ListTransactionsTest(BitcoinTestFramework):
         # sendmany from node1: twice to self, twice to node2:
         send_to = { self.nodes[0].getnewaddress() : 0.11,
                     self.nodes[1].getnewaddress() : 0.22,
-                    self.nodes[0].getaccountaddress("from1") : 0.33,
-                    self.nodes[1].getaccountaddress("toself") : 0.44 }
+                    self.nodes[0].getaccountaddress("") : 0.33,
+                    self.nodes[1].getaccountaddress("") : 0.44 }
         txid = self.nodes[1].sendmany("", send_to)
         self.sync_all()
         check_array_result(self.nodes[1].listtransactions(),
@@ -85,13 +85,13 @@ class ListTransactionsTest(BitcoinTestFramework):
                            {"txid":txid} )
         check_array_result(self.nodes[0].listtransactions(),
                            {"category":"receive","amount":Decimal("0.33")},
-                           {"txid":txid, "account" : "from1"} )
+                           {"txid":txid, "account" : ""} )
         check_array_result(self.nodes[1].listtransactions(),
                            {"category":"send","amount":Decimal("-0.44")},
                            {"txid":txid, "account" : ""} )
         check_array_result(self.nodes[1].listtransactions(),
                            {"category":"receive","amount":Decimal("0.44")},
-                           {"txid":txid, "account" : "toself"} )
+                           {"txid":txid, "account" : ""} )
 
 if __name__ == '__main__':
     ListTransactionsTest().main()
