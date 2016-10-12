@@ -390,6 +390,37 @@ TEST(wallet_tests, set_invalid_note_addrs_in_cwallettx) {
     EXPECT_THROW(wtx.SetNoteData(noteData), std::logic_error);
 }
 
+TEST(wallet_tests, GetNoteNullifier) {
+    CWallet wallet;
+
+    auto sk = libzcash::SpendingKey::random();
+    auto address = sk.address();
+    auto dec = ZCNoteDecryption(sk.viewing_key());
+
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    auto hSig = wtx.vjoinsplit[0].h_sig(
+        *params, wtx.joinSplitPubKey);
+
+    auto ret = wallet.GetNoteNullifier(
+        wtx.vjoinsplit[0],
+        address,
+        dec,
+        hSig, 1);
+    EXPECT_NE(nullifier, ret);
+
+    wallet.AddSpendingKey(sk);
+
+    ret = wallet.GetNoteNullifier(
+        wtx.vjoinsplit[0],
+        address,
+        dec,
+        hSig, 1);
+    EXPECT_EQ(nullifier, ret);
+}
+
 TEST(wallet_tests, FindMyNotes) {
     CWallet wallet;
 
@@ -793,6 +824,41 @@ TEST(wallet_tests, WriteWitnessCache) {
 
     // Everything succeeds
     wallet.WriteWitnessCache(walletdb);
+}
+
+TEST(wallet_tests, UpdateNullifierNoteMap) {
+    TestWallet wallet;
+    uint256 r {GetRandHash()};
+    CKeyingMaterial vMasterKey (r.begin(), r.end());
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    ASSERT_TRUE(wallet.EncryptKeys(vMasterKey));
+
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    // Pretend that we called FindMyNotes while the wallet was locked
+    mapNoteData_t noteData;
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+    CNoteData nd {sk.address()};
+    noteData[jsoutpt] = nd;
+    wtx.SetNoteData(noteData);
+
+    wallet.AddToWallet(wtx, true, NULL);
+    EXPECT_EQ(0, wallet.mapNullifiersToNotes.count(nullifier));
+
+    EXPECT_FALSE(wallet.UpdateNullifierNoteMap());
+
+    ASSERT_TRUE(wallet.Unlock(vMasterKey));
+
+    EXPECT_TRUE(wallet.UpdateNullifierNoteMap());
+    EXPECT_EQ(1, wallet.mapNullifiersToNotes.count(nullifier));
+    EXPECT_EQ(wtx.GetHash(), wallet.mapNullifiersToNotes[nullifier].hash);
+    EXPECT_EQ(0, wallet.mapNullifiersToNotes[nullifier].js);
+    EXPECT_EQ(1, wallet.mapNullifiersToNotes[nullifier].n);
 }
 
 TEST(wallet_tests, UpdatedNoteData) {

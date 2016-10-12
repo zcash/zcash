@@ -201,12 +201,18 @@ class CNoteData
 public:
     libzcash::PaymentAddress address;
 
-    // It's okay to cache the nullifier in the wallet, because we are storing
-    // the spending key there too, which could be used to derive this.
-    // If PR #1210 is merged, we need to revisit the threat model and decide
-    // whether it is okay to store this unencrypted while the spending key is
-    // encrypted.
-    uint256 nullifier;
+    /**
+     * Cached note nullifier. May not be set if the wallet was not unlocked when
+     * this was CNoteData was created. If not set, we always assume that the
+     * note has not been spent.
+     *
+     * It's okay to cache the nullifier in the wallet, because we are storing
+     * the spending key there too, which could be used to derive this.
+     * If PR #1210 is merged, we need to revisit the threat model and decide
+     * whether it is okay to store this unencrypted while the spending key is
+     * encrypted.
+     */
+    boost::optional<uint256> nullifier;
 
     /**
      * Cached incremental witnesses for spendable Notes.
@@ -215,6 +221,7 @@ public:
     std::list<ZCIncrementalWitness> witnesses;
 
     CNoteData() : address(), nullifier() { }
+    CNoteData(libzcash::PaymentAddress a) : address {a}, nullifier() { }
     CNoteData(libzcash::PaymentAddress a, uint256 n) : address {a}, nullifier {n} { }
 
     ADD_SERIALIZE_METHODS;
@@ -704,7 +711,59 @@ public:
         nWitnessCacheSize = 0;
     }
 
+    /**
+     * The reverse mapping of nullifiers to notes.
+     *
+     * The mapping cannot be updated while an encrypted wallet is locked,
+     * because we need the SpendingKey to create the nullifier (#1502). This has
+     * several implications for transactions added to the wallet while locked:
+     *
+     * - Parent transactions can't be marked dirty when a child transaction that
+     *   spends their output notes is updated.
+     *
+     *   - We currently don't cache any note values, so this is not a problem,
+     *     yet.
+     *
+     * - GetFilteredNotes can't filter out spent notes.
+     *
+     *   - Per the comment in CNoteData, we assume that if we don't have a
+     *     cached nullifier, the note is not spent.
+     *
+     * Another more problematic implication is that the wallet can fail to
+     * detect transactions on the blockchain that spend our notes. There are two
+     * possible cases in which this could happen:
+     *
+     * - We receive a note when the wallet is locked, and then spend it using a
+     *   different wallet client.
+     *
+     * - We spend from a PaymentAddress we control, then we export the
+     *   SpendingKey and import it into a new wallet, and reindex/rescan to find
+     *   the old transactions.
+     *
+     * The wallet will only miss "pure" spends - transactions that are only
+     * linked to us by the fact that they contain notes we spent. If it also
+     * sends notes to us, or interacts with our transparent addresses, we will
+     * detect the transaction and add it to the wallet (again without caching
+     * nullifiers for new notes). As by default JoinSplits send change back to
+     * the origin PaymentAddress, the wallet should rarely miss transactions.
+     *
+     * To work around these issues, whenever the wallet is unlocked, we scan all
+     * cached notes, and cache any missing nullifiers. Since the wallet must be
+     * unlocked in order to spend notes, this means that GetFilteredNotes will
+     * always behave correctly within that context (and any other uses will give
+     * correct responses afterwards), for the transactions that the wallet was
+     * able to detect. Any missing transactions can be rediscovered by:
+     *
+     * - Unlocking the wallet (to fill all nullifier caches).
+     *
+     * - Restarting the node with -reindex (which operates on a locked wallet
+     *   but with the now-cached nullifiers).
+     *
+     * Several rounds of this may be required to incrementally fill the
+     * nullifier caches of discovered notes.
+     */
     std::map<uint256, JSOutPoint> mapNullifiersToNotes;
+
     std::map<uint256, CWalletTx> mapWallet;
 
     int64_t nOrderPosNext;
@@ -810,6 +869,7 @@ public:
     TxItems OrderedTxItems(std::list<CAccountingEntry>& acentries, std::string strAccount = "");
 
     void MarkDirty();
+    bool UpdateNullifierNoteMap();
     void UpdateNullifierNoteMap(const CWalletTx& wtx);
     bool AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb);
     void SyncTransaction(const CTransaction& tx, const CBlock* pblock);
@@ -850,6 +910,12 @@ public:
 
     std::set<CTxDestination> GetAccountAddresses(std::string strAccount) const;
 
+    boost::optional<uint256> GetNoteNullifier(
+        const JSDescription& jsdesc,
+        const libzcash::PaymentAddress& address,
+        const ZCNoteDecryption& dec,
+        const uint256& hSig,
+        uint8_t n) const;
     mapNoteData_t FindMyNotes(const CTransaction& tx) const;
     bool IsFromMe(const uint256& nullifier) const;
     void GetNoteWitnesses(

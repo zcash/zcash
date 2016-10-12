@@ -1877,6 +1877,7 @@ Value walletpassphrase(const Array& params, bool fHelp)
             "walletpassphrase <passphrase> <timeout>\n"
             "Stores the wallet decryption key in memory for <timeout> seconds.");
 
+    pwalletMain->UpdateNullifierNoteMap();
     pwalletMain->TopUpKeyPool();
 
     int64_t nSleepTime = params[1].get_int64();

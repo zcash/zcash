@@ -115,10 +115,16 @@ class WalletNullifiersTest (BitcoinTestFramework):
         zaddrremaining = zsendmanynotevalue - zsendmany2notevalue - zsendmanyfee
         assert_equal(self.nodes[3].z_getbalance(myzaddr3), zsendmany2notevalue)
         assert_equal(self.nodes[2].z_getbalance(myzaddr), zaddrremaining)
-        assert_equal(self.nodes[1].z_getbalance(myzaddr), zaddrremaining)
+
+        # Parallel encrypted wallet can't cache nullifiers for received notes,
+        # and therefore can't detect spends. So it sees a balance corresponding
+        # to the sum of both notes it received (one as change).
+        # TODO: Devise a way to avoid this issue (#)
+        assert_equal(self.nodes[1].z_getbalance(myzaddr), zsendmanynotevalue + zaddrremaining)
 
         # send node 2 zaddr on node 1 to taddr
-        # This requires that node 1 be unlocked
+        # This requires that node 1 be unlocked, which triggers caching of
+        # uncached nullifiers.
         self.nodes[1].walletpassphrase("test", 600)
         mytaddr1 = self.nodes[1].getnewaddress();
         recipients = []
@@ -144,6 +150,9 @@ class WalletNullifiersTest (BitcoinTestFramework):
         self.sync_all()
 
         # check zaddr balance
+        # Now that the encrypted wallet has been unlocked, the note nullifiers
+        # have been cached and spent notes can be detected. Thus the two wallets
+        # are in agreement once more.
         zsendmany3notevalue = Decimal('1.0')
         zaddrremaining2 = zaddrremaining - zsendmany3notevalue - zsendmanyfee
         assert_equal(self.nodes[1].z_getbalance(myzaddr), zaddrremaining2)
