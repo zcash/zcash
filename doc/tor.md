@@ -89,10 +89,8 @@ for normal IPv4/IPv6 communication, use:
 3. Connect to a Zcash hidden server
 -----------------------------------
 
-To test your set-up, you might want to try connecting via Tor to just a
-a single Zcash hidden server.
-
-Launch zcashd as follows, connecting to the Zcash hidden server:
+To test your set-up, you might want to try connecting via Tor on a different computer to just a
+a single Zcash hidden server. Launch zcashd as follows:
 
 	./zcashd -onion=127.0.0.1:9050 -connect=zctestseie6wxgio.onion
 
@@ -110,3 +108,7 @@ Now use zcash-cli to verify there is only a single peer connection.
 	        ...
 	    }
 	]
+
+To connect to multiple Tor nodes, use:
+
+	./zcashd -onion=127.0.0.1:9050 -addnode=zctestseie6wxgio.onion -dnsseed=0 -onlynet=onion
