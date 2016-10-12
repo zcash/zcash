@@ -312,7 +312,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     BOOST_CHECK(addrs.size()==1);
     
     BOOST_CHECK_THROW(CallRPC("z_exportwallet"), runtime_error);
-    
+
+    BOOST_CHECK_THROW(CallRPC("z_exportwallet toomany args"), runtime_error);
+
    
     boost::filesystem::path temp = boost::filesystem::temp_directory_path() /
             boost::filesystem::unique_path();
@@ -361,6 +363,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     
     // error if no args
     BOOST_CHECK_THROW(CallRPC("z_importwallet"), runtime_error);
+
+    // error if too many args
+    BOOST_CHECK_THROW(CallRPC("z_importwallet toomany args"), runtime_error);
 
     // create a random key locally
     auto testSpendingKey = libzcash::SpendingKey::random();
@@ -430,6 +435,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     BOOST_CHECK_THROW(CallRPC("z_importkey"), runtime_error);   
     BOOST_CHECK_THROW(CallRPC("z_exportkey"), runtime_error);   
 
+    // error if too many args
+    BOOST_CHECK_THROW(CallRPC("z_importkey too many args"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_exportkey toomany args"), runtime_error);
+
     // wallet should currently be empty
     std::set<libzcash::PaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
@@ -490,6 +499,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     CZCPaymentAddress pa(newaddress);
     auto newAddr = pa.Get();
     BOOST_CHECK(pwalletMain->HaveSpendingKey(newAddr));
+
+    // Check if too many args
+    BOOST_CHECK_THROW(CallRPC("z_getnewaddress toomanyargs"), runtime_error);
 }
 
 
@@ -709,6 +721,9 @@ BOOST_AUTO_TEST_CASE(rpc_z_getoperations)
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     BOOST_CHECK(q->getOperationCount() == 0);
     
+    // Check if too many args
+    BOOST_CHECK_THROW(CallRPC("z_listoperationids toomany args"), runtime_error);
+
     Value retValue;
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listoperationids"));
     BOOST_CHECK(retValue.get_array().size() == 2);
