@@ -305,11 +305,11 @@ Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys)
                 libzcash::SpendingKey key = spendingkey.Get();
                 libzcash::PaymentAddress addr = key.address();
                 if (pwalletMain->HaveSpendingKey(addr)) {
-                    LogPrintf("Skipping import of zaddr %s (key already present)\n", CZCPaymentAddress(addr).ToString());
+                    LogPrint("zrpc", "Skipping import of zaddr %s (key already present)\n", CZCPaymentAddress(addr).ToString());
                     continue;
                 }
                 int64_t nTime = DecodeDumpTime(vstr[1]);
-                LogPrintf("Importing zaddr %s...\n", CZCPaymentAddress(addr).ToString());
+                LogPrint("zrpc", "Importing zaddr %s...\n", CZCPaymentAddress(addr).ToString());
                 if (!pwalletMain->AddZKey(key)) {
                     // Something went wrong
                     fGood = false;
@@ -320,7 +320,7 @@ Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys)
                 continue;
             }
             catch (const std::runtime_error &e) {
-                LogPrintf("Importing detected an error: %s\n", e.what());
+                LogPrint("zrpc","Importing detected an error: %s\n", e.what());
                 // Not a valid spending key, so carry on and see if it's a Bitcoin style address.
             }
         }
