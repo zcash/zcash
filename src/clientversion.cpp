@@ -19,7 +19,7 @@
  * for both bitcoind and bitcoin-core, to make it harder for attackers to
  * target servers or GUI users specifically.
  */
-const std::string CLIENT_NAME("Satoshi");
+const std::string CLIENT_NAME("MagicBean");
 
 /**
  * Client version number

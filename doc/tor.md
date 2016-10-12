@@ -109,8 +109,8 @@ Now use zcash-cli to verify there is only a single peer connection.
 	        "id" : 1,
 	        "addr" : "abc123.onion:18233",
 	        ...
-	        "version" : 70002,
-	        "subver" : "/Satoshi:0.11.2/",
+	        "version" : 170002,
+	        "subver" : "/MagicBean:1.0.0/",
 	        ...
 	    }
 	]
