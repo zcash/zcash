@@ -306,8 +306,10 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
             const Value& valParams = find_value(responseObject, "params");
             if (valParams.type() == array_type) {
                 const Array& params = valParams.get_array();
-                p_active->host = params[0].get_str();
-                p_active->port = params[1].get_str();
+                if (params.size() > 0) {
+                    p_active->host = params[0].get_str();
+                    p_active->port = params[1].get_str();
+                }
                 // TODO: Handle wait time
                 LogS("Reconnection requested\n");
                 reconnect();
