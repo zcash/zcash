@@ -136,9 +136,9 @@ void StratumClient<Miner, Job, Solution>::connect()
         }
         std::ostream os(&m_requestBuffer);
         os << "{\"id\": 1, \"method\": \"mining.subscribe\", \"params\": [\""
+           << p_miner->userAgent() << "\", null,\""
            << p_active->host << "\",\""
-           << p_active->port << "\",\""
-           << p_miner->userAgent() << "\", null]}\n";
+           << p_active->port << "\"]}\n";
         write(m_socket, m_requestBuffer);
     }
 }
