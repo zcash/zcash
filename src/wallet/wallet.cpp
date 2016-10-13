@@ -3314,7 +3314,11 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
     return ::AcceptToMemoryPool(mempool, state, *this, fLimitFree, NULL, fRejectAbsurdFee);
 }
 
-bool CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, int minDepth, bool ignoreSpent)
+/**
+ * Find notes in the wallet filtered by payment address, min depth and ability to spend.
+ * These notes are decrypted and added to the output parameter vector, outEntries.
+ */
+void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, int minDepth, bool ignoreSpent)
 {
     bool fFilterAddress = false;
     libzcash::PaymentAddress filterPaymentAddress;
