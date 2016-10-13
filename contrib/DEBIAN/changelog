@@ -1,0 +1,5 @@
+zcash (1.0.0-rc1) UNRELEASED; urgency=medium
+
+  * Initial packaging for Debian.
+
+ -- Zcash Company <team@z.cash>  Tue, 27 Sep 2016 12:05:17 -0700

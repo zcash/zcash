@@ -1,0 +1,3 @@
+usr/bin/zcashd
+usr/bin/zcash-cli
+usr/local/bin/zcash-fetch-params
