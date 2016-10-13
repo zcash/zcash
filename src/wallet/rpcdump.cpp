@@ -532,9 +532,9 @@ Value z_importkey(const Array& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return Value::null;
 
-    if (fHelp || params.size() < 1 || params.size() > 3)
+    if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "z_importkey \"zkey\" ( \"label\" rescan )\n"
+            "z_importkey \"zkey\" ( rescan )\n"
             "\nAdds a zkey (as returned by z_exportkey) to your wallet.\n"
             "\nArguments:\n"
             "1. \"zkey\"             (string, required) The zkey (see z_exportkey)\n"
@@ -545,10 +545,8 @@ Value z_importkey(const Array& params, bool fHelp)
             + HelpExampleCli("z_exportkey", "\"myaddress\"") +
             "\nImport the zkey with rescan\n"
             + HelpExampleCli("z_importkey", "\"mykey\"") +
-            "\nImport using a label and without rescan\n"
-            + HelpExampleCli("z_importkey", "\"mykey\" \"testing\" false") +
             "\nAs a JSON-RPC call\n"
-            + HelpExampleRpc("z_importkey", "\"mykey\", \"testing\", false")
+            + HelpExampleRpc("z_importkey", "\"mykey\", false")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
