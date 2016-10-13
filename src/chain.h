@@ -138,6 +138,9 @@ public:
     //! Verification status of this block. See enum BlockStatus
     unsigned int nStatus;
 
+    //! The anchor for the tree state up to the start of this block
+    uint256 hashAnchor;
+
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
@@ -163,6 +166,7 @@ public:
         nTx = 0;
         nChainTx = 0;
         nStatus = 0;
+        hashAnchor = uint256();
         nSequenceId = 0;
 
         nVersion       = 0;
@@ -320,6 +324,7 @@ public:
             READWRITE(VARINT(nDataPos));
         if (nStatus & BLOCK_HAVE_UNDO)
             READWRITE(VARINT(nUndoPos));
+        READWRITE(hashAnchor);
 
         // block header
         READWRITE(this->nVersion);
