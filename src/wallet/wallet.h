@@ -208,9 +208,10 @@ public:
      *
      * It's okay to cache the nullifier in the wallet, because we are storing
      * the spending key there too, which could be used to derive this.
-     * If PR #1210 is merged, we need to revisit the threat model and decide
-     * whether it is okay to store this unencrypted while the spending key is
-     * encrypted.
+     * If the wallet is encrypted, this means that someone with access to the
+     * locked wallet cannot spend notes, but can connect received notes to the
+     * transactions they are spent in. This is the same security semantics as
+     * for transparent addresses.
      */
     boost::optional<uint256> nullifier;
 
@@ -758,9 +759,6 @@ public:
      *
      * - Restarting the node with -reindex (which operates on a locked wallet
      *   but with the now-cached nullifiers).
-     *
-     * Several rounds of this may be required to incrementally fill the
-     * nullifier caches of discovered notes.
      */
     std::map<uint256, JSOutPoint> mapNullifiersToNotes;
 

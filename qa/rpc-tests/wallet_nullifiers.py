@@ -119,7 +119,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         # Parallel encrypted wallet can't cache nullifiers for received notes,
         # and therefore can't detect spends. So it sees a balance corresponding
         # to the sum of both notes it received (one as change).
-        # TODO: Devise a way to avoid this issue (#)
+        # TODO: Devise a way to avoid this issue (#1528)
         assert_equal(self.nodes[1].z_getbalance(myzaddr), zsendmanynotevalue + zaddrremaining)
 
         # send node 2 zaddr on node 1 to taddr
