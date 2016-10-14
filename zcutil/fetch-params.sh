@@ -24,16 +24,8 @@ function fetch_params {
             --continue \
             --retry-connrefused --waitretry=3 --timeout=30 \
             "$url"
-        
-        if command -v shasum >/dev/null 2>&1; then
-            SUM="shasum -a 256 --check <<EOF"
-        elif command -v sha256sum >/dev/null 2>&1; then
-            SUM="sha256sum --check <<EOF"
-        else
-            SUM=command_not_found "shasum or sha256sum"
-        fi
-        
-        $SUM
+            
+        sha256sum --check <<EOF
 $expectedhash  $dlname
 EOF
 
