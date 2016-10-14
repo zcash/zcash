@@ -39,6 +39,7 @@ function fetch_params {
             $SUM --check <<EOF
         else
             $SUM
+        fi
             
 $expectedhash  $dlname
 EOF
