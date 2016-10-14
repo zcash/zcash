@@ -707,36 +707,52 @@ TEST(wallet_tests, WriteWitnessCache) {
     auto wtx = GetValidReceive(sk, 10, true);
     wallet.AddToWallet(wtx, true, NULL);
 
-    EXPECT_CALL(walletdb, TxnBegin())
-        .WillOnce(Return(false))
-        .WillRepeatedly(Return(true));
-    EXPECT_CALL(walletdb, TxnCommit())
-        .WillOnce(Return(false))
-        .WillRepeatedly(Return(true));
-    EXPECT_CALL(walletdb, TxnAbort())
-        .Times(4);
-
-    EXPECT_CALL(walletdb, WriteTx(wtx.GetHash(), wtx))
-        .WillOnce(Return(false))
-        .WillOnce(ThrowLogicError())
-        .WillRepeatedly(Return(true));
-    EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
-        .WillOnce(Return(false))
-        .WillOnce(ThrowLogicError())
-        .WillRepeatedly(Return(true));
-
     // TxnBegin fails
+    EXPECT_CALL(walletdb, TxnBegin())
+        .WillOnce(Return(false));
     wallet.WriteWitnessCache(walletdb);
+    EXPECT_CALL(walletdb, TxnBegin())
+        .WillRepeatedly(Return(true));
+
     // WriteTx fails
+    EXPECT_CALL(walletdb, WriteTx(wtx.GetHash(), wtx))
+        .WillOnce(Return(false));
+    EXPECT_CALL(walletdb, TxnAbort())
+        .Times(1);
     wallet.WriteWitnessCache(walletdb);
+
     // WriteTx throws
+    EXPECT_CALL(walletdb, WriteTx(wtx.GetHash(), wtx))
+        .WillOnce(ThrowLogicError());
+    EXPECT_CALL(walletdb, TxnAbort())
+        .Times(1);
     wallet.WriteWitnessCache(walletdb);
+    EXPECT_CALL(walletdb, WriteTx(wtx.GetHash(), wtx))
+        .WillRepeatedly(Return(true));
+
     // WriteWitnessCacheSize fails
+    EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
+        .WillOnce(Return(false));
+    EXPECT_CALL(walletdb, TxnAbort())
+        .Times(1);
     wallet.WriteWitnessCache(walletdb);
+
     // WriteWitnessCacheSize throws
+    EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
+        .WillOnce(ThrowLogicError());
+    EXPECT_CALL(walletdb, TxnAbort())
+        .Times(1);
     wallet.WriteWitnessCache(walletdb);
+    EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
+        .WillRepeatedly(Return(true));
+
     // TxCommit fails
+    EXPECT_CALL(walletdb, TxnCommit())
+        .WillOnce(Return(false));
     wallet.WriteWitnessCache(walletdb);
+    EXPECT_CALL(walletdb, TxnCommit())
+        .WillRepeatedly(Return(true));
+
     // Everything succeeds
     wallet.WriteWitnessCache(walletdb);
 }
