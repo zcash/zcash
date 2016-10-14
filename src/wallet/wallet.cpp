@@ -1025,15 +1025,30 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
 
 bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
 {
+    // On reindex, IncrementNoteWitnesses() is called for every block again. So
+    // we drop the cached witnesses for any transactions we already know about.
+    bool dropCache = GetBoolArg("-reindex", false);
+
     if (wtxIn.mapNoteData.empty() || wtxIn.mapNoteData == wtx.mapNoteData) {
-        return false;
+        // No change in note data; check for cache invalidation
+        if (dropCache) {
+            for (std::pair<JSOutPoint, CNoteData> nd : wtx.mapNoteData) {
+                wtx.mapNoteData.at(nd.first).witnesses.clear();
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
+
     auto tmp = wtxIn.mapNoteData;
-    // Ensure we keep any cached witnesses we may already have
-    for (const std::pair<JSOutPoint, CNoteData> nd : wtx.mapNoteData) {
-        if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
-            tmp.at(nd.first).witnesses.assign(
-                nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+    if (!dropCache) {
+        // Ensure we keep any cached witnesses we may already have
+        for (const std::pair<JSOutPoint, CNoteData> nd : wtx.mapNoteData) {
+            if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
+                tmp.at(nd.first).witnesses.assign(
+                    nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+            }
         }
     }
     // Now copy over the updated note data
