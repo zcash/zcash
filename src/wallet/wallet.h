@@ -241,7 +241,7 @@ public:
 
 typedef std::map<JSOutPoint, CNoteData> mapNoteData_t;
 
-
+/** Decrypted note and its location in a transaction. */
 struct CNotePlaintextEntry
 {
     JSOutPoint jsop;
@@ -911,7 +911,7 @@ public:
     void SetBroadcastTransactions(bool broadcast) { fBroadcastTransactions = broadcast; }
     
     /* Find notes filtered by payment address, min depth, ability to spend */
-    bool GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, int minDepth=1, bool ignoreSpent=true);
+    void GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, int minDepth=1, bool ignoreSpent=true);
     
 };
 
