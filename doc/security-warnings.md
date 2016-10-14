@@ -44,9 +44,9 @@ The REST interface is a feature inherited from upstream Bitcoin.  By default,
 it is disabled. We do not recommend you enable it until it has undergone a
 security review.
 
-Block Chain Reorganizations
-----------------------------
+Block Chain Reorganization: Major Differences
+---------------------------------------------------
 
-Users should be aware of new behavior in Zcash that differs significantly from Bitcoin: in the case of a block chain reorganization, Bitcoin's coinbase maturity rule helps ensure that any reorg shorter than the maturity interval will not invalidate any of the rolled-back transactions. However for Zcash, all JoinSplits which were anchored within the reorg interval will become invalid, rolling back transactions and reverting funds to the original owner. The transaction rebroadcast mechanism inherited from Bitcoin will not successfully rebroadcast transactions containing JoinSplits if the anchor needs to change—the JoinSplit creator must do that.
+Users should be aware of new behavior in Zcash that differs significantly from Bitcoin: in the case of a block chain reorganization, Bitcoin's coinbase maturity rule helps to ensure that any reorganization shorter than the maturity interval will not invalidate any of the rolled-back transactions. Zcash keeps Bitcoin's 100-block maturity interval for generation transactions, but because JoinSplits must be anchored within a block, this provides more limited protection against transactions becoming invalidated. In the case of a block chain reorganization for Zcash, all JoinSplits which were anchored within the reorganization interval and any transactions that depend on them will become invalid, rolling back transactions and reverting funds to the original owner. The transaction rebroadcast mechanism inherited from Bitcoin will not successfully rebroadcast transactions depending on invalidated JoinSplits if the anchor needs to change. The creator of an invalidated JoinSplit, as well as the creators of all transactions dependent on it, must rebroadcast the transactions themselves.
 
-For receivers of funds from a JoinSplit, using a higher minconf (minimum number of confirmations) can help mitigate the risk of relying on funds received from transactions that may be rolled back.
+Receivers of funds from a JoinSplit can mitigate the risk of relying on funds received from transactions that may be rolled back by using a higher minconf (minimum number of confirmations).
