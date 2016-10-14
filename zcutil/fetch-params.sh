@@ -35,7 +35,7 @@ function fetch_params {
         
         if [$SUM -eq "shasum"]; then
             $SUM -a 256 --check <<EOF
-        elif [$SUM -eq "sha256sum]; then
+        elif [$SUM -eq "sha256sum"]; then
             $SUM --check <<EOF
         else
             $SUM
