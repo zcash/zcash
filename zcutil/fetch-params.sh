@@ -26,19 +26,11 @@ function fetch_params {
             "$url"
         
         if command -v shasum >/dev/null 2>&1; then
-            SUM="shasum"
+            "shasum" -a 256 --check <<EOF
         elif command -v sha256sum >/dev/null 2>&1; then
-            SUM="sha256sum"
+            "sha256sum" --check <<EOF
         else
-            SUM=command_not_found "shasum or sha1sum"
-        fi
-        
-        if [$SUM -eq "shasum"]; then
-            $SUM -a 256 --check <<EOF
-        elif [$SUM -eq "sha256sum"]; then
-            $SUM --check <<EOF
-        else
-            $SUM
+            command_not_found "shasum or sha1sum"
         fi
             
 $expectedhash  $dlname
