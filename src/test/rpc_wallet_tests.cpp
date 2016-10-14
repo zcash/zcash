@@ -29,6 +29,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace std;
 using namespace json_spirit;
@@ -1069,6 +1070,8 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     SecureString strWalletPass;
     strWalletPass.reserve(100);
     strWalletPass = "hello";
+
+    boost::filesystem::current_path(GetArg("-datadir","/tmp/thisshouldnothappen"));
     BOOST_CHECK(pwalletMain->EncryptWallet(strWalletPass));
     
     // Verify we can still list the keys imported
