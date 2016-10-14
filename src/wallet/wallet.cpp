@@ -1187,7 +1187,12 @@ mapNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
                         noteData.insert(std::make_pair(jsoutpt, nd));
                     }
                     break;
-                } catch (const std::runtime_error &) {
+                } catch (const std::runtime_error &err) {
+                    if (memcmp("Could not decrypt message", err.what(), 25) != 0) {
+                        // Unexpected failure
+                        LogPrintf("FindMyNotes(): Unexpected runtime error while testing decrypt:\n");
+                        LogPrintf("%s\n", err.what());
+                    } // else
                     // Couldn't decrypt with this decryptor
                 } catch (const std::exception &exc) {
                     // Unexpected failure

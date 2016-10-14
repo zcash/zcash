@@ -425,13 +425,19 @@ TEST(wallet_tests, FindMyNotes) {
     CWallet wallet;
 
     auto sk = libzcash::SpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    auto sk2 = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk2);
 
     auto wtx = GetValidReceive(sk, 10, true);
     auto note = GetNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
     auto noteMap = wallet.FindMyNotes(wtx);
+    EXPECT_EQ(0, noteMap.size());
+
+    wallet.AddSpendingKey(sk);
+
+    noteMap = wallet.FindMyNotes(wtx);
     EXPECT_EQ(2, noteMap.size());
 
     JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
