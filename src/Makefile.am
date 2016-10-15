@@ -76,7 +76,8 @@ LIBZCASH_H = \
   zcash/JoinSplit.hpp \
   zcash/Note.hpp \
   zcash/prf.h \
-  zcash/util.h
+  zcash/util.h \
+  zcash/Zcash.h
 
 .PHONY: FORCE check-symbols check-security
 # bitcoin core #
