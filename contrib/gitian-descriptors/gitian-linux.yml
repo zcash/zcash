@@ -31,6 +31,7 @@ script: |
   WRAP_DIR=$HOME/wrapped
   HOSTS="x86_64-unknown-linux-gnu"
   CONFIGFLAGS="--enable-glibc-back-compat --enable-reduce-exports --disable-bench --disable-gui-tests --with-gui=no --enable-hardening"
+  MAKEOPTS="V=1 NO_QT=1"
   FAKETIME_HOST_PROGS=""
   FAKETIME_PROGS="date ar ranlib nm strip objcopy"
   HOST_CFLAGS="-fwrapv -fno-strict-aliasing -Werror -g"
@@ -83,7 +84,7 @@ script: |
   BASEPREFIX=`pwd`/depends
   # Build dependencies for each host
   for i in $HOSTS; do
-    make ${MAKEOPTS} -C ${BASEPREFIX} V=1 NO_QT=1 HOST="${i}"
+    make ${MAKEOPTS} -C ${BASEPREFIX} HOST="${i}"
   done
 
   # Faketime for binaries
