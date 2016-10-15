@@ -195,6 +195,7 @@ libbitcoin_server_a_SOURCES = \
   sendalert.cpp \
   addrman.cpp \
   alert.cpp \
+  alertkeys.h \
   asyncrpcoperation.cpp \
   asyncrpcqueue.cpp \
   bloom.cpp \
