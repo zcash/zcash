@@ -231,6 +231,7 @@ libbitcoin_server_a_SOURCES = \
 libbitcoin_wallet_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_wallet_a_SOURCES = \
   zcbenchmarks.cpp \
+  zcbenchmarks.h \
   wallet/asyncrpcoperation_sendmany.cpp \
   wallet/crypter.cpp \
   wallet/db.cpp \
