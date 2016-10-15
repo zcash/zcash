@@ -76,6 +76,7 @@ LIBZCASH_H = \
   zcash/JoinSplit.hpp \
   zcash/Note.hpp \
   zcash/prf.h \
+  zcash/Proof.hpp \
   zcash/util.h \
   zcash/Zcash.h
 
