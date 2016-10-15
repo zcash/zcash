@@ -69,9 +69,8 @@ if BUILD_BITCOIN_UTILS
   bin_PROGRAMS += zcash-cli bitcoin-tx
 endif
 
-# TODO: rename to libzcash
 LIBZCASH_H = \
-  zcash/IncrementalMerkleTree.h \
+  zcash/IncrementalMerkleTree.hpp \
   zcash/NoteEncryption.hpp \
   zcash/Address.hpp \
   zcash/JoinSplit.hpp \
