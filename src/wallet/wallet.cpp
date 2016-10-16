@@ -890,13 +890,16 @@ bool CWallet::UpdateNullifierNoteMap()
                         item.first.n);
                 }
             }
-            UpdateNullifierNoteMap(wtxItem.second);
+            UpdateNullifierNoteMapWithTx(wtxItem.second);
         }
     }
     return true;
 }
 
-void CWallet::UpdateNullifierNoteMap(const CWalletTx& wtx)
+/**
+ * Update mapNullifiersToNotes with the cached nullifiers in this tx.
+ */
+void CWallet::UpdateNullifierNoteMapWithTx(const CWalletTx& wtx)
 {
     {
         LOCK(cs_wallet);
@@ -916,7 +919,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
     {
         mapWallet[hash] = wtxIn;
         mapWallet[hash].BindWallet(this);
-        UpdateNullifierNoteMap(mapWallet[hash]);
+        UpdateNullifierNoteMapWithTx(mapWallet[hash]);
         AddToSpends(hash);
     }
     else
@@ -926,7 +929,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
         pair<map<uint256, CWalletTx>::iterator, bool> ret = mapWallet.insert(make_pair(hash, wtxIn));
         CWalletTx& wtx = (*ret.first).second;
         wtx.BindWallet(this);
-        UpdateNullifierNoteMap(wtx);
+        UpdateNullifierNoteMapWithTx(wtx);
         bool fInsertedNew = ret.second;
         if (fInsertedNew)
         {

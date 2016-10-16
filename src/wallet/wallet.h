@@ -868,7 +868,7 @@ public:
 
     void MarkDirty();
     bool UpdateNullifierNoteMap();
-    void UpdateNullifierNoteMap(const CWalletTx& wtx);
+    void UpdateNullifierNoteMapWithTx(const CWalletTx& wtx);
     bool AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb);
     void SyncTransaction(const CTransaction& tx, const CBlock* pblock);
     bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate);
