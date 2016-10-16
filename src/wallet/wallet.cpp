@@ -863,12 +863,50 @@ void CWallet::MarkDirty()
     }
 }
 
-void CWallet::UpdateNullifierNoteMap(const CWalletTx& wtx)
+/**
+ * Ensure that every note in the wallet has a cached nullifier.
+ */
+bool CWallet::UpdateNullifierNoteMap()
+{
+    {
+        LOCK(cs_wallet);
+
+        if (IsLocked())
+            return false;
+
+        ZCNoteDecryption dec;
+        for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+            for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
+                if (!item.second.nullifier) {
+                    auto i = item.first.js;
+                    GetNoteDecryptor(item.second.address, dec);
+                    auto hSig = wtxItem.second.vjoinsplit[i].h_sig(
+                        *pzcashParams, wtxItem.second.joinSplitPubKey);
+                    item.second.nullifier = GetNoteNullifier(
+                        wtxItem.second.vjoinsplit[i],
+                        item.second.address,
+                        dec,
+                        hSig,
+                        item.first.n);
+                }
+            }
+            UpdateNullifierNoteMapWithTx(wtxItem.second);
+        }
+    }
+    return true;
+}
+
+/**
+ * Update mapNullifiersToNotes with the cached nullifiers in this tx.
+ */
+void CWallet::UpdateNullifierNoteMapWithTx(const CWalletTx& wtx)
 {
     {
         LOCK(cs_wallet);
         for (const mapNoteData_t::value_type& item : wtx.mapNoteData) {
-            mapNullifiersToNotes[item.second.nullifier] = item.first;
+            if (item.second.nullifier) {
+                mapNullifiersToNotes[*item.second.nullifier] = item.first;
+            }
         }
     }
 }
@@ -881,7 +919,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
     {
         mapWallet[hash] = wtxIn;
         mapWallet[hash].BindWallet(this);
-        UpdateNullifierNoteMap(mapWallet[hash]);
+        UpdateNullifierNoteMapWithTx(mapWallet[hash]);
         AddToSpends(hash);
     }
     else
@@ -891,7 +929,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
         pair<map<uint256, CWalletTx>::iterator, bool> ret = mapWallet.insert(make_pair(hash, wtxIn));
         CWalletTx& wtx = (*ret.first).second;
         wtx.BindWallet(this);
-        UpdateNullifierNoteMap(wtx);
+        UpdateNullifierNoteMapWithTx(wtx);
         bool fInsertedNew = ret.second;
         if (fInsertedNew)
         {
@@ -1093,6 +1131,32 @@ void CWallet::EraseFromWallet(const uint256 &hash)
 
 
 /**
+ * Returns a nullifier if the SpendingKey is available
+ * Throws std::runtime_error if the decryptor doesn't match this note
+ */
+boost::optional<uint256> CWallet::GetNoteNullifier(const JSDescription& jsdesc,
+                                                   const libzcash::PaymentAddress& address,
+                                                   const ZCNoteDecryption& dec,
+                                                   const uint256& hSig,
+                                                   uint8_t n) const
+{
+    boost::optional<uint256> ret;
+    auto note_pt = libzcash::NotePlaintext::decrypt(
+        dec,
+        jsdesc.ciphertexts[n],
+        jsdesc.ephemeralKey,
+        hSig,
+        (unsigned char) n);
+    auto note = note_pt.note(address);
+    // SpendingKeys are only available if the wallet is unlocked
+    libzcash::SpendingKey key;
+    if (GetSpendingKey(address, key)) {
+        ret = note.nullifier(key);
+    }
+    return ret;
+}
+
+/**
  * Finds all output notes in the given transaction that have been sent to
  * PaymentAddresses in this wallet.
  *
@@ -1106,28 +1170,33 @@ mapNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
     uint256 hash = tx.GetHash();
 
     mapNoteData_t noteData;
-    libzcash::SpendingKey key;
     for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {
         auto hSig = tx.vjoinsplit[i].h_sig(*pzcashParams, tx.joinSplitPubKey);
         for (uint8_t j = 0; j < tx.vjoinsplit[i].ciphertexts.size(); j++) {
             for (const NoteDecryptorMap::value_type& item : mapNoteDecryptors) {
                 try {
-                    auto note_pt = libzcash::NotePlaintext::decrypt(
-                        item.second,
-                        tx.vjoinsplit[i].ciphertexts[j],
-                        tx.vjoinsplit[i].ephemeralKey,
-                        hSig,
-                        (unsigned char) j);
                     auto address = item.first;
-                    // Decryptors are only cached when SpendingKeys are added
-                    assert(GetSpendingKey(address, key));
-                    auto note = note_pt.note(address);
                     JSOutPoint jsoutpt {hash, i, j};
-                    CNoteData nd {address, note.nullifier(key)};
-                    noteData.insert(std::make_pair(jsoutpt, nd));
+                    auto nullifier = GetNoteNullifier(
+                        tx.vjoinsplit[i],
+                        address,
+                        item.second,
+                        hSig, j);
+                    if (nullifier) {
+                        CNoteData nd {address, *nullifier};
+                        noteData.insert(std::make_pair(jsoutpt, nd));
+                    } else {
+                        CNoteData nd {address};
+                        noteData.insert(std::make_pair(jsoutpt, nd));
+                    }
                     break;
-                } catch (const std::runtime_error &) {
-                    // Couldn't decrypt with this spending key
+                } catch (const std::runtime_error &err) {
+                    if (memcmp("Could not decrypt message", err.what(), 25) != 0) {
+                        // Unexpected failure
+                        LogPrintf("FindMyNotes(): Unexpected runtime error while testing decrypt:\n");
+                        LogPrintf("%s\n", err.what());
+                    } // else
+                    // Couldn't decrypt with this decryptor
                 } catch (const std::exception &exc) {
                     // Unexpected failure
                     LogPrintf("FindMyNotes(): Unexpected error while testing decrypt:\n");
@@ -3335,7 +3404,7 @@ void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, st
             }
 
             // skip note which has been spent
-            if (ignoreSpent && IsSpent(nd.nullifier)) {
+            if (ignoreSpent && nd.nullifier && IsSpent(*nd.nullifier)) {
                 continue;
             }
 

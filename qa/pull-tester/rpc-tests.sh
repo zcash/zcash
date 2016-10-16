@@ -12,6 +12,7 @@ export BITCOIND=${REAL_BITCOIND}
 
 testScripts=(
     'wallet.py'
+    'wallet_nullifiers.py'
     'listtransactions.py'
     'mempool_resurrect_test.py'
     'txn_doublespend.py'
