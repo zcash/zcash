@@ -691,8 +691,10 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                     if (txIsOurs) {
                         JSOutPoint jsoutpt {hash, i, j};
                         if (mapWallet[hash].mapNoteData.count(jsoutpt)) {
-                            mapWallet[hash].mapNoteData[jsoutpt].witnesses.push_front(
-                                tree.witness());
+                            CNoteData* nd = &(mapWallet[hash].mapNoteData[jsoutpt]);
+                            nd->witnesses.push_front(tree.witness());
+                            // Check the validity of the cache
+                            assert(nWitnessCacheSize >= nd->witnesses.size());
                         }
                     }
                 }
