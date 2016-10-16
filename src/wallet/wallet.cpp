@@ -687,6 +687,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                         }
                     }
 
+#if 0
                     // If this is our note, witness it
                     if (txIsOurs) {
                         JSOutPoint jsoutpt {hash, i, j};
@@ -697,6 +698,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                             assert(nWitnessCacheSize >= nd->witnesses.size());
                         }
                     }
+#endif
                 }
             }
         }
