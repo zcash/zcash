@@ -654,6 +654,9 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                 }
             }
         }
+        if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
+            nWitnessCacheSize += 1;
+        }
 
         const CBlock* pblock {pblockIn};
         CBlock block;
@@ -693,9 +696,6 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                     }
                 }
             }
-        }
-        if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
-            nWitnessCacheSize += 1;
         }
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
