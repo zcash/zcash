@@ -2033,8 +2033,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // Special case for the genesis block, skipping connection of its transactions
     // (its coinbase is unspendable)
     if (block.GetHash() == chainparams.GetConsensus().hashGenesisBlock) {
-        if (!fJustCheck)
+        if (!fJustCheck) {
             view.SetBestBlock(pindex->GetBlockHash());
+            // Before the genesis block, there was an empty tree
+            ZCIncrementalMerkleTree tree;
+            pindex->hashAnchor = tree.root();
+        }
         return true;
     }
 
@@ -2080,7 +2084,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // block position,
     auto old_tree_root = view.GetBestAnchor();
     // saving the top anchor in the block index as we go.
-    pindex->hashAnchor = old_tree_root;
+    if (!fJustCheck) {
+        pindex->hashAnchor = old_tree_root;
+    }
     ZCIncrementalMerkleTree tree;
     // This should never fail: we should always be able to get the root
     // that is on the tip of our chain
