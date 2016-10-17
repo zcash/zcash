@@ -1,5 +1,5 @@
-zcash (1.0.0-rc1) UNRELEASED; urgency=medium
+zcash (1.0.0-rc1) jessie; urgency=medium
 
   * Initial packaging for Debian.
 
- -- Zcash Company <team@z.cash>  Thu, 13 Oct 2016 20:12:17 -0700
+ -- Zcash Company <team@z.cash>  Mon, 17 Oct 2016 11:47:02 -0700
