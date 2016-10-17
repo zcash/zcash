@@ -28,14 +28,17 @@ Also, the following commands use the `ZCASH_RELEASE_PREV` bash variable for the
 previous release:
 
     $ ZCASH_RELEASE_PREV=1.0.0-beta1
-    
+
 ## B. create a new release branch / github PR
 ### B1. update (commit) version in sources
 
     doc/README.md
     src/clientversion.h
     configure.ac
-    
+    contrib/DEBIAN/control
+    contrib/gitian-descriptors/gitian-linux.yml
+
+
 In `configure.ac` and `clientversion.h`:
 
 - Increment `CLIENT_VERSION_BUILD` according to the following schema:
@@ -56,12 +59,20 @@ git shortlog helps a lot, for example:
     $ git shortlog --no-merges v${ZCASH_RELEASE_PREV}..HEAD \
         > ./doc/release-notes/release-notes-${ZCASH_RELEASE}.md
 
+Update the Debian package changelog:
+
+    export DEBVERSION='1.0.0-rc1'
+    export DEBEMAIL="${DEBEMAIL:-team@z.cash}"
+    export DEBFULLNAME="${DEBFULLNAME:-Zcash Company}"
+
+    dch -v $DEBVERSION -D jessie -c contrib/DEBIAN/changelog
+
 ### B3. change the network magics
 
 If this release breaks backwards compatibility, change the network magic
 numbers. Set the four `pchMessageStart` in `CTestNetParams` in `chainparams.cpp`
 to random values.
-        
+
 ### B4. merge the previous changes
 
 Do the normal pull-request, review, testing process for this release PR.
