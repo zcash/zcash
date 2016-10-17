@@ -117,9 +117,9 @@ fprintf(stderr,"chainparams\n");
         base58Prefixes[ZCSPENDING_KEY] = {171,54};*/
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
-        base58Prefixes[PUBKEY_ADDRESS]     = {0x3C,0xB8};
+        base58Prefixes[PUBKEY_ADDRESS]     = {0x3C};
         // guarantees the first 2 characters, when base58 encoded, are "t3"
-        base58Prefixes[SCRIPT_ADDRESS]     = {0x55,0xBD};
+        base58Prefixes[SCRIPT_ADDRESS]     = {0x55};
         // the first character, when base58 encoded, is "5" or "K" or "L" (as in Bitcoin)
         base58Prefixes[SECRET_KEY]         = {188};
         // do not rely on these BIP32 prefixes; they are not specified and may change
