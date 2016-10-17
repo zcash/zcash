@@ -59,7 +59,7 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 int32_t komodo_blockcheck(CBlock *block,uint32_t *nBitsp)
 {
     CBlockIndex *bindex = new CBlockIndex(block->GetBlockHeader());
-    if ( bindex->nHeight <= NOTARIZED_HEIGHT )
+    if ( bindex != 0 && bindex->nHeight <= NOTARIZED_HEIGHT )
         return(-1);
     // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS
     // -1 -> invalid, ie, prior to notarized block
