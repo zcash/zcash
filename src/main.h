@@ -47,9 +47,6 @@ class CValidationState;
 
 struct CNodeStateStats;
 
-// This is a 2-of-3 multisig P2SH
-//static const char *FOUNDERS_REWARD_SCRIPT = "a9146708e6670db0b950dac68031025cc5b63213a49187";
-
 /** Default for -blockmaxsize and -blockminsize, which control the range of sizes the mining code will create **/
 static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 750000;
 static const unsigned int DEFAULT_BLOCK_MIN_SIZE = 0;
@@ -57,8 +54,8 @@ static const unsigned int DEFAULT_BLOCK_MIN_SIZE = 0;
 static const unsigned int DEFAULT_BLOCK_PRIORITY_SIZE = 50000;
 /** Default for accepting alerts from the P2P network. */
 static const bool DEFAULT_ALERTS = true;
-/** The maximum size for transactions we're willing to relay/mine */
-static const unsigned int MAX_STANDARD_TX_SIZE = 100000;
+/** Minimum alert priority for enabling safe mode. */
+static const int ALERT_PRIORITY_SAFE_MODE = 4000;
 /** Maximum number of signature check operations in an IsStandard() P2SH script */
 static const unsigned int MAX_P2SH_SIGOPS = 15;
 /** The maximum number of sigops we're willing to relay/mine in a single tx */

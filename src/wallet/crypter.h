@@ -7,7 +7,9 @@
 
 #include "keystore.h"
 #include "serialize.h"
+#include "streams.h"
 #include "support/allocators/secure.h"
+#include "zcash/Address.hpp"
 
 class uint256;
 
@@ -66,6 +68,18 @@ public:
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;
 
+class CSecureDataStream : public CBaseDataStream<CKeyingMaterial>
+{
+public:
+    explicit CSecureDataStream(int nTypeIn, int nVersionIn) : CBaseDataStream(nTypeIn, nVersionIn) { }
+
+    CSecureDataStream(const_iterator pbegin, const_iterator pend, int nTypeIn, int nVersionIn) :
+            CBaseDataStream(pbegin, pend, nTypeIn, nVersionIn) { }
+
+    CSecureDataStream(const vector_type& vchIn, int nTypeIn, int nVersionIn) :
+            CBaseDataStream(vchIn, nTypeIn, nVersionIn) { }
+};
+
 /** Encryption/decryption context with key information */
 class CCrypter
 {
@@ -114,10 +128,11 @@ class CCryptoKeyStore : public CBasicKeyStore
 {
 private:
     CryptedKeyMap mapCryptedKeys;
+    CryptedSpendingKeyMap mapCryptedSpendingKeys;
 
     CKeyingMaterial vMasterKey;
 
-    //! if fUseCrypto is true, mapKeys must be empty
+    //! if fUseCrypto is true, mapKeys and mapSpendingKeys must be empty
     //! if fUseCrypto is false, vMasterKey must be empty
     bool fUseCrypto;
 
@@ -180,6 +195,36 @@ public:
         setAddress.clear();
         CryptedKeyMap::const_iterator mi = mapCryptedKeys.begin();
         while (mi != mapCryptedKeys.end())
+        {
+            setAddress.insert((*mi).first);
+            mi++;
+        }
+    }
+    virtual bool AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
+                                       const libzcash::ViewingKey &vk,
+                                       const std::vector<unsigned char> &vchCryptedSecret);
+    bool AddSpendingKey(const libzcash::SpendingKey &sk);
+    bool HaveSpendingKey(const libzcash::PaymentAddress &address) const
+    {
+        {
+            LOCK(cs_KeyStore);
+            if (!IsCrypted())
+                return CBasicKeyStore::HaveSpendingKey(address);
+            return mapCryptedSpendingKeys.count(address) > 0;
+        }
+        return false;
+    }
+    bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey &skOut) const;
+    void GetPaymentAddresses(std::set<libzcash::PaymentAddress> &setAddress) const
+    {
+        if (!IsCrypted())
+        {
+            CBasicKeyStore::GetPaymentAddresses(setAddress);
+            return;
+        }
+        setAddress.clear();
+        CryptedSpendingKeyMap::const_iterator mi = mapCryptedSpendingKeys.begin();
+        while (mi != mapCryptedSpendingKeys.end())
         {
             setAddress.insert((*mi).first);
             mi++;

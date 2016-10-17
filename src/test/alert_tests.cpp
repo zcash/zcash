@@ -13,6 +13,8 @@
 #include "data/alertTests.raw.h"
 
 #include "main.h"
+#include "rpcprotocol.h"
+#include "rpcserver.h"
 #include "serialize.h"
 #include "streams.h"
 #include "util.h"
@@ -25,6 +27,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/foreach.hpp>
 #include <boost/test/unit_test.hpp>
+#include "json/json_spirit_reader_template.h"
 
 #include "key.h"
 #include "alertkeys.h"
@@ -163,12 +166,12 @@ void GenerateAlertTests()
     SignAndSerialize(alert, sBuffer);
 
     // More tests go here ...
-    alert.setSubVer.insert(std::string("/Satoshi:0.1.0/"));
-    alert.strStatusBar  = "Alert 1 for Satoshi 0.1.0";
+    alert.setSubVer.insert(std::string("/MagicBean:0.1.0/"));
+    alert.strStatusBar  = "Alert 1 for MagicBean 0.1.0";
     SignAndSerialize(alert, sBuffer);
 
-    alert.setSubVer.insert(std::string("/Satoshi:0.2.0/"));
-    alert.strStatusBar  = "Alert 1 for Satoshi 0.1.0, 0.2.0";
+    alert.setSubVer.insert(std::string("/MagicBean:0.2.0/"));
+    alert.strStatusBar  = "Alert 1 for MagicBean 0.1.0, 0.2.0";
     SignAndSerialize(alert, sBuffer);
 
     alert.setSubVer.clear();
@@ -183,13 +186,26 @@ void GenerateAlertTests()
     SignAndSerialize(alert, sBuffer);
 
     ++alert.nID;
-    alert.nMinVer = 11;
-    alert.nMaxVer = 22;
+    alert.nPriority = 5000;
+    alert.strStatusBar  = "Alert 3, disables RPC";
+    alert.strRPCError = "RPC disabled";
     SignAndSerialize(alert, sBuffer);
 
     ++alert.nID;
-    alert.strStatusBar  = "Alert 2 for Satoshi 0.1.0";
-    alert.setSubVer.insert(std::string("/Satoshi:0.1.0/"));
+    alert.nPriority = 5000;
+    alert.strStatusBar  = "Alert 4, re-enables RPC";
+    alert.strRPCError = "";
+    SignAndSerialize(alert, sBuffer);
+
+    ++alert.nID;
+    alert.nMinVer = 11;
+    alert.nMaxVer = 22;
+    alert.nPriority = 100;
+    SignAndSerialize(alert, sBuffer);
+
+    ++alert.nID;
+    alert.strStatusBar  = "Alert 2 for MagicBean 0.1.0";
+    alert.setSubVer.insert(std::string("/MagicBean:0.1.0/"));
     SignAndSerialize(alert, sBuffer);
 
     ++alert.nID;
@@ -280,27 +296,27 @@ BOOST_AUTO_TEST_CASE(AlertApplies)
     // Matches:
     BOOST_CHECK(alerts[0].AppliesTo(1, ""));
     BOOST_CHECK(alerts[0].AppliesTo(999001, ""));
-    BOOST_CHECK(alerts[0].AppliesTo(1, "/Satoshi:11.11.11/"));
+    BOOST_CHECK(alerts[0].AppliesTo(1, "/MagicBean:11.11.11/"));
 
-    BOOST_CHECK(alerts[1].AppliesTo(1, "/Satoshi:0.1.0/"));
-    BOOST_CHECK(alerts[1].AppliesTo(999001, "/Satoshi:0.1.0/"));
+    BOOST_CHECK(alerts[1].AppliesTo(1, "/MagicBean:0.1.0/"));
+    BOOST_CHECK(alerts[1].AppliesTo(999001, "/MagicBean:0.1.0/"));
 
-    BOOST_CHECK(alerts[2].AppliesTo(1, "/Satoshi:0.1.0/"));
-    BOOST_CHECK(alerts[2].AppliesTo(1, "/Satoshi:0.2.0/"));
+    BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.1.0/"));
+    BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.2.0/"));
 
     // Don't match:
     BOOST_CHECK(!alerts[0].AppliesTo(-1, ""));
     BOOST_CHECK(!alerts[0].AppliesTo(999002, ""));
 
     BOOST_CHECK(!alerts[1].AppliesTo(1, ""));
-    BOOST_CHECK(!alerts[1].AppliesTo(1, "Satoshi:0.1.0"));
-    BOOST_CHECK(!alerts[1].AppliesTo(1, "/Satoshi:0.1.0"));
-    BOOST_CHECK(!alerts[1].AppliesTo(1, "Satoshi:0.1.0/"));
-    BOOST_CHECK(!alerts[1].AppliesTo(-1, "/Satoshi:0.1.0/"));
-    BOOST_CHECK(!alerts[1].AppliesTo(999002, "/Satoshi:0.1.0/"));
-    BOOST_CHECK(!alerts[1].AppliesTo(1, "/Satoshi:0.2.0/"));
+    BOOST_CHECK(!alerts[1].AppliesTo(1, "MagicBean:0.1.0"));
+    BOOST_CHECK(!alerts[1].AppliesTo(1, "/MagicBean:0.1.0"));
+    BOOST_CHECK(!alerts[1].AppliesTo(1, "MagicBean:0.1.0/"));
+    BOOST_CHECK(!alerts[1].AppliesTo(-1, "/MagicBean:0.1.0/"));
+    BOOST_CHECK(!alerts[1].AppliesTo(999002, "/MagicBean:0.1.0/"));
+    BOOST_CHECK(!alerts[1].AppliesTo(1, "/MagicBean:0.2.0/"));
 
-    BOOST_CHECK(!alerts[2].AppliesTo(1, "/Satoshi:0.3.0/"));
+    BOOST_CHECK(!alerts[2].AppliesTo(1, "/MagicBean:0.3.0/"));
 
     SetMockTime(0);
 }
@@ -320,7 +336,7 @@ BOOST_AUTO_TEST_CASE(AlertNotify)
         alert.ProcessAlert(alertKey, false);
 
     std::vector<std::string> r = read_lines(temp);
-    BOOST_CHECK_EQUAL(r.size(), 4u);
+    BOOST_CHECK_EQUAL(r.size(), 6u);
 
 // Windows built-in echo semantics are different than posixy shells. Quotes and
 // whitespace are printed literally.
@@ -329,16 +345,43 @@ BOOST_AUTO_TEST_CASE(AlertNotify)
     BOOST_CHECK_EQUAL(r[0], "Alert 1");
     BOOST_CHECK_EQUAL(r[1], "Alert 2, cancels 1");
     BOOST_CHECK_EQUAL(r[2], "Alert 2, cancels 1");
-    BOOST_CHECK_EQUAL(r[3], "Evil Alert; /bin/ls; echo "); // single-quotes should be removed
+    BOOST_CHECK_EQUAL(r[3], "Alert 3, disables RPC");
+    BOOST_CHECK_EQUAL(r[4], "Alert 4, reenables RPC"); // dashes should be removed
+    BOOST_CHECK_EQUAL(r[5], "Evil Alert; /bin/ls; echo "); // single-quotes should be removed
 #else
     BOOST_CHECK_EQUAL(r[0], "'Alert 1' ");
     BOOST_CHECK_EQUAL(r[1], "'Alert 2, cancels 1' ");
     BOOST_CHECK_EQUAL(r[2], "'Alert 2, cancels 1' ");
-    BOOST_CHECK_EQUAL(r[3], "'Evil Alert; /bin/ls; echo ' ");
+    BOOST_CHECK_EQUAL(r[3], "'Alert 3, disables RPC' ");
+    BOOST_CHECK_EQUAL(r[4], "'Alert 4, reenables RPC' "); // dashes should be removed
+    BOOST_CHECK_EQUAL(r[5], "'Evil Alert; /bin/ls; echo ' ");
 #endif
     boost::filesystem::remove(temp);
 
     SetMockTime(0);
+    mapAlerts.clear();
+}
+
+BOOST_AUTO_TEST_CASE(AlertDisablesRPC)
+{
+    SetMockTime(11);
+    const std::vector<unsigned char>& alertKey = Params(CBaseChainParams::MAIN).AlertKey();
+
+    // Command should work before alerts
+    BOOST_CHECK_EQUAL(GetWarnings("rpc"), "");
+
+    // First alert should disable RPC
+    alerts[5].ProcessAlert(alertKey, false);
+    BOOST_CHECK_EQUAL(alerts[5].strRPCError, "RPC disabled");
+    BOOST_CHECK_EQUAL(GetWarnings("rpc"), "RPC disabled");
+
+    // Second alert should re-enable RPC
+    alerts[6].ProcessAlert(alertKey, false);
+    BOOST_CHECK_EQUAL(alerts[6].strRPCError, "");
+    BOOST_CHECK_EQUAL(GetWarnings("rpc"), "");
+
+    SetMockTime(0);
+    mapAlerts.clear();
 }
 
 static bool falseFunc() { return false; }

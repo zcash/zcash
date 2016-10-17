@@ -156,7 +156,7 @@ Value generate(const Array& params, bool fHelp)
     unsigned int k = Params().EquihashK();
     while (nHeight < nHeightEnd)
     {
-        auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
+        unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Wallet keypool empty");
         CBlock *pblock = &pblocktemplate->block;
@@ -795,11 +795,6 @@ Value getblocksubsidy(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
-    /*CAmount nFoundersReward = 0;
-    if ((nHeight > 0) && (nHeight < Params().GetConsensus().nSubsidyHalvingInterval)) {
-        nFoundersReward = nReward/5;
-        nReward -= nFoundersReward;
-    }*/
     Object result;
     result.push_back(Pair("miner", ValueFromAmount(nReward)));
     //result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));

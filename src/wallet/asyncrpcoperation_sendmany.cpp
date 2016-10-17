@@ -218,13 +218,13 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         tx_ = CTransaction(rawTx);
     }
 
-    LogPrint("asyncrpc", "%s: spending %s to send %s with fee %s\n",
+    LogPrint("zrpc", "%s: spending %s to send %s with fee %s\n",
             getId().substr(0,10), FormatMoney(targetAmount, false), FormatMoney(sendAmount, false), FormatMoney(minersFee, false));
-    LogPrint("asyncrpc", " -  transparent input: %s (to choose from)\n", FormatMoney(t_inputs_total, false));
-    LogPrint("asyncrpc", " -      private input: %s (to choose from)\n", FormatMoney(z_inputs_total, false));
-    LogPrint("asyncrpc", " - transparent output: %s\n", FormatMoney(t_outputs_total, false));
-    LogPrint("asyncrpc", " -     private output: %s\n", FormatMoney(z_outputs_total, false));
-    LogPrint("asyncrpc", " -                fee: %s\n", FormatMoney(minersFee, false));
+    LogPrint("zrpc", " -  transparent input: %s (to choose from)\n", FormatMoney(t_inputs_total, false));
+    LogPrint("zrpc", " -      private input: %s (to choose from)\n", FormatMoney(z_inputs_total, false));
+    LogPrint("zrpc", " - transparent output: %s\n", FormatMoney(t_outputs_total, false));
+    LogPrint("zrpc", " -     private output: %s\n", FormatMoney(z_outputs_total, false));
+    LogPrint("zrpc", " -                fee: %s\n", FormatMoney(minersFee, false));
 
     /**
      * SCENARIO #1
@@ -243,7 +243,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         if (change > 0) {
             add_taddr_change_output_to_tx(change);
 
-            LogPrint("asyncrpc", "%s: transparent change in transaction output (amount=%s)\n",
+            LogPrint("zrpc", "%s: transparent change in transaction output (amount=%s)\n",
                     getId().substr(0, 10),
                     FormatMoney(change, false)
                     );
@@ -301,7 +301,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 SendManyRecipient smr(address, change, std::string());
                 zOutputsDeque.push_back(smr);
 
-                LogPrint("asyncrpc", "%s: change from coinbase utxo is also sent to the recipient (amount=%s)\n",
+                LogPrint("zrpc", "%s: change from coinbase utxo is also sent to the recipient (amount=%s)\n",
                         getId().substr(0, 10),
                         FormatMoney(change, false)
                         );
@@ -313,7 +313,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 // If there is a single zaddr and no coinbase utxos, just use a regular output for change.
                 add_taddr_change_output_to_tx(change);
 
-                LogPrint("asyncrpc", "%s: transparent change in transaction output (amount=%s)\n",
+                LogPrint("zrpc", "%s: transparent change in transaction output (amount=%s)\n",
                         getId().substr(0, 10),
                         FormatMoney(change, false)
                         );
@@ -395,7 +395,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 outPoints.push_back(outPoint);
 
 
-                LogPrint("asyncrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s)\n",
+                LogPrint("zrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s)\n",
                         getId().substr(0, 10),
                         outPoint.hash.ToString().substr(0, 10),
                         outPoint.js,
@@ -422,7 +422,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 info.vjsout.push_back(JSOutput());
                 info.vjsout.push_back(JSOutput(frompaymentaddress_, jsChange));
                 
-                LogPrint("asyncrpc", "%s: generating note for change (amount=%s)\n",
+                LogPrint("zrpc", "%s: generating note for change (amount=%s)\n",
                         getId().substr(0, 10),
                         FormatMoney(jsChange, false)
                         );
@@ -510,7 +510,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                     
                     jsInputValue += plaintext.value;
                     
-                    LogPrint("asyncrpc", "%s: spending change (amount=%s)\n",
+                    LogPrint("zrpc", "%s: spending change (amount=%s)\n",
                         getId().substr(0, 10),
                         FormatMoney(plaintext.value, false)
                         );
@@ -540,7 +540,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 
                 jsInputValue += noteFunds;
                 
-                LogPrint("asyncrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s)\n",
+                LogPrint("zrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s)\n",
                         getId().substr(0, 10),
                         jso.hash.ToString().substr(0, 10),
                         jso.js,
@@ -638,7 +638,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             if (jsChange>0) {
                 info.vjsout.push_back(JSOutput(frompaymentaddress_, jsChange));
 
-                LogPrint("asyncrpc", "%s: generating note for change (amount=%s)\n",
+                LogPrint("zrpc", "%s: generating note for change (amount=%s)\n",
                         getId().substr(0, 10),
                         FormatMoney(jsChange, false)
                         );
@@ -715,7 +715,7 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true, fAcceptCoinbase);
 
     BOOST_FOREACH(const COutput& out, vecOutputs) {
         if (out.nDepth < mindepth_) {
@@ -758,7 +758,7 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     for (CNotePlaintextEntry & entry : entries) {
         z_inputs_.push_back(SendManyInputJSOP(entry.jsop, entry.plaintext.note(frompaymentaddress_), CAmount(entry.plaintext.value)));
         std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
-        LogPrint("asyncrpc", "%s: found unspent note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
+        LogPrint("zrpc", "%s: found unspent note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
                 getId().substr(0, 10),
                 entry.jsop.hash.ToString().substr(0, 10),
                 entry.jsop.js,
@@ -836,7 +836,7 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
 
     CMutableTransaction mtx(tx_);
 
-    LogPrint("asyncrpc", "%s: creating joinsplit at index %d (vpub_old=%s, vpub_new=%s, in[0]=%s, in[1]=%s, out[0]=%s, out[1]=%s)\n",
+    LogPrint("zrpc", "%s: creating joinsplit at index %d (vpub_old=%s, vpub_new=%s, in[0]=%s, in[1]=%s, out[0]=%s, out[1]=%s)\n",
             getId().substr(0,10),
             tx_.vjoinsplit.size(),
             FormatMoney(info.vpub_old, false), FormatMoney(info.vpub_new, false),

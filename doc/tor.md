@@ -70,7 +70,7 @@ your zcashd's P2P listen port (8233 by default).
 
 In a typical situation, where you're only reachable via Tor, this should suffice:
 
-	./zcashd -proxy=127.0.0.1:9050 -externalip=abc123.onion -listen
+	./zcashd -proxy=127.0.0.1:9050 -externalip=zctestseie6wxgio.onion -listen
 
 (obviously, replace the Onion address with your own). If you don't care too much
 about hiding your node, and want to be reachable on IPv4 as well, additionally
@@ -83,34 +83,32 @@ and open port 8233 on your firewall (or use -upnp).
 If you only want to use Tor to reach onion addresses, but not use it as a proxy
 for normal IPv4/IPv6 communication, use:
 
-	./zcashd -onion=127.0.0.1:9050 -externalip=abc123.onion -discover
+	./zcashd -onion=127.0.0.1:9050 -externalip=zctestseie6wxgio.onion -discover
 
 
 3. Connect to a Zcash hidden server
 -----------------------------------
 
-To test your set-up, you might want to try connecting via Tor to just a
-a single Zcash hidden server.
+To test your set-up, you might want to try connecting via Tor on a different computer to just a
+a single Zcash hidden server. Launch zcashd as follows:
 
-Edit zcash.conf and comment out any nodes you might normally connect to.
-
-	#addnode=alphatestnet.z.cash
-
-Launch zcashd as follows:
-
-	zcashd -onion=127.0.0.1:9050 -addnode=abc123.onion 
+	./zcashd -onion=127.0.0.1:9050 -connect=zctestseie6wxgio.onion
 
 Now use zcash-cli to verify there is only a single peer connection.
 
 	zcash-cli getpeerinfo
-	
+
 	[
 	    {
 	        "id" : 1,
-	        "addr" : "abc123.onion:18233",
+	        "addr" : "zctestseie6wxgio.onion:18233",
 	        ...
-	        "version" : 70002,
-	        "subver" : "/Satoshi:0.11.2/",
+	        "version" : 170002,
+	        "subver" : "/MagicBean:1.0.0/",
 	        ...
 	    }
 	]
+
+To connect to multiple Tor nodes, use:
+
+	./zcashd -onion=127.0.0.1:9050 -addnode=zctestseie6wxgio.onion -dnsseed=0 -onlynet=onion

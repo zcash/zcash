@@ -104,6 +104,26 @@ bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey,
     return true;
 }
 
+bool CWalletDB::WriteCryptedZKey(const libzcash::PaymentAddress & addr,
+                                 const libzcash::ViewingKey &vk,
+                                 const std::vector<unsigned char>& vchCryptedSecret,
+                                 const CKeyMetadata &keyMeta)
+{
+    const bool fEraseUnencryptedKey = true;
+    nWalletDBUpdated++;
+
+    if (!Write(std::make_pair(std::string("zkeymeta"), addr), keyMeta))
+        return false;
+
+    if (!Write(std::make_pair(std::string("czkey"), addr), std::make_pair(vk, vchCryptedSecret), false))
+        return false;
+    if (fEraseUnencryptedKey)
+    {
+        Erase(std::make_pair(std::string("zkey"), addr));
+    }
+    return true;
+}
+
 bool CWalletDB::WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey)
 {
     nWalletDBUpdated++;
@@ -348,6 +368,7 @@ public:
     unsigned int nCKeys;
     unsigned int nKeyMeta;
     unsigned int nZKeys;
+    unsigned int nCZKeys;
     unsigned int nZKeyMeta;
     bool fIsEncrypted;
     bool fAnyUnordered;
@@ -355,7 +376,7 @@ public:
     vector<uint256> vWalletUpgrade;
 
     CWalletScanState() {
-        nKeys = nCKeys = nKeyMeta = nZKeys = nZKeyMeta = 0;
+        nKeys = nCKeys = nKeyMeta = nZKeys = nCZKeys = nZKeyMeta = 0;
         fIsEncrypted = false;
         fAnyUnordered = false;
         nFileVersion = 0;
@@ -557,6 +578,25 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             }
             wss.fIsEncrypted = true;
         }
+        else if (strType == "czkey")
+        {
+            libzcash::PaymentAddress addr;
+            ssKey >> addr;
+            // Deserialization of a pair is just one item after another
+            uint256 vkValue;
+            ssValue >> vkValue;
+            libzcash::ViewingKey vk(vkValue);
+            vector<unsigned char> vchCryptedSecret;
+            ssValue >> vchCryptedSecret;
+            wss.nCKeys++;
+
+            if (!pwallet->LoadCryptedZKey(addr, vk, vchCryptedSecret))
+            {
+                strErr = "Error reading wallet database: LoadCryptedZKey failed";
+                return false;
+            }
+            wss.fIsEncrypted = true;
+        }
         else if (strType == "keymeta")
         {
             CPubKey vchPubKey;
@@ -651,7 +691,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
 static bool IsKeyType(string strType)
 {
     return (strType== "key" || strType == "wkey" ||
-            strType == "zkey" ||
+            strType == "zkey" || strType == "czkey" ||
             strType == "mkey" || strType == "ckey");
 }
 
@@ -736,9 +776,8 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
     LogPrintf("Keys: %u plaintext, %u encrypted, %u w/ metadata, %u total\n",
            wss.nKeys, wss.nCKeys, wss.nKeyMeta, wss.nKeys + wss.nCKeys);
 
-    // TODO: Keep track of encrypted ZKeys
-    LogPrintf("ZKeys: %u plaintext, -- encrypted, %u w/metadata, %u total\n",
-           wss.nZKeys, wss.nZKeyMeta, wss.nZKeys + 0);
+    LogPrintf("ZKeys: %u plaintext, %u encrypted, %u w/metadata, %u total\n",
+           wss.nZKeys, wss.nCZKeys, wss.nZKeyMeta, wss.nZKeys + wss.nCZKeys);
 
     // nTimeFirstKey is only reliable if all keys have metadata
     if ((wss.nKeys + wss.nCKeys) != wss.nKeyMeta)
