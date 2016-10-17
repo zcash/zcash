@@ -2954,7 +2954,7 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
     nBits = block.nBits;
     CBlockIndex *bindex = new CBlockIndex(block);
 
-    if ( bindex->nHeight < NOTARIZED_HEIGHT )//|| (block.nHeight == NOTARIZED_HEIGHT && NOTARIZED_HASH != block.GetHash()) )
+    if ( bindex->nHeight < NOTARIZED_HEIGHT || (bindex->nHeight == NOTARIZED_HEIGHT && NOTARIZED_HASH != bindex->GetHash()) )
         return(false);
     if ( (retval= komodo_blockhdrcheck(&block,&nBits)) == 0 )
     {
