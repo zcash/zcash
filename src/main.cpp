@@ -2946,14 +2946,12 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
 {
-    int32_t retval; uint32_t nBits;
+    int32_t retval; uint32_t nBits; CBlockIndex *bindex = new CBlockIndex(block);
     // Check timestamp
     if (block.GetBlockTime() > GetAdjustedTime() + 60)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
     nBits = block.nBits;
-    CBlockIndex *bindex = new CBlockIndex(block);
-
-    if ( bindex->nHeight < NOTARIZED_HEIGHT || (bindex->nHeight == NOTARIZED_HEIGHT && NOTARIZED_HASH != bindex->GetBlockHash()) )
+    if ( bindex != 0 && (bindex->nHeight < NOTARIZED_HEIGHT || (bindex->nHeight == NOTARIZED_HEIGHT && NOTARIZED_HASH != bindex->GetBlockHash())) )
         return(false);
     if ( (retval= komodo_blockhdrcheck(&block,&nBits)) == 0 )
     {
