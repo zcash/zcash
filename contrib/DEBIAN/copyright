@@ -4,12 +4,12 @@ Upstream-Contact: Zcash Company <team@z.cash>
 Source: https://github.com/zcash/zcash
 
 Files: *
-Copyright: 2016, The Zcash Core developers
+Copyright: 2016, The Zcash developers
  2009-2015, Bitcoin Core developers
 License: Expat
 Comment: The Bitcoin Core developers encompasses the current developers listed on bitcoin.org,
  as well as the numerous contributors to the project.
- The Zcash Core developers are listed at https://z.cash/team.html.
+ The Zcash developers are listed at https://z.cash/team.html.
 
 Files: src/json/*
 Copyright: 2007-2009, John W. Wilkinson
@@ -83,7 +83,7 @@ Copyright: 2013-2016 Frank Denis
 License: ISC
 
 Files: depends/sources/libsnark-*.tar.gz
-Copyright: 2012-2016 SCIPR Lab and contributors; 2016 Zcash developers
+Copyright: 2012-2016 SCIPR Lab and contributors; 2016 The Zcash developers
 License: Expat
 
 Files: depends/sources/gmp-*.tar.bz2
