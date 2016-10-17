@@ -69,15 +69,16 @@ if BUILD_BITCOIN_UTILS
   bin_PROGRAMS += zcash-cli bitcoin-tx
 endif
 
-# TODO: rename to libzcash
 LIBZCASH_H = \
-  zcash/IncrementalMerkleTree.h \
+  zcash/IncrementalMerkleTree.hpp \
   zcash/NoteEncryption.hpp \
   zcash/Address.hpp \
   zcash/JoinSplit.hpp \
   zcash/Note.hpp \
   zcash/prf.h \
-  zcash/util.h
+  zcash/Proof.hpp \
+  zcash/util.h \
+  zcash/Zcash.h
 
 .PHONY: FORCE check-symbols check-security
 # bitcoin core #
@@ -194,6 +195,7 @@ libbitcoin_server_a_SOURCES = \
   sendalert.cpp \
   addrman.cpp \
   alert.cpp \
+  alertkeys.h \
   asyncrpcoperation.cpp \
   asyncrpcqueue.cpp \
   bloom.cpp \
@@ -229,6 +231,7 @@ libbitcoin_server_a_SOURCES = \
 libbitcoin_wallet_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_wallet_a_SOURCES = \
   zcbenchmarks.cpp \
+  zcbenchmarks.h \
   wallet/asyncrpcoperation_sendmany.cpp \
   wallet/crypter.cpp \
   wallet/db.cpp \
@@ -246,6 +249,7 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/common.h \
   crypto/equihash.cpp \
   crypto/equihash.h \
+  crypto/equihash.tcc \
   crypto/hmac_sha256.cpp \
   crypto/hmac_sha256.h \
   crypto/hmac_sha512.cpp \
@@ -420,7 +424,13 @@ libzcash_a_SOURCES = \
   zcash/Proof.cpp \
   zcash/Note.cpp \
   zcash/prf.cpp \
-  zcash/util.cpp
+  zcash/util.cpp \
+  zcash/circuit/commitment.tcc \
+  zcash/circuit/gadget.tcc \
+  zcash/circuit/merkle.tcc \
+  zcash/circuit/note.tcc \
+  zcash/circuit/prfs.tcc \
+  zcash/circuit/utils.tcc
 
 libzcash_a_CPPFLAGS = -DMULTICORE -fopenmp -fPIC -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS $(HARDENED_CPPFLAGS) -pipe -O1 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
 
