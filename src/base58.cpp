@@ -253,7 +253,7 @@ bool CBitcoinAddress::IsValid(const CChainParams& params) const
 
 bool CBitcoinAddress::SetString(const char* pszAddress)
 {
-    return CBase58Data::SetString(pszAddress, 2);
+    return CBase58Data::SetString(pszAddress, 1);//2);
 }
 
 bool CBitcoinAddress::SetString(const std::string& strAddress)
