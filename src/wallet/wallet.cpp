@@ -654,6 +654,9 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                 }
             }
         }
+        if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
+            nWitnessCacheSize += 1;
+        }
 
         const CBlock* pblock {pblockIn};
         CBlock block;
@@ -675,6 +678,8 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
                         for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                             CNoteData* nd = &(item.second);
+                            // Check the validity of the cache
+                            assert(nWitnessCacheSize >= nd->witnesses.size());
                             if (nd->witnesses.size() > 0) {
                                 nd->witnesses.front().append(note_commitment);
                             }
@@ -685,15 +690,22 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                     if (txIsOurs) {
                         JSOutPoint jsoutpt {hash, i, j};
                         if (mapWallet[hash].mapNoteData.count(jsoutpt)) {
-                            mapWallet[hash].mapNoteData[jsoutpt].witnesses.push_front(
-                                tree.witness());
+                            CNoteData* nd = &(mapWallet[hash].mapNoteData[jsoutpt]);
+                            assert(nd->witnesses.size() == 0);
+                            nd->witnesses.push_front(tree.witness());
+                            // Check the validity of the cache
+                            assert(nWitnessCacheSize >= nd->witnesses.size());
                         }
                     }
                 }
             }
         }
-        if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
-            nWitnessCacheSize += 1;
+        for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+            for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
+                CNoteData* nd = &(item.second);
+                // Check the validity of the cache
+                assert(nWitnessCacheSize >= nd->witnesses.size());
+            }
         }
         if (fFileBacked) {
             CWalletDB walletdb(strWalletFile);
@@ -709,12 +721,21 @@ void CWallet::DecrementNoteWitnesses()
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                 CNoteData* nd = &(item.second);
+                // Check the validity of the cache
+                assert(nWitnessCacheSize >= nd->witnesses.size());
                 if (nd->witnesses.size() > 0) {
                     nd->witnesses.pop_front();
                 }
             }
         }
         nWitnessCacheSize -= 1;
+        for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+            for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
+                CNoteData* nd = &(item.second);
+                // Check the validity of the cache
+                assert(nWitnessCacheSize >= nd->witnesses.size());
+            }
+        }
         // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
         assert(nWitnessCacheSize > 0);
         if (fFileBacked) {
