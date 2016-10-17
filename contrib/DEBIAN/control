@@ -9,7 +9,6 @@ Build-Depends: autoconf, automake, bsdmainutils, build-essential
  unzip, wget, zlib1g-dev
 Vcs-Git: git@github.com:zcash/zcash.git
 Vcs-Browser: https://github.com/zcash/zcash
-
 Package: zcash
 Version: 1.0.0-rc1
 Architecture: amd64
