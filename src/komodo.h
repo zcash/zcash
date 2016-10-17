@@ -19,8 +19,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
-int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
+int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT;
 std::string NOTARY_PUBKEY;
+uint256 NOTARIZED_HASH;
 
 int32_t komodo_checkmsg(void *bitcoinpeer,uint8_t *data,int32_t datalen)
 {
@@ -57,6 +58,8 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 
 int32_t komodo_blockcheck(CBlock *block,uint32_t *nBitsp)
 {
+    if ( block.GetHeight() <= NOTARIZED_HEIGHT )
+        return(-1);
     // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS
     // -1 -> invalid, ie, prior to notarized block
     return(0); // normal PoW block

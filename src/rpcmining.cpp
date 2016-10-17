@@ -199,8 +199,7 @@ Value generate(const Array& params, bool fHelp)
                 if ( (retval= komodo_blockcheck(pblock,&nBits)) == 0 )
                 {
                     return CheckProofOfWork(pblock->GetHash(), nBits, Params().GetConsensus());
-                }
-                else if ( retval < 0 ) // komodo rejects, ie. prior to notarized blockhash
+                } else if ( retval < 0 ) // komodo rejects, ie. prior to notarized blockhash
                     return(false);
                 return true;
             };
