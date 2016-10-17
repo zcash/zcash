@@ -2952,7 +2952,9 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
     if (block.GetBlockTime() > GetAdjustedTime() + 60)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
     nBits = block.nBits;
-    if ( CBlockIndex::CBlockIndex(block).nHeight < NOTARIZED_HEIGHT )//|| (block.nHeight == NOTARIZED_HEIGHT && NOTARIZED_HASH != block.GetHash()) )
+    CBlockIndex *bindex = new CBlockIndex(block);
+
+    if ( bindex->nHeight < NOTARIZED_HEIGHT )//|| (block.nHeight == NOTARIZED_HEIGHT && NOTARIZED_HASH != block.GetHash()) )
         return(false);
     if ( (retval= komodo_blockhdrcheck(&block,&nBits)) == 0 )
     {
