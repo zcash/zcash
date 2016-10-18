@@ -31,9 +31,9 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
     block.SetNull();
     CAutoFile filein(OpenBlockFile(pindex->GetBlockPos(),true),SER_DISK,CLIENT_VERSION);
     if ( filein.IsNull() )
-        return(-1);
+        return(0);
     try { filein >> block; }
-    catch (const std::exception& e) { return(-1); }
+    catch (const std::exception& e) { return(0); }
     height = pindex->nHeight;
     coinbasestr = (char *)block.vtx[0].vout[0].scriptPubKey.ToString().c_str();
     printf("ht.%d (%s)\n",height,coinbasestr);
