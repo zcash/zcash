@@ -211,7 +211,7 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
     char *scriptstr,*opreturnstr; uint32_t notarizedheight; uint8_t opret[256];
-    int32_t i,j,k,opretlen,len,numvins,numvouts,height,txn_count; uint256 kmdtxid,btctxid;
+    int32_t i,j,k,opretlen,len,numvouts,height,txn_count; uint256 kmdtxid,btctxid;
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
@@ -220,18 +220,6 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         for (i=0; i<txn_count; i++)
         {
             numvouts = block.vtx[i].vout.size();
-            numvins = block.vtx[i].vin.size();
-            for (j=0; j<numvins; j++)
-            {
-                const COutPoint &prevout = block.vtx[i].vin[j].prevout;
-                const CCoins *coins = view.AccessCoins(prevout.hash);
-                printf("view.%p coins.%p\n",view,coins);
-                if ( view != 0 && coins != 0 )
-                {
-                    scriptstr = (char *)coins->vout[prevout.n].scriptPubKey.ToString().c_str();
-                    printf("ht.%d txi.%d vini.%d of %d: (%s)\n",height,i,j,numvins,scriptstr);
-                }
-            }
             for (j=0; j<numvouts; j++)
             {
                 scriptstr = (char *)block.vtx[i].vout[j].scriptPubKey.ToString().c_str();
