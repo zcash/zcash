@@ -246,6 +246,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             txhash = block.vtx[i].GetHash();
             numvouts = block.vtx[i].vout.size();
             notaryid = -1;
+            voutmask = 0;
             for (j=0; j<numvouts; j++)
             {
                 scriptstr = (char *)block.vtx[i].vout[j].scriptPubKey.ToString().c_str();
@@ -265,7 +266,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         printf("NOTARIZED.%d KMD.%s BTC.%s\n",notarizedheight,kmdtxid.ToString().c_str(),btctxid.ToString().c_str());
                     }
                 }
-                for (voutmask=k=0; k<64; k++)
+                for (k=0; k<64; k++)
                 {
                     if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
                         break;
