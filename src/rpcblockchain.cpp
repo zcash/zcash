@@ -460,17 +460,6 @@ Value gettxout(const Array& params, bool fHelp)
     return ret;
 }
 
-char *komodo_getspendscript(uint256 hash,int32_t n)
-{
-    CTransaction tx; uint256 hashBlock;
-    if ( GetTransaction(hash,tx,Params().GetConsensus(),hashBlock,true) != 0 )
-    {
-        if ( n >= 0 && n < tx.vout.size() )
-            return((char *)tx.vout[n].scriptPubKey.ToString().c_str());
-    } else printf("null GetTransaction\n");
-    return(0);
-}
-
 Value verifychain(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 2)
