@@ -30,12 +30,8 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
     CBlock block; int32_t height; char *coinbasestr;
     if ( pindex == 0 )
         return(0);
-    block.SetNull();
-    CAutoFile filein(OpenBlockFile(pindex->GetBlockPos(),true),SER_DISK,CLIENT_VERSION);
-    if ( filein.IsNull() )
+    if ( ReadBlockFromDisk(block,pindex,1) == 0 )
         return(0);
-    try { filein >> block; }
-    catch (const std::exception& e) { return(0); }
     if ( block.vtx.size() > 0 )
     {
         height = pindex->nHeight;
