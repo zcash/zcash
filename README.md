@@ -13,7 +13,8 @@ What is Zcash?
 
 Zcash is an implementation of the "Zerocash" protocol. Based on Bitcoin's code, it intends to
 offer a far higher standard of privacy and anonymity through a sophisticiated zero-knowledge
-proving scheme which preserves confidentiality of transaction metadata.
+proving scheme which preserves confidentiality of transaction metadata. Technical details are
+available in our [Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf).
 
 **Zcash is unfinished and highly experimental.** Use at your own risk.
 
