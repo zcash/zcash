@@ -90,7 +90,7 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    char *scriptstr; int32_t i,j,numvins,numvouts,height,txn_count;
+    char *scriptstr; int32_t i,j,k,numvins,numvouts,height,txn_count;
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
@@ -107,7 +107,17 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     printf(">>>>>>>> ");
                 else if ( j == 0 )
                 {
-                    
+                    for (k=0; k<64; k++)
+                    {
+                        if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
+                            break;
+                        if ( strncmp(Notaries[k][1],coinbasestr,66) == 0 )
+                        {
+                            printf("%s ht.%d (%s)\n",Notaries[k][0],height,coinbasestr);
+                            //*nBitsp = KOMODO_MINDIFF_NBITS;
+                            break;
+                        }
+                    }
                 }
                 printf("ht.%d txi.%d vout.%d (%s)\n",height,i,j,scriptstr);
             }
