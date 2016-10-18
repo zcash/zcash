@@ -469,7 +469,7 @@ char *komodo_gettxout(uint256 hash,int32_t n)
         return(0);
     BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
     pindex = it->second;
-    return(coins.vout[n].scriptPubKey.ToString().c_str());
+    return((char *)coins.vout[n].scriptPubKey.ToString().c_str());
 }
 
 Value verifychain(const Array& params, bool fHelp)
