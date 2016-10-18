@@ -240,18 +240,6 @@ Value getrawtransaction(const Array& params, bool fHelp)
     return result;
 }
 
-char *komodo_getspendscript(uint256 hash,int32_t n)
-{
-    CTransaction tx; uint256 hashBlock;
-    LOCK(cs_main);
-    if ( GetTransaction(hash,tx,hashBlock,true) != 0 )
-    {
-        if ( n >= 0 && n < tx.vout.size() )
-            return((char *)tx.vout[n].scriptPubKey.ToString().c_str());
-    } else printf("null GetTransaction\n");
-    return(0);
-}
-
 Value gettxoutproof(const Array& params, bool fHelp)
 {
     if (fHelp || (params.size() != 1 && params.size() != 2))

@@ -1292,9 +1292,32 @@ bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock
     return false;
 }
 
-
-
-
+char *komodo_getspendscript(uint256 hash,int32_t n)
+{
+    CTransaction tx; uint256 hashBlock; CBlockIndex *pindexSlow = NULL; int nHeight = -1;
+    CBlock block; CCoinsViewCache &view = *pcoinsTip;
+    const CCoins* coins = view.AccessCoins(hash);
+    if ( coins )
+        nHeight = coins->nHeight;
+    if ( nHeight > 0 )
+        pindexSlow = chainActive[nHeight];
+    if ( pindexSlow != 0 )
+    {
+        if ( ReadBlockFromDisk(block,pindexSlow,0) )
+        {
+            BOOST_FOREACH(const CTransaction &tx,block.vtx)
+            {
+                if ( tx.GetHash() == hash )
+                {
+                    if ( n >= 0 && n < tx.vout.size() )
+                        return((char *)tx.vout[n].scriptPubKey.ToString().c_str());
+                    else printf("getspendscript illegal n.%d\n",n);
+                }
+            }
+        }
+    }
+    return(0);
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
