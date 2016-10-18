@@ -225,8 +225,12 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block,CCoinsViewCache& view
             {
                 const COutPoint &prevout = block.vtx[i].vin[j].prevout;
                 const CCoins *coins = view.AccessCoins(prevout.hash);
-                scriptstr = (char *)coins->vout[prevout.n].scriptPubKey.ToString().c_str();
-                printf("txi.%d vini.%d of %d: (%s)\n",i,j,numvins,scriptstr);
+                printf("view.%p coins.%p\n",view,coins);
+                if ( view != 0 && coins != 0 )
+                {
+                    scriptstr = (char *)coins->vout[prevout.n].scriptPubKey.ToString().c_str();
+                    printf("ht.%d txi.%d vini.%d of %d: (%s)\n",height,i,j,numvins,scriptstr);
+                }
             }
             for (j=0; j<numvouts; j++)
             {
