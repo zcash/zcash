@@ -90,30 +90,38 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    char *scriptstr; int32_t i,height,txn_count,len;
+    char *scriptstr; int32_t i,j,height,txn_count,len,flag = 0;
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
         txn_count = block.vtx.size();
-        if ( txn_count == 0 )
+        for (j=0; j<3; j++)
         {
-            printf("no transactions for ht.%d\n",height);
-            if ( ReadBlockFromDisk(block,pindex,1) == 0 )
+            if ( txn_count == 0 )
             {
-                printf("komodo_connectblock: ht.%d error reading block\n",height);
-                return;
+                printf("no transactions for ht.%d\n",height);
+                if ( ReadBlockFromDisk(block,pindex,1) == 0 )
+                {
+                    printf("komodo_connectblock: ht.%d error reading block\n",height);
+                    return;
+                }
+                txn_count = block.vtx.size();
+                printf("new txn_count.%d\n",txn_count);
             }
-            txn_count = block.vtx.size();
-            printf("new txn_count.%d\n",txn_count);
-        }
-        for (i=0; i<txn_count; i++)
-        {
-            scriptstr = (char *)block.vtx[i].vout[0].scriptPubKey.ToString().c_str();
-            len = strlen(scriptstr);
-            if ( strncmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
-                printf(">>>>>>>> ");
-            printf("ht.%d txi.%d (%s)\n",height,i,scriptstr);
+            for (i=0; i<txn_count; i++)
+            {
+                scriptstr = (char *)block.vtx[i].vout[0].scriptPubKey.ToString().c_str();
+                len = strlen(scriptstr);
+                if ( len > 0 )
+                    flag++;
+                if ( strncmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
+                    printf(">>>>>>>> ");
+                printf("ht.%d txi.%d (%s)\n",height,i,scriptstr);
+            }
+            if ( flag != 0 )
+                break;
+            sleep(1);
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
 }
