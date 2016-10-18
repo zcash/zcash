@@ -78,8 +78,9 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
                 break;
             if ( strncmp(Notaries[i][1],coinbasestr,66) == 0 )
             {
-                printf("Notary.[%d] %s ht.%d (%s)\n",i,Notaries[i][0],height,coinbasestr);
-                break;
+                //printf("Notary.[%d] %s ht.%d (%s)\n",i,Notaries[i][0],height,coinbasestr);
+                //*nBitsp = KOMODO_MINDIFF_NBITS;
+                return(1);
             }
         }
     }
@@ -95,6 +96,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     {
         height = pindex->nHeight;
         txn_count = block.vtx.size();
+        if ( txn_count == 0 )
+            printf("no transactions for ht.%d\n",height);
         for (i=0; i<txn_count; i++)
         {
             scriptstr = (char *)block.vtx[i].vout[0].scriptPubKey.ToString().c_str();
