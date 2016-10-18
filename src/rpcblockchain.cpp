@@ -462,25 +462,13 @@ Value gettxout(const Array& params, bool fHelp)
 
 char *komodo_getspendscript(uint256 hash,int32_t n)
 {
-    CCoins coins; CBlockIndex *pindex;
-    LOCK(cs_main);
+    CTransaction tx; uint256 hashBlock;
+    if ( GetTransaction(hash,tx,Params().GetConsensus(),hashBlock,true) != 0 )
     {
-        LOCK(mempool.cs);
-        CCoinsViewMemPool view(pcoinsTip, mempool);
-        if (!view.GetCoins(hash, coins))
-        {
-            printf("null view.GetCoins\n");
-            return(0);
-        }
-    }
-    if ( n < 0 || (unsigned int)n >= coins.vout.size() )
-    {
-        printf("komodo_getspendscript illegal n.%d\n",n);
-        return(0);
-    }
-    BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-    pindex = it->second;
-    return((char *)coins.vout[n].scriptPubKey.ToString().c_str());
+        if ( n >= 0 && n < tx.vout.size() )
+            return((char *)tx.vout[n].scriptPubKey.ToString().c_str());
+    } else printf("null GetTransaction\n");
+    return(0);
 }
 
 Value verifychain(const Array& params, bool fHelp)
