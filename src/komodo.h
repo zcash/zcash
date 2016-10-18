@@ -88,7 +88,7 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
     return(0);
 }
 
-void komodo_connectblock(CBlockIndex *pindex,const CBlock& block)
+void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
     char *scriptstr; int32_t i,j,height,txn_count,len,flag = 0;
     // update voting results and official (height, notaries[])
