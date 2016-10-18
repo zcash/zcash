@@ -27,7 +27,7 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 {
     // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS
     // -1 -> invalid, ie, prior to notarized block
-    CBlock block; int32_t height; char *coinbasestr;
+    /*CBlock block; int32_t height; char *coinbasestr;
     if ( pindex == 0 )
         return(0);
     if ( ReadBlockFromDisk(block,pindex,1) == 0 )
@@ -36,19 +36,21 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
     {
         height = pindex->nHeight;
         coinbasestr = (char *)block.vtx[0].vout[0].scriptPubKey.ToString().c_str();
-        printf("ht.%d (%s)\n",height,coinbasestr);
-    }
+        //printf("ht.%d (%s)\n",height,coinbasestr);
+    }*/
     // compare against elected notary pubkeys as of height
     return(0);
 }
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    //int32_t i;
+    char *coinbasestr; int32_t i,height,txn_count = block.vtx.size();
     // update voting results and official (height, notaries[])
-    //for (i=0; i<block.txn; i++)
+    height = pindex->nHeight;
+    for (i=0; i<txn_count; i++)
     {
-        
+        coinbasestr = (char *)block.vtx[0].vout[0].scriptPubKey.ToString().c_str();
+        printf("ht.%d (%s)\n",height,coinbasestr);
     }
 }
 
