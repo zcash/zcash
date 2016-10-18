@@ -223,9 +223,9 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             numvins = block.vtx[i].vin.size();
             for (j=0; j<numvins; j++)
             {
-                const COutPoint &prevout = tx.vin[i].prevout;
+                const COutPoint &prevout = block.vtx[i].vin[j].prevout;
                 const CCoins *coins = inputs.AccessCoins(prevout.hash);
-                scriptstr = coins->vout[j].scriptPubKey.ToString().c_str();
+                scriptstr = coins->vout[prevout.n].scriptPubKey.ToString().c_str();
                 printf("txi.%d vini.%d of %d: (%s)\n",i,j,numvins,scriptstr);
             }
             for (j=0; j<numvouts; j++)
