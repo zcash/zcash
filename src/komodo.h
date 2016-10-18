@@ -243,16 +243,16 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 else if ( j == 1 && strncmp("OP_RETURN ",scriptstr,strlen("OP_RETURN ")) == 0 )
                 {
                     opreturnstr = &scriptstr[strlen("OP_RETURN ")];
-                    len = (int32_t)strlen(opretstr) >> 1;
+                    len = (int32_t)strlen(opreturnstr) >> 1;
                     if ( len <= sizeof(opret) )
                     {
                         decode_hex(opret,len,opretstr);
                         opretlen = 0;
-                        opretlen += iguana_rwbignum(0,&opret[opretlen],32,(void *)&kmdtxid);
-                        opretlen += iguana_rwnum(0,&opret[opretlen],4,(uint32_t *)&notarizedheight);
-                        opretlen += iguana_rwbignum(0,&opret[opretlen],32,(void *)&btctxid);
-                        printf("NOTARIZED.%d KMD.%s BTC.%s\n",notarizedheight,kmdtxid.ToString()
-                               ,btctxid.ToString());
+                        opretlen += iguana_rwbignum(0,&opret[opretlen],32,(uint8_t *)&kmdtxid);
+                        opretlen += iguana_rwnum(0,&opret[opretlen],4,(uint8_t *)&notarizedheight);
+                        opretlen += iguana_rwbignum(0,&opret[opretlen],32,(uint8_t *)&btctxid);
+                        printf("NOTARIZED.%d KMD.%s BTC.%s\n",notarizedheight,kmdtxid.ToString().c_str()
+                               ,btctxid.ToString().c_str());
                     }
                 }
                 printf("ht.%d txi.%d vout.%d (%s)\n",height,i,j,scriptstr);
