@@ -132,7 +132,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             if ( ReadBlockFromDisk(block,pindex,1) == 0 )
             {
                 printf("error readblock.%d\n",height);
-                return(0);
+                return;
             }
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
