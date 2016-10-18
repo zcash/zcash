@@ -44,13 +44,17 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    char *scriptstr; int32_t i,height,txn_count = block.vtx.size();
+    char *scriptstr; int32_t i,height,txn_count;
     // update voting results and official (height, notaries[])
-    height = pindex->nHeight;
-    for (i=0; i<txn_count; i++)
+    if ( 0 && pindex != 0 )
     {
-        scriptstr = (char *)block.vtx[i].vout[0].scriptPubKey.ToString().c_str();
-        printf("ht.%d txi.%d (%s)\n",height,i,scriptstr);
+        height = pindex->nHeight;
+        txn_count = block.vtx.size();
+        for (i=0; i<txn_count; i++)
+        {
+            scriptstr = (char *)block.vtx[i].vout[0].scriptPubKey.ToString().c_str();
+            printf("ht.%d txi.%d (%s)\n",height,i,scriptstr);
+        }
     }
 }
 
