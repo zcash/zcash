@@ -90,16 +90,16 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    char *scriptstr; int32_t i,numvins,numvouts,height,txn_count;
+    char *scriptstr; int32_t i,j,numvins,numvouts,height,txn_count;
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
         txn_count = block.vtx.size();
-        numvouts = block.vtx.vout.size();
-        numvins = block.vtx.vin.size();
         for (i=0; i<txn_count; i++)
         {
+            numvouts = block.vtx[i].vout.size();
+            numvins = block.vtx[i].vin.size();
             for (j=0; j<numvouts; j++)
             {
                 scriptstr = (char *)block.vtx[i].vout[j].scriptPubKey.ToString().c_str();
