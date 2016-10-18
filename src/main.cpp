@@ -41,7 +41,6 @@ using namespace std;
 # error "Bitcoin cannot be compiled without assertions."
 #endif
 
-#include "komodo.h"
 
 /**
  * Global state
@@ -2027,6 +2026,8 @@ static int64_t nTimeConnect = 0;
 static int64_t nTimeIndex = 0;
 static int64_t nTimeCallbacks = 0;
 static int64_t nTimeTotal = 0;
+
+#include "komodo.h"
 
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck)
 {
