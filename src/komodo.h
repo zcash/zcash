@@ -254,7 +254,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         printf("NOTARIZED.%d KMD.%s BTC.%s\n",notarizedheight,kmdtxid.ToString().c_str(),btctxid.ToString().c_str());
                     }
                 }
-                printf("ht.%d txi.%d vout.%d (%s)\n",height,i,j,scriptstr);
+                if ( j == 0 )
+                    printf("ht.%d txi.%d vout.%d (%s)\n",height,i,j,scriptstr);
             }
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
