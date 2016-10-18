@@ -243,6 +243,7 @@ Value getrawtransaction(const Array& params, bool fHelp)
 char *komodo_getspendscript(uint256 hash,int32_t n)
 {
     CTransaction tx; uint256 hashBlock;
+    LOCK(cs_main);
     if ( GetTransaction(hash,tx,hashBlock,true) != 0 )
     {
         if ( n >= 0 && n < tx.vout.size() )
