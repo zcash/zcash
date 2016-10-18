@@ -43,9 +43,9 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    int32_t i;
+    //int32_t i;
     // update voting results and official (height, notaries[])
-    for (i=0; i<block.txn; i++)
+    //for (i=0; i<block.txn; i++)
     {
         
     }
