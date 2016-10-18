@@ -78,6 +78,19 @@ public:
             bool computeProof = true // Set to false in some tests
     );
 
+    static JSDescription Randomized(
+            ZCJoinSplit& params,
+            const uint256& pubKeyHash,
+            const uint256& rt,
+            boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+            boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+            boost::array<size_t, ZC_NUM_JS_INPUTS>& inputMap,
+            boost::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap,
+            CAmount vpub_old,
+            CAmount vpub_new,
+            bool computeProof = true // Set to false in some tests
+    );
+
     // Verifies that the JoinSplit proof is correct.
     bool Verify(ZCJoinSplit& params, const uint256& pubKeyHash) const;
 
