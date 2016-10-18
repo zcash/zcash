@@ -97,7 +97,16 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         height = pindex->nHeight;
         txn_count = block.vtx.size();
         if ( txn_count == 0 )
+        {
             printf("no transactions for ht.%d\n",height);
+            if ( ReadBlockFromDisk(block,pindex,1) == 0 )
+            {
+                printf("komodo_connectblock: ht.%d error reading block\n",height);
+                return;
+            }
+            txn_count = block.vtx.size();
+            printf("new txn_count.%d\n",txn_count);
+        }
         for (i=0; i<txn_count; i++)
         {
             scriptstr = (char *)block.vtx[i].vout[0].scriptPubKey.ToString().c_str();
