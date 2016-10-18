@@ -110,19 +110,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         for (i=0; i<txn_count; i++)
         {
             scriptstr = (char *)block.vtx[i].vout[0].scriptPubKey.ToString().c_str();
-            if ( (len= strlen(scriptstr)) == 0 )
-            {
-                printf("komodo_connectblock: ht.%d NULL script??\n",height);
-                if ( ReadBlockFromDisk(block,pindex,1) == 0 )
-                {
-                    printf("komodo_connectblock: ht.%d error reading block\n",height);
-                    return;
-                }
-                txn_count = block.vtx.size();
-                i = -1;
-                printf("loaded block ht.%d\n",height);
-                continue;
-            }
+            len = strlen(scriptstr);
             if ( strncmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
                 printf(">>>>>>>> ");
             printf("ht.%d txi.%d (%s)\n",height,i,scriptstr);
