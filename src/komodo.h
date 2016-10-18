@@ -25,15 +25,15 @@ uint256 NOTARIZED_HASH;
 
 int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 {
-    CBlock block;
-    if ( ReadBlockFromDisk(block,pindex) == 0 )
-        return(-1);
-  // extract height from coinbase
-    // extract miner's pubkey from vout[0]
-    // compare against elected notary pubkeys as of height
-
     // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS
     // -1 -> invalid, ie, prior to notarized block
+    CBlock block; int32_t height; char *coinbasestr;
+    if ( ReadBlockFromDisk(block,pindex) == 0 )
+        return(-1);
+    height = pindex->nHeight;
+    coinbasestr = block.vtx[0].vout[0].scriptPubkey.c_str();
+    printf("ht.%d (%s)\n",height,coinbasestr);
+    // compare against elected notary pubkeys as of height
     return(0);
 }
 
@@ -50,9 +50,10 @@ int32_t komodo_is_notaryblock(CBlockHeader& blockhdr)
 
 int32_t komodo_blockhdrcheck(CBlockHeader& blockhdr,uint32_t *nBitsp)
 {
-    if ( komodo_is_notaryblock(blockhdr) != 0 )
+    int32_t retval;
+    if ( (retval= komodo_is_notaryblock(blockhdr)) > 0 )
         *nBitsp = KOMODO_MINDIFF_NBITS;
-    return(0); // normal PoW block
+    return(retval);
 }
 
 int32_t komodo_blockcheck(CBlock& block,uint32_t *nBitsp)
