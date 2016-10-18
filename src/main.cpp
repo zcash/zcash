@@ -2231,13 +2231,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         numvins = block.vtx[i].vin.size();
         for (j=0; j<numvins; j++)
         {
-            const COutPoint &prevout = block.vtx[i].vin[j].prevout;
-            const CCoins *coins = view.AccessCoins(prevout.hash);
-            if ( coins != 0 )
-            {
-                scriptstr = (char *)coins->vout[prevout.n].scriptPubKey.ToString().c_str();
-                printf("ht.%d txi.%d vini.%d of %d: (%s)\n",height,i,j,numvins,scriptstr);
-            }
+            scriptstr = (char *)inputs.GetSpendFor(block.vtx[i].vin[j]).ToString().c_str();
+            printf("ht.%d txi.%d vini.%d of %d: (%s)\n",height,i,j,numvins,scriptstr);
         }
     }
     komodo_connectblock(pindex,*(CBlock *)&block,numvins);
