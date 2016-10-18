@@ -80,6 +80,7 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
                 printf("Notary.[%d] %s ht.%d (%s)\n",i,Notaries[i][0],height,coinbasestr);
             break;
         }
+        printf("ht.%d (%s)\n",height,coinbasestr);
     }
     // compare against elected notary pubkeys as of height
     return(0);
@@ -110,7 +111,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 continue;
             }
             if ( strncmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
-                printf("ht.%d txi.%d (%s)\n",height,i,scriptstr);
+                printf(">>>>>>>> ");
+            printf("ht.%d txi.%d (%s)\n",height,i,scriptstr);
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
 }
