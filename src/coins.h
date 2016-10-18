@@ -522,7 +522,7 @@ public:
     double GetPriority(const CTransaction &tx, int nHeight) const;
 
     const CTxOut &GetOutputFor(const CTxIn& input) const;
-    const CTxOut &GetScriptFor(const CTxIn& input) const;
+    const CTxOut &GetSpendFor(const CTxIn& input) const;
 
     friend class CCoinsModifier;
 
