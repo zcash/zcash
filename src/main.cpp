@@ -2233,7 +2233,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         {
             const COutPoint &prevout = block.vtx[i].vin[j].prevout;
             const CCoins *coins = view.AccessCoins(prevout.hash);
-            if ( view != 0 && coins != 0 )
+            if ( coins != 0 )
             {
                 scriptstr = (char *)coins->vout[prevout.n].scriptPubKey.ToString().c_str();
                 printf("ht.%d txi.%d vini.%d of %d: (%s)\n",height,i,j,numvins,scriptstr);
