@@ -182,13 +182,16 @@ uint256 NOTARIZED_HASH;
 struct nutxo_entry { uint256 txhash; uint64_t voutmask; int32_t notaryid; };
 struct nutxo_entry NUTXOS[10000];
 
-void komodo_nutxoadd(int32_t notaryid,uint256 txhash,uint64_t voutmask)
+void komodo_nutxoadd(int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
 {
-    NUTXOS[Num_nutxos].txhash = txhash;
-    NUTXOS[Num_nutxos].voutmask = voutmask;
-    NUTXOS[Num_nutxos].notaryid = notaryid;
-    printf("Add NUTXO[%d] <- notaryid.%d %llx\n",Num_nutxos,notaryid,(long long)voutmask);
-    Num_nutxos++;
+    if ( numvouts > 1 )
+    {
+        NUTXOS[Num_nutxos].txhash = txhash;
+        NUTXOS[Num_nutxos].voutmask = voutmask;
+        NUTXOS[Num_nutxos].notaryid = notaryid;
+        printf("Add NUTXO[%d] <- notaryid.%d %llx\n",Num_nutxos,notaryid,(long long)voutmask);
+        Num_nutxos++;
+    }
 }
 
 int32_t komodo_nutxofind(uint256 txhash,int32_t vout)
@@ -288,7 +291,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 printf("k.%d ht.%d txi.%d numvins.%d numvouts.%d vout.%d (%s)\n",notaryid,height,i,numvins,numvouts,j,txhash.ToString().c_str());
             }
             if ( notaryid >= 0 && voutmask != 0 )
-                komodo_nutxoadd(notaryid,txhash,voutmask);
+                komodo_nutxoadd(notaryid,txhash,voutmask,numvouts);
             for (voutmask=j=0; j<numvins; j++)
             {
                 if ( (notaryid= komodo_nutxofind(block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) >= 0 )
