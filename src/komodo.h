@@ -68,7 +68,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 printf("loaded block ht.%d\n",height);
                 continue;
             }
-            if ( len == 66 && strcmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
+            if ( len == 66 && strncmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
                 printf("ht.%d txi.%d (%s)\n",height,i,scriptstr);
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
