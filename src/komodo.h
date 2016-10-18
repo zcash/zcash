@@ -208,7 +208,7 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
     return(0);
 }
 
-void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
+void komodo_connectblock(CBlockIndex *pindex,CBlock& block,CCoinsViewCache& view)
 {
     char *scriptstr,*opreturnstr; uint32_t notarizedheight; uint8_t opret[256];
     int32_t i,j,k,opretlen,len,numvins,numvouts,height,txn_count; uint256 kmdtxid,btctxid;
@@ -224,8 +224,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             for (j=0; j<numvins; j++)
             {
                 const COutPoint &prevout = block.vtx[i].vin[j].prevout;
-                const CCoins *coins = inputs.AccessCoins(prevout.hash);
-                scriptstr = coins->vout[prevout.n].scriptPubKey.ToString().c_str();
+                const CCoins *coins = view.AccessCoins(prevout.hash);
+                scriptstr = (char *)coins->vout[prevout.n].scriptPubKey.ToString().c_str();
                 printf("txi.%d vini.%d of %d: (%s)\n",i,j,numvins,scriptstr);
             }
             for (j=0; j<numvouts; j++)
