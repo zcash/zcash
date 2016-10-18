@@ -2228,7 +2228,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     txn_count = block.vtx.size();
     for (i=0; i<txn_count; i++)
     {
-        const CCoins* coins = view.AccessCoins(tx.GetHash());
         numvins = block.vtx[i].vin.size();
         for (j=0; j<numvins; j++)
         {
