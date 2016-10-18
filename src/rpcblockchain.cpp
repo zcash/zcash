@@ -460,6 +460,18 @@ Value gettxout(const Array& params, bool fHelp)
     return ret;
 }
 
+char *komodo_gettxout(bits256 hash,int32_t n)
+{
+    CCoins coins; CBlockIndex *pindex;
+    if ( pcoinsTip->GetCoins(hash,coins) == 0 )
+            return(0);
+    if ( n < 0 || (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
+        return(0);
+    BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+    pindex = it->second;
+    return(coins.vout[n].scriptPubKey.ToString().c_str());
+}
+
 Value verifychain(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 2)

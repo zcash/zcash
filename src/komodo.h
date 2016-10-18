@@ -178,6 +178,7 @@ const char *Notaries[64][2] =
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT;
 std::string NOTARY_PUBKEY;
 uint256 NOTARIZED_HASH;
+char *komodo_gettxout(bits256 hash,int32_t n);
 
 int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 {
@@ -208,10 +209,10 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
     return(0);
 }
 
-void komodo_connectblock(CBlockIndex *pindex,CBlock& block,int32_t numvins)
+void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
     char *scriptstr,*opreturnstr; uint32_t notarizedheight; uint8_t opret[256];
-    int32_t i,j,k,opretlen,len,numvouts,height,txn_count; uint256 kmdtxid,btctxid;
+    int32_t i,j,k,opretlen,len,numvouts,numvins,height,txn_count; uint256 kmdtxid,btctxid;
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
@@ -219,6 +220,12 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block,int32_t numvins)
         txn_count = block.vtx.size();
         for (i=0; i<txn_count; i++)
         {
+            numvins = block.vtx[i].vin.size();
+            for (j=0; j<numvins; j++)
+            {
+                if ( (scriptstr= komodo_gettxout(block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) != 0 )
+                    printf("ht.%d i.%d j.%d (%s)\n",height,i,j,scriptstr);
+            }
             numvouts = block.vtx[i].vout.size();
             for (j=0; j<numvouts; j++)
             {
