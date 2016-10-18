@@ -31,7 +31,7 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
     if ( ReadBlockFromDisk(block,pindex) == 0 )
         return(-1);
     height = pindex->nHeight;
-    coinbasestr = block.vtx[0].vout[0].scriptPubKey.c_str();
+    coinbasestr = block.vtx[0].vout[0].scriptPubKey.ToString().c_str();
     printf("ht.%d (%s)\n",height,coinbasestr);
     // compare against elected notary pubkeys as of height
     return(0);
