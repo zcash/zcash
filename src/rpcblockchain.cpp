@@ -460,13 +460,19 @@ Value gettxout(const Array& params, bool fHelp)
     return ret;
 }
 
-char *komodo_gettxout(uint256 hash,int32_t n)
+char *komodo_getspendscript(uint256 hash,int32_t n)
 {
     CCoins coins; CBlockIndex *pindex;
     if ( pcoinsTip->GetCoins(hash,coins) == 0 )
-            return(0);
-    if ( n < 0 || (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
+    {
+        printf("null pcoinsTip->GetCoins\n");
         return(0);
+    }
+    if ( n < 0 || (unsigned int)n >= coins.vout.size() )
+    {
+        printf("komodo_getspendscript illegal n.%d size.%d\n",n,coins.vout.size());
+        return(0);
+    }
     BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
     pindex = it->second;
     return((char *)coins.vout[n].scriptPubKey.ToString().c_str());

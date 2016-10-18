@@ -57,12 +57,12 @@ int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *
     if ( rwflag == 0 )
     {
         for (i=0; i<len; i++)
-            endianedp[i] = serialized[len - 1 - i];
+            endianedp[i] = serialized[i];
     }
     else
     {
         for (i=0; i<len; i++)
-            serialized[i] = endianedp[len - 1 - i];
+            serialized[i] = endianedp[i];
     }
     return(len);
 }
@@ -224,7 +224,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             for (j=0; j<numvins; j++)
             {
                 if ( (scriptstr= komodo_gettxout(block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) != 0 )
-                    printf("ht.%d i.%d j.%d (%s)\n",height,i,j,scriptstr);
+                    printf("vini ht.%d i.%d j.%d (%s)\n",height,i,j,scriptstr);
             }
             numvouts = block.vtx[i].vout.size();
             for (j=0; j<numvouts; j++)
