@@ -270,7 +270,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         break;
                     if ( strncmp(Notaries[k][1],scriptstr,66) == 0 )
                     {
-                        printf("%s ht.%d i.%d k.%d (%s)\n",Notaries[k][0],height,scriptstr);
+                        printf("%s ht.%d i.%d k.%d\n",Notaries[k][0],height,i,k);
                         //*nBitsp = KOMODO_MINDIFF_NBITS;
                         if ( notaryid < 0 )
                         {
