@@ -2221,8 +2221,27 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     int64_t nTime4 = GetTimeMicros(); nTimeCallbacks += nTime4 - nTime3;
     LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime4 - nTime3), nTimeCallbacks * 0.000001);
+    
+    int32_t i,j,height,txn_count,numvins; char *scriptstr;
     //FlushStateToDisk();
-    komodo_connectblock(pindex,*(CBlock *)&block,view);
+    height = pindex->nHeight;
+    txn_count = block.vtx.size();
+    for (i=0; i<txn_count; i++)
+    {
+        numvins = block.vtx[i].vin.size();
+        for (j=0; j<numvins; j++)
+        {
+            const COutPoint &prevout = block.vtx[i].vin[j].prevout;
+            const CCoins *coins = view.AccessCoins(prevout.hash);
+            printf("view.%p coins.%p\n",view,coins);
+            if ( view != 0 && coins != 0 )
+            {
+                scriptstr = (char *)coins->vout[prevout.n].scriptPubKey.ToString().c_str();
+                printf("ht.%d txi.%d vini.%d of %d: (%s)\n",height,i,j,numvins,scriptstr);
+            }
+        }
+    }
+    komodo_connectblock(pindex,*(CBlock *)&block);
 
     return true;
 }
