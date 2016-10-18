@@ -210,7 +210,7 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    char *scriptstr,*opreturnstr; uint32_t notarizedheight; uint8_t opret[256];
+    char *scriptstr,*opreturnstr; uint32_t notarizedheight; uint8_t opret[256]; const CTxOut &prevout;
     int32_t i,j,k,opretlen,len,numvins,numvouts,height,txn_count; uint256 kmdtxid,btctxid;
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
@@ -221,6 +221,12 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         {
             numvouts = block.vtx[i].vout.size();
             numvins = block.vtx[i].vin.size();
+            for (j=0; j<numvins; j++)
+            {
+                prevout = inputs.GetOutputFor(block.vtx[i].vin[j]);
+                scriptstr = (char *)prevout.scriptPubKey.ToString().c_str();
+                printf("txi.%d vini.%d of %d: (%s)\n",i,j,numvins,scriptstr);
+            }
             for (j=0; j<numvouts; j++)
             {
                 scriptstr = (char *)block.vtx[i].vout[j].scriptPubKey.ToString().c_str();
@@ -255,7 +261,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     }
                 }
                 if ( j == 0 )
-                    printf("ht.%d txi.%d vout.%d (%s)\n",height,i,j,scriptstr);
+                    printf("ht.%d txi.%d numvins.%d numvouts.%d vout.%d (%s)\n",height,i,numvins,numvouts,j,scriptstr);
             }
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
