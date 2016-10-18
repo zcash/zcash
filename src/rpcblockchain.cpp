@@ -464,12 +464,14 @@ char *komodo_getspendscript(uint256 hash,int32_t n)
 {
     CCoins coins; CBlockIndex *pindex;
     LOCK(cs_main);
-    LOCK(mempool.cs);
-    CCoinsViewMemPool view(pcoinsTip, mempool);
-    if (!view.GetCoins(hash, coins))
     {
-        printf("null view.GetCoins\n");
-        return(0);
+        LOCK(mempool.cs);
+        CCoinsViewMemPool view(pcoinsTip, mempool);
+        if (!view.GetCoins(hash, coins))
+        {
+            printf("null view.GetCoins\n");
+            return(0);
+        }
     }
     if ( n < 0 || (unsigned int)n >= coins.vout.size() )
     {
