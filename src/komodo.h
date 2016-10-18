@@ -90,38 +90,27 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    char *scriptstr; int32_t i,j,height,txn_count,len,flag = 0;
+    char *scriptstr; int32_t i,numvins,numvouts,height,txn_count;
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
         txn_count = block.vtx.size();
-        for (j=0; j<13; j++)
+        numvouts = block.vtx.vout.size();
+        numvins = block.vtx.vin.size();
+        for (i=0; i<txn_count; i++)
         {
-            if ( txn_count == 0 )
+            for (j=0; j<numvouts; j++)
             {
-                //printf("no transactions for ht.%d\n",height);
-                if ( ReadBlockFromDisk(block,pindex,1) == 0 )
-                {
-                    printf("komodo_connectblock: ht.%d error reading block\n",height);
-                    return;
-                }
-                txn_count = block.vtx.size();
-                printf("new txn_count.%d\n",txn_count);
-            }
-            for (i=0; i<txn_count; i++)
-            {
-                scriptstr = (char *)block.vtx[i].vout[0].scriptPubKey.ToString().c_str();
-                len = strlen(scriptstr);
-                if ( len > 0 )
-                    flag++;
+                scriptstr = (char *)block.vtx[i].vout[j].scriptPubKey.ToString().c_str();
                 if ( strncmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
                     printf(">>>>>>>> ");
-                printf("ht.%d txi.%d (%s)\n",height,i,scriptstr);
+                else if ( j == 0 )
+                {
+                    
+                }
+                printf("ht.%d txi.%d vout.%d (%s)\n",height,i,j,scriptstr);
             }
-            if ( flag != 0 )
-                break;
-            sleep(1);
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
 }
