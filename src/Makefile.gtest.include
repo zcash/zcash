@@ -17,6 +17,7 @@ zcash_gtest_SOURCES = \
 	gtest/test_noteencryption.cpp \
 	gtest/test_merkletree.cpp \
 	gtest/test_pow.cpp \
+	gtest/test_random.cpp \
 	gtest/test_rpc.cpp \
 	gtest/test_circuit.cpp \
 	gtest/test_txid.cpp \
