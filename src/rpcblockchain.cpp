@@ -470,7 +470,7 @@ char *komodo_getspendscript(uint256 hash,int32_t n)
     }
     if ( n < 0 || (unsigned int)n >= coins.vout.size() )
     {
-        printf("komodo_getspendscript illegal n.%d size.%d\n",n,coins.vout.size());
+        printf("komodo_getspendscript illegal n.%d\n",n);
         return(0);
     }
     BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
