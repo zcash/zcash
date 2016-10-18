@@ -41,6 +41,7 @@ std::string HelpMessageMiner()
     strUsage += HelpMessageOpt("-?", _("This help message"));
 
     strUsage += HelpMessageGroup(_("Mining pool options:"));
+    strUsage += HelpMessageOpt("-genproclimit=<n>", strprintf(_("Set the number of threads for coin generation if enabled (-1 = all cores, default: %d)"), 1));
     strUsage += HelpMessageOpt("-stratum=<url>", _("Mine on the Stratum server at <url>"));
     strUsage += HelpMessageOpt("-user=<user>",
                                strprintf(_("Username for Stratum server (default: %u)"), "x"));
