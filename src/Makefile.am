@@ -52,10 +52,10 @@ EXTRA_LIBRARIES += libbitcoin_wallet.a
 endif
 
 if BUILD_BITCOIN_LIBS
-lib_LTLIBRARIES = libbitcoinconsensus.la
-LIBBITCOIN_CONSENSUS=libbitcoinconsensus.la
+lib_LTLIBRARIES = libzcashconsensus.la
+LIBZCASH_CONSENSUS=libzcashconsensus.la
 else
-LIBBITCOIN_CONSENSUS=
+LIBZCASH_CONSENSUS=
 endif
 
 bin_PROGRAMS =
@@ -440,10 +440,10 @@ libzcash_a_LDFLAGS = $(HARDENED_LDFLAGS)
 
 libzcash_a_CPPFLAGS += -DMONTGOMERY_OUTPUT
 
-# bitcoinconsensus library #
+# zcashconsensus library #
 if BUILD_BITCOIN_LIBS
-include_HEADERS = script/bitcoinconsensus.h
-libbitcoinconsensus_la_SOURCES = \
+include_HEADERS = script/zcashconsensus.h
+libzcashconsensus_la_SOURCES = \
   crypto/equihash.cpp \
   crypto/hmac_sha512.cpp \
   crypto/ripemd160.cpp \
@@ -455,19 +455,19 @@ libbitcoinconsensus_la_SOURCES = \
   hash.cpp \
   primitives/transaction.cpp \
   pubkey.cpp \
-  script/bitcoinconsensus.cpp \
+  script/zcashconsensus.cpp \
   script/interpreter.cpp \
   script/script.cpp \
   uint256.cpp \
   utilstrencodings.cpp
 
 if GLIBC_BACK_COMPAT
-  libbitcoinconsensus_la_SOURCES += compat/glibc_compat.cpp
+  libzcashconsensus_la_SOURCES += compat/glibc_compat.cpp
 endif
 
-libbitcoinconsensus_la_LDFLAGS = -no-undefined $(RELDFLAGS)
-libbitcoinconsensus_la_LIBADD = $(CRYPTO_LIBS)
-libbitcoinconsensus_la_CPPFLAGS = $(CRYPTO_CFLAGS) -I$(builddir)/obj -DBUILD_BITCOIN_INTERNAL
+libzcashconsensus_la_LDFLAGS = -no-undefined $(RELDFLAGS)
+libzcashconsensus_la_LIBADD = $(CRYPTO_LIBS)
+libzcashconsensus_la_CPPFLAGS = $(CRYPTO_CFLAGS) -I$(builddir)/obj -DBUILD_BITCOIN_INTERNAL
 
 endif
 #
