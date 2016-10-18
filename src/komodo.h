@@ -74,7 +74,7 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
         coinbasestr = (char *)block.vtx[0].vout[0].scriptPubKey.ToString().c_str();
         for (i=0; i<64; i++)
         {
-            if ( Notaries[i][0] == 0 )
+            if ( Notaries[i][0] == 0 || Notaries[i][1] == 0 || Notaries[i][0][0] == 0 || Notaries[i][1][0] == 0 )
                 break;
             if ( strncmp(Notaries[i][1],coinbasestr,66) == 0 )
             {
