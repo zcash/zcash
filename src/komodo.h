@@ -29,7 +29,7 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
     // -1 -> invalid, ie, prior to notarized block
     CBlock block; int32_t height; char *coinbasestr;
     block.SetNull();
-    CAutoFile filein(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
+    CAutoFile filein(OpenBlockFile(pindex->GetBlockPos(),true),SER_DISK,CLIENT_VERSION);
     if ( filein.IsNull() )
         return(-1);
     try { filein >> block; }
