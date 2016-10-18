@@ -105,15 +105,15 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 scriptstr = (char *)block.vtx[i].vout[j].scriptPubKey.ToString().c_str();
                 if ( strncmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
                     printf(">>>>>>>> ");
-                else if ( j == 0 )
+                else if ( i == 0 && j == 0 )
                 {
                     for (k=0; k<64; k++)
                     {
                         if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
                             break;
-                        if ( strncmp(Notaries[k][1],coinbasestr,66) == 0 )
+                        if ( strncmp(Notaries[k][1],scriptstr,66) == 0 )
                         {
-                            printf("%s ht.%d (%s)\n",Notaries[k][0],height,coinbasestr);
+                            printf("%s ht.%d (%s)\n",Notaries[k][0],height,scriptstr);
                             //*nBitsp = KOMODO_MINDIFF_NBITS;
                             break;
                         }
