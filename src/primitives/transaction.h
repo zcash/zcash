@@ -7,6 +7,7 @@
 #define BITCOIN_PRIMITIVES_TRANSACTION_H
 
 #include "amount.h"
+#include "random.h"
 #include "script/script.h"
 #include "serialize.h"
 #include "uint256.h"
@@ -88,7 +89,8 @@ public:
             boost::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap,
             CAmount vpub_old,
             CAmount vpub_new,
-            bool computeProof = true // Set to false in some tests
+            bool computeProof = true, // Set to false in some tests
+            std::function<int(int)> gen = GetRandInt
     );
 
     // Verifies that the JoinSplit proof is correct.

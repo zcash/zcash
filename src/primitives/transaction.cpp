@@ -6,7 +6,6 @@
 #include "primitives/transaction.h"
 
 #include "hash.h"
-#include "random.h"
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
@@ -52,13 +51,14 @@ JSDescription JSDescription::Randomized(
             boost::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap,
             CAmount vpub_old,
             CAmount vpub_new,
-            bool computeProof)
+            bool computeProof,
+            std::function<int(int)> gen)
 {
     // Randomize the order of the inputs and outputs
     inputMap = {0, 1};
     outputMap = {0, 1};
-    MappedShuffle(inputs.begin(), inputMap.begin(), ZC_NUM_JS_INPUTS, GetRandInt);
-    MappedShuffle(outputs.begin(), outputMap.begin(), ZC_NUM_JS_OUTPUTS, GetRandInt);
+    MappedShuffle(inputs.begin(), inputMap.begin(), ZC_NUM_JS_INPUTS, gen);
+    MappedShuffle(outputs.begin(), outputMap.begin(), ZC_NUM_JS_OUTPUTS, gen);
 
     return JSDescription(
         params, pubKeyHash, anchor, inputs, outputs,

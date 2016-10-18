@@ -2,15 +2,8 @@
 
 #include "random.h"
 
-int GenZero(int n)
-{
-    return 0;
-}
-
-int GenMax(int n)
-{
-    return n-1;
-}
+extern int GenZero(int n);
+extern int GenMax(int n);
 
 TEST(Random, MappedShuffle) {
     std::vector<int> a {8, 4, 6, 3, 5};

@@ -13,7 +13,7 @@
 
 using ::testing::Return;
 
-ZCJoinSplit* params = ZCJoinSplit::Unopened();
+extern ZCJoinSplit* params;
 
 ACTION(ThrowLogicError) {
     throw std::logic_error("Boom");

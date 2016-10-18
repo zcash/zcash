@@ -367,34 +367,6 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
         test.anchor = GetRandHash();
         BOOST_CHECK(!test.Verify(*p, pubKeyHash));
     }
-
-    {
-        boost::array<size_t, ZC_NUM_JS_INPUTS> inputMap;
-        boost::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
-        auto jsdesc = JSDescription::Randomized(
-            *p, pubKeyHash, rt,
-            inputs, outputs,
-            inputMap, outputMap,
-            0, 0);
-        BOOST_CHECK(jsdesc.Verify(*p, pubKeyHash));
-
-        std::set<size_t> inputSet;
-        for (size_t i = 0; i < ZC_NUM_JS_INPUTS; i++) {
-            inputSet.insert(inputMap[i]);
-        }
-        std::set<size_t> expectedInputSet {0, 1};
-        BOOST_CHECK(expectedInputSet == inputSet);
-
-        std::set<size_t> outputSet;
-        for (size_t i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
-            outputSet.insert(outputMap[i]);
-        }
-        std::set<size_t> expectedOutputSet {0, 1};
-        BOOST_CHECK(expectedOutputSet == outputSet);
-    }
-
-
-    delete p;
 }
 
 BOOST_AUTO_TEST_CASE(test_simple_joinsplit_invalidity)
