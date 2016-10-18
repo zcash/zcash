@@ -187,6 +187,7 @@ void komodo_nutxoadd(int32_t notaryid,uint256 txhash,uint64_t voutmask)
     NUTXOS[Num_nutxos].txhash = txhash;
     NUTXOS[Num_nutxos].voutmask = voutmask;
     NUTXOS[Num_nutxos].notaryid = notaryid;
+    printf("Add NUTXO[%d] <- notaryid.%d %llx\n",Num_nutxos,notaryid,(long long)voutmask);
     Num_nutxos++;
 }
 
@@ -283,7 +284,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         break;
                     }
                 }
-                printf("k.%d ht.%d txi.%d numvins.%d numvouts.%d vout.%d (%s)\n",k,height,i,numvins,numvouts,j,txhash.ToString().c_str());
+                printf("k.%d ht.%d txi.%d numvins.%d numvouts.%d vout.%d (%s)\n",notaryid,height,i,numvins,numvouts,j,txhash.ToString().c_str());
             }
             if ( notaryid >= 0 && voutmask != 0 )
                 komodo_nutxoadd(notaryid,txhash,voutmask);
