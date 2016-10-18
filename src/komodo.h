@@ -178,7 +178,7 @@ const char *Notaries[64][2] =
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT;
 std::string NOTARY_PUBKEY;
 uint256 NOTARIZED_HASH;
-char *komodo_gettxout(bits256 hash,int32_t n);
+char *komodo_gettxout(uint256 hash,int32_t n);
 
 int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 {

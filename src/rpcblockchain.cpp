@@ -460,7 +460,7 @@ Value gettxout(const Array& params, bool fHelp)
     return ret;
 }
 
-char *komodo_gettxout(bits256 hash,int32_t n)
+char *komodo_gettxout(uint256 hash,int32_t n)
 {
     CCoins coins; CBlockIndex *pindex;
     if ( pcoinsTip->GetCoins(hash,coins) == 0 )
