@@ -96,11 +96,11 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     {
         height = pindex->nHeight;
         txn_count = block.vtx.size();
-        for (j=0; j<3; j++)
+        for (j=0; j<13; j++)
         {
             if ( txn_count == 0 )
             {
-                printf("no transactions for ht.%d\n",height);
+                //printf("no transactions for ht.%d\n",height);
                 if ( ReadBlockFromDisk(block,pindex,1) == 0 )
                 {
                     printf("komodo_connectblock: ht.%d error reading block\n",height);
