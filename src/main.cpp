@@ -2240,7 +2240,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             }
         }
     }
-    komodo_connectblock(pindex,*(CBlock *)&block);
+    komodo_connectblock(pindex,*(CBlock *)&block,numvins);
 
     return true;
 }

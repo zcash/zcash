@@ -208,7 +208,7 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
     return(0);
 }
 
-void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
+void komodo_connectblock(CBlockIndex *pindex,CBlock& block,int32_t numvins)
 {
     char *scriptstr,*opreturnstr; uint32_t notarizedheight; uint8_t opret[256];
     int32_t i,j,k,opretlen,len,numvouts,height,txn_count; uint256 kmdtxid,btctxid;
