@@ -90,36 +90,49 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    char *scriptstr; int32_t i,j,k,numvins,numvouts,height,txn_count;
+    char *scriptstr; int32_t iter,i,j,k,numvins,numvouts,height,txn_count,flag=0;
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
-        txn_count = block.vtx.size();
-        for (i=0; i<txn_count; i++)
+        for (iter=0; iter<13; iter++)
         {
-            numvouts = block.vtx[i].vout.size();
-            numvins = block.vtx[i].vin.size();
-            for (j=0; j<numvouts; j++)
+            txn_count = block.vtx.size();
+            for (i=0; i<txn_count; i++)
             {
-                scriptstr = (char *)block.vtx[i].vout[j].scriptPubKey.ToString().c_str();
-                if ( strncmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
-                    printf(">>>>>>>> ");
-                else if ( i == 0 && j == 0 )
+                numvouts = block.vtx[i].vout.size();
+                numvins = block.vtx[i].vin.size();
+                for (j=0; j<numvouts; j++)
                 {
-                    for (k=0; k<64; k++)
+                    scriptstr = (char *)block.vtx[i].vout[j].scriptPubKey.ToString().c_str();
+                    if ( scriptstr[0] != 0 )
+                        flag++;
+                    if ( strncmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
+                        printf(">>>>>>>> ");
+                    else if ( i == 0 && j == 0 )
                     {
-                        if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
-                            break;
-                        if ( strncmp(Notaries[k][1],scriptstr,66) == 0 )
+                        for (k=0; k<64; k++)
                         {
-                            printf("%s ht.%d (%s)\n",Notaries[k][0],height,scriptstr);
-                            //*nBitsp = KOMODO_MINDIFF_NBITS;
-                            break;
+                            if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
+                                break;
+                            if ( strncmp(Notaries[k][1],scriptstr,66) == 0 )
+                            {
+                                printf("%s ht.%d (%s)\n",Notaries[k][0],height,scriptstr);
+                                //*nBitsp = KOMODO_MINDIFF_NBITS;
+                                break;
+                            }
                         }
                     }
+                    printf("ht.%d txi.%d vout.%d (%s)\n",height,i,j,scriptstr);
                 }
-                printf("ht.%d txi.%d vout.%d (%s)\n",height,i,j,scriptstr);
+            }
+            if ( flag != 0 )
+                break;
+            sleep(1);
+            if ( ReadBlockFromDisk(block,pindex,1) == 0 )
+            {
+                printf("error readblock.%d\n",height);
+                return(0);
             }
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
