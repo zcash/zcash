@@ -742,8 +742,8 @@ bool Equihash<N,K>::IsValidSolution(const eh_HashState& base_state, std::vector<
                 return false;
             }
             if (X[i+1].IndicesBefore(X[i], hashLen, lenIndices)) {
-                return false;
                 LogPrint("pow", "Invalid solution: Index tree incorrectly ordered\n");
+                return false;
             }
             if (!DistinctIndices(X[i], X[i+1], hashLen, lenIndices)) {
                 LogPrint("pow", "Invalid solution: duplicate indices\n");

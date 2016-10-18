@@ -12,6 +12,7 @@
 #include <set>
 #include <vector>
 #include <boost/filesystem.hpp>
+#include "util.h"
 
 // To run tests:
 // ./zcash-gtest --gtest_filter="founders_reward_test.*"
@@ -25,13 +26,14 @@
 TEST(founders_reward_test, create_testnet_2of3multisig) {
     ECC_Start();
     SelectParams(CBaseChainParams::TESTNET);
-    boost::filesystem::path temp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    const std::string path = temp.native() + "-wallet.dat";
+    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
+    boost::filesystem::create_directories(pathTemp);
+    mapArgs["-datadir"] = pathTemp.string();
     bool fFirstRun;
-    auto pWallet = std::make_shared<CWallet>(path);
+    auto pWallet = std::make_shared<CWallet>("wallet.dat");
     ASSERT_EQ(DB_LOAD_OK, pWallet->LoadWallet(fFirstRun));
     pWallet->TopUpKeyPool();
-    std::cout << "Test wallet file path: " << path << std::endl;
+    std::cout << "Test wallet and logs saved in folder: " << pathTemp.native() << std::endl;
     
     int numKeys = 48;
     std::vector<CPubKey> pubkeys;

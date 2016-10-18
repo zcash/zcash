@@ -138,6 +138,9 @@ public:
     //! Verification status of this block. See enum BlockStatus
     unsigned int nStatus;
 
+    //! The anchor for the tree state up to the start of this block
+    uint256 hashAnchor;
+
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
@@ -163,6 +166,7 @@ public:
         nTx = 0;
         nChainTx = 0;
         nStatus = 0;
+        hashAnchor = uint256();
         nSequenceId = 0;
 
         nVersion       = 0;
@@ -320,6 +324,12 @@ public:
             READWRITE(VARINT(nDataPos));
         if (nStatus & BLOCK_HAVE_UNDO)
             READWRITE(VARINT(nUndoPos));
+        uint8_t tag = 0;
+        READWRITE(tag);
+        if (ser_action.ForRead() && tag != 0) {
+            assert(!"For the first time running zcashd after upgrading to v1.0.0-rc1, please use the -reindex option.");
+        }
+        READWRITE(hashAnchor);
 
         // block header
         READWRITE(this->nVersion);

@@ -92,7 +92,7 @@ void ThreadSendAlert()
     alert.strRPCError   = "URGENT: Upgrade required: see https://z.cash";
 
     // Set specific client version/versions here. If setSubVer is empty, no filtering on subver is done:
-    // alert.setSubVer.insert(std::string("/Satoshi:0.7.2/"));
+    // alert.setSubVer.insert(std::string("/MagicBean:0.7.2/"));
 
     // Sign
     const CChainParams& chainparams = Params();
