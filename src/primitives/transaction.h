@@ -294,7 +294,9 @@ private:
 public:
     typedef boost::array<unsigned char, 64> joinsplit_sig_t;
 
-    static const int32_t CURRENT_VERSION=1;
+    // Transactions that include a list of JoinSplits are version 2.
+    static const int32_t MIN_CURRENT_VERSION = 1;
+    static const int32_t MAX_CURRENT_VERSION = 2;
 
     // The local variables are made const to prevent unintended modification
     // without updating the cached hash value. However, CTransaction is not
