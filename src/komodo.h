@@ -16,6 +16,126 @@
 #ifndef H_KOMODO_H
 #define H_KOMODO_H
 
+int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp)
+{
+    int32_t i; uint64_t x;
+    if ( rwflag == 0 )
+    {
+        x = 0;
+        for (i=len-1; i>=0; i--)
+        {
+            x <<= 8;
+            x |= serialized[i];
+        }
+        switch ( len )
+        {
+            case 1: *(uint8_t *)endianedp = (uint8_t)x; break;
+            case 2: *(uint16_t *)endianedp = (uint16_t)x; break;
+            case 4: *(uint32_t *)endianedp = (uint32_t)x; break;
+            case 8: *(uint64_t *)endianedp = (uint64_t)x; break;
+        }
+    }
+    else
+    {
+        x = 0;
+        switch ( len )
+        {
+            case 1: x = *(uint8_t *)endianedp; break;
+            case 2: x = *(uint16_t *)endianedp; break;
+            case 4: x = *(uint32_t *)endianedp; break;
+            case 8: x = *(uint64_t *)endianedp; break;
+        }
+        for (i=0; i<len; i++,x >>= 8)
+            serialized[i] = (uint8_t)(x & 0xff);
+    }
+    return(len);
+}
+
+int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *endianedp)
+{
+    int32_t i;
+    if ( rwflag == 0 )
+    {
+        for (i=0; i<len; i++)
+            endianedp[i] = serialized[len - 1 - i];
+    }
+    else
+    {
+        for (i=0; i<len; i++)
+            serialized[i] = endianedp[len - 1 - i];
+    }
+    return(len);
+}
+
+int32_t _unhex(char c)
+{
+    if ( c >= '0' && c <= '9' )
+        return(c - '0');
+    else if ( c >= 'a' && c <= 'f' )
+        return(c - 'a' + 10);
+    else if ( c >= 'A' && c <= 'F' )
+        return(c - 'A' + 10);
+    return(-1);
+}
+
+int32_t is_hexstr(char *str,int32_t n)
+{
+    int32_t i;
+    if ( str == 0 || str[0] == 0 )
+        return(0);
+    for (i=0; str[i]!=0; i++)
+    {
+        if ( n > 0 && i >= n )
+            break;
+        if ( _unhex(str[i]) < 0 )
+            break;
+    }
+    if ( n == 0 )
+        return(i);
+    return(i == n);
+}
+
+int32_t unhex(char c)
+{
+    int32_t hex;
+    if ( (hex= _unhex(c)) < 0 )
+    {
+        //printf("unhex: illegal hexchar.(%c)\n",c);
+    }
+    return(hex);
+}
+
+unsigned char _decode_hex(char *hex) { return((unhex(hex[0])<<4) | unhex(hex[1])); }
+
+int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex)
+{
+    int32_t adjust,i = 0;
+    //printf("decode.(%s)\n",hex);
+    if ( is_hexstr(hex,n) == 0 )
+    {
+        memset(bytes,0,n);
+        return(n);
+    }
+    if ( n == 0 || (hex[n*2+1] == 0 && hex[n*2] != 0) )
+    {
+        if ( n > 0 )
+        {
+            bytes[0] = unhex(hex[0]);
+            printf("decode_hex n.%d hex[0] (%c) -> %d hex.(%s) [n*2+1: %d] [n*2: %d %c] len.%ld\n",n,hex[0],bytes[0],hex,hex[n*2+1],hex[n*2],hex[n*2],(long)strlen(hex));
+        }
+        bytes++;
+        hex++;
+        adjust = 1;
+    } else adjust = 0;
+    if ( n > 0 )
+    {
+        for (i=0; i<n; i++)
+            bytes[i] = _decode_hex(&hex[i*2]);
+    }
+    //bytes[i] = 0;
+    return(n + adjust);
+}
+
 #include <stdint.h>
 #include <stdio.h>
 
@@ -90,49 +210,52 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    char *scriptstr; int32_t iter,i,j,k,numvins,numvouts,height,txn_count,flag=0;
+    char *scriptstr,*opreturnstr; uint32_t notarizedheight; uint8_t opret[256];
+    int32_t i,j,k,opretlen,len,numvins,numvouts,height,txn_count; uint256 kmdtxid,btctxid;
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
-        for (iter=0; iter<13; iter++)
+        txn_count = block.vtx.size();
+        for (i=0; i<txn_count; i++)
         {
-            txn_count = block.vtx.size();
-            for (i=0; i<txn_count; i++)
+            numvouts = block.vtx[i].vout.size();
+            numvins = block.vtx[i].vin.size();
+            for (j=0; j<numvouts; j++)
             {
-                numvouts = block.vtx[i].vout.size();
-                numvins = block.vtx[i].vin.size();
-                for (j=0; j<numvouts; j++)
+                scriptstr = (char *)block.vtx[i].vout[j].scriptPubKey.ToString().c_str();
+                if ( strncmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
+                    printf(">>>>>>>> ");
+                else if ( i == 0 && j == 0 )
                 {
-                    scriptstr = (char *)block.vtx[i].vout[j].scriptPubKey.ToString().c_str();
-                    if ( scriptstr[0] != 0 )
-                        flag++;
-                    if ( strncmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
-                        printf(">>>>>>>> ");
-                    else if ( i == 0 && j == 0 )
+                    for (k=0; k<64; k++)
                     {
-                        for (k=0; k<64; k++)
+                        if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
+                            break;
+                        if ( strncmp(Notaries[k][1],scriptstr,66) == 0 )
                         {
-                            if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
-                                break;
-                            if ( strncmp(Notaries[k][1],scriptstr,66) == 0 )
-                            {
-                                printf("%s ht.%d (%s)\n",Notaries[k][0],height,scriptstr);
-                                //*nBitsp = KOMODO_MINDIFF_NBITS;
-                                break;
-                            }
+                            printf("%s ht.%d (%s)\n",Notaries[k][0],height,scriptstr);
+                            //*nBitsp = KOMODO_MINDIFF_NBITS;
+                            break;
                         }
                     }
-                    printf("ht.%d txi.%d vout.%d (%s)\n",height,i,j,scriptstr);
                 }
-            }
-            if ( flag != 0 )
-                break;
-            sleep(1);
-            if ( ReadBlockFromDisk(block,pindex,1) == 0 )
-            {
-                printf("error readblock.%d\n",height);
-                return;
+                else if ( j == 1 && strncmp("OP_RETURN ",scriptstr,strlen("OP_RETURN ")) == 0 )
+                {
+                    opreturnstr = &scriptstr[strlen("OP_RETURN ")];
+                    len = (int32_t)strlen(opretstr) >> 1;
+                    if ( len <= sizeof(opret) )
+                    {
+                        decode_hex(opret,len,opretstr);
+                        opretlen = 0;
+                        opretlen += iguana_rwbignum(0,&opret[opretlen],32,(void *)&kmdtxid);
+                        opretlen += iguana_rwnum(0,&opret[opretlen],4,(uint32_t *)&notarizedheight);
+                        opretlen += iguana_rwbignum(0,&opret[opretlen],32,(void *)&btctxid);
+                        printf("NOTARIZED.%d KMD.%s BTC.%s\n",notarizedheight,kmdtxid.ToString()
+                               ,btctxid.ToString());
+                    }
+                }
+                printf("ht.%d txi.%d vout.%d (%s)\n",height,i,j,scriptstr);
             }
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
