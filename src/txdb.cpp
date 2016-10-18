@@ -267,8 +267,6 @@ bool CBlockTreeDB::ReadFlag(const std::string &name, bool &fValue) {
 }
 
 int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp);
-extern int32_t NOTARIZED_HEIGHT;
-extern uint256 NOTARIZED_HASH;
 
 bool CBlockTreeDB::LoadBlockIndexGuts()
 {
@@ -311,8 +309,6 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 
                 int32_t retval; uint32_t nBits;
                 nBits = pindexNew->nBits;
-                if ( pindexNew->nHeight < NOTARIZED_HEIGHT || (pindexNew->nHeight == NOTARIZED_HEIGHT && NOTARIZED_HASH != pindexNew->GetBlockHash()) )
-                    return(false);
                 if ( (retval= komodo_blockindexcheck(pindexNew,&nBits)) == 0 )
                 {
                     if (!CheckProofOfWork(pindexNew->GetBlockHash(), nBits, Params().GetConsensus()))
