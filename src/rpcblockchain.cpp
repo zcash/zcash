@@ -463,9 +463,12 @@ Value gettxout(const Array& params, bool fHelp)
 char *komodo_getspendscript(uint256 hash,int32_t n)
 {
     CCoins coins; CBlockIndex *pindex;
-    if ( pcoinsTip->GetCoins(hash,coins) == 0 )
+    LOCK(cs_main);
+    LOCK(mempool.cs);
+    CCoinsViewMemPool view(pcoinsTip, mempool);
+    if (!view.GetCoins(hash, coins))
     {
-        printf("null pcoinsTip->GetCoins\n");
+        printf("null view.GetCoins\n");
         return(0);
     }
     if ( n < 0 || (unsigned int)n >= coins.vout.size() )
