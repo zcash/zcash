@@ -501,7 +501,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                     throw JSONRPCError(RPC_WALLET_ERROR, "Could not find previous JoinSplit anchor");
                 }
                 
-                // NOTE: We assume the last commitment, output 1, is the change we want
                 for (const uint256& commitment : prevJoinSplit.commitments) {
                     tree.append(commitment);
                     previousCommitments.push_back(commitment);                   
