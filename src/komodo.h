@@ -77,10 +77,11 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
             if ( Notaries[i][0] == 0 )
                 break;
             if ( strncmp(Notaries[i][1],coinbasestr,66) == 0 )
+            {
                 printf("Notary.[%d] %s ht.%d (%s)\n",i,Notaries[i][0],height,coinbasestr);
-            break;
+                break;
+            }
         }
-        printf("ht.%d (%s)\n",height,coinbasestr);
     }
     // compare against elected notary pubkeys as of height
     return(0);
