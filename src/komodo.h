@@ -36,9 +36,12 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
         return(0);
     try { filein >> block; }
     catch (const std::exception& e) { return(0); }
-    height = pindex->nHeight;
-    coinbasestr = (char *)block.vtx[0].vout[0].scriptPubKey.ToString().c_str();
-    printf("ht.%d (%s)\n",height,coinbasestr);
+    if ( block.vtx.size() > 0 )
+    {
+        height = pindex->nHeight;
+        coinbasestr = (char *)block.vtx[0].vout[0].scriptPubKey.ToString().c_str();
+        printf("ht.%d (%s)\n",height,coinbasestr);
+    }
     // compare against elected notary pubkeys as of height
     return(0);
 }
