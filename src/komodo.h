@@ -46,7 +46,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
     char *scriptstr; int32_t i,height,txn_count;
     // update voting results and official (height, notaries[])
-    if ( 0 && pindex != 0 )
+    if ( pindex != 0 )
     {
         height = pindex->nHeight;
         txn_count = block.vtx.size();
@@ -60,8 +60,9 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 
 int32_t komodo_is_notaryblock(CBlockHeader& blockhdr)
 {
-    uint32_t nBits = 0;
-    return(komodo_blockindexcheck(mapBlockIndex[blockhdr.GetHash()],&nBits));
+    //uint32_t nBits = 0;
+    //return(komodo_blockindexcheck(mapBlockIndex[blockhdr.GetHash()],&nBits));
+    return(0);
 }
 
 int32_t komodo_blockhdrcheck(CBlockHeader& blockhdr,uint32_t *nBitsp)
