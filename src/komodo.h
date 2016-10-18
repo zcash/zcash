@@ -28,6 +28,8 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
     // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS
     // -1 -> invalid, ie, prior to notarized block
     CBlock block; int32_t height; char *coinbasestr;
+    if ( pindex == 0 )
+        return(0);
     block.SetNull();
     CAutoFile filein(OpenBlockFile(pindex->GetBlockPos(),true),SER_DISK,CLIENT_VERSION);
     if ( filein.IsNull() )
