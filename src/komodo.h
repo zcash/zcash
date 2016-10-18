@@ -175,10 +175,31 @@ const char *Notaries[64][2] =
     { "titomane_AE", "03cda6ca5c2d02db201488a54a548dbfc10533bdc275d5ea11928e8d6ab33c2185" },
 };
 
-int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT;
+int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos;
 std::string NOTARY_PUBKEY;
 uint256 NOTARIZED_HASH;
-char *komodo_getspendscript(uint256 hash,int32_t n);
+//char *komodo_getspendscript(uint256 hash,int32_t n);
+struct nutxo_entry { uint256 txhash; uint64_t voutmask; int32_t notaryid; };
+struct nutxo_entry NUTXOS[10000];
+
+void komodo_nutxoadd(int32_t notaryid,uint256 txhash,uint64_t voutmask)
+{
+    NUTXOS[Num_nutxos].txhash = txhash;
+    NUTXOS[Num_nutxos].voutmask = voutmask;
+    NUTXOS[Num_nutxos].notaryid = notaryid;
+    Num_nutxos++;
+}
+
+int32_t komodo_nutxofind(uint256 txhash,int32_t vout)
+{
+    int32_t i;
+    for (i=0; i<Num_nutxos; i++)
+    {
+        if ( memcmp(&txhash,&NUTXOS[i].txhash,sizeof(txhash)) == 0 && ((1LL << vout) & NUTXOS[i].voutmask) != 0 )
+            return(NUTXOS[i].notaryid);
+    }
+    return(-1);
+}
 
 int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 {
@@ -211,8 +232,8 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    char *scriptstr,*opreturnstr; uint32_t notarizedheight; uint8_t opret[256];
-    int32_t i,j,k,opretlen,len,numvouts,numvins,height,txn_count; uint256 kmdtxid,btctxid;
+    char *scriptstr,*opreturnstr; uint64_t voutmask; uint32_t notarizedheight; uint8_t opret[256];
+    int32_t i,j,k,opretlen,notaryid,len,numvouts,numvins,height,txn_count; uint256 kmdtxid,btctxid,txhash;
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
@@ -221,32 +242,15 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         for (i=0; i<txn_count; i++)
         {
             numvins = block.vtx[i].vin.size();
-            for (j=0; j<numvins; j++)
-            {
-                if ( (scriptstr= komodo_getspendscript(block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) != 0 )
-                    printf("vini ht.%d i.%d j.%d (%s)\n",height,i,j,scriptstr);
-            }
+            txhash = block.vtx[i].GetHash();
             numvouts = block.vtx[i].vout.size();
+            notaryid = -1;
             for (j=0; j<numvouts; j++)
             {
                 scriptstr = (char *)block.vtx[i].vout[j].scriptPubKey.ToString().c_str();
                 if ( strncmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
                     printf(">>>>>>>> ");
-                else if ( i == 0 && j == 0 )
-                {
-                    for (k=0; k<64; k++)
-                    {
-                        if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
-                            break;
-                        if ( strncmp(Notaries[k][1],scriptstr,66) == 0 )
-                        {
-                            printf("%s ht.%d (%s)\n",Notaries[k][0],height,scriptstr);
-                            //*nBitsp = KOMODO_MINDIFF_NBITS;
-                            break;
-                        }
-                    }
-                }
-                else if ( j == 1 && strncmp("OP_RETURN ",scriptstr,strlen("OP_RETURN ")) == 0 )
+                if ( j == 1 && strncmp("OP_RETURN ",scriptstr,strlen("OP_RETURN ")) == 0 )
                 {
                     opreturnstr = &scriptstr[strlen("OP_RETURN ")];
                     len = (int32_t)strlen(opreturnstr) >> 1;
@@ -260,8 +264,37 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         printf("NOTARIZED.%d KMD.%s BTC.%s\n",notarizedheight,kmdtxid.ToString().c_str(),btctxid.ToString().c_str());
                     }
                 }
-                if ( j == 0 )
-                    printf("ht.%d txi.%d numvins.%d numvouts.%d vout.%d (%s)\n",height,i,numvins,numvouts,j,scriptstr);
+                for (voutmask=k=0; k<64; k++)
+                {
+                    if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
+                        break;
+                    if ( strncmp(Notaries[k][1],scriptstr,66) == 0 )
+                    {
+                        printf("%s ht.%d i.%d k.%d (%s)\n",Notaries[k][0],height,scriptstr);
+                        //*nBitsp = KOMODO_MINDIFF_NBITS;
+                        if ( notaryid < 0 )
+                        {
+                            notaryid = k;
+                            voutmask |= (1LL << j);
+                        }
+                        else if ( notaryid != k )
+                            printf("mismatch notaryid.%d k.%d\n",notaryid,k);
+                        else voutmask |= (1LL << j);
+                        break;
+                    }
+                }
+                printf("k.%d ht.%d txi.%d numvins.%d numvouts.%d vout.%d (%s)\n",k,height,i,numvins,numvouts,j,txhash.ToString().c_str());
+            }
+            if ( notaryid >= 0 && voutmask != 0 )
+                komodo_nutxoadd(notaryid,txhash,voutmask);
+            for (voutmask=j=0; j<numvins; j++)
+            {
+                if ( (notaryid= komodo_nutxofind(block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) >= 0 )
+                    voutmask |= (1LL << notaryid);
+            }
+            if ( voutmask != 0 )
+            {
+                printf("NOTARY SIGNED.%llx ht.%d txi.%d\n",(long long)voutmask,height,i);
             }
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
