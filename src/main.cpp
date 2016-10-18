@@ -2951,7 +2951,7 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
     if (block.GetBlockTime() > GetAdjustedTime() + 60)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
     nBits = block.nBits;
-    if ( (retval= komodo_blockhdrcheck((CBlockHeader)block,&nBits)) == 0 )
+    if ( (retval= komodo_blockhdrcheck(*(CBlockHeader *)&block,&nBits)) == 0 )
     {
         // Check Equihash solution is valid
         if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
