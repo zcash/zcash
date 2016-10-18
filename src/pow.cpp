@@ -16,14 +16,14 @@
 
 #include "sodium.h"
 
-int32_t komodo_is_notaryblock(CBlockHeader *pblock);
+int32_t komodo_is_notaryblock(CBlockHeader& block);
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
 
     // Genesis block
-    if (pindexLast == NULL || komodo_is_notaryblock((CBlockHeader *)pblock) != 0 )
+    if (pindexLast == NULL || komodo_is_notaryblock(*pblock) != 0 )
         return nProofOfWorkLimit;
 
     // Find the first block in the averaging interval

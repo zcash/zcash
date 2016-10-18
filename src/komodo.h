@@ -34,36 +34,31 @@ void komodo_connectblock(CBlock *block)
     // update voting results and official (height, notaries[])
 }
 
-int32_t komodo_is_notaryblock(CBlockHeader *blockhdr)
+int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 {
     // extract height from coinbase
     // extract miner's pubkey from vout[0]
     // compare against elected notary pubkeys as of height
+    return(0); // normal PoW block
+}
+
+int32_t komodo_is_notaryblock(CBlockHeader& blockhdr)
+{
+    // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS
+    // -1 -> invalid, ie, prior to notarized block
     return(0);
 }
 
-int32_t komodo_blockhdrcheck(const CBlockHeader *blockhdr,uint32_t *nBitsp)
+int32_t komodo_blockhdrcheck(CBlockHeader& blockhdr,uint32_t *nBitsp)
 {
-    if ( komodo_is_notaryblock((CBlockHeader *)blockhdr) != 0 )
+    if ( komodo_is_notaryblock(blockhdr) != 0 )
         *nBitsp = KOMODO_MINDIFF_NBITS;
-    // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS
-    // -1 -> invalid, ie, prior to notarized block
     return(0); // normal PoW block
 }
 
-int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
+int32_t komodo_blockcheck(CBlock& block,uint32_t *nBitsp)
 {
-    return(0); // normal PoW block
-}
-
-int32_t komodo_blockcheck(CBlock *block,uint32_t *nBitsp)
-{
-    CBlockIndex *bindex = 0;//new CBlockIndex(block->GetBlockHeader());
-    if ( bindex != 0 && bindex->nHeight <= NOTARIZED_HEIGHT )
-        return(-1);
-    // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS
-    // -1 -> invalid, ie, prior to notarized block
-    return(0); // normal PoW block
+    komodo_blockhdrcheck(block,nBitsp);
 }
 
 #endif

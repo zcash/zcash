@@ -1343,7 +1343,7 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
 
     // Check the header
     nBits = block.nBits;
-    if ( (retval= komodo_blockcheck(&block,&nBits)) == 0 )
+    if ( (retval= komodo_blockcheck(block,&nBits)) == 0 )
     {
         if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(block.GetHash(), nBits, Params().GetConsensus())))
             return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
@@ -2951,7 +2951,7 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
     if (block.GetBlockTime() > GetAdjustedTime() + 60)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
     nBits = block.nBits;
-    if ( (retval= komodo_blockhdrcheck(&block,&nBits)) == 0 )
+    if ( (retval= komodo_blockhdrcheck(block,&nBits)) == 0 )
     {
         // Check Equihash solution is valid
         if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
