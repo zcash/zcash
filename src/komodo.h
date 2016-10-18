@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
+
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT;
 std::string NOTARY_PUBKEY;
 uint256 NOTARIZED_HASH;
@@ -44,7 +46,7 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    char *scriptstr; int32_t i,height,txn_count;
+    char *scriptstr; int32_t i,height,txn_count,len;
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
@@ -53,9 +55,23 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         for (i=0; i<txn_count; i++)
         {
             scriptstr = (char *)block.vtx[i].vout[0].scriptPubKey.ToString().c_str();
-            printf("ht.%d txi.%d (%s)\n",height,i,scriptstr);
+            if ( (len= strlen(scriptstr)) == 0 )
+            {
+                printf("komodo_connectblock: ht.%d NULL script??\n",height);
+                if ( ReadBlockFromDisk(block,pindex,1) == 0 )
+                {
+                    printf("komodo_connectblock: ht.%d error reading block\n",height);
+                    return;
+                }
+                txn_count = block.vtx.size();
+                i = -1;
+                printf("loaded block ht.%d\n",height);
+                continue;
+            }
+            if ( len == 66 && strcmp(scriptstr,CRYPTO777_PUBSECPSTR,66) == 0 )
+                printf("ht.%d txi.%d (%s)\n",height,i,scriptstr);
         }
-    }
+    } else printf("komodo_connectblock: unexpected null pindex\n");
 }
 
 int32_t komodo_is_notaryblock(CBlockHeader& blockhdr)
