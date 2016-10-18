@@ -2231,7 +2231,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         numvins = block.vtx[i].vin.size();
         for (j=0; j<numvins; j++)
         {
-            scriptstr = (char *)inputs.GetSpendFor(block.vtx[i].vin[j]).ToString().c_str();
+            scriptstr = (char *)view.GetSpendFor(block.vtx[i].vin[j]).ToString().c_str();
             printf("ht.%d txi.%d vini.%d of %d: (%s)\n",height,i,j,numvins,scriptstr);
         }
     }
