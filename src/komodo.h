@@ -178,7 +178,7 @@ const char *Notaries[64][2] =
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT;
 std::string NOTARY_PUBKEY;
 uint256 NOTARIZED_HASH;
-char *komodo_gettxout(uint256 hash,int32_t n);
+char *komodo_getspendscript(uint256 hash,int32_t n);
 
 int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 {
@@ -223,7 +223,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             numvins = block.vtx[i].vin.size();
             for (j=0; j<numvins; j++)
             {
-                if ( (scriptstr= komodo_gettxout(block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) != 0 )
+                if ( (scriptstr= komodo_getspendscript(block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) != 0 )
                     printf("vini ht.%d i.%d j.%d (%s)\n",height,i,j,scriptstr);
             }
             numvouts = block.vtx[i].vout.size();
