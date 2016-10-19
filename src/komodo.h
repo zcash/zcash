@@ -325,7 +325,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 {
                     memcpy(scriptbuf,block.vtx[i].vout[j].scriptPubKey.data(),len);
                     notaryid = komodo_voutupdate(notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight);
-                    if ( i > 0 )
+                    if ( 0 && i > 0 )
                     {
                         for (k=0; k<len; k++)
                             printf("%02x",scriptbuf[k]);
