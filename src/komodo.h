@@ -180,7 +180,7 @@ const char *Notaries[64][2] =
 
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos;
 std::string NOTARY_PUBKEY;
-uint256 NOTARIZED_HASH;
+uint256 NOTARIZED_HASH,NOTARIZED_BTCHASH;
 struct nutxo_entry { uint256 txhash; uint64_t voutmask; int32_t notaryid; };
 struct nutxo_entry NUTXOS[10000];
 
@@ -220,10 +220,10 @@ int32_t komodo_notaryfind(uint8_t *pubkey) // change to ADD_HASH()
     {
         for (k=0; k<64; k++)
         {
-            printf("k.%d (%s) (%s)\n",k,Notaries[k][0],Notaries[k][1]);
             if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
                 break;
             decode_hex(notarypubs[k],33,(char *)Notaries[k][1]);
+            printf("k.%d (%s) (%s) ",k,Notaries[k][0],Notaries[k][1]);
             for (i=0; i<33; i++)
                 printf("%02x",notarypubs[k][i]);
             printf(" notarypubs.[%d]\n",k);
@@ -297,6 +297,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             {
                 NOTARIZED_HEIGHT = *notarizedheightp;
                 NOTARIZED_HASH = kmdtxid;
+                NOTARIZED_BTCHASH = btctxid;
             }
         }
     }
