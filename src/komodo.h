@@ -261,7 +261,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
     printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
     if ( j == 0 && len == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
     {
-        decode_hex(crypto777,33,CRYPTO777_PUBSECPSTR);
+        decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
         if ( memcmp(crypto777,scriptbuf+1,33) == 0 )
         {
             *specialtxp = 1;
@@ -293,7 +293,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
             len += iguana_rwnum(0,&scriptbuf[len],4,(uint8_t *)notarizedheightp);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&btctxid);
-            printf("ht.%d NOTARIZED.%d KMD.%s BTC.%s %s\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),btctxid.ToString().c_str(),scriptstr);
+            printf("ht.%d NOTARIZED.%d KMD.%s BTC.%s\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),btctxid.ToString().c_str());
             if ( *notarizedheightp > NOTARIZED_HEIGHT )
             {
                 NOTARIZED_HEIGHT = *notarizedheightp;
