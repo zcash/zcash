@@ -183,9 +183,14 @@ uint256 NOTARIZED_HASH;
 struct nutxo_entry { uint256 txhash; uint64_t voutmask; int32_t notaryid; };
 struct nutxo_entry NUTXOS[10000];
 
+int32_t komodo_threshold(uint64_t signedmask)
+{
+    return(1); // N/2+1 || N/3 + devsig
+}
+
 void komodo_nutxoadd(int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
 {
-    if ( numvouts > 1 )
+    if ( numvouts > 1 && notaryid < 64 )
     {
         NUTXOS[Num_nutxos].txhash = txhash;
         NUTXOS[Num_nutxos].voutmask = voutmask;
@@ -208,21 +213,27 @@ int32_t komodo_nutxofind(uint256 txhash,int32_t vout) // change to ADD_HASH() an
 
 int32_t komodo_notaryfind(uint8_t *pubkey) // change to ADD_HASH()
 {
-    int32_t k; uint8_t notarypub[33];
+    static int didinit; static uint8_t notarypubs[64][33];
+    int32_t i,k; uint8_t notarypub[33];
+    if ( didinit == 0 )
+    {
+        for (k=0; k<64; k++)
+        {
+            if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
+                break;
+            decode_hex(notarypubs[k],33,(char *)Notaries[k][1]);
+            for (i=0; i<33; i++)
+                printf("%02x",notarypubs[k][i]);
+            printf(" notarypubs.[%d]\n",k);
+        }
+        didinit = 1;
+    }
     for (k=0; k<64; k++)
     {
-        if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
-            break;
-        decode_hex(notarypub,33,(char *)Notaries[k][1]);
-        if ( memcmp(notarypub,pubkey,33) == 0 )
+        if ( memcmp(notarypubs[k],pubkey,33) == 0 )
             return(k);
     }
     return(-1);
-}
-
-int32_t komodo_threshold(uint64_t signedmask)
-{
-    return(1); // N/2+1 || N/3 + devsig
 }
 
 int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp)
