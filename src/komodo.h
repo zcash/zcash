@@ -185,7 +185,7 @@ uint256 NOTARIZED_HASH,NOTARIZED_BTCHASH;
 struct nutxo_entry { uint256 txhash; uint64_t voutmask; int32_t notaryid; };
 struct nutxo_entry NUTXOS[10000];
 
-void komodo_nutxoadd(int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
+void komodo_nutxoadd(int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts);
 
 int32_t komodo_threshold(uint64_t signedmask)
 {
