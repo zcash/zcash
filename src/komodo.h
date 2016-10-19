@@ -313,6 +313,12 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 {
                     memcpy(scriptbuf,block.vtx[i].vout[j].scriptPubKey.data(),len);
                     notaryid = komodo_voutupdate(notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight);
+                    if ( i > 0 )
+                    {
+                        for (k=0; k<len; k++)
+                            printf("%02x",scriptbuf[k]);
+                        printf(" <- notaryid.%d ht.%d i.%d j.%d numvouts.%d numvins.%d voutmask.%llx\n",notaryid,height,i,j,numvouts,numvins,(long long)voutmask);
+                    }
                 }
             }
             if ( notaryid >= 0 && voutmask != 0 )
@@ -328,7 +334,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             }
             if ( signedmask != 0 && (notarizedheight != 0 || specialtx != 0) )
             {
-                printf("NOTARY SIGNED.%llx ht.%d txi.%d notaryht.%d specialtx.%d\n",(long long)signedmask,height,i,notarizedheight,specialtx);
+                printf("NOTARY SIGNED.%llx numvins.%d ht.%d txi.%d notaryht.%d specialtx.%d\n",(long long)signedmask,numvins,height,i,notarizedheight,specialtx);
                 if ( specialtx != 0 && numvouts > 2 && komodo_threshold(signedmask) > 0 )
                 {
                     for (j=1; j<numvouts; j++)
