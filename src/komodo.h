@@ -364,7 +364,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     static int32_t didinit;
     char *scriptstr,*opreturnstr; uint64_t signedmask,voutmask;
     uint8_t scriptbuf[4096],pubkeys[64][33]; uint256 kmdtxid,btctxid,txhash;
-    int32_t i,j,k,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count,flag;
+    int32_t i,j,k,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count,flag;
     if ( didinit == 0 )
     {
         komodo_stateupdate(0,0);
@@ -412,6 +412,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 printf("NOTARY SIGNED.%llx numvins.%d ht.%d txi.%d notaryht.%d specialtx.%d\n",(long long)signedmask,numvins,height,i,notarizedheight,specialtx);
                 if ( specialtx != 0 && numvouts > 2 && komodo_threshold(signedmask) > 0 )
                 {
+                    numvalid = 0;
                     memset(pubkeys,0,sizeof(pubkeys));
                     for (j=1; j<numvouts; j++)
                     {
@@ -421,14 +422,15 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                             memcpy(scriptbuf,block.vtx[i].vout[j].scriptPubKey.data(),len);
                             if ( len == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
                             {
-                                memcpy(pubkeys[j-1],scriptbuf+1,33);
+                                memcpy(pubkeys[numvalid++],scriptbuf+1,33);
                                 for (k=0; k<33; k++)
                                     printf("%02x",scriptbuf[k+1]);
                                 printf(" <- new notary.[%d]\n",j-1);
                             }
                         }
                     }
-                    komodo_stateupdate(pubkeys,numvouts-1);
+                    if ( numvalid > 13 )
+                        komodo_stateupdate(pubkeys,numvalid);
                     printf("new notaries.%d newheight.%d from height.%d\n",numvouts-1,(((height+500)/1000)+1)*1000,height);
                 }
             }
