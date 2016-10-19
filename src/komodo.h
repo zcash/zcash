@@ -224,6 +224,7 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,int32_t 
                         errs++;
                     if ( fread(&NOTARIZED_BTCHASH,1,sizeof(NOTARIZED_BTCHASH),fp) != sizeof(NOTARIZED_BTCHASH) )
                         errs++;
+                    printf("load NOTARIZED %d %s\n",NOTARIZED_HEIGHT,NOTARIZED_HASH.ToString().c_str());
                 }
                 else if ( func == 'U' )
                 {
