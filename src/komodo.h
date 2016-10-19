@@ -275,9 +275,9 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
             len += iguana_rwnum(0,&scriptbuf[len],4,(uint8_t *)notarizedheightp);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&btctxid);
-            for (k=0; k<scriptlen; k++)
-                printf("%02x",scriptbuf[k]);
-            printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
+            //for (k=0; k<scriptlen; k++)
+            //    printf("%02x",scriptbuf[k]);
+            //printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
             printf("ht.%d NOTARIZED.%d KMD.%s BTC.%s\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),btctxid.ToString().c_str());
             if ( *notarizedheightp > NOTARIZED_HEIGHT )
             {
