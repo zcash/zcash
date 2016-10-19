@@ -256,10 +256,7 @@ int32_t komodo_notaryfind(uint8_t *pubkey)
 int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp)
 {
     int32_t k,opretlen,len = 0; uint256 kmdtxid,btctxid; uint8_t crypto777[33];
-    for (k=0; k<scriptlen; k++)
-        printf("%02x",scriptbuf[k]);
-    printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
-    if ( j == 0 && len == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
+    if ( len == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
     {
         decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
         if ( memcmp(crypto777,scriptbuf+1,33) == 0 )
@@ -293,6 +290,9 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
             len += iguana_rwnum(0,&scriptbuf[len],4,(uint8_t *)notarizedheightp);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&btctxid);
+            for (k=0; k<scriptlen; k++)
+                printf("%02x",scriptbuf[k]);
+            printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
             printf("ht.%d NOTARIZED.%d KMD.%s BTC.%s\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),btctxid.ToString().c_str());
             if ( *notarizedheightp > NOTARIZED_HEIGHT )
             {
@@ -338,9 +338,9 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 if ( (k= komodo_nutxofind(block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) >= 0 )
                     signedmask |= (1LL << k);
             }
-            if ( signedmask != 0 || notarizedheight != 0 )
+            if ( signedmask != 0 && (notarizedheight != 0 || specialtx != 0) )
             {
-                printf("NOTARY SIGNED.%llx ht.%d txi.%d notaryht.%d\n",(long long)signedmask,height,i,notarizedheight);
+                printf("NOTARY SIGNED.%llx ht.%d txi.%d notaryht.%d specialtx.%d\n",(long long)signedmask,height,i,notarizedheight,specialtx);
             }
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
