@@ -236,20 +236,22 @@ int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    char *scriptstr,*opreturnstr; uint64_t voutmask; uint32_t notarizedheight; uint8_t opret[256];
-    int32_t i,j,k,opretlen,notaryid,len,numvouts,numvins,height,txn_count; uint256 kmdtxid,btctxid,txhash;
+    char *scriptstr,*opreturnstr; uint64_t signedmask,voutmask; uint32_t notarizedheight;
+    uint8_t opret[256]; uint256 kmdtxid,btctxid,txhash;
+    int32_t i,j,k,opretlen,notaryid,len,numvouts,numvins,height,txn_count;
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
         txn_count = block.vtx.size();
+        notarizedheight = 0;
         for (i=0; i<txn_count; i++)
         {
             numvins = block.vtx[i].vin.size();
             txhash = block.vtx[i].GetHash();
             numvouts = block.vtx[i].vout.size();
             notaryid = -1;
-            voutmask = 0;
+            voutmask = signedmask = 0;
             for (j=0; j<numvouts; j++)
             {
                 scriptstr = (char *)block.vtx[i].vout[j].scriptPubKey.ToString().c_str();
@@ -266,7 +268,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         opretlen += iguana_rwbignum(0,&opret[opretlen],32,(uint8_t *)&kmdtxid);
                         opretlen += iguana_rwnum(0,&opret[opretlen],4,(uint8_t *)&notarizedheight);
                         opretlen += iguana_rwbignum(0,&opret[opretlen],32,(uint8_t *)&btctxid);
-                        printf("NOTARIZED.%d KMD.%s BTC.%s\n",notarizedheight,kmdtxid.ToString().c_str(),btctxid.ToString().c_str());
+                        printf("ht.%d NOTARIZED.%d KMD.%s BTC.%s\n",height,notarizedheight,kmdtxid.ToString().c_str(),btctxid.ToString().c_str());
                     }
                 }
                 for (k=0; k<64; k++)
@@ -275,7 +277,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         break;
                     if ( strncmp(Notaries[k][1],scriptstr,66) == 0 )
                     {
-                        printf("%s ht.%d i.%d k.%d\n",Notaries[k][0],height,i,k);
+                        //printf("%s ht.%d i.%d k.%d\n",Notaries[k][0],height,i,k);
                         //*nBitsp = KOMODO_MINDIFF_NBITS;
                         if ( notaryid < 0 )
                         {
@@ -288,19 +290,19 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         break;
                     }
                 }
-                printf("k.%d ht.%d txi.%d numvins.%d numvouts.%d vout.%d (%s)\n",notaryid,height,i,numvins,numvouts,j,txhash.ToString().c_str());
+                printf("k.%d %s ht.%d txi.%d in.%d out.%d vout.%d (%s)\n",notaryid,k>=0?Notaries[notaryid][0]:"",height,i,numvins,numvouts,j,txhash.ToString().c_str());
             }
-            if ( notaryid >= 0 && voutmask != 0 )
-                komodo_nutxoadd(notaryid,txhash,voutmask,numvouts);
-            for (voutmask=j=0; j<numvins; j++)
+            for (j=0; j<numvins; j++)
             {
                 if ( (notaryid= komodo_nutxofind(block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) >= 0 )
-                    voutmask |= (1LL << notaryid);
+                    signedmask |= (1LL << notaryid);
             }
-            if ( voutmask != 0 )
-            {
-                printf("NOTARY SIGNED.%llx ht.%d txi.%d\n",(long long)voutmask,height,i);
-            }
+            if ( signedmask != 0 && notaryid >= 0 && voutmask != 0 )
+                komodo_nutxoadd(notaryid,txhash,voutmask,numvouts);
+        }
+        if ( signedmask != 0 )
+        {
+            printf("NOTARY SIGNED.%llx ht.%d txi.%d notaryht.%d\n",(long long)voutmask,height,i,notarizedheight);
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
 }
