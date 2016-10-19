@@ -233,7 +233,7 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries)
             if ( fwrite(notarypubs,33,numnotaries,fp) != numnotaries )
                 errs++;
         }
-        fputs('N',fp);
+        fputc('N',fp);
         if ( fwrite(&NOTARIZED_HEIGHT,1,sizeof(NOTARIZED_HEIGHT),fp) != sizeof(NOTARIZED_HEIGHT) )
             errs++;
         if ( fwrite(&NOTARIZED_HASH,1,sizeof(NOTARIZED_HASH),fp) != sizeof(NOTARIZED_HASH) )
