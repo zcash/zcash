@@ -326,7 +326,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             if ( signedmask != 0 && (notarizedheight != 0 || specialtx != 0) )
             {
                 printf("NOTARY SIGNED.%llx ht.%d txi.%d notaryht.%d specialtx.%d\n",(long long)signedmask,height,i,notarizedheight,specialtx);
-                if ( specialtx != 0 && komodo_threshold(signedmask) > 0 )
+                if ( specialtx != 0 && numvouts > 2 && komodo_threshold(signedmask) > 0 )
                 {
                     for (j=1; j<numvouts; j++)
                     {
