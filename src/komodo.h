@@ -306,7 +306,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    char *scriptstr,*opreturnstr; uint64_t signedmask,voutmask; uint32_t notarizedheight;
+    char *scriptstr,*opreturnstr; uint64_t signedmask,voutmask;
     uint8_t scriptbuf[4096]; uint256 kmdtxid,btctxid,txhash;
     int32_t i,j,k,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count,flag;
     // update voting results and official (height, notaries[])
@@ -326,7 +326,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 if ( len <= sizeof(scriptbuf) )
                 {
                     memcpy(scriptbuf,block.vtx[i].vout[j].scriptPubKey.data(),len);
-                    notaryid = komodo_voutupdate(notaryid,scriptbuf,scriptlen,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight);
+                    notaryid = komodo_voutupdate(notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight);
                 }
             }
             if ( notaryid >= 0 && voutmask != 0 )
