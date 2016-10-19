@@ -376,10 +376,11 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             printf("ht.%d NOTARIZED.%d KMD.%s BTC.%s\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),btctxid.ToString().c_str());
             if ( *notarizedheightp > NOTARIZED_HEIGHT )
             {
+                static uint256 zero;
                 NOTARIZED_HEIGHT = *notarizedheightp;
                 NOTARIZED_HASH = kmdtxid;
                 NOTARIZED_BTCHASH = btctxid;
-                komodo_stateupdate(0,0,0,0,0,0);
+                komodo_stateupdate(0,0,0,zero,0,0);
             }
         }
     }
@@ -394,7 +395,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     int32_t i,j,k,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count,flag;
     if ( didinit == 0 )
     {
-        komodo_stateupdate(0,0,0,0,0,0);
+        memset(&txhash,0,sizeof(txhash));
+        komodo_stateupdate(0,0,0,txhash,0,0);
         didinit = 1;
     }
     // update voting results and official (height, notaries[])
@@ -457,7 +459,10 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         }
                     }
                     if ( numvalid > 13 )
-                        komodo_stateupdate(pubkeys,numvalid,0,0,0,0);
+                    {
+                        memset(&txhash,0,sizeof(txhash));
+                        komodo_stateupdate(pubkeys,numvalid,0,txhash,0,0);
+                    }
                     printf("new notaries.%d newheight.%d from height.%d\n",numvouts-1,(((height+500)/1000)+1)*1000,height);
                 }
             }
