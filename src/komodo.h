@@ -242,7 +242,7 @@ int32_t komodo_notaryfind(uint8_t *pubkey)
     {
         if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
             break;
-        decode_hex(notarypub,33,Notaries[k][1]);
+        decode_hex(notarypub,33,(char *)Notaries[k][1]);
         if ( memcmp(notarypub,pubkey,33) == 0 )
         {
             //printf("%s ht.%d i.%d k.%d\n",Notaries[k][0],height,i,k);
@@ -255,12 +255,13 @@ int32_t komodo_notaryfind(uint8_t *pubkey)
 
 int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp)
 {
-    int32_t k,opretlen,len = 0; uint256 kmdtxid,btctxid;
+    int32_t k,opretlen,len = 0; uint256 kmdtxid,btctxid; uint8_t crypto777[33];
     for (k=0; k<scriptlen; k++)
         printf("%02x",scriptbuf[k]);
     printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
     if ( j == 0 && len == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
     {
+        decode_hex(crypto777,33,CRYPTO777_PUBSECPSTR);
         if ( memcmp(crypto777,scriptbuf+1,33) == 0 )
         {
             *specialtxp = 1;
@@ -306,9 +307,8 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
     char *scriptstr,*opreturnstr; uint64_t signedmask,voutmask; uint32_t notarizedheight;
-    uint8_t scriptbuf[4096],crypto777[33]; uint256 kmdtxid,btctxid,txhash;
+    uint8_t scriptbuf[4096]; uint256 kmdtxid,btctxid,txhash;
     int32_t i,j,k,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count,flag;
-    decode_hex(crypto777,33,CRYPTO777_PUBSECPSTR);
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
