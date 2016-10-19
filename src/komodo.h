@@ -192,8 +192,8 @@ int32_t komodo_threshold(uint64_t signedmask)
 
 int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries)
 {
-    static FILE *fp; char fname[512]; uint8_t func,num,pubkeys[64][33];
-    sprintf(fname,"%s/%s",boost::filesystem::is_directory(GetDataDir(false)),"komodostate");
+    static FILE *fp; static int32_t errs; char fname[512]; uint8_t func,num,pubkeys[64][33];
+    sprintf(fname,"%s/%s",boost::filesystem::is_directory(GetDataDir(false)),(char *)"komodostate");
     if ( fp == 0 )
     {
         if ( (fp= fopen(fname,"rb+")) != 0 )
@@ -203,14 +203,18 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries)
                 if ( func == 'P' )
                 {
                     if ( (num= fgetc(fp)) < 64 )
-                        fread(pubkeys,num,33,fp);
+                        if ( fread(pubkeys,33,num,fp) != num )
+                            errs++;
                     else printf("illegal num.%d\n",num);
                 }
                 else if ( func == 'N' )
                 {
-                    fread(&NOTARIZED_HEIGHT,1,sizeof(NOTARIZED_HEIGHT),fp);
-                    fread(&NOTARIZED_HASH,1,sizeof(NOTARIZED_HASH),fp);
-                    fread(&NOTARIZED_BTCHASH,1,sizeof(NOTARIZED_BTCHASH),fp);
+                    if ( fread(&NOTARIZED_HEIGHT,1,sizeof(NOTARIZED_HEIGHT),fp) != sizeof(NOTARIZED_HEIGHT) )
+                        errs++;
+                    if ( fread(&NOTARIZED_HASH,1,sizeof(NOTARIZED_HASH),fp) != sizeof(NOTARIZED_HASH) )
+                        errs++;
+                    if ( fread(&NOTARIZED_BTCHASH,1,sizeof(NOTARIZED_BTCHASH),fp) != sizeof(NOTARIZED_BTCHASH) )
+                        errs++;
                 }
                 else printf("illegal func.(%d %c)\n",func,func);
             }
@@ -223,12 +227,16 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries)
         {
             fputc('P',fp);
             fputc(numnotaries,fp);
-            fwrite(notarypubs,numnotaries,33,fp);
+            if ( fwrite(notarypubs,33,numnotaries,fp) != numnotaries )
+                errs++;
         }
         fputs('N',fp);
-        fwrite(&NOTARIZED_HEIGHT,1,sizeof(NOTARIZED_HEIGHT),fp);
-        fwrite(&NOTARIZED_HASH,1,sizeof(NOTARIZED_HASH),fp);
-        fwrite(&NOTARIZED_BTCHASH,1,sizeof(NOTARIZED_BTCHASH),fp);
+        if ( fwrite(&NOTARIZED_HEIGHT,1,sizeof(NOTARIZED_HEIGHT),fp) != sizeof(NOTARIZED_HEIGHT) )
+            errs++;
+        if ( fwrite(&NOTARIZED_HASH,1,sizeof(NOTARIZED_HASH),fp) != sizeof(NOTARIZED_HASH) )
+            errs++;
+        if ( fwrite(&NOTARIZED_BTCHASH,1,sizeof(NOTARIZED_BTCHASH),fp) != sizeof(NOTARIZED_BTCHASH) )
+            errs++;
     }
 }
 
