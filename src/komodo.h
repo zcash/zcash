@@ -317,7 +317,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     {
                         for (k=0; k<len; k++)
                             printf("%02x",scriptbuf[k]);
-                        printf(" <- notaryid.%d ht.%d i.%d j.%d numvouts.%d numvins.%d voutmask.%llx\n",notaryid,height,i,j,numvouts,numvins,(long long)voutmask);
+                        printf(" <- notaryid.%d ht.%d i.%d j.%d numvouts.%d numvins.%d voutmask.%llx txid.(%s)\n",notaryid,height,i,j,numvouts,numvins,(long long)voutmask,txhash.ToString().c_str());
                     }
                 }
             }
