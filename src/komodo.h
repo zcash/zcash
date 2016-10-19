@@ -166,7 +166,7 @@ const char *Notaries[64][2] =
     { "yassin_EU", "033fb7231bb66484081952890d9a03f91164fb27d392d9152ec41336b71b15fbd0" },
     { "durerus_EU", "02bcbd287670bdca2c31e5d50130adb5dea1b53198f18abeec7211825f47485d57" },
     { "badass_SH", "026b49dd3923b78a592c1b475f208e23698d3f085c4c3b4906a59faf659fd9530b" },
-    { "baddass_NA", "02afa1a9f948e1634a29dc718d218e9d150c531cfa852843a1643a02184a63c1a7" },
+    { "badass_NA", "02afa1a9f948e1634a29dc718d218e9d150c531cfa852843a1643a02184a63c1a7" },
     { "pondsea_NA", "031bcfdbb62268e2ff8dfffeb9ddff7fe95fca46778c77eebff9c3829dfa1bb411" },
     { "rnr_EU", "0287aa4b73988ba26cf6565d815786caf0d2c4af704d7883d163ee89cd9977edec" },
     { "crackers_SH", "02313d72f9a16055737e14cfc528dcd5d0ef094cfce23d0348fe974b6b1a32e5f0" },
@@ -176,6 +176,7 @@ const char *Notaries[64][2] =
     { "titomane_AE", "03cda6ca5c2d02db201488a54a548dbfc10533bdc275d5ea11928e8d6ab33c2185" },
     { "kolo_EU", "03f5c08dadffa0ffcafb8dd7ffc38c22887bd02702a6c9ac3440deddcf2837692b" },
     { "artik_NA", "0224e31f93eff0cc30eaf0b2389fbc591085c0e122c4d11862c1729d090106c842" },
+    { "eclips_EU", "0339369c1f5a2028d44be7be6f8ec3b907fdec814f87d2dead97cab4edb71a42e9" },
 };
 
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos;
@@ -187,6 +188,48 @@ struct nutxo_entry NUTXOS[10000];
 int32_t komodo_threshold(uint64_t signedmask)
 {
     return(1); // N/2+1 || N/3 + devsig
+}
+
+int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries)
+{
+    static FILE *fp; char fname[512]; uint8_t func,num,pubkeys[64][33];
+    sprintf(fname,"%s/%s",boost::filesystem::is_directory(GetDataDir(false)),"komodostate");
+    if ( fp == 0 )
+    {
+        if ( (fp= fopen(fname,"rb+")) != 0 )
+        {
+            while ( (func= fgetc(fp)) != EOF )
+            {
+                if ( func == 'P' )
+                {
+                    if ( (num= fgetc(fp)) < 64 )
+                        fread(pubkeys,num,33,fp);
+                    else printf("illegal num.%d\n",num);
+                }
+                else if ( func == 'N' )
+                {
+                    fread(&NOTARIZED_HEIGHT,1,sizeof(NOTARIZED_HEIGHT),fp);
+                    fread(&NOTARIZED_HASH,1,sizeof(NOTARIZED_HASH),fp);
+                    fread(&NOTARIZED_BTCHASH,1,sizeof(NOTARIZED_BTCHASH),fp);
+                }
+                else printf("illegal func.(%d %c)\n",func,func);
+            }
+        } else fp = fopen(fname,"wb+");
+        printf("fname.(%s) fpos.%ld\n",fname,ftell(fp));
+    }
+    if ( fp != 0 )
+    {
+        if ( notarypubs != 0 && numnotaries > 0 )
+        {
+            fputc('P',fp);
+            fputc(numnotaries,fp);
+            fwrite(notarypubs,numnotaries,33,fp);
+        }
+        fputs('N',fp);
+        fwrite(&NOTARIZED_HEIGHT,1,sizeof(NOTARIZED_HEIGHT),fp);
+        fwrite(&NOTARIZED_HASH,1,sizeof(NOTARIZED_HASH),fp);
+        fwrite(&NOTARIZED_BTCHASH,1,sizeof(NOTARIZED_BTCHASH),fp);
+    }
 }
 
 void komodo_nutxoadd(int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
@@ -298,6 +341,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
                 NOTARIZED_HEIGHT = *notarizedheightp;
                 NOTARIZED_HASH = kmdtxid;
                 NOTARIZED_BTCHASH = btctxid;
+                komodo_stateupdate(0,0);
             }
         }
     }
@@ -306,9 +350,15 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
+    static int32_t didinit;
     char *scriptstr,*opreturnstr; uint64_t signedmask,voutmask;
     uint8_t scriptbuf[4096]; uint256 kmdtxid,btctxid,txhash;
     int32_t i,j,k,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count,flag;
+    if ( didinit == 0 )
+    {
+        komodo_stateupdate(0,0);
+        didinit = 1;
+    }
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
