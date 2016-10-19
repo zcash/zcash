@@ -225,12 +225,12 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
     if ( scriptlen == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
     {
         decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
-        for (k=0; k<33; k++)
+        /*for (k=0; k<33; k++)
             printf("%02x",crypto777[k]);
         printf(" crypto777 ");
         for (k=0; k<scriptlen; k++)
             printf("%02x",scriptbuf[k]);
-        printf(" <- script ht.%d i.%d j.%d cmp.%d\n",height,i,j,memcmp(crypto777,scriptbuf+1,33));
+        printf(" <- script ht.%d i.%d j.%d cmp.%d\n",height,i,j,memcmp(crypto777,scriptbuf+1,33));*/
         if ( memcmp(crypto777,scriptbuf+1,33) == 0 )
         {
             *specialtxp = 1;
