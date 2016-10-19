@@ -239,7 +239,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
     char *scriptstr,*opreturnstr; uint64_t signedmask,voutmask; uint32_t notarizedheight;
     uint8_t opret[256]; uint256 kmdtxid,btctxid,txhash;
-    int32_t i,j,k,opretlen,notaryid,len,numvouts,numvins,height,txn_count;
+    int32_t i,j,k,opretlen,notaryid,len,numvouts,numvins,height,txn_count,flag;
     // update voting results and official (height, notaries[])
     if ( pindex != 0 )
     {
@@ -261,16 +261,27 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     printf(">>>>>>>> ");
                 if ( j == 1 && strncmp("OP_RETURN ",scriptstr,strlen("OP_RETURN ")) == 0 )
                 {
+                    flag = 0;
                     opreturnstr = &scriptstr[strlen("OP_RETURN ")];
-                    len = (int32_t)strlen(opreturnstr) >> 1;
+                    len = (int32_t)strlen(opreturnstr);
+                    if ( (len & 1) != 0 && opreturnstr[len-1] == '?' )
+                        len--, flag++;
+                    len >>= 1;
                     if ( len <= sizeof(opret) )
                     {
                         decode_hex(opret,len,opreturnstr);
+                        if ( flag != 0 )
+                            opret[len++] = 0; // horrible hack
                         opretlen = 0;
                         opretlen += iguana_rwbignum(0,&opret[opretlen],32,(uint8_t *)&kmdtxid);
                         opretlen += iguana_rwnum(0,&opret[opretlen],4,(uint8_t *)&notarizedheight);
                         opretlen += iguana_rwbignum(0,&opret[opretlen],32,(uint8_t *)&btctxid);
-                        printf("ht.%d NOTARIZED.%d KMD.%s BTC.%s %s\n",height,notarizedheight,kmdtxid.ToString().c_str(),btctxid.ToString().c_str(),scriptstr);
+                        printf("signed.%llx ht.%d NOTARIZED.%d KMD.%s BTC.%s %s\n",(long long)signedmask,height,notarizedheight,kmdtxid.ToString().c_str(),btctxid.ToString().c_str(),scriptstr);
+                        if ( signedmask != 0 && notarizedheight > NOTARIZED_HEIGHT )
+                        {
+                            NOTARIZED_HEIGHT = notarizedheight;
+                            NOTARIZED_HASH = kmdtxid;
+                        }
                     }
                 }
                 for (k=0; k<64; k++)
