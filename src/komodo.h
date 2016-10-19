@@ -292,7 +292,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         break;
                     }
                 }
-                if ( k >= 0 )
+                if ( notaryid >= 0 )
                     printf("k.%d %s ht.%d txi.%d in.%d out.%d vout.%d (%s)\n",notaryid,k>=0?Notaries[notaryid][0]:"",height,i,numvins,numvouts,j,txhash.ToString().c_str());
             }
             for (j=0; j<numvins; j++)
