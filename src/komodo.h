@@ -193,7 +193,7 @@ int32_t komodo_threshold(uint64_t signedmask)
 int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries)
 {
     static FILE *fp; static int32_t errs; char fname[512]; uint8_t func,num,pubkeys[64][33];
-    sprintf(fname,"%s/%s",GetDataDir(false),(char *)"komodostate");
+    sprintf(fname,"%s/%s",GetDataDir(false).ToString.c_str(),(char *)"komodostate");
     if ( fp == 0 )
     {
         if ( (fp= fopen(fname,"rb+")) != 0 )
