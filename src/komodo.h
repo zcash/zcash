@@ -245,13 +245,14 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         height = pindex->nHeight;
         txn_count = block.vtx.size();
         notarizedheight = 0;
+        signedmask = 0;
         for (i=0; i<txn_count; i++)
         {
             numvins = block.vtx[i].vin.size();
             txhash = block.vtx[i].GetHash();
             numvouts = block.vtx[i].vout.size();
             notaryid = -1;
-            voutmask = signedmask = 0;
+            voutmask = 0;
             for (j=0; j<numvouts; j++)
             {
                 scriptstr = (char *)block.vtx[i].vout[j].scriptPubKey.ToString().c_str();
@@ -300,7 +301,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             if ( signedmask != 0 && notaryid >= 0 && voutmask != 0 )
                 komodo_nutxoadd(notaryid,txhash,voutmask,numvouts);
         }
-        if ( signedmask != 0 )
+        if ( signedmask != 0 || notarizedheight != 0 )
         {
             printf("NOTARY SIGNED.%llx ht.%d txi.%d notaryht.%d\n",(long long)voutmask,height,i,notarizedheight);
         }
