@@ -219,6 +219,7 @@ int32_t komodo_notaryfind(uint8_t *pubkey) // change to ADD_HASH()
     {
         for (k=0; k<64; k++)
         {
+            printf("k.%d (%s) (%s)\n",k,Notaries[k][0],Notaries[k][1]);
             if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
                 break;
             decode_hex(notarypubs[k],33,(char *)Notaries[k][1]);
