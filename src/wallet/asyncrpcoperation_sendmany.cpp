@@ -36,13 +36,14 @@ int find_output(Object obj, int n) {
     }
 
     Array outputMap = outputMapValue.get_array();
+    assert(outputMap.size() == ZC_NUM_JS_OUTPUTS);
     for (size_t i = 0; i < outputMap.size(); i++) {
         if (outputMap[i] == n) {
             return i;
         }
     }
 
-    return -1;
+    throw std::logic_error("n is not present in outputmap");
 }
 
 AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(

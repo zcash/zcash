@@ -43,6 +43,8 @@ void MappedShuffle(RandomAccessIterator first,
 {
     for (size_t i = len-1; i > 0; --i) {
         auto r = gen(i+1);
+        assert(r >= 0);
+        assert(r <= i);
         std::swap(first[i], first[r]);
         std::swap(mapFirst[i], mapFirst[r]);
     }
