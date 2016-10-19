@@ -68,6 +68,7 @@ git pull
 
 ./zcutil/build.sh -j8
 
+To reset the blockchain, from ~/.komodo rm -rf blocks chainstate debug.log komodostate db.log
 
 Create komodo.conf
 ------------------
