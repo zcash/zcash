@@ -174,6 +174,7 @@ const char *Notaries[64][2] =
     { "titomane_NA", "0387046d9745414fb58a0fa3599078af5073e10347e4657ef7259a99cb4f10ad47" },
     { "titomane_AE", "03cda6ca5c2d02db201488a54a548dbfc10533bdc275d5ea11928e8d6ab33c2185" },
     { "kolo_EU", "03f5c08dadffa0ffcafb8dd7ffc38c22887bd02702a6c9ac3440deddcf2837692b" },
+    { "artik_NA", "0224e31f93eff0cc30eaf0b2389fbc591085c0e122c4d11862c1729d090106c842" },
 };
 
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos;
@@ -189,7 +190,7 @@ void komodo_nutxoadd(int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t n
         NUTXOS[Num_nutxos].txhash = txhash;
         NUTXOS[Num_nutxos].voutmask = voutmask;
         NUTXOS[Num_nutxos].notaryid = notaryid;
-        printf("Add NUTXO[%d] <- notaryid.%d %llx\n",Num_nutxos,notaryid,(long long)voutmask);
+        printf("Add NUTXO[%d] <- notaryid.%d %s %llx\n",Num_nutxos,notaryid,txhash.ToString().c_str(),(long long)voutmask);
         Num_nutxos++;
     }
 }
@@ -322,6 +323,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             {
                 if ( (k= komodo_nutxofind(block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) >= 0 )
                     signedmask |= (1LL << k);
+                else if ( signedmask != 0 )
+                    printf("signedmask.%llx but ht.%d i.%d j.%d not found (%s %d)\n",(long long)signedmask,height,i,j,block.vtx[i].vin[j].prevout.hash.ToString().c_str(),block.vtx[i].vin[j].prevout.n);
             }
             if ( signedmask != 0 && (notarizedheight != 0 || specialtx != 0) )
             {
