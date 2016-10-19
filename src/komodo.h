@@ -179,7 +179,6 @@ const char *Notaries[64][2] =
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos;
 std::string NOTARY_PUBKEY;
 uint256 NOTARIZED_HASH;
-//char *komodo_getspendscript(uint256 hash,int32_t n);
 struct nutxo_entry { uint256 txhash; uint64_t voutmask; int32_t notaryid; };
 struct nutxo_entry NUTXOS[10000];
 
@@ -206,35 +205,6 @@ int32_t komodo_nutxofind(uint256 txhash,int32_t vout)
     return(-1);
 }
 
-int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
-{
-    // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS
-    // -1 -> invalid, ie, prior to notarized block
-    CBlock block; int32_t i,height; char *coinbasestr;
-    if ( pindex == 0 )
-        return(0);
-    if ( ReadBlockFromDisk(block,pindex,1) == 0 )
-        return(0);
-    if ( block.vtx.size() > 0 )
-    {
-        height = pindex->nHeight;
-        coinbasestr = (char *)block.vtx[0].vout[0].scriptPubKey.ToString().c_str();
-        for (i=0; i<64; i++)
-        {
-            if ( Notaries[i][0] == 0 || Notaries[i][1] == 0 || Notaries[i][0][0] == 0 || Notaries[i][1][0] == 0 )
-                break;
-            if ( strncmp(Notaries[i][1],coinbasestr,66) == 0 )
-            {
-                //printf("Notary.[%d] %s ht.%d (%s)\n",i,Notaries[i][0],height,coinbasestr);
-                //*nBitsp = KOMODO_MINDIFF_NBITS;
-                return(1);
-            }
-        }
-    }
-    // compare against elected notary pubkeys as of height
-    return(0);
-}
-
 int32_t komodo_notaryfind(uint8_t *pubkey)
 {
     int32_t k; uint8_t notarypub[33];
@@ -244,11 +214,7 @@ int32_t komodo_notaryfind(uint8_t *pubkey)
             break;
         decode_hex(notarypub,33,(char *)Notaries[k][1]);
         if ( memcmp(notarypub,pubkey,33) == 0 )
-        {
-            //printf("%s ht.%d i.%d k.%d\n",Notaries[k][0],height,i,k);
-            //*nBitsp = KOMODO_MINDIFF_NBITS;
             return(k);
-        }
     }
     return(-1);
 }
@@ -259,6 +225,12 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
     if ( len == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
     {
         decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
+        for (k=0; k<33; k++)
+            printf("%02x",crypto777[k]);
+        printf(" crypto777 ");
+        for (k=0; k<scriptlen; k++)
+            printf("%02x",scriptbuf[k]);
+        printf(" <- script ht.%d i.%d j.%d cmp.%d\n",height,i,j,memcmp(crypto777,scriptbuf+1,33));
         if ( memcmp(crypto777,scriptbuf+1,33) == 0 )
         {
             *specialtxp = 1;
@@ -266,6 +238,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
         }
         else if ( (k= komodo_notaryfind(scriptbuf + 1)) >= 0 )
         {
+            printf("found notary.k%d\n",k);
             if ( notaryid < 0 )
             {
                 notaryid = k;
@@ -344,6 +317,35 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             }
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
+}
+
+int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
+{
+    // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS
+    // -1 -> invalid, ie, prior to notarized block
+    CBlock block; int32_t i,height; char *coinbasestr;
+    if ( pindex == 0 )
+        return(0);
+    if ( ReadBlockFromDisk(block,pindex,1) == 0 )
+        return(0);
+    if ( block.vtx.size() > 0 )
+    {
+        height = pindex->nHeight;
+        coinbasestr = (char *)block.vtx[0].vout[0].scriptPubKey.ToString().c_str();
+        for (i=0; i<64; i++)
+        {
+            if ( Notaries[i][0] == 0 || Notaries[i][1] == 0 || Notaries[i][0][0] == 0 || Notaries[i][1][0] == 0 )
+                break;
+            if ( strncmp(Notaries[i][1],coinbasestr,66) == 0 )
+            {
+                //printf("Notary.[%d] %s ht.%d (%s)\n",i,Notaries[i][0],height,coinbasestr);
+                //*nBitsp = KOMODO_MINDIFF_NBITS;
+                return(1);
+            }
+        }
+    }
+    // compare against elected notary pubkeys as of height
+    return(0);
 }
 
 int32_t komodo_is_notaryblock(CBlockHeader& blockhdr)
