@@ -173,6 +173,7 @@ const char *Notaries[64][2] =
     { "polycryptoblock_NA", "02708dcda7c45fb54b78469673c2587bfdd126e381654819c4c23df0e00b679622" },
     { "titomane_NA", "0387046d9745414fb58a0fa3599078af5073e10347e4657ef7259a99cb4f10ad47" },
     { "titomane_AE", "03cda6ca5c2d02db201488a54a548dbfc10533bdc275d5ea11928e8d6ab33c2185" },
+    { "kolo_EU", "03f5c08dadffa0ffcafb8dd7ffc38c22887bd02702a6c9ac3440deddcf2837692b" },
 };
 
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos;
@@ -269,7 +270,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         opretlen += iguana_rwbignum(0,&opret[opretlen],32,(uint8_t *)&kmdtxid);
                         opretlen += iguana_rwnum(0,&opret[opretlen],4,(uint8_t *)&notarizedheight);
                         opretlen += iguana_rwbignum(0,&opret[opretlen],32,(uint8_t *)&btctxid);
-                        printf("ht.%d NOTARIZED.%d KMD.%s BTC.%s\n",height,notarizedheight,kmdtxid.ToString().c_str(),btctxid.ToString().c_str());
+                        printf("ht.%d NOTARIZED.%d KMD.%s BTC.%s %s\n",height,notarizedheight,kmdtxid.ToString().c_str(),btctxid.ToString().c_str(),scriptstr);
                     }
                 }
                 for (k=0; k<64; k++)
@@ -291,7 +292,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         break;
                     }
                 }
-                printf("k.%d %s ht.%d txi.%d in.%d out.%d vout.%d (%s)\n",notaryid,k>=0?Notaries[notaryid][0]:"",height,i,numvins,numvouts,j,txhash.ToString().c_str());
+                if ( k >= 0 )
+                    printf("k.%d %s ht.%d txi.%d in.%d out.%d vout.%d (%s)\n",notaryid,k>=0?Notaries[notaryid][0]:"",height,i,numvins,numvouts,j,txhash.ToString().c_str());
             }
             for (j=0; j<numvins; j++)
             {
@@ -303,7 +305,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         }
         if ( signedmask != 0 || notarizedheight != 0 )
         {
-            printf("NOTARY SIGNED.%llx ht.%d txi.%d notaryht.%d\n",(long long)voutmask,height,i,notarizedheight);
+            printf("NOTARY SIGNED.%llx ht.%d txi.%d notaryht.%d\n",(long long)signedmask,height,i,notarizedheight);
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
 }
