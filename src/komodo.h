@@ -336,7 +336,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                             memcpy(scriptbuf,block.vtx[i].vout[j].scriptPubKey.data(),len);
                             if ( len == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
                             {
-                                for (k=0; k<33; j++)
+                                for (k=0; k<33; k++)
                                     printf("%02x",scriptbuf[k+1]);
                                 printf(" <- new notary.[%d]\n",j-1);
                             }
