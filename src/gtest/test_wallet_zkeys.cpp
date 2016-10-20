@@ -75,12 +75,12 @@ TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
 
     // Get temporary and unique path for file.
     // Note: / operator to append paths
-    boost::filesystem::path temp = boost::filesystem::temp_directory_path() /
-            boost::filesystem::unique_path();
-    const std::string path = temp.native();
+    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
+    boost::filesystem::create_directories(pathTemp);
+    mapArgs["-datadir"] = pathTemp.string();
 
     bool fFirstRun;
-    CWallet wallet(path);
+    CWallet wallet("wallet.dat");
     ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
 
     // No default CPubKey set
@@ -103,7 +103,7 @@ TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
     auto addr = sk.address();
     int64_t now = GetTime();
     CKeyMetadata meta(now);
-    CWalletDB db(path);
+    CWalletDB db("wallet.dat");
     db.WriteZKey(addr, sk, meta);
 
     // wallet should not be aware of key
@@ -150,12 +150,12 @@ TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
 
     // Get temporary and unique path for file.
     // Note: / operator to append paths
-    boost::filesystem::path temp = boost::filesystem::temp_directory_path() /
-            boost::filesystem::unique_path();
-    const std::string path = temp.native();
+    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
+    boost::filesystem::create_directories(pathTemp);
+    mapArgs["-datadir"] = pathTemp.string();
 
     bool fFirstRun;
-    CWallet wallet(path);
+    CWallet wallet("wallet_crypted.dat");
     ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
 
     // No default CPubKey set
@@ -187,7 +187,7 @@ TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
     auto paymentAddress2 = wallet.GenerateNewZKey();
 
     // Create a new wallet from the existing wallet path
-    CWallet wallet2(path);
+    CWallet wallet2("wallet_crypted.dat");
     ASSERT_EQ(DB_LOAD_OK, wallet2.LoadWallet(fFirstRun));
 
     // Confirm it's not the same as the other wallet

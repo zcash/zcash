@@ -1,4 +1,4 @@
-Zcash Core 1.0.0-beta2
+Zcash Core 1.0.0-rc1
 ====================
 
 [Zcash](https://z.cash/) is the Zcash client. It downloads and stores the entire history of Zcash transactions; depending on the speed of your computer and network connection, the synchronization process could take a day or more once the blockchain has reached a significant size.

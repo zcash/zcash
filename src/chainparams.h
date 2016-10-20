@@ -83,6 +83,8 @@ public:
     std::string GetFoundersRewardAddressAtIndex(int i) const;
     /** #1398 to return a fixed founders reward script for miner_tests */
     bool fMinerTestModeForFoundersRewardScript = false;
+    /** Enforce coinbase consensus rule in regtest mode */
+    void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
 protected:
     CChainParams() {}
 

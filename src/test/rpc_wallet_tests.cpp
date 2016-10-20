@@ -29,6 +29,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace std;
 using namespace json_spirit;
@@ -93,7 +94,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     CPubKey demoPubkey = pwalletMain->GenerateNewKey();
     CBitcoinAddress demoAddress = CBitcoinAddress(CTxDestination(demoPubkey.GetID()));
     Value retValue;
-    string strAccount = "walletDemoAccount";
+    string strAccount = "";
     string strPurpose = "receive";
     BOOST_CHECK_NO_THROW({ /*Initialize Wallet with an account */
         CWalletDB walletdb(pwalletMain->strWalletFile);
@@ -109,7 +110,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     /*********************************
      * 			setaccount
      *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("setaccount " + setaccountDemoAddress.ToString() + " nullaccount"));
+    BOOST_CHECK_NO_THROW(CallRPC("setaccount " + setaccountDemoAddress.ToString() + " \"\""));
+    /* Accounts are disabled */
+    BOOST_CHECK_THROW(CallRPC("setaccount " + setaccountDemoAddress.ToString() + " nullaccount"), runtime_error);
     /* t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV is not owned by the test wallet. */
     BOOST_CHECK_THROW(CallRPC("setaccount t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV nullaccount"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("setaccount"), runtime_error);
@@ -121,7 +124,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      *                  getbalance
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getbalance"));
-    BOOST_CHECK_NO_THROW(CallRPC("getbalance " + demoAddress.ToString()));
+    BOOST_CHECK_THROW(CallRPC("getbalance " + demoAddress.ToString()), runtime_error);
 
     /*********************************
      * 			listunspent
@@ -192,13 +195,16 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      * 		getnewaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getnewaddress"));
-    BOOST_CHECK_NO_THROW(CallRPC("getnewaddress getnewaddress_demoaccount"));
+    BOOST_CHECK_NO_THROW(CallRPC("getnewaddress \"\""));
+    /* Accounts are deprecated */
+    BOOST_CHECK_THROW(CallRPC("getnewaddress getnewaddress_demoaccount"), runtime_error);
 
     /*********************************
      * 		getaccountaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getaccountaddress \"\""));
-    BOOST_CHECK_NO_THROW(CallRPC("getaccountaddress accountThatDoesntExists")); // Should generate a new account
+    /* Accounts are deprecated */
+    BOOST_CHECK_THROW(CallRPC("getaccountaddress accountThatDoesntExists"), runtime_error);
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getaccountaddress " + strAccount));
     BOOST_CHECK(CBitcoinAddress(retValue.get_str()).Get() == demoAddress.Get());
 
@@ -234,8 +240,12 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_THROW(CallRPC("getaddressesbyaccount"), runtime_error);
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getaddressesbyaccount " + strAccount));
     Array arr = retValue.get_array();
-    BOOST_CHECK(arr.size() > 0);
-    BOOST_CHECK(CBitcoinAddress(arr[0].get_str()).Get() == demoAddress.Get());
+    BOOST_CHECK_EQUAL(4, arr.size());
+    bool notFound = true;
+    for (auto a : arr) {
+        notFound &= CBitcoinAddress(a.get_str()).Get() != demoAddress.Get();
+    }
+    BOOST_CHECK(!notFound);
 
     /*
      * getblocksubsidy
@@ -303,7 +313,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     BOOST_CHECK(addrs.size()==1);
     
     BOOST_CHECK_THROW(CallRPC("z_exportwallet"), runtime_error);
-    
+
+    BOOST_CHECK_THROW(CallRPC("z_exportwallet toomany args"), runtime_error);
+
    
     boost::filesystem::path temp = boost::filesystem::temp_directory_path() /
             boost::filesystem::unique_path();
@@ -352,6 +364,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     
     // error if no args
     BOOST_CHECK_THROW(CallRPC("z_importwallet"), runtime_error);
+
+    // error if too many args
+    BOOST_CHECK_THROW(CallRPC("z_importwallet toomany args"), runtime_error);
 
     // create a random key locally
     auto testSpendingKey = libzcash::SpendingKey::random();
@@ -421,6 +436,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     BOOST_CHECK_THROW(CallRPC("z_importkey"), runtime_error);   
     BOOST_CHECK_THROW(CallRPC("z_exportkey"), runtime_error);   
 
+    // error if too many args
+    BOOST_CHECK_THROW(CallRPC("z_importkey too many args"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_exportkey toomany args"), runtime_error);
+
     // wallet should currently be empty
     std::set<libzcash::PaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
@@ -481,6 +500,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     CZCPaymentAddress pa(newaddress);
     auto newAddr = pa.Get();
     BOOST_CHECK(pwalletMain->HaveSpendingKey(newAddr));
+
+    // Check if too many args
+    BOOST_CHECK_THROW(CallRPC("z_getnewaddress toomanyargs"), runtime_error);
 }
 
 
@@ -700,6 +722,9 @@ BOOST_AUTO_TEST_CASE(rpc_z_getoperations)
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     BOOST_CHECK(q->getOperationCount() == 0);
     
+    // Check if too many args
+    BOOST_CHECK_THROW(CallRPC("z_listoperationids toomany args"), runtime_error);
+
     Value retValue;
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listoperationids"));
     BOOST_CHECK(retValue.get_array().size() == 2);
@@ -1069,6 +1094,8 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     SecureString strWalletPass;
     strWalletPass.reserve(100);
     strWalletPass = "hello";
+
+    boost::filesystem::current_path(GetArg("-datadir","/tmp/thisshouldnothappen"));
     BOOST_CHECK(pwalletMain->EncryptWallet(strWalletPass));
     
     // Verify we can still list the keys imported

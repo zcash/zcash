@@ -69,7 +69,7 @@ enum RPCErrorCode
     //! Wallet errors
     RPC_WALLET_ERROR                = -4,  //! Unspecified problem with wallet (key not found etc.)
     RPC_WALLET_INSUFFICIENT_FUNDS   = -6,  //! Not enough funds in wallet or account
-    RPC_WALLET_INVALID_ACCOUNT_NAME = -11, //! Invalid account name
+    RPC_WALLET_ACCOUNTS_UNSUPPORTED = -11, //! Accounts are unsupported
     RPC_WALLET_KEYPOOL_RAN_OUT      = -12, //! Keypool ran out, call keypoolrefill first
     RPC_WALLET_UNLOCK_NEEDED        = -13, //! Enter the wallet passphrase with walletpassphrase first
     RPC_WALLET_PASSPHRASE_INCORRECT = -14, //! The wallet passphrase entered was incorrect

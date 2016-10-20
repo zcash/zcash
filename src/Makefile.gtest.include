@@ -4,11 +4,13 @@ bin_PROGRAMS += zcash-gtest
 # tool for generating our public parameters
 zcash_gtest_SOURCES = \
 	gtest/main.cpp \
+	gtest/test_checktransaction.cpp \
 	gtest/json_test_vectors.cpp \
+        gtest/json_test_vectors.h \
 	gtest/test_foundersreward.cpp \
+	gtest/test_wallet_zkeys.cpp \
 	gtest/test_jsonspirit.cpp \
 	gtest/test_tautology.cpp \
-	gtest/test_checktransaction.cpp \
 	gtest/test_equihash.cpp \
 	gtest/test_joinsplit.cpp \
 	gtest/test_keystore.cpp \
@@ -18,7 +20,6 @@ zcash_gtest_SOURCES = \
 	gtest/test_rpc.cpp \
 	gtest/test_circuit.cpp \
 	gtest/test_txid.cpp \
-	gtest/test_wallet_zkeys.cpp \
 	gtest/test_libzcash_utils.cpp \
 	gtest/test_proofs.cpp \
 	wallet/gtest/test_wallet.cpp
