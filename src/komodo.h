@@ -533,7 +533,7 @@ int32_t komodo_block2height(CBlock *block)
             printf("%02x",ptr[i]);
         for (i=0; i<4; i++)
             height = (height << 8) + ptr[i+2];
-        printf(" <- coinbase.%d ht.%d\n",block->vtx[0].vin[0].scriptSig.size(),height);
+        printf(" <- coinbase.%d ht.%d\n",(int32_t)block->vtx[0].vin[0].scriptSig.size(),height);
     }
     return(height);
 }
