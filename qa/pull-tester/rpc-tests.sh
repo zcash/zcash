@@ -42,6 +42,7 @@ testScriptsExt=(
     'hardforkdetection.py'
     'invalidateblock.py'
     'keypool.py'
+    'p2p-mempool.py'
     'receivedby.py'
     'reindex.py'
     'rpcbind_test.py'
