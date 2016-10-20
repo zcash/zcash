@@ -3068,11 +3068,11 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         // Don't accept any forks from the main chain prior to last checkpoint
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         if (pcheckpoint && nHeight < pcheckpoint->nHeight)
-            return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d)", __func__, nHeight));
+            return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
         else if ( nHeight < NOTARIZED_HEIGHT )
         {
             fprintf(stderr,"nHeight.%d < NOTARIZED_HEIGHT.%d\n",nHeight,NOTARIZED_HEIGHT);
-            return state.DoS(100, error("%s: forked chain older than last notarized (height %d)", __func__, NOTARIZED_HEIGHT));
+            return state.DoS(100, error("%s: forked chain older than last notarized (height %d) vs %d", __func__,nHeight, NOTARIZED_HEIGHT));
         }
         else if ( nHeight == NOTARIZED_HEIGHT && memcmp(&hash,&NOTARIZED_HASH,sizeof(hash)) != 0 )
         {

@@ -390,8 +390,9 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
 
     CAmount nResult = 0;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
+    {
         nResult += GetOutputFor(tx.vin[i]).nValue;
-
+    }
     nResult += tx.GetJoinSplitValueIn();
 
     return nResult;
