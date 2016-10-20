@@ -520,6 +520,10 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 
 int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33)
 {
+    int32_t i;
+    for (i=0; i<33; i++)
+        printf("%02x",pubkey33[i]);
+    printf(" komodo_heightnotary.%d\n",height);
     return(0);
     // -1 if not notary, 0 if notary, 1 if special notary
 }
@@ -533,7 +537,10 @@ int32_t komodo_block2height(CBlock *block)
             printf("%02x",ptr[i]);
         n = ptr[0];
         for (i=0; i<n; i++)
+        {
             height = (height << 8) + ptr[i+1];
+            printf("(%02x %d) ",ptr[i+1],height);
+        }
         printf(" <- coinbase.%d ht.%d\n",(int32_t)block->vtx[0].vin[0].scriptSig.size(),height);
     }
     return(height);
