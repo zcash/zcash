@@ -307,7 +307,7 @@ public:
     const uint32_t nLockTime;
     const std::vector<JSDescription> vjoinsplit;
     const uint256 joinSplitPubKey;
-    const joinsplit_sig_t joinSplitSig;
+    const joinsplit_sig_t joinSplitSig = {0};
 
     /** Construct a CTransaction that qualifies as IsNull() */
     CTransaction();
