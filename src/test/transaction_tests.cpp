@@ -367,8 +367,6 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
         test.anchor = GetRandHash();
         BOOST_CHECK(!test.Verify(*p, pubKeyHash));
     }
-
-    delete p;
 }
 
 BOOST_AUTO_TEST_CASE(test_simple_joinsplit_invalidity)

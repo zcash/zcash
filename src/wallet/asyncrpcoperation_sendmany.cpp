@@ -29,6 +29,23 @@
 
 using namespace libzcash;
 
+int find_output(Object obj, int n) {
+    Value outputMapValue = find_value(obj, "outputmap");
+    if (outputMapValue.type() != array_type) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Missing outputmap for JoinSplit operation");
+    }
+
+    Array outputMap = outputMapValue.get_array();
+    assert(outputMap.size() == ZC_NUM_JS_OUTPUTS);
+    for (size_t i = 0; i < outputMap.size(); i++) {
+        if (outputMap[i] == n) {
+            return i;
+        }
+    }
+
+    throw std::logic_error("n is not present in outputmap");
+}
+
 AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         std::string fromAddress,
         std::vector<SendManyRecipient> tOutputs,
@@ -372,6 +389,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
      */
     Object obj;
     CAmount jsChange = 0;   // this is updated after each joinsplit
+    int changeOutputIndex = -1; // this is updated after each joinsplit if jsChange > 0
     bool minersFeeProcessed = false;
 
     if (t_outputs_total > 0) {
@@ -429,6 +447,10 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             }
 
             obj = perform_joinsplit(info, outPoints);
+
+            if (jsChange > 0) {
+                changeOutputIndex = find_output(obj, 1);
+            }
         }
     }
 
@@ -442,9 +464,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         // Keep track of treestate within this transaction 
         boost::unordered_map<uint256, ZCIncrementalMerkleTree, CCoinsKeyHasher> intermediates;
         std::vector<uint256> previousCommitments;
-
-        // NOTE: Randomization of input and output order could break this in future
-        const int changeOutputIndex = 1;
         
         while (zOutputsDeque.size() > 0) {
             AsyncJoinSplitInfo info;
@@ -483,7 +502,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                     throw JSONRPCError(RPC_WALLET_ERROR, "Could not find previous JoinSplit anchor");
                 }
                 
-                // NOTE: We assume the last commitment, output 1, is the change we want
                 for (const uint256& commitment : prevJoinSplit.commitments) {
                     tree.append(commitment);
                     previousCommitments.push_back(commitment);                   
@@ -645,6 +663,10 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             }
 
             obj = perform_joinsplit(info, witnesses, jsAnchor);
+
+            if (jsChange > 0) {
+                changeOutputIndex = find_output(obj, 1);
+            }
         }
     }
 
@@ -845,11 +867,20 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
             );
 
     // Generate the proof, this can take over a minute.
-    JSDescription jsdesc(*pzcashParams,
+    boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs
+            {info.vjsin[0], info.vjsin[1]};
+    boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs
+            {info.vjsout[0], info.vjsout[1]};
+    boost::array<size_t, ZC_NUM_JS_INPUTS> inputMap;
+    boost::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
+    JSDescription jsdesc = JSDescription::Randomized(
+            *pzcashParams,
             joinSplitPubKey_,
             anchor,
-            {info.vjsin[0], info.vjsin[1]},
-            {info.vjsout[0], info.vjsout[1]},
+            inputs,
+            outputs,
+            inputMap,
+            outputMap,
             info.vpub_old,
             info.vpub_new,
             !this->testmode);
@@ -910,10 +941,21 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
         encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }
 
+    Array arrInputMap;
+    Array arrOutputMap;
+    for (size_t i = 0; i < ZC_NUM_JS_INPUTS; i++) {
+        arrInputMap.push_back(inputMap[i]);
+    }
+    for (size_t i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
+        arrOutputMap.push_back(outputMap[i]);
+    }
+
     Object obj;
     obj.push_back(Pair("encryptednote1", encryptedNote1));
     obj.push_back(Pair("encryptednote2", encryptedNote2));
     obj.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
+    obj.push_back(Pair("inputmap", arrInputMap));
+    obj.push_back(Pair("outputmap", arrOutputMap));
     return obj;
 }
 

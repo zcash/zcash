@@ -41,6 +41,30 @@ JSDescription::JSDescription(ZCJoinSplit& params,
     );
 }
 
+JSDescription JSDescription::Randomized(
+            ZCJoinSplit& params,
+            const uint256& pubKeyHash,
+            const uint256& anchor,
+            boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+            boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+            boost::array<size_t, ZC_NUM_JS_INPUTS>& inputMap,
+            boost::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap,
+            CAmount vpub_old,
+            CAmount vpub_new,
+            bool computeProof,
+            std::function<int(int)> gen)
+{
+    // Randomize the order of the inputs and outputs
+    inputMap = {0, 1};
+    outputMap = {0, 1};
+    MappedShuffle(inputs.begin(), inputMap.begin(), ZC_NUM_JS_INPUTS, gen);
+    MappedShuffle(outputs.begin(), outputMap.begin(), ZC_NUM_JS_OUTPUTS, gen);
+
+    return JSDescription(
+        params, pubKeyHash, anchor, inputs, outputs,
+        vpub_old, vpub_new, computeProof);
+}
+
 bool JSDescription::Verify(
     ZCJoinSplit& params,
     const uint256& pubKeyHash
