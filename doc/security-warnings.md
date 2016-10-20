@@ -44,6 +44,11 @@ The REST interface is a feature inherited from upstream Bitcoin.  By default,
 it is disabled. We do not recommend you enable it until it has undergone a
 security review.
 
+RPC Interface
+---------------
+
+If the client knows the RPC password, they have full access to the node. Users should choose a strong RPC password, and refrain from changing the default setting that only allows RPC connections from localhost. A remote host would enable a MITM to execute arbitrary RPC commands. For multi-user services that use one or more zcashd instances on the backend, the parameters passed in by users should be controlled to prevent confused-deputy attacks which could spend from any keys held by that zcashd.
+
 Block Chain Reorganizations
 ----------------------------
 
