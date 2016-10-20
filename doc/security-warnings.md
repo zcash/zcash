@@ -14,6 +14,34 @@ make proving keys generated on 64-bit systems unusable on 32-bit and big-endian
 systems. It's unclear if a warning will be issued in this case, or if the
 proving system will be silently compromised.
 
+Wallet Encryption
+-----------------
+
+Wallet encryption is disabled, for several reasons:
+
+- Encrypted wallets are unable to correctly detect shielded spends (due to the
+  nature of unlinkability of JoinSplits) and can incorrectly show larger
+  available shielded balances until the next time the wallet is unlocked. This
+  problem was not limited to failing to recognize the spend; it was possible for
+  the shown balance to increase by the amount of change from a spend, without
+  deducting the spent amount.
+
+- While encrypted wallets prevent spending of funds, they do not maintain the
+  shielding properties of JoinSplits (due to the need to detect spends). That
+  is, someone with access to an encrypted wallet.dat has full visibility of
+  your entire transaction graph (other than newly-detected spends, which suffer
+  from the earlier issue).
+
+- We were concerned about the resistance of the algorithm used to derive wallet
+  encryption keys (inherited from Bitcoin) to dictionary attacks by a powerful
+  attacker. If and when we re-enable wallet encryption, it is likely to be with
+  a modern passphrase-based key derivation algorithm designed for greater
+  resistance to dictionary attack, such as Argon2i.
+
+You should use full-disk encryption (or encryption of your home directory) to
+protect your wallet at rest, and should assume (even unprivileged) users who are
+runnng on your OS can read your wallet.dat file.
+
 Side-Channel Attacks
 --------------------
 

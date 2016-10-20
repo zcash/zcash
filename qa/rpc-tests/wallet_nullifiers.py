@@ -10,6 +10,10 @@ from time import *
 
 class WalletNullifiersTest (BitcoinTestFramework):
 
+    def setup_nodes(self):
+        return start_nodes(4, self.options.tmpdir,
+                           extra_args=[['-developerencryptwallet']] * 4)
+
     def run_test (self):
         # add zaddr to node 0
         myzaddr0 = self.nodes[0].z_getnewaddress()
