@@ -119,9 +119,9 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         {
             if ( pubkey33[i] != 0 )
                 nonz++;
-            fprintf(stderr,"%02x",pubkey33[i]);
+            //fprintf(stderr,"%02x",pubkey33[i]);
         }
-        fprintf(stderr," height.%d special.%d nonz.%d\n",height,special,nonz);
+        //fprintf(stderr," height.%d special.%d nonz.%d\n",height,special,nonz);
         if ( nonz == 0 )
             return(true);
         if ( special < 0 ) // non-notary node
