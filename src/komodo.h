@@ -505,7 +505,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         memset(&txhash,0,sizeof(txhash));
                         komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0);
                     }
-                    printf("new notaries.%d newheight.%d from height.%d\n",numvouts-1,KOMODO_PUBKEYHEIGHT(height),height);
+                    printf("new notaries.%d newheight.%d from height.%d\n",numvouts-1,KOMODO_PUBKEYS_HEIGHT(height),height);
                 }
             }
         }
