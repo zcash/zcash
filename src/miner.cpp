@@ -455,6 +455,7 @@ void static BitcoinMiner(CWallet *pwallet)
     unsigned int k = chainparams.EquihashK();
 
     std::string solver = GetArg("-equihashsolver", "default");
+    assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
 
     std::mutex m_cs;
@@ -564,6 +565,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     return cancelSolver;
                 };
 
+                // TODO: factor this out into a function with the same API for each solver.
                 if (solver == "tromp") {
                     // Create solver and initialize it.
                     equi eq(1);
