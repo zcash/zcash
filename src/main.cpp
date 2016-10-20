@@ -3130,7 +3130,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         return true;
     }
 
-    if (!CheckBlockHeader(pindex->nHeight,block, block, state))
+    if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,block, block, state))
         return false;
 
     // Get prev block index
