@@ -352,14 +352,12 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         pblock->hashReserved   = uint256();
         UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
-        extern int32_t IS_KOMODO_NOTARY;
-        if ( 0 && IS_KOMODO_NOTARY != 0 )
-            pblock->nBits = KOMODO_MINDIFF_NBITS;
-        else pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
+        pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
         CValidationState state;
+//need to fix this and also ht specific notarized ht
         if ( 0 && !TestBlockValidity(state, *pblock, pindexPrev, false, false))
             throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
     }
