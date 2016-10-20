@@ -311,7 +311,7 @@ void komodo_nutxoadd(int32_t height,int32_t notaryid,uint256 txhash,uint64_t vou
     }
 }
 
-int32_t komodo_nutxofind(uint256 txhash,int32_t vout) // change to HASH_FIND()
+int32_t komodo_nutxofind(int32_t height,uint256 txhash,int32_t vout) // change to HASH_FIND()
 {
     int32_t i;
     for (i=0; i<Num_nutxos; i++)
