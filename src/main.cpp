@@ -2973,7 +2973,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
 
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
-    if (!CheckBlockHeader(block, block, state, fCheckPOW))
+    if (!CheckBlockHeader(height,block, block, state, fCheckPOW))
         return false;
 
     // Check the merkle root.
@@ -3130,7 +3130,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         return true;
     }
 
-    if (!CheckBlockHeader(block, block, state))
+    if (!CheckBlockHeader(pindex->nHeight,block, block, state))
         return false;
 
     // Get prev block index
