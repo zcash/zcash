@@ -317,7 +317,7 @@ void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txh
     struct nutxo_entry *np;
     if ( numvouts > 1 && notaryid < 64 ) // change to ADD_HASH() and file based
     {
-        np = calloc(1,sizeof(*np));
+        np = (struct nutxo_entry *)calloc(1,sizeof(*np));
         np->height = height;
         np->txhash = txhash;
         np->voutmask = voutmask;
@@ -340,7 +340,7 @@ int32_t komodo_nutxofind(int32_t height,uint256 txhash,int32_t vout) // change t
             return(NUTXOS[i].notaryid);
     }*/
     HASH_FIND(hh,NUTXOS,&txhash,sizeof(txhash),np);
-    if ( np != 0 && ((1LL << vout) & NUTXOS[i].voutmask) != 0 )
+    if ( np != 0 && ((1LL << vout) & np->voutmask) != 0 )
         return(np->notaryid);
     return(-1);
 }
