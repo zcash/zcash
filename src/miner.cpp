@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "miner.h"
+#include "trompequihash/equi_miner.h"
 
 #include "amount.h"
 #include "chainparams.h"
@@ -29,6 +30,10 @@
 #include <boost/thread.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <mutex>
+
+#ifndef USE_TROMP_EQUIHASH
+// #define USE_TROMP_EQUIHASH
+#endif
 
 using namespace std;
 
@@ -504,29 +509,6 @@ void static BitcoinMiner(CWallet *pwallet)
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
 
             while (true) {
-                // Hash state
-                crypto_generichash_blake2b_state state;
-                EhInitialiseState(n, k, state);
-
-                // I = the block header minus nonce and solution.
-                CEquihashInput I{*pblock};
-                CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-                ss << I;
-
-                // H(I||...
-                crypto_generichash_blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
-
-                // H(I||V||...
-                crypto_generichash_blake2b_state curr_state;
-                curr_state = state;
-                crypto_generichash_blake2b_update(&curr_state,
-                                                  pblock->nNonce.begin(),
-                                                  pblock->nNonce.size());
-
-                // (x_1, x_2, ...) = A(I, V, n, k)
-                LogPrint("pow", "Running Equihash solver with nNonce = %s\n",
-                         pblock->nNonce.ToString());
-
                 std::function<bool(std::vector<unsigned char>)> validBlock =
                         [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
                         (std::vector<unsigned char> soln) {
@@ -559,6 +541,86 @@ void static BitcoinMiner(CWallet *pwallet)
                     std::lock_guard<std::mutex> lock{m_cs};
                     return cancelSolver;
                 };
+
+
+#ifdef USE_TROMP_EQUIHASH
+            	//////////////////////////////////////////////////////////////////////////
+            	// TROMP EQ SOLVER START
+              	// I = the block header minus nonce and solution.
+                CEquihashInput I{*pblock};
+                CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                ss << I;
+              	const char *header = (char *)&ss[0];
+              	unsigned int headerLen = ss.size();
+
+                // Nonce
+                // Nonce is u256 convert it to u32
+                const char *nonce = (const char*) pblock->nNonce.begin();
+
+              	// Create solver and initialize it with header and nonce.
+              	equi eq(1);
+              	eq.setnonce(header, headerLen, nonce, pblock->nNonce.size());
+
+                LogPrintf("Running TrompEquihash solver with nNonceInBlock=%s\n",
+                  		 pblock->nNonce.ToString());
+
+                // Intialization done, start algo driver.
+                eq.digit0(0);
+                eq.xfull = eq.bfull = eq.hfull = 0;
+                eq.showbsizes(0);
+                for (u32 r = 1; r < WK; r++) {
+                	r&1 ? eq.digitodd(r, 0) : eq.digiteven(r, 0);
+                	eq.xfull = eq.bfull = eq.hfull = 0;
+                	eq.showbsizes(r);
+                }
+                eq.digitK(0);
+
+                // Convert solution indices to charactar array(decompress) and pass it to validBlock method.
+                u32 nsols = 0;
+                for (unsigned s = 0; s < eq.nsols; s++) {
+                	nsols++;
+                    LogPrintf("Checking solution %d \n", nsols);
+                    std::vector<eh_index> index_vector(PROOFSIZE);
+                    for (u32 i = 0; i < PROOFSIZE; i++) {
+                    	index_vector[i] = eq.sols[s][i];
+                    }
+                    std::vector<unsigned char> sol_char = GetMinimalFromIndices(index_vector, DIGITBITS);
+
+                    if (validBlock(sol_char)) {
+                    	// If we find a POW solution, do not try other solutions
+                      	// because they become invalid as we created a new block in blockchain.
+                      	  break;
+                    }
+                }
+                //////////////////////////////////////////////////////////////////////
+                // TROMP EQ SOLVER END
+                //////////////////////////////////////////////////////////////////////
+
+#else
+                // Use default mining algorithm.
+                // Hash state
+                crypto_generichash_blake2b_state state;
+                EhInitialiseState(n, k, state);
+
+                // I = the block header minus nonce and solution.
+                CEquihashInput I{*pblock};
+                CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                ss << I;
+
+                // H(I||...
+                crypto_generichash_blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
+
+                // H(I||V||...
+                crypto_generichash_blake2b_state curr_state;
+                curr_state = state;
+                crypto_generichash_blake2b_update(&curr_state,
+                                                  pblock->nNonce.begin(),
+                                                  pblock->nNonce.size());
+
+                // (x_1, x_2, ...) = A(I, V, n, k)
+                LogPrint("pow", "Running Equihash solver with nNonce = %s\n",
+                         pblock->nNonce.ToString());
+
                 try {
                     // If we find a valid block, we rebuild
                     if (EhOptimisedSolve(n, k, curr_state, validBlock, cancelled))
@@ -568,6 +630,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     std::lock_guard<std::mutex> lock{m_cs};
                     cancelSolver = false;
                 }
+#endif
 
                 // Check for stop or if block needs to be rebuilt
                 boost::this_thread::interruption_point();
