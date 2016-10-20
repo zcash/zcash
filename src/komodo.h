@@ -22,7 +22,7 @@
 
 #define KOMODO_TESTNET_EXPIRATION 60000
 #define KOMODO_ELECTION_GAP 1000
-#define KOMODO_PUBKEYS_HEIGHT(height) (((((height)+KOMODO_ELECTION_GAP*.5)/KOMODO_ELECTION_GAP) + 1) * KOMODO_ELECTION_GAP)
+#define KOMODO_PUBKEYS_HEIGHT(height) ((int32_t)(((((height)+KOMODO_ELECTION_GAP*.5)/KOMODO_ELECTION_GAP) + 1) * KOMODO_ELECTION_GAP))
 
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos,KOMODO_NUMNOTARIES = 64;
 std::string NOTARY_PUBKEY;
@@ -33,6 +33,7 @@ struct nutxo_entry { UT_hash_handle hh; uint256 txhash; uint64_t voutmask; int32
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; } Pubkeys[10000];
 
+int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts);
 // add opreturn funcid
 // pricefeeds
 
@@ -43,7 +44,7 @@ int32_t komodo_threshold(int32_t height,uint64_t signedmask)
     for (i=0; i<numnotaries; i++)
         if ( ((1LL << i) & signedmask) != 0 )
             wt++;
-    if ( wt > (numnotaries >> 1) || (wt > numnotaries/3 && (signedmask & 3) != 0) )
+    if ( wt > (numnotaries >> 1) || (wt > numnotaries/5 && (signedmask & 3) != 0) )
         return(1); // N/2+1 || N/3 + devsig
     else return(0);
 }
@@ -241,7 +242,7 @@ void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
     memset(&N,0,sizeof(N));
     for (k=0; k<num; k++)
     {
-        kp = calloc(1,sizeof(*kp));
+        kp = (struct knotary_entry *)calloc(1,sizeof(*kp));
         memcpy(kp->pubkey,pubkeys[k],33);
         kp->notaryid = k;
         HASH_ADD_KEYPTR(hh,N.Notaries,kp->pubkey,33,kp);
@@ -270,7 +271,7 @@ int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33)
         if ( (numnotaries= Pubkeys[height/KOMODO_ELECTION_GAP].numnotaries) > 0 )
         {
             modval = ((height % numnotaries) == kp->notaryid);
-            printf("found notary.%d ht.%d modval.%d\n",kp->notaryid,height);
+            printf("found notary.%d ht.%d modval.%d\n",kp->notaryid,height,modval);
         } else printf("unexpected zero notaries at height.%d\n",height);
     }
     return(modval);
