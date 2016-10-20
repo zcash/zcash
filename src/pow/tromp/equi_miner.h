@@ -1,5 +1,5 @@
 // Equihash solver
-// Copyright (c) 2016 John Tromp
+// Copyright (c) 2016 John Tromp, The Zcash developers
 
 // Fix N, K, such that n = N/(k+1) is integer
 // Fix M = 2^{n+1} hashes each of length N bits,
@@ -18,7 +18,7 @@
 // the i*n 0s, each bucket having 4 * 2^RESTBITS slots,
 // twice the number of subtrees expected to land there.
 
-#include "equi.h"
+#include "pow/tromp/equi.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -27,7 +27,7 @@
 typedef uint16_t u16;
 typedef uint64_t u64;
 
-#ifdef ATOMIC
+#ifdef EQUIHASH_TROMP_ATOMIC
 #include <atomic>
 typedef std::atomic<u32> au32;
 #else
@@ -204,7 +204,7 @@ u32 min(const u32 a, const u32 b) {
 }
 
 struct equi {
-  blake2b_state blake_ctx;
+  crypto_generichash_blake2b_state blake_ctx;
   htalloc hta;
   bsizes *nslots; // PUT IN BUCKET STRUCT
   proof *sols;
@@ -228,13 +228,13 @@ struct equi {
     free(nslots);
     free(sols);
   }
-  void setnonce(const char *header, const u32 headerlen, const u32 nonce) {
-    setheader(&blake_ctx, header, headerlen, nonce);
+  void setstate(const crypto_generichash_blake2b_state *ctx) {
+    blake_ctx = *ctx;
     memset(nslots, 0, NBUCKETS * sizeof(au32)); // only nslots[0] needs zeroing
     nsols = 0;
   }
   u32 getslot(const u32 r, const u32 bucketi) {
-#ifdef ATOMIC
+#ifdef EQUIHASH_TROMP_ATOMIC
     return std::atomic_fetch_add_explicit(&nslots[r&1][bucketi], 1U, std::memory_order_relaxed);
 #else
     return nslots[r&1][bucketi]++;
@@ -282,7 +282,7 @@ struct equi {
     for (u32 i=1; i<PROOFSIZE; i++)
       if (prf[i] <= prf[i-1])
         return;
-#ifdef ATOMIC
+#ifdef EQUIHASH_TROMP_ATOMIC
     u32 soli = std::atomic_fetch_add_explicit(&nsols, 1U, std::memory_order_relaxed);
 #else
     u32 soli = nsols++;
@@ -431,14 +431,14 @@ struct equi {
 
   void digit0(const u32 id) {
     uchar hash[HASHOUT];
-    blake2b_state state;
+    crypto_generichash_blake2b_state state;
     htlayout htl(this, 0);
     const u32 hashbytes = hashsize(0);
     for (u32 block = id; block < NBLOCKS; block += nthreads) {
       state = blake_ctx;
       u32 leb = htole32(block);
-      blake2b_update(&state, (uchar *)&leb, sizeof(u32));
-      blake2b_final(&state, hash, HASHOUT);
+      crypto_generichash_blake2b_update(&state, (uchar *)&leb, sizeof(u32));
+      crypto_generichash_blake2b_final(&state, hash, HASHOUT);
       for (u32 i = 0; i<HASHESPERBLAKE; i++) {
         const uchar *ph = hash + i * WN/8;
 #if BUCKBITS == 16 && RESTBITS == 4
