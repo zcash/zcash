@@ -605,4 +605,21 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     }
 }
 
+uint32_t komodo_txtime(uint256 hash)
+{
+    CTransaction tx;
+    uint256 hashBlock;
+    if (!GetTransaction(hash, tx, hashBlock, true))
+        return(0);
+    if (!hashBlock.IsNull()) {
+        BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
+        if (mi != mapBlockIndex.end() && (*mi).second)
+        {
+            CBlockIndex* pindex = (*mi).second;
+            if (chainActive.Contains(pindex))
+                return(pindex->GetBlockTime());
+        }
+    }
+    return(0);
+}
 #endif

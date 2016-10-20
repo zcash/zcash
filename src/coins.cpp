@@ -383,6 +383,8 @@ const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
     return coins->vout[input.prevout.n].scriptPubKey;
 }
 
+uint32_t komodo_txtime(uint256 hash);
+
 CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
 {
     if (tx.IsCoinBase())
@@ -391,6 +393,7 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
     CAmount nResult = 0;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
+        fprintf(stderr,"i.%d time.%u\n",i,komodo_txtime(tx.vin[i].prevout.hash));
         nResult += GetOutputFor(tx.vin[i]).nValue;
     }
     nResult += tx.GetJoinSplitValueIn();
