@@ -40,8 +40,6 @@ bool read_block(const std::string& filename, CBlock& block)
     return true;
 }
 
-int32_t komodo_block2height(CBlock *block)
-
 BOOST_AUTO_TEST_CASE(May15)
 {
     // Putting a 1MB binary file in the git repository is not a great
@@ -58,7 +56,7 @@ BOOST_AUTO_TEST_CASE(May15)
 
         // After May 15'th, big blocks are OK:
         forkingBlock.nTime = tMay15; // Invalidates PoW
-        BOOST_CHECK(CheckBlock(komodo_block2height(&forkingBlock),forkingBlock, state, false, false));
+        BOOST_CHECK(CheckBlock(0,forkingBlock, state, false, false));
     }
 
     SetMockTime(0);
