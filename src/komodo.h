@@ -523,12 +523,13 @@ int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33)
 {
     // -1 if not notary, 0 if notary, 1 if special notary
     int32_t i,notaryid,modval = -1;
-    for (i=0; i<33; i++)
-        printf("%02x",pubkey33[i]);
+    //for (i=0; i<33; i++)
+    //    printf("%02x",pubkey33[i]);
     if ( (notaryid= komodo_notaryfind(pubkey33)) >= 0 )
         modval = ((height % KOMODO_NUMNOTARIES) == notaryid);
-    printf(" komodo_heightnotary.%d notaryid.%d mod.%d\n",height,notaryid,modval);
-    return(0);
+    else return(-1);
+    //printf(" komodo_heightnotary.%d notaryid.%d mod.%d\n",height,notaryid,modval);
+    return(modval);
 }
 
 int32_t komodo_block2height(CBlock *block)
@@ -562,17 +563,15 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        printf("call readblock\n");
         if ( ReadBlockFromDisk(block,(const CBlockIndex *)pindex) != 0 )
         {
-            printf("from index2pubkey33\n");
             komodo_block2pubkey33(pubkey33,block);
         }
     }
     else
     {
         // height -> pubkey33
-        printf("komodo_index2pubkey33 height.%d need to get pubkey33\n",height);
+        printf("unexpected komodo_index2pubkey33 height.%d need to get pubkey33\n",height);
     }
 }
 
