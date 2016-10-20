@@ -112,7 +112,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     arith_uint256 bnTarget;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
-    if ( height >= 33325 && (special= komodo_heightnotary(height,pubkey33)) != 0 ) // 0 -> non-special notary
+    if ( (special= komodo_heightnotary(height,pubkey33)) != 0 ) // 0 -> non-special notary
     {
         int32_t i,nonz = 0;
         for (i=0; i<33; i++)
@@ -124,14 +124,12 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         //fprintf(stderr," height.%d special.%d nonz.%d\n",height,special,nonz);
         if ( nonz == 0 )
             return(true);
-        if ( special < 0 ) // non-notary node
-            bnTarget /= 8;
-        else // special notary id == (height % numnotaries)
+        if ( special < 0 ) // special notary id == (height % numnotaries)
         {
             if (UintToArith256(hash) <= bnTarget) // accept normal diff
                 return true;
             bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-        }
+        } else bnTarget /= 8;
     }
     // Check range
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
