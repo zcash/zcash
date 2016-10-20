@@ -520,12 +520,14 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 
 int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33)
 {
-    int32_t i;
+    // -1 if not notary, 0 if notary, 1 if special notary
+    int32_t i,notaryid,modval = -1;
     for (i=0; i<33; i++)
         printf("%02x",pubkey33[i]);
-    printf(" komodo_heightnotary.%d\n",height);
+    if ( (notaryid= komodo_notaryfind(pubkey33)) >= 0 )
+        modval = ((height % numnotaries) == notaryid);
+    printf(" komodo_heightnotary.%d notaryid.%d mod.%d\n",height,notaryid,modval);
     return(0);
-    // -1 if not notary, 0 if notary, 1 if special notary
 }
 
 int32_t komodo_block2height(CBlock *block)
@@ -560,7 +562,10 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     if ( pindex != 0 )
     {
         if ( ReadBlockFromDisk(block,(const CBlockIndex *)pindex) != 0 )
+        {
+            printf("from index2pubkey33\n");
             komodo_block2pubkey33(pubkey33,block);
+        }
     }
     else
     {

@@ -307,6 +307,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
                 uint8_t pubkey33[33];
+                printf("from txdb\n");
                 komodo_index2pubkey33(pubkey33,pindexNew,pindexNew->nHeight);
                 if (!CheckProofOfWork(pindexNew->nHeight,pubkey33,pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
                     return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());

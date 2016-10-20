@@ -1351,6 +1351,7 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
         return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
     // Check the header
+    printf("from readblock\n");
     komodo_block2pubkey33(pubkey33,block);
     if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus())))
         return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
@@ -2961,6 +2962,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     
     // Check proof of work matches claimed amount
+    printf("from checkblockheader\n");
     komodo_index2pubkey33(pubkey33,pindex,height);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus()) )
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");
