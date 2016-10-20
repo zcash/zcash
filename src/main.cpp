@@ -3169,7 +3169,11 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     CBlockIndex *&pindex = *ppindex;
     if (!AcceptBlockHeader(block, state, &pindex))
         return false;
-
+    if ( pindex == 0 )
+    {
+        fprintf(stderr,"AcceptBlock error null pindex\n");
+        return false;
+    }
     // Try to process all requested blocks that we don't have, but only
     // process an unrequested block if it's new and has enough work to
     // advance our tip, and isn't too many blocks ahead.
