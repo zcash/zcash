@@ -115,7 +115,7 @@ Value getgenerate(const Array& params, bool fHelp)
     return GetBoolArg("-gen", false);
 }
 
-int32_t komodo_blockcheck(CBlock& block,uint32_t *nBitsp);
+extern uint8_t NOTARY_PUBKEY33[33];
 
 Value generate(const Array& params, bool fHelp)
 {
@@ -193,15 +193,8 @@ Value generate(const Array& params, bool fHelp)
             std::function<bool(std::vector<unsigned char>)> validBlock =
                     [&pblock](std::vector<unsigned char> soln)
             {
-                int32_t retval; uint32_t nBits;
                 pblock->nSolution = soln;
-                nBits = pblock->nBits;
-                if ( (retval= komodo_blockcheck(*pblock,&nBits)) == 0 )
-                {
-                    return CheckProofOfWork(pblock->GetHash(), nBits, Params().GetConsensus());
-                } else if ( retval < 0 ) // komodo rejects, ie. prior to notarized blockhash
-                    return(false);
-                return true;
+                return CheckProofOfWork(nHeight,NOTARY_PUBKEY33,pblock->GetHash(), pblock->nBits, Params().GetConsensus());
             };
             if (EhBasicSolveUncancellable(n, k, curr_state, validBlock))
                 goto endloop;

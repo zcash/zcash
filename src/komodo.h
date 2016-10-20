@@ -181,6 +181,7 @@ const char *Notaries[64][2] =
 
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos;
 std::string NOTARY_PUBKEY;
+uint8_t NOTARY_PUBKEY33[33];
 uint256 NOTARIZED_HASH,NOTARIZED_BTCHASH;
 struct nutxo_entry { uint256 txhash; uint64_t voutmask; int32_t notaryid; };
 struct nutxo_entry NUTXOS[10000];
@@ -205,6 +206,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
 #endif
     if ( fp == 0 )
     {
+        decode_hex(NOTARY_PUBKEY33,33,NOTARY_PUBKEY.ToString().c_str());
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
             while ( (func= fgetc(fp)) != EOF )
@@ -513,7 +515,19 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
     komodo_stateupdate(-pindex->nHeight,0,0,0,zero,0,0);
 }
 
-int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
+void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex)
+{
+    
+}
+
+void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
+{
+    uint8_t *ptr;
+    ptr = block.vtx[0].vout[0].scriptPubKey.data();
+    memcpy(pubkey33,ptr+1,33);
+}
+
+/*int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
 {
     // 1 -> valid notary block, change nBits to KOMODO_MINDIFF_NBITS
     // -1 -> invalid, ie, prior to notarized block
@@ -560,6 +574,6 @@ int32_t komodo_blockhdrcheck(CBlockHeader& blockhdr,uint32_t *nBitsp)
 int32_t komodo_blockcheck(CBlock& block,uint32_t *nBitsp)
 {
     return(komodo_blockhdrcheck(block,nBitsp));
-}
+}*/
 
 #endif

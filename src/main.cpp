@@ -1278,7 +1278,7 @@ bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock
 
     if (pindexSlow) {
         CBlock block;
-        if (ReadBlockFromDisk(block, pindexSlow,0)) {
+        if (ReadBlockFromDisk(block, pindexSlow)) {
             BOOST_FOREACH(const CTransaction &tx, block.vtx) {
                 if (tx.GetHash() == hash) {
                     txOut = tx;
@@ -1333,9 +1333,9 @@ bool WriteBlockToDisk(CBlock& block, CDiskBlockPos& pos, const CMessageHeader::M
     return true;
 }
 
-bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos,int32_t skipkomodo)
+bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
 {
-    int32_t retval=0; uint32_t nBits;
+    uint8_t pubkey33[33];
     block.SetNull();
 
     // Open history file to read
@@ -1350,22 +1350,16 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos,int32_t skipkomod
     catch (const std::exception& e) {
         return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
-
     // Check the header
-    nBits = block.nBits;
-    if ( skipkomodo != 0 || (retval= komodo_blockcheck(block,&nBits)) == 0 )
-    {
-        if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(block.GetHash(), nBits, Params().GetConsensus())))
-            return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
-    }
-    else if ( retval < 0 )
-        return(false);
+    komodo_block2pubkey33(pubkey33,block);
+    if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus())))
+        return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
     return true;
 }
 
-bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex,int32_t skipkomodo)
+bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
 {
-    if (!ReadBlockFromDisk(block, pindex->GetBlockPos(),skipkomodo))
+    if (!ReadBlockFromDisk(pindex->nHeight,block, pindex->GetBlockPos()))
         return false;
     if (block.GetHash() != pindex->GetBlockHash())
         return error("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for %s at %s",
@@ -2405,7 +2399,7 @@ bool static DisconnectTip(CValidationState &state) {
     mempool.check(pcoinsTip);
     // Read block from disk.
     CBlock block;
-    if (!ReadBlockFromDisk(block, pindexDelete,0))
+    if (!ReadBlockFromDisk(block, pindexDelete))
         return AbortNode(state, "Failed to read block");
     // Apply the block atomically to the chain state.
     uint256 anchorBeforeDisconnect = pcoinsTip->GetBestAnchor();
@@ -2468,7 +2462,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     int64_t nTime1 = GetTimeMicros();
     CBlock block;
     if (!pblock) {
-        if (!ReadBlockFromDisk(block, pindexNew,0))
+        if (!ReadBlockFromDisk(block, pindexNew))
             return AbortNode(state, "Failed to read block");
         pblock = &block;
     }
@@ -2956,25 +2950,20 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
     return true;
 }
 
-bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
+bool CheckBlockHeader(int32_t height,const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
 {
-    int32_t retval; uint32_t nBits;
+    uint8_t pubkey33[33];
     // Check timestamp
     if (block.GetBlockTime() > GetAdjustedTime() + 60)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
-    nBits = block.nBits;
-    if ( (retval= komodo_blockhdrcheck(*(CBlockHeader *)&block,&nBits)) == 0 )
-    {
-        // Check Equihash solution is valid
-        if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
-            return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
-        
-        // Check proof of work matches claimed amount
-        if ( fCheckPOW && !CheckProofOfWork(block.GetHash(), nBits, Params().GetConsensus()) )
-            return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");
-    }
-    else if ( retval < 0 ) // komodo rejects block, ie. prior to notarized blockhash
-        return(false);
+    // Check Equihash solution is valid
+    if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
+        return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
+    
+    // Check proof of work matches claimed amount
+    komodo_block2pubkey33(pubkey33,block);
+    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
+        return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");
     return true;
 }
 
@@ -3606,7 +3595,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
             break;
         CBlock block;
         // check level 0: read from disk
-        if (!ReadBlockFromDisk(block, pindex,0))
+        if (!ReadBlockFromDisk(block, pindex))
             return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 1: verify block validity
         if (nCheckLevel >= 1 && !CheckBlock(block, state))
@@ -3646,7 +3635,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
             uiInterface.ShowProgress(_("Verifying blocks..."), std::max(1, std::min(99, 100 - (int)(((double)(chainActive.Height() - pindex->nHeight)) / (double)nCheckDepth * 50))));
             pindex = chainActive.Next(pindex);
             CBlock block;
-            if (!ReadBlockFromDisk(block, pindex,0))
+            if (!ReadBlockFromDisk(block, pindex))
                 return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
             if (!ConnectBlock(block, state, pindex, coins))
                 return error("VerifyDB(): *** found unconnectable block at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
@@ -3819,7 +3808,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                     std::pair<std::multimap<uint256, CDiskBlockPos>::iterator, std::multimap<uint256, CDiskBlockPos>::iterator> range = mapBlocksUnknownParent.equal_range(head);
                     while (range.first != range.second) {
                         std::multimap<uint256, CDiskBlockPos>::iterator it = range.first;
-                        if (ReadBlockFromDisk(block, it->second,0))
+                        if (ReadBlockFromDisk(block, it->second))
                         {
                             LogPrintf("%s: Processing out of order child %s of %s\n", __func__, block.GetHash().ToString(),
                                     head.ToString());
@@ -4178,7 +4167,7 @@ void static ProcessGetData(CNode* pfrom)
                 {
                     // Send block from disk
                     CBlock block;
-                    if (!ReadBlockFromDisk(block, (*mi).second,0))
+                    if (!ReadBlockFromDisk(block, (*mi).second))
                         assert(!"cannot load block from disk");
                     if (inv.type == MSG_BLOCK)
                         pfrom->PushMessage("block", block);
