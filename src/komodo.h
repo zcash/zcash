@@ -291,7 +291,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
             if ( fwrite(&txhash,1,sizeof(txhash),fp) != sizeof(txhash) )
                 errs++;
         }
-        else
+        else if ( height != 0 )
         {
             //printf("func N ht.%d errs.%d\n",NOTARIZED_HEIGHT,errs);
             fputc('N',fp);
@@ -538,8 +538,9 @@ int32_t komodo_block2height(CBlock *block)
         n = ptr[0];
         for (i=0; i<n; i++)
         {
-            height = (height << 8) + ptr[i+1];
-            printf("(%02x %d) ",ptr[i+1],height);
+            //03bb81000101(bb 187) (81 48001) (00 12288256)  <- coinbase.6 ht.12288256
+            height += ((uint32_t)ptr[i+1] << (i*8));
+            printf("(%02x %x %d) ",ptr[i+1],((uint32_t)ptr[i+1] << (i*8)),height);
         }
         printf(" <- coinbase.%d ht.%d\n",(int32_t)block->vtx[0].vin[0].scriptSig.size(),height);
     }
