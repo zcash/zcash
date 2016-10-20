@@ -1984,7 +1984,7 @@ Value encryptwallet(const Array& params, bool fHelp)
 
     std::string strWalletEncryptionDisabledMsg = "";
     if (!fEnableWalletEncryption) {
-        strWalletEncryptionDisabledMsg = "\nWARNING: Wallet encryption is DISABLED. This call does nothing.\n";
+        strWalletEncryptionDisabledMsg = "\nWARNING: Wallet encryption is DISABLED. This call always fails.\n";
     }
 
     if (!pwalletMain->IsCrypted() && (fHelp || params.size() != 1))
@@ -2017,7 +2017,7 @@ Value encryptwallet(const Array& params, bool fHelp)
     if (fHelp)
         return true;
     if (!fEnableWalletEncryption) {
-        return false;
+        throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: wallet encryption is disabled.");
     }
     if (pwalletMain->IsCrypted())
         throw JSONRPCError(RPC_WALLET_WRONG_ENC_STATE, "Error: running with an encrypted wallet, but encryptwallet was called.");
