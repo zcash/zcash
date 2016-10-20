@@ -297,7 +297,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
                     break;
                 decode_hex(pubkeys[k],33,(char *)Notaries[k][1]);
             }
-            komodo_notaryinit(0,pubkeys,KOMODO_NUMNOTARIES);
+            komodo_notarysinit(0,pubkeys,KOMODO_NUMNOTARIES);
             didinit = 1;
         }
         if ( (fp= fopen(fname,"rb+")) != 0 )
