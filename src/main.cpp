@@ -2954,7 +2954,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
 {
     uint8_t pubkey33[33];
     // Check timestamp
-    if (block.GetBlockTime() > GetAdjustedTime() + 60)
+    if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
     // Check Equihash solution is valid
     if ( fCheckPOW && !CheckEquihashSolution(&blockhdr, Params()) )
@@ -2962,7 +2962,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
     
     // Check proof of work matches claimed amount
     komodo_index2pubkey33(pubkey33,pindex,height);
-    if ( fCheckPOW && !CheckProofOfWork(height:0,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus()) )
+    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus()) )
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");
     return true;
 }
