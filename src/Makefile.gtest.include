@@ -5,6 +5,7 @@ bin_PROGRAMS += zcash-gtest
 zcash_gtest_SOURCES = \
 	gtest/main.cpp \
 	gtest/utils.cpp \
+	gtest/test_checkblock.cpp \
 	gtest/test_checktransaction.cpp \
 	gtest/json_test_vectors.cpp \
         gtest/json_test_vectors.h \

@@ -2940,6 +2940,11 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
 {
+    // Check block version
+    if (block.nVersion < MIN_BLOCK_VERSION)
+        return state.DoS(100, error("CheckBlockHeader(): block version too low"),
+                         REJECT_INVALID, "version-too-low");
+
     // Check Equihash solution is valid
     if (fCheckPOW && !CheckEquihashSolution(&block, Params()))
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
