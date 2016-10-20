@@ -300,7 +300,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
     {
         if ( didinit == 0 )
         {
-            pthread_mutex_init(&komodo_mutex);
+            pthread_mutex_init(&komodo_mutex,NULL);
             decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
             KOMODO_NUMNOTARIES = (int32_t)(sizeof(Notaries)/sizeof(*Notaries));
             for (k=0; k<KOMODO_NUMNOTARIES; k++)
