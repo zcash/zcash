@@ -193,8 +193,9 @@ Value generate(const Array& params, bool fHelp)
             std::function<bool(std::vector<unsigned char>)> validBlock =
                     [&pblock](std::vector<unsigned char> soln)
             {
+                LOCK(cs_main);
                 pblock->nSolution = soln;
-                return CheckProofOfWork(pblock->nHeight,NOTARY_PUBKEY33,pblock->GetHash(), pblock->nBits, Params().GetConsensus());
+                return CheckProofOfWork(chainActive.Height(),NOTARY_PUBKEY33,pblock->GetHash(), pblock->nBits, Params().GetConsensus());
             };
             if (EhBasicSolveUncancellable(n, k, curr_state, validBlock))
                 goto endloop;
