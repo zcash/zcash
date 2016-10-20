@@ -243,6 +243,10 @@ libbitcoin_wallet_a_SOURCES = \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
+TROMPEQUIHASH_SOURCES = \
+  trompequihash/equi_miner.h \
+  trompequihash/equi.h
+
 # crypto primitives library
 crypto_libbitcoin_crypto_a_CPPFLAGS = $(BITCOIN_CONFIG_INCLUDES)
 crypto_libbitcoin_crypto_a_SOURCES = \
@@ -261,7 +265,8 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha256.cpp \
   crypto/sha256.h \
   crypto/sha512.cpp \
-  crypto/sha512.h
+  crypto/sha512.h \
+  ${TROMPEQUIHASH_SOURCES}
 
 # univalue JSON library
 univalue_libbitcoin_univalue_a_SOURCES = \
