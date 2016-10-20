@@ -114,22 +114,21 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     arith_uint256 bnTarget;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
-    if ( (special= komodo_heightnotary(height,pubkey33)) != 0 )
+    if ( (special= komodo_heightnotary(height,pubkey33)) != 0 ) // 0 -> non-special notary
     {
         int32_t i;
         for (i=0; i<33; i++)
             fprintf(stderr,"%02x",pubkey33[i]);
         fprintf(stderr," height.%d special.%d\n",height,special);
-        if ( special < 0 )
+        if ( special < 0 ) // non-notary node
             bnTarget /= 8;
-        else
+        else // special notary id == (height % numnotaries)
         {
             if (UintToArith256(hash) <= bnTarget) // accept normal diff
                 return true;
             bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
         }
     }
-
     // Check range
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");
