@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 # Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -74,7 +74,7 @@ class TestNode(NodeConnCB):
 class P2PMempoolTests(BitcoinTestFramework):
 
     def __init__(self):
-        super().__init__()
+        super(P2PMempoolTests, self).__init__()
         self.setup_clean_chain = True
         self.num_nodes = 2
 
