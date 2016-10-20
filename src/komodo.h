@@ -21,7 +21,7 @@
 
 #define KOMODO_TESTNET_EXPIRATION 60000
 
-int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos;
+int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos,KOMODO_NUMNOTARIES = 64;
 std::string NOTARY_PUBKEY;
 uint8_t NOTARY_PUBKEY33[33];
 uint256 NOTARIZED_HASH,NOTARIZED_BTCHASH;
@@ -209,6 +209,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
     if ( fp == 0 )
     {
         decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+        KOMODO_NUMNOTARIES = (int32_t)(sizeof(Notaries)/sizeof(*Notaries));
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
             while ( (func= fgetc(fp)) != EOF )
@@ -525,7 +526,7 @@ int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33)
     for (i=0; i<33; i++)
         printf("%02x",pubkey33[i]);
     if ( (notaryid= komodo_notaryfind(pubkey33)) >= 0 )
-        modval = ((height % numnotaries) == notaryid);
+        modval = ((height % KOMODO_NUMNOTARIES) == notaryid);
     printf(" komodo_heightnotary.%d notaryid.%d mod.%d\n",height,notaryid,modval);
     return(0);
 }
