@@ -1343,7 +1343,7 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
     if (filein.IsNull())
     {
         //fprintf(stderr,"readblockfromdisk err A\n");
-        return false; //error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
+        return error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
     }
 
     // Read block
