@@ -185,7 +185,7 @@ uint256 NOTARIZED_HASH,NOTARIZED_BTCHASH;
 struct nutxo_entry { uint256 txhash; uint64_t voutmask; int32_t notaryid; };
 struct nutxo_entry NUTXOS[10000];
 
-void komodo_nutxoadd(int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts);
+void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts);
 // add opreturn funcid
 // height/pubkey notary lookup
 // pricefeeds
@@ -241,7 +241,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
                         errs++;
                     if ( fread(&hash,1,sizeof(hash),fp) != sizeof(hash) )
                         errs++;
-                    komodo_nutxoadd(height,nid,hash,mask,n);
+                    komodo_nutxoadd(0,height,nid,hash,mask,n);
                 }
                 else if ( func == 'D' )
                 {
@@ -298,7 +298,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
     }
 }
 
-void komodo_nutxoadd(int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
+void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
 {
     if ( numvouts > 1 && notaryid < 64 ) // change to ADD_HASH() and file based
     {
@@ -306,7 +306,8 @@ void komodo_nutxoadd(int32_t height,int32_t notaryid,uint256 txhash,uint64_t vou
         NUTXOS[Num_nutxos].voutmask = voutmask;
         NUTXOS[Num_nutxos].notaryid = notaryid;
         printf("Add NUTXO[%d] <- %s notaryid.%d %s %llx\n",Num_nutxos,Notaries[notaryid][0],notaryid,txhash.ToString().c_str(),(long long)voutmask);
-        komodo_stateupdate(height,0,0,notaryid,txhash,voutmask,numvouts);
+        if ( addflag != 0 )
+            komodo_stateupdate(height,0,0,notaryid,txhash,voutmask,numvouts);
         Num_nutxos++;
     }
 }
@@ -455,7 +456,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 }
             }
             if ( notaryid >= 0 && voutmask != 0 )
-                komodo_nutxoadd(height,notaryid,txhash,voutmask,numvouts);
+                komodo_nutxoadd(1,height,notaryid,txhash,voutmask,numvouts);
             signedmask = 0;
             numvins = block.vtx[i].vin.size();
             for (j=0; j<numvins; j++)
