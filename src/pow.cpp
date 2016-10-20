@@ -106,13 +106,24 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
     return true;
 }
 
+int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33);
+
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
-    bool fNegative;
-    bool fOverflow;
+    bool fNegative,fOverflow; int32_t special;
     arith_uint256 bnTarget;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
+    if ( (special= komodo_heightnotary(height,pubkey33)) != 0 )
+    {
+        int32_t i;
+        for (i=0; i<33; i++)
+            fprintf(stderr,"%02x",pubkey33[i]);
+        fprintf(stderr," height.%d special.%d\n",height,special);
+        if ( special < 0 )
+            bnTarget /= 8;
+        else bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    }
 
     // Check range
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))

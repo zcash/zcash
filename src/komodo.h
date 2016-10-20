@@ -213,7 +213,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
             {
                 if ( fread(&ht,1,sizeof(ht),fp) != sizeof(ht) )
                     errs++;
-                printf("func.(%d %c) ht.%d\n",func,func,height);
+                //printf("func.(%d %c) ht.%d\n",func,func,height);
                 if ( func == 'P' )
                 {
                     if ( (num= fgetc(fp)) < 64 )
@@ -223,7 +223,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
                         else printf("updated %d pubkeys\n",num);
                     }
                     else printf("illegal num.%d\n",num);
-                    printf("P[%d]\n",num);
+                    //printf("P[%d]\n",num);
                 }
                 else if ( func == 'N' )
                 {
@@ -240,7 +240,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
                     uint8_t n,nid; uint256 hash; uint64_t mask;
                     n = fgetc(fp);
                     nid = fgetc(fp);
-                    printf("U %d %d\n",n,nid);
+                    //printf("U %d %d\n",n,nid);
                     if ( fread(&mask,1,sizeof(mask),fp) != sizeof(mask) )
                         errs++;
                     if ( fread(&hash,1,sizeof(hash),fp) != sizeof(hash) )
@@ -249,7 +249,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
                 }
                 else if ( func == 'D' )
                 {
-                    printf("D[%d]\n",ht);
+                    //printf("D[%d]\n",ht);
                 }
                 else printf("illegal func.(%d %c)\n",func,func);
             }
@@ -260,14 +260,15 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
     {
         if ( height < 0 )
         {
-            printf("func D[%d] errs.%d\n",height,errs);
+            height = -height;
+            //printf("func D[%d] errs.%d\n",height,errs);
             fputc('D',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
                 errs++;
         }
-        if ( notarypubs != 0 && numnotaries > 0 )
+        else if ( notarypubs != 0 && numnotaries > 0 )
         {
-            printf("func P[%d] errs.%d\n",numnotaries,errs);
+            //printf("func P[%d] errs.%d\n",numnotaries,errs);
             fputc('P',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
                 errs++;
@@ -277,7 +278,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
         }
         else if ( voutmask != 0 && numvouts > 0 )
         {
-            printf("func U %d %d errs.%d hashsize.%ld\n",numvouts,notaryid,errs,sizeof(txhash));
+            //printf("func U %d %d errs.%d hashsize.%ld\n",numvouts,notaryid,errs,sizeof(txhash));
             fputc('U',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
                 errs++;
@@ -290,7 +291,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
         }
         else
         {
-            printf("func N ht.%d errs.%d\n",NOTARIZED_HEIGHT,errs);
+            //printf("func N ht.%d errs.%d\n",NOTARIZED_HEIGHT,errs);
             fputc('N',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
                 errs++;
@@ -509,15 +510,16 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
-    uint256 zero;
-    printf("disconnect ht.%d\n",pindex->nHeight);
-    memset(&zero,0,sizeof(zero));
-    komodo_stateupdate(-pindex->nHeight,0,0,0,zero,0,0);
+    //uint256 zero;
+    //printf("disconnect ht.%d\n",pindex->nHeight);
+    //memset(&zero,0,sizeof(zero));
+    //komodo_stateupdate(-pindex->nHeight,0,0,0,zero,0,0);
 }
 
-void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex)
+int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33)
 {
-    
+    return(0);
+    // -1 if not notary, 0 if notary, 1 if special notary
 }
 
 void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
@@ -525,6 +527,13 @@ void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
     uint8_t *ptr;
     ptr = block.vtx[0].vout[0].scriptPubKey.data();
     memcpy(pubkey33,ptr+1,33);
+}
+
+void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex)
+{
+    CBlock block;
+    if ( ReadBlockFromDisk(block,(const CBlockIndex *)pindex) != 0 )
+        komodo_block2pubkey33(pubkey33,block);
 }
 
 /*int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
