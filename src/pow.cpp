@@ -122,7 +122,12 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         fprintf(stderr," height.%d special.%d\n",height,special);
         if ( special < 0 )
             bnTarget /= 8;
-        else bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+        else
+        {
+            if (UintToArith256(hash) <= bnTarget) // accept normal diff
+                return true;
+            bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+        }
     }
 
     // Check range
@@ -131,8 +136,9 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
 
     // Check proof of work matches claimed amount
     if (UintToArith256(hash) > bnTarget)
+    {
         return error("CheckProofOfWork(): hash doesn't match nBits");
-
+    }
     return true;
 }
 

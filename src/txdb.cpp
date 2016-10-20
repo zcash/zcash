@@ -266,8 +266,6 @@ bool CBlockTreeDB::ReadFlag(const std::string &name, bool &fValue) {
     return true;
 }
 
-int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp);
-
 bool CBlockTreeDB::LoadBlockIndexGuts()
 {
     boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
@@ -308,7 +306,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nTx            = diskindex.nTx;
                 uint8_t pubkey33[33];
                 komodo_index2pubkey33(pubkey33,pindexNew);
-                if (!CheckProofOfWork(pindexNew->height,pubkey33,pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
+                if (!CheckProofOfWork(pindexNew->nHeight,pubkey33,pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
                     return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
                 pcursor->Next();
             } else {
