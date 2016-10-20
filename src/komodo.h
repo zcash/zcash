@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <pthread.h>
 #include "uthash.h"
 
 #define KOMODO_TESTNET_EXPIRATION 60000
@@ -28,6 +29,7 @@ int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos,KOMODO_
 std::string NOTARY_PUBKEY;
 uint8_t NOTARY_PUBKEY33[33];
 uint256 NOTARIZED_HASH,NOTARIZED_BTCHASH;
+pthread_mutex_t komodo_mutex;
 
 struct nutxo_entry { UT_hash_handle hh; uint256 txhash; uint64_t voutmask; int32_t notaryid,height; } *NUTXOS;
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
@@ -215,6 +217,7 @@ void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txh
     struct nutxo_entry *np;
     if ( numvouts > 1 && notaryid < 64 ) // change to ADD_HASH() and file based
     {
+        pthread_mutex_lock(&komodo_mutex);
         np = (struct nutxo_entry *)calloc(1,sizeof(*np));
         np->height = height;
         np->txhash = txhash;
@@ -225,13 +228,16 @@ void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txh
         if ( addflag != 0 )
             komodo_stateupdate(height,0,0,notaryid,txhash,voutmask,numvouts);
         Num_nutxos++;
+        pthread_mutex_unlock(&komodo_mutex);
     }
 }
 
 int32_t komodo_nutxofind(int32_t height,uint256 txhash,int32_t vout) // change to HASH_FIND()
 {
     struct nutxo_entry *np;
+    pthread_mutex_lock(&komodo_mutex);
     HASH_FIND(hh,NUTXOS,&txhash,sizeof(txhash),np);
+    pthread_mutex_unlock(&komodo_mutex);
     if ( np != 0 && ((1LL << vout) & np->voutmask) != 0 )
         return(np->notaryid);
     return(-1);
@@ -241,6 +247,7 @@ void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
 {
     int32_t k,i,htind; struct knotary_entry *kp; struct knotaries_entry N;
     memset(&N,0,sizeof(N));
+    pthread_mutex_lock(&komodo_mutex);
     for (k=0; k<num; k++)
     {
         kp = (struct knotary_entry *)calloc(1,sizeof(*kp));
@@ -260,13 +267,16 @@ void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
         Pubkeys[i] = N;
         Pubkeys[i].height = i * KOMODO_ELECTION_GAP;
     }
+    pthread_mutex_unlock(&komodo_mutex);
 }
 
 int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33)
 {
     // -1 if not notary, 0 if notary, 1 if special notary
     struct knotary_entry *kp; int32_t numnotaries,modval = -1;
+    pthread_mutex_lock(&komodo_mutex);
     HASH_FIND(hh,Pubkeys[height/KOMODO_ELECTION_GAP].Notaries,pubkey33,33,kp);
+    pthread_mutex_unlock(&komodo_mutex);
     if ( kp != 0 )
     {
         if ( (numnotaries= Pubkeys[height/KOMODO_ELECTION_GAP].numnotaries) > 0 )
@@ -290,6 +300,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
     {
         if ( didinit == 0 )
         {
+            pthread_mutex_init(&komodo_mutex);
             decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
             KOMODO_NUMNOTARIES = (int32_t)(sizeof(Notaries)/sizeof(*Notaries));
             for (k=0; k<KOMODO_NUMNOTARIES; k++)
