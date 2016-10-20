@@ -544,12 +544,20 @@ void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
     memcpy(pubkey33,ptr+1,33);
 }
 
-void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex)
+void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
     CBlock block;
     memset(pubkey33,0,33);
-    if ( pindex != 0 && ReadBlockFromDisk(block,(const CBlockIndex *)pindex) != 0 )
-        komodo_block2pubkey33(pubkey33,block);
+    if ( pindex != 0 )
+    {
+        if ( ReadBlockFromDisk(block,(const CBlockIndex *)pindex) != 0 )
+            komodo_block2pubkey33(pubkey33,block);
+    }
+    else
+    {
+        // height -> pubkey33
+        printf("komodo_index2pubkey33 height.%d need to get pubkey33\n",height);
+    }
 }
 
 /*int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
