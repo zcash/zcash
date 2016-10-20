@@ -522,10 +522,23 @@ int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33)
     // -1 if not notary, 0 if notary, 1 if special notary
 }
 
+int32_t komodo_block2height(CBlock *block)
+{
+    int32_t i,height = 0; uint8_t *ptr = (uint8_t *)block->vin[0].scriptSig.data();
+    if ( block->vin[0].scriptSig.size() > 5 )
+    {
+        for (i=0; i<6; i++)
+            printf("%02x",ptr[i]);
+        for (i=0; i<4; i++)
+            height = (height << 8) + ptr[i+2];
+        printf(" <- coinbase ht.%d\n",height);
+    }
+    return(height);
+}
+
 void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
 {
-    uint8_t *ptr;
-    ptr = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
+    uint8_t *ptr = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
     memcpy(pubkey33,ptr+1,33);
 }
 
