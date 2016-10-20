@@ -186,6 +186,9 @@ struct nutxo_entry { uint256 txhash; uint64_t voutmask; int32_t notaryid; };
 struct nutxo_entry NUTXOS[10000];
 
 void komodo_nutxoadd(int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts);
+// add opreturn funcid
+// height/pubkey notary lookup
+// pricefeeds
 
 int32_t komodo_threshold(uint64_t signedmask)
 {
@@ -206,6 +209,7 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t 
         {
             while ( (func= fgetc(fp)) != EOF )
             {
+                printf("func.(%d %c)\n",func,func);
                 if ( func == 'P' )
                 {
                     if ( (num= fgetc(fp)) < 64 )
@@ -246,6 +250,7 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t 
     {
         if ( notarypubs != 0 && numnotaries > 0 )
         {
+            printf("func P[%d]\n",numnotaries);
             fputc('P',fp);
             fputc(numnotaries,fp);
             if ( fwrite(notarypubs,33,numnotaries,fp) != numnotaries )
@@ -253,6 +258,7 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t 
         }
         else if ( voutmask != 0 && numvouts > 0 )
         {
+            printf("func U %d %d\n",numvouts,notaryid);
             fputc('U',fp);
             fputc(numvouts,fp);
             fputc(notaryid,fp);
@@ -263,6 +269,7 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t 
         }
         else
         {
+            printf("func N ht.%d\n",NOTARIZED_HEIGHT);
             fputc('N',fp);
             if ( fwrite(&NOTARIZED_HEIGHT,1,sizeof(NOTARIZED_HEIGHT),fp) != sizeof(NOTARIZED_HEIGHT) )
                 errs++;
