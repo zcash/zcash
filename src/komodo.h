@@ -206,7 +206,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
 #endif
     if ( fp == 0 )
     {
-        decode_hex(NOTARY_PUBKEY33,33,NOTARY_PUBKEY.ToString().c_str());
+        decode_hex(NOTARY_PUBKEY33,33,NOTARY_PUBKEY.c_str());
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
             while ( (func= fgetc(fp)) != EOF )
@@ -525,7 +525,7 @@ int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33)
 void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
 {
     uint8_t *ptr;
-    ptr = block.vtx[0].vout[0].scriptPubKey.data();
+    ptr = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
     memcpy(pubkey33,ptr+1,33);
 }
 

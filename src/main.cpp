@@ -2950,19 +2950,19 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
     return true;
 }
 
-bool CheckBlockHeader(int32_t height,const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
+bool CheckBlockHeader(int32_t height,const CBlock& block, const CBlockHeader& blockhdr, CValidationState& state, bool fCheckPOW)
 {
     uint8_t pubkey33[33];
     // Check timestamp
     if (block.GetBlockTime() > GetAdjustedTime() + 60)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
     // Check Equihash solution is valid
-    if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
+    if ( fCheckPOW && !CheckEquihashSolution(&blockhdr, Params()) )
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     
     // Check proof of work matches claimed amount
     komodo_block2pubkey33(pubkey33,block);
-    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
+    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus()) )
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");
     return true;
 }
@@ -2973,7 +2973,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
 
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
-    if (!CheckBlockHeader(block, state, fCheckPOW))
+    if (!CheckBlockHeader(block, block, state, fCheckPOW))
         return false;
 
     // Check the merkle root.
@@ -3062,6 +3062,16 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         if (pcheckpoint && nHeight < pcheckpoint->nHeight)
             return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d)", __func__, nHeight));
+        else if ( nHeight < NOTARIZED_HEIGHT )
+        {
+            fprintf(stderr,"nHeight.%d < NOTARIZED_HEIGHT.%d\n",nHeight,NOTARIZED_HEIGHT);
+            return state.DoS(100, error("%s: forked chain older than last notarized (height %d)", __func__, NOTARIZED_HEIGHT));
+        }
+        else if ( nHeight == NOTARIZED_HEIGHT && memcmp(&hash,&NOTARIZED_HASH,sizeof(hash)) != 0 )
+        {
+            fprintf(stderr,"nHeight.%d == NOTARIZED_HEIGHT.%d, diff hash\n",nHeight,NOTARIZED_HEIGHT);
+            return state.DoS(100, error("%s: forked chain at notarized (height %d) with different hash", __func__, NOTARIZED_HEIGHT));
+        }
     }
 
     // Reject block.nVersion < 4 blocks
@@ -3120,7 +3130,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         return true;
     }
 
-    if (!CheckBlockHeader(block, state))
+    if (!CheckBlockHeader(block, block, state))
         return false;
 
     // Get prev block index
