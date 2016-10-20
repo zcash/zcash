@@ -2950,7 +2950,7 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
     return true;
 }
 
-bool CheckBlockHeader(int32_t height,const CBlock& block, const CBlockHeader& blockhdr, CValidationState& state, bool fCheckPOW)
+bool CheckBlockHeader(CBlockIndex *pindex, const CBlockHeader& blockhdr, CValidationState& state, bool fCheckPOW)
 {
     uint8_t pubkey33[33];
     // Check timestamp
@@ -2961,8 +2961,8 @@ bool CheckBlockHeader(int32_t height,const CBlock& block, const CBlockHeader& bl
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     
     // Check proof of work matches claimed amount
-    komodo_block2pubkey33(pubkey33,*(CBlock *)&block);
-    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus()) )
+    komodo_blockindex2pubkey33(pubkey33,pindex);
+    if ( fCheckPOW && !CheckProofOfWork(pindex!=0?pindex->height:0,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus()) )
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");
     return true;
 }
@@ -2973,7 +2973,7 @@ bool CheckBlock(int32_t height,const CBlock& block, CValidationState& state, boo
 
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
-    if (!CheckBlockHeader(height,block, block, state, fCheckPOW))
+    if (!CheckBlockHeader(height, block, state, fCheckPOW))
         return false;
 
     // Check the merkle root.
@@ -3130,7 +3130,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         return true;
     }
 
-    if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,block, block, state))
+    if (!CheckBlockHeader(*ppindex, block, state))
         return false;
 
     // Get prev block index

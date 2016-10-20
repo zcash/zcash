@@ -545,7 +545,8 @@ void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex)
 {
     CBlock block;
-    if ( ReadBlockFromDisk(block,(const CBlockIndex *)pindex) != 0 )
+    memset(pubkey,0,33);
+    if ( pindex != 0 && ReadBlockFromDisk(block,(const CBlockIndex *)pindex) != 0 )
         komodo_block2pubkey33(pubkey33,block);
 }
 
