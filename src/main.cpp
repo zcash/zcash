@@ -2961,7 +2961,7 @@ bool CheckBlockHeader(int32_t height,const CBlock& block, const CBlockHeader& bl
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     
     // Check proof of work matches claimed amount
-    komodo_block2pubkey33(pubkey33,block);
+    komodo_block2pubkey33(pubkey33,*(CBlock *)&block);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus()) )
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");
     return true;

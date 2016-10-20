@@ -206,7 +206,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
 #endif
     if ( fp == 0 )
     {
-        decode_hex(NOTARY_PUBKEY33,33,NOTARY_PUBKEY.c_str());
+        decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
             while ( (func= fgetc(fp)) != EOF )
