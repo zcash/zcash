@@ -112,7 +112,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     arith_uint256 bnTarget;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
-    if ( (special= komodo_heightnotary(height,pubkey33)) != 0 ) // 0 -> non-special notary
+    if ( height > 34000 && (special= komodo_heightnotary(height,pubkey33)) != 0 ) // 0 -> non-special notary
     {
         int32_t i,nonz = 0;
         for (i=0; i<33; i++)
