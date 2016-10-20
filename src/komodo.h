@@ -526,13 +526,14 @@ int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33)
 
 int32_t komodo_block2height(CBlock *block)
 {
-    int32_t i,height = 0; uint8_t *ptr = (uint8_t *)block->vtx[0].vin[0].scriptSig.data();
+    int32_t i,n,height = 0; uint8_t *ptr = (uint8_t *)block->vtx[0].vin[0].scriptSig.data();
     if ( block->vtx[0].vin[0].scriptSig.size() > 5 )
     {
         for (i=0; i<6; i++)
             printf("%02x",ptr[i]);
-        for (i=0; i<4; i++)
-            height = (height << 8) + ptr[i+2];
+        n = ptr[0];
+        for (i=0; i<n; i++)
+            height = (height << 8) + ptr[i+1];
         printf(" <- coinbase.%d ht.%d\n",(int32_t)block->vtx[0].vin[0].scriptSig.size(),height);
     }
     return(height);
