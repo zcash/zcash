@@ -192,7 +192,7 @@ int32_t komodo_threshold(uint64_t signedmask)
     return(1); // N/2+1 || N/3 + devsig
 }
 
-int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
+int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts)
 {
     static FILE *fp; static int32_t errs; char fname[512]; int32_t func; uint8_t num,pubkeys[64][33];
 #ifdef WIN32
