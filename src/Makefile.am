@@ -224,7 +224,7 @@ libbitcoin_server_a_SOURCES = \
   validationinterface.cpp \
   $(JSON_H) \
   $(BITCOIN_CORE_H) \
-  $(LIBZCASH_H) 
+  $(LIBZCASH_H)
 
 # wallet: shared between bitcoind and bitcoin-qt, but only linked
 # when wallet enabled
@@ -245,15 +245,7 @@ libbitcoin_wallet_a_SOURCES = \
 
 TROMPEQUIHASH_SOURCES = \
   trompequihash/equi_miner.h \
-  trompequihash/equi.h \
-  trompequihash/blake/blake2b-load-sse41.h \
-  trompequihash/blake/blake2-impl.h \
-  trompequihash/blake/blake2-round.h \
-  trompequihash/blake/blake2-config.h \
-  trompequihash/blake/blake2b-round.h \
-  trompequihash/blake/blake2b.cpp \
-  trompequihash/blake/blake2b-load-sse2.h \
-  trompequihash/blake/blake2.h 
+  trompequihash/equi.h
 
 # crypto primitives library
 crypto_libbitcoin_crypto_a_CPPFLAGS = $(BITCOIN_CONFIG_INCLUDES)
@@ -274,8 +266,8 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha256.h \
   crypto/sha512.cpp \
   crypto/sha512.h \
-  ${TROMPEQUIHASH_SOURCES} 
-  
+  ${TROMPEQUIHASH_SOURCES}
+
 # univalue JSON library
 univalue_libbitcoin_univalue_a_SOURCES = \
   univalue/univalue.cpp \
