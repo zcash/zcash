@@ -409,7 +409,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins, bool fJustCheck = false);
 
 /** Context-independent validity checks */
-bool CheckBlockHeader(int32_t height,const CBlock& block, const CBlockHeader& blockhdr, CValidationState& state, bool fCheckPOW = true);
+bool CheckBlockHeader(CBlockIndex *pindex,const CBlock& block, const CBlockHeader& blockhdr, CValidationState& state, bool fCheckPOW = true);
 bool CheckBlock(int32_t height,const CBlock& block, CValidationState& state, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
 
 /** Context-dependent validity checks */
