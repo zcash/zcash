@@ -47,7 +47,10 @@ security review.
 RPC Interface
 ---------------
 
-If the client knows the RPC password, they have full access to the node. Users should choose a strong RPC password, and refrain from changing the default setting that only allows RPC connections from localhost. A remote host would enable a MITM to execute arbitrary RPC commands. For multi-user services that use one or more zcashd instances on the backend, the parameters passed in by users should be controlled to prevent confused-deputy attacks which could spend from any keys held by that zcashd.
+Users should choose a strong RPC password. If no RPC username and password are set, zcashd will not start and will print an error message with a suggestion for a strong random password. If the client knows the RPC password, they have at least full access to the node. In addition, certain RPC commands can be misused to overwrite files and/or take over the account that is running zcashd. (In the future we may restrict these commands, but full node access – including the ability to spend from and export keys held by the wallet – would still be possible unless wallet methods are disabled.)
+
+Users should also refrain from changing the default setting that only allows RPC connections from localhost. Allowing connections from remote hosts would enable a MITM to execute arbitrary RPC commands, which could lead to compromise of the account running zcashd and loss of funds. For multi-user services that use one or more zcashd instances on the backend, the parameters passed in by users should be controlled to prevent confused-deputy attacks which could spend from any keys held by that zcashd.
+
 
 Block Chain Reorganization: Major Differences
 -------------------------------------------------
