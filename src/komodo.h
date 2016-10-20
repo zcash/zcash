@@ -185,7 +185,7 @@ uint256 NOTARIZED_HASH,NOTARIZED_BTCHASH;
 struct nutxo_entry { uint256 txhash; uint64_t voutmask; int32_t notaryid; };
 struct nutxo_entry NUTXOS[10000];
 
-void komodo_nutxoadd(int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts);
+void komodo_nutxoadd(int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts);
 // add opreturn funcid
 // height/pubkey notary lookup
 // pricefeeds
@@ -195,7 +195,7 @@ int32_t komodo_threshold(uint64_t signedmask)
     return(1); // N/2+1 || N/3 + devsig
 }
 
-int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts)
+int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts)
 {
     static FILE *fp; static int32_t errs; char fname[512]; int32_t func; uint8_t num,pubkeys[64][33];
 #ifdef WIN32
@@ -219,6 +219,7 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t 
                         else printf("updated %d pubkeys\n",num);
                     }
                     else printf("illegal num.%d\n",num);
+                    printf("P[%d]\n",num);
                 }
                 else if ( func == 'N' )
                 {
@@ -235,11 +236,19 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t 
                     uint8_t n,nid; uint256 hash; uint64_t mask;
                     n = fgetc(fp);
                     nid = fgetc(fp);
+                    printf("U %d %d\n",n,nid);
                     if ( fread(&mask,1,sizeof(mask),fp) != sizeof(mask) )
                         errs++;
                     if ( fread(&hash,1,sizeof(hash),fp) != sizeof(hash) )
                         errs++;
-                    komodo_nutxoadd(nid,hash,mask,n);
+                    komodo_nutxoadd(height,nid,hash,mask,n);
+                }
+                else if ( func == 'D' )
+                {
+                    int32_t ht;
+                    if ( fread(&ht,1,sizeof(ht),fp) != sizeof(ht) )
+                        errs++;
+                    printf("D[%d]\n",ht);
                 }
                 else printf("illegal func.(%d %c)\n",func,func);
             }
@@ -248,9 +257,16 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t 
     }
     if ( fp != 0 )
     {
+        if ( height < 0 )
+        {
+            printf("func D[%d] errs.%d\n",height,errs);
+            fputc('D',fp);
+            if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
+                errs++;
+        }
         if ( notarypubs != 0 && numnotaries > 0 )
         {
-            printf("func P[%d]\n",numnotaries);
+            printf("func P[%d] errs.%d\n",numnotaries,errs);
             fputc('P',fp);
             fputc(numnotaries,fp);
             if ( fwrite(notarypubs,33,numnotaries,fp) != numnotaries )
@@ -258,7 +274,7 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t 
         }
         else if ( voutmask != 0 && numvouts > 0 )
         {
-            printf("func U %d %d\n",numvouts,notaryid);
+            printf("func U %d %d errs.%d hashsize.%ld\n",numvouts,notaryid,errs,sizeof(txhash));
             fputc('U',fp);
             fputc(numvouts,fp);
             fputc(notaryid,fp);
@@ -269,7 +285,7 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t 
         }
         else
         {
-            printf("func N ht.%d\n",NOTARIZED_HEIGHT);
+            printf("func N ht.%d errs.%d\n",NOTARIZED_HEIGHT,errs);
             fputc('N',fp);
             if ( fwrite(&NOTARIZED_HEIGHT,1,sizeof(NOTARIZED_HEIGHT),fp) != sizeof(NOTARIZED_HEIGHT) )
                 errs++;
@@ -282,7 +298,7 @@ int32_t komodo_stateupdate(uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t 
     }
 }
 
-void komodo_nutxoadd(int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
+void komodo_nutxoadd(int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
 {
     if ( numvouts > 1 && notaryid < 64 ) // change to ADD_HASH() and file based
     {
@@ -290,7 +306,7 @@ void komodo_nutxoadd(int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t n
         NUTXOS[Num_nutxos].voutmask = voutmask;
         NUTXOS[Num_nutxos].notaryid = notaryid;
         printf("Add NUTXO[%d] <- %s notaryid.%d %s %llx\n",Num_nutxos,Notaries[notaryid][0],notaryid,txhash.ToString().c_str(),(long long)voutmask);
-        komodo_stateupdate(0,0,notaryid,txhash,voutmask,numvouts);
+        komodo_stateupdate(height,0,0,notaryid,txhash,voutmask,numvouts);
         Num_nutxos++;
     }
 }
@@ -393,7 +409,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
                 NOTARIZED_HEIGHT = *notarizedheightp;
                 NOTARIZED_HASH = kmdtxid;
                 NOTARIZED_BTCHASH = btctxid;
-                komodo_stateupdate(0,0,0,zero,0,0);
+                komodo_stateupdate(height,0,0,0,zero,0,0);
             }
         }
     }
@@ -409,7 +425,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     if ( didinit == 0 )
     {
         memset(&txhash,0,sizeof(txhash));
-        komodo_stateupdate(0,0,0,txhash,0,0);
+        komodo_stateupdate(0,0,0,0,txhash,0,0);
         didinit = 1;
     }
     // update voting results and official (height, notaries[])
@@ -439,12 +455,12 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 }
             }
             if ( notaryid >= 0 && voutmask != 0 )
-                komodo_nutxoadd(notaryid,txhash,voutmask,numvouts);
+                komodo_nutxoadd(height,notaryid,txhash,voutmask,numvouts);
             signedmask = 0;
             numvins = block.vtx[i].vin.size();
             for (j=0; j<numvins; j++)
             {
-                if ( (k= komodo_nutxofind(block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) >= 0 )
+                if ( (k= komodo_nutxofind(height,block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) >= 0 )
                     signedmask |= (1LL << k);
                 else if ( 0 && signedmask != 0 )
                     printf("signedmask.%llx but ht.%d i.%d j.%d not found (%s %d)\n",(long long)signedmask,height,i,j,block.vtx[i].vin[j].prevout.hash.ToString().c_str(),block.vtx[i].vin[j].prevout.n);
@@ -474,13 +490,20 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     if ( numvalid > 13 )
                     {
                         memset(&txhash,0,sizeof(txhash));
-                        komodo_stateupdate(pubkeys,numvalid,0,txhash,0,0);
+                        komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0);
                     }
                     printf("new notaries.%d newheight.%d from height.%d\n",numvouts-1,(((height+500)/1000)+1)*1000,height);
                 }
             }
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
+}
+
+void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
+{
+    uint256 zero;
+    memset(&zero,0,sizeof(zero));
+    komodo_stateupdate(-pindex->nHeight,0,0,0,zero,0,0);
 }
 
 int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp)
