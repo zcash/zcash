@@ -114,10 +114,16 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( (special= komodo_heightnotary(height,pubkey33)) != 0 ) // 0 -> non-special notary
     {
-        int32_t i;
+        int32_t i,nonz = 0;
         for (i=0; i<33; i++)
+        {
+            if ( pubkey33[i] != 0 )
+                nonz++;
             fprintf(stderr,"%02x",pubkey33[i]);
-        fprintf(stderr," height.%d special.%d\n",height,special);
+        }
+        fprintf(stderr," height.%d special.%d nonz.%d\n",height,special,nonz);
+        if ( nonz == 0 )
+            return(true);
         if ( special < 0 ) // non-notary node
             bnTarget /= 8;
         else // special notary id == (height % numnotaries)

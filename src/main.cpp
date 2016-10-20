@@ -1342,7 +1342,7 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
     CAutoFile filein(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
     if (filein.IsNull())
     {
-        fprintf(stderr,"readblockfromdisk err A\n");
+        //fprintf(stderr,"readblockfromdisk err A\n");
         return error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
     }
 
@@ -1355,7 +1355,6 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
         return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
     // Check the header
-    printf("from readblock\n");
     komodo_block2pubkey33(pubkey33,block);
     if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus())))
         return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
@@ -2966,7 +2965,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     
     // Check proof of work matches claimed amount
-    printf("from checkblockheader pindex.%p %p\n",pindex,mapBlockIndex[blockhdr.GetHash()]);
+    //printf("from checkblockheader pindex.%p %p\n",pindex,mapBlockIndex[blockhdr.GetHash()]);
     if ( pindex == 0 )
         pindex = mapBlockIndex[blockhdr.GetHash()];
     komodo_index2pubkey33(pubkey33,pindex,height);
@@ -3155,7 +3154,6 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         return false;
     if (pindex == NULL)
         pindex = AddToBlockIndex(block);
-    printf("from AcceptBlock\n");
     if (!CheckBlockHeader(pindex->nHeight,pindex, block, state))
         return false;
     if (ppindex)
@@ -3169,7 +3167,6 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     AssertLockHeld(cs_main);
 
     CBlockIndex *&pindex = *ppindex;
-    printf("from acceptblock\n");
     if (!AcceptBlockHeader(block, state, &pindex))
         return false;
 
@@ -3243,7 +3240,6 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 bool ProcessNewBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
-    printf("ProcessNewBlock\n");
     bool checked = CheckBlock(komodo_block2height(pblock),0,*pblock, state);
 
     {
