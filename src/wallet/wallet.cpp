@@ -708,9 +708,11 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                                 // to be called again on previously-cached blocks. This
                                 // doesn't affect existing cached notes because of the
                                 // CNoteData::witnessHeight checks. See #1378 for details.
-                                LogPrintf("Inconsistent witness cache state found for %s\n- Cache size: %d\n- Top: %s\n- New: %s\n",
+                                LogPrintf("Inconsistent witness cache state found for %s\n- Cache size: %d\n- Top (height %d): %s\n- New (height %d): %s\n",
                                           jsoutpt.ToString(), nd->witnesses.size(),
+                                          nd->witnessHeight,
                                           nd->witnesses.front().root().GetHex(),
+                                          pindex->nHeight,
                                           tree.witness().root().GetHex());
                                 nd->witnesses.clear();
                             }
