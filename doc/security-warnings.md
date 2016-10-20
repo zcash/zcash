@@ -20,8 +20,11 @@ Wallet Encryption
 Wallet encryption is disabled, for several reasons:
 
 - Encrypted wallets are unable to correctly detect shielded spends (due to the
-  nature of unlinkability of JoinSplits) and will incorrectly show much larger
-  available shielded balances until the next time the wallet is unlocked.
+  nature of unlinkability of JoinSplits) and can incorrectly show larger
+  available shielded balances until the next time the wallet is unlocked. This
+  problem was not limited to failing to recognize the spend; it was possible for
+  the shown balance to increase by the amount of change from a spend, without
+  deducting the spent amount.
 
 - While encrypted wallets prevent spending of funds, they do not maintain the
   shielding properties of JoinSplits (due to the need to detect spends). That
