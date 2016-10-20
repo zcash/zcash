@@ -20,7 +20,7 @@
 #include <stdio.h>
 
 #define KOMODO_TESTNET_EXPIRATION 60000
-#define KOMODOE_PUBKEYS_HEIGHT(height) (((((height)+500)/1000) + 1) * 1000)
+#define KOMODO_PUBKEYS_HEIGHT(height) (((((height)+500)/1000) + 1) * 1000)
 
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos,KOMODO_NUMNOTARIES = 64;
 std::string NOTARY_PUBKEY;
