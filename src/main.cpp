@@ -2057,7 +2057,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     bool fScriptChecks = (!fCheckpointsEnabled || pindex->nHeight >= Checkpoints::GetTotalBlocksEstimate(chainparams.Checkpoints()));
-    if ( pindex->nHeight > 50000 ) // "testnet"
+    if ( KOMODO_TESTNET_EXPIRATION != 0 && pindex->nHeight > KOMODO_TESTNET_EXPIRATION ) // "testnet"
         return(false);
     // Do not allow blocks that contain transactions which 'overwrite' older transactions,
     // unless those are already completely spent.
@@ -2961,8 +2961,8 @@ bool CheckBlockHeader(CBlockIndex *pindex, const CBlockHeader& blockhdr, CValida
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     
     // Check proof of work matches claimed amount
-    komodo_blockindex2pubkey33(pubkey33,pindex);
-    if ( fCheckPOW && !CheckProofOfWork(pindex!=0?pindex->height:0,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus()) )
+    komodo_index2pubkey33(pubkey33,pindex);
+    if ( fCheckPOW && !CheckProofOfWork(pindex!=0?pindex->nHeight:0,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus()) )
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");
     return true;
 }
