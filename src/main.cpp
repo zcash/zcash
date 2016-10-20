@@ -1341,13 +1341,17 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
     // Open history file to read
     CAutoFile filein(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
     if (filein.IsNull())
+    {
+        fprintf(stderr,"readblockfromdisk err A\n");
         return error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
+    }
 
     // Read block
     try {
         filein >> block;
     }
     catch (const std::exception& e) {
+        fprintf(stderr,"readblockfromdisk err B\n");
         return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
     // Check the header
@@ -3151,6 +3155,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         return false;
     if (pindex == NULL)
         pindex = AddToBlockIndex(block);
+    printf("from AcceptBlock\n");
     if (!CheckBlockHeader(pindex->nHeight,pindex, block, state))
         return false;
     if (ppindex)
@@ -3164,7 +3169,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     AssertLockHeld(cs_main);
 
     CBlockIndex *&pindex = *ppindex;
-
+    printf("from acceptblock\n");
     if (!AcceptBlockHeader(block, state, &pindex))
         return false;
 
@@ -3238,6 +3243,7 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 bool ProcessNewBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
+    printf("ProcessNewBlock\n");
     bool checked = CheckBlock(komodo_block2height(pblock),0,*pblock, state);
 
     {
