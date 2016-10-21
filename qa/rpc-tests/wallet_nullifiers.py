@@ -39,6 +39,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
                 mytxid = results[0]["result"]["txid"]
                 break
 
+        self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
@@ -79,6 +80,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
                 mytxid = results[0]["result"]["txid"]
                 break
 
+        self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
@@ -110,6 +112,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
                 mytxid = results[0]["result"]["txid"]
                 break
 
+        self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
 
@@ -150,6 +153,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
                 mytxid = results[0]["result"]["txid"]
                 break
 
+        self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
 
