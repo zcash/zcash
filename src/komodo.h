@@ -37,7 +37,6 @@ struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notar
 struct notarized_checkpoint { uint256 notarized_hash,notarized_btctxid; int32_t nHeight,notarized_height; } *NPOINTS; int32_t NUM_NPOINTS;
 
 int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts);
-uint32_t komodo_txtime(uint256 hash);
 // add opreturn funcid
 // pricefeeds
 
@@ -245,6 +244,29 @@ int32_t komodo_threshold(int32_t height,uint64_t signedmask)
     if ( wt > (numnotaries >> 1) || (wt > numnotaries/5 && (signedmask & 3) != 0) )
         return(1); // N/2+1 || N/3 + devsig
     else return(0);
+}
+
+uint32_t komodo_txtime(uint256 hash)
+{
+    CTransaction tx;
+    uint256 hashBlock;
+    if (!GetTransaction(hash, tx, hashBlock, true))
+    {
+        //printf("null GetTransaction\n");
+        return(tx.nLockTime);
+    }
+    if (!hashBlock.IsNull()) {
+        BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
+        if (mi != mapBlockIndex.end() && (*mi).second)
+        {
+            CBlockIndex* pindex = (*mi).second;
+            if (chainActive.Contains(pindex))
+                return(pindex->GetBlockTime());
+        }
+        //printf("cant find in iterator\n");
+    }
+    //printf("null hashBlock\n");
+    return(tx.nLockTime);
 }
 
 void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
