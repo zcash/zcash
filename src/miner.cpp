@@ -507,8 +507,8 @@ void static BitcoinMiner(CWallet *pwallet)
             // Search
             //
             int64_t nStart = GetTime();
-            if ( komodo_chosennotary(&notaryid,pblock->nHeight,NOTARY_PUBKEY33) > 0 )
-                fprintf(stderr,"I am the chosen one for ht.%d\n",pblock->nHeight);
+            if ( komodo_chosennotary(&notaryid,pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
+                fprintf(stderr,"I am the chosen one for ht.%d\n",pindexPrev->nHeight+1);
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
 
             while (true)
