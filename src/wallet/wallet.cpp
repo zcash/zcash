@@ -2437,7 +2437,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
     }
     else
     {
-        txNew.nLockTime = (uint32_t)time(NULL) - 1800; // set to a time close to now
+        txNew.nLockTime = (uint32_t)time(NULL) - 60; // set to a time close to now
     }
 
     {

@@ -383,7 +383,28 @@ const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
     return coins->vout[input.prevout.n].scriptPubKey;
 }
 
-uint32_t komodo_txtime(uint256 hash);
+uint32_t komodo_txtime(uint256 hash)
+{
+    CTransaction tx;
+    uint256 hashBlock;
+    if (!GetTransaction(hash, tx, hashBlock, true))
+    {
+        //printf("null GetTransaction\n");
+        return(tx.nLockTime);
+    }
+    if (!hashBlock.IsNull()) {
+        BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
+        if (mi != mapBlockIndex.end() && (*mi).second)
+        {
+            CBlockIndex* pindex = (*mi).second;
+            if (chainActive.Contains(pindex))
+                return(pindex->GetBlockTime());
+        }
+        //printf("cant find in iterator\n");
+    }
+    //printf("null hashBlock\n");
+    return(tx.nLockTime);
+}
 
 CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
 {
@@ -393,7 +414,7 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
     CAmount nResult = 0;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
-        fprintf(stderr,"i.%d time.%u\n",i,komodo_txtime(tx.vin[i].prevout.hash));
+        fprintf(stderr,"GetValueIn i.%d time.%u\n",i,komodo_txtime(tx.vin[i].prevout.hash));
         nResult += GetOutputFor(tx.vin[i]).nValue;
     }
     nResult += tx.GetJoinSplitValueIn();
