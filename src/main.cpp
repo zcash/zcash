@@ -1371,11 +1371,16 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
     return true;
 }
 
+uint64_t komodo_moneysupply(int32_t height);
+
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
     CAmount nSubsidy = 3 * COIN;
     if ( nHeight == 1 )
         return(100000000 * COIN); // ICO allocation
+    else if ( komodo_moneysupply(nHeight) < MAX_MONEY )
+        return(3 * COIN);
+    else return(0);
 /*
     // Mining slow start
     // The subsidy is ramped up linearly, skipping the middle payout of
@@ -1393,12 +1398,12 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     assert(nHeight > consensusParams.SubsidySlowStartShift());
     int halvings = (nHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nSubsidyHalvingInterval;*/
     // Force block reward to zero when right shift is undefined.
-    int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
-    if (halvings >= 64)
-        return 0;
+    //int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
+    //if (halvings >= 64)
+    //    return 0;
 
     // Subsidy is cut in half every 840,000 blocks which will occur approximately every 4 years.
-    nSubsidy >>= halvings;
+    //nSubsidy >>= halvings;
     return nSubsidy;
 }
 
