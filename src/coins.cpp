@@ -385,7 +385,7 @@ const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
 
 uint32_t komodo_txtime(uint256 hash);
 
-CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx,uint32_t blocktime) const
+CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx,uint32_t prevblocktime) const
 {
     uint32_t timestamp,minutes;
     if ( tx.IsCoinBase() != 0 )
@@ -395,9 +395,9 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx,uint32_t blocktime) c
     {
         value = GetOutputFor(tx.vin[i]).nValue;
         nResult += value;
-        if ( (timestamp= komodo_txtime(tx.vin[i].prevout.hash)) != 0 && timestamp < blocktime-3600*24*7 && value >= COIN )
+        if ( (timestamp= komodo_txtime(tx.vin[i].prevout.hash)) != 0 && timestamp < prevblocktime-3600*24*7 && value >= COIN )
         {
-            minutes = (blocktime - timestamp) / 60;
+            minutes = (prevblocktime - timestamp) / 60;
             fprintf(stderr,"GetValueIn %lld i.%d time.%u minutes.%d\n",(long long)value,i,timestamp,minutes);
         }
     }
