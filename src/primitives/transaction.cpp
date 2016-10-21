@@ -137,7 +137,7 @@ std::string CTxOut::ToString() const
     return strprintf("CTxOut(nValue=%d.%08d, scriptPubKey=%s)", nValue / COIN, nValue % COIN, scriptPubKey.ToString().substr(0,30));
 }
 
-CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::CURRENT_VERSION), nLockTime(0) {}
+CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::MIN_CURRENT_VERSION), nLockTime(0) {}
 CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
                                                                    vjoinsplit(tx.vjoinsplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
 {
@@ -154,7 +154,7 @@ void CTransaction::UpdateHash() const
     *const_cast<uint256*>(&hash) = SerializeHash(*this);
 }
 
-CTransaction::CTransaction() : nVersion(CTransaction::CURRENT_VERSION), vin(), vout(), nLockTime(0), vjoinsplit(), joinSplitPubKey(), joinSplitSig() { }
+CTransaction::CTransaction() : nVersion(CTransaction::MIN_CURRENT_VERSION), vin(), vout(), nLockTime(0), vjoinsplit(), joinSplitPubKey(), joinSplitSig() { }
 
 CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), vjoinsplit(tx.vjoinsplit),
                                                             joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
