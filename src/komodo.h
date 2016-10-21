@@ -311,6 +311,12 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
     return(modval);
 }
 
+int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp)
+{
+    memset(notarized_hashp,0,sizeof(*notarized_hashp));
+    return(-1);
+}
+
 int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts)
 {
     static FILE *fp; static int32_t errs,didinit; char fname[512]; int32_t ht,k,func; uint8_t num,pubkeys[64][33];

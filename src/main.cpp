@@ -3069,16 +3069,21 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         if (pcheckpoint && nHeight < pcheckpoint->nHeight)
             return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
-        /*else if ( nHeight < NOTARIZED_HEIGHT )
+        else
         {
-            fprintf(stderr,"nHeight.%d < NOTARIZED_HEIGHT.%d\n",nHeight,NOTARIZED_HEIGHT);
-            return state.DoS(100, error("%s: forked chain older than last notarized (height %d) vs %d", __func__,nHeight, NOTARIZED_HEIGHT));
+            int32_t notarized_height; uint256 notarized_hash;
+            notarized_height = komodo_notarizeddata(chainActive.Tip()->nHeight,&notarized_hash);
+            if ( nHeight < notarized_height )
+            {
+                fprintf(stderr,"nHeight.%d < NOTARIZED_HEIGHT.%d\n",nHeight,notarized_height);
+                return state.DoS(100, error("%s: forked chain older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
+            }
+            else if ( nHeight == notarized_height && memcmp(&hash,&notarized_hash,sizeof(hash)) != 0 )
+            {
+                fprintf(stderr,"nHeight.%d == NOTARIZED_HEIGHT.%d, diff hash\n",nHeight,notarized_height);
+                return state.DoS(100, error("%s: forked chain at notarized (height %d) with different hash", __func__, notarized_height));
+            }
         }
-        else if ( nHeight == NOTARIZED_HEIGHT && memcmp(&hash,&NOTARIZED_HASH,sizeof(hash)) != 0 )
-        {
-            fprintf(stderr,"nHeight.%d == NOTARIZED_HEIGHT.%d, diff hash\n",nHeight,NOTARIZED_HEIGHT);
-            return state.DoS(100, error("%s: forked chain at notarized (height %d) with different hash", __func__, NOTARIZED_HEIGHT));
-        }*/
     }
 
     // Reject block.nVersion < 4 blocks
