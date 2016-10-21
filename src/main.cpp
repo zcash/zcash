@@ -3078,6 +3078,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         {
             int32_t notarized_height; uint256 notarized_hash,notarized_btctxid;
             notarized_height = komodo_notarizeddata(chainActive.Tip()->nHeight,&notarized_hash,&notarized_btctxid);
+            printf("nHeight.%d -> (%d %s)\n",chainActive.Tip()->nHeight,notarized_height,notarized_hash.ToString().c_str());
             if ( nHeight < notarized_height )
             {
                 fprintf(stderr,"nHeight.%d < NOTARIZED_HEIGHT.%d\n",nHeight,notarized_height);
