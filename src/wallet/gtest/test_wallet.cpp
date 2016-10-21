@@ -11,6 +11,8 @@
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
+#include <boost/filesystem.hpp>
+
 using ::testing::Return;
 
 extern ZCJoinSplit* params;
@@ -176,6 +178,13 @@ CWalletTx GetValidSpend(const libzcash::SpendingKey& sk,
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
     return wtx;
+}
+
+TEST(wallet_tests, setup_datadir_location_run_as_first_test) {
+    // Get temporary and unique path for file.
+    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
+    boost::filesystem::create_directories(pathTemp);
+    mapArgs["-datadir"] = pathTemp.string();
 }
 
 TEST(wallet_tests, note_data_serialisation) {
