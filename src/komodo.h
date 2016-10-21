@@ -277,8 +277,8 @@ int64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
         minutes = (tiptime - nLockTime) / 60;
         days = minutes / (24 * 60);
         if ( days > 0 )
-            interest = (nValue * 50000) / (365 * 1000000 / days);
-        fprintf(stderr,"komodo_interest %lld nLockTime.%u tiptime.%u minutes.%d days.%d interest %lld %.4f%%\n",(long long)nValue,nLockTime,tiptime,minutes,days,(long long)interest,(double)interest/10000.);
+            interest = (nValue * 5000000) / (365 * 1000000 / days);
+        fprintf(stderr,"komodo_interest %lld %.8f nLockTime.%u tiptime.%u minutes.%d days.%d interest %lld %.8f\n",(long long)nValue,(double)nValue/100000000.,nLockTime,tiptime,minutes,days,(long long)interest,(double)interest/100000000);
     }
     return(interest * 0);
 }
