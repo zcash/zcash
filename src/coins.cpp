@@ -406,16 +406,21 @@ uint32_t komodo_txtime(uint256 hash)
     return(tx.nLockTime);
 }
 
-CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
+CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx,uint32_t blocktime) const
 {
-    if (tx.IsCoinBase())
+    uint32_t timestamp,minutes;
+    if ( tx.IsCoinBase() != 0 )
         return 0;
-
-    CAmount nResult = 0;
+    CAmount value,nResult = 0;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
-        //fprintf(stderr,"GetValueIn i.%d time.%u\n",i,komodo_txtime(tx.vin[i].prevout.hash));
-        nResult += GetOutputFor(tx.vin[i]).nValue;
+        value = GetOutputFor(tx.vin[i]).nValue;
+        nResult += value;
+        if ( (timestamp= komodo_txtime(tx.vin[i].prevout.hash)) != 0 && timestamp < blocktime-3600*24*7 && value >= COIN )
+        {
+            minutes = (blocktime - timestamp) / 60;
+            fprintf(stderr,"GetValueIn %lld i.%d time.%u minutes.%d\n",(long long)value,i,timestamp,minutes);
+        }
     }
     nResult += tx.GetJoinSplitValueIn();
 
