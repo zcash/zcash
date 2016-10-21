@@ -123,7 +123,7 @@ class Wallet2Test (BitcoinTestFramework):
         self.sync_all()
 
         # check balance
-        assert_equal(self.nodes[2].getbalance(), Decimal('19'))
+        assert_equal(Decimal(self.nodes[2].getbalance()), Decimal('19'))
 
 if __name__ == '__main__':
     Wallet2Test ().main ()
