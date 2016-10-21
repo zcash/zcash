@@ -2375,7 +2375,7 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
             if(!out.fSpendable)
                 continue;
             nValueRet += out.tx->vout[out.i].nValue;
-            nValueRet += komodo_interest(out.tx->vout[out.i].nValue,out.tx.nLockTime,activeChain.Tip()->nTime);
+            nValueRet += komodo_interest(out.tx->vout[out.i].nValue,out.tx.nLockTime,chainActive.Tip()->nTime);
             setCoinsRet.insert(make_pair(out.tx, out.i));
         }
         return (nValueRet >= nTargetValue);

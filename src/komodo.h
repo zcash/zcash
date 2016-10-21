@@ -273,7 +273,7 @@ int64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
     int32_t minutes,days; uint64_t interest = 0;
     if ( tiptime == 0 )
-        tiptime = activeChain.Tip()->nTime;
+        tiptime = chainActive.Tip()->nTime;
     if ( nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= COIN )
     {
         minutes = (tiptime - nLockTime) / 60;
