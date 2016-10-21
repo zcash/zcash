@@ -251,7 +251,10 @@ uint32_t komodo_txtime(uint256 hash)
     CTransaction tx;
     uint256 hashBlock;
     if (!GetTransaction(hash, tx, hashBlock, true))
+    {
+        //printf("null GetTransaction\n");
         return(0);
+    }
     if (!hashBlock.IsNull()) {
         BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
         if (mi != mapBlockIndex.end() && (*mi).second)
@@ -260,7 +263,9 @@ uint32_t komodo_txtime(uint256 hash)
             if (chainActive.Contains(pindex))
                 return(pindex->GetBlockTime());
         }
+        //printf("cant find in iterator\n");
     }
+    //printf("null hashBlock\n");
     return(0);
 }
 
