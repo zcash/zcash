@@ -37,6 +37,7 @@ struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notar
 struct notarized_checkpoint { uint256 notarized_hash,notarized_btctxid; int32_t nHeight,notarized_height; } *NPOINTS; int32_t NUM_NPOINTS;
 
 int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts);
+uint32_t komodo_txtime(uint256 hash);
 // add opreturn funcid
 // pricefeeds
 

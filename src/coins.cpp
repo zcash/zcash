@@ -414,7 +414,7 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
     CAmount nResult = 0;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
-        fprintf(stderr,"GetValueIn i.%d time.%u\n",i,komodo_txtime(tx.vin[i].prevout.hash));
+        //fprintf(stderr,"GetValueIn i.%d time.%u\n",i,komodo_txtime(tx.vin[i].prevout.hash));
         nResult += GetOutputFor(tx.vin[i]).nValue;
     }
     nResult += tx.GetJoinSplitValueIn();

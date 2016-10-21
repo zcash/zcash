@@ -2133,7 +2133,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (nSigOps > MAX_BLOCK_SIGOPS)
             return state.DoS(100, error("ConnectBlock(): too many sigops"),
                              REJECT_INVALID, "bad-blk-sigops");
-fprintf(stderr,"ht.%d vout0 t%u\n",pindex->nHeight,tx.nLockTime);
+//fprintf(stderr,"ht.%d vout0 t%u\n",pindex->nHeight,tx.nLockTime);
         if (!tx.IsCoinBase())
         {
             if (!view.HaveInputs(tx))
