@@ -212,6 +212,25 @@ int32_t komodo_threshold(int32_t height,uint64_t signedmask)
     else return(0);
 }
 
+uint32_t komodo_txtime(uint256 hash)
+{
+    CTransaction tx;
+    uint256 hashBlock;
+    komodo_init();
+    if (!GetTransaction(hash, tx, hashBlock, true))
+        return(0);
+    if (!hashBlock.IsNull()) {
+        BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
+        if (mi != mapBlockIndex.end() && (*mi).second)
+        {
+            CBlockIndex* pindex = (*mi).second;
+            if (chainActive.Contains(pindex))
+                return(pindex->GetBlockTime());
+        }
+    }
+    return(0);
+}
+
 void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
 {
     struct nutxo_entry *np;
@@ -224,7 +243,7 @@ void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txh
         np->voutmask = voutmask;
         np->notaryid = notaryid;
         HASH_ADD_KEYPTR(hh,NUTXOS,&np->txhash,sizeof(np->txhash),np);
-        printf("Add NUTXO[%d] <- %s notaryid.%d %s %llx\n",Num_nutxos,Notaries[notaryid][0],notaryid,txhash.ToString().c_str(),(long long)voutmask);
+        printf("Add NUTXO[%d] <- %s notaryid.%d t%u %s %llx\n",Num_nutxos,Notaries[notaryid][0],notaryid,komodo_txtime(txhash),txhash.ToString().c_str(),(long long)voutmask);
         if ( addflag != 0 )
             komodo_stateupdate(height,0,0,notaryid,txhash,voutmask,numvouts);
         Num_nutxos++;
@@ -626,22 +645,4 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     }
 }
 
-uint32_t komodo_txtime(uint256 hash)
-{
-    CTransaction tx;
-    uint256 hashBlock;
-    komodo_init();
-    if (!GetTransaction(hash, tx, hashBlock, true))
-        return(0);
-    if (!hashBlock.IsNull()) {
-        BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
-        if (mi != mapBlockIndex.end() && (*mi).second)
-        {
-            CBlockIndex* pindex = (*mi).second;
-            if (chainActive.Contains(pindex))
-                return(pindex->GetBlockTime());
-        }
-    }
-    return(0);
-}
 #endif
