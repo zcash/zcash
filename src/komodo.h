@@ -271,13 +271,16 @@ uint32_t komodo_txtime(uint256 hash)
 
 int64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
-    int32_t minutes;
+    int32_t minutes,days; uint64_t interest = 0;
     if ( nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= COIN )
     {
         minutes = (tiptime - nLockTime) / 60;
-        fprintf(stderr,"komodo_interest %lld nLockTime.%u tiptime.%u minutes.%d\n",(long long)nValue,nLockTime,tiptime,minutes);
+        days = minutes / (24 * 60);
+        if ( days > 0 )
+            interest = (nValue * 50000) / (365 * 1000000 / days);
+        fprintf(stderr,"komodo_interest %lld nLockTime.%u tiptime.%u minutes.%d days.%d interest %lld %.4f%%\n",(long long)nValue,nLockTime,tiptime,minutes,days,(long long)interest,(double)interest/10000.);
     }
-    return(0);
+    return(interest * 0);
 }
 
 void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
