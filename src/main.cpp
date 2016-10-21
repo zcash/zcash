@@ -4272,7 +4272,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     }
 
 
-    if ((pfrom->nServices & NODE_BLOOM) &&
+    if (!(pfrom->nServices & NODE_BLOOM) &&
         (strCommand == "filterload" ||
          strCommand == "filteradd" ||
          strCommand == "filterclear"))
