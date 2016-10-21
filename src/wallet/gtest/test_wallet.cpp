@@ -734,6 +734,14 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         wallet.GetNoteWitnesses(notes, witnesses, anchor4);
         EXPECT_TRUE((bool) witnesses[0]);
         EXPECT_EQ(anchor2, anchor4);
+
+        // Incrementing with the same block again should not change the cache
+        uint256 anchor5;
+        wallet.IncrementNoteWitnesses(&index2, &block2, tree);
+        std::vector<boost::optional<ZCIncrementalWitness>> witnesses5;
+        wallet.GetNoteWitnesses(notes, witnesses5, anchor5);
+        EXPECT_EQ(witnesses, witnesses5);
+        EXPECT_EQ(anchor4, anchor5);
     }
 }
 
