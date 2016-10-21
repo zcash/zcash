@@ -216,7 +216,6 @@ uint32_t komodo_txtime(uint256 hash)
 {
     CTransaction tx;
     uint256 hashBlock;
-    komodo_init();
     if (!GetTransaction(hash, tx, hashBlock, true))
         return(0);
     if (!hashBlock.IsNull()) {
