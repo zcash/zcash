@@ -240,7 +240,7 @@ class WalletTest (BitcoinTestFramework):
 
         # send node 2 taddr to zaddr
         recipients = []
-        recipients.append({"address":myzaddr, "amount":7.0})
+        recipients.append({"address":myzaddr, "amount":7})
         myopid = self.nodes[2].z_sendmany(mytaddr, recipients)
 
         opids = []
@@ -288,7 +288,7 @@ class WalletTest (BitcoinTestFramework):
         node2balance = self.nodes[2].getbalance() # 16.99790000
 
         recipients = []
-        recipients.append({"address":self.nodes[0].getnewaddress(), "amount":1.0})
+        recipients.append({"address":self.nodes[0].getnewaddress(), "amount":1})
         recipients.append({"address":self.nodes[2].getnewaddress(), "amount":1.0})
         myopid = self.nodes[2].z_sendmany(myzaddr, recipients)
 
