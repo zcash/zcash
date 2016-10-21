@@ -104,7 +104,7 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
     return true;
 }
 
-int32_t komodo_heightnotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
+int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
@@ -114,7 +114,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( height > 34000 ) // 0 -> non-special notary
     {
-        special = komodo_heightnotary(&notaryid,height,pubkey33);
+        special = komodo_chosennotary(&notaryid,height,pubkey33);
         for (i=0; i<33; i++)
         {
             if ( pubkey33[i] != 0 )

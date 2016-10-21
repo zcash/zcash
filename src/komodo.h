@@ -270,7 +270,7 @@ void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
     pthread_mutex_unlock(&komodo_mutex);
 }
 
-int32_t komodo_heightnotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
+int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 {
     // -1 if not notary, 0 if notary, 1 if special notary
     struct knotary_entry *kp; int32_t numnotaries,modval = -1;
@@ -421,7 +421,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
 
 int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp)
 {
-    int32_t k,opretlen,len = 0; uint256 kmdtxid,btctxid; uint8_t crypto777[33];
+    int32_t k,opretlen,nid,len = 0; uint256 kmdtxid,btctxid; uint8_t crypto777[33];
     if ( scriptlen == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
     {
         decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
@@ -436,19 +436,19 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             *specialtxp = 1;
             printf(">>>>>>>> ");
         }
-        else if ( (k= komodo_heightnotary(height,scriptbuf + 1)) >= 0 )
+        else if ( komodo_chosennotary(&nid,height,scriptbuf + 1) >= 0 )
         {
             //printf("found notary.k%d\n",k);
             if ( notaryid < 64 )
             {
                 if ( notaryid < 0 )
                 {
-                    notaryid = k;
+                    notaryid = nid;
                     *voutmaskp |= (1LL << j);
                 }
-                else if ( notaryid != k )
+                else if ( notaryid != nid )
                 {
-                    printf("mismatch notaryid.%d k.%d\n",notaryid,k);
+                    printf("mismatch notaryid.%d k.%d\n",notaryid,nid);
                     notaryid = 64;
                     *voutmaskp = 0;
                 }
@@ -525,7 +525,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     }
                 }
             }
-            if ( notaryid >= 0 && voutmask != 0 )
+            if ( notaryid >= 0 && notaryid < 64 && voutmask != 0 )
                 komodo_nutxoadd(1,height,notaryid,txhash,voutmask,numvouts);
             signedmask = 0;
             numvins = block.vtx[i].vin.size();
