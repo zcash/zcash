@@ -438,6 +438,9 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
     return true;
 }
 
+extern uint8_t NOTARY_PUBKEY33[33];
+int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
+
 void static BitcoinMiner(CWallet *pwallet)
 {
     LogPrintf("ZcashMiner started\n");
@@ -504,7 +507,7 @@ void static BitcoinMiner(CWallet *pwallet)
             // Search
             //
             int64_t nStart = GetTime();
-            if ( komodo_chosennotary(&notaryid,pblock->nHeight,KOMODO_PUBKEY33) > 0 )
+            if ( komodo_chosennotary(&notaryid,pblock->nHeight,NOTARY_PUBKEY33) > 0 )
                 fprintf(stderr,"I am the chosen one for ht.%d\n",pblock->nHeight);
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
 
