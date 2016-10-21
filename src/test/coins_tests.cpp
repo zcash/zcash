@@ -11,6 +11,7 @@
 #include "consensus/validation.h"
 #include "main.h"
 #include "undo.h"
+#include "pubkey.h"
 
 #include <vector>
 #include <map>
