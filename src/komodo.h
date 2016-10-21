@@ -87,7 +87,7 @@ uint64_t komodo_accrued_interest(int32_t height,int64_t paidinterest)
     int32_t ind,incr = 100000;
     if ( height >= maxheight )
     {
-        interests = realloc(interests,(maxheight + incr) * sizeof(*interests) * 2);
+        interests = (uint64_t *)realloc(interests,(maxheight + incr) * sizeof(*interests) * 2);
         memset(&interests[maxheight << 1],0,incr * sizeof(*interests) * 2);
         maxheight += incr;
     }
@@ -348,7 +348,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 void komodo_notarized_update(int32_t nHeight,int32_t notarized_height,uint256 notarized_hash,uint256 notarized_btctxid)
 {
     struct notarized_checkpoint *np;
-    NPOINTS = realloc(NPOINTS,(NUM_NPOINTS+1) * sizeof(*NPOINTS));
+    NPOINTS = (struct notarized_checkpoint *)realloc(NPOINTS,(NUM_NPOINTS+1) * sizeof(*NPOINTS));
     np = &NPOINTS[NUM_NPOINTS++];
     memset(np,0,sizeof(*np));
     np->nHeight = nHeight;

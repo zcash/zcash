@@ -3076,8 +3076,8 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
             return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
         else
         {
-            int32_t notarized_height; uint256 notarized_hash;
-            notarized_height = komodo_notarizeddata(chainActive.Tip()->nHeight,&notarized_hash);
+            int32_t notarized_height; uint256 notarized_hash,notarized_btctxid;
+            notarized_height = komodo_notarizeddata(chainActive.Tip()->nHeight,&notarized_hash,&notarized_btctxid);
             if ( nHeight < notarized_height )
             {
                 fprintf(stderr,"nHeight.%d < NOTARIZED_HEIGHT.%d\n",nHeight,notarized_height);
