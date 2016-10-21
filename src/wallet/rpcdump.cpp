@@ -305,11 +305,11 @@ Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys)
                 libzcash::SpendingKey key = spendingkey.Get();
                 libzcash::PaymentAddress addr = key.address();
                 if (pwalletMain->HaveSpendingKey(addr)) {
-                    LogPrintf("Skipping import of zaddr %s (key already present)\n", CZCPaymentAddress(addr).ToString());
+                    LogPrint("zrpc", "Skipping import of zaddr %s (key already present)\n", CZCPaymentAddress(addr).ToString());
                     continue;
                 }
                 int64_t nTime = DecodeDumpTime(vstr[1]);
-                LogPrintf("Importing zaddr %s...\n", CZCPaymentAddress(addr).ToString());
+                LogPrint("zrpc", "Importing zaddr %s...\n", CZCPaymentAddress(addr).ToString());
                 if (!pwalletMain->AddZKey(key)) {
                     // Something went wrong
                     fGood = false;
@@ -320,7 +320,7 @@ Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys)
                 continue;
             }
             catch (const std::runtime_error &e) {
-                LogPrintf("Importing detected an error: %s\n", e.what());
+                LogPrint("zrpc","Importing detected an error: %s\n", e.what());
                 // Not a valid spending key, so carry on and see if it's a Bitcoin style address.
             }
         }
@@ -532,9 +532,9 @@ Value z_importkey(const Array& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return Value::null;
 
-    if (fHelp || params.size() < 1 || params.size() > 3)
+    if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "z_importkey \"zkey\" ( \"label\" rescan )\n"
+            "z_importkey \"zkey\" ( rescan )\n"
             "\nAdds a zkey (as returned by z_exportkey) to your wallet.\n"
             "\nArguments:\n"
             "1. \"zkey\"             (string, required) The zkey (see z_exportkey)\n"
@@ -545,10 +545,8 @@ Value z_importkey(const Array& params, bool fHelp)
             + HelpExampleCli("z_exportkey", "\"myaddress\"") +
             "\nImport the zkey with rescan\n"
             + HelpExampleCli("z_importkey", "\"mykey\"") +
-            "\nImport using a label and without rescan\n"
-            + HelpExampleCli("z_importkey", "\"mykey\" \"testing\" false") +
             "\nAs a JSON-RPC call\n"
-            + HelpExampleRpc("z_importkey", "\"mykey\", \"testing\", false")
+            + HelpExampleRpc("z_importkey", "\"mykey\", false")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);

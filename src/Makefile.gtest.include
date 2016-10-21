@@ -4,10 +4,13 @@ bin_PROGRAMS += komodo-gtest
 # tool for generating our public parameters
 komodo_gtest_SOURCES = \
 	gtest/main.cpp \
+	gtest/test_checktransaction.cpp \
 	gtest/json_test_vectors.cpp \
+        gtest/json_test_vectors.h \
+	gtest/test_foundersreward.cpp \
+	gtest/test_wallet_zkeys.cpp \
 	gtest/test_jsonspirit.cpp \
 	gtest/test_tautology.cpp \
-	gtest/test_checktransaction.cpp \
 	gtest/test_equihash.cpp \
 	gtest/test_joinsplit.cpp \
 	gtest/test_keystore.cpp \
@@ -17,7 +20,6 @@ komodo_gtest_SOURCES = \
 	gtest/test_rpc.cpp \
 	gtest/test_circuit.cpp \
 	gtest/test_txid.cpp \
-	gtest/test_wallet_zkeys.cpp \
 	gtest/test_libzcash_utils.cpp \
 	gtest/test_proofs.cpp \
 	wallet/gtest/test_wallet.cpp
@@ -34,5 +36,5 @@ komodo_gtest_LDADD += $(LIBBITCOIN_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_L
 
 komodo_gtest_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 
-komodo-gtest_check: komodo-gtest FORCE
-	./komodo-gtest
+komodo-gtest-expected-failures: komodo-gtest FORCE
+	./komodo-gtest --gtest_filter=*DISABLED_* --gtest_also_run_disabled_tests

@@ -478,7 +478,6 @@ const boost::filesystem::path &ZC_GetParamsDir()
         return path;
 
     path = ZC_GetBaseParamsDir();
-    path /= BaseParams().DataDir();
 
     return path;
 }

@@ -100,7 +100,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
     const CChainParams& chainparams = Params();
     // Create new block
-    auto_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
+    unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
@@ -334,20 +334,6 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         txNew.vout.resize(1);
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
-
-        /*if ((nHeight > 0) && (nHeight < chainparams.GetConsensus().nSubsidyHalvingInterval)) {
-            // Founders reward is 20% of the block subsidy
-            auto vFoundersReward = txNew.vout[0].nValue / 5;
-            // Take some reward away from us
-            txNew.vout[0].nValue -= vFoundersReward;
-
-            auto rewardScript = ParseHex(FOUNDERS_REWARD_SCRIPT);
-
-            // And give it to the founders
-            txNew.vout.push_back(CTxOut(vFoundersReward, CScript(rewardScript.begin(),
-                                                                 rewardScript.end())));
-        }*/
-
         // Add fees
         txNew.vout[0].nValue += nFees;
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
@@ -366,16 +352,16 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         pblock->hashReserved   = uint256();
         UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
-        extern int32_t IS_KOMODO_NOTARY;
-        if ( 0 && IS_KOMODO_NOTARY != 0 )
-            pblock->nBits = KOMODO_MINDIFF_NBITS;
-        else pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
+        pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
         CValidationState state;
-        if (!TestBlockValidity(state, *pblock, pindexPrev, false, false))
-            throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+        if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
+        {
+            fprintf(stderr,"testblockvalidity failed\n");
+            //throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+        }
     }
 
     return pblocktemplate.release();
@@ -452,6 +438,9 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
     return true;
 }
 
+extern uint8_t NOTARY_PUBKEY33[33];
+int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
+
 void static BitcoinMiner(CWallet *pwallet)
 {
     LogPrintf("ZcashMiner started\n");
@@ -502,7 +491,7 @@ void static BitcoinMiner(CWallet *pwallet)
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
 
-            auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
+            unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
             if (!pblocktemplate.get())
             {
                 LogPrintf("Error in ZcashMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");
@@ -517,7 +506,12 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             // Search
             //
+            int32_t notaryid;
             int64_t nStart = GetTime();
+            if ( komodo_chosennotary(&notaryid,pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
+            {
+                //fprintf(stderr,"I am the chosen one for ht.%d\n",pindexPrev->nHeight+1);
+            }
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
 
             while (true)

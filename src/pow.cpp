@@ -16,14 +16,12 @@
 
 #include "sodium.h"
 
-int32_t komodo_is_notaryblock(CBlockHeader *pblock);
-
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
 
     // Genesis block
-    if (pindexLast == NULL || komodo_is_notaryblock((CBlockHeader *)pblock) != 0 )
+    if (pindexLast == NULL )
         return nProofOfWorkLimit;
 
     // Find the first block in the averaging interval
@@ -106,22 +104,48 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
     return true;
 }
 
-bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params& params)
+int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
+
+bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
-    bool fNegative;
-    bool fOverflow;
+    bool fNegative,fOverflow; int32_t i,nonz=0,special,notaryid,flag = 0;
     arith_uint256 bnTarget;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
-
+    if ( height > 34000 ) // 0 -> non-special notary
+    {
+        special = komodo_chosennotary(&notaryid,height,pubkey33);
+        for (i=0; i<33; i++)
+        {
+            if ( pubkey33[i] != 0 )
+                nonz++;
+            //fprintf(stderr,"%02x",pubkey33[i]);
+        }
+        //fprintf(stderr," height.%d special.%d nonz.%d\n",height,special,nonz);
+        if ( nonz == 0 )
+            return(true); // will come back via different path with pubkey set
+        if ( special > 0 ) // special notary id == (height % numnotaries)
+        {
+            if (UintToArith256(hash) <= bnTarget) // accept normal diff
+                return true;
+            bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+            flag = 1;
+        } //else bnTarget /= 8;
+    }
     // Check range
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");
-
     // Check proof of work matches claimed amount
     if (UintToArith256(hash) > bnTarget)
+    {
         return error("CheckProofOfWork(): hash doesn't match nBits");
-
+    }
+    if ( flag != 0 )
+    {
+        for (i=0; i<33; i++)
+            fprintf(stderr,"%02x",pubkey33[i]);
+        fprintf(stderr," <- Round Robin ht.%d for notary.%d special.%d\n",height,notaryid,special);
+    }
     return true;
 }
 

@@ -8,12 +8,18 @@
 
 #include <string>
 
+#include <boost/preprocessor/arithmetic/add.hpp>
+#include <boost/preprocessor/arithmetic/sub.hpp>
+#include <boost/preprocessor/comparison/equal.hpp>
+#include <boost/preprocessor/comparison/less.hpp>
+#include <boost/preprocessor/control/if.hpp>
+
 /**
  * Name of client reported in the 'version' message. Report the same name
  * for both bitcoind and bitcoin-core, to make it harder for attackers to
  * target servers or GUI users specifically.
  */
-const std::string CLIENT_NAME("Satoshi");
+const std::string CLIENT_NAME("MagicBean");
 
 /**
  * Client version number
@@ -48,14 +54,30 @@ const std::string CLIENT_NAME("Satoshi");
 #define GIT_COMMIT_DATE "$Format:%cD$"
 #endif
 
+#define RENDER_BETA_STRING(num) "-beta" DO_STRINGIZE(num)
+#define RENDER_RC_STRING(num) "-rc" DO_STRINGIZE(num)
+#define RENDER_DEV_STRING(num) "-" DO_STRINGIZE(num)
+
+#define RENDER_BUILD(build) \
+    BOOST_PP_IF( \
+        BOOST_PP_LESS(build, 25), \
+        RENDER_BETA_STRING(BOOST_PP_ADD(build, 1)), \
+        BOOST_PP_IF( \
+            BOOST_PP_LESS(build, 50), \
+            RENDER_RC_STRING(BOOST_PP_SUB(build, 24)), \
+            BOOST_PP_IF( \
+                BOOST_PP_EQUAL(build, 50), \
+                "", \
+                RENDER_DEV_STRING(BOOST_PP_SUB(build, 50)))))
+
 #define BUILD_DESC_WITH_SUFFIX(maj, min, rev, build, suffix) \
-    "v" DO_STRINGIZE(maj) "." DO_STRINGIZE(min) "." DO_STRINGIZE(rev) "." DO_STRINGIZE(build) "-" DO_STRINGIZE(suffix)
+    "v" DO_STRINGIZE(maj) "." DO_STRINGIZE(min) "." DO_STRINGIZE(rev) RENDER_BUILD(build) "-" DO_STRINGIZE(suffix)
 
 #define BUILD_DESC_FROM_COMMIT(maj, min, rev, build, commit) \
-    "v" DO_STRINGIZE(maj) "." DO_STRINGIZE(min) "." DO_STRINGIZE(rev) "." DO_STRINGIZE(build) "-g" commit
+    "v" DO_STRINGIZE(maj) "." DO_STRINGIZE(min) "." DO_STRINGIZE(rev) RENDER_BUILD(build) "-g" commit
 
 #define BUILD_DESC_FROM_UNKNOWN(maj, min, rev, build) \
-    "v" DO_STRINGIZE(maj) "." DO_STRINGIZE(min) "." DO_STRINGIZE(rev) "." DO_STRINGIZE(build) "-unk"
+    "v" DO_STRINGIZE(maj) "." DO_STRINGIZE(min) "." DO_STRINGIZE(rev) RENDER_BUILD(build) "-unk"
 
 #ifndef BUILD_DESC
 #ifdef BUILD_SUFFIX
@@ -80,10 +102,14 @@ const std::string CLIENT_DATE(BUILD_DATE);
 
 static std::string FormatVersion(int nVersion)
 {
-    if (nVersion % 100 == 0)
+    if (nVersion % 100 < 25)
+        return strprintf("%d.%d.%d-beta%d", nVersion / 1000000, (nVersion / 10000) % 100, (nVersion / 100) % 100, (nVersion % 100)+1);
+    if (nVersion % 100 < 50)
+        return strprintf("%d.%d.%d-rc%d", nVersion / 1000000, (nVersion / 10000) % 100, (nVersion / 100) % 100, (nVersion % 100)-24);
+    else if (nVersion % 100 == 50)
         return strprintf("%d.%d.%d", nVersion / 1000000, (nVersion / 10000) % 100, (nVersion / 100) % 100);
     else
-        return strprintf("%d.%d.%d.%d", nVersion / 1000000, (nVersion / 10000) % 100, (nVersion / 100) % 100, nVersion % 100);
+        return strprintf("%d.%d.%d-%d", nVersion / 1000000, (nVersion / 10000) % 100, (nVersion / 100) % 100, (nVersion % 100)-50);
 }
 
 std::string FormatFullVersion()

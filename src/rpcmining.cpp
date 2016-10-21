@@ -115,7 +115,7 @@ Value getgenerate(const Array& params, bool fHelp)
     return GetBoolArg("-gen", false);
 }
 
-int32_t komodo_blockcheck(CBlock *block,uint32_t *nBitsp);
+extern uint8_t NOTARY_PUBKEY33[33];
 
 Value generate(const Array& params, bool fHelp)
 {
@@ -156,7 +156,7 @@ Value generate(const Array& params, bool fHelp)
     unsigned int k = Params().EquihashK();
     while (nHeight < nHeightEnd)
     {
-        auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
+        unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Wallet keypool empty");
         CBlock *pblock = &pblocktemplate->block;
@@ -193,16 +193,9 @@ Value generate(const Array& params, bool fHelp)
             std::function<bool(std::vector<unsigned char>)> validBlock =
                     [&pblock](std::vector<unsigned char> soln)
             {
-                int32_t retval; uint32_t nBits;
+                LOCK(cs_main);
                 pblock->nSolution = soln;
-                nBits = pblock->nBits;
-                if ( (retval= komodo_blockcheck(pblock,&nBits)) == 0 )
-                {
-                    return CheckProofOfWork(pblock->GetHash(), nBits, Params().GetConsensus());
-                }
-                else if ( retval < 0 ) // komodo rejects, ie. prior to notarized blockhash
-                    return(false);
-                return true;
+                return CheckProofOfWork(chainActive.Height(),NOTARY_PUBKEY33,pblock->GetHash(), pblock->nBits, Params().GetConsensus());
             };
             if (EhBasicSolveUncancellable(n, k, curr_state, validBlock))
                 goto endloop;
@@ -796,11 +789,6 @@ Value getblocksubsidy(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
-    /*CAmount nFoundersReward = 0;
-    if ((nHeight > 0) && (nHeight < Params().GetConsensus().nSubsidyHalvingInterval)) {
-        nFoundersReward = nReward/5;
-        nReward -= nFoundersReward;
-    }*/
     Object result;
     result.push_back(Pair("miner", ValueFromAmount(nReward)));
     //result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));

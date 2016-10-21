@@ -6,9 +6,9 @@ https://z.cash/
  
 Where do I begin?
 -----------------
- 
-We have a guide for joining the public testnet: https://github.com/zcash/zcash/wiki/Public-Alpha-Guide
- 
+
+We have a guide for joining the public testnet: https://github.com/zcash/zcash/wiki/Beta-Guide
+
 What is Zcash?
 --------------
  
@@ -52,15 +52,24 @@ git clone https://github.com/jl777/komodo
 cd komodo
 ./autogen.sh
 ./configure --with-incompatible-bdb --with-gui
-# This command might finish with: configure: error: libgmp headers missing. This can be ignored.
+# This command might finish with: configure: error: libgmp headers missing. This can be ignored. so can libsnark directory missing error
 ./zcutil/fetch-params.sh
-cp ~/.zcash-params/testnet3/z9* ~/.zcash-params
 
 # -j8 uses 8 threads - replace 8 with number of threads you want to use
 ./zcutil/build.sh -j8
 #This can take some time.
 ```
  
+# to update an existing version, git checkout dPoW if not on that branch already
+
+git pull
+
+./zcutil/fetch-params.sh
+
+./zcutil/build.sh -j8
+
+To reset the blockchain, from ~/.komodo rm -rf blocks chainstate debug.log komodostate db.log
+
 Create komodo.conf
 ------------------
  
