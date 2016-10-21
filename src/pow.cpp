@@ -104,18 +104,17 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
     return true;
 }
 
-int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33);
+int32_t komodo_heightnotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
-    bool fNegative,fOverflow; int32_t special;
+    bool fNegative,fOverflow; int32_t i,nonz=0,special,notaryid,flag = 0;
     arith_uint256 bnTarget;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( height > 34000 ) // 0 -> non-special notary
     {
-        int32_t i,nonz = 0;
-        special = komodo_heightnotary(height,pubkey33);
+        special = komodo_heightnotary(&notaryid,height,pubkey33);
         for (i=0; i<33; i++)
         {
             if ( pubkey33[i] != 0 )
@@ -130,6 +129,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             if (UintToArith256(hash) <= bnTarget) // accept normal diff
                 return true;
             bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+            flag = 1;
         } //else bnTarget /= 8;
     }
     // Check range
@@ -139,6 +139,12 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     if (UintToArith256(hash) > bnTarget)
     {
         return error("CheckProofOfWork(): hash doesn't match nBits");
+    }
+    if ( flag != 0 )
+    {
+        for (i=0; i<33; i++)
+            fprintf(stderr,"%02x",pubkey33[i]);
+        fprintf(stderr," <- Round Robin ht.%d for notary.%d special.%d\n",height,notaryid,special);
     }
     return true;
 }
