@@ -274,6 +274,10 @@ int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33)
 {
     // -1 if not notary, 0 if notary, 1 if special notary
     struct knotary_entry *kp; int32_t numnotaries,modval = -1;
+    int32_t i; for (i=0; i<33; i++)
+        printf("%02x",pubkey33[i]);
+    printf(" ht.%d\n",height);
+    
     pthread_mutex_lock(&komodo_mutex);
     HASH_FIND(hh,Pubkeys[height/KOMODO_ELECTION_GAP].Notaries,pubkey33,33,kp);
     pthread_mutex_unlock(&komodo_mutex);
@@ -604,7 +608,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        if ( ReadBlockFromDisk(block,(const CBlockIndex *)pindex) != 0 )
+        if ( 0 && ReadBlockFromDisk(block,(const CBlockIndex *)pindex) != 0 )
         {
             komodo_block2pubkey33(pubkey33,block);
         }
