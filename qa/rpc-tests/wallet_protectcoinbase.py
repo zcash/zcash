@@ -72,6 +72,7 @@ class Wallet2Test (BitcoinTestFramework):
         recipients.append({"address":myzaddr, "amount":20.0})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
         self.wait_for_operationd_success(myopid)
+        self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
 
@@ -86,6 +87,7 @@ class Wallet2Test (BitcoinTestFramework):
         recipients.append({"address":mytaddr, "amount":20.0})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
         self.wait_for_operationd_success(myopid)
+        self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
 
@@ -116,6 +118,7 @@ class Wallet2Test (BitcoinTestFramework):
         except JSONRPCException:
             assert(False)
 
+        self.sync_all()
         self.nodes[1].generate(10)
         self.sync_all()
 
