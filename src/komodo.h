@@ -39,18 +39,6 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
 // add opreturn funcid
 // pricefeeds
 
-int32_t komodo_threshold(int32_t height,uint64_t signedmask)
-{
-    int32_t numnotaries,i,wt = 0;
-    numnotaries = Pubkeys[height / KOMODO_ELECTION_GAP].numnotaries;
-    for (i=0; i<numnotaries; i++)
-        if ( ((1LL << i) & signedmask) != 0 )
-            wt++;
-    if ( wt > (numnotaries >> 1) || (wt > numnotaries/5 && (signedmask & 3) != 0) )
-        return(1); // N/2+1 || N/3 + devsig
-    else return(0);
-}
-
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
 
 const char *Notaries[][2] =
@@ -212,6 +200,18 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex)
     return(n + adjust);
 }
 
+int32_t komodo_threshold(int32_t height,uint64_t signedmask)
+{
+    int32_t numnotaries,i,wt = 0;
+    numnotaries = Pubkeys[height / KOMODO_ELECTION_GAP].numnotaries;
+    for (i=0; i<numnotaries; i++)
+        if ( ((1LL << i) & signedmask) != 0 )
+            wt++;
+    if ( wt > (numnotaries >> 1) || (wt > numnotaries/5 && (signedmask & 3) != 0) )
+        return(1); // N/2+1 || N/3 + devsig
+    else return(0);
+}
+
 void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
 {
     struct nutxo_entry *np;
@@ -287,9 +287,9 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
             //printf("found notary.%d ht.%d modval.%d\n",kp->notaryid,height,modval);
         } else printf("unexpected zero notaries at height.%d\n",height);
     }
-    int32_t i; for (i=0; i<33; i++)
-        printf("%02x",pubkey33[i]);
-    printf(" ht.%d notary.%d special.%d\n",height,*notaryidp,modval);
+    //int32_t i; for (i=0; i<33; i++)
+    //    printf("%02x",pubkey33[i]);
+    //printf(" ht.%d notary.%d special.%d\n",height,*notaryidp,modval);
     return(modval);
 }
 
