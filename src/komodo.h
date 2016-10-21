@@ -252,8 +252,8 @@ uint32_t komodo_txtime(uint256 hash)
     uint256 hashBlock;
     if (!GetTransaction(hash, tx, hashBlock, true))
     {
-        printf("null GetTransaction\n");
-        return(0);
+        //printf("null GetTransaction\n");
+        return(tx.nLockTime);
     }
     if (!hashBlock.IsNull()) {
         BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
@@ -263,10 +263,10 @@ uint32_t komodo_txtime(uint256 hash)
             if (chainActive.Contains(pindex))
                 return(pindex->GetBlockTime());
         }
-        printf("cant find in iterator\n");
+        //printf("cant find in iterator\n");
     }
-    printf("null hashBlock\n");
-    return(0);
+    //printf("null hashBlock\n");
+    return(tx.nLockTime);
 }
 
 void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
