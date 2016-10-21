@@ -3138,8 +3138,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         return true;
     }
 
-    //if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state))
-    //    return false;
+    if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state))
+        return false;
 
     // Get prev block index
     CBlockIndex* pindexPrev = NULL;
@@ -3155,8 +3155,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         return false;
     if (pindex == NULL)
         pindex = AddToBlockIndex(block);
-    if (!CheckBlockHeader(pindex!=0?pindex->nHeight:0,pindex, block, state))
-        return false;
+    //if (!CheckBlockHeader(pindex!=0?pindex->nHeight:0,pindex, block, state))
+    //    return false;
     if (ppindex)
         *ppindex = pindex;
     return true;
