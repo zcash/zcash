@@ -289,7 +289,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
     }
     int32_t i; for (i=0; i<33; i++)
         printf("%02x",pubkey33[i]);
-    printf(" ht.%d notary.%d special.%d\n",height,notaryid,modval);
+    printf(" ht.%d notary.%d special.%d\n",height,*notaryidp,modval);
     return(modval);
 }
 
