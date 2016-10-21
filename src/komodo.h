@@ -273,10 +273,7 @@ void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
 int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33)
 {
     // -1 if not notary, 0 if notary, 1 if special notary
-    struct knotary_entry *kp; int32_t numnotaries,modval = -1;
-    //int32_t i; for (i=0; i<33; i++)
-    //    printf("%02x",pubkey33[i]);
-    //printf(" ht.%d\n",height);
+    struct knotary_entry *kp; int32_t numnotaries,notaryid = -1,modval = -1;
     
     pthread_mutex_lock(&komodo_mutex);
     HASH_FIND(hh,Pubkeys[height/KOMODO_ELECTION_GAP].Notaries,pubkey33,33,kp);
@@ -285,10 +282,14 @@ int32_t komodo_heightnotary(int32_t height,uint8_t *pubkey33)
     {
         if ( (numnotaries= Pubkeys[height/KOMODO_ELECTION_GAP].numnotaries) > 0 )
         {
+            notaryid = kp->notaryid;
             modval = ((height % numnotaries) == kp->notaryid);
             //printf("found notary.%d ht.%d modval.%d\n",kp->notaryid,height,modval);
         } else printf("unexpected zero notaries at height.%d\n",height);
     }
+    int32_t i; for (i=0; i<33; i++)
+        printf("%02x",pubkey33[i]);
+    printf(" ht.%d notary.%d special.%d\n",height,notaryid,modval);
     return(modval);
 }
 
