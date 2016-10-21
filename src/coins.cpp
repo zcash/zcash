@@ -384,7 +384,7 @@ const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
 }
 
 uint32_t komodo_txtime(uint256 hash);
-int64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+uint64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 
 CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx,uint32_t tiptime) const
 {

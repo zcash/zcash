@@ -269,7 +269,7 @@ uint32_t komodo_txtime(uint256 hash)
     return(0);
 }
 
-int64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
+uint64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
     int32_t minutes,days; uint64_t interest = 0;
     if ( tiptime == 0 )

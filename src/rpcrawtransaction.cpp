@@ -96,7 +96,7 @@ Array TxJoinSplitToJSON(const CTransaction& tx) {
     return vjoinsplit;
 }
 
-int64_t komodo_interest(uint64_t nValue,uint32_t pastlocktime,uint32_t tiptime);
+uint64_t komodo_interest(uint64_t nValue,uint32_t pastlocktime,uint32_t tiptime);
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 {
     entry.push_back(Pair("txid", tx.GetHash().GetHex()));

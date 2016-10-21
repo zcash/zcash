@@ -2259,7 +2259,7 @@ Value resendwallettransactions(const Array& params, bool fHelp)
     return result;
 }
 
-int64_t komodo_interest(uint64_t nValue,uint32_t pastlocktime,uint32_t tiptime);
+uint64_t komodo_interest(uint64_t nValue,uint32_t pastlocktime,uint32_t tiptime);
 Value listunspent(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
