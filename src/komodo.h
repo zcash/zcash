@@ -255,7 +255,7 @@ uint32_t komodo_txtime(uint256 hash)
         //printf("null GetTransaction\n");
         return(tx.nLockTime);
     }
-    if (!hashBlock.IsNull()) {
+    /*if (!hashBlock.IsNull()) {
         BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
         if (mi != mapBlockIndex.end() && (*mi).second)
         {
@@ -264,9 +264,20 @@ uint32_t komodo_txtime(uint256 hash)
                 return(pindex->GetBlockTime());
         }
         //printf("cant find in iterator\n");
-    }
+    }*/
     //printf("null hashBlock\n");
-    return(tx.nLockTime);
+    return(0);
+}
+
+int64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
+{
+    int32_t minutes;
+    if ( nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= COIN )
+    {
+        minutes = (tiptime - nLockTime) / 60;
+        fprintf(stderr,"komodo_interest %lld nLockTime.%u tiptime.%u minutes.%d\n",(long long)nValue,nLockTime,tiptime,minutes);
+    }
+    return(0);
 }
 
 void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
@@ -718,5 +729,6 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
         //printf("extending chaintip komodo_index2pubkey33 height.%d need to get pubkey33\n",height);
     }
 }
+
 
 #endif

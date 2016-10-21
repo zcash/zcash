@@ -2259,6 +2259,7 @@ Value resendwallettransactions(const Array& params, bool fHelp)
     return result;
 }
 
+int64_t komodo_interest(uint64_t nValue,uint32_t pastlocktime,uint32_t tiptime);
 Value listunspent(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -2363,6 +2364,7 @@ Value listunspent(const Array& params, bool fHelp)
             }
         }
         entry.push_back(Pair("amount",ValueFromAmount(nValue)));
+        entry.push_back(Pair("interest",ValueFromAmount(komodo_interest(nValue,out.tx->nLockTime,activeChain.Tip()->nTime))));
         entry.push_back(Pair("confirmations",out.nDepth));
         entry.push_back(Pair("spendable", out.fSpendable));
         results.push_back(entry);
