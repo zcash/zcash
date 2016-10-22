@@ -11,7 +11,7 @@ Jack Grigg:
       Add support for spending keys to the basic key store.
       Merge AddSpendingKeyPaymentAddress into AddSpendingKey to simplify API.
       Add methods for byte array expansion and compression.
-      Update Equihash hash generation to match the Zcash spec.
+      Update Equihash hash generation to match the DeepWebCash spec.
       Extend byte array expansion and compression methods with optional padding.
       Store the Equihash solution in minimal representation in the block header.
       Enable branch coverage in coverage reports.

@@ -50,7 +50,7 @@ In `configure.ac` and `clientversion.h`:
   - (`CLIENT_VERSION_REVISION` rolls over)
   - 0-24: `1.0.1-beta1`-`1.0.1-beta25`
 
-- Change `CLIENT_VERSION_IS_RELEASE` to false while Zcash is in beta-test phase.
+- Change `CLIENT_VERSION_IS_RELEASE` to false while DeepWebCash is in beta-test phase.
 
 ### B2. write release notes
 
@@ -63,7 +63,7 @@ Update the Debian package changelog:
 
     export DEBVERSION='1.0.0-rc1'
     export DEBEMAIL="${DEBEMAIL:-team@z.cash}"
-    export DEBFULLNAME="${DEBFULLNAME:-Zcash Company}"
+    export DEBFULLNAME="${DEBFULLNAME:-DeepWebCash Company}"
 
     dch -v $DEBVERSION -D jessie -c contrib/DEBIAN/changelog
 
@@ -97,9 +97,9 @@ previous merged PR, then:
 
 ## E. deploy testnet
 
-Notify the Zcash DevOps engineer/sysadmin that the release has been tagged. They update some variables in the company's automation code and then run an Ansible playbook, which:
+Notify the DeepWebCash DevOps engineer/sysadmin that the release has been tagged. They update some variables in the company's automation code and then run an Ansible playbook, which:
 
-* builds Zcash based on the specified branch
+* builds DeepWebCash based on the specified branch
 * deploys it as a public service (e.g. betatestnet.z.cash, mainnet.z.cash)
 * often the same server can be re-used, and the role idempotently handles upgrades, but if not then they also need to update DNS records
 * possible manual steps: blowing away the `testnet3` dir, deleting old parameters, restarting DNS seeder
@@ -109,7 +109,7 @@ Then, verify that nodes can connect to the testnet server, and update the guide 
 ## F. publish the release announcement (blog, dwcash-dev, slack)
 ## G. celebrate
 ## missing steps
-Zcash still needs:
+DeepWebCash still needs:
 
 * deterministic or reproducible builds
 
@@ -117,4 +117,4 @@ Zcash still needs:
 
 * release deployment steps (eg: updating build-depends mirror, deploying testnet, etc...)
 
-* proper Zcash-specific versions and names in software and documentation.
+* proper DeepWebCash-specific versions and names in software and documentation.

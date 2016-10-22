@@ -1,18 +1,18 @@
-*** Warning: Do not assume Tor support does the correct thing in Zcash; better Tor support is a future feature goal. ***
+*** Warning: Do not assume Tor support does the correct thing in DeepWebCash; better Tor support is a future feature goal. ***
 
 TOR SUPPORT IN ZCASH
 ====================
 
-It is possible to run Zcash as a Tor hidden service, and connect to such services.
+It is possible to run DeepWebCash as a Tor hidden service, and connect to such services.
 
 The following directions assume you have a Tor proxy running on port 9050. Many distributions default to having a SOCKS proxy listening on port 9050, but others may not. In particular, the Tor Browser Bundle defaults to listening on a random port. See [Tor Project FAQ:TBBSocksPort](https://www.torproject.org/docs/faq.html.en#TBBSocksPort) for how to properly
 configure Tor.
 
 
-1. Run Zcash behind a Tor proxy
+1. Run DeepWebCash behind a Tor proxy
 -------------------------------
 
-The first step is running Zcash behind a Tor proxy. This will already make all
+The first step is running DeepWebCash behind a Tor proxy. This will already make all
 outgoing connections be anonymized, but more is possible.
 
 	-proxy=ip:port  Set the proxy server. If SOCKS5 is selected (default), this proxy
@@ -36,7 +36,7 @@ In a typical situation, this suffices to run behind a Tor proxy:
 	./dwcashd -proxy=127.0.0.1:9050
 
 
-2. Run a Zcash hidden server
+2. Run a DeepWebCash hidden server
 ----------------------------
 
 If you configure your Tor system accordingly, it is possible to make your node also
@@ -50,7 +50,7 @@ config file):
 The directory can be different of course, but (both) port numbers should be equal to
 your dwcashd's P2P listen port (8233 by default).
 
-	-externalip=X   You can tell Zcash about its publicly reachable address using
+	-externalip=X   You can tell DeepWebCash about its publicly reachable address using
 	                this option, and this can be a .onion address. Given the above
 	                configuration, you can find your onion address in
 	                /var/lib/tor/dwcash-service/hostname. Onion addresses are given
@@ -86,11 +86,11 @@ for normal IPv4/IPv6 communication, use:
 	./dwcashd -onion=127.0.0.1:9050 -externalip=zctestseie6wxgio.onion -discover
 
 
-3. Connect to a Zcash hidden server
+3. Connect to a DeepWebCash hidden server
 -----------------------------------
 
 To test your set-up, you might want to try connecting via Tor on a different computer to just a
-a single Zcash hidden server. Launch dwcashd as follows:
+a single DeepWebCash hidden server. Launch dwcashd as follows:
 
 	./dwcashd -onion=127.0.0.1:9050 -connect=zctestseie6wxgio.onion
 

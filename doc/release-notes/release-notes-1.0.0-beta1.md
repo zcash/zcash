@@ -47,7 +47,7 @@ Jack Grigg (43):
       Remove .z# suffix from version
 
 Lars-Magnus Skog (1):
-      changed module name from "bitcoin" to "Zcash" in FormatException()
+      changed module name from "bitcoin" to "DeepWebCash" in FormatException()
 
 Sean Bowe (7):
       Deallocate the public parameters during Shutdown.

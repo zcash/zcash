@@ -381,7 +381,7 @@ static std::string FormatException(const std::exception* pex, const char* pszThr
     char pszModule[MAX_PATH] = "";
     GetModuleFileNameA(NULL, pszModule, sizeof(pszModule));
 #else
-    const char* pszModule = "Zcash";
+    const char* pszModule = "DeepWebCash";
 #endif
     if (pex)
         return strprintf(
@@ -402,13 +402,13 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
 boost::filesystem::path GetDefaultDataDir()
 {
     namespace fs = boost::filesystem;
-    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Zcash
-    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zcash
-    // Mac: ~/Library/Application Support/Zcash
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\DeepWebCash
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\DeepWebCash
+    // Mac: ~/Library/Application Support/DeepWebCash
     // Unix: ~/.dwcash
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Zcash";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "DeepWebCash";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -420,7 +420,7 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    return pathRet / "Zcash";
+    return pathRet / "DeepWebCash";
 #else
     // Unix
     return pathRet / ".dwcash";
@@ -438,13 +438,13 @@ static boost::filesystem::path ZC_GetBaseParamsDir()
     // Copied from GetDefaultDataDir and adapter for dwcash params.
 
     namespace fs = boost::filesystem;
-    // Windows < Vista: C:\Documents and Settings\Username\Application Data\ZcashParams
-    // Windows >= Vista: C:\Users\Username\AppData\Roaming\ZcashParams
-    // Mac: ~/Library/Application Support/ZcashParams
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\DeepWebCashParams
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\DeepWebCashParams
+    // Mac: ~/Library/Application Support/DeepWebCashParams
     // Unix: ~/.dwcash-params
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "ZcashParams";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "DeepWebCashParams";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -456,7 +456,7 @@ static boost::filesystem::path ZC_GetBaseParamsDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    return pathRet / "ZcashParams";
+    return pathRet / "DeepWebCashParams";
 #else
     // Unix
     return pathRet / ".dwcash-params";

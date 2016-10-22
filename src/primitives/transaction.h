@@ -15,7 +15,7 @@
 #include <boost/array.hpp>
 
 #include "dwcash/NoteEncryption.hpp"
-#include "dwcash/Zcash.h"
+#include "dwcash/DeepWebCash.h"
 #include "dwcash/JoinSplit.hpp"
 #include "dwcash/Proof.hpp"
 

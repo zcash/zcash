@@ -21,7 +21,7 @@
 
 #include "zcbenchmarks.h"
 
-#include "dwcash/Zcash.h"
+#include "dwcash/DeepWebCash.h"
 #include "dwcash/IncrementalMerkleTree.hpp"
 
 using namespace libdwcash;

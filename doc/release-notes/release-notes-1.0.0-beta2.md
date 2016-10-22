@@ -22,7 +22,7 @@ Gregory Maxwell (1):
 Jack Grigg (43):
       Add support for encrypting spending keys
       Check we haven't trashed the first key entry with the second
-      Move serialized Zcash address length constants into dwcash/Address.hpp
+      Move serialized DeepWebCash address length constants into dwcash/Address.hpp
       Measure multithreaded solveequihash time per-thread
       Add a make command for checking expected failures
       Enable high-priority alerts to put the RPC into safe mode

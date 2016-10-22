@@ -2,7 +2,7 @@
 #define _ZCNOTE_H_
 
 #include "uint256.h"
-#include "Zcash.h"
+#include "DeepWebCash.h"
 #include "Address.hpp"
 #include "NoteEncryption.hpp"
 

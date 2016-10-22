@@ -1,5 +1,5 @@
 /*
-See the Zcash protocol specification for more information.
+See the DeepWebCash protocol specification for more information.
 https://github.com/dwcash/zips/blob/master/protocol/protocol.pdf
 */
 
@@ -10,7 +10,7 @@ https://github.com/dwcash/zips/blob/master/protocol/protocol.pdf
 #include "uint256.h"
 #include "uint252.h"
 
-#include "dwcash/Zcash.h"
+#include "dwcash/DeepWebCash.h"
 
 namespace libdwcash {
 

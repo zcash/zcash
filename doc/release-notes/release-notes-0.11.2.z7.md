@@ -65,7 +65,7 @@ bitcartel (15):
       Update URL for dwcash alert IDs.
       Remove QT alert message box.
       New alert test data generated for new alert key pair. Added test fixture to create new test data. Added instructions for developer.
-      Update tor.md for Zcash
+      Update tor.md for DeepWebCash
 
 Taylor Hornby (17):
       WIP: Add mock test coverage of CheckTransaction

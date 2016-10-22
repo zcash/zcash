@@ -1,7 +1,7 @@
 #ifndef _ZCJOINSPLIT_H_
 #define _ZCJOINSPLIT_H_
 
-#include "Zcash.h"
+#include "DeepWebCash.h"
 #include "Proof.hpp"
 #include "Address.hpp"
 #include "Note.hpp"

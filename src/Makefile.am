@@ -78,7 +78,7 @@ LIBZCASH_H = \
   dwcash/prf.h \
   dwcash/Proof.hpp \
   dwcash/util.h \
-  dwcash/Zcash.h
+  dwcash/DeepWebCash.h
 
 .PHONY: FORCE check-symbols check-security
 # bitcoin core #

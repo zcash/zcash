@@ -49,11 +49,11 @@ Jay Graber (17):
       Document wallet reindexing for z_importkey description in payment-api.md
       Rm beta 1 release note about encrypted wallets
       Note that Coinbase maturity interval does not protect JoinSplits
-      Refer to Zcash wiki in INSTALL
+      Refer to DeepWebCash wiki in INSTALL
       Rm bitcoin logo
-      Rm build-unix.md, to keep single copy of build instructions for Zcash on github wiki
+      Rm build-unix.md, to keep single copy of build instructions for DeepWebCash on github wiki
       Rm Bitcoin-specific documentation
-      Add note that document is not updated for Zcash to translation policy
+      Add note that document is not updated for DeepWebCash to translation policy
       Rm doc for disabled REST interface
       Change alpha to beta testnet, add dwcash hidden service
       Improve documentation on connecting to dwcash hidden server
@@ -71,23 +71,23 @@ Kevin Gallagher (24):
       Moves dwcash-fetch-params to /usr/bin
       Adds newline between source and package definition
       Adds copyright file back to Debian package
-      Updates Linux gitian descriptor file for Zcash
+      Updates Linux gitian descriptor file for DeepWebCash
       Updates trusty -> jessie in Gitian Linux descriptor
       Adds distro: debian to gitian-linux.yml
-      Updates Gitian descriptor for Zcash
+      Updates Gitian descriptor for DeepWebCash
       Removes Windows and OSX packaging from EXTRA_DIST
       Moves V=1 and NO_QT=1 to MAKEOPTS
       Include contrib/devtools/split-debug.sh from upstream
       Adds faketime to Gitian build dependencies
       Inlude crypto/equihash.tcc in list of sources for dist
-      Adds dwcash/Zcash.h to LIBZCASH sources
+      Adds dwcash/DeepWebCash.h to LIBZCASH sources
       Adds dwcash/Proof.hpp to LIBZCASH_H
       Add alertkeys.h to libbitcoin_server_a_SOURCES
       Adds files in src/dwcash/circuit to libdwcash_a_SOURCES
       Adds zcbenchmarks.h to libbitcoin_wallet_a_SOURCES
       Adds json_test_vectors.h to dwcash_gtest_SOURCES
       Adds additional licenses to Debian copyright file
-      Updates Zcash Core developers -> Zcash developers
+      Updates DeepWebCash Core developers -> DeepWebCash developers
       Adds . to blank lines in Google license
 
 MarcoFalke (3):

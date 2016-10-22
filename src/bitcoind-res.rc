@@ -16,8 +16,8 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "Zcash"
-            VALUE "FileDescription",    "dwcashd (Zcash node with a JSON-RPC server)"
+            VALUE "CompanyName",        "DeepWebCash"
+            VALUE "FileDescription",    "dwcashd (DeepWebCash node with a JSON-RPC server)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
             VALUE "InternalName",       "dwcashd"
             VALUE "LegalCopyright",     COPYRIGHT_STR

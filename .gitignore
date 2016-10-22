@@ -9,7 +9,7 @@ src/bitcoin-tx
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
 
-# Zcash utilities
+# DeepWebCash utilities
 src/dwcash/GenerateParams
 
 *dwcashTest.pk

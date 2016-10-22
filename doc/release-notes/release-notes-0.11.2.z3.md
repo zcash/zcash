@@ -29,7 +29,7 @@ Sean Bowe (49):
       Distinguish the failure cases of wfcheck in tree.
       Change ciphertext length to match protocol spec, and refactor the use of constants.
       Initialize libsodium in the gtest suite.
-      Introduce new `libdwcash` Zcash protocol API and crypto constructions surrounding the zkSNARK circuit.
+      Introduce new `libdwcash` DeepWebCash protocol API and crypto constructions surrounding the zkSNARK circuit.
       zkSNARK: Foundations of circuit design and verification logic.
       zkSNARK: Add "zero" constant variable.
       zkSNARK: Enforce spend-authority of input notes.

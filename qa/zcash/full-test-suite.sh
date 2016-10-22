@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Execute all of the automated tests related to Zcash.
+# Execute all of the automated tests related to DeepWebCash.
 #
 
 set -eu

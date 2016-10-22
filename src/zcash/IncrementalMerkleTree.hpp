@@ -8,7 +8,7 @@
 #include "uint256.h"
 #include "serialize.h"
 
-#include "Zcash.h"
+#include "DeepWebCash.h"
 
 namespace libdwcash {
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python2
 
 # This script tests that the package mirror at https://z.cash/depends-sources/
-# contains all of the packages required to build this version of Zcash.
+# contains all of the packages required to build this version of DeepWebCash.
 #
-# This script assumes you've just built Zcash, and that as a result of that
+# This script assumes you've just built DeepWebCash, and that as a result of that
 # build, all of the dependency packages have been downloaded into the
 # depends/sources directory (inside the root of this repository). The script
 # checks that all of those files are accessible on the mirror.
