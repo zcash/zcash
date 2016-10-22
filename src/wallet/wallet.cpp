@@ -2378,7 +2378,9 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
                 continue;
             nValueRet += out.tx->vout[out.i].nValue;
             interest = komodo_interest(out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
+#ifdef KOMODO_ENABLE_INTEREST
             nValueRet += interest;
+#endif
             fprintf(stderr,"interest %llu from %llu lock.%u tip.%u\n",(long long)interest,(long long)out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
             setCoinsRet.insert(make_pair(out.tx, out.i));
         }

@@ -397,7 +397,9 @@ CAmount CCoinsViewCache::GetValueIn(int64_t *interestp,const CTransaction& tx,ui
         value = GetOutputFor(tx.vin[i]).nValue;
         nResult += value;
         interest = komodo_interest(value,tx.nLockTime,tiptime);
+#ifdef KOMODO_ENABLE_INTEREST
         nResult += interest;
+#endif
         (*interestp) += interest;
     }
     nResult += tx.GetJoinSplitValueIn();

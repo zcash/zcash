@@ -1,4 +1,5 @@
 
+//#define KOMODO_ENABLE_INTEREST
 
 #define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))
 #define dstr(x) ((double)(x)/COIN)
@@ -16,5 +17,5 @@ uint64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
         interest = (numerator / denominator) / COIN;
         fprintf(stderr,"komodo_interest %lld %.8f nLockTime.%u tiptime.%u minutes.%d interest %lld %.8f (%llu / %llu)\n",(long long)nValue,dstr(nValue),nLockTime,tiptime,minutes,(long long)interest,dstr(interest),(long long)numerator,(long long)denominator);
     }
-    return(interest * 0);
+    return(interest);
 }
