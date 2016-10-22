@@ -15,15 +15,6 @@ Files: src/json/*
 Copyright: 2007-2009, John W. Wilkinson
 License: Expat
 
-Files: debian/*
-Copyright: 2010-2011, Jonas Smedegaard <dr@jones.dk>
-           2011, Matt Corallo <matt@bluematt.me>
-License: GPL-2+
-
-Files: debian/manpages/*
-Copyright: Micah Anderson <micah@debian.org>
-License: GPL-3+
-
 Files: src/qt/res/icons/clock*.png, src/qt/res/icons/tx*.png,
        src/qt/res/src/*.svg
 Copyright: Wladimir van der Laan
