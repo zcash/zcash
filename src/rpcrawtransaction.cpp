@@ -121,14 +121,19 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
     }
     entry.push_back(Pair("vin", vin));
     Array vout;
+    BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+    CBlockIndex *pindex = it->second;
     uint64_t interest;
     for (unsigned int i = 0; i < tx.vout.size(); i++) {
         const CTxOut& txout = tx.vout[i];
         Object out;
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
-        interest = komodo_interest(txout.nValue,tx.nLockTime,chainActive.Tip()->nTime));
-        fprintf(stderr,"TxtoJSON interest %llu %.8f\n",(long long)interest,(double)interest/COIN);
-        out.push_back(Pair("interest", ValueFromAmount(interest));
+        if ( pindex != 0 )
+        {
+            interest = komodo_interest(txout.nValue,tx.nLockTime,pindex->nTime);
+            fprintf(stderr,"TxtoJSON interest %llu %.8f\n",(long long)interest,(double)interest/COIN);
+            out.push_back(Pair("interest", ValueFromAmount(interest)));
+        }
         out.push_back(Pair("n", (int64_t)i));
         Object o;
         ScriptPubKeyToJSON(txout.scriptPubKey, o, true);

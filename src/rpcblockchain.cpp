@@ -451,7 +451,7 @@ Value gettxout(const Array& params, bool fHelp)
         ret.push_back(Pair("confirmations", 0));
     else ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
-    ret.push_back(Pair("interest", ValueFromAmount(komodo_interest(coins.vout[n].nValue,coins.nLockTime,coins.nTime))));
+    ret.push_back(Pair("interest", ValueFromAmount(komodo_interest(coins.vout[n].nValue,coins.nLockTime,pindex->nTime))));
     Object o;
     ScriptPubKeyToJSON(coins.vout[n].scriptPubKey, o, true);
     ret.push_back(Pair("scriptPubKey", o));

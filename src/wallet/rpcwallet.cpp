@@ -2364,8 +2364,13 @@ Value listunspent(const Array& params, bool fHelp)
             }
         }
         entry.push_back(Pair("amount",ValueFromAmount(nValue)));
-        fprintf(stderr,"nLock.%u tip.%u\n",tx->nLockTime,chainActive.Tip()->nTime);
-        entry.push_back(Pair("interest",ValueFromAmount(komodo_interest(nValue,out.tx->nLockTime,chainActive.Tip()->nTime))));
+        BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+        CBlockIndex *pindex = it->second;
+        if ( pindex != 0 )
+        {
+            fprintf(stderr,"nLock.%u tip.%u\n",tx->nLockTime,chainActive.Tip()->nTime);
+            entry.push_back(Pair("interest",ValueFromAmount(komodo_interest(nValue,out.tx->nLockTime,pindex->nTime))));
+        }
         entry.push_back(Pair("confirmations",out.nDepth));
         entry.push_back(Pair("spendable", out.fSpendable));
         results.push_back(entry);
