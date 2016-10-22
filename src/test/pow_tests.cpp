@@ -36,9 +36,8 @@ BOOST_AUTO_TEST_CASE(get_next_work_pow_limit)
     int64_t nLastRetargetTime = 1231006505; // Block #0 of Bitcoin
     int64_t nThisTime = 1233061996;  // Block #2015 of Bitcoin
     arith_uint256 bnAvg;
-    // TODO change once the harder genesis block is generated
-    bnAvg.SetCompact(0x200f0f0f);
-    BOOST_CHECK_EQUAL(0x200f0f0f,
+    bnAvg.SetCompact(0x2003ffff);
+    BOOST_CHECK_EQUAL(0x2003ffff,
                       CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params));
 }
 

@@ -100,7 +100,7 @@ TEST(checktransaction_tests, BadVersionTooLow) {
 
     CTransaction tx(mtx);
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-version-too-low", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
