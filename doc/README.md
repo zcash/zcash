@@ -16,5 +16,10 @@ Build Zcash along with most dependencies from source by running ./zcutil/build.s
 License
 ---------------------
 Distributed under the [MIT software license](http://www.opensource.org/licenses/mit-license.php).
+
 This product includes software developed by the OpenSSL Project for use in the [OpenSSL Toolkit](https://www.openssl.org/). This product includes
 cryptographic software written by Eric Young ([eay@cryptsoft.com](mailto:eay@cryptsoft.com)), and UPnP software written by Thomas Bernard.
+
+Certain files under the ``src/qt/`` and ``scripts/img/`` directories are distributed under the
+LGPL or GPL licenses. Dependencies downloaded as part of the build process may be covered by other
+open source licenses. For further details see ``contrib/DEBIAN/copyright``.
