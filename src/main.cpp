@@ -854,7 +854,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     // Check transaction version
     if (tx.nVersion < MIN_TX_VERSION) {
         return state.DoS(100, error("CheckTransaction(): version too low"),
-                         REJECT_INVALID, "bad-version-too-low");
+                         REJECT_INVALID, "bad-txns-version-too-low");
     }
 
     // Transactions can contain empty `vin` and `vout` so long as
