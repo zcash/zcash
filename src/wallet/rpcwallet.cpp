@@ -610,7 +610,7 @@ Value getreceivedbyaddress(const Array& params, bool fHelp)
         BOOST_FOREACH(const CTxOut& txout, wtx.vout)
             if (txout.scriptPubKey == scriptPubKey)
                 if (wtx.GetDepthInMainChain() >= nMinDepth)
-                    nAmount += txout.nValue;
+                    nAmount += txout.nValue; // komodo_interest?
     }
 
     return  ValueFromAmount(nAmount);
@@ -666,7 +666,7 @@ Value getreceivedbyaccount(const Array& params, bool fHelp)
             CTxDestination address;
             if (ExtractDestination(txout.scriptPubKey, address) && IsMine(*pwalletMain, address) && setAddress.count(address))
                 if (wtx.GetDepthInMainChain() >= nMinDepth)
-                    nAmount += txout.nValue;
+                    nAmount += txout.nValue; // komodo_interest?
         }
     }
 
@@ -1140,7 +1140,7 @@ Value ListReceived(const Array& params, bool fByAccounts)
                 continue;
 
             tallyitem& item = mapTally[address];
-            item.nAmount += txout.nValue;
+            item.nAmount += txout.nValue; // komodo_interest?
             item.nConf = min(item.nConf, nDepth);
             item.txids.push_back(wtx.GetHash());
             if (mine & ISMINE_WATCH_ONLY)
@@ -2893,7 +2893,7 @@ CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1) {
             }
         }
         
-        CAmount nValue = out.tx->vout[out.i].nValue;
+        CAmount nValue = out.tx->vout[out.i].nValue; // komodo_interest
         balance += nValue;
     }
     return balance;

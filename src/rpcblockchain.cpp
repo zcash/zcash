@@ -452,14 +452,11 @@ Value gettxout(const Array& params, bool fHelp)
     else ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
     
-    it = mapBlockIndex.find(hash);
-    if ( (pindex= it->second) != 0 )
-    {
         uint64_t interest;
         interest = komodo_interest(coins.vout[n].nValue,coins.nLockTime,pindex->nTime);
         fprintf(stderr,"nValue %llu lock.%u nTime.%u -> %llu\n",(long long)coins.vout[n].nValue,coins.nLockTime,pindex->nTime,(long long)interest);
         ret.push_back(Pair("interest", ValueFromAmount(interest)));
-    }
+
     Object o;
     ScriptPubKeyToJSON(coins.vout[n].scriptPubKey, o, true);
     ret.push_back(Pair("scriptPubKey", o));
