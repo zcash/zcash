@@ -2364,6 +2364,7 @@ Value listunspent(const Array& params, bool fHelp)
             }
         }
         entry.push_back(Pair("amount",ValueFromAmount(nValue)));
+        fprintf(stderr,"nLock.%u tip.%u\n",tx->nLockTime,chainActive.Tip()->nTime);
         entry.push_back(Pair("interest",ValueFromAmount(komodo_interest(nValue,out.tx->nLockTime,chainActive.Tip()->nTime))));
         entry.push_back(Pair("confirmations",out.nDepth));
         entry.push_back(Pair("spendable", out.fSpendable));

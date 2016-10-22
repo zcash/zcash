@@ -330,7 +330,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
         // Create coinbase tx
         CMutableTransaction txNew;
-        txNew.nLockTime = (uint32_t)time(NULL) - 60;
+        //txNew.nLockTime = (uint32_t)time(NULL) - 60;
         txNew.vin.resize(1);
         txNew.vin[0].prevout.SetNull();
         txNew.vout.resize(1);

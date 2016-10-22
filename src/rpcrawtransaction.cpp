@@ -97,6 +97,7 @@ Array TxJoinSplitToJSON(const CTransaction& tx) {
 }
 
 uint64_t komodo_interest(uint64_t nValue,uint32_t pastlocktime,uint32_t tiptime);
+
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 {
     entry.push_back(Pair("txid", tx.GetHash().GetHex()));
@@ -120,11 +121,14 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
     }
     entry.push_back(Pair("vin", vin));
     Array vout;
+    uint64_t interest;
     for (unsigned int i = 0; i < tx.vout.size(); i++) {
         const CTxOut& txout = tx.vout[i];
         Object out;
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
-        out.push_back(Pair("interest", ValueFromAmount(komodo_interest(txout.nValue,tx.nLockTime,chainActive.Tip()->nTime))));
+        interest = komodo_interest(txout.nValue,tx.nLockTime,chainActive.Tip()->nTime));
+        fprintf(stderr,"TxtoJSON interest %llu %.8f\n",(long long)interest,(double)interest/COIN);
+        out.push_back(Pair("interest", ValueFromAmount(interest));
         out.push_back(Pair("n", (int64_t)i));
         Object o;
         ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
