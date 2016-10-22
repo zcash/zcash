@@ -10,6 +10,7 @@
 #include "uint256.h"
 #include "util.h"
 #include "crypto/equihash.h"
+//#include "pow/tromp/equi_miner.h"
 
 #include "test/test_bitcoin.h"
 
@@ -209,19 +210,37 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
                                               pblock->nNonce.begin(),
                                               pblock->nNonce.size());
 
-            // (x_1, x_2, ...) = A(I, V, n, k)
+            // Create solver and initialize it.
+            equi eq(1);
+            eq.setstate(&curr_state);
+
+            // Intialization done, start algo driver.
+            eq.digit0(0);
+            eq.xfull = eq.bfull = eq.hfull = 0;
+            eq.showbsizes(0);
+            for (u32 r = 1; r < WK; r++) {
+                (r&1) ? eq.digitodd(r, 0) : eq.digiteven(r, 0);
+                eq.xfull = eq.bfull = eq.hfull = 0;
+                eq.showbsizes(r);
+            }
+            eq.digitK(0);
+
+            // Convert solution indices to byte array (decompress) and pass it to validBlock method.
             std::set<std::vector<unsigned char>> solns;
-            std::function<bool(std::vector<unsigned char>)> validBlock =
-                [&solns](std::vector<unsigned char> soln) {
-                solns.insert(soln);
-                return false;
-            };
-            EhOptimisedSolveUncancellable(n, k, curr_state, validBlock);
+            for (size_t s = 0; s < eq.nsols; s++) {
+                LogPrint("pow", "Checking solution %d\n", s+1);
+                std::vector<eh_index> index_vector(PROOFSIZE);
+                for (size_t i = 0; i < PROOFSIZE; i++) {
+                    index_vector[i] = eq.sols[s][i];
+                }
+                std::vector<unsigned char> sol_char = GetMinimalFromIndices(index_vector, DIGITBITS);
+                solns.insert(sol_char);
+            }
 
             bool ret;
             for (auto soln : solns) {
                 EhIsValidSolution(n, k, curr_state, soln, ret);
-                assert(ret);
+                if (!ret) continue;
                 pblock->nSolution = soln;
 
                 CValidationState state;
