@@ -3233,8 +3233,6 @@ Value z_sendmany(const Array& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected object");
         const Object& o = output.get_obj();
 
-        RPCTypeCheck(o, boost::assign::map_list_of("address", str_type)("amount", real_type));
-
         // sanity check, report error if unknown key-value pairs
         for (const Pair& p : o) {
             std::string s = p.name_;

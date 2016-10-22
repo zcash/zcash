@@ -26,7 +26,7 @@ public:
 
 class NotePlaintext {
 public:
-    uint64_t value;
+    uint64_t value = 0;
     uint256 rho;
     uint256 r;
     boost::array<unsigned char, ZC_MEMO_SIZE> memo;

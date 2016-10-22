@@ -52,10 +52,10 @@ EXTRA_LIBRARIES += libbitcoin_wallet.a
 endif
 
 if BUILD_BITCOIN_LIBS
-lib_LTLIBRARIES = libbitcoinconsensus.la
-LIBBITCOIN_CONSENSUS=libbitcoinconsensus.la
+lib_LTLIBRARIES = libdwcashconsensus.la
+LIBDWCASH_CONSENSUS=libdwcashconsensus.la
 else
-LIBBITCOIN_CONSENSUS=
+LIBDWCASH_CONSENSUS=
 endif
 
 bin_PROGRAMS =
@@ -66,7 +66,11 @@ if BUILD_BITCOIND
 endif
 
 if BUILD_BITCOIN_UTILS
+<<<<<<< HEAD
   bin_PROGRAMS += dwcash-cli bitcoin-tx
+=======
+  bin_PROGRAMS += dwcash-cli dwcash-tx
+>>>>>>> a12eaa2bf2b19f9b3ce2bc6e98604a403847a441
 endif
 
 LIBDWCASH_H = \
@@ -243,8 +247,13 @@ libbitcoin_wallet_a_SOURCES = \
   $(BITCOIN_CORE_H) \
   $(LIBDWCASH_H)
 
+EQUIHASH_TROMP_SOURCES = \
+  pow/tromp/equi_miner.h \
+  pow/tromp/equi.h \
+  pow/tromp/osx_barrier.h
+
 # crypto primitives library
-crypto_libbitcoin_crypto_a_CPPFLAGS = $(BITCOIN_CONFIG_INCLUDES)
+crypto_libbitcoin_crypto_a_CPPFLAGS = $(BITCOIN_CONFIG_INCLUDES) -DEQUIHASH_TROMP_ATOMIC
 crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/common.h \
   crypto/equihash.cpp \
@@ -261,7 +270,8 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha256.cpp \
   crypto/sha256.h \
   crypto/sha512.cpp \
-  crypto/sha512.h
+  crypto/sha512.h \
+  ${EQUIHASH_TROMP_SOURCES}
 
 # univalue JSON library
 univalue_libbitcoin_univalue_a_SOURCES = \
@@ -393,17 +403,22 @@ dwcash_cli_LDADD = \
   $(LIBDWCASH_LIBS)
 #
 
-# bitcoin-tx binary #
-bitcoin_tx_SOURCES = bitcoin-tx.cpp
-bitcoin_tx_CPPFLAGS = $(BITCOIN_INCLUDES)
-bitcoin_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+# dwcash-tx binary #
+dwcash_tx_SOURCES = bitcoin-tx.cpp
+dwcash_tx_CPPFLAGS = $(BITCOIN_INCLUDES)
+dwcash_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
-bitcoin_tx_SOURCES += bitcoin-tx-res.rc
+dwcash_tx_SOURCES += bitcoin-tx-res.rc
 endif
 
+<<<<<<< HEAD
 # FIXME: Is libdwcash needed for bitcoin_tx?
 bitcoin_tx_LDADD = \
+=======
+# FIXME: Is libdwcash needed for dwcash_tx?
+dwcash_tx_LDADD = \
+>>>>>>> a12eaa2bf2b19f9b3ce2bc6e98604a403847a441
   $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
@@ -412,7 +427,7 @@ bitcoin_tx_LDADD = \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBDWCASH_LIBS)
 
-bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
+dwcash_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 #
 
 # dwcash protocol primitives #
@@ -440,10 +455,10 @@ libdwcash_a_LDFLAGS = $(HARDENED_LDFLAGS)
 
 libdwcash_a_CPPFLAGS += -DMONTGOMERY_OUTPUT
 
-# bitcoinconsensus library #
+# dwcashconsensus library #
 if BUILD_BITCOIN_LIBS
-include_HEADERS = script/bitcoinconsensus.h
-libbitcoinconsensus_la_SOURCES = \
+include_HEADERS = script/dwcashconsensus.h
+libdwcashconsensus_la_SOURCES = \
   crypto/equihash.cpp \
   crypto/hmac_sha512.cpp \
   crypto/ripemd160.cpp \
@@ -455,19 +470,19 @@ libbitcoinconsensus_la_SOURCES = \
   hash.cpp \
   primitives/transaction.cpp \
   pubkey.cpp \
-  script/bitcoinconsensus.cpp \
+  script/dwcashconsensus.cpp \
   script/interpreter.cpp \
   script/script.cpp \
   uint256.cpp \
   utilstrencodings.cpp
 
 if GLIBC_BACK_COMPAT
-  libbitcoinconsensus_la_SOURCES += compat/glibc_compat.cpp
+  libdwcashconsensus_la_SOURCES += compat/glibc_compat.cpp
 endif
 
-libbitcoinconsensus_la_LDFLAGS = -no-undefined $(RELDFLAGS)
-libbitcoinconsensus_la_LIBADD = $(CRYPTO_LIBS)
-libbitcoinconsensus_la_CPPFLAGS = $(CRYPTO_CFLAGS) -I$(builddir)/obj -DBUILD_BITCOIN_INTERNAL
+libdwcashconsensus_la_LDFLAGS = -no-undefined $(RELDFLAGS)
+libdwcashconsensus_la_LIBADD = $(CRYPTO_LIBS)
+libdwcashconsensus_la_CPPFLAGS = $(CRYPTO_CFLAGS) -I$(builddir)/obj -DBUILD_BITCOIN_INTERNAL
 
 endif
 #

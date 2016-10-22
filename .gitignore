@@ -5,7 +5,7 @@ src/bitcoin
 src/dwcashd
 src/dwcash-cli
 src/dwcash-gtest
-src/bitcoin-tx
+src/dwcash-tx
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
 
@@ -120,4 +120,4 @@ qa/pull-tester/test.*/*
 
 /doc/doxygen/
 
-libbitcoinconsensus.pc
+libdwcashconsensus.pc

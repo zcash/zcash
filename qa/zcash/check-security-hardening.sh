@@ -29,18 +29,32 @@ function test_fortify_source {
 # PIE, RELRO, Canary, and NX are tested by make check-security.
 make -C "$REPOROOT/src" check-security
 
+<<<<<<< HEAD
 test_rpath_runpath "${REPOROOT}/src/dwcashd"
 test_rpath_runpath "${REPOROOT}/src/dwcash-cli"
 test_rpath_runpath "${REPOROOT}/src/dwcash-gtest"
 test_rpath_runpath "${REPOROOT}/src/bitcoin-tx"
+=======
+test_rpath_runpath "${REPOROOT}/src/dwcashd"
+test_rpath_runpath "${REPOROOT}/src/dwcash-cli"
+test_rpath_runpath "${REPOROOT}/src/dwcash-gtest"
+test_rpath_runpath "${REPOROOT}/src/dwcash-tx"
+>>>>>>> a12eaa2bf2b19f9b3ce2bc6e98604a403847a441
 test_rpath_runpath "${REPOROOT}/src/test/test_bitcoin"
 test_rpath_runpath "${REPOROOT}/src/dwcash/GenerateParams"
 
 # NOTE: checksec.sh does not reliably determine whether FORTIFY_SOURCE is
 # enabled for the entire binary. See issue #915.
+<<<<<<< HEAD
 test_fortify_source "${REPOROOT}/src/dwcashd"
 test_fortify_source "${REPOROOT}/src/dwcash-cli"
 test_fortify_source "${REPOROOT}/src/dwcash-gtest"
 test_fortify_source "${REPOROOT}/src/bitcoin-tx"
+=======
+test_fortify_source "${REPOROOT}/src/dwcashd"
+test_fortify_source "${REPOROOT}/src/dwcash-cli"
+test_fortify_source "${REPOROOT}/src/dwcash-gtest"
+test_fortify_source "${REPOROOT}/src/dwcash-tx"
+>>>>>>> a12eaa2bf2b19f9b3ce2bc6e98604a403847a441
 test_fortify_source "${REPOROOT}/src/test/test_bitcoin"
 test_fortify_source "${REPOROOT}/src/dwcash/GenerateParams"
