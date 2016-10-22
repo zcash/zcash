@@ -1,6 +1,6 @@
 
 
-#define KOMODO_INTEREST ((uint64_t)0.05 * COIN)
+#define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))
 #define dstr(x) ((double)(x)/COIN)
 
 uint64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
