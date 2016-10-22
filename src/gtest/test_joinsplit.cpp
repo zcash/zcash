@@ -4,14 +4,14 @@
 
 #include <boost/foreach.hpp>
 
-#include "zcash/prf.h"
+#include "dwcash/prf.h"
 
-#include "zcash/JoinSplit.hpp"
-#include "zcash/Note.hpp"
-#include "zcash/NoteEncryption.hpp"
-#include "zcash/IncrementalMerkleTree.hpp"
+#include "dwcash/JoinSplit.hpp"
+#include "dwcash/Note.hpp"
+#include "dwcash/NoteEncryption.hpp"
+#include "dwcash/IncrementalMerkleTree.hpp"
 
-using namespace libzcash;
+using namespace libdwcash;
 
 void test_full_api(ZCJoinSplit* js)
 {
@@ -239,16 +239,16 @@ TEST(joinsplit, full_api_test)
 
     test_full_api(js);
 
-    js->saveProvingKey("./zcashTest.pk");
-    js->saveVerifyingKey("./zcashTest.vk");
+    js->saveProvingKey("./dwcashTest.pk");
+    js->saveVerifyingKey("./dwcashTest.vk");
 
     delete js;
 
     js = ZCJoinSplit::Unopened();
 
-    js->setProvingKeyPath("./zcashTest.pk");
+    js->setProvingKeyPath("./dwcashTest.pk");
     js->loadProvingKey();
-    js->loadVerifyingKey("./zcashTest.vk");
+    js->loadVerifyingKey("./dwcashTest.vk");
 
     test_full_api(js);
 

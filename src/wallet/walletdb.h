@@ -10,7 +10,7 @@
 #include "wallet/db.h"
 #include "key.h"
 #include "keystore.h"
-#include "zcash/Address.hpp"
+#include "dwcash/Address.hpp"
 
 #include <list>
 #include <stdint.h>
@@ -134,9 +134,9 @@ public:
     static bool Recover(CDBEnv& dbenv, const std::string& filename);
 
     /// Write spending key to wallet database, where key is payment address and value is spending key.
-    bool WriteZKey(const libzcash::PaymentAddress& addr, const libzcash::SpendingKey& key, const CKeyMetadata &keyMeta);
-    bool WriteCryptedZKey(const libzcash::PaymentAddress & addr,
-                          const libzcash::ViewingKey & vk,
+    bool WriteZKey(const libdwcash::PaymentAddress& addr, const libdwcash::SpendingKey& key, const CKeyMetadata &keyMeta);
+    bool WriteCryptedZKey(const libdwcash::PaymentAddress & addr,
+                          const libdwcash::ViewingKey & vk,
                           const std::vector<unsigned char>& vchCryptedSecret,
                           const CKeyMetadata &keyMeta);
 

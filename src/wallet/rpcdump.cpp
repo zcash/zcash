@@ -302,8 +302,8 @@ Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys)
         if (fImportZKeys) {
             try {
                 CZCSpendingKey spendingkey(vstr[0]);
-                libzcash::SpendingKey key = spendingkey.Get();
-                libzcash::PaymentAddress addr = key.address();
+                libdwcash::SpendingKey key = spendingkey.Get();
+                libdwcash::PaymentAddress addr = key.address();
                 if (pwalletMain->HaveSpendingKey(addr)) {
                     LogPrint("zrpc", "Skipping import of zaddr %s (key already present)\n", CZCPaymentAddress(addr).ToString());
                     continue;
@@ -506,13 +506,13 @@ Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys)
     file << "\n";
 
     if (fDumpZKeys) {
-        std::set<libzcash::PaymentAddress> addresses;
+        std::set<libdwcash::PaymentAddress> addresses;
         pwalletMain->GetPaymentAddresses(addresses);
         file << "\n";
         file << "# Zkeys\n";
         file << "\n";
         for (auto addr : addresses ) {
-            libzcash::SpendingKey key;
+            libdwcash::SpendingKey key;
             if (pwalletMain->GetSpendingKey(addr, key)) {
                 std::string strTime = EncodeDumpTime(pwalletMain->mapZKeyMetadata[addr].nCreateTime);
                 file << strprintf("%s %s # zaddr=%s\n", CZCSpendingKey(key).ToString(), strTime, CZCPaymentAddress(addr).ToString());
@@ -614,7 +614,7 @@ Value z_exportkey(const Array& params, bool fHelp)
     CZCPaymentAddress address(strAddress);
     auto addr = address.Get();
 
-    libzcash::SpendingKey k;
+    libdwcash::SpendingKey k;
     if (!pwalletMain->GetSpendingKey(addr, k))
         throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
 

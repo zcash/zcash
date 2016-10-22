@@ -37,7 +37,7 @@
 using namespace std;
 using namespace json_spirit;
 
-using namespace libzcash;
+using namespace libdwcash;
 
 extern Array TxJoinSplitToJSON(const CTransaction& tx);
 
@@ -2396,7 +2396,7 @@ Value zc_sample_joinsplit(const json_spirit::Array& params, bool fHelp)
 
     uint256 pubKeyHash;
     uint256 anchor = ZCIncrementalMerkleTree().root();
-    JSDescription samplejoinsplit(*pzcashParams,
+    JSDescription samplejoinsplit(*pdwcashParams,
                                   pubKeyHash,
                                   anchor,
                                   {JSInput(), JSInput()},
@@ -2449,7 +2449,7 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
     if (benchmarktype == "createjoinsplit") {
         /* Load the proving now key so that it doesn't happen as part of the
          * first joinsplit. */
-        pzcashParams->loadProvingKey();
+        pdwcashParams->loadProvingKey();
     }
 
     JSDescription samplejoinsplit;
@@ -2699,7 +2699,7 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
     mtx.nVersion = 2;
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    JSDescription jsdesc(*pzcashParams,
+    JSDescription jsdesc(*pdwcashParams,
                          joinSplitPubKey,
                          anchor,
                          {vjsin[0], vjsin[1]},
@@ -2707,7 +2707,7 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
                          vpub_old,
                          vpub_new);
 
-    assert(jsdesc.Verify(*pzcashParams, joinSplitPubKey));
+    assert(jsdesc.Verify(*pdwcashParams, joinSplitPubKey));
 
     mtx.vjoinsplit.push_back(jsdesc);
 
@@ -2740,7 +2740,7 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
         ss2 << ((unsigned char) 0x00);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[0];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey);
+        ss2 << jsdesc.h_sig(*pdwcashParams, joinSplitPubKey);
 
         encryptedNote1 = HexStr(ss2.begin(), ss2.end());
     }
@@ -2749,7 +2749,7 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
         ss2 << ((unsigned char) 0x01);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[1];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey);
+        ss2 << jsdesc.h_sig(*pdwcashParams, joinSplitPubKey);
 
         encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }
@@ -2811,7 +2811,7 @@ Value z_getnewaddress(const Array& params, bool fHelp)
             "\nReturns a new zaddr for receiving payments.\n"
             "\nArguments:\n"
             "\nResult:\n"
-            "\"zcashaddress\"    (string) The new zaddr\n"
+            "\"dwcashaddress\"    (string) The new zaddr\n"
             "\nExamples:\n"
             + HelpExampleCli("z_getnewaddress", "")
             + HelpExampleRpc("z_getnewaddress", "")
@@ -2850,7 +2850,7 @@ Value z_listaddresses(const Array& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     Array ret;
-    std::set<libzcash::PaymentAddress> addresses;
+    std::set<libdwcash::PaymentAddress> addresses;
     pwalletMain->GetPaymentAddresses(addresses);
     for (auto addr : addresses ) {
         ret.push_back(CZCPaymentAddress(addr).ToString());
@@ -2942,7 +2942,7 @@ Value z_listreceivedbyaddress(const Array& params, bool fHelp)
     // Check that the from address is valid.
     auto fromaddress = params[0].get_str();
 
-    libzcash::PaymentAddress zaddr;
+    libdwcash::PaymentAddress zaddr;
     CZCPaymentAddress address(fromaddress);
     try {
         zaddr = address.Get();
@@ -3008,7 +3008,7 @@ Value z_getbalance(const Array& params, bool fHelp)
     bool fromTaddr = false;
     CBitcoinAddress taddr(fromaddress);
     fromTaddr = taddr.IsValid();
-    libzcash::PaymentAddress zaddr;
+    libdwcash::PaymentAddress zaddr;
     if (!fromTaddr) {
         CZCPaymentAddress address(fromaddress);
         try {
@@ -3197,7 +3197,7 @@ Value z_sendmany(const Array& params, bool fHelp)
     bool fromTaddr = false;
     CBitcoinAddress taddr(fromaddress);
     fromTaddr = taddr.IsValid();
-    libzcash::PaymentAddress zaddr;
+    libdwcash::PaymentAddress zaddr;
     if (!fromTaddr) {
         CZCPaymentAddress address(fromaddress);
         try {

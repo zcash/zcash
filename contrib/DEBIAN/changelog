@@ -1,4 +1,4 @@
-zcash (1.0.0-rc1) jessie; urgency=medium
+dwcash (1.0.0-rc1) jessie; urgency=medium
 
   * Initial packaging for Debian.
 

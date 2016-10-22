@@ -1,8 +1,8 @@
-#include "zcash/circuit/utils.tcc"
-#include "zcash/circuit/prfs.tcc"
-#include "zcash/circuit/commitment.tcc"
-#include "zcash/circuit/merkle.tcc"
-#include "zcash/circuit/note.tcc"
+#include "dwcash/circuit/utils.tcc"
+#include "dwcash/circuit/prfs.tcc"
+#include "dwcash/circuit/commitment.tcc"
+#include "dwcash/circuit/merkle.tcc"
+#include "dwcash/circuit/note.tcc"
 
 template<typename FieldT, size_t NumInputs, size_t NumOutputs>
 class joinsplit_gadget : gadget<FieldT> {

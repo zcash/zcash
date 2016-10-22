@@ -2,11 +2,11 @@
 
 #include <boost/foreach.hpp>
 
-#include "zcash/IncrementalMerkleTree.hpp"
+#include "dwcash/IncrementalMerkleTree.hpp"
 #include "crypto/sha256.h"
-#include "zcash/util.h"
+#include "dwcash/util.h"
 
-namespace libzcash {
+namespace libdwcash {
 
 SHA256Compress SHA256Compress::combine(const SHA256Compress& a, const SHA256Compress& b)
 {
@@ -296,4 +296,4 @@ template class IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA2
 template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, SHA256Compress>;
 template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA256Compress>;
 
-} // end namespace `libzcash`
+} // end namespace `libdwcash`

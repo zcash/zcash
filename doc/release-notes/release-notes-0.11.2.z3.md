@@ -3,8 +3,8 @@ Daira Hopwood (1):
 
 Nathan Wilcox (4):
       Add a depends description for googletest.
-      Add a zcash-gtest binary to our build with a single tautological test.
-      Add coverage support scoped to only the zcash-gtest run; invoke with make zcash-cov; make cov is a superset.
+      Add a dwcash-gtest binary to our build with a single tautological test.
+      Add coverage support scoped to only the dwcash-gtest run; invoke with make dwcash-cov; make cov is a superset.
       Add googlemock 1.7.0 dependency.
 
 Sean Bowe (49):
@@ -17,19 +17,19 @@ Sean Bowe (49):
       Improve well-formedness checks and add additional serialization/deserialization tests.
       Add more well-formedness checks/tests to tree.
       Make appending algorithm more succinct.
-      Move incremental merkle tree tests to zcash-gtest.
+      Move incremental merkle tree tests to dwcash-gtest.
       NoteEncryption implementation and integration, removal of ECIES and crypto++ dependencies.
       Move NoteEncryption tests to gtest suite.
       Add additional tests for ephemeral key behavior.
       Clarify the usage of decryption API.
       Check exception has specific string message.
       Small nit fixes
-      Run `zcash-gtest` in `make check` and fix performance tests.
+      Run `dwcash-gtest` in `make check` and fix performance tests.
       Perform zerocash tests as part of full-test-suite, in preparation for removal of zerocash waterfall.
       Distinguish the failure cases of wfcheck in tree.
       Change ciphertext length to match protocol spec, and refactor the use of constants.
       Initialize libsodium in the gtest suite.
-      Introduce new `libzcash` Zcash protocol API and crypto constructions surrounding the zkSNARK circuit.
+      Introduce new `libdwcash` Zcash protocol API and crypto constructions surrounding the zkSNARK circuit.
       zkSNARK: Foundations of circuit design and verification logic.
       zkSNARK: Add "zero" constant variable.
       zkSNARK: Enforce spend-authority of input notes.
@@ -40,9 +40,9 @@ Sean Bowe (49):
       zkSNARK: Ensure that values balance correctly.
       zkSNARK: Witness commitments to input notes.
       zkSNARK: Enforce merkle authentication path from nonzero-valued public inputs to root.
-      libzcash: Add tests for API
+      libdwcash: Add tests for API
       Remove scriptPubKey/scriptSig from CPourTx, and add randomSeed.
-      Transplant of libzcash.
+      Transplant of libdwcash.
       Added public zkSNARK parameter generation utility.
       Stop testing old tree against new tree.
       Remove nearly all of libzerocash.
@@ -63,7 +63,7 @@ Taylor Hornby (7):
       Fix sighash tests
       Add empty merkle/noteencryption tests so Sean can rebase.
       Fix RPC tests
-      Rename bitcoin.conf and bitcoind.pid to zcash.conf and zcashd.pid in qa/ and src/
+      Rename bitcoin.conf and bitcoind.pid to dwcash.conf and dwcashd.pid in qa/ and src/
       Trivial change: Capitalize the Z in Zerocash
       Remove the Merkle tree hash function's fixed point.
 

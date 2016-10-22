@@ -7,9 +7,9 @@
 #include "main.h"
 #include "random.h"
 #include "wallet/wallet.h"
-#include "zcash/JoinSplit.hpp"
-#include "zcash/Note.hpp"
-#include "zcash/NoteEncryption.hpp"
+#include "dwcash/JoinSplit.hpp"
+#include "dwcash/Note.hpp"
+#include "dwcash/NoteEncryption.hpp"
 
 using ::testing::Return;
 
@@ -62,7 +62,7 @@ public:
     }
 };
 
-CWalletTx GetValidReceive(const libzcash::SpendingKey& sk, CAmount value, bool randomInputs) {
+CWalletTx GetValidReceive(const libdwcash::SpendingKey& sk, CAmount value, bool randomInputs) {
     CMutableTransaction mtx;
     mtx.nVersion = 2; // Enable JoinSplits
     mtx.vin.resize(2);
@@ -82,17 +82,17 @@ CWalletTx GetValidReceive(const libzcash::SpendingKey& sk, CAmount value, bool r
     crypto_sign_keypair(joinSplitPubKey.begin(), joinSplitPrivKey);
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    boost::array<libzcash::JSInput, 2> inputs = {
-        libzcash::JSInput(), // dummy input
-        libzcash::JSInput() // dummy input
+    boost::array<libdwcash::JSInput, 2> inputs = {
+        libdwcash::JSInput(), // dummy input
+        libdwcash::JSInput() // dummy input
     };
 
-    boost::array<libzcash::JSOutput, 2> outputs = {
-        libzcash::JSOutput(sk.address(), value),
-        libzcash::JSOutput(sk.address(), value)
+    boost::array<libdwcash::JSOutput, 2> outputs = {
+        libdwcash::JSOutput(sk.address(), value),
+        libdwcash::JSOutput(sk.address(), value)
     };
 
-    boost::array<libzcash::Note, 2> output_notes;
+    boost::array<libdwcash::Note, 2> output_notes;
 
     // Prepare JoinSplits
     uint256 rt;
@@ -116,11 +116,11 @@ CWalletTx GetValidReceive(const libzcash::SpendingKey& sk, CAmount value, bool r
     return wtx;
 }
 
-libzcash::Note GetNote(const libzcash::SpendingKey& sk,
+libdwcash::Note GetNote(const libdwcash::SpendingKey& sk,
                        const CTransaction& tx, size_t js, size_t n) {
     ZCNoteDecryption decryptor {sk.viewing_key()};
     auto hSig = tx.vjoinsplit[js].h_sig(*params, tx.joinSplitPubKey);
-    auto note_pt = libzcash::NotePlaintext::decrypt(
+    auto note_pt = libdwcash::NotePlaintext::decrypt(
         decryptor,
         tx.vjoinsplit[js].ciphertexts[n],
         tx.vjoinsplit[js].ephemeralKey,
@@ -129,8 +129,8 @@ libzcash::Note GetNote(const libzcash::SpendingKey& sk,
     return note_pt.note(sk.address());
 }
 
-CWalletTx GetValidSpend(const libzcash::SpendingKey& sk,
-                        const libzcash::Note& note, CAmount value) {
+CWalletTx GetValidSpend(const libdwcash::SpendingKey& sk,
+                        const libdwcash::Note& note, CAmount value) {
     CMutableTransaction mtx;
     mtx.vout.resize(2);
     mtx.vout[0].nValue = value;
@@ -145,17 +145,17 @@ CWalletTx GetValidSpend(const libzcash::SpendingKey& sk,
     // Fake tree for the unused witness
     ZCIncrementalMerkleTree tree;
 
-    boost::array<libzcash::JSInput, 2> inputs = {
-        libzcash::JSInput(tree.witness(), note, sk),
-        libzcash::JSInput() // dummy input
+    boost::array<libdwcash::JSInput, 2> inputs = {
+        libdwcash::JSInput(tree.witness(), note, sk),
+        libdwcash::JSInput() // dummy input
     };
 
-    boost::array<libzcash::JSOutput, 2> outputs = {
-        libzcash::JSOutput(), // dummy output
-        libzcash::JSOutput() // dummy output
+    boost::array<libdwcash::JSOutput, 2> outputs = {
+        libdwcash::JSOutput(), // dummy output
+        libdwcash::JSOutput() // dummy output
     };
 
-    boost::array<libzcash::Note, 2> output_notes;
+    boost::array<libdwcash::Note, 2> output_notes;
 
     // Prepare JoinSplits
     uint256 rt;
@@ -179,7 +179,7 @@ CWalletTx GetValidSpend(const libzcash::SpendingKey& sk,
 }
 
 TEST(wallet_tests, note_data_serialisation) {
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     auto wtx = GetValidReceive(sk, 10, true);
     auto note = GetNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
@@ -205,7 +205,7 @@ TEST(wallet_tests, note_data_serialisation) {
 TEST(wallet_tests, find_unspent_notes) {
     SelectParams(CBaseChainParams::TESTNET);
     CWallet wallet;
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
@@ -362,7 +362,7 @@ TEST(wallet_tests, find_unspent_notes) {
 
 
 TEST(wallet_tests, set_note_addrs_in_cwallettx) {
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     auto wtx = GetValidReceive(sk, 10, true);
     auto note = GetNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
@@ -382,7 +382,7 @@ TEST(wallet_tests, set_invalid_note_addrs_in_cwallettx) {
     EXPECT_EQ(0, wtx.mapNoteData.size());
 
     mapNoteData_t noteData;
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
     CNoteData nd {sk.address(), uint256()};
     noteData[jsoutpt] = nd;
@@ -393,7 +393,7 @@ TEST(wallet_tests, set_invalid_note_addrs_in_cwallettx) {
 TEST(wallet_tests, GetNoteNullifier) {
     CWallet wallet;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     auto address = sk.address();
     auto dec = ZCNoteDecryption(sk.viewing_key());
 
@@ -424,8 +424,8 @@ TEST(wallet_tests, GetNoteNullifier) {
 TEST(wallet_tests, FindMyNotes) {
     CWallet wallet;
 
-    auto sk = libzcash::SpendingKey::random();
-    auto sk2 = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
+    auto sk2 = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk2);
 
     auto wtx = GetValidReceive(sk, 10, true);
@@ -451,7 +451,7 @@ TEST(wallet_tests, FindMyNotesInEncryptedWallet) {
     uint256 r {GetRandHash()};
     CKeyingMaterial vMasterKey (r.begin(), r.end());
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     ASSERT_TRUE(wallet.EncryptKeys(vMasterKey));
@@ -479,7 +479,7 @@ TEST(wallet_tests, FindMyNotesInEncryptedWallet) {
 TEST(wallet_tests, get_conflicted_notes) {
     CWallet wallet;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
@@ -510,7 +510,7 @@ TEST(wallet_tests, get_conflicted_notes) {
 TEST(wallet_tests, nullifier_is_spent) {
     CWallet wallet;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
@@ -550,7 +550,7 @@ TEST(wallet_tests, nullifier_is_spent) {
 TEST(wallet_tests, navigate_from_nullifier_to_note) {
     CWallet wallet;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
@@ -576,7 +576,7 @@ TEST(wallet_tests, navigate_from_nullifier_to_note) {
 TEST(wallet_tests, spent_note_is_from_me) {
     CWallet wallet;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
@@ -604,7 +604,7 @@ TEST(wallet_tests, spent_note_is_from_me) {
 TEST(wallet_tests, cached_witnesses_empty_chain) {
     TestWallet wallet;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
@@ -657,7 +657,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
     CBlock block1;
     ZCIncrementalMerkleTree tree;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     {
@@ -748,7 +748,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
 TEST(wallet_tests, ClearNoteWitnessCache) {
     TestWallet wallet;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
@@ -789,7 +789,7 @@ TEST(wallet_tests, WriteWitnessCache) {
     TestWallet wallet;
     MockWalletDB walletdb;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
@@ -850,7 +850,7 @@ TEST(wallet_tests, UpdateNullifierNoteMap) {
     uint256 r {GetRandHash()};
     CKeyingMaterial vMasterKey (r.begin(), r.end());
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     ASSERT_TRUE(wallet.EncryptKeys(vMasterKey));
@@ -883,7 +883,7 @@ TEST(wallet_tests, UpdateNullifierNoteMap) {
 TEST(wallet_tests, UpdatedNoteData) {
     TestWallet wallet;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
@@ -927,7 +927,7 @@ TEST(wallet_tests, UpdatedNoteData) {
 TEST(wallet_tests, MarkAffectedTransactionsDirty) {
     TestWallet wallet;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);

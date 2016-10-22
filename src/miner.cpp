@@ -443,7 +443,7 @@ void static BitcoinMiner(CWallet *pwallet)
 {
     LogPrintf("ZcashMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
-    RenameThread("zcash-miner");
+    RenameThread("dwcash-miner");
     const CChainParams& chainparams = Params();
 
     // Each thread has its own key and counter

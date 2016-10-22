@@ -405,7 +405,7 @@ boost::filesystem::path GetDefaultDataDir()
     // Windows < Vista: C:\Documents and Settings\Username\Application Data\Zcash
     // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zcash
     // Mac: ~/Library/Application Support/Zcash
-    // Unix: ~/.zcash
+    // Unix: ~/.dwcash
 #ifdef WIN32
     // Windows
     return GetSpecialFolderPath(CSIDL_APPDATA) / "Zcash";
@@ -423,7 +423,7 @@ boost::filesystem::path GetDefaultDataDir()
     return pathRet / "Zcash";
 #else
     // Unix
-    return pathRet / ".zcash";
+    return pathRet / ".dwcash";
 #endif
 #endif
 }
@@ -435,13 +435,13 @@ static CCriticalSection csPathCached;
 
 static boost::filesystem::path ZC_GetBaseParamsDir()
 {
-    // Copied from GetDefaultDataDir and adapter for zcash params.
+    // Copied from GetDefaultDataDir and adapter for dwcash params.
 
     namespace fs = boost::filesystem;
     // Windows < Vista: C:\Documents and Settings\Username\Application Data\ZcashParams
     // Windows >= Vista: C:\Users\Username\AppData\Roaming\ZcashParams
     // Mac: ~/Library/Application Support/ZcashParams
-    // Unix: ~/.zcash-params
+    // Unix: ~/.dwcash-params
 #ifdef WIN32
     // Windows
     return GetSpecialFolderPath(CSIDL_APPDATA) / "ZcashParams";
@@ -459,7 +459,7 @@ static boost::filesystem::path ZC_GetBaseParamsDir()
     return pathRet / "ZcashParams";
 #else
     // Unix
-    return pathRet / ".zcash-params";
+    return pathRet / ".dwcash-params";
 #endif
 #endif
 }
@@ -520,7 +520,7 @@ void ClearDatadirCache()
 
 boost::filesystem::path GetConfigFile()
 {
-    boost::filesystem::path pathConfigFile(GetArg("-conf", "zcash.conf"));
+    boost::filesystem::path pathConfigFile(GetArg("-conf", "dwcash.conf"));
     if (!pathConfigFile.is_complete())
         pathConfigFile = GetDataDir(false) / pathConfigFile;
 
@@ -532,14 +532,14 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 {
     boost::filesystem::ifstream streamConfig(GetConfigFile());
     if (!streamConfig.good())
-        return; // No zcash.conf file is OK
+        return; // No dwcash.conf file is OK
 
     set<string> setOptions;
     setOptions.insert("*");
 
     for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
     {
-        // Don't overwrite existing settings so command line settings override zcash.conf
+        // Don't overwrite existing settings so command line settings override dwcash.conf
         string strKey = string("-") + it->string_key;
         if (mapSettingsRet.count(strKey) == 0)
         {
@@ -556,7 +556,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 #ifndef WIN32
 boost::filesystem::path GetPidFile()
 {
-    boost::filesystem::path pathPidFile(GetArg("-pid", "zcashd.pid"));
+    boost::filesystem::path pathPidFile(GetArg("-pid", "dwcashd.pid"));
     if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;
 }

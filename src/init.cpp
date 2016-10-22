@@ -53,7 +53,7 @@ using namespace std;
 
 extern void ThreadSendAlert();
 
-ZCJoinSplit* pzcashParams = NULL;
+ZCJoinSplit* pdwcashParams = NULL;
 
 #ifdef ENABLE_WALLET
 CWallet* pwalletMain = NULL;
@@ -208,8 +208,8 @@ void Shutdown()
     delete pwalletMain;
     pwalletMain = NULL;
 #endif
-    delete pzcashParams;
-    pzcashParams = NULL;
+    delete pdwcashParams;
+    pdwcashParams = NULL;
     ECC_Stop();
     LogPrintf("%s: done\n", __func__);
 }
@@ -280,7 +280,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-blocknotify=<cmd>", _("Execute command when the best block changes (%s in cmd is replaced by block hash)"));
     strUsage += HelpMessageOpt("-checkblocks=<n>", strprintf(_("How many blocks to check at startup (default: %u, 0 = all)"), 288));
     strUsage += HelpMessageOpt("-checklevel=<n>", strprintf(_("How thorough the block verification of -checkblocks is (0-4, default: %u)"), 3));
-    strUsage += HelpMessageOpt("-conf=<file>", strprintf(_("Specify configuration file (default: %s)"), "zcash.conf"));
+    strUsage += HelpMessageOpt("-conf=<file>", strprintf(_("Specify configuration file (default: %s)"), "dwcash.conf"));
     if (mode == HMM_BITCOIND)
     {
 #if !defined(WIN32)
@@ -294,7 +294,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-par=<n>", strprintf(_("Set the number of script verification threads (%u to %d, 0 = auto, <0 = leave that many cores free, default: %d)"),
         -(int)boost::thread::hardware_concurrency(), MAX_SCRIPTCHECK_THREADS, DEFAULT_SCRIPTCHECK_THREADS));
 #ifndef WIN32
-    strUsage += HelpMessageOpt("-pid=<file>", strprintf(_("Specify pid file (default: %s)"), "zcashd.pid"));
+    strUsage += HelpMessageOpt("-pid=<file>", strprintf(_("Specify pid file (default: %s)"), "dwcashd.pid"));
 #endif
     strUsage += HelpMessageOpt("-prune=<n>", strprintf(_("Reduce storage requirements by pruning (deleting) old blocks. This mode disables wallet support and is incompatible with -txindex. "
             "Warning: Reverting this setting requires re-downloading the entire blockchain. "
@@ -616,18 +616,18 @@ static void ZC_LoadParams()
     boost::filesystem::path pk_path = ZC_GetParamsDir() / "beta2-proving.key";
     boost::filesystem::path vk_path = ZC_GetParamsDir() / "beta2-verifying.key";
 
-    pzcashParams = ZCJoinSplit::Unopened();
+    pdwcashParams = ZCJoinSplit::Unopened();
 
     LogPrintf("Loading verifying key from %s\n", vk_path.string().c_str());
     gettimeofday(&tv_start, 0);
 
-    pzcashParams->loadVerifyingKey(vk_path.string());
+    pdwcashParams->loadVerifyingKey(vk_path.string());
 
     gettimeofday(&tv_end, 0);
     elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
     LogPrintf("Loaded verifying key in %fs seconds.\n", elapsed);
 
-    pzcashParams->setProvingKeyPath(pk_path.string());
+    pdwcashParams->setProvingKeyPath(pk_path.string());
 }
 
 /** Initialize bitcoin.

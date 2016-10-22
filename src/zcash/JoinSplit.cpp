@@ -2,7 +2,7 @@
 #include "prf.h"
 #include "sodium.h"
 
-#include "zcash/util.h"
+#include "dwcash/util.h"
 
 #include <memory>
 
@@ -19,9 +19,9 @@
 
 using namespace libsnark;
 
-namespace libzcash {
+namespace libdwcash {
 
-#include "zcash/circuit/gadget.tcc"
+#include "dwcash/circuit/gadget.tcc"
 
 CCriticalSection cs_ParamsIO;
 CCriticalSection cs_InitializeParams;

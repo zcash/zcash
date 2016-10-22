@@ -9,7 +9,7 @@
 #include "serialize.h"
 #include "streams.h"
 #include "support/allocators/secure.h"
-#include "zcash/Address.hpp"
+#include "dwcash/Address.hpp"
 
 class uint256;
 
@@ -200,11 +200,11 @@ public:
             mi++;
         }
     }
-    virtual bool AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
-                                       const libzcash::ViewingKey &vk,
+    virtual bool AddCryptedSpendingKey(const libdwcash::PaymentAddress &address,
+                                       const libdwcash::ViewingKey &vk,
                                        const std::vector<unsigned char> &vchCryptedSecret);
-    bool AddSpendingKey(const libzcash::SpendingKey &sk);
-    bool HaveSpendingKey(const libzcash::PaymentAddress &address) const
+    bool AddSpendingKey(const libdwcash::SpendingKey &sk);
+    bool HaveSpendingKey(const libdwcash::PaymentAddress &address) const
     {
         {
             LOCK(cs_KeyStore);
@@ -214,8 +214,8 @@ public:
         }
         return false;
     }
-    bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey &skOut) const;
-    void GetPaymentAddresses(std::set<libzcash::PaymentAddress> &setAddress) const
+    bool GetSpendingKey(const libdwcash::PaymentAddress &address, libdwcash::SpendingKey &skOut) const;
+    void GetPaymentAddresses(std::set<libdwcash::PaymentAddress> &setAddress) const
     {
         if (!IsCrypted())
         {

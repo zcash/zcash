@@ -27,7 +27,7 @@ Modify the alert parameters, id and message found in this file.
 
 Build and run with -sendalert or -printalert.
 
-./zcashd -printtoconsole -sendalert
+./dwcashd -printtoconsole -sendalert
 
 One minute after starting up, the alert will be broadcast. It is then
 flooded through the network until the nRelayUntil time, and will be
@@ -72,7 +72,7 @@ void ThreadSendAlert()
     CAlert alert;
     alert.nRelayUntil   = GetTime() + 15 * 60;
     alert.nExpiration   = GetTime() + 365 * 60 * 60;
-    alert.nID           = 1000;  // use https://github.com/zcash/zcash/wiki/specification#assigned-numbers to keep track of alert IDs
+    alert.nID           = 1000;  // use https://github.com/dwcash/dwcash/wiki/specification#assigned-numbers to keep track of alert IDs
     alert.nCancel       = 0;   // cancels previous messages up to this ID number
 
     // These versions are protocol versions

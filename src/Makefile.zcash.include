@@ -1,9 +1,9 @@
 bin_PROGRAMS += \
-  zcash/GenerateParams 
+  dwcash/GenerateParams 
 
 # tool for generating our public parameters
-zcash_GenerateParams_SOURCES = zcash/GenerateParams.cpp
-zcash_GenerateParams_LDADD = \
+dwcash_GenerateParams_SOURCES = dwcash/GenerateParams.cpp
+dwcash_GenerateParams_LDADD = \
   $(BOOST_LIBS) \
   $(LIBZCASH) \
   $(LIBBITCOIN_UTIL) \

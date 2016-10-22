@@ -31,7 +31,7 @@ LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBBITCOIN_UNIVALUE=univalue/libbitcoin_univalue.a
 LIBBITCOINQT=qt/libbitcoinqt.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
-LIBZCASH=libzcash.a
+LIBZCASH=libdwcash.a
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
@@ -45,7 +45,7 @@ EXTRA_LIBRARIES = \
   univalue/libbitcoin_univalue.a \
   libbitcoin_server.a \
   libbitcoin_cli.a \
-  libzcash.a
+  libdwcash.a
 if ENABLE_WALLET
 BITCOIN_INCLUDES += $(BDB_CPPFLAGS)
 EXTRA_LIBRARIES += libbitcoin_wallet.a
@@ -62,23 +62,23 @@ bin_PROGRAMS =
 TESTS =
 
 if BUILD_BITCOIND
-  bin_PROGRAMS += zcashd
+  bin_PROGRAMS += dwcashd
 endif
 
 if BUILD_BITCOIN_UTILS
-  bin_PROGRAMS += zcash-cli bitcoin-tx
+  bin_PROGRAMS += dwcash-cli bitcoin-tx
 endif
 
 LIBZCASH_H = \
-  zcash/IncrementalMerkleTree.hpp \
-  zcash/NoteEncryption.hpp \
-  zcash/Address.hpp \
-  zcash/JoinSplit.hpp \
-  zcash/Note.hpp \
-  zcash/prf.h \
-  zcash/Proof.hpp \
-  zcash/util.h \
-  zcash/Zcash.h
+  dwcash/IncrementalMerkleTree.hpp \
+  dwcash/NoteEncryption.hpp \
+  dwcash/Address.hpp \
+  dwcash/JoinSplit.hpp \
+  dwcash/Note.hpp \
+  dwcash/prf.h \
+  dwcash/Proof.hpp \
+  dwcash/util.h \
+  dwcash/Zcash.h
 
 .PHONY: FORCE check-symbols check-security
 # bitcoin core #
@@ -339,15 +339,15 @@ nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
 #
 
 # bitcoind binary #
-zcashd_SOURCES = bitcoind.cpp
-zcashd_CPPFLAGS = $(BITCOIN_INCLUDES)
-zcashd_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+dwcashd_SOURCES = bitcoind.cpp
+dwcashd_CPPFLAGS = $(BITCOIN_INCLUDES)
+dwcashd_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
-zcashd_SOURCES += bitcoind-res.rc
+dwcashd_SOURCES += bitcoind-res.rc
 endif
 
-zcashd_LDADD = \
+dwcashd_LDADD = \
   $(LIBBITCOIN_SERVER) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UNIVALUE) \
@@ -359,10 +359,10 @@ zcashd_LDADD = \
   $(LIBSECP256K1)
 
 if ENABLE_WALLET
-zcashd_LDADD += libbitcoin_wallet.a
+dwcashd_LDADD += libbitcoin_wallet.a
 endif
 
-zcashd_LDADD += \
+dwcashd_LDADD += \
   $(BOOST_LIBS) \
   $(BDB_LIBS) \
   $(SSL_LIBS) \
@@ -374,15 +374,15 @@ zcashd_LDADD += \
 #
 
 # bitcoin-cli binary #
-zcash_cli_SOURCES = bitcoin-cli.cpp
-zcash_cli_CPPFLAGS = $(BITCOIN_INCLUDES)
-zcash_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+dwcash_cli_SOURCES = bitcoin-cli.cpp
+dwcash_cli_CPPFLAGS = $(BITCOIN_INCLUDES)
+dwcash_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
-zcash_cli_SOURCES += bitcoin-cli-res.rc
+dwcash_cli_SOURCES += bitcoin-cli-res.rc
 endif
 
-zcash_cli_LDADD = \
+dwcash_cli_LDADD = \
   $(LIBBITCOIN_CLI) \
   $(LIBBITCOIN_UTIL) \
   $(BOOST_LIBS) \
@@ -402,7 +402,7 @@ if TARGET_WINDOWS
 bitcoin_tx_SOURCES += bitcoin-tx-res.rc
 endif
 
-# FIXME: Is libzcash needed for bitcoin_tx?
+# FIXME: Is libdwcash needed for bitcoin_tx?
 bitcoin_tx_LDADD = \
   $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_COMMON) \
@@ -415,30 +415,30 @@ bitcoin_tx_LDADD = \
 bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 #
 
-# zcash protocol primitives #
-libzcash_a_SOURCES = \
-  zcash/IncrementalMerkleTree.cpp \
-  zcash/NoteEncryption.cpp \
-  zcash/Address.cpp \
-  zcash/JoinSplit.cpp \
-  zcash/Proof.cpp \
-  zcash/Note.cpp \
-  zcash/prf.cpp \
-  zcash/util.cpp \
-  zcash/circuit/commitment.tcc \
-  zcash/circuit/gadget.tcc \
-  zcash/circuit/merkle.tcc \
-  zcash/circuit/note.tcc \
-  zcash/circuit/prfs.tcc \
-  zcash/circuit/utils.tcc
+# dwcash protocol primitives #
+libdwcash_a_SOURCES = \
+  dwcash/IncrementalMerkleTree.cpp \
+  dwcash/NoteEncryption.cpp \
+  dwcash/Address.cpp \
+  dwcash/JoinSplit.cpp \
+  dwcash/Proof.cpp \
+  dwcash/Note.cpp \
+  dwcash/prf.cpp \
+  dwcash/util.cpp \
+  dwcash/circuit/commitment.tcc \
+  dwcash/circuit/gadget.tcc \
+  dwcash/circuit/merkle.tcc \
+  dwcash/circuit/note.tcc \
+  dwcash/circuit/prfs.tcc \
+  dwcash/circuit/utils.tcc
 
-libzcash_a_CPPFLAGS = -DMULTICORE -fopenmp -fPIC -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS $(HARDENED_CPPFLAGS) -pipe -O1 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
+libdwcash_a_CPPFLAGS = -DMULTICORE -fopenmp -fPIC -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS $(HARDENED_CPPFLAGS) -pipe -O1 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
 
-libzcash_a_CXXFLAGS = $(HARDENED_CXXFLAGS) -fwrapv -fno-strict-aliasing
+libdwcash_a_CXXFLAGS = $(HARDENED_CXXFLAGS) -fwrapv -fno-strict-aliasing
 
-libzcash_a_LDFLAGS = $(HARDENED_LDFLAGS)
+libdwcash_a_LDFLAGS = $(HARDENED_LDFLAGS)
 
-libzcash_a_CPPFLAGS += -DMONTGOMERY_OUTPUT
+libdwcash_a_CPPFLAGS += -DMONTGOMERY_OUTPUT
 
 # bitcoinconsensus library #
 if BUILD_BITCOIN_LIBS
@@ -521,4 +521,4 @@ if ENABLE_QT_TESTS
 include Makefile.qttest.include
 endif
 
-include Makefile.zcash.include
+include Makefile.dwcash.include

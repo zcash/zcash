@@ -5,7 +5,7 @@ Zcash Core 1.0.0-rc1
 
 ### Need Help?
 
-* See the documentation at the [Zcash Wiki](https://github.com/zcash/zcash/wiki) for help and more information. NOTE: Other documentation in this directory may be out of date and inaccurate.
+* See the documentation at the [Zcash Wiki](https://github.com/dwcash/dwcash/wiki) for help and more information. NOTE: Other documentation in this directory may be out of date and inaccurate.
 * Ask for help on the [Zcash](https://forum.z.cash/) forums.
 
 Building

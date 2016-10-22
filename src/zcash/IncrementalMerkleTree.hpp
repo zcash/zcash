@@ -10,7 +10,7 @@
 
 #include "Zcash.h"
 
-namespace libzcash {
+namespace libdwcash {
 
 class MerklePath {
 public:
@@ -185,13 +185,13 @@ public:
     static SHA256Compress combine(const SHA256Compress& a, const SHA256Compress& b);
 };
 
-} // end namespace `libzcash`
+} // end namespace `libdwcash`
 
-typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::SHA256Compress> ZCIncrementalMerkleTree;
-typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::SHA256Compress> ZCTestingIncrementalMerkleTree;
+typedef libdwcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH, libdwcash::SHA256Compress> ZCIncrementalMerkleTree;
+typedef libdwcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libdwcash::SHA256Compress> ZCTestingIncrementalMerkleTree;
 
-typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::SHA256Compress> ZCIncrementalWitness;
-typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::SHA256Compress> ZCTestingIncrementalWitness;
+typedef libdwcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, libdwcash::SHA256Compress> ZCIncrementalWitness;
+typedef libdwcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libdwcash::SHA256Compress> ZCTestingIncrementalWitness;
 
 #endif /* ZCINCREMENTALMERKLETREE_H_ */
 

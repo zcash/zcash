@@ -32,7 +32,7 @@ Taylor Hornby:
       Disable hardening when building for coverage reports.
       Upgrade libsodium for AVX2-detection bugfix.
       Fix inconsistent optimization flags; single source of truth.
-      Add -fwrapv -fno-strict-aliasing; fix libzcash flags.
+      Add -fwrapv -fno-strict-aliasing; fix libdwcash flags.
       Use libsodium's s < L check, instead checking that libsodium checks that.
 
 Simon Liu:
@@ -41,7 +41,7 @@ Simon Liu:
       Add note about zkey and encrypted wallets.
 
 Gaurav Rana:
-      Update zcash-cli stop message.
+      Update dwcash-cli stop message.
 
 Tom Ritter:
       Clarify comment about nonce space for Note Encryption.

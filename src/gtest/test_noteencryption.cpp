@@ -3,8 +3,8 @@
 
 #include <stdexcept>
 
-#include "zcash/NoteEncryption.hpp"
-#include "zcash/prf.h"
+#include "dwcash/NoteEncryption.hpp"
+#include "dwcash/prf.h"
 #include "crypto/sha256.h"
 
 class TestNoteDecryption : public ZCNoteDecryption {
@@ -118,7 +118,7 @@ uint256 test_prf(
 TEST(noteencryption, prf_addr)
 {
     for (size_t i = 0; i < 100; i++) {
-        uint252 a_sk = libzcash::random_uint252();
+        uint252 a_sk = libdwcash::random_uint252();
         uint256 rest;
         ASSERT_TRUE(
             test_prf(0xc0, a_sk, rest) == PRF_addr_a_pk(a_sk)
@@ -126,7 +126,7 @@ TEST(noteencryption, prf_addr)
     }
 
     for (size_t i = 0; i < 100; i++) {
-        uint252 a_sk = libzcash::random_uint252();
+        uint252 a_sk = libdwcash::random_uint252();
         uint256 rest;
         *rest.begin() = 0x01;
         ASSERT_TRUE(
@@ -138,8 +138,8 @@ TEST(noteencryption, prf_addr)
 TEST(noteencryption, prf_nf)
 {
     for (size_t i = 0; i < 100; i++) {
-        uint252 a_sk = libzcash::random_uint252();
-        uint256 rho = libzcash::random_uint256();
+        uint252 a_sk = libdwcash::random_uint252();
+        uint256 rho = libdwcash::random_uint256();
         ASSERT_TRUE(
             test_prf(0xe0, a_sk, rho) == PRF_nf(a_sk, rho)
         );
@@ -149,16 +149,16 @@ TEST(noteencryption, prf_nf)
 TEST(noteencryption, prf_pk)
 {
     for (size_t i = 0; i < 100; i++) {
-        uint252 a_sk = libzcash::random_uint252();
-        uint256 h_sig = libzcash::random_uint256();
+        uint252 a_sk = libdwcash::random_uint252();
+        uint256 h_sig = libdwcash::random_uint256();
         ASSERT_TRUE(
             test_prf(0x00, a_sk, h_sig) == PRF_pk(a_sk, 0, h_sig)
         );
     }
 
     for (size_t i = 0; i < 100; i++) {
-        uint252 a_sk = libzcash::random_uint252();
-        uint256 h_sig = libzcash::random_uint256();
+        uint252 a_sk = libdwcash::random_uint252();
+        uint256 h_sig = libdwcash::random_uint256();
         ASSERT_TRUE(
             test_prf(0x40, a_sk, h_sig) == PRF_pk(a_sk, 1, h_sig)
         );
@@ -172,16 +172,16 @@ TEST(noteencryption, prf_pk)
 TEST(noteencryption, prf_rho)
 {
     for (size_t i = 0; i < 100; i++) {
-        uint252 phi = libzcash::random_uint252();
-        uint256 h_sig = libzcash::random_uint256();
+        uint252 phi = libdwcash::random_uint252();
+        uint256 h_sig = libdwcash::random_uint256();
         ASSERT_TRUE(
             test_prf(0x20, phi, h_sig) == PRF_rho(phi, 0, h_sig)
         );
     }
 
     for (size_t i = 0; i < 100; i++) {
-        uint252 phi = libzcash::random_uint252();
-        uint256 h_sig = libzcash::random_uint256();
+        uint252 phi = libdwcash::random_uint252();
+        uint256 h_sig = libdwcash::random_uint256();
         ASSERT_TRUE(
             test_prf(0x60, phi, h_sig) == PRF_rho(phi, 1, h_sig)
         );

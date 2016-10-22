@@ -1,6 +1,6 @@
 /*
 See the Zcash protocol specification for more information.
-https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
+https://github.com/dwcash/zips/blob/master/protocol/protocol.pdf
 */
 
 #ifndef ZC_NOTE_ENCRYPTION_H_
@@ -10,9 +10,9 @@ https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
 #include "uint256.h"
 #include "uint252.h"
 
-#include "zcash/Zcash.h"
+#include "dwcash/Zcash.h"
 
-namespace libzcash {
+namespace libdwcash {
 
 #define NOTEENCRYPTION_AUTH_BYTES 16
 
@@ -84,7 +84,7 @@ uint252 random_uint252();
 
 }
 
-typedef libzcash::NoteEncryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteEncryption;
-typedef libzcash::NoteDecryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteDecryption;
+typedef libdwcash::NoteEncryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteEncryption;
+typedef libdwcash::NoteDecryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteDecryption;
 
 #endif /* ZC_NOTE_ENCRYPTION_H_ */

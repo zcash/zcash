@@ -2,7 +2,7 @@
 
 set -eu
 
-PARAMS_DIR="$HOME/.zcash-params"
+PARAMS_DIR="$HOME/.dwcash-params"
 
 BETA2_PKEY_NAME='beta2-proving.key'
 BETA2_VKEY_NAME='beta2-verifying.key'

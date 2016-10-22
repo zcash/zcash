@@ -6,7 +6,7 @@ https://z.cash/
 Where do I begin?
 -----------------
 
-We have a guide for joining the public testnet: https://github.com/zcash/zcash/wiki/Beta-Guide
+We have a guide for joining the public testnet: https://github.com/dwcash/dwcash/wiki/Beta-Guide
 
 What is Zcash?
 --------------
@@ -14,7 +14,7 @@ What is Zcash?
 Zcash is an implementation of the "Zerocash" protocol. Based on Bitcoin's code, it intends to
 offer a far higher standard of privacy and anonymity through a sophisticiated zero-knowledge
 proving scheme which preserves confidentiality of transaction metadata. Technical details are
-available in our [Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf).
+available in our [Protocol Specification](https://github.com/dwcash/zips/raw/master/protocol/protocol.pdf).
 
 **Zcash is unfinished and highly experimental.** Use at your own risk.
 

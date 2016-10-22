@@ -6,7 +6,7 @@ set -e
 set -x
 
 BUILD_PATH="/tmp/zcbuild"
-PACKAGE_NAME="zcash"
+PACKAGE_NAME="dwcash"
 SRC_PATH=`pwd`
 
 umask 022
@@ -24,9 +24,9 @@ fi
 mkdir -p $BUILD_DIR/DEBIAN $BUILD_DIR/usr/bin
 
 cp -r $SRC_PATH/contrib/DEBIAN/* $BUILD_DIR/DEBIAN/
-cp $SRC_PATH/src/zcashd $BUILD_DIR/usr/bin/
-cp $SRC_PATH/src/zcash-cli $BUILD_DIR/usr/bin/
-cp $SRC_PATH/zcutil/fetch-params.sh $BUILD_DIR/usr/bin/zcash-fetch-params
+cp $SRC_PATH/src/dwcashd $BUILD_DIR/usr/bin/
+cp $SRC_PATH/src/dwcash-cli $BUILD_DIR/usr/bin/
+cp $SRC_PATH/zcutil/fetch-params.sh $BUILD_DIR/usr/bin/dwcash-fetch-params
 
 # Create the deb package
 dpkg-deb --build $BUILD_DIR

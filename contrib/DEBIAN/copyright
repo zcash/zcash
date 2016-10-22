@@ -1,7 +1,7 @@
 Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?rev=174
 Upstream-Name: Zcash
 Upstream-Contact: Zcash Company <team@z.cash>
-Source: https://github.com/zcash/zcash
+Source: https://github.com/dwcash/dwcash
 
 Files: *
 Copyright: 2016, The Zcash developers

@@ -2,7 +2,7 @@ Alex (1):
       add sha256sum support for Mac OS X
 
 Alfie John (1):
-      Rename libzerocash to libzcash
+      Rename libzerocash to libdwcash
 
 Jack Grigg (21):
       Implement mining slow start with a linear ramp
@@ -28,7 +28,7 @@ Jack Grigg (21):
       Fix nits after review
 
 Nathan Wilcox (1):
-      Fix a test name bug so that ``make cov-zcash`` correctly runs the ``zcash-gtest`` binary. Fixes #946.
+      Fix a test name bug so that ``make cov-dwcash`` correctly runs the ``dwcash-gtest`` binary. Fixes #946.
 
 Sean Bowe (14):
       Refactor PRF_gadget to hand responsibility to PRF_addr_a_pk_gadget for creating the '0' argument to the PRF.
