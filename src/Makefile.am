@@ -66,11 +66,7 @@ if BUILD_BITCOIND
 endif
 
 if BUILD_BITCOIN_UTILS
-<<<<<<< HEAD
-  bin_PROGRAMS += dwcash-cli bitcoin-tx
-=======
   bin_PROGRAMS += dwcash-cli dwcash-tx
->>>>>>> a12eaa2bf2b19f9b3ce2bc6e98604a403847a441
 endif
 
 LIBDWCASH_H = \
@@ -412,13 +408,8 @@ if TARGET_WINDOWS
 dwcash_tx_SOURCES += bitcoin-tx-res.rc
 endif
 
-<<<<<<< HEAD
-# FIXME: Is libdwcash needed for bitcoin_tx?
-bitcoin_tx_LDADD = \
-=======
 # FIXME: Is libdwcash needed for dwcash_tx?
 dwcash_tx_LDADD = \
->>>>>>> a12eaa2bf2b19f9b3ce2bc6e98604a403847a441
   $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
