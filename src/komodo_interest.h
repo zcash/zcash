@@ -5,7 +5,7 @@
 
 uint64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
-    int32_t minutes; uint64_t interest = 0;
+    int32_t minutes; uint64_t numerator,denominator,interest = 0;
     if ( nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= COIN )
     {
         minutes = (tiptime - nLockTime) / 60;
