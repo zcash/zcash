@@ -3079,19 +3079,26 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
             return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
         else
         {
-            int32_t notarized_height; uint256 notarized_hash,notarized_btctxid;
+            int32_t notarized_height; uint256 notarized_hash,notarized_btctxid; CBlockIndex *notary;
             notarized_height = komodo_notarizeddata(chainActive.Tip()->nHeight,&notarized_hash,&notarized_btctxid);
-            //printf("nHeight.%d -> (%d %s)\n",chainActive.Tip()->nHeight,notarized_height,notarized_hash.ToString().c_str());
-            if ( nHeight < notarized_height )
+            if ( (notary= mapBlockIndex[notarized_hash]) != 0 )
             {
-                fprintf(stderr,"nHeight.%d < NOTARIZED_HEIGHT.%d\n",nHeight,notarized_height);
-                return state.DoS(100, error("%s: forked chain older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
-            }
-            else if ( nHeight == notarized_height && memcmp(&hash,&notarized_hash,sizeof(hash)) != 0 )
-            {
-                fprintf(stderr,"nHeight.%d == NOTARIZED_HEIGHT.%d, diff hash\n",nHeight,notarized_height);
-                return state.DoS(100, error("%s: forked chain at notarized (height %d) with different hash", __func__, notarized_height));
-            }
+                //printf("nHeight.%d -> (%d %s)\n",chainActive.Tip()->nHeight,notarized_height,notarized_hash.ToString().c_str());
+                if ( notary->nHeight == notarized_height ) // if notarized_hash not in chain, reorg
+                {
+                    if ( nHeight < notarized_height )
+                    {
+                        fprintf(stderr,"nHeight.%d < NOTARIZED_HEIGHT.%d\n",nHeight,notarized_height);
+                        return state.DoS(100, error("%s: forked chain older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
+                    }
+                    else if ( nHeight == notarized_height && memcmp(&hash,&notarized_hash,sizeof(hash)) != 0 )
+                    {
+                        fprintf(stderr,"nHeight.%d == NOTARIZED_HEIGHT.%d, diff hash\n",nHeight,notarized_height);
+                        return state.DoS(100, error("%s: forked chain at notarized (height %d) with different hash", __func__, notarized_height));
+                    }
+                } else fprintf(stderr,"notary_hash %s ht.%d at ht.%d\n",notarized_hash.ToString().c_str(),notarized_height,notary->nHeight);
+            } else if ( notarized_height > 0 )
+                fprintf(stderr,"couldnt find notary_hash %s ht.%d\n",notarized_hash.ToString().c_str(),notarized_height);
         }
     }
 
