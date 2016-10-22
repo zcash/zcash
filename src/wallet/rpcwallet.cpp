@@ -2372,7 +2372,6 @@ Value listunspent(const Array& params, bool fHelp)
             if ( pindex != 0 )
             {
                 interest = komodo_interest(nValue,out.tx->nLockTime,pindex->nTime);
-                fprintf(stderr,"nLock.%u tip.%u %u interest.%llu\n",out.tx->nLockTime,chainActive.Tip()->nTime,pindex->nTime,(long long)interest);
                 entry.push_back(Pair("interest",ValueFromAmount(interest)));
             }
         }

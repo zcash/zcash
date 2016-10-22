@@ -454,7 +454,11 @@ Value gettxout(const Array& params, bool fHelp)
     else ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
     
-    uint64_t interest; uint32_t timestamp = komodo_txtime(hash);
+    CBlockIndex *pblockindex = chainActive[coins.nHeight];
+
+    uint64_t interest; uint32_t timestamp=0;
+    if ( pblockindex != 0 )
+        timestamp = pblockindex->nTime;
     interest = komodo_interest(coins.vout[n].nValue,timestamp,pindex->nTime);
     fprintf(stderr,"nValue %llu lock.%u:%u nTime.%u -> %llu\n",(long long)coins.vout[n].nValue,coins.nLockTime,timestamp,pindex->nTime,(long long)interest);
     ret.push_back(Pair("interest", ValueFromAmount(interest)));
