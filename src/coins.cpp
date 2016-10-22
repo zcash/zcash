@@ -383,7 +383,6 @@ const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
     return coins->vout[input.prevout.n].scriptPubKey;
 }
 
-uint32_t komodo_txtime(uint256 hash);
 uint64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 
 CAmount CCoinsViewCache::GetValueIn(int64_t *interestp,const CTransaction& tx,uint32_t tiptime) const
@@ -397,7 +396,7 @@ CAmount CCoinsViewCache::GetValueIn(int64_t *interestp,const CTransaction& tx,ui
     {
         value = GetOutputFor(tx.vin[i]).nValue;
         nResult += value;
-        interest = komodo_interest(value,komodo_txtime(tx.vin[i].prevout.hash),tiptime);
+        interest = komodo_interest(value,tx.nLockTime,tiptime);
         nResult += interest;
         (*interestp) += interest;
     }
