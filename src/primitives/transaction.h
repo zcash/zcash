@@ -53,7 +53,7 @@ public:
     // These contain trapdoors, values and other information
     // that the recipient needs, including a memo field. It
     // is encrypted using the scheme implemented in crypto/NoteEncryption.cpp
-    boost::array<ZCNoteEncryption::Ciphertext, ZC_NUM_JS_OUTPUTS> ciphertexts;
+    boost::array<ZCNoteEncryption::Ciphertext, ZC_NUM_JS_OUTPUTS> ciphertexts = {{ {{0}} }};
 
     // Random seed
     uint256 randomSeed;
@@ -324,7 +324,7 @@ public:
     const uint32_t nLockTime;
     const std::vector<JSDescription> vjoinsplit;
     const uint256 joinSplitPubKey;
-    const joinsplit_sig_t joinSplitSig;
+    const joinsplit_sig_t joinSplitSig = {{0}};
 
     /** Construct a CTransaction that qualifies as IsNull() */
     CTransaction();
@@ -403,7 +403,7 @@ struct CMutableTransaction
     uint32_t nLockTime;
     std::vector<JSDescription> vjoinsplit;
     uint256 joinSplitPubKey;
-    CTransaction::joinsplit_sig_t joinSplitSig;
+    CTransaction::joinsplit_sig_t joinSplitSig = {{0}};
 
     CMutableTransaction();
     CMutableTransaction(const CTransaction& tx);
