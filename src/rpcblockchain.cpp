@@ -381,6 +381,8 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
 }
 
 uint64_t komodo_interest(uint64_t nValue,uint32_t pastlocktime,uint32_t tiptime);
+uint32_t komodo_txtime(uint256 hash);
+
 Value gettxout(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 2 || params.size() > 3)
@@ -445,20 +447,18 @@ Value gettxout(const Array& params, bool fHelp)
         return Value::null;
 
     BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-    BlockMap::iterator it2 = mapBlockIndex.find(hash);
-    CBlockIndex *pindex2,*pindex = it->second;
+    CBlockIndex *pindex = it->second;
     ret.push_back(Pair("bestblock", pindex->GetBlockHash().GetHex()));
     if ((unsigned int)coins.nHeight == MEMPOOL_HEIGHT)
         ret.push_back(Pair("confirmations", 0));
     else ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
-    if ( (pindex2= it2->second) != 0 )
-    {
-        uint64_t interest;
-        interest = komodo_interest(coins.vout[n].nValue,pindex2->nTime,pindex->nTime);
-        fprintf(stderr,"nValue %llu lock.%u nTime.%u -> %llu\n",(long long)coins.vout[n].nValue,coins.nLockTime,pindex2->nTime,(long long)interest);
-        ret.push_back(Pair("interest", ValueFromAmount(interest)));
-    }
+    
+    uint64_t interest; uint32_t timestamp = komodo_txtime(hash);
+    interest = komodo_interest(coins.vout[n].nValue,timestamp,pindex->nTime);
+    fprintf(stderr,"nValue %llu lock.%u:%u nTime.%u -> %llu\n",(long long)coins.vout[n].nValue,coins.nLockTime,timestamp,pindex->nTime,(long long)interest);
+    ret.push_back(Pair("interest", ValueFromAmount(interest)));
+
     Object o;
     ScriptPubKeyToJSON(coins.vout[n].scriptPubKey, o, true);
     ret.push_back(Pair("scriptPubKey", o));
