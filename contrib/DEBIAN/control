@@ -1,8 +1,8 @@
 Source: dwcash
 Section: utils
 Priority: optional
-Maintainer: DeepWebCash Company <team@z.cash>
-Homepage: https://z.cash
+Maintainer: DeepWebCash Company <team@dw.cash>
+Homepage: https://dw.cash
 Build-Depends: autoconf, automake, bsdmainutils, build-essential
  git, g++-multilib, libc6-dev, libtool
  m4, ncurses-dev, pkg-config, python

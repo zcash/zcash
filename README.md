@@ -1,7 +1,7 @@
 DeepWebCash
 =====
 
-https://z.cash/
+https://dw.cash/
 
 Where do I begin?
 -----------------

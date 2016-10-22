@@ -88,8 +88,8 @@ void ThreadSendAlert()
     //  4000 or higher will put the RPC into safe mode
     alert.nPriority     = 5000;
     alert.strComment    = "";
-    alert.strStatusBar  = "URGENT: Upgrade required: see https://z.cash";
-    alert.strRPCError   = "URGENT: Upgrade required: see https://z.cash";
+    alert.strStatusBar  = "URGENT: Upgrade required: see https://dw.cash";
+    alert.strRPCError   = "URGENT: Upgrade required: see https://dw.cash";
 
     // Set specific client version/versions here. If setSubVer is empty, no filtering on subver is done:
     // alert.setSubVer.insert(std::string("/MagicBean:0.7.2/"));

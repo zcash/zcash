@@ -65,14 +65,14 @@ Jack Grigg (43):
       Update address in Founders' Reward gtest
 
 Jay Graber (4):
-      Link to z.cash on security-warnings.md
+      Link to dw.cash on security-warnings.md
       Add section abt confs and reorgs to security-warnings.md
       Update wording
       Final edits
 
 Kevin Gallagher (5):
       Lock to prevent parallel execution of fetch-params.sh
-      Updates dns.testnet.z.cash -> dnsseed.testnet.z.cash
+      Updates dns.testnet.dw.cash -> dnsseed.testnet.dw.cash
       Verify TLS certificates w/ wget in fetch-params.sh
       Inserts some notes related to testnet deployment
       Adds note about updating guide during testnet deployment

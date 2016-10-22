@@ -1,12 +1,12 @@
 DeepWebCash Core 1.0.0-rc1
 ====================
 
-[DeepWebCash](https://z.cash/) is the DeepWebCash client. It downloads and stores the entire history of DeepWebCash transactions; depending on the speed of your computer and network connection, the synchronization process could take a day or more once the blockchain has reached a significant size.
+[DeepWebCash](https://dw.cash/) is the DeepWebCash client. It downloads and stores the entire history of DeepWebCash transactions; depending on the speed of your computer and network connection, the synchronization process could take a day or more once the blockchain has reached a significant size.
 
 ### Need Help?
 
 * See the documentation at the [DeepWebCash Wiki](https://github.com/deepwebcash/deepwebcash/wiki) for help and more information. NOTE: Other documentation in this directory may be out of date and inaccurate.
-* Ask for help on the [DeepWebCash](https://forum.z.cash/) forums.
+* Ask for help on the [DeepWebCash](https://forum.dw.cash/) forums.
 
 Building
 --------

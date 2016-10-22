@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-# This script tests that the package mirror at https://z.cash/depends-sources/
+# This script tests that the package mirror at https://dw.cash/depends-sources/
 # contains all of the packages required to build this version of DeepWebCash.
 #
 # This script assumes you've just built DeepWebCash, and that as a result of that
@@ -12,7 +12,7 @@ import sys
 import os
 import requests
 
-MIRROR_URL_DIR="https://z.cash/depends-sources/"
+MIRROR_URL_DIR="https://dw.cash/depends-sources/"
 DEPENDS_SOURCES_DIR=os.path.realpath(os.path.join(
     os.path.dirname(__file__),
     "..", "..", "depends", "sources"

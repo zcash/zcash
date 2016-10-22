@@ -6,8 +6,8 @@ PARAMS_DIR="$HOME/.dwcash-params"
 
 BETA2_PKEY_NAME='beta2-proving.key'
 BETA2_VKEY_NAME='beta2-verifying.key'
-BETA2_PKEY_URL="https://z.cash/downloads/$BETA2_PKEY_NAME"
-BETA2_VKEY_URL="https://z.cash/downloads/$BETA2_VKEY_NAME"
+BETA2_PKEY_URL="https://dw.cash/downloads/$BETA2_PKEY_NAME"
+BETA2_VKEY_URL="https://dw.cash/downloads/$BETA2_VKEY_NAME"
 
 function fetch_params {
     local url="$1"

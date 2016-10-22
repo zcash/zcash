@@ -4,7 +4,7 @@ Security Warnings
 Security Audit
 --------------
 
-DeepWebCash has been subjected to a formal third-party security review. For high priority security announcements, check https://z.cash.
+DeepWebCash has been subjected to a formal third-party security review. For high priority security announcements, check https://dw.cash.
 
 x86-64 Linux Only
 -----------------------

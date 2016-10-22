@@ -62,7 +62,7 @@ git shortlog helps a lot, for example:
 Update the Debian package changelog:
 
     export DEBVERSION='1.0.0-rc1'
-    export DEBEMAIL="${DEBEMAIL:-team@z.cash}"
+    export DEBEMAIL="${DEBEMAIL:-team@dw.cash}"
     export DEBFULLNAME="${DEBFULLNAME:-DeepWebCash Company}"
 
     dch -v $DEBVERSION -D jessie -c contrib/DEBIAN/changelog
@@ -81,7 +81,7 @@ Do the normal pull-request, review, testing process for this release PR.
 
 ### C1. Ensure depends tree is working
 
-https://ci.z.cash/builders/depends-sources
+https://ci.dw.cash/builders/depends-sources
 
 ### C2. Ensure public parameters work
 
@@ -100,7 +100,7 @@ previous merged PR, then:
 Notify the DeepWebCash DevOps engineer/sysadmin that the release has been tagged. They update some variables in the company's automation code and then run an Ansible playbook, which:
 
 * builds DeepWebCash based on the specified branch
-* deploys it as a public service (e.g. betatestnet.z.cash, mainnet.z.cash)
+* deploys it as a public service (e.g. betatestnet.dw.cash, mainnet.dw.cash)
 * often the same server can be re-used, and the role idempotently handles upgrades, but if not then they also need to update DNS records
 * possible manual steps: blowing away the `testnet3` dir, deleting old parameters, restarting DNS seeder
 
