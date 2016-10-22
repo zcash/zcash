@@ -18,16 +18,16 @@ Check all of the following:
 
 ## A. Define the release version as:
 
-    $ ZCASH_RELEASE=MAJOR.MINOR.REVISION(-BUILD_STRING)
+    $ DWCASH_RELEASE=MAJOR.MINOR.REVISION(-BUILD_STRING)
 
 Example:
 
-    $ ZCASH_RELEASE=1.0.0-beta2
+    $ DWCASH_RELEASE=1.0.0-beta2
 
-Also, the following commands use the `ZCASH_RELEASE_PREV` bash variable for the
+Also, the following commands use the `DWCASH_RELEASE_PREV` bash variable for the
 previous release:
 
-    $ ZCASH_RELEASE_PREV=1.0.0-beta1
+    $ DWCASH_RELEASE_PREV=1.0.0-beta1
 
 ## B. create a new release branch / github PR
 ### B1. update (commit) version in sources
@@ -56,8 +56,8 @@ In `configure.ac` and `clientversion.h`:
 
 git shortlog helps a lot, for example:
 
-    $ git shortlog --no-merges v${ZCASH_RELEASE_PREV}..HEAD \
-        > ./doc/release-notes/release-notes-${ZCASH_RELEASE}.md
+    $ git shortlog --no-merges v${DWCASH_RELEASE_PREV}..HEAD \
+        > ./doc/release-notes/release-notes-${DWCASH_RELEASE}.md
 
 Update the Debian package changelog:
 
@@ -92,8 +92,8 @@ Run `./fetch-params.sh`.
 In this example, we ensure master is up to date with the
 previous merged PR, then:
 
-    $ git tag -s v${ZCASH_RELEASE}
-    $ git push origin v${ZCASH_RELEASE}
+    $ git tag -s v${DWCASH_RELEASE}
+    $ git push origin v${DWCASH_RELEASE}
 
 ## E. deploy testnet
 

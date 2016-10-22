@@ -80,8 +80,8 @@ Kevin Gallagher (24):
       Include contrib/devtools/split-debug.sh from upstream
       Adds faketime to Gitian build dependencies
       Inlude crypto/equihash.tcc in list of sources for dist
-      Adds dwcash/DeepWebCash.h to LIBZCASH sources
-      Adds dwcash/Proof.hpp to LIBZCASH_H
+      Adds dwcash/DeepWebCash.h to LIBDWCASH sources
+      Adds dwcash/Proof.hpp to LIBDWCASH_H
       Add alertkeys.h to libbitcoin_server_a_SOURCES
       Adds files in src/dwcash/circuit to libdwcash_a_SOURCES
       Adds zcbenchmarks.h to libbitcoin_wallet_a_SOURCES

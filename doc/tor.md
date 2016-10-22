@@ -1,6 +1,6 @@
 *** Warning: Do not assume Tor support does the correct thing in DeepWebCash; better Tor support is a future feature goal. ***
 
-TOR SUPPORT IN ZCASH
+TOR SUPPORT IN DWCASH
 ====================
 
 It is possible to run DeepWebCash as a Tor hidden service, and connect to such services.

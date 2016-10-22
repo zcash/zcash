@@ -51,7 +51,7 @@ Sean Bowe (49):
       Remove the zerocash tests from the full test suite.
       Protect-style joinsplits should anchor to the latest root for now, until #604 is resolved.
       Use inheritance for PRF gadgets.
-      Rename ZCASH_ constants to ZC_.
+      Rename DWCASH_ constants to ZC_.
       Rename hmac -> mac in circuit.
       `Note` values should be little-endian byte order.
       Update zkSNARK proving/verifying keys.

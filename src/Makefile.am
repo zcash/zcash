@@ -31,7 +31,7 @@ LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBBITCOIN_UNIVALUE=univalue/libbitcoin_univalue.a
 LIBBITCOINQT=qt/libbitcoinqt.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
-LIBZCASH=libdwcash.a
+LIBDWCASH=libdwcash.a
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
@@ -69,7 +69,7 @@ if BUILD_BITCOIN_UTILS
   bin_PROGRAMS += dwcash-cli bitcoin-tx
 endif
 
-LIBZCASH_H = \
+LIBDWCASH_H = \
   dwcash/IncrementalMerkleTree.hpp \
   dwcash/NoteEncryption.hpp \
   dwcash/Address.hpp \
@@ -224,7 +224,7 @@ libbitcoin_server_a_SOURCES = \
   validationinterface.cpp \
   $(JSON_H) \
   $(BITCOIN_CORE_H) \
-  $(LIBZCASH_H)
+  $(LIBDWCASH_H)
 
 # wallet: shared between bitcoind and bitcoin-qt, but only linked
 # when wallet enabled
@@ -241,7 +241,7 @@ libbitcoin_wallet_a_SOURCES = \
   wallet/wallet_ismine.cpp \
   wallet/walletdb.cpp \
   $(BITCOIN_CORE_H) \
-  $(LIBZCASH_H)
+  $(LIBDWCASH_H)
 
 # crypto primitives library
 crypto_libbitcoin_crypto_a_CPPFLAGS = $(BITCOIN_CONFIG_INCLUDES)
@@ -299,7 +299,7 @@ libbitcoin_common_a_SOURCES = \
   script/sign.cpp \
   script/standard.cpp \
   $(BITCOIN_CORE_H) \
-  $(LIBZCASH_H)
+  $(LIBDWCASH_H)
 
 # util: shared between all executables.
 # This library *must* be included to make sure that the glibc
@@ -322,7 +322,7 @@ libbitcoin_util_a_SOURCES = \
   utilstrencodings.cpp \
   utiltime.cpp \
   $(BITCOIN_CORE_H) \
-  $(LIBZCASH_H)
+  $(LIBDWCASH_H)
 
 if GLIBC_BACK_COMPAT
 libbitcoin_util_a_SOURCES += compat/glibc_compat.cpp
@@ -333,7 +333,7 @@ libbitcoin_cli_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_cli_a_SOURCES = \
   rpcclient.cpp \
   $(BITCOIN_CORE_H) \
-  $(LIBZCASH_H)
+  $(LIBDWCASH_H)
 
 nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
 #
@@ -353,7 +353,7 @@ dwcashd_LDADD = \
   $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH) \
+  $(LIBDWCASH) \
   $(LIBLEVELDB) \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
@@ -368,9 +368,9 @@ dwcashd_LDADD += \
   $(SSL_LIBS) \
   $(CRYPTO_LIBS) \
   $(MINIUPNPC_LIBS) \
-  $(LIBZCASH) \
+  $(LIBDWCASH) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH_LIBS)
+  $(LIBDWCASH_LIBS)
 #
 
 # bitcoin-cli binary #
@@ -388,9 +388,9 @@ dwcash_cli_LDADD = \
   $(BOOST_LIBS) \
   $(SSL_LIBS) \
   $(CRYPTO_LIBS) \
-  $(LIBZCASH) \
+  $(LIBDWCASH) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH_LIBS)
+  $(LIBDWCASH_LIBS)
 #
 
 # bitcoin-tx binary #
@@ -408,9 +408,9 @@ bitcoin_tx_LDADD = \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
   $(LIBSECP256K1) \
-  $(LIBZCASH) \
+  $(LIBDWCASH) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH_LIBS)
+  $(LIBDWCASH_LIBS)
 
 bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 #

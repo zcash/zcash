@@ -16,12 +16,12 @@ function dwcashd_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
     ./src/dwcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
-    ZCASHD_PID=$!
+    DWCASHD_PID=$!
 }
 
 function dwcashd_stop {
     dwcash_rpc stop > /dev/null
-    wait $ZCASH_PID
+    wait $DWCASH_PID
 }
 
 function dwcashd_massif_start {
@@ -29,12 +29,12 @@ function dwcashd_massif_start {
     mkdir -p "$DATADIR"
     rm -f massif.out
     valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/dwcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
-    ZCASHD_PID=$!
+    DWCASHD_PID=$!
 }
 
 function dwcashd_massif_stop {
     dwcash_rpc stop > /dev/null
-    wait $ZCASHD_PID
+    wait $DWCASHD_PID
     ms_print massif.out
 }
 
@@ -43,12 +43,12 @@ function dwcashd_valgrind_start {
     mkdir -p "$DATADIR"
     rm -f valgrind.out
     valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/dwcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
-    ZCASHD_PID=$!
+    DWCASHD_PID=$!
 }
 
 function dwcashd_valgrind_stop {
     dwcash_rpc stop > /dev/null
-    wait $ZCASHD_PID
+    wait $DWCASHD_PID
     cat valgrind.out
 }
 

@@ -3,7 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
-ZCASH_LOAD_TIMEOUT=500
+DWCASH_LOAD_TIMEOUT=500
 DATADIR="@abs_top_builddir@/.dwcash"
 rm -rf "$DATADIR"
 mkdir -p "$DATADIR"/regtest
@@ -15,7 +15,7 @@ PORT=`expr 10000 + $$ % 55536`
 BITCOIND=$!
 
 #Install a watchdog.
-(sleep "$ZCASH_LOAD_TIMEOUT" && kill -0 $WAITER 2>/dev/null && kill -9 $BITCOIND $$)&
+(sleep "$DWCASH_LOAD_TIMEOUT" && kill -0 $WAITER 2>/dev/null && kill -9 $BITCOIND $$)&
 wait $WAITER
 
 if [ -n "$TIMEOUT" ]; then
@@ -26,7 +26,7 @@ else
   RETURN=$?
 fi
 
-(sleep "$ZCASH_LOAD_TIMEOUT" && kill -0 $BITCOIND 2>/dev/null && kill -9 $BITCOIND $$)&
+(sleep "$DWCASH_LOAD_TIMEOUT" && kill -0 $BITCOIND 2>/dev/null && kill -9 $BITCOIND $$)&
 kill $BITCOIND && wait $BITCOIND
 
 # timeout returns 124 on timeout, otherwise the return value of the child
