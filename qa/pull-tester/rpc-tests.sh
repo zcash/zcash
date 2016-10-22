@@ -31,6 +31,7 @@ testScripts=(
     'walletbackup.py'
     'zcjoinsplit.py'
     'zcjoinsplitdoublespend.py'
+    'getblocktemplate.py'
 );
 testScriptsExt=(
     'bipdersig-p2p.py'
