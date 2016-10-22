@@ -23,6 +23,8 @@
 
 using namespace std;
 
+#include "komodo_interest.h"
+
 static bool fCreateBlank;
 static map<string,UniValue> registers;
 
@@ -322,15 +324,6 @@ vector<unsigned char> ParseHexUO(map<string,UniValue>& o, string strKey)
     return ParseHexUV(o[strKey], strKey);
 }
 
-uint32_t komodo_txtime(uint256 hash)
-{
-    return(0);
-}
-
-uint64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
-{
-    return(0);
-}
 
 static void MutateTxSign(CMutableTransaction& tx, const string& flagStr)
 {

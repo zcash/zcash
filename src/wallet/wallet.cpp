@@ -2370,12 +2370,15 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
     // coin control -> return all selected outputs (we want all selected to go into the transaction for sure)
     if (coinControl && coinControl->HasSelected())
     {
+        uint64_t interest;
         BOOST_FOREACH(const COutput& out, vCoins)
         {
             if(!out.fSpendable)
                 continue;
             nValueRet += out.tx->vout[out.i].nValue;
-            nValueRet += komodo_interest(out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
+            interest = komodo_interest(out.tx->vout[out.i].nValue,out.tx->nLockTime,pcoinsTip->nTime);
+            nValueRet += interest;
+            fprintf(stderr,"interest %llu from %llu lock.%u tip.%u\n",(long long)interest,(long long)out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
             setCoinsRet.insert(make_pair(out.tx, out.i));
         }
         return (nValueRet >= nTargetValue);
