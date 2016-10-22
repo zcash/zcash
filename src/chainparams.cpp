@@ -61,7 +61,7 @@ public:
         pchMessageStart[2] = 0x4e;
         pchMessageStart[3] = 0xd8;
         vAlertPubKey = ParseHex("04b7ecf0baa90495ceb4e4090f6b2fd37eec1e9c85fac68a487f3ce11589692e4a317479316ee814e066638e1db54e37a10689b70286e6315b1087b6615d179264");
-        nDefaultPort = 8233;
+        nDefaultPort = 18233;
         nMinerThreads = 0;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
@@ -147,18 +147,7 @@ public:
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vFoundersRewardAddress = {
-            "t3QW3CN6TzmTVH8M5E5aJoKzN838zAEBCuS", "t3c6yYJxXBGr3A2KjATDwDsbn8iLP9AsXfk", "t3TuV45WwNVwo3Qc4o2Mr1TenrY9FwRM18Z", "t3hmq4gpfPGhbaRaCsmD2ePidaPxWf3upsg",
-            "t3Y8pxVmXa4URdCWLC4cmeGPQ9nu8eSJMvG", "t3aE5FYLigL7VZw6qjmM6ftjBiAvGiPkjo5", "t3eiUmJQGPykPH8U5gzbPd1SjGDK2k6SFvb", "t3N1ybrjKLyn7q7tpQSRxSZmYp7UgkEgHDb",
-            "t3c8uR6tn6KWwrPWApBXJQuQ6daAr8bcaMg", "t3PGLi4mkL5FkMNjp9ERHtTBQguHPjT3yqA", "t3NYWdEZKfKwvBGCtJM2oMWhy1Rzot3yL3Q", "t3N7PKyV2yQnciu9cx5UbaqDRCVtev9qHpN",
-            "t3YPB1besUqKeEtx9FZX1A6HcXnkXq9Vc3r", "t3UrKCimx2FA9LU4ZMHE5A9dWbxEzm5MgLj", "t3WF7VvMmEh5teWs3WnW6shMqMj3UbX6p33", "t3aBmkm1cZoF5dZuumscMjWviipvSx6hFLR",
-            "t3VMf2EpazVsr4mKy4Gyp9qizCdQLrWTm9J", "t3NtLU7S7fYCtLMCjJHkxGd8kr79w7UhtpX", "t3SwJTa8B4zCEX6fth9BMaejp3pQW11DTB8", "t3PCnGjULLqDUq91XNAwU7aAx6v2WkAP12v",
-            "t3MAXyTGySnb6b3No3LuoVuFL3fY7recEin", "t3hbK2KY4BQ1rQuzwufyxLzSKQQPiP9XidW", "t3aF3uT8jQSmVetYwP5qLAuTnNqWJRNLQu7", "t3PWLsr8ru9MXyq7YWGAHPcY3N9t3Zp45uo",
-            "t3WzEt94EcdNXWjL8sb2KFTawZPUcL42MoX", "t3cjgEXQH2dp4Gozu6Mn45LC5HGfjrSAf9V", "t3ZmskqAyBLXkYBMGfBBpVmR3sNKN79anu3", "t3hGLeywDDaiqBro2Mi2eLD1i8LUttrBfbT",
-            "t3eQdDzPZMdN4vCziFt5zar7qp1XyMwgnD6", "t3PXk3FyBi7q48paPDLtCKdzF1zDS4bpjM3", "t3W65DrnBYmU8DPJgQ44acpz3YPwoNE8pc5", "t3Tj5a6hNPksnpcRSXS2pv1f2mrPtL2bqGb",
-            "t3heu9Ty3XwHAJbux6Bm4MakzS8jUL3EkFD", "t3WFEk3WwAXF6ByHxfLohtz22J1TUwsL6iu", "t3gxDHAf8iW7xBFB7JsScngfJjH6h3QBfot", "t3bn1o8hx4jYjxgC8Pdt6Z6oeFrPQPtT8pC",
-            "t3XHGtWbALCLfY1jAtkUpVELPJMZpqxBtgE", "t3RUBEzMhjHpM2DQLsAmpAm9ZUHUxnEQAtM", "t3KdS1RGsiDXBKebyZvwVE2pfacNj28KLqB", "t3MmVaTutnXLqyD2F6EKnDtCKs38HxkVAdH",
-            "t3LesWouCkeWkwkaQUoGnD4k1pqmn3AYkt4", "t3PmV5vRVByLMTjR1W8ZCp2xy82kpb6n99u", "t3KX34whzndhhxPKJwAyETkeVA2Q1TzBhor", "t3SPSmxWnzNYr7WQooNxkHMhVYdAKY6M5Dr",
-            "t3KpcuJDA82TZhJoygng6eq72LWBCYtp7W8", "t3cHewjCnajURPGXA74kdLUkcqtRWpN3QkG", "t3a3zS49EqTFJWfDgNQhTNNFjkkhveqQssP", "t3eunPgNGpcSqEUSgAwip3Mm5nYQcPvacvX",
+            
         };
         assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
     }
@@ -183,7 +172,7 @@ public:
         pchMessageStart[2] = 0xD7;
         pchMessageStart[3] = 0xA2;
         vAlertPubKey = ParseHex("044e7a1553392325c871c5ace5d6ad73501c66f4c185d6b0453cf45dec5a1322e705c672ac1a27ef7cdaf588c10effdf50ed5f95f85f2f54a5f6159fca394ed0c6");
-        nDefaultPort = 18233;
+        nDefaultPort = 28233;
         nMinerThreads = 0;
         nMaxTipAge = 0x7fffffff;
         nPruneAfterHeight = 1000;
@@ -219,7 +208,7 @@ public:
         fRequireRPCPassword = true;
         fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
-        fRequireStandard = false;
+        fRequireStandard = true;
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = true;
 
@@ -233,18 +222,7 @@ public:
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vFoundersRewardAddress = {
-            "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi", "t2N9PH9Wk9xjqYg9iin1Ua3aekJqfAtE543", "t2NGQjYMQhFndDHguvUw4wZdNdsssA6K7x2", "t27ktmq1kbeCWiQ5TZ7w5npSzcdbBmTB7v6",
-            "t2GcBttAKD2WTHka8HyGc2dfvVTKYZUfHmJ", "t2Q3vxWaD9LrdqUE8Xd9Ddjpr9pUQ2aGotK", "t2TTfWDsYu998fHWzVP9Gns4fgxXXRi1Wzu", "t2KS6R4MMWdSBMjLCiw2iMyhWGRQPmyRqDn",
-            "t2Q2ELrgotWv3Eec6LEtMMiiQ8dtW38u8Tj", "t2AEgJA88vTWAKqxJDFUEJWyHUtQAZi5G1D", "t2HCSdmpq1TQKksuwPQevwAzPTgfJ2rkMbG", "t2HQCPFAUQaUdJWHPhg5pPBxit7inaJzubE",
-            "t2Fzqvq8Y9e6Mn3JNPb982aYsLmq4b5HmhH", "t2HEz7YZQqDUgC5h4y2WSD3mWneqJNVRjjJ", "t2GCR1SCk687Eeo5NEZ23MLsms7JjVWBgfG", "t2KyiPR9Lztq2w1w747X6W4nkUMAGL8M9KN",
-            "t2UxymadyxSyVihmbq7S1yxw5dCBqJ1S4jT", "t2AVeMy7fdmTcJhckqiKRG8B7F1vccEhSqU", "t26m7LwihQzD2sH7ZVhYpPJM5j7kzwbfKW9", "t2DgwUNTe7NxuyPU6fxsB5xJXap3E4yWXrN",
-            "t2U6funcXA11fC9SZehyvUL3rk3Vhuh7fzS", "t284JhyS8LGM72Tx1porSqwrcq3CejthP1p", "t29egu8QcpzKeLoPLqWS6QVMnUUPQdF6eNm", "t29LqD9p9D3B26euBwFi6mfcWu8HPA38VNs",
-            "t28GsAMCxAyLy85XaasddDzaYFTtfewr86y", "t2GV44QyaikQPLUfm6oTfZnw71LLjnR7gDG", "t2U2QzNLQ1jtAu4L6xxVnRXLBsQpQvGRR2g", "t2QKGr5PNan7nrwDgseyHMN9NFeeuUjCh8b",
-            "t2AfS8u6HwBeJpKpbuxztvRjupKQDXqnrwa", "t2CTRQUViQd3CWMhnKhFnUHqDLUyTxmWhJs", "t2CbM9EqszNURqh1UXZBXYhwp1R4GwEhWRE", "t2LM7uYiAsKDU42GNSnMwDxbZ8s1DowQzYH",
-            "t2AgvT35LHR378AE3ouz6xKMhkTLHLJC6nD", "t285EAQXUVyi4NMddJv2QqTrnv45GRMbP8e", "t2EpMRCD5b8f2DCQ37npNULcpZhkjC8muqA", "t2BCmWXrRPiCeQTpizSWKKRPM5X6PS7umDY",
-            "t2DN7X6wDFn5hYKBiBmn3Z98st419yaTVTH", "t2QJj8HeCwQ6mHwqekxxDLZntYpZTHNU62t", "t2QdHBR1Yciqn4j8gpS8DcQZZtYetKvfNj3", "t2E5cpLA1ey5VNxFNcuopeQMq2rH2NHiPdu",
-            "t2EVRGtzjFAyz8CF8ndvLuiJu7qZUfDa93H", "t2KoQDk3BSFadBkuaWdLwchFuQamzw9RE4L", "t2FnR3yhTmuiejEJeu6qpidWTghRd1HpjLt", "t2BAuBAAospDc9d1u5nNGEi6x4NRJBD2PQ2",
-            "t2RtKrLCGcyPkm4a4APg1YY9Wu2m4R2PgrB", "t28aUbSteZzBq2pFgj1K1XNZRZP5mMMyakV", "t2Urdy1ERfkvsFuy6Z4BkhvYGzWdmivfAFR", "t2ADinR4JrvCMd4Q1XGALPajzFrirqvhED6",
+            
         };
         assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
     }
@@ -283,7 +261,7 @@ public:
         genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000021");
         genesis.nSolution = ParseHex("0f2a976db4c4263da10fd5d38eb1790469cf19bdb4bf93450e09a72fdff17a3454326399");
         consensus.hashGenesisBlock = genesis.GetHash();
-        nDefaultPort = 18444;
+        nDefaultPort = 28444;
         assert(consensus.hashGenesisBlock == uint256S("0x00a215b4fe36f5d2f829d43e587bf10e89e64f9f48a5b6ce18559089e8fd643d"));
         nPruneAfterHeight = 1000;
 
@@ -306,7 +284,7 @@ public:
         };
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
-        vFoundersRewardAddress = { "t2FwcEhFdNXuFMv1tcYwaBJtYVtMj8b1uTg" };
+        vFoundersRewardAddress = {  };
         assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
     }
 };
