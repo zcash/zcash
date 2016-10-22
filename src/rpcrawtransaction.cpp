@@ -124,7 +124,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
         const CTxOut& txout = tx.vout[i];
         Object out;
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
-        out.push_back(Pair("interest", ValueFromAmount(komodo_interest(txout.nValue,tx.nLockTime,pcoinsTip->nTime))));
+        out.push_back(Pair("interest", ValueFromAmount(komodo_interest(txout.nValue,tx.nLockTime,chainActive.Tip()->nTime))));
         out.push_back(Pair("n", (int64_t)i));
         Object o;
         ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
