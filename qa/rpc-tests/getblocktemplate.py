@@ -48,7 +48,7 @@ class GetBlockTemplateTest(BitcoinTestFramework):
 
         # Test 5: General checks
         tmpl = node.getblocktemplate()
-        assert(len(tmpl['noncerange']) == 8)
+        assert(len(tmpl['noncerange']) == 16)
 
         # Test 6: coinbasetxn checks
         assert('foundersreward' in tmpl['coinbasetxn'])
