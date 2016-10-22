@@ -11,6 +11,7 @@
 #include "script/script.h"
 #include "serialize.h"
 #include "uint256.h"
+#include "consensus/consensus.h"
 
 #include <boost/array.hpp>
 
@@ -312,6 +313,9 @@ public:
     // Transactions that include a list of JoinSplits are version 2.
     static const int32_t MIN_CURRENT_VERSION = 1;
     static const int32_t MAX_CURRENT_VERSION = 2;
+
+    static_assert(MIN_CURRENT_VERSION >= MIN_TX_VERSION,
+                  "standard rule for tx version should be consistent with network rule");
 
     // The local variables are made const to prevent unintended modification
     // without updating the cached hash value. However, CTransaction is not
