@@ -6,7 +6,7 @@ https://z.cash/
 Where do I begin?
 -----------------
 
-We have a guide for joining the public testnet: https://github.com/dwcash/dwcash/wiki/Beta-Guide
+We have a guide for joining the public testnet: https://github.com/deepwebcash/deepwebcash/wiki/Beta-Guide
 
 What is DeepWebCash?
 --------------

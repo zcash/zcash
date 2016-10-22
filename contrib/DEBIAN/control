@@ -7,8 +7,8 @@ Build-Depends: autoconf, automake, bsdmainutils, build-essential
  git, g++-multilib, libc6-dev, libtool
  m4, ncurses-dev, pkg-config, python
  unzip, wget, zlib1g-dev
-Vcs-Git: git@github.com:dwcash/dwcash.git
-Vcs-Browser: https://github.com/dwcash/dwcash
+Vcs-Git: git@github.com:deepwebcash/deepwebcash.git
+Vcs-Browser: https://github.com/deepwebcash/deepwebcash
 Package: dwcash
 Version: 1.0.0-rc1
 Architecture: amd64

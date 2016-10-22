@@ -72,7 +72,7 @@ void ThreadSendAlert()
     CAlert alert;
     alert.nRelayUntil   = GetTime() + 15 * 60;
     alert.nExpiration   = GetTime() + 365 * 60 * 60;
-    alert.nID           = 1000;  // use https://github.com/dwcash/dwcash/wiki/specification#assigned-numbers to keep track of alert IDs
+    alert.nID           = 1000;  // use https://github.com/deepwebcash/deepwebcash/wiki/specification#assigned-numbers to keep track of alert IDs
     alert.nCancel       = 0;   // cancels previous messages up to this ID number
 
     // These versions are protocol versions

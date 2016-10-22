@@ -1,7 +1,7 @@
 Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?rev=174
 Upstream-Name: DeepWebCash
 Upstream-Contact: DeepWebCash Company <team@z.cash>
-Source: https://github.com/dwcash/dwcash
+Source: https://github.com/deepwebcash/deepwebcash
 
 Files: *
 Copyright: 2016, The DeepWebCash developers

@@ -43,12 +43,12 @@ related to the DNS seed operation.
 
 If these expectations cannot be satisfied the operator should discontinue
 providing services and contact the active DeepWebCash development team as well as
-creating an issue in the [DeepWebCash repository](https://github.com/dwcash/dwcash).
+creating an issue in the [DeepWebCash repository](https://github.com/deepwebcash/deepwebcash).
 
 Behavior outside of these expectations may be reasonable in some
 situations but should be discussed in public in advance.
 
 See also
 ----------
-- [dwcash-seeder](https://github.com/dwcash/dwcash-seeder) is a reference
+- [dwcash-seeder](https://github.com/deepwebcash/deepwebcash-seeder) is a reference
   implementation of a DNS seed.
