@@ -342,6 +342,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             txNew.vout[1].scriptPubKey.resize(opretlen);
             memcpy(txNew.vout[1].scriptPubKey.data(),opret,opretlen);
             txNew.vout[1].nValue = 0;
+            fprintf(stderr,"opretlen.%d\n",opretlen);
         } else txNew.vout.resize(1);
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
