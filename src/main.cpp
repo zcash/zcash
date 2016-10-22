@@ -1132,7 +1132,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // Bring the best block into scope
         view.GetBestBlock();
 
-        nValueIn = view.GetValueIn(&interest,tx,chainActive.Tip()->nTime);
+        nValueIn = view.GetValueIn(chainActive.Tip()->nHeight,&interest,tx,chainActive.Tip()->nTime);
 
         // we have all inputs cached now, so switch back to dummy, so we don't need to keep lock on mempool
         view.SetBackend(dummy);
@@ -2154,7 +2154,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 return state.DoS(100, error("ConnectBlock(): too many sigops"),
                                  REJECT_INVALID, "bad-blk-sigops");
 
-            nFees += view.GetValueIn(&interest,tx,chainActive.Tip()->nTime) - tx.GetValueOut();
+            nFees += view.GetValueIn(chainActive.Tip()->nHeight,&interest,tx,chainActive.Tip()->nTime) - tx.GetValueOut();
             sum += interest;
             std::vector<CScriptCheck> vChecks;
             if (!ContextualCheckInputs(tx, state, view, fScriptChecks, flags, false, chainparams.GetConsensus(), nScriptCheckThreads ? &vChecks : NULL))

@@ -96,7 +96,7 @@ Array TxJoinSplitToJSON(const CTransaction& tx) {
     return vjoinsplit;
 }
 
-uint64_t komodo_interest(uint64_t nValue,uint32_t pastlocktime,uint32_t tiptime);
+uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 {
@@ -130,7 +130,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
         if ( pindex != 0 && tx.nLockTime != 0 )
         {
-            interest = komodo_interest(txout.nValue,tx.nLockTime,pindex->nTime);
+            interest = komodo_interest(pindex->nHeight,txout.nValue,tx.nLockTime,pindex->nTime);
             fprintf(stderr,"TxtoJSON interest %llu %.8f\n",(long long)interest,(double)interest/COIN);
             out.push_back(Pair("interest", ValueFromAmount(interest)));
         }

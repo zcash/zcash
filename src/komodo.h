@@ -83,38 +83,6 @@ const char *Notaries[][2] =
     { "titomane_SH", "035f49d7a308dd9a209e894321f010d21b7793461b0c89d6d9231a3fe5f68d9960" },
 };
 
-uint64_t komodo_accrued_interest(int32_t height,int64_t paidinterest)
-{
-    static uint64_t *interests; static int32_t maxheight;
-    int32_t ind,incr = 100000;
-    if ( height >= maxheight )
-    {
-        interests = (uint64_t *)realloc(interests,(maxheight + incr) * sizeof(*interests) * 2);
-        memset(&interests[maxheight << 1],0,incr * sizeof(*interests) * 2);
-        maxheight += incr;
-    }
-    ind = (height << 1);
-    if ( paidinterest < 0 ) // request
-        return(interests[ind]);
-    else
-    {
-        if ( interests[ind + 1] != paidinterest )
-        {
-            interests[ind + 1] = paidinterest;
-            if ( height == 0 )
-                height++;
-            for (; height<maxheight; height++,ind+=2)
-                interests[ind] = interests[ind - 2] + interests[ind + 1];
-        }
-    }
-}
-
-uint64_t komodo_moneysupply(int32_t height)
-{
-    if ( height <= 1 )
-        return(0);
-    else return(COIN * 100000000 + (height-1) * 3 + komodo_accrued_interest(height,-1));
-}
 
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp)
 {

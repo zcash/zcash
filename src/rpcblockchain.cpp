@@ -380,7 +380,7 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
     return ret;
 }
 
-uint64_t komodo_interest(uint64_t nValue,uint32_t pastlocktime,uint32_t tiptime);
+uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint32_t komodo_txtime(uint256 hash);
 
 Value gettxout(const Array& params, bool fHelp)
@@ -455,12 +455,11 @@ Value gettxout(const Array& params, bool fHelp)
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
     
     CBlockIndex *pblockindex = chainActive[coins.nHeight];
-
     uint64_t interest; uint32_t timestamp=0;
     if ( pblockindex != 0 )
-        timestamp = pblockindex->nTime;
-    interest = komodo_interest(coins.vout[n].nValue,timestamp,pindex->nTime);
-    fprintf(stderr,"nValue %llu lock.%u:%u nTime.%u -> %llu\n",(long long)coins.vout[n].nValue,coins.nLockTime,timestamp,pindex->nTime,(long long)interest);
+        timestamp = pblockindex->nTime; // this is approx, but cant figure out how to get tx here
+    interest = komodo_interest(coins.nHeight,coins.vout[n].nValue,timestamp,pindex->nTime);
+    //fprintf(stderr,"nValue %llu lock.%u:%u nTime.%u -> %llu\n",(long long)coins.vout[n].nValue,coins.nLockTime,timestamp,pindex->nTime,(long long)interest);
     ret.push_back(Pair("interest", ValueFromAmount(interest)));
 
     Object o;

@@ -2333,7 +2333,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
     return true;
 }
 
-uint64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 
 bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet,  bool& fOnlyCoinbaseCoinsRet, bool& fNeedCoinbaseCoinsRet, const CCoinControl* coinControl) const
 {
@@ -2377,7 +2377,7 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
             if(!out.fSpendable)
                 continue;
             nValueRet += out.tx->vout[out.i].nValue;
-            interest = komodo_interest(out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
+            interest = komodo_interest(out.tx->nHeight,out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
 #ifdef KOMODO_ENABLE_INTEREST
             nValueRet += interest;
 #endif
