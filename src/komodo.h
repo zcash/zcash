@@ -702,10 +702,32 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t *opret,int32_t opretlen)
 
 int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize)
 {
-    int32_t i,n; uint8_t data[4096];
-    for (i=0; i<8; i++)
-        data[i] = i;
-    n = komodo_opreturnscript(opret,data,i);
+    FILE *fp; char fname[512]; uint32_t crc32,check; int32_t i,n,retval,fsize; uint8_t data[8192];
+#ifdef WIN32
+    sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"komodofeed");
+#else
+    sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),(char *)"komodofeed");
+#endif
+    if ( (fp= fopen(fname,"rb")) != 0 )
+    {
+        fseek(fp,0,SEEK_END);
+        fsize = (int32_t)ftell(fp);
+        rewind(fp);
+        if ( fsize <= maxsize-4 && fsize <= sizeof(data) && fsize > sizeof(uin32_t) )
+        {
+            if ( (retval= (int32_t)fread(data,1,fsize,fp)) == fsize )
+            {
+                iguana_rwnum(0,data,sizeof(crc32),(void *)&crc32);
+                check = calc_crc32(0,data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
+                n = komodo_opreturnscript(opret,data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
+                for (i=0; i<n; i++)
+                    printf("%02x",opret[i]);
+                printf(" coinbase opret[%d] crc32.%u:%u\n",n,crc32,check);
+            }
+            else printf("fread.%d error != fsize.%d\n",retval,fsize);
+        } else printf("fsize.%ld > maxsize.%d or data[%d]\n",fsize,maxsize,sizeof(data));
+        fclose(fp);
+    }
     return(n);
 }
 
