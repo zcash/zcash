@@ -106,6 +106,9 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
+        // The best chain should have at least this much work.
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000281b32ff3198a1");
+
         /**
          * The message start string should be awesome! ⓩ❤
          */
@@ -268,6 +271,9 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
+        // The best chain should have at least this much work.
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000000001d0c4d9cd");
+
         pchMessageStart[0] = 0xfa;
         pchMessageStart[1] = 0x1a;
         pchMessageStart[2] = 0xf9;
@@ -316,6 +322,7 @@ public:
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = true;
+
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
@@ -379,6 +386,9 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 170006;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+
+        // The best chain should have at least this much work.
+        consensus.nMinimumChainWork = uint256S("0x00");
 
         pchMessageStart[0] = 0xaa;
         pchMessageStart[1] = 0xe8;
