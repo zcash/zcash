@@ -2368,7 +2368,7 @@ Value listunspent(const Array& params, bool fHelp)
         CBlockIndex *pindex = it->second;
         if ( pindex != 0 )
         {
-            fprintf(stderr,"nLock.%u tip.%u\n",tx->nLockTime,chainActive.Tip()->nTime);
+            fprintf(stderr,"nLock.%u tip.%u %u\n",out.tx->nLockTime,chainActive.Tip()->nTime,pindex->nTime);
             entry.push_back(Pair("interest",ValueFromAmount(komodo_interest(nValue,out.tx->nLockTime,pindex->nTime))));
         }
         entry.push_back(Pair("confirmations",out.nDepth));
