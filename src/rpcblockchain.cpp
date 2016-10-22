@@ -445,18 +445,20 @@ Value gettxout(const Array& params, bool fHelp)
         return Value::null;
 
     BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-    CBlockIndex *pindex = it->second;
+    BlockMap::iterator it2 = mapBlockIndex.find(hash);
+    CBlockIndex *pindex2,*pindex = it->second;
     ret.push_back(Pair("bestblock", pindex->GetBlockHash().GetHex()));
     if ((unsigned int)coins.nHeight == MEMPOOL_HEIGHT)
         ret.push_back(Pair("confirmations", 0));
     else ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
-    
+    if ( (pindex2= it2->second) != 0 )
+    {
         uint64_t interest;
-        interest = komodo_interest(coins.vout[n].nValue,coins.nLockTime,pindex->nTime);
-        fprintf(stderr,"nValue %llu lock.%u nTime.%u -> %llu\n",(long long)coins.vout[n].nValue,coins.nLockTime,pindex->nTime,(long long)interest);
+        interest = komodo_interest(coins.vout[n].nValue,pindex2->nTime,pindex->nTime);
+        fprintf(stderr,"nValue %llu lock.%u nTime.%u -> %llu\n",(long long)coins.vout[n].nValue,coins.nLockTime,pindex2->nTime,(long long)interest);
         ret.push_back(Pair("interest", ValueFromAmount(interest)));
-
+    }
     Object o;
     ScriptPubKeyToJSON(coins.vout[n].scriptPubKey, o, true);
     ret.push_back(Pair("scriptPubKey", o));
