@@ -42,7 +42,6 @@ public:
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 4000;
-        // TODO generate harder genesis block
         consensus.powLimit = uint256S("03ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowAveragingWindow = 17;
         assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
@@ -55,6 +54,7 @@ public:
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
          */
+        // TODO: the above comment doesn't fully hold; make sure it does for the final start strings.
         pchMessageStart[0] = 0x9f;
         pchMessageStart[1] = 0xee;
         pchMessageStart[2] = 0x4e;
@@ -72,13 +72,7 @@ public:
         /**
          * Build the genesis block. Note that the output of its generation
          * transaction cannot be spent since it did not originally exist in the
-         * database.
-         *
-         * CBlock(hash=000000000019d6, ver=1, hashPrevBlock=00000000000000, hashMerkleRoot=4a5e1e, nTime=1231006505, nBits=1d00ffff, nNonce=2083236893, vtx=1)
-         *   CTransaction(hash=4a5e1e, ver=1, vin.size=1, vout.size=1, nLockTime=0)
-         *     CTxIn(COutPoint(000000, -1), coinbase 04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73)
-         *     CTxOut(nValue=50.00000000, scriptPubKey=0x5F1DF16B2B704C8A578D0B)
-         *   vMerkleTree: 4a5e1e
+         * database (and is in any case of zero value).
          */
         const char* pszTimestamp = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks";
         CMutableTransaction txNew;
@@ -92,7 +86,6 @@ public:
         genesis.hashMerkleRoot = genesis.BuildMerkleTree();
         genesis.nVersion = 4;
         genesis.nTime    = 1231006505;
-        // TODO generate harder genesis block
         genesis.nBits    = 0x2003ffff;
         genesis.nNonce   = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000");
         genesis.nSolution = ParseHex("0025991209a4a7952e06c65febfd76424b11df202714b3e2083c8598a9083f098459638b2b0d269efcbf0d72d9fdccc92045835652ac372d51d0e23dea6ea31a7625d3c686a5f549aae270912751397f10bfcc89066e50df029f2fe9c72f41dfafc41beca6e9a9c21f2f903f234460610f1c01c54802b8f4edb5611263ae57a50307db731787a281d65046ea7619bc86b515e361e0d4d6e427970b72880952d9d2ab12783498cd5f00b895ab47cecdad71afb53db474875a6c409a863140b73d39d25bb034fa1ce7d4084cba721953de7de0141a1342cbcc28933d52d22624c725ed4a53b0920e29b93a9314e317abe1e1da0af153d8cf05579c2226021a21012872a903d9a5a2e15fade995d2bcdda25c1795cdfc021cf107b3aaf3652b5073de526356de1d09781c6027ec77c9a5f249b98dfd23fb038178aaf229558a30e94e32d9162d073e12ed988e1f1718bb7d00ce6e6b1b2ec8d97719d52e655781cd8279b9644109252b20210f0037696ed1b878cbc8f6b4db95dd1d01c6c53ec18fb4d38526c45a8bd163da81a6df360534b62267ac35a053c7abb5b40ee5a12e2fad1b61940e7269dcf95b12d7eabda16e16c1d5c5e5c015e19723f189a4e5a52161e4c842f4d869028143474fbb5110ee1cf0acf3ad1fecd8e2d58768633b55cb1ab8c518e5a4954ac66fdaffcd93d1f6ab0af4fc885ef15908b1c65a80d31475b868b57c8239676ea288bceae4190781906ecb5dd0fdc3959f0fbe64ea5f3f1f8c030ceafd4feb4c232fd3d4a19711d359051c62ebdb2b2ebc361a34323a25edbe9705f46571c60cfdf327c618a5529a6aea5185578ce1d62543a52141de8e52b819da2ca3dbc89d62db077200df2ceb3160664ff18e1b1cdbbb9cd1e368a3bed50db432202eb204dd186920bfce44c74eaaec7afe4284eab4ce78ef5b78cb9a009092f24ec999f3d7ae71e4dfe559323e5f76d99d3ebf4a663395b39f9657bd831afdab3f9f109ff2f003fe44734054a3c7915dd4a7de4dac7dcfc0f003532a913d2925e0edfd32b043284f66d93911ddd7e591031771fb4bc5d7a058fc519ee7a1a8f87d3a9fea42181da2335e37ddbde6c235425971f81a00743e9c210ffcff2875e8a191d8d2d381efabf801d7887dca33189bce10fb919b214f94a3047eb503d503a61fc76d086d5f1c1d88a663ecbae576f66d6ba1867a3ae1bd28f37c3744e5e72fe022a8eb4349b63edbbddae9291665470af215f63d506b12354a5ff0a332543a8bdf4d3aff12555aa237957939c2be676c4b11233948851823dda4d2d7c421af7241ae8dabf5ce25befb11e62c96c5c13e512bb91cae854e70b3c8fdfc727f117444bafeb9b4dbf637a297b63227cafa7e611c3bd3be507d6e756d6da7116d5eb761f76e0ec62f6a32c8d30176ac03960cd7790d6b218e89a215b86440c88dd40870b853040d8d2510ef918551b86e312f230c475702ee274271d9f9c4f0f880a5c43a9572a1b61dcd290e0d1231c3ea76f5f718a3481674297cd3eaceda2a05868bc0690201d506c8d25137a266daa5d216f7f2067e62db9ba8f841788611cbe5af6bc9532df1fb7b22e3be8e4713f23de2f692b271ffdcf4f43e0838942c9716ae8ea75f97d47ae405967977f6ebdcbc33e408163d8c504e1a6a7828940e44d66b816113fbeb5b24d1f42bd9e0c33523c5d4720fdea6c9a3d634029b1126e96b9945a2ec4c3b98c08b78e262daaad9ceda2e31e99c04507d557cc2077fda6f8cefb0a7df121a17778ea7a336ff17c3132627675d69d69b17da698b2c5756585a731f17c2f97332981efa598c66cfd1f93b61075427e578f57906946ce25a8f1a56c9fffa673fded26154990b27a8a7162e86e427cb50743bb4e8");
