@@ -2372,7 +2372,7 @@ Value listunspent(const Array& params, bool fHelp)
             uint64_t interest;
             if ( pindex != 0 )
             {
-                interest = komodo_interest(out.tx->nHeight,nValue,out.tx->nLockTime,pindex->nTime);
+                interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,pindex->nTime);
                 entry.push_back(Pair("interest",ValueFromAmount(interest)));
             }
         }

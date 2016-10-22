@@ -96,6 +96,8 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
 }
 
+int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize);
+
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
     const CChainParams& chainparams = Params();
@@ -333,11 +335,19 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         //txNew.nLockTime = (uint32_t)time(NULL) - 60;
         txNew.vin.resize(1);
         txNew.vin[0].prevout.SetNull();
-        txNew.vout.resize(1);
+        int32_t opretlen; uint8_t opret[8192];
+        if ( (opretlen= komodo_opreturn(opret,sizeof(opret))) > 0 )
+        {
+            txNew.vout.resize(2);
+            txNew.vout[1].scriptPubKey.resize(opretlen);
+            memcpy(txNew.vout[1].scriptPubKey.data(),opret,opretlen);
+            txNew.vout[1].nValue = 0;
+        } else txNew.vout.resize(1);
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
         // Add fees
         txNew.vout[0].nValue += nFees;
+        
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
 
         pblock->vtx[0] = txNew;

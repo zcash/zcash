@@ -678,5 +678,12 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     }
 }
 
+int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize)
+{
+    int32_t i;
+    for (i=0; i<8; i++)
+        opret[i] = i;
+    return(i);
+}
 
 #endif
