@@ -21,7 +21,6 @@
 #include <pthread.h>
 #include "uthash.h"
 
-#define KOMODO_INTEREST ((uint64_t)0.05 * COIN)
 #include "komodo_interest.h"
 
 #define KOMODO_TESTNET_EXPIRATION 60000
@@ -244,9 +243,32 @@ int32_t komodo_threshold(int32_t height,uint64_t signedmask)
     for (i=0; i<numnotaries; i++)
         if ( ((1LL << i) & signedmask) != 0 )
             wt++;
-    if ( wt > (numnotaries >> 1) || (wt > numnotaries/5 && (signedmask & 3) != 0) )
+    if ( wt > (numnotaries >> 1) || (wt > 7 && (signedmask & 3) != 0) )
         return(1); // N/2+1 || N/3 + devsig
     else return(0);
+}
+
+uint32_t komodo_txtime(uint256 hash)
+{
+    CTransaction tx;
+    uint256 hashBlock;
+    if (!GetTransaction(hash, tx, hashBlock, true))
+    {
+        //printf("null GetTransaction\n");
+        return(tx.nLockTime);
+    }
+    /*if (!hashBlock.IsNull()) {
+     BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
+     if (mi != mapBlockIndex.end() && (*mi).second)
+     {
+     CBlockIndex* pindex = (*mi).second;
+     if (chainActive.Contains(pindex))
+     return(pindex->GetBlockTime());
+     }
+     //printf("cant find in iterator\n");
+     }*/
+    //printf("null hashBlock\n");
+    return(0);
 }
 
 void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)

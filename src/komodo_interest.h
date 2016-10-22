@@ -1,31 +1,10 @@
-uint32_t komodo_txtime(uint256 hash)
-{
-    CTransaction tx;
-    uint256 hashBlock;
-    if (!GetTransaction(hash, tx, hashBlock, true))
-    {
-        //printf("null GetTransaction\n");
-        return(tx.nLockTime);
-    }
-    /*if (!hashBlock.IsNull()) {
-        BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
-        if (mi != mapBlockIndex.end() && (*mi).second)
-        {
-            CBlockIndex* pindex = (*mi).second;
-            if (chainActive.Contains(pindex))
-                return(pindex->GetBlockTime());
-        }
-        //printf("cant find in iterator\n");
-    }*/
-    //printf("null hashBlock\n");
-    return(0);
-}
+
+
+#define KOMODO_INTEREST ((uint64_t)0.05 * COIN)
 
 uint64_t komodo_interest(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
     int32_t minutes; uint64_t interest = 0;
-    if ( tiptime == 0 )
-        tiptime = chainActive.Tip()->nTime;
     if ( nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= COIN )
     {
         minutes = (tiptime - nLockTime) / 60;
