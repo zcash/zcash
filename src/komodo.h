@@ -678,12 +678,35 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     }
 }
 
+int32_t komodo_opreturnscript(uint8_t *script,uint8_t *opret,int32_t opretlen)
+{
+    int32_t offset = 0;
+    script[offset++] = 0x6a;
+    if ( opretlen >= 0x4c )
+    {
+        if ( opretlen > 0xff )
+        {
+            script[offset++] = 0x4d;
+            script[offset++] = opretlen & 0xff;
+            script[offset++] = (opretlen >> 8) & 0xff;
+        }
+        else
+        {
+            script[offset++] = 0x4c;
+            script[offset++] = opretlen;
+        }
+    } else script[offset++] = opretlen;
+    memcpy(&script[offset],opret,opretlen);
+    return(opretlen + offset);
+}
+
 int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize)
 {
-    int32_t i;
+    int32_t i,n; uint8_t data[4096];
     for (i=0; i<8; i++)
-        opret[i] = i;
-    return(i);
+        data[i] = i;
+    n = komodo_opreturnscript(opret,data,i);
+    return(n);
 }
 
 #endif
