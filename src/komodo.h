@@ -38,7 +38,7 @@ struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; } Pubkeys[10000];
 struct notarized_checkpoint { uint256 notarized_hash,notarized_btctxid; int32_t nHeight,notarized_height; } *NPOINTS; int32_t NUM_NPOINTS;
 
-int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts);
+int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals);
 // add opreturn funcid
 // pricefeeds
 
@@ -207,9 +207,12 @@ int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,doubl
     for (i=0; i<n-3; i++)
     {
         len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&pvals[i]);
-        printf("%u ",pvals[i]);
+        //printf("%u ",pvals[i]);
     }
-    printf("OP_RETURN prices\n");
+    pvals[i++] = kmdbtc;
+    pvals[i++] = btcusd;
+    pvals[i++] = cnyusd;
+    //printf("OP_RETURN prices\n");
     return(n-3);
 }
 
@@ -320,7 +323,7 @@ void komodo_nutxoadd(int32_t addflag,int32_t height,int32_t notaryid,uint256 txh
         HASH_ADD_KEYPTR(hh,NUTXOS,&np->txhash,sizeof(np->txhash),np);
         printf("Add NUTXO[%d] <- %s notaryid.%d t%u %s %llx\n",Num_nutxos,Notaries[notaryid][0],notaryid,komodo_txtime(txhash),txhash.ToString().c_str(),(long long)voutmask);
         if ( addflag != 0 )
-            komodo_stateupdate(height,0,0,notaryid,txhash,voutmask,numvouts);
+            komodo_stateupdate(height,0,0,notaryid,txhash,voutmask,numvouts,0,0);
         Num_nutxos++;
         pthread_mutex_unlock(&komodo_mutex);
     }
@@ -421,9 +424,26 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
     return(-1);
 }
 
-int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts)
+void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
 {
-    static FILE *fp; static int32_t errs,didinit; char fname[512]; int32_t ht,k,func; uint8_t num,pubkeys[64][33];
+    int32_t i; double KMDBTC,BTCUSD,CNYUSD; uint32_t kmdbtc,btcusd,cnyusd;
+    if ( numpvals >= 35 )
+    {
+        for (i=0; i<32; i++)
+            printf("%u ",pvals[i]);
+        kmdbtc = pvals[i++];
+        btcusd = pvals[i++];
+        cnyusd = pvals[i++];
+        KMDBTC = ((double)kmdbtc / (1000000000. * 1000.));
+        BTCUSD = ((double)btcusd / (1000000000. / 1000.));
+        CNYUSD = ((double)cnyusd / 1000000000.);
+        printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f\n",height,KMDBTC,BTCUSD,CNYUSD);
+    }
+}
+
+int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals)
+{
+    static FILE *fp; static int32_t errs,didinit; char fname[512]; int32_t ht,k,i,func; uint8_t data[2048],num,pubkeys[64][33];
 #ifdef WIN32
     sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"komodostate");
 #else
@@ -479,6 +499,16 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
                 {
                     //printf("D[%d]\n",ht);
                 }
+                else if ( func == 'V' )
+                {
+                    int32_t numpvals; uint32_t pvals[128];
+                    numpvals = fgetc(fp);
+                    if ( numpvals*sizeof(uint32_t) <= sizeof(data) && fread(pvals,sizeof(uint32_t),numpvals,fp) == numpvals )
+                    {
+                        komodo_pvals(ht,pvals,numpvals);
+                        printf("load pvals\n");
+                    }
+                }
                 else printf("illegal func.(%d %c)\n",func,func);
             }
         } else fp = fopen(fname,"wb+");
@@ -531,6 +561,17 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
                 errs++;
             komodo_notarized_update(height,NOTARIZED_HEIGHT,NOTARIZED_HASH,NOTARIZED_BTCTXID);
         }
+        else if ( pvals != 0 && numpvals > 0 )
+        {
+            fputc('V',fp);
+            if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
+                errs++;
+            fputc(numpvals,fp);
+            if ( fwrite(pvals,sizeof(uint32_t),numpvals,fp) != numpvals )
+                errs++;
+            komodo_pvals(height,pvals,numpvals);
+            printf("save pvals\n");
+        }
         fflush(fp);
     }
 }
@@ -552,13 +593,13 @@ void komodo_init()
         }
         komodo_notarysinit(0,pubkeys,KOMODO_NUMNOTARIES);
         memset(&zero,0,sizeof(zero));
-        komodo_stateupdate(0,0,0,0,zero,0,0);
+        komodo_stateupdate(0,0,0,0,zero,0,0,0,0);
     }
 }
 
 int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp)
 {
-    int32_t k,opretlen,nid,len = 0; uint256 kmdtxid,btctxid; uint8_t crypto777[33];
+    static uint256 zero; int32_t k,opretlen,nid,len = 0; uint256 kmdtxid,btctxid; uint8_t crypto777[33];
     if ( scriptlen == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
     {
         decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
@@ -615,18 +656,18 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
                 printf("ht.%d NOTARIZED.%d KMD.%s BTCTXID.%s (%s)\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),btctxid.ToString().c_str(),(char *)&scriptbuf[len+32*2+4]);
                 if ( *notarizedheightp > NOTARIZED_HEIGHT )
                 {
-                    static uint256 zero;
                     NOTARIZED_HEIGHT = *notarizedheightp;
                     NOTARIZED_HASH = kmdtxid;
                     NOTARIZED_BTCTXID = btctxid;
-                    komodo_stateupdate(height,0,0,0,zero,0,0);
+                    komodo_stateupdate(height,0,0,0,zero,0,0,0,0);
                 }
             }
             else if ( i == 0 && scriptbuf[len] == 'P' )
             {
-                double KMDBTC,BTCUSD,CNYUSD; uint32_t numprices,timestamp,pvals[128];
-                numprices = dpow_readprices(&scriptbuf[++len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
-                printf("Found OP_RETURN prices\n");
+                double KMDBTC,BTCUSD,CNYUSD; uint32_t numpvals,timestamp,pvals[128];
+                numpvals = dpow_readprices(&scriptbuf[++len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
+                komodo_stateupdate(height,0,0,0,zero,0,0,pvals,numpvals);
+                printf("vout OP_RETURN prices\n");
             }
         }
     }
@@ -701,7 +742,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     if ( numvalid > 13 )
                     {
                         memset(&txhash,0,sizeof(txhash));
-                        komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0);
+                        komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0,0,0);
                     }
                     printf("new notaries.%d newheight.%d from height.%d\n",numvouts-1,KOMODO_PUBKEYS_HEIGHT(height),height);
                 }
@@ -716,7 +757,7 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
     //uint256 zero;
     //printf("disconnect ht.%d\n",pindex->nHeight);
     //memset(&zero,0,sizeof(zero));
-    //komodo_stateupdate(-pindex->nHeight,0,0,0,zero,0,0);
+    //komodo_stateupdate(-pindex->nHeight,0,0,0,zero,0,0,0,0);
 }
 
 int32_t komodo_block2height(CBlock *block)
