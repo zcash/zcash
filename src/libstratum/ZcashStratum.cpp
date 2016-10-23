@@ -7,6 +7,8 @@
 #include "chainparams.h"
 #include "clientversion.h"
 #include "crypto/equihash.h"
+#include "metrics.h"
+#include "pow/tromp/equi_miner.h"
 #include "streams.h"
 #include "version.h"
 
@@ -20,6 +22,10 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
 
     unsigned int n = Params().EquihashN();
     unsigned int k = Params().EquihashK();
+
+    std::string solver = GetArg("-equihashsolver", "default");
+    assert(solver == "tromp" || solver == "default");
+    LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
 
     std::shared_ptr<std::mutex> m_zmt(new std::mutex);
     CBlockHeader header;
@@ -110,6 +116,7 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
                     LogPrint("pow", "- Checking solution against target...");
                     header.nNonce = bNonce;
                     header.nSolution = soln;
+                    solutionTargetChecks.increment();
 
                     if (UintToArith256(header.GetHash()) > target) {
                         LogPrint("pow", " too large.\n");
@@ -129,15 +136,53 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
                     boost::this_thread::interruption_point();
                     return cancelSolver.load();
                 };
-                try {
-                    // If we find a valid block, we get more work
-                    if (EhOptimisedSolve(n, k, curr_state, validBlock, cancelled)) {
+
+                // TODO: factor this out into a function with the same API for each solver.
+                if (solver == "tromp") {
+                    // Create solver and initialize it.
+                    equi eq(1);
+                    eq.setstate(&curr_state);
+
+                    // Intialization done, start algo driver.
+                    eq.digit0(0);
+                    eq.xfull = eq.bfull = eq.hfull = 0;
+                    eq.showbsizes(0);
+                    for (u32 r = 1; r < WK; r++) {
+                        (r&1) ? eq.digitodd(r, 0) : eq.digiteven(r, 0);
+                        eq.xfull = eq.bfull = eq.hfull = 0;
+                        eq.showbsizes(r);
+                    }
+                    eq.digitK(0);
+                    ehSolverRuns.increment();
+
+                    // Convert solution indices to byte array (decompress) and pass it to validBlock method.
+                    for (size_t s = 0; s < eq.nsols; s++) {
+                        LogPrint("pow", "Checking solution %d\n", s+1);
+                        std::vector<eh_index> index_vector(PROOFSIZE);
+                        for (size_t i = 0; i < PROOFSIZE; i++) {
+                            index_vector[i] = eq.sols[s][i];
+                        }
+                        std::vector<unsigned char> sol_char = GetMinimalFromIndices(index_vector, DIGITBITS);
+
+                        if (validBlock(sol_char)) {
+                            // If we find a POW solution, do not try other solutions
+                            // because they become invalid as we created a new block in blockchain.
+                            break;
+                        }
+                    }
+                } else {
+                    try {
+                        // If we find a valid block, we get more work
+                        bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
+                        ehSolverRuns.increment();
+                        if (found) {
+                            break;
+                        }
+                    } catch (EhSolverCancelledException&) {
+                        LogPrint("pow", "Equihash solver cancelled\n");
+                        cancelSolver.store(false);
                         break;
                     }
-                } catch (EhSolverCancelledException&) {
-                    LogPrint("pow", "Equihash solver cancelled\n");
-                    cancelSolver.store(false);
-                    break;
                 }
 
                 // Check for stop
