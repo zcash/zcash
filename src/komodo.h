@@ -45,6 +45,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
 
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
 
+#define MAX_CURRENCIES 32
 char CURRENCIES[][8] = { "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "NZD", // major currencies
     "CNY", "RUB", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK" };
 
@@ -52,7 +53,7 @@ uint32_t MINDENOMS[] = { 1000, 1000, 100000, 1000, 1000, 1000, 1000, 1000, // ma
     10000, 100000, 10000, 1000, 100000, 10000, 1000, 10000, 1000, 10000, 10000, 10000, 10000, 100000, 1000, 1000000, 1000, 10000, 1000, 1000, 10000, 1000, 10000000, 10000, // end of currencies
 };
 
-uint32_t PAX_val32(double val)
+/*uint32_t PAX_val32(double val)
 {
     uint32_t val32 = 0; struct price_resolution price;
     if ( (price.Pval= val*1000000000) != 0 )
@@ -62,7 +63,7 @@ uint32_t PAX_val32(double val)
         else val32 = (uint32_t)price.Pval;
     }
     return(val32);
-}
+}*/
 
 double PAX_val(uint32_t pval,int32_t baseid)
 {
@@ -472,6 +473,15 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
     }
 }
 
+int32_t komodo_baseid(char *base)
+{
+    int32_t i;
+    for (i=0; i<MAX_CURRENCIES; i++)
+        if ( strcmp(CURRENCIES[i],base) == 0 )
+            return(i);
+    return(-1);
+}
+
 uint64_t komodo_paxprice(int32_t height,char *base,char *rel)
 {
     int32_t baseid,relid,i,ht; uint32_t pvalb,pvalr,*ptr;
@@ -483,7 +493,7 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel)
             if ( *ptr <= height )
             {
                 if ( (pvalb= ptr[baseid]) != 0 && (pvalr= ptr[relid]) != 0 )
-                    return(SATOSHIDEN * (PAX_val(pvalb,baseid) / PAX_val(pvalr,relid)));
+                    return(COIN * (PAX_val(pvalb,baseid) / PAX_val(pvalr,relid)));
                 return(0);
             }
         }
@@ -701,7 +711,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             //for (k=0; k<scriptlen; k++)
             //    printf("%02x",scriptbuf[k]);
             //printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
-            printf("ht.%d NOTARIZED.%d KMD.%s BTCTXID.%s (%s)\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),btctxid.ToString().c_str(),(char *)scriptbuf[len]);
+            printf("ht.%d NOTARIZED.%d KMD.%s BTCTXID.%s (%s)\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),btctxid.ToString().c_str(),(char *)&scriptbuf[len]);
             if ( *notarizedheightp > NOTARIZED_HEIGHT )
             {
                 NOTARIZED_HEIGHT = *notarizedheightp;
