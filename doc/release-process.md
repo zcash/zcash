@@ -110,7 +110,14 @@ Then, verify that nodes can connect to the testnet server, and update the guide 
 
 ## F. Update the Beta Guide
 ## G. Publish the release announcement (blog, zcash-dev, slack)
-## H. Celebrate
+## H. Make and deploy deterministic builds
+
+- Run the [Gitian deterministic build environment](https://github.com/zcash/zcash-gitian)
+- Compare the uploaded [build manifests on gitian.sigs](https://github.com/zcash/gitian.sigs)
+- If all is well, the DevOps engineer will build the Debian packages and update the
+  [apt.z.cash package repository](https://apt.z.cash).
+
+## I. Celebrate
 
 ## missing steps
 Zcash still needs:
