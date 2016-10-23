@@ -1070,7 +1070,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     // is it already in the memory pool?
     uint256 hash = tx.GetHash();
     if (pool.exists(hash))
+    {
+        fprintf(stderr,"already in mempool\n");
         return false;
+    }
 
     // Check for conflicts with in-memory transactions
     {
