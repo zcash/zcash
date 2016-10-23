@@ -450,7 +450,7 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
         *notarized_hashp = np->notarized_hash;
         *notarized_btctxidp = np->notarized_btctxid;
         return(np->notarized_height);
-    }
+    } 
     memset(notarized_hashp,0,sizeof(*notarized_hashp));
     return(0);
 }
