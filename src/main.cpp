@@ -706,7 +706,10 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
     }
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
         if (!txin.IsFinal())
+        {
+            printf("non-final txin\n");
             return false;
+        }
     return true;
 }
 
