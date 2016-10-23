@@ -572,8 +572,11 @@ void static BitcoinMiner(CWallet *pwallet)
                             LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
                     if ( pblock->nBits == KOMODO_MINDIFF_NBITS )
                     {
-                        while ( time(NULL) < starttime+50 )
+                        while ( (uint32_t)time(NULL) < starttime+50 )
+                        {
                             fprintf(stderr,"%u: wait until %u\n",(uint32_t)time(NULL),starttime+50);
+                            sleep(1);
+                        }
                     }
                     if (ProcessBlockFound(pblock, *pwallet, reservekey)) {
                                     // Ignore chain updates caused by us
