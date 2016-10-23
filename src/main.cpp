@@ -705,11 +705,17 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
         return(false); // need to prevent pastdating tx
     }
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
-        if (!txin.IsFinal())
+    {
+        if ( txin.nSequence == 0xfffffffe && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime > nBlockTime )
+        {
+            
+        }
+        else if (!txin.IsFinal())
         {
             printf("non-final txin seq.%x\n",txin.nSequence);
             return false;
         }
+    }
     return true;
 }
 
