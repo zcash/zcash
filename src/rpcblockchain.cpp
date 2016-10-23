@@ -389,20 +389,21 @@ Value paxprice(const Array& params, bool fHelp)
     if ( fHelp || params.size() < 3 || params.size() > 4 )
         throw runtime_error("paxprice \"base\" \"rel\" height\n");
     LOCK(cs_main);
-    Object ret; uint64_t pricetoshis,basevolume,relvolume;
+    Object ret; uint64_t pricetoshis,basevolume=0,relvolume;
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
     int32_t height = atoi(params[2].get_str().c_str());
-    if ( params.size() == 3 )
+    if ( params.size() == 4 )
+        basevolume = AmountFromValue(params[3]);
+    if ( basevolume == 0 )
         basevolume = COIN;
-    else basevolume = AmountFromValue(params[3]);
     relvolume = komodo_paxprice(height,(char *)base.c_str(),(char *)rel.c_str(),basevolume);
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
     ret.push_back(Pair("height", height));
     if ( relvolume != 0 )
     {
-        ret.push_back(Pair("price", ValueFromAmount(basevolume) / ValueFromAmount(relvolume)));
+        ret.push_back(Pair("price", ValueFromAmount(((double)basevolume / (double)relvolume))));
         ret.push_back(Pair("relvolume", ValueFromAmount(relvolume)));
     }
     return ret;
