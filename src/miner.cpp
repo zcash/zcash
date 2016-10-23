@@ -503,6 +503,7 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             // Create new block
             //
+            uint32_t starttime = (uint32_t)time(NULL);
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
 
@@ -521,7 +522,6 @@ void static BitcoinMiner(CWallet *pwallet)
             // Search
             //
             int32_t notaryid; uint32_t savebits; int64_t nStart = GetTime();
-            uint32_t starttime = (uint32_t)time(NULL);
             savebits = pblock->nBits;
             if ( komodo_chosennotary(&notaryid,pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
@@ -565,22 +565,17 @@ void static BitcoinMiner(CWallet *pwallet)
                     if (UintToArith256(pblock->GetHash()) > hashTarget) {
                         return false;
                     }
+                            if ( time(NULL) < starttime+50 )
+                                sleep(starttime+50-time(NULL));
 
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     LogPrintf("ZcashMiner:\n");
-                            LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
-                    if ( pblock->nBits == KOMODO_MINDIFF_NBITS )
-                    {
-                        while ( (uint32_t)time(NULL) < starttime+50 )
-                        {
-                            fprintf(stderr,"%u: wait until %u\n",(uint32_t)time(NULL),starttime+50);
-                            sleep(1);
-                        }
-                    }
+                    LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
+                            
                     if (ProcessBlockFound(pblock, *pwallet, reservekey)) {
-                                    // Ignore chain updates caused by us
-                                    std::lock_guard<std::mutex> lock{m_cs};
+                        // Ignore chain updates caused by us
+                        std::lock_guard<std::mutex> lock{m_cs};
                         cancelSolver = false;
                     }
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
