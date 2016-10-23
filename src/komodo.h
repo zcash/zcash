@@ -196,7 +196,7 @@ int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *
 int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,double *BTCUSDp,double *CNYUSDp,uint32_t *pvals)
 {
     uint32_t kmdbtc,btcusd,cnyusd; int32_t i,n,len = 0;
-    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&timestamp);
+    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)timestampp);
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&n);
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&kmdbtc); // /= 1000
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&btcusd); // *= 1000
@@ -210,7 +210,7 @@ int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,doubl
         printf("%u ",pvals[i]);
     }
     printf("OP_RETURN prices\n");
-    return(len);
+    return(n-3);
 }
 
 int32_t _unhex(char c)
