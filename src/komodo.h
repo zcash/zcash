@@ -762,6 +762,7 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
 
 int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize)
 {
+    static uint32_t lastcrc;
     FILE *fp; char fname[512]; uint32_t crc32,check; int32_t i,n,retval,fsize,len=0; uint8_t data[8192];
 #ifdef WIN32
     sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"komodofeed");
@@ -793,19 +794,23 @@ int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize)
                     for (i=0; i<n-3; i++)
                     {
                         len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&pvals[i]);
-                        printf("%u ",pvals[i]);
+                        if ( lastcrc != crc32 )
+                            printf("%u ",pvals[i]);
                     }
-                    printf("t%u n.%d KMD %f BTC %f CNY %f (%f)\n",timestamp,n,KMDBTC,BTCUSD,CNYUSD,CNYUSD!=0?1./CNYUSD:0);
+                    if ( lastcrc != crc32 )
+                        printf("t%u n.%d KMD %f BTC %f CNY %f (%f)\n",timestamp,n,KMDBTC,BTCUSD,CNYUSD,CNYUSD!=0?1./CNYUSD:0);
                     if ( timestamp > time(NULL)-60 )
                     {
                         n = komodo_opreturnscript(opret,'P',data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
-                        for (i=0; i<n; i++)
-                            printf("%02x",opret[i]);
-                        printf(" coinbase opret[%d] crc32.%u:%u\n",n,crc32,check);
+                        if ( lastcrc != crc32 )
+                        {
+                            for (i=0; i<n; i++)
+                                printf("%02x",opret[i]);
+                            printf(" coinbase opret[%d] crc32.%u:%u\n",n,crc32,check);
+                        }
                     } else printf("t%u too old for %u\n",timestamp,(uint32_t)time(NULL));
                 } else printf("crc32 %u mismatch %u\n",crc32,check);
-            }
-            else printf("fread.%d error != fsize.%d\n",retval,fsize);
+            } else printf("fread.%d error != fsize.%d\n",retval,fsize);
         } else printf("fsize.%d > maxsize.%d or data[%d]\n",fsize,maxsize,(int32_t)sizeof(data));
         fclose(fp);
     }
