@@ -565,8 +565,8 @@ void static BitcoinMiner(CWallet *pwallet)
                     if (UintToArith256(pblock->GetHash()) > hashTarget) {
                         return false;
                     }
-                            if ( time(NULL) < starttime+50 )
-                                sleep(starttime+50-time(NULL));
+                          /*  if ( pblock->nBits == KOMODO_MINDIFF_NBITS && time(NULL) < starttime+50 )
+                                sleep(starttime+50-time(NULL));*/
 
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
