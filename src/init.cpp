@@ -16,6 +16,7 @@
 #include "consensus/validation.h"
 #include "key.h"
 #include "main.h"
+#include "metrics.h"
 #include "miner.h"
 #include "net.h"
 #include "rpcserver.h"
@@ -974,6 +975,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Start the lightweight task scheduler thread
     CScheduler::Function serviceLoop = boost::bind(&CScheduler::serviceQueue, &scheduler);
     threadGroup.create_thread(boost::bind(&TraceThread<CScheduler::Function>, "scheduler", serviceLoop));
+
+    if (GetBoolArg("-showmetrics", true) && !fPrintToConsole && !GetBoolArg("-daemon", false)) {
+        // Start the persistent metrics interface
+        ConnectMetricsScreen();
+        threadGroup.create_thread(&ThreadShowMetricsScreen);
+    }
 
     // Initialize Zcash circuit parameters
     ZC_LoadParams();
