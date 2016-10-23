@@ -707,7 +707,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
         if (!txin.IsFinal())
         {
-            printf("non-final txin\n");
+            printf("non-final txin seq.%x\n",txin.nSequence);
             return false;
         }
     return true;
@@ -1050,7 +1050,6 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     AssertLockHeld(cs_main);
     if (pfMissingInputs)
         *pfMissingInputs = false;
-fprintf(stderr,"AcceptToMemoryPool\n");
     if (!CheckTransaction(tx, state))
     {
         fprintf(stderr,"AcceptToMemoryPool CheckTransaction failed\n");
@@ -1077,7 +1076,6 @@ fprintf(stderr,"AcceptToMemoryPool\n");
         fprintf(stderr,"AcceptToMemoryPool non-final\n");
         return state.DoS(0, false, REJECT_NONSTANDARD, "non-final");
     }
-fprintf(stderr,"AcceptToMemoryPool B\n");
    // is it already in the memory pool?
     uint256 hash = tx.GetHash();
     if (pool.exists(hash))
@@ -1109,7 +1107,6 @@ fprintf(stderr,"AcceptToMemoryPool B\n");
         }
     }
     }
-fprintf(stderr,"AcceptToMemoryPool C\n");
 
     {
         CCoinsView dummy;
@@ -1139,7 +1136,6 @@ fprintf(stderr,"AcceptToMemoryPool C\n");
                 return false;
             }
         }
-fprintf(stderr,"AcceptToMemoryPool D\n");
 
         // are the actual inputs available?
         if (!view.HaveInputs(tx))
@@ -1182,7 +1178,6 @@ fprintf(stderr,"AcceptToMemoryPool D\n");
 
         CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height(), mempool.HasNoInputsOf(tx));
         unsigned int nSize = entry.GetTxSize();
-fprintf(stderr,"AcceptToMemoryPool D\n");
 
         // Don't accept it if it can't get into a block
         CAmount txMinFee = GetMinRelayFee(tx, nSize, true);
@@ -1222,7 +1217,6 @@ fprintf(stderr,"AcceptToMemoryPool D\n");
         if (fRejectAbsurdFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000)
             return error("AcceptToMemoryPool: absurdly high fees %s, %d > %d",
                          hash.ToString(), nFees, ::minRelayTxFee.GetFee(nSize) * 10000);
-fprintf(stderr,"AcceptToMemoryPool E\n");
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
@@ -1248,7 +1242,6 @@ fprintf(stderr,"AcceptToMemoryPool E\n");
         // Store transaction in memory
         pool.addUnchecked(hash, entry, !IsInitialBlockDownload());
     }
-fprintf(stderr,"AcceptToMemoryPool F\n");
 
     SyncWithWallets(tx, NULL);
 
