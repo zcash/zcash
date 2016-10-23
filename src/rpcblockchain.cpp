@@ -382,6 +382,24 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
 
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint32_t komodo_txtime(uint256 hash);
+uint64_t komodo_paxprice(int32_t height,char *base,char *rel);
+
+Value paxprice(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 3)
+        throw runtime_error("paxprice \"base\" \"rel\" height\n");
+    LOCK(cs_main);
+    Object ret; uint64_t pricetoshis;
+    std::string base = params[0].get_str();
+    std::string rel = params[1].get_str();
+    int height = params[2].get_int();
+    pricetoshis = komodo_paxprice(height,(char *)base.c_str(),(char *)rel.c_str());
+    ret.push_back(Pair("base", base));
+    ret.push_back(Pair("rel", rel));
+    ret.push_back(Pair("height", height));
+    ret.push_back(Pair("price", ValueFromAmount(pricetoshis)));
+    return ret;
+}
 
 Value gettxout(const Array& params, bool fHelp)
 {

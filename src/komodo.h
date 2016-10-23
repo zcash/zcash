@@ -45,6 +45,32 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
 
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
 
+char CURRENCIES[][8] = { "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "NZD", // major currencies
+    "CNY", "RUB", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK" };
+
+uint32_t MINDENOMS[] = { 1000, 1000, 100000, 1000, 1000, 1000, 1000, 1000, // major currencies
+    10000, 100000, 10000, 1000, 100000, 10000, 1000, 10000, 1000, 10000, 10000, 10000, 10000, 100000, 1000, 1000000, 1000, 10000, 1000, 1000, 10000, 1000, 10000000, 10000, // end of currencies
+};
+
+uint32_t PAX_val32(double val)
+{
+    uint32_t val32 = 0; struct price_resolution price;
+    if ( (price.Pval= val*1000000000) != 0 )
+    {
+        if ( price.Pval > 0xffffffff )
+            printf("Pval overflow error %lld\n",(long long)price.Pval);
+        else val32 = (uint32_t)price.Pval;
+    }
+    return(val32);
+}
+
+double PAX_val(uint32_t pval,int32_t baseid)
+{
+    if ( baseid >= 0 && baseid < MAX_CURRENCIES )
+        return(((double)pval / 1000000000.) / MINDENOMS[baseid]);
+    return(0.);
+}
+
 const char *Notaries[][2] =
 {
     { "jl777_testA", "03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828" },
@@ -444,6 +470,25 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
         NUM_PRICES++;
         printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES);
     }
+}
+
+uint64_t komodo_paxprice(int32_t height,char *base,char *rel)
+{
+    int32_t baseid,relid,i,ht; uint32_t pvalb,pvalr,*ptr;
+    if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
+    {
+        for (i=NUM_PRICES-1; i>=0; i--)
+        {
+            ptr = &PVALS[36 * i];
+            if ( *ptr <= height )
+            {
+                if ( (pvalb= ptr[baseid]) != 0 && (pvalr= ptr[relid]) != 0 )
+                    return(SATOSHIDEN * (PAX_val(pvalb,baseid) / PAX_val(pvalr,relid)));
+                return(0);
+            }
+        }
+    }
+    return(0);
 }
 
 int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals)
