@@ -367,8 +367,6 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
         test.anchor = GetRandHash();
         BOOST_CHECK(!test.Verify(*p, pubKeyHash));
     }
-
-    delete p;
 }
 
 BOOST_AUTO_TEST_CASE(test_simple_joinsplit_invalidity)
@@ -589,6 +587,57 @@ BOOST_AUTO_TEST_CASE(test_IsStandard)
 
     t.vout[0].scriptPubKey = CScript() << OP_RETURN;
     t.vout[1].scriptPubKey = CScript() << OP_RETURN;
+    BOOST_CHECK(!IsStandardTx(t, reason));
+}
+
+BOOST_AUTO_TEST_CASE(test_IsStandardV2)
+{
+    LOCK(cs_main);
+    CBasicKeyStore keystore;
+    CCoinsView coinsDummy;
+    CCoinsViewCache coins(&coinsDummy);
+    std::vector<CMutableTransaction> dummyTransactions = SetupDummyInputs(keystore, coins);
+
+    CMutableTransaction t;
+    t.vin.resize(1);
+    t.vin[0].prevout.hash = dummyTransactions[0].GetHash();
+    t.vin[0].prevout.n = 1;
+    t.vin[0].scriptSig << std::vector<unsigned char>(65, 0);
+    t.vout.resize(1);
+    t.vout[0].nValue = 90*CENT;
+    CKey key;
+    key.MakeNewKey(true);
+    t.vout[0].scriptPubKey = GetScriptForDestination(key.GetPubKey().GetID());
+
+    string reason;
+    // A v2 transaction with no JoinSplits is still standard.
+    t.nVersion = 2;
+    BOOST_CHECK(IsStandardTx(t, reason));
+
+    // ... and with one JoinSplit.
+    t.vjoinsplit.push_back(JSDescription());
+    BOOST_CHECK(IsStandardTx(t, reason));
+
+    // ... and when that JoinSplit takes from a transparent input.
+    JSDescription *jsdesc = &t.vjoinsplit[0];
+    jsdesc->vpub_old = 10*CENT;
+    t.vout[0].nValue -= 10*CENT;
+    BOOST_CHECK(IsStandardTx(t, reason));
+
+    // A v2 transaction with JoinSplits but no transparent inputs is standard.
+    jsdesc->vpub_old = 0;
+    jsdesc->vpub_new = 100*CENT;
+    t.vout[0].nValue = 90*CENT;
+    t.vin.resize(0);
+    BOOST_CHECK(IsStandardTx(t, reason));
+
+    // v2 transactions can still be non-standard for the same reasons as v1.
+    t.vout[0].nValue = 501; // dust
+    BOOST_CHECK(!IsStandardTx(t, reason));
+
+    // v3 is not standard.
+    t.nVersion = 3;
+    t.vout[0].nValue = 90*CENT;
     BOOST_CHECK(!IsStandardTx(t, reason));
 }
 

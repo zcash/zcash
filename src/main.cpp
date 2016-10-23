@@ -16,6 +16,7 @@
 #include "consensus/validation.h"
 #include "init.h"
 #include "merkleblock.h"
+#include "metrics.h"
 #include "net.h"
 #include "pow.h"
 #include "txdb.h"
@@ -564,7 +565,7 @@ bool AddOrphanTx(const CTransaction& tx, NodeId peer)
     // have been mined or received.
     // 10,000 orphans, each of which is at most 5,000 bytes big is
     // at most 500 megabytes of orphans:
-    unsigned int sz = tx.GetSerializeSize(SER_NETWORK, CTransaction::CURRENT_VERSION);
+    unsigned int sz = tx.GetSerializeSize(SER_NETWORK, tx.nVersion);
     if (sz > 5000)
     {
         LogPrint("mempool", "ignoring large orphan tx (size: %u, hash: %s)\n", sz, hash.ToString());
@@ -639,7 +640,7 @@ unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans)
 
 bool IsStandardTx(const CTransaction& tx, string& reason)
 {
-    if (tx.nVersion > CTransaction::CURRENT_VERSION || tx.nVersion < 1) {
+    if (tx.nVersion > CTransaction::MAX_CURRENT_VERSION || tx.nVersion < CTransaction::MIN_CURRENT_VERSION) {
         reason = "version";
         return false;
     }
@@ -833,6 +834,11 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 
 bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 {
+    // Don't count coinbase transactions because mining skews the count
+    if (!tx.IsCoinBase()) {
+        transactionsValidated.increment();
+    }
+
     if (!CheckTransactionWithoutProofVerification(tx, state)) {
         return false;
     } else {
@@ -850,6 +856,12 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidationState &state)
 {
     // Basic checks that don't depend on any context
+
+    // Check transaction version
+    if (tx.nVersion < MIN_TX_VERSION) {
+        return state.DoS(100, error("CheckTransaction(): version too low"),
+                         REJECT_INVALID, "bad-txns-version-too-low");
+    }
 
     // Transactions can contain empty `vin` and `vout` so long as
     // `vjoinsplit` is non-empty.
@@ -2934,6 +2946,11 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
 {
+    // Check block version
+    if (block.nVersion < MIN_BLOCK_VERSION)
+        return state.DoS(100, error("CheckBlockHeader(): block version too low"),
+                         REJECT_INVALID, "version-too-low");
+
     // Check Equihash solution is valid
     if (fCheckPOW && !CheckEquihashSolution(&block, Params()))
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
@@ -4867,6 +4884,14 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     // the getaddr message mitigates the attack.
     else if ((strCommand == "getaddr") && (pfrom->fInbound))
     {
+        // Only send one GetAddr response per connection to reduce resource waste
+        //  and discourage addr stamping of INV announcements.
+        if (pfrom->fSentAddr) {
+            LogPrint("net", "Ignoring repeated \"getaddr\". peer=%d\n", pfrom->id);
+            return true;
+        }
+        pfrom->fSentAddr = true;
+
         pfrom->vAddrToSend.clear();
         vector<CAddress> vAddr = addrman.GetAddr();
         BOOST_FOREACH(const CAddress &addr, vAddr)
@@ -5082,8 +5107,12 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         }
     }
 
-    else
-    {
+    else if (strCommand == "notfound") {
+        // We do not care about the NOTFOUND message, but logging an Unknown Command
+        // message would be undesirable as we transmit it ourselves.
+    }
+
+    else {
         // Ignore unknown commands for extensibility
         LogPrint("net", "Unknown command \"%s\" from peer=%d\n", SanitizeString(strCommand), pfrom->id);
     }

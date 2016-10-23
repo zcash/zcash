@@ -65,6 +65,7 @@ def initialize_datadir(dirname, n):
         os.makedirs(datadir)
     with open(os.path.join(datadir, "zcash.conf"), 'w') as f:
         f.write("regtest=1\n");
+        f.write("showmetrics=0\n");
         f.write("rpcuser=rt\n");
         f.write("rpcpassword=rt\n");
         f.write("port="+str(p2p_port(n))+"\n");

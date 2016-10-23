@@ -44,10 +44,10 @@ static bool AppInitRawTx(int argc, char* argv[])
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help"))
     {
         // First part of help message is specific to this utility
-        std::string strUsage = _("Bitcoin Core bitcoin-tx utility version") + " " + FormatFullVersion() + "\n\n" +
+        std::string strUsage = _("Zcash zcash-tx utility version") + " " + FormatFullVersion() + "\n\n" +
             _("Usage:") + "\n" +
-              "  bitcoin-tx [options] <hex-tx> [commands]  " + _("Update hex-encoded bitcoin transaction") + "\n" +
-              "  bitcoin-tx [options] -create [commands]   " + _("Create hex-encoded bitcoin transaction") + "\n" +
+              "  zcash-tx [options] <hex-tx> [commands]  " + _("Update hex-encoded zcash transaction") + "\n" +
+              "  zcash-tx [options] -create [commands]   " + _("Create hex-encoded zcash transaction") + "\n" +
               "\n";
 
         fprintf(stdout, "%s", strUsage.c_str());
@@ -157,7 +157,7 @@ static void RegisterLoad(const string& strInput)
 static void MutateTxVersion(CMutableTransaction& tx, const string& cmdVal)
 {
     int64_t newVersion = atoi64(cmdVal);
-    if (newVersion < 1 || newVersion > CTransaction::CURRENT_VERSION)
+    if (newVersion < CTransaction::MIN_CURRENT_VERSION || newVersion > CTransaction::MAX_CURRENT_VERSION)
         throw runtime_error("Invalid TX version requested");
 
     tx.nVersion = (int) newVersion;

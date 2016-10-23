@@ -42,24 +42,22 @@ public:
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 4000;
-        // TODO generate harder genesis block
-        //consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.powLimit = uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
+        consensus.powLimit = uint256S("03ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowAveragingWindow = 17;
         assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
         consensus.nPowMaxAdjustDown = 32; // 32% adjustment down
         consensus.nPowMaxAdjustUp = 16; // 16% adjustment up
         consensus.nPowTargetSpacing = 2.5 * 60;
         consensus.fPowAllowMinDifficultyBlocks = false;
-        /** 
+        /**
          * The message start string is designed to be unlikely to occur in normal data.
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
          */
-        pchMessageStart[0] = 0x9f;
-        pchMessageStart[1] = 0xee;
-        pchMessageStart[2] = 0x4e;
-        pchMessageStart[3] = 0xd8;
+        pchMessageStart[0] = 0xf9;
+        pchMessageStart[1] = 0x1b;
+        pchMessageStart[2] = 0xac;
+        pchMessageStart[3] = 0xab;
         vAlertPubKey = ParseHex("04b7ecf0baa90495ceb4e4090f6b2fd37eec1e9c85fac68a487f3ce11589692e4a317479316ee814e066638e1db54e37a10689b70286e6315b1087b6615d179264");
         nDefaultPort = 8233;
         nMinerThreads = 0;
@@ -73,35 +71,27 @@ public:
         /**
          * Build the genesis block. Note that the output of its generation
          * transaction cannot be spent since it did not originally exist in the
-         * database.
-         *
-         * CBlock(hash=000000000019d6, ver=1, hashPrevBlock=00000000000000, hashMerkleRoot=4a5e1e, nTime=1231006505, nBits=1d00ffff, nNonce=2083236893, vtx=1)
-         *   CTransaction(hash=4a5e1e, ver=1, vin.size=1, vout.size=1, nLockTime=0)
-         *     CTxIn(COutPoint(000000, -1), coinbase 04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73)
-         *     CTxOut(nValue=50.00000000, scriptPubKey=0x5F1DF16B2B704C8A578D0B)
-         *   vMerkleTree: 4a5e1e
+         * database (and is in any case of zero value).
          */
         const char* pszTimestamp = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks";
         CMutableTransaction txNew;
         txNew.vin.resize(1);
         txNew.vout.resize(1);
         txNew.vin[0].scriptSig = CScript() << 486604799 << CScriptNum(4) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
-        txNew.vout[0].nValue = 50 * COIN;
+        txNew.vout[0].nValue = 0;
         txNew.vout[0].scriptPubKey = CScript() << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f") << OP_CHECKSIG;
         genesis.vtx.push_back(txNew);
         genesis.hashPrevBlock.SetNull();
         genesis.hashMerkleRoot = genesis.BuildMerkleTree();
-        genesis.nVersion = 1;
+        genesis.nVersion = 4;
         genesis.nTime    = 1231006505;
-        // TODO generate harder genesis block
-        //genesis.nBits    = 0x1d00ffff;
-        genesis.nBits    = 0x200f0f0f;
-        genesis.nNonce   = uint256S("0x000000000000000000000000000000000000000000000000000000000000000b");
-        genesis.nSolution = ParseHex("000d5ba7cda5d473947263bf194285317179d2b0d307119c2e7cc4bd8ac456f0774bd52b0cd9249be9d40718b6397a4c7bbd8f2b3272fed2823cd2af4bd1632200ba4bf796727d6347b225f670f292343274cc35099466f5fb5f0cd1c105121b28213d15db2ed7bdba490b4cedc69742a57b7c25af24485e523aadbb77a0144fc76f79ef73bd8530d42b9f3b9bed1c135ad1fe152923fafe98f95f76f1615e64c4abb1137f4c31b218ba2782bc15534788dda2cc08a0ee2987c8b27ff41bd4e31cd5fb5643dfe862c9a02ca9f90c8c51a6671d681d04ad47e4b53b1518d4befafefe8cadfb912f3d03051b1efbf1dfe37b56e93a741d8dfd80d576ca250bee55fab1311fc7b3255977558cdda6f7d6f875306e43a14413facdaed2f46093e0ef1e8f8a963e1632dcbeebd8e49fd16b57d49b08f9762de89157c65233f60c8e38a1f503a48c555f8ec45dedecd574a37601323c27be597b956343107f8bd80f3a925afaf30811df83c402116bb9c1e5231c70fff899a7c82f73c902ba54da53cc459b7bf1113db65cc8f6914d3618560ea69abd13658fa7b6af92d374d6eca9529f8bd565166e4fcbf2a8dfb3c9b69539d4d2ee2e9321b85b331925df195915f2757637c2805e1d4131e1ad9ef9bc1bb1c732d8dba4738716d351ab30c996c8657bab39567ee3b29c6d054b711495c0d52e1cd5d8e55b4f0f0325b97369280755b46a02afd54be4ddd9f77c22272b8bbb17ff5118fedbae2564524e797bd28b5f74f7079d532ccc059807989f94d267f47e724b3f1ecfe00ec9e6541c961080d8891251b84b4480bc292f6a180bea089fef5bbda56e1e41390d7c0e85ba0ef530f7177413481a226465a36ef6afe1e2bca69d2078712b3912bba1a99b1fbff0d355d6ffe726d2bb6fbc103c4ac5756e5bee6e47e17424ebcbf1b63d8cb90ce2e40198b4f4198689daea254307e52a25562f4c1455340f0ffeb10f9d8e914775e37d0edca019fb1b9c6ef81255ed86bc51c5391e0591480f66e2d88c5f4fd7277697968656a9b113ab97f874fdd5f2465e5559533e01ba13ef4a8f7a21d02c30c8ded68e8c54603ab9c8084ef6d9eb4e92c75b078539e2ae786ebab6dab73a09e0aa9ac575bcefb29e930ae656e58bcb513f7e3c17e079dce4f05b5dbc18c2a872b22509740ebe6a3903e00ad1abc55076441862643f93606e3dc35e8d9f2caef3ee6be14d513b2e062b21d0061de3bd56881713a1a5c17f5ace05e1ec09da53f99442df175a49bd154aa96e4949decd52fed79ccf7ccbce32941419c314e374e4a396ac553e17b5340336a1a25c22f9e42a243ba5404450b650acfc826a6e432971ace776e15719515e1634ceb9a4a35061b668c74998d3dfb5827f6238ec015377e6f9c94f38108768cf6e5c8b132e0303fb5a200368f845ad9d46343035a6ff94031df8d8309415bb3f6cd5ede9c135fdabcc030599858d803c0f85be7661c88984d88faa3d26fb0e9aac0056a53f1b5d0baed713c853c4a2726869a0a124a8a5bbc0fc0ef80c8ae4cb53636aa02503b86a1eb9836fcc259823e2692d921d88e1ffc1e6cb2bde43939ceb3f32a611686f539f8f7c9f0bf00381f743607d40960f06d347d1cd8ac8a51969c25e37150efdf7aa4c2037a2fd0516fb444525ab157a0ed0a7412b2fa69b217fe397263153782c0f64351fbdf2678fa0dc8569912dcd8e3ccad38f34f23bbbce14c6a26ac24911b308b82c7e43062d180baeac4ba7153858365c72c63dcf5f6a5b08070b730adb017aeae925b7d0439979e2679f45ed2f25a7edcfd2fb77a8794630285ccb0a071f5cce410b46dbf9750b0354aae8b65574501cc69efb5b6a43444074fee116641bb29da56c2b4a7f456991fc92b2");
+        genesis.nBits    = 0x2003ffff;
+        genesis.nNonce   = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000");
+        genesis.nSolution = ParseHex("0025991209a4a7952e06c65febfd76424b11df202714b3e2083c8598a9083f098459638b2b0d269efcbf0d72d9fdccc92045835652ac372d51d0e23dea6ea31a7625d3c686a5f549aae270912751397f10bfcc89066e50df029f2fe9c72f41dfafc41beca6e9a9c21f2f903f234460610f1c01c54802b8f4edb5611263ae57a50307db731787a281d65046ea7619bc86b515e361e0d4d6e427970b72880952d9d2ab12783498cd5f00b895ab47cecdad71afb53db474875a6c409a863140b73d39d25bb034fa1ce7d4084cba721953de7de0141a1342cbcc28933d52d22624c725ed4a53b0920e29b93a9314e317abe1e1da0af153d8cf05579c2226021a21012872a903d9a5a2e15fade995d2bcdda25c1795cdfc021cf107b3aaf3652b5073de526356de1d09781c6027ec77c9a5f249b98dfd23fb038178aaf229558a30e94e32d9162d073e12ed988e1f1718bb7d00ce6e6b1b2ec8d97719d52e655781cd8279b9644109252b20210f0037696ed1b878cbc8f6b4db95dd1d01c6c53ec18fb4d38526c45a8bd163da81a6df360534b62267ac35a053c7abb5b40ee5a12e2fad1b61940e7269dcf95b12d7eabda16e16c1d5c5e5c015e19723f189a4e5a52161e4c842f4d869028143474fbb5110ee1cf0acf3ad1fecd8e2d58768633b55cb1ab8c518e5a4954ac66fdaffcd93d1f6ab0af4fc885ef15908b1c65a80d31475b868b57c8239676ea288bceae4190781906ecb5dd0fdc3959f0fbe64ea5f3f1f8c030ceafd4feb4c232fd3d4a19711d359051c62ebdb2b2ebc361a34323a25edbe9705f46571c60cfdf327c618a5529a6aea5185578ce1d62543a52141de8e52b819da2ca3dbc89d62db077200df2ceb3160664ff18e1b1cdbbb9cd1e368a3bed50db432202eb204dd186920bfce44c74eaaec7afe4284eab4ce78ef5b78cb9a009092f24ec999f3d7ae71e4dfe559323e5f76d99d3ebf4a663395b39f9657bd831afdab3f9f109ff2f003fe44734054a3c7915dd4a7de4dac7dcfc0f003532a913d2925e0edfd32b043284f66d93911ddd7e591031771fb4bc5d7a058fc519ee7a1a8f87d3a9fea42181da2335e37ddbde6c235425971f81a00743e9c210ffcff2875e8a191d8d2d381efabf801d7887dca33189bce10fb919b214f94a3047eb503d503a61fc76d086d5f1c1d88a663ecbae576f66d6ba1867a3ae1bd28f37c3744e5e72fe022a8eb4349b63edbbddae9291665470af215f63d506b12354a5ff0a332543a8bdf4d3aff12555aa237957939c2be676c4b11233948851823dda4d2d7c421af7241ae8dabf5ce25befb11e62c96c5c13e512bb91cae854e70b3c8fdfc727f117444bafeb9b4dbf637a297b63227cafa7e611c3bd3be507d6e756d6da7116d5eb761f76e0ec62f6a32c8d30176ac03960cd7790d6b218e89a215b86440c88dd40870b853040d8d2510ef918551b86e312f230c475702ee274271d9f9c4f0f880a5c43a9572a1b61dcd290e0d1231c3ea76f5f718a3481674297cd3eaceda2a05868bc0690201d506c8d25137a266daa5d216f7f2067e62db9ba8f841788611cbe5af6bc9532df1fb7b22e3be8e4713f23de2f692b271ffdcf4f43e0838942c9716ae8ea75f97d47ae405967977f6ebdcbc33e408163d8c504e1a6a7828940e44d66b816113fbeb5b24d1f42bd9e0c33523c5d4720fdea6c9a3d634029b1126e96b9945a2ec4c3b98c08b78e262daaad9ceda2e31e99c04507d557cc2077fda6f8cefb0a7df121a17778ea7a336ff17c3132627675d69d69b17da698b2c5756585a731f17c2f97332981efa598c66cfd1f93b61075427e578f57906946ce25a8f1a56c9fffa673fded26154990b27a8a7162e86e427cb50743bb4e8");
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x027e3758c3a65b12aa1046462b486d0a63bfa1beae327897f56c5cfb7daaae71"));
-        assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+        assert(consensus.hashGenesisBlock == uint256S("0x00982212b34e545f873e3ce30b0babab7d2acdedc52867b2bee24a182538633f"));
+        assert(genesis.hashMerkleRoot == uint256S("0xdc6c10ad2a26613ae9b8a156ed9ca15e3e355a994a7e32cd7a4c3d7a478f57d2"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -175,13 +165,13 @@ public:
         consensus.nMajorityEnforceBlockUpgrade = 51;
         consensus.nMajorityRejectBlockOutdated = 75;
         consensus.nMajorityWindow = 400;
-        consensus.powLimit = uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
+        consensus.powLimit = uint256S("03ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
         consensus.fPowAllowMinDifficultyBlocks = true;
-        pchMessageStart[0] = 0x0C;
-        pchMessageStart[1] = 0x9E;
-        pchMessageStart[2] = 0xD7;
-        pchMessageStart[3] = 0xA2;
+        pchMessageStart[0] = 0xf9;
+        pchMessageStart[1] = 0x9f;
+        pchMessageStart[2] = 0x24;
+        pchMessageStart[3] = 0xb6;
         vAlertPubKey = ParseHex("044e7a1553392325c871c5ace5d6ad73501c66f4c185d6b0453cf45dec5a1322e705c672ac1a27ef7cdaf588c10effdf50ed5f95f85f2f54a5f6159fca394ed0c6");
         nDefaultPort = 18233;
         nMinerThreads = 0;
@@ -190,11 +180,11 @@ public:
 
         //! Modify the testnet genesis block so the timestamp is valid for a later start.
         genesis.nTime = 1296688602;
-        genesis.nBits = 0x200f0f0f;
-        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000009");
-        genesis.nSolution = ParseHex("003423da3e41f916bf3ff0ee770eb844a240361abe08a8c9d46bd30226e2ad411a4047b6ddc230d173c60537e470e24f764120f5a2778b2a1285b0727bf79a0b085ad67e6266fb38fd72ef17f827315c42f921720248c983d4100e6ebd1c4b5e8762a973bac3bec7f7153b93752ebbb465f0fc9520bcfc30f9abfe303627338fed6ede9cf1b9173a736cf270cf4d9c6999ff4c3a301a78fd50dab6ccca67a0c5c2e41f216a1f3efd049a74bbe6252f9773bc309d3f9e554d996913ce8e1cec672a1fa4ea59726b61ea9e75d5ce9aa5dbfa96179a293810e02787f26de324fe7c88376ff57e29574a55faff7c2946f3e40e451861c32bf67da7377de3136858a18f34fab1bc8da37726ca2c25fc7b312a5427554ec944da81c7e27255d6c94ade9987ff7daedc2d1cc63d7d4cf93e691d13326fb1c7ee72ccdc0b134eb665fc6a9821e6fef6a6d45e4aac6dca6b505a0100ad56ea4f6fa4cdc2f0d1b65f730104a515172e34163bdb422f99d083e6eb860cf6b3f66642c4dbaf0d0fa1dca1b6166f1d1ffaa55a9d6d6df628afbdd14f1622c1c8303259299521a253bc28fcc93676723158067270fc710a09155a1e50c533e9b79ed5edba4ab70a08a9a2fc0eef0ddae050d75776a9804f8d6ad7e30ccb66c6a98d86710ca7a4dfb4feb159484796b9a015c5764aa3509051c87f729b9877ea41f8b470898c01388ed9098b1e006d3c30fc6e7c781072fa3f75d918505ee8ca75840fc62f67c57060666aa42578a2dd022eda62e3f1e447d7364074d34fd60ad9b138f60422afa6cfcb913fd6c213b496144dbfda7bfc7c24540cfe40ad0c0fd5a8c0902127f53d3178ba1b2a87bf1224d53d3a15e49ccdf121ae872a011c996d1b9793153cdcd4c0a7e99f8a35669788551cca2b62769eda24b6b55e2f4e0ac0d30aa50ecf33c6cdb24adfc922006a7bf434ced800fefe814c94c6fc8caa37b372d5088bb31d2f6b11a7a67ad3f70abbac0d5c256b637828de6cc525978cf151a2e50798e0c591787639a030291272c9ced3ab7d682e03f8c7db51f60163baa85315789666ea8c5cd6f789a7f4a5de4f8a9dfefce20f353cec606492fde8eab3e3b487b3a3a57434f8cf252a4b643fc125c8a5948b06744f5dc306aa587bdc85364c7488235c6edddd78763675e50a9637181519be06dd30c4ba0d845f9ba320d01706fd6dd64d1aa3cd4211a4a7d1d3f2c1ef2766d27d5d2cdf8e7f5e3ea309d4f149bb737305df1373a7f5313abe5986f4aa620bec4b0065d48aafac3631de3771f5c4d2f6eec67b09d9c70a3c1969fecdb014cb3c69832b63cc9d6efa378bff0ef95ffacdeb1675bb326e698f022c1a3a2e1c2b0f05e1492a6d2b7552388eca7ee8a2467ef5d4207f65d4e2ae7e33f13eb473954f249d7c20158ae703e1accddd4ea899f026618695ed2949715678a32a153df32c08922fafad68b1895e3b10e143e712940104b3b352369f4fe79bd1f1dbe03ea9909dbcf5862d1f15b3d1557a6191f54c891513cdb3c729bb9ab08c0d4c35a3ed67d517ffe1e2b7a798521aed15ff9822169c0ec860d7b897340bc2ef4c37f7eb73bd7dafef12c4fd4e6f5dd3690305257ae14ed03df5e3327b68467775a90993e613173fa6650ffa2a26e84b3ce79606bf234eda9f4053307f344099e3b10308d3785b8726fd02d8e94c2759bebd05748c3fe7d5fe087dc63608fb77f29708ab167a13f32da251e249a544124ed50c270cfc6986d9d1814273d2f0510d0d2ea335817207db6a4a23ae9b079967b63b25cb3ceea7001b65b879263f5009ac84ab89738a5b8b71fd032beb9f297326f1f5afa630a5198d684514e242f315a4d95fa6802e82799a525bb653b80b4518ec610a5996403b1391");
+        genesis.nBits = 0x2003ffff;
+        genesis.nNonce = uint256S("0x000000000000000000000000000000000000000000000000000000000000001d");
+        genesis.nSolution = ParseHex("00206211d02ae0a9f111f32b83725bca34081ff8640a5782bc4e8d60e306a7128f5d48d37e93851c61fc103065cd85a59943a364e38f1dc1b14242af5b21831864c6938faae7d5f1ef23124f514b592fd63ebde70f771709d587887080aec110a1740594bb747fb9ef143722a94b13394bf8a7a256bb471371aa440fd7ed107c058413639c89268353bb609f97b2c7365def1d2a0316b6f89dd317a4312a07a67e59ab04647fcf00015a0d40a5c78a9cc60b22be495713addb8c945adf2830fda88b517900fafa9976917edd7ea673fb12340279b7733d06eb284a48b0b39f8dda397f4779df2934a4a1cc7095f854e9ae74890f39ff3d9cd4745e4a0269ad941f6f195bbdcb929023364c3a2ce33af6715a218b1282a28e2f8c28075525dba772e4e95d63f5093ffbd1b499b0233427b1e21eabcce4c7b65b1f570b564497e9d7c88b0f4d21b09b2e78e74dd99bf2d902b08a50f1dc718bdb7893bee8c490127abb3a91d944145ab08e19e4259470365d8460135643aa5bf4020f566250782b11fba024b2332c596aed96680ef49d444a870eae5ea3218bc5b65a9e481dd70f3eff81c80b56be8aaa109fb555aef367961ef58338cfff8e5f13efc65daf246fc5ab45016b2cdc761932953b46f31c39d2b292971f77bbfe8461d13598876b6bbeef552495b9529a91956b3262741f6b250c4a3247fb656b07c64349c1cdcea7dddf24f28fb97ec69e76d6779125673e0110db2a61af8f72ca9a4114d93e1eee80831f87eecf001de2fb33c716e7ac68281e897ad6d4b737da42c080d4717eb17ee7eb2ae2e3762c11bebde107f84b79e596b6b97237e576a4b95a3f1758bef2ba0cfbb44da9f4b641ddbaa38aa56d88521aca5b8d382749b25b16cc5979c95b82e0115e0cca1fb3726ae637eddb2d3b14616fbff816afa25cba12a9231fedc300a2bff8e446c68752055209a16cf2d16af5363ebb4411a43c0191cffb2f42a8cb4f6b4b1a96cc190f02025719eaf449dc7ac83aa1e8829cdc909efe6922dd065109e407db885f6923833ce1e74a3511a6da28a20f43eba46a21594de3248a9b726bc5eebe76fb592f1955c6bde7cdb04b1d7666824cee2906d9f757a5a716f54a42f6a3fd59b36e92b44dcd5b325295b5cfbd227ba3f03c4a1765df12827484c2b1b8a02586d8c2048bf651e2d474450f96a5bb7c3ac0760392d8c324112e0b90cf652779b116856e0e71a3e33ed47ef2f41cd445781047e86da04a41df294ba208d76a15827e1cebd3329763ff45a9f512dfc43ada1db7bc1b357f120645cfa68f47992c128786526459466c08b3f54e5a3fdcebcf33b981f5b5d88f32df9e1e444bf970c320356f7f8511ae0b6502f519b3d8c41eea4a3a7ca2a0096df56fb5fa09d774ea3524dd9376b2c4f837e300c3411b07238e532d0f93ad16defd9a42737c814704544ab5742fdd21c84bf3f3f4e76201ba6691f639088f10fa409d91351a338672f9f279dad2701efa253807ba27296d851fb007b38476a9d8f242903ee620092a61d3d34357b5249c84453e370c89f53d33d9800dd0834f3d58943d4f12855077e3e3755eb3b38df73f68ae258616ddc9d385a80d09f9a9a21a42126e7b437a4aacfed26cf53c8d480f0e4b6f3b16f3df322303198649ef4d4f8d779a61c705edb7b17d1fdefab118f60e48ce62376d963ad69af5c1ad225c003f55201132b1a2e15e248cf947019a64d2767d99adafa2b71cc1a70698d2b5dd14f8c548e7ebe0be9c82f9435f06c95cd912abae35dae3935e92486eeb25539d733239773d7a55e07aa5ed29781bd246a48ac961bc1bf907f3f2a516d353ed0cc0b1fe3ede9dea60077ba1745272ecd0ade27581e362a684175071d2e8f39af430");
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x0cdf00b25a93ded11d73ebe1728cf7867f18e1f62aca9554b95e0f3026174e33"));
+        assert(consensus.hashGenesisBlock == uint256S("0x01f4137ae8aced18e017119ec1a5ddd7f29a163e84e5809eb37aa6bd736b86a2"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -219,7 +209,7 @@ public:
         fRequireRPCPassword = true;
         fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
-        fRequireStandard = false;
+        fRequireStandard = true;
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = true;
 
@@ -280,11 +270,11 @@ public:
         nEquihashK = K;
         genesis.nTime = 1296688602;
         genesis.nBits = 0x200f0f0f;
-        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000021");
-        genesis.nSolution = ParseHex("0f2a976db4c4263da10fd5d38eb1790469cf19bdb4bf93450e09a72fdff17a3454326399");
+        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000009");
+        genesis.nSolution = ParseHex("0905111770fb9072e53075375f5d77c379e30bd25270f8778abdca2ee5156f5635b9b391");
         consensus.hashGenesisBlock = genesis.GetHash();
         nDefaultPort = 18444;
-        assert(consensus.hashGenesisBlock == uint256S("0x00a215b4fe36f5d2f829d43e587bf10e89e64f9f48a5b6ce18559089e8fd643d"));
+        assert(consensus.hashGenesisBlock == uint256S("0x0b9d8b1be2041720ab879592c3be0ec7ee79fcb2d1e238f93d3d1afe58d0d867"));
         nPruneAfterHeight = 1000;
 
         vFixedSeeds.clear(); //! Regtest mode doesn't have any fixed seeds.

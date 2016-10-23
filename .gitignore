@@ -6,7 +6,7 @@ src/zcashd
 src/zcash-cli
 src/zcash-gtest
 src/zcash-miner
-src/bitcoin-tx
+src/zcash-tx
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
 
@@ -62,7 +62,6 @@ src/qt/test/moc*.cpp
 *.pyc
 *.o
 *.o-*
-*.patch
 .zcash
 *.a
 *.pb.cc
@@ -122,4 +121,4 @@ qa/pull-tester/test.*/*
 
 /doc/doxygen/
 
-libbitcoinconsensus.pc
+libzcashconsensus.pc

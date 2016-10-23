@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "miner.h"
+#include "pow/tromp/equi_miner.h"
 
 #include "amount.h"
 #include "chainparams.h"
@@ -11,6 +12,7 @@
 #include "consensus/validation.h"
 #include "hash.h"
 #include "main.h"
+#include "metrics.h"
 #include "net.h"
 #include "pow.h"
 #include "primitives/transaction.h"
@@ -436,6 +438,8 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
     if (!ProcessNewBlock(state, NULL, pblock, true, NULL))
         return error("ZcashMiner: ProcessNewBlock, block not accepted");
 
+    minedBlocks.increment();
+
     return true;
 }
 
@@ -452,6 +456,10 @@ void static BitcoinMiner(CWallet *pwallet)
 
     unsigned int n = chainparams.EquihashN();
     unsigned int k = chainparams.EquihashK();
+
+    std::string solver = GetArg("-equihashsolver", "default");
+    assert(solver == "tromp" || solver == "default");
+    LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
 
     std::mutex m_cs;
     bool cancelSolver = false;
@@ -524,8 +532,8 @@ void static BitcoinMiner(CWallet *pwallet)
                                                   pblock->nNonce.size());
 
                 // (x_1, x_2, ...) = A(I, V, n, k)
-                LogPrint("pow", "Running Equihash solver with nNonce = %s\n",
-                         pblock->nNonce.ToString());
+                LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",
+                         solver, pblock->nNonce.ToString());
 
                 std::function<bool(std::vector<unsigned char>)> validBlock =
                         [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
@@ -533,6 +541,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     // Write the solution to the hash and compute the result.
                     LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
+                    solutionTargetChecks.increment();
 
                     if (UintToArith256(pblock->GetHash()) > hashTarget) {
                         return false;
@@ -550,8 +559,11 @@ void static BitcoinMiner(CWallet *pwallet)
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
 
                     // In regression test mode, stop mining after a block is found.
-                    if (chainparams.MineBlocksOnDemand())
+                    if (chainparams.MineBlocksOnDemand()) {
+                        // Increment here because throwing skips the call below
+                        ehSolverRuns.increment();
                         throw boost::thread_interrupted();
+                    }
 
                     return true;
                 };
@@ -559,14 +571,53 @@ void static BitcoinMiner(CWallet *pwallet)
                     std::lock_guard<std::mutex> lock{m_cs};
                     return cancelSolver;
                 };
-                try {
-                    // If we find a valid block, we rebuild
-                    if (EhOptimisedSolve(n, k, curr_state, validBlock, cancelled))
-                        break;
-                } catch (EhSolverCancelledException&) {
-                    LogPrint("pow", "Equihash solver cancelled\n");
-                    std::lock_guard<std::mutex> lock{m_cs};
-                    cancelSolver = false;
+
+                // TODO: factor this out into a function with the same API for each solver.
+                if (solver == "tromp") {
+                    // Create solver and initialize it.
+                    equi eq(1);
+                    eq.setstate(&curr_state);
+
+                    // Intialization done, start algo driver.
+                    eq.digit0(0);
+                    eq.xfull = eq.bfull = eq.hfull = 0;
+                    eq.showbsizes(0);
+                    for (u32 r = 1; r < WK; r++) {
+                        (r&1) ? eq.digitodd(r, 0) : eq.digiteven(r, 0);
+                        eq.xfull = eq.bfull = eq.hfull = 0;
+                        eq.showbsizes(r);
+                    }
+                    eq.digitK(0);
+                    ehSolverRuns.increment();
+
+                    // Convert solution indices to byte array (decompress) and pass it to validBlock method.
+                    for (size_t s = 0; s < eq.nsols; s++) {
+                        LogPrint("pow", "Checking solution %d\n", s+1);
+                        std::vector<eh_index> index_vector(PROOFSIZE);
+                        for (size_t i = 0; i < PROOFSIZE; i++) {
+                            index_vector[i] = eq.sols[s][i];
+                        }
+                        std::vector<unsigned char> sol_char = GetMinimalFromIndices(index_vector, DIGITBITS);
+
+                        if (validBlock(sol_char)) {
+                            // If we find a POW solution, do not try other solutions
+                            // because they become invalid as we created a new block in blockchain.
+                            break;
+                        }
+                    }
+                } else {
+                    try {
+                        // If we find a valid block, we rebuild
+                        bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
+                        ehSolverRuns.increment();
+                        if (found) {
+                            break;
+                        }
+                    } catch (EhSolverCancelledException&) {
+                        LogPrint("pow", "Equihash solver cancelled\n");
+                        std::lock_guard<std::mutex> lock{m_cs};
+                        cancelSolver = false;
+                    }
                 }
 
                 // Check for stop or if block needs to be rebuilt

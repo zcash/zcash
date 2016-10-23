@@ -1,3 +1,9 @@
+zcash (1.0.0-rc2) jessie; urgency=medium
+
+  * 1.0.0-rc2 release.
+
+ -- Zcash Company <team@z.cash>  Sun, 23 Oct 2016 01:51:27 +0100
+
 zcash (1.0.0-rc1) jessie; urgency=medium
 
   * Initial packaging for Debian.

@@ -163,7 +163,7 @@ private:
     IncrementalMerkleTree<Depth, Hash> tree;
     std::vector<Hash> filled;
     boost::optional<IncrementalMerkleTree<Depth, Hash>> cursor;
-    size_t cursor_depth;
+    size_t cursor_depth = 0;
     std::deque<Hash> partial_path() const;
     IncrementalWitness(IncrementalMerkleTree<Depth, Hash> tree) : tree(tree) {}
 };

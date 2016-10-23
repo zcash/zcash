@@ -8,7 +8,7 @@ NO_WALLET ?=
 NO_UPNP ?=
 FALLBACK_DOWNLOAD_PATH ?= https://z.cash/depends-sources
 
-BUILD = $(shell ./config.guess)
+BUILD ?= $(shell ./config.guess)
 HOST ?= $(BUILD)
 PATCHES_PATH = $(BASEDIR)/patches
 BASEDIR = $(CURDIR)

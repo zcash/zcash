@@ -94,6 +94,16 @@ TEST(checktransaction_tests, valid_transaction) {
     EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
 }
 
+TEST(checktransaction_tests, BadVersionTooLow) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.nVersion = 0;
+
+    CTransaction tx(mtx);
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
 TEST(checktransaction_tests, bad_txns_vin_empty) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vjoinsplit.resize(0);

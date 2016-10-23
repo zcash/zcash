@@ -52,10 +52,10 @@ EXTRA_LIBRARIES += libbitcoin_wallet.a
 endif
 
 if BUILD_BITCOIN_LIBS
-lib_LTLIBRARIES = libbitcoinconsensus.la
-LIBBITCOIN_CONSENSUS=libbitcoinconsensus.la
+lib_LTLIBRARIES = libzcashconsensus.la
+LIBZCASH_CONSENSUS=libzcashconsensus.la
 else
-LIBBITCOIN_CONSENSUS=
+LIBZCASH_CONSENSUS=
 endif
 
 bin_PROGRAMS =
@@ -66,7 +66,7 @@ if BUILD_BITCOIND
 endif
 
 if BUILD_BITCOIN_UTILS
-  bin_PROGRAMS += zcash-cli bitcoin-tx
+  bin_PROGRAMS += zcash-cli zcash-tx
 endif
 
 LIBZCASH_H = \
@@ -120,6 +120,7 @@ BITCOIN_CORE_H = \
   main.h \
   memusage.h \
   merkleblock.h \
+  metrics.h \
   miner.h \
   mruset.h \
   net.h \
@@ -205,6 +206,7 @@ libbitcoin_server_a_SOURCES = \
   leveldbwrapper.cpp \
   main.cpp \
   merkleblock.cpp \
+  metrics.cpp \
   miner.cpp \
   net.cpp \
   noui.cpp \
@@ -243,8 +245,13 @@ libbitcoin_wallet_a_SOURCES = \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
+EQUIHASH_TROMP_SOURCES = \
+  pow/tromp/equi_miner.h \
+  pow/tromp/equi.h \
+  pow/tromp/osx_barrier.h
+
 # crypto primitives library
-crypto_libbitcoin_crypto_a_CPPFLAGS = $(BITCOIN_CONFIG_INCLUDES)
+crypto_libbitcoin_crypto_a_CPPFLAGS = $(BITCOIN_CONFIG_INCLUDES) -DEQUIHASH_TROMP_ATOMIC
 crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/common.h \
   crypto/equihash.cpp \
@@ -261,7 +268,8 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha256.cpp \
   crypto/sha256.h \
   crypto/sha512.cpp \
-  crypto/sha512.h
+  crypto/sha512.h \
+  ${EQUIHASH_TROMP_SOURCES}
 
 # univalue JSON library
 univalue_libbitcoin_univalue_a_SOURCES = \
@@ -393,17 +401,17 @@ zcash_cli_LDADD = \
   $(LIBZCASH_LIBS)
 #
 
-# bitcoin-tx binary #
-bitcoin_tx_SOURCES = bitcoin-tx.cpp
-bitcoin_tx_CPPFLAGS = $(BITCOIN_INCLUDES)
-bitcoin_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+# zcash-tx binary #
+zcash_tx_SOURCES = bitcoin-tx.cpp
+zcash_tx_CPPFLAGS = $(BITCOIN_INCLUDES)
+zcash_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
-bitcoin_tx_SOURCES += bitcoin-tx-res.rc
+zcash_tx_SOURCES += bitcoin-tx-res.rc
 endif
 
-# FIXME: Is libzcash needed for bitcoin_tx?
-bitcoin_tx_LDADD = \
+# FIXME: Is libzcash needed for zcash_tx?
+zcash_tx_LDADD = \
   $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
@@ -412,7 +420,7 @@ bitcoin_tx_LDADD = \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZCASH_LIBS)
 
-bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
+zcash_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 #
 
 # zcash protocol primitives #
@@ -440,10 +448,10 @@ libzcash_a_LDFLAGS = $(HARDENED_LDFLAGS)
 
 libzcash_a_CPPFLAGS += -DMONTGOMERY_OUTPUT
 
-# bitcoinconsensus library #
+# zcashconsensus library #
 if BUILD_BITCOIN_LIBS
-include_HEADERS = script/bitcoinconsensus.h
-libbitcoinconsensus_la_SOURCES = \
+include_HEADERS = script/zcashconsensus.h
+libzcashconsensus_la_SOURCES = \
   crypto/equihash.cpp \
   crypto/hmac_sha512.cpp \
   crypto/ripemd160.cpp \
@@ -455,19 +463,19 @@ libbitcoinconsensus_la_SOURCES = \
   hash.cpp \
   primitives/transaction.cpp \
   pubkey.cpp \
-  script/bitcoinconsensus.cpp \
+  script/zcashconsensus.cpp \
   script/interpreter.cpp \
   script/script.cpp \
   uint256.cpp \
   utilstrencodings.cpp
 
 if GLIBC_BACK_COMPAT
-  libbitcoinconsensus_la_SOURCES += compat/glibc_compat.cpp
+  libzcashconsensus_la_SOURCES += compat/glibc_compat.cpp
 endif
 
-libbitcoinconsensus_la_LDFLAGS = -no-undefined $(RELDFLAGS)
-libbitcoinconsensus_la_LIBADD = $(CRYPTO_LIBS)
-libbitcoinconsensus_la_CPPFLAGS = $(CRYPTO_CFLAGS) -I$(builddir)/obj -DBUILD_BITCOIN_INTERNAL
+libzcashconsensus_la_LDFLAGS = -no-undefined $(RELDFLAGS)
+libzcashconsensus_la_LIBADD = $(CRYPTO_LIBS)
+libzcashconsensus_la_CPPFLAGS = $(CRYPTO_CFLAGS) -I$(builddir)/obj -DBUILD_BITCOIN_INTERNAL
 
 endif
 #

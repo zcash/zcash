@@ -11,6 +11,7 @@
 #include "crypto/equihash.h"
 #include "init.h"
 #include "main.h"
+#include "metrics.h"
 #include "miner.h"
 #include "net.h"
 #include "pow.h"
@@ -191,15 +192,20 @@ Value generate(const Array& params, bool fHelp)
             std::function<bool(std::vector<unsigned char>)> validBlock =
                     [&pblock](std::vector<unsigned char> soln) {
                 pblock->nSolution = soln;
+                solutionTargetChecks.increment();
                 return CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus());
             };
-            if (EhBasicSolveUncancellable(n, k, curr_state, validBlock))
+            bool found = EhBasicSolveUncancellable(n, k, curr_state, validBlock);
+            ehSolverRuns.increment();
+            if (found) {
                 goto endloop;
+            }
         }
 endloop:
         CValidationState state;
         if (!ProcessNewBlock(state, NULL, pblock, true, NULL))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
+        minedBlocks.increment();
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
     }
@@ -389,10 +395,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
             "      }\n"
             "      ,...\n"
             "  ],\n"
-            "  \"coinbaseaux\" : {                  (json object) data that should be included in the coinbase's scriptSig content\n"
-            "      \"flags\" : \"flags\"            (string) \n"
-            "  },\n"
-            "  \"coinbasevalue\" : n,               (numeric) maximum allowable input to coinbase transaction, including the generation award and transaction fees (in Satoshis)\n"
+//            "  \"coinbaseaux\" : {                  (json object) data that should be included in the coinbase's scriptSig content\n"
+//            "      \"flags\" : \"flags\"            (string) \n"
+//            "  },\n"
+//            "  \"coinbasevalue\" : n,               (numeric) maximum allowable input to coinbase transaction, including the generation award and transaction fees (in Satoshis)\n"
             "  \"coinbasetxn\" : { ... },           (json object) information for coinbase transaction\n"
             "  \"target\" : \"xxxx\",               (string) The hash target\n"
             "  \"mintime\" : xxx,                   (numeric) The minimum timestamp appropriate for next block time in seconds since epoch (Jan 1 1970 GMT)\n"
@@ -415,8 +421,15 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     LOCK(cs_main);
 
+    // Wallet is required because we support coinbasetxn
+    if (pwalletMain == NULL) {
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (disabled)");
+    }
+
     std::string strMode = "template";
     Value lpval = Value::null;
+    // TODO: Re-enable coinbasevalue once a specification has been written
+    bool coinbasetxn = true;
     if (params.size() > 0)
     {
         const Object& oparam = params[0].get_obj();
@@ -529,7 +542,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
         // Clear pindexPrev so future calls make a new block, despite any failures from here on
         pindexPrev = NULL;
 
-        // Store the pindexBest used before CreateNewBlock, to avoid races
+        // Store the pindexBest used before CreateNewBlockWithKey, to avoid races
         nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
         CBlockIndex* pindexPrevNew = chainActive.Tip();
         nStart = GetTime();
@@ -540,12 +553,12 @@ Value getblocktemplate(const Array& params, bool fHelp)
             delete pblocktemplate;
             pblocktemplate = NULL;
         }
-        CScript scriptDummy = CScript() << OP_TRUE;
-        pblocktemplate = CreateNewBlock(scriptDummy);
+        CReserveKey reservekey(pwalletMain);
+        pblocktemplate = CreateNewBlockWithKey(reservekey);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 
-        // Need to update only after we know CreateNewBlock succeeded
+        // Need to update only after we know CreateNewBlockWithKey succeeded
         pindexPrev = pindexPrevNew;
     }
     CBlock* pblock = &pblocktemplate->block; // pointer for convenience
@@ -556,6 +569,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     static const Array aCaps = boost::assign::list_of("proposal");
 
+    Value txCoinbase = Value::null;
     Array transactions;
     map<uint256, int64_t> setTxIndex;
     int i = 0;
@@ -564,7 +578,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
 
-        if (tx.IsCoinBase())
+        if (tx.IsCoinBase() && !coinbasetxn)
             continue;
 
         Object entry;
@@ -585,7 +599,17 @@ Value getblocktemplate(const Array& params, bool fHelp)
         entry.push_back(Pair("fee", pblocktemplate->vTxFees[index_in_template]));
         entry.push_back(Pair("sigops", pblocktemplate->vTxSigOps[index_in_template]));
 
-        transactions.push_back(entry);
+        if (tx.IsCoinBase()) {
+            // Show founders' reward if it is required
+            if (pblock->vtx[0].vout.size() > 1) {
+                // Correct this if GetBlockTemplate changes the order
+                entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
+            }
+            entry.push_back(Pair("required", true));
+            txCoinbase = entry;
+        } else {
+            transactions.push_back(entry);
+        }
     }
 
     Object aux;
@@ -606,8 +630,13 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("version", pblock->nVersion));
     result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
     result.push_back(Pair("transactions", transactions));
-    result.push_back(Pair("coinbaseaux", aux));
-    result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
+    if (coinbasetxn) {
+        assert(txCoinbase.type() == obj_type);
+        result.push_back(Pair("coinbasetxn", txCoinbase));
+    } else {
+        result.push_back(Pair("coinbaseaux", aux));
+        result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
+    }
     result.push_back(Pair("longpollid", chainActive.Tip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast)));
     result.push_back(Pair("target", hashTarget.GetHex()));
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
