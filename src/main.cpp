@@ -1084,6 +1084,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         if (pool.mapNextTx.count(outpoint))
         {
             // Disable replacement feature for now
+            fprintf(stderr,"Disable replacement feature for now\n");
             return false;
         }
     }
@@ -1091,6 +1092,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
             if (pool.mapNullifiers.count(nf))
             {
+                fprintf(stderr,"pool.mapNullifiers.count\n");
                 return false;
             }
         }
@@ -1109,7 +1111,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
         // do we already have it?
         if (view.HaveCoins(hash))
+        {
+            fprintf(stderr,"view.HaveCoins(hash) error\n");
             return false;
+        }
 
         // do all inputs exist?
         // Note that this does not check for the presence of actual outputs (see the next check for that),
@@ -1118,6 +1123,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             if (!view.HaveCoins(txin.prevout.hash)) {
                 if (pfMissingInputs)
                     *pfMissingInputs = true;
+                fprintf(stderr,"do all inputs exist?\n");
                 return false;
             }
         }
