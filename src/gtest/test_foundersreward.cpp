@@ -14,7 +14,7 @@
 #include <boost/filesystem.hpp>
 #include "util.h"
 
-#ifndef disable_founders
+//#ifndef disable_founders
 // To run tests:
 // ./zcash-gtest --gtest_filter="founders_reward_test.*"
 
@@ -179,4 +179,4 @@ TEST(founders_reward_test, per_address_reward_testnet) {
     SelectParams(CBaseChainParams::TESTNET);
     verifyNumberOfRewards();
 }
-#endif
+//#endif
