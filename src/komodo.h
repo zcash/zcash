@@ -604,20 +604,29 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
         }
         if ( opretlen >= 32*2+4 )
         {
-            len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
-            len += iguana_rwnum(0,&scriptbuf[len],4,(uint8_t *)notarizedheightp);
-            len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&btctxid);
-            //for (k=0; k<scriptlen; k++)
-            //    printf("%02x",scriptbuf[k]);
-            //printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
-            printf("ht.%d NOTARIZED.%d KMD.%s BTCTXID.%s\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),btctxid.ToString().c_str());
-            if ( *notarizedheightp > NOTARIZED_HEIGHT )
+            if ( strcmp("KMD",(char *)&scriptbuf[len+32*2+4]) == 0 )
             {
-                static uint256 zero;
-                NOTARIZED_HEIGHT = *notarizedheightp;
-                NOTARIZED_HASH = kmdtxid;
-                NOTARIZED_BTCTXID = btctxid;
-                komodo_stateupdate(height,0,0,0,zero,0,0);
+                len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
+                len += iguana_rwnum(0,&scriptbuf[len],4,(uint8_t *)notarizedheightp);
+                len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&btctxid);
+                //for (k=0; k<scriptlen; k++)
+                //    printf("%02x",scriptbuf[k]);
+                //printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
+                printf("ht.%d NOTARIZED.%d KMD.%s BTCTXID.%s (%s)\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),btctxid.ToString().c_str(),(char *)&scriptbuf[len+32*2+4]);
+                if ( *notarizedheightp > NOTARIZED_HEIGHT )
+                {
+                    static uint256 zero;
+                    NOTARIZED_HEIGHT = *notarizedheightp;
+                    NOTARIZED_HASH = kmdtxid;
+                    NOTARIZED_BTCTXID = btctxid;
+                    komodo_stateupdate(height,0,0,0,zero,0,0);
+                }
+            }
+            else if ( i == 0 && scriptbuf[len] == 'P' )
+            {
+                double KMDBTC,BTCUSD,CNYUSD; uint32_t numprices,timestamp,pvals[128];
+                numprices = dpow_readprices(&scriptbuf[++len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
+                printf("Found OP_RETURN prices\n");
             }
         }
     }
