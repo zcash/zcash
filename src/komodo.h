@@ -68,7 +68,7 @@ uint32_t MINDENOMS[] = { 1000, 1000, 100000, 1000, 1000, 1000, 1000, 1000, // ma
 
 double PAX_val(uint32_t pval,int32_t baseid)
 {
-    printf("PAX_val baseid.%d pval.%u\n",baseid,pval);
+    //printf("PAX_val baseid.%d pval.%u\n",baseid,pval);
     if ( baseid >= 0 && baseid < MAX_CURRENCIES )
         return(((double)pval / 1000000000.) / MINDENOMS[baseid]);
     return(0.);
@@ -488,15 +488,17 @@ int32_t komodo_baseid(char *origbase)
     for (i=0; origbase[i]!=0&&i<sizeof(base); i++)
         base[i] = toupper((int32_t)(origbase[i] & 0xff));
     base[i] = 0;
+    if ( strcmp(base,"KMD") == 0 )
+        return(MAX_CURRENCIES);
     for (i=0; i<MAX_CURRENCIES; i++)
         if ( strcmp(CURRENCIES[i],base) == 0 )
             return(i);
     return(-1);
 }
 
-uint64_t komodo_paxprice(int32_t height,char *base,char *rel)
+uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t volume)
 {
-    int32_t baseid,relid,i,ht; uint32_t pvalb,pvalr,*ptr; double baseval,relval;
+    int32_t baseid,relid,i,ht; uint32_t usdval,kmdbtc,btcusd,pvalb,pvalr,*ptr; double usdval,baseval,relval,KMDBTC,BTCUSD;
     if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
     {
         for (i=NUM_PRICES-1; i>=0; i--)
@@ -504,12 +506,29 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel)
             ptr = &PVALS[36 * i];
             if ( *ptr < height )
             {
-                if ( (pvalb= ptr[1 + baseid]) != 0 && (pvalr= ptr[1 + relid]) != 0 )
+                if ( (pvalb= ptr[1 + baseid]) != 0 )
                 {
                     baseval = PAX_val(pvalb,baseid);
-                    relval = PAX_val(pvalr,relid);
-                    printf("ht.%d [%d] base.(%u %f) rel.(%u %f) -> %llu\n",height,*ptr,pvalb,baseval,pvalr,relval,(long long)(COIN * (baseval / relval)));
-                    return(COIN * (baseval / relval));
+                    if ( relid == MAX_CURRENCIES )
+                    {
+                        kmdbtc = ptr[1 + MAX_CURRENCIES];
+                        btcusd = ptr[1 + MAX_CURRENCIES + 1];
+                        if ( ptr[1 + USD] != 0 && kmdbtc != 0 && btcusd != 0 )
+                        {
+                            usdval = PAX_val(ptr[1 + USD],USD);
+                            KMDBTC = ((double)kmdbtc / (1000000000. * 1000.));
+                            BTCUSD = ((double)btcusd / (1000000000. / 1000.));
+                            KMDUSD = (KMDBTC * BTCUSD);
+                            printf("base -> USD %f, BTC %f KMDUSD %f\n",baseval/usdval,BTCUSD,KMDUSD);
+                            return(volume * (baseval / usdval) / KMDUSD);
+                        }
+                    }
+                    else if ( (pvalr= ptr[1 + relid]) != 0 )
+                    {
+                        relval = PAX_val(pvalr,relid);
+                        printf("ht.%d [%d] base.(%u %f) rel.(%u %f) -> %llu\n",height,*ptr,pvalb,baseval,pvalr,relval,(long long)(COIN * (baseval / relval)));
+                        return(volume * (baseval / relval));
+                    }
                 }
                 return(0);
             }
