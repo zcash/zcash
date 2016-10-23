@@ -392,7 +392,7 @@ Value paxprice(const Array& params, bool fHelp)
     Object ret; uint64_t pricetoshis;
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
-    int height = atoi(params[2].get_str().c_str());
+    int32_t height = atoi(params[2].get_str().c_str());
     pricetoshis = komodo_paxprice(height,(char *)base.c_str(),(char *)rel.c_str());
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
