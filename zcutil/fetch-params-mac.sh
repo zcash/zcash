@@ -25,7 +25,7 @@ function fetch_params {
             --retry-connrefused --waitretry=3 --timeout=30 \
             "$url"
             
-        sha256sum --check <<EOF
+        shasum -a 256 --check <<EOF
 $expectedhash  $dlname
 EOF
 
