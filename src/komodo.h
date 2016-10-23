@@ -813,7 +813,7 @@ int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize)
                 {
                     double KMDBTC,BTCUSD,CNYUSD; uint32_t pvals[128];
                     dpow_readprices(&data[len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
-                    if ( lastcrc != crc32 )
+                    if ( 0 && lastcrc != crc32 )
                     {
                         for (i=0; i<32; i++)
                             printf("%u ",pvals[i]);
@@ -822,7 +822,7 @@ int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize)
                     if ( timestamp > time(NULL)-60 )
                     {
                         n = komodo_opreturnscript(opret,'P',data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
-                        if ( lastcrc != crc32 )
+                        if ( 0 && lastcrc != crc32 )
                         {
                             for (i=0; i<n; i++)
                                 printf("%02x",opret[i]);
