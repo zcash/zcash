@@ -1046,25 +1046,31 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         *pfMissingInputs = false;
 fprintf(stderr,"AcceptToMemoryPool\n");
     if (!CheckTransaction(tx, state))
+    {
+        fprintf(stderr,"AcceptToMemoryPool CheckTransaction failed\n");
         return error("AcceptToMemoryPool: CheckTransaction failed");
-
+    }
     // Coinbase is only valid in a block, not as a loose transaction
     if (tx.IsCoinBase())
-        return state.DoS(100, error("AcceptToMemoryPool: coinbase as individual tx"),
-                         REJECT_INVALID, "coinbase");
-
+    {
+        fprintf(stderr,"AcceptToMemoryPool coinbase as individual tx\n");
+        return state.DoS(100, error("AcceptToMemoryPool: coinbase as individual tx"),REJECT_INVALID, "coinbase");
+    }
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     string reason;
     if (Params().RequireStandard() && !IsStandardTx(tx, reason))
-        return state.DoS(0,error("AcceptToMemoryPool: nonstandard transaction: %s", reason),
-                         REJECT_NONSTANDARD, reason);
-
+    {
+        fprintf(stderr,"AcceptToMemoryPool nonstandard transaction: %s\n",reason.c_str());
+        return state.DoS(0,error("AcceptToMemoryPool: nonstandard transaction: %s", reason),REJECT_NONSTANDARD, reason);
+    }
     // Only accept nLockTime-using transactions that can be mined in the next
     // block; we don't want our mempool filled up with transactions that can't
     // be mined yet.
     if (!CheckFinalTx(tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
+    {
+        fprintf(stderr,"AcceptToMemoryPool non-final\n");
         return state.DoS(0, false, REJECT_NONSTANDARD, "non-final");
-
+    }
 fprintf(stderr,"AcceptToMemoryPool B\n");
    // is it already in the memory pool?
     uint256 hash = tx.GetHash();
