@@ -207,9 +207,9 @@ int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,doubl
     for (i=0; i<n-3; i++)
     {
         len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&pvals[i]);
-        if ( lastcrc != crc32 )
-            printf("%u ",pvals[i]);
+        printf("%u ",pvals[i]);
     }
+    printf("OP_RETURN prices\n");
     return(len);
 }
 
