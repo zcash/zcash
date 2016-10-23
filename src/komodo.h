@@ -193,6 +193,26 @@ int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *
     return(len);
 }
 
+int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,double *BTCUSDp,double *CNYUSDp,uint32_t *pvals)
+{
+    uint32_t kmdbtc,btcusd,cnyusd; int32_t i,n,len = 0;
+    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&timestamp);
+    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&n);
+    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&kmdbtc); // /= 1000
+    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&btcusd); // *= 1000
+    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&cnyusd);
+    *KMDBTCp = ((double)kmdbtc / (1000000000. * 1000.));
+    *BTCUSDp = ((double)btcusd / (1000000000. / 1000.));
+    *CNYUSDp = ((double)cnyusd / 1000000000.);
+    for (i=0; i<n-3; i++)
+    {
+        len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&pvals[i]);
+        if ( lastcrc != crc32 )
+            printf("%u ",pvals[i]);
+    }
+    return(len);
+}
+
 int32_t _unhex(char c)
 {
     if ( c >= '0' && c <= '9' )
@@ -763,7 +783,7 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
 int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize)
 {
     static uint32_t lastcrc;
-    FILE *fp; char fname[512]; uint32_t crc32,check; int32_t i,n,retval,fsize,len=0; uint8_t data[8192];
+    FILE *fp; char fname[512]; uint32_t crc32,check,timestamp; int32_t i,n,retval,fsize,len=0; uint8_t data[8192];
 #ifdef WIN32
     sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"komodofeed");
 #else
@@ -778,27 +798,17 @@ int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize)
         {
             if ( (retval= (int32_t)fread(data,1,fsize,fp)) == fsize )
             {
-                uint32_t timestamp,kmdbtc,btcusd,cnyusd,pvals[32]; double KMDBTC,BTCUSD,CNYUSD;
                 len = iguana_rwnum(0,data,sizeof(crc32),(void *)&crc32);
                 check = calc_crc32(0,data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
                 if ( check == crc32 )
                 {
-                    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&timestamp);
-                    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&n);
-                    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&kmdbtc); // /= 1000
-                    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&btcusd); // *= 1000
-                    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&cnyusd);
-                    KMDBTC = ((double)kmdbtc / (1000000000. * 1000.));
-                    BTCUSD = ((double)btcusd / (1000000000. / 1000.));
-                    CNYUSD = ((double)cnyusd / 1000000000.);
-                    for (i=0; i<n-3; i++)
-                    {
-                        len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&pvals[i]);
-                        if ( lastcrc != crc32 )
-                            printf("%u ",pvals[i]);
-                    }
+                    dpow_readprices(&data[len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
                     if ( lastcrc != crc32 )
+                    {
+                        for (i=0; i<32; i++)
+                            printf("%u ",pvals[i]);
                         printf("t%u n.%d KMD %f BTC %f CNY %f (%f)\n",timestamp,n,KMDBTC,BTCUSD,CNYUSD,CNYUSD!=0?1./CNYUSD:0);
+                    }
                     if ( timestamp > time(NULL)-60 )
                     {
                         n = komodo_opreturnscript(opret,'P',data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
