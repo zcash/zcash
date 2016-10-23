@@ -48,7 +48,8 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
 
 #define MAX_CURRENCIES 32
 char CURRENCIES[][8] = { "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "NZD", // major currencies
-    "CNY", "RUB", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK" };
+    "CNY", "RUB", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK",
+   "KMD" };
 
 uint32_t MINDENOMS[] = { 1000, 1000, 100000, 1000, 1000, 1000, 1000, 1000, // major currencies
     10000, 100000, 10000, 1000, 100000, 10000, 1000, 10000, 1000, 10000, 10000, 10000, 10000, 100000, 1000, 1000000, 1000, 10000, 1000, 1000, 10000, 1000, 10000000, 10000, // end of currencies
@@ -488,17 +489,16 @@ int32_t komodo_baseid(char *origbase)
     for (i=0; origbase[i]!=0&&i<sizeof(base); i++)
         base[i] = toupper((int32_t)(origbase[i] & 0xff));
     base[i] = 0;
-    if ( strcmp(base,"KMD") == 0 )
-        return(MAX_CURRENCIES);
-    for (i=0; i<MAX_CURRENCIES; i++)
+    for (i=0; i<=MAX_CURRENCIES; i++)
         if ( strcmp(CURRENCIES[i],base) == 0 )
             return(i);
+    printf("illegal base.(%s) %s\n",origbase,base);
     return(-1);
 }
 
 uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t volume)
 {
-    int32_t baseid,relid,i,ht; uint32_t usdval,kmdbtc,btcusd,pvalb,pvalr,*ptr; double usdval,baseval,relval,KMDBTC,BTCUSD;
+    int32_t baseid=-1,relid=-1,i,ht; uint32_t usdval,kmdbtc,btcusd,pvalb,pvalr,*ptr; double usdval,baseval,relval,KMDBTC,BTCUSD;
     if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
     {
         for (i=NUM_PRICES-1; i>=0; i--)
@@ -533,7 +533,7 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t volume)
                 return(0);
             }
         }
-    } else printf("paxprice invalid base.%s rel.%s\n",base,rel);
+    } else printf("paxprice invalid base.%s %d, rel.%s %d\n",base,baseid,rel,relid);
     return(0);
 }
 
@@ -953,7 +953,7 @@ int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize)
                             printf("%u ",pvals[i]);
                         printf("t%u n.%d KMD %f BTC %f CNY %f (%f)\n",timestamp,n,KMDBTC,BTCUSD,CNYUSD,CNYUSD!=0?1./CNYUSD:0);
                     }
-                    if ( timestamp > time(NULL)-60 )
+                    if ( timestamp > time(NULL)-600 )
                     {
                         n = komodo_opreturnscript(opret,'P',data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
                         if ( 0 && lastcrc != crc32 )
