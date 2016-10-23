@@ -736,10 +736,11 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     }
 }
 
-int32_t komodo_opreturnscript(uint8_t *script,uint8_t *opret,int32_t opretlen)
+int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen)
 {
     int32_t offset = 0;
     script[offset++] = 0x6a;
+    opretlen++;
     if ( opretlen >= 0x4c )
     {
         if ( opretlen > 0xff )
@@ -754,6 +755,7 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t *opret,int32_t opretlen)
             script[offset++] = opretlen;
         }
     } else script[offset++] = opretlen;
+    script[offset++] = type;
     memcpy(&script[offset],opret,opretlen);
     return(opretlen + offset);
 }
@@ -796,7 +798,7 @@ int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize)
                     printf("t%u n.%d KMD %f BTC %f CNY %f (%f)\n",timestamp,n,KMDBTC,BTCUSD,CNYUSD,CNYUSD!=0?1./CNYUSD:0);
                     if ( timestamp > time(NULL)-60 )
                     {
-                        n = komodo_opreturnscript(opret,data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
+                        n = komodo_opreturnscript(opret,'P',data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
                         for (i=0; i<n; i++)
                             printf("%02x",opret[i]);
                         printf(" coinbase opret[%d] crc32.%u:%u\n",n,crc32,check);
