@@ -403,7 +403,7 @@ Value paxprice(const Array& params, bool fHelp)
     ret.push_back(Pair("height", height));
     if ( relvolume != 0 )
     {
-        ret.push_back(Pair("price",((double)basevolume / (double)relvolume));
+        ret.push_back(Pair("price",((double)basevolume / (double)relvolume)));
         ret.push_back(Pair("relvolume", ValueFromAmount(relvolume)));
     }
     return ret;
