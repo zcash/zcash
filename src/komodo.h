@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <ctype.h>
 #include "uthash.h"
 
 #include "komodo_interest.h"
@@ -481,9 +482,12 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
     }
 }
 
-int32_t komodo_baseid(char *base)
+int32_t komodo_baseid(char *origbase)
 {
-    int32_t i;
+    int32_t i; char base[64];
+    for (i=0; origbase[i]!=0&&i<sizeof(base); i++)
+        base[i] = toupper((int32_t)(origbase[i] & 0xff));
+    base[i] = 0;
     for (i=0; i<MAX_CURRENCIES; i++)
         if ( strcmp(CURRENCIES[i],base) == 0 )
             return(i);
