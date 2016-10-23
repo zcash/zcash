@@ -502,9 +502,9 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel)
         for (i=NUM_PRICES-1; i>=0; i--)
         {
             ptr = &PVALS[36 * i];
-            if ( *ptr <= height )
+            if ( *ptr < height )
             {
-                if ( (pvalb= ptr[baseid]) != 0 && (pvalr= ptr[relid]) != 0 )
+                if ( (pvalb= ptr[1 + baseid]) != 0 && (pvalr= ptr[1 + relid]) != 0 )
                 {
                     baseval = PAX_val(pvalb,baseid);
                     relval = PAX_val(pvalr,relid);
