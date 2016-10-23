@@ -496,9 +496,10 @@ int32_t komodo_baseid(char *origbase)
     return(-1);
 }
 
+#define USD 0
 uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t volume)
 {
-    int32_t baseid=-1,relid=-1,i,ht; uint32_t usdval,kmdbtc,btcusd,pvalb,pvalr,*ptr; double usdval,baseval,relval,KMDBTC,BTCUSD;
+    int32_t baseid=-1,relid=-1,i,ht; uint32_t kmdbtc,btcusd,pvalb,pvalr,*ptr; double usdval,baseval,relval,KMDBTC,BTCUSD,KMDUSD;
     if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
     {
         for (i=NUM_PRICES-1; i>=0; i--)
