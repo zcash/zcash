@@ -19,6 +19,11 @@ AtomicCounter ehSolverRuns;
 AtomicCounter solutionTargetChecks;
 AtomicCounter minedBlocks;
 
+// Standalone miner counters
+AtomicCounter acceptedSolutions;
+AtomicCounter rejectedSolutions;
+AtomicCounter failedSolutions;
+
 boost::synchronized_value<std::list<std::string>> messageBox;
 boost::synchronized_value<std::string> initMessage;
 bool loaded = false;
@@ -118,6 +123,16 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
         std::cout << "- " << strprintf(_("You have completed %d Equihash solver runs."), ehSolverRuns.get()) << std::endl;
         lines += 2;
 
+        int accepted = acceptedSolutions.get();
+        int rejected = rejectedSolutions.get();
+        int failed   = failedSolutions.get();
+        int total = accepted + rejected + failed;
+        if (total > 0) {
+            std::cout << "- " << strprintf(_("You have submitted %d solutions!"), total) << std::endl;
+            std::cout << "  " << strprintf(_("Accepted: %d, Rejected: %d, Failed: %d"), accepted, rejected, failed) << std::endl;
+            lines += 2;
+        }
+
         int mined = minedBlocks.get();
         if (mined > 0) {
             std::cout << "- " << strprintf(_("You have mined %d blocks!"), mined) << std::endl;
@@ -165,7 +180,7 @@ int printInitMessage()
     return 2;
 }
 
-void ThreadShowMetricsScreen()
+void ThreadShowMetricsScreen(bool standaloneMiner)
 {
     // Make this thread recognisable as the metrics screen thread
     RenameThread("zcash-metrics-screen");
@@ -178,12 +193,17 @@ void ThreadShowMetricsScreen()
     std::cout << std::endl;
 
     // Thank you text
-    std::cout << _("Thank you for running a Zcash node!") << std::endl;
-    std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
+    if (standaloneMiner) {
+        std::cout << _("Thank you for running a Zcash miner!") << std::endl;
+        std::cout << _("You're helping to strengthen the network :)") << std::endl;
+    } else {
+        std::cout << _("Thank you for running a Zcash node!") << std::endl;
+        std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
+    }
     std::cout << std::endl;
 
     // Miner status
-    bool mining = GetBoolArg("-gen", false);
+    bool mining = standaloneMiner || GetBoolArg("-gen", false);
     printMiningStatus(mining);
 
     // Count uptime

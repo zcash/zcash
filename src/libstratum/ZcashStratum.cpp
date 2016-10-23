@@ -408,12 +408,15 @@ void ZcashMiner::submitSolution(const EquihashSolution& solution)
 
 void ZcashMiner::acceptedSolution(bool stale)
 {
+    acceptedSolutions.increment();
 }
 
 void ZcashMiner::rejectedSolution(bool stale)
 {
+    rejectedSolutions.increment();
 }
 
 void ZcashMiner::failedSolution()
 {
+    failedSolutions.increment();
 }

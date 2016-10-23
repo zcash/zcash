@@ -2,15 +2,18 @@
 #include "chainparams.h"
 #include "crypto/equihash.h"
 #include "libstratum/StratumClient.h"
+#include "metrics.h"
 #include "primitives/block.h"
 #include "serialize.h"
 #include "streams.h"
+#include "ui_interface.h"
 #include "util.h"
 #include "utiltime.h"
 #include "version.h"
 
 #include "sodium.h"
 
+#include <boost/thread.hpp>
 #include <csignal>
 #include <iostream>
 
@@ -32,6 +35,9 @@ static uint64_t rdtsc(void) {
 #endif
 #endif
 }
+
+
+CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
 
 
 std::string HelpMessageMiner()
@@ -223,6 +229,14 @@ int main(int argc, char* argv[])
             return false;
         }
 
+        boost::thread_group threadGroup;
+
+        if (GetBoolArg("-showmetrics", true) && !fPrintToConsole) {
+            // Start the persistent metrics interface
+            ConnectMetricsScreen();
+            threadGroup.create_thread(boost::bind(&ThreadShowMetricsScreen, true));
+        }
+
         ZcashMiner miner(GetArg("-genproclimit", 1));
         ZcashStratumClient sc {
             &miner, host, port,
@@ -238,9 +252,14 @@ int main(int argc, char* argv[])
         scSig = &sc;
         signal(SIGINT, stratum_sigint_handler);
 
+        uiInterface.InitMessage(_("Done loading"));
+
         while(sc.isRunning()) {
             MilliSleep(1000);
         }
+
+        threadGroup.interrupt_all();
+        threadGroup.join_all();
     } else {
         std::cout << "Running the test miner" << std::endl;
         test_mine(

@@ -28,8 +28,13 @@ extern AtomicCounter ehSolverRuns;
 extern AtomicCounter solutionTargetChecks;
 extern AtomicCounter minedBlocks;
 
+// Standalone miner counters
+extern AtomicCounter acceptedSolutions;
+extern AtomicCounter rejectedSolutions;
+extern AtomicCounter failedSolutions;
+
 void ConnectMetricsScreen();
-void ThreadShowMetricsScreen();
+void ThreadShowMetricsScreen(bool standaloneMiner);
 
 /**
  * Heart image: https://commons.wikimedia.org/wiki/File:Heart_coraz%C3%B3n.svg
