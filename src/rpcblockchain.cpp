@@ -389,7 +389,7 @@ Value paxprice(const Array& params, bool fHelp)
     if ( fHelp || params.size() < 3 || params.size() > 4 )
         throw runtime_error("paxprice \"base\" \"rel\" height\n");
     LOCK(cs_main);
-    Object ret; uint64_t pricetoshis,basevolume;
+    Object ret; uint64_t pricetoshis,basevolume,relvolume;
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
     int32_t height = atoi(params[2].get_str().c_str());
