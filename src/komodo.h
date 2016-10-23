@@ -802,7 +802,7 @@ int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize)
                 check = calc_crc32(0,data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
                 if ( check == crc32 )
                 {
-                    double KMDBTC,BTCUSD,CNYUSD;
+                    double KMDBTC,BTCUSD,CNYUSD; uint32_t pvals[128];
                     dpow_readprices(&data[len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
                     if ( lastcrc != crc32 )
                     {
