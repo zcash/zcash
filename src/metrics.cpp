@@ -192,16 +192,22 @@ void ThreadShowMetricsScreen()
     while (true) {
         // Number of lines that are always displayed
         int lines = 1;
+        int cols = 80;
 
         // Get current window size
-        struct winsize w;
-        ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+        if (isatty(STDOUT_FILENO)) {
+          struct winsize w;
+          ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+          if (w.ws_col) {
+            cols = w.ws_col;
+          }
+        }
 
         // Erase below current position
         std::cout << "\e[J";
 
-        lines += printMetrics(w.ws_col, nStart, mining);
-        lines += printMessageBox(w.ws_col);
+        lines += printMetrics(cols, nStart, mining);
+        lines += printMessageBox(cols);
         lines += printInitMessage();
 
         // Explain how to exit
