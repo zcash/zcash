@@ -335,12 +335,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         //txNew.nLockTime = (uint32_t)time(NULL) - 60;
         txNew.vin.resize(1);
         txNew.vin[0].prevout.SetNull();
-        int32_t opretlen; uint8_t opret[8192];
+        int32_t i,opretlen; uint8_t opret[8192],*ptr;
         if ( (opretlen= komodo_opreturn(opret,sizeof(opret))) > 0 )
         {
             txNew.vout.resize(2);
             txNew.vout[1].scriptPubKey.resize(opretlen);
-            memcpy(txNew.vout[1].scriptPubKey.data(),opret,opretlen);
+            ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
+            for (i=0; i<opretlen; i++)
+                ptr[i] = opret[i];
             txNew.vout[1].nValue = 0;
             //fprintf(stderr,"opretlen.%d\n",opretlen);
         } else txNew.vout.resize(1);
