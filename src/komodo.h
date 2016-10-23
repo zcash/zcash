@@ -213,7 +213,7 @@ int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,doubl
     pvals[i++] = btcusd;
     pvals[i++] = cnyusd;
     //printf("OP_RETURN prices\n");
-    return(n-3);
+    return(n);
 }
 
 int32_t _unhex(char c)
