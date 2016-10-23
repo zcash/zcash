@@ -452,7 +452,7 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
         return(np->notarized_height);
     }
     memset(notarized_hashp,0,sizeof(*notarized_hashp));
-    return(-1);
+    return(0);
 }
 
 void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
