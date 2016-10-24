@@ -401,12 +401,15 @@ Value paxprice(const Array& params, bool fHelp)
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
     ret.push_back(Pair("height", height));
-    ret.push_back(Pair("test", (char *)"test"));
-
     if ( basevolume != 0 )
     {
         ret.push_back(Pair("price",((double)relvolume / (double)basevolume)));
         ret.push_back(Pair("relvolume", ValueFromAmount(relvolume)));
+        Array a;
+            Object item;
+                item.push_back(Pair("price",((double)relvolume / (double)basevolume)));
+            a.push_back(item);
+        ret.push_back(Pair("array", a));
     }
     return ret;
 }
