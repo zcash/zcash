@@ -456,7 +456,7 @@ uint64_t PAX_fiatdest(char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t
 
 Value paxdeposit(const Array& params, bool fHelp)
 {
-    uint64_t komodoshis = 0; char destaddr[64]; uint8_t pubkey33[33];
+    uint64_t komodoshis = 0; char destaddr[64]; uint8_t i,pubkey33[33];
     bool fSubtractFeeFromAmount = false;
     if (!EnsureWalletIsAvailable(fHelp))
         return Value::null;
@@ -474,7 +474,9 @@ Value paxdeposit(const Array& params, bool fHelp)
     CBitcoinAddress destaddress(dest);
     if (!destaddress.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest Bitcoin address");
-    printf("ht.%d srcaddr.(%s) %s fiatunits.%d -> dest.(%s) komodoshis.%llu\n",chainActive.Tip()->nHeight,(char *)params[0].get_str().c_str(),(char *)base.c_str(),fiatunits,destaddr,(long long)komodoshis);
+    for (i=0; i<33; i++)
+        printf("%02x",pubkey33[i]);
+    printf(" ht.%d srcaddr.(%s) %s fiatunits.%d -> dest.(%s) komodoshis.%llu\n",chainActive.Tip()->nHeight,(char *)params[0].get_str().c_str(),(char *)base.c_str(),fiatunits,destaddr,(long long)komodoshis);
     
     EnsureWalletIsUnlocked();
     CWalletTx wtx;

@@ -227,7 +227,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
                 baseusd = ((uint64_t)pvalb * 1000000000) / pvals[USD];
                 kmdusd = ((uint64_t)kmdbtc * 1000000000) / btcusd;
                 //printf("base -> USD %llu, BTC %llu KMDUSD %llu\n",(long long)baseusd,(long long)btcusd,(long long)kmdusd);
-                return(basevolume * ((baseusd * 1000000000) / kmdusd));
+                return((basevolume * baseusd) / kmdusd));
             }
         }
         else if ( baseid == relid )
@@ -287,7 +287,7 @@ uint64_t PAX_fiatdest(char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t
         return(0);
     if ( fiatunits < 0 )
         shortflag = 1, fiatunits = -fiatunits;
-    komodoshis = komodo_paxprice(height,base,(char *)"KMD",(uint64_t)fiatunits * COIN);
+    komodoshis = komodo_paxprice(height,base,(char *)"KMD",(uint64_t)fiatunits);
     if ( bitcoin_addr2rmd160(&addrtype,rmd160,coinaddr) == 20 )
     {
         PAX_pubkey(pubkey33,addrtype,rmd160,base,shortflag,fiatunits);
