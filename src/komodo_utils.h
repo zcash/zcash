@@ -13,14 +13,14 @@
  *                                                                            *
  ******************************************************************************/
 
+union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
+typedef union _bits256 bits256;
+
 #include "mini-gmp.c"
 #include "uthash.h"
 
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
 #define KOMODO_PUBTYPE 60
-
-union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
-typedef union _bits256 bits256;
 
 struct sha256_vstate { uint64_t length; uint32_t state[8],curlen; uint8_t buf[64]; };
 struct rmd160_vstate { uint64_t length; uint8_t buf[64]; uint32_t curlen, state[5]; };
