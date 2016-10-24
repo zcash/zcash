@@ -300,7 +300,7 @@ struct equi {
     }
     for (u32 i=0; i < 65; i++) {
 #ifdef HIST
-      printf(" %d:%d", i, binsizes[i]);
+//      printf(" %d:%d", i, binsizes[i]);
 #else
 #ifdef SPARK
       u32 sparks = binsizes[i] / SPARKSCALE;
@@ -309,10 +309,10 @@ struct equi {
       for (u32 bs = binsizes[i]; bs; bs >>= 1) sparks++;
       sparks = sparks * 7 / SPARKSCALE;
 #endif
-      printf("\342\226%c", '\201' + sparks);
+//      printf("\342\226%c", '\201' + sparks);
 #endif
     }
-    printf("\n");
+//    printf("\n");
 #endif
   }
 
@@ -590,7 +590,7 @@ nc++,       candidate(tree(bucketid, s0, s1));
         }
       }
     }
-printf(" %d candidates ", nc);
+//printf(" %d candidates ", nc);
   }
 };
 
@@ -603,7 +603,7 @@ typedef struct {
 void barrier(pthread_barrier_t *barry) {
   const int rc = pthread_barrier_wait(barry);
   if (rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD) {
-    printf("Could not wait on barrier\n");
+//    printf("Could not wait on barrier\n");
     pthread_exit(NULL);
   }
 }
@@ -613,7 +613,7 @@ void *worker(void *vp) {
   equi *eq = tp->eq;
 
   if (tp->id == 0)
-    printf("Digit 0\n");
+//    printf("Digit 0\n");
   barrier(&eq->barry);
   eq->digit0(tp->id);
   barrier(&eq->barry);
@@ -624,19 +624,19 @@ void *worker(void *vp) {
   barrier(&eq->barry);
   for (u32 r = 1; r < WK; r++) {
     if (tp->id == 0)
-      printf("Digit %d", r);
+//      printf("Digit %d", r);
     barrier(&eq->barry);
     r&1 ? eq->digitodd(r, tp->id) : eq->digiteven(r, tp->id);
     barrier(&eq->barry);
     if (tp->id == 0) {
-      printf(" x%d b%d h%d\n", eq->xfull, eq->bfull, eq->hfull);
+//      printf(" x%d b%d h%d\n", eq->xfull, eq->bfull, eq->hfull);
       eq->xfull = eq->bfull = eq->hfull = 0;
       eq->showbsizes(r);
     }
     barrier(&eq->barry);
   }
   if (tp->id == 0)
-    printf("Digit %d\n", WK);
+//    printf("Digit %d\n", WK);
   eq->digitK(tp->id);
   barrier(&eq->barry);
   pthread_exit(NULL);

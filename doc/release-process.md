@@ -29,8 +29,8 @@ previous release:
 
     $ DWCASH_RELEASE_PREV=1.0.0-beta1
 
-## B. create a new release branch / github PR
-### B1. update (commit) version in sources
+## B. Create a new release branch / github PR
+### B1. Update (commit) version in sources
 
     doc/README.md
     src/clientversion.h
@@ -52,7 +52,7 @@ In `configure.ac` and `clientversion.h`:
 
 - Change `CLIENT_VERSION_IS_RELEASE` to false while DeepWebCash is in beta-test phase.
 
-### B2. write release notes
+### B2. Write release notes
 
 git shortlog helps a lot, for example:
 
@@ -61,19 +61,21 @@ git shortlog helps a lot, for example:
 
 Update the Debian package changelog:
 
-    export DEBVERSION='1.0.0-rc1'
+    export DEBVERSION="${DWCASH_RELEASE}"
     export DEBEMAIL="${DEBEMAIL:-team@dw.cash}"
-    export DEBFULLNAME="${DEBFULLNAME:-DeepWebCash Company}"
+    export DEBFULLNAME="${DEBFULLNAME:-Zcash Company}"
 
     dch -v $DEBVERSION -D jessie -c contrib/DEBIAN/changelog
 
-### B3. change the network magics
+(`dch` comes from the devscripts package.)
+
+### B3. Change the network magics
 
 If this release breaks backwards compatibility, change the network magic
 numbers. Set the four `pchMessageStart` in `CTestNetParams` in `chainparams.cpp`
 to random values.
 
-### B4. merge the previous changes
+### B4. Merge the previous changes
 
 Do the normal pull-request, review, testing process for this release PR.
 
@@ -87,7 +89,7 @@ https://ci.dw.cash/builders/depends-sources
 
 Run `./fetch-params.sh`.
 
-## D. make tag for the newly merged result
+## D. Make tag for the newly merged result
 
 In this example, we ensure master is up to date with the
 previous merged PR, then:
@@ -95,7 +97,7 @@ previous merged PR, then:
     $ git tag -s v${DWCASH_RELEASE}
     $ git push origin v${DWCASH_RELEASE}
 
-## E. deploy testnet
+## E. Deploy testnet
 
 Notify the DeepWebCash DevOps engineer/sysadmin that the release has been tagged. They update some variables in the company's automation code and then run an Ansible playbook, which:
 
@@ -106,15 +108,31 @@ Notify the DeepWebCash DevOps engineer/sysadmin that the release has been tagged
 
 Then, verify that nodes can connect to the testnet server, and update the guide on the wiki to ensure the correct hostname is listed in the recommended dwcash.conf.
 
+<<<<<<< HEAD
 ## F. publish the release announcement (blog, dwcash-dev, slack)
 ## G. celebrate
+=======
+## F. Update the Beta Guide
+## G. Publish the release announcement (blog, dwcash-dev, slack)
+## H. Make and deploy deterministic builds
+
+- Run the [Gitian deterministic build environment](https://github.com/dwcash/dwcash-gitian)
+- Compare the uploaded [build manifests on gitian.sigs](https://github.com/dwcash/gitian.sigs)
+- If all is well, the DevOps engineer will build the Debian packages and update the
+  [apt.dw.cash package repository](https://apt.dw.cash).
+
+## I. Celebrate
+
+>>>>>>> 90c116ac5400da94a0329d5af441f8f2c24d0e27
 ## missing steps
 DeepWebCash still needs:
 
-* deterministic or reproducible builds
-
 * thorough pre-release testing (presumably more thorough than standard PR tests)
 
+<<<<<<< HEAD
 * release deployment steps (eg: updating build-depends mirror, deploying testnet, etc...)
 
 * proper DeepWebCash-specific versions and names in software and documentation.
+=======
+* automated release deployment (e.g.: updating build-depends mirror, deploying testnet, etc...)
+>>>>>>> 90c116ac5400da94a0329d5af441f8f2c24d0e27
