@@ -2,6 +2,8 @@
 
 int32_t NUM_PRICES; uint32_t *PVALS;
 
+#define USD 0
+
 #define MAX_CURRENCIES 32
 char CURRENCIES[][8] = { "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "NZD", // major currencies
     "CNY", "RUB", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK",
@@ -139,7 +141,7 @@ int32_t komodo_baseid(char *origbase)
 
 uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t volume)
 {
-    uint32_t pvalb,pvalr,kmdbtc,btcusd; uint64_t sum,ranked[32]; int32_t i;
+    uint32_t pvalb,pvalr,kmdbtc,btcusd; uint64_t baseusd,kmdusd,sum,ranked[32]; int32_t i;
     if ( (pvalb= pvals[baseid]) != 0 )
     {
         if ( relid == MAX_CURRENCIES )
@@ -167,7 +169,6 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t vo
     }
 }
 
-#define USD 0
 uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t volume)
 {
     int32_t baseid=-1,relid=-1,i,ht; uint32_t kmdbtc,btcusd,pvalb,pvalr,*ptr; uint64_t baserel,baseusd,kmdusd;
