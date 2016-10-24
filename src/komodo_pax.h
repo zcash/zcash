@@ -153,13 +153,12 @@ int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize)
  return(val32);
  }*/
 
-int32_t PAX_pubkey(uint8_t *pubkey33,uint8_t addrtype,uint8_t rmd160[20],char fiat[4],uint8_t shortflag,int32_t fiatunits)
+int32_t PAX_pubkey(uint8_t *pubkey33,uint8_t addrtype,uint8_t rmd160[20],char fiat[4],uint8_t shortflag,int32_t fiatoshis)
 {
     memset(pubkey33,0,33);
     pubkey33[0] = 0x02 | (shortflag != 0);
     memcpy(&pubkey33[1],fiat,3);
-    iguana_rwnum(1,&pubkey33[4],sizeof(fiatunits),(void *)&fiatunits);
-    memcpy(&pubkey33[8],(char *)"PAX",4);
+    iguana_rwnum(1,&pubkey33[4],sizeof(fiatoshis),(void *)&fiatoshis);
     pubkey33[12] = addrtype;
     memcpy(&pubkey33[13],rmd160,20);
 }
@@ -292,8 +291,8 @@ uint64_t PAX_fiatdest(char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t
     for (i=0; i<3; i++)
         base[i] = toupper(origbase[i]);
     base[i] = 0;
-    if ( fiatunits < 0 )
-        shortflag = 1, fiatunits = -fiatunits;
+    if ( fiatoshis < 0 )
+        shortflag = 1, fiatoshis = -fiatoshis;
     komodoshis = komodo_paxprice(height,base,(char *)"KMD",(uint64_t)fiatoshis);
     if ( bitcoin_addr2rmd160(&addrtype,rmd160,coinaddr) == 20 )
     {
