@@ -51,9 +51,9 @@ void pax_rank(uint64_t *ranked,uint32_t *pvals)
     for (i=0; i<32; i++)
     {
         ranked[i] = (vals[i] * 1000000000) / sum;
-        printf("%.6f ",(double)ranked[i]/1000000000.);
+        //printf("%.6f ",(double)ranked[i]/1000000000.);
     }
-    printf("sum %llu\n",(long long)sum);
+    //printf("sum %llu\n",(long long)sum);
 };
 
 int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,double *BTCUSDp,double *CNYUSDp,uint32_t *pvals)
@@ -159,8 +159,11 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t vo
         }
         else if ( baseid == relid )
         {
-            pax_rank(ranked,pvals);
-            return(ranked[baseid]);
+            if ( baseid != MAX_CURRENCIES )
+            {
+                pax_rank(ranked,pvals);
+                return(ranked[baseid]);
+            }
         }
         else if ( (pvalr= pvals[relid]) != 0 )
         {
@@ -186,16 +189,22 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t volume)
     return(0);
 }
 
-int32_t komodo_paxprices(uint32_t *timestamps,uint64_t *prices,int32_t max,int32_t width,char *base,char *rel)
+int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,int32_t width,char *base,char *rel)
 {
-    int32_t baseid=-1,relid=-1,i,ht; uint32_t *ptr;
+    int32_t baseid=-1,relid=-1,i,ht,num = 0; uint32_t *ptr;
     if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
     {
         for (i=NUM_PRICES-1; i>=0; i--)
         {
             ptr = &PVALS[36 * i];
+            heights[num] = *ptr;
+            prices[num] = komodo_paxcalc(&ptr[1],baseid,relid,COIN);
+            num++;
+            if ( num >= max )
+                return(num);
         }
     }
+    return(num);
 }
 
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize)
