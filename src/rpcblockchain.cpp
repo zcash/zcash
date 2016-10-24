@@ -393,7 +393,7 @@ Value paxprice(const Array& params, bool fHelp)
     Object ret; uint64_t basevolume=0,relvolume;
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
-    int32_t width = atoi(params[2].get_str().c_str());
+    int32_t height = atoi(params[2].get_str().c_str());
     if ( width < 60 )
         width = 60;
     if ( basevolume == 0 )
@@ -423,19 +423,16 @@ Value paxprices(const Array& params, bool fHelp)
     int32_t width = atoi(params[2].get_str().c_str());
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
-    if ( basevolume != 0 && relvolume != 0 )
+    n = komodo_paxprices(timestamps,prices,(int32_t)(sizeof(prices)/sizeof(*prices)),width,(char *)base.c_str(),(char *)rel.c_str());
+    Array a;
+    for (i=0; i<n; i++)
     {
-        n = komodo_paxprices(timestamps,prices,(int32_t)(sizeof(prices)/sizeof(*prices)),width,(char *)base.c_str(),(char *)rel.c_str());
-        Array a;
-        for (i=0; i<n; i++)
-        {
-            Object item;
-                item.push_back(Pair("t", timestamps[i]));
-                item.push_back(Pair("p", (double)prices[i] / COIN));
-            a.push_back(item);
-        }
-        ret.push_back(Pair("array", a));
+        Object item;
+        item.push_back(Pair("t", (int64_t)timestamps[i]));
+        item.push_back(Pair("p", (double)prices[i] / COIN));
+        a.push_back(item);
     }
+    ret.push_back(Pair("array", a));
     return ret;
 }
 
