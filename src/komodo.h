@@ -16,6 +16,8 @@
 #ifndef H_KOMODO_H
 #define H_KOMODO_H
 
+// Todo: handle reorg
+
 #include <stdint.h>
 #include <stdio.h>
 #include <pthread.h>
