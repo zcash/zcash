@@ -23,6 +23,8 @@
 
 using namespace std;
 
+#include "komodo_interest.h"
+
 static bool fCreateBlank;
 static map<string,UniValue> registers;
 
@@ -321,6 +323,7 @@ vector<unsigned char> ParseHexUO(map<string,UniValue>& o, string strKey)
     }
     return ParseHexUV(o[strKey], strKey);
 }
+
 
 static void MutateTxSign(CMutableTransaction& tx, const string& flagStr)
 {

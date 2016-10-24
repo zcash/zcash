@@ -96,6 +96,8 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
 }
 
+int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize);
+
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
     const CChainParams& chainparams = Params();
@@ -228,6 +230,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         // Collect transactions into block
         uint64_t nBlockSize = 1000;
         uint64_t nBlockTx = 0;
+        int64_t interest;
         int nBlockSigOps = 100;
         bool fSortedByFee = (nBlockPrioritySize <= 0);
 
@@ -275,7 +278,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if (!view.HaveInputs(tx))
                 continue;
 
-            CAmount nTxFees = view.GetValueIn(tx)-tx.GetValueOut();
+            CAmount nTxFees = view.GetValueIn(chainActive.Tip()->nHeight,&interest,tx,chainActive.Tip()->nTime)-tx.GetValueOut();
 
             nTxSigOps += GetP2SHSigOpCount(tx, view);
             if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
@@ -329,13 +332,25 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
         // Create coinbase tx
         CMutableTransaction txNew;
+        //txNew.nLockTime = (uint32_t)time(NULL) - 60;
         txNew.vin.resize(1);
         txNew.vin[0].prevout.SetNull();
-        txNew.vout.resize(1);
+        int32_t i,opretlen; uint8_t opret[8192],*ptr;
+        if ( (opretlen= komodo_opreturn(opret,sizeof(opret))) > 0 )
+        {
+            txNew.vout.resize(2);
+            txNew.vout[1].scriptPubKey.resize(opretlen);
+            ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
+            for (i=0; i<opretlen; i++)
+                ptr[i] = opret[i];
+            txNew.vout[1].nValue = 0;
+            //fprintf(stderr,"opretlen.%d\n",opretlen);
+        } else txNew.vout.resize(1);
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
         // Add fees
         txNew.vout[0].nValue += nFees;
+        
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
 
         pblock->vtx[0] = txNew;
@@ -488,6 +503,7 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             // Create new block
             //
+            uint32_t starttime = (uint32_t)time(NULL);
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
 
@@ -499,17 +515,17 @@ void static BitcoinMiner(CWallet *pwallet)
             }
             CBlock *pblock = &pblocktemplate->block;
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
-
             LogPrintf("Running ZcashMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
                 ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
             //
             // Search
             //
-            int32_t notaryid;
-            int64_t nStart = GetTime();
+            int32_t notaryid; uint32_t savebits; int64_t nStart = GetTime();
+            savebits = pblock->nBits;
             if ( komodo_chosennotary(&notaryid,pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
+                pblock->nBits = KOMODO_MINDIFF_NBITS;
                 //fprintf(stderr,"I am the chosen one for ht.%d\n",pindexPrev->nHeight+1);
             }
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
@@ -549,11 +565,14 @@ void static BitcoinMiner(CWallet *pwallet)
                     if (UintToArith256(pblock->GetHash()) > hashTarget) {
                         return false;
                     }
+                          /*  if ( pblock->nBits == KOMODO_MINDIFF_NBITS && time(NULL) < starttime+50 )
+                                sleep(starttime+50-time(NULL));*/
 
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     LogPrintf("ZcashMiner:\n");
                     LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
+                            
                     if (ProcessBlockFound(pblock, *pwallet, reservekey)) {
                         // Ignore chain updates caused by us
                         std::lock_guard<std::mutex> lock{m_cs};
@@ -595,6 +614,7 @@ void static BitcoinMiner(CWallet *pwallet)
 
                 // Update nNonce and nTime
                 pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
+                pblock->nBits = savebits;
                 UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
                 if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
                 {

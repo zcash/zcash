@@ -380,6 +380,35 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
     return ret;
 }
 
+uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+uint32_t komodo_txtime(uint256 hash);
+uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume);
+
+Value paxprice(const Array& params, bool fHelp)
+{
+    if ( fHelp || params.size() < 3 || params.size() > 4 )
+        throw runtime_error("paxprice \"base\" \"rel\" height\n");
+    LOCK(cs_main);
+    Object ret; uint64_t pricetoshis,basevolume=0,relvolume;
+    std::string base = params[0].get_str();
+    std::string rel = params[1].get_str();
+    int32_t height = atoi(params[2].get_str().c_str());
+    if ( params.size() == 4 )
+        basevolume = AmountFromValue(params[3]);
+    if ( basevolume == 0 )
+        basevolume = COIN;
+    relvolume = komodo_paxprice(height,(char *)base.c_str(),(char *)rel.c_str(),basevolume);
+    ret.push_back(Pair("base", base));
+    ret.push_back(Pair("rel", rel));
+    ret.push_back(Pair("height", height));
+    if ( basevolume != 0 )
+    {
+        ret.push_back(Pair("price",((double)relvolume / (double)basevolume)));
+        ret.push_back(Pair("relvolume", ValueFromAmount(relvolume)));
+    }
+    return ret;
+}
+
 Value gettxout(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 2 || params.size() > 3)
@@ -448,9 +477,17 @@ Value gettxout(const Array& params, bool fHelp)
     ret.push_back(Pair("bestblock", pindex->GetBlockHash().GetHex()));
     if ((unsigned int)coins.nHeight == MEMPOOL_HEIGHT)
         ret.push_back(Pair("confirmations", 0));
-    else
-        ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
+    else ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
+    
+    CBlockIndex *pblockindex = chainActive[coins.nHeight];
+    uint64_t interest; uint32_t timestamp=0;
+    if ( pblockindex != 0 )
+        timestamp = pblockindex->nTime; // this is approx, but cant figure out how to get tx here
+    interest = komodo_interest(coins.nHeight,coins.vout[n].nValue,timestamp,pindex->nTime);
+    //fprintf(stderr,"nValue %llu lock.%u:%u nTime.%u -> %llu\n",(long long)coins.vout[n].nValue,coins.nLockTime,timestamp,pindex->nTime,(long long)interest);
+    ret.push_back(Pair("interest", ValueFromAmount(interest)));
+
     Object o;
     ScriptPubKeyToJSON(coins.vout[n].scriptPubKey, o, true);
     ret.push_back(Pair("scriptPubKey", o));

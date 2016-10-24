@@ -699,9 +699,23 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
         return true;
     if ((int64_t)tx.nLockTime < ((int64_t)tx.nLockTime < LOCKTIME_THRESHOLD ? (int64_t)nBlockHeight : nBlockTime))
         return true;
+    if ( (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
+    {
+        fprintf(stderr,"IsFinalTx reject locktime %u vs nBlockTime %u\n",tx.nLockTime,(uint32_t)nBlockTime);
+        return(false); // need to prevent pastdating tx
+    }
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
-        if (!txin.IsFinal())
+    {
+        if ( txin.nSequence == 0xfffffffe && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime > nBlockTime )
+        {
+            
+        }
+        else if (!txin.IsFinal())
+        {
+            printf("non-final txin seq.%x\n",txin.nSequence);
             return false;
+        }
+    }
     return true;
 }
 
@@ -1037,38 +1051,44 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
 }
 
 
-bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
-                        bool* pfMissingInputs, bool fRejectAbsurdFee)
+bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee)
 {
     AssertLockHeld(cs_main);
     if (pfMissingInputs)
         *pfMissingInputs = false;
-
     if (!CheckTransaction(tx, state))
+    {
+        fprintf(stderr,"AcceptToMemoryPool CheckTransaction failed\n");
         return error("AcceptToMemoryPool: CheckTransaction failed");
-
+    }
     // Coinbase is only valid in a block, not as a loose transaction
     if (tx.IsCoinBase())
-        return state.DoS(100, error("AcceptToMemoryPool: coinbase as individual tx"),
-                         REJECT_INVALID, "coinbase");
-
+    {
+        fprintf(stderr,"AcceptToMemoryPool coinbase as individual tx\n");
+        return state.DoS(100, error("AcceptToMemoryPool: coinbase as individual tx"),REJECT_INVALID, "coinbase");
+    }
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     string reason;
     if (Params().RequireStandard() && !IsStandardTx(tx, reason))
-        return state.DoS(0,
-                         error("AcceptToMemoryPool: nonstandard transaction: %s", reason),
-                         REJECT_NONSTANDARD, reason);
-
+    {
+        fprintf(stderr,"AcceptToMemoryPool nonstandard transaction: %s\n",reason.c_str());
+        return state.DoS(0,error("AcceptToMemoryPool: nonstandard transaction: %s", reason),REJECT_NONSTANDARD, reason);
+    }
     // Only accept nLockTime-using transactions that can be mined in the next
     // block; we don't want our mempool filled up with transactions that can't
     // be mined yet.
     if (!CheckFinalTx(tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
+    {
+        fprintf(stderr,"AcceptToMemoryPool non-final\n");
         return state.DoS(0, false, REJECT_NONSTANDARD, "non-final");
-
-    // is it already in the memory pool?
+    }
+   // is it already in the memory pool?
     uint256 hash = tx.GetHash();
     if (pool.exists(hash))
+    {
+        fprintf(stderr,"already in mempool\n");
         return false;
+    }
 
     // Check for conflicts with in-memory transactions
     {
@@ -1079,6 +1099,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         if (pool.mapNextTx.count(outpoint))
         {
             // Disable replacement feature for now
+            fprintf(stderr,"Disable replacement feature for now\n");
             return false;
         }
     }
@@ -1086,6 +1107,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
             if (pool.mapNullifiers.count(nf))
             {
+                fprintf(stderr,"pool.mapNullifiers.count\n");
                 return false;
             }
         }
@@ -1095,7 +1117,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     {
         CCoinsView dummy;
         CCoinsViewCache view(&dummy);
-
+        int64_t interest;
         CAmount nValueIn = 0;
         {
         LOCK(pool.cs);
@@ -1104,7 +1126,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
         // do we already have it?
         if (view.HaveCoins(hash))
+        {
+            fprintf(stderr,"view.HaveCoins(hash) error\n");
             return false;
+        }
 
         // do all inputs exist?
         // Note that this does not check for the presence of actual outputs (see the next check for that),
@@ -1113,6 +1138,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             if (!view.HaveCoins(txin.prevout.hash)) {
                 if (pfMissingInputs)
                     *pfMissingInputs = true;
+                fprintf(stderr,"do all inputs exist?\n");
                 return false;
             }
         }
@@ -1130,7 +1156,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // Bring the best block into scope
         view.GetBestBlock();
 
-        nValueIn = view.GetValueIn(tx);
+        nValueIn = view.GetValueIn(chainActive.Tip()->nHeight,&interest,tx,chainActive.Tip()->nTime);
 
         // we have all inputs cached now, so switch back to dummy, so we don't need to keep lock on mempool
         view.SetBackend(dummy);
@@ -1148,8 +1174,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         unsigned int nSigOps = GetLegacySigOpCount(tx);
         nSigOps += GetP2SHSigOpCount(tx, view);
         if (nSigOps > MAX_STANDARD_TX_SIGOPS)
-            return state.DoS(0,
-                             error("AcceptToMemoryPool: too many sigops %s, %d > %d",
+            return state.DoS(0, error("AcceptToMemoryPool: too many sigops %s, %d > %d",
                                    hash.ToString(), nSigOps, MAX_STANDARD_TX_SIGOPS),
                              REJECT_NONSTANDARD, "bad-txns-too-many-sigops");
 
@@ -1190,16 +1215,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             // -limitfreerelay unit is thousand-bytes-per-minute
             // At default rate it would take over a month to fill 1GB
             if (dFreeCount >= GetArg("-limitfreerelay", 15)*10*1000)
-                return state.DoS(0, error("AcceptToMemoryPool: free transaction rejected by rate limiter"),
-                                 REJECT_INSUFFICIENTFEE, "rate limited free transaction");
+                return state.DoS(0, error("AcceptToMemoryPool: free transaction rejected by rate limiter"), REJECT_INSUFFICIENTFEE, "rate limited free transaction");
             LogPrint("mempool", "Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
             dFreeCount += nSize;
         }
 
         if (fRejectAbsurdFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000)
             return error("AcceptToMemoryPool: absurdly high fees %s, %d > %d",
-                         hash.ToString(),
-                         nFees, ::minRelayTxFee.GetFee(nSize) * 10000);
+                         hash.ToString(), nFees, ::minRelayTxFee.GetFee(nSize) * 10000);
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
@@ -2098,6 +2121,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTimeStart = GetTimeMicros();
     CAmount nFees = 0;
     int nInputs = 0;
+    int64_t interest,sum = 0;
     unsigned int nSigOps = 0;
     CDiskTxPos pos(pindex->GetBlockPos(), GetSizeOfCompactSize(block.vtx.size()));
     std::vector<std::pair<uint256, CDiskTxPos> > vPos;
@@ -2131,7 +2155,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (nSigOps > MAX_BLOCK_SIGOPS)
             return state.DoS(100, error("ConnectBlock(): too many sigops"),
                              REJECT_INVALID, "bad-blk-sigops");
-
+//fprintf(stderr,"ht.%d vout0 t%u\n",pindex->nHeight,tx.nLockTime);
         if (!tx.IsCoinBase())
         {
             if (!view.HaveInputs(tx))
@@ -2151,14 +2175,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 return state.DoS(100, error("ConnectBlock(): too many sigops"),
                                  REJECT_INVALID, "bad-blk-sigops");
 
-            nFees += view.GetValueIn(tx)-tx.GetValueOut();
-
+            nFees += view.GetValueIn(chainActive.Tip()->nHeight,&interest,tx,chainActive.Tip()->nTime) - tx.GetValueOut();
+            sum += interest;
             std::vector<CScriptCheck> vChecks;
             if (!ContextualCheckInputs(tx, state, view, fScriptChecks, flags, false, chainparams.GetConsensus(), nScriptCheckThreads ? &vChecks : NULL))
                 return false;
             control.Add(vChecks);
         }
-
+        komodo_accrued_interest(pindex->nHeight,sum);
         CTxUndo undoDummy;
         if (i > 0) {
             blockundo.vtxundo.push_back(CTxUndo());
@@ -3076,19 +3100,26 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
             return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
         else
         {
-            int32_t notarized_height; uint256 notarized_hash,notarized_btctxid;
+            int32_t notarized_height; uint256 notarized_hash,notarized_btctxid; CBlockIndex *notary;
             notarized_height = komodo_notarizeddata(chainActive.Tip()->nHeight,&notarized_hash,&notarized_btctxid);
-            //printf("nHeight.%d -> (%d %s)\n",chainActive.Tip()->nHeight,notarized_height,notarized_hash.ToString().c_str());
-            if ( nHeight < notarized_height )
+            if ( (notary= mapBlockIndex[notarized_hash]) != 0 )
             {
-                fprintf(stderr,"nHeight.%d < NOTARIZED_HEIGHT.%d\n",nHeight,notarized_height);
-                return state.DoS(100, error("%s: forked chain older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
-            }
-            else if ( nHeight == notarized_height && memcmp(&hash,&notarized_hash,sizeof(hash)) != 0 )
-            {
-                fprintf(stderr,"nHeight.%d == NOTARIZED_HEIGHT.%d, diff hash\n",nHeight,notarized_height);
-                return state.DoS(100, error("%s: forked chain at notarized (height %d) with different hash", __func__, notarized_height));
-            }
+                //printf("nHeight.%d -> (%d %s)\n",chainActive.Tip()->nHeight,notarized_height,notarized_hash.ToString().c_str());
+                if ( notary->nHeight == notarized_height ) // if notarized_hash not in chain, reorg
+                {
+                    if ( nHeight < notarized_height )
+                    {
+                        fprintf(stderr,"nHeight.%d < NOTARIZED_HEIGHT.%d\n",nHeight,notarized_height);
+                        return state.DoS(100, error("%s: forked chain older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
+                    }
+                    else if ( nHeight == notarized_height && memcmp(&hash,&notarized_hash,sizeof(hash)) != 0 )
+                    {
+                        fprintf(stderr,"nHeight.%d == NOTARIZED_HEIGHT.%d, diff hash\n",nHeight,notarized_height);
+                        return state.DoS(100, error("%s: forked chain at notarized (height %d) with different hash", __func__, notarized_height));
+                    }
+                } else fprintf(stderr,"notary_hash %s ht.%d at ht.%d\n",notarized_hash.ToString().c_str(),notarized_height,notary->nHeight);
+            } else if ( notarized_height > 0 )
+                fprintf(stderr,"couldnt find notary_hash %s ht.%d\n",notarized_hash.ToString().c_str(),notarized_height);
         }
     }
 

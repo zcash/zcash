@@ -1312,7 +1312,7 @@ CAmount CWallet::GetDebit(const CTxIn &txin, const isminefilter& filter) const
             const CWalletTx& prev = (*mi).second;
             if (txin.prevout.n < prev.vout.size())
                 if (IsMine(prev.vout[txin.prevout.n]) & filter)
-                    return prev.vout[txin.prevout.n].nValue;
+                    return prev.vout[txin.prevout.n].nValue; // komodo_interest?
         }
     }
     return 0;
@@ -2333,6 +2333,8 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
     return true;
 }
 
+uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+
 bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet,  bool& fOnlyCoinbaseCoinsRet, bool& fNeedCoinbaseCoinsRet, const CCoinControl* coinControl) const
 {
     // Output parameter fOnlyCoinbaseCoinsRet is set to true when the only available coins are coinbase utxos.
@@ -2369,11 +2371,17 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
     // coin control -> return all selected outputs (we want all selected to go into the transaction for sure)
     if (coinControl && coinControl->HasSelected())
     {
+        uint64_t interest;
         BOOST_FOREACH(const COutput& out, vCoins)
         {
             if(!out.fSpendable)
                 continue;
             nValueRet += out.tx->vout[out.i].nValue;
+            interest = komodo_interest(chainActive.Tip()->nHeight,out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
+#ifdef KOMODO_ENABLE_INTEREST
+            nValueRet += interest;
+#endif
+            fprintf(stderr,"interest %llu from %llu lock.%u tip.%u\n",(long long)interest,(long long)out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
             setCoinsRet.insert(make_pair(out.tx, out.i));
         }
         return (nValueRet >= nTargetValue);
@@ -2411,27 +2419,34 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
     wtxNew.BindWallet(this);
     CMutableTransaction txNew;
 
-    // Discourage fee sniping.
-    //
-    // However because of a off-by-one-error in previous versions we need to
-    // neuter it by setting nLockTime to at least one less than nBestHeight.
-    // Secondly currently propagation of transactions created for block heights
-    // corresponding to blocks that were just mined may be iffy - transactions
-    // aren't re-accepted into the mempool - we additionally neuter the code by
-    // going ten blocks back. Doesn't yet do anything for sniping, but does act
-    // to shake out wallet bugs like not showing nLockTime'd transactions at
-    // all.
-    txNew.nLockTime = std::max(0, chainActive.Height() - 10);
-
-    // Secondly occasionally randomly pick a nLockTime even further back, so
-    // that transactions that are delayed after signing for whatever reason,
-    // e.g. high-latency mix networks and some CoinJoin implementations, have
-    // better privacy.
-    if (GetRandInt(10) == 0)
-        txNew.nLockTime = std::max(0, (int)txNew.nLockTime - GetRandInt(100));
-
-    assert(txNew.nLockTime <= (unsigned int)chainActive.Height());
-    assert(txNew.nLockTime < LOCKTIME_THRESHOLD);
+    if ( 0 )
+    {
+        // Discourage fee sniping.
+        //
+        // However because of a off-by-one-error in previous versions we need to
+        // neuter it by setting nLockTime to at least one less than nBestHeight.
+        // Secondly currently propagation of transactions created for block heights
+        // corresponding to blocks that were just mined may be iffy - transactions
+        // aren't re-accepted into the mempool - we additionally neuter the code by
+        // going ten blocks back. Doesn't yet do anything for sniping, but does act
+        // to shake out wallet bugs like not showing nLockTime'd transactions at
+        // all.
+        txNew.nLockTime = std::max(0, chainActive.Height() - 10);
+        
+        // Secondly occasionally randomly pick a nLockTime even further back, so
+        // that transactions that are delayed after signing for whatever reason,
+        // e.g. high-latency mix networks and some CoinJoin implementations, have
+        // better privacy.
+        if (GetRandInt(10) == 0)
+            txNew.nLockTime = std::max(0, (int)txNew.nLockTime - GetRandInt(100));
+        
+        assert(txNew.nLockTime <= (unsigned int)chainActive.Height());
+        assert(txNew.nLockTime < LOCKTIME_THRESHOLD);
+    }
+    else
+    {
+        txNew.nLockTime = (uint32_t)chainActive.Tip()->nTime + 1; // set to a time close to now
+    }
 
     {
         LOCK2(cs_main, cs_wallet);

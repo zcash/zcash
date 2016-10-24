@@ -383,18 +383,24 @@ const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
     return coins->vout[input.prevout.n].scriptPubKey;
 }
 
-uint32_t komodo_txtime(uint256 hash);
+uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 
-CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
+CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTransaction& tx,uint32_t tiptime) const
 {
-    if (tx.IsCoinBase())
+    uint32_t timestamp,minutes; int64_t interest;
+    *interestp = 0;
+    if ( tx.IsCoinBase() != 0 )
         return 0;
-
-    CAmount nResult = 0;
+    CAmount value,nResult = 0;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
-        //fprintf(stderr,"i.%d time.%u\n",i,komodo_txtime(tx.vin[i].prevout.hash));
-        nResult += GetOutputFor(tx.vin[i]).nValue;
+        value = GetOutputFor(tx.vin[i]).nValue;
+        nResult += value;
+        interest = komodo_interest(nHeight,value,tx.nLockTime,tiptime);
+#ifdef KOMODO_ENABLE_INTEREST
+        nResult += interest;
+#endif
+        (*interestp) += interest;
     }
     nResult += tx.GetJoinSplitValueIn();
 
