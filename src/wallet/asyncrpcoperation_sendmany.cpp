@@ -301,8 +301,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
      *       -> zaddrs
      * 
      * Note: Consensus rule states that coinbase utxos can only be sent to a zaddr.
-     *       Any change over and above the amount specified by the user will be sent
-     *       to the same zaddr the user is sending funds to. 
+     *       Local wallet rule does not allow any change when sending coinbase utxos
+     *       since there is currently no way to specify a change address and we don't
+     *       want users accidentally sending excess funds to a recipient.
      */
     if (isfromtaddr_) {
         add_taddr_outputs_to_tx();
@@ -311,25 +312,13 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         CAmount fundsSpent = t_outputs_total + minersFee + z_outputs_total;
         CAmount change = funds - fundsSpent;
         
-        // If there is a single zaddr and there are coinbase utxos, change goes to the zaddr.
         if (change > 0) {
-            if (isSingleZaddrOutput && selectedUTXOCoinbase) {
-                std::string address = std::get<0>(zOutputsDeque.front());   
-                SendManyRecipient smr(address, change, std::string());
-                zOutputsDeque.push_back(smr);
-
-                LogPrint("zrpc", "%s: change from coinbase utxo is also sent to the recipient (amount=%s)\n",
-                        getId().substr(0, 10),
-                        FormatMoney(change, false)
-                        );
-
-            } else if (!isSingleZaddrOutput && selectedUTXOCoinbase) {
-                // This should not happen and is not allowed
-                assert(false);
+            if (selectedUTXOCoinbase) {
+                assert(isSingleZaddrOutput);
+                throw JSONRPCError(RPC_WALLET_ERROR, strprintf(
+                    "Change %ld not allowed. When protecting coinbase funds, the wallet does not allow any change as there is currently no way to specify a change address in z_sendmany.", change));
             } else {
-                // If there is a single zaddr and no coinbase utxos, just use a regular output for change.
                 add_taddr_change_output_to_tx(change);
-
                 LogPrint("zrpc", "%s: transparent change in transaction output (amount=%s)\n",
                         getId().substr(0, 10),
                         FormatMoney(change, false)
