@@ -430,8 +430,8 @@ Value paxprices(const Array& params, bool fHelp)
         for (i=0; i<n; i++)
         {
             Object item;
-                item.push_back(timestamps[i]);
-                item.push_back((double)prices[i] / COIN);
+                item.push_back(Pair("t", timestamps[i]));
+                item.push_back(Pair("p", (double)prices[i] / COIN));
             a.push_back(item);
         }
         ret.push_back(Pair("array", a));
