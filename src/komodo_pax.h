@@ -141,7 +141,7 @@ int32_t komodo_baseid(char *origbase)
 
 uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t volume)
 {
-    uint32_t pvalb,pvalr,kmdbtc,btcusd; uint64_t baseusd,kmdusd,sum,ranked[32]; int32_t i;
+    uint32_t pvalb,pvalr,kmdbtc,btcusd; uint64_t baseusd,kmdusd,baserel,sum,ranked[32]; int32_t i;
     if ( (pvalb= pvals[baseid]) != 0 )
     {
         if ( relid == MAX_CURRENCIES )
