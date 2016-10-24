@@ -471,7 +471,7 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
         {
             if ( pvals[i] != 0 )
                 nonz++;
-            printf("%u ",pvals[i]);
+            //printf("%u ",pvals[i]);
         }
         if ( nonz == 32 )
         {
@@ -485,7 +485,7 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
             PVALS[36 * NUM_PRICES] = height;
             memcpy(&PVALS[36 * NUM_PRICES + 1],pvals,sizeof(*pvals) * 35);
             NUM_PRICES++;
-            printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES);
+            //printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES);
         }
     }
 }
@@ -660,7 +660,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
             if ( fwrite(pvals,sizeof(uint32_t),numpvals,fp) != numpvals )
                 errs++;
             komodo_pvals(height,pvals,numpvals);
-            printf("save pvals height.%d numpvals.%d\n",height,numpvals);
+            //printf("save pvals height.%d numpvals.%d\n",height,numpvals);
         }
         else if ( height != 0 )
         {
@@ -769,7 +769,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             double KMDBTC,BTCUSD,CNYUSD; uint32_t numpvals,timestamp,pvals[128];
             numpvals = dpow_readprices(&scriptbuf[++len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
             komodo_stateupdate(height,0,0,0,zero,0,0,pvals,numpvals);
-            printf("vout OP_RETURN.%d prices numpvals.%d opretlen.%d\n",height,numpvals,opretlen);
+            //printf("vout OP_RETURN.%d prices numpvals.%d opretlen.%d\n",height,numpvals,opretlen);
         }
     }
     return(notaryid);
