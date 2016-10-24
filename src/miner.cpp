@@ -96,7 +96,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
 }
 
-int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize);
+int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -336,7 +336,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         txNew.vin.resize(1);
         txNew.vin[0].prevout.SetNull();
         int32_t i,opretlen; uint8_t opret[8192],*ptr;
-        if ( (opretlen= komodo_opreturn(opret,sizeof(opret))) > 0 )
+        if ( (opretlen= komodo_pax_opreturn(opret,sizeof(opret))) > 0 )
         {
             txNew.vout.resize(2);
             txNew.vout[1].scriptPubKey.resize(opretlen);

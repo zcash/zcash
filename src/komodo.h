@@ -23,59 +23,33 @@
 #include <pthread.h>
 #include <ctype.h>
 #include "uthash.h"
+#include "komodo_utils.h"
 
 #include "komodo_interest.h"
+#ifdef KOMODO_PAX
+#include "komodo_pax.h"
+#endif
 
 #define KOMODO_TESTNET_EXPIRATION 60000
 #define KOMODO_ELECTION_GAP 1000
 #define KOMODO_PUBKEYS_HEIGHT(height) ((int32_t)(((((height)+KOMODO_ELECTION_GAP*.5)/KOMODO_ELECTION_GAP) + 1) * KOMODO_ELECTION_GAP))
 
-int32_t NUM_PRICES,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos,KOMODO_NUMNOTARIES = 64;
+int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos,KOMODO_NUMNOTARIES = 64;
 std::string NOTARY_PUBKEY;
 uint8_t NOTARY_PUBKEY33[33];
-uint256 NOTARIZED_HASH,NOTARIZED_BTCTXID;
+uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
 pthread_mutex_t komodo_mutex;
-uint32_t *PVALS;
 
 struct nutxo_entry { UT_hash_handle hh; uint256 txhash; uint64_t voutmask; int32_t notaryid,height; } *NUTXOS;
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; } Pubkeys[10000];
-struct notarized_checkpoint { uint256 notarized_hash,notarized_btctxid; int32_t nHeight,notarized_height; } *NPOINTS; int32_t NUM_NPOINTS;
+struct notarized_checkpoint { uint256 notarized_hash,notarized_desttxid; int32_t nHeight,notarized_height; } *NPOINTS; int32_t NUM_NPOINTS;
 
 int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals);
 // add opreturn funcid
 // pricefeeds
 
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
-
-#define MAX_CURRENCIES 32
-char CURRENCIES[][8] = { "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "NZD", // major currencies
-    "CNY", "RUB", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK",
-   "KMD" };
-
-uint32_t MINDENOMS[] = { 1000, 1000, 100000, 1000, 1000, 1000, 1000, 1000, // major currencies
-    10000, 100000, 10000, 1000, 100000, 10000, 1000, 10000, 1000, 10000, 10000, 10000, 10000, 100000, 1000, 1000000, 1000, 10000, 1000, 1000, 10000, 1000, 10000000, 10000, // end of currencies
-};
-
-/*uint32_t PAX_val32(double val)
-{
-    uint32_t val32 = 0; struct price_resolution price;
-    if ( (price.Pval= val*1000000000) != 0 )
-    {
-        if ( price.Pval > 0xffffffff )
-            printf("Pval overflow error %lld\n",(long long)price.Pval);
-        else val32 = (uint32_t)price.Pval;
-    }
-    return(val32);
-}*/
-
-double PAX_val(uint32_t pval,int32_t baseid)
-{
-    //printf("PAX_val baseid.%d pval.%u\n",baseid,pval);
-    if ( baseid >= 0 && baseid < MAX_CURRENCIES )
-        return(((double)pval / 1000000000.) / MINDENOMS[baseid]);
-    return(0.);
-}
 
 const char *Notaries[][2] =
 {
@@ -115,208 +89,6 @@ const char *Notaries[][2] =
     { "eclips_EU", "0339369c1f5a2028d44be7be6f8ec3b907fdec814f87d2dead97cab4edb71a42e9" },
     { "titomane_SH", "035f49d7a308dd9a209e894321f010d21b7793461b0c89d6d9231a3fe5f68d9960" },
 };
-
-static const uint32_t crc32_tab[] = {
-	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
-	0xe963a535, 0x9e6495a3,	0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
-	0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91, 0x1db71064, 0x6ab020f2,
-	0xf3b97148, 0x84be41de,	0x1adad47d, 0x6ddde4eb, 0xf4d4b551, 0x83d385c7,
-	0x136c9856, 0x646ba8c0, 0xfd62f97a, 0x8a65c9ec,	0x14015c4f, 0x63066cd9,
-	0xfa0f3d63, 0x8d080df5,	0x3b6e20c8, 0x4c69105e, 0xd56041e4, 0xa2677172,
-	0x3c03e4d1, 0x4b04d447, 0xd20d85fd, 0xa50ab56b,	0x35b5a8fa, 0x42b2986c,
-	0xdbbbc9d6, 0xacbcf940,	0x32d86ce3, 0x45df5c75, 0xdcd60dcf, 0xabd13d59,
-	0x26d930ac, 0x51de003a, 0xc8d75180, 0xbfd06116, 0x21b4f4b5, 0x56b3c423,
-	0xcfba9599, 0xb8bda50f, 0x2802b89e, 0x5f058808, 0xc60cd9b2, 0xb10be924,
-	0x2f6f7c87, 0x58684c11, 0xc1611dab, 0xb6662d3d,	0x76dc4190, 0x01db7106,
-	0x98d220bc, 0xefd5102a, 0x71b18589, 0x06b6b51f, 0x9fbfe4a5, 0xe8b8d433,
-	0x7807c9a2, 0x0f00f934, 0x9609a88e, 0xe10e9818, 0x7f6a0dbb, 0x086d3d2d,
-	0x91646c97, 0xe6635c01, 0x6b6b51f4, 0x1c6c6162, 0x856530d8, 0xf262004e,
-	0x6c0695ed, 0x1b01a57b, 0x8208f4c1, 0xf50fc457, 0x65b0d9c6, 0x12b7e950,
-	0x8bbeb8ea, 0xfcb9887c, 0x62dd1ddf, 0x15da2d49, 0x8cd37cf3, 0xfbd44c65,
-	0x4db26158, 0x3ab551ce, 0xa3bc0074, 0xd4bb30e2, 0x4adfa541, 0x3dd895d7,
-	0xa4d1c46d, 0xd3d6f4fb, 0x4369e96a, 0x346ed9fc, 0xad678846, 0xda60b8d0,
-	0x44042d73, 0x33031de5, 0xaa0a4c5f, 0xdd0d7cc9, 0x5005713c, 0x270241aa,
-	0xbe0b1010, 0xc90c2086, 0x5768b525, 0x206f85b3, 0xb966d409, 0xce61e49f,
-	0x5edef90e, 0x29d9c998, 0xb0d09822, 0xc7d7a8b4, 0x59b33d17, 0x2eb40d81,
-	0xb7bd5c3b, 0xc0ba6cad, 0xedb88320, 0x9abfb3b6, 0x03b6e20c, 0x74b1d29a,
-	0xead54739, 0x9dd277af, 0x04db2615, 0x73dc1683, 0xe3630b12, 0x94643b84,
-	0x0d6d6a3e, 0x7a6a5aa8, 0xe40ecf0b, 0x9309ff9d, 0x0a00ae27, 0x7d079eb1,
-	0xf00f9344, 0x8708a3d2, 0x1e01f268, 0x6906c2fe, 0xf762575d, 0x806567cb,
-	0x196c3671, 0x6e6b06e7, 0xfed41b76, 0x89d32be0, 0x10da7a5a, 0x67dd4acc,
-	0xf9b9df6f, 0x8ebeeff9, 0x17b7be43, 0x60b08ed5, 0xd6d6a3e8, 0xa1d1937e,
-	0x38d8c2c4, 0x4fdff252, 0xd1bb67f1, 0xa6bc5767, 0x3fb506dd, 0x48b2364b,
-	0xd80d2bda, 0xaf0a1b4c, 0x36034af6, 0x41047a60, 0xdf60efc3, 0xa867df55,
-	0x316e8eef, 0x4669be79, 0xcb61b38c, 0xbc66831a, 0x256fd2a0, 0x5268e236,
-	0xcc0c7795, 0xbb0b4703, 0x220216b9, 0x5505262f, 0xc5ba3bbe, 0xb2bd0b28,
-	0x2bb45a92, 0x5cb36a04, 0xc2d7ffa7, 0xb5d0cf31, 0x2cd99e8b, 0x5bdeae1d,
-	0x9b64c2b0, 0xec63f226, 0x756aa39c, 0x026d930a, 0x9c0906a9, 0xeb0e363f,
-	0x72076785, 0x05005713, 0x95bf4a82, 0xe2b87a14, 0x7bb12bae, 0x0cb61b38,
-	0x92d28e9b, 0xe5d5be0d, 0x7cdcefb7, 0x0bdbdf21, 0x86d3d2d4, 0xf1d4e242,
-	0x68ddb3f8, 0x1fda836e, 0x81be16cd, 0xf6b9265b, 0x6fb077e1, 0x18b74777,
-	0x88085ae6, 0xff0f6a70, 0x66063bca, 0x11010b5c, 0x8f659eff, 0xf862ae69,
-	0x616bffd3, 0x166ccf45, 0xa00ae278, 0xd70dd2ee, 0x4e048354, 0x3903b3c2,
-	0xa7672661, 0xd06016f7, 0x4969474d, 0x3e6e77db, 0xaed16a4a, 0xd9d65adc,
-	0x40df0b66, 0x37d83bf0, 0xa9bcae53, 0xdebb9ec5, 0x47b2cf7f, 0x30b5ffe9,
-	0xbdbdf21c, 0xcabac28a, 0x53b39330, 0x24b4a3a6, 0xbad03605, 0xcdd70693,
-	0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
-	0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
-};
-
-uint32_t calc_crc32(uint32_t crc,const void *buf,size_t size)
-{
-	const uint8_t *p;
-    
-	p = (const uint8_t *)buf;
-	crc = crc ^ ~0U;
-    
-	while (size--)
-		crc = crc32_tab[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
-    
-	return crc ^ ~0U;
-}
-
-int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp)
-{
-    int32_t i; uint64_t x;
-    if ( rwflag == 0 )
-    {
-        x = 0;
-        for (i=len-1; i>=0; i--)
-        {
-            x <<= 8;
-            x |= serialized[i];
-        }
-        switch ( len )
-        {
-            case 1: *(uint8_t *)endianedp = (uint8_t)x; break;
-            case 2: *(uint16_t *)endianedp = (uint16_t)x; break;
-            case 4: *(uint32_t *)endianedp = (uint32_t)x; break;
-            case 8: *(uint64_t *)endianedp = (uint64_t)x; break;
-        }
-    }
-    else
-    {
-        x = 0;
-        switch ( len )
-        {
-            case 1: x = *(uint8_t *)endianedp; break;
-            case 2: x = *(uint16_t *)endianedp; break;
-            case 4: x = *(uint32_t *)endianedp; break;
-            case 8: x = *(uint64_t *)endianedp; break;
-        }
-        for (i=0; i<len; i++,x >>= 8)
-            serialized[i] = (uint8_t)(x & 0xff);
-    }
-    return(len);
-}
-
-int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *endianedp)
-{
-    int32_t i;
-    if ( rwflag == 0 )
-    {
-        for (i=0; i<len; i++)
-            endianedp[i] = serialized[i];
-    }
-    else
-    {
-        for (i=0; i<len; i++)
-            serialized[i] = endianedp[i];
-    }
-    return(len);
-}
-
-int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,double *BTCUSDp,double *CNYUSDp,uint32_t *pvals)
-{
-    uint32_t kmdbtc,btcusd,cnyusd; int32_t i,n,len = 0;
-    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)timestampp);
-    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&n);
-    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&kmdbtc); // /= 1000
-    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&btcusd); // *= 1000
-    len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&cnyusd);
-    *KMDBTCp = ((double)kmdbtc / (1000000000. * 1000.));
-    *BTCUSDp = ((double)btcusd / (1000000000. / 1000.));
-    *CNYUSDp = ((double)cnyusd / 1000000000.);
-    for (i=0; i<n-3; i++)
-    {
-        len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&pvals[i]);
-        //printf("%u ",pvals[i]);
-    }
-    pvals[i++] = kmdbtc;
-    pvals[i++] = btcusd;
-    pvals[i++] = cnyusd;
-    //printf("OP_RETURN prices\n");
-    return(n);
-}
-
-int32_t _unhex(char c)
-{
-    if ( c >= '0' && c <= '9' )
-        return(c - '0');
-    else if ( c >= 'a' && c <= 'f' )
-        return(c - 'a' + 10);
-    else if ( c >= 'A' && c <= 'F' )
-        return(c - 'A' + 10);
-    return(-1);
-}
-
-int32_t is_hexstr(char *str,int32_t n)
-{
-    int32_t i;
-    if ( str == 0 || str[0] == 0 )
-        return(0);
-    for (i=0; str[i]!=0; i++)
-    {
-        if ( n > 0 && i >= n )
-            break;
-        if ( _unhex(str[i]) < 0 )
-            break;
-    }
-    if ( n == 0 )
-        return(i);
-    return(i == n);
-}
-
-int32_t unhex(char c)
-{
-    int32_t hex;
-    if ( (hex= _unhex(c)) < 0 )
-    {
-        //printf("unhex: illegal hexchar.(%c)\n",c);
-    }
-    return(hex);
-}
-
-unsigned char _decode_hex(char *hex) { return((unhex(hex[0])<<4) | unhex(hex[1])); }
-
-int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex)
-{
-    int32_t adjust,i = 0;
-    //printf("decode.(%s)\n",hex);
-    if ( is_hexstr(hex,n) == 0 )
-    {
-        memset(bytes,0,n);
-        return(n);
-    }
-    if ( n == 0 || (hex[n*2+1] == 0 && hex[n*2] != 0) )
-    {
-        if ( n > 0 )
-        {
-            bytes[0] = unhex(hex[0]);
-            printf("decode_hex n.%d hex[0] (%c) -> %d hex.(%s) [n*2+1: %d] [n*2: %d %c] len.%ld\n",n,hex[0],bytes[0],hex,hex[n*2+1],hex[n*2],hex[n*2],(long)strlen(hex));
-        }
-        bytes++;
-        hex++;
-        adjust = 1;
-    } else adjust = 0;
-    if ( n > 0 )
-    {
-        for (i=0; i<n; i++)
-            bytes[i] = _decode_hex(&hex[i*2]);
-    }
-    //bytes[i] = 0;
-    return(n + adjust);
-}
 
 int32_t komodo_threshold(int32_t height,uint64_t signedmask)
 {
@@ -423,7 +195,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
     return(modval);
 }
 
-void komodo_notarized_update(int32_t nHeight,int32_t notarized_height,uint256 notarized_hash,uint256 notarized_btctxid)
+void komodo_notarized_update(int32_t nHeight,int32_t notarized_height,uint256 notarized_hash,uint256 notarized_desttxid)
 {
     struct notarized_checkpoint *np;
     if ( notarized_height > nHeight )
@@ -437,10 +209,10 @@ void komodo_notarized_update(int32_t nHeight,int32_t notarized_height,uint256 no
     np->nHeight = nHeight;
     np->notarized_height = notarized_height;
     np->notarized_hash = notarized_hash;
-    np->notarized_btctxid = notarized_btctxid;
+    np->notarized_desttxid = notarized_desttxid;
 }
 
-int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_btctxidp)
+int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
 {
     struct notarized_checkpoint *np = 0; int32_t i;
     if ( NUM_NPOINTS > 0 )
@@ -455,93 +227,10 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
     if ( np != 0 )
     {
         *notarized_hashp = np->notarized_hash;
-        *notarized_btctxidp = np->notarized_btctxid;
+        *notarized_desttxidp = np->notarized_desttxid;
         return(np->notarized_height);
     } 
     memset(notarized_hashp,0,sizeof(*notarized_hashp));
-    return(0);
-}
-
-void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
-{
-    int32_t i,nonz; double KMDBTC,BTCUSD,CNYUSD; uint32_t kmdbtc,btcusd,cnyusd;
-    if ( numpvals >= 35 )
-    {
-        for (nonz=i=0; i<32; i++)
-        {
-            if ( pvals[i] != 0 )
-                nonz++;
-            //printf("%u ",pvals[i]);
-        }
-        if ( nonz == 32 )
-        {
-            kmdbtc = pvals[i++];
-            btcusd = pvals[i++];
-            cnyusd = pvals[i++];
-            KMDBTC = ((double)kmdbtc / (1000000000. * 1000.));
-            BTCUSD = ((double)btcusd / (1000000000. / 1000.));
-            CNYUSD = ((double)cnyusd / 1000000000.);
-            PVALS = (uint32_t *)realloc(PVALS,(NUM_PRICES+1) * sizeof(*PVALS) * 36);
-            PVALS[36 * NUM_PRICES] = height;
-            memcpy(&PVALS[36 * NUM_PRICES + 1],pvals,sizeof(*pvals) * 35);
-            NUM_PRICES++;
-            //printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES);
-        }
-    }
-}
-
-int32_t komodo_baseid(char *origbase)
-{
-    int32_t i; char base[64];
-    for (i=0; origbase[i]!=0&&i<sizeof(base); i++)
-        base[i] = toupper((int32_t)(origbase[i] & 0xff));
-    base[i] = 0;
-    for (i=0; i<=MAX_CURRENCIES; i++)
-        if ( strcmp(CURRENCIES[i],base) == 0 )
-            return(i);
-    printf("illegal base.(%s) %s\n",origbase,base);
-    return(-1);
-}
-
-#define USD 0
-uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t volume)
-{
-    int32_t baseid=-1,relid=-1,i,ht; uint32_t kmdbtc,btcusd,pvalb,pvalr,*ptr; double usdval,baseval,relval,KMDBTC,BTCUSD,KMDUSD;
-    if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
-    {
-        for (i=NUM_PRICES-1; i>=0; i--)
-        {
-            ptr = &PVALS[36 * i];
-            if ( *ptr < height )
-            {
-                if ( (pvalb= ptr[1 + baseid]) != 0 )
-                {
-                    baseval = PAX_val(pvalb,baseid);
-                    if ( relid == MAX_CURRENCIES )
-                    {
-                        kmdbtc = ptr[1 + MAX_CURRENCIES];
-                        btcusd = ptr[1 + MAX_CURRENCIES + 1];
-                        if ( ptr[1 + USD] != 0 && kmdbtc != 0 && btcusd != 0 )
-                        {
-                            usdval = PAX_val(ptr[1 + USD],USD);
-                            KMDBTC = ((double)kmdbtc / (1000000000. * 1000.));
-                            BTCUSD = ((double)btcusd / (1000000000. / 1000.));
-                            KMDUSD = (KMDBTC * BTCUSD);
-                            printf("base -> USD %f, BTC %f KMDUSD %f\n",baseval/usdval,BTCUSD,KMDUSD);
-                            return(volume * (baseval / usdval) / KMDUSD);
-                        }
-                    }
-                    else if ( (pvalr= ptr[1 + relid]) != 0 )
-                    {
-                        relval = PAX_val(pvalr,relid);
-                        printf("ht.%d [%d] base.(%u %f) rel.(%u %f) -> %llu\n",height,*ptr,pvalb,baseval,pvalr,relval,(long long)(COIN * (baseval / relval)));
-                        return(volume * (baseval / relval));
-                    }
-                }
-                return(0);
-            }
-        }
-    } else printf("paxprice invalid base.%s %d, rel.%s %d\n",base,baseid,rel,relid);
     return(0);
 }
 
@@ -582,10 +271,10 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
                         errs++;
                     if ( fread(&NOTARIZED_HASH,1,sizeof(NOTARIZED_HASH),fp) != sizeof(NOTARIZED_HASH) )
                         errs++;
-                    if ( fread(&NOTARIZED_BTCTXID,1,sizeof(NOTARIZED_BTCTXID),fp) != sizeof(NOTARIZED_BTCTXID) )
+                    if ( fread(&NOTARIZED_DESTTXID,1,sizeof(NOTARIZED_DESTTXID),fp) != sizeof(NOTARIZED_DESTTXID) )
                         errs++;
                     printf("load NOTARIZED %d %s\n",NOTARIZED_HEIGHT,NOTARIZED_HASH.ToString().c_str());
-                    komodo_notarized_update(ht,NOTARIZED_HEIGHT,NOTARIZED_HASH,NOTARIZED_BTCTXID);
+                    komodo_notarized_update(ht,NOTARIZED_HEIGHT,NOTARIZED_HASH,NOTARIZED_DESTTXID);
                 }
                 else if ( func == 'U' )
                 {
@@ -603,6 +292,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
                 {
                     //printf("D[%d]\n",ht);
                 }
+#ifdef KOMODO_PAX
                 else if ( func == 'V' )
                 {
                     int32_t numpvals; uint32_t pvals[128];
@@ -613,6 +303,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
                         printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
                     } else printf("error loading pvals[%d]\n",numpvals);
                 }
+#endif
                 else printf("illegal func.(%d %c)\n",func,func);
             }
         } else fp = fopen(fname,"wb+");
@@ -651,6 +342,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
             if ( fwrite(&txhash,1,sizeof(txhash),fp) != sizeof(txhash) )
                 errs++;
         }
+#ifdef KOMODO_PAX
         else if ( pvals != 0 && numpvals > 0 )
         {
             fputc('V',fp);
@@ -662,6 +354,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
             komodo_pvals(height,pvals,numpvals);
             //printf("save pvals height.%d numpvals.%d\n",height,numpvals);
         }
+#endif
         else if ( height != 0 )
         {
             //printf("func N ht.%d errs.%d\n",NOTARIZED_HEIGHT,errs);
@@ -672,9 +365,9 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
                 errs++;
             if ( fwrite(&NOTARIZED_HASH,1,sizeof(NOTARIZED_HASH),fp) != sizeof(NOTARIZED_HASH) )
                 errs++;
-            if ( fwrite(&NOTARIZED_BTCTXID,1,sizeof(NOTARIZED_BTCTXID),fp) != sizeof(NOTARIZED_BTCTXID) )
+            if ( fwrite(&NOTARIZED_DESTTXID,1,sizeof(NOTARIZED_DESTTXID),fp) != sizeof(NOTARIZED_DESTTXID) )
                 errs++;
-            komodo_notarized_update(height,NOTARIZED_HEIGHT,NOTARIZED_HASH,NOTARIZED_BTCTXID);
+            komodo_notarized_update(height,NOTARIZED_HEIGHT,NOTARIZED_HASH,NOTARIZED_DESTTXID);
         }
         fflush(fp);
     }
@@ -760,10 +453,11 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
                 printf("ht.%d NOTARIZED.%d KMD.%s BTCTXID.%s (%s)\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),btctxid.ToString().c_str(),(char *)&scriptbuf[len]);
                 NOTARIZED_HEIGHT = *notarizedheightp;
                 NOTARIZED_HASH = kmdtxid;
-                NOTARIZED_BTCTXID = btctxid;
+                NOTARIZED_DESTTXID = desttxid;
                 komodo_stateupdate(height,0,0,0,zero,0,0,0,0);
             } else printf("reject ht.%d NOTARIZED.%d KMD.%s BTCTXID.%s (%s)\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),btctxid.ToString().c_str(),(char *)&scriptbuf[len]);
         }
+#ifdef KOMODO_PAX
         else if ( i == 0 && scriptbuf[len] == 'P' )
         {
             double KMDBTC,BTCUSD,CNYUSD; uint32_t numpvals,timestamp,pvals[128];
@@ -771,6 +465,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             komodo_stateupdate(height,0,0,0,zero,0,0,pvals,numpvals);
             //printf("vout OP_RETURN.%d prices numpvals.%d opretlen.%d\n",height,numpvals,opretlen);
         }
+#endif
     }
     return(notaryid);
 }
@@ -907,77 +602,6 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     }
 }
 
-int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen)
-{
-    int32_t offset = 0;
-    script[offset++] = 0x6a;
-    opretlen++;
-    if ( opretlen >= 0x4c )
-    {
-        if ( opretlen > 0xff )
-        {
-            script[offset++] = 0x4d;
-            script[offset++] = opretlen & 0xff;
-            script[offset++] = (opretlen >> 8) & 0xff;
-        }
-        else
-        {
-            script[offset++] = 0x4c;
-            script[offset++] = opretlen;
-        }
-    } else script[offset++] = opretlen;
-    script[offset++] = type;
-    memcpy(&script[offset],opret,opretlen);
-    return(opretlen + offset);
-}
 
-int32_t komodo_opreturn(uint8_t *opret,int32_t maxsize)
-{
-    static uint32_t lastcrc;
-    FILE *fp; char fname[512]; uint32_t crc32,check,timestamp; int32_t i,n,retval,fsize,len=0; uint8_t data[8192];
-#ifdef WIN32
-    sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"komodofeed");
-#else
-    sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),(char *)"komodofeed");
-#endif
-    if ( (fp= fopen(fname,"rb")) != 0 )
-    {
-        fseek(fp,0,SEEK_END);
-        fsize = (int32_t)ftell(fp);
-        rewind(fp);
-        if ( fsize <= maxsize-4 && fsize <= sizeof(data) && fsize > sizeof(crc32) )
-        {
-            if ( (retval= (int32_t)fread(data,1,fsize,fp)) == fsize )
-            {
-                len = iguana_rwnum(0,data,sizeof(crc32),(void *)&crc32);
-                check = calc_crc32(0,data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
-                if ( check == crc32 )
-                {
-                    double KMDBTC,BTCUSD,CNYUSD; uint32_t pvals[128];
-                    dpow_readprices(&data[len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
-                    if ( 0 && lastcrc != crc32 )
-                    {
-                        for (i=0; i<32; i++)
-                            printf("%u ",pvals[i]);
-                        printf("t%u n.%d KMD %f BTC %f CNY %f (%f)\n",timestamp,n,KMDBTC,BTCUSD,CNYUSD,CNYUSD!=0?1./CNYUSD:0);
-                    }
-                    if ( timestamp > time(NULL)-600 )
-                    {
-                        n = komodo_opreturnscript(opret,'P',data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
-                        if ( 0 && lastcrc != crc32 )
-                        {
-                            for (i=0; i<n; i++)
-                                printf("%02x",opret[i]);
-                            printf(" coinbase opret[%d] crc32.%u:%u\n",n,crc32,check);
-                        }
-                    } else printf("t%u too old for %u\n",timestamp,(uint32_t)time(NULL));
-                    lastcrc = crc32;
-                } else printf("crc32 %u mismatch %u\n",crc32,check);
-            } else printf("fread.%d error != fsize.%d\n",retval,fsize);
-        } else printf("fsize.%d > maxsize.%d or data[%d]\n",fsize,maxsize,(int32_t)sizeof(data));
-        fclose(fp);
-    }
-    return(n);
-}
 
 #endif
