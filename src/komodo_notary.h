@@ -47,32 +47,6 @@ struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; } Pubkeys[10000];
 struct notarized_checkpoint { uint256 notarized_hash,notarized_desttxid; int32_t nHeight,notarized_height; } *NPOINTS; int32_t NUM_NPOINTS;
 
-int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,NOTARIZED_HEIGHT,Num_nutxos,KOMODO_NUMNOTARIES = 64;
-std::string NOTARY_PUBKEY;
-uint8_t NOTARY_PUBKEY33[33];
-uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
-
-void komodo_init()
-{
-    static int didinit; uint256 zero; int32_t k; uint8_t pubkeys[64][33];
-    if ( didinit == 0 )
-    {
-        didinit = 1;
-        pthread_mutex_init(&komodo_mutex,NULL);
-        decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
-        KOMODO_NUMNOTARIES = (int32_t)(sizeof(Notaries)/sizeof(*Notaries));
-        for (k=0; k<KOMODO_NUMNOTARIES; k++)
-        {
-            if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
-                break;
-            decode_hex(pubkeys[k],33,(char *)Notaries[k][1]);
-        }
-        komodo_notarysinit(0,pubkeys,KOMODO_NUMNOTARIES);
-        memset(&zero,0,sizeof(zero));
-        komodo_stateupdate(0,0,0,0,zero,0,0,0,0);
-    }
-}
-
 int32_t komodo_ratify_threshold(int32_t height,uint64_t signedmask)
 {
     int32_t numnotaries,i,wt = 0;
@@ -203,4 +177,25 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
     }
     memset(notarized_hashp,0,sizeof(*notarized_hashp));
     return(0);
+}
+
+void komodo_init()
+{
+    static int didinit; uint256 zero; int32_t k; uint8_t pubkeys[64][33];
+    if ( didinit == 0 )
+    {
+        didinit = 1;
+        pthread_mutex_init(&komodo_mutex,NULL);
+        decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+        KOMODO_NUMNOTARIES = (int32_t)(sizeof(Notaries)/sizeof(*Notaries));
+        for (k=0; k<KOMODO_NUMNOTARIES; k++)
+        {
+            if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
+                break;
+            decode_hex(pubkeys[k],33,(char *)Notaries[k][1]);
+        }
+        komodo_notarysinit(0,pubkeys,KOMODO_NUMNOTARIES);
+        memset(&zero,0,sizeof(zero));
+        komodo_stateupdate(0,0,0,0,zero,0,0,0,0);
+    }
 }
