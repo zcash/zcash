@@ -228,7 +228,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
                 kmdusd = ((uint64_t)kmdbtc * 1000000000) / btcusd;
                 //printf("base -> USD %llu, BTC %llu KMDUSD %llu\n",(long long)baseusd,(long long)btcusd,(long long)kmdusd);
                 printf("kmdusd.%llu basevolume.%llu baseusd.%llu\n",(long long)kmdusd,(long long)basevolume,(long long)baseusd);
-                return(kmdusd / (basevolume * baseusd));
+                return((kmdusd * 1000000000) / (basevolume * baseusd));
             }
         }
         else if ( baseid == relid )
