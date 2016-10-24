@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <ctype.h>
+#include "mini-gmp.c"
 #include "uthash.h"
 #include "komodo_utils.h"
 

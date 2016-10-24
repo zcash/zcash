@@ -400,12 +400,19 @@ Value paxprice(const Array& params, bool fHelp)
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
     ret.push_back(Pair("height", height));
-    if ( basevolume != 0 && relvolume != 0 )
+    if ( height < 0 || height > chainActive.Height() )
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+    else
     {
-        ret.push_back(Pair("price",((double)relvolume / (double)basevolume)));
-        ret.push_back(Pair("invprice",((double)basevolume / (double)relvolume)));
-        ret.push_back(Pair("basevolume", ValueFromAmount(basevolume)));
-        ret.push_back(Pair("relvolume", ValueFromAmount(relvolume)));
+        CBlockIndex *pblockindex = chainActive[height];
+        item.push_back(Pair("timestamp", (int64_t)pblockindex->nTime));
+        if ( basevolume != 0 && relvolume != 0 )
+        {
+            ret.push_back(Pair("price",((double)relvolume / (double)basevolume)));
+            ret.push_back(Pair("invprice",((double)basevolume / (double)relvolume)));
+            ret.push_back(Pair("basevolume", ValueFromAmount(basevolume)));
+            ret.push_back(Pair("relvolume", ValueFromAmount(relvolume)));
+        }
     }
     return ret;
 }
