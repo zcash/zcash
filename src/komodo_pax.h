@@ -231,7 +231,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
                 usdkmd = ((uint64_t)btcusd * 1000000000) / kmdbtc;
                 //printf("base -> USD %llu, BTC %llu KMDUSD %llu\n",(long long)baseusd,(long long)btcusd,(long long)kmdusd);
                 printf("usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol);
-                return(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / MINDENOMS[baseid]);
+                return(MINDENOMS[USD] * (komodo_paxvol(usdvol,usdkmd) / MINDENOMS[baseid]));
             }
         }
         else if ( baseid == relid )
