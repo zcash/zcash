@@ -9,6 +9,9 @@ BETA2_VKEY_NAME='beta2-verifying.key'
 BETA2_PKEY_URL="https://z.cash/downloads/$BETA2_PKEY_NAME"
 BETA2_VKEY_URL="https://z.cash/downloads/$BETA2_VKEY_NAME"
 
+SHA256CMD="$(command -v sha256sum || echo shasum)"
+SHA256ARGS="$(command -v sha256sum >/dev/null || echo '-a 256')"
+
 function fetch_params {
     local url="$1"
     local output="$2"
@@ -25,7 +28,7 @@ function fetch_params {
             --retry-connrefused --waitretry=3 --timeout=30 \
             "$url"
 
-        shasum -a 256 --check <<EOF
+        "$SHA256CMD" $SHA256ARGS --check <<EOF
 $expectedhash  $dlname
 EOF
 
