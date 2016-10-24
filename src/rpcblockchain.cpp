@@ -412,7 +412,7 @@ Value paxprice(const Array& params, bool fHelp)
             ret.push_back(Pair("invprice",((double)basevolume / (double)relvolume)));
             ret.push_back(Pair("basevolume", ValueFromAmount(basevolume)));
             ret.push_back(Pair("relvolume", ValueFromAmount(relvolume)));
-        }
+        } else ret.push_back(Pair("error", "overflow or error in one or more of parameters"));
     }
     return ret;
 }

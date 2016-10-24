@@ -216,7 +216,7 @@ int32_t komodo_baseid(char *origbase)
 uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t basevolume)
 {
     uint32_t pvalb,pvalr,kmdbtc,btcusd; uint64_t usdvol,baseusd,usdkmd,baserel,sum,ranked[32]; int32_t i;
-    if ( basevolume > 1000000*COIN )
+    if ( basevolume > 10000000*COIN )
         return(0);
     if ( (pvalb= pvals[baseid]) != 0 )
     {
