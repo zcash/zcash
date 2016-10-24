@@ -120,14 +120,14 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t volume)
                             //KMDBTC = ((double)kmdbtc / (1000000000. * 1000.));
                             //BTCUSD = ((double)btcusd / (1000000000. / 1000.));
                             //KMDUSD = (KMDBTC * BTCUSD);
-                            printf("base -> USD %llu, BTC %llu KMDUSD %llu\n",(long long)baseusd,(long long)btcusd,(long long)kmdusd);
-                            return((volume * baseusd) / kmdbtc);
+                            //printf("base -> USD %llu, BTC %llu KMDUSD %llu\n",(long long)baseusd,(long long)btcusd,(long long)kmdusd);
+                            return((volume * baseusd) / kmdusd);
                         }
                     }
                     else if ( (pvalr= ptr[1 + relid]) != 0 )
                     {
                         baserel = ((uint64_t)pvalb * 1000000000) / pvalr;
-                        return(volume * baserel);
+                        return((volume * baserel) / 1000000000);
                     }
                 }
                 return(0);

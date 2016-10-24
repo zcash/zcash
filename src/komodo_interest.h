@@ -1,5 +1,4 @@
 
-//#define KOMODO_ENABLE_INTEREST
 
 #define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))
 #define dstr(x) ((double)(x)/COIN)
