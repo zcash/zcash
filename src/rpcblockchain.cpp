@@ -383,32 +383,57 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint32_t komodo_txtime(uint256 hash);
 uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume);
+int32_t komodo_paxprices(uint32_t *timestamps,uint64_t *prices,int32_t max,int32_t width,char *base,char *rel);
 
 Value paxprice(const Array& params, bool fHelp)
 {
     if ( fHelp || params.size() < 3 || params.size() > 4 )
         throw runtime_error("paxprice \"base\" \"rel\" height\n");
     LOCK(cs_main);
-    Object ret; uint64_t pricetoshis,basevolume=0,relvolume;
+    Object ret; uint64_t basevolume=0,relvolume;
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
-    int32_t height = atoi(params[2].get_str().c_str());
-    if ( params.size() == 4 )
-        basevolume = AmountFromValue(params[3]);
+    int32_t width = atoi(params[2].get_str().c_str());
+    if ( width < 60 )
+        width = 60;
     if ( basevolume == 0 )
         basevolume = COIN;
     relvolume = komodo_paxprice(height,(char *)base.c_str(),(char *)rel.c_str(),basevolume);
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
     ret.push_back(Pair("height", height));
-    if ( basevolume != 0 )
+    if ( basevolume != 0 && relvolume != 0 )
     {
         ret.push_back(Pair("price",((double)relvolume / (double)basevolume)));
+        ret.push_back(Pair("invprice",((double)basevolume / (double)relvolume)));
+        ret.push_back(Pair("basevolume", ValueFromAmount(basevolume)));
         ret.push_back(Pair("relvolume", ValueFromAmount(relvolume)));
+    }
+    return ret;
+}
+
+Value paxprices(const Array& params, bool fHelp)
+{
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("paxprices \"base\" \"rel\" width\n");
+    LOCK(cs_main);
+    Object ret; uint64_t relvolume,prices[1024]; uint32_t i,n,timestamps[1024];
+    std::string base = params[0].get_str();
+    std::string rel = params[1].get_str();
+    int32_t width = atoi(params[2].get_str().c_str());
+    ret.push_back(Pair("base", base));
+    ret.push_back(Pair("rel", rel));
+    if ( basevolume != 0 && relvolume != 0 )
+    {
+        n = komodo_paxprices(timestamps,prices,(int32_t)(sizeof(prices)/sizeof(*prices)),width,(char *)base.c_str(),(char *)rel.c_str());
         Array a;
+        for (i=0; i<n; i++)
+        {
             Object item;
-                item.push_back(Pair("price",((double)relvolume / (double)basevolume)));
+                item.push_back(timestamps[i]);
+                item.push_back((double)prices[i] / COIN);
             a.push_back(item);
+        }
         ret.push_back(Pair("array", a));
     }
     return ret;
