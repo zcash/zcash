@@ -394,8 +394,6 @@ Value paxprice(const Array& params, bool fHelp)
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
     int32_t height = atoi(params[2].get_str().c_str());
-    if ( width < 60 )
-        width = 60;
     if ( basevolume == 0 )
         basevolume = COIN;
     relvolume = komodo_paxprice(height,(char *)base.c_str(),(char *)rel.c_str(),basevolume);
@@ -421,6 +419,8 @@ Value paxprices(const Array& params, bool fHelp)
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
     int32_t width = atoi(params[2].get_str().c_str());
+    if ( width < 60 )
+        width = 60;
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
     n = komodo_paxprices(timestamps,prices,(int32_t)(sizeof(prices)/sizeof(*prices)),width,(char *)base.c_str(),(char *)rel.c_str());
