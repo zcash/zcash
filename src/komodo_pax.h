@@ -216,7 +216,7 @@ int32_t komodo_baseid(char *origbase)
 uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t basevolume)
 {
     uint32_t pvalb,pvalr,kmdbtc,btcusd; uint64_t usdvol,baseusd,usdkmd,baserel,sum,ranked[32]; int32_t i;
-    if ( basevolume > 10000000*COIN )
+    if ( basevolume > 1000000*COIN )
         return(0);
     if ( (pvalb= pvals[baseid]) != 0 )
     {
@@ -284,17 +284,20 @@ int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *bas
     return(num);
 }
 
-uint64_t PAX_fiatdest(char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *base,int32_t fiatunits)
+uint64_t PAX_fiatdest(char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *origbase,int64_t fiatoshis)
 {
-    uint8_t shortflag = 0; int32_t baseid,relid; uint8_t addrtype,rmd160[20]; uint64_t komodoshis = 0;
+    uint8_t shortflag = 0; char base[4]; int32_t i,baseid,relid; uint8_t addrtype,rmd160[20]; uint64_t komodoshis = 0;
     if ( strcmp(base,(char *)"KMD") == 0 || strcmp(base,(char *)"kmd") == 0 )
         return(0);
+    for (i=0; i<3; i++)
+        base[i] = toupper(origbase[i]);
+    base[i] = 0;
     if ( fiatunits < 0 )
         shortflag = 1, fiatunits = -fiatunits;
-    komodoshis = komodo_paxprice(height,base,(char *)"KMD",(uint64_t)fiatunits);
+    komodoshis = komodo_paxprice(height,base,(char *)"KMD",(uint64_t)fiatoshis);
     if ( bitcoin_addr2rmd160(&addrtype,rmd160,coinaddr) == 20 )
     {
-        PAX_pubkey(pubkey33,addrtype,rmd160,base,shortflag,fiatunits);
+        PAX_pubkey(pubkey33,addrtype,rmd160,base,shortflag,fiatoshis);
         bitcoin_address(destaddr,KOMODO_PUBTYPE,pubkey33,33);
     }
     return(komodoshis);

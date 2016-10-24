@@ -452,7 +452,7 @@ Value sendtoaddress(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
-uint64_t PAX_fiatdest(char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *base,int32_t fiatunits);
+uint64_t PAX_fiatdest(char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *base,int64_t fiatoshis);
 
 Value paxdeposit(const Array& params, bool fHelp)
 {
@@ -461,22 +461,22 @@ Value paxdeposit(const Array& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return Value::null;
     if (fHelp || params.size() != 3)
-        throw runtime_error("paxdeposit \"bitcoinaddress\" fiatunits \"base\"");
+        throw runtime_error("paxdeposit \"bitcoinaddress\" [-]fiatoshis \"base\"\nnegative fiatoshis means a short position, long position capped at 100% gain");
     LOCK2(cs_main, pwalletMain->cs_wallet);
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
-    int32_t fiatunits = atoi(params[1].get_str());
+    int64_t fiatoshis = atof(params[1].get_str()) * COIN;
     std::string base = params[2].get_str();
     std::string dest;
-    komodoshis = PAX_fiatdest(destaddr,pubkey33,(char *)params[0].get_str().c_str(),chainActive.Tip()->nHeight,(char *)base.c_str(),fiatunits);
+    komodoshis = PAX_fiatdest(destaddr,pubkey33,(char *)params[0].get_str().c_str(),chainActive.Tip()->nHeight,(char *)base.c_str(),fiatoshis);
     dest.append(destaddr);
     CBitcoinAddress destaddress(dest);
     if (!destaddress.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest Bitcoin address");
     for (i=0; i<33; i++)
         printf("%02x",pubkey33[i]);
-    printf(" ht.%d srcaddr.(%s) %s fiatunits.%d -> dest.(%s) komodoshis.%llu\n",chainActive.Tip()->nHeight,(char *)params[0].get_str().c_str(),(char *)base.c_str(),fiatunits,destaddr,(long long)komodoshis);
+    printf(" ht.%d srcaddr.(%s) %s fiatoshis.%lld -> dest.(%s) komodoshis.%llu\n",chainActive.Tip()->nHeight,(char *)params[0].get_str().c_str(),(char *)base.c_str(),(long long)fiatoshis,destaddr,(long long)komodoshis);
     
     EnsureWalletIsUnlocked();
     CWalletTx wtx;
