@@ -452,7 +452,7 @@ Value sendtoaddress(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
-uint64_t PAX_fiatdest(char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *base,int32_t fiatunits)
+uint64_t PAX_fiatdest(char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *base,int32_t fiatunits);
 
 Value paxdeposit(const Array& params, bool fHelp)
 {
