@@ -109,7 +109,8 @@ namespace tinyformat {}
 namespace tfm = tinyformat;
 
 // Error handling; calls assert() by default.
-#define TINYFORMAT_ERROR(reasonString) throw std::runtime_error(reasonString)
+#define TINYFORMAT_ERROR(reasonString, origFmt) \
+    throw std::runtime_error(std::string(reasonString) + ": \"" + origFmt + "\"")
 
 // Define for C++11 variadic templates which make the code shorter & more
 // general.  If you don't define this, C++11 support is autodetected below.
@@ -124,7 +125,7 @@ namespace tfm = tinyformat;
 #include <stdexcept>
 
 #ifndef TINYFORMAT_ERROR
-#   define TINYFORMAT_ERROR(reason) assert(0 && reason)
+#   define TINYFORMAT_ERROR(reason, origFmt) assert(0 && reason)
 #endif
 
 #if !defined(TINYFORMAT_USE_VARIADIC_TEMPLATES) && !defined(TINYFORMAT_NO_VARIADIC_TEMPLATES)
@@ -236,7 +237,7 @@ struct convertToInt
     static int invoke(const T& /*value*/)
     {
         TINYFORMAT_ERROR("tinyformat: Cannot convert from argument type to "
-                         "integer for use as variable width or precision");
+                         "integer for use as variable width or precision", "unknown");
         return 0;
     }
 };
@@ -462,7 +463,8 @@ class FormatIterator
             m_origWidth(out.width()),
             m_origPrecision(out.precision()),
             m_origFlags(out.flags()),
-            m_origFill(out.fill())
+            m_origFill(out.fill()),
+            m_debug(fmt)
         { }
 
         // Print remaining part of format string.
@@ -472,7 +474,7 @@ class FormatIterator
             // can't if TINFORMAT_ERROR is used to throw an exception!
             m_fmt = printFormatStringLiteral(m_out, m_fmt);
             if(*m_fmt != '\0')
-                TINYFORMAT_ERROR("tinyformat: Too many conversion specifiers in format string");
+                TINYFORMAT_ERROR("tinyformat: Too many conversion specifiers in format string", m_debug);
         }
 
         ~FormatIterator()
@@ -556,7 +558,8 @@ class FormatIterator
                                                  unsigned int& extraFlags,
                                                  const char* fmtStart,
                                                  int variableWidth,
-                                                 int variablePrecision);
+                                                 int variablePrecision,
+                                                 const char *origFmt);
 
         // Private copy & assign: Kill gcc warnings with -Weffc++
         FormatIterator(const FormatIterator&);
@@ -576,6 +579,7 @@ class FormatIterator
         std::streamsize m_origPrecision;
         std::ios::fmtflags m_origFlags;
         char m_origFill;
+        const char *m_debug;
 };
 
 
@@ -589,7 +593,7 @@ void FormatIterator::accept(const T& value)
     if(m_extraFlags == Flag_None && !m_wantWidth && !m_wantPrecision)
     {
         m_fmt = printFormatStringLiteral(m_out, m_fmt);
-        fmtEnd = streamStateFromFormat(m_out, m_extraFlags, m_fmt, 0, 0);
+        fmtEnd = streamStateFromFormat(m_out, m_extraFlags, m_fmt, 0, 0, m_debug);
         m_wantWidth     = (m_extraFlags & Flag_VariableWidth) != 0;
         m_wantPrecision = (m_extraFlags & Flag_VariablePrecision) != 0;
     }
@@ -614,7 +618,7 @@ void FormatIterator::accept(const T& value)
         // If we get here, we've set both the variable precision and width as
         // required and we need to rerun the stream state setup to insert these.
         fmtEnd = streamStateFromFormat(m_out, m_extraFlags, m_fmt,
-                                       m_variableWidth, m_variablePrecision);
+                                       m_variableWidth, m_variablePrecision, m_debug);
     }
 
     // Format the value into the stream.
@@ -669,11 +673,12 @@ inline const char* FormatIterator::streamStateFromFormat(std::ostream& out,
                                                          unsigned int& extraFlags,
                                                          const char* fmtStart,
                                                          int variableWidth,
-                                                         int variablePrecision)
+                                                         int variablePrecision,
+                                                         const char *origFmt)
 {
     if(*fmtStart != '%')
     {
-        TINYFORMAT_ERROR("tinyformat: Not enough conversion specifiers in format string");
+        TINYFORMAT_ERROR("tinyformat: Not enough conversion specifiers in format string", origFmt);
         return fmtStart;
     }
     // Reset stream state to defaults.
@@ -807,7 +812,7 @@ inline const char* FormatIterator::streamStateFromFormat(std::ostream& out,
             break;
         case 'a': case 'A':
             TINYFORMAT_ERROR("tinyformat: the %a and %A conversion specs "
-                             "are not supported");
+                             "are not supported", origFmt);
             break;
         case 'c':
             // Handled as special case inside formatValue()
@@ -820,11 +825,11 @@ inline const char* FormatIterator::streamStateFromFormat(std::ostream& out,
             break;
         case 'n':
             // Not supported - will cause problems!
-            TINYFORMAT_ERROR("tinyformat: %n conversion spec not supported");
+            TINYFORMAT_ERROR("tinyformat: %n conversion spec not supported", origFmt);
             break;
         case '\0':
             TINYFORMAT_ERROR("tinyformat: Conversion spec incorrectly "
-                             "terminated by end of string");
+                             "terminated by end of string", origFmt);
             return c;
     }
     if(intConversion && precisionSet && !widthSet)
