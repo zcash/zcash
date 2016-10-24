@@ -37,12 +37,12 @@ uint8_t NOTARY_PUBKEY33[33];
 uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
 pthread_mutex_t komodo_mutex;
 
+#include "komodo_bitcoind.h"
 #include "komodo_interest.h"
 #ifdef KOMODO_PAX
 #include "komodo_pax.h"
 #endif
 #include "komodo_notary.h"
-#include "komodo_bitcoind.h"
 
 int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals)
 {
