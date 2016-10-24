@@ -423,7 +423,7 @@ Value paxprices(const Array& params, bool fHelp)
         width = 60;
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
-    n = komodo_paxprices(timestamps,prices,(int32_t)(sizeof(prices)/sizeof(*prices)),width,(char *)base.c_str(),(char *)rel.c_str());
+    n = komodo_paxprices(heights,prices,(int32_t)(sizeof(prices)/sizeof(*prices)),width,(char *)base.c_str(),(char *)rel.c_str());
     Array a;
     for (i=0; i<n; i++)
     {
