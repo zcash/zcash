@@ -53,6 +53,7 @@ void pax_rank(uint64_t *ranked,uint32_t *pvals)
         ranked[i] = (vals[i] * 1000000000) / sum;
         printf("%.6f ",(double)ranked[i]/1000000000.);
     }
+    printf("sum %llu\n",(long long)sum);
 };
 
 int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,double *BTCUSDp,double *CNYUSDp,uint32_t *pvals)
@@ -159,7 +160,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t vo
         else if ( baseid == relid )
         {
             pax_rank(ranked,pvals);
-
+            return(ranked[baseid]);
         }
         else if ( (pvalr= pvals[relid]) != 0 )
         {
@@ -167,6 +168,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t vo
             return(komodo_paxvol(volume,baserel));
         }
     }
+    return(0);
 }
 
 uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t volume)
