@@ -4399,7 +4399,7 @@ int32_t bitcoin_base58decode(uint8_t *data,char *coinaddr)
 	return(be_sz);
 }
 
-#include "../includes/curve25519.h"
+//#include "../includes/curve25519.h"
 
 void mpz_from_bits256(mpz_t bn,bits256 x)
 {
