@@ -13,6 +13,7 @@
 #include <boost/thread/synchronized_value.hpp>
 #include <string>
 #include <sys/ioctl.h>
+#include <unistd.h>
 
 AtomicCounter transactionsValidated;
 AtomicCounter ehSolverRuns;
@@ -196,11 +197,11 @@ void ThreadShowMetricsScreen()
 
         // Get current window size
         if (isatty(STDOUT_FILENO)) {
-          struct winsize w;
-          ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-          if (w.ws_col) {
-            cols = w.ws_col;
-          }
+            struct winsize w;
+            w.ws_col = 0;
+            if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1 && w.ws_col != 0) {
+                cols = w.ws_col;
+            }
         }
 
         // Erase below current position
