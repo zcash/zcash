@@ -11,6 +11,27 @@ uint32_t MINDENOMS[] = { 1000, 1000, 100000, 1000, 1000, 1000, 1000, 1000, // ma
     10000, 100000, 10000, 1000, 100000, 10000, 1000, 10000, 1000, 10000, 10000, 10000, 10000, 100000, 1000, 1000000, 1000, 10000, 1000, 1000, 10000, 1000, 10000000, 10000, // end of currencies
 };
 
+uint64_t komodo_paxvol(uint64_t volume,uint64_t price)
+{
+    if ( volume < 10000000000 )
+        return((volume * price) / 1000000000);
+    else if ( volume < (uint64_t)10 * 10000000000 )
+        return((volume * (price / 10)) / 100000000);
+    else if ( volume < (uint64_t)100 * 10000000000 )
+        return(((volume / 10) * (price / 10)) / 10000000);
+    else if ( volume < (uint64_t)1000 * 10000000000 )
+        return(((volume / 10) * (price / 100)) / 1000000);
+    else if ( volume < (uint64_t)10000 * 10000000000 )
+        return(((volume / 100) * (price / 100)) / 100000);
+    else if ( volume < (uint64_t)100000 * 10000000000 )
+        return(((volume / 100) * (price / 1000)) / 10000);
+    else if ( volume < (uint64_t)1000000 * 10000000000 )
+        return(((volume / 1000) * (price / 1000)) / 1000);
+    else if ( volume < (uint64_t)10000000 * 10000000000 )
+        return(((volume / 1000) * (price / 10000)) / 100);
+    else return(((volume / 10000) * (price / 10000)) / 10);
+}
+
 int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,double *BTCUSDp,double *CNYUSDp,uint32_t *pvals)
 {
     uint32_t kmdbtc,btcusd,cnyusd; int32_t i,n,len = 0;
@@ -123,13 +144,7 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t volume)
                     else if ( (pvalr= ptr[1 + relid]) != 0 )
                     {
                         baserel = ((uint64_t)pvalb * 1000000000) / pvalr;
-                        if ( volume < 1000000000 )
-                            return((volume * baserel) / 1000000000);
-                        else if ( volume < (uint64_t)1000 * 1000000000 )
-                            return((volume * (baserel / 1000)) / 1000000);
-                        else if ( volume < (uint64_t)100000 * 1000000000 )
-                            return((volume * (baserel / 100000)) / 10000);
-                        else return((volume / 1000000000) * baserel);
+                        return(komodo_paxvol(volume,baserel));
                     }
                 }
                 return(0);
