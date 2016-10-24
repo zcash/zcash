@@ -454,6 +454,7 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
 }
 
 extern uint8_t NOTARY_PUBKEY33[33];
+uint32_t Mining_start;
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 
 void static BitcoinMiner(CWallet *pwallet)
@@ -503,7 +504,7 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             // Create new block
             //
-            uint32_t starttime = (uint32_t)time(NULL);
+            Mining_start = (uint32_t)time(NULL);
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
 
@@ -527,8 +528,9 @@ void static BitcoinMiner(CWallet *pwallet)
             if ( komodo_chosennotary(&notaryid,pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
                 hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
+                Mining_start = (uint32_t)time(NULL);
                 //fprintf(stderr,"I am the chosen one for ht.%d\n",pindexPrev->nHeight+1);
-            }
+            } else Mining_start = 0;
 
             while (true)
             {
@@ -565,8 +567,11 @@ void static BitcoinMiner(CWallet *pwallet)
                     if (UintToArith256(pblock->GetHash()) > hashTarget) {
                         return false;
                     }
-                          /*  if ( pblock->nBits == KOMODO_MINDIFF_NBITS && time(NULL) < starttime+50 )
-                                sleep(starttime+50-time(NULL));*/
+                    if ( Mining_start != 0 && time(NULL) < Mining_start+50 )
+                    {
+                        printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+50-time(NULL)));
+                        sleep(Mining_start+50-time(NULL));
+                    }
 
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);

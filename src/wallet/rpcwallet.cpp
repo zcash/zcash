@@ -452,6 +452,35 @@ Value sendtoaddress(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
+uint64_t PAX_fiatdest(char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *base,int32_t fiatunits)
+
+Value paxdeposit(const Array& params, bool fHelp)
+{
+    uint64_t komodoshis = 0; char destaddr[64]; uint8_t pubkey33[33];
+    bool fSubtractFeeFromAmount = false;
+    if (!EnsureWalletIsAvailable(fHelp))
+        return Value::null;
+    if (fHelp || params.size() != 3)
+        throw runtime_error("paxdeposit \"bitcoinaddress\" fiatunits \"base\" \n");
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    CBitcoinAddress address(params[0].get_str());
+    if (!address.IsValid())
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
+    int32_t fiatunits = AmountFromValue(params[1]);
+    std:string dest,base = params[2].get_str();
+    komodoshis = PAX_fiatdest(destaddr,pubkey33,(char *)params[0].get_str().c_str(),chainActive.Tip()->nHeight,(char *)base.c_str(),fiatunits);
+    dest.copy(destaddr);
+    CBitcoinAddress destaddress(dest);
+    if (!destaddress.IsValid())
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest Bitcoin address");
+    printf("ht.%d srcaddr.(%s) %s fiatunits.%d -> dest.(%s) komodoshis.%llu\n",chainActive.Tip()->nHeight,(char *)params[0].get_str().c_str(),(char *)base.c_str(),fiatunits,destaddr,(long long)komodoshis);
+    
+    EnsureWalletIsUnlocked();
+    CWalletTx wtx;
+    SendMoney(destaddress.Get(), komodoshis, fSubtractFeeFromAmount, wtx);
+    return wtx.GetHash().GetHex();
+}
+
 Value listaddressgroupings(const Array& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
