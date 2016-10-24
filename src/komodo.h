@@ -39,6 +39,7 @@ pthread_mutex_t komodo_mutex;
 #include "komodo_pax.h"
 #endif
 #include "komodo_notary.h"
+#include "komodo_bitcoind.h"
 
 
 
@@ -299,12 +300,12 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             //printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
             if ( *notarizedheightp > NOTARIZED_HEIGHT && *notarizedheightp < height )
             {
-                printf("ht.%d NOTARIZED.%d KMD.%s BTCTXID.%s (%s)\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),btctxid.ToString().c_str(),(char *)&scriptbuf[len]);
+                printf("ht.%d NOTARIZED.%d KMD.%s BTCTXID.%s (%s)\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
                 NOTARIZED_HEIGHT = *notarizedheightp;
                 NOTARIZED_HASH = kmdtxid;
                 NOTARIZED_DESTTXID = desttxid;
                 komodo_stateupdate(height,0,0,0,zero,0,0,0,0);
-            } else printf("reject ht.%d NOTARIZED.%d %s.%s DESTTXID.%s (%s)\n",height,*notarizedheightp,KOMODO_SOURCE,kmdtxid.ToString().c_str(),btctxid.ToString().c_str(),(char *)&scriptbuf[len]);
+            } else printf("reject ht.%d NOTARIZED.%d %s.%s DESTTXID.%s (%s)\n",height,*notarizedheightp,KOMODO_SOURCE,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
         }
 #ifdef KOMODO_PAX
         else if ( i == 0 && scriptbuf[len] == 'P' )
