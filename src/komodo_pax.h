@@ -125,9 +125,9 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t volume)
                         baserel = ((uint64_t)pvalb * 1000000000) / pvalr;
                         if ( volume < 1000000000 )
                             return((volume * baserel) / 1000000000);
-                        else if ( volume < 1000 * 1000000000 )
+                        else if ( volume < (uint64_t)1000 * 1000000000 )
                             return((volume * (baserel / 1000)) / 1000000);
-                        else if ( volume < 100000 * 1000000000 )
+                        else if ( volume < (uint64_t)100000 * 1000000000 )
                             return((volume * (baserel / 100000)) / 10000);
                         else return((volume / 1000000000) * baserel);
                     }
