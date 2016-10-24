@@ -383,7 +383,7 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint32_t komodo_txtime(uint256 hash);
 uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume);
-int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,int32_t width,char *base,char *rel);
+int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel);
 
 Value paxprice(const Array& params, bool fHelp)
 {
@@ -413,17 +413,19 @@ Value paxprice(const Array& params, bool fHelp)
 Value paxprices(const Array& params, bool fHelp)
 {
     if ( fHelp || params.size() != 3 )
-        throw runtime_error("paxprices \"base\" \"rel\" width\n");
+        throw runtime_error("paxprices \"base\" \"rel\" maxsamples\n");
     LOCK(cs_main);
-    Object ret; uint64_t relvolume,prices[1024]; uint32_t i,n; int32_t heights[1024];
+    Object ret; uint64_t relvolume,prices[4096]; uint32_t i,n; int32_t heights[sizeof(prices)/sizeof(*prices)];
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
-    int32_t width = atoi(params[2].get_str().c_str());
-    if ( width < 60 )
-        width = 60;
+    int32_t max = atoi(params[2].get_str().c_str());
+    if ( maxsamples < 60 )
+        maxsamples = 60;
+    else if ( maxsamples > sizeof(heights)/sizeof(*heights) )
+        maxsamples = sizeof(heights)/sizeof(*heights);
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
-    n = komodo_paxprices(heights,prices,(int32_t)(sizeof(prices)/sizeof(*prices)),width,(char *)base.c_str(),(char *)rel.c_str());
+    n = komodo_paxprices(heights,prices,maxsamples,(char *)base.c_str(),(char *)rel.c_str());
     Array a;
     for (i=0; i<n; i++)
     {

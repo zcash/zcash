@@ -162,7 +162,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t vo
             if ( baseid != MAX_CURRENCIES )
             {
                 pax_rank(ranked,pvals);
-                return(ranked[baseid]);
+                return(10 * ranked[baseid]); // map to percentage
             }
         }
         else if ( (pvalr= pvals[relid]) != 0 )
@@ -189,7 +189,7 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t volume)
     return(0);
 }
 
-int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,int32_t width,char *base,char *rel)
+int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel)
 {
     int32_t baseid=-1,relid=-1,i,ht,num = 0; uint32_t *ptr;
     if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
