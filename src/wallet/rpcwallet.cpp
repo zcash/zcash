@@ -461,12 +461,12 @@ Value paxdeposit(const Array& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return Value::null;
     if (fHelp || params.size() != 3)
-        throw runtime_error("paxdeposit \"bitcoinaddress\" fiatunits \"base\" \n");
+        throw runtime_error("paxdeposit \"bitcoinaddress\" fiatunits \"base\"");
     LOCK2(cs_main, pwalletMain->cs_wallet);
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
-    int32_t fiatunits = AmountFromValue(params[1]);
+    int32_t fiatunits = atoi(params[1].get_str());
     std::string base = params[2].get_str();
     std::string dest;
     komodoshis = PAX_fiatdest(destaddr,pubkey33,(char *)params[0].get_str().c_str(),chainActive.Tip()->nHeight,(char *)base.c_str(),fiatunits);
