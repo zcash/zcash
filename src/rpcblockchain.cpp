@@ -394,7 +394,7 @@ Value paxprice(const Array& params, bool fHelp)
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
     int32_t height = atoi(params[2].get_str().c_str());
-    if ( (basevolume= atol(params[3].get_str().c_str())) == 0 )
+    if ( (basevolume= AmountFromValue(params[3])) == 0 )
         basevolume = COIN;
     relvolume = komodo_paxprice(height,(char *)base.c_str(),(char *)rel.c_str(),basevolume);
     ret.push_back(Pair("base", base));
