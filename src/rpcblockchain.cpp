@@ -419,8 +419,8 @@ Value paxprices(const Array& params, bool fHelp)
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
     int32_t maxsamples = atoi(params[2].get_str().c_str());
-    if ( maxsamples < 60 )
-        maxsamples = 60;
+    if ( maxsamples < 1 )
+        maxsamples = 1;
     else if ( maxsamples > sizeof(heights)/sizeof(*heights) )
         maxsamples = sizeof(heights)/sizeof(*heights);
     ret.push_back(Pair("base", base));
