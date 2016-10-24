@@ -468,7 +468,7 @@ Value paxdeposit(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
     int32_t fiatunits = AmountFromValue(params[1]);
     std::string base = params[2].get_str();
-    std::basic_string dest;
+    std::string dest;
     komodoshis = PAX_fiatdest(destaddr,pubkey33,(char *)params[0].get_str().c_str(),chainActive.Tip()->nHeight,(char *)base.c_str(),fiatunits);
     dest.append(destaddr);
     CBitcoinAddress destaddress(dest);
