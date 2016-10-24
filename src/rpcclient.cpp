@@ -106,7 +106,8 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_getoperationstatus", 0},
     { "z_getoperationresult", 0},
     { "z_importkey", 1 },
-    { "paxprice", 3 },
+    { "paxprice", 4 },
+    { "paxprice2", 3 },
 };
 
 class CRPCConvertTable
