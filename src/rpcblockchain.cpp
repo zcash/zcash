@@ -405,7 +405,7 @@ Value paxprice(const Array& params, bool fHelp)
     else
     {
         CBlockIndex *pblockindex = chainActive[height];
-        item.push_back(Pair("timestamp", (int64_t)pblockindex->nTime));
+        ret.push_back(Pair("timestamp", (int64_t)pblockindex->nTime));
         if ( basevolume != 0 && relvolume != 0 )
         {
             ret.push_back(Pair("price",((double)relvolume / (double)basevolume)));
