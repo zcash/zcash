@@ -479,11 +479,13 @@ Value paxdeposit(const Array& params, bool fHelp)
         printf("%02x",pubkey33[i]);
     printf(" ht.%d srcaddr.(%s) %s fiatoshis.%lld -> dest.(%s) komodoshis.%llu\n",chainActive.Tip()->nHeight,(char *)params[0].get_str().c_str(),(char *)base.c_str(),(long long)fiatoshis,destaddr,(long long)komodoshis);
     EnsureWalletIsUnlocked();
-    CWalletTx wtx; std::string account,paxstr;
-    account.append((char *)"PAX");
+    CWalletTx wtx; std::string account,paxstr,tmp;
+    account.append((char *)"account");
     paxstr.append(fiatbuf);
+    tmp.append("PAX");
     wtx.mapValue["PAX"] = paxstr;
-    pwalletMain->SetAddressBook(destaddress.Get(),account,fiatbuf);
+    wtx.mapValue["account"] = tmp;
+    pwalletMain->SetAddressBook(destaddress.Get(),account,tmp);
     SendMoney(destaddress.Get(),komodoshis,fSubtractFeeFromAmount,wtx);
     return wtx.GetHash().GetHex();
 }
