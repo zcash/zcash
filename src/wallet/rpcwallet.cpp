@@ -393,7 +393,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
         opretpubkey.resize(opretlen);
         ptr = (uint8_t *)opretpubkey.data();
         for (i=0; i<opretlen; i++)
-            ptr[i] = opretuf[i];
+            ptr[i] = opretbuf[i];
         CRecipient opret = { opretpubkey, opretValue, false };
         vecSend.push_back(opret);
     }
@@ -463,6 +463,7 @@ Value sendtoaddress(const Array& params, bool fHelp)
 }
 
 uint64_t PAX_fiatdest(char *fiatbuf,char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *base,int64_t fiatoshis);
+int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen);
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
 
 Value paxdeposit(const Array& params, bool fHelp)
