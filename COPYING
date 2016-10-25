@@ -36,16 +36,5 @@ and UPnP software written by Thomas Bernard.
 
 Although almost all of the Zcash code is licensed under "permissive" open source
 licenses, users and distributors should note that when built using the default
-build options, Zcash depends on Oracle Berkeley DB, which includes the following
-license clause:
-
-  Redistributions in any form must be accompanied by information on
-  how to obtain complete source code for the DB software and any
-  accompanying software that uses the DB software.  The source code
-  must either be included in the distribution or be available for no
-  more than the cost of distribution plus a nominal fee, and must be
-  freely redistributable under reasonable conditions.  For an
-  executable file, complete source code means the source code for all
-  modules it contains.  It does not include source code for modules or
-  files that typically accompany the major components of the operating
-  system on which the executable file runs.
+build options, Zcash depends on Oracle Berkeley DB 6.2.x, which is licensed
+under the GNU Affero General Public License.
