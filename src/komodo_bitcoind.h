@@ -90,8 +90,7 @@ char *curl_post(CURL **cHandlep,char *url,char *userpass,char *postfields,char *
 
 char *komodo_issuemethod(char *method,char *params)
 {
-    static void *cHandle; extern char USERPASS[1024]; extern uint16_t BITCOIND_PORT;
-    char url[512],*retstr=0,postdata[8192];
+    static void *cHandle; char url[512],*retstr=0,postdata[8192];
     if ( params == 0 || params[0] == 0 )
         params = (char *)"[]";
     if ( strlen(params) < sizeof(postdata)-128 )
@@ -103,6 +102,7 @@ char *komodo_issuemethod(char *method,char *params)
     }
     return(retstr);
 }
+//curl --url "http://127.0.0.1:14555" --data "{\"method\":\"getinfo\",\"params\":[]}"
 
 uint32_t komodo_txtime(uint256 hash)
 {

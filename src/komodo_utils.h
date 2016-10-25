@@ -949,15 +949,14 @@ char *parse_conf_line(char *line,char *field)
         line++;
     while ( line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n' || line[strlen(line)-1] == ' ' )
         line[strlen(line)-1] = 0;
-    printf("LINE.(%s)\n",line);
+    //printf("LINE.(%s)\n",line);
     _stripwhite(line,0);
     return(clonestr(line));
 }
 
 void komodo_configfile(char *symbol,uint16_t port)
 {
-    extern uint16_t BITCOIND_PORT;
-    FILE *fp; char fname[512],buf[128],line[4096],*str,*rpcuser,*rpcpassword,*rpcport,*retstr;
+    FILE *fp; char fname[512],buf[128],line[4096],*str,*rpcuser,*rpcpassword,*rpcport;
     srand((uint32_t)time(NULL));
     sprintf(buf,"%s.conf",symbol);
     BITCOIND_PORT = port;
@@ -982,7 +981,7 @@ void komodo_configfile(char *symbol,uint16_t port)
         {
             if ( line[0] == '#' )
                 continue;
-            printf("line.(%s) %p %p\n",line,strstr(line,(char *)"rpcuser"),strstr(line,(char *)"rpcpassword"));
+            //printf("line.(%s) %p %p\n",line,strstr(line,(char *)"rpcuser"),strstr(line,(char *)"rpcpassword"));
             if ( (str= strstr(line,(char *)"rpcuser")) != 0 )
                 rpcuser = parse_conf_line(str,(char *)"rpcuser");
             else if ( (str= strstr(line,(char *)"rpcpassword")) != 0 )
@@ -1009,9 +1008,9 @@ void komodo_configfile(char *symbol,uint16_t port)
             free(rpcpassword);
         fclose(fp);
     }
-    if ( (retstr= komodo_issuemethod((char *)"getinfo",0)) != 0 )
+    /*if ( (retstr= komodo_issuemethod((char *)"getinfo",0)) != 0 )
     {
         printf("GETINFO.%s (%s) USERPASS.%s\n",symbol,retstr,USERPASS);
         free(retstr);
-    }
+    }*/
 }
