@@ -969,7 +969,7 @@ void komodo_configfile(char *symbol,uint16_t port)
     {
         if ( (fp= fopen(fname,"wb")) != 0 )
         {
-            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%u\nrpcport=%u\nserver=1\n",rand(),rand(),port);
+            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%u\nrpcport=%u\nserver=1\ntxindex=1\n",rand(),rand(),port);
             fclose(fp);
             printf("Created (%s)\n",fname);
         }
