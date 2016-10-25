@@ -15,7 +15,7 @@
 
 void komodo_gateway_iteration(char *symbol)
 {
-    char *retstr; uint32_t n=0; static uint32_t r,counter=0;
+    char *retstr; static uint32_t r,n,counter=0;
     if ( r == 0 )
         r = rand();
     if ( (counter++ % 10) == (r % 10) )
