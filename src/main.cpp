@@ -675,14 +675,16 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
         }
     }
 
-    unsigned int nDataOut = 0;
+    unsigned int v=0,nDataOut = 0;
     txnouttype whichType;
-    BOOST_FOREACH(const CTxOut& txout, tx.vout) {
+    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    {
         if (!::IsStandard(txout.scriptPubKey, whichType)) {
             reason = "scriptpubkey";
+            fprintf(stderr,"vout.%d nDataout.%d\n",v,nDataOut);
             return false;
         }
-
+        
         if (whichType == TX_NULL_DATA)
             nDataOut++;
         else if ((whichType == TX_MULTISIG) && (!fIsBareMultisigStd)) {
@@ -692,6 +694,7 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
             reason = "dust";
             return false;
         }
+        v++;
     }
 
     // only one OP_RETURN txout is permitted
