@@ -102,7 +102,7 @@ char *komodo_issuemethod(char *method,char *params)
     }
     return(retstr);
 }
-//curl --url "http://127.0.0.1:14555" --user "user782512472:pass1476445872" --data "{\"method\":\"getinfo\",\"params\":[]}"
+//curl --url "http://127.0.0.1:13033" --user "user1557335368:pass111720054" --data "{\"method\":\"getinfo\",\"params\":[]}"
 
 uint32_t komodo_txtime(uint256 hash)
 {
