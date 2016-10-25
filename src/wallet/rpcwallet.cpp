@@ -393,7 +393,11 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
         opretpubkey.resize(opretlen);
         ptr = (uint8_t *)opretpubkey.data();
         for (i=0; i<opretlen; i++)
+        {
             ptr[i] = opretbuf[i];
+            printf("%02x",ptr[i]);
+        }
+        printf(" opretbuf[%d]\n",opretlen);
         CRecipient opret = { opretpubkey, opretValue, false };
         vecSend.push_back(opret);
     }

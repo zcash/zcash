@@ -902,7 +902,7 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
             script[offset++] = opretlen;
         }
     } else script[offset++] = opretlen;
-    script[offset++] = type;
+    script[offset] = type; // covered by opretlen
     memcpy(&script[offset],opret,opretlen);
     return(opretlen + offset);
 }
