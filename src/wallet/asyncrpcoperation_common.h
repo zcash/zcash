@@ -5,6 +5,7 @@
 #ifndef ZCASH_WALLET_ASYNCRPCOPERATION_COMMON_H
 #define ZCASH_WALLET_ASYNCRPCOPERATION_COMMON_H
 
+#include "consensus/validation.h"
 #include "core_io.h"
 #include "primitives/transaction.h"
 #include "rpc/protocol.h"
@@ -38,9 +39,10 @@ UniValue SendTransaction(
             // More details in debug.log
             throw JSONRPCError(RPC_WALLET_ERROR, "SendTransaction: SaveRecipientMappings failed");
         }
-        if (!pwalletMain->CommitTransaction(wtx, reservekey)) {
-            // More details in debug.log
-            throw JSONRPCError(RPC_WALLET_ERROR, "SendTransaction: CommitTransaction failed");
+        CValidationState state;
+        if (!pwalletMain->CommitTransaction(wtx, reservekey, state)) {
+            std::string strError = strprintf("SendTransaction: Transaction commit failed:: %s", state.GetRejectReason());
+            throw JSONRPCError(RPC_WALLET_ERROR, strError);
         }
         o.pushKV("txid", tx.GetHash().ToString());
     } else {
