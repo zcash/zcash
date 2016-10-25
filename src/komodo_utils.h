@@ -990,6 +990,7 @@ void komodo_configfile(char *symbol,uint16_t port)
             else if ( (str= strstr(line,(char *)"rpcport")) != 0 )
                 rpcport = parse_conf_line(str,(char *)"rpcport");
         }
+        printf("rpcuser.(%s) rpcpassword.(%s) port.(%s)\n",rpcuser,rpcpassword,rpcport);
         if ( rpcuser != 0 && rpcpassword != 0 )
         {
             sprintf(USERPASS,"%s:%s",rpcuser,rpcpassword);
