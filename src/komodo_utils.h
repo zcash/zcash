@@ -976,6 +976,28 @@ char *clonestr(char *str)
     return(clone);
 }
 
+int32_t safecopy(char *dest,char *src,long len)
+{
+    int32_t i = -1;
+    if ( src != 0 && dest != 0 && src != dest )
+    {
+        if ( dest != 0 )
+            memset(dest,0,len);
+        for (i=0; i<len&&src[i]!=0; i++)
+            dest[i] = src[i];
+        if ( i == len )
+        {
+            printf("safecopy: %s too long %ld\n",src,len);
+#ifdef __APPLE__
+            //getchar();
+#endif
+            return(-1);
+        }
+        dest[i] = 0;
+    }
+    return(i);
+}
+
 char *parse_conf_line(char *line,char *field)
 {
     line += strlen(field);

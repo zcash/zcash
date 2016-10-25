@@ -707,6 +707,14 @@ int64_t get_cJSON_int(cJSON *json,char *field)
     return(0);
 }
 
+int64_t conv_floatstr(char *numstr)
+{
+    double val,corr;
+    val = atof(numstr);
+    corr = (val < 0.) ? -0.50000000001 : 0.50000000001;
+    return((int64_t)(val * SATOSHIDEN + corr));
+}
+
 int64_t _conv_cJSON_float(cJSON *json)
 {
     int64_t conv_floatstr(char *);
