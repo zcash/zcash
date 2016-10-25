@@ -922,6 +922,22 @@ long _stripwhite(char *buf,int accept)
     return(j);
 }
 
+char *clonestr(char *str)
+{
+    char *clone;
+    if ( str == 0 || str[0] == 0 )
+    {
+        printf("warning cloning nullstr.%p\n",str);
+#ifdef __APPLE__
+        while ( 1 ) sleep(1);
+#endif
+        str = (char *)"<nullstr>";
+    }
+    clone = (char *)malloc(strlen(str)+16);
+    strcpy(clone,str);
+    return(clone);
+}
+
 char *parse_conf_line(char *line,char *field)
 {
     line += strlen(field);
