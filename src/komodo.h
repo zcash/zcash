@@ -288,7 +288,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     }
                 }
             }
-            if ( notaryid >= 0 && notaryid < 64 && voutmask != 0 )
+            if ( i != 0 && notaryid >= 0 && notaryid < 64 && voutmask != 0 )
             {
                 komodo_stateupdate(height,0,0,notaryid,txhash,voutmask,numvouts,0,0);
                 //komodo_nutxoadd(height,notaryid,txhash,voutmask,numvouts);
