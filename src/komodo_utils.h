@@ -906,3 +906,23 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
     memcpy(&script[offset],opret,opretlen);
     return(opretlen + offset);
 }
+
+void komodo_configfile(char *symbol,uint16_t port)
+{
+    FILE *fp; char fname[512],buf[128];
+    sprintf(buf,"%s.conf",symbol);
+#ifdef WIN32
+    sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),buf);
+#else
+    sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),buf);
+#endif
+    if ( (fp= fopen(fname,"rb")) == 0 )
+    {
+        if ( (fp= fopen(fname,"wb")) != 0 )
+        {
+            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%u\nrpcport=%u\nserver=1\n",rand(),rand(),port);
+            fclose(fp);
+            printf("Created (%s)\n",fname);
+        }
+    }
+}
