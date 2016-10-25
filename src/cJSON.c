@@ -25,7 +25,7 @@
 /* JSON parser in C. */
 #include <math.h>
 
-#include "../includes/cJSON.h"
+#include "cJSON.h"
 
 #ifndef DBL_EPSILON
 #define DBL_EPSILON 2.2204460492503131E-16

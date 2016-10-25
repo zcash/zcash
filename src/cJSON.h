@@ -31,7 +31,7 @@
 #include <float.h>
 #include <memory.h>
 
-#include "../crypto777/OS_portable.h"
+//#include "../crypto777/OS_portable.h"
 
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
