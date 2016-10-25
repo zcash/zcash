@@ -907,11 +907,40 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
     return(opretlen + offset);
 }
 
+long _stripwhite(char *buf,int accept)
+{
+    int32_t i,j,c;
+    if ( buf == 0 || buf[0] == 0 )
+        return(0);
+    for (i=j=0; buf[i]!=0; i++)
+    {
+        buf[j] = c = buf[i];
+        if ( c == accept || (c != ' ' && c != '\n' && c != '\r' && c != '\t' && c != '\b') )
+            j++;
+    }
+    buf[j] = 0;
+    return(j);
+}
+
+char *parse_conf_line(char *line,char *field)
+{
+    line += strlen(field);
+    for (; *line!='='&&*line!=0; line++)
+        break;
+    if ( *line == 0 )
+        return(0);
+    if ( *line == '=' )
+        line++;
+    _stripwhite(line,0);
+    return(clonestr(line));
+}
+
 void komodo_configfile(char *symbol,uint16_t port)
 {
-    FILE *fp; char fname[512],buf[128];
+    FILE *fp; char fname[512],buf[128],line[4096],*rpcuser,*rpcpassword,*rpcport,*retstr;
     srand((uint32_t)time(NULL));
     sprintf(buf,"%s.conf",symbol);
+    BITCOIND_PORT = port;
 #ifdef WIN32
     sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),buf);
 #else
@@ -925,5 +954,43 @@ void komodo_configfile(char *symbol,uint16_t port)
             fclose(fp);
             printf("Created (%s)\n",fname);
         }
+    }
+    else
+    {
+        rpcuser = rpcpassword = rpcport = 0;
+        while ( fgets(line,sizeof(line),fp) != 0 )
+        {
+            if ( line[0] == '#' )
+                continue;
+            //printf("line.(%s) %p %p\n",line,strstr(line,"rpcuser"),strstr(line,"rpcpassword"));
+            if ( (str= strstr(line,"rpcuser")) != 0 )
+                rpcuser = parse_conf_line(str,"rpcuser");
+            else if ( (str= strstr(line,"rpcpassword")) != 0 )
+                rpcpassword = parse_conf_line(str,"rpcpassword");
+            else if ( (str= strstr(line,"rpcport")) != 0 )
+                rpcport = parse_conf_line(str,"rpcport");
+        }
+        if ( rpcuser != 0 && rpcpassword != 0 )
+        {
+            sprintf(USERPASS,"%s:%s",rpcuser,rpcpassword);
+        }
+        if ( rpcport != 0 )
+        {
+            if ( port != atoi(rpcport) )
+                printf("port.%u mismatch (%s)\n",port,rpcport);
+            //if ( serverport[0] == 0 )
+            //    sprintf(serverport,"127.0.0.1:%s",rpcport);
+            free(rpcport);
+        }
+        if ( rpcuser != 0 )
+            free(rpcuser);
+        if ( rpcpassword != 0 )
+            free(rpcpassword);
+        fclose(fp);
+    }
+    if ( (retstr= komodo_issuemethod("getinfo",0)) != 0 )
+    {
+        printf("GETINFO.%s (%s)\n",symbol,retstr);
+        free(retstr);
     }
 }

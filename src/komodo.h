@@ -31,6 +31,7 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
 int32_t NOTARIZED_HEIGHT,Num_nutxos;
 uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
 pthread_mutex_t komodo_mutex;
+char USERPASS[1024]; uint16_t BITCOIND_PORT = 7771;
 
 #include "komodo_bitcoind.h"
 #include "komodo_interest.h"

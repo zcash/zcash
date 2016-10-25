@@ -88,17 +88,17 @@ char *curl_post(CURL **cHandlep,char *url,char *userpass,char *postfields,char *
     return(chunk.memory);
 }
 
-char *komodo_issuemethod(char *method,char *params,char *userpass)
+char *komodo_issuemethod(char *method,char *params)
 {
-    static void *cHandle;
+    static void *cHandle; extern char USERPASS[]; extern uint16_t BITCOIND_PORT;
     char url[512],*retstr=0,postdata[8192];
     if ( strlen(params) < sizeof(postdata)-128 )
     {
         if ( params == 0 )
             params = (char *)"[]";
-        sprintf(url,(char *)"http://127.0.0.1:7771");
+        sprintf(url,(char *)"http://127.0.0.1:%u",port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
-        retstr = curl_post(&cHandle,url,userpass,postdata,0,0,0,0);
+        retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
     return(retstr);
 }
