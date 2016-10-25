@@ -27,7 +27,7 @@ void komodo_gateway_iteration(char *symbol)
             free(retstr);
             if ( (retstr= komodo_issuemethod((char *)"listtransactions",0,7771)) != 0 )
             {
-                //printf("LIST.(%s)\n",retstr);
+                printf("LIST.(%s)\n",retstr);
                 if ( (listobj= cJSON_Parse(retstr)) != 0 )
                 {
                     if ( (num= cJSON_GetArraySize(listobj)) > 0 )
@@ -35,7 +35,7 @@ void komodo_gateway_iteration(char *symbol)
                         for (i=0; i<num; i++)
                         {
                             item = jitem(listobj,i);
-                            printf("%d.(%s)\n",i,jprint(item,0));
+                            printf("%s %d of %d.(%s)\n",symbol,i,num,jprint(item,0));
                         }
                     }
                     free_json(listobj);
