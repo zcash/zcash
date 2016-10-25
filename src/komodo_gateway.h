@@ -15,7 +15,7 @@
 
 void komodo_gateway_iteration(char *symbol)
 {
-    char *retstr; int32_t i,num; cJSON *item,*listobj; static uint32_t r,n,counter=0;
+    char *retstr; int32_t i,num; cJSON *item,*array,*listobj; static uint32_t r,n,counter=0;
     if ( r == 0 )
         r = rand();
     if ( (counter++ % 10) == (r % 10) )
@@ -27,14 +27,14 @@ void komodo_gateway_iteration(char *symbol)
             free(retstr);
             if ( (retstr= komodo_issuemethod((char *)"listtransactions",0,7771)) != 0 )
             {
-                printf("LIST.(%s)\n",retstr);
+                //printf("LIST.(%s)\n",retstr);
                 if ( (listobj= cJSON_Parse(retstr)) != 0 )
                 {
-                    if ( (num= cJSON_GetArraySize(listobj)) > 0 )
+                    if ( (array= jarray(&num,listobj,"result")) > 0 )
                     {
                         for (i=0; i<num; i++)
                         {
-                            item = jitem(listobj,i);
+                            item = jitem(array,i);
                             printf("%s %d of %d.(%s)\n",symbol,i,num,jprint(item,0));
                         }
                     }
