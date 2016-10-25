@@ -15,6 +15,94 @@
 
 // komodo functions that interact with bitcoind C++
 
+#ifdef _WIN32
+#include <curl.h>
+#include <easy.h>
+#else
+#include <curl/curl.h>
+#include <curl/easy.h>
+#endif
+
+struct MemoryStruct { char *memory; size_t size; };
+
+static size_t WriteMemoryCallback(void *ptr,size_t size,size_t nmemb,void *data)
+{
+    size_t realsize = (size * nmemb);
+    struct MemoryStruct *mem = (struct MemoryStruct *)data;
+    mem->memory = (ptr != 0) ? realloc(mem->memory,mem->size + realsize + 1) : malloc(mem->size + realsize + 1);
+    if ( mem->memory != 0 )
+    {
+        if ( ptr != 0 )
+            memcpy(&(mem->memory[mem->size]),ptr,realsize);
+        mem->size += realsize;
+        mem->memory[mem->size] = 0;
+    }
+    //printf("got %d bytes\n",(int32_t)(size*nmemb));
+    return(realsize);
+}
+
+void *curl_post(CURL **cHandlep,char *url,char *userpass,char *postfields,char *hdr0,char *hdr1,char *hdr2,char *hdr3)
+{
+    struct MemoryStruct chunk; CURL *cHandle; long code; struct curl_slist *headers = 0;
+    if ( (cHandle= *cHandlep) == NULL )
+		*cHandlep = cHandle = curl_easy_init();
+    else curl_easy_reset(cHandle);
+    //#ifdef DEBUG
+	//curl_easy_setopt(cHandle,CURLOPT_VERBOSE, 1);
+    //#endif
+	curl_easy_setopt(cHandle,CURLOPT_USERAGENT,"mozilla/4.0");//"Mozilla/4.0 (compatible; )");
+	curl_easy_setopt(cHandle,CURLOPT_SSL_VERIFYPEER,0);
+	//curl_easy_setopt(cHandle,CURLOPT_SSLVERSION,1);
+	curl_easy_setopt(cHandle,CURLOPT_URL,url);
+  	curl_easy_setopt(cHandle,CURLOPT_CONNECTTIMEOUT,10);
+    if ( userpass != 0 && userpass[0] != 0 )
+        curl_easy_setopt(cHandle,CURLOPT_USERPWD,userpass);
+	if ( postfields != 0 && postfields[0] != 0 )
+    {
+        curl_easy_setopt(cHandle,CURLOPT_POST,1);
+		curl_easy_setopt(cHandle,CURLOPT_POSTFIELDS,postfields);
+    }
+    if ( hdr0 != NULL && hdr0[0] != 0 )
+    {
+        //printf("HDR0.(%s) HDR1.(%s) HDR2.(%s) HDR3.(%s)\n",hdr0!=0?hdr0:"",hdr1!=0?hdr1:"",hdr2!=0?hdr2:"",hdr3!=0?hdr3:"");
+        headers = curl_slist_append(headers,hdr0);
+        if ( hdr1 != 0 && hdr1[0] != 0 )
+            headers = curl_slist_append(headers,hdr1);
+        if ( hdr2 != 0 && hdr2[0] != 0 )
+            headers = curl_slist_append(headers,hdr2);
+        if ( hdr3 != 0 && hdr3[0] != 0 )
+            headers = curl_slist_append(headers,hdr3);
+    } //headers = curl_slist_append(0,"Expect:");
+    if ( headers != 0 )
+        curl_easy_setopt(cHandle,CURLOPT_HTTPHEADER,headers);
+    //res = curl_easy_perform(cHandle);
+    memset(&chunk,0,sizeof(chunk));
+    curl_easy_setopt(cHandle,CURLOPT_WRITEFUNCTION,WriteMemoryCallback);
+    curl_easy_setopt(cHandle,CURLOPT_WRITEDATA,(void *)&chunk);
+    curl_easy_perform(cHandle);
+    curl_easy_getinfo(cHandle,CURLINFO_RESPONSE_CODE,&code);
+    if ( headers != 0 )
+        curl_slist_free_all(headers);
+    if ( code != 200 )
+        printf("(%s) server responded with code %ld (%s)\n",url,code,chunk.memory);
+    return(chunk.memory);
+}
+
+char *komodo_issuemethod(char *method,char *params,char *userpass)
+{
+    static void *cHandle;
+    char url[512],*retstr=0,postdata[8192];
+    if ( strlen(params) < sizeof(postdata)-128 )
+    {
+        if ( params == 0 )
+            params = "[]";
+        sprintf(url,"http://127.0.0.1:7771");
+        sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
+        retstr = curl_post(&cHandle,url,userpass,postdata,0,0,0,0);
+    }
+    return(retstr);
+}
+
 uint32_t komodo_txtime(uint256 hash)
 {
     CTransaction tx;

@@ -263,6 +263,10 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     uint8_t scriptbuf[4096],pubkeys[64][33]; uint256 kmdtxid,btctxid,txhash;
     int32_t i,j,k,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count,flag;
     komodo_init();
+#ifdef KOMODO_ISSUER
+    komodo_gateway_issuer();
+#else
+#endif
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
