@@ -30,7 +30,7 @@ void komodo_gateway_iteration(char *symbol)
                 //printf("LIST.(%s)\n",retstr);
                 if ( (listobj= cJSON_Parse(retstr)) != 0 )
                 {
-                    if ( (array= jarray(&num,listobj,"result")) != 0 )
+                    if ( (array= jarray(&num,listobj,(char *)"result")) != 0 )
                     {
                         for (i=0; i<num; i++)
                         {
