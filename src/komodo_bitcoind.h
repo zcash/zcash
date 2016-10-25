@@ -302,7 +302,7 @@ char *komodo_issuemethod(char *method,char *params,uint16_t port)
         sprintf(url,(char *)"http://127.0.0.1:%u",port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
         //printf("postdata.(%s) USERPASS.(%s)\n",postdata,USERPASS);
-        retstr2 = bitcoind_RPC(&retstr,"debug",url,USERPASS,method,params);
+        retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,USERPASS,method,params);
         //retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
     return(retstr);
