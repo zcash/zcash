@@ -194,20 +194,20 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
 
 void komodo_init()
 {
-    static int didinit; uint256 zero; int32_t k; uint8_t pubkeys[64][33];
+    static int didinit; uint256 zero; int32_t k,n; uint8_t pubkeys[64][33];
     if ( didinit == 0 )
     {
         didinit = 1;
         pthread_mutex_init(&komodo_mutex,NULL);
         decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
-        KOMODO_NUMNOTARIES = (int32_t)(sizeof(Notaries)/sizeof(*Notaries));
-        for (k=0; k<KOMODO_NUMNOTARIES; k++)
+        n = (int32_t)(sizeof(Notaries)/sizeof(*Notaries));
+        for (k=0; k<n; k++)
         {
             if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
                 break;
             decode_hex(pubkeys[k],33,(char *)Notaries[k][1]);
         }
-        komodo_notarysinit(0,pubkeys,KOMODO_NUMNOTARIES);
+        komodo_notarysinit(0,pubkeys,k);
         memset(&zero,0,sizeof(zero));
         komodo_stateupdate(0,0,0,0,zero,0,0,0,0);
     }

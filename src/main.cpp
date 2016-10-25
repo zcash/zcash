@@ -546,6 +546,16 @@ CBlockIndex* FindForkInGlobalIndex(const CChain& chain, const CBlockLocator& loc
 
 CCoinsViewCache *pcoinsTip = NULL;
 CBlockTreeDB *pblocktree = NULL;
+
+// Komodo globals
+int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
+std::string NOTARY_PUBKEY;
+uint8_t NOTARY_PUBKEY33[33];
+
+#define KOMODO_TESTNET_EXPIRATION 60000
+//#define KOMODO_ENABLE_INTEREST enabling this is a hardfork
+#define KOMODO_SOURCE "KMD"
+#define KOMODO_PAX
 #include "komodo.h"
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3096,31 +3106,11 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
 
         // Don't accept any forks from the main chain prior to last checkpoint
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
+        int32_t notarized_height;
         if (pcheckpoint && nHeight < pcheckpoint->nHeight)
             return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
-        else
-        {
-            int32_t notarized_height; uint256 notarized_hash,notarized_desttxid; CBlockIndex *notary;
-            notarized_height = komodo_notarizeddata(chainActive.Tip()->nHeight,&notarized_hash,&notarized_desttxid);
-            if ( (notary= mapBlockIndex[notarized_hash]) != 0 )
-            {
-                //printf("nHeight.%d -> (%d %s)\n",chainActive.Tip()->nHeight,notarized_height,notarized_hash.ToString().c_str());
-                if ( notary->nHeight == notarized_height ) // if notarized_hash not in chain, reorg
-                {
-                    if ( nHeight < notarized_height )
-                    {
-                        fprintf(stderr,"nHeight.%d < NOTARIZED_HEIGHT.%d\n",nHeight,notarized_height);
-                        return state.DoS(100, error("%s: forked chain older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
-                    }
-                    else if ( nHeight == notarized_height && memcmp(&hash,&notarized_hash,sizeof(hash)) != 0 )
-                    {
-                        fprintf(stderr,"nHeight.%d == NOTARIZED_HEIGHT.%d, diff hash\n",nHeight,notarized_height);
-                        return state.DoS(100, error("%s: forked chain at notarized (height %d) with different hash", __func__, notarized_height));
-                    }
-                } else fprintf(stderr,"notary_hash %s ht.%d at ht.%d\n",notarized_hash.ToString().c_str(),notarized_height,notary->nHeight);
-            } else if ( notarized_height > 0 )
-                fprintf(stderr,"couldnt find notary_hash %s ht.%d\n",notarized_hash.ToString().c_str(),notarized_height);
-        }
+        else if ( komodo_checkpoint(&notarized_height,nHeight,hash) < 0 )
+            return state.DoS(100, error("%s: forked chain %d older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
     }
 
     // Reject block.nVersion < 4 blocks

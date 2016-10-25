@@ -82,3 +82,28 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     }
 }
 
+int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
+{
+    int32_t notarized_height; uint256 notarized_hash,notarized_desttxid; CBlockIndex *notary;
+    notarized_height = komodo_notarizeddata(chainActive.Tip()->nHeight,&notarized_hash,&notarized_desttxid);
+    *notarized_heightp = notarized_height;
+    if ( notarized_height >= 0 && notarized_height <= activeChain.Tip()->nHeight && (notary= mapBlockIndex[notarized_hash]) != 0 )
+    {
+        //printf("nHeight.%d -> (%d %s)\n",chainActive.Tip()->nHeight,notarized_height,notarized_hash.ToString().c_str());
+        if ( notary->nHeight == notarized_height ) // if notarized_hash not in chain, reorg
+        {
+            if ( nHeight < notarized_height )
+            {
+                fprintf(stderr,"nHeight.%d < NOTARIZED_HEIGHT.%d\n",nHeight,notarized_height);
+                return(-1);
+            }
+            else if ( nHeight == notarized_height && memcmp(&hash,&notarized_hash,sizeof(hash)) != 0 )
+            {
+                fprintf(stderr,"nHeight.%d == NOTARIZED_HEIGHT.%d, diff hash\n",nHeight,notarized_height);
+                return(-1);
+            }
+        } else fprintf(stderr,"unexpected error notary_hash %s ht.%d at ht.%d\n",notarized_hash.ToString().c_str(),notarized_height,notary->nHeight);
+    } else if ( notarized_height > 0 )
+        fprintf(stderr,"couldnt find notary_hash %s ht.%d\n",notarized_hash.ToString().c_str(),notarized_height);
+    return(0);
+}

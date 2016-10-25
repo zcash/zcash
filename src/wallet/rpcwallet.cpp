@@ -365,7 +365,7 @@ Value getaddressesbyaccount(const Array& params, bool fHelp)
     return ret;
 }
 
-static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew)
+static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew,uint8_t *opretbuf,int32_t opretlen,uint64_t opretValue)
 {
     CAmount curBalance = pwalletMain->GetBalance();
 
@@ -387,6 +387,16 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
     int nChangePosRet = -1;
     CRecipient recipient = {scriptPubKey, nValue, fSubtractFeeFromAmount};
     vecSend.push_back(recipient);
+    if ( opretlen > 0 && opretbuf != 0 )
+    {
+        CScript opretpubkey; int32_t i; uint8_t *ptr;
+        opretpubkey.resize(opretlen);
+        ptr = (uint8_t *)opretpubkey.data();
+        for (i=0; i<opretlen; i++)
+            ptr[i] = opret[i];
+        CRecipient opret = { opretpubkey, opretValue, false };
+        vecSend.push_back(opret);
+    }
     if (!pwalletMain->CreateTransaction(vecSend, wtxNew, reservekey, nFeeRequired, nChangePosRet, strError)) {
         if (!fSubtractFeeFromAmount && nValue + nFeeRequired > pwalletMain->GetBalance())
             strError = strprintf("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!", FormatMoney(nFeeRequired));
@@ -447,7 +457,7 @@ Value sendtoaddress(const Array& params, bool fHelp)
 
     EnsureWalletIsUnlocked();
 
-    SendMoney(address.Get(), nAmount, fSubtractFeeFromAmount, wtx);
+    SendMoney(address.Get(), nAmount, fSubtractFeeFromAmount, wtx,0,0,0);
 
     return wtx.GetHash().GetHex();
 }
@@ -471,7 +481,7 @@ Value paxdeposit(const Array& params, bool fHelp)
     std::string dest; char fiatbuf[1024];
     komodoshis = PAX_fiatdest(fiatbuf,destaddr,pubkey33,(char *)params[0].get_str().c_str(),chainActive.Tip()->nHeight,(char *)base.c_str(),fiatoshis);
     dest.append(destaddr);
-    CBitcoinAddress destaddress(dest);
+    CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
     if (!destaddress.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest Bitcoin address");
 
@@ -479,13 +489,18 @@ Value paxdeposit(const Array& params, bool fHelp)
         printf("%02x",pubkey33[i]);
     printf(" ht.%d srcaddr.(%s) %s fiatoshis.%lld -> dest.(%s) komodoshis.%llu\n",chainActive.Tip()->nHeight,(char *)params[0].get_str().c_str(),(char *)base.c_str(),(long long)fiatoshis,destaddr,(long long)komodoshis);
     EnsureWalletIsUnlocked();
-    CWalletTx wtx; std::string account,paxstr,tmp;
+    CWalletTx wtx;
+    /*std::string account,paxstr,tmp;
     account.append((char *)"account");
     paxstr.append(fiatbuf);
     tmp.append("PAX");
     wtx.mapValue["PAX"] = paxstr;
-    pwalletMain->SetAddressBook(destaddress.Get(),account,tmp);
-    SendMoney(destaddress.Get(),komodoshis,fSubtractFeeFromAmount,wtx);
+    pwalletMain->SetAddressBook(destaddress.Get(),account,tmp);*/
+    uint8_t opretbuf[64]; int32_t opretlen; uint64_t fee = komodoshis / 1000;
+    if ( fee < 10000 )
+        fee = 10000;
+    opretlen = komodo_opreturnscript(opretbuf,'D',pubkey33,33);
+    SendMoney(destaddress.Get(),fee,fSubtractFeeFromAmount,wtx,opretbuf,opretlen,komodoshis);
     return wtx.GetHash().GetHex();
 }
 
@@ -958,7 +973,7 @@ Value sendfrom(const Array& params, bool fHelp)
     if (nAmount > nBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Account has insufficient funds");
 
-    SendMoney(address.Get(), nAmount, false, wtx);
+    SendMoney(address.Get(), nAmount, false, wtx,0,0,0);
 
     return wtx.GetHash().GetHex();
 }
