@@ -502,7 +502,7 @@ static boost::filesystem::path pathCachedNetSpecific;
 static boost::filesystem::path zc_paramsPathCached;
 static CCriticalSection csPathCached;
 
-static boost::filesystem::path ZC_GetBaseParamsDir()
+static boost::filesystem::path ZC_GetDefaultBaseParamsDir()
 {
     // Copied from GetDefaultDataDir and adapter for zcash params.
 
@@ -546,7 +546,15 @@ const boost::filesystem::path &ZC_GetParamsDir()
     if (!path.empty())
         return path;
 
-    path = ZC_GetBaseParamsDir();
+    if (mapArgs.count("-paramsdir")) {
+        path = fs::system_complete(mapArgs["-paramsdir"]);
+        if (!fs::is_directory(path)) {
+            path = "";
+            return path;
+        }
+    } else {
+        path = ZC_GetDefaultBaseParamsDir();
+    }
 
     return path;
 }
