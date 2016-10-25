@@ -87,7 +87,7 @@ int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 has
     int32_t notarized_height; uint256 notarized_hash,notarized_desttxid; CBlockIndex *notary;
     notarized_height = komodo_notarizeddata(chainActive.Tip()->nHeight,&notarized_hash,&notarized_desttxid);
     *notarized_heightp = notarized_height;
-    if ( notarized_height >= 0 && notarized_height <= activeChain.Tip()->nHeight && (notary= mapBlockIndex[notarized_hash]) != 0 )
+    if ( notarized_height >= 0 && notarized_height <= chainActive.Tip()->nHeight && (notary= mapBlockIndex[notarized_hash]) != 0 )
     {
         //printf("nHeight.%d -> (%d %s)\n",chainActive.Tip()->nHeight,notarized_height,notarized_hash.ToString().c_str());
         if ( notary->nHeight == notarized_height ) // if notarized_hash not in chain, reorg
