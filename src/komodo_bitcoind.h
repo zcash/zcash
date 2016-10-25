@@ -96,7 +96,7 @@ char *komodo_issuemethod(char *method,char *params)
     {
         if ( params == 0 )
             params = (char *)"[]";
-        sprintf(url,(char *)"http://127.0.0.1:%u",port);
+        sprintf(url,(char *)"http://127.0.0.1:%u",BITCOIND_PORT);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
         retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
