@@ -980,12 +980,12 @@ void komodo_configfile(char *symbol,uint16_t port)
             if ( line[0] == '#' )
                 continue;
             //printf("line.(%s) %p %p\n",line,strstr(line,"rpcuser"),strstr(line,"rpcpassword"));
-            if ( (str= strstr(line,"rpcuser")) != 0 )
-                rpcuser = parse_conf_line(str,"rpcuser");
-            else if ( (str= strstr(line,"rpcpassword")) != 0 )
-                rpcpassword = parse_conf_line(str,"rpcpassword");
-            else if ( (str= strstr(line,"rpcport")) != 0 )
-                rpcport = parse_conf_line(str,"rpcport");
+            if ( (str= strstr(line,(char *)"rpcuser")) != 0 )
+                rpcuser = parse_conf_line(str,(char *)"rpcuser");
+            else if ( (str= strstr(line,(char *)"rpcpassword")) != 0 )
+                rpcpassword = parse_conf_line(str,(char *)"rpcpassword");
+            else if ( (str= strstr(line,(char *)"rpcport")) != 0 )
+                rpcport = parse_conf_line(str,(char *)"rpcport");
         }
         if ( rpcuser != 0 && rpcpassword != 0 )
         {

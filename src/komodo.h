@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <ctype.h>
-#include "komodo_utils.h"
 
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals);
 void komodo_init();
@@ -34,6 +33,7 @@ uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
 pthread_mutex_t komodo_mutex;
 char USERPASS[1024]; uint16_t BITCOIND_PORT = 7771;
 
+#include "komodo_utils.h"
 #include "komodo_bitcoind.h"
 #include "komodo_interest.h"
 #ifdef KOMODO_PAX
