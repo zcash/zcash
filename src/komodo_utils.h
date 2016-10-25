@@ -947,6 +947,8 @@ char *parse_conf_line(char *line,char *field)
         return(0);
     if ( *line == '=' )
         line++;
+    while ( line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n' || line[strlen(line)-1] == ' ' )
+        line[strlen(line)-1] == 0;
     _stripwhite(line,0);
     return(clonestr(line));
 }
