@@ -12,6 +12,7 @@ Vcs-Browser: https://github.com/zcash/zcash
 Package: zcash
 Version: 1.0.0-rc2
 Architecture: amd64
+Depends: libgomp1
 Description: Zcash is an implementation of the "Zerocash" protocol.
  Based on Bitcoin's code, it intends to offer a far higher standard
  of privacy and anonymity through a sophisticiated zero-knowledge
