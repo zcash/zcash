@@ -29,7 +29,7 @@ static size_t WriteMemoryCallback(void *ptr,size_t size,size_t nmemb,void *data)
 {
     size_t realsize = (size * nmemb);
     struct MemoryStruct *mem = (struct MemoryStruct *)data;
-    mem->memory = (ptr != 0) ? realloc(mem->memory,mem->size + realsize + 1) : malloc(mem->size + realsize + 1);
+    mem->memory = (char *)((ptr != 0) ? realloc(mem->memory,mem->size + realsize + 1) : malloc(mem->size + realsize + 1));
     if ( mem->memory != 0 )
     {
         if ( ptr != 0 )
@@ -95,8 +95,8 @@ char *komodo_issuemethod(char *method,char *params,char *userpass)
     if ( strlen(params) < sizeof(postdata)-128 )
     {
         if ( params == 0 )
-            params = "[]";
-        sprintf(url,"http://127.0.0.1:7771");
+            params = (char *)"[]";
+        sprintf(url,(char *)"http://127.0.0.1:7771");
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
         retstr = curl_post(&cHandle,url,userpass,postdata,0,0,0,0);
     }
