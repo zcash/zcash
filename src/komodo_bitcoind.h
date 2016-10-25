@@ -340,7 +340,7 @@ char *komodo_issuemethod(char *method,char *params,uint16_t port)
         retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,USERPASS,method,params);
         //retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
-    return(retstr);
+    return(retstr2);
 }
 //curl --url "http://127.0.0.1:13033" --user "user1557335368:pass111720054" --data "{\"method\":\"getinfo\",\"params\":[]}"
 
