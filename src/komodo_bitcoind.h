@@ -90,7 +90,7 @@ char *curl_post(CURL **cHandlep,char *url,char *userpass,char *postfields,char *
 
 char *komodo_issuemethod(char *method,char *params)
 {
-    static void *cHandle; extern char USERPASS[]; extern uint16_t BITCOIND_PORT;
+    static void *cHandle; extern char USERPASS[1024]; extern uint16_t BITCOIND_PORT;
     char url[512],*retstr=0,postdata[8192];
     if ( strlen(params) < sizeof(postdata)-128 )
     {

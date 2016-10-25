@@ -953,7 +953,8 @@ char *parse_conf_line(char *line,char *field)
 
 void komodo_configfile(char *symbol,uint16_t port)
 {
-    FILE *fp; char fname[512],buf[128],line[4096],*rpcuser,*rpcpassword,*rpcport,*retstr;
+    extern uint16_t BITCOIND_PORT;
+    FILE *fp; char fname[512],buf[128],line[4096],*str,*rpcuser,*rpcpassword,*rpcport,*retstr;
     srand((uint32_t)time(NULL));
     sprintf(buf,"%s.conf",symbol);
     BITCOIND_PORT = port;
