@@ -41,7 +41,7 @@ static size_t WriteMemoryCallback(void *ptr,size_t size,size_t nmemb,void *data)
     return(realsize);
 }
 
-void *curl_post(CURL **cHandlep,char *url,char *userpass,char *postfields,char *hdr0,char *hdr1,char *hdr2,char *hdr3)
+char *curl_post(CURL **cHandlep,char *url,char *userpass,char *postfields,char *hdr0,char *hdr1,char *hdr2,char *hdr3)
 {
     struct MemoryStruct chunk; CURL *cHandle; long code; struct curl_slist *headers = 0;
     if ( (cHandle= *cHandlep) == NULL )
