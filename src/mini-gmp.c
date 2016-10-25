@@ -70,7 +70,7 @@ see https://www.gnu.org/licenses/.  */
 #define GMP_MAX(a, b) ((a) > (b) ? (a) : (b))
 
 #define gmp_assert_nocarry(x) do { \
-    mp_limb_t __cy = x;	if ( __cy != 0 ) ; \
+    mp_limb_t __cy = x;	if ( __cy != 0 ) {} \
     assert (__cy == 0);		   \
   } while (0)
 
