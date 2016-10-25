@@ -1015,3 +1015,12 @@ void komodo_configfile(char *symbol,uint16_t port)
         } else printf("couldnt open.(%s)\n",fname);
     }
 }
+
+double OS_milliseconds()
+{
+    struct timeval tv; double millis;
+    gettimeofday(&tv,NULL);
+    millis = ((double)tv.tv_sec * 1000. + (double)tv.tv_usec / 1000.);
+    //printf("tv_sec.%ld usec.%d %f\n",tv.tv_sec,tv.tv_usec,millis);
+    return(millis);
+}
