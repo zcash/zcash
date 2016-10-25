@@ -34,6 +34,7 @@ pthread_mutex_t komodo_mutex;
 char USERPASS[1024]; uint16_t BITCOIND_PORT = 7771;
 
 #include "komodo_utils.h"
+#include "cJSON.c"
 #include "komodo_bitcoind.h"
 #include "komodo_interest.h"
 #ifdef KOMODO_PAX
