@@ -1001,7 +1001,7 @@ void komodo_configfile(char *symbol,uint16_t port)
             //    sprintf(serverport,"127.0.0.1:%s",rpcport);
             free(rpcport);
         }
-        printf("rpcuser.(%s) rpcpassword.(%s) port.(%s) USERPASS.(%s) port.%u\n",rpcuser,rpcpassword,rpcport,USERPASS,atoi(rpcport!=0?rpcport:0));
+        printf("rpcuser.(%s) rpcpassword.(%s) port.(%s) USERPASS.(%s) port.%u vs %u\n",rpcuser,rpcpassword,rpcport,USERPASS,atoi(rpcport!=0?rpcport:0),port);
         if ( rpcuser != 0 )
             free(rpcuser);
         if ( rpcpassword != 0 )
