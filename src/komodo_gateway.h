@@ -15,7 +15,7 @@
 
 void komodo_gateway_iteration(char *symbol)
 {
-    char *retstr; int32_t i,num; cJSON *item,*array,*listobj; static uint32_t r,n,counter=0;
+    char *retstr,*coinaddr; int32_t i,num; cJSON *item,*array,*listobj; static uint32_t r,n,counter=0;
     if ( r == 0 )
         r = rand();
     if ( (counter++ % 10) == (r % 10) )
