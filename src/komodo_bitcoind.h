@@ -107,7 +107,11 @@ uint32_t komodo_txtime(uint256 hash)
 {
     CTransaction tx;
     uint256 hashBlock;
-    if (!GetTransaction(hash, tx, hashBlock, true))
+    if (!GetTransaction(hash, tx,
+#ifndef KOMODO_ZCASH
+                        Params().GetConsensus(),
+#endif
+                        hashBlock, true))
     {
         //printf("null GetTransaction\n");
         return(tx.nLockTime);
@@ -158,7 +162,11 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        if ( ReadBlockFromDisk(block,(const CBlockIndex *)pindex) != 0 )
+        if ( ReadBlockFromDisk(block,(const CBlockIndex *)pindex,
+#ifndef KOMODO_ZCASH
+                               Params().GetConsensus(),
+#endif
+                               ) != 0 )
         {
             komodo_block2pubkey33(pubkey33,block);
         }
