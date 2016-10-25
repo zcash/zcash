@@ -1,7 +1,19 @@
+/******************************************************************************
+ * Copyright © 2014-2016 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
 
-//#define KOMODO_ENABLE_INTEREST
-
-#define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))
+#define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))   // 5%
 #define dstr(x) ((double)(x)/COIN)
 
 uint64_t komodo_accrued_interest(int32_t height,int64_t paidinterest)
@@ -55,7 +67,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
             if ( denominator == 0 )
                 denominator = 1; // max KOMODO_INTEREST per transfer, do it at least annually!
             interest = (numerator / denominator) / COIN;
-            fprintf(stderr,"komodo_interest %lld %.8f nLockTime.%u tiptime.%u minutes.%d interest %lld %.8f (%llu / %llu)\n",(long long)nValue,dstr(nValue),nLockTime,tiptime,minutes,(long long)interest,dstr(interest),(long long)numerator,(long long)denominator);
+            //fprintf(stderr,"komodo_interest %lld %.8f nLockTime.%u tiptime.%u minutes.%d interest %lld %.8f (%llu / %llu)\n",(long long)nValue,dstr(nValue),nLockTime,tiptime,minutes,(long long)interest,dstr(interest),(long long)numerator,(long long)denominator);
         }
     }
     return(interest);

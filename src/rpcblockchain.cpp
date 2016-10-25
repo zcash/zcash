@@ -383,29 +383,72 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint32_t komodo_txtime(uint256 hash);
 uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume);
+int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel);
 
 Value paxprice(const Array& params, bool fHelp)
 {
     if ( fHelp || params.size() < 3 || params.size() > 4 )
         throw runtime_error("paxprice \"base\" \"rel\" height\n");
     LOCK(cs_main);
-    Object ret; uint64_t pricetoshis,basevolume=0,relvolume;
+    Object ret; uint64_t basevolume=0,relvolume;
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
     int32_t height = atoi(params[2].get_str().c_str());
-    if ( params.size() == 4 )
-        basevolume = AmountFromValue(params[3]);
-    if ( basevolume == 0 )
+    if ( (basevolume= COIN * atof(params[3].get_str().c_str())) == 0 )
         basevolume = COIN;
     relvolume = komodo_paxprice(height,(char *)base.c_str(),(char *)rel.c_str(),basevolume);
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
     ret.push_back(Pair("height", height));
-    if ( basevolume != 0 )
+    if ( height < 0 || height > chainActive.Height() )
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+    else
     {
-        ret.push_back(Pair("price",((double)relvolume / (double)basevolume)));
-        ret.push_back(Pair("relvolume", ValueFromAmount(relvolume)));
+        CBlockIndex *pblockindex = chainActive[height];
+        ret.push_back(Pair("timestamp", (int64_t)pblockindex->nTime));
+        if ( basevolume != 0 && relvolume != 0 )
+        {
+            ret.push_back(Pair("price",((double)relvolume / (double)basevolume)));
+            ret.push_back(Pair("invprice",((double)basevolume / (double)relvolume)));
+            ret.push_back(Pair("basevolume", ValueFromAmount(basevolume)));
+            ret.push_back(Pair("relvolume", ValueFromAmount(relvolume)));
+        } else ret.push_back(Pair("error", "overflow or error in one or more of parameters"));
     }
+    return ret;
+}
+
+Value paxprices(const Array& params, bool fHelp)
+{
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("paxprices \"base\" \"rel\" maxsamples\n");
+    LOCK(cs_main);
+    Object ret; uint64_t relvolume,prices[4096]; uint32_t i,n; int32_t heights[sizeof(prices)/sizeof(*prices)];
+    std::string base = params[0].get_str();
+    std::string rel = params[1].get_str();
+    int32_t maxsamples = atoi(params[2].get_str().c_str());
+    if ( maxsamples < 1 )
+        maxsamples = 1;
+    else if ( maxsamples > sizeof(heights)/sizeof(*heights) )
+        maxsamples = sizeof(heights)/sizeof(*heights);
+    ret.push_back(Pair("base", base));
+    ret.push_back(Pair("rel", rel));
+    n = komodo_paxprices(heights,prices,maxsamples,(char *)base.c_str(),(char *)rel.c_str());
+    Array a;
+    for (i=0; i<n; i++)
+    {
+        Object item;
+        if ( heights[i] < 0 || heights[i] > chainActive.Height() )
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+        else
+        {
+            CBlockIndex *pblockindex = chainActive[heights[i]];
+            
+            item.push_back(Pair("t", (int64_t)pblockindex->nTime));
+            item.push_back(Pair("p", (double)prices[i] / COIN));
+            a.push_back(item);
+        }
+    }
+    ret.push_back(Pair("array", a));
     return ret;
 }
 

@@ -184,14 +184,20 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType)
 {
     vector<valtype> vSolutions;
     if (!Solver(scriptPubKey, whichType, vSolutions))
+    {
+        int32_t i; uint8_t *ptr = (uint8_t *)scriptPubKey.data();
+        for (i=0; i<scriptPubKey.size(); i++)
+            fprintf(stderr,"%02x",ptr[i]);
+        fprintf(stderr," non-standard scriptPubKey\n");
         return false;
+    }
 
     if (whichType == TX_MULTISIG)
     {
         unsigned char m = vSolutions.front()[0];
         unsigned char n = vSolutions.back()[0];
-        // Support up to x-of-3 multisig txns as standard
-        if (n < 1 || n > 3)
+        // Support up to x-of-9 multisig txns as standard
+        if (n < 1 || n > 9)
             return false;
         if (m < 1 || m > n)
             return false;
@@ -211,7 +217,10 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
     {
         CPubKey pubKey(vSolutions[0]);
         if (!pubKey.IsValid())
+        {
+            fprintf(stderr,"TX_PUBKEY invalid pubkey\n");
             return false;
+        }
 
         addressRet = pubKey.GetID();
         return true;

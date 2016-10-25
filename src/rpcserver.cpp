@@ -301,6 +301,7 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "gettxoutsetinfo",        &gettxoutsetinfo,        true  },
     { "blockchain",         "verifychain",            &verifychain,            true  },
     { "blockchain",         "paxprice",               &paxprice,               true  },
+    { "blockchain",         "paxprices",              &paxprices,              true  },
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
@@ -398,7 +399,9 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "z_exportkey",            &z_exportkey,            true  },
     { "wallet",             "z_importkey",            &z_importkey,            true  },
     { "wallet",             "z_exportwallet",         &z_exportwallet,         true  },
-    { "wallet",             "z_importwallet",         &z_importwallet,         true  }
+    { "wallet",             "z_importwallet",         &z_importwallet,         true  },
+    
+    { "wallet",             "paxdeposit",             &paxdeposit,             true  }
 #endif // ENABLE_WALLET
 };
 

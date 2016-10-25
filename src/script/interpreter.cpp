@@ -817,6 +817,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 }
                 break;
 
+                // script that takes PAXpubkey + real pubkey, verifies output is within acceptable range and sig is for real pubkey. adjust vin amount to fiatvalue
                 case OP_CHECKSIG:
                 case OP_CHECKSIGVERIFY:
                 {

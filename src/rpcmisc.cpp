@@ -41,7 +41,7 @@ using namespace std;
  **/
 Value getinfo(const Array& params, bool fHelp)
 {
-    extern uint256 NOTARIZED_HASH,NOTARIZED_BTCTXID;
+    extern uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
     extern int32_t NOTARIZED_HEIGHT;
     if (fHelp || params.size() != 0)
         throw runtime_error(
@@ -85,7 +85,7 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("protocolversion", PROTOCOL_VERSION));
     obj.push_back(Pair("notarized", NOTARIZED_HEIGHT));
     obj.push_back(Pair("notarizedhash", NOTARIZED_HASH.ToString()));
-    obj.push_back(Pair("notarizedbtc", NOTARIZED_BTCTXID.ToString()));
+    obj.push_back(Pair("notarizedbtc", NOTARIZED_DESTTXID.ToString()));
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
