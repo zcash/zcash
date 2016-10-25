@@ -1005,7 +1005,7 @@ void komodo_configfile(char *symbol,uint16_t port)
             free(rpcpassword);
         fclose(fp);
     }
-    if ( (retstr= komodo_issuemethod("getinfo",0)) != 0 )
+    if ( (retstr= komodo_issuemethod((char *)"getinfo",0)) != 0 )
     {
         printf("GETINFO.%s (%s)\n",symbol,retstr);
         free(retstr);
