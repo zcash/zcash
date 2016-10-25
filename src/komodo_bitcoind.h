@@ -130,7 +130,7 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 
 int32_t komodo_block2height(CBlock *block)
 {
-    int32_t i,n,height = 0; uint8_t *ptr = (uint8_t *)block->vtx[0].vin[0].scriptSig.data();
+    int32_t i,n,height = 0; uint8_t *ptr = (uint8_t *)&block->vtx[0].vin[0].scriptSig;
     komodo_init();
     if ( block->vtx[0].vin[0].scriptSig.size() > 5 )
     {
@@ -150,7 +150,7 @@ int32_t komodo_block2height(CBlock *block)
 
 void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
 {
-    uint8_t *ptr = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
+    uint8_t *ptr = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey;
     komodo_init();
     memcpy(pubkey33,ptr+1,33);
 }
@@ -164,7 +164,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     {
         if ( ReadBlockFromDisk(block,(const CBlockIndex *)pindex,
 #ifndef KOMODO_ZCASH
-                               Params().GetConsensus(),
+                               Params().GetConsensus()
 #endif
                                ) != 0 )
         {
