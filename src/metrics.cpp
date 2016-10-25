@@ -13,6 +13,7 @@
 #include <boost/thread/synchronized_value.hpp>
 #include <string>
 #include <sys/ioctl.h>
+#include <unistd.h>
 
 AtomicCounter transactionsValidated;
 AtomicCounter ehSolverRuns;
@@ -192,16 +193,22 @@ void ThreadShowMetricsScreen()
     while (true) {
         // Number of lines that are always displayed
         int lines = 1;
+        int cols = 80;
 
         // Get current window size
-        struct winsize w;
-        ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+        if (isatty(STDOUT_FILENO)) {
+            struct winsize w;
+            w.ws_col = 0;
+            if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1 && w.ws_col != 0) {
+                cols = w.ws_col;
+            }
+        }
 
         // Erase below current position
         std::cout << "\e[J";
 
-        lines += printMetrics(w.ws_col, nStart, mining);
-        lines += printMessageBox(w.ws_col);
+        lines += printMetrics(cols, nStart, mining);
+        lines += printMessageBox(cols);
         lines += printInitMessage();
 
         // Explain how to exit
