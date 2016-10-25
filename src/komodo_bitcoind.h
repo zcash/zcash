@@ -330,7 +330,7 @@ char *curl_post(CURL **cHandlep,char *url,char *userpass,char *postfields,char *
 char *komodo_issuemethod(char *method,char *params,uint16_t port)
 {
     //static void *cHandle;
-    char url[512],*retstr=0,*retstr2,postdata[8192];
+    char url[512],*retstr=0,*retstr2=0,postdata[8192];
     if ( params == 0 || params[0] == 0 )
         params = (char *)"[]";
     if ( strlen(params) < sizeof(postdata)-128 )
