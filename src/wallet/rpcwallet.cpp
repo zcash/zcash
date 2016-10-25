@@ -461,7 +461,7 @@ Value paxdeposit(const Array& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return Value::null;
     if (fHelp || params.size() != 3)
-        throw runtime_error("paxdeposit \"bitcoinaddress\" [-]fiatoshis \"base\"\nnegative fiatoshis means a short position, long position capped at 100% gain");
+        throw runtime_error("paxdeposit \"address\" [-]fiatoshis \"base\"\nnegative fiatoshis means a short position, long position capped at 100% gain");
     LOCK2(cs_main, pwalletMain->cs_wallet);
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
@@ -484,7 +484,6 @@ Value paxdeposit(const Array& params, bool fHelp)
     paxstr.append(fiatbuf);
     tmp.append("PAX");
     wtx.mapValue["PAX"] = paxstr;
-    wtx.mapValue["account"] = tmp;
     pwalletMain->SetAddressBook(destaddress.Get(),account,tmp);
     SendMoney(destaddress.Get(),komodoshis,fSubtractFeeFromAmount,wtx);
     return wtx.GetHash().GetHex();

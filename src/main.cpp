@@ -1138,7 +1138,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             if (!view.HaveCoins(txin.prevout.hash)) {
                 if (pfMissingInputs)
                     *pfMissingInputs = true;
-                fprintf(stderr,"do all inputs exist?\n");
+                fprintf(stderr,"missing inputs\n");
                 return false;
             }
         }
