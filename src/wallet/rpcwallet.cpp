@@ -365,7 +365,7 @@ Value getaddressesbyaccount(const Array& params, bool fHelp)
     return ret;
 }
 
-static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew,uint8_t *opretbuf,int32_t opretlen,uint64_t opretValue)
+static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew,uint8_t *opretbuf,int32_t opretlen,long int opretValue)
 {
     CAmount curBalance = pwalletMain->GetBalance();
 
@@ -393,7 +393,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
         opretpubkey.resize(opretlen);
         ptr = (uint8_t *)opretpubkey.data();
         for (i=0; i<opretlen; i++)
-            ptr[i] = opret[i];
+            ptr[i] = opretuf[i];
         CRecipient opret = { opretpubkey, opretValue, false };
         vecSend.push_back(opret);
     }
@@ -463,6 +463,7 @@ Value sendtoaddress(const Array& params, bool fHelp)
 }
 
 uint64_t PAX_fiatdest(char *fiatbuf,char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *base,int64_t fiatoshis);
+#define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
 
 Value paxdeposit(const Array& params, bool fHelp)
 {
