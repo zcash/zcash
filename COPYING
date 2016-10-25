@@ -18,3 +18,37 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+This product includes software developed by the OpenSSL Project for use in the
+[OpenSSL Toolkit](https://www.openssl.org/). This product includes cryptographic
+software written by Eric Young ([eay@cryptsoft.com](mailto:eay@cryptsoft.com)),
+and UPnP software written by Thomas Bernard.
+
+
+The [MIT software license](http://www.opensource.org/licenses/mit-license.php)
+above applies to the code directly included in this source distribution, with
+the exception of certain files under the 'src/qt/' and 'scripts/img/' directories
+which are distributed under the LGPL or GPL licenses. Dependencies downloaded
+as part of the build process may be covered by other open source licenses.
+For further details see 'contrib/DEBIAN/copyright'.
+
+Although almost all of the Zcash code is licensed under "permissive" open source
+licenses, users and distributors should note that when built, Zcash depends
+on Oracle Berkeley DB Java Edition, which includes the following license clause:
+
+  Redistributions in any form must be accompanied by information on
+  how to obtain complete source code for the Oracle Berkeley DB
+  Java Edition software and any accompanying software that uses the
+  Oracle Berkeley DB Java Edition software.  The source code must
+  either be included in the distribution or be available for no
+  more than the cost of distribution plus a nominal fee, and must be
+  freely redistributable under reasonable conditions.  For an
+  executable file, complete source code means the source code for all
+  modules it contains.  It does not include source code for modules or
+  files that typically accompany the major components of the operating
+  system on which the executable file runs.
+
+In order to comply with this license clause, it is necessary to make available
+the source code of any modifications to Zcash if the resulting code is to be
+linked against Oracle Berkeley DB Java Edition (as is done by the usual build
+process).
