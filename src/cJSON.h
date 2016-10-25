@@ -33,7 +33,6 @@
 
 //#include "../crypto777/OS_portable.h"
 
-#define SATOSHIDEN ((uint64_t)100000000L)
 #define MAX_JSON_FIELD 4096 // on the big side
 
 #ifdef __cplusplus

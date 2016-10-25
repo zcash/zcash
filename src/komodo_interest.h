@@ -14,7 +14,8 @@
  ******************************************************************************/
 
 #define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))   // 5%
-#define dstr(x) ((double)(x)/COIN)
+#define dstr(x) ((double)(x)/SATOSHIDEN)
+#define SATOSHIDEN ((uint64_t)100000000L)
 
 uint64_t komodo_accrued_interest(int32_t height,int64_t paidinterest)
 {
