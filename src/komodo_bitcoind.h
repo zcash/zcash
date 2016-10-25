@@ -32,9 +32,44 @@ struct return_string { char *ptr; size_t len; };
 #define CURL_GLOBAL_WIN32 (1<<1)
 
 
-size_t accumulate(void *ptr, size_t size, size_t nmemb, struct return_string *s);
-void init_string(struct return_string *s);
+/************************************************************************
+ *
+ * Initialize the string handler so that it is thread safe
+ *
+ ************************************************************************/
 
+void init_string(struct return_string *s)
+{
+    s->len = 0;
+    s->ptr = (char *)calloc(1,s->len+1);
+    if ( s->ptr == NULL )
+    {
+        fprintf(stderr,"init_string malloc() failed\n");
+        exit(-1);
+    }
+    s->ptr[0] = '\0';
+}
+
+/************************************************************************
+ *
+ * Use the "writer" to accumulate text until done
+ *
+ ************************************************************************/
+
+size_t accumulatebytes(void *ptr,size_t size,size_t nmemb,struct return_string *s)
+{
+    size_t new_len = s->len + size*nmemb;
+    s->ptr = (char *)realloc(s->ptr,new_len+1);
+    if ( s->ptr == NULL )
+    {
+        fprintf(stderr, "accumulate realloc() failed\n");
+        exit(-1);
+    }
+    memcpy(s->ptr+s->len,ptr,size*nmemb);
+    s->ptr[new_len] = '\0';
+    s->len = new_len;
+    return(size * nmemb);
+}
 
 /************************************************************************
  *
@@ -132,7 +167,7 @@ try_again:
   	curl_easy_setopt(curl_handle,CURLOPT_USERAGENT,"mozilla/4.0");//"Mozilla/4.0 (compatible; )");
     curl_easy_setopt(curl_handle,CURLOPT_HTTPHEADER,	headers);
     curl_easy_setopt(curl_handle,CURLOPT_URL,		url);
-    curl_easy_setopt(curl_handle,CURLOPT_WRITEFUNCTION,	(void *)accumulate); 		// send all data to this function
+    curl_easy_setopt(curl_handle,CURLOPT_WRITEFUNCTION,	(void *)accumulatebytes); 		// send all data to this function
     curl_easy_setopt(curl_handle,CURLOPT_WRITEDATA,		&s); 			// we pass our 's' struct to the callback
     curl_easy_setopt(curl_handle,CURLOPT_NOSIGNAL,		1L);   			// supposed to fix "Alarm clock" and long jump crash
 	curl_easy_setopt(curl_handle,CURLOPT_NOPROGRESS,	1L);			// no progress callback
