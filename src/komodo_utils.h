@@ -979,7 +979,7 @@ void komodo_configfile(char *symbol,uint16_t port)
         {
             if ( line[0] == '#' )
                 continue;
-            //printf("line.(%s) %p %p\n",line,strstr(line,"rpcuser"),strstr(line,"rpcpassword"));
+            printf("line.(%s) %p %p\n",line,strstr(line,"rpcuser"),strstr(line,"rpcpassword"));
             if ( (str= strstr(line,(char *)"rpcuser")) != 0 )
                 rpcuser = parse_conf_line(str,(char *)"rpcuser");
             else if ( (str= strstr(line,(char *)"rpcpassword")) != 0 )
@@ -1007,7 +1007,7 @@ void komodo_configfile(char *symbol,uint16_t port)
     }
     if ( (retstr= komodo_issuemethod((char *)"getinfo",0)) != 0 )
     {
-        printf("GETINFO.%s (%s)\n",symbol,retstr);
+        printf("GETINFO.%s (%s) USERPASS.%s\n",symbol,retstr,USERPASS);
         free(retstr);
     }
 }
