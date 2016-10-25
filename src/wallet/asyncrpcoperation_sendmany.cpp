@@ -196,12 +196,15 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     CAmount sendAmount = z_outputs_total + t_outputs_total;
     CAmount targetAmount = sendAmount + minersFee;
 
+    assert(!isfromtaddr_ || z_inputs_total == 0);
+    assert(!isfromzaddr_ || t_inputs_total == 0);
+
     if (isfromtaddr_ && (t_inputs_total < targetAmount)) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strprintf("Insufficient transparent funds, have %ld, need %ld plus fee %ld", t_inputs_total, t_outputs_total, minersFee));
+        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strprintf("Insufficient transparent funds, have %ld, need %ld", t_inputs_total, targetAmount));
     }
     
     if (isfromzaddr_ && (z_inputs_total < targetAmount)) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strprintf("Insufficient protected funds, have %ld, need %ld plus fee %ld", z_inputs_total, z_outputs_total, minersFee));
+        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strprintf("Insufficient protected funds, have %ld, need %ld", z_inputs_total, targetAmount));
     }
 
     // If from address is a taddr, select UTXOs to spend
