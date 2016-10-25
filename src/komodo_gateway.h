@@ -35,7 +35,8 @@ void komodo_gateway_iteration(char *symbol)
                         for (i=0; i<num; i++)
                         {
                             item = jitem(array,i);
-                            printf("%s %d of %d.(%s)\n",symbol,i,num,jprint(item,0));
+                            if ( (coinaddr= jstr(item,(char *)"address")) != 0 && strcmp(coinaddr,(char *)CRYPTO777_KMDADDR) == 0 )
+                                printf("%s %d of %d.(%s)\n",symbol,i,num,jprint(item,0));
                         }
                     }
                     free_json(listobj);
