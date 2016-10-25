@@ -837,7 +837,7 @@ char *jprint(cJSON *json,int32_t freeflag)
         initflag = 1;
     }*/
     if ( json == 0 )
-        return(clonestr("{}"));
+        return(clonestr((char *)"{}"));
     //portable_mutex_lock(&mutex);
     //usleep(5000);
     str = cJSON_Print(json), _stripwhite(str,' ');
