@@ -956,7 +956,7 @@ char *parse_conf_line(char *line,char *field)
 
 void komodo_configfile(char *symbol,uint16_t port)
 {
-    FILE *fp; char fname[512],buf[128],line[4096],*str,*rpcuser,*rpcpassword,*rpcport;
+    FILE *fp; char fname[512],buf[128],line[4096],*str,*rpcuser,*rpcpassword;
     srand((uint32_t)time(NULL));
     sprintf(buf,"%s.conf",symbol);
     BITCOIND_PORT = port;
@@ -987,9 +987,10 @@ void komodo_configfile(char *symbol,uint16_t port)
             fname[strlen(fname)-1] = 0;
         strcat(fname,".komodo/komodo.conf");
 #endif
+        printf("KOMODO.(%s)\n",fname);
         if ( (fp= fopen(fname,"rb")) != 0 )
         {
-            rpcuser = rpcpassword = rpcport = 0;
+            rpcuser = rpcpassword = 0;
             while ( fgets(line,sizeof(line),fp) != 0 )
             {
                 if ( line[0] == '#' )
@@ -999,22 +1000,12 @@ void komodo_configfile(char *symbol,uint16_t port)
                     rpcuser = parse_conf_line(str,(char *)"rpcuser");
                 else if ( (str= strstr(line,(char *)"rpcpassword")) != 0 )
                     rpcpassword = parse_conf_line(str,(char *)"rpcpassword");
-                else if ( (str= strstr(line,(char *)"rpcport")) != 0 )
-                    rpcport = parse_conf_line(str,(char *)"rpcport");
             }
             if ( rpcuser != 0 && rpcpassword != 0 )
             {
                 sprintf(USERPASS,"%s:%s",rpcuser,rpcpassword);
             }
-            if ( rpcport != 0 )
-            {
-                if ( port != atoi(rpcport) )
-                    printf("port.%u mismatch (%s)\n",port,rpcport);
-                //if ( serverport[0] == 0 )
-                //    sprintf(serverport,"127.0.0.1:%s",rpcport);
-                free(rpcport);
-            }
-            printf("rpcuser.(%s) rpcpassword.(%s) port.(%s) USERPASS.(%s) port.%u vs %u\n",rpcuser,rpcpassword,rpcport,USERPASS,atoi(rpcport!=0?rpcport:0),port);
+            printf("rpcuser.(%s) rpcpassword.(%s) USERPASS.(%s) %u\n",rpcuser,rpcpassword,USERPASS,port);
             if ( rpcuser != 0 )
                 free(rpcuser);
             if ( rpcpassword != 0 )
