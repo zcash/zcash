@@ -13,6 +13,8 @@
  *                                                                            *
  ******************************************************************************/
 
+#define dstr(x) ((double)(x) / SATOSHIDEN)
+
 union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
 typedef union _bits256 bits256;
 
@@ -830,6 +832,41 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex)
     }
     //bytes[i] = 0;
     return(n + adjust);
+}
+
+char hexbyte(int32_t c)
+{
+    c &= 0xf;
+    if ( c < 10 )
+        return('0'+c);
+    else if ( c < 16 )
+        return('a'+c-10);
+    else return(0);
+}
+
+int32_t init_hexbytes_noT(char *hexbytes,unsigned char *message,long len)
+{
+    int32_t i;
+    if ( len <= 0 )
+    {
+        hexbytes[0] = 0;
+        return(1);
+    }
+    for (i=0; i<len; i++)
+    {
+        hexbytes[i*2] = hexbyte((message[i]>>4) & 0xf);
+        hexbytes[i*2 + 1] = hexbyte(message[i] & 0xf);
+        //printf("i.%d (%02x) [%c%c]\n",i,message[i],hexbytes[i*2],hexbytes[i*2+1]);
+    }
+    hexbytes[len*2] = 0;
+    //printf("len.%ld\n",len*2+1);
+    return((int32_t)len*2+1);
+}
+
+char *bits256_str(char hexstr[65],bits256 x)
+{
+    init_hexbytes_noT(hexstr,x.bytes,sizeof(x));
+    return(hexstr);
 }
 
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp)
