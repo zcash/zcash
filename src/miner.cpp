@@ -335,7 +335,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         //txNew.nLockTime = (uint32_t)time(NULL) - 60;
         txNew.vin.resize(1);
         txNew.vin[0].prevout.SetNull();
-        int32_t i,opretlen; uint8_t opret[8192],*ptr;
+        int32_t i,opretlen; uint8_t opret[256],*ptr;
         if ( (opretlen= komodo_pax_opreturn(opret,sizeof(opret))) > 0 )
         {
             txNew.vout.resize(2);
