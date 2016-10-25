@@ -130,7 +130,7 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 
 int32_t komodo_block2height(CBlock *block)
 {
-    int32_t i,n,height = 0; uint8_t *ptr = (uint8_t *)&block->vtx[0].vin[0].scriptSig;
+    int32_t i,n,height = 0; uint8_t *ptr = (uint8_t *)block->vtx[0].vin[0].scriptSig.data();
     komodo_init();
     if ( block->vtx[0].vin[0].scriptSig.size() > 5 )
     {
@@ -150,7 +150,7 @@ int32_t komodo_block2height(CBlock *block)
 
 void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
 {
-    uint8_t *ptr = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey;
+    uint8_t *ptr = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
     komodo_init();
     memcpy(pubkey33,ptr+1,33);
 }

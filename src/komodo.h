@@ -232,9 +232,9 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
             len += iguana_rwnum(0,&scriptbuf[len],4,(uint8_t *)notarizedheightp);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
-            //for (k=0; k<scriptlen; k++)
-            //    printf("%02x",scriptbuf[k]);
-            //printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
+            for (k=0; k<scriptlen; k++)
+                printf("%02x",scriptbuf[k]);
+            printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
             if ( *notarizedheightp > NOTARIZED_HEIGHT && *notarizedheightp < height )
             {
                 printf("ht.%d NOTARIZED.%d KMD.%s BTCTXID.%s (%s)\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
@@ -250,7 +250,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             double KMDBTC,BTCUSD,CNYUSD; uint32_t numpvals,timestamp,pvals[128];
             numpvals = dpow_readprices(&scriptbuf[++len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
             komodo_stateupdate(height,0,0,0,zero,0,0,pvals,numpvals);
-            //printf("vout OP_RETURN.%d prices numpvals.%d opretlen.%d\n",height,numpvals,opretlen);
+            printf("vout OP_RETURN.%d prices numpvals.%d opretlen.%d\n",height,numpvals,opretlen);
         }
 #endif
     }
@@ -282,7 +282,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 len = block.vtx[i].vout[j].scriptPubKey.size();
                 if ( len <= sizeof(scriptbuf) )
                 {
-                    memcpy(scriptbuf,&block.vtx[i].vout[j].scriptPubKey,len);
+                    memcpy(scriptbuf,block.vtx[i].vout[j].scriptPubKey.data(),len);
                     notaryid = komodo_voutupdate(notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight);
                     if ( 0 && i > 0 )
                     {
@@ -318,7 +318,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         len = block.vtx[i].vout[j].scriptPubKey.size();
                         if ( len <= sizeof(scriptbuf) )
                         {
-                            memcpy(scriptbuf,&block.vtx[i].vout[j].scriptPubKey,len);
+                            memcpy(scriptbuf,block.vtx[i].vout[j].scriptPubKey.data(),len);
                             if ( len == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
                             {
                                 memcpy(pubkeys[numvalid++],scriptbuf+1,33);
