@@ -130,8 +130,13 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 
 int32_t komodo_block2height(CBlock *block)
 {
-    int32_t i,n,height = 0; uint8_t *ptr = (uint8_t *)block->vtx[0].vin[0].scriptSig.data();
+    int32_t i,n,height = 0; uint8_t *ptr;
     komodo_init();
+#ifdef KOMODO_ZCASH
+    ptr = (uint8_t *)block->vtx[0].vin[0].scriptSig.data();
+#else
+    ptr = (uint8_t *)&block->vtx[0].vin[0].scriptSig[0];
+#endif
     if ( block->vtx[0].vin[0].scriptSig.size() > 5 )
     {
         //for (i=0; i<6; i++)

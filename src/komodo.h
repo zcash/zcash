@@ -282,7 +282,11 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 len = block.vtx[i].vout[j].scriptPubKey.size();
                 if ( len <= sizeof(scriptbuf) )
                 {
+#ifdef KOMODO_ZCASH
                     memcpy(scriptbuf,block.vtx[i].vout[j].scriptPubKey.data(),len);
+#else
+                    memcpy(scriptbuf,(uint8_t *)&block.vtx[i].vout[j].scriptPubKey[0],len);
+#endif
                     notaryid = komodo_voutupdate(notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight);
                     if ( 0 && i > 0 )
                     {
@@ -318,7 +322,11 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         len = block.vtx[i].vout[j].scriptPubKey.size();
                         if ( len <= sizeof(scriptbuf) )
                         {
+#ifdef KOMODO_ZCASH
                             memcpy(scriptbuf,block.vtx[i].vout[j].scriptPubKey.data(),len);
+#else
+                            memcpy(scriptbuf,(uint8_t *)&block.vtx[i].vout[j].scriptPubKey[0],len);
+#endif
                             if ( len == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
                             {
                                 memcpy(pubkeys[numvalid++],scriptbuf+1,33);
