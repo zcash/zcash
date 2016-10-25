@@ -92,10 +92,10 @@ char *komodo_issuemethod(char *method,char *params)
 {
     static void *cHandle; extern char USERPASS[1024]; extern uint16_t BITCOIND_PORT;
     char url[512],*retstr=0,postdata[8192];
+    if ( params == 0 || params[0] == 0 )
+        params = (char *)"[]";
     if ( strlen(params) < sizeof(postdata)-128 )
     {
-        if ( params == 0 )
-            params = (char *)"[]";
         sprintf(url,(char *)"http://127.0.0.1:%u",BITCOIND_PORT);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
         retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
