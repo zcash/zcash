@@ -46,6 +46,7 @@ uint64_t komodo_accrued_interest(int32_t height,int64_t paidinterest)
             }
         }
     }
+    return(0);
 }
 
 uint64_t komodo_moneysupply(int32_t height)
