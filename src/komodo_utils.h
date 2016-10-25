@@ -910,7 +910,7 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
 void komodo_configfile(char *symbol,uint16_t port)
 {
     FILE *fp; char fname[512],buf[128];
-    srand((uin32_t)time(NULL));
+    srand((uint32_t)time(NULL));
     sprintf(buf,"%s.conf",symbol);
 #ifdef WIN32
     sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),buf);
