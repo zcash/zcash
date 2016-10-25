@@ -41,7 +41,7 @@ pthread_mutex_t komodo_mutex;
 
 int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals)
 {
-    static FILE *fp; static int32_t errs,didinit; char fname[512]; int32_t ht,k,i,func; uint8_t num,pubkeys[64][33];
+    static FILE *fp; static int32_t errs; char fname[512]; int32_t ht,func; uint8_t num,pubkeys[64][33];
 #ifdef WIN32
     sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"komodostate");
 #else
@@ -182,7 +182,7 @@ int32_t komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numno
 
 int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp)
 {
-    static uint256 zero; int32_t k,opretlen,nid,len = 0; uint256 kmdtxid,desttxid; uint8_t crypto777[33];
+    static uint256 zero; int32_t opretlen,nid,len = 0; uint256 kmdtxid,desttxid; uint8_t crypto777[33];
     if ( scriptlen == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
     {
         decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
@@ -258,10 +258,9 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
-    static int32_t didinit;
-    char *scriptstr,*opreturnstr; uint64_t signedmask,voutmask;
+    uint64_t signedmask,voutmask;
     uint8_t scriptbuf[4096],pubkeys[64][33]; uint256 kmdtxid,btctxid,txhash;
-    int32_t i,j,k,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count,flag;
+    int32_t i,j,k,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
     komodo_init();
 #ifdef KOMODO_ISSUER
     komodo_gateway_issuer();
