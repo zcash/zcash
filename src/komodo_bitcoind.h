@@ -98,6 +98,7 @@ char *komodo_issuemethod(char *method,char *params)
     {
         sprintf(url,(char *)"http://127.0.0.1:%u",BITCOIND_PORT);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
+        printf("postdata.(%s) USERPASS.(%s)\n",postdata,USERPASS);
         retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
     return(retstr);
