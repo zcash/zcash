@@ -25,13 +25,13 @@ void komodo_gateway_voutupdate(int32_t height,int32_t txi,int32_t vout,uint64_t 
 
 void komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
 {
-    char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*vouts,*item,*sobj; int32_t vout,n,len,isspecial; uint64_t value;
+    char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*result,*vouts,*item,*sobj; int32_t vout,n,len,isspecial; uint64_t value;
     sprintf(params,"[\"%s\", 1]",txidstr);
     if ( (retstr= komodo_issuemethod((char *)"getrawtransaction",params,port)) != 0 )
     {
         if ( (json= cJSON_Parse(retstr)) != 0 )
         {
-            if ( (vouts= jarray(&n,json,(char *)"vout")) != 0 )
+            if ( (result= jobj(json,(char *)"result")) != 0 && (vouts= jarray(&n,result,(char *)"vout")) != 0 )
             {
                 isspecial = 0;
                 for (vout=0; vout<n; vout++)
@@ -62,21 +62,21 @@ void komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
 
 void komodo_gateway_block(int32_t height,uint16_t port)
 {
-    char *retstr,*retstr2,params[128],*txidstr; int32_t i,n; cJSON *json,*tx,*result;
+    char *retstr,*retstr2,params[128],*txidstr; int32_t i,n; cJSON *json,*tx,*result,*result2;
     sprintf(params,"[%d]",height);
     if ( (retstr= komodo_issuemethod((char *)"getblockhash",params,port)) != 0 )
     {
         if ( (result= cJSON_Parse(retstr)) != 0 )
         {
-            if ( (txidstr= jstr(result,"result")) != 0 && strlen(txidstr) == 64 )
+            if ( (txidstr= jstr(result,(char *)"result")) != 0 && strlen(txidstr) == 64 )
             {
                 sprintf(params,"[\"%s\"]",txidstr);
                 if ( (retstr2= komodo_issuemethod((char *)"getblock",params,port)) != 0 )
                 {
-                    printf("getblock.(%s)\n",retstr2);
+                    //printf("getblock.(%s)\n",retstr2);
                     if ( (json= cJSON_Parse(retstr2)) != 0 )
                     {
-                        if ( (tx= jarray(&n,json,(char *)"tx")) != 0 )
+                        if ( (result2= jobj(json,(char *)"result")) != 0 && (tx= jarray(&n,result2,(char *)"tx")) != 0 )
                         {
                             for (i=0; i<n; i++)
                                 komodo_gateway_tx(height,i,jstri(tx,i),port);
