@@ -20,8 +20,6 @@
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen)
 {
     uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i; char base[4],coinaddr[64],destaddr[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
-    if ( opretlen == 72 )
-        return("notarized");
     printf("komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
     if ( opretbuf[0] == 'D' )
     {
@@ -48,9 +46,12 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
 {
     int32_t i,opretlen,offset = 0; uint256 zero; const char *typestr;
     typestr = "unknown";
-    for (i=0; i<len; i++)
-        printf("%02x",script[i]);
-    printf(" <- %s VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%s)\n",symbol,height,txi,vout,dstr(value),len,script[0] == 0x6a,typestr);
+    if ( i != 0 || vout != 0 )
+    {
+        for (i=0; i<len; i++)
+            printf("%02x",script[i]);
+        printf(" <- %s VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%s)\n",symbol,height,txi,vout,dstr(value),len,script[0] == 0x6a,typestr);
+    }
     if ( script[offset++] == 0x6a )
     {
         offset += komodo_scriptitemlen(&opretlen,&script[offset]);
