@@ -50,7 +50,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t v
         {
             offset += komodo_scriptitemlen(&opretlen,&script[offset]);
             if ( script[offset] == 'P' )
-                komodo_paxpricefeed(&script[++offset]);
+                komodo_paxpricefeed(height,&script[++offset],opretlen);
             else
             {
                 printf("offset.%d opretlen.%d\n",offset,opretlen);

@@ -284,7 +284,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
         }
 #ifdef KOMODO_PAX
         else if ( i == 0 && scriptbuf[len] == 'P' )
-            komodo_paxpricefeed(&scriptbuf[++len]);
+            komodo_paxpricefeed(height,&scriptbuf[++len],opretlen);
 #endif
     }
     return(notaryid);

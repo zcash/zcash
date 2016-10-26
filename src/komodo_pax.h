@@ -298,7 +298,7 @@ int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *bas
     return(num);
 }
 
-void komodo_paxpricefeed(uint8_t *pricefeed)
+void komodo_paxpricefeed(int32_t height,uint8_t *pricefeed,int32_t opretlen)
 {
     double KMDBTC,BTCUSD,CNYUSD; uint32_t numpvals,timestamp,pvals[128]; uint256 zero;
     numpvals = dpow_readprices(pricefeed,&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
