@@ -99,7 +99,7 @@ void komodo_gateway_iteration(char *symbol)
                 for (i=0; i<10000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
                     printf("%s KMDheight.%d\n",symbol,KMDHEIGHT);
-                    if ( komodo_gateway_block(KMDHEIGHT) >= 0 )
+                    if ( komodo_gateway_block(KMDHEIGHT,port) >= 0 )
                     {
                         
                     }
