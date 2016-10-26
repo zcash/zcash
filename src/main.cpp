@@ -720,7 +720,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
     }
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
-        if ( txin.nSequence == 0xfffffffe && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime > nBlockTime )
+        if ( txin.nSequence == 0xfffffffe && (((int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime > nBlockTime) || ((int64_t)tx.nLockTime < LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime > nBlockHeight)) )
         {
             
         }
