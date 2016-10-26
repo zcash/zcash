@@ -15,7 +15,7 @@ function dwcashd_generate {
 function dwcashd_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
-    ./src/dwcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
+    ./src/dwcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     DWCASHD_PID=$!
 }
 
@@ -28,7 +28,7 @@ function dwcashd_massif_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
     rm -f massif.out
-    valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/dwcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
+    valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/dwcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     DWCASHD_PID=$!
 }
 
@@ -42,7 +42,7 @@ function dwcashd_valgrind_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
     rm -f valgrind.out
-    valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/dwcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
+    valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/dwcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     DWCASHD_PID=$!
 }
 

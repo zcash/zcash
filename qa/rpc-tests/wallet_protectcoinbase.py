@@ -60,16 +60,39 @@ class Wallet2Test (BitcoinTestFramework):
         # coinbase utxos can only be sent to a zaddr.
         errorString = ""
         try:
-            self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 1.0)
+            self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 1)
         except JSONRPCException,e:
             errorString = e.error['message']
         assert_equal("Coinbase funds can only be sent to a zaddr" in errorString, True)
 
-        # send node 0 taddr to node 0 zaddr
+        # Prepare to send taddr->zaddr
         mytaddr = self.nodes[0].getnewaddress()
         myzaddr = self.nodes[0].z_getnewaddress()
+
+        # This send will fail because our wallet does not allow any change when protecting a coinbase utxo,
+        # as it's currently not possible to specify a change address in z_sendmany.
         recipients = []
-        recipients.append({"address":myzaddr, "amount":20.0})
+        recipients.append({"address":myzaddr, "amount":Decimal('1.23456789')})
+        errorString = ""
+        myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
+        opids = []
+        opids.append(myopid)
+        timeout = 10
+        status = None
+        for x in xrange(1, timeout):
+            results = self.nodes[0].z_getoperationresult(opids)
+            if len(results)==0:
+                sleep(1)
+            else:
+                status = results[0]["status"]
+                errorString = results[0]["error"]["message"]
+                break
+        assert_equal("failed", status)
+        assert_equal("wallet does not allow any change" in errorString, True)
+
+        # This send will succeed.  We send two coinbase utxos totalling 20.0 less a fee of 0.00010000, with no change.
+        recipients = []
+        recipients.append({"address":myzaddr, "amount": Decimal('20.0') - Decimal('0.0001')})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
         self.wait_for_operationd_success(myopid)
         self.sync_all()
@@ -78,13 +101,13 @@ class Wallet2Test (BitcoinTestFramework):
 
         # check balances (the z_sendmany consumes 3 coinbase utxos)
         resp = self.nodes[0].z_gettotalbalance()
-        assert_equal(Decimal(resp["transparent"]), Decimal('10.0'))
-        assert_equal(Decimal(resp["private"]), Decimal('29.9999'))
+        assert_equal(Decimal(resp["transparent"]), Decimal('20.0'))
+        assert_equal(Decimal(resp["private"]), Decimal('19.9999'))
         assert_equal(Decimal(resp["total"]), Decimal('39.9999'))
 
         # convert note to transparent funds
         recipients = []
-        recipients.append({"address":mytaddr, "amount":20.0})
+        recipients.append({"address":mytaddr, "amount":Decimal('10.0')})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
         self.wait_for_operationd_success(myopid)
         self.sync_all()
@@ -100,30 +123,30 @@ class Wallet2Test (BitcoinTestFramework):
         # Send will fail because send amount is too big, even when including coinbase utxos
         errorString = ""
         try:
-            self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 99999.0)
+            self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 99999)
         except JSONRPCException,e:
             errorString = e.error['message']
         assert_equal("Insufficient funds" in errorString, True)
 
         # Send will fail because of insufficient funds unless sender uses coinbase utxos
         try:
-            self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 21.0)
+            self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 21)
         except JSONRPCException,e:
             errorString = e.error['message']
         assert_equal("Insufficient funds, coinbase funds can only be spent after they have been sent to a zaddr" in errorString, True)
 
-        # Send will succeed because the balance of non-coinbase utxos is 20.0
+        # Send will succeed because the balance of non-coinbase utxos is 10.0
         try:
-            self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 19.0)
+            self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 9)
         except JSONRPCException:
             assert(False)
 
         self.sync_all()
-        self.nodes[1].generate(10)
+        self.nodes[1].generate(1)
         self.sync_all()
 
         # check balance
-        assert_equal(self.nodes[2].getbalance(), Decimal('19'))
+        assert_equal(self.nodes[2].getbalance(), 9)
 
 if __name__ == '__main__':
     Wallet2Test ().main ()

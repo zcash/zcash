@@ -3176,6 +3176,7 @@ Value z_sendmany(const Array& params, bool fHelp)
             "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf )\n"
             "\nSend multiple times. Amounts are double-precision floating point numbers."
             "\nChange from a taddr flows to a new taddr address, while change from zaddr returns to itself."
+            "\nWhen sending coinbase UTXOs to a zaddr, change is not alllowed. The entire value of the UTXO(s) must be consumed."
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
             "1. \"fromaddress\"         (string, required) The taddr or zaddr to send the funds from.\n"
