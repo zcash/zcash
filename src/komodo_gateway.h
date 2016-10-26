@@ -13,7 +13,6 @@
  *                                                                            *
  ******************************************************************************/
 
-// savestate with important tx
 // convert paxdeposit into new coins in the next block
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 // need to save most processed block in other chain(s)
@@ -122,7 +121,7 @@ void komodo_gateway_iteration(char *symbol)
         {
             if ( (result= jobj(infoobj,(char *)"result")) != 0 && (kmdheight= jint(result,(char *)"blocks")) != 0 )
             {
-                for (i=0; i<10 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
+                for (i=0; i<1000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
                     if ( (KMDHEIGHT % 100) == 0 )
                     {
