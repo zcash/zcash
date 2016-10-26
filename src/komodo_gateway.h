@@ -134,7 +134,12 @@ void komodo_gateway_iteration(char *symbol)
             free_json(infoobj);
         }
         free(retstr);
-    } else printf("error from %s\n",symbol);
+    }
+    else
+    {
+        printf("error from %s\n",symbol);
+        sleep(30);
+    }
 }
 
 #ifdef KOMODO_ISSUER
