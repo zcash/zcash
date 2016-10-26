@@ -101,9 +101,10 @@ void komodo_gateway_iteration(char *symbol)
         {
             if ( (result= jobj(infoobj,(char *)"result")) != 0 && (kmdheight= jint(result,(char *)"blocks")) != 0 )
             {
-                for (i=0; i<1000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
+                for (i=0; i<100 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
-                    printf("%s KMDheight.%d\n",symbol,KMDHEIGHT);
+                    if ( (KMDHEIGHT % 1000) == 0 )
+                        fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
                     komodo_gateway_block(KMDHEIGHT,port);
                 }
             }
