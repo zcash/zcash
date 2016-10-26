@@ -67,7 +67,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
         }
         else if ( isspecial != 0 )
         {
-            komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,value,&script[offset],opretlen);
+            komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,value,&script[offset],opretlen);
         }
     }
     else if ( numvouts > 13 )
@@ -170,7 +170,7 @@ void komodo_gateway_iteration(char *symbol)
                     {
                         fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
                         memset(&zero,0,sizeof(zero));
-                        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,KMDHEIGHT,0,0,0);
+                        komodo_stateupdate(KMDHEIGHT,0,0,0,zero,0,0,0,0,KMDHEIGHT,0,0,0);
                     }
                     if ( komodo_gateway_block(symbol,KMDHEIGHT,port) < 0 )
                         break;
