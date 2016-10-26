@@ -35,7 +35,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t v
                 if ( fiatoshis < 0 )
                     fiatoshis = -fiatoshis;
                 bitcoin_address(coinaddr,addrtype,rmd160,20);
-                printf("DEPOSIT %.8f %s -> %s\n",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
+                printf("DEPOSIT %.8f %c%s -> %s\n",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
                 // verify price value for fiatoshis of base
                 typestr = "deposit";
             }
