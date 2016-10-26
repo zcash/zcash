@@ -18,9 +18,9 @@
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 // need to save most processed block in other chain(s)
 
-void komodo_gateway_voutupdate(int32_t height,int32_t txi,int32_t vout,uint8_t *script,int32_t len)
+void komodo_gateway_voutupdate(int32_t height,int32_t txi,int32_t vout,uint64_t value,uint8_t *script,int32_t len)
 {
-    printf("VOUTUPDATE.%d txi.%d vout.%d scriptlen.%d OP_RETURN.%d (%c)\n",height,txi,vout,len,script[0] == 0x6a,script[0] == 0x6a ? script[2] : -1);
+    printf("VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%c)\n",height,txi,vout,dstr(value),len,script[0] == 0x6a,script[0] == 0x6a ? script[2] : -1);
 }
 
 void komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
@@ -48,7 +48,7 @@ void komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
                             if ( isspecial != 0 && len <= sizeof(script) )
                             {
                                 decode_hex(script,len,hexstr);
-                                komodo_gateway_voutupdate(height,txi,vout,script,len);
+                                komodo_gateway_voutupdate(height,txi,vout,value,script,len);
                             }
                         }
                     }
@@ -89,7 +89,7 @@ void komodo_gateway_block(int32_t height,uint16_t port)
 
 void komodo_gateway_iteration(char *symbol)
 {
-    char *retstr,*coinaddr; int32_t i,kmdheight; cJSON *infoobj; uint16_t port = 7771;
+    char *retstr; int32_t i,kmdheight; cJSON *infoobj; uint16_t port = 7771;
     if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
     {
         if ( (infoobj= cJSON_Parse(retstr)) != 0 )
@@ -99,10 +99,7 @@ void komodo_gateway_iteration(char *symbol)
                 for (i=0; i<10000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
                     printf("%s KMDheight.%d\n",symbol,KMDHEIGHT);
-                    if ( komodo_gateway_block(KMDHEIGHT,port) >= 0 )
-                    {
-                        
-                    }
+                    komodo_gateway_block(KMDHEIGHT,port);
                 }
             }
             free_json(infoobj);
