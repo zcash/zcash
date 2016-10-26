@@ -56,7 +56,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t v
         {
             typestr = "pricefeed";
             komodo_paxpricefeed(height,&script[++offset],opretlen);
-            printf("height.%d pricefeed len.%d\n",opretlen);
+            printf("height.%d pricefeed len.%d\n",height,opretlen);
         }
         else
         {
