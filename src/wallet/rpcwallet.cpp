@@ -500,7 +500,7 @@ Value paxdeposit(const Array& params, bool fHelp)
     if ( fee < 10000 )
         fee = 10000;
     opretlen = komodo_opreturnscript(opretbuf,'D',pubkey33,33);
-    SendMoney(destaddress.Get(),fee,fSubtractFeeFromAmount,wtx,opretbuf,opretlen,komodoshis);
+    SendMoney(address.Get(),fee,fSubtractFeeFromAmount,wtx,opretbuf,opretlen,komodoshis);
     return wtx.GetHash().GetHex();
 }
 

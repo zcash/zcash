@@ -328,7 +328,7 @@ int32_t komodo_isratify(int32_t isspecial,int32_t numvalid)
 // with more than 13 pay2pubkey outputs -> ratify
 // if all outputs to notary -> notary utxo
 // if txi == 0 && 2 outputs and 2nd OP_RETURN, len == 32*2+4 -> notarized, 1st byte 'P' -> pricefeed
-// OP_RETURN: 'D' -> deposit
+// OP_RETURN: 'D' -> deposit, 'W' -> withdraw
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {

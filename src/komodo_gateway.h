@@ -13,20 +13,21 @@
  *                                                                            *
  ******************************************************************************/
 
-// convert paxdeposit into new coins in the next block
+// create list of approved deposits, validate all deposits against this list, prevent double deposit
+// need to tag deposits with OP_RETURN, ie link with originating txid/vout
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen)
 {
     uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     //printf("komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
-    if ( opretbuf[0] == 'D' )
+#ifdef KOMODO_ISSUER
+    tokomodo = 1;
+#endif
+    if ( opretbuf[0] == ((tokomodo != 0) ? 'D' : 'W') )
     {
         if ( opretlen == 34 )
         {
-#ifdef KOMODO_ISSUER
-            tokomodo = 1;
-#endif
             memset(base,0,sizeof(base));
             PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&fiatoshis);
             if ( fiatoshis < 0 )
@@ -42,9 +43,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             printf(" checkpubkey check %.8f v %.8f dest.(%s)\n",dstr(checktoshis),dstr(value),destaddr);
             typestr = "deposit";
 #ifdef KOMODO_ISSUER
-            if ( strncmp(KOMODO_SOURCE,base,strlen(base)) == 0 && value >= checktoshis*.9999 )
+            if ( strncmp(KOMODO_SOURCE,base,strlen(base)) == 0 && ((tokomodo == 0 && value >= checktoshis*.9999) || (tokomodo != 0 && value <= checktoshis/.9999)) )
             {
-                printf("START %s MINER!\n",KOMODO_SOURCE);
+                printf("START %s MINER! %.8f\n",KOMODO_SOURCE,dstr(fiatoshis));
                 KOMODO_DEPOSIT = fiatoshis;
                 KOMODO_SCRIPTPUBKEY[0] = 0x76;
                 KOMODO_SCRIPTPUBKEY[1] = 0xa9;
