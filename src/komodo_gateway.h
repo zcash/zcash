@@ -92,6 +92,7 @@ void komodo_gateway_iteration(char *symbol)
     char *retstr; int32_t i,kmdheight; cJSON *infoobj; uint16_t port = 7771;
     if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
     {
+        printf("GETINFO from.%s (%s)\n",ASSETCHAINS_SYMBOL,retstr);
         if ( (infoobj= cJSON_Parse(retstr)) != 0 )
         {
             if ( (kmdheight= jint(infoobj,(char *)"blocks")) != 0 )
@@ -104,7 +105,6 @@ void komodo_gateway_iteration(char *symbol)
             }
             free_json(infoobj);
         }
-        //printf("GETINFO from.%s (%s)\n",ASSETCHAINS_SYMBOL,retstr);
         free(retstr);
     } else printf("error from %s\n",symbol);
 }
