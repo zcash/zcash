@@ -18,7 +18,7 @@
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 // need to save most processed block in other chain(s)
 
-void komodo_gateway_voutupdate(int32_t height,int32_t txi,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
+void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
 {
     const char *typestr = "unknown";
     if ( script[0] == 0x6a )
@@ -32,10 +32,10 @@ void komodo_gateway_voutupdate(int32_t height,int32_t txi,int32_t vout,int32_t n
     }
     else if ( numvouts > 13 )
         typestr = "ratify";
-    printf("VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%s)\n",height,txi,vout,dstr(value),len,script[0] == 0x6a,typestr);
+    printf("%s VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%s)\n",symbol,height,txi,vout,dstr(value),len,script[0] == 0x6a,typestr);
 }
 
-void komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
+void komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,uint32_t port)
 {
     char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*result,*vouts,*item,*sobj; int32_t vout,n,len,isspecial; uint64_t value;
     sprintf(params,"[\"%s\", 1]",txidstr);
@@ -57,10 +57,10 @@ void komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
                             len = (int32_t)strlen(hexstr) >> 1;
                             if ( vout == 0 && memcmp(&hexstr[2],CRYPTO777_PUBSECPSTR,66) == 0 && len == 35 )
                                 isspecial = 1;
-                            if ( isspecial != 0 && len <= sizeof(script) )
+                            else if ( isspecial != 0 && len <= sizeof(script) )
                             {
                                 decode_hex(script,len,hexstr);
-                                komodo_gateway_voutupdate(height,txi,vout,n,value,script,len);
+                                komodo_gateway_voutupdate(symbol,height,txi,vout,n,value,script,len);
                             }
                         }
                     }
@@ -72,7 +72,7 @@ void komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
     }
 }
 
-void komodo_gateway_block(int32_t height,uint16_t port)
+void komodo_gateway_block(char *symbol,int32_t height,uint16_t port)
 {
     char *retstr,*retstr2,params[128],*txidstr; int32_t i,n; cJSON *json,*tx,*result,*result2;
     sprintf(params,"[%d]",height);
@@ -91,7 +91,7 @@ void komodo_gateway_block(int32_t height,uint16_t port)
                         if ( (result2= jobj(json,(char *)"result")) != 0 && (tx= jarray(&n,result2,(char *)"tx")) != 0 )
                         {
                             for (i=0; i<n; i++)
-                                komodo_gateway_tx(height,i,jstri(tx,i),port);
+                                komodo_gateway_tx(symbol,height,i,jstri(tx,i),port);
                         }
                         free_json(json);
                     }
@@ -117,7 +117,7 @@ void komodo_gateway_iteration(char *symbol)
                 {
                     if ( (KMDHEIGHT % 1000) == 0 )
                         fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
-                    komodo_gateway_block(KMDHEIGHT,port);
+                    komodo_gateway_block(symbol,KMDHEIGHT,port);
                     usleep(1000);
                 }
             }
