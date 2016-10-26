@@ -32,7 +32,7 @@ previous release:
 ## B. Create a new release branch / github PR
 ### B1. Update (commit) version in sources
 
-    doc/README.md
+    README.md
     src/clientversion.h
     configure.ac
     contrib/DEBIAN/control
