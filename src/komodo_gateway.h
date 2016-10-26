@@ -71,6 +71,7 @@ void komodo_gateway_block(int32_t height,uint16_t port)
             sprintf(params,"[\"%s\"]",retstr);
             if ( (retstr2= komodo_issuemethod((char *)"getblock",params,port)) != 0 )
             {
+                printf("getblock.(%s)\n",retstr2);
                 if ( (json= cJSON_Parse(retstr2)) != 0 )
                 {
                     if ( (tx= jarray(&n,json,(char *)"tx")) != 0 )
@@ -82,7 +83,7 @@ void komodo_gateway_block(int32_t height,uint16_t port)
                 }
                 free(retstr2);
             }
-        }
+        } else printf("strlen.%ld (%s)\n",strlen(retstr),retstr);
         free(retstr);
     }
 }
@@ -96,7 +97,7 @@ void komodo_gateway_iteration(char *symbol)
         {
             if ( (result= jobj(infoobj,(char *)"result")) != 0 && (kmdheight= jint(result,(char *)"blocks")) != 0 )
             {
-                for (i=0; i<10000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
+                for (i=0; i<1000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
                     printf("%s KMDheight.%d\n",symbol,KMDHEIGHT);
                     komodo_gateway_block(KMDHEIGHT,port);
