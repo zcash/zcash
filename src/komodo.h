@@ -57,7 +57,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             {
                 if ( fread(&ht,1,sizeof(ht),fp) != sizeof(ht) )
                     errs++;
-                printf("func.(%d %c) ht.%d\n",func,func,ht);
+                //printf("func.(%d %c) ht.%d\n",func,func,ht);
                 if ( func == 'P' )
                 {
                     if ( (num= fgetc(fp)) < 64 )
@@ -140,6 +140,11 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             }
         } else fp = fopen(fname,"wb+");
         printf("fname.(%s) fpos.%ld\n",fname,ftell(fp));
+    }
+    if ( height <= 0 )
+    {
+        printf("early return: stateupdate height.%d\n",height);
+        return;
     }
     if ( fp != 0 ) // write out funcid, height, other fields, call side effect function
     {

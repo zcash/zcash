@@ -91,14 +91,14 @@ int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,doubl
     {
         if ( pvals[i] != 0 )
             nonz++;
-        else if ( nonz != 0 )
-            printf("pvals[%d] is zero\n",i);
+        //else if ( nonz != 0 )
+        //    printf("pvals[%d] is zero\n",i);
         len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&pvals[i]);
         //printf("%u ",pvals[i]);
     }
     if ( nonz < n-3 )
     {
-        printf("nonz.%d n.%d retval -1\n",nonz,n);
+        //printf("nonz.%d n.%d retval -1\n",nonz,n);
         return(-1);
     }
     pvals[i++] = kmdbtc;
