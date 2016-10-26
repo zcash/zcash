@@ -20,7 +20,7 @@
 
 void komodo_gateway_voutupdate(int32_t height,int32_t txi,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
 {
-    char *typestr = "unknown";
+    const char *typestr = "unknown";
     if ( script[0] == 0x6a )
     {
         if ( len >= 32*2+4 && strcmp((char *)&script[2+32*2+4],"KMD") == 0 )
