@@ -38,7 +38,7 @@ const char *komodo_opreturn(int32_t height,uint8_t *opretbuf,int32_t opretlen)
 
 void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
 {
-    int32_t i,opretlen,offset = 0; const char *typestr;
+    int32_t i,opretlen,offset = 0; uint256 zero; const char *typestr;
     typestr = "unknown";
     if ( script[offset++] == 0x6a )
     {
