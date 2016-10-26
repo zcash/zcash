@@ -57,7 +57,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             {
                 if ( fread(&ht,1,sizeof(ht),fp) != sizeof(ht) )
                     errs++;
-                //printf("func.(%d %c) ht.%d\n",func,func,ht);
+                printf("func.(%d %c) ht.%d\n",func,func,ht);
                 if ( func == 'P' )
                 {
                     if ( (num= fgetc(fp)) < 64 )
