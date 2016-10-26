@@ -118,6 +118,7 @@ void komodo_gateway_iteration(char *symbol)
                     if ( (KMDHEIGHT % 1000) == 0 )
                         fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
                     komodo_gateway_block(KMDHEIGHT,port);
+                    usleep(1000);
                 }
             }
             free_json(infoobj);
