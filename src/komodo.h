@@ -28,10 +28,10 @@ void komodo_init();
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp);
 char *komodo_issuemethod(char *method,char *params,uint16_t port);
 
-int32_t NOTARIZED_HEIGHT,Num_nutxos;
+int32_t NOTARIZED_HEIGHT,Num_nutxos,KMDHEIGHT;
 uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
 pthread_mutex_t komodo_mutex;
-char USERPASS[1024]; uint16_t BITCOIND_PORT = 7771;
+char KMDUSERPASS[1024]; uint16_t BITCOIND_PORT = 7771;
 
 #include "komodo_utils.h"
 #include "cJSON.c"
@@ -260,6 +260,19 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
     return(notaryid);
 }
 
+int32_t komodo_isratify(int32_t isspecial,int32_t numvalid)
+{
+    if ( isspecial != 0 && numvalid > 13 )
+        return(1);
+    else return(0);
+}
+
+// Special tx have vout[0] -> CRYPTO777
+// with more than 13 pay2pubkey outputs -> ratify
+// if all outputs to notary -> notary utxo
+// if txi == 0 && 2 outputs and 2nd OP_RETURN, len == 32*2+4 -> notarized, 1st byte 'P' -> pricefeed
+// OP_RETURN: 'D' -> deposit
+
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
     uint64_t signedmask,voutmask;
@@ -269,6 +282,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 #ifdef KOMODO_ISSUER
     komodo_gateway_issuer();
 #else
+    komodo_gateway_redeemer();
 #endif
     if ( pindex != 0 )
     {
@@ -339,7 +353,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                             }
                         }
                     }
-                    if ( numvalid > 13 )
+                    if ( komodo_isratify(1,numvalid) > 13 )
                     {
                         memset(&txhash,0,sizeof(txhash));
                         komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0,0,0);

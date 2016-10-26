@@ -2593,13 +2593,11 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     else
                     {
                         // Insert change txn at random position:
-                        nChangePosRet = GetRandInt(txNew.vout.size()+1);
+                        nChangePosRet = GetRandInt(txNew.vout.size() + 1*0); // all but last position
                         vector<CTxOut>::iterator position = txNew.vout.begin()+nChangePosRet;
                         txNew.vout.insert(position, newTxOut);
                     }
-                }
-                else
-                    reservekey.ReturnKey();
+                } else reservekey.ReturnKey();
 
                 // Fill vin
                 //

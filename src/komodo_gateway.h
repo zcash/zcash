@@ -13,47 +13,115 @@
  *                                                                            *
  ******************************************************************************/
 
-void komodo_gateway_iteration(char *symbol)
+// savestate with important tx
+// convert paxdeposit into new coins in the next block
+// paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
+// need to save most processed block in other chain(s)
+
+void komodo_gateway_voutupdate(int32_t height,int32_t txi,int32_t vout,uint8_t *script,int32_t len)
 {
-    char *retstr,*coinaddr; int32_t i,num; cJSON *item,*array,*listobj; static uint32_t r,n,counter=0;
-    if ( r == 0 )
-        r = rand();
-    if ( (counter++ % 10) == (r % 10) )
+    printf("VOUTUPDATE.%d txi.%d vout.%d scriptlen.%d OP_RETURN.%d (%c)\n",height,txi,vout,len,script[0] == 0x6a,script[0] == 0x6a ? script[2] : -1);
+}
+
+int32_t komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
+{
+    char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*vouts,*item; int32_t vout,n,len,isspecial; uint64_t value;
+    sprintf(params,"[\"%s\", 1]",txidstr);
+    if ( (retstr= komodo_issuemethod((char *)"getrawtransaction",params,port)) != 0 )
     {
-        printf("%s calling getinfo %d\n",symbol,n);
-        if ( (retstr= komodo_issuemethod((char *)"getinfo",0,7771)) != 0 )
+        if ( (json= cJSON_Parse(retstr)) != 0 )
         {
-            //printf("GETINFO from.%s (%s)\n",ASSETCHAINS_SYMBOL,retstr);
-            free(retstr);
-            if ( (retstr= komodo_issuemethod((char *)"listtransactions",0,7771)) != 0 )
+            if ( (vouts= jarray(&n,json,"vout")) != 0 )
             {
-                //printf("LIST.(%s)\n",retstr);
-                if ( (listobj= cJSON_Parse(retstr)) != 0 )
+                isspecial = 0;
+                for (vout=0; vout<n; vout++)
                 {
-                    if ( (array= jarray(&num,listobj,(char *)"result")) != 0 )
+                    item = jitem(vouts,vout);
+                    value = SATOSHIDEN * jdouble(item,"value");
+                    if ( (sobj= jobj(item,"scriptPubKey")) != 0 )
                     {
-                        for (i=0; i<num; i++)
+                        if ( (hexstr= jstr(sobj,"hex")) != 0 )
                         {
-                            item = jitem(array,i);
-                            if ( (coinaddr= jstr(item,(char *)"address")) != 0 && strcmp(coinaddr,(char *)CRYPTO777_KMDADDR) == 0 )
-                                printf("%s %d of %d.(%s)\n",symbol,i,num,jprint(item,0));
+                            len = (int32_t)strlen(hexstr) >> 1;
+                            if ( vout == 0 && memcmp(&hexstr[2],CRYPTO777_PUBSECPSTR,66) == 0 && len == 35 )
+                                isspecial = 1;
+                            if ( isspecial != 0 && len <= sizeof(script) )
+                            {
+                                decode_hex(script,len,hexstr);
+                                komodo_gateway_update(height,txi,vout,script,len);
+                            }
                         }
                     }
-                    free_json(listobj);
                 }
-                free(retstr);
             }
-            n++;
-        } else printf("error from %s\n",symbol);
+            free_json(json);
+        }
+        free(retstr);
     }
 }
 
-void komodo_gateway_issuer() // "assetchain"
+int32_t komodo_gateway_block(int32_t height,uint16_t port)
 {
-    
+    char *retstr,*retstr2,params[128]; int32_t i,n; cJSON *json,*tx;
+    sprintf(params,"[%d]",height);
+    if ( (retstr= komodo_issuemethod((char *)"getblockhash",params,port)) != 0 )
+    {
+        if ( strlen(retstr) == 64 )
+        {
+            sprintf(params,"[\"%s\"]",retstr);
+            if ( (retstr2= komodo_issuemethod((char *)"getblock",params,port)) != 0 )
+            {
+                if ( (json= cJSON_Parse(retstr2)) != 0 )
+                {
+                    if ( (tx= jarray(&n,json,"tx")) != 0 )
+                    {
+                        for (i=0; i<n; i++)
+                            komodo_gateway_tx(height,i,jstri(tx,i),port);
+                    }
+                    free_json(json);
+                }
+                free(retstr2);
+            }
+        }
+        free(retstr);
+    }
 }
 
-void komodo_gateway_redeemer() // "KMD"
+void komodo_gateway_iteration(char *symbol)
+{
+    char *retstr,*coinaddr; int32_t i,num,kmdheight; cJSON *item,*array,*infoobj,*listobj; uint16_t port = 7771;
+    printf("%s calling getinfo %d\n",symbol,n);
+    if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
+    {
+        if ( (infoobj= cJSON_Parse(retstr)) != 0 )
+        {
+            if ( (kmdheight= jint(infoobj,"blocks")) != 0 )
+            {
+                for (i=0; i<10000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
+                {
+                    printf("%s KMDheight.%d\n",symbol,KMDHEIGHT);
+                    if ( komodo_blockhash(KMDHEIGHT) >= 0 )
+                    {
+                        
+                    }
+                }
+            }
+            free_json(infoobj);
+        }
+        //printf("GETINFO from.%s (%s)\n",ASSETCHAINS_SYMBOL,retstr);
+        free(retstr);
+    } else printf("error from %s\n",symbol);
+}
+
+#ifdef KOMODO_ISSUER
+void komodo_gateway_issuer() // from "assetchain" connectblock()
+{
+    // check for redeems
+}
+#else
+
+void komodo_gateway_redeemer() // from "KMD" connectblock()
 {
     
 }
+#endif
