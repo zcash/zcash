@@ -51,6 +51,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t v
             offset += komodo_scriptitemlen(&opretlen,&script[offset]);
             printf("offset.%d opretlen.%d\n",offset,opretlen);
             typestr = komodo_opreturn(height,&script[offset],opretlen);
+            komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,&script[offset],opretlen);
         }
     }
     else if ( numvouts > 13 )
