@@ -113,7 +113,7 @@ int32_t komodo_gateway_block(char *symbol,int32_t height,uint16_t port)
 
 void komodo_gateway_iteration(char *symbol)
 {
-    char *retstr; int32_t i,kmdheight; cJSON *infoobj,*result; uint16_t port = 7771;
+    char *retstr; int32_t i,kmdheight; cJSON *infoobj,*result; uint256 zero; uint16_t port = 7771;
     if ( KMDHEIGHT <= 0 )
         KMDHEIGHT = 1;
     if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
@@ -125,7 +125,11 @@ void komodo_gateway_iteration(char *symbol)
                 for (i=0; i<10 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
                     if ( (KMDHEIGHT % 100) == 0 )
+                    {
                         fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
+                        memset(&zero,0,sizeof(zero));
+                        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,KMDHEIGHT);
+                    }
                     if ( komodo_gateway_block(symbol,KMDHEIGHT,port) < 0 )
                         break;
                     usleep(10000);
@@ -137,7 +141,7 @@ void komodo_gateway_iteration(char *symbol)
     }
     else
     {
-        printf("error from %s\n",symbol);
+        //printf("error from %s\n",symbol);
         sleep(30);
     }
 }
