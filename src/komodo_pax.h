@@ -324,7 +324,7 @@ void komodo_paxpricefeed(int32_t height,uint8_t *pricefeed,int32_t opretlen)
     numpvals = dpow_readprices(pricefeed,&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
     memset(&zero,0,sizeof(zero));
     komodo_stateupdate(height,0,0,0,zero,0,0,pvals,numpvals,0,0,0,0);
-    printf("komodo_paxpricefeed vout OP_RETURN.%d prices numpvals.%d opretlen.%d\n",height,numpvals,opretlen);
+    //printf("komodo_paxpricefeed vout OP_RETURN.%d prices numpvals.%d opretlen.%d\n",height,numpvals,opretlen);
 }
 
 uint64_t PAX_fiatdest(int32_t tokomodo,char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *origbase,int64_t fiatoshis)
