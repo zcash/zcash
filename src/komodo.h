@@ -283,14 +283,14 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             opretlen = scriptbuf[len++];
             opretlen = (opretlen << 8) + scriptbuf[len++];
         }
+        for (k=0; k<scriptlen; k++)
+            printf("%02x",scriptbuf[k]);
+        printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
         if ( j == 1 && opretlen >= 32*2+4 && strcmp(KOMODO_SOURCE,(char *)&scriptbuf[len+32*2+4]) == 0 )
         {
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
             len += iguana_rwnum(0,&scriptbuf[len],4,(uint8_t *)notarizedheightp);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
-            for (k=0; k<scriptlen; k++)
-                printf("%02x",scriptbuf[k]);
-            printf(" <- script ht.%d i.%d j.%d\n",height,i,j);
             if ( *notarizedheightp > NOTARIZED_HEIGHT && *notarizedheightp < height )
             {
                 printf("ht.%d NOTARIZED.%d KMD.%s BTCTXID.%s (%s)\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
@@ -300,7 +300,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
                 komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0);
             } else printf("reject ht.%d NOTARIZED.%d %s.%s DESTTXID.%s (%s)\n",height,*notarizedheightp,KOMODO_SOURCE,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
         }
-        else if ( i == 0 && opretlen == 149 )
+        else if ( i == 0 && j == 1 && opretlen == 149 )
             komodo_paxpricefeed(height,&scriptbuf[len + scriptbuf[len] == 'P'],opretlen);
         else
         {
