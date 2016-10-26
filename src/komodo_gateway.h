@@ -60,7 +60,7 @@ void komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
     }
 }
 
-int32_t komodo_gateway_block(int32_t height,uint16_t port)
+void komodo_gateway_block(int32_t height,uint16_t port)
 {
     char *retstr,*retstr2,params[128]; int32_t i,n; cJSON *json,*tx;
     sprintf(params,"[%d]",height);
@@ -89,7 +89,7 @@ int32_t komodo_gateway_block(int32_t height,uint16_t port)
 
 void komodo_gateway_iteration(char *symbol)
 {
-    char *retstr,*coinaddr; int32_t i,kmdheight; cJSON *array,*infoobj; uint16_t port = 7771;
+    char *retstr,*coinaddr; int32_t i,kmdheight; cJSON *infoobj; uint16_t port = 7771;
     if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
     {
         if ( (infoobj= cJSON_Parse(retstr)) != 0 )
