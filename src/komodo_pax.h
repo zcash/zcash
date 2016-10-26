@@ -185,7 +185,9 @@ int32_t PAX_pubkey(int32_t rwflag,uint8_t *pubkey33,uint8_t *addrtypep,uint8_t r
     else
     {
         *shortflagp = (pubkey33[0] == 0x03);
-        memcpy(fiat,&pubkey33[1],4);
+        memcpy(fiat,&pubkey33[1],3);
+        printf("%02x %02x %02x\n",fiat[0],fiat[1],fiat[2]);
+        fiat[3] = 0;
         iguana_rwnum(rwflag,&pubkey33[4],sizeof(*fiatoshisp),(void *)fiatoshisp);
         if ( *shortflagp != 0 )
             *fiatoshisp = -(*fiatoshisp);
