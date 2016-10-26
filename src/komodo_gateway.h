@@ -43,14 +43,14 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     return(typestr);
 }
 
-void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
+void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int32_t txi,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
 {
     int32_t i,opretlen,offset = 0; uint256 zero; const char *typestr;
     typestr = "unknown";
     if ( script[offset++] == 0x6a )
     {
         offset += komodo_scriptitemlen(&opretlen,&script[offset]);
-        if ( len >= offset+32*2+4 && strcmp((char *)&script[offset+32*2+4],"KMD") == 0 )
+        if ( isspecial != 0 && len >= offset+32*2+4 && strcmp((char *)&script[offset+32*2+4],"KMD") == 0 )
             typestr = "notarized";
         else if ( script[offset] == 'P' )
         {
@@ -58,7 +58,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t v
             komodo_paxpricefeed(height,&script[++offset],opretlen);
             printf("height.%d pricefeed len.%d\n",height,opretlen);
         }
-        else
+        else if ( isspecial != 0 )
         {
             komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,value,&script[offset],opretlen);
             for (i=0; i<len; i++)
@@ -95,10 +95,10 @@ int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,
                                 printf("ht.%d txi.%d vout.%d/%d %s script (%d %d)\n",height,txi,vout,n,hexstr,memcmp(&hexstr[2],CRYPTO777_PUBSECPSTR,66),memcmp(&hexstr[6],CRYPTO777_RMD160STR,40));
                             if ( vout == 0 && ((memcmp(&hexstr[2],CRYPTO777_PUBSECPSTR,66) == 0 && len == 35) || (memcmp(&hexstr[6],CRYPTO777_RMD160STR,40) == 0 && len == 25)) )
                                 isspecial = 1;
-                            else if ( isspecial != 0 && len <= sizeof(script) )
+                            else if ( len <= sizeof(script) )
                             {
                                 decode_hex(script,len,hexstr);
-                                komodo_gateway_voutupdate(symbol,height,txi,vout,n,value,script,len);
+                                komodo_gateway_voutupdate(symbol,isspecial,height,txi,vout,n,value,script,len);
                             }
                         }
                     }

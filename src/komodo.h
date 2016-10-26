@@ -202,7 +202,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
 //#ifdef KOMODO_PAX
         else if ( pvals != 0 && numpvals > 0 )
         {
-            int32_t nonz = 0;
+            int32_t i,nonz = 0;
             for (i=0; i<32; i++)
                 if ( pvals[i] != 0 )
                     nonz++;
@@ -354,6 +354,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 #else
                     memcpy(scriptbuf,(uint8_t *)&block.vtx[i].vout[j].scriptPubKey[0],len);
 #endif
+                    // signedmask is needed here!
                     notaryid = komodo_voutupdate(notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight,(uint64_t)block.vtx[i].vout[j].nValue);
                     if ( 0 && i > 0 )
                     {
