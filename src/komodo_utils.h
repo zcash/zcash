@@ -921,6 +921,23 @@ int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *
     return(len);
 }
 
+int32_t komodo_scriptitemlen(int32_t *opretlenp,uint8_t *script)
+{
+    int32_t opretlen,len = 0;
+    if ( (opretlen= script[len++]) >= 0x4c )
+    {
+        if ( opretlen == 0x4c )
+            opretlen = script[len++];
+        else if ( opretlen == 0x4d )
+        {
+            opretlen = script[len++];
+            opretlen = (opretlen << 8) | script[len++];
+        }
+    }
+    *opretlenp = opretlen;
+    return(len);
+}
+
 int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen)
 {
     int32_t offset = 0;

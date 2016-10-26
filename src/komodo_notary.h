@@ -85,8 +85,6 @@ void komodo_nutxoadd(int32_t height,int32_t notaryid,uint256 txhash,uint64_t vou
         np->notaryid = notaryid;
         HASH_ADD_KEYPTR(hh,NUTXOS,&np->txhash,sizeof(np->txhash),np);
         printf("Add NUTXO[%d] <- %s notaryid.%d t%u %s %llx\n",Num_nutxos,Notaries[notaryid][0],notaryid,komodo_txtime(txhash),txhash.ToString().c_str(),(long long)voutmask);
-        //if ( addflag != 0 )
-        //    komodo_stateupdate(height,0,0,notaryid,txhash,voutmask,numvouts,0,0);
         Num_nutxos++;
         pthread_mutex_unlock(&komodo_mutex);
     }
@@ -211,6 +209,6 @@ void komodo_init()
         }
         komodo_notarysinit(0,pubkeys,k);
         memset(&zero,0,sizeof(zero));
-        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0);
+        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0);
     }
 }

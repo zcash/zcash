@@ -367,7 +367,7 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
     //uint256 zero;
     //printf("disconnect ht.%d\n",pindex->nHeight);
     //memset(&zero,0,sizeof(zero));
-    //komodo_stateupdate(-pindex->nHeight,0,0,0,zero,0,0,0,0);
+    //komodo_stateupdate(-pindex->nHeight,0,0,0,zero,0,0,0,0,0,0);
 }
 
 int32_t komodo_block2height(CBlock *block)

@@ -17,33 +17,47 @@
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 // need to save most processed block in other chain(s)
 
+const char *komodo_opreturn(int32_t height,uint8_t *opretbuf,int32_t opretlen)
+{
+    uint8_t rmd160[20],addrtype,shortflag; char base[4],coinaddr[64]; int64_t fiatoshis; const char *typestr = "unknown";
+    if ( opretbuf[0] == 'D' )
+    {
+        if ( opretlen == 34 )
+        {
+            PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&fiatoshis);
+            if ( fiatoshis < 0 )
+                fiatoshis = -fiatoshis;
+            bitcoin_address(coinaddr,addrtype,rmd160,20);
+            printf("DEPOSIT %.8f %c%s -> %s\n",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
+            // verify price value for fiatoshis of base
+            typestr = "deposit";
+        }
+    }
+    return(typestr);
+}
+
 void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
 {
-    uint8_t rmd160[20],addrtype,shortflag; char base[4],coinaddr[64]; int64_t fiatoshis; const char *typestr;
+    int32_t i,opretlen,offset = 0; const char *typestr;
     typestr = "unknown";
-    if ( script[0] == 0x6a )
+    if ( script[offset++] == 0x6a )
     {
-        if ( len >= 32*2+4 && strcmp((char *)&script[2+32*2+4],"KMD") == 0 )
+        if ( len >= 32*2+4 && strcmp((char *)&script[1+32*2+4],"KMD") == 0 )
             typestr = "notarized";
         if ( script[2] == 'P' )
             typestr = "pricefeed";
-        else if ( script[2] == 'D' )
+        else
         {
-            if ( len == 36 )
-            {
-                PAX_pubkey(0,&script[3],&addrtype,rmd160,base,&shortflag,&fiatoshis);
-                if ( fiatoshis < 0 )
-                    fiatoshis = -fiatoshis;
-                bitcoin_address(coinaddr,addrtype,rmd160,20);
-                printf("DEPOSIT %.8f %c%s -> %s\n",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
-                // verify price value for fiatoshis of base
-                typestr = "deposit";
-            }
+            offset += komodo_scriptitemlen(&opretlen,&script[offset]);
+            printf("offset.%d opretlen.%d\n",offset,opretlen);
+            typestr = komodo_opreturn(height,&script[offset],opretlen);
         }
     }
     else if ( numvouts > 13 )
         typestr = "ratify";
-    printf("%s VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%s)\n",symbol,height,txi,vout,dstr(value),len,script[0] == 0x6a,typestr);
+    for (i=0; i<len; i++)
+        printf("%02x",script[i]);
+    printf(" <- %s VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%s)\n",symbol,height,txi,vout,dstr(value),len,script[0] == 0x6a,typestr);
 }
 
 int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,uint32_t port)
@@ -139,7 +153,7 @@ void komodo_gateway_iteration(char *symbol)
                     {
                         fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
                         memset(&zero,0,sizeof(zero));
-                        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,KMDHEIGHT);
+                        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,KMDHEIGHT,0,0);
                     }
                     if ( komodo_gateway_block(symbol,KMDHEIGHT,port) < 0 )
                         break;
