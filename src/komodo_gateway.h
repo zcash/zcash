@@ -18,9 +18,21 @@
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 // need to save most processed block in other chain(s)
 
-void komodo_gateway_voutupdate(int32_t height,int32_t txi,int32_t vout,uint64_t value,uint8_t *script,int32_t len)
+void komodo_gateway_voutupdate(int32_t height,int32_t txi,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
 {
-    printf("VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%c)\n",height,txi,vout,dstr(value),len,script[0] == 0x6a,script[0] == 0x6a ? script[2] : -1);
+    char *typestr = "unknown";
+    if ( script[0] == 0x6a )
+    {
+        if ( len >= 32*2+4 && strcmp((char *)&script[2+32*2+4],"KMD") == 0 )
+            typestr = "notarized";
+        if ( script[2] == 'P' )
+            typestr = "pricefeed";
+        else if ( script[2] == 'D' )
+            typestr = "deposit";
+    }
+    else if ( numvouts > 13 )
+        typestr = "ratify";
+    printf("VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%s)\n",height,txi,vout,dstr(value),len,script[0] == 0x6a,typestr);
 }
 
 void komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
