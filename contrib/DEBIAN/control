@@ -10,7 +10,7 @@ Build-Depends: autoconf, automake, bsdmainutils, build-essential
 Vcs-Git: git@github.com:zcash/zcash.git
 Vcs-Browser: https://github.com/zcash/zcash
 Package: zcash
-Version: 1.0.0-rc2
+Version: 1.0.0-rc3
 Architecture: amd64
 Depends: libgomp1
 Description: Zcash is an implementation of the "Zerocash" protocol.
