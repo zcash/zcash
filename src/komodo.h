@@ -165,7 +165,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 errs++;
             if ( fwrite(opretbuf,1,opretlen,fp) != opretlen )
                 errs++;
-            komodo_opreturn(height,value,opretbuf,opretlen);
+            komodo_opreturn(height,opretvalue,opretbuf,opretlen);
         }
         else if ( notarypubs != 0 && numnotaries > 0 )
         {

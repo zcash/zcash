@@ -310,7 +310,6 @@ void komodo_paxpricefeed(int32_t height,uint8_t *pricefeed,int32_t opretlen)
 uint64_t PAX_fiatdest(char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *origbase,int64_t fiatoshis)
 {
     uint8_t shortflag = 0; char base[4]; int32_t i; uint8_t addrtype,rmd160[20]; uint64_t komodoshis = 0;
-    fiatbuf[0] = 0;
     if ( strcmp(base,(char *)"KMD") == 0 || strcmp(base,(char *)"kmd") == 0 )
         return(0);
     for (i=0; i<3; i++)
