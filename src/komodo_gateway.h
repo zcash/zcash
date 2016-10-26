@@ -23,7 +23,7 @@ void komodo_gateway_voutupdate(int32_t height,int32_t txi,int32_t vout,uint8_t *
     printf("VOUTUPDATE.%d txi.%d vout.%d scriptlen.%d OP_RETURN.%d (%c)\n",height,txi,vout,len,script[0] == 0x6a,script[0] == 0x6a ? script[2] : -1);
 }
 
-int32_t komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
+void komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
 {
     char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*vouts,*item,*sobj; int32_t vout,n,len,isspecial; uint64_t value;
     sprintf(params,"[\"%s\", 1]",txidstr);
@@ -89,7 +89,7 @@ int32_t komodo_gateway_block(int32_t height,uint16_t port)
 
 void komodo_gateway_iteration(char *symbol)
 {
-    char *retstr,*coinaddr; int32_t i,num,kmdheight; cJSON *item,*array,*infoobj,*listobj; uint16_t port = 7771;
+    char *retstr,*coinaddr; int32_t i,kmdheight; cJSON *array,*infoobj; uint16_t port = 7771;
     if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
     {
         if ( (infoobj= cJSON_Parse(retstr)) != 0 )
