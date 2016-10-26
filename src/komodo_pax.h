@@ -282,7 +282,7 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume
 
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel)
 {
-    int32_t baseid=-1,relid=-1,i,ht,num = 0; uint32_t *ptr;
+    int32_t baseid=-1,relid=-1,i,num = 0; uint32_t *ptr;
     if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
     {
         for (i=NUM_PRICES-1; i>=0; i--)
