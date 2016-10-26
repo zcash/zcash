@@ -309,7 +309,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
         else
         {
-            komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,value,&scriptbuf[len],opretlen);
+            komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,value,&scriptbuf[len],opretlen);
         }
     }
     return(notaryid);
