@@ -17,9 +17,9 @@
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 // need to save most processed block in other chain(s)
 
-const char *komodo_opreturn(int32_t height,uint8_t *opretbuf,int32_t opretlen)
+const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen)
 {
-    uint8_t rmd160[20],addrtype,shortflag; char base[4],coinaddr[64]; int64_t fiatoshis; const char *typestr = "unknown";
+    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; char base[4],coinaddr[64],destaddr[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     if ( opretbuf[0] == 'D' )
     {
         if ( opretlen == 34 )
@@ -28,8 +28,12 @@ const char *komodo_opreturn(int32_t height,uint8_t *opretbuf,int32_t opretlen)
             if ( fiatoshis < 0 )
                 fiatoshis = -fiatoshis;
             bitcoin_address(coinaddr,addrtype,rmd160,20);
+            checktoshis = PAX_fiatdest(destaddr,pubkey33,coinaddr,height,base,fiatoshis);
             printf("DEPOSIT %.8f %c%s -> %s\n",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
             // verify price value for fiatoshis of base
+            for (i=0; i<33; i++)
+                printf("%02x",pubkey33[i]);
+            printf(" checkpubkey check %.8f v %.8f dest.(%s)\n",dstr(checktoshis),dstr(value),destaddr);
             typestr = "deposit";
         }
     }
@@ -54,7 +58,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t v
             else
             {
                 printf("offset.%d opretlen.%d\n",offset,opretlen);
-                typestr = komodo_opreturn(height,&script[offset],opretlen);
+                typestr = komodo_opreturn(height,value,&script[offset],opretlen);
                 komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,&script[offset],opretlen);
             }
         }

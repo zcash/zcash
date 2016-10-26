@@ -466,7 +466,7 @@ Value sendtoaddress(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
-uint64_t PAX_fiatdest(char *fiatbuf,char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *base,int64_t fiatoshis);
+uint64_t PAX_fiatdest(char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *base,int64_t fiatoshis);
 int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen);
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
 
@@ -484,8 +484,8 @@ Value paxdeposit(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
     int64_t fiatoshis = atof(params[1].get_str().c_str()) * COIN;
     std::string base = params[2].get_str();
-    std::string dest; char fiatbuf[1024];
-    komodoshis = PAX_fiatdest(fiatbuf,destaddr,pubkey33,(char *)params[0].get_str().c_str(),chainActive.Tip()->nHeight,(char *)base.c_str(),fiatoshis);
+    std::string dest;
+    komodoshis = PAX_fiatdest(destaddr,pubkey33,(char *)params[0].get_str().c_str(),chainActive.Tip()->nHeight,(char *)base.c_str(),fiatoshis);
     dest.append(destaddr);
     CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
     if (!destaddress.IsValid())

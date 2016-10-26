@@ -307,7 +307,7 @@ void komodo_paxpricefeed(int32_t height,uint8_t *pricefeed,int32_t opretlen)
     printf("komodo_paxpricefeed vout OP_RETURN.%d prices numpvals.%d opretlen.%d\n",height,numpvals,opretlen);
 }
 
-uint64_t PAX_fiatdest(char *fiatbuf,char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *origbase,int64_t fiatoshis)
+uint64_t PAX_fiatdest(char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *origbase,int64_t fiatoshis)
 {
     uint8_t shortflag = 0; char base[4]; int32_t i; uint8_t addrtype,rmd160[20]; uint64_t komodoshis = 0;
     fiatbuf[0] = 0;
@@ -321,7 +321,6 @@ uint64_t PAX_fiatdest(char *fiatbuf,char *destaddr,uint8_t pubkey33[33],char *co
     komodoshis = komodo_paxprice(height,base,(char *)"KMD",(uint64_t)fiatoshis);
     if ( bitcoin_addr2rmd160(&addrtype,rmd160,coinaddr) == 20 )
     {
-        // put JSON into fiatbuf enough to replicate/validate
         PAX_pubkey(1,pubkey33,&addrtype,rmd160,base,&shortflag,&fiatoshis);
         bitcoin_address(destaddr,KOMODO_PUBTYPE,pubkey33,33);
     }

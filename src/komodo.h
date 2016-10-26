@@ -108,12 +108,14 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 }
                 else if ( func == 'O' )
                 {
-                    uint16_t olen; uint8_t opret[10000];
+                    uint16_t olen; uint64_t ovalue; uint8_t opret[10000];
                     if ( fread(&olen,1,sizeof(olen),fp) != sizeof(olen) )
+                        errs++;
+                    if ( fread(&ovalue,1,sizeof(ovalue),fp) != sizeof(ovalue) )
                         errs++;
                     if ( fread(opret,1,olen,fp) != olen )
                         errs++;
-                    komodo_opreturn(ht,opret,olen);
+                    komodo_opreturn(ht,ovalue,opret,olen);
                 }
                 else if ( func == 'D' )
                 {
@@ -159,9 +161,11 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             fputc('O',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
                 errs++;
+            if ( fwrite(&value,1,sizeof(value),fp) != sizeof(value) )
+                errs++;
             if ( fwrite(opretbuf,1,opretlen,fp) != opretlen )
                 errs++;
-            komodo_opreturn(height,opretbuf,opretlen);
+            komodo_opreturn(height,value,opretbuf,opretlen);
         }
         else if ( notarypubs != 0 && numnotaries > 0 )
         {
