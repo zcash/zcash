@@ -60,7 +60,7 @@ void komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
                             if ( isspecial != 0 && len <= sizeof(script) )
                             {
                                 decode_hex(script,len,hexstr);
-                                komodo_gateway_voutupdate(height,txi,vout,value,script,len);
+                                komodo_gateway_voutupdate(height,txi,vout,n,value,script,len);
                             }
                         }
                     }
