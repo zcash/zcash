@@ -31,16 +31,16 @@ int32_t komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port
     {
         if ( (json= cJSON_Parse(retstr)) != 0 )
         {
-            if ( (vouts= jarray(&n,json,"vout")) != 0 )
+            if ( (vouts= jarray(&n,json,(char *)"vout")) != 0 )
             {
                 isspecial = 0;
                 for (vout=0; vout<n; vout++)
                 {
                     item = jitem(vouts,vout);
-                    value = SATOSHIDEN * jdouble(item,"value");
-                    if ( (sobj= jobj(item,"scriptPubKey")) != 0 )
+                    value = SATOSHIDEN * jdouble(item,(char *)"value");
+                    if ( (sobj= jobj(item,(char *)"scriptPubKey")) != 0 )
                     {
-                        if ( (hexstr= jstr(sobj,"hex")) != 0 )
+                        if ( (hexstr= jstr(sobj,(char *)"hex")) != 0 )
                         {
                             len = (int32_t)strlen(hexstr) >> 1;
                             if ( vout == 0 && memcmp(&hexstr[2],CRYPTO777_PUBSECPSTR,66) == 0 && len == 35 )
@@ -90,7 +90,6 @@ int32_t komodo_gateway_block(int32_t height,uint16_t port)
 void komodo_gateway_iteration(char *symbol)
 {
     char *retstr,*coinaddr; int32_t i,num,kmdheight; cJSON *item,*array,*infoobj,*listobj; uint16_t port = 7771;
-    printf("%s calling getinfo %d\n",symbol,n);
     if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
     {
         if ( (infoobj= cJSON_Parse(retstr)) != 0 )
