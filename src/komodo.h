@@ -109,13 +109,16 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 else if ( func == 'O' )
                 {
                     uint16_t olen; uint64_t ovalue; uint8_t opret[10000];
-                    if ( fread(&olen,1,sizeof(olen),fp) != sizeof(olen) )
-                        errs++;
                     if ( fread(&ovalue,1,sizeof(ovalue),fp) != sizeof(ovalue) )
                         errs++;
-                    if ( fread(opret,1,olen,fp) != olen )
+                    if ( fread(&olen,1,sizeof(olen),fp) != sizeof(olen) )
                         errs++;
-                    komodo_opreturn(ht,ovalue,opret,olen);
+                    if ( olen < sizeof(opret) )
+                    {
+                        if ( fread(opret,1,olen,fp) != olen )
+                            errs++;
+                        komodo_opreturn(ht,ovalue,opret,olen);
+                    } else printf("illegal olen.%u\n",olen);
                 }
                 else if ( func == 'D' )
                 {
@@ -158,10 +161,14 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         }
         else if ( opretbuf != 0 && opretlen > 0 )
         {
+            uint16_t olen;
             fputc('O',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
                 errs++;
             if ( fwrite(&opretvalue,1,sizeof(opretvalue),fp) != sizeof(opretvalue) )
+                errs++;
+            olen = opretlen;
+            if ( fwrite(&olen,1,sizeof(olen),fp) != olen )
                 errs++;
             if ( fwrite(opretbuf,1,opretlen,fp) != opretlen )
                 errs++;
