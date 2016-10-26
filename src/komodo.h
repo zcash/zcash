@@ -58,7 +58,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             {
                 if ( fread(&ht,1,sizeof(ht),fp) != sizeof(ht) )
                     errs++;
-                //printf("func.(%d %c) ht.%d\n",func,func,ht);
+                printf("fpos.%ld func.(%d %c) ht.%d\n",ftell(fp),func,func,ht);
                 if ( func == 'P' )
                 {
                     if ( (num= fgetc(fp)) < 64 )
@@ -149,10 +149,11 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
     }
     if ( fp != 0 ) // write out funcid, height, other fields, call side effect function
     {
+        printf("fpos.%ld ",ftell(fp));
         if ( height < 0 )
         {
             height = -height;
-            //printf("func D[%d] errs.%d\n",height,errs);
+            printf("func D[%d] errs.%d\n",height,errs);
             fputc('D',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
                 errs++;
@@ -164,6 +165,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 errs++;
             if ( fwrite(&KMDheight,1,sizeof(KMDheight),fp) != sizeof(KMDheight) )
                 errs++;
+            printf("ht.%d K %d\n",height,KMDheight);
         }
         else if ( opretbuf != 0 && opretlen > 0 )
         {
@@ -177,11 +179,12 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 errs++;
             if ( fwrite(opretbuf,1,olen,fp) != olen )
                 errs++;
+            printf("ht.%d R opret[%d]\n",height,olen);
             komodo_opreturn(height,opretvalue,opretbuf,olen);
         }
         else if ( notarypubs != 0 && numnotaries > 0 )
         {
-            //printf("func P[%d] errs.%d\n",numnotaries,errs);
+            printf("ht.%d func P[%d] errs.%d\n",height,numnotaries,errs);
             fputc('P',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
                 errs++;
@@ -192,7 +195,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         }
         else if ( voutmask != 0 && numvouts > 0 )
         {
-            //printf("func U %d %d errs.%d hashsize.%ld\n",numvouts,notaryid,errs,sizeof(txhash));
+            printf("ht.%d func U %d %d errs.%d hashsize.%ld\n",height,numvouts,notaryid,errs,sizeof(txhash));
             fputc('U',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
                 errs++;
@@ -220,13 +223,14 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 if ( fwrite(pvals,sizeof(uint32_t),numpvals,fp) != numpvals )
                     errs++;
                 komodo_pvals(height,pvals,numpvals);
+                printf("ht.%d V numpvals[%d]\n",height,numpvals);
             }
             //printf("save pvals height.%d numpvals.%d\n",height,numpvals);
         }
 //#endif
         else if ( height != 0 )
         {
-            //printf("func N ht.%d errs.%d\n",NOTARIZED_HEIGHT,errs);
+            printf("ht.%d func N ht.%d errs.%d\n",height,NOTARIZED_HEIGHT,errs);
             fputc('N',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
                 errs++;
@@ -307,10 +311,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
         }
         else if ( i == 0 && j == 1 && opretlen == 149 )
             komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
-        else
-        {
-            komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,value,&scriptbuf[len],opretlen);
-        }
+        else komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,value,&scriptbuf[len],opretlen);
     }
     return(notaryid);
 }

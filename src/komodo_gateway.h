@@ -19,18 +19,21 @@
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen)
 {
-    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i; char base[4],coinaddr[64],destaddr[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
+    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     printf("komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
     if ( opretbuf[0] == 'D' )
     {
         if ( opretlen == 34 )
         {
+#ifdef KOMODO_ISSUER
+            tokomodo = 1;
+#endif
             PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&fiatoshis);
             if ( fiatoshis < 0 )
                 fiatoshis = -fiatoshis;
             bitcoin_address(coinaddr,addrtype,rmd160,20);
             memset(base,0,sizeof(base));
-            checktoshis = PAX_fiatdest(destaddr,pubkey33,coinaddr,height,base,fiatoshis);
+            checktoshis = PAX_fiatdest(tokomodo,destaddr,pubkey33,coinaddr,height,base,fiatoshis);
             for (i=0; i<opretlen; i++)
                 printf("%02x",opretbuf[i]);
             printf(" DEPOSIT %.8f %c%s -> %s\n",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
