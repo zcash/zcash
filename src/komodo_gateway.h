@@ -96,6 +96,7 @@ int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,
                             else if ( isspecial != 0 && len <= sizeof(script) )
                             {
                                 decode_hex(script,len,hexstr);
+                                if ( len != 74 )
                                 printf("ht.%d txi.%d vout.%d/%d %s script\n",height,txi,vout,n,hexstr);
                                 komodo_gateway_voutupdate(symbol,height,txi,vout,n,value,script,len);
                             }
