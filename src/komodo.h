@@ -124,7 +124,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 {
                     //printf("D[%d]\n",ht);
                 }
-#ifdef KOMODO_PAX
+//#ifdef KOMODO_PAX
                 else if ( func == 'V' )
                 {
                     int32_t numpvals; uint32_t pvals[128];
@@ -135,7 +135,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                         //printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
                     } else printf("error loading pvals[%d]\n",numpvals);
                 }
-#endif
+//#endif
                 else printf("illegal func.(%d %c)\n",func,func);
             }
         } else fp = fopen(fname,"wb+");
@@ -199,7 +199,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 errs++;
             komodo_nutxoadd(height,notaryid,txhash,voutmask,numvouts);
         }
-#ifdef KOMODO_PAX
+//#ifdef KOMODO_PAX
         else if ( pvals != 0 && numpvals > 0 )
         {
             fputc('V',fp);
@@ -211,7 +211,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             komodo_pvals(height,pvals,numpvals);
             //printf("save pvals height.%d numpvals.%d\n",height,numpvals);
         }
-#endif
+//#endif
         else if ( height != 0 )
         {
             //printf("func N ht.%d errs.%d\n",NOTARIZED_HEIGHT,errs);

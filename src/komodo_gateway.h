@@ -20,6 +20,8 @@
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen)
 {
     uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i; char base[4],coinaddr[64],destaddr[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
+    if ( opretlen == 72 )
+        return("notarized");
     printf("komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
     if ( opretbuf[0] == 'D' )
     {
@@ -47,13 +49,13 @@ void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t v
     typestr = "unknown";
     if ( script[offset++] == 0x6a )
     {
-        if ( len >= 32*2+4 && strcmp((char *)&script[1+32*2+4],"KMD") == 0 )
+        offset += komodo_scriptitemlen(&opretlen,&script[offset]);
+        if ( len >= offset+32*2+4 && strcmp((char *)&script[offset+32*2+4],"KMD") == 0 )
             typestr = "notarized";
         if ( script[2] == 'P' )
             typestr = "pricefeed";
         else
         {
-            offset += komodo_scriptitemlen(&opretlen,&script[offset]);
             if ( script[offset] == 'P' )
                 komodo_paxpricefeed(height,&script[++offset],opretlen);
             else
