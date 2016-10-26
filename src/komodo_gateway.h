@@ -97,6 +97,7 @@ int32_t komodo_gateway_block(char *symbol,int32_t height,uint16_t port)
                                     break;
                             if ( i == n )
                                 retval = 0;
+                            else printf("error i.%d vs n.%d\n",i,n);
                         }
                         free_json(json);
                     }
@@ -113,6 +114,8 @@ int32_t komodo_gateway_block(char *symbol,int32_t height,uint16_t port)
 void komodo_gateway_iteration(char *symbol)
 {
     char *retstr; int32_t i,kmdheight; cJSON *infoobj,*result; uint16_t port = 7771;
+    if ( KMDHEIGHT <= 0 )
+        KMDHEIGHT = 1;
     if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
     {
         if ( (infoobj= cJSON_Parse(retstr)) != 0 )
