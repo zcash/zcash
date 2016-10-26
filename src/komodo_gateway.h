@@ -59,7 +59,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
 {
     int32_t i,opretlen,offset = 0; uint256 zero; const char *typestr;
     typestr = "unknown";
-    //if ( txi != 0 || vout != 0 )
+    if ( txi != 0 || vout != 0 )
     {
         for (i=0; i<len; i++)
             printf("%02x",script[i]);
@@ -76,7 +76,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
             komodo_paxpricefeed(height,&script[offset],opretlen);
             printf("height.%d pricefeed len.%d\n",height,opretlen);
         }
-        else if ( isspecial != 0 )
+        else
         {
             komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,value,&script[offset],opretlen);
         }
