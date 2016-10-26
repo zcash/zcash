@@ -187,7 +187,7 @@ double PAX_val(uint32_t pval,int32_t baseid)
 
 void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
 {
-    int32_t i,nonz; uint32_t kmdbtc,btcusd,cnyusd; //double KMDBTC,BTCUSD,CNYUSD;
+    int32_t i,nonz; uint32_t kmdbtc,btcusd,cnyusd; double KMDBTC,BTCUSD,CNYUSD;
     if ( numpvals >= 35 )
     {
         for (nonz=i=0; i<32; i++)
@@ -201,14 +201,15 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
             kmdbtc = pvals[i++];
             btcusd = pvals[i++];
             cnyusd = pvals[i++];
-            //KMDBTC = ((double)kmdbtc / (1000000000. * 1000.));
-            //BTCUSD = ((double)btcusd / (1000000000. / 1000.));
-            //CNYUSD = ((double)cnyusd / 1000000000.);
+            KMDBTC = ((double)kmdbtc / (1000000000. * 1000.));
+            BTCUSD = ((double)btcusd / (1000000000. / 1000.));
+            CNYUSD = ((double)cnyusd / 1000000000.);
             PVALS = (uint32_t *)realloc(PVALS,(NUM_PRICES+1) * sizeof(*PVALS) * 36);
             PVALS[36 * NUM_PRICES] = height;
             memcpy(&PVALS[36 * NUM_PRICES + 1],pvals,sizeof(*pvals) * 35);
             NUM_PRICES++;
-            //printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES);
+            if ( 0 )
+                printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d (%llu %llu %llu)\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES,(long long)kmdbtc,(long long)btcusd,(long long)cnyusd);
         }
     }
 }
