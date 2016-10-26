@@ -181,7 +181,7 @@ void komodo_gateway_iteration(char *symbol)
             {
                 for (i=0; i<1000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
-                    //printf("KMDHEIGHT %d\n",KMDHEIGHT);
+                    printf("KMDHEIGHT %d\n",KMDHEIGHT);
                     if ( (KMDHEIGHT % 100) == 0 )
                     {
                         fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
