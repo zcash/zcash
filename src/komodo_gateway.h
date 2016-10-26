@@ -92,7 +92,7 @@ int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,
                         if ( (hexstr= jstr(sobj,(char *)"hex")) != 0 )
                         {
                             len = (int32_t)strlen(hexstr) >> 1;
-                            if ( len != 74 )
+                            if ( 0 && len != 74 )
                                 printf("ht.%d txi.%d vout.%d/%d %s script (%d %d)\n",height,txi,vout,n,hexstr,memcmp(&hexstr[2],CRYPTO777_PUBSECPSTR,66),memcmp(&hexstr[6],CRYPTO777_RMD160STR,40));
                             if ( vout == 0 && ((memcmp(&hexstr[2],CRYPTO777_PUBSECPSTR,66) == 0 && len == 35) || (memcmp(&hexstr[6],CRYPTO777_RMD160STR,40) == 0 && len == 25)) )
                                 isspecial = 1;
