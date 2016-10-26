@@ -29,7 +29,7 @@ cp $SRC_PATH/src/zcash-cli $BUILD_DIR/usr/bin/
 cp $SRC_PATH/zcutil/fetch-params.sh $BUILD_DIR/usr/bin/zcash-fetch-params
 
 # Create the deb package
-dpkg-deb --build $BUILD_DIR
+fakeroot dpkg-deb --build $BUILD_DIR
 cp $BUILD_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb $SRC_PATH
 
 exit 0
