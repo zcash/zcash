@@ -31,6 +31,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             if ( fiatoshis < 0 )
                 fiatoshis = -fiatoshis;
             bitcoin_address(coinaddr,addrtype,rmd160,20);
+            memset(base,0,sizeof(base));
             checktoshis = PAX_fiatdest(destaddr,pubkey33,coinaddr,height,base,fiatoshis);
             printf("DEPOSIT %.8f %c%s -> %s\n",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
             // verify price value for fiatoshis of base

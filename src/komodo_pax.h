@@ -74,6 +74,11 @@ int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,doubl
     uint32_t kmdbtc,btcusd,cnyusd; int32_t i,n,nonz,len = 0;
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)timestampp);
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&n);
+    if ( n != 32 )
+    {
+        printf("dpow_readprices illegal n.%d\n",n);
+        return(-1);
+    }
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&kmdbtc); // /= 1000
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&btcusd); // *= 1000
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&cnyusd);
