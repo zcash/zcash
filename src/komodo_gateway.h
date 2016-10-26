@@ -19,7 +19,7 @@
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen)
 {
     uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
-    printf("komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
+    //printf("komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
     if ( opretbuf[0] == 'D' )
     {
         if ( opretlen == 34 )
@@ -27,11 +27,11 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 #ifdef KOMODO_ISSUER
             tokomodo = 1;
 #endif
+            memset(base,0,sizeof(base));
             PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&fiatoshis);
             if ( fiatoshis < 0 )
                 fiatoshis = -fiatoshis;
             bitcoin_address(coinaddr,addrtype,rmd160,20);
-            memset(base,0,sizeof(base));
             checktoshis = PAX_fiatdest(tokomodo,destaddr,pubkey33,coinaddr,height,base,fiatoshis);
             for (i=0; i<opretlen; i++)
                 printf("%02x",opretbuf[i]);
@@ -42,6 +42,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             printf(" checkpubkey check %.8f v %.8f dest.(%s)\n",dstr(checktoshis),dstr(value),destaddr);
             typestr = "deposit";
 #ifdef KOMODO_ISSUER
+            printf("START MINER!\n");
             KOMODO_DEPOSIT = fiatoshis;
             KOMODO_SCRIPTPUBKEY[0] = 0x76;
             KOMODO_SCRIPTPUBKEY[1] = 0xa9;
@@ -59,7 +60,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
 {
     int32_t i,opretlen,offset = 0; uint256 zero; const char *typestr;
     typestr = "unknown";
-    if ( txi != 0 || vout != 0 )
+    if ( 0 )//txi != 0 || vout != 0 )
     {
         for (i=0; i<len; i++)
             printf("%02x",script[i]);
@@ -176,7 +177,7 @@ void komodo_gateway_iteration(char *symbol)
             {
                 for (i=0; i<1000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
-                    printf("KMDHEIGHT %d\n",KMDHEIGHT);
+                    //printf("KMDHEIGHT %d\n",KMDHEIGHT);
                     if ( (KMDHEIGHT % 100) == 0 )
                     {
                         fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
