@@ -37,9 +37,7 @@ char KMDUSERPASS[1024]; uint16_t BITCOIND_PORT = 7771;
 #include "cJSON.c"
 #include "komodo_bitcoind.h"
 #include "komodo_interest.h"
-#ifdef KOMODO_PAX
 #include "komodo_pax.h"
-#endif
 #include "komodo_notary.h"
 #include "komodo_gateway.h"
 

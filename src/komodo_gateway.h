@@ -19,7 +19,8 @@
 
 void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
 {
-    const char *typestr = "unknown";
+    uint8_t rmd160[20],addrtype,shortflag; char base[4],coinaddr[64]; int64_t fiatoshis; const char *typestr;
+    typestr = "unknown";
     if ( script[0] == 0x6a )
     {
         if ( len >= 32*2+4 && strcmp((char *)&script[2+32*2+4],"KMD") == 0 )
@@ -27,7 +28,18 @@ void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t v
         if ( script[2] == 'P' )
             typestr = "pricefeed";
         else if ( script[2] == 'D' )
-            typestr = "deposit";
+        {
+            if ( len == 36 )
+            {
+                PAX_pubkey(0,&script[3],&addrtype,rmd160,base,&shortflag,&fiatoshis);
+                if ( fiatoshis < 0 )
+                    fiatoshis = -fiatoshis;
+                bitcoin_address(coinaddr,addrtype,rmd160,20);
+                printf("DEPOSIT %.8f %s -> %s\n",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
+                // verify price value for fiatoshis of base
+                typestr = "deposit";
+            }
+        }
     }
     else if ( numvouts > 13 )
         typestr = "ratify";

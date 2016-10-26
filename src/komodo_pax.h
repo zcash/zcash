@@ -153,14 +153,27 @@ int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize)
  return(val32);
  }*/
 
-int32_t PAX_pubkey(uint8_t *pubkey33,uint8_t addrtype,uint8_t rmd160[20],char fiat[4],uint8_t shortflag,int32_t fiatoshis)
+int32_t PAX_pubkey(int32_t rwflag,uint8_t *pubkey33,uint8_t *addrtypep,uint8_t rmd160[20],char fiat[4],uint8_t *shortflagp,int64_t *fiatoshisp)
 {
-    memset(pubkey33,0,33);
-    pubkey33[0] = 0x02 | (shortflag != 0);
-    memcpy(&pubkey33[1],fiat,3);
-    iguana_rwnum(1,&pubkey33[4],sizeof(fiatoshis),(void *)&fiatoshis);
-    pubkey33[12] = addrtype;
-    memcpy(&pubkey33[13],rmd160,20);
+    if ( rwflag != 0 )
+    {
+        memset(pubkey33,0,33);
+        pubkey33[0] = 0x02 | (*shortflagp != 0);
+        memcpy(&pubkey33[1],fiat,3);
+        iguana_rwnum(rwflag,&pubkey33[4],sizeof(*fiatoshisp),(void *)fiatoshisp);
+        pubkey33[12] = *addrtypep;
+        memcpy(&pubkey33[13],rmd160,20);
+    }
+    else
+    {
+        *shortflagp = (pubkey33[0] == 0x03);
+        memcpy(fiat,&pubkey33[1],4);
+        iguana_rwnum(rwflag,&pubkey33[4],sizeof(*fiatoshisp),(void *)fiatoshisp);
+        if ( *shortflagp != 0 )
+            *fiatoshisp = -(*fiatoshisp);
+        *addrtypep = pubkey33[12];
+        memcpy(rmd160,&pubkey33[13],20);
+    }
 }
 
 double PAX_val(uint32_t pval,int32_t baseid)
@@ -298,7 +311,7 @@ uint64_t PAX_fiatdest(char *fiatbuf,char *destaddr,uint8_t pubkey33[33],char *co
     if ( bitcoin_addr2rmd160(&addrtype,rmd160,coinaddr) == 20 )
     {
         // put JSON into fiatbuf enough to replicate/validate
-        PAX_pubkey(pubkey33,addrtype,rmd160,base,shortflag,fiatoshis);
+        PAX_pubkey(1,pubkey33,&addrtype,rmd160,base,&shortflag,&fiatoshis);
         bitcoin_address(destaddr,KOMODO_PUBTYPE,pubkey33,33);
     }
     return(komodoshis);
