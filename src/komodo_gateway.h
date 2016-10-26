@@ -42,14 +42,17 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             printf(" checkpubkey check %.8f v %.8f dest.(%s)\n",dstr(checktoshis),dstr(value),destaddr);
             typestr = "deposit";
 #ifdef KOMODO_ISSUER
-            printf("START MINER!\n");
-            KOMODO_DEPOSIT = fiatoshis;
-            KOMODO_SCRIPTPUBKEY[0] = 0x76;
-            KOMODO_SCRIPTPUBKEY[1] = 0xa9;
-            KOMODO_SCRIPTPUBKEY[2] = 0x14;
-            memcpy(&KOMODO_SCRIPTPUBKEY[3],rmd160,0x14);
-            KOMODO_SCRIPTPUBKEY[23] = 0x88;
-            KOMODO_SCRIPTPUBKEY[24] = 0xac;
+            if ( strncmp(KOMODO_SYMBOL,base,strlen(base)) == 0 )
+            {
+                printf("START %s MINER!\n",KOMODO_SYMBOL);
+                KOMODO_DEPOSIT = fiatoshis;
+                KOMODO_SCRIPTPUBKEY[0] = 0x76;
+                KOMODO_SCRIPTPUBKEY[1] = 0xa9;
+                KOMODO_SCRIPTPUBKEY[2] = 0x14;
+                memcpy(&KOMODO_SCRIPTPUBKEY[3],rmd160,0x14);
+                KOMODO_SCRIPTPUBKEY[23] = 0x88;
+                KOMODO_SCRIPTPUBKEY[24] = 0xac;
+            }
 #endif
         }
     }

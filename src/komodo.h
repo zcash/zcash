@@ -134,7 +134,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                     if ( numpvals*sizeof(uint32_t) <= sizeof(pvals) && fread(pvals,sizeof(uint32_t),numpvals,fp) == numpvals )
                     {
                         komodo_pvals(ht,pvals,numpvals);
-                        printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
+                        //printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
                     } else printf("error loading pvals[%d]\n",numpvals);
                 }
 //#endif
