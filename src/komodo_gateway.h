@@ -42,9 +42,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             printf(" checkpubkey check %.8f v %.8f dest.(%s)\n",dstr(checktoshis),dstr(value),destaddr);
             typestr = "deposit";
 #ifdef KOMODO_ISSUER
-            if ( strncmp(KOMODO_SYMBOL,base,strlen(base)) == 0 )
+            if ( strncmp(KOMODO_SOURCE,base,strlen(base)) == 0 )
             {
-                printf("START %s MINER!\n",KOMODO_SYMBOL);
+                printf("START %s MINER!\n",KOMODO_SOURCE);
                 KOMODO_DEPOSIT = fiatoshis;
                 KOMODO_SCRIPTPUBKEY[0] = 0x76;
                 KOMODO_SCRIPTPUBKEY[1] = 0xa9;
