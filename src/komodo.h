@@ -284,12 +284,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
         }
 #ifdef KOMODO_PAX
         else if ( i == 0 && scriptbuf[len] == 'P' )
-        {
-            double KMDBTC,BTCUSD,CNYUSD; uint32_t numpvals,timestamp,pvals[128];
-            numpvals = dpow_readprices(&scriptbuf[++len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
-            komodo_stateupdate(height,0,0,0,zero,0,0,pvals,numpvals,0,0,0);
-            printf("vout OP_RETURN.%d prices numpvals.%d opretlen.%d\n",height,numpvals,opretlen);
-        }
+            komodo_paxpricefeed(&scriptbuf[++len]);
 #endif
     }
     return(notaryid);
