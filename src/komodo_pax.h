@@ -96,11 +96,11 @@ int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,doubl
         len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&pvals[i]);
         //printf("%u ",pvals[i]);
     }
-    if ( nonz < n-3 )
+    /*if ( nonz < n-3 )
     {
         //printf("nonz.%d n.%d retval -1\n",nonz,n);
         return(-1);
-    }
+    }*/
     pvals[i++] = kmdbtc;
     pvals[i++] = btcusd;
     pvals[i++] = cnyusd;
