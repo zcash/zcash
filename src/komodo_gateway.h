@@ -91,13 +91,13 @@ int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,
                         if ( (hexstr= jstr(sobj,(char *)"hex")) != 0 )
                         {
                             len = (int32_t)strlen(hexstr) >> 1;
+                            if ( len != 74 )
+                                printf("ht.%d txi.%d vout.%d/%d %s script\n",height,txi,vout,n,hexstr);
                             if ( vout == 0 && ((memcmp(&hexstr[2],CRYPTO777_PUBSECPSTR,66) == 0 && len == 35) || (memcmp(&hexstr[6],CRYPTO777_RMD160STR,40) == 0 && len == 25)) )
                                 isspecial = 1;
                             else if ( isspecial != 0 && len <= sizeof(script) )
                             {
                                 decode_hex(script,len,hexstr);
-                                if ( len != 74 )
-                                printf("ht.%d txi.%d vout.%d/%d %s script\n",height,txi,vout,n,hexstr);
                                 komodo_gateway_voutupdate(symbol,height,txi,vout,n,value,script,len);
                             }
                         }
