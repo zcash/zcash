@@ -35,9 +35,9 @@ void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t v
     printf("%s VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%s)\n",symbol,height,txi,vout,dstr(value),len,script[0] == 0x6a,typestr);
 }
 
-void komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,uint32_t port)
+int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,uint32_t port)
 {
-    char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*result,*vouts,*item,*sobj; int32_t vout,n,len,isspecial; uint64_t value;
+    char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*result,*vouts,*item,*sobj; int32_t vout,n,len,isspecial,retval = -1; uint64_t value;
     sprintf(params,"[\"%s\", 1]",txidstr);
     if ( (retstr= komodo_issuemethod((char *)"getrawtransaction",params,port)) != 0 )
     {
@@ -45,6 +45,7 @@ void komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,uin
         {
             if ( (result= jobj(json,(char *)"result")) != 0 && (vouts= jarray(&n,result,(char *)"vout")) != 0 )
             {
+                retval = 0;
                 isspecial = 0;
                 for (vout=0; vout<n; vout++)
                 {
@@ -70,11 +71,12 @@ void komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,uin
         }
         free(retstr);
     }
+    return(retval);
 }
 
-void komodo_gateway_block(char *symbol,int32_t height,uint16_t port)
+int32_t komodo_gateway_block(char *symbol,int32_t height,uint16_t port)
 {
-    char *retstr,*retstr2,params[128],*txidstr; int32_t i,n; cJSON *json,*tx,*result,*result2;
+    char *retstr,*retstr2,params[128],*txidstr; int32_t i,n,retval = -1; cJSON *json,*tx,*result,*result2;
     sprintf(params,"[%d]",height);
     if ( (retstr= komodo_issuemethod((char *)"getblockhash",params,port)) != 0 )
     {
@@ -91,7 +93,10 @@ void komodo_gateway_block(char *symbol,int32_t height,uint16_t port)
                         if ( (result2= jobj(json,(char *)"result")) != 0 && (tx= jarray(&n,result2,(char *)"tx")) != 0 )
                         {
                             for (i=0; i<n; i++)
-                                komodo_gateway_tx(symbol,height,i,jstri(tx,i),port);
+                                if ( komodo_gateway_tx(symbol,height,i,jstri(tx,i),port) < 0 )
+                                    break;
+                            if ( i == n )
+                                retval = 0;
                         }
                         free_json(json);
                     }
@@ -102,6 +107,7 @@ void komodo_gateway_block(char *symbol,int32_t height,uint16_t port)
         }
         free(retstr);
     }
+    return(retval);
 }
 
 void komodo_gateway_iteration(char *symbol)
@@ -113,11 +119,12 @@ void komodo_gateway_iteration(char *symbol)
         {
             if ( (result= jobj(infoobj,(char *)"result")) != 0 && (kmdheight= jint(result,(char *)"blocks")) != 0 )
             {
-                for (i=0; i<100 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
+                for (i=0; i<10 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
-                    if ( (KMDHEIGHT % 1000) == 0 )
+                    if ( (KMDHEIGHT % 100) == 0 )
                         fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
-                    komodo_gateway_block(symbol,KMDHEIGHT,port);
+                    if ( komodo_gateway_block(symbol,KMDHEIGHT,port) < 0 )
+                        break;
                     usleep(10000);
                 }
             }

@@ -753,7 +753,7 @@ void StartRPCThreads()
     g_rpcSignals.Started();
 
     // Launch one async rpc worker.  The ability to launch multiple workers is not recommended at present and thus the option is disabled.
-    for (int i=0; i<32; i++)
+    //for (int i=0; i<32; i++)
         getAsyncRPCQueue()->addWorker();
 /*   
     int n = GetArg("-rpcasyncthreads", 1);
