@@ -25,7 +25,7 @@ void komodo_gateway_voutupdate(int32_t height,int32_t txi,int32_t vout,uint8_t *
 
 int32_t komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
 {
-    char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*vouts,*item; int32_t vout,n,len,isspecial; uint64_t value;
+    char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*vouts,*item,*sobj; int32_t vout,n,len,isspecial; uint64_t value;
     sprintf(params,"[\"%s\", 1]",txidstr);
     if ( (retstr= komodo_issuemethod((char *)"getrawtransaction",params,port)) != 0 )
     {
@@ -48,7 +48,7 @@ int32_t komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port
                             if ( isspecial != 0 && len <= sizeof(script) )
                             {
                                 decode_hex(script,len,hexstr);
-                                komodo_gateway_update(height,txi,vout,script,len);
+                                komodo_gateway_voutupdate(height,txi,vout,script,len);
                             }
                         }
                     }
@@ -73,7 +73,7 @@ int32_t komodo_gateway_block(int32_t height,uint16_t port)
             {
                 if ( (json= cJSON_Parse(retstr2)) != 0 )
                 {
-                    if ( (tx= jarray(&n,json,"tx")) != 0 )
+                    if ( (tx= jarray(&n,json,(char *)"tx")) != 0 )
                     {
                         for (i=0; i<n; i++)
                             komodo_gateway_tx(height,i,jstri(tx,i),port);
@@ -94,12 +94,12 @@ void komodo_gateway_iteration(char *symbol)
     {
         if ( (infoobj= cJSON_Parse(retstr)) != 0 )
         {
-            if ( (kmdheight= jint(infoobj,"blocks")) != 0 )
+            if ( (kmdheight= jint(infoobj,(char *)"blocks")) != 0 )
             {
                 for (i=0; i<10000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
                     printf("%s KMDheight.%d\n",symbol,KMDHEIGHT);
-                    if ( komodo_blockhash(KMDHEIGHT) >= 0 )
+                    if ( komodo_gateway_block(KMDHEIGHT) >= 0 )
                     {
                         
                     }
