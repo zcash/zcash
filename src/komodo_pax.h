@@ -71,7 +71,7 @@ void pax_rank(uint64_t *ranked,uint32_t *pvals)
 
 int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,double *BTCUSDp,double *CNYUSDp,uint32_t *pvals)
 {
-    uint32_t kmdbtc,btcusd,cnyusd; int32_t i,n,len = 0;
+    uint32_t kmdbtc,btcusd,cnyusd; int32_t i,n,nonz,len = 0;
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)timestampp);
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&n);
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&kmdbtc); // /= 1000
@@ -80,11 +80,15 @@ int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,doubl
     *KMDBTCp = ((double)kmdbtc / (1000000000. * 1000.));
     *BTCUSDp = ((double)btcusd / (1000000000. / 1000.));
     *CNYUSDp = ((double)cnyusd / 1000000000.);
-    for (i=0; i<n-3; i++)
+    for (i=nonz=0; i<n-3; i++)
     {
+        if ( pvals[i] != 0 )
+            nonz++;
         len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&pvals[i]);
         //printf("%u ",pvals[i]);
     }
+    if ( nonz < n-3 )
+        return(-1);
     pvals[i++] = kmdbtc;
     pvals[i++] = btcusd;
     pvals[i++] = cnyusd;
@@ -115,24 +119,26 @@ int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize)
                 if ( check == crc32 )
                 {
                     double KMDBTC,BTCUSD,CNYUSD; uint32_t pvals[128];
-                    dpow_readprices(&data[len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
-                    if ( 0 && lastcrc != crc32 )
+                    if ( dpow_readprices(&data[len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals) > 0 )
                     {
-                        for (i=0; i<32; i++)
-                            printf("%u ",pvals[i]);
-                        printf("t%u n.%d KMD %f BTC %f CNY %f (%f)\n",timestamp,n,KMDBTC,BTCUSD,CNYUSD,CNYUSD!=0?1./CNYUSD:0);
-                    }
-                    if ( timestamp > time(NULL)-600 )
-                    {
-                        n = komodo_opreturnscript(opret,'P',data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
                         if ( 0 && lastcrc != crc32 )
                         {
-                            for (i=0; i<n; i++)
-                                printf("%02x",opret[i]);
-                            printf(" coinbase opret[%d] crc32.%u:%u\n",n,crc32,check);
+                            for (i=0; i<32; i++)
+                                printf("%u ",pvals[i]);
+                            printf("t%u n.%d KMD %f BTC %f CNY %f (%f)\n",timestamp,n,KMDBTC,BTCUSD,CNYUSD,CNYUSD!=0?1./CNYUSD:0);
                         }
-                    } //else printf("t%u too old for %u\n",timestamp,(uint32_t)time(NULL));
-                    lastcrc = crc32;
+                        if ( timestamp > time(NULL)-600 )
+                        {
+                            n = komodo_opreturnscript(opret,'P',data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
+                            if ( 0 && lastcrc != crc32 )
+                            {
+                                for (i=0; i<n; i++)
+                                    printf("%02x",opret[i]);
+                                printf(" coinbase opret[%d] crc32.%u:%u\n",n,crc32,check);
+                            }
+                        } //else printf("t%u too old for %u\n",timestamp,(uint32_t)time(NULL));
+                        lastcrc = crc32;
+                    }
                 } else printf("crc32 %u mismatch %u\n",crc32,check);
             } else printf("fread.%d error != fsize.%d\n",retval,fsize);
         } else printf("fsize.%d > maxsize.%d or data[%d]\n",fsize,maxsize,(int32_t)sizeof(data));

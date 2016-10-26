@@ -202,13 +202,20 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
 //#ifdef KOMODO_PAX
         else if ( pvals != 0 && numpvals > 0 )
         {
-            fputc('V',fp);
-            if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
-                errs++;
-            fputc(numpvals,fp);
-            if ( fwrite(pvals,sizeof(uint32_t),numpvals,fp) != numpvals )
-                errs++;
-            komodo_pvals(height,pvals,numpvals);
+            int32_t nonz = 0;
+            for (i=0; i<32; i++)
+                if ( pvals[i] != 0 )
+                    nonz++;
+            if ( nonz >= 32 )
+            {
+                fputc('V',fp);
+                if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
+                    errs++;
+                fputc(numpvals,fp);
+                if ( fwrite(pvals,sizeof(uint32_t),numpvals,fp) != numpvals )
+                    errs++;
+                komodo_pvals(height,pvals,numpvals);
+            }
             //printf("save pvals height.%d numpvals.%d\n",height,numpvals);
         }
 //#endif
