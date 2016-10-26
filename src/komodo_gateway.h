@@ -31,7 +31,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             bitcoin_address(coinaddr,addrtype,rmd160,20);
             memset(base,0,sizeof(base));
             checktoshis = PAX_fiatdest(destaddr,pubkey33,coinaddr,height,base,fiatoshis);
-            printf("DEPOSIT %.8f %c%s -> %s\n",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
+            for (i=0; i<opretlen; i++)
+                printf("%02x",opretbuf[i]);
+            printf(" DEPOSIT %.8f %c%s -> %s\n",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
             // verify price value for fiatoshis of base
             for (i=0; i<33; i++)
                 printf("%02x",pubkey33[i]);
@@ -60,7 +62,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
         else if ( txi == 0 && vout == 1 && opretlen == 149 )
         {
             typestr = "pricefeed";
-            komodo_paxpricefeed(height,&script[len + script[offset] == 'P'],opretlen);
+            komodo_paxpricefeed(height,&script[offset],opretlen);
             printf("height.%d pricefeed len.%d\n",height,opretlen);
         }
         else if ( isspecial != 0 )
