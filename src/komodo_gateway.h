@@ -89,13 +89,13 @@ void komodo_gateway_block(int32_t height,uint16_t port)
 
 void komodo_gateway_iteration(char *symbol)
 {
-    char *retstr; int32_t i,kmdheight; cJSON *infoobj; uint16_t port = 7771;
+    char *retstr; int32_t i,kmdheight; cJSON *infoobj,*result; uint16_t port = 7771;
     if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
     {
         printf("GETINFO from.%s (%s)\n",ASSETCHAINS_SYMBOL,retstr);
         if ( (infoobj= cJSON_Parse(retstr)) != 0 )
         {
-            if ( (kmdheight= jint(infoobj,(char *)"blocks")) != 0 )
+            if ( (result= jobj(infoobj,(char *)"result")) != 0 && (kmdheight= jint(infoobj,(char *)"blocks")) != 0 )
             {
                 for (i=0; i<10000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
