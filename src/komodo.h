@@ -58,7 +58,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             {
                 if ( fread(&ht,1,sizeof(ht),fp) != sizeof(ht) )
                     errs++;
-                printf("fpos.%ld func.(%d %c) ht.%d\n",ftell(fp),func,func,ht);
+                printf("fpos.%ld func.(%d %c) ht.%d ",ftell(fp),func,func,ht);
                 if ( func == 'P' )
                 {
                     if ( (num= fgetc(fp)) < 64 )
@@ -71,7 +71,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                             komodo_notarysinit(ht,pubkeys,num);
                         }
                     } else printf("illegal num.%d\n",num);
-                    //printf("P[%d]\n",num);
+                    printf("P[%d]\n",num);
                 }
                 else if ( func == 'N' )
                 {
@@ -89,7 +89,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                     uint8_t n,nid; uint256 hash; uint64_t mask;
                     n = fgetc(fp);
                     nid = fgetc(fp);
-                    //printf("U %d %d\n",n,nid);
+                    printf("U %d %d\n",n,nid);
                     if ( fread(&mask,1,sizeof(mask),fp) != sizeof(mask) )
                         errs++;
                     if ( fread(&hash,1,sizeof(hash),fp) != sizeof(hash) )
@@ -104,8 +104,8 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                     if ( kheight > KMDHEIGHT )
                     {
                         KMDHEIGHT = kheight;
-                        printf("KMDHEIGHT <- %d\n",kheight);
                     }
+                    printf("ht.%d KMDHEIGHT <- %d\n",ht,kheight);
                 }
                 else if ( func == 'R' )
                 {
