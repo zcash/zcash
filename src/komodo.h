@@ -156,7 +156,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         }
         else if ( opretbuf != 0 && opretlen > 0 )
         {
-            fputc('K',fp);
+            fputc('O',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
                 errs++;
             if ( fwrite(opretbuf,1,opretlen,fp) != opretlen )
