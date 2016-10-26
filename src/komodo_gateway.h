@@ -52,10 +52,10 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
         offset += komodo_scriptitemlen(&opretlen,&script[offset]);
         if ( isspecial != 0 && len >= offset+32*2+4 && strcmp((char *)&script[offset+32*2+4],"KMD") == 0 )
             typestr = "notarized";
-        else if ( txi == 0 && (scriptbuf[offset] == 'P' || opretlen == 149) )
+        else if ( txi == 0 && (script[offset] == 'P' || opretlen == 149) )
         {
             typestr = "pricefeed";
-            komodo_paxpricefeed(height,&scriptbuf[len + scriptbuf[offset] == 'P'],opretlen);
+            komodo_paxpricefeed(height,&scriptbuf[len + scriptboffset] == 'P'],opretlen);
             printf("height.%d pricefeed len.%d\n",height,opretlen);
         }
         else if ( isspecial != 0 )
