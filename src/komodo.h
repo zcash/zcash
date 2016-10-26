@@ -28,7 +28,7 @@ void komodo_init();
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp);
 char *komodo_issuemethod(char *method,char *params,uint16_t port);
 
-int32_t NOTARIZED_HEIGHT,Num_nutxos,KMDHEIGHT = 34000;
+int32_t NOTARIZED_HEIGHT,Num_nutxos,KMDHEIGHT = 40000;
 uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
 pthread_mutex_t komodo_mutex;
 char KMDUSERPASS[1024]; uint16_t BITCOIND_PORT = 7771;
@@ -40,6 +40,7 @@ char KMDUSERPASS[1024]; uint16_t BITCOIND_PORT = 7771;
 #include "komodo_pax.h"
 #include "komodo_notary.h"
 #include "komodo_gateway.h"
+
 
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t KMDheight,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen)
 {
@@ -106,7 +107,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                         printf("KMDHEIGHT <- %d\n",kheight);
                     }
                 }
-                /*else if ( func == 'O' )
+                else if ( func == 'R' )
                 {
                     uint16_t olen; uint64_t ovalue; uint8_t opret[10000];
                     if ( fread(&ovalue,1,sizeof(ovalue),fp) != sizeof(ovalue) )
@@ -119,7 +120,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                             errs++;
                         komodo_opreturn(ht,ovalue,opret,olen);
                     } else printf("illegal olen.%u\n",olen);
-                }*/
+                }
                 else if ( func == 'D' )
                 {
                     //printf("D[%d]\n",ht);
@@ -164,21 +165,20 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             if ( fwrite(&KMDheight,1,sizeof(KMDheight),fp) != sizeof(KMDheight) )
                 errs++;
         }
-        /*else if ( opretbuf != 0 && opretlen > 0 )
+        else if ( opretbuf != 0 && opretlen > 0 )
         {
-            uint16_t olen;
-            fputc('O',fp);
+            uint16_t olen = opretlen;
+            fputc('R',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
                 errs++;
             if ( fwrite(&opretvalue,1,sizeof(opretvalue),fp) != sizeof(opretvalue) )
                 errs++;
-            olen = opretlen;
             if ( fwrite(&olen,1,sizeof(olen),fp) != olen )
                 errs++;
-            if ( fwrite(opretbuf,1,opretlen,fp) != opretlen )
+            if ( fwrite(opretbuf,1,olen,fp) != olen )
                 errs++;
-            komodo_opreturn(height,opretvalue,opretbuf,opretlen);
-        }*/
+            komodo_opreturn(height,opretvalue,opretbuf,olen);
+        }
         else if ( notarypubs != 0 && numnotaries > 0 )
         {
             //printf("func P[%d] errs.%d\n",numnotaries,errs);
