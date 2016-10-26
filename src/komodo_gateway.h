@@ -48,11 +48,11 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
 {
     int32_t i,opretlen,offset = 0; uint256 zero; const char *typestr;
     typestr = "unknown";
-    if ( txi != 0 || vout != 0 )
+    //if ( txi != 0 || vout != 0 )
     {
         for (i=0; i<len; i++)
             printf("%02x",script[i]);
-        printf(" <- %s VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%s)\n",symbol,height,txi,vout,dstr(value),len,script[0] == 0x6a,typestr);
+        printf(" <- %s VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%s) len.%d\n",symbol,height,txi,vout,dstr(value),len,script[0] == 0x6a,typestr,opretlen);
     }
     if ( script[offset++] == 0x6a )
     {
