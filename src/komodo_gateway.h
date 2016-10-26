@@ -46,7 +46,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
 {
     int32_t i,opretlen,offset = 0; uint256 zero; const char *typestr;
     typestr = "unknown";
-    if ( i != 0 || vout != 0 )
+    if ( txi != 0 || vout != 0 )
     {
         for (i=0; i<len; i++)
             printf("%02x",script[i]);
