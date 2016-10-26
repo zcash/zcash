@@ -55,7 +55,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
         else if ( txi == 0 && (script[offset] == 'P' || opretlen == 149) )
         {
             typestr = "pricefeed";
-            komodo_paxpricefeed(height,&scriptbuf[len + script[offset] == 'P'],opretlen);
+            komodo_paxpricefeed(height,&script[len + script[offset] == 'P'],opretlen);
             printf("height.%d pricefeed len.%d\n",height,opretlen);
         }
         else if ( isspecial != 0 )
