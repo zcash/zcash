@@ -58,8 +58,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t v
             else
             {
                 printf("offset.%d opretlen.%d\n",offset,opretlen);
-                typestr = komodo_opreturn(height,value,&script[offset],opretlen);
-                komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,&script[offset],opretlen);
+                komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,value,&script[offset],opretlen);
             }
         }
     }
@@ -163,7 +162,7 @@ void komodo_gateway_iteration(char *symbol)
                     {
                         fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
                         memset(&zero,0,sizeof(zero));
-                        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,KMDHEIGHT,0,0);
+                        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,KMDHEIGHT,0,0,0);
                     }
                     if ( komodo_gateway_block(symbol,KMDHEIGHT,port) < 0 )
                         break;

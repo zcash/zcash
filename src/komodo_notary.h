@@ -209,6 +209,6 @@ void komodo_init()
         }
         komodo_notarysinit(0,pubkeys,k);
         memset(&zero,0,sizeof(zero));
-        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0);
+        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0);
     }
 }
