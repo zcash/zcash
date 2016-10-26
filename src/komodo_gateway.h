@@ -62,28 +62,32 @@ void komodo_gateway_tx(int32_t height,int32_t txi,char *txidstr,uint32_t port)
 
 void komodo_gateway_block(int32_t height,uint16_t port)
 {
-    char *retstr,*retstr2,params[128]; int32_t i,n; cJSON *json,*tx;
+    char *retstr,*retstr2,params[128],*txidstr; int32_t i,n; cJSON *json,*tx,*result;
     sprintf(params,"[%d]",height);
     if ( (retstr= komodo_issuemethod((char *)"getblockhash",params,port)) != 0 )
     {
-        if ( strlen(retstr) == 64 )
+        if ( (result= cJSON_Parse(retstr)) != 0 )
         {
-            sprintf(params,"[\"%s\"]",retstr);
-            if ( (retstr2= komodo_issuemethod((char *)"getblock",params,port)) != 0 )
+            if ( (txidstr= jstr(result,"result")) != 0 && strlen(txidstr) == 64 )
             {
-                printf("getblock.(%s)\n",retstr2);
-                if ( (json= cJSON_Parse(retstr2)) != 0 )
+                sprintf(params,"[\"%s\"]",txidstr);
+                if ( (retstr2= komodo_issuemethod((char *)"getblock",params,port)) != 0 )
                 {
-                    if ( (tx= jarray(&n,json,(char *)"tx")) != 0 )
+                    printf("getblock.(%s)\n",retstr2);
+                    if ( (json= cJSON_Parse(retstr2)) != 0 )
                     {
-                        for (i=0; i<n; i++)
-                            komodo_gateway_tx(height,i,jstri(tx,i),port);
+                        if ( (tx= jarray(&n,json,(char *)"tx")) != 0 )
+                        {
+                            for (i=0; i<n; i++)
+                                komodo_gateway_tx(height,i,jstri(tx,i),port);
+                        }
+                        free_json(json);
                     }
-                    free_json(json);
+                    free(retstr2);
                 }
-                free(retstr2);
-            }
-        } else printf("strlen.%ld (%s)\n",strlen(retstr),retstr);
+            } else printf("strlen.%ld (%s)\n",strlen(txidstr),txidstr);
+            free_json(result);
+        }
         free(retstr);
     }
 }
