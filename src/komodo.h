@@ -293,10 +293,8 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
                 komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0);
             } else printf("reject ht.%d NOTARIZED.%d %s.%s DESTTXID.%s (%s)\n",height,*notarizedheightp,KOMODO_SOURCE,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
         }
-#ifdef KOMODO_PAX
         else if ( i == 0 && scriptbuf[len] == 'P' )
             komodo_paxpricefeed(height,&scriptbuf[++len],opretlen);
-#endif
         else
         {
             komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,value,&scriptbuf[len],opretlen);
