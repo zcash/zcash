@@ -52,24 +52,22 @@ void komodo_gateway_voutupdate(char *symbol,int32_t height,int32_t txi,int32_t v
         offset += komodo_scriptitemlen(&opretlen,&script[offset]);
         if ( len >= offset+32*2+4 && strcmp((char *)&script[offset+32*2+4],"KMD") == 0 )
             typestr = "notarized";
-        if ( script[2] == 'P' )
+        else if ( script[offset] == 'P' )
+        {
             typestr = "pricefeed";
+            komodo_paxpricefeed(height,&script[++offset],opretlen);
+            printf("height.%d pricefeed len.%d\n",opretlen);
+        }
         else
         {
-            if ( script[offset] == 'P' )
-                komodo_paxpricefeed(height,&script[++offset],opretlen);
-            else
-            {
-                printf("offset.%d opretlen.%d\n",offset,opretlen);
-                komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,value,&script[offset],opretlen);
-            }
+            komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,value,&script[offset],opretlen);
+            for (i=0; i<len; i++)
+                printf("%02x",script[i]);
+            printf(" <- %s VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%s)\n",symbol,height,txi,vout,dstr(value),len,script[0] == 0x6a,typestr);
         }
     }
     else if ( numvouts > 13 )
         typestr = "ratify";
-    for (i=0; i<len; i++)
-        printf("%02x",script[i]);
-    printf(" <- %s VOUTUPDATE.%d txi.%d vout.%d %.8f scriptlen.%d OP_RETURN.%d (%s)\n",symbol,height,txi,vout,dstr(value),len,script[0] == 0x6a,typestr);
 }
 
 int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,uint32_t port)
