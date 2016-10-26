@@ -230,7 +230,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
     }
 }
 
-int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp)
+int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value)
 {
     static uint256 zero; int32_t opretlen,nid,k,len = 0; uint256 kmdtxid,desttxid; uint8_t crypto777[33];
     if ( scriptlen == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
@@ -267,7 +267,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             }
         }
     }
-    if ( j == 1 && scriptbuf[len++] == 0x6a )
+    if ( scriptbuf[len++] == 0x6a )
     {
         if ( (opretlen= scriptbuf[len++]) == 0x4c )
             opretlen = scriptbuf[len++];
@@ -276,7 +276,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             opretlen = scriptbuf[len++];
             opretlen = (opretlen << 8) + scriptbuf[len++];
         }
-        if ( opretlen >= 32*2+4 && strcmp(KOMODO_SOURCE,(char *)&scriptbuf[len+32*2+4]) == 0 )
+        if ( j == 1 && opretlen >= 32*2+4 && strcmp(KOMODO_SOURCE,(char *)&scriptbuf[len+32*2+4]) == 0 )
         {
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
             len += iguana_rwnum(0,&scriptbuf[len],4,(uint8_t *)notarizedheightp);
@@ -297,6 +297,10 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
         else if ( i == 0 && scriptbuf[len] == 'P' )
             komodo_paxpricefeed(height,&scriptbuf[++len],opretlen);
 #endif
+        else
+        {
+            komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,value,&script[len],opretlen);
+        }
     }
     return(notaryid);
 }
@@ -345,7 +349,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 #else
                     memcpy(scriptbuf,(uint8_t *)&block.vtx[i].vout[j].scriptPubKey[0],len);
 #endif
-                    notaryid = komodo_voutupdate(notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight);
+                    notaryid = komodo_voutupdate(notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight,(uint64_t)block.vtx[i].vout[j].value);
                     if ( 0 && i > 0 )
                     {
                         for (k=0; k<len; k++)
