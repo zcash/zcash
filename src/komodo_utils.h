@@ -20,6 +20,7 @@
 #define portable_mutex_lock pthread_mutex_lock
 #define portable_mutex_unlock pthread_mutex_unlock
 
+struct allocitem { uint32_t allocsize,type; };
 struct queueitem { struct queueitem *next,*prev; uint32_t allocsize,type;  };
 
 typedef struct queue
