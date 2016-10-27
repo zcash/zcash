@@ -64,7 +64,7 @@ void komodo_gateway_deposits(CMutableTransaction& txNew)
     printf("total numvouts.%d %.8f\n",numvouts,dstr(PENDING_KOMODO_TX));
 }
 
-int32_t komodo_check_deposit(CBlock& block)
+int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid pax pricing
 {
     return(0);
 }
