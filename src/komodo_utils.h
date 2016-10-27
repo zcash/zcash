@@ -15,6 +15,10 @@
 
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
+#define portable_mutex_t pthread_mutex_t
+#define portable_mutex_init(ptr) pthread_mutex_init(ptr,NULL)
+#define portable_mutex_lock pthread_mutex_lock
+#define portable_mutex_unlock pthread_mutex_unlock
 
 struct queueitem { struct queueitem *next,*prev; uint32_t allocsize,type;  };
 
