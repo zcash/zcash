@@ -32,7 +32,7 @@ previous release:
 ## B. Create a new release branch / github PR
 ### B1. Update (commit) version in sources
 
-    doc/README.md
+    README.md
     src/clientversion.h
     configure.ac
     contrib/DEBIAN/control
@@ -63,7 +63,7 @@ Update the Debian package changelog:
 
     export DEBVERSION="${DWCASH_RELEASE}"
     export DEBEMAIL="${DEBEMAIL:-team@dw.cash}"
-    export DEBFULLNAME="${DEBFULLNAME:-Zcash Company}"
+    export DEBFULLNAME="${DEBFULLNAME:-DeepWebCash Company}"
 
     dch -v $DEBVERSION -D jessie -c contrib/DEBIAN/changelog
 

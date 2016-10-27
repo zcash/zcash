@@ -16,8 +16,8 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "Zcash"
-            VALUE "FileDescription",    "dwcash-tx (CLI Zcash transaction editor utility)"
+            VALUE "CompanyName",        "DeepWebCash"
+            VALUE "FileDescription",    "dwcash-tx (CLI DeepWebCash transaction editor utility)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
             VALUE "InternalName",       "dwcash-tx"
             VALUE "LegalCopyright",     COPYRIGHT_STR

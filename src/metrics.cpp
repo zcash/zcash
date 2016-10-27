@@ -1,4 +1,4 @@
-// Copyright (c) 2016 The Zcash developers
+// Copyright (c) 2016 The DeepWebCash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -179,7 +179,7 @@ void ThreadShowMetricsScreen()
     std::cout << std::endl;
 
     // Thank you text
-    std::cout << _("Thank you for running a Zcash node!") << std::endl;
+    std::cout << _("Thank you for running a DeepWebCash node!") << std::endl;
     std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
     std::cout << std::endl;
 

@@ -3,8 +3,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: Zcash consensus library
-Description: Library for the Zcash consensus protocol.
+Name: DeepWebCash consensus library
+Description: Library for the DeepWebCash consensus protocol.
 Version: @PACKAGE_VERSION@
 Libs: -L${libdir} -ldwcashconsensus
 Cflags: -I${includedir}

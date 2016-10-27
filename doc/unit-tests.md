@@ -12,6 +12,6 @@ There are two scripts for running tests:
 The main test suite uses two different testing frameworks. Tests using the Boost
 framework are under ``src/test/``; tests using the Google Test/Google Mock
 framework are under ``src/gtest/`` and ``src/wallet/gtest/``. The latter framework
-is preferred for new Zcash unit tests.
+is preferred for new DeepWebCash unit tests.
 
 RPC tests are implemented in Python under the ``qa/rpc-tests/`` directory.

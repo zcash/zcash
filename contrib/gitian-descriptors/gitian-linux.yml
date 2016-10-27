@@ -1,5 +1,5 @@
 ---
-name: "dwcash-1.0.0-rc2"
+name: "dwcash-1.0.0-rc3"
 enable_cache: true
 distro: "debian"
 suites:
@@ -25,7 +25,7 @@ packages:
 - "wget"
 - "zlib1g-dev"
 remotes:
-- "url": "https://github.com/deepwebcash/deepwebcash.git"
+- "url": "https://github.com/dwcash/dwcash.git"
   "dir": "dwcash"
 files: []
 script: |

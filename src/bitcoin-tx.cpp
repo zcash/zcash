@@ -44,7 +44,7 @@ static bool AppInitRawTx(int argc, char* argv[])
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help"))
     {
         // First part of help message is specific to this utility
-        std::string strUsage = _("Zcash dwcash-tx utility version") + " " + FormatFullVersion() + "\n\n" +
+        std::string strUsage = _("DeepWebCash dwcash-tx utility version") + " " + FormatFullVersion() + "\n\n" +
             _("Usage:") + "\n" +
               "  dwcash-tx [options] <hex-tx> [commands]  " + _("Update hex-encoded dwcash transaction") + "\n" +
               "  dwcash-tx [options] -create [commands]   " + _("Create hex-encoded dwcash transaction") + "\n" +

@@ -1,7 +1,7 @@
 Source: dwcash
 Section: utils
 Priority: optional
-Maintainer: Zcash Company <team@dw.cash>
+Maintainer: DeepWebCash Company <team@dw.cash>
 Homepage: https://dw.cash
 Build-Depends: autoconf, automake, bsdmainutils, build-essential
  git, g++-multilib, libc6-dev, libtool
@@ -10,10 +10,10 @@ Build-Depends: autoconf, automake, bsdmainutils, build-essential
 Vcs-Git: git@github.com:dwcash/dwcash.git
 Vcs-Browser: https://github.com/dwcash/dwcash
 Package: dwcash
-Version: 1.0.0-rc2
+Version: 1.0.0-rc3
 Architecture: amd64
 Depends: libgomp1
-Description: Zcash is an implementation of the "Zerocash" protocol.
+Description: DeepWebCash is an implementation of the "Zerocash" protocol.
  Based on Bitcoin's code, it intends to offer a far higher standard
  of privacy and anonymity through a sophisticiated zero-knowledge
  proving scheme which preserves confidentiality of transaction metadata.
