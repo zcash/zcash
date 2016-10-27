@@ -55,7 +55,7 @@ public:
          * a large 32-bit integer with any alignment.
          */
         pchMessageStart[0] = 0xf9;
-        pchMessageStart[1] = 0x1b;
+        pchMessageStart[1] = 0xf3;
         pchMessageStart[2] = 0xac;
         pchMessageStart[3] = 0xab;
         vAlertPubKey = ParseHex("04b7ecf0baa90495ceb4e4090f6b2fd37eec1e9c85fac68a487f3ce11589692e4a317479316ee814e066638e1db54e37a10689b70286e6315b1087b6615d179264");
@@ -207,8 +207,8 @@ public:
         consensus.powLimit = uint256S("07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
         consensus.fPowAllowMinDifficultyBlocks = true;
-        pchMessageStart[0] = 0xf9;
-        pchMessageStart[1] = 0x9f;
+        pchMessageStart[0] = 0xfa;
+        pchMessageStart[1] = 0x1a;
         pchMessageStart[2] = 0x24;
         pchMessageStart[3] = 0xb6;
         vAlertPubKey = ParseHex("044e7a1553392325c871c5ace5d6ad73501c66f4c185d6b0453cf45dec5a1322e705c672ac1a27ef7cdaf588c10effdf50ed5f95f85f2f54a5f6159fca394ed0c6");
