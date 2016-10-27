@@ -1415,8 +1415,8 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     CAmount nSubsidy = 3 * COIN;
     if ( nHeight == 1 )
         return(100000000 * COIN); // ICO allocation
-    //else if ( komodo_moneysupply(nHeight) < MAX_MONEY )
-    //    return(3 * COIN);
+    else if ( komodo_moneysupply(nHeight) < MAX_MONEY )
+        return(3 * COIN);
     else return(0);
 /*
     // Mining slow start
