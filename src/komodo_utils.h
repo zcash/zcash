@@ -16,10 +16,12 @@
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 
+struct queueitem { struct queueitem *next,*prev; uint32_t allocsize,type;  };
+
 typedef struct queue
 {
 	struct queueitem *list;
-	portable_mutex_t mutex;
+	pthread_mutex_t mutex;
     char name[64],initflag;
 } queue_t;
 
