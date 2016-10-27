@@ -57,6 +57,7 @@ gzip --best -n $DEB_MAN/zcash-cli.1
 
 # Create the deb package
 fakeroot dpkg-deb --build $BUILD_DIR
+lintian -i $BUILD_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb
 cp $BUILD_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb $SRC_PATH
 
 exit 0
