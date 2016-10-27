@@ -28,7 +28,7 @@ void komodo_init();
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp);
 char *komodo_issuemethod(char *method,char *params,uint16_t port);
 
-int32_t ASSETCHAINS_SHORTFLAG,NOTARIZED_HEIGHT,Num_nutxos,KMDHEIGHT = 40000;
+int32_t ASSETCHAINS_SHORTFLAG,NOTARIZED_HEIGHT,Num_nutxos,KMDHEIGHT = 43000;
 uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
 pthread_mutex_t komodo_mutex;
 char KMDUSERPASS[1024]; uint16_t BITCOIND_PORT = 7771;
