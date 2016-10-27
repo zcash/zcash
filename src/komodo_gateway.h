@@ -169,7 +169,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     printf("%02x",((uint8_t *)&issuedtxid)[j]);
                 }
                 issuedvout = opretbuf[len++];
-                issuedvout = (vout << 8) | opretbuf[len++];
+                issuedvout = (opretbuf[len++] << 8) | vout;
                 printf(" issuedtxid v%d i.%d opretlen.%d\n",issuedvout,i,opretlen);
                 if ( komodo_gateway_depositremove(issuedtxid,issuedvout) == 0 )
                     printf("error removing deposit\n");
