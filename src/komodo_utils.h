@@ -1064,8 +1064,8 @@ void komodo_configfile(char *symbol,uint16_t port)
     memcpy(buf,&r,sizeof(r));
     memcpy(&buf[sizeof(r)],&r2,sizeof(r2));
     memcpy(&buf[sizeof(r)+sizeof(r2)],symbol,strlen(symbol));
-    crc = calc_crc(0,buf,(int32_t)(sizeof(r)+sizeof(r2)+strlen(symbol)));
-    vcalc_sha256(0,buf2,buf,(int32_t)(sizeof(r)+sizeof(r2)+strlen(symbol)));
+    crc = calc_crc32(0,(uint8_t *)buf,(int32_t)(sizeof(r)+sizeof(r2)+strlen(symbol)));
+    vcalc_sha256(0,(uint8_t *)buf2,(uint8_t *)buf,(int32_t)(sizeof(r)+sizeof(r2)+strlen(symbol)));
     sprintf(buf,"%s.conf",symbol);
     BITCOIND_PORT = port;
 #ifdef WIN32
