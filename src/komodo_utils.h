@@ -1098,7 +1098,7 @@ void komodo_configfile(char *symbol,uint16_t port)
             {
                 sprintf(KMDUSERPASS,"%s:%s",rpcuser,rpcpassword);
             }
-            printf("rpcuser.(%s) rpcpassword.(%s) KMDUSERPASS.(%s) %u\n",rpcuser,rpcpassword,KMDUSERPASS,port);
+            //printf("rpcuser.(%s) rpcpassword.(%s) KMDUSERPASS.(%s) %u\n",rpcuser,rpcpassword,KMDUSERPASS,port);
             if ( rpcuser != 0 )
                 free(rpcuser);
             if ( rpcpassword != 0 )
