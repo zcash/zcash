@@ -1222,11 +1222,11 @@ int32_t queue_size(queue_t *queue)
 
 void iguana_initQ(queue_t *Q,char *name)
 {
-    struct queueitem *item,I;
+    struct queueitem *item,*I;
     memset(Q,0,sizeof(*Q));
-    memset(&I,0,sizeof(I));
+    I = calloc(1,sizeof(*I));
     strcpy(Q->name,name);
-    queue_enqueue(name,Q,&I);
+    queue_enqueue(name,Q,I);
     if ( (item= queue_dequeue(Q)) != 0 )
         free(item);
 }
