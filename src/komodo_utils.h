@@ -1115,45 +1115,42 @@ void komodo_configfile(char *symbol,uint16_t port)
             printf("Created (%s)\n",fname);
         } else printf("Couldnt create (%s)\n",fname);
     }
-    else
-    {
-        fclose(fp);
-        strcpy(fname,GetDataDir(false).string().c_str());
+    else fclose(fp);
+    strcpy(fname,GetDataDir(false).string().c_str());
 #ifdef WIN32
-        while ( fname[strlen(fname)-1] != '\\' )
-            fname[strlen(fname)-1] = 0;
-        strcat(fname,".komodo/komodo.conf");
+    while ( fname[strlen(fname)-1] != '\\' )
+        fname[strlen(fname)-1] = 0;
+    strcat(fname,".komodo/komodo.conf");
 #else
-        while ( fname[strlen(fname)-1] != '/' )
-            fname[strlen(fname)-1] = 0;
-        strcat(fname,".komodo/komodo.conf");
+    while ( fname[strlen(fname)-1] != '/' )
+        fname[strlen(fname)-1] = 0;
+    strcat(fname,".komodo/komodo.conf");
 #endif
-        printf("KOMODO.(%s)\n",fname);
-        if ( (fp= fopen(fname,"rb")) != 0 )
+    printf("KOMODO.(%s)\n",fname);
+    if ( (fp= fopen(fname,"rb")) != 0 )
+    {
+        rpcuser = rpcpassword = 0;
+        while ( fgets(line,sizeof(line),fp) != 0 )
         {
-            rpcuser = rpcpassword = 0;
-            while ( fgets(line,sizeof(line),fp) != 0 )
-            {
-                if ( line[0] == '#' )
-                    continue;
-                //printf("line.(%s) %p %p\n",line,strstr(line,(char *)"rpcuser"),strstr(line,(char *)"rpcpassword"));
-                if ( (str= strstr(line,(char *)"rpcuser")) != 0 )
-                    rpcuser = parse_conf_line(str,(char *)"rpcuser");
-                else if ( (str= strstr(line,(char *)"rpcpassword")) != 0 )
-                    rpcpassword = parse_conf_line(str,(char *)"rpcpassword");
-            }
-            if ( rpcuser != 0 && rpcpassword != 0 )
-            {
-                sprintf(KMDUSERPASS,"%s:%s",rpcuser,rpcpassword);
-            }
-            //printf("rpcuser.(%s) rpcpassword.(%s) KMDUSERPASS.(%s) %u\n",rpcuser,rpcpassword,KMDUSERPASS,port);
-            if ( rpcuser != 0 )
-                free(rpcuser);
-            if ( rpcpassword != 0 )
-                free(rpcpassword);
-            fclose(fp);
-        } else printf("couldnt open.(%s)\n",fname);
-    }
+            if ( line[0] == '#' )
+                continue;
+            //printf("line.(%s) %p %p\n",line,strstr(line,(char *)"rpcuser"),strstr(line,(char *)"rpcpassword"));
+            if ( (str= strstr(line,(char *)"rpcuser")) != 0 )
+                rpcuser = parse_conf_line(str,(char *)"rpcuser");
+            else if ( (str= strstr(line,(char *)"rpcpassword")) != 0 )
+                rpcpassword = parse_conf_line(str,(char *)"rpcpassword");
+        }
+        if ( rpcuser != 0 && rpcpassword != 0 )
+        {
+            sprintf(KMDUSERPASS,"%s:%s",rpcuser,rpcpassword);
+        }
+        //printf("rpcuser.(%s) rpcpassword.(%s) KMDUSERPASS.(%s) %u\n",rpcuser,rpcpassword,KMDUSERPASS,port);
+        if ( rpcuser != 0 )
+            free(rpcuser);
+        if ( rpcpassword != 0 )
+            free(rpcpassword);
+        fclose(fp);
+    } else printf("couldnt open.(%s)\n",fname);
 }
 
 void lock_queue(queue_t *queue)
