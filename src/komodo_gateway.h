@@ -28,7 +28,7 @@ void komodo_gateway_deposits(CMutableTransaction& txNew)
 {
     struct pax_transaction *ptr; uint8_t *script,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
     PENDING_KOMODO_TX = 0;
-    while ( (ptr= (struct pax_transaction *)queue_dequeue(&DepositsQ,0)) != 0 )
+    while ( (ptr= (struct pax_transaction *)queue_dequeue(&DepositsQ)) != 0 )
     {
         txNew.vout.resize(numvouts+1);
         txNew.vout[numvouts].nValue = ptr->fiatoshis;
@@ -100,7 +100,7 @@ int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain c
                     printf("DELETE %.8f DEPOSIT %s %.8f\n",dstr(ptr->komodoshis),ptr->symbol,dstr(ptr->fiatoshis));
                     DL_DELETE(Q->list,&ptr->DL);
                     n++;
-                    myfree(ptr,sizeof(struct queueitem));
+                    free(ptr);
                     break;
                 }
             }
