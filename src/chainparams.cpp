@@ -133,19 +133,62 @@ public:
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vFoundersRewardAddress = {
-            "t3QW3CN6TzmTVH8M5E5aJoKzN838zAEBCuS", "t3c6yYJxXBGr3A2KjATDwDsbn8iLP9AsXfk", "t3TuV45WwNVwo3Qc4o2Mr1TenrY9FwRM18Z", "t3hmq4gpfPGhbaRaCsmD2ePidaPxWf3upsg",
-            "t3Y8pxVmXa4URdCWLC4cmeGPQ9nu8eSJMvG", "t3aE5FYLigL7VZw6qjmM6ftjBiAvGiPkjo5", "t3eiUmJQGPykPH8U5gzbPd1SjGDK2k6SFvb", "t3N1ybrjKLyn7q7tpQSRxSZmYp7UgkEgHDb",
-            "t3c8uR6tn6KWwrPWApBXJQuQ6daAr8bcaMg", "t3PGLi4mkL5FkMNjp9ERHtTBQguHPjT3yqA", "t3NYWdEZKfKwvBGCtJM2oMWhy1Rzot3yL3Q", "t3N7PKyV2yQnciu9cx5UbaqDRCVtev9qHpN",
-            "t3YPB1besUqKeEtx9FZX1A6HcXnkXq9Vc3r", "t3UrKCimx2FA9LU4ZMHE5A9dWbxEzm5MgLj", "t3WF7VvMmEh5teWs3WnW6shMqMj3UbX6p33", "t3aBmkm1cZoF5dZuumscMjWviipvSx6hFLR",
-            "t3VMf2EpazVsr4mKy4Gyp9qizCdQLrWTm9J", "t3NtLU7S7fYCtLMCjJHkxGd8kr79w7UhtpX", "t3SwJTa8B4zCEX6fth9BMaejp3pQW11DTB8", "t3PCnGjULLqDUq91XNAwU7aAx6v2WkAP12v",
-            "t3MAXyTGySnb6b3No3LuoVuFL3fY7recEin", "t3hbK2KY4BQ1rQuzwufyxLzSKQQPiP9XidW", "t3aF3uT8jQSmVetYwP5qLAuTnNqWJRNLQu7", "t3PWLsr8ru9MXyq7YWGAHPcY3N9t3Zp45uo",
-            "t3WzEt94EcdNXWjL8sb2KFTawZPUcL42MoX", "t3cjgEXQH2dp4Gozu6Mn45LC5HGfjrSAf9V", "t3ZmskqAyBLXkYBMGfBBpVmR3sNKN79anu3", "t3hGLeywDDaiqBro2Mi2eLD1i8LUttrBfbT",
-            "t3eQdDzPZMdN4vCziFt5zar7qp1XyMwgnD6", "t3PXk3FyBi7q48paPDLtCKdzF1zDS4bpjM3", "t3W65DrnBYmU8DPJgQ44acpz3YPwoNE8pc5", "t3Tj5a6hNPksnpcRSXS2pv1f2mrPtL2bqGb",
-            "t3heu9Ty3XwHAJbux6Bm4MakzS8jUL3EkFD", "t3WFEk3WwAXF6ByHxfLohtz22J1TUwsL6iu", "t3gxDHAf8iW7xBFB7JsScngfJjH6h3QBfot", "t3bn1o8hx4jYjxgC8Pdt6Z6oeFrPQPtT8pC",
-            "t3XHGtWbALCLfY1jAtkUpVELPJMZpqxBtgE", "t3RUBEzMhjHpM2DQLsAmpAm9ZUHUxnEQAtM", "t3KdS1RGsiDXBKebyZvwVE2pfacNj28KLqB", "t3MmVaTutnXLqyD2F6EKnDtCKs38HxkVAdH",
-            "t3LesWouCkeWkwkaQUoGnD4k1pqmn3AYkt4", "t3PmV5vRVByLMTjR1W8ZCp2xy82kpb6n99u", "t3KX34whzndhhxPKJwAyETkeVA2Q1TzBhor", "t3SPSmxWnzNYr7WQooNxkHMhVYdAKY6M5Dr",
-            "t3KpcuJDA82TZhJoygng6eq72LWBCYtp7W8", "t3cHewjCnajURPGXA74kdLUkcqtRWpN3QkG", "t3a3zS49EqTFJWfDgNQhTNNFjkkhveqQssP", "t3eunPgNGpcSqEUSgAwip3Mm5nYQcPvacvX",
-        };
+            "t3Vz22vK5z2LcKEdg16Yv4FFneEL1zg9ojd", /* main-index: 0*/
+            "t3cL9AucCajm3HXDhb5jBnJK2vapVoXsop3", /* main-index: 1*/
+            "t3fqvkzrrNaMcamkQMwAyHRjfDdM2xQvDTR", /* main-index: 2*/
+            "t3TgZ9ZT2CTSK44AnUPi6qeNaHa2eC7pUyF", /* main-index: 3*/
+            "t3SpkcPQPfuRYHsP5vz3Pv86PgKo5m9KVmx", /* main-index: 4*/
+            "t3Xt4oQMRPagwbpQqkgAViQgtST4VoSWR6S", /* main-index: 5*/
+            "t3ayBkZ4w6kKXynwoHZFUSSgXRKtogTXNgb", /* main-index: 6*/
+            "t3adJBQuaa21u7NxbR8YMzp3km3TbSZ4MGB", /* main-index: 7*/
+            "t3K4aLYagSSBySdrfAGGeUd5H9z5Qvz88t2", /* main-index: 8*/
+            "t3RYnsc5nhEvKiva3ZPhfRSk7eyh1CrA6Rk", /* main-index: 9*/
+            "t3Ut4KUq2ZSMTPNE67pBU5LqYCi2q36KpXQ", /* main-index: 10*/
+            "t3ZnCNAvgu6CSyHm1vWtrx3aiN98dSAGpnD", /* main-index: 11*/
+            "t3fB9cB3eSYim64BS9xfwAHQUKLgQQroBDG", /* main-index: 12*/
+            "t3cwZfKNNj2vXMAHBQeewm6pXhKFdhk18kD", /* main-index: 13*/
+            "t3YcoujXfspWy7rbNUsGKxFEWZqNstGpeG4", /* main-index: 14*/
+            "t3bLvCLigc6rbNrUTS5NwkgyVrZcZumTRa4", /* main-index: 15*/
+            "t3VvHWa7r3oy67YtU4LZKGCWa2J6eGHvShi", /* main-index: 16*/
+            "t3eF9X6X2dSo7MCvTjfZEzwWrVzquxRLNeY", /* main-index: 17*/
+            "t3esCNwwmcyc8i9qQfyTbYhTqmYXZ9AwK3X", /* main-index: 18*/
+            "t3M4jN7hYE2e27yLsuQPPjuVek81WV3VbBj", /* main-index: 19*/
+            "t3gGWxdC67CYNoBbPjNvrrWLAWxPqZLxrVY", /* main-index: 20*/
+            "t3LTWeoxeWPbmdkUD3NWBquk4WkazhFBmvU", /* main-index: 21*/
+            "t3P5KKX97gXYFSaSjJPiruQEX84yF5z3Tjq", /* main-index: 22*/
+            "t3f3T3nCWsEpzmD35VK62JgQfFig74dV8C9", /* main-index: 23*/
+            "t3Rqonuzz7afkF7156ZA4vi4iimRSEn41hj", /* main-index: 24*/
+            "t3fJZ5jYsyxDtvNrWBeoMbvJaQCj4JJgbgX", /* main-index: 25*/
+            "t3Pnbg7XjP7FGPBUuz75H65aczphHgkpoJW", /* main-index: 26*/
+            "t3WeKQDxCijL5X7rwFem1MTL9ZwVJkUFhpF", /* main-index: 27*/
+            "t3Y9FNi26J7UtAUC4moaETLbMo8KS1Be6ME", /* main-index: 28*/
+            "t3aNRLLsL2y8xcjPheZZwFy3Pcv7CsTwBec", /* main-index: 29*/
+            "t3gQDEavk5VzAAHK8TrQu2BWDLxEiF1unBm", /* main-index: 30*/
+            "t3Rbykhx1TUFrgXrmBYrAJe2STxRKFL7G9r", /* main-index: 31*/
+            "t3aaW4aTdP7a8d1VTE1Bod2yhbeggHgMajR", /* main-index: 32*/
+            "t3YEiAa6uEjXwFL2v5ztU1fn3yKgzMQqNyo", /* main-index: 33*/
+            "t3g1yUUwt2PbmDvMDevTCPWUcbDatL2iQGP", /* main-index: 34*/
+            "t3dPWnep6YqGPuY1CecgbeZrY9iUwH8Yd4z", /* main-index: 35*/
+            "t3QRZXHDPh2hwU46iQs2776kRuuWfwFp4dV", /* main-index: 36*/
+            "t3enhACRxi1ZD7e8ePomVGKn7wp7N9fFJ3r", /* main-index: 37*/
+            "t3PkLgT71TnF112nSwBToXsD77yNbx2gJJY", /* main-index: 38*/
+            "t3LQtHUDoe7ZhhvddRv4vnaoNAhCr2f4oFN", /* main-index: 39*/
+            "t3fNcdBUbycvbCtsD2n9q3LuxG7jVPvFB8L", /* main-index: 40*/
+            "t3dKojUU2EMjs28nHV84TvkVEUDu1M1FaEx", /* main-index: 41*/
+            "t3aKH6NiWN1ofGd8c19rZiqgYpkJ3n679ME", /* main-index: 42*/
+            "t3MEXDF9Wsi63KwpPuQdD6by32Mw2bNTbEa", /* main-index: 43*/
+            "t3WDhPfik343yNmPTqtkZAoQZeqA83K7Y3f", /* main-index: 44*/
+            "t3PSn5TbMMAEw7Eu36DYctFezRzpX1hzf3M", /* main-index: 45*/
+            "t3R3Y5vnBLrEn8L6wFjPjBLnxSUQsKnmFpv", /* main-index: 46*/
+            "t3Pcm737EsVkGTbhsu2NekKtJeG92mvYyoN", /* main-index: 47*/
+//            "t3PZ9PPcLzgL57XRSG5ND4WNBC9UTFb8DXv", /* main-index: 48*/
+//            "t3L1WgcyQ95vtpSgjHfgANHyVYvffJZ9iGb", /* main-index: 49*/
+//            "t3JtoXqsv3FuS7SznYCd5pZJGU9di15mdd7", /* main-index: 50*/
+//            "t3hLJHrHs3ytDgExxr1mD8DYSrk1TowGV25", /* main-index: 51*/
+//            "t3fmYHU2DnVaQgPhDs6TMFVmyC3qbWEWgXN", /* main-index: 52*/
+//            "t3T4WmAp6nrLkJ24iPpGeCe1fSWTPv47ASG", /* main-index: 53*/
+//            "t3fP6GrDM4QVwdjFhmCxGNbe7jXXXSDQ5dv", /* main-index: 54*/
+};
         assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
     }
 };
