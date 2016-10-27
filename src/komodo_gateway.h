@@ -81,14 +81,15 @@ void komodo_gateway_deposit(uint64_t value,int32_t shortflag,char *symbol,uint64
 
 int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain context
 {
-    int32_t iter,n=0; queue_t *Q; struct pax_transaction *ptr;
+    int32_t iter,n=0; queue_t *Q; struct pax_transaction *ptr; struct queueitem *item;
     for (iter=0; iter<2; iter++)
     {
         Q = (iter == 0) ? &DepositsQ : &PendingsQ;
         portable_mutex_lock(&Q->mutex);
         if ( Q->list != 0 )
         {
-            DL_FOREACH(Q->list,&ptr->DL.DL)
+            item = &ptr->DL;
+            DL_FOREACH(Q->list,item)
             {
                 if ( memcmp(&ptr->txid,&txid,sizeof(txid)) == 0 && ptr->vout == vout )
                 {
