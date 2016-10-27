@@ -1056,7 +1056,7 @@ double OS_milliseconds()
     return(millis);
 }
 
-void OS_portable_randombytes(unsigned char *x,long xlen)
+void OS_randombytes(unsigned char *x,long xlen)
 {
     static int fd = -1;
     int32_t i;
