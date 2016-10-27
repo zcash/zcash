@@ -115,7 +115,6 @@ int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain c
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
 {
     uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
-    //printf("komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
 #ifdef KOMODO_ISSUER
     tokomodo = 1;
 #endif
@@ -152,22 +151,29 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 #endif
         }
     }
-    else if ( opretbuf[0] == 'I' )
+    else
     {
-        uint256 issuedtxid; uint16_t issuedvout;
-        opretbuf++, opretlen--;
-        for (i=len=0; i<opretlen/34; i++)
+        for (i=0; i<opreturnlen; i++)
+            printf("%02x",opretbuf[i])
+        printf(" komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
+        
+        if ( opretbuf[0] == 'I' )
         {
-            for (j=0; j<32; j++)
+            uint256 issuedtxid; uint16_t issuedvout;
+            opretbuf++, opretlen--;
+            for (i=len=0; i<opretlen/34; i++)
             {
-                ((uint8_t *)&issuedtxid)[j] = opretbuf[len++];
-                printf("%02x",((uint8_t *)&issuedtxid)[j]);
+                for (j=0; j<32; j++)
+                {
+                    ((uint8_t *)&issuedtxid)[j] = opretbuf[len++];
+                    printf("%02x",((uint8_t *)&issuedtxid)[j]);
+                }
+                issuedvout = opretbuf[len++];
+                issuedvout = (vout << 8) | opretbuf[len++];
+                printf(" issuedtxid v%d i.%d opretlen.%d\n",issuedvout,i,opretlen);
+                if ( komodo_gateway_depositremove(issuedtxid,issuedvout) == 0 )
+                    printf("error removing deposit\n");
             }
-            issuedvout = opretbuf[len++];
-            issuedvout = (vout << 8) | opretbuf[len++];
-            printf(" issuedtxid v%d i.%d opretlen.%d\n",issuedvout,i,opretlen);
-            if ( komodo_gateway_depositremove(issuedtxid,issuedvout) == 0 )
-                printf("error removing deposit\n");
         }
     }
     return(typestr);
@@ -228,7 +234,6 @@ int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,
                             else if ( len <= sizeof(script) )
                             {
                                 decode_hex(script,len,hexstr);
-                                printf("call voutupdate vout.%d\n",vout);
                                 komodo_gateway_voutupdate(symbol,isspecial,height,txi,txid,vout,n,value,script,len);
                             }
                         }
