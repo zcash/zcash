@@ -1139,7 +1139,7 @@ void *mycalloc(uint8_t type,int32_t n,long itemsize)
     while ( (item= (struct allocitem *)calloc(1,sizeof(struct allocitem) + allocsize + 16)) == 0 )
     {
         char str[65];
-        printf("mycalloc.%c: need to wait for memory.(%d,%ld) %s to be available\n",type,n,itemsize,mbstr(str,allocsize));
+        printf("mycalloc.%c: need to wait for memory.(%d,%ld) to be available\n",type,n,itemsize);
         sleep(10);
     }
     item->allocsize = (uint32_t)allocsize;
@@ -1239,7 +1239,7 @@ void *queue_clone(queue_t *clone,queue_t *queue,int32_t size)
     {
         DL_FOREACH(queue->list,item)
         {
-            ptr = mycalloc('c',1,sizeof(*ptr));
+            ptr = (struct queueitem *)mycalloc('c',1,sizeof(*ptr));
             memcpy(ptr,item,size);
             queue_enqueue(queue->name,clone,ptr,0);
         }
@@ -1259,9 +1259,29 @@ int32_t queue_size(queue_t *queue)
 	return count;
 }
 
+void *queueitem(char *str)
+{
+    struct queueitem *item; int32_t n,allocsize; char *data; uint8_t type = 'y';
+    n = (uint32_t)strlen(str) + 1;
+    allocsize = (uint32_t)(sizeof(struct queueitem) + n);
+    while ( (item= (struct queueitem *)calloc(1,allocsize)) == 0 )
+    {
+        char str[65];
+        printf("queueitem: need to wait for memory.(%d,%ld) to be available\n",n,(long)sizeof(*item));
+        sleep(10);
+    }
+    item->allocsize = (uint32_t)allocsize;
+    item->type = type;
+    data = (char *)(long)((long)item + sizeof(*item));
+    memcpy(data,str,n);
+    //printf("(%c) queueitem.%p itemdata.%p n.%d allocsize.%d\n",type,item,data,n,allocsize);
+    //portable_mutex_unlock(&MEMmutex);
+    return(data);
+}
+
 void iguana_initQ(queue_t *Q,char *name)
 {
-    char *tst,*str = "need to init each Q when single threaded";
+    char *tst,*str = (char *)"need to init each Q when single threaded";
     memset(Q,0,sizeof(*Q));
     strcpy(Q->name,name);
     queue_enqueue(name,Q,queueitem(str),1);
