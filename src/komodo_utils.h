@@ -1088,7 +1088,7 @@ void OS_portable_randombytes(unsigned char *x,long xlen)
 
 void komodo_configfile(char *symbol,uint16_t port)
 {
-    FILE *fp; uint8_t buf2[512]; char fname[512],buf[128],line[4096],*str,*rpcuser,*rpcpassword; uint32_t crc,r,r2;
+    FILE *fp; uint8_t buf2[512]; char fname[512],buf[128],line[4096],*str,*rpcuser,*rpcpassword; uint32_t crc,r,r2,i;
     r = (uint32_t)time(NULL);
     r2 = OS_milliseconds();
     memcpy(buf,&r,sizeof(r));
