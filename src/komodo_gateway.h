@@ -88,7 +88,7 @@ int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain c
         portable_mutex_lock(&Q->mutex);
         if ( Q->list != 0 )
         {
-            DL_FOREACH(Q->list,&ptr->DL)
+            DL_FOREACH(Q->list,&ptr->DL.DL)
             {
                 if ( memcmp(&ptr->txid,&txid,sizeof(txid)) == 0 && ptr->vout == vout )
                 {
