@@ -1058,7 +1058,7 @@ double OS_milliseconds()
 
 void komodo_configfile(char *symbol,uint16_t port)
 {
-    FILE *fp; char fname[512],buf[128],buf2[32],line[4096],*str,*rpcuser,*rpcpassword; uint32_t crc,r,r2;
+    FILE *fp; long long buf2[8]; char fname[512],buf[128],line[4096],*str,*rpcuser,*rpcpassword; uint32_t crc,r,r2;
     r = (uint32_t)time(NULL);
     r2 = OS_milliseconds();
     memcpy(buf,&r,sizeof(r));
