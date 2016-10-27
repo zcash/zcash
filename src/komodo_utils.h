@@ -13,14 +13,33 @@
  *                                                                            *
  ******************************************************************************/
 
+#define SATOSHIDEN ((uint64_t)100000000L)
+#define dstr(x) ((double)(x) / SATOSHIDEN)
+#define portable_mutex_t pthread_mutex_t
+#define portable_mutex_init(ptr) pthread_mutex_init(ptr,NULL)
+#define portable_mutex_lock pthread_mutex_lock
+#define portable_mutex_unlock pthread_mutex_unlock
+
+struct allocitem { uint32_t allocsize,type; };
+struct queueitem { struct queueitem *next,*prev; uint32_t allocsize,type;  };
+
+typedef struct queue
+{
+	struct queueitem *list;
+	pthread_mutex_t mutex;
+    char name[64],initflag;
+} queue_t;
+
 union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
 typedef union _bits256 bits256;
 
 #include "mini-gmp.c"
 #include "uthash.h"
+#include "utlist.h"
 
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
+#define CRYPTO777_RMD160STR "f1dce4182fce875748c4986b240ff7d7bc3fffb0"
 
 #define KOMODO_PUBTYPE 60
 
@@ -736,7 +755,7 @@ int32_t bitcoin_addr2rmd160(uint8_t *addrtypep,uint8_t rmd160[20],char *coinaddr
             }
             for (i=0; i<len; i++)
                 printf("%02x ",buf[i]);
-            char str[65]; printf("\nhex checkhash.(%s) len.%d mismatch %02x %02x %02x %02x vs %02x %02x %02x %02x\n",coinaddr,len,buf[len-1]&0xff,buf[len-2]&0xff,buf[len-3]&0xff,buf[len-4]&0xff,hash.bytes[31],hash.bytes[30],hash.bytes[29],hash.bytes[28]);
+            printf("\nhex checkhash.(%s) len.%d mismatch %02x %02x %02x %02x vs %02x %02x %02x %02x\n",coinaddr,len,buf[len-1]&0xff,buf[len-2]&0xff,buf[len-3]&0xff,buf[len-4]&0xff,hash.bytes[31],hash.bytes[30],hash.bytes[29],hash.bytes[28]);
         }
     }
 	return(0);
@@ -832,6 +851,41 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex)
     return(n + adjust);
 }
 
+char hexbyte(int32_t c)
+{
+    c &= 0xf;
+    if ( c < 10 )
+        return('0'+c);
+    else if ( c < 16 )
+        return('a'+c-10);
+    else return(0);
+}
+
+int32_t init_hexbytes_noT(char *hexbytes,unsigned char *message,long len)
+{
+    int32_t i;
+    if ( len <= 0 )
+    {
+        hexbytes[0] = 0;
+        return(1);
+    }
+    for (i=0; i<len; i++)
+    {
+        hexbytes[i*2] = hexbyte((message[i]>>4) & 0xf);
+        hexbytes[i*2 + 1] = hexbyte(message[i] & 0xf);
+        //printf("i.%d (%02x) [%c%c]\n",i,message[i],hexbytes[i*2],hexbytes[i*2+1]);
+    }
+    hexbytes[len*2] = 0;
+    //printf("len.%ld\n",len*2+1);
+    return((int32_t)len*2+1);
+}
+
+char *bits256_str(char hexstr[65],bits256 x)
+{
+    init_hexbytes_noT(hexstr,x.bytes,sizeof(x));
+    return(hexstr);
+}
+
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp)
 {
     int32_t i; uint64_t x;
@@ -883,6 +937,23 @@ int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *
     return(len);
 }
 
+int32_t komodo_scriptitemlen(int32_t *opretlenp,uint8_t *script)
+{
+    int32_t opretlen,len = 0;
+    if ( (opretlen= script[len++]) >= 0x4c )
+    {
+        if ( opretlen == 0x4c )
+            opretlen = script[len++];
+        else if ( opretlen == 0x4d )
+        {
+            opretlen = script[len++];
+            opretlen = (opretlen << 8) | script[len++];
+        }
+    }
+    *opretlenp = opretlen;
+    return(len);
+}
+
 int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen)
 {
     int32_t offset = 0;
@@ -902,7 +973,260 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
             script[offset++] = opretlen;
         }
     } else script[offset++] = opretlen;
-    script[offset] = type; // covered by opretlen
-    memcpy(&script[offset],opret,opretlen);
-    return(opretlen + offset);
+    script[offset++] = type; // covered by opretlen
+    memcpy(&script[offset],opret,opretlen-1);
+    return(offset + opretlen - 1);
+}
+
+long _stripwhite(char *buf,int accept)
+{
+    int32_t i,j,c;
+    if ( buf == 0 || buf[0] == 0 )
+        return(0);
+    for (i=j=0; buf[i]!=0; i++)
+    {
+        buf[j] = c = buf[i];
+        if ( c == accept || (c != ' ' && c != '\n' && c != '\r' && c != '\t' && c != '\b') )
+            j++;
+    }
+    buf[j] = 0;
+    return(j);
+}
+
+char *clonestr(char *str)
+{
+    char *clone;
+    if ( str == 0 || str[0] == 0 )
+    {
+        printf("warning cloning nullstr.%p\n",str);
+#ifdef __APPLE__
+        while ( 1 ) sleep(1);
+#endif
+        str = (char *)"<nullstr>";
+    }
+    clone = (char *)malloc(strlen(str)+16);
+    strcpy(clone,str);
+    return(clone);
+}
+
+int32_t safecopy(char *dest,char *src,long len)
+{
+    int32_t i = -1;
+    if ( src != 0 && dest != 0 && src != dest )
+    {
+        if ( dest != 0 )
+            memset(dest,0,len);
+        for (i=0; i<len&&src[i]!=0; i++)
+            dest[i] = src[i];
+        if ( i == len )
+        {
+            printf("safecopy: %s too long %ld\n",src,len);
+#ifdef __APPLE__
+            //getchar();
+#endif
+            return(-1);
+        }
+        dest[i] = 0;
+    }
+    return(i);
+}
+
+char *parse_conf_line(char *line,char *field)
+{
+    line += strlen(field);
+    for (; *line!='='&&*line!=0; line++)
+        break;
+    if ( *line == 0 )
+        return(0);
+    if ( *line == '=' )
+        line++;
+    while ( line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n' || line[strlen(line)-1] == ' ' )
+        line[strlen(line)-1] = 0;
+    //printf("LINE.(%s)\n",line);
+    _stripwhite(line,0);
+    return(clonestr(line));
+}
+
+void komodo_configfile(char *symbol,uint16_t port)
+{
+    FILE *fp; char fname[512],buf[128],line[4096],*str,*rpcuser,*rpcpassword;
+    srand((uint32_t)time(NULL));
+    sprintf(buf,"%s.conf",symbol);
+    BITCOIND_PORT = port;
+#ifdef WIN32
+    sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),buf);
+#else
+    sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),buf);
+#endif
+    if ( (fp= fopen(fname,"rb")) == 0 )
+    {
+        if ( (fp= fopen(fname,"wb")) != 0 )
+        {
+            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%u\nrpcport=%u\nserver=1\ntxindex=1\n",rand(),rand(),port);
+            fclose(fp);
+            printf("Created (%s)\n",fname);
+        }
+    }
+    else
+    {
+        fclose(fp);
+        strcpy(fname,GetDataDir(false).string().c_str());
+#ifdef WIN32
+        while ( fname[strlen(fname)-1] != '\\' )
+            fname[strlen(fname)-1] = 0;
+        strcat(fname,".komodo/komodo.conf");
+#else
+        while ( fname[strlen(fname)-1] != '/' )
+            fname[strlen(fname)-1] = 0;
+        strcat(fname,".komodo/komodo.conf");
+#endif
+        printf("KOMODO.(%s)\n",fname);
+        if ( (fp= fopen(fname,"rb")) != 0 )
+        {
+            rpcuser = rpcpassword = 0;
+            while ( fgets(line,sizeof(line),fp) != 0 )
+            {
+                if ( line[0] == '#' )
+                    continue;
+                //printf("line.(%s) %p %p\n",line,strstr(line,(char *)"rpcuser"),strstr(line,(char *)"rpcpassword"));
+                if ( (str= strstr(line,(char *)"rpcuser")) != 0 )
+                    rpcuser = parse_conf_line(str,(char *)"rpcuser");
+                else if ( (str= strstr(line,(char *)"rpcpassword")) != 0 )
+                    rpcpassword = parse_conf_line(str,(char *)"rpcpassword");
+            }
+            if ( rpcuser != 0 && rpcpassword != 0 )
+            {
+                sprintf(KMDUSERPASS,"%s:%s",rpcuser,rpcpassword);
+            }
+            printf("rpcuser.(%s) rpcpassword.(%s) KMDUSERPASS.(%s) %u\n",rpcuser,rpcpassword,KMDUSERPASS,port);
+            if ( rpcuser != 0 )
+                free(rpcuser);
+            if ( rpcpassword != 0 )
+                free(rpcpassword);
+            fclose(fp);
+        } else printf("couldnt open.(%s)\n",fname);
+    }
+}
+
+double OS_milliseconds()
+{
+    struct timeval tv; double millis;
+    gettimeofday(&tv,NULL);
+    millis = ((double)tv.tv_sec * 1000. + (double)tv.tv_usec / 1000.);
+    //printf("tv_sec.%ld usec.%d %f\n",tv.tv_sec,tv.tv_usec,millis);
+    return(millis);
+}
+
+void lock_queue(queue_t *queue)
+{
+    if ( queue->initflag == 0 )
+    {
+        portable_mutex_init(&queue->mutex);
+        queue->initflag = 1;
+    }
+	portable_mutex_lock(&queue->mutex);
+}
+
+void queue_enqueue(char *name,queue_t *queue,struct queueitem *item)
+{
+    if ( queue->name[0] == 0 && name != 0 && name[0] != 0 )
+        strcpy(queue->name,name);
+    if ( item == 0 )
+    {
+        printf("FATAL type error: queueing empty value\n");
+        return;
+    }
+    lock_queue(queue);
+    DL_APPEND(queue->list,item);
+    portable_mutex_unlock(&queue->mutex);
+}
+
+struct queueitem *queue_dequeue(queue_t *queue)
+{
+    struct queueitem *item = 0;
+    lock_queue(queue);
+    if ( queue->list != 0 )
+    {
+        item = queue->list;
+        DL_DELETE(queue->list,item);
+    }
+	portable_mutex_unlock(&queue->mutex);
+    return(item);
+}
+
+void *queue_delete(queue_t *queue,struct queueitem *copy,int32_t copysize)
+{
+    struct queueitem *item = 0;
+    lock_queue(queue);
+    if ( queue->list != 0 )
+    {
+        DL_FOREACH(queue->list,item)
+        {
+            if ( item == copy || (item->allocsize == copysize && memcmp((void *)((long)item + sizeof(struct queueitem)),(void *)((long)copy + sizeof(struct queueitem)),copysize) == 0) )
+            {
+                DL_DELETE(queue->list,item);
+                portable_mutex_unlock(&queue->mutex);
+                printf("name.(%s) deleted item.%p list.%p\n",queue->name,item,queue->list);
+                return(item);
+            }
+        }
+    }
+	portable_mutex_unlock(&queue->mutex);
+    return(0);
+}
+
+void *queue_free(queue_t *queue)
+{
+    struct queueitem *item = 0;
+    lock_queue(queue);
+    if ( queue->list != 0 )
+    {
+        DL_FOREACH(queue->list,item)
+        {
+            DL_DELETE(queue->list,item);
+            free(item);
+        }
+        //printf("name.(%s) dequeue.%p list.%p\n",queue->name,item,queue->list);
+    }
+	portable_mutex_unlock(&queue->mutex);
+    return(0);
+}
+
+void *queue_clone(queue_t *clone,queue_t *queue,int32_t size)
+{
+    struct queueitem *ptr,*item = 0;
+    lock_queue(queue);
+    if ( queue->list != 0 )
+    {
+        DL_FOREACH(queue->list,item)
+        {
+            ptr = (struct queueitem *)calloc(1,sizeof(*ptr));
+            memcpy(ptr,item,size);
+            queue_enqueue(queue->name,clone,ptr);
+        }
+        //printf("name.(%s) dequeue.%p list.%p\n",queue->name,item,queue->list);
+    }
+	portable_mutex_unlock(&queue->mutex);
+    return(0);
+}
+
+int32_t queue_size(queue_t *queue)
+{
+    int32_t count = 0;
+    struct queueitem *tmp;
+    lock_queue(queue);
+    DL_COUNT(queue->list,tmp,count);
+    portable_mutex_unlock(&queue->mutex);
+	return count;
+}
+
+void iguana_initQ(queue_t *Q,char *name)
+{
+    struct queueitem *item,*I;
+    memset(Q,0,sizeof(*Q));
+    I = (struct queueitem *)calloc(1,sizeof(*I));
+    strcpy(Q->name,name);
+    queue_enqueue(name,Q,I);
+    if ( (item= queue_dequeue(Q)) != 0 )
+        free(item);
 }

@@ -85,8 +85,6 @@ void komodo_nutxoadd(int32_t height,int32_t notaryid,uint256 txhash,uint64_t vou
         np->notaryid = notaryid;
         HASH_ADD_KEYPTR(hh,NUTXOS,&np->txhash,sizeof(np->txhash),np);
         printf("Add NUTXO[%d] <- %s notaryid.%d t%u %s %llx\n",Num_nutxos,Notaries[notaryid][0],notaryid,komodo_txtime(txhash),txhash.ToString().c_str(),(long long)voutmask);
-        //if ( addflag != 0 )
-        //    komodo_stateupdate(height,0,0,notaryid,txhash,voutmask,numvouts,0,0);
         Num_nutxos++;
         pthread_mutex_unlock(&komodo_mutex);
     }
@@ -135,6 +133,8 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
     // -1 if not notary, 0 if notary, 1 if special notary
     struct knotary_entry *kp; int32_t numnotaries,modval = -1;
     *notaryidp = -1;
+    if ( height < 0 || height/KOMODO_ELECTION_GAP >= sizeof(Pubkeys)/sizeof(*Pubkeys) )
+        return(-1);
     pthread_mutex_lock(&komodo_mutex);
     HASH_FIND(hh,Pubkeys[height/KOMODO_ELECTION_GAP].Notaries,pubkey33,33,kp);
     pthread_mutex_unlock(&komodo_mutex);
@@ -198,6 +198,8 @@ void komodo_init()
     if ( didinit == 0 )
     {
         didinit = 1;
+        iguana_initQ(&DepositsQ,(char *)"Deposits");
+        iguana_initQ(&PendingsQ,(char *)"Pendings");
         pthread_mutex_init(&komodo_mutex,NULL);
         decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
         n = (int32_t)(sizeof(Notaries)/sizeof(*Notaries));
@@ -209,6 +211,6 @@ void komodo_init()
         }
         komodo_notarysinit(0,pubkeys,k);
         memset(&zero,0,sizeof(zero));
-        komodo_stateupdate(0,0,0,0,zero,0,0,0,0);
+        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0);
     }
 }

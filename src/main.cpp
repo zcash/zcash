@@ -556,6 +556,7 @@ uint8_t NOTARY_PUBKEY33[33];
 //#define KOMODO_ENABLE_INTEREST enabling this is a hardfork
 #define KOMODO_SOURCE "KMD"
 #define KOMODO_PAX
+#define KOMODO_ZCASH
 #include "komodo.h"
 
 //////////////////////////////////////////////////////////////////////////////
@@ -719,13 +720,13 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
     }
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
-        if ( txin.nSequence == 0xfffffffe && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime > nBlockTime )
+        if ( txin.nSequence == 0xfffffffe && (((int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime > nBlockTime) || ((int64_t)tx.nLockTime < LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime > nBlockHeight)) )
         {
             
         }
         else if (!txin.IsFinal())
         {
-            printf("non-final txin seq.%x\n",txin.nSequence);
+            printf("non-final txin seq.%x locktime.%u vs nTime.%u\n",txin.nSequence,(uint32_t)tx.nLockTime,(uint32_t)nBlockTime);
             return false;
         }
     }
@@ -1151,7 +1152,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             if (!view.HaveCoins(txin.prevout.hash)) {
                 if (pfMissingInputs)
                     *pfMissingInputs = true;
-                fprintf(stderr,"missing inputs\n");
+                //fprintf(stderr,"missing inputs\n");
                 return false;
             }
         }

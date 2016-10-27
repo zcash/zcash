@@ -14,7 +14,6 @@
  ******************************************************************************/
 
 #define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))   // 5%
-#define dstr(x) ((double)(x)/COIN)
 
 uint64_t komodo_accrued_interest(int32_t height,int64_t paidinterest)
 {
@@ -46,6 +45,7 @@ uint64_t komodo_accrued_interest(int32_t height,int64_t paidinterest)
             }
         }
     }
+    return(0);
 }
 
 uint64_t komodo_moneysupply(int32_t height)

@@ -131,7 +131,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
         if ( pindex != 0 && tx.nLockTime != 0 )
         {
             interest = komodo_interest(pindex->nHeight,txout.nValue,tx.nLockTime,pindex->nTime);
-            fprintf(stderr,"TxtoJSON interest %llu %.8f\n",(long long)interest,(double)interest/COIN);
+            //fprintf(stderr,"TxtoJSON interest %llu %.8f\n",(long long)interest,(double)interest/COIN);
             out.push_back(Pair("interest", ValueFromAmount(interest)));
         }
         out.push_back(Pair("n", (int64_t)i));

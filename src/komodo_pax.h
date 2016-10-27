@@ -71,20 +71,36 @@ void pax_rank(uint64_t *ranked,uint32_t *pvals)
 
 int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,double *BTCUSDp,double *CNYUSDp,uint32_t *pvals)
 {
-    uint32_t kmdbtc,btcusd,cnyusd; int32_t i,n,len = 0;
+    uint32_t kmdbtc,btcusd,cnyusd; int32_t i,n,nonz,len = 0;
+    if ( data[0] == 'P' && data[5] == 35 )
+        data++;
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)timestampp);
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&n);
+    if ( n != 35 )
+    {
+        printf("dpow_readprices illegal n.%d\n",n);
+        return(-1);
+    }
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&kmdbtc); // /= 1000
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&btcusd); // *= 1000
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&cnyusd);
     *KMDBTCp = ((double)kmdbtc / (1000000000. * 1000.));
     *BTCUSDp = ((double)btcusd / (1000000000. / 1000.));
     *CNYUSDp = ((double)cnyusd / 1000000000.);
-    for (i=0; i<n-3; i++)
+    for (i=nonz=0; i<n-3; i++)
     {
+        if ( pvals[i] != 0 )
+            nonz++;
+        //else if ( nonz != 0 )
+        //    printf("pvals[%d] is zero\n",i);
         len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&pvals[i]);
         //printf("%u ",pvals[i]);
     }
+    /*if ( nonz < n-3 )
+    {
+        //printf("nonz.%d n.%d retval -1\n",nonz,n);
+        return(-1);
+    }*/
     pvals[i++] = kmdbtc;
     pvals[i++] = btcusd;
     pvals[i++] = cnyusd;
@@ -95,7 +111,7 @@ int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,doubl
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize)
 {
     static uint32_t lastcrc;
-    FILE *fp; char fname[512]; uint32_t crc32,check,timestamp; int32_t i,n,retval,fsize,len=0; uint8_t data[8192];
+    FILE *fp; char fname[512]; uint32_t crc32,check,timestamp; int32_t i,n=0,retval,fsize,len=0; uint8_t data[8192];
 #ifdef WIN32
     sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"komodofeed");
 #else
@@ -115,24 +131,26 @@ int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize)
                 if ( check == crc32 )
                 {
                     double KMDBTC,BTCUSD,CNYUSD; uint32_t pvals[128];
-                    dpow_readprices(&data[len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
-                    if ( 0 && lastcrc != crc32 )
+                    if ( dpow_readprices(&data[len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals) > 0 )
                     {
-                        for (i=0; i<32; i++)
-                            printf("%u ",pvals[i]);
-                        printf("t%u n.%d KMD %f BTC %f CNY %f (%f)\n",timestamp,n,KMDBTC,BTCUSD,CNYUSD,CNYUSD!=0?1./CNYUSD:0);
-                    }
-                    if ( timestamp > time(NULL)-600 )
-                    {
-                        n = komodo_opreturnscript(opret,'P',data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
                         if ( 0 && lastcrc != crc32 )
                         {
-                            for (i=0; i<n; i++)
-                                printf("%02x",opret[i]);
-                            printf(" coinbase opret[%d] crc32.%u:%u\n",n,crc32,check);
+                            for (i=0; i<32; i++)
+                                printf("%u ",pvals[i]);
+                            printf("t%u n.%d KMD %f BTC %f CNY %f (%f)\n",timestamp,n,KMDBTC,BTCUSD,CNYUSD,CNYUSD!=0?1./CNYUSD:0);
                         }
-                    } //else printf("t%u too old for %u\n",timestamp,(uint32_t)time(NULL));
-                    lastcrc = crc32;
+                        if ( timestamp > time(NULL)-600 )
+                        {
+                            n = komodo_opreturnscript(opret,'P',data+sizeof(crc32),(int32_t)(fsize-sizeof(crc32)));
+                            if ( 0 && lastcrc != crc32 )
+                            {
+                                for (i=0; i<n; i++)
+                                    printf("%02x",opret[i]);
+                                printf(" coinbase opret[%d] crc32.%u:%u\n",n,crc32,check);
+                            }
+                        } //else printf("t%u too old for %u\n",timestamp,(uint32_t)time(NULL));
+                        lastcrc = crc32;
+                    }
                 } else printf("crc32 %u mismatch %u\n",crc32,check);
             } else printf("fread.%d error != fsize.%d\n",retval,fsize);
         } else printf("fsize.%d > maxsize.%d or data[%d]\n",fsize,maxsize,(int32_t)sizeof(data));
@@ -153,14 +171,29 @@ int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize)
  return(val32);
  }*/
 
-int32_t PAX_pubkey(uint8_t *pubkey33,uint8_t addrtype,uint8_t rmd160[20],char fiat[4],uint8_t shortflag,int32_t fiatoshis)
+int32_t PAX_pubkey(int32_t rwflag,uint8_t *pubkey33,uint8_t *addrtypep,uint8_t rmd160[20],char fiat[4],uint8_t *shortflagp,int64_t *fiatoshisp)
 {
-    memset(pubkey33,0,33);
-    pubkey33[0] = 0x02 | (shortflag != 0);
-    memcpy(&pubkey33[1],fiat,3);
-    iguana_rwnum(1,&pubkey33[4],sizeof(fiatoshis),(void *)&fiatoshis);
-    pubkey33[12] = addrtype;
-    memcpy(&pubkey33[13],rmd160,20);
+    if ( rwflag != 0 )
+    {
+        memset(pubkey33,0,33);
+        pubkey33[0] = 0x02 | (*shortflagp != 0);
+        memcpy(&pubkey33[1],fiat,3);
+        iguana_rwnum(rwflag,&pubkey33[4],sizeof(*fiatoshisp),(void *)fiatoshisp);
+        pubkey33[12] = *addrtypep;
+        memcpy(&pubkey33[13],rmd160,20);
+    }
+    else
+    {
+        *shortflagp = (pubkey33[0] == 0x03);
+        memcpy(fiat,&pubkey33[1],3);
+        fiat[3] = 0;
+        iguana_rwnum(rwflag,&pubkey33[4],sizeof(*fiatoshisp),(void *)fiatoshisp);
+        if ( *shortflagp != 0 )
+            *fiatoshisp = -(*fiatoshisp);
+        *addrtypep = pubkey33[12];
+        memcpy(rmd160,&pubkey33[13],20);
+    }
+    return(33);
 }
 
 double PAX_val(uint32_t pval,int32_t baseid)
@@ -173,7 +206,7 @@ double PAX_val(uint32_t pval,int32_t baseid)
 
 void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
 {
-    int32_t i,nonz; double KMDBTC,BTCUSD,CNYUSD; uint32_t kmdbtc,btcusd,cnyusd;
+    int32_t i,nonz; uint32_t kmdbtc,btcusd,cnyusd; double KMDBTC,BTCUSD,CNYUSD;
     if ( numpvals >= 35 )
     {
         for (nonz=i=0; i<32; i++)
@@ -194,7 +227,8 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
             PVALS[36 * NUM_PRICES] = height;
             memcpy(&PVALS[36 * NUM_PRICES + 1],pvals,sizeof(*pvals) * 35);
             NUM_PRICES++;
-            //printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES);
+            if ( 0 )
+                printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d (%llu %llu %llu)\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES,(long long)kmdbtc,(long long)btcusd,(long long)cnyusd);
         }
     }
 }
@@ -214,7 +248,7 @@ int32_t komodo_baseid(char *origbase)
 
 uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t basevolume)
 {
-    uint32_t pvalb,pvalr,kmdbtc,btcusd; uint64_t usdvol,baseusd,usdkmd,baserel,sum,ranked[32]; int32_t i;
+    uint32_t pvalb,pvalr,kmdbtc,btcusd; uint64_t usdvol,baseusd,usdkmd,baserel,ranked[32];
     if ( basevolume > 1000000*COIN )
         return(0);
     if ( (pvalb= pvals[baseid]) != 0 )
@@ -252,7 +286,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
 
 uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume)
 {
-    int32_t baseid=-1,relid=-1,i,ht; uint32_t *ptr;
+    int32_t baseid=-1,relid=-1,i; uint32_t *ptr;
     if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
     {
         for (i=NUM_PRICES-1; i>=0; i--)
@@ -267,7 +301,7 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume
 
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel)
 {
-    int32_t baseid=-1,relid=-1,i,ht,num = 0; uint32_t *ptr;
+    int32_t baseid=-1,relid=-1,i,num = 0; uint32_t *ptr;
     if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
     {
         for (i=NUM_PRICES-1; i>=0; i--)
@@ -283,11 +317,19 @@ int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *bas
     return(num);
 }
 
-uint64_t PAX_fiatdest(char *fiatbuf,char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *origbase,int64_t fiatoshis)
+void komodo_paxpricefeed(int32_t height,uint8_t *pricefeed,int32_t opretlen)
 {
-    uint8_t shortflag = 0; char base[4]; int32_t i,baseid,relid; uint8_t addrtype,rmd160[20]; uint64_t komodoshis = 0;
-    fiatbuf[0] = 0;
-    if ( strcmp(base,(char *)"KMD") == 0 || strcmp(base,(char *)"kmd") == 0 )
+    double KMDBTC,BTCUSD,CNYUSD; uint32_t numpvals,timestamp,pvals[128]; uint256 zero;
+    numpvals = dpow_readprices(pricefeed,&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
+    memset(&zero,0,sizeof(zero));
+    komodo_stateupdate(height,0,0,0,zero,0,0,pvals,numpvals,0,0,0,0,0);
+    //printf("komodo_paxpricefeed vout OP_RETURN.%d prices numpvals.%d opretlen.%d\n",height,numpvals,opretlen);
+}
+
+uint64_t PAX_fiatdest(int32_t tokomodo,char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *origbase,int64_t fiatoshis)
+{
+    uint8_t shortflag = 0; char base[4]; int32_t i,baseid; uint8_t addrtype,rmd160[20]; int64_t komodoshis = 0;
+    if ( (baseid= komodo_baseid(origbase)) < 0 || baseid == MAX_CURRENCIES )
         return(0);
     for (i=0; i<3; i++)
         base[i] = toupper(origbase[i]);
@@ -297,8 +339,7 @@ uint64_t PAX_fiatdest(char *fiatbuf,char *destaddr,uint8_t pubkey33[33],char *co
     komodoshis = komodo_paxprice(height,base,(char *)"KMD",(uint64_t)fiatoshis);
     if ( bitcoin_addr2rmd160(&addrtype,rmd160,coinaddr) == 20 )
     {
-        // put JSON into fiatbuf enough to replicate/validate
-        PAX_pubkey(pubkey33,addrtype,rmd160,base,shortflag,fiatoshis);
+        PAX_pubkey(1,pubkey33,&addrtype,rmd160,base,&shortflag,tokomodo != 0 ? &komodoshis : &fiatoshis);
         bitcoin_address(destaddr,KOMODO_PUBTYPE,pubkey33,33);
     }
     return(komodoshis);
