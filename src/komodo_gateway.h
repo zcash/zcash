@@ -107,6 +107,8 @@ int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain c
         }
         portable_mutex_unlock(&Q->mutex);
     }
+    if ( queuesize(&DepositsQ) == 0 && queuesize(&PendingsQ) == 0 )
+        KOMODO_DEPOSIT = 0;
     return(n);
 }
 
