@@ -21,6 +21,7 @@ typedef union _bits256 bits256;
 
 #include "mini-gmp.c"
 #include "uthash.h"
+#include "utlist.h"
 
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
@@ -1100,4 +1101,118 @@ double OS_milliseconds()
     millis = ((double)tv.tv_sec * 1000. + (double)tv.tv_usec / 1000.);
     //printf("tv_sec.%ld usec.%d %f\n",tv.tv_sec,tv.tv_usec,millis);
     return(millis);
+}
+
+void lock_queue(queue_t *queue)
+{
+    if ( queue->initflag == 0 )
+    {
+        portable_mutex_init(&queue->mutex);
+        queue->initflag = 1;
+    }
+	portable_mutex_lock(&queue->mutex);
+}
+
+void queue_enqueue(char *name,queue_t *queue,struct queueitem *origitem,int32_t offsetflag)
+{
+    struct queueitem *item;
+    if ( queue->name[0] == 0 && name != 0 && name[0] != 0 )
+        strcpy(queue->name,name);//,sizeof(queue->name));
+    if ( origitem == 0 )
+    {
+        printf("FATAL type error: queueing empty value\n");//, getchar();
+        return;
+    }
+    //fprintf(stderr,"enqueue.(%s) %p offset.%d\n",queue->name,origitem,offsetflag);
+    lock_queue(queue);
+    item = (struct queueitem *)((long)origitem - offsetflag*sizeof(struct queueitem));
+    DL_APPEND(queue->list,item);
+    portable_mutex_unlock(&queue->mutex);
+    //printf("queue_enqueue name.(%s) origitem.%p append.%p list.%p\n",name,origitem,item,queue->list);
+}
+
+void *queue_dequeue(queue_t *queue,int32_t offsetflag)
+{
+    struct queueitem *item = 0;
+    lock_queue(queue);
+    if ( queue->list != 0 )
+    {
+        item = queue->list;
+        //printf("queue_dequeue name.(%s) dequeue.%p list.%p\n",queue->name,item,queue->list);
+        DL_DELETE(queue->list,item);
+    }
+	portable_mutex_unlock(&queue->mutex);
+    if ( item != 0 && offsetflag != 0 )
+        return((void *)((long)item + sizeof(struct queueitem)));
+    else return(item);
+}
+
+void *queue_delete(queue_t *queue,struct queueitem *copy,int32_t copysize,int32_t freeitem)
+{
+    struct allocitem *ptr;
+    struct queueitem *item = 0;
+    lock_queue(queue);
+    if ( queue->list != 0 )
+    {
+        DL_FOREACH(queue->list,item)
+        {
+            ptr = (void *)((long)item - sizeof(struct allocitem));
+            if ( item == copy || (ptr->allocsize == copysize && memcmp((void *)((long)item + sizeof(struct queueitem)),(void *)((long)item + sizeof(struct queueitem)),copysize) == 0) )
+            {
+                DL_DELETE(queue->list,item);
+                portable_mutex_unlock(&queue->mutex);
+                //printf("name.(%s) deleted item.%p list.%p\n",queue->name,item,queue->list);
+                if ( freeitem != 0 )
+                    myfree(item,copysize);
+                return(item);
+            }
+        }
+    }
+	portable_mutex_unlock(&queue->mutex);
+    return(0);
+}
+
+void *queue_free(queue_t *queue)
+{
+    struct queueitem *item = 0;
+    lock_queue(queue);
+    if ( queue->list != 0 )
+    {
+        DL_FOREACH(queue->list,item)
+        {
+            DL_DELETE(queue->list,item);
+            myfree(item,sizeof(struct queueitem));
+        }
+        //printf("name.(%s) dequeue.%p list.%p\n",queue->name,item,queue->list);
+    }
+	portable_mutex_unlock(&queue->mutex);
+    return(0);
+}
+
+void *queue_clone(queue_t *clone,queue_t *queue,int32_t size)
+{
+    struct queueitem *ptr,*item = 0;
+    lock_queue(queue);
+    if ( queue->list != 0 )
+    {
+        DL_FOREACH(queue->list,item)
+        {
+            ptr = mycalloc('c',1,sizeof(*ptr));
+            memcpy(ptr,item,size);
+            queue_enqueue(queue->name,clone,ptr,0);
+        }
+        //printf("name.(%s) dequeue.%p list.%p\n",queue->name,item,queue->list);
+    }
+	portable_mutex_unlock(&queue->mutex);
+    return(0);
+}
+
+int32_t queue_size(queue_t *queue)
+{
+    int32_t count = 0;
+    struct queueitem *tmp;
+    lock_queue(queue);
+    DL_COUNT(queue->list,tmp,count);
+    portable_mutex_unlock(&queue->mutex);
+	return count;
 }

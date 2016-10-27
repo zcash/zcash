@@ -187,7 +187,6 @@ int32_t PAX_pubkey(int32_t rwflag,uint8_t *pubkey33,uint8_t *addrtypep,uint8_t r
         *shortflagp = (pubkey33[0] == 0x03);
         memcpy(fiat,&pubkey33[1],3);
         fiat[3] = 0;
-        printf("%02x %02x %02x (%s)\n",fiat[0],fiat[1],fiat[2],fiat);
         iguana_rwnum(rwflag,&pubkey33[4],sizeof(*fiatoshisp),(void *)fiatoshisp);
         if ( *shortflagp != 0 )
             *fiatoshisp = -(*fiatoshisp);
@@ -323,7 +322,7 @@ void komodo_paxpricefeed(int32_t height,uint8_t *pricefeed,int32_t opretlen)
     double KMDBTC,BTCUSD,CNYUSD; uint32_t numpvals,timestamp,pvals[128]; uint256 zero;
     numpvals = dpow_readprices(pricefeed,&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
     memset(&zero,0,sizeof(zero));
-    komodo_stateupdate(height,0,0,0,zero,0,0,pvals,numpvals,0,0,0,0);
+    komodo_stateupdate(height,0,0,0,zero,0,0,pvals,numpvals,0,0,0,0,0);
     //printf("komodo_paxpricefeed vout OP_RETURN.%d prices numpvals.%d opretlen.%d\n",height,numpvals,opretlen);
 }
 

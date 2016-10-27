@@ -13,13 +13,102 @@
  *                                                                            *
  ******************************************************************************/
 
-// create list of approved deposits, validate all deposits against this list, prevent double deposit
-// need to tag deposits with OP_RETURN, ie link with originating txid/vout
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 
-const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen)
+struct pax_transaction
 {
-    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
+    struct queueitem DL;
+    uint256 txid;
+    uint64_t komodoshis,fiatoshis;
+    uint16_t vout;
+    char symbol[4]; uint8_t rmd160[20],shortflag;
+};
+
+void komodo_gateway_deposits(CMutableTransaction& txNew)
+{
+    struct pax_transaction *ptr; uint8_t *script,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
+    PENDING_KOMODO_TX = 0;
+    while ( (ptr= queue_dequeue(&DepositQ,0)) != 0 )
+    {
+        txNew.vout.resize(numvouts+1);
+        txNew.vout[numvouts].nValue = ptr->fiatoshis;
+        txNew.vout[numvouts].scriptPubKey.resize(25);
+        script = (uint8_t *)&txNew.vout[numvouts].scriptPubKey[0];
+        *script++ = 0x76;
+        *script++ = 0xa9;
+        *script++ = 20;
+        memcpy(script,rmd160,20), script += 20;
+        *script++ = 0x88;
+        *script++ = 0xac;
+        for (i=0; i<32; i++)
+        {
+            printf("%02x",((uint8_t *)&ptr->txid)[i]);
+            data[len++] = ((uint8_t *)&ptr->txid)[i];
+        }
+        data[len++] = ptr->vout & 0xff;
+        data[len++] = (ptr->vout >> 8) & 0xff;
+        printf(" vout.%u DEPOSIT %.8f\n",ptr->vout,(double)KOMODO_DEPOSIT/COIN);
+        PENDING_KOMODO_TX += ptr->fiatoshis;
+        numvouts++;
+        queue_enqueue("PENDINGS",&PendingsQ,&ptr->DL,0);
+    }
+    if ( numvouts > 1 )
+    {
+        opretlen = komodo_opreturnscript(opret,'I',data,len);
+        txNew.vout.resize(numvouts+1);
+        txNew.vout[numvouts].nValue = 0;
+        txNew.vout[numvouts].scriptPubKey.resize(opretlen);
+        script = (uint8_t *)&txNew.vout[numvouts].scriptPubKey[0];
+        memcpy(script,opret,opretlen);
+    }
+    printf("total numvouts.%d %.8f\n",numvouts,dstr(PENDING_KOMODO_TX));
+}
+
+void komodo_gateway_deposit(uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout) // assetchain context
+{
+    struct pax_transaction *ptr;
+    ptr = calloc(1,sizeof(*ptr));
+    ptr->komodoshis = value;
+    ptr->fiatoshis = fiatoshis;
+    memcpy(ptr->symbol,symbol,3);
+    memcpy(ptr->rmd160,rmd160,20)
+    ptr->shortflag = shortflag;
+    ptr->txid = txid;
+    ptr->vout = vout;
+    KOMODO_DEPOSIT += fiatoshis;
+    queue_enqueue("DEPOSITS",&DepositsQ,&ptr->DL,0);
+}
+
+void komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain context
+{
+    int32_t iter; queue_t *Q;
+    for (iter=0; iter<2; iter++)
+    {
+        Q = (iter == 0) ? &DepositsQ : &PendingsQ;
+        portable_mutex_lock(&Q->mutex);
+        if ( Q->list != 0 )
+        {
+            DL_FOREACH(Q->list,ptr)
+            {
+                if ( memcmp(&ptr->txid,&txid,sizeof(txid)) == 0 && ptr->vout == vout )
+                {
+                    if ( KOMODO_DEPOSIT >= ptr->fiatoshis )
+                        KOMODO_DEPOSIT -= ptr->fiatoshis;
+                    else KOMODO_DEPOSIT = 0;
+                    printf("DELETE %.8f DEPOSIT %s %.8f\n",dstr(ptr->value),ptr->symbol,dstr(ptr->fiatoshis));
+                    DL_DELETE(Q->list,ptr);
+                    myfree(ptr,sizeof(struct queueitem));
+                    break;
+                }
+            }
+        }
+        portable_mutex_unlock(&Q->mutex);
+    }
+}
+
+const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
+{
+    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     //printf("komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
 #ifdef KOMODO_ISSUER
     tokomodo = 1;
@@ -36,31 +125,49 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             checktoshis = PAX_fiatdest(tokomodo,destaddr,pubkey33,coinaddr,height,base,fiatoshis);
             for (i=0; i<opretlen; i++)
                 printf("%02x",opretbuf[i]);
-            printf(" DEPOSIT %.8f %c%s -> %s\n",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
-            // verify price value for fiatoshis of base
+            printf(" DEPOSIT %.8f %c%s -> %s ",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
+            for (i=0; i<32; i++)
+                printf("%02x",((uint8_t *)&txid)[i]);
+            printf(" <- txid.v%u ",vout);
             for (i=0; i<33; i++)
                 printf("%02x",pubkey33[i]);
             printf(" checkpubkey check %.8f v %.8f dest.(%s)\n",dstr(checktoshis),dstr(value),destaddr);
             typestr = "deposit";
 #ifdef KOMODO_ISSUER
-            if ( strncmp(KOMODO_SOURCE,base,strlen(base)) == 0 && ((tokomodo == 0 && value >= checktoshis*.9999) || (tokomodo != 0 && value <= checktoshis/.9999)) )
+            if ( strncmp(KOMODO_SOURCE,base,strlen(base)) == 0 && value >= (9999*checktoshis)/10000 && shortflag == ASSETCHAINS_SHORTFLAG )
             {
-                printf("START %s MINER! %.8f\n",KOMODO_SOURCE,dstr(fiatoshis));
-                KOMODO_DEPOSIT = fiatoshis;
-                KOMODO_SCRIPTPUBKEY[0] = 0x76;
-                KOMODO_SCRIPTPUBKEY[1] = 0xa9;
-                KOMODO_SCRIPTPUBKEY[2] = 0x14;
-                memcpy(&KOMODO_SCRIPTPUBKEY[3],rmd160,0x14);
-                KOMODO_SCRIPTPUBKEY[23] = 0x88;
-                KOMODO_SCRIPTPUBKEY[24] = 0xac;
+                komodo_gateway_deposit(value,shortflag,symbol,fiatoshis,rmd160,txid,vout);
+            }
+#else
+            if ( tokomodo != 0 && value <= (10000*checktoshis)/9999 )
+            {
+                
             }
 #endif
+        }
+    }
+    else if ( opretbuf[0] == 'I' )
+    {
+        uint256 issuedtxid; uint16_t issuedvout;
+        opretbuf++, opretlen--;
+        for (i=len=0; i<opretlen/34; i++)
+        {
+            for (j=0; j<32; j++)
+            {
+                ((uint8_t *)&issuedtxid)[j] = opretbuf[len++];
+                printf("%02x",((uint8_t *)&issuedtxid)[j]);
+            }
+            issuedvout = opretbuf[len++];
+            issuedvout = (vout << 8) | opretbuf[len++];
+            printf(" issuedtxid v%d i.%d opretlen.%d\n",issuedvout,i,opretlen);
+            if ( komodo_gateway_depositremove(issuedtxid,issuedvout) < 0 )
+                printf("error removing deposit\n");
         }
     }
     return(typestr);
 }
 
-void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int32_t txi,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
+void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int32_t txi,uint256 txid,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
 {
     int32_t i,opretlen,offset = 0; uint256 zero; const char *typestr;
     typestr = "unknown";
@@ -81,10 +188,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
             komodo_paxpricefeed(height,&script[offset],opretlen);
             //printf("height.%d pricefeed len.%d\n",height,opretlen);
         }
-        else
-        {
-            komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,value,&script[offset],opretlen);
-        }
+        else komodo_stateupdate(height,0,0,0,txid,0,0,0,0,0,value,&script[offset],opretlen,vout);
     }
     else if ( numvouts > 13 )
         typestr = "ratify";
@@ -92,7 +196,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
 
 int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,uint32_t port)
 {
-    char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*result,*vouts,*item,*sobj; int32_t vout,n,len,isspecial,retval = -1; uint64_t value;
+    char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*result,*vouts,*item,*sobj; int32_t vout,n,len,isspecial,retval = -1; uint64_t value; uint256 txid;
     sprintf(params,"[\"%s\", 1]",txidstr);
     if ( (retstr= komodo_issuemethod((char *)"getrawtransaction",params,port)) != 0 )
     {
@@ -105,6 +209,7 @@ int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,
                 for (vout=0; vout<n; vout++)
                 {
                     item = jitem(vouts,vout);
+                    txid = jbits256(item,(char *)"txid");
                     value = SATOSHIDEN * jdouble(item,(char *)"value");
                     if ( (sobj= jobj(item,(char *)"scriptPubKey")) != 0 )
                     {
@@ -118,7 +223,7 @@ int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,
                             else if ( len <= sizeof(script) )
                             {
                                 decode_hex(script,len,hexstr);
-                                komodo_gateway_voutupdate(symbol,isspecial,height,txi,vout,n,value,script,len);
+                                komodo_gateway_voutupdate(symbol,isspecial,height,txi,txid,vout,n,value,script,len);
                             }
                         }
                     }
@@ -186,7 +291,7 @@ void komodo_gateway_iteration(char *symbol)
                     {
                         fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
                         memset(&zero,0,sizeof(zero));
-                        komodo_stateupdate(KMDHEIGHT,0,0,0,zero,0,0,0,0,KMDHEIGHT,0,0,0);
+                        komodo_stateupdate(KMDHEIGHT,0,0,0,zero,0,0,0,0,KMDHEIGHT,0,0,0,0);
                     }
                     if ( komodo_gateway_block(symbol,KMDHEIGHT,port) < 0 )
                         break;
