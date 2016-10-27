@@ -16,6 +16,13 @@
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 
+typedef struct queue
+{
+	struct queueitem *list;
+	portable_mutex_t mutex;
+    char name[64],initflag;
+} queue_t;
+
 union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
 typedef union _bits256 bits256;
 
@@ -1215,4 +1222,14 @@ int32_t queue_size(queue_t *queue)
     DL_COUNT(queue->list,tmp,count);
     portable_mutex_unlock(&queue->mutex);
 	return count;
+}
+
+void iguana_initQ(queue_t *Q,char *name)
+{
+    char *tst,*str = "need to init each Q when single threaded";
+    memset(Q,0,sizeof(*Q));
+    strcpy(Q->name,name);
+    queue_enqueue(name,Q,queueitem(str),1);
+    if ( (tst= queue_dequeue(Q,1)) != 0 )
+        free_queueitem(tst);
 }
