@@ -1128,6 +1128,13 @@ void myfree(void *_ptr,long allocsize)
     free(item);
 }
 
+void free_queueitem(void *itemdata)
+{
+    struct queueitem *item = (void *)((long)itemdata - sizeof(struct queueitem));
+    //printf("freeq item.%p itemdata.%p size.%d\n",item,itemdata,item->allocsize);
+    _myfree(item->type,item->allocsize,item,item->allocsize);
+}
+
 void *mycalloc(uint8_t type,int32_t n,long itemsize)
 {
     struct allocitem *item; int64_t allocsize = ((uint64_t)n * itemsize);
@@ -1284,7 +1291,7 @@ void iguana_initQ(queue_t *Q,char *name)
     char *tst,*str = (char *)"need to init each Q when single threaded";
     memset(Q,0,sizeof(*Q));
     strcpy(Q->name,name);
-    queue_enqueue(name,Q,queueitem(str),1);
-    if ( (tst= queue_dequeue(Q,1)) != 0 )
+    queue_enqueue(name,Q,(struct queueitem *)queueitem(str),1);
+    if ( (tst= (char *)queue_dequeue(Q,1)) != 0 )
         free_queueitem(tst);
 }
