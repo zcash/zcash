@@ -4,10 +4,10 @@ set -eu
 
 PARAMS_DIR="$HOME/.zcash-params"
 
-BETA2_PKEY_NAME='beta2-proving.key'
-BETA2_VKEY_NAME='beta2-verifying.key'
-BETA2_PKEY_URL="https://z.cash/downloads/$BETA2_PKEY_NAME"
-BETA2_VKEY_URL="https://z.cash/downloads/$BETA2_VKEY_NAME"
+SPROUT_PKEY_NAME='sprout-proving.key'
+SPROUT_VKEY_NAME='sprout-verifying.key'
+SPROUT_PKEY_URL="https://z.cash/downloads/$SPROUT_PKEY_NAME"
+SPROUT_VKEY_URL="https://z.cash/downloads/$SPROUT_VKEY_NAME"
 
 SHA256CMD="$(command -v sha256sum || echo shasum)"
 SHA256ARGS="$(command -v sha256sum >/dev/null || echo '-a 256')"
@@ -99,8 +99,8 @@ EOF
 
     cd "$PARAMS_DIR"
 
-    fetch_params "$BETA2_PKEY_URL" "$PARAMS_DIR/$BETA2_PKEY_NAME" "cca9887becf803c8ca801bc9da8fcba4f5fb3ba13af9d17e8603021a150cb4b7"
-    fetch_params "$BETA2_VKEY_URL" "$PARAMS_DIR/$BETA2_VKEY_NAME" "2faffd2a5e2e67276c3471c48068a0c16f62286d2e4622a733d7cd1f82ffa860"
+    fetch_params "$SPROUT_PKEY_URL" "$PARAMS_DIR/$SPROUT_PKEY_NAME" "8bc20a7f013b2b58970cddd2e7ea028975c88ae7ceb9259a5344a16bc2c0eef7"
+    fetch_params "$SPROUT_VKEY_URL" "$PARAMS_DIR/$SPROUT_VKEY_NAME" "4bd498dae0aacfd8e98dc306338d017d9c08dd0918ead18172bd0aec2fc5df82"
 }
 
 main
