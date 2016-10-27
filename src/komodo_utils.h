@@ -1117,42 +1117,6 @@ double OS_milliseconds()
     return(millis);
 }
 
-void myfree(void *_ptr,long allocsize)
-{
-    struct allocitem *item = (struct allocitem *)((long)_ptr - sizeof(struct allocitem));
-    if  ( allocsize == 0 )
-    {
-        printf("myfree zero allocsize %p?\n",_ptr);
-        return;
-    }
-    free(item);
-}
-
-void free_queueitem(void *itemdata)
-{
-    struct queueitem *item = (struct queueitem *)((long)itemdata - sizeof(struct queueitem));
-    //printf("freeq item.%p itemdata.%p size.%d\n",item,itemdata,item->allocsize);
-    myfree(item,item->allocsize);
-}
-
-void *mycalloc(uint8_t type,int32_t n,long itemsize)
-{
-    struct allocitem *item; int64_t allocsize = ((uint64_t)n * itemsize);
-    if ( type == 0 && n == 0 && itemsize == 0 )
-    {
-        myfree(mycalloc('t',1024,1024 * 32),1024*1024*32);
-        return(0);
-    }
-    while ( (item= (struct allocitem *)calloc(1,sizeof(struct allocitem) + allocsize + 16)) == 0 )
-    {
-        printf("mycalloc.%c: need to wait for memory.(%d,%ld) to be available\n",type,n,itemsize);
-        sleep(10);
-    }
-    item->allocsize = (uint32_t)allocsize;
-    item->type = type;
-    return((void *)((long)item + sizeof(*item)));
-}
-
 void lock_queue(queue_t *queue)
 {
     if ( queue->initflag == 0 )
@@ -1163,55 +1127,46 @@ void lock_queue(queue_t *queue)
 	portable_mutex_lock(&queue->mutex);
 }
 
-void queue_enqueue(char *name,queue_t *queue,struct queueitem *origitem,int32_t offsetflag)
+void queue_enqueue(char *name,queue_t *queue,struct queueitem *item)
 {
-    struct queueitem *item;
     if ( queue->name[0] == 0 && name != 0 && name[0] != 0 )
-        strcpy(queue->name,name);//,sizeof(queue->name));
-    if ( origitem == 0 )
+        strcpy(queue->name,name);
+    if ( item == 0 )
     {
-        printf("FATAL type error: queueing empty value\n");//, getchar();
+        printf("FATAL type error: queueing empty value\n");
         return;
     }
-    //fprintf(stderr,"enqueue.(%s) %p offset.%d\n",queue->name,origitem,offsetflag);
     lock_queue(queue);
-    item = (struct queueitem *)((long)origitem - offsetflag*sizeof(struct queueitem));
     DL_APPEND(queue->list,item);
     portable_mutex_unlock(&queue->mutex);
-    //printf("queue_enqueue name.(%s) origitem.%p append.%p list.%p\n",name,origitem,item,queue->list);
 }
 
-void *queue_dequeue(queue_t *queue,int32_t offsetflag)
+struct queueitem *queue_dequeue(queue_t *queue)
 {
     struct queueitem *item = 0;
     lock_queue(queue);
     if ( queue->list != 0 )
     {
         item = queue->list;
-        //printf("queue_dequeue name.(%s) dequeue.%p list.%p\n",queue->name,item,queue->list);
         DL_DELETE(queue->list,item);
     }
 	portable_mutex_unlock(&queue->mutex);
-    if ( item != 0 && offsetflag != 0 )
-        return((void *)((long)item + sizeof(struct queueitem)));
-    else return(item);
+    return(item);
 }
 
 void *queue_delete(queue_t *queue,struct queueitem *copy,int32_t copysize)
 {
-    struct allocitem *ptr;
     struct queueitem *item = 0;
     lock_queue(queue);
     if ( queue->list != 0 )
     {
         DL_FOREACH(queue->list,item)
         {
-            ptr = (struct allocitem *)((long)item - sizeof(struct allocitem));
-            if ( item == copy || (ptr->allocsize == copysize && memcmp((void *)((long)item + sizeof(struct queueitem)),(void *)((long)item + sizeof(struct queueitem)),copysize) == 0) )
+            if ( item == copy || (item->allocsize == copysize && memcmp((void *)((long)item + sizeof(struct queueitem)),(void *)((long)copy + sizeof(struct queueitem)),copysize) == 0) )
             {
                 DL_DELETE(queue->list,item);
                 portable_mutex_unlock(&queue->mutex);
-                //printf("name.(%s) deleted item.%p list.%p\n",queue->name,item,queue->list);
+                printf("name.(%s) deleted item.%p list.%p\n",queue->name,item,queue->list);
                 return(item);
             }
         }
@@ -1229,7 +1184,7 @@ void *queue_free(queue_t *queue)
         DL_FOREACH(queue->list,item)
         {
             DL_DELETE(queue->list,item);
-            myfree(item,sizeof(struct queueitem));
+            free(item);
         }
         //printf("name.(%s) dequeue.%p list.%p\n",queue->name,item,queue->list);
     }
@@ -1245,7 +1200,7 @@ void *queue_clone(queue_t *clone,queue_t *queue,int32_t size)
     {
         DL_FOREACH(queue->list,item)
         {
-            ptr = (struct queueitem *)mycalloc('c',1,sizeof(*ptr));
+            ptr = (struct queueitem *)calloc(1,sizeof(*ptr));
             memcpy(ptr,item,size);
             queue_enqueue(queue->name,clone,ptr,0);
         }
@@ -1265,31 +1220,13 @@ int32_t queue_size(queue_t *queue)
 	return count;
 }
 
-void *queueitem(char *str)
-{
-    struct queueitem *item; int32_t n,allocsize; char *data; uint8_t type = 'y';
-    n = (uint32_t)strlen(str) + 1;
-    allocsize = (uint32_t)(sizeof(struct queueitem) + n);
-    while ( (item= (struct queueitem *)calloc(1,allocsize)) == 0 )
-    {
-        printf("queueitem: need to wait for memory.(%d,%ld) to be available\n",n,(long)sizeof(*item));
-        sleep(10);
-    }
-    item->allocsize = (uint32_t)allocsize;
-    item->type = type;
-    data = (char *)(long)((long)item + sizeof(*item));
-    memcpy(data,str,n);
-    //printf("(%c) queueitem.%p itemdata.%p n.%d allocsize.%d\n",type,item,data,n,allocsize);
-    //portable_mutex_unlock(&MEMmutex);
-    return(data);
-}
-
 void iguana_initQ(queue_t *Q,char *name)
 {
-    char *tst,*str = (char *)"need to init each Q when single threaded";
+    struct queueitem *item,I;
     memset(Q,0,sizeof(*Q));
+    memset(&I,0,sizeof(I));
     strcpy(Q->name,name);
-    queue_enqueue(name,Q,(struct queueitem *)queueitem(str),1);
-    if ( (tst= (char *)queue_dequeue(Q,1)) != 0 )
-        free_queueitem(tst);
+    queue_enqueue(name,Q,&I);
+    if ( (item= queue_dequeue(Q)) != 0 )
+        free(item);
 }
