@@ -79,9 +79,9 @@ void komodo_gateway_deposit(uint64_t value,int32_t shortflag,char *symbol,uint64
     queue_enqueue((char *)"DEPOSITS",&DepositsQ,&ptr->DL,0);
 }
 
-void komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain context
+int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain context
 {
-    int32_t iter; queue_t *Q; struct pax_transaction *ptr;
+    int32_t iter,n=0; queue_t *Q; struct pax_transaction *ptr;
     for (iter=0; iter<2; iter++)
     {
         Q = (iter == 0) ? &DepositsQ : &PendingsQ;
@@ -95,8 +95,9 @@ void komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain cont
                     if ( KOMODO_DEPOSIT >= ptr->fiatoshis )
                         KOMODO_DEPOSIT -= ptr->fiatoshis;
                     else KOMODO_DEPOSIT = 0;
-                    printf("DELETE %.8f DEPOSIT %s %.8f\n",dstr(ptr->value),ptr->symbol,dstr(ptr->fiatoshis));
+                    printf("DELETE %.8f DEPOSIT %s %.8f\n",dstr(ptr->komodoshis),ptr->symbol,dstr(ptr->fiatoshis));
                     DL_DELETE(Q->list,&ptr->DL);
+                    n++;
                     myfree(ptr,sizeof(struct queueitem));
                     break;
                 }
@@ -104,6 +105,7 @@ void komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain cont
         }
         portable_mutex_unlock(&Q->mutex);
     }
+    return(n);
 }
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
@@ -160,17 +162,18 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             issuedvout = opretbuf[len++];
             issuedvout = (vout << 8) | opretbuf[len++];
             printf(" issuedtxid v%d i.%d opretlen.%d\n",issuedvout,i,opretlen);
-            if ( komodo_gateway_depositremove(issuedtxid,issuedvout) < 0 )
+            if ( komodo_gateway_depositremove(issuedtxid,issuedvout) == 0 )
                 printf("error removing deposit\n");
         }
     }
     return(typestr);
 }
 
-void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int32_t txi,uint256 txid,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
+void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int32_t txi,bits256 txid,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
 {
-    int32_t i,opretlen,offset = 0; uint256 zero; const char *typestr;
+    int32_t i,opretlen,offset = 0; uint256 zero,utxid; const char *typestr;
     typestr = "unknown";
+    memcpy(&utxid,&txid,sizeof(utxid));
     if ( 0 )//txi != 0 || vout != 0 )
     {
         for (i=0; i<len; i++)
@@ -188,7 +191,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
             komodo_paxpricefeed(height,&script[offset],opretlen);
             //printf("height.%d pricefeed len.%d\n",height,opretlen);
         }
-        else komodo_stateupdate(height,0,0,0,txid,0,0,0,0,0,value,&script[offset],opretlen,vout);
+        else komodo_stateupdate(height,0,0,0,utxid,0,0,0,0,0,value,&script[offset],opretlen,vout);
     }
     else if ( numvouts > 13 )
         typestr = "ratify";
@@ -196,7 +199,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
 
 int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,uint32_t port)
 {
-    char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*result,*vouts,*item,*sobj; int32_t vout,n,len,isspecial,retval = -1; uint64_t value; uint256 txid;
+    char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*result,*vouts,*item,*sobj; int32_t vout,n,len,isspecial,retval = -1; uint64_t value; bits256 txid;
     sprintf(params,"[\"%s\", 1]",txidstr);
     if ( (retstr= komodo_issuemethod((char *)"getrawtransaction",params,port)) != 0 )
     {
