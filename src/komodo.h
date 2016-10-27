@@ -31,7 +31,7 @@ char *komodo_issuemethod(char *method,char *params,uint16_t port);
 int32_t ASSETCHAINS_SHORTFLAG,NOTARIZED_HEIGHT,Num_nutxos,KMDHEIGHT = 43000;
 uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
 pthread_mutex_t komodo_mutex;
-uint32_t KOMODO_INITDONE; 
+uint32_t KOMODO_INITDONE;
 char KMDUSERPASS[1024]; uint16_t BITCOIND_PORT = 7771;
 uint64_t KOMODO_DEPOSIT,PENDING_KOMODO_TX;
 
@@ -149,7 +149,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             }
         } else fp = fopen(fname,"wb+");
         printf("fname.(%s) fpos.%ld\n",fname,ftell(fp));
-        KOMODO_INITDONE = (uin32_t)time(NULL);
+        KOMODO_INITDONE = (uint32_t)time(NULL);
     }
     if ( height <= 0 )
     {
@@ -348,7 +348,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     uint8_t scriptbuf[4096],pubkeys[64][33]; uint256 kmdtxid,btctxid,txhash;
     int32_t i,j,k,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
     komodo_init();
-    KOMODO_INITDONE = (uin32_t)time(NULL);
+    KOMODO_INITDONE = (uint32_t)time(NULL);
 #ifdef KOMODO_ISSUER
     komodo_gateway_issuer();
 #else
@@ -434,7 +434,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             }
         }
     } else printf("komodo_connectblock: unexpected null pindex\n");
-    KOMODO_INITDONE = (uin32_t)time(NULL);
+    KOMODO_INITDONE = (uint32_t)time(NULL);
 }
 
 
