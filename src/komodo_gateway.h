@@ -50,7 +50,7 @@ void komodo_gateway_deposits(CMutableTransaction& txNew)
         printf(" vout.%u DEPOSIT %.8f\n",ptr->vout,(double)KOMODO_DEPOSIT/COIN);
         PENDING_KOMODO_TX += ptr->fiatoshis;
         numvouts++;
-        queue_enqueue((char *)"PENDINGS",&PendingsQ,&ptr->DL,0);
+        queue_enqueue((char *)"PENDINGS",&PendingsQ,&ptr->DL);
     }
     if ( numvouts > 1 )
     {
@@ -76,7 +76,7 @@ void komodo_gateway_deposit(uint64_t value,int32_t shortflag,char *symbol,uint64
     ptr->txid = txid;
     ptr->vout = vout;
     KOMODO_DEPOSIT += fiatoshis;
-    queue_enqueue((char *)"DEPOSITS",&DepositsQ,&ptr->DL,0);
+    queue_enqueue((char *)"DEPOSITS",&DepositsQ,&ptr->DL);
 }
 
 int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain context

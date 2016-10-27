@@ -1202,7 +1202,7 @@ void *queue_clone(queue_t *clone,queue_t *queue,int32_t size)
         {
             ptr = (struct queueitem *)calloc(1,sizeof(*ptr));
             memcpy(ptr,item,size);
-            queue_enqueue(queue->name,clone,ptr,0);
+            queue_enqueue(queue->name,clone,ptr);
         }
         //printf("name.(%s) dequeue.%p list.%p\n",queue->name,item,queue->list);
     }
