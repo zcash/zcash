@@ -64,6 +64,11 @@ void komodo_gateway_deposits(CMutableTransaction& txNew)
     printf("total numvouts.%d %.8f\n",numvouts,dstr(PENDING_KOMODO_TX));
 }
 
+int32_t komodo_check_deposit(CBlock& block)
+{
+    return(0);
+}
+
 void komodo_gateway_deposit(uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout) // assetchain context
 {
     struct pax_transaction *ptr;
