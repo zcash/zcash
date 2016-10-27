@@ -31,7 +31,7 @@ char *komodo_issuemethod(char *method,char *params,uint16_t port);
 int32_t ASSETCHAINS_SHORTFLAG,NOTARIZED_HEIGHT,Num_nutxos,KMDHEIGHT = 43000;
 uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
 pthread_mutex_t komodo_mutex;
-uint32_t KOMODO_INITDONE;
+uint32_t KOMODO_INITDONE; 
 char KMDUSERPASS[1024]; uint16_t BITCOIND_PORT = 7771;
 uint64_t KOMODO_DEPOSIT,PENDING_KOMODO_TX;
 
