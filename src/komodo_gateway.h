@@ -28,7 +28,7 @@ void komodo_gateway_deposits(CMutableTransaction& txNew)
 {
     struct pax_transaction *ptr; uint8_t *script,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
     PENDING_KOMODO_TX = 0;
-    while ( (ptr= queue_dequeue(&DepositsQ,0)) != 0 )
+    while ( (ptr= (struct pax_transaction *)queue_dequeue(&DepositsQ,0)) != 0 )
     {
         txNew.vout.resize(numvouts+1);
         txNew.vout[numvouts].nValue = ptr->fiatoshis;
@@ -71,7 +71,7 @@ void komodo_gateway_deposit(uint64_t value,int32_t shortflag,char *symbol,uint64
     ptr->komodoshis = value;
     ptr->fiatoshis = fiatoshis;
     memcpy(ptr->symbol,symbol,3);
-    memcpy(ptr->rmd160,rmd160,20)
+    memcpy(ptr->rmd160,rmd160,20);
     ptr->shortflag = shortflag;
     ptr->txid = txid;
     ptr->vout = vout;
