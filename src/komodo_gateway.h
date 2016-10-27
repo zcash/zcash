@@ -88,7 +88,7 @@ void komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain cont
         portable_mutex_lock(&Q->mutex);
         if ( Q->list != 0 )
         {
-            DL_FOREACH(Q->list,ptr)
+            DL_FOREACH(Q->list,&ptr->DL)
             {
                 if ( memcmp(&ptr->txid,&txid,sizeof(txid)) == 0 && ptr->vout == vout )
                 {
@@ -96,7 +96,7 @@ void komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain cont
                         KOMODO_DEPOSIT -= ptr->fiatoshis;
                     else KOMODO_DEPOSIT = 0;
                     printf("DELETE %.8f DEPOSIT %s %.8f\n",dstr(ptr->value),ptr->symbol,dstr(ptr->fiatoshis));
-                    DL_DELETE(Q->list,ptr);
+                    DL_DELETE(Q->list,&ptr->DL);
                     myfree(ptr,sizeof(struct queueitem));
                     break;
                 }
