@@ -66,6 +66,7 @@ void komodo_gateway_deposits(CMutableTransaction& txNew)
 
 int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid pax pricing
 {
+    // reenable rpc auth
     return(0);
 }
 

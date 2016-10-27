@@ -1113,7 +1113,7 @@ void komodo_configfile(char *symbol,uint16_t port)
             fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\n",crc,line,port);
             fclose(fp);
             printf("Created (%s)\n",fname);
-        }
+        } else printf("Couldnt create (%s)\n",fname);
     }
     else
     {
