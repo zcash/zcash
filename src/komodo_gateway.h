@@ -91,6 +91,7 @@ int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain c
             item = &ptr->DL;
             DL_FOREACH(Q->list,item)
             {
+                ptr = (struct pax_transaction *)item;
                 if ( memcmp(&ptr->txid,&txid,sizeof(txid)) == 0 && ptr->vout == vout )
                 {
                     if ( KOMODO_DEPOSIT >= ptr->fiatoshis )
