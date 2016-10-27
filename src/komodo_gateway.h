@@ -139,7 +139,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 #ifdef KOMODO_ISSUER
             if ( strncmp(KOMODO_SOURCE,base,strlen(base)) == 0 && value >= (9999*checktoshis)/10000 && shortflag == ASSETCHAINS_SHORTFLAG )
             {
-                komodo_gateway_deposit(value,shortflag,symbol,fiatoshis,rmd160,txid,vout);
+                komodo_gateway_deposit(value,shortflag,base,fiatoshis,rmd160,txid,vout);
             }
 #else
             if ( tokomodo != 0 && value <= (10000*checktoshis)/9999 )

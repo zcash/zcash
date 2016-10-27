@@ -1145,7 +1145,6 @@ void *mycalloc(uint8_t type,int32_t n,long itemsize)
     }
     while ( (item= (struct allocitem *)calloc(1,sizeof(struct allocitem) + allocsize + 16)) == 0 )
     {
-        char str[65];
         printf("mycalloc.%c: need to wait for memory.(%d,%ld) to be available\n",type,n,itemsize);
         sleep(10);
     }
@@ -1273,7 +1272,6 @@ void *queueitem(char *str)
     allocsize = (uint32_t)(sizeof(struct queueitem) + n);
     while ( (item= (struct queueitem *)calloc(1,allocsize)) == 0 )
     {
-        char str[65];
         printf("queueitem: need to wait for memory.(%d,%ld) to be available\n",n,(long)sizeof(*item));
         sleep(10);
     }
