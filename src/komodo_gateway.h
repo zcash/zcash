@@ -213,10 +213,10 @@ int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,
             {
                 retval = 0;
                 isspecial = 0;
+                txid = jbits256(result,(char *)"txid");
                 for (vout=0; vout<n; vout++)
                 {
                     item = jitem(vouts,vout);
-                    txid = jbits256(item,(char *)"txid");
                     value = SATOSHIDEN * jdouble(item,(char *)"value");
                     if ( (sobj= jobj(item,(char *)"scriptPubKey")) != 0 )
                     {
