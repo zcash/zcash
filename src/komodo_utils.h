@@ -1119,13 +1119,32 @@ double OS_milliseconds()
 
 void myfree(void *_ptr,long allocsize)
 {
-    struct allocitem *item = (void *)((long)_ptr - sizeof(struct allocitem));
+    struct allocitem *item = (struct allocitem *)((long)_ptr - sizeof(struct allocitem));
     if  ( allocsize == 0 )
     {
         printf("myfree zero allocsize %p?\n",_ptr);
         return;
     }
     free(item);
+}
+
+void *mycalloc(uint8_t type,int32_t n,long itemsize)
+{
+    struct allocitem *item; int64_t allocsize = ((uint64_t)n * itemsize);
+    if ( type == 0 && n == 0 && itemsize == 0 )
+    {
+        myfree(mycalloc('t',1024,1024 * 32),1024*1024*32);
+        return(0);
+    }
+    while ( (item= (struct allocitem *)calloc(1,sizeof(struct allocitem) + allocsize + 16)) == 0 )
+    {
+        char str[65];
+        printf("mycalloc.%c: need to wait for memory.(%d,%ld) %s to be available\n",type,n,itemsize,mbstr(str,allocsize));
+        sleep(10);
+    }
+    item->allocsize = (uint32_t)allocsize;
+    item->type = type;
+    return((void *)((long)item + sizeof(*item)));
 }
 
 void lock_queue(queue_t *queue)
