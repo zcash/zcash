@@ -1,6 +1,6 @@
 #!/bin/bash
 ## Usage:
-##  ./build_DEBIAN_package.sh
+##  ./zcutil/build-debian-package.sh
 
 set -e
 set -x
@@ -29,9 +29,9 @@ DEB_MAN=$BUILD_DIR/usr/share/man/man1
 mkdir -p $BUILD_DIR/DEBIAN $DEB_BIN $DEB_DOC $DEB_MAN
 chmod 0755 -R $BUILD_DIR/*
 
-# Copy control
+# Copy control file
 cp $SRC_DEB/control $BUILD_DIR/DEBIAN
-# Currently empty
+# Package maintainer scripts (currently empty)
 #cp $SRC_DEB/postinst $BUILD_DIR/DEBIAN
 #cp $SRC_DEB/postrm $BUILD_DIR/DEBIAN
 #cp $SRC_DEB/preinst $BUILD_DIR/DEBIAN
@@ -55,9 +55,9 @@ gzip --best -n $DEB_DOC/changelog.Debian
 gzip --best -n $DEB_MAN/zcashd.1
 gzip --best -n $DEB_MAN/zcash-cli.1
 
-# Create the deb package
+# Create the Debian package
 fakeroot dpkg-deb --build $BUILD_DIR
-lintian -i $BUILD_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb
 cp $BUILD_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb $SRC_PATH
-
+# Analyze with Lintian, reporting bugs and policy violations
+lintian -i $SRC_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb
 exit 0
