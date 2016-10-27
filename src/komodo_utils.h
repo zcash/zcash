@@ -1117,6 +1117,17 @@ double OS_milliseconds()
     return(millis);
 }
 
+void myfree(void *_ptr,long allocsize)
+{
+    struct allocitem *item = (void *)((long)_ptr - sizeof(struct allocitem));
+    if  ( allocsize == 0 )
+    {
+        printf("myfree zero allocsize %p?\n",_ptr);
+        return;
+    }
+    free(item);
+}
+
 void lock_queue(queue_t *queue)
 {
     if ( queue->initflag == 0 )
@@ -1161,7 +1172,7 @@ void *queue_dequeue(queue_t *queue,int32_t offsetflag)
     else return(item);
 }
 
-void *queue_delete(queue_t *queue,struct queueitem *copy,int32_t copysize,int32_t freeitem)
+void *queue_delete(queue_t *queue,struct queueitem *copy,int32_t copysize)
 {
     struct allocitem *ptr;
     struct queueitem *item = 0;
@@ -1170,14 +1181,12 @@ void *queue_delete(queue_t *queue,struct queueitem *copy,int32_t copysize,int32_
     {
         DL_FOREACH(queue->list,item)
         {
-            ptr = (void *)((long)item - sizeof(struct allocitem));
+            ptr = (struct allocitem *)((long)item - sizeof(struct allocitem));
             if ( item == copy || (ptr->allocsize == copysize && memcmp((void *)((long)item + sizeof(struct queueitem)),(void *)((long)item + sizeof(struct queueitem)),copysize) == 0) )
             {
                 DL_DELETE(queue->list,item);
                 portable_mutex_unlock(&queue->mutex);
                 //printf("name.(%s) deleted item.%p list.%p\n",queue->name,item,queue->list);
-                if ( freeitem != 0 )
-                    myfree(item,copysize);
                 return(item);
             }
         }
