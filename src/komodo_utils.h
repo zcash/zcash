@@ -1130,9 +1130,9 @@ void myfree(void *_ptr,long allocsize)
 
 void free_queueitem(void *itemdata)
 {
-    struct queueitem *item = (void *)((long)itemdata - sizeof(struct queueitem));
+    struct queueitem *item = (struct queueitem *)((long)itemdata - sizeof(struct queueitem));
     //printf("freeq item.%p itemdata.%p size.%d\n",item,itemdata,item->allocsize);
-    _myfree(item->type,item->allocsize,item,item->allocsize);
+    myfree(item,item->allocsize);
 }
 
 void *mycalloc(uint8_t type,int32_t n,long itemsize)

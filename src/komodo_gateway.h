@@ -28,7 +28,7 @@ void komodo_gateway_deposits(CMutableTransaction& txNew)
 {
     struct pax_transaction *ptr; uint8_t *script,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
     PENDING_KOMODO_TX = 0;
-    while ( (ptr= queue_dequeue(&DepositQ,0)) != 0 )
+    while ( (ptr= queue_dequeue(&DepositsQ,0)) != 0 )
     {
         txNew.vout.resize(numvouts+1);
         txNew.vout[numvouts].nValue = ptr->fiatoshis;
@@ -37,7 +37,7 @@ void komodo_gateway_deposits(CMutableTransaction& txNew)
         *script++ = 0x76;
         *script++ = 0xa9;
         *script++ = 20;
-        memcpy(script,rmd160,20), script += 20;
+        memcpy(script,ptr->rmd160,20), script += 20;
         *script++ = 0x88;
         *script++ = 0xac;
         for (i=0; i<32; i++)
@@ -50,7 +50,7 @@ void komodo_gateway_deposits(CMutableTransaction& txNew)
         printf(" vout.%u DEPOSIT %.8f\n",ptr->vout,(double)KOMODO_DEPOSIT/COIN);
         PENDING_KOMODO_TX += ptr->fiatoshis;
         numvouts++;
-        queue_enqueue("PENDINGS",&PendingsQ,&ptr->DL,0);
+        queue_enqueue((char *)"PENDINGS",&PendingsQ,&ptr->DL,0);
     }
     if ( numvouts > 1 )
     {
@@ -67,7 +67,7 @@ void komodo_gateway_deposits(CMutableTransaction& txNew)
 void komodo_gateway_deposit(uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout) // assetchain context
 {
     struct pax_transaction *ptr;
-    ptr = calloc(1,sizeof(*ptr));
+    ptr = (struct pax_transaction *)calloc(1,sizeof(*ptr));
     ptr->komodoshis = value;
     ptr->fiatoshis = fiatoshis;
     memcpy(ptr->symbol,symbol,3);
@@ -76,12 +76,12 @@ void komodo_gateway_deposit(uint64_t value,int32_t shortflag,char *symbol,uint64
     ptr->txid = txid;
     ptr->vout = vout;
     KOMODO_DEPOSIT += fiatoshis;
-    queue_enqueue("DEPOSITS",&DepositsQ,&ptr->DL,0);
+    queue_enqueue((char *)"DEPOSITS",&DepositsQ,&ptr->DL,0);
 }
 
 void komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain context
 {
-    int32_t iter; queue_t *Q;
+    int32_t iter; queue_t *Q; struct pax_transaction *ptr;
     for (iter=0; iter<2; iter++)
     {
         Q = (iter == 0) ? &DepositsQ : &PendingsQ;
