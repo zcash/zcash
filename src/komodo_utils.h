@@ -1065,7 +1065,7 @@ void komodo_configfile(char *symbol,uint16_t port)
     memcpy(&buf[sizeof(r)],&r2,sizeof(r2));
     memcpy(&buf[sizeof(r)+sizeof(r2)],symbol,strlen(symbol));
     crc = calc_crc32(0,(uint8_t *)buf,(int32_t)(sizeof(r)+sizeof(r2)+strlen(symbol)));
-    vcalc_sha256(0,(uint8_t *)buf2,(uint8_t *)buf,(int32_t)(sizeof(r)+sizeof(r2)+strlen(symbol)));
+    vcalc_sha256(line,(uint8_t *)buf2,(uint8_t *)buf,(int32_t)(sizeof(r)+sizeof(r2)+strlen(symbol)));
     sprintf(buf,"%s.conf",symbol);
     BITCOIND_PORT = port;
 #ifdef WIN32
@@ -1077,7 +1077,7 @@ void komodo_configfile(char *symbol,uint16_t port)
     {
         if ( (fp= fopen(fname,"wb")) != 0 )
         {
-            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%llu\nrpcport=%u\nserver=1\ntxindex=1\n",crc,*(long long *)buf2,port);
+            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\n",crc,line,port);
             fclose(fp);
             printf("Created (%s)\n",fname);
         }
