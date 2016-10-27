@@ -1047,10 +1047,25 @@ char *parse_conf_line(char *line,char *field)
     return(clonestr(line));
 }
 
+double OS_milliseconds()
+{
+    struct timeval tv; double millis;
+    gettimeofday(&tv,NULL);
+    millis = ((double)tv.tv_sec * 1000. + (double)tv.tv_usec / 1000.);
+    //printf("tv_sec.%ld usec.%d %f\n",tv.tv_sec,tv.tv_usec,millis);
+    return(millis);
+}
+
 void komodo_configfile(char *symbol,uint16_t port)
 {
-    FILE *fp; char fname[512],buf[128],line[4096],*str,*rpcuser,*rpcpassword;
-    srand((uint32_t)time(NULL));
+    FILE *fp; char fname[512],buf[128],buf2[32],line[4096],*str,*rpcuser,*rpcpassword; uint32_t crc,r,r2;
+    r = (uint32_t)time(NULL);
+    r2 = OS_milliseconds();
+    memcpy(buf,&r,sizeof(r));
+    memcpy(&buf[sizeof(r)],&r2,sizeof(r2));
+    memcpy(&buf[sizeof(r)+sizeof(r2)],symbol,strlen(symbol));
+    crc = calc_crc(0,buf,(int32_t)(sizeof(r)+sizeof(r2)+strlen(symbol)));
+    vcalc_sha256(0,buf2,buf,(int32_t)(sizeof(r)+sizeof(r2)+strlen(symbol)));
     sprintf(buf,"%s.conf",symbol);
     BITCOIND_PORT = port;
 #ifdef WIN32
@@ -1062,7 +1077,7 @@ void komodo_configfile(char *symbol,uint16_t port)
     {
         if ( (fp= fopen(fname,"wb")) != 0 )
         {
-            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%u\nrpcport=%u\nserver=1\ntxindex=1\n",rand(),rand(),port);
+            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%llu\nrpcport=%u\nserver=1\ntxindex=1\n",crc,*(long long *)buf2,port);
             fclose(fp);
             printf("Created (%s)\n",fname);
         }
@@ -1106,15 +1121,6 @@ void komodo_configfile(char *symbol,uint16_t port)
             fclose(fp);
         } else printf("couldnt open.(%s)\n",fname);
     }
-}
-
-double OS_milliseconds()
-{
-    struct timeval tv; double millis;
-    gettimeofday(&tv,NULL);
-    millis = ((double)tv.tv_sec * 1000. + (double)tv.tv_usec / 1000.);
-    //printf("tv_sec.%ld usec.%d %f\n",tv.tv_sec,tv.tv_usec,millis);
-    return(millis);
 }
 
 void lock_queue(queue_t *queue)
