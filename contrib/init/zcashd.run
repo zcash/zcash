@@ -1,0 +1,49 @@
+#!/bin/bash
+export HOME="/var/lib/zcash"
+
+ARGS=""
+ARGS+=" -printtoconsole"
+ARGS+=" -datadir=$HOME"
+ARGS+=" -conf=$HOME/zcash.conf"
+ARGS+=" -rpcallowip=::/0"
+
+if [[ ! -z "$ZCASH_MINE" ]]; then
+    ARGS+=" -gen=1"
+    ARGS+=" -genproclimit=-1"
+fi
+
+# gen random pw for rpc server
+RANDOMPW=$(dd if=/dev/urandom bs=10 count=1 status=none |
+    shasum | cut -b 1-20)
+
+cd $HOME
+
+if [[ ! -e $HOME/.zcash-params ]]; then
+    ln -s /etc/zcash $HOME/.zcash-params
+fi
+
+if [[ ! -e $HOME/zcash.conf ]]; then
+
+    # write config file
+    cat > $HOME/zcash.conf <<EOF
+rpcuser=${ZCASH_RPCUSER:-rpcuser}
+rpcpassword=${ZCASH_RPCPASSWORD:-$RANDOMPW}
+equihashsolver=tromp
+EOF
+
+    # set permissions on config file
+    chmod go-rwx $HOME/zcash.conf
+fi
+
+# SECURITY this puts the rpc password into the container log
+cat $HOME/zcash.conf
+
+chown -R zcash:zcash $HOME
+
+# slow down restart loop if flapping
+sleep 1
+exec chpst -uzcash \
+    /usr/local/bin/zcashd \
+        $ARGS \
+        $ZCASHD_EXTRA_OPTS \
+        2>&1
