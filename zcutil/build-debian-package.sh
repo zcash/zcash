@@ -36,7 +36,6 @@ cp $SRC_DEB/control $BUILD_DIR/DEBIAN
 #cp $SRC_DEB/postrm $BUILD_DIR/DEBIAN
 #cp $SRC_DEB/preinst $BUILD_DIR/DEBIAN
 #cp $SRC_DEB/prerm $BUILD_DIR/DEBIAN
-cp $SRC_DEB/rules $BUILD_DIR/DEBIAN
 # Copy binaries
 cp $SRC_PATH/src/zcashd $DEB_BIN
 cp $SRC_PATH/src/zcash-cli $DEB_BIN

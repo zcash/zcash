@@ -38,6 +38,9 @@ previous release:
     contrib/DEBIAN/control
     contrib/gitian-descriptors/gitian-linux.yml
 
+    help2man -n "RPC client for the Zcash daemon" src/zcash-cli > contrib/DEBIAN/manpages/zcash-cli.1
+    help2man -n "Network daemon for interacting with the Zcash blockchain" src/zcashd > contrib/DEBIAN/manpages/zcashd.1
+
 
 In `configure.ac` and `clientversion.h`:
 
