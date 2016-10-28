@@ -10,6 +10,10 @@ from time import *
 
 class WalletNullifiersTest (BitcoinTestFramework):
 
+    def setup_nodes(self):
+        return start_nodes(4, self.options.tmpdir,
+                           extra_args=[['-developerencryptwallet']] * 4)
+
     def run_test (self):
         # add zaddr to node 0
         myzaddr0 = self.nodes[0].z_getnewaddress()
@@ -17,7 +21,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         # send node 0 taddr to zaddr to get out of coinbase
         mytaddr = self.nodes[0].getnewaddress();
         recipients = []
-        recipients.append({"address":myzaddr0, "amount":10.0})
+        recipients.append({"address":myzaddr0, "amount":Decimal('10.0')-Decimal('0.0001')}) # utxo amount less fee
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
 
         opids = []
@@ -35,6 +39,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
                 mytxid = results[0]["result"]["txid"]
                 break
 
+        self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
@@ -75,6 +80,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
                 mytxid = results[0]["result"]["txid"]
                 break
 
+        self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
@@ -106,6 +112,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
                 mytxid = results[0]["result"]["txid"]
                 break
 
+        self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
 
@@ -146,6 +153,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
                 mytxid = results[0]["result"]["txid"]
                 break
 
+        self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
 

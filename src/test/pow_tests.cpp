@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_pow_limit)
     // TODO change once the harder genesis block is generated
     bnAvg.SetCompact(KOMODO_MINDIFF_NBITS);
     BOOST_CHECK_EQUAL(KOMODO_MINDIFF_NBITS,
-                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params));
+    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params));
 }
 
 /* Test the constraint on the lower bound for actual time taken */

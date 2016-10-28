@@ -1,5 +1,29 @@
-zcash (1.0.0-rc1) UNRELEASED; urgency=medium
+zcash (1.0.0-sprout) jessie; urgency=medium
+
+  * 1.0.0 release.
+
+ -- Zcash Company <team@z.cash>  Fri, 28 Oct 2016 03:00:50 -0700
+
+zcash (1.0.0-rc4) jessie; urgency=medium
+
+  * 1.0.0-rc4 release.
+
+ -- Zcash Company <team@z.cash>  Thu, 27 Oct 2016 13:36:00 +0100
+
+zcash (1.0.0-rc3) jessie; urgency=medium
+
+  * 1.0.0-rc3 release.
+
+ -- Zcash Company <team@z.cash>  Wed, 26 Oct 2016 23:17:03 +0100
+
+zcash (1.0.0-rc2) jessie; urgency=medium
+
+  * 1.0.0-rc2 release.
+
+ -- Zcash Company <team@z.cash>  Sun, 23 Oct 2016 01:51:27 +0100
+
+zcash (1.0.0-rc1) jessie; urgency=medium
 
   * Initial packaging for Debian.
 
- -- Zcash Company <team@z.cash>  Thu, 13 Oct 2016 20:12:17 -0700
+ -- Zcash Company <team@z.cash>  Mon, 17 Oct 2016 11:47:02 -0700

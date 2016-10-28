@@ -388,13 +388,13 @@ int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *bas
 Value paxprice(const Array& params, bool fHelp)
 {
     if ( fHelp || params.size() < 3 || params.size() > 4 )
-        throw runtime_error("paxprice \"base\" \"rel\" height\n");
+        throw runtime_error("paxprice \"base\" \"rel\" height amount\n");
     LOCK(cs_main);
     Object ret; uint64_t basevolume=0,relvolume;
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
     int32_t height = atoi(params[2].get_str().c_str());
-    if ( (basevolume= COIN * atof(params[3].get_str().c_str())) == 0 )
+    if ( params.size() == 3 || (basevolume= COIN * atof(params[3].get_str().c_str())) == 0 )
         basevolume = COIN;
     relvolume = komodo_paxprice(height,(char *)base.c_str(),(char *)rel.c_str(),basevolume);
     ret.push_back(Pair("base", base));

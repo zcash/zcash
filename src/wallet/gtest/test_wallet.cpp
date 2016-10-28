@@ -11,9 +11,11 @@
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
+#include <boost/filesystem.hpp>
+
 using ::testing::Return;
 
-ZCJoinSplit* params = ZCJoinSplit::Unopened();
+extern ZCJoinSplit* params;
 
 ACTION(ThrowLogicError) {
     throw std::logic_error("Boom");
@@ -176,6 +178,13 @@ CWalletTx GetValidSpend(const libzcash::SpendingKey& sk,
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
     return wtx;
+}
+
+TEST(wallet_tests, setup_datadir_location_run_as_first_test) {
+    // Get temporary and unique path for file.
+    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
+    boost::filesystem::create_directories(pathTemp);
+    mapArgs["-datadir"] = pathTemp.string();
 }
 
 TEST(wallet_tests, note_data_serialisation) {
@@ -734,6 +743,14 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         wallet.GetNoteWitnesses(notes, witnesses, anchor4);
         EXPECT_TRUE((bool) witnesses[0]);
         EXPECT_EQ(anchor2, anchor4);
+
+        // Incrementing with the same block again should not change the cache
+        uint256 anchor5;
+        wallet.IncrementNoteWitnesses(&index2, &block2, tree);
+        std::vector<boost::optional<ZCIncrementalWitness>> witnesses5;
+        wallet.GetNoteWitnesses(notes, witnesses5, anchor5);
+        EXPECT_EQ(witnesses, witnesses5);
+        EXPECT_EQ(anchor4, anchor5);
     }
 }
 
