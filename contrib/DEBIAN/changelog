@@ -1,3 +1,9 @@
+dwcash (1.0.0-rc4) jessie; urgency=medium
+
+  * 1.0.0-rc4 release.
+
+ -- DeepWebCash Company <team@dw.cash>  Thu, 27 Oct 2016 13:36:00 +0100
+
 dwcash (1.0.0-rc3) jessie; urgency=medium
 
   * 1.0.0-rc3 release.

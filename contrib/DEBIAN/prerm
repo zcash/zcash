@@ -13,15 +13,12 @@ set -e
 #        * <deconfigured's-prerm> `deconfigure' `in-favour'
 #          <package-being-installed> <version> `removing'
 #          <conflicting-package> <version>
-# for details, see http://www.debian.org/doc/debian-policy/ or
+# for details, see https://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
 
 case "$1" in
-    remove|deconfigure)
-    ;;
-
-    upgrade)
+    remove|upgrade|deconfigure)
     ;;
 
     failed-upgrade)
