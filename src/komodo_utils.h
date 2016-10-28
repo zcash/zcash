@@ -1125,8 +1125,8 @@ void komodo_configfile(char *symbol,uint16_t port)
     crc = calc_crc32(0,(uint8_t *)buf,(int32_t)(sizeof(r)+sizeof(r2)+strlen(symbol)));
     OS_randombytes(buf2,sizeof(buf2));
     for (i=0; i<sizeof(buf2); i++)
-        sprintf(&line[i*2],"%02x",buf2[i]);
-    line[i*2] = 0;
+        sprintf(&password[i*2],"%02x",buf2[i]);
+    password[i*2] = 0;
     sprintf(buf,"%s.conf",symbol);
     BITCOIND_PORT = port;
 #ifdef WIN32
@@ -1138,7 +1138,7 @@ void komodo_configfile(char *symbol,uint16_t port)
     {
         if ( (fp= fopen(fname,"wb")) != 0 )
         {
-            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\n",crc,line,port);
+            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\n",crc,password,port);
             fclose(fp);
             printf("Created (%s)\n",fname);
         } else printf("Couldnt create (%s)\n",fname);
