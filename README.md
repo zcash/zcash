@@ -69,8 +69,8 @@ Komodo
 ```
 git clone https://github.com/jl777/komodo
 cd komodo
-./autogen.sh
-./configure --with-incompatible-bdb --with-gui
+#./autogen.sh
+#./configure --with-incompatible-bdb --with-gui
 # This command might finish with: configure: error: libgmp headers missing. This can be ignored. so can libsnark directory missing error
 ./zcutil/fetch-params.sh
 
