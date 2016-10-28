@@ -26,8 +26,8 @@ See important security warnings in
 Where do I begin?
 -----------------
 
-We have a guide for joining the public testnet:
-https://github.com/zcash/zcash/wiki/Beta-Guide
+We have a guide for joining the public network:
+https://github.com/zcash/zcash/wiki/1.0-User-Guide
 
 ### Need Help?
 
