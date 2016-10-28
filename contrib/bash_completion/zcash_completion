@@ -1,0 +1,32 @@
+# zcash_completion
+#
+# Created by M. Massenzio, 2016-10-27
+#
+# Enables TAB completion in bash for the zcash-cli
+# Source it on the command line or, even better,
+# place it in /etc/bash_completion.d/
+#
+
+declare -r CMDS="${HOME}/.zcash/zcash_cmds"
+
+_zcash() {
+
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    opts=$(cat $CMDS)
+
+    if [[ ${cur} == * ]] ; then
+        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+        return 0
+    fi
+}
+
+if [[ ! -e ${CMDS} ]]; then
+    echo "Missing commands file ${CMDS}"
+    exit 1
+fi
+
+complete -F _zcash zcash-cli
+
