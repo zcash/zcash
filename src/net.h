@@ -278,6 +278,7 @@ public:
     // b) the peer may tell us in its version message that we should not relay tx invs
     //    until it has initialized its bloom filter.
     bool fRelayTxes;
+    bool fSentAddr;
     CSemaphoreGrant grantOutbound;
     CCriticalSection cs_filter;
     CBloomFilter* pfilter;

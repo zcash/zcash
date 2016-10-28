@@ -324,11 +324,6 @@ public:
             READWRITE(VARINT(nDataPos));
         if (nStatus & BLOCK_HAVE_UNDO)
             READWRITE(VARINT(nUndoPos));
-        uint8_t tag = 0;
-        READWRITE(tag);
-        if (ser_action.ForRead() && tag != 0) {
-            assert(!"For the first time running zcashd after upgrading to v1.0.0-rc1, please use the -reindex option.");
-        }
         READWRITE(hashAnchor);
 
         // block header

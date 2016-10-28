@@ -699,7 +699,23 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                         JSOutPoint jsoutpt {hash, i, j};
                         if (mapWallet[hash].mapNoteData.count(jsoutpt)) {
                             CNoteData* nd = &(mapWallet[hash].mapNoteData[jsoutpt]);
-                            assert(nd->witnesses.size() == 0);
+                            if (nd->witnesses.size() > 0) {
+                                // We think this can happen because we write out the
+                                // witness cache state after every block increment or
+                                // decrement, but the block index itself is written in
+                                // batches. So if the node crashes in between these two
+                                // operations, it is possible for IncrementNoteWitnesses
+                                // to be called again on previously-cached blocks. This
+                                // doesn't affect existing cached notes because of the
+                                // CNoteData::witnessHeight checks. See #1378 for details.
+                                LogPrintf("Inconsistent witness cache state found for %s\n- Cache size: %d\n- Top (height %d): %s\n- New (height %d): %s\n",
+                                          jsoutpt.ToString(), nd->witnesses.size(),
+                                          nd->witnessHeight,
+                                          nd->witnesses.front().root().GetHex(),
+                                          pindex->nHeight,
+                                          tree.witness().root().GetHex());
+                                nd->witnesses.clear();
+                            }
                             nd->witnesses.push_front(tree.witness());
                             // Set height to one less than pindex so it gets incremented
                             nd->witnessHeight = pindex->nHeight - 1;

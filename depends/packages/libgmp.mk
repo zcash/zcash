@@ -7,7 +7,7 @@ $(package)_dependencies=
 $(package)_config_opts=--enable-cxx --disable-shared
 
 define $(package)_config_cmds
-  $($(package)_autoconf)
+  $($(package)_autoconf) --host=$(host) --build=$(build)
 endef
 
 define $(package)_build_cmds

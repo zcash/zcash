@@ -1,0 +1,11 @@
+--- boost_1_62_0-orig/boost/asio/detail/socket_types.hpp	2016-09-21 15:33:21.000000000 +0100
++++ boost_1_62_0/boost/asio/detail/socket_types.hpp	2016-10-18 03:08:41.712254217 +0100
+@@ -58,7 +58,7 @@
+ #else
+ # include <sys/ioctl.h>
+ # if !defined(__SYMBIAN32__)
+-#  include <sys/poll.h>
++#  include <poll.h>
+ # endif
+ # include <sys/types.h>
+ # include <sys/stat.h>
