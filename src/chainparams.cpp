@@ -50,14 +50,12 @@ public:
         consensus.nPowTargetSpacing = 2.5 * 60;
         consensus.fPowAllowMinDifficultyBlocks = false;
         /**
-         * The message start string is designed to be unlikely to occur in normal data.
-         * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
-         * a large 32-bit integer with any alignment.
+         * The message start string should be awesome! ⓩ❤
          */
-        pchMessageStart[0] = 0xf9;
-        pchMessageStart[1] = 0xf3;
-        pchMessageStart[2] = 0xac;
-        pchMessageStart[3] = 0xab;
+        pchMessageStart[0] = 0x24;
+        pchMessageStart[1] = 0xe9;
+        pchMessageStart[2] = 0x27;
+        pchMessageStart[3] = 0x64;
         vAlertPubKey = ParseHex("04b7ecf0baa90495ceb4e4090f6b2fd37eec1e9c85fac68a487f3ce11589692e4a317479316ee814e066638e1db54e37a10689b70286e6315b1087b6615d179264");
         nDefaultPort = 8233;
         nMinerThreads = 0;
@@ -212,8 +210,8 @@ public:
         consensus.fPowAllowMinDifficultyBlocks = true;
         pchMessageStart[0] = 0xfa;
         pchMessageStart[1] = 0x1a;
-        pchMessageStart[2] = 0x24;
-        pchMessageStart[3] = 0xb6;
+        pchMessageStart[2] = 0xf9;
+        pchMessageStart[3] = 0xbf;
         vAlertPubKey = ParseHex("044e7a1553392325c871c5ace5d6ad73501c66f4c185d6b0453cf45dec5a1322e705c672ac1a27ef7cdaf588c10effdf50ed5f95f85f2f54a5f6159fca394ed0c6");
         nDefaultPort = 18233;
         nMinerThreads = 0;
