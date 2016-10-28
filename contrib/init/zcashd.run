@@ -29,6 +29,10 @@ if [[ ! -e $HOME/zcash.conf ]]; then
 rpcuser=${ZCASH_RPCUSER:-rpcuser}
 rpcpassword=${ZCASH_RPCPASSWORD:-$RANDOMPW}
 equihashsolver=tromp
+addnode=mainnet.z.cash
+addnode=54.154.158.29
+addnode=94.23.102.99
+addnode=159.203.242.63
 EOF
 
     # set permissions on config file
