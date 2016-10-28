@@ -79,7 +79,7 @@ int zcashconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int
         stream >> tx;
         if (nIn >= tx.vin.size())
             return set_error(err, zcashconsensus_ERR_TX_INDEX);
-        if (tx.GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION) != txToLen)
+        if (GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) != txToLen)
             return set_error(err, zcashconsensus_ERR_TX_SIZE_MISMATCH);
 
          // Regardless of the verification result, the tx did not error.

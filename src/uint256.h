@@ -75,11 +75,6 @@ public:
         return sizeof(data);
     }
 
-    unsigned int GetSerializeSize(int nType, int nVersion) const
-    {
-        return sizeof(data);
-    }
-
     template<typename Stream>
     void Serialize(Stream& s, int nType, int nVersion) const
     {

@@ -123,10 +123,6 @@ public:
     }
 
     //! Implement serialization, as if this was a byte vector.
-    unsigned int GetSerializeSize(int nType, int nVersion) const
-    {
-        return size() + 1;
-    }
     template <typename Stream>
     void Serialize(Stream& s, int nType, int nVersion) const
     {
@@ -218,10 +214,6 @@ struct CExtPubKey {
     void Decode(const unsigned char code[BIP32_EXTKEY_SIZE]);
     bool Derive(CExtPubKey& out, unsigned int nChild) const;
 
-    unsigned int GetSerializeSize(int nType, int nVersion) const
-    {
-        return BIP32_EXTKEY_SIZE+1; //add one byte for the size (compact int)
-    }
     template <typename Stream>
     void Serialize(Stream& s, int nType, int nVersion) const
     {

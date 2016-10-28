@@ -281,7 +281,7 @@ public:
         if (scriptPubKey.IsUnspendable())
             return 0;
 
-        size_t nSize = GetSerializeSize(SER_DISK,0)+148u;
+        size_t nSize = GetSerializeSize(*this, SER_DISK, 0) + 148u;
         return 3*minRelayTxFee.GetFee(nSize);
     }
 
