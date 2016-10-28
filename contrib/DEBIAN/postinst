@@ -2,8 +2,9 @@
 # postinst script for zcash
 #
 # see: dh_installdeb(1)
+
 set -e
-set -x
+
 # summary of how this script can be called:
 #        * <postinst> `configure' <most-recently-configured-version>
 #        * <old-postinst> `abort-upgrade' <new version>
@@ -13,8 +14,9 @@ set -x
 #        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
 #          <failed-install-package> <version> `removing'
 #          <conflicting-package> <version>
-# for details, see http://www.debian.org/doc/debian-policy/ or
+# for details, see https://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
+
 
 case "$1" in
     configure)
