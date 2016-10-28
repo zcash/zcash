@@ -475,10 +475,10 @@ void static BitcoinMiner(CWallet *pwallet)
     unsigned int n = chainparams.EquihashN();
     unsigned int k = chainparams.EquihashK();
 
-    std::string solver = GetArg("-equihashsolver", "default");
+    std::string solver = GetArg("-equihashsolver", "tromp");
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
-
+    fprintf(stderr,"Mining with %s\n",solver.c_str());
     std::mutex m_cs;
     bool cancelSolver = false;
     boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
