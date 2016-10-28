@@ -34,9 +34,10 @@ protected:
     typedef SerializeType vector_type;
     vector_type vch;
     unsigned int nReadPos;
-public:
+
     int nType;
     int nVersion;
+public:
 
     typedef typename vector_type::allocator_type   allocator_type;
     typedef typename vector_type::size_type        size_type;
@@ -219,9 +220,9 @@ public:
     int in_avail()               { return size(); }
 
     void SetType(int n)          { nType = n; }
-    int GetType()                { return nType; }
+    int GetType() const          { return nType; }
     void SetVersion(int n)       { nVersion = n; }
-    int GetVersion()             { return nVersion; }
+    int GetVersion() const       { return nVersion; }
 
     void read(char* pch, size_t nSize)
     {
@@ -353,17 +354,15 @@ private:
     CAutoFile(const CAutoFile&);
     CAutoFile& operator=(const CAutoFile&);
 
-    int nType;
-    int nVersion;
-	
+    const int nType;
+    const int nVersion;
+
     FILE* file;	
 
 public:
-    CAutoFile(FILE* filenew, int nTypeIn, int nVersionIn)
+    CAutoFile(FILE* filenew, int nTypeIn, int nVersionIn) : nType(nTypeIn), nVersion(nVersionIn)
     {
         file = filenew;
-        nType = nTypeIn;
-        nVersion = nVersionIn;
     }
 
     ~CAutoFile()
@@ -398,10 +397,8 @@ public:
     //
     // Stream subset
     //
-    void SetType(int n)          { nType = n; }
-    int GetType()                { return nType; }
-    void SetVersion(int n)       { nVersion = n; }
-    int GetVersion()             { return nVersion; }
+    int GetType() const          { return nType; }
+    int GetVersion() const       { return nVersion; }
 
     void read(char* pch, size_t nSize)
     {
@@ -473,8 +470,8 @@ private:
     CBufferedFile(const CBufferedFile&);
     CBufferedFile& operator=(const CBufferedFile&);
 
-    int nType;
-    int nVersion;
+    const int nType;
+    const int nVersion;
 
     FILE *src;            // source file
     uint64_t nSrcPos;     // how many bytes have been read from source
@@ -504,11 +501,9 @@ protected:
 
 public:
     CBufferedFile(FILE *fileIn, uint64_t nBufSize, uint64_t nRewindIn, int nTypeIn, int nVersionIn) :
-        nSrcPos(0), nReadPos(0), nReadLimit((uint64_t)(-1)), nRewind(nRewindIn), vchBuf(nBufSize, 0)
+        nType(nTypeIn), nVersion(nVersionIn), nSrcPos(0), nReadPos(0), nReadLimit((uint64_t)(-1)), nRewind(nRewindIn), vchBuf(nBufSize, 0)
     {
         src = fileIn;
-        nType = nTypeIn;
-        nVersion = nVersionIn;
     }
 
     ~CBufferedFile()
