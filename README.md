@@ -1,5 +1,5 @@
-DeepWebCash 1.0.0-rc4
-===============
+DeepWebCash 1.0.0
+===========
 
 What is DeepWebCash?
 --------------

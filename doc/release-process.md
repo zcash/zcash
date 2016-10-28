@@ -38,6 +38,9 @@ previous release:
     contrib/DEBIAN/control
     contrib/gitian-descriptors/gitian-linux.yml
 
+    help2man -n "RPC client for the DeepWebCash daemon" src/dwcash-cli > contrib/DEBIAN/manpages/dwcash-cli.1
+    help2man -n "Network daemon for interacting with the DeepWebCash blockchain" src/dwcashd > contrib/DEBIAN/manpages/dwcashd.1
+
 
 In `configure.ac` and `clientversion.h`:
 

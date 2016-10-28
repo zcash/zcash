@@ -36,13 +36,12 @@ cp $SRC_DEB/control $BUILD_DIR/DEBIAN
 #cp $SRC_DEB/postrm $BUILD_DIR/DEBIAN
 #cp $SRC_DEB/preinst $BUILD_DIR/DEBIAN
 #cp $SRC_DEB/prerm $BUILD_DIR/DEBIAN
-cp $SRC_DEB/rules $BUILD_DIR/DEBIAN
 # Copy binaries
 cp $SRC_PATH/src/dwcashd $DEB_BIN
 cp $SRC_PATH/src/dwcash-cli $DEB_BIN
 cp $SRC_PATH/zcutil/fetch-params.sh $DEB_BIN/dwcash-fetch-params
 # Copy docs
-cp $SRC_PATH/doc/release-notes/release-notes-$PACKAGE_VERSION.md $DEB_DOC/changelog
+cp $SRC_PATH/doc/release-notes/release-notes-1.0.0.md $DEB_DOC/changelog
 cp $SRC_DEB/changelog $DEB_DOC/changelog.Debian
 cp $SRC_DEB/copyright $DEB_DOC
 cp -r $SRC_DEB/examples $DEB_DOC
