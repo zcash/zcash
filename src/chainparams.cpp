@@ -29,6 +29,7 @@ using namespace std;
  *    timestamp before)
  * + Contains no strange transactions
  */
+void *chainparams_commandline(void *ptr);
 
 const arith_uint256 maxUint = UintToArith256(uint256S("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
@@ -153,9 +154,72 @@ public:
                  //   (the tx=... number in the SetBestChain debug.log lines)
             0    // * estimated number of transactions per day after checkpoint
         };
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        {
+            if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,chainparams_commandline,(void *)&consensus) != 0 )
+            {
+                
+            }
+        }
     }
 };
 static CMainParams mainParams;
+
+void *chainparams_commandline(void *ptr)
+{
+    //CChainParams *consensus = (CChainParams *)ptr;
+    static CBlock genesis;
+    uint32_t nonce; bool fNegative,fOverflow; arith_uint256 bnTarget; uint256 tmp,hash,powlimit;
+    powlimit = uint256S("000fffff00000000000000000000000000000000000000000000000000000000");
+    //fprintf(stderr,"POWLIMIT.%s\n",powlimit.ToString().c_str());
+    while ( ASSETCHAINS_PORT == 0 )
+    {
+        sleep(1);
+        //fprintf(stderr,"port.%u\n",ASSETCHAINS_PORT);
+    }
+    mainParams.SetDefaultPort(ASSETCHAINS_PORT);
+    mainParams.pchMessageStart[0] = ASSETCHAINS_MAGIC & 0xff;
+    mainParams.pchMessageStart[1] = (ASSETCHAINS_MAGIC >> 8) & 0xff;
+    mainParams.pchMessageStart[2] = (ASSETCHAINS_MAGIC >> 16) & 0xff;
+    mainParams.pchMessageStart[3] = (ASSETCHAINS_MAGIC >> 24) & 0xff;
+    //fprintf(stderr,"%s port.%u magic.%08x timestamp.%u supply.%u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,ASSETCHAINS_TIMESTAMP,(int32_t)ASSETCHAINS_SUPPLY);
+    for (nonce=ASSETCHAINS_SUPPLY; nonce<ASSETCHAINS_SUPPLY+1000000; nonce++)
+    {
+        genesis = CreateGenesisBlock(ASSETCHAINS_TIMESTAMP, nonce, GENESIS_NBITS, 1, COIN);
+        bnTarget.SetCompact(GENESIS_NBITS,&fNegative,&fOverflow);
+        if ( fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(powlimit) )
+        {
+            fprintf(stderr,"%d %d target > powlimit\n",fNegative,fOverflow);
+            continue;
+        }
+        hash = genesis.GetHash();
+        if ( UintToArith256(hash) > bnTarget )
+        {
+            tmp = ArithToUint256(bnTarget);
+            //fprintf(stderr,"%u: hash %s > target %s\n",nonce,hash.ToString().c_str(),tmp.ToString().c_str());
+            continue;
+        }
+        break;
+    }
+    if ( nonce == ASSETCHAINS_SUPPLY+1000000 )
+    {
+        fprintf(stderr,"couldnt find nonce, abort\n");
+        exit(-1);
+    }
+    mainParams.setnonce(nonce);
+    mainParams.settimestamp(ASSETCHAINS_TIMESTAMP);
+    fprintf(stderr,">>>>>>>>>> %u: merkle %s hash %s <= target %s\n",nonce,genesis.hashMerkleRoot.ToString().c_str(),genesis.GetHash().ToString().c_str(),tmp.ToString().c_str());
+    mainParams.consensus.hashGenesisBlock = genesis.GetHash();
+    mainParams.recalc_genesis(nonce);
+    fprintf(stderr,">>>>>>>>>> %u: hash %s merkle %s timestamp.%u\n",mainParams.GenesisBlock().nNonce,mainParams.GenesisBlock().GetHash().ToString().c_str(),mainParams.GenesisBlock().hashMerkleRoot.ToString().c_str(),mainParams.GenesisBlock().nTime);
+    
+    //set_genesis_tip(hash);
+    SelectBaseParams("main");
+    //BaseParams().nRPCPort = ASSETCHAINS_PORT + 1;
+    fprintf(stderr,">>>>>>>>>> %s: port.%u/%u magic.%08x %u nonce.%u time.%u nbits.%08x %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_PORT+1,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,nonce,ASSETCHAINS_TIMESTAMP,GENESIS_NBITS,(uint32_t)ASSETCHAINS_SUPPLY);
+    ASSETCHAIN_INIT = 1;
+    return(0);
+}
 
 /**
  * Testnet (v3)
