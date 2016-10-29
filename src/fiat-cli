@@ -21,7 +21,7 @@ echo nok; fiat/nok $1 $2 $3 $4
 echo nzd; fiat/nzd $1 $2 $3 $4
 echo php; fiat/php $1 $2 $3 $4
 echo pln; fiat/pln $1 $2 $3 $4
-echo rbl; fiat/rbl $1 $2 $3 $4
+echo brl; fiat/brl $1 $2 $3 $4
 echo ron; fiat/ron $1 $2 $3 $4
 echo rub; fiat/rub $1 $2 $3 $4
 echo sek; fiat/sek $1 $2 $3 $4

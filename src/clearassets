@@ -9,7 +9,7 @@ rm -rf ~/.komodo/NZD
 rm -rf ~/.komodo/CNY 
 rm -rf ~/.komodo/RUB 
 rm -rf ~/.komodo/MXN 
-rm -rf ~/.komodo/RBL 
+rm -rf ~/.komodo/BRL 
 rm -rf ~/.komodo/INR 
 rm -rf ~/.komodo/HKD 
 rm -rf ~/.komodo/TRY 
