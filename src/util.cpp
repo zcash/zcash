@@ -534,7 +534,11 @@ void ClearDatadirCache()
 
 boost::filesystem::path GetConfigFile()
 {
-    boost::filesystem::path pathConfigFile(GetArg("-conf", "komodo.conf"));
+    char confname[512];
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        sprintf(confname,"%s.conf",ASSETCHAINS_SYMBOL);
+    else strcpy(confname,"komodo.conf");
+    boost::filesystem::path pathConfigFile(GetArg("-conf",confname));
     if (!pathConfigFile.is_complete())
         pathConfigFile = GetDataDir(false) / pathConfigFile;
 

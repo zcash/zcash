@@ -1268,11 +1268,11 @@ void komodo_configfile(char *symbol,uint16_t port)
 #ifdef WIN32
     while ( fname[strlen(fname)-1] != '\\' )
         fname[strlen(fname)-1] = 0;
-    strcat(fname,".komodo/komodo.conf");
+    strcat(fname,"komodo.conf");
 #else
     while ( fname[strlen(fname)-1] != '/' )
         fname[strlen(fname)-1] = 0;
-    strcat(fname,".komodo/komodo.conf");
+    strcat(fname,"komodo.conf");
 #endif
     printf("KOMODO.(%s)\n",fname);
     if ( (fp= fopen(fname,"rb")) != 0 )
