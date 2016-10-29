@@ -17,16 +17,12 @@ _zcash() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     opts=$(cat $CMDS)
 
-    if [[ ${cur} == * ]] ; then
-        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-        return 0
-    fi
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    return 0
 }
 
 if [[ ! -e ${CMDS} ]]; then
-    echo "Missing commands file ${CMDS}"
-    exit 1
+    echo "Missing zcash-cli commands file '${CMDS}', tab-completion not installed"
+else
+    complete -F _zcash zcash-cli
 fi
-
-complete -F _zcash zcash-cli
-
