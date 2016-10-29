@@ -504,7 +504,7 @@ void static BitcoinMiner(CWallet *pwallet)
     try {
         while (true)
         {
-            if (0&&chainparams.MiningRequiresPeers())
+            if (chainparams.MiningRequiresPeers())
             {
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
