@@ -112,9 +112,12 @@ void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
         memcpy(kp->pubkey,pubkeys[k],33);
         kp->notaryid = k;
         HASH_ADD_KEYPTR(hh,N.Notaries,kp->pubkey,33,kp);
-        for (i=0; i<33; i++)
-            printf("%02x",pubkeys[k][i]);
-        printf(" notarypubs.[%d]\n",k);
+        if ( height > 10000 )
+        {
+            for (i=0; i<33; i++)
+                printf("%02x",pubkeys[k][i]);
+            printf(" notarypubs.[%d]\n",k);
+        }
     }
     N.numnotaries = num;
     htind = KOMODO_PUBKEYS_HEIGHT(height) / KOMODO_ELECTION_GAP;

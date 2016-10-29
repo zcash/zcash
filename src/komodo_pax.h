@@ -18,9 +18,7 @@ int32_t NUM_PRICES; uint32_t *PVALS;
 #define USD 0
 
 #define MAX_CURRENCIES 32
-char CURRENCIES[][8] = { "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "NZD", // major currencies
-    "CNY", "RUB", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK",
-    "KMD" };
+extern char CURRENCIES[][8];
 
 uint64_t M1SUPPLY[] = { 3317900000000, 6991604000000, 667780000000000, 1616854000000, 331000000000, 861909000000, 584629000000, 46530000000, // major currencies
     45434000000000, 16827000000000, 3473357229000, 306435000000, 27139000000000, 2150641000000, 347724099000, 1469583000000, 749543000000, 1826110000000, 2400434000000, 1123925000000, 3125276000000, 13975000000000, 317657000000, 759706000000000, 354902000000, 2797061000000, 162189000000, 163745000000, 1712000000000, 39093000000, 1135490000000000, 80317000000,
@@ -231,19 +229,6 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
                 printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d (%llu %llu %llu)\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES,(long long)kmdbtc,(long long)btcusd,(long long)cnyusd);
         }
     }
-}
-
-int32_t komodo_baseid(char *origbase)
-{
-    int32_t i; char base[64];
-    for (i=0; origbase[i]!=0&&i<sizeof(base); i++)
-        base[i] = toupper((int32_t)(origbase[i] & 0xff));
-    base[i] = 0;
-    for (i=0; i<=MAX_CURRENCIES; i++)
-        if ( strcmp(CURRENCIES[i],base) == 0 )
-            return(i);
-    printf("illegal base.(%s) %s\n",origbase,base);
-    return(-1);
 }
 
 uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t basevolume)

@@ -549,9 +549,6 @@ CCoinsViewCache *pcoinsTip = NULL;
 CBlockTreeDB *pblocktree = NULL;
 
 // Komodo globals
-int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
-std::string NOTARY_PUBKEY;
-uint8_t NOTARY_PUBKEY33[33];
 
 #define KOMODO_TESTNET_EXPIRATION 60000
 //#define KOMODO_ENABLE_INTEREST enabling this is a hardfork
@@ -1421,15 +1418,27 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
 }
 
 uint64_t komodo_moneysupply(int32_t height);
+extern char ASSETCHAINS_SYMBOL[16];
+extern uint32_t ASSETCHAINS_MAGIC;
+extern uint64_t ASSETCHAINS_SUPPLY;
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
     CAmount nSubsidy = 3 * COIN;
-    if ( nHeight == 1 )
-        return(100000000 * COIN); // ICO allocation
-    else if ( komodo_moneysupply(nHeight) < MAX_MONEY )
-        return(3 * COIN);
-    else return(0);
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    {
+        if ( nHeight == 1 )
+            return(100000000 * COIN); // ICO allocation
+        else if ( komodo_moneysupply(nHeight) < MAX_MONEY )
+            return(3 * COIN);
+        else return(0);
+    }
+    else
+    {
+        if ( nHeight == 1 )
+            return(ASSETCHAINS_SUPPLY * COIN + (ASSETCHAINS_MAGIC & 0xffffff));
+        else return(10000);
+    }
 /*
     // Mining slow start
     // The subsidy is ramped up linearly, skipping the middle payout of

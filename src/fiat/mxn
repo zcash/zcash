@@ -1,0 +1,1 @@
+./komodo-cli -ac_name=MXN $1 $2 $3 $4

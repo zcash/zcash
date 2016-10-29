@@ -782,6 +782,24 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
     return(coinaddr);
 }
 
+#define MAX_CURRENCIES 32
+char CURRENCIES[][8] = { "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "NZD", // major currencies
+    "CNY", "RUB", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK",
+    "KMD" };
+
+int32_t komodo_baseid(char *origbase)
+{
+    int32_t i; char base[64];
+    for (i=0; origbase[i]!=0&&i<sizeof(base); i++)
+        base[i] = toupper((int32_t)(origbase[i] & 0xff));
+    base[i] = 0;
+    for (i=0; i<=MAX_CURRENCIES; i++)
+        if ( strcmp(CURRENCIES[i],base) == 0 )
+            return(i);
+    printf("illegal base.(%s) %s\n",origbase,base);
+    return(-1);
+}
+
 int32_t _unhex(char c)
 {
     if ( c >= '0' && c <= '9' )
@@ -1086,89 +1104,6 @@ void OS_randombytes(unsigned char *x,long xlen)
     }
 }
 
-void komodo_userpass(char *username,char *password,FILE *fp)
-{
-    char *rpcuser,*rpcpassword,*str,line[8192];
-    rpcuser = rpcpassword = 0;
-    username[0] = password[0] = 0;
-    while ( fgets(line,sizeof(line),fp) != 0 )
-    {
-        if ( line[0] == '#' )
-            continue;
-        //printf("line.(%s) %p %p\n",line,strstr(line,(char *)"rpcuser"),strstr(line,(char *)"rpcpassword"));
-        if ( (str= strstr(line,(char *)"rpcuser")) != 0 )
-            rpcuser = parse_conf_line(str,(char *)"rpcuser");
-        else if ( (str= strstr(line,(char *)"rpcpassword")) != 0 )
-            rpcpassword = parse_conf_line(str,(char *)"rpcpassword");
-    }
-    if ( rpcuser != 0 && rpcpassword != 0 )
-    {
-        strcpy(username,rpcuser);
-        strcpy(password,rpcpassword);
-    }
-    //printf("rpcuser.(%s) rpcpassword.(%s) KMDUSERPASS.(%s) %u\n",rpcuser,rpcpassword,KMDUSERPASS,port);
-    if ( rpcuser != 0 )
-        free(rpcuser);
-    if ( rpcpassword != 0 )
-        free(rpcpassword);
-}
-
-void komodo_configfile(char *symbol,uint16_t port)
-{
-    static char myusername[512],mypassword[8192];
-    FILE *fp; uint8_t buf2[512]; char fname[512],buf[128],username[512],password[8192]; uint32_t crc,r,r2,i;
-    r = (uint32_t)time(NULL);
-    r2 = OS_milliseconds();
-    memcpy(buf,&r,sizeof(r));
-    memcpy(&buf[sizeof(r)],&r2,sizeof(r2));
-    memcpy(&buf[sizeof(r)+sizeof(r2)],symbol,strlen(symbol));
-    crc = calc_crc32(0,(uint8_t *)buf,(int32_t)(sizeof(r)+sizeof(r2)+strlen(symbol)));
-    OS_randombytes(buf2,sizeof(buf2));
-    for (i=0; i<sizeof(buf2); i++)
-        sprintf(&password[i*2],"%02x",buf2[i]);
-    password[i*2] = 0;
-    sprintf(buf,"%s.conf",symbol);
-    BITCOIND_PORT = port;
-#ifdef WIN32
-    sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),buf);
-#else
-    sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),buf);
-#endif
-    if ( (fp= fopen(fname,"rb")) == 0 )
-    {
-        if ( (fp= fopen(fname,"wb")) != 0 )
-        {
-            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\nbind=127.0.0.1\n",crc,password,port);
-            fclose(fp);
-            printf("Created (%s)\n",fname);
-        } else printf("Couldnt create (%s)\n",fname);
-    }
-    else
-    {
-        komodo_userpass(myusername,mypassword,fp);
-        mapArgs["-rpcpassword"] = mypassword;
-        mapArgs["-rpcusername"] = myusername;
-        fclose(fp);
-    }
-    strcpy(fname,GetDataDir(false).string().c_str());
-#ifdef WIN32
-    while ( fname[strlen(fname)-1] != '\\' )
-        fname[strlen(fname)-1] = 0;
-    strcat(fname,".komodo/komodo.conf");
-#else
-    while ( fname[strlen(fname)-1] != '/' )
-        fname[strlen(fname)-1] = 0;
-    strcat(fname,".komodo/komodo.conf");
-#endif
-    printf("KOMODO.(%s)\n",fname);
-    if ( (fp= fopen(fname,"rb")) != 0 )
-    {
-        komodo_userpass(username,password,fp);
-        sprintf(KMDUSERPASS,"%s:%s",username,password);
-        fclose(fp);
-    } else printf("couldnt open.(%s)\n",fname);
-}
-
 void lock_queue(queue_t *queue)
 {
     if ( queue->initflag == 0 )
@@ -1281,4 +1216,135 @@ void iguana_initQ(queue_t *Q,char *name)
     queue_enqueue(name,Q,I);
     if ( (item= queue_dequeue(Q)) != 0 )
         free(item);
+}
+
+void komodo_userpass(char *username,char *password,FILE *fp)
+{
+    char *rpcuser,*rpcpassword,*str,line[8192];
+    rpcuser = rpcpassword = 0;
+    username[0] = password[0] = 0;
+    while ( fgets(line,sizeof(line),fp) != 0 )
+    {
+        if ( line[0] == '#' )
+            continue;
+        //printf("line.(%s) %p %p\n",line,strstr(line,(char *)"rpcuser"),strstr(line,(char *)"rpcpassword"));
+        if ( (str= strstr(line,(char *)"rpcuser")) != 0 )
+            rpcuser = parse_conf_line(str,(char *)"rpcuser");
+        else if ( (str= strstr(line,(char *)"rpcpassword")) != 0 )
+            rpcpassword = parse_conf_line(str,(char *)"rpcpassword");
+    }
+    if ( rpcuser != 0 && rpcpassword != 0 )
+    {
+        strcpy(username,rpcuser);
+        strcpy(password,rpcpassword);
+    }
+    //printf("rpcuser.(%s) rpcpassword.(%s) KMDUSERPASS.(%s) %u\n",rpcuser,rpcpassword,KMDUSERPASS,port);
+    if ( rpcuser != 0 )
+        free(rpcuser);
+    if ( rpcpassword != 0 )
+        free(rpcpassword);
+}
+
+void komodo_configfile(char *symbol,uint16_t port)
+{
+    static char myusername[512],mypassword[8192];
+    FILE *fp; uint8_t buf2[33]; char fname[512],buf[128],username[512],password[8192]; uint32_t crc,r,r2,i;
+    r = (uint32_t)time(NULL);
+    r2 = OS_milliseconds();
+    memcpy(buf,&r,sizeof(r));
+    memcpy(&buf[sizeof(r)],&r2,sizeof(r2));
+    memcpy(&buf[sizeof(r)+sizeof(r2)],symbol,strlen(symbol));
+    crc = calc_crc32(0,(uint8_t *)buf,(int32_t)(sizeof(r)+sizeof(r2)+strlen(symbol)));
+    OS_randombytes(buf2,sizeof(buf2));
+    for (i=0; i<sizeof(buf2); i++)
+        sprintf(&password[i*2],"%02x",buf2[i]);
+    password[i*2] = 0;
+    sprintf(buf,"%s.conf",symbol);
+    BITCOIND_PORT = port;
+#ifdef WIN32
+    sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),buf);
+#else
+    sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),buf);
+#endif
+    if ( (fp= fopen(fname,"rb")) == 0 )
+    {
+        if ( (fp= fopen(fname,"wb")) != 0 )
+        {
+            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\n\n",crc,password,port);
+            fclose(fp);
+            printf("Created (%s)\n",fname);
+        } else printf("Couldnt create (%s)\n",fname);
+    }
+    else
+    {
+        komodo_userpass(myusername,mypassword,fp);
+        mapArgs["-rpcpassword"] = mypassword;
+        mapArgs["-rpcusername"] = myusername;
+        //fprintf(stderr,"myusername.(%s)\n",myusername);
+        fclose(fp);
+    }
+    strcpy(fname,GetDataDir().string().c_str());
+#ifdef WIN32
+    while ( fname[strlen(fname)-1] != '\\' )
+        fname[strlen(fname)-1] = 0;
+    strcat(fname,"komodo.conf");
+#else
+    while ( fname[strlen(fname)-1] != '/' )
+        fname[strlen(fname)-1] = 0;
+    strcat(fname,"komodo.conf");
+#endif
+    //printf("KOMODO.(%s)\n",fname);
+    if ( (fp= fopen(fname,"rb")) != 0 )
+    {
+        komodo_userpass(username,password,fp);
+        sprintf(KMDUSERPASS,"%s:%s",username,password);
+        fclose(fp);
+    } else printf("couldnt open.(%s)\n",fname);
+}
+
+void komodo_args()
+{
+    std::string name; char *dirname; uint8_t buf[512]; int32_t i,len;
+    IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
+    NOTARY_PUBKEY = GetArg("-pubkey", "");
+    if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
+        USE_EXTERNAL_PUBKEY = 1;
+    name = GetArg("-ac_name","");
+    if ( name.c_str()[0] != 0 )
+    {
+        ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
+        strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
+        len = iguana_rwnum(1,&buf[len],sizeof(ASSETCHAINS_SUPPLY),(void *)&ASSETCHAINS_SUPPLY);
+        strcpy((char *)&buf[len],ASSETCHAINS_SYMBOL);
+        len += strlen(ASSETCHAINS_SYMBOL);
+        ASSETCHAINS_MAGIC = calc_crc32(0,buf,len);
+        ASSETCHAINS_PORT = GetArg("-ac_port",8000 + (ASSETCHAINS_MAGIC % 7777));
+        if ( ASSETCHAINS_SYMBOL[0] == '-' )
+        {
+            ASSETCHAINS_SHORTFLAG = 1;
+            for (i=0; ASSETCHAINS_SYMBOL[i+1]!=0; i++)
+                ASSETCHAINS_SYMBOL[i] = ASSETCHAINS_SYMBOL[i+1];
+        }
+        //fprintf(stderr,"after args: %c%s port.%u magic.%08x supply.%u\n",ASSETCHAINS_SHORTFLAG!=0?'-':'+',ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,(int32_t)ASSETCHAINS_SUPPLY);
+        while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
+        {
+            fprintf(stderr,"waiting for datadir\n");
+            sleep(3);
+        }
+        //fprintf(stderr,"Got datadir.(%s)\n",dirname);
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        {
+            int32_t komodo_baseid(char *origbase);
+            extern int COINBASE_MATURITY;
+            komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
+            if ( komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 )
+                COINBASE_MATURITY = 1;
+        }
+    }
+    else
+    {
+        ASSETCHAINS_PORT = 8777;
+        fprintf(stderr,"IS_KOMODO_NOTARY %d %s\n",IS_KOMODO_NOTARY,NOTARY_PUBKEY.c_str());
+    }
+    //fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
 }

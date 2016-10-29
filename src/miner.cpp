@@ -99,6 +99,9 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 }
 
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
+extern int32_t KOMODO_INITDONE;
+extern uint64_t KOMODO_DEPOSIT;
+extern char ASSETCHAINS_SYMBOL[16];
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -108,6 +111,17 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
+    while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight > 10 && mempool.GetTotalTxSize() <= 0 )
+    {
+        sleep(10);
+        if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 )
+            continue;
+        if ( KOMODO_DEPOSIT != 0 )
+        {
+            printf("KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)KOMODO_DEPOSIT,(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
+            break;
+        }
+    }
 
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
@@ -410,6 +424,9 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 //
 extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
 extern std::string NOTARY_PUBKEY;
+extern uint8_t NOTARY_PUBKEY33[33];
+uint32_t Mining_start,Mining_height;
+int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
@@ -457,10 +474,6 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
     return true;
 }
 
-extern uint8_t NOTARY_PUBKEY33[33];
-uint32_t Mining_start;
-int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
-
 void static BitcoinMiner(CWallet *pwallet)
 {
     LogPrintf("ZcashMiner started\n");
@@ -478,7 +491,7 @@ void static BitcoinMiner(CWallet *pwallet)
     std::string solver = GetArg("-equihashsolver", "tromp");
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
-    fprintf(stderr,"Mining with %s\n",solver.c_str());
+    //fprintf(stderr,"Mining with %s\n",solver.c_str());
     std::mutex m_cs;
     bool cancelSolver = false;
     boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
@@ -495,7 +508,7 @@ void static BitcoinMiner(CWallet *pwallet)
             {
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
-                fprintf(stderr,"Wait for peers...\n");
+                //fprintf(stderr,"Wait for peers...\n");
                 do {
                     bool fvNodesEmpty;
                     {
@@ -506,7 +519,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         break;
                     MilliSleep(1000);
                 } while (true);
-                fprintf(stderr,"Found peers\n");
+                //fprintf(stderr,"Found peers\n");
             }
             //fprintf(stderr,"create new block\n");
             //
@@ -539,31 +552,25 @@ void static BitcoinMiner(CWallet *pwallet)
                 Mining_start = (uint32_t)time(NULL);
                 //fprintf(stderr,"I am the chosen one for ht.%d\n",pindexPrev->nHeight+1);
             } else Mining_start = 0;
-
+            Mining_height = pindexPrev->nHeight+1;
             while (true)
             {
                 // Hash state
                 crypto_generichash_blake2b_state state;
                 EhInitialiseState(n, k, state);
-
                 // I = the block header minus nonce and solution.
                 CEquihashInput I{*pblock};
                 CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
                 ss << I;
-
                 // H(I||...
                 crypto_generichash_blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
-
                 // H(I||V||...
                 crypto_generichash_blake2b_state curr_state;
                 curr_state = state;
-                crypto_generichash_blake2b_update(&curr_state,
-                                                  pblock->nNonce.begin(),
-                                                  pblock->nNonce.size());
+                crypto_generichash_blake2b_update(&curr_state,pblock->nNonce.begin(),pblock->nNonce.size());
 
                 // (x_1, x_2, ...) = A(I, V, n, k)
-                LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",
-                         solver, pblock->nNonce.ToString());
+                LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",solver, pblock->nNonce.ToString());
 
                 std::function<bool(std::vector<unsigned char>)> validBlock =
                         [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
@@ -572,35 +579,30 @@ void static BitcoinMiner(CWallet *pwallet)
                     LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
                     solutionTargetChecks.increment();
-
-                    if (UintToArith256(pblock->GetHash()) > hashTarget) {
+                    if ( UintToArith256(pblock->GetHash()) > hashTarget )
                         return false;
-                    }
                     if ( Mining_start != 0 && time(NULL) < Mining_start+50 )
                     {
                         printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+50-time(NULL)));
                         sleep(Mining_start+50-time(NULL));
                     }
-
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     LogPrintf("ZcashMiner:\n");
                     LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
-                            
                     if (ProcessBlockFound(pblock, *pwallet, reservekey)) {
                         // Ignore chain updates caused by us
                         std::lock_guard<std::mutex> lock{m_cs};
                         cancelSolver = false;
                     }
+                    fprintf(stderr,"%s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
-
                     // In regression test mode, stop mining after a block is found.
                     if (chainparams.MineBlocksOnDemand()) {
                         // Increment here because throwing skips the call below
                         ehSolverRuns.increment();
                         throw boost::thread_interrupted();
                     }
-
                     return true;
                 };
                 std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck pos) {

@@ -66,6 +66,8 @@ static CBaseChainParams* pCurrentBaseParams = 0;
 
 const CBaseChainParams& BaseParams()
 {
+    if ( pCurrentBaseParams == 0 )
+        pCurrentBaseParams = &mainParams;
     assert(pCurrentBaseParams);
     return *pCurrentBaseParams;
 }

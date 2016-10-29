@@ -56,12 +56,18 @@ public:
 
 };
 
+#include "uint256.h"
+#include "arith_uint256.h"
+#include "komodo_globals.h"
+#include "komodo_utils.h"
+
 static bool AppInitRPC(int argc, char* argv[])
 {
     //
     // Parameters
     //
     ParseParameters(argc, argv);
+    komodo_args();
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help") || mapArgs.count("-version")) {
         std::string strUsage = _("Komodo RPC client version") + " " + FormatFullVersion() + "\n";
         if (!mapArgs.count("-version")) {

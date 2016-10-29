@@ -32,6 +32,8 @@
  */
 
 static bool fDaemon;
+extern char ASSETCHAINS_SYMBOL[16];
+void komodo_gateway_iteration(char *symbol);
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
@@ -39,7 +41,9 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     // Tell the main threads to shutdown.
     while (!fShutdown)
     {
-        MilliSleep(200);
+        MilliSleep(2000);
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            komodo_gateway_iteration(ASSETCHAINS_SYMBOL);
         fShutdown = ShutdownRequested();
     }
     if (threadGroup)
@@ -53,7 +57,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 //
 // Start
 //
-extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
+extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,ASSETCHAIN_INIT;
 extern std::string NOTARY_PUBKEY;
 
 bool AppInit(int argc, char* argv[])
@@ -92,6 +96,13 @@ bool AppInit(int argc, char* argv[])
 
     try
     {
+        void komodo_args();
+        fprintf(stderr,"call komodo_args\n");
+        komodo_args();
+        while ( ASSETCHAIN_INIT == 0 )
+        {
+            sleep(1);
+        }
         if (!boost::filesystem::is_directory(GetDataDir(false)))
         {
             fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs["-datadir"].c_str());
@@ -109,12 +120,7 @@ bool AppInit(int argc, char* argv[])
             fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
             return false;
         }
-        IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
-        NOTARY_PUBKEY = GetArg("-pubkey", "");
-        if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
-            USE_EXTERNAL_PUBKEY = 1;
-        fprintf(stderr,"IS_KOMODO_NOTARY %d %s\n",IS_KOMODO_NOTARY,NOTARY_PUBKEY.c_str());
-        
+
         // Command-line RPC
         bool fCommandLine = false;
         for (int i = 1; i < argc; i++)

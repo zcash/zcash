@@ -85,14 +85,20 @@ public:
     std::string GetFoundersRewardAddressAtIndex(int i) const;
     /** Enforce coinbase consensus rule in regtest mode */
     void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
+
+    void SetDefaultPort(uint16_t port) { nDefaultPort = port; }
+    //void setnonce(uint32_t nonce) { memcpy(&genesis.nNonce,&nonce,sizeof(nonce)); }
+    //void settimestamp(uint32_t timestamp) { genesis.nTime = timestamp; }
+    //void setgenesis(CBlock &block) { genesis = block; }
+    //void recalc_genesis(uint32_t nonce) { genesis = CreateGenesisBlock(ASSETCHAINS_TIMESTAMP, nonce, GENESIS_NBITS, 1, COIN); };
+    int nDefaultPort = 0;
+    CMessageHeader::MessageStartChars pchMessageStart; // jl777 moved
 protected:
     CChainParams() {}
+    Consensus::Params consensus; 
 
-    Consensus::Params consensus;
-    CMessageHeader::MessageStartChars pchMessageStart;
-    //! Raw pub key bytes for the broadcast alert signing key.
+     //! Raw pub key bytes for the broadcast alert signing key.
     std::vector<unsigned char> vAlertPubKey;
-    int nDefaultPort = 0;
     int nMinerThreads = 0;
     long nMaxTipAge = 0;
     uint64_t nPruneAfterHeight = 0;

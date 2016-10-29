@@ -400,6 +400,8 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
     strMiscWarning = message;
 }
 
+extern char ASSETCHAINS_SYMBOL[16];
+
 boost::filesystem::path GetDefaultDataDir()
 {
     namespace fs = boost::filesystem;
@@ -409,7 +411,9 @@ boost::filesystem::path GetDefaultDataDir()
     // Unix: ~/.zcash
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Komodo";
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        return GetSpecialFolderPath(CSIDL_APPDATA) / "Komodo";
+    else return GetSpecialFolderPath(CSIDL_APPDATA) / "Komodo" / ASSETCHAINS_SYMBOL;
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -421,10 +425,19 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    return pathRet / "Komodo";
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        return pathRet / "Komodo";
+    else
+    {
+        pathRet /= "Komodo";
+        TryCreateDirectory(pathRet);
+        return pathRet / ASSETCHAINS_SYMBOL;
+    }
 #else
     // Unix
-    return pathRet / ".komodo";
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        return pathRet / ".komodo";
+    else return pathRet / ".komodo" / ASSETCHAINS_SYMBOL;
 #endif
 #endif
 }
@@ -521,7 +534,11 @@ void ClearDatadirCache()
 
 boost::filesystem::path GetConfigFile()
 {
-    boost::filesystem::path pathConfigFile(GetArg("-conf", "komodo.conf"));
+    char confname[512];
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        sprintf(confname,"%s.conf",ASSETCHAINS_SYMBOL);
+    else strcpy(confname,"komodo.conf");
+    boost::filesystem::path pathConfigFile(GetArg("-conf",confname));
     if (!pathConfigFile.is_complete())
         pathConfigFile = GetDataDir(false) / pathConfigFile;
 
