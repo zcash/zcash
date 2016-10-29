@@ -1262,7 +1262,7 @@ void komodo_configfile(char *symbol,uint16_t port)
         komodo_userpass(myusername,mypassword,fp);
         mapArgs["-rpcpassword"] = mypassword;
         mapArgs["-rpcusername"] = myusername;
-        fprintf(stderr,"myusername.(%s)\n",myusername);
+        //fprintf(stderr,"myusername.(%s)\n",myusername);
         fclose(fp);
     }
     strcpy(fname,GetDataDir().string().c_str());
@@ -1275,7 +1275,7 @@ void komodo_configfile(char *symbol,uint16_t port)
         fname[strlen(fname)-1] = 0;
     strcat(fname,"komodo.conf");
 #endif
-    printf("KOMODO.(%s)\n",fname);
+    //printf("KOMODO.(%s)\n",fname);
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
         komodo_userpass(username,password,fp);
@@ -1291,7 +1291,6 @@ void komodo_args()
     NOTARY_PUBKEY = GetArg("-pubkey", "");
     if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
         USE_EXTERNAL_PUBKEY = 1;
-    fprintf(stderr,"IS_KOMODO_NOTARY %d %s\n",IS_KOMODO_NOTARY,NOTARY_PUBKEY.c_str());
     name = GetArg("-ac_name","");
     if ( name.c_str()[0] != 0 )
     {
@@ -1308,15 +1307,20 @@ void komodo_args()
             for (i=0; ASSETCHAINS_SYMBOL[i+1]!=0; i++)
                 ASSETCHAINS_SYMBOL[i] = ASSETCHAINS_SYMBOL[i+1];
         }
-        fprintf(stderr,"after args: %c%s port.%u magic.%08x supply.%u\n",ASSETCHAINS_SHORTFLAG!=0?'-':'+',ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,(int32_t)ASSETCHAINS_SUPPLY);
+        //fprintf(stderr,"after args: %c%s port.%u magic.%08x supply.%u\n",ASSETCHAINS_SHORTFLAG!=0?'-':'+',ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,(int32_t)ASSETCHAINS_SUPPLY);
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
             fprintf(stderr,"waiting for datadir\n");
             sleep(3);
         }
-        fprintf(stderr,"Got datadir.(%s)\n",dirname);
+        //fprintf(stderr,"Got datadir.(%s)\n",dirname);
         if ( ASSETCHAINS_SYMBOL[0] != 0 )
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
-    } else ASSETCHAINS_PORT = 8777;
-    fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
+    }
+    else
+    {
+        ASSETCHAINS_PORT = 8777;
+        fprintf(stderr,"IS_KOMODO_NOTARY %d %s\n",IS_KOMODO_NOTARY,NOTARY_PUBKEY.c_str());
+    }
+    //fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
 }
