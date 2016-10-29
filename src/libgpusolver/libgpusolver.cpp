@@ -23,12 +23,12 @@
 
 #include <chrono>
 
-#include "gpusolver.h"
+#include "libgpusolver.h"
 #include "util.h"
 #include "primitives/block.h"
 #include "arith_uint256.h"
 
-#define DEBUG
+//#define DEBUG
 
 char *s_hexdump(const void *_a, uint32_t a_len)
 {
@@ -60,7 +60,7 @@ GPUSolver::GPUSolver() {
 	size_t global_work_size = 1 << 20;
     size_t local_work_size = 32;
 
-	miner = new cl_zogminer();
+	miner = new cl_kernel();
 
 	indices = (sols_t *) malloc(sizeof(sols_t));
 	if(indices == NULL)
@@ -109,7 +109,7 @@ GPUSolver::GPUSolver(int64_t selGPU) {
 	size_t global_work_size = 1 << 20;
     size_t local_work_size = 32;
 
-	miner = new cl_zogminer();
+	miner = new cl_kernel();
 
 	indices = (sols_t *) malloc(sizeof(sols_t));
 	if(indices == NULL)

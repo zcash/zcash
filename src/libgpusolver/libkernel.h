@@ -4,7 +4,7 @@
 #define CL_USE_DEPRECATED_OPENCL_2_0_APIS
 
 // Just for Hello World Kernel
-#define DATA_SIZE 100
+//#define DATA_SIZE 100
 
 #if defined(__clang__)
 #pragma clang diagnostic push

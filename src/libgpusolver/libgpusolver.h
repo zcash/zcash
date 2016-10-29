@@ -29,7 +29,7 @@
 #include <iostream>
 
 #include "crypto/equihash.h"
-#include "cl_zogminer.h"
+#include "cl_kernel.h"
 
 //#include "param.h"
 //#include "blake.h"
