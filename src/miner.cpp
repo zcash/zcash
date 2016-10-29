@@ -475,6 +475,7 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
 
 void static BitcoinMiner(CWallet *pwallet)
 {
+    extern char ASSETCHAINS_SYMBOL[16];
     LogPrintf("ZcashMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("zcash-miner");
