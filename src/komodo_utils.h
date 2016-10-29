@@ -1318,9 +1318,5 @@ void komodo_args()
         if ( ASSETCHAINS_SYMBOL[0] != 0 )
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
     } else ASSETCHAINS_PORT = 8777;
-    while ( ASSETCHAIN_INIT == 0 )
-    {
-        sleep(1);
-    }
     fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
 }

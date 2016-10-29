@@ -53,7 +53,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 //
 // Start
 //
-extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
+extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,ASSETCHAIN_INIT;
 extern std::string NOTARY_PUBKEY;
 
 bool AppInit(int argc, char* argv[])
@@ -95,6 +95,10 @@ bool AppInit(int argc, char* argv[])
         void komodo_args();
         fprintf(stderr,"call komodo_args\n");
         komodo_args();
+        while ( ASSETCHAIN_INIT == 0 )
+        {
+            sleep(1);
+        }
         if (!boost::filesystem::is_directory(GetDataDir(false)))
         {
             fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs["-datadir"].c_str());
