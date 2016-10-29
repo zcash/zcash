@@ -17,7 +17,7 @@ static const unsigned int MAX_BLOCK_SIGOPS = 20000;
 /** The maximum size of a transaction (network rule) */
 static const unsigned int MAX_TX_SIZE = 100000;
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
-int COINBASE_MATURITY = 100;
+extern int COINBASE_MATURITY;
 
 /** Flags for LockTime() */
 enum {
