@@ -31,11 +31,11 @@ using namespace std;
  */
 void *chainparams_commandline(void *ptr);
 extern char ASSETCHAINS_SYMBOL[16];
-extern uint16_t ASSETCHAINS_PORT = 8777;
-extern uint32_t ASSETCHAIN_INIT = 0;
-extern uint32_t ASSETCHAINS_MAGIC = 2387029918;
-extern uint32_t ASSETCHAINS_TIMESTAMP = 1475772963;
-extern uint64_t ASSETCHAINS_SUPPLY = 1000000;
+extern uint16_t ASSETCHAINS_PORT;
+extern uint32_t ASSETCHAIN_INIT;
+extern uint32_t ASSETCHAINS_MAGIC;
+extern uint32_t ASSETCHAINS_TIMESTAMP;
+extern uint64_t ASSETCHAINS_SUPPLY;
 
 const arith_uint256 maxUint = UintToArith256(uint256S("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
