@@ -29,7 +29,7 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
 char *komodo_issuemethod(char *method,char *params,uint16_t port);
 
 #define GENESIS_NBITS 0x1f00ffff
-
+#include "komodo_globals.h"
 #include "komodo_utils.h"
 queue_t DepositsQ,PendingsQ;
 
