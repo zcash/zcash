@@ -31,11 +31,11 @@ char *komodo_issuemethod(char *method,char *params,uint16_t port);
 #define GENESIS_NBITS 0x1f00ffff
 int32_t ASSETCHAINS_SHORTFLAG;
 extern char ASSETCHAINS_SYMBOL[16];
-extern uint16_t ASSETCHAINS_PORT = 8777;
-extern uint32_t ASSETCHAIN_INIT = 0;
-extern uint32_t ASSETCHAINS_MAGIC = 2387029918;
-extern uint32_t ASSETCHAINS_TIMESTAMP = 1475772963;
-extern uint64_t ASSETCHAINS_SUPPLY = 1000000;
+extern uint16_t ASSETCHAINS_PORT;
+extern uint32_t ASSETCHAIN_INIT;
+extern uint32_t ASSETCHAINS_MAGIC;
+extern uint32_t ASSETCHAINS_TIMESTAMP;
+extern uint64_t ASSETCHAINS_SUPPLY;
 
 int32_t NOTARIZED_HEIGHT,Num_nutxos,KMDHEIGHT = 43000;
 uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
