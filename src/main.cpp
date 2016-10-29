@@ -1421,12 +1421,22 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
 }
 
 uint64_t komodo_moneysupply(int32_t height);
+extern char ASSETCHAINS_SYMBOL[16];
+extern uint32_t ASSETCHAINS_MAGIC;
+extern uint64_t ASSETCHAINS_SUPPLY;
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
     CAmount nSubsidy = 3 * COIN;
     if ( nHeight == 1 )
-        return(100000000 * COIN); // ICO allocation
+    {
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            return(100000000 * COIN); // ICO allocation
+        else
+        {
+            return(ASSETCHAINS_SUPPLY * COIN + (ASSETCHAINS_MAGIC & 0xffffff));
+        }
+    }
     else if ( komodo_moneysupply(nHeight) < MAX_MONEY )
         return(3 * COIN);
     else return(0);

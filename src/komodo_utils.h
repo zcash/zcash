@@ -1230,7 +1230,7 @@ void komodo_userpass(char *username,char *password,FILE *fp)
 void komodo_configfile(char *symbol,uint16_t port)
 {
     static char myusername[512],mypassword[8192];
-    FILE *fp; uint8_t buf2[512]; char fname[512],buf[128],username[512],password[8192]; uint32_t crc,r,r2,i;
+    FILE *fp; uint8_t buf2[33]; char fname[512],buf[128],username[512],password[8192]; uint32_t crc,r,r2,i;
     r = (uint32_t)time(NULL);
     r2 = OS_milliseconds();
     memcpy(buf,&r,sizeof(r));
@@ -1264,7 +1264,7 @@ void komodo_configfile(char *symbol,uint16_t port)
         mapArgs["-rpcusername"] = myusername;
         fclose(fp);
     }
-    strcpy(fname,GetDataDir(false).string().c_str());
+    strcpy(fname,GetConfigFile().string().c_str());
 #ifdef WIN32
     while ( fname[strlen(fname)-1] != '\\' )
         fname[strlen(fname)-1] = 0;
@@ -1294,11 +1294,9 @@ void komodo_args()
     name = GetArg("-ac_name","");
     if ( name.c_str()[0] != 0 )
     {
-        ASSETCHAINS_TIMESTAMP = GetArg("-ac_timestamp",ASSETCHAINS_TIMESTAMP);
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
         strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
-        len = iguana_rwnum(1,buf,sizeof(ASSETCHAINS_TIMESTAMP),(void *)&ASSETCHAINS_TIMESTAMP);
-        len += iguana_rwnum(1,&buf[len],sizeof(ASSETCHAINS_SUPPLY),(void *)&ASSETCHAINS_SUPPLY);
+        len = iguana_rwnum(1,&buf[len],sizeof(ASSETCHAINS_SUPPLY),(void *)&ASSETCHAINS_SUPPLY);
         strcpy((char *)&buf[len],ASSETCHAINS_SYMBOL);
         len += strlen(ASSETCHAINS_SYMBOL);
         ASSETCHAINS_MAGIC = calc_crc32(0,buf,len);
@@ -1309,7 +1307,7 @@ void komodo_args()
             for (i=0; ASSETCHAINS_SYMBOL[i+1]!=0; i++)
                 ASSETCHAINS_SYMBOL[i] = ASSETCHAINS_SYMBOL[i+1];
         }
-        fprintf(stderr,"after args: %c%s port.%u magic.%08x timestamp.%u supply.%u\n",ASSETCHAINS_SHORTFLAG!=0?'-':'+',ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,ASSETCHAINS_TIMESTAMP,(int32_t)ASSETCHAINS_SUPPLY);
+        fprintf(stderr,"after args: %c%s port.%u magic.%08x supply.%u\n",ASSETCHAINS_SHORTFLAG!=0?'-':'+',ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,(int32_t)ASSETCHAINS_SUPPLY);
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
             fprintf(stderr,"waiting for datadir\n");
