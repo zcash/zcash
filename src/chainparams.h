@@ -14,6 +14,7 @@
 
 #define KOMODO_MINDIFF_NBITS 0x200f0f0f
 #define GENESIS_NBITS 0x1f00ffff
+extern uint32_t ASSETCHAINS_TIMESTAMP;
 
 #include <vector>
 
@@ -88,7 +89,7 @@ public:
     void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
 
     void SetDefaultPort(uint16_t port) { nDefaultPort = port; }
-    void setnonce(uint32_t nonce) { genesis.nNonce = nonce; }
+    void setnonce(uint32_t nonce) { memcpy(&genesis.nNonce,&nonce,sizeof(nonce)); }
     void settimestamp(uint32_t timestamp) { genesis.nTime = timestamp; }
     void setgenesis(CBlock &block) { genesis = block; }
     void recalc_genesis(uint32_t nonce) { genesis = CreateGenesisBlock(ASSETCHAINS_TIMESTAMP, nonce, GENESIS_NBITS, 1, COIN); };
