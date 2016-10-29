@@ -188,7 +188,7 @@ CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutput
     genesis.nVersion = nVersion;
     genesis.vtx.push_back(txNew);
     genesis.hashPrevBlock.SetNull();
-    genesis.hashMerkleRoot = BlockMerkleRoot(genesis);
+    genesis.hashMerkleRoot = txNew.GetHash();//BlockMerkleRoot(genesis);
     return genesis;
 }
 #define GENESIS_STRING "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
@@ -249,7 +249,7 @@ void *chainparams_commandline(void *ptr)
     fprintf(stderr,">>>>>>>>>> %u: hash %s merkle %s timestamp.%u\n",*(uint32_t *)&mainParams.GenesisBlock().nNonce,mainParams.GenesisBlock().GetHash().ToString().c_str(),mainParams.GenesisBlock().hashMerkleRoot.ToString().c_str(),mainParams.GenesisBlock().nTime);
     
     //set_genesis_tip(hash);
-    SelectBaseParams(0);
+    SelectBaseParams(MAIN);
     //BaseParams().nRPCPort = ASSETCHAINS_PORT + 1;
     fprintf(stderr,">>>>>>>>>> %s: port.%u/%u magic.%08x %u nonce.%u time.%u nbits.%08x %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_PORT+1,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,nonce,ASSETCHAINS_TIMESTAMP,GENESIS_NBITS,(uint32_t)ASSETCHAINS_SUPPLY);
     ASSETCHAIN_INIT = 1;

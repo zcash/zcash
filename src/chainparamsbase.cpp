@@ -73,7 +73,6 @@ const CBaseChainParams& BaseParams()
 void SelectBaseParams(CBaseChainParams::Network network)
 {
     switch (network) {
-    case 0:
     case CBaseChainParams::MAIN:
         pCurrentBaseParams = &mainParams;
         break;
