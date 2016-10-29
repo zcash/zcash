@@ -1285,25 +1285,40 @@ void komodo_configfile(char *symbol,uint16_t port)
 
 void komodo_args()
 {
-    std::string name;
-    ASSETCHAINS_TIMESTAMP = GetArg("-ac_timestamp",ASSETCHAINS_TIMESTAMP);
-    ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
-    name = GetArg("-ac_name","REVS");
-    strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
-    uint8_t buf[512]; int32_t i,len;
-    len = iguana_rwnum(1,buf,sizeof(ASSETCHAINS_TIMESTAMP),(void *)&ASSETCHAINS_TIMESTAMP);
-    len += iguana_rwnum(1,&buf[len],sizeof(ASSETCHAINS_SUPPLY),(void *)&ASSETCHAINS_SUPPLY);
-    strcpy((char *)&buf[len],ASSETCHAINS_SYMBOL);
-    len += strlen(ASSETCHAINS_SYMBOL);
-    ASSETCHAINS_MAGIC = calc_crc32(0,buf,len);
-    ASSETCHAINS_PORT = GetArg("-ac_port",8000 + (ASSETCHAINS_MAGIC % 7777));
-    if ( ASSETCHAINS_SYMBOL[0] == '-' )
+    std::string name; char *dirname; uint8_t buf[512]; int32_t i,len;
+    IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
+    NOTARY_PUBKEY = GetArg("-pubkey", "");
+    if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
+        USE_EXTERNAL_PUBKEY = 1;
+    fprintf(stderr,"IS_KOMODO_NOTARY %d %s\n",IS_KOMODO_NOTARY,NOTARY_PUBKEY.c_str());
+    name = GetArg("-ac_name","");
+    if ( name.c_str()[0] != 0 )
     {
-        ASSETCHAINS_SHORTFLAG = 1;
-        for (i=0; ASSETCHAINS_SYMBOL[i+1]!=0; i++)
-            ASSETCHAINS_SYMBOL[i] = ASSETCHAINS_SYMBOL[i+1];
-            }
-    fprintf(stderr,"after args: %c%s port.%u magic.%08x timestamp.%u supply.%u\n",ASSETCHAINS_SHORTFLAG!=0?'-':'+',ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,ASSETCHAINS_TIMESTAMP,(int32_t)ASSETCHAINS_SUPPLY);
+        ASSETCHAINS_TIMESTAMP = GetArg("-ac_timestamp",ASSETCHAINS_TIMESTAMP);
+        ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
+        strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
+        len = iguana_rwnum(1,buf,sizeof(ASSETCHAINS_TIMESTAMP),(void *)&ASSETCHAINS_TIMESTAMP);
+        len += iguana_rwnum(1,&buf[len],sizeof(ASSETCHAINS_SUPPLY),(void *)&ASSETCHAINS_SUPPLY);
+        strcpy((char *)&buf[len],ASSETCHAINS_SYMBOL);
+        len += strlen(ASSETCHAINS_SYMBOL);
+        ASSETCHAINS_MAGIC = calc_crc32(0,buf,len);
+        ASSETCHAINS_PORT = GetArg("-ac_port",8000 + (ASSETCHAINS_MAGIC % 7777));
+        if ( ASSETCHAINS_SYMBOL[0] == '-' )
+        {
+            ASSETCHAINS_SHORTFLAG = 1;
+            for (i=0; ASSETCHAINS_SYMBOL[i+1]!=0; i++)
+                ASSETCHAINS_SYMBOL[i] = ASSETCHAINS_SYMBOL[i+1];
+        }
+        fprintf(stderr,"after args: %c%s port.%u magic.%08x timestamp.%u supply.%u\n",ASSETCHAINS_SHORTFLAG!=0?'-':'+',ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,ASSETCHAINS_TIMESTAMP,(int32_t)ASSETCHAINS_SUPPLY);
+        while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
+        {
+            fprintf(stderr,"waiting for datadir\n");
+            sleep(3);
+        }
+        fprintf(stderr,"Got datadir.(%s)\n",dirname);
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
+    }
     while ( 0 && ASSETCHAIN_INIT == 0 )
     {
         sleep(1);
