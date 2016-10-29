@@ -280,7 +280,7 @@ int32_t komodo_gateway_block(char *symbol,int32_t height,uint16_t port)
                                     break;
                             if ( i == n )
                                 retval = 0;
-                            else printf("error i.%d vs n.%d\n",i,n);
+                            //else printf("error i.%d vs n.%d\n",i,n);
                         }
                         free_json(json);
                     }

@@ -227,7 +227,8 @@ try_again:
             free(s.ptr);
             return(0);
         }
-        printf( "curl_easy_perform() failed: %s %s.(%s %s), retries: %d\n",curl_easy_strerror(res),debugstr,url,command,numretries);
+        if ( (rand() % 1000) == 0 )
+            printf( "curl_easy_perform() failed: %s %s.(%s %s), retries: %d\n",curl_easy_strerror(res),debugstr,url,command,numretries);
         free(s.ptr);
         sleep((1<<numretries));
         goto try_again;
@@ -239,7 +240,7 @@ try_again:
         {
             count++;
             elapsedsum += (OS_milliseconds() - starttime);
-            if ( (count % 10000) == 0)
+            if ( (count % 1000000) == 0)
                 printf("%d: ave %9.6f | elapsed %.3f millis | bitcoind_RPC.(%s) url.(%s)\n",count,elapsedsum/count,(OS_milliseconds() - starttime),command,url);
             if ( retstrp != 0 )
             {
