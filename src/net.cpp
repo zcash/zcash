@@ -115,6 +115,7 @@ void AddOneShot(string strDest)
 
 unsigned short GetListenPort()
 {
+    printf("Listenport.%u\n",Params().GetDefaultPort());
     return (unsigned short)(GetArg("-port", Params().GetDefaultPort()));
 }
 

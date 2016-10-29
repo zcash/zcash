@@ -1262,6 +1262,7 @@ void komodo_configfile(char *symbol,uint16_t port)
         komodo_userpass(myusername,mypassword,fp);
         mapArgs["-rpcpassword"] = mypassword;
         mapArgs["-rpcusername"] = myusername;
+        fprintf(stderr,"myusername.(%s)\n",myusername);
         fclose(fp);
     }
     strcpy(fname,GetDataDir().string().c_str());
