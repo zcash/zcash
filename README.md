@@ -152,6 +152,11 @@ tail -f ~/.komodo/debug.log
 
 #To view all command
 ./src/komodo-cli help
+
+ASSETCHAINS: -ac_name=name -ac_supply=nnnnn
+
+Both komodod and komodo-cli recognize -ac_name=option so you can create a zcash fork from the commandline
+
 ```
 
 =======
