@@ -440,12 +440,11 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     CPubKey pubkey; CScript scriptPubKey;
     if (!reservekey.GetReservedKey(pubkey))
         return NULL;
-    scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
     if ( USE_EXTERNAL_PUBKEY != 0 )
     {
         //fprintf(stderr,"use notary pubkey\n");
         scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
-    }
+    } else scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
     return CreateNewBlock(scriptPubKey);
 }
 
