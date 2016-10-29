@@ -1,0 +1,1 @@
+./assetchain-cli -ac_name=HRK $1 $2 $3 $4
