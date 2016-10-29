@@ -9,7 +9,6 @@ zcash_gtest_SOURCES = \
 	gtest/test_checktransaction.cpp \
 	gtest/json_test_vectors.cpp \
         gtest/json_test_vectors.h \
-	gtest/test_foundersreward.cpp \
 	gtest/test_wallet_zkeys.cpp \
 	gtest/test_jsonspirit.cpp \
 	gtest/test_tautology.cpp \
