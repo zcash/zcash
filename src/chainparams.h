@@ -85,12 +85,13 @@ public:
     std::string GetFoundersRewardAddressAtIndex(int i) const;
     /** Enforce coinbase consensus rule in regtest mode */
     void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
+
+    Consensus::Params consensus; // jl777 moved
+    CMessageHeader::MessageStartChars pchMessageStart; // jl777 moved
 protected:
     CChainParams() {}
 
-    Consensus::Params consensus;
-    CMessageHeader::MessageStartChars pchMessageStart;
-    //! Raw pub key bytes for the broadcast alert signing key.
+     //! Raw pub key bytes for the broadcast alert signing key.
     std::vector<unsigned char> vAlertPubKey;
     int nDefaultPort = 0;
     int nMinerThreads = 0;

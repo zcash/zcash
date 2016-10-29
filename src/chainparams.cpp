@@ -220,7 +220,7 @@ void *chainparams_commandline(void *ptr)
     fprintf(stderr,">>>>>>>>>> %u: hash %s merkle %s timestamp.%u\n",mainParams.GenesisBlock().nNonce,mainParams.GenesisBlock().GetHash().ToString().c_str(),mainParams.GenesisBlock().hashMerkleRoot.ToString().c_str(),mainParams.GenesisBlock().nTime);
     
     //set_genesis_tip(hash);
-    SelectBaseParams("main");
+    SelectBaseParams((char *)"main");
     //BaseParams().nRPCPort = ASSETCHAINS_PORT + 1;
     fprintf(stderr,">>>>>>>>>> %s: port.%u/%u magic.%08x %u nonce.%u time.%u nbits.%08x %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_PORT+1,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,nonce,ASSETCHAINS_TIMESTAMP,GENESIS_NBITS,(uint32_t)ASSETCHAINS_SUPPLY);
     ASSETCHAIN_INIT = 1;

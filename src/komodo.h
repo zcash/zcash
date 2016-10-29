@@ -28,6 +28,7 @@ void komodo_init();
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp);
 char *komodo_issuemethod(char *method,char *params,uint16_t port);
 
+#define GENESIS_NBITS 0x1f00ffff
 int32_t ASSETCHAINS_SHORTFLAG;
 char ASSETCHAINS_SYMBOL[16];
 uint16_t ASSETCHAINS_PORT = 8777;
