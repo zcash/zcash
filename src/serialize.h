@@ -879,11 +879,11 @@ void Unserialize(Stream& is, std::list<T, A>& l)
  */
 struct CSerActionSerialize
 {
-    bool ForRead() const { return false; }
+    constexpr bool ForRead() const { return false; }
 };
 struct CSerActionUnserialize
 {
-    bool ForRead() const { return true; }
+    constexpr bool ForRead() const { return true; }
 };
 
 template<typename Stream, typename T>
