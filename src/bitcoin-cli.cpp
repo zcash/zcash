@@ -57,7 +57,7 @@ public:
 };
 
 #include "arith_uint256.h"
-#include "komodo.h"
+#include "komodo_utils.h"
 
 static bool AppInitRPC(int argc, char* argv[])
 {
