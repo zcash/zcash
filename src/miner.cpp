@@ -629,23 +629,23 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
                     }
                 }
 
-                    try {
-                        if(!conf.useGPU) {
-                            // If we find a valid block, we rebuild
-                            bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
-                            ehSolverRuns.increment();
-                            if (found)
-                                break;
-                        } else {
-                            bool found = g_solver->run(n, k, header, ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN, nn++, validBlock, cancelledGPU, curr_state);
-                            if (found)
-                                break;
-                        }
-                    } catch (EhSolverCancelledException&) {
-                        LogPrint("pow", "Equihash solver cancelled\n");
-                        std::lock_guard<std::mutex> lock{m_cs};
-                        cancelSolver = false;
+                try {
+                    if(!conf.useGPU) {
+                        // If we find a valid block, we rebuild
+                        bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
+                        ehSolverRuns.increment();
+                        if (found)
+                            break;
+                    } else {
+                        bool found = g_solver->run(n, k, header, ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN, nn++, validBlock, cancelledGPU, curr_state);
+                        if (found)
+                            break;
                     }
+                } catch (EhSolverCancelledException&) {
+                    LogPrint("pow", "Equihash solver cancelled\n");
+                    std::lock_guard<std::mutex> lock{m_cs};
+                    cancelSolver = false;
+                }
 
 
                 // Check for stop or if block needs to be rebuilt

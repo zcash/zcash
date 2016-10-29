@@ -48,6 +48,7 @@ EXTRA_LIBRARIES = \
   libbitcoin_cli.a \
   libzcash.a \
 	libgpusolver.a
+
 if ENABLE_WALLET
 BITCOIN_INCLUDES += $(BDB_CPPFLAGS)
 EXTRA_LIBRARIES += libbitcoin_wallet.a
@@ -376,7 +377,8 @@ zcashd_LDADD = \
   $(LIBZCASH) \
   $(LIBLEVELDB) \
   $(LIBMEMENV) \
-  $(LIBSECP256K1)
+  $(LIBSECP256K1) \
+  $(LIBGPUSOLVER)
 
 if ENABLE_WALLET
 zcashd_LDADD += libbitcoin_wallet.a
