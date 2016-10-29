@@ -352,6 +352,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         //txNew.nLockTime = (uint32_t)time(NULL) - 60;
         txNew.vin.resize(1);
         txNew.vin[0].prevout.SetNull();
+        txNew.vout.resize(1);
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight,chainparams.GetConsensus());
         // Add fees
@@ -369,7 +370,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     ptr[i] = opret[i];
                 txNew.vout[1].nValue = 0;
                 //fprintf(stderr,"opretlen.%d\n",opretlen);
-            } else txNew.vout.resize(1);
+            }
         }
         else
         {
