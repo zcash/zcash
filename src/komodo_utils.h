@@ -1252,7 +1252,7 @@ void komodo_configfile(char *symbol,uint16_t port)
     {
         if ( (fp= fopen(fname,"wb")) != 0 )
         {
-            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\nbind=127.0.0.1\n",crc,password,port);
+            fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\n\n",crc,password,port);
             fclose(fp);
             printf("Created (%s)\n",fname);
         } else printf("Couldnt create (%s)\n",fname);
@@ -1315,7 +1315,12 @@ void komodo_args()
         }
         //fprintf(stderr,"Got datadir.(%s)\n",dirname);
         if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        {
+            extern int COINBASE_MATURITY;
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
+            if ( komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 )
+                COINBASE_MATURITY = 0;
+        }
     }
     else
     {
