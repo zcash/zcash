@@ -782,6 +782,23 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
     return(coinaddr);
 }
 
+char CURRENCIES[][8] = { "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "NZD", // major currencies
+    "CNY", "RUB", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK",
+    "KMD" };
+
+int32_t komodo_baseid(char *origbase)
+{
+    int32_t i; char base[64];
+    for (i=0; origbase[i]!=0&&i<sizeof(base); i++)
+        base[i] = toupper((int32_t)(origbase[i] & 0xff));
+    base[i] = 0;
+    for (i=0; i<=MAX_CURRENCIES; i++)
+        if ( strcmp(CURRENCIES[i],base) == 0 )
+            return(i);
+    printf("illegal base.(%s) %s\n",origbase,base);
+    return(-1);
+}
+
 int32_t _unhex(char c)
 {
     if ( c >= '0' && c <= '9' )
