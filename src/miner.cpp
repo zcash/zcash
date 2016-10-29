@@ -411,7 +411,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
 extern std::string NOTARY_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[33];
-uint32_t Mining_start;
+uint32_t Mining_start,Mining_height;
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
@@ -538,7 +538,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 Mining_start = (uint32_t)time(NULL);
                 //fprintf(stderr,"I am the chosen one for ht.%d\n",pindexPrev->nHeight+1);
             } else Mining_start = 0;
-
+            Mining_height = pindexPrev->nHeight+1;
             while (true)
             {
                 // Hash state
@@ -581,7 +581,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         std::lock_guard<std::mutex> lock{m_cs};
                         cancelSolver = false;
                     }
-                            fprintf(stderr,"Block found %d\n",pindexPrev->nHeight+1);
+                            fprintf(stderr,"Block found %d\n",Mining_height);
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
                     // In regression test mode, stop mining after a block is found.
                     if (chainparams.MineBlocksOnDemand()) {
