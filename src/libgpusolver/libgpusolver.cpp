@@ -28,7 +28,7 @@
 #include "primitives/block.h"
 #include "arith_uint256.h"
 
-//#define DEBUG
+#define DEBUG
 
 char *s_hexdump(const void *_a, uint32_t a_len)
 {
