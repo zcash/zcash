@@ -47,7 +47,7 @@ void komodo_gateway_deposits(CMutableTransaction& txNew)
         }
         data[len++] = ptr->vout & 0xff;
         data[len++] = (ptr->vout >> 8) & 0xff;
-        printf(" vout.%u DEPOSIT %.8f\n",ptr->vout,(double)KOMODO_DEPOSIT/COIN);
+        printf(" vout.%u DEPOSIT %.8f <- komodo_gateway_deposits\n",ptr->vout,(double)KOMODO_DEPOSIT/COIN);
         PENDING_KOMODO_TX += ptr->fiatoshis;
         numvouts++;
         queue_enqueue((char *)"PENDINGS",&PendingsQ,&ptr->DL);
@@ -70,7 +70,7 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
     return(0);
 }
 
-void komodo_gateway_deposit(uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout) // assetchain context
+void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout) // assetchain context
 {
     struct pax_transaction *ptr;
     ptr = (struct pax_transaction *)calloc(1,sizeof(*ptr));
@@ -82,6 +82,7 @@ void komodo_gateway_deposit(uint64_t value,int32_t shortflag,char *symbol,uint64
     ptr->txid = txid;
     ptr->vout = vout;
     KOMODO_DEPOSIT += fiatoshis;
+    printf("ADD DEPOSIT %s %.8f -> %s TO QUEUE\n",symbol,dstr(fiatoshis),coinaddr);
     queue_enqueue((char *)"DEPOSITS",&DepositsQ,&ptr->DL);
 }
 
@@ -146,7 +147,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 printf(" checkpubkey check %.8f v %.8f dest.(%s)\n",dstr(checktoshis),dstr(value),destaddr);
                 if ( value >= (9999*checktoshis)/10000 && shortflag == ASSETCHAINS_SHORTFLAG )
                 {
-                    komodo_gateway_deposit(value,shortflag,base,fiatoshis,rmd160,txid,vout);
+                    komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout);
                 }
             }
             else
