@@ -107,7 +107,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x88,0xB2,0x1E};
         base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x88,0xAD,0xE4};
         // guarantees the first 2 characters, when base58 encoded, are "dp"
-        base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x0E,0x71};
+        base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x0E,0x72};
         // guarantees the first 2 characters, when base58 encoded, are "DK"
         base58Prefixes[ZCSPENDING_KEY]     = {0x53,0x3A};
 
@@ -181,7 +181,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x35,0x87,0xCF};
         base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x35,0x83,0x94};
         // guarantees the first 2 characters, when base58 encoded, are "dt"
-        base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x0E,0x78};
+        base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x0E,0x79};
         // guarantees the first 2 characters, when base58 encoded, are "DT"
         base58Prefixes[ZCSPENDING_KEY]     = {0x54,0x29};
 

@@ -174,9 +174,9 @@ void ThreadShowMetricsScreen()
     // Clear screen
     std::cout << "\e[2J";
 
-    // Print art
-    std::cout << METRICS_ART << std::endl;
-    std::cout << std::endl;
+    // Don't Print art
+    //std::cout << METRICS_ART << std::endl;
+    //std::cout << std::endl;
 
     // Thank you text
     std::cout << _("Thank you for running a DeepWebCash node!") << std::endl;
