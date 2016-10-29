@@ -28,7 +28,7 @@
 #include "primitives/block.h"
 #include "arith_uint256.h"
 
-#define DEBUG
+//#define DEBUG
 
 char *s_hexdump(const void *_a, uint32_t a_len)
 {
@@ -66,7 +66,7 @@ GPUSolver::GPUSolver() {
 
 }
 
-GPUSolver::GPUSolver(unsigned selGPU) {
+GPUSolver::GPUSolver(unsigned platform, unsigned device) {
 
 	/* Notes
 	I've added some extra parameters in this interface to assist with dev, such as
@@ -88,7 +88,7 @@ GPUSolver::GPUSolver(unsigned selGPU) {
 	@params: unsigned localWorkSizes
 	@params: unsigned globalWorkSizes
 	*/
-	GPU = miner->configureGPU(0, local_work_size, global_work_size);
+	GPU = miner->configureGPU(platform, local_work_size, global_work_size);
 	if(!GPU)
 		std::cout << "ERROR: No suitable GPU found! No work will be performed!" << std::endl;
 
@@ -101,7 +101,7 @@ GPUSolver::GPUSolver(unsigned selGPU) {
 	*/
 	std::vector<std::string> kernels {"kernel_init_ht", "kernel_round0", "kernel_round1", "kernel_round2","kernel_round3", "kernel_round4", "kernel_round5", "kernel_round6", "kernel_round7", "kernel_round8", "kernel_sols"};
 	if(GPU)
-		initOK = miner->init(0, selGPU, kernels);
+		initOK = miner->init(platform, device, kernels);
 
 }
 
@@ -141,7 +141,7 @@ bool GPUSolver::GPUSolve200_9(uint8_t *header, size_t header_len, uint64_t nonce
 	*/
 
 	if(GPU && initOK) {
-        auto t = std::chrono::high_resolution_clock::now();
+      //  auto t = std::chrono::high_resolution_clock::now();
 		uint64_t ptr;
     	miner->run(header, header_len, nonce, indices, &n_sol, &ptr);
 
@@ -150,6 +150,7 @@ bool GPUSolver::GPUSolve200_9(uint8_t *header, size_t header_len, uint64_t nonce
                                               nNonce.begin(),
                                               nNonce.size());
 
+/*
 		auto d = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - t);
 		auto milis = std::chrono::duration_cast<std::chrono::milliseconds>(d).count();
 
@@ -163,6 +164,7 @@ bool GPUSolver::GPUSolve200_9(uint8_t *header, size_t header_len, uint64_t nonce
 
 		if(!(counter % 10))
 			std::cout << "Kernel run took " << milis << " ms. (" << avg << " H/s)" << std::endl;
+*/
 
 		size_t checkedSols = n_sol;
 		size_t s = 0;

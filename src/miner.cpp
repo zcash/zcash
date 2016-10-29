@@ -447,7 +447,11 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
 
 void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
 {
-    LogPrintf("ZcashMiner started\n");
+    if(conf.useGPU)
+      LogPrintf("ZcashMiner started on device: %u\n", conf.currentDevice);
+    else
+      LogPrintf("ZcashMiner started\n");
+
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("zcash-miner");
     const CChainParams& chainparams = Params();
@@ -463,7 +467,7 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
     GPUSolver * g_solver;
     // If zcash.conf GPU=1
     if(conf.useGPU) {
-        g_solver = new GPUSolver(conf.selGPU);
+        g_solver = new GPUSolver(conf.currentPlatform, conf.selGPU);
         LogPrint("pow", "Using Equihash solver GPU with n = %u, k = %u\n", n, k);
     }
 
@@ -535,7 +539,7 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
                 CEquihashInput I{*pblock};
                 CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
                 ss << I;
-
+                memcpy(header, &ss[0], ss.size());
                 // H(I||...
                 crypto_generichash_blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
 
@@ -638,6 +642,7 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
                             break;
                     } else {
                         bool found = g_solver->run(n, k, header, ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN, nn++, validBlock, cancelledGPU, curr_state);
+                        ehSolverRuns.increment();
                         if (found)
                             break;
                     }
@@ -719,8 +724,38 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
 
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads, GPUConfig conf)
 {
-    static boost::thread_group* minerThreads = NULL;
+  static boost::thread_group* minerThreads = NULL;
+  if(conf.useGPU)
+    {
+    minerThreads = new boost::thread_group();
+    conf.currentPlatform =0;
+    conf.currentDevice = conf.selGPU;
+        if(conf.allGPU)
+        {
+          static unsigned numPlatforms = cl_gpuminer::getNumPlatforms();
+          for(unsigned platform = 0; platform < numPlatforms; ++platform){
+            static unsigned noDevices = cl_gpuminer::getNumDevices(platform);
+            fprintf(stderr, "noDevices:%u", noDevices);
+            for(unsigned j = 0; j < noDevices; ++j){
+                conf.currentPlatform = platform;
+                conf.currentDevice = j;
+                minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
 
+                if(conf.twoThreadsPerCard)
+                  minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
+
+              }
+          }
+      }
+      else
+
+        minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
+        if(conf.twoThreadsPerCard)
+          minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
+
+    }
+    else
+      {
     if (nThreads < 0) {
         // In regtest threads defaults to 1
         if (Params().DefaultMinerThreads())
@@ -740,9 +775,9 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads, GPUConfig 
         return;
 
     minerThreads = new boost::thread_group();
-
     for (int i = 0; i < nThreads; i++)
         minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
-}
+  }
 
+}
 #endif // ENABLE_WALLET
