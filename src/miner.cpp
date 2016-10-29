@@ -437,14 +437,25 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
-    CPubKey pubkey; CScript scriptPubKey;
-    if (!reservekey.GetReservedKey(pubkey))
-        return NULL;
+    CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i;
     if ( USE_EXTERNAL_PUBKEY != 0 )
     {
         //fprintf(stderr,"use notary pubkey\n");
         scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
-    } else scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
+    }
+    else
+    {
+        if (!reservekey.GetReservedKey(pubkey))
+            return NULL;
+        scriptPubKey.resize(35);
+        ptr = (uint8_t *)pubkey.data();
+        script = (uint8_t *)scriptPubKey.data();
+        script[0] = 33;
+        for (i=0; i<33; i++)
+            script[i+1] = ptr[i];
+        script[34] = OP_CHECKSIG;
+        //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
+    }
     return CreateNewBlock(scriptPubKey);
 }
 
