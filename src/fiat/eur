@@ -1,1 +1,1 @@
-./assetchain-cli -ac_name=EUR $1 $2 $3 $4
+./komodo-cli -ac_name=EUR $1 $2 $3 $4
