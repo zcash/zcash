@@ -800,6 +800,13 @@ int32_t komodo_baseid(char *origbase)
     return(-1);
 }
 
+int32_t komodo_is_issuer()
+{
+    if ( ASSETCHAINS_SYMBOL[0] != 0 && COINBASE_MATURITY == 1 )
+        return(1);
+    else return(0);
+}
+
 int32_t _unhex(char c)
 {
     if ( c >= '0' && c <= '9' )
