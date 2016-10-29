@@ -56,7 +56,7 @@ public:
 
 };
 
-void komodo_args();
+#include "komodo.h"
 
 static bool AppInitRPC(int argc, char* argv[])
 {
