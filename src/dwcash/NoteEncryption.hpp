@@ -1,6 +1,6 @@
 /*
 See the DeepWebCash protocol specification for more information.
-https://github.com/dwcash/zips/blob/master/protocol/protocol.pdf
+https://github.com/deepwebcash/zips/blob/master/protocol/protocol.pdf
 */
 
 #ifndef ZC_NOTE_ENCRYPTION_H_

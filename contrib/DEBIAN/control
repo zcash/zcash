@@ -7,8 +7,8 @@ Build-Depends: autoconf, automake, bsdmainutils, build-essential
  git, g++-multilib, libc6-dev, libtool
  m4, ncurses-dev, pkg-config, python
  unzip, wget, zlib1g-dev
-Vcs-Git: https://github.com/dwcash/dwcash.git
-Vcs-Browser: https://github.com/dwcash/dwcash
+Vcs-Git: https://github.com/deepwebcash/dwcash.git
+Vcs-Browser: https://github.com/deepwebcash/dwcash
 Package: dwcash
 Version: 1.0.0-sprout
 Architecture: amd64

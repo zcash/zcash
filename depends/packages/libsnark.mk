@@ -1,6 +1,6 @@
 package=libsnark
 $(package)_version=0.1
-$(package)_download_path=https://github.com/dwcash/$(package)/archive/
+$(package)_download_path=https://github.com/deepwebcash/$(package)/archive/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
 $(package)_sha256_hash=9422b1a2a94e6b8be61f07af7f146087c2a7d70b208d07ad076622225aa7f0e4

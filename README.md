@@ -8,7 +8,7 @@ What is DeepWebCash?
 Based on Bitcoin's code, it intends to offer a far higher standard of privacy
 and anonymity through a sophisticated zero-knowledge proving scheme that
 preserves confidentiality of transaction metadata. Technical details are
-available in our [Protocol Specification](https://github.com/dwcash/zips/raw/master/protocol/protocol.pdf).
+available in our [Protocol Specification](https://github.com/deepwebcash/zips/raw/master/protocol/protocol.pdf).
 
 This software is the DeepWebCash client. It downloads and stores the entire history
 of DeepWebCash transactions; depending on the speed of your computer and network
@@ -27,11 +27,11 @@ Where do I begin?
 -----------------
 
 We have a guide for joining the public testnet:
-https://github.com/dwcash/dwcash/wiki/Beta-Guide
+https://github.com/deepwebcash/dwcash/wiki/Beta-Guide
 
 ### Need Help?
 
-* See the documentation at the [DeepWebCash Wiki](https://github.com/dwcash/dwcash/wiki)
+* See the documentation at the [DeepWebCash Wiki](https://github.com/deepwebcash/dwcash/wiki)
   for help and more information.
 * Ask for help on the [DeepWebCash](https://forum.dw.cash/) forum.
 
