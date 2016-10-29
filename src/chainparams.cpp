@@ -123,12 +123,9 @@ public:
                  //   (the tx=... number in the SetBestChain debug.log lines)
             0    // * estimated number of transactions per day after checkpoint
         };
-        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,chainparams_commandline,(void *)&consensus) != 0 )
         {
-            if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,chainparams_commandline,(void *)&consensus) != 0 )
-            {
-                
-            }
+            
         }
     }
 };
@@ -140,13 +137,16 @@ void *chainparams_commandline(void *ptr)
     {
         sleep(1);
     }
-    fprintf(stderr,"port.%u\n",ASSETCHAINS_PORT);
-    mainParams.SetDefaultPort(ASSETCHAINS_PORT);
-    mainParams.pchMessageStart[0] = ASSETCHAINS_MAGIC & 0xff;
-    mainParams.pchMessageStart[1] = (ASSETCHAINS_MAGIC >> 8) & 0xff;
-    mainParams.pchMessageStart[2] = (ASSETCHAINS_MAGIC >> 16) & 0xff;
-    mainParams.pchMessageStart[3] = (ASSETCHAINS_MAGIC >> 24) & 0xff;
-    fprintf(stderr,">>>>>>>>>> %s: port.%u/%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_PORT+1,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
+    fprintf(stderr,">>>>>>>> port.%u\n",ASSETCHAINS_PORT);
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    {
+        mainParams.SetDefaultPort(ASSETCHAINS_PORT);
+        mainParams.pchMessageStart[0] = ASSETCHAINS_MAGIC & 0xff;
+        mainParams.pchMessageStart[1] = (ASSETCHAINS_MAGIC >> 8) & 0xff;
+        mainParams.pchMessageStart[2] = (ASSETCHAINS_MAGIC >> 16) & 0xff;
+        mainParams.pchMessageStart[3] = (ASSETCHAINS_MAGIC >> 24) & 0xff;
+        fprintf(stderr,">>>>>>>>>> %s: port.%u/%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_PORT+1,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
+    }
     ASSETCHAIN_INIT = 1;
     return(0);
 }

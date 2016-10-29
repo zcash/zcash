@@ -1264,7 +1264,7 @@ void komodo_configfile(char *symbol,uint16_t port)
         mapArgs["-rpcusername"] = myusername;
         fclose(fp);
     }
-    strcpy(fname,GetConfigFile().string().c_str());
+    strcpy(fname,GetDataDir().string().c_str());
 #ifdef WIN32
     while ( fname[strlen(fname)-1] != '\\' )
         fname[strlen(fname)-1] = 0;
@@ -1316,8 +1316,8 @@ void komodo_args()
         fprintf(stderr,"Got datadir.(%s)\n",dirname);
         if ( ASSETCHAINS_SYMBOL[0] != 0 )
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
-    }
-    while ( 0 && ASSETCHAIN_INIT == 0 )
+    } else ASSETCHAINS_PORT = 8777;
+    while ( ASSETCHAIN_INIT == 0 )
     {
         sleep(1);
     }

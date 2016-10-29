@@ -410,6 +410,9 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 //
 extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
 extern std::string NOTARY_PUBKEY;
+extern uint8_t NOTARY_PUBKEY33[33];
+uint32_t Mining_start;
+int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
@@ -456,10 +459,6 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
 
     return true;
 }
-
-extern uint8_t NOTARY_PUBKEY33[33];
-uint32_t Mining_start;
-int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 
 void static BitcoinMiner(CWallet *pwallet)
 {
