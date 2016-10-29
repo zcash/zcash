@@ -30,7 +30,7 @@ using namespace std;
  * + Contains no strange transactions
  */
 void *chainparams_commandline(void *ptr);
-char ASSETCHAINS_SYMBOL[16];
+extern char ASSETCHAINS_SYMBOL[16];
 uint16_t ASSETCHAINS_PORT = 8777;
 uint32_t ASSETCHAIN_INIT = 0;
 uint32_t ASSETCHAINS_MAGIC = 2387029918;
