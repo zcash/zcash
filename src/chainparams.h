@@ -13,6 +13,7 @@
 #include "protocol.h"
 
 #define KOMODO_MINDIFF_NBITS 0x200f0f0f
+#define GENESIS_NBITS 0x1f00ffff
 
 #include <vector>
 
