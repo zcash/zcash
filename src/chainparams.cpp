@@ -97,17 +97,17 @@ public:
         vSeeds.push_back(CDNSSeedData("deepwebcash.com", "dnsseed.deepwebcash.com`")); // 
         vSeeds.push_back(CDNSSeedData("darkwebcash.com", "dnsseed.darkwebcash.com")); // 
 
-        // guarantees the first 2 characters, when base58 encoded,
-        base58Prefixes[PUBKEY_ADDRESS]     = {0x13,0xB1};
-        // guarantees the first 2 characters, when base58 encoded,
-        base58Prefixes[SCRIPT_ADDRESS]     = {0x13,0xB3};
+        // guarantees the first 2 characters, when base58 encoded, are "dc"
+        base58Prefixes[PUBKEY_ADDRESS]     = {0x14,0x9D};
+        // guarantees the first 2 characters, when base58 encoded, are "dw"
+        base58Prefixes[SCRIPT_ADDRESS]     = {0x14,0xCC};
         // the first character, when base58 encoded, is "5" or "K" or "L" (as in Bitcoin)
         base58Prefixes[SECRET_KEY]         = {0x80};
         // do not rely on these BIP32 prefixes; they are not specified and may change
         base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x88,0xB2,0x1E};
         base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x88,0xAD,0xE4};
-        // guarantees the first 2 characters, when base58 encoded,
-        base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x12,0x8E};
+        // guarantees the first 2 characters, when base58 encoded, are "dp"
+        base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x0E,0x71};
         // guarantees the first 2 characters, when base58 encoded,
         base58Prefixes[ZCSPENDING_KEY]     = {0x8E,0x39};
 
@@ -171,17 +171,17 @@ public:
         vSeeds.clear();
         vSeeds.push_back(CDNSSeedData("dw.cash", "dnsseed.testnet.dw.cash")); // DeepWebCash
 
-        // guarantees the first 2 characters, when base58 encoded,
-        base58Prefixes[PUBKEY_ADDRESS]     = {0x13,0xB5};
-        // guarantees the first 2 characters, when base58 encoded,
-        base58Prefixes[SCRIPT_ADDRESS]     = {0x13,0xB9};
+        // guarantees the first 2 characters, when base58 encoded, are "td"
+        base58Prefixes[PUBKEY_ADDRESS]     = {0x1D,0x11};
+        // guarantees the first 2 characters, when base58 encoded, are "tp"
+        base58Prefixes[SCRIPT_ADDRESS]     = {0x1D,0x2D};
         // the first character, when base58 encoded, is "9" or "c" (as in Bitcoin)
         base58Prefixes[SECRET_KEY]         = {0xEF};
         // do not rely on these BIP32 prefixes; they are not specified and may change
         base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x35,0x87,0xCF};
         base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x35,0x83,0x94};
-        // guarantees the first 2 characters, when base58 encoded,
-        base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x12,0x9A};
+        // guarantees the first 2 characters, when base58 encoded, are "dt"
+        base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x0E,0x78};
         // guarantees the first 2 characters, when base58 encoded,
         base58Prefixes[ZCSPENDING_KEY]     = {0x8E,0x3F};
 
