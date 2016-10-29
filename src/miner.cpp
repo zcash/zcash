@@ -99,6 +99,8 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 }
 
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
+extern int32_t KOMODO_INITDONE;
+extern uint64_t KOMODO_DEPOSIT;
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -108,6 +110,17 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
+    while ( chainActive.Tip()->nHeight > 10 && mempool.GetTotalTxSize() <= 0 )
+    {
+        sleep(10);
+        if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 )
+            continue;
+        if ( KOMODO_DEPOSIT != 0 )
+        {
+            printf("KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)KOMODO_DEPOSIT,(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
+            break;
+        }
+    }
 
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
