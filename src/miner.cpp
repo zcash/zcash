@@ -490,7 +490,7 @@ void static BitcoinMiner(CWallet *pwallet)
     std::string solver = GetArg("-equihashsolver", "tromp");
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
-    fprintf(stderr,"Mining with %s\n",solver.c_str());
+    //fprintf(stderr,"Mining with %s\n",solver.c_str());
     std::mutex m_cs;
     bool cancelSolver = false;
     boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
@@ -503,7 +503,7 @@ void static BitcoinMiner(CWallet *pwallet)
     try {
         while (true)
         {
-            if (0 && chainparams.MiningRequiresPeers())
+            if (chainparams.MiningRequiresPeers())
             {
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
@@ -594,7 +594,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         std::lock_guard<std::mutex> lock{m_cs};
                         cancelSolver = false;
                     }
-                            fprintf(stderr,"Block found %d\n",Mining_height);
+                    fprintf(stderr,"%s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
                     // In regression test mode, stop mining after a block is found.
                     if (chainparams.MineBlocksOnDemand()) {
