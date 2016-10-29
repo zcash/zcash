@@ -13,6 +13,20 @@
  *                                                                            *
  ******************************************************************************/
 
+int32_t ASSETCHAINS_SHORTFLAG;
+extern char ASSETCHAINS_SYMBOL[16];
+extern uint16_t ASSETCHAINS_PORT;
+extern uint32_t ASSETCHAIN_INIT;
+extern uint32_t ASSETCHAINS_MAGIC;
+extern uint64_t ASSETCHAINS_SUPPLY;
+
+int32_t NOTARIZED_HEIGHT,Num_nutxos,KMDHEIGHT = 43000;
+uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
+pthread_mutex_t komodo_mutex;
+uint32_t KOMODO_INITDONE;
+char KMDUSERPASS[1024]; uint16_t BITCOIND_PORT = 7771;
+uint64_t KOMODO_DEPOSIT,PENDING_KOMODO_TX;
+
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 #define portable_mutex_t pthread_mutex_t
