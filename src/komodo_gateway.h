@@ -24,16 +24,16 @@ struct pax_transaction
     char symbol[4]; uint8_t rmd160[20],shortflag;
 };
 
-void komodo_gateway_deposits(CMutableTransaction& txNew)
+void komodo_gateway_deposits(CMutableTransaction *txNew)
 {
     struct pax_transaction *ptr; uint8_t *script,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
     PENDING_KOMODO_TX = 0;
     while ( (ptr= (struct pax_transaction *)queue_dequeue(&DepositsQ)) != 0 )
     {
-        txNew.vout.resize(numvouts+1);
-        txNew.vout[numvouts].nValue = ptr->fiatoshis;
-        txNew.vout[numvouts].scriptPubKey.resize(25);
-        script = (uint8_t *)&txNew.vout[numvouts].scriptPubKey[0];
+        txNew->vout.resize(numvouts+1);
+        txNew->vout[numvouts].nValue = ptr->fiatoshis;
+        txNew->vout[numvouts].scriptPubKey.resize(25);
+        script = (uint8_t *)&txNew->vout[numvouts].scriptPubKey[0];
         *script++ = 0x76;
         *script++ = 0xa9;
         *script++ = 20;
@@ -55,13 +55,13 @@ void komodo_gateway_deposits(CMutableTransaction& txNew)
     if ( numvouts > 1 )
     {
         opretlen = komodo_opreturnscript(opret,'I',data,len);
-        txNew.vout.resize(numvouts+1);
-        txNew.vout[numvouts].nValue = 0;
-        txNew.vout[numvouts].scriptPubKey.resize(opretlen);
-        script = (uint8_t *)&txNew.vout[numvouts].scriptPubKey[0];
+        txNew->vout.resize(numvouts+1);
+        txNew->vout[numvouts].nValue = 0;
+        txNew->vout[numvouts].scriptPubKey.resize(opretlen);
+        script = (uint8_t *)&txNew->vout[numvouts].scriptPubKey[0];
         memcpy(script,opret,opretlen);
-    }
-    printf("total numvouts.%d %.8f\n",numvouts,dstr(PENDING_KOMODO_TX));
+        printf("total numvouts.%d %.8f opretlen.%d\n",numvouts,dstr(PENDING_KOMODO_TX),opretlen);
+    } else KOMODO_DEPOSIT = 0;
 }
 
 int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid pax pricing
