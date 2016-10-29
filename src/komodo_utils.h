@@ -1316,6 +1316,7 @@ void komodo_args()
         //fprintf(stderr,"Got datadir.(%s)\n",dirname);
         if ( ASSETCHAINS_SYMBOL[0] != 0 )
         {
+            int32_t komodo_baseid(char *origbase);
             extern int COINBASE_MATURITY;
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
             if ( komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 )
