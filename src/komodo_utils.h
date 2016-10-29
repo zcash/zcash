@@ -13,6 +13,10 @@
  *                                                                            *
  ******************************************************************************/
 
+int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
+std::string NOTARY_PUBKEY;
+uint8_t NOTARY_PUBKEY33[33];
+
 int32_t ASSETCHAINS_SHORTFLAG;
 extern char ASSETCHAINS_SYMBOL[16];
 extern uint16_t ASSETCHAINS_PORT;

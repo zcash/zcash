@@ -56,6 +56,7 @@ public:
 
 };
 
+#include "uint256.h"
 #include "arith_uint256.h"
 #include "komodo_utils.h"
 

@@ -549,9 +549,6 @@ CCoinsViewCache *pcoinsTip = NULL;
 CBlockTreeDB *pblocktree = NULL;
 
 // Komodo globals
-int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
-std::string NOTARY_PUBKEY;
-uint8_t NOTARY_PUBKEY33[33];
 
 #define KOMODO_TESTNET_EXPIRATION 60000
 //#define KOMODO_ENABLE_INTEREST enabling this is a hardfork
