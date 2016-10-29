@@ -490,7 +490,7 @@ void static BitcoinMiner(CWallet *pwallet)
     try {
         while (true)
         {
-            if (chainparams.MiningRequiresPeers())
+            if (0 && chainparams.MiningRequiresPeers())
             {
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
@@ -507,7 +507,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 } while (true);
                 //fprintf(stderr,"Found peers\n");
             }
-            //fprintf(stderr,"create new block\n");
+            fprintf(stderr,"create new block\n");
             //
             // Create new block
             //
