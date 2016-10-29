@@ -132,7 +132,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             if ( fiatoshis < 0 )
                 fiatoshis = -fiatoshis;
             bitcoin_address(coinaddr,addrtype,rmd160,20);
-            checktoshis = PAX_fiatdest(tokomodo,destaddr,pubkey33,coinaddr,height,base,fiatoshis);
+            checktoshis = PAX_fiatdest(tokomodo,destaddr,pubkey33,coinaddr,height-1,base,fiatoshis);
             typestr = "deposit";
             if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
             {
