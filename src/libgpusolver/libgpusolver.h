@@ -29,7 +29,7 @@
 #include <iostream>
 
 #include "crypto/equihash.h"
-#include "silentarmy.h"
+#include "libkernel.h"
 
 //#include "param.h"
 //#include "blake.h"
