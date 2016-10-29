@@ -108,8 +108,8 @@ public:
         base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x88,0xAD,0xE4};
         // guarantees the first 2 characters, when base58 encoded, are "dp"
         base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x0E,0x71};
-        // guarantees the first 2 characters, when base58 encoded,
-        base58Prefixes[ZCSPENDING_KEY]     = {0x8E,0x39};
+        // guarantees the first 2 characters, when base58 encoded, are "DK"
+        base58Prefixes[ZCSPENDING_KEY]     = {0x53,0x3A};
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
@@ -182,8 +182,8 @@ public:
         base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x35,0x83,0x94};
         // guarantees the first 2 characters, when base58 encoded, are "dt"
         base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x0E,0x78};
-        // guarantees the first 2 characters, when base58 encoded,
-        base58Prefixes[ZCSPENDING_KEY]     = {0x8E,0x3F};
+        // guarantees the first 2 characters, when base58 encoded, are "DT"
+        base58Prefixes[ZCSPENDING_KEY]     = {0x54,0x29};
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
 
