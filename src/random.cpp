@@ -21,6 +21,7 @@
 
 #include <openssl/err.h>
 #include <openssl/rand.h>
+#include "sodium.h"
 
 static inline int64_t GetPerformanceCounter()
 {
@@ -83,12 +84,9 @@ void RandAddSeedPerfmon()
 #endif
 }
 
-void GetRandBytes(unsigned char* buf, int num)
+void GetRandBytes(unsigned char* buf, size_t num)
 {
-    if (RAND_bytes(buf, num) != 1) {
-        LogPrintf("%s: OpenSSL RAND_bytes() failed with error: %s\n", __func__, ERR_error_string(ERR_get_error(), NULL));
-        assert(false);
-    }
+    randombytes_buf(buf, (size_t) num);
 }
 
 uint64_t GetRand(uint64_t nMax)
