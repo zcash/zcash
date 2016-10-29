@@ -448,7 +448,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
         if (!reservekey.GetReservedKey(pubkey))
             return NULL;
         scriptPubKey.resize(35);
-        ptr = (uint8_t *)pubkey.data();
+        ptr = (uint8_t *)pubkey.begin();
         script = (uint8_t *)scriptPubKey.data();
         script[0] = 33;
         for (i=0; i<33; i++)
