@@ -42,7 +42,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     while (!fShutdown)
     {
         MilliSleep(2000);
-        komodo_gateway_iteration(ASSETCHAINS_SYMBOL);
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            komodo_gateway_iteration(ASSETCHAINS_SYMBOL);
         fShutdown = ShutdownRequested();
     }
     if (threadGroup)
