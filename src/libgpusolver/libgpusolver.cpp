@@ -74,7 +74,7 @@ GPUSolver::GPUSolver(unsigned selGPU) {
 	*/
 	//TODO This looks like IND_PER_BUCKET, enough for GPU?
 	size_t global_work_size = 1 << 20;
-  size_t local_work_size = 32;
+  	size_t local_work_size = 32;
 
 	miner = new cl_gpuminer();
 
@@ -196,7 +196,7 @@ bool GPUSolver::GPUSolve200_9(uint8_t *header, size_t header_len, uint64_t nonce
             if (validBlock(sol_char)) {
             	// If we find a POW solution, do not try other solutions
               	// because they become invalid as we created a new block in blockchain.
-				  //std::cout << "Valid block found!" << std::endl;
+				  std::cout << "Valid block found!" << std::endl;
               	  return true;
             }
         }

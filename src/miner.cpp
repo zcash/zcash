@@ -459,7 +459,7 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
     unsigned int n = chainparams.EquihashN();
     unsigned int k = chainparams.EquihashK();
 
-    uint64_t nn= 0;
+    uint64_t nn = 0;
     GPUSolver * g_solver;
     // If zcash.conf GPU=1
     if(conf.useGPU) {
