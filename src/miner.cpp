@@ -101,6 +101,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 extern int32_t KOMODO_INITDONE;
 extern uint64_t KOMODO_DEPOSIT;
+extern char ASSETCHAINS_SYMBOL[16];
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -110,7 +111,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    while ( chainActive.Tip()->nHeight > 10 && mempool.GetTotalTxSize() <= 0 )
+    while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight > 10 && mempool.GetTotalTxSize() <= 0 )
     {
         sleep(10);
         if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 )
@@ -475,7 +476,6 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
 
 void static BitcoinMiner(CWallet *pwallet)
 {
-    extern char ASSETCHAINS_SYMBOL[16];
     LogPrintf("ZcashMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("zcash-miner");
