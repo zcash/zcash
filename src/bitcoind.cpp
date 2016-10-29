@@ -93,6 +93,7 @@ bool AppInit(int argc, char* argv[])
     try
     {
         void komodo_args();
+        fprintf(stderr,"call komodo_args\n");
         komodo_args();
         if (!boost::filesystem::is_directory(GetDataDir(false)))
         {
