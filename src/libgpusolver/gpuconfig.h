@@ -29,9 +29,12 @@ class GPUConfig {
 public:
 	//GPUConfig();
 	//~GPUConfig();
-	
+
 	bool useGPU;
-	int64_t selGPU;
+	unsigned selGPU;
+	bool allGPU;
+	unsigned currentPlatform;
+	unsigned currentDevice;
 	unsigned globalWorkSize;
 	unsigned workgroupSize;
 

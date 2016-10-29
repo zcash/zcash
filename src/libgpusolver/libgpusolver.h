@@ -29,7 +29,8 @@
 #include <iostream>
 
 #include "crypto/equihash.h"
-#include "libkernel.h"
+#include "libclwrapper.h"
+
 
 //#include "param.h"
 //#include "blake.h"

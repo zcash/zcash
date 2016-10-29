@@ -31,7 +31,7 @@
 #include <queue>
 #include <vector>
 #include <random>
-#include "libkernel.h"
+#include "libclwrapper.h"
 #include "kernels/silentarmy.h"
 
 // workaround lame platforms
@@ -47,14 +47,14 @@
 
 using namespace std;
 
-unsigned const cl_kernel::c_defaultLocalWorkSize = 32;
-unsigned const cl_kernel::c_defaultGlobalWorkSizeMultiplier = 4096; // * CL_DEFAULT_LOCAL_WORK_SIZE
-unsigned const cl_kernel::c_defaultMSPerBatch = 0;
-bool cl_kernel::s_allowCPU = false;
-unsigned cl_kernel::s_extraRequiredGPUMem;
-unsigned cl_kernel::s_msPerBatch = cl_kernel::c_defaultMSPerBatch;
-unsigned cl_kernel::s_workgroupSize = cl_kernel::c_defaultLocalWorkSize;
-unsigned cl_kernel::s_initialGlobalWorkSize = cl_kernel::c_defaultGlobalWorkSizeMultiplier * cl_zogminer::c_defaultLocalWorkSize;
+unsigned const cl_wrapper::c_defaultLocalWorkSize = 32;
+unsigned const cl_wrapper::c_defaultGlobalWorkSizeMultiplier = 4096; // * CL_DEFAULT_LOCAL_WORK_SIZE
+unsigned const cl_wrapper::c_defaultMSPerBatch = 0;
+bool cl_wrapper::s_allowCPU = false;
+unsigned cl_wrapper::s_extraRequiredGPUMem;
+unsigned cl_wrapper::s_msPerBatch = cl_wrapper::c_defaultMSPerBatch;
+unsigned cl_wrapper::s_workgroupSize = cl_wrapper::c_defaultLocalWorkSize;
+unsigned cl_wrapper::s_initialGlobalWorkSize = cl_wrapper::c_defaultGlobalWorkSizeMultiplier * cl_zogminer::c_defaultLocalWorkSize;
 
 #if defined(_WIN32)
 extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(const char* lpOutputString);
@@ -85,7 +85,7 @@ static void addDefinition(string& _source, char const* _id, unsigned _value)
 }
 
 
-cl_kernel::cl_kernel()
+cl_wrapper::cl_wrapper()
 :	m_openclOnePointOne()
 {
 
@@ -95,14 +95,14 @@ cl_kernel::cl_kernel()
 
 }
 
-cl_kernel::~cl_kernel()
+cl_wrapper::~cl_wrapper()
 {
 	if(dst_solutions != NULL)
 		free(dst_solutions);
 	finish();
 }
 
-std::vector<cl::Platform> cl_kernel::getPlatforms()
+std::vector<cl::Platform> cl_wrapper::getPlatforms()
 {
 	vector<cl::Platform> platforms;
 	try
@@ -121,7 +121,7 @@ std::vector<cl::Platform> cl_kernel::getPlatforms()
 	return platforms;
 }
 
-string cl_kernel::platform_info(unsigned _platformId, unsigned _deviceId)
+string cl_wrapper::platform_info(unsigned _platformId, unsigned _deviceId)
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -143,7 +143,7 @@ string cl_kernel::platform_info(unsigned _platformId, unsigned _deviceId)
 	return "{ \"platform\": \"" + platforms[platform_num].getInfo<CL_PLATFORM_NAME>() + "\", \"device\": \"" + device.getInfo<CL_DEVICE_NAME>() + "\", \"version\": \"" + device_version + "\" }";
 }
 
-std::vector<cl::Device> cl_kernel::getDevices(std::vector<cl::Platform> const& _platforms, unsigned _platformId)
+std::vector<cl::Device> cl_wrapper::getDevices(std::vector<cl::Platform> const& _platforms, unsigned _platformId)
 {
 	vector<cl::Device> devices;
 	unsigned platform_num = min<unsigned>(_platformId, _platforms.size() - 1);
@@ -163,7 +163,7 @@ std::vector<cl::Device> cl_kernel::getDevices(std::vector<cl::Platform> const& _
 	return devices;
 }
 
-unsigned cl_kernel::getNumPlatforms()
+unsigned cl_wrapper::getNumPlatforms()
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -171,7 +171,7 @@ unsigned cl_kernel::getNumPlatforms()
 	return platforms.size();
 }
 
-unsigned cl_kernel::getNumDevices(unsigned _platformId)
+unsigned cl_wrapper::getNumDevices(unsigned _platformId)
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -187,7 +187,7 @@ unsigned cl_kernel::getNumDevices(unsigned _platformId)
 }
 
 // This needs customizing apon completion of the kernel - Checks memory requirements - May not be applicable
-bool cl_kernel::configureGPU(
+bool cl_wrapper::configureGPU(
 	unsigned _platformId,
 	unsigned _localWorkSize,
 	unsigned _globalWorkSize
@@ -211,7 +211,7 @@ bool cl_kernel::configureGPU(
 	);
 }
 
-bool cl_kernel::searchForAllDevices(function<bool(cl::Device const&)> _callback)
+bool cl_wrapper::searchForAllDevices(function<bool(cl::Device const&)> _callback)
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -223,7 +223,7 @@ bool cl_kernel::searchForAllDevices(function<bool(cl::Device const&)> _callback)
 	return false;
 }
 
-bool cl_kernel::searchForAllDevices(unsigned _platformId, function<bool(cl::Device const&)> _callback)
+bool cl_wrapper::searchForAllDevices(unsigned _platformId, function<bool(cl::Device const&)> _callback)
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -239,7 +239,7 @@ bool cl_kernel::searchForAllDevices(unsigned _platformId, function<bool(cl::Devi
 	return false;
 }
 
-void cl_kernel::doForAllDevices(function<void(cl::Device const&)> _callback)
+void cl_wrapper::doForAllDevices(function<void(cl::Device const&)> _callback)
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -248,7 +248,7 @@ void cl_kernel::doForAllDevices(function<void(cl::Device const&)> _callback)
 		doForAllDevices(i, _callback);
 }
 
-void cl_kernel::doForAllDevices(unsigned _platformId, function<void(cl::Device const&)> _callback)
+void cl_wrapper::doForAllDevices(unsigned _platformId, function<void(cl::Device const&)> _callback)
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -261,7 +261,7 @@ void cl_kernel::doForAllDevices(unsigned _platformId, function<void(cl::Device c
 		_callback(device);
 }
 
-void cl_kernel::listDevices()
+void cl_wrapper::listDevices()
 {
 	string outString ="\nListing OpenCL devices.\nFORMAT: [deviceID] deviceName\n";
 	unsigned int i = 0;
@@ -293,7 +293,7 @@ void cl_kernel::listDevices()
 	CL_LOG(outString);
 }
 
-void cl_kernel::finish()
+void cl_wrapper::finish()
 {
 
 	if (m_queue())
@@ -301,7 +301,7 @@ void cl_kernel::finish()
 }
 
 // Customise given kernel - This builds the kernel and creates memory buffers
-bool cl_kernel::init(
+bool cl_wrapper::init(
 	unsigned _platformId,
 	unsigned _deviceId,
 	const std::vector<std::string> _kernels
@@ -353,12 +353,12 @@ bool cl_kernel::init(
 		m_stepWorkSizeAdjust = pow(2, m_deviceBits / 2 + 1);
 
 		// patch source code
-		// note: CL_MINER_KERNEL is simply cl_kernel_kernel.cl compiled
+		// note: CL_MINER_KERNEL is simply cl_wrapper_kernel.cl compiled
 		// into a byte array by bin2h.cmake. There is no need to load the file by hand in runtime
 
 		// Uncomment for loading kernel from compiled cl file.
 #ifdef DEBUG
-		ifstream kernel_file("./libzogminer/kernels/cl_kernel_kernel.cl");
+		ifstream kernel_file("./libzogminer/kernels/cl_wrapper_kernel.cl");
 		string code((istreambuf_iterator<char>(kernel_file)), istreambuf_iterator<char>());
 		kernel_file.close();
 #else
@@ -412,7 +412,7 @@ bool cl_kernel::init(
 }
 
 
-void cl_kernel::run(uint8_t *header, size_t header_len, uint64_t nonce, sols_t * indices, uint32_t * n_sol, uint64_t * ptr)
+void cl_wrapper::run(uint8_t *header, size_t header_len, uint64_t nonce, sols_t * indices, uint32_t * n_sol, uint64_t * ptr)
 {
 	try
 	{
