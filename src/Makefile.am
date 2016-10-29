@@ -86,7 +86,7 @@ LIBGPUSOLVER_H = \
   libgpusolver/libgpusolver.h \
   libgpusolver/gpuconfig.h \
   libgpusolver/kernels/silentarmy.h \
-  libgpusolver/libkernel.h \
+  libgpusolver/libclwrapper.h \
   libgpusolver/cl.hpp \
   libgpusolver/blake.h \
   libgpusolver/param.h
@@ -464,7 +464,7 @@ libzcash_a_CPPFLAGS += -DMONTGOMERY_OUTPUT
 
 libgpusolver_a_SOURCES = \
   libgpusolver/libgpusolver.cpp \
-  libgpusolver/libkernel.cpp \
+  libgpusolver/libclwrapper.cpp \
   libgpusolver/blake.cpp
 
 libgpusolver_a_CPPFLAGS = -DMULTICORE -fopenmp -fPIC -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS $(HARDENED_CPPFLAGS) -pipe -O1 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden

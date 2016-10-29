@@ -627,7 +627,7 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
                             break;
                         }
                     }
-                } 
+                }
 
                     try {
                         if(!conf.useGPU) {
@@ -638,7 +638,7 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
                                 break;
                         } else {
                             bool found = g_solver->run(n, k, header, ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN, nn++, validBlock, cancelledGPU, curr_state);
-                            if (found) 
+                            if (found)
                                 break;
                         }
                     } catch (EhSolverCancelledException&) {
@@ -714,9 +714,6 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
     if (nThreads == 0 || !fGenerate)
         return;
 
-    minerThreads = new boost::thread_group();
-    for (int i = 0; i < nThreads; i++)
-        minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet));
 }
 
 
