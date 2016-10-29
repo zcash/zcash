@@ -122,7 +122,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 {
     uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     tokomodo = (komodo_is_issuer() == 0);
-    if ( opretbuf[0] == ((tokomodo != 0) ? 'D' : 'W') )
+    if ( opretbuf[0] == ((tokomodo == 0) ? 'D' : 'W') )
     {
         if ( opretlen == 34 )
         {
@@ -133,7 +133,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             bitcoin_address(coinaddr,addrtype,rmd160,20);
             checktoshis = PAX_fiatdest(tokomodo,destaddr,pubkey33,coinaddr,height,base,fiatoshis);
             typestr = "deposit";
-            if ( tokomodo == 0 && strncmp(KOMODO_SOURCE,base,strlen(base)) == 0 )
+            if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
             {
                 for (i=0; i<opretlen; i++)
                     printf("%02x",opretbuf[i]);
