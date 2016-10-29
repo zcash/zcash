@@ -99,6 +99,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 }
 
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
+void komodo_gateway_deposits(CMutableTransaction& txNew);
 extern int32_t KOMODO_INITDONE;
 extern uint64_t KOMODO_DEPOSIT;
 extern char ASSETCHAINS_SYMBOL[16];
@@ -351,23 +352,29 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         //txNew.nLockTime = (uint32_t)time(NULL) - 60;
         txNew.vin.resize(1);
         txNew.vin[0].prevout.SetNull();
-        int32_t i,opretlen; uint8_t opret[256],*ptr;
-        if ( (opretlen= komodo_pax_opreturn(opret,sizeof(opret))) > 0 )
-        {
-            txNew.vout.resize(2);
-            txNew.vout[1].scriptPubKey.resize(opretlen);
-            ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
-            for (i=0; i<opretlen; i++)
-                ptr[i] = opret[i];
-            txNew.vout[1].nValue = 0;
-            //fprintf(stderr,"opretlen.%d\n",opretlen);
-        } else txNew.vout.resize(1);
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
-        txNew.vout[0].nValue = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+        txNew.vout[0].nValue = GetBlockSubsidy(nHeight,chainparams.GetConsensus());
         // Add fees
         txNew.vout[0].nValue += nFees;
-        
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        {
+            int32_t i,opretlen; uint8_t opret[256],*ptr;
+            if ( (opretlen= komodo_pax_opreturn(opret,sizeof(opret))) > 0 )
+            {
+                txNew.vout.resize(2);
+                txNew.vout[1].scriptPubKey.resize(opretlen);
+                ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
+                for (i=0; i<opretlen; i++)
+                    ptr[i] = opret[i];
+                txNew.vout[1].nValue = 0;
+                //fprintf(stderr,"opretlen.%d\n",opretlen);
+            } else txNew.vout.resize(1);
+        }
+        else
+        {
+            komodo_gateway_deposits(txNew);
+        }
 
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
