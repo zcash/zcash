@@ -581,7 +581,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         std::lock_guard<std::mutex> lock{m_cs};
                         cancelSolver = false;
                     }
-                            fprintf(stderr,"Block found %d\n",pblock->nHeight);
+                            fprintf(stderr,"Block found %d\n",pindexPrev->nHeight+1);
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
                     // In regression test mode, stop mining after a block is found.
                     if (chainparams.MineBlocksOnDemand()) {
