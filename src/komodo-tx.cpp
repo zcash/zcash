@@ -23,6 +23,10 @@
 
 using namespace std;
 
+#include "uint256.h"
+#include "arith_uint256.h"
+#include "komodo_globals.h"
+
 #include "komodo_interest.h"
 
 static bool fCreateBlank;
