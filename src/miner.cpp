@@ -459,16 +459,17 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
     unsigned int n = chainparams.EquihashN();
     unsigned int k = chainparams.EquihashK();
 
+    uint64_t nn= 0;
+    GPUSolver * g_solver;
     // If zcash.conf GPU=1
     if(conf.useGPU) {
-        GPUSolver * solver;
-        solver = new GPUSolver(conf.selGPU);
+        g_solver = new GPUSolver(conf.selGPU);
         LogPrint("pow", "Using Equihash solver GPU with n = %u, k = %u\n", n, k);
-    } else {
-        std::string solver = GetArg("-equihashsolver", "default");
-        assert(solver == "tromp" || solver == "GPU" || solver == "default");
-        LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
     }
+
+    std::string solver = GetArg("-equihashsolver", "default");
+    assert(solver == "tromp" || solver == "GPU" || solver == "default");
+    LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
 
 
     std::mutex m_cs;
@@ -549,8 +550,8 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
                 }
 
                 // (x_1, x_2, ...) = A(I, V, n, k)
-                LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",
-                         solver, pblock->nNonce.ToString());
+                LogPrint("pow", "Running Equihash solver with nNonce = %s\n",
+                         pblock->nNonce.ToString());
 
                 std::function<bool(std::vector<unsigned char>)> validBlock =
                         [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
@@ -626,28 +627,26 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
                             break;
                         }
                     }
-                } else {
+                } 
+
                     try {
                         if(!conf.useGPU) {
                             // If we find a valid block, we rebuild
                             bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
                             ehSolverRuns.increment();
-                            if (found) {
+                            if (found)
                                 break;
-                            }
                         } else {
-                                bool found = solver->run(n, k, header, ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN, nn++, validBlock, cancelledGPU, curr_state) {
-                                if (found) {
-                                    break;
-                                }
-                            }
+                            bool found = g_solver->run(n, k, header, ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN, nn++, validBlock, cancelledGPU, curr_state);
+                            if (found) 
+                                break;
                         }
                     } catch (EhSolverCancelledException&) {
                         LogPrint("pow", "Equihash solver cancelled\n");
                         std::lock_guard<std::mutex> lock{m_cs};
                         cancelSolver = false;
                     }
-                }
+
 
                 // Check for stop or if block needs to be rebuilt
                 boost::this_thread::interruption_point();
@@ -676,25 +675,19 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
     {
         LogPrintf("ZcashMiner terminated\n");
         if(conf.useGPU)
-            delete solver;
-        if(tmp_header)
-            free(tmp_header);
+            delete g_solver;
         throw;
     }
     catch (const std::runtime_error &e)
     {
         LogPrintf("ZcashMiner runtime error: %s\n", e.what());
         if(conf.useGPU)
-            delete solver;
-        if(tmp_header)
-            free(tmp_header);
+            delete g_solver;
         return;
     }
 
     if(conf.useGPU)
-        delete solver;
-    if(tmp_header)
-            free(tmp_header);
+        delete g_solver;
 
     c.disconnect();
 }
@@ -724,6 +717,35 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
     minerThreads = new boost::thread_group();
     for (int i = 0; i < nThreads; i++)
         minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet));
+}
+
+
+void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads, GPUConfig conf)
+{
+    static boost::thread_group* minerThreads = NULL;
+
+    if (nThreads < 0) {
+        // In regtest threads defaults to 1
+        if (Params().DefaultMinerThreads())
+            nThreads = Params().DefaultMinerThreads();
+        else
+            nThreads = boost::thread::hardware_concurrency();
+    }
+
+    if (minerThreads != NULL)
+    {
+        minerThreads->interrupt_all();
+        delete minerThreads;
+        minerThreads = NULL;
+    }
+
+    if (nThreads == 0 || !fGenerate)
+        return;
+
+    minerThreads = new boost::thread_group();
+
+    for (int i = 0; i < nThreads; i++)
+        minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
 }
 
 #endif // ENABLE_WALLET

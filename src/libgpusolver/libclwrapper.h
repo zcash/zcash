@@ -64,13 +64,13 @@ typedef struct  debug_s
 
 typedef uint32_t eh_index;
 
-class cl_kernel
+class cl_gpukernel
 {
 
 public:
 
-	cl_kernel();
-	~cl_kernel();
+	cl_gpukernel();
+	~cl_gpukernel();
 
 	static bool searchForAllDevices(unsigned _platformId, std::function<bool(cl::Device const&)> _callback);
 	static bool searchForAllDevices(std::function<bool(cl::Device const&)> _callback);
@@ -209,7 +209,7 @@ private:
 	}
 	cl::Context m_context;
 	cl::CommandQueue m_queue;
-	std::vector<cl::Kernel> m_zogKernels;
+	std::vector<cl::Kernel> m_gpuKernels;
 	/*cl::Buffer m_digests[2];
 	cl::Buffer m_buckets;
 	cl::Buffer m_new_digest_index;

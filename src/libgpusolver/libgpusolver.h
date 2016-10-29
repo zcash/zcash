@@ -47,7 +47,7 @@
 
 #define EK 9
 #define EN 200
-#define DIGITBITS	(EN/(EK+1))
+#define DIGITBITS_S	(EN/(EK+1))
 
 class GPUSolverCancelledException : public std::exception
 {
@@ -74,7 +74,7 @@ public:
 			crypto_generichash_blake2b_state base_state);
 
 private:
-	cl_zogminer * miner;
+	cl_gpukernel * miner;
 	bool GPU;
 	bool initOK;
 	static const uint32_t PROOFSIZE = 1 << EK;

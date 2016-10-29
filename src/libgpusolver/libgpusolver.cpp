@@ -178,7 +178,7 @@ bool GPUSolver::GPUSolve200_9(uint8_t *header, size_t header_len, uint64_t nonce
 				 //std::cout << s << "] ["<< " " << i << std::endl;
             	index_vector[i] = indices->values[s-1][i];
             }
-            std::vector<unsigned char> sol_char = GetMinimalFromIndices(index_vector, DIGITBITS);
+            std::vector<unsigned char> sol_char = GetMinimalFromIndices(index_vector, DIGITBITS_S);
 #ifdef DEBUG
             bool isValid;
 			LogPrint("pow", "Checking with = %s\n",

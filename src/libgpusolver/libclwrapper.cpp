@@ -1,38 +1,18 @@
-/* MIT License
- *
- * Copyright (c) 2016 Age Manning <age@agemanning.com>
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
 
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <cstdio>
 #include <cstdlib>
+//#include <chrono>
 #include <fstream>
 #include <streambuf>
 #include <iostream>
 #include <queue>
 #include <vector>
 #include <random>
-#include "libclwrapper.h"
-#include "kernels/silentarmy.h"
+//#include <atomic>
+#include "cl_gpuminer.h"
+#include "kernels/cl_gpuminer_kernel.h" // Created from CMake
 
 // workaround lame platforms
 #if !CL_VERSION_1_2
@@ -47,14 +27,14 @@
 
 using namespace std;
 
-unsigned const cl_wrapper::c_defaultLocalWorkSize = 32;
-unsigned const cl_wrapper::c_defaultGlobalWorkSizeMultiplier = 4096; // * CL_DEFAULT_LOCAL_WORK_SIZE
-unsigned const cl_wrapper::c_defaultMSPerBatch = 0;
-bool cl_wrapper::s_allowCPU = false;
-unsigned cl_wrapper::s_extraRequiredGPUMem;
-unsigned cl_wrapper::s_msPerBatch = cl_wrapper::c_defaultMSPerBatch;
-unsigned cl_wrapper::s_workgroupSize = cl_wrapper::c_defaultLocalWorkSize;
-unsigned cl_wrapper::s_initialGlobalWorkSize = cl_wrapper::c_defaultGlobalWorkSizeMultiplier * cl_zogminer::c_defaultLocalWorkSize;
+unsigned const cl_gpuminer::c_defaultLocalWorkSize = 32;
+unsigned const cl_gpuminer::c_defaultGlobalWorkSizeMultiplier = 4096; // * CL_DEFAULT_LOCAL_WORK_SIZE
+unsigned const cl_gpuminer::c_defaultMSPerBatch = 0;
+bool cl_gpuminer::s_allowCPU = false;
+unsigned cl_gpuminer::s_extraRequiredGPUMem;
+unsigned cl_gpuminer::s_msPerBatch = cl_gpuminer::c_defaultMSPerBatch;
+unsigned cl_gpuminer::s_workgroupSize = cl_gpuminer::c_defaultLocalWorkSize;
+unsigned cl_gpuminer::s_initialGlobalWorkSize = cl_gpuminer::c_defaultGlobalWorkSizeMultiplier * cl_gpuminer::c_defaultLocalWorkSize;
 
 #if defined(_WIN32)
 extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(const char* lpOutputString);
@@ -85,24 +65,24 @@ static void addDefinition(string& _source, char const* _id, unsigned _value)
 }
 
 
-cl_wrapper::cl_wrapper()
+cl_gpuminer::cl_gpuminer()
 :	m_openclOnePointOne()
 {
 
 	dst_solutions = (uint32_t *) malloc(10*NUM_INDICES*sizeof(uint32_t));
 	if(dst_solutions == NULL)
-		std::cout << "Error allocating dst_solutions array!" << std::endl;
+		std::cout << "Error allocating dst_solutions array!" << std::endl; 
 
 }
 
-cl_wrapper::~cl_wrapper()
+cl_gpuminer::~cl_gpuminer()
 {
 	if(dst_solutions != NULL)
 		free(dst_solutions);
 	finish();
 }
 
-std::vector<cl::Platform> cl_wrapper::getPlatforms()
+std::vector<cl::Platform> cl_gpuminer::getPlatforms()
 {
 	vector<cl::Platform> platforms;
 	try
@@ -121,7 +101,7 @@ std::vector<cl::Platform> cl_wrapper::getPlatforms()
 	return platforms;
 }
 
-string cl_wrapper::platform_info(unsigned _platformId, unsigned _deviceId)
+string cl_gpuminer::platform_info(unsigned _platformId, unsigned _deviceId)
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -143,7 +123,7 @@ string cl_wrapper::platform_info(unsigned _platformId, unsigned _deviceId)
 	return "{ \"platform\": \"" + platforms[platform_num].getInfo<CL_PLATFORM_NAME>() + "\", \"device\": \"" + device.getInfo<CL_DEVICE_NAME>() + "\", \"version\": \"" + device_version + "\" }";
 }
 
-std::vector<cl::Device> cl_wrapper::getDevices(std::vector<cl::Platform> const& _platforms, unsigned _platformId)
+std::vector<cl::Device> cl_gpuminer::getDevices(std::vector<cl::Platform> const& _platforms, unsigned _platformId)
 {
 	vector<cl::Device> devices;
 	unsigned platform_num = min<unsigned>(_platformId, _platforms.size() - 1);
@@ -163,7 +143,7 @@ std::vector<cl::Device> cl_wrapper::getDevices(std::vector<cl::Platform> const& 
 	return devices;
 }
 
-unsigned cl_wrapper::getNumPlatforms()
+unsigned cl_gpuminer::getNumPlatforms()
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -171,7 +151,7 @@ unsigned cl_wrapper::getNumPlatforms()
 	return platforms.size();
 }
 
-unsigned cl_wrapper::getNumDevices(unsigned _platformId)
+unsigned cl_gpuminer::getNumDevices(unsigned _platformId)
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -187,7 +167,7 @@ unsigned cl_wrapper::getNumDevices(unsigned _platformId)
 }
 
 // This needs customizing apon completion of the kernel - Checks memory requirements - May not be applicable
-bool cl_wrapper::configureGPU(
+bool cl_gpuminer::configureGPU(
 	unsigned _platformId,
 	unsigned _localWorkSize,
 	unsigned _globalWorkSize
@@ -211,7 +191,7 @@ bool cl_wrapper::configureGPU(
 	);
 }
 
-bool cl_wrapper::searchForAllDevices(function<bool(cl::Device const&)> _callback)
+bool cl_gpuminer::searchForAllDevices(function<bool(cl::Device const&)> _callback)
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -223,7 +203,7 @@ bool cl_wrapper::searchForAllDevices(function<bool(cl::Device const&)> _callback
 	return false;
 }
 
-bool cl_wrapper::searchForAllDevices(unsigned _platformId, function<bool(cl::Device const&)> _callback)
+bool cl_gpuminer::searchForAllDevices(unsigned _platformId, function<bool(cl::Device const&)> _callback)
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -239,7 +219,7 @@ bool cl_wrapper::searchForAllDevices(unsigned _platformId, function<bool(cl::Dev
 	return false;
 }
 
-void cl_wrapper::doForAllDevices(function<void(cl::Device const&)> _callback)
+void cl_gpuminer::doForAllDevices(function<void(cl::Device const&)> _callback)
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -248,7 +228,7 @@ void cl_wrapper::doForAllDevices(function<void(cl::Device const&)> _callback)
 		doForAllDevices(i, _callback);
 }
 
-void cl_wrapper::doForAllDevices(unsigned _platformId, function<void(cl::Device const&)> _callback)
+void cl_gpuminer::doForAllDevices(unsigned _platformId, function<void(cl::Device const&)> _callback)
 {
 	vector<cl::Platform> platforms = getPlatforms();
 	if (platforms.empty())
@@ -261,7 +241,7 @@ void cl_wrapper::doForAllDevices(unsigned _platformId, function<void(cl::Device 
 		_callback(device);
 }
 
-void cl_wrapper::listDevices()
+void cl_gpuminer::listDevices()
 {
 	string outString ="\nListing OpenCL devices.\nFORMAT: [deviceID] deviceName\n";
 	unsigned int i = 0;
@@ -293,7 +273,7 @@ void cl_wrapper::listDevices()
 	CL_LOG(outString);
 }
 
-void cl_wrapper::finish()
+void cl_gpuminer::finish()
 {
 
 	if (m_queue())
@@ -301,13 +281,14 @@ void cl_wrapper::finish()
 }
 
 // Customise given kernel - This builds the kernel and creates memory buffers
-bool cl_wrapper::init(
+bool cl_gpuminer::init(
 	unsigned _platformId,
 	unsigned _deviceId,
 	const std::vector<std::string> _kernels
 )
 {
 	// get all platforms
+	printf("IN INIT CLASS\n");
 	try
 	{
 		vector<cl::Platform> platforms = getPlatforms();
@@ -353,12 +334,12 @@ bool cl_wrapper::init(
 		m_stepWorkSizeAdjust = pow(2, m_deviceBits / 2 + 1);
 
 		// patch source code
-		// note: CL_MINER_KERNEL is simply cl_wrapper_kernel.cl compiled
+		// note: CL_MINER_KERNEL is simply cl_gpuminer_kernel.cl compiled
 		// into a byte array by bin2h.cmake. There is no need to load the file by hand in runtime
 
 		// Uncomment for loading kernel from compiled cl file.
 #ifdef DEBUG
-		ifstream kernel_file("./libzogminer/kernels/cl_wrapper_kernel.cl");
+		ifstream kernel_file("./libgpuminer/kernels/silentarmy.cl");
 		string code((istreambuf_iterator<char>(kernel_file)), istreambuf_iterator<char>());
 		kernel_file.close();
 #else
@@ -384,11 +365,11 @@ bool cl_wrapper::init(
 		try
 		{
 			for (auto & _kernel : _kernels)
-				m_zogKernels.push_back(cl::Kernel(program, _kernel.c_str()));
+				m_gpuKernels.push_back(cl::Kernel(program, _kernel.c_str()));
 		}
 		catch (cl::Error const& err)
 		{
-			CL_LOG("ZOGKERNEL Creation failed: " << err.what() << "(" << err.err() << "). Bailing.");
+			CL_LOG("gpuKERNEL Creation failed: " << err.what() << "(" << err.err() << "). Bailing.");
 			return false;
 		}
 
@@ -412,8 +393,9 @@ bool cl_wrapper::init(
 }
 
 
-void cl_wrapper::run(uint8_t *header, size_t header_len, uint64_t nonce, sols_t * indices, uint32_t * n_sol, uint64_t * ptr)
+void cl_gpuminer::run(uint8_t *header, size_t header_len, uint64_t nonce, sols_t * indices, uint32_t * n_sol, uint64_t * ptr)
 {
+	printf("IN CLRUN CLASS\n");
 	try
 	{
 
@@ -444,31 +426,31 @@ void cl_wrapper::run(uint8_t *header, size_t header_len, uint64_t nonce, sols_t 
 		for (unsigned round = 0; round < PARAM_K; round++) {
 
 			size_t      global_ws = NR_ROWS;
-
-			m_zogKernels[0].setArg(0, buf_ht[round % 2]);
-			m_queue.enqueueNDRangeKernel(m_zogKernels[0], cl::NullRange, cl::NDRange(global_ws), cl::NDRange(local_ws));
-
+			
+			m_gpuKernels[0].setArg(0, buf_ht[round % 2]);
+			m_queue.enqueueNDRangeKernel(m_gpuKernels[0], cl::NullRange, cl::NDRange(global_ws), cl::NDRange(local_ws));
+			
 			if (!round) {
-				m_zogKernels[1+round].setArg(0, buf_blake_st);
-				m_zogKernels[1+round].setArg(1, buf_ht[round % 2]);
+				m_gpuKernels[1+round].setArg(0, buf_blake_st);
+				m_gpuKernels[1+round].setArg(1, buf_ht[round % 2]);
 				global_ws = select_work_size_blake();
 			} else {
-				m_zogKernels[1+round].setArg(0, buf_ht[(round - 1) % 2]);
-				m_zogKernels[1+round].setArg(1, buf_ht[round % 2]);
+				m_gpuKernels[1+round].setArg(0, buf_ht[(round - 1) % 2]);
+				m_gpuKernels[1+round].setArg(1, buf_ht[round % 2]);
 				global_ws = NR_ROWS;
 			}
+			
+			m_gpuKernels[1+round].setArg(2, buf_dbg);
 
-			m_zogKernels[1+round].setArg(2, buf_dbg);
-
-			m_queue.enqueueNDRangeKernel(m_zogKernels[1+round], cl::NullRange, cl::NDRange(global_ws), cl::NDRange(local_ws));
-
+			m_queue.enqueueNDRangeKernel(m_gpuKernels[1+round], cl::NullRange, cl::NDRange(global_ws), cl::NDRange(local_ws));
+		
 		}
-
-		m_zogKernels[10].setArg(0, buf_ht[0]);
-		m_zogKernels[10].setArg(1, buf_ht[1]);
-		m_zogKernels[10].setArg(2, buf_sols);
+		
+		m_gpuKernels[10].setArg(0, buf_ht[0]);
+		m_gpuKernels[10].setArg(1, buf_ht[1]);
+		m_gpuKernels[10].setArg(2, buf_sols);
 		global_ws = NR_ROWS;
-		m_queue.enqueueNDRangeKernel(m_zogKernels[10], cl::NullRange, cl::NDRange(global_ws), cl::NDRange(local_ws));
+		m_queue.enqueueNDRangeKernel(m_gpuKernels[10], cl::NullRange, cl::NDRange(global_ws), cl::NDRange(local_ws)); 
 
 		sols_t	* sols;
 		sols = (sols_t *)malloc(sizeof(*sols));
