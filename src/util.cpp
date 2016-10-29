@@ -400,7 +400,7 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
     strMiscWarning = message;
 }
 
-char ASSETCHAINS_SYMBOL[16];
+extern char ASSETCHAINS_SYMBOL[16];
 
 boost::filesystem::path GetDefaultDataDir()
 {
