@@ -32,6 +32,8 @@
  */
 
 static bool fDaemon;
+extern char ASSETCHAINS_SYMBOL[16];
+void komodo_gateway_iteration(char *symbol);
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
@@ -39,7 +41,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     // Tell the main threads to shutdown.
     while (!fShutdown)
     {
-        MilliSleep(200);
+        MilliSleep(2000);
+        komodo_gateway_iteration(ASSETCHAINS_SYMBOL);
         fShutdown = ShutdownRequested();
     }
     if (threadGroup)
