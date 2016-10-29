@@ -74,7 +74,7 @@ public:
 			crypto_generichash_blake2b_state base_state);
 
 private:
-	cl_gpukernel * miner;
+	cl_gpuminer * miner;
 	bool GPU;
 	bool initOK;
 	static const uint32_t PROOFSIZE = 1 << EK;

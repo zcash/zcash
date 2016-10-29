@@ -46,7 +46,7 @@ GPUSolver::GPUSolver() {
 	size_t global_work_size = 1 << 20;
   size_t local_work_size = 32;
 
-	miner = new cl_wrapper();
+	miner = new cl_gpuminer();
 
 	indices = (sols_t *) malloc(sizeof(sols_t));
 	if(indices == NULL)
@@ -76,7 +76,7 @@ GPUSolver::GPUSolver(unsigned selGPU) {
 	size_t global_work_size = 1 << 20;
   size_t local_work_size = 32;
 
-	miner = new cl_wrapper();
+	miner = new cl_gpuminer();
 
 	indices = (sols_t *) malloc(sizeof(sols_t));
 	if(indices == NULL)

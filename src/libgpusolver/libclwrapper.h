@@ -64,13 +64,13 @@ typedef struct  debug_s
 
 typedef uint32_t eh_index;
 
-class cl_gpukernel
+class cl_gpuminer
 {
 
 public:
 
-	cl_gpukernel();
-	~cl_gpukernel();
+	cl_gpuminer();
+	~cl_gpuminer();
 
 	static bool searchForAllDevices(unsigned _platformId, std::function<bool(cl::Device const&)> _callback);
 	static bool searchForAllDevices(std::function<bool(cl::Device const&)> _callback);

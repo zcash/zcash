@@ -1,5 +1,5 @@
 bin_PROGRAMS += \
-  zcash/GenerateParams 
+  zcash/GenerateParams
 
 # tool for generating our public parameters
 zcash_GenerateParams_SOURCES = zcash/GenerateParams.cpp

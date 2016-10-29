@@ -11,8 +11,8 @@
 #include <vector>
 #include <random>
 //#include <atomic>
-#include "cl_gpuminer.h"
-#include "kernels/cl_gpuminer_kernel.h" // Created from CMake
+#include "libclwrapper.h"
+#include "kernels/silentarmy.h" // Created from CMake
 
 // workaround lame platforms
 #if !CL_VERSION_1_2
@@ -71,7 +71,7 @@ cl_gpuminer::cl_gpuminer()
 
 	dst_solutions = (uint32_t *) malloc(10*NUM_INDICES*sizeof(uint32_t));
 	if(dst_solutions == NULL)
-		std::cout << "Error allocating dst_solutions array!" << std::endl; 
+		std::cout << "Error allocating dst_solutions array!" << std::endl;
 
 }
 
@@ -426,10 +426,10 @@ void cl_gpuminer::run(uint8_t *header, size_t header_len, uint64_t nonce, sols_t
 		for (unsigned round = 0; round < PARAM_K; round++) {
 
 			size_t      global_ws = NR_ROWS;
-			
+
 			m_gpuKernels[0].setArg(0, buf_ht[round % 2]);
 			m_queue.enqueueNDRangeKernel(m_gpuKernels[0], cl::NullRange, cl::NDRange(global_ws), cl::NDRange(local_ws));
-			
+
 			if (!round) {
 				m_gpuKernels[1+round].setArg(0, buf_blake_st);
 				m_gpuKernels[1+round].setArg(1, buf_ht[round % 2]);
@@ -439,18 +439,18 @@ void cl_gpuminer::run(uint8_t *header, size_t header_len, uint64_t nonce, sols_t
 				m_gpuKernels[1+round].setArg(1, buf_ht[round % 2]);
 				global_ws = NR_ROWS;
 			}
-			
+
 			m_gpuKernels[1+round].setArg(2, buf_dbg);
 
 			m_queue.enqueueNDRangeKernel(m_gpuKernels[1+round], cl::NullRange, cl::NDRange(global_ws), cl::NDRange(local_ws));
-		
+
 		}
-		
+
 		m_gpuKernels[10].setArg(0, buf_ht[0]);
 		m_gpuKernels[10].setArg(1, buf_ht[1]);
 		m_gpuKernels[10].setArg(2, buf_sols);
 		global_ws = NR_ROWS;
-		m_queue.enqueueNDRangeKernel(m_gpuKernels[10], cl::NullRange, cl::NDRange(global_ws), cl::NDRange(local_ws)); 
+		m_queue.enqueueNDRangeKernel(m_gpuKernels[10], cl::NullRange, cl::NDRange(global_ws), cl::NDRange(local_ws));
 
 		sols_t	* sols;
 		sols = (sols_t *)malloc(sizeof(*sols));
