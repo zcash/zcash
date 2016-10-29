@@ -156,6 +156,8 @@ inline float ser_uint32_to_float(uint32_t y)
 // i.e. anything that supports .read(char*, size_t) and .write(char*, size_t)
 //
 
+class CSizeComputer;
+
 enum
 {
     // primary actions
@@ -229,6 +231,8 @@ inline unsigned int GetSizeOfCompactSize(uint64_t nSize)
     else if (nSize <= 0xFFFFFFFFu)  return 5;
     else                            return 9;
 }
+
+inline void WriteCompactSize(CSizeComputer& os, uint64_t nSize);
 
 template<typename Stream>
 void WriteCompactSize(Stream& os, uint64_t nSize)
@@ -322,6 +326,9 @@ inline unsigned int GetSizeOfVarInt(I n)
     }
     return nRet;
 }
+
+template<typename I>
+inline void WriteVarInt(CSizeComputer& os, I n);
 
 template<typename Stream, typename I>
 void WriteVarInt(Stream& os, I n)
@@ -906,6 +913,17 @@ inline void SerReadWrite(Stream& s, T& obj, CSerActionUnserialize ser_action)
 
 
 
+/* ::GetSerializeSize implementations
+ *
+ * Computing the serialized size of objects is done through a special stream
+ * object of type CSizeComputer, which only records the number of bytes written
+ * to it.
+ *
+ * If your Serialize or SerializationOp method has non-trivial overhead for
+ * serialization, it may be worthwhile to implement a specialized version for
+ * CSizeComputer, which uses the s.seek() method to record bytes that would
+ * be written instead.
+ */
 class CSizeComputer
 {
 protected:
@@ -917,6 +935,12 @@ public:
     CSizeComputer(int nTypeIn, int nVersionIn) : nSize(0), nType(nTypeIn), nVersion(nVersionIn) {}
 
     void write(const char *psz, size_t _nSize)
+    {
+        this->nSize += _nSize;
+    }
+
+    /** Pretend _nSize bytes are written, without specifying them. */
+    void seek(size_t _nSize)
     {
         this->nSize += _nSize;
     }
@@ -982,6 +1006,17 @@ template<typename Stream, typename... Args>
 inline void SerReadWriteMany(Stream& s, CSerActionUnserialize ser_action, Args&... args)
 {
     ::UnserializeMany(s, args...);
+}
+
+template<typename I>
+inline void WriteVarInt(CSizeComputer &s, I n)
+{
+    s.seek(GetSizeOfVarInt<I>(n));
+}
+
+inline void WriteCompactSize(CSizeComputer &s, uint64_t nSize)
+{
+    s.seek(GetSizeOfCompactSize(nSize));
 }
 
 template <typename T>
