@@ -145,14 +145,14 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 for (i=0; i<33; i++)
                     printf("%02x",pubkey33[i]);
                 printf(" checkpubkey check %.8f v %.8f dest.(%s) height.%d\n",dstr(checktoshis),dstr(value),destaddr,height);
-                if ( value >= (9999*checktoshis)/10000 && shortflag == ASSETCHAINS_SHORTFLAG )
+                if ( value >= checktoshis && shortflag == ASSETCHAINS_SHORTFLAG )
                 {
                     komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout);
                 }
             }
             else
             {
-                if ( value <= (10000*checktoshis)/9999 )
+                if ( value <= checktoshis )
                 {
                     
                 }
