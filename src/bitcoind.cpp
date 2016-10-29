@@ -92,6 +92,8 @@ bool AppInit(int argc, char* argv[])
 
     try
     {
+        void komodo_args();
+        komodo_args();
         if (!boost::filesystem::is_directory(GetDataDir(false)))
         {
             fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs["-datadir"].c_str());
@@ -114,7 +116,15 @@ bool AppInit(int argc, char* argv[])
         if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
             USE_EXTERNAL_PUBKEY = 1;
         fprintf(stderr,"IS_KOMODO_NOTARY %d %s\n",IS_KOMODO_NOTARY,NOTARY_PUBKEY.c_str());
-        
+        char *dirname;
+        while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
+        {
+            fprintf(stderr,"waiting for datadir\n");
+            sleep(3);
+        }
+        fprintf(stderr,"Got datadir.(%s)\n",dirname);
+        komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
+
         // Command-line RPC
         bool fCommandLine = false;
         for (int i = 1; i < argc; i++)
