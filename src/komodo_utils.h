@@ -1331,6 +1331,7 @@ void komodo_args()
             ASSETCHAINS_SHORTFLAG = 1;
             for (i=0; ASSETCHAINS_SYMBOL[i+1]!=0; i++)
                 ASSETCHAINS_SYMBOL[i] = ASSETCHAINS_SYMBOL[i+1];
+            ASSETCHAINS_SYMBOL[i] = 0;
         }
         //fprintf(stderr,"after args: %c%s port.%u magic.%08x supply.%u\n",ASSETCHAINS_SHORTFLAG!=0?'-':'+',ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,(int32_t)ASSETCHAINS_SUPPLY);
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
