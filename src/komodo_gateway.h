@@ -34,18 +34,18 @@ int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uin
         base[i] = opretbuf[opretlen-4+i];
     if ( strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 ) // shortflag
     {
-        printf("BASE.(%s) vs (%s)\n",base,ASSETCHAINS_SYMBOL);
+        //printf("BASE.(%s) vs (%s)\n",base,ASSETCHAINS_SYMBOL);
         opretbuf++, opretlen--;
         for (n=len=0; n<opretlen/34; n++)
         {
             for (j=0; j<32; j++)
             {
                 ((uint8_t *)&txids[n])[j] = opretbuf[len++];
-                printf("%02x",((uint8_t *)&txids[n])[j]);
+                //printf("%02x",((uint8_t *)&txids[n])[j]);
             }
             vouts[n] = opretbuf[len++];
             vouts[n] = (opretbuf[len++] << 8) | vouts[n];
-            printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
+            //printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
         }
     }
     return(n);
@@ -155,7 +155,7 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
     if ( n <= 2 || script[0] != 0x6a )
         return(0);
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
-    printf("checkdeposit n.%d [%02x] [%c] %d vs %d\n",n,script[0],script[offset],script[offset],'I');
+    //printf("checkdeposit n.%d [%02x] [%c] %d vs %d\n",n,script[0],script[offset],script[offset],'I');
     if ( script[offset] == 'I' && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
     {
         if ( (num= komodo_issued_opreturn(&shortflag,base,txids,vouts,&script[offset],opretlen)) > 0 )
@@ -178,7 +178,7 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
                             {
                                 if ( ptr->fiatoshis == block.vtx[0].vout[i].nValue )
                                 {
-                                    printf("matched %.8f vout.%d\n",dstr(ptr->fiatoshis),i);
+                                    //printf("matched %.8f vout.%d\n",dstr(ptr->fiatoshis),i);
                                     matchflag = 1;
                                 } else printf("error finding %.8f vout.%d\n",dstr(ptr->fiatoshis),i);
                                 break;
@@ -194,7 +194,7 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
                 }
             }
         }
-        printf("opretlen.%d num.%d\n",opretlen,num);
+        //printf("opretlen.%d num.%d\n",opretlen,num);
     }
     return(0);
 }
@@ -242,9 +242,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     else if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 )
     {
         
-        for (i=0; i<opretlen; i++)
-            printf("%02x",opretbuf[i]);
-        printf(" komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
+        //for (i=0; i<opretlen; i++)
+        //    printf("%02x",opretbuf[i]);
+        //printf(" komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
         if ( tokomodo == 0 && opretbuf[0] == 'I' )
         {
             if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen)) > 0 )
