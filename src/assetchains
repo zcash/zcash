@@ -1,4 +1,4 @@
-.include pubkey.txt
+include pubkey.txt
 
 ./komodod -pub=$pubkey -ac_name=USD -addnode=78.47.196.146 &
 ./komodod -pub=$pubkey -ac_name=EUR -addnode=78.47.196.146 &
