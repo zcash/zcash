@@ -24,11 +24,51 @@ struct pax_transaction
     char symbol[4]; uint8_t rmd160[20],shortflag;
 };
 
+int32_t komodo_issued_opreturn(int32_t *shortflagp,char *base,uint256 *txids,uint16_t *vouts,uint8_t *opretbuf,int32_t opretlen)
+{
+    int32_t i,n,j,len;
+    if ( opretbuf[opretlen-5] == '-' )
+        *shortflagp = 1;
+    else *shortflagp = 0;
+    for (i=0; i<4; i++)
+        base[i] = opretbuf[opretlen-4+i];
+    printf("BASE.(%s) vs (%s)\n",base,ASSETCHAINS_SYMBOL);
+    if ( strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 ) // shortflag
+    {
+        opretbuf++, opretlen--;
+        for (n=len=0; n<opretlen/34; n++)
+        {
+            for (j=0; j<32; j++)
+            {
+                ((uint8_t *)&txids[n])[j] = opretbuf[len++];
+                printf("%02x",((uint8_t *)&txids[n])[j]);
+            }
+            vouts[n] = opretbuf[len++];
+            vouts[n] = (opretbuf[len++] << 8) | vouts[n];
+            printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
+            if ( komodo_gateway_depositremove(txids[n],vouts[n]) == 0 )
+                printf("error removing deposit\n");
+        }
+    }
+    return(n);
+}
+
+int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid pax pricing
+{
+    int32_t i,n;
+    n = block.vout.size();
+    for (i=1; i<n; i++)
+    {
+        
+    }
+    return(0);
+}
+
 void komodo_gateway_deposits(CMutableTransaction *txNew)
 {
     struct pax_transaction *ptr; uint8_t *script,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
     PENDING_KOMODO_TX = 0;
-    while ( (ptr= (struct pax_transaction *)queue_dequeue(&DepositsQ)) != 0 )
+    while ( numvouts < 64 && (ptr= (struct pax_transaction *)queue_dequeue(&DepositsQ)) != 0 )
     {
         txNew->vout.resize(numvouts+1);
         txNew->vout[numvouts].nValue = ptr->fiatoshis;
@@ -69,12 +109,6 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
         memcpy(script,opret,opretlen);
         printf("total numvouts.%d %.8f opretlen.%d\n",numvouts,dstr(PENDING_KOMODO_TX),opretlen);
     } else KOMODO_DEPOSIT = 0;
-}
-
-int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid pax pricing
-{
-    // reenable rpc auth
-    return(0);
 }
 
 void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout) // assetchain context
@@ -128,7 +162,7 @@ int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain c
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
 {
-    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
+    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     tokomodo = (komodo_is_issuer() == 0);
     if ( opretbuf[0] == ((tokomodo == 0) ? 'D' : 'W') )
     {
@@ -171,29 +205,16 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         for (i=0; i<opretlen; i++)
             printf("%02x",opretbuf[i]);
         printf(" komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
-        if ( tokomodo == 0 ) // shortflag
+        if ( tokomodo == 0 && opretbuf[0] == 'I' )
         {
-            if ( opretbuf[opretlen-5] == '-' )
-                shortflag = 1;
-            else shortflag = 0;
-            for (i=0; i<4; i++)
-                base[i] = opretbuf[opretlen-4+i];
-            printf("BASE.(%s) vs (%s)\n",base,ASSETCHAINS_SYMBOL);
-            if ( strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 && opretbuf[0] == 'I' )
+            if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen)) > 0 )
             {
-                uint256 issuedtxid; uint16_t issuedvout;
-                opretbuf++, opretlen--;
-                for (i=len=0; i<opretlen/34; i++)
+                for (i=0; i<n; i++)
                 {
                     for (j=0; j<32; j++)
-                    {
-                        ((uint8_t *)&issuedtxid)[j] = opretbuf[len++];
-                        printf("%02x",((uint8_t *)&issuedtxid)[j]);
-                    }
-                    issuedvout = opretbuf[len++];
-                    issuedvout = (opretbuf[len++] << 8) | issuedvout;
-                    printf(" issuedtxid v%d i.%d opretlen.%d\n",issuedvout,i,opretlen);
-                    if ( komodo_gateway_depositremove(issuedtxid,issuedvout) == 0 )
+                        printf("%02x",((uint8_t *)&txids)[j]);
+                    printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[i],i,opretlen);
+                    if ( komodo_gateway_depositremove(txids[i],vouts[i]) == 0 )
                         printf("error removing deposit\n");
                 }
             }
