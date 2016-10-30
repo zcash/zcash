@@ -603,7 +603,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
         entry.push_back(Pair("fee", pblocktemplate->vTxFees[index_in_template]));
         entry.push_back(Pair("sigops", pblocktemplate->vTxSigOps[index_in_template]));
 
-        if (tx.IsCoinBase()) {
+       /* if (tx.IsCoinBase()) {
             // Show founders' reward if it is required
             if (pblock->vtx[0].vout.size() > 1) {
                 // Correct this if GetBlockTemplate changes the order
@@ -611,9 +611,8 @@ Value getblocktemplate(const Array& params, bool fHelp)
             }
             entry.push_back(Pair("required", true));
             txCoinbase = entry;
-        } else {
+        } else*/
             transactions.push_back(entry);
-        }
     }
 
     Object aux;
@@ -804,8 +803,7 @@ Value getblocksubsidy(const Array& params, bool fHelp)
             "1. height         (numeric, optional) The block height.  If not provided, defaults to the current height of the chain.\n"
             "\nResult:\n"
             "{\n"
-            "  \"miner\" : x.xxx           (numeric) The mining reward amount in ZEC.\n"
-            "  \"founders\" : x.xxx        (numeric) The founders reward amount in ZEC.\n"
+            "  \"miner\" : x.xxx           (numeric) The mining reward amount in KMD.\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")
