@@ -115,11 +115,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight > 10 && mempool.GetTotalTxSize() <= 0 )
     {
         sleep(10);
-        printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)KOMODO_DEPOSIT,(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
         if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 )
             continue;
         if ( KOMODO_DEPOSIT != 0 )
         {
+            printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)KOMODO_DEPOSIT,(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
             break;
         }
     }
