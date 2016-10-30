@@ -692,6 +692,8 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
         LogPrintf("ZcashMiner terminated\n");
         if(conf.useGPU)
             delete g_solver;
+		free(header);
+		free(zero);
         throw;
     }
     catch (const std::runtime_error &e)
@@ -699,11 +701,15 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
         LogPrintf("ZcashMiner runtime error: %s\n", e.what());
         if(conf.useGPU)
             delete g_solver;
+		free(header);
+		free(zero);
         return;
     }
 
     if(conf.useGPU)
         delete g_solver;
+	free(header);
+	free(zero);
 
     c.disconnect();
 }
