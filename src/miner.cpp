@@ -100,7 +100,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 void komodo_gateway_deposits(CMutableTransaction *txNew);
-extern int32_t KOMODO_INITDONE;
+extern int32_t KOMODO_INITDONE,ASSETCHAINS_SHORTFLAG;
 extern uint64_t KOMODO_DEPOSIT;
 extern char ASSETCHAINS_SYMBOL[16];
 
@@ -523,7 +523,7 @@ void static BitcoinMiner(CWallet *pwallet)
     try {
         while (true)
         {
-            if (chainparams.MiningRequiresPeers())
+            if (ASSETCHAINS_SHORTFLAG == 0 && chainparams.MiningRequiresPeers())
             {
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
