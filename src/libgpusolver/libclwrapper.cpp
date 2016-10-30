@@ -288,7 +288,6 @@ bool cl_gpuminer::init(
 )
 {
 	// get all platforms
-	printf("IN INIT CLASS\n");
 	try
 	{
 		vector<cl::Platform> platforms = getPlatforms();

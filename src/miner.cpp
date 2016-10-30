@@ -599,7 +599,7 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
                 };
 
                 // TODO: factor this out into a function with the same API for each solver.
-                if (solver == "tromp") {
+                if (solver == "tromp" && !conf.useGPU) {
                     // Create solver and initialize it.
                     equi eq(1);
                     eq.setstate(&curr_state);
@@ -632,46 +632,47 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
                         }
                     }
                 }
+                else {
+                  try {
+                      if(!conf.useGPU) {
+                          // If we find a valid block, we rebuild
+                          bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
+                          ehSolverRuns.increment();
+                          if (found)
+                              break;
+                      } else {
+                          bool found = g_solver->run(n, k, header, ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN, nn++, validBlock, cancelledGPU, curr_state);
+                          ehSolverRuns.increment();
+                          if (found)
+                              break;
+                      }
+                  } catch (EhSolverCancelledException&) {
+                      LogPrint("pow", "Equihash solver cancelled\n");
+                      std::lock_guard<std::mutex> lock{m_cs};
+                      cancelSolver = false;
+                  }
 
-                try {
-                    if(!conf.useGPU) {
-                        // If we find a valid block, we rebuild
-                        bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
-                        ehSolverRuns.increment();
-                        if (found)
-                            break;
-                    } else {
-                        bool found = g_solver->run(n, k, header, ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN, nn++, validBlock, cancelledGPU, curr_state);
-                        ehSolverRuns.increment();
-                        if (found)
-                            break;
-                    }
-                } catch (EhSolverCancelledException&) {
-                    LogPrint("pow", "Equihash solver cancelled\n");
-                    std::lock_guard<std::mutex> lock{m_cs};
-                    cancelSolver = false;
-                }
 
+                  // Check for stop or if block needs to be rebuilt
+                  boost::this_thread::interruption_point();
+                  // Regtest mode doesn't require peers
+                  if (vNodes.empty() && chainparams.MiningRequiresPeers())
+                      break;
+                  if ((UintToArith256(pblock->nNonce) & 0xffff) == 0xffff)
+                      break;
+                  if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
+                      break;
+                  if (pindexPrev != chainActive.Tip())
+                      break;
 
-                // Check for stop or if block needs to be rebuilt
-                boost::this_thread::interruption_point();
-                // Regtest mode doesn't require peers
-                if (vNodes.empty() && chainparams.MiningRequiresPeers())
-                    break;
-                if ((UintToArith256(pblock->nNonce) & 0xffff) == 0xffff)
-                    break;
-                if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
-                    break;
-                if (pindexPrev != chainActive.Tip())
-                    break;
-
-                // Update nNonce and nTime
-                pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
-                UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-                if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
-                {
-                    // Changing pblock->nTime can change work required on testnet:
-                    hashTarget.SetCompact(pblock->nBits);
+                  // Update nNonce and nTime
+                  pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
+                  UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
+                  if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
+                  {
+                      // Changing pblock->nTime can change work required on testnet:
+                      hashTarget.SetCompact(pblock->nBits);
+                  }
                 }
             }
         }
