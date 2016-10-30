@@ -389,7 +389,6 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-G", _("Enable GPU mining (default: false)"));
     strUsage += HelpMessageOpt("-device=<id>", _("If -G is enabled this specifies the GPU device number to use (default: 0)"));
     strUsage += HelpMessageOpt("-allgpu", _("If -G is enabled this will mine on all available GPU devices (default: false)"));
-    strUsage += HelpMessageOpt("-2x", _("If -G is enabled this will create two threads per GPU device (default: false)"));
 #endif
     strUsage += HelpMessageOpt("-help-debug", _("Show all debugging options (usage: --help -help-debug)"));
     strUsage += HelpMessageOpt("-logips", strprintf(_("Include IP addresses in debug output (default: %u)"), 0));
@@ -1502,7 +1501,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
  		   conf.useGPU = GetBoolArg("-G", false);
  		   conf.selGPU = GetArg("-deviceid", 0);
  		   conf.allGPU = GetBoolArg("-allgpu", 0);
- 		   conf.twoThreadsPerCard = GetBoolArg("-2x", 0);
        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1),conf);
       }
 #endif

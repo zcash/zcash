@@ -33,7 +33,6 @@ public:
 	bool useGPU;
 	unsigned selGPU;
 	bool allGPU;
-	bool twoThreadsPerCard;
 	unsigned currentPlatform;
 	unsigned currentDevice;
 	unsigned globalWorkSize;

@@ -467,7 +467,7 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
     GPUSolver * g_solver;
     // If zcash.conf GPU=1
     if(conf.useGPU) {
-        g_solver = new GPUSolver(conf.currentPlatform, conf.selGPU);
+        g_solver = new GPUSolver(conf.currentPlatform, conf.currentDevice);
         LogPrint("pow", "Using Equihash solver GPU with n = %u, k = %u\n", n, k);
     }
 
@@ -725,38 +725,8 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads, GPUConfig conf)
 {
   static boost::thread_group* minerThreads = NULL;
-  if(conf.useGPU)
-    {
-    minerThreads = new boost::thread_group();
-    conf.currentPlatform =0;
-    conf.currentDevice = conf.selGPU;
-        if(conf.allGPU)
-        {
-          static unsigned numPlatforms = cl_gpuminer::getNumPlatforms();
-          for(unsigned platform = 0; platform < numPlatforms; ++platform){
-            static unsigned noDevices = cl_gpuminer::getNumDevices(platform);
-            fprintf(stderr, "noDevices:%u", noDevices);
-            for(unsigned j = 0; j < noDevices; ++j){
-                conf.currentPlatform = platform;
-                conf.currentDevice = j;
-                minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
 
-                if(conf.twoThreadsPerCard)
-                  minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
-
-              }
-          }
-      }
-      else
-
-        minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
-        if(conf.twoThreadsPerCard)
-          minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
-
-    }
-    else
-      {
-    if (nThreads < 0) {
+  if (nThreads < 0) {
         // In regtest threads defaults to 1
         if (Params().DefaultMinerThreads())
             nThreads = Params().DefaultMinerThreads();
@@ -774,10 +744,35 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads, GPUConfig 
     if (nThreads == 0 || !fGenerate)
         return;
 
-    minerThreads = new boost::thread_group();
+  minerThreads = new boost::thread_group();
+  // If using GPU
+  if(conf.useGPU)
+    {
+    conf.currentPlatform =0;
+    conf.currentDevice = conf.selGPU;
+    for (int i = 0; i < nThreads; i++){
+          if(conf.allGPU)
+          {
+            unsigned numPlatforms = cl_gpuminer::getNumPlatforms();
+            for(unsigned platform = 0; platform < numPlatforms; ++platform){
+              unsigned noDevices = cl_gpuminer::getNumDevices(platform);
+              fprintf(stderr, "noDevices:%u", noDevices);
+              for(unsigned device = 0; device < noDevices; ++device){
+                  conf.currentPlatform = platform;
+                  conf.currentDevice = device;
+                  minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
+                }
+            }
+        }
+        else
+          minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
+      }
+    }
+    else
+      {
     for (int i = 0; i < nThreads; i++)
         minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
-  }
+    }
 
 }
 #endif // ENABLE_WALLET
