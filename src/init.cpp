@@ -1498,7 +1498,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Generate coins in the background
     if (pwalletMain){
        GPUConfig conf;
- 		   conf.useGPU = GetBoolArg("-G", false);
+ 		   conf.useGPU = GetBoolArg("-G", false) || GetBoolArg("-GPU", false);
  		   conf.selGPU = GetArg("-deviceid", 0);
  		   conf.allGPU = GetBoolArg("-allgpu", 0);
        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1),conf);
