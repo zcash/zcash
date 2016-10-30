@@ -28,6 +28,8 @@ boost::synchronized_value<std::list<std::string>> messageBox;
 boost::synchronized_value<std::string> initMessage;
 bool loaded = false;
 
+extern int64_t GetNetworkHashPS(int lookup, int height);
+
 void TrackMinedBlock(uint256 hash)
 {
     minedBlocks.increment();
@@ -74,6 +76,18 @@ void ConnectMetricsScreen()
     uiInterface.InitMessage.connect(metrics_InitMessage);
 }
 
+int printNetworkStats()
+{
+    LOCK2(cs_main, cs_vNodes);
+
+    std::cout << "           " << _("Block height") << " | " << chainActive.Height() << std::endl;
+    std::cout << "  " << _("Network solution rate") << " | " << GetNetworkHashPS(120, -1) << " Sol/s" << std::endl;
+    std::cout << "            " << _("Connections") << " | " << vNodes.size() << std::endl;
+    std::cout << std::endl;
+
+    return 4;
+}
+
 int printMiningStatus(bool mining)
 {
     // Number of lines that are always displayed
@@ -88,7 +102,8 @@ int printMiningStatus(bool mining)
             else
                 nThreads = boost::thread::hardware_concurrency();
         }
-        std::cout << strprintf(_("You are running %d mining threads."), nThreads) << std::endl;
+        std::cout << strprintf(_("You are mining with the %s solver on %d threads."),
+                               GetArg("-equihashsolver", "default"), nThreads) << std::endl;
         lines++;
     } else {
         std::cout << _("You are currently not mining.") << std::endl;
@@ -258,6 +273,9 @@ void ThreadShowMetricsScreen()
         // Miner status
         bool mining = GetBoolArg("-gen", false);
 
+        if (loaded) {
+            lines += printNetworkStats();
+        }
         lines += printMiningStatus(mining);
         lines += printMetrics(cols, nStart, mining);
         lines += printMessageBox(cols);
