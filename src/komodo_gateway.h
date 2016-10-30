@@ -235,8 +235,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             }
         }
     }
-    else
+    else if ( strncmp("KMD",&opretbuf[opretlen-4],3) != 0 )
     {
+        
         for (i=0; i<opretlen; i++)
             printf("%02x",opretbuf[i]);
         printf(" komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
