@@ -74,8 +74,11 @@ void ConnectMetricsScreen()
     uiInterface.InitMessage.connect(metrics_InitMessage);
 }
 
-void printMiningStatus(bool mining)
+int printMiningStatus(bool mining)
 {
+    // Number of lines that are always displayed
+    int lines = 1;
+
     if (mining) {
         int nThreads = GetArg("-genproclimit", 1);
         if (nThreads < 0) {
@@ -86,11 +89,15 @@ void printMiningStatus(bool mining)
                 nThreads = boost::thread::hardware_concurrency();
         }
         std::cout << strprintf(_("You are running %d mining threads."), nThreads) << std::endl;
+        lines++;
     } else {
         std::cout << _("You are currently not mining.") << std::endl;
         std::cout << _("To enable mining, add 'gen=1' to your zcash.conf and restart.") << std::endl;
+        lines += 2;
     }
     std::cout << std::endl;
+
+    return lines;
 }
 
 int printMetrics(size_t cols, int64_t nStart, bool mining)
@@ -228,10 +235,6 @@ void ThreadShowMetricsScreen()
     std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
     std::cout << std::endl;
 
-    // Miner status
-    bool mining = GetBoolArg("-gen", false);
-    printMiningStatus(mining);
-
     // Count uptime
     int64_t nStart = GetTime();
 
@@ -252,6 +255,10 @@ void ThreadShowMetricsScreen()
         // Erase below current position
         std::cout << "\e[J";
 
+        // Miner status
+        bool mining = GetBoolArg("-gen", false);
+
+        lines += printMiningStatus(mining);
         lines += printMetrics(cols, nStart, mining);
         lines += printMessageBox(cols);
         lines += printInitMessage();
