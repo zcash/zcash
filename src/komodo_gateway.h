@@ -47,7 +47,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
         }
         data[len++] = ptr->vout & 0xff;
         data[len++] = (ptr->vout >> 8) & 0xff;
-        printf(" vout.%u DEPOSIT %.8f <- komodo_gateway_deposits\n",ptr->vout,(double)KOMODO_DEPOSIT/COIN);
+        printf(" vout.%u DEPOSIT %.8f <- komodo_gateway_deposits\n",ptr->vout,(double)txNew->vout[numvouts].nValue/COIN);
         PENDING_KOMODO_TX += ptr->fiatoshis;
         numvouts++;
         queue_enqueue((char *)"PENDINGS",&PendingsQ,&ptr->DL);
@@ -163,12 +163,11 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else
     {
-        if ( tokomodo == 0 && strncmp(KOMODO_SOURCE,base,strlen(base)) == 0 )
+        for (i=0; i<opretlen; i++)
+            printf("%02x",opretbuf[i]);
+        printf(" komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
+        if ( tokomodo == 0 && strncmp(KOMODO_SOURCE,base,strlen(base)) == 0 ) // shortflag
         {
-            for (i=0; i<opretlen; i++)
-                printf("%02x",opretbuf[i]);
-            printf(" komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
-            
             if ( opretbuf[0] == 'I' )
             {
                 uint256 issuedtxid; uint16_t issuedvout;
