@@ -74,7 +74,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
         }
         data[len++] = ptr->vout & 0xff;
         data[len++] = (ptr->vout >> 8) & 0xff;
-        printf(" vout.%u DEPOSIT %.8f <- komodo_gateway_deposits\n",ptr->vout,(double)txNew->vout[numvouts].nValue/COIN);
+        printf(" vout.%u DEPOSIT %.8f <- paxdeposit.%s\n",ptr->vout,(double)txNew->vout[numvouts].nValue/COIN,ASSETCHAINS_SYMBOL);
         PENDING_KOMODO_TX += ptr->fiatoshis;
         numvouts++;
         queue_enqueue((char *)"PENDINGS",&PendingsQ,&ptr->DL);
@@ -94,7 +94,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
         txNew->vout[numvouts].scriptPubKey.resize(opretlen);
         script = (uint8_t *)&txNew->vout[numvouts].scriptPubKey[0];
         memcpy(script,opret,opretlen);
-        printf("total numvouts.%d %.8f opretlen.%d\n",numvouts,dstr(PENDING_KOMODO_TX),opretlen);
+        //printf("total numvouts.%d %.8f opretlen.%d\n",numvouts,dstr(PENDING_KOMODO_TX),opretlen);
     } else KOMODO_DEPOSIT = 0;
 }
 
