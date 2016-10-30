@@ -1481,7 +1481,7 @@ bool IsInitialBlockDownload()
     static bool lockIBDState = false;
     if (lockIBDState)
     {
-        fprintf(stderr,"lockIBDState true\n");
+        fprintf(stderr,"lockIBDState true %d < %d\n",chainActive.Height(),pindexBestHeader->nHeight - 10);
         return false;
     }
     bool state;
