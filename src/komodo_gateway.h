@@ -261,9 +261,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( komodo_gateway_depositremove(txids[i],vouts[i]) == 0 )
                         printf("error removing deposit\n");
                 }
-                for (i=0; i<32; i++)
-                    printf("%02x",((uint8_t *)&txid)[i]);
-                printf(" v%d komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",vout,opretbuf[0],height,dstr(value),opretlen);
+                //for (i=0; i<32; i++)
+                //    printf("%02x",((uint8_t *)&txid)[i]);
+                //printf(" v%d komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",vout,opretbuf[0],height,dstr(value),opretlen);
             }
         }
     }

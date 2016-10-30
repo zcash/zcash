@@ -364,12 +364,12 @@ uint32_t komodo_txtime(uint256 hash)
 
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
-    int32_t i; uint256 hash;
+    //int32_t i; uint256 hash;
     komodo_init();
-    hash = block.GetHash();
-    for (i=0; i<32; i++)
-        printf("%02x",((uint8_t *)&hash)[i]);
-    printf(" <- disconnect block\n");
+    //hash = block.GetHash();
+    //for (i=0; i<32; i++)
+    //    printf("%02x",((uint8_t *)&hash)[i]);
+    //printf(" <- disconnect block\n");
     //uint256 zero;
     //printf("disconnect ht.%d\n",pindex->nHeight);
     //memset(&zero,0,sizeof(zero));
