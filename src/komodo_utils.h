@@ -1351,7 +1351,7 @@ void komodo_args()
     else
     {
         ASSETCHAINS_PORT = 8777;
-        fprintf(stderr,"IS_KOMODO_NOTARY %d %s\n",IS_KOMODO_NOTARY,NOTARY_PUBKEY.c_str());
+        //fprintf(stderr,"IS_KOMODO_NOTARY %d %s\n",IS_KOMODO_NOTARY,NOTARY_PUBKEY.c_str());
     }
     //fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
 }
