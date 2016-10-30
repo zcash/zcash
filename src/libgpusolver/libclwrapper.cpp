@@ -406,8 +406,8 @@ void cl_gpuminer::run(uint8_t *header, size_t header_len, uint64_t nonce, sols_t
   	assert(header_len == ZCASH_BLOCK_HEADER_LEN ||
     header_len == ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN);
   	nonce_ptr = (uint64_t *)(header + ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN);
-		memset(nonce_ptr, 0, ZCASH_NONCE_LEN);
-		*nonce_ptr = nonce;
+		//memset(nonce_ptr, 0, ZCASH_NONCE_LEN);
+		//*nonce_ptr = nonce;
 		*ptr = *nonce_ptr;
 
 		//printf("\nSolving nonce %s\n", s_hexdump(nonce_ptr, ZCASH_NONCE_LEN));

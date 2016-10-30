@@ -463,13 +463,15 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
     unsigned int n = chainparams.EquihashN();
     unsigned int k = chainparams.EquihashK();
 
-    uint64_t nn = 0;
+    //uint64_t nn = 0;
     GPUSolver * g_solver;
     // If zcash.conf GPU=1
     if(conf.useGPU) {
         g_solver = new GPUSolver(conf.currentPlatform, conf.currentDevice);
         LogPrint("pow", "Using Equihash solver GPU with n = %u, k = %u\n", n, k);
     }
+	uint8_t * header = (uint8_t *) calloc(ZCASH_BLOCK_HEADER_LEN, sizeof(uint8_t));
+	uint8_t * zero = (uint8_t *) calloc(12, sizeof(uint8_t));
 
     std::string solver = GetArg("-equihashsolver", "default");
     assert(solver == "tromp" || solver == "GPU" || solver == "default");
@@ -526,9 +528,10 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
             int64_t nStart = GetTime();
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
 
-            uint8_t * header = (uint8_t *) calloc(ZCASH_BLOCK_HEADER_LEN, sizeof(uint8_t));
             crypto_generichash_blake2b_state state;
             EhInitialiseState(n, k, state);
+
+			memset(pblock->nNonce.begin()+20, 0, 12);
 
             while (true) {
                 // Hash state
@@ -547,11 +550,16 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
                 crypto_generichash_blake2b_state curr_state;
                 curr_state = state;
 
-                if(!conf.useGPU) {
+				//memset(pblock->nNonce.begin()+20, 0, 12);
+
+                //if(!conf.useGPU) {
                     crypto_generichash_blake2b_update(&curr_state,
                                                       pblock->nNonce.begin(),
                                                       pblock->nNonce.size());
-                }
+                //}
+
+				for (size_t i = 0; i < ZCASH_NONCE_LEN; ++i)
+					header[108 + i] = pblock->nNonce.begin()[i];
 
                 // (x_1, x_2, ...) = A(I, V, n, k)
                 LogPrint("pow", "Running Equihash solver with nNonce = %s\n",
@@ -641,7 +649,7 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
                           if (found)
                               break;
                       } else {
-                          bool found = g_solver->run(n, k, header, ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN, nn++, validBlock, cancelledGPU, curr_state);
+                          bool found = g_solver->run(n, k, header, ZCASH_BLOCK_HEADER_LEN, 0, validBlock, cancelledGPU, curr_state);
                           ehSolverRuns.increment();
                           if (found)
                               break;
@@ -667,6 +675,8 @@ void static BitcoinMiner(CWallet *pwallet, GPUConfig conf)
 
                   // Update nNonce and nTime
                   pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
+				  if(memcmp(pblock->nNonce.begin()+20, zero, 12))
+				  	  memset(pblock->nNonce.begin()+20, 0, 12);
                   UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
                   if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
                   {

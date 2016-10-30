@@ -145,10 +145,10 @@ bool GPUSolver::GPUSolve200_9(uint8_t *header, size_t header_len, uint64_t nonce
 		uint64_t ptr;
     	miner->run(header, header_len, nonce, indices, &n_sol, &ptr);
 
-		uint256 nNonce = ArithToUint256(ptr);
-			crypto_generichash_blake2b_update(&base_state,
+		//uint256 nNonce = ArithToUint256(ptr);
+			/*crypto_generichash_blake2b_update(&base_state,
                                               nNonce.begin(),
-                                              nNonce.size());
+                                              nNonce.size());*/
 
 /*
 		auto d = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - t);
@@ -183,8 +183,8 @@ bool GPUSolver::GPUSolve200_9(uint8_t *header, size_t header_len, uint64_t nonce
             std::vector<unsigned char> sol_char = GetMinimalFromIndices(index_vector, DIGITBITS_S);
 #ifdef DEBUG
             bool isValid;
-			LogPrint("pow", "Checking with = %s\n",
-                     nNonce.ToString());
+			/*LogPrint("pow", "Checking with = %s\n",
+                     nNonce.ToString());*/
              EhIsValidSolution(200, 9, base_state, sol_char, isValid);
              std::cout << "is valid: " << isValid << '\n';
              if (!isValid) {
