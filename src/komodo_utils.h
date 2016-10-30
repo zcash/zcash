@@ -1325,7 +1325,6 @@ void komodo_args()
         strcpy((char *)&buf[len],ASSETCHAINS_SYMBOL);
         len += strlen(ASSETCHAINS_SYMBOL);
         ASSETCHAINS_MAGIC = calc_crc32(0,buf,len);
-        ASSETCHAINS_PORT = GetArg("-ac_port",8000 + (ASSETCHAINS_MAGIC % 7777));
         if ( ASSETCHAINS_SYMBOL[0] == '-' )
         {
             ASSETCHAINS_SHORTFLAG = 1;
@@ -1333,6 +1332,7 @@ void komodo_args()
                 ASSETCHAINS_SYMBOL[i] = ASSETCHAINS_SYMBOL[i+1];
             ASSETCHAINS_SYMBOL[i] = 0;
         }
+        ASSETCHAINS_PORT = GetArg("-ac_port",8000+ASSETCHAINS_SHORTFLAG*7777 + (ASSETCHAINS_MAGIC % 7777));
         //fprintf(stderr,"after args: %c%s port.%u magic.%08x supply.%u\n",ASSETCHAINS_SHORTFLAG!=0?'-':'+',ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,(int32_t)ASSETCHAINS_SUPPLY);
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
