@@ -247,7 +247,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     {
         if ( tokomodo == 0 && opretbuf[0] == 'I' )
         {
-            if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen)) > 0 && shortflag == ASSETCHAINS_SHORTFLAG )
+            if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen)) > 0 )//&& shortflag == ASSETCHAINS_SHORTFLAG )
             {
                 for (i=0; i<n; i++)
                 {
