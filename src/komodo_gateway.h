@@ -149,14 +149,16 @@ int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain c
 
 int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid pax pricing
 {
-    int32_t i,n,scriptlen,num,iter,matchflag; uint256 txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; queue_t *Q; struct pax_transaction *ptr; struct queueitem *item;
+    int32_t i,n,opretlen,num,iter,matchflag,offset=1; uint256 txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; queue_t *Q; struct pax_transaction *ptr; struct queueitem *item;
     n = block.vtx[0].vout.size();
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
-    printf("checkdeposit n.%d [%02x] [%c] %d vs %d\n",n,script[0],script[1],script[1],'I');
-    if ( n > 2 && script[0] == 0x6a && script[1] == 'I' )
+    if ( n <= 2 || script[0] != 0x6a )
+        return(0);
+    offset += komodo_scriptitemlen(&opretlen,&script[offset]);
+    printf("checkdeposit n.%d [%02x] [%c] %d vs %d\n",n,script[0],script[offset],script[offset],'I');
+    if ( script[offset] == 'I' && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
     {
-        scriptlen = block.vtx[0].vout[n-1].scriptPubKey.size();
-        if ( (num= komodo_issued_opreturn(&shortflag,base,txids,vouts,script+1,scriptlen-1)) > 0 )
+        if ( (num= komodo_issued_opreturn(&shortflag,base,txids,vouts,&script[offset],opretlen)) > 0 )
         {
             for (i=1; i<n-1; i++)
             {
@@ -192,7 +194,7 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
                 }
             }
         }
-        printf("scriptlen.%d num.%d\n",scriptlen,num);
+        printf("opretlen.%d num.%d\n",opretlen,num);
     }
     return(0);
 }
