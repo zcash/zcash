@@ -235,7 +235,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             }
         }
     }
-    else if ( strncmp((char *)"KMD",&opretbuf[opretlen-4],3) != 0 )
+    else if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 )
     {
         
         for (i=0; i<opretlen; i++)
