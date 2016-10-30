@@ -511,7 +511,7 @@ void static BitcoinMiner(CWallet *pwallet)
     std::string solver = GetArg("-equihashsolver", "tromp");
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
-    //fprintf(stderr,"Mining with %s\n",solver.c_str());
+    fprintf(stderr,"Mining with %s\n",solver.c_str());
     std::mutex m_cs;
     bool cancelSolver = false;
     boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
@@ -539,7 +539,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         break;
                     MilliSleep(1000);
                 } while (true);
-                //fprintf(stderr,"Found peers\n");
+                fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
             }
             fprintf(stderr,"%s create new block\n",ASSETCHAINS_SYMBOL);
             //
