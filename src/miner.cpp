@@ -115,7 +115,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight > 10 && mempool.GetTotalTxSize() <= 0 )
     {
         sleep(10);
-        printf("KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)KOMODO_DEPOSIT,(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
+        printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)KOMODO_DEPOSIT,(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
         if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 )
             continue;
         if ( KOMODO_DEPOSIT != 0 )
@@ -440,6 +440,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
     CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i;
+    fprintf(stderr,"%s createnewblockwith key\n",ASSETCHAINS_SYMBOL);
     if ( USE_EXTERNAL_PUBKEY != 0 )
     {
         //fprintf(stderr,"use notary pubkey\n");
@@ -523,7 +524,7 @@ void static BitcoinMiner(CWallet *pwallet)
     try {
         while (true)
         {
-            if (ASSETCHAINS_SHORTFLAG == 0 && chainparams.MiningRequiresPeers())
+            if (chainparams.MiningRequiresPeers())
             {
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
@@ -540,7 +541,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 } while (true);
                 //fprintf(stderr,"Found peers\n");
             }
-            //fprintf(stderr,"create new block\n");
+            fprintf(stderr,"%s create new block\n",ASSETCHAINS_SYMBOL);
             //
             // Create new block
             //
@@ -572,6 +573,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 //fprintf(stderr,"I am the chosen one for ht.%d\n",pindexPrev->nHeight+1);
             } else Mining_start = 0;
             Mining_height = pindexPrev->nHeight+1;
+            fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);
             while (true)
             {
                 // Hash state
