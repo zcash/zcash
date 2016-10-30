@@ -149,7 +149,7 @@ int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain c
 
 int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid pax pricing
 {
-    int32_t i,n,scriptlen,num,iter; uint256 txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; queue_t *Q; struct pax_transaction *ptr; struct queueitem *item;
+    int32_t i,n,scriptlen,num,iter,matchflag; uint256 txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; queue_t *Q; struct pax_transaction *ptr; struct queueitem *item;
     n = block.vtx[0].vout.size();
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     if ( script[0] == 0x6a )
@@ -171,7 +171,7 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
                         DL_FOREACH(Q->list,item)
                         {
                             ptr = (struct pax_transaction *)item;
-                            if ( memcmp(&ptr->txid,&txid,sizeof(txid)) == 0 && ptr->vout == vout )
+                            if ( memcmp(&ptr->txid,&txids[i-1],sizeof(txids[i-1])) == 0 && ptr->vout == vouts[i-1] )
                             {
                                 if ( ptr->fiatoshis == block.vtx[0].vout[i].nValue )
                                 {
