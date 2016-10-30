@@ -121,3 +121,5 @@ qa/pull-tester/test.*/*
 /doc/doxygen/
 
 libzcashconsensus.pc
+
+src/fiat/-usd
