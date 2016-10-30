@@ -205,7 +205,6 @@ endloop:
         CValidationState state;
         if (!ProcessNewBlock(state, NULL, pblock, true, NULL))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
-        minedBlocks.increment();
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
     }

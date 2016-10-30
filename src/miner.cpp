@@ -438,7 +438,7 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
     if (!ProcessNewBlock(state, NULL, pblock, true, NULL))
         return error("ZcashMiner: ProcessNewBlock, block not accepted");
 
-    minedBlocks.increment();
+    TrackMinedBlock(pblock->GetHash());
 
     return true;
 }

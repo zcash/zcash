@@ -5,9 +5,11 @@
 #include "metrics.h"
 
 #include "chainparams.h"
+#include "main.h"
 #include "ui_interface.h"
 #include "util.h"
 #include "utiltime.h"
+#include "utilmoneystr.h"
 
 #include <boost/thread.hpp>
 #include <boost/thread/synchronized_value.hpp>
@@ -20,9 +22,17 @@ AtomicCounter ehSolverRuns;
 AtomicCounter solutionTargetChecks;
 AtomicCounter minedBlocks;
 
+boost::synchronized_value<std::list<uint256>> trackedBlocks;
+
 boost::synchronized_value<std::list<std::string>> messageBox;
 boost::synchronized_value<std::string> initMessage;
 bool loaded = false;
+
+void TrackMinedBlock(uint256 hash)
+{
+    minedBlocks.increment();
+    trackedBlocks->push_back(hash);
+}
 
 static bool metrics_ThreadSafeMessageBox(const std::string& message,
                                       const std::string& caption,
@@ -121,8 +131,43 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
 
         int mined = minedBlocks.get();
         if (mined > 0) {
+            LOCK(cs_main);
+            boost::strict_lock_ptr<std::list<uint256>> u = trackedBlocks.synchronize();
+            auto consensusParams = Params().GetConsensus();
+            auto tipHeight = chainActive.Height();
+            std::string units = Params().CurrencyUnits();
+
+            // Update orphans and calculate subsidies
+            CAmount immature {0};
+            CAmount mature {0};
+            for (std::list<uint256>::iterator it = u->begin(); it != u->end(); it++) {
+                auto hash = *it;
+                if (mapBlockIndex.count(hash) > 0 &&
+                        chainActive.Contains(mapBlockIndex[hash])) {
+                    int height = mapBlockIndex[hash]->nHeight;
+                    CAmount subsidy = GetBlockSubsidy(height, consensusParams);
+                    if ((height > 0) && (height <= consensusParams.GetLastFoundersRewardBlockHeight())) {
+                        subsidy -= subsidy/5;
+                    }
+                    if (std::max(0, COINBASE_MATURITY - (tipHeight - height)) > 0) {
+                        immature += subsidy;
+                    } else {
+                        mature += subsidy;
+                    }
+                } else {
+                    it = u->erase(it);
+                }
+            }
+            int orphaned = mined - u->size();
+
             std::cout << "- " << strprintf(_("You have mined %d blocks!"), mined) << std::endl;
-            lines++;
+            std::cout << "  "
+                      << strprintf(_("Orphaned: %d blocks, Immature: %u %s, Mature: %u %s"),
+                                     orphaned,
+                                     FormatMoney(immature), units,
+                                     FormatMoney(mature), units)
+                      << std::endl;
+            lines += 2;
         }
     }
     std::cout << std::endl;
