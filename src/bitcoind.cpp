@@ -97,8 +97,8 @@ bool AppInit(int argc, char* argv[])
     try
     {
         void komodo_args();
-        fprintf(stderr,"call komodo_args\n");
         komodo_args();
+        fprintf(stderr,"call komodo_args NOTARY_PUBKEY.(%s)\n",NOTARY_PUBKEY.c_str());
         while ( ASSETCHAIN_INIT == 0 )
         {
             sleep(1);
