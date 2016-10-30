@@ -522,6 +522,7 @@ void static BitcoinMiner(CWallet *pwallet)
     );
 
     try {
+        fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
         while (true)
         {
             if (chainparams.MiningRequiresPeers())
@@ -537,7 +538,9 @@ void static BitcoinMiner(CWallet *pwallet)
                     }
                     if (!fvNodesEmpty && !IsInitialBlockDownload())
                         break;
-                    MilliSleep(1000);
+                    MilliSleep(5000);
+                    fprintf(stderr,"fvNodesEmpty %d IsInitialBlockDownload() %d\n",(int32_t)fvNodesEmpty,(int32_t)IsInitialBlockDownload());
+
                 } while (true);
                 fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
             }
