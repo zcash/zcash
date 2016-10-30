@@ -152,6 +152,7 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
     int32_t i,n,scriptlen,num,iter,matchflag; uint256 txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; queue_t *Q; struct pax_transaction *ptr; struct queueitem *item;
     n = block.vtx[0].vout.size();
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
+    printf("checkdeposit n.%d [%02x]\n",n,script[0]);
     if ( n > 2 && script[0] == 0x6a )
     {
         scriptlen = block.vtx[0].vout[n-1].scriptPubKey.size();
@@ -191,6 +192,7 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
                 }
             }
         }
+        printf("scriptlen.%d num.%d\n",scriptlen,num);
     }
     return(0);
 }
