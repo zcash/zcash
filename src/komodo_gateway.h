@@ -171,9 +171,15 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         for (i=0; i<opretlen; i++)
             printf("%02x",opretbuf[i]);
         printf(" komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",opretbuf[0],height,dstr(value),opretlen);
-        if ( tokomodo == 0 && strncmp(KOMODO_SOURCE,base,strlen(base)) == 0 ) // shortflag
+        if ( tokomodo == 0 ) // shortflag
         {
-            if ( opretbuf[0] == 'I' )
+            if ( opretbuf[opretlen-5] == '-' )
+                shortflag = 1;
+            else shortflag = 0;
+            for (i=0; i<4; i++)
+                base[i] = opretbuf[opretlen-4+i];
+            printf("BASE.(%s)\n",base);
+            if ( strncmp(KOMODO_SOURCE,base,strlen(base)) == 0 && opretbuf[0] == 'I' )
             {
                 uint256 issuedtxid; uint16_t issuedvout;
                 opretbuf++, opretlen--;
