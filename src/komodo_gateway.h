@@ -151,7 +151,7 @@ int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain c
 
 int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid pax pricing
 {
-    int32_t i,n,opretlen,num,iter,matchflag,offset=1; uint256 txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; queue_t *Q; struct pax_transaction *ptr; struct queueitem *item;
+    int32_t i,j,n,opretlen,num,iter,matchflag,offset=1; uint256 txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; queue_t *Q; struct pax_transaction *ptr; struct queueitem *item;
     n = block.vtx[0].vout.size();
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     if ( n <= 2 || script[0] != 0x6a )
@@ -180,7 +180,9 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
                             {
                                 if ( ptr->fiatoshis == block.vtx[0].vout[i].nValue )
                                 {
-                                    //printf("matched %.8f vout.%d\n",dstr(ptr->fiatoshis),i);
+                                    for (j=0; j<32; j++)
+                                        printf("%02x",((uint8_t *)&ptr->txid)[j]);
+                                    printf(" v%d matched %.8f vout.%d\n",ptr->vout,dstr(ptr->fiatoshis),i);
                                     matchflag = 1;
                                 } else printf("error finding %.8f vout.%d\n",dstr(ptr->fiatoshis),i);
                                 break;
