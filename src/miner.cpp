@@ -539,7 +539,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     if (!fvNodesEmpty && !IsInitialBlockDownload())
                         break;
                     MilliSleep(5000);
-                    fprintf(stderr,"fvNodesEmpty %d IsInitialBlockDownload() %d\n",(int32_t)fvNodesEmpty,(int32_t)IsInitialBlockDownload());
+                    fprintf(stderr,"fvNodesEmpty %d IsInitialBlockDownload(%s) %d\n",(int32_t)fvNodesEmpty,ASSETCHAINS_SYMBOL,(int32_t)IsInitialBlockDownload());
 
                 } while (true);
                 fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
