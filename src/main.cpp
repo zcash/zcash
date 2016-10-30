@@ -1620,8 +1620,8 @@ void static InvalidBlockFound(CBlockIndex *pindex, const CValidationState &state
 
 void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight)
 {
-    // mark inputs spent
-    if (!tx.IsCoinBase()) {
+    if (!tx.IsCoinBase()) // mark inputs spent
+    {
         txundo.vprevout.reserve(tx.vin.size());
         BOOST_FOREACH(const CTxIn &txin, tx.vin) {
             CCoinsModifier coins = inputs.ModifyCoins(txin.prevout.hash);
@@ -1640,16 +1640,12 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
             }
         }
     }
-
-    // spend nullifiers
-    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
+    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) { // spend nullifiers
         BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
             inputs.SetNullifier(nf, true);
         }
     }
-
-    // add outputs
-    inputs.ModifyCoins(tx.GetHash())->FromTx(tx, nHeight);
+    inputs.ModifyCoins(tx.GetHash())->FromTx(tx, nHeight); // add outputs
 }
 
 void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, int nHeight)
