@@ -1466,7 +1466,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 
 bool IsInitialBlockDownload()
 {
-    const CChainParams& chainParams = Params();
+    int32_t gap; const CChainParams& chainParams = Params();
     LOCK(cs_main);
     if (fImporting || fReindex)
     {
@@ -1480,9 +1480,14 @@ bool IsInitialBlockDownload()
     }
     static bool lockIBDState = false;
     if (lockIBDState)
+    {
+        fprintf(stderr,"lockIBDState true\n");
         return false;
-    bool state = (chainActive.Height() < pindexBestHeader->nHeight - 24 * 6 ||
+    }
+    gap = ASSETCHAINS_SYMBOL[0] == 0 ? 24 * 6 : 1;
+    bool state = (chainActive.Height() < pindexBestHeader->nHeight - gap ||
             pindexBestHeader->GetBlockTime() < GetTime() - chainParams.MaxTipAge());
+    fprintf(stderr,"height.%d < best.%d\n",chainActive.Height(),pindexBestHeader->nHeight);
     if (!state)
     {
         fprintf(stderr,"lockIBDState tru\n");
