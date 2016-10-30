@@ -52,6 +52,8 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
         numvouts++;
         queue_enqueue((char *)"PENDINGS",&PendingsQ,&ptr->DL);
     }
+    while ( (ptr= (struct pax_transaction *)queue_dequeue(&PendingsQ)) != 0 )
+        queue_enqueue((char *)"DEPOSITS",&DepositsQ,&ptr->DL);
     if ( numvouts > 1 )
     {
         opretlen = komodo_opreturnscript(opret,'I',data,len);
