@@ -1487,7 +1487,7 @@ bool IsInitialBlockDownload()
     gap = ASSETCHAINS_SYMBOL[0] == 0 ? 24 * 6 : 1;
     bool state = (chainActive.Height() < pindexBestHeader->nHeight - gap ||
             pindexBestHeader->GetBlockTime() < GetTime() - chainParams.MaxTipAge());
-    fprintf(stderr,"height.%d < best.%d, %u < %u - %u\n",chainActive.Height(),pindexBestHeader->nHeight,(uint32_t)pindexBestHeader->GetBlockTime(),(uint32_t)GetTime(),(uint32_t)chainParams.MaxTipAge());
+    fprintf(stderr,"height.%d < best.%d, %u < %u %u - %u\n",chainActive.Height(),pindexBestHeader->nHeight,(uint32_t)pindexBestHeader->GetBlockTime(),(uint32_t)(GetTime() - chainParams.MaxTipAge()),(uint32_t)GetTime(),(uint32_t)chainParams.MaxTipAge());
     if (!state)
     {
         fprintf(stderr,"lockIBDState tru\n");
