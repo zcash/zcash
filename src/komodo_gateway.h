@@ -178,8 +178,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             else shortflag = 0;
             for (i=0; i<4; i++)
                 base[i] = opretbuf[opretlen-4+i];
-            printf("BASE.(%s) vs (%s)\n",base,KOMODO_SOURCE);
-            if ( strncmp(KOMODO_SOURCE,base,strlen(base)) == 0 && opretbuf[0] == 'I' )
+            printf("BASE.(%s) vs (%s)\n",base,ASSETCHAINS_SYMBOL);
+            if ( strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 && opretbuf[0] == 'I' )
             {
                 uint256 issuedtxid; uint16_t issuedvout;
                 opretbuf++, opretlen--;
