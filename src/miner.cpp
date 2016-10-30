@@ -756,34 +756,49 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads, GPUConfig 
         return;
 
   minerThreads = new boost::thread_group();
+
   // If using GPU
-  if(conf.useGPU)
-    {
-    conf.currentPlatform =0;
-    conf.currentDevice = conf.selGPU;
-    for (int i = 0; i < nThreads; i++){
-          if(conf.allGPU)
-          {
+  if(conf.useGPU) {
+
+      conf.currentPlatform =0;
+      conf.currentDevice = conf.selGPU;
+
+      // use all available GPUs
+      if(conf.allGPU) {
+
             unsigned numPlatforms = cl_gpuminer::getNumPlatforms();
-            for(unsigned platform = 0; platform < numPlatforms; ++platform){
+
+            for(unsigned platform = 0; platform < numPlatforms; ++platform) {
+
               unsigned noDevices = cl_gpuminer::getNumDevices(platform);
+
               fprintf(stderr, "noDevices:%u", noDevices);
-              for(unsigned device = 0; device < noDevices; ++device){
+
+              for(unsigned device = 0; device < noDevices; ++device) {
                   conf.currentPlatform = platform;
                   conf.currentDevice = device;
-                  minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
-                }
+
+                  // genproclimit, threads per gpu
+                  for (int i = 0; i < nThreads; i++)
+                    minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
+
+              }
             }
+
+        } else {
+
+          // genproclimit, threads on single gpu
+          for (int i = 0; i < nThreads; i++)
+            minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
+
         }
-        else
-          minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
-      }
-    }
-    else
-      {
-    for (int i = 0; i < nThreads; i++)
+
+  }
+  else
+  {
+     for (int i = 0; i < nThreads; i++)
         minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, conf));
-    }
+  }
 
 }
 #endif // ENABLE_WALLET
