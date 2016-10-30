@@ -399,18 +399,16 @@ void cl_gpuminer::run(uint8_t *header, size_t header_len, uint64_t nonce, sols_t
 	{
 
 		blake2b_state_t     blake;
-    	cl::Buffer          buf_blake_st;
+    cl::Buffer          buf_blake_st;
 		uint32_t		sol_found = 0;
 		size_t      local_ws = 64;
 		size_t		global_ws;
 		uint64_t		*nonce_ptr;
-    	assert(header_len == ZCASH_BLOCK_HEADER_LEN ||
-	    header_len == ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN);
-    	nonce_ptr = (uint64_t *)(header + ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN);
-    	if (header_len == ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN)
-			memset(nonce_ptr, 0, ZCASH_NONCE_LEN);
-    	// add the nonce
-    	//*nonce_ptr += nonce;
+  	assert(header_len == ZCASH_BLOCK_HEADER_LEN ||
+    header_len == ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN);
+  	nonce_ptr = (uint64_t *)(header + ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN);
+		memset(nonce_ptr, 0, ZCASH_NONCE_LEN);
+		*nonce_ptr = nonce;
 		*ptr = *nonce_ptr;
 
 		//printf("\nSolving nonce %s\n", s_hexdump(nonce_ptr, ZCASH_NONCE_LEN));
@@ -468,6 +466,8 @@ void cl_gpuminer::run(uint8_t *header, size_t header_len, uint64_t nonce, sols_t
 			sol_found += verify_sol(sols, sol_i);
 
 		//print_sols(sols, nonce, nr_valid_sols);
+
+		//printf("\nSolutions: %u\n", sol_found);
 
 		*n_sol = sol_found;
 		memcpy(indices, sols, sizeof(sols_t));
