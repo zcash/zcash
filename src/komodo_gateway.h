@@ -56,6 +56,11 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
         queue_enqueue((char *)"DEPOSITS",&DepositsQ,&ptr->DL);
     if ( numvouts > 1 )
     {
+        if ( ASSETCHAINS_SHORTFLAG != 0 )
+            data[len++] = '-';
+        for (i=0; ASSETCHAINS_SYMBOL[i]!=0; i++)
+            data[len++] = ASSETCHAINS_SYMBOL[i];
+        data[len++] = 0;
         opretlen = komodo_opreturnscript(opret,'I',data,len);
         txNew->vout.resize(numvouts+1);
         txNew->vout[numvouts].nValue = 0;
