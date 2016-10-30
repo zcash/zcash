@@ -144,7 +144,7 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
 
     std::cout << "- " << strprintf(_("You have validated %d transactions!"), transactionsValidated.get()) << std::endl;
 
-    if (mining) {
+    if (mining && loaded) {
         double solps = uptime > 0 ? (double)solutionTargetChecks.get() / uptime : 0;
         std::string strSolps = strprintf("%.4f Sol/s", solps);
         std::cout << "- " << strprintf(_("You have contributed %s on average to the network solution rate."), strSolps) << std::endl;
