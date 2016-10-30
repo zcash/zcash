@@ -34,18 +34,18 @@ int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uin
         base[i] = opretbuf[opretlen-4+i];
     if ( strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 ) // shortflag
     {
-        printf("BASE.(%s) vs (%s)\n",base,ASSETCHAINS_SYMBOL);
+        //printf("BASE.(%s) vs (%s)\n",base,ASSETCHAINS_SYMBOL);
         opretbuf++, opretlen--;
         for (n=len=0; n<opretlen/34; n++)
         {
             for (j=0; j<32; j++)
             {
                 ((uint8_t *)&txids[n])[j] = opretbuf[len++];
-                printf("%02x",((uint8_t *)&txids[n])[j]);
+                //printf("%02x",((uint8_t *)&txids[n])[j]);
             }
             vouts[n] = opretbuf[len++];
             vouts[n] = (opretbuf[len++] << 8) | vouts[n];
-            printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
+            //printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
         }
     }
     return(n);
