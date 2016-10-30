@@ -440,7 +440,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
     CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i;
-    fprintf(stderr,"%s createnewblockwith key\n",ASSETCHAINS_SYMBOL);
+    //fprintf(stderr,"%s createnewblockwith key\n",ASSETCHAINS_SYMBOL);
     if ( USE_EXTERNAL_PUBKEY != 0 )
     {
         //fprintf(stderr,"use notary pubkey\n");
@@ -511,7 +511,7 @@ void static BitcoinMiner(CWallet *pwallet)
     std::string solver = GetArg("-equihashsolver", "tromp");
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
-    fprintf(stderr,"Mining with %s\n",solver.c_str());
+    //fprintf(stderr,"Mining with %s\n",solver.c_str());
     std::mutex m_cs;
     bool cancelSolver = false;
     boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
@@ -522,7 +522,7 @@ void static BitcoinMiner(CWallet *pwallet)
     );
 
     try {
-        fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
+        //fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
         while (true)
         {
             if (chainparams.MiningRequiresPeers())
@@ -539,12 +539,12 @@ void static BitcoinMiner(CWallet *pwallet)
                     if (!fvNodesEmpty && !IsInitialBlockDownload())
                         break;
                     MilliSleep(5000);
-                    fprintf(stderr,"fvNodesEmpty %d IsInitialBlockDownload(%s) %d\n",(int32_t)fvNodesEmpty,ASSETCHAINS_SYMBOL,(int32_t)IsInitialBlockDownload());
+                    //fprintf(stderr,"fvNodesEmpty %d IsInitialBlockDownload(%s) %d\n",(int32_t)fvNodesEmpty,ASSETCHAINS_SYMBOL,(int32_t)IsInitialBlockDownload());
 
                 } while (true);
-                fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
+                //fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
             }
-            fprintf(stderr,"%s create new block\n",ASSETCHAINS_SYMBOL);
+            //fprintf(stderr,"%s create new block\n",ASSETCHAINS_SYMBOL);
             //
             // Create new block
             //
@@ -576,7 +576,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 //fprintf(stderr,"I am the chosen one for ht.%d\n",pindexPrev->nHeight+1);
             } else Mining_start = 0;
             Mining_height = pindexPrev->nHeight+1;
-            fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);
+            //fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);
             while (true)
             {
                 // Hash state
