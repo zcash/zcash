@@ -32,9 +32,9 @@ int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uin
     else *shortflagp = 0;
     for (i=0; i<4; i++)
         base[i] = opretbuf[opretlen-4+i];
-    printf("BASE.(%s) vs (%s)\n",base,ASSETCHAINS_SYMBOL);
     if ( strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 ) // shortflag
     {
+        printf("BASE.(%s) vs (%s)\n",base,ASSETCHAINS_SYMBOL);
         opretbuf++, opretlen--;
         for (n=len=0; n<opretlen/34; n++)
         {
@@ -49,17 +49,6 @@ int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uin
         }
     }
     return(n);
-}
-
-int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid pax pricing
-{
-    int32_t i,n;
-    n = block.vtx[0].vout.size();
-    for (i=1; i<n; i++)
-    {
-        
-    }
-    return(0);
 }
 
 void komodo_gateway_deposits(CMutableTransaction *txNew)
@@ -158,6 +147,54 @@ int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain c
     return(n);
 }
 
+int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid pax pricing
+{
+    int32_t i,n,scriptlen,num,iter; uint256 txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; queue_t *Q; struct pax_transaction *ptr; struct queueitem *item;
+    n = block.vtx[0].vout.size();
+    script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
+    if ( script[0] == 0x6a )
+    {
+        scriptlen = block.vtx[0].vout[n-1].scriptPubKey.size();
+        if ( (num= komodo_issued_opreturn(&shortflag,base,txids,vouts,script,scriptlen)) > 0 && num == n-2 )
+        {
+            for (i=1; i<n-1; i++)
+            {
+                for (iter=0; iter<2; iter++)
+                {
+                    Q = (iter == 0) ? &DepositsQ : &PendingsQ;
+                    portable_mutex_lock(&Q->mutex);
+                    ptr = 0;
+                    if ( Q->list != 0 )
+                    {
+                        item = &ptr->DL;
+                        matchflag = 0;
+                        DL_FOREACH(Q->list,item)
+                        {
+                            ptr = (struct pax_transaction *)item;
+                            if ( memcmp(&ptr->txid,&txid,sizeof(txid)) == 0 && ptr->vout == vout )
+                            {
+                                if ( ptr->fiatoshis == block.vtx[0].vout[i].nValue )
+                                {
+                                    printf("matched %.8f vout.%d\n",dstr(ptr->fiatoshis),i);
+                                    matchflag = 1;
+                                } else printf("error finding %.8f vout.%d\n",dstr(ptr->fiatoshis),i);
+                                break;
+                            }
+                        }
+                    }
+                    portable_mutex_unlock(&Q->mutex);
+                }
+                if ( matchflag == 0 )
+                {
+                    printf("couldnt find vout.[%d]\n",i);
+                    return(-1);
+                }
+            }
+        }
+    }
+    return(0);
+}
+
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
 {
     uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
@@ -235,7 +272,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
     if ( script[offset++] == 0x6a )
     {
         offset += komodo_scriptitemlen(&opretlen,&script[offset]);
-        if ( isspecial != 0 && len >= offset+32*2+4 && strcmp((char *)&script[offset+32*2+4],"KMD") == 0 )
+        if ( isspecial != 0 && len >= offset+32*2+4 && strcmp((char *)&script[offset+32*2+4],ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL) == 0 )
             typestr = "notarized";
         else if ( txi == 0 && vout == 1 && opretlen == 149 )
         {
