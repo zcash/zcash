@@ -24,7 +24,7 @@ struct pax_transaction
     char symbol[4]; uint8_t rmd160[20],shortflag;
 };
 
-int32_t komodo_issued_opreturn(int32_t *shortflagp,char *base,uint256 *txids,uint16_t *vouts,uint8_t *opretbuf,int32_t opretlen)
+int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uint16_t *vouts,uint8_t *opretbuf,int32_t opretlen)
 {
     int32_t i,n,j,len;
     if ( opretbuf[opretlen-5] == '-' )
@@ -46,8 +46,6 @@ int32_t komodo_issued_opreturn(int32_t *shortflagp,char *base,uint256 *txids,uin
             vouts[n] = opretbuf[len++];
             vouts[n] = (opretbuf[len++] << 8) | vouts[n];
             printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
-            if ( komodo_gateway_depositremove(txids[n],vouts[n]) == 0 )
-                printf("error removing deposit\n");
         }
     }
     return(n);
@@ -56,7 +54,7 @@ int32_t komodo_issued_opreturn(int32_t *shortflagp,char *base,uint256 *txids,uin
 int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid pax pricing
 {
     int32_t i,n;
-    n = block.vout.size();
+    n = block.vtx[0].vout.size();
     for (i=1; i<n; i++)
     {
         
@@ -162,7 +160,7 @@ int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain c
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
 {
-    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
+    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     tokomodo = (komodo_is_issuer() == 0);
     if ( opretbuf[0] == ((tokomodo == 0) ? 'D' : 'W') )
     {
