@@ -153,10 +153,10 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
     n = block.vtx[0].vout.size();
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     printf("checkdeposit n.%d [%02x]\n",n,script[0]);
-    if ( n > 2 && script[0] == 0x6a )
+    if ( n > 2 && script[0] == 0x6a && script[1] == 'I' )
     {
         scriptlen = block.vtx[0].vout[n-1].scriptPubKey.size();
-        if ( (num= komodo_issued_opreturn(&shortflag,base,txids,vouts,script,scriptlen)) > 0 )
+        if ( (num= komodo_issued_opreturn(&shortflag,base,txids,vouts,script+1,scriptlen-1)) > 0 )
         {
             for (i=1; i<n-1; i++)
             {
