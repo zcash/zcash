@@ -210,10 +210,10 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
 {
     uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
+    tokomodo = (komodo_is_issuer() == 0);
     for (i=0; i<opretlen; i++)
         printf("%02x",opretbuf[i]);
-    printf(" DEPOSIT %.8f %c%s -> %s ",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
-    tokomodo = (komodo_is_issuer() == 0);
+    printf(" DEPOSIT.[%c] tokomodo.%d %.8f %c%s -> %s ",opretbuf[0],tokomodo,dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
     if ( opretbuf[0] == ((tokomodo == 0) ? 'D' : 'W') )
     {
         if ( opretlen == 34 )
