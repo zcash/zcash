@@ -20,7 +20,7 @@ struct pax_transaction
     UT_hash_handle hh;
     uint256 txid;
     uint64_t komodoshis,fiatoshis;
-    int32_t mark;
+    int32_t marked;
     uint16_t vout;
     char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
 } *PAX;
@@ -105,24 +105,24 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
         if ( pax->mark != 0 )
             continue;
         txNew->vout.resize(numvouts+1);
-        txNew->vout[numvouts].nValue = ptr->fiatoshis;
+        txNew->vout[numvouts].nValue = pax->fiatoshis;
         txNew->vout[numvouts].scriptPubKey.resize(25);
         script = (uint8_t *)&txNew->vout[numvouts].scriptPubKey[0];
         *script++ = 0x76;
         *script++ = 0xa9;
         *script++ = 20;
-        memcpy(script,ptr->rmd160,20), script += 20;
+        memcpy(script,pax->rmd160,20), script += 20;
         *script++ = 0x88;
         *script++ = 0xac;
         for (i=0; i<32; i++)
         {
-            printf("%02x",((uint8_t *)&ptr->txid)[i]);
-            data[len++] = ((uint8_t *)&ptr->txid)[i];
+            printf("%02x",((uint8_t *)&pax->txid)[i]);
+            data[len++] = ((uint8_t *)&pax->txid)[i];
         }
-        data[len++] = ptr->vout & 0xff;
-        data[len++] = (ptr->vout >> 8) & 0xff;
-        printf(" vout.%u DEPOSIT %.8f <- paxdeposit.%s\n",ptr->vout,(double)txNew->vout[numvouts].nValue/COIN,ASSETCHAINS_SYMBOL);
-        PENDING_KOMODO_TX += ptr->fiatoshis;
+        data[len++] = pax->vout & 0xff;
+        data[len++] = (pax->vout >> 8) & 0xff;
+        printf(" vout.%u DEPOSIT %.8f <- paxdeposit.%s\n",pax->vout,(double)txNew->vout[numvouts].nValue/COIN,ASSETCHAINS_SYMBOL);
+        PENDING_KOMODO_TX += pax->fiatoshis;
         if ( numvouts++ >= 64 )
             break;
     }
