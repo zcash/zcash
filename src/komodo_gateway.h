@@ -20,24 +20,33 @@ struct pax_transaction
     UT_hash_handle hh;
     uint256 txid;
     uint64_t komodoshis,fiatoshis;
-    int32_t marked;
+    int32_t marked,height;
     uint16_t vout;
     char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
 } *PAX;
 
-void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout) // assetchain context
+void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout,int32_t height) // assetchain context
 {
     struct pax_transaction *pax;
     pax = (struct pax_transaction *)calloc(1,sizeof(*pax));
-    strcpy(pax->coinaddr,coinaddr);
-    pax->komodoshis = value;
-    pax->shortflag = shortflag;
-    strcpy(pax->symbol,symbol);
-    pax->fiatoshis = fiatoshis;
-    memcpy(pax->rmd160,rmd160,20);
+    if ( coinaddr != 0 )
+    {
+        strcpy(pax->coinaddr,coinaddr);
+        pax->komodoshis = value;
+        pax->shortflag = shortflag;
+        strcpy(pax->symbol,symbol);
+        pax->fiatoshis = fiatoshis;
+        memcpy(pax->rmd160,rmd160,20);
+        pax->height = height;
+        printf("ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d\n",symbol,dstr(fiatoshis),coinaddr,height);
+    }
+    else
+    {
+        pax->marked = height;
+        printf("MARK DEPOSIT ht.%d\n",height);
+    }
     pax->txid = txid;
     pax->vout = vout;
-    printf("ADD DEPOSIT %s %.8f -> %s TO PAX\n",symbol,dstr(fiatoshis),coinaddr);
     pthread_mutex_lock(&komodo_mutex);
     HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
     pthread_mutex_unlock(&komodo_mutex);
@@ -203,7 +212,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 printf(" checkpubkey check %.8f v %.8f dest.(%s) height.%d\n",dstr(checktoshis),dstr(value),destaddr,height);
                 if ( value >= checktoshis && shortflag == ASSETCHAINS_SHORTFLAG )
                 {
-                    komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout);
+                    komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,height);
                 }
             }
             else
@@ -221,18 +230,16 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         {
             if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen)) > 0 && shortflag == ASSETCHAINS_SHORTFLAG )
             {
-                while ( KOMODO_REALTIME == 0 || time(NULL) <= KOMODO_REALTIME )
-                {
-                    printf("komodo_opreturn waiting for realtime\n");
-                    sleep(3);
-                }
                 for (i=0; i<n; i++)
                 {
                     for (j=0; j<32; j++)
                         printf("%02x",((uint8_t *)&txids[i])[j]);
                     printf(" issuedtxid v%d i.%d of n.%d opretlen.%d\n",vouts[i],i,n,opretlen);
                     if ( komodo_paxmark(&space,txids[i],vouts[i],height) == 0 )
-                        printf("%s error removing deposit\n",ASSETCHAINS_SYMBOL);
+                    {
+                        printf("%s queue remove deposit\n",ASSETCHAINS_SYMBOL);
+                        komodo_gateway_deposit(0,0,0,0,0,0,txids[i],vouts[i],height);
+                    }
                 }
             }
         }
