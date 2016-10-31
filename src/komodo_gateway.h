@@ -251,7 +251,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     {
         if ( tokomodo == 0 && opretbuf[0] == 'I' )
         {
-            if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen)) > 0 )//&& shortflag == ASSETCHAINS_SHORTFLAG )
+            if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen)) > 0 && shortflag == ASSETCHAINS_SHORTFLAG )
             {
                 for (i=0; i<n; i++)
                 {
@@ -261,9 +261,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( komodo_gateway_depositremove(txids[i],vouts[i]) == 0 )
                         printf("error removing deposit\n");
                 }
-                //for (i=0; i<32; i++)
-                //    printf("%02x",((uint8_t *)&txid)[i]);
-                //printf(" v%d komodo_opreturn[%c]: ht.%d %.8f opretlen.%d\n",vout,opretbuf[0],height,dstr(value),opretlen);
             }
         }
     }
@@ -388,7 +385,7 @@ void komodo_gateway_iteration(char *symbol)
             {
                 for (i=0; i<1000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
-                    //printf("KMDHEIGHT %d\n",KMDHEIGHT);
+                    printf("KMDHEIGHT %d\n",KMDHEIGHT);
                     if ( (KMDHEIGHT % 100) == 0 )
                     {
                         fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
@@ -406,7 +403,7 @@ void komodo_gateway_iteration(char *symbol)
     }
     else
     {
-        //printf("error from %s\n",symbol);
+        printf("error from %s\n",symbol);
         sleep(30);
     }
 }
