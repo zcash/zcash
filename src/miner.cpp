@@ -98,6 +98,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
 }
 
+#define ASSETCHAINS_MINHEIGHT 100
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 void komodo_gateway_deposits(CMutableTransaction *txNew);
 extern int32_t KOMODO_INITDONE,ASSETCHAINS_SHORTFLAG;
@@ -112,7 +113,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight > 10 && mempool.GetTotalTxSize() <= 0 )
+    while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight > ASSETCHAINS_MINHEIGHT && mempool.GetTotalTxSize() <= 0 )
     {
         sleep(10);
         if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 )
@@ -569,7 +570,7 @@ void static BitcoinMiner(CWallet *pwallet)
             int32_t notaryid; uint32_t savebits; int64_t nStart = GetTime();
             savebits = pblock->nBits;
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
-            if ( komodo_chosennotary(&notaryid,pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
+            if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_chosennotary(&notaryid,pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
                 hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                 Mining_start = (uint32_t)time(NULL);
@@ -621,7 +622,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     }
                     int32_t i; uint256 hash = pblock->GetHash();
                     for (i=0; i<32; i++)
-                        printf("%02x",((uint8_t *)&hash)[i]);
+                        fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
                     fprintf(stderr," <- %s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
                     // In regression test mode, stop mining after a block is found.
