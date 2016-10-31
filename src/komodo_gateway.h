@@ -145,7 +145,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
 
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
-    int32_t i,j,n,opretlen,offset=1; uint256 hash,txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; struct pax_transaction *pax,space;
+    int32_t i,j,n,num,opretlen,offset=1; uint256 hash,txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; struct pax_transaction *pax,space;
     n = block.vtx[0].vout.size();
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     if ( n <= 2 || script[0] != 0x6a )
@@ -158,7 +158,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         {
             for (i=1; i<n-1; i++)
             {
-                if ( (pax= komodo_paxfind(&space,txids[i-1],vouts[i-1])) == 0 || ptr->fiatoshis != block.vtx[0].vout[i].nValue )
+                if ( (pax= komodo_paxfind(&space,txids[i-1],vouts[i-1])) == 0 || pax->fiatoshis != block.vtx[0].vout[i].nValue )
                     break;
             }
             if ( i != n-1 )
