@@ -109,7 +109,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height)
     if ( (htind= KOMODO_PUBKEYS_HEIGHT(height) / KOMODO_ELECTION_GAP) == 1 )
         htind = 0;
     pthread_mutex_lock(&komodo_mutex);
-    n = Pubkeys[htind].num;
+    n = Pubkeys[htind].numnotaries;
     HASH_ITER(hh,Pubkeys[htind].Notaries,kp,tmp)
     {
         if ( kp->notaryid < n )
@@ -230,12 +230,12 @@ void komodo_init()
         iguana_initQ(&PendingsQ,(char *)"Pendings");
         pthread_mutex_init(&komodo_mutex,NULL);
         decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
-        n = (int32_t)(sizeof(Notaries)/sizeof(*Notaries));
+        n = (int32_t)(sizeof(Notaries_genesis)/sizeof(*Notaries_genesis));
         for (k=0; k<n; k++)
         {
-            if ( Notaries[k][0] == 0 || Notaries[k][1] == 0 || Notaries[k][0][0] == 0 || Notaries[k][1][0] == 0 )
+            if ( Notaries_genesis[k][0] == 0 || Notaries_genesis[k][1] == 0 || Notaries_genesis[k][0][0] == 0 || Notaries_genesis[k][1][0] == 0 )
                 break;
-            decode_hex(pubkeys[k],33,(char *)Notaries[k][1]);
+            decode_hex(pubkeys[k],33,(char *)Notaries_genesis[k][1]);
         }
         komodo_notarysinit(0,pubkeys,k);
         memset(&zero,0,sizeof(zero));
