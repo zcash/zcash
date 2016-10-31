@@ -384,6 +384,50 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
 uint32_t komodo_txtime(uint256 hash);
 uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume);
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel);
+int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
+char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
+
+Value notaries(const Array& params, bool fHelp)
+{
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("notaries height\n");
+    LOCK(cs_main);
+    int32_t n,height = atoi(params[0].get_str().c_str());
+    if ( height < 0 || height > chainActive.Height() )
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+    else
+    {
+        Array a; Object item; int32_t i,j,n,m; char *hexstr; std::string hex,addr; uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
+        hex.resize(67);
+        if ( (n= komodo_notaries(pubkeys,height)) > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                std::string btcaddress,kmdaddress;
+                bitcoin_address(btcaddr,0,pubkeys[i],33);
+                m = (int32_t)strlen(btcaddr);
+                btcaddress.resize(m+1);
+                ptr = (char *)btcaddress.data();
+                strcpy(ptr,btcaddr);
+                bitcoin_address(kmdaddr,60,pubkeys[i],33);
+                m = (int32_t)strlen(kmdaddr);
+                kmdaddress.resize(m+1);
+                ptr = (char *)kmdaddress.data();
+                strcpy(ptr,kmdaddr);
+                hexstr = (char *)hex.data();
+                for (j=0; j<33; j++)
+                    sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
+                hexstr[j*2] = 0;
+                item.push_back(Pair("pubkey", hex));
+                item.push_back(Pair("BTCaddress", btcaddress));
+                item.push_back(Pair("KMDaddress", kmdaddress));
+                a.push_back(item);
+            }
+        }
+        ret.push_back(Pair("notaries", a));
+    }
+    return ret;
+}
 
 Value paxprice(const Array& params, bool fHelp)
 {
