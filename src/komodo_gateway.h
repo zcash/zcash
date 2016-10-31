@@ -22,7 +22,7 @@ struct pax_transaction
     uint64_t komodoshis,fiatoshis;
     int32_t mark;
     uint16_t vout;
-    char symbol[16]; uint8_t rmd160[20],shortflag;
+    char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
 } *PAX;
 
 void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout) // assetchain context
@@ -100,7 +100,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
 {
     struct pax_transaction *pax,*tmp; uint8_t *script,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
     PENDING_KOMODO_TX = 0;
-    HASH_ITER(hh,PAX,ptr,tmp)
+    HASH_ITER(hh,PAX,pax,tmp)
     {
         if ( pax->mark != 0 )
             continue;
