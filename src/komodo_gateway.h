@@ -149,7 +149,7 @@ int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain c
     return(n);
 }
 
-int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid pax pricing
+int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
     int32_t i,j,n,opretlen,num,iter,matchflag,offset=1; uint256 hash,txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; queue_t *Q; struct pax_transaction *ptr; struct queueitem *item;
     n = block.vtx[0].vout.size();
@@ -157,7 +157,7 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
     if ( n <= 2 || script[0] != 0x6a )
         return(0);
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
-    printf("checkdeposit n.%d [%02x] [%c] %d vs %d\n",n,script[0],script[offset],script[offset],'I');
+    //printf("checkdeposit n.%d [%02x] [%c] %d vs %d\n",n,script[0],script[offset],script[offset],'I');
     if ( script[offset] == 'I' && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
     {
         if ( (num= komodo_issued_opreturn(&shortflag,base,txids,vouts,&script[offset],opretlen)) > 0 )
@@ -200,8 +200,8 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
                     hash = block.GetHash();
                     for (j=0; j<32; j++)
                         printf("%02x",((uint8_t *)&hash)[j]);
-                    printf(" blockhash couldnt find vout.[%d]\n",i);
-                    return(-1);
+                    printf(" ht.%d blockhash couldnt find vout.[%d]\n",height,i);
+                    //return(-1);
                 }
             }
         }
