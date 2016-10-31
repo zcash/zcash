@@ -973,8 +973,10 @@ static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
         // Parse request
         Value valRequest;
         if (!read_string(strRequest, valRequest))
+        {
+            fprintf(stderr,"CANTPARSE.(%s)\n",strRequest.c_str());
             throw JSONRPCError(RPC_PARSE_ERROR, "Parse error");
-
+        }
         // Return immediately if in warmup
         {
             LOCK(cs_rpcWarmup);
