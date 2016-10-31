@@ -343,12 +343,15 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     uint8_t scriptbuf[4096],pubkeys[64][33]; uint256 kmdtxid,btctxid,txhash;
     int32_t i,j,k,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
     komodo_init();
-    KOMODO_INITDONE = (uint32_t)time(NULL);
-#ifdef KOMODO_ISSUER
-    komodo_gateway_issuer();
-#else
-    komodo_gateway_redeemer();
-#endif
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    {
+        while ( KOMODO_REALTIME == 0 || time(NULL) < KOMODO_REALTIME+10 )
+        {
+            fprintf(stderr,"komodo_connect.(%s) waiting for realtime\n",ASSETCHAINS_SYMBOL);
+            sleep(3);
+        }
+        KOMODO_INITDONE = (uint32_t)time(NULL);
+    }
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
