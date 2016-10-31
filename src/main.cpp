@@ -1488,7 +1488,7 @@ bool IsInitialBlockDownload()
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         state = (chainActive.Height() < pindexBestHeader->nHeight - 24*6) ||
                     pindexBestHeader->GetBlockTime() < (GetTime() - chainParams.MaxTipAge());
-    else state = (chainActive.Height() < pindexBestHeader->nHeight - 1);
+    else state = (chainActive.Height() < pindexBestHeader->nHeight - 100);
     if (!state)
     {
         //fprintf(stderr,"lockIBDState tru\n");
