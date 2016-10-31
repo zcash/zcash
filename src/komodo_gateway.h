@@ -102,7 +102,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
     PENDING_KOMODO_TX = 0;
     HASH_ITER(hh,PAX,pax,tmp)
     {
-        if ( pax->mark != 0 )
+        if ( pax->marked != 0 )
             continue;
         txNew->vout.resize(numvouts+1);
         txNew->vout[numvouts].nValue = pax->fiatoshis;
