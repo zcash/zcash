@@ -393,7 +393,7 @@ Value notaries(const Array& params, bool fHelp)
     if ( fHelp || params.size() != 1 )
         throw runtime_error("notaries height\n");
     LOCK(cs_main);
-    int32_t n,height = atoi(params[0].get_str().c_str());
+    int32_t height = atoi(params[0].get_str().c_str());
     if ( height < 0 || height > chainActive.Height() )
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     else
