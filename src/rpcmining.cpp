@@ -603,15 +603,15 @@ Value getblocktemplate(const Array& params, bool fHelp)
         entry.push_back(Pair("fee", pblocktemplate->vTxFees[index_in_template]));
         entry.push_back(Pair("sigops", pblocktemplate->vTxSigOps[index_in_template]));
 
-       /* if (tx.IsCoinBase()) {
+        if (tx.IsCoinBase()) {
             // Show founders' reward if it is required
-            if (pblock->vtx[0].vout.size() > 1) {
+            //if (pblock->vtx[0].vout.size() > 1) {
                 // Correct this if GetBlockTemplate changes the order
-                entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
-            }
+            //    entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
+            //}
             entry.push_back(Pair("required", true));
             txCoinbase = entry;
-        } else*/
+        } else
             transactions.push_back(entry);
     }
 
