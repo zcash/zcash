@@ -337,7 +337,7 @@ int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,
 
 int32_t komodo_gateway_block(char *symbol,int32_t height,uint16_t port)
 {
-    char *retstr,*retstr2,params[128],*txidstr; int32_t i,n,retval = -1; cJSON *json,*tx,*result,*result2;
+    char *retstr,*retstr2,params[128],*txidstr; int32_t i,n,retval = -1; cJSON *json,*tx=0,*result=0,*result2;
     sprintf(params,"[%d]",height);
     if ( (retstr= komodo_issuemethod((char *)"getblockhash",params,port)) != 0 )
     {
@@ -359,16 +359,16 @@ int32_t komodo_gateway_block(char *symbol,int32_t height,uint16_t port)
                             if ( i == n )
                                 retval = 0;
                             //else printf("error i.%d vs n.%d\n",i,n);
-                        }
+                        } else printf("cant get result.%p or tx.%p\n",result,tx);
                         free_json(json);
-                    }
+                    } else printf("cant parse2.(%s)\n",retstr2);
                     free(retstr2);
-                }
+                } else printf("error getblock %s\n",params);
             } else printf("strlen.%ld (%s)\n",strlen(txidstr),txidstr);
             free_json(result);
-        }
+        } else printf("couldnt parse.(%s)\n",retstr);
         free(retstr);
-    }
+    } else printf("error from getblockhash %d\n",height);
     return(retval);
 }
 
@@ -385,7 +385,6 @@ void komodo_gateway_iteration(char *symbol)
             {
                 for (i=0; i<1000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
-                    printf("KMDHEIGHT %d\n",KMDHEIGHT);
                     if ( (KMDHEIGHT % 100) == 0 )
                     {
                         fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
@@ -393,7 +392,10 @@ void komodo_gateway_iteration(char *symbol)
                         komodo_stateupdate(KMDHEIGHT,0,0,0,zero,0,0,0,0,KMDHEIGHT,0,0,0,0);
                     }
                     if ( komodo_gateway_block(symbol,KMDHEIGHT,port) < 0 )
+                    {
+                        printf("error KMDHEIGHT %d\n",KMDHEIGHT);
                         break;
+                    }
                     usleep(10000);
                 }
             }
