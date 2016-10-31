@@ -3315,8 +3315,10 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 bool ProcessNewBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
-    bool checked = CheckBlock(komodo_block2height(pblock),0,*pblock, state);
-
+    bool checked;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        checked = CheckBlock(komodo_block2height(pblock),0,*pblock, state);
+    else checked = CheckBlock(0,0,*pblock, state);
     {
         LOCK(cs_main);
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
