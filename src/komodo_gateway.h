@@ -327,7 +327,7 @@ int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,
                         }
                     }
                 }
-            }
+            } else printf("error getting txids.(%s)\n",retstr);
             free_json(json);
         }
         free(retstr);
@@ -358,7 +358,7 @@ int32_t komodo_gateway_block(char *symbol,int32_t height,uint16_t port)
                                     break;
                             if ( i == n )
                                 retval = 0;
-                            //else printf("error i.%d vs n.%d\n",i,n);
+                            else printf("komodo_gateway_block ht.%d error i.%d vs n.%d\n",height,i,n);
                         } else printf("cant get result.%p or tx.%p\n",result,tx);
                         free_json(json);
                     } else printf("cant parse2.(%s)\n",retstr2);
