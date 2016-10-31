@@ -389,7 +389,7 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 
 Value notaries(const Array& params, bool fHelp)
 {
-    Array a; Object ret; int32_t i,j,n,m; char *hexstr; std::string hex,addr; uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
+    Array a; Object ret; int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("notaries height\n");
     LOCK(cs_main);
@@ -398,23 +398,25 @@ Value notaries(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     else
     {
-        hex.resize(67);
         if ( (n= komodo_notaries(pubkeys,height)) > 0 )
         {
             for (i=0; i<n; i++)
             {
                 Object item;
-                std::string btcaddress,kmdaddress;
+                std::string btcaddress,kmdaddress,hex;
                 bitcoin_address(btcaddr,0,pubkeys[i],33);
                 m = (int32_t)strlen(btcaddr);
                 btcaddress.resize(m+1);
                 ptr = (char *)btcaddress.data();
                 strcpy(ptr,btcaddr);
+                ptr[m] = 0;
                 bitcoin_address(kmdaddr,60,pubkeys[i],33);
                 m = (int32_t)strlen(kmdaddr);
                 kmdaddress.resize(m+1);
                 ptr = (char *)kmdaddress.data();
                 strcpy(ptr,kmdaddr);
+                ptr[m] = 0;
+                hex.resize(67);
                 hexstr = (char *)hex.data();
                 for (j=0; j<33; j++)
                     sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
