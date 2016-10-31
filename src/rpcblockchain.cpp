@@ -406,21 +406,18 @@ Value notaries(const Array& params, bool fHelp)
                 std::string btcaddress,kmdaddress,hex;
                 bitcoin_address(btcaddr,0,pubkeys[i],33);
                 m = (int32_t)strlen(btcaddr);
-                btcaddress.resize(m+1);
+                btcaddress.resize(m);
                 ptr = (char *)btcaddress.data();
-                strcpy(ptr,btcaddr);
-                ptr[m] = 0;
+                memcpy(ptr,btcaddr,n);
                 bitcoin_address(kmdaddr,60,pubkeys[i],33);
                 m = (int32_t)strlen(kmdaddr);
-                kmdaddress.resize(m+1);
+                kmdaddress.resize(m);
                 ptr = (char *)kmdaddress.data();
-                strcpy(ptr,kmdaddr);
-                ptr[m] = 0;
-                hex.resize(67);
+                memcpy(ptr,kmdaddr,m);
+                hex.resize(66);
                 hexstr = (char *)hex.data();
                 for (j=0; j<33; j++)
                     sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
-                hexstr[j*2] = 0;
                 item.push_back(Pair("pubkey", hex));
                 item.push_back(Pair("BTCaddress", btcaddress));
                 item.push_back(Pair("KMDaddress", kmdaddress));
