@@ -147,11 +147,6 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
 {
     int32_t i,j,n,num,opretlen,offset=1; uint256 hash,txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; struct pax_transaction *pax,space;
     n = block.vtx[0].vout.size();
-    while ( KOMODO_REALTIME == 0 || time(NULL) <= KOMODO_REALTIME )
-    {
-        printf("komodo_check_deposit waiting for realtime\n");
-        sleep(3);
-    }
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     if ( n <= 2 || script[0] != 0x6a )
         return(0);
@@ -226,6 +221,11 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         {
             if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen)) > 0 && shortflag == ASSETCHAINS_SHORTFLAG )
             {
+                while ( KOMODO_REALTIME == 0 || time(NULL) <= KOMODO_REALTIME )
+                {
+                    printf("komodo_opreturn waiting for realtime\n");
+                    sleep(3);
+                }
                 for (i=0; i<n; i++)
                 {
                     for (j=0; j<32; j++)
