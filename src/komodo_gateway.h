@@ -397,10 +397,10 @@ void komodo_gateway_iteration(char *symbol)
                         printf("error KMDHEIGHT %d\n",KMDHEIGHT);
                         break;
                     }
-                    if ( KMDHEIGHT == kmdheight )
-                        KOMODO_REALTIME = (uint32_t)time(NULL);
                     usleep(10000);
                 }
+                if ( KMDHEIGHT >= kmdheight )
+                    KOMODO_REALTIME = (uint32_t)time(NULL);
             }
             free_json(infoobj);
         }
