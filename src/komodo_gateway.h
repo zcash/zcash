@@ -210,6 +210,9 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
 {
     uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
+    for (i=0; i<opretlen; i++)
+        printf("%02x",opretbuf[i]);
+    printf(" DEPOSIT %.8f %c%s -> %s ",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
     tokomodo = (komodo_is_issuer() == 0);
     if ( opretbuf[0] == ((tokomodo == 0) ? 'D' : 'W') )
     {
@@ -224,9 +227,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             typestr = "deposit";
             if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
             {
-                for (i=0; i<opretlen; i++)
-                    printf("%02x",opretbuf[i]);
-                printf(" DEPOSIT %.8f %c%s -> %s ",dstr(fiatoshis),shortflag!=0?'-':'+',base,coinaddr);
                 for (i=0; i<32; i++)
                     printf("%02x",((uint8_t *)&txid)[i]);
                 printf(" <- txid.v%u ",vout);
