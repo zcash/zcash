@@ -157,7 +157,7 @@ int32_t komodo_check_deposit(const CBlock& block) // verify above block is valid
     if ( n <= 2 || script[0] != 0x6a )
         return(0);
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
-    //printf("checkdeposit n.%d [%02x] [%c] %d vs %d\n",n,script[0],script[offset],script[offset],'I');
+    printf("checkdeposit n.%d [%02x] [%c] %d vs %d\n",n,script[0],script[offset],script[offset],'I');
     if ( script[offset] == 'I' && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
     {
         if ( (num= komodo_issued_opreturn(&shortflag,base,txids,vouts,&script[offset],opretlen)) > 0 )
