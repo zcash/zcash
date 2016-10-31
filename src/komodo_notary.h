@@ -228,8 +228,8 @@ void komodo_init()
     if ( didinit == 0 )
     {
         didinit = 1;
-        iguana_initQ(&DepositsQ,(char *)"Deposits");
-        iguana_initQ(&PendingsQ,(char *)"Pendings");
+        //iguana_initQ(&DepositsQ,(char *)"Deposits");
+        //iguana_initQ(&PendingsQ,(char *)"Pendings");
         pthread_mutex_init(&komodo_mutex,NULL);
         decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
         n = (int32_t)(sizeof(Notaries_genesis)/sizeof(*Notaries_genesis));

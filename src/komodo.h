@@ -31,7 +31,7 @@ char *komodo_issuemethod(char *method,char *params,uint16_t port);
 #define GENESIS_NBITS 0x1f00ffff
 #include "komodo_globals.h"
 #include "komodo_utils.h"
-queue_t DepositsQ,PendingsQ;
+//queue_t DepositsQ,PendingsQ;
 
 #include "cJSON.c"
 #include "komodo_bitcoind.h"

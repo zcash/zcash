@@ -17,12 +17,57 @@
 
 struct pax_transaction
 {
-    struct queueitem DL;
+    UT_hash_handle hh;
     uint256 txid;
     uint64_t komodoshis,fiatoshis;
+    int32_t mark;
     uint16_t vout;
-    char symbol[4]; uint8_t rmd160[20],shortflag;
-};
+    char symbol[16]; uint8_t rmd160[20],shortflag;
+} *PAX;
+
+void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout) // assetchain context
+{
+    struct pax_transaction *pax;
+    pax = (struct pax_transaction *)calloc(1,sizeof(*pax));
+    strcpy(pax->coinaddr,coinaddr);
+    pax->komodoshis = value;
+    pax->shortflag = shortflag;
+    strcpy(pax->symbol,symbol);
+    pax->fiatoshis = fiatoshis;
+    memcpy(pax->rmd160,rmd160,20);
+    pax->txid = txid;
+    pax->vout = vout;
+    printf("ADD DEPOSIT %s %.8f -> %s TO PAX\n",symbol,dstr(fiatoshis),coinaddr);
+    pthread_mutex_lock(&komodo_mutex);
+    HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
+    pthread_mutex_unlock(&komodo_mutex);
+    KOMODO_DEPOSIT += fiatoshis;
+}
+
+struct pax_transaction *komodo_paxfind(struct pax_transaction *space,uint256 txid,uint16_t vout)
+{
+    struct pax_transaction *pax;
+    pthread_mutex_lock(&komodo_mutex);
+    HASH_FIND(hh,PAX,&txid,sizeof(txid),pax);
+    if ( pax != 0 )
+        memcpy(space,pax,sizeof(*pax));
+    pthread_mutex_unlock(&komodo_mutex);
+    return(pax);
+}
+
+struct pax_transaction *komodo_paxmark(struct pax_transaction *space,uint256 txid,uint16_t vout,int32_t mark)
+{
+    struct pax_transaction *pax;
+    pthread_mutex_lock(&komodo_mutex);
+    HASH_FIND(hh,PAX,&txid,sizeof(txid),pax);
+    if ( pax != 0 )
+    {
+        pax->marked = mark;
+        memcpy(space,pax,sizeof(*pax));
+    }
+    pthread_mutex_unlock(&komodo_mutex);
+    return(pax);
+}
 
 int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uint16_t *vouts,uint8_t *opretbuf,int32_t opretlen)
 {
@@ -53,10 +98,12 @@ int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uin
 
 void komodo_gateway_deposits(CMutableTransaction *txNew)
 {
-    struct pax_transaction *ptr; uint8_t *script,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
+    struct pax_transaction *pax,*tmp; uint8_t *script,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
     PENDING_KOMODO_TX = 0;
-    while ( numvouts < 64 && (ptr= (struct pax_transaction *)queue_dequeue(&DepositsQ)) != 0 )
+    HASH_ITER(hh,PAX,ptr,tmp)
     {
+        if ( pax->mark != 0 )
+            continue;
         txNew->vout.resize(numvouts+1);
         txNew->vout[numvouts].nValue = ptr->fiatoshis;
         txNew->vout[numvouts].scriptPubKey.resize(25);
@@ -76,11 +123,9 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
         data[len++] = (ptr->vout >> 8) & 0xff;
         printf(" vout.%u DEPOSIT %.8f <- paxdeposit.%s\n",ptr->vout,(double)txNew->vout[numvouts].nValue/COIN,ASSETCHAINS_SYMBOL);
         PENDING_KOMODO_TX += ptr->fiatoshis;
-        numvouts++;
-        queue_enqueue((char *)"PENDINGS",&PendingsQ,&ptr->DL);
+        if ( numvouts++ >= 64 )
+            break;
     }
-    while ( (ptr= (struct pax_transaction *)queue_dequeue(&PendingsQ)) != 0 )
-        queue_enqueue((char *)"DEPOSITS",&DepositsQ,&ptr->DL);
     if ( numvouts > 1 )
     {
         if ( ASSETCHAINS_SHORTFLAG != 0 )
@@ -98,60 +143,9 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
     } else KOMODO_DEPOSIT = 0;
 }
 
-void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout) // assetchain context
-{
-    struct pax_transaction *ptr;
-    ptr = (struct pax_transaction *)calloc(1,sizeof(*ptr));
-    ptr->komodoshis = value;
-    ptr->fiatoshis = fiatoshis;
-    memcpy(ptr->symbol,symbol,3);
-    memcpy(ptr->rmd160,rmd160,20);
-    ptr->shortflag = shortflag;
-    ptr->txid = txid;
-    ptr->vout = vout;
-    KOMODO_DEPOSIT += fiatoshis;
-    printf("ADD DEPOSIT %s %.8f -> %s TO QUEUE\n",symbol,dstr(fiatoshis),coinaddr);
-    queue_enqueue((char *)"DEPOSITS",&DepositsQ,&ptr->DL);
-}
-
-int32_t komodo_gateway_depositremove(uint256 txid,uint16_t vout) // assetchain context
-{
-    int32_t iter,i,n=0; queue_t *Q; struct pax_transaction *ptr; struct queueitem *item;
-    for (iter=0; iter<2; iter++)
-    {
-        Q = (iter == 0) ? &DepositsQ : &PendingsQ;
-        portable_mutex_lock(&Q->mutex);
-        if ( Q->list != 0 )
-        {
-            item = &ptr->DL;
-            DL_FOREACH(Q->list,item)
-            {
-                ptr = (struct pax_transaction *)item;
-                if ( memcmp(&ptr->txid,&txid,sizeof(txid)) == 0 && ptr->vout == vout )
-                {
-                    if ( KOMODO_DEPOSIT >= ptr->fiatoshis )
-                        KOMODO_DEPOSIT -= ptr->fiatoshis;
-                    else KOMODO_DEPOSIT = 0;
-                    for (i=0; i<32; i++)
-                        printf("%02x",((uint8_t *)&txid)[i]);
-                    printf(" v%d DELETE %.8f DEPOSIT %s %.8f\n",vout,dstr(ptr->komodoshis),ptr->symbol,dstr(ptr->fiatoshis));
-                    DL_DELETE(Q->list,&ptr->DL);
-                    n++;
-                    free(ptr);
-                    break;
-                }
-            }
-        }
-        portable_mutex_unlock(&Q->mutex);
-    }
-    if ( queue_size(&DepositsQ) == 0 && queue_size(&PendingsQ) == 0 )
-        KOMODO_DEPOSIT = PENDING_KOMODO_TX = 0;
-    return(n);
-}
-
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
-    int32_t i,j,n,opretlen,num,iter,matchflag,offset=1; uint256 hash,txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; queue_t *Q; struct pax_transaction *ptr; struct queueitem *item;
+    int32_t i,j,n,opretlen,offset=1; uint256 hash,txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; struct pax_transaction *pax,space;
     n = block.vtx[0].vout.size();
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     if ( n <= 2 || script[0] != 0x6a )
@@ -164,45 +158,16 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         {
             for (i=1; i<n-1; i++)
             {
-                for (iter=0; iter<2; iter++)
-                {
-                    Q = (iter == 0) ? &DepositsQ : &PendingsQ;
-                    portable_mutex_lock(&Q->mutex);
-                    ptr = 0;
-                    if ( Q->list != 0 )
-                    {
-                        item = &ptr->DL;
-                        matchflag = 0;
-                        DL_FOREACH(Q->list,item)
-                        {
-                            ptr = (struct pax_transaction *)item;
-                            if ( memcmp(&ptr->txid,&txids[i-1],sizeof(txids[i-1])) == 0 && ptr->vout == vouts[i-1] )
-                            {
-                                if ( ptr->fiatoshis == block.vtx[0].vout[i].nValue )
-                                {
-                                    /*for (j=0; j<32; j++)
-                                        printf("%02x",((uint8_t *)&ptr->txid)[j]);
-                                    printf(" v%d matched %.8f vout.%d ",ptr->vout,dstr(ptr->fiatoshis),i);
-                                    hash = block.GetHash();
-                                    for (j=0; j<32; j++)
-                                        printf("%02x",((uint8_t *)&hash)[j]);
-                                    printf(".blockhash\n");*/
-                                    matchflag = 1;
-                                } else printf("error finding %.8f vout.%d\n",dstr(ptr->fiatoshis),i);
-                                break;
-                            }
-                        }
-                    }
-                    portable_mutex_unlock(&Q->mutex);
-                }
-                if ( matchflag == 0 )
-                {
-                    hash = block.GetHash();
-                    for (j=0; j<32; j++)
-                        printf("%02x",((uint8_t *)&hash)[j]);
-                    printf(" ht.%d blockhash couldnt find vout.[%d]\n",height,i);
-                    //return(-1);
-                }
+                if ( (pax= komodo_paxfind(&space,txids[i-1],vouts[i-1])) == 0 || ptr->fiatoshis != block.vtx[0].vout[i].nValue )
+                    break;
+            }
+            if ( i != n-1 )
+            {
+                hash = block.GetHash();
+                for (j=0; j<32; j++)
+                    printf("%02x",((uint8_t *)&hash)[j]);
+                printf(" ht.%d blockhash couldnt find vout.[%d]\n",height,i);
+                //return(-1);
             }
         }
         //printf("opretlen.%d num.%d\n",opretlen,num);
@@ -212,7 +177,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
 {
-    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
+    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     tokomodo = (komodo_is_issuer() == 0);
     //for (i=0; i<opretlen; i++)
     //    printf("%02x",opretbuf[i]);
@@ -261,7 +226,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     for (j=0; j<32; j++)
                         printf("%02x",((uint8_t *)&txids[i])[j]);
                     printf(" issuedtxid v%d i.%d of n.%d opretlen.%d\n",vouts[i],i,n,opretlen);
-                    if ( komodo_gateway_depositremove(txids[i],vouts[i]) == 0 )
+                    if ( komodo_paxmark(&space,txids[i],vouts[i],height) == 0 )
                         printf("%s error removing deposit\n",ASSETCHAINS_SYMBOL);
                 }
             }
