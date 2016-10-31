@@ -26,7 +26,7 @@ struct pax_transaction
 
 int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uint16_t *vouts,uint8_t *opretbuf,int32_t opretlen)
 {
-    int32_t i,n,j,len;
+    int32_t i,n=0,j,len;
     if ( opretbuf[opretlen-5] == '-' )
         *shortflagp = 1;
     else *shortflagp = 0;
@@ -257,7 +257,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 {
                     for (j=0; j<32; j++)
                         printf("%02x",((uint8_t *)&txids[i])[j]);
-                    printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[i],i,opretlen);
+                    printf(" issuedtxid v%d i.%d of n.%d opretlen.%d\n",vouts[i],i,n,opretlen);
                     if ( komodo_gateway_depositremove(txids[i],vouts[i]) == 0 )
                         printf("error removing deposit\n");
                 }
