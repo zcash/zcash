@@ -147,7 +147,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
 {
     int32_t i,j,n,num,opretlen,offset=1; uint256 hash,txids[64]; uint8_t shortflag; char base[16]; uint16_t vouts[64]; uint8_t *script; struct pax_transaction *pax,space;
     n = block.vtx[0].vout.size();
-    while ( KOMODO_REALTIME == 0 || time(null) < KOMODO_REALTIME )
+    while ( KOMODO_REALTIME == 0 || time(NULL) <= KOMODO_REALTIME )
     {
         printf("komodo_check_deposit waiting for realtime\n");
         sleep(3);
