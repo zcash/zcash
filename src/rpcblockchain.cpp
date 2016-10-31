@@ -389,7 +389,7 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 
 Value notaries(const Array& params, bool fHelp)
 {
-    Array a; Object ret,item; int32_t i,j,n,m; char *hexstr; std::string hex,addr; uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
+    Array a; Object ret; int32_t i,j,n,m; char *hexstr; std::string hex,addr; uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("notaries height\n");
     LOCK(cs_main);
@@ -403,6 +403,7 @@ Value notaries(const Array& params, bool fHelp)
         {
             for (i=0; i<n; i++)
             {
+                Object item;
                 std::string btcaddress,kmdaddress;
                 bitcoin_address(btcaddr,0,pubkeys[i],33);
                 m = (int32_t)strlen(btcaddr);
