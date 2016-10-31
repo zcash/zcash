@@ -345,7 +345,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     komodo_init();
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
-        while ( KOMODO_REALTIME == 0 || time(NULL) < KOMODO_REALTIME+10 )
+        while ( KOMODO_REALTIME == 0 || time(NULL) <= KOMODO_REALTIME )
         {
             fprintf(stderr,"komodo_connect.(%s) waiting for realtime RT.%u now.%u\n",ASSETCHAINS_SYMBOL,KOMODO_REALTIME,(uint32_t)time(NULL));
             sleep(3);
