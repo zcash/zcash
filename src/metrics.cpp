@@ -17,6 +17,8 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+CCriticalSection cs_metrics;
+
 AtomicCounter transactionsValidated;
 AtomicCounter ehSolverRuns;
 AtomicCounter solutionTargetChecks;
@@ -32,6 +34,7 @@ extern int64_t GetNetworkHashPS(int lookup, int height);
 
 void TrackMinedBlock(uint256 hash)
 {
+    LOCK(cs_metrics);
     minedBlocks.increment();
     trackedBlocks->push_back(hash);
 }
@@ -151,9 +154,10 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
         std::cout << "- " << strprintf(_("You have completed %d Equihash solver runs."), ehSolverRuns.get()) << std::endl;
         lines += 2;
 
-        int mined = minedBlocks.get();
-        if (mined > 0) {
-            LOCK(cs_main);
+        int mined = 0;
+        int orphaned = 0;
+        {
+            LOCK2(cs_main, cs_metrics);
             boost::strict_lock_ptr<std::list<uint256>> u = trackedBlocks.synchronize();
             auto consensusParams = Params().GetConsensus();
             auto tipHeight = chainActive.Height();
@@ -180,8 +184,12 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
                     it = u->erase(it);
                 }
             }
-            int orphaned = mined - u->size();
 
+            mined = minedBlocks.get();
+            orphaned = mined - u->size();
+        }
+
+        if (mined > 0) {
             std::cout << "- " << strprintf(_("You have mined %d blocks!"), mined) << std::endl;
             std::cout << "  "
                       << strprintf(_("Orphaned: %d blocks, Immature: %u %s, Mature: %u %s"),
