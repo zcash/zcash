@@ -966,7 +966,6 @@ static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
         conn->stream() << HTTPError(HTTP_UNAUTHORIZED, false) << std::flush;
         return false;
     }
-
     JSONRequest jreq;
     try
     {
