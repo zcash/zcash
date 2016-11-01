@@ -207,7 +207,7 @@ public:
     bool HaveSpendingKey(const libzcash::PaymentAddress &address) const
     {
         {
-            LOCK(cs_KeyStore);
+            LOCK(cs_SpendingKeyStore);
             if (!IsCrypted())
                 return CBasicKeyStore::HaveSpendingKey(address);
             return mapCryptedSpendingKeys.count(address) > 0;

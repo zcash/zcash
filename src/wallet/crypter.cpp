@@ -153,7 +153,7 @@ static bool DecryptSpendingKey(const CKeyingMaterial& vMasterKey,
 
 bool CCryptoKeyStore::SetCrypted()
 {
-    LOCK(cs_KeyStore);
+    LOCK2(cs_KeyStore, cs_SpendingKeyStore);
     if (fUseCrypto)
         return true;
     if (!(mapKeys.empty() && mapSpendingKeys.empty()))
@@ -179,7 +179,7 @@ bool CCryptoKeyStore::Lock()
 bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
 {
     {
-        LOCK(cs_KeyStore);
+        LOCK2(cs_KeyStore, cs_SpendingKeyStore);
         if (!SetCrypted())
             return false;
 
