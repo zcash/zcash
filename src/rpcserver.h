@@ -263,6 +263,7 @@ extern json_spirit::Value z_sendmany(const json_spirit::Array& params, bool fHel
 extern json_spirit::Value z_getoperationstatus(const json_spirit::Array& params, bool fHelp); // in rpcwallet.cpp
 extern json_spirit::Value z_getoperationresult(const json_spirit::Array& params, bool fHelp); // in rpcwallet.cpp
 extern json_spirit::Value z_listoperationids(const json_spirit::Array& params, bool fHelp); // in rpcwallet.cpp
+extern json_spirit::Value z_validateaddress(const json_spirit::Array& params, bool fHelp); // in rpcmisc.cpp
 
 
 // in rest.cpp
