@@ -8,7 +8,7 @@
 #include <string>
 
 struct AtomicCounter {
-    std::atomic<int> value;
+    std::atomic<uint64_t> value;
 
     AtomicCounter() : value {0} { }
 
