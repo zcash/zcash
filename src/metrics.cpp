@@ -165,7 +165,8 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
             auto tipHeight = chainActive.Height();
 
             // Update orphans and calculate subsidies
-            for (std::list<uint256>::iterator it = u->begin(); it != u->end(); it++) {
+            std::list<uint256>::iterator it = u->begin();
+            while (it != u->end()) {
                 auto hash = *it;
                 if (mapBlockIndex.count(hash) > 0 &&
                         chainActive.Contains(mapBlockIndex[hash])) {
@@ -179,6 +180,7 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
                     } else {
                         mature += subsidy;
                     }
+                    it++;
                 } else {
                     it = u->erase(it);
                 }
