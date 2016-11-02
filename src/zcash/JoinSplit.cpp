@@ -26,6 +26,7 @@ namespace libzcash {
 
 CCriticalSection cs_ParamsIO;
 CCriticalSection cs_InitializeParams;
+CCriticalSection cs_LoadKeys;
 
 template<typename T>
 void saveToFile(std::string path, T& obj) {
@@ -71,6 +72,7 @@ public:
 
     boost::optional<r1cs_ppzksnark_proving_key<ppzksnark_ppT>> pk;
     boost::optional<r1cs_ppzksnark_verification_key<ppzksnark_ppT>> vk;
+    boost::optional<r1cs_ppzksnark_processed_verification_key<ppzksnark_ppT>> vk_precomp;
     boost::optional<std::string> pkPath;
 
     JoinSplitCircuit() {}
@@ -87,6 +89,8 @@ public:
     }
 
     void loadProvingKey() {
+        LOCK(cs_LoadKeys);
+
         if (!pk) {
             if (!pkPath) {
                 throw std::runtime_error("proving key path unknown");
@@ -103,7 +107,14 @@ public:
         }
     }
     void loadVerifyingKey(std::string path) {
+        LOCK(cs_LoadKeys);
+
         loadFromFile(path, vk);
+
+        processVerifyingKey();
+    }
+    void processVerifyingKey() {
+        vk_precomp = r1cs_ppzksnark_verifier_process_vk(*vk);
     }
     void saveVerifyingKey(std::string path) {
         if (vk) {
@@ -128,11 +139,14 @@ public:
     }
 
     void generate() {
+        LOCK(cs_LoadKeys);
+
         const r1cs_constraint_system<FieldT> constraint_system = generate_r1cs();
         r1cs_ppzksnark_keypair<ppzksnark_ppT> keypair = r1cs_ppzksnark_generator<ppzksnark_ppT>(constraint_system);
 
         pk = keypair.pk;
         vk = keypair.vk;
+        processVerifyingKey();
     }
 
     bool verify(
@@ -146,7 +160,7 @@ public:
         uint64_t vpub_new,
         const uint256& rt
     ) {
-        if (!vk) {
+        if (!vk || !vk_precomp) {
             throw std::runtime_error("JoinSplit verifying key not loaded");
         }
 
@@ -165,7 +179,7 @@ public:
                 vpub_new
             );
 
-            return r1cs_ppzksnark_verifier_strong_IC<ppzksnark_ppT>(*vk, witness, r1cs_proof);
+            return r1cs_ppzksnark_online_verifier_strong_IC<ppzksnark_ppT>(*vk_precomp, witness, r1cs_proof);
         } catch (...) {
             return false;
         }
