@@ -340,6 +340,12 @@ static const CRPCCommand vRPCCommands[] =
     { "hidden",             "resendwallettransactions", &resendwallettransactions, true},
 #endif
 
+    /* Address index extensions */
+    { "address index",      "searchrawtransactions",  &searchrawtransactions,  false },
+    { "address index",      "listallunspent",         &listallunspent,         false },
+    { "address index",      "getallbalance",          &getallbalance,          false },
+    { "address index",      "gettxposition",          &gettxposition,          false },
+
 #ifdef ENABLE_WALLET
     /* Wallet */
     { "wallet",             "addmultisigaddress",     &addmultisigaddress,     true  },
