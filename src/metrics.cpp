@@ -156,16 +156,15 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
 
         int mined = 0;
         int orphaned = 0;
+        CAmount immature {0};
+        CAmount mature {0};
         {
             LOCK2(cs_main, cs_metrics);
             boost::strict_lock_ptr<std::list<uint256>> u = trackedBlocks.synchronize();
             auto consensusParams = Params().GetConsensus();
             auto tipHeight = chainActive.Height();
-            std::string units = Params().CurrencyUnits();
 
             // Update orphans and calculate subsidies
-            CAmount immature {0};
-            CAmount mature {0};
             for (std::list<uint256>::iterator it = u->begin(); it != u->end(); it++) {
                 auto hash = *it;
                 if (mapBlockIndex.count(hash) > 0 &&
@@ -190,6 +189,7 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
         }
 
         if (mined > 0) {
+            std::string units = Params().CurrencyUnits();
             std::cout << "- " << strprintf(_("You have mined %d blocks!"), mined) << std::endl;
             std::cout << "  "
                       << strprintf(_("Orphaned: %d blocks, Immature: %u %s, Mature: %u %s"),
