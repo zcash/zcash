@@ -1,5 +1,9 @@
-Zcash 1.0.0
+Zcash Classic 1.0.0
 ===========
+
+What is Zcash Classic?
+--------------
+Zcash Classic is Zcash minus the 20% founders reward.  Miners keep 100% of block rewards.
 
 What is Zcash?
 --------------
