@@ -207,6 +207,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
                 dPriority += (double)nValueIn * nConf;
             }
+            nTotalIn += tx.GetJoinSplitValueIn();
+
             if (fMissingInputs) continue;
 
             // Priority is sum(valuein * age) / modified_txsize
