@@ -36,6 +36,7 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = "main";
+        strCurrencyUnits = "ZEC";
         consensus.fCoinbaseMustBeProtected = true;
         consensus.nSubsidySlowStartInterval = 20000;
         consensus.nSubsidyHalvingInterval = 840000;
@@ -203,6 +204,7 @@ class CTestNetParams : public CMainParams {
 public:
     CTestNetParams() {
         strNetworkID = "test";
+        strCurrencyUnits = "TAZ";
         consensus.nMajorityEnforceBlockUpgrade = 51;
         consensus.nMajorityRejectBlockOutdated = 75;
         consensus.nMajorityWindow = 400;
@@ -288,6 +290,7 @@ class CRegTestParams : public CTestNetParams {
 public:
     CRegTestParams() {
         strNetworkID = "regtest";
+        strCurrencyUnits = "REG";
         consensus.fCoinbaseMustBeProtected = false;
         consensus.nSubsidySlowStartInterval = 0;
         consensus.nSubsidyHalvingInterval = 150;

@@ -1,14 +1,16 @@
 TESTS += zcash-gtest
 bin_PROGRAMS += zcash-gtest
 
-# tool for generating our public parameters
+# tool for generating our public parameters.
+# test_checktransaction.cpp MUST be before
+# any test that calls SelectParams().
 zcash_gtest_SOURCES = \
 	gtest/main.cpp \
 	gtest/utils.cpp \
-	gtest/test_checkblock.cpp \
 	gtest/test_checktransaction.cpp \
+	gtest/test_checkblock.cpp \
 	gtest/json_test_vectors.cpp \
-        gtest/json_test_vectors.h \
+	gtest/json_test_vectors.h \
 	gtest/test_foundersreward.cpp \
 	gtest/test_wallet_zkeys.cpp \
 	gtest/test_jsonspirit.cpp \
