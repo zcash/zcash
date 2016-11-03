@@ -8,7 +8,6 @@ zcash_gtest_SOURCES = \
 	gtest/main.cpp \
 	gtest/utils.cpp \
 	gtest/test_checktransaction.cpp \
-	gtest/test_checkblock.cpp \
 	gtest/json_test_vectors.cpp \
 	gtest/json_test_vectors.h \
 	gtest/test_foundersreward.cpp \
@@ -28,6 +27,7 @@ zcash_gtest_SOURCES = \
 	gtest/test_txid.cpp \
 	gtest/test_libzcash_utils.cpp \
 	gtest/test_proofs.cpp \
+	gtest/test_checkblock.cpp \
 	wallet/gtest/test_wallet.cpp
 
 zcash_gtest_CPPFLAGS = -DMULTICORE -fopenmp -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC
