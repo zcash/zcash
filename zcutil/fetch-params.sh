@@ -67,6 +67,10 @@ function main() {
     cat <<EOF
 Zcash - fetch-params.sh
 
+This script will fetch the Zcash zkSNARK parameters and verify their
+integrity with sha256sum.
+
+If they already exist locally, it will exit now and do nothing else.
 EOF
 
     # Now create PARAMS_DIR and insert a README if necessary:
@@ -84,9 +88,6 @@ EOF
         # This may be the first time the user's run this script, so give
         # them some info, especially about bandwidth usage:
         cat <<EOF
-This script will fetch the Zcash zkSNARK parameters and verify their
-integrity with sha256sum.
-
 The parameters are currently just under 911MB in size, so plan accordingly
 for your bandwidth constraints. If the files are already present and
 have the correct sha256sum, no networking is used.
@@ -104,4 +105,5 @@ EOF
 }
 
 main
+rm -f /tmp/fetch_params.lock
 exit 0
