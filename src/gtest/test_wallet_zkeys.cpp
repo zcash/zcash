@@ -5,8 +5,6 @@
 #include "wallet/walletdb.h"
 #include "util.h"
 
-#include <boost/filesystem.hpp>
-
 /**
  * This test covers methods on CWallet
  * GenerateNewZKey()
@@ -72,12 +70,6 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
  */
 TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
     SelectParams(CBaseChainParams::TESTNET);
-
-    // Get temporary and unique path for file.
-    // Note: / operator to append paths
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
-    mapArgs["-datadir"] = pathTemp.string();
 
     bool fFirstRun;
     CWallet wallet("wallet.dat");
@@ -147,12 +139,6 @@ TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
     ECC_Start();
 
     SelectParams(CBaseChainParams::TESTNET);
-
-    // Get temporary and unique path for file.
-    // Note: / operator to append paths
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
-    mapArgs["-datadir"] = pathTemp.string();
 
     bool fFirstRun;
     CWallet wallet("wallet_crypted.dat");
