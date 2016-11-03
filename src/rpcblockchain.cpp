@@ -46,7 +46,7 @@ double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficul
     int nShiftAmount = (powLimit >> 24) & 0xff;
 
     double dDiff =
-        (double)(powLimit & 0x00ffffff) / 
+        (double)(powLimit & 0x00ffffff) /
         (double)(bits & 0x00ffffff);
 
     while (nShift < nShiftAmount)
@@ -394,7 +394,7 @@ Value gettxout(const Array& params, bool fHelp)
             "{\n"
             "  \"bestblock\" : \"hash\",    (string) the block hash\n"
             "  \"confirmations\" : n,       (numeric) The number of confirmations\n"
-            "  \"value\" : x.xxx,           (numeric) The transaction value in btc\n"
+            "  \"value\" : x.xxx,           (numeric) The transaction value in zec\n"
             "  \"scriptPubKey\" : {         (json object)\n"
             "     \"asm\" : \"code\",       (string) \n"
             "     \"hex\" : \"hex\",        (string) \n"
