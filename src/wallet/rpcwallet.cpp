@@ -469,11 +469,14 @@ Value sendtoaddress(const Array& params, bool fHelp)
 uint64_t PAX_fiatdest(int32_t tokomodo,char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *base,int64_t fiatoshis);
 int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen);
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
+extern char ASSETCHAINS_SYMBOL[16];
 
 Value paxdeposit(const Array& params, bool fHelp)
 {
     uint64_t komodoshis = 0; char destaddr[64]; uint8_t i,pubkey33[33];
     bool fSubtractFeeFromAmount = false;
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxdeposit only from KMD");
     if (!EnsureWalletIsAvailable(fHelp))
         return Value::null;
     if (fHelp || params.size() != 3)
@@ -490,7 +493,6 @@ Value paxdeposit(const Array& params, bool fHelp)
     CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
     if (!destaddress.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest Bitcoin address");
-
     for (i=0; i<33; i++)
         printf("%02x",pubkey33[i]);
     printf(" ht.%d srcaddr.(%s) %s fiatoshis.%lld -> dest.(%s) komodoshis.%llu\n",chainActive.Tip()->nHeight,(char *)params[0].get_str().c_str(),(char *)base.c_str(),(long long)fiatoshis,destaddr,(long long)komodoshis);
@@ -501,6 +503,37 @@ Value paxdeposit(const Array& params, bool fHelp)
         fee = 10000;
     opretlen = komodo_opreturnscript(opretbuf,'D',pubkey33,33);
     SendMoney(address.Get(),fee,fSubtractFeeFromAmount,wtx,opretbuf,opretlen,komodoshis);
+    return wtx.GetHash().GetHex();
+}
+
+Value paxwithdraw(const Value& params, bool fHelp)
+{
+    CWalletTx wtx; std::string dest; uint64_t komodoshis = 0; char destaddr[64]; uint8_t i,pubkey33[33]; bool fSubtractFeeFromAmount = false;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxwithdraw cant be from KMD");
+    if (!EnsureWalletIsAvailable(fHelp))
+        return 0;
+    if (fHelp || params.size() != 2)
+        throw runtime_error("paxwithdraw \"address\" fiatamount");
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    CBitcoinAddress address(params[0].get_str());
+    if (!address.IsValid())
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
+    int64_t fiatoshis = atof(params[1].get_str().c_str()) * COIN;
+    komodoshis = PAX_fiatdest(1,destaddr,pubkey33,(char *)params[0].get_str().c_str(),chainActive.Tip()->nHeight,ASSETCHAINS_SYMBOL,fiatoshis);
+    dest.append(destaddr);
+    CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
+    if (!destaddress.IsValid())
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest Bitcoin address");
+    for (i=0; i<33; i++)
+        printf("%02x",pubkey33[i]);
+    printf(" ht.%d srcaddr.(%s) %s fiatoshis.%lld -> dest.(%s) komodoshis.%llu\n",chainActive.Tip()->nHeight,(char *)params[0].get_str().c_str(),ASSETCHAINS_SYMBOL,(long long)fiatoshis,destaddr,(long long)komodoshis);
+    EnsureWalletIsUnlocked();
+    uint8_t opretbuf[64]; int32_t opretlen; uint64_t fee = komodoshis / 1000;
+    if ( fee < 10000 )
+        fee = 10000;
+    opretlen = komodo_opreturnscript(opretbuf,'W',pubkey33,33);
+    SendMoney(destaddress.Get(),fee,fSubtractFeeFromAmount,wtx,opretbuf,opretlen,fiatoshis);
     return wtx.GetHash().GetHex();
 }
 
