@@ -2,18 +2,18 @@
 *.deb
 *.exe
 src/bitcoin
-src/zcashd
-src/zcash-cli
-src/zcash-gtest
-src/zcash-tx
+src/dwcashd
+src/dwcash-cli
+src/dwcash-gtest
+src/dwcash-tx
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
 
-# Zcash utilities
-src/zcash/GenerateParams
+# DeepWebCash utilities
+src/dwcash/GenerateParams
 
-*zcashTest.pk
-*zcashTest.vk
+*dwcashTest.pk
+*dwcashTest.vk
 
 # autoreconf
 Makefile.in
@@ -61,7 +61,7 @@ src/qt/test/moc*.cpp
 *.pyc
 *.o
 *.o-*
-.zcash
+.dwcash
 *.a
 *.pb.cc
 *.pb.h
@@ -103,7 +103,7 @@ build
 *.gcda
 /*.info
 test_bitcoin.coverage/
-zcash-gtest.coverage/
+dwcash-gtest.coverage/
 total.coverage/
 coverage_percent.txt
 
@@ -120,4 +120,4 @@ qa/pull-tester/test.*/*
 
 /doc/doxygen/
 
-libzcashconsensus.pc
+libdwcashconsensus.pc

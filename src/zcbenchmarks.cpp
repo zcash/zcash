@@ -21,10 +21,10 @@
 
 #include "zcbenchmarks.h"
 
-#include "zcash/Zcash.h"
-#include "zcash/IncrementalMerkleTree.hpp"
+#include "dwcash/DeepWebCash.h"
+#include "dwcash/IncrementalMerkleTree.hpp"
 
-using namespace libzcash;
+using namespace libdwcash;
 
 void timer_start(timeval &tv_start)
 {
@@ -80,7 +80,7 @@ double benchmark_create_joinsplit()
 
     struct timeval tv_start;
     timer_start(tv_start);
-    JSDescription jsdesc(*pzcashParams,
+    JSDescription jsdesc(*pdwcashParams,
                          pubKeyHash,
                          anchor,
                          {JSInput(), JSInput()},
@@ -89,7 +89,7 @@ double benchmark_create_joinsplit()
                          0);
     double ret = timer_stop(tv_start);
 
-    assert(jsdesc.Verify(*pzcashParams, pubKeyHash));
+    assert(jsdesc.Verify(*pdwcashParams, pubKeyHash));
     return ret;
 }
 
@@ -98,7 +98,7 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
     struct timeval tv_start;
     timer_start(tv_start);
     uint256 pubKeyHash;
-    joinsplit.Verify(*pzcashParams, pubKeyHash);
+    joinsplit.Verify(*pdwcashParams, pubKeyHash);
     return timer_stop(tv_start);
 }
 

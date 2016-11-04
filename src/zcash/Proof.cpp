@@ -18,7 +18,7 @@ typedef alt_bn128_pp::Fqe_type curve_Fq2;
 
 BOOST_STATIC_ASSERT(sizeof(mp_limb_t) == 8);
 
-namespace libzcash {
+namespace libdwcash {
 
 // FE2IP as defined in the protocol spec and IEEE Std 1363a-2004.
 bigint<8> fq2_to_bigint(const curve_Fq2 &e)

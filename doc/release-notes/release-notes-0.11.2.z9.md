@@ -11,7 +11,7 @@ Jack Grigg:
       Add support for spending keys to the basic key store.
       Merge AddSpendingKeyPaymentAddress into AddSpendingKey to simplify API.
       Add methods for byte array expansion and compression.
-      Update Equihash hash generation to match the Zcash spec.
+      Update Equihash hash generation to match the DeepWebCash spec.
       Extend byte array expansion and compression methods with optional padding.
       Store the Equihash solution in minimal representation in the block header.
       Enable branch coverage in coverage reports.
@@ -32,7 +32,7 @@ Taylor Hornby:
       Disable hardening when building for coverage reports.
       Upgrade libsodium for AVX2-detection bugfix.
       Fix inconsistent optimization flags; single source of truth.
-      Add -fwrapv -fno-strict-aliasing; fix libzcash flags.
+      Add -fwrapv -fno-strict-aliasing; fix libdwcash flags.
       Use libsodium's s < L check, instead checking that libsodium checks that.
 
 Simon Liu:
@@ -41,7 +41,7 @@ Simon Liu:
       Add note about zkey and encrypted wallets.
 
 Gaurav Rana:
-      Update zcash-cli stop message.
+      Update dwcash-cli stop message.
 
 Tom Ritter:
       Clarify comment about nonce space for Note Encryption.

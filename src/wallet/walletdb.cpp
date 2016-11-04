@@ -104,8 +104,8 @@ bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey,
     return true;
 }
 
-bool CWalletDB::WriteCryptedZKey(const libzcash::PaymentAddress & addr,
-                                 const libzcash::ViewingKey &vk,
+bool CWalletDB::WriteCryptedZKey(const libdwcash::PaymentAddress & addr,
+                                 const libdwcash::ViewingKey &vk,
                                  const std::vector<unsigned char>& vchCryptedSecret,
                                  const CKeyMetadata &keyMeta)
 {
@@ -130,7 +130,7 @@ bool CWalletDB::WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey)
     return Write(std::make_pair(std::string("mkey"), nID), kMasterKey, true);
 }
 
-bool CWalletDB::WriteZKey(const libzcash::PaymentAddress& addr, const libzcash::SpendingKey& key, const CKeyMetadata &keyMeta)
+bool CWalletDB::WriteZKey(const libdwcash::PaymentAddress& addr, const libdwcash::SpendingKey& key, const CKeyMetadata &keyMeta)
 {
     nWalletDBUpdated++;
 
@@ -471,9 +471,9 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "zkey")
         {
-            libzcash::PaymentAddress addr;
+            libdwcash::PaymentAddress addr;
             ssKey >> addr;
-            libzcash::SpendingKey key;
+            libdwcash::SpendingKey key;
             ssValue >> key;
 
             if (!pwallet->LoadZKey(key))
@@ -580,12 +580,12 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "czkey")
         {
-            libzcash::PaymentAddress addr;
+            libdwcash::PaymentAddress addr;
             ssKey >> addr;
             // Deserialization of a pair is just one item after another
             uint256 vkValue;
             ssValue >> vkValue;
-            libzcash::ViewingKey vk(vkValue);
+            libdwcash::ViewingKey vk(vkValue);
             vector<unsigned char> vchCryptedSecret;
             ssValue >> vchCryptedSecret;
             wss.nCKeys++;
@@ -614,7 +614,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "zkeymeta")
         {
-            libzcash::PaymentAddress addr;
+            libdwcash::PaymentAddress addr;
             ssKey >> addr;
             CKeyMetadata keyMeta;
             ssValue >> keyMeta;
@@ -885,7 +885,7 @@ DBErrors CWalletDB::ZapWalletTx(CWallet* pwallet, vector<CWalletTx>& vWtx)
 void ThreadFlushWalletDB(const string& strFile)
 {
     // Make this thread recognisable as the wallet flushing thread
-    RenameThread("zcash-wallet");
+    RenameThread("dwcash-wallet");
 
     static bool fOneThread;
     if (fOneThread)

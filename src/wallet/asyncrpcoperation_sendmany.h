@@ -1,4 +1,4 @@
-// Copyright (c) 2016 The Zcash developers
+// Copyright (c) 2016 The DeepWebCash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,8 +9,8 @@
 #include "amount.h"
 #include "base58.h"
 #include "primitives/transaction.h"
-#include "zcash/JoinSplit.hpp"
-#include "zcash/Address.hpp"
+#include "dwcash/JoinSplit.hpp"
+#include "dwcash/Address.hpp"
 #include "json/json_spirit_value.h"
 #include "wallet.h"
 
@@ -19,7 +19,7 @@
 // TODO: Compute fee based on a heuristic, e.g. (num tx output * dust threshold) + joinsplit bytes * ?
 #define ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE   10000
 
-using namespace libzcash;
+using namespace libdwcash;
 using namespace json_spirit;
 
 // A recipient is a tuple of address, amount, memo (optional if zaddr)

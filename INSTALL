@@ -1,5 +1,5 @@
-Building Zcash
+Building DeepWebCash
 
-See the Zcash github wiki (https://github.com/zcash/zcash/wiki) for instructions on building zcashd,
+See the DeepWebCash github wiki (https://github.com/deepwebcash/deepwebcash/wiki) for instructions on building dwcashd,
 the intended-for-services, no-graphical-interface, reference
-implementation of Zcash.
+implementation of DeepWebCash.

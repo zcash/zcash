@@ -27,7 +27,7 @@ Jack Grigg (24):
       Implement new difficulty algorithm (#931)
       Update tests for new difficulty algorithm
       Improve comments per review
-      Handle full Zcash version string in AC_INIT
+      Handle full DeepWebCash version string in AC_INIT
       Fix bug in network hashrate lookup window configuration
 
 Patrick Strateman (1):
@@ -57,10 +57,10 @@ Sean Bowe (28):
       Rename to `fCoinbaseMustBeProtected`.
       Disable enforced coinbase protection in miner_tests.
       Do not encode leading bytes in `PaymentAddress` serialization; this is a task for a higher-level API.
-      Use base58check to encode Zcash payment addresses, such that the first two bytes are "zc".
+      Use base58check to encode DeepWebCash payment addresses, such that the first two bytes are "zc".
       Add tests for `CZCPaymentAddress`.
       Fix test against merkle tree root.
-      Added encoding for Zcash spending keys.
+      Added encoding for DeepWebCash spending keys.
       Guarantee first two bytes of spending key are SK
       Make testnet addresses always start with 'tn'.
       Add test to ensure spending keys always encode with 'SK' at beginning.

@@ -1,15 +1,15 @@
-Source: zcash
+Source: dwcash
 Section: utils
 Priority: optional
-Maintainer: Zcash Company <team@z.cash>
-Homepage: https://z.cash
+Maintainer: DeepWebCash Company <team@dw.cash>
+Homepage: https://dw.cash
 Build-Depends: autoconf, automake, bsdmainutils, build-essential
  git, g++-multilib, libc6-dev, libtool
  m4, ncurses-dev, pkg-config, python
  unzip, wget, zlib1g-dev
-Vcs-Git: https://github.com/zcash/zcash.git
-Vcs-Browser: https://github.com/zcash/zcash
-Package: zcash
+Vcs-Git: https://github.com/deepwebcash/deepwebcash.git
+Vcs-Browser: https://github.com/deepwebcash/deepwebcash
+Package: dwcash
 Version: 1.0.1
 Architecture: amd64
 Depends: libgomp1
@@ -17,5 +17,5 @@ Description: An implementation of the "Zerocash" protocol.
  Based on Bitcoin's code, it intends to offer a far higher standard
  of privacy and anonymity through a sophisticiated zero-knowledge
  proving scheme which preserves confidentiality of transaction metadata.
- This package provides the daemon, zcashd, and the CLI tool,
- zcash-cli, to interact with the daemon.
+ This package provides the daemon, dwcashd, and the CLI tool,
+ dwcash-cli, to interact with the daemon.

@@ -16,14 +16,14 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "Zcash"
-            VALUE "FileDescription",    "zcash-tx (CLI Zcash transaction editor utility)"
+            VALUE "CompanyName",        "DeepWebCash"
+            VALUE "FileDescription",    "dwcash-tx (CLI DeepWebCash transaction editor utility)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
-            VALUE "InternalName",       "zcash-tx"
+            VALUE "InternalName",       "dwcash-tx"
             VALUE "LegalCopyright",     COPYRIGHT_STR
             VALUE "LegalTrademarks1",   "Distributed under the MIT software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
-            VALUE "OriginalFilename",   "zcash-tx.exe"
-            VALUE "ProductName",        "zcash-tx"
+            VALUE "OriginalFilename",   "dwcash-tx.exe"
+            VALUE "ProductName",        "dwcash-tx"
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
         END
     END

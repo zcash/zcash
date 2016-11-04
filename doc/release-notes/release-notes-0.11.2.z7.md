@@ -62,20 +62,20 @@ bitcartel (15):
       Update comments.
       Update alert ID start value and URL in comment.
       Update alert protocol version comment.
-      Update URL for zcash alert IDs.
+      Update URL for dwcash alert IDs.
       Remove QT alert message box.
       New alert test data generated for new alert key pair. Added test fixture to create new test data. Added instructions for developer.
-      Update tor.md for Zcash
+      Update tor.md for DeepWebCash
 
 Taylor Hornby (17):
       WIP: Add mock test coverage of CheckTransaction
       Split JoinSplit proof verification out of CheckTransaction.
       More testing of CheckTransaction
       Test non-canonical ed25519 signature check
-      Rename zerocash to zcash in some places.
+      Rename zerocash to dwcash in some places.
       Remove references to libzerocash in .gitignore
-      Rename qa/zerocash to qa/zcash in Makefile.am
-      Rename zerocash_packages to zcash_packages in packages.mk
+      Rename qa/zerocash to qa/dwcash in Makefile.am
+      Rename zerocash_packages to dwcash_packages in packages.mk
       Add security warnings doc with warning about side channels.
       Add another security warning
       Add the results of #784 to security warnings.

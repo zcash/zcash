@@ -4,9 +4,9 @@ Security Warnings
 Security Audit
 --------------
 
-Zcash has been subjected to a formal third-party security review. For security
+DeepWebCash has been subjected to a formal third-party security review. For security
 announcements, audit results and other general security information, see
-https://z.cash/support/security.html
+https://dw.cash/support/security.html
 
 x86-64 Linux Only
 -----------------------
@@ -47,9 +47,9 @@ runnng on your OS can read your wallet.dat file.
 Side-Channel Attacks
 --------------------
 
-This implementation of Zcash is not resistant to side-channel attacks. You
+This implementation of DeepWebCash is not resistant to side-channel attacks. You
 should assume (even unprivileged) users who are running on the hardware, or who
-are physically near the hardware, that your `zcashd` process is running on will
+are physically near the hardware, that your `dwcashd` process is running on will
 be able to:
 
 - Determine the values of your secret spending keys, as well as which notes you
@@ -64,7 +64,7 @@ be able to:
   each note ciphertext on the blockchain.
 
 You should ensure no other users have the ability to execute code (even
-unprivileged) on the hardware your `zcashd` process runs on until these
+unprivileged) on the hardware your `dwcashd` process runs on until these
 vulnerabilities are fully analyzed and fixed.
 
 REST Interface
@@ -77,14 +77,14 @@ security review.
 RPC Interface
 ---------------
 
-Users should choose a strong RPC password. If no RPC username and password are set, zcashd will not start and will print an error message with a suggestion for a strong random password. If the client knows the RPC password, they have at least full access to the node. In addition, certain RPC commands can be misused to overwrite files and/or take over the account that is running zcashd. (In the future we may restrict these commands, but full node access – including the ability to spend from and export keys held by the wallet – would still be possible unless wallet methods are disabled.)
+Users should choose a strong RPC password. If no RPC username and password are set, dwcashd will not start and will print an error message with a suggestion for a strong random password. If the client knows the RPC password, they have at least full access to the node. In addition, certain RPC commands can be misused to overwrite files and/or take over the account that is running dwcashd. (In the future we may restrict these commands, but full node access – including the ability to spend from and export keys held by the wallet – would still be possible unless wallet methods are disabled.)
 
-Users should also refrain from changing the default setting that only allows RPC connections from localhost. Allowing connections from remote hosts would enable a MITM to execute arbitrary RPC commands, which could lead to compromise of the account running zcashd and loss of funds. For multi-user services that use one or more zcashd instances on the backend, the parameters passed in by users should be controlled to prevent confused-deputy attacks which could spend from any keys held by that zcashd.
+Users should also refrain from changing the default setting that only allows RPC connections from localhost. Allowing connections from remote hosts would enable a MITM to execute arbitrary RPC commands, which could lead to compromise of the account running dwcashd and loss of funds. For multi-user services that use one or more dwcashd instances on the backend, the parameters passed in by users should be controlled to prevent confused-deputy attacks which could spend from any keys held by that dwcashd.
 
 Block Chain Reorganization: Major Differences
 -------------------------------------------------
 
-Users should be aware of new behavior in Zcash that differs significantly from Bitcoin: in the case of a block chain reorganization, Bitcoin's coinbase maturity rule helps to ensure that any reorganization shorter than the maturity interval will not invalidate any of the rolled-back transactions. Zcash keeps Bitcoin's 100-block maturity interval for generation transactions, but because JoinSplits must be anchored within a block, this provides more limited protection against transactions becoming invalidated. In the case of a block chain reorganization for Zcash, all JoinSplits which were anchored within the reorganization interval and any transactions that depend on them will become invalid, rolling back transactions and reverting funds to the original owner. The transaction rebroadcast mechanism inherited from Bitcoin will not successfully rebroadcast transactions depending on invalidated JoinSplits if the anchor needs to change. The creator of an invalidated JoinSplit, as well as the creators of all transactions dependent on it, must rebroadcast the transactions themselves.
+Users should be aware of new behavior in DeepWebCash that differs significantly from Bitcoin: in the case of a block chain reorganization, Bitcoin's coinbase maturity rule helps to ensure that any reorganization shorter than the maturity interval will not invalidate any of the rolled-back transactions. DeepWebCash keeps Bitcoin's 100-block maturity interval for generation transactions, but because JoinSplits must be anchored within a block, this provides more limited protection against transactions becoming invalidated. In the case of a block chain reorganization for DeepWebCash, all JoinSplits which were anchored within the reorganization interval and any transactions that depend on them will become invalid, rolling back transactions and reverting funds to the original owner. The transaction rebroadcast mechanism inherited from Bitcoin will not successfully rebroadcast transactions depending on invalidated JoinSplits if the anchor needs to change. The creator of an invalidated JoinSplit, as well as the creators of all transactions dependent on it, must rebroadcast the transactions themselves.
 
 Receivers of funds from a JoinSplit can mitigate the risk of relying on funds received from transactions that may be rolled back by using a higher minconf (minimum number of confirmations).
 
@@ -105,6 +105,6 @@ potential mistakes in our modifications to Bitcoin Core, it is also possible
 that there were potential changes we were supposed to make to Bitcoin Core but
 didn't, either because we didn't even consider making those changes, or we ran
 out of time. We have brainstormed and documented a variety of such possibilities
-in [issue #826](https://github.com/zcash/zcash/issues/826), and believe that we
+in [issue #826](https://github.com/deepwebcash/deepwebcash/issues/826), and believe that we
 have changed or done everything that was necessary for the 1.0.0 launch. Users
 may want to review this list themselves.

@@ -1,4 +1,4 @@
-// Copyright (c) 2016 The Zcash developers
+// Copyright (c) 2016 The DeepWebCash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -110,7 +110,7 @@ int printMiningStatus(bool mining)
         lines++;
     } else {
         std::cout << _("You are currently not mining.") << std::endl;
-        std::cout << _("To enable mining, add 'gen=1' to your zcash.conf and restart.") << std::endl;
+        std::cout << _("To enable mining, add 'gen=1' to your dwcash.conf and restart.") << std::endl;
         lines += 2;
     }
     std::cout << std::endl;
@@ -246,7 +246,7 @@ int printInitMessage()
 void ThreadShowMetricsScreen()
 {
     // Make this thread recognisable as the metrics screen thread
-    RenameThread("zcash-metrics-screen");
+    RenameThread("dwcash-metrics-screen");
 
     // Clear screen
     std::cout << "\e[2J";
@@ -256,7 +256,7 @@ void ThreadShowMetricsScreen()
     std::cout << std::endl;
 
     // Thank you text
-    std::cout << _("Thank you for running a Zcash node!") << std::endl;
+    std::cout << _("Thank you for running a DeepWebCash node!") << std::endl;
     std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
     std::cout << std::endl;
 

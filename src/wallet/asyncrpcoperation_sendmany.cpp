@@ -1,4 +1,4 @@
-// Copyright (c) 2016 The Zcash developers
+// Copyright (c) 2016 The DeepWebCash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -19,7 +19,7 @@
 #include "script/interpreter.h"
 #include "utiltime.h"
 #include "rpcprotocol.h"
-#include "zcash/IncrementalMerkleTree.hpp"
+#include "dwcash/IncrementalMerkleTree.hpp"
 #include "sodium.h"
 
 #include <iostream>
@@ -27,7 +27,7 @@
 #include <thread>
 #include <string>
 
-using namespace libzcash;
+using namespace libdwcash;
 
 int find_output(Object obj, int n) {
     Value outputMapValue = find_value(obj, "outputmap");
@@ -506,7 +506,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
                 // Decrypt the change note's ciphertext to retrieve some data we need
                 ZCNoteDecryption decryptor(spendingkey_.viewing_key());
-                auto hSig = prevJoinSplit.h_sig(*pzcashParams, tx_.joinSplitPubKey);
+                auto hSig = prevJoinSplit.h_sig(*pdwcashParams, tx_.joinSplitPubKey);
                 try {
                     NotePlaintext plaintext = NotePlaintext::decrypt(
                             decryptor,
@@ -869,14 +869,14 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
             );
 
     // Generate the proof, this can take over a minute.
-    boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs
+    boost::array<libdwcash::JSInput, ZC_NUM_JS_INPUTS> inputs
             {info.vjsin[0], info.vjsin[1]};
-    boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs
+    boost::array<libdwcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs
             {info.vjsout[0], info.vjsout[1]};
     boost::array<size_t, ZC_NUM_JS_INPUTS> inputMap;
     boost::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
     JSDescription jsdesc = JSDescription::Randomized(
-            *pzcashParams,
+            *pdwcashParams,
             joinSplitPubKey_,
             anchor,
             inputs,
@@ -887,7 +887,7 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
             info.vpub_new,
             !this->testmode);
 
-    if (!(jsdesc.Verify(*pzcashParams, joinSplitPubKey_))) {
+    if (!(jsdesc.Verify(*pdwcashParams, joinSplitPubKey_))) {
         throw std::runtime_error("error verifying joinsplit");
     }
 
@@ -929,7 +929,7 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
         ss2 << ((unsigned char) 0x00);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[0];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey_);
+        ss2 << jsdesc.h_sig(*pdwcashParams, joinSplitPubKey_);
 
         encryptedNote1 = HexStr(ss2.begin(), ss2.end());
     }
@@ -938,7 +938,7 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
         ss2 << ((unsigned char) 0x01);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[1];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey_);
+        ss2 << jsdesc.h_sig(*pdwcashParams, joinSplitPubKey_);
 
         encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }

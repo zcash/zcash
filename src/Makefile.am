@@ -31,7 +31,7 @@ LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBBITCOIN_UNIVALUE=univalue/libbitcoin_univalue.a
 LIBBITCOINQT=qt/libbitcoinqt.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
-LIBZCASH=libzcash.a
+LIBDWCASH=libdwcash.a
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
@@ -45,40 +45,40 @@ EXTRA_LIBRARIES = \
   univalue/libbitcoin_univalue.a \
   libbitcoin_server.a \
   libbitcoin_cli.a \
-  libzcash.a
+  libdwcash.a
 if ENABLE_WALLET
 BITCOIN_INCLUDES += $(BDB_CPPFLAGS)
 EXTRA_LIBRARIES += libbitcoin_wallet.a
 endif
 
 if BUILD_BITCOIN_LIBS
-lib_LTLIBRARIES = libzcashconsensus.la
-LIBZCASH_CONSENSUS=libzcashconsensus.la
+lib_LTLIBRARIES = libdwcashconsensus.la
+LIBDWCASH_CONSENSUS=libdwcashconsensus.la
 else
-LIBZCASH_CONSENSUS=
+LIBDWCASH_CONSENSUS=
 endif
 
 bin_PROGRAMS =
 TESTS =
 
 if BUILD_BITCOIND
-  bin_PROGRAMS += zcashd
+  bin_PROGRAMS += dwcashd
 endif
 
 if BUILD_BITCOIN_UTILS
-  bin_PROGRAMS += zcash-cli zcash-tx
+  bin_PROGRAMS += dwcash-cli dwcash-tx
 endif
 
-LIBZCASH_H = \
-  zcash/IncrementalMerkleTree.hpp \
-  zcash/NoteEncryption.hpp \
-  zcash/Address.hpp \
-  zcash/JoinSplit.hpp \
-  zcash/Note.hpp \
-  zcash/prf.h \
-  zcash/Proof.hpp \
-  zcash/util.h \
-  zcash/Zcash.h
+LIBDWCASH_H = \
+  dwcash/IncrementalMerkleTree.hpp \
+  dwcash/NoteEncryption.hpp \
+  dwcash/Address.hpp \
+  dwcash/JoinSplit.hpp \
+  dwcash/Note.hpp \
+  dwcash/prf.h \
+  dwcash/Proof.hpp \
+  dwcash/util.h \
+  dwcash/DeepWebCash.h
 
 .PHONY: FORCE check-symbols check-security
 # bitcoin core #
@@ -226,7 +226,7 @@ libbitcoin_server_a_SOURCES = \
   validationinterface.cpp \
   $(JSON_H) \
   $(BITCOIN_CORE_H) \
-  $(LIBZCASH_H)
+  $(LIBDWCASH_H)
 
 # wallet: shared between bitcoind and bitcoin-qt, but only linked
 # when wallet enabled
@@ -243,7 +243,7 @@ libbitcoin_wallet_a_SOURCES = \
   wallet/wallet_ismine.cpp \
   wallet/walletdb.cpp \
   $(BITCOIN_CORE_H) \
-  $(LIBZCASH_H)
+  $(LIBDWCASH_H)
 
 EQUIHASH_TROMP_SOURCES = \
   pow/tromp/equi_miner.h \
@@ -307,7 +307,7 @@ libbitcoin_common_a_SOURCES = \
   script/sign.cpp \
   script/standard.cpp \
   $(BITCOIN_CORE_H) \
-  $(LIBZCASH_H)
+  $(LIBDWCASH_H)
 
 # util: shared between all executables.
 # This library *must* be included to make sure that the glibc
@@ -330,7 +330,7 @@ libbitcoin_util_a_SOURCES = \
   utilstrencodings.cpp \
   utiltime.cpp \
   $(BITCOIN_CORE_H) \
-  $(LIBZCASH_H)
+  $(LIBDWCASH_H)
 
 if GLIBC_BACK_COMPAT
 libbitcoin_util_a_SOURCES += compat/glibc_compat.cpp
@@ -341,117 +341,117 @@ libbitcoin_cli_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_cli_a_SOURCES = \
   rpcclient.cpp \
   $(BITCOIN_CORE_H) \
-  $(LIBZCASH_H)
+  $(LIBDWCASH_H)
 
 nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
 #
 
 # bitcoind binary #
-zcashd_SOURCES = bitcoind.cpp
-zcashd_CPPFLAGS = $(BITCOIN_INCLUDES)
-zcashd_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+dwcashd_SOURCES = bitcoind.cpp
+dwcashd_CPPFLAGS = $(BITCOIN_INCLUDES)
+dwcashd_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
-zcashd_SOURCES += bitcoind-res.rc
+dwcashd_SOURCES += bitcoind-res.rc
 endif
 
-zcashd_LDADD = \
+dwcashd_LDADD = \
   $(LIBBITCOIN_SERVER) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH) \
+  $(LIBDWCASH) \
   $(LIBLEVELDB) \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
 
 if ENABLE_WALLET
-zcashd_LDADD += libbitcoin_wallet.a
+dwcashd_LDADD += libbitcoin_wallet.a
 endif
 
-zcashd_LDADD += \
+dwcashd_LDADD += \
   $(BOOST_LIBS) \
   $(BDB_LIBS) \
   $(SSL_LIBS) \
   $(CRYPTO_LIBS) \
   $(MINIUPNPC_LIBS) \
-  $(LIBZCASH) \
+  $(LIBDWCASH) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH_LIBS)
+  $(LIBDWCASH_LIBS)
 #
 
 # bitcoin-cli binary #
-zcash_cli_SOURCES = bitcoin-cli.cpp
-zcash_cli_CPPFLAGS = $(BITCOIN_INCLUDES)
-zcash_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+dwcash_cli_SOURCES = bitcoin-cli.cpp
+dwcash_cli_CPPFLAGS = $(BITCOIN_INCLUDES)
+dwcash_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
-zcash_cli_SOURCES += bitcoin-cli-res.rc
+dwcash_cli_SOURCES += bitcoin-cli-res.rc
 endif
 
-zcash_cli_LDADD = \
+dwcash_cli_LDADD = \
   $(LIBBITCOIN_CLI) \
   $(LIBBITCOIN_UTIL) \
   $(BOOST_LIBS) \
   $(SSL_LIBS) \
   $(CRYPTO_LIBS) \
-  $(LIBZCASH) \
+  $(LIBDWCASH) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH_LIBS)
+  $(LIBDWCASH_LIBS)
 #
 
-# zcash-tx binary #
-zcash_tx_SOURCES = bitcoin-tx.cpp
-zcash_tx_CPPFLAGS = $(BITCOIN_INCLUDES)
-zcash_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+# dwcash-tx binary #
+dwcash_tx_SOURCES = bitcoin-tx.cpp
+dwcash_tx_CPPFLAGS = $(BITCOIN_INCLUDES)
+dwcash_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
-zcash_tx_SOURCES += bitcoin-tx-res.rc
+dwcash_tx_SOURCES += bitcoin-tx-res.rc
 endif
 
-# FIXME: Is libzcash needed for zcash_tx?
-zcash_tx_LDADD = \
+# FIXME: Is libdwcash needed for dwcash_tx?
+dwcash_tx_LDADD = \
   $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
   $(LIBSECP256K1) \
-  $(LIBZCASH) \
+  $(LIBDWCASH) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH_LIBS)
+  $(LIBDWCASH_LIBS)
 
-zcash_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
+dwcash_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 #
 
-# zcash protocol primitives #
-libzcash_a_SOURCES = \
-  zcash/IncrementalMerkleTree.cpp \
-  zcash/NoteEncryption.cpp \
-  zcash/Address.cpp \
-  zcash/JoinSplit.cpp \
-  zcash/Proof.cpp \
-  zcash/Note.cpp \
-  zcash/prf.cpp \
-  zcash/util.cpp \
-  zcash/circuit/commitment.tcc \
-  zcash/circuit/gadget.tcc \
-  zcash/circuit/merkle.tcc \
-  zcash/circuit/note.tcc \
-  zcash/circuit/prfs.tcc \
-  zcash/circuit/utils.tcc
+# dwcash protocol primitives #
+libdwcash_a_SOURCES = \
+  dwcash/IncrementalMerkleTree.cpp \
+  dwcash/NoteEncryption.cpp \
+  dwcash/Address.cpp \
+  dwcash/JoinSplit.cpp \
+  dwcash/Proof.cpp \
+  dwcash/Note.cpp \
+  dwcash/prf.cpp \
+  dwcash/util.cpp \
+  dwcash/circuit/commitment.tcc \
+  dwcash/circuit/gadget.tcc \
+  dwcash/circuit/merkle.tcc \
+  dwcash/circuit/note.tcc \
+  dwcash/circuit/prfs.tcc \
+  dwcash/circuit/utils.tcc
 
-libzcash_a_CPPFLAGS = -DMULTICORE -fopenmp -fPIC -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS $(HARDENED_CPPFLAGS) -pipe -O1 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
+libdwcash_a_CPPFLAGS = -DMULTICORE -fopenmp -fPIC -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS $(HARDENED_CPPFLAGS) -pipe -O1 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
 
-libzcash_a_CXXFLAGS = $(HARDENED_CXXFLAGS) -fwrapv -fno-strict-aliasing
+libdwcash_a_CXXFLAGS = $(HARDENED_CXXFLAGS) -fwrapv -fno-strict-aliasing
 
-libzcash_a_LDFLAGS = $(HARDENED_LDFLAGS)
+libdwcash_a_LDFLAGS = $(HARDENED_LDFLAGS)
 
-libzcash_a_CPPFLAGS += -DMONTGOMERY_OUTPUT
+libdwcash_a_CPPFLAGS += -DMONTGOMERY_OUTPUT
 
-# zcashconsensus library #
+# dwcashconsensus library #
 if BUILD_BITCOIN_LIBS
-include_HEADERS = script/zcashconsensus.h
-libzcashconsensus_la_SOURCES = \
+include_HEADERS = script/dwcashconsensus.h
+libdwcashconsensus_la_SOURCES = \
   crypto/equihash.cpp \
   crypto/hmac_sha512.cpp \
   crypto/ripemd160.cpp \
@@ -463,19 +463,19 @@ libzcashconsensus_la_SOURCES = \
   hash.cpp \
   primitives/transaction.cpp \
   pubkey.cpp \
-  script/zcashconsensus.cpp \
+  script/dwcashconsensus.cpp \
   script/interpreter.cpp \
   script/script.cpp \
   uint256.cpp \
   utilstrencodings.cpp
 
 if GLIBC_BACK_COMPAT
-  libzcashconsensus_la_SOURCES += compat/glibc_compat.cpp
+  libdwcashconsensus_la_SOURCES += compat/glibc_compat.cpp
 endif
 
-libzcashconsensus_la_LDFLAGS = -no-undefined $(RELDFLAGS)
-libzcashconsensus_la_LIBADD = $(CRYPTO_LIBS)
-libzcashconsensus_la_CPPFLAGS = $(CRYPTO_CFLAGS) -I$(builddir)/obj -DBUILD_BITCOIN_INTERNAL
+libdwcashconsensus_la_LDFLAGS = -no-undefined $(RELDFLAGS)
+libdwcashconsensus_la_LIBADD = $(CRYPTO_LIBS)
+libdwcashconsensus_la_CPPFLAGS = $(CRYPTO_CFLAGS) -I$(builddir)/obj -DBUILD_BITCOIN_INTERNAL
 
 endif
 #
@@ -529,4 +529,4 @@ if ENABLE_QT_TESTS
 include Makefile.qttest.include
 endif
 
-include Makefile.zcash.include
+include Makefile.dwcash.include

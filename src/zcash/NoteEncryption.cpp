@@ -32,7 +32,7 @@ void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
     memcpy(block+96, pk_enc.begin(), 32);
 
     unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES] = {};
-    memcpy(personalization, "ZcashKDF", 8);
+    memcpy(personalization, "DeepWebCashKDF", 8);
     memcpy(personalization+8, &nonce, 1);
 
     if (crypto_generichash_blake2b_salt_personal(K, NOTEENCRYPTION_CIPHER_KEYSIZE,
@@ -46,7 +46,7 @@ void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
     }
 }
 
-namespace libzcash {
+namespace libdwcash {
 
 template<size_t MLEN>
 NoteEncryption<MLEN>::NoteEncryption(uint256 hSig) : nonce(0), hSig(hSig) {

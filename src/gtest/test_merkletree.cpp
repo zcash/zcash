@@ -15,8 +15,8 @@
 #include "serialize.h"
 #include "streams.h"
 
-#include "zcash/IncrementalMerkleTree.hpp"
-#include "zcash/util.h"
+#include "dwcash/IncrementalMerkleTree.hpp"
+#include "dwcash/util.h"
 
 #include "libsnark/common/default_types/r1cs_ppzksnark_pp.hpp"
 #include "libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp"
@@ -40,7 +40,7 @@ void expect_deser_same(const ZCTestingIncrementalWitness& expected)
 }
 
 template<>
-void expect_deser_same(const libzcash::MerklePath& expected)
+void expect_deser_same(const libdwcash::MerklePath& expected)
 {
     // This deserialization check is pointless for MerklePath,
     // since we only serialize it to check it against test
@@ -182,7 +182,7 @@ TEST(merkletree, emptyroots) {
     Array empty_roots = read_json(std::string(json_tests::merkle_roots_empty, json_tests::merkle_roots_empty + sizeof(json_tests::merkle_roots_empty)));
     Array::iterator root_iterator = empty_roots.begin();
 
-    libzcash::EmptyMerkleRoots<64, libzcash::SHA256Compress> emptyroots;
+    libdwcash::EmptyMerkleRoots<64, libdwcash::SHA256Compress> emptyroots;
 
     for (size_t depth = 0; depth <= 64; depth++) {
         expect_test_vector(root_iterator, emptyroots.empty_root(depth));

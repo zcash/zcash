@@ -5,9 +5,9 @@
 #include "version.h"
 #include "streams.h"
 
-#include "zcash/util.h"
+#include "dwcash/util.h"
 
-namespace libzcash {
+namespace libdwcash {
 
 Note::Note() {
     a_pk = random_uint256();

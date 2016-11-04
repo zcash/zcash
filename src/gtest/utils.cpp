@@ -1,4 +1,4 @@
-#include "zcash/JoinSplit.hpp"
+#include "dwcash/JoinSplit.hpp"
 
 ZCJoinSplit* params = ZCJoinSplit::Unopened();
 

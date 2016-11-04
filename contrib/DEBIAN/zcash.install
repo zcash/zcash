@@ -1,3 +1,3 @@
-usr/bin/zcashd
-usr/bin/zcash-cli
-usr/bin/zcash-fetch-params
+usr/bin/dwcashd
+usr/bin/dwcash-cli
+usr/bin/dwcash-fetch-params

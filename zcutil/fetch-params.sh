@@ -2,12 +2,12 @@
 
 set -eu
 
-PARAMS_DIR="$HOME/.zcash-params"
+PARAMS_DIR="$HOME/.dwcash-params"
 
 SPROUT_PKEY_NAME='sprout-proving.key'
 SPROUT_VKEY_NAME='sprout-verifying.key'
-SPROUT_PKEY_URL="https://z.cash/downloads/$SPROUT_PKEY_NAME"
-SPROUT_VKEY_URL="https://z.cash/downloads/$SPROUT_VKEY_NAME"
+SPROUT_PKEY_URL="https://dw.cash/downloads/$SPROUT_PKEY_NAME"
+SPROUT_VKEY_URL="https://dw.cash/downloads/$SPROUT_VKEY_NAME"
 
 SHA256CMD="$(command -v sha256sum || echo shasum)"
 SHA256ARGS="$(command -v sha256sum >/dev/null || echo '-a 256')"
@@ -65,9 +65,9 @@ function main() {
     || exit_locked_error
 
     cat <<EOF
-Zcash - fetch-params.sh
+DeepWebCash - fetch-params.sh
 
-This script will fetch the Zcash zkSNARK parameters and verify their
+This script will fetch the DeepWebCash zkSNARK parameters and verify their
 integrity with sha256sum.
 
 If they already exist locally, it will exit now and do nothing else.
@@ -79,7 +79,7 @@ EOF
         mkdir -p "$PARAMS_DIR"
         README_PATH="$PARAMS_DIR/README"
         cat >> "$README_PATH" <<EOF
-This directory stores common Zcash zkSNARK parameters. Note that it is
+This directory stores common DeepWebCash zkSNARK parameters. Note that it is
 distinct from the daemon's -datadir argument because the parameters are
 large and may be shared across multiple distinct -datadir's such as when
 setting up test networks.

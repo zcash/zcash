@@ -4,7 +4,7 @@
 #include "prf.h"
 #include "streams.h"
 
-namespace libzcash {
+namespace libdwcash {
 
 uint256 PaymentAddress::GetHash() const {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);

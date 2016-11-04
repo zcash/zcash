@@ -6,7 +6,7 @@ set -e
 set -x
 
 BUILD_PATH="/tmp/zcbuild"
-PACKAGE_NAME="zcash"
+PACKAGE_NAME="dwcash"
 SRC_PATH=`pwd`
 SRC_DEB=$SRC_PATH/contrib/DEBIAN
 
@@ -37,22 +37,22 @@ cp $SRC_DEB/control $BUILD_DIR/DEBIAN
 #cp $SRC_DEB/preinst $BUILD_DIR/DEBIAN
 #cp $SRC_DEB/prerm $BUILD_DIR/DEBIAN
 # Copy binaries
-cp $SRC_PATH/src/zcashd $DEB_BIN
-cp $SRC_PATH/src/zcash-cli $DEB_BIN
-cp $SRC_PATH/zcutil/fetch-params.sh $DEB_BIN/zcash-fetch-params
+cp $SRC_PATH/src/dwcashd $DEB_BIN
+cp $SRC_PATH/src/dwcash-cli $DEB_BIN
+cp $SRC_PATH/zcutil/fetch-params.sh $DEB_BIN/dwcash-fetch-params
 # Copy docs
 cp $SRC_PATH/doc/release-notes/release-notes-1.0.0.md $DEB_DOC/changelog
 cp $SRC_DEB/changelog $DEB_DOC/changelog.Debian
 cp $SRC_DEB/copyright $DEB_DOC
 cp -r $SRC_DEB/examples $DEB_DOC
 # Copy manpages
-cp $SRC_DEB/manpages/zcashd.1 $DEB_MAN
-cp $SRC_DEB/manpages/zcash-cli.1 $DEB_MAN
+cp $SRC_DEB/manpages/dwcashd.1 $DEB_MAN
+cp $SRC_DEB/manpages/dwcash-cli.1 $DEB_MAN
 # Gzip files
 gzip --best -n $DEB_DOC/changelog
 gzip --best -n $DEB_DOC/changelog.Debian
-gzip --best -n $DEB_MAN/zcashd.1
-gzip --best -n $DEB_MAN/zcash-cli.1
+gzip --best -n $DEB_MAN/dwcashd.1
+gzip --best -n $DEB_MAN/dwcash-cli.1
 
 # Create the Debian package
 fakeroot dpkg-deb --build $BUILD_DIR

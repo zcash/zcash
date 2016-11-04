@@ -1,10 +1,10 @@
-TESTS += zcash-gtest
-bin_PROGRAMS += zcash-gtest
+TESTS += dwcash-gtest
+bin_PROGRAMS += dwcash-gtest
 
 # tool for generating our public parameters.
 # test_checktransaction.cpp MUST be before
 # any test that calls SelectParams().
-zcash_gtest_SOURCES = \
+dwcash_gtest_SOURCES = \
 	gtest/main.cpp \
 	gtest/utils.cpp \
 	gtest/test_checktransaction.cpp \
@@ -25,25 +25,25 @@ zcash_gtest_SOURCES = \
 	gtest/test_transaction.cpp \
 	gtest/test_circuit.cpp \
 	gtest/test_txid.cpp \
-	gtest/test_libzcash_utils.cpp \
+	gtest/test_libdwcash_utils.cpp \
 	gtest/test_proofs.cpp \
 	gtest/test_checkblock.cpp \
 	wallet/gtest/test_wallet.cpp
 
-zcash_gtest_CPPFLAGS = -DMULTICORE -fopenmp -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC
+dwcash_gtest_CPPFLAGS = -DMULTICORE -fopenmp -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC
 
-zcash_gtest_LDADD = -lgtest -lgmock $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CRYPTO) $(LIBBITCOIN_UNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
+dwcash_gtest_LDADD = -lgtest -lgmock $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CRYPTO) $(LIBBITCOIN_UNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
   $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1)
 if ENABLE_WALLET
-zcash_gtest_LDADD += $(LIBBITCOIN_WALLET)
+dwcash_gtest_LDADD += $(LIBBITCOIN_WALLET)
 endif
 
-zcash_gtest_LDADD += $(LIBZCASH_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(LIBZCASH) $(LIBZCASH_LIBS)
+dwcash_gtest_LDADD += $(LIBDWCASH_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(LIBDWCASH) $(LIBDWCASH_LIBS)
 
-zcash_gtest_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
+dwcash_gtest_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 
-zcash-gtest_check: zcash-gtest FORCE
-	./zcash-gtest
+dwcash-gtest_check: dwcash-gtest FORCE
+	./dwcash-gtest
 
-zcash-gtest-expected-failures: zcash-gtest FORCE
-	./zcash-gtest --gtest_filter=*DISABLED_* --gtest_also_run_disabled_tests
+dwcash-gtest-expected-failures: dwcash-gtest FORCE
+	./dwcash-gtest --gtest_filter=*DISABLED_* --gtest_also_run_disabled_tests

@@ -11,8 +11,8 @@
 #include "script/script.h"
 #include "script/standard.h"
 #include "sync.h"
-#include "zcash/Address.hpp"
-#include "zcash/NoteEncryption.hpp"
+#include "dwcash/Address.hpp"
+#include "dwcash/NoteEncryption.hpp"
 
 #include <boost/signals2/signal.hpp>
 #include <boost/variant.hpp>
@@ -49,19 +49,19 @@ public:
     virtual bool HaveWatchOnly() const =0;
 
     //! Add a spending key to the store.
-    virtual bool AddSpendingKey(const libzcash::SpendingKey &sk) =0;
+    virtual bool AddSpendingKey(const libdwcash::SpendingKey &sk) =0;
 
     //! Check whether a spending key corresponding to a given payment address is present in the store.
-    virtual bool HaveSpendingKey(const libzcash::PaymentAddress &address) const =0;
-    virtual bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey& skOut) const =0;
-    virtual void GetPaymentAddresses(std::set<libzcash::PaymentAddress> &setAddress) const =0;
+    virtual bool HaveSpendingKey(const libdwcash::PaymentAddress &address) const =0;
+    virtual bool GetSpendingKey(const libdwcash::PaymentAddress &address, libdwcash::SpendingKey& skOut) const =0;
+    virtual void GetPaymentAddresses(std::set<libdwcash::PaymentAddress> &setAddress) const =0;
 };
 
 typedef std::map<CKeyID, CKey> KeyMap;
 typedef std::map<CScriptID, CScript > ScriptMap;
 typedef std::set<CScript> WatchOnlySet;
-typedef std::map<libzcash::PaymentAddress, libzcash::SpendingKey> SpendingKeyMap;
-typedef std::map<libzcash::PaymentAddress, ZCNoteDecryption> NoteDecryptorMap;
+typedef std::map<libdwcash::PaymentAddress, libdwcash::SpendingKey> SpendingKeyMap;
+typedef std::map<libdwcash::PaymentAddress, ZCNoteDecryption> NoteDecryptorMap;
 
 /** Basic key store, that keeps keys in an address->secret map */
 class CBasicKeyStore : public CKeyStore
@@ -119,8 +119,8 @@ public:
     virtual bool HaveWatchOnly(const CScript &dest) const;
     virtual bool HaveWatchOnly() const;
 
-    bool AddSpendingKey(const libzcash::SpendingKey &sk);
-    bool HaveSpendingKey(const libzcash::PaymentAddress &address) const
+    bool AddSpendingKey(const libdwcash::SpendingKey &sk);
+    bool HaveSpendingKey(const libdwcash::PaymentAddress &address) const
     {
         bool result;
         {
@@ -129,7 +129,7 @@ public:
         }
         return result;
     }
-    bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey &skOut) const
+    bool GetSpendingKey(const libdwcash::PaymentAddress &address, libdwcash::SpendingKey &skOut) const
     {
         {
             LOCK(cs_SpendingKeyStore);
@@ -142,7 +142,7 @@ public:
         }
         return false;
     }
-    bool GetNoteDecryptor(const libzcash::PaymentAddress &address, ZCNoteDecryption &decOut) const
+    bool GetNoteDecryptor(const libdwcash::PaymentAddress &address, ZCNoteDecryption &decOut) const
     {
         {
             LOCK(cs_SpendingKeyStore);
@@ -155,7 +155,7 @@ public:
         }
         return false;
     }
-    void GetPaymentAddresses(std::set<libzcash::PaymentAddress> &setAddress) const
+    void GetPaymentAddresses(std::set<libdwcash::PaymentAddress> &setAddress) const
     {
         setAddress.clear();
         {
@@ -172,6 +172,6 @@ public:
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;
 typedef std::map<CKeyID, std::pair<CPubKey, std::vector<unsigned char> > > CryptedKeyMap;
-typedef std::map<libzcash::PaymentAddress, std::vector<unsigned char> > CryptedSpendingKeyMap;
+typedef std::map<libdwcash::PaymentAddress, std::vector<unsigned char> > CryptedSpendingKeyMap;
 
 #endif // BITCOIN_KEYSTORE_H

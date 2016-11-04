@@ -4,7 +4,7 @@ Jack Grigg (8):
       Fix DEBIAN/control errors raised by lintian
       Build libsnark with -march=x86-64 instead of -march=native
       Disable the metrics screen on regtest
-      Add the Zcash genesis blocks
+      Add the DeepWebCash genesis blocks
       Update tests for new genesis blocks
       Update version strings to 1.0.0
 
@@ -13,6 +13,6 @@ Kevin Gallagher (6):
       Update Debian package maintainer scripts
       Fixes executable mode of maintainer scripts
       Add DEBIAN/rules file (required by policy)
-      Adds zcash.examples and zcash.manpages
+      Adds dwcash.examples and dwcash.manpages
       Run Lintian after built package is copied to $SRC_PATH
 

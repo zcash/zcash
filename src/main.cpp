@@ -39,7 +39,7 @@
 using namespace std;
 
 #if defined(NDEBUG)
-# error "Zcash cannot be compiled without assertions."
+# error "DeepWebCash cannot be compiled without assertions."
 #endif
 
 /**
@@ -91,7 +91,7 @@ static void CheckBlockIndex();
 /** Constant stuff for coinbase transactions we create: */
 CScript COINBASE_FLAGS;
 
-const string strMessageMagic = "Zcash Signed Message:\n";
+const string strMessageMagic = "DeepWebCash Signed Message:\n";
 
 // Internal stuff
 namespace {
@@ -844,7 +844,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     } else {
         // Ensure that zk-SNARKs verify
         BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-            if (!joinsplit.Verify(*pzcashParams, tx.joinSplitPubKey)) {
+            if (!joinsplit.Verify(*pdwcashParams, tx.joinSplitPubKey)) {
                 return state.DoS(100, error("CheckTransaction(): joinsplit does not verify"),
                                     REJECT_INVALID, "bad-txns-joinsplit-verification-failed");
             }
@@ -1958,7 +1958,7 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 static CCheckQueue<CScriptCheck> scriptcheckqueue(128);
 
 void ThreadScriptCheck() {
-    RenameThread("zcash-scriptch");
+    RenameThread("dwcash-scriptch");
     scriptcheckqueue.Thread();
 }
 

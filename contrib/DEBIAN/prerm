@@ -1,5 +1,5 @@
 #!/bin/sh
-# prerm script for zcash
+# prerm script for dwcash
 #
 # see: dh_installdeb(1)
 

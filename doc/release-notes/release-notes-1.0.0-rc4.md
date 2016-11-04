@@ -10,5 +10,5 @@ Jack Grigg (4):
       Update tests for new genesis blocks
 
 Sean Bowe (1):
-      Zcash zk-SNARK public parameters for 1.0 "Sprout".
+      DeepWebCash zk-SNARK public parameters for 1.0 "Sprout".
 

@@ -15,10 +15,10 @@
 
 #include <boost/array.hpp>
 
-#include "zcash/NoteEncryption.hpp"
-#include "zcash/Zcash.h"
-#include "zcash/JoinSplit.hpp"
-#include "zcash/Proof.hpp"
+#include "dwcash/NoteEncryption.hpp"
+#include "dwcash/DeepWebCash.h"
+#include "dwcash/JoinSplit.hpp"
+#include "dwcash/Proof.hpp"
 
 class JSDescription
 {
@@ -66,15 +66,15 @@ public:
 
     // JoinSplit proof
     // This is a zk-SNARK which ensures that this JoinSplit is valid.
-    libzcash::ZCProof proof;
+    libdwcash::ZCProof proof;
 
     JSDescription(): vpub_old(0), vpub_new(0) { }
 
     JSDescription(ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& rt,
-            const boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
-            const boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+            const boost::array<libdwcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+            const boost::array<libdwcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             CAmount vpub_old,
             CAmount vpub_new,
             bool computeProof = true // Set to false in some tests
@@ -84,8 +84,8 @@ public:
             ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& rt,
-            boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
-            boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+            boost::array<libdwcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+            boost::array<libdwcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             boost::array<size_t, ZC_NUM_JS_INPUTS>& inputMap,
             boost::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap,
             CAmount vpub_old,

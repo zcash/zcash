@@ -4,7 +4,7 @@
 #include "serialize.h"
 #include "uint256.h"
 
-namespace libzcash {
+namespace libdwcash {
 
 const unsigned char G1_PREFIX_MASK = 0x02;
 const unsigned char G2_PREFIX_MASK = 0x0a;

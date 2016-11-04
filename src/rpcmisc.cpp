@@ -23,7 +23,7 @@
 #include "json/json_spirit_utils.h"
 #include "json/json_spirit_value.h"
 
-#include "zcash/Address.hpp"
+#include "dwcash/Address.hpp"
 
 using namespace json_spirit;
 using namespace std;
@@ -251,7 +251,7 @@ Value z_validateaddress(const Array& params, bool fHelp)
     string strAddress = params[0].get_str();
     try {
         CZCPaymentAddress address(strAddress);
-        libzcash::PaymentAddress addr = address.Get();
+        libdwcash::PaymentAddress addr = address.Get();
 
 #ifdef ENABLE_WALLET
         isMine = pwalletMain->HaveSpendingKey(addr);

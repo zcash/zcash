@@ -2,7 +2,7 @@ Alex (1):
       add sha256sum support for Mac OS X
 
 Alfie John (1):
-      Rename libzerocash to libzcash
+      Rename libzerocash to libdwcash
 
 Jack Grigg (21):
       Implement mining slow start with a linear ramp
@@ -10,9 +10,9 @@ Jack Grigg (21):
       Update miner tests to account for mining slow start
       Disable mining slow start in regtest mode
       Fix failing miner test
-      Add Zcash revision to version strings
-      Bitcoin -> Zcash in version and help text
-      Add Zcash Developers to CLI copyright notice
+      Add DeepWebCash revision to version strings
+      Bitcoin -> DeepWebCash in version and help text
+      Add DeepWebCash Developers to CLI copyright notice
       Minor error message tweak
       Refactor StepRow to make optimisation easier
       Cleanups
@@ -28,7 +28,7 @@ Jack Grigg (21):
       Fix nits after review
 
 Nathan Wilcox (1):
-      Fix a test name bug so that ``make cov-zcash`` correctly runs the ``zcash-gtest`` binary. Fixes #946.
+      Fix a test name bug so that ``make cov-dwcash`` correctly runs the ``dwcash-gtest`` binary. Fixes #946.
 
 Sean Bowe (14):
       Refactor PRF_gadget to hand responsibility to PRF_addr_a_pk_gadget for creating the '0' argument to the PRF.
@@ -57,7 +57,7 @@ Taylor Hornby (16):
       Use left shift instead of floating-point pow() in equihash.
       Ignore deprecated declaration warnings.
       Remove unused code in libzerocash util.cpp
-      Turn on -Werror for the Zcash build.
+      Turn on -Werror for the DeepWebCash build.
       Patch libsnark to build with my compiler. Upstream PR #35.
       Hide new Boost warnings on GCC 6.
       Add ability to run things under valgrind.

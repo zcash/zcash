@@ -1,7 +1,7 @@
 #ifndef _ZCJOINSPLIT_H_
 #define _ZCJOINSPLIT_H_
 
-#include "Zcash.h"
+#include "DeepWebCash.h"
 #include "Proof.hpp"
 #include "Address.hpp"
 #include "Note.hpp"
@@ -13,7 +13,7 @@
 
 #include <boost/array.hpp>
 
-namespace libzcash {
+namespace libdwcash {
 
 class JSInput {
 public:
@@ -98,7 +98,7 @@ protected:
 
 }
 
-typedef libzcash::JoinSplit<ZC_NUM_JS_INPUTS,
+typedef libdwcash::JoinSplit<ZC_NUM_JS_INPUTS,
                             ZC_NUM_JS_OUTPUTS> ZCJoinSplit;
 
 #endif // _ZCJOINSPLIT_H_

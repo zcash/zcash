@@ -1,15 +1,15 @@
 Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?rev=174
-Upstream-Name: Zcash
-Upstream-Contact: Zcash Company <team@z.cash>
-Source: https://github.com/zcash/zcash
+Upstream-Name: DeepWebCash
+Upstream-Contact: DeepWebCash Company <team@dw.cash>
+Source: https://github.com/deepwebcash/deepwebcash
 
 Files: *
-Copyright: 2016, The Zcash developers
+Copyright: 2016, The DeepWebCash developers
  2009-2015, Bitcoin Core developers
 License: Expat
 Comment: The Bitcoin Core developers encompasses the current developers listed on bitcoin.org,
  as well as the numerous contributors to the project.
- The Zcash developers are listed at https://z.cash/team.html.
+ The DeepWebCash developers are listed at https://dw.cash/team.html.
 
 Files: src/json/*
 Copyright: 2007-2009, John W. Wilkinson
@@ -74,7 +74,7 @@ Copyright: 2013-2016 Frank Denis
 License: ISC
 
 Files: depends/sources/libsnark-*.tar.gz
-Copyright: 2012-2016 SCIPR Lab and contributors; 2016 The Zcash developers
+Copyright: 2012-2016 SCIPR Lab and contributors; 2016 The DeepWebCash developers
 License: Expat
 
 Files: depends/sources/gmp-*.tar.bz2

@@ -1,35 +1,35 @@
-zcash (1.0.1) jessie; urgency=medium
+dwcash (1.0.1) jessie; urgency=medium
 
   * 1.0.1 release.
 
- -- Zcash Company <team@z.cash>  Thu, 03 Nov 2016 23:21:09 -0500
+ -- DeepWebCash Company <team@dw.cash>  Thu, 03 Nov 2016 23:21:09 -0500
 
-zcash (1.0.0-sprout) jessie; urgency=medium
+dwcash (1.0.0-sprout) jessie; urgency=medium
 
   * 1.0.0 release.
 
- -- Zcash Company <team@z.cash>  Fri, 28 Oct 2016 03:00:50 -0700
+ -- DeepWebCash Company <team@dw.cash>  Fri, 28 Oct 2016 03:00:50 -0700
 
-zcash (1.0.0-rc4) jessie; urgency=medium
+dwcash (1.0.0-rc4) jessie; urgency=medium
 
   * 1.0.0-rc4 release.
 
- -- Zcash Company <team@z.cash>  Thu, 27 Oct 2016 13:36:00 +0100
+ -- DeepWebCash Company <team@dw.cash>  Thu, 27 Oct 2016 13:36:00 +0100
 
-zcash (1.0.0-rc3) jessie; urgency=medium
+dwcash (1.0.0-rc3) jessie; urgency=medium
 
   * 1.0.0-rc3 release.
 
- -- Zcash Company <team@z.cash>  Wed, 26 Oct 2016 23:17:03 +0100
+ -- DeepWebCash Company <team@dw.cash>  Wed, 26 Oct 2016 23:17:03 +0100
 
-zcash (1.0.0-rc2) jessie; urgency=medium
+dwcash (1.0.0-rc2) jessie; urgency=medium
 
   * 1.0.0-rc2 release.
 
- -- Zcash Company <team@z.cash>  Sun, 23 Oct 2016 01:51:27 +0100
+ -- DeepWebCash Company <team@dw.cash>  Sun, 23 Oct 2016 01:51:27 +0100
 
-zcash (1.0.0-rc1) jessie; urgency=medium
+dwcash (1.0.0-rc1) jessie; urgency=medium
 
   * Initial packaging for Debian.
 
- -- Zcash Company <team@z.cash>  Mon, 17 Oct 2016 11:47:02 -0700
+ -- DeepWebCash Company <team@dw.cash>  Mon, 17 Oct 2016 11:47:02 -0700

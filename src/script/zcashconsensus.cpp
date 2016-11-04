@@ -3,7 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "zcashconsensus.h"
+#include "dwcashconsensus.h"
 
 #include "primitives/transaction.h"
 #include "script/interpreter.h"
@@ -53,7 +53,7 @@ private:
     size_t m_remaining;
 };
 
-inline int set_error(zcashconsensus_error* ret, zcashconsensus_error serror)
+inline int set_error(dwcashconsensus_error* ret, dwcashconsensus_error serror)
 {
     if (ret)
         *ret = serror;
@@ -62,30 +62,30 @@ inline int set_error(zcashconsensus_error* ret, zcashconsensus_error serror)
 
 } // anon namespace
 
-int zcashconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
+int dwcashconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
                                     const unsigned char *txTo        , unsigned int txToLen,
-                                    unsigned int nIn, unsigned int flags, zcashconsensus_error* err)
+                                    unsigned int nIn, unsigned int flags, dwcashconsensus_error* err)
 {
     try {
         TxInputStream stream(SER_NETWORK, PROTOCOL_VERSION, txTo, txToLen);
         CTransaction tx;
         stream >> tx;
         if (nIn >= tx.vin.size())
-            return set_error(err, zcashconsensus_ERR_TX_INDEX);
+            return set_error(err, dwcashconsensus_ERR_TX_INDEX);
         if (tx.GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION) != txToLen)
-            return set_error(err, zcashconsensus_ERR_TX_SIZE_MISMATCH);
+            return set_error(err, dwcashconsensus_ERR_TX_SIZE_MISMATCH);
 
          // Regardless of the verification result, the tx did not error.
-         set_error(err, zcashconsensus_ERR_OK);
+         set_error(err, dwcashconsensus_ERR_OK);
 
         return VerifyScript(tx.vin[nIn].scriptSig, CScript(scriptPubKey, scriptPubKey + scriptPubKeyLen), flags, TransactionSignatureChecker(&tx, nIn), NULL);
     } catch (const std::exception&) {
-        return set_error(err, zcashconsensus_ERR_TX_DESERIALIZE); // Error deserializing
+        return set_error(err, dwcashconsensus_ERR_TX_DESERIALIZE); // Error deserializing
     }
 }
 
-unsigned int zcashconsensus_version()
+unsigned int dwcashconsensus_version()
 {
     // Just use the API version for now
-    return ZCASHCONSENSUS_API_VER;
+    return DWCASHCONSENSUS_API_VER;
 }

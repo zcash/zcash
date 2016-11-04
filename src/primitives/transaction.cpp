@@ -12,13 +12,13 @@
 JSDescription::JSDescription(ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& anchor,
-            const boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
-            const boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+            const boost::array<libdwcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+            const boost::array<libdwcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             CAmount vpub_old,
             CAmount vpub_new,
             bool computeProof) : vpub_old(vpub_old), vpub_new(vpub_new), anchor(anchor)
 {
-    boost::array<libzcash::Note, ZC_NUM_JS_OUTPUTS> notes;
+    boost::array<libdwcash::Note, ZC_NUM_JS_OUTPUTS> notes;
 
     if (computeProof) {
         params.loadProvingKey();
@@ -45,8 +45,8 @@ JSDescription JSDescription::Randomized(
             ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& anchor,
-            boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
-            boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+            boost::array<libdwcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+            boost::array<libdwcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             boost::array<size_t, ZC_NUM_JS_INPUTS>& inputMap,
             boost::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap,
             CAmount vpub_old,

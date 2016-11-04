@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "zcash/Address.hpp"
+#include "dwcash/Address.hpp"
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
 #include "util.h"
@@ -20,7 +20,7 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
     CWallet wallet;
 
     // wallet should be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libdwcash::PaymentAddress> addrs;
     wallet.GetPaymentAddresses(addrs);
     ASSERT_EQ(0, addrs.size());
 
@@ -34,7 +34,7 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
     ASSERT_TRUE(wallet.HaveSpendingKey(addr));
 
     // manually add new spending key to wallet
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     ASSERT_TRUE(wallet.AddZKey(sk));
 
     // verify wallet did add it
@@ -42,7 +42,7 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
     ASSERT_TRUE(wallet.HaveSpendingKey(addr));
 
     // verify spending key stored correctly
-    libzcash::SpendingKey keyOut;
+    libdwcash::SpendingKey keyOut;
     wallet.GetSpendingKey(addr, keyOut);
     ASSERT_EQ(sk, keyOut);
 
@@ -52,7 +52,7 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
     ASSERT_EQ(1, addrs.count(addr));
 
     // Load a third key into the wallet
-    sk = libzcash::SpendingKey::random();
+    sk = libdwcash::SpendingKey::random();
     ASSERT_TRUE(wallet.LoadZKey(sk));
 
     // attach metadata to this third key
@@ -87,7 +87,7 @@ TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
     ASSERT_TRUE(fFirstRun);
 
     // wallet should be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libdwcash::PaymentAddress> addrs;
     wallet.GetPaymentAddresses(addrs);
     ASSERT_EQ(0, addrs.size());
 
@@ -99,7 +99,7 @@ TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
     ASSERT_EQ(1, addrs.size());
 
     // create random key and add it to database directly, bypassing wallet
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libdwcash::SpendingKey::random();
     auto addr = sk.address();
     int64_t now = GetTime();
     CKeyMetadata meta(now);
@@ -125,7 +125,7 @@ TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
     ASSERT_TRUE(wallet.HaveSpendingKey(addr));
 
     // check key is the same
-    libzcash::SpendingKey keyOut;
+    libdwcash::SpendingKey keyOut;
     wallet.GetSpendingKey(addr, keyOut);
     ASSERT_EQ(sk, keyOut);
 
@@ -162,7 +162,7 @@ TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
     ASSERT_TRUE(fFirstRun);
 
     // wallet should be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libdwcash::PaymentAddress> addrs;
     wallet.GetPaymentAddresses(addrs);
     ASSERT_EQ(0, addrs.size());
 
@@ -202,7 +202,7 @@ TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
     ASSERT_TRUE(addrs.count(paymentAddress2.Get()));
 
     // spending key is crypted, so we can't extract valid payment address
-    libzcash::SpendingKey keyOut;
+    libdwcash::SpendingKey keyOut;
     wallet2.GetSpendingKey(paymentAddress.Get(), keyOut);
     ASSERT_FALSE(paymentAddress.Get() == keyOut.address());
     

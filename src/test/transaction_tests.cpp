@@ -27,8 +27,8 @@
 #include <boost/assign/list_of.hpp>
 #include "json/json_spirit_writer_template.h"
 
-#include "zcash/Note.hpp"
-#include "zcash/Address.hpp"
+#include "dwcash/Note.hpp"
+#include "dwcash/Address.hpp"
 
 using namespace std;
 using namespace json_spirit;
@@ -305,7 +305,7 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
     // on all platforms and would gently push us down an ugly
     // path. We should just fix the assertions.
     //
-    // Also, it's generally libzcash's job to ensure the
+    // Also, it's generally libdwcash's job to ensure the
     // integrity of the scheme through its own tests.
 
     // construct the r1cs keypair
@@ -314,10 +314,10 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
     // construct a merkle tree
     ZCIncrementalMerkleTree merkleTree;
 
-    libzcash::SpendingKey k = libzcash::SpendingKey::random();
-    libzcash::PaymentAddress addr = k.address();
+    libdwcash::SpendingKey k = libdwcash::SpendingKey::random();
+    libdwcash::PaymentAddress addr = k.address();
 
-    libzcash::Note note(addr.a_pk, 100, uint256(), uint256());
+    libdwcash::Note note(addr.a_pk, 100, uint256(), uint256());
 
     // commitment from coin
     uint256 commitment = note.cm();
@@ -332,13 +332,13 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
 
     // create JSDescription
     uint256 pubKeyHash;
-    boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
-        libzcash::JSInput(witness, note, k),
-        libzcash::JSInput() // dummy input of zero value
+    boost::array<libdwcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
+        libdwcash::JSInput(witness, note, k),
+        libdwcash::JSInput() // dummy input of zero value
     };
-    boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs = {
-        libzcash::JSOutput(addr, 50),
-        libzcash::JSOutput(addr, 50)
+    boost::array<libdwcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs = {
+        libdwcash::JSOutput(addr, 50),
+        libdwcash::JSOutput(addr, 50)
     };
 
     {

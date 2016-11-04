@@ -11,9 +11,9 @@ $0 --help
   Show this help message and exit.
 
 $0 [ --enable-lcov ] [ MAKEARGS... ]
-  Build Zcash and most of its transitive dependencies from
-  source. MAKEARGS are applied to both dependencies and Zcash itself. If
-  --enable-lcov is passed, Zcash is configured to add coverage
+  Build DeepWebCash and most of its transitive dependencies from
+  source. MAKEARGS are applied to both dependencies and DeepWebCash itself. If
+  --enable-lcov is passed, DeepWebCash is configured to add coverage
   instrumentation, thus enabling "make cov" to work.
 EOF
     exit 0
