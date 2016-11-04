@@ -25,34 +25,6 @@ struct pax_transaction
     char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
 } *PAX;
 
-void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout,int32_t height) // assetchain context
-{
-    struct pax_transaction *pax;
-    pax = (struct pax_transaction *)calloc(1,sizeof(*pax));
-    if ( coinaddr != 0 )
-    {
-        strcpy(pax->coinaddr,coinaddr);
-        pax->komodoshis = value;
-        pax->shortflag = shortflag;
-        strcpy(pax->symbol,symbol);
-        pax->fiatoshis = fiatoshis;
-        memcpy(pax->rmd160,rmd160,20);
-        pax->height = height;
-        printf("ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d\n",symbol,dstr(fiatoshis),coinaddr,height);
-    }
-    else
-    {
-        pax->marked = height;
-        printf("MARK DEPOSIT ht.%d\n",height);
-    }
-    pax->txid = txid;
-    pax->vout = vout;
-    pthread_mutex_lock(&komodo_mutex);
-    HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
-    pthread_mutex_unlock(&komodo_mutex);
-    KOMODO_DEPOSIT += fiatoshis;
-}
-
 struct pax_transaction *komodo_paxfind(struct pax_transaction *space,uint256 txid,uint16_t vout)
 {
     struct pax_transaction *pax;
@@ -79,6 +51,40 @@ struct pax_transaction *komodo_paxmark(struct pax_transaction *space,uint256 txi
     }
     pthread_mutex_unlock(&komodo_mutex);
     return(pax);
+}
+
+void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout,int32_t height) // assetchain context
+{
+    struct pax_transaction *pax;
+    pthread_mutex_lock(&komodo_mutex);
+    HASH_FIND(hh,PAX,&txid,sizeof(txid),pax);
+    if ( pax == 0 )
+        pax = (struct pax_transaction *)calloc(1,sizeof(*pax));
+    if ( coinaddr != 0 )
+    {
+        strcpy(pax->coinaddr,coinaddr);
+        pax->komodoshis = value;
+        pax->shortflag = shortflag;
+        strcpy(pax->symbol,symbol);
+        pax->fiatoshis = fiatoshis;
+        memcpy(pax->rmd160,rmd160,20);
+        pax->height = height;
+        if ( pax->marked == 0 )
+            printf("ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d\n",symbol,dstr(fiatoshis),coinaddr,height);
+        else printf("MARKED.%d DEPOSIT %s %.8f -> %s TO PAX ht.%d\n",pax->marked,symbol,dstr(fiatoshis),coinaddr,height);
+    }
+    else
+    {
+        pax->marked = height;
+        printf("MARK DEPOSIT ht.%d\n",height);
+    }
+    pax->txid = txid;
+    pax->vout = vout;
+    pthread_mutex_lock(&komodo_mutex);
+    HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
+    pthread_mutex_unlock(&komodo_mutex);
+    KOMODO_DEPOSIT += fiatoshis;
+    pthread_mutex_unlock(&komodo_mutex);
 }
 
 int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uint16_t *vouts,uint8_t *opretbuf,int32_t opretlen)
