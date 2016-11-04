@@ -550,8 +550,8 @@ CBlockTreeDB *pblocktree = NULL;
 
 // Komodo globals
 
-#define KOMODO_TESTNET_EXPIRATION 60000
-//#define KOMODO_ENABLE_INTEREST enabling this is a hardfork
+#define KOMODO_TESTNET_EXPIRATION 100000
+#define KOMODO_ENABLE_INTEREST //enabling this is a hardfork
 #define KOMODO_PAX
 #define KOMODO_ZCASH
 #include "komodo.h"
