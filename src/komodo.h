@@ -422,7 +422,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                             }
                         }
                     }
-                    if ( komodo_isratify(1,numvalid) > 13 )
+                    if ( komodo_isratify(1,numvalid) > 7 )
                     {
                         memset(&txhash,0,sizeof(txhash));
                         komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0,0,0,0,0,0,0,0);
