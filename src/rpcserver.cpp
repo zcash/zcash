@@ -330,6 +330,7 @@ static const CRPCCommand vRPCCommands[] =
     { "util",               "verifymessage",          &verifymessage,          true  },
     { "util",               "estimatefee",            &estimatefee,            true  },
     { "util",               "estimatepriority",       &estimatepriority,       true  },
+    { "util",               "z_validateaddress",      &z_validateaddress,      true  }, /* uses wallet if enabled */
 
     /* Not shown in help */
     { "hidden",             "invalidateblock",        &invalidateblock,        true  },
