@@ -243,8 +243,11 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,height);
                 }
             }
-            else
+            else if ( tokomodo != 0 && ASSETCHAINS_SYMBOL[0] == 0 )
             {
+                for (i=0; i<opretlen; i++)
+                    printf("%02x",opretbuf[i]);
+                printf(" opret[%c] tokomodo.%d value %.8f vs check %.8f\n",opretbuf[0],tokomodo,dstr(value),dstr(checktoshis));
                 if ( value <= checktoshis )
                 {
                     

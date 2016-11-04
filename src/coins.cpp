@@ -384,6 +384,7 @@ const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
 }
 
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+extern char ASSETCHAINS_SYMBOL[16];
 
 CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTransaction& tx,uint32_t tiptime) const
 {
@@ -398,7 +399,7 @@ CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTr
         nResult += value;
         interest = komodo_interest(nHeight,value,tx.nLockTime,tiptime);
 #ifdef KOMODO_ENABLE_INTEREST
-        if ( nHeight >= 60000 )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 && nHeight >= 60000 )
             nResult += interest;
 #endif
         (*interestp) += interest;
