@@ -1,5 +1,5 @@
 bin_PROGRAMS += \
-  zcash/GenerateParams 
+  zcash/GenerateParams
 
 # tool for generating our public parameters
 zcash_GenerateParams_SOURCES = zcash/GenerateParams.cpp
@@ -9,3 +9,23 @@ zcash_GenerateParams_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZCASH_LIBS)
+
+zcash_miner_SOURCES = \
+  libstratum/StratumClient.cpp \
+  libstratum/StratumClient.h \
+  libstratum/ZcashStratum.cpp \
+  libstratum/ZcashStratum.h \
+  standaloneminer.cpp
+zcash_miner_CPPFLAGS = $(BITCOIN_INCLUDES)
+zcash_miner_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+zcash_miner_LDADD = \
+  $(LIBBITCOIN_COMMON) \
+  $(LIBBITCOIN_CRYPTO) \
+  $(LIBBITCOIN_UTIL) \
+  $(LIBSECP256K1) \
+  $(BOOST_LIBS) \
+  $(CRYPTO_LIBS) \
+  $(LIBZCASH) \
+  $(LIBZCASH_LIBS) \
+  $(LIBGPUSOLVER) \
+  $(LIBGPUSOLVER_LIBS)

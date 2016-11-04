@@ -8,6 +8,8 @@
 
 #include "primitives/block.h"
 
+#include "libgpusolver/gpuconfig.h"
+
 #include <stdint.h>
 
 class CBlockIndex;
@@ -25,6 +27,7 @@ struct CBlockTemplate
 
 /** Run the miner threads */
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads);
+void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads, GPUConfig conf);
 /** Generate a new block, without valid proof-of-work */
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn);
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey);
