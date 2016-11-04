@@ -506,7 +506,7 @@ Value paxdeposit(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
-Value paxwithdraw(const Value& params, bool fHelp)
+Value paxwithdraw(const Array& params, bool fHelp)
 {
     CWalletTx wtx; std::string dest; uint64_t komodoshis = 0; char destaddr[64]; uint8_t i,pubkey33[33]; bool fSubtractFeeFromAmount = false;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
