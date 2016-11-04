@@ -169,6 +169,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             {
                 if ( (pax= komodo_paxfind(&space,txids[i-1],vouts[i-1])) == 0 || pax->fiatoshis != block.vtx[0].vout[i].nValue )
                     break;
+                 else printf("found issued %.8f\n",dstr(block.vtx[0].vout[i].nValue));
             }
             if ( i != n-1 )
             {
@@ -188,16 +189,16 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 {
     uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     tokomodo = (komodo_is_issuer() == 0);
-    if ( ASSETCHAINS_SYMBOL[0] != 0 )
-    {
-        for (i=0; i<opretlen; i++)
-            printf("%02x",opretbuf[i]);
-        printf(" opret[%c] tokomodo.%d\n",opretbuf[0],tokomodo);
-    }
     if ( opretbuf[0] == ((tokomodo == 0) ? 'D' : 'W') )
     {
         if ( opretlen == 34 )
         {
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            {
+                for (i=0; i<opretlen; i++)
+                    printf("%02x",opretbuf[i]);
+                printf(" opret[%c] tokomodo.%d\n",opretbuf[0],tokomodo);
+            }
             memset(base,0,sizeof(base));
             PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&fiatoshis);
             if ( fiatoshis < 0 )
@@ -231,6 +232,12 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     {
         if ( tokomodo == 0 && opretbuf[0] == 'I' )
         {
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            {
+                for (i=0; i<opretlen; i++)
+                    printf("%02x",opretbuf[i]);
+                printf(" opret[%c] tokomodo.%d\n",opretbuf[0],tokomodo);
+            }
             if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen)) > 0 && shortflag == ASSETCHAINS_SHORTFLAG )
             {
                 for (i=0; i<n; i++)
