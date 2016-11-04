@@ -606,7 +606,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     solutionTargetChecks.increment();
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
                         return false;
-                    if ( Mining_start != 0 && time(NULL) < Mining_start+30 )
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+30 )
                     {
                         printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+30-time(NULL)));
                         sleep(Mining_start+30-time(NULL));
