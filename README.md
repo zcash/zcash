@@ -1,14 +1,14 @@
-DeepWebCash 1.0.0
-===========
+DeepWebCash 1.0.1
 
 What is DeepWebCash?
 --------------
 
 [DeepWebCash](https://dw.cash/) is an implementation of the "Zerocash" protocol.
 Based on Bitcoin's code, it intends to offer a far higher standard of privacy
-and anonymity through a sophisticated zero-knowledge proving scheme that
-preserves confidentiality of transaction metadata. Technical details are
-available in our [Protocol Specification](https://github.com/deepwebcash/zips/raw/master/protocol/protocol.pdf).
+through a sophisticated zero-knowledge proving scheme that preserves
+confidentiality of transaction metadata. Technical details are available
+in our [Protocol Specification](https://github.com/deepwebcash/zips/raw/master/protocol/protocol.pdf).
+
 
 This software is the DeepWebCash client. It downloads and stores the entire history
 of DeepWebCash transactions; depending on the speed of your computer and network
@@ -25,9 +25,8 @@ See important security warnings in
 
 Where do I begin?
 -----------------
-
-We have a guide for joining the public testnet:
-https://github.com/deepwebcash/deepwebcash/wiki/Beta-Guide
+We have a guide for joining the main DeepWebCash network:
+https://github.com/deepwebcash/deepwebcash/wiki/1.0-User-Guide
 
 ### Need Help?
 
@@ -42,7 +41,7 @@ Building
 --------
 
 Build DeepWebCash along with most dependencies from source by running
-./zcutil/build.sh. Currently only Linux is supported.
+./zcutil/build.sh. Currently only Linux is officially supported.
 
 License
 -------

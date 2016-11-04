@@ -29,7 +29,6 @@ function test_fortify_source {
 # PIE, RELRO, Canary, and NX are tested by make check-security.
 make -C "$REPOROOT/src" check-security
 
-
 test_rpath_runpath "${REPOROOT}/src/dwcashd"
 test_rpath_runpath "${REPOROOT}/src/dwcash-cli"
 test_rpath_runpath "${REPOROOT}/src/dwcash-gtest"

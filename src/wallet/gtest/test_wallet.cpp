@@ -99,7 +99,7 @@ CWalletTx GetValidReceive(const libdwcash::SpendingKey& sk, CAmount value, bool 
     // Prepare JoinSplits
     uint256 rt;
     JSDescription jsdesc {*params, mtx.joinSplitPubKey, rt,
-                          inputs, outputs, value, 0, false};
+                          inputs, outputs, 2*value, 0, false};
     mtx.vjoinsplit.push_back(jsdesc);
 
     // Empty output script.
@@ -147,20 +147,39 @@ CWalletTx GetValidSpend(const libdwcash::SpendingKey& sk,
     // Fake tree for the unused witness
     ZCIncrementalMerkleTree tree;
 
+    libdwcash::JSOutput dummyout;
+    libdwcash::JSInput dummyin;
+
+    {
+        if (note.value > value) {
+            libdwcash::SpendingKey dummykey = libdwcash::SpendingKey::random();
+            libdwcash::PaymentAddress dummyaddr = dummykey.address();
+            dummyout = libdwcash::JSOutput(dummyaddr, note.value - value);
+        } else if (note.value < value) {
+            libdwcash::SpendingKey dummykey = libdwcash::SpendingKey::random();
+            libdwcash::PaymentAddress dummyaddr = dummykey.address();
+            libdwcash::Note dummynote(dummyaddr.a_pk, (value - note.value), uint256(), uint256());
+            tree.append(dummynote.cm());
+            dummyin = libdwcash::JSInput(tree.witness(), dummynote, dummykey);
+        }
+    }
+
+    tree.append(note.cm());
+
     boost::array<libdwcash::JSInput, 2> inputs = {
         libdwcash::JSInput(tree.witness(), note, sk),
-        libdwcash::JSInput() // dummy input
+        dummyin
     };
 
     boost::array<libdwcash::JSOutput, 2> outputs = {
-        libdwcash::JSOutput(), // dummy output
+        dummyout, // dummy output
         libdwcash::JSOutput() // dummy output
     };
 
     boost::array<libdwcash::Note, 2> output_notes;
 
     // Prepare JoinSplits
-    uint256 rt;
+    uint256 rt = tree.root();
     JSDescription jsdesc {*params, mtx.joinSplitPubKey, rt,
                           inputs, outputs, 0, value, false};
     mtx.vjoinsplit.push_back(jsdesc);

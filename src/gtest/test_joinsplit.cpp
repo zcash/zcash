@@ -154,6 +154,63 @@ void test_full_api(ZCJoinSplit* js)
     ));
 }
 
+// Invokes the API (but does not compute a proof)
+// to test exceptions
+void invokeAPI(
+    ZCJoinSplit* js,
+    const boost::array<JSInput, 2>& inputs,
+    const boost::array<JSOutput, 2>& outputs,
+    uint64_t vpub_old,
+    uint64_t vpub_new,
+    const uint256& rt
+) {
+    uint256 ephemeralKey;
+    uint256 randomSeed;
+    uint256 pubKeyHash = random_uint256();
+    boost::array<uint256, 2> macs;
+    boost::array<uint256, 2> nullifiers;
+    boost::array<uint256, 2> commitments;
+    boost::array<ZCNoteEncryption::Ciphertext, 2> ciphertexts;
+
+    boost::array<Note, 2> output_notes;
+
+    ZCProof proof = js->prove(
+        inputs,
+        outputs,
+        output_notes,
+        ciphertexts,
+        ephemeralKey,
+        pubKeyHash,
+        randomSeed,
+        macs,
+        nullifiers,
+        commitments,
+        vpub_old,
+        vpub_new,
+        rt,
+        false
+    );
+}
+
+void invokeAPIFailure(
+    ZCJoinSplit* js,
+    const boost::array<JSInput, 2>& inputs,
+    const boost::array<JSOutput, 2>& outputs,
+    uint64_t vpub_old,
+    uint64_t vpub_new,
+    const uint256& rt,
+    std::string reason
+)
+{
+    try {
+        invokeAPI(js, inputs, outputs, vpub_old, vpub_new, rt);
+    } catch(std::invalid_argument const & err) {
+        EXPECT_EQ(err.what(), reason);
+    } catch(...) {
+        FAIL() << "Expected invalid_argument exception.";
+    }
+}
+
 TEST(joinsplit, h_sig)
 {
     auto js = ZCJoinSplit::Unopened();
@@ -233,9 +290,203 @@ for test_input in TEST_VECTORS:
     delete js;
 }
 
+void increment_note_witnesses(
+    const uint256& element,
+    std::vector<ZCIncrementalWitness>& witnesses,
+    ZCIncrementalMerkleTree& tree
+)
+{
+    tree.append(element);
+    for (ZCIncrementalWitness& w : witnesses) {
+        w.append(element);
+    }
+    witnesses.push_back(tree.witness());
+}
+
 TEST(joinsplit, full_api_test)
 {
     auto js = ZCJoinSplit::Generate();
+
+    {
+        std::vector<ZCIncrementalWitness> witnesses;
+        ZCIncrementalMerkleTree tree;
+        increment_note_witnesses(uint256(), witnesses, tree);
+        SpendingKey sk = SpendingKey::random();
+        PaymentAddress addr = sk.address();
+        Note note1(addr.a_pk, 100, random_uint256(), random_uint256());
+        increment_note_witnesses(note1.cm(), witnesses, tree);
+        Note note2(addr.a_pk, 100, random_uint256(), random_uint256());
+        increment_note_witnesses(note2.cm(), witnesses, tree);
+        Note note3(addr.a_pk, 2100000000000001, random_uint256(), random_uint256());
+        increment_note_witnesses(note3.cm(), witnesses, tree);
+        Note note4(addr.a_pk, 1900000000000000, random_uint256(), random_uint256());
+        increment_note_witnesses(note4.cm(), witnesses, tree);
+        Note note5(addr.a_pk, 1900000000000000, random_uint256(), random_uint256());
+        increment_note_witnesses(note5.cm(), witnesses, tree);
+
+        // Should work
+        invokeAPI(js,
+        {
+            JSInput(),
+            JSInput()
+        },
+        {
+            JSOutput(),
+            JSOutput()
+        },
+        0,
+        0,
+        tree.root());
+
+        // lhs > MAX_MONEY
+        invokeAPIFailure(js,
+        {
+            JSInput(),
+            JSInput()
+        },
+        {
+            JSOutput(),
+            JSOutput()
+        },
+        2100000000000001,
+        0,
+        tree.root(),
+        "nonsensical vpub_old value");
+
+        // rhs > MAX_MONEY
+        invokeAPIFailure(js,
+        {
+            JSInput(),
+            JSInput()
+        },
+        {
+            JSOutput(),
+            JSOutput()
+        },
+        0,
+        2100000000000001,
+        tree.root(),
+        "nonsensical vpub_new value");
+
+        // input is not in tree
+        invokeAPIFailure(js,
+        {
+            JSInput(witnesses[0], note1, sk),
+            JSInput()
+        },
+        {
+            JSOutput(),
+            JSOutput()
+        },
+        0,
+        100,
+        tree.root(),
+        "joinsplit not anchored to the correct root");
+
+        // input is in the tree now! this should work
+        invokeAPI(js,
+        {
+            JSInput(witnesses[1], note1, sk),
+            JSInput()
+        },
+        {
+            JSOutput(),
+            JSOutput()
+        },
+        0,
+        100,
+        tree.root());
+
+        // Wrong secret key
+        invokeAPIFailure(js,
+        {
+            JSInput(witnesses[1], note1, SpendingKey::random()),
+            JSInput()
+        },
+        {
+            JSOutput(),
+            JSOutput()
+        },
+        0,
+        0,
+        tree.root(),
+        "input note not authorized to spend with given key");
+
+        // Absurd input value
+        invokeAPIFailure(js,
+        {
+            JSInput(witnesses[3], note3, sk),
+            JSInput()
+        },
+        {
+            JSOutput(),
+            JSOutput()
+        },
+        0,
+        0,
+        tree.root(),
+        "nonsensical input note value");
+
+        // Absurd total input value
+        invokeAPIFailure(js,
+        {
+            JSInput(witnesses[4], note4, sk),
+            JSInput(witnesses[5], note5, sk)
+        },
+        {
+            JSOutput(),
+            JSOutput()
+        },
+        0,
+        0,
+        tree.root(),
+        "nonsensical left hand size of joinsplit balance");
+
+        // Absurd output value
+        invokeAPIFailure(js,
+        {
+            JSInput(),
+            JSInput()
+        },
+        {
+            JSOutput(addr, 2100000000000001),
+            JSOutput()
+        },
+        0,
+        0,
+        tree.root(),
+        "nonsensical output value");
+
+        // Absurd total output value
+        invokeAPIFailure(js,
+        {
+            JSInput(),
+            JSInput()
+        },
+        {
+            JSOutput(addr, 1900000000000000),
+            JSOutput(addr, 1900000000000000)
+        },
+        0,
+        0,
+        tree.root(),
+        "nonsensical right hand side of joinsplit balance");
+
+        // Absurd total output value
+        invokeAPIFailure(js,
+        {
+            JSInput(),
+            JSInput()
+        },
+        {
+            JSOutput(addr, 1900000000000000),
+            JSOutput()
+        },
+        0,
+        0,
+        tree.root(),
+        "invalid joinsplit balance");
+    }
 
     test_full_api(js);
 

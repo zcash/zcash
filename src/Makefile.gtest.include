@@ -1,14 +1,15 @@
 TESTS += dwcash-gtest
 bin_PROGRAMS += dwcash-gtest
 
-# tool for generating our public parameters
+# tool for generating our public parameters.
+# test_checktransaction.cpp MUST be before
+# any test that calls SelectParams().
 dwcash_gtest_SOURCES = \
 	gtest/main.cpp \
 	gtest/utils.cpp \
-	gtest/test_checkblock.cpp \
 	gtest/test_checktransaction.cpp \
 	gtest/json_test_vectors.cpp \
-        gtest/json_test_vectors.h \
+	gtest/json_test_vectors.h \
 	gtest/test_foundersreward.cpp \
 	gtest/test_wallet_zkeys.cpp \
 	gtest/test_jsonspirit.cpp \
@@ -26,6 +27,7 @@ dwcash_gtest_SOURCES = \
 	gtest/test_txid.cpp \
 	gtest/test_libdwcash_utils.cpp \
 	gtest/test_proofs.cpp \
+	gtest/test_checkblock.cpp \
 	wallet/gtest/test_wallet.cpp
 
 dwcash_gtest_CPPFLAGS = -DMULTICORE -fopenmp -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC

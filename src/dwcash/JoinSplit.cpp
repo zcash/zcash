@@ -16,6 +16,7 @@
 #include "libsnark/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.hpp"
 
 #include "sync.h"
+#include "amount.h"
 
 using namespace libsnark;
 
@@ -181,8 +182,44 @@ public:
             throw std::runtime_error("JoinSplit proving key not loaded");
         }
 
-        // Compute nullifiers of inputs
+        if (vpub_old > MAX_MONEY) {
+            throw std::invalid_argument("nonsensical vpub_old value");
+        }
+
+        if (vpub_new > MAX_MONEY) {
+            throw std::invalid_argument("nonsensical vpub_new value");
+        }
+
+        uint64_t lhs_value = vpub_old;
+        uint64_t rhs_value = vpub_new;
+
         for (size_t i = 0; i < NumInputs; i++) {
+            // Sanity checks of input
+            {
+                // If note has nonzero value, its witness's root must be equal to the
+                // input.
+                if ((inputs[i].note.value != 0) && (inputs[i].witness.root() != rt)) {
+                    throw std::invalid_argument("joinsplit not anchored to the correct root");
+                }
+
+                // Ensure we have the key to this note.
+                if (inputs[i].note.a_pk != inputs[i].key.address().a_pk) {
+                    throw std::invalid_argument("input note not authorized to spend with given key");
+                }
+
+                // Balance must be sensical
+                if (inputs[i].note.value > MAX_MONEY) {
+                    throw std::invalid_argument("nonsensical input note value");
+                }
+
+                lhs_value += inputs[i].note.value;
+
+                if (lhs_value > MAX_MONEY) {
+                    throw std::invalid_argument("nonsensical left hand size of joinsplit balance");
+                }
+            }
+
+            // Compute nullifier of input
             out_nullifiers[i] = inputs[i].nullifier();
         }
 
@@ -197,10 +234,27 @@ public:
 
         // Compute notes for outputs
         for (size_t i = 0; i < NumOutputs; i++) {
+            // Sanity checks of output
+            {
+                if (outputs[i].value > MAX_MONEY) {
+                    throw std::invalid_argument("nonsensical output value");
+                }
+
+                rhs_value += outputs[i].value;
+
+                if (rhs_value > MAX_MONEY) {
+                    throw std::invalid_argument("nonsensical right hand side of joinsplit balance");
+                }
+            }
+
             // Sample r
             uint256 r = random_uint256();
 
             out_notes[i] = outputs[i].note(phi, r, i, h_sig);
+        }
+
+        if (lhs_value != rhs_value) {
+            throw std::invalid_argument("invalid joinsplit balance");
         }
 
         // Compute the output commitments
@@ -214,7 +268,6 @@ public:
             ZCNoteEncryption encryptor(h_sig);
 
             for (size_t i = 0; i < NumOutputs; i++) {
-
                 NotePlaintext pt(out_notes[i], outputs[i].memo);
 
                 out_ciphertexts[i] = pt.encrypt(encryptor, outputs[i].addr.pk_enc);
@@ -249,9 +302,9 @@ public:
             );
         }
 
-        if (!pb.is_satisfied()) {
-            throw std::invalid_argument("Constraint system not satisfied by inputs");
-        }
+        // The constraint system must be satisfied or there is an unimplemented
+        // or incorrect sanity check above. Or the constraint system is broken!
+        assert(pb.is_satisfied());
 
         // TODO: These are copies, which is not strictly necessary.
         std::vector<FieldT> primary_input = pb.primary_input();

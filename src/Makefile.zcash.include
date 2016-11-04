@@ -1,0 +1,11 @@
+bin_PROGRAMS += \
+  dwcash/GenerateParams 
+
+# tool for generating our public parameters
+dwcash_GenerateParams_SOURCES = dwcash/GenerateParams.cpp
+dwcash_GenerateParams_LDADD = \
+  $(BOOST_LIBS) \
+  $(LIBDWCASH) \
+  $(LIBBITCOIN_UTIL) \
+  $(LIBBITCOIN_CRYPTO) \
+  $(LIBDWCASH_LIBS)
