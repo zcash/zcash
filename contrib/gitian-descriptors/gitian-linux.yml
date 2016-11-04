@@ -25,7 +25,7 @@ packages:
 - "wget"
 - "zlib1g-dev"
 remotes:
-- "url": "https://github.com/deepwebcash/dwcash.git"
+- "url": "https://github.com/deepwebcash/deepwebcash.git"
   "dir": "dwcash"
 files: []
 script: |

@@ -119,7 +119,7 @@ Then, verify that nodes can connect to the testnet server, and update the guide 
 ## G. Publish the release announcement (blog, dwcash-dev, slack)
 ## H. Make and deploy deterministic builds
 
-- Run the [Gitian deterministic build environment](https://github.com/deepwebcash/dwcash-gitian)
+- Run the [Gitian deterministic build environment](https://github.com/deepwebcash/deepwebcash-gitian)
 - Compare the uploaded [build manifests on gitian.sigs](https://github.com/deepwebcash/gitian.sigs)
 - If all is well, the DevOps engineer will build the Debian packages and update the
   [apt.dw.cash package repository](https://apt.dw.cash).

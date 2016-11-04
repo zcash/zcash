@@ -27,11 +27,11 @@ Where do I begin?
 -----------------
 
 We have a guide for joining the public testnet:
-https://github.com/deepwebcash/dwcash/wiki/Beta-Guide
+https://github.com/deepwebcash/deepwebcash/wiki/Beta-Guide
 
 ### Need Help?
 
-* See the documentation at the [DeepWebCash Wiki](https://github.com/deepwebcash/dwcash/wiki)
+* See the documentation at the [DeepWebCash Wiki](https://github.com/deepwebcash/deepwebcash/wiki)
   for help and more information.
 * Ask for help on the [DeepWebCash](https://forum.dw.cash/) forum.
 
