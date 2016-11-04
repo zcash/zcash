@@ -25,6 +25,17 @@ struct pax_transaction
     char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
 } *PAX;
 
+uint64_t komodo_paxtotal()
+{
+    struct pax_transaction *pax,*tmp; uint64_t total = 0;
+    HASH_ITER(hh,PAX,pax,tmp)
+    {
+        if ( pax->marked == 0 )
+            total += pax->fiatoshis;
+    }
+    return(total);
+}
+
 struct pax_transaction *komodo_paxfind(struct pax_transaction *space,uint256 txid,uint16_t vout)
 {
     struct pax_transaction *pax;
@@ -41,6 +52,13 @@ struct pax_transaction *komodo_paxmark(struct pax_transaction *space,uint256 txi
     struct pax_transaction *pax;
     pthread_mutex_lock(&komodo_mutex);
     HASH_FIND(hh,PAX,&txid,sizeof(txid),pax);
+    if ( pax == 0 )
+    {
+        pax = (struct pax_transaction *)calloc(1,sizeof(*pax));
+        pax->txid = txid;
+        pax->vout = vout;
+        HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
+    }
     if ( pax != 0 )
     {
         pax->marked = mark;
@@ -80,10 +98,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
     }
     pax->txid = txid;
     pax->vout = vout;
-    pthread_mutex_lock(&komodo_mutex);
     HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
-    pthread_mutex_unlock(&komodo_mutex);
-    KOMODO_DEPOSIT += fiatoshis;
     pthread_mutex_unlock(&komodo_mutex);
 }
 
@@ -401,4 +416,5 @@ void komodo_gateway_iteration(char *symbol)
         printf("error from %s\n",symbol);
         sleep(30);
     }
+    KOMODO_DEPOSIT = komodo_paxtotal();
 }
