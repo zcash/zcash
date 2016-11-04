@@ -398,7 +398,8 @@ CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTr
         nResult += value;
         interest = komodo_interest(nHeight,value,tx.nLockTime,tiptime);
 #ifdef KOMODO_ENABLE_INTEREST
-        nResult += interest;
+        if ( nHeight >= 60000 )
+            nResult += interest;
 #endif
         (*interestp) += interest;
     }
