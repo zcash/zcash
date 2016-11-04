@@ -72,6 +72,7 @@ struct pax_transaction *komodo_paxmark(struct pax_transaction *space,uint256 txi
     if ( pax != 0 )
     {
         pax->marked = mark;
+        char str[65]; printf("paxmark.ht %d (%s).v%d\n",mark,bits256_str(str,txid),vout);
         memcpy(space,pax,sizeof(*pax));
     }
     pthread_mutex_unlock(&komodo_mutex);
