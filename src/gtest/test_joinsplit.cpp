@@ -206,9 +206,12 @@ void invokeAPIFailure(
         invokeAPI(js, inputs, outputs, vpub_old, vpub_new, rt);
     } catch(std::invalid_argument const & err) {
         EXPECT_EQ(err.what(), reason);
+        return;
     } catch(...) {
         FAIL() << "Expected invalid_argument exception.";
     }
+
+    FAIL() << "It worked, when it shouldn't have!";
 }
 
 TEST(joinsplit, h_sig)
@@ -368,7 +371,7 @@ TEST(joinsplit, full_api_test)
         tree.root(),
         "nonsensical vpub_new value");
 
-        // input is not in tree
+        // input witness for the wrong element
         invokeAPIFailure(js,
         {
             JSInput(witnesses[0], note1, sk),
@@ -381,6 +384,22 @@ TEST(joinsplit, full_api_test)
         0,
         100,
         tree.root(),
+        "witness of wrong element for joinsplit input");
+
+        // input witness doesn't match up with
+        // real root
+        invokeAPIFailure(js,
+        {
+            JSInput(witnesses[1], note1, sk),
+            JSInput()
+        },
+        {
+            JSOutput(),
+            JSOutput()
+        },
+        0,
+        100,
+        uint256(),
         "joinsplit not anchored to the correct root");
 
         // input is in the tree now! this should work
