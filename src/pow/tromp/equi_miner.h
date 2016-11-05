@@ -42,7 +42,6 @@
 
 #include "pow/tromp/equi.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <pthread.h>
 #include <assert.h>
 
@@ -741,7 +740,7 @@ static const u32 NBLOCKS = (NHASHES+HASHESPERBLOCK-1)/HASHESPERBLOCK;
 
   // functions digit1 through digit9 are unrolled versions specific to the
   // (N=200,K=9) parameters with 8 RESTBITS
-  // and will be used with compile option -DUNROLL
+  // and will be used with compile option -DEQUIHASH_TROMP_UNROLL
   void digit1(const u32 id) {
     htalloc heaps = hta;
     collisiondata cd;
@@ -1051,7 +1050,7 @@ void *worker(void *vp) {
   barrier(&eq->barry);
   if (tp->id == 0) eq->showbsizes(0);
   barrier(&eq->barry);
-#if WN == 200 && WK == 9 && RESTBITS == 8 && defined UNROLL
+#if WN == 200 && WK == 9 && RESTBITS == 8 && defined EQUIHASH_TROMP_UNROLL
   eq->digit1(tp->id);
   barrier(&eq->barry);
   if (tp->id == 0) eq->showbsizes(1);
