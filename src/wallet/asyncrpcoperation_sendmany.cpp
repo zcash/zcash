@@ -875,7 +875,6 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
             {info.vjsout[0], info.vjsout[1]};
     boost::array<size_t, ZC_NUM_JS_INPUTS> inputMap;
     boost::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
-    std::function<int(int)> emptyFunc;
     JSDescription jsdesc = JSDescription::Randomized(
             *pzcashParams,
             joinSplitPubKey_,
@@ -888,7 +887,7 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
             info.vpub_new,
             !this->testmode,
             // Temporary fix for #1779 is to disable shuffling of inputs and outputs.
-            emptyFunc);
+            GenIdentity);
 
     if (!(jsdesc.Verify(*pzcashParams, joinSplitPubKey_))) {
         throw std::runtime_error("error verifying joinsplit");
