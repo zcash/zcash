@@ -204,14 +204,12 @@ void invokeAPIFailure(
 {
     try {
         invokeAPI(js, inputs, outputs, vpub_old, vpub_new, rt);
+        FAIL() << "It worked, when it shouldn't have!";
     } catch(std::invalid_argument const & err) {
         EXPECT_EQ(err.what(), reason);
-        return;
     } catch(...) {
         FAIL() << "Expected invalid_argument exception.";
     }
-
-    FAIL() << "It worked, when it shouldn't have!";
 }
 
 TEST(joinsplit, h_sig)
