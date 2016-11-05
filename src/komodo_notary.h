@@ -92,6 +92,8 @@ int32_t komodo_nutxofind(int32_t height,uint256 txhash,int32_t vout)
 int32_t komodo_ratify_threshold(int32_t height,uint64_t signedmask)
 {
     int32_t htind,numnotaries,i,wt = 0;
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        return(2);
     if ( (htind= KOMODO_PUBKEYS_HEIGHT(height) / KOMODO_ELECTION_GAP) == 1 )
         htind = 0;
     numnotaries = Pubkeys[htind].numnotaries;
