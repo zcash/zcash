@@ -34,6 +34,12 @@
 // In practice this works very well to avoid bucket overflow
 // and produces negligible false positives
 
+#if defined(__GNUC__) && !defined(__ICC)
+#pragma GCC push_options
+#pragma GCC optimize ("O2")
+#pragma GCC optimize ("omit-frame-pointer")
+#endif
+
 #include "pow/tromp/equi.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -1090,3 +1096,8 @@ void *worker(void *vp) {
   pthread_exit(NULL);
   return 0;
 }
+
+#if defined(__GNUC__) && !defined(__ICC)
+#pragma GCC pop_options
+#endif
+

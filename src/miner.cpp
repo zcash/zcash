@@ -473,6 +473,8 @@ void static BitcoinMiner(CWallet *pwallet)
     );
 
     try {
+        if (solver == "tromp")
+            equi eq(1);
         while (true) {
             if (chainparams.MiningRequiresPeers()) {
                 // Busy-wait for the network to come online so we don't waste time mining
@@ -576,8 +578,7 @@ void static BitcoinMiner(CWallet *pwallet)
 
                 // TODO: factor this out into a function with the same API for each solver.
                 if (solver == "tromp") {
-                    // Create solver and initialize it.
-                    equi eq(1);
+                    // initialize solver
                     eq.setstate(&curr_state);
 
                     // Intialization done, start algo driver.
