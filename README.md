@@ -5,6 +5,24 @@ What is Zclassic
 ----------------
 Zclassic is a Zcash fork with no 20% Founders Tax.
 
+Get dependencies:
+```{r, engine='bash'}
+
+sudo apt-get install \
+      build-essential pkg-config libc6-dev m4 g++-multilib \
+      autoconf libtool ncurses-dev unzip git python \
+      zlib1g-dev wget bsdmainutils automake
+```
+
+Install
+```{r, engine='bash'}
+# Build
+./zcutil/build.sh -j$(nproc)
+# Run on Testnet
+./src/zcashd -connect=54.191.72.102
+```
+
+
 What is Zcash?
 --------------
 
