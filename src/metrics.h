@@ -29,15 +29,17 @@ extern AtomicCounter transactionsValidated;
 extern AtomicCounter ehSolverRuns;
 extern AtomicCounter solutionTargetChecks;
 
-void TrackMinedBlock(uint256 hash);
-
+#ifdef STANDALONE_MINER
 // Standalone miner counters
 extern AtomicCounter acceptedSolutions;
 extern AtomicCounter rejectedSolutions;
 extern AtomicCounter failedSolutions;
+#else
+void TrackMinedBlock(uint256 hash);
+#endif
 
 void ConnectMetricsScreen();
-void ThreadShowMetricsScreen(bool standaloneMiner);
+void ThreadShowMetricsScreen();
 
 /**
  * Heart image: https://commons.wikimedia.org/wiki/File:Heart_coraz%C3%B3n.svg

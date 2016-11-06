@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
         if (GetBoolArg("-showmetrics", true) && !fPrintToConsole) {
             // Start the persistent metrics interface
             ConnectMetricsScreen();
-            threadGroup.create_thread(boost::bind(&ThreadShowMetricsScreen, true));
+            threadGroup.create_thread(&ThreadShowMetricsScreen);
         }
 
         ZcashMiner miner(GetArg("-genproclimit", 1));

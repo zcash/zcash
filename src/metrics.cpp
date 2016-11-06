@@ -5,7 +5,9 @@
 #include "metrics.h"
 
 #include "chainparams.h"
+#ifndef STANDALONE_MINER
 #include "main.h"
+#endif
 #include "ui_interface.h"
 #include "util.h"
 #include "utiltime.h"
@@ -17,19 +19,23 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+#ifndef STANDALONE_MINER
 CCriticalSection cs_metrics;
+#endif
 
 AtomicCounter transactionsValidated;
 AtomicCounter ehSolverRuns;
 AtomicCounter solutionTargetChecks;
 AtomicCounter minedBlocks;
 
-boost::synchronized_value<std::list<uint256>> trackedBlocks;
-
+#ifdef STANDALONE_MINER
 // Standalone miner counters
 AtomicCounter acceptedSolutions;
 AtomicCounter rejectedSolutions;
 AtomicCounter failedSolutions;
+#else
+boost::synchronized_value<std::list<uint256>> trackedBlocks;
+#endif
 
 boost::synchronized_value<std::list<std::string>> messageBox;
 boost::synchronized_value<std::string> initMessage;
@@ -37,12 +43,14 @@ bool loaded = false;
 
 extern int64_t GetNetworkHashPS(int lookup, int height);
 
+#ifndef STANDALONE_MINER
 void TrackMinedBlock(uint256 hash)
 {
     LOCK(cs_metrics);
     minedBlocks.increment();
     trackedBlocks->push_back(hash);
 }
+#endif
 
 static bool metrics_ThreadSafeMessageBox(const std::string& message,
                                       const std::string& caption,
@@ -84,6 +92,7 @@ void ConnectMetricsScreen()
     uiInterface.InitMessage.connect(metrics_InitMessage);
 }
 
+#ifndef STANDALONE_MINER
 int printNetworkStats()
 {
     LOCK2(cs_main, cs_vNodes);
@@ -95,6 +104,7 @@ int printNetworkStats()
 
     return 4;
 }
+#endif
 
 int printMiningStatus(bool mining)
 {
@@ -166,6 +176,7 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
         std::cout << "- " << strprintf(_("You have completed %d Equihash solver runs."), ehSolverRuns.get()) << std::endl;
         lines += 2;
 
+#ifdef STANDALONE_MINER
         int accepted = acceptedSolutions.get();
         int rejected = rejectedSolutions.get();
         int failed   = failedSolutions.get();
@@ -175,7 +186,7 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
             std::cout << "  " << strprintf(_("Accepted: %d, Rejected: %d, Failed: %d"), accepted, rejected, failed) << std::endl;
             lines += 2;
         }
-
+#else
         int mined = 0;
         int orphaned = 0;
         CAmount immature {0};
@@ -223,6 +234,7 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
                       << std::endl;
             lines += 2;
         }
+#endif
     }
     std::cout << std::endl;
 
@@ -265,7 +277,7 @@ int printInitMessage()
     return 2;
 }
 
-void ThreadShowMetricsScreen(bool standaloneMiner)
+void ThreadShowMetricsScreen()
 {
     // Make this thread recognisable as the metrics screen thread
     RenameThread("zcash-metrics-screen");
@@ -278,13 +290,13 @@ void ThreadShowMetricsScreen(bool standaloneMiner)
     std::cout << std::endl;
 
     // Thank you text
-    if (standaloneMiner) {
-        std::cout << _("Thank you for running a Zcash miner!") << std::endl;
-        std::cout << _("You're helping to strengthen the network :)") << std::endl;
-    } else {
-        std::cout << _("Thank you for running a Zcash node!") << std::endl;
-        std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
-    }
+#ifdef STANDALONE_MINER
+    std::cout << _("Thank you for running a Zcash miner!") << std::endl;
+    std::cout << _("You're helping to strengthen the network :)") << std::endl;
+#else
+    std::cout << _("Thank you for running a Zcash node!") << std::endl;
+    std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
+#endif
     std::cout << std::endl;
 
     // Count uptime
@@ -308,11 +320,15 @@ void ThreadShowMetricsScreen(bool standaloneMiner)
         std::cout << "\e[J";
 
         // Miner status
-        bool mining = standaloneMiner || GetBoolArg("-gen", false);
+#ifdef STANDALONE_MINER
+        bool mining = true;
+#else
+        bool mining = GetBoolArg("-gen", false);
 
         if (loaded) {
             lines += printNetworkStats();
         }
+#endif
         lines += printMiningStatus(mining);
         lines += printMetrics(cols, nStart, mining);
         lines += printMessageBox(cols);

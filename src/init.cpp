@@ -981,7 +981,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             !fPrintToConsole && !GetBoolArg("-daemon", false)) {
         // Start the persistent metrics interface
         ConnectMetricsScreen();
-        threadGroup.create_thread(boost::bind(&ThreadShowMetricsScreen, false));
+        threadGroup.create_thread(&ThreadShowMetricsScreen);
     }
 
     // Initialize Zcash circuit parameters

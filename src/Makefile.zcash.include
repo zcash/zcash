@@ -18,7 +18,7 @@ zcash_miner_SOURCES = \
   libstratum/ZcashStratum.h \
   metrics.cpp \
   standaloneminer.cpp
-zcash_miner_CPPFLAGS = $(BITCOIN_INCLUDES)
+zcash_miner_CPPFLAGS = $(BITCOIN_INCLUDES) -DSTANDALONE_MINER
 zcash_miner_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 zcash_miner_LDADD = \
   $(LIBBITCOIN_COMMON) \
