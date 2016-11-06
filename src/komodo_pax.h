@@ -334,6 +334,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
                 val = (val * MINDENOMS[relid]) / MINDENOMS[baseid];
             else if ( MINDENOMS[baseid] < MINDENOMS[relid] )
                 val = (val / MINDENOMS[baseid]) * MINDENOMS[relid];
+            return(val);
         }
     }
     return(0);
