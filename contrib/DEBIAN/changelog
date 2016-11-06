@@ -1,3 +1,9 @@
+zcash (1.0.1) jessie; urgency=medium
+
+  * 1.0.1 release.
+
+ -- Zcash Company <team@z.cash>  Thu, 03 Nov 2016 23:21:09 -0500
+
 zcash (1.0.0-sprout) jessie; urgency=medium
 
   * 1.0.0 release.
