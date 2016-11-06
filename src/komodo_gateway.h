@@ -193,7 +193,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             {
                 if ( (pax= komodo_paxfind(&space,txids[i-1],vouts[i-1])) != 0 && pax->fiatoshis == block.vtx[0].vout[i].nValue )
                 {
-                    printf("i.%d match %.8f == %.8f\n",i,dstr(pax != 0 ? pax->fiatoshis:-1),dstr(block.vtx[0].vout[i].nValue));
+                    //printf("i.%d match %.8f == %.8f\n",i,dstr(pax != 0 ? pax->fiatoshis:-1),dstr(block.vtx[0].vout[i].nValue));
                     komodo_paxmark(&space,txids[i-1],vouts[i-1],height);
                 }
                 else

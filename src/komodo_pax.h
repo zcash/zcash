@@ -356,8 +356,15 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume
     numvotes = (int32_t)(sizeof(Peggy_inds)/sizeof(*Peggy_inds));
     memset(votes,0,sizeof(votes));
     for (i=0; i<numvotes; i++)
+    {
         if ( (votes[i]= _komodo_paxprice(height-i,base,rel,COIN)) == 0 )
+        {
+            printf("null price height.%d\n",height-i);
             return(0);
+        }
+        printf("%.8f ",dstr(votes[i]));
+    }
+    printf("numvotes.%d\n",numvotes);
     start = (uint32_t)komodo_seed(height);
     tolerance = 10000;
     for (k=0; k<numvotes; k++)
