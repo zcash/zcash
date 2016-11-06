@@ -368,7 +368,7 @@ uint64_t komodo_seed(int32_t height)
     if ( pindex != 0 )
     {
         hash = pindex->GetBlockHash();
-        seed = hash.GetLow64();
+        seed = arith_uint256(hash).GetLow64();
     }
     return(seed);
 }

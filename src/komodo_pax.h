@@ -393,7 +393,7 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume
             }
             sum /= densum;
             sum = (sum * basevolume) / COIN;
-            printf("sum %.8f densum %.8f basevol %.8f\n",dstr(sum),dstr(densum),dstr(basevolume));
+            printf("seed.%llx sum %.8f densum %.8f basevol %.8f\n",(long long)seed,dstr(sum),dstr(densum),dstr(basevolume));
             break;
         }
     }
