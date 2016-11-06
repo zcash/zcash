@@ -217,7 +217,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     tokomodo = (komodo_is_issuer() == 0);
     if ( opretbuf[0] == ((tokomodo == 0) ? 'D' : 'W') )
     {
-        if ( opretlen == 34 )
+        if ( opretlen == 34 ) // any KMD tx
         {
             if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
             {
@@ -232,35 +232,38 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             bitcoin_address(coinaddr,addrtype,rmd160,20);
             checktoshis = PAX_fiatdest(tokomodo,destaddr,pubkey33,coinaddr,height,base,fiatoshis);
             typestr = "deposit";
-            if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
+            if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 && shortflag == ASSETCHAINS_SHORTFLAG )
             {
-                for (i=0; i<32; i++)
-                    printf("%02x",((uint8_t *)&txid)[i]);
-                printf(" <- txid.v%u ",vout);
-                for (i=0; i<33; i++)
-                    printf("%02x",pubkey33[i]);
-                printf(" checkpubkey check %.8f v %.8f dest.(%s) height.%d\n",dstr(checktoshis),dstr(value),destaddr,height);
-                if ( value >= checktoshis && shortflag == ASSETCHAINS_SHORTFLAG )
+                if ( shortflag == 0 )
                 {
-                    if ( komodo_paxfind(&space,txid,vout) == 0 )
-                        komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,height);
+                    for (i=0; i<32; i++)
+                        printf("%02x",((uint8_t *)&txid)[i]);
+                    printf(" <- txid.v%u ",vout);
+                    for (i=0; i<33; i++)
+                        printf("%02x",pubkey33[i]);
+                    printf(" checkpubkey check %.8f v %.8f dest.(%s) height.%d\n",dstr(checktoshis),dstr(value),destaddr,height);
+                    if ( value >= checktoshis )
+                    {
+                        if ( komodo_paxfind(&space,txid,vout) == 0 )
+                            komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,height);
+                    }
                 }
-            }
-            else if ( tokomodo != 0 && ASSETCHAINS_SYMBOL[0] == 0 )
-            {
-                for (i=0; i<opretlen; i++)
-                    printf("%02x",opretbuf[i]);
-                printf(" opret[%c] tokomodo.%d value %.8f vs check %.8f\n",opretbuf[0],tokomodo,dstr(value),dstr(checktoshis));
-                if ( value <= checktoshis )
+                else // short
                 {
-                    
+                    for (i=0; i<opretlen; i++)
+                        printf("%02x",opretbuf[i]);
+                    printf(" opret[%c] tokomodo.%d value %.8f vs check %.8f\n",opretbuf[0],tokomodo,dstr(value),dstr(checktoshis));
+                    if ( value <= checktoshis )
+                    {
+                        
+                    }
                 }
             }
         }
     }
     else if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 )
     {
-        if ( tokomodo == 0 && opretbuf[0] == 'I' )
+        if ( tokomodo == 0 && opretbuf[0] == 'I' ) // assetchain coinbase
         {
             if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
             {
@@ -302,7 +305,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
         }
         else komodo_stateupdate(height,0,0,0,utxid,0,0,0,0,0,value,&script[offset],opretlen,vout);
     }
-    else if ( numvouts > 13 )
+    else if ( numvouts >= KOMODO_MINRATIFY )
         typestr = "ratify";
 }
 
@@ -397,9 +400,10 @@ void komodo_gateway_iteration(char *symbol)
             {
                 for (i=0; i<1000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
-                    if ( (KMDHEIGHT % 100) == 0 )
+                    if ( (KMDHEIGHT % 10) == 0 )
                     {
-                        fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
+                        if ( (KMDHEIGHT % 100) == 0 )
+                            fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
                         memset(&zero,0,sizeof(zero));
                         komodo_stateupdate(KMDHEIGHT,0,0,0,zero,0,0,0,0,KMDHEIGHT,0,0,0,0);
                     }

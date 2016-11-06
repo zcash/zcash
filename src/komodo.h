@@ -17,6 +17,8 @@
 #define H_KOMODO_H
 
 // Todo: handle reorg: clear all entries above reorged height
+// smooth consensus price
+//
 
 #include <stdint.h>
 #include <stdio.h>
@@ -29,6 +31,8 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
 char *komodo_issuemethod(char *method,char *params,uint16_t port);
 
 #define GENESIS_NBITS 0x1f00ffff
+#define KOMODO_MINRATIFY 7
+
 #include "komodo_globals.h"
 #include "komodo_utils.h"
 //queue_t DepositsQ,PendingsQ;
@@ -326,13 +330,13 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
 
 int32_t komodo_isratify(int32_t isspecial,int32_t numvalid)
 {
-    if ( isspecial != 0 && numvalid > 13 )
+    if ( isspecial != 0 && numvalid >= KOMODO_MINRATIFY )
         return(1);
     else return(0);
 }
 
 // Special tx have vout[0] -> CRYPTO777
-// with more than 13 pay2pubkey outputs -> ratify
+// with more than KOMODO_MINRATIFY pay2pubkey outputs -> ratify
 // if all outputs to notary -> notary utxo
 // if txi == 0 && 2 outputs and 2nd OP_RETURN, len == 32*2+4 -> notarized, 1st byte 'P' -> pricefeed
 // OP_RETURN: 'D' -> deposit, 'W' -> withdraw
@@ -350,8 +354,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             fprintf(stderr,"komodo_connect.(%s) waiting for realtime RT.%u now.%u\n",ASSETCHAINS_SYMBOL,KOMODO_REALTIME,(uint32_t)time(NULL));
             sleep(3);
         }
-        KOMODO_INITDONE = (uint32_t)time(NULL);
     }
+    KOMODO_INITDONE = (uint32_t)time(NULL);
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
@@ -422,7 +426,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                             }
                         }
                     }
-                    if ( komodo_isratify(1,numvalid) > 7 )
+                    if ( komodo_isratify(1,numvalid) >= KOMODO_MINRATIFY && numvouts > 13 )
                     {
                         memset(&txhash,0,sizeof(txhash));
                         komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0,0,0,0,0,0,0,0);

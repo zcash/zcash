@@ -508,11 +508,22 @@ void static BitcoinMiner(CWallet *pwallet)
 
     unsigned int n = chainparams.EquihashN();
     unsigned int k = chainparams.EquihashK();
+    extern int32_t ASSETCHAIN_INIT,KOMODO_INITDONE; extern uint8_t NOTARY_PUBKEY33[33];
+    int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
+    int32_t notaryid = -1;
+    while ( ASSETCHAIN_INIT == 0 || KOMODO_INITDONE == 0 )
+    {
+        sleep(1);
+    }
+    komodo_chosennotary(&notaryid,int32_t height,NOTARY_PUBKEY33);
 
-    std::string solver = GetArg("-equihashsolver", "tromp");
+    std::string solver;
+    if ( notaryid >= 0 )
+        solver = "tromp";
+        solver = "default";
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
-    //fprintf(stderr,"Mining with %s\n",solver.c_str());
+    fprintf(stderr,"Mining with %s\n",solver.c_str());
     std::mutex m_cs;
     bool cancelSolver = false;
     boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
@@ -606,10 +617,10 @@ void static BitcoinMiner(CWallet *pwallet)
                     solutionTargetChecks.increment();
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
                         return false;
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+30 )
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+20 )
                     {
-                        printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+30-time(NULL)));
-                        sleep(Mining_start+30-time(NULL));
+                        printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+20-time(NULL)));
+                        sleep(Mining_start+20-time(NULL));
                     }
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
@@ -639,7 +650,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 };
 
                 // TODO: factor this out into a function with the same API for each solver.
-                if (solver == "tromp") {
+                if (solver == "tromp" && notaryid >= 0 ) {
                     // Create solver and initialize it.
                     equi eq(1);
                     eq.setstate(&curr_state);
