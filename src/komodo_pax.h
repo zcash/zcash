@@ -299,7 +299,7 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
 
 uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t basevolume)
 {
-    uint32_t pvalb,pvalr,kmdbtc,btcusd; uint64_t val,usdvol,baseusd,usdkmd,baserel,ranked[32];
+    uint32_t pvalb,pvalr,kmdbtc,btcusd; uint64_t usdvol,baseusd,usdkmd,baserel,ranked[32];
     if ( basevolume > 1000000*COIN )
         return(0);
     if ( (pvalb= pvals[baseid]) != 0 )
@@ -329,12 +329,11 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
         else if ( (pvalr= pvals[relid]) != 0 )
         {
             baserel = ((uint64_t)pvalb * 1000000000) / pvalr;
-            val = komodo_paxvol(basevolume,baserel);
             if ( MINDENOMS[baseid] > MINDENOMS[relid] )
-                val = (val * MINDENOMS[relid]) / MINDENOMS[baseid];
+                baserel /= (MINDENOMS[baseid] / MINDENOMS[relid]);
             else if ( MINDENOMS[baseid] < MINDENOMS[relid] )
-                val = (val / MINDENOMS[baseid]) * MINDENOMS[relid];
-            return(val);
+                baserel *= (MINDENOMS[relid] / MINDENOMS[baseid]);
+            return(komodo_paxvol(basevolume,baserel));
         }
     }
     return(0);
