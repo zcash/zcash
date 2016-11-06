@@ -25,13 +25,27 @@ struct pax_transaction
     char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
 } *PAX;
 
-uint64_t komodo_paxtotal()
+/*uint64_t komodo_paxtotal()
 {
     struct pax_transaction *pax,*tmp; uint64_t total = 0;
     HASH_ITER(hh,PAX,pax,tmp)
     {
         if ( pax->marked == 0 )
             total += pax->fiatoshis;
+    }
+    return(total);
+}*/
+
+uint64_t dpow_paxtotal(struct dpow_info *dp)
+{
+    struct pax_transaction *pax,*tmp; uint64_t total = 0;
+    tmp = 0;
+    while ( (pax= PAX->hh.next) != 0 && pax != tmp )
+    {
+        if ( pax->marked == 0 )
+            total += pax->fiatoshis;
+        tmp = pax;
+        pax = pax->hh.next;
     }
     return(total);
 }
@@ -135,7 +149,9 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
 {
     struct pax_transaction *pax,*tmp; uint8_t *script,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
     PENDING_KOMODO_TX = 0;
-    HASH_ITER(hh,PAX,pax,tmp)
+    //HASH_ITER(hh,PAX,pax,tmp)
+    tmp = 0;
+    while ( (pax= PAX->hh.next) != 0 && pax != tmp )
     {
         if ( pax->marked != 0 )
             continue;
@@ -161,6 +177,8 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
             PENDING_KOMODO_TX += pax->fiatoshis;
         if ( numvouts++ >= 64 )
             break;
+        tmp = pax;
+        pax = pax->hh.next;
     }
     if ( numvouts > 1 )
     {
