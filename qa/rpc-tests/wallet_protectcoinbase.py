@@ -148,5 +148,22 @@ class Wallet2Test (BitcoinTestFramework):
         # check balance
         assert_equal(self.nodes[2].getbalance(), 9)
 
+        # Check that chained joinsplits in a single tx are created successfully.
+        recipients = []
+        num_recipients = 3
+        amount_per_recipient = Decimal('0.002')
+        for i in xrange(0,num_recipients):
+            newzaddr = self.nodes[2].z_getnewaddress()
+            recipients.append({"address":newzaddr, "amount":amount_per_recipient})
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
+        self.wait_for_operationd_success(myopid)
+        self.sync_all()
+        self.nodes[1].generate(1)
+        self.sync_all()
+
+        # check balances
+        resp = self.nodes[2].z_gettotalbalance()
+        assert_equal(Decimal(resp["private"]), num_recipients * amount_per_recipient)
+
 if __name__ == '__main__':
     Wallet2Test ().main ()
