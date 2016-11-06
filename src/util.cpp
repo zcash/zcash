@@ -409,7 +409,7 @@ boost::filesystem::path GetDefaultDataDir()
     // Unix: ~/.zcash
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Zcash";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "Zclassic";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -421,10 +421,10 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    return pathRet / "Zcash";
+    return pathRet / "Zclassic";
 #else
     // Unix
-    return pathRet / ".zcash";
+    return pathRet / ".zclassic";
 #endif
 #endif
 }
