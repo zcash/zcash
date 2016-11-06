@@ -375,7 +375,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         }
         else
         {
-            komodo_gateway_deposits(&txNew,0,"KMD");
+            komodo_gateway_deposits(&txNew,0,(char *)"KMD");
             //fprintf(stderr,"txNew numvouts.%d\n",(int32_t)txNew.vout.size());
         }
 
