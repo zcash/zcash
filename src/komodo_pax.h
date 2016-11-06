@@ -299,7 +299,7 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
 
 uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t basevolume)
 {
-    uint32_t pvalb,pvalr,kmdbtc,btcusd; uint64_t usdvol,baseusd,usdkmd,baserel,ranked[32];
+    uint32_t pvalb,pvalr,kmdbtc,btcusd; uint64_t val,usdvol,baseusd,usdkmd,baserel,ranked[32];
     if ( basevolume > 1000000*COIN )
         return(0);
     if ( (pvalb= pvals[baseid]) != 0 )
@@ -329,7 +329,11 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
         else if ( (pvalr= pvals[relid]) != 0 )
         {
             baserel = ((uint64_t)pvalb * 1000000000) / pvalr;
-            return(komodo_paxvol(basevolume,baserel));
+            val = komodo_paxvol(basevolume,baserel);
+            if ( MINDENOMS[base] > MINDENOMS[rel] )
+                val = (val * MINDENOMS[rel]) / MINDENOMS[base];
+            else if ( MINDENOMS[base] < MINDENOMS[rel] )
+                val = (val / MINDENOMS[base]) * MINDENOMS[rel];
         }
     }
     return(0);
@@ -378,7 +382,6 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume
     //printf("\n}; // numvotes.%d\n\n",numvotes);
     seed = komodo_seed(height);
     tolerance = sum / 50;
-    printf("aveprice %.8f seed %llx\n",dstr(sum),(long long)seed);
     for (k=0; k<numvotes; k++)
     {
         ind = Peggy_inds[(k + seed) % numvotes];
