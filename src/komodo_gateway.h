@@ -392,14 +392,13 @@ void komodo_gateway_iteration(char *symbol)
     if ( KMDHEIGHT <= 0 )
         KMDHEIGHT = 1;
     KOMODO_REALTIME = 0;
-    printf("komodo_gateway_iteration\n");
     if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
     {
         if ( (infoobj= cJSON_Parse(retstr)) != 0 )
         {
             if ( (result= jobj(infoobj,(char *)"result")) != 0 && (kmdheight= jint(result,(char *)"blocks")) != 0 )
             {
-                printf("gateway KMDHEIGHT.%d kmdheight.%d\n",KMDHEIGHT,kmdheight);
+                //printf("gateway KMDHEIGHT.%d kmdheight.%d\n",KMDHEIGHT,kmdheight);
                 for (i=0; i<1000 && KMDHEIGHT<kmdheight; i++,KMDHEIGHT++)
                 {
                     if ( (KMDHEIGHT % 10) == 0 )
