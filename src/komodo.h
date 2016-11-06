@@ -343,10 +343,18 @@ int32_t komodo_isratify(int32_t isspecial,int32_t numvalid)
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
+    static int32_t hwmheight;
     uint64_t signedmask,voutmask;
     uint8_t scriptbuf[4096],pubkeys[64][33]; uint256 kmdtxid,btctxid,txhash;
     int32_t i,j,k,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
     komodo_init();
+    if ( pindex->nHeight > hwmheight )
+        hwmheight = pindex->nHeight;
+    else
+    {
+        printf("hwmheight.%d vs pindex->nHeight.%d reorg.%d\n",hwmheight,pindex->nHeight,hwmheight-pindex->nHeight);
+        // reset komodostate
+    }
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
         while ( KOMODO_REALTIME == 0 || time(NULL) <= KOMODO_REALTIME )
