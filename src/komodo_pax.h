@@ -330,10 +330,10 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
         {
             baserel = ((uint64_t)pvalb * 1000000000) / pvalr;
             val = komodo_paxvol(basevolume,baserel);
-            if ( MINDENOMS[base] > MINDENOMS[rel] )
-                val = (val * MINDENOMS[rel]) / MINDENOMS[base];
-            else if ( MINDENOMS[base] < MINDENOMS[rel] )
-                val = (val / MINDENOMS[base]) * MINDENOMS[rel];
+            if ( MINDENOMS[baseid] > MINDENOMS[relid] )
+                val = (val * MINDENOMS[relid]) / MINDENOMS[baseid];
+            else if ( MINDENOMS[baseid] < MINDENOMS[relid] )
+                val = (val / MINDENOMS[baseid]) * MINDENOMS[relid];
         }
     }
     return(0);
