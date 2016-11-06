@@ -79,8 +79,11 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
     if ( pax == 0 )
     {
         pax = (struct pax_transaction *)calloc(1,sizeof(*pax));
-        addflag = 1;
+        pax->txid = txid;
+        pax->vout = vout;
+        HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
     }
+    pthread_mutex_unlock(&komodo_mutex);
     if ( coinaddr != 0 )
     {
         strcpy(pax->coinaddr,coinaddr);
@@ -99,11 +102,6 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         pax->marked = height;
         printf("MARK DEPOSIT ht.%d\n",height);
     }
-    pax->txid = txid;
-    pax->vout = vout;
-    if ( addflag != 0 )
-        HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
-    pthread_mutex_unlock(&komodo_mutex);
 }
 
 int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uint16_t *vouts,uint8_t *opretbuf,int32_t opretlen)
