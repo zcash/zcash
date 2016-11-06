@@ -110,7 +110,7 @@ int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uin
     else *shortflagp = 0;
     for (i=0; i<4; i++)
         base[i] = opretbuf[opretlen-4+i];
-    if ( strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 ) // shortflag
+    if ( (strcmp(base,"KMD") == 0 && ASSETCHAINS_SYMBOL[0] == 0) || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 ) // shortflag
     {
         //printf("BASE.(%s) vs (%s)\n",base,ASSETCHAINS_SYMBOL);
         opretbuf++, opretlen--;
@@ -129,7 +129,7 @@ int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uin
     return(n);
 }
 
-void komodo_gateway_deposits(CMutableTransaction *txNew)
+void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol)
 {
     struct pax_transaction *pax,*tmp; uint8_t *script,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
     PENDING_KOMODO_TX = 0;
@@ -155,16 +155,17 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
         data[len++] = pax->vout & 0xff;
         data[len++] = (pax->vout >> 8) & 0xff;
         printf(" vout.%u DEPOSIT %.8f <- paxdeposit.%s\n",pax->vout,(double)txNew->vout[numvouts].nValue/COIN,ASSETCHAINS_SYMBOL);
-        PENDING_KOMODO_TX += pax->fiatoshis;
+        if ( shortflag == 0 && strcmp(symbol,"KMD") == 0 )
+            PENDING_KOMODO_TX += pax->fiatoshis;
         if ( numvouts++ >= 64 )
             break;
     }
     if ( numvouts > 1 )
     {
-        if ( ASSETCHAINS_SHORTFLAG != 0 )
+        if ( shortflag != 0 )
             data[len++] = '-';
-        for (i=0; ASSETCHAINS_SYMBOL[i]!=0; i++)
-            data[len++] = ASSETCHAINS_SYMBOL[i];
+        for (i=0; symbol[i]!=0; i++)
+            data[len++] = symbol[i];
         data[len++] = 0;
         opretlen = komodo_opreturnscript(opret,'I',data,len);
         txNew->vout.resize(numvouts+1);
@@ -173,7 +174,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew)
         script = (uint8_t *)&txNew->vout[numvouts].scriptPubKey[0];
         memcpy(script,opret,opretlen);
         printf("total numvouts.%d %.8f opretlen.%d\n",numvouts,dstr(PENDING_KOMODO_TX),opretlen);
-    } //else KOMODO_DEPOSIT = 0;
+    }
 }
 
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
@@ -207,6 +208,14 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             }
         }
         //printf("opretlen.%d num.%d\n",opretlen,num);
+    }
+    else if ( script[offset] == 'X' && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
+    {
+        if ( (num= komodo_issued_opreturn(&shortflag,base,txids,vouts,&script[offset],opretlen)) > 0 )
+        {
+            // return(-1) if invalid withdraw redeem
+            // check txid in assetchain, verify fiatoshis and conversion rate
+        }
     }
     return(0);
 }
@@ -282,6 +291,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         komodo_gateway_deposit(0,0,0,0,0,0,txids[i],vouts[i],height);
                 }
             }
+        }
+        else if ( tomomodo != 0 && opretbuf[0] == 'X' )
+        {
+            // verify and update limits
         }
     }
     return(typestr);

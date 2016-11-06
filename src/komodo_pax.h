@@ -317,7 +317,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
                 usdvol = komodo_paxvol(basevolume,baseusd) / MINDENOMS[baseid];
                 usdkmd = ((uint64_t)btcusd * 1000000000) / kmdbtc;
                 //printf("base -> USD %llu, BTC %llu KMDUSD %llu\n",(long long)baseusd,(long long)btcusd,(long long)kmdusd);
-                printf("usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %.8f\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,dstr(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd)));
+                //printf("usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %.8f\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,dstr(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd)));
                 return(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd));
             } else printf("zero val in KMD conv %llu %llu %llu\n",(long long)pvals[USD],(long long)kmdbtc,(long long)btcusd);
         }
@@ -326,7 +326,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
             if ( baseid != MAX_CURRENCIES )
             {
                 pax_rank(ranked,pvals);
-                printf("%s M1 percentage %.8f\n",CURRENCIES[baseid],dstr(10 * ranked[baseid]));
+                //printf("%s M1 percentage %.8f\n",CURRENCIES[baseid],dstr(10 * ranked[baseid]));
                 return(10 * ranked[baseid]); // scaled percentage of M1 total
             } else return(basevolume);
         }
@@ -426,7 +426,7 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume
             }
             sum /= densum;
             sum = (sum * basevolume) / 100000;
-            printf("seed.%llx sum %.8f densum %.8f basevol %.8f\n",(long long)seed,dstr(sum),dstr(densum),dstr(basevolume));
+            //printf("seed.%llx sum %.8f densum %.8f basevol %.8f\n",(long long)seed,dstr(sum),dstr(densum),dstr(basevolume));
             break;
         }
     }

@@ -100,7 +100,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 
 #define ASSETCHAINS_MINHEIGHT 100
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
-void komodo_gateway_deposits(CMutableTransaction *txNew);
+void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol);
 extern int32_t KOMODO_INITDONE,ASSETCHAINS_SHORTFLAG;
 extern uint64_t KOMODO_DEPOSIT;
 extern char ASSETCHAINS_SYMBOL[16];
@@ -375,7 +375,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         }
         else
         {
-            komodo_gateway_deposits(&txNew);
+            komodo_gateway_deposits(&txNew,0,"KMD");
             //fprintf(stderr,"txNew numvouts.%d\n",(int32_t)txNew.vout.size());
         }
 
