@@ -286,7 +286,11 @@ void ThreadShowMetricsScreen()
     std::cout << "\e[2J";
 
     // Print art
+#ifdef STANDALONE_MINER
+    std::cout << ZCASH_LOGO << std::endl;
+#else
     std::cout << METRICS_ART << std::endl;
+#endif
     std::cout << std::endl;
 
     // Thank you text
