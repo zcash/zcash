@@ -470,6 +470,7 @@ uint64_t PAX_fiatdest(int32_t tokomodo,char *destaddr,uint8_t pubkey33[33],char 
 int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen);
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
 extern char ASSETCHAINS_SYMBOL[16];
+int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
 
 Value paxdeposit(const Array& params, bool fHelp)
 {
@@ -509,7 +510,7 @@ Value paxdeposit(const Array& params, bool fHelp)
 Value paxwithdraw(const Array& params, bool fHelp)
 {
     extern int32_t KMDHEIGHT,KOMODO_REALTIME;
-    CWalletTx wtx; std::string dest; uint64_t komodoshis = 0; char destaddr[64]; uint8_t i,pubkey33[33]; bool fSubtractFeeFromAmount = false;
+    CWalletTx wtx; std::string dest; int32_t height; uint64_t komodoshis = 0; char destaddr[64]; uint8_t i,pubkey37[37]; bool fSubtractFeeFromAmount = false;
     if ( KOMODO_REALTIME == 0 )
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxwithdraw needs to wait for KMD realtime");
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
@@ -523,19 +524,21 @@ Value paxwithdraw(const Array& params, bool fHelp)
     if (!address.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
     int64_t fiatoshis = atof(params[1].get_str().c_str()) * COIN;
-    komodoshis = PAX_fiatdest(1,destaddr,pubkey33,(char *)params[0].get_str().c_str(),KMDHEIGHT,ASSETCHAINS_SYMBOL,fiatoshis);
+    komodoshis = PAX_fiatdest(1,destaddr,pubkey37,(char *)params[0].get_str().c_str(),KMDHEIGHT,ASSETCHAINS_SYMBOL,fiatoshis);
     dest.append(destaddr);
     CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
     if (!destaddress.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest Bitcoin address");
     for (i=0; i<33; i++)
-        printf("%02x",pubkey33[i]);
-    printf(" ht.%d srcaddr.(%s) %s fiatoshis.%lld -> dest.(%s) komodoshis.%llu\n",chainActive.Tip()->nHeight,(char *)params[0].get_str().c_str(),ASSETCHAINS_SYMBOL,(long long)fiatoshis,destaddr,(long long)komodoshis);
+        printf("%02x",pubkey37[i]);
+    height = chainActive.Tip()->nHeight;
+    printf(" ht.%d srcaddr.(%s) %s fiatoshis.%lld -> dest.(%s) komodoshis.%llu\n",height,(char *)params[0].get_str().c_str(),ASSETCHAINS_SYMBOL,(long long)fiatoshis,destaddr,(long long)komodoshis);
     EnsureWalletIsUnlocked();
     uint8_t opretbuf[64]; int32_t opretlen; uint64_t fee = komodoshis / 1000;
     if ( fee < 10000 )
         fee = 10000;
-    opretlen = komodo_opreturnscript(opretbuf,'W',pubkey33,33);
+    iguana_rwnum(1,&pubkey33[33],sizeof(height),&height);
+    opretlen = komodo_opreturnscript(opretbuf,'W',pubkey37,37);
     SendMoney(destaddress.Get(),fee,fSubtractFeeFromAmount,wtx,opretbuf,opretlen,fiatoshis);
     return wtx.GetHash().GetHex();
 }
