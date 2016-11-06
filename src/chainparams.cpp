@@ -38,7 +38,7 @@ public:
         strNetworkID = "main";
         strCurrencyUnits = "ZEC";
         consensus.fCoinbaseMustBeProtected = true;
-        consensus.nSubsidySlowStartInterval = 20000;
+        consensus.nSubsidySlowStartInterval = 10;
         consensus.nSubsidyHalvingInterval = 840000;
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
