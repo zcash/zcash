@@ -508,7 +508,10 @@ Value paxdeposit(const Array& params, bool fHelp)
 
 Value paxwithdraw(const Array& params, bool fHelp)
 {
+    extern int32_t KMDHEIGHT,KOMODO_REALTIME;
     CWalletTx wtx; std::string dest; uint64_t komodoshis = 0; char destaddr[64]; uint8_t i,pubkey33[33]; bool fSubtractFeeFromAmount = false;
+    if ( KOMODO_REALTIME == 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxwithdraw needs to wait for KMD realtime");
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxwithdraw cant be from KMD");
     if (!EnsureWalletIsAvailable(fHelp))
@@ -520,7 +523,7 @@ Value paxwithdraw(const Array& params, bool fHelp)
     if (!address.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
     int64_t fiatoshis = atof(params[1].get_str().c_str()) * COIN;
-    komodoshis = PAX_fiatdest(1,destaddr,pubkey33,(char *)params[0].get_str().c_str(),chainActive.Tip()->nHeight,ASSETCHAINS_SYMBOL,fiatoshis);
+    komodoshis = PAX_fiatdest(1,destaddr,pubkey33,(char *)params[0].get_str().c_str(),KMDHEIGHT,ASSETCHAINS_SYMBOL,fiatoshis);
     dest.append(destaddr);
     CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
     if (!destaddress.IsValid())
