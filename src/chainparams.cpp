@@ -38,14 +38,14 @@ public:
         strNetworkID = "main";
         strCurrencyUnits = "ZEC";
         consensus.fCoinbaseMustBeProtected = true;
-        consensus.nSubsidySlowStartInterval = 20000;
+        consensus.nSubsidySlowStartInterval = 2;
         consensus.nSubsidyHalvingInterval = 840000;
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 4000;
-        consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.nPowAveragingWindow = 1;
-        assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
+        consensus.powLimit = uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        consensus.nPowAveragingWindow = 17;
+        //assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
         consensus.nPowMaxAdjustDown = 32; // 32% adjustment down
         consensus.nPowMaxAdjustUp = 16; // 16% adjustment up
         consensus.nPowTargetSpacing = 2.5 * 60;
@@ -57,8 +57,8 @@ public:
         pchMessageStart[1] = 0xe9;
         pchMessageStart[2] = 0x27;
         pchMessageStart[3] = 0x64;
-        vAlertPubKey = ParseHex("04b7ecf0baa90495ceb4e4090f6b2fd37eec1e9c85fac68a487f3ce11589692e4a317479316ee814e066638e1db54e37a10689b70286e6315b1087b6615d179264");
-        nDefaultPort = 8233;
+        vAlertPubKey = ParseHex("048679fb891b15d0cada9692047fd0ae26ad8bfb83fabddbb50334ee5bc0683294deb410be20513c5af6e7b9cec717ade82b27080ee6ef9a245c36a795ab044bb3");
+        nDefaultPort = 8133;
         nMinerThreads = 0;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
@@ -73,9 +73,9 @@ public:
          * database (and is in any case of zero value).
          *
          * >>> from pyblake2 import blake2s
-         * >>> 'Zcash' + blake2s(b'The Economist 2016-10-29 Known unknown: Another crypto-currency is born. BTC#436254 0000000000000000044f321997f336d2908cf8c8d6893e88dbf067e2d949487d ETH#2521903 483039a6b6bd8bd05f0584f9a078d075e454925eb71c1f13eaff59b405a721bb DJIA close on 27 Oct 2016: 18,169.68').hexdigest()
+         * >>> 'Zclassic' + blake2s(b'No taxation without representation. BTC #437541 - 00000000000000000397f175a94dd3f530b957182eb2a9f7b79a44a94a5e0450').hexdigest()
          */
-        const char* pszTimestamp = "Zclassic-BTCBlock#437398fb01fcf9200f17248fe2a689bfff069e5d5f13b0a351f90cfb914d54c0c11bee";
+        const char* pszTimestamp = "Zclassic860413afe207aa173afee4fcfa9166dc745651c754a41ea8f155646f5aa828ac";
         CMutableTransaction txNew;
         txNew.vin.resize(1);
         txNew.vout.resize(1);
@@ -86,20 +86,19 @@ public:
         genesis.hashPrevBlock.SetNull();
         genesis.hashMerkleRoot = genesis.BuildMerkleTree();
         genesis.nVersion = 4;
-        genesis.nTime    = 1478319508;
-        genesis.nBits    = 0x207fffff;
-        genesis.nNonce   = uint256S("0x0000000000000000000000000000000000000000000000000000000000000114");
-        genesis.nSolution = ParseHex("00bbd8171f25cd8b6e55b2fd47afce41bdd7f7f3971c60c63ae30a482f7bb6a4249ca5a9d27ed6751888072fdf65968a10bd6d0c84c37f27d84ae8295a9a7b0cef9faea790128abf33422f78d13b1bb5df1fec7f0ddba4740bd8b7136f8410fe6dc43d3719f819774f265df72d3c1e40b1dbe198d9927af4f64917fc0266193e22b7a1218ebf23b019f25e6c6916a9b41fae7825ba3af3224f33b3705ad2f300c7a0a1339f4e90b902c8f8827e418d8f7407108a6c45aabd49925f73811821c70680879009edcee56e4d6f2889f8f674632535c866bce25c87ebb1c354037b5e2851ae583cd5955a98ad9954d793edb5ca25e9c03980f2a1609e498204bfe311cceddf65c18da0fe2bd432e1168d4e50c458785cb0251c0390e4e026cf1d4bc196c276dbccf606798652c80c4a9087f68287027fff28a5aafa44dd1caa824136a54d5ddfb2c21ae8e1e364b9736abcb20265ab5260d3e3e5660d03292550ba8b7af55db9e327ac0601bc4f3fb3a9bcf68996679d55cd29f57d0405034c210d4d41c3299a331b7c459da1568f30ce550bb82a2532322d5bfbc8a4058a72e73a51a798fec7029f67c3a7c7e8c04f16f0e453d023ce970cb7408b139e13057f9d96f19d9b37d83bf3fc96eb0b1a19dd0a8e655c3b929289978f15c116f05439c1715c143a43efdde1349fe82f99d30806d64369be0251b9133f02b8a763eb17e5b7201bb144f50dc7dd95d7f8f6c11e3da1c563f0726da916059ad4400a0224c21af535048e25a455551bed63ba66ec5c4f622aa3ba7592f12529bda83adeaca94c8198704046fffa2962b7c41a0515be809992d1d2a36ad5414bbccf35e4a7b448632233cba0409003c4ea5af5991249f68b317399eccd075ecefdd78936351679f1ce3dc6bd59c5cafe068967563f86aedefdaf75a8a71c567ccd4e98ad37de9e028f30b76286db9d3bcd90fb61e8064cfa7d8b97da4b5615d1b674eadbb962253616f6929db32d2df0b63cdec30716a1d205873344e31c2ecb9ee5d67911bb827f47f7c96bb965e439e98a4159b4caf0dc7e16360659f877e8cf2cd0af9a10cf29dda2f86b26866be32042313f1812a6ebd65a04b8b2d7fc5ab0999a3ccc0a4c1323164bd545992f849aa05ca69188fc9f956831f4cd5a91727979b65e36e3796c0ca26983d840240307b310ded161ab354851680195ed61067773cf072350b2c8815737fff5cff30d0ccaaf79c33ef6d875149e56a4751ba38d58a12314cfb10b32082c345fa6574e73965ce0d47d384538b453c87c3a9d8a1f6fa20f48fbdc9f8e63f6a7c945c6d84f893dbc4cb10a9a1e924b49a756cb1f5cf92589a0f9edf62a4335fc26167e45e2b2a003c142d07969cadcc69bdcf6df2a682b50fdc73ed64060f26468563d73958391d07f44b40377da3e94c951f91e4882cccea89e1b89ba7ee016120f237dbec9ec7eec8ed44cd4ff87bda5c00ecc92098f9259d850fc8bf204814e4e1f64e9e79c9f6f2618aca90d1d0665b1ad23756b4fe319c5d311b173ed05739a23c490e733972022ac18e92534e3982eea4635a8dcad79950a030f23c68fc7f5bfca77925d9e6e1915227bb5cc2471a958337b43fe614371efdcdd0044086285b09f82198ffd89f3a4d7da2ae3d9d9e1e3048dd58ef60e4c1de6c994165a5a2e2943473b2c2a0f9c3ff8b8229d71daec0351e3d6b46d8efb7b191407deb55c53b17d21b88f817e18e37e7cc99bd24778166cd9689853c2c79cf4e239fec46155863b10d0e00a686d8aa3155592b336762453703baa8b18972cb30d224aae0fcaac3717fd13637cf989fa1fa37e6cda169075ca584b3173a32a41b4fd1bef6647be99fc8026e9e9cfe3cbe298e18cf4996676e8675c22bf7118");
+        genesis.nTime    = 1478403829;
+        genesis.nBits    = 0x1f07ffff;
+        genesis.nNonce   = uint256S("0x000000000000000000000000000000000000000000000000000000000000021d");
+        genesis.nSolution = ParseHex("009aaa951ca873376788d3002918d956e371bdf03c1afcfd8eea17867b5480d2e59a2a4dd52ed0d091af0c0909aa66ce2da97266926a9ea69b9ccca389bc120d9c4dbbae727ab9d6dfd1cd847df0ef0cc9bc989f11bdd6522429c15957daa3c5a2612522ded69857c148c0638611a19287599b47683c714b5774d0fcb1341cf4fc3a546a2441a19f02a55c6f9775749e57783b2abd5b25d41753d2f60892bbb4c3173d7787dbf5e50267324db218a14dd65f71bb02cf2566d3201800f866701db8c221424b75c639de58e7e40705157ae7d10da708ec2b9e71b9bc1ad34854a7bdf58d93766b6e291d3b545fa1f785a1a9829eccd525d16856f4317f0449d5c3516736f1e564f17690f13d3c939ad5516f1db70194902c20afd939168037fa404ec962dfbe752f79ac87a2cc3fd07bcd94d1975b1849cc739c0bc144ae4e75eda1bbed5b5ef8f65966257ec7b1fc6bb600e12e1c65c8c13a505f35dd363e07b6238211a0e502e36db5a620310b544360dd9b4a6cedabc34eeb530139daad50d4a5b6eaf4d50be4ba10e970ce984fb705376a3b0b4bf3f3778600f14e739e04406106f707085ab87ca70598c032b6717a54a9fd8ef72fdd78fb41fa9d45ad685caf77e0fc42e8e644634c24bc972f3ab0e3f0345854eda624045feb6bc9d20b5b1fc6903ebc64026e51da598c0d8711c452131a8fd2bbe01403af20e5db88afcd53b6107f001dae78b548d6a1581baca15359de83e54e75d8fc6374ca1edec17a9f4b06931162f9952575c5c3fb5dfc70a0f793049e781926daaafd4f4d330cf7d5635af1541f0d29e709a37c088d6d2e7aa09d15dfb9c2ae6c1ce661e85e9d89772eb47cfea00c621b66faf8a48cfa970b898dbd77b14e7bf44b742c00f76d2435f949f027132adb1e974551488f988e9fe379a0f86538ee59e26637a3d50bf400c7f52aa9457d77c3eb426628bb17909b26a6820d0772d4c6f74472f635e4c6e72272ce01fc475df69e10371457c55e0fbdf3a392850b9924da9c9a55792325c4318562593f0df8d39559065be03a22b1b6c21206aa1958a0d33257d89b74dea42a11aabf8eddbfe6136ab649744b704eb3e3d473654b588927dd9f486c1cd02639cf656ccbf2c4869c2ed1f2ba4ec55e69a42d5af6b3605a0cdf987734727c6fc1c1489870fb300139328c4d12eb6f5e8309cc09f5f3c29ab0957374113931ec9a56e7579446f12faacda9bd50899a17bd0f78e89ed70a723fdadfb1f4bc3317c8caa32757901604fb79ae48e22251c3b1691125ec5a99fabdf62b015bc817e1c30c06565a7071510b014058a77856a150bf86ab0c565b8bbbed159e2fb862c6215752bf3f0563e2bbbf23b0dbfb2de21b366b7e4cda212d69502643ca1f13ce362eef7435d60530b9999027dd39cd01fd8e064f1ccf6b748a2739707c9f76a041f82d3e046a9c184d83396f1f15b5a11eddb2baff40fc7b410f0c43e36ac7d8ff0204219abe4610825191fbb2be15a508c839259bfd6a4c5204c779fad6c23bbd37f90709654a5b93c6f93b4c844be12cd6cd2200afbf600b2ae9b6c133d8cdb3a85312a6d9948213c656db4d076d2bacd10577d7624be0c684bd1e5464bb39006a524d971cd2223ae9e23dea12366355b3cc4c9f6b8104df6abd23029ac4179f718e3a51eba69e4ebeec511312c423e0755b53f72ac18ef1fb445d7ab83b0894435a4b1a9cd1b473792e0628fd40bef624b4fb6ba457494cd1137a4da9e44956143068af9db98135e6890ef589726f4f5fbd45a713a24736acf150b5fb7a4c3448465322dccd7f3458c49cf2d0ef6dd7dd2ed1f1147f4a00af28ae39a73c827a38309f59faf8970448436fbb14766a3247aac4d5c610db9a662b8cb5b3e2");
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x"+consensus.hashGenesisBlock.ToString()));
+        assert(consensus.hashGenesisBlock == uint256S("0x0007104ccda289427919efc39dc9e4d499804b7bebc22df55f8b834301260602"));
         assert(genesis.hashMerkleRoot == uint256S("0x"+genesis.hashMerkleRoot.ToString()));
 
         vFixedSeeds.clear();
         vSeeds.clear();
-        //vSeeds.push_back(CDNSSeedData("z.cash", "dnsseed.z.cash")); // Zcash
-        //vSeeds.push_back(CDNSSeedData("str4d.xyz", "dnsseed.str4d.xyz")); // @str4d
-        //vSeeds.push_back(CDNSSeedData("znodes.org", "dnsseed.znodes.org")); // @bitcartel
+        vSeeds.push_back(CDNSSeedData("zclassic.org", "dnsseed.zclassic.org")); // zclassic
+        vSeeds.push_back(CDNSSeedData("rotorproject.org", "dnsseed.rotorproject.org")); // @IndieOnion
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
         base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
