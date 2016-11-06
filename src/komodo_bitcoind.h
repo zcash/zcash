@@ -367,8 +367,8 @@ uint64_t komodo_seed(int32_t height)
     uint256 hash; uint64_t seed = 0; CBlockIndex *pindex = chainActive[height];
     if ( pindex != 0 )
     {
-        hash = pindex->GetHash();
-        seed = hash & 0xffffffffffffffff;
+        hash = pindex->GetBlockHash();
+        seed = (uint64_t)hash;
     }
     return(seed);
 }
