@@ -364,11 +364,13 @@ uint32_t komodo_txtime(uint256 hash)
 
 uint64_t komodo_seed(int32_t height)
 {
-    uint256 hash; uint64_t seed = 0; CBlockIndex *pindex = chainActive[height];
+    uint256 hash; uint8_t *ptr; uint64_t seed = 0; CBlockIndex *pindex = chainActive[height];
     if ( pindex != 0 )
     {
         hash = pindex->GetBlockHash();
-        seed = (uint64_t)hash;
+        ptr = (uint8_t *)&hash;
+        for (i=0; i<8; i++)
+            seed = (seed << 8) | ptr[i];
     }
     return(seed);
 }
