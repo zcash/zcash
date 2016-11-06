@@ -18,8 +18,8 @@ Install
 ```{r, engine='bash'}
 # Build
 ./zcutil/build.sh -j$(nproc)
-# Run on Testnet
-./src/zcashd -connect=54.191.72.102
+# Run
+./src/zcashd
 ```
 
 
