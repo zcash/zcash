@@ -537,7 +537,7 @@ Value paxwithdraw(const Array& params, bool fHelp)
     uint8_t opretbuf[64]; int32_t opretlen; uint64_t fee = komodoshis / 1000;
     if ( fee < 10000 )
         fee = 10000;
-    iguana_rwnum(1,&pubkey33[33],sizeof(height),&height);
+    iguana_rwnum(1,&pubkey37[33],sizeof(height),&height);
     opretlen = komodo_opreturnscript(opretbuf,'W',pubkey37,37);
     SendMoney(destaddress.Get(),fee,fSubtractFeeFromAmount,wtx,opretbuf,opretlen,fiatoshis);
     return wtx.GetHash().GetHex();
