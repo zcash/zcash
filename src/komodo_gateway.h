@@ -392,6 +392,7 @@ void komodo_gateway_iteration(char *symbol)
     if ( KMDHEIGHT <= 0 )
         KMDHEIGHT = 1;
     KOMODO_REALTIME = 0;
+    printf("komodo_gateway_iteration\n");
     if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
     {
         if ( (infoobj= cJSON_Parse(retstr)) != 0 )

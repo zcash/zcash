@@ -101,6 +101,8 @@ bool AppInit(int argc, char* argv[])
         fprintf(stderr,"call komodo_args NOTARY_PUBKEY.(%s)\n",NOTARY_PUBKEY.c_str());
         while ( ASSETCHAIN_INIT == 0 )
         {
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                komodo_gateway_iteration(ASSETCHAINS_SYMBOL);
             sleep(1);
         }
         if (!boost::filesystem::is_directory(GetDataDir(false)))
