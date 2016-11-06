@@ -73,11 +73,14 @@ struct pax_transaction *komodo_paxmark(struct pax_transaction *space,uint256 txi
 
 void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout,int32_t height) // assetchain context
 {
-    struct pax_transaction *pax;
+    struct pax_transaction *pax; int32_t addflag = 0;
     pthread_mutex_lock(&komodo_mutex);
     HASH_FIND(hh,PAX,&txid,sizeof(txid),pax);
     if ( pax == 0 )
+    {
         pax = (struct pax_transaction *)calloc(1,sizeof(*pax));
+        addflag = 1;
+    }
     if ( coinaddr != 0 )
     {
         strcpy(pax->coinaddr,coinaddr);
@@ -98,7 +101,8 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
     }
     pax->txid = txid;
     pax->vout = vout;
-    HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
+    if ( addflag != 0 )
+        HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
     pthread_mutex_unlock(&komodo_mutex);
 }
 
