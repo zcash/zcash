@@ -479,13 +479,13 @@ void komodo_gateway_iteration(char *symbol)
                     for (i=0; i<n; i++)
                     {
                         item = jitem(array,i);
-                        coinaddr = jstr(item,"address");
-                        value = jdouble(item,"KMD") * COIN;
-                        shortflag = juint(item,"short");
-                        vout = jint(item,"prev_vout");
-                        height = jint(item,"height");
-                        base = jstr(item,"fiat");
-                        txidstr = jstr(item,"prev_hash");
+                        coinaddr = jstr(item,(char *)"address");
+                        value = jdouble(item,(char *)"KMD") * COIN;
+                        shortflag = juint(item,(char *)"short");
+                        vout = jint(item,(char *)"prev_vout");
+                        height = jint(item,(char *)"height");
+                        base = jstr(item,(char *)"fiat");
+                        txidstr = jstr(item,(char *)"prev_hash");
                         if ( coinaddr != 0 && base != 0 && value > 0 && height > 0 )
                         {
                             fiatoshis = jdouble(item,base) * COIN;
