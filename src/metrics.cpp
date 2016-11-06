@@ -256,8 +256,8 @@ void ThreadShowMetricsScreen()
     std::cout << std::endl;
 
     // Thank you text
-    std::cout << _("Thank you for running a Zcash node!") << std::endl;
-    std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
+    std::cout << _("Thank you for running a Zclassic node!") << std::endl;
+    std::cout << _("You're helping to strengthen the network and contributing to a social good, all coins are created equal :)") << std::endl;
     std::cout << std::endl;
 
     // Count uptime
