@@ -300,7 +300,7 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
 uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t basevolume)
 {
     uint32_t pvalb,pvalr,kmdbtc,btcusd; uint64_t usdvol,baseusd,usdkmd,baserel,ranked[32];
-    if ( basevolume > 1000000*COIN )
+    if ( basevolume > 10000*COIN )
     {
         printf("paxcalc overflow %.8f\n",dstr(basevolume));
         return(0);
@@ -335,9 +335,9 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
             baserel = ((uint64_t)pvalb * 1000000000) / pvalr;
             printf("baserel.%lld %lld %lld %.8f %.8f\n",(long long)baserel,(long long)MINDENOMS[baseid],(long long)MINDENOMS[relid],dstr(MINDENOMS[baseid]/MINDENOMS[relid]),dstr(MINDENOMS[relid]/MINDENOMS[baseid]));
             if ( MINDENOMS[baseid] > MINDENOMS[relid] )
-                baserel /= (MINDENOMS[baseid] / MINDENOMS[relid]);
+                basevolume /= (MINDENOMS[baseid] / MINDENOMS[relid]);
             else if ( MINDENOMS[baseid] < MINDENOMS[relid] )
-                baserel *= (MINDENOMS[relid] / MINDENOMS[baseid]);
+                basevolume *= (MINDENOMS[relid] / MINDENOMS[baseid]);
             return(komodo_paxvol(basevolume,baserel));
         }
         else printf("null pval for %s\n",CURRENCIES[relid]);
