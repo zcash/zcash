@@ -323,7 +323,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
             if ( baseid != MAX_CURRENCIES )
             {
                 pax_rank(ranked,pvals);
-                return(10 * ranked[baseid]); // map to percentage
+                return(10 * ranked[baseid]); // scaled percentage of M1 total
             }
         }
         else if ( (pvalr= pvals[relid]) != 0 )
@@ -358,6 +358,8 @@ uint64_t _komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolum
 uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t lastprice,seed,tolerance,den,densum,sum=0,votes[539];
+    return(_komodo_paxprice(height,base,rel,basevolume));
+
     numvotes = (int32_t)(sizeof(Peggy_inds)/sizeof(*Peggy_inds));
     memset(votes,0,sizeof(votes));
     for (sum=i=zeroes=nonz=0; i<numvotes; i++)
