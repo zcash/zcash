@@ -368,7 +368,7 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume
     memset(votes,0,sizeof(votes));
     for (sum=i=zeroes=nonz=0; i<numvotes; i++)
     {
-        if ( (votes[numvotes-1-i]= _komodo_paxprice(height-i,base,rel,COIN)) == 0 )
+        if ( (votes[numvotes-1-i]= _komodo_paxprice(height-i,base,rel,10000)) == 0 )
         {
             zeroes++;
             //printf("null price height.%d\n",height-i);
@@ -421,7 +421,7 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume
                 sum += (den * votes[(ind + j) % numvotes]);
             }
             sum /= densum;
-            sum = (sum * basevolume) / COIN;
+            sum = (sum / 10000) * basevolume;
             printf("seed.%llx sum %.8f densum %.8f basevol %.8f\n",(long long)seed,dstr(sum),dstr(densum),dstr(basevolume));
             break;
         }
