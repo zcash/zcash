@@ -362,6 +362,17 @@ uint32_t komodo_txtime(uint256 hash)
     return(0);
 }
 
+uint64_t komodo_seed(int32_t height)
+{
+    uint256 hash; uint64_t seed = 0; CBlockIndex *pindex = chainActive[height];
+    if ( pindex != 0 )
+    {
+        hash = pindex->GetHash();
+        seed = hash & 0xffffffffffffffff;
+    }
+    return(seed);
+}
+
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
     //int32_t i; uint256 hash;
