@@ -4,7 +4,9 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "miner.h"
+#if defined(ENABLE_WALLET) && defined(ENABLE_MINING)
 #include "pow/tromp/equi_miner.h"
+#endif
 
 #include "amount.h"
 #include "chainparams.h"
@@ -21,7 +23,9 @@
 #include "util.h"
 #include "utilmoneystr.h"
 #ifdef ENABLE_WALLET
+ #ifdef ENABLE_MINING
 #include "crypto/equihash.h"
+ #endif
 #include "wallet/wallet.h"
 #include <functional>
 #endif
@@ -414,6 +418,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     return CreateNewBlock(scriptPubKey);
 }
 
+#ifdef ENABLE_MINING
 static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 {
     LogPrintf("%s\n", pblock->ToString());
@@ -687,4 +692,5 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
         minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet));
 }
 
+#endif // ENABLE_MINING
 #endif // ENABLE_WALLET

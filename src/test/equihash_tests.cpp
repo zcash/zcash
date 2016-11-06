@@ -3,6 +3,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#if defined(HAVE_CONFIG_H)
+#include "config/bitcoin-config.h"
+#endif
+
 #include "arith_uint256.h"
 #include "crypto/sha256.h"
 #include "crypto/equihash.h"
@@ -40,6 +44,7 @@ void PrintSolutions(std::stringstream &strm, std::set<std::vector<uint32_t>> sol
     strm << "\n}";
 }
 
+#ifdef ENABLE_MINING
 void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, const arith_uint256 &nonce, const std::set<std::vector<uint32_t>> &solns) {
     size_t cBitLen { n/(k+1) };
     crypto_generichash_blake2b_state state;
@@ -78,6 +83,7 @@ void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, c
     BOOST_CHECK(retOpt == solns);
     BOOST_CHECK(retOpt == ret);
 }
+#endif
 
 void TestEquihashValidator(unsigned int n, unsigned int k, const std::string &I, const arith_uint256 &nonce, std::vector<uint32_t> soln, bool expected) {
     size_t cBitLen { n/(k+1) };
@@ -95,6 +101,7 @@ void TestEquihashValidator(unsigned int n, unsigned int k, const std::string &I,
     BOOST_CHECK(isValid == expected);
 }
 
+#ifdef ENABLE_MINING
 BOOST_AUTO_TEST_CASE(solver_testvectors) {
     TestEquihashSolvers(96, 5, "block header", 0, {
   {976, 126621, 100174, 123328, 38477, 105390, 38834, 90500, 6411, 116489, 51107, 129167, 25557, 92292, 38525, 56514, 1110, 98024, 15426, 74455, 3185, 84007, 24328, 36473, 17427, 129451, 27556, 119967, 31704, 62448, 110460, 117894},
@@ -147,6 +154,7 @@ BOOST_AUTO_TEST_CASE(solver_testvectors) {
   {8144, 33053, 33933, 77498, 21356, 110495, 42805, 116575, 27360, 48574, 100682, 102629, 50754, 64608, 96899, 120978, 11924, 74422, 49240, 106822, 12787, 68290, 44314, 50005, 38056, 49716, 83299, 95307, 41798, 82309, 94504, 96161}
                 });
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(validator_testvectors) {
     // Original valid solution
