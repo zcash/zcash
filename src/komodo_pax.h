@@ -352,24 +352,33 @@ uint64_t _komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolum
 
 uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume)
 {
-    int32_t i,j,k,ind,numvotes,wt; int64_t delta; uint64_t seed,tolerance,den,densum,sum=0,votes[539];
+    int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t lastprice,seed,tolerance,den,densum,sum=0,votes[539];
     numvotes = (int32_t)(sizeof(Peggy_inds)/sizeof(*Peggy_inds));
     memset(votes,0,sizeof(votes));
-    for (sum=i=0; i<numvotes; i++)
+    for (sum=i=zeroes=nonz=0; i<numvotes; i++)
     {
-        if ( (votes[i]= _komodo_paxprice(height-i,base,rel,COIN)) == 0 )
+        if ( (votes[numvotes-1-i]= _komodo_paxprice(height-i,base,rel,COIN)) == 0 )
         {
-            printf("null price height.%d\n",height-i);
-            return(0);
-        }
-        sum += votes[i];
+            zeroes++;
+            //printf("null price height.%d\n",height-i);
+            //return(0);
+        } else sum += votes[i], nonz++;
         //printf("%.8f, ",dstr(votes[i]));
     }
-    sum /= numvotes;
+    if ( nonz <= (numvotes >> 1) )
+        return(0);
+    sum /= nonz;
+    lastprice = sum;
+    for (i=0; i<numvotes; i++)
+    {
+        if ( votes[i] == 0 )
+            votes[i] = lastprice;
+        else lastprice = votes[i];
+    }
     //printf("\n}; // numvotes.%d\n\n",numvotes);
     seed = komodo_seed(height);
-    tolerance = sum / 100;
-    //printf("aveprice %.8f seed %llx\n",dstr(sum),(long long)seed);
+    tolerance = sum / 50;
+    printf("aveprice %.8f seed %llx\n",dstr(sum),(long long)seed);
     for (k=0; k<numvotes; k++)
     {
         ind = Peggy_inds[(k + seed) % numvotes];
