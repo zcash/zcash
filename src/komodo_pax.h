@@ -333,7 +333,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
         else if ( (pvalr= pvals[relid]) != 0 )
         {
             baserel = ((uint64_t)pvalb * 1000000000) / pvalr;
-            printf("baserel.%lld %lld %lld %.8f %.8f\n",(long long)baserel,(long long)MINDENOMS[baseid],(long long)MINDENOMS[relid],dstr(MINDENOMS[baseid]/MINDENOMS[relid]),dstr(MINDENOMS[relid]/MINDENOMS[baseid]));
+            //printf("baserel.%lld %lld %lld %.8f %.8f\n",(long long)baserel,(long long)MINDENOMS[baseid],(long long)MINDENOMS[relid],dstr(MINDENOMS[baseid]/MINDENOMS[relid]),dstr(MINDENOMS[relid]/MINDENOMS[baseid]));
             if ( MINDENOMS[baseid] > MINDENOMS[relid] )
                 basevolume /= (MINDENOMS[baseid] / MINDENOMS[relid]);
             else if ( MINDENOMS[baseid] < MINDENOMS[relid] )
