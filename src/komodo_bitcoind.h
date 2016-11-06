@@ -23,6 +23,8 @@
 #include <curl/easy.h>
 #endif
 
+#define issue_curl(cmdstr) bitcoind_RPC(0,"curl","http://127.0.0.1:7771",0,cmdstr,0)
+
 struct MemoryStruct { char *memory; size_t size; };
 struct return_string { char *ptr; size_t len; };
 
@@ -136,7 +138,6 @@ char *post_process_bitcoind_RPC(char *debugstr,char *command,char *rpcstr,char *
  * perform the query
  *
  ************************************************************************/
-
 
 char *bitcoind_RPC(char **retstrp,char *debugstr,char *url,char *userpass,char *command,char *params)
 {
@@ -344,7 +345,6 @@ char *komodo_issuemethod(char *method,char *params,uint16_t port)
     }
     return(retstr2);
 }
-//curl --url "http://127.0.0.1:13033" --user "user1557335368:pass111720054" --data "{\"method\":\"getinfo\",\"params\":[]}"
 
 uint32_t komodo_txtime(uint256 hash)
 {

@@ -113,7 +113,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight > ASSETCHAINS_MINHEIGHT && mempool.GetTotalTxSize() <= 0 )
+    while ( chainActive.Tip()->nHeight > ASSETCHAINS_MINHEIGHT && mempool.GetTotalTxSize() <= 0 )
     {
         sleep(10);
         if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 )
@@ -372,6 +372,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 txNew.vout[1].nValue = 0;
                 //fprintf(stderr,"opretlen.%d\n",opretlen);
             }
+            komodo_gateway_deposits(&txNew,0,(char *)"EUR");
         }
         else
         {
