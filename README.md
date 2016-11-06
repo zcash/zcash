@@ -1,5 +1,9 @@
-Zcash 1.0.1
-===========
+Zclassic 1.0.1
+==============
+
+What is Zclassic
+----------------
+Zclassic is a Zcash fork with no 20% Founders Tax.
 
 What is Zcash?
 --------------
