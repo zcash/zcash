@@ -520,7 +520,7 @@ void static BitcoinMiner(CWallet *pwallet)
     std::string solver;
     if ( notaryid >= 0 )
         solver = "tromp";
-        solver = "default";
+    else solver = "default";
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
     fprintf(stderr,"Mining with %s\n",solver.c_str());
@@ -572,7 +572,7 @@ void static BitcoinMiner(CWallet *pwallet)
             }
             CBlock *pblock = &pblocktemplate->block;
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
-            LogPrintf("Running ZcashMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
+            LogPrintf("Running ZcashMiner.%s with %u transactions in block (%u bytes)\n", solver.c_str(),pblock->vtx.size(),
                 ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
             //
