@@ -363,7 +363,11 @@ uint64_t _komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolum
 uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t lastprice,seed,tolerance,den,densum,sum=0,votes[539];
-    //return(_komodo_paxprice(height,base,rel,basevolume));
+    if ( basevolume > 10000*COIN )
+    {
+        printf("komodo_paxprice overflow %.8f\n",dstr(basevolume));
+        return(0);
+    }
     numvotes = (int32_t)(sizeof(Peggy_inds)/sizeof(*Peggy_inds));
     memset(votes,0,sizeof(votes));
     for (sum=i=zeroes=nonz=0; i<numvotes; i++)
