@@ -137,7 +137,7 @@ void *chainparams_commandline(void *ptr)
     {
         sleep(1);
     }
-    fprintf(stderr,">>>>>>>> port.%u\n",ASSETCHAINS_PORT);
+    //fprintf(stderr,">>>>>>>> port.%u\n",ASSETCHAINS_PORT);
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
         mainParams.SetDefaultPort(ASSETCHAINS_PORT);

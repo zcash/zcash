@@ -40,7 +40,7 @@ uint64_t komodo_paxtotal()
 {
     struct pax_transaction *pax,*tmp; uint64_t total = 0;
     tmp = 0;
-    while ( (pax= (struct pax_transaction *)PAX->hh.next) != 0 && pax != tmp )
+    while ( PAX != 0 && (pax= (struct pax_transaction *)PAX->hh.next) != 0 && pax != tmp )
     {
         if ( pax->marked == 0 )
             total += pax->fiatoshis;
@@ -153,7 +153,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
         opcode = 'I';
     else opcode = 'X';
     tmp = 0;
-    while ( (pax= (struct pax_transaction *)PAX->hh.next) != 0 && pax != tmp )
+    while ( PAX != 0 && (pax= (struct pax_transaction *)PAX->hh.next) != 0 && pax != tmp )
     {
         if ( pax->marked != 0 )
             continue;
