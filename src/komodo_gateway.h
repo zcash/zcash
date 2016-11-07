@@ -27,16 +27,17 @@ struct pax_transaction
 
 uint64_t komodo_paxtotal()
 {
-    struct pax_transaction *pax,*tmp; uint64_t total = 0;
+    struct pax_transaction *pax,*tmp; int32_t n = 0; uint64_t total = 0;
+    pthread_mutex_lock(&komodo_mutex);
     tmp = 0;
     if ( PAX != 0 )
     {
         pax = (struct pax_transaction *)PAX->hh.next;
-        while ( pax != 0 && pax != tmp )
+        while ( pax != 0 && pax != tmp && n++ < 1000000 )
         {
-            //printf("PAX.[%p %p] pax.%p marked.%d fiat %.8f KMD %.8f\n",PAX->hh.next,PAX->hh.prev,pax,pax->marked,dstr(pax->fiatoshis),dstr(pax->komodoshis));
             if ( pax->marked == 0 )
             {
+                //printf("PAX.[%p %p] pax.%p marked.%d fiat %.8f KMD %.8f\n",PAX->hh.next,PAX->hh.prev,pax,pax->marked,dstr(pax->fiatoshis),dstr(pax->komodoshis));
                 if ( komodo_is_issuer() != 0 )
                     total += pax->fiatoshis;
                 else total += pax->komodoshis;
@@ -45,6 +46,9 @@ uint64_t komodo_paxtotal()
             pax = (struct pax_transaction *)pax->hh.next;
         }
     }
+    pthread_mutex_unlock(&komodo_mutex);
+    if ( n >= 1000000 )
+        printf("komodo_paxtotal n.%d iterations?\n",n);
     return(total);
 }
 
