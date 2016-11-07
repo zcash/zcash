@@ -376,7 +376,7 @@ uint64_t komodo_seed(int32_t height)
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
     //int32_t i; uint256 hash;
-    komodo_init();
+    komodo_init(pindex->nHeight);
     //hash = block.GetHash();
     //for (i=0; i<32; i++)
     //    printf("%02x",((uint8_t *)&hash)[i]);
@@ -390,7 +390,6 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 int32_t komodo_block2height(CBlock *block)
 {
     int32_t i,n,height = 0; uint8_t *ptr;
-    komodo_init();
 #ifdef KOMODO_ZCASH
     ptr = (uint8_t *)block->vtx[0].vin[0].scriptSig.data();
 #else
@@ -409,6 +408,7 @@ int32_t komodo_block2height(CBlock *block)
         }
         //printf(" <- coinbase.%d ht.%d\n",(int32_t)block->vtx[0].vin[0].scriptSig.size(),height);
     }
+    komodo_init(height);
     return(height);
 }
 
@@ -419,14 +419,14 @@ void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
 #else
     uint8_t *ptr = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
 #endif
-    komodo_init();
+    komodo_init(0);
     memcpy(pubkey33,ptr+1,33);
 }
 
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
     CBlock block;
-    komodo_init();
+    komodo_init(height);
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {

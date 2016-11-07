@@ -26,7 +26,7 @@
 #include <ctype.h>
 
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t kheight,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout);
-void komodo_init();
+void komodo_init(int32_t height);
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp);
 char *komodo_issuemethod(char *method,char *params,uint16_t port);
 
@@ -150,7 +150,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         printf("fname.(%s) fpos.%ld\n",fname,ftell(fp));
         KOMODO_INITDONE = (uint32_t)time(NULL);
     }
-    if ( height <= 0 )
+    if ( height <= 0 || )
     {
         //printf("early return: stateupdate height.%d\n",height);
         return;
@@ -347,7 +347,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     uint64_t signedmask,voutmask;
     uint8_t scriptbuf[4096],pubkeys[64][33]; uint256 kmdtxid,btctxid,txhash;
     int32_t i,j,k,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
-    komodo_init();
+    komodo_init(pindex->nHeight);
     if ( pindex->nHeight > hwmheight )
         hwmheight = pindex->nHeight;
     else
