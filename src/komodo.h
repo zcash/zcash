@@ -150,7 +150,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         printf("fname.(%s) fpos.%ld\n",fname,ftell(fp));
         KOMODO_INITDONE = (uint32_t)time(NULL);
     }
-    if ( height <= 0 || )
+    if ( height <= 0 )
     {
         //printf("early return: stateupdate height.%d\n",height);
         return;
