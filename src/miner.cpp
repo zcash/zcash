@@ -114,7 +114,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize());
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize());
     while ( chainActive.Tip()->nHeight > ASSETCHAINS_MINHEIGHT && mempool.GetTotalTxSize() <= 0 )
     {
         deposits = komodo_paxtotal();
@@ -578,8 +579,8 @@ void static BitcoinMiner(CWallet *pwallet)
             }
             CBlock *pblock = &pblocktemplate->block;
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
-            LogPrintf("Running ZcashMiner.%s with %u transactions in block (%u bytes)\n", solver.c_str(),pblock->vtx.size(),
-                ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
+            LogPrintf("Running ZcashMiner.%s with %u transactions in block (%u bytes)\n",solver.c_str(),pblock->vtx.size(),::GetSerializeSize(*pblock,SER_NETWORK,PROTOCOL_VERSION));
+            frintf(stderr,"Running ZcashMiner.%s with %u transactions in block (%u bytes)\n",solver.c_str(),pblock->vtx.size(),::GetSerializeSize(*pblock,SER_NETWORK,PROTOCOL_VERSION));
 
             //
             // Search
@@ -594,9 +595,9 @@ void static BitcoinMiner(CWallet *pwallet)
                 fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
             } else Mining_start = 0;
             Mining_height = pindexPrev->nHeight+1;
-            //fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);
             while (true)
             {
+                fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);
                 // Hash state
                 crypto_generichash_blake2b_state state;
                 EhInitialiseState(n, k, state);
@@ -610,19 +611,22 @@ void static BitcoinMiner(CWallet *pwallet)
                 crypto_generichash_blake2b_state curr_state;
                 curr_state = state;
                 crypto_generichash_blake2b_update(&curr_state,pblock->nNonce.begin(),pblock->nNonce.size());
-
                 // (x_1, x_2, ...) = A(I, V, n, k)
                 LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",solver, pblock->nNonce.ToString());
-
                 std::function<bool(std::vector<unsigned char>)> validBlock =
                         [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
-                        (std::vector<unsigned char> soln) {
+                        (std::vector<unsigned char> soln)
+                {
                     // Write the solution to the hash and compute the result.
                     LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
                     solutionTargetChecks.increment();
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
+                    {
+                        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                            printf("missed target\n");
                         return false;
+                    }
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+20 )
                     {
                         printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+20-time(NULL)));
@@ -707,14 +711,29 @@ void static BitcoinMiner(CWallet *pwallet)
                 boost::this_thread::interruption_point();
                 // Regtest mode doesn't require peers
                 if (vNodes.empty() && chainparams.MiningRequiresPeers())
+                {
+                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                        printf("no nodes, break\n");
                     break;
+                }
                 if ((UintToArith256(pblock->nNonce) & 0xffff) == 0xffff)
+                {
+                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                        printf("0xffff, break\n");
                     break;
+                }
                 if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
+                {
+                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                        printf("timeout, break\n");
                     break;
-                if (pindexPrev != chainActive.Tip())
+                }
+                if ( pindexPrev != chainActive.Tip() )
+                {
+                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                        printf("Tip advanced, break\n");
                     break;
-
+                }
                 // Update nNonce and nTime
                 pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
                 pblock->nBits = savebits;
