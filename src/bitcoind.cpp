@@ -34,6 +34,7 @@
 static bool fDaemon;
 extern char ASSETCHAINS_SYMBOL[16];
 void komodo_gateway_iteration(char *symbol);
+void komodo_iteration(char *symbol);
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
@@ -44,6 +45,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         MilliSleep(2000);
         if ( ASSETCHAINS_SYMBOL[0] != 0 )
             komodo_gateway_iteration(ASSETCHAINS_SYMBOL);
+        else komodo_iteration("EUR");
+            
         fShutdown = ShutdownRequested();
     }
     if (threadGroup)
