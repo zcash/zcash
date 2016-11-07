@@ -40,12 +40,12 @@ uint64_t komodo_paxtotal()
 {
     struct pax_transaction *pax,*tmp; uint64_t total = 0;
     tmp = 0;
-    while ( (pax= PAX->hh.next) != 0 && pax != tmp )
+    while ( (pax= (struct pax_transaction *)PAX->hh.next) != 0 && pax != tmp )
     {
         if ( pax->marked == 0 )
             total += pax->fiatoshis;
         tmp = pax;
-        pax = pax->hh.next;
+        pax = (struct pax_transaction *)pax->hh.next;
     }
     return(total);
 }
