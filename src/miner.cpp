@@ -102,29 +102,29 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol);
 extern int32_t KOMODO_INITDONE,ASSETCHAINS_SHORTFLAG;
-extern uint64_t KOMODO_DEPOSIT;
 extern char ASSETCHAINS_SYMBOL[16];
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
-    const CChainParams& chainparams = Params();
+    uint64_t deposits; const CChainParams& chainparams = Params();
     // Create new block
     unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    fprintf(stderr,"CreateNewBlock initdone.%d deposit %.8f\n",KOMODO_INITDONE,(double)KOMODO_DEPOSIT/COIN);
     while ( chainActive.Tip()->nHeight > ASSETCHAINS_MINHEIGHT && mempool.GetTotalTxSize() <= 0 )
     {
+        deposit = komodo_paxtotal();
+        fprintf(stderr,"CreateNewBlock initdone.%d deposit %.8f mempool.%d\n",KOMODO_INITDONE,(double)deposits/COIN,(int32_t)mempool.GetTotalTxSize());
         sleep(10);
         if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 )
             continue;
-        if ( KOMODO_DEPOSIT != 0 )
+        if ( deposit != 0 )
         {
-            printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)KOMODO_DEPOSIT,(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
             break;
         }
     }
+    printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)deposit,(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
 
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios

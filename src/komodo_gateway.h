@@ -43,7 +43,11 @@ uint64_t komodo_paxtotal()
     while ( PAX != 0 && (pax= (struct pax_transaction *)PAX->hh.next) != 0 && pax != tmp )
     {
         if ( pax->marked == 0 )
-            total += pax->fiatoshis;
+        {
+            if ( ASSETCHAINS_SYMBOL[0] == 0 )
+                total += pax->fiatoshis;
+            else total += pax->komodoshis;
+        }
         tmp = pax;
         pax = (struct pax_transaction *)pax->hh.next;
     }
@@ -471,8 +475,6 @@ void komodo_gateway_iteration(char *symbol)
         printf("error from %s\n",symbol);
         sleep(30);
     }
-    if ( (KOMODO_DEPOSIT= komodo_paxtotal()) != 0 )
-        printf("KOMODO_DEPOSIT %.8f RT.%u\n",dstr(KOMODO_DEPOSIT),KOMODO_REALTIME);
 }
 
 void komodo_iteration(char *symbol)
