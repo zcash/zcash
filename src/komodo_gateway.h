@@ -40,17 +40,21 @@ uint64_t komodo_paxtotal()
 {
     struct pax_transaction *pax,*tmp; uint64_t total = 0;
     tmp = 0;
-    while ( PAX != 0 && (pax= (struct pax_transaction *)PAX->hh.next) != 0 && pax != tmp )
+    if ( PAX != 0 )
     {
-        printf("pax.%p marked.%d fiat %.8f KMD %.8f\n",pax,pax->marked,dstr(pax->fiatoshis),dstr(pax->komodoshis));
-        if ( pax->marked == 0 )
+        pax = (struct pax_transaction *)PAX->hh.next;
+        while ( pax != 0 && pax != tmp )
         {
-            if ( komodo_is_issuer() != 0 )
-                total += pax->fiatoshis;
-            else total += pax->komodoshis;
+            printf("PAX.[%p %p] pax.%p marked.%d fiat %.8f KMD %.8f\n",PAX->hh.next,PAX->hh.prev,pax,pax->marked,dstr(pax->fiatoshis),dstr(pax->komodoshis));
+            if ( pax->marked == 0 )
+            {
+                if ( komodo_is_issuer() != 0 )
+                    total += pax->fiatoshis;
+                else total += pax->komodoshis;
+            }
+            tmp = pax;
+            pax = (struct pax_transaction *)pax->hh.next;
         }
-        tmp = pax;
-        pax = (struct pax_transaction *)pax->hh.next;
     }
     return(total);
 }
@@ -102,7 +106,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         pax->txid = txid;
         pax->vout = vout;
         HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
-        printf("ht.%d create pax.%p\n",height,pax);
+        printf("[%s] ht.%d create pax.%p\n",ASSETCHAINS_SYMBOL,height,pax);
     }
     pthread_mutex_unlock(&komodo_mutex);
     if ( coinaddr != 0 )
@@ -115,7 +119,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         memcpy(pax->rmd160,rmd160,20);
         pax->height = height;
         if ( pax->marked == 0 )
-            printf("%p ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d total %.8f\n",pax,symbol,dstr(fiatoshis),coinaddr,height,dstr(komodo_paxtotal()));
+            printf("[%s] %p ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d total %.8f\n",ASSETCHAINS_SYMBOL,pax,symbol,dstr(fiatoshis),coinaddr,height,dstr(komodo_paxtotal()));
         else printf("%p MARKED.%d DEPOSIT %s %.8f -> %s TO PAX ht.%d\n",pax,pax->marked,symbol,dstr(fiatoshis),coinaddr,height);
     }
     else
@@ -156,11 +160,14 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
 {
     struct pax_transaction *pax,*tmp; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
     PENDING_KOMODO_TX = 0;
+    if ( PAX == 0 )
+        return;
     if ( strcmp(symbol,"KMD") == 0 )
         opcode = 'I';
     else opcode = 'X';
     tmp = 0;
-    while ( PAX != 0 && (pax= (struct pax_transaction *)PAX->hh.next) != 0 && pax != tmp )
+    pax = (struct pax_transaction *)PAX->hh.next;
+    while ( pax != 0 && pax != tmp )
     {
         printf("pax.%p marked.%d %.8f -> %.8f\n",pax,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         if ( pax->marked != 0 )
