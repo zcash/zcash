@@ -802,7 +802,7 @@ int32_t komodo_baseid(char *origbase)
 
 int32_t komodo_is_issuer()
 {
-    if ( ASSETCHAINS_SYMBOL[0] != 0 && COINBASE_MATURITY < 10 )
+    if ( ASSETCHAINS_SYMBOL[0] != 0 && komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 )
         return(1);
     else return(0);
 }

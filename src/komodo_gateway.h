@@ -44,7 +44,7 @@ uint64_t komodo_paxtotal()
     {
         if ( pax->marked == 0 )
         {
-            if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            if ( komodo_is_issuer() != 0 )
                 total += pax->fiatoshis;
             else total += pax->komodoshis;
         }
@@ -80,9 +80,9 @@ struct pax_transaction *komodo_paxmark(struct pax_transaction *space,uint256 txi
     if ( pax != 0 )
     {
         pax->marked = mark;
-        int32_t i; for (i=0; i<32; i++)
-            printf("%02x",((uint8_t *)&txid)[i]);
-        printf(" paxmark.ht %d vout%d\n",mark,vout);
+        //int32_t i; for (i=0; i<32; i++)
+        //    printf("%02x",((uint8_t *)&txid)[i]);
+        //printf(" paxmark.ht %d vout%d\n",mark,vout);
         memcpy(space,pax,sizeof(*pax));
     }
     pthread_mutex_unlock(&komodo_mutex);
@@ -238,9 +238,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 else
                 {
                     hash = block.GetHash();
-                    for (j=0; j<32; j++)
-                        printf("%02x",((uint8_t *)&hash)[j]);
-                    printf(" ht.%d blockhash couldnt find vout.[%d]\n",height,i);
+                    //for (j=0; j<32; j++)
+                    //   printf("%02x",((uint8_t *)&hash)[j]);
+                    //printf(" ht.%d blockhash couldnt find vout.[%d]\n",height,i);
                     komodo_paxmark(&space,txids[i-1],vouts[i-1],height);
                 }
             }
@@ -266,7 +266,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             bitcoin_address(coinaddr,addrtype,rmd160,20);
             checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,fiatoshis);
             typestr = "deposit";
-            printf("kmdheight.%d vs height.%d check %.8f vs %.8f\n",kmdheight,height,dstr(checktoshis),dstr(value));
+            printf("kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d\n",kmdheight,height,dstr(checktoshis),dstr(value),tokomodo,strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0);
             if ( kmdheight <= height )
             {
                 if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )

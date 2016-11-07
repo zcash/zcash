@@ -476,7 +476,7 @@ Value paxdeposit(const Array& params, bool fHelp)
 {
     uint64_t seed,komodoshis = 0; int32_t height; char destaddr[64]; uint8_t i,pubkey37[33];
     bool fSubtractFeeFromAmount = false;
-    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    if ( komodo_is_issuer() != 0 )
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxdeposit only from KMD");
     if (!EnsureWalletIsAvailable(fHelp))
         return Value::null;
