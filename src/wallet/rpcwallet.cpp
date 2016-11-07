@@ -474,7 +474,7 @@ int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endian
 
 Value paxdeposit(const Array& params, bool fHelp)
 {
-    uint64_t komodoshis = 0; int32_t height; char destaddr[64]; uint8_t i,pubkey37[33];
+    uint64_t seed,komodoshis = 0; int32_t height; char destaddr[64]; uint8_t i,pubkey37[33];
     bool fSubtractFeeFromAmount = false;
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxdeposit only from KMD");
@@ -512,7 +512,7 @@ Value paxdeposit(const Array& params, bool fHelp)
 Value paxwithdraw(const Array& params, bool fHelp)
 {
     extern int32_t KMDHEIGHT,KOMODO_REALTIME;
-    CWalletTx wtx; std::string dest; int32_t height; uint64_t komodoshis = 0; char destaddr[64]; uint8_t i,pubkey37[37]; bool fSubtractFeeFromAmount = false;
+    CWalletTx wtx; std::string dest; int32_t height; uint64_t seed,komodoshis = 0; char destaddr[64]; uint8_t i,pubkey37[37]; bool fSubtractFeeFromAmount = false;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxwithdraw cant be from KMD");
     if (!EnsureWalletIsAvailable(fHelp))
