@@ -42,6 +42,7 @@ uint64_t komodo_paxtotal()
     tmp = 0;
     while ( PAX != 0 && (pax= (struct pax_transaction *)PAX->hh.next) != 0 && pax != tmp )
     {
+        printf("pax.%p marked.%d fiat %.8f KMD %.8f\n",pax,pax->marked,dstr(pax->fiatoshis),dstr(pax->komodoshis));
         if ( pax->marked == 0 )
         {
             if ( komodo_is_issuer() != 0 )
@@ -254,7 +255,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 {
     uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo,kmdheight; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; double diff; uint64_t seed; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     tokomodo = (komodo_is_issuer() == 0);
-    printf("ASSETCHAIN.(%s) -> tokomodo.%d is_issuer.%d\n",ASSETCHAINS_SYMBOL,tokomodo,komodo_is_issuer());
     if ( opretbuf[0] == 'D' )
     {
         if ( opretlen == 38 ) // any KMD tx
