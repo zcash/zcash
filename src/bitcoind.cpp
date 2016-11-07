@@ -45,7 +45,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         MilliSleep(2000);
         if ( ASSETCHAINS_SYMBOL[0] != 0 )
             komodo_gateway_iteration(ASSETCHAINS_SYMBOL);
-        else komodo_iteration("EUR");
+        else komodo_iteration((char *)"EUR");
             
         fShutdown = ShutdownRequested();
     }
