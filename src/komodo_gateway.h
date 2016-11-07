@@ -349,32 +349,37 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
 
 int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,uint32_t port)
 {
-    char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*result,*vouts,*item,*sobj; int32_t vout,n,len,isspecial,retval = -1; uint64_t value; bits256 txid;
+    char *retstr,params[256],*hexstr; uint8_t script[10000]; cJSON *json,*result,*vouts,*item,*sobj; int32_t vout,n,len,isspecial,retval = -1; uint64_t value,vpub_old,vpub_new; bits256 txid;
     sprintf(params,"[\"%s\", 1]",txidstr);
     if ( (retstr= komodo_issuemethod((char *)"getrawtransaction",params,port)) != 0 )
     {
         if ( (json= cJSON_Parse(retstr)) != 0 )
         {
-            if ( (result= jobj(json,(char *)"result")) != 0 && (vouts= jarray(&n,result,(char *)"vout")) != 0 )
+            if ( (result= jobj(json,(char *)"result")) != 0 )
             {
+                vpub_old = j64bits(result,(char *)"vpub_old");
+                vpub_new = j64bits(result,(char *)"vpub_new");
                 retval = 0;
-                isspecial = 0;
-                txid = jbits256(result,(char *)"txid");
-                for (vout=0; vout<n; vout++)
+                if ( vpub_old == 0 && vpub_new == 0 && (vouts= jarray(&n,result,(char *)"vout")) != 0 )
                 {
-                    item = jitem(vouts,vout);
-                    value = SATOSHIDEN * jdouble(item,(char *)"value");
-                    if ( (sobj= jobj(item,(char *)"scriptPubKey")) != 0 )
+                    isspecial = 0;
+                    txid = jbits256(result,(char *)"txid");
+                    for (vout=0; vout<n; vout++)
                     {
-                        if ( (hexstr= jstr(sobj,(char *)"hex")) != 0 )
+                        item = jitem(vouts,vout);
+                        value = SATOSHIDEN * jdouble(item,(char *)"value");
+                        if ( (sobj= jobj(item,(char *)"scriptPubKey")) != 0 )
                         {
-                            len = (int32_t)strlen(hexstr) >> 1;
-                            if ( vout == 0 && ((memcmp(&hexstr[2],CRYPTO777_PUBSECPSTR,66) == 0 && len == 35) || (memcmp(&hexstr[6],CRYPTO777_RMD160STR,40) == 0 && len == 25)) )
-                                isspecial = 1;
-                            else if ( len <= sizeof(script) )
+                            if ( (hexstr= jstr(sobj,(char *)"hex")) != 0 )
                             {
-                                decode_hex(script,len,hexstr);
-                                komodo_gateway_voutupdate(symbol,isspecial,height,txi,txid,vout,n,value,script,len);
+                                len = (int32_t)strlen(hexstr) >> 1;
+                                if ( vout == 0 && ((memcmp(&hexstr[2],CRYPTO777_PUBSECPSTR,66) == 0 && len == 35) || (memcmp(&hexstr[6],CRYPTO777_RMD160STR,40) == 0 && len == 25)) )
+                                    isspecial = 1;
+                                else if ( len <= sizeof(script) )
+                                {
+                                    decode_hex(script,len,hexstr);
+                                    komodo_gateway_voutupdate(symbol,isspecial,height,txi,txid,vout,n,value,script,len);
+                                }
                             }
                         }
                     }
