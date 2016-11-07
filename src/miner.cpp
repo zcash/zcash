@@ -116,7 +116,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     while ( chainActive.Tip()->nHeight > ASSETCHAINS_MINHEIGHT && mempool.GetTotalTxSize() <= 0 )
     {
         deposits = komodo_paxtotal();
-        fprintf(stderr,"CreateNewBlock initdone.%d deposit %.8f mempool.%d\n",KOMODO_INITDONE,(double)deposits/COIN,(int32_t)mempool.GetTotalTxSize());
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            fprintf(stderr,"CreateNewBlock initdone.%d deposit %.8f mempool.%d\n",KOMODO_INITDONE,(double)deposits/COIN,(int32_t)mempool.GetTotalTxSize());
         sleep(10);
         if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 )
             continue;
@@ -125,7 +126,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             break;
         }
     }
-    printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)deposits,(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)deposits,(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
 
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
@@ -444,7 +446,8 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
     CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i;
-    fprintf(stderr,"%s createnewblockwith key\n",ASSETCHAINS_SYMBOL);
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        fprintf(stderr,"%s createnewblockwith key\n",ASSETCHAINS_SYMBOL);
     if ( USE_EXTERNAL_PUBKEY != 0 )
     {
         //fprintf(stderr,"use notary pubkey\n");
@@ -559,7 +562,8 @@ void static BitcoinMiner(CWallet *pwallet)
                 } while (true);
                 //fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
             }
-            fprintf(stderr,"%s create new block\n",ASSETCHAINS_SYMBOL);
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                fprintf(stderr,"%s create new block\n",ASSETCHAINS_SYMBOL);
             //
             // Create new block
             //
