@@ -23,7 +23,7 @@
 #include <curl/easy.h>
 #endif
 
-#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7771",0,(char *)(cmdstr),0)
+#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7775",0,(char *)(cmdstr),0)
 
 struct MemoryStruct { char *memory; size_t size; };
 struct return_string { char *ptr; size_t len; };
