@@ -2411,7 +2411,7 @@ bool UndoReadFromDisk(CBlockUndo& blockundo, const CDiskBlockPos& pos, const uin
  * @param out The out point that corresponds to the tx input.
  * @return True on success.
  */
-static bool ApplyTxInUndo(const CTxInUndo& undo, CCoinsViewCache& view, const COutPoint& out)
+bool ApplyTxInUndo(const CTxInUndo& undo, CCoinsViewCache& view, const COutPoint& out)
 {
     bool fClean = true;
 
