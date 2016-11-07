@@ -113,6 +113,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
+    fprintf(stderr,"CreateNewBlock initdone.%d deposit %.8f\n",KOMODO_INITDONE,dstr(KOMODO_DEPOSIT));
     while ( chainActive.Tip()->nHeight > ASSETCHAINS_MINHEIGHT && mempool.GetTotalTxSize() <= 0 )
     {
         sleep(10);
@@ -442,7 +443,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
     CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i;
-    //fprintf(stderr,"%s createnewblockwith key\n",ASSETCHAINS_SYMBOL);
+    fprintf(stderr,"%s createnewblockwith key\n",ASSETCHAINS_SYMBOL);
     if ( USE_EXTERNAL_PUBKEY != 0 )
     {
         //fprintf(stderr,"use notary pubkey\n");
@@ -557,7 +558,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 } while (true);
                 //fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
             }
-            //fprintf(stderr,"%s create new block\n",ASSETCHAINS_SYMBOL);
+            fprintf(stderr,"%s create new block\n",ASSETCHAINS_SYMBOL);
             //
             // Create new block
             //

@@ -174,10 +174,10 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
         }
         data[len++] = pax->vout & 0xff;
         data[len++] = (pax->vout >> 8) & 0xff;
-        printf(" vout.%u DEPOSIT %.8f <- paxdeposit.%s\n",pax->vout,(double)txNew->vout[numvouts].nValue/COIN,symbol);
         if ( strcmp(symbol,"KMD") != 0 )
             PENDING_KOMODO_TX += pax->fiatoshis;
         else PENDING_KOMODO_TX += pax->komodoshis;
+        printf(" vout.%u DEPOSIT %.8f <- paxdeposit.%s pending %.8f\n",pax->vout,(double)txNew->vout[numvouts].nValue/COIN,symbol,dstr(PENDING_KOMODO_TX));
         if ( numvouts++ >= 64 )
             break;
         tmp = pax;
@@ -470,7 +470,8 @@ void komodo_gateway_iteration(char *symbol)
         printf("error from %s\n",symbol);
         sleep(30);
     }
-    KOMODO_DEPOSIT = komodo_paxtotal();
+    if ( (KOMODO_DEPOSIT= komodo_paxtotal()) != 0 )
+        printf("KOMODO_DEPOSIT %.8f RT.%u\n",dstr(KOMODO_DEPOSIT),KOMODO_REALTIME);
 }
 
 void komodo_iteration(char *symbol)
