@@ -504,7 +504,7 @@ Value paxdeposit(const Array& params, bool fHelp)
     if ( fee < 10000 )
         fee = 10000;
     iguana_rwnum(1,&pubkey37[33],sizeof(height),&height);
-    opretlen = komodo_opreturnscript(opretbuf,'D',pubkey37,33);
+    opretlen = komodo_opreturnscript(opretbuf,'D',pubkey37,37);
     SendMoney(address.Get(),fee,fSubtractFeeFromAmount,wtx,opretbuf,opretlen,komodoshis);
     return wtx.GetHash().GetHex();
 }
