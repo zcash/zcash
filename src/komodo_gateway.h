@@ -66,7 +66,7 @@ struct pax_transaction *komodo_paxfind(struct pax_transaction *space,uint256 txi
     return(pax);
 }
 
-struct pax_transaction *komodo_paxmark(struct pax_transaction *space,uint256 txid,uint16_t vout,int32_t mark)
+struct pax_transaction *komodo_paxmark(int32_t height,struct pax_transaction *space,uint256 txid,uint16_t vout,int32_t mark)
 {
     struct pax_transaction *pax;
     pthread_mutex_lock(&komodo_mutex);
@@ -77,6 +77,7 @@ struct pax_transaction *komodo_paxmark(struct pax_transaction *space,uint256 txi
         pax->txid = txid;
         pax->vout = vout;
         HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
+        printf("ht.%d create pax.%p mark.%d\n",height,pax,mark);
     }
     if ( pax != 0 )
     {
@@ -101,6 +102,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         pax->txid = txid;
         pax->vout = vout;
         HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
+        printf("ht.%d create pax.%p\n",height,pax);
     }
     pthread_mutex_unlock(&komodo_mutex);
     if ( coinaddr != 0 )
@@ -113,13 +115,13 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         memcpy(pax->rmd160,rmd160,20);
         pax->height = height;
         if ( pax->marked == 0 )
-            printf("ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d total %.8f\n",symbol,dstr(fiatoshis),coinaddr,height,dstr(komodo_paxtotal()));
-        else printf("MARKED.%d DEPOSIT %s %.8f -> %s TO PAX ht.%d\n",pax->marked,symbol,dstr(fiatoshis),coinaddr,height);
+            printf("%p ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d total %.8f\n",pax,symbol,dstr(fiatoshis),coinaddr,height,dstr(komodo_paxtotal()));
+        else printf("%p MARKED.%d DEPOSIT %s %.8f -> %s TO PAX ht.%d\n",pax,pax->marked,symbol,dstr(fiatoshis),coinaddr,height);
     }
     else
     {
         pax->marked = height;
-        printf("MARK DEPOSIT ht.%d\n",height);
+        printf("pax.%p MARK DEPOSIT ht.%d\n",pax,height);
     }
 }
 
@@ -234,7 +236,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 if ( (pax= komodo_paxfind(&space,txids[i-1],vouts[i-1])) != 0 && ((opcode == 'I' && pax->fiatoshis == block.vtx[0].vout[i].nValue) || (opcode == 'X' && pax->komodoshis == block.vtx[0].vout[i].nValue)) )
                 {
                     //printf("i.%d match %.8f == %.8f\n",i,dstr(pax != 0 ? pax->fiatoshis:-1),dstr(block.vtx[0].vout[i].nValue));
-                    komodo_paxmark(&space,txids[i-1],vouts[i-1],height);
+                    komodo_paxmark(height,&space,txids[i-1],vouts[i-1],height);
                 }
                 else
                 {
@@ -242,7 +244,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     //for (j=0; j<32; j++)
                     //   printf("%02x",((uint8_t *)&hash)[j]);
                     //printf(" ht.%d blockhash couldnt find vout.[%d]\n",height,i);
-                    komodo_paxmark(&space,txids[i-1],vouts[i-1],height);
+                    komodo_paxmark(height,&space,txids[i-1],vouts[i-1],height);
                 }
             }
         }
@@ -327,7 +329,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     for (j=0; j<32; j++)
                         printf("%02x",((uint8_t *)&txids[i])[j]);
                     printf(" issuedtxid v%d i.%d of n.%d opretlen.%d\n",vouts[i],i,n,opretlen);
-                    if ( komodo_paxmark(&space,txids[i],vouts[i],height) == 0 )
+                    if ( komodo_paxmark(height,&space,txids[i],vouts[i],height) == 0 )
                         komodo_gateway_deposit(0,0,0,0,0,0,txids[i],vouts[i],height);
                 }
             }
