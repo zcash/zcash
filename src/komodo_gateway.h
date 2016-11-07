@@ -112,7 +112,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         memcpy(pax->rmd160,rmd160,20);
         pax->height = height;
         if ( pax->marked == 0 )
-            printf("ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d total %.8f\n",symbol,dstr(fiatoshis),coinaddr,height,dstr(komodo_total()));
+            printf("ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d total %.8f\n",symbol,dstr(fiatoshis),coinaddr,height,dstr(komodo_paxtotal()));
         else printf("MARKED.%d DEPOSIT %s %.8f -> %s TO PAX ht.%d\n",pax->marked,symbol,dstr(fiatoshis),coinaddr,height);
     }
     else
