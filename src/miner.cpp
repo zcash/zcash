@@ -378,13 +378,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         }
         else if ( komodo_is_issuer() != 0 )
         {
-            komodo_gateway_deposits(&txNew,0,(char *)"KMD");
+            komodo_gateway_deposits(&txNew,0,ASSETCHAINS_SYMBOL);
             fprintf(stderr,"txNew numvouts.%d\n",(int32_t)txNew.vout.size());
         }
-
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
-
         // Randomise nonce
         arith_uint256 nonce = UintToArith256(GetRandHash());
         // Clear the top and bottom 16 bits (for local use as thread flags and counters)
