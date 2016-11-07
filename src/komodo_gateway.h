@@ -331,14 +331,14 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 )
     {
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        {
+            for (i=0; i<opretlen; i++)
+                printf("%02x",opretbuf[i]);
+            printf(" opret[%c] else path tokomodo.%d ht.%d\n",opretbuf[0],tokomodo,height);
+        }
         if ( tokomodo == 0 && opretbuf[0] == 'I' ) // assetchain coinbase
         {
-            if ( ASSETCHAINS_SYMBOL[0] != 0 )
-            {
-                for (i=0; i<opretlen; i++)
-                    printf("%02x",opretbuf[i]);
-                printf(" opret[%c] else path tokomodo.%d ht.%d\n",opretbuf[0],tokomodo,height);
-            }
             if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen)) > 0 && shortflag == ASSETCHAINS_SHORTFLAG )
             {
                 for (i=0; i<n; i++)

@@ -304,9 +304,6 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             opretlen = scriptbuf[len++];
             opretlen = (opretlen << 8) + scriptbuf[len++];
         }
-        //for (k=0; k<scriptlen; k++)
-        //    printf("%02x",scriptbuf[k]);
-        //printf(" <- script ht.%d i.%d j.%d value %.8f\n",height,i,j,dstr(value));
         if ( j == 1 && opretlen >= 32*2+4 && strcmp(ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+32*2+4]) == 0 )
         {
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
@@ -323,7 +320,13 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
         }
         else if ( i == 0 && j == 1 && opretlen == 149 )
             komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
-        else komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,value,&scriptbuf[len],opretlen,j);
+        else
+        {
+            for (k=0; k<scriptlen; k++)
+                printf("%02x",scriptbuf[k]);
+            printf(" <- script ht.%d i.%d j.%d value %.8f\n",height,i,j,dstr(value));
+            komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,value,&scriptbuf[len],opretlen,j);
+        }
     }
     return(notaryid);
 }
