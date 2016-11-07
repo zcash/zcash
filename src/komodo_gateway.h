@@ -149,11 +149,11 @@ int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uin
             for (j=0; j<32; j++)
             {
                 ((uint8_t *)&txids[n])[j] = opretbuf[len++];
-                printf("%02x",((uint8_t *)&txids[n])[j]);
+                //printf("%02x",((uint8_t *)&txids[n])[j]);
             }
             vouts[n] = opretbuf[len++];
             vouts[n] = (opretbuf[len++] << 8) | vouts[n];
-            printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
+            //printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
         }
     }
     return(n);
@@ -184,7 +184,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
         *script++ = 0xac;
         for (i=0; i<32; i++)
         {
-            printf("%02x",((uint8_t *)&pax->txid)[i]);
+            //printf("%02x",((uint8_t *)&pax->txid)[i]);
             data[len++] = ((uint8_t *)&pax->txid)[i];
         }
         data[len++] = pax->vout & 0xff;
@@ -192,7 +192,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
         if ( strcmp(symbol,"KMD") != 0 )
             PENDING_KOMODO_TX += pax->fiatoshis;
         else PENDING_KOMODO_TX += pax->komodoshis;
-        printf(" vout.%u DEPOSIT %.8f <- paxdeposit.%s pending %.8f\n",pax->vout,(double)txNew->vout[numvouts].nValue/COIN,symbol,dstr(PENDING_KOMODO_TX));
+        //printf(" vout.%u DEPOSIT %.8f <- paxdeposit.%s pending %.8f\n",pax->vout,(double)txNew->vout[numvouts].nValue/COIN,symbol,dstr(PENDING_KOMODO_TX));
         if ( numvouts++ >= 64 )
             break;
     }
@@ -245,7 +245,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         if ( pax->marked != 0 )
                             errs++;
                         else matched++;
-                        printf("errs.%d i.%d match %.8f == %.8f\n",errs,i,dstr(pax != 0 ? pax->fiatoshis:-1),dstr(block.vtx[0].vout[i].nValue));
+                        //printf("errs.%d i.%d match %.8f == %.8f\n",errs,i,dstr(pax != 0 ? pax->fiatoshis:-1),dstr(block.vtx[0].vout[i].nValue));
                     }
                     else
                     {
@@ -279,7 +279,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 {
     uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo,kmdheight; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; double diff; uint64_t seed; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     tokomodo = (komodo_is_issuer() == 0);
-    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
     {
         for (i=0; i<opretlen; i++)
             printf("%02x",opretbuf[i]);
@@ -343,15 +343,15 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             {
                 for (i=0; i<n; i++)
                 {
-                    for (j=0; j<32; j++)
-                        printf("%02x",((uint8_t *)&txids[i])[j]);
+                    //for (j=0; j<32; j++)
+                    //    printf("%02x",((uint8_t *)&txids[i])[j]);
                     if ( komodo_paxmark(height,&space,txids[i],vouts[i],height) == 0 )
                     {
                         komodo_gateway_deposit(0,0,0,0,0,0,txids[i],vouts[i],height);
                     }
                     else
                     {
-                        printf(" duplicate issuedtxid v%d i.%d of n.%d opretlen.%d\n",vouts[i],i,n,opretlen);
+                        //printf(" duplicate issuedtxid v%d i.%d of n.%d opretlen.%d\n",vouts[i],i,n,opretlen);
                     }
                 }
             }

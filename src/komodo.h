@@ -191,7 +191,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 errs++;
             if ( fwrite(opretbuf,1,olen,fp) != olen )
                 errs++;
-            printf("ht.%d R opret[%d]\n",height,olen);
+            //printf("ht.%d R opret[%d]\n",height,olen);
             komodo_opreturn(height,opretvalue,opretbuf,olen,txhash,vout);
         }
         else if ( notarypubs != 0 && numnotaries > 0 )
@@ -322,9 +322,9 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
         else
         {
-            int32_t k; for (k=0; k<scriptlen; k++)
-                printf("%02x",scriptbuf[k]);
-            printf(" <- script ht.%d i.%d j.%d value %.8f\n",height,i,j,dstr(value));
+            //int32_t k; for (k=0; k<scriptlen; k++)
+            //    printf("%02x",scriptbuf[k]);
+            //printf(" <- script ht.%d i.%d j.%d value %.8f\n",height,i,j,dstr(value));
             komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,value,&scriptbuf[len],opretlen,j);
         }
     }
@@ -371,7 +371,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     {
         height = pindex->nHeight;
         txn_count = block.vtx.size();
-        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
             printf("%s ht.%d connect txn_count.%d\n",ASSETCHAINS_SYMBOL,height,txn_count);
         for (i=0; i<txn_count; i++)
         {
