@@ -279,6 +279,12 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 {
     uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo,kmdheight; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; double diff; uint64_t seed; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     tokomodo = (komodo_is_issuer() == 0);
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    {
+        for (i=0; i<opretlen; i++)
+            printf("%02x",opretbuf[i]);
+        printf(" opret[%c] else path tokomodo.%d ht.%d\n",opretbuf[0],tokomodo,height);
+    }
     if ( opretbuf[0] == 'D' )
     {
         if ( opretlen == 38 ) // any KMD tx
@@ -331,12 +337,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 )
     {
-        if ( ASSETCHAINS_SYMBOL[0] != 0 )
-        {
-            for (i=0; i<opretlen; i++)
-                printf("%02x",opretbuf[i]);
-            printf(" opret[%c] else path tokomodo.%d ht.%d\n",opretbuf[0],tokomodo,height);
-        }
         if ( tokomodo == 0 && opretbuf[0] == 'I' ) // assetchain coinbase
         {
             if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen)) > 0 && shortflag == ASSETCHAINS_SHORTFLAG )
