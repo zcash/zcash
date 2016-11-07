@@ -469,7 +469,7 @@ void komodo_gateway_iteration(char *symbol)
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         //[{"prev_hash":"5d5c9a49489b558de9e84f991f996dedaae6b9d0f157f82b2fec64662476d5cf","prev_vout":2,"EUR":0.78329000,"fiat":"EUR","height":57930,"KMD":0.10000000,"address":"RDhEGYScNQYetCyG75Kf8Fg61UWPdwc1C5"}]
-        char *retstr,*base,*coinaddr,*txidstr; uint64_t value; cJSON *array; int32_t n,vout,shortflag,height; uint256 txid; uint8_t rmd160[20],addrtype;
+        char *retstr,*base,*coinaddr,*txidstr; uint64_t value,fiatoshis; cJSON *array,*item; int32_t n,vout,shortflag,height; uint256 txid; uint8_t rmd160[20],addrtype;
         if ( (retstr= issue_curl("{\"agent\":\"dpow\",\"method\":\"pending\",\"fiat\":\"EUR\"}")) != 0 )
         {
             if ( (array= cJSON_Parse(retstr)) != 0 )
