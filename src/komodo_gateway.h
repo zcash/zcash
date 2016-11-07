@@ -357,6 +357,7 @@ int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,
         {
             if ( (result= jobj(json,(char *)"result")) != 0 )
             {
+                printf("RESULT.(%s)\n",jprint(result,0));
                 vpub_old = jdouble(result,(char *)"vpub_old") * COIN;
                 vpub_new = jdouble(result,(char *)"vpub_new") * COIN;
                 retval = 0;
@@ -384,7 +385,7 @@ int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,
                         }
                     }
                 }
-            } else printf("error getting txids.(%s)\n",retstr);
+            } else printf("error getting txids.(%s) %p\n",retstr,result);
             free_json(json);
         }
         free(retstr);
