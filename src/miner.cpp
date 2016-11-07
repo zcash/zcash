@@ -113,11 +113,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
+    fprintf(stderr,"start CreateNewBlock initdone.%d deposit %.8f mempool.%d\n",KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize());
     while ( chainActive.Tip()->nHeight > ASSETCHAINS_MINHEIGHT && mempool.GetTotalTxSize() <= 0 )
     {
         deposits = komodo_paxtotal();
-        if ( ASSETCHAINS_SYMBOL[0] != 0 )
-            fprintf(stderr,"CreateNewBlock initdone.%d deposit %.8f mempool.%d\n",KOMODO_INITDONE,(double)deposits/COIN,(int32_t)mempool.GetTotalTxSize());
         sleep(10);
         if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 )
             continue;
@@ -127,7 +126,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         }
     }
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
-        printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)deposits,(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
+        printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)komodo_paxtotal(),(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
 
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
@@ -326,8 +325,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
             if (fPrintPriority)
             {
-                LogPrintf("priority %.1f fee %s txid %s\n",
-                    dPriority, feeRate.ToString(), tx.GetHash().ToString());
+                LogPrintf("priority %.1f fee %s txid %s\n",dPriority, feeRate.ToString(), tx.GetHash().ToString());
             }
 
             // Add transactions that depend on this one to the priority queue
@@ -381,7 +379,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         else
         {
             komodo_gateway_deposits(&txNew,0,(char *)"KMD");
-            //fprintf(stderr,"txNew numvouts.%d\n",(int32_t)txNew.vout.size());
+            fprintf(stderr,"txNew numvouts.%d\n",(int32_t)txNew.vout.size());
         }
 
         pblock->vtx[0] = txNew;
@@ -592,7 +590,7 @@ void static BitcoinMiner(CWallet *pwallet)
             {
                 hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                 Mining_start = (uint32_t)time(NULL);
-                //fprintf(stderr,"I am the chosen one for ht.%d\n",pindexPrev->nHeight+1);
+                fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
             } else Mining_start = 0;
             Mining_height = pindexPrev->nHeight+1;
             //fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);

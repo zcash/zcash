@@ -153,7 +153,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
 {
     struct pax_transaction *pax,*tmp; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
     PENDING_KOMODO_TX = 0;
-    if ( strcmp(symbol,"KMD") != 0 )
+    if ( strcmp(symbol,"KMD") == 0 )
         opcode = 'I';
     else opcode = 'X';
     tmp = 0;
