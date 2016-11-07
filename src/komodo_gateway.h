@@ -25,17 +25,6 @@ struct pax_transaction
     char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
 } *PAX;
 
-/*uint64_t komodo_paxtotal()
-{
-    struct pax_transaction *pax,*tmp; uint64_t total = 0;
-    HASH_ITER(hh,PAX,pax,tmp)
-    {
-        if ( pax->marked == 0 )
-            total += pax->fiatoshis;
-    }
-    return(total);
-}*/
-
 uint64_t komodo_paxtotal()
 {
     struct pax_transaction *pax,*tmp; uint64_t total = 0;
@@ -45,7 +34,7 @@ uint64_t komodo_paxtotal()
         pax = (struct pax_transaction *)PAX->hh.next;
         while ( pax != 0 && pax != tmp )
         {
-            printf("PAX.[%p %p] pax.%p marked.%d fiat %.8f KMD %.8f\n",PAX->hh.next,PAX->hh.prev,pax,pax->marked,dstr(pax->fiatoshis),dstr(pax->komodoshis));
+            //printf("PAX.[%p %p] pax.%p marked.%d fiat %.8f KMD %.8f\n",PAX->hh.next,PAX->hh.prev,pax,pax->marked,dstr(pax->fiatoshis),dstr(pax->komodoshis));
             if ( pax->marked == 0 )
             {
                 if ( komodo_is_issuer() != 0 )
@@ -81,7 +70,7 @@ struct pax_transaction *komodo_paxmark(int32_t height,struct pax_transaction *sp
         pax->txid = txid;
         pax->vout = vout;
         HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
-        printf("ht.%d create pax.%p mark.%d\n",height,pax,mark);
+        //printf("ht.%d create pax.%p mark.%d\n",height,pax,mark);
     }
     if ( pax != 0 )
     {
@@ -106,7 +95,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         pax->txid = txid;
         pax->vout = vout;
         HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
-        printf("[%s] ht.%d create pax.%p\n",ASSETCHAINS_SYMBOL,height,pax);
+        //printf("[%s] ht.%d create pax.%p\n",ASSETCHAINS_SYMBOL,height,pax);
     }
     pthread_mutex_unlock(&komodo_mutex);
     if ( coinaddr != 0 )
