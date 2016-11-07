@@ -368,7 +368,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     {
         height = pindex->nHeight;
         txn_count = block.vtx.size();
-        printf("%s ht.%d connect txn_count.%d\n",ASSETCHAINS_SYMBOL,height,txn_count);
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            printf("%s ht.%d connect txn_count.%d\n",ASSETCHAINS_SYMBOL,height,txn_count);
         for (i=0; i<txn_count; i++)
         {
             txhash = block.vtx[i].GetHash();

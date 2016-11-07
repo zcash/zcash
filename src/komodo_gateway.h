@@ -257,9 +257,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 }
                 else
                 {
-                    for (j=0; j<32; j++)
-                        printf("%02x",((uint8_t *)&txids[i-1])[j]);
-                    printf(" cant paxfind txid\n");
+                    //for (j=0; j<32; j++)
+                    //    printf("%02x",((uint8_t *)&txids[i-1])[j]);
+                    //printf(" cant paxfind txid\n");
                 }
                 komodo_paxmark(height,&space,txids[i-1],vouts[i-1],height);
             }
