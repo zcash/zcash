@@ -524,7 +524,7 @@ void static BitcoinMiner(CWallet *pwallet)
     komodo_chosennotary(&notaryid,chainActive.Tip()->nHeight,NOTARY_PUBKEY33);
 
     std::string solver;
-    if ( notaryid >= 0 || ASSETCHAINS[0] != 0 )
+    if ( notaryid >= 0 || ASSETCHAINS_SYMBOL[0] != 0 )
         solver = "tromp";
     else solver = "default";
     assert(solver == "tromp" || solver == "default");
