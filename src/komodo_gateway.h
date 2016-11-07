@@ -112,7 +112,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         memcpy(pax->rmd160,rmd160,20);
         pax->height = height;
         if ( pax->marked == 0 )
-            printf("ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d\n",symbol,dstr(fiatoshis),coinaddr,height);
+            printf("ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d total %.8f\n",symbol,dstr(fiatoshis),coinaddr,height,dstr(komodo_total()));
         else printf("MARKED.%d DEPOSIT %s %.8f -> %s TO PAX ht.%d\n",pax->marked,symbol,dstr(fiatoshis),coinaddr,height);
     }
     else
@@ -252,49 +252,66 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
 {
-    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
+    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,kmdheight,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     tokomodo = (komodo_is_issuer() == 0);
     if ( opretbuf[0] == 'D' )
     {
-        if ( opretlen == 34 ) // any KMD tx
+        if ( opretlen == 38 ) // any KMD tx
         {
-            if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+            iguana_rwnum(0,&opretbuf[34],sizeof(kmdheight),&kmdheight);
+            if ( kmdheight <= height )
             {
-                for (i=0; i<opretlen; i++)
-                    printf("%02x",opretbuf[i]);
-                printf(" opret[%c] tokomodo.%d\n",opretbuf[0],tokomodo);
-            }
-            memset(base,0,sizeof(base));
-            PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&fiatoshis);
-            if ( fiatoshis < 0 )
-                fiatoshis = -fiatoshis;
-            bitcoin_address(coinaddr,addrtype,rmd160,20);
-            checktoshis = PAX_fiatdest(tokomodo,destaddr,pubkey33,coinaddr,height-1,base,fiatoshis);
-            typestr = "deposit";
-            if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 && shortflag == ASSETCHAINS_SHORTFLAG )
-            {
-                if ( shortflag == 0 )
-                {
-                    for (i=0; i<32; i++)
-                        printf("%02x",((uint8_t *)&txid)[i]);
-                    printf(" <- txid.v%u ",vout);
-                    for (i=0; i<33; i++)
-                        printf("%02x",pubkey33[i]);
-                    printf(" checkpubkey check %.8f v %.8f dest.(%s) height.%d\n",dstr(checktoshis),dstr(value),destaddr,height);
-                    if ( value >= checktoshis )
-                    {
-                        if ( komodo_paxfind(&space,txid,vout) == 0 )
-                            komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,height);
-                    }
-                }
-                else // short
+                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                 {
                     for (i=0; i<opretlen; i++)
                         printf("%02x",opretbuf[i]);
-                    printf(" opret[%c] tokomodo.%d value %.8f vs check %.8f\n",opretbuf[0],tokomodo,dstr(value),dstr(checktoshis));
-                    if ( value <= checktoshis )
+                    printf(" opret[%c] tokomodo.%d\n",opretbuf[0],tokomodo);
+                }
+                memset(base,0,sizeof(base));
+                PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&fiatoshis);
+                if ( fiatoshis < 0 )
+                    fiatoshis = -fiatoshis;
+                bitcoin_address(coinaddr,addrtype,rmd160,20);
+                checktoshis = PAX_fiatdest(tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,fiatoshis);
+                typestr = "deposit";
+                //0245555240420f00000000003c8390ec7bac0c84d9ceb39b1f31564c983123b8e4 ht.59480 srcaddr.(RMGrD8DzED6YYT63z1TaF4sVTCB7Qqvj1Z) eur fiatoshis.1000000 -> dest.(RQY5zAq49YYc8knVkBBpxuxbQa3xwhaw5z) komodoshis.7763390
+                //6a22440245555240420f00000000003c8390ec7bac0c84d9ceb39b1f31564c983123b8e4 opretbuf[36]
+                //9b51f402d7f5afde938b96f0c69d4114f2033a7ebd4db11eee7f2b6a94f00bca
+                /*{
+                 "base" : "eur",
+                 "rel" : "kmd",
+                 "height" : 59480,
+                 "timestamp" : 1478540309,
+                 "price" : 7.76339000,
+                 "invprice" : 0.12880971,
+                 "basevolume" : 1.00000000,
+                 "relvolume" : 7.76339000
+                 }*/
+                if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 && shortflag == ASSETCHAINS_SHORTFLAG )
+                {
+                    if ( shortflag == 0 )
                     {
-                        
+                        for (i=0; i<32; i++)
+                            printf("%02x",((uint8_t *)&txid)[i]);
+                        printf(" <- txid.v%u ",vout);
+                        for (i=0; i<33; i++)
+                            printf("%02x",pubkey33[i]);
+                        printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
+                        if ( value >= checktoshis )
+                        {
+                            if ( komodo_paxfind(&space,txid,vout) == 0 )
+                                komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,kmdheight);
+                        }
+                    }
+                    else // short
+                    {
+                        for (i=0; i<opretlen; i++)
+                            printf("%02x",opretbuf[i]);
+                        printf(" opret[%c] tokomodo.%d value %.8f vs check %.8f\n",opretbuf[0],tokomodo,dstr(value),dstr(checktoshis));
+                        if ( value <= checktoshis )
+                        {
+                            
+                        }
                     }
                 }
             }
