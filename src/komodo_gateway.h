@@ -108,7 +108,9 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         pax->txid = txid;
         pax->vout = vout;
         HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
-        //printf("[%s] ht.%d create pax.%p\n",ASSETCHAINS_SYMBOL,height,pax);
+        int32_t i; for (i=0; i<32; i++)
+            printf("%02x",((uint8_t *)&txid)[i]);
+        printf(" v.%d [%s] ht.%d create pax.%p\n",vout,ASSETCHAINS_SYMBOL,height,pax);
     }
     pthread_mutex_unlock(&komodo_mutex);
     if ( coinaddr != 0 )
@@ -295,13 +297,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 diff = -diff;
             if ( kmdheight <= height )
             {
-                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-                {
-                    for (i=0; i<opretlen; i++)
-                        printf("%02x",opretbuf[i]);
-                    printf(" opret[%c] tokomodo.%d\n",opretbuf[0],tokomodo);
-                }
-                //paxprice seed.0 sum 0.07766840 densum 1000.00000000 basevol 0.01000000 height.59532
                 if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 && shortflag == ASSETCHAINS_SHORTFLAG )
                 {
                     if ( shortflag == 0 )
@@ -315,7 +310,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         if ( value >= checktoshis || (seed == 0 && diff < .01) )
                         {
                             if ( komodo_paxfind(&space,txid,vout) == 0 )
+                            {
                                 komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,kmdheight);
+                            } else printf("duplicate deposit\n");
                         }
                     }
                     else // short
@@ -340,19 +337,21 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             {
                 for (i=0; i<opretlen; i++)
                     printf("%02x",opretbuf[i]);
-                printf(" opret[%c] else path tokomodo.%d\n",opretbuf[0],tokomodo);
+                printf(" opret[%c] else path tokomodo.%d ht.%d\n",opretbuf[0],tokomodo,height);
             }
             if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen)) > 0 && shortflag == ASSETCHAINS_SHORTFLAG )
             {
                 for (i=0; i<n; i++)
                 {
+                    for (j=0; j<32; j++)
+                        printf("%02x",((uint8_t *)&txids[i])[j]);
                     if ( komodo_paxmark(height,&space,txids[i],vouts[i],height) == 0 )
+                    {
                         komodo_gateway_deposit(0,0,0,0,0,0,txids[i],vouts[i],height);
+                    }
                     else
                     {
-                        for (j=0; j<32; j++)
-                            printf("%02x",((uint8_t *)&txids[i])[j]);
-                        printf(" issuedtxid v%d i.%d of n.%d opretlen.%d\n",vouts[i],i,n,opretlen);
+                        printf(" duplicate issuedtxid v%d i.%d of n.%d opretlen.%d\n",vouts[i],i,n,opretlen);
                     }
                 }
             }
