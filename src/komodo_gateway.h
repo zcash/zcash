@@ -28,16 +28,16 @@ struct pax_transaction
 uint64_t komodo_paxtotal()
 {
     struct pax_transaction *pax,*tmp; int32_t n = 0; uint64_t total = 0;
-    pthread_mutex_lock(&komodo_mutex);
+    /*pthread_mutex_lock(&komodo_mutex);
     tmp = 0;
     if ( PAX != 0 )
     {
         pax = (struct pax_transaction *)PAX->hh.next;
         while ( pax != 0 && pax != tmp && n++ < 1000000 )
         {
+            printf("PAX.[%p %p] pax.%p marked.%d fiat %.8f KMD %.8f\n",PAX->hh.next,PAX->hh.prev,pax,pax->marked,dstr(pax->fiatoshis),dstr(pax->komodoshis));
             if ( pax->marked == 0 )
             {
-                //printf("PAX.[%p %p] pax.%p marked.%d fiat %.8f KMD %.8f\n",PAX->hh.next,PAX->hh.prev,pax,pax->marked,dstr(pax->fiatoshis),dstr(pax->komodoshis));
                 if ( komodo_is_issuer() != 0 )
                     total += pax->fiatoshis;
                 else total += pax->komodoshis;
@@ -48,7 +48,16 @@ uint64_t komodo_paxtotal()
     }
     pthread_mutex_unlock(&komodo_mutex);
     if ( n >= 1000000 )
-        printf("komodo_paxtotal n.%d iterations?\n",n);
+        printf("komodo_paxtotal n.%d iterations?\n",n);*/
+    HASH_ITER(hh,PAX,pax,tmp)
+    {
+        if ( pax->marked == 0 )
+        {
+            if ( komodo_is_issuer() != 0 )
+                total += pax->fiatoshis;
+            else total += pax->komodoshis;
+        }
+    }
     return(total);
 }
 
@@ -153,43 +162,46 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
 {
     struct pax_transaction *pax,*tmp; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
     PENDING_KOMODO_TX = 0;
-    if ( PAX == 0 )
-        return;
     if ( strcmp(symbol,"KMD") == 0 )
         opcode = 'I';
     else opcode = 'X';
-    tmp = 0;
-    pax = (struct pax_transaction *)PAX->hh.next;
-    while ( pax != 0 && pax != tmp )
+    HASH_ITER(hh,PAX,pax,tmp)
     {
-        printf("pax.%p marked.%d %.8f -> %.8f\n",pax,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
-        if ( pax->marked != 0 )
-            continue;
-        txNew->vout.resize(numvouts+1);
-        txNew->vout[numvouts].nValue = pax->fiatoshis;
-        txNew->vout[numvouts].scriptPubKey.resize(25);
-        script = (uint8_t *)&txNew->vout[numvouts].scriptPubKey[0];
-        *script++ = 0x76;
-        *script++ = 0xa9;
-        *script++ = 20;
-        memcpy(script,pax->rmd160,20), script += 20;
-        *script++ = 0x88;
-        *script++ = 0xac;
-        for (i=0; i<32; i++)
+        //if ( PAX == 0 )
+        //    return;
+        tmp = 0;
+        //pax = (struct pax_transaction *)PAX->hh.next;
+        //while ( pax != 0 && pax != tmp )
         {
-            printf("%02x",((uint8_t *)&pax->txid)[i]);
-            data[len++] = ((uint8_t *)&pax->txid)[i];
+            printf("pax.%p marked.%d %.8f -> %.8f\n",pax,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
+            if ( pax->marked != 0 )
+                continue;
+            txNew->vout.resize(numvouts+1);
+            txNew->vout[numvouts].nValue = pax->fiatoshis;
+            txNew->vout[numvouts].scriptPubKey.resize(25);
+            script = (uint8_t *)&txNew->vout[numvouts].scriptPubKey[0];
+            *script++ = 0x76;
+            *script++ = 0xa9;
+            *script++ = 20;
+            memcpy(script,pax->rmd160,20), script += 20;
+            *script++ = 0x88;
+            *script++ = 0xac;
+            for (i=0; i<32; i++)
+            {
+                printf("%02x",((uint8_t *)&pax->txid)[i]);
+                data[len++] = ((uint8_t *)&pax->txid)[i];
+            }
+            data[len++] = pax->vout & 0xff;
+            data[len++] = (pax->vout >> 8) & 0xff;
+            if ( strcmp(symbol,"KMD") != 0 )
+                PENDING_KOMODO_TX += pax->fiatoshis;
+            else PENDING_KOMODO_TX += pax->komodoshis;
+            printf(" vout.%u DEPOSIT %.8f <- paxdeposit.%s pending %.8f\n",pax->vout,(double)txNew->vout[numvouts].nValue/COIN,symbol,dstr(PENDING_KOMODO_TX));
+            if ( numvouts++ >= 64 )
+                break;
+            //tmp = pax;
+            //pax = (struct pax_transaction *)pax->hh.next;
         }
-        data[len++] = pax->vout & 0xff;
-        data[len++] = (pax->vout >> 8) & 0xff;
-        if ( strcmp(symbol,"KMD") != 0 )
-            PENDING_KOMODO_TX += pax->fiatoshis;
-        else PENDING_KOMODO_TX += pax->komodoshis;
-        printf(" vout.%u DEPOSIT %.8f <- paxdeposit.%s pending %.8f\n",pax->vout,(double)txNew->vout[numvouts].nValue/COIN,symbol,dstr(PENDING_KOMODO_TX));
-        if ( numvouts++ >= 64 )
-            break;
-        tmp = pax;
-        pax = (struct pax_transaction *)pax->hh.next;
     }
     if ( numvouts > 1 )
     {
