@@ -44,6 +44,9 @@ inline bool AllowFree(double dPriority)
     return dPriority > AllowFreeThreshold();
 }
 
+/** Version from which we write `fee_estimates.dat` without priority information: 5.5.0-beta1 or later */
+static const int FEE_ESTIMATES_WITHOUT_PRIORITY_VERSION = 5050000;
+
 /** Fake height value used in CCoins to signify they are only in the memory pool (since 0.8) */
 static const unsigned int MEMPOOL_HEIGHT = 0x7FFFFFFF;
 

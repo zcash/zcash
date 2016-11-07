@@ -29,6 +29,16 @@ RPC Changes
   is unable to construct the transaction without selecting funds from the transparent 
   pool, so the impact of this change is that for such transactions, the user must specify
   `AllowFullyTransparent`.
+- The `estimatepriority` RPC call now always returns -1.
+
+Removal of Priority Estimation
+------------------------------
+
+- Estimation of "priority" needed for a transaction to be included within a target
+  number of blocks has been removed. The `estimatepriority` RPC call now always
+  returns -1. The format for `fee_estimates.dat` has also changed to no longer save
+  these priority estimates. It will automatically be converted to the new format
+  which is not readable by prior versions of the software.
 
 [Deprecations](https://zcash.github.io/zcash/user/deprecation.html)
 --------------
