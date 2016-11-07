@@ -167,10 +167,10 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
     else opcode = 'X';
     HASH_ITER(hh,PAX,pax,tmp)
     {
-        if ( ASSETCHAINS_SYMBOL[0] != 0 )
-            printf("pax.%p marked.%d %.8f -> %.8f\n",pax,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         if ( pax->marked != 0 )
             continue;
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            printf("pax.%p marked.%d %.8f -> %.8f\n",pax,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         txNew->vout.resize(numvouts+1);
         txNew->vout[numvouts].nValue = pax->fiatoshis;
         txNew->vout[numvouts].scriptPubKey.resize(25);
