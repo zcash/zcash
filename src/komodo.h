@@ -322,7 +322,7 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
         else
         {
-            for (k=0; k<scriptlen; k++)
+            int32_t k; for (k=0; k<scriptlen; k++)
                 printf("%02x",scriptbuf[k]);
             printf(" <- script ht.%d i.%d j.%d value %.8f\n",height,i,j,dstr(value));
             komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,value,&scriptbuf[len],opretlen,j);
