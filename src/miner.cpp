@@ -103,7 +103,7 @@ int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 uint64_t komodo_paxtotal();
 int32_t komodo_is_issuer();
 void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol);
-extern int32_t KOMODO_INITDONE,ASSETCHAINS_SHORTFLAG;
+extern int32_t KOMODO_INITDONE,ASSETCHAINS_SHORTFLAG,KOMODO_REALTIME;
 extern char ASSETCHAINS_SYMBOL[16];
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
@@ -115,11 +115,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
-        fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize());
+        fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d  RT.%u\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),KOMODO_REALTIME);
     while ( chainActive.Tip()->nHeight > ASSETCHAINS_MINHEIGHT && mempool.GetTotalTxSize() <= 0 )
     {
         deposits = komodo_paxtotal();
-        if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 )
+        if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 || KOMODO_REALTIME == 0 )
             continue;
         if ( deposits != 0 )
             break;
