@@ -237,21 +237,30 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         {
             for (i=1; i<n-1; i++)
             {
-                if ( (pax= komodo_paxfind(&space,txids[i-1],vouts[i-1])) != 0 && ((opcode == 'I' && pax->fiatoshis == block.vtx[0].vout[i].nValue) || (opcode == 'X' && pax->komodoshis == block.vtx[0].vout[i].nValue)) )
+                if ( (pax= komodo_paxfind(&space,txids[i-1],vouts[i-1])) != 0 )
                 {
-                    if ( pax->marked != 0 )
-                        errs++;
-                    else matched++;
-                    printf("errs.%d i.%d match %.8f == %.8f\n",errs,i,dstr(pax != 0 ? pax->fiatoshis:-1),dstr(block.vtx[0].vout[i].nValue));
-                    komodo_paxmark(height,&space,txids[i-1],vouts[i-1],height);
+                    if ( ((opcode == 'I' && pax->fiatoshis == block.vtx[0].vout[i].nValue) || (opcode == 'X' && pax->komodoshis == block.vtx[0].vout[i].nValue)) )
+                    {
+                        if ( pax->marked != 0 )
+                            errs++;
+                        else matched++;
+                        printf("errs.%d i.%d match %.8f == %.8f\n",errs,i,dstr(pax != 0 ? pax->fiatoshis:-1),dstr(block.vtx[0].vout[i].nValue));
+                        komodo_paxmark(height,&space,txids[i-1],vouts[i-1],height);
+                    }
+                    else
+                    {
+                        hash = block.GetHash();
+                        for (j=0; j<32; j++)
+                            printf("%02x",((uint8_t *)&hash)[j]);
+                        printf(" ht.%d blockhash couldnt find vout.[%d]\n",height,i);
+                        komodo_paxmark(height,&space,txids[i-1],vouts[i-1],height);
+                    }
                 }
                 else
                 {
-                    hash = block.GetHash();
                     for (j=0; j<32; j++)
-                       printf("%02x",((uint8_t *)&hash)[j]);
-                    printf(" ht.%d blockhash couldnt find vout.[%d]\n",height,i);
-                    komodo_paxmark(height,&space,txids[i-1],vouts[i-1],height);
+                        printf("%02x",((uint8_t *)&txids[i-1])[j]);
+                    printf("cant paxfind txid\n");
                 }
             }
             if ( matched != num )
