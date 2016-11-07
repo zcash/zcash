@@ -153,7 +153,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
         opcode = 'I';
     else opcode = 'X';
     tmp = 0;
-    while ( (pax= PAX->hh.next) != 0 && pax != tmp )
+    while ( (pax= (struct pax_transaction *)PAX->hh.next) != 0 && pax != tmp )
     {
         if ( pax->marked != 0 )
             continue;
@@ -181,7 +181,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
         if ( numvouts++ >= 64 )
             break;
         tmp = pax;
-        pax = pax->hh.next;
+        pax = (struct pax_transaction *)pax->hh.next;
     }
     if ( numvouts > 1 )
     {
