@@ -357,8 +357,8 @@ int32_t komodo_gateway_tx(char *symbol,int32_t height,int32_t txi,char *txidstr,
         {
             if ( (result= jobj(json,(char *)"result")) != 0 )
             {
-                vpub_old = j64bits(result,(char *)"vpub_old");
-                vpub_new = j64bits(result,(char *)"vpub_new");
+                vpub_old = jdouble(result,(char *)"vpub_old") * COIN;
+                vpub_new = jdouble(result,(char *)"vpub_new") * COIN;
                 retval = 0;
                 if ( vpub_old == 0 && vpub_new == 0 && (vouts= jarray(&n,result,(char *)"vout")) != 0 )
                 {
