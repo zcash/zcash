@@ -360,7 +360,7 @@ uint64_t _komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolum
     return(0);
 }
 
-uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume)
+uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t lastprice,seed,tolerance,den,densum,sum=0,votes[539];
     if ( basevolume > 10000*COIN )
@@ -391,7 +391,7 @@ uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume
         else lastprice = votes[i];
     }
     //printf("\n}; // numvotes.%d\n\n",numvotes);
-    seed = komodo_seed(height);
+    *seedp = seed = komodo_seed(height);
     tolerance = sum / 50;
     for (k=0; k<numvotes; k++)
     {
@@ -460,7 +460,7 @@ void komodo_paxpricefeed(int32_t height,uint8_t *pricefeed,int32_t opretlen)
     //printf("komodo_paxpricefeed vout OP_RETURN.%d prices numpvals.%d opretlen.%d\n",height,numpvals,opretlen);
 }
 
-uint64_t PAX_fiatdest(int32_t tokomodo,char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *origbase,int64_t fiatoshis)
+uint64_t PAX_fiatdest(uint64_t *seedp,int32_t tokomodo,char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *origbase,int64_t fiatoshis)
 {
     uint8_t shortflag = 0; char base[4]; int32_t i,baseid; uint8_t addrtype,rmd160[20]; int64_t komodoshis = 0;
     if ( (baseid= komodo_baseid(origbase)) < 0 || baseid == MAX_CURRENCIES )
@@ -470,8 +470,8 @@ uint64_t PAX_fiatdest(int32_t tokomodo,char *destaddr,uint8_t pubkey33[33],char 
     base[i] = 0;
     if ( fiatoshis < 0 )
         shortflag = 1, fiatoshis = -fiatoshis;
-    komodoshis = komodo_paxprice(height,base,(char *)"KMD",(uint64_t)fiatoshis);
-    printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f\n",height,base,(double)fiatoshis/COIN,(double)komodoshis/COIN);
+    komodoshis = komodo_paxprice(seedp,height,base,(char *)"KMD",(uint64_t)fiatoshis);
+    //printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f\n",height,base,(double)fiatoshis/COIN,(double)komodoshis/COIN);
     if ( bitcoin_addr2rmd160(&addrtype,rmd160,coinaddr) == 20 )
     {
         PAX_pubkey(1,pubkey33,&addrtype,rmd160,base,&shortflag,tokomodo != 0 ? &komodoshis : &fiatoshis);
