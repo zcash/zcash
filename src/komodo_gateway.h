@@ -252,8 +252,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
 {
-    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,kmdheight,tokomodo=0; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; uint64_t seed; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
+    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo,kmdheight; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; uint64_t seed; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     tokomodo = (komodo_is_issuer() == 0);
+    printf("ASSETCHAIN.(%s) -> tokomodo.%d is_issuer.%d\n",ASSETCHAINS_SYMBOL,tokomodo,komodo_is_issuer());
     if ( opretbuf[0] == 'D' )
     {
         if ( opretlen == 38 ) // any KMD tx
@@ -266,7 +267,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             bitcoin_address(coinaddr,addrtype,rmd160,20);
             checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,fiatoshis);
             typestr = "deposit";
-            printf("kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d\n",kmdheight,height,dstr(checktoshis),dstr(value),tokomodo,strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0);
+            printf("kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d\n",kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0);
             if ( kmdheight <= height )
             {
                 if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
@@ -276,7 +277,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     printf(" opret[%c] tokomodo.%d\n",opretbuf[0],tokomodo);
                 }
                 //paxprice seed.0 sum 0.07766840 densum 1000.00000000 basevol 0.01000000 height.59532
-                if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 && shortflag == ASSETCHAINS_SHORTFLAG )
+                if ( strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 && shortflag == ASSETCHAINS_SHORTFLAG )
                 {
                     if ( shortflag == 0 )
                     {
