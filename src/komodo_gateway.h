@@ -155,6 +155,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
     tmp = 0;
     while ( PAX != 0 && (pax= (struct pax_transaction *)PAX->hh.next) != 0 && pax != tmp )
     {
+        printf("pax.%p marked.%d %.8f -> %.8f\n",pax,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         if ( pax->marked != 0 )
             continue;
         txNew->vout.resize(numvouts+1);
