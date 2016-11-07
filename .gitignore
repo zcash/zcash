@@ -5,6 +5,7 @@ src/bitcoin
 src/zcashd
 src/zcash-cli
 src/zcash-gtest
+src/zcash-miner
 src/zcash-tx
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
