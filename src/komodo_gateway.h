@@ -252,7 +252,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
 {
-    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo,kmdheight; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; uint64_t seed; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
+    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo,kmdheight; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; double diff; uint64_t seed; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     tokomodo = (komodo_is_issuer() == 0);
     printf("ASSETCHAIN.(%s) -> tokomodo.%d is_issuer.%d\n",ASSETCHAINS_SYMBOL,tokomodo,komodo_is_issuer());
     if ( opretbuf[0] == 'D' )
@@ -267,7 +267,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             bitcoin_address(coinaddr,addrtype,rmd160,20);
             checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,fiatoshis);
             typestr = "deposit";
-            printf("kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d\n",kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0);
+            printf("kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d seed.%llx\n",kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed);
+            diff = ((double)value / checktoshis) - 1.;
+            if ( diff < 0. )
+                diff = -diff;
             if ( kmdheight <= height )
             {
                 if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
@@ -277,7 +280,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     printf(" opret[%c] tokomodo.%d\n",opretbuf[0],tokomodo);
                 }
                 //paxprice seed.0 sum 0.07766840 densum 1000.00000000 basevol 0.01000000 height.59532
-                if ( strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 && shortflag == ASSETCHAINS_SHORTFLAG )
+                if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 && shortflag == ASSETCHAINS_SHORTFLAG )
                 {
                     if ( shortflag == 0 )
                     {
@@ -287,7 +290,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         for (i=0; i<33; i++)
                             printf("%02x",pubkey33[i]);
                         printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
-                        if ( value >= checktoshis )
+                        if ( value >= checktoshis || (seed == 0 && diff < .01) )
                         {
                             if ( komodo_paxfind(&space,txid,vout) == 0 )
                                 komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,kmdheight);
@@ -298,7 +301,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         for (i=0; i<opretlen; i++)
                             printf("%02x",opretbuf[i]);
                         printf(" opret[%c] tokomodo.%d value %.8f vs check %.8f\n",opretbuf[0],tokomodo,dstr(value),dstr(checktoshis));
-                        if ( value <= checktoshis )
+                        if ( value <= checktoshis || (seed == 0 && diff < .01) )
                         {
                             
                         }
