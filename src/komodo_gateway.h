@@ -274,19 +274,28 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 bitcoin_address(coinaddr,addrtype,rmd160,20);
                 checktoshis = PAX_fiatdest(tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,fiatoshis);
                 typestr = "deposit";
-                //0245555240420f00000000003c8390ec7bac0c84d9ceb39b1f31564c983123b8e4 ht.59480 srcaddr.(RMGrD8DzED6YYT63z1TaF4sVTCB7Qqvj1Z) eur fiatoshis.1000000 -> dest.(RQY5zAq49YYc8knVkBBpxuxbQa3xwhaw5z) komodoshis.7763390
-                //6a22440245555240420f00000000003c8390ec7bac0c84d9ceb39b1f31564c983123b8e4 opretbuf[36]
-                //9b51f402d7f5afde938b96f0c69d4114f2033a7ebd4db11eee7f2b6a94f00bca
-                /*{
-                 "base" : "eur",
-                 "rel" : "kmd",
-                 "height" : 59480,
-                 "timestamp" : 1478540309,
-                 "price" : 7.76339000,
-                 "invprice" : 0.12880971,
-                 "basevolume" : 1.00000000,
-                 "relvolume" : 7.76339000
-                 }*/
+                //paxprice seed.0 sum 0.07766840 densum 1000.00000000 basevol 0.01000000 height.59532
+
+                // 0.07759490
+                /* ./komodo-cli paxdeposit RMGrD8DzED6YYT63z1TaF4sVTCB7Qqvj1Z 0.01 eur
+                0245555240420f00000000003c8390ec7bac0c84d9ceb39b1f31564c983123b8e4 ht.59532 srcaddr.(RMGrD8DzED6YYT63z1TaF4sVTCB7Qqvj1Z) eur fiatoshis.1000000 -> dest.(RQY5zAq49YYc8knVkBBpxuxbQa3xwhaw5z) komodoshis.7759490
+                6a26440245555240420f00000000003c8390ec7bac0c84d9ceb39b1f31564c983123b8e48ce80000 opretbuf[40]
+                b1d7350ef5a9502e1249384abccbc5aa78e3172d182757431f548728583de4a2
+                root@devbox2:~/komodo/src# start CreateNewBlock initdone.1478543278 deposit 0.00000000 mempool.274
+                start CreateNewBlock initdone.1478543372 deposit 0.00000000 mempool.0
+                b1d7350ef5a9502e1249384abccbc5aa78e3172d182757431f548728583de4a2 <- txid.v2 0245555240420f00000000003c8390ec7bac0c84d9ceb39b1f31564c983123b8e4 checkpubkey check 0.07766840 v 0.07759490 dest.(RQY5zAq49YYc8knVkBBpxuxbQa3xwhaw5z) kmdheight.59532 height.59533
+                ./komodo-cli paxprice eur kmd 59532
+                {
+                    "base" : "eur",
+                    "rel" : "kmd",
+                    "height" : 59532,
+                    "timestamp" : 1478543277,
+                    "price" : 7.75949000,
+                    "invprice" : 0.12887445,
+                    "basevolume" : 1.00000000,
+                    "relvolume" : 7.75949000
+                }
+*/
                 if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 && shortflag == ASSETCHAINS_SHORTFLAG )
                 {
                     if ( shortflag == 0 )

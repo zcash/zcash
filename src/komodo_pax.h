@@ -471,6 +471,7 @@ uint64_t PAX_fiatdest(int32_t tokomodo,char *destaddr,uint8_t pubkey33[33],char 
     if ( fiatoshis < 0 )
         shortflag = 1, fiatoshis = -fiatoshis;
     komodoshis = komodo_paxprice(height,base,(char *)"KMD",(uint64_t)fiatoshis);
+    printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f\n",height,base,(double)fiatoshis/COIN,(double)komodoshis/COIN);
     if ( bitcoin_addr2rmd160(&addrtype,rmd160,coinaddr) == 20 )
     {
         PAX_pubkey(1,pubkey33,&addrtype,rmd160,base,&shortflag,tokomodo != 0 ? &komodoshis : &fiatoshis);
