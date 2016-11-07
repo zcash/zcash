@@ -119,13 +119,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     while ( chainActive.Tip()->nHeight > ASSETCHAINS_MINHEIGHT && mempool.GetTotalTxSize() <= 0 )
     {
         deposits = komodo_paxtotal();
-        sleep(10);
         if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 )
             continue;
         if ( deposits != 0 )
-        {
             break;
-        }
+        sleep(10);
     }
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)komodo_paxtotal(),(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
@@ -446,8 +444,6 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
     CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i;
-    if ( ASSETCHAINS_SYMBOL[0] != 0 )
-        fprintf(stderr,"%s createnewblockwith key\n",ASSETCHAINS_SYMBOL);
     if ( USE_EXTERNAL_PUBKEY != 0 )
     {
         //fprintf(stderr,"use notary pubkey\n");
@@ -562,8 +558,8 @@ void static BitcoinMiner(CWallet *pwallet)
                 } while (true);
                 //fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
             }
-            if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                fprintf(stderr,"%s create new block\n",ASSETCHAINS_SYMBOL);
+            //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            //    fprintf(stderr,"%s create new block\n",ASSETCHAINS_SYMBOL);
             //
             // Create new block
             //
@@ -595,7 +591,7 @@ void static BitcoinMiner(CWallet *pwallet)
             Mining_height = pindexPrev->nHeight+1;
             while (true)
             {
-                fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);
+                //fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);
                 // Hash state
                 crypto_generichash_blake2b_state state;
                 EhInitialiseState(n, k, state);
@@ -621,8 +617,8 @@ void static BitcoinMiner(CWallet *pwallet)
                     solutionTargetChecks.increment();
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
                     {
-                        if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                            printf("missed target\n");
+                        //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                        //    printf("missed target\n");
                         return false;
                     }
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+20 )
