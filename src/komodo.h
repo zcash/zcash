@@ -17,8 +17,10 @@
 #define H_KOMODO_H
 
 // Todo: handle reorg: clear all entries above reorged height
-// smooth consensus price
-//
+// error check redeems
+// net balance limiter
+// REVS and non-fiat chains
+// verify: interest payment, ratification
 
 #include <stdint.h>
 #include <stdio.h>
