@@ -716,7 +716,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 // Regtest mode doesn't require peers
                 if (vNodes.empty() && chainparams.MiningRequiresPeers())
                 {
-                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height < 100 )
                         printf("no nodes, break\n");
                     break;
                 }
