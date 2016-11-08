@@ -556,14 +556,15 @@ void static BitcoinMiner(CWallet *pwallet)
                 } while (true);
                 //fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
             }
-            //if ( ASSETCHAINS_SYMBOL[0] != 0 )
-            //    fprintf(stderr,"%s create new block\n",ASSETCHAINS_SYMBOL);
             //
             // Create new block
             //
             Mining_start = (uint32_t)time(NULL);
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
+            Mining_height = pindexPrev->nHeight+1;
+            //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
 
             unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
             if (!pblocktemplate.get())
@@ -586,7 +587,6 @@ void static BitcoinMiner(CWallet *pwallet)
                 Mining_start = (uint32_t)time(NULL);
                 fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
             } else Mining_start = 0;
-            Mining_height = pindexPrev->nHeight+1;
             while (true)
             {
                 //fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);
@@ -722,7 +722,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 }
                 if ( pindexPrev != chainActive.Tip() )
                 {
-                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                    //if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         printf("Tip advanced, break\n");
                     break;
                 }
