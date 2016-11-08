@@ -114,22 +114,23 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    //if ( ASSETCHAINS_SYMBOL[0] != 0 )
-        fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d  RT.%u\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),KOMODO_REALTIME);
-    while ( mempool.GetTotalTxSize() <= 0 )
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
-        deposits = komodo_paxtotal();
-        if ( KOMODO_INITDONE == 0 || KOMODO_REALTIME == 0 )
+        fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d  RT.%u\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),KOMODO_REALTIME);
+        while ( mempool.GetTotalTxSize() <= 0 )
         {
-            fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f\n",KOMODO_INITDONE,KOMODO_REALTIME,(double)deposits/COIN);
+            deposits = komodo_paxtotal();
+            if ( KOMODO_INITDONE == 0 || KOMODO_REALTIME == 0 )
+            {
+                fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f\n",KOMODO_INITDONE,KOMODO_REALTIME,(double)deposits/COIN);
+            }
+            else if ( deposits != 0 )
+                break;
+            sleep(10);
         }
-        else if ( deposits != 0 )
-            break;
-        sleep(10);
+        if ( 0 && deposits != 0 )
+            printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)komodo_paxtotal(),(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
     }
-    //if ( 0 && deposits != 0 )
-        printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)komodo_paxtotal(),(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
-
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
     if (Params().MineBlocksOnDemand())
