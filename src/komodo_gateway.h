@@ -499,7 +499,7 @@ void komodo_gateway_iteration(char *symbol)
     char *retstr; int32_t i,kmdheight; cJSON *infoobj,*result; uint256 zero; uint16_t port = 7771;
     if ( KMDHEIGHT <= 0 )
         KMDHEIGHT = 1;
-    KOMODO_REALTIME = 0;
+    //KOMODO_REALTIME = 0;
     if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
     {
         if ( (infoobj= cJSON_Parse(retstr)) != 0 )
