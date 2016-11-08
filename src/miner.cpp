@@ -718,7 +718,8 @@ void static BitcoinMiner(CWallet *pwallet)
                 {
                     if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height < 100 )
                         printf("no nodes, break\n");
-                    break;
+                    if ( ASSETCHAINS_SYMBOL[0] != 0 && Mining_height >= 100 )
+                        break;
                 }
                 if ((UintToArith256(pblock->nNonce) & 0xffff) == 0xffff)
                 {
@@ -728,14 +729,14 @@ void static BitcoinMiner(CWallet *pwallet)
                 }
                 if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                 {
-                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                        printf("timeout, break\n");
+                    //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                    //    printf("timeout, break\n");
                     break;
                 }
                 if ( pindexPrev != chainActive.Tip() )
                 {
-                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                        printf("Tip advanced, break\n");
+                    //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                    //    printf("Tip advanced, break\n");
                     break;
                 }
                 // Update nNonce and nTime
