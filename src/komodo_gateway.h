@@ -222,7 +222,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
         txNew->vout[numvouts].scriptPubKey.resize(opretlen);
         script = (uint8_t *)&txNew->vout[numvouts].scriptPubKey[0];
         memcpy(script,opret,opretlen);
-        printf("MINER deposits: tokomodo.%d (%s) total numvouts.%d %.8f opretlen.%d\n",tokomodo,ASSETCHAINS_SYMBOL,numvouts,dstr(PENDING_KOMODO_TX),opretlen);
+        printf("MINER deposits.%d (%s) vouts.%d %.8f opretlen.%d\n",tokomodo,ASSETCHAINS_SYMBOL,numvouts,dstr(PENDING_KOMODO_TX),opretlen);
     }
 }
 
@@ -234,9 +234,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     if ( n <= 2 || script[0] != 0x6a )
         return(0);
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
-    //printf("checkdeposit n.%d [%02x] [%c] %d vs %d\n",n,script[0],script[offset],script[offset],'I');
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
+        printf("checkdeposit n.%d [%02x] [%c] %d vs %d\n",n,script[0],script[offset],script[offset],'X');
         opcode = 'X';
         strcpy(symbol,"KMD");
     }
