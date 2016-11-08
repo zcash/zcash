@@ -152,6 +152,9 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     // We can't make transactions until we have inputs
     // Therefore, load 100 blocks :)
     std::vector<CTransaction*>txFirst;
+    unique_ptr<equi> peq;
+    if (solver == "tromp")
+        peq.reset(new equi(1));
     for (unsigned int i = 0; i < sizeof(blockinfo)/sizeof(*blockinfo); ++i)
     {
         // Simple block creation, nothing special yet:
@@ -203,8 +206,8 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
                                               pblock->nNonce.begin(),
                                               pblock->nNonce.size());
 
-            // Create solver and initialize it.
-            equi eq(1);
+            // initialize it.
+            equi& eq = *peq;
             eq.setstate(&curr_state);
 
             // Intialization done, start algo driver.
