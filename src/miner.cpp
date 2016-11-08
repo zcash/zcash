@@ -436,7 +436,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 // Internal miner
 //
 #define ROUNDROBIN_DELAY 10
-extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE;
+extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE;
 extern std::string NOTARY_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[33];
 uint32_t Mining_start,Mining_height;
@@ -511,8 +511,6 @@ void static BitcoinMiner(CWallet *pwallet)
 
     unsigned int n = chainparams.EquihashN();
     unsigned int k = chainparams.EquihashK();
-    extern int32_t ASSETCHAIN_INIT,KOMODO_INITDONE; extern uint8_t NOTARY_PUBKEY33[33];
-    int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
     int32_t notaryid = -1;
     while ( ASSETCHAIN_INIT == 0 || KOMODO_INITDONE == 0 )
     {

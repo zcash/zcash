@@ -141,6 +141,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     }
     else if ( height == 0 && KOMODO_CHOSEN_ONE != 0 )
     {
+        extern uint8_t NOTARY_PUBKEY33[33];
         bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
         memcpy(pubkey33,NOTARY_PUBKEY33,33);
         special = 1;
