@@ -34,6 +34,8 @@
 static bool fDaemon;
 extern char ASSETCHAINS_SYMBOL[16];
 void komodo_gateway_iteration(char *symbol);
+void komodo_iteration(char *symbol);
+int32_t komodo_is_issuer();
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
@@ -42,8 +44,10 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     while (!fShutdown)
     {
         MilliSleep(2000);
-        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        if ( komodo_is_issuer() != 0 )
             komodo_gateway_iteration(ASSETCHAINS_SYMBOL);
+        else komodo_iteration((char *)"EUR");
+            
         fShutdown = ShutdownRequested();
     }
     if (threadGroup)
@@ -59,6 +63,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 //
 extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,ASSETCHAIN_INIT;
 extern std::string NOTARY_PUBKEY;
+int32_t komodo_is_issuer();
 
 bool AppInit(int argc, char* argv[])
 {
@@ -97,10 +102,12 @@ bool AppInit(int argc, char* argv[])
     try
     {
         void komodo_args();
-        fprintf(stderr,"call komodo_args\n");
         komodo_args();
+        fprintf(stderr,"call komodo_args NOTARY_PUBKEY.(%s)\n",NOTARY_PUBKEY.c_str());
         while ( ASSETCHAIN_INIT == 0 )
         {
+            if ( komodo_is_issuer() != 0 )
+                komodo_gateway_iteration(ASSETCHAINS_SYMBOL);
             sleep(1);
         }
         if (!boost::filesystem::is_directory(GetDataDir(false)))

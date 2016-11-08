@@ -550,9 +550,8 @@ CBlockTreeDB *pblocktree = NULL;
 
 // Komodo globals
 
-#define KOMODO_TESTNET_EXPIRATION 60000
-//#define KOMODO_ENABLE_INTEREST enabling this is a hardfork
-#define KOMODO_SOURCE "KMD"
+#define KOMODO_TESTNET_EXPIRATION 100000
+#define KOMODO_ENABLE_INTEREST //enabling this is a hardfork
 #define KOMODO_PAX
 #define KOMODO_ZCASH
 #include "komodo.h"
@@ -1470,16 +1469,31 @@ bool IsInitialBlockDownload()
     const CChainParams& chainParams = Params();
     LOCK(cs_main);
     if (fImporting || fReindex)
+    {
+        //fprintf(stderr,"fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
         return true;
+    }
     if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
+    {
+        //fprintf(stderr,"checkpoint -> initialdownload\n");
         return true;
+    }
     static bool lockIBDState = false;
     if (lockIBDState)
+    {
+        //fprintf(stderr,"lockIBDState true %d < %d\n",chainActive.Height(),pindexBestHeader->nHeight - 10);
         return false;
-    bool state = (chainActive.Height() < pindexBestHeader->nHeight - 24 * 6 ||
-            pindexBestHeader->GetBlockTime() < GetTime() - chainParams.MaxTipAge());
+    }
+    bool state;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        state = (chainActive.Height() < pindexBestHeader->nHeight - 24*6) ||
+                    pindexBestHeader->GetBlockTime() < (GetTime() - chainParams.MaxTipAge());
+    else state = (chainActive.Height() < pindexBestHeader->nHeight - 100);
     if (!state)
+    {
+        //fprintf(stderr,"lockIBDState tru\n");
         lockIBDState = true;
+    }
     return state;
 }
 
@@ -1621,8 +1635,8 @@ void static InvalidBlockFound(CBlockIndex *pindex, const CValidationState &state
 
 void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight)
 {
-    // mark inputs spent
-    if (!tx.IsCoinBase()) {
+    if (!tx.IsCoinBase()) // mark inputs spent
+    {
         txundo.vprevout.reserve(tx.vin.size());
         BOOST_FOREACH(const CTxIn &txin, tx.vin) {
             CCoinsModifier coins = inputs.ModifyCoins(txin.prevout.hash);
@@ -1641,16 +1655,12 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
             }
         }
     }
-
-    // spend nullifiers
-    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
+    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) { // spend nullifiers
         BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
             inputs.SetNullifier(nf, true);
         }
     }
-
-    // add outputs
-    inputs.ModifyCoins(tx.GetHash())->FromTx(tx, nHeight);
+    inputs.ModifyCoins(tx.GetHash())->FromTx(tx, nHeight); // add outputs
 }
 
 void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, int nHeight)
@@ -2243,7 +2253,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus());
-    if (block.vtx[0].GetValueOut() > blockReward)
+    if (block.vtx[0].vout[0].nValue > blockReward)
+    //if (block.vtx[0].GetValueOut() > blockReward)
         return state.DoS(100,
                          error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
                                block.vtx[0].GetValueOut(), blockReward),
@@ -3039,6 +3050,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
     return true;
 }
 
+int32_t komodo_check_deposit(int32_t height,const CBlock& block);
 bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidationState& state, bool fCheckPOW, bool fCheckMerkleRoot)
 {
     // These are checks that are independent of context.
@@ -3095,7 +3107,8 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     if (nSigOps > MAX_BLOCK_SIGOPS)
         return state.DoS(100, error("CheckBlock(): out-of-bounds SigOpCount"),
                          REJECT_INVALID, "bad-blk-sigops", true);
-
+    if ( komodo_check_deposit(height,block) < 0 )
+        return(false);
     return true;
 }
 
@@ -3302,8 +3315,10 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 bool ProcessNewBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
-    bool checked = CheckBlock(komodo_block2height(pblock),0,*pblock, state);
-
+    bool checked;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        checked = CheckBlock(komodo_block2height(pblock),0,*pblock, state);
+    else checked = CheckBlock(0,0,*pblock, state);
     {
         LOCK(cs_main);
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());

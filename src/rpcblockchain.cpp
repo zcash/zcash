@@ -382,24 +382,69 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
 
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint32_t komodo_txtime(uint256 hash);
-uint64_t komodo_paxprice(int32_t height,char *base,char *rel,uint64_t basevolume);
+uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume);
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel);
+int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
+char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
+
+Value notaries(const Array& params, bool fHelp)
+{
+    Array a; Object ret; int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("notaries height\n");
+    LOCK(cs_main);
+    int32_t height = atoi(params[0].get_str().c_str());
+    if ( height < 0 || height > chainActive.Height()+2000 )
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+    else
+    {
+        if ( (n= komodo_notaries(pubkeys,height)) > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                Object item;
+                std::string btcaddress,kmdaddress,hex;
+                bitcoin_address(btcaddr,0,pubkeys[i],33);
+                m = (int32_t)strlen(btcaddr);
+                btcaddress.resize(m);
+                ptr = (char *)btcaddress.data();
+                memcpy(ptr,btcaddr,n);
+                bitcoin_address(kmdaddr,60,pubkeys[i],33);
+                m = (int32_t)strlen(kmdaddr);
+                kmdaddress.resize(m);
+                ptr = (char *)kmdaddress.data();
+                memcpy(ptr,kmdaddr,m);
+                hex.resize(66);
+                hexstr = (char *)hex.data();
+                for (j=0; j<33; j++)
+                    sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
+                item.push_back(Pair("pubkey", hex));
+                item.push_back(Pair("BTCaddress", btcaddress));
+                item.push_back(Pair("KMDaddress", kmdaddress));
+                a.push_back(item);
+            }
+        }
+        ret.push_back(Pair("notaries", a));
+    }
+    return ret;
+}
 
 Value paxprice(const Array& params, bool fHelp)
 {
     if ( fHelp || params.size() < 3 || params.size() > 4 )
         throw runtime_error("paxprice \"base\" \"rel\" height amount\n");
     LOCK(cs_main);
-    Object ret; uint64_t basevolume=0,relvolume;
+    Object ret; uint64_t basevolume=0,relvolume,seed;
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
     int32_t height = atoi(params[2].get_str().c_str());
     if ( params.size() == 3 || (basevolume= COIN * atof(params[3].get_str().c_str())) == 0 )
         basevolume = COIN;
-    relvolume = komodo_paxprice(height,(char *)base.c_str(),(char *)rel.c_str(),basevolume);
+    relvolume = komodo_paxprice(&seed,height,(char *)base.c_str(),(char *)rel.c_str(),basevolume);
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
     ret.push_back(Pair("height", height));
+    ret.push_back(Pair("seed", seed));
     if ( height < 0 || height > chainActive.Height() )
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     else

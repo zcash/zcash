@@ -302,6 +302,7 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "verifychain",            &verifychain,            true  },
     { "blockchain",         "paxprice",               &paxprice,               true  },
     { "blockchain",         "paxprices",              &paxprices,              true  },
+    { "blockchain",         "notaries",               &notaries,               true  },
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
@@ -401,7 +402,8 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "z_exportwallet",         &z_exportwallet,         true  },
     { "wallet",             "z_importwallet",         &z_importwallet,         true  },
     
-    { "wallet",             "paxdeposit",             &paxdeposit,             true  }
+    { "wallet",             "paxdeposit",             &paxdeposit,             true  },
+    { "wallet",             "paxwithdraw",            &paxwithdraw,            true  }
 #endif // ENABLE_WALLET
 };
 
@@ -965,15 +967,16 @@ static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
         conn->stream() << HTTPError(HTTP_UNAUTHORIZED, false) << std::flush;
         return false;
     }
-
     JSONRequest jreq;
     try
     {
         // Parse request
         Value valRequest;
         if (!read_string(strRequest, valRequest))
+        {
+            fprintf(stderr,"CANTPARSE.(%s)\n",strRequest.c_str());
             throw JSONRPCError(RPC_PARSE_ERROR, "Parse error");
-
+        }
         // Return immediately if in warmup
         {
             LOCK(cs_rpcWarmup);

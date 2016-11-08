@@ -23,6 +23,8 @@
 #include <curl/easy.h>
 #endif
 
+#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7775",0,(char *)(cmdstr),0)
+
 struct MemoryStruct { char *memory; size_t size; };
 struct return_string { char *ptr; size_t len; };
 
@@ -137,7 +139,6 @@ char *post_process_bitcoind_RPC(char *debugstr,char *command,char *rpcstr,char *
  *
  ************************************************************************/
 
-
 char *bitcoind_RPC(char **retstrp,char *debugstr,char *url,char *userpass,char *command,char *params)
 {
     static int didinit,count,count2; static double elapsedsum,elapsedsum2;
@@ -227,7 +228,8 @@ try_again:
             free(s.ptr);
             return(0);
         }
-        printf( "curl_easy_perform() failed: %s %s.(%s %s), retries: %d\n",curl_easy_strerror(res),debugstr,url,command,numretries);
+        if ( (rand() % 1000) == 0 )
+            printf( "curl_easy_perform() failed: %s %s.(%s %s), retries: %d\n",curl_easy_strerror(res),debugstr,url,command,numretries);
         free(s.ptr);
         sleep((1<<numretries));
         goto try_again;
@@ -239,7 +241,7 @@ try_again:
         {
             count++;
             elapsedsum += (OS_milliseconds() - starttime);
-            if ( (count % 10000) == 0)
+            if ( (count % 1000000) == 0)
                 printf("%d: ave %9.6f | elapsed %.3f millis | bitcoind_RPC.(%s) url.(%s)\n",count,elapsedsum/count,(OS_milliseconds() - starttime),command,url);
             if ( retstrp != 0 )
             {
@@ -343,7 +345,6 @@ char *komodo_issuemethod(char *method,char *params,uint16_t port)
     }
     return(retstr2);
 }
-//curl --url "http://127.0.0.1:13033" --user "user1557335368:pass111720054" --data "{\"method\":\"getinfo\",\"params\":[]}"
 
 uint32_t komodo_txtime(uint256 hash)
 {
@@ -361,9 +362,25 @@ uint32_t komodo_txtime(uint256 hash)
     return(0);
 }
 
+uint64_t komodo_seed(int32_t height)
+{
+    uint256 hash; uint64_t seed = 0; CBlockIndex *pindex = chainActive[height];
+    if ( pindex != 0 )
+    {
+        hash = pindex->GetBlockHash();
+        seed = arith_uint256(hash.GetHex()).GetLow64();
+    }
+    return(seed);
+}
+
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
-    komodo_init();
+    //int32_t i; uint256 hash;
+    komodo_init(pindex->nHeight);
+    //hash = block.GetHash();
+    //for (i=0; i<32; i++)
+    //    printf("%02x",((uint8_t *)&hash)[i]);
+    //printf(" <- disconnect block\n");
     //uint256 zero;
     //printf("disconnect ht.%d\n",pindex->nHeight);
     //memset(&zero,0,sizeof(zero));
@@ -373,7 +390,6 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 int32_t komodo_block2height(CBlock *block)
 {
     int32_t i,n,height = 0; uint8_t *ptr;
-    komodo_init();
 #ifdef KOMODO_ZCASH
     ptr = (uint8_t *)block->vtx[0].vin[0].scriptSig.data();
 #else
@@ -392,6 +408,7 @@ int32_t komodo_block2height(CBlock *block)
         }
         //printf(" <- coinbase.%d ht.%d\n",(int32_t)block->vtx[0].vin[0].scriptSig.size(),height);
     }
+    komodo_init(height);
     return(height);
 }
 
@@ -402,14 +419,14 @@ void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
 #else
     uint8_t *ptr = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
 #endif
-    komodo_init();
+    komodo_init(0);
     memcpy(pubkey33,ptr+1,33);
 }
 
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
     CBlock block;
-    komodo_init();
+    komodo_init(height);
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {

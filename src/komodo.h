@@ -17,6 +17,8 @@
 #define H_KOMODO_H
 
 // Todo: handle reorg: clear all entries above reorged height
+// smooth consensus price
+//
 
 #include <stdint.h>
 #include <stdio.h>
@@ -24,14 +26,16 @@
 #include <ctype.h>
 
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t kheight,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout);
-void komodo_init();
+void komodo_init(int32_t height);
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp);
 char *komodo_issuemethod(char *method,char *params,uint16_t port);
 
 #define GENESIS_NBITS 0x1f00ffff
+#define KOMODO_MINRATIFY 7
+
 #include "komodo_globals.h"
 #include "komodo_utils.h"
-queue_t DepositsQ,PendingsQ;
+//queue_t DepositsQ,PendingsQ;
 
 #include "cJSON.c"
 #include "komodo_bitcoind.h"
@@ -148,7 +152,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
     }
     if ( height <= 0 )
     {
-        printf("early return: stateupdate height.%d\n",height);
+        //printf("early return: stateupdate height.%d\n",height);
         return;
     }
     if ( fp != 0 ) // write out funcid, height, other fields, call side effect function
@@ -300,59 +304,75 @@ int32_t komodo_voutupdate(int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,
             opretlen = scriptbuf[len++];
             opretlen = (opretlen << 8) + scriptbuf[len++];
         }
-        //for (k=0; k<scriptlen; k++)
-        //    printf("%02x",scriptbuf[k]);
-        //printf(" <- script ht.%d i.%d j.%d value %.8f\n",height,i,j,dstr(value));
-        if ( j == 1 && opretlen >= 32*2+4 && strcmp(KOMODO_SOURCE,(char *)&scriptbuf[len+32*2+4]) == 0 )
+        if ( j == 1 && opretlen >= 32*2+4 && strcmp(ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+32*2+4]) == 0 )
         {
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
             len += iguana_rwnum(0,&scriptbuf[len],4,(uint8_t *)notarizedheightp);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
             if ( *notarizedheightp > NOTARIZED_HEIGHT && *notarizedheightp < height )
             {
-                printf("ht.%d NOTARIZED.%d KMD.%s BTCTXID.%s (%s)\n",height,*notarizedheightp,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
+                printf("ht.%d NOTARIZED.%d %s.%s %sTXID.%s (%s)\n",height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
                 NOTARIZED_HEIGHT = *notarizedheightp;
                 NOTARIZED_HASH = kmdtxid;
                 NOTARIZED_DESTTXID = desttxid;
                 komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0);
-            } else printf("reject ht.%d NOTARIZED.%d %s.%s DESTTXID.%s (%s)\n",height,*notarizedheightp,KOMODO_SOURCE,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
+            } else printf("reject ht.%d NOTARIZED.%d %s.%s DESTTXID.%s (%s)\n",height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
         }
         else if ( i == 0 && j == 1 && opretlen == 149 )
             komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
-        else komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,value,&scriptbuf[len],opretlen,j);
+        else
+        {
+            //int32_t k; for (k=0; k<scriptlen; k++)
+            //    printf("%02x",scriptbuf[k]);
+            //printf(" <- script ht.%d i.%d j.%d value %.8f\n",height,i,j,dstr(value));
+            komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,value,&scriptbuf[len],opretlen,j);
+        }
     }
     return(notaryid);
 }
 
 int32_t komodo_isratify(int32_t isspecial,int32_t numvalid)
 {
-    if ( isspecial != 0 && numvalid > 13 )
+    if ( isspecial != 0 && numvalid >= KOMODO_MINRATIFY )
         return(1);
     else return(0);
 }
 
 // Special tx have vout[0] -> CRYPTO777
-// with more than 13 pay2pubkey outputs -> ratify
+// with more than KOMODO_MINRATIFY pay2pubkey outputs -> ratify
 // if all outputs to notary -> notary utxo
 // if txi == 0 && 2 outputs and 2nd OP_RETURN, len == 32*2+4 -> notarized, 1st byte 'P' -> pricefeed
 // OP_RETURN: 'D' -> deposit, 'W' -> withdraw
 
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
+    static int32_t hwmheight;
     uint64_t signedmask,voutmask;
     uint8_t scriptbuf[4096],pubkeys[64][33]; uint256 kmdtxid,btctxid,txhash;
     int32_t i,j,k,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
-    komodo_init();
+    komodo_init(pindex->nHeight);
+    if ( pindex->nHeight > hwmheight )
+        hwmheight = pindex->nHeight;
+    else
+    {
+        printf("hwmheight.%d vs pindex->nHeight.%d reorg.%d\n",hwmheight,pindex->nHeight,hwmheight-pindex->nHeight);
+        // reset komodostate
+    }
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    {
+        while ( KOMODO_REALTIME == 0 || time(NULL) <= KOMODO_REALTIME )
+        {
+            fprintf(stderr,"komodo_connect.(%s) waiting for realtime RT.%u now.%u\n",ASSETCHAINS_SYMBOL,KOMODO_REALTIME,(uint32_t)time(NULL));
+            sleep(3);
+        }
+    }
     KOMODO_INITDONE = (uint32_t)time(NULL);
-#ifdef KOMODO_ISSUER
-    komodo_gateway_issuer();
-#else
-    komodo_gateway_redeemer();
-#endif
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
         txn_count = block.vtx.size();
+        if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+            printf("%s ht.%d connect txn_count.%d\n",ASSETCHAINS_SYMBOL,height,txn_count);
         for (i=0; i<txn_count; i++)
         {
             txhash = block.vtx[i].GetHash();
@@ -419,7 +439,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                             }
                         }
                     }
-                    if ( komodo_isratify(1,numvalid) > 13 )
+                    if ( komodo_isratify(1,numvalid) >= KOMODO_MINRATIFY && numvouts > 13 )
                     {
                         memset(&txhash,0,sizeof(txhash));
                         komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0,0,0,0,0,0,0,0);

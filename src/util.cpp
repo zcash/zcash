@@ -401,19 +401,27 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
 }
 
 extern char ASSETCHAINS_SYMBOL[16];
+extern int32_t ASSETCHAINS_SHORTFLAG;
 
 boost::filesystem::path GetDefaultDataDir()
 {
     namespace fs = boost::filesystem;
+    char symbol[16];
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    {
+        if ( ASSETCHAINS_SHORTFLAG != 0 )
+            sprintf(symbol,"-%s",ASSETCHAINS_SYMBOL);
+        else strcpy(symbol,ASSETCHAINS_SYMBOL);
+    } else symbol[0] = 0;
     // Windows < Vista: C:\Documents and Settings\Username\Application Data\Zcash
     // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zcash
     // Mac: ~/Library/Application Support/Zcash
     // Unix: ~/.zcash
 #ifdef WIN32
     // Windows
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( symbol[0] == 0 )
         return GetSpecialFolderPath(CSIDL_APPDATA) / "Komodo";
-    else return GetSpecialFolderPath(CSIDL_APPDATA) / "Komodo" / ASSETCHAINS_SYMBOL;
+    else return GetSpecialFolderPath(CSIDL_APPDATA) / "Komodo" / symbol;
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -425,19 +433,19 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( symbol[0] == 0 )
         return pathRet / "Komodo";
     else
     {
         pathRet /= "Komodo";
         TryCreateDirectory(pathRet);
-        return pathRet / ASSETCHAINS_SYMBOL;
+        return pathRet / symbol;
     }
 #else
     // Unix
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( symbol[0] == 0 )
         return pathRet / ".komodo";
-    else return pathRet / ".komodo" / ASSETCHAINS_SYMBOL;
+    else return pathRet / ".komodo" / symbol;
 #endif
 #endif
 }
