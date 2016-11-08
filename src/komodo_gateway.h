@@ -291,8 +291,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             {
                 if  ( opcode == 'X' )
                     printf("matched.%d vs num.%d\n",matched,num);
-                if ( height > 60000 )
-                    return(-1);
+                //if ( height > 60000 )
+                //    return(-1);
             }
         }
         //printf("opretlen.%d num.%d\n",opretlen,num);
