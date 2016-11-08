@@ -207,7 +207,7 @@ Value generate(const Array& params, bool fHelp)
         }
 endloop:
         CValidationState state;
-        if (!ProcessNewBlock(chainActive->Tip()->nHeight+1,state, NULL, pblock, true, NULL))
+        if (!ProcessNewBlock(chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
         minedBlocks.increment();
         ++nHeight;
@@ -716,7 +716,7 @@ Value submitblock(const Array& params, bool fHelp)
     CValidationState state;
     submitblock_StateCatcher sc(block.GetHash());
     RegisterValidationInterface(&sc);
-    bool fAccepted = ProcessNewBlock(chainActive->Tip()->nHeight+1,state, NULL, &block, true, NULL);
+    bool fAccepted = ProcessNewBlock(chainActive.Tip()->nHeight+1,state, NULL, &block, true, NULL);
     UnregisterValidationInterface(&sc);
     if (fBlockPresent)
     {
