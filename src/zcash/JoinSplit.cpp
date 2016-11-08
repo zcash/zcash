@@ -112,14 +112,23 @@ public:
             throw std::runtime_error("cannot save verifying key; key doesn't exist");
         }
     }
+    void saveR1CS(std::string path) {
+        auto r1cs = generate_r1cs();
 
-    void generate() {
+        saveToFile(path, r1cs);
+    }
+
+    r1cs_constraint_system<FieldT> generate_r1cs() {
         protoboard<FieldT> pb;
 
         joinsplit_gadget<FieldT, NumInputs, NumOutputs> g(pb);
         g.generate_r1cs_constraints();
 
-        const r1cs_constraint_system<FieldT> constraint_system = pb.get_constraint_system();
+        return pb.get_constraint_system();
+    }
+
+    void generate() {
+        const r1cs_constraint_system<FieldT> constraint_system = generate_r1cs();
         r1cs_ppzksnark_keypair<ppzksnark_ppT> keypair = r1cs_ppzksnark_generator<ppzksnark_ppT>(constraint_system);
 
         pk = keypair.pk;

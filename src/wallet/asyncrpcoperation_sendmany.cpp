@@ -885,7 +885,9 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
             outputMap,
             info.vpub_old,
             info.vpub_new,
-            !this->testmode);
+            !this->testmode,
+            // Temporary fix for #1779 is to disable shuffling of inputs and outputs.
+            GenIdentity);
 
     if (!(jsdesc.Verify(*pzcashParams, joinSplitPubKey_))) {
         throw std::runtime_error("error verifying joinsplit");

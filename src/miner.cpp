@@ -650,11 +650,13 @@ void static BitcoinMiner(CWallet *pwallet)
     }
     catch (const boost::thread_interrupted&)
     {
+        c.disconnect();
         LogPrintf("ZcashMiner terminated\n");
         throw;
     }
     catch (const std::runtime_error &e)
     {
+        c.disconnect();
         LogPrintf("ZcashMiner runtime error: %s\n", e.what());
         return;
     }
