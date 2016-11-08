@@ -102,7 +102,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 uint64_t komodo_paxtotal();
 int32_t komodo_is_issuer();
-void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol,int32_t tokomodo);
+int32_t komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol,int32_t tokomodo);
 extern int32_t KOMODO_INITDONE,ASSETCHAINS_SHORTFLAG,KOMODO_REALTIME;
 extern char ASSETCHAINS_SYMBOL[16];
 
@@ -367,17 +367,19 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             int32_t i,opretlen; uint8_t opret[256],*ptr;
-            if ( (opretlen= komodo_pax_opreturn(opret,sizeof(opret))) > 0 )
+            if ( komodo_gateway_deposits(&txNew,0,(char *)"EUR",1) == 0 )
             {
-                txNew.vout.resize(2);
-                txNew.vout[1].scriptPubKey.resize(opretlen);
-                ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
-                for (i=0; i<opretlen; i++)
-                    ptr[i] = opret[i];
-                txNew.vout[1].nValue = 0;
-                //fprintf(stderr,"opretlen.%d\n",opretlen);
+                if ( (opretlen= komodo_pax_opreturn(opret,sizeof(opret))) > 0 )
+                {
+                    txNew.vout.resize(2);
+                    txNew.vout[1].scriptPubKey.resize(opretlen);
+                    ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
+                    for (i=0; i<opretlen; i++)
+                        ptr[i] = opret[i];
+                    txNew.vout[1].nValue = 0;
+                    //fprintf(stderr,"opretlen.%d\n",opretlen);
+                }
             }
-            komodo_gateway_deposits(&txNew,0,(char *)"EUR",1);
         }
         else if ( komodo_is_issuer() != 0 )
         {
