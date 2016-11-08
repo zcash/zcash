@@ -88,9 +88,9 @@ struct pax_transaction *komodo_paxmark(int32_t height,struct pax_transaction *sp
     if ( pax != 0 )
     {
         pax->marked = mark;
-        int32_t i; for (i=0; i<32; i++)
-            printf("%02x",((uint8_t *)&txid)[i]);
-        printf(" paxmark.ht %d vout%d\n",mark,vout);
+        //int32_t i; for (i=0; i<32; i++)
+        //    printf("%02x",((uint8_t *)&txid)[i]);
+        //printf(" paxmark.ht %d vout%d\n",mark,vout);
         memcpy(space,pax,sizeof(*pax));
     }
     pthread_mutex_unlock(&komodo_mutex);
@@ -108,9 +108,9 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         pax->txid = txid;
         pax->vout = vout;
         HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
-        int32_t i; for (i=0; i<32; i++)
-            printf("%02x",((uint8_t *)&txid)[i]);
-        printf(" v.%d [%s] ht.%d create pax.%p\n",vout,ASSETCHAINS_SYMBOL,height,pax);
+        //int32_t i; for (i=0; i<32; i++)
+        //    printf("%02x",((uint8_t *)&txid)[i]);
+        //printf(" v.%d [%s] ht.%d create pax.%p\n",vout,ASSETCHAINS_SYMBOL,height,pax);
     }
     pthread_mutex_unlock(&komodo_mutex);
     if ( coinaddr != 0 )
@@ -250,9 +250,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     else
                     {
                         hash = block.GetHash();
-                        for (j=0; j<32; j++)
-                            printf("%02x",((uint8_t *)&hash)[j]);
-                        printf(" ht.%d blockhash couldnt find vout.[%d]\n",height,i);
+                        //for (j=0; j<32; j++)
+                        //    printf("%02x",((uint8_t *)&hash)[j]);
+                        //printf(" ht.%d blockhash couldnt find vout.[%d]\n",height,i);
                     }
                 }
                 else
@@ -265,7 +265,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             }
             if ( matched != num )
             {
-                printf("matched.%d vs num.%d\n",matched,num);
+                //printf("matched.%d vs num.%d\n",matched,num);
                 if ( height > 60000 )
                     return(-1);
             }
