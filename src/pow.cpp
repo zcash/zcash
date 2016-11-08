@@ -138,6 +138,14 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             flag = 1;
         } //else bnTarget /= 8;
     }
+    else if ( height == 0 && KOMODO_CHOSEN_ONE != 0 )
+    {
+        bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+        memcpy(pubkey33,NOTARY_PUBKEY33,33);
+        special = 1;
+        notaryid = -1;
+        printf("KOMODO_CHOSEN_ONE -> MINDIFF\n");
+    }
     // Check range
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");

@@ -436,7 +436,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 // Internal miner
 //
 #define ROUNDROBIN_DELAY 10
-extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
+extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE;
 extern std::string NOTARY_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[33];
 uint32_t Mining_start,Mining_height;
@@ -594,6 +594,7 @@ void static BitcoinMiner(CWallet *pwallet)
             {
                 //fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);
                 // Hash state
+                KOMODO_CHOSEN_ONE = 0;
                 crypto_generichash_blake2b_state state;
                 EhInitialiseState(n, k, state);
                 // I = the block header minus nonce and solution.
@@ -626,6 +627,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     {
                         printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+ROUNDROBIN_DELAY-time(NULL)));
                         sleep(Mining_start+ROUNDROBIN_DELAY-time(NULL));
+                        KOMODO_CHOSEN_ONE = 1;
                     }
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
@@ -636,6 +638,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         std::lock_guard<std::mutex> lock{m_cs};
                         cancelSolver = false;
                     }
+                    KOMODO_CHOSEN_ONE = 0;
                     int32_t i; uint256 hash = pblock->GetHash();
                     for (i=0; i<32; i++)
                         fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
