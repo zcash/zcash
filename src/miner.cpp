@@ -127,7 +127,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             break;
         sleep(10);
     }
-    if ( deposits != 0 )
+    if ( 0 && deposits != 0 )
         printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)komodo_paxtotal(),(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
 
     // -regtest only: allow overriding block.nVersion with
