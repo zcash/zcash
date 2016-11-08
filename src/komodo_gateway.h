@@ -280,16 +280,20 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 {
                     if  ( opcode == 'X' )
                     {
+                        matched++;
                         for (j=0; j<32; j++)
                             printf("%02x",((uint8_t *)&txids[i-1])[j]);
                         printf(" cant paxfind txid\n");
-                    }
+                    } else if ( opcode == 'I' )
+                        matched++;
                 }
                 komodo_paxmark(height,&space,txids[i-1],vouts[i-1],height);
             }
             if ( matched != num )
             {
                 // can easily happen depending on order of loading
+                if ( height > 60000 )
+                    printf("WARNING: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
             }
         }
         //printf("opretlen.%d num.%d\n",opretlen,num);
