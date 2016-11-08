@@ -124,6 +124,12 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         //fprintf(stderr," height.%d special.%d nonz.%d\n",height,special,nonz);
         if ( nonz == 0 )
             return(true); // will come back via different path with pubkey set
+        else
+        {
+            for (i=0; i<33; i++)
+                fprintf(stderr,"%02x",pubkey33[i]);
+            fprintf(stderr," special.%d notaryid.%d ht.%d mod.%d\n",special,notaryid,height,(height % 35));
+        }
         if ( special > 0 ) // special notary id == (height % numnotaries)
         {
             if (UintToArith256(hash) <= bnTarget) // accept normal diff
