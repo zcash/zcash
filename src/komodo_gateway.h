@@ -111,7 +111,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
             if ( addflag != 0 )
                 printf("[%s] addflag.%d ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d otherht.%d total %.8f\n",ASSETCHAINS_SYMBOL,addflag,symbol,dstr(fiatoshis),coinaddr,height,otherheight,dstr(komodo_paxtotal()));
         }
-        else printf("%p MARKED.%d DEPOSIT %s %.8f -> %s TO PAX ht.%d otherht.%d\n",pax,pax->marked,symbol,dstr(fiatoshis),coinaddr,height,otherheight);
+        //else printf("%p MARKED.%d DEPOSIT %s %.8f -> %s TO PAX ht.%d otherht.%d\n",pax,pax->marked,symbol,dstr(fiatoshis),coinaddr,height,otherheight);
     }
     else
     {
@@ -289,10 +289,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             }
             if ( matched != num )
             {
-                if  ( opcode == 'X' )
-                    printf("matched.%d vs num.%d\n",matched,num);
-                //if ( height > 60000 )
-                //    return(-1);
+                // can easily happen depending on order of loading
             }
         }
         //printf("opretlen.%d num.%d\n",opretlen,num);
