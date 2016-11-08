@@ -146,11 +146,11 @@ int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uin
     return(n);
 }
 
-void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol)
+void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol,int32_t tokomodo)
 {
     struct pax_transaction *pax,*tmp; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
     PENDING_KOMODO_TX = 0;
-    if ( strcmp(symbol,"KMD") != 0 )
+    if ( tokomodo == 0 )
         opcode = 'I';
     else opcode = 'X';
     HASH_ITER(hh,PAX,pax,tmp)
@@ -176,7 +176,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
         }
         data[len++] = pax->vout & 0xff;
         data[len++] = (pax->vout >> 8) & 0xff;
-        if ( strcmp(symbol,"KMD") != 0 )
+        if ( tokomodo == 0 )
             PENDING_KOMODO_TX += pax->fiatoshis;
         else
         {
@@ -208,7 +208,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
         txNew->vout[numvouts].scriptPubKey.resize(opretlen);
         script = (uint8_t *)&txNew->vout[numvouts].scriptPubKey[0];
         memcpy(script,opret,opretlen);
-        printf("deposits: total numvouts.%d %.8f opretlen.%d\n",numvouts,dstr(PENDING_KOMODO_TX),opretlen);
+        printf("MINER deposits: tokomodo.%d (%s) total numvouts.%d %.8f opretlen.%d\n",tokomodo,ASSETCHAINS_SYMBOL,numvouts,dstr(PENDING_KOMODO_TX),opretlen);
     }
 }
 

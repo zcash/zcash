@@ -102,7 +102,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 uint64_t komodo_paxtotal();
 int32_t komodo_is_issuer();
-void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol);
+void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol,int32_t tokomodo);
 extern int32_t KOMODO_INITDONE,ASSETCHAINS_SHORTFLAG,KOMODO_REALTIME;
 extern char ASSETCHAINS_SYMBOL[16];
 
@@ -376,11 +376,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 txNew.vout[1].nValue = 0;
                 //fprintf(stderr,"opretlen.%d\n",opretlen);
             }
-            komodo_gateway_deposits(&txNew,0,(char *)"EUR");
+            komodo_gateway_deposits(&txNew,0,(char *)"EUR",1);
         }
         else if ( komodo_is_issuer() != 0 )
         {
-            komodo_gateway_deposits(&txNew,0,ASSETCHAINS_SYMBOL);
+            komodo_gateway_deposits(&txNew,0,ASSETCHAINS_SYMBOL,0);
             fprintf(stderr,"txNew numvouts.%d\n",(int32_t)txNew.vout.size());
         }
         pblock->vtx[0] = txNew;
