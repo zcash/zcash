@@ -502,6 +502,8 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
     return true;
 }
 
+int32_t komodo_baseid(char *origbase);
+
 void static BitcoinMiner(CWallet *pwallet)
 {
     LogPrintf("ZcashMiner started\n");
@@ -519,6 +521,8 @@ void static BitcoinMiner(CWallet *pwallet)
     while ( ASSETCHAIN_INIT == 0 || KOMODO_INITDONE == 0 )
     {
         sleep(1);
+        if ( komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
+            break;
     }
     komodo_chosennotary(&notaryid,chainActive.Tip()->nHeight,NOTARY_PUBKEY33);
 
