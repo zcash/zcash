@@ -120,7 +120,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     {
         deposits = komodo_paxtotal();
         if ( KOMODO_INITDONE == 0 || time(NULL) < KOMODO_INITDONE+60 || KOMODO_REALTIME == 0 )
+        {
+            fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f\n",KOMODO_INITDONE,KOMODO_REALTIME,(double)deposits/COIN);
             continue;
+        }
         if ( deposits != 0 )
             break;
         sleep(10);
