@@ -87,6 +87,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         pax->txid = txid;
         pax->vout = vout;
         HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
+        addflag = 1;
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             int32_t i; for (i=0; i<32; i++)
@@ -106,7 +107,10 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         pax->height = height;
         pax->otherheight = otherheight;
         if ( pax->marked == 0 )
-            printf("[%s] %p ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d otherht.%d total %.8f\n",ASSETCHAINS_SYMBOL,pax,symbol,dstr(fiatoshis),coinaddr,height,otherheight,dstr(komodo_paxtotal()));
+        {
+            if ( addflag != 0 )
+                printf("[%s] %p ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d otherht.%d total %.8f\n",ASSETCHAINS_SYMBOL,pax,symbol,dstr(fiatoshis),coinaddr,height,otherheight,dstr(komodo_paxtotal()));
+        }
         else printf("%p MARKED.%d DEPOSIT %s %.8f -> %s TO PAX ht.%d otherht.%d\n",pax,pax->marked,symbol,dstr(fiatoshis),coinaddr,height,otherheight);
     }
     else
@@ -539,7 +543,7 @@ void komodo_iteration(char *symbol)
                     }
                 }
             }
-            printf("retstr.(%s)\n",retstr);
+            //printf("retstr.(%s)\n",retstr);
             free(retstr);
         }
     }
