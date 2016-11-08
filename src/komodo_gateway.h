@@ -509,7 +509,6 @@ void komodo_gateway_iteration(char *symbol)
 void komodo_iteration(char *symbol)
 {
     char *retstr,*base,*coinaddr,*txidstr,cmd[512]; uint64_t value,fiatoshis; cJSON *array,*item; int32_t i,n,vout,shortflag,height,fiatheight; uint256 txid; uint8_t rmd160[20],addrtype;
-    return;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         sprintf(cmd,"{\"agent\":\"dpow\",\"method\":\"pending\",\"fiat\":\"%s\"}",symbol);
