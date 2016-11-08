@@ -444,7 +444,9 @@ Value paxprice(const Array& params, bool fHelp)
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
     ret.push_back(Pair("height", height));
-    ret.push_back(Pair("seed", seed));
+    char seedstr[32];
+    sprintf(seedstr,"%llu",(long long)seed);
+    ret.push_back(Pair("seed", seedstr));
     if ( height < 0 || height > chainActive.Height() )
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     else
