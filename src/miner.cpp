@@ -114,7 +114,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    printf("create new block %d\n",chainActive.Tip()->nHeight);
+    fprintf(stderr,"create new block %d\n",chainActive.Tip()->nHeight);
     if ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight >= 100 )
     {
         fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d  RT.%u\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),KOMODO_REALTIME);
