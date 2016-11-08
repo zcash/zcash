@@ -153,10 +153,8 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
     if ( strcmp(symbol,"KMD") != 0 )
         opcode = 'I';
     else opcode = 'X';
-    printf("gateway deposits\n");
     HASH_ITER(hh,PAX,pax,tmp)
     {
-        printf("pax.%p\n",pax);
         if ( pax->marked != 0 )
             continue;
         if ( ASSETCHAINS_SYMBOL[0] != 0 )

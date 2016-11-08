@@ -724,7 +724,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 }
                 if ( pindexPrev != chainActive.Tip() )
                 {
-                    //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         printf("Tip advanced, break\n");
                     break;
                 }
