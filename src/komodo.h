@@ -16,11 +16,13 @@
 #ifndef H_KOMODO_H
 #define H_KOMODO_H
 
-// Todo: handle reorg: clear all entries above reorged height
-// error check redeems
-// net balance limiter
-// REVS and non-fiat chains
-// verify: interest payment, ratification
+// Todo:
+// 1. error check fiat redeem amounts
+// 2. net balance limiter, activate dPoW for all fiats
+// 3. REVS and non-fiat chains
+// 4. verify: interest payment, ratification, reorgs
+// 5. automate notarization fee payouts
+// 6. automated distribution of test REVS snapshot
 
 #include <stdint.h>
 #include <stdio.h>

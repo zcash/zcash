@@ -160,9 +160,10 @@ int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uin
     return(n);
 }
 
-int32_t komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol,int32_t tokomodo)
+int32_t komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *base,int32_t tokomodo)
 {
-    struct pax_transaction *pax,*tmp; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
+    struct pax_transaction *pax,*tmp; char symbol[16]; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
+    strcpy(symbol,base);
     PENDING_KOMODO_TX = 0;
     if ( tokomodo == 0 )
         opcode = 'I';
@@ -214,7 +215,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,cha
         if ( shortflag != 0 )
             data[len++] = '-';
         if ( tokomodo != 0 )
-            strcpy(symbol,"KMD");
+            strcpy(symbol,(char *)"KMD");
         for (i=0; symbol[i]!=0; i++)
             data[len++] = symbol[i];
         data[len++] = 0;
