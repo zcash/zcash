@@ -1379,7 +1379,7 @@ void komodo_args()
             int32_t komodo_baseid(char *origbase);
             extern int COINBASE_MATURITY;
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
-            if ( komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 )
+            //if ( komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 )
                 COINBASE_MATURITY = 1;
         }
     }
