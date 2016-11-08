@@ -236,7 +236,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
-        printf("checkdeposit n.%d [%02x] [%c] %d vs %d\n",n,script[0],script[offset],script[offset],'X');
+        for (i=0; i<opretlen; i++)
+            printf("%02x",script[i]);
+        printf(" height.%d checkdeposit n.%d [%02x] [%c] %d vs %d\n",height,n,script[0],script[offset],script[offset],'X');
         opcode = 'X';
         strcpy(symbol,"KMD");
     }
