@@ -105,6 +105,7 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
 }
 
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
+extern int32_t KOMODO_CHOSEN_ONE;
 
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
