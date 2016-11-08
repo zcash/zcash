@@ -366,7 +366,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             sleep(3);
         }
     }
-    KOMODO_INITDONE = (uint32_t)time(NULL);
+    KOMODO_REALTIME = KOMODO_INITDONE = (uint32_t)time(NULL);
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
