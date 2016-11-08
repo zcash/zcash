@@ -515,13 +515,13 @@ Value paxwithdraw(const Array& params, bool fHelp)
     extern int32_t KMDHEIGHT,KOMODO_REALTIME;
     CWalletTx wtx; std::string dest; int32_t height; uint64_t seed,komodoshis = 0; char destaddr[64]; uint8_t i,pubkey37[37]; bool fSubtractFeeFromAmount = false;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxwithdraw cant be from KMD");
+        return(0);
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
     if (fHelp || params.size() != 2)
         throw runtime_error("paxwithdraw \"address\" fiatamount");
     if ( KOMODO_REALTIME == 0 )
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxwithdraw needs to wait for KMD realtime");
+        return(0);
     LOCK2(cs_main, pwalletMain->cs_wallet);
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
