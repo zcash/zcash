@@ -128,7 +128,7 @@ int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uin
     else *shortflagp = 0;
     for (i=0; i<4; i++)
         base[i] = opretbuf[opretlen-4+i];
-    if ( (strcmp(base,"KMD") == 0 && ASSETCHAINS_SYMBOL[0] == 0) || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 ) // shortflag
+    if ( ASSETCHAINS_SYMBOL[0] == 0 || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 ) // shortflag
     {
         opretbuf++, opretlen--;
         for (n=len=0; n<opretlen/34; n++)
@@ -213,6 +213,8 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
     {
         if ( shortflag != 0 )
             data[len++] = '-';
+        if ( tokomodo != 0 )
+            strcpy(symbol,"KMD");
         for (i=0; symbol[i]!=0; i++)
             data[len++] = symbol[i];
         data[len++] = 0;
