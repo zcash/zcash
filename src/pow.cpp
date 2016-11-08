@@ -124,7 +124,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         //fprintf(stderr," height.%d special.%d nonz.%d\n",height,special,nonz);
         if ( nonz == 0 )
             return(true); // will come back via different path with pubkey set
-        else
+        else if ( 0 )
         {
             for (i=0; i<33; i++)
                 fprintf(stderr,"%02x",pubkey33[i]);
@@ -146,7 +146,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     {
         for (i=0; i<33; i++)
             printf("%02x",pubkey33[i]);
-        printf(" special.%d notaryid.%d ht.%d mod.%d\n",special,notaryid,height,(height % 35));
+        printf(" special.%d notaryid.%d ht.%d mod.%d error\n",special,notaryid,height,(height % 35));
         return error("CheckProofOfWork(): hash doesn't match nBits");
     }
     if ( flag != 0 )

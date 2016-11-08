@@ -435,6 +435,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 //
 // Internal miner
 //
+#define ROUNDROBIN_DELAY 10
 extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
 extern std::string NOTARY_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[33];
@@ -621,10 +622,10 @@ void static BitcoinMiner(CWallet *pwallet)
                         //    printf("missed target\n");
                         return false;
                     }
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+20 )
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+ROUNDROBIN_DELAY )
                     {
-                        printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+20-time(NULL)));
-                        sleep(Mining_start+20-time(NULL));
+                        printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+ROUNDROBIN_DELAY-time(NULL)));
+                        sleep(Mining_start+ROUNDROBIN_DELAY-time(NULL));
                     }
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
