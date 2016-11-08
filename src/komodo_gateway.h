@@ -191,7 +191,11 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
         data[len++] = (pax->vout >> 8) & 0xff;
         if ( strcmp(symbol,"KMD") != 0 )
             PENDING_KOMODO_TX += pax->fiatoshis;
-        else PENDING_KOMODO_TX += pax->komodoshis;
+        else
+        {
+        //[{"prev_hash":"5d5c9a49489b558de9e84f991f996dedaae6b9d0f157f82b2fec64662476d5cf","prev_vout":2,"EUR":0.78329000,"fiat":"EUR","height":57930,"KMD":0.10000000,"address":"RDhEGYScNQYetCyG75Kf8Fg61UWPdwc1C5"}]
+            PENDING_KOMODO_TX += pax->komodoshis;
+        }
         //printf(" vout.%u DEPOSIT %.8f <- paxdeposit.%s pending %.8f\n",pax->vout,(double)txNew->vout[numvouts].nValue/COIN,symbol,dstr(PENDING_KOMODO_TX));
         if ( numvouts++ >= 64 )
             break;
