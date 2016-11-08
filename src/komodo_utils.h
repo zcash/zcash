@@ -796,7 +796,7 @@ int32_t komodo_baseid(char *origbase)
     for (i=0; i<=MAX_CURRENCIES; i++)
         if ( strcmp(CURRENCIES[i],base) == 0 )
             return(i);
-    printf("illegal base.(%s) %s\n",origbase,base);
+    //printf("illegal base.(%s) %s\n",origbase,base);
     return(-1);
 }
 
