@@ -114,7 +114,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    fprintf(stderr,"create new block %d\n",chainActive.Tip()->nHeight);
+    //fprintf(stderr,"create new block %d\n",chainActive.Tip()->nHeight);
     if ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight >= 100 )
     {
         fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d  RT.%u\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),KOMODO_REALTIME);
@@ -716,9 +716,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 // Regtest mode doesn't require peers
                 if (vNodes.empty() && chainparams.MiningRequiresPeers())
                 {
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height < 100 )
-                        printf("no nodes, break\n");
-                    if ( ASSETCHAINS_SYMBOL[0] != 0 && Mining_height >= 100 )
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height >= 100 )
                         break;
                 }
                 if ((UintToArith256(pblock->nNonce) & 0xffff) == 0xffff)
