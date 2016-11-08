@@ -468,7 +468,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 {
     LogPrintf("%s\n", pblock->ToString());
-    LogPrintf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue));
+    LogPrintf("generated %s height.%d\n", FormatMoney(pblock->vtx[0].vout[0].nValue),chainActive.Tip()->nHeight+1);
 
     // Found a solution
     {
@@ -489,7 +489,7 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
 
     // Process this block the same as if we had received it from another node
     CValidationState state;
-    if (!ProcessNewBlock(state, NULL, pblock, true, NULL))
+    if (!ProcessNewBlock(chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
         return error("ZcashMiner: ProcessNewBlock, block not accepted");
 
     minedBlocks.increment();
