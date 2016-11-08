@@ -20,7 +20,7 @@ struct pax_transaction
     UT_hash_handle hh;
     uint256 txid;
     uint64_t komodoshis,fiatoshis;
-    int32_t marked,height;
+    int32_t marked,kmdheight;
     uint16_t vout;
     char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
 } *PAX;
@@ -28,27 +28,6 @@ struct pax_transaction
 uint64_t komodo_paxtotal()
 {
     struct pax_transaction *pax,*tmp; uint64_t total = 0;
-    /*pthread_mutex_lock(&komodo_mutex);
-    tmp = 0;
-    if ( PAX != 0 )
-    {
-        pax = (struct pax_transaction *)PAX->hh.next;
-        while ( pax != 0 && pax != tmp && n++ < 1000000 )
-        {
-            printf("PAX.[%p %p] pax.%p marked.%d fiat %.8f KMD %.8f\n",PAX->hh.next,PAX->hh.prev,pax,pax->marked,dstr(pax->fiatoshis),dstr(pax->komodoshis));
-            if ( pax->marked == 0 )
-            {
-                if ( komodo_is_issuer() != 0 )
-                    total += pax->fiatoshis;
-                else total += pax->komodoshis;
-            }
-            tmp = pax;
-            pax = (struct pax_transaction *)pax->hh.next;
-        }
-    }
-    pthread_mutex_unlock(&komodo_mutex);
-    if ( n >= 1000000 )
-        printf("komodo_paxtotal n.%d iterations?\n",n);*/
     HASH_ITER(hh,PAX,pax,tmp)
     {
         if ( pax->marked == 0 )
@@ -97,7 +76,7 @@ struct pax_transaction *komodo_paxmark(int32_t height,struct pax_transaction *sp
     return(pax);
 }
 
-void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout,int32_t height) // assetchain context
+void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout,int32_t height,int32_t otherheight) // assetchain context
 {
     struct pax_transaction *pax; int32_t addflag = 0;
     pthread_mutex_lock(&komodo_mutex);
@@ -108,9 +87,12 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         pax->txid = txid;
         pax->vout = vout;
         HASH_ADD_KEYPTR(hh,PAX,&pax->txid,sizeof(pax->txid),pax);
-        //int32_t i; for (i=0; i<32; i++)
-        //    printf("%02x",((uint8_t *)&txid)[i]);
-        //printf(" v.%d [%s] ht.%d create pax.%p\n",vout,ASSETCHAINS_SYMBOL,height,pax);
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        {
+            int32_t i; for (i=0; i<32; i++)
+                printf("%02x",((uint8_t *)&txid)[i]);
+            printf(" v.%d [%s] kht.%d ht.%d create pax.%p\n",vout,ASSETCHAINS_SYMBOL,height,otherheight,pax);
+        }
     }
     pthread_mutex_unlock(&komodo_mutex);
     if ( coinaddr != 0 )
@@ -122,14 +104,15 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         pax->fiatoshis = fiatoshis;
         memcpy(pax->rmd160,rmd160,20);
         pax->height = height;
+        pax->otherheight = otherheight;
         if ( pax->marked == 0 )
-            printf("[%s] %p ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d total %.8f\n",ASSETCHAINS_SYMBOL,pax,symbol,dstr(fiatoshis),coinaddr,height,dstr(komodo_paxtotal()));
-        else printf("%p MARKED.%d DEPOSIT %s %.8f -> %s TO PAX ht.%d\n",pax,pax->marked,symbol,dstr(fiatoshis),coinaddr,height);
+            printf("[%s] %p ADD DEPOSIT %s %.8f -> %s TO PAX ht.%d otherht.%d total %.8f\n",ASSETCHAINS_SYMBOL,pax,symbol,dstr(fiatoshis),coinaddr,height,otherheight,dstr(komodo_paxtotal()));
+        else printf("%p MARKED.%d DEPOSIT %s %.8f -> %s TO PAX ht.%d otherht.%d\n",pax,pax->marked,symbol,dstr(fiatoshis),coinaddr,height,otherheight);
     }
     else
     {
         pax->marked = height;
-        printf("pax.%p MARK DEPOSIT ht.%d\n",pax,height);
+        printf("pax.%p MARK DEPOSIT ht.%d other.%d\n",pax,height,otherheight);
     }
 }
 
@@ -173,7 +156,7 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
         if ( ASSETCHAINS_SYMBOL[0] != 0 )
             printf("pax.%p marked.%d %.8f -> %.8f\n",pax,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         txNew->vout.resize(numvouts+1);
-        txNew->vout[numvouts].nValue = pax->fiatoshis;
+        txNew->vout[numvouts].nValue = (opcode == 'I') ? pax->fiatoshis : pax->komodoshis;
         txNew->vout[numvouts].scriptPubKey.resize(25);
         script = (uint8_t *)&txNew->vout[numvouts].scriptPubKey[0];
         *script++ = 0x76;
@@ -193,7 +176,15 @@ void komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *
             PENDING_KOMODO_TX += pax->fiatoshis;
         else
         {
-        //[{"prev_hash":"5d5c9a49489b558de9e84f991f996dedaae6b9d0f157f82b2fec64662476d5cf","prev_vout":2,"EUR":0.78329000,"fiat":"EUR","height":57930,"KMD":0.10000000,"address":"RDhEGYScNQYetCyG75Kf8Fg61UWPdwc1C5"}]
+            //[{"prev_hash":"5d5c9a49489b558de9e84f991f996dedaae6b9d0f157f82b2fec64662476d5cf","prev_vout":2,"EUR":0.10000000,"fiat":"EUR","kmdheight":57930,"height":153,"KMD":0.78329000,"address":"RDhEGYScNQYetCyG75Kf8Fg61UWPdwc1C5","rmd160":"306c507eea639e7220b3069ed9f49f3bc97eaca1"}]
+            len += iguana_rwnum(1,&data[len],sizeof(pax->fiatoshis),&pax->fiatoshis);
+            len += iguana_rwnum(1,&data[len],sizeof(pax->height),&pax->height);
+            len += iguana_rwnum(1,&data[len],sizeof(pax->otherheight),&pax->otherheight);
+            if ( pax->shortflag != 0 )
+                data[len++] = '-';
+            for (i=0; pax->symbol[i]!=0&&i<3; i++)
+                data[len++] = pax->symbol[i];
+            data[len++] = 0;
             PENDING_KOMODO_TX += pax->komodoshis;
         }
         //printf(" vout.%u DEPOSIT %.8f <- paxdeposit.%s pending %.8f\n",pax->vout,(double)txNew->vout[numvouts].nValue/COIN,symbol,dstr(PENDING_KOMODO_TX));
@@ -321,7 +312,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         {
                             if ( komodo_paxfind(&space,txid,vout) == 0 )
                             {
-                                komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,kmdheight);
+                                komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,kmdheight,height);
                             } else printf("duplicate deposit\n");
                         }
                     }
@@ -351,7 +342,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     //    printf("%02x",((uint8_t *)&txids[i])[j]);
                     if ( komodo_paxmark(height,&space,txids[i],vouts[i],height) == 0 )
                     {
-                        komodo_gateway_deposit(0,0,0,0,0,0,txids[i],vouts[i],height);
+                        komodo_gateway_deposit(0,0,0,0,0,0,txids[i],vouts[i],height,0);
                     }
                     else
                     {
@@ -517,10 +508,9 @@ void komodo_gateway_iteration(char *symbol)
 
 void komodo_iteration(char *symbol)
 {
-    char *retstr,*base,*coinaddr,*txidstr,cmd[512]; uint64_t value,fiatoshis; cJSON *array,*item; int32_t i,n,vout,shortflag,height; uint256 txid; uint8_t rmd160[20],addrtype;
+    char *retstr,*base,*coinaddr,*txidstr,cmd[512]; uint64_t value,fiatoshis; cJSON *array,*item; int32_t i,n,vout,shortflag,height,fiatheight; uint256 txid; uint8_t rmd160[20],addrtype;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
-        //[{"prev_hash":"5d5c9a49489b558de9e84f991f996dedaae6b9d0f157f82b2fec64662476d5cf","prev_vout":2,"EUR":0.78329000,"fiat":"EUR","height":57930,"KMD":0.10000000,"address":"RDhEGYScNQYetCyG75Kf8Fg61UWPdwc1C5"}]
         sprintf(cmd,"{\"agent\":\"dpow\",\"method\":\"pending\",\"fiat\":\"%s\"}",symbol);
         if ( (retstr= issue_curl(cmd)) != 0 )
         {
@@ -533,17 +523,18 @@ void komodo_iteration(char *symbol)
                         item = jitem(array,i);
                         coinaddr = jstr(item,(char *)"address");
                         value = jdouble(item,(char *)"KMD") * COIN;
+                        base = jstr(item,(char *)"fiat");
                         shortflag = juint(item,(char *)"short");
                         vout = jint(item,(char *)"prev_vout");
-                        height = jint(item,(char *)"height");
-                        base = jstr(item,(char *)"fiat");
+                        height = jint(item,(char *)"kmdheight");
+                        fiatheight = jint(item,(char *)"height");
                         txidstr = jstr(item,(char *)"prev_hash");
                         if ( coinaddr != 0 && base != 0 && value > 0 && height > 0 )
                         {
                             fiatoshis = jdouble(item,base) * COIN;
                             decode_hex((uint8_t *)&txid,sizeof(txid),txidstr);
                             bitcoin_addr2rmd160(&addrtype,rmd160,coinaddr);
-                            komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,height);
+                            komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,height,fiatheight);
                         }
                     }
                 }
