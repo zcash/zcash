@@ -273,6 +273,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                             for (j=0; j<32; j++)
                                 printf("%02x",((uint8_t *)&hash)[j]);
                             printf(" ht.%d blockhash couldnt find vout.[%d]\n",height,i);
+                            // validate amount!
                         }
                     }
                 }
@@ -284,6 +285,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         for (j=0; j<32; j++)
                             printf("%02x",((uint8_t *)&txids[i-1])[j]);
                         printf(" cant paxfind txid\n");
+                        // validate amount!
                     } else if ( opcode == 'I' )
                         matched++;
                 }
