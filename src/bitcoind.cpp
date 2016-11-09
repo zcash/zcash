@@ -43,7 +43,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     // Tell the main threads to shutdown.
     while (!fShutdown)
     {
-        MilliSleep(2000);
+        MilliSleep(10000);
         if ( komodo_is_issuer() != 0 )
             komodo_gateway_iteration(ASSETCHAINS_SYMBOL);
         else komodo_iteration((char *)"EUR");
