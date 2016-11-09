@@ -1383,18 +1383,18 @@ void komodo_args()
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
             //if ( komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 )
                 COINBASE_MATURITY = 1;
-            iguana_rwnum(1,magic,sizeof(ASSETCHAINS_MAGIC),(void *)&ASSETCHAINS_MAGIC);
-            for (i=0; i<4; i++)
-                sprintf(&magicstr[i<<1],"%02x",magic[i]);
-            magicstr[8] = 0;
-            sprintf(fname,"gen%s",ASSETCHAINS_SYMBOL);
-            if ( (fp= fopen(fname,"wb")) != 0 )
-            {
-                fprintf(fp,iguanafmtstr,name.c_str(),name.c_str(),magicstr,ASSETCHAINS_PORT,ASSETCHAINS_PORT+1,"78.47.196.146");
-                fclose(fp);
-                printf("created (%s)\n",fname);
-            } else printf("error creating (%s)\n",fname);
         }
+        iguana_rwnum(1,magic,sizeof(ASSETCHAINS_MAGIC),(void *)&ASSETCHAINS_MAGIC);
+        for (i=0; i<4; i++)
+            sprintf(&magicstr[i<<1],"%02x",magic[i]);
+        magicstr[8] = 0;
+        sprintf(fname,"gen%s",ASSETCHAINS_SYMBOL);
+        if ( (fp= fopen(fname,"wb")) != 0 )
+        {
+            fprintf(fp,iguanafmtstr,name.c_str(),name.c_str(),magicstr,ASSETCHAINS_PORT,ASSETCHAINS_PORT+1,"78.47.196.146");
+            fclose(fp);
+            printf("created (%s)\n",fname);
+        } else printf("error creating (%s)\n",fname);
     }
     else
     {
