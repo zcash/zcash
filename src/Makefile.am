@@ -250,8 +250,14 @@ EQUIHASH_TROMP_SOURCES = \
   pow/tromp/equi.h \
   pow/tromp/osx_barrier.h
 
+EQUIHASH_TROMP_AVX2_SOURCES = \
+  pow/tromp/blake2-avx2/blake2b-common.h \
+  pow/tromp/blake2-avx2/blake2b-load-avx2-simple.h \
+  pow/tromp/blake2-avx2/blake2bip.c \
+  pow/tromp/blake2-avx2/blake2bip.h
+
 # crypto primitives library
-crypto_libbitcoin_crypto_a_CPPFLAGS = $(BITCOIN_CONFIG_INCLUDES) -DEQUIHASH_TROMP_ATOMIC
+crypto_libbitcoin_crypto_a_CPPFLAGS = $(BITCOIN_CONFIG_INCLUDES) -DEQUIHASH_TROMP_UNROLL
 crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/common.h \
   crypto/equihash.cpp \
@@ -270,6 +276,13 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha512.cpp \
   crypto/sha512.h \
   ${EQUIHASH_TROMP_SOURCES}
+
+if USE_TROMP_AVX2
+crypto_libbitcoin_crypto_a_CPPFLAGS += -mavx2
+crypto_libbitcoin_crypto_a_SOURCES += ${EQUIHASH_TROMP_AVX2_SOURCES}
+else
+crypto_libbitcoin_crypto_a_CPPFLAGS += -DEQUIHASH_TROMP_ATOMIC
+endif
 
 # univalue JSON library
 univalue_libbitcoin_univalue_a_SOURCES = \
