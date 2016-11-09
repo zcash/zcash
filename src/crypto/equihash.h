@@ -182,6 +182,7 @@ public:
     Equihash() { }
 
     int InitialiseState(eh_HashState& base_state);
+    int InitialiseStateV0(eh_HashState& base_state);
     bool BasicSolve(const eh_HashState& base_state,
                     const std::function<bool(std::vector<unsigned char>)> validBlock,
                     const std::function<bool(EhSolverCancelCheck)> cancelled);
@@ -207,6 +208,18 @@ static Equihash<48,5> Eh48_5;
         Eh96_5.InitialiseState(base_state);  \
     } else if (n == 48 && k == 5) {          \
         Eh48_5.InitialiseState(base_state);  \
+    } else {                                 \
+        throw std::invalid_argument("Unsupported Equihash parameters"); \
+    }
+#define EhInitialiseStateV0(n, k, base_state)  \
+    if (n == 96 && k == 3) {                 \
+        Eh96_3.InitialiseStateV0(base_state);  \
+    } else if (n == 200 && k == 9) {         \
+        Eh200_9.InitialiseStateV0(base_state); \
+    } else if (n == 96 && k == 5) {          \
+        Eh96_5.InitialiseStateV0(base_state);  \
+    } else if (n == 48 && k == 5) {          \
+        Eh48_5.InitialiseStateV0(base_state);  \
     } else {                                 \
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
