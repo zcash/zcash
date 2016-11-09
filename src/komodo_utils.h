@@ -851,11 +851,13 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex)
 {
     int32_t adjust,i = 0;
     //printf("decode.(%s)\n",hex);
-    if ( is_hexstr(hex,n) == 0 )
+    if ( is_hexstr(hex,n) < 2 )
     {
         memset(bytes,0,n);
         return(n);
     }
+    if ( hex[n-1] == '\n' || hex[n-1] == '\r' )
+        n--;
     if ( n == 0 || (hex[n*2+1] == 0 && hex[n*2] != 0) )
     {
         if ( n > 0 )
