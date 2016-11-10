@@ -184,6 +184,14 @@ CTransaction::CTransaction(
     assert(evilDeveloperFlag);
 }
 
+CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId),
+                                                       vin(std::move(tx.vin)), vout(std::move(tx.vout)), nLockTime(tx.nLockTime), nExpiryHeight(tx.nExpiryHeight),
+                                                       vjoinsplit(std::move(tx.vjoinsplit)),
+                                                       joinSplitPubKey(std::move(tx.joinSplitPubKey)), joinSplitSig(std::move(tx.joinSplitSig))
+{
+    UpdateHash();
+}
+
 CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<bool*>(&fOverwintered) = tx.fOverwintered;
     *const_cast<int*>(&nVersion) = tx.nVersion;
