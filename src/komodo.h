@@ -362,7 +362,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         printf("hwmheight.%d vs pindex->nHeight.%d reorg.%d\n",hwmheight,pindex->nHeight,hwmheight-pindex->nHeight);
         // reset komodostate
     }
-    CURRENT_HEIGHT = pindex->nHeight;
+    CURRENT_HEIGHT = chainActive.Tip()->nHeight;
     if ( komodo_is_issuer() != 0 )
     {
         while ( KOMODO_REALTIME == 0 || time(NULL) <= KOMODO_REALTIME )

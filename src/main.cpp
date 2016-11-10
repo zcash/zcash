@@ -3315,7 +3315,9 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
+    extern int32_t CURRENT_HEIGHT;
     bool checked;
+    CURRENT_HEIGHT = chainActive.Tip()->nHeight;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state);
     else checked = CheckBlock(0,0,*pblock, state);
