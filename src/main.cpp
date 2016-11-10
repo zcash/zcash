@@ -3317,7 +3317,8 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
     // Preliminary checks
     extern int32_t CURRENT_HEIGHT;
     bool checked;
-    CURRENT_HEIGHT = chainActive.Tip()->nHeight;
+    if ( chainActive.Tip() != 0 )
+        CURRENT_HEIGHT = chainActive.Tip()->nHeight;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state);
     else checked = CheckBlock(0,0,*pblock, state);
