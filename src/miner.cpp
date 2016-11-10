@@ -594,7 +594,7 @@ void static BitcoinMiner(CWallet *pwallet)
             {
                 hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                 Mining_start = (uint32_t)time(NULL);
-                fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
+                //fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
             } else Mining_start = 0;
             while (true)
             {
