@@ -440,7 +440,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 // Internal miner
 //
 #define ROUNDROBIN_DELAY 44
-extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE;
+extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE;
 extern std::string NOTARY_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[33];
 uint32_t Mining_start,Mining_height;
@@ -546,8 +546,10 @@ void static BitcoinMiner(CWallet *pwallet)
         //fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
         while (true)
         {
-            if (chainActive.Tip()->nHeight >= 100 && chainparams.MiningRequiresPeers())
+            if (chainparams.MiningRequiresPeers())
             {
+                if ( ASSETCHAINS_SEED != 0 && chainActive.Tip()->nHeight < 100 )
+                    break;
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
                 //fprintf(stderr,"Wait for peers...\n");

@@ -271,6 +271,6 @@ void komodo_assetchain_pubkeys(char *jsonstr)
             } else fprintf(stderr,"komodo_assetchain_pubkeys i.%d vs n.%d\n",i,n);
         } else fprintf(stderr,"assetchain pubkeys n.%d\n",n);
     }
-    else if ( jsonstr != 0 )
-        fprintf(stderr,"assetchain pubkeys couldnt parse.(%s)\n",jsonstr);
+    //else if ( jsonstr != 0 )
+    //    fprintf(stderr,"assetchain pubkeys couldnt parse.(%s)\n",jsonstr);
 }

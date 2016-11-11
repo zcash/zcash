@@ -1361,7 +1361,7 @@ char *iguanafmtstr = (char *)"curl --url \"http://127.0.0.1:7778\" --data \"{\\\
 
 void komodo_args()
 {
-    std::string name; char *dirname,fname[512],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,len;
+    std::string name,addn; char *dirname,fname[512],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,len;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     NOTARY_PUBKEY = GetArg("-pubkey", "");
     if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
@@ -1370,6 +1370,9 @@ void komodo_args()
     if ( name.c_str()[0] != 0 )
     {
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
+        addn = GetArg("-addnode","");
+        if ( strlen(addn.c_str()) > 6 )
+            ASSETCHAINS_SEED = 1;
         strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
         ASSETCHAINS_PORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,&ASSETCHAINS_SHORTFLAG);
         //fprintf(stderr,"after args: %c%s port.%u magic.%08x supply.%u\n",ASSETCHAINS_SHORTFLAG!=0?'-':'+',ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,(int32_t)ASSETCHAINS_SUPPLY);
@@ -1398,7 +1401,7 @@ void komodo_args()
         {
             fprintf(fp,iguanafmtstr,name.c_str(),name.c_str(),magicstr,ASSETCHAINS_PORT,ASSETCHAINS_PORT+1,"78.47.196.146");
             fclose(fp);
-            printf("created (%s)\n",fname);
+            //printf("created (%s)\n",fname);
         } else printf("error creating (%s)\n",fname);
     }
     else
