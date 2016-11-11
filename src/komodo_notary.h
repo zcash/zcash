@@ -244,3 +244,30 @@ void komodo_init(int32_t height)
         komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0);
     }
 }
+
+void komodo_assetchain_pubkeys(char *jsonstr)
+{
+    cJSON *array; int32_t i,n; uint8_t pubkeys[64][33]; char *hexstr;
+    memset(pubkeys,0,sizeof(pubkeys));
+    if ( (array= cJSON_Parse(jsonstr)) != 0 )
+    {
+        if ( (n= cJSON_GetArraySize(array)) > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                if ( (hexstr= jstri(array,i)) != 0 && is_hexstr(hexstr,0) == 66 )
+                    decode_hex(pubkeys[i],33,hexstr);
+                else
+                {
+                    printf("illegal hexstr.(%s) i.%d of n.%d\n",hexstr,i,n);
+                    break;
+                }
+            }
+            if ( i == n )
+            {
+                komodo_notarysinit(0,pubkeys,n);
+                printf("initialize pubkeys[%d]\n",n);
+            }
+        }
+    }
+}
