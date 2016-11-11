@@ -2399,11 +2399,11 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
             if(!out.fSpendable)
                 continue;
             nValueRet += out.tx->vout[out.i].nValue;
-            interest = komodo_interest(chainActive.Tip()->nHeight,out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
+            interest = komodo_interest(chainActive.Tip()->nHeight+1,out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
 #ifdef KOMODO_ENABLE_INTEREST
-            if ( ASSETCHAINS_SYMBOL[0] == 0 && txheight >= 60000 )
+            if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip()->nHeight+1 >= 60000 )
             {
-                printf("nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nValueRet/COIN,(double)interest/COIN,txheight,tx->nLockTime,chainActive.Tip()->nTime);
+                printf("nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nValueRet/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,out.tx->nLockTime,chainActive.Tip()->nTime);
                 nValueRet += interest;
             }
             fprintf(stderr,"interest %llu from %llu lock.%u tip.%u\n",(long long)interest,(long long)out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
