@@ -255,7 +255,7 @@ void komodo_assetchain_pubkeys(char *jsonstr)
                 if ( (hexstr= jstri(array,i)) != 0 && is_hexstr(hexstr,0) == 66 )
                 {
                     decode_hex(pubkeys[i],33,hexstr);
-                    fprintf(stderr,"i.%d of n.%d pubkey.(%s)\n",hexstr);
+                    fprintf(stderr,"i.%d of n.%d pubkey.(%s)\n",i,n,hexstr);
                 }
                 else
                 {
