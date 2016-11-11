@@ -266,6 +266,8 @@ void komodo_assetchain_pubkeys(char *jsonstr)
                 komodo_notarysinit(0,pubkeys,n);
                 printf("initialize pubkeys[%d]\n",n);
             }
-        }
+        } else printf("assetchain pubkeys n.%d\n",n);
     }
+    else if ( jsonstr != 0 )
+        printf("assetchain pubkeys couldnt parse.(%s)\n",jsonstr);
 }
