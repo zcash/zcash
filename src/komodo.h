@@ -18,8 +18,8 @@
 
 // Todo:
 // 1. error check fiat redeem amounts
-// 2. net balance limiter, activate dPoW for all fiats
-// 3. REVS and non-fiat chains
+// 2. net balance limiter
+// 3. new RR algo
 // 4. verify: interest payment, ratification, reorgs
 // 5. automate notarization fee payouts
 // 6. automated distribution of test REVS snapshot
@@ -32,6 +32,8 @@
 
 #define GENESIS_NBITS 0x1f00ffff
 #define KOMODO_MINRATIFY 7
+
+int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
 
 #include "komodo_globals.h"
 #include "komodo_utils.h"
@@ -348,7 +350,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     static int32_t hwmheight;
     uint64_t signedmask,voutmask;
     uint8_t scriptbuf[4096],pubkeys[64][33]; uint256 kmdtxid,btctxid,txhash;
-    int32_t i,j,k,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
+    int32_t i,j,k,nid,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
     komodo_init(pindex->nHeight);
     if ( pindex->nHeight > hwmheight )
         hwmheight = pindex->nHeight;
@@ -391,6 +393,11 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 #endif
                     // signedmask is needed here!
                     notaryid = komodo_voutupdate(notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight,(uint64_t)block.vtx[i].vout[j].nValue);
+                    if ( i == 0 && j == 0 && komodo_chosennotary(&nid,height,scriptbuf + 1) >= 0 )
+                    {
+                        if ( height < sizeof(Minerids)/sizeof(*Minerids) )
+                            Minerids[height] = nid;
+                    }
                     if ( 0 && i > 0 )
                     {
                         for (k=0; k<len; k++)

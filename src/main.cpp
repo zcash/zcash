@@ -551,7 +551,6 @@ CBlockTreeDB *pblocktree = NULL;
 // Komodo globals
 
 #define KOMODO_TESTNET_EXPIRATION 100000
-#define KOMODO_ENABLE_INTEREST //enabling this is a hardfork
 #define KOMODO_PAX
 #define KOMODO_ZCASH
 #include "komodo.h"
@@ -1179,7 +1178,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         view.GetBestBlock();
 
         nValueIn = view.GetValueIn(chainActive.Tip()->nHeight,&interest,tx,chainActive.Tip()->nTime);
-
+            if ( interest != 0 )
+                fprintf(stderr,"add interest %.8f\n",(double)interest/COIN);
         // we have all inputs cached now, so switch back to dummy, so we don't need to keep lock on mempool
         view.SetBackend(dummy);
         }

@@ -105,7 +105,9 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
 }
 
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
+int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
 extern int32_t KOMODO_CHOSEN_ONE,CURRENT_HEIGHT;
+extern int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
 
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
@@ -122,39 +124,22 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         {
             if ( pubkey33[i] != 0 )
                 nonz++;
-            //fprintf(stderr,"%02x",pubkey33[i]);
         }
-        //fprintf(stderr," height.%d special.%d nonz.%d\n",height,special,nonz);
         if ( nonz == 0 )
             return(true); // will come back via different path with pubkey set
-        else if ( 0 )
+        if ( notaryid >= 0 )
         {
-            for (i=0; i<33; i++)
-                fprintf(stderr,"%02x",pubkey33[i]);
-            fprintf(stderr," special.%d notaryid.%d ht.%d mod.%d\n",special,notaryid,height,(height % 35));
-        }
-        if ( special > 0 ) // special notary id == (height % numnotaries)
-        {
-            if (UintToArith256(hash) <= bnTarget) // accept normal diff
-                return true;
-            bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-            flag = 1;
+            if ( komodo_is_special(height,pubkey33) > 0 )
+            {
+                bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+                flag = 1;
+            }
         } //else bnTarget /= 8;
     }
-    /*else if ( height == 0 && KOMODO_CHOSEN_ONE != 0 )
-    {
-        extern uint8_t NOTARY_PUBKEY33[33];
-        bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-        memcpy(pubkey33,NOTARY_PUBKEY33,33);
-        special = 1;
-        notaryid = -1;
-        printf("KOMODO_CHOSEN_ONE -> MINDIFF\n");
-    }*/
-    // Check range
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");
     // Check proof of work matches claimed amount
-    if (UintToArith256(hash) > bnTarget)
+    if ( UintToArith256(hash) > bnTarget )
     {
         for (i=0; i<33; i++)
             printf("%02x",pubkey33[i]);

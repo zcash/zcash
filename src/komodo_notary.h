@@ -229,15 +229,20 @@ void komodo_init(int32_t height)
     {
         pthread_mutex_init(&komodo_mutex,NULL);
         decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
-        n = (int32_t)(sizeof(Notaries_genesis)/sizeof(*Notaries_genesis));
-        for (k=0; k<n; k++)
+        if ( height >= 0 )
         {
-            if ( Notaries_genesis[k][0] == 0 || Notaries_genesis[k][1] == 0 || Notaries_genesis[k][0][0] == 0 || Notaries_genesis[k][1][0] == 0 )
-                break;
-            decode_hex(pubkeys[k],33,(char *)Notaries_genesis[k][1]);
+            n = (int32_t)(sizeof(Notaries_genesis)/sizeof(*Notaries_genesis));
+            for (k=0; k<n; k++)
+            {
+                if ( Notaries_genesis[k][0] == 0 || Notaries_genesis[k][1] == 0 || Notaries_genesis[k][0][0] == 0 || Notaries_genesis[k][1][0] == 0 )
+                    break;
+                decode_hex(pubkeys[k],33,(char *)Notaries_genesis[k][1]);
+            }
+            komodo_notarysinit(0,pubkeys,k);
         }
-        komodo_notarysinit(0,pubkeys,k);
         memset(&zero,0,sizeof(zero));
+        for (i=0; i<sizeof(Minerids); i++)
+            Minerids[i] = -2;
     }
     komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0);
 }
@@ -265,7 +270,7 @@ void komodo_assetchain_pubkeys(char *jsonstr)
             }
             if ( i == n )
             {
-                komodo_init(0);
+                komodo_init(-1);
                 komodo_notarysinit(0,pubkeys,n);
                 printf("initialize pubkeys[%d]\n",n);
             } else fprintf(stderr,"komodo_assetchain_pubkeys i.%d vs n.%d\n",i,n);
