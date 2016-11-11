@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # The BSD License (http://www.opensource.org/licenses/bsd-license.php) 
 # specifies the terms and conditions of use for checksec.sh:

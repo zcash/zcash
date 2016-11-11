@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 if ! [[ "$2" =~ [git@]?[www.]?github.com[:|/]bitcoin/bitcoin[.git]? ]]; then
     exit 0
 fi
