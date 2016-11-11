@@ -22,6 +22,8 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "sodium.h"
 
+#include <stdint.h>
+
 #include <iostream>
 #include <chrono>
 #include <thread>

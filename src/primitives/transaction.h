@@ -12,6 +12,7 @@
 #include "serialize.h"
 #include "uint256.h"
 #include "consensus/consensus.h"
+#include <stdint.h>
 
 #include <boost/array.hpp>
 
