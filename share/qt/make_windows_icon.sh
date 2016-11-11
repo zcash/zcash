@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # create multiresolution windows icon
 ICON_SRC=../../src/qt/res/icons/bitcoin.png
 ICON_DST=../../src/qt/res/icons/bitcoin.ico
