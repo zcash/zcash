@@ -58,8 +58,12 @@ public:
 
 #include "uint256.h"
 #include "arith_uint256.h"
+
+void komodo_init(int32_t height);
+void komodo_assetchain_pubkeys(char *jsonstr);
 #include "komodo_globals.h"
 #include "komodo_utils.h"
+#include "cJSON.c"
 #include "komodo_notary.h"
 
 static bool AppInitRPC(int argc, char* argv[])
