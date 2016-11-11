@@ -40,7 +40,6 @@ void komodo_init(int32_t height);
 
 #include "komodo_globals.h"
 #include "komodo_utils.h"
-//queue_t DepositsQ,PendingsQ;
 
 #include "cJSON.c"
 #include "komodo_bitcoind.h"
