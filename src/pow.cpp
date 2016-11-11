@@ -161,12 +161,12 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         printf(" special.%d notaryid.%d ht.%d mod.%d error\n",special,notaryid,height,(height % 35));
         return error("CheckProofOfWork(): hash doesn't match nBits");
     }
-    if ( flag != 0 )
+    /*if ( flag != 0 )
     {
         for (i=0; i<33; i++)
             fprintf(stderr,"%02x",pubkey33[i]);
         fprintf(stderr," <- Round Robin ht.%d for notary.%d special.%d\n",height,notaryid,special);
-    }
+    }*/
     return true;
 }
 

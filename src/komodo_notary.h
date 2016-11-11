@@ -253,10 +253,13 @@ void komodo_assetchain_pubkeys(char *jsonstr)
             for (i=0; i<n; i++)
             {
                 if ( (hexstr= jstri(array,i)) != 0 && is_hexstr(hexstr,0) == 66 )
+                {
                     decode_hex(pubkeys[i],33,hexstr);
+                    fprintf(stderr,"i.%d of n.%d pubkey.(%s)\n",hexstr);
+                }
                 else
                 {
-                    printf("illegal hexstr.(%s) i.%d of n.%d\n",hexstr,i,n);
+                    fprintf(stderr,"illegal hexstr.(%s) i.%d of n.%d\n",hexstr,i,n);
                     break;
                 }
             }
@@ -265,9 +268,9 @@ void komodo_assetchain_pubkeys(char *jsonstr)
                 komodo_init(0);
                 komodo_notarysinit(0,pubkeys,n);
                 printf("initialize pubkeys[%d]\n",n);
-            }
-        } else printf("assetchain pubkeys n.%d\n",n);
+            } else fprintf(stderr,"komodo_assetchain_pubkeys i.%d vs n.%d\n",i,n);
+        } else fprintf(stderr,"assetchain pubkeys n.%d\n",n);
     }
     else if ( jsonstr != 0 )
-        printf("assetchain pubkeys couldnt parse.(%s)\n",jsonstr);
+        fprintf(stderr,"assetchain pubkeys couldnt parse.(%s)\n",jsonstr);
 }
