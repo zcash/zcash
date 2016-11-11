@@ -8,7 +8,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
 from time import *
 
-class Wallet2Test (BitcoinTestFramework):
+class WalletProtectCoinbaseTest (BitcoinTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
@@ -23,21 +23,28 @@ class Wallet2Test (BitcoinTestFramework):
         self.is_network_split=False
         self.sync_all()
 
-    def wait_for_operationd_success(self, myopid):
+    def wait_and_assert_operationid_status(self, myopid, in_status='success', in_errormsg=None):
         print('waiting for async operation {}'.format(myopid))
         opids = []
         opids.append(myopid)
         timeout = 120
         status = None
+        errormsg = None
         for x in xrange(1, timeout):
             results = self.nodes[0].z_getoperationresult(opids)
             if len(results)==0:
                 sleep(1)
             else:
                 status = results[0]["status"]
+                if status == "failed":
+                    errormsg = results[0]['error']['message']
                 break
         print('...returned status: {}'.format(status))
-        assert_equal("success", status)
+        assert_equal(in_status, status)
+        if errormsg is not None:
+            assert(in_errormsg is not None)
+            assert_equal(in_errormsg in errormsg, True)
+            print('...returned error: {}'.format(errormsg))
 
     def run_test (self):
         print "Mining blocks..."
@@ -94,7 +101,7 @@ class Wallet2Test (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":myzaddr, "amount": Decimal('20.0') - Decimal('0.0001')})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        self.wait_for_operationd_success(myopid)
+        self.wait_and_assert_operationid_status(myopid)
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
@@ -109,7 +116,7 @@ class Wallet2Test (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":mytaddr, "amount":Decimal('10.0')})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
-        self.wait_for_operationd_success(myopid)
+        self.wait_and_assert_operationid_status(myopid)
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
@@ -127,6 +134,14 @@ class Wallet2Test (BitcoinTestFramework):
         except JSONRPCException,e:
             errorString = e.error['message']
         assert_equal("Insufficient funds" in errorString, True)
+
+        # z_sendmany will fail because of insufficient funds
+        recipients = []
+        recipients.append({"address":self.nodes[1].getnewaddress(), "amount":Decimal('10000.0')})
+        myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
+        self.wait_and_assert_operationid_status(myopid, "failed", "Insufficient transparent funds, have 10.00, need 10000.0001")
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
+        self.wait_and_assert_operationid_status(myopid, "failed", "Insufficient protected funds, have 9.9998, need 10000.0001")
 
         # Send will fail because of insufficient funds unless sender uses coinbase utxos
         try:
@@ -156,7 +171,7 @@ class Wallet2Test (BitcoinTestFramework):
             newzaddr = self.nodes[2].z_getnewaddress()
             recipients.append({"address":newzaddr, "amount":amount_per_recipient})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
-        self.wait_for_operationd_success(myopid)
+        self.wait_and_assert_operationid_status(myopid)
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
@@ -166,4 +181,4 @@ class Wallet2Test (BitcoinTestFramework):
         assert_equal(Decimal(resp["private"]), num_recipients * amount_per_recipient)
 
 if __name__ == '__main__':
-    Wallet2Test ().main ()
+    WalletProtectCoinbaseTest().main()
