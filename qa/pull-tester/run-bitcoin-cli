@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # This is a thin wrapper around bitcoin-cli that strips the Windows-style EOLs
 # from the output if present. It is necessary when using bitcoin-cli.exe on

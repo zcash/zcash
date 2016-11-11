@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 ###   This script attempts to download the signature file SHA256SUMS.asc from bitcoin.org
 ###   It first checks if the signature passes, and then downloads the files specified in

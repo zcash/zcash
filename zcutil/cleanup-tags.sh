@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 # Warning: This deletes tags on "origin", so point that at the right target!
 #

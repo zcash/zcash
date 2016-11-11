@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -e -o pipefail
 
 CURDIR=$(cd $(dirname "$0"); pwd)
