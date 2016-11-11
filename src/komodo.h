@@ -34,6 +34,7 @@ void komodo_init(int32_t height);
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp);
 char *komodo_issuemethod(char *method,char *params,uint16_t port);
 void komodo_init(int32_t height);
+void komodo_assetchain_pubkeys(char *jsonstr);
 
 #define GENESIS_NBITS 0x1f00ffff
 #define KOMODO_MINRATIFY 7
