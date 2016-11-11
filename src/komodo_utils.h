@@ -1370,8 +1370,8 @@ void komodo_args()
     if ( name.c_str()[0] != 0 )
     {
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
-        addn = GetArg("-addnode","");
-        if ( strlen(addn.c_str()) > 6 )
+        addn = GetArg("-seednode","");
+        if ( strlen(addn.c_str()) > 0 )
             ASSETCHAINS_SEED = 1;
         strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
         ASSETCHAINS_PORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,&ASSETCHAINS_SHORTFLAG);
