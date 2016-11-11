@@ -60,6 +60,7 @@ public:
 #include "arith_uint256.h"
 #include "komodo_globals.h"
 #include "komodo_utils.h"
+#include "komodo_notary.h"
 
 static bool AppInitRPC(int argc, char* argv[])
 {
