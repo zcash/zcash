@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script will locally construct a merge commit for a pull request on a
 # github repository, inspect it, sign it and optionally push it.
