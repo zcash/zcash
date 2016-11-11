@@ -19,6 +19,7 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
 char *komodo_issuemethod(char *method,char *params,uint16_t port);
 void komodo_init(int32_t height);
 void komodo_assetchain_pubkeys(char *jsonstr);
+int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 
 int COINBASE_MATURITY = 100;
 

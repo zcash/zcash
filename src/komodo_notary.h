@@ -224,7 +224,7 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
 
 void komodo_init(int32_t height)
 {
-    static int didinit; uint256 zero; int32_t k,n; uint8_t pubkeys[64][33];
+    static int didinit; uint256 zero; int32_t i,k,n; uint8_t pubkeys[64][33];
     if ( didinit == 0 )
     {
         pthread_mutex_init(&komodo_mutex,NULL);

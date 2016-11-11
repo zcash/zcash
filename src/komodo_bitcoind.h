@@ -464,7 +464,7 @@ int8_t komodo_minerid(int32_t height)
 
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
 {
-    int32_t notaryid;
+    int32_t i,notaryid;
     komodo_chosennotary(&notaryid,height,pubkey33);
     if ( height >= 34000 && notaryid >= 0 )
     {
