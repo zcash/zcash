@@ -1362,7 +1362,6 @@ char *iguanafmtstr = (char *)"curl --url \"http://127.0.0.1:7778\" --data \"{\\\
 void komodo_args()
 {
     std::string name; char *dirname,fname[512],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,len;
-    komodo_init(0);
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     NOTARY_PUBKEY = GetArg("-pubkey", "");
     if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
@@ -1371,8 +1370,6 @@ void komodo_args()
     if ( name.c_str()[0] != 0 )
     {
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
-        ASSETCHAINS_NOTARIES = GetArg("-ac_notaries","");
-        komodo_assetchain_pubkeys((char *)ASSETCHAINS_NOTARIES.c_str());
         strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
         ASSETCHAINS_PORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,&ASSETCHAINS_SHORTFLAG);
         //fprintf(stderr,"after args: %c%s port.%u magic.%08x supply.%u\n",ASSETCHAINS_SHORTFLAG!=0?'-':'+',ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,(int32_t)ASSETCHAINS_SUPPLY);
@@ -1390,6 +1387,8 @@ void komodo_args()
             //if ( komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 )
                 COINBASE_MATURITY = 1;
         }
+        ASSETCHAINS_NOTARIES = GetArg("-ac_notaries","");
+        komodo_assetchain_pubkeys((char *)ASSETCHAINS_NOTARIES.c_str());
         iguana_rwnum(1,magic,sizeof(ASSETCHAINS_MAGIC),(void *)&ASSETCHAINS_MAGIC);
         for (i=0; i<4; i++)
             sprintf(&magicstr[i<<1],"%02x",magic[i]);

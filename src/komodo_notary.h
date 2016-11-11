@@ -262,6 +262,7 @@ void komodo_assetchain_pubkeys(char *jsonstr)
             }
             if ( i == n )
             {
+                komodo_init(0);
                 komodo_notarysinit(0,pubkeys,n);
                 printf("initialize pubkeys[%d]\n",n);
             }
