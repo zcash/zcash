@@ -414,7 +414,7 @@ Value notaries(const Array& params, bool fHelp)
                 m = (int32_t)strlen(btcaddr);
                 btcaddress.resize(m);
                 ptr = (char *)btcaddress.data();
-                memcpy(ptr,btcaddr,n);
+                memcpy(ptr,btcaddr,m);
                 item.push_back(Pair("BTCaddress", btcaddress));
 
                 bitcoin_address(kmdaddr,60,pubkeys[i],33);
