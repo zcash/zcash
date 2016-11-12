@@ -450,7 +450,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 int8_t komodo_minerid(int32_t height)
 {
     int32_t notaryid; CBlockIndex *pindex; uint8_t pubkey33[33];
-    if ( height <= chainActive.Tip()->nHeight )
+    if ( height <= CURRENT_HEIGHT )//chainActive.Tip()->nHeight )
     {
         if ( (pindex= chainActive[height]) != 0 )
         {
