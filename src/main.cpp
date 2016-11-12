@@ -5288,7 +5288,7 @@ bool ProcessMessages(CNode* pfrom)
             }
             else
             {
-                PrintExceptionContinue(&e, "ProcessMessages()");
+                //PrintExceptionContinue(&e, "ProcessMessages()");
             }
         }
         catch (const boost::thread_interrupted&) {
