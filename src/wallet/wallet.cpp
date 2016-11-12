@@ -2403,10 +2403,13 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
 #ifdef KOMODO_ENABLE_INTEREST
             if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip()->nHeight+1 >= 60000 )
             {
-                printf("nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nValueRet/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,out.tx->nLockTime,chainActive.Tip()->nTime);
+                if ( interest != 0 )
+                {
+                    printf("nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nValueRet/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,out.tx->nLockTime,chainActive.Tip()->nTime);
+                    fprintf(stderr,"nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nValueRet/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,out.tx->nLockTime,chainActive.Tip()->nTime);
+                }
                 nValueRet += interest;
             }
-            fprintf(stderr,"interest %llu from %llu lock.%u tip.%u\n",(long long)interest,(long long)out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
 #endif
             setCoinsRet.insert(make_pair(out.tx, out.i));
         }
