@@ -396,6 +396,7 @@ Value notaries(const Array& params, bool fHelp)
     int32_t height = atoi(params[0].get_str().c_str());
     if ( height < 0 )
         height = 0;
+    fprintf(stderr,"notaries as of height.%d\n",height);
     if ( height > chainActive.Height()+20000 )
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     else
