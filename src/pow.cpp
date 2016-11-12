@@ -127,7 +127,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         }
         if ( nonz == 0 )
             return(true); // will come back via different path with pubkey set
-        if ( height > 65500 )
+        if ( height > 65800 )
         {
             if ( notaryid >= 0 )
             {

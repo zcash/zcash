@@ -52,7 +52,7 @@ const char *Notaries_genesis[][2] =
     { "titomane_SH", "035f49d7a308dd9a209e894321f010d21b7793461b0c89d6d9231a3fe5f68d9960" },
 };
 
-#define KOMODO_ELECTION_GAP 1000
+#define KOMODO_ELECTION_GAP 2000
 #define KOMODO_PUBKEYS_HEIGHT(height) ((int32_t)(((((height)+KOMODO_ELECTION_GAP*.5)/KOMODO_ELECTION_GAP) + 1) * KOMODO_ELECTION_GAP))
 
 struct nutxo_entry { UT_hash_handle hh; uint256 txhash; uint64_t voutmask; int32_t notaryid,height; } *NUTXOS;
