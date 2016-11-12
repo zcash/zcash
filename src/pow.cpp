@@ -127,14 +127,27 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         }
         if ( nonz == 0 )
             return(true); // will come back via different path with pubkey set
-        if ( notaryid >= 0 )
+        if ( height > 65000 )
         {
-            if ( komodo_is_special(height,pubkey33) > 0 )
+            if ( notaryid >= 0 )
             {
+                if ( komodo_is_special(height,pubkey33) > 0 )
+                {
+                    bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+                    flag = 1;
+                }
+            }
+        }
+        else
+        {
+            if ( special > 0 ) // special notary id == (height % numnotaries)
+            {
+                if (UintToArith256(hash) <= bnTarget) // accept normal diff
+                    return true;
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 flag = 1;
             }
-        } //else bnTarget /= 8;
+        }
     }
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");
@@ -146,12 +159,6 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         printf(" special.%d notaryid.%d ht.%d mod.%d error\n",special,notaryid,height,(height % 35));
         return error("CheckProofOfWork(): hash doesn't match nBits");
     }
-    /*if ( flag != 0 )
-    {
-        for (i=0; i<33; i++)
-            fprintf(stderr,"%02x",pubkey33[i]);
-        fprintf(stderr," <- Round Robin ht.%d for notary.%d special.%d\n",height,notaryid,special);
-    }*/
     return true;
 }
 
