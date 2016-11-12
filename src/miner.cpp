@@ -571,10 +571,13 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             // Create new block
             //
-            Mining_start = (uint32_t)time(NULL);
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
-            Mining_height = pindexPrev->nHeight+1;
+            if ( Mining_height != pindexPrev->nHeight+1 )
+            {
+                Mining_height = pindexPrev->nHeight+1;
+                Mining_start = (uint32_t)time(NULL);
+            }
             if ( ASSETCHAINS_SYMBOL[0] != 0 )
                 fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
 
@@ -596,7 +599,6 @@ void static BitcoinMiner(CWallet *pwallet)
             if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
                 hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
-                Mining_start = (uint32_t)time(NULL);
                 //fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
             } else Mining_start = 0;
             while (true)

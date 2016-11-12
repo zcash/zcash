@@ -131,7 +131,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         {
             if ( notaryid >= 0 )
             {
-                if ( height < 70000 || komodo_is_special(height,pubkey33) > 0 )
+                if ( height < 70000 || special != 0 || komodo_is_special(height,pubkey33) > 0 )
                 {
                     bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                     flag = 1;
