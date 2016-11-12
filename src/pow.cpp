@@ -131,7 +131,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         {
             if ( notaryid >= 0 )
             {
-                if ( height < 70000 || special != 0 || komodo_is_special(height,pubkey33) > 0 )
+                if ( (height < 70000 && special != 0) || komodo_is_special(height,pubkey33) > 0 )
                 {
                     bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                     flag = 1;
@@ -154,9 +154,9 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        for (i=0; i<33; i++)
-            printf("%02x",pubkey33[i]);
-        printf(" special.%d notaryid.%d ht.%d mod.%d error\n",special,notaryid,height,(height % 35));
+        //for (i=0; i<33; i++)
+        //    printf("%02x",pubkey33[i]);
+        //printf(" special.%d notaryid.%d ht.%d mod.%d error\n",special,notaryid,height,(height % 35));
         return error("CheckProofOfWork(): hash doesn't match nBits");
     }
     return true;
