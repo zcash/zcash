@@ -451,7 +451,7 @@ int8_t komodo_minerid(int32_t height)
 {
     static uint32_t depth;
     int32_t notaryid; CBlockIndex *pindex; uint8_t pubkey33[33];
-    if ( depth == 0 && height <= CURRENT_HEIGHT )//chainActive.Tip()->nHeight )
+    if ( depth < 3 && height <= CURRENT_HEIGHT )//chainActive.Tip()->nHeight )
     {
         if ( (pindex= chainActive[height]) != 0 )
         {
