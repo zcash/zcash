@@ -85,7 +85,7 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
     // Hash state
     crypto_generichash_blake2b_state state;
 
-    if(pblock->nTime>1478786400){
+    if(pblock->nTime>1478786400 & pblock->nTime < 1479024000){
         EhInitialiseState(n, k, state);
     }else{
         EhInitialiseStateV0(n, k, state);
