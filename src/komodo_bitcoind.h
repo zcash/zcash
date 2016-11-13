@@ -388,6 +388,23 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
     //komodo_stateupdate(-pindex->nHeight,0,0,0,zero,0,0,0,0,0,0,0);
 }
 
+int32_t komodo_is_notarytx(const CTransaction& tx)
+{
+    uint8_t *ptr,crypto777[33];
+#ifdef KOMODO_ZCASH
+    ptr = (uint8_t *)block->vtx[0].vout[0].scriptPubKey.data();
+#else
+    ptr = (uint8_t *)&block->vtx[0].vout[0].scriptPubKey[0];
+#endif
+    decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
+    if ( memcmp(ptr+1,crypto777,33) == 0 )
+    {
+        printf("found notarytx\n");
+        return(1);
+    }
+    else return(0);
+}
+
 int32_t komodo_block2height(CBlock *block)
 {
     int32_t i,n,height = 0; uint8_t *ptr;

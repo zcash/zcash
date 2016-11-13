@@ -1044,6 +1044,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
 
 CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree)
 {
+    extern int32_t KOMODO_ON_DEMAND;
     {
         LOCK(mempool.cs);
         uint256 hash = tx.GetHash();
@@ -1268,6 +1269,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
 
         // Store transaction in memory
+        if ( komodo_is_notarytx(tx) == 0 )
+            KOMODO_ON_DEMAND++;
         pool.addUnchecked(hash, entry, !IsInitialBlockDownload());
     }
 
