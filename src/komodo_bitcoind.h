@@ -479,7 +479,7 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
                 if ( Minerids[height - i] == -2 )
                 {
                     //fprintf(stderr,"second -2 for Minerids[%d] current.%d\n",height-i,CURRENT_HEIGHT);
-                    return(0);
+                    return(-2);
                 }
             }
             if ( Minerids[height-i] == notaryid )
