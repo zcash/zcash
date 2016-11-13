@@ -69,8 +69,8 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             }
             Minerfp = fopen(fname2,"rb+");
         }
-        if ( Minerfp != 0 )
-            fread(Minerids,1,sizeof(Minerids),Minerfp);
+        if ( Minerfp != 0 && fread(Minerids,1,sizeof(Minerids),Minerfp) != sizeof(Minerids) )
+            printf("read error Minerids\n");
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
             while ( (func= fgetc(fp)) != EOF )
