@@ -111,7 +111,7 @@ extern int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
 
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
-    bool fNegative,fOverflow; int32_t i,nonz=0,special,notaryid,flag = 0;
+    bool fNegative,fOverflow; int32_t i,nonz=0,special,special2,notaryid,flag = 0;
     arith_uint256 bnTarget;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
@@ -131,8 +131,9 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         {
             if ( notaryid >= 0 )
             {
-                if ( (height < 70000 && (special != 0 || komodo_is_special(height,pubkey33) > 0)) ||
-                    (height >= 70000 && komodo_is_special(height,pubkey33) > 0) )
+                special2 = komodo_is_special(height,pubkey33);
+                if ( special2 == -2 || (height < 70000 && (special != 0 || special2 > 0)) ||
+                    (height >= 70000 && special2 > 0) )
                 {
                     bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                     flag = 1;

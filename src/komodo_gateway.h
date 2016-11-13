@@ -265,7 +265,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         if ( pax->marked != 0 )
                             errs++;
                         else matched++;
-                        if ( opcode == 'X' )
+                        if ( 0 && opcode == 'X' )
                             printf("errs.%d i.%d match %.8f == %.8f\n",errs,i,dstr(pax != 0 ? pax->fiatoshis:-1),dstr(block.vtx[0].vout[i].nValue));
                     }
                     else
