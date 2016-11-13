@@ -200,11 +200,15 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     assert(!isfromzaddr_ || t_inputs_total == 0);
 
     if (isfromtaddr_ && (t_inputs_total < targetAmount)) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strprintf("Insufficient transparent funds, have %ld, need %ld", t_inputs_total, targetAmount));
+        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
+            strprintf("Insufficient transparent funds, have %s, need %s",
+            FormatMoney(t_inputs_total), FormatMoney(targetAmount)));
     }
     
     if (isfromzaddr_ && (z_inputs_total < targetAmount)) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strprintf("Insufficient protected funds, have %ld, need %ld", z_inputs_total, targetAmount));
+        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
+            strprintf("Insufficient protected funds, have %s, need %s",
+            FormatMoney(z_inputs_total), FormatMoney(targetAmount)));
     }
 
     // If from address is a taddr, select UTXOs to spend
@@ -319,7 +323,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             if (selectedUTXOCoinbase) {
                 assert(isSingleZaddrOutput);
                 throw JSONRPCError(RPC_WALLET_ERROR, strprintf(
-                    "Change %ld not allowed. When protecting coinbase funds, the wallet does not allow any change as there is currently no way to specify a change address in z_sendmany.", change));
+                    "Change %s not allowed. When protecting coinbase funds, the wallet does not "
+                    "allow any change as there is currently no way to specify a change address "
+                    "in z_sendmany.", FormatMoney(change)));
             } else {
                 add_taddr_change_output_to_tx(change);
                 LogPrint("zrpc", "%s: transparent change in transaction output (amount=%s)\n",
