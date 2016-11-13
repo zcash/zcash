@@ -392,9 +392,9 @@ int32_t komodo_is_notarytx(const CTransaction& tx)
 {
     uint8_t *ptr,crypto777[33];
 #ifdef KOMODO_ZCASH
-    ptr = (uint8_t *)block->vtx[0].vout[0].scriptPubKey.data();
+    ptr = (uint8_t *)tx.vout[0].scriptPubKey.data();
 #else
-    ptr = (uint8_t *)&block->vtx[0].vout[0].scriptPubKey[0];
+    ptr = (uint8_t *)&tx.vout[0].scriptPubKey[0];
 #endif
     decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
     if ( memcmp(ptr+1,crypto777,33) == 0 )
