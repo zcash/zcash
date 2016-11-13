@@ -551,7 +551,6 @@ CBlockTreeDB *pblocktree = NULL;
 // Komodo globals
 
 #define KOMODO_TESTNET_EXPIRATION 100000
-#define KOMODO_ENABLE_INTEREST //enabling this is a hardfork
 #define KOMODO_PAX
 #define KOMODO_ZCASH
 #include "komodo.h"
@@ -1179,7 +1178,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         view.GetBestBlock();
 
         nValueIn = view.GetValueIn(chainActive.Tip()->nHeight,&interest,tx,chainActive.Tip()->nTime);
-
+            if ( interest != 0 )
+                fprintf(stderr,"add interest %.8f\n",(double)interest/COIN);
         // we have all inputs cached now, so switch back to dummy, so we don't need to keep lock on mempool
         view.SetBackend(dummy);
         }
@@ -3312,12 +3312,15 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 }
 
 
-bool ProcessNewBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
+bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
+    extern int32_t CURRENT_HEIGHT;
     bool checked;
+    if ( chainActive.Tip() != 0 )
+        CURRENT_HEIGHT = chainActive.Tip()->nHeight;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        checked = CheckBlock(komodo_block2height(pblock),0,*pblock, state);
+        checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state);
     else checked = CheckBlock(0,0,*pblock, state);
     {
         LOCK(cs_main);
@@ -3882,7 +3885,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                 // process in case the block isn't known yet
                 if (mapBlockIndex.count(hash) == 0 || (mapBlockIndex[hash]->nStatus & BLOCK_HAVE_DATA) == 0) {
                     CValidationState state;
-                    if (ProcessNewBlock(state, NULL, &block, true, dbp))
+                    if (ProcessNewBlock(0,state, NULL, &block, true, dbp))
                         nLoaded++;
                     if (state.IsError())
                         break;
@@ -3904,7 +3907,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                             LogPrintf("%s: Processing out of order child %s of %s\n", __func__, block.GetHash().ToString(),
                                     head.ToString());
                             CValidationState dummy;
-                            if (ProcessNewBlock(dummy, NULL, &block, true, &it->second))
+                            if (ProcessNewBlock(0,dummy, NULL, &block, true, &it->second))
                             {
                                 nLoaded++;
                                 queue.push_back(block.GetHash());
@@ -4896,7 +4899,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 int nDoS;
                 if (state.IsInvalid(nDoS)) {
                     if (nDoS > 0)
-                        Misbehaving(pfrom->GetId(), nDoS);
+                        Misbehaving(pfrom->GetId(), nDoS/nDoS);
                     return error("invalid header received");
                 }
             }
@@ -4932,7 +4935,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         // Such an unrequested block may still be processed, subject to the
         // conditions in AcceptBlock().
         bool forceProcessing = pfrom->fWhitelisted && !IsInitialBlockDownload();
-        ProcessNewBlock(state, pfrom, &block, forceProcessing, NULL);
+        ProcessNewBlock(0,state, pfrom, &block, forceProcessing, NULL);
         int nDoS;
         if (state.IsInvalid(nDoS)) {
             pfrom->PushMessage("reject", strCommand, state.GetRejectCode(),
@@ -5285,7 +5288,7 @@ bool ProcessMessages(CNode* pfrom)
             }
             else
             {
-                PrintExceptionContinue(&e, "ProcessMessages()");
+                //PrintExceptionContinue(&e, "ProcessMessages()");
             }
         }
         catch (const boost::thread_interrupted&) {

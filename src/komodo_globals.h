@@ -13,10 +13,18 @@
  *                                                                            *
  ******************************************************************************/
 
+void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t kheight,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout);
+void komodo_init(int32_t height);
+int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp);
+char *komodo_issuemethod(char *method,char *params,uint16_t port);
+void komodo_init(int32_t height);
+void komodo_assetchain_pubkeys(char *jsonstr);
+int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
+
 int COINBASE_MATURITY = 100;
 
-int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
-std::string NOTARY_PUBKEY;
+int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,CURRENT_HEIGHT,ASSETCHAINS_SEED;
+std::string NOTARY_PUBKEY,ASSETCHAINS_NOTARIES;
 uint8_t NOTARY_PUBKEY33[33];
 
 int32_t ASSETCHAINS_SHORTFLAG;

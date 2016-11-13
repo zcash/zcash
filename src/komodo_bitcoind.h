@@ -23,7 +23,7 @@
 #include <curl/easy.h>
 #endif
 
-#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7775",0,(char *)(cmdstr),0)
+#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7776",0,0,(char *)(cmdstr))
 
 struct MemoryStruct { char *memory; size_t size; };
 struct return_string { char *ptr; size_t len; };
@@ -377,6 +377,7 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
     //int32_t i; uint256 hash;
     komodo_init(pindex->nHeight);
+    Minerids[pindex->nHeight] = -2;
     //hash = block.GetHash();
     //for (i=0; i<32; i++)
     //    printf("%02x",((uint8_t *)&hash)[i]);
@@ -444,6 +445,49 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
         // height -> pubkey33
         //printf("extending chaintip komodo_index2pubkey33 height.%d need to get pubkey33\n",height);
     }
+}
+
+int8_t komodo_minerid(int32_t height)
+{
+    static uint32_t depth;
+    int32_t notaryid; CBlockIndex *pindex; uint8_t pubkey33[33];
+    if ( depth == 0 && height <= CURRENT_HEIGHT )//chainActive.Tip()->nHeight )
+    {
+        if ( (pindex= chainActive[height]) != 0 )
+        {
+            depth++;
+            komodo_index2pubkey33(pubkey33,pindex,height);
+            komodo_chosennotary(&notaryid,height,pubkey33);
+            depth--;
+            return(notaryid);
+        }
+    }
+    return(-2);
+}
+
+int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
+{
+    int32_t i,notaryid;
+    komodo_chosennotary(&notaryid,height,pubkey33);
+    if ( height >= 34000 && notaryid >= 0 )
+    {
+        for (i=1; i<64; i++)
+        {
+            if ( Minerids[height-i] == -2 )
+            {
+                Minerids[height-i] = komodo_minerid(height-i);
+                if ( Minerids[height - i] == -2 )
+                {
+                    //fprintf(stderr,"second -2 for Minerids[%d] current.%d\n",height-i,CURRENT_HEIGHT);
+                    return(0);
+                }
+            }
+            if ( Minerids[height-i] == notaryid )
+                return(-1);
+        }
+        return(1);
+    }
+    return(0);
 }
 
 int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)

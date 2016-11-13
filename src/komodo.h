@@ -16,26 +16,27 @@
 #ifndef H_KOMODO_H
 #define H_KOMODO_H
 
-// Todo: handle reorg: clear all entries above reorged height
-// smooth consensus price
-//
+// Todo:
+// 1. error check fiat redeem amounts
+// 2. net balance limiter
+// 3. new RR algo
+// 4. verify: interest payment, ratification, reorgs
+// 5. automate notarization fee payouts
+// 6. automated distribution of test REVS snapshot
 
 #include <stdint.h>
 #include <stdio.h>
 #include <pthread.h>
 #include <ctype.h>
 
-void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t kheight,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout);
-void komodo_init(int32_t height);
-int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp);
-char *komodo_issuemethod(char *method,char *params,uint16_t port);
 
 #define GENESIS_NBITS 0x1f00ffff
 #define KOMODO_MINRATIFY 7
 
+int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
+
 #include "komodo_globals.h"
 #include "komodo_utils.h"
-//queue_t DepositsQ,PendingsQ;
 
 #include "cJSON.c"
 #include "komodo_bitcoind.h"
@@ -349,7 +350,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     static int32_t hwmheight;
     uint64_t signedmask,voutmask;
     uint8_t scriptbuf[4096],pubkeys[64][33]; uint256 kmdtxid,btctxid,txhash;
-    int32_t i,j,k,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
+    int32_t i,j,k,nid,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
     komodo_init(pindex->nHeight);
     if ( pindex->nHeight > hwmheight )
         hwmheight = pindex->nHeight;
@@ -358,15 +359,16 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         printf("hwmheight.%d vs pindex->nHeight.%d reorg.%d\n",hwmheight,pindex->nHeight,hwmheight-pindex->nHeight);
         // reset komodostate
     }
-    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    CURRENT_HEIGHT = chainActive.Tip()->nHeight;
+    if ( komodo_is_issuer() != 0 )
     {
         while ( KOMODO_REALTIME == 0 || time(NULL) <= KOMODO_REALTIME )
         {
             fprintf(stderr,"komodo_connect.(%s) waiting for realtime RT.%u now.%u\n",ASSETCHAINS_SYMBOL,KOMODO_REALTIME,(uint32_t)time(NULL));
-            sleep(3);
+            sleep(30);
         }
     }
-    KOMODO_INITDONE = (uint32_t)time(NULL);
+    KOMODO_REALTIME = KOMODO_INITDONE = (uint32_t)time(NULL);
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
@@ -391,6 +393,11 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 #endif
                     // signedmask is needed here!
                     notaryid = komodo_voutupdate(notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight,(uint64_t)block.vtx[i].vout[j].nValue);
+                    if ( i == 0 && j == 0 && komodo_chosennotary(&nid,height,scriptbuf + 1) >= 0 )
+                    {
+                        if ( height < sizeof(Minerids)/sizeof(*Minerids) )
+                            Minerids[height] = nid;
+                    }
                     if ( 0 && i > 0 )
                     {
                         for (k=0; k<len; k++)

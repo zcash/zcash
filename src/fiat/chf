@@ -1,1 +1,2 @@
+#!/bin/bash
 ./komodo-cli -ac_name=CHF $1 $2 $3 $4

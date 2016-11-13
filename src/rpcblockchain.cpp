@@ -394,7 +394,10 @@ Value notaries(const Array& params, bool fHelp)
         throw runtime_error("notaries height\n");
     LOCK(cs_main);
     int32_t height = atoi(params[0].get_str().c_str());
-    if ( height < 0 || height > chainActive.Height()+2000 )
+    if ( height < 0 )
+        height = 0;
+    //fprintf(stderr,"notaries as of height.%d\n",height);
+    if ( height > chainActive.Height()+20000 )
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     else
     {
@@ -404,22 +407,24 @@ Value notaries(const Array& params, bool fHelp)
             {
                 Object item;
                 std::string btcaddress,kmdaddress,hex;
-                bitcoin_address(btcaddr,0,pubkeys[i],33);
-                m = (int32_t)strlen(btcaddr);
-                btcaddress.resize(m);
-                ptr = (char *)btcaddress.data();
-                memcpy(ptr,btcaddr,n);
-                bitcoin_address(kmdaddr,60,pubkeys[i],33);
-                m = (int32_t)strlen(kmdaddr);
-                kmdaddress.resize(m);
-                ptr = (char *)kmdaddress.data();
-                memcpy(ptr,kmdaddr,m);
                 hex.resize(66);
                 hexstr = (char *)hex.data();
                 for (j=0; j<33; j++)
                     sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
                 item.push_back(Pair("pubkey", hex));
+
+                bitcoin_address(btcaddr,0,pubkeys[i],33);
+                m = (int32_t)strlen(btcaddr);
+                btcaddress.resize(m);
+                ptr = (char *)btcaddress.data();
+                memcpy(ptr,btcaddr,m);
                 item.push_back(Pair("BTCaddress", btcaddress));
+
+                bitcoin_address(kmdaddr,60,pubkeys[i],33);
+                m = (int32_t)strlen(kmdaddr);
+                kmdaddress.resize(m);
+                ptr = (char *)kmdaddress.data();
+                memcpy(ptr,kmdaddr,m);
                 item.push_back(Pair("KMDaddress", kmdaddress));
                 a.push_back(item);
             }
@@ -444,7 +449,9 @@ Value paxprice(const Array& params, bool fHelp)
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
     ret.push_back(Pair("height", height));
-    ret.push_back(Pair("seed", seed));
+    char seedstr[32];
+    sprintf(seedstr,"%llu",(long long)seed);
+    ret.push_back(Pair("seed", seedstr));
     if ( height < 0 || height > chainActive.Height() )
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     else

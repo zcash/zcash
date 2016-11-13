@@ -160,7 +160,11 @@ public:
     // Transaction hash
     uint256 hash;
     // Index into CTransaction.vjoinsplit
+#ifdef __APPLE__
+    uint64_t js;
+#else
     size_t js;
+#endif
     // Index into JSDescription fields of length ZC_NUM_JS_OUTPUTS
     uint8_t n;
 

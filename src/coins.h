@@ -6,6 +6,8 @@
 #ifndef BITCOIN_COINS_H
 #define BITCOIN_COINS_H
 
+#define KOMODO_ENABLE_INTEREST //enabling this is a hardfork, activate with new RR method
+
 #include "compressor.h"
 #include "memusage.h"
 #include "serialize.h"

@@ -18,7 +18,7 @@
 #include "utilmoneystr.h"
 #include "zcash/Note.hpp"
 #include "crypter.h"
-
+#include "coins.h"
 #include <assert.h>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -2399,12 +2399,18 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
             if(!out.fSpendable)
                 continue;
             nValueRet += out.tx->vout[out.i].nValue;
-            interest = komodo_interest(chainActive.Tip()->nHeight,out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
+            interest = komodo_interest(chainActive.Tip()->nHeight+1,out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
 #ifdef KOMODO_ENABLE_INTEREST
-            if ( ASSETCHAINS_SYMBOL[0] == 0 && txheight >= 60000 )
+            if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip()->nHeight+1 >= 60000 )
+            {
+                if ( interest != 0 )
+                {
+                    printf("nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nValueRet/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,out.tx->nLockTime,chainActive.Tip()->nTime);
+                    fprintf(stderr,"nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nValueRet/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,out.tx->nLockTime,chainActive.Tip()->nTime);
+                }
                 nValueRet += interest;
+            }
 #endif
-            fprintf(stderr,"interest %llu from %llu lock.%u tip.%u\n",(long long)interest,(long long)out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
             setCoinsRet.insert(make_pair(out.tx, out.i));
         }
         return (nValueRet >= nTargetValue);

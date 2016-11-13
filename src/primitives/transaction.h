@@ -12,6 +12,7 @@
 #include "serialize.h"
 #include "uint256.h"
 #include "consensus/consensus.h"
+#include <stdint.h>
 
 #include <boost/array.hpp>
 
@@ -86,8 +87,13 @@ public:
             const uint256& rt,
             boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
             boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+#ifdef __APPLE__
+            boost::array<uint64_t, ZC_NUM_JS_INPUTS>& inputMap,
+            boost::array<uint64_t, ZC_NUM_JS_OUTPUTS>& outputMap,
+#else
             boost::array<size_t, ZC_NUM_JS_INPUTS>& inputMap,
             boost::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap,
+#endif
             CAmount vpub_old,
             CAmount vpub_new,
             bool computeProof = true, // Set to false in some tests

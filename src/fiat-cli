@@ -1,3 +1,4 @@
+#!/bin/bash
 echo aud; fiat/aud $1 $2 $3 $4
 echo bgn; fiat/bgn $1 $2 $3 $4
 echo cad; fiat/cad $1 $2 $3 $4

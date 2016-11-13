@@ -58,8 +58,18 @@ public:
 
 #include "uint256.h"
 #include "arith_uint256.h"
+
+int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
+
 #include "komodo_globals.h"
 #include "komodo_utils.h"
+#include "cJSON.c"
+#include "komodo_notary.h"
+
+void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t KMDheight,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout)
+{
+    
+}
 
 static bool AppInitRPC(int argc, char* argv[])
 {
