@@ -471,7 +471,10 @@ int8_t komodo_minerid(int32_t height)
     if ( depth < 3 && height <= CURRENT_HEIGHT )//chainActive.Tip()->nHeight )
     {
         if ( Minerids[height] >= -1 )
+        {
+            printf("cached[%d] -> %d\n",height,Minerids[height]);
             return(Minerids[height]);
+        }
         if ( (pindex= chainActive[height]) != 0 )
         {
             depth++;
