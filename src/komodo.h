@@ -17,12 +17,12 @@
 #define H_KOMODO_H
 
 // Todo:
+// 0. minerids file
 // 1. error check fiat redeem amounts
 // 2. net balance limiter
-// 3. new RR algo
-// 4. verify: interest payment, ratification, reorgs
-// 5. automate notarization fee payouts
-// 6. automated distribution of test REVS snapshot
+// 3. verify: interest payment, ratification, reorgs
+// 4. automate notarization fee payouts
+// 5. automated distribution of test REVS snapshot
 
 #include <stdint.h>
 #include <stdio.h>
@@ -33,6 +33,7 @@
 #define GENESIS_NBITS 0x1f00ffff
 #define KOMODO_MINRATIFY 7
 
+FILE *Minerfp;
 int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
 
 #include "komodo_globals.h"
@@ -48,14 +49,26 @@ int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
 
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t KMDheight,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout)
 {
-    static FILE *fp; static int32_t errs; char fname[512]; int32_t ht,func; uint8_t num,pubkeys[64][33];
-#ifdef WIN32
-    sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"komodostate");
-#else
-    sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),(char *)"komodostate");
-#endif
+    static FILE *fp; static int32_t errs; char fname[512],fname2[512]; int32_t ht,func; uint8_t num,pubkeys[64][33];
     if ( fp == 0 )
     {
+#ifdef WIN32
+        sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"komodostate");
+        sprintf(fname2,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"minerids");
+#else
+        sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),(char *)"komodostate");
+        sprintf(fname2,"%s/%s",GetDataDir(false).string().c_str(),(char *)"minerids");
+#endif
+        memset(Minerids,0xfe,sizeof(Minerids));
+        if ( (Minerfp= fopen(fname2,"rb+")) == 0 )
+        {
+            if ( (Minerfp= fopen(fname2,"wb")) != 0 )
+            {
+                fwrite(Minerids,1,sizeof(Minerids),Minerfp);
+                fclose(Minerfp);
+            }
+            Minerfp = fopen(fname2,"rb+");
+        }
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
             while ( (func= fgetc(fp)) != EOF )
@@ -396,7 +409,17 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     if ( i == 0 && j == 0 && komodo_chosennotary(&nid,height,scriptbuf + 1) >= 0 )
                     {
                         if ( height < sizeof(Minerids)/sizeof(*Minerids) )
-                            Minerids[height] = nid;
+                        {
+                            if ( (Minerids[height]= nid) >= -1 )
+                            {
+                                if ( Minerfp != 0 )
+                                {
+                                    fseek(Minerfp,height,SEEK_SET);
+                                    fputc(Minerids[height],Minerfp);
+                                    fflush(Minerfp);
+                                }
+                            }
+                        }
                     }
                     if ( 0 && i > 0 )
                     {
