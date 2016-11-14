@@ -289,7 +289,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         if ( memcmp(crypto777,scriptbuf+1,33) == 0 )
         {
             *specialtxp = 1;
-            printf(">>>>>>>> ");
+            //printf(">>>>>>>> ");
         }
         else if ( komodo_chosennotary(&nid,height,scriptbuf + 1) >= 0 )
         {
@@ -303,9 +303,9 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 }
                 else if ( notaryid != nid )
                 {
-                    for (i=0; i<33; i++)
-                        printf("%02x",scriptbuf[i+1]);
-                    printf(" %s mismatch notaryid.%d k.%d\n",ASSETCHAINS_SYMBOL,notaryid,nid);
+                    //for (i=0; i<33; i++)
+                    //    printf("%02x",scriptbuf[i+1]);
+                    //printf(" %s mismatch notaryid.%d k.%d\n",ASSETCHAINS_SYMBOL,notaryid,nid);
                     notaryid = 64;
                     *voutmaskp = 0;
                 }
