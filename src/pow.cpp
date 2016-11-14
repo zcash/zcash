@@ -132,6 +132,8 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             if ( notaryid >= 0 )
             {
                 special2 = komodo_is_special(height,pubkey33);
+                if ( 0 && special2 == -2 )
+                    printf("height.%d special2.%d special.%d\n",height,special2,special);
                 if ( special2 == -2 || (height < 70000 && (special != 0 || special2 > 0)) ||
                     (height >= 70000 && special2 > 0) )
                 {
@@ -153,6 +155,8 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     }
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");
+    if ( height > 70000 )
+        bnTarget /= 64;
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {

@@ -388,6 +388,23 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
     //komodo_stateupdate(-pindex->nHeight,0,0,0,zero,0,0,0,0,0,0,0);
 }
 
+int32_t komodo_is_notarytx(const CTransaction& tx)
+{
+    uint8_t *ptr,crypto777[33];
+#ifdef KOMODO_ZCASH
+    ptr = (uint8_t *)tx.vout[0].scriptPubKey.data();
+#else
+    ptr = (uint8_t *)&tx.vout[0].scriptPubKey[0];
+#endif
+    decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
+    if ( memcmp(ptr+1,crypto777,33) == 0 )
+    {
+        //printf("found notarytx\n");
+        return(1);
+    }
+    else return(0);
+}
+
 int32_t komodo_block2height(CBlock *block)
 {
     int32_t i,n,height = 0; uint8_t *ptr;
@@ -453,11 +470,26 @@ int8_t komodo_minerid(int32_t height)
     int32_t notaryid; CBlockIndex *pindex; uint8_t pubkey33[33];
     if ( depth < 3 && height <= CURRENT_HEIGHT )//chainActive.Tip()->nHeight )
     {
+        if ( Minerids[height] >= -1 )
+        {
+            printf("cached[%d] -> %d\n",height,Minerids[height]);
+            return(Minerids[height]);
+        }
         if ( (pindex= chainActive[height]) != 0 )
         {
             depth++;
             komodo_index2pubkey33(pubkey33,pindex,height);
             komodo_chosennotary(&notaryid,height,pubkey33);
+            if ( notaryid >= -1 )
+            {
+                Minerids[height] = notaryid;
+                if ( Minerfp != 0 )
+                {
+                    fseek(Minerfp,height,SEEK_SET);
+                    fputc(Minerids[height],Minerfp);
+                    fflush(Minerfp);
+                }
+            }
             depth--;
             return(notaryid);
         }

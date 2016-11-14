@@ -99,12 +99,18 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 }
 
 #define ASSETCHAINS_MINHEIGHT 100
+#define ROUNDROBIN_DELAY 45
+extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,ASSETCHAINS_SHORTFLAG,KOMODO_REALTIME;
+extern char ASSETCHAINS_SYMBOL[16];
+extern std::string NOTARY_PUBKEY;
+extern uint8_t NOTARY_PUBKEY33[33];
+uint32_t Mining_start,Mining_height;
+int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
+int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 uint64_t komodo_paxtotal();
 int32_t komodo_is_issuer();
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol,int32_t tokomodo);
-extern int32_t KOMODO_INITDONE,ASSETCHAINS_SHORTFLAG,KOMODO_REALTIME;
-extern char ASSETCHAINS_SYMBOL[16];
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -114,11 +120,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    //fprintf(stderr,"create new block %d\n",chainActive.Tip()->nHeight);
     if ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight >= 100 )
     {
-        fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d  RT.%u\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),KOMODO_REALTIME);
-        while ( mempool.GetTotalTxSize() <= 0 )
+        fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d RT.%u KOMODO_ON_DEMAND.%d\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),KOMODO_REALTIME,KOMODO_ON_DEMAND);
+        while ( KOMODO_ON_DEMAND == 0 )//mempool.GetTotalTxSize() <= 0 )
         {
             deposits = komodo_paxtotal();
             if ( KOMODO_INITDONE == 0 || KOMODO_REALTIME == 0 )
@@ -129,6 +134,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 break;
             sleep(10);
         }
+        KOMODO_ON_DEMAND = 0;
         if ( 0 && deposits != 0 )
             printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)komodo_paxtotal(),(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
     }
@@ -439,13 +445,6 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 //
 // Internal miner
 //
-#define ROUNDROBIN_DELAY 45
-extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE;
-extern std::string NOTARY_PUBKEY;
-extern uint8_t NOTARY_PUBKEY33[33];
-uint32_t Mining_start,Mining_height;
-int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
-int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {

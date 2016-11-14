@@ -514,7 +514,10 @@ void CleanupBlockRevFiles()
                 remove(it->path());
         }
     }
-
+    path komodostate = GetDataDir() / "komodostate";
+    remove(komodostate);
+    path minerids = GetDataDir() / "minerids";
+    remove(minerids);
     // Remove all block files that aren't part of a contiguous set starting at
     // zero by walking the ordered map (keys are block file indices) by
     // keeping a separate counter.  Once we hit a gap (or if 0 doesn't exist)

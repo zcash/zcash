@@ -52,8 +52,7 @@ const char *Notaries_genesis[][2] =
     { "titomane_SH", "035f49d7a308dd9a209e894321f010d21b7793461b0c89d6d9231a3fe5f68d9960" },
 };
 
-#define KOMODO_ELECTION_GAP 2000
-#define KOMODO_PUBKEYS_HEIGHT(height) ((int32_t)(((((height)+KOMODO_ELECTION_GAP*.5)/KOMODO_ELECTION_GAP) + 1) * KOMODO_ELECTION_GAP))
+#define KOMODO_ELECTION_GAP ((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)
 
 struct nutxo_entry { UT_hash_handle hh; uint256 txhash; uint64_t voutmask; int32_t notaryid,height; } *NUTXOS;
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
@@ -94,8 +93,7 @@ int32_t komodo_ratify_threshold(int32_t height,uint64_t signedmask)
     int32_t htind,numnotaries,i,wt = 0;
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         return(2);
-    if ( (htind= KOMODO_PUBKEYS_HEIGHT(height) / KOMODO_ELECTION_GAP) == 1 )
-        htind = 0;
+    htind = height / KOMODO_ELECTION_GAP;
     numnotaries = Pubkeys[htind].numnotaries;
     for (i=0; i<numnotaries; i++)
         if ( ((1LL << i) & signedmask) != 0 )
@@ -108,8 +106,7 @@ int32_t komodo_ratify_threshold(int32_t height,uint64_t signedmask)
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height)
 {
     int32_t i,htind,n; uint64_t mask = 0; struct knotary_entry *kp,*tmp;
-    if ( (htind= KOMODO_PUBKEYS_HEIGHT(height) / KOMODO_ELECTION_GAP) == 1 )
-        htind = 0;
+    htind = height / KOMODO_ELECTION_GAP;
     pthread_mutex_lock(&komodo_mutex);
     n = Pubkeys[htind].numnotaries;
     HASH_ITER(hh,Pubkeys[htind].Notaries,kp,tmp)
@@ -129,8 +126,16 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height)
 
 void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
 {
-    int32_t k,i,htind; struct knotary_entry *kp; struct knotaries_entry N;
+    static int32_t hwmheight;
+    int32_t k,i,htind,nonz; struct knotary_entry *kp; struct knotaries_entry N;
     memset(&N,0,sizeof(N));
+    if ( height > 0 )
+    {
+        height += KOMODO_ELECTION_GAP/2;
+        height /= KOMODO_ELECTION_GAP;
+        height = ((height + 1) * KOMODO_ELECTION_GAP);
+        htind = (height / KOMODO_ELECTION_GAP);
+    } else htind = 0;
     pthread_mutex_lock(&komodo_mutex);
     for (k=0; k<num; k++)
     {
@@ -138,22 +143,24 @@ void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
         memcpy(kp->pubkey,pubkeys[k],33);
         kp->notaryid = k;
         HASH_ADD_KEYPTR(hh,N.Notaries,kp->pubkey,33,kp);
-        //if ( height > 10000 )
+        if ( height > 0 )
         {
             for (i=0; i<33; i++)
                 printf("%02x",pubkeys[k][i]);
-            printf(" notarypubs.[%d] ht.%d\n",k,height);
+            printf(" notarypubs.[%d] ht.%d active at %d\n",k,height,htind*KOMODO_ELECTION_GAP);
         }
     }
     N.numnotaries = num;
-    if ( (htind= KOMODO_PUBKEYS_HEIGHT(height) / KOMODO_ELECTION_GAP) == 1 )
-        htind = 0;
     for (i=htind; i<sizeof(Pubkeys)/sizeof(*Pubkeys); i++)
     {
+        if ( Pubkeys[i].height != 0 && height < hwmheight )
+            break;
         Pubkeys[i] = N;
         Pubkeys[i].height = i * KOMODO_ELECTION_GAP;
     }
     pthread_mutex_unlock(&komodo_mutex);
+    if ( height > hwmheight )
+        hwmheight = height;
 }
 
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
@@ -163,8 +170,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
     *notaryidp = -1;
     if ( height < 0 || height/KOMODO_ELECTION_GAP >= sizeof(Pubkeys)/sizeof(*Pubkeys) )
         return(-1);
-    if ( (htind= KOMODO_PUBKEYS_HEIGHT(height) / KOMODO_ELECTION_GAP) == 1 )
-        htind = 0;
+    htind = height / KOMODO_ELECTION_GAP;
     pthread_mutex_lock(&komodo_mutex);
     HASH_FIND(hh,Pubkeys[htind].Notaries,pubkey33,33,kp);
     pthread_mutex_unlock(&komodo_mutex);
@@ -273,7 +279,7 @@ void komodo_assetchain_pubkeys(char *jsonstr)
             {
                 komodo_init(-1);
                 komodo_notarysinit(0,pubkeys,n);
-                printf("initialize pubkeys[%d]\n",n);
+                //printf("initialize pubkeys[%d]\n",n);
             } else fprintf(stderr,"komodo_assetchain_pubkeys i.%d vs n.%d\n",i,n);
         } else fprintf(stderr,"assetchain pubkeys n.%d\n",n);
     }
