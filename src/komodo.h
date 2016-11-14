@@ -378,8 +378,9 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     static int32_t hwmheight;
     uint64_t signedmask,voutmask;
     uint8_t scriptbuf[4096],pubkeys[64][33]; uint256 kmdtxid,btctxid,txhash;
-    int32_t i,j,k,isratification,nid,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
+    int32_t i,j,k,numnotaries,isratification,nid,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
     komodo_init(pindex->nHeight);
+    numnotaries = komodo_notaries(pubkeys,pindex->nHeight);
     if ( pindex->nHeight > hwmheight )
         hwmheight = pindex->nHeight;
     else
@@ -484,7 +485,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                             }
                         }
                     }
-                    if ( ((signedmask & 1) != 0 && numvalid >= KOMODO_MINRATIFY) || bitweight(signedmask) > (bp->numnotaries>>1) )
+                    if ( ((signedmask & 1) != 0 && numvalid >= KOMODO_MINRATIFY) || bitweight(signedmask) > (numnotaries>>1) )
                     {
                         memset(&txhash,0,sizeof(txhash));
                         komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0,0,0,0,0,0,0,0);
