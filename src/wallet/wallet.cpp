@@ -2405,7 +2405,7 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
             {
                 //if ( interest != 0 )
                 {
-                    printf("nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nValueRet/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,out.tx->nLockTime,chainActive.Tip()->nTime);
+                    printf("nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)out.tx->vout[out.i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,out.tx->nLockTime,chainActive.Tip()->nTime);
                     fprintf(stderr,"nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nValueRet/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,out.tx->nLockTime,chainActive.Tip()->nTime);
                 }
                 nValueRet += interest;
