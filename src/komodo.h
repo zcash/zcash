@@ -17,7 +17,7 @@
 #define H_KOMODO_H
 
 // Todo:
-// 0. minerids file
+// 0. optimize assetchains RT loop
 // 1. error check fiat redeem amounts
 // 2. net balance limiter
 // 3. verify: interest payment, ratification, reorgs
