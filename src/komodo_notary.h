@@ -130,10 +130,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height)
 void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
 {
     static int32_t hwmheight;
-    int32_t k,i,htind; struct knotary_entry *kp; struct knotaries_entry N;
-    if ( height <= hwmheight )
-        return;
-    hwmheight = height;
+    int32_t k,i,htind,nonz; struct knotary_entry *kp; struct knotaries_entry N;
     memset(&N,0,sizeof(N));
     if ( (htind= KOMODO_PUBKEYS_HEIGHT(height) / KOMODO_ELECTION_GAP) == 0 )
         htind = 1;
@@ -148,16 +145,20 @@ void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
         {
             for (i=0; i<33; i++)
                 printf("%02x",pubkeys[k][i]);
-            printf(" notarypubs.[%d] ht.%d active at %d\n",k,height,htind*KOMODO_ELECTION_GAP);
+            printf(" notarypubs.[%d] ht.%d active at %d\n",k,height,KOMODO_PUBKEYS_HEIGHT(height));
         }
     }
     N.numnotaries = num;
-    for (i=htind; i<sizeof(Pubkeys)/sizeof(*Pubkeys); i++)
+    for (i=height==0?0:htind; i<sizeof(Pubkeys)/sizeof(*Pubkeys); i++)
     {
+        if ( Pubkeys[i].height != 0 && height < hwmheight )
+            break;
         Pubkeys[i] = N;
         Pubkeys[i].height = i * KOMODO_ELECTION_GAP;
     }
     pthread_mutex_unlock(&komodo_mutex);
+    if ( height > hwmheight )
+        hwmheight = height;
 }
 
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
@@ -277,7 +278,7 @@ void komodo_assetchain_pubkeys(char *jsonstr)
             {
                 komodo_init(-1);
                 komodo_notarysinit(0,pubkeys,n);
-                printf("initialize pubkeys[%d]\n",n);
+                //printf("initialize pubkeys[%d]\n",n);
             } else fprintf(stderr,"komodo_assetchain_pubkeys i.%d vs n.%d\n",i,n);
         } else fprintf(stderr,"assetchain pubkeys n.%d\n",n);
     }
