@@ -138,8 +138,7 @@ void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
     static int32_t hwmheight;
     int32_t k,i,htind,nonz; struct knotary_entry *kp; struct knotaries_entry N;
     memset(&N,0,sizeof(N));
-    if ( (htind= KOMODO_PUBKEYS_HEIGHT(height) / KOMODO_ELECTION_GAP) == 0 )
-        htind = 1;
+    htind = (KOMODO_PUBKEYS_HEIGHT(height) / KOMODO_ELECTION_GAP) + 1;
     pthread_mutex_lock(&komodo_mutex);
     for (k=0; k<num; k++)
     {
@@ -151,7 +150,7 @@ void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
         {
             for (i=0; i<33; i++)
                 printf("%02x",pubkeys[k][i]);
-            printf(" notarypubs.[%d] ht.%d active at %d\n",k,height,KOMODO_PUBKEYS_HEIGHT(height));
+            printf(" notarypubs.[%d] ht.%d active at %d\n",k,height,htind*KOMODO_ELECTION_GAP);
         }
     }
     N.numnotaries = num;
