@@ -53,7 +53,13 @@ const char *Notaries_genesis[][2] =
 };
 
 #define KOMODO_ELECTION_GAP ((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)
-#define KOMODO_PUBKEYS_HEIGHT(height) ((int32_t)(((((height)+KOMODO_ELECTION_GAP*.5)/KOMODO_ELECTION_GAP) + 1) * KOMODO_ELECTION_GAP))
+
+int32_t KOMODO_PUBKEYS_HEIGHT(int32_t height)
+{
+    height += KOMODO_ELECTION_GAP/2;
+    height /= KOMODO_ELECTION_GAP;
+    return((height + 1) * KOMODO_ELECTION_GAP);
+}
 
 struct nutxo_entry { UT_hash_handle hh; uint256 txhash; uint64_t voutmask; int32_t notaryid,height; } *NUTXOS;
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
