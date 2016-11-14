@@ -150,6 +150,37 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
             errorString = e.error['message']
         assert_equal("Insufficient funds, coinbase funds can only be spent after they have been sent to a zaddr" in errorString, True)
 
+        # Verify that mempools accept tx with joinsplits which have at least the default z_sendmany fee.
+        # If this test passes, it confirms that issue #1851 has been resolved, where sending from
+        # a zaddr to 1385 taddr recipients fails because the default fee was considered too low
+        # given the tx size, resulting in mempool rejection.
+        errorString = ''
+        recipients = []
+        num_t_recipients = 2500
+        amount_per_recipient = Decimal('0.00000546') # dust threshold
+        # Note that regtest chainparams does not require standard tx, so setting the amount to be
+        # less than the dust threshold, e.g. 0.00000001 will not result in mempool rejection.
+        for i in xrange(0,num_t_recipients):
+            newtaddr = self.nodes[2].getnewaddress()
+            recipients.append({"address":newtaddr, "amount":amount_per_recipient})
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
+        try:
+            self.wait_and_assert_operationid_status(myopid)
+        except JSONRPCException as e:
+            print("JSONRPC error: "+e.error['message'])
+            assert(False)
+        except Exception as e:
+            print("Unexpected exception caught during testing: "+str(sys.exc_info()[0]))
+            assert(False)
+
+        self.sync_all()
+        self.nodes[1].generate(1)
+        self.sync_all()
+
+        # check balance
+        node2balance = amount_per_recipient * num_t_recipients
+        assert_equal(self.nodes[2].getbalance(), node2balance)
+
         # Send will succeed because the balance of non-coinbase utxos is 10.0
         try:
             self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 9)
@@ -161,7 +192,8 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
 
         # check balance
-        assert_equal(self.nodes[2].getbalance(), 9)
+        node2balance = node2balance + 9
+        assert_equal(self.nodes[2].getbalance(), node2balance)
 
         # Check that chained joinsplits in a single tx are created successfully.
         recipients = []
