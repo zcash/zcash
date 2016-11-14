@@ -399,7 +399,7 @@ int32_t komodo_is_notarytx(const CTransaction& tx)
     decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
     if ( memcmp(ptr+1,crypto777,33) == 0 )
     {
-        printf("found notarytx\n");
+        //printf("found notarytx\n");
         return(1);
     }
     else return(0);
