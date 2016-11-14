@@ -461,7 +461,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             if ( signedmask != 0 && (notarizedheight != 0 || specialtx != 0) )
             {
                 printf("NOTARY SIGNED.%llx numvins.%d ht.%d txi.%d notaryht.%d specialtx.%d\n",(long long)signedmask,numvins,height,i,notarizedheight,specialtx);
-                if ( specialtx != 0 && isratification != 0 && numvouts > 2 && komodo_ratify_threshold(height,signedmask) > 0 )
+                if ( specialtx != 0 && isratification != 0 && numvouts > 2 )
                 {
                     numvalid = 0;
                     memset(pubkeys,0,sizeof(pubkeys));
@@ -484,7 +484,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                             }
                         }
                     }
-                    if ( numvalid >= KOMODO_MINRATIFY )
+                    if ( ((signedmask & 1) != 0 && numvalid >= KOMODO_MINRATIFY) || bitweight(signedmask) > (bp->numnotaries>>1) )
                     {
                         memset(&txhash,0,sizeof(txhash));
                         komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0,0,0,0,0,0,0,0);
