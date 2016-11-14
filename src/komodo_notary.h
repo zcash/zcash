@@ -135,6 +135,8 @@ void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
         return;
     hwmheight = height;
     memset(&N,0,sizeof(N));
+    if ( (htind= KOMODO_PUBKEYS_HEIGHT(height) / KOMODO_ELECTION_GAP) == 0 )
+        htind = 1;
     pthread_mutex_lock(&komodo_mutex);
     for (k=0; k<num; k++)
     {
@@ -146,12 +148,10 @@ void komodo_notarysinit(int32_t height,uint8_t pubkeys[64][33],int32_t num)
         {
             for (i=0; i<33; i++)
                 printf("%02x",pubkeys[k][i]);
-            printf(" notarypubs.[%d] ht.%d\n",k,height);
+            printf(" notarypubs.[%d] ht.%d active at %d\n",k,height,htind*KOMODO_ELECTION_GAP);
         }
     }
     N.numnotaries = num;
-    if ( (htind= KOMODO_PUBKEYS_HEIGHT(height) / KOMODO_ELECTION_GAP) == 0 )
-        htind = 1;
     for (i=htind; i<sizeof(Pubkeys)/sizeof(*Pubkeys); i++)
     {
         Pubkeys[i] = N;
