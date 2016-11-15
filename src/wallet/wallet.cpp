@@ -2219,7 +2219,8 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                                 fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
                                 ptr = (uint64_t *)&pcoin->vout[i].nValue;
                                 (*ptr) += interest;
-                                pcoin->vout[i].interest = interest;
+                                ptr = (uint64_t *)&pcoin->vout[i].interest;
+                                (*ptr) = interest;
                                 //pcoin->vout[i].nValue += interest;
                             }
                         }
