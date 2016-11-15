@@ -72,6 +72,8 @@ void EnsureWalletIsUnlocked()
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please enter the wallet passphrase with walletpassphrase first.");
 }
 
+uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue);
+
 void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
 {
     int32_t i,n,txheight; uint32_t locktime; uint64_t interest = 0; int confirms = wtx.GetDepthInMainChain();
