@@ -253,7 +253,7 @@ Value getrawtransaction(const Array& params, bool fHelp)
     return result;
 }
 
-uint32_t komodo_interest_args(int32_t *txheightp,int32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
+uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 
 Value gettxoutproof(const Array& params, bool fHelp)
 {
