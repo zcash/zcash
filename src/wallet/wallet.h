@@ -151,7 +151,6 @@ struct COutputEntry
     CTxDestination destination;
     CAmount amount;
     int vout;
-    uint64_t interest;
 };
 
 /** An note outpoint */
@@ -348,7 +347,7 @@ public:
     char fFromMe;
     std::string strFromAccount;
     int64_t nOrderPos; //! position in ordered transaction list
-    uint64_t interest;
+
     // memory only
     mutable bool fDebitCached;
     mutable bool fCreditCached;
