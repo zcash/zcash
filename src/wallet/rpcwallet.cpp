@@ -74,7 +74,7 @@ void EnsureWalletIsUnlocked()
 
 void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
 {
-    int confirms = wtx.GetDepthInMainChain();
+    int32_t i,n,txheight; uint32_t locktime; uint64_t interest = 0; int confirms = wtx.GetDepthInMainChain();
     entry.push_back(Pair("confirmations", confirms));
     if (wtx.IsCoinBase())
         entry.push_back(Pair("generated", true));
@@ -86,6 +86,11 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
     }
     uint256 hash = wtx.GetHash();
     entry.push_back(Pair("txid", hash.GetHex()));
+    n = wtx.vout.size();
+    for (i=0; i<n; i++)
+        interest += komodo_accrued_interest(&txheight,&locktime,hash,i,0,0);
+    entry.push_back(Pair("interest", interest));
+
     Array conflicts;
     BOOST_FOREACH(const uint256& conflict, wtx.GetConflicts())
         conflicts.push_back(conflict.GetHex());
