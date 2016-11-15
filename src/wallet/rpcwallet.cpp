@@ -2498,8 +2498,6 @@ uint64_t komod_interestsum()
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
     BOOST_FOREACH(const COutput& out,vecOutputs)
     {
-        if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
-            continue;
         CAmount nValue = out.tx->vout[out.i].nValue;
         if ( out.tx->nLockTime != 0 )
         {
