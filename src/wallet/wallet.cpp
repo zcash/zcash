@@ -2415,6 +2415,7 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
             if(!out.fSpendable)
                 continue;
             nValueRet += out.tx->vout[out.i].nValue;
+            fprintf(stderr,"[%.8f] ",(double)out.tx->vout[out.i].nValue/COIN);
             setCoinsRet.insert(make_pair(out.tx, out.i));
         }
         return (nValueRet >= nTargetValue);
@@ -2557,8 +2558,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                         age += 1;
                     dPriority += (double)nCredit * age;
                 }
-
                 CAmount nChange = nValueIn - nValue;
+fprintf(stderr,"wallet sum %.8f (%.8f - %.8f)\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN);
                 if (nSubtractFeeFromAmount == 0)
                     nChange -= nFeeRet;
 
