@@ -2494,7 +2494,7 @@ Value listunspent(const Array& params, bool fHelp)
     return results;
 }
 
-uint64_t komod_interestsum()
+uint64_t komodo_interestsum()
 {
     uint64_t interest,sum = 0;
     vector<COutput> vecOutputs;
@@ -3210,9 +3210,11 @@ Value z_gettotalbalance(const Array& params, bool fHelp)
     // so we use our own method to get balance of utxos.
     CAmount nBalance = getBalanceTaddr("", nMinDepth);
     CAmount nPrivateBalance = getBalanceZaddr("", nMinDepth);
-    CAmount nTotalBalance = nBalance + nPrivateBalance;
+    uint64_t interest = komodo_interestsum();
+    CAmount nTotalBalance = nBalance + nPrivateBalance + interest;
     Object result;
     result.push_back(Pair("transparent", FormatMoney(nBalance, false)));
+    result.push_back(Pair("interest", FormatMoney(interest, false)));
     result.push_back(Pair("private", FormatMoney(nPrivateBalance, false)));
     result.push_back(Pair("total", FormatMoney(nTotalBalance, false)));
     return result;
