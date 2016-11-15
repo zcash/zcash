@@ -2278,8 +2278,7 @@ static void ApproximateBestSubset(vector<pair<CAmount, pair<const CWalletTx*,uns
     }
 }
 
-bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, vector<COutput> vCoins,
-                                 set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet) const
+bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, vector<COutput> vCoins,set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet) const
 {
     setCoinsRet.clear();
     nValueRet = 0;
@@ -2549,9 +2548,11 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     }
                     return false;
                 }
+                interest = 0;
                 BOOST_FOREACH(PAIRTYPE(const CWalletTx*, unsigned int) pcoin, setCoins)
                 {
                     CAmount nCredit = pcoin.first->vout[pcoin.second].nValue;
+                    fprintf(stderr,"val %.8f interest %.8f\n",(double)nCredit/COIN,(double)pcoin.first->vout[pcoin.second].interest);
                     interest += pcoin.first->vout[pcoin.second].interest;
                     //The coin age after the next block (depth+1) is used instead of the current,
                     //reflecting an assumption the user would accept a bit more delay for
@@ -2562,7 +2563,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                         age += 1;
                     dPriority += (double)nCredit * age;
                 }
-                CAmount nChange = nValueIn - nValue + interest;
+                CAmount nChange = (nValueIn - nValue + interest);
 fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest/COIN);
                 if (nSubtractFeeFromAmount == 0)
                     nChange -= nFeeRet;
