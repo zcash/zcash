@@ -122,16 +122,17 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
     entry.push_back(Pair("vin", vin));
     Array vout;
     BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-    CBlockIndex *pindex = it->second;
+    CBlockIndex *tipindex,*pindex = it->second;
     uint64_t interest;
     for (unsigned int i = 0; i < tx.vout.size(); i++) {
         const CTxOut& txout = tx.vout[i];
         Object out;
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
-        if ( pindex != 0 && tx.nLockTime != 0 )
+        if ( pindex != 0 && tx.nLockTime != 0 && (tipindex= chainActive.Tip()) != 0 )
         {
-            interest = komodo_interest(pindex->nHeight,txout.nValue,tx.nLockTime,pindex->nTime);
-            //fprintf(stderr,"TxtoJSON interest %llu %.8f\n",(long long)interest,(double)interest/COIN);
+            interest = komodo_interest(pindex->nHeight,txout.nValue,tx.nLockTime,tipindex->nTime);
+            if ( strcmp("REVS",ASSETCHAINS_SYMBOL) == 0 )
+                fprintf(stderr,"TxtoJSON interest %llu %.8f (%d %llu %u %u)\n",(long long)interest,(double)interest/COIN,(int32_t)pindex->nHeight,(long long)txout.nValue,(uint32_t)tx.nLockTime,(int32_t)pcoinsTip->nTime);
             out.push_back(Pair("interest", ValueFromAmount(interest)));
         }
         out.push_back(Pair("n", (int64_t)i));
@@ -251,19 +252,22 @@ Value getrawtransaction(const Array& params, bool fHelp)
     return result;
 }
 
-uint32_t komodo_interest_args(int32_t *prevblockheightp,int32_t *prevblocktimep,uint64_t *valuep,uint256 hash,int32_t n)
+uint32_t komodo_interest_args(int32_t *txheightp,int32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n)
 {
-    //interest = komodo_interest(pindex->nHeight,txout.nValue,tx.nLockTime,pindex->nTime);
     LOCK(cs_main);
-    CTransaction tx;
-    uint256 hashBlock;
+    CTransaction tx; uint256 hashBlock; CBlockIndex *pindex,*tipindex;
     if ( !GetTransaction(hash,tx,hashBlock,true) )
         return(0);
     uint32_t locktime = 0;
     if ( n < tx.vout.size() )
     {
-        locktime = tx.nLockTime;
-        //TxToJSON(tx,hashBlock,result);
+        if ( (pindex= map[hashBlock]) != 0 && (tipindex= chainActive.Tip()) != 0 )
+        {
+            *valuep = tx.vout[n].nValue;
+            *txheightp = pindex->nHeight;
+            *tiptimep = tipindex->nTime;
+            locktime = tx.nLockTime;
+        }
     }
     return(locktime);
 }

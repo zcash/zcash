@@ -2473,11 +2473,11 @@ Value listunspent(const Array& params, bool fHelp)
         if ( out.tx->nLockTime != 0 )
         {
             BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-            CBlockIndex *pindex = it->second;
+            CBlockIndex *tipindex,*pindex = it->second;
             uint64_t interest;
-            if ( pindex != 0 )
+            if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
             {
-                interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,pindex->nTime);
+                interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,tipindex->nTime);
                 entry.push_back(Pair("interest",ValueFromAmount(interest)));
             }
         }

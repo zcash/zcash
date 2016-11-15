@@ -15,7 +15,7 @@
 
 #define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))   // 5%
 
-uint64_t komodo_accrued_interest(int32_t height,int64_t paidinterest)
+uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
 {
     static uint64_t *interests; static int32_t maxheight;
     uint64_t total; int32_t ind,incr = 100000;
@@ -50,15 +50,15 @@ uint64_t komodo_accrued_interest(int32_t height,int64_t paidinterest)
 
 uint64_t komodo_moneysupply(int32_t height)
 {
-    if ( height <= 1 )
+    if ( height <= 1 || ASSETCHAINS_SYMBOL[0] == 0 )
         return(0);
-    else return(COIN * 100000000 + (height-1) * 3 + komodo_accrued_interest(height,-1));
+    else return(COIN * 100000000 + (height-1) * 3 + komodo_earned_interest(height,-1));
 }
 
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
     int32_t minutes; uint64_t numerator,denominator,interest = 0;
-    if ( komodo_moneysupply(txheight) < MAX_MONEY && nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= COIN )
+    if ( komodo_moneysupply(txheight) < MAX_MONEY && nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= 100*COIN )
     {
         if ( (minutes= (tiptime - nLockTime) / 60) > 60 )
         {
