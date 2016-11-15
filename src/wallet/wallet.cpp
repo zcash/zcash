@@ -2393,7 +2393,6 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
     if (coinControl && coinControl->HasSelected())
     {
         extern char ASSETCHAINS_SYMBOL[16];
-        uint64_t interest;
         BOOST_FOREACH(const COutput& out, vCoins)
         {
             if(!out.fSpendable)
@@ -2402,8 +2401,9 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
 #ifdef KOMODO_ENABLE_INTEREST
             if ( strcmp(ASSETCHAINS_SYMBOL,"REVS") == 0 )//&& chainActive.Tip()->nHeight+1 >= 60000 )
             {
+                uint64_t interest;
                 interest = komodo_interest(chainActive.Tip()->nHeight+1,out.tx->vout[out.i].nValue,out.tx->nLockTime,chainActive.Tip()->nTime);
-                if ( interest != 0 || value >= COIN*100 )
+                if ( interest != 0 || out.tx->vout[out.i].nValue >= COIN*100 )
                 {
                     printf("nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)out.tx->vout[out.i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,out.tx->nLockTime,chainActive.Tip()->nTime);
                     fprintf(stderr,"nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nValueRet/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,out.tx->nLockTime,chainActive.Tip()->nTime);
