@@ -1718,6 +1718,19 @@ bool NonContextualCheckInputs(const CTransaction& tx, CValidationState &state, c
 
             // Check for negative or overflow input values
             nValueIn += coins->vout[prevout.n].nValue;
+#ifdef KOMODO_ENABLE_INTEREST
+            if ( strcmp(ASSETCHAINS_SYMBOL,"REVS") == 0 )//&& nHeight >= 60000 )
+            {
+                //if ( value >= COIN*100 )
+                {
+                    int64_t interest; int32_t txheight; uint32_t locktime;
+                    interest = komodo_accrued_interest(&txheight,&locktime,prevout.hash,prevout.n,0,coins->vout[prevout.n].nValue);
+                    printf("checkResult %.8f += val %.8f interest %.8f ht.%d lock.%u tip.%u\n",(double)nResult/COIN,(double)coins->vout[prevout.n].nValue/COIN,(double)interest/COIN,txheight,locktime,tiptime);
+                    fprintf(stderr,"checkResult %.8f += val %.8f interest %.8f ht.%d lock.%u tip.%u\n",(double)nResult/COIN,(double)coins->vout[prevout.n].nValue/COIN,(double)interest/COIN,txheight,locktime,tiptime);
+                    nValueIn += interest;
+                }
+            }
+#endif
             if (!MoneyRange(coins->vout[prevout.n].nValue) || !MoneyRange(nValueIn))
                 return state.DoS(100, error("CheckInputs(): txin values out of range"),
                                  REJECT_INVALID, "bad-txns-inputvalues-outofrange");
