@@ -2337,7 +2337,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
             nTotalLower += n;
             if ( count < sizeof(interests)/sizeof(*interests) )
             {
-                fprintf(stderr,"count.%d %.8f\n",count,(double)pcoin->vout[i].interest/COIN);
+                //fprintf(stderr,"count.%d %.8f\n",count,(double)pcoin->vout[i].interest/COIN);
                 interests[count++] = pcoin->vout[i].interest;
             }
         }
@@ -2593,6 +2593,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     //reflecting an assumption the user would accept a bit more delay for
                     //a chance at a free transaction.
                     //But mempool inputs might still be in the mempool, so their age stays 0
+                    fprintf(stderr,"nCredit %.8f interest %.8f\n",(double)nCredit/COIN,(double)pcoin.first->vout[pcoin.second].interest/COIN);
                     int age = pcoin.first->GetDepthInMainChain();
                     if (age != 0)
                         age += 1;
