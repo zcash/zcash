@@ -279,7 +279,7 @@ public:
     uint256 hashBlock;
     std::vector<uint256> vMerkleBranch;
     int nIndex;
-
+    
     // memory only
     mutable bool fMerkleVerified;
 
