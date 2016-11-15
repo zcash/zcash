@@ -2209,13 +2209,15 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                     extern char ASSETCHAINS_SYMBOL[16];
                     if ( strcmp(ASSETCHAINS_SYMBOL,"REVS") == 0 && chainActive.Tip() != 0 )
                     {
-                        uint64_t interest;
+                        uint64_t interest,*ptr;
                         interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
                         if ( pcoin->vout[i].nValue >= COIN )
                         {
                             printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
                             fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
-                            pcoin->vout[i].nValue += interest;
+                            ptr = (uint64_t *)&pcoin->vout[i].nValue;
+                            (*ptr) += interest;
+                            //pcoin->vout[i].nValue += interest;
                         }
                     }
 #endif
