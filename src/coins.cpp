@@ -383,7 +383,8 @@ const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
     return coins->vout[input.prevout.n].scriptPubKey;
 }
 
-uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+//uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+uint64_t komodo_accrued_interest(uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue);
 extern char ASSETCHAINS_SYMBOL[16];
 
 CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTransaction& tx,uint32_t tiptime) const
@@ -400,8 +401,9 @@ CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTr
         if ( strcmp(ASSETCHAINS_SYMBOL,"REVS") == 0 )//&& nHeight >= 60000 )
         {
             int64_t interest;
-            interest = komodo_interest(nHeight,value,tx.nLockTime,tiptime);
-            if ( interest != 0 || value >= COIN*100 )
+            interest = komodo_accrued_interest(tx.vin[i].hash,tx.vin[i].n,nHeight,value);
+            //interest = komodo_interest(nHeight,value,tx.nLockTime,tiptime);
+            //if ( interest != 0 || value >= COIN*100 )
             {
                 printf("nResult %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nResult/COIN,(double)interest/COIN,nHeight,tx.nLockTime,tiptime);
                 fprintf(stderr,"nResult %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nResult/COIN,(double)interest/COIN,nHeight,tx.nLockTime,tiptime);
