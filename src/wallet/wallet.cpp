@@ -2280,7 +2280,9 @@ static void ApproximateBestSubset(vector<pair<CAmount, pair<const CWalletTx*,uns
 
 bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, vector<COutput> vCoins,set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet, uint64_t *interestp) const
 {
+    uint64_t interests[512],lowest_interest = 0; int32_t count = 0;
     setCoinsRet.clear();
+    memset(interests,0,sizeof(interests));
     nValueRet = 0;
     *interestp = 0;
     // List of values less than target
@@ -2318,11 +2320,13 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
         {
             vValue.push_back(coin);
             nTotalLower += n;
+            if ( count < sizeof(interests)/sizeof(*interests) )
+                interests[count++] = pcoin->vout[i].interest;
         }
         else if (n < coinLowestLarger.first)
         {
             coinLowestLarger = coin;
-            coinLowestLarger.second.first->interest = pcoin->vout[i].interest;
+            lowest_interest = pcoin->vout[i].interest;
         }
     }
 
@@ -2332,7 +2336,8 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
         {
             setCoinsRet.insert(vValue[i].second);
             nValueRet += vValue[i].first;
-            *interestp += pcoin->vout[i].interest;
+            if ( i < count )
+                *interestp += interests[i];
         }
         return true;
     }
@@ -2343,7 +2348,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
             return false;
         setCoinsRet.insert(coinLowestLarger.second);
         nValueRet += coinLowestLarger.first;
-        *interestp += pcoin->vout[i].interest;
+        *interestp += lowest_interest;
         return true;
     }
 
@@ -2363,7 +2368,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
     {
         setCoinsRet.insert(coinLowestLarger.second);
         nValueRet += coinLowestLarger.first;
-        *interestp += coinLowestLarger.second.first->interest;
+        *interestp += lowest_interest;
     }
     else {
         for (unsigned int i = 0; i < vValue.size(); i++)
@@ -2371,7 +2376,8 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
             {
                 setCoinsRet.insert(vValue[i].second);
                 nValueRet += vValue[i].first;
-                *interestp += vValue[i].second.first->interest;
+                if ( i < count )
+                    *interestp += interests[i];
             }
 
         LogPrint("selectcoins", "SelectCoins() best subset: ");
