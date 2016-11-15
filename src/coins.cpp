@@ -398,9 +398,9 @@ CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTr
         value = GetOutputFor(tx.vin[i]).nValue;
         nResult += value;
 #ifdef KOMODO_ENABLE_INTEREST
-        if ( value >= COIN )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 && nHeight >= 60000 )
         {
-            if ( ASSETCHAINS_SYMBOL[0] == 0 && nHeight >= 60000 )
+            if ( value >= 10*COIN )
             {
                 int64_t interest; int32_t txheight; uint32_t locktime;
                 interest = komodo_accrued_interest(&txheight,&locktime,tx.vin[i].prevout.hash,tx.vin[i].prevout.n,0,value);
