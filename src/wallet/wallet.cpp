@@ -2468,7 +2468,7 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
 bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                                 CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, int& nChangePosRet, std::string& strFailReason, const CCoinControl* coinControl)
 {
-    uint64_t interest = 0; CAmount nValue = 0; unsigned int nSubtractFeeFromAmount = 0;
+    uint64_t interest2,interest = 0; CAmount nValue = 0; unsigned int nSubtractFeeFromAmount = 0;
     BOOST_FOREACH (const CRecipient& recipient, vecSend)
     {
         if (nValue < 0 || recipient.nAmount < 0)
@@ -2573,7 +2573,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                 CAmount nValueIn = 0;
                 bool fOnlyCoinbaseCoins = false;
                 bool fNeedCoinbaseCoins = false;
-                interest = 0;
+                interest = interest2 = 0;
                 if (!SelectCoins(nTotalValue, setCoins, nValueIn, fOnlyCoinbaseCoins, fNeedCoinbaseCoins, coinControl,&interest))
                 {
                     if (fOnlyCoinbaseCoins && Params().GetConsensus().fCoinbaseMustBeProtected) {
@@ -2585,7 +2585,6 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     }
                     return false;
                 }
-                fprintf(stderr,"interest sum %.8f\n",(double)interest/COIN);
                 BOOST_FOREACH(PAIRTYPE(const CWalletTx*, unsigned int) pcoin, setCoins)
                 {
                     CAmount nCredit = pcoin.first->vout[pcoin.second].nValue;
@@ -2593,13 +2592,15 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     //reflecting an assumption the user would accept a bit more delay for
                     //a chance at a free transaction.
                     //But mempool inputs might still be in the mempool, so their age stays 0
-                    fprintf(stderr,"nCredit %.8f interest %.8f\n",(double)nCredit/COIN,(double)pcoin.first->vout[pcoin.second].interest/COIN);
+                    //fprintf(stderr,"nCredit %.8f interest %.8f\n",(double)nCredit/COIN,(double)pcoin.first->vout[pcoin.second].interest/COIN);
+                    interest2 += pcoin.first->vout[pcoin.second].interest;
                     int age = pcoin.first->GetDepthInMainChain();
                     if (age != 0)
                         age += 1;
                     dPriority += (double)nCredit * age;
                 }
-                CAmount nChange = (nValueIn - nValue + interest);
+                fprintf(stderr,"interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
+                CAmount nChange = (nValueIn - nValue);
 fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest/COIN);
                 if (nSubtractFeeFromAmount == 0)
                     nChange -= nFeeRet;
