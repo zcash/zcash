@@ -253,11 +253,12 @@ Value help(const Array& params, bool fHelp)
 
 Value stop(const Array& params, bool fHelp)
 {
-    // Accept the deprecated and ignored 'detach' boolean argument
+    extern char ASSETCHAINS_SYMBOL[16];
+   // Accept the deprecated and ignored 'detach' boolean argument
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "stop\n"
-            "\nStop Komodo server.");
+            "\nStop Komodo %s server.",ASSETCHAINS_SYMBOL);
     // Shutdown will take long enough that the response should get back
     StartShutdown();
     return "Komodo server stopping";
