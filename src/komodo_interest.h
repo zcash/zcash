@@ -60,7 +60,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
     int32_t minutes; uint64_t numerator,denominator,interest = 0;
     if ( komodo_moneysupply(txheight) < MAX_MONEY && nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= 10*COIN )
     {
-        if ( (minutes= (tiptime - nLockTime) / 60) > 1 )
+        if ( (minutes= (tiptime - nLockTime) / 60) >= 60 )
         {
             numerator = (nValue * KOMODO_INTEREST);
             denominator = (((uint64_t)365 * 24 * 60) / minutes);
