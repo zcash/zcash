@@ -221,7 +221,15 @@ public:
      */
     std::list<ZCIncrementalWitness> witnesses;
 
-    /** Block height corresponding to the most current witness. */
+    /**
+     * Block height corresponding to the most current witness.
+     *
+     * When we first create a CNoteData in CWallet::FindMyNotes, this is set to
+     * -1 as a placeholder. The next time CWallet::ChainTip is called, we can
+     * determine what height the witness cache for this note is valid for (even
+     * if no witnesses were cached), and so can set the correct value in
+     * CWallet::IncrementNoteWitnesses and CWallet::DecrementNoteWitnesses.
+     */
     int witnessHeight;
 
     CNoteData() : address(), nullifier(), witnessHeight {-1} { }
@@ -616,9 +624,15 @@ public:
     void ClearNoteWitnessCache();
 
 protected:
+    /**
+     * pindex is the new tip being connected.
+     */
     void IncrementNoteWitnesses(const CBlockIndex* pindex,
                                 const CBlock* pblock,
                                 ZCIncrementalMerkleTree& tree);
+    /**
+     * pindex is the old tip being disconnected.
+     */
     void DecrementNoteWitnesses(const CBlockIndex* pindex);
 
     template <typename WalletDB>

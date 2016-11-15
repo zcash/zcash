@@ -762,6 +762,8 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
                 if (nd->witnesses.size() > 0) {
                     nd->witnesses.pop_front();
                 }
+                // pindex is the block being removed, so the new witness cache
+                // height is one below it.
                 nd->witnessHeight = pindex->nHeight - 1;
             }
         }
