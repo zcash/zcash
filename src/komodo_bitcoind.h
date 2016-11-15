@@ -548,3 +548,36 @@ int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 has
     return(0);
 }
 
+uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n)
+{
+    LOCK(cs_main);
+    CTransaction tx; uint256 hashBlock; CBlockIndex *pindex,*tipindex;
+    if ( !GetTransaction(hash,tx,hashBlock,true) )
+        return(0);
+    uint32_t locktime = 0;
+    if ( n < tx.vout.size() )
+    {
+        if ( (pindex= mapBlockIndex[hashBlock]) != 0 && (tipindex= chainActive.Tip()) != 0 )
+        {
+            *valuep = tx.vout[n].nValue;
+            *txheightp = pindex->nHeight;
+            *tiptimep = tipindex->nTime;
+            locktime = tx.nLockTime;
+        }
+    }
+    return(locktime);
+}
+
+uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+uint64_t komodo_accrued_interest(uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue)
+{
+    uint64_t value; int32_t txheight; uint32_t locktime,tiptime;
+    if ( (locktime= komodo_interest_args(&txheight,&tiptime,&value,hash,n)) != 0 )
+    {
+        if ( (checkvalue == 0 || value == checkvalue) && (checkheight == 0 || txheight == checkheight) )
+            return(komodo_interest(txheight,value,locktime,tiptime));
+        //fprintf(stderr,"nValue %llu lock.%u:%u nTime.%u -> %llu\n",(long long)coins.vout[n].nValue,coins.nLockTime,timestamp,pindex->nTime,(long long)interest);
+    } else fprintf(stderr,"komodo_accrued_interest value mismatch %llu vs %llu or height mismatch %d vs %d\n",(long long)value,(long long)checkvalue,txheight,checkheight);
+    return(0);
+}
+
