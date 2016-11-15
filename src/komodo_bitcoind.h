@@ -563,6 +563,7 @@ uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *va
             *txheightp = pindex->nHeight;
             *tiptimep = tipindex->nTime;
             locktime = tx.nLockTime;
+            fprintf(stderr,"tx locktime.%u %.8f height.%d | tiptime.%u\n",locktime,(double)*valuep/COIN,*txheightp,*timetimep);
         }
     }
     return(locktime);
