@@ -2321,7 +2321,10 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
             vValue.push_back(coin);
             nTotalLower += n;
             if ( count < sizeof(interests)/sizeof(*interests) )
+            {
+                fprintf(stderr,"count.%d %.8f\n",count,(double)pcoin->vout[i].interest/COIN);
                 interests[count++] = pcoin->vout[i].interest;
+            }
         }
         else if (n < coinLowestLarger.first)
         {
