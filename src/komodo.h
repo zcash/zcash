@@ -17,11 +17,10 @@
 #define H_KOMODO_H
 
 // Todo:
-// 00. standardize interests
 // 0. optimize assetchains RT loop
 // 1. error check fiat redeem amounts
 // 2. net balance limiter
-// 3. verify: interest payment, reorgs
+// 3. verify: reorgs
 // 4. automate notarization fee payouts
 // 5. automated distribution of test REVS snapshot
 

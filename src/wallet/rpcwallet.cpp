@@ -2489,6 +2489,32 @@ Value listunspent(const Array& params, bool fHelp)
     return results;
 }
 
+uint64_t komod_interestsum()
+{
+    uint64_t interest,sum = 0;
+    vector<COutput> vecOutputs;
+    assert(pwalletMain != NULL);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    BOOST_FOREACH(const COutput& out,vecOutputs)
+    {
+        if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
+            continue;
+        CAmount nValue = out.tx->vout[out.i].nValue;
+        if ( out.tx->nLockTime != 0 )
+        {
+            BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+            CBlockIndex *tipindex,*pindex = it->second;
+            if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
+            {
+                interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,tipindex->nTime);
+                sum += interest;
+            }
+        }
+    }
+    return(sum);
+}
+
 Value zc_sample_joinsplit(const json_spirit::Array& params, bool fHelp)
 {
     if (fHelp) {

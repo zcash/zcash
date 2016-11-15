@@ -39,6 +39,8 @@ using namespace std;
  *
  * Or alternatively, create a specific query method for the information.
  **/
+uint64_t komod_interestsum();
+
 Value getinfo(const Array& params, bool fHelp)
 {
     extern uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
@@ -90,6 +92,7 @@ Value getinfo(const Array& params, bool fHelp)
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
         obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
+        obj.push_back(Pair("interest",       ValueFromAmount(komod_interestsum())));
     }
 #endif
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
