@@ -400,16 +400,16 @@ CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTr
 #ifdef KOMODO_ENABLE_INTEREST
         if ( strcmp(ASSETCHAINS_SYMBOL,"REVS") == 0 )//&& nHeight >= 60000 )
         {
-            int64_t interest;
-            interest = komodo_accrued_interest(GetOutputFor(tx.vin[i]).hash,GetOutputFor(tx.vin[i]).n,nHeight,value);
-            //interest = komodo_interest(nHeight,value,tx.nLockTime,tiptime);
-            //if ( interest != 0 || value >= COIN*100 )
+            //if ( value >= COIN*100 )
             {
+                int64_t interest;
+                interest = komodo_accrued_interest(tx.vin[i].prevout.hash,tx.vin[i].prevout.n,nHeight,value);
+                //interest = komodo_interest(nHeight,value,tx.nLockTime,tiptime);
                 printf("nResult %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nResult/COIN,(double)interest/COIN,nHeight,tx.nLockTime,tiptime);
                 fprintf(stderr,"nResult %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nResult/COIN,(double)interest/COIN,nHeight,tx.nLockTime,tiptime);
+                nResult += interest;
+                (*interestp) += interest;
             }
-            nResult += interest;
-            (*interestp) += interest;
         }
 #endif
     }
