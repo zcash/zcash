@@ -155,8 +155,8 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     }
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");
-    if ( height > 70000 )
-        bnTarget /= 64;
+    //if ( height > 70000 )
+    //    bnTarget /= 64;
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {

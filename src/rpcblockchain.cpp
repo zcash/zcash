@@ -577,6 +577,7 @@ Value gettxout(const Array& params, bool fHelp)
     
     CBlockIndex *pblockindex = chainActive[coins.nHeight];
     uint64_t interest; uint32_t timestamp=0;
+    
     if ( pblockindex != 0 )
         timestamp = pblockindex->nTime; // this is approx, but cant figure out how to get tx here
     interest = komodo_interest(coins.nHeight,coins.vout[n].nValue,timestamp,pindex->nTime);

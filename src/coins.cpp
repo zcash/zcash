@@ -408,8 +408,8 @@ CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTr
             }
             nResult += interest;
         }
-#endif
         (*interestp) += interest;
+#endif
     }
     nResult += tx.GetJoinSplitValueIn();
 

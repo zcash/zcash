@@ -251,6 +251,23 @@ Value getrawtransaction(const Array& params, bool fHelp)
     return result;
 }
 
+uint32_t komodo_interest_args(int32_t *prevblockheightp,int32_t *prevblocktimep,uint64_t *valuep,uint256 hash,int32_t n)
+{
+    //interest = komodo_interest(pindex->nHeight,txout.nValue,tx.nLockTime,pindex->nTime);
+    LOCK(cs_main);
+    CTransaction tx;
+    uint256 hashBlock;
+    if ( !GetTransaction(hash,tx,hashBlock,true) )
+        return(0);
+    uint32_t locktime = 0;
+    if ( n < tx.vout.size() )
+    {
+        locktime = tx.nLockTime;
+        //TxToJSON(tx,hashBlock,result);
+    }
+    return(locktime);
+}
+
 Value gettxoutproof(const Array& params, bool fHelp)
 {
     if (fHelp || (params.size() != 1 && params.size() != 2))

@@ -17,6 +17,7 @@
 #define H_KOMODO_H
 
 // Todo:
+// 00. standardize interests
 // 0. optimize assetchains RT loop
 // 1. error check fiat redeem amounts
 // 2. net balance limiter
