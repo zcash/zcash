@@ -380,7 +380,7 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
     return ret;
 }
 
-uint32_t komodo_interest_args(int32_t *prevblockheightp,int32_t *prevblocktimep,uint64_t *valuep,uint256 hash,int32_t n);
+uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint32_t komodo_txtime(uint256 hash);
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume);
@@ -507,11 +507,11 @@ Value paxprices(const Array& params, bool fHelp)
 
 uint64_t komodo_accrued_interest(uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue)
 {
-    uint64_t value; int32_t txheight; uint32_t locktime,prevblocktime;
-    if ( (locktime= komodo_interest_args(&txheight,&prevblocktime,&value,hash,n)) != 0 )
+    uint64_t value; int32_t txheight; uint32_t locktime,tiptime;
+    if ( (locktime= komodo_interest_args(&txheight,&tiptime,&value,hash,n)) != 0 )
     {
         if ( (checkvalue == 0 || value == checkvalue) && (checkheight == 0 || txheight == checkheight) )
-            return(komodo_interest(txheight,value,locktime,prevblocktime));
+            return(komodo_interest(txheight,value,locktime,tiptime));
         //fprintf(stderr,"nValue %llu lock.%u:%u nTime.%u -> %llu\n",(long long)coins.vout[n].nValue,coins.nLockTime,timestamp,pindex->nTime,(long long)interest);
     } else fprintf(stderr,"komodo_accrued_interest value mismatch %llu vs %llu or height mismatch %d vs %d\n",(long long)value,(long long)checkvalue,txheight,checkheight);
     return(0);
@@ -587,6 +587,7 @@ Value gettxout(const Array& params, bool fHelp)
         ret.push_back(Pair("confirmations", 0));
     else ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
+    uint64_t interest;
     if ( (interest= komodo_accrued_interest(hash,n,coins.nHeight,coins.vout[n].nValue)) != 0 )
         ret.push_back(Pair("interest", ValueFromAmount(interest)));
     Object o;
