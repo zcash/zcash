@@ -130,9 +130,10 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
         if ( pindex != 0 && tx.nLockTime != 0 && (tipindex= chainActive.Tip()) != 0 )
         {
+            extern char ASSETCHAINS_SYMBOL[16];
             interest = komodo_interest(pindex->nHeight,txout.nValue,tx.nLockTime,tipindex->nTime);
             if ( strcmp("REVS",ASSETCHAINS_SYMBOL) == 0 )
-                fprintf(stderr,"TxtoJSON interest %llu %.8f (%d %llu %u %u)\n",(long long)interest,(double)interest/COIN,(int32_t)pindex->nHeight,(long long)txout.nValue,(uint32_t)tx.nLockTime,(int32_t)pcoinsTip->nTime);
+                fprintf(stderr,"TxtoJSON interest %llu %.8f (%d %llu %u %u)\n",(long long)interest,(double)interest/COIN,(int32_t)pindex->nHeight,(long long)txout.nValue,(uint32_t)tx.nLockTime,(int32_t)tipindex->nTime);
             out.push_back(Pair("interest", ValueFromAmount(interest)));
         }
         out.push_back(Pair("n", (int64_t)i));
@@ -261,7 +262,7 @@ uint32_t komodo_interest_args(int32_t *txheightp,int32_t *tiptimep,uint64_t *val
     uint32_t locktime = 0;
     if ( n < tx.vout.size() )
     {
-        if ( (pindex= map[hashBlock]) != 0 && (tipindex= chainActive.Tip()) != 0 )
+        if ( (pindex= mapBlockIndex[hashBlock]) != 0 && (tipindex= chainActive.Tip()) != 0 )
         {
             *valuep = tx.vout[n].nValue;
             *txheightp = pindex->nHeight;
