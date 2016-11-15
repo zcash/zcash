@@ -1027,6 +1027,7 @@ TEST(wallet_tests, UpdatedNoteData) {
     // Pretend we mined the tx by adding a fake witness
     ZCIncrementalMerkleTree tree;
     wtx.mapNoteData[jsoutpt].witnesses.push_front(tree.witness());
+    wtx.mapNoteData[jsoutpt].witnessHeight = 100;
 
     // Now pretend we added the key for the second note, and
     // the tx was "added" to the wallet again to update it.
@@ -1039,11 +1040,13 @@ TEST(wallet_tests, UpdatedNoteData) {
     // The txs should initially be different
     EXPECT_NE(wtx.mapNoteData, wtx2.mapNoteData);
     EXPECT_EQ(1, wtx.mapNoteData[jsoutpt].witnesses.size());
+    EXPECT_EQ(100, wtx.mapNoteData[jsoutpt].witnessHeight);
 
     // After updating, they should be the same
     EXPECT_TRUE(wallet.UpdatedNoteData(wtx2, wtx));
     EXPECT_EQ(wtx.mapNoteData, wtx2.mapNoteData);
     EXPECT_EQ(1, wtx.mapNoteData[jsoutpt].witnesses.size());
+    EXPECT_EQ(100, wtx.mapNoteData[jsoutpt].witnessHeight);
     // TODO: The new note should get witnessed (but maybe not here) (#1350)
 }
 

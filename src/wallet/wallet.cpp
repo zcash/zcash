@@ -1106,6 +1106,7 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
             tmp.at(nd.first).witnesses.assign(
                 nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
         }
+        tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
     }
     // Now copy over the updated note data
     wtx.mapNoteData = tmp;
