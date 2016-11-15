@@ -2208,7 +2208,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                 {
 #ifdef KOMODO_ENABLE_INTEREST
                     extern char ASSETCHAINS_SYMBOL[16];
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 && nHeight >= 60000 && chainActive.Tip() != 0 )
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight >= 60000 )
                     {
                         if ( pcoin->vout[i].nValue >= 10*COIN )
                         {
