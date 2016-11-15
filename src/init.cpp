@@ -987,12 +987,13 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         threadGroup.create_thread(&ThreadShowMetricsScreen);
     }
 
-    // Initialize Zcash circuit parameters
-    ZC_LoadParams();
     // These must be disabled for now, they are buggy and we probably don't
     // want any of libsnark's profiling in production anyway.
     libsnark::inhibit_profiling_info = true;
     libsnark::inhibit_profiling_counters = true;
+
+    // Initialize Zcash circuit parameters
+    ZC_LoadParams();
 
     /* Start the RPC server already.  It will be started in "warmup" mode
      * and not really process calls already (but it will signify connections
