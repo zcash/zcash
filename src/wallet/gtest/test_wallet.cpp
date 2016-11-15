@@ -50,8 +50,8 @@ public:
                                 ZCIncrementalMerkleTree tree) {
         CWallet::IncrementNoteWitnesses(pindex, pblock, tree);
     }
-    void DecrementNoteWitnesses() {
-        CWallet::DecrementNoteWitnesses();
+    void DecrementNoteWitnesses(const CBlockIndex* pindex) {
+        CWallet::DecrementNoteWitnesses(pindex);
     }
     void WriteWitnessCache(MockWalletDB& walletdb) {
         CWallet::WriteWitnessCache(walletdb);
@@ -675,7 +675,7 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
     EXPECT_TRUE((bool) witnesses[1]);
 
     // Until #1302 is implemented, this should triggger an assertion
-    EXPECT_DEATH(wallet.DecrementNoteWitnesses(),
+    EXPECT_DEATH(wallet.DecrementNoteWitnesses(&index),
                  "Assertion `nWitnessCacheSize > 0' failed.");
 }
 
@@ -748,7 +748,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
 
         // Decrementing should give us the previous anchor
         uint256 anchor3;
-        wallet.DecrementNoteWitnesses();
+        wallet.DecrementNoteWitnesses(&index2);
         witnesses.clear();
         wallet.GetNoteWitnesses(notes, witnesses, anchor3);
         EXPECT_FALSE((bool) witnesses[0]);
@@ -773,6 +773,101 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
     }
 }
 
+TEST(wallet_tests, CachedWitnessesDecrementFirst) {
+    TestWallet wallet;
+    uint256 anchor2;
+    CBlock block2;
+    CBlockIndex index2(block2);
+    ZCIncrementalMerkleTree tree;
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    {
+        // First transaction (case tested in _empty_chain)
+        auto wtx = GetValidReceive(sk, 10, true);
+        auto note = GetNote(sk, wtx, 0, 1);
+        auto nullifier = note.nullifier(sk);
+
+        mapNoteData_t noteData;
+        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+        CNoteData nd {sk.address(), nullifier};
+        noteData[jsoutpt] = nd;
+        wtx.SetNoteData(noteData);
+        wallet.AddToWallet(wtx, true, NULL);
+
+        // First block (case tested in _empty_chain)
+        CBlock block1;
+        block1.vtx.push_back(wtx);
+        CBlockIndex index1(block1);
+        index1.nHeight = 1;
+        wallet.IncrementNoteWitnesses(&index1, &block1, tree);
+    }
+
+    {
+        // Second transaction (case tested in _chain_tip)
+        auto wtx = GetValidReceive(sk, 50, true);
+        auto note = GetNote(sk, wtx, 0, 1);
+        auto nullifier = note.nullifier(sk);
+
+        mapNoteData_t noteData;
+        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+        CNoteData nd {sk.address(), nullifier};
+        noteData[jsoutpt] = nd;
+        wtx.SetNoteData(noteData);
+        wallet.AddToWallet(wtx, true, NULL);
+
+        std::vector<JSOutPoint> notes {jsoutpt};
+        std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+
+        // Second block (case tested in _chain_tip)
+        block2.vtx.push_back(wtx);
+        index2.nHeight = 2;
+        wallet.IncrementNoteWitnesses(&index2, &block2, tree);
+        // Called to fetch anchor
+        wallet.GetNoteWitnesses(notes, witnesses, anchor2);
+    }
+
+    {
+        // Third transaction - never mined
+        auto wtx = GetValidReceive(sk, 20, true);
+        auto note = GetNote(sk, wtx, 0, 1);
+        auto nullifier = note.nullifier(sk);
+
+        mapNoteData_t noteData;
+        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+        CNoteData nd {sk.address(), nullifier};
+        noteData[jsoutpt] = nd;
+        wtx.SetNoteData(noteData);
+        wallet.AddToWallet(wtx, true, NULL);
+
+        std::vector<JSOutPoint> notes {jsoutpt};
+        std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+        uint256 anchor3;
+
+        wallet.GetNoteWitnesses(notes, witnesses, anchor3);
+        EXPECT_FALSE((bool) witnesses[0]);
+
+        // Decrementing (before the transaction has ever seen an increment)
+        // should give us the previous anchor
+        uint256 anchor4;
+        wallet.DecrementNoteWitnesses(&index2);
+        witnesses.clear();
+        wallet.GetNoteWitnesses(notes, witnesses, anchor4);
+        EXPECT_FALSE((bool) witnesses[0]);
+        // Should not equal second anchor because none of these notes had witnesses
+        EXPECT_NE(anchor2, anchor4);
+
+        // Re-incrementing with the same block should give the same result
+        uint256 anchor5;
+        wallet.IncrementNoteWitnesses(&index2, &block2, tree);
+        witnesses.clear();
+        wallet.GetNoteWitnesses(notes, witnesses, anchor5);
+        EXPECT_FALSE((bool) witnesses[0]);
+        EXPECT_EQ(anchor3, anchor5);
+    }
+}
+
 TEST(wallet_tests, ClearNoteWitnessCache) {
     TestWallet wallet;
 
@@ -780,6 +875,7 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     wallet.AddSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
+    auto hash = wtx.GetHash();
     auto note = GetNote(sk, wtx, 0, 0);
     auto nullifier = note.nullifier(sk);
 
@@ -793,6 +889,8 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     // Pretend we mined the tx by adding a fake witness
     ZCIncrementalMerkleTree tree;
     wtx.mapNoteData[jsoutpt].witnesses.push_front(tree.witness());
+    wtx.mapNoteData[jsoutpt].witnessHeight = 1;
+    wallet.nWitnessCacheSize = 1;
 
     wallet.AddToWallet(wtx, true, NULL);
 
@@ -804,6 +902,8 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     wallet.GetNoteWitnesses(notes, witnesses, anchor2);
     EXPECT_TRUE((bool) witnesses[0]);
     EXPECT_FALSE((bool) witnesses[1]);
+    EXPECT_EQ(1, wallet.mapWallet[hash].mapNoteData[jsoutpt].witnessHeight);
+    EXPECT_EQ(1, wallet.nWitnessCacheSize);
 
     // After clearing, we should not have a witness for either note
     wallet.ClearNoteWitnessCache();
@@ -811,6 +911,8 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     wallet.GetNoteWitnesses(notes, witnesses, anchor2);
     EXPECT_FALSE((bool) witnesses[0]);
     EXPECT_FALSE((bool) witnesses[1]);
+    EXPECT_EQ(-1, wallet.mapWallet[hash].mapNoteData[jsoutpt].witnessHeight);
+    EXPECT_EQ(0, wallet.nWitnessCacheSize);
 }
 
 TEST(wallet_tests, WriteWitnessCache) {
@@ -932,6 +1034,7 @@ TEST(wallet_tests, UpdatedNoteData) {
     // Pretend we mined the tx by adding a fake witness
     ZCIncrementalMerkleTree tree;
     wtx.mapNoteData[jsoutpt].witnesses.push_front(tree.witness());
+    wtx.mapNoteData[jsoutpt].witnessHeight = 100;
 
     // Now pretend we added the key for the second note, and
     // the tx was "added" to the wallet again to update it.
@@ -944,11 +1047,13 @@ TEST(wallet_tests, UpdatedNoteData) {
     // The txs should initially be different
     EXPECT_NE(wtx.mapNoteData, wtx2.mapNoteData);
     EXPECT_EQ(1, wtx.mapNoteData[jsoutpt].witnesses.size());
+    EXPECT_EQ(100, wtx.mapNoteData[jsoutpt].witnessHeight);
 
     // After updating, they should be the same
     EXPECT_TRUE(wallet.UpdatedNoteData(wtx2, wtx));
     EXPECT_EQ(wtx.mapNoteData, wtx2.mapNoteData);
     EXPECT_EQ(1, wtx.mapNoteData[jsoutpt].witnesses.size());
+    EXPECT_EQ(100, wtx.mapNoteData[jsoutpt].witnessHeight);
     // TODO: The new note should get witnessed (but maybe not here) (#1350)
 }
 
