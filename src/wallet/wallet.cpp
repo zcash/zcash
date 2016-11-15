@@ -2173,6 +2173,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
 
 void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const CCoinControl *coinControl, bool fIncludeZeroValue, bool fIncludeCoinBase) const
 {
+    uint64_t interest,*ptr;
     vCoins.clear();
 
     {
@@ -2209,7 +2210,6 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                     extern char ASSETCHAINS_SYMBOL[16];
                     if ( strcmp(ASSETCHAINS_SYMBOL,"REVS") == 0 && chainActive.Tip() != 0 )
                     {
-                        uint64_t interest,*ptr;
                         if ( pcoin->vout[i].nValue >= COIN )
                         {
                             interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
