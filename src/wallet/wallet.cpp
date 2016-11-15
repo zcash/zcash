@@ -2210,14 +2210,18 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                     if ( strcmp(ASSETCHAINS_SYMBOL,"REVS") == 0 && chainActive.Tip() != 0 )
                     {
                         uint64_t interest,*ptr;
-                        interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
                         if ( pcoin->vout[i].nValue >= COIN )
                         {
-                            printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
-                            fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
-                            ptr = (uint64_t *)&pcoin->vout[i].nValue;
-                            (*ptr) += interest;
-                            //pcoin->vout[i].nValue += interest;
+                            interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
+                            if ( interest != 0 && pcoin->vout[i].addedinterest == 0 )
+                            {
+                                printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
+                                fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
+                                ptr = (uint64_t *)&pcoin->vout[i].nValue;
+                                (*ptr) += interest;
+                                pcoin->vout[i].interest = interest;
+                                //pcoin->vout[i].nValue += interest;
+                            }
                         }
                     }
 #endif
@@ -2415,7 +2419,6 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
             if(!out.fSpendable)
                 continue;
             nValueRet += out.tx->vout[out.i].nValue;
-            fprintf(stderr,"[%.8f] ",(double)out.tx->vout[out.i].nValue/COIN);
             setCoinsRet.insert(make_pair(out.tx, out.i));
         }
         return (nValueRet >= nTargetValue);
