@@ -2552,8 +2552,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                 BOOST_FOREACH(PAIRTYPE(const CWalletTx*, unsigned int) pcoin, setCoins)
                 {
                     CAmount nCredit = pcoin.first->vout[pcoin.second].nValue;
-                    fprintf(stderr,"val %.8f interest %.8f\n",(double)nCredit/COIN,(double)pcoin.first->vout[pcoin.second].interest);
-                    interest += pcoin.first->vout[pcoin.second].interest;
+                    fprintf(stderr,"val %.8f interest %.8f\n",(double)nCredit/COIN,(double)pcoin.vout[pcoin.second].interest);
+                    interest += pcoin.vout[pcoin.second].interest;
                     //The coin age after the next block (depth+1) is used instead of the current,
                     //reflecting an assumption the user would accept a bit more delay for
                     //a chance at a free transaction.
