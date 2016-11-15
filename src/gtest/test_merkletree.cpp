@@ -76,6 +76,9 @@ void test_tree(
     // empty tree.
     ASSERT_TRUE(tree.root() == Tree::empty_root());
 
+    // The tree doesn't have a 'last' element added since it's blank.
+    ASSERT_THROW(tree.last(), std::runtime_error);
+
     // We need to witness at every single point in the tree, so
     // that the consistency of the tree and the merkle paths can
     // be checked.
@@ -107,6 +110,7 @@ void test_tree(
 
             if (first) {
                 ASSERT_THROW(wit.path(), std::runtime_error);
+                ASSERT_THROW(wit.element(), std::runtime_error);
             } else {
                 auto path = wit.path();
 
