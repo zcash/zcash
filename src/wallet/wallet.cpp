@@ -2215,8 +2215,8 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                             interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
                             if ( interest != 0 && pcoin->vout[i].interest == 0 )
                             {
-                                printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
-                                fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
+                                //printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
+                                //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
                                 ptr = (uint64_t *)&pcoin->vout[i].nValue;
                                 (*ptr) += interest;
                                 ptr = (uint64_t *)&pcoin->vout[i].interest;
@@ -2563,7 +2563,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     dPriority += (double)nCredit * age;
                 }
                 CAmount nChange = nValueIn - nValue;
-fprintf(stderr,"wallet sum %.8f (%.8f - %.8f)\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN);
+fprintf(stderr,"wallet change %.8f (%.8f - %.8f)\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN);
                 if (nSubtractFeeFromAmount == 0)
                     nChange -= nFeeRet;
 
