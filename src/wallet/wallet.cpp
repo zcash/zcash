@@ -2213,17 +2213,32 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                         if ( pcoin->vout[i].nValue >= COIN )
                         {
                             interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
-                            if ( interest != 0 && pcoin->vout[i].interest == 0 )
+                            if ( interest != 0 )
                             {
                                 //printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
-                                //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
+                                fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
                                 ptr = (uint64_t *)&pcoin->vout[i].nValue;
                                 (*ptr) += interest;
                                 ptr = (uint64_t *)&pcoin->vout[i].interest;
                                 (*ptr) = interest;
                                 //pcoin->vout[i].nValue += interest;
                             }
+                            else
+                            {
+                                ptr = (uint64_t *)&pcoin->vout[i].interest;
+                                (*ptr) = 0;
+                            }
                         }
+                        else
+                        {
+                            ptr = (uint64_t *)&pcoin->vout[i].interest;
+                            (*ptr) = 0;
+                        }
+                    }
+                    else
+                    {
+                        ptr = (uint64_t *)&pcoin->vout[i].interest;
+                        (*ptr) = 0;
                     }
 #endif
                     vCoins.push_back(COutput(pcoin, i, nDepth, (mine & ISMINE_SPENDABLE) != ISMINE_NO));
