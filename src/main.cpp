@@ -1719,7 +1719,7 @@ bool NonContextualCheckInputs(const CTransaction& tx, CValidationState &state, c
             // Check for negative or overflow input values
             nValueIn += coins->vout[prevout.n].nValue;
 #ifdef KOMODO_ENABLE_INTEREST
-            if ( strcmp(ASSETCHAINS_SYMBOL,"REVS") == 0 )//&& nHeight >= 60000 )
+            if ( ASSETCHAINS_SYMBOL[0] == 0 && nHeight >= 60000 )
             {
                 if ( coins->vout[prevout.n].nValue >= COIN )
                 {
@@ -1757,7 +1757,7 @@ bool NonContextualCheckInputs(const CTransaction& tx, CValidationState &state, c
         if (!MoneyRange(nFees))
             return state.DoS(100, error("CheckInputs(): nFees out of range"),
                              REJECT_INVALID, "bad-txns-fee-outofrange");
-fprintf(stderr,"nFees %.8f\n",(double)nFees/COIN);
+//fprintf(stderr,"nFees %.8f\n",(double)nFees/COIN);
         // The first loop above does all the inexpensive checks.
         // Only if ALL inputs pass do we perform expensive ECDSA signature checks.
         // Helps prevent CPU exhaustion attacks.
