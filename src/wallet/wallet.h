@@ -151,6 +151,7 @@ struct COutputEntry
     CTxDestination destination;
     CAmount amount;
     int vout;
+    uint64_t interest;
 };
 
 /** An note outpoint */
