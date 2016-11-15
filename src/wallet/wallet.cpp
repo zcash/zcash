@@ -2217,8 +2217,8 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                             {
                                 //printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
                                 //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
-                                ptr = (uint64_t *)&pcoin->vout[i].nValue;
-                                (*ptr) += interest;
+                                //ptr = (uint64_t *)&pcoin->vout[i].nValue;
+                                //(*ptr) += interest;
                                 ptr = (uint64_t *)&pcoin->vout[i].interest;
                                 (*ptr) = interest;
                                 //pcoin->vout[i].nValue += interest;
@@ -2444,8 +2444,7 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
             fNeedCoinbaseCoinsRet = (valueWithCoinbase >= nTargetValue);
         }
     }
-
-    // coin control -> return all selected outputs (we want all selected to go into the transaction for sure)
+    // coin control -> return all selected outputs (we want all to go into the transaction for sure)
     *interestp = 0;
     if (coinControl && coinControl->HasSelected())
     {
@@ -2600,7 +2599,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     dPriority += (double)nCredit * age;
                 }
                 fprintf(stderr,"interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
-                CAmount nChange = (nValueIn - nValue);
+                CAmount nChange = (nValueIn - nValue + interest);
 fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest/COIN,(double)nTotalValue/COIN);
                 if (nSubtractFeeFromAmount == 0)
                     nChange -= nFeeRet;
