@@ -875,6 +875,7 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     wallet.AddSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
+    auto hash = wtx.GetHash();
     auto note = GetNote(sk, wtx, 0, 0);
     auto nullifier = note.nullifier(sk);
 
@@ -888,6 +889,8 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     // Pretend we mined the tx by adding a fake witness
     ZCIncrementalMerkleTree tree;
     wtx.mapNoteData[jsoutpt].witnesses.push_front(tree.witness());
+    wtx.mapNoteData[jsoutpt].witnessHeight = 1;
+    wallet.nWitnessCacheSize = 1;
 
     wallet.AddToWallet(wtx, true, NULL);
 
@@ -899,6 +902,8 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     wallet.GetNoteWitnesses(notes, witnesses, anchor2);
     EXPECT_TRUE((bool) witnesses[0]);
     EXPECT_FALSE((bool) witnesses[1]);
+    EXPECT_EQ(1, wallet.mapWallet[hash].mapNoteData[jsoutpt].witnessHeight);
+    EXPECT_EQ(1, wallet.nWitnessCacheSize);
 
     // After clearing, we should not have a witness for either note
     wallet.ClearNoteWitnessCache();
@@ -906,6 +911,8 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     wallet.GetNoteWitnesses(notes, witnesses, anchor2);
     EXPECT_FALSE((bool) witnesses[0]);
     EXPECT_FALSE((bool) witnesses[1]);
+    EXPECT_EQ(-1, wallet.mapWallet[hash].mapNoteData[jsoutpt].witnessHeight);
+    EXPECT_EQ(0, wallet.nWitnessCacheSize);
 }
 
 TEST(wallet_tests, WriteWitnessCache) {
