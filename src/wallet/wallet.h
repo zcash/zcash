@@ -619,7 +619,7 @@ protected:
     void IncrementNoteWitnesses(const CBlockIndex* pindex,
                                 const CBlock* pblock,
                                 ZCIncrementalMerkleTree& tree);
-    void DecrementNoteWitnesses();
+    void DecrementNoteWitnesses(const CBlockIndex* pindex);
 
     template <typename WalletDB>
     void WriteWitnessCache(WalletDB& walletdb) {

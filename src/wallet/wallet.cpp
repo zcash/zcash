@@ -373,7 +373,7 @@ void CWallet::ChainTip(const CBlockIndex *pindex, const CBlock *pblock,
     if (added) {
         IncrementNoteWitnesses(pindex, pblock, tree);
     } else {
-        DecrementNoteWitnesses();
+        DecrementNoteWitnesses(pindex);
     }
 }
 
@@ -648,7 +648,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                 // Only increment witnesses that are behind the current height
                 if (nd->witnessHeight < pindex->nHeight) {
                     // Witnesses being incremented should always be either -1
-                    // (never incremented) or one below pindex
+                    // (never incremented or decremented) or one below pindex
                     assert((nd->witnessHeight == -1) ||
                            (nd->witnessHeight == pindex->nHeight - 1));
                     // Copy the witness for the previous block if we have one
@@ -746,7 +746,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
     }
 }
 
-void CWallet::DecrementNoteWitnesses()
+void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
 {
     {
         LOCK(cs_wallet);
@@ -755,10 +755,14 @@ void CWallet::DecrementNoteWitnesses()
                 CNoteData* nd = &(item.second);
                 // Check the validity of the cache
                 assert(nWitnessCacheSize >= nd->witnesses.size());
+                // Witnesses being decremented should always be either -1
+                // (never incremented or decremented) or equal to pindex
+                assert((nd->witnessHeight == -1) ||
+                       (nd->witnessHeight == pindex->nHeight));
                 if (nd->witnesses.size() > 0) {
                     nd->witnesses.pop_front();
                 }
-                nd->witnessHeight -= 1;
+                nd->witnessHeight = pindex->nHeight - 1;
             }
         }
         nWitnessCacheSize -= 1;
