@@ -2216,7 +2216,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                             if ( interest != 0 )
                             {
                                 //printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
-                                fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
+                                //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
                                 ptr = (uint64_t *)&pcoin->vout[i].nValue;
                                 (*ptr) += interest;
                                 ptr = (uint64_t *)&pcoin->vout[i].interest;
@@ -2459,7 +2459,7 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
         }
         return (nValueRet >= nTargetValue);
     }
-
+fprintf(stderr,"nValueRet %8f vs target %.8f\n",(double)nValueRet/COIN,(double)nTargetValue/COIN);
     return (SelectCoinsMinConf(nTargetValue, 1, 6, vCoins, setCoinsRet, nValueRet,interestp) ||
             SelectCoinsMinConf(nTargetValue, 1, 1, vCoins, setCoinsRet, nValueRet,interestp) ||
             (bSpendZeroConfChange && SelectCoinsMinConf(nTargetValue, 0, 1, vCoins, setCoinsRet, nValueRet,interestp)));
@@ -2592,7 +2592,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     //reflecting an assumption the user would accept a bit more delay for
                     //a chance at a free transaction.
                     //But mempool inputs might still be in the mempool, so their age stays 0
-                    //fprintf(stderr,"nCredit %.8f interest %.8f\n",(double)nCredit/COIN,(double)pcoin.first->vout[pcoin.second].interest/COIN);
+                    fprintf(stderr,"nCredit %.8f interest %.8f\n",(double)nCredit/COIN,(double)pcoin.first->vout[pcoin.second].interest/COIN);
                     interest2 += pcoin.first->vout[pcoin.second].interest;
                     int age = pcoin.first->GetDepthInMainChain();
                     if (age != 0)
@@ -2601,7 +2601,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                 }
                 fprintf(stderr,"interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
                 CAmount nChange = (nValueIn - nValue);
-fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest/COIN);
+fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest/COIN,(double)nTotalValue/COIN);
                 if (nSubtractFeeFromAmount == 0)
                     nChange -= nFeeRet;
 
