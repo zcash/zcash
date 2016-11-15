@@ -253,25 +253,7 @@ Value getrawtransaction(const Array& params, bool fHelp)
     return result;
 }
 
-uint32_t komodo_interest_args(int32_t *txheightp,int32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n)
-{
-    LOCK(cs_main);
-    CTransaction tx; uint256 hashBlock; CBlockIndex *pindex,*tipindex;
-    if ( !GetTransaction(hash,tx,hashBlock,true) )
-        return(0);
-    uint32_t locktime = 0;
-    if ( n < tx.vout.size() )
-    {
-        if ( (pindex= mapBlockIndex[hashBlock]) != 0 && (tipindex= chainActive.Tip()) != 0 )
-        {
-            *valuep = tx.vout[n].nValue;
-            *txheightp = pindex->nHeight;
-            *tiptimep = tipindex->nTime;
-            locktime = tx.nLockTime;
-        }
-    }
-    return(locktime);
-}
+uint32_t komodo_interest_args(int32_t *txheightp,int32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 
 Value gettxoutproof(const Array& params, bool fHelp)
 {
