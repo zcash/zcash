@@ -568,6 +568,7 @@ uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *va
     return(locktime);
 }
 
+uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint64_t komodo_accrued_interest(uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue)
 {
     uint64_t value; int32_t txheight; uint32_t locktime,tiptime;
