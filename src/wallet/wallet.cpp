@@ -2433,8 +2433,7 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
 bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                                 CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, int& nChangePosRet, std::string& strFailReason, const CCoinControl* coinControl)
 {
-    CAmount nValue = 0;
-    unsigned int nSubtractFeeFromAmount = 0;
+    uint64_t interest = 0; CAmount nValue = 0; unsigned int nSubtractFeeFromAmount = 0;
     BOOST_FOREACH (const CRecipient& recipient, vecSend)
     {
         if (nValue < 0 || recipient.nAmount < 0)
@@ -2553,6 +2552,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                 BOOST_FOREACH(PAIRTYPE(const CWalletTx*, unsigned int) pcoin, setCoins)
                 {
                     CAmount nCredit = pcoin.first->vout[pcoin.second].nValue;
+                    interest += pcoin.first->vout[pcoin.second].interest;
                     //The coin age after the next block (depth+1) is used instead of the current,
                     //reflecting an assumption the user would accept a bit more delay for
                     //a chance at a free transaction.
@@ -2562,8 +2562,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                         age += 1;
                     dPriority += (double)nCredit * age;
                 }
-                CAmount nChange = nValueIn - nValue;
-fprintf(stderr,"wallet change %.8f (%.8f - %.8f)\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN);
+                CAmount nChange = nValueIn - nValue + interest;
+fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest/COIN);
                 if (nSubtractFeeFromAmount == 0)
                     nChange -= nFeeRet;
 
