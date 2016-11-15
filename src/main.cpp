@@ -1721,7 +1721,7 @@ bool NonContextualCheckInputs(const CTransaction& tx, CValidationState &state, c
 #ifdef KOMODO_ENABLE_INTEREST
             if ( strcmp(ASSETCHAINS_SYMBOL,"REVS") == 0 )//&& nHeight >= 60000 )
             {
-                if ( value >= COIN )
+                if ( coins->vout[prevout.n].nValue >= COIN )
                 {
                     int64_t interest; int32_t txheight; uint32_t locktime;
                     if ( (interest= komodo_accrued_interest(&txheight,&locktime,prevout.hash,prevout.n,0,coins->vout[prevout.n].nValue)) != 0 )
