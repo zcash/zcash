@@ -73,6 +73,7 @@ void EnsureWalletIsUnlocked()
 }
 
 uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue);
+uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 
 void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
 {
@@ -90,7 +91,7 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
     entry.push_back(Pair("txid", hash.GetHex()));
     n = wtx.vout.size();
     for (i=0; i<n; i++)
-        interest += komodo_accrued_interest(&txheight,&locktime,hash,i,0,0);
+        interest += komodo_interest(mapBlockIndex[wtx.hashBlock]->nHeight,wtx.vout[i].nValue,wtx.nLockTime,mapBlockIndex[wtx.hashBlock]->nTime);
     entry.push_back(Pair("interest", interest));
 
     Array conflicts;
