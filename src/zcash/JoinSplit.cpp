@@ -219,10 +219,17 @@ public:
         for (size_t i = 0; i < NumInputs; i++) {
             // Sanity checks of input
             {
-                // If note has nonzero value, its witness's root must be equal to the
-                // input.
-                if ((inputs[i].note.value != 0) && (inputs[i].witness.root() != rt)) {
-                    throw std::invalid_argument("joinsplit not anchored to the correct root");
+                // If note has nonzero value
+                if (inputs[i].note.value != 0) {
+                    // The witness root must equal the input root.
+                    if (inputs[i].witness.root() != rt) {
+                        throw std::invalid_argument("joinsplit not anchored to the correct root");
+                    }
+
+                    // The tree must witness the correct element
+                    if (inputs[i].note.cm() != inputs[i].witness.element()) {
+                        throw std::invalid_argument("witness of wrong element for joinsplit input");
+                    }
                 }
 
                 // Ensure we have the key to this note.
