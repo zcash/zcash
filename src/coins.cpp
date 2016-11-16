@@ -383,12 +383,12 @@ const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
     return coins->vout[input.prevout.n].scriptPubKey;
 }
 
-uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+//uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue);
 extern char ASSETCHAINS_SYMBOL[16];
 
 CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTransaction& tx,uint32_t tiptime) const
 {
-    uint32_t timestamp,minutes; int64_t interest;
     *interestp = 0;
     if ( tx.IsCoinBase() != 0 )
         return 0;
@@ -397,19 +397,20 @@ CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTr
     {
         value = GetOutputFor(tx.vin[i]).nValue;
         nResult += value;
-        interest = komodo_interest(nHeight,value,tx.nLockTime,tiptime);
 #ifdef KOMODO_ENABLE_INTEREST
         if ( ASSETCHAINS_SYMBOL[0] == 0 && nHeight >= 60000 )
         {
-            if ( interest != 0 )
+            if ( value >= 10*COIN )
             {
-                printf("nResult %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nResult/COIN,(double)interest/COIN,nHeight,tx.nLockTime,tiptime);
-                fprintf(stderr,"nResult %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)nResult/COIN,(double)interest/COIN,nHeight,tx.nLockTime,tiptime);
+                int64_t interest; int32_t txheight; uint32_t locktime;
+                interest = komodo_accrued_interest(&txheight,&locktime,tx.vin[i].prevout.hash,tx.vin[i].prevout.n,0,value);
+                //printf("nResult %.8f += val %.8f interest %.8f ht.%d lock.%u tip.%u\n",(double)nResult/COIN,(double)value/COIN,(double)interest/COIN,txheight,locktime,tiptime);
+                //fprintf(stderr,"nResult %.8f += val %.8f interest %.8f ht.%d lock.%u tip.%u\n",(double)nResult/COIN,(double)value/COIN,(double)interest/COIN,txheight,locktime,tiptime);
+                nResult += interest;
+                (*interestp) += interest;
             }
-            nResult += interest;
         }
 #endif
-        (*interestp) += interest;
     }
     nResult += tx.GetJoinSplitValueIn();
 

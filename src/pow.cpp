@@ -127,7 +127,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         }
         if ( nonz == 0 )
             return(true); // will come back via different path with pubkey set
-        if ( height > 60000 )
+        //if ( height > 60000 )
         {
             if ( notaryid >= 0 )
             {
@@ -142,7 +142,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 }
             }
         }
-        else
+        /*else
         {
             if ( special > 0 ) // special notary id == (height % numnotaries)
             {
@@ -151,12 +151,10 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 flag = 1;
             }
-        }
+        }*/
     }
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");
-    if ( height > 70000 )
-        bnTarget /= 64;
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {

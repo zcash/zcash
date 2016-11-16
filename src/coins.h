@@ -87,14 +87,14 @@ public:
     //! version of the CTransaction; accesses to this value should probably check for nHeight as well,
     //! as new tx version will probably only be introduced at certain heights
     int nVersion;
-    uint32_t nLockTime;
+    //uint32_t nLockTime;
 
     void FromTx(const CTransaction &tx, int nHeightIn) {
         fCoinBase = tx.IsCoinBase();
         vout = tx.vout;
         nHeight = nHeightIn;
         nVersion = tx.nVersion;
-        nLockTime = tx.nLockTime;
+        //nLockTime = tx.nLockTime;
         ClearUnspendable();
     }
 

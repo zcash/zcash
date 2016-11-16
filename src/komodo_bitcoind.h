@@ -547,3 +547,38 @@ int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 has
         fprintf(stderr,"couldnt find notary_hash %s ht.%d\n",notarized_hash.ToString().c_str(),notarized_height);
     return(0);
 }
+
+uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n)
+{
+    LOCK(cs_main);
+    CTransaction tx; uint256 hashBlock; CBlockIndex *pindex,*tipindex;
+    if ( !GetTransaction(hash,tx,hashBlock,true) )
+        return(0);
+    uint32_t locktime = 0;
+    if ( n < tx.vout.size() )
+    {
+        if ( (pindex= mapBlockIndex[hashBlock]) != 0 && (tipindex= chainActive.Tip()) != 0 )
+        {
+            *valuep = tx.vout[n].nValue;
+            *txheightp = pindex->nHeight;
+            *tiptimep = tipindex->nTime;
+            locktime = tx.nLockTime;
+            //fprintf(stderr,"tx locktime.%u %.8f height.%d | tiptime.%u\n",locktime,(double)*valuep/COIN,*txheightp,*tiptimep);
+        }
+    }
+    return(locktime);
+}
+
+uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue)
+{
+    uint64_t value; uint32_t tiptime;
+    if ( (*locktimep= komodo_interest_args(txheightp,&tiptime,&value,hash,n)) != 0 )
+    {
+        if ( (checkvalue == 0 || value == checkvalue) && (checkheight == 0 || *txheightp == checkheight) )
+            return(komodo_interest(*txheightp,value,*locktimep,tiptime));
+        //fprintf(stderr,"nValue %llu lock.%u:%u nTime.%u -> %llu\n",(long long)coins.vout[n].nValue,coins.nLockTime,timestamp,pindex->nTime,(long long)interest);
+        else fprintf(stderr,"komodo_accrued_interest value mismatch %llu vs %llu or height mismatch %d vs %d\n",(long long)value,(long long)checkvalue,*txheightp,checkheight);
+    }
+    return(0);
+}

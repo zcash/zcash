@@ -386,6 +386,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel);
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
 char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
+uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 
 Value notaries(const Array& params, bool fHelp)
 {
@@ -504,6 +505,8 @@ Value paxprices(const Array& params, bool fHelp)
     return ret;
 }
 
+uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue);
+
 Value gettxout(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 2 || params.size() > 3)
@@ -574,15 +577,9 @@ Value gettxout(const Array& params, bool fHelp)
         ret.push_back(Pair("confirmations", 0));
     else ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
-    
-    CBlockIndex *pblockindex = chainActive[coins.nHeight];
-    uint64_t interest; uint32_t timestamp=0;
-    if ( pblockindex != 0 )
-        timestamp = pblockindex->nTime; // this is approx, but cant figure out how to get tx here
-    interest = komodo_interest(coins.nHeight,coins.vout[n].nValue,timestamp,pindex->nTime);
-    //fprintf(stderr,"nValue %llu lock.%u:%u nTime.%u -> %llu\n",(long long)coins.vout[n].nValue,coins.nLockTime,timestamp,pindex->nTime,(long long)interest);
-    ret.push_back(Pair("interest", ValueFromAmount(interest)));
-
+    uint64_t interest; int32_t txheight; uint32_t locktime;
+    if ( (interest= komodo_accrued_interest(&txheight,&locktime,hash,n,coins.nHeight,coins.vout[n].nValue)) != 0 )
+        ret.push_back(Pair("interest", ValueFromAmount(interest)));
     Object o;
     ScriptPubKeyToJSON(coins.vout[n].scriptPubKey, o, true);
     ret.push_back(Pair("scriptPubKey", o));

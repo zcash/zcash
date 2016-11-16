@@ -144,7 +144,8 @@ bool AppInit(int argc, char* argv[])
         fDaemon = GetBoolArg("-daemon", false);
         if (fDaemon)
         {
-            fprintf(stdout, "Komodo server starting\n");
+            extern char ASSETCHAINS_SYMBOL[16];
+            fprintf(stdout, "Komodo %s server starting\n",ASSETCHAINS_SYMBOL);
 
             // Daemonize
             pid_t pid = fork();

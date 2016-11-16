@@ -39,6 +39,8 @@ using namespace std;
  *
  * Or alternatively, create a specific query method for the information.
  **/
+uint64_t komodo_interestsum();
+
 Value getinfo(const Array& params, bool fHelp)
 {
     extern uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
@@ -90,10 +92,13 @@ Value getinfo(const Array& params, bool fHelp)
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
         obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
+        obj.push_back(Pair("interest",       ValueFromAmount(komodo_interestsum())));
     }
 #endif
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
+    if ( chainActive.Tip() != 0 )
+        obj.push_back(Pair("tiptime", (int)chainActive.Tip()->nTime));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string())));
     obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
