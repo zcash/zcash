@@ -77,7 +77,8 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
 
 void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
 {
-    int32_t i,n,txheight; uint32_t locktime; uint64_t interest = 0; int confirms = wtx.GetDepthInMainChain();
+    //int32_t i,n,txheight; uint32_t locktime; uint64_t interest = 0;
+    int confirms = wtx.GetDepthInMainChain();
     entry.push_back(Pair("confirmations", confirms));
     if (wtx.IsCoinBase())
         entry.push_back(Pair("generated", true));
@@ -89,10 +90,10 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
     }
     uint256 hash = wtx.GetHash();
     entry.push_back(Pair("txid", hash.GetHex()));
-    n = wtx.vout.size();
-    for (i=0; i<n; i++)
-        interest += komodo_interest(mapBlockIndex[wtx.hashBlock]->nHeight,wtx.vout[i].nValue,wtx.nLockTime,mapBlockIndex[wtx.hashBlock]->nTime);
-    entry.push_back(Pair("interest", interest));
+    //n = wtx.vout.size();
+    //for (i=0; i<n; i++)
+    //    interest += komodo_interest(mapBlockIndex[wtx.hashBlock]->nHeight,wtx.vout[i].nValue,wtx.nLockTime,mapBlockIndex[wtx.hashBlock]->nTime);
+    //entry.push_back(Pair("interest", interest));
 
     Array conflicts;
     BOOST_FOREACH(const uint256& conflict, wtx.GetConflicts())
