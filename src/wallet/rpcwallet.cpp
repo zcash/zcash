@@ -2454,7 +2454,8 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
 
     JSDescription samplejoinsplit;
 
-    if (benchmarktype == "verifyjoinsplit") {
+    if (benchmarktype == "verifyjoinsplit" ||
+            benchmarktype == "trydecryptnotes") {
         CDataStream ss(ParseHexV(params[2].get_str(), "js"), SER_NETWORK, PROTOCOL_VERSION);
         ss >> samplejoinsplit;
     }
@@ -2480,6 +2481,8 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
             sample_times.push_back(benchmark_verify_equihash());
         } else if (benchmarktype == "validatelargetx") {
             sample_times.push_back(benchmark_large_tx());
+        } else if (benchmarktype == "trydecryptnotes") {
+            sample_times.push_back(benchmark_try_decrypt_notes(samplejoinsplit));
         } else {
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
         }

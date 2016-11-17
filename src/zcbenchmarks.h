@@ -12,5 +12,6 @@ extern std::vector<double> benchmark_solve_equihash_threaded(int nThreads);
 extern double benchmark_verify_joinsplit(const JSDescription &joinsplit);
 extern double benchmark_verify_equihash();
 extern double benchmark_large_tx();
+extern double benchmark_try_decrypt_notes(const JSDescription &joinsplit);
 
 #endif

@@ -56,7 +56,7 @@ function zcashd_valgrind_stop {
 case "$1" in
     *)
         case "$2" in
-            verifyjoinsplit)
+            verifyjoinsplit|trydecryptnotes)
                 zcashd_start
                 RAWJOINSPLIT=$(zcash_rpc zcsamplejoinsplit)
                 zcashd_stop
@@ -88,6 +88,9 @@ case "$1" in
             validatelargetx)
                 zcash_rpc zcbenchmark validatelargetx 5
                 ;;
+            trydecryptnotes)
+                zcash_rpc zcbenchmark trydecryptnotes 1000 "\"$RAWJOINSPLIT\""
+                ;;
             *)
                 zcashd_stop
                 echo "Bad arguments."
@@ -115,6 +118,9 @@ case "$1" in
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1
+                ;;
+            trydecryptnotes)
+                zcash_rpc zcbenchmark trydecryptnotes 1 "\"$RAWJOINSPLIT\""
                 ;;
             *)
                 zcashd_massif_stop
@@ -144,6 +150,9 @@ case "$1" in
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1
+                ;;
+            trydecryptnotes)
+                zcash_rpc zcbenchmark trydecryptnotes 1 "\"$RAWJOINSPLIT\""
                 ;;
             *)
                 zcashd_valgrind_stop

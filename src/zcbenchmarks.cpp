@@ -223,3 +223,23 @@ double benchmark_large_tx()
     return timer_stop(tv_start);
 }
 
+double benchmark_try_decrypt_notes(const JSDescription &joinsplit)
+{
+    const size_t NUM_ADDRS = 10;
+
+    CWallet wallet;
+    for (int i = 0; i < NUM_ADDRS; i++) {
+        auto sk = libzcash::SpendingKey::random();
+        wallet.AddSpendingKey(sk);
+    }
+
+    CMutableTransaction mtx;
+    mtx.vjoinsplit.push_back(joinsplit);
+    CTransaction tx(mtx);
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+    auto nd = wallet.FindMyNotes(tx);
+    return timer_stop(tv_start);
+}
+
