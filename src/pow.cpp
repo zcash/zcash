@@ -106,7 +106,8 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
 
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
-extern int32_t KOMODO_CHOSEN_ONE,CURRENT_HEIGHT;
+int32_t komodo_currentheight();
+extern int32_t KOMODO_CHOSEN_ONE;
 extern int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
 
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
@@ -116,7 +117,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( height == 0 )
-        height = CURRENT_HEIGHT + 1;
+        height = komodo_currentheight() + 1;
     if ( height > 34000 ) // 0 -> non-special notary
     {
         special = komodo_chosennotary(&notaryid,height,pubkey33);

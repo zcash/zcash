@@ -3328,14 +3328,14 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
     return (nFound >= nRequired);
 }
 
+void komodo_currentheight_set(int32_t height);
 
 bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
-    extern int32_t CURRENT_HEIGHT;
     bool checked;
     if ( chainActive.Tip() != 0 )
-        CURRENT_HEIGHT = chainActive.Tip()->nHeight;
+        komodo_currentheight_set(chainActive.Tip()->nHeight);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state);
     else checked = CheckBlock(0,0,*pblock, state);

@@ -385,7 +385,6 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
     //uint256 zero;
     //printf("disconnect ht.%d\n",pindex->nHeight);
     //memset(&zero,0,sizeof(zero));
-    //komodo_stateupdate(-pindex->nHeight,0,0,0,zero,0,0,0,0,0,0,0);
 }
 
 int32_t komodo_is_notarytx(const CTransaction& tx)
@@ -468,7 +467,7 @@ int8_t komodo_minerid(int32_t height)
 {
     static uint32_t depth;
     int32_t notaryid; CBlockIndex *pindex; uint8_t pubkey33[33];
-    if ( depth < 3 && height <= CURRENT_HEIGHT )//chainActive.Tip()->nHeight )
+    if ( depth < 3 && height <= komodo_currentheight() )//chainActive.Tip()->nHeight )
     {
         if ( Minerids[height] >= -1 )
         {
@@ -510,7 +509,7 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
                 Minerids[height-i] = komodo_minerid(height-i);
                 if ( Minerids[height - i] == -2 )
                 {
-                    //fprintf(stderr,"second -2 for Minerids[%d] current.%d\n",height-i,CURRENT_HEIGHT);
+                    //fprintf(stderr,"second -2 for Minerids[%d] current.%d\n",height-i,komodo_currentheight());
                     return(-2);
                 }
             }

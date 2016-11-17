@@ -15,16 +15,6 @@
 
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 
-struct pax_transaction
-{
-    UT_hash_handle hh;
-    uint256 txid;
-    uint64_t komodoshis,fiatoshis;
-    int32_t marked,height,otherheight;
-    uint16_t vout;
-    char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
-} *PAX;
-
 uint64_t komodo_paxtotal()
 {
     struct pax_transaction *pax,*tmp; uint64_t total = 0;
