@@ -164,7 +164,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
     // -1 if not notary, 0 if notary, 1 if special notary
     struct knotary_entry *kp; int32_t numnotaries,htind,modval = -1;
     *notaryidp = -1;
-    if ( height < 0 || height/KOMODO_ELECTION_GAP >= sizeof(Pubkeys)/sizeof(*Pubkeys) )
+    if ( height < 0 || height >= KOMODO_MAXBLOCKS )
         return(-1);
     htind = height / KOMODO_ELECTION_GAP;
     pthread_mutex_lock(&komodo_mutex);
