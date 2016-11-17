@@ -13,6 +13,9 @@
  *                                                                            *
  ******************************************************************************/
 
+#include "uthash.h"
+#include "utlist.h"
+
 struct pax_transaction
 {
     UT_hash_handle hh;
