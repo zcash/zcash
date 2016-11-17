@@ -51,10 +51,10 @@ struct komodo_event
     uint8_t space[];
 } PACKED;
 
-struct komodo_event *komodo_eventadd(int32_t height,char *symbol,uint8_t type,uint8_t *data,uint16_datalen)
+struct komodo_event *komodo_eventadd(int32_t height,char *symbol,uint8_t type,uint8_t *data,uint16_t datalen)
 {
     struct komodo_event *ep; uint16_t len = (uint16_t)(sizeof(*ep) + datalen);
-    ep = calloc(1,len);
+    ep = (struct komodo_event *)calloc(1,len);
     ep->len = len;
     ep->height = height;
     ep->type = type;
