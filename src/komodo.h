@@ -71,6 +71,7 @@ struct komodo_state
     // gateway state
 } KOMODO_STATES[33];
 
+#include "komodo_globals.h"
 #include "komodo_utils.h"
 struct komodo_state *komodo_stateptr(char *symbol,char *dest)
 {
@@ -96,7 +97,6 @@ struct komodo_state *komodo_stateptr(char *symbol,char *dest)
     return(sp);
 }
 
-#include "komodo_globals.h"
 
 #include "cJSON.c"
 #include "komodo_bitcoind.h"
