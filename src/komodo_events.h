@@ -35,11 +35,11 @@
 #define KOMODO_OPRETURN_WITHDRAW 'W' // assetchain
 #define KOMODO_OPRETURN_REDEEMED 'X'
 
-struct komodo_event_notarized { uint256 blockhash,desttxid; int32_t notarizedheight; char dest[16]; } PACKED;
-struct komodo_event_pubkeys { uint8_t num; uint8_t pubkeys[64][33]; } PACKED;
-struct komodo_event_utxo { uint256 txid; uint64_t voutmask; uint8_t numvouts; } PACKED;
-struct komodo_event_opreturn { uint256 txid; uint64_t value; uint16_t vout,oplen; uint8_t opret[]; } PACKED;
-struct komodo_event_pricefeed { uint8_t num; uint32_t prices[35]; } PACKED;
+struct komodo_event_notarized { uint256 blockhash,desttxid; int32_t notarizedheight; char dest[16]; };
+struct komodo_event_pubkeys { uint8_t num; uint8_t pubkeys[64][33]; };
+struct komodo_event_utxo { uint256 txid; uint64_t voutmask; uint8_t numvouts; };
+struct komodo_event_opreturn { uint256 txid; uint64_t value; uint16_t vout,oplen; uint8_t opret[]; };
+struct komodo_event_pricefeed { uint8_t num; uint32_t prices[35]; };
 
 struct komodo_event
 {
