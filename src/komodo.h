@@ -130,7 +130,7 @@ int32_t komodo_currentheight()
 int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char *dest)
 {
     static int32_t errs;
-    char symbol[16]; int32_t func,ht,notarized_height,matched=0; uint256 notarized_hash,notarized_desttxid; uint8_t pubkeys[64][33];
+    int32_t func,ht,notarized_height,num,matched=0; uint256 notarized_hash,notarized_desttxid; uint8_t pubkeys[64][33];
     if ( (func= fgetc(fp)) != EOF )
     {
         if ( ASSETCHAINS_SYMBOL[0] == 0 && strcmp(symbol,"KMD") == 0 )
@@ -176,7 +176,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             if ( fread(&hash,1,sizeof(hash),fp) != sizeof(hash) )
                 errs++;
             if ( matched != 0 )
-                komodo_eventadd_utxo(sp,symbol,ht,nid,hash,voutmask,n);
+                komodo_eventadd_utxo(sp,symbol,ht,nid,hash,mask,n);
         }
         else if ( func == 'K' )
         {
@@ -202,7 +202,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 if ( fread(opret,1,olen,fp) != olen )
                     errs++;
                 if ( matched != 0 )
-                    komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,opretlen);
+                    komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen);
             } else printf("illegal olen.%u\n",olen);
         }
         else if ( func == 'D' )
@@ -216,7 +216,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             if ( numpvals*sizeof(uint32_t) <= sizeof(pvals) && fread(pvals,sizeof(uint32_t),numpvals,fp) == numpvals )
             {
                 if ( matched != 0 )
-                    komodo_eventadd_pricefeed(sp,symbol,height,pvals,numpvals);
+                    komodo_eventadd_pricefeed(sp,symbol,ht,pvals,numpvals);
                 //printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
             } else printf("error loading pvals[%d]\n",numpvals);
         }
@@ -365,7 +365,9 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
 
 int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value)
 {
-    static uint256 zero; int32_t opretlen,nid,k,len = 0; uint256 kmdtxid,desttxid; uint8_t crypto777[33];
+    static uint256 zero; int32_t opretlen,nid,k,len = 0; uint256 kmdtxid,desttxid; uint8_t crypto777[33]; struct komodo_state *sp; char symbol[16],dest[16];
+    if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
+        return(-1);
     if ( scriptlen == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
     {
         decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
