@@ -373,12 +373,11 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
         else
         {
-            //int32_t k; for (k=0; k<scriptlen; k++)
-            //    printf("%02x",scriptbuf[k]);
-            //printf(" <- script ht.%d i.%d j.%d value %.8f\n",height,i,j,dstr(value));
+            int32_t k; for (k=0; k<scriptlen; k++)
+                printf("%02x",scriptbuf[k]);
+            printf(" <- script ht.%d i.%d j.%d value %.8f\n",height,i,j,dstr(value));
             if ( opretlen >= 32*2+4 && strcmp(ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+32*2+4]) == 0 )
             {
-                iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
                 for (k=0; k<32; k++)
                     if ( scriptbuf[len+k] != 0 )
                         break;
