@@ -491,7 +491,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             {
                 if ( (k= komodo_nutxofind(height,block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) >= 0 )
                     signedmask |= (1LL << k);
-                else if ( 0 && signedmask != 0 )
+                else if ( signedmask != 0 )
                     printf("signedmask.%llx but ht.%d i.%d j.%d not found (%s %d)\n",(long long)signedmask,height,i,j,block.vtx[i].vin[j].prevout.hash.ToString().c_str(),block.vtx[i].vin[j].prevout.n);
             }
             if ( signedmask != 0 && (notarizedheight != 0 || specialtx != 0) )
@@ -526,7 +526,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         memset(&txhash,0,sizeof(txhash));
                         komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0,0,0,0,0,0,0,0);
                         printf("RATIFIED! >>>>>>>>>> new notaries.%d newheight.%d from height.%d\n",numvalid,(((height+KOMODO_ELECTION_GAP/2)/KOMODO_ELECTION_GAP)+1)*KOMODO_ELECTION_GAP,height);
-                    }
+                    } else printf("signedmask.%llx numvalid.%d wt.%d numnotaries.%d\n",(long long)signedmask,numvalid,bitweight(signedmask),numnotaries);
                 }
             }
         }
