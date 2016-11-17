@@ -5,6 +5,7 @@
 #include "zcash/util.h"
 
 #include <memory>
+#include <mutex>
 
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
@@ -24,8 +25,9 @@ namespace libzcash {
 
 #include "zcash/circuit/gadget.tcc"
 
+std::once_flag init_public_params_once_flag;
+
 CCriticalSection cs_ParamsIO;
-CCriticalSection cs_InitializeParams;
 CCriticalSection cs_LoadKeys;
 
 template<typename T>
@@ -79,9 +81,7 @@ public:
     ~JoinSplitCircuit() {}
 
     static void initialize() {
-        LOCK(cs_InitializeParams);
-
-        ppzksnark_ppT::init_public_params();
+        std::call_once (init_public_params_once_flag, ppzksnark_ppT::init_public_params);
     }
 
     void setProvingKeyPath(std::string path) {
