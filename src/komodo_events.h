@@ -16,7 +16,7 @@
 #ifndef H_KOMODOEVENTS_H
 #define H_KOMODOEVENTS_H
 
-/*
+
 #ifdef WIN32
 #define PACKED
 #else
@@ -146,5 +146,5 @@ void komodo_eventadd_redeemed(char *symbol,int32_t height,bits256 kmdtxid,uint16
 
 // process events
 // 
-*/
+
 #endif

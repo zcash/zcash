@@ -38,10 +38,10 @@
 FILE *Minerfp;
 int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
 
-#include "komodo_events.h"
 
 #include "komodo_globals.h"
 #include "komodo_utils.h"
+#include "komodo_events.h"
 
 #include "cJSON.c"
 #include "komodo_bitcoind.h"
