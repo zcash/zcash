@@ -40,12 +40,7 @@
 #include "komodo_structs.h"
 
 
-struct komodo_state
-{
-    uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
-    int32_t CURRENT_HEIGHT,NOTARIZED_HEIGHT;
-    // gateway state
-} KOMODO_STATES[33];
+struct komodo_state KOMODO_STATES[33];
 
 #include "komodo_globals.h"
 #include "komodo_utils.h"

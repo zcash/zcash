@@ -30,3 +30,10 @@ struct nutxo_entry { UT_hash_handle hh; uint256 txhash; uint64_t voutmask; int32
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; };
 struct notarized_checkpoint { uint256 notarized_hash,notarized_desttxid; int32_t nHeight,notarized_height; };
+
+struct komodo_state
+{
+    uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
+    int32_t CURRENT_HEIGHT,NOTARIZED_HEIGHT;
+    // gateway state
+};
