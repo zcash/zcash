@@ -71,23 +71,7 @@ struct komodo_state
     // gateway state
 } KOMODO_STATES[33];
 
-#include "komodo_globals.h"
 #include "komodo_utils.h"
-
-#include "cJSON.c"
-#include "komodo_bitcoind.h"
-#include "komodo_interest.h"
-#include "komodo_pax.h"
-#include "komodo_notary.h"
-#include "komodo_gateway.h"
-#include "komodo_events.h"
-
-void komodo_setkmdheight(int32_t kmdheight)
-{
-    if ( kmdheight > KMDHEIGHT )
-        KMDHEIGHT = kmdheight;
-}
-
 struct komodo_state *komodo_stateptr(char *symbol,char *dest)
 {
     int32_t baseid; struct komodo_state *sp;
@@ -110,6 +94,22 @@ struct komodo_state *komodo_stateptr(char *symbol,char *dest)
         }
     }
     return(sp);
+}
+
+#include "komodo_globals.h"
+
+#include "cJSON.c"
+#include "komodo_bitcoind.h"
+#include "komodo_interest.h"
+#include "komodo_pax.h"
+#include "komodo_notary.h"
+#include "komodo_gateway.h"
+#include "komodo_events.h"
+
+void komodo_setkmdheight(int32_t kmdheight)
+{
+    if ( kmdheight > KMDHEIGHT )
+        KMDHEIGHT = kmdheight;
 }
 
 void komodo_currentheight_set(int32_t height)

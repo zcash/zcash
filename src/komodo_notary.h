@@ -120,7 +120,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height)
 void komodo_notarysinit(int32_t origheight,uint8_t pubkeys[64][33],int32_t num)
 {
     static int32_t hwmheight;
-    int32_t k,i,htind,nonz; struct knotary_entry *kp; struct knotaries_entry N;
+    int32_t k,i,htind,nonz,height; struct knotary_entry *kp; struct knotaries_entry N;
     if ( Pubkeys == 0 )
         Pubkeys = (struct knotaries_entry *)calloc(KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP,sizeof(*Pubkeys));
     memset(&N,0,sizeof(N));
