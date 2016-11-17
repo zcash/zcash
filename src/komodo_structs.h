@@ -16,6 +16,10 @@
 #include "uthash.h"
 #include "utlist.h"
 
+#define GENESIS_NBITS 0x1f00ffff
+#define KOMODO_MINRATIFY 7
+#define KOMODO_MAXBLOCKS 5000000
+
 struct pax_transaction
 {
     UT_hash_handle hh;

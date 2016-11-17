@@ -33,12 +33,7 @@
 #include "uthash.h"
 #include "utlist.h"
 
-#define GENESIS_NBITS 0x1f00ffff
-#define KOMODO_MINRATIFY 7
-#define KOMODO_MAXBLOCKS 5000000
-
 #include "komodo_structs.h"
-
 
 struct komodo_state KOMODO_STATES[33];
 
