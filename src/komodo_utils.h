@@ -34,6 +34,8 @@ union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uin
 typedef union _bits256 bits256;
 
 #include "mini-gmp.c"
+#include "uthash.h"
+#include "utlist.h"
 
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
