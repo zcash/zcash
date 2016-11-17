@@ -35,6 +35,7 @@ struct knotaries_entry *Pubkeys;
 struct nutxo_entry *NUTXOS; int32_t Num_nutxos;
 struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS;
 
+struct komodo_state KOMODO_STATES[33];
 
 int COINBASE_MATURITY = 100;
 

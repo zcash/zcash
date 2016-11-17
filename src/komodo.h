@@ -35,8 +35,6 @@
 
 #include "komodo_structs.h"
 
-struct komodo_state KOMODO_STATES[33];
-
 #include "komodo_globals.h"
 #include "komodo_utils.h"
 
