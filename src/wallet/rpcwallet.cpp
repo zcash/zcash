@@ -2483,6 +2483,9 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
             sample_times.push_back(benchmark_large_tx());
         } else if (benchmarktype == "trydecryptnotes") {
             sample_times.push_back(benchmark_try_decrypt_notes(samplejoinsplit));
+        } else if (benchmarktype == "incnotewitnesses") {
+            int nTxs = params[2].get_int();
+            sample_times.push_back(benchmark_increment_note_witnesses(nTxs));
         } else {
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
         }

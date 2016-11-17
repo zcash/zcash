@@ -91,6 +91,9 @@ case "$1" in
             trydecryptnotes)
                 zcash_rpc zcbenchmark trydecryptnotes 1000 "\"$RAWJOINSPLIT\""
                 ;;
+            incnotewitnesses)
+                zcash_rpc zcbenchmark incnotewitnesses 100 "${@:3}"
+                ;;
             *)
                 zcashd_stop
                 echo "Bad arguments."
@@ -121,6 +124,9 @@ case "$1" in
                 ;;
             trydecryptnotes)
                 zcash_rpc zcbenchmark trydecryptnotes 1 "\"$RAWJOINSPLIT\""
+                ;;
+            incnotewitnesses)
+                zcash_rpc zcbenchmark incnotewitnesses 1 "${@:3}"
                 ;;
             *)
                 zcashd_massif_stop
@@ -153,6 +159,9 @@ case "$1" in
                 ;;
             trydecryptnotes)
                 zcash_rpc zcbenchmark trydecryptnotes 1 "\"$RAWJOINSPLIT\""
+                ;;
+            incnotewitnesses)
+                zcash_rpc zcbenchmark incnotewitnesses 1 "${@:3}"
                 ;;
             *)
                 zcashd_valgrind_stop
