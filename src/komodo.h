@@ -39,29 +39,7 @@ struct komodo_state KOMODO_STATES[33];
 
 #include "komodo_globals.h"
 #include "komodo_utils.h"
-struct komodo_state *komodo_stateptr(char *symbol,char *dest)
-{
-    int32_t baseid; struct komodo_state *sp;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
-    {
-        strcpy(symbol,"KMD");
-        strcpy(dest,"BTC");
-        sp = &KOMODO_STATES[0];
-    }
-    else
-    {
-        strcpy(symbol,ASSETCHAINS_SYMBOL);
-        strcpy(dest,"KMD");
-        if ( (baseid= komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 )
-            sp = &KOMODO_STATES[baseid];
-        else
-        {
-            fprintf(stderr,"komodo_stateupdate.(%s) not supported\n",ASSETCHAINS_SYMBOL);
-            return(0);
-        }
-    }
-    return(sp);
-}
+
 
 void komodo_setkmdheight(int32_t kmdheight)
 {
