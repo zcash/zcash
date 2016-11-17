@@ -30,6 +30,8 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <ctype.h>
+#include "uthash.h"
+#include "utlist.h"
 
 #define GENESIS_NBITS 0x1f00ffff
 #define KOMODO_MINRATIFY 7
