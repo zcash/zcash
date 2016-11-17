@@ -37,25 +37,12 @@
 #define KOMODO_MINRATIFY 7
 #define KOMODO_MAXBLOCKS 5000000
 
+#include "komodo_structs.h"
+
 FILE *Minerfp;
 int8_t Minerids[KOMODO_MAXBLOCKS]; // 5 million blocks
 #define KOMODO_ELECTION_GAP ((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)
 
-struct pax_transaction
-{
-    UT_hash_handle hh;
-    uint256 txid;
-    uint64_t komodoshis,fiatoshis;
-    int32_t marked,height,otherheight;
-    uint16_t vout;
-    char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
-};
-
-struct nutxo_entry { UT_hash_handle hh; uint256 txhash; uint64_t voutmask; int32_t notaryid,height; };
-struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
-struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; };
-struct notarized_checkpoint { uint256 notarized_hash,notarized_desttxid; int32_t nHeight,notarized_height; };
-pthread_mutex_t komodo_mutex;
 int32_t KMDHEIGHT = 43000;
 
 struct pax_transaction *PAX;

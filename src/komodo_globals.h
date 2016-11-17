@@ -21,6 +21,7 @@ void komodo_init(int32_t height);
 void komodo_assetchain_pubkeys(char *jsonstr);
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 
+pthread_mutex_t komodo_mutex;
 int COINBASE_MATURITY = 100;
 
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAINS_SEED,KOMODO_ON_DEMAND;
