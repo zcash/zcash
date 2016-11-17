@@ -23,7 +23,7 @@
 #define PACKED __attribute__((packed))
 #endif
 
-#define KOMODO_EVENT_PUBKEYS 'P'
+#define KOMODO_EVENT_RATIFY 'P'
 #define KOMODO_EVENT_NOTARIZED 'N'
 #define KOMODO_EVENT_UTXO 'U'
 #define KOMODO_EVENT_KMDHEIGHT 'K'
@@ -35,7 +35,7 @@
 #define KOMODO_OPRETURN_WITHDRAW 'W' // assetchain
 #define KOMODO_OPRETURN_REDEEM 'X'
 
-struct komodo_event_notarized { bits256 blockhash,desttxid; int32_t notarizedheight; char symbol[16]; } PACKED;
+struct komodo_event_notarized { bits256 blockhash,desttxid; int32_t notarizedheight; char dest[16]; } PACKED;
 struct komodo_event_pubkeys { uint8_t num; uint8_t pubkeys[64][33]; } PACKED;
 struct komodo_event_utxo { bits256 txid; uint64_t voutmask; uint8_t numvouts; } PACKED;
 struct komodo_event_opreturn { bits256 txid; uint64_t ovalue; uint16_t vout,olen; uint8_t opret[]; } PACKED;
@@ -72,7 +72,7 @@ void komodo_eventadd_notarized(char *symbol,int32_t height,char *dest,bits256 bl
     N.desttxid = desttxid;
     N.notarizedheight = notarizedheight;
     strcpy(N.dest,dest);
-    komodo_eventadd(height,symbol,KOMODO_EVENT_NOTARIZED,(void *)&B,sizeof(N));
+    komodo_eventadd(height,symbol,KOMODO_EVENT_NOTARIZED,(uint8_t *)&N,sizeof(N));
 }
 
 void komodo_eventadd_pubkeys(char *symbol,int32_t height,uint8_t num,uint8_t pubkeys[64][33])
@@ -81,7 +81,7 @@ void komodo_eventadd_pubkeys(char *symbol,int32_t height,uint8_t num,uint8_t pub
     memset(&P,0,sizeof(P));
     P.num = num;
     memcpy(P.pubkeys,pubkeys,33 * num);
-    komodo_eventadd(height,symbol,KOMODO_EVENT_RATIFY,(void *)&P,(int32_t)(sizeof(P.num) + 33 * num));
+    komodo_eventadd(height,symbol,KOMODO_EVENT_RATIFY,(uint8_t *)&P,(int32_t)(sizeof(P.num) + 33 * num));
 }
 
 void komodo_eventadd_utxo(char *symbol,int32_t height,uint8_t notaryid,bits256 txid,uint64_t voutmask,uint8_t numvouts)
@@ -91,7 +91,7 @@ void komodo_eventadd_utxo(char *symbol,int32_t height,uint8_t notaryid,bits256 t
     U.txid = txid;
     U.voutmask = voutmask;
     U.numvouts = numvouts;
-    komodo_eventadd(height,symbol,KOMODO_EVENT_UTXO,(void *)&U,sizeof(U));
+    komodo_eventadd(height,symbol,KOMODO_EVENT_UTXO,(uint8_t *)&U,sizeof(U));
 }
 
 void komodo_eventadd_pricefeed(char *symbol,int32_t height,uint32_t *prices,uint8_t num)
@@ -100,15 +100,15 @@ void komodo_eventadd_pricefeed(char *symbol,int32_t height,uint32_t *prices,uint
     memset(&F,0,sizeof(F));
     F.num = num;
     memcpy(F.prices,prices,sizeof(*F.prices) * num);
-    komodo_eventadd(height,symbol,KOMODO_EVENT_PRICEFEED,(void *)&F,(int32_t)(sizeof(F.num) + sizeof(*F.prices) * num)));
+    komodo_eventadd(height,symbol,KOMODO_EVENT_PRICEFEED,(uint8_t *)&F,(int32_t)(sizeof(F.num) + sizeof(*F.prices) * num)));
 }
 
 void komodo_eventadd_kmdheight(char *symbol,int32_t height,int32_t kmdheight)
 {
-    komodo_eventadd(height,symbol,KOMODO_EVENT_KMDHEIGHT,(void *)&kmdheight,sizeof(kmdheight));
+    komodo_eventadd(height,symbol,KOMODO_EVENT_KMDHEIGHT,(uint8_t *)&kmdheight,sizeof(kmdheight));
 }
 
-void komodo_eventadd_opreturn(char *symbol,int32_t height,uint8_t type,bits256 txid,uint64_t value,uint16_t vout,uint8_t *opret,uint16_t opretlen)
+void komodo_eventadd_opreturn(char *symbol,int32_t height,uint8_t type,bits256 txid,uint64_t value,uint16_t vout,uint8_t *buf,uint16_t opretlen)
 {
     struct komodo_event_opreturn O; uint8_t opret[10000];
     memset(&O,0,sizeof(O));
@@ -116,7 +116,7 @@ void komodo_eventadd_opreturn(char *symbol,int32_t height,uint8_t type,bits256 t
     O.value = value;
     O.vout = vout;
     memcpy(opret,&O,sizeof(O));
-    memcpy(&opret[sizeof(O)],opret,opretlen);
+    memcpy(&opret[sizeof(O)],buf,opretlen);
     komodo_eventadd(height,symbol,type,opret,(int32_t)(opretlen + sizeof(O)));
 }
 
