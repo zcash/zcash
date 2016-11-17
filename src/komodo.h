@@ -17,12 +17,14 @@
 #define H_KOMODO_H
 
 // Todo:
-// 0. optimize assetchains RT loop
+// 0. optimize assetchains
 // 1. error check fiat redeem amounts
 // 2. net balance limiter
 // 3. verify: reorgs
-// 4. automate notarization fee payouts
-// 5. automated distribution of test REVS snapshot
+
+// non komodod (non-hardfork) todo:
+// a. automate notarization fee payouts
+// b. automated distribution of test REVS snapshot
 
 #include <stdint.h>
 #include <stdio.h>
@@ -35,6 +37,8 @@
 
 FILE *Minerfp;
 int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
+
+#include "komodo_events.h"
 
 #include "komodo_globals.h"
 #include "komodo_utils.h"
@@ -146,7 +150,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 }
                 else if ( func == 'D' )
                 {
-                    //printf("D[%d]\n",ht);
+                    printf("unexpected function D[%d]\n",ht);
                 }
 //#ifdef KOMODO_PAX
                 else if ( func == 'V' )
