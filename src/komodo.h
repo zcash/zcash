@@ -97,6 +97,11 @@ struct komodo_state *komodo_stateptr(char *symbol,char *dest)
     return(sp);
 }
 
+void komodo_setkmdheight(int32_t kmdheight)
+{
+    if ( kmdheight > KMDHEIGHT )
+        KMDHEIGHT = kmdheight;
+}
 
 #include "cJSON.c"
 #include "komodo_bitcoind.h"
@@ -106,11 +111,6 @@ struct komodo_state *komodo_stateptr(char *symbol,char *dest)
 #include "komodo_gateway.h"
 #include "komodo_events.h"
 
-void komodo_setkmdheight(int32_t kmdheight)
-{
-    if ( kmdheight > KMDHEIGHT )
-        KMDHEIGHT = kmdheight;
-}
 
 void komodo_currentheight_set(int32_t height)
 {

@@ -463,7 +463,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     }
 }
 
-void komodo_currentheight_set(int32_t height);
+void komodo_currentheight();
 int8_t komodo_minerid(int32_t height)
 {
     static uint32_t depth;

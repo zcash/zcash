@@ -63,7 +63,7 @@ struct komodo_event *komodo_eventadd(int32_t height,char *symbol,uint8_t type,ui
     strcpy(ep->symbol,symbol);
     if ( datalen != 0 )
         memcpy(ep->space,data,datalen);
-    Komodo_events = realloc(Komodo_events,(1 + Komodo_numevents) * sizeof(*Komodo_events));
+    Komodo_events = (struct komodo_event **)realloc(Komodo_events,(1 + Komodo_numevents) * sizeof(*Komodo_events));
     Komodo_events[Komodo_numevents++] = ep;
     return(ep);
 }
@@ -72,8 +72,8 @@ void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t heig
 {
     struct komodo_event_notarized N;
     memset(&N,0,sizeof(N));
-    N.blockhash = blockhash;
-    N.desttxid = desttxid;
+    N.blockhash = notarized_hash;
+    N.desttxid = notarized_desttxid;
     N.notarizedheight = notarizedheight;
     strcpy(N.dest,dest);
     komodo_eventadd(height,symbol,KOMODO_EVENT_NOTARIZED,(uint8_t *)&N,sizeof(N));
@@ -92,7 +92,7 @@ void komodo_eventadd_pubkeys(struct komodo_state *sp,char *symbol,int32_t height
         komodo_notarysinit(height,pubkeys,num);
 }
 
-void komodo_eventadd_utxo(struct komodo_state *sp,char *symbol,int32_t height,uint8_t notaryid,bits256 txid,uint64_t voutmask,uint8_t numvouts)
+void komodo_eventadd_utxo(struct komodo_state *sp,char *symbol,int32_t height,uint8_t notaryid,uint256 txid,uint64_t voutmask,uint8_t numvouts)
 {
     struct komodo_event_utxo U;
     memset(&U,0,sizeof(U));
@@ -122,7 +122,7 @@ void komodo_eventadd_kmdheight(struct komodo_state *sp,char *symbol,int32_t heig
         komodo_setkmdheight(kmdheight);
 }
 
-void komodo_eventadd_opreturn(struct komodo_state *sp,char *symbol,int32_t height,bits256 txid,uint64_t value,uint16_t vout,uint8_t *buf,uint16_t opretlen)
+void komodo_eventadd_opreturn(struct komodo_state *sp,char *symbol,int32_t height,uint256 txid,uint64_t value,uint16_t vout,uint8_t *buf,uint16_t opretlen)
 {
     struct komodo_event_opreturn O; uint8_t opret[10000];
     memset(&O,0,sizeof(O));
@@ -153,6 +153,7 @@ void komodo_event_undo(struct komodo_event *ep)
 
 void komodo_event_rewind(int32_t height)
 {
+    struct komodo_event *ep;
     while ( Komodo_numevents > 0 )
     {
         if ( (ep= Komodo_events[Komodo_numevents-1]) != 0 )
