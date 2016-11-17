@@ -39,17 +39,6 @@
 
 #include "komodo_structs.h"
 
-FILE *Minerfp;
-int8_t Minerids[KOMODO_MAXBLOCKS]; // 5 million blocks
-#define KOMODO_ELECTION_GAP ((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)
-
-int32_t KMDHEIGHT = 43000;
-
-struct pax_transaction *PAX;
-int32_t NUM_PRICES; uint32_t *PVALS;
-struct knotaries_entry *Pubkeys;
-struct nutxo_entry *NUTXOS; int32_t Num_nutxos;
-struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS;
 
 struct komodo_state
 {

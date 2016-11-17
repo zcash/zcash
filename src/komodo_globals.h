@@ -22,6 +22,20 @@ void komodo_assetchain_pubkeys(char *jsonstr);
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 
 pthread_mutex_t komodo_mutex;
+
+FILE *Minerfp;
+int8_t Minerids[KOMODO_MAXBLOCKS]; // 5 million blocks
+#define KOMODO_ELECTION_GAP ((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)
+
+int32_t KMDHEIGHT = 43000;
+
+struct pax_transaction *PAX;
+int32_t NUM_PRICES; uint32_t *PVALS;
+struct knotaries_entry *Pubkeys;
+struct nutxo_entry *NUTXOS; int32_t Num_nutxos;
+struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS;
+
+
 int COINBASE_MATURITY = 100;
 
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAINS_SEED,KOMODO_ON_DEMAND;

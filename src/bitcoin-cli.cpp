@@ -59,7 +59,6 @@ public:
 #include "uint256.h"
 #include "arith_uint256.h"
 
-int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
 #include "komodo_structs.h"
 
 #include "komodo_globals.h"
