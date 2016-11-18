@@ -111,7 +111,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height)
         } else printf("illegal notaryid.%d vs n.%d\n",kp->notaryid,n);
     }
     pthread_mutex_unlock(&komodo_mutex);
-    if ( mask == ((1LL << n)-1) )
+    if ( (n < 64 && mask == ((1LL << n)-1)) || (n == 64 && mask == 0xffffffffffffffffLL) )
         return(n);
     printf("error retrieving notaries ht.%d got mask.%llx for n.%d\n",height,(long long)mask,n);
     return(-1);
