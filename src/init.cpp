@@ -980,7 +980,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     threadGroup.create_thread(boost::bind(&TraceThread<CScheduler::Function>, "scheduler", serviceLoop));
 
     if ((chainparams.NetworkIDString() != "regtest") &&
-            GetBoolArg("-showmetrics", true) &&
+            GetBoolArg("-showmetrics", isatty(STDOUT_FILENO)) &&
             !fPrintToConsole && !GetBoolArg("-daemon", false)) {
         // Start the persistent metrics interface
         ConnectMetricsScreen();
