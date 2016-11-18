@@ -471,23 +471,28 @@ int8_t komodo_minerid(int32_t height)
     CBlock block; int32_t notaryid,num,i; CBlockIndex *pindex; uint8_t pubkeys[64][33],script[35];
     if ( (pindex= chainActive[height]) != 0 )
     {
-        if ( ReadBlockFromDisk(block,(const CBlockIndex *)pindex
-#ifndef KOMODO_ZCASH
-                               ,Params().GetConsensus()
-#endif
-                               ) != 0 )
+        block.SetNull();
+        // Open history file to read
+        CAutoFile filein(OpenBlockFile(pindex->GetBlockPos(),true),SER_DISK,CLIENT_VERSION);
+        if (filein.IsNull())
+            return(-1);
+        // Read block
+        try { filein >> block; }
+        catch (const std::exception& e)
         {
-            if ( gettxout_scriptPubKey(script,sizeof(script),block.vtx[0].GetHash(),0) == 35 )
+            fprintf(stderr,"readblockfromdisk err B\n");
+            return(-1);
+        }
+        if ( gettxout_scriptPubKey(script,sizeof(script),block.vtx[0].GetHash(),0) == 35 )
+        {
+            if ( (num= komodo_notaries(pubkeys,height)) > 0 )
             {
-                if ( (num= komodo_notaries(pubkeys,height)) > 0 )
-                {
-                    for (i=0; i<num; i++)
-                        if ( memcmp(pubkeys[i],&script[1],33) == 0 )
-                        {
-                            printf("minderid.%d ht.%d\n",i,height);
-                            return(i);
-                        }
-                }
+                for (i=0; i<num; i++)
+                    if ( memcmp(pubkeys[i],&script[1],33) == 0 )
+                    {
+                        printf("minderid.%d ht.%d\n",i,height);
+                        return(i);
+                    }
             }
         }
     }
