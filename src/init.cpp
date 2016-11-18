@@ -439,9 +439,9 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-rpcsslprivatekeyfile=<file.pem>", strprintf(_("Server private key (default: %s)"), "server.pem"));
     strUsage += HelpMessageOpt("-rpcsslciphers=<ciphers>", strprintf(_("Acceptable ciphers (default: %s)"), "TLSv1.2+HIGH:TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!3DES:@STRENGTH"));
 
+    strUsage += HelpMessageGroup(_("UI Options:"));
     if (mode == HMM_BITCOIN_QT)
     {
-        strUsage += HelpMessageGroup(_("UI Options:"));
         if (showDebug) {
             strUsage += HelpMessageOpt("-allowselfsignedrootcertificates", "Allow self signed root certificates (default: 0)");
         }
@@ -450,6 +450,10 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-min", _("Start minimized"));
         strUsage += HelpMessageOpt("-rootcertificates=<file>", _("Set SSL root certificates for payment request (default: -system-)"));
         strUsage += HelpMessageOpt("-splash", _("Show splash screen on startup (default: 1)"));
+    } else {
+        strUsage += HelpMessageOpt("-showmetrics", _("Show metrics on stdout (default: 1 if running in a console, 0 otherwise)"));
+        strUsage += HelpMessageOpt("-metricsui", _("Set to 1 for a persistent metrics screen, 0 for sequential metrics output (default: 1 if running in a console, 0 otherwise)"));
+        strUsage += HelpMessageOpt("-metricsrefreshtime", strprintf(_("Number of seconds between metrics refreshes (default: %u if running in a console, %u otherwise)"), 1, 600));
     }
 
     return strUsage;
