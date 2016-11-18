@@ -34,8 +34,6 @@ union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uin
 typedef union _bits256 bits256;
 
 #include "mini-gmp.c"
-#include "uthash.h"
-#include "utlist.h"
 
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
@@ -1419,4 +1417,28 @@ void komodo_args()
         //fprintf(stderr,"IS_KOMODO_NOTARY %d %s\n",IS_KOMODO_NOTARY,NOTARY_PUBKEY.c_str());
     }
     //fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
+}
+
+struct komodo_state *komodo_stateptr(char *symbol,char *dest)
+{
+    int32_t baseid; struct komodo_state *sp;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    {
+        strcpy(symbol,"KMD");
+        strcpy(dest,"BTC");
+        sp = &KOMODO_STATES[0];
+    }
+    else
+    {
+        strcpy(symbol,ASSETCHAINS_SYMBOL);
+        strcpy(dest,"KMD");
+        if ( (baseid= komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 )
+            sp = &KOMODO_STATES[baseid];
+        else
+        {
+            fprintf(stderr,"komodo_stateupdate.(%s) not supported\n",ASSETCHAINS_SYMBOL);
+            return(0);
+        }
+    }
+    return(sp);
 }

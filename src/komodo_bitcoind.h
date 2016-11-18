@@ -375,17 +375,13 @@ uint64_t komodo_seed(int32_t height)
 
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
-    //int32_t i; uint256 hash;
+    char symbol[16],dest[16]; struct komodo_state *sp;
     komodo_init(pindex->nHeight);
-    Minerids[pindex->nHeight] = -2;
-    //hash = block.GetHash();
-    //for (i=0; i<32; i++)
-    //    printf("%02x",((uint8_t *)&hash)[i]);
-    //printf(" <- disconnect block\n");
-    //uint256 zero;
-    //printf("disconnect ht.%d\n",pindex->nHeight);
-    //memset(&zero,0,sizeof(zero));
-    //komodo_stateupdate(-pindex->nHeight,0,0,0,zero,0,0,0,0,0,0,0);
+    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
+    {
+        //sp->rewinding = pindex->nHeight;
+        //fprintf(stderr,"-%d ",pindex->nHeight);
+    } else printf("komodo_disconnect: ht.%d cant get komodo_state.(%s)\n",pindex->nHeight,ASSETCHAINS_SYMBOL);
 }
 
 int32_t komodo_is_notarytx(const CTransaction& tx)
@@ -432,13 +428,34 @@ int32_t komodo_block2height(CBlock *block)
 
 void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
 {
+    int32_t n;
 #ifdef KOMODO_ZCASH
     uint8_t *ptr = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
 #else
     uint8_t *ptr = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
 #endif
     komodo_init(0);
-    memcpy(pubkey33,ptr+1,33);
+    n = block.vtx[0].vout[0].scriptPubKey.size();
+    if ( n == 35 )
+        memcpy(pubkey33,ptr+1,33);
+    else memset(pubkey33,0,33);
+}
+
+int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex)
+{
+    block.SetNull();
+    // Open history file to read
+    CAutoFile filein(OpenBlockFile(pindex->GetBlockPos(),true),SER_DISK,CLIENT_VERSION);
+    if (filein.IsNull())
+        return(-1);
+    // Read block
+    try { filein >> block; }
+    catch (const std::exception& e)
+    {
+        fprintf(stderr,"readblockfromdisk err B\n");
+        return(-1);
+    }
+    return(0);
 }
 
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
@@ -448,14 +465,8 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        if ( ReadBlockFromDisk(block,(const CBlockIndex *)pindex
-#ifndef KOMODO_ZCASH
-                               ,Params().GetConsensus()
-#endif
-                               ) != 0 )
-        {
+        if ( komodo_blockload(block,pindex) == 0 )
             komodo_block2pubkey33(pubkey33,block);
-        }
     }
     else
     {
@@ -464,57 +475,41 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     }
 }
 
+void komodo_connectpindex(CBlockIndex *pindex)
+{
+    CBlock block;
+    if ( komodo_blockload(block,pindex) == 0 )
+        komodo_connectblock(pindex,block);
+}
+
+int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
+
 int8_t komodo_minerid(int32_t height)
 {
-    static uint32_t depth;
-    int32_t notaryid; CBlockIndex *pindex; uint8_t pubkey33[33];
-    if ( depth < 3 && height <= CURRENT_HEIGHT )//chainActive.Tip()->nHeight )
+    int32_t num,i; CBlockIndex *pindex; uint8_t pubkey33[33],pubkeys[64][33];
+    if ( (pindex= chainActive[height]) != 0 )
     {
-        if ( Minerids[height] >= -1 )
+        komodo_index2pubkey33(pubkey33,pindex,height);
+        if ( (num= komodo_notaries(pubkeys,height)) > 0 )
         {
-            printf("cached[%d] -> %d\n",height,Minerids[height]);
-            return(Minerids[height]);
-        }
-        if ( (pindex= chainActive[height]) != 0 )
-        {
-            depth++;
-            komodo_index2pubkey33(pubkey33,pindex,height);
-            komodo_chosennotary(&notaryid,height,pubkey33);
-            if ( notaryid >= -1 )
-            {
-                Minerids[height] = notaryid;
-                if ( Minerfp != 0 )
-                {
-                    fseek(Minerfp,height,SEEK_SET);
-                    fputc(Minerids[height],Minerfp);
-                    fflush(Minerfp);
-                }
-            }
-            depth--;
-            return(notaryid);
+            for (i=0; i<num; i++)
+                if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
+                    return(i);
         }
     }
-    return(-2);
+    //printf("minderid not notary ht.%d\n",height);
+    return(-1);
 }
 
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
 {
-    int32_t i,notaryid;
+    int32_t i,notaryid,minerid;
     komodo_chosennotary(&notaryid,height,pubkey33);
     if ( height >= 34000 && notaryid >= 0 )
     {
         for (i=1; i<64; i++)
         {
-            if ( Minerids[height-i] == -2 )
-            {
-                Minerids[height-i] = komodo_minerid(height-i);
-                if ( Minerids[height - i] == -2 )
-                {
-                    //fprintf(stderr,"second -2 for Minerids[%d] current.%d\n",height-i,CURRENT_HEIGHT);
-                    return(-2);
-                }
-            }
-            if ( Minerids[height-i] == notaryid )
+            if ( komodo_minerid(height-i) == notaryid )
                 return(-1);
         }
         return(1);
@@ -543,7 +538,7 @@ int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 has
                 return(-1);
             }
         } else fprintf(stderr,"unexpected error notary_hash %s ht.%d at ht.%d\n",notarized_hash.ToString().c_str(),notarized_height,notary->nHeight);
-    } else if ( notarized_height > 0 )
+    } else if ( notarized_height > 0 && notarized_height != 73880 )
         fprintf(stderr,"couldnt find notary_hash %s ht.%d\n",notarized_hash.ToString().c_str(),notarized_height);
     return(0);
 }

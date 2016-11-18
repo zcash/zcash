@@ -431,6 +431,7 @@ Value notaries(const Array& params, bool fHelp)
             }
         }
         ret.push_back(Pair("notaries", a));
+        ret.push_back(Pair("numnotaries", n));
     }
     return ret;
 }
@@ -587,6 +588,29 @@ Value gettxout(const Array& params, bool fHelp)
     ret.push_back(Pair("coinbase", coins.fCoinBase));
 
     return ret;
+}
+
+int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid,int32_t n)
+{
+    int32_t i,m; uint8_t *ptr;
+    LOCK(cs_main);
+    CCoins coins;
+    if ( 1 )
+    {
+        LOCK(mempool.cs);
+        CCoinsViewMemPool view(pcoinsTip,mempool);
+        if ( view.GetCoins(txid,coins) == 0 )
+            return(-1);
+        mempool.pruneSpent(txid, coins); // TODO: this should be done by the CCoinsViewMemPool
+    } else if ( pcoinsTip->GetCoins(txid,coins) == 0 )
+        return(-1);
+    if ( n < 0 || (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
+        return(-1);
+    ptr = (uint8_t *)coins.vout[n].scriptPubKey.data();
+    m = coins.vout[n].scriptPubKey.size();
+    for (i=0; i<maxsize&&i<m; i++)
+        scriptPubKey[i] = ptr[i];
+    return(i);
 }
 
 Value verifychain(const Array& params, bool fHelp)

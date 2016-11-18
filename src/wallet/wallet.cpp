@@ -2627,11 +2627,20 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
 
                         // Reserve a new key pair from key pool
                         CPubKey vchPubKey;
-                        bool ret;
-                        ret = reservekey.GetReservedKey(vchPubKey);
-                        assert(ret); // should never fail, as we just unlocked
-
-                        scriptChange = GetScriptForDestination(vchPubKey.GetID());
+                        extern int32_t USE_EXTERNAL_PUBKEY; extern std::string NOTARY_PUBKEY;
+                        if ( USE_EXTERNAL_PUBKEY == 0 )
+                        {
+                            //fprintf(stderr,"use notary pubkey\n");
+                            //scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
+                            bool ret;
+                            ret = reservekey.GetReservedKey(vchPubKey);
+                            assert(ret); // should never fail, as we just unlocked
+                            scriptChange = GetScriptForDestination(vchPubKey.GetID());
+                        }
+                        else
+                        {
+                            scriptChange = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
+                        }
                     }
 
                     CTxOut newTxOut(nChange, scriptChange);

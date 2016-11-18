@@ -106,8 +106,9 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
 
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
-extern int32_t KOMODO_CHOSEN_ONE,CURRENT_HEIGHT;
-extern int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
+int32_t komodo_currentheight();
+extern int32_t KOMODO_CHOSEN_ONE;
+//extern int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
 
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
@@ -116,7 +117,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( height == 0 )
-        height = CURRENT_HEIGHT + 1;
+        height = komodo_currentheight() + 1;
     if ( height > 34000 ) // 0 -> non-special notary
     {
         special = komodo_chosennotary(&notaryid,height,pubkey33);
@@ -132,7 +133,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             if ( notaryid >= 0 )
             {
                 special2 = komodo_is_special(height,pubkey33);
-                if ( 0 && special2 == -2 )
+                if ( special2 == -2 )
                     printf("height.%d special2.%d special.%d\n",height,special2,special);
                 if ( special2 == -2 || (height < 70000 && (special != 0 || special2 > 0)) ||
                     (height >= 70000 && special2 > 0) )

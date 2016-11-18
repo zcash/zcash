@@ -40,11 +40,12 @@ using namespace std;
  * Or alternatively, create a specific query method for the information.
  **/
 uint64_t komodo_interestsum();
+int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
 
 Value getinfo(const Array& params, bool fHelp)
 {
-    extern uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
-    extern int32_t NOTARIZED_HEIGHT;
+    uint256 notarized_hash,notarized_desttxid;
+    int32_t notarized_height;
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getinfo\n"
@@ -81,13 +82,14 @@ Value getinfo(const Array& params, bool fHelp)
 
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
+    notarized_height = komodo_notarized_height(&notarized_hash,&notarized_desttxid);
 
     Object obj;
     obj.push_back(Pair("version", CLIENT_VERSION));
     obj.push_back(Pair("protocolversion", PROTOCOL_VERSION));
-    obj.push_back(Pair("notarized", NOTARIZED_HEIGHT));
-    obj.push_back(Pair("notarizedhash", NOTARIZED_HASH.ToString()));
-    obj.push_back(Pair("notarizedtxid", NOTARIZED_DESTTXID.ToString()));
+    obj.push_back(Pair("notarized", notarized_height));
+    obj.push_back(Pair("notarizedhash", notarized_hash.ToString()));
+    obj.push_back(Pair("notarizedtxid", notarized_desttxid.ToString()));
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
