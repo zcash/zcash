@@ -249,7 +249,9 @@ void ThreadShowMetricsScreen()
     RenameThread("zcash-metrics-screen");
 
     // Determine whether we should render a persistent UI or rolling metrics
-    bool isScreen = GetBoolArg("-metricsui", isatty(STDOUT_FILENO));
+    bool isTTY = isatty(STDOUT_FILENO);
+    bool isScreen = GetBoolArg("-metricsui", isTTY);
+    int64_t nRefresh = GetArg("-metricsrefreshtime", isTTY ? 1 : 600);
 
     if (isScreen) {
         // Clear screen
@@ -274,7 +276,7 @@ void ThreadShowMetricsScreen()
         int cols = 80;
 
         // Get current window size
-        if (isatty(STDOUT_FILENO)) {
+        if (isTTY) {
             struct winsize w;
             w.ws_col = 0;
             if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1 && w.ws_col != 0) {
@@ -306,8 +308,11 @@ void ThreadShowMetricsScreen()
             std::cout << "----------------" << std::endl;
         }
 
-        boost::this_thread::interruption_point();
-        MilliSleep(1000);
+        int64_t nWaitEnd = GetTime() + nRefresh;
+        while (GetTime() < nWaitEnd) {
+            boost::this_thread::interruption_point();
+            MilliSleep(200);
+        }
 
         if (isScreen) {
             // Return to the top of the updating section
