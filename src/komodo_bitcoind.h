@@ -468,19 +468,26 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
 int8_t komodo_minerid(int32_t height)
 {
     //static uint32_t depth;
-    int32_t notaryid,num,i; CBlockIndex *pindex; uint8_t pubkeys[64][33],script[35];
+    CBlock block; int32_t notaryid,num,i; CBlockIndex *pindex; uint8_t pubkeys[64][33],script[35];
     if ( (pindex= chainActive[height]) != 0 )
     {
-        if ( gettxout_scriptPubKey(script,sizeof(script),pindex->block.vtx[0].GetHash(),0) == 35 )
+        if ( ReadBlockFromDisk(block,(const CBlockIndex *)pindex
+#ifndef KOMODO_ZCASH
+                               ,Params().GetConsensus()
+#endif
+                               ) != 0 )
         {
-            if ( (num= komodo_notaries(pubkeys,height)) > 0 )
+            if ( gettxout_scriptPubKey(script,sizeof(script),block.vtx[0].GetHash(),0) == 35 )
             {
-                for (i=0; i<num; i++)
-                    if ( memcmp(pubkeys[i],&script[1],33) == 0 )
-                    {
-                        printf("minderid.%d ht.%d\n",i,height);
-                        return(i);
-                    }
+                if ( (num= komodo_notaries(pubkeys,height)) > 0 )
+                {
+                    for (i=0; i<num; i++)
+                        if ( memcmp(pubkeys[i],&script[1],33) == 0 )
+                        {
+                            printf("minderid.%d ht.%d\n",i,height);
+                            return(i);
+                        }
+                }
             }
         }
     }
