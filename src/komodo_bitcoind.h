@@ -441,6 +441,23 @@ void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
     else memset(pubkey33,0,33);
 }
 
+int32_t komodo_blockload(CBlock& block,cBlockIndex *pindex)
+{
+    block.SetNull();
+    // Open history file to read
+    CAutoFile filein(OpenBlockFile(pindex->GetBlockPos(),true),SER_DISK,CLIENT_VERSION);
+    if (filein.IsNull())
+        return(-1);
+    // Read block
+    try { filein >> block; }
+    catch (const std::exception& e)
+    {
+        fprintf(stderr,"readblockfromdisk err B\n");
+        return(-1);
+    }
+    return(0);
+}
+
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
     CBlock block;
@@ -448,18 +465,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        block.SetNull();
-        // Open history file to read
-        CAutoFile filein(OpenBlockFile(pindex->GetBlockPos(),true),SER_DISK,CLIENT_VERSION);
-        if (filein.IsNull())
-            return;
-        // Read block
-        try { filein >> block; }
-        catch (const std::exception& e)
-        {
-            fprintf(stderr,"readblockfromdisk err B\n");
-            return;
-        }
+        komodo_blockload(block,pindex);
         komodo_block2pubkey33(pubkey33,block);
     }
     else
@@ -467,6 +473,13 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
         // height -> pubkey33
         //printf("extending chaintip komodo_index2pubkey33 height.%d need to get pubkey33\n",height);
     }
+}
+
+void komodo_connectpindex(CBlockIndex *pindex)
+{
+    CBlock block;
+    komodo_blockload(block,pindex);
+    komodo_connectblock(pindex,block);
 }
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);

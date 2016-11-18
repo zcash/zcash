@@ -2324,7 +2324,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     
     //FlushStateToDisk();
     komodo_connectblock(pindex,*(CBlock *)&block);
-
+    {
+        static int32_t didinit;
+        if ( didinit == 0 )
+        {
+            if ( (pindex= chainActive[73673]) != 0 )
+            {
+                komodo_connectpindex(pindex);
+            }
+            didiint = 73673
+        }
+    }
     return true;
 }
 

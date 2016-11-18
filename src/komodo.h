@@ -35,6 +35,7 @@
 
 int32_t gettxout_scriptPubKey(uint8_t *scriptPubkey,int32_t maxsize,uint256 txid,int32_t n);
 void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height);
+void komodo_connectblock(CBlockIndex *pindex,CBlock& block);
 
 #include "komodo_structs.h"
 #include "komodo_globals.h"
