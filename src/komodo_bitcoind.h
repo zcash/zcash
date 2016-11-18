@@ -463,12 +463,27 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     }
 }
 
-int32_t komodo_currentheight();
 int8_t komodo_minerid(int32_t height)
 {
-    static uint32_t depth;
-    int32_t notaryid; CBlockIndex *pindex; uint8_t pubkey33[33];
-    if ( Minerids[height] >= -1 )
+    //static uint32_t depth;
+    int32_t notaryid,num,i; CBlockIndex *pindex; uint8_t pubkeys[64][33],script[35];
+    if ( (pindex= chainActive[height]) != 0 )
+    {
+        if ( gettxout_scriptPubKey(script,sizeof(script),pindex->vtx[0].GetHash(),0) == 35 )
+        {
+            if ( (num= komodo_notaries(pubkeys,height)) > 0 )
+            {
+                for (i=0; i<num; i++)
+                    if ( memcmp(pubkeys[i],&script[1],33) == 0 )
+                    {
+                        printf("minderid.%d ht.%d\n",i,height);
+                        return(i);
+                    }
+            }
+        }
+    }
+    return(-1);
+    /*if ( Minerids[height] >= -1 )
     {
         printf("cached[%d] -> %d\n",height,Minerids[height]);
         return(Minerids[height]);
@@ -493,7 +508,7 @@ int8_t komodo_minerid(int32_t height)
             depth--;
             return(notaryid);
         }
-    }
+    }*/
     return(-2);
 }
 
@@ -510,7 +525,7 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
                 Minerids[height-i] = komodo_minerid(height-i);
                 if ( Minerids[height - i] == -2 )
                 {
-                    //fprintf(stderr,"second -2 for Minerids[%d] current.%d\n",height-i,komodo_currentheight());
+                    fprintf(stderr,"second -2 for Minerids[%d] current.%d\n",height-i,komodo_currentheight());
                     return(-2);
                 }
             }

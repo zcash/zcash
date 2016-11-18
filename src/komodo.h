@@ -33,11 +33,11 @@
 #include "uthash.h"
 #include "utlist.h"
 
-#include "komodo_structs.h"
+int32_t gettxout_scriptPubKey(uint8_t *scriptPubkey,int32_t maxsize,uint256 txid,int32_t n);
 
+#include "komodo_structs.h"
 #include "komodo_globals.h"
 #include "komodo_utils.h"
-
 
 void komodo_setkmdheight(int32_t kmdheight)
 {
