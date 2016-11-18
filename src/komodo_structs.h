@@ -38,6 +38,6 @@ struct notarized_checkpoint { uint256 notarized_hash,notarized_desttxid; int32_t
 struct komodo_state
 {
     uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
-    int32_t CURRENT_HEIGHT,NOTARIZED_HEIGHT;
+    int32_t CURRENT_HEIGHT,NOTARIZED_HEIGHT,rewinding;
     // gateway state
 };

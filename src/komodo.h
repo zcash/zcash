@@ -426,10 +426,19 @@ int32_t komodo_notarycmp(uint8_t *scriptPubKey,int32_t scriptlen,uint8_t pubkeys
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
     static int32_t hwmheight;
-    uint64_t signedmask,voutmask;
+    uint64_t signedmask,voutmask; char symbol[16],dest[16]; struct komodo_state *sp;
     uint8_t scriptbuf[4096],pubkeys[64][33],rmd160[20],scriptPubKey[35]; uint256 kmdtxid,btctxid,txhash;
     int32_t i,j,k,numnotaries,scriptlen,isratification,nid,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
     komodo_init(pindex->nHeight);
+    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
+    {
+        if ( sp->rewinding != 0 )
+        {
+            printf("sp->rewinding.%d connect.%d\n",sp->rewinding,pindex->nHeight);
+            komodo_event_rewind(sp,symbol,pindex->nHeight);
+           // komodo_stateupdate();
+        }
+    }
     numnotaries = komodo_notaries(pubkeys,pindex->nHeight);
     calc_rmd160_sha256(rmd160,pubkeys[0],33);
     if ( pindex->nHeight > hwmheight )
