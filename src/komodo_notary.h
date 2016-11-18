@@ -150,7 +150,10 @@ void komodo_notarysinit(int32_t origheight,uint8_t pubkeys[64][33],int32_t num)
     for (i=htind; i<KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP; i++)
     {
         if ( Pubkeys[i].height != 0 && height < hwmheight )
+        {
+            printf("Pubkeys[%d].height %d < %d hwmheight, i.%d\n",i,Pubkeys[i].height,hwmheight);
             break;
+        }
         Pubkeys[i] = N;
         Pubkeys[i].height = i * KOMODO_ELECTION_GAP;
     }

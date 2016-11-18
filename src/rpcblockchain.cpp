@@ -431,6 +431,7 @@ Value notaries(const Array& params, bool fHelp)
             }
         }
         ret.push_back(Pair("notaries", a));
+        ret.push_back(Pair("numnotaries", n));
     }
     return ret;
 }
