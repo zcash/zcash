@@ -468,13 +468,13 @@ int8_t komodo_minerid(int32_t height)
 {
     static uint32_t depth;
     int32_t notaryid; CBlockIndex *pindex; uint8_t pubkey33[33];
-    if ( depth < 3 && height <= komodo_currentheight() )//chainActive.Tip()->nHeight )
+    if ( Minerids[height] >= -1 )
     {
-        if ( Minerids[height] >= -1 )
-        {
-            printf("cached[%d] -> %d\n",height,Minerids[height]);
-            return(Minerids[height]);
-        }
+        printf("cached[%d] -> %d\n",height,Minerids[height]);
+        return(Minerids[height]);
+    }
+    if ( depth < 1 )
+    {
         if ( (pindex= chainActive[height]) != 0 )
         {
             depth++;
