@@ -375,7 +375,7 @@ uint64_t komodo_seed(int32_t height)
 
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
-    char base[16],dest[16]; struct komodo_state *sp;
+    char symbol[16],dest[16]; struct komodo_state *sp;
     komodo_init(pindex->nHeight);
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
         komodo_event_rewind(sp,symbol,pindex->nHeight);
