@@ -130,7 +130,7 @@ void komodo_notarysinit(int32_t origheight,uint8_t pubkeys[64][33],int32_t num)
         height /= KOMODO_ELECTION_GAP;
         height = ((height + 1) * KOMODO_ELECTION_GAP);
         htind = (height / KOMODO_ELECTION_GAP);
-        printf("htind.%d activation %d from %d vs %d\n",htind,height,origheight,(((origheight+KOMODO_ELECTION_GAP/2)/KOMODO_ELECTION_GAP)+1)*KOMODO_ELECTION_GAP);
+        printf("htind.%d activation %d from %d vs %d | hwmheight.%d\n",htind,height,origheight,(((origheight+KOMODO_ELECTION_GAP/2)/KOMODO_ELECTION_GAP)+1)*KOMODO_ELECTION_GAP,hwmheight);
     } else htind = 0;
     pthread_mutex_lock(&komodo_mutex);
     for (k=0; k<num; k++)
@@ -149,7 +149,7 @@ void komodo_notarysinit(int32_t origheight,uint8_t pubkeys[64][33],int32_t num)
     N.numnotaries = num;
     for (i=htind; i<KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP; i++)
     {
-        if ( Pubkeys[i].height != 0 && height < hwmheight )
+        if ( Pubkeys[i].height != 0 && origheight < hwmheight )
         {
             printf("Pubkeys[%d].height %d < %d hwmheight\n",i,Pubkeys[i].height,hwmheight);
             break;
@@ -158,8 +158,8 @@ void komodo_notarysinit(int32_t origheight,uint8_t pubkeys[64][33],int32_t num)
         Pubkeys[i].height = i * KOMODO_ELECTION_GAP;
     }
     pthread_mutex_unlock(&komodo_mutex);
-    if ( height > hwmheight )
-        hwmheight = height;
+    if ( origheight > hwmheight )
+        hwmheight = origheight;
 }
 
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
