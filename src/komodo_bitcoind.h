@@ -379,7 +379,7 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
     komodo_init(pindex->nHeight);
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
         komodo_event_rewind(sp,symbol,pindex->nHeight);
-    komodo_stateupdate();
+    // add rewind entry komodo_stateupdate();
 }
 
 int32_t komodo_is_notarytx(const CTransaction& tx)
