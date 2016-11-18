@@ -248,17 +248,22 @@ void ThreadShowMetricsScreen()
     // Make this thread recognisable as the metrics screen thread
     RenameThread("zcash-metrics-screen");
 
-    // Clear screen
-    std::cout << "\e[2J";
+    // Determine whether we should render a persistent UI or rolling metrics
+    bool isScreen = GetBoolArg("-metricsui", isatty(STDOUT_FILENO));
 
-    // Print art
-    std::cout << METRICS_ART << std::endl;
-    std::cout << std::endl;
+    if (isScreen) {
+        // Clear screen
+        std::cout << "\e[2J";
 
-    // Thank you text
-    std::cout << _("Thank you for running a Zcash node!") << std::endl;
-    std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
-    std::cout << std::endl;
+        // Print art
+        std::cout << METRICS_ART << std::endl;
+        std::cout << std::endl;
+
+        // Thank you text
+        std::cout << _("Thank you for running a Zcash node!") << std::endl;
+        std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
+        std::cout << std::endl;
+    }
 
     // Count uptime
     int64_t nStart = GetTime();
@@ -277,8 +282,10 @@ void ThreadShowMetricsScreen()
             }
         }
 
-        // Erase below current position
-        std::cout << "\e[J";
+        if (isScreen) {
+            // Erase below current position
+            std::cout << "\e[J";
+        }
 
         // Miner status
         bool mining = GetBoolArg("-gen", false);
@@ -291,13 +298,20 @@ void ThreadShowMetricsScreen()
         lines += printMessageBox(cols);
         lines += printInitMessage();
 
-        // Explain how to exit
-        std::cout << "[" << _("Press Ctrl+C to exit") << "] [" << _("Set 'showmetrics=0' to hide") << "]" << std::endl;;
+        if (isScreen) {
+            // Explain how to exit
+            std::cout << "[" << _("Press Ctrl+C to exit") << "] [" << _("Set 'showmetrics=0' to hide") << "]" << std::endl;
+        } else {
+            // Print delineator
+            std::cout << "----------------" << std::endl;
+        }
 
         boost::this_thread::interruption_point();
         MilliSleep(1000);
 
-        // Return to the top of the updating section
-        std::cout << "\e[" << lines << "A";
+        if (isScreen) {
+            // Return to the top of the updating section
+            std::cout << "\e[" << lines << "A";
+        }
     }
 }
