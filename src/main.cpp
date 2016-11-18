@@ -2324,6 +2324,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     
     //FlushStateToDisk();
     komodo_connectblock(pindex,*(CBlock *)&block);
+    uint8_t pubkeys[64][33];
+    if ( pindex->nHeight > 73673 && komodo_notaries(pubkeys,76000) == 35 )
     {
         static int32_t didinit;
         if ( didinit == 0 )
