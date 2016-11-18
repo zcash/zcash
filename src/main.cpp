@@ -2334,7 +2334,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             {
                 komodo_connectpindex(pindex);
             }
-            didinit = 73673
+            didinit = 73673;
         }
     }
     return true;
