@@ -32,7 +32,7 @@ int32_t KMDHEIGHT = 43000;
 struct pax_transaction *PAX;
 int32_t NUM_PRICES; uint32_t *PVALS;
 struct knotaries_entry *Pubkeys;
-struct nutxo_entry *NUTXOS; int32_t Num_nutxos;
+//struct nutxo_entry *NUTXOS; int32_t Num_nutxos;
 struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS;
 
 struct komodo_state KOMODO_STATES[33];

@@ -52,7 +52,7 @@ const char *Notaries_genesis[][2] =
     { "titomane_SH", "035f49d7a308dd9a209e894321f010d21b7793461b0c89d6d9231a3fe5f68d9960" },
 };
 
-void komodo_nutxoadd(int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
+/*void komodo_nutxoadd(int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
 {
     struct nutxo_entry *np;
     if ( numvouts > 1 && notaryid < 64 )
@@ -79,7 +79,7 @@ int32_t komodo_nutxofind(int32_t height,uint256 txhash,int32_t vout)
     if ( np != 0 && ((1LL << vout) & np->voutmask) != 0 )
         return(np->notaryid);
     return(-1);
-}
+}*/
 
 int32_t komodo_ratify_threshold(int32_t height,uint64_t signedmask)
 {
