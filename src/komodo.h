@@ -34,6 +34,7 @@
 #include "utlist.h"
 
 int32_t gettxout_scriptPubKey(uint8_t *scriptPubkey,int32_t maxsize,uint256 txid,int32_t n);
+void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height);
 
 #include "komodo_structs.h"
 #include "komodo_globals.h"
@@ -83,7 +84,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
         //printf("fpos.%ld func.(%d %c) ht.%d ",ftell(fp),func,func,ht);
         if ( func == 'P' )
         {
-            if ( (num= fgetc(fp)) < 64 )
+            if ( (num= fgetc(fp)) <= 64 )
             {
                 if ( fread(pubkeys,33,num,fp) != num )
                     errs++;
@@ -241,7 +242,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         }
         else if ( notarypubs != 0 && numnotaries > 0 )
         {
-            //printf("ht.%d func P[%d] errs.%d\n",height,numnotaries,errs);
+            printf("ht.%d func P[%d] errs.%d\n",height,numnotaries,errs);
             fputc('P',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
                 errs++;

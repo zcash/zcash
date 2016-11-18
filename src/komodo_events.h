@@ -27,6 +27,7 @@
 #define KOMODO_EVENT_NOTARIZED 'N'
 #define KOMODO_EVENT_UTXO 'U'
 #define KOMODO_EVENT_KMDHEIGHT 'K'
+#define KOMODO_EVENT_REWIND 'B'
 //#define KOMODO_EVENT_DELETE 'D'
 #define KOMODO_EVENT_PRICEFEED 'V'
 #define KOMODO_EVENT_OPRETURN 'R'
@@ -84,6 +85,7 @@ void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t heig
 void komodo_eventadd_pubkeys(struct komodo_state *sp,char *symbol,int32_t height,uint8_t num,uint8_t pubkeys[64][33])
 {
     struct komodo_event_pubkeys P;
+    printf("eventadd pubkeys ht.%d\n",height);
     memset(&P,0,sizeof(P));
     P.num = num;
     memcpy(P.pubkeys,pubkeys,33 * num);
@@ -151,17 +153,22 @@ void komodo_event_undo(struct komodo_event *ep)
     }
 }
 
-void komodo_event_rewind(int32_t height)
+void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height)
 {
     struct komodo_event *ep;
-    while ( Komodo_numevents > 0 )
+    komodo_eventadd(height,symbol,KOMODO_EVENT_REWIND,(uint8_t *)&height,sizeof(height));
+    if ( sp != 0 )
     {
-        if ( (ep= Komodo_events[Komodo_numevents-1]) != 0 )
+        while ( Komodo_numevents > 0 )
         {
-            if ( ep->height < height )
-                break;
-            komodo_event_undo(ep);
-            Komodo_numevents--;
+            if ( (ep= Komodo_events[Komodo_numevents-1]) != 0 )
+            {
+                if ( ep->height < height )
+                    break;
+                printf("undo event.%c ht.%d for rewind.%d\n",ep->type,ep->height,height);
+                komodo_event_undo(ep);
+                Komodo_numevents--;
+            }
         }
     }
 }

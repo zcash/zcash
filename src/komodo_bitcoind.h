@@ -375,16 +375,11 @@ uint64_t komodo_seed(int32_t height)
 
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
-    //int32_t i; uint256 hash;
+    char base[16],dest[16]; struct komodo_state *sp;
     komodo_init(pindex->nHeight);
-    //Minerids[pindex->nHeight] = -2;
-    //hash = block.GetHash();
-    //for (i=0; i<32; i++)
-    //    printf("%02x",((uint8_t *)&hash)[i]);
-    //printf(" <- disconnect block\n");
-    //uint256 zero;
-    //printf("disconnect ht.%d\n",pindex->nHeight);
-    //memset(&zero,0,sizeof(zero));
+    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
+        komodo_event_rewind(sp,symbol,pindex->nHeight);
+    komodo_stateupdate();
 }
 
 int32_t komodo_is_notarytx(const CTransaction& tx)
@@ -464,14 +459,6 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
             return;
         }
         komodo_block2pubkey33(pubkey33,block);
-/*        if ( ReadBlockFromDisk(block,(const CBlockIndex *)pindex
-#ifndef KOMODO_ZCASH
-                               ,Params().GetConsensus()
-#endif
-                               ) != 0 )
-        {
-            komodo_block2pubkey33(pubkey33,block);
-        }*/
     }
     else
     {
