@@ -378,7 +378,10 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
     char symbol[16],dest[16]; struct komodo_state *sp;
     komodo_init(pindex->nHeight);
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
+    {
         sp->rewinding = pindex->nHeight;
+        printf("-%d",pindex->nHeight);
+    } else printf("komodo_disconnect: ht.%d cant get komodo_state.(%s)\n",pindex->nHeight,ASSETCHAINS_SYMBOL);
 }
 
 int32_t komodo_is_notarytx(const CTransaction& tx)

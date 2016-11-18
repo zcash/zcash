@@ -436,9 +436,10 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         {
             printf("sp->rewinding.%d connect.%d\n",sp->rewinding,pindex->nHeight);
             komodo_event_rewind(sp,symbol,pindex->nHeight);
+            sp->rewinding = 0;
            // komodo_stateupdate();
         }
-    }
+    } else printf("komodo_connectblock cant get komodo_state %s\n",ASSETCHAINS_SYMBOL);
     numnotaries = komodo_notaries(pubkeys,pindex->nHeight);
     calc_rmd160_sha256(rmd160,pubkeys[0],33);
     if ( pindex->nHeight > hwmheight )
