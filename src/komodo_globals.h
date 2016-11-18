@@ -23,8 +23,8 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 
 pthread_mutex_t komodo_mutex;
 
-FILE *Minerfp;
-int8_t Minerids[KOMODO_MAXBLOCKS]; // 5 million blocks
+//FILE *Minerfp;
+//int8_t Minerids[KOMODO_MAXBLOCKS]; // 5 million blocks
 #define KOMODO_ELECTION_GAP ((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)
 
 int32_t KMDHEIGHT = 43000;

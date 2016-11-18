@@ -377,7 +377,7 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
     //int32_t i; uint256 hash;
     komodo_init(pindex->nHeight);
-    Minerids[pindex->nHeight] = -2;
+    //Minerids[pindex->nHeight] = -2;
     //hash = block.GetHash();
     //for (i=0; i<32; i++)
     //    printf("%02x",((uint8_t *)&hash)[i]);
@@ -492,53 +492,17 @@ int8_t komodo_minerid(int32_t height)
         }
     }
     return(-1);
-    /*if ( Minerids[height] >= -1 )
-    {
-        printf("cached[%d] -> %d\n",height,Minerids[height]);
-        return(Minerids[height]);
-    }
-    if ( depth < 1 )
-    {
-        if ( (pindex= chainActive[height]) != 0 )
-        {
-            depth++;
-            komodo_index2pubkey33(pubkey33,pindex,height);
-            komodo_chosennotary(&notaryid,height,pubkey33);
-            if ( notaryid >= -1 )
-            {
-                Minerids[height] = notaryid;
-                if ( Minerfp != 0 )
-                {
-                    fseek(Minerfp,height,SEEK_SET);
-                    fputc(Minerids[height],Minerfp);
-                    fflush(Minerfp);
-                }
-            }
-            depth--;
-            return(notaryid);
-        }
-    }
-    return(-2);*/
 }
 
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
 {
-    int32_t i,notaryid;
+    int32_t i,notaryid,minerid;
     komodo_chosennotary(&notaryid,height,pubkey33);
     if ( height >= 34000 && notaryid >= 0 )
     {
         for (i=1; i<64; i++)
         {
-            if ( Minerids[height-i] == -2 )
-            {
-                Minerids[height-i] = komodo_minerid(height-i);
-                if ( Minerids[height - i] == -2 )
-                {
-                    fprintf(stderr,"second -2 for Minerids[%d] current.%d\n",height-i,height);
-                    return(-2);
-                }
-            }
-            if ( Minerids[height-i] == notaryid )
+            if ( komodo_minerid(height-i) == notaryid )
                 return(-1);
         }
         return(1);
@@ -567,7 +531,7 @@ int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 has
                 return(-1);
             }
         } else fprintf(stderr,"unexpected error notary_hash %s ht.%d at ht.%d\n",notarized_hash.ToString().c_str(),notarized_height,notary->nHeight);
-    } else if ( notarized_height > 0 )
+    } else if ( notarized_height > 0 && notarized_height != 73880 )
         fprintf(stderr,"couldnt find notary_hash %s ht.%d\n",notarized_hash.ToString().c_str(),notarized_height);
     return(0);
 }
