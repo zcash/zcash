@@ -430,16 +430,6 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     uint8_t scriptbuf[4096],pubkeys[64][33],rmd160[20],scriptPubKey[35]; uint256 kmdtxid,btctxid,txhash;
     int32_t i,j,k,numnotaries,scriptlen,isratification,nid,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
     komodo_init(pindex->nHeight);
-    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
-    {
-        if ( sp->rewinding != 0 )
-        {
-            printf("sp->rewinding.%d connect.%d\n",sp->rewinding,pindex->nHeight);
-            komodo_event_rewind(sp,symbol,pindex->nHeight);
-            sp->rewinding = 0;
-           // komodo_stateupdate();
-        }
-    } else printf("komodo_connectblock cant get komodo_state %s\n",ASSETCHAINS_SYMBOL);
     numnotaries = komodo_notaries(pubkeys,pindex->nHeight);
     calc_rmd160_sha256(rmd160,pubkeys[0],33);
     if ( pindex->nHeight > hwmheight )
@@ -447,7 +437,9 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     else
     {
         printf("hwmheight.%d vs pindex->nHeight.%d reorg.%d\n",hwmheight,pindex->nHeight,hwmheight-pindex->nHeight);
-        // reset komodostate
+        if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
+            komodo_event_rewind(sp,symbol,pindex->nHeight);
+        // komodo_stateupdate();
     }
     komodo_currentheight_set(chainActive.Tip()->nHeight);
     if ( komodo_is_issuer() != 0 )

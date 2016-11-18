@@ -379,8 +379,8 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
     komodo_init(pindex->nHeight);
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
-        sp->rewinding = pindex->nHeight;
-        printf("-%d",pindex->nHeight);
+        //sp->rewinding = pindex->nHeight;
+        //fprintf(stderr,"-%d ",pindex->nHeight);
     } else printf("komodo_disconnect: ht.%d cant get komodo_state.(%s)\n",pindex->nHeight,ASSETCHAINS_SYMBOL);
 }
 
