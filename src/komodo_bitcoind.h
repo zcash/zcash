@@ -495,7 +495,7 @@ int8_t komodo_minerid(int32_t height)
                     return(i);
         }
     }
-    printf("minderid not notary ht.%d\n",height);
+    //printf("minderid not notary ht.%d\n",height);
     return(-1);
 }
 
