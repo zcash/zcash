@@ -441,7 +441,7 @@ void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
     else memset(pubkey33,0,33);
 }
 
-int32_t komodo_blockload(CBlock& block,cBlockIndex *pindex)
+int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex)
 {
     block.SetNull();
     // Open history file to read
