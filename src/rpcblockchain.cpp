@@ -589,12 +589,12 @@ Value gettxout(const Array& params, bool fHelp)
     return ret;
 }
 
-int32_t gettxout_scriptPubKey(uint8_t *scriptPubkey,int32_t maxsize,uint256 txid,int32_t n)
+int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid,int32_t n)
 {
     int32_t i,m; uint8_t *ptr;
     LOCK(cs_main);
     CCoins coins;
-    if (fMempool)
+    if ( 1 )
     {
         LOCK(mempool.cs);
         CCoinsViewMemPool view(pcoinsTip,mempool);
