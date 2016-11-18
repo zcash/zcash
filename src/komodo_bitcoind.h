@@ -465,8 +465,8 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        komodo_blockload(block,pindex);
-        komodo_block2pubkey33(pubkey33,block);
+        if ( komodo_blockload(block,pindex) == 0 )
+            komodo_block2pubkey33(pubkey33,block);
     }
     else
     {
@@ -478,8 +478,8 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 void komodo_connectpindex(CBlockIndex *pindex)
 {
     CBlock block;
-    komodo_blockload(block,pindex);
-    komodo_connectblock(pindex,block);
+    if ( komodo_blockload(block,pindex) == 0 )
+        komodo_connectblock(pindex,block);
 }
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
