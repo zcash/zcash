@@ -3235,15 +3235,13 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         if (mi == mapBlockIndex.end())
             return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         pindexPrev = (*mi).second;
-        if (pindexPrev->nStatus & BLOCK_FAILED_MASK)
+        if (pindexPrev == 0 || (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
             return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
     }
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
         return false;
     if (pindex == NULL)
         pindex = AddToBlockIndex(block);
-    //if (!CheckBlockHeader(pindex!=0?pindex->nHeight:0,pindex, block, state))
-    //    return false;
     if (ppindex)
         *ppindex = pindex;
     return true;
