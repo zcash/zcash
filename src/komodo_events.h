@@ -26,7 +26,7 @@ struct komodo_event *komodo_eventadd(struct komodo_state *sp,int32_t height,char
     strcpy(ep->symbol,symbol);
     if ( datalen != 0 )
         memcpy(ep->space,data,datalen);
-    sp->Komodo_events = (struct komodo_event **)realloc(sp->Komodo_events,(1 + sp->Komodo_numevents) * sizeof(*Komodo_events));
+    sp->Komodo_events = (struct komodo_event **)realloc(sp->Komodo_events,(1 + sp->Komodo_numevents) * sizeof(*sp->Komodo_events));
     sp->Komodo_events[sp->Komodo_numevents++] = ep;
     return(ep);
 }
@@ -149,7 +149,7 @@ void komodo_eventadd_kmdheight(struct komodo_state *sp,char *symbol,int32_t heig
     else
     {
         kmdheight = -kmdheight;
-        komodo_eventadd(so,height,symbol,KOMODO_EVENT_REWIND,(uint8_t *)&height,sizeof(height));
+        komodo_eventadd(sp,height,symbol,KOMODO_EVENT_REWIND,(uint8_t *)&height,sizeof(height));
         if ( sp != 0 )
             komodo_event_rewind(sp,symbol,height);
     }

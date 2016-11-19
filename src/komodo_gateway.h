@@ -575,7 +575,7 @@ void komodo_gateway_iteration()
                 komodo_nameset(symbol,dest,base);
                 if ( (fp= fopen(fname,"rb")) != 0 )
                 {
-                    fseek(fp,lastpos,SEEK_SET);
+                    fseek(fp,lastpos[baseid],SEEK_SET);
                     if ( ftell(fp) > lastpos[baseid] )
                     {
                         while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
