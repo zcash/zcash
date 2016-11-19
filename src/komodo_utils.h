@@ -1378,7 +1378,7 @@ uint16_t komodo_assetport(uint32_t magic)
 uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp)
 {
     *magicp = komodo_assetmagic(symbol,supply);
-    return(komodo_assetport(*magicp,*shortflagp));
+    return(komodo_assetport(*magicp));
 }
 
 void komodo_ports(uint16_t ports[MAX_CURRENCIES])

@@ -295,7 +295,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
 {
-    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo,kmdheight; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; double diff; uint64_t seed; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
+    uint8_t rmd160[20],addrtype,pubkey33[33]; int32_t i,j,n,len,tokomodo,kmdheight; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; double diff; uint64_t seed; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     tokomodo = (komodo_is_issuer() == 0);
     if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
     {
@@ -344,7 +344,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     {
         if ( tokomodo == 0 && opretbuf[0] == 'I' ) // assetchain coinbase
         {
-            if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen,0)) > 0 )
+            if ( (n= komodo_issued_opreturn(base,txids,vouts,opretbuf,opretlen,0)) > 0 )
             {
                 for (i=0; i<n; i++)
                 {
@@ -560,7 +560,7 @@ void komodo_iteration(char *symbol)
 void komodo_gateway_iteration()
 {
     static long lastpos[33];
-    FILE *fp; int32_t baseid,refid; struct komodo_state *sp; char fname[512],*base,dest[16];
+    FILE *fp; int32_t baseid,refid; struct komodo_state *sp; char fname[512],*base,symbol[16],dest[16];
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 32;
     else refid = komodo_baseid(ASSETCHAINS_SYMBOL);
