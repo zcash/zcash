@@ -604,7 +604,7 @@ void komodo_passport_iteration()
                 fclose(fp);
             } else fprintf(stderr,"%s open error RT\n",base);
         }
-        else if ( chainActive.Tip()->nHeight != lastRTheight )
+        else //if ( chainActive.Tip()->nHeight != lastRTheight )
         {
             lastRTheight = chainActive.Tip()->nHeight;
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
