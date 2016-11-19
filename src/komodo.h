@@ -86,8 +86,8 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                     errs++;
                 else
                 {
-                    printf("updated %d pubkeys at ht.%d\n",num,ht);
-                    if ( matched != 0 ) // private state -> global Pubkeys
+                    printf("updated %d pubkeys at %s ht.%d\n",num,symbol,ht);
+                    if ( (KOMODO_EXTERNAL_NOTARIES != 0 && matched != 0) || (strcmp(symbol,"KMD") == 0 && KOMODO_EXTERNAL_NOTARIES == 0) )
                         komodo_eventadd_pubkeys(sp,symbol,ht,num,pubkeys);
                 }
             } else printf("illegal num.%d\n",num);
@@ -100,7 +100,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 errs++;
             if ( fread(&notarized_desttxid,1,sizeof(notarized_desttxid),fp) != sizeof(notarized_desttxid) )
                 errs++;
-            printf("load %s NOTARIZED %d %s\n",ASSETCHAINS_SYMBOL,notarized_height,notarized_hash.ToString().c_str());
+            printf("%s load[%s] NOTARIZED %d %s\n",ASSETCHAINS_SYMBOL,symbol,notarized_height,notarized_hash.ToString().c_str());
             //if ( matched != 0 ) global independent states -> inside *sp
             komodo_eventadd_notarized(sp,symbol,ht,dest,notarized_hash,notarized_desttxid,notarized_height);
         }
@@ -123,7 +123,8 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             if ( fread(&kheight,1,sizeof(kheight),fp) != sizeof(kheight) )
                 errs++;
             //if ( matched != 0 ) global independent states -> inside *sp
-                komodo_eventadd_kmdheight(sp,symbol,ht,kheight);
+            printf("%s load[%s] ht.%d\n",ASSETCHAINS_SYMBOL,symbol,kheight);
+            komodo_eventadd_kmdheight(sp,symbol,ht,kheight);
         }
         else if ( func == 'R' )
         {
@@ -141,7 +142,8 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 if ( fread(opret,1,olen,fp) != olen )
                     errs++;
                 //if ( matched != 0 ) global shared state -> global PAX
-                    komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen);
+                printf("%s load[%s] opret[%c] %.8f\n",ASSETCHAINS_SYMBOL,symbol,opret[0],(double)ovalue/COIN);
+                komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen);
             } else printf("illegal olen.%u\n",olen);
         }
         else if ( func == 'D' )
@@ -155,7 +157,8 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             if ( numpvals*sizeof(uint32_t) <= sizeof(pvals) && fread(pvals,sizeof(uint32_t),numpvals,fp) == numpvals )
             {
                 //if ( matched != 0 ) global shared state -> global PVALS
-                    komodo_eventadd_pricefeed(sp,symbol,ht,pvals,numpvals);
+                printf("%s load[%s] prices %d\n",ASSETCHAINS_SYMBOL,symbol,ht);
+                komodo_eventadd_pricefeed(sp,symbol,ht,pvals,numpvals);
                 //printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
             } else printf("error loading pvals[%d]\n",numpvals);
         }
