@@ -1261,7 +1261,7 @@ void komodo_userpass(char *username,char *password,FILE *fp)
         free(rpcpassword);
 }
 
-void komodo_statefname(char *fname,char *symbol)
+void komodo_statefname(char *fname,char *symbol,char *test)
 {
     int32_t n,len;
     sprintf(fname,"%s",GetDataDir(false).string().c_str());
@@ -1276,21 +1276,26 @@ void komodo_statefname(char *fname,char *symbol)
             return;
         }
     }
+    else
+    {
 #ifdef WIN32
-    strcat(fname,"\\");
+        strcat(fname,"\\");
 #else
-    strcat(fname,"/");
+        strcat(fname,"/");
 #endif
-    if ( symbol == 0 || symbol[0] == 0 || strcmp("KMD",symbol) == 0 )
+    }
+    if ( symbol != 0 && symbol[0] != 0 && strcmp("KMD",symbol) != 0 )
+    {
         strcat(fname,symbol);
-    //printf("statefname.(%s) -> (%s)\n",symbol,fname);
+        //printf("statefname.(%s) -> (%s)\n",symbol,fname);
 #ifdef WIN32
-    strcat(fname,"\\");
+        strcat(fname,"\\");
 #else
-    strcat(fname,"/");
+        strcat(fname,"/");
 #endif
+    }
     strcat(fname,(char *)"komodostate");
-    //printf("statename.(%s) %s\n",symbol,fname);
+    //printf("test.(%s) -> [%s] statename.(%s) %s\n",test,ASSETCHAINS_SYMBOL,symbol,fname);
 }
 
 void komodo_configfile(char *symbol,uint16_t port)
