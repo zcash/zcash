@@ -560,7 +560,7 @@ void komodo_iteration(char *symbol)
 void komodo_passport_iteration()
 {
     static long lastpos[34],didinit; static char userpass[33][1024];
-    FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp; char *retstr,fname[512],*base,symbol[16],dest[16]; cJSON *infoobj; uint16_t port; uint32_t magic;
+    FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp; char *retstr,fname[512],*base,symbol[16],dest[16]; cJSON *infoobj,*result; uint16_t port; uint32_t magic;
     if ( didinit == 0 )
     {
         for (baseid=0; baseid<=32; baseid++)
@@ -598,14 +598,17 @@ void komodo_passport_iteration()
                 {
                     if ( (infoobj= cJSON_Parse(retstr)) != 0 )
                     {
-                        blocks = juint(infoobj,(char *)"blocks");
-                        longest = juint(infoobj,(char *)"longestchain");
-                        printf("(%s %d %d) ",base,blocks,longest);
-                        if ( blocks > 0 && blocks == longest )
-                            isrealtime = 1;
+                        if ( (result= jobj(infoobj,"result")) != 0 )
+                        {
+                            blocks = juint(infoobj,(char *)"blocks");
+                            longest = juint(infoobj,(char *)"longestchain");
+                            printf("%s.(%d L%d) ",base,blocks,longest);
+                            if ( blocks > 0 && blocks == longest )
+                                isrealtime = 1;
+                        }
                         free_json(infoobj);
                     }
-                    printf("(%s)\n",retstr);
+                    //printf("(%s)\n",retstr);
                     free(retstr);
                 } else printf("%s port.%u no getinfo\n",base,port);
             } else printf("fname.(%s) cant open\n",fname);
