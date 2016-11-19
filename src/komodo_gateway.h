@@ -561,6 +561,7 @@ void komodo_passport_iteration()
 {
     static long lastpos[33];
     FILE *fp; int32_t baseid,refid; struct komodo_state *sp; char fname[512],*base,symbol[16],dest[16];
+    printf("PASSPORT\n");
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 32;
     else refid = komodo_baseid(ASSETCHAINS_SYMBOL);
@@ -587,7 +588,7 @@ void komodo_passport_iteration()
                 } else printf("fname.(%s) cant open\n",fname);
             }
         }
-    }
+    } else printf("passport disabled for refid.%d (%s)\n",refid,ASSETCHAINS_SYMBOL);
 }
 #endif
 

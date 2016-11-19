@@ -268,6 +268,7 @@ void komodo_assetchain_pubkeys(char *jsonstr)
             {
                 komodo_init(-1);
                 komodo_notarysinit(0,pubkeys,n);
+                KOMODO_EXTERNAL_NOTARIES = 1;
                 //printf("initialize pubkeys[%d]\n",n);
             } else fprintf(stderr,"komodo_assetchain_pubkeys i.%d vs n.%d\n",i,n);
         } else fprintf(stderr,"assetchain pubkeys n.%d\n",n);
