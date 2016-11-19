@@ -40,6 +40,7 @@ using namespace std;
  * Or alternatively, create a specific query method for the information.
  **/
 uint64_t komodo_interestsum();
+int32_t komodo_longestchain();
 int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
 
 Value getinfo(const Array& params, bool fHelp)
@@ -98,6 +99,7 @@ Value getinfo(const Array& params, bool fHelp)
     }
 #endif
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
+    obj.push_back(Pair("longestchain",        komodo_longestchain()));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
     if ( chainActive.Tip() != 0 )
         obj.push_back(Pair("tiptime", (int)chainActive.Tip()->nTime));

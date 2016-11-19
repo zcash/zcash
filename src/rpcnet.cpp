@@ -165,6 +165,36 @@ Value getpeerinfo(const Array& params, bool fHelp)
     return ret;
 }
 
+int32_t komodo_longestchain()
+{
+    int32_t ht,n=0,num=0,maxheight=0,height = 0;
+    LOCK(cs_main);
+    vector<CNodeStats> vstats;
+    CopyNodeStats(vstats);
+    BOOST_FOREACH(const CNodeStats& stats, vstats)
+    {
+        CNodeStateStats statestats;
+        bool fStateStats = GetNodeStateStats(stats.nodeid,statestats);
+        ht = 0;
+        if ( stats.nStartingHeight > ht )
+            ht = stats.nStartingHeight;
+        if ( stats.nSyncHeight > ht )
+            ht = stats.nSyncHeight;
+        if ( stats.nCommonHeight > ht )
+            ht = stats.nCommonHeight;
+        if ( maxheight == 0 || ht > maxheight*1.01 )
+            maxheight = ht, num = 1;
+        else if ( ht > maxheight*0.99 )
+            num++;
+        n++;
+        if ( ht > height )
+            height = ht;
+    }
+    if ( num > (n >> 1) )
+        return(height);
+    else return(0);
+}
+
 Value addnode(const Array& params, bool fHelp)
 {
     string strCommand;
