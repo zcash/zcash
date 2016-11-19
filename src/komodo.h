@@ -41,20 +41,15 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block);
 #include "komodo_globals.h"
 #include "komodo_utils.h"
 
-void komodo_setkmdheight(int32_t kmdheight)
-{
-    if ( kmdheight > KMDHEIGHT )
-        KMDHEIGHT = kmdheight;
-}
-
 #include "cJSON.c"
 #include "komodo_bitcoind.h"
 #include "komodo_interest.h"
 #include "komodo_pax.h"
 #include "komodo_notary.h"
+
+int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char *dest);
 #include "komodo_gateway.h"
 #include "komodo_events.h"
-
 
 void komodo_currentheight_set(int32_t height)
 {
@@ -177,25 +172,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         return;
     if ( fp == 0 )
     {
-#ifdef WIN32
-        sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"komodostate");
-        //sprintf(fname2,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"minerids");
-#else
-        sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),(char *)"komodostate");
-        //sprintf(fname2,"%s/%s",GetDataDir(false).string().c_str(),(char *)"minerids");
-#endif
-        /*memset(Minerids,0xfe,sizeof(Minerids));
-        if ( (Minerfp= fopen(fname2,"rb+")) == 0 )
-        {
-            if ( (Minerfp= fopen(fname2,"wb")) != 0 )
-            {
-                fwrite(Minerids,1,sizeof(Minerids),Minerfp);
-                fclose(Minerfp);
-            }
-            Minerfp = fopen(fname2,"rb+");
-        }
-        if ( Minerfp != 0 && fread(Minerids,1,sizeof(Minerids),Minerfp) != sizeof(Minerids) )
-            printf("read error Minerids\n");*/
+        komodo_statefname(fname,ASSETCHAINS_SYMBOL);
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
             while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
@@ -212,7 +189,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
     if ( fp != 0 ) // write out funcid, height, other fields, call side effect function
     {
         //printf("fpos.%ld ",ftell(fp));
-        if ( KMDheight > 0 )
+        if ( KMDheight != 0 )
         {
             fputc('K',fp);
             if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
@@ -368,6 +345,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 sp->NOTARIZED_HASH = kmdtxid;
                 sp->NOTARIZED_DESTTXID = desttxid;
                 komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0);
+                // extract X opreturns here
             } else printf("reject ht.%d NOTARIZED.%d %s.%s DESTTXID.%s (%s)\n",height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
         }
         else if ( i == 0 && j == 1 && opretlen == 149 )
@@ -407,7 +385,7 @@ int32_t komodo_isratify(int32_t isspecial,int32_t numvalid)
 // if all outputs to notary -> notary utxo
 // if txi == 0 && 2 outputs and 2nd OP_RETURN, len == 32*2+4 -> notarized, 1st byte 'P' -> pricefeed
 // OP_RETURN: 'D' -> deposit, 'W' -> withdraw
-void komodo_currentheight_set(int32_t height);
+
 int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid,int32_t n);
 
 int32_t komodo_notarycmp(uint8_t *scriptPubKey,int32_t scriptlen,uint8_t pubkeys[64][33],int32_t numnotaries,uint8_t rmd160[20])
@@ -428,9 +406,12 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
     static int32_t hwmheight;
     uint64_t signedmask,voutmask; char symbol[16],dest[16]; struct komodo_state *sp;
-    uint8_t scriptbuf[4096],pubkeys[64][33],rmd160[20],scriptPubKey[35]; uint256 kmdtxid,btctxid,txhash;
+    uint8_t scriptbuf[4096],pubkeys[64][33],rmd160[20],scriptPubKey[35]; uint256 kmdtxid,zero,btctxid,txhash;
     int32_t i,j,k,numnotaries,scriptlen,isratification,nid,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
+    memset(zero.bytes,0,sizeof(zero));
     komodo_init(pindex->nHeight);
+    if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
+        return;
     numnotaries = komodo_notaries(pubkeys,pindex->nHeight);
     calc_rmd160_sha256(rmd160,pubkeys[0],33);
     if ( pindex->nHeight > hwmheight )
@@ -438,20 +419,19 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     else
     {
         printf("hwmheight.%d vs pindex->nHeight.%d reorg.%d\n",hwmheight,pindex->nHeight,hwmheight-pindex->nHeight);
-        if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
-            komodo_event_rewind(sp,symbol,pindex->nHeight);
-        // komodo_stateupdate();
+        komodo_event_rewind(sp,symbol,pindex->nHeight);
+        komodo_stateupdate(pindex->nHeight,0,0,0,zero,0,0,0,0,-pindex->nHeight,0,0,0,0);
     }
     komodo_currentheight_set(chainActive.Tip()->nHeight);
-    if ( komodo_is_issuer() != 0 )
+    /*if ( komodo_is_issuer() != 0 )
     {
         while ( KOMODO_REALTIME == 0 || time(NULL) <= KOMODO_REALTIME )
         {
             fprintf(stderr,"komodo_connect.(%s) waiting for realtime RT.%u now.%u\n",ASSETCHAINS_SYMBOL,KOMODO_REALTIME,(uint32_t)time(NULL));
             sleep(30);
         }
-    }
-    KOMODO_REALTIME = KOMODO_INITDONE = (uint32_t)time(NULL);
+    }*/
+    sp->KOMODO_REALTIME = KOMODO_INITDONE = (uint32_t)time(NULL);
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
@@ -481,10 +461,6 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     }
                 }
             }
-            if ( i != 0 && notaryid >= 0 && notaryid < 64 && voutmask != 0 )
-            {
-                //komodo_stateupdate(height,0,0,notaryid,txhash,voutmask,numvouts,0,0,0,0,0,0,0);
-            }
             signedmask = 0;
             numvins = block.vtx[i].vin.size();
             for (j=0; j<numvins; j++)
@@ -494,10 +470,6 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     if ( (k= komodo_notarycmp(scriptPubKey,scriptlen,pubkeys,numnotaries,rmd160)) >= 0 )
                         signedmask |= (1LL << k);
                 }
-                /*if ( (k= komodo_nutxofind(height,block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) >= 0 )
-                    signedmask |= (1LL << k);
-                else if ( signedmask != 0 )
-                    printf("signedmask.%llx but ht.%d i.%d j.%d not found (%s %d)\n",(long long)signedmask,height,i,j,block.vtx[i].vin[j].prevout.hash.ToString().c_str(),block.vtx[i].vin[j].prevout.n);*/
             }
             if ( signedmask != 0 )
                 printf("ht.%d signedmask.%llx numvins.%d numvouts.%d\n",height,(long long)signedmask,numvins,numvouts);
@@ -537,6 +509,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 }
             }
         }
+        if ( pindex->nHeight == hwmheight && (hwmheight % 100) == 0 )
+            komodo_stateupdate(height,0,0,0,zero,0,0,0,0,height,0,0,0,0);
     } else printf("komodo_connectblock: unexpected null pindex\n");
     KOMODO_INITDONE = (uint32_t)time(NULL);
 }

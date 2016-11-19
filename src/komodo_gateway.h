@@ -110,12 +110,9 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
     }
 }
 
-int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uint16_t *vouts,uint8_t *opretbuf,int32_t opretlen,int32_t iskomodo)
+int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,uint8_t *opretbuf,int32_t opretlen,int32_t iskomodo)
 {
     int32_t i,n=0,j,len;
-    if ( opretbuf[opretlen-5] == '-' )
-        *shortflagp = 1;
-    else *shortflagp = 0;
     for (i=0; i<4; i++)
         base[i] = opretbuf[opretlen-4+i];
     if ( ASSETCHAINS_SYMBOL[0] == 0 || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 ) // shortflag
@@ -143,7 +140,7 @@ int32_t komodo_issued_opreturn(uint8_t *shortflagp,char *base,uint256 *txids,uin
                 for (i=0; opretbuf[len+i]!=0&&i<3; i++)
                     symbol[i] = opretbuf[len+i];
                 symbol[i] = 0;
-                printf(">>>>>>> iskomodo X: (%s) fiat %.8f kmdheight.%d other.%d short.%d\n",symbol,dstr(fiatoshis),height,otherheight,shortflag);
+                printf(">>>>>>> iskomodo X: (%s) fiat %.8f kmdheight.%d other.%d\n",symbol,dstr(fiatoshis),height,otherheight);
             }
         }
     }
@@ -223,7 +220,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,cha
 
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
-    int32_t i,j,n,num,opretlen,offset=1,errs=0,matched=0; uint256 hash,txids[64]; uint8_t shortflag; char symbol[16],base[16]; uint16_t vouts[64]; uint8_t *script,opcode; struct pax_transaction *pax,space;
+    int32_t i,j,n,num,opretlen,offset=1,errs=0,matched=0; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; uint8_t *script,opcode; struct pax_transaction *pax,space;
     n = block.vtx[0].vout.size();
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     if ( n <= 2 || script[0] != 0x6a )
@@ -244,7 +241,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     }
     if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
     {
-        if ( (num= komodo_issued_opreturn(&shortflag,base,txids,vouts,&script[offset],opretlen,opcode == 'X')) > 0 )
+        if ( (num= komodo_issued_opreturn(base,txids,vouts,&script[offset],opretlen,opcode == 'X')) > 0 )
         {
             for (i=1; i<n-1; i++)
             {
@@ -324,33 +321,20 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 diff = -diff;
             if ( kmdheight <= height )
             {
-                if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 && shortflag == ASSETCHAINS_SHORTFLAG )
+                if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
                 {
-                    if ( shortflag == 0 )
+                    for (i=0; i<32; i++)
+                        printf("%02x",((uint8_t *)&txid)[i]);
+                    printf(" <- txid.v%u ",vout);
+                    for (i=0; i<33; i++)
+                        printf("%02x",pubkey33[i]);
+                    printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
+                    if ( value >= checktoshis || (seed == 0 && diff < .01) )
                     {
-                        for (i=0; i<32; i++)
-                            printf("%02x",((uint8_t *)&txid)[i]);
-                        printf(" <- txid.v%u ",vout);
-                        for (i=0; i<33; i++)
-                            printf("%02x",pubkey33[i]);
-                        printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
-                        if ( value >= checktoshis || (seed == 0 && diff < .01) )
+                        if ( komodo_paxfind(&space,txid,vout) == 0 )
                         {
-                            if ( komodo_paxfind(&space,txid,vout) == 0 )
-                            {
-                                komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,kmdheight,height);
-                            } else printf("duplicate deposit\n");
-                        }
-                    }
-                    else // short
-                    {
-                        for (i=0; i<opretlen; i++)
-                            printf("%02x",opretbuf[i]);
-                        printf(" opret[%c] tokomodo.%d value %.8f vs check %.8f\n",opretbuf[0],tokomodo,dstr(value),dstr(checktoshis));
-                        if ( value <= checktoshis || (seed == 0 && diff < .01) )
-                        {
-                            
-                        }
+                            komodo_gateway_deposit(coinaddr,value,shortflag,base,fiatoshis,rmd160,txid,vout,kmdheight,height);
+                        } else printf("duplicate deposit\n");
                     }
                 }
             }
@@ -360,7 +344,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     {
         if ( tokomodo == 0 && opretbuf[0] == 'I' ) // assetchain coinbase
         {
-            if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen,0)) > 0 && shortflag == ASSETCHAINS_SHORTFLAG )
+            if ( (n= komodo_issued_opreturn(&shortflag,base,txids,vouts,opretbuf,opretlen,0)) > 0 )
             {
                 for (i=0; i<n; i++)
                 {
@@ -385,6 +369,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     return(typestr);
 }
 
+#ifdef pollmethod
 void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int32_t txi,bits256 txid,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
 {
     int32_t i,opretlen,offset = 0; uint256 zero,utxid; const char *typestr;
@@ -519,7 +504,7 @@ void komodo_gateway_iteration(char *symbol)
                     usleep(10000);
                 }
                 if ( KMDHEIGHT >= kmdheight )
-                    KOMODO_REALTIME = (uint32_t)time(NULL);
+                    sp->KOMODO_REALTIME = (uint32_t)time(NULL);
             }
             free_json(infoobj);
         }
@@ -570,3 +555,38 @@ void komodo_iteration(char *symbol)
         }
     }
 }
+#else
+
+void komodo_gateway_iteration()
+{
+    static long lastpos[33];
+    FILE *fp; int32_t baseid,refid; struct komodo_state *sp; char fname[512],*base,dest[16];
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        refid = 32;
+    else refid = komodo_baseid(ASSETCHAINS_SYMBOL);
+    if ( refid >= 0 )
+    {
+        for (baseid=0; baseid<=32; baseid++)
+        {
+            if ( baseid != refid ) // use direct data for yourself
+            {
+                komodo_statefname(fname,"");
+                komodo_nameset(symbol,dest,source);
+                if ( (fp= fopen(fname,"rb")) != 0 )
+                {
+                    fseek(fp,lastpos,SEEK_SET);
+                    if ( ftell(fp) > lastpos[baseid] )
+                    {
+                        while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
+                            ;
+                        lastpos[baseid] = ftell(fp);
+                        printf("%s lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
+                    }
+                    fclose(fp);
+                }
+            }
+        }
+    }
+}
+#endif
+

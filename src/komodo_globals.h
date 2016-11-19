@@ -20,19 +20,15 @@ char *komodo_issuemethod(char *method,char *params,uint16_t port);
 void komodo_init(int32_t height);
 void komodo_assetchain_pubkeys(char *jsonstr);
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
+int32_t komodo_isrealtime(int32_t *kmdheightp,char *target);
 
 pthread_mutex_t komodo_mutex;
 
-//FILE *Minerfp;
-//int8_t Minerids[KOMODO_MAXBLOCKS]; // 5 million blocks
 #define KOMODO_ELECTION_GAP ((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)
-
-int32_t KMDHEIGHT = 43000;
 
 struct pax_transaction *PAX;
 int32_t NUM_PRICES; uint32_t *PVALS;
 struct knotaries_entry *Pubkeys;
-//struct nutxo_entry *NUTXOS; int32_t Num_nutxos;
 struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS;
 
 struct komodo_state KOMODO_STATES[33];
@@ -43,13 +39,12 @@ int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAINS_SEED,
 std::string NOTARY_PUBKEY,ASSETCHAINS_NOTARIES;
 uint8_t NOTARY_PUBKEY33[33];
 
-int32_t ASSETCHAINS_SHORTFLAG;
 char ASSETCHAINS_SYMBOL[16];
 uint16_t ASSETCHAINS_PORT;
 uint32_t ASSETCHAIN_INIT;
 uint32_t ASSETCHAINS_MAGIC = 2387029918;
 uint64_t ASSETCHAINS_SUPPLY = 10;
 
-uint32_t KOMODO_INITDONE,KOMODO_REALTIME;
+uint32_t KOMODO_INITDONE;
 char KMDUSERPASS[1024]; uint16_t BITCOIND_PORT = 7771;
 uint64_t PENDING_KOMODO_TX;

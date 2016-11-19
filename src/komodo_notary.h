@@ -208,7 +208,7 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
     sp->NOTARIZED_DESTTXID = np->notarized_desttxid = notarized_desttxid;
 }
 
-struct komodo_state *komodo_stateptr(char *symbol,char *dest);
+//struct komodo_state *komodo_stateptr(char *symbol,char *dest);
 int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
 {
     char symbol[16],dest[16]; struct komodo_state *sp;

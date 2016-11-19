@@ -1261,6 +1261,36 @@ void komodo_userpass(char *username,char *password,FILE *fp)
         free(rpcpassword);
 }
 
+void komodo_statefname(char *fname,char *symbol)
+{
+    int32_t n,len;
+    sprintf(fname,"%s",GetDataDir(false).string().c_str());
+    if ( (n= (int32_t)strlen(ASSETCHAINS_SYMBOL)) != 0 )
+    {
+        len = (int32_t)strlen(fname);
+        if ( strcmp(ASSETCHAINS_SYMBOL,&fname[len - n]) == 0 )
+        {
+            fname[len - n] = 0;
+            if ( symbol[0] != 0 )
+            {
+                strcpy(&fname[len - n],symbol);
+#ifdef WIN32
+                strcat(fname,"\\");
+#else
+                strcat(fname,"//");
+#endif
+            }
+        }
+        else
+        {
+            printf("unexpected fname.(%s) vs %s\n",fname,ASSETCHAINS_SYMBOL);
+            return;
+        }
+    }
+    strcat(fname,(char *)"komodostate");
+    printf("statename.(%s) %s\n",symbol,fname);
+}
+
 void komodo_configfile(char *symbol,uint16_t port)
 {
     static char myusername[512],mypassword[8192];
@@ -1327,7 +1357,7 @@ uint32_t komodo_assetmagic(char *symbol,uint64_t supply)
     return(calc_crc32(0,buf,len));
 }
 
-int32_t komodo_shortflag(char *symbol)
+/*int32_t komodo_shortflag(char *symbol)
 {
     int32_t i,shortflag = 0;
     if ( symbol[0] == '-' )
@@ -1338,17 +1368,16 @@ int32_t komodo_shortflag(char *symbol)
         symbol[i] = 0;
     }
     return(shortflag);
-}
+}*/
 
 uint16_t komodo_assetport(uint32_t magic,int32_t shortflag)
 {
     return(8000 + shortflag*7777 + (magic % 7777));
 }
 
-uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp,int32_t *shortflagp)
+uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp)
 {
     *magicp = komodo_assetmagic(symbol,supply);
-    *shortflagp = komodo_shortflag(symbol);
     return(komodo_assetport(*magicp,*shortflagp));
 }
 
@@ -1381,8 +1410,7 @@ void komodo_args()
         if ( strlen(addn.c_str()) > 0 )
             ASSETCHAINS_SEED = 1;
         strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
-        ASSETCHAINS_PORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,&ASSETCHAINS_SHORTFLAG);
-        //fprintf(stderr,"after args: %c%s port.%u magic.%08x supply.%u\n",ASSETCHAINS_SHORTFLAG!=0?'-':'+',ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,(int32_t)ASSETCHAINS_SUPPLY);
+        ASSETCHAINS_PORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC);
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
             fprintf(stderr,"waiting for datadir\n");
@@ -1395,7 +1423,7 @@ void komodo_args()
             extern int COINBASE_MATURITY;
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
             //if ( komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 )
-                COINBASE_MATURITY = 1;
+            COINBASE_MATURITY = 1;
         }
         ASSETCHAINS_NOTARIES = GetArg("-ac_notaries","");
         komodo_assetchain_pubkeys((char *)ASSETCHAINS_NOTARIES.c_str());
@@ -1419,21 +1447,30 @@ void komodo_args()
     //fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
 }
 
-struct komodo_state *komodo_stateptr(char *symbol,char *dest)
+void komodo_nameset(char *symbol,char *dest,char *source)
 {
-    int32_t baseid; struct komodo_state *sp;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( source[0] == 0 )
     {
         strcpy(symbol,"KMD");
         strcpy(dest,"BTC");
-        sp = &KOMODO_STATES[0];
     }
     else
     {
-        strcpy(symbol,ASSETCHAINS_SYMBOL);
+        strcpy(symbol,source);
         strcpy(dest,"KMD");
+    }
+}
+
+struct komodo_state *komodo_stateptr(char *symbol,char *dest)
+{
+    int32_t baseid; struct komodo_state *sp;
+    komodo_nameset(symbol,dest,ASSETCHAINS_SYMBOL);
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        sp = &KOMODO_STATES[0];
+    else
+    {
         if ( (baseid= komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 )
-            sp = &KOMODO_STATES[baseid];
+            sp = &KOMODO_STATES[baseid+1];
         else
         {
             fprintf(stderr,"komodo_stateupdate.(%s) not supported\n",ASSETCHAINS_SYMBOL);
@@ -1441,4 +1478,26 @@ struct komodo_state *komodo_stateptr(char *symbol,char *dest)
         }
     }
     return(sp);
+}
+
+struct komodo_state *komodo_stateptrget(char *base)
+{
+    int32_t baseid;
+    if ( base == 0 || base[0] == 0 || strcmp(base,"KMD") == 0 )
+        return(KOMODO_STATES[0]);
+    else if ( (baseid= komodo_baseid(base)) >= 0 )
+        return(&KOMODO_STATES[baseid+1]);
+    else return(0);
+}
+
+int32_t komodo_isrealtime(int32_t *kmdheightp,char *target)
+{
+    char symbol[16],dest[16]; struct komodo_state *sp;
+    *kmdheightp = 0;
+    if ( (sp= komodo_stateptrget(target)) != 0 )
+    {
+        *kmdheightp = sp->CURRENT_HEIGHT;
+        return(sp->KOMODO_REALTIME);
+    }
+    return(0);
 }
