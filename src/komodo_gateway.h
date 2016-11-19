@@ -564,7 +564,7 @@ void komodo_passport_iteration()
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 32;
     else refid = komodo_baseid(ASSETCHAINS_SYMBOL);
-    printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
+    //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     if ( refid >= 0 )
     {
         for (baseid=0; baseid<=32; baseid++)
@@ -584,7 +584,7 @@ void komodo_passport_iteration()
                             ;
                         lastpos[baseid] = ftell(fp);
                         printf("%s lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
-                    } else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
+                    } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                     fclose(fp);
                 } else printf("fname.(%s) cant open\n",fname);
             }
