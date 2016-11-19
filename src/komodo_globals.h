@@ -24,7 +24,7 @@ int32_t komodo_isrealtime(int32_t *kmdheightp,char *target);
 
 pthread_mutex_t komodo_mutex;
 
-#define KOMODO_ELECTION_GAP ((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)
+#define KOMODO_ELECTION_GAP 2000    //((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)
 
 struct pax_transaction *PAX;
 int32_t NUM_PRICES; uint32_t *PVALS;
