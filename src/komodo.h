@@ -153,7 +153,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 if ( fread(opret,1,olen,fp) != olen )
                     errs++;
                 //if ( matched != 0 ) global shared state -> global PAX
-                printf("%s load[%s] opret[%c] %.8f\n",ASSETCHAINS_SYMBOL,symbol,opret[0],(double)ovalue/COIN);
+                printf("%s load[%s] opret[%c] len.%d %.8f\n",ASSETCHAINS_SYMBOL,symbol,opret[0],olen,(double)ovalue/COIN);
                 komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen);
             } else printf("illegal olen.%u\n",olen);
         }
@@ -445,7 +445,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         hwmheight = pindex->nHeight;
     else
     {
-        printf("hwmheight.%d vs pindex->nHeight.%d reorg.%d\n",hwmheight,pindex->nHeight,hwmheight-pindex->nHeight);
+        printf("hwmheight.%d vs pindex->nHeight.%d t.%u reorg.%d\n",hwmheight,pindex->nHeight,(uint32_t)pindex->nTime,hwmheight-pindex->nHeight);
         komodo_event_rewind(sp,symbol,pindex->nHeight);
         komodo_stateupdate(pindex->nHeight,0,0,0,zero,0,0,0,0,-pindex->nHeight,pindex->nTime,0,0,0,0);
     }
@@ -537,7 +537,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             }
         }
         if ( pindex->nHeight == hwmheight )
-            komodo_stateupdate(height,0,0,0,zero,0,0,0,0,height,pindex->nHeight,0,0,0,0);
+            komodo_stateupdate(height,0,0,0,zero,0,0,0,0,height,(uint32_t)pindex->nTime,0,0,0,0);
     } else printf("komodo_connectblock: unexpected null pindex\n");
     KOMODO_INITDONE = (uint32_t)time(NULL);
 }
