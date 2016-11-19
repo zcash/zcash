@@ -626,7 +626,7 @@ void komodo_passport_iteration()
     }
     if ( RTmask != prevRTmask )
     {
-        printf("[%s] new RTmask %llx\n",ASSETCHAINS_SYMBOL,RTmask);
+        printf("[%s] new RTmask %llx\n",ASSETCHAINS_SYMBOL,(long long)RTmask);
         prevRTmask = RTmask;
     }
 }
