@@ -535,7 +535,7 @@ CBlockIndex* FindForkInGlobalIndex(const CChain& chain, const CBlockLocator& loc
     // Find the first block the caller has in the main chain
     BOOST_FOREACH(const uint256& hash, locator.vHave) {
         BlockMap::iterator mi = mapBlockIndex.find(hash);
-        if (mi != 0 && mi != mapBlockIndex.end())
+        if (mi != mapBlockIndex.end())
         {
             CBlockIndex* pindex = (*mi).second;
             if (pindex != 0 && chain.Contains(pindex))

@@ -598,7 +598,7 @@ void komodo_passport_iteration()
                 {
                     if ( (infoobj= cJSON_Parse(retstr)) != 0 )
                     {
-                        if ( (result= jobj(infoobj,"result")) != 0 )
+                        if ( (result= jobj(infoobj,(char *)"result")) != 0 )
                         {
                             blocks = juint(infoobj,(char *)"blocks");
                             longest = juint(infoobj,(char *)"longestchain");
