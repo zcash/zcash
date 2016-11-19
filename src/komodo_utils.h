@@ -1358,6 +1358,8 @@ void komodo_configfile(char *symbol,uint16_t port)
 uint32_t komodo_assetmagic(char *symbol,uint64_t supply)
 {
     uint8_t buf[512]; int32_t len = 0;
+    if ( strcmp(symbol,"KMD") == 0 )
+        return(0x8de4eef9);
     len = iguana_rwnum(1,&buf[len],sizeof(supply),(void *)&supply);
     strcpy((char *)&buf[len],symbol);
     len += strlen(symbol);
@@ -1379,11 +1381,18 @@ uint32_t komodo_assetmagic(char *symbol,uint64_t supply)
 
 uint16_t komodo_assetport(uint32_t magic)
 {
-    return(8000 + (magic % 7777));
+    if ( magic == 0x8de4eef9 )
+        return(7771);
+    else return(8000 + (magic % 7777));
 }
 
 uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp)
 {
+    if ( symbol == 0 || symbol[0] == 0 || strcmp("KMD",symbol) == 0 )
+    {
+        *magicp = 0x8de4eef9;
+        return(7771);
+    }
     *magicp = komodo_assetmagic(symbol,supply);
     return(komodo_assetport(*magicp));
 }

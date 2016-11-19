@@ -560,7 +560,7 @@ void komodo_iteration(char *symbol)
 void komodo_passport_iteration()
 {
     static long lastpos[34];
-    FILE *fp; int32_t baseid,refid; struct komodo_state *sp; char fname[512],*base,symbol[16],dest[16];
+    FILE *fp; int32_t baseid,isrealtime,refid,block,longest; struct komodo_state *sp; char *retstr,fname[512],*base,symbol[16],dest[16]; cJSON *infoobj; uint16_t port; uint32_t magic;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 33;
     else refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1;
@@ -572,6 +572,9 @@ void komodo_passport_iteration()
             base = (char *)CURRENCIES[baseid];
             komodo_statefname(fname,baseid<32?base:(char *)"");
             komodo_nameset(symbol,dest,base);
+            port = komodo_port(base,10,&magic);
+            sp = 0;
+            isrealtime = 0;
             if ( (fp= fopen(fname,"rb")) != 0 && (sp= komodo_stateptrget(symbol)) != 0 )
             {
                 //printf("refid.%d %s fname.(%s) base.%s\n",refid,symbol,fname,base);
@@ -585,7 +588,22 @@ void komodo_passport_iteration()
                     //printf("from.(%s) lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
                 } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                 fclose(fp);
+                if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
+                {
+                    if ( (infoobj= cJSON_Parse(retstr)) != 0 )
+                    {
+                        blocks = juint(infoobj,"blocks");
+                        longest = juint(infoobj,"longestchain");
+                        printf("(%s %d %d) ",base,blocks,longest);
+                        if ( blocks > 0 && blocks == longest )
+                            isrealtime = 1;
+                        free_json(infoobj);
+                    }
+                    free(retstr);
+                }
             } else printf("fname.(%s) cant open\n",fname);
+            if ( sp != 0 )
+                sp->KOMODO_REALTIME = isrealtime * (uint32_t)time(NULL);
         } // else use direct data for self via connect
     }
 }

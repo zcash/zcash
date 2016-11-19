@@ -127,6 +127,8 @@ void komodo_setkmdheight(struct komodo_state *sp,int32_t kmdheight,uint32_t time
         sp->SAVEDHEIGHT = kmdheight;
         sp->SAVEDTIMESTAMP = timestamp;
     }
+    if ( kmdheight > sp->CURRENT_HEIGHT )
+        sp->CURRENT_HEIGHT = kmdheight;
 }
 
 void komodo_eventadd_kmdheight(struct komodo_state *sp,char *symbol,int32_t height,int32_t kmdheight,uint32_t timestamp)
