@@ -584,7 +584,7 @@ void komodo_passport_iteration()
                         printf("%s lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
                     }
                     fclose(fp);
-                }
+                } else printf("fname.(%s) cant open\n",fname);
             }
         }
     }
