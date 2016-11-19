@@ -529,7 +529,7 @@ Value paxwithdraw(const Array& params, bool fHelp)
         return 0;
     if (fHelp || params.size() != 2)
         throw runtime_error("paxwithdraw \"address\" fiatamount");
-    if ( komodo_isrealtime(&kmdheight,"KMD") == 0 )
+    if ( komodo_isrealtime(&kmdheight,(char *)"KMD") == 0 )
         return(0);
     LOCK2(cs_main, pwalletMain->cs_wallet);
     CBitcoinAddress address(params[0].get_str());
