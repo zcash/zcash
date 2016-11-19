@@ -1268,7 +1268,7 @@ void komodo_statefname(char *fname,char *symbol)
     if ( (n= (int32_t)strlen(ASSETCHAINS_SYMBOL)) != 0 )
     {
         len = (int32_t)strlen(fname);
-        if ( strcmp(symbol,&fname[len - n]) == 0 )
+        if ( strcmp(ASSETCHAINS_SYMBOL,&fname[len - n]) == 0 )
             fname[len - n] = 0;
         else
         {
@@ -1276,15 +1276,13 @@ void komodo_statefname(char *fname,char *symbol)
             return;
         }
     }
-    if ( symbol != 0 && symbol[0] != 0 )
-    {
 #ifdef WIN32
-        strcat(fname,"\\");
+    strcat(fname,"\\");
 #else
-        strcat(fname,"/");
+    strcat(fname,"/");
 #endif
+    if ( symbol == 0 || symbol[0] == 0 || strcmp("KMD",symbol) == 0 )
         strcat(fname,symbol);
-    }
     //printf("statefname.(%s) -> (%s)\n",symbol,fname);
 #ifdef WIN32
     strcat(fname,"\\");
