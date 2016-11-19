@@ -599,6 +599,7 @@ void komodo_passport_iteration()
                             isrealtime = 1;
                         free_json(infoobj);
                     }
+                    printf("(%s)\n",retstr);
                     free(retstr);
                 } else printf("%s port.%u no getinfo\n",base,port);
             } else printf("fname.(%s) cant open\n",fname);
