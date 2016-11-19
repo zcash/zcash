@@ -87,7 +87,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 else
                 {
                     printf("updated %d pubkeys at ht.%d\n",num,ht);
-                    if ( matched != 0 )
+                    if ( matched != 0 ) // private state -> global Pubkeys
                         komodo_eventadd_pubkeys(sp,symbol,ht,num,pubkeys);
                 }
             } else printf("illegal num.%d\n",num);
@@ -100,11 +100,11 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 errs++;
             if ( fread(&notarized_desttxid,1,sizeof(notarized_desttxid),fp) != sizeof(notarized_desttxid) )
                 errs++;
-            printf("load NOTARIZED %d %s\n",notarized_height,notarized_hash.ToString().c_str());
-            if ( matched != 0 )
-                komodo_eventadd_notarized(sp,symbol,ht,dest,notarized_hash,notarized_desttxid,notarized_height);
+            printf("load %s NOTARIZED %d %s\n",ASSETCHAINS_SYMBOL,notarized_height,notarized_hash.ToString().c_str());
+            //if ( matched != 0 ) global independent states -> inside *sp
+            komodo_eventadd_notarized(sp,symbol,ht,dest,notarized_hash,notarized_desttxid,notarized_height);
         }
-        else if ( func == 'U' )
+        else if ( func == 'U' ) // deprecated
         {
             uint8_t n,nid; uint256 hash; uint64_t mask;
             n = fgetc(fp);
@@ -122,7 +122,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             int32_t kheight;
             if ( fread(&kheight,1,sizeof(kheight),fp) != sizeof(kheight) )
                 errs++;
-            if ( matched != 0 )
+            //if ( matched != 0 ) global independent states -> inside *sp
                 komodo_eventadd_kmdheight(sp,symbol,ht,kheight);
         }
         else if ( func == 'R' )
@@ -140,7 +140,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             {
                 if ( fread(opret,1,olen,fp) != olen )
                     errs++;
-                if ( matched != 0 )
+                //if ( matched != 0 ) global shared state -> global PAX
                     komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen);
             } else printf("illegal olen.%u\n",olen);
         }
@@ -154,7 +154,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             numpvals = fgetc(fp);
             if ( numpvals*sizeof(uint32_t) <= sizeof(pvals) && fread(pvals,sizeof(uint32_t),numpvals,fp) == numpvals )
             {
-                if ( matched != 0 )
+                //if ( matched != 0 ) global shared state -> global PVALS
                     komodo_eventadd_pricefeed(sp,symbol,ht,pvals,numpvals);
                 //printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
             } else printf("error loading pvals[%d]\n",numpvals);
@@ -340,7 +340,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
             if ( *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
             {
-                printf("ht.%d NOTARIZED.%d %s.%s %sTXID.%s (%s)\n",height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
+                printf("%s ht.%d NOTARIZED.%d %s.%s %sTXID.%s (%s)\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
                 sp->NOTARIZED_HEIGHT = *notarizedheightp;
                 sp->NOTARIZED_HASH = kmdtxid;
                 sp->NOTARIZED_DESTTXID = desttxid;

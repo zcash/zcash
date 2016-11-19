@@ -56,18 +56,6 @@ void komodo_eventadd_pubkeys(struct komodo_state *sp,char *symbol,int32_t height
         komodo_notarysinit(height,pubkeys,num);
 }
 
-/*void komodo_eventadd_utxo(struct komodo_state *sp,char *symbol,int32_t height,uint8_t notaryid,uint256 txid,uint64_t voutmask,uint8_t numvouts)
-{
-    struct komodo_event_utxo U;
-    memset(&U,0,sizeof(U));
-    U.txid = txid;
-    U.voutmask = voutmask;
-    U.numvouts = numvouts;
-    komodo_eventadd(height,symbol,KOMODO_EVENT_UTXO,(uint8_t *)&U,sizeof(U));
-    if ( sp != 0 )
-        komodo_nutxoadd(height,notaryid,txid,voutmask,numvouts);
-}*/
-
 void komodo_eventadd_pricefeed(struct komodo_state *sp,char *symbol,int32_t height,uint32_t *prices,uint8_t num)
 {
     struct komodo_event_pricefeed F;

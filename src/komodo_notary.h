@@ -52,46 +52,15 @@ const char *Notaries_genesis[][2] =
     { "titomane_SH", "035f49d7a308dd9a209e894321f010d21b7793461b0c89d6d9231a3fe5f68d9960" },
 };
 
-/*void komodo_nutxoadd(int32_t height,int32_t notaryid,uint256 txhash,uint64_t voutmask,int32_t numvouts)
-{
-    struct nutxo_entry *np;
-    if ( numvouts > 1 && notaryid < 64 )
-    {
-        pthread_mutex_lock(&komodo_mutex);
-        np = (struct nutxo_entry *)calloc(1,sizeof(*np));
-        np->height = height;
-        np->txhash = txhash;
-        np->voutmask = voutmask;
-        np->notaryid = notaryid;
-        HASH_ADD_KEYPTR(hh,NUTXOS,&np->txhash,sizeof(np->txhash),np);
-        //printf("Add NUTXO[%d] <- %s notaryid.%d t%u %s %llx\n",Num_nutxos,Notaries[notaryid][0],notaryid,komodo_txtime(txhash),txhash.ToString().c_str(),(long long)voutmask);
-        Num_nutxos++;
-        pthread_mutex_unlock(&komodo_mutex);
-    }
-}
-
-int32_t komodo_nutxofind(int32_t height,uint256 txhash,int32_t vout)
-{
-    struct nutxo_entry *np;
-    pthread_mutex_lock(&komodo_mutex);
-    HASH_FIND(hh,NUTXOS,&txhash,sizeof(txhash),np);
-    pthread_mutex_unlock(&komodo_mutex);
-    if ( np != 0 && ((1LL << vout) & np->voutmask) != 0 )
-        return(np->notaryid);
-    return(-1);
-}*/
-
 int32_t komodo_ratify_threshold(int32_t height,uint64_t signedmask)
 {
     int32_t htind,numnotaries,i,wt = 0;
-    if ( ASSETCHAINS_SYMBOL[0] != 0 )
-        return(2);
     htind = height / KOMODO_ELECTION_GAP;
-    numnotaries = Pubkeys[htind].numnotaries;
+    numnotaries = sp->Pubkeys[htind].numnotaries;
     for (i=0; i<numnotaries; i++)
         if ( ((1LL << i) & signedmask) != 0 )
             wt++;
-    if ( wt > (numnotaries >> 1) || (wt > 7 && (signedmask & 3) != 0) )
+    if ( wt > (numnotaries >> 1) || (wt > 7 && (signedmask & 1) != 0) )
         return(1);
     else return(0);
 }
