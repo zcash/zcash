@@ -556,6 +556,7 @@ void komodo_iteration(char *symbol)
     }
 }
 #else
+int32_t komodo_longestchain();
 
 void komodo_passport_iteration()
 {
