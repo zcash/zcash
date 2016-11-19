@@ -295,7 +295,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
 {
-    uint8_t rmd160[20],addrtype,pubkey33[33]; int32_t i,j,n,len,tokomodo,kmdheight; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; double diff; uint64_t seed; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
+    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo,kmdheight; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; double diff; uint64_t seed; int64_t fiatoshis,checktoshis; const char *typestr = "unknown";
     tokomodo = (komodo_is_issuer() == 0);
     if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
     {
@@ -568,10 +568,11 @@ void komodo_gateway_iteration()
     {
         for (baseid=0; baseid<=32; baseid++)
         {
+            base = (char *)CURRENCIES[baseid];
             if ( baseid != refid ) // use direct data for yourself
             {
-                komodo_statefname(fname,"");
-                komodo_nameset(symbol,dest,source);
+                komodo_statefname(fname,(char *)"");
+                komodo_nameset(symbol,dest,base);
                 if ( (fp= fopen(fname,"rb")) != 0 )
                 {
                     fseek(fp,lastpos,SEEK_SET);
