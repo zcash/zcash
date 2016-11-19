@@ -28,7 +28,7 @@ Install
 About
 --------------
 
-[Zclassic]http://zclassic.org/), like [Zcash](https://z.cash/), is an implementation of the "Zerocash" protocol.
+[Zclassic](http://zclassic.org/), like [Zcash](https://z.cash/), is an implementation of the "Zerocash" protocol.
 Based on Bitcoin's code, it intends to offer a far higher standard of privacy
 through a sophisticated zero-knowledge proving scheme that preserves
 confidentiality of transaction metadata. Technical details are available
