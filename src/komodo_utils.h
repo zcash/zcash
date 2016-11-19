@@ -1462,33 +1462,21 @@ void komodo_nameset(char *symbol,char *dest,char *source)
     }
 }
 
-struct komodo_state *komodo_stateptr(char *symbol,char *dest)
-{
-    int32_t baseid; struct komodo_state *sp;
-    komodo_nameset(symbol,dest,ASSETCHAINS_SYMBOL);
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        sp = &KOMODO_STATES[0];
-    else
-    {
-        if ( (baseid= komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 )
-            sp = &KOMODO_STATES[baseid+1];
-        else
-        {
-            fprintf(stderr,"komodo_stateupdate.(%s) not supported\n",ASSETCHAINS_SYMBOL);
-            return(0);
-        }
-    }
-    return(sp);
-}
-
 struct komodo_state *komodo_stateptrget(char *base)
 {
     int32_t baseid;
     if ( base == 0 || base[0] == 0 || strcmp(base,"KMD") == 0 )
-        return(&KOMODO_STATES[0]);
+        return(&KOMODO_STATES[33]);
     else if ( (baseid= komodo_baseid(base)) >= 0 )
         return(&KOMODO_STATES[baseid+1]);
-    else return(0);
+    else return(&KOMODO_STATES[0]);
+}
+
+struct komodo_state *komodo_stateptr(char *symbol,char *dest)
+{
+    int32_t baseid;
+    komodo_nameset(symbol,dest,ASSETCHAINS_SYMBOL);
+    return(komodo_stateptrget(symbol));
 }
 
 int32_t komodo_isrealtime(int32_t *kmdheightp,char *target)

@@ -31,7 +31,7 @@ int32_t NUM_PRICES; uint32_t *PVALS;
 struct knotaries_entry *Pubkeys;
 struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS;
 
-struct komodo_state KOMODO_STATES[33];
+struct komodo_state KOMODO_STATES[34];
 
 int COINBASE_MATURITY = 100;
 
