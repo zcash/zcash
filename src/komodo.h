@@ -499,10 +499,10 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 }
             }
             if ( signedmask != 0 )
-                printf("ht.%d signedmask.%llx numvins.%d numvouts.%d\n",height,(long long)signedmask,numvins,numvouts);
+                printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
             if ( signedmask != 0 && (notarizedheight != 0 || specialtx != 0) )
             {
-                printf("NOTARY SIGNED.%llx numvins.%d ht.%d txi.%d notaryht.%d specialtx.%d\n",(long long)signedmask,numvins,height,i,notarizedheight,specialtx);
+                printf("%s NOTARY SIGNED.%llx numvins.%d ht.%d txi.%d notaryht.%d specialtx.%d\n",ASSETCHAINS_SYMBOL,(long long)signedmask,numvins,height,i,notarizedheight,specialtx);
                 printf("ht.%d specialtx.%d isratification.%d numvouts.%d signed.%llx numnotaries.%d\n",height,specialtx,isratification,numvouts,(long long)signedmask,numnotaries);
                 if ( specialtx != 0 && isratification != 0 && numvouts > 2 )
                 {
