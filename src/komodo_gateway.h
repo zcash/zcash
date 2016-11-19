@@ -600,7 +600,7 @@ void komodo_passport_iteration()
                         free_json(infoobj);
                     }
                     free(retstr);
-                }
+                } else printf("%s port.%u no getinfo\n",base,port);
             } else printf("fname.(%s) cant open\n",fname);
             if ( sp != 0 )
                 sp->KOMODO_REALTIME = isrealtime * (uint32_t)time(NULL);
