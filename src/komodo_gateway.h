@@ -576,6 +576,7 @@ void komodo_passport_iteration()
                 komodo_nameset(symbol,dest,base);
                 if ( (fp= fopen(fname,"rb")) != 0 )
                 {
+                    fseek(fp,0,SEEK_END);
                     if ( ftell(fp) > lastpos[baseid] )
                     {
                         fseek(fp,lastpos[baseid],SEEK_SET);
@@ -583,7 +584,7 @@ void komodo_passport_iteration()
                             ;
                         lastpos[baseid] = ftell(fp);
                         printf("%s lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
-                    }
+                    } else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                     fclose(fp);
                 } else printf("fname.(%s) cant open\n",fname);
             }
