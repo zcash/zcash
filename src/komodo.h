@@ -408,7 +408,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     uint64_t signedmask,voutmask; char symbol[16],dest[16]; struct komodo_state *sp;
     uint8_t scriptbuf[4096],pubkeys[64][33],rmd160[20],scriptPubKey[35]; uint256 kmdtxid,zero,btctxid,txhash;
     int32_t i,j,k,numnotaries,scriptlen,isratification,nid,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
-    memset(zero.bytes,0,sizeof(zero));
+    memset(&zero,0,sizeof(zero));
     komodo_init(pindex->nHeight);
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
         return;
