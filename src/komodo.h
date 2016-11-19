@@ -153,7 +153,9 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 if ( fread(opret,1,olen,fp) != olen )
                     errs++;
                 //if ( matched != 0 ) global shared state -> global PAX
-                printf("%s load[%s] opret[%c] len.%d %.8f\n",ASSETCHAINS_SYMBOL,symbol,opret[0],olen,(double)ovalue/COIN);
+                for (i=0; i<olen; i++)
+                    printf("%02x",opret[i]);
+                printf(" %s load[%s] opret[%c] len.%d %.8f\n",ASSETCHAINS_SYMBOL,symbol,opret[0],olen,(double)ovalue/COIN);
                 komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen);
             } else printf("illegal olen.%u\n",olen);
         }
