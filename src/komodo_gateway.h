@@ -604,13 +604,14 @@ void komodo_passport_iteration()
                 {
                     blocks = juint(result,(char *)"blocks");
                     longest = juint(result,(char *)"longestchain");
-                    printf("%s.(%d L%d) ",base,blocks,longest);
+                    //printf("%s.(%d L%d) ",base,blocks,longest);
                     if ( blocks > 0 && blocks == longest )
                         isrealtime = 1;
                 }
                 free_json(infoobj);
             }
-            //printf("(%s)\n",retstr);
+            if ( baseid == 32 )
+                printf("(%s)\n",retstr);
             free(retstr);
         } else printf("%s port.%u no getinfo\n",base,port);
         if ( sp != 0 )
