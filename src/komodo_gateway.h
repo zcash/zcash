@@ -599,10 +599,10 @@ void komodo_passport_iteration()
                     {
                         isrealtime = 1;
                         RTmask |= (1LL << baseid);
-                    }
-                }
+                    } else fprintf(stderr,"%s not RT\n",base);
+                } else fprintf(stderr,"%s size error RT\n",base);
                 fclose(fp);
-            }
+            } else fprintf(stderr,"%s open error RT\n",base);
         }
         else
         {
