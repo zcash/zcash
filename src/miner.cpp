@@ -111,6 +111,7 @@ int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 uint64_t komodo_paxtotal();
 int32_t komodo_is_issuer();
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol,int32_t tokomodo);
+int32_t komodo_isrealtime(int32_t *kmdheightp,char *target);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
