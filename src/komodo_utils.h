@@ -1370,9 +1370,9 @@ uint32_t komodo_assetmagic(char *symbol,uint64_t supply)
     return(shortflag);
 }*/
 
-uint16_t komodo_assetport(uint32_t magic,int32_t shortflag)
+uint16_t komodo_assetport(uint32_t magic)
 {
-    return(8000 + shortflag*7777 + (magic % 7777));
+    return(8000 + (magic % 7777));
 }
 
 uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp)
@@ -1383,10 +1383,10 @@ uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp)
 
 void komodo_ports(uint16_t ports[MAX_CURRENCIES])
 {
-    int32_t i,shortflag; uint32_t magic;
+    int32_t i; uint32_t magic;
     for (i=0; i<MAX_CURRENCIES; i++)
     {
-        ports[i] = komodo_port(CURRENCIES[i],10,&magic,&shortflag);
+        ports[i] = komodo_port(CURRENCIES[i],10,&magic);
         printf("%u ",ports[i]);
     }
     printf("ports\n");
@@ -1484,7 +1484,7 @@ struct komodo_state *komodo_stateptrget(char *base)
 {
     int32_t baseid;
     if ( base == 0 || base[0] == 0 || strcmp(base,"KMD") == 0 )
-        return(KOMODO_STATES[0]);
+        return(&KOMODO_STATES[0]);
     else if ( (baseid= komodo_baseid(base)) >= 0 )
         return(&KOMODO_STATES[baseid+1]);
     else return(0);
