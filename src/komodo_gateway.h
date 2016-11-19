@@ -559,11 +559,11 @@ void komodo_iteration(char *symbol)
 
 void komodo_passport_iteration()
 {
-    static long lastpos[33];
+    static long lastpos[34];
     FILE *fp; int32_t baseid,refid; struct komodo_state *sp; char fname[512],*base,symbol[16],dest[16];
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        refid = 32;
-    else refid = komodo_baseid(ASSETCHAINS_SYMBOL);
+        refid = 33;
+    else refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1;
     //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=0; baseid<=32; baseid++)
     {
@@ -574,7 +574,7 @@ void komodo_passport_iteration()
             komodo_nameset(symbol,dest,base);
             if ( (fp= fopen(fname,"rb")) != 0 && (sp= komodo_stateptrget(symbol)) != 0 )
             {
-                printf("%s fname.(%s)\n",symbol,fname);
+                printf("refid.%d %s fname.(%s)\n",refid,symbol,fname);
                 fseek(fp,0,SEEK_END);
                 if ( ftell(fp) > lastpos[baseid] )
                 {
