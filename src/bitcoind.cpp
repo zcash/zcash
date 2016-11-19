@@ -103,7 +103,7 @@ bool AppInit(int argc, char* argv[])
         while ( ASSETCHAIN_INIT == 0 )
         {
             //if ( komodo_is_issuer() != 0 )
-                komodo_passport_iteration();
+            //    komodo_passport_iteration();
             sleep(1);
         }
         if (!boost::filesystem::is_directory(GetDataDir(false)))
