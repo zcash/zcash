@@ -13,8 +13,6 @@
  *                                                                            *
  ******************************************************************************/
 
-int32_t NUM_PRICES; uint32_t *PVALS;
-
 #define USD 0
 
 #define MAX_CURRENCIES 32

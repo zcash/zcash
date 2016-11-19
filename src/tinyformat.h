@@ -821,7 +821,7 @@ inline void formatImpl(std::ostream& out, const char* fmt,
 
     // Print remaining part of format string.
     fmt = printFormatStringLiteral(out, fmt);
-    if(*fmt != '\0')
+    if(*fmt != '\0' && 0 ) // disabled due to complaints
         TINYFORMAT_ERROR("tinyformat: Too many conversion specifiers in format string");
 
     // Restore stream state

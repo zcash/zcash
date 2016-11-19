@@ -2324,7 +2324,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     
     //FlushStateToDisk();
     komodo_connectblock(pindex,*(CBlock *)&block);
-
     return true;
 }
 
@@ -3235,15 +3234,13 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         if (mi == mapBlockIndex.end())
             return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         pindexPrev = (*mi).second;
-        if (pindexPrev->nStatus & BLOCK_FAILED_MASK)
+        if (pindexPrev == 0 || (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
             return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
     }
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
         return false;
     if (pindex == NULL)
         pindex = AddToBlockIndex(block);
-    //if (!CheckBlockHeader(pindex!=0?pindex->nHeight:0,pindex, block, state))
-    //    return false;
     if (ppindex)
         *ppindex = pindex;
     return true;
@@ -3328,14 +3325,14 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
     return (nFound >= nRequired);
 }
 
+void komodo_currentheight_set(int32_t height);
 
 bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
-    extern int32_t CURRENT_HEIGHT;
     bool checked;
     if ( chainActive.Tip() != 0 )
-        CURRENT_HEIGHT = chainActive.Tip()->nHeight;
+        komodo_currentheight_set(chainActive.Tip()->nHeight);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state);
     else checked = CheckBlock(0,0,*pblock, state);
