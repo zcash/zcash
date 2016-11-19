@@ -599,7 +599,7 @@ void komodo_passport_iteration()
                     {
                         isrealtime = 1;
                         RTmask |= (1LL << baseid);
-                    } else fprintf(stderr,"%s not RT\n",base);
+                    } //else fprintf(stderr,"%s not RT\n",base);
                 } else fprintf(stderr,"%s size error RT\n",base);
                 fclose(fp);
             } else fprintf(stderr,"%s open error RT\n",base);
@@ -626,7 +626,7 @@ void komodo_passport_iteration()
     }
     if ( RTmask != prevRTmask )
     {
-        printf("[%s] new RTmask %llx\n",ASSETCHAINS_SYMBOL,(long long)RTmask);
+        printf("[%s] new RTmask %llx\n",ASSETCHAINS_SYMBOL[0]!=0?ASSETCHAINS_SYMBOL:"KMD",(long long)RTmask);
         prevRTmask = RTmask;
     }
 }
