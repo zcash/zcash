@@ -557,7 +557,7 @@ void komodo_iteration(char *symbol)
 }
 #else
 
-void komodo_gateway_iteration()
+void komodo_passport_iteration()
 {
     static long lastpos[33];
     FILE *fp; int32_t baseid,refid; struct komodo_state *sp; char fname[512],*base,symbol[16],dest[16];
