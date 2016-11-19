@@ -595,7 +595,7 @@ void komodo_passport_iteration()
             {
                 if ( fread(buf,1,sizeof(buf),fp) == sizeof(buf) )
                 {
-                    if ( buf[0] != 0 && buf[0] == buf[1] )
+                    if ( buf[0] != 0 && buf[0] == buf[1] && buf[2] > time(NULL)-60 )
                     {
                         isrealtime = 1;
                         RTmask |= (1LL << baseid);

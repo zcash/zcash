@@ -1363,13 +1363,11 @@ int32_t komodo_userpass(char *userpass,char *symbol)
         sprintf(confname,"komodo.conf");
     else sprintf(confname,"%s.conf",symbol);
     komodo_statefname(fname,symbol,confname);
-    printf("[%s] conf.(%s)\n",symbol,fname);
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
         komodo_userpass(username,password,fp);
         sprintf(userpass,"%s:%s",username,password);
         fclose(fp);
-        printf("[%s] conf.(%s) %s\n",symbol,fname,userpass);
         return((int32_t)strlen(userpass));
     }
     return(-1);
