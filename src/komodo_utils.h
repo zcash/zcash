@@ -1265,7 +1265,7 @@ void komodo_statefname(char *fname,char *symbol)
 {
     int32_t n,len;
     sprintf(fname,"%s",GetDataDir(false).string().c_str());
-    if ( (n= (int32_t)strlen(symbol)) != 0 )
+    if ( (n= (int32_t)strlen(ASSETCHAINS_SYMBOL)) != 0 )
     {
         len = (int32_t)strlen(fname);
         if ( strcmp(symbol,&fname[len - n]) == 0 )
@@ -1280,6 +1280,7 @@ void komodo_statefname(char *fname,char *symbol)
             return;
         }
     }
+    printf("statefname.(%s) -> (%s)\n",symbol,fname);
 #ifdef WIN32
     strcat(fname,"\\");
 #else
