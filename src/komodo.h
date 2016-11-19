@@ -500,7 +500,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         signedmask |= (1LL << k);
                 }
             }
-            if ( signedmask != 0 )
+            if ( 0 && signedmask != 0 )
                 printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
             if ( signedmask != 0 && (notarizedheight != 0 || specialtx != 0) )
             {
