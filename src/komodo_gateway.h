@@ -582,7 +582,7 @@ void komodo_passport_iteration()
                     while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
                         ;
                     lastpos[baseid] = ftell(fp);
-                    printf("from.(%s) lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
+                    //printf("from.(%s) lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
                 } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                 fclose(fp);
             } else printf("fname.(%s) cant open\n",fname);

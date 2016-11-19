@@ -112,7 +112,7 @@ void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height)
             {
                 if ( ep->height < height )
                     break;
-                printf("undo event.%c ht.%d for rewind.%d\n",ep->type,ep->height,height);
+                printf("[%s] undo %s event.%c ht.%d for rewind.%d\n",ASSETCHAINS_SYMBOL,symbol,ep->type,ep->height,height);
                 komodo_event_undo(sp,ep);
                 sp->Komodo_numevents--;
             }
