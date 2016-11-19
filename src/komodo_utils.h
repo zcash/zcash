@@ -1272,15 +1272,12 @@ void komodo_statefname(char *fname,char *symbol)
         {
             fname[len - n] = 0;
             if ( symbol[0] != 0 )
-            {
                 strcpy(&fname[len - n],symbol);
-                //printf("statefname.(%s)\n",fname);
 #ifdef WIN32
-                strcat(fname,"\\");
+            strcat(fname,"\\");
 #else
-                strcat(fname,"/");
+            strcat(fname,"/");
 #endif
-            }
         }
         else
         {
