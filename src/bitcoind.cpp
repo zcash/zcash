@@ -59,6 +59,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,ASSETCHAIN_INIT;
 extern std::string NOTARY_PUBKEY;
 int32_t komodo_is_issuer();
+void komodo_passport_iteration();
 
 bool AppInit(int argc, char* argv[])
 {
@@ -101,8 +102,8 @@ bool AppInit(int argc, char* argv[])
         fprintf(stderr,"call komodo_args NOTARY_PUBKEY.(%s)\n",NOTARY_PUBKEY.c_str());
         while ( ASSETCHAIN_INIT == 0 )
         {
-            if ( komodo_is_issuer() != 0 )
-                komodo_gateway_iteration(ASSETCHAINS_SYMBOL);
+            //if ( komodo_is_issuer() != 0 )
+                komodo_passport_iteration();
             sleep(1);
         }
         if (!boost::filesystem::is_directory(GetDataDir(false)))
