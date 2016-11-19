@@ -169,7 +169,7 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
         return;
     }
     sp->NPOINTS = (struct notarized_checkpoint *)realloc(sp->NPOINTS,(sp->NUM_NPOINTS+1) * sizeof(*sp->NPOINTS));
-    np = &sp->NPOINTS[NUM_NPOINTS++];
+    np = &sp->NPOINTS[sp->NUM_NPOINTS++];
     memset(np,0,sizeof(*np));
     np->nHeight = nHeight;
     sp->NOTARIZED_HEIGHT = np->notarized_height = notarized_height;
