@@ -610,7 +610,7 @@ void komodo_passport_iteration()
                 }
                 free_json(infoobj);
             }
-            else printf("%s (%s)\n",base,retstr);
+            else printf("[%s] %s (%s)\n",ASSETCHAINS_SYMBOL,base,retstr);
             free(retstr);
         } // else printf("%s port.%u no getinfo\n",base,port);
         if ( sp != 0 )
