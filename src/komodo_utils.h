@@ -1265,10 +1265,10 @@ void komodo_statefname(char *fname,char *symbol)
 {
     int32_t n,len;
     sprintf(fname,"%s",GetDataDir(false).string().c_str());
-    if ( (n= (int32_t)strlen(ASSETCHAINS_SYMBOL)) != 0 )
+    if ( (n= (int32_t)strlen(symbol)) != 0 )
     {
         len = (int32_t)strlen(fname);
-        if ( strcmp(ASSETCHAINS_SYMBOL,&fname[len - n]) == 0 )
+        if ( strcmp(symbol,&fname[len - n]) == 0 )
         {
             fname[len - n] = 0;
             if ( symbol[0] != 0 )
@@ -1276,7 +1276,7 @@ void komodo_statefname(char *fname,char *symbol)
         }
         else
         {
-            printf("unexpected fname.(%s) vs %s\n",fname,ASSETCHAINS_SYMBOL);
+            printf("unexpected fname.(%s) vs %s\n",fname,symbol);
             return;
         }
     }
