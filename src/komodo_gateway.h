@@ -572,7 +572,7 @@ void komodo_passport_iteration()
             base = (char *)CURRENCIES[baseid];
             komodo_statefname(fname,baseid<32?base:(char *)"");
             komodo_nameset(symbol,dest,base);
-            port = komodo_port(base,10,&magic);
+            port = komodo_port(base,10,&magic) + 1;
             sp = 0;
             isrealtime = 0;
             if ( (fp= fopen(fname,"rb")) != 0 && (sp= komodo_stateptrget(symbol)) != 0 )

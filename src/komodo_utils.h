@@ -1382,7 +1382,7 @@ uint32_t komodo_assetmagic(char *symbol,uint64_t supply)
 uint16_t komodo_assetport(uint32_t magic)
 {
     if ( magic == 0x8de4eef9 )
-        return(7771);
+        return(7770);
     else return(8000 + (magic % 7777));
 }
 
@@ -1391,7 +1391,7 @@ uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp)
     if ( symbol == 0 || symbol[0] == 0 || strcmp("KMD",symbol) == 0 )
     {
         *magicp = 0x8de4eef9;
-        return(7771);
+        return(7770);
     }
     *magicp = komodo_assetmagic(symbol,supply);
     return(komodo_assetport(*magicp));
