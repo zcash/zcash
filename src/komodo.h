@@ -123,7 +123,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             if ( fread(&kheight,1,sizeof(kheight),fp) != sizeof(kheight) )
                 errs++;
             //if ( matched != 0 ) global independent states -> inside *sp
-            printf("%s.%d load[%s] ht.%d\n",ASSETCHAINS_SYMBOL,ht,symbol,kheight);
+            //printf("%s.%d load[%s] ht.%d\n",ASSETCHAINS_SYMBOL,ht,symbol,kheight);
             komodo_eventadd_kmdheight(sp,symbol,ht,kheight,0);
         }
         else if ( func == 'T' )
@@ -134,7 +134,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             if ( fread(&ktimestamp,1,sizeof(ktimestamp),fp) != sizeof(ktimestamp) )
                 errs++;
             //if ( matched != 0 ) global independent states -> inside *sp
-            printf("%s.%d load[%s] ht.%d t.%u\n",ASSETCHAINS_SYMBOL,ht,symbol,kheight,ktimestamp);
+            //printf("%s.%d load[%s] ht.%d t.%u\n",ASSETCHAINS_SYMBOL,ht,symbol,kheight,ktimestamp);
             komodo_eventadd_kmdheight(sp,symbol,ht,kheight,ktimestamp);
         }
         else if ( func == 'R' )

@@ -574,7 +574,7 @@ void komodo_passport_iteration()
             komodo_nameset(symbol,dest,base);
             if ( (fp= fopen(fname,"rb")) != 0 && (sp= komodo_stateptrget(symbol)) != 0 )
             {
-                printf("refid.%d %s fname.(%s) base.%s\n",refid,symbol,fname,base);
+                //printf("refid.%d %s fname.(%s) base.%s\n",refid,symbol,fname,base);
                 fseek(fp,0,SEEK_END);
                 if ( ftell(fp) > lastpos[baseid] )
                 {
