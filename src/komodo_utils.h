@@ -1274,6 +1274,7 @@ void komodo_statefname(char *fname,char *symbol)
             if ( symbol[0] != 0 )
             {
                 strcpy(&fname[len - n],symbol);
+                printf("statefname.(%s)\n",fname);
 #ifdef WIN32
                 strcat(fname,"\\");
 #else
