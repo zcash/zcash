@@ -1,6 +1,8 @@
 source pubkey.txt
 echo $pubkey
 
+./komodod -pubkey=$pubkey -ac_name=REVS -ac_supply=1300000 -addnode=78.47.196.146 $1 &
+
 ./komodod -pubkey=$pubkey -ac_name=USD -addnode=78.47.196.146 $1 &
 ./komodod -pubkey=$pubkey -ac_name=EUR -addnode=78.47.196.146 $1 &
 ./komodod -pubkey=$pubkey -ac_name=JPY -addnode=78.47.196.146 $1 &
