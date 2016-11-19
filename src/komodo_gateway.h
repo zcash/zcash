@@ -573,14 +573,14 @@ void komodo_passport_iteration()
     //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=0; baseid<=32; baseid++)
     {
+        sp = 0;
+        isrealtime = 0;
         if ( baseid+1 != refid )
         {
             base = (char *)CURRENCIES[baseid];
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"komodostate");
             komodo_nameset(symbol,dest,base);
             port = komodo_port(base,10,&magic) + 1;
-            sp = 0;
-            isrealtime = 0;
             if ( (fp= fopen(fname,"rb")) != 0 && (sp= komodo_stateptrget(symbol)) != 0 )
             {
                 //printf("refid.%d %s fname.(%s) base.%s\n",refid,symbol,fname,base);
@@ -594,27 +594,27 @@ void komodo_passport_iteration()
                     //printf("from.(%s) lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
                 } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                 fclose(fp);
-                if ( (retstr= komodo_issuemethod(userpass[baseid],(char *)"getinfo",0,port)) != 0 )
+            }
+        }
+        if ( (retstr= komodo_issuemethod(userpass[baseid],(char *)"getinfo",0,port)) != 0 )
+        {
+            if ( (infoobj= cJSON_Parse(retstr)) != 0 )
+            {
+                if ( (result= jobj(infoobj,(char *)"result")) != 0 )
                 {
-                    if ( (infoobj= cJSON_Parse(retstr)) != 0 )
-                    {
-                        if ( (result= jobj(infoobj,(char *)"result")) != 0 )
-                        {
-                            blocks = juint(infoobj,(char *)"blocks");
-                            longest = juint(infoobj,(char *)"longestchain");
-                            printf("%s.(%d L%d) ",base,blocks,longest);
-                            if ( blocks > 0 && blocks == longest )
-                                isrealtime = 1;
-                        }
-                        free_json(infoobj);
-                    }
-                    //printf("(%s)\n",retstr);
-                    free(retstr);
-                } else printf("%s port.%u no getinfo\n",base,port);
-            } else printf("fname.(%s) cant open\n",fname);
-            if ( sp != 0 )
-                sp->KOMODO_REALTIME = isrealtime * (uint32_t)time(NULL);
-        } // else use direct data for self via connect
+                    blocks = juint(result,(char *)"blocks");
+                    longest = juint(result,(char *)"longestchain");
+                    printf("%s.(%d L%d) ",base,blocks,longest);
+                    if ( blocks > 0 && blocks == longest )
+                        isrealtime = 1;
+                }
+                free_json(infoobj);
+            }
+            //printf("(%s)\n",retstr);
+            free(retstr);
+        } else printf("%s port.%u no getinfo\n",base,port);
+        if ( sp != 0 )
+            sp->KOMODO_REALTIME = isrealtime * (uint32_t)time(NULL);
     }
 }
 #endif
