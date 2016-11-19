@@ -564,7 +564,7 @@ void komodo_passport_iteration()
     if ( didinit == 0 )
     {
         for (baseid=0; baseid<=32; baseid++)
-            komodo_userpass(userpass[baseid],CURRENCIES[baseid])
+            komodo_userpass(userpass[baseid],CURRENCIES[baseid]);
         didinit = 1;
     }
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
@@ -576,7 +576,7 @@ void komodo_passport_iteration()
         if ( baseid+1 != refid )
         {
             base = (char *)CURRENCIES[baseid];
-            komodo_statefname(fname,baseid<32?base:(char *)"","komodostate");
+            komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"komodostate");
             komodo_nameset(symbol,dest,base);
             port = komodo_port(base,10,&magic) + 1;
             sp = 0;

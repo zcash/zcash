@@ -188,7 +188,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         return;
     if ( fp == 0 )
     {
-        komodo_statefname(fname,ASSETCHAINS_SYMBOL,"komodostate");
+        komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"komodostate");
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
             while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
