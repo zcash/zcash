@@ -166,6 +166,174 @@ uint256 appendRandomCommitment(ZCIncrementalMerkleTree &tree)
 
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
 
+BOOST_AUTO_TEST_CASE(nullifier_regression_test)
+{
+    // Correct behavior:
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert a nullifier into the base.
+        uint256 nf = GetRandHash();
+        cache1.SetNullifier(nf, true);
+        cache1.Flush(); // Flush to base.
+
+        // Remove the nullifier from cache
+        cache1.SetNullifier(nf, false);
+
+        // The nullifier now should be `false`.
+        BOOST_CHECK(!cache1.GetNullifier(nf));
+    }
+
+    // Also correct behavior:
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert a nullifier into the base.
+        uint256 nf = GetRandHash();
+        cache1.SetNullifier(nf, true);
+        cache1.Flush(); // Flush to base.
+
+        // Remove the nullifier from cache
+        cache1.SetNullifier(nf, false);
+        cache1.Flush(); // Flush to base.
+
+        // The nullifier now should be `false`.
+        BOOST_CHECK(!cache1.GetNullifier(nf));
+    }
+
+    // Works because we bring it from the parent cache:
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert a nullifier into the base.
+        uint256 nf = GetRandHash();
+        cache1.SetNullifier(nf, true);
+        cache1.Flush(); // Empties cache.
+
+        // Create cache on top.
+        {
+            // Remove the nullifier.
+            CCoinsViewCacheTest cache2(&cache1);
+            BOOST_CHECK(cache2.GetNullifier(nf));
+            cache2.SetNullifier(nf, false);
+            cache2.Flush(); // Empties cache, flushes to cache1.
+        }
+
+        // The nullifier now should be `false`.
+        BOOST_CHECK(!cache1.GetNullifier(nf));
+    }
+
+    // Was broken:
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert a nullifier into the base.
+        uint256 nf = GetRandHash();
+        cache1.SetNullifier(nf, true);
+        cache1.Flush(); // Empties cache.
+
+        // Create cache on top.
+        {
+            // Remove the nullifier.
+            CCoinsViewCacheTest cache2(&cache1);
+            cache2.SetNullifier(nf, false);
+            cache2.Flush(); // Empties cache, flushes to cache1.
+        }
+
+        // The nullifier now should be `false`.
+        BOOST_CHECK(!cache1.GetNullifier(nf));
+    }
+}
+
+BOOST_AUTO_TEST_CASE(anchor_regression_test)
+{
+    // Correct behavior:
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert anchor into base.
+        ZCIncrementalMerkleTree tree;
+        uint256 cm = GetRandHash();
+        tree.append(cm);
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+        BOOST_CHECK(cache1.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
+        BOOST_CHECK(!cache1.GetAnchorAt(tree.root(), tree));
+    }
+
+    // Also correct behavior:
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert anchor into base.
+        ZCIncrementalMerkleTree tree;
+        uint256 cm = GetRandHash();
+        tree.append(cm);
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+        cache1.Flush();
+        BOOST_CHECK(cache1.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
+        BOOST_CHECK(!cache1.GetAnchorAt(tree.root(), tree));
+    }
+
+    // Works because we bring the anchor in from parent cache.
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert anchor into base.
+        ZCIncrementalMerkleTree tree;
+        uint256 cm = GetRandHash();
+        tree.append(cm);
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        {
+            // Pop anchor.
+            CCoinsViewCacheTest cache2(&cache1);
+            BOOST_CHECK(cache2.GetAnchorAt(tree.root(), tree));
+            cache2.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+            cache2.Flush();
+        }
+
+        BOOST_CHECK(cache1.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
+        BOOST_CHECK(!cache1.GetAnchorAt(tree.root(), tree));
+    }
+
+    // Was broken:
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert anchor into base.
+        ZCIncrementalMerkleTree tree;
+        uint256 cm = GetRandHash();
+        tree.append(cm);
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        {
+            // Pop anchor.
+            CCoinsViewCacheTest cache2(&cache1);
+            cache2.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+            cache2.Flush();
+        }
+
+        BOOST_CHECK(cache1.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
+        BOOST_CHECK(!cache1.GetAnchorAt(tree.root(), tree));
+    }
+}
+
 BOOST_AUTO_TEST_CASE(nullifiers_test)
 {
     CCoinsViewTest base;

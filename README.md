@@ -1,4 +1,4 @@
-Zclassic 1.0.1
+Zclassic 1.0.3
 ==============
 
 What is Zclassic
@@ -23,7 +23,6 @@ Install
 # Run
 ./src/zcashd
 ```
-
 
 What is Zcash?
 --------------

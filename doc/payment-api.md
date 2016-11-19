@@ -98,3 +98,71 @@ Command | Parameters | Description
 z_getoperationresult <br>| [operationids] | Return OperationStatus JSON objects for all completed operations the node is currently aware of, and then remove the operation from memory.<br><br>Operationids is an optional array to filter which operations you want to receive status objects for.<br><br>Output is a list of operation status objects, where the status is either "failed", "cancelled" or "success".<br>[<br>{“operationid”: “opid-11ee…”,<br>“status”: “cancelled”},<br>{“operationid”: “opid-9876”, “status”: ”failed”},<br>{“operationid”: “opid-0e0e”,<br>“status”:”success”,<br>“execution_time”:”25”,<br>“result”: {“txid”:”af3887654…”,...}<br>},<br>]
 z_getoperationstatus <br>| [operationids] | Return OperationStatus JSON objects for all operations the node is currently aware of.<br><br>Operationids is an optional array to filter which operations you want to receive status objects for.<br><br>Output is a list of operation status objects.<br>[<br>{“operationid”: “opid-12ee…”,<br>“status”: “queued”},<br>{“operationid”: “opd-098a…”, “status”: ”executing”},<br>{“operationid”: “opid-9876”, “status”: ”failed”}<br>]<br><br>When the operation succeeds, the status object will also include the result.<br><br>{“operationid”: “opid-0e0e”,<br>“status”:”success”,<br>“execution_time”:”25”,<br>“result”: {“txid”:”af3887654…”,...}<br>}
 z_listoperationids <br>| [state] | Return a list of operationids for all operations which the node is currently aware of.<br><br>State is an optional string parameter to filter the operations you want listed by their state.  Acceptable parameter values are ‘queued’, ‘executing’, ‘success’, ‘failed’, ‘cancelled’.<br><br>[“opid-0e0e…”, “opid-1af4…”, … ]
+
+## Asynchronous RPC call Error Codes
+
+Zcash error codes are defined in https://github.com/zcash/zcash/blob/master/src/rpcprotocol.h
+
+### z_sendmany error codes
+
+RPC_INVALID_PARAMETER (-8) | _Invalid, missing or duplicate parameter_
+---------------------------| -------------------------------------------------
+"Minconf cannot be negative" | Cannot accept negative minimum confirmation number.
+"Minimum number of confirmations cannot be less than 0" | Cannot accept negative minimum confirmation number.
+"From address parameter missing" | Missing an address to send funds from.
+"No recipients" | Missing recipient addresses.
+"Memo must be in hexadecimal format" | Encrypted memo field data must be in hexadecimal format.
+"Memo size of __ is too big, maximum allowed is __ " | Encrypted memo field data exceeds maximum size of 512 bytes.
+"From address does not belong to this node, zaddr spending key not found." | Sender address spending key not found.
+"Invalid parameter, expected object" | Expected object.
+"Invalid parameter, unknown key: __" | Unknown key.
+"Invalid parameter, expected valid size" | Invalid size.
+"Invalid parameter, expected hex txid" | Invalid txid.
+"Invalid parameter, vout must be positive" | Invalid vout.
+"Invalid parameter, duplicated address" | Address is duplicated.
+"Invalid parameter, amounts array is empty" | Amounts array is empty.
+"Invalid parameter, unknown key" | Key not found.
+"Invalid parameter, unknown address format" | Unknown address format.
+"Invalid parameter, size of memo" | Invalid memo field size.
+"Invalid parameter, amount must be positive" | Invalid or negative amount.
+"Invalid parameter, too many zaddr outputs" | z_address outputs exceed maximum allowed.
+"Invalid parameter, expected memo data in hexadecimal format" | Encrypted memo field is not in hexadecimal format.
+"Invalid parameter, size of memo is larger than maximum allowed __ " | Encrypted memo field data exceeds maximum size of 512 bytes.
+
+
+RPC_INVALID_ADDRESS_OR_KEY (-5) | _Invalid address or key_
+--------------------------------| ---------------------------
+"Invalid from address, no spending key found for zaddr" | z_address spending key not found.
+"Invalid output address, not a valid taddr."            | Transparent output address is invalid.
+"Invalid from address, should be a taddr or zaddr."     | Sender address is invalid.
+"From address does not belong to this node, zaddr spending key not found."  | Sender address spending key not found.
+
+
+RPC_WALLET_INSUFFICIENT_FUNDS (-6) | _Not enough funds in wallet or account_
+-----------------------------------| ------------------------------------------
+"Insufficient funds, no UTXOs found for taddr from address." | Insufficient funds for sending address.
+"Could not find any non-coinbase UTXOs to spend. Coinbase UTXOs can only be sent to a single zaddr recipient." | Must send Coinbase UTXO to a single z_address.
+"Could not find any non-coinbase UTXOs to spend." | No available non-coinbase UTXOs.
+"Insufficient funds, no unspent notes found for zaddr from address." | Insufficient funds for sending address.
+"Insufficient transparent funds, have __, need __ plus fee __" | Insufficient funds from transparent address.
+"Insufficient protected funds, have __, need __ plus fee __" | Insufficient funds from shielded address.
+
+RPC_WALLET_ERROR (-4) | _Unspecified problem with wallet_
+----------------------| -------------------------------------
+"Could not find previous JoinSplit anchor" | Try restarting node with `-reindex`.
+"Error decrypting output note of previous JoinSplit: __"  |
+"Could not find witness for note commitment" | Try restarting node with `-reindex`.
+"Witness for note commitment is null" | Missing witness for note commitement.
+"Witness for spendable note does not have same anchor as change input" | Invalid anchor for spendable note witness.
+"Not enough funds to pay miners fee" | Retry with sufficient funds.
+"Missing hex data for raw transaction" | Raw transaction data is null.
+"Missing hex data for signed transaction" | Hex value for signed transaction is null.
+"Send raw transaction did not return an error or a txid." |
+
+RPC_WALLET_ENCRYPTION_FAILED (-16)                                       | _Failed to encrypt the wallet_
+-------------------------------------------------------------------------| -------------------------------------
+"Failed to sign transaction"                                             | Transaction was not signed, sign transaction and retry.
+
+RPC_WALLET_KEYPOOL_RAN_OUT (-12)                                         | _Keypool ran out, call keypoolrefill first_
+-------------------------------------------------------------------------| -----------------------------------------------
+"Could not generate a taddr to use as a change address"                  | Call keypoolrefill and retry.
