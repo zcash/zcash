@@ -560,7 +560,7 @@ void komodo_iteration(char *symbol)
 void komodo_passport_iteration()
 {
     static long lastpos[34];
-    FILE *fp; int32_t baseid,isrealtime,refid,block,longest; struct komodo_state *sp; char *retstr,fname[512],*base,symbol[16],dest[16]; cJSON *infoobj; uint16_t port; uint32_t magic;
+    FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp; char *retstr,fname[512],*base,symbol[16],dest[16]; cJSON *infoobj; uint16_t port; uint32_t magic;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 33;
     else refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1;
@@ -592,8 +592,8 @@ void komodo_passport_iteration()
                 {
                     if ( (infoobj= cJSON_Parse(retstr)) != 0 )
                     {
-                        blocks = juint(infoobj,"blocks");
-                        longest = juint(infoobj,"longestchain");
+                        blocks = juint(infoobj,(char *)"blocks");
+                        longest = juint(infoobj,(char *)"longestchain");
                         printf("(%s %d %d) ",base,blocks,longest);
                         if ( blocks > 0 && blocks == longest )
                             isrealtime = 1;
