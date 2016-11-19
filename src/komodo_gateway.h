@@ -560,7 +560,7 @@ int32_t komodo_longestchain();
 
 void komodo_passport_iteration()
 {
-    static long lastpos[34]; static uint64_t prevRTmask; static char userpass[33][1024];
+    static long lastpos[34]; static uint64_t prevRTmask,lastRTheight; static char userpass[33][1024];
     FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp; char *retstr,fname[512],*base,symbol[16],dest[16]; cJSON *infoobj,*result; uint64_t RTmask = 0; uint16_t port; uint32_t magic,buf[3];
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 33;
@@ -604,12 +604,13 @@ void komodo_passport_iteration()
                 fclose(fp);
             } else fprintf(stderr,"%s open error RT\n",base);
         }
-        else
+        else if ( chainActive.Tip()->nHeight != lastRTheight )
         {
+            lastRTheight = chainActive.Tip()->nHeight;
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
-                buf[0] = (uint32_t)chainActive.Tip()->nHeight;
+                buf[0] = (uint32_t)lastRTheight;
                 buf[1] = (uint32_t)komodo_longestchain();
                 if ( buf[0] != 0 && buf[0] == buf[1] )
                 {
