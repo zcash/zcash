@@ -567,7 +567,7 @@ void komodo_passport_iteration()
     //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=0; baseid<=32; baseid++)
     {
-        if ( baseid != refid )
+        if ( baseid+1 != refid )
         {
             base = (char *)CURRENCIES[baseid];
             komodo_statefname(fname,baseid<32?base:(char *)"");
