@@ -1261,7 +1261,7 @@ void komodo_userpass(char *username,char *password,FILE *fp)
         free(rpcpassword);
 }
 
-void komodo_statefname(char *fname,char *symbol,char *test)
+void komodo_statefname(char *fname,char *symbol)
 {
     int32_t n,len;
     sprintf(fname,"%s",GetDataDir(false).string().c_str());
