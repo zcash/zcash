@@ -1261,7 +1261,7 @@ void komodo_userpass(char *username,char *password,FILE *fp)
         free(rpcpassword);
 }
 
-void komodo_statefname(char *fname,char *symbol)
+void komodo_statefname(char *fname,char *symbol,char *str)
 {
     int32_t n,len;
     sprintf(fname,"%s",GetDataDir(false).string().c_str());
@@ -1294,7 +1294,7 @@ void komodo_statefname(char *fname,char *symbol)
         strcat(fname,"/");
 #endif
     }
-    strcat(fname,(char *)"komodostate");
+    strcat(fname,str);
     //printf("test.(%s) -> [%s] statename.(%s) %s\n",test,ASSETCHAINS_SYMBOL,symbol,fname);
 }
 
@@ -1353,6 +1353,22 @@ void komodo_configfile(char *symbol,uint16_t port)
         sprintf(KMDUSERPASS,"%s:%s",username,password);
         fclose(fp);
     } else printf("couldnt open.(%s)\n",fname);
+}
+
+int32_t komodo_userpass(char *userpass,char *symbol)
+{
+    FILE *fp; char fname[512],username[512],password[512],confname[16];
+    userpass[0] = 0;
+    sprintf(confname,"%s.conf",symbol);
+    komodo_statefname(fname,symbol,confname);
+    if ( (fp= fopen(fname,"rb")) != 0 )
+    {
+        komodo_userpass(username,password,fp);
+        sprintf(userpass,"%s:%s",username,password);
+        fclose(fp);
+        return((int32_t)strlen(userpass));
+    }
+    return(-1);
 }
 
 uint32_t komodo_assetmagic(char *symbol,uint64_t supply)

@@ -559,8 +559,14 @@ void komodo_iteration(char *symbol)
 
 void komodo_passport_iteration()
 {
-    static long lastpos[34];
+    static long lastpos[34],didinit; static char userpass[33][1024];
     FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp; char *retstr,fname[512],*base,symbol[16],dest[16]; cJSON *infoobj; uint16_t port; uint32_t magic;
+    if ( didinit == 0 )
+    {
+        for (baseid=0; baseid<=32; baseid++)
+            komodo_userpass(userpass[baseid],CURRENCIES[baseid])
+        didinit = 1;
+    }
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 33;
     else refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1;
@@ -570,7 +576,7 @@ void komodo_passport_iteration()
         if ( baseid+1 != refid )
         {
             base = (char *)CURRENCIES[baseid];
-            komodo_statefname(fname,baseid<32?base:(char *)"");
+            komodo_statefname(fname,baseid<32?base:(char *)"","komodostate");
             komodo_nameset(symbol,dest,base);
             port = komodo_port(base,10,&magic) + 1;
             sp = 0;
@@ -588,7 +594,7 @@ void komodo_passport_iteration()
                     //printf("from.(%s) lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
                 } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                 fclose(fp);
-                if ( (retstr= komodo_issuemethod((char *)"getinfo",0,port)) != 0 )
+                if ( (retstr= komodo_issuemethod(userpass[baseid],(char *)"getinfo",0,port)) != 0 )
                 {
                     if ( (infoobj= cJSON_Parse(retstr)) != 0 )
                     {
