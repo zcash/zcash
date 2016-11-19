@@ -1274,11 +1274,11 @@ void komodo_statefname(char *fname,char *symbol)
             if ( symbol[0] != 0 )
             {
                 strcpy(&fname[len - n],symbol);
-                printf("statefname.(%s)\n",fname);
+                //printf("statefname.(%s)\n",fname);
 #ifdef WIN32
                 strcat(fname,"\\");
 #else
-                strcat(fname,"//");
+                strcat(fname,"/");
 #endif
             }
         }
@@ -1289,7 +1289,7 @@ void komodo_statefname(char *fname,char *symbol)
         }
     }
     strcat(fname,(char *)"komodostate");
-    printf("statename.(%s) %s\n",symbol,fname);
+    //printf("statename.(%s) %s\n",symbol,fname);
 }
 
 void komodo_configfile(char *symbol,uint16_t port)
