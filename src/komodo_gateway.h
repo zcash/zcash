@@ -610,8 +610,7 @@ void komodo_passport_iteration()
                 }
                 free_json(infoobj);
             }
-            if ( baseid == 32 )
-                printf("(%s)\n",retstr);
+            else printf("%s (%s)\n",base,retstr);
             free(retstr);
         } // else printf("%s port.%u no getinfo\n",base,port);
         if ( sp != 0 )
