@@ -1359,9 +1359,11 @@ int32_t komodo_userpass(char *userpass,char *symbol)
 {
     FILE *fp; char fname[512],username[512],password[512],confname[16];
     userpass[0] = 0;
-    sprintf(confname,"%s.conf",symbol);
+    if ( strcmp("KMD",symbol) == 0 )
+        sprintf(confname,"komodo.conf");
+    else sprintf(confname,"%s.conf",symbol);
     komodo_statefname(fname,symbol,confname);
-    printf("[%s] conf.(%s)\n",symbol,fname);
+    //printf("[%s] conf.(%s)\n",symbol,fname);
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
         komodo_userpass(username,password,fp);

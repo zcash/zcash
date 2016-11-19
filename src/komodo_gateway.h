@@ -613,7 +613,7 @@ void komodo_passport_iteration()
             if ( baseid == 32 )
                 printf("(%s)\n",retstr);
             free(retstr);
-        } else printf("%s port.%u no getinfo\n",base,port);
+        } // else printf("%s port.%u no getinfo\n",base,port);
         if ( sp != 0 )
             sp->KOMODO_REALTIME = isrealtime * (uint32_t)time(NULL);
     }
