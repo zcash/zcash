@@ -572,14 +572,13 @@ void komodo_passport_iteration()
             if ( baseid != refid ) // use direct data for yourself
             {
                 base = (char *)CURRENCIES[baseid];
-                fprintf(stderr,"%s ",base);
                 komodo_statefname(fname,(char *)"");
                 komodo_nameset(symbol,dest,base);
                 if ( (fp= fopen(fname,"rb")) != 0 )
                 {
-                    fseek(fp,lastpos[baseid],SEEK_SET);
                     if ( ftell(fp) > lastpos[baseid] )
                     {
+                        fseek(fp,lastpos[baseid],SEEK_SET);
                         while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
                             ;
                         lastpos[baseid] = ftell(fp);
