@@ -45,7 +45,7 @@ Security Warnings
 See important security warnings in
 [doc/security-warnings.md](doc/security-warnings.md).
 
-**Zcash is unfinished and highly experimental.** Use at your own risk.
+**Zcash and Zclassic are unfinished and highly experimental.** Use at your own risk.
 
 Where do I begin?
 -----------------
