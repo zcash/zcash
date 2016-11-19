@@ -1269,17 +1269,15 @@ void komodo_statefname(char *fname,char *symbol)
     {
         len = (int32_t)strlen(fname);
         if ( strcmp(symbol,&fname[len - n]) == 0 )
-        {
             fname[len - n] = 0;
-            if ( symbol[0] != 0 )
-                strcpy(&fname[len - n],symbol);
-        }
         else
         {
             printf("unexpected fname.(%s) vs %s\n",fname,symbol);
             return;
         }
     }
+    if ( symbol != 0 && symbol[0] != 0 )
+        strcat(fname,symbol);
     printf("statefname.(%s) -> (%s)\n",symbol,fname);
 #ifdef WIN32
     strcat(fname,"\\");
