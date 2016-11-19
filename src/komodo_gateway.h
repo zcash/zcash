@@ -386,7 +386,7 @@ void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int
             komodo_paxpricefeed(height,&script[offset],opretlen);
             //printf("height.%d pricefeed len.%d\n",height,opretlen);
         }
-        else komodo_stateupdate(height,0,0,0,utxid,0,0,0,0,0,value,&script[offset],opretlen,vout);
+        else komodo_stateupdate(height,0,0,0,utxid,0,0,0,0,0,0,value,&script[offset],opretlen,vout);
     }
     else if ( numvouts >= KOMODO_MINRATIFY )
         typestr = "ratify";
@@ -494,7 +494,7 @@ void komodo_gateway_iteration(char *symbol)
                         if ( (KMDHEIGHT % 100) == 0 )
                             fprintf(stderr,"%s.%d ",symbol,KMDHEIGHT);
                         memset(&zero,0,sizeof(zero));
-                        komodo_stateupdate(KMDHEIGHT,0,0,0,zero,0,0,0,0,KMDHEIGHT,0,0,0,0);
+                        komodo_stateupdate(KMDHEIGHT,0,0,0,zero,0,0,0,0,KMDHEIGHT,0,0,0,0,0);
                     }
                     if ( komodo_gateway_block(symbol,KMDHEIGHT,port) < 0 )
                     {

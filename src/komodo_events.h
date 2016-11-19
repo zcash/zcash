@@ -120,19 +120,25 @@ void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height)
     }
 }
 
-void komodo_setkmdheight(struct komodo_state *sp,int32_t kmdheight)
+void komodo_setkmdheight(struct komodo_state *sp,int32_t kmdheight,uint32_t timestamp)
 {
     if ( kmdheight > sp->SAVEDHEIGHT )
+    {
         sp->SAVEDHEIGHT = kmdheight;
+        sp->SAVEDTIMESTAMP = timestamp;
+    }
 }
 
-void komodo_eventadd_kmdheight(struct komodo_state *sp,char *symbol,int32_t height,int32_t kmdheight)
+void komodo_eventadd_kmdheight(struct komodo_state *sp,char *symbol,int32_t height,int32_t kmdheight,uint32_t timestamp)
 {
+    uint32_t buf[2];
     if ( kmdheight > 0 )
     {
-        komodo_eventadd(sp,height,symbol,KOMODO_EVENT_KMDHEIGHT,(uint8_t *)&kmdheight,sizeof(kmdheight));
+        buf[0] = (uint32_t)kmdheight;
+        buf[1] = timestamp;
+        komodo_eventadd(sp,height,symbol,KOMODO_EVENT_KMDHEIGHT,(uint8_t *)buf,sizeof(buf));
         if ( sp != 0 )
-            komodo_setkmdheight(sp,kmdheight);
+            komodo_setkmdheight(sp,kmdheight,timestamp);
     }
     else
     {
