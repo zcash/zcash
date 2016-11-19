@@ -56,7 +56,7 @@ int32_t komodo_ratify_threshold(int32_t height,uint64_t signedmask)
 {
     int32_t htind,numnotaries,i,wt = 0;
     htind = height / KOMODO_ELECTION_GAP;
-    numnotaries = sp->Pubkeys[htind].numnotaries;
+    numnotaries = Pubkeys[htind].numnotaries;
     for (i=0; i<numnotaries; i++)
         if ( ((1LL << i) & signedmask) != 0 )
             wt++;
