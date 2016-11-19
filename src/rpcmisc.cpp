@@ -46,7 +46,7 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
 Value getinfo(const Array& params, bool fHelp)
 {
     uint256 notarized_hash,notarized_desttxid;
-    int32_t notarized_height;
+    int32_t notarized_height,longestchain;
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getinfo\n"
@@ -99,7 +99,9 @@ Value getinfo(const Array& params, bool fHelp)
     }
 #endif
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
-    obj.push_back(Pair("longestchain",        komodo_longestchain()));
+    if ( (longestchain= komodo_longestchain()) != 0 && chainActive.Height() > longestchain )
+        longestchain = chainActive.Height();
+    obj.push_back(Pair("longestchain",        longestchain));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
     if ( chainActive.Tip() != 0 )
         obj.push_back(Pair("tiptime", (int)chainActive.Tip()->nTime));
