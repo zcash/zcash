@@ -570,9 +570,9 @@ void komodo_passport_iteration()
     {
         sp = 0;
         isrealtime = 0;
+        base = (char *)CURRENCIES[baseid];
         if ( baseid+1 != refid )
         {
-            base = (char *)CURRENCIES[baseid];
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"komodostate");
             komodo_nameset(symbol,dest,base);
             port = komodo_port(base,10,&magic) + 1;
@@ -619,7 +619,7 @@ void komodo_passport_iteration()
                 if ( fwrite(buf,1,sizeof(buf),fp) != sizeof(buf) )
                     fprintf(stderr,"[%s] %s error writing realtime\n",ASSETCHAINS_SYMBOL,base);
                 fclose(fp);
-            }
+            } else fprintf(stderr,"%s create error RT\n",base);
         }
         if ( sp != 0 )
             sp->KOMODO_REALTIME = isrealtime * (uint32_t)time(NULL);
