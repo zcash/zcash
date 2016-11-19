@@ -565,31 +565,28 @@ void komodo_passport_iteration()
         refid = 32;
     else refid = komodo_baseid(ASSETCHAINS_SYMBOL);
     //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
-    if ( refid >= 0 )
+    for (baseid=0; baseid<=32; baseid++)
     {
-        for (baseid=0; baseid<=32; baseid++)
+        if ( baseid != refid )
         {
-            if ( baseid != refid ) // use direct data for yourself
+            base = (char *)CURRENCIES[baseid];
+            komodo_statefname(fname,baseid<32?base:(char *)"");
+            komodo_nameset(symbol,dest,base);
+            if ( (fp= fopen(fname,"rb")) != 0 && (sp= komodo_stateptrget(symbol)) != 0 )
             {
-                base = (char *)CURRENCIES[baseid];
-                komodo_statefname(fname,baseid<32?base:(char *)"");
-                komodo_nameset(symbol,dest,base);
-                if ( (fp= fopen(fname,"rb")) != 0 && (sp= komodo_stateptrget(symbol)) != 0 )
+                fseek(fp,0,SEEK_END);
+                if ( ftell(fp) > lastpos[baseid] )
                 {
-                    fseek(fp,0,SEEK_END);
-                    if ( ftell(fp) > lastpos[baseid] )
-                    {
-                        fseek(fp,lastpos[baseid],SEEK_SET);
-                        while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
-                            ;
-                        lastpos[baseid] = ftell(fp);
-                        printf("%s lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
-                    } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
-                    fclose(fp);
-                } else printf("fname.(%s) cant open\n",fname);
-            }
-        }
-    } else printf("passport disabled for refid.%d (%s)\n",refid,ASSETCHAINS_SYMBOL);
+                    fseek(fp,lastpos[baseid],SEEK_SET);
+                    while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
+                        ;
+                    lastpos[baseid] = ftell(fp);
+                    printf("%s lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
+                } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
+                fclose(fp);
+            } else printf("fname.(%s) cant open\n",fname);
+        } // else use direct data for self via connect
+    }
 }
 #endif
 
