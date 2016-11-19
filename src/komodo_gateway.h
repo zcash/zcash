@@ -560,13 +560,13 @@ void komodo_iteration(char *symbol)
 void komodo_passport_iteration()
 {
     static long lastpos[34],didinit; static char userpass[33][1024];
-    FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp; char *retstr,fname[512],*base,symbol[16],dest[16]; cJSON *infoobj,*result; uint16_t port; uint32_t magic;
-    if ( didinit == 0 )
+    FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp; char *retstr,fname[512],*base,symbol[16],dest[16]; cJSON *infoobj,*result; uint16_t port; uint32_t magic,buf[3];
+    /*if ( didinit == 0 )
     {
         for (baseid=0; baseid<=32; baseid++)
             komodo_userpass(userpass[baseid],CURRENCIES[baseid]);
         didinit = 1;
-    }
+    }*/
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 33;
     else refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1;
@@ -595,8 +595,32 @@ void komodo_passport_iteration()
                 } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                 fclose(fp);
             }
+            komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
+            if ( (fp= fopen(fname,"rb")) != 0 )
+            {
+                if ( fread(buf,1,sizeof(buf),fp) == sizeof(buf) )
+                {
+                    if ( buf[0] != 0 && buf[0] == buf[1] )
+                        isrealtime = 1;
+                }
+                fclose(fp);
+            }
         }
-        if ( (retstr= komodo_issuemethod(userpass[baseid],(char *)"getinfo",0,port)) != 0 )
+        else
+        {
+            komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
+            if ( (fp= fopen(fname,"wb")) != 0 )
+            {
+                buf[0] = (uint32_t)chainActive.Tip()->nHeight;
+                buf[1] = (uint32_t)komodo_longestchain();
+                if ( buf[0] != 0 && buf[0] == buf[1] )
+                    buf[2] = (uint32_t)time(NULL);
+                if ( fwrite(buf,1,sizeof(buf),fp) != sizeof(buf) )
+                    fprintf(stderr,"[%s] %s error writing realtime\n",ASSETCHAINS_SYMBOL,base);
+                fclose(fp);
+            }
+        }
+        /*if ( (retstr= komodo_issuemethod(userpass[baseid],(char *)"getinfo",0,port)) != 0 )
         {
             if ( (infoobj= cJSON_Parse(retstr)) != 0 )
             {
@@ -612,7 +636,7 @@ void komodo_passport_iteration()
             }
             else printf("[%s] %s (%s)\n",ASSETCHAINS_SYMBOL,base,retstr);
             free(retstr);
-        } // else printf("%s port.%u no getinfo\n",base,port);
+        } // else printf("%s port.%u no getinfo\n",base,port);*/
         if ( sp != 0 )
             sp->KOMODO_REALTIME = isrealtime * (uint32_t)time(NULL);
     }
