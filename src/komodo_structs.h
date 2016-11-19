@@ -72,5 +72,6 @@ struct komodo_state
     uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
     int32_t SAVEDHEIGHT,CURRENT_HEIGHT,NOTARIZED_HEIGHT;
     uint32_t KOMODO_REALTIME,SAVEDTIMESTAMP;
+    struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS;
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
 };

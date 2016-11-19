@@ -168,8 +168,8 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
         printf("komodo_notarized_update REJECT notarized_height %d > %d nHeight\n",notarized_height,nHeight);
         return;
     }
-    NPOINTS = (struct notarized_checkpoint *)realloc(NPOINTS,(NUM_NPOINTS+1) * sizeof(*NPOINTS));
-    np = &NPOINTS[NUM_NPOINTS++];
+    sp->NPOINTS = (struct notarized_checkpoint *)realloc(sp->NPOINTS,(sp->NUM_NPOINTS+1) * sizeof(*sp->NPOINTS));
+    np = &sp->NPOINTS[NUM_NPOINTS++];
     memset(np,0,sizeof(*np));
     np->nHeight = nHeight;
     sp->NOTARIZED_HEIGHT = np->notarized_height = notarized_height;
@@ -197,21 +197,24 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
 
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
 {
-    struct notarized_checkpoint *np = 0; int32_t i;
-    if ( NUM_NPOINTS > 0 )
+    struct notarized_checkpoint *np = 0; int32_t i; char symbol[16],dest[16]; struct komodo_state *sp;
+    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
-        for (i=0; i<NUM_NPOINTS; i++)
+        if ( sp->NUM_NPOINTS > 0 )
         {
-            if ( NPOINTS[i].nHeight >= nHeight )
-                break;
-            np = &NPOINTS[i];
+            for (i=0; i<sp->NUM_NPOINTS; i++)
+            {
+                if ( sp->NPOINTS[i].nHeight >= nHeight )
+                    break;
+                np = &sp->NPOINTS[i];
+            }
         }
-    }
-    if ( np != 0 )
-    {
-        *notarized_hashp = np->notarized_hash;
-        *notarized_desttxidp = np->notarized_desttxid;
-        return(np->notarized_height);
+        if ( np != 0 )
+        {
+            *notarized_hashp = np->notarized_hash;
+            *notarized_desttxidp = np->notarized_desttxid;
+            return(np->notarized_height);
+        }
     }
     memset(notarized_hashp,0,sizeof(*notarized_hashp));
     return(0);
