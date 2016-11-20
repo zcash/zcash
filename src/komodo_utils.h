@@ -1522,7 +1522,7 @@ int32_t komodo_isrealtime(int32_t *kmdheightp,char *target)
     {
         if ( (baseid= komodo_baseid(target)) < 0 )
             return(0);
-        mask = (1LL << 32) | (1LL << (baseid+1));
+        mask = (1LL << 32) | (1LL << baseid);
         if ( (sp->RTmask & mask) != mask )
         {
             printf("%s not RT mask.%llx vs RTmask.%llx\n",target,(long long)mask,(long long)sp->RTmask);
