@@ -99,7 +99,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 }
 
 #define ASSETCHAINS_MINHEIGHT 100
-#define ROUNDROBIN_DELAY 45
+#define ROUNDROBIN_DELAY 60
 extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE;
 extern char ASSETCHAINS_SYMBOL[16];
 extern std::string NOTARY_PUBKEY;
@@ -604,7 +604,7 @@ void static BitcoinMiner(CWallet *pwallet)
             } else Mining_start = 0;
             while (true)
             {
-                if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                     fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
@@ -632,13 +632,13 @@ void static BitcoinMiner(CWallet *pwallet)
                     solutionTargetChecks.increment();
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
                     {
-                        if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                            printf("missed target\n");
+                        if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                            fprintf(stderr,"missed target\n");
                         return false;
                     }
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+ROUNDROBIN_DELAY )
                     {
-                        printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+ROUNDROBIN_DELAY-time(NULL)));
+                        //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+ROUNDROBIN_DELAY-time(NULL)));
                         sleep(Mining_start+ROUNDROBIN_DELAY-time(NULL));
                         KOMODO_CHOSEN_ONE = 1;
                     }
@@ -725,25 +725,25 @@ void static BitcoinMiner(CWallet *pwallet)
                 {
                     if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height >= 100 )
                     {
-                        fprintf(stderr,"no nodes, break\n");
+                        //fprintf(stderr,"no nodes, break\n");
                         break;
                     }
                 }
                 if ((UintToArith256(pblock->nNonce) & 0xffff) == 0xffff)
                 {
-                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                         fprintf(stderr,"0xffff, break\n");
                     break;
                 }
                 if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                 {
-                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                         fprintf(stderr,"timeout, break\n");
                     break;
                 }
                 if ( pindexPrev != chainActive.Tip() )
                 {
-                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                         fprintf(stderr,"Tip advanced, break\n");
                     break;
                 }
