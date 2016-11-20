@@ -354,6 +354,25 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             }
         }
     }
+    else if ( opretbuf[0] == 'W' && opretlen >= 38 )
+    {
+        iguana_rwnum(0,&opretbuf[34],sizeof(kmdheight),&kmdheight);
+        memset(base,0,sizeof(base));
+        PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&fiatoshis);
+        bitcoin_address(coinaddr,addrtype,rmd160,20);
+        checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,fiatoshis);
+        typestr = "withdraw";
+        printf("%s kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d seed.%llx\n",ASSETCHAINS_SYMBOL,kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed);
+        if ( komodo_paxmark(height,&space,txid,vout,kmdheight) == 0 )
+        {
+            if ( (pax= komodo_paxfind(&space,txids[i],vouts[i])) != 0 )
+            {
+                
+            }
+            printf("notarize %s %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),kmdheight,height);
+            //komodo_gateway_deposit(0,0,0,0,0,txids[i],vouts[i],height,0);
+        }
+    }
     else if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 || opretlen == 38 )
     {
         if ( tokomodo == 0 && opretbuf[0] == 'I' ) // assetchain coinbase
@@ -365,25 +384,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( komodo_paxmark(height,&space,txids[i],vouts[i],height) == 0 )
                         komodo_gateway_deposit(0,0,0,0,0,txids[i],vouts[i],height,0);
                 }
-            }
-        }
-        else if ( tokomodo != 0 && opretbuf[0] == 'W' && opretlen >= 38 )
-        {
-            iguana_rwnum(0,&opretbuf[34],sizeof(kmdheight),&kmdheight);
-            memset(base,0,sizeof(base));
-            PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&fiatoshis);
-            bitcoin_address(coinaddr,addrtype,rmd160,20);
-            checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,fiatoshis);
-            typestr = "withdraw";
-            printf("%s kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d seed.%llx\n",ASSETCHAINS_SYMBOL,kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed);
-            if ( komodo_paxmark(height,&space,txid,vout,kmdheight) == 0 )
-            {
-                if ( (pax= komodo_paxfind(&space,txids[i],vouts[i])) != 0 )
-                {
-                    
-                }
-                printf("notarize %s %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),kmdheight,height);
-                //komodo_gateway_deposit(0,0,0,0,0,txids[i],vouts[i],height,0);
             }
         }
     }
