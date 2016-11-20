@@ -53,8 +53,8 @@ struct pax_transaction *komodo_paxmark(int32_t height,struct pax_transaction *sp
 
 void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout,int32_t height,int32_t otherheight) // assetchain context
 {
-    struct pax_transaction *pax; int32_t addflag = 0; struct komodo_state *sp; char symbol[16],dest[16];
-    sp = komodo_stateptr(symbol,dest);
+    struct pax_transaction *pax; int32_t addflag = 0; struct komodo_state *sp; char str[16],dest[16];
+    sp = komodo_stateptr(str,dest);
     pthread_mutex_lock(&komodo_mutex);
     HASH_FIND(hh,PAX,&txid,sizeof(txid),pax);
     if ( pax == 0 )
@@ -135,7 +135,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,uint8_t
 
 uint64_t komodo_paxtotal()
 {
-    struct pax_transaction *pax,*tmp; uint64_t total = 0;
+    struct pax_transaction *pax,*tmp; int32_t ht; uint64_t total = 0;
     if ( komodo_isrealtime(&ht,ASSETCHAINS_SYMBOL) == 0 )
         return(0);
     HASH_ITER(hh,PAX,pax,tmp)
@@ -423,7 +423,7 @@ void komodo_passport_iteration()
                         RTmask |= (1LL << baseid);
                         memcpy(refsp->RTbufs[baseid+1],buf,sizeof(refsp->RTbufs[baseid+1]));
                     } //else fprintf(stderr,"%s not RT\n",base);
-                } else fprintf(stderr,"%s size error RT\n",base);
+                } //else fprintf(stderr,"%s size error RT\n",base);
                 fclose(fp);
             } else fprintf(stderr,"%s open error RT\n",base);
         }
