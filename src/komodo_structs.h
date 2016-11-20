@@ -57,7 +57,7 @@ struct pax_transaction
     UT_hash_handle hh;
     uint256 txid;
     uint64_t komodoshis,fiatoshis;
-    int32_t marked,height,otherheight;
+    int32_t marked,height,otherheight,approved;
     uint16_t vout;
     char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
 };

@@ -155,6 +155,8 @@ uint64_t komodo_paxtotal()
     return(total);
 }
 
+// need a function to return pending withdraws for notarizing opreturn
+
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t tokomodo)
 {
     struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t mask;
@@ -372,19 +374,26 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             else
             {
                 printf(" %.8f -> %s withdraw already there\n",dstr(value),coinaddr);
-                strcpy(pax->coinaddr,coinaddr);
-                pax->komodoshis = komodoshis;
-                strcpy(pax->symbol,"KMD");
-                pax->fiatoshis = value;
-                memcpy(pax->rmd160,rmd160,20);
-                pax->height = kmdheight;
-                pax->otherheight = height;
+                komodo_gateway_deposit(coinaddr,komodoshis,"KMD",value,rmd160,txid,vout,kmdheight,height);
             }
         }
     }
-    else if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 || opretlen == 38 )
+    else if ( tokomodo != 0 && opretbuf[0] == 'A' )
     {
-        if ( tokomodo == 0 && opretbuf[0] == 'I' ) // assetchain coinbase
+        if ( (n= komodo_issued_opreturn(base,txids,vouts,values,kmdheights,otherheights,baseids,opretbuf,opretlen,0)) > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                if ( (pax= komodo_paxfind(&space,txids[i],vouts[i])) == 0 )
+                {
+                    komodo_gateway_deposit(0,0,0,0,0,txids[i],vouts[i],kmdheights[i],otherheights[i]);
+                } else pax->approved = kmdheights[i];
+            }
+        }
+    }
+    else if ( tokomodo == 0 && opretbuf[0] == 'I' )
+    {
+        if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 )
         {
             if ( (n= komodo_issued_opreturn(base,txids,vouts,values,kmdheights,otherheights,baseids,opretbuf,opretlen,0)) > 0 )
             {
