@@ -385,6 +385,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     return(typestr);
 }
 
+#ifdef pollmethod
 void komodo_gateway_voutupdate(char *symbol,int32_t isspecial,int32_t height,int32_t txi,bits256 txid,int32_t vout,int32_t numvouts,uint64_t value,uint8_t *script,int32_t len)
 {
     int32_t i,opretlen,offset = 0; uint256 zero,utxid; const char *typestr;
@@ -531,6 +532,13 @@ void komodo_gateway_iteration(char *symbol)
         sleep(30);
     }
 }
+#else
+
+void komodo_gateway_iteration(char *symbol)
+{
+    
+}
+#endif
 
 void komodo_iteration(char *symbol)
 {
