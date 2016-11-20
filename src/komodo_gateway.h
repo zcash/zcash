@@ -149,12 +149,22 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,uint8_t
 
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t tokomodo)
 {
-    struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1; struct komodo_state *sp;
+    struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,baseid,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t mask;
     sp = komodo_stateptr(symbol,dest);
     strcpy(symbol,base);
     PENDING_KOMODO_TX = 0;
     if ( tokomodo == 0 )
+    {
         opcode = 'I';
+        if ( (baseid= komodo_baseid(base)) < 0 )
+            return(0);
+        mask = (1LL << 32) | (1LL << (baseid+1));
+        if ( (sp->RTmask & mask) != mask )
+        {
+            printf("%s not RT mask.%llx vs RTmask.%llx\n",ASSETCHAINS_SYMBOL,(long long)mask,(long long)sp->RTmask);
+            return(0);
+        }
+    }
     else opcode = 'X';
     HASH_ITER(hh,PAX,pax,tmp)
     {
