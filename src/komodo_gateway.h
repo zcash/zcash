@@ -80,7 +80,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
         pax->fiatoshis = fiatoshis;
         memcpy(pax->rmd160,rmd160,20);
         pax->height = height;
-        pax->otherheight = sp->CURRENT_HEIGHT;//otherheight;
+        pax->otherheight = otherheight;
         if ( pax->marked == 0 )
         {
             if ( addflag != 0 )
@@ -368,7 +368,18 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             if ( (pax= komodo_paxfind(&space,txid,vout)) == 0 )
             {
                 printf("notarize %s %.8f -> %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),dstr(komodoshis),kmdheight,height);
-            } else printf(" %.8f -> %s withdraw already there\n",dstr(value),coinaddr);
+            }
+            else
+            {
+                printf(" %.8f -> %s withdraw already there\n",dstr(value),coinaddr);
+                strcpy(pax->coinaddr,coinaddr);
+                pax->komodoshis = komodoshis;
+                strcpy(pax->symbol,"KMD");
+                pax->fiatoshis = value;
+                memcpy(pax->rmd160,rmd160,20);
+                pax->height = kmdheight;
+                pax->otherheight = height;
+            }
         }
     }
     else if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 || opretlen == 38 )
