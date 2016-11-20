@@ -1521,7 +1521,7 @@ int32_t komodo_isrealtime(int32_t *kmdheightp)
         mask = (1LL << 32) | 1LL;
         if ( (sp->RTmask & mask) != mask )
         {
-            printf("%s not RT mask.%llx vs RTmask.%llx\n",target,(long long)mask,(long long)sp->RTmask);
+            printf("%s not RT mask.%llx vs RTmask.%llx\n",ASSETCHAINS_SYMBOL,(long long)mask,(long long)sp->RTmask);
             return(0);
         }
         *kmdheightp = sp->CURRENT_HEIGHT;
