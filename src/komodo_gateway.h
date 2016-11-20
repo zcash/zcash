@@ -75,12 +75,18 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
     if ( coinaddr != 0 )
     {
         strcpy(pax->coinaddr,coinaddr);
-        pax->komodoshis = value;
-        strcpy(pax->symbol,symbol);
-        pax->fiatoshis = fiatoshis;
-        memcpy(pax->rmd160,rmd160,20);
-        pax->height = height;
-        pax->otherheight = otherheight;
+        if ( value != 0 )
+            pax->komodoshis = value;
+        if ( symbol != 0 )
+            strcpy(pax->symbol,symbol);
+        if ( fiatoshis != 0 )
+            pax->fiatoshis = fiatoshis;
+        if ( rmd160 != 0 )
+            memcpy(pax->rmd160,rmd160,20);
+        if ( height != 0 )
+            pax->height = height;
+        if ( otherheight != 0 )
+            pax->otherheight = otherheight;
         if ( pax->marked == 0 )
         {
             if ( addflag != 0 )
@@ -414,12 +420,13 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     {
         if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 )
         {
-            if ( (n= komodo_issued_opreturn(base,txids,vouts,values,kmdheights,otherheights,baseids,opretbuf,opretlen,0)) > 0 )
+            if ( (n= komodo_issued_opreturn(base,txids,vouts,values,kmdheights,otherheights,baseids,rmd160s,opretbuf,opretlen,0)) > 0 )
             {
                 for (i=0; i<n; i++)
                 {
+                    bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
                     if ( komodo_paxmark(height,&space,txids[i],vouts[i],height) == 0 )
-                        komodo_gateway_deposit(0,0,0,0,0,txids[i],vouts[i],height,0);
+                        komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0);
                 }
             }
         }
