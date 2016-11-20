@@ -248,7 +248,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         //    printf("%02x",script[i]);
         //printf(" height.%d checkdeposit n.%d [%02x] [%c] %d vs %d\n",height,n,script[0],script[offset],script[offset],'X');
         opcode = 'X';
-        strcpy(symbol,"KMD");
+        strcpy(symbol,(char *)"KMD");
     }
     else
     {
@@ -374,7 +374,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             else
             {
                 printf(" %.8f -> %s withdraw already there\n",dstr(value),coinaddr);
-                komodo_gateway_deposit(coinaddr,komodoshis,"KMD",value,rmd160,txid,vout,kmdheight,height);
+                komodo_gateway_deposit(coinaddr,komodoshis,(char *)"KMD",value,rmd160,txid,vout,kmdheight,height);
             }
         }
     }
