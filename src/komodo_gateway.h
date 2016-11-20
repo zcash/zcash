@@ -354,7 +354,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             }
         }
     }
-    else if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 )
+    else if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 || opretlen == 38 )
     {
         if ( tokomodo == 0 && opretbuf[0] == 'I' ) // assetchain coinbase
         {
@@ -367,10 +367,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 }
             }
         }
-    }
-    else 
-    {
-        if ( tokomodo != 0 && opretbuf[0] == 'W' && opretlen >= 38 )
+        else if ( tokomodo != 0 && opretbuf[0] == 'W' && opretlen >= 38 )
         {
             iguana_rwnum(0,&opretbuf[34],sizeof(kmdheight),&kmdheight);
             memset(base,0,sizeof(base));
