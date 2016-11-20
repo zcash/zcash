@@ -136,7 +136,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,uint8_t
 uint64_t komodo_paxtotal()
 {
     struct pax_transaction *pax,*tmp; int32_t ht; uint64_t total = 0;
-    if ( komodo_isrealtime(&ht,ASSETCHAINS_SYMBOL) == 0 )
+    if ( komodo_isrealtime(&ht) == 0 )
         return(0);
     HASH_ITER(hh,PAX,pax,tmp)
     {
@@ -161,7 +161,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     if ( tokomodo == 0 )
     {
         opcode = 'I';
-        if ( komodo_isrealtime(&ht,ASSETCHAINS_SYMBOL) == 0 )
+        if ( komodo_isrealtime(&ht) == 0 )
             return(0);
     }
     else opcode = 'X';
@@ -437,7 +437,7 @@ void komodo_passport_iteration()
                 if ( buf[0] != 0 && buf[0] == buf[1] )
                 {
                     buf[2] = (uint32_t)time(NULL);
-                    RTmask |= (1LL << baseid);
+                    RTmask |= (1LL << baseid) | 1;
                     memcpy(refsp->RTbufs[baseid+1],buf,sizeof(refsp->RTbufs[baseid+1]));
                     if ( refid != 0 )
                         memcpy(refsp->RTbufs[0],buf,sizeof(refsp->RTbufs[0]));

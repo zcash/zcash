@@ -481,7 +481,7 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
 extern char ASSETCHAINS_SYMBOL[16];
 int32_t komodo_is_issuer();
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
-int32_t komodo_isrealtime(int32_t *kmdheightp,char *target);
+int32_t komodo_isrealtime(int32_t *kmdheightp);
 
 Value paxdeposit(const Array& params, bool fHelp)
 {
@@ -529,7 +529,7 @@ Value paxwithdraw(const Array& params, bool fHelp)
         return 0;
     if (fHelp || params.size() != 2)
         throw runtime_error("paxwithdraw \"address\" fiatamount");
-    if ( komodo_isrealtime(&kmdheight,(char *)"KMD") == 0 )
+    if ( komodo_isrealtime(&kmdheight) == 0 )
         return(0);
     LOCK2(cs_main, pwalletMain->cs_wallet);
     CBitcoinAddress address(params[0].get_str());

@@ -111,7 +111,7 @@ int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 uint64_t komodo_paxtotal();
 int32_t komodo_is_issuer();
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
-int32_t komodo_isrealtime(int32_t *kmdheightp,char *target);
+int32_t komodo_isrealtime(int32_t *kmdheightp);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -123,12 +123,12 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
     if ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight >= 100 )
     {
-        isrealtime = komodo_isrealtime(&kmdheight,ASSETCHAINS_SYMBOL);
+        isrealtime = komodo_isrealtime(&kmdheight);
         fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d RT.%u KOMODO_ON_DEMAND.%d\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),isrealtime,KOMODO_ON_DEMAND);
         while ( KOMODO_ON_DEMAND == 0 )
         {
             deposits = komodo_paxtotal();
-            if ( KOMODO_INITDONE == 0 || komodo_isrealtime(&kmdheight,ASSETCHAINS_SYMBOL) == 0 )
+            if ( KOMODO_INITDONE == 0 || komodo_isrealtime(&kmdheight) == 0 )
             {
                 //fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f\n",KOMODO_INITDONE,isrealtime,(double)deposits/COIN);
             }
