@@ -194,7 +194,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     HASH_ITER(hh,PAX,pax,tmp)
     {
         //printf("pax.%s marked.%d %.8f -> %.8f\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
-        if ( pax->marked != 0 || strcmp(pax->symbol,symbol) != 0 )
+        if ( pax->marked != 0 || strcmp(pax->symbol,symbol) != 0 || (strcmp(symbol,"KMD") == 0 && pax->approved == 0) )
             continue;
         //if ( ASSETCHAINS_SYMBOL[0] != 0 )
             printf("pax.%s marked.%d %.8f -> %.8f\n",ASSETCHAINS_SYMBOL,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
@@ -292,6 +292,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         else matched++;
                         if ( 0 && opcode == 'X' )
                             printf("errs.%d i.%d match %.8f == %.8f\n",errs,i,dstr(pax != 0 ? pax->fiatoshis:-1),dstr(block.vtx[0].vout[i].nValue));
+                        komodo_paxmark(height,&space,txids[i-1],vouts[i-1],height);
                     }
                     else
                     {
@@ -317,7 +318,6 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     } else if ( opcode == 'I' )
                         matched++;
                 }
-                komodo_paxmark(height,&space,txids[i-1],vouts[i-1],height);
             }
             if ( matched != num )
             {
