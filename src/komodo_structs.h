@@ -74,4 +74,5 @@ struct komodo_state
     uint32_t KOMODO_REALTIME,SAVEDTIMESTAMP;
     struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS;
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
+    uint32_t RTbufs[64][3]; uint64_t RTmask;
 };

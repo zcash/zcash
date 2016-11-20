@@ -110,7 +110,7 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 uint64_t komodo_paxtotal();
 int32_t komodo_is_issuer();
-int32_t komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol,int32_t tokomodo);
+int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
 int32_t komodo_isrealtime(int32_t *kmdheightp,char *target);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
@@ -376,7 +376,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             int32_t i,opretlen; uint8_t opret[256],*ptr;
-            if ( komodo_gateway_deposits(&txNew,0,(char *)"EUR",1) == 0 )
+            if ( komodo_gateway_deposits(&txNew,(char *)"KMD",1) == 0 )
             {
                 if ( (opretlen= komodo_pax_opreturn(opret,sizeof(opret))) > 0 )
                 {
@@ -392,7 +392,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         }
         else if ( komodo_is_issuer() != 0 )
         {
-            komodo_gateway_deposits(&txNew,0,ASSETCHAINS_SYMBOL,0);
+            komodo_gateway_deposits(&txNew,ASSETCHAINS_SYMBOL,0);
             fprintf(stderr,"txNew numvouts.%d\n",(int32_t)txNew.vout.size());
         }
         pblock->vtx[0] = txNew;

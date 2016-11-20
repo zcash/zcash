@@ -17,7 +17,6 @@
 #define H_KOMODO_H
 
 // Todo:
-// 0. optimize assetchains
 // 1. error check fiat redeem amounts
 // 2. net balance limiter
 // 3. verify: reorgs

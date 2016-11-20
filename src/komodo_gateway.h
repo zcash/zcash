@@ -147,9 +147,10 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,uint8_t
     return(n);
 }
 
-int32_t komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *base,int32_t tokomodo)
+int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t tokomodo)
 {
-    struct pax_transaction *pax,*tmp; char symbol[16]; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1;
+    struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,len=0,opretlen=0,numvouts=1; struct komodo_state *sp;
+    sp = komodo_stateptr(symbol,dest);
     strcpy(symbol,base);
     PENDING_KOMODO_TX = 0;
     if ( tokomodo == 0 )
@@ -157,10 +158,11 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,cha
     else opcode = 'X';
     HASH_ITER(hh,PAX,pax,tmp)
     {
-        if ( pax->marked != 0 )
+        printf("pax.%s marked.%d %.8f -> %.8f\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
+        if ( pax->marked != 0 || strcmp(pax->symbol,ASSETCHAINS_SYMBOL) != 0 )
             continue;
         if ( ASSETCHAINS_SYMBOL[0] != 0 )
-            printf("pax.%p marked.%d %.8f -> %.8f\n",pax,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
+            printf("pax.%s marked.%d %.8f -> %.8f\n",ASSETCHAINS_SYMBOL,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         txNew->vout.resize(numvouts+1);
         txNew->vout[numvouts].nValue = (opcode == 'I') ? pax->fiatoshis : pax->komodoshis;
         txNew->vout[numvouts].scriptPubKey.resize(25);
@@ -186,9 +188,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,cha
             len += iguana_rwnum(1,&data[len],sizeof(pax->fiatoshis),&pax->fiatoshis);
             len += iguana_rwnum(1,&data[len],sizeof(pax->height),&pax->height);
             len += iguana_rwnum(1,&data[len],sizeof(pax->otherheight),&pax->otherheight);
-            if ( pax->shortflag != 0 )
-                data[len++] = '-';
-            for (i=0; pax->symbol[i]!=0&&i<3; i++)
+            for (i=0; pax->symbol[i]!=0&&i<3; i++) // must be 3 letter currency
                 data[len++] = pax->symbol[i];
             data[len++] = 0;
             PENDING_KOMODO_TX += pax->komodoshis;
@@ -560,11 +560,12 @@ int32_t komodo_longestchain();
 
 void komodo_passport_iteration()
 {
-    static long lastpos[34]; static uint64_t prevRTmask,lastRTheight; static char userpass[33][1024];
-    FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp; char *retstr,fname[512],*base,symbol[16],dest[16]; cJSON *infoobj,*result; uint64_t RTmask = 0; uint16_t port; uint32_t magic,buf[3];
+    static long lastpos[34]; static char userpass[33][1024];
+    FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3]; cJSON *infoobj,*result; uint64_t RTmask = 0;
+    refsp = komodo_stateptr(symbol,dest);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 33;
-    else refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1;
+    else refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1; // illegal base -> baseid.-1 -> 0
     //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=0; baseid<=32; baseid++)
     {
@@ -599,12 +600,13 @@ void komodo_passport_iteration()
                     {
                         isrealtime = 1;
                         RTmask |= (1LL << baseid);
+                        memcpy(refsp->RTbufs[baseid+1],buf,sizeof(refsp->RTbufs[baseid+1]));
                     } //else fprintf(stderr,"%s not RT\n",base);
                 } else fprintf(stderr,"%s size error RT\n",base);
                 fclose(fp);
             } else fprintf(stderr,"%s open error RT\n",base);
         }
-        else //if ( chainActive.Tip()->nHeight != lastRTheight )
+        else
         {
             lastRTheight = chainActive.Tip()->nHeight;
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
@@ -616,6 +618,9 @@ void komodo_passport_iteration()
                 {
                     buf[2] = (uint32_t)time(NULL);
                     RTmask |= (1LL << baseid);
+                    memcpy(refsp->RTbufs[baseid+1],buf,sizeof(refsp->RTbufs[baseid+1]));
+                    if ( refid != 0 )
+                        memcpy(refsp->RTbufs[0],buf,sizeof(refsp->RTbufs[0]));
                 }
                 if ( fwrite(buf,1,sizeof(buf),fp) != sizeof(buf) )
                     fprintf(stderr,"[%s] %s error writing realtime\n",ASSETCHAINS_SYMBOL,base);
@@ -625,11 +630,7 @@ void komodo_passport_iteration()
         if ( sp != 0 )
             sp->KOMODO_REALTIME = isrealtime * (uint32_t)time(NULL);
     }
-    if ( RTmask != prevRTmask )
-    {
-        printf("[%s] new RTmask %llx\n",ASSETCHAINS_SYMBOL[0]!=0?ASSETCHAINS_SYMBOL:"KMD",(long long)RTmask);
-        prevRTmask = RTmask;
-    }
+    refsp->RTmask = RTmask;
 }
 #endif
 
