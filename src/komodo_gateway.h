@@ -379,7 +379,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,fiatoshis);
             typestr = "withdraw";
             printf("%s kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d seed.%llx\n",ASSETCHAINS_SYMBOL,kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed);
-            if ( komodo_paxmark(height,&space,txid,vout,kmdheight)) == 0 )
+            if ( komodo_paxmark(height,&space,txid,vout,kmdheight) == 0 )
             {
                 if ( (pax= komodo_paxfind(&space,txids[i],vouts[i])) != 0 )
                 {
