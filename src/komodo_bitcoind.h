@@ -577,3 +577,11 @@ uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 
     }
     return(0);
 }
+
+int32_t komodo_isrealtime(int32_t *kmdheightp)
+{
+    *kmdheightp = (int32_t)chainActive.Tip()->nHeight;
+    if ( *kmdheightp != 0 && *kmdheightp == (int32_t)komodo_longestchain() )
+        return(1);
+    else return(0);
+}

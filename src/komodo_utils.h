@@ -1512,12 +1512,5 @@ struct komodo_state *komodo_stateptr(char *symbol,char *dest)
     return(komodo_stateptrget(symbol));
 }
 
-int32_t komodo_isrealtime(int32_t *kmdheightp)
-{
-    *kmdheightp = (int32_t)chainActive.Tip()->nHeight;
-    if ( *kmdheightp != 0 && *kmdheightp == (int32_t)komodo_longestchain() )
-        return(1);
-    else return(0);
-}
 
 
