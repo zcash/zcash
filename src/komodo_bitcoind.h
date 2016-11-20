@@ -584,7 +584,7 @@ int32_t komodo_isrealtime(int32_t *kmdheightp)
     if ( (sp= komodo_stateptrget((char *)"KMD")) != 0 )
         *kmdheightp = sp->CURRENT_HEIGHT;
     else *kmdheightp = 0;
-    if ( *kmdheightp != 0 && *kmdheightp == (int32_t)komodo_longestchain() )
+    if ( chainActive.Tip()->nHeight == (int32_t)komodo_longestchain() )
         return(1);
     else return(0);
 }

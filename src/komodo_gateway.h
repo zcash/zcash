@@ -363,10 +363,13 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,value);
         typestr = "withdraw";
         printf("%s.height.%d vs height.%d check %.8f/%.8f vs %.8f tokomodo.%d %d seed.%llx -> (%s)\n",ASSETCHAINS_SYMBOL,kmdheight,height,dstr(checktoshis),dstr(komodoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed,coinaddr);
-        if ( (pax= komodo_paxfind(&space,txid,vout)) == 0 )
+        if ( checktoshis == komodoshis )
         {
-            printf("notarize %s %.8f -> %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),dstr(komodoshis),kmdheight,height);
-        } else printf(" %.8f -> %s withdraw already there\n",dstr(value),coinaddr);
+            if ( (pax= komodo_paxfind(&space,txid,vout)) == 0 )
+            {
+                printf("notarize %s %.8f -> %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),dstr(komodoshis),kmdheight,height);
+            } else printf(" %.8f -> %s withdraw already there\n",dstr(value),coinaddr);
+        }
     }
     else if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 || opretlen == 38 )
     {
