@@ -140,7 +140,7 @@ uint64_t komodo_paxtotal()
         return(0);
     HASH_ITER(hh,PAX,pax,tmp)
     {
-        printf("pax.%s marked.%d %.8f -> %.8f\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
+        //printf("pax.%s marked.%d %.8f -> %.8f\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         if ( pax->marked == 0 )
         {
             if ( komodo_is_issuer() != 0 )
