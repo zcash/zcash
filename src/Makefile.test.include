@@ -31,10 +31,11 @@ JSON_TEST_FILES = \
   test/data/merkle_serialization.json \
   test/data/merkle_witness_serialization.json \
   test/data/merkle_path.json \
+  test/data/merkle_commitments.json \
   test/data/g1_compressed.json \
   test/data/g2_compressed.json
 
-RAW_TEST_FILES = test/data/alertTests.raw
+RAW_TEST_FILES =
 
 GENERATED_TEST_FILES = $(JSON_TEST_FILES:.json=.json.h) $(RAW_TEST_FILES:.raw=.raw.h)
 

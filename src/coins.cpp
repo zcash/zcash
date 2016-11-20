@@ -303,16 +303,12 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
             CAnchorsMap::iterator parent_it = cacheAnchors.find(child_it->first);
 
             if (parent_it == cacheAnchors.end()) {
-                if (child_it->second.entered) {
-                    // Parent doesn't have an entry, but child has a new commitment root.
+                CAnchorsCacheEntry& entry = cacheAnchors[child_it->first];
+                entry.entered = child_it->second.entered;
+                entry.tree = child_it->second.tree;
+                entry.flags = CAnchorsCacheEntry::DIRTY;
 
-                    CAnchorsCacheEntry& entry = cacheAnchors[child_it->first];
-                    entry.entered = true;
-                    entry.tree = child_it->second.tree;
-                    entry.flags = CAnchorsCacheEntry::DIRTY;
-
-                    cachedCoinsUsage += memusage::DynamicUsage(entry.tree);
-                }
+                cachedCoinsUsage += memusage::DynamicUsage(entry.tree);
             } else {
                 if (parent_it->second.entered != child_it->second.entered) {
                     // The parent may have removed the entry.
@@ -332,14 +328,9 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
             CNullifiersMap::iterator parent_it = cacheNullifiers.find(child_it->first);
 
             if (parent_it == cacheNullifiers.end()) {
-                if (child_it->second.entered) {
-                    // Parent doesn't have an entry, but child has a SPENT nullifier.
-                    // Move the spent nullifier up.
-
-                    CNullifiersCacheEntry& entry = cacheNullifiers[child_it->first];
-                    entry.entered = true;
-                    entry.flags = CNullifiersCacheEntry::DIRTY;
-                }
+                CNullifiersCacheEntry& entry = cacheNullifiers[child_it->first];
+                entry.entered = child_it->second.entered;
+                entry.flags = CNullifiersCacheEntry::DIRTY;
             } else {
                 if (parent_it->second.entered != child_it->second.entered) {
                     parent_it->second.entered = child_it->second.entered;

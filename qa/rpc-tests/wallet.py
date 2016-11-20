@@ -244,6 +244,52 @@ class WalletTest (BitcoinTestFramework):
         myvjoinsplits = mytxdetails["vjoinsplit"]
         assert_equal(0, len(myvjoinsplits))
 
+        # z_sendmany is expected to fail if tx size breaks limit
+        myzaddr = self.nodes[0].z_getnewaddress()
+
+        recipients = []
+        num_t_recipients = 3000
+        amount_per_recipient = Decimal('0.00000001')
+        errorString = ''
+        for i in xrange(0,num_t_recipients):
+            newtaddr = self.nodes[2].getnewaddress()
+            recipients.append({"address":newtaddr, "amount":amount_per_recipient})
+        try:
+            self.nodes[0].z_sendmany(myzaddr, recipients)
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert("Too many outputs, size of raw transaction" in errorString)
+
+        recipients = []
+        num_t_recipients = 2000
+        num_z_recipients = 50
+        amount_per_recipient = Decimal('0.00000001')
+        errorString = ''
+        for i in xrange(0,num_t_recipients):
+            newtaddr = self.nodes[2].getnewaddress()
+            recipients.append({"address":newtaddr, "amount":amount_per_recipient})
+        for i in xrange(0,num_z_recipients):
+            newzaddr = self.nodes[2].z_getnewaddress()
+            recipients.append({"address":newzaddr, "amount":amount_per_recipient})
+        try:
+            self.nodes[0].z_sendmany(myzaddr, recipients)
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert("size of raw transaction would be larger than limit" in errorString)
+
+        recipients = []
+        num_z_recipients = 100
+        amount_per_recipient = Decimal('0.00000001')
+        errorString = ''
+        for i in xrange(0,num_z_recipients):
+            newzaddr = self.nodes[2].z_getnewaddress()
+            recipients.append({"address":newzaddr, "amount":amount_per_recipient})
+        try:
+            self.nodes[0].z_sendmany(myzaddr, recipients)
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert("Invalid parameter, too many zaddr outputs" in errorString)
+
         # add zaddr to node 2
         myzaddr = self.nodes[2].z_getnewaddress()
 
