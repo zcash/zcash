@@ -103,7 +103,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
 
 int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t *values,int32_t *kmdheights,int32_t *otherheights,int8_t *baseids,uint8_t *rmd160s,uint8_t *opretbuf,int32_t opretlen,int32_t iskomodo)
 {
-    int32_t i,n=0,j,len,incr; uint8_t rmd160[20];
+    int32_t i,n=0,j,len,incr,height,otherheight; uint8_t rmd160[20]; uint64_t fiatoshis; char symbol[16];
     for (i=0; i<4; i++)
         base[i] = opretbuf[opretlen-4+i];
     if ( ASSETCHAINS_SYMBOL[0] == 0 || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
@@ -122,7 +122,6 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
             //printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
             if ( iskomodo != 0 )
             {
-                uint64_t fiatoshis; int32_t height,otherheight; char symbol[16];
                 len += iguana_rwnum(0,&opretbuf[len],sizeof(fiatoshis),&fiatoshis);
                 len += iguana_rwnum(0,&opretbuf[len],sizeof(height),&height);
                 len += iguana_rwnum(0,&opretbuf[len],sizeof(otherheight),&otherheight);
