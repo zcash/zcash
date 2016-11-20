@@ -1,3 +1,9 @@
+Zclassic Team (4):
+      Purged the soon-to-be-retired Bitcoin Alert System (https://bitcoin.org/en/alert/2016-11-01-alert-retirement)
+      Testnet bug fixes
+      Documentation updates
+      Zclassic logo ASCII for metrics screen
+      
 Jack Grigg (5):
       Add --disable-tests flag to zcutils/build.sh
       Correctly set CNoteData::witnessHeight when decrementing witness caches
