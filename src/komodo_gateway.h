@@ -15,21 +15,6 @@
 
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 
-uint64_t komodo_paxtotal()
-{
-    struct pax_transaction *pax,*tmp; uint64_t total = 0;
-    HASH_ITER(hh,PAX,pax,tmp)
-    {
-        if ( pax->marked == 0 )
-        {
-            if ( komodo_is_issuer() != 0 )
-                total += pax->fiatoshis;
-            else total += pax->komodoshis;
-        }
-    }
-    return(total);
-}
-
 struct pax_transaction *komodo_paxfind(struct pax_transaction *space,uint256 txid,uint16_t vout)
 {
     struct pax_transaction *pax;
@@ -68,7 +53,8 @@ struct pax_transaction *komodo_paxmark(int32_t height,struct pax_transaction *sp
 
 void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout,int32_t height,int32_t otherheight) // assetchain context
 {
-    struct pax_transaction *pax; int32_t addflag = 0;
+    struct pax_transaction *pax; int32_t addflag = 0; struct komodo_state *sp; char symbol[16],dest[16];
+    sp = komodo_stateptr(symbol,dest);
     pthread_mutex_lock(&komodo_mutex);
     HASH_FIND(hh,PAX,&txid,sizeof(txid),pax);
     if ( pax == 0 )
@@ -95,7 +81,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,int32_t shortflag,char
         pax->fiatoshis = fiatoshis;
         memcpy(pax->rmd160,rmd160,20);
         pax->height = height;
-        pax->otherheight = otherheight;
+        pax->otherheight = sp->CURRENT_HEIGHT;//otherheight;
         if ( pax->marked == 0 )
         {
             if ( addflag != 0 )
@@ -147,23 +133,36 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,uint8_t
     return(n);
 }
 
+uint64_t komodo_paxtotal()
+{
+    struct pax_transaction *pax,*tmp; uint64_t total = 0;
+    if ( komodo_isrealtime(&ht,ASSETCHAINS_SYMBOL) == 0 )
+        return(0);
+    HASH_ITER(hh,PAX,pax,tmp)
+    {
+        printf("pax.%s marked.%d %.8f -> %.8f\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
+        if ( pax->marked == 0 )
+        {
+            if ( komodo_is_issuer() != 0 )
+                total += pax->fiatoshis;
+            else total += pax->komodoshis;
+        }
+    }
+    printf("paxtotal %.8f\n",dstr(total));
+    return(total);
+}
+
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t tokomodo)
 {
-    struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,baseid,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t mask;
+    struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t mask;
     sp = komodo_stateptr(symbol,dest);
     strcpy(symbol,base);
     PENDING_KOMODO_TX = 0;
     if ( tokomodo == 0 )
     {
         opcode = 'I';
-        if ( (baseid= komodo_baseid(base)) < 0 )
+        if ( komodo_isrealtime(&ht,ASSETCHAINS_SYMBOL) == 0 )
             return(0);
-        mask = (1LL << 32) | (1LL << (baseid+1));
-        if ( (sp->RTmask & mask) != mask )
-        {
-            printf("%s not RT mask.%llx vs RTmask.%llx\n",ASSETCHAINS_SYMBOL,(long long)mask,(long long)sp->RTmask);
-            return(0);
-        }
     }
     else opcode = 'X';
     HASH_ITER(hh,PAX,pax,tmp)
@@ -337,7 +336,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     for (i=0; i<33; i++)
                         printf("%02x",pubkey33[i]);
                     printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
-                    if ( value >= checktoshis || (seed == 0 && diff < .01) )
+                    if ( value == checktoshis )//value >= checktoshis || (seed == 0 && diff < .01) )
                     {
                         if ( komodo_paxfind(&space,txid,vout) == 0 )
                         {
@@ -417,6 +416,7 @@ void komodo_passport_iteration()
             {
                 if ( fread(buf,1,sizeof(buf),fp) == sizeof(buf) )
                 {
+                    sp->CURRENT_HEIGHT = buf[0];
                     if ( buf[0] != 0 && buf[0] == buf[1] && buf[2] > time(NULL)-60 )
                     {
                         isrealtime = 1;
@@ -447,8 +447,8 @@ void komodo_passport_iteration()
                 fclose(fp);
             } else fprintf(stderr,"%s create error RT\n",base);
         }
-        if ( sp != 0 )
-            sp->KOMODO_REALTIME = isrealtime * (uint32_t)time(NULL);
+        if ( sp != 0 && isrealtime == 0 )
+            refsp->RTbufs[0][2] = 0;
     }
     refsp->RTmask = RTmask;
 }

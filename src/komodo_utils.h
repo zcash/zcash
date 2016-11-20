@@ -1514,12 +1514,24 @@ struct komodo_state *komodo_stateptr(char *symbol,char *dest)
 
 int32_t komodo_isrealtime(int32_t *kmdheightp,char *target)
 {
-    char symbol[16],dest[16]; struct komodo_state *sp;
+    char symbol[16],dest[16]; int32_t baseid; uint64_t mask; struct komodo_state *sp;
     *kmdheightp = 0;
+    if ( target == 0 || target[0] == 0 )
+        target = (char *)"KMD";
     if ( (sp= komodo_stateptrget(target)) != 0 )
     {
+        if ( (baseid= komodo_baseid(target)) < 0 )
+            return(0);
+        mask = (1LL << 32) | (1LL << (baseid+1));
+        if ( (sp->RTmask & mask) != mask )
+        {
+            printf("%s not RT mask.%llx vs RTmask.%llx\n",target,(long long)mask,(long long)sp->RTmask);
+            return(0);
+        }
         *kmdheightp = sp->CURRENT_HEIGHT;
-        return(sp->KOMODO_REALTIME);
+        return(sp->RTbufs[0][2]);
     }
     return(0);
 }
+
+
