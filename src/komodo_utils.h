@@ -1514,11 +1514,13 @@ struct komodo_state *komodo_stateptr(char *symbol,char *dest)
 
 int32_t komodo_isrealtime(int32_t *kmdheightp)
 {
-    char symbol[16],dest[16]; uint64_t mask; struct komodo_state *sp;
+    char symbol[16],dest[16]; int32_t baseid; uint64_t mask; struct komodo_state *sp;
     *kmdheightp = 0;
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
-        mask = (1LL << 32) | 1LL;
+        if ( (baseid= komodo_baseid(symbol)) < 0 )
+            return(0);
+        mask = (1LL << 32) | (1LL << baseid);
         if ( (sp->RTmask & mask) != mask )
         {
             printf("%s not RT mask.%llx vs RTmask.%llx\n",ASSETCHAINS_SYMBOL,(long long)mask,(long long)sp->RTmask);
