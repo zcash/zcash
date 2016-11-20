@@ -1485,20 +1485,20 @@ void komodo_nameset(char *symbol,char *dest,char *source)
 {
     if ( source[0] == 0 )
     {
-        strcpy(symbol,"KMD");
-        strcpy(dest,"BTC");
+        strcpy(symbol,(char *)"KMD");
+        strcpy(dest,(char *)"BTC");
     }
     else
     {
         strcpy(symbol,source);
-        strcpy(dest,"KMD");
+        strcpy(dest,(char *)"KMD");
     }
 }
 
 struct komodo_state *komodo_stateptrget(char *base)
 {
     int32_t baseid;
-    if ( base == 0 || base[0] == 0 || strcmp(base,"KMD") == 0 )
+    if ( base == 0 || base[0] == 0 || strcmp(base,(char *)"KMD") == 0 )
         return(&KOMODO_STATES[33]);
     else if ( (baseid= komodo_baseid(base)) >= 0 )
         return(&KOMODO_STATES[baseid+1]);

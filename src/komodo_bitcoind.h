@@ -581,7 +581,7 @@ uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 
 int32_t komodo_isrealtime(int32_t *kmdheightp)
 {
     struct komodo_state *sp;
-    if ( (sp= komodo_stateptrget("KMD")) != 0 )
+    if ( (sp= komodo_stateptrget((char *)"KMD")) != 0 )
         *kmdheightp = sp->CURRENT_HEIGHT;
     else *kmdheightp = 0;
     if ( *kmdheightp != 0 && *kmdheightp == (int32_t)komodo_longestchain() )
