@@ -362,7 +362,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         bitcoin_address(coinaddr,addrtype,rmd160,20);
         convtoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,value);
         typestr = "withdraw";
-        printf("%s.height.%d vs height.%d check %.8f/%.8f vs %.8f tokomodo.%d %d seed.%llx -> %s/v%d (%s)\n",ASSETCHAINS_SYMBOL,kmdheight,height,dstr(checktoshis),dstr(convtoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed,txid.ToString.c_str(),vout,coinaddr);
+        printf("%s.height.%d vs height.%d check %.8f/%.8f vs %.8f tokomodo.%d %d seed.%llx -> (%s)\n",ASSETCHAINS_SYMBOL,kmdheight,height,dstr(checktoshis),dstr(convtoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed,coinaddr);
         if ( komodo_paxmark(height,&space,txid,vout,kmdheight) == 0 )
         {
             if ( (pax= komodo_paxfind(&space,txids[i],vouts[i])) != 0 )
@@ -371,7 +371,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             }
             printf("notarize %s %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),kmdheight,height);
             //komodo_gateway_deposit(0,0,0,0,0,txids[i],vouts[i],height,0);
-        } else printf("%s/v%d -> %s withdraw already there\n",txid.ToString.c_str(),vout,coinaddr);
+        } else printf(" %.8f -> %s withdraw already there\n",dstr(value),coinaddr);
     }
     else if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 || opretlen == 38 )
     {
