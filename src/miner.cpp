@@ -128,9 +128,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         while ( KOMODO_ON_DEMAND == 0 )
         {
             deposits = komodo_paxtotal();
-            if ( KOMODO_INITDONE == 0 || komodo_isrealtime(&kmdheight) == 0 )
+            if ( KOMODO_INITDONE == 0 || (isrealtime= komodo_isrealtime(&kmdheight)) == 0 )
             {
-                //fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f\n",KOMODO_INITDONE,isrealtime,(double)deposits/COIN);
+                fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f ht.%d\n",KOMODO_INITDONE,isrealtime,(double)deposits/COIN,kmdheight);
             }
             else if ( deposits != 0 )
                 break;
