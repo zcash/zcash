@@ -309,7 +309,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout)
 {
-    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fiatoshis,checktoshis,values[64]; struct pax_transaction *pax;
+    uint8_t rmd160[20],addrtype,shortflag,pubkey33[33]; int32_t i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; struct pax_transaction space; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fiatoshis,komodoshis,values[64]; struct pax_transaction *pax;
     const char *typestr = "unknown";
     memset(baseids,0xff,sizeof(baseids));
     memset(values,0,sizeof(values));
@@ -358,19 +358,14 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     {
         iguana_rwnum(0,&opretbuf[34],sizeof(kmdheight),&kmdheight);
         memset(base,0,sizeof(base));
-        PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&checktoshis);
+        PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&komodoshis);
         bitcoin_address(coinaddr,addrtype,rmd160,20);
-        convtoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,value);
+        checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,value);
         typestr = "withdraw";
-        printf("%s.height.%d vs height.%d check %.8f/%.8f vs %.8f tokomodo.%d %d seed.%llx -> (%s)\n",ASSETCHAINS_SYMBOL,kmdheight,height,dstr(checktoshis),dstr(convtoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed,coinaddr);
-        if ( komodo_paxmark(height,&space,txid,vout,kmdheight) == 0 )
+        printf("%s.height.%d vs height.%d check %.8f/%.8f vs %.8f tokomodo.%d %d seed.%llx -> (%s)\n",ASSETCHAINS_SYMBOL,kmdheight,height,dstr(checktoshis),dstr(komodoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed,coinaddr);
+        if ( (pax= komodo_paxfind(&space,txid,vout)) != 0 )
         {
-            if ( (pax= komodo_paxfind(&space,txids[i],vouts[i])) != 0 )
-            {
-                
-            }
-            printf("notarize %s %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),kmdheight,height);
-            //komodo_gateway_deposit(0,0,0,0,0,txids[i],vouts[i],height,0);
+            printf("notarize %s %.8f -> %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),dstr(komodoshis),kmdheight,height);
         } else printf(" %.8f -> %s withdraw already there\n",dstr(value),coinaddr);
     }
     else if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 || opretlen == 38 )
