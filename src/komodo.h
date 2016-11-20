@@ -374,7 +374,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 sp->NOTARIZED_DESTTXID = desttxid;
                 komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0);
                 // extract X opreturns here
-            } else printf("reject ht.%d NOTARIZED.%d %s.%s DESTTXID.%s (%s)\n",height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
+            } else printf("notarized.%d reject ht.%d NOTARIZED.%d %s.%s DESTTXID.%s (%s)\n",notarized,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
         }
         else if ( i == 0 && j == 1 && opretlen == 149 )
             komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
@@ -480,6 +480,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         signedmask |= (1LL << k);
                 }
             }
+            printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
             if ( specialtx != 0 && (((signedmask & 1) != 0 && numvalid >= KOMODO_MINRATIFY) || bitweight(signedmask) > (numnotaries>>1)) )
             {
                 printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
