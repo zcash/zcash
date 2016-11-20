@@ -209,8 +209,6 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     }
     if ( numvouts > 1 )
     {
-        if ( shortflag != 0 )
-            data[len++] = '-';
         if ( tokomodo != 0 )
             strcpy(symbol,(char *)"KMD");
         for (i=0; symbol[i]!=0; i++)
@@ -586,7 +584,7 @@ void komodo_passport_iteration()
         {
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"komodostate");
             komodo_nameset(symbol,dest,base);
-            port = komodo_port(base,10,&magic) + 1;
+            //port = komodo_port(base,10,&magic) + 1;
             if ( (fp= fopen(fname,"rb")) != 0 && (sp= komodo_stateptrget(symbol)) != 0 )
             {
                 //printf("refid.%d %s fname.(%s) base.%s\n",refid,symbol,fname,base);
@@ -618,11 +616,10 @@ void komodo_passport_iteration()
         }
         else
         {
-            lastRTheight = chainActive.Tip()->nHeight;
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
-                buf[0] = (uint32_t)lastRTheight;
+                buf[0] = (uint32_t)chainActive.Tip()->nHeight;
                 buf[1] = (uint32_t)komodo_longestchain();
                 if ( buf[0] != 0 && buf[0] == buf[1] )
                 {
