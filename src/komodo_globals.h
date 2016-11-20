@@ -22,6 +22,7 @@ void komodo_assetchain_pubkeys(char *jsonstr);
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
 uint64_t komodo_paxtotal();
+int32_t komodo_longestchain();
 
 pthread_mutex_t komodo_mutex;
 

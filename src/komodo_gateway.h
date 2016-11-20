@@ -376,8 +376,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     return(typestr);
 }
 
-int32_t komodo_longestchain();
-
 void komodo_passport_iteration()
 {
     static long lastpos[34]; static char userpass[33][1024];
