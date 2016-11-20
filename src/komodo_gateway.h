@@ -95,7 +95,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
     }
 }
 
-int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,uint64_t *values,int32_t *kmdheights,int32_t *otherheights,int8_t *baseids,uint8_t *opretbuf,int32_t opretlen,int32_t iskomodo)
+int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t *values,int32_t *kmdheights,int32_t *otherheights,int8_t *baseids,uint8_t *opretbuf,int32_t opretlen,int32_t iskomodo)
 {
     int32_t i,n=0,j,len;
     for (i=0; i<4; i++)
