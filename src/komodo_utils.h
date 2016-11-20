@@ -1514,22 +1514,10 @@ struct komodo_state *komodo_stateptr(char *symbol,char *dest)
 
 int32_t komodo_isrealtime(int32_t *kmdheightp)
 {
-    char symbol[16],dest[16]; int32_t baseid; uint64_t mask; struct komodo_state *sp;
-    *kmdheightp = 0;
-    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
-    {
-        if ( (baseid= komodo_baseid(symbol)) < 0 )
-            return(0);
-        mask = (1LL << 32) | (1LL << baseid);
-        if ( (sp->RTmask & mask) != mask )
-        {
-            printf("%s not RT mask.%llx vs RTmask.%llx\n",ASSETCHAINS_SYMBOL,(long long)mask,(long long)sp->RTmask);
-            return(0);
-        }
-        *kmdheightp = sp->CURRENT_HEIGHT;
-        return(sp->RTbufs[0][2]);
-    }
-    return(0);
+    *kmdheightp = (int32_t)chainActive.Tip()->nHeight;
+    if ( *kmdheightp != 0 && *kmdheightp == (int32_t)komodo_longestchain() )
+        return(1);
+    else return(0);
 }
 
 
