@@ -84,7 +84,7 @@ void komodo_eventadd_opreturn(struct komodo_state *sp,char *symbol,int32_t heigh
     O.oplen = (int32_t)(opretlen + sizeof(O));
     komodo_eventadd(sp,height,symbol,KOMODO_EVENT_OPRETURN,opret,O.oplen);
     if ( sp != 0 )
-        komodo_opreturn(height,value,buf,opretlen,txid,vout);
+        komodo_opreturn(height,value,buf,opretlen,txid,vout,symbol);
 }
 
 void komodo_event_undo(struct komodo_state *sp,struct komodo_event *ep)

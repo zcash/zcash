@@ -59,7 +59,7 @@ struct pax_transaction
     uint64_t komodoshis,fiatoshis;
     int32_t marked,height,otherheight,approved;
     uint16_t vout;
-    char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
+    char symbol[16],source[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
 };
 
 //struct nutxo_entry { UT_hash_handle hh; uint256 txhash; uint64_t voutmask; int32_t notaryid,height; };
