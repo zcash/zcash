@@ -111,7 +111,7 @@ int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transactio
     //printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
     len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->fiatoshis),&pax->komodoshis);
     len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->fiatoshis),&pax->fiatoshis);
-    len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->kmdheight),&pax->kmdheight);
+    len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->height),&pax->height);
     len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->otherheight),&pax->otherheight);
     memcpy(&opretbuf[len],pax->rmd160,20), len += 20;
     for (i=0; i<4; i++)
@@ -137,7 +137,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                 if ( values != 0 && kmdheights != 0 && otherheights != 0 && baseids != 0 )
                 {
                     values[i] = (ASSETCHAINS_SYMBOL[0] == 0) ? p.komodoshis : p.fiatoshis;
-                    kmdheights[i] = p.kmdheight;
+                    kmdheights[i] = p.height;
                     otherheights[i] = p.otherheight;
                     memcpy(&rmd160s[n * 20],p.rmd160,20);
                     baseids[i] = komodo_baseid(p.symbol);
