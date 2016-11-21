@@ -115,7 +115,7 @@ int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transactio
     len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->otherheight),&pax->otherheight);
     memcpy(&opretbuf[len],pax->rmd160,20), len += 20;
     for (i=0; i<4; i++)
-        opretbuf[len++] = symbol[i];
+        opretbuf[len++] = pax->symbol[i];
     return(len);
 }
 
