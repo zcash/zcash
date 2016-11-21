@@ -459,6 +459,11 @@ void komodo_passport_iteration()
 {
     static long lastpos[34]; static char userpass[33][1024];
     FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3]; cJSON *infoobj,*result; uint64_t RTmask = 0;
+    while ( KOMODO_INITDONE == 0 )
+    {
+        fprintf(stderr,"PASSPORT iteration waiting for KOMODO_INITDONE\n");
+        sleep(3);
+    }
     refsp = komodo_stateptr(symbol,dest);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 33;

@@ -462,7 +462,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             sleep(3);
         }
     }
-    KOMODO_INITDONE = (uint32_t)time(NULL);
+    //KOMODO_INITDONE = (uint32_t)time(NULL);
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
@@ -547,7 +547,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         if ( pindex->nHeight == hwmheight )
             komodo_stateupdate(height,0,0,0,zero,0,0,0,0,height,(uint32_t)pindex->nTime,0,0,0,0);
     } else printf("komodo_connectblock: unexpected null pindex\n");
-    KOMODO_INITDONE = (uint32_t)time(NULL);
+    //KOMODO_INITDONE = (uint32_t)time(NULL);
 }
 
 
