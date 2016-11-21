@@ -104,6 +104,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
 int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transaction *pax)
 {
     int32_t i,len = 0;
+return(0);
     for (i=0; i<32; i++)
         opretbuf[len++] = ((uint8_t *)&pax->txid)[i];
     opretbuf[len++] = pax->vout & 0xff;
@@ -136,11 +137,11 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                 len += komodo_rwapproval(0,&opretbuf[len],&p);
                 if ( values != 0 && kmdheights != 0 && otherheights != 0 && baseids != 0 )
                 {
-                    values[i] = (ASSETCHAINS_SYMBOL[0] == 0) ? p.komodoshis : p.fiatoshis;
-                    kmdheights[i] = p.height;
-                    otherheights[i] = p.otherheight;
+                    values[n] = (ASSETCHAINS_SYMBOL[0] == 0) ? p.komodoshis : p.fiatoshis;
+                    kmdheights[n] = p.height;
+                    otherheights[n] = p.otherheight;
                     memcpy(&rmd160s[n * 20],p.rmd160,20);
-                    baseids[i] = komodo_baseid(p.symbol);
+                    baseids[n] = komodo_baseid(p.symbol);
                 }
                 printf(">>>>>>> iskomodo X: (%s) fiat %.8f kmdheight.%d other.%d\n",symbol,dstr(fiatoshis),height,otherheight);
             }
