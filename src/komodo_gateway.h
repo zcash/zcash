@@ -427,6 +427,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else if ( tokomodo != 0 && opretbuf[0] == 'A' )
     {
+        printf("extra 'A' opret[%d]\n",opretlen);
         if ( (n= komodo_issued_opreturn(base,txids,vouts,values,kmdheights,otherheights,baseids,rmd160s,opretbuf,opretlen,1)) > 0 )
         {
             for (i=0; i<n; i++)
@@ -435,11 +436,16 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 {
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
                     komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],kmdheights[i],otherheights[i],CURRENCIES[baseids[i]]);
-                }
+                    printf("i.%d (%s) <- %.8f\n",i,coinaddr,dstr(values[i]));
+                } else printf("i.%d pax.%p baseids[] %d\n",i,pax,baseids[i]);
                 if ( (pax= komodo_paxfind(&space,txids[i],vouts[i])) != 0 )
+                {
                     pax->approved = kmdheights[i];
+                    printf("i.%d approved.%d\n",i,kmdheights[i]);
+                }
             }
         }
+        printf("extra.[%d]\n",n);
     }
     else if ( tokomodo == 0 && opretbuf[0] == 'I' )
     {
