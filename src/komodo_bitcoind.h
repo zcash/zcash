@@ -355,7 +355,7 @@ uint256 komodo_getblockhash(int32_t height)
     {
         if ( (result= cJSON_Parse(jsonstr)) != 0 )
         {
-            if ( (hexstr= jstr(result,"result")) != 0 )
+            if ( (hexstr= jstr(result,(char *)"result")) != 0 )
             {
                 if ( is_hexstr(hexstr,0) == 64 )
                     decode_hex((uint8_t *)&hash,32,hexstr);
