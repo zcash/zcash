@@ -168,6 +168,7 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
         printf("komodo_notarized_update REJECT notarized_height %d > %d nHeight\n",notarized_height,nHeight);
         return;
     }
+    portable_mutex_lock(&komodo_mutex);
     sp->NPOINTS = (struct notarized_checkpoint *)realloc(sp->NPOINTS,(sp->NUM_NPOINTS+1) * sizeof(*sp->NPOINTS));
     np = &sp->NPOINTS[sp->NUM_NPOINTS++];
     memset(np,0,sizeof(*np));
@@ -175,6 +176,7 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
     sp->NOTARIZED_HEIGHT = np->notarized_height = notarized_height;
     sp->NOTARIZED_HASH = np->notarized_hash = notarized_hash;
     sp->NOTARIZED_DESTTXID = np->notarized_desttxid = notarized_desttxid;
+    portable_mutex_unlock(&komodo_mutex);
 }
 
 //struct komodo_state *komodo_stateptr(char *symbol,char *dest);

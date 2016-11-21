@@ -19,6 +19,7 @@
 struct komodo_event *komodo_eventadd(struct komodo_state *sp,int32_t height,char *symbol,uint8_t type,uint8_t *data,uint16_t datalen)
 {
     struct komodo_event *ep; uint16_t len = (uint16_t)(sizeof(*ep) + datalen);
+    portable_mutex_lock(&komodo_mutex);
     ep = (struct komodo_event *)calloc(1,len);
     ep->len = len;
     ep->height = height;
@@ -28,6 +29,7 @@ struct komodo_event *komodo_eventadd(struct komodo_state *sp,int32_t height,char
         memcpy(ep->space,data,datalen);
     sp->Komodo_events = (struct komodo_event **)realloc(sp->Komodo_events,(1 + sp->Komodo_numevents) * sizeof(*sp->Komodo_events));
     sp->Komodo_events[sp->Komodo_numevents++] = ep;
+    portable_mutex_unlock(&komodo_mutex);
     return(ep);
 }
 
