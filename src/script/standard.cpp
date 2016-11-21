@@ -143,6 +143,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
             else if (opcode2 == OP_SMALLDATA)
             {
                 // small pushdata, <= nMaxDatacarrierBytes
+                fprintf(stderr,"size.%d > nMaxDatacarrier.%d\n",vch1.size(),nMaxDatacarrierBytes);
                 if (vch1.size() > nMaxDatacarrierBytes)
                     break;
             }
