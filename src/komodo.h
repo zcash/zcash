@@ -444,6 +444,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     int32_t i,j,k,numnotaries,notarized,scriptlen,isratification,nid,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
     memset(&zero,0,sizeof(zero));
     komodo_init(pindex->nHeight);
+    KOMODO_INITDONE = (uint32_t)time(NULL);
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
         return;
     numnotaries = komodo_notaries(pubkeys,pindex->nHeight);
@@ -465,7 +466,6 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             sleep(3);
         }
     }
-    //KOMODO_INITDONE = (uint32_t)time(NULL);
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
