@@ -205,8 +205,6 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType)
         if (m < 1 || m > n)
             return false;
     }
-    if ( whichType == TX_NONSTANDARD )
-        fprintf(stderr,"IsStandard nonstandard tx\n");
     return whichType != TX_NONSTANDARD;
 }
 
