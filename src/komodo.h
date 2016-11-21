@@ -449,7 +449,10 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     komodo_init(pindex->nHeight);
     KOMODO_INITDONE = (uint32_t)time(NULL);
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
+    {
+        fprintf(stderr,"unexpected null komodostateptr.[%s]\n",ASSETCHAINS_SYMBOL);
         return;
+    }
     numnotaries = komodo_notaries(pubkeys,pindex->nHeight);
     calc_rmd160_sha256(rmd160,pubkeys[0],33);
     if ( pindex->nHeight > hwmheight )
@@ -461,6 +464,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         komodo_stateupdate(pindex->nHeight,0,0,0,zero,0,0,0,0,-pindex->nHeight,pindex->nTime,0,0,0,0);
     }
     komodo_currentheight_set(chainActive.Tip()->nHeight);
+    printf("HWM.%d connect.%d\n",chainActive.Tip()->nHeight,pindex->nHeight);
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
@@ -545,7 +549,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         }
         if ( pindex->nHeight == hwmheight )
             komodo_stateupdate(height,0,0,0,zero,0,0,0,0,height,(uint32_t)pindex->nTime,0,0,0,0);
-    } else printf("komodo_connectblock: unexpected null pindex\n");
+    } else fprintf(stderr,"komodo_connectblock: unexpected null pindex\n");
     //KOMODO_INITDONE = (uint32_t)time(NULL);
 }
 
