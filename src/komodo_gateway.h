@@ -126,14 +126,14 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
     if ( ASSETCHAINS_SYMBOL[0] == 0 || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
     {
         opretbuf++, opretlen--;
-        incr = 34 + (iskomodo * (sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4));
+        incr = 34 + (iskomodo * (2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4));
         for (n=0; n<opretlen/incr; n++)
         {
             printf(" komodo_issued_opreturn issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
             if ( iskomodo != 0 )
             {
                 memset(&p,0,sizeof(p));
-                //len += komodo_rwapproval(0,&opretbuf[len],&p);
+                len += komodo_rwapproval(0,&opretbuf[len],&p);
                 if ( values != 0 && kmdheights != 0 && otherheights != 0 && baseids != 0 )
                 {
                     values[i] = (ASSETCHAINS_SYMBOL[0] == 0) ? p.komodoshis : p.fiatoshis;
@@ -481,10 +481,10 @@ void komodo_passport_iteration()
             //port = komodo_port(base,10,&magic) + 1;
             if ( (fp= fopen(fname,"rb")) != 0 && (sp= komodo_stateptrget(symbol)) != 0 )
             {
-                //printf("refid.%d %s fname.(%s) base.%s\n",refid,symbol,fname,base);
                 fseek(fp,0,SEEK_END);
                 if ( ftell(fp) > lastpos[baseid] )
                 {
+                    printf("passport refid.%d %s fname.(%s) base.%s\n",refid,symbol,fname,base);
                     fseek(fp,lastpos[baseid],SEEK_SET);
                     while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
                         ;
