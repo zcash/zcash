@@ -528,5 +528,6 @@ void komodo_passport_iteration()
             refsp->RTbufs[0][2] = 0;
     }
     refsp->RTmask = RTmask;
+    KOMODO_PASSPORT_INITDONE = 1;
 }
 

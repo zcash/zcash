@@ -454,14 +454,11 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         komodo_stateupdate(pindex->nHeight,0,0,0,zero,0,0,0,0,-pindex->nHeight,pindex->nTime,0,0,0,0);
     }
     komodo_currentheight_set(chainActive.Tip()->nHeight);
-    /*if ( komodo_is_issuer() != 0 )
+    while ( KOMODO_PASSPORT_INITDONE == 0 )
     {
-        while ( KOMODO_REALTIME == 0 || time(NULL) <= KOMODO_REALTIME )
-        {
-            fprintf(stderr,"komodo_connect.(%s) waiting for realtime RT.%u now.%u\n",ASSETCHAINS_SYMBOL,KOMODO_REALTIME,(uint32_t)time(NULL));
-            sleep(30);
-        }
-    }*/
+        fprintf(stderr,"komodo_connect.(%s) waiting for KOMODO_PASSPORT_INITDONE.%u\n",ASSETCHAINS_SYMBOL,KOMODO_PASSPORT_INITDONE);
+        sleep(3);
+    }
     KOMODO_INITDONE = (uint32_t)time(NULL);
     if ( pindex != 0 )
     {
