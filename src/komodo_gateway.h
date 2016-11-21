@@ -108,7 +108,6 @@ int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transactio
         opretbuf[len++] = ((uint8_t *)&pax->txid)[i];
     opretbuf[len++] = pax->vout & 0xff;
     opretbuf[len++] = (pax->vout >> 8) & 0xff;
-    //printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
     len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->fiatoshis),&pax->komodoshis);
     len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->fiatoshis),&pax->fiatoshis);
     len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->height),&pax->height);
@@ -121,19 +120,20 @@ int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transactio
 
 int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t *values,int32_t *kmdheights,int32_t *otherheights,int8_t *baseids,uint8_t *rmd160s,uint8_t *opretbuf,int32_t opretlen,int32_t iskomodo)
 {
-    struct pax_transaction p; int32_t i,n=0,j,len,incr,height,otherheight; uint8_t rmd160[20]; uint64_t fiatoshis; char symbol[16];
+    struct pax_transaction p; int32_t i,n=0,j,len=0,incr,height,otherheight; uint8_t rmd160[20]; uint64_t fiatoshis; char symbol[16];
     for (i=0; i<4; i++)
         base[i] = opretbuf[opretlen-4+i];
     if ( ASSETCHAINS_SYMBOL[0] == 0 || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
     {
         opretbuf++, opretlen--;
         incr = 34 + (iskomodo * (sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4));
-        for (n=len=0; n<opretlen/incr; n++)
+        for (n=0; n<opretlen/incr; n++)
         {
-            //printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
+            printf(" komodo_issued_opreturn issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
             if ( iskomodo != 0 )
             {
-                len += komodo_rwapproval(0,&opretbuf[len],&p);
+                memset(&p,0,sizeof(p));
+                //len += komodo_rwapproval(0,&opretbuf[len],&p);
                 if ( values != 0 && kmdheights != 0 && otherheights != 0 && baseids != 0 )
                 {
                     values[i] = (ASSETCHAINS_SYMBOL[0] == 0) ? p.komodoshis : p.fiatoshis;
