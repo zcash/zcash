@@ -1261,6 +1261,43 @@ void komodo_userpass(char *username,char *password,FILE *fp)
         free(rpcpassword);
 }
 
+void komodo_statefname(char *fname,char *symbol,char *str)
+{
+    int32_t n,len;
+    sprintf(fname,"%s",GetDataDir(false).string().c_str());
+    if ( (n= (int32_t)strlen(ASSETCHAINS_SYMBOL)) != 0 )
+    {
+        len = (int32_t)strlen(fname);
+        if ( strcmp(ASSETCHAINS_SYMBOL,&fname[len - n]) == 0 )
+            fname[len - n] = 0;
+        else
+        {
+            printf("unexpected fname.(%s) vs %s [%s] n.%d len.%d (%s)\n",fname,symbol,ASSETCHAINS_SYMBOL,n,len,&fname[len - n]);
+            return;
+        }
+    }
+    else
+    {
+#ifdef WIN32
+        strcat(fname,"\\");
+#else
+        strcat(fname,"/");
+#endif
+    }
+    if ( symbol != 0 && symbol[0] != 0 && strcmp("KMD",symbol) != 0 )
+    {
+        strcat(fname,symbol);
+        //printf("statefname.(%s) -> (%s)\n",symbol,fname);
+#ifdef WIN32
+        strcat(fname,"\\");
+#else
+        strcat(fname,"/");
+#endif
+    }
+    strcat(fname,str);
+    //printf("test.(%s) -> [%s] statename.(%s) %s\n",test,ASSETCHAINS_SYMBOL,symbol,fname);
+}
+
 void komodo_configfile(char *symbol,uint16_t port)
 {
     static char myusername[512],mypassword[8192];
@@ -1318,16 +1355,36 @@ void komodo_configfile(char *symbol,uint16_t port)
     } else printf("couldnt open.(%s)\n",fname);
 }
 
+int32_t komodo_userpass(char *userpass,char *symbol)
+{
+    FILE *fp; char fname[512],username[512],password[512],confname[16];
+    userpass[0] = 0;
+    if ( strcmp("KMD",symbol) == 0 )
+        sprintf(confname,"komodo.conf");
+    else sprintf(confname,"%s.conf",symbol);
+    komodo_statefname(fname,symbol,confname);
+    if ( (fp= fopen(fname,"rb")) != 0 )
+    {
+        komodo_userpass(username,password,fp);
+        sprintf(userpass,"%s:%s",username,password);
+        fclose(fp);
+        return((int32_t)strlen(userpass));
+    }
+    return(-1);
+}
+
 uint32_t komodo_assetmagic(char *symbol,uint64_t supply)
 {
     uint8_t buf[512]; int32_t len = 0;
+    if ( strcmp(symbol,"KMD") == 0 )
+        return(0x8de4eef9);
     len = iguana_rwnum(1,&buf[len],sizeof(supply),(void *)&supply);
     strcpy((char *)&buf[len],symbol);
     len += strlen(symbol);
     return(calc_crc32(0,buf,len));
 }
 
-int32_t komodo_shortflag(char *symbol)
+/*int32_t komodo_shortflag(char *symbol)
 {
     int32_t i,shortflag = 0;
     if ( symbol[0] == '-' )
@@ -1338,26 +1395,32 @@ int32_t komodo_shortflag(char *symbol)
         symbol[i] = 0;
     }
     return(shortflag);
+}*/
+
+uint16_t komodo_assetport(uint32_t magic)
+{
+    if ( magic == 0x8de4eef9 )
+        return(7770);
+    else return(8000 + (magic % 7777));
 }
 
-uint16_t komodo_assetport(uint32_t magic,int32_t shortflag)
+uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp)
 {
-    return(8000 + shortflag*7777 + (magic % 7777));
-}
-
-uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp,int32_t *shortflagp)
-{
+    if ( symbol == 0 || symbol[0] == 0 || strcmp("KMD",symbol) == 0 )
+    {
+        *magicp = 0x8de4eef9;
+        return(7770);
+    }
     *magicp = komodo_assetmagic(symbol,supply);
-    *shortflagp = komodo_shortflag(symbol);
-    return(komodo_assetport(*magicp,*shortflagp));
+    return(komodo_assetport(*magicp));
 }
 
 void komodo_ports(uint16_t ports[MAX_CURRENCIES])
 {
-    int32_t i,shortflag; uint32_t magic;
+    int32_t i; uint32_t magic;
     for (i=0; i<MAX_CURRENCIES; i++)
     {
-        ports[i] = komodo_port(CURRENCIES[i],10,&magic,&shortflag);
+        ports[i] = komodo_port(CURRENCIES[i],10,&magic);
         printf("%u ",ports[i]);
     }
     printf("ports\n");
@@ -1381,8 +1444,7 @@ void komodo_args()
         if ( strlen(addn.c_str()) > 0 )
             ASSETCHAINS_SEED = 1;
         strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
-        ASSETCHAINS_PORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,&ASSETCHAINS_SHORTFLAG);
-        //fprintf(stderr,"after args: %c%s port.%u magic.%08x supply.%u\n",ASSETCHAINS_SHORTFLAG!=0?'-':'+',ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_MAGIC,(int32_t)ASSETCHAINS_SUPPLY);
+        ASSETCHAINS_PORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC);
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
             fprintf(stderr,"waiting for datadir\n");
@@ -1395,7 +1457,7 @@ void komodo_args()
             extern int COINBASE_MATURITY;
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
             //if ( komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 )
-                COINBASE_MATURITY = 1;
+            COINBASE_MATURITY = 1;
         }
         ASSETCHAINS_NOTARIES = GetArg("-ac_notaries","");
         komodo_assetchain_pubkeys((char *)ASSETCHAINS_NOTARIES.c_str());
@@ -1419,26 +1481,36 @@ void komodo_args()
     //fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
 }
 
-struct komodo_state *komodo_stateptr(char *symbol,char *dest)
+void komodo_nameset(char *symbol,char *dest,char *source)
 {
-    int32_t baseid; struct komodo_state *sp;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( source[0] == 0 )
     {
-        strcpy(symbol,"KMD");
-        strcpy(dest,"BTC");
-        sp = &KOMODO_STATES[0];
+        strcpy(symbol,(char *)"KMD");
+        strcpy(dest,(char *)"BTC");
     }
     else
     {
-        strcpy(symbol,ASSETCHAINS_SYMBOL);
-        strcpy(dest,"KMD");
-        if ( (baseid= komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 )
-            sp = &KOMODO_STATES[baseid];
-        else
-        {
-            fprintf(stderr,"komodo_stateupdate.(%s) not supported\n",ASSETCHAINS_SYMBOL);
-            return(0);
-        }
+        strcpy(symbol,source);
+        strcpy(dest,(char *)"KMD");
     }
-    return(sp);
 }
+
+struct komodo_state *komodo_stateptrget(char *base)
+{
+    int32_t baseid;
+    if ( base == 0 || base[0] == 0 || strcmp(base,(char *)"KMD") == 0 )
+        return(&KOMODO_STATES[33]);
+    else if ( (baseid= komodo_baseid(base)) >= 0 )
+        return(&KOMODO_STATES[baseid+1]);
+    else return(&KOMODO_STATES[0]);
+}
+
+struct komodo_state *komodo_stateptr(char *symbol,char *dest)
+{
+    int32_t baseid;
+    komodo_nameset(symbol,dest,ASSETCHAINS_SYMBOL);
+    return(komodo_stateptrget(symbol));
+}
+
+
+

@@ -16,16 +16,48 @@
 #include "uthash.h"
 #include "utlist.h"
 
+#ifdef WIN32
+#define PACKED
+#else
+#define PACKED __attribute__((packed))
+#endif
+
 #define GENESIS_NBITS 0x1f00ffff
 #define KOMODO_MINRATIFY 7
 #define KOMODO_MAXBLOCKS 5000000
+
+#define KOMODO_EVENT_RATIFY 'P'
+#define KOMODO_EVENT_NOTARIZED 'N'
+#define KOMODO_EVENT_KMDHEIGHT 'K'
+#define KOMODO_EVENT_REWIND 'B'
+#define KOMODO_EVENT_PRICEFEED 'V'
+#define KOMODO_EVENT_OPRETURN 'R'
+#define KOMODO_OPRETURN_DEPOSIT 'D'
+#define KOMODO_OPRETURN_ISSUED 'I' // assetchain
+#define KOMODO_OPRETURN_WITHDRAW 'W' // assetchain
+#define KOMODO_OPRETURN_REDEEMED 'X'
+
+struct komodo_event_notarized { uint256 blockhash,desttxid; int32_t notarizedheight; char dest[16]; };
+struct komodo_event_pubkeys { uint8_t num; uint8_t pubkeys[64][33]; };
+struct komodo_event_opreturn { uint256 txid; uint64_t value; uint16_t vout,oplen; uint8_t opret[]; };
+struct komodo_event_pricefeed { uint8_t num; uint32_t prices[35]; };
+
+struct komodo_event
+{
+    struct komodo_event *related;
+    uint16_t len;
+    int32_t height;
+    uint8_t type,reorged;
+    char symbol[16];
+    uint8_t space[];
+} PACKED;
 
 struct pax_transaction
 {
     UT_hash_handle hh;
     uint256 txid;
     uint64_t komodoshis,fiatoshis;
-    int32_t marked,height,otherheight;
+    int32_t marked,height,otherheight,approved;
     uint16_t vout;
     char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
 };
@@ -38,6 +70,9 @@ struct notarized_checkpoint { uint256 notarized_hash,notarized_desttxid; int32_t
 struct komodo_state
 {
     uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
-    int32_t CURRENT_HEIGHT,NOTARIZED_HEIGHT,rewinding;
-    // gateway state
+    int32_t SAVEDHEIGHT,CURRENT_HEIGHT,NOTARIZED_HEIGHT;
+    uint32_t SAVEDTIMESTAMP;
+    struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS;
+    struct komodo_event **Komodo_events; int32_t Komodo_numevents;
+    uint32_t RTbufs[64][3]; uint64_t RTmask;
 };

@@ -31,3 +31,4 @@ echo thb; fiat/thb $1 $2 $3 $4
 echo try; fiat/try $1 $2 $3 $4
 echo usd; fiat/usd $1 $2 $3 $4
 echo zar; fiat/zar $1 $2 $3 $4
+echo revs; fiat/revs $1 $2 $3 $4

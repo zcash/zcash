@@ -1,5 +1,44 @@
+#!/bin/bash
 source pubkey.txt
 echo $pubkey
+
+curl --url "http://127.0.0.1:7776" --data "{\"timeout\":60000,\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"REVS\",\"pubkey\":\"$pubkey\"}"
+
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"USD\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"EUR\",\"pubkey\":\"$pubkey\"}"
+ 
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"JPY\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"GBP\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"AUD\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"CAD\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"CHF\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"NZD\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"CNY\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"RUB\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"MXN\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"BRL\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"INR\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"HKD\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"TRY\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"ZAR\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"PLN\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"NOK\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"SEK\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"DKK\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"CZK\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"HUF\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"ILS\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"KRW\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"MYR\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"PHP\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"RON\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"SGD\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"THB\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"BGN\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"IDR\",\"pubkey\":\"$pubkey\"}"
+curl --url "http://127.0.0.1:7776" --data "{\"agent\":\"iguana\",\"method\":\"dpow\",\"symbol\":\"HRK\",\"pubkey\":\"$pubkey\"}"
+
+./komodod -pubkey=$pubkey -ac_name=REVS -ac_supply=1300000 -addnode=78.47.196.146 $1 &
 
 ./komodod -pubkey=$pubkey -ac_name=USD -addnode=78.47.196.146 $1 &
 ./komodod -pubkey=$pubkey -ac_name=EUR -addnode=78.47.196.146 $1 &

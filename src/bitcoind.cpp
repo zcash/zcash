@@ -33,9 +33,7 @@
 
 static bool fDaemon;
 extern char ASSETCHAINS_SYMBOL[16];
-void komodo_gateway_iteration(char *symbol);
-void komodo_iteration(char *symbol);
-int32_t komodo_is_issuer();
+void komodo_passport_iteration();
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
@@ -44,10 +42,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     while (!fShutdown)
     {
         MilliSleep(10000);
-        if ( komodo_is_issuer() != 0 )
-            komodo_gateway_iteration(ASSETCHAINS_SYMBOL);
-        else komodo_iteration((char *)"EUR");
-            
+        komodo_passport_iteration();
         fShutdown = ShutdownRequested();
     }
     if (threadGroup)
@@ -64,6 +59,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,ASSETCHAIN_INIT;
 extern std::string NOTARY_PUBKEY;
 int32_t komodo_is_issuer();
+void komodo_passport_iteration();
 
 bool AppInit(int argc, char* argv[])
 {
@@ -106,10 +102,11 @@ bool AppInit(int argc, char* argv[])
         fprintf(stderr,"call komodo_args NOTARY_PUBKEY.(%s)\n",NOTARY_PUBKEY.c_str());
         while ( ASSETCHAIN_INIT == 0 )
         {
-            if ( komodo_is_issuer() != 0 )
-                komodo_gateway_iteration(ASSETCHAINS_SYMBOL);
+            //if ( komodo_is_issuer() != 0 )
+            //    komodo_passport_iteration();
             sleep(1);
         }
+        printf("initialized %s\n",ASSETCHAINS_SYMBOL);
         if (!boost::filesystem::is_directory(GetDataDir(false)))
         {
             fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs["-datadir"].c_str());
@@ -144,7 +141,6 @@ bool AppInit(int argc, char* argv[])
         fDaemon = GetBoolArg("-daemon", false);
         if (fDaemon)
         {
-            extern char ASSETCHAINS_SYMBOL[16];
             fprintf(stdout, "Komodo %s server starting\n",ASSETCHAINS_SYMBOL);
 
             // Daemonize
