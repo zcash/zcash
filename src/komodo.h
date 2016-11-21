@@ -168,7 +168,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
         return(func);
     } else return(-1);
 }
-
+                    
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t KMDheight,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout)
 {
     static FILE *fp; static int32_t errs;
@@ -177,7 +177,13 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         return;
     if ( fp == 0 )
     {
-        komodo_statename(fname,ASSETCHAINS_SYMBOL);
+#ifdef WIN32
+        sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"komodostate");
+        //sprintf(fname2,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"minerids");
+#else
+        sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),(char *)"komodostate");
+        //sprintf(fname2,"%s/%s",GetDataDir(false).string().c_str(),(char *)"minerids");
+#endif
         /*memset(Minerids,0xfe,sizeof(Minerids));
         if ( (Minerfp= fopen(fname2,"rb+")) == 0 )
         {

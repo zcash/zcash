@@ -1261,36 +1261,6 @@ void komodo_userpass(char *username,char *password,FILE *fp)
         free(rpcpassword);
 }
 
-void komodo_statename(char *fname,char *symbol)
-{
-    int32_t n,len;
-    sprintf(fname,"%s",GetDataDir(false).string().c_str());
-    if ( (n= (int32_t)strlen(ASSETCHAINS_SYMBOL)) != 0 )
-    {
-        len = (int32_t)strlen(fname);
-        if ( strcmp(ASSETCHAINS_SYMBOL,&fname[len - n]) == 0 )
-        {
-            fname[len - n] = 0;
-            if ( symbol[0] != 0 )
-            {
-                strcpy(&fname[len - n],symbol);
-#ifdef WIN32
-                strcat(fname,"\\");
-#else
-                strcat(fname,"//");
-#endif
-            }
-        }
-        else
-        {
-            printf("unexpected fname.(%s) vs %s\n",fname,ASSETCHAINS_SYMBOL);
-            return;
-        }
-    }
-    strcat(fname,(char *)"komodostate");
-    printf("statename.(%s) %s\n",symbol,fname);
-}
-
 void komodo_configfile(char *symbol,uint16_t port)
 {
     static char myusername[512],mypassword[8192];
