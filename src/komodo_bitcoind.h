@@ -510,7 +510,10 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
         for (i=1; i<64; i++)
         {
             if ( komodo_minerid(height-i) == notaryid )
+            {
+                fprintf(stderr,"ht.%d notaryid.%d already mined -i.%d\n",height,notaryid,i);
                 return(-1);
+            }
         }
         return(1);
     }
