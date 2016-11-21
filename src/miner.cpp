@@ -550,8 +550,8 @@ void static BitcoinMiner(CWallet *pwallet)
         {
             if (chainparams.MiningRequiresPeers())
             {
-                if ( ASSETCHAINS_SEED != 0 && chainActive.Tip()->nHeight < 100 )
-                    break;
+                //if ( ASSETCHAINS_SEED != 0 && chainActive.Tip()->nHeight < 100 )
+                //    break;
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
                 //fprintf(stderr,"Wait for peers...\n");
@@ -569,6 +569,11 @@ void static BitcoinMiner(CWallet *pwallet)
                 } while (true);
                 //fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
             }
+            /*while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight < 100 )
+            {
+                fprintf(stderr,"%s waiting for block 100, ht.%d\n",ASSETCHAINS_SYMBOL,chainActive.Tip()->nHeight);
+                sleep(3);
+            }*/
             //
             // Create new block
             //
@@ -652,10 +657,6 @@ void static BitcoinMiner(CWallet *pwallet)
                         cancelSolver = false;
                     }
                     KOMODO_CHOSEN_ONE = 0;
-                    int32_t i; uint256 hash = pblock->GetHash();
-                    for (i=0; i<32; i++)
-                        fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
-                    fprintf(stderr," <- %s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
                     // In regression test mode, stop mining after a block is found.
                     if (chainparams.MineBlocksOnDemand()) {
@@ -709,6 +710,10 @@ void static BitcoinMiner(CWallet *pwallet)
                         bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
                         ehSolverRuns.increment();
                         if (found) {
+                            int32_t i; uint256 hash = pblock->GetHash();
+                            for (i=0; i<32; i++)
+                                fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+                            fprintf(stderr," <- %s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
                             break;
                         }
                     } catch (EhSolverCancelledException&) {
