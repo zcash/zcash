@@ -454,10 +454,13 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         komodo_stateupdate(pindex->nHeight,0,0,0,zero,0,0,0,0,-pindex->nHeight,pindex->nTime,0,0,0,0);
     }
     komodo_currentheight_set(chainActive.Tip()->nHeight);
-    while ( KOMODO_PASSPORT_INITDONE == 0 )
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
-        fprintf(stderr,"komodo_connect.(%s) waiting for KOMODO_PASSPORT_INITDONE.%u\n",ASSETCHAINS_SYMBOL,KOMODO_PASSPORT_INITDONE);
-        sleep(3);
+        while ( KOMODO_PASSPORT_INITDONE == 0 )
+        {
+            fprintf(stderr,"komodo_connect.(%s) waiting for KOMODO_PASSPORT_INITDONE.%u\n",ASSETCHAINS_SYMBOL,KOMODO_PASSPORT_INITDONE);
+            sleep(3);
+        }
     }
     KOMODO_INITDONE = (uint32_t)time(NULL);
     if ( pindex != 0 )
