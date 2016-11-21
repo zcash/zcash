@@ -351,7 +351,7 @@ uint256 komodo_getblockhash(int32_t height)
     uint256 hash; char params[128],*hexstr;
     memset(&hash,0,sizeof(hash));
     sprintf(params,"[%d]",height);
-    if ( (hexstr= komodo_issuemethod(KMDUSERPASS,"getblockhash",params,7771)) != 0 )
+    if ( (hexstr= komodo_issuemethod(KMDUSERPASS,(char *)"getblockhash",params,7771)) != 0 )
     {
         if ( is_hexstr(hexstr,0) == 64 )
             decode_hex((uint8_t *)&hash,32,hexstr);
