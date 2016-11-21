@@ -569,11 +569,11 @@ void static BitcoinMiner(CWallet *pwallet)
                 } while (true);
                 //fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
             }
-            while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight < 100 )
+            /*while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight < 100 )
             {
                 fprintf(stderr,"%s waiting for block 100, ht.%d\n",ASSETCHAINS_SYMBOL,chainActive.Tip()->nHeight);
                 sleep(3);
-            }
+            }*/
             //
             // Create new block
             //

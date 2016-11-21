@@ -550,12 +550,14 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
 
 int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
 {
-    int32_t notarized_height; uint256 notarized_hash,notarized_desttxid; CBlockIndex *notary;
-    notarized_height = komodo_notarizeddata(chainActive.Tip()->nHeight,&notarized_hash,&notarized_desttxid);
+    int32_t notarized_height; uint256 notarized_hash,notarized_desttxid; CBlockIndex *notary; CBlockIndex *pindex;
+    if ( (pindex= chainActive.Tip()) == 0 )
+        return(-1);
+    notarized_height = komodo_notarizeddata(pindex->nHeight,&notarized_hash,&notarized_desttxid);
     *notarized_heightp = notarized_height;
-    if ( notarized_height >= 0 && notarized_height <= chainActive.Tip()->nHeight && (notary= mapBlockIndex[notarized_hash]) != 0 )
+    if ( notarized_height >= 0 && notarized_height <= pindex->nHeight && (notary= mapBlockIndex[notarized_hash]) != 0 )
     {
-        //printf("nHeight.%d -> (%d %s)\n",chainActive.Tip()->nHeight,notarized_height,notarized_hash.ToString().c_str());
+        //printf("nHeight.%d -> (%d %s)\n",pindex->Tip()->nHeight,notarized_height,notarized_hash.ToString().c_str());
         if ( notary->nHeight == notarized_height ) // if notarized_hash not in chain, reorg
         {
             if ( nHeight < notarized_height )
@@ -570,7 +572,7 @@ int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 has
             }
         } else fprintf(stderr,"unexpected error notary_hash %s ht.%d at ht.%d\n",notarized_hash.ToString().c_str(),notarized_height,notary->nHeight);
     } else if ( notarized_height > 0 && notarized_height != 73880 )
-        fprintf(stderr,"[%s] couldnt find notarized.(%s %d) ht.%d\n",ASSETCHAINS_SYMBOL,notarized_hash.ToString().c_str(),notarized_height,chainActive.Tip()->nHeight);
+        fprintf(stderr,"[%s] couldnt find notarized.(%s %d) ht.%d\n",ASSETCHAINS_SYMBOL,notarized_hash.ToString().c_str(),notarized_height,pindex->nHeight);
     return(0);
 }
 
@@ -611,11 +613,11 @@ uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 
 
 int32_t komodo_isrealtime(int32_t *kmdheightp)
 {
-    struct komodo_state *sp;
+    struct komodo_state *sp; CBlockIndex *pindex;
     if ( (sp= komodo_stateptrget((char *)"KMD")) != 0 )
         *kmdheightp = sp->CURRENT_HEIGHT;
     else *kmdheightp = 0;
-    if ( chainActive.Tip()->nHeight == (int32_t)komodo_longestchain() )
+    if ( (pindex= chainActive.Tip()) != 0 && pindex->nHeight == (int32_t)komodo_longestchain() )
         return(1);
     else return(0);
 }
