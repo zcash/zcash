@@ -192,8 +192,10 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"komodostate");
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
+            pthread_mutex_lock(&komodo_mutex);
             while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
                 ;
+            pthread_mutex_unlock(&komodo_mutex);
         } else fp = fopen(fname,"wb+");
         printf("fname.(%s) fpos.%ld\n",fname,ftell(fp));
         KOMODO_INITDONE = (uint32_t)time(NULL);
@@ -206,6 +208,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
     if ( fp != 0 ) // write out funcid, height, other fields, call side effect function
     {
         //printf("fpos.%ld ",ftell(fp));
+        pthread_mutex_lock(&komodo_mutex);
         if ( KMDheight != 0 )
         {
             if ( KMDtimestamp != 0 )
@@ -310,6 +313,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             //komodo_notarized_update(height,NOTARIZED_HEIGHT,NOTARIZED_HASH,NOTARIZED_DESTTXID);
         }
         fflush(fp);
+        pthread_mutex_unlock(&komodo_mutex);
     }
 }
 
