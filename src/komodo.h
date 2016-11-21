@@ -151,11 +151,13 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             {
                 if ( fread(opret,1,olen,fp) != olen )
                     errs++;
-                //if ( matched != 0 ) global shared state -> global PAX
-                int32_t i;  for (i=0; i<olen; i++)
-                    printf("%02x",opret[i]);
-                printf(" %s load[%s] opret[%c] len.%d %.8f\n",ASSETCHAINS_SYMBOL,symbol,opret[0],olen,(double)ovalue/COIN);
-                komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen);
+                if ( matched != 0 )
+                {
+                    int32_t i;  for (i=0; i<olen; i++)
+                        printf("%02x",opret[i]);
+                    printf(" %s.%d load[%s] opret[%c] len.%d %.8f\n",ASSETCHAINS_SYMBOL,ht,symbol,opret[0],olen,(double)ovalue/COIN);
+                }
+                komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen); // global shared state -> global PAX
             } else printf("illegal olen.%u\n",olen);
         }
         else if ( func == 'D' )
