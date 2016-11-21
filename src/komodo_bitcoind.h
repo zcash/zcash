@@ -346,6 +346,34 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     return(retstr2);
 }
 
+uint256 komodo_getblockhash(int32_t height)
+{
+    uint256 hash; char params[128];
+    memset(&hash,0,sizeof(hash));
+    sprintf(params,"[%d]",height);
+    if ( (hexstr= komodo_issuemethod(KMDUSERPASS,"getblockhash",params,7771)) != 0 )
+    {
+        if ( is_hexstr(hexstr,0) == 64 )
+            decode_hex((uint8_t *)&hash,32,hexstr);
+        printf("KMD hash.%d (%s)\n",height,hexstr);
+        free(hexstr);
+    }
+    return(hash);
+}
+
+uint64_t komodo_seed(int32_t height)
+{
+    uint256 hash; uint64_t seed = 0; CBlockIndex *pindex;
+    memset(&hash,0,sizeof(hash));
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    {
+        if ( (pindex= chainActive[height]) != 0 )
+            hash = pindex->GetBlockHash();
+    } else hash = komodo_getblockhash(height);
+    seed = arith_uint256(hash.GetHex()).GetLow64();
+    return(seed);
+}
+
 uint32_t komodo_txtime(uint256 hash)
 {
     CTransaction tx;
@@ -360,17 +388,6 @@ uint32_t komodo_txtime(uint256 hash)
         return(tx.nLockTime);
     }
     return(0);
-}
-
-uint64_t komodo_seed(int32_t height)
-{
-    uint256 hash; uint64_t seed = 0; CBlockIndex *pindex = chainActive[height];
-    if ( pindex != 0 )
-    {
-        hash = pindex->GetBlockHash();
-        seed = arith_uint256(hash.GetHex()).GetLow64();
-    }
-    return(seed);
 }
 
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)

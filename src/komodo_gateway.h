@@ -185,6 +185,7 @@ int32_t komodo_pending_withdraws(char *opretstr)
         return(0);
     HASH_ITER(hh,PAX,pax,tmp)
     {
+        printf("pax %s marked.%u approved.%u\n",pax->symbol,pax->marked,pax->approved);
         if ( pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 )
         {
             // add 'A' opreturn entry
