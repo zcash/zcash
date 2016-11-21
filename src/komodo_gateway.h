@@ -182,7 +182,7 @@ uint64_t komodo_paxtotal()
 
 int32_t komodo_pending_withdraws(char *opretstr)
 {
-    struct pax_transaction *pax,*tmp; uint8_t opretbuf[10000]; int32_t ht,len=0; uint64_t total = 0;
+    struct pax_transaction *pax,*tmp; uint8_t opretbuf[16384]; int32_t ht,len=0; uint64_t total = 0;
     if ( komodo_isrealtime(&ht) == 0 || ASSETCHAINS_SYMBOL[0] != 0 )
         return(0);
     HASH_ITER(hh,PAX,pax,tmp)
@@ -204,7 +204,7 @@ int32_t komodo_pending_withdraws(char *opretstr)
 
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t tokomodo)
 {
-    struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[10000],data[10000]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t mask;
+    struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[16384],data[16384]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t mask;
     sp = komodo_stateptr(symbol,dest);
     strcpy(symbol,base);
     PENDING_KOMODO_TX = 0;

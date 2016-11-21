@@ -139,7 +139,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
         }
         else if ( func == 'R' )
         {
-            uint16_t olen,v; uint64_t ovalue; uint256 txid; uint8_t opret[10000];
+            uint16_t olen,v; uint64_t ovalue; uint256 txid; uint8_t opret[16384];
             if ( fread(&txid,1,sizeof(txid),fp) != sizeof(txid) )
                 errs++;
             if ( fread(&v,1,sizeof(v),fp) != sizeof(v) )

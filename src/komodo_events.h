@@ -74,7 +74,7 @@ void komodo_eventadd_pricefeed(struct komodo_state *sp,char *symbol,int32_t heig
 
 void komodo_eventadd_opreturn(struct komodo_state *sp,char *symbol,int32_t height,uint256 txid,uint64_t value,uint16_t vout,uint8_t *buf,uint16_t opretlen)
 {
-    struct komodo_event_opreturn O; uint8_t opret[10000];
+    struct komodo_event_opreturn O; uint8_t opret[16384];
     memset(&O,0,sizeof(O));
     O.txid = txid;
     O.value = value;
