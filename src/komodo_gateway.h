@@ -101,9 +101,27 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
     }
 }
 
+int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transaction *pax)
+{
+    int32_t i,len = 0;
+    for (i=0; i<32; i++)
+        opretbuf[len++] = ((uint8_t *)&pax->txid)[i];
+    opretbuf[len++] = pax->vout & 0xff;
+    opretbuf[len++] = (pax->vout >> 8) & 0xff;
+    //printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
+    len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->fiatoshis),&pax->komodoshis);
+    len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->fiatoshis),&pax->fiatoshis);
+    len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->kmdheight),&pax->kmdheight);
+    len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->otherheight),&pax->otherheight);
+    memcpy(&opretbuf[len],pax->rmd160,20), len += 20;
+    for (i=0; i<4; i++)
+        opretbuf[len++] = symbol[i];
+    return(len);
+}
+
 int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t *values,int32_t *kmdheights,int32_t *otherheights,int8_t *baseids,uint8_t *rmd160s,uint8_t *opretbuf,int32_t opretlen,int32_t iskomodo)
 {
-    int32_t i,n=0,j,len,incr,height,otherheight; uint8_t rmd160[20]; uint64_t fiatoshis; char symbol[16];
+    struct pax_transaction p; int32_t i,n=0,j,len,incr,height,otherheight; uint8_t rmd160[20]; uint64_t fiatoshis; char symbol[16];
     for (i=0; i<4; i++)
         base[i] = opretbuf[opretlen-4+i];
     if ( ASSETCHAINS_SYMBOL[0] == 0 || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
@@ -112,32 +130,29 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
         incr = 34 + (iskomodo * (sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4));
         for (n=len=0; n<opretlen/incr; n++)
         {
-            for (j=0; j<32; j++)
-            {
-                ((uint8_t *)&txids[n])[j] = opretbuf[len++];
-                //printf("%02x",((uint8_t *)&txids[n])[j]);
-            }
-            vouts[n] = opretbuf[len++];
-            vouts[n] = (opretbuf[len++] << 8) | vouts[n];
             //printf(" issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
             if ( iskomodo != 0 )
             {
-                len += iguana_rwnum(0,&opretbuf[len],sizeof(fiatoshis),&fiatoshis);
-                len += iguana_rwnum(0,&opretbuf[len],sizeof(height),&height);
-                len += iguana_rwnum(0,&opretbuf[len],sizeof(otherheight),&otherheight);
-                memcpy(rmd160,&opretbuf[len],20);
-                for (i=0; opretbuf[len+i]!=0&&i<3; i++)
-                    symbol[i] = opretbuf[len+i];
-                symbol[i] = 0;
+                len += komodo_rwapproval(0,&opretbuf[len],&p);
                 if ( values != 0 && kmdheights != 0 && otherheights != 0 && baseids != 0 )
                 {
-                    values[i] = fiatoshis;
-                    kmdheights[i] = height;
-                    otherheights[i] = otherheight;
-                    memcpy(&rmd160s[n * 20],rmd160,20);
-                    baseids[i] = komodo_baseid(symbol);
+                    values[i] = (ASSETCHAINS_SYMBOL[0] == 0) ? p.komodoshis : p.fiatoshis;
+                    kmdheights[i] = p.kmdheight;
+                    otherheights[i] = p.otherheight;
+                    memcpy(&rmd160s[n * 20],p.rmd160,20);
+                    baseids[i] = komodo_baseid(p.symbol);
                 }
                 printf(">>>>>>> iskomodo X: (%s) fiat %.8f kmdheight.%d other.%d\n",symbol,dstr(fiatoshis),height,otherheight);
+            }
+            else
+            {
+                for (j=0; j<32; j++)
+                {
+                    ((uint8_t *)&txids[n])[j] = opretbuf[len++];
+                    //printf("%02x",((uint8_t *)&txids[n])[j]);
+                }
+                vouts[n] = opretbuf[len++];
+                vouts[n] = (opretbuf[len++] << 8) | vouts[n];
             }
         }
     }
@@ -163,9 +178,9 @@ uint64_t komodo_paxtotal()
     return(total);
 }
 
-int32_t komodo_withdraws_pending(char *opretbuf)
+int32_t komodo_pending_withdraws(char *opretstr)
 {
-    struct pax_transaction *pax,*tmp; int32_t ht,len=0; uint64_t total = 0;
+    struct pax_transaction *pax,*tmp; uint8_t opretbuf[10000]; int32_t ht,len=0; uint64_t total = 0;
     if ( komodo_isrealtime(&ht) == 0 || ASSETCHAINS_SYMBOL[0] != 0 )
         return(0);
     HASH_ITER(hh,PAX,pax,tmp)
@@ -173,8 +188,14 @@ int32_t komodo_withdraws_pending(char *opretbuf)
         if ( pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 )
         {
             // add 'A' opreturn entry
+            if ( len == 0 )
+                opretbuf[len++] = 'A';
+            len += komodo_rwapproval(1,&opretbuf[len],pax);
         }
     }
+    if ( len > 0 )
+        init_hexbytes_noT(opretstr,opretbuf,len);
+    else opretstr[0] = 0;
     return(len);
 }
 
