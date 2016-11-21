@@ -348,7 +348,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 
 uint256 komodo_getblockhash(int32_t height)
 {
-    uint256 hash; char params[128],*hexstr,*jsonstr;
+    uint256 hash; char params[128],*hexstr,*jsonstr; cJSON *result;
     memset(&hash,0,sizeof(hash));
     sprintf(params,"[%d]",height);
     if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getblockhash",params,7771)) != 0 )
