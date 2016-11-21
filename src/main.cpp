@@ -676,14 +676,18 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
     txnouttype whichType;
     BOOST_FOREACH(const CTxOut& txout, tx.vout)
     {
-        if (!::IsStandard(txout.scriptPubKey, whichType)) {
-            reason = "scriptpubkey";
-            fprintf(stderr,"vout.%d nDataout.%d\n",v,nDataOut);
+        if (!::IsStandard(txout.scriptPubKey, whichType))
+        {
+            reason = "scriptpubkeyA";
+            fprintf(stderr,">>>>>>>>>>>>>>> vout.%d nDataout.%d\n",v,nDataOut);
             return false;
         }
         
         if (whichType == TX_NULL_DATA)
+        {
             nDataOut++;
+            fprintf(stderr,"is OP_RETURN\n");
+        }
         else if ((whichType == TX_MULTISIG) && (!fIsBareMultisigStd)) {
             reason = "bare-multisig";
             return false;

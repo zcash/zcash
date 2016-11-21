@@ -143,9 +143,11 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
             else if (opcode2 == OP_SMALLDATA)
             {
                 // small pushdata, <= nMaxDatacarrierBytes
-                fprintf(stderr,"size.%d > nMaxDatacarrier.%d\n",(int32_t)vch1.size(),(int32_t)nMaxDatacarrierBytes);
                 if (vch1.size() > nMaxDatacarrierBytes)
+                {
+                    fprintf(stderr,"size.%d > nMaxDatacarrier.%d\n",(int32_t)vch1.size(),(int32_t)nMaxDatacarrierBytes);
                     break;
+                }
             }
             else if (opcode1 != opcode2 || vch1 != vch2)
             {
@@ -203,7 +205,8 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType)
         if (m < 1 || m > n)
             return false;
     }
-
+    if ( whichtype == TX_NONSTANDARD )
+        fprintf(stderr,"IsStandard nonstandard tx\n");
     return whichType != TX_NONSTANDARD;
 }
 
