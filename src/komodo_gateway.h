@@ -187,7 +187,7 @@ int32_t komodo_pending_withdraws(char *opretstr)
         return(0);
     HASH_ITER(hh,PAX,pax,tmp)
     {
-        printf("pax %s marked.%u approved.%u\n",pax->symbol,pax->marked,pax->approved);
+        //printf("pax %s marked.%u approved.%u\n",pax->symbol,pax->marked,pax->approved);
         if ( pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 )
         {
             // add 'A' opreturn entry
@@ -431,7 +431,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 {
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
                     komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],kmdheights[i],otherheights[i],CURRENCIES[baseids[i]]);
-                } else pax->approved = kmdheights[i];
+                }
+                if ( (pax= komodo_paxfind(&space,txids[i],vouts[i])) != 0 )
+                    pax->approved = kmdheights[i];
             }
         }
     }
