@@ -436,11 +436,13 @@ Value notaries(const Array& params, bool fHelp)
     return ret;
 }
 
-Value withdraws_pending(const Array& params, bool fHelp)
+int32_t komodo_pending_withdraws(char *opretstr);
+
+Value paxpending(const Array& params, bool fHelp)
 {
     Object ret; char opretbuf[10000*2]; int32_t opretlen;
     if ( fHelp || params.size() != 0 )
-        throw runtime_error("withdraws_pending needs no args\n");
+        throw runtime_error("paxpending needs no args\n");
     LOCK(cs_main);
     if ( (opretlen= komodo_pending_withdraws(opretbuf)) > 0 )
         ret.push_back(Pair("withdraws", opretbuf));
