@@ -108,6 +108,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_importkey", 1 },
     { "paxprice", 4 },
     { "paxprices", 3 },
+    { "paxpending", 3 },
     { "notaries", 1 },
 };
 

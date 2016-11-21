@@ -99,7 +99,8 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 errs++;
             if ( fread(&notarized_desttxid,1,sizeof(notarized_desttxid),fp) != sizeof(notarized_desttxid) )
                 errs++;
-            //printf("%s load[%s] NOTARIZED %d %s\n",ASSETCHAINS_SYMBOL,symbol,notarized_height,notarized_hash.ToString().c_str());
+            if ( 0 && sp != 0 )
+                printf("%s %p %p[%d] load[%s] NOTARIZED %d %s\n",ASSETCHAINS_SYMBOL,sp,sp->NPOINTS,sp->NUM_NPOINTS,symbol,notarized_height,notarized_hash.ToString().c_str());
             //if ( matched != 0 ) global independent states -> inside *sp
             komodo_eventadd_notarized(sp,symbol,ht,dest,notarized_hash,notarized_desttxid,notarized_height);
         }
@@ -151,11 +152,13 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             {
                 if ( fread(opret,1,olen,fp) != olen )
                     errs++;
-                //if ( matched != 0 ) global shared state -> global PAX
-                int32_t i;  for (i=0; i<olen; i++)
-                    printf("%02x",opret[i]);
-                printf(" %s load[%s] opret[%c] len.%d %.8f\n",ASSETCHAINS_SYMBOL,symbol,opret[0],olen,(double)ovalue/COIN);
-                komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen);
+                if ( matched != 0 )
+                {
+                    int32_t i;  for (i=0; i<olen; i++)
+                        printf("%02x",opret[i]);
+                    printf(" %s.%d load[%s] opret[%c] len.%d %.8f\n",ASSETCHAINS_SYMBOL,ht,symbol,opret[0],olen,(double)ovalue/COIN);
+                }
+                komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen); // global shared state -> global PAX
             } else printf("illegal olen.%u\n",olen);
         }
         else if ( func == 'D' )
@@ -295,17 +298,19 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         else if ( height != 0 )
         {
             //printf("ht.%d func N ht.%d errs.%d\n",height,NOTARIZED_HEIGHT,errs);
-            fputc('N',fp);
-            if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
-                errs++;
-            if ( fwrite(&sp->NOTARIZED_HEIGHT,1,sizeof(sp->NOTARIZED_HEIGHT),fp) != sizeof(sp->NOTARIZED_HEIGHT) )
-                errs++;
-            if ( fwrite(&sp->NOTARIZED_HASH,1,sizeof(sp->NOTARIZED_HASH),fp) != sizeof(sp->NOTARIZED_HASH) )
-                errs++;
-            if ( fwrite(&sp->NOTARIZED_DESTTXID,1,sizeof(sp->NOTARIZED_DESTTXID),fp) != sizeof(sp->NOTARIZED_DESTTXID) )
-                errs++;
-            komodo_eventadd_notarized(sp,symbol,height,dest,sp->NOTARIZED_HASH,sp->NOTARIZED_DESTTXID,sp->NOTARIZED_HEIGHT);
-            //komodo_notarized_update(height,NOTARIZED_HEIGHT,NOTARIZED_HASH,NOTARIZED_DESTTXID);
+            if ( sp != 0 )
+            {
+                fputc('N',fp);
+                if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
+                    errs++;
+                if ( fwrite(&sp->NOTARIZED_HEIGHT,1,sizeof(sp->NOTARIZED_HEIGHT),fp) != sizeof(sp->NOTARIZED_HEIGHT) )
+                    errs++;
+                if ( fwrite(&sp->NOTARIZED_HASH,1,sizeof(sp->NOTARIZED_HASH),fp) != sizeof(sp->NOTARIZED_HASH) )
+                    errs++;
+                if ( fwrite(&sp->NOTARIZED_DESTTXID,1,sizeof(sp->NOTARIZED_DESTTXID),fp) != sizeof(sp->NOTARIZED_DESTTXID) )
+                    errs++;
+                komodo_eventadd_notarized(sp,symbol,height,dest,sp->NOTARIZED_HASH,sp->NOTARIZED_DESTTXID,sp->NOTARIZED_HEIGHT);
+            }
         }
         fflush(fp);
     }
@@ -452,15 +457,15 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         komodo_stateupdate(pindex->nHeight,0,0,0,zero,0,0,0,0,-pindex->nHeight,pindex->nTime,0,0,0,0);
     }
     komodo_currentheight_set(chainActive.Tip()->nHeight);
-    /*if ( komodo_is_issuer() != 0 )
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
-        while ( KOMODO_REALTIME == 0 || time(NULL) <= KOMODO_REALTIME )
+        while ( KOMODO_PASSPORT_INITDONE == 0 )
         {
-            fprintf(stderr,"komodo_connect.(%s) waiting for realtime RT.%u now.%u\n",ASSETCHAINS_SYMBOL,KOMODO_REALTIME,(uint32_t)time(NULL));
-            sleep(30);
+            fprintf(stderr,"komodo_connect.(%s) waiting for KOMODO_PASSPORT_INITDONE.%u\n",ASSETCHAINS_SYMBOL,KOMODO_PASSPORT_INITDONE);
+            sleep(3);
         }
-    }*/
-    KOMODO_INITDONE = (uint32_t)time(NULL);
+    }
+    //KOMODO_INITDONE = (uint32_t)time(NULL);
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
@@ -545,7 +550,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         if ( pindex->nHeight == hwmheight )
             komodo_stateupdate(height,0,0,0,zero,0,0,0,0,height,(uint32_t)pindex->nTime,0,0,0,0);
     } else printf("komodo_connectblock: unexpected null pindex\n");
-    KOMODO_INITDONE = (uint32_t)time(NULL);
+    //KOMODO_INITDONE = (uint32_t)time(NULL);
 }
 
 

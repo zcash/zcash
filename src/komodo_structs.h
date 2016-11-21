@@ -16,11 +16,11 @@
 #include "uthash.h"
 #include "utlist.h"
 
-#ifdef WIN32
+/*#ifdef WIN32
 #define PACKED
 #else
 #define PACKED __attribute__((packed))
-#endif
+#endif*/
 
 #define GENESIS_NBITS 0x1f00ffff
 #define KOMODO_MINRATIFY 7
@@ -50,7 +50,7 @@ struct komodo_event
     uint8_t type,reorged;
     char symbol[16];
     uint8_t space[];
-} PACKED;
+};
 
 struct pax_transaction
 {
@@ -59,7 +59,7 @@ struct pax_transaction
     uint64_t komodoshis,fiatoshis;
     int32_t marked,height,otherheight,approved;
     uint16_t vout;
-    char symbol[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
+    char symbol[16],source[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
 };
 
 //struct nutxo_entry { UT_hash_handle hh; uint256 txhash; uint64_t voutmask; int32_t notaryid,height; };

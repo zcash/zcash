@@ -436,6 +436,20 @@ Value notaries(const Array& params, bool fHelp)
     return ret;
 }
 
+int32_t komodo_pending_withdraws(char *opretstr);
+
+Value paxpending(const Array& params, bool fHelp)
+{
+    Object ret; char opretbuf[10000*2]; int32_t opretlen;
+    if ( fHelp || params.size() != 0 )
+        throw runtime_error("paxpending needs no args\n");
+    LOCK(cs_main);
+    if ( (opretlen= komodo_pending_withdraws(opretbuf)) > 0 )
+        ret.push_back(Pair("withdraws", opretbuf));
+    else ret.push_back(Pair("withdraws", (char *)""));
+    return ret;
+}
+
 Value paxprice(const Array& params, bool fHelp)
 {
     if ( fHelp || params.size() < 3 || params.size() > 4 )

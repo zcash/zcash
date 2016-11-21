@@ -346,6 +346,45 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     return(retstr2);
 }
 
+uint256 komodo_getblockhash(int32_t height)
+{
+    uint256 hash; char params[128],*hexstr,*jsonstr; cJSON *result; int32_t i; uint8_t revbuf[32];
+    memset(&hash,0,sizeof(hash));
+    sprintf(params,"[%d]",height);
+    if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getblockhash",params,7771)) != 0 )
+    {
+        if ( (result= cJSON_Parse(jsonstr)) != 0 )
+        {
+            if ( (hexstr= jstr(result,(char *)"result")) != 0 )
+            {
+                if ( is_hexstr(hexstr,0) == 64 )
+                {
+                    decode_hex(revbuf,32,hexstr);
+                    for (i=0; i<32; i++)
+                        ((uint8_t *)&hash)[i] = revbuf[31-i];
+                }
+            }
+            free_json(result);
+        }
+        printf("KMD hash.%d (%s) %x\n",height,jsonstr,*(uint32_t *)&hash);
+        free(jsonstr);
+    }
+    return(hash);
+}
+
+uint64_t komodo_seed(int32_t height)
+{
+    uint256 hash; uint64_t seed = 0; CBlockIndex *pindex;
+    memset(&hash,0,sizeof(hash));
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    {
+        if ( (pindex= chainActive[height]) != 0 )
+            hash = pindex->GetBlockHash();
+    } else hash = komodo_getblockhash(height);
+    seed = arith_uint256(hash.GetHex()).GetLow64();
+    return(seed);
+}
+
 uint32_t komodo_txtime(uint256 hash)
 {
     CTransaction tx;
@@ -360,17 +399,6 @@ uint32_t komodo_txtime(uint256 hash)
         return(tx.nLockTime);
     }
     return(0);
-}
-
-uint64_t komodo_seed(int32_t height)
-{
-    uint256 hash; uint64_t seed = 0; CBlockIndex *pindex = chainActive[height];
-    if ( pindex != 0 )
-    {
-        hash = pindex->GetBlockHash();
-        seed = arith_uint256(hash.GetHex()).GetLow64();
-    }
-    return(seed);
 }
 
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
@@ -510,7 +538,10 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
         for (i=1; i<64; i++)
         {
             if ( komodo_minerid(height-i) == notaryid )
+            {
+                //fprintf(stderr,"ht.%d notaryid.%d already mined -i.%d\n",height,notaryid,i);
                 return(-1);
+            }
         }
         return(1);
     }
