@@ -163,17 +163,21 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
 
 uint64_t komodo_paxtotal()
 {
-    struct pax_transaction *pax,*tmp; int32_t ht; uint64_t total = 0;
+    struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; int32_t ht; uint64_t total = 0;
     if ( komodo_isrealtime(&ht) == 0 )
         return(0);
+    komodo_stateptr(symbol,dest);
     HASH_ITER(hh,PAX,pax,tmp)
     {
         //printf("pax.%s marked.%d %.8f -> %.8f\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
-        if ( pax->marked == 0 )
+        if ( strcmp(symbol,pax->symbol) == 0 )
         {
-            if ( komodo_is_issuer() != 0 )
-                total += pax->fiatoshis;
-            else total += pax->komodoshis;
+            if ( pax->marked == 0 )
+            {
+                if ( komodo_is_issuer() != 0 )
+                    total += pax->fiatoshis;
+                else total += pax->komodoshis;
+            }
         }
     }
     //printf("paxtotal %.8f\n",dstr(total));
