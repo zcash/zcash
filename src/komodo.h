@@ -461,14 +461,6 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         komodo_stateupdate(pindex->nHeight,0,0,0,zero,0,0,0,0,-pindex->nHeight,pindex->nTime,0,0,0,0);
     }
     komodo_currentheight_set(chainActive.Tip()->nHeight);
-    /*if ( ASSETCHAINS_SYMBOL[0] != 0 )
-    {
-        while ( KOMODO_PASSPORT_INITDONE == 0 )
-        {
-            fprintf(stderr,"komodo_connect.(%s) waiting for KOMODO_PASSPORT_INITDONE.%u\n",ASSETCHAINS_SYMBOL,KOMODO_PASSPORT_INITDONE);
-            sleep(3);
-        }
-    }*/
     if ( pindex != 0 )
     {
         height = pindex->nHeight;
@@ -490,6 +482,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 }
             }
             numvalid = bitweight(signedmask);
+            printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<< notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
             if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) || bitweight(signedmask) > (numnotaries>>1)) )
             {
                 printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<< notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
