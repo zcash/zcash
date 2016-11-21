@@ -398,9 +398,9 @@ Value notaries(const Array& params, bool fHelp)
     if ( height < 0 )
         height = 0;
     //fprintf(stderr,"notaries as of height.%d\n",height);
-    if ( height > chainActive.Height()+20000 )
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
-    else
+    //if ( height > chainActive.Height()+20000 )
+    //    throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+    //else
     {
         if ( (n= komodo_notaries(pubkeys,height)) > 0 )
         {
