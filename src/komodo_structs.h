@@ -16,11 +16,11 @@
 #include "uthash.h"
 #include "utlist.h"
 
-#ifdef WIN32
+/*#ifdef WIN32
 #define PACKED
 #else
 #define PACKED __attribute__((packed))
-#endif
+#endif*/
 
 #define GENESIS_NBITS 0x1f00ffff
 #define KOMODO_MINRATIFY 7
@@ -50,7 +50,7 @@ struct komodo_event
     uint8_t type,reorged;
     char symbol[16];
     uint8_t space[];
-} PACKED;
+};
 
 struct pax_transaction
 {
