@@ -362,8 +362,8 @@ uint256 komodo_getblockhash(int32_t height)
             }
             free_json(result);
         }
-        printf("KMD hash.%d (%s)\n",height,hexstr);
-        free(hexstr);
+        printf("KMD hash.%d (%s) %x\n",height,jsonstr,*(uint32_t *)&hash);
+        free(jsonstr);
     }
     return(hash);
 }
