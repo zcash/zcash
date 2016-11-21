@@ -79,6 +79,7 @@ public:
     Hash root() const {
         return root(Depth, std::deque<Hash>());
     }
+    Hash last() const;
 
     IncrementalWitness<Depth, Hash> witness() const {
         return IncrementalWitness<Depth, Hash>(*this);
@@ -136,6 +137,12 @@ public:
 
     MerklePath path() const {
         return tree.path(partial_path());
+    }
+
+    // Return the element being witnessed (should be a note
+    // commitment!)
+    Hash element() const {
+        return tree.last();
     }
 
     Hash root() const {

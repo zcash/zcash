@@ -57,6 +57,9 @@ JSDescription JSDescription::Randomized(
     // Randomize the order of the inputs and outputs
     inputMap = {0, 1};
     outputMap = {0, 1};
+
+    assert(gen);
+
     MappedShuffle(inputs.begin(), inputMap.begin(), ZC_NUM_JS_INPUTS, gen);
     MappedShuffle(outputs.begin(), outputMap.begin(), ZC_NUM_JS_OUTPUTS, gen);
 

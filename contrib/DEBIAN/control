@@ -10,7 +10,7 @@ Build-Depends: autoconf, automake, bsdmainutils, build-essential
 Vcs-Git: https://github.com/deepwebcash/deepwebcash.git
 Vcs-Browser: https://github.com/deepwebcash/deepwebcash
 Package: dwcash
-Version: 1.0.1
+Version: 1.0.3
 Architecture: amd64
 Depends: libgomp1
 Description: An implementation of the "Zerocash" protocol.

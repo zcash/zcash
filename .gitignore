@@ -65,6 +65,7 @@ src/qt/test/moc*.cpp
 *.a
 *.pb.cc
 *.pb.h
+.vscode
 
 *.log
 *.trs

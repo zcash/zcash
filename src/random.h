@@ -26,6 +26,11 @@ int GetRandInt(int nMax);
 uint256 GetRandHash();
 
 /**
+ * Identity function for MappedShuffle, so that elements retain their original order.
+ */
+ int GenIdentity(int n);
+
+/**
  * Rearranges the elements in the range [first,first+len) randomly, assuming
  * that gen is a uniform random number generator. Follows the same algorithm as
  * std::shuffle in C++11 (a Durstenfeld shuffle).
