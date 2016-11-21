@@ -486,7 +486,7 @@ void komodo_passport_iteration()
                 if ( ftell(fp) > lastpos[baseid] )
                 {
                     fseek(fp,lastpos[baseid],SEEK_SET);
-                    while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
+                    while ( komodo_parsestatefile(0,fp,symbol,dest) >= 0 )
                         ;
                     lastpos[baseid] = ftell(fp);
                     //printf("from.(%s) lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
