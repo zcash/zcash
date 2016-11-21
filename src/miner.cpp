@@ -657,10 +657,6 @@ void static BitcoinMiner(CWallet *pwallet)
                         cancelSolver = false;
                     }
                     KOMODO_CHOSEN_ONE = 0;
-                    int32_t i; uint256 hash = pblock->GetHash();
-                    for (i=0; i<32; i++)
-                        fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
-                    fprintf(stderr," <- %s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
                     // In regression test mode, stop mining after a block is found.
                     if (chainparams.MineBlocksOnDemand()) {
@@ -714,6 +710,10 @@ void static BitcoinMiner(CWallet *pwallet)
                         bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
                         ehSolverRuns.increment();
                         if (found) {
+                            int32_t i; uint256 hash = pblock->GetHash();
+                            for (i=0; i<32; i++)
+                                fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+                            fprintf(stderr," <- %s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
                             break;
                         }
                     } catch (EhSolverCancelledException&) {
