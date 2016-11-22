@@ -63,7 +63,7 @@ public:
          */
         pchMessageStart[0] = 0xf9;
         pchMessageStart[1] = 0xee;
-        pchMessageStart[2] = 0xe4;
+        pchMessageStart[2] = 0x4e; // pre-79749 0xe4;
         pchMessageStart[3] = 0x8d;
         vAlertPubKey = ParseHex("020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9");
         nDefaultPort = 7770;
