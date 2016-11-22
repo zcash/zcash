@@ -371,6 +371,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
             len += iguana_rwnum(0,&scriptbuf[len],4,(uint8_t *)notarizedheightp);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
+            len += 4;
             if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
             {
                 printf("%s ht.%d NOTARIZED.%d %s.%s %sTXID.%s (%s)\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
@@ -378,7 +379,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 sp->NOTARIZED_HASH = kmdtxid;
                 sp->NOTARIZED_DESTTXID = desttxid;
                 komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0);
-                if ( opretlen > len && scriptbuf[len] == 'A' )
+                if ( opretlen > len )//&& scriptbuf[len] == 'A' )
                 {
                     printf("Found extradata.[%d]\n",opretlen-len);
                     komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen-len,j);
