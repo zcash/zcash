@@ -370,7 +370,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         else if ( opretlen == 0x4d )
         {
             opretlen = scriptbuf[len++];
-            opretlen = (opretlen << 8) + scriptbuf[len++];
+            opretlen += (scriptbuf[len++] << 8);
         }
         if ( j == 1 && opretlen >= 32*2+4 && strcmp(ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+32*2+4]) == 0 )
         {
@@ -492,8 +492,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 }
             }
             numvalid = bitweight(signedmask);
-            //if ( height == 79633 )
-            //    notarized = 1;
+            if ( height == 79633 )
+                notarized = 1;
             if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) || bitweight(signedmask) > (numnotaries>>1)) )
             {
                 printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<< notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
