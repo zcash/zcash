@@ -159,7 +159,12 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                     printf(" %s.%d load[%s] opret[%c] len.%d %.8f\n",ASSETCHAINS_SYMBOL,ht,symbol,opret[0],olen,(double)ovalue/COIN);
                 }
                 komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen); // global shared state -> global PAX
-            } else printf("illegal olen.%u\n",olen);
+            } else
+            {
+                for (i=0; i<olen; i++)
+                    fgetc(fp);
+                printf("illegal olen.%u\n",olen);
+            }
         }
         else if ( func == 'D' )
         {
