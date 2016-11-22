@@ -609,7 +609,7 @@ void static BitcoinMiner(CWallet *pwallet)
             } else Mining_start = 0;
             while (true)
             {
-                //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                     fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
@@ -637,13 +637,13 @@ void static BitcoinMiner(CWallet *pwallet)
                     solutionTargetChecks.increment();
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
                     {
-                        //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                        if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                             fprintf(stderr,"missed target\n");
                         return false;
                     }
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+ROUNDROBIN_DELAY )
                     {
-                        printf("Round robin diff %d\n",(int32_t)(Mining_start+ROUNDROBIN_DELAY-time(NULL)));
+                        //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+ROUNDROBIN_DELAY-time(NULL)));
                         sleep(Mining_start+ROUNDROBIN_DELAY-time(NULL));
                         KOMODO_CHOSEN_ONE = 1;
                     }
