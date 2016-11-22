@@ -128,31 +128,18 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         }
         if ( nonz == 0 )
             return(true); // will come back via different path with pubkey set
-        //if ( height > 60000 )
+        if ( notaryid >= 0 )
         {
-            if ( notaryid >= 0 )
+            special2 = komodo_is_special(height,pubkey33);
+            if ( special2 == -2 )
+                printf("height.%d special2.%d special.%d\n",height,special2,special);
+            if ( special2 == -2 || (height < 80000 && (special != 0 || special2 > 0)) ||
+                (height >= 80000 && special2 > 0) )
             {
-                special2 = komodo_is_special(height,pubkey33);
-                if ( special2 == -2 )
-                    printf("height.%d special2.%d special.%d\n",height,special2,special);
-                if ( special2 == -2 || (height < 80000 && (special != 0 || special2 > 0)) ||
-                    (height >= 80000 && special2 > 0) )
-                {
-                    bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-                    flag = 1;
-                }
-            }
-        }
-        /*else
-        {
-            if ( special > 0 ) // special notary id == (height % numnotaries)
-            {
-                if (UintToArith256(hash) <= bnTarget) // accept normal diff
-                    return true;
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 flag = 1;
             }
-        }*/
+        }
     }
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");
