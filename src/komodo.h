@@ -161,6 +161,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen); // global shared state -> global PAX
             } else
             {
+                int32_t i;
                 for (i=0; i<olen; i++)
                     fgetc(fp);
                 printf("illegal olen.%u\n",olen);
