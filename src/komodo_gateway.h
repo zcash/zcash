@@ -369,12 +369,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     memset(kmdheights,0,sizeof(kmdheights));
     memset(otherheights,0,sizeof(otherheights));
     tokomodo = (komodo_is_issuer() == 0);
-    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-    {
-        for (i=0; i<opretlen; i++)
-            printf("%02x",opretbuf[i]);
-        printf(" opret[%c] else path tokomodo.%d ht.%d\n",opretbuf[0],tokomodo,height);
-    }
     if ( opretbuf[0] == 'D' )
     {
         if ( opretlen == 38 ) // any KMD tx
@@ -427,6 +421,12 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else if ( tokomodo != 0 && opretbuf[0] == 'A' )
     {
+        //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+        {
+            for (i=0; i<opretlen; i++)
+                printf("%02x",opretbuf[i]);
+            printf(" opret[%c] else path tokomodo.%d ht.%d\n",opretbuf[0],tokomodo,height);
+        }
         printf("extra 'A' opret[%d]\n",opretlen);
         if ( (n= komodo_issued_opreturn(base,txids,vouts,values,kmdheights,otherheights,baseids,rmd160s,opretbuf,opretlen,1)) > 0 )
         {
