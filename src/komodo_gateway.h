@@ -528,6 +528,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             }
         }
     }
+    else if ( opretbuf[0] == 'X' )
+    {
+        printf("got X opreturn\n");
+    }
     return(typestr);
 }
 
