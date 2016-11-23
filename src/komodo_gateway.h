@@ -371,7 +371,6 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     {
         if ( (num= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,&script[offset],opretlen,opcode == 'X')) > 0 )
         {
-            printf("komodo_check_deposit opcode.%c num.%d n.%d\n",opcode,num,n);
             for (i=1; i<n-1; i++)
             {
                 if ( (pax= komodo_paxfind(txids[i-1],vouts[i-1])) != 0 )
@@ -381,7 +380,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         if ( pax->marked != 0 )
                             errs++;
                         else matched++;
-                        if ( opcode == 'X' )
+                        if ( 0 && opcode == 'X' )
                             printf("errs.%d i.%d match %.8f == %.8f pax.%p\n",errs,i,dstr(pax != 0 ? pax->komodoshis:-1),dstr(block.vtx[0].vout[i].nValue),pax);
                         //komodo_paxmark(height,txids[i-1],vouts[i-1],height);
                         //if ( pax->marked == 0 )
@@ -394,7 +393,6 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                             for (j=0; j<32; j++)
                                 printf("%02x",((uint8_t *)&txids[i-1])[j]);
                             printf(" cant paxfind X txid\n");
-                            // validate amount! via fiat chain
                         }
                     }
                 }
