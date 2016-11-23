@@ -106,17 +106,36 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
 int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transaction *pax)
 {
     int32_t i,len = 0;
-    for (i=0; i<32; i++)
-        opretbuf[len++] = ((uint8_t *)&pax->txid)[i];
-    opretbuf[len++] = pax->vout & 0xff;
-    opretbuf[len++] = (pax->vout >> 8) & 0xff;
-    len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->fiatoshis),&pax->komodoshis);
-    len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->fiatoshis),&pax->fiatoshis);
-    len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->height),&pax->height);
-    len += iguana_rwnum(1,&opretbuf[len],sizeof(pax->otherheight),&pax->otherheight);
-    memcpy(&opretbuf[len],pax->rmd160,20), len += 20;
-    for (i=0; i<4; i++)
-        opretbuf[len++] = pax->source[i];
+    if ( rwflag == 1 )
+    {
+        for (i=0; i<32; i++)
+            opretbuf[len++] = ((uint8_t *)&pax->txid)[i];
+        opretbuf[len++] = pax->vout & 0xff;
+        opretbuf[len++] = (pax->vout >> 8) & 0xff;
+    }
+    else
+    {
+        for (i=0; i<32; i++)
+            ((uint8_t *)&pax->txid)[i] = opretbuf[len++];
+        pax->vout = opretbuf[len++];
+        pax->vout += ((uint32_t)opretbuf[len++] << 8);
+    }
+    len += iguana_rwnum(rwflag,&opretbuf[len],sizeof(pax->fiatoshis),&pax->komodoshis);
+    len += iguana_rwnum(rwflag,&opretbuf[len],sizeof(pax->fiatoshis),&pax->fiatoshis);
+    len += iguana_rwnum(rwflag,&opretbuf[len],sizeof(pax->height),&pax->height);
+    len += iguana_rwnum(rwflag,&opretbuf[len],sizeof(pax->otherheight),&pax->otherheight);
+    if ( rwflag != 0 )
+    {
+        memcpy(&opretbuf[len],pax->rmd160,20), len += 20;
+        for (i=0; i<4; i++)
+            opretbuf[len++] = pax->source[i];
+    }
+    else
+    {
+        memcpy(pax->rmd160,&opretbuf[len],20), len += 20;
+        for (i=0; i<4; i++)
+            pax->source[i] = opretbuf[len++];
+    }
     return(len);
 }
 
