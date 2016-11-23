@@ -474,7 +474,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 }
             }
         }
-        printf("extra.[%d] after %.8f\n",n,dstr(komodo_paxtotal());
+        printf("extra.[%d] after %.8f\n",n,dstr(komodo_paxtotal()));
     }
     else if ( tokomodo == 0 && opretbuf[0] == 'I' )
     {
