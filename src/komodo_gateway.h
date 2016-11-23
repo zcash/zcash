@@ -139,7 +139,7 @@ int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transactio
         memcpy(pax->rmd160,&opretbuf[len],20), len += 20;
         for (i=0; i<4; i++)
             pax->source[i] = opretbuf[len++];
-        printf("%02x %02x %02x %02x\n",source[0],source[1],source[2],source[3]);
+        printf("%02x %02x %02x %02x\n",pax->source[0],pax->source[1],pax->source[2],pax->source[3]);
     }
     return(len);
 }
