@@ -382,12 +382,13 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                             errs++;
                         else matched++;
                         if ( opcode == 'X' )
-                            printf("errs.%d i.%d match %.8f == %.8f\n",errs,i,dstr(pax != 0 ? pax->fiatoshis:-1),dstr(block.vtx[0].vout[i].nValue));
-                        komodo_paxmark(height,txids[i-1],vouts[i-1],height);
+                            printf("errs.%d i.%d match %.8f == %.8f pax.%p\n",errs,i,dstr(pax != 0 ? pax->komodoshis:-1),dstr(block.vtx[0].vout[i].nValue),pax);
+                        //komodo_paxmark(height,txids[i-1],vouts[i-1],height);
+                        //if ( pax->marked == 0 )
+                        //    printf("unexpected unmarked %p\n",pax);
                     }
                     else
                     {
-                        hash = block.GetHash();
                         if ( opcode == 'X' )
                         {
                             for (j=0; j<32; j++)
@@ -401,7 +402,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 {
                     if  ( opcode == 'X' )
                     {
-                        
+                        hash = block.GetHash();
                         for (j=0; j<32; j++)
                             printf("%02x",((uint8_t *)&hash)[j]);
                         printf(" ht.%d blockhash X couldnt find vout.[%d]\n",height,i);
