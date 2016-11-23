@@ -533,7 +533,11 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height)
 {
     int32_t i,n=0;
     for (i=0; i<1000; i++,n++)
+    {
+        if ( height-i <= 0 )
+            break;
         minerids[i] = komodo_minerid(height - i);
+    }
     return(n);
 }
 

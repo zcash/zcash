@@ -395,6 +395,9 @@ Value minerids(const Array& params, bool fHelp)
     if ( fHelp || params.size() != 1 )
         throw runtime_error("minerids needs height\n");
     LOCK(cs_main);
+    int32_t height = atoi(params[0].get_str().c_str());
+    if ( height < 0 )
+        height = 0;
     if ( (n= komodo_minerids(minerids,height)) > 0 && n <= 64 )
     {
         memset(tally,0,sizeof(tally));
