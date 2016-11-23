@@ -144,7 +144,11 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                     memcpy(&rmd160s[n * 20],p.rmd160,20);
                     baseids[n] = komodo_baseid(p.symbol);
                 }
-                printf(">>>>>>> iskomodo X: (%s) fiat %.8f kmdheight.%d other.%d\n",symbol,dstr(fiatoshis),height,otherheight);
+                {
+                    char coinaddr[64];
+                    bitcoin_address(coinaddr,60,p.rmd160,20);
+                    printf(">>>>>>> approved A: (%s) fiat %.8f kmdheight.%d other.%d -> %s %.8f\n",baseids[n]>=0?CURRENCIES[baseids[n]]:"???",dstr(p.fiatoshis),p.height,p.otherheight,coinaddr,dstr(p.komodoshis));
+                }
             }
             else
             {

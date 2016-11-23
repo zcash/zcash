@@ -99,7 +99,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 }
 
 #define ASSETCHAINS_MINHEIGHT 100
-#define ROUNDROBIN_DELAY 77
+#define ROUNDROBIN_DELAY 59
 extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE;
 extern char ASSETCHAINS_SYMBOL[16];
 extern std::string NOTARY_PUBKEY;
@@ -644,7 +644,10 @@ void static BitcoinMiner(CWallet *pwallet)
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+ROUNDROBIN_DELAY )
                     {
                         //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+ROUNDROBIN_DELAY-time(NULL)));
-                        sleep(Mining_start+ROUNDROBIN_DELAY-time(NULL));
+                        int32_t nseconds = Mining_start+ROUNDROBIN_DELAY-time(NULL);
+                        if ( nseconds > 0 )
+                            sleep(nseconds);
+                        MilliSleep((rand() % 2000) + 1);
                         KOMODO_CHOSEN_ONE = 1;
                     }
                     // Found a solution
