@@ -398,7 +398,7 @@ Value minerids(const Array& params, bool fHelp)
     int32_t height = atoi(params[0].get_str().c_str());
     if ( height <= 0 )
         height = chainActive.Tip()->nHeight;
-    if ( (n= komodo_minerids(minerids,height)) > 0 && n <= 64 )
+    if ( (n= komodo_minerids(minerids,height)) > 0 )
     {
         memset(tally,0,sizeof(tally));
         numnotaries = komodo_notaries(pubkeys,height);
