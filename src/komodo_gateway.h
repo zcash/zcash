@@ -162,6 +162,8 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                 len += komodo_rwapproval(0,&opretbuf[len],&p);
                 if ( values != 0 && kmdheights != 0 && otherheights != 0 && baseids != 0 && rmd160s != 0 )
                 {
+                    txids[n] = p.txid;
+                    vouts[n] = p.vout;
                     values[n] = (ASSETCHAINS_SYMBOL[0] == 0) ? p.komodoshis : p.fiatoshis;
                     kmdheights[n] = p.height;
                     otherheights[n] = p.otherheight;
@@ -170,7 +172,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                     {
                         char coinaddr[64];
                         bitcoin_address(coinaddr,60,&rmd160s[n * 20],20);
-                        printf(">>>>>>> approved A: (%s) fiat %.8f kmdheight.%d other.%d -> %s %.8f\n",baseids[n]>=0?CURRENCIES[baseids[n]]:"???",dstr(p.komodoshis),kmdheights[n],otherheights[n],coinaddr,dstr(values[n]));
+                        printf(">>>>>>> approved A: (%s) fiat %.8f kmdheight.%d other.%d -> %s %.8f\n",baseids[n]>=0?CURRENCIES[baseids[n]]:"???",dstr(p.fiatoshis),kmdheights[n],otherheights[n],coinaddr,dstr(values[n]));
                     }
                 }
             }
