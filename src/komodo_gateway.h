@@ -214,9 +214,9 @@ uint64_t komodo_paxtotal()
                     else
                     {
                         seed = 0;
-                        checktoshis = komodo_paxprice(&seed,pax->height,pax->source,(char *)"KMD",(uint64_t)pax->fiatvalue);
+                        checktoshis = komodo_paxprice(&seed,pax->height,pax->source,(char *)"KMD",(uint64_t)pax->fiatoshis);
                         printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f vs %.8f\n",pax->height,pax->symbol,(double)pax->fiatoshis/COIN,(double)pax->komodoshis/COIN,(double)checktoshis/COIN);
-                        printf(" v%d %.8f k.%d ht.%d base.%d\n",pax->vout,dstr(pax->komodoshis),pax->height,pax->otherheight,pax->symbol);
+                        printf(" v%d %.8f k.%d ht.%d\n",pax->vout,dstr(pax->komodoshis),pax->height,pax->otherheight);
                         if ( seed != 0 )
                         {
                             if ( checktoshis == pax->komodoshis )
@@ -273,7 +273,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     HASH_ITER(hh,PAX,pax,tmp)
     {
         //printf("pax.%s marked.%d %.8f -> %.8f\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
-        if ( strcmp(symbol,"KMD") == 0 && (pax->approved == 0 || pax->validated == 0 )
+        if ( strcmp(symbol,"KMD") == 0 && (pax->approved == 0 || pax->validated == 0) )
             continue;
         if ( pax->marked != 0 || strcmp(pax->symbol,symbol) != 0 )
             continue;
