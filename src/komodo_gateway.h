@@ -254,6 +254,7 @@ int32_t komodo_pending_withdraws(char *opretstr)
     if ( len > 0 )
         init_hexbytes_noT(opretstr,opretbuf,len);
     else opretstr[0] = 0;
+    printf("PAXTOTAL %.8f\n",dstr(komodo_paxtotal()));
     return(len);
 }
 
