@@ -462,17 +462,17 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         {
             for (i=0; i<n; i++)
             {
+                for (j=0; j<32; j++)
+                    printf("%02x",((uint8_t *)&txids[i])[j]);
                 if ( (pax= komodo_paxfind(txids[i],vouts[i])) == 0 && baseids[i] >= 0 )
                 {
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
                     komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],kmdheights[i],otherheights[i],CURRENCIES[baseids[i]],kmdheights[i]);
-                    printf("i.%d (%s) <- %.8f\n",i,coinaddr,dstr(values[i]));
-                } else printf("i.%d of n.%d pax.%p baseids[] %d\n",i,n,pax,baseids[i]);
+                    printf(" i.%d (%s) <- %.8f\n",i,coinaddr,dstr(values[i]));
+                } else printf(" i.%d of n.%d pax.%p baseids[] %d\n",i,n,pax,baseids[i]);
                 if ( (pax= komodo_paxfind(txids[i],vouts[i])) != 0 )
                 {
                     pax->approved = kmdheights[i];
-                    for (j=0; j<32; i++)
-                        printf("%02x",((uint8_t *)&txids[i])[j]);
                     printf(" i.%d approved.%d <<<<<<<<<<<<< APPROVED %p\n",i,kmdheights[i],pax);
                 }
             }
