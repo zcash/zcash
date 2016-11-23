@@ -147,6 +147,7 @@ int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transactio
 int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t *values,int64_t *srcvalues,int32_t *kmdheights,int32_t *otherheights,int8_t *baseids,uint8_t *rmd160s,uint8_t *opretbuf,int32_t opretlen,int32_t iskomodo)
 {
     struct pax_transaction p; int32_t i,n=0,j,len=0,incr,height,otherheight; uint8_t rmd160[20]; uint64_t fiatoshis; char symbol[16];
+    incr = 34 + (iskomodo * (2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4));
     for (i=0; i<4; i++)
         base[i] = opretbuf[opretlen-4+i];
     for (i=0; i<opretlen; i++)
@@ -155,7 +156,6 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
     if ( ASSETCHAINS_SYMBOL[0] == 0 || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
     {
         opretbuf++, opretlen--;
-        incr = 34 + (iskomodo * (2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4));
         for (n=0; n<opretlen/incr; n++)
         {
             printf(" komodo_issued_opreturn issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
@@ -293,15 +293,17 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         memcpy(script,pax->rmd160,20), script += 20;
         *script++ = 0x88;
         *script++ = 0xac;
-        for (i=0; i<32; i++)
-        {
-            //printf("%02x",((uint8_t *)&pax->txid)[i]);
-            data[len++] = ((uint8_t *)&pax->txid)[i];
-        }
-        data[len++] = pax->vout & 0xff;
-        data[len++] = (pax->vout >> 8) & 0xff;
         if ( tokomodo == 0 )
+        {
+            for (i=0; i<32; i++)
+            {
+                //printf("%02x",((uint8_t *)&pax->txid)[i]);
+                data[len++] = ((uint8_t *)&pax->txid)[i];
+            }
+            data[len++] = pax->vout & 0xff;
+            data[len++] = (pax->vout >> 8) & 0xff;
             PENDING_KOMODO_TX += pax->fiatoshis;
+        }
         else
         {
             //[{"prev_hash":"5d5c9a49489b558de9e84f991f996dedaae6b9d0f157f82b2fec64662476d5cf","prev_vout":2,"EUR":0.10000000,"fiat":"EUR","kmdheight":57930,"height":153,"KMD":0.78329000,"address":"RDhEGYScNQYetCyG75Kf8Fg61UWPdwc1C5","rmd160":"306c507eea639e7220b3069ed9f49f3bc97eaca1"}]
