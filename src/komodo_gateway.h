@@ -118,7 +118,7 @@ int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transactio
         for (i=0; i<32; i++)
         {
             ((uint8_t *)&pax->txid)[i] = opretbuf[len++];
-            printf("%02x ",((uint8_t *)&pax->txid)[i]);
+            printf("%02x",((uint8_t *)&pax->txid)[i]);
         }
         pax->vout = opretbuf[len++];
         pax->vout += ((uint32_t)opretbuf[len++] << 8);
@@ -139,7 +139,7 @@ int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transactio
         memcpy(pax->rmd160,&opretbuf[len],20), len += 20;
         for (i=0; i<4; i++)
             pax->source[i] = opretbuf[len++];
-        printf("%02x %02x %02x %02x\n",pax->source[0],pax->source[1],pax->source[2],pax->source[3]);
+        printf("%02x %02x %02x %02x %s\n",pax->source[0],pax->source[1],pax->source[2],pax->source[3],pax->source);
     }
     return(len);
 }
@@ -166,7 +166,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                     kmdheights[n] = p.height;
                     otherheights[n] = p.otherheight;
                     memcpy(&rmd160s[n * 20],p.rmd160,20);
-                    baseids[n] = komodo_baseid(p.symbol);
+                    baseids[n] = komodo_baseid(p.source);
                 }
                 {
                     char coinaddr[64];
