@@ -17,9 +17,8 @@
 #define H_KOMODO_H
 
 // Todo:
-// 1. error check fiat redeem amounts
-// 2. net balance limiter
-// 3. verify: reorgs
+// 1. net balance limiter
+// 2. verify: reorgs
 
 // non komodod (non-hardfork) todo:
 // a. automate notarization fee payouts
