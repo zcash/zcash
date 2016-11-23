@@ -23,6 +23,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         self.is_network_split=False
         self.sync_all()
 
+    # Returns txid if operation was a success or None
     def wait_and_assert_operationid_status(self, myopid, in_status='success', in_errormsg=None):
         print('waiting for async operation {}'.format(myopid))
         opids = []
@@ -30,6 +31,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         timeout = 120
         status = None
         errormsg = None
+        txid = None
         for x in xrange(1, timeout):
             results = self.nodes[0].z_getoperationresult(opids)
             if len(results)==0:
@@ -38,6 +40,8 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
                 status = results[0]["status"]
                 if status == "failed":
                     errormsg = results[0]['error']['message']
+                elif status == "success":
+                    txid = results[0]['result']['txid']
                 break
         print('...returned status: {}'.format(status))
         assert_equal(in_status, status)
@@ -45,6 +49,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
             assert(in_errormsg is not None)
             assert_equal(in_errormsg in errormsg, True)
             print('...returned error: {}'.format(errormsg))
+        return txid
 
     def run_test (self):
         print "Mining blocks..."
@@ -116,8 +121,14 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":mytaddr, "amount":Decimal('10.0')})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
-        self.wait_and_assert_operationid_status(myopid)
+        mytxid = self.wait_and_assert_operationid_status(myopid)
+        assert(mytxid is not None)
         self.sync_all()
+
+        # check that priority of the tx sending from a zaddr is not 0
+        mempool = self.nodes[0].getrawmempool(True)
+        assert(Decimal(mempool[mytxid]['startingpriority']) >= Decimal('1000000000000'))
+
         self.nodes[1].generate(1)
         self.sync_all()
 

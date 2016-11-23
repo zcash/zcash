@@ -6,6 +6,7 @@
 
 #include "memusage.h"
 #include "random.h"
+#include "version.h"
 
 #include <assert.h>
 
@@ -433,6 +434,7 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
 {
     if (tx.IsCoinBase())
         return 0.0;
+    CAmount nTotalIn = 0;
     double dResult = 0.0;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
@@ -441,8 +443,34 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
         if (!coins->IsAvailable(txin.prevout.n)) continue;
         if (coins->nHeight < nHeight) {
             dResult += coins->vout[txin.prevout.n].nValue * (nHeight-coins->nHeight);
+            nTotalIn += coins->vout[txin.prevout.n].nValue;
         }
     }
+
+    // If a transaction contains a joinsplit, we boost the priority of the transaction.
+    // Joinsplits do not reveal any information about the value or age of a note, so we
+    // cannot apply the priority algorithm used for transparent utxos.  Instead, we pick a
+    // very large number and multiply it by the transaction's fee per 1000 bytes of data.
+    // One trillion, 1000000000000, is equivalent to 1 ZEC utxo * 10000 blocks (~17 days).
+    if (tx.vjoinsplit.size() > 0) {
+        unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+        nTotalIn += tx.GetJoinSplitValueIn();
+        CAmount fee = nTotalIn - tx.GetValueOut();
+        CFeeRate feeRate(fee, nTxSize);
+        CAmount feePerK = feeRate.GetFeePerK();
+
+        if (feePerK == 0) {
+            feePerK = 1;
+        }
+
+        dResult += 1000000000000 * double(feePerK);
+        // We cast feePerK from int64_t to double because if feePerK is a large number, say
+        // close to MAX_MONEY, the multiplication operation will result in an integer overflow.
+        // The variable dResult should never overflow since a 64-bit double in C++ is typically
+        // a double-precision floating-point number as specified by IEE 754, with a maximum
+        // value DBL_MAX of 1.79769e+308.
+    }
+
     return tx.ComputePriority(dResult);
 }
 
