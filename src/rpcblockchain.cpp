@@ -421,10 +421,11 @@ Value minerids(const Array& params, bool fHelp)
                 item.push_back(Pair("blocks", tally[i]));
                 a.push_back(item);
             }
+            Object item; 
+            item.push_back(Pair("pubkey", (char *)"external miners"));
+            item.push_back(Pair("blocks", tally[64]));
+            a.push_back(item);
         }
-        item.push_back(Pair("pubkey", (char *)"external miner"));
-        item.push_back(Pair("blocks", tally[64]));
-        a.push_back(item);
         ret.push_back(Pair("mined", a));
     } else ret.push_back(Pair("error", (char *)"couldnt extract minerids"));
     return ret;
