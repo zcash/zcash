@@ -3,6 +3,7 @@
 
 #include "consensus/validation.h"
 #include "main.h"
+#include "zcash/Proof.hpp"
 
 class MockCValidationState : public CValidationState {
 public:
@@ -22,12 +23,14 @@ public:
 };
 
 TEST(CheckBlock, VersionTooLow) {
+    auto verifier = libzcash::ProofVerifier::Strict();
+
     CBlock block;
     block.nVersion = 1;
 
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "version-too-low", false)).Times(1);
-    EXPECT_FALSE(CheckBlock(block, state, false, false));
+    EXPECT_FALSE(CheckBlock(block, state, verifier, false, false));
 }
 
 TEST(ContextualCheckBlock, BadCoinbaseHeight) {
