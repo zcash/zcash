@@ -1431,7 +1431,7 @@ char *iguanafmtstr = (char *)"curl --url \"http://127.0.0.1:7778\" --data \"{\\\
 
 int32_t komodo_whoami(char *pubkeystr,int32_t height)
 {
-    int32_t i,notaryid; uint8_t
+    int32_t i,notaryid; 
     for (i=0; i<33; i++)
         sprintf(&pubkeystr[i<<1],NOTARY_PUBKEY33[i]);
     pubkeystr[66] = 0;
