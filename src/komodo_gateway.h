@@ -530,7 +530,16 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else if ( opretbuf[0] == 'X' )
     {
-        printf("got X opreturn\n");
+        printf("got X opreturn height.%d\n",height);
+        if ( (n= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,opretbuf,opretlen,1)) > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
+                if ( komodo_paxmark(height,txids[i],vouts[i],height) == 0 && baseids[i] >= 0 )
+                    komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,(char *)"KMD",0);
+            }
+        }
     }
     return(typestr);
 }
