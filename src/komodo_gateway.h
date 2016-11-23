@@ -155,7 +155,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
         incr = 34 + (iskomodo * (2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4));
         for (n=0; n<opretlen/incr; n++)
         {
-            //printf(" komodo_issued_opreturn issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
+            printf(" komodo_issued_opreturn issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
             if ( iskomodo != 0 )
             {
                 memset(&p,0,sizeof(p));
@@ -540,7 +540,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 if ( komodo_paxmark(height,txids[i],vouts[i],height) == 0 )
                     komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,(char *)"KMD",0);
             }
-        }
+        } else printf("komodo_issued_opreturn returned %d\n",n);
     }
     return(typestr);
 }
