@@ -377,7 +377,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 {
                     if ( ((opcode == 'I' && pax->fiatoshis == block.vtx[0].vout[i].nValue) || (opcode == 'X' && pax->komodoshis == block.vtx[0].vout[i].nValue)) )
                     {
-                        if ( pax->marked != 0 )
+                        if ( pax->marked != 0 && height >= 80820 )
                             errs++;
                         else matched++;
                         if ( 0 && opcode == 'X' )
