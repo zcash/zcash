@@ -23,7 +23,7 @@
 #endif*/
 
 #define GENESIS_NBITS 0x1f00ffff
-#define KOMODO_MINRATIFY 7
+#define KOMODO_MINRATIFY ((height < 90000) ? 7 : 13)
 #define KOMODO_MAXBLOCKS 5000000
 
 #define KOMODO_EVENT_RATIFY 'P'

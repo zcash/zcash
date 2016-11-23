@@ -388,8 +388,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     printf("%s ht.%d NOTARIZED.%d %s.%s %sTXID.%s (%s) lens.(%d %d)\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),(char *)&scriptbuf[len],opretlen,len);
                 if ( ASSETCHAINS[0] == 0 && opretlen > len && scriptbuf[len] == 'A' )
                 {
-                    if ( )
-                        printf("Found extradata.[%d] %d - %d\n",opretlen-len,opretlen,len);
+                    printf("Found extradata.[%d] %d - %d\n",opretlen-len,opretlen,len);
                     komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen-len,j);
                 }
             } else printf("notarized.%d %llx reject ht.%d NOTARIZED.%d %s.%s DESTTXID.%s (%s)\n",notarized,(long long)signedmask,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
@@ -419,12 +418,12 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
     return(notaryid);
 }
 
-int32_t komodo_isratify(int32_t isspecial,int32_t numvalid)
+/*int32_t komodo_isratify(int32_t isspecial,int32_t numvalid)
 {
     if ( isspecial != 0 && numvalid >= KOMODO_MINRATIFY )
         return(1);
     else return(0);
-}
+}*/
 
 // Special tx have vout[0] -> CRYPTO777
 // with more than KOMODO_MINRATIFY pay2pubkey outputs -> ratify
@@ -496,7 +495,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             numvalid = bitweight(signedmask);
             if ( height == 79633 )
                 notarized = 1;
-            if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) || bitweight(signedmask) > (numnotaries>>1)) )
+            if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) || numvalid > (numnotaries>>1)) )
             {
                 printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<< notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
                 notarized = 1;
