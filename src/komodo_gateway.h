@@ -230,6 +230,7 @@ int32_t komodo_pending_withdraws(char *opretstr)
             if ( len == 0 )
                 opretbuf[len++] = 'A';
             len += komodo_rwapproval(1,&opretbuf[len],pax);
+            printf("%s.(marked.%u approved.%d) %p\n",pax->source,pax->marked,pax->approved,pax);
         }
     }
     if ( len > 0 )
@@ -473,7 +474,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 if ( (pax= komodo_paxfind(&space,txids[i],vouts[i])) != 0 )
                 {
                     pax->approved = kmdheights[i];
-                    printf("i.%d approved.%d\n",i,kmdheights[i]);
+                    printf("i.%d approved.%d <<<<<<<<<<<<< APPROVED %p\n",i,kmdheights[i],pax);
                 }
             }
         }
