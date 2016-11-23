@@ -391,7 +391,7 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height);
 
 Value minerids(const Array& params, bool fHelp)
 {
-    Object ret; Array a; uint8_t minerids[1000],pubkeys[64][33]; int32_t i,j,n,tally[65];
+    Object ret; Array a; uint8_t minerids[1000],pubkeys[64][33]; int32_t i,j,n,numnotaries,tally[65];
     if ( fHelp || params.size() != 1 )
         throw runtime_error("minerids needs height\n");
     LOCK(cs_main);
@@ -401,14 +401,15 @@ Value minerids(const Array& params, bool fHelp)
     if ( (n= komodo_minerids(minerids,height)) > 0 && n <= 64 )
     {
         memset(tally,0,sizeof(tally));
-        for (i=0; i<n; i++)
+        numnotaries = komodo_notaries(pubkeys,height);
+        if ( numnotaries > 0 )
         {
-            if ( minerids[i] >= 64 )
-                tally[64]++;
-            else tally[minerids[i]]++;
-        }
-        if ( (n= komodo_notaries(pubkeys,height)) > 0 )
-        {
+            for (i=0; i<n; i++)
+            {
+                if ( minerids[i] >= numnotaries )
+                    tally[64]++;
+                else tally[minerids[i]]++;
+            }
             for (i=0; i<64; i++)
             {
                 Object item; std::string hex; char *hexstr;
@@ -421,6 +422,9 @@ Value minerids(const Array& params, bool fHelp)
                 a.push_back(item);
             }
         }
+        item.push_back(Pair("pubkey", (char *)"external miner"));
+        item.push_back(Pair("blocks", tally[64]));
+        a.push_back(item);
         ret.push_back(Pair("mined", a));
     } else ret.push_back(Pair("error", (char *)"couldnt extract minerids"));
     return ret;
