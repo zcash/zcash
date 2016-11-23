@@ -417,6 +417,7 @@ Value minerids(const Array& params, bool fHelp)
                 hexstr = (char *)hex.data();
                 for (j=0; j<33; j++)
                     sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
+                item.push_back(Pair("notaryid", i));
                 item.push_back(Pair("pubkey", hex));
                 item.push_back(Pair("blocks", tally[i]));
                 a.push_back(item);
