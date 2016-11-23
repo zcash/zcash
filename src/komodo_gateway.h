@@ -219,7 +219,7 @@ uint64_t komodo_paxtotal()
                         printf(" v%d %.8f k.%d ht.%d\n",pax->vout,dstr(pax->komodoshis),pax->height,pax->otherheight);
                         if ( seed != 0 )
                         {
-                            if ( checktoshis == pax->komodoshis )
+                            if ( checktoshis >= pax->komodoshis )
                             {
                                 total += pax->komodoshis;
                                 pax->validated = pax->komodoshis;
