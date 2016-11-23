@@ -1433,7 +1433,7 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height)
 {
     int32_t i,notaryid; 
     for (i=0; i<33; i++)
-        sprintf(&pubkeystr[i<<1],NOTARY_PUBKEY33[i]);
+        sprintf(&pubkeystr[i<<1],"%02x",NOTARY_PUBKEY33[i]);
     pubkeystr[66] = 0;
     komodo_chosennotary(&notaryid,height,NOTARY_PUBKEY33);
     return(notaryid);
