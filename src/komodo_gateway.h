@@ -151,7 +151,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
         base[i] = opretbuf[opretlen-4+i];
     for (i=0; i<opretlen; i++)
         printf("%02x",opretbuf[i]);
-    printf(" opretlen.%d vs %d\n",opretlen,(int32_t)(2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4));
+    printf(" opretlen.%d vs %d incr.%d\n",opretlen,(int32_t)(2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4),incr);
     if ( ASSETCHAINS_SYMBOL[0] == 0 || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
     {
         opretbuf++, opretlen--;
@@ -257,7 +257,7 @@ int32_t komodo_pending_withdraws(char *opretstr)
     if ( len > 0 )
         init_hexbytes_noT(opretstr,opretbuf,len);
     else opretstr[0] = 0;
-    printf("PAXTOTAL %.8f\n",dstr(komodo_paxtotal()));
+    printf("komodo_pending_withdraws len.%d PAXTOTAL %.8f\n",len,dstr(komodo_paxtotal()));
     return(len);
 }
 
