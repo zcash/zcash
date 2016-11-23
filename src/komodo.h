@@ -392,7 +392,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     if ( signedfp == 0 )
                     {
                         char fname[512];
-                        komodo_statefname(fname,"","signedmasks");
+                        komodo_statefname(fname,"",(char *)"signedmasks");
                         if ( (signedfp= fopen(fname,"rb+")) == 0 )
                             signedfp = fopen(fname,"wb");
                         else fseek(signedfp,0,SEEK_END);
