@@ -529,6 +529,14 @@ int8_t komodo_minerid(int32_t height)
     return(-1);
 }
 
+int32_t komodo_minerids(uint8_t *minerids,int32_t height)
+{
+    int32_t i,n=0;
+    for (i=0; i<1000; i++,n++)
+        minerids[i] = komodo_minerid(height - i);
+    return(n);
+}
+
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
 {
     int32_t i,notaryid,minerid,limit;

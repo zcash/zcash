@@ -110,6 +110,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "paxprices", 3 },
     { "paxpending", 3 },
     { "notaries", 1 },
+    { "minerids", 1 },
 };
 
 class CRPCConvertTable
