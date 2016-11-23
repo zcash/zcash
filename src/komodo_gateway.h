@@ -393,7 +393,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 {
                     if  ( opcode == 'X' )
                     {
-                        matched++;
+                        //matched++;
                         for (j=0; j<32; j++)
                             printf("%02x",((uint8_t *)&txids[i-1])[j]);
                         printf(" cant paxfind X txid\n");
@@ -405,8 +405,11 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             if ( matched != num )
             {
                 // can easily happen depending on order of loading
-                if ( height > 60000 )
-                    printf("WARNING: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
+                if ( height > 60000 && opcode == 'X' )
+                {
+                    printf("REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
+                    return(-1);
+                }
             }
         }
         //printf("opretlen.%d num.%d\n",opretlen,num);
@@ -477,7 +480,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else if ( tokomodo != 0 && opretbuf[0] == 'A' )
     {
-        if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
         {
             for (i=0; i<opretlen; i++)
                 printf("%02x",opretbuf[i]);
