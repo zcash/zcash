@@ -305,12 +305,13 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         else
         {
             //[{"prev_hash":"5d5c9a49489b558de9e84f991f996dedaae6b9d0f157f82b2fec64662476d5cf","prev_vout":2,"EUR":0.10000000,"fiat":"EUR","kmdheight":57930,"height":153,"KMD":0.78329000,"address":"RDhEGYScNQYetCyG75Kf8Fg61UWPdwc1C5","rmd160":"306c507eea639e7220b3069ed9f49f3bc97eaca1"}]
-            len += iguana_rwnum(1,&data[len],sizeof(pax->fiatoshis),&pax->fiatoshis);
+            len += komodo_rwapproval(1,&data[len],pax);
+            /*len += iguana_rwnum(1,&data[len],sizeof(pax->fiatoshis),&pax->fiatoshis);
             len += iguana_rwnum(1,&data[len],sizeof(pax->height),&pax->height);
             len += iguana_rwnum(1,&data[len],sizeof(pax->otherheight),&pax->otherheight);
             for (i=0; pax->symbol[i]!=0&&i<3; i++) // must be 3 letter currency
                 data[len++] = pax->symbol[i];
-            data[len++] = 0;
+            data[len++] = 0;*/
             PENDING_KOMODO_TX += pax->komodoshis;
             printf(" vout.%u DEPOSIT %.8f <- pax.%s pending %.8f | ",pax->vout,(double)txNew->vout[numvouts].nValue/COIN,symbol,dstr(PENDING_KOMODO_TX));
         }
