@@ -160,18 +160,18 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
             {
                 memset(&p,0,sizeof(p));
                 len += komodo_rwapproval(0,&opretbuf[len],&p);
-                if ( values != 0 && kmdheights != 0 && otherheights != 0 && baseids != 0 )
+                if ( values != 0 && kmdheights != 0 && otherheights != 0 && baseids != 0 && rmd160s != 0 )
                 {
                     values[n] = (ASSETCHAINS_SYMBOL[0] == 0) ? p.komodoshis : p.fiatoshis;
                     kmdheights[n] = p.height;
                     otherheights[n] = p.otherheight;
                     memcpy(&rmd160s[n * 20],p.rmd160,20);
                     baseids[n] = komodo_baseid(p.source);
-                }
-                {
-                    char coinaddr[64];
-                    bitcoin_address(coinaddr,60,p.rmd160,20);
-                    printf(">>>>>>> approved A: (%s) fiat %.8f kmdheight.%d other.%d -> %s %.8f\n",baseids[n]>=0?CURRENCIES[baseids[n]]:"???",dstr(p.fiatoshis),p.height,p.otherheight,coinaddr,dstr(p.komodoshis));
+                    {
+                        char coinaddr[64];
+                        bitcoin_address(coinaddr,60,&rmd160s[n * 20],20);
+                        printf(">>>>>>> approved A: (%s) fiat %.8f kmdheight.%d other.%d -> %s %.8f\n",baseids[n]>=0?CURRENCIES[baseids[n]]:"???",dstr(p.komodoshis),kmdheights[n],otherheights[n],coinaddr,dstr(values[n]));
+                    }
                 }
             }
             else
@@ -464,6 +464,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             {
                 for (j=0; j<32; j++)
                     printf("%02x",((uint8_t *)&txids[i])[j]);
+                printf(" v%d %.8f k.%d ht.%d base.%d\n",vouts[i],dstr(values[i]),kmdheights[i],otherheights[i],baseids[i]);
                 if ( (pax= komodo_paxfind(txids[i],vouts[i])) == 0 && baseids[i] >= 0 )
                 {
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
