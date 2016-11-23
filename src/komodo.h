@@ -99,7 +99,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 errs++;
             if ( fread(&notarized_desttxid,1,sizeof(notarized_desttxid),fp) != sizeof(notarized_desttxid) )
                 errs++;
-            //if ( 0 && sp != 0 )
+            if ( 0 && sp != 0 )
                 printf("%s load[%s.%d] NOTARIZED %d %s\n",ASSETCHAINS_SYMBOL,symbol,sp->NUM_NPOINTS,notarized_height,notarized_hash.ToString().c_str());
             //if ( matched != 0 ) global independent states -> inside *sp
             komodo_eventadd_notarized(sp,symbol,ht,dest,notarized_hash,notarized_desttxid,notarized_height);
@@ -384,10 +384,12 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 sp->NOTARIZED_DESTTXID = desttxid;
                 komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0);
                 len += 4;
-                printf("%s ht.%d NOTARIZED.%d %s.%s %sTXID.%s (%s) lens.(%d %d)\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),(char *)&scriptbuf[len],opretlen,len);
-                if ( opretlen > len )//&& scriptbuf[len] == 'A' )
+                if ( ASSETCHAINS[0] == 0 )
+                    printf("%s ht.%d NOTARIZED.%d %s.%s %sTXID.%s (%s) lens.(%d %d)\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),(char *)&scriptbuf[len],opretlen,len);
+                if ( ASSETCHAINS[0] == 0 && opretlen > len && scriptbuf[len] == 'A' )
                 {
-                    printf("Found extradata.[%d] %d - %d\n",opretlen-len,opretlen,len);
+                    if ( )
+                        printf("Found extradata.[%d] %d - %d\n",opretlen-len,opretlen,len);
                     komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen-len,j);
                 }
             } else printf("notarized.%d %llx reject ht.%d NOTARIZED.%d %s.%s DESTTXID.%s (%s)\n",notarized,(long long)signedmask,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);

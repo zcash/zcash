@@ -117,8 +117,8 @@ int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transactio
     {
         for (i=0; i<32; i++)
         {
-            ((uint8_t *)&pax->txid)[i] = opretbuf[len++];
-            printf("%02x",((uint8_t *)&pax->txid)[i]);
+            ((uint8_t *)&pax->txid)[31-i] = opretbuf[len++];
+            printf("%02x",((uint8_t *)&pax->txid)[31-i]);
         }
         pax->vout = opretbuf[len++];
         pax->vout += ((uint32_t)opretbuf[len++] << 8);
