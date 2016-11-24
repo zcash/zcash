@@ -235,6 +235,36 @@ public:
     }
 };
 
+void initialize_curve_params();
+
+class ProofVerifier {
+private:
+    bool perform_verification;
+
+    ProofVerifier(bool perform_verification) : perform_verification(perform_verification) { }
+
+public:
+    // Creates a verification context that strictly verifies
+    // all proofs using libsnark's API.
+    static ProofVerifier Strict();
+
+    // Creates a dummy verification context that performs
+    // no verification, used when avoiding duplicate effort
+    // such as during reindexing.
+    static ProofVerifier Dummy();
+
+    template <typename VerificationKey,
+              typename ProcessedVerificationKey,
+              typename PrimaryInput,
+              typename Proof
+              >
+    bool check(
+        const VerificationKey& vk,
+        const ProcessedVerificationKey& pvk,
+        const PrimaryInput& pi,
+        const Proof& p
+    );
+};
 
 }
 

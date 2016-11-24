@@ -341,9 +341,11 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
         libzcash::JSOutput(addr, 50)
     };
 
+    auto verifier = libzcash::ProofVerifier::Strict();
+
     {
         JSDescription jsdesc(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
-        BOOST_CHECK(jsdesc.Verify(*p, pubKeyHash));
+        BOOST_CHECK(jsdesc.Verify(*p, verifier, pubKeyHash));
 
         CDataStream ss(SER_DISK, CLIENT_VERSION);
         ss << jsdesc;
@@ -352,7 +354,7 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
         ss >> jsdesc_deserialized;
 
         BOOST_CHECK(jsdesc_deserialized == jsdesc);
-        BOOST_CHECK(jsdesc_deserialized.Verify(*p, pubKeyHash));
+        BOOST_CHECK(jsdesc_deserialized.Verify(*p, verifier, pubKeyHash));
     }
 
     {
@@ -365,7 +367,7 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
         // Ensure that it won't verify if the root is changed.
         auto test = JSDescription(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
         test.anchor = GetRandHash();
-        BOOST_CHECK(!test.Verify(*p, pubKeyHash));
+        BOOST_CHECK(!test.Verify(*p, verifier, pubKeyHash));
     }
 }
 

@@ -95,7 +95,11 @@ public:
     );
 
     // Verifies that the JoinSplit proof is correct.
-    bool Verify(ZCJoinSplit& params, const uint256& pubKeyHash) const;
+    bool Verify(
+        ZCJoinSplit& params,
+        libzcash::ProofVerifier& verifier,
+        const uint256& pubKeyHash
+    ) const;
 
     // Returns the calculated h_sig
     uint256 h_sig(ZCJoinSplit& params, const uint256& pubKeyHash) const;
