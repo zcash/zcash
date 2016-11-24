@@ -376,6 +376,8 @@ uint64_t komodo_seed(int32_t height)
 {
     uint256 hash; uint64_t seed = 0; CBlockIndex *pindex;
     memset(&hash,0,sizeof(hash));
+    if ( height > 10 )
+        height -= 10;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         if ( (pindex= chainActive[height]) != 0 )
