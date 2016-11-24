@@ -42,6 +42,7 @@ using namespace std;
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
 int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
+int32_t komodo_whoami(char *pubkeystr,int32_t height);
 
 Value getinfo(const Array& params, bool fHelp)
 {
@@ -120,6 +121,14 @@ Value getinfo(const Array& params, bool fHelp)
 #endif
     obj.push_back(Pair("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK())));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
+    {
+        char pubkeystr[65]; int32_t notaryid;
+        if ( (notaryid= komodo_whoami(pubkeystr,longestchain)) >= 0 )
+        {
+            obj.push_back(Pair("notaryid",        notaryid));
+            obj.push_back(Pair("pubkey",        pubkeystr));
+        }
+    }
     return obj;
 }
 

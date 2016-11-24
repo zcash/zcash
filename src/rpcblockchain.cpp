@@ -387,6 +387,50 @@ int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *bas
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
 char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
 uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
+int32_t komodo_minerids(uint8_t *minerids,int32_t height);
+
+Value minerids(const Array& params, bool fHelp)
+{
+    Object ret; Array a; uint8_t minerids[1000],pubkeys[64][33]; int32_t i,j,n,numnotaries,tally[65];
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("minerids needs height\n");
+    LOCK(cs_main);
+    int32_t height = atoi(params[0].get_str().c_str());
+    if ( height <= 0 )
+        height = chainActive.Tip()->nHeight;
+    if ( (n= komodo_minerids(minerids,height)) > 0 )
+    {
+        memset(tally,0,sizeof(tally));
+        numnotaries = komodo_notaries(pubkeys,height);
+        if ( numnotaries > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                if ( minerids[i] >= numnotaries )
+                    tally[64]++;
+                else tally[minerids[i]]++;
+            }
+            for (i=0; i<64; i++)
+            {
+                Object item; std::string hex; char *hexstr;
+                hex.resize(66);
+                hexstr = (char *)hex.data();
+                for (j=0; j<33; j++)
+                    sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
+                item.push_back(Pair("notaryid", i));
+                item.push_back(Pair("pubkey", hex));
+                item.push_back(Pair("blocks", tally[i]));
+                a.push_back(item);
+            }
+            Object item;
+            item.push_back(Pair("pubkey", (char *)"external miners"));
+            item.push_back(Pair("blocks", tally[64]));
+            a.push_back(item);
+        }
+        ret.push_back(Pair("mined", a));
+    } else ret.push_back(Pair("error", (char *)"couldnt extract minerids"));
+    return ret;
+}
 
 Value notaries(const Array& params, bool fHelp)
 {

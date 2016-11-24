@@ -376,6 +376,8 @@ uint64_t komodo_seed(int32_t height)
 {
     uint256 hash; uint64_t seed = 0; CBlockIndex *pindex;
     memset(&hash,0,sizeof(hash));
+    if ( height > 10 )
+        height -= 10;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         if ( (pindex= chainActive[height]) != 0 )
@@ -529,6 +531,18 @@ int8_t komodo_minerid(int32_t height)
     return(-1);
 }
 
+int32_t komodo_minerids(uint8_t *minerids,int32_t height)
+{
+    int32_t i,n=0;
+    for (i=0; i<1000; i++,n++)
+    {
+        if ( height-i <= 0 )
+            break;
+        minerids[i] = komodo_minerid(height - i);
+    }
+    return(n);
+}
+
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
 {
     int32_t i,notaryid,minerid,limit;
@@ -560,7 +574,7 @@ int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 has
         return(-1);
     notarized_height = komodo_notarizeddata(pindex->nHeight,&notarized_hash,&notarized_desttxid);
     *notarized_heightp = notarized_height;
-    if ( nHeight >= 79700 && notarized_height >= 0 && notarized_height <= pindex->nHeight && (notary= mapBlockIndex[notarized_hash]) != 0 )
+    if ( notarized_height >= 0 && notarized_height <= pindex->nHeight && (notary= mapBlockIndex[notarized_hash]) != 0 )
     {
         //printf("nHeight.%d -> (%d %s)\n",pindex->Tip()->nHeight,notarized_height,notarized_hash.ToString().c_str());
         if ( notary->nHeight == notarized_height ) // if notarized_hash not in chain, reorg
