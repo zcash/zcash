@@ -83,7 +83,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
         {
             int32_t i; for (i=0; i<32; i++)
                 printf("%02x",((uint8_t *)&txid)[i]);
-            printf(" v.%d [%s] kht.%d ht.%d create pax.%p symbol.%s source.%d\n",vout,ASSETCHAINS_SYMBOL,height,otherheight,pax,symbol,source);
+            printf(" v.%d [%s] kht.%d ht.%d create pax.%p symbol.%s source.%s\n",vout,ASSETCHAINS_SYMBOL,height,otherheight,pax,symbol,source);
         }
     }
     pthread_mutex_unlock(&komodo_mutex);
@@ -490,7 +490,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             if ( (pax= komodo_paxfind(txid,vout)) == 0 )
             {
                 if ( (basesp= komodo_stateptrget(base)) != 0 )
-                    basesp->withdraw += value;
+                    basesp->withdrawn += value;
                 printf("notarize %s %.8f -> %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),dstr(komodoshis),kmdheight,height);
             }
             komodo_gateway_deposit(coinaddr,komodoshis,(char *)"KMD",value,rmd160,txid,vout,kmdheight,height,source,0);
