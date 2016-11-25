@@ -466,7 +466,7 @@ int32_t komodo_paxcmp(uint64_t value,uint64_t checkvalue,uint64_t seed)
     if ( seed == 0 )
     {
         value <<= 10;
-        ratio = (checkvalue / value);
+        ratio = (value / checkvalue);
         if ( ratio >= 1023 && ratio <= 1025 )
             return(0);
         else return(-1);
