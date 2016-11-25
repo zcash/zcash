@@ -482,7 +482,7 @@ Value notaries(const Array& params, bool fHelp)
 
 int32_t komodo_pending_withdraws(char *opretstr);
 int32_t pax_fiatstatus(uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base);
-extern char CURRENCIES[][32];
+extern char CURRENCIES[][8];
 
 Value paxpending(const Array& params, bool fHelp)
 {
