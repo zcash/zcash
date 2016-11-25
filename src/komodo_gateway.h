@@ -487,26 +487,24 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             printf("(%s) (%s) kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d seed.%llx\n",ASSETCHAINS_SYMBOL,base,kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed);
             if ( kmdheight <= height )
             {
-                if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
+                for (i=0; i<32; i++)
+                    printf("%02x",((uint8_t *)&txid)[i]);
+                printf(" <- txid.v%u ",vout);
+                for (i=0; i<33; i++)
+                    printf("%02x",pubkey33[i]);
+                printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
+                if ( value >= checktoshis-(checktoshis >> 10) )
                 {
-                    for (i=0; i<32; i++)
-                        printf("%02x",((uint8_t *)&txid)[i]);
-                    printf(" <- txid.v%u ",vout);
-                    for (i=0; i<33; i++)
-                        printf("%02x",pubkey33[i]);
-                    printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
-                    if ( value >= checktoshis-(checktoshis >> 10) )
+                    if ( komodo_paxfind(txid,vout) == 0 )
                     {
-                        if ( komodo_paxfind(txid,vout) == 0 )
+                        if ( (basesp= komodo_stateptrget(base)) != 0 )
                         {
-                            if ( (basesp= komodo_stateptrget(base)) != 0 )
-                            {
-                                basesp->deposited += fiatoshis;
-                                printf("########### %p deposited %s += %.8f\n",basesp,base,dstr(fiatoshis));
-                            }
+                            basesp->deposited += fiatoshis;
+                            printf("########### %p deposited %s += %.8f\n",basesp,base,dstr(fiatoshis));
+                        }
+                        if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
                             komodo_gateway_deposit(coinaddr,value,base,fiatoshis,rmd160,txid,vout,kmdheight,height,(char *)"KMD",0);
-                        } else printf("duplicate deposit\n");
-                    }
+                    } else printf("duplicate deposit\n");
                 }
             }
         }
