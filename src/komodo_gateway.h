@@ -27,6 +27,7 @@ int32_t pax_fiatstatus(uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,
             *withdrawn = sp->withdrawn;
             *approved = sp->approved;
             *redeemed = sp->redeemed;
+            printf("%p %s %.8f %.8f %.8f %.8f %.8f\n",sp,base,*deposited,*issued,*withdrawn,*approved,*redeemed);
             return(0);
         }
     }
@@ -114,7 +115,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
                     if ( (basesp= komodo_stateptrget(symbol)) != 0 )
                     {
                         basesp->approved += fiatoshis;
-                        printf("########### approved %s += %.8f\n",symbol,dstr(fiatoshis));
+                        printf("########### %p approved %s += %.8f\n",basesp,symbol,dstr(fiatoshis));
                     }
                 }
                 else
@@ -125,7 +126,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
                         if ( (basesp= komodo_stateptrget(source)) != 0 )
                         {
                             basesp->withdrawn += fiatoshis;
-                            printf("########### withdrawn %s += %.8f\n",source,dstr(fiatoshis));
+                            printf("########### %p withdrawn %s += %.8f\n",basesp,source,dstr(fiatoshis));
                         }
                     }
                     else
@@ -133,7 +134,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
                         if ( (basesp= komodo_stateptrget(symbol)) != 0 )
                         {
                             basesp->deposited += fiatoshis;
-                            printf("########### deposited %s += %.8f\n",symbol,dstr(fiatoshis));
+                            printf("########### %p deposited %s += %.8f\n",basesp,symbol,dstr(fiatoshis));
                         }
                     }
                 }
@@ -496,7 +497,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                             if ( (basesp= komodo_stateptrget(base)) != 0 )
                             {
                                 basesp->deposited += fiatoshis;
-                                printf("########### deposited %s += %.8f\n",base,dstr(fiatoshis));
+                                printf("########### %p deposited %s += %.8f\n",basesp,base,dstr(fiatoshis));
                             }
                             komodo_gateway_deposit(coinaddr,value,base,fiatoshis,rmd160,txid,vout,kmdheight,height,(char *)"KMD",0);
                         } else printf("duplicate deposit\n");
@@ -521,7 +522,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 if ( (basesp= komodo_stateptrget(base)) != 0 )
                 {
                     basesp->withdrawn += value;
-                    printf("########### withdrawn %s += %.8f\n",base,dstr(value));
+                    printf("########### %p withdrawn %s += %.8f\n",basesp,base,dstr(value));
                 }
                 printf("notarize %s %.8f -> %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),dstr(komodoshis),kmdheight,height);
             }
@@ -555,7 +556,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                     {
                         basesp->approved += srcvalues[i];
-                        printf("########### approved %s += %.8f\n",CURRENCIES[baseids[i]],dstr(srcvalues[i]));
+                        printf("########### %p approved %s += %.8f\n",basesp,CURRENCIES[baseids[i]],dstr(srcvalues[i]));
                     }
                     printf(" i.%d (%s) <- %.8f ADDFLAG APPROVED\n",i,coinaddr,dstr(values[i]));
                 } else printf(" i.%d of n.%d pax.%p baseids[] %d\n",i,n,pax,baseids[i]);
@@ -582,7 +583,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         if ( (basesp= komodo_stateptrget(base)) != 0 )
                         {
                             basesp->issued += srcvalues[i];
-                            printf("########### issued %s += %.8f\n",base,dstr(srcvalues[i]));
+                            printf("########### %p issued %s += %.8f\n",basesp,base,dstr(srcvalues[i]));
                         }
                         komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,CURRENCIES[baseids[i]],0);
                     }
@@ -604,7 +605,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( (basesp= komodo_stateptrget(base)) != 0 )
                     {
                         basesp->redeemed += srcvalues[i];
-                        printf("########### redeemed %s += %.8f\n",base,dstr(srcvalues[i]));
+                        printf("########### %p redeemed %s += %.8f\n",basesp,base,dstr(srcvalues[i]));
                     }
                     komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,(char *)"KMD",0);
                 }
