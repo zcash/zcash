@@ -460,9 +460,19 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     return(0);
 }
 
+int32_t komodo_paxcmp(uint64_t value,uint64_t checkvalue,uint64_t seed)
+{
+    if ( seed == 0 )
+    {
+        value >>= 7;
+        checkvalue >>= 7;
+    }
+    return(value != checkvalue);
+}
+
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
 {
-    uint8_t rmd160[20],rmd160s[64*20],addrtype,shortflag,pubkey33[33]; int32_t didstats,i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fiatoshis,komodoshis,checktoshis,values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *basesp;
+    uint8_t rmd160[20],rmd160s[64*20],addrtype,shortflag,pubkey33[33]; int32_t didstats,i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fiatoshis,komodoshis,checktoshis,values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *basesp; double diff;
     const char *typestr = "unknown";
     memset(baseids,0xff,sizeof(baseids));
     memset(values,0,sizeof(values));
@@ -491,7 +501,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     printf("%02x",pubkey33[i]);
                 printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
                 didstats = 0;
-                if ( value >= checktoshis-(checktoshis >> 8) )
+                if ( komodo_paxcmp(value,checktoshis,seed) == 0 )//value >= checktoshis-(checktoshis >> 8) )
                 {
                     if ( (pax= komodo_paxfind(txid,vout)) == 0 )
                     {
@@ -531,7 +541,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         typestr = "withdraw";
         printf("%s.height.%d vs height.%d check %.8f/%.8f vs %.8f tokomodo.%d %d seed.%llx -> (%s)\n",ASSETCHAINS_SYMBOL,kmdheight,height,dstr(checktoshis),dstr(komodoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed,coinaddr);
         didstats = 0;
-        if ( checktoshis <= komodoshis+(komodoshis >> 10) )
+        if ( komodo_paxcmp(komodoshis,checktoshis,seed) == 0 ) //checktoshis <= komodoshis+(komodoshis >> 10) )
         {
             if ( (pax= komodo_paxfind(txid,vout)) == 0 || pax->didstats == 0 )
             {
