@@ -27,7 +27,7 @@ int32_t pax_fiatstatus(uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,
             *withdrawn = sp->withdrawn;
             *approved = sp->approved;
             *redeemed = sp->redeemed;
-            printf("%p %s %.8f %.8f %.8f %.8f %.8f\n",sp,base,dstr(*deposited),dstr(*issued),dstr(*withdrawn),dstr(*approved),dstr(*redeemed));
+            //printf("%p %s %.8f %.8f %.8f %.8f %.8f\n",sp,base,dstr(*deposited),dstr(*issued),dstr(*withdrawn),dstr(*approved),dstr(*redeemed));
             return(0);
         } else printf("pax_fiatstatus cant get basesp.%s\n",base);
     } else printf("pax_fiatstatus illegal base.%s\n",base);
@@ -105,39 +105,44 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
             pax->height = height;
         if ( otherheight != 0 )
             pax->otherheight = otherheight;
+        if ( pax->didstats == 0 && fiatoshis == 0 )
+        {
+            if ( (pax->approved= approved) != 0 )
+            {
+                if ( (basesp= komodo_stateptrget(symbol)) != 0 )
+                {
+                    basesp->approved += fiatoshis;
+                    printf("########### %p approved %s += %.8f\n",basesp,symbol,dstr(fiatoshis));
+                }
+            }
+            else
+            {
+                if ( ASSETCHAINS_SYMBOL[0] == 0 )
+                {
+                    if ( (basesp= komodo_stateptrget(source)) != 0 )
+                    {
+                        basesp->withdrawn += fiatoshis;
+                        printf("########### %p withdrawn %s += %.8f\n",basesp,source,dstr(fiatoshis));
+                    }
+                }
+                else
+                {
+                    if ( (basesp= komodo_stateptrget(symbol)) != 0 )
+                    {
+                        basesp->deposited += fiatoshis;
+                        printf("########### %p deposited %s += %.8f\n",basesp,symbol,dstr(fiatoshis));
+                    }
+                }
+            }
+            pax->didstats = 1;
+        }
         if ( pax->marked == 0 )
         {
             if ( addflag != 0 )
             {
                 if ( (pax->approved= approved) != 0 )
-                {
                     s = (char *)"APPROVED";
-                    if ( (basesp= komodo_stateptrget(symbol)) != 0 )
-                    {
-                        basesp->approved += fiatoshis;
-                        printf("########### %p approved %s += %.8f\n",basesp,symbol,dstr(fiatoshis));
-                    }
-                }
-                else
-                {
-                    s = (char *)((ASSETCHAINS_SYMBOL[0] == 0) ? "WITHDRAW" : "DEPOSIT");
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 )
-                    {
-                        if ( (basesp= komodo_stateptrget(source)) != 0 )
-                        {
-                            basesp->withdrawn += fiatoshis;
-                            printf("########### %p withdrawn %s += %.8f\n",basesp,source,dstr(fiatoshis));
-                        }
-                    }
-                    else
-                    {
-                        if ( (basesp= komodo_stateptrget(symbol)) != 0 )
-                        {
-                            basesp->deposited += fiatoshis;
-                            printf("########### %p deposited %s += %.8f\n",basesp,symbol,dstr(fiatoshis));
-                        }
-                    }
-                }
+                else s = (char *)((ASSETCHAINS_SYMBOL[0] == 0) ? "WITHDRAW" : "DEPOSIT");
                 printf("[%s] addflag.%d ADD %s/%s %s %.8f -> %s TO PAX ht.%d otherht.%d total %.8f\n",ASSETCHAINS_SYMBOL,addflag,s,symbol,source,dstr(ASSETCHAINS_SYMBOL[0]==0?pax->komodoshis:pax->fiatoshis),pax->coinaddr,pax->height,pax->otherheight,dstr(komodo_paxtotal()));
             }
         }

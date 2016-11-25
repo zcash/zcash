@@ -500,11 +500,11 @@ Value paxpending(const Array& params, bool fHelp)
         {
             if ( deposited != 0 || issued != 0 || withdrawn != 0 || approved != 0 || redeemed != 0 )
             {
-                item.push_back(Pair("deposited", deposited));
-                item.push_back(Pair("issued", issued));
-                item.push_back(Pair("withdrawn", withdrawn));
-                item.push_back(Pair("approved", approved));
-                item.push_back(Pair("redeemed", redeemed));
+                item.push_back(Pair("deposited", ValueFromAmount(deposited)));
+                item.push_back(Pair("issued", ValueFromAmount(issued)));
+                item.push_back(Pair("withdrawn", ValueFromAmount(withdrawn)));
+                item.push_back(Pair("approved", ValueFromAmount(approved)));
+                item.push_back(Pair("redeemed", ValueFromAmount(redeemed)));
                 obj.push_back(Pair(CURRENCIES[baseid],item));
                 a.push_back(obj);
             }
