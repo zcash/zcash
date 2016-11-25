@@ -105,7 +105,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
             pax->height = height;
         if ( otherheight != 0 )
             pax->otherheight = otherheight;
-        if ( pax->didstats == 0 && fiatoshis == 0 )
+        if ( pax->didstats == 0 && fiatoshis != 0 )
         {
             if ( (pax->approved= approved) != 0 )
             {
@@ -465,11 +465,14 @@ int32_t komodo_paxcmp(uint64_t value,uint64_t checkvalue,uint64_t seed)
     int32_t ratio;
     if ( seed == 0 )
     {
-        value <<= 10;
-        ratio = (value / checkvalue);
+        ratio = ((value << 10) / checkvalue);
         if ( ratio >= 1023 && ratio <= 1025 )
             return(0);
-        else return(-1);
+        else
+        {
+            printf("value %lld vs checkvalue %lld -> ratio.%d\n",(long long)value,(long long)checkvalue,ratio);
+            return(-1);
+        }
     }
     return(value != checkvalue);
 }
