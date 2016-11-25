@@ -109,8 +109,25 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
             if ( addflag != 0 )
             {
                 if ( (pax->approved= approved) != 0 )
+                {
                     s = (char *)"APPROVED";
-                else s = (char *)((ASSETCHAINS_SYMBOL[0] == 0) ? "WITHDRAW" : "DEPOSIT");
+                    if ( (basesp= komodo_stateptrget(symbol)) != 0 )
+                        basesp->approved += fiatoshis;
+                }
+                else
+                {
+                    s = (char *)((ASSETCHAINS_SYMBOL[0] == 0) ? "WITHDRAW" : "DEPOSIT");
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+                    {
+                        if ( (basesp= komodo_stateptrget(source)) != 0 )
+                            basesp->withdraw += fiatoshis;
+                    }
+                    else
+                    {
+                        if ( (basesp= komodo_stateptrget(symbol)) != 0 )
+                            basesp->deposited += fiatoshis;
+                    }
+                }
                 printf("[%s] addflag.%d ADD %s/%s %s %.8f -> %s TO PAX ht.%d otherht.%d total %.8f\n",ASSETCHAINS_SYMBOL,addflag,s,symbol,source,dstr(ASSETCHAINS_SYMBOL[0]==0?pax->komodoshis:pax->fiatoshis),pax->coinaddr,pax->height,pax->otherheight,dstr(komodo_paxtotal()));
             }
         }
