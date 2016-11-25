@@ -62,7 +62,6 @@ struct pax_transaction
     char symbol[16],source[16],coinaddr[64]; uint8_t rmd160[20],shortflag;
 };
 
-//struct nutxo_entry { UT_hash_handle hh; uint256 txhash; uint64_t voutmask; int32_t notaryid,height; };
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; };
 struct notarized_checkpoint { uint256 notarized_hash,notarized_desttxid; int32_t nHeight,notarized_height; };
@@ -72,6 +71,7 @@ struct komodo_state
     uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
     int32_t SAVEDHEIGHT,CURRENT_HEIGHT,NOTARIZED_HEIGHT;
     uint32_t SAVEDTIMESTAMP;
+    uint64_t deposited,issued,withdrawn,approved,redeemed;
     struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS;
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
