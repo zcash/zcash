@@ -112,7 +112,10 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
                 {
                     s = (char *)"APPROVED";
                     if ( (basesp= komodo_stateptrget(symbol)) != 0 )
+                    {
                         basesp->approved += fiatoshis;
+                        printf("########### approved %s += %.8f\n",symbol,dstr(fiatoshis));
+                    }
                 }
                 else
                 {
@@ -120,12 +123,18 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
                     if ( ASSETCHAINS_SYMBOL[0] == 0 )
                     {
                         if ( (basesp= komodo_stateptrget(source)) != 0 )
+                        {
                             basesp->withdrawn += fiatoshis;
+                            printf("########### withdrawn %s += %.8f\n",source,dstr(fiatoshis));
+                        }
                     }
                     else
                     {
                         if ( (basesp= komodo_stateptrget(symbol)) != 0 )
+                        {
                             basesp->deposited += fiatoshis;
+                            printf("########### deposited %s += %.8f\n",symbol,dstr(fiatoshis));
+                        }
                     }
                 }
                 printf("[%s] addflag.%d ADD %s/%s %s %.8f -> %s TO PAX ht.%d otherht.%d total %.8f\n",ASSETCHAINS_SYMBOL,addflag,s,symbol,source,dstr(ASSETCHAINS_SYMBOL[0]==0?pax->komodoshis:pax->fiatoshis),pax->coinaddr,pax->height,pax->otherheight,dstr(komodo_paxtotal()));
@@ -254,8 +263,8 @@ uint64_t komodo_paxtotal()
                     {
                         seed = 0;
                         checktoshis = komodo_paxprice(&seed,pax->height,pax->source,(char *)"KMD",(uint64_t)pax->fiatoshis);
-                        printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f vs %.8f\n",pax->height,pax->symbol,(double)pax->fiatoshis/COIN,(double)pax->komodoshis/COIN,(double)checktoshis/COIN);
-                        printf(" v%d %.8f k.%d ht.%d\n",pax->vout,dstr(pax->komodoshis),pax->height,pax->otherheight);
+                        //printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f vs %.8f\n",pax->height,pax->symbol,(double)pax->fiatoshis/COIN,(double)pax->komodoshis/COIN,(double)checktoshis/COIN);
+                        //printf(" v%d %.8f k.%d ht.%d\n",pax->vout,dstr(pax->komodoshis),pax->height,pax->otherheight);
                         if ( seed != 0 )
                         {
                             if ( checktoshis >= pax->komodoshis )
@@ -485,7 +494,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         if ( komodo_paxfind(txid,vout) == 0 )
                         {
                             if ( (basesp= komodo_stateptrget(base)) != 0 )
+                            {
                                 basesp->deposited += fiatoshis;
+                                printf("########### deposited %s += %.8f\n",base,dstr(fiatoshis));
+                            }
                             komodo_gateway_deposit(coinaddr,value,base,fiatoshis,rmd160,txid,vout,kmdheight,height,(char *)"KMD",0);
                         } else printf("duplicate deposit\n");
                     }
@@ -507,7 +519,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             if ( (pax= komodo_paxfind(txid,vout)) == 0 )
             {
                 if ( (basesp= komodo_stateptrget(base)) != 0 )
+                {
                     basesp->withdrawn += value;
+                    printf("########### withdrawn %s += %.8f\n",base,dstr(value));
+                }
                 printf("notarize %s %.8f -> %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),dstr(komodoshis),kmdheight,height);
             }
             komodo_gateway_deposit(coinaddr,komodoshis,(char *)"KMD",value,rmd160,txid,vout,kmdheight,height,source,0);
@@ -538,7 +553,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
                     komodo_gateway_deposit(coinaddr,values[i],CURRENCIES[baseids[i]],srcvalues[i],&rmd160s[i*20],txids[i],vouts[i],kmdheights[i],otherheights[i],CURRENCIES[baseids[i]],kmdheights[i]);
                     if ( (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
+                    {
                         basesp->approved += srcvalues[i];
+                        printf("########### approved %s += %.8f\n",CURRENCIES[baseids[i]],dstr(srcvalues[i]));
+                    }
                     printf(" i.%d (%s) <- %.8f ADDFLAG APPROVED\n",i,coinaddr,dstr(values[i]));
                 } else printf(" i.%d of n.%d pax.%p baseids[] %d\n",i,n,pax,baseids[i]);
                 if ( (pax= komodo_paxfind(txids[i],vouts[i])) != 0 )
@@ -562,7 +580,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( komodo_paxmark(height,txids[i],vouts[i],height) == 0 && baseids[i] >= 0 )
                     {
                         if ( (basesp= komodo_stateptrget(base)) != 0 )
+                        {
                             basesp->issued += srcvalues[i];
+                            printf("########### issued %s += %.8f\n",base,dstr(srcvalues[i]));
+                        }
                         komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,CURRENCIES[baseids[i]],0);
                     }
                 }
@@ -581,7 +602,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 if ( komodo_paxmark(height,txids[i],vouts[i],height) == 0 )
                 {
                     if ( (basesp= komodo_stateptrget(base)) != 0 )
+                    {
                         basesp->redeemed += srcvalues[i];
+                        printf("########### redeemed %s += %.8f\n",base,dstr(srcvalues[i]));
+                    }
                     komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,(char *)"KMD",0);
                 }
             }

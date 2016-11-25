@@ -428,7 +428,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
             }
             sum /= densum;
             sum = (sum * basevolume) / 100000;
-            printf("paxprice seed.%llx sum %.8f densum %.8f basevol %.8f height.%d\n",(long long)seed,dstr(sum),dstr(densum),dstr(basevolume),height);
+            //printf("paxprice seed.%llx sum %.8f densum %.8f basevol %.8f height.%d\n",(long long)seed,dstr(sum),dstr(densum),dstr(basevolume),height);
             break;
         }
     }
@@ -473,7 +473,7 @@ uint64_t PAX_fiatdest(uint64_t *seedp,int32_t tokomodo,char *destaddr,uint8_t pu
     if ( fiatoshis < 0 )
         shortflag = 1, fiatoshis = -fiatoshis;
     komodoshis = komodo_paxprice(seedp,height,base,(char *)"KMD",(uint64_t)fiatoshis);
-    printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f\n",height,base,(double)fiatoshis/COIN,(double)komodoshis/COIN);
+    //printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f\n",height,base,(double)fiatoshis/COIN,(double)komodoshis/COIN);
     if ( bitcoin_addr2rmd160(&addrtype,rmd160,coinaddr) == 20 )
     {
         PAX_pubkey(1,pubkey33,&addrtype,rmd160,base,&shortflag,tokomodo != 0 ? &komodoshis : &fiatoshis);
