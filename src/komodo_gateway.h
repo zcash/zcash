@@ -120,7 +120,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
                     if ( ASSETCHAINS_SYMBOL[0] == 0 )
                     {
                         if ( (basesp= komodo_stateptrget(source)) != 0 )
-                            basesp->withdraw += fiatoshis;
+                            basesp->withdrawn += fiatoshis;
                     }
                     else
                     {
