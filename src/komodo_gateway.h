@@ -380,7 +380,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         if ( pax->marked != 0 && height >= 80820 )
                             errs++;
                         else matched++;
-                        if ( 0 && opcode == 'X' )
+                        if ( opcode == 'X' )
                             printf("errs.%d i.%d match %.8f == %.8f pax.%p\n",errs,i,dstr(pax != 0 ? pax->komodoshis:-1),dstr(block.vtx[0].vout[i].nValue),pax);
                         //komodo_paxmark(height,txids[i-1],vouts[i-1],height);
                         //if ( pax->marked == 0 )
