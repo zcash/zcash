@@ -574,7 +574,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else if ( tokomodo == 0 && opretbuf[0] == 'I' )
     {
-        if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 )
+        //if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 )
         {
             if ( (n= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,opretbuf,opretlen,0)) > 0 )
             {
@@ -583,7 +583,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
                     if ( komodo_paxmark(height,txids[i],vouts[i],height) == 0 && baseids[i] >= 0 )
                     {
-                        if ( (basesp= komodo_stateptrget(base)) != 0 )
+                        if ( (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                         {
                             basesp->issued += srcvalues[i];
                             printf("########### %p issued %s += %.8f\n",basesp,base,dstr(srcvalues[i]));
@@ -605,7 +605,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 printf("i.%d of %d: %.8f -> %s\n",i,n,dstr(values[i]),coinaddr);
                 if ( komodo_paxmark(height,txids[i],vouts[i],height) == 0 )
                 {
-                    if ( (basesp= komodo_stateptrget(base)) != 0 )
+                    if ( baseids[i] >= 0 && (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                     {
                         basesp->redeemed += srcvalues[i];
                         printf("########### %p redeemed %s += %.8f\n",basesp,base,dstr(srcvalues[i]));
