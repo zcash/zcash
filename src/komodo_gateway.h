@@ -258,7 +258,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
 
 uint64_t komodo_paxtotal()
 {
-    struct pax_transaction *pax,*pax2,*tmp,*tmp2; char symbol[16],dest[16]; int32_t ht; int64_t checktoshis; uint64_t seed,total = 0; struct komodo_state *basesp;
+    struct pax_transaction *pax,*pax2,*tmp,*tmp2; char symbol[16],dest[16]; int32_t i,ht; int64_t checktoshis; uint64_t seed,total = 0; struct komodo_state *basesp;
     if ( komodo_isrealtime(&ht) == 0 )
         return(0);
     else
@@ -267,9 +267,14 @@ uint64_t komodo_paxtotal()
         {
             if ( pax->didstats == 0 && pax->type == 'I' )
             {
-                printf("pax.%p didstats.0 type.%c\n",pax,pax->type);
+                for (i=0; i<32; i++)
+                    printf("%02x",((uint8_t *)&pax->txid)[i]);
+                printf(" pax.%p didstats.0 type.%c\n",pax,pax->type);
                 HASH_ITER(hh,PAX,pax2,tmp2)
                 {
+                    for (i=0; i<32; i++)
+                        printf("%02x",((uint8_t *)&pax2->txid)[i]);
+                    printf(" pax2.%p\n",pax2);
                     if ( pax != pax2 && pax->txid == pax2->txid )
                     {
                         printf("matched txid\n");
