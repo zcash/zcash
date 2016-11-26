@@ -637,7 +637,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     solutionTargetChecks.increment();
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
                     {
-                        if (  ASSETCHAINS_SYMBOL[0] != 0 )
+                        if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                             fprintf(stderr,"missed target\n");
                         return false;
                     }
@@ -648,8 +648,8 @@ void static BitcoinMiner(CWallet *pwallet)
                         if ( nseconds > 0 )
                             sleep(nseconds);
                         MilliSleep((rand() % 5000) + 1);
-                        KOMODO_CHOSEN_ONE = 1;
                     }
+                    KOMODO_CHOSEN_ONE = 1;
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     LogPrintf("KomodoMiner:\n");

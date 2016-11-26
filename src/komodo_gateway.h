@@ -192,9 +192,9 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
     incr = 34 + (iskomodo * (2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4));
     for (i=0; i<4; i++)
         base[i] = opretbuf[opretlen-4+i];
-    for (i=0; i<opretlen; i++)
-        printf("%02x",opretbuf[i]);
-    printf(" opretlen.%d (%s)\n",opretlen,base);
+    //for (i=0; i<opretlen; i++)
+    //    printf("%02x",opretbuf[i]);
+    //printf(" opretlen.%d (%s)\n",opretlen,base);
     //printf(" opretlen.%d vs %d incr.%d\n",opretlen,(int32_t)(2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4),incr);
     //if ( ASSETCHAINS_SYMBOL[0] == 0 || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
     {
@@ -265,7 +265,6 @@ uint64_t komodo_paxtotal()
             {
                 if ( (pax2= komodo_paxfind(pax->txid,pax->vout,'D')) != 0 )
                 {
-                    printf("%.8f pax2.%p vs pax.%p\n",dstr(pax2->fiatoshis),pax2,pax);
                     if ( pax2->fiatoshis != 0 )
                     {
                         pax->komodoshis = pax2->komodoshis;
@@ -276,12 +275,12 @@ uint64_t komodo_paxtotal()
                     }
                 }
             }
-            if ( strcmp(str,"HRK") == 0 || strcmp("HRK",pax->symbol) == 0 || strcmp("HRK",pax->source) == 0 )
+            /*if ( strcmp(str,"HRK") == 0 || strcmp("HRK",pax->symbol) == 0 || strcmp("HRK",pax->source) == 0 )
             {
                 for (i=0; i<32; i++)
                     printf("%02x",((uint8_t *)&pax->txid)[i]);
                 printf(" stats.%d type.%c (%s) k.%d %.8f h.%d %.8f I.%.8f X.%.8f\n",pax->didstats,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis),dstr(basesp->issued),dstr(basesp->redeemed));
-            }
+            }*/
         }
     }
     komodo_stateptr(symbol,dest);
@@ -480,8 +479,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             }
             if ( matched != num )
             {
+                printf("WOULD REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
                 // can easily happen depending on order of loading
-                if ( height > 100000 && opcode == 'X' )
+                if ( height > 100000 ) //&& opcode == 'X' )
                 {
                     printf("REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
                     return(-1);
