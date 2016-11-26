@@ -275,7 +275,8 @@ uint64_t komodo_paxtotal()
                         pax->didstats = 1;
                         printf("Iset %s dstats %.8f += %.8f\n",str,dstr(basesp->issued),dstr(pax->fiatoshis));
                     }
-                    printf(" stats.%d type.%c (%s) k.%d %.8f h.%d %.8f I.%.8f X.%.8f\n",pax->didstats,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis),dstr(basesp->issued),dstr(basesp->redeemed));
+                    if ( strcmp(str,"HRK") == 0 )
+                        printf(" stats.%d type.%c (%s) k.%d %.8f h.%d %.8f I.%.8f X.%.8f\n",pax->didstats,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis),dstr(basesp->issued),dstr(basesp->redeemed));
                 }
             }
         }
