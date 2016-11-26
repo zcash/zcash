@@ -272,6 +272,7 @@ uint64_t komodo_paxtotal()
                 {
                     if ( pax != pax2 && pax->txid == pax2->txid )
                     {
+                        printf("matched txid\n");
                         if ( pax2->fiatoshis != 0 )
                         {
                             pax->fiatoshis = pax2->fiatoshis;
@@ -283,7 +284,7 @@ uint64_t komodo_paxtotal()
                                 pax->didstats = 1;
                                 printf("found match for %s %.8f\n",pax->symbol,dstr(pax->fiatoshis));
                             } else printf("paxtotal cant find.(%s)\n",pax->source);
-                        }
+                        } else printf("null fiatoshis\n");
                     }
                 }
             }
