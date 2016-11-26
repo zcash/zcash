@@ -289,8 +289,8 @@ uint64_t komodo_paxtotal()
                             pax->didstats = 1;
                         }
                     }
-                    printf(" stats.%d type.%c (%s) k.%d %.8f h.%d %.8f I.%.8f X.%.8f\n",pax->didstats,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis),dstr(basesp->issued),dstr(basesp->redeemed));
                 }
+                printf(" stats.%d type.%c (%s) k.%d %.8f h.%d %.8f I.%.8f X.%.8f\n",pax->didstats,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis),dstr(basesp->issued),dstr(basesp->redeemed));
             }
         }
     }
@@ -602,11 +602,11 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         {
             if ( value != 0 & ((pax= komodo_paxfind(txid,vout)) == 0 || pax->didstats == 0) )
             {
-                if ( (basesp= komodo_stateptrget(base)) != 0 )
+                if ( (basesp= komodo_stateptrget(pax->source)) != 0 )
                 {
                     basesp->withdrawn += value;
                     didstats = 1;
-                    printf("########### %p withdrawn %s += %.8f\n",basesp,base,dstr(value));
+                    printf("########### %p withdrawn %s += %.8f\n",basesp,pax->source,dstr(value));
                 }
                 printf("notarize %s %.8f -> %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),dstr(komodoshis),kmdheight,height);
             }
@@ -694,7 +694,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         if ( (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                         {
                             basesp->issued += srcvalues[i];
-                            printf("########### %p issued %s += %.8f\n",basesp,base,dstr(srcvalues[i]));
+                            printf("########### %p issued %s += %.8f\n",basesp,CURRENCIES[baseids[i]],dstr(srcvalues[i]));
                         }
                         didstats = 1;
                     }
