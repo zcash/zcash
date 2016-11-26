@@ -276,7 +276,7 @@ uint64_t komodo_paxtotal()
                     }
                 }
             }
-            if ( strcmp(str,"HRK") == 0 || strcmp("HRK",pax->symbol) == 0 || strcmp("HRK",pax->source) == 0 )
+            //if ( strcmp(str,"HRK") == 0 || strcmp("HRK",pax->symbol) == 0 || strcmp("HRK",pax->source) == 0 )
             {
                 for (i=0; i<32; i++)
                     printf("%02x",((uint8_t *)&pax->txid)[i]);
@@ -671,7 +671,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         continue;
                     }
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
-                    printf("ISSUE %s %.8f %.8f\n",CURRENCIES[baseids[i]],dstr(values[i]),dstr(srcvalues[i]));
                     komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],'I',height,0,CURRENCIES[baseids[i]],0);
                     if ( komodo_paxmark(height,txids[i],vouts[i],'I',height) == 0 )
                     {
@@ -687,7 +686,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else if ( opretbuf[0] == 'X' )
     {
-        printf("got X opreturn height.%d\n",height);
         if ( (n= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,opretbuf,opretlen,1)) > 0 )
         {
             for (i=0; i<n; i++)
@@ -695,7 +693,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 if ( baseids[i] < 0 )
                     continue;
                 bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
-                printf("%s X i.%d of %d: %.8f -> %s\n",CURRENCIES[baseids[i]],i,n,dstr(values[i]),coinaddr);
                 komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],'X',height,0,(char *)"KMD",0);
                 if ( komodo_paxmark(height,txids[i],vouts[i],'X',height) == 0 )
                     ;
@@ -742,13 +739,13 @@ void komodo_passport_iteration()
                 fseek(fp,0,SEEK_END);
                 if ( ftell(fp) > lastpos[baseid] )
                 {
-                    if ( strcmp(symbol,"KMD") == 0 )
+                    if ( 0 && strcmp(symbol,"KMD") == 0 )
                         printf("passport refid.%d %s fname.(%s) base.%s\n",refid,symbol,fname,base);
                     fseek(fp,lastpos[baseid],SEEK_SET);
                     while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
                         ;
                     lastpos[baseid] = ftell(fp);
-                    if ( strcmp(symbol,"KMD") == 0 )
+                    if ( 0 && strcmp(symbol,"KMD") == 0 )
                         printf("from.(%s) lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
                 } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                 fclose(fp);
