@@ -135,7 +135,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
                 if ( (pax->approved= approved) != 0 )
                     s = (char *)"APPROVED";
                 else s = (char *)((strcmp(pax->symbol,"KMD") == 0) ? "WITHDRAW" : "DEPOSIT");
-                printf("[%s] addflag.%d ADD %s/%s %s %.8f -> %s TO PAX ht.%d otherht.%d total %.8f\n",ASSETCHAINS_SYMBOL,addflag,s,symbol,source,dstr(ASSETCHAINS_SYMBOL[0]==0?pax->komodoshis:pax->fiatoshis),pax->coinaddr,pax->height,pax->otherheight,dstr(komodo_paxtotal()));
+                printf("[%s] addflag.%d ADD %s/%s %s %.8f -> %s TO PAX ht.%d otherht.%d total %.8f\n",ASSETCHAINS_SYMBOL,addflag,s,symbol,source,dstr(strcmp(pax->symbol,"KMD")==0?pax->komodoshis:pax->fiatoshis),pax->coinaddr,pax->height,pax->otherheight,dstr(komodo_paxtotal()));
             }
         }
         //else printf("%p MARKED.%d DEPOSIT %s %.8f -> %s TO PAX ht.%d otherht.%d\n",pax,pax->marked,symbol,dstr(fiatoshis),coinaddr,height,otherheight);
@@ -520,7 +520,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     memset(rmd160s,0,sizeof(rmd160s));
     memset(kmdheights,0,sizeof(kmdheights));
     memset(otherheights,0,sizeof(otherheights));
-    tokomodo = (komodo_is_issuer() == 0);
+    tokomodo = (komodo_baseid(source) >= 0 && komodo_baseid(source) != 32); //(komodo_is_issuer() == 0);
     if ( opretbuf[0] == 'D' )
     {
         if ( opretlen == 38 ) // any KMD tx
@@ -551,10 +551,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                             didstats = 1;
                             printf("########### %p deposited %s += %.8f\n",basesp,base,dstr(fiatoshis));
                         }
-                        //if ( strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 ) //tokomodo == 0 &&
-                        {
-                            komodo_gateway_deposit(coinaddr,value,base,fiatoshis,rmd160,txid,vout,'D',kmdheight,height,(char *)"KMD",0);
-                        }
+                        komodo_gateway_deposit(coinaddr,value,base,fiatoshis,rmd160,txid,vout,'D',kmdheight,height,(char *)"KMD",0);
                     }
                     if ( (pax= komodo_paxfind(txid,vout,'D')) != 0 )
                     {
