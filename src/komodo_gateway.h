@@ -252,12 +252,6 @@ uint64_t komodo_paxtotal()
                             pax->didstats = 1;
                             printf("Iset dstats %.8f += %.8f\n",dstr(basesp->issued),dstr(pax->fiatoshis));
                         }
-                        else if ( pax->type == 'X' )
-                        {
-                            basesp->redeemed += pax->fiatoshis;
-                            pax->didstats = 1;
-                            printf("Xset dstats %.8f += %.8f\n",dstr(basesp->redeemed),dstr(pax->fiatoshis));
-                        }
                     }
                 }
                 printf(" stats.%d type.%c (%s) k.%d %.8f h.%d %.8f I.%.8f X.%.8f\n",pax->didstats,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis),dstr(basesp->issued),dstr(basesp->redeemed));
@@ -528,7 +522,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         if ( (basesp= komodo_stateptrget(base)) != 0 )
                         {
                             basesp->deposited += fiatoshis;
-                            didstats = 1;
+                            pax->didstats = 1;
                             printf("########### %p deposited %s += %.8f\n",basesp,base,dstr(fiatoshis));
                         }
                         //if ( strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 ) //tokomodo == 0 &&
@@ -544,16 +538,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                             if ( (basesp= komodo_stateptrget(base)) != 0 )
                             {
                                 basesp->deposited += fiatoshis;
-                                didstats = 1;
+                                pax->didstats = 1;
                                 printf("########### %p deposited %s += %.8f\n",basesp,base,dstr(fiatoshis));
                             }
                         }
-                    }
-                    if ( (pax= komodo_paxfind(txid,vout)) != 0 )
-                    {
-                        if ( didstats != 0 )
-                            pax->didstats = 1;
-                        pax->type = opretbuf[0];
                     }
                 }
             }
@@ -659,10 +647,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         continue;
                     }
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
+                    printf("ISSUE %s %.8f %.8f\n",CURRENCIES[baseids[i]],dstr(values[i]),dstr(srcvalues[i]));
+                    komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,CURRENCIES[baseids[i]],0);
                     if ( komodo_paxmark(height,txids[i],vouts[i],height) == 0 )
                     {
-                        //if ( tokomodo == 0 )
-                            komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,CURRENCIES[baseids[i]],0);
                     }
                     if ( (pax= komodo_paxfind(txids[i],vouts[i])) != 0 )
                     {
@@ -684,11 +672,17 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     continue;
                 bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
                 printf("X i.%d of %d: %.8f -> %s\n",i,n,dstr(values[i]),coinaddr);
+                komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,(char *)"KMD",0);
                 if ( komodo_paxmark(height,txids[i],vouts[i],height) == 0 )
-                    komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,(char *)"KMD",0);
+                    ;
                 if ( (pax= komodo_paxfind(txids[i],vouts[i])) != 0 )
                 {
                     pax->type = opretbuf[0];
+                    if ( srcvalues[i] != 0 )
+                    {
+                        pax->redeemed += srcvalues[i];
+                        pax->didstats = 1;
+                    }
                 }
             }
         } else printf("komodo_issued_opreturn returned %d\n",n);
