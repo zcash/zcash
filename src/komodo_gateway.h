@@ -276,7 +276,7 @@ uint64_t komodo_paxtotal()
                     }
                 }
             }
-            //if ( strcmp(str,"HRK") == 0 || strcmp("HRK",pax->symbol) == 0 || strcmp("HRK",pax->source) == 0 )
+            if ( strcmp(str,"HRK") == 0 || strcmp("HRK",pax->symbol) == 0 || strcmp("HRK",pax->source) == 0 )
             {
                 for (i=0; i<32; i++)
                     printf("%02x",((uint8_t *)&pax->txid)[i]);
@@ -739,13 +739,13 @@ void komodo_passport_iteration()
                 fseek(fp,0,SEEK_END);
                 if ( ftell(fp) > lastpos[baseid] )
                 {
-                    if ( 0 && strcmp(symbol,"KMD") == 0 )
+                    if ( lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
                         printf("passport refid.%d %s fname.(%s) base.%s\n",refid,symbol,fname,base);
                     fseek(fp,lastpos[baseid],SEEK_SET);
                     while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
                         ;
                     lastpos[baseid] = ftell(fp);
-                    if ( 0 && strcmp(symbol,"KMD") == 0 )
+                    if ( lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
                         printf("from.(%s) lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
                 } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                 fclose(fp);
