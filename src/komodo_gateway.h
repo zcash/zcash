@@ -258,7 +258,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
 
 uint64_t komodo_paxtotal()
 {
-    struct pax_transaction *pax,*pax2,*tmp,*tmp2; char symbol[16],dest[16]; int32_t i,ht; int64_t checktoshis; uint64_t seed,total = 0; struct komodo_state *basesp;
+    struct pax_transaction *pax,*pax2,*tmp,*tmp2; char symbol[16],dest[16],*str; int32_t i,ht; int64_t checktoshis; uint64_t seed,total = 0; struct komodo_state *basesp;
     if ( komodo_isrealtime(&ht) == 0 )
         return(0);
     else
@@ -269,7 +269,10 @@ uint64_t komodo_paxtotal()
             {
                 for (i=0; i<32; i++)
                     printf("%02x",((uint8_t *)&pax->txid)[i]);
-                printf(" pax.%p didstats.0 type.%c (%s) k.%d %.8f h.%d %.8f\n",pax,pax->type,pax->symbol,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis));
+                if ( pax->type == 'X' || pax->type == 'A' )
+                    str = pax->symbol;
+                else str = pax->source;
+                printf(" pax.%p didstats.0 type.%c (%s) k.%d %.8f h.%d %.8f\n",pax,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis));
                 /*HASH_ITER(hh,PAX,pax2,tmp2)
                 {
                     for (i=0; i<32; i++)
@@ -567,7 +570,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                             komodo_gateway_deposit(coinaddr,value,base,fiatoshis,rmd160,txid,vout,kmdheight,height,(char *)"KMD",0);
                         }
                     }
-                    else
+                    if ( (pax= komodo_paxfind(txid,vout)) != 0 )
                     {
                         pax->type = opretbuf[0];
                         if ( pax->didstats == 0 )
