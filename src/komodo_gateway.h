@@ -278,7 +278,7 @@ uint64_t komodo_paxtotal()
                             memcpy(pax->rmd160,pax2->rmd160,20);
                             if ( (basesp= komodo_stateptrget(pax->source)) != 0 )
                             {
-                                basep->issued += pax->fiatoshis;
+                                basesp->issued += pax->fiatoshis;
                                 pax->didstats = 1;
                                 printf("found match for %s %.8f\n",pax->symbol,dstr(pax->fiatoshis));
                             } else printf("paxtotal cant find.(%s)\n",pax->source);
