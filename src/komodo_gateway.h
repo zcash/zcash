@@ -200,8 +200,9 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
     incr = 34 + (iskomodo * (2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4));
     for (i=0; i<4; i++)
         base[i] = opretbuf[opretlen-4+i];
-    //for (i=0; i<opretlen; i++)
-    //    printf("%02x",opretbuf[i]);
+    for (i=0; i<opretlen; i++)
+        printf("%02x",opretbuf[i]);
+    printf(" opretlen.%d (%s)\n",opretlen,base);
     //printf(" opretlen.%d vs %d incr.%d\n",opretlen,(int32_t)(2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4),incr);
     if ( ASSETCHAINS_SYMBOL[0] == 0 || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
     {
