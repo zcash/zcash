@@ -272,29 +272,20 @@ uint64_t komodo_paxtotal()
                 if ( pax->type == 'X' || pax->type == 'A' || pax->type == 'D' || pax->type == 'I' )
                     str = pax->symbol;
                 else str = pax->source;
-                printf(" pax.%p didstats.0 type.%c (%s) k.%d %.8f h.%d %.8f\n",pax,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis));
-                /*HASH_ITER(hh,PAX,pax2,tmp2)
+                if ( pax->didstats == 0 && pax->fiatoshis != 0 )
                 {
-                    for (i=0; i<32; i++)
-                        printf("%02x",((uint8_t *)&pax2->txid)[i]);
-                    printf(" pax2.%p\n",pax2);
-                    if ( pax != pax2 && pax->txid == pax2->txid )
+                    if ( pax->type == 'I' )
                     {
-                        printf("matched txid\n");
-                        if ( pax2->fiatoshis != 0 )
-                        {
-                            pax->fiatoshis = pax2->fiatoshis;
-                            pax->komodoshis = pax2->komodoshis;
-                            memcpy(pax->rmd160,pax2->rmd160,20);
-                            if ( (basesp= komodo_stateptrget(pax->source)) != 0 )
-                            {
-                                basesp->issued += pax->fiatoshis;
-                                pax->didstats = 1;
-                                printf("found match for %s %.8f\n",pax->symbol,dstr(pax->fiatoshis));
-                            } else printf("paxtotal cant find.(%s)\n",pax->source);
-                        } else printf("null fiatoshis\n");
+                        basesp->issued += pax->fiatoshis;
+                        pax->didstats = 1;
                     }
-                }*/
+                    else if ( pax->type == 'X' )
+                    {
+                        basesp->redeemed += pax->fiatoshis;
+                        pax->didstats = 1;
+                    }
+                }
+                printf(" didstats.0 type.%c (%s) k.%d %.8f h.%d %.8f\n",pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis));
             }
         }
     }
@@ -705,7 +696,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( komodo_paxmark(height,txids[i],vouts[i],height) == 0 )
                     {
                         //if ( tokomodo == 0 )
-                        printf("I: %s\n",CURRENCIES[baseids[i]]);
+                        //printf("I: %s\n",CURRENCIES[baseids[i]]);
                             komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,CURRENCIES[baseids[i]],0);
                     }
                     if ( (pax= komodo_paxfind(txids[i],vouts[i])) != 0 )
