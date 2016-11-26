@@ -442,7 +442,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         {
             for (i=1; i<n-1; i++)
             {
-                if ( (pax= komodo_paxfind(txids[i-1],vouts[i-1])) != 0 )
+                if ( (pax= komodo_paxfinds(txids[i-1],vouts[i-1])) != 0 )
                 {
                     pax->type = opcode;
                     if ( ((opcode == 'I' && pax->fiatoshis == block.vtx[0].vout[i].nValue) || (opcode == 'X' && pax->komodoshis == block.vtx[0].vout[i].nValue)) )
@@ -540,7 +540,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 didstats = 0;
                 if ( komodo_paxcmp(value,checktoshis,seed) == 0 )
                 {
-                    if ( (pax= komodo_paxfind(txid,vout)) == 0 )
+                    if ( (pax= komodo_paxfind(txid,vout,'D')) == 0 )
                     {
                         if ( (basesp= komodo_stateptrget(base)) != 0 )
                         {
