@@ -53,7 +53,7 @@ struct pax_transaction *komodo_paxfind(uint256 txid,uint16_t vout,uint8_t type)
 
 struct pax_transaction *komodo_paxfinds(uint256 txid,uint16_t vout)
 {
-    uint8_t types[] = { 'D', 'I', 'W', 'A', 'X' };
+    struct pax_transaction *pax; uint8_t types[] = { 'D', 'I', 'W', 'A', 'X' };
     for (i=0; i<sizeof(types)/sizeof(*types); i++)
         if ( (pax= komodo_paxfind(txid,vout,types[i])) != 0 )
             return(pax);
