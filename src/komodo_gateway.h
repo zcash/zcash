@@ -265,16 +265,15 @@ uint64_t komodo_paxtotal()
                     str = pax->symbol;
                 else str = pax->source;
                 basesp = komodo_stateptrget(str);
-                if ( komodo_baseid(str) >= 0 && pax->didstats == 0 && pax->fiatoshis != 0 )
+                if ( basesp != 0 && pax->didstats == 0 && pax->type == 'I' )
                 {
-                    if ( basesp != 0 )
+                    if ( (pax2= komodo_paxfind(pax->txid,pax->vout,'D')) != 0 && pax2->fiatoshis != 0 )
                     {
-                        if ( pax->type == 'I' )
-                        {
-                            basesp->issued += pax->fiatoshis;
-                            pax->didstats = 1;
-                            printf("Iset dstats %.8f += %.8f\n",dstr(basesp->issued),dstr(pax->fiatoshis));
-                        }
+                        pax->komodoshis = pax2->komodoshis;
+                        pax->fiatoshis = pax2->fiatoshis;
+                        basesp->issued += pax->fiatoshis;
+                        pax->didstats = 1;
+                        printf("Iset dstats %.8f += %.8f\n",dstr(basesp->issued),dstr(pax->fiatoshis));
                     }
                 }
                 printf(" stats.%d type.%c (%s) k.%d %.8f h.%d %.8f I.%.8f X.%.8f\n",pax->didstats,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis),dstr(basesp->issued),dstr(basesp->redeemed));
