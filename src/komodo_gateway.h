@@ -628,7 +628,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 for (i=0; i<n; i++)
                 {
                     if ( baseids[i] < 0 )
+                    {
+                        printf("%d of %d illegal baseid.%d\n",i,n,baseids[i]);
                         continue;
+                    }
                     didstats = 0;
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
                     if ( (pax= komodo_paxfind(txids[i],vouts[i])) == 0 || pax->didstats == 0 )
@@ -649,7 +652,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         pax->didstats = 1;
                 }
             } else printf("opreturn none issued?\n");
-        }
+        } else printf("opreturn matches KMD? %s\n",(char *)&opretbuf[opretlen-4]);
     }
     else if ( opretbuf[0] == 'X' )
     {
