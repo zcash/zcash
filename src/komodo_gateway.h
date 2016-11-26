@@ -261,7 +261,7 @@ uint64_t komodo_paxtotal()
             {
                 //for (i=0; i<32; i++)
                 //    printf("%02x",((uint8_t *)&pax->txid)[i]);
-                if ( pax->type == 'A' || pax->type == 'D' )
+                if ( pax->type == 'A' || pax->type == 'D' || pax->type == 'X' )
                     str = pax->symbol;
                 else str = pax->source;
                 basesp = komodo_stateptrget(str);
@@ -275,8 +275,8 @@ uint64_t komodo_paxtotal()
                         pax->didstats = 1;
                         printf("Iset %s dstats %.8f += %.8f\n",str,dstr(basesp->issued),dstr(pax->fiatoshis));
                     }
+                    printf(" stats.%d type.%c (%s) k.%d %.8f h.%d %.8f I.%.8f X.%.8f\n",pax->didstats,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis),dstr(basesp->issued),dstr(basesp->redeemed));
                 }
-                printf(" stats.%d type.%c (%s) k.%d %.8f h.%d %.8f I.%.8f X.%.8f\n",pax->didstats,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis),dstr(basesp->issued),dstr(basesp->redeemed));
             }
         }
     }
@@ -694,7 +694,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 if ( baseids[i] < 0 )
                     continue;
                 bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
-                printf("X i.%d of %d: %.8f -> %s\n",i,n,dstr(values[i]),coinaddr);
+                printf("%s X i.%d of %d: %.8f -> %s\n",CURRENCIES[baseids[i]],i,n,dstr(values[i]),coinaddr);
                 komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],'X',height,0,(char *)"KMD",0);
                 if ( komodo_paxmark(height,txids[i],vouts[i],'X',height) == 0 )
                     ;
