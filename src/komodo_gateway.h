@@ -196,7 +196,7 @@ int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transactio
 
 int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t *values,int64_t *srcvalues,int32_t *kmdheights,int32_t *otherheights,int8_t *baseids,uint8_t *rmd160s,uint8_t *opretbuf,int32_t opretlen,int32_t iskomodo)
 {
-    struct pax_transaction p; int32_t i,n=0,j,len=0,incr,height,otherheight; uint8_t type,rmd160[20]; uint64_t fiatoshis; char symbol[16];
+    struct pax_transaction p,*pax; int32_t i,n=0,j,len=0,incr,height,otherheight; uint8_t type,rmd160[20]; uint64_t fiatoshis; char symbol[16];
     incr = 34 + (iskomodo * (2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4));
     for (i=0; i<4; i++)
         base[i] = opretbuf[opretlen-4+i];
@@ -241,6 +241,14 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                 vouts[n] = opretbuf[len++];
                 vouts[n] = (opretbuf[len++] << 8) | vouts[n];
                 baseids[n] = komodo_baseid(base);
+                if ( (pax= komodo_paxfind(txids[n],vouts[n])) != 0 )
+                {
+                    values[n] = (ASSETCHAINS_SYMBOL[0] == 0) ? pax->komodoshis : pax->fiatoshis;
+                    srcvalues[n] = (ASSETCHAINS_SYMBOL[0] == 0) ? pax->fiatoshis : pax->komodoshis;
+                    kmdheights[n] = pax->height;
+                    otherheights[n] = pax->otherheight;
+                    memcpy(&rmd160s[n * 20],pax->rmd160,20);
+                }
             }
             //printf(" komodo_issued_opreturn issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
         }
@@ -325,8 +333,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         opcode = 'I';
         if ( komodo_isrealtime(&ht) == 0 )
             return(0);
-    }
-    else opcode = 'X';
+    } else opcode = 'X';
     HASH_ITER(hh,PAX,pax,tmp)
     {
         //printf("pax.%s marked.%d %.8f -> %.8f\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
