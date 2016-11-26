@@ -637,7 +637,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     solutionTargetChecks.increment();
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
                     {
-                        if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                        if ( ASSETCHAINS_SYMBOL[0] != 0 )
                             fprintf(stderr,"missed target\n");
                         return false;
                     }
