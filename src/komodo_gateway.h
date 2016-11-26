@@ -269,8 +269,8 @@ uint64_t komodo_paxtotal()
             {
                 for (i=0; i<32; i++)
                     printf("%02x",((uint8_t *)&pax->txid)[i]);
-                printf(" pax.%p didstats.0 type.%c\n",pax,pax->type);
-                HASH_ITER(hh,PAX,pax2,tmp2)
+                printf(" pax.%p didstats.0 type.%c (%s) k.%d %.8f h.%d %.8f\n",pax,pax->type,pax->symbol,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis));
+                /*HASH_ITER(hh,PAX,pax2,tmp2)
                 {
                     for (i=0; i<32; i++)
                         printf("%02x",((uint8_t *)&pax2->txid)[i]);
@@ -291,7 +291,7 @@ uint64_t komodo_paxtotal()
                             } else printf("paxtotal cant find.(%s)\n",pax->source);
                         } else printf("null fiatoshis\n");
                     }
-                }
+                }*/
             }
         }
     }
@@ -552,7 +552,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     printf("%02x",pubkey33[i]);
                 printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
                 didstats = 0;
-                if ( komodo_paxcmp(value,checktoshis,seed) == 0 )//value >= checktoshis-(checktoshis >> 8) )
+                if ( komodo_paxcmp(value,checktoshis,seed) == 0 )
                 {
                     if ( (pax= komodo_paxfind(txid,vout)) == 0 )
                     {
