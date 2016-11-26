@@ -131,7 +131,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
                 {
                     if ( (basesp= komodo_stateptrget(symbol)) != 0 )
                     {
-                        //pax->didstats = 1;
+                        pax->didstats = 1;
                         basesp->deposited += fiatoshis;
                         printf("########### %p deposited %s += %.8f\n",basesp,symbol,dstr(fiatoshis));
                     }
@@ -582,9 +582,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                             }
                         }
                     }
-                    if ( didstats != 0 && (pax= komodo_paxfind(txid,vout)) != 0 )
+                    if ( (pax= komodo_paxfind(txid,vout)) != 0 )
                     {
-                        //pax->didstats = 1;
+                        if ( didstats != 0 )
+                            pax->didstats = 1;
                         pax->type = opretbuf[0];
                     }
                 }
