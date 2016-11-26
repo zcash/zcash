@@ -690,7 +690,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     }
                     didstats = 0;
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
-                    if ( srcvalues[i] != 0 && ((pax= komodo_paxfind(txids[i],vouts[i])) == 0 || pax->didstats == 0) )
+                    /*if ( srcvalues[i] != 0 && ((pax= komodo_paxfind(txids[i],vouts[i])) == 0 || pax->didstats == 0) )
                     {
                         if ( (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                         {
@@ -698,7 +698,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                             printf("########### %p issued %s += %.8f\n",basesp,CURRENCIES[baseids[i]],dstr(srcvalues[i]));
                         }
                         didstats = 1;
-                    }
+                    }*/
                     if ( komodo_paxmark(height,txids[i],vouts[i],height) == 0 )
                     {
                         //if ( tokomodo == 0 )
@@ -727,8 +727,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     continue;
                 didstats = 0;
                 bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
-                printf("i.%d of %d: %.8f -> %s\n",i,n,dstr(values[i]),coinaddr);
-                if ( srcvalues[i] != 0 && ((pax= komodo_paxfind(txids[i],vouts[i])) == 0 || pax->didstats == 0) )
+                printf("X i.%d of %d: %.8f -> %s\n",i,n,dstr(values[i]),coinaddr);
+                /*if ( srcvalues[i] != 0 && ((pax= komodo_paxfind(txids[i],vouts[i])) == 0 || pax->didstats == 0) )
                 {
                     if ( (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                     {
@@ -737,7 +737,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         printf("########### %p redeemed %s += %.8f\n",basesp,CURRENCIES[baseids[i]],dstr(srcvalues[i]));
                     }
                     didstats = 1;
-                }
+                }*/
                 if ( komodo_paxmark(height,txids[i],vouts[i],height) == 0 )
                     komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,(char *)"KMD",0);
                 if ( (pax= komodo_paxfind(txids[i],vouts[i])) != 0 )
