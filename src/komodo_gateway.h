@@ -522,7 +522,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         if ( (basesp= komodo_stateptrget(base)) != 0 )
                         {
                             basesp->deposited += fiatoshis;
-                            pax->didstats = 1;
+                            didstats = 1;
                             printf("########### %p deposited %s += %.8f\n",basesp,base,dstr(fiatoshis));
                         }
                         //if ( strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 ) //tokomodo == 0 &&
@@ -533,15 +533,17 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( (pax= komodo_paxfind(txid,vout)) != 0 )
                     {
                         pax->type = opretbuf[0];
-                        if ( pax->didstats == 0 )
+                        if ( didstats == 0 && pax->didstats == 0 )
                         {
                             if ( (basesp= komodo_stateptrget(base)) != 0 )
                             {
                                 basesp->deposited += fiatoshis;
-                                pax->didstats = 1;
+                                didstats = 1;
                                 printf("########### %p deposited %s += %.8f\n",basesp,base,dstr(fiatoshis));
                             }
                         }
+                        if ( didstats != 0 )
+                            pax->didstats = 1;
                     }
                 }
             }
