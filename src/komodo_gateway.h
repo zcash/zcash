@@ -283,11 +283,13 @@ uint64_t komodo_paxtotal()
                         {
                             basesp->issued += pax->fiatoshis;
                             pax->didstats = 1;
+                            printf("Iset dstats %.8f += %.8f\n",dstr(basesp->issued),dstr(pax->fiatoshis));
                         }
                         else if ( pax->type == 'X' )
                         {
                             basesp->redeemed += pax->fiatoshis;
                             pax->didstats = 1;
+                            printf("Xset dstats %.8f += %.8f\n",dstr(basesp->redeemed),dstr(pax->fiatoshis));
                         }
                     }
                 }
@@ -688,7 +690,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         printf("%d of %d illegal baseid.%d\n",i,n,baseids[i]);
                         continue;
                     }
-                    didstats = 0;
+                    //didstats = 0;
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
                     /*if ( srcvalues[i] != 0 && ((pax= komodo_paxfind(txids[i],vouts[i])) == 0 || pax->didstats == 0) )
                     {
@@ -709,8 +711,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     {
                         pax->type = opretbuf[0];
                         strcpy(pax->source,(char *)&opretbuf[opretlen-4]);
-                        if ( didstats != 0 )
-                            pax->didstats = 1;
+                        //if ( didstats != 0 )
+                        //    pax->didstats = 1;
                     }
                 }
             } else printf("opreturn none issued?\n");
