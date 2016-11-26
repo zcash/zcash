@@ -196,7 +196,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
         printf("%02x",opretbuf[i]);
     printf(" opretlen.%d (%s)\n",opretlen,base);
     //printf(" opretlen.%d vs %d incr.%d\n",opretlen,(int32_t)(2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4),incr);
-    if ( ASSETCHAINS_SYMBOL[0] == 0 || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
+    //if ( ASSETCHAINS_SYMBOL[0] == 0 || strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
     {
         type = opretbuf[0];
         opretbuf++, opretlen--;
@@ -210,8 +210,8 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                 {
                     txids[n] = p.txid;
                     vouts[n] = p.vout;
-                    values[n] = (ASSETCHAINS_SYMBOL[0] == 0) ? p.komodoshis : p.fiatoshis;
-                    srcvalues[n] = (ASSETCHAINS_SYMBOL[0] == 0) ? p.fiatoshis : p.komodoshis;
+                    values[n] = (strcmp("KMD",base) == 0) ? p.komodoshis : p.fiatoshis;
+                    srcvalues[n] = (strcmp("KMD",base) == 0) ? p.fiatoshis : p.komodoshis;
                     kmdheights[n] = p.height;
                     otherheights[n] = p.otherheight;
                     memcpy(&rmd160s[n * 20],p.rmd160,20);
@@ -235,8 +235,8 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                 baseids[n] = komodo_baseid(base);
                 if ( (pax= komodo_paxfinds(txids[n],vouts[n])) != 0 )
                 {
-                    values[n] = (ASSETCHAINS_SYMBOL[0] == 0) ? pax->komodoshis : pax->fiatoshis;
-                    srcvalues[n] = (ASSETCHAINS_SYMBOL[0] == 0) ? pax->fiatoshis : pax->komodoshis;
+                    values[n] = (strcmp("KMD",base) == 0) ? pax->komodoshis : pax->fiatoshis;
+                    srcvalues[n] = (strcmp("KMD",base) == 0) ? pax->fiatoshis : pax->komodoshis;
                     kmdheights[n] = pax->height;
                     otherheights[n] = pax->otherheight;
                     memcpy(&rmd160s[n * 20],pax->rmd160,20);
