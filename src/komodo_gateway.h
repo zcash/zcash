@@ -565,7 +565,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                             didstats = 1;
                             printf("########### %p deposited %s += %.8f\n",basesp,base,dstr(fiatoshis));
                         }
-                        if ( tokomodo == 0 && strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 )
+                        if ( strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0 ) //tokomodo == 0 &&
                         {
                             komodo_gateway_deposit(coinaddr,value,base,fiatoshis,rmd160,txid,vout,kmdheight,height,(char *)"KMD",0);
                         }
