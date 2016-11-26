@@ -272,20 +272,23 @@ uint64_t komodo_paxtotal()
                 if ( pax->type == 'X' || pax->type == 'A' || pax->type == 'D' || pax->type == 'I' )
                     str = pax->symbol;
                 else str = pax->source;
-                if ( pax->didstats == 0 && pax->fiatoshis != 0 )
+                if ( komodo_baseid(str) >= 0 && pax->didstats == 0 && pax->fiatoshis != 0 )
                 {
-                    if ( pax->type == 'I' )
+                    if ( (basesp= komodo_stateptrget(str)) != 0 )
                     {
-                        basesp->issued += pax->fiatoshis;
-                        pax->didstats = 1;
-                    }
-                    else if ( pax->type == 'X' )
-                    {
-                        basesp->redeemed += pax->fiatoshis;
-                        pax->didstats = 1;
+                        if ( pax->type == 'I' )
+                        {
+                            basesp->issued += pax->fiatoshis;
+                            pax->didstats = 1;
+                        }
+                        else if ( pax->type == 'X' )
+                        {
+                            basesp->redeemed += pax->fiatoshis;
+                            pax->didstats = 1;
+                        }
                     }
                 }
-                printf(" didstats.0 type.%c (%s) k.%d %.8f h.%d %.8f\n",pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis));
+                printf(" stats.%d type.%c (%s) k.%d %.8f h.%d %.8f\n",pax->didstats,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis));
             }
         }
     }
