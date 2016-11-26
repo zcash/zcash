@@ -269,7 +269,7 @@ uint64_t komodo_paxtotal()
             {
                 for (i=0; i<32; i++)
                     printf("%02x",((uint8_t *)&pax->txid)[i]);
-                if ( pax->type == 'X' || pax->type == 'A' )
+                if ( pax->type == 'X' || pax->type == 'A' || pax->type == 'D' || pax->type == 'I' )
                     str = pax->symbol;
                 else str = pax->source;
                 printf(" pax.%p didstats.0 type.%c (%s) k.%d %.8f h.%d %.8f\n",pax,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis));
