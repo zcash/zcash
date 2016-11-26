@@ -120,11 +120,11 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
             {
                 if ( ASSETCHAINS_SYMBOL[0] == 0 )
                 {
-                    if ( (basesp= komodo_stateptrget(source)) != 0 )
+                    if ( (basesp= komodo_stateptrget(symbol)) != 0 )
                     {
                         pax->didstats = 1;
                         basesp->withdrawn += fiatoshis;
-                        printf("########### %p withdrawn %s += %.8f\n",basesp,source,dstr(fiatoshis));
+                        printf("########### %p withdrawn %s += %.8f\n",basesp,symbol,dstr(fiatoshis));
                     }
                 }
                 else
@@ -602,11 +602,11 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         {
             if ( value != 0 & ((pax= komodo_paxfind(txid,vout)) == 0 || pax->didstats == 0) )
             {
-                if ( (basesp= komodo_stateptrget(pax->source)) != 0 )
+                if ( (basesp= komodo_stateptrget(base)) != 0 )
                 {
                     basesp->withdrawn += value;
                     didstats = 1;
-                    printf("########### %p withdrawn %s += %.8f\n",basesp,pax->source,dstr(value));
+                    printf("########### %p withdrawn %s += %.8f\n",basesp,base,dstr(value));
                 }
                 printf("notarize %s %.8f -> %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),dstr(komodoshis),kmdheight,height);
             }
