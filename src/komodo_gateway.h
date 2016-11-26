@@ -685,8 +685,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         strcpy(pax->source,(char *)&opretbuf[opretlen-4]);
                     }
                 }
-            } else printf("opreturn none issued?\n");
-        } else printf("opreturn matches KMD? %s\n",(char *)&opretbuf[opretlen-4]);
+            } //else printf("opreturn none issued?\n");
+        } //else printf("opreturn matches KMD? %s\n",(char *)&opretbuf[opretlen-4]);
     }
     else if ( opretbuf[0] == 'X' )
     {
@@ -740,18 +740,19 @@ void komodo_passport_iteration()
         {
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"komodostate");
             komodo_nameset(symbol,dest,base);
-            //port = komodo_port(base,10,&magic) + 1;
             if ( (fp= fopen(fname,"rb")) != 0 && (sp= komodo_stateptrget(symbol)) != 0 )
             {
                 fseek(fp,0,SEEK_END);
                 if ( ftell(fp) > lastpos[baseid] )
                 {
-                    //printf("passport refid.%d %s fname.(%s) base.%s\n",refid,symbol,fname,base);
+                    if ( strcmp(symbol,"KMD") == 0 )
+                        printf("passport refid.%d %s fname.(%s) base.%s\n",refid,symbol,fname,base);
                     fseek(fp,lastpos[baseid],SEEK_SET);
                     while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
                         ;
                     lastpos[baseid] = ftell(fp);
-                    //printf("from.(%s) lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
+                    if ( strcmp(symbol,"KMD") == 0 )
+                        printf("from.(%s) lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
                 } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                 fclose(fp);
             }
