@@ -51,6 +51,15 @@ struct pax_transaction *komodo_paxfind(uint256 txid,uint16_t vout,uint8_t type)
     return(pax);
 }
 
+struct pax_transaction *komodo_paxfinds(uint256 txid,uint16_t vout)
+{
+    uint8_t types[] = { 'D', 'I', 'W', 'A', 'X' };
+    for (i=0; i<sizeof()/sizeof(*); i++)
+        if ( (pax= komodo_paxfind(txid,vout,types[i])) != 0 )
+            return(pax);
+    return(0);
+}
+
 struct pax_transaction *komodo_paxmark(int32_t height,uint256 txid,uint16_t vout,uint8_t type,int32_t mark)
 {
     struct pax_transaction *pax; uint8_t buf[35];
@@ -224,7 +233,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                 vouts[n] = opretbuf[len++];
                 vouts[n] = (opretbuf[len++] << 8) | vouts[n];
                 baseids[n] = komodo_baseid(base);
-                if ( (pax= komodo_paxfind(txids[n],vouts[n])) != 0 )
+                if ( (pax= komodo_paxfinds(txids[n],vouts[n])) != 0 )
                 {
                     values[n] = (ASSETCHAINS_SYMBOL[0] == 0) ? pax->komodoshis : pax->fiatoshis;
                     srcvalues[n] = (ASSETCHAINS_SYMBOL[0] == 0) ? pax->fiatoshis : pax->komodoshis;
