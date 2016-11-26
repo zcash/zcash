@@ -261,7 +261,7 @@ uint64_t komodo_paxtotal()
             {
                 //for (i=0; i<32; i++)
                 //    printf("%02x",((uint8_t *)&pax->txid)[i]);
-                if ( pax->type == 'A' || pax->type == 'D' || pax->type == 'I' )
+                if ( pax->type == 'A' || pax->type == 'D' )
                     str = pax->symbol;
                 else str = pax->source;
                 basesp = komodo_stateptrget(str);
