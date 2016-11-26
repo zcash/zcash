@@ -736,7 +736,7 @@ void komodo_passport_iteration()
         sp = 0;
         isrealtime = 0;
         base = (char *)CURRENCIES[baseid];
-if ( strcmp("EUR",base) != 0 && baseid < 32 )
+if ( strcmp("HRK",base) != 0 && baseid < 32 )
     continue;
         if ( baseid+1 != refid )
         {
