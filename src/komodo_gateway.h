@@ -619,7 +619,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         }
         printf("extra.[%d] after %.8f\n",n,dstr(komodo_paxtotal()));
     }
-    else if ( tokomodo == 0 && opretbuf[0] == 'I' )
+    else if ( opretbuf[0] == 'I' )
     {
         if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 )
         {
@@ -642,7 +642,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     }
                     if ( komodo_paxmark(height,txids[i],vouts[i],height) == 0 )
                     {
-                        komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,CURRENCIES[baseids[i]],0);
+                        if ( tokomodo == 0 )
+                            komodo_gateway_deposit(coinaddr,0,0,0,0,txids[i],vouts[i],height,0,CURRENCIES[baseids[i]],0);
                     }
                     if ( didstats != 0 && (pax= komodo_paxfind(txids[i],vouts[i])) != 0 )
                         pax->didstats = 1;
