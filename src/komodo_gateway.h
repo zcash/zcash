@@ -263,16 +263,20 @@ uint64_t komodo_paxtotal()
             basesp = komodo_stateptrget(str);
             if ( basesp != 0 && pax->didstats == 0 && pax->type == 'I' )
             {
-                if ( (pax2= komodo_paxfind(pax->txid,pax->vout,'D')) != 0 && pax2->fiatoshis != 0 )
+                if ( (pax2= komodo_paxfind(pax->txid,pax->vout,'D')) != 0 )
                 {
-                    pax->komodoshis = pax2->komodoshis;
-                    pax->fiatoshis = pax2->fiatoshis;
-                    basesp->issued += pax->fiatoshis;
-                    pax->didstats = 1;
-                    printf("Iset %s dstats %.8f += %.8f\n",str,dstr(basesp->issued),dstr(pax->fiatoshis));
+                    printf("%.8f pax2.%p vs pax.%p\n",dstr(pax2->fiatoshis),pax2,pax);
+                    if ( pax2->fiatoshis != 0 )
+                    {
+                        pax->komodoshis = pax2->komodoshis;
+                        pax->fiatoshis = pax2->fiatoshis;
+                        basesp->issued += pax->fiatoshis;
+                        pax->didstats = 1;
+                        printf("Iset %s dstats %.8f += %.8f\n",str,dstr(basesp->issued),dstr(pax->fiatoshis));
+                    }
                 }
             }
-            if ( pax->type == 'D' || strcmp(str,"HRK") == 0 || strcmp("HRK",pax->symbol) == 0 || strcmp("HRK",pax->source) == 0 )
+            if ( strcmp(str,"HRK") == 0 || strcmp("HRK",pax->symbol) == 0 || strcmp("HRK",pax->source) == 0 )
             {
                 for (i=0; i<32; i++)
                     printf("%02x",((uint8_t *)&pax->txid)[i]);
