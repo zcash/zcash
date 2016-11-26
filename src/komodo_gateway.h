@@ -647,7 +647,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( didstats != 0 && (pax= komodo_paxfind(txids[i],vouts[i])) != 0 )
                         pax->didstats = 1;
                 }
-            }
+            } else printf("opreturn none issued?\n");
         }
     }
     else if ( opretbuf[0] == 'X' )
@@ -701,6 +701,8 @@ void komodo_passport_iteration()
         sp = 0;
         isrealtime = 0;
         base = (char *)CURRENCIES[baseid];
+if ( strcmp("EUR",base) != 0 && baseid < 32 )
+    continue;
         if ( baseid+1 != refid )
         {
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"komodostate");
