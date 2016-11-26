@@ -134,7 +134,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
             {
                 if ( (pax->approved= approved) != 0 )
                     s = (char *)"APPROVED";
-                else s = (char *)((ASSETCHAINS_SYMBOL[0] == 0) ? "WITHDRAW" : "DEPOSIT");
+                else s = (char *)((strcmp(pax->symbol,"KMD") == 0) ? "WITHDRAW" : "DEPOSIT");
                 printf("[%s] addflag.%d ADD %s/%s %s %.8f -> %s TO PAX ht.%d otherht.%d total %.8f\n",ASSETCHAINS_SYMBOL,addflag,s,symbol,source,dstr(ASSETCHAINS_SYMBOL[0]==0?pax->komodoshis:pax->fiatoshis),pax->coinaddr,pax->height,pax->otherheight,dstr(komodo_paxtotal()));
             }
         }
@@ -275,10 +275,10 @@ uint64_t komodo_paxtotal()
                         pax->didstats = 1;
                         printf("Iset %s dstats %.8f += %.8f\n",str,dstr(basesp->issued),dstr(pax->fiatoshis));
                     }
-                    if ( strcmp(str,"HRK") == 0 )
-                        printf(" stats.%d type.%c (%s) k.%d %.8f h.%d %.8f I.%.8f X.%.8f\n",pax->didstats,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis),dstr(basesp->issued),dstr(basesp->redeemed));
                 }
             }
+            if ( strcmp(str,"HRK") == 0 )
+                printf(" stats.%d type.%c (%s) k.%d %.8f h.%d %.8f I.%.8f X.%.8f\n",pax->didstats,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis),dstr(basesp->issued),dstr(basesp->redeemed));
         }
     }
     komodo_stateptr(symbol,dest);
