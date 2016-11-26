@@ -683,7 +683,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     }
                     didstats = 0;
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
-                    if ( srcvalues[i] != 0 && (pax= komodo_paxfind(txids[i],vouts[i])) == 0 || pax->didstats == 0 )
+                    if ( srcvalues[i] != 0 && ((pax= komodo_paxfind(txids[i],vouts[i])) == 0 || pax->didstats == 0) )
                     {
                         if ( (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                         {
