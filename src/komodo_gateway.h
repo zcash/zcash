@@ -267,6 +267,7 @@ uint64_t komodo_paxtotal()
         {
             if ( pax->didstats == 0 && pax->type == 'I' )
             {
+                printf("pax.%p didstats.0 type.%c\n",pax,pax->type);
                 HASH_ITER(hh,PAX,pax2,tmp2)
                 {
                     if ( pax != pax2 && pax->txid == pax2->txid )
