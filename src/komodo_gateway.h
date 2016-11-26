@@ -274,9 +274,10 @@ uint64_t komodo_paxtotal()
                 if ( pax->type == 'X' || pax->type == 'A' || pax->type == 'D' || pax->type == 'I' )
                     str = pax->symbol;
                 else str = pax->source;
+                basesp = komodo_stateptrget(str);
                 if ( komodo_baseid(str) >= 0 && pax->didstats == 0 && pax->fiatoshis != 0 )
                 {
-                    if ( (basesp= komodo_stateptrget(str)) != 0 )
+                    if ( basesp != 0 )
                     {
                         if ( pax->type == 'I' )
                         {
