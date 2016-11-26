@@ -542,8 +542,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                                 printf("########### %p deposited %s += %.8f\n",basesp,base,dstr(fiatoshis));
                             }
                         }
-                        if ( didstats != 0 )
-                            pax->didstats = 1;
+                        //if ( didstats != 0 )
+                        //    pax->didstats = 1;
                     }
                 }
             }
@@ -574,8 +574,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             komodo_gateway_deposit(coinaddr,komodoshis,(char *)"KMD",value,rmd160,txid,vout,kmdheight,height,source,0);
             if ( (pax= komodo_paxfind(txid,vout)) != 0 )
             {
-                if ( didstats != 0 )
-                    pax->didstats = 1;
+                //if ( didstats != 0 )
+                //    pax->didstats = 1;
                 pax->type = opretbuf[0];
             }
         }
@@ -627,8 +627,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 {
                     pax->type = opretbuf[0];
                     pax->approved = kmdheights[i];
-                    if ( didstats != 0 )
-                        pax->didstats = 1;
+                    //if ( didstats != 0 )
+                    //    pax->didstats = 1;
                     printf(" i.%d approved.%d <<<<<<<<<<<<< APPROVED %p\n",i,kmdheights[i],pax);
                 }
             }
@@ -683,7 +683,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( baseids[i] >= 0 && srcvalues[i] != 0 && (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                     {
                         basesp->redeemed += srcvalues[i];
-                        pax->didstats = 1;
+                        //pax->didstats = 1;
                     }
                 }
             }
