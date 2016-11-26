@@ -678,9 +678,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 if ( (pax= komodo_paxfind(txids[i],vouts[i])) != 0 )
                 {
                     pax->type = opretbuf[0];
-                    if ( srcvalues[i] != 0 )
+                    if ( baseids[i] >= 0 && srcvalues[i] != 0 && (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                     {
-                        pax->redeemed += srcvalues[i];
+                        basesp->redeemed += srcvalues[i];
                         pax->didstats = 1;
                     }
                 }
