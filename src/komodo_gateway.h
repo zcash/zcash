@@ -257,28 +257,27 @@ uint64_t komodo_paxtotal()
     {
         HASH_ITER(hh,PAX,pax,tmp)
         {
-            //if ( pax->didstats == 0 && pax->type == 'I' )
+            if ( pax->type == 'A' || pax->type == 'D' || pax->type == 'X' )
+                str = pax->symbol;
+            else str = pax->source;
+            basesp = komodo_stateptrget(str);
+            if ( basesp != 0 && pax->didstats == 0 && pax->type == 'I' )
             {
-                //for (i=0; i<32; i++)
-                //    printf("%02x",((uint8_t *)&pax->txid)[i]);
-                if ( pax->type == 'A' || pax->type == 'D' || pax->type == 'X' )
-                    str = pax->symbol;
-                else str = pax->source;
-                basesp = komodo_stateptrget(str);
-                if ( basesp != 0 && pax->didstats == 0 && pax->type == 'I' )
+                if ( (pax2= komodo_paxfind(pax->txid,pax->vout,'D')) != 0 && pax2->fiatoshis != 0 )
                 {
-                    if ( (pax2= komodo_paxfind(pax->txid,pax->vout,'D')) != 0 && pax2->fiatoshis != 0 )
-                    {
-                        pax->komodoshis = pax2->komodoshis;
-                        pax->fiatoshis = pax2->fiatoshis;
-                        basesp->issued += pax->fiatoshis;
-                        pax->didstats = 1;
-                        printf("Iset %s dstats %.8f += %.8f\n",str,dstr(basesp->issued),dstr(pax->fiatoshis));
-                    }
+                    pax->komodoshis = pax2->komodoshis;
+                    pax->fiatoshis = pax2->fiatoshis;
+                    basesp->issued += pax->fiatoshis;
+                    pax->didstats = 1;
+                    printf("Iset %s dstats %.8f += %.8f\n",str,dstr(basesp->issued),dstr(pax->fiatoshis));
                 }
             }
-            if ( strcmp(str,"HRK") == 0 )
+            if ( strcmp(str,"HRK") == 0 || strcmp("HRK",pax->symbol) == 0 || strcmp("HRK",pax->source) == 0 )
+            {
+                for (i=0; i<32; i++)
+                    printf("%02x",((uint8_t *)&pax->txid)[i]);
                 printf(" stats.%d type.%c (%s) k.%d %.8f h.%d %.8f I.%.8f X.%.8f\n",pax->didstats,pax->type,str,pax->height,dstr(pax->komodoshis),pax->otherheight,dstr(pax->fiatoshis),dstr(basesp->issued),dstr(basesp->redeemed));
+            }
         }
     }
     komodo_stateptr(symbol,dest);
