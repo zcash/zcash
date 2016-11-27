@@ -430,8 +430,11 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
             ptr = &PVALS[36 * i];
             if ( *ptr < height )
             {
-                *kmdbtcp = pvals[MAX_CURRENCIES + 1];
-                *btcusdp = pvals[MAX_CURRENCIES + 2];
+                if ( kmdbtcp != 0 && btcusdp != 0 )
+                {
+                    *kmdbtcp = pvals[MAX_CURRENCIES + 1];
+                    *btcusdp = pvals[MAX_CURRENCIES + 2];
+                }
                 if ( kmdbtc != 0 && btcusd != 0 )
                     return(komodo_paxcalc(&ptr[1],baseid,relid,basevolume,kmdbtc,btcusd));
                 else return(0);
@@ -461,7 +464,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     printf("kmdbtc %llu btcusd %llu\n",(long long)kmdbtc,(long long)btcusd);
     for (i=nonz=0; i<numvotes; i++)
     {
-        if ( (votes[numvotes-1-i]= _komodo_paxprice(&kmdbtc[numvotes-1-i],&btcusd[numvotes-1-i],height-i,base,rel,100000,kmdbtc,btcusd)) == 0 )
+        if ( (votes[numvotes-1-i]= _komodo_paxprice(0,0,height-i,base,rel,100000,kmdbtc,btcusd)) == 0 )
             zeroes++;
         else nonz++;
     }
