@@ -512,8 +512,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 }
             }
             numvalid = bitweight(signedmask);
-            if ( height == 79633 )
-                notarized = 1;
+            //if ( height == 79633 )
+            //    notarized = 1;
             if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) || numvalid > (numnotaries/3)) )
             {
                 printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<< notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
