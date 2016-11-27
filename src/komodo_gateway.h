@@ -370,9 +370,9 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         else if ( strcmp(symbol,"KMD") != 0 )
         {
 #ifdef KOMODO_ASSETCHAINS_WAITNOTARIZE
-            struct komodo_state *kmdsp = komodo_stateptrget("KMD");
-            if ( kmdsp != 0 && kmdsp->notarized_height >= pax->height ) // assumes same chain as notarize
-                pax->validated = kmdsp->notarized_height;
+            struct komodo_state *kmdsp = komodo_stateptrget((char *)"KMD");
+            if ( kmdsp != 0 && kmdsp->NOTARIZED_HEIGHT >= pax->height ) // assumes same chain as notarize
+                pax->validated = kmdsp->NOTARIZED_HEIGHT;
 #endif
         }
         if ( pax->marked != 0 || strcmp(pax->symbol,symbol) != 0 || pax->validated == 0 )

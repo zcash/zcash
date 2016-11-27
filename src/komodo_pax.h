@@ -94,6 +94,17 @@ uint64_t peggy_smooth_coeffs[sizeof(Peggy_inds)/sizeof(*Peggy_inds)] =	// numpri
     1, 1, 1, 1, 1, 1, 0, 0, // isum 100000000000
 };
 
+uint64_t komodo_maxallowed(int32_t baseid)
+{
+    uint64_t mult,val = (uint64_t)10000 * COIN;
+    if ( baseid < 0 || baseid >= 32 )
+        return(0);
+    if ( baseid < 10 )
+        val *= 10;
+    mult = MINDENOMS[baseid] / MIND;
+    return(mult * val);
+}
+
 uint64_t komodo_paxvol(uint64_t volume,uint64_t price)
 {
     if ( volume < 10000000000 )
