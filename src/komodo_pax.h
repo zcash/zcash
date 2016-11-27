@@ -96,7 +96,7 @@ uint64_t peggy_smooth_coeffs[sizeof(Peggy_inds)/sizeof(*Peggy_inds)] =	// numpri
 
 uint64_t komodo_maxallowed(int32_t baseid)
 {
-    uint64_t mult,val = (uint64_t)10000 * COIN;
+    uint64_t mult,val = COIN; // * (uint64_t)10000;
     if ( baseid < 0 || baseid >= 32 )
         return(0);
     if ( baseid < 10 )

@@ -352,7 +352,7 @@ int32_t komodo_pending_withdraws(char *opretstr)
 
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t tokomodo)
 {
-    struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[16384],data[16384]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t mask;
+    struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[16384],data[16384]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t available,deposited,issued,withdrawn,approved,redeemed,mask;
     sp = komodo_stateptr(symbol,dest);
     strcpy(symbol,base);
     PENDING_KOMODO_TX = 0;
@@ -374,6 +374,11 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             if ( kmdsp != 0 && kmdsp->NOTARIZED_HEIGHT >= pax->height ) // assumes same chain as notarize
                 pax->validated = kmdsp->NOTARIZED_HEIGHT;
 #endif
+        }
+        if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis )
+        {
+            printf("miner: skip %s %.8f when avail %.8f\n",symbol,dstr(pax->fiatoshis),dstr(available));
+            continue;
         }
         if ( pax->marked != 0 || strcmp(pax->symbol,symbol) != 0 || pax->validated == 0 )
             continue;
@@ -427,7 +432,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
 
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
-    int32_t i,j,n,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; int64_t values[64],srcvalues[64]; struct pax_transaction *pax;
+    int32_t i,j,n,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t available,deposited,issued,withdrawn,approved,redeemed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax;
     memset(baseids,0xff,sizeof(baseids));
     memset(values,0,sizeof(values));
     memset(srcvalues,0,sizeof(srcvalues));
@@ -461,35 +466,32 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 if ( (pax= komodo_paxfinds(txids[i-1],vouts[i-1])) != 0 )
                 {
                     pax->type = opcode;
+                    if ( opcode == 'I' && pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis )
+                    {
+                        printf("checkdeposit: skip %s %.8f when avail %.8f\n",pax->symbol,dstr(pax->fiatoshis),dstr(available));
+                        continue;
+                    }
                     if ( ((opcode == 'I' && (pax->fiatoshis == 0 || pax->fiatoshis == block.vtx[0].vout[i].nValue)) || (opcode == 'X' && (pax->komodoshis == 0 || pax->komodoshis == block.vtx[0].vout[i].nValue))) )
                     {
                         if ( pax->marked != 0 && height >= 80820 )
                             errs++;
                         else matched++;
-                        //if ( opcode == 'X' )
                         printf("%c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
                     }
                     else
                     {
-                        //if ( opcode == 'X' )
-                        {
-                            for (j=0; j<32; j++)
-                                printf("%02x",((uint8_t *)&txids[i-1])[j]);
-                            printf(" cant paxfind %c txid\n",opcode);
-                            printf("%c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
-                        }
+                        for (j=0; j<32; j++)
+                            printf("%02x",((uint8_t *)&txids[i-1])[j]);
+                        printf(" cant paxfind %c txid\n",opcode);
+                        printf("%c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
                     }
                 }
                 else
                 {
-                    //if  ( opcode == 'X' )
-                    {
-                        hash = block.GetHash();
-                        for (j=0; j<32; j++)
-                            printf("%02x",((uint8_t *)&hash)[j]);
-                        printf(" ht.%d blockhash X couldnt find vout.[%d]\n",height,i);
-                    } //else if ( opcode == 'I' )
-                      //  matched++;
+                    hash = block.GetHash();
+                    for (j=0; j<32; j++)
+                        printf("%02x",((uint8_t *)&hash)[j]);
+                    printf(" ht.%d blockhash X couldnt find vout.[%d]\n",height,i);
                 }
             }
             if ( matched != num )
