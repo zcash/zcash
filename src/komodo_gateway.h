@@ -522,7 +522,7 @@ int32_t komodo_paxcmp(int32_t kmdheight,uint64_t value,uint64_t checkvalue,uint6
             return(0);
         else
         {
-            if ( kmdheight >= 86050 )
+            if ( kmdheight >= 86150 )
                 printf("ht.%d ignore mismatched value %lld vs checkvalue %lld -> ratio.%d\n",kmdheight,(long long)value,(long long)checkvalue,ratio);
             return(-1);
         }
