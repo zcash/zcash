@@ -356,7 +356,7 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
                 den = peggy_smooth_coeffs[j];
                 densum += den;
                 sum += (den * votes[(ind + j) % numvotes]);
-                printf("(%llu/%llu %.8f) ",(long long)sum,(long long)densum,(double)sum/densum);
+                //printf("(%llu/%llu %.8f) ",(long long)sum,(long long)densum,(double)sum/densum);
             }
             sum /= densum;
             //sum = (sum * basevolume);
@@ -468,7 +468,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     printf("kmdbtc %llu btcusd %llu\n",(long long)kmdbtc,(long long)btcusd);
     for (i=nonz=0; i<numvotes; i++)
     {
-        if ( (votes[numvotes-1-i]= _komodo_paxprice(0,0,height-i,base,rel,100000,kmdbtc,btcusd)) == 0 )
+        if ( (votes[numvotes-1-i]= _komodo_paxprice(0,0,height-i,base,rel,100000000,kmdbtc,btcusd)) == 0 )
             zeroes++;
         else nonz++;
     }
