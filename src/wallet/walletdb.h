@@ -202,6 +202,9 @@ public:
     bool WriteSproutViewingKey(const libzcash::SproutViewingKey &vk);
     bool EraseSproutViewingKey(const libzcash::SproutViewingKey &vk);
 
+    static void IncrementUpdateCounter();
+    static unsigned int GetUpdateCounter();
+
 private:
     CWalletDB(const CWalletDB&);
     void operator=(const CWalletDB&);
