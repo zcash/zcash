@@ -433,8 +433,8 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
             {
                 if ( kmdbtcp != 0 && btcusdp != 0 )
                 {
-                    *kmdbtcp = ptr[MAX_CURRENCIES + 1];
-                    *btcusdp = ptr[MAX_CURRENCIES + 2];
+                    *kmdbtcp = ptr[MAX_CURRENCIES + 1] / 10;
+                    *btcusdp = ptr[MAX_CURRENCIES + 2] / 10;
                 }
                 if ( kmdbtc != 0 && btcusd != 0 )
                     return(komodo_paxcalc(&ptr[1],baseid,relid,basevolume,kmdbtc,btcusd));
