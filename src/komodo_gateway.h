@@ -272,6 +272,7 @@ uint64_t komodo_paxtotal()
                         basesp->issued += pax->fiatoshis;
                         pax->didstats = 1;
                         printf("Iset %s dstats %.8f += %.8f\n",str,dstr(basesp->issued),dstr(pax->fiatoshis));
+                        pax2->marked = pax->height;
                     }
                 }
             }
