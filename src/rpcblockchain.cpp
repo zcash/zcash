@@ -496,7 +496,7 @@ Value paxpending(const Array& params, bool fHelp)
     for (baseid=0; baseid<32; baseid++)
     {
         Object item,obj;
-        if ( pax_fiatstatus(&deposited,&issued,&withdrawn,&approved,&redeemed,CURRENCIES[baseid]) == 0 )
+        if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,CURRENCIES[baseid]) == 0 )
         {
             if ( deposited != 0 || issued != 0 || withdrawn != 0 || approved != 0 || redeemed != 0 )
             {
