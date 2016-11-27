@@ -473,7 +473,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     }
     if ( nonz <= (numvotes >> 1) )
         return(0);
-    return(komodo_paxcorrelation(votes,numvotes,seed,basevolume) / 100000);
+    return(komodo_paxcorrelation(votes,numvotes,seed));
 }
 
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel)
