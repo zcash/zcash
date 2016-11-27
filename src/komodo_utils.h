@@ -785,6 +785,17 @@ char CURRENCIES[][8] = { "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "NZD",
     "CNY", "RUB", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK",
     "KMD" };
 
+uint64_t komodo_maxallowed(int32_t baseid)
+{
+    uint64_t mult,val = (uint64_t)10000 * COIN;
+    if ( baseid < 0 || baseid >= 32 )
+        return(0);
+    if ( baseid < 10 )
+        val *= 10;
+    mult = MINDENOMS[baseid] / MIND;
+    return(mult * val);
+}
+
 int32_t komodo_baseid(char *origbase)
 {
     int32_t i; char base[64];

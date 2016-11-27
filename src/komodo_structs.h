@@ -23,7 +23,7 @@
 #endif*/
 
 #define GENESIS_NBITS 0x1f00ffff
-#define KOMODO_MINRATIFY ((height < 90000) ? 7 : 13)
+#define KOMODO_MINRATIFY ((height < 90000) ? 7 : 11)
 #define KOMODO_MAXBLOCKS 5000000
 
 #define KOMODO_EVENT_RATIFY 'P'
@@ -71,7 +71,7 @@ struct komodo_state
     uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
     int32_t SAVEDHEIGHT,CURRENT_HEIGHT,NOTARIZED_HEIGHT;
     uint32_t SAVEDTIMESTAMP;
-    uint64_t deposited,issued,withdrawn,approved,redeemed;
+    uint64_t deposited,issued,withdrawn,approved,redeemed,shorted;
     struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS;
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
     uint32_t RTbufs[64][3]; uint64_t RTmask;

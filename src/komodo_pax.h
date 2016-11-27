@@ -309,7 +309,8 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
     {
         if ( relid == MAX_CURRENCIES )
         {
-            kmdbtc = pvals[MAX_CURRENCIES];
+            if ( (kmdbtc= pvals[MAX_CURRENCIES]) < 25000 )
+                kmdbtc = 25000;
             btcusd = pvals[MAX_CURRENCIES + 1];
             if ( pvals[USD] != 0 && kmdbtc != 0 && btcusd != 0 )
             {
