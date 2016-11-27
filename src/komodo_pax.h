@@ -360,7 +360,7 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
             }
             sum /= densum;
             //sum = (sum * basevolume);
-            printf("paxprice seed.%llx sum %.8f densum %.8f\n",(long long)seed,dstr(sum),dstr(densum));
+            //printf("paxprice seed.%llx sum %.8f densum %.8f\n",(long long)seed,dstr(sum),dstr(densum));
             break;
         }
     }
@@ -474,7 +474,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     }
     if ( nonz <= (numvotes >> 1) )
         return(0);
-    return(komodo_paxcorrelation(votes,numvotes,seed) * 1000);
+    return(komodo_paxcorrelation(votes,numvotes,seed) * basevolume);
 }
 
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel)
