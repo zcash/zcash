@@ -52,7 +52,7 @@ void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t heig
 void komodo_eventadd_pubkeys(struct komodo_state *sp,char *symbol,int32_t height,uint8_t num,uint8_t pubkeys[64][33])
 {
     struct komodo_event_pubkeys P;
-    printf("eventadd pubkeys ht.%d\n",height);
+    //printf("eventadd pubkeys ht.%d\n",height);
     memset(&P,0,sizeof(P));
     P.num = num;
     memcpy(P.pubkeys,pubkeys,33 * num);
