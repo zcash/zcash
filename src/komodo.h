@@ -85,7 +85,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                     errs++;
                 else
                 {
-                    printf("updated %d pubkeys at %s ht.%d\n",num,symbol,ht);
+                    //printf("updated %d pubkeys at %s ht.%d\n",num,symbol,ht);
                     if ( (KOMODO_EXTERNAL_NOTARIES != 0 && matched != 0) || (strcmp(symbol,"KMD") == 0 && KOMODO_EXTERNAL_NOTARIES == 0) )
                         komodo_eventadd_pubkeys(sp,symbol,ht,num,pubkeys);
                 }
