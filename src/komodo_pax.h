@@ -389,7 +389,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
             {
                 baseusd = 1000 * (((uint64_t)pvalb * 1000000) / pvals[USD]);
                 usdvol = komodo_paxvol(basevolume,baseusd);
-                usdkmd = ((uint64_t)btcusd * 1000000000) / kmdbtc;
+                usdkmd = ((uint64_t)kmdbtc * 1000000000) / btcusd;
                 printf("kmdbtc.%llu btcusd.%llu base -> USD %llu, usdkmd %llu usdvol %llu -> %llu\n",(long long)kmdbtc,(long long)btcusd,(long long)baseusd,(long long)usdkmd,(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / MINDENOMS[baseid]));
                 //printf("usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %.8f\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,dstr(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd)));
                 return(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / MINDENOMS[baseid]);
@@ -407,7 +407,7 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
         else if ( (pvalr= pvals[relid]) != 0 )
         {
             baserel = ((uint64_t)pvalb * 1000000000) / pvalr;
-            //printf("baserel.%lld %lld %lld %.8f %.8f\n",(long long)baserel,(long long)MINDENOMS[baseid],(long long)MINDENOMS[relid],dstr(MINDENOMS[baseid]/MINDENOMS[relid]),dstr(MINDENOMS[relid]/MINDENOMS[baseid]));
+            printf("baserel.%lld %lld %lld %.8f %.8f\n",(long long)baserel,(long long)MINDENOMS[baseid],(long long)MINDENOMS[relid],dstr(MINDENOMS[baseid]/MINDENOMS[relid]),dstr(MINDENOMS[relid]/MINDENOMS[baseid]));
             if ( MINDENOMS[baseid] > MINDENOMS[relid] )
                 basevolume /= (MINDENOMS[baseid] / MINDENOMS[relid]);
             else if ( MINDENOMS[baseid] < MINDENOMS[relid] )
