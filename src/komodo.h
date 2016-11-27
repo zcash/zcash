@@ -24,6 +24,7 @@
 // b. automated distribution of test REVS snapshot
 
 #define KOMODO_ASSETCHAINS_WAITNOTARIZE
+#define KOMODO_PAXMAX (100000 * COIN)
 
 #include <stdint.h>
 #include <stdio.h>
