@@ -462,6 +462,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                             for (j=0; j<32; j++)
                                 printf("%02x",((uint8_t *)&txids[i-1])[j]);
                             printf(" cant paxfind %c txid\n",opcode);
+                            printf("%c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
                         }
                     }
                 }
