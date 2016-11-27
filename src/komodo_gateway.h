@@ -475,9 +475,10 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     if ( ((opcode == 'I' && (pax->fiatoshis == 0 || pax->fiatoshis == block.vtx[0].vout[i].nValue)) || (opcode == 'X' && (pax->komodoshis == 0 || pax->komodoshis == block.vtx[0].vout[i].nValue))) )
                     {
                         if ( pax->marked != 0 && height >= 80820 )
+                        {
+                            printf("%c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
                             errs++;
-                        else matched++;
-                        printf("%c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
+                        } else matched++;
                     }
                     else
                     {
