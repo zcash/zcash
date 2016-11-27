@@ -318,7 +318,7 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
         else sum += votes[i], nonz++;
     }
     if ( nonz < (numvotes >> 2) )
-        return(0)
+        return(0);
     sum /= nonz;
     lastprice = sum;
     for (i=0; i<numvotes; i++)
