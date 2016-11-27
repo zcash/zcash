@@ -317,6 +317,8 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
             zeroes++;
         else sum += votes[i], nonz++;
     }
+    if ( nonz < (numvotes >> 2) )
+        return(0)
     sum /= nonz;
     lastprice = sum;
     for (i=0; i<numvotes; i++)
@@ -358,7 +360,8 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
                 sum += (den * votes[(ind + j) % numvotes]);
                 //printf("(%llu/%llu %.8f) ",(long long)sum,(long long)densum,(double)sum/densum);
             }
-            sum /= densum;
+            if ( densum != 0 )
+                sum /= densum;
             //sum = (sum * basevolume);
             //printf("paxprice seed.%llx sum %.8f densum %.8f\n",(long long)seed,dstr(sum),dstr(densum));
             break;
