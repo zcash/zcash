@@ -465,7 +465,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     *seedp = seed = komodo_seed(height);
     kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,seed) * 539;
     btcusd = komodo_paxcorrelation(btcusds,numvotes,seed) * 539;
-    printf("kmdbtc %llu btcusd %llu\n",(long long)kmdbtc,(long long)btcusd);
+    //printf("kmdbtc %llu btcusd %llu\n",(long long)kmdbtc,(long long)btcusd);
     for (i=nonz=0; i<numvotes; i++)
     {
         if ( (votes[numvotes-1-i]= _komodo_paxprice(0,0,height-i,base,rel,100000,kmdbtc,btcusd)) == 0 )

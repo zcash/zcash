@@ -368,7 +368,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         //printf("pax.%s marked.%d %.8f -> %.8f\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         if ( strcmp(symbol,"KMD") == 0 && pax->approved == 0 )
             continue;
-        else if ( strcmp(symbol,"KMD") != 0 )
+        //else if ( strcmp(symbol,"KMD") != 0 )
         {
 #ifdef KOMODO_ASSETCHAINS_WAITNOTARIZE
             struct komodo_state *kmdsp = komodo_stateptrget((char *)"KMD");
