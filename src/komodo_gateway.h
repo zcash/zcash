@@ -515,7 +515,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
 int32_t komodo_paxcmp(uint64_t value,uint64_t checkvalue,uint64_t seed)
 {
     int32_t ratio;
-    if ( seed == 0 )
+    if ( seed == 0 && checkvalue != 0 )
     {
         ratio = ((value << 6) / checkvalue);
         if ( ratio >= 63 && ratio <= 65 )
