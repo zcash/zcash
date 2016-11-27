@@ -388,11 +388,15 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
             if ( pvals[USD] != 0 && kmdbtc != 0 && btcusd != 0 )
             {
                 baseusd = ((uint64_t)pvalb * 1000000000) / pvals[USD];
-                usdvol = komodo_paxvol(basevolume,baseusd) / MINDENOMS[baseid];
+                usdvol = komodo_paxvol(basevolume,baseusd);
+                if ( MINDENOMS[baseid] > MINDENOMS[USD] )
+                    usdvol /= (MINDENOMS[baseid] / MINDENOMS[USD]);
                 usdkmd = ((uint64_t)btcusd * 1000000000) / kmdbtc;
-                //printf("base -> USD %llu, BTC %llu  ",(long long)baseusd,(long long)btcusd);
+                printf("kmdbtc.%llu btcusd.%llu base -> USD %llu, usdkmd %llu usdvol %llu -> %llu ",(long long)kmdbtc,(long long)btcusd,(long long)baseusd,(long long)usdkmd,(long long)usdvol,(long long)MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd));
                 //printf("usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %.8f\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,dstr(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd)));
-                return(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd));
+                if ( MINDENOMS[baseid] < MINDENOMS[USD] )
+                    return((MINDENOMS[USD]/MINDENOMS[baseid]) * komodo_paxvol(usdvol,usdkmd));
+                else return(komodo_paxvol(usdvol,usdkmd));
             } //else printf("zero val in KMD conv %llu %llu %llu\n",(long long)pvals[USD],(long long)kmdbtc,(long long)btcusd);
         }
         else if ( baseid == relid )
