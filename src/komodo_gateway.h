@@ -512,7 +512,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     return(0);
 }
 
-int32_t komodo_paxcmp(uint64_t value,uint64_t checkvalue,uint64_t seed)
+int32_t komodo_paxcmp(int32_t height,uint64_t value,uint64_t checkvalue,uint64_t seed)
 {
     int32_t ratio;
     if ( seed == 0 && checkvalue != 0 )
@@ -522,7 +522,8 @@ int32_t komodo_paxcmp(uint64_t value,uint64_t checkvalue,uint64_t seed)
             return(0);
         else
         {
-            printf("ignore mismatched value %lld vs checkvalue %lld -> ratio.%d\n",(long long)value,(long long)checkvalue,ratio);
+            if ( height >= 85000 )
+                printf("ignore mismatched value %lld vs checkvalue %lld -> ratio.%d\n",(long long)value,(long long)checkvalue,ratio);
             return(-1);
         }
     }
@@ -560,7 +561,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     printf("%02x",pubkey33[i]);
                 printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);*/
                 didstats = 0;
-                if ( komodo_paxcmp(value,checktoshis,seed) == 0 )
+                if ( komodo_paxcmp(kmdheight,value,checktoshis,seed) == 0 )
                 {
                     if ( (pax= komodo_paxfind(txid,vout,'D')) == 0 )
                     {
@@ -602,7 +603,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         typestr = "withdraw";
         //printf("%s.height.%d vs height.%d check %.8f/%.8f vs %.8f tokomodo.%d %d seed.%llx -> (%s)\n",ASSETCHAINS_SYMBOL,kmdheight,height,dstr(checktoshis),dstr(komodoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed,coinaddr);
         didstats = 0;
-        if ( komodo_paxcmp(komodoshis,checktoshis,seed) == 0 )
+        if ( komodo_paxcmp(kmdheight,komodoshis,checktoshis,seed) == 0 )
         {
             if ( value != 0 && ((pax= komodo_paxfind(txid,vout,'W')) == 0 || pax->didstats == 0) )
             {
