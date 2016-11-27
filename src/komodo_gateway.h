@@ -521,7 +521,7 @@ int32_t komodo_paxcmp(uint64_t value,uint64_t checkvalue,uint64_t seed)
             return(0);
         else
         {
-            printf("value %lld vs checkvalue %lld -> ratio.%d\n",(long long)value,(long long)checkvalue,ratio);
+            printf("ignore mismatched value %lld vs checkvalue %lld -> ratio.%d\n",(long long)value,(long long)checkvalue,ratio);
             return(-1);
         }
     }
@@ -733,7 +733,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     }
                 }
             }
-        } else printf("komodo_issued_opreturn returned %d\n",n);
+        } //else printf("komodo_issued_opreturn returned %d\n",n);
     }
     return(typestr);
 }

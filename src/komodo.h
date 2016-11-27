@@ -164,7 +164,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 int32_t i;
                 for (i=0; i<olen; i++)
                     fgetc(fp);
-                printf("illegal olen.%u\n",olen);
+                //printf("illegal olen.%u\n",olen);
             }
         }
         else if ( func == 'D' )
