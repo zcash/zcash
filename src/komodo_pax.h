@@ -468,13 +468,13 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     printf("kmdbtc %llu btcusd %llu\n",(long long)kmdbtc,(long long)btcusd);
     for (i=nonz=0; i<numvotes; i++)
     {
-        if ( (votes[numvotes-1-i]= _komodo_paxprice(0,0,height-i,base,rel,100000000,kmdbtc,btcusd)) == 0 )
+        if ( (votes[numvotes-1-i]= _komodo_paxprice(0,0,height-i,base,rel,100000,kmdbtc,btcusd)) == 0 )
             zeroes++;
         else nonz++;
     }
     if ( nonz <= (numvotes >> 1) )
         return(0);
-    return(komodo_paxcorrelation(votes,numvotes,seed));
+    return(komodo_paxcorrelation(votes,numvotes,seed) * 1000);
 }
 
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel)
