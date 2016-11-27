@@ -387,12 +387,13 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
                 kmdbtc = 25000000;
             if ( pvals[USD] != 0 && kmdbtc != 0 && btcusd != 0 )
             {
-                baseusd = ((uint64_t)pvalb * (1000000000*MINDENOMS[USD]/MINDENOMS[baseid])) / pvals[USD];
-                usdvol = komodo_paxvol(basevolume,baseusd);
+                baseusd = ((uint64_t)pvalb * 1000000000) / pvals[USD];
+                usdvol = MINDENOMS[USD] * komodo_paxvol(basevolume,baseusd);
+                //usdkmd = ((uint64_t)btcusd * 1000000000) / kmdbtc;
                 usdkmd = ((uint64_t)btcusd * 1000000000) / kmdbtc;
-                printf("kmdbtc.%llu btcusd.%llu base -> USD %llu, usdkmd %llu usdvol %llu -> %llu\n",(long long)kmdbtc,(long long)btcusd,(long long)baseusd,(long long)usdkmd,(long long)usdvol,(long long)MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd));
+                printf("kmdbtc.%llu btcusd.%llu base -> USD %llu, usdkmd %llu usdvol %llu -> %llu\n",(long long)kmdbtc,(long long)btcusd,(long long)baseusd,(long long)usdkmd,(long long)usdvol,komodo_paxvol(usdvol,usdkmd) / MINDENOMS[baseid]);
                 //printf("usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %.8f\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,dstr(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd)));
-                return(komodo_paxvol(usdvol,usdkmd));
+                return(komodo_paxvol(usdvol,usdkmd) / MINDENOMS[baseid]);
             } //else printf("zero val in KMD conv %llu %llu %llu\n",(long long)pvals[USD],(long long)kmdbtc,(long long)btcusd);
         }
         else if ( baseid == relid )
