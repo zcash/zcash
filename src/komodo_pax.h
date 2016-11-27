@@ -387,12 +387,12 @@ uint64_t komodo_paxcalc(uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t ba
                 kmdbtc = 25000000;
             if ( pvals[USD] != 0 && kmdbtc != 0 && btcusd != 0 )
             {
-                baseusd = 1000 * (((uint64_t)pvalb * 1000000) / pvals[USD]);
+                baseusd = (((uint64_t)pvalb * 1000000000) / pvals[USD]);
                 usdvol = komodo_paxvol(basevolume,baseusd);
                 usdkmd = ((uint64_t)kmdbtc * 1000000000) / btcusd;
-                printf("kmdbtc.%llu btcusd.%llu base -> USD %llu, usdkmd %llu usdvol %llu -> %llu\n",(long long)kmdbtc,(long long)btcusd,(long long)baseusd,(long long)usdkmd,(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / MINDENOMS[baseid]));
+                printf("kmdbtc.%llu btcusd.%llu base -> USD %llu, usdkmd %llu usdvol %llu -> %llu\n",(long long)kmdbtc,(long long)btcusd,(long long)baseusd,(long long)usdkmd,(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)));
                 //printf("usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %.8f\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,dstr(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd)));
-                return(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / MINDENOMS[baseid]);
+                return(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100));
             } //else printf("zero val in KMD conv %llu %llu %llu\n",(long long)pvals[USD],(long long)kmdbtc,(long long)btcusd);
         }
         else if ( baseid == relid )
@@ -451,6 +451,11 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     if ( basevolume > KOMODO_PAXMAX )
     {
         printf("komodo_paxprice overflow %.8f\n",dstr(basevolume));
+        return(0);
+    }
+    if ( strcmp(base,"KMD") == 0 || strcmp(base,"kmd") == 0 )
+    {
+        printf("kmd cannot be base currency\n");
         return(0);
     }
     numvotes = (int32_t)(sizeof(Peggy_inds)/sizeof(*Peggy_inds));
