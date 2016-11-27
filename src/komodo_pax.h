@@ -360,7 +360,7 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
             }
             sum /= densum;
             //sum = (sum * basevolume);
-            printf("paxprice seed.%llx sum %.8f densum %.8f basevol %.8f height.%d\n",(long long)seed,dstr(sum),dstr(densum),dstr(basevolume),height);
+            printf("paxprice seed.%llx sum %.8f densum %.8f height.%d\n",(long long)seed,dstr(sum),dstr(densum),height);
             break;
         }
     }
