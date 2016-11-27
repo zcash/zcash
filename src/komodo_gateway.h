@@ -512,7 +512,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     return(0);
 }
 
-int32_t komodo_paxcmp(int32_t height,uint64_t value,uint64_t checkvalue,uint64_t seed)
+int32_t komodo_paxcmp(int32_t kmdheight,uint64_t value,uint64_t checkvalue,uint64_t seed)
 {
     int32_t ratio;
     if ( seed == 0 && checkvalue != 0 )
@@ -522,8 +522,8 @@ int32_t komodo_paxcmp(int32_t height,uint64_t value,uint64_t checkvalue,uint64_t
             return(0);
         else
         {
-            if ( height >= 85000 )
-                printf("ignore mismatched value %lld vs checkvalue %lld -> ratio.%d\n",(long long)value,(long long)checkvalue,ratio);
+            if ( kmdheight >= 85000 )
+                printf("ht.%d ignore mismatched value %lld vs checkvalue %lld -> ratio.%d\n",kmdheight,(long long)value,(long long)checkvalue,ratio);
             return(-1);
         }
     }
