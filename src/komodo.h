@@ -17,12 +17,14 @@
 #define H_KOMODO_H
 
 // Todo:
-// 1. net balance limiter
-// 2. verify: reorgs
+// verify: reorgs
 
 // non komodod (non-hardfork) todo:
 // a. automate notarization fee payouts
 // b. automated distribution of test REVS snapshot
+
+//#define KOMODO_ASSETCHAINS_WAITNOTARIZE
+#define KOMODO_PAXMAX (10000 * COIN)
 
 #include <stdint.h>
 #include <stdio.h>
@@ -84,7 +86,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                     errs++;
                 else
                 {
-                    printf("updated %d pubkeys at %s ht.%d\n",num,symbol,ht);
+                    //printf("updated %d pubkeys at %s ht.%d\n",num,symbol,ht);
                     if ( (KOMODO_EXTERNAL_NOTARIES != 0 && matched != 0) || (strcmp(symbol,"KMD") == 0 && KOMODO_EXTERNAL_NOTARIES == 0) )
                         komodo_eventadd_pubkeys(sp,symbol,ht,num,pubkeys);
                 }
@@ -163,7 +165,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 int32_t i;
                 for (i=0; i<olen; i++)
                     fgetc(fp);
-                printf("illegal olen.%u\n",olen);
+                //printf("illegal olen.%u\n",olen);
             }
         }
         else if ( func == 'D' )
@@ -510,9 +512,9 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 }
             }
             numvalid = bitweight(signedmask);
-            if ( height == 79633 )
-                notarized = 1;
-            if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) || numvalid > (numnotaries>>1)) )
+            //if ( height == 79633 )
+            //    notarized = 1;
+            if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) || numvalid > (numnotaries/3)) )
             {
                 printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<< notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
                 notarized = 1;
@@ -563,7 +565,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                             }
                         }
                     }
-                    if ( ((signedmask & 1) != 0 && numvalid >= KOMODO_MINRATIFY) || bitweight(signedmask) > (numnotaries>>1) )
+                    if ( ((signedmask & 1) != 0 && numvalid >= KOMODO_MINRATIFY) || bitweight(signedmask) > (numnotaries/3) )
                     {
                         memset(&txhash,0,sizeof(txhash));
                         komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0,0,0,0,0,0,0,0,0);

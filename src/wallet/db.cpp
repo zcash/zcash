@@ -83,7 +83,7 @@ bool CDBEnv::Open(const boost::filesystem::path& pathIn)
     TryCreateDirectory(pathLogDir);
     boost::filesystem::path pathErrorFile = pathIn / "db.log";
     LogPrintf("CDBEnv::Open: LogDir=%s ErrorFile=%s pathIn.(%s)\n", pathLogDir.string(), pathErrorFile.string(),pathIn.string());
-    fprintf(stderr,"strPath.(%s)\n",strPath.c_str());
+    //fprintf(stderr,"strPath.(%s)\n",strPath.c_str());
 
     unsigned int nEnvFlags = 0;
     if (GetBoolArg("-privdb", true))

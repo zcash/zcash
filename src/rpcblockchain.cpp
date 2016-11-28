@@ -481,16 +481,37 @@ Value notaries(const Array& params, bool fHelp)
 }
 
 int32_t komodo_pending_withdraws(char *opretstr);
+int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base);
+extern char CURRENCIES[][8];
 
 Value paxpending(const Array& params, bool fHelp)
 {
-    Object ret; char opretbuf[10000*2]; int32_t opretlen;
+    Object ret; Array a; char opretbuf[10000*2]; int32_t opretlen,baseid; uint64_t available,deposited,issued,withdrawn,approved,redeemed;
     if ( fHelp || params.size() != 0 )
         throw runtime_error("paxpending needs no args\n");
     LOCK(cs_main);
     if ( (opretlen= komodo_pending_withdraws(opretbuf)) > 0 )
         ret.push_back(Pair("withdraws", opretbuf));
     else ret.push_back(Pair("withdraws", (char *)""));
+    for (baseid=0; baseid<32; baseid++)
+    {
+        Object item,obj;
+        if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,CURRENCIES[baseid]) == 0 )
+        {
+            if ( deposited != 0 || issued != 0 || withdrawn != 0 || approved != 0 || redeemed != 0 )
+            {
+                item.push_back(Pair("available", ValueFromAmount(available)));
+                item.push_back(Pair("deposited", ValueFromAmount(deposited)));
+                item.push_back(Pair("issued", ValueFromAmount(issued)));
+                item.push_back(Pair("withdrawn", ValueFromAmount(withdrawn)));
+                item.push_back(Pair("approved", ValueFromAmount(approved)));
+                item.push_back(Pair("redeemed", ValueFromAmount(redeemed)));
+                obj.push_back(Pair(CURRENCIES[baseid],item));
+                a.push_back(obj);
+            }
+        }
+    }
+    ret.push_back(Pair("fiatstatus", a));
     return ret;
 }
 
