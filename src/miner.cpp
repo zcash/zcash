@@ -609,7 +609,7 @@ void static BitcoinMiner(CWallet *pwallet)
             } else Mining_start = 0;
             while (true)
             {
-                if ( ASSETCHAINS_SYMBOL[0] != 0 && txNew.vout.size() == 1 && Mining_height >= 100 )
+                if ( ASSETCHAINS_SYMBOL[0] != 0 && pblock->vtx[0].vout.size() == 1 && Mining_height >= 100 )
                 {
                     fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
                     break;
