@@ -473,7 +473,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
         script[34] = OP_CHECKSIG;
         //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
     }
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( 0 && ASSETCHAINS_SYMBOL[0] == 0 )
     {
         for (i=0; i<65; i++)
             fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i));
@@ -558,7 +558,7 @@ void static BitcoinMiner(CWallet *pwallet)
         //fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
         while (true)
         {
-            if (chainparams.MiningRequiresPeers())
+            if (0 && chainparams.MiningRequiresPeers())
             {
                 //if ( ASSETCHAINS_SEED != 0 && chainActive.Tip()->nHeight < 100 )
                 //    break;
