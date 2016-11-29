@@ -412,12 +412,20 @@ Value minerids(const Array& params, bool fHelp)
             }
             for (i=0; i<64; i++)
             {
-                Object item; std::string hex; char *hexstr;
+                Object item; std::string hex,kmdaddress; char *hexstr,kmdaddr[64],*ptr; int32_t m;
                 hex.resize(66);
                 hexstr = (char *)hex.data();
                 for (j=0; j<33; j++)
                     sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
                 item.push_back(Pair("notaryid", i));
+                
+                bitcoin_address(kmdaddr,60,pubkeys[i],33);
+                m = (int32_t)strlen(kmdaddr);
+                kmdaddress.resize(m);
+                ptr = (char *)kmdaddress.data();
+                memcpy(ptr,kmdaddr,m);
+                item.push_back(Pair("KMDaddress", kmdaddress));
+                
                 item.push_back(Pair("pubkey", hex));
                 item.push_back(Pair("blocks", tally[i]));
                 a.push_back(item);

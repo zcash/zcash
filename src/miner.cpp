@@ -99,7 +99,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 }
 
 #define ASSETCHAINS_MINHEIGHT 100
-#define ROUNDROBIN_DELAY 59
+#define ROUNDROBIN_DELAY 58
 extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE;
 extern char ASSETCHAINS_SYMBOL[16];
 extern std::string NOTARY_PUBKEY;
@@ -717,6 +717,7 @@ void static BitcoinMiner(CWallet *pwallet)
                             for (i=0; i<32; i++)
                                 fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
                             fprintf(stderr," <- %s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
+                            sleep(60); // avoid mining forks
                             break;
                         }
                     } catch (EhSolverCancelledException&) {
