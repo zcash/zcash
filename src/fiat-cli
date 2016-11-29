@@ -33,3 +33,10 @@ echo try; fiat/try $1 $2 $3 $4
 echo usd; fiat/usd $1 $2 $3 $4
 echo zar; fiat/zar $1 $2 $3 $4
 echo revs; fiat/revs $1 $2 $3 $4
+echo revs; fiat/supernet $1 $2 $3 $4
+echo revs; fiat/dex $1 $2 $3 $4
+echo revs; fiat/pangea $1 $2 $3 $4
+echo revs; fiat/jumblr $1 $2 $3 $4
+echo revs; fiat/bet $1 $2 $3 $4
+echo revs; fiat/crypto $1 $2 $3 $4
+echo revs; fiat/hodl $1 $2 $3 $4
