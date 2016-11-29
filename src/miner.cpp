@@ -476,8 +476,8 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         for (i=0; i<65; i++)
-            fprintf(stderr,"%d ",komodo_minerid(activeChain.Tip()->nHeight-i));
-        fprintf(stderr," minerids from ht.%d\n",activeChain.Tip()->nHeight);
+            fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i));
+        fprintf(stderr," minerids from ht.%d\n",chainActive.Tip()->nHeight);
     }
     return CreateNewBlock(scriptPubKey);
 }
