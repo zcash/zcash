@@ -40,3 +40,5 @@ echo revs; fiat/jumblr $1 $2 $3 $4
 echo revs; fiat/bet $1 $2 $3 $4
 echo revs; fiat/crypto $1 $2 $3 $4
 echo revs; fiat/hodl $1 $2 $3 $4
+echo revs; fiat/shark $1 $2 $3 $4
+echo revs; fiat/bots $1 $2 $3 $4
