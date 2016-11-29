@@ -14,6 +14,9 @@
 #include <stdint.h>
 #include <string>
 
+/** Minimum alert priority for enabling safe mode. */
+static const int ALERT_PRIORITY_SAFE_MODE = 4000;
+
 class CAlert;
 class CNode;
 class uint256;

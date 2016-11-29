@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2015-2020 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -15,6 +16,7 @@
 #include "sync.h"
 #include "utilstrencodings.h"
 #include "utiltime.h"
+#include "alert.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -109,7 +111,11 @@ bool fPrintToConsole = false;
 bool fPrintToDebugLog = true;
 bool fDaemon = false;
 bool fServer = false;
+
 string strMiscWarning;
+bool fLargeWorkForkFound = false;
+bool fLargeWorkInvalidChainFound = false;
+
 bool fLogTimestamps = DEFAULT_LOGTIMESTAMPS;
 bool fLogTimeMicros = DEFAULT_LOGTIMEMICROS;
 bool fLogIPs = DEFAULT_LOGIPS;
@@ -923,3 +929,57 @@ int GetNumCores()
     return boost::thread::physical_concurrency();
 }
 
+std::string GetWarnings(const std::string& strFor)
+{
+    int nPriority = 0;
+    string strStatusBar;
+    string strRPC;
+
+    if (!CLIENT_VERSION_IS_RELEASE)
+        strStatusBar = _("This is a pre-release test build - use at your own risk - do not use for mining or merchant applications");
+
+    if (GetBoolArg("-testsafemode", DEFAULT_TESTSAFEMODE))
+        strStatusBar = strRPC = "testsafemode enabled";
+
+    // Misc warnings like out of disk space and clock is wrong
+    if (strMiscWarning != "")
+    {
+        nPriority = 1000;
+        strStatusBar = strMiscWarning;
+    }
+
+    if (fLargeWorkForkFound)
+    {
+        nPriority = 2000;
+        strStatusBar = strRPC = _("Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.");
+    }
+    else if (fLargeWorkInvalidChainFound)
+    {
+        nPriority = 2000;
+        strStatusBar = strRPC = _("Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.");
+    }
+
+    // Alerts
+    {
+        LOCK(cs_mapAlerts);
+        BOOST_FOREACH(PAIRTYPE(const uint256, CAlert)& item, mapAlerts)
+        {
+            const CAlert& alert = item.second;
+            if (alert.AppliesToMe() && alert.nPriority > nPriority)
+            {
+                nPriority = alert.nPriority;
+                strStatusBar = alert.strStatusBar;
+                if (alert.nPriority >= ALERT_PRIORITY_SAFE_MODE) {
+                    strRPC = alert.strRPCError;
+                }
+            }
+        }
+    }
+
+    if (strFor == "statusbar")
+        return strStatusBar;
+    else if (strFor == "rpc")
+        return strRPC;
+    assert(!"GetWarnings(): invalid parameter");
+    return "error";
+}
