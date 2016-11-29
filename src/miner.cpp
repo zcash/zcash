@@ -450,6 +450,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 //
 // Internal miner
 //
+int8_t komodo_minerid(int32_t height);
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
@@ -471,6 +472,12 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
             script[i+1] = ptr[i];
         script[34] = OP_CHECKSIG;
         //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
+    }
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    {
+        for (i=0; i<65; i++)
+            fprintf(stderr,"%d ",komodo_minerid(activeChain.Tip()->nHeight-i));
+        fprintf(stderr," minerids from ht.%d\n",activeChain.Tip()->nHeight);
     }
     return CreateNewBlock(scriptPubKey);
 }
@@ -739,7 +746,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 // Regtest mode doesn't require peers
                 if (vNodes.empty() && chainparams.MiningRequiresPeers())
                 {
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height >= 100 )
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height > 100 )
                     {
                         //fprintf(stderr,"no nodes, break\n");
                         break;
