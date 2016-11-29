@@ -501,7 +501,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             numvouts = block.vtx[i].vout.size();
             notaryid = -1;
             voutmask = specialtx = notarizedheight = isratification = notarized = 0;
-            signedmask = 0;
+            signedmask = 1;
             numvins = block.vtx[i].vin.size();
             for (j=0; j<numvins; j++)
             {
