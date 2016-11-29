@@ -392,12 +392,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         }
         else if ( komodo_is_issuer() != 0 )
         {
-            do
-            {
-                komodo_gateway_deposits(&txNew,ASSETCHAINS_SYMBOL,0);
-                fprintf(stderr,"%s txNew numvouts.%d\n",ASSETCHAINS_SYMBOL,(int32_t)txNew.vout.size());
-                sleep(10);
-            } while ( txNew.vout.size() == 1 );
+            komodo_gateway_deposits(&txNew,ASSETCHAINS_SYMBOL,0);
             fprintf(stderr,"%s txNew numvouts.%d\n",ASSETCHAINS_SYMBOL,(int32_t)txNew.vout.size());
         }
         pblock->vtx[0] = txNew;
@@ -614,8 +609,11 @@ void static BitcoinMiner(CWallet *pwallet)
             } else Mining_start = 0;
             while (true)
             {
-                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-                    fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);
+                if ( ASSETCHAINS_SYMBOL[0] != 0 && txNew.vout.size() == 1 && Mining_height >= 100 )
+                {
+                    fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
+                    break;
+                }
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
                 crypto_generichash_blake2b_state state;
