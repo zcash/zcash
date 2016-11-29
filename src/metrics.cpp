@@ -305,7 +305,7 @@ void ThreadShowMetricsScreen()
             std::cout << "[" << _("Press Ctrl+C to exit") << "] [" << _("Set 'showmetrics=0' to hide") << "]" << std::endl;
         } else {
             // Print delineator
-            std::cout << "----------------" << std::endl;
+            std::cout << "----------------------------------------" << std::endl;
         }
 
         int64_t nWaitEnd = GetTime() + nRefresh;
