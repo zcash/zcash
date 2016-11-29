@@ -8,9 +8,9 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=DEX -ac_supply=1000000 -addnode=78.47.196.146 $1 &
 ./komodod -pubkey=$pubkey -ac_name=PANGEA -ac_supply=1000000 -addnode=78.47.196.146 $1 &
 ./komodod -pubkey=$pubkey -ac_name=JUMBLR -ac_supply=1000000 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=BET -ac_supply=1000000 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=BET -ac_supply=999999 -addnode=78.47.196.146 $1 &
 ./komodod -pubkey=$pubkey -ac_name=CRYPTO -ac_supply=1000000 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=HODL -ac_supply=10000000 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=HODL -ac_supply=9999999 -addnode=78.47.196.146 $1 &
 ./komodod -pubkey=$pubkey -ac_name=SHARK -ac_supply=1400 -addnode=78.47.196.146 $1 &
 ./komodod -pubkey=$pubkey -ac_name=BOTS -ac_supply=1000000 -addnode=78.47.196.146 $1 &
 ./komodod -pubkey=$pubkey -ac_name=MGW -ac_supply=1000000 -addnode=78.47.196.146 $1 &
