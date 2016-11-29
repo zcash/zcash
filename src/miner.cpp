@@ -395,6 +395,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             do
             {
                 komodo_gateway_deposits(&txNew,ASSETCHAINS_SYMBOL,0);
+                fprintf(stderr,"%s txNew numvouts.%d\n",ASSETCHAINS_SYMBOL,(int32_t)txNew.vout.size());
                 sleep(10);
             } while ( txNew.vout.size() == 1 );
             fprintf(stderr,"%s txNew numvouts.%d\n",ASSETCHAINS_SYMBOL,(int32_t)txNew.vout.size());
