@@ -558,7 +558,7 @@ void static BitcoinMiner(CWallet *pwallet)
         //fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
         while (true)
         {
-            if (chainparams.MiningRequiresPeers())
+            if (0 && chainparams.MiningRequiresPeers())
             {
                 //if ( ASSETCHAINS_SEED != 0 && chainActive.Tip()->nHeight < 100 )
                 //    break;
@@ -746,7 +746,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 // Regtest mode doesn't require peers
                 if (vNodes.empty() && chainparams.MiningRequiresPeers())
                 {
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height >= 100 )
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height > 100 )
                     {
                         //fprintf(stderr,"no nodes, break\n");
                         break;
