@@ -1,0 +1,23 @@
+From ec1c49bb0cd5e448e6f0adee7de3a831c4869bdd Mon Sep 17 00:00:00 2001
+From: Thomas Bernard <miniupnp@free.fr>
+Date: Fri, 11 Nov 2016 17:24:39 +0100
+Subject: [PATCH] check strlen before memcmp
+
+1st try to fix #220
+---
+ miniupnpc/portlistingparse.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/miniupnpc/portlistingparse.c b/miniupnpc/portlistingparse.c
+index 0e09278..1bed763 100644
+--- a/miniupnpc/portlistingparse.c
++++ b/miniupnpc/portlistingparse.c
+@@ -55,7 +55,7 @@ startelt(void * d, const char * name, int l)
+ 	pdata->curelt = PortMappingEltNone;
+ 	for(i = 0; elements[i].str; i++)
+ 	{
+-		if(memcmp(name, elements[i].str, l) == 0)
++		if(strlen(elements[i].str) == l && memcmp(name, elements[i].str, l) == 0)
+ 		{
+ 			pdata->curelt = elements[i].code;
+ 			break;
