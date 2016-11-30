@@ -380,7 +380,7 @@ void CWallet::ChainTip(const CBlockIndex *pindex, const CBlock *pblock,
 void CWallet::SetBestChain(const CBlockLocator& loc)
 {
     CWalletDB walletdb(strWalletFile);
-    walletdb.WriteBestBlock(loc);
+    SetBestChainINTERNAL(walletdb, loc);
 }
 
 bool CWallet::SetMinVersion(enum WalletFeature nVersion, CWalletDB* pwalletdbIn, bool fExplicit)
@@ -741,10 +741,9 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
             }
         }
 
-        if (fFileBacked) {
-            CWalletDB walletdb(strWalletFile);
-            WriteWitnessCache(walletdb);
-        }
+        // For performance reasons, we write out the witness cache in
+        // CWallet::SetBestChain() (which also ensures that overall consistency
+        // of the wallet.dat is maintained).
     }
 }
 
@@ -779,10 +778,10 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
         }
         // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
         assert(nWitnessCacheSize > 0);
-        if (fFileBacked) {
-            CWalletDB walletdb(strWalletFile);
-            WriteWitnessCache(walletdb);
-        }
+
+        // For performance reasons, we write out the witness cache in
+        // CWallet::SetBestChain() (which also ensures that overall consistency
+        // of the wallet.dat is maintained).
     }
 }
 

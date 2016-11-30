@@ -5,6 +5,7 @@
 #include "base58.h"
 #include "chainparams.h"
 #include "main.h"
+#include "primitives/block.h"
 #include "random.h"
 #include "wallet/wallet.h"
 #include "zcash/JoinSplit.hpp"
@@ -29,9 +30,11 @@ public:
 
     MOCK_METHOD2(WriteTx, bool(uint256 hash, const CWalletTx& wtx));
     MOCK_METHOD1(WriteWitnessCacheSize, bool(int64_t nWitnessCacheSize));
+    MOCK_METHOD1(WriteBestBlock, bool(const CBlockLocator& loc));
 };
 
-template void CWallet::WriteWitnessCache<MockWalletDB>(MockWalletDB& walletdb);
+template void CWallet::SetBestChainINTERNAL<MockWalletDB>(
+        MockWalletDB& walletdb, const CBlockLocator& loc);
 
 class TestWallet : public CWallet {
 public:
@@ -53,8 +56,8 @@ public:
     void DecrementNoteWitnesses(const CBlockIndex* pindex) {
         CWallet::DecrementNoteWitnesses(pindex);
     }
-    void WriteWitnessCache(MockWalletDB& walletdb) {
-        CWallet::WriteWitnessCache(walletdb);
+    void SetBestChain(MockWalletDB& walletdb, const CBlockLocator& loc) {
+        CWallet::SetBestChainINTERNAL(walletdb, loc);
     }
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx) {
         return CWallet::UpdatedNoteData(wtxIn, wtx);
@@ -918,6 +921,7 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
 TEST(wallet_tests, WriteWitnessCache) {
     TestWallet wallet;
     MockWalletDB walletdb;
+    CBlockLocator loc;
 
     auto sk = libzcash::SpendingKey::random();
     wallet.AddSpendingKey(sk);
@@ -928,7 +932,7 @@ TEST(wallet_tests, WriteWitnessCache) {
     // TxnBegin fails
     EXPECT_CALL(walletdb, TxnBegin())
         .WillOnce(Return(false));
-    wallet.WriteWitnessCache(walletdb);
+    wallet.SetBestChain(walletdb, loc);
     EXPECT_CALL(walletdb, TxnBegin())
         .WillRepeatedly(Return(true));
 
@@ -937,14 +941,14 @@ TEST(wallet_tests, WriteWitnessCache) {
         .WillOnce(Return(false));
     EXPECT_CALL(walletdb, TxnAbort())
         .Times(1);
-    wallet.WriteWitnessCache(walletdb);
+    wallet.SetBestChain(walletdb, loc);
 
     // WriteTx throws
     EXPECT_CALL(walletdb, WriteTx(wtx.GetHash(), wtx))
         .WillOnce(ThrowLogicError());
     EXPECT_CALL(walletdb, TxnAbort())
         .Times(1);
-    wallet.WriteWitnessCache(walletdb);
+    wallet.SetBestChain(walletdb, loc);
     EXPECT_CALL(walletdb, WriteTx(wtx.GetHash(), wtx))
         .WillRepeatedly(Return(true));
 
@@ -953,26 +957,42 @@ TEST(wallet_tests, WriteWitnessCache) {
         .WillOnce(Return(false));
     EXPECT_CALL(walletdb, TxnAbort())
         .Times(1);
-    wallet.WriteWitnessCache(walletdb);
+    wallet.SetBestChain(walletdb, loc);
 
     // WriteWitnessCacheSize throws
     EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
         .WillOnce(ThrowLogicError());
     EXPECT_CALL(walletdb, TxnAbort())
         .Times(1);
-    wallet.WriteWitnessCache(walletdb);
+    wallet.SetBestChain(walletdb, loc);
     EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
+        .WillRepeatedly(Return(true));
+
+    // WriteBestBlock fails
+    EXPECT_CALL(walletdb, WriteBestBlock(loc))
+        .WillOnce(Return(false));
+    EXPECT_CALL(walletdb, TxnAbort())
+        .Times(1);
+    wallet.SetBestChain(walletdb, loc);
+
+    // WriteBestBlock throws
+    EXPECT_CALL(walletdb, WriteBestBlock(loc))
+        .WillOnce(ThrowLogicError());
+    EXPECT_CALL(walletdb, TxnAbort())
+        .Times(1);
+    wallet.SetBestChain(walletdb, loc);
+    EXPECT_CALL(walletdb, WriteBestBlock(loc))
         .WillRepeatedly(Return(true));
 
     // TxCommit fails
     EXPECT_CALL(walletdb, TxnCommit())
         .WillOnce(Return(false));
-    wallet.WriteWitnessCache(walletdb);
+    wallet.SetBestChain(walletdb, loc);
     EXPECT_CALL(walletdb, TxnCommit())
         .WillRepeatedly(Return(true));
 
     // Everything succeeds
-    wallet.WriteWitnessCache(walletdb);
+    wallet.SetBestChain(walletdb, loc);
 }
 
 TEST(wallet_tests, UpdateNullifierNoteMap) {
