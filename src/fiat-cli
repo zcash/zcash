@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+#set -x
 echo aud; fiat/aud $1 $2 $3 $4
 echo bgn; fiat/bgn $1 $2 $3 $4
 echo cad; fiat/cad $1 $2 $3 $4
@@ -33,13 +33,13 @@ echo try; fiat/try $1 $2 $3 $4
 echo usd; fiat/usd $1 $2 $3 $4
 echo zar; fiat/zar $1 $2 $3 $4
 echo revs; fiat/revs $1 $2 $3 $4
-echo revs; fiat/supernet $1 $2 $3 $4
-echo revs; fiat/dex $1 $2 $3 $4
-echo revs; fiat/pangea $1 $2 $3 $4
-echo revs; fiat/jumblr $1 $2 $3 $4
-echo revs; fiat/bet $1 $2 $3 $4
-echo revs; fiat/crypto $1 $2 $3 $4
-echo revs; fiat/hodl $1 $2 $3 $4
-echo revs; fiat/shark $1 $2 $3 $4
-echo revs; fiat/bots $1 $2 $3 $4
-echo revs; fiat/mgw $1 $2 $3 $4
+echo supernet; fiat/supernet $1 $2 $3 $4
+echo dex; fiat/dex $1 $2 $3 $4
+echo pangea; fiat/pangea $1 $2 $3 $4
+echo jumblr; fiat/jumblr $1 $2 $3 $4
+echo bet; fiat/bet $1 $2 $3 $4
+echo crypto; fiat/crypto $1 $2 $3 $4
+echo hodl; fiat/hodl $1 $2 $3 $4
+echo shark; fiat/shark $1 $2 $3 $4
+echo bots; fiat/bots $1 $2 $3 $4
+echo mgw; fiat/mgw $1 $2 $3 $4

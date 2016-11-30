@@ -561,6 +561,7 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
                 return(-1);
             }
         }
+        //fprintf(stderr,"special notaryid.%d ht.%d limit.%d\n",notaryid,height,limit);
         return(1);
     }
     return(0);
