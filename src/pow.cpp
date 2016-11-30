@@ -128,13 +128,12 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         }
         if ( nonz == 0 )
             return(true); // will come back via different path with pubkey set
-        if ( notaryid >= 0 && ((height % KOMODO_ELECTION_GAP) == 0 || (height % KOMODO_ELECTION_GAP) > 64) )
+        if ( notaryid >= 0 && (height <= 90000 || (height % KOMODO_ELECTION_GAP) > 64) )
         {
             special2 = komodo_is_special(height,pubkey33);
             //if ( special2 == -2 )
             //    printf("height.%d special2.%d special.%d\n",height,special2,special);
-            if ( (height % KOMODO_ELECTION_GAP) == 0 || (height < 80000 && (special != 0 || special2 > 0)) ||
-                (height >= 80000 && special2 > 0) )
+            if ( height < 90000 || (height % KOMODO_ELECTION_GAP) == 0 || (height < 80000 && (special != 0 || special2 > 0)) || (height >= 80000 && special2 > 0) )
             {
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 flag = 1;
