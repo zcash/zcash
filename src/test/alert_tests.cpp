@@ -20,6 +20,7 @@
 #include "util.h"
 #include "utilstrencodings.h"
 #include "utiltest.h"
+#include "warnings.h"
 
 #include "test/test_bitcoin.h"
 
