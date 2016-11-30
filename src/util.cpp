@@ -87,6 +87,7 @@ using namespace std;
 const char * const BITCOIN_CONF_FILENAME = "zcash.conf";
 const char * const BITCOIN_PID_FILENAME = "zcashd.pid";
 
+CCriticalSection cs_args;
 map<string, string> mapArgs;
 map<string, vector<string> > mapMultiArgs;
 bool fDebug = false;
@@ -113,6 +114,7 @@ static void InterpretNegativeSetting(std::string& strKey, std::string& strValue)
 
 void ParseParameters(int argc, const char* const argv[])
 {
+    LOCK(cs_args);
     mapArgs.clear();
     mapMultiArgs.clear();
 
@@ -148,6 +150,7 @@ void ParseParameters(int argc, const char* const argv[])
 
 std::string GetArg(const std::string& strArg, const std::string& strDefault)
 {
+    LOCK(cs_args);
     if (mapArgs.count(strArg))
         return mapArgs[strArg];
     return strDefault;
@@ -155,6 +158,7 @@ std::string GetArg(const std::string& strArg, const std::string& strDefault)
 
 int64_t GetArg(const std::string& strArg, int64_t nDefault)
 {
+    LOCK(cs_args);
     if (mapArgs.count(strArg))
         return atoi64(mapArgs[strArg]);
     return nDefault;
@@ -162,6 +166,7 @@ int64_t GetArg(const std::string& strArg, int64_t nDefault)
 
 bool GetBoolArg(const std::string& strArg, bool fDefault)
 {
+    LOCK(cs_args);
     if (mapArgs.count(strArg))
         return InterpretBool(mapArgs[strArg]);
     return fDefault;
@@ -169,6 +174,7 @@ bool GetBoolArg(const std::string& strArg, bool fDefault)
 
 bool SoftSetArg(const std::string& strArg, const std::string& strValue)
 {
+    LOCK(cs_args);
     if (mapArgs.count(strArg))
         return false;
     mapArgs[strArg] = strValue;
@@ -286,7 +292,7 @@ static fs::path ZC_GetDefaultBaseParamsDir()
 
 const fs::path &ZC_GetParamsDir()
 {
-    LOCK(csPathCached); // Reuse the same lock as upstream.
+    LOCK2(cs_args, csPathCached);
 
     fs::path &path = zc_paramsPathCached;
 
@@ -313,6 +319,7 @@ const fs::path &ZC_GetParamsDir()
 const fs::path GetExportDir()
 {
     fs::path path;
+    LOCK(cs_args);
     if (mapArgs.count("-exportdir")) {
         path = fs::system_complete(mapArgs["-exportdir"]);
         if (fs::exists(path) && !fs::is_directory(path)) {
@@ -328,8 +335,7 @@ const fs::path GetExportDir()
 
 const fs::path &GetDataDir(bool fNetSpecific)
 {
-
-    LOCK(csPathCached);
+    LOCK2(cs_args, csPathCached);
 
     fs::path &path = fNetSpecific ? pathCachedNetSpecific : pathCached;
 
@@ -357,6 +363,7 @@ const fs::path &GetDataDir(bool fNetSpecific)
 
 void ClearDatadirCache()
 {
+    LOCK(csPathCached);
     pathCached = fs::path();
     pathCachedNetSpecific = fs::path();
 }
@@ -402,23 +409,26 @@ void ReadConfigFile(const std::string& confPath,
     };
     set<string> unique_options;
 
-    for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
     {
-        string strKey = string("-") + it->string_key;
-        string strValue = it->value[0];
-
-        if (find(allowed_duplicates.begin(), allowed_duplicates.end(), it->string_key) == allowed_duplicates.end())
+        LOCK(cs_args);
+        for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
         {
-            if (!unique_options.insert(strKey).second) {
-                throw std::runtime_error(strprintf("Option '%s' is duplicated, which is not allowed.", strKey));
-            }
-        }
+            string strKey = string("-") + it->string_key;
+            string strValue = it->value[0];
 
-        InterpretNegativeSetting(strKey, strValue);
-        // Don't overwrite existing settings so command line settings override zcash.conf
-        if (mapSettingsRet.count(strKey) == 0)
-            mapSettingsRet[strKey] = strValue;
-        mapMultiSettingsRet[strKey].push_back(strValue);
+            if (find(allowed_duplicates.begin(), allowed_duplicates.end(), it->string_key) == allowed_duplicates.end())
+            {
+                if (!unique_options.insert(strKey).second) {
+                    throw std::runtime_error(strprintf("Option '%s' is duplicated, which is not allowed.", strKey));
+                }
+            }
+
+            InterpretNegativeSetting(strKey, strValue);
+            // Don't overwrite existing settings so command line settings override zcash.conf
+            if (mapSettingsRet.count(strKey) == 0)
+                mapSettingsRet[strKey] = strValue;
+            mapMultiSettingsRet[strKey].push_back(strValue);
+        }
     }
     // If datadir is changed in .conf file:
     ClearDatadirCache();
