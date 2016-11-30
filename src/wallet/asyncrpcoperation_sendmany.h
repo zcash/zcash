@@ -16,7 +16,7 @@
 
 #include <tuple>
 
-// TODO: Compute fee based on a heuristic, e.g. (num tx output * dust threshold) + joinsplit bytes * ?
+// Default transaction fee if caller does not specify one.
 #define ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE   10000
 
 using namespace libzcash;
@@ -43,7 +43,7 @@ struct AsyncJoinSplitInfo
 
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
 public:
-    AsyncRPCOperation_sendmany(std::string fromAddress, std::vector<SendManyRecipient> tOutputs, std::vector<SendManyRecipient> zOutputs, int minDepth);
+    AsyncRPCOperation_sendmany(std::string fromAddress, std::vector<SendManyRecipient> tOutputs, std::vector<SendManyRecipient> zOutputs, int minDepth, CAmount fee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE);
     virtual ~AsyncRPCOperation_sendmany();
     
     // We don't want to be copied or moved around
@@ -59,6 +59,7 @@ public:
 private:
     friend class TEST_FRIEND_AsyncRPCOperation_sendmany;    // class for unit testing
 
+    CAmount fee_;
     int mindepth_;
     std::string fromaddress_;
     bool isfromtaddr_;

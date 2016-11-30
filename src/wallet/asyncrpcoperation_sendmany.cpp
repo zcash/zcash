@@ -50,9 +50,12 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         std::string fromAddress,
         std::vector<SendManyRecipient> tOutputs,
         std::vector<SendManyRecipient> zOutputs,
-        int minDepth) :
-        fromaddress_(fromAddress), t_outputs_(tOutputs), z_outputs_(zOutputs), mindepth_(minDepth)
+        int minDepth,
+        CAmount fee) :
+        fromaddress_(fromAddress), t_outputs_(tOutputs), z_outputs_(zOutputs), mindepth_(minDepth), fee_(fee)
 {
+    assert(fee_ > 0);
+
     if (minDepth < 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be negative");
     }
@@ -147,8 +150,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     bool isSingleZaddrOutput = (t_outputs_.size()==0 && z_outputs_.size()==1);
     bool isMultipleZaddrOutput = (t_outputs_.size()==0 && z_outputs_.size()>=1);
     bool isPureTaddrOnlyTx = (isfromtaddr_ && z_outputs_.size() == 0);
-    CAmount minersFee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE;
-    
+    CAmount minersFee = fee_;
+
     // When spending coinbase utxos, you can only specify a single zaddr as the change must go somewhere
     // and if there are multiple zaddrs, we don't know where to send it.
     if (isfromtaddr_) {

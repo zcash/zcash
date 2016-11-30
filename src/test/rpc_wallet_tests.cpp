@@ -820,7 +820,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
 
     BOOST_CHECK_THROW(CallRPC("z_sendmany"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_sendmany toofewargs"), runtime_error);
-    BOOST_CHECK_THROW(CallRPC("z_sendmany too many args here"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_sendmany just too many args here"), runtime_error);
 
     // bad from address
     BOOST_CHECK_THROW(CallRPC("z_sendmany "
@@ -839,6 +839,27 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
             "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
             "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0},"
             " {\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":12.0} ]"
+            ), runtime_error);
+
+    // invalid fee amount, cannot be negative
+    BOOST_CHECK_THROW(CallRPC("z_sendmany "
+            "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0}] "
+            "1 -0.0001"
+            ), runtime_error);
+
+    // invalid fee amount, bigger than MAX_MONEY
+    BOOST_CHECK_THROW(CallRPC("z_sendmany "
+            "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0}] "
+            "1 21000001"
+            ), runtime_error);
+
+    // fee amount is bigger than sum of outputs
+    BOOST_CHECK_THROW(CallRPC("z_sendmany "
+            "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0}] "
+            "1 50.00000001"
             ), runtime_error);
 
     // memo bigger than allowed length of ZC_MEMO_SIZE
