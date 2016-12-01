@@ -376,13 +376,19 @@ uint256 _komodo_getblockhash(int32_t height);
 
 uint64_t komodo_seed(int32_t height)
 {
-    uint256 hash; uint64_t seed = 0; CBlockIndex *pindex;
+    uint256 hash,zero; uint64_t seed = 0; CBlockIndex *pindex;
     memset(&hash,0,sizeof(hash));
+    memset(&zero,0,sizeof(zero));
     if ( height > 10 )
         height -= 10;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         hash = _komodo_getblockhash(height);
+        while ( memcmp(&hash,&zero,sizeof(hash)) == 0 )
+        {
+            fprintf(stderr,"null seed for height.%d, sleep\n",height);
+            sleep(3);
+        }
         int32_t i;
         for (i=0; i<32; i++)
             printf("%02x",((uint8_t *)&hash)[i]);
