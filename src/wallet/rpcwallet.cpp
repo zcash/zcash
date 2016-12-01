@@ -493,7 +493,7 @@ Value paxdeposit(const Array& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return Value::null;
     if (fHelp || params.size() != 3)
-        throw runtime_error("paxdeposit \"address\" fiatoshis base");
+        throw runtime_error("paxdeposit address fiatoshis base");
     LOCK2(cs_main, pwalletMain->cs_wallet);
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
@@ -531,7 +531,7 @@ Value paxwithdraw(const Array& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
     if (fHelp || params.size() != 2)
-        throw runtime_error("paxwithdraw \"address\" fiatamount");
+        throw runtime_error("paxwithdraw address fiatamount");
     if ( komodo_isrealtime(&kmdheight) == 0 )
         return(0);
     LOCK2(cs_main, pwalletMain->cs_wallet);
