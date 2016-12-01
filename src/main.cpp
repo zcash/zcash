@@ -2703,7 +2703,15 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         if (!DisconnectTip(state))
             return false;
     }
-
+if ( 1 )
+{
+    while (chainActive.Tip()->nHeight > 91419 )
+    {
+        fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
+        if (!DisconnectTip(state))
+            return false;
+    }
+}
     // Build list of new blocks to connect.
     std::vector<CBlockIndex*> vpindexToConnect;
     bool fContinue = true;
