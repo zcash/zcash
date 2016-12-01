@@ -2709,7 +2709,7 @@ if ( 0 )
     static int32_t didinit;
     if ( didinit++ == 0 )
     {
-        while (chainActive.Tip()->nHeight > 91418 )
+        while (chainActive.Tip()->nHeight > 91760 )
         {
             fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
             if ( !DisconnectTip(state) )
