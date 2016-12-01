@@ -297,7 +297,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
         m = tx.vout[n].scriptPubKey.size();
         for (i=0; i<maxsize&&i<m; i++)
             scriptPubKey[i] = ptr[i];
-        fprintf(stderr,"got scriptPubKey via rawtransaction\n");
+        //fprintf(stderr,"got scriptPubKey via rawtransaction\n");
         return(i);
     }
     return(-1);

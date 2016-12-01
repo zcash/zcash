@@ -505,6 +505,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             numvins = block.vtx[i].vin.size();
             for (j=0; j<numvins; j++)
             {
+                if ( i == 0 && j == 0 )
+                    continue;
                 if ( (scriptlen= gettxout_scriptPubKey(scriptPubKey,sizeof(scriptPubKey),block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) > 0 )
                 {
                     if ( (k= komodo_notarycmp(scriptPubKey,scriptlen,pubkeys,numnotaries,rmd160)) >= 0 )
