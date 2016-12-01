@@ -661,7 +661,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         int32_t nseconds = Mining_start+ROUNDROBIN_DELAY-time(NULL);
                         if ( nseconds > 0 )
                             sleep(nseconds);
-                        MilliSleep((rand() % 4700) + 1);
+                        MilliSleep((rand() % 700) + 1);
                     }
                     KOMODO_CHOSEN_ONE = 1;
                     // Found a solution
