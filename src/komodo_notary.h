@@ -135,6 +135,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 {
     // -1 if not notary, 0 if notary, 1 if special notary
     struct knotary_entry *kp; int32_t numnotaries=0,htind,modval = -1;
+    komodo_init(0);
     *notaryidp = -1;
     if ( height < 0 || height >= KOMODO_MAXBLOCKS )
     {
