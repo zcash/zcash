@@ -381,8 +381,13 @@ uint64_t komodo_seed(int32_t height)
     if ( height > 10 )
         height -= 10;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    {
         hash = _komodo_getblockhash(height);
-    else hash = komodo_getblockhash(height);
+        int32_t i;
+        for (i=0; i<32; i++)
+            printf("%02x",((uint8_t *)&hash)[i]);
+        printf(" seed.%d\n",nHeight);
+    } else hash = komodo_getblockhash(height);
     seed = arith_uint256(hash.GetHex()).GetLow64();
     return(seed);
 }

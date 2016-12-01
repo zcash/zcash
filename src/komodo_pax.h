@@ -451,6 +451,7 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t lastprice,seed,tolerance,den,densum,sum=0,votes[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],btcusds[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtcs[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtc,btcusd;
+    *seedp = seed = komodo_seed(height);
     if ( basevolume > KOMODO_PAXMAX )
     {
         printf("komodo_paxprice overflow %.8f\n",dstr(basevolume));
@@ -470,7 +471,6 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
         _komodo_paxprice(&kmdbtcs[numvotes-1-i],&btcusds[numvotes-1-i],height-i,base,rel,100000,0,0);
         //printf("(%llu %llu) ",(long long)kmdbtcs[numvotes-1-i],(long long)btcusds[numvotes-1-i]);
     }
-    *seedp = seed = komodo_seed(height);
     kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,seed) * 539;
     btcusd = komodo_paxcorrelation(btcusds,numvotes,seed) * 539;
     //printf("kmdbtc %llu btcusd %llu\n",(long long)kmdbtc,(long long)btcusd);
@@ -515,8 +515,12 @@ void komodo_paxpricefeed(int32_t height,uint8_t *pricefeed,int32_t opretlen)
 uint64_t PAX_fiatdest(uint64_t *seedp,int32_t tokomodo,char *destaddr,uint8_t pubkey33[33],char *coinaddr,int32_t height,char *origbase,int64_t fiatoshis)
 {
     uint8_t shortflag = 0; char base[4]; int32_t i,baseid; uint8_t addrtype,rmd160[20]; int64_t komodoshis = 0;
+    *seedp = 0;
     if ( (baseid= komodo_baseid(origbase)) < 0 || baseid == MAX_CURRENCIES )
+    {
+        printf("PAX_fiatdest illegal base.(%s)\n",origbase);
         return(0);
+    }
     for (i=0; i<3; i++)
         base[i] = toupper(origbase[i]);
     base[i] = 0;
