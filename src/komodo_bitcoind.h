@@ -396,10 +396,10 @@ uint64_t komodo_seed(int32_t height)
     }
     else
     {
-        seed = calc_crc32(0,(void *)&height,sizeof(height));
-        seed <<= 32;
+        seed = (height << 13) ^ (height << 2);
+        seed <<= 21;
         seed |= (height & 0xffffffff);
-        seed |= calc_crc32(0,(void *)&seed,sizeof(seed));
+        seed ^= (seed << 17) ^ (seed << 1);
     }
     return(seed);
 }
