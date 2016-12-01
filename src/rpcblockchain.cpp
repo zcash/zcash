@@ -682,7 +682,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
     int32_t i,m; uint8_t *ptr;
     LOCK(cs_main);
     CCoins coins;
-    if ( 1 )
+    if ( 0 )
     {
         LOCK(mempool.cs);
         CCoinsViewMemPool view(pcoinsTip,mempool);
