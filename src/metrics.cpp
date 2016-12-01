@@ -94,7 +94,6 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
     int hours = (uptime - (days * 24 * 60 * 60)) / (60 * 60);
     int minutes = (uptime - (((days * 24) + hours) * 60 * 60)) / 60;
     int seconds = uptime - (((((days * 24) + hours) * 60) + minutes) * 60);
-    int validatedCount = 0;
 
     // Display uptime
     std::string duration;
@@ -111,13 +110,13 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
     std::cout << strDuration << std::endl;
     lines += (strDuration.size() / cols);
 
-    validatedCount = transactionsValidated.get();
+    int validatedCount = transactionsValidated.get();
     if (validatedCount > 1) {
       std::cout << "- " << strprintf(_("You have validated %d transactions!"), validatedCount) << std::endl;
     } else if (validatedCount == 1) {
-      std::cout << "- " << strprintf(_("You have validated %d transaction."), validatedCount) << std::endl;
+      std::cout << "- " << _("You have validated a transaction!") << std::endl;
     } else {
-      std::cout << "- " << strprintf(_("You have validated %d transactions."), validatedCount) << std::endl;
+      std::cout << "- " << _("You have validated no transactions.") << std::endl;
     }
 
     if (mining) {
