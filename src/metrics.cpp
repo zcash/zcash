@@ -145,7 +145,14 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
     std::cout << strDuration << std::endl;
     lines += (strDuration.size() / cols);
 
-    std::cout << "- " << strprintf(_("You have validated %d transactions!"), transactionsValidated.get()) << std::endl;
+    int validatedCount = transactionsValidated.get();
+    if (validatedCount > 1) {
+      std::cout << "- " << strprintf(_("You have validated %d transactions!"), validatedCount) << std::endl;
+    } else if (validatedCount == 1) {
+      std::cout << "- " << _("You have validated a transaction!") << std::endl;
+    } else {
+      std::cout << "- " << _("You have validated no transactions.") << std::endl;
+    }
 
     if (mining && loaded) {
         double solps = uptime > 0 ? (double)solutionTargetChecks.get() / uptime : 0;
