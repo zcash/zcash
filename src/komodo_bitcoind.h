@@ -457,7 +457,7 @@ int32_t komodo_block2height(CBlock *block)
         }
         //printf(" <- coinbase.%d ht.%d\n",(int32_t)block->vtx[0].vin[0].scriptSig.size(),height);
     }
-    komodo_init(height);
+    //komodo_init(height);
     return(height);
 }
 
@@ -469,7 +469,7 @@ void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
 #else
     uint8_t *ptr = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
 #endif
-    komodo_init(0);
+    //komodo_init(0);
     n = block.vtx[0].vout[0].scriptPubKey.size();
     if ( n == 35 )
         memcpy(pubkey33,ptr+1,33);
@@ -496,7 +496,7 @@ int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex)
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
     CBlock block;
-    komodo_init(height);
+    //komodo_init(height);
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
