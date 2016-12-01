@@ -551,18 +551,18 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             bitcoin_address(coinaddr,addrtype,rmd160,20);
             checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,fiatoshis);
             typestr = "deposit";
-            printf("(%s) (%s) kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d seed.%llx\n",ASSETCHAINS_SYMBOL,base,kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed);
             if ( kmdheight <= height )
             {
-                for (i=0; i<32; i++)
-                    printf("%02x",((uint8_t *)&txid)[i]);
-                printf(" <- txid.v%u ",vout);
-                for (i=0; i<33; i++)
-                    printf("%02x",pubkey33[i]);
-                printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
                 didstats = 0;
                 if ( komodo_paxcmp(base,kmdheight,value,checktoshis,seed) == 0 )
                 {
+                    printf("(%s) (%s) kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d seed.%llx\n",ASSETCHAINS_SYMBOL,base,kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed);
+                    for (i=0; i<32; i++)
+                        printf("%02x",((uint8_t *)&txid)[i]);
+                    printf(" <- txid.v%u ",vout);
+                    for (i=0; i<33; i++)
+                        printf("%02x",pubkey33[i]);
+                    printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
                     if ( (pax= komodo_paxfind(txid,vout,'D')) == 0 )
                     {
                         if ( (basesp= komodo_stateptrget(base)) != 0 )
@@ -576,6 +576,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     }
                     if ( (pax= komodo_paxfind(txid,vout,'D')) != 0 )
                     {
+                        pax->validated = kmdheight;
                         if ( didstats == 0 && pax->didstats == 0 )
                         {
                             if ( (basesp= komodo_stateptrget(base)) != 0 )
@@ -589,7 +590,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         if ( didstats != 0 )
                             pax->didstats = 1;
                     }
-                } else printf("pax %s deposit %.8f rejected\n",base,dstr(fiatoshis));
+                }
+                else if ( kmdheight > 91800 )
+                    printf("pax %s deposit %.8f rejected\n",base,dstr(fiatoshis));
             }
         }
     }
@@ -622,6 +625,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 if ( didstats != 0 )
                     pax->didstats = 1;
                 pax->type = opretbuf[0];
+                pax->validated = kmdheight;
             }
         }
     }

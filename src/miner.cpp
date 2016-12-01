@@ -133,7 +133,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             }
             else if ( deposits != 0 )
             {
-                //fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d RT.%u KOMODO_ON_DEMAND.%d\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),isrealtime,KOMODO_ON_DEMAND);
+                fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d RT.%u KOMODO_ON_DEMAND.%d\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),isrealtime,KOMODO_ON_DEMAND);
                 break;
             }
             sleep(10);
