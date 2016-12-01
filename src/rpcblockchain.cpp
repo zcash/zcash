@@ -700,7 +700,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
             //fprintf(stderr,"cant get pcoinsTip->GetCoins\n");
             continue;
         }
-        if ( n < 0 || (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
+        if ( n < 0 || (unsigned int)n > coins.vout.size() || coins.vout[n].IsNull() ) // vout.size() seems off by 1
         {
             fprintf(stderr,"iter.%d n.%d vs voutsize.%d\n",iter,n,(int32_t)coins.vout.size());
             continue;
@@ -715,7 +715,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
     uint256 hashBlock;
     if ( GetTransaction(txid,tx,hashBlock,true) == 0 )
         return(-1);
-    else //if ( n < tx.vout.size() )
+    else if ( n <= tx.vout.size() ) // vout.size() seems off by 1
     {
         ptr = (uint8_t *)tx.vout[n].scriptPubKey.data();
         m = tx.vout[n].scriptPubKey.size();
