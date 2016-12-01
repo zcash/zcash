@@ -679,9 +679,9 @@ Value gettxout(const Array& params, bool fHelp)
 
 int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid,int32_t n)
 {
-    int32_t i,m,iter; uint8_t *ptr;
+    int32_t i,m; uint8_t *ptr;
     LOCK(cs_main);
-    CCoins coins;
+    /*CCoins coins;
     for (iter=0; iter<2; iter++)
     {
         if ( iter == 0 )
@@ -700,7 +700,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
             //fprintf(stderr,"cant get pcoinsTip->GetCoins\n");
             continue;
         }
-        if ( n < 0 || (unsigned int)n > coins.vout.size() || coins.vout[n].IsNull() ) // vout.size() seems off by 1
+        if ( n < 0 || (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
         {
             fprintf(stderr,"iter.%d n.%d vs voutsize.%d\n",iter,n,(int32_t)coins.vout.size());
             continue;
@@ -710,7 +710,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
         for (i=0; i<maxsize&&i<m; i++)
             scriptPubKey[i] = ptr[i];
         return(i);
-    }
+    }*/
     CTransaction tx;
     uint256 hashBlock;
     if ( GetTransaction(txid,tx,hashBlock,true) == 0 )
