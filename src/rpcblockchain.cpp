@@ -690,14 +690,14 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
             CCoinsViewMemPool view(pcoinsTip,mempool);
             if ( view.GetCoins(txid,coins) == 0 )
             {
-                fprintf(stderr,"cant get view\n");
+                //fprintf(stderr,"cant get view\n");
                 continue;
             }
             mempool.pruneSpent(txid, coins); // TODO: this should be done by the CCoinsViewMemPool
         }
         else if ( pcoinsTip->GetCoins(txid,coins) == 0 )
         {
-            fprintf(stderr,"cant get pcoinsTip->GetCoins\n");
+            //fprintf(stderr,"cant get pcoinsTip->GetCoins\n");
             continue;
         }
         if ( n < 0 || (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
