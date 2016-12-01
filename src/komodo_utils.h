@@ -1493,18 +1493,18 @@ void komodo_args()
 #ifdef WIN32
         while ( fname[strlen(fname)-1] != '\\' )
             fname[strlen(fname)-1] = 0;
-        strcat(fname,"/.komodo/komodo.conf");
+        strcat(fname,".komodo/komodo.conf");
 #else
         while ( fname[strlen(fname)-1] != '/' )
             fname[strlen(fname)-1] = 0;
-        strcat(fname,"/.komodo/komodo.conf");
+        strcat(fname,".komodo/komodo.conf");
 #endif
         if ( (fp= fopen(fname,"rb")) != 0 )
         {
             komodo_userpass(username,password,fp);
             sprintf(KMDUSERPASS,"%s:%s",username,password);
             fclose(fp);
-            printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
+            //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
         } else printf("couldnt open.(%s)\n",fname);
     }
     //fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
