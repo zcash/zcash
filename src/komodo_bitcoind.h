@@ -386,7 +386,7 @@ uint64_t komodo_seed(int32_t height)
         int32_t i;
         for (i=0; i<32; i++)
             printf("%02x",((uint8_t *)&hash)[i]);
-        printf(" seed.%d\n",nHeight);
+        printf(" seed.%d\n",height);
     } else hash = komodo_getblockhash(height);
     seed = arith_uint256(hash.GetHex()).GetLow64();
     return(seed);
