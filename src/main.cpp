@@ -2704,7 +2704,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         if (!DisconnectTip(state))
             return false;
     }
-if ( 1 )
+if ( 0 )
 {
     static int32_t didinit;
     if ( didinit++ == 0 )
