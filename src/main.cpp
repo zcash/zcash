@@ -2706,14 +2706,18 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     }
 if ( 1 )
 {
-    while (chainActive.Tip()->nHeight > 91418 )
+    static int32_t didinit;
+    if ( didinit++ == 0 )
     {
-        fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
-        if ( !DisconnectTip(state) )
-            return false;
+        while (chainActive.Tip()->nHeight > 91418 )
+        {
+            fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
+            if ( !DisconnectTip(state) )
+                return false;
+        }
+        pindexOldTip = chainActive.Tip();
+        pindexFork = chainActive.FindFork(pindexMostWork);
     }
-    pindexOldTip = chainActive.Tip();
-    pindexFork = chainActive.FindFork(pindexMostWork);
 }
     // Build list of new blocks to connect.
     std::vector<CBlockIndex*> vpindexToConnect;
