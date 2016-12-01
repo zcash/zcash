@@ -376,9 +376,10 @@ uint256 _komodo_getblockhash(int32_t height);
 
 uint64_t komodo_seed(int32_t height)
 {
+    uint64_t seed = 0;
     if ( 0 ) // problem during init time, seeds are needed for loading blockindex, so null seeds...
     {
-        uint256 hash,zero; uint64_t seed = 0; CBlockIndex *pindex;
+        uint256 hash,zero; CBlockIndex *pindex;
         memset(&hash,0,sizeof(hash));
         memset(&zero,0,sizeof(zero));
         if ( height > 10 )
