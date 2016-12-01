@@ -711,6 +711,18 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
             scriptPubKey[i] = ptr[i];
         return(i);
     }
+    CTransaction tx;
+    uint256 hashBlock;
+    if ( GetTransaction(hash,tx,hashBlock,true) == 0 )
+        return(-1);
+    else
+    {
+        ptr = (uint8_t *)tx.vout[n].scriptPubKey.data();
+        m = tx.vout[n].scriptPubKey.size();
+        for (i=0; i<maxsize&&i<m; i++)
+            scriptPubKey[i] = ptr[i];
+        return(i);
+    }
     return(-1);
 }
 
