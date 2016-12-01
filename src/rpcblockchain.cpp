@@ -272,7 +272,7 @@ Value getblockhash(const Array& params, bool fHelp)
     return pblockindex->GetBlockHash().GetHex();
 }
 
-uint256 _komodo_getblockhash(int32_t height)
+uint256 _komodo_getblockhash(int32_t nHeight)
 {
     uint256 hash;
     LOCK(cs_main);
