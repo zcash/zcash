@@ -677,56 +677,6 @@ Value gettxout(const Array& params, bool fHelp)
     return ret;
 }
 
-int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid,int32_t n)
-{
-    int32_t i,m; uint8_t *ptr;
-    LOCK(cs_main);
-    /*CCoins coins;
-    for (iter=0; iter<2; iter++)
-    {
-        if ( iter == 0 )
-        {
-            LOCK(mempool.cs);
-            CCoinsViewMemPool view(pcoinsTip,mempool);
-            if ( view.GetCoins(txid,coins) == 0 )
-            {
-                //fprintf(stderr,"cant get view\n");
-                continue;
-            }
-            mempool.pruneSpent(txid, coins); // TODO: this should be done by the CCoinsViewMemPool
-        }
-        else if ( pcoinsTip->GetCoins(txid,coins) == 0 )
-        {
-            //fprintf(stderr,"cant get pcoinsTip->GetCoins\n");
-            continue;
-        }
-        if ( n < 0 || (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
-        {
-            fprintf(stderr,"iter.%d n.%d vs voutsize.%d\n",iter,n,(int32_t)coins.vout.size());
-            continue;
-        }
-        ptr = (uint8_t *)coins.vout[n].scriptPubKey.data();
-        m = coins.vout[n].scriptPubKey.size();
-        for (i=0; i<maxsize&&i<m; i++)
-            scriptPubKey[i] = ptr[i];
-        return(i);
-    }*/
-    CTransaction tx;
-    uint256 hashBlock;
-    if ( GetTransaction(txid,tx,hashBlock,true) == 0 )
-        return(-1);
-    else if ( n <= tx.vout.size() ) // vout.size() seems off by 1
-    {
-        ptr = (uint8_t *)tx.vout[n].scriptPubKey.data();
-        m = tx.vout[n].scriptPubKey.size();
-        for (i=0; i<maxsize&&i<m; i++)
-            scriptPubKey[i] = ptr[i];
-        fprintf(stderr,"got scriptPubKey via rawtransaction\n");
-        return(i);
-    }
-    return(-1);
-}
-
 Value verifychain(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 2)
