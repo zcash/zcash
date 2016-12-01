@@ -372,6 +372,8 @@ uint256 komodo_getblockhash(int32_t height)
     return(hash);
 }
 
+uint256 _komodo_getblockhash(int32_t height);
+
 uint64_t komodo_seed(int32_t height)
 {
     uint256 hash; uint64_t seed = 0; CBlockIndex *pindex;
@@ -379,10 +381,8 @@ uint64_t komodo_seed(int32_t height)
     if ( height > 10 )
         height -= 10;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
-    {
-        if ( (pindex= chainActive[height]) != 0 )
-            hash = pindex->GetBlockHash();
-    } else hash = komodo_getblockhash(height);
+        hash = _komodo_getblockhash(height);
+    else hash = komodo_getblockhash(height);
     seed = arith_uint256(hash.GetHex()).GetLow64();
     return(seed);
 }

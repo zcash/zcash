@@ -272,6 +272,18 @@ Value getblockhash(const Array& params, bool fHelp)
     return pblockindex->GetBlockHash().GetHex();
 }
 
+uint256 _komodo_getblockhash(int32_t height);
+{
+    uint256 hash;
+    LOCK(cs_main);
+    if ( nHeight >= 0 && nHeight <= chainActive.Height() )
+    {
+        CBlockIndex* pblockindex = chainActive[nHeight];
+        hash = pblockindex->GetBlockHash();
+    } else memset(&hash,0,sizeof(hash));
+    return(hash);
+}
+
 Value getblock(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)

@@ -589,7 +589,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         if ( didstats != 0 )
                             pax->didstats = 1;
                     }
-                }
+                } else printf("pax %s deposit %.8f rejected\n",base,dstr(fiatoshis));
             }
         }
     }
