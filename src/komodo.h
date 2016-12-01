@@ -501,19 +501,26 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             numvouts = block.vtx[i].vout.size();
             notaryid = -1;
             voutmask = specialtx = notarizedheight = isratification = notarized = 0;
-            signedmask = 1;
+            signedmask = (height < 91400) ? 1 : 0;
             numvins = block.vtx[i].vin.size();
             for (j=0; j<numvins; j++)
             {
+                if ( i == 0 && j == 0 )
+                    continue;
                 if ( (scriptlen= gettxout_scriptPubKey(scriptPubKey,sizeof(scriptPubKey),block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) > 0 )
                 {
                     if ( (k= komodo_notarycmp(scriptPubKey,scriptlen,pubkeys,numnotaries,rmd160)) >= 0 )
                         signedmask |= (1LL << k);
-                }
+                    else if ( numvins >= 17 )
+                    {
+                        int32_t k;
+                        for (k=0; k<scriptlen; k++)
+                            printf("%02x",scriptPubKey[k]);
+                        printf(" scriptPubKey doesnt match any notary\n");
+                    }
+                } else printf("cant get scriptPubKey for ht.%d txi.%d vin.%d\n",height,i,j);
             }
             numvalid = bitweight(signedmask);
-            //if ( height == 79633 )
-            //    notarized = 1;
             if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) || numvalid > (numnotaries/3)) )
             {
                 printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<< notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
@@ -538,10 +545,14 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     }
                 }
             }
+            printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d notarized.%d special.%d isratification.%d\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts,notarized,specialtx,isratification);
             if ( notarized != 0 && (notarizedheight != 0 || specialtx != 0) )
             {
-                //printf("%s NOTARY SIGNED.%llx numvins.%d ht.%d txi.%d notaryht.%d specialtx.%d\n",ASSETCHAINS_SYMBOL,(long long)signedmask,numvins,height,i,notarizedheight,specialtx);
-                //printf("ht.%d specialtx.%d isratification.%d numvouts.%d signed.%llx numnotaries.%d\n",height,specialtx,isratification,numvouts,(long long)signedmask,numnotaries);
+                if ( isratification != 0 )
+                {
+                    printf("%s NOTARY SIGNED.%llx numvins.%d ht.%d txi.%d notaryht.%d specialtx.%d\n",ASSETCHAINS_SYMBOL,(long long)signedmask,numvins,height,i,notarizedheight,specialtx);
+                    printf("ht.%d specialtx.%d isratification.%d numvouts.%d signed.%llx numnotaries.%d\n",height,specialtx,isratification,numvouts,(long long)signedmask,numnotaries);
+                }
                 if ( specialtx != 0 && isratification != 0 && numvouts > 2 )
                 {
                     numvalid = 0;

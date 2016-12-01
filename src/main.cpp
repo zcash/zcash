@@ -2555,6 +2555,7 @@ static int64_t nTimePostConnect = 0;
  * corresponding to pindexNew, to bypass loading it again from disk.
  */
 bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *pblock) {
+    
     assert(pindexNew->pprev == chainActive.Tip());
     mempool.check(pcoinsTip);
     // Read block from disk.
@@ -2703,7 +2704,21 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         if (!DisconnectTip(state))
             return false;
     }
-
+if ( 0 )
+{
+    static int32_t didinit;
+    if ( didinit++ == 0 )
+    {
+        while (chainActive.Tip()->nHeight > 91418 )
+        {
+            fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
+            if ( !DisconnectTip(state) )
+                return false;
+        }
+        pindexOldTip = chainActive.Tip();
+        pindexFork = chainActive.FindFork(pindexMostWork);
+    }
+}
     // Build list of new blocks to connect.
     std::vector<CBlockIndex*> vpindexToConnect;
     bool fContinue = true;
