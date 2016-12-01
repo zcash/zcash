@@ -376,20 +376,30 @@ uint256 _komodo_getblockhash(int32_t height);
 
 uint64_t komodo_seed(int32_t height)
 {
-    uint256 hash,zero; uint64_t seed = 0; CBlockIndex *pindex;
-    memset(&hash,0,sizeof(hash));
-    memset(&zero,0,sizeof(zero));
-    if ( height > 10 )
-        height -= 10;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        hash = _komodo_getblockhash(height);
-    if ( memcmp(&hash,&zero,sizeof(hash)) == 0 )
-        hash = komodo_getblockhash(height);
-    int32_t i;
-    for (i=0; i<32; i++)
-        printf("%02x",((uint8_t *)&hash)[i]);
-    printf(" seed.%d\n",height);
+    if ( 0 ) // problem during init time, seeds are needed for loading blockindex, so null seeds...
+    {
+        uint256 hash,zero; uint64_t seed = 0; CBlockIndex *pindex;
+        memset(&hash,0,sizeof(hash));
+        memset(&zero,0,sizeof(zero));
+        if ( height > 10 )
+            height -= 10;
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            hash = _komodo_getblockhash(height);
+        if ( memcmp(&hash,&zero,sizeof(hash)) == 0 )
+            hash = komodo_getblockhash(height);
+        int32_t i;
+        for (i=0; i<32; i++)
+            printf("%02x",((uint8_t *)&hash)[i]);
+        printf(" seed.%d\n",height);
         seed = arith_uint256(hash.GetHex()).GetLow64();
+    }
+    else
+    {
+        seed = calc_crc32(0,(void *)&height,sizeof(height));
+        seed <<= 32;
+        seed |= (height & 0xffffffff);
+        seed |= calc_crc32(0,(void *)&seed,sizeof(seed));
+    }
     return(seed);
 }
 
