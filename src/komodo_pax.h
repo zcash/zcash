@@ -450,8 +450,9 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
 
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
-    int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t lastprice,seed,tolerance,den,densum,sum=0,votes[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],btcusds[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtcs[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtc,btcusd;
-    *seedp = seed = komodo_seed(height);
+    int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t lastprice,tolerance,den,densum,sum=0,votes[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],btcusds[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtcs[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtc,btcusd;
+    *seedp = komodo_seed(height);
+    printf("paxprice set seed.%llx\n",(long long)*seedp);
     if ( basevolume > KOMODO_PAXMAX )
     {
         printf("komodo_paxprice overflow %.8f\n",dstr(basevolume));
@@ -471,8 +472,8 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
         _komodo_paxprice(&kmdbtcs[numvotes-1-i],&btcusds[numvotes-1-i],height-i,base,rel,100000,0,0);
         //printf("(%llu %llu) ",(long long)kmdbtcs[numvotes-1-i],(long long)btcusds[numvotes-1-i]);
     }
-    kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,seed) * 539;
-    btcusd = komodo_paxcorrelation(btcusds,numvotes,seed) * 539;
+    kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,*seedp) * 539;
+    btcusd = komodo_paxcorrelation(btcusds,numvotes,*seedp) * 539;
     //printf("kmdbtc %llu btcusd %llu\n",(long long)kmdbtc,(long long)btcusd);
     for (i=nonz=0; i<numvotes; i++)
     {
@@ -482,7 +483,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     }
     if ( nonz <= (numvotes >> 1) )
         return(0);
-    return(komodo_paxcorrelation(votes,numvotes,seed) * basevolume / 100000);
+    return(komodo_paxcorrelation(votes,numvotes,*seedp) * basevolume / 100000);
 }
 
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel)
@@ -527,7 +528,7 @@ uint64_t PAX_fiatdest(uint64_t *seedp,int32_t tokomodo,char *destaddr,uint8_t pu
     if ( fiatoshis < 0 )
         shortflag = 1, fiatoshis = -fiatoshis;
     komodoshis = komodo_paxprice(seedp,height,base,(char *)"KMD",(uint64_t)fiatoshis);
-    //printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f\n",height,base,(double)fiatoshis/COIN,(double)komodoshis/COIN);
+    printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f seed.%llx\n",height,base,(double)fiatoshis/COIN,(double)komodoshis/COIN,(long long)*seedp);
     if ( bitcoin_addr2rmd160(&addrtype,rmd160,coinaddr) == 20 )
     {
         PAX_pubkey(1,pubkey33,&addrtype,rmd160,base,&shortflag,tokomodo != 0 ? &komodoshis : &fiatoshis);

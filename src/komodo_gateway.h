@@ -571,7 +571,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                             didstats = 1;
                             if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
                                 printf("########### %p deposited %s += %.8f kmdheight.%d %.8f\n",basesp,base,dstr(fiatoshis),kmdheight,dstr(value));
-                        }
+                        } else printf("cant get stateptr.(%s)\n",base);
                         komodo_gateway_deposit(coinaddr,value,base,fiatoshis,rmd160,txid,vout,'D',kmdheight,height,(char *)"KMD",0);
                     }
                     if ( (pax= komodo_paxfind(txid,vout,'D')) != 0 )
