@@ -20,7 +20,9 @@ _zcash_rpc() {
 # Add wallet accounts to COMPREPLY
 _zcash_accounts() {
     local accounts
-    accounts=$(_zcash_rpc listaccounts | awk -F '"' '{ print $2 }')
+    # Accounts are deprecated in Zcash
+    #accounts=$(_zcash_rpc listaccounts | awk -F '"' '{ print $2 }')
+    accounts="\\\"\\\""
     COMPREPLY=( "${COMPREPLY[@]}" $( compgen -W "$accounts" -- "$cur" ) )
 }
 
