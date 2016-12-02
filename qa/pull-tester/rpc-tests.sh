@@ -11,6 +11,7 @@ export BITCOIND=${REAL_BITCOIND}
 #Run the tests
 
 testScripts=(
+    'wallet_zsendmany_strict_coinbase.py'
     'wallet_protectcoinbase.py'
     'wallet.py'
     'wallet_nullifiers.py'

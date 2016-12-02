@@ -262,6 +262,20 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         tx_ = CTransaction(rawTx);
     }
 
+    // Node can restrict coinbase taddr->zaddr so that it (and any change) must goto a zaddr belonging to the wallet.
+    if (selectedUTXOCoinbase && isSingleZaddrOutput) {
+        if (mapArgs.count("-zsendmanystrictcoinbase")) {
+            CZCPaymentAddress address(std::get<0>(z_outputs_[0]));
+            try {
+                if (!pwalletMain->HaveSpendingKey(address.Get())) {
+                    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid recipient address, does not belong to wallet.  Required when zsendmanystrictcoinbase is enabled.");
+                }
+            } catch (std::runtime_error e) {
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("runtime error: ") + e.what());
+            }
+        }
+    }
+
     LogPrint("zrpc", "%s: spending %s to send %s with fee %s\n",
             getId().substr(0,10), FormatMoney(targetAmount, false), FormatMoney(sendAmount, false), FormatMoney(minersFee, false));
     LogPrint("zrpc", " -  transparent input: %s (to choose from)\n", FormatMoney(t_inputs_total, false));
