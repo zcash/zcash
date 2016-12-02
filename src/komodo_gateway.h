@@ -528,7 +528,7 @@ int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t che
         }
     }
     if ( value != checkvalue )
-        printf("paxcmp value %llu != checkvalue %llu\n",(long long)value,(long long)checkvalue);
+        printf("%s.%d seed.%llx paxcmp value %llu != checkvalue %llu\n",symbol,kmdheight,(long long)seed,(long long)value,(long long)checkvalue);
     return(value != checkvalue);
 }
 
