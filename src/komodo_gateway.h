@@ -527,6 +527,8 @@ int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t che
             return(-1);
         }
     }
+    if ( value != checkvalue )
+        printf("paxcmp value %llu != checkvalue %llu\n",(long long)value,(long long)checkvalue);
     return(value != checkvalue);
 }
 
@@ -554,7 +556,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             if ( kmdheight <= height )
             {
                 didstats = 0;
-                if ( strcmp(CURRENCIES[baseids[i]],ASSETCHAINS_SYMBOL) == 0 )
+                if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
                 {
                     printf("(%s) (%s) kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d seed.%llx\n",ASSETCHAINS_SYMBOL,base,kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed);
                     for (i=0; i<32; i++)
