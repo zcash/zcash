@@ -4,7 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 # call $bitcoin-cli for RPC
-_bitcoin_rpc() {
+_zcash_rpc() {
     # determine already specified args necessary for RPC
     local rpcargs=()
     for i in ${COMP_LINE}; do
@@ -18,13 +18,13 @@ _bitcoin_rpc() {
 }
 
 # Add wallet accounts to COMPREPLY
-_bitcoin_accounts() {
+_zcash_accounts() {
     local accounts
-    accounts=$(_bitcoin_rpc listaccounts | awk -F '"' '{ print $2 }')
+    accounts=$(_zcash_rpc listaccounts | awk -F '"' '{ print $2 }')
     COMPREPLY=( "${COMPREPLY[@]}" $( compgen -W "$accounts" -- "$cur" ) )
 }
 
-_bitcoin_cli() {
+_zcash_cli() {
     local cur prev words=() cword
     local bitcoin_cli
 
@@ -60,7 +60,7 @@ _bitcoin_cli() {
     if ((cword > 3)); then
         case ${words[cword-3]} in
             addmultisigaddress)
-                _bitcoin_accounts
+                _zcash_accounts
                 return 0
                 ;;
             getbalance|gettxout|importaddress|importpubkey|importprivkey|listreceivedbyaccount|listreceivedbyaddress|listsinceblock)
@@ -85,7 +85,7 @@ _bitcoin_cli() {
                 return 0
                 ;;
             move|setaccount)
-                _bitcoin_accounts
+                _zcash_accounts
                 return 0
                 ;;
         esac
@@ -101,7 +101,7 @@ _bitcoin_cli() {
             return 0
             ;;
         getaccountaddress|getaddressesbyaccount|getbalance|getnewaddress|getreceivedbyaccount|listtransactions|move|sendfrom|sendmany)
-            _bitcoin_accounts
+            _zcash_accounts
             return 0
             ;;
     esac
@@ -130,7 +130,7 @@ _bitcoin_cli() {
 
             # only parse help if senseful
             if [[ -z "$cur" || "$cur" =~ ^[a-z] ]]; then
-                commands=$(_bitcoin_rpc help 2>/dev/null | awk '$1 ~ /^[a-z]/ { print $1; }')
+                commands=$(_zcash_rpc help 2>/dev/null | awk '$1 ~ /^[a-z]/ { print $1; }')
             fi
 
             COMPREPLY=( $( compgen -W "$helpopts $commands" -- "$cur" ) )
@@ -143,7 +143,7 @@ _bitcoin_cli() {
             ;;
     esac
 } &&
-complete -F _bitcoin_cli bitcoin-cli
+complete -F _zcash_cli zcash-cli
 
 # Local variables:
 # mode: shell-script

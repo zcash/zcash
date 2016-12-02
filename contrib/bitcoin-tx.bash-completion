@@ -46,7 +46,7 @@ _bitcoin_tx() {
 
     return 0
 } &&
-complete -F _bitcoin_tx bitcoin-tx
+complete -F _bitcoin_tx zcash-tx
 
 # Local variables:
 # mode: shell-script
