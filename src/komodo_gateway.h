@@ -527,7 +527,7 @@ int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t che
             return(-1);
         }
     }
-    if ( value != checkvalue )
+    if ( 0 && value != checkvalue )
         printf("%s.%d seed.%llx paxcmp value %llu != checkvalue %llu\n",symbol,kmdheight,(long long)seed,(long long)value,(long long)checkvalue);
     return(value != checkvalue);
 }
@@ -589,7 +589,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                                 basesp->deposited += fiatoshis;
                                 didstats = 1;
                                 if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
-                                    printf("########### %p deposited %s += %.8f\n",basesp,base,dstr(fiatoshis));
+                                    printf("########### %p deposited %s += %.8f kmdheight.%d %.8f\n",basesp,base,dstr(fiatoshis),kmdheight,dstr(value));
                             }
                         }
                         if ( didstats != 0 )
@@ -716,8 +716,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         strcpy(pax->source,(char *)&opretbuf[opretlen-4]);
                     }
                 }
-            } //else printf("opreturn none issued?\n");
-        } //else printf("opreturn matches KMD? %s\n",(char *)&opretbuf[opretlen-4]);
+            } else printf("opreturn none issued?\n");
+        } else printf("opreturn matches KMD? %s\n",(char *)&opretbuf[opretlen-4]);
     }
     else if ( opretbuf[0] == 'X' )
     {
