@@ -2704,12 +2704,12 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         if (!DisconnectTip(state))
             return false;
     }
-if ( 0 )
+if ( 1 )
 {
     static int32_t didinit;
     if ( didinit++ == 0 )
     {
-        while (chainActive.Tip()->nHeight > 91760 )
+        while (chainActive.Tip()->nHeight > 94000 )
         {
             fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
             if ( !DisconnectTip(state) )
