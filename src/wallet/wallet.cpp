@@ -776,7 +776,7 @@ void CWallet::DecrementNoteWitnesses()
             extern char ASSETCHAINS_SYMBOL[16];
             fprintf(stderr,"%s nWitnessCacheSize.%d\n",ASSETCHAINS_SYMBOL,(int32_t)nWitnessCacheSize);
         }
-        if ( KOMODO_REWIND == 0 || chainActive.Tip()->nHeight >= KOMODO_REWIND )
+        if ( KOMODO_REWIND == 0 || chainActive.Tip()->nHeight <= KOMODO_REWIND )
             assert(nWitnessCacheSize > 0);
         if (fFileBacked) {
             CWalletDB walletdb(strWalletFile);
