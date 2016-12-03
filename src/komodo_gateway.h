@@ -536,7 +536,7 @@ int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t che
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
 {
-    uint8_t rmd160[20],rmd160s[64*20],addrtype,shortflag,pubkey33[33]; int32_t didstats,i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fiatoshis,komodoshis,checktoshis,values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *basesp; double diff;
+    uint8_t rmd160[20],rmd160s[64*20],addrtype,shortflag,pubkey33[33]; int32_t didstats,i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fiatoshis,komodoshis,checktoshis,values[64],srcvalues[64]; struct pax_transaction *pax,*pax2; struct komodo_state *basesp; double diff;
     const char *typestr = "unknown";
     memset(baseids,0xff,sizeof(baseids));
     memset(values,0,sizeof(values));
@@ -545,7 +545,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     memset(kmdheights,0,sizeof(kmdheights));
     memset(otherheights,0,sizeof(otherheights));
     tokomodo = (komodo_is_issuer() == 0);
-    printf("\nOPRET[%c]\n",opretbuf[0]);
     if ( opretbuf[0] == 'D' )
     {
         tokomodo = 0;
@@ -598,6 +597,16 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         }
                         if ( didstats != 0 )
                             pax->didstats = 1;
+                        if ( (pax2= komodo_paxfind(txid,vout,'I')) != 0 )
+                        {
+                            pax2->fiatoshis = pax->fiatoshis;
+                            pax2->komodoshis = pax->komodoshis;
+                            pax2->height = pax->height;
+                            pax2->otherheight = pax->otherheight;
+                            pax->marked = pax2->marked = pax->height;
+                            if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                                printf("########### %p issued %s += %.8f kmdheight.%d %.8f\n",basesp,base,dstr(fiatoshis),kmdheight,dstr(value));
+                        }
                     }
                 }
                 else if ( kmdheight > 91800 )
@@ -721,16 +730,17 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     {
                         pax->type = opretbuf[0];
                         strcpy(pax->source,(char *)&opretbuf[opretlen-4]);
+                        if ( (pax2= komodo_paxfind(txids[i],vouts[i],'D')) != 0 )
+                        {
+                            // realtime path
+                            pax->fiatoshis = pax2->fiatoshis;
+                            pax->komodoshis = pax2->komodoshis;
+                            pax->height = pax2->height;
+                            pax->otherheight = pax2->otherheight;
+                            printf("ISSUED.%p kht.%d ht.%d %.8f %.8f\n",pax,pax->height,pax->otherheight,dstr(pax->komodoshis),dstr(pax->fiatoshis));
+                            pax->marked = pax2->marked = pax2->height;
+                        }
                     }
-                    if ( (pax= komodo_paxfind(txids[i],vouts[i],'D')) != 0 )
-                    {
-                        // realtime path
-                        values[i] = pax->fiatoshis;
-                        srcvalues[i] = pax->komodoshis;
-                        kmdheights[i] = pax->height;
-                        otherheights[i] = pax->otherheight;
-                    }
-                    printf("ISSUE.%p kht.%d ht.%d %.8f %.8f\n",pax,kmdheights[i],otherheights[i],dstr(values[i]),dstr(srcvalues[i]));
                 }
             } else printf("opreturn none issued?\n");
         }
