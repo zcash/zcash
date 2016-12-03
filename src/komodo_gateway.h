@@ -587,7 +587,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                                     basesp->issued += pax2->fiatoshis;
                                     pax2->didstats = 1;
                                     if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
-                                        printf("########### %p issued %s += %.8f kmdheight.%d %.8f other.%d\n",basesp,str,dstr(pax->fiatoshis),pax->height,dstr(pax->komodoshis),pax->otherheight);
+                                        printf("########### %p issued %s += %.8f kmdheight.%d %.8f other.%d\n",basesp,base,dstr(pax->fiatoshis),pax->height,dstr(pax->komodoshis),pax->otherheight);
                                 }
                             }
                         }
