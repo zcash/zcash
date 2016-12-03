@@ -277,8 +277,10 @@ uint64_t komodo_paxtotal()
                         pax->fiatoshis = pax2->fiatoshis;
                         basesp->issued += pax->fiatoshis;
                         pax->didstats = 1;
-                        //printf("Iset %s dstats %.8f += %.8f\n",str,dstr(basesp->issued),dstr(pax->fiatoshis));
+                        if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
+                            printf("########### %p issued %s += %.8f kmdheight.%d %.8f other.%d\n",basesp,str,dstr(pax->fiatoshis),pax->height,dstr(pax->komodoshis),pax->otherheight);
                         pax2->marked = pax->height;
+                        pax->marked = pax->height;
                     }
                 }
             }
