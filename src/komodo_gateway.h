@@ -562,7 +562,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     }
                     if ( (pax= komodo_paxfind(txid,vout,'D')) != 0 )
                     {
-                        pax->validated = kmdheight;
+                        pax->height = pax->validated = kmdheight;
+                        pax->komodoshis = value;
+                        pax->fiatoshis = fiatoshis;
                         if ( didstats == 0 && pax->didstats == 0 )
                         {
                             if ( (basesp= komodo_stateptrget(base)) != 0 )
