@@ -145,6 +145,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
+        int32_t i;
         for (i=0; i<32; i++)
             printf("%02x",((uint8_t *)&hash)[i]);
         printf(" hash vs ")
