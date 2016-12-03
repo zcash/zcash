@@ -542,9 +542,11 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     memset(rmd160s,0,sizeof(rmd160s));
     memset(kmdheights,0,sizeof(kmdheights));
     memset(otherheights,0,sizeof(otherheights));
-    tokomodo = !(komodo_baseid(source) >= 0 && komodo_baseid(source) != 32); //(komodo_is_issuer() == 0);
+    tokomodo = (komodo_is_issuer() == 0);
+    printf("\nOPRET[%c]\n",opretbuf[0]);
     if ( opretbuf[0] == 'D' )
     {
+        tokomodo = 0;
         if ( opretlen == 38 ) // any KMD tx
         {
             iguana_rwnum(0,&opretbuf[34],sizeof(kmdheight),&kmdheight);
@@ -603,6 +605,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else if ( opretbuf[0] == 'W' && opretlen >= 38 )
     {
+        tokomodo = 1;
         iguana_rwnum(0,&opretbuf[34],sizeof(kmdheight),&kmdheight);
         memset(base,0,sizeof(base));
         PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&komodoshis);
@@ -636,6 +639,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else if ( tokomodo != 0 && opretbuf[0] == 'A' )
     {
+        tokomodo = 1;
         if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
         {
             for (i=0; i<opretlen; i++)
@@ -695,6 +699,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else if ( opretbuf[0] == 'I' )
     {
+        tokomodo = 0;
         if ( strncmp((char *)"KMD",(char *)&opretbuf[opretlen-4],3) != 0 )
         {
             if ( (n= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,opretbuf,opretlen,0)) > 0 )
@@ -721,6 +726,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else if ( opretbuf[0] == 'X' )
     {
+        tokomodo = 1;
         if ( (n= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,opretbuf,opretlen,1)) > 0 )
         {
             for (i=0; i<n; i++)
