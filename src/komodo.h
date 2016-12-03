@@ -516,7 +516,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         int32_t k;
                         for (k=0; k<scriptlen; k++)
                             printf("%02x",scriptPubKey[k]);
-                        printf(" scriptPubKey doesnt match any notary\n");
+                        printf(" scriptPubKey doesnt match any notary vini.%d of %d\n",j,numvins);
                     }
                 } else printf("cant get scriptPubKey for ht.%d txi.%d vin.%d\n",height,i,j);
             }
