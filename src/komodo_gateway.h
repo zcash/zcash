@@ -507,8 +507,12 @@ int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t che
             return(-1);
         }
     }
-    if ( 0 && value != checkvalue )
-        printf("%s.%d seed.%llx paxcmp value %llu != checkvalue %llu\n",symbol,kmdheight,(long long)seed,(long long)value,(long long)checkvalue);
+    else
+    {
+        ratio = ((value << 10) / checkvalue);
+        if ( ratio >= 1023 && ratio <= 1025 )
+            return(0);
+    }
     return(value != checkvalue);
 }
 
