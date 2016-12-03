@@ -2694,6 +2694,7 @@ static void PruneBlockIndexCandidates() {
  * pblock is either NULL or a pointer to a CBlock corresponding to pindexMostWork.
  */
 static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMostWork, CBlock *pblock) {
+    extern int32_t KOMODO_REWIND;
     AssertLockHeld(cs_main);
     bool fInvalidFound = false;
     const CBlockIndex *pindexOldTip = chainActive.Tip();
@@ -2704,21 +2705,21 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         if (!DisconnectTip(state))
             return false;
     }
-if ( 1 )
-{
-    static int32_t didinit;
-    if ( didinit++ == 0 )
+    if ( KOMODO_REWIND != 0 && chainActive.Tip()->nHeight > KOMODO_REWIND )
     {
-        while (chainActive.Tip()->nHeight > 94000 )
+        static int32_t didinit;
+        if ( didinit++ == 0 )
         {
-            fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
-            if ( !DisconnectTip(state) )
-                return false;
+            while (chainActive.Tip()->nHeight > KOMODO_REWIND )
+            {
+                fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
+                if ( !DisconnectTip(state) )
+                    return false;
+            }
+            pindexOldTip = chainActive.Tip();
+            pindexFork = chainActive.FindFork(pindexMostWork);
         }
-        pindexOldTip = chainActive.Tip();
-        pindexFork = chainActive.FindFork(pindexMostWork);
     }
-}
     // Build list of new blocks to connect.
     std::vector<CBlockIndex*> vpindexToConnect;
     bool fContinue = true;
