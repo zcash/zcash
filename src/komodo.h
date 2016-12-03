@@ -511,7 +511,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 {
                     if ( (k= komodo_notarycmp(scriptPubKey,scriptlen,pubkeys,numnotaries,rmd160)) >= 0 )
                         signedmask |= (1LL << k);
-                    else if ( numvins >= 17 )
+                    else if ( 0 && numvins >= 17 )
                     {
                         int32_t k;
                         for (k=0; k<scriptlen; k++)
