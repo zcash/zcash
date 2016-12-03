@@ -1256,7 +1256,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             // first suggest a reindex
             if (!fReset) {
                 bool fRet = uiInterface.ThreadSafeMessageBox(
-                    strLoadError + ".\n\n" + _("Do you want to rebuild the block database now?"),
+                    strLoadError + ".\n\n" + _("error in HDD data, might just need to update to latest, if that doesnt work, then you need to resync"),
                     "", CClientUIInterface::MSG_ERROR | CClientUIInterface::BTN_ABORT);
                 if (fRet) {
                     fReindex = true;
