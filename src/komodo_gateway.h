@@ -720,6 +720,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         pax->type = opretbuf[0];
                         strcpy(pax->source,(char *)&opretbuf[opretlen-4]);
                     }
+                    printf("ISSUE.%p kht.%d ht.%d %.8f %.8f\n",pax,kmdheights[i],otherheights[i],dstr(values[i]),dstr(othervalues[i]));
                 }
             } else printf("opreturn none issued?\n");
         }
