@@ -353,7 +353,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
 #ifdef KOMODO_ASSETCHAINS_WAITNOTARIZE
             struct komodo_state *kmdsp = komodo_stateptrget((char *)"KMD");
             if ( kmdsp != 0 && kmdsp->NOTARIZED_HEIGHT >= pax->height ) // assumes same chain as notarize
-                pax->validated = kmdsp->NOTARIZED_HEIGHT;
+                pax->validated = pax->komodoshis; //kmdsp->NOTARIZED_HEIGHT;
 #endif
         }
         if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis )
@@ -361,8 +361,13 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             printf("miner: skip %s %.8f when avail %.8f\n",symbol,dstr(pax->fiatoshis),dstr(available));
             continue;
         }
-        if ( pax->marked != 0 || strcmp(pax->symbol,symbol) != 0 || pax->validated == 0 )
+        if ( pax->marked != 0 )
             continue;
+        if ( strcmp(pax->symbol,symbol) != 0 || pax->validated == 0 )
+        {
+            printf("pax->symbol.%s != %s or null pax->validated %.8f\n",pax->symbol,symbol,dstr(pax->validated));
+            continue;
+        }
         if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
             printf("pax.%s marked.%d %.8f -> %.8f\n",ASSETCHAINS_SYMBOL,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         txNew->vout.resize(numvouts+1);
@@ -566,7 +571,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     }
                     if ( (pax= komodo_paxfind(txid,vout,'D')) != 0 )
                     {
-                        pax->height = pax->validated = kmdheight;
+                        pax->height = kmdheight;
+                        pax->validated = value;
                         pax->komodoshis = value;
                         pax->fiatoshis = fiatoshis;
                         if ( didstats == 0 && pax->didstats == 0 )
@@ -683,7 +689,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 if ( didstats != 0 )
                     pax->didstats = 1;
                 pax->type = opretbuf[0];
-                pax->validated = kmdheight;
+                pax->validated = komodoshis;
             }
         }
     }
