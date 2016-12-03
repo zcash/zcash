@@ -365,7 +365,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             continue;
         if ( strcmp(pax->symbol,symbol) != 0 || pax->validated == 0 )
         {
-            printf("pax->symbol.%s != %s or null pax->validated %.8f\n",pax->symbol,symbol,dstr(pax->validated));
+            //printf("pax->symbol.%s != %s or null pax->validated %.8f\n",pax->symbol,symbol,dstr(pax->validated));
             continue;
         }
         if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
