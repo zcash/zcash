@@ -722,7 +722,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     }
                 }
             } else printf("opreturn none issued?\n");
-        } else printf("opreturn matches KMD? %s\n",(char *)&opretbuf[opretlen-4]);
+        }
+        printf("source.%s opreturn[I] matches %s\n",source,(char *)&opretbuf[opretlen-4]);
     }
     else if ( opretbuf[0] == 'X' )
     {
