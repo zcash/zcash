@@ -511,17 +511,17 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 {
                     if ( (k= komodo_notarycmp(scriptPubKey,scriptlen,pubkeys,numnotaries,rmd160)) >= 0 )
                         signedmask |= (1LL << k);
-                    else if ( numvins >= 17 )
+                    else if ( 0 && numvins >= 17 )
                     {
                         int32_t k;
                         for (k=0; k<scriptlen; k++)
                             printf("%02x",scriptPubKey[k]);
-                        printf(" scriptPubKey doesnt match any notary\n");
+                        printf(" scriptPubKey doesnt match any notary vini.%d of %d\n",j,numvins);
                     }
                 } else printf("cant get scriptPubKey for ht.%d txi.%d vin.%d\n",height,i,j);
             }
             numvalid = bitweight(signedmask);
-            if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) || numvalid > (numnotaries/3)) )
+            if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) || numvalid > (numnotaries/4)) )
             {
                 printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<< notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
                 notarized = 1;

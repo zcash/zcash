@@ -366,24 +366,41 @@ uint256 komodo_getblockhash(int32_t height)
             }
             free_json(result);
         }
-        //printf("KMD hash.%d (%s) %x\n",height,jsonstr,*(uint32_t *)&hash);
+        printf("KMD hash.%d (%s) %x\n",height,jsonstr,*(uint32_t *)&hash);
         free(jsonstr);
     }
     return(hash);
 }
 
+uint256 _komodo_getblockhash(int32_t height);
+
 uint64_t komodo_seed(int32_t height)
 {
-    uint256 hash; uint64_t seed = 0; CBlockIndex *pindex;
-    memset(&hash,0,sizeof(hash));
-    if ( height > 10 )
-        height -= 10;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    uint64_t seed = 0;
+    if ( 0 ) // problem during init time, seeds are needed for loading blockindex, so null seeds...
     {
-        if ( (pindex= chainActive[height]) != 0 )
-            hash = pindex->GetBlockHash();
-    } else hash = komodo_getblockhash(height);
-    seed = arith_uint256(hash.GetHex()).GetLow64();
+        uint256 hash,zero; CBlockIndex *pindex;
+        memset(&hash,0,sizeof(hash));
+        memset(&zero,0,sizeof(zero));
+        if ( height > 10 )
+            height -= 10;
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            hash = _komodo_getblockhash(height);
+        if ( memcmp(&hash,&zero,sizeof(hash)) == 0 )
+            hash = komodo_getblockhash(height);
+        int32_t i;
+        for (i=0; i<32; i++)
+            printf("%02x",((uint8_t *)&hash)[i]);
+        printf(" seed.%d\n",height);
+        seed = arith_uint256(hash.GetHex()).GetLow64();
+    }
+    else
+    {
+        seed = (height << 13) ^ (height << 2);
+        seed <<= 21;
+        seed |= (height & 0xffffffff);
+        seed ^= (seed << 17) ^ (seed << 1);
+    }
     return(seed);
 }
 
@@ -452,7 +469,7 @@ int32_t komodo_block2height(CBlock *block)
         }
         //printf(" <- coinbase.%d ht.%d\n",(int32_t)block->vtx[0].vin[0].scriptSig.size(),height);
     }
-    komodo_init(height);
+    //komodo_init(height);
     return(height);
 }
 
@@ -464,7 +481,7 @@ void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
 #else
     uint8_t *ptr = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
 #endif
-    komodo_init(0);
+    //komodo_init(0);
     n = block.vtx[0].vout[0].scriptPubKey.size();
     if ( n == 35 )
         memcpy(pubkey33,ptr+1,33);
@@ -491,7 +508,7 @@ int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex)
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
     CBlock block;
-    komodo_init(height);
+    //komodo_init(height);
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {

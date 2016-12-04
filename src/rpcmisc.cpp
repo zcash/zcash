@@ -123,11 +123,9 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
     {
         char pubkeystr[65]; int32_t notaryid;
-        if ( (notaryid= komodo_whoami(pubkeystr,longestchain)) >= 0 )
-        {
-            obj.push_back(Pair("notaryid",        notaryid));
-            obj.push_back(Pair("pubkey",        pubkeystr));
-        }
+        notaryid = komodo_whoami(pubkeystr,longestchain);
+        obj.push_back(Pair("notaryid",        notaryid));
+        obj.push_back(Pair("pubkey",        pubkeystr));
     }
     return obj;
 }

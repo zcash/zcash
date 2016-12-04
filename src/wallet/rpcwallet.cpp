@@ -493,7 +493,7 @@ Value paxdeposit(const Array& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return Value::null;
     if (fHelp || params.size() != 3)
-        throw runtime_error("paxdeposit \"address\" fiatoshis base");
+        throw runtime_error("paxdeposit address fiatoshis base");
     LOCK2(cs_main, pwalletMain->cs_wallet);
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
@@ -510,8 +510,8 @@ Value paxdeposit(const Array& params, bool fHelp)
     if (!destaddress.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest Bitcoin address");
     for (i=0; i<33; i++)
-        printf("%02x",pubkey37[i]);
-    printf(" ht.%d srcaddr.(%s) %s fiatoshis.%lld -> dest.(%s) komodoshis.%llu seed.%llx\n",height,(char *)params[0].get_str().c_str(),(char *)base.c_str(),(long long)fiatoshis,destaddr,(long long)komodoshis,(long long)seed);
+        fprintf(stderr,"%02x",pubkey37[i]);
+    fprintf(stderr," ht.%d srcaddr.(%s) %s fiatoshis.%lld -> dest.(%s) komodoshis.%llu seed.%llx\n",height,(char *)params[0].get_str().c_str(),(char *)base.c_str(),(long long)fiatoshis,destaddr,(long long)komodoshis,(long long)seed);
     EnsureWalletIsUnlocked();
     CWalletTx wtx;
     uint8_t opretbuf[64]; int32_t opretlen; uint64_t fee = komodoshis / 1000;
@@ -531,7 +531,7 @@ Value paxwithdraw(const Array& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
     if (fHelp || params.size() != 2)
-        throw runtime_error("paxwithdraw \"address\" fiatamount");
+        throw runtime_error("paxwithdraw address fiatamount");
     if ( komodo_isrealtime(&kmdheight) == 0 )
         return(0);
     LOCK2(cs_main, pwalletMain->cs_wallet);
