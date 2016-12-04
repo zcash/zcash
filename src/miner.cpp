@@ -99,8 +99,8 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 }
 
 #define ASSETCHAINS_MINHEIGHT 100
-#define ROUNDROBIN_DELAY 45
-extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,ASSETCHAINS_SHORTFLAG,KOMODO_REALTIME;
+#define ROUNDROBIN_DELAY 58
+extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE;
 extern char ASSETCHAINS_SYMBOL[16];
 extern std::string NOTARY_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[33];
@@ -110,28 +110,32 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 uint64_t komodo_paxtotal();
 int32_t komodo_is_issuer();
-int32_t komodo_gateway_deposits(CMutableTransaction *txNew,int32_t shortflag,char *symbol,int32_t tokomodo);
+int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
+int32_t komodo_isrealtime(int32_t *kmdheightp);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
-    uint64_t deposits; const CChainParams& chainparams = Params();
+    uint64_t deposits; int32_t isrealtime,kmdheight; const CChainParams& chainparams = Params();
     // Create new block
     unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    if ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight >= 100 )
+    if ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight > ASSETCHAINS_MINHEIGHT )
     {
-        fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d RT.%u KOMODO_ON_DEMAND.%d\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),KOMODO_REALTIME,KOMODO_ON_DEMAND);
-        while ( KOMODO_ON_DEMAND == 0 )//mempool.GetTotalTxSize() <= 0 )
+        isrealtime = komodo_isrealtime(&kmdheight);
+        while ( KOMODO_ON_DEMAND == 0 )
         {
             deposits = komodo_paxtotal();
-            if ( KOMODO_INITDONE == 0 || KOMODO_REALTIME == 0 )
+            if ( KOMODO_INITDONE == 0 || (isrealtime= komodo_isrealtime(&kmdheight)) == 0 )
             {
-                //fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f\n",KOMODO_INITDONE,KOMODO_REALTIME,(double)deposits/COIN);
+                //fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f ht.%d\n",KOMODO_INITDONE,isrealtime,(double)deposits/COIN,kmdheight);
             }
             else if ( deposits != 0 )
+            {
+                fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d RT.%u KOMODO_ON_DEMAND.%d\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),isrealtime,KOMODO_ON_DEMAND);
                 break;
+            }
             sleep(10);
         }
         KOMODO_ON_DEMAND = 0;
@@ -374,9 +378,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             int32_t i,opretlen; uint8_t opret[256],*ptr;
-            if ( komodo_gateway_deposits(&txNew,0,(char *)"EUR",1) == 0 )
+            if ( (nHeight % 60) == 0 || komodo_gateway_deposits(&txNew,(char *)"KMD",1) == 0 )
             {
-                if ( (opretlen= komodo_pax_opreturn(opret,sizeof(opret))) > 0 )
+                if ( (opretlen= komodo_pax_opreturn(opret,sizeof(opret))) > 0 ) // have pricefeed
                 {
                     txNew.vout.resize(2);
                     txNew.vout[1].scriptPubKey.resize(opretlen);
@@ -390,8 +394,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         }
         else if ( komodo_is_issuer() != 0 )
         {
-            komodo_gateway_deposits(&txNew,0,ASSETCHAINS_SYMBOL,0);
-            fprintf(stderr,"txNew numvouts.%d\n",(int32_t)txNew.vout.size());
+            komodo_gateway_deposits(&txNew,ASSETCHAINS_SYMBOL,0);
+            if ( txNew.vout.size() > 1 )
+                fprintf(stderr,"%s txNew numvouts.%d\n",ASSETCHAINS_SYMBOL,(int32_t)txNew.vout.size());
         }
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
@@ -445,6 +450,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 //
 // Internal miner
 //
+int8_t komodo_minerid(int32_t height);
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
@@ -466,6 +472,12 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
             script[i+1] = ptr[i];
         script[34] = OP_CHECKSIG;
         //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
+    }
+    if ( 0 && ASSETCHAINS_SYMBOL[0] == 0 )
+    {
+        for (i=0; i<65; i++)
+            fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i));
+        fprintf(stderr," minerids.special %d from ht.%d\n",komodo_is_special(chainActive.Tip()->nHeight+1,NOTARY_PUBKEY33),chainActive.Tip()->nHeight);
     }
     return CreateNewBlock(scriptPubKey);
 }
@@ -532,7 +544,7 @@ void static BitcoinMiner(CWallet *pwallet)
     else solver = "default";
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
-    fprintf(stderr,"Mining with %s\n",solver.c_str());
+    //fprintf(stderr,"Mining with %s\n",solver.c_str());
     std::mutex m_cs;
     bool cancelSolver = false;
     boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
@@ -548,8 +560,8 @@ void static BitcoinMiner(CWallet *pwallet)
         {
             if (chainparams.MiningRequiresPeers())
             {
-                if ( ASSETCHAINS_SEED != 0 && chainActive.Tip()->nHeight < 100 )
-                    break;
+                //if ( ASSETCHAINS_SEED != 0 && chainActive.Tip()->nHeight < 100 )
+                //    break;
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
                 //fprintf(stderr,"Wait for peers...\n");
@@ -567,6 +579,11 @@ void static BitcoinMiner(CWallet *pwallet)
                 } while (true);
                 //fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
             }
+            /*while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight < ASSETCHAINS_MINHEIGHT )
+            {
+                fprintf(stderr,"%s waiting for block 100, ht.%d\n",ASSETCHAINS_SYMBOL,chainActive.Tip()->nHeight);
+                sleep(3);
+            }*/
             //
             // Create new block
             //
@@ -577,7 +594,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 Mining_height = pindexPrev->nHeight+1;
                 Mining_start = (uint32_t)time(NULL);
             }
-            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                 fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
 
             unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
@@ -598,11 +615,16 @@ void static BitcoinMiner(CWallet *pwallet)
             if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
                 hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
-                //fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
+                fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
             } else Mining_start = 0;
             while (true)
             {
-                //fprintf(stderr,"%s start mining loop\n",ASSETCHAINS_SYMBOL);
+                if ( ASSETCHAINS_SYMBOL[0] != 0 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
+                {
+                    //fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
+                    sleep(10);
+                    break;
+                }
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
                 crypto_generichash_blake2b_state state;
@@ -629,16 +651,19 @@ void static BitcoinMiner(CWallet *pwallet)
                     solutionTargetChecks.increment();
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
                     {
-                        //if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                        //    printf("missed target\n");
+                        if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                            fprintf(stderr,"missed target\n");
                         return false;
                     }
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+ROUNDROBIN_DELAY )
                     {
-                        printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+ROUNDROBIN_DELAY-time(NULL)));
-                        sleep(Mining_start+ROUNDROBIN_DELAY-time(NULL));
-                        KOMODO_CHOSEN_ONE = 1;
+                        //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+ROUNDROBIN_DELAY-time(NULL)));
+                        int32_t nseconds = Mining_start+ROUNDROBIN_DELAY-time(NULL);
+                        if ( nseconds > 0 )
+                            sleep(nseconds);
+                        MilliSleep((rand() % 700) + 1);
                     }
+                    KOMODO_CHOSEN_ONE = 1;
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     LogPrintf("KomodoMiner:\n");
@@ -649,10 +674,6 @@ void static BitcoinMiner(CWallet *pwallet)
                         cancelSolver = false;
                     }
                     KOMODO_CHOSEN_ONE = 0;
-                    int32_t i; uint256 hash = pblock->GetHash();
-                    for (i=0; i<32; i++)
-                        fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
-                    fprintf(stderr," <- %s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
                     // In regression test mode, stop mining after a block is found.
                     if (chainparams.MineBlocksOnDemand()) {
@@ -706,6 +727,11 @@ void static BitcoinMiner(CWallet *pwallet)
                         bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
                         ehSolverRuns.increment();
                         if (found) {
+                            int32_t i; uint256 hash = pblock->GetHash();
+                            for (i=0; i<32; i++)
+                                fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+                            fprintf(stderr," <- %s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
+                            sleep(60); // avoid mining forks
                             break;
                         }
                     } catch (EhSolverCancelledException&) {
@@ -720,25 +746,28 @@ void static BitcoinMiner(CWallet *pwallet)
                 // Regtest mode doesn't require peers
                 if (vNodes.empty() && chainparams.MiningRequiresPeers())
                 {
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height >= 100 )
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height > ASSETCHAINS_MINHEIGHT )
+                    {
+                        //fprintf(stderr,"no nodes, break\n");
                         break;
+                    }
                 }
                 if ((UintToArith256(pblock->nNonce) & 0xffff) == 0xffff)
                 {
-                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                        printf("0xffff, break\n");
+                    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                        fprintf(stderr,"0xffff, break\n");
                     break;
                 }
                 if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                 {
-                    //if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                    //    printf("timeout, break\n");
+                    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                        fprintf(stderr,"timeout, break\n");
                     break;
                 }
                 if ( pindexPrev != chainActive.Tip() )
                 {
-                    //if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                    //    printf("Tip advanced, break\n");
+                    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                        fprintf(stderr,"Tip advanced, break\n");
                     break;
                 }
                 // Update nNonce and nTime

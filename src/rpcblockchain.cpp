@@ -272,6 +272,22 @@ Value getblockhash(const Array& params, bool fHelp)
     return pblockindex->GetBlockHash().GetHex();
 }
 
+uint256 _komodo_getblockhash(int32_t nHeight)
+{
+    uint256 hash;
+    LOCK(cs_main);
+    if ( nHeight >= 0 && nHeight <= chainActive.Height() )
+    {
+        CBlockIndex* pblockindex = chainActive[nHeight];
+        hash = pblockindex->GetBlockHash();
+        int32_t i;
+        for (i=0; i<32; i++)
+            printf("%02x",((uint8_t *)&hash)[i]);
+        printf(" blockhash.%d\n",nHeight);
+    } else memset(&hash,0,sizeof(hash));
+    return(hash);
+}
+
 Value getblock(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
@@ -387,6 +403,58 @@ int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *bas
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
 char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
 uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
+int32_t komodo_minerids(uint8_t *minerids,int32_t height);
+
+Value minerids(const Array& params, bool fHelp)
+{
+    Object ret; Array a; uint8_t minerids[1000],pubkeys[64][33]; int32_t i,j,n,numnotaries,tally[65];
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("minerids needs height\n");
+    LOCK(cs_main);
+    int32_t height = atoi(params[0].get_str().c_str());
+    if ( height <= 0 )
+        height = chainActive.Tip()->nHeight;
+    if ( (n= komodo_minerids(minerids,height)) > 0 )
+    {
+        memset(tally,0,sizeof(tally));
+        numnotaries = komodo_notaries(pubkeys,height);
+        if ( numnotaries > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                if ( minerids[i] >= numnotaries )
+                    tally[64]++;
+                else tally[minerids[i]]++;
+            }
+            for (i=0; i<64; i++)
+            {
+                Object item; std::string hex,kmdaddress; char *hexstr,kmdaddr[64],*ptr; int32_t m;
+                hex.resize(66);
+                hexstr = (char *)hex.data();
+                for (j=0; j<33; j++)
+                    sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
+                item.push_back(Pair("notaryid", i));
+                
+                bitcoin_address(kmdaddr,60,pubkeys[i],33);
+                m = (int32_t)strlen(kmdaddr);
+                kmdaddress.resize(m);
+                ptr = (char *)kmdaddress.data();
+                memcpy(ptr,kmdaddr,m);
+                item.push_back(Pair("KMDaddress", kmdaddress));
+                
+                item.push_back(Pair("pubkey", hex));
+                item.push_back(Pair("blocks", tally[i]));
+                a.push_back(item);
+            }
+            Object item;
+            item.push_back(Pair("pubkey", (char *)"external miners"));
+            item.push_back(Pair("blocks", tally[64]));
+            a.push_back(item);
+        }
+        ret.push_back(Pair("mined", a));
+    } else ret.push_back(Pair("error", (char *)"couldnt extract minerids"));
+    return ret;
+}
 
 Value notaries(const Array& params, bool fHelp)
 {
@@ -398,9 +466,9 @@ Value notaries(const Array& params, bool fHelp)
     if ( height < 0 )
         height = 0;
     //fprintf(stderr,"notaries as of height.%d\n",height);
-    if ( height > chainActive.Height()+20000 )
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
-    else
+    //if ( height > chainActive.Height()+20000 )
+    //    throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+    //else
     {
         if ( (n= komodo_notaries(pubkeys,height)) > 0 )
         {
@@ -433,6 +501,41 @@ Value notaries(const Array& params, bool fHelp)
         ret.push_back(Pair("notaries", a));
         ret.push_back(Pair("numnotaries", n));
     }
+    return ret;
+}
+
+int32_t komodo_pending_withdraws(char *opretstr);
+int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base);
+extern char CURRENCIES[][8];
+
+Value paxpending(const Array& params, bool fHelp)
+{
+    Object ret; Array a; char opretbuf[10000*2]; int32_t opretlen,baseid; uint64_t available,deposited,issued,withdrawn,approved,redeemed;
+    if ( fHelp || params.size() != 0 )
+        throw runtime_error("paxpending needs no args\n");
+    LOCK(cs_main);
+    if ( (opretlen= komodo_pending_withdraws(opretbuf)) > 0 )
+        ret.push_back(Pair("withdraws", opretbuf));
+    else ret.push_back(Pair("withdraws", (char *)""));
+    for (baseid=0; baseid<32; baseid++)
+    {
+        Object item,obj;
+        if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,CURRENCIES[baseid]) == 0 )
+        {
+            if ( deposited != 0 || issued != 0 || withdrawn != 0 || approved != 0 || redeemed != 0 )
+            {
+                item.push_back(Pair("available", ValueFromAmount(available)));
+                item.push_back(Pair("deposited", ValueFromAmount(deposited)));
+                item.push_back(Pair("issued", ValueFromAmount(issued)));
+                item.push_back(Pair("withdrawn", ValueFromAmount(withdrawn)));
+                item.push_back(Pair("approved", ValueFromAmount(approved)));
+                item.push_back(Pair("redeemed", ValueFromAmount(redeemed)));
+                obj.push_back(Pair(CURRENCIES[baseid],item));
+                a.push_back(obj);
+            }
+        }
+    }
+    ret.push_back(Pair("fiatstatus", a));
     return ret;
 }
 
@@ -588,29 +691,6 @@ Value gettxout(const Array& params, bool fHelp)
     ret.push_back(Pair("coinbase", coins.fCoinBase));
 
     return ret;
-}
-
-int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid,int32_t n)
-{
-    int32_t i,m; uint8_t *ptr;
-    LOCK(cs_main);
-    CCoins coins;
-    if ( 1 )
-    {
-        LOCK(mempool.cs);
-        CCoinsViewMemPool view(pcoinsTip,mempool);
-        if ( view.GetCoins(txid,coins) == 0 )
-            return(-1);
-        mempool.pruneSpent(txid, coins); // TODO: this should be done by the CCoinsViewMemPool
-    } else if ( pcoinsTip->GetCoins(txid,coins) == 0 )
-        return(-1);
-    if ( n < 0 || (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
-        return(-1);
-    ptr = (uint8_t *)coins.vout[n].scriptPubKey.data();
-    m = coins.vout[n].scriptPubKey.size();
-    for (i=0; i<maxsize&&i<m; i++)
-        scriptPubKey[i] = ptr[i];
-    return(i);
 }
 
 Value verifychain(const Array& params, bool fHelp)

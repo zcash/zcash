@@ -40,12 +40,14 @@ using namespace std;
  * Or alternatively, create a specific query method for the information.
  **/
 uint64_t komodo_interestsum();
+int32_t komodo_longestchain();
 int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
+int32_t komodo_whoami(char *pubkeystr,int32_t height);
 
 Value getinfo(const Array& params, bool fHelp)
 {
     uint256 notarized_hash,notarized_desttxid;
-    int32_t notarized_height;
+    int32_t notarized_height,longestchain;
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getinfo\n"
@@ -98,6 +100,9 @@ Value getinfo(const Array& params, bool fHelp)
     }
 #endif
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
+    if ( (longestchain= komodo_longestchain()) != 0 && chainActive.Height() > longestchain )
+        longestchain = chainActive.Height();
+    obj.push_back(Pair("longestchain",        longestchain));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
     if ( chainActive.Tip() != 0 )
         obj.push_back(Pair("tiptime", (int)chainActive.Tip()->nTime));
@@ -116,6 +121,12 @@ Value getinfo(const Array& params, bool fHelp)
 #endif
     obj.push_back(Pair("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK())));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
+    {
+        char pubkeystr[65]; int32_t notaryid;
+        notaryid = komodo_whoami(pubkeystr,longestchain);
+        obj.push_back(Pair("notaryid",        notaryid));
+        obj.push_back(Pair("pubkey",        pubkeystr));
+    }
     return obj;
 }
 

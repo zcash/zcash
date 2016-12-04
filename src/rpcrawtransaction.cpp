@@ -132,7 +132,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
         {
             extern char ASSETCHAINS_SYMBOL[16];
             interest = komodo_interest(pindex->nHeight,txout.nValue,tx.nLockTime,tipindex->nTime);
-            if ( strcmp("REVS",ASSETCHAINS_SYMBOL) == 0 )
+            if ( 0 && strcmp("REVS",ASSETCHAINS_SYMBOL) == 0 )
                 fprintf(stderr,"TxtoJSON interest %llu %.8f (%d %llu %u %u)\n",(long long)interest,(double)interest/COIN,(int32_t)pindex->nHeight,(long long)txout.nValue,(uint32_t)tx.nLockTime,(int32_t)tipindex->nTime);
             out.push_back(Pair("interest", ValueFromAmount(interest)));
         }
@@ -251,6 +251,56 @@ Value getrawtransaction(const Array& params, bool fHelp)
     result.push_back(Pair("hex", strHex));
     TxToJSON(tx, hashBlock, result);
     return result;
+}
+
+int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid,int32_t n)
+{
+    int32_t i,m; uint8_t *ptr;
+    LOCK(cs_main);
+    /*CCoins coins;
+     for (iter=0; iter<2; iter++)
+     {
+     if ( iter == 0 )
+     {
+     LOCK(mempool.cs);
+     CCoinsViewMemPool view(pcoinsTip,mempool);
+     if ( view.GetCoins(txid,coins) == 0 )
+     {
+     //fprintf(stderr,"cant get view\n");
+     continue;
+     }
+     mempool.pruneSpent(txid, coins); // TODO: this should be done by the CCoinsViewMemPool
+     }
+     else if ( pcoinsTip->GetCoins(txid,coins) == 0 )
+     {
+     //fprintf(stderr,"cant get pcoinsTip->GetCoins\n");
+     continue;
+     }
+     if ( n < 0 || (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
+     {
+     fprintf(stderr,"iter.%d n.%d vs voutsize.%d\n",iter,n,(int32_t)coins.vout.size());
+     continue;
+     }
+     ptr = (uint8_t *)coins.vout[n].scriptPubKey.data();
+     m = coins.vout[n].scriptPubKey.size();
+     for (i=0; i<maxsize&&i<m; i++)
+     scriptPubKey[i] = ptr[i];
+     return(i);
+     }*/
+    CTransaction tx;
+    uint256 hashBlock;
+    if ( GetTransaction(txid,tx,hashBlock,true) == 0 )
+        return(-1);
+    else if ( n <= tx.vout.size() ) // vout.size() seems off by 1
+    {
+        ptr = (uint8_t *)tx.vout[n].scriptPubKey.data();
+        m = tx.vout[n].scriptPubKey.size();
+        for (i=0; i<maxsize&&i<m; i++)
+            scriptPubKey[i] = ptr[i];
+        //fprintf(stderr,"got scriptPubKey via rawtransaction\n");
+        return(i);
+    }
+    return(-1);
 }
 
 Value gettxoutproof(const Array& params, bool fHelp)

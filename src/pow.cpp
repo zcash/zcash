@@ -108,11 +108,12 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
 int32_t komodo_currentheight();
 extern int32_t KOMODO_CHOSEN_ONE;
-//extern int8_t Minerids[1024 * 1024 * 5]; // 5 million blocks
+#define KOMODO_ELECTION_GAP 2000
 
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
-    bool fNegative,fOverflow; int32_t i,nonz=0,special,special2,notaryid,flag = 0;
+    extern int32_t KOMODO_REWIND;
+    bool fNegative,fOverflow; int32_t i,nonz=0,special,special2,notaryid=-1,flag = 0;
     arith_uint256 bnTarget;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
@@ -128,41 +129,32 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         }
         if ( nonz == 0 )
             return(true); // will come back via different path with pubkey set
-        //if ( height > 60000 )
+        special2 = komodo_is_special(height,pubkey33);
+        if ( notaryid >= 0 && ((height >= 64000 && height <= 90065) || (height % KOMODO_ELECTION_GAP) > 64) )
         {
-            if ( notaryid >= 0 )
+            //if ( special2 == -2 )
+            //    printf("height.%d special2.%d special.%d\n",height,special2,special);
+            if ( (height >= 64000 && height <= 90065) || (height % KOMODO_ELECTION_GAP) == 0 || (height < 80000 && (special != 0 || special2 > 0)) || (height >= 80000 && special2 > 0) )
             {
-                special2 = komodo_is_special(height,pubkey33);
-                if ( special2 == -2 )
-                    printf("height.%d special2.%d special.%d\n",height,special2,special);
-                if ( special2 == -2 || (height < 70000 && (special != 0 || special2 > 0)) ||
-                    (height >= 70000 && special2 > 0) )
-                {
-                    bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-                    flag = 1;
-                }
-            }
-        }
-        /*else
-        {
-            if ( special > 0 ) // special notary id == (height % numnotaries)
-            {
-                if (UintToArith256(hash) <= bnTarget) // accept normal diff
-                    return true;
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 flag = 1;
             }
-        }*/
+        }
     }
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        //for (i=0; i<33; i++)
-        //    printf("%02x",pubkey33[i]);
-        //printf(" special.%d notaryid.%d ht.%d mod.%d error\n",special,notaryid,height,(height % 35));
-        return error("CheckProofOfWork(): hash doesn't match nBits");
+        int32_t i;
+        for (i=31; i>=0; i--)
+            printf("%02x",((uint8_t *)&hash)[i]);
+        printf(" hash vs ");
+        for (i=31; i>=0; i--)
+            printf("%02x",((uint8_t *)&bnTarget)[i]);
+        printf(" ht.%d REWIND.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,KOMODO_REWIND,special,notaryid,height,(height % 35));
+        if ( height <= KOMODO_REWIND )
+            return error("CheckProofOfWork(): hash doesn't match nBits");
     }
     return true;
 }

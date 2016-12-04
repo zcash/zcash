@@ -538,7 +538,7 @@ CBlockIndex* FindForkInGlobalIndex(const CChain& chain, const CBlockLocator& loc
         if (mi != mapBlockIndex.end())
         {
             CBlockIndex* pindex = (*mi).second;
-            if (chain.Contains(pindex))
+            if (pindex != 0 && chain.Contains(pindex))
                 return pindex;
         }
     }
@@ -676,14 +676,18 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
     txnouttype whichType;
     BOOST_FOREACH(const CTxOut& txout, tx.vout)
     {
-        if (!::IsStandard(txout.scriptPubKey, whichType)) {
+        if (!::IsStandard(txout.scriptPubKey, whichType))
+        {
             reason = "scriptpubkey";
-            fprintf(stderr,"vout.%d nDataout.%d\n",v,nDataOut);
+            fprintf(stderr,">>>>>>>>>>>>>>> vout.%d nDataout.%d\n",v,nDataOut);
             return false;
         }
         
         if (whichType == TX_NULL_DATA)
+        {
             nDataOut++;
+            //fprintf(stderr,"is OP_RETURN\n");
+        }
         else if ((whichType == TX_MULTISIG) && (!fIsBareMultisigStd)) {
             reason = "bare-multisig";
             return false;
@@ -1179,7 +1183,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         view.GetBestBlock();
 
         nValueIn = view.GetValueIn(chainActive.Tip()->nHeight,&interest,tx,chainActive.Tip()->nTime);
-            if ( interest != 0 )
+            if ( 0 && interest != 0 )
                 fprintf(stderr,"add interest %.8f\n",(double)interest/COIN);
         // we have all inputs cached now, so switch back to dummy, so we don't need to keep lock on mempool
         view.SetBackend(dummy);
@@ -2551,6 +2555,7 @@ static int64_t nTimePostConnect = 0;
  * corresponding to pindexNew, to bypass loading it again from disk.
  */
 bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *pblock) {
+    
     assert(pindexNew->pprev == chainActive.Tip());
     mempool.check(pcoinsTip);
     // Read block from disk.
@@ -2689,6 +2694,7 @@ static void PruneBlockIndexCandidates() {
  * pblock is either NULL or a pointer to a CBlock corresponding to pindexMostWork.
  */
 static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMostWork, CBlock *pblock) {
+    extern int32_t KOMODO_REWIND;
     AssertLockHeld(cs_main);
     bool fInvalidFound = false;
     const CBlockIndex *pindexOldTip = chainActive.Tip();
@@ -2699,7 +2705,21 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         if (!DisconnectTip(state))
             return false;
     }
-
+    if ( KOMODO_REWIND != 0 && chainActive.Tip()->nHeight > KOMODO_REWIND )
+    {
+        static int32_t didinit;
+        if ( didinit++ == 0 )
+        {
+            while (chainActive.Tip()->nHeight > KOMODO_REWIND )
+            {
+                fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
+                if ( !DisconnectTip(state) )
+                    return false;
+            }
+            pindexOldTip = chainActive.Tip();
+            pindexFork = chainActive.FindFork(pindexMostWork);
+        }
+    }
     // Build list of new blocks to connect.
     std::vector<CBlockIndex*> vpindexToConnect;
     bool fContinue = true;
