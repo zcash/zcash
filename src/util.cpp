@@ -526,8 +526,8 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
         path /= BaseParams().DataDir();
 
     fs::create_directories(path);
-    std::string assetpath = path + "/assets";
-    boost::filesystem::create_directory(assetpath);
+    //std::string assetpath = path + "/assets";
+    //boost::filesystem::create_directory(assetpath);
     return path;
 }
 
