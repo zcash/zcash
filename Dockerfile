@@ -1,5 +1,5 @@
-FROM kolobus/komodod:ubuntu
-MAINTAINER Mihail Fedorov <mit-license@fedorov.net>
+FROM kolobus/ubuntu:komodo
+MAINTAINER Mihail Fedorov <tech@fedorov.net>
 
 ADD ./ /komodo
 ENV HOME /komodo
@@ -9,7 +9,7 @@ WORKDIR /komodo
 RUN cd /komodo && \
     ./autogen.sh && \
     ./configure --with-incompatible-bdb --with-gui || true && \
-    ./zcutil/build.sh -j4
+    ./zcutil/build.sh -j$(nproc)
 
 # Unknown stuff goes here
 
