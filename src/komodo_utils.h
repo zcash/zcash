@@ -1317,9 +1317,9 @@ void komodo_configfile(char *symbol,uint16_t port)
         sprintf(buf,"%s.conf",symbol);
         BITCOIND_PORT = port;
 #ifdef WIN32
-        sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),buf);
+        sprintf(fname,"%s\\assets\\%s",GetDataDir(false).string().c_str(),buf);
 #else
-        sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),buf);
+        sprintf(fname,"%s/assets/%s",GetDataDir(false).string().c_str(),buf);
 #endif
         if ( (fp= fopen(fname,"rb")) == 0 )
         {
