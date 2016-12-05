@@ -249,6 +249,81 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
     }
 }
 
+BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
+{
+    // Correct behavior:
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Create dummy anchor/commitment
+        ZCIncrementalMerkleTree tree;
+        uint256 cm = GetRandHash();
+        tree.append(cm);
+
+        // Add the anchor
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        // Remove the anchor
+        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+        cache1.Flush();
+
+        // Add the anchor back
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        // The base contains the anchor, of course!
+        {
+            ZCIncrementalMerkleTree checktree;
+            BOOST_CHECK(cache1.GetAnchorAt(tree.root(), checktree));
+            BOOST_CHECK(checktree.root() == tree.root());
+        }
+    }
+
+    // Previously incorrect behavior
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Create dummy anchor/commitment
+        ZCIncrementalMerkleTree tree;
+        uint256 cm = GetRandHash();
+        tree.append(cm);
+
+        // Add the anchor and flush to disk
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        // Remove the anchor, but don't flush yet!
+        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+
+        {
+            CCoinsViewCacheTest cache2(&cache1); // Build cache on top
+            cache2.PushAnchor(tree); // Put the same anchor back!
+            cache2.Flush(); // Flush to cache1
+        }
+
+        // cache2's flush kinda worked, i.e. cache1 thinks the
+        // tree is there, but it didn't bring down the correct
+        // treestate...
+        {
+            ZCIncrementalMerkleTree checktree;
+            BOOST_CHECK(cache1.GetAnchorAt(tree.root(), checktree));
+            BOOST_CHECK(checktree.root() == tree.root()); // Oh, shucks.
+        }
+
+        // Flushing cache won't help either, just makes the inconsistency
+        // permanent.
+        cache1.Flush();
+        {
+            ZCIncrementalMerkleTree checktree;
+            BOOST_CHECK(cache1.GetAnchorAt(tree.root(), checktree));
+            BOOST_CHECK(checktree.root() == tree.root()); // Oh, shucks.
+        }
+    }
+}
+
 BOOST_AUTO_TEST_CASE(anchor_regression_test)
 {
     // Correct behavior:
