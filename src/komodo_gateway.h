@@ -659,7 +659,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         if ( strcmp(source,ASSETCHAINS_SYMBOL) == 0 )
             printf("source.%s opreturn[I] matches %s\n",source,(char *)&opretbuf[opretlen-4]);
     }
-    else if ( opretbuf[0] == 'W' && opretlen >= 38 )
+    else if ( opretbuf[0] == 'W' )//&& opretlen >= 38 )
     {
         tokomodo = 1;
         iguana_rwnum(0,&opretbuf[34],sizeof(kmdheight),&kmdheight);
@@ -668,8 +668,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         bitcoin_address(coinaddr,addrtype,rmd160,20);
         checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,value);
         typestr = "withdraw";
-        if ( strcmp(ASSETCHAINS_SYMBOL,"RUB") == 0 )
-        printf("%s.height.%d vs height.%d check %.8f/%.8f vs %.8f tokomodo.%d %d seed.%llx -> (%s)\n",ASSETCHAINS_SYMBOL,kmdheight,height,dstr(checktoshis),dstr(komodoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed,coinaddr);
+        if ( strcmp(base,"RUB") == 0 )
+            printf("%s.height.%d vs height.%d check %.8f/%.8f vs %.8f tokomodo.%d %d seed.%llx -> (%s) len.%d\n",ASSETCHAINS_SYMBOL,kmdheight,height,dstr(checktoshis),dstr(komodoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed,coinaddr,opretlen);
         didstats = 0;
         if ( komodo_paxcmp(base,kmdheight,komodoshis,checktoshis,seed) == 0 )
         {
