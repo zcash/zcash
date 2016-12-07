@@ -121,7 +121,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    if ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight > ASSETCHAINS_MINHEIGHT )
+    if ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight >= ASSETCHAINS_MINHEIGHT )
     {
         isrealtime = komodo_isrealtime(&kmdheight);
         while ( KOMODO_ON_DEMAND == 0 )

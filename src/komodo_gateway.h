@@ -688,8 +688,12 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             komodo_gateway_deposit(coinaddr,komodoshis,(char *)"KMD",value,rmd160,txid,vout,'W',kmdheight,height,source,0);
             if ( (pax= komodo_paxfind(txid,vout,'W')) != 0 )
             {
-                if ( didstats != 0 )
+                if ( didstats != 0 && pax->didstats == 0 )
+                {
+                    if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                        printf("########### %p withdrawn %s += %.8f kmdht.%d ht.%d\n",basesp,base,dstr(value),kmdheight,height);
                     pax->didstats = 1;
+                }
                 pax->type = opretbuf[0];
                 pax->validated = komodoshis;
                 if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
