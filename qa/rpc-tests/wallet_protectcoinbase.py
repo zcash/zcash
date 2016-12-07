@@ -190,6 +190,27 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         node2balance = amount_per_recipient * num_t_recipients
         assert_equal(self.nodes[2].getbalance(), node2balance)
 
+        # Send will fail because fee is negative
+        try:
+            self.nodes[0].z_sendmany(myzaddr, recipients, 1, -1)
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert_equal("Invalid amount" in errorString, True)
+
+        # Send will fail because fee is larger than MAX_MONEY
+        try:
+            self.nodes[0].z_sendmany(myzaddr, recipients, 1, Decimal('21000000.00000001'))
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert_equal("Invalid amount" in errorString, True)
+
+        # Send will fail because fee is larger than sum of outputs
+        try:
+            self.nodes[0].z_sendmany(myzaddr, recipients, 1, (amount_per_recipient * num_t_recipients) + Decimal('0.00000001'))
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert_equal("is greater than the sum of outputs" in errorString, True)
+
         # Send will succeed because the balance of non-coinbase utxos is 10.0
         try:
             self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 9)
@@ -208,10 +229,14 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients = []
         num_recipients = 3
         amount_per_recipient = Decimal('0.002')
+        minconf = 1
+        send_amount = num_recipients * amount_per_recipient
+        custom_fee = Decimal('0.00012345')
+        zbalance = self.nodes[0].z_getbalance(myzaddr)
         for i in xrange(0,num_recipients):
             newzaddr = self.nodes[2].z_getnewaddress()
             recipients.append({"address":newzaddr, "amount":amount_per_recipient})
-        myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, minconf, custom_fee)
         self.wait_and_assert_operationid_status(myopid)
         self.sync_all()
         self.nodes[1].generate(1)
@@ -219,7 +244,9 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
 
         # check balances
         resp = self.nodes[2].z_gettotalbalance()
-        assert_equal(Decimal(resp["private"]), num_recipients * amount_per_recipient)
+        assert_equal(Decimal(resp["private"]), send_amount)
+        resp = self.nodes[0].z_getbalance(myzaddr)
+        assert_equal(Decimal(resp), zbalance - custom_fee - send_amount)
 
 if __name__ == '__main__':
     WalletProtectCoinbaseTest().main()
