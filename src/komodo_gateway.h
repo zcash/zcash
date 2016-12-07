@@ -690,8 +690,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     pax->didstats = 1;
                 pax->type = opretbuf[0];
                 pax->validated = komodoshis;
-            }
-        }
+                if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                    printf("set validated W.%d %.8f\n",kmdheight,dstr(value));
+            } else printf("cant paxfind W\n");
+        } else printf("withdraw paxcmp error %.8f vs %.8f\n",dstr(komodoshis),dstr(checktoshis));
     }
     else if ( tokomodo != 0 && opretbuf[0] == 'A' )
     {
