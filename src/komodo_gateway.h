@@ -792,7 +792,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 
 void komodo_passport_iteration()
 {
-    static long lastpos[34]; static char userpass[33][1024];
+    static long lastpos[34]; static char didinit,userpass[33][1024];
     FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3]; cJSON *infoobj,*result; uint64_t RTmask = 0;
     while ( KOMODO_INITDONE == 0 )
     {
@@ -803,7 +803,7 @@ void komodo_passport_iteration()
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 33;
     else refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1; // illegal base -> baseid.-1 -> 0
-    //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
+    printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=32; baseid>=0; baseid--)
     {
         sp = 0;
@@ -847,6 +847,17 @@ void komodo_passport_iteration()
         }
         else
         {
+            if ( baseid < 32 && didinit == 0 )
+            {
+                komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"komodostate");
+                if ( (fp= fopen(fname,"rb+")) != 0 )
+                {
+                    while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
+                        ;
+                    fclose(fp);
+                }
+                didinit = 1;
+            }
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
             if ( (fp= fopen(fname,"wb")) != 0 )
             {

@@ -200,8 +200,11 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"komodostate");
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
-            while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
-                ;
+            if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            {
+                while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
+                    ;
+            } else fseek(fp,0,SEEK_END);
         } else fp = fopen(fname,"wb+");
         printf("fname.(%s) fpos.%ld\n",fname,ftell(fp));
         KOMODO_INITDONE = (uint32_t)time(NULL);
