@@ -51,9 +51,9 @@ CWalletTx GetValidReceive(ZCJoinSplit& params,
 
     // Add the signature
     assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
-                         dataToBeSigned.begin(), 32,
-                         joinSplitPrivKey
-                        ) == 0);
+                                dataToBeSigned.begin(), 32,
+                                joinSplitPrivKey
+                               ) == 0);
 
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
@@ -135,9 +135,9 @@ CWalletTx GetValidSpend(ZCJoinSplit& params,
 
     // Add the signature
     assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
-                         dataToBeSigned.begin(), 32,
-                         joinSplitPrivKey
-                        ) == 0);
+                                dataToBeSigned.begin(), 32,
+                                joinSplitPrivKey
+                               ) == 0);
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
     return wtx;
