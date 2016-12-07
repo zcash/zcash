@@ -269,7 +269,7 @@ uint64_t komodo_paxtotal()
                 }
                 else if ( pax->type == 'W' )
                 {
-                    printf("got WITHDRAW.%s kmd.%d ht.%d %.8f\n",str,pax->height,pax->otherheight,dstr(pax->value));
+                    printf("got WITHDRAW.%s kmd.%d ht.%d %.8f\n",str,pax->height,pax->otherheight,dstr(pax->fiatoshis));
                 }
             }
         }
