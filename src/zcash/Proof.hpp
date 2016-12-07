@@ -244,6 +244,12 @@ private:
     ProofVerifier(bool perform_verification) : perform_verification(perform_verification) { }
 
 public:
+    // ProofVerifier should never be copied
+    ProofVerifier(const ProofVerifier&) = delete;
+    ProofVerifier& operator=(const ProofVerifier&) = delete;
+    ProofVerifier(ProofVerifier&&);
+    ProofVerifier& operator=(ProofVerifier&&);
+
     // Creates a verification context that strictly verifies
     // all proofs using libsnark's API.
     static ProofVerifier Strict();
