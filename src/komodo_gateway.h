@@ -673,24 +673,29 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         {
             if ( value != 0 && ((pax= komodo_paxfind(txid,vout,'W')) == 0 || pax->didstats == 0) )
             {
+                if ( (basesp= komodo_stateptrget(base)) != 0 )
+                {
+                    basesp->withdrawn += value;
+                    didstats = 1;
+                    if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                        printf("########### %p withdrawn %s += %.8f\n",basesp,base,dstr(value));
+                }
                 if ( strcmp(base,"RUB") == 0 )
                     printf("notarize %s %.8f -> %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),dstr(komodoshis),kmdheight,height);
             }
             komodo_gateway_deposit(coinaddr,komodoshis,(char *)"KMD",value,rmd160,txid,vout,'W',kmdheight,height,source,0);
             if ( (pax= komodo_paxfind(txid,vout,'W')) != 0 )
             {
-                if ( pax->didstats == 0 )
+                if ( didstats != 0 && pax->didstats == 0 )
                 {
-                    if ( (basesp= komodo_stateptrget(base)) != 0 )
-                    {
-                        basesp->withdrawn += value;
-                        pax->didstats = 1;
-                        if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
-                            printf("########### %p withdrawn %s += %.8f\n",basesp,base,dstr(value));
-                    }
+                    if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                        printf("########### %p withdrawn %s += %.8f kmdht.%d ht.%d\n",basesp,base,dstr(value),kmdheight,height);
+                    pax->didstats = 1;
                 }
                 pax->type = opretbuf[0];
                 pax->validated = komodoshis;
+                if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                    printf("set validated W.%d %.8f\n",kmdheight,dstr(value));
             } else printf("cant paxfind W\n");
         } else printf("withdraw %s paxcmp ht.%d %d error value %.8f -> %.8f vs %.8f\n",base,kmdheight,height,dstr(value),dstr(komodoshis),dstr(checktoshis));
     }
@@ -798,7 +803,7 @@ void komodo_passport_iteration()
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 33;
     else refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1; // illegal base -> baseid.-1 -> 0
-    //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
+    printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=32; baseid>=0; baseid--)
     {
         sp = 0;
