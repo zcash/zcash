@@ -638,7 +638,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     {
                         pax->type = opretbuf[0];
                         strcpy(pax->source,(char *)&opretbuf[opretlen-4]);
-                        if ( (pax2= komodo_paxfind(txids[i],vouts[i],'D')) != 0 )
+                        if ( (pax2= komodo_paxfind(txids[i],vouts[i],'D')) != 0 && pax2->fiatoshis != 0 && pax2->komodoshis != 0 )
                         {
                             // realtime path?
                             pax->fiatoshis = pax2->fiatoshis;
