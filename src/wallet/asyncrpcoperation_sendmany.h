@@ -42,9 +42,9 @@ struct AsyncJoinSplitInfo
     CAmount vpub_new = 0;
 };
 
-// A struct to help us track the witnesses and anchor for a given JSOutPoint
+// A struct to help us track the witness and anchor for a given JSOutPoint
 struct WitnessAnchorData {
-	std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+	boost::optional<ZCIncrementalWitness> witness;
 	uint256 anchor;
 };
 

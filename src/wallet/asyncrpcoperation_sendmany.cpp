@@ -331,7 +331,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             uint256 inputAnchor;
             std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
             pwalletMain->GetNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
-            jsopWitnessAnchorMap[ jso.ToString() ] = WitnessAnchorData{ vInputWitnesses, inputAnchor };
+            jsopWitnessAnchorMap[ jso.ToString() ] = WitnessAnchorData{ vInputWitnesses[0], inputAnchor };
         }
     }
 
@@ -587,7 +587,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             std::vector<JSOutPoint> vOutPoints;
             std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
             uint256 inputAnchor;
-            WitnessAnchorData wad;
             int numInputsNeeded = (jsChange>0) ? 1 : 0;
             while (numInputsNeeded++ < ZC_NUM_JS_INPUTS && zInputsDeque.size() > 0) {
                 SendManyInputJSOP t = zInputsDeque.front();
@@ -596,10 +595,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 CAmount noteFunds = std::get<2>(t);
                 zInputsDeque.pop_front();
 
-                wad = jsopWitnessAnchorMap[ jso.ToString() ];
-                for (auto & w : wad.witnesses) {
-                    vInputWitnesses.push_back(w);
-                }
+                WitnessAnchorData wad = jsopWitnessAnchorMap[ jso.ToString() ];
+                vInputWitnesses.push_back(wad.witness);
                 if (inputAnchor.IsNull()) {
                     inputAnchor = wad.anchor;
                 } else if (inputAnchor != wad.anchor) {
