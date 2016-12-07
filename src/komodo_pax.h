@@ -481,7 +481,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     }
     if ( nonz <= (numvotes >> 1) )
     {
-        printf("NUM_PVALS.%d kmdbtc %llu btcusd %llu ",NUM_PRICES,(long long)kmdbtc,(long long)btcusd);
+        printf("kmdbtc %llu btcusd %llu\n",(long long)kmdbtc,(long long)btcusd);
         printf("komodo_paxprice nonz.%d of numvotes.%d\n",nonz,numvotes);
         return(0);
     }
