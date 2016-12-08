@@ -224,7 +224,7 @@ ProofVerifier ProofVerifier::Strict() {
     return ProofVerifier(true);
 }
 
-ProofVerifier ProofVerifier::Dummy() {
+ProofVerifier ProofVerifier::Disabled() {
     initialize_curve_params();
     return ProofVerifier(false);
 }

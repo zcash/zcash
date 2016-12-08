@@ -254,10 +254,10 @@ public:
     // all proofs using libsnark's API.
     static ProofVerifier Strict();
 
-    // Creates a dummy verification context that performs
-    // no verification, used when avoiding duplicate effort
+    // Creates a verification context that performs no
+    // verification, used when avoiding duplicate effort
     // such as during reindexing.
-    static ProofVerifier Dummy();
+    static ProofVerifier Disabled();
 
     template <typename VerificationKey,
               typename ProcessedVerificationKey,
