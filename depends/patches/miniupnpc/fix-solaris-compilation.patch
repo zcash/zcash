@@ -1,0 +1,42 @@
+From 71ce1d6dfa5424f8fe8633e23494c7638ea2c79e Mon Sep 17 00:00:00 2001
+From: Thomas Bernard <miniupnp@free.fr>
+Date: Thu, 10 Nov 2016 21:55:33 +0100
+Subject: [PATCH] fix for Solaris 11 compilation
+
+see #216
+---
+ miniupnpc/Makefile    | 2 ++
+ miniupnpc/minissdpc.c | 3 +++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/miniupnpc/Makefile b/miniupnpc/Makefile
+index 5c23000..72cdc0f 100644
+--- a/miniupnpc/Makefile
++++ b/miniupnpc/Makefile
+@@ -43,10 +43,12 @@ CFLAGS += -D_NETBSD_SOURCE
+ endif
+ ifneq ($(OS), FreeBSD)
+ ifneq ($(OS), Darwin)
++ifneq ($(OS), SunOS)
+ #CFLAGS += -D_POSIX_C_SOURCE=200112L
+ CFLAGS += -D_XOPEN_SOURCE=600
+ endif
+ endif
++endif
+ #CFLAGS += -ansi
+ # -DNO_GETADDRINFO
+ INSTALL = install
+diff --git a/miniupnpc/minissdpc.c b/miniupnpc/minissdpc.c
+index f200f07..263160e 100644
+--- a/miniupnpc/minissdpc.c
++++ b/miniupnpc/minissdpc.c
+@@ -73,6 +73,9 @@ struct sockaddr_un {
+ 
+ #if !defined(HAS_IP_MREQN) && !defined(_WIN32)
+ #include <sys/ioctl.h>
++#if defined(__sun)
++#include <sys/sockio.h>
++#endif
+ #endif
+ 
+ #if defined(HAS_IP_MREQN) && defined(NEED_STRUCT_IP_MREQN)
