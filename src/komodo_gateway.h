@@ -599,7 +599,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                             pax2->fiatoshis = pax->fiatoshis;
                             pax2->komodoshis = pax->komodoshis;
                             pax->marked = pax2->marked = pax->height;
-                            pax->otherheight = height;
+                            pax2->otherheight = pax->otherheight = height;
                             if ( pax2->didstats == 0 )
                             {
                                 if ( (basesp= komodo_stateptrget(base)) != 0 )
