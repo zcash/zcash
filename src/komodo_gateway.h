@@ -253,7 +253,7 @@ uint64_t komodo_paxtotal()
             basesp = komodo_stateptrget(str);
             if ( basesp != 0 && pax->didstats == 0 )
             {
-                if ( pax->type == 'I' && (pax2= komodo_paxfind(pax->txid,pax->vout,pax->type == 'I' ? 'D' : 'W')) != 0 )
+                if ( pax->type == 'I' && (pax2= komodo_paxfind(pax->txid,pax->vout,'D')) != 0 )
                 {
                     if ( pax2->fiatoshis != 0 )
                     {
@@ -269,7 +269,8 @@ uint64_t komodo_paxtotal()
                 }
                 else if ( pax->type == 'W' )
                 {
-                    printf("got WITHDRAW.%s kmd.%d ht.%d %.8f\n",str,pax->height,pax->otherheight,dstr(pax->fiatoshis));
+                    if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
+                        printf("got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f\n",str,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis));
                 }
             }
         }
@@ -295,7 +296,7 @@ uint64_t komodo_paxtotal()
                         checktoshis = komodo_paxprice(&seed,pax->height,pax->source,(char *)"KMD",(uint64_t)pax->fiatoshis);
                         //printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f vs %.8f\n",pax->height,pax->symbol,(double)pax->fiatoshis/COIN,(double)pax->komodoshis/COIN,(double)checktoshis/COIN);
                         //printf(" v%d %.8f k.%d ht.%d\n",pax->vout,dstr(pax->komodoshis),pax->height,pax->otherheight);
-                        if ( seed != 0 )
+                        if ( seed != 0 && checktoshis != 0 )
                         {
                             if ( checktoshis == pax->komodoshis )
                             {
