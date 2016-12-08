@@ -692,7 +692,12 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             }
             komodo_gateway_deposit(coinaddr,0,(char *)"KMD",value,rmd160,txid,vout,'W',kmdheight,height,source,0);
             if ( (pax= komodo_paxfind(txid,vout,'W')) != 0 )
-                 pax->type = opretbuf[0];
+            {
+                pax->type = opretbuf[0];
+                strcpy(pax->symbol,base);
+                pax->height = kmdheight;
+                pax->otherheight = height;
+            }
         } else printf("withdraw %s paxcmp ht.%d %d error value %.8f -> %.8f vs %.8f\n",base,kmdheight,height,dstr(value),dstr(komodoshis),dstr(checktoshis));
     }
     else if ( tokomodo != 0 && opretbuf[0] == 'A' )
