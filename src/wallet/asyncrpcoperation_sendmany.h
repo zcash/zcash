@@ -14,6 +14,7 @@
 #include "json/json_spirit_value.h"
 #include "wallet.h"
 
+#include <unordered_map>
 #include <tuple>
 
 // Default transaction fee if caller does not specify one.
@@ -39,6 +40,12 @@ struct AsyncJoinSplitInfo
     std::vector<Note> notes;
     CAmount vpub_old = 0;
     CAmount vpub_new = 0;
+};
+
+// A struct to help us track the witness and anchor for a given JSOutPoint
+struct WitnessAnchorData {
+	boost::optional<ZCIncrementalWitness> witness;
+	uint256 anchor;
 };
 
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
@@ -71,7 +78,9 @@ private:
     uint256 joinSplitPubKey_;
     unsigned char joinSplitPrivKey_[crypto_sign_SECRETKEYBYTES];
 
-        
+    // The key is the result string from calling JSOutPoint::ToString()
+    std::unordered_map<std::string, WitnessAnchorData> jsopWitnessAnchorMap;
+
     std::vector<SendManyRecipient> t_outputs_;
     std::vector<SendManyRecipient> z_outputs_;
     std::vector<SendManyInputUTXO> t_inputs_;

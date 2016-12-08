@@ -323,7 +323,22 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         zOutputsDeque.push_back(o);
     }
 
-    
+    // When spending notes, take a snapshot of note witnesses and anchors as the treestate will
+    // change upon arrival of new blocks which contain joinsplit transactions.  This is likely
+    // to happen as creating a chained joinsplit transaction can take longer than the block interval.
+    if (z_inputs_.size() > 0) {
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        for (auto t : z_inputs_) {
+            JSOutPoint jso = std::get<0>(t);
+            std::vector<JSOutPoint> vOutPoints = { jso };
+            uint256 inputAnchor;
+            std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
+            pwalletMain->GetNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
+            jsopWitnessAnchorMap[ jso.ToString() ] = WitnessAnchorData{ vInputWitnesses[0], inputAnchor };
+        }
+    }
+
+
     /**
      * SCENARIO #2
      * 
@@ -573,6 +588,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             //
             std::vector<Note> vInputNotes;
             std::vector<JSOutPoint> vOutPoints;
+            std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
             uint256 inputAnchor;
             int numInputsNeeded = (jsChange>0) ? 1 : 0;
             while (numInputsNeeded++ < ZC_NUM_JS_INPUTS && zInputsDeque.size() > 0) {
@@ -581,6 +597,14 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 Note note = std::get<1>(t);
                 CAmount noteFunds = std::get<2>(t);
                 zInputsDeque.pop_front();
+
+                WitnessAnchorData wad = jsopWitnessAnchorMap[ jso.ToString() ];
+                vInputWitnesses.push_back(wad.witness);
+                if (inputAnchor.IsNull()) {
+                    inputAnchor = wad.anchor;
+                } else if (inputAnchor != wad.anchor) {
+                    throw JSONRPCError(RPC_WALLET_ERROR, "Selected input notes do not share the same anchor");
+                }
 
                 vOutPoints.push_back(jso);
                 vInputNotes.push_back(note);
@@ -598,12 +622,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                         
             // Add history of previous commitments to witness 
             if (vInputNotes.size() > 0) {
-                std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
-                {
-                    LOCK(cs_main);
-                    pwalletMain->GetNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
-                }
-       
+
                 if (vInputWitnesses.size()==0) {
                     throw JSONRPCError(RPC_WALLET_ERROR, "Could not find witness for note commitment");
                 }
