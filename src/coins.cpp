@@ -176,11 +176,20 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
     // case restoring the "old" anchor during a reorg must
     // have no effect.
     if (currentRoot != newrt) {
-        CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(currentRoot, CAnchorsCacheEntry())).first;
+        // Bring the current best anchor into our local cache
+        // so that its tree exists in memory.
+        {
+            ZCIncrementalMerkleTree tree;
+            assert(GetAnchorAt(currentRoot, tree));
+        }
 
-        ret->second.entered = false;
-        ret->second.flags = CAnchorsCacheEntry::DIRTY;
+        // Mark the anchor as unentered, removing it from view
+        cacheAnchors[currentRoot].entered = false;
 
+        // Mark the cache entry as dirty so it's propagated
+        cacheAnchors[currentRoot].flags = CAnchorsCacheEntry::DIRTY;
+
+        // Mark the new root as the best anchor
         hashAnchor = newrt;
     }
 }
