@@ -756,16 +756,19 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
                 CNoteData* nd = &(item.second);
                 // Check the validity of the cache
                 assert(nWitnessCacheSize >= nd->witnesses.size());
-                // Witnesses being decremented should always be either -1
-                // (never incremented or decremented) or equal to pindex
-                assert((nd->witnessHeight == -1) ||
-                       (nd->witnessHeight == pindex->nHeight));
-                if (nd->witnesses.size() > 0) {
-                    nd->witnesses.pop_front();
+                // Only increment witnesses that are not above the current height
+                if (nd->witnessHeight <= pindex->nHeight) {
+                    // Witnesses being decremented should always be either -1
+                    // (never incremented or decremented) or equal to pindex
+                    assert((nd->witnessHeight == -1) ||
+                           (nd->witnessHeight == pindex->nHeight));
+                    if (nd->witnesses.size() > 0) {
+                        nd->witnesses.pop_front();
+                    }
+                    // pindex is the block being removed, so the new witness cache
+                    // height is one below it.
+                    nd->witnessHeight = pindex->nHeight - 1;
                 }
-                // pindex is the block being removed, so the new witness cache
-                // height is one below it.
-                nd->witnessHeight = pindex->nHeight - 1;
             }
         }
         nWitnessCacheSize -= 1;
