@@ -15,6 +15,9 @@ using namespace libzcash;
 
 void test_full_api(ZCJoinSplit* js)
 {
+    // Create verification context.
+    auto verifier = libzcash::ProofVerifier::Strict();
+
     // The recipient's information.
     SpendingKey recipient_key = SpendingKey::random();
     PaymentAddress recipient_addr = recipient_key.address();
@@ -69,6 +72,7 @@ void test_full_api(ZCJoinSplit* js)
     // Verify the transaction:
     ASSERT_TRUE(js->verify(
         proof,
+        verifier,
         pubKeyHash,
         randomSeed,
         macs,
@@ -143,6 +147,7 @@ void test_full_api(ZCJoinSplit* js)
     // Verify the transaction:
     ASSERT_TRUE(js->verify(
         proof,
+        verifier,
         pubKeyHash,
         randomSeed,
         macs,

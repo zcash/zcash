@@ -844,8 +844,9 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
         return false;
     } else {
         // Ensure that zk-SNARKs verify
+        auto verifier = libzcash::ProofVerifier::Strict();
         BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-            if (!joinsplit.Verify(*pzcashParams, tx.joinSplitPubKey)) {
+            if (!joinsplit.Verify(*pzcashParams, verifier, tx.joinSplitPubKey)) {
                 return state.DoS(100, error("CheckTransaction(): joinsplit does not verify"),
                                     REJECT_INVALID, "bad-txns-joinsplit-verification-failed");
             }

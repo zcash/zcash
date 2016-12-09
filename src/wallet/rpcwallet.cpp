@@ -2707,7 +2707,10 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
                          vpub_old,
                          vpub_new);
 
-    assert(jsdesc.Verify(*pzcashParams, joinSplitPubKey));
+    {
+        auto verifier = libzcash::ProofVerifier::Strict();
+        assert(jsdesc.Verify(*pzcashParams, verifier, joinSplitPubKey));
+    }
 
     mtx.vjoinsplit.push_back(jsdesc);
 

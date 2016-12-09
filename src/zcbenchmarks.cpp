@@ -89,7 +89,8 @@ double benchmark_create_joinsplit()
                          0);
     double ret = timer_stop(tv_start);
 
-    assert(jsdesc.Verify(*pzcashParams, pubKeyHash));
+    auto verifier = libzcash::ProofVerifier::Strict();
+    assert(jsdesc.Verify(*pzcashParams, verifier, pubKeyHash));
     return ret;
 }
 
@@ -98,7 +99,8 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
     struct timeval tv_start;
     timer_start(tv_start);
     uint256 pubKeyHash;
-    joinsplit.Verify(*pzcashParams, pubKeyHash);
+    auto verifier = libzcash::ProofVerifier::Strict();
+    joinsplit.Verify(*pzcashParams, verifier, pubKeyHash);
     return timer_stop(tv_start);
 }
 
