@@ -871,6 +871,121 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
     }
 }
 
+TEST(wallet_tests, CachedWitnessesCleanIndex) {
+    TestWallet wallet;
+    CBlock block1;
+    CBlock block2;
+    CBlock block3;
+    CBlockIndex index1(block1);
+    CBlockIndex index2(block2);
+    CBlockIndex index3(block3);
+    ZCIncrementalMerkleTree tree;
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    {
+        // First transaction (case tested in _empty_chain)
+        auto wtx = GetValidReceive(sk, 10, true);
+        auto note = GetNote(sk, wtx, 0, 1);
+        auto nullifier = note.nullifier(sk);
+
+        mapNoteData_t noteData;
+        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+        CNoteData nd {sk.address(), nullifier};
+        noteData[jsoutpt] = nd;
+        wtx.SetNoteData(noteData);
+        wallet.AddToWallet(wtx, true, NULL);
+
+        // First block (case tested in _empty_chain)
+        block1.vtx.push_back(wtx);
+        index1.nHeight = 1;
+        wallet.IncrementNoteWitnesses(&index1, &block1, tree);
+    }
+
+    {
+        // Second transaction (case tested in _chain_tip)
+        auto wtx = GetValidReceive(sk, 50, true);
+        auto note = GetNote(sk, wtx, 0, 1);
+        auto nullifier = note.nullifier(sk);
+
+        mapNoteData_t noteData;
+        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+        CNoteData nd {sk.address(), nullifier};
+        noteData[jsoutpt] = nd;
+        wtx.SetNoteData(noteData);
+        wallet.AddToWallet(wtx, true, NULL);
+
+        // Second block (case tested in _chain_tip)
+        block2.vtx.push_back(wtx);
+        index2.nHeight = 2;
+        wallet.IncrementNoteWitnesses(&index2, &block2, tree);
+    }
+
+    {
+        // Third transaction
+        auto wtx = GetValidReceive(sk, 20, true);
+        auto note = GetNote(sk, wtx, 0, 1);
+        auto nullifier = note.nullifier(sk);
+
+        mapNoteData_t noteData;
+        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+        CNoteData nd {sk.address(), nullifier};
+        noteData[jsoutpt] = nd;
+        wtx.SetNoteData(noteData);
+        wallet.AddToWallet(wtx, true, NULL);
+
+        std::vector<JSOutPoint> notes {jsoutpt};
+        std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+        uint256 anchor3;
+
+        // Third block
+        block3.vtx.push_back(wtx);
+        index3.nHeight = 3;
+        wallet.IncrementNoteWitnesses(&index3, &block3, tree);
+        wallet.GetNoteWitnesses(notes, witnesses, anchor3);
+
+        // Now pretend we are reindexing: the chain is cleared, and each block is
+        // used to increment witnesses again.
+        wallet.IncrementNoteWitnesses(&index1, &block1, tree);
+        uint256 anchor3a;
+        witnesses.clear();
+        wallet.GetNoteWitnesses(notes, witnesses, anchor3a);
+        EXPECT_TRUE((bool) witnesses[0]);
+        // Should equal third anchor because witness cache unaffected
+        EXPECT_EQ(anchor3, anchor3a);
+
+        wallet.IncrementNoteWitnesses(&index2, &block2, tree);
+        uint256 anchor3b;
+        witnesses.clear();
+        wallet.GetNoteWitnesses(notes, witnesses, anchor3b);
+        EXPECT_TRUE((bool) witnesses[0]);
+        EXPECT_EQ(anchor3, anchor3b);
+
+        // Pretend a reorg happened that was recorded in the block files
+        wallet.DecrementNoteWitnesses(&index2);
+        uint256 anchor3c;
+        witnesses.clear();
+        wallet.GetNoteWitnesses(notes, witnesses, anchor3c);
+        EXPECT_TRUE((bool) witnesses[0]);
+        EXPECT_EQ(anchor3, anchor3c);
+
+        wallet.IncrementNoteWitnesses(&index2, &block2, tree);
+        uint256 anchor3d;
+        witnesses.clear();
+        wallet.GetNoteWitnesses(notes, witnesses, anchor3d);
+        EXPECT_TRUE((bool) witnesses[0]);
+        EXPECT_EQ(anchor3, anchor3d);
+
+        wallet.IncrementNoteWitnesses(&index3, &block3, tree);
+        uint256 anchor3e;
+        witnesses.clear();
+        wallet.GetNoteWitnesses(notes, witnesses, anchor3e);
+        EXPECT_TRUE((bool) witnesses[0]);
+        EXPECT_EQ(anchor3, anchor3e);
+    }
+}
+
 TEST(wallet_tests, ClearNoteWitnessCache) {
     TestWallet wallet;
 
