@@ -28,7 +28,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         print('waiting for async operation {}'.format(myopid))
         opids = []
         opids.append(myopid)
-        timeout = 120
+        timeout = 300
         status = None
         errormsg = None
         txid = None
