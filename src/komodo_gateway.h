@@ -296,7 +296,7 @@ uint64_t komodo_paxtotal()
             {
                 if ( komodo_is_issuer() != 0 )
                 {
-                    if ( pax->validated != 0 ) // but what to do with 'W' 'A' and 'X' variants?
+                    if ( pax->validated != 0 && pax->type == 'D' )
                     {
                         total += pax->fiatoshis;
                         pax->ready = 1;
