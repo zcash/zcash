@@ -274,6 +274,20 @@ double benchmark_increment_note_witnesses(size_t nTxs)
     // Second block
     CBlock block2;
     block2.hashPrevBlock = block1.GetHash();
+    {
+        auto wtx = GetValidReceive(*pzcashParams, sk, 10, true);
+        auto note = GetNote(*pzcashParams, sk, wtx, 0, 1);
+        auto nullifier = note.nullifier(sk);
+
+        mapNoteData_t noteData;
+        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+        CNoteData nd {sk.address(), nullifier};
+        noteData[jsoutpt] = nd;
+
+        wtx.SetNoteData(noteData);
+        wallet.AddToWallet(wtx, true, NULL);
+        block2.vtx.push_back(wtx);
+    }
     CBlockIndex index2(block2);
     index2.nHeight = 2;
 
