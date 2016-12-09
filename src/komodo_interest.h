@@ -18,12 +18,20 @@
 uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
 {
     static uint64_t *interests; static int32_t maxheight;
-    uint64_t total; int32_t ind,incr = 100000;
+    uint64_t total; int32_t ind,incr = 1000000;
     if ( height >= maxheight )
     {
-        interests = (uint64_t *)realloc(interests,(maxheight + incr) * sizeof(*interests) * 2);
-        memset(&interests[maxheight << 1],0,incr * sizeof(*interests) * 2);
-        maxheight += incr;
+        if ( interests == 0 )
+        {
+            interests = (uint64_t *)calloc(incr,sizeof(*interests) * 2); // fix before block 1 million
+            maxheight += incr;
+        }
+        else
+        {
+            interests = (uint64_t *)realloc(interests,(maxheight + incr) * sizeof(*interests) * 2);
+            memset(&interests[maxheight << 1],0,incr * sizeof(*interests) * 2);
+            maxheight += incr;
+        }
     }
     ind = (height << 1);
     if ( paidinterest < 0 ) // request
