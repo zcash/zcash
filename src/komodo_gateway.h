@@ -697,6 +697,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 strcpy(pax->symbol,base);
                 pax->height = kmdheight;
                 pax->otherheight = height;
+                pax->komodoshis = komodoshis;
             }
         } // else printf("withdraw %s paxcmp ht.%d %d error value %.8f -> %.8f vs %.8f\n",base,kmdheight,height,dstr(value),dstr(komodoshis),dstr(checktoshis));
         // need to allocate pax
