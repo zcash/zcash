@@ -473,7 +473,6 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     }
     kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,*seedp) * 539;
     btcusd = komodo_paxcorrelation(btcusds,numvotes,*seedp) * 539;
-    //printf("kmdbtc %llu btcusd %llu\n",(long long)kmdbtc,(long long)btcusd);
     for (i=nonz=0; i<numvotes; i++)
     {
         if ( (votes[numvotes-1-i]= _komodo_paxprice(0,0,height-i,base,rel,100000,kmdbtc,btcusd)) == 0 )
@@ -481,7 +480,11 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
         else nonz++;
     }
     if ( nonz <= (numvotes >> 1) )
+    {
+        printf("kmdbtc %llu btcusd %llu\n",(long long)kmdbtc,(long long)btcusd);
+        printf("komodo_paxprice nonz.%d of numvotes.%d\n",nonz,numvotes);
         return(0);
+    }
     return(komodo_paxcorrelation(votes,numvotes,*seedp) * basevolume / 100000);
 }
 
@@ -527,7 +530,8 @@ uint64_t PAX_fiatdest(uint64_t *seedp,int32_t tokomodo,char *destaddr,uint8_t pu
     if ( fiatoshis < 0 )
         shortflag = 1, fiatoshis = -fiatoshis;
     komodoshis = komodo_paxprice(seedp,height,base,(char *)"KMD",(uint64_t)fiatoshis);
-    //printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f seed.%llx\n",height,base,(double)fiatoshis/COIN,(double)komodoshis/COIN,(long long)*seedp);
+    if ( strcmp(base,"RUB") == 0 )
+        printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f seed.%llx\n",height,base,(double)fiatoshis/COIN,(double)komodoshis/COIN,(long long)*seedp);
     if ( bitcoin_addr2rmd160(&addrtype,rmd160,coinaddr) == 20 )
     {
         PAX_pubkey(1,pubkey33,&addrtype,rmd160,base,&shortflag,tokomodo != 0 ? &komodoshis : &fiatoshis);

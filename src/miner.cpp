@@ -121,7 +121,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    if ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight > ASSETCHAINS_MINHEIGHT )
+    if ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight >= ASSETCHAINS_MINHEIGHT )
     {
         isrealtime = komodo_isrealtime(&kmdheight);
         while ( KOMODO_ON_DEMAND == 0 )
@@ -131,7 +131,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             {
                 //fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f ht.%d\n",KOMODO_INITDONE,isrealtime,(double)deposits/COIN,kmdheight);
             }
-            else if ( deposits != 0 )
+            else if ( deposits != 0 || (int32_t)mempool.GetTotalTxSize() > 0 )
             {
                 fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d RT.%u KOMODO_ON_DEMAND.%d\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),isrealtime,KOMODO_ON_DEMAND);
                 break;

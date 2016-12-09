@@ -113,7 +113,7 @@ extern int32_t KOMODO_CHOSEN_ONE;
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
     extern int32_t KOMODO_REWIND;
-    bool fNegative,fOverflow; int32_t i,nonz=0,special,special2,notaryid=-1,flag = 0;
+    bool fNegative,fOverflow; int32_t i,nonz=0,special=0,special2=0,notaryid=-1,flag = 0;
     arith_uint256 bnTarget;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
@@ -153,7 +153,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         for (i=31; i>=0; i--)
             printf("%02x",((uint8_t *)&bnTarget)[i]);
         printf(" ht.%d REWIND.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,KOMODO_REWIND,special,notaryid,height,(height % 35));
-        if ( height <= KOMODO_REWIND )
+        if ( (KOMODO_REWIND == 0 && height > 108000) || height <= KOMODO_REWIND )
             return error("CheckProofOfWork(): hash doesn't match nBits");
     }
     return true;
