@@ -345,7 +345,7 @@ TEST(proofs, zksnark_serializes_properly)
         auto verifierEnabled = ProofVerifier::Strict();
         auto verifierDisabled = ProofVerifier::Disabled();
         // This verifier should catch the bad proof
-        ASSERT_TRUE(verifierEnabled.check(
+        ASSERT_FALSE(verifierEnabled.check(
             kp.vk,
             vkprecomp,
             example.primary_input,
