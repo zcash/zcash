@@ -742,7 +742,9 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
         }
 
         if (fFileBacked) {
-            CWalletDB walletdb(strWalletFile);
+            // Do not flush the wallet here for performance reasons
+            // this is safe, as in case of a crash, we rescan the necessary blocks on startup through our SetBestChain-mechanism
+            CWalletDB walletdb(strWalletFile, "r+", false);
             WriteWitnessCache(walletdb);
         }
     }
@@ -780,7 +782,9 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
         // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
         assert(nWitnessCacheSize > 0);
         if (fFileBacked) {
-            CWalletDB walletdb(strWalletFile);
+            // Do not flush the wallet here for performance reasons
+            // this is safe, as in case of a crash, we rescan the necessary blocks on startup through our SetBestChain-mechanism
+            CWalletDB walletdb(strWalletFile, "r+", false);
             WriteWitnessCache(walletdb);
         }
     }
