@@ -271,10 +271,16 @@ uint64_t komodo_paxtotal()
                 {
                     //if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
                     //bitcoin_address(coinaddr,addrtype,rmd160,20);
-                    checktoshis = komodo_paxprice(&seed,pax->height,pax->source,(char *)"KMD",(uint64_t)pax->fiatoshis);
-                    if ( checktoshis != pax->komodoshis )
-                        pax->marked = pax->height;
-                    else printf("got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
+                    if ( (checktoshis= komodo_paxprice(&seed,pax->height,pax->source,(char *)"KMD",(uint64_t)pax->fiatoshis)) != 0 )
+                    {
+                        if ( checktoshis != pax->komodoshis )
+                            pax->marked = pax->height;
+                        else if ( pax->validated == 0 )
+                        {
+                            pax->validated = pax->komodoshis;
+                            printf("got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
+                        }
+                    }
                 }
             }
         }
@@ -289,7 +295,13 @@ uint64_t komodo_paxtotal()
             if ( pax->marked == 0 )
             {
                 if ( komodo_is_issuer() != 0 )
-                    total += pax->fiatoshis;
+                {
+                    if ( pax->validated != 0 ) // but what to do with 'W' 'A' and 'X' variants?
+                    {
+                        total += pax->fiatoshis;
+                        pax->ready = 1;
+                    }
+                }
                 else if ( pax->approved != 0 )
                 {
                     if ( pax->validated != 0 )
@@ -326,7 +338,7 @@ int32_t komodo_pending_withdraws(char *opretstr)
     HASH_ITER(hh,PAX,pax,tmp)
     {
         //printf("pax %s marked.%u approved.%u\n",pax->symbol,pax->marked,pax->approved);
-        if ( pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 )
+        if ( pax->type == 'W' && pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 && pax->validated != 0 )
         {
             // add 'A' opreturn entry
             if ( len == 0 )
@@ -460,7 +472,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         {
             for (i=1; i<n-1; i++)
             {
-                if ( (pax= komodo_paxfinds(txids[i-1],vouts[i-1])) != 0 )
+                if ( (pax= komodo_paxfinds(txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
                 {
                     pax->type = opcode;
                     if ( opcode == 'I' && pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis )
@@ -472,7 +484,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     {
                         if ( pax->marked != 0 && height >= 80820 )
                         {
-                            printf("%c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
+                            printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
                             errs++;
                         } else matched++;
                     }
@@ -481,7 +493,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         for (j=0; j<32; j++)
                             printf("%02x",((uint8_t *)&txids[i-1])[j]);
                         printf(" cant paxfind %c txid\n",opcode);
-                        printf("%c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
+                        printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
                     }
                 }
                 else
