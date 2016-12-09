@@ -270,7 +270,7 @@ uint64_t komodo_paxtotal()
                 else if ( pax->type == 'W' )
                 {
                     //if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
-                    bitcoin_address(coinaddr,addrtype,rmd160,20);
+                    //bitcoin_address(coinaddr,addrtype,rmd160,20);
                     checktoshis = komodo_paxprice(&seed,pax->height,pax->source,(char *)"KMD",(uint64_t)pax->fiatoshis);
 
                         printf("got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
