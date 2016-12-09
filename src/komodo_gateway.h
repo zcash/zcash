@@ -305,7 +305,10 @@ uint64_t komodo_paxtotal()
                 else if ( pax->approved != 0 )
                 {
                     if ( pax->validated != 0 )
+                    {
                         total += pax->komodoshis;
+                        pax->ready = 1;
+                    }
                     else
                     {
                         seed = 0;
@@ -338,7 +341,7 @@ int32_t komodo_pending_withdraws(char *opretstr)
     HASH_ITER(hh,PAX,pax,tmp)
     {
         //printf("pax %s marked.%u approved.%u\n",pax->symbol,pax->marked,pax->approved);
-        if ( pax->type == 'W' && pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 && pax->validated != 0 )
+        if ( pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 && pax->validated != 0 )
         {
             // add 'A' opreturn entry
             if ( len == 0 )
@@ -384,7 +387,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             printf("miner: skip %s %.8f when avail %.8f\n",symbol,dstr(pax->fiatoshis),dstr(available));
             continue;
         }
-        if ( pax->marked != 0 )
+        if ( pax->marked != 0 || (pax->type != 'D' && pax->type != 'A') || pax->ready == 0 )
             continue;
         if ( strcmp(pax->symbol,symbol) != 0 || pax->validated == 0 )
         {
@@ -482,19 +485,11 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     }
                     if ( ((opcode == 'I' && (pax->fiatoshis == 0 || pax->fiatoshis == block.vtx[0].vout[i].nValue)) || (opcode == 'X' && (pax->komodoshis == 0 || pax->komodoshis == block.vtx[0].vout[i].nValue))) )
                     {
-                        if ( pax->marked != 0 )
+                        if ( pax->marked != 0 && height >= 80820 )
                         {
-                            if ( pax->marked != height && height >= 80820 )
-                            {
-                                printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
-                                errs++;
-                            } else matched++;
-                        }
-                        else
-                        {
-                            matched++;
-                            pax->marked = height;
-                        }
+                            printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
+                            errs++;
+                        } else matched++;
                     }
                     else
                     {
