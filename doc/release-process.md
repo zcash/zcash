@@ -59,10 +59,9 @@ In `configure.ac` and `clientversion.h`:
 
 ### B2. Write release notes
 
-git shortlog helps a lot, for example:
+Run the release-notes.py script to generate release notes and update authors.md file. For example:
 
-    $ git shortlog --no-merges v${ZCASH_RELEASE_PREV}..HEAD \
-        > ./doc/release-notes/release-notes-${ZCASH_RELEASE}.md
+    $ python zcutil/release-notes.py --version $ZCASH_RELEASE
 
 Update the Debian package changelog:
 
