@@ -2454,8 +2454,7 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
 
     JSDescription samplejoinsplit;
 
-    if (benchmarktype == "verifyjoinsplit" ||
-            benchmarktype == "trydecryptnotes") {
+    if (benchmarktype == "verifyjoinsplit") {
         CDataStream ss(ParseHexV(params[2].get_str(), "js"), SER_NETWORK, PROTOCOL_VERSION);
         ss >> samplejoinsplit;
     }
@@ -2482,7 +2481,8 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         } else if (benchmarktype == "validatelargetx") {
             sample_times.push_back(benchmark_large_tx());
         } else if (benchmarktype == "trydecryptnotes") {
-            sample_times.push_back(benchmark_try_decrypt_notes(samplejoinsplit));
+            int nAddrs = params[2].get_int();
+            sample_times.push_back(benchmark_try_decrypt_notes(nAddrs));
         } else if (benchmarktype == "incnotewitnesses") {
             int nTxs = params[2].get_int();
             sample_times.push_back(benchmark_increment_note_witnesses(nTxs));
