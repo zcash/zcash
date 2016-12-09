@@ -542,11 +542,6 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
     RenameThread("zcash-loadblk");
     // -reindex
     if (fReindex) {
-#ifdef ENABLE_WALLET
-        if (pwalletMain) {
-            pwalletMain->ClearNoteWitnessCache();
-        }
-#endif
         CImportingNow imp;
         int nFile = 0;
         while (true) {
@@ -1387,7 +1382,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
         CBlockIndex *pindexRescan = chainActive.Tip();
         if (GetBoolArg("-rescan", false))
+        {
+            pwalletMain->ClearNoteWitnessCache();
             pindexRescan = chainActive.Genesis();
+        }
         else
         {
             CWalletDB walletdb(strWalletFile);

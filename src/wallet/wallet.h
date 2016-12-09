@@ -636,35 +636,40 @@ protected:
     void DecrementNoteWitnesses(const CBlockIndex* pindex);
 
     template <typename WalletDB>
-    void WriteWitnessCache(WalletDB& walletdb) {
+    void SetBestChainINTERNAL(WalletDB& walletdb, const CBlockLocator& loc) {
         if (!walletdb.TxnBegin()) {
             // This needs to be done atomically, so don't do it at all
-            LogPrintf("WriteWitnessCache(): Couldn't start atomic write\n");
+            LogPrintf("SetBestChain(): Couldn't start atomic write\n");
             return;
         }
         try {
             for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
                 if (!walletdb.WriteTx(wtxItem.first, wtxItem.second)) {
-                    LogPrintf("WriteWitnessCache(): Failed to write CWalletTx, aborting atomic write\n");
+                    LogPrintf("SetBestChain(): Failed to write CWalletTx, aborting atomic write\n");
                     walletdb.TxnAbort();
                     return;
                 }
             }
             if (!walletdb.WriteWitnessCacheSize(nWitnessCacheSize)) {
-                LogPrintf("WriteWitnessCache(): Failed to write nWitnessCacheSize, aborting atomic write\n");
+                LogPrintf("SetBestChain(): Failed to write nWitnessCacheSize, aborting atomic write\n");
+                walletdb.TxnAbort();
+                return;
+            }
+            if (!walletdb.WriteBestBlock(loc)) {
+                LogPrintf("SetBestChain(): Failed to write best block, aborting atomic write\n");
                 walletdb.TxnAbort();
                 return;
             }
         } catch (const std::exception &exc) {
             // Unexpected failure
-            LogPrintf("WriteWitnessCache(): Unexpected error during atomic write:\n");
+            LogPrintf("SetBestChain(): Unexpected error during atomic write:\n");
             LogPrintf("%s\n", exc.what());
             walletdb.TxnAbort();
             return;
         }
         if (!walletdb.TxnCommit()) {
             // Couldn't commit all to db, but in-memory state is fine
-            LogPrintf("WriteWitnessCache(): Couldn't commit atomic write\n");
+            LogPrintf("SetBestChain(): Couldn't commit atomic write\n");
             return;
         }
     }
@@ -954,6 +959,7 @@ public:
     CAmount GetCredit(const CTransaction& tx, const isminefilter& filter) const;
     CAmount GetChange(const CTransaction& tx) const;
     void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, ZCIncrementalMerkleTree tree, bool added);
+    /** Saves witness caches and best block locator to disk. */
     void SetBestChain(const CBlockLocator& loc);
 
     DBErrors LoadWallet(bool& fFirstRunRet);
