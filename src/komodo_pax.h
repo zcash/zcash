@@ -444,7 +444,7 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
                 else return(0);
             }
         }
-    } else printf("paxprice invalid base.%s %d, rel.%s %d\n",base,baseid,rel,relid);
+    } //else printf("paxprice invalid base.%s %d, rel.%s %d\n",base,baseid,rel,relid);
     return(0);
 }
 
