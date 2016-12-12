@@ -109,6 +109,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 uint64_t komodo_paxtotal();
+int32_t komodo_baseid(char *origbase);
 int32_t komodo_is_issuer();
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
@@ -127,7 +128,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         while ( KOMODO_ON_DEMAND == 0 )
         {
             deposits = komodo_paxtotal();
-            if ( KOMODO_INITDONE == 0 || (isrealtime= komodo_isrealtime(&kmdheight)) == 0 )
+            if ( KOMODO_INITDONE == 0 || komodo_baseid(ASSETCHAINS_SYMBOL) < 0 || (isrealtime= komodo_isrealtime(&kmdheight)) == 0 )
             {
                 //fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f ht.%d\n",KOMODO_INITDONE,isrealtime,(double)deposits/COIN,kmdheight);
             }
