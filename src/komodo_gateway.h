@@ -247,6 +247,8 @@ uint64_t komodo_paxtotal()
     {
         HASH_ITER(hh,PAX,pax,tmp)
         {
+            if ( pax->marked != 0 )
+                continue;
             if ( pax->type == 'A' || pax->type == 'D' || pax->type == 'X' )
                 str = pax->symbol;
             else str = pax->source;
@@ -289,6 +291,8 @@ uint64_t komodo_paxtotal()
     HASH_ITER(hh,PAX,pax,tmp)
     {
         pax->ready = 0;
+        if ( pax->marked != 0 )
+            continue;
         //printf("pax.%s marked.%d %.8f -> %.8f\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         if ( strcmp(symbol,pax->symbol) == 0 )
         {
