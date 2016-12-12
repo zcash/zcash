@@ -889,7 +889,7 @@ void komodo_passport_iteration()
                 fclose(fp);
             } //else fprintf(stderr,"%s open error RT\n",base);
         }
-        else if ( 0 )
+        else 
         {
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
             if ( (fp= fopen(fname,"wb")) != 0 )
