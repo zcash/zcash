@@ -344,7 +344,7 @@ int32_t komodo_pending_withdraws(char *opretstr)
         return(0);
     HASH_ITER(hh,PAX,pax,tmp)
     {
-        //printf("pax %s marked.%u approved.%u\n",pax->symbol,pax->marked,pax->approved);
+        printf("pax %s marked.%u approved.%u\n",pax->symbol,pax->marked,pax->approved);
         if ( pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 && pax->validated != 0 )
         {
             // add 'A' opreturn entry
@@ -835,8 +835,7 @@ void komodo_passport_iteration()
 {
     static long lastpos[34]; static char userpass[33][1024];
     FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3]; cJSON *infoobj,*result; uint64_t RTmask = 0;
-    printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
-    
+    //printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
     while ( KOMODO_INITDONE == 0 )
     {
         fprintf(stderr,"PASSPORT iteration waiting for KOMODO_INITDONE\n");
@@ -854,7 +853,7 @@ void komodo_passport_iteration()
             return;
         }
     }
-    printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
+    //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=32; baseid>=0; baseid--)
     {
         sp = 0;
@@ -922,6 +921,6 @@ void komodo_passport_iteration()
     komodo_paxtotal();
     refsp->RTmask = RTmask;
     KOMODO_PASSPORT_INITDONE = 1;
-    printf("done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
+    //printf("done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
 }
 
