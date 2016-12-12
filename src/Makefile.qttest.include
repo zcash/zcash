@@ -3,9 +3,9 @@ TESTS += qt/test/test_bitcoin-qt
 
 TEST_QT_MOC_CPP = qt/test/moc_uritests.cpp
 
-#if ENABLE_WALLET
+if ENABLE_WALLET
 TEST_QT_MOC_CPP += qt/test/moc_paymentservertests.cpp
-#endif
+endif
 
 TEST_QT_H = \
   qt/test/uritests.h \
