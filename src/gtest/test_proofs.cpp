@@ -336,6 +336,29 @@ TEST(proofs, zksnark_serializes_properly)
     auto example = libsnark::generate_r1cs_example_with_field_input<curve_Fr>(250, 4);
     example.constraint_system.swap_AB_if_beneficial();
     auto kp = libsnark::r1cs_ppzksnark_generator<curve_pp>(example.constraint_system);
+    auto vkprecomp = libsnark::r1cs_ppzksnark_verifier_process_vk(kp.vk);
+
+    for (size_t i = 0; i < 20; i++) {
+        auto badproof = ZCProof::random_invalid();
+        auto proof = badproof.to_libsnark_proof<libsnark::r1cs_ppzksnark_proof<curve_pp>>();
+        
+        auto verifierEnabled = ProofVerifier::Strict();
+        auto verifierDisabled = ProofVerifier::Disabled();
+        // This verifier should catch the bad proof
+        ASSERT_FALSE(verifierEnabled.check(
+            kp.vk,
+            vkprecomp,
+            example.primary_input,
+            proof
+        ));
+        // This verifier won't!
+        ASSERT_TRUE(verifierDisabled.check(
+            kp.vk,
+            vkprecomp,
+            example.primary_input,
+            proof
+        ));
+    }
 
     for (size_t i = 0; i < 20; i++) {
         auto proof = libsnark::r1cs_ppzksnark_prover<curve_pp>(
@@ -344,6 +367,23 @@ TEST(proofs, zksnark_serializes_properly)
             example.auxiliary_input,
             example.constraint_system
         );
+
+        {
+            auto verifierEnabled = ProofVerifier::Strict();
+            auto verifierDisabled = ProofVerifier::Disabled();
+            ASSERT_TRUE(verifierEnabled.check(
+                kp.vk,
+                vkprecomp,
+                example.primary_input,
+                proof
+            ));
+            ASSERT_TRUE(verifierDisabled.check(
+                kp.vk,
+                vkprecomp,
+                example.primary_input,
+                proof
+            ));
+        }
 
         ASSERT_TRUE(libsnark::r1cs_ppzksnark_verifier_strong_IC<curve_pp>(
             kp.vk,

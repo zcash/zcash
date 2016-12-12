@@ -247,6 +247,8 @@ uint64_t komodo_paxtotal()
     {
         HASH_ITER(hh,PAX,pax,tmp)
         {
+            if ( pax->marked != 0 )
+                continue;
             if ( pax->type == 'A' || pax->type == 'D' || pax->type == 'X' )
                 str = pax->symbol;
             else str = pax->source;
@@ -269,7 +271,6 @@ uint64_t komodo_paxtotal()
                 }
                 else if ( pax->type == 'W' )
                 {
-                    //if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
                     //bitcoin_address(coinaddr,addrtype,rmd160,20);
                     if ( (checktoshis= komodo_paxprice(&seed,pax->height,pax->source,(char *)"KMD",(uint64_t)pax->fiatoshis)) != 0 )
                     {
@@ -278,7 +279,8 @@ uint64_t komodo_paxtotal()
                         else if ( pax->validated == 0 )
                         {
                             pax->validated = pax->komodoshis;
-                            printf("got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
+                            if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
+                                printf("got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
                         }
                     }
                 }
@@ -289,6 +291,8 @@ uint64_t komodo_paxtotal()
     HASH_ITER(hh,PAX,pax,tmp)
     {
         pax->ready = 0;
+        if ( pax->marked != 0 )
+            continue;
         //printf("pax.%s marked.%d %.8f -> %.8f\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         if ( strcmp(symbol,pax->symbol) == 0 )
         {
@@ -831,6 +835,8 @@ void komodo_passport_iteration()
 {
     static long lastpos[34]; static char userpass[33][1024];
     FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3]; cJSON *infoobj,*result; uint64_t RTmask = 0;
+    //printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
+    
     while ( KOMODO_INITDONE == 0 )
     {
         fprintf(stderr,"PASSPORT iteration waiting for KOMODO_INITDONE\n");
@@ -913,5 +919,6 @@ void komodo_passport_iteration()
     komodo_paxtotal();
     refsp->RTmask = RTmask;
     KOMODO_PASSPORT_INITDONE = 1;
+    //printf("done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
 }
 

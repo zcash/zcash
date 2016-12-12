@@ -62,6 +62,7 @@ public:
     virtual void saveProvingKey(std::string path) = 0;
     virtual void loadVerifyingKey(std::string path) = 0;
     virtual void saveVerifyingKey(std::string path) = 0;
+    virtual void saveR1CS(std::string path) = 0;
 
     virtual ZCProof prove(
         const boost::array<JSInput, NumInputs>& inputs,
@@ -82,6 +83,7 @@ public:
 
     virtual bool verify(
         const ZCProof& proof,
+        ProofVerifier& verifier,
         const uint256& pubKeyHash,
         const uint256& randomSeed,
         const boost::array<uint256, NumInputs>& hmacs,

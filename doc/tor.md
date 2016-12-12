@@ -18,7 +18,7 @@ outgoing connections be anonymized, but more is possible.
 	-proxy=ip:port  Set the proxy server. If SOCKS5 is selected (default), this proxy
 	                server will be used to try to reach .onion addresses as well.
 
-	-onion=ip:port  Set the proxy server to use for tor hidden services. You do not
+	-onion=ip:port  Set the proxy server to use for Tor hidden services. You do not
 	                need to set this if it's the same as -proxy. You can use -noonion
 	                to explicitly disable access to hidden service.
 

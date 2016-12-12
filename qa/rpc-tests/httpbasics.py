@@ -38,13 +38,9 @@ class HTTPBasicsTest (BitcoinTestFramework):
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         out1 = conn.getresponse().read();
         assert_equal('"error":null' in out1, True)
-        assert_equal(conn.sock!=None, True) #according to http/1.1 connection must still be open!
-        
-        #send 2nd request without closing connection
-        conn.request('POST', '/', '{"method": "getchaintips"}', headers)
-        out2 = conn.getresponse().read();
-        assert_equal('"error":null' in out1, True) #must also response with a correct json-rpc message
-        assert_equal(conn.sock!=None, True) #according to http/1.1 connection must still be open!
+
+        # TODO #1856: Re-enable support for persistent connections.
+        assert_equal(conn.sock!=None, False)
         conn.close()
         
         #same should be if we add keep-alive because this should be the std. behaviour
@@ -55,13 +51,9 @@ class HTTPBasicsTest (BitcoinTestFramework):
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         out1 = conn.getresponse().read();
         assert_equal('"error":null' in out1, True)
-        assert_equal(conn.sock!=None, True) #according to http/1.1 connection must still be open!
-        
-        #send 2nd request without closing connection
-        conn.request('POST', '/', '{"method": "getchaintips"}', headers)
-        out2 = conn.getresponse().read();
-        assert_equal('"error":null' in out1, True) #must also response with a correct json-rpc message
-        assert_equal(conn.sock!=None, True) #according to http/1.1 connection must still be open!
+
+        # TODO #1856: Re-enable support for persistent connections.
+        assert_equal(conn.sock!=None, False)
         conn.close()
         
         #now do the same with "Connection: close"
@@ -96,7 +88,10 @@ class HTTPBasicsTest (BitcoinTestFramework):
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         out1 = conn.getresponse().read();
         assert_equal('"error":null' in out1, True)
-        assert_equal(conn.sock!=None, True) #connection must be closed because bitcoind should use keep-alive by default
+
+        # TODO #1856: Re-enable support for persistent connections.
+        assert_equal(conn.sock!=None, False)
+        conn.close()
         
 if __name__ == '__main__':
     HTTPBasicsTest ().main ()
