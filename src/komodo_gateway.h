@@ -845,11 +845,14 @@ void komodo_passport_iteration()
     refsp = komodo_stateptr(symbol,dest);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 33;
-    else refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1; // illegal base -> baseid.-1 -> 0
-    if ( refid == 0 )
+    else
     {
-        KOMODO_PASSPORT_INITDONE = 1;
-        return;
+        refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1; // illegal base -> baseid.-1 -> 0
+        if ( refid == 0 )
+        {
+            KOMODO_PASSPORT_INITDONE = 1;
+            return;
+        }
     }
     //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=32; baseid>=0; baseid--)
