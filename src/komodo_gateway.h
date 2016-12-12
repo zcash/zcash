@@ -362,6 +362,8 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[16384],data[16384]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t available,deposited,issued,withdrawn,approved,redeemed,mask;
     sp = komodo_stateptr(symbol,dest);
     strcpy(symbol,base);
+    if ( komodo_baseid(base) < 0 )
+        return(0);
     PENDING_KOMODO_TX = 0;
     if ( tokomodo == 0 )
     {
@@ -468,6 +470,15 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     {
         strcpy(symbol,ASSETCHAINS_SYMBOL);
         opcode = 'I';
+        if ( komodo_baseid(symbol) < 0 )
+        {
+            if ( block.vtx[0].vout.size() != 1 )
+            {
+                printf("%s has more than one coinbase?\n",symbol);
+                return(-1);
+            }
+            return(0);
+        }
     }
     if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
     {
@@ -551,6 +562,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 {
     uint8_t rmd160[20],rmd160s[64*20],addrtype,shortflag,pubkey33[33]; int32_t didstats,i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fiatoshis,komodoshis,checktoshis,values[64],srcvalues[64]; struct pax_transaction *pax,*pax2; struct komodo_state *basesp; double diff;
     const char *typestr = "unknown";
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        return("komodo");
+    else if ( komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
+        return("assetchain");
     memset(baseids,0xff,sizeof(baseids));
     memset(values,0,sizeof(values));
     memset(srcvalues,0,sizeof(srcvalues));
@@ -825,6 +840,11 @@ void komodo_passport_iteration()
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 33;
     else refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1; // illegal base -> baseid.-1 -> 0
+    if ( refid == 0 )
+    {
+        KOMODO_PASSPORT_INITDONE = 1;
+        return;
+    }
     //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=32; baseid>=0; baseid--)
     {
