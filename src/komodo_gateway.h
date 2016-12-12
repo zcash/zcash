@@ -353,7 +353,7 @@ int32_t komodo_pending_withdraws(char *opretstr)
     if ( len > 0 )
         init_hexbytes_noT(opretstr,opretbuf,len);
     else opretstr[0] = 0;
-    fprintf(stderr,"komodo_pending_withdraws len.%d PAXTOTAL %.8f\n",len,dstr(komodo_paxtotal()));
+    //fprintf(stderr,"komodo_pending_withdraws len.%d PAXTOTAL %.8f\n",len,dstr(komodo_paxtotal()));
     return(len);
 }
 
