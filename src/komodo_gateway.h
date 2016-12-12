@@ -269,7 +269,6 @@ uint64_t komodo_paxtotal()
                 }
                 else if ( pax->type == 'W' )
                 {
-                    //if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
                     //bitcoin_address(coinaddr,addrtype,rmd160,20);
                     if ( (checktoshis= komodo_paxprice(&seed,pax->height,pax->source,(char *)"KMD",(uint64_t)pax->fiatoshis)) != 0 )
                     {
@@ -278,7 +277,8 @@ uint64_t komodo_paxtotal()
                         else if ( pax->validated == 0 )
                         {
                             pax->validated = pax->komodoshis;
-                            printf("got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
+                            if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
+                                printf("got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
                         }
                     }
                 }
@@ -842,7 +842,7 @@ void komodo_passport_iteration()
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 33;
     else refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1; // illegal base -> baseid.-1 -> 0
-    //if ( refid == 0 )
+    if ( refid == 0 )
     {
         KOMODO_PASSPORT_INITDONE = 1;
         return;
@@ -889,7 +889,7 @@ void komodo_passport_iteration()
                 fclose(fp);
             } //else fprintf(stderr,"%s open error RT\n",base);
         }
-        else
+        else if ( 0 )
         {
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
             if ( (fp= fopen(fname,"wb")) != 0 )
@@ -912,7 +912,7 @@ void komodo_passport_iteration()
         if ( sp != 0 && isrealtime == 0 )
             refsp->RTbufs[0][2] = 0;
     }
-    komodo_paxtotal();
+    //komodo_paxtotal();
     refsp->RTmask = RTmask;
     KOMODO_PASSPORT_INITDONE = 1;
     //printf("done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
