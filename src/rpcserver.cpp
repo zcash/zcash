@@ -309,6 +309,8 @@ static const CRPCCommand vRPCCommands[] =
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
     { "mining",             "getmininginfo",          &getmininginfo,          true  },
+    { "mining",             "getlocalsolps",          &getlocalsolps,          true  },
+    { "mining",             "getnetworksolps",        &getnetworksolps,        true  },
     { "mining",             "getnetworkhashps",       &getnetworkhashps,       true  },
     { "mining",             "prioritisetransaction",  &prioritisetransaction,  true  },
     { "mining",             "submitblock",            &submitblock,            true  },
@@ -335,6 +337,7 @@ static const CRPCCommand vRPCCommands[] =
     { "util",               "verifymessage",          &verifymessage,          true  },
     { "util",               "estimatefee",            &estimatefee,            true  },
     { "util",               "estimatepriority",       &estimatepriority,       true  },
+    { "util",               "z_validateaddress",      &z_validateaddress,      true  }, /* uses wallet if enabled */
 
     /* Not shown in help */
     { "hidden",             "invalidateblock",        &invalidateblock,        true  },
@@ -1034,9 +1037,15 @@ void ServiceConnection(AcceptedConnection *conn)
         // Read HTTP message headers and body
         ReadHTTPMessage(conn->stream(), mapHeaders, strRequest, nProto, MAX_SIZE);
 
+        // TODO #1856: Re-enable support for persistent connections.
+        // We have disabled support for HTTP Keep-Alive until resolution of #1680, upstream rpc deadlock.
+        // Close connection immediately.
+        fRun = false;
+        /*
         // HTTP Keep-Alive is false; close connection immediately
         if ((mapHeaders["connection"] == "close") || (!GetBoolArg("-rpckeepalive", true)))
             fRun = false;
+        */
 
         // Process via JSON-RPC API
         if (strURI == "/") {

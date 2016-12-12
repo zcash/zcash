@@ -243,6 +243,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
                 dPriority += (double)nValueIn * nConf;
             }
+            nTotalIn += tx.GetJoinSplitValueIn();
+
             if (fMissingInputs) continue;
 
             // Priority is sum(valuein * age) / modified_txsize
@@ -510,7 +512,7 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
     if (!ProcessNewBlock(chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
         return error("KomodoMiner: ProcessNewBlock, block not accepted");
 
-    minedBlocks.increment();
+    TrackMinedBlock(pblock->GetHash());
 
     return true;
 }
@@ -785,11 +787,13 @@ void static BitcoinMiner(CWallet *pwallet)
     }
     catch (const boost::thread_interrupted&)
     {
+        c.disconnect();
         LogPrintf("KomodoMiner terminated\n");
         throw;
     }
     catch (const std::runtime_error &e)
     {
+        c.disconnect();
         LogPrintf("KomodoMiner runtime error: %s\n", e.what());
         return;
     }

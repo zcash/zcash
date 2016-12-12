@@ -295,13 +295,59 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
     BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress tnRZ8bPq2pff3xBWhTJhNkVUkm2uhzksDeW5PvEa7aFKGT9Qi3YgTALZfjaY4jU3HLVKBtHdSXxoPoLA3naMPcHBcY88FcF 1"), runtime_error);
 }
 
+/**
+ * This test covers RPC command z_validateaddress
+ */
+BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateaddress)
+{
+    SelectParams(CBaseChainParams::MAIN);
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    Value retValue;
+
+    // Check number of args
+    BOOST_CHECK_THROW(CallRPC("z_validateaddress"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_validateaddress toomany args"), runtime_error);
+
+    // Wallet should be empty
+    std::set<libzcash::PaymentAddress> addrs;
+    pwalletMain->GetPaymentAddresses(addrs);
+    BOOST_CHECK(addrs.size()==0);
+
+    // This address is not valid, it belongs to another network
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateaddress ztaaga95QAPyp1kSQ1hD2kguCpzyMHjxWZqaYDEkzbvo7uYQYAw2S8X4Kx98AvhhofMtQL8PAXKHuZsmhRcanavKRKmdCzk"));
+    Object resultObj = retValue.get_obj();
+    bool b = find_value(resultObj, "isvalid").get_bool();
+    BOOST_CHECK_EQUAL(b, false);
+
+    // This address is valid, but the spending key is not in this wallet
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateaddress zcfA19SDAKRYHLoRDoShcoz4nPohqWxuHcqg8WAxsiB2jFrrs6k7oSvst3UZvMYqpMNSRBkxBsnyjjngX5L55FxMzLKach8"));
+    resultObj = retValue.get_obj();
+    b = find_value(resultObj, "isvalid").get_bool();
+    BOOST_CHECK_EQUAL(b, true);
+    b = find_value(resultObj, "ismine").get_bool();
+    BOOST_CHECK_EQUAL(b, false);
+
+    // Let's import a spending key to the wallet and validate its payment address
+    BOOST_CHECK_NO_THROW(CallRPC("z_importkey SKxoWv77WGwFnUJitQKNEcD636bL4X5Gd6wWmgaA4Q9x8jZBPJXT"));
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateaddress zcWsmqT4X2V4jgxbgiCzyrAfRT1vi1F4sn7M5Pkh66izzw8Uk7LBGAH3DtcSMJeUb2pi3W4SQF8LMKkU2cUuVP68yAGcomL"));
+    resultObj = retValue.get_obj();
+    b = find_value(resultObj, "isvalid").get_bool();
+    BOOST_CHECK_EQUAL(b, true);
+    b = find_value(resultObj, "ismine").get_bool();
+    BOOST_CHECK_EQUAL(b, true);
+    BOOST_CHECK_EQUAL(find_value(resultObj, "payingkey").get_str(), "f5bb3c888ccc9831e3f6ba06e7528e26a312eec3acc1823be8918b6a3a5e20ad");
+    BOOST_CHECK_EQUAL(find_value(resultObj, "transmissionkey").get_str(), "7a58c7132446564e6b810cf895c20537b3528357dc00150a8e201f491efa9c1a");
+}
+
 /*
  * This test covers RPC command z_exportwallet
  */
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    
+
     // wallet should be empty
     std::set<libzcash::PaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
@@ -774,7 +820,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
 
     BOOST_CHECK_THROW(CallRPC("z_sendmany"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_sendmany toofewargs"), runtime_error);
-    BOOST_CHECK_THROW(CallRPC("z_sendmany too many args here"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_sendmany just too many args here"), runtime_error);
 
     // bad from address
     BOOST_CHECK_THROW(CallRPC("z_sendmany "
@@ -793,6 +839,27 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
             "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
             "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0},"
             " {\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":12.0} ]"
+            ), runtime_error);
+
+    // invalid fee amount, cannot be negative
+    BOOST_CHECK_THROW(CallRPC("z_sendmany "
+            "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0}] "
+            "1 -0.0001"
+            ), runtime_error);
+
+    // invalid fee amount, bigger than MAX_MONEY
+    BOOST_CHECK_THROW(CallRPC("z_sendmany "
+            "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0}] "
+            "1 21000001"
+            ), runtime_error);
+
+    // fee amount is bigger than sum of outputs
+    BOOST_CHECK_THROW(CallRPC("z_sendmany "
+            "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0}] "
+            "1 50.00000001"
             ), runtime_error);
 
     // memo bigger than allowed length of ZC_MEMO_SIZE
