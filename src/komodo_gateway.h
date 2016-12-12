@@ -831,7 +831,7 @@ void komodo_passport_iteration()
 {
     static long lastpos[34]; static char userpass[33][1024];
     FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3]; cJSON *infoobj,*result; uint64_t RTmask = 0;
-    printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
+    //printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
     
     while ( KOMODO_INITDONE == 0 )
     {
@@ -842,12 +842,12 @@ void komodo_passport_iteration()
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         refid = 33;
     else refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1; // illegal base -> baseid.-1 -> 0
-    if ( refid == 0 )
+    //if ( refid == 0 )
     {
         KOMODO_PASSPORT_INITDONE = 1;
         return;
     }
-    printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
+    //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=32; baseid>=0; baseid--)
     {
         sp = 0;
@@ -915,6 +915,6 @@ void komodo_passport_iteration()
     komodo_paxtotal();
     refsp->RTmask = RTmask;
     KOMODO_PASSPORT_INITDONE = 1;
-    printf("done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
+    //printf("done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
 }
 
