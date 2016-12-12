@@ -889,7 +889,7 @@ void komodo_passport_iteration()
                 fclose(fp);
             } //else fprintf(stderr,"%s open error RT\n",base);
         }
-        else 
+        else
         {
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
             if ( (fp= fopen(fname,"wb")) != 0 )
@@ -912,7 +912,7 @@ void komodo_passport_iteration()
         if ( sp != 0 && isrealtime == 0 )
             refsp->RTbufs[0][2] = 0;
     }
-    //komodo_paxtotal();
+    komodo_paxtotal();
     refsp->RTmask = RTmask;
     KOMODO_PASSPORT_INITDONE = 1;
     //printf("done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
