@@ -346,7 +346,7 @@ int32_t komodo_pending_withdraws(char *opretstr)
     {
         if ( pax->type == 'W' && pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 && pax->validated != 0 )
         {
-            printf("pax %s marked.%u approved.%u validated.%u\n",pax->symbol,pax->marked,pax->approved,pax->validated);
+            printf("pax %s marked.%u approved.%u validated.%llu\n",pax->symbol,pax->marked,pax->approved,(long long)pax->validated);
             // add 'A' opreturn entry
             if ( len == 0 )
                 opretbuf[len++] = 'A';
