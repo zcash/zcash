@@ -238,6 +238,30 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
     return(n);
 }
 
+int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t checkvalue,uint64_t seed)
+{
+    int32_t ratio;
+    if ( seed == 0 && checkvalue != 0 )
+    {
+        ratio = ((value << 6) / checkvalue);
+        if ( ratio >= 63 && ratio <= 65 )
+            return(0);
+        else
+        {
+            if ( kmdheight >= 86150 )
+                printf("ht.%d ignore mismatched %s value %lld vs checkvalue %lld -> ratio.%d\n",kmdheight,symbol,(long long)value,(long long)checkvalue,ratio);
+            return(-1);
+        }
+    }
+    else if ( checkvalue != 0 )
+    {
+        ratio = ((value << 10) / checkvalue);
+        if ( ratio >= 1023 && ratio <= 1025 )
+            return(0);
+    }
+    return(value != checkvalue);
+}
+
 uint64_t komodo_paxtotal()
 {
     struct pax_transaction *pax,*pax2,*tmp,*tmp2; char symbol[16],dest[16],*str; int32_t i,ht; int64_t checktoshis; uint64_t seed,total = 0; struct komodo_state *basesp;
@@ -274,10 +298,10 @@ uint64_t komodo_paxtotal()
                     //bitcoin_address(coinaddr,addrtype,rmd160,20);
                     if ( (checktoshis= komodo_paxprice(&seed,pax->height,pax->source,(char *)"KMD",(uint64_t)pax->fiatoshis)) != 0 )
                     {
-                        if ( checktoshis != pax->komodoshis )
+                        if ( komodo_paxcmp(pax->source,pax->height,pax->komodoshis,checktoshis,seed) == 0 )
                         {
                             pax->marked = pax->height;
-                            printf("WITHDRAW mark <- %d %.8f != %.8f\n",pax->height,dstr(checktoshis),dstr(pax->komodoshis));
+                            printf("WITHDRAW.%s mark <- %d %.8f != %.8f\n",pax->source,pax->height,dstr(checktoshis),dstr(pax->komodoshis));
                         }
                         else if ( pax->validated == 0 )
                         {
@@ -542,30 +566,6 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         //printf("opretlen.%d num.%d\n",opretlen,num);
     }
     return(0);
-}
-
-int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t checkvalue,uint64_t seed)
-{
-    int32_t ratio;
-    if ( seed == 0 && checkvalue != 0 )
-    {
-        ratio = ((value << 6) / checkvalue);
-        if ( ratio >= 63 && ratio <= 65 )
-            return(0);
-        else
-        {
-            if ( kmdheight >= 86150 )
-                printf("ht.%d ignore mismatched %s value %lld vs checkvalue %lld -> ratio.%d\n",kmdheight,symbol,(long long)value,(long long)checkvalue,ratio);
-            return(-1);
-        }
-    }
-    else if ( checkvalue != 0 )
-    {
-        ratio = ((value << 10) / checkvalue);
-        if ( ratio >= 1023 && ratio <= 1025 )
-            return(0);
-    }
-    return(value != checkvalue);
 }
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
