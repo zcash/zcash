@@ -843,7 +843,7 @@ void komodo_passport_iteration()
     //printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
     while ( KOMODO_INITDONE == 0 )
     {
-        fprintf(stderr,"PASSPORT iteration waiting for KOMODO_INITDONE\n");
+        fprintf(stderr,"[%s] PASSPORT iteration waiting for KOMODO_INITDONE\n",ASSETCHAINS_SYMBOL);
         sleep(3);
     }
     refsp = komodo_stateptr(symbol,dest);
