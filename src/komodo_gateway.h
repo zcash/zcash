@@ -353,8 +353,8 @@ int32_t komodo_pending_withdraws(char *opretstr)
                 if ( len == 0 )
                     opretbuf[len++] = 'A';
                 len += komodo_rwapproval(1,&opretbuf[len],pax);
-                printf("%s.(marked.%u approved.%d) %.8f\n",pax->source,pax->marked,pax->approved,dstr(pax->komodoshis));
             }
+            printf("%s.(kmdht.%d ht.%d marked.%u approved.%d validated %.8f) %.8f\n",pax->source,pax->height,pax->otherheight,pax->marked,pax->approved,dstr(pax->validated),dstr(pax->komodoshis));
         }
     }
     if ( len > 0 )
