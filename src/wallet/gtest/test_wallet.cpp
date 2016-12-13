@@ -51,7 +51,7 @@ public:
 
     void IncrementNoteWitnesses(const CBlockIndex* pindex,
                                 const CBlock* pblock,
-                                ZCIncrementalMerkleTree tree) {
+                                ZCIncrementalMerkleTree& tree) {
         CWallet::IncrementNoteWitnesses(pindex, pblock, tree);
     }
     void DecrementNoteWitnesses(const CBlockIndex* pindex) {
