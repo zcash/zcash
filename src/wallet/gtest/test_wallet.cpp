@@ -82,6 +82,28 @@ CWalletTx GetValidSpend(const libzcash::SpendingKey& sk,
     return GetValidSpend(*params, sk, note, value);
 }
 
+JSOutPoint CreateValidBlock(TestWallet& wallet,
+                            const libzcash::SpendingKey& sk,
+                            const CBlockIndex& index,
+                            CBlock& block,
+                            ZCIncrementalMerkleTree& tree) {
+    auto wtx = GetValidReceive(sk, 50, true);
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    mapNoteData_t noteData;
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+    CNoteData nd {sk.address(), nullifier};
+    noteData[jsoutpt] = nd;
+    wtx.SetNoteData(noteData);
+    wallet.AddToWallet(wtx, true, NULL);
+
+    block.vtx.push_back(wtx);
+    wallet.IncrementNoteWitnesses(&index, &block, tree);
+
+    return jsoutpt;
+}
+
 TEST(wallet_tests, setup_datadir_location_run_as_first_test) {
     // Get temporary and unique path for file.
     boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
@@ -572,27 +594,14 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
     wallet.AddSpendingKey(sk);
 
     {
-        // First transaction (case tested in _empty_chain)
-        auto wtx = GetValidReceive(sk, 10, true);
-        auto note = GetNote(sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
-
-        mapNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        CNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
-        wtx.SetNoteData(noteData);
-        wallet.AddToWallet(wtx, true, NULL);
-
-        std::vector<JSOutPoint> notes {jsoutpt};
-        std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
-
         // First block (case tested in _empty_chain)
-        block1.vtx.push_back(wtx);
         CBlockIndex index1(block1);
         index1.nHeight = 1;
-        wallet.IncrementNoteWitnesses(&index1, &block1, tree);
+        auto jsoutpt = CreateValidBlock(wallet, sk, index1, block1, tree);
+
         // Called to fetch anchor
+        std::vector<JSOutPoint> notes {jsoutpt};
+        std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
         wallet.GetNoteWitnesses(notes, witnesses, anchor1);
     }
 
@@ -667,47 +676,21 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
     wallet.AddSpendingKey(sk);
 
     {
-        // First transaction (case tested in _empty_chain)
-        auto wtx = GetValidReceive(sk, 10, true);
-        auto note = GetNote(sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
-
-        mapNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        CNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
-        wtx.SetNoteData(noteData);
-        wallet.AddToWallet(wtx, true, NULL);
-
         // First block (case tested in _empty_chain)
         CBlock block1;
-        block1.vtx.push_back(wtx);
         CBlockIndex index1(block1);
         index1.nHeight = 1;
-        wallet.IncrementNoteWitnesses(&index1, &block1, tree);
+        CreateValidBlock(wallet, sk, index1, block1, tree);
     }
 
     {
-        // Second transaction (case tested in _chain_tip)
-        auto wtx = GetValidReceive(sk, 50, true);
-        auto note = GetNote(sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
+        // Second block (case tested in _chain_tip)
+        index2.nHeight = 2;
+        auto jsoutpt = CreateValidBlock(wallet, sk, index2, block2, tree);
 
-        mapNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        CNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
-        wtx.SetNoteData(noteData);
-        wallet.AddToWallet(wtx, true, NULL);
-
+        // Called to fetch anchor
         std::vector<JSOutPoint> notes {jsoutpt};
         std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
-
-        // Second block (case tested in _chain_tip)
-        block2.vtx.push_back(wtx);
-        index2.nHeight = 2;
-        wallet.IncrementNoteWitnesses(&index2, &block2, tree);
-        // Called to fetch anchor
         wallet.GetNoteWitnesses(notes, witnesses, anchor2);
     }
 
@@ -765,64 +748,25 @@ TEST(wallet_tests, CachedWitnessesCleanIndex) {
     wallet.AddSpendingKey(sk);
 
     {
-        // First transaction (case tested in _empty_chain)
-        auto wtx = GetValidReceive(sk, 10, true);
-        auto note = GetNote(sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
-
-        mapNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        CNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
-        wtx.SetNoteData(noteData);
-        wallet.AddToWallet(wtx, true, NULL);
-
         // First block (case tested in _empty_chain)
-        block1.vtx.push_back(wtx);
         index1.nHeight = 1;
-        wallet.IncrementNoteWitnesses(&index1, &block1, tree);
+        CreateValidBlock(wallet, sk, index1, block1, tree);
     }
 
     {
-        // Second transaction (case tested in _chain_tip)
-        auto wtx = GetValidReceive(sk, 50, true);
-        auto note = GetNote(sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
-
-        mapNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        CNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
-        wtx.SetNoteData(noteData);
-        wallet.AddToWallet(wtx, true, NULL);
-
         // Second block (case tested in _chain_tip)
-        block2.vtx.push_back(wtx);
         index2.nHeight = 2;
-        wallet.IncrementNoteWitnesses(&index2, &block2, tree);
+        CreateValidBlock(wallet, sk, index2, block2, tree);
     }
 
     {
-        // Third transaction
-        auto wtx = GetValidReceive(sk, 20, true);
-        auto note = GetNote(sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
-
-        mapNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        CNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
-        wtx.SetNoteData(noteData);
-        wallet.AddToWallet(wtx, true, NULL);
+        // Third block
+        index3.nHeight = 3;
+        auto jsoutpt = CreateValidBlock(wallet, sk, index3, block3, tree);
 
         std::vector<JSOutPoint> notes {jsoutpt};
         std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
         uint256 anchor3;
-
-        // Third block
-        block3.vtx.push_back(wtx);
-        index3.nHeight = 3;
-        wallet.IncrementNoteWitnesses(&index3, &block3, tree);
         wallet.GetNoteWitnesses(notes, witnesses, anchor3);
 
         // Now pretend we are reindexing: the chain is cleared, and each block is
