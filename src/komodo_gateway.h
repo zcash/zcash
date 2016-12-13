@@ -851,7 +851,7 @@ void komodo_passport_iteration()
             return;
         }
     }
-    //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
+    printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=32; baseid>=0; baseid--)
     {
         sp = 0;
