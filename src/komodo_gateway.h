@@ -344,14 +344,17 @@ int32_t komodo_pending_withdraws(char *opretstr)
         return(0);
     HASH_ITER(hh,PAX,pax,tmp)
     {
-        if ( pax->type == 'W' && pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 && pax->validated != 0 )
+        if ( pax->type == 'W' )
         {
             printf("pax %s marked.%u approved.%u validated.%llu\n",pax->symbol,pax->marked,pax->approved,(long long)pax->validated);
-            // add 'A' opreturn entry
-            if ( len == 0 )
-                opretbuf[len++] = 'A';
-            len += komodo_rwapproval(1,&opretbuf[len],pax);
-            //printf("%s.(marked.%u approved.%d) %p\n",pax->source,pax->marked,pax->approved,pax);
+            if ( pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 && pax->validated != 0 )
+            {
+                // add 'A' opreturn entry
+                if ( len == 0 )
+                    opretbuf[len++] = 'A';
+                len += komodo_rwapproval(1,&opretbuf[len],pax);
+                //printf("%s.(marked.%u approved.%d) %p\n",pax->source,pax->marked,pax->approved,pax);
+            }
         }
     }
     if ( len > 0 )
