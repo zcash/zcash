@@ -353,7 +353,7 @@ int32_t komodo_pending_withdraws(char *opretstr)
                 if ( len == 0 )
                     opretbuf[len++] = 'A';
                 len += komodo_rwapproval(1,&opretbuf[len],pax);
-                //printf("%s.(marked.%u approved.%d) %p\n",pax->source,pax->marked,pax->approved,pax);
+                printf("%s.(marked.%u approved.%d) %.8f\n",pax->source,pax->marked,pax->approved,dstr(pax->komodoshis));
             }
         }
     }
