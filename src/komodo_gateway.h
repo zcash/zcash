@@ -275,7 +275,10 @@ uint64_t komodo_paxtotal()
                     if ( (checktoshis= komodo_paxprice(&seed,pax->height,pax->source,(char *)"KMD",(uint64_t)pax->fiatoshis)) != 0 )
                     {
                         if ( checktoshis != pax->komodoshis )
+                        {
                             pax->marked = pax->height;
+                            printf("WITHDRAW mark <- %d %.8f != %.8f\n",pax->height,dstr(checktoshis),dstr(pax->komodoshis));
+                        }
                         else if ( pax->validated == 0 )
                         {
                             pax->validated = pax->komodoshis;
