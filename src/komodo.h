@@ -194,7 +194,10 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
     static FILE *fp; static int32_t errs;
     struct komodo_state *sp; char fname[512],symbol[16],dest[16]; int32_t ht,func; uint8_t num,pubkeys[64][33];
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
+    {
+        KOMODO_INITDONE = (uint32_t)time(NULL);
         return;
+    }
     if ( fp == 0 )
     {
         komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"komodostate");
