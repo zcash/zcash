@@ -35,10 +35,10 @@ Wallet encryption is disabled, for several reasons:
   from the earlier issue).
 
 - We were concerned about the resistance of the algorithm used to derive wallet
-  encryption keys (inherited from Bitcoin) to dictionary attacks by a powerful
-  attacker. If and when we re-enable wallet encryption, it is likely to be with
-  a modern passphrase-based key derivation algorithm designed for greater
-  resistance to dictionary attack, such as Argon2i.
+  encryption keys (inherited from [Bitcoin](https://bitcoin.org/en/secure-your-wallet))
+  to dictionary attacks by a powerful attacker. If and when we re-enable wallet 
+  encryption, it is likely to be with a modern passphrase-based key derivation 
+  algorithm designed for greater resistance to dictionary attack, such as Argon2i.
 
 You should use full-disk encryption (or encryption of your home directory) to
 protect your wallet at rest, and should assume (even unprivileged) users who are

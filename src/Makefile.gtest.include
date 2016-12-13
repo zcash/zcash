@@ -5,7 +5,6 @@ bin_PROGRAMS += komodo-gtest
 komodo_gtest_SOURCES = \
 	gtest/main.cpp \
 	gtest/utils.cpp \
-	gtest/test_checkblock.cpp \
 	gtest/test_checktransaction.cpp \
 	gtest/json_test_vectors.cpp \
         gtest/json_test_vectors.h \
@@ -18,6 +17,7 @@ komodo_gtest_SOURCES = \
 	gtest/test_keystore.cpp \
 	gtest/test_noteencryption.cpp \
 	gtest/test_merkletree.cpp \
+	gtest/test_metrics.cpp \
 	gtest/test_pow.cpp \
 	gtest/test_random.cpp \
 	gtest/test_rpc.cpp \
@@ -26,7 +26,11 @@ komodo_gtest_SOURCES = \
 	gtest/test_txid.cpp \
 	gtest/test_libzcash_utils.cpp \
 	gtest/test_proofs.cpp \
+	gtest/test_checkblock.cpp
+if ENABLE_WALLET
+zcash_gtest_SOURCES += \
 	wallet/gtest/test_wallet.cpp
+endif
 
 komodo_gtest_CPPFLAGS = -DMULTICORE -fopenmp -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC
 

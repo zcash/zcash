@@ -99,7 +99,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 }
 
 #define ASSETCHAINS_MINHEIGHT 100
-#define ROUNDROBIN_DELAY 58
+#define ROUNDROBIN_DELAY 57
 extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE;
 extern char ASSETCHAINS_SYMBOL[16];
 extern std::string NOTARY_PUBKEY;
@@ -109,6 +109,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
 int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
 uint64_t komodo_paxtotal();
+int32_t komodo_baseid(char *origbase);
 int32_t komodo_is_issuer();
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
@@ -124,10 +125,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     if ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight >= ASSETCHAINS_MINHEIGHT )
     {
         isrealtime = komodo_isrealtime(&kmdheight);
-        while ( KOMODO_ON_DEMAND == 0 )
+        deposits = komodo_paxtotal();
+        while ( KOMODO_ON_DEMAND == 0 && deposits == 0 && (int32_t)mempool.GetTotalTxSize() == 0 )
         {
             deposits = komodo_paxtotal();
-            if ( KOMODO_INITDONE == 0 || (isrealtime= komodo_isrealtime(&kmdheight)) == 0 )
+            if ( KOMODO_INITDONE == 0 || (komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 && (isrealtime= komodo_isrealtime(&kmdheight)) == 0) )
             {
                 //fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f ht.%d\n",KOMODO_INITDONE,isrealtime,(double)deposits/COIN,kmdheight);
             }
@@ -242,6 +244,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
                 dPriority += (double)nValueIn * nConf;
             }
+            nTotalIn += tx.GetJoinSplitValueIn();
+
             if (fMissingInputs) continue;
 
             // Priority is sum(valuein * age) / modified_txsize
@@ -509,7 +513,7 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
     if (!ProcessNewBlock(chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
         return error("KomodoMiner: ProcessNewBlock, block not accepted");
 
-    minedBlocks.increment();
+    TrackMinedBlock(pblock->GetHash());
 
     return true;
 }
@@ -784,11 +788,13 @@ void static BitcoinMiner(CWallet *pwallet)
     }
     catch (const boost::thread_interrupted&)
     {
+        c.disconnect();
         LogPrintf("KomodoMiner terminated\n");
         throw;
     }
     catch (const std::runtime_error &e)
     {
+        c.disconnect();
         LogPrintf("KomodoMiner runtime error: %s\n", e.what());
         return;
     }

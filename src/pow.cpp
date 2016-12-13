@@ -146,15 +146,17 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        int32_t i;
-        for (i=31; i>=0; i--)
-            printf("%02x",((uint8_t *)&hash)[i]);
-        printf(" hash vs ");
-        for (i=31; i>=0; i--)
-            printf("%02x",((uint8_t *)&bnTarget)[i]);
-        printf(" ht.%d REWIND.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,KOMODO_REWIND,special,notaryid,height,(height % 35));
-        if ( (KOMODO_REWIND == 0 && height > 108000) || height <= KOMODO_REWIND )
+        if ( height > 110000 )
+        {
+            int32_t i;
+            for (i=31; i>=0; i--)
+                printf("%02x",((uint8_t *)&hash)[i]);
+            printf(" hash vs ");
+            for (i=31; i>=0; i--)
+                printf("%02x",((uint8_t *)&bnTarget)[i]);
+            printf(" ht.%d REWIND.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,KOMODO_REWIND,special,notaryid,height,(height % 35));
             return error("CheckProofOfWork(): hash doesn't match nBits");
+        }
     }
     return true;
 }

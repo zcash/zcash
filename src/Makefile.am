@@ -232,6 +232,8 @@ libbitcoin_server_a_SOURCES = \
 # when wallet enabled
 libbitcoin_wallet_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_wallet_a_SOURCES = \
+  utiltest.cpp \
+  utiltest.h \
   zcbenchmarks.cpp \
   zcbenchmarks.h \
   wallet/asyncrpcoperation_sendmany.cpp \
@@ -516,10 +518,10 @@ endif
 	@test -f $(PROTOC)
 	$(AM_V_GEN) $(PROTOC) --cpp_out=$(@D) --proto_path=$(abspath $(<D) $<)
 
-if ENABLE_TESTS
-include Makefile.test.include
-include Makefile.gtest.include
-endif
+#if ENABLE_TESTS
+#include Makefile.test.include
+#include Makefile.gtest.include
+#endif
 
 if ENABLE_QT
 include Makefile.qt.include

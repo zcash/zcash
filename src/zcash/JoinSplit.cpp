@@ -16,6 +16,7 @@
 #include "libsnark/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.hpp"
 
 #include "sync.h"
+#include "amount.h"
 
 using namespace libsnark;
 
@@ -24,7 +25,7 @@ namespace libzcash {
 #include "zcash/circuit/gadget.tcc"
 
 CCriticalSection cs_ParamsIO;
-CCriticalSection cs_InitializeParams;
+CCriticalSection cs_LoadKeys;
 
 template<typename T>
 void saveToFile(std::string path, T& obj) {
@@ -70,22 +71,19 @@ public:
 
     boost::optional<r1cs_ppzksnark_proving_key<ppzksnark_ppT>> pk;
     boost::optional<r1cs_ppzksnark_verification_key<ppzksnark_ppT>> vk;
+    boost::optional<r1cs_ppzksnark_processed_verification_key<ppzksnark_ppT>> vk_precomp;
     boost::optional<std::string> pkPath;
 
     JoinSplitCircuit() {}
     ~JoinSplitCircuit() {}
-
-    static void initialize() {
-        LOCK(cs_InitializeParams);
-
-        ppzksnark_ppT::init_public_params();
-    }
 
     void setProvingKeyPath(std::string path) {
         pkPath = path;
     }
 
     void loadProvingKey() {
+        LOCK(cs_LoadKeys);
+
         if (!pk) {
             if (!pkPath) {
                 throw std::runtime_error("proving key path unknown");
@@ -102,7 +100,14 @@ public:
         }
     }
     void loadVerifyingKey(std::string path) {
+        LOCK(cs_LoadKeys);
+
         loadFromFile(path, vk);
+
+        processVerifyingKey();
+    }
+    void processVerifyingKey() {
+        vk_precomp = r1cs_ppzksnark_verifier_process_vk(*vk);
     }
     void saveVerifyingKey(std::string path) {
         if (vk) {
@@ -111,22 +116,35 @@ public:
             throw std::runtime_error("cannot save verifying key; key doesn't exist");
         }
     }
+    void saveR1CS(std::string path) {
+        auto r1cs = generate_r1cs();
 
-    void generate() {
+        saveToFile(path, r1cs);
+    }
+
+    r1cs_constraint_system<FieldT> generate_r1cs() {
         protoboard<FieldT> pb;
 
         joinsplit_gadget<FieldT, NumInputs, NumOutputs> g(pb);
         g.generate_r1cs_constraints();
 
-        const r1cs_constraint_system<FieldT> constraint_system = pb.get_constraint_system();
+        return pb.get_constraint_system();
+    }
+
+    void generate() {
+        LOCK(cs_LoadKeys);
+
+        const r1cs_constraint_system<FieldT> constraint_system = generate_r1cs();
         r1cs_ppzksnark_keypair<ppzksnark_ppT> keypair = r1cs_ppzksnark_generator<ppzksnark_ppT>(constraint_system);
 
         pk = keypair.pk;
         vk = keypair.vk;
+        processVerifyingKey();
     }
 
     bool verify(
         const ZCProof& proof,
+        ProofVerifier& verifier,
         const uint256& pubKeyHash,
         const uint256& randomSeed,
         const boost::array<uint256, NumInputs>& macs,
@@ -136,7 +154,7 @@ public:
         uint64_t vpub_new,
         const uint256& rt
     ) {
-        if (!vk) {
+        if (!vk || !vk_precomp) {
             throw std::runtime_error("JoinSplit verifying key not loaded");
         }
 
@@ -155,7 +173,12 @@ public:
                 vpub_new
             );
 
-            return r1cs_ppzksnark_verifier_strong_IC<ppzksnark_ppT>(*vk, witness, r1cs_proof);
+            return verifier.check(
+                *vk,
+                *vk_precomp,
+                witness,
+                r1cs_proof
+            );
         } catch (...) {
             return false;
         }
@@ -181,8 +204,51 @@ public:
             throw std::runtime_error("JoinSplit proving key not loaded");
         }
 
-        // Compute nullifiers of inputs
+        if (vpub_old > MAX_MONEY) {
+            throw std::invalid_argument("nonsensical vpub_old value");
+        }
+
+        if (vpub_new > MAX_MONEY) {
+            throw std::invalid_argument("nonsensical vpub_new value");
+        }
+
+        uint64_t lhs_value = vpub_old;
+        uint64_t rhs_value = vpub_new;
+
         for (size_t i = 0; i < NumInputs; i++) {
+            // Sanity checks of input
+            {
+                // If note has nonzero value
+                if (inputs[i].note.value != 0) {
+                    // The witness root must equal the input root.
+                    if (inputs[i].witness.root() != rt) {
+                        throw std::invalid_argument("joinsplit not anchored to the correct root");
+                    }
+
+                    // The tree must witness the correct element
+                    if (inputs[i].note.cm() != inputs[i].witness.element()) {
+                        throw std::invalid_argument("witness of wrong element for joinsplit input");
+                    }
+                }
+
+                // Ensure we have the key to this note.
+                if (inputs[i].note.a_pk != inputs[i].key.address().a_pk) {
+                    throw std::invalid_argument("input note not authorized to spend with given key");
+                }
+
+                // Balance must be sensical
+                if (inputs[i].note.value > MAX_MONEY) {
+                    throw std::invalid_argument("nonsensical input note value");
+                }
+
+                lhs_value += inputs[i].note.value;
+
+                if (lhs_value > MAX_MONEY) {
+                    throw std::invalid_argument("nonsensical left hand size of joinsplit balance");
+                }
+            }
+
+            // Compute nullifier of input
             out_nullifiers[i] = inputs[i].nullifier();
         }
 
@@ -197,10 +263,27 @@ public:
 
         // Compute notes for outputs
         for (size_t i = 0; i < NumOutputs; i++) {
+            // Sanity checks of output
+            {
+                if (outputs[i].value > MAX_MONEY) {
+                    throw std::invalid_argument("nonsensical output value");
+                }
+
+                rhs_value += outputs[i].value;
+
+                if (rhs_value > MAX_MONEY) {
+                    throw std::invalid_argument("nonsensical right hand side of joinsplit balance");
+                }
+            }
+
             // Sample r
             uint256 r = random_uint256();
 
             out_notes[i] = outputs[i].note(phi, r, i, h_sig);
+        }
+
+        if (lhs_value != rhs_value) {
+            throw std::invalid_argument("invalid joinsplit balance");
         }
 
         // Compute the output commitments
@@ -214,7 +297,6 @@ public:
             ZCNoteEncryption encryptor(h_sig);
 
             for (size_t i = 0; i < NumOutputs; i++) {
-
                 NotePlaintext pt(out_notes[i], outputs[i].memo);
 
                 out_ciphertexts[i] = pt.encrypt(encryptor, outputs[i].addr.pk_enc);
@@ -249,9 +331,9 @@ public:
             );
         }
 
-        if (!pb.is_satisfied()) {
-            throw std::invalid_argument("Constraint system not satisfied by inputs");
-        }
+        // The constraint system must be satisfied or there is an unimplemented
+        // or incorrect sanity check above. Or the constraint system is broken!
+        assert(pb.is_satisfied());
 
         // TODO: These are copies, which is not strictly necessary.
         std::vector<FieldT> primary_input = pb.primary_input();
@@ -275,7 +357,7 @@ public:
 template<size_t NumInputs, size_t NumOutputs>
 JoinSplit<NumInputs, NumOutputs>* JoinSplit<NumInputs, NumOutputs>::Generate()
 {
-    JoinSplitCircuit<NumInputs, NumOutputs>::initialize();
+    initialize_curve_params();
     auto js = new JoinSplitCircuit<NumInputs, NumOutputs>();
     js->generate();
 
@@ -285,7 +367,7 @@ JoinSplit<NumInputs, NumOutputs>* JoinSplit<NumInputs, NumOutputs>::Generate()
 template<size_t NumInputs, size_t NumOutputs>
 JoinSplit<NumInputs, NumOutputs>* JoinSplit<NumInputs, NumOutputs>::Unopened()
 {
-    JoinSplitCircuit<NumInputs, NumOutputs>::initialize();
+    initialize_curve_params();
     return new JoinSplitCircuit<NumInputs, NumOutputs>();
 }
 

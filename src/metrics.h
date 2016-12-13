@@ -2,11 +2,13 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "uint256.h"
+
 #include <atomic>
 #include <string>
 
 struct AtomicCounter {
-    std::atomic<int> value;
+    std::atomic<uint64_t> value;
 
     AtomicCounter() : value {0} { }
 
@@ -26,7 +28,11 @@ struct AtomicCounter {
 extern AtomicCounter transactionsValidated;
 extern AtomicCounter ehSolverRuns;
 extern AtomicCounter solutionTargetChecks;
-extern AtomicCounter minedBlocks;
+
+void TrackMinedBlock(uint256 hash);
+
+void MarkStartTime();
+double GetLocalSolPS();
 
 void ConnectMetricsScreen();
 void ThreadShowMetricsScreen();
