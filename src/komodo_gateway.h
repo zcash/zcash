@@ -344,9 +344,9 @@ int32_t komodo_pending_withdraws(char *opretstr)
         return(0);
     HASH_ITER(hh,PAX,pax,tmp)
     {
-        printf("pax %s marked.%u approved.%u\n",pax->symbol,pax->marked,pax->approved);
-        if ( pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 && pax->validated != 0 )
+        if ( pax->type == 'W' && pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 && pax->validated != 0 )
         {
+            printf("pax %s marked.%u approved.%u validated.%u\n",pax->symbol,pax->marked,pax->approved,pax->validated);
             // add 'A' opreturn entry
             if ( len == 0 )
                 opretbuf[len++] = 'A';
@@ -400,7 +400,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             //printf("pax->symbol.%s != %s or null pax->validated %.8f\n",pax->symbol,symbol,dstr(pax->validated));
             continue;
         }
-        //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+        if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
             printf("pax.%s marked.%d %.8f -> %.8f\n",ASSETCHAINS_SYMBOL,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         txNew->vout.resize(numvouts+1);
         txNew->vout[numvouts].nValue = (opcode == 'I') ? pax->fiatoshis : pax->komodoshis;
@@ -854,7 +854,7 @@ void komodo_passport_iteration()
             return;
         }
     }
-    printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
+    //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=32; baseid>=0; baseid--)
     {
         sp = 0;
@@ -877,7 +877,7 @@ void komodo_passport_iteration()
                     lastpos[baseid] = ftell(fp);
                     if ( 0 && lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
                         printf("from.(%s) lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
-                } else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
+                } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                 fclose(fp);
             } else printf("error.(%s) %p\n",fname,sp);
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
