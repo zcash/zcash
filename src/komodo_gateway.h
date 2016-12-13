@@ -736,7 +736,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             if ( (pax= komodo_paxfind(txid,vout,'W')) != 0 )
             {
                 pax->type = opretbuf[0];
-                strcpy(pax->symbol,base);
+                strcpy(pax->source,base);
+                strcpy(pax->symbol,"KMD");
                 pax->height = kmdheight;
                 pax->otherheight = height;
                 pax->komodoshis = komodoshis;
