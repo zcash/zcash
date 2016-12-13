@@ -130,15 +130,24 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         if ( nonz == 0 )
             return(true); // will come back via different path with pubkey set
         special2 = komodo_is_special(height,pubkey33);
-        if ( notaryid >= 0 && ((height >= 64000 && height <= 90065) || (height % KOMODO_ELECTION_GAP) > 64) )
+        /*if ( notaryid >= 0 && ((height >= 64000 && height <= 90065) || (height % KOMODO_ELECTION_GAP) > 64) )
         {
-            //if ( special2 == -2 )
-            //    printf("height.%d special2.%d special.%d\n",height,special2,special);
             if ( (height >= 64000 && height <= 90065) || (height % KOMODO_ELECTION_GAP) == 0 || (height < 80000 && (special != 0 || special2 > 0)) || (height >= 80000 && special2 > 0) )
             {
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 flag = 1;
             }
+        }*/
+        if ( notaryid >= 0 )
+        {
+            if ( height < 80000 && (special != 0 || special2 > 0) )
+                flag = 1;
+            else if ( height >= 80000 && height < 108000 && special2 > 0 )
+                flag = 1;
+            else if ( height >= 108000 && special2 > 0 )
+                flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
+            if ( flag != 0 )
+                bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
         }
     }
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
@@ -146,7 +155,6 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( height > 110000 )
         {
             int32_t i;
             for (i=31; i>=0; i--)
@@ -155,7 +163,8 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             for (i=31; i>=0; i--)
                 printf("%02x",((uint8_t *)&bnTarget)[i]);
             printf(" ht.%d REWIND.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,KOMODO_REWIND,special,notaryid,height,(height % 35));
-            return error("CheckProofOfWork(): hash doesn't match nBits");
+            if ( height < 90000 || height > 110000 )
+                return error("CheckProofOfWork(): hash doesn't match nBits");
         }
     }
     return true;
