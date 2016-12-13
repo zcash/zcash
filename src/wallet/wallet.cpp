@@ -704,7 +704,8 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                     // If this is our note, witness it
                     if (txIsOurs) {
                         JSOutPoint jsoutpt {hash, i, j};
-                        if (mapWallet[hash].mapNoteData.count(jsoutpt)) {
+                        if (mapWallet[hash].mapNoteData.count(jsoutpt) &&
+                                mapWallet[hash].mapNoteData[jsoutpt].witnessHeight < pindex->nHeight) {
                             CNoteData* nd = &(mapWallet[hash].mapNoteData[jsoutpt]);
                             if (nd->witnesses.size() > 0) {
                                 // We think this can happen because we write out the
