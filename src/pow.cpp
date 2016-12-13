@@ -146,7 +146,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( (KOMODO_REWIND == 0 && height > 108000) || height <= KOMODO_REWIND )
+        if ( height > 108000 )
         {
             int32_t i;
             for (i=31; i>=0; i--)
