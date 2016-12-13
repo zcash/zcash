@@ -868,7 +868,8 @@ void komodo_passport_iteration()
         {
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"komodostate");
             komodo_nameset(symbol,dest,base);
-            if ( (fp= fopen(fname,"rb")) != 0 && (sp= komodo_stateptrget(symbol)) != 0 )
+            sp = komodo_stateptrget(symbol);
+            if ( (fp= fopen(fname,"rb")) != 0 && sp != 0 )
             {
                 fseek(fp,0,SEEK_END);
                 if ( ftell(fp) > lastpos[baseid] )
