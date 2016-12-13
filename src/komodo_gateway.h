@@ -577,6 +577,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     memset(kmdheights,0,sizeof(kmdheights));
     memset(otherheights,0,sizeof(otherheights));
     tokomodo = (komodo_is_issuer() == 0);
+    printf("OPRETURN[%c]\n",opretbuf[0]);
     if ( opretbuf[0] == 'D' )
     {
         tokomodo = 0;
