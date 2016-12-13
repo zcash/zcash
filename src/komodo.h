@@ -153,7 +153,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             {
                 if ( fread(opret,1,olen,fp) != olen )
                     errs++;
-                if ( 0 && matched != 0 )
+                //if ( 0 && matched != 0 )
                 {
                     int32_t i;  for (i=0; i<olen; i++)
                         printf("%02x",opret[i]);
