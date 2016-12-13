@@ -301,7 +301,7 @@ uint64_t komodo_paxtotal()
                         if ( komodo_paxcmp(pax->source,pax->height,pax->komodoshis,checktoshis,seed) == 0 )
                         {
                             pax->marked = pax->height;
-                            printf("WITHDRAW.%s mark <- %d %.8f != %.8f\n",pax->source,pax->height,dstr(checktoshis),dstr(pax->komodoshis));
+                            //printf("WITHDRAW.%s mark <- %d %.8f != %.8f\n",pax->source,pax->height,dstr(checktoshis),dstr(pax->komodoshis));
                         }
                         else if ( pax->validated == 0 )
                         {
