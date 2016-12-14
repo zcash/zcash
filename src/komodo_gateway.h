@@ -369,8 +369,8 @@ static int _paxorder(const void *a,const void *b)
 #define pax_a (*(struct pax_transaction **)a)
 #define pax_b (*(struct pax_transaction **)b)
     uint64_t aval,bval;
-    aval = pax_a->fiatoshi + pax_a->komodoshis + pax_a->height;
-    bval = pax_b->fiatoshi + pax_b->komodoshis + pax_b->height;
+    aval = pax_a->fiatoshis + pax_a->komodoshis + pax_a->height;
+    bval = pax_b->fiatoshis + pax_b->komodoshis + pax_b->height;
 	if ( bval > aval )
 		return(-1);
 	else if ( bval < aval )
