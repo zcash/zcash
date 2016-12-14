@@ -364,11 +364,28 @@ uint64_t komodo_paxtotal()
     return(total);
 }
 
-int32_t komodo_pending_withdraws(char *opretstr)
+static int _paxorder(const void *a,const void *b)
 {
-    struct pax_transaction *pax,*tmp; uint8_t opretbuf[16384]; int32_t ht,len=0; uint64_t total = 0;
+#define pax_a (*(struct pax_transaction **)a)
+#define pax_b (*(struct pax_transaction **)b)
+    uint64_t aval,bval;
+    aval = pax_a->fiatoshis + pax_a->komodoshis + pax_a->height;
+    bval = pax_b->fiatoshis + pax_b->komodoshis + pax_b->height;
+	if ( bval > aval )
+		return(-1);
+	else if ( bval < aval )
+		return(1);
+	return(0);
+#undef pax_a
+#undef pax_b
+}
+
+int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic order
+{
+    struct pax_transaction *pax,*tmp,*paxes[64]; uint8_t opretbuf[16384]; int32_t i,n,ht,len=0; uint64_t total = 0;
     if ( komodo_isrealtime(&ht) == 0 || ASSETCHAINS_SYMBOL[0] != 0 )
         return(0);
+    n = 0;
     HASH_ITER(hh,PAX,pax,tmp)
     {
         if ( pax->type == 'W' )
@@ -376,17 +393,25 @@ int32_t komodo_pending_withdraws(char *opretstr)
             //printf("pax %s marked.%u approved.%u validated.%llu\n",pax->symbol,pax->marked,pax->approved,(long long)pax->validated);
             if ( pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 && pax->validated != 0 )
             {
-                // add 'A' opreturn entry
-                if ( len == 0 )
-                    opretbuf[len++] = 'A';
-                len += komodo_rwapproval(1,&opretbuf[len],pax);
+                if ( n < sizeof(paxes)/sizeof(*paxes) )
+                    paxes[n++] = pax;
             }
             printf("%s.(kmdht.%d ht.%d marked.%u approved.%d validated %.8f) %.8f\n",pax->source,pax->height,pax->otherheight,pax->marked,pax->approved,dstr(pax->validated),dstr(pax->komodoshis));
         }
     }
-    if ( len > 0 )
-        init_hexbytes_noT(opretstr,opretbuf,len);
-    else opretstr[0] = 0;
+    opretstr[0] = 0;
+    if ( n > 0 )
+    {
+        opretbuf[len++] = 'A';
+        qsort(paxes,n,sizeof(*paxes),_paxorder);
+        for (i=0; i<n; i++)
+        {
+            if ( len < (sizeof(opretbuf)>>3)*7 )
+                len += komodo_rwapproval(1,&opretbuf[len],paxes[i]);
+        }
+        if ( len > 0 )
+            init_hexbytes_noT(opretstr,opretbuf,len);
+    }
     //fprintf(stderr,"komodo_pending_withdraws len.%d PAXTOTAL %.8f\n",len,dstr(komodo_paxtotal()));
     return(len);
 }
