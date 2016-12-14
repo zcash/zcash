@@ -396,7 +396,7 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
                 if ( n < sizeof(paxes)/sizeof(*paxes) )
                     paxes[n++] = pax;
             }
-            printf("%s.(kmdht.%d ht.%d marked.%u approved.%d validated %.8f) %.8f\n",pax->source,pax->height,pax->otherheight,pax->marked,pax->approved,dstr(pax->validated),dstr(pax->komodoshis));
+            //printf("%s.(kmdht.%d ht.%d marked.%u approved.%d validated %.8f) %.8f\n",pax->source,pax->height,pax->otherheight,pax->marked,pax->approved,dstr(pax->validated),dstr(pax->komodoshis));
         }
     }
     opretstr[0] = 0;
