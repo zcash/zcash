@@ -311,7 +311,7 @@ uint64_t komodo_paxtotal()
                         }
                         else if ( pax->validated == 0 )
                         {
-                            pax->validated = checktoshis;
+                            pax->validated = pax->komodoshis = checktoshis;
                             if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
                                 printf("got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
                         }
@@ -637,7 +637,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             if ( kmdheight <= height )
             {
                 didstats = 0;
-                if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                if ( 0 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
                 {
                     printf("(%s) (%s) kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d seed.%llx\n",ASSETCHAINS_SYMBOL,base,kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed);
                     for (i=0; i<32; i++)
