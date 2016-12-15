@@ -284,7 +284,6 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 errs++;
             //komodo_eventadd_utxo(sp,symbol,height,notaryid,txhash,voutmask,numvouts);
         }
-//#ifdef KOMODO_PAX
         else if ( pvals != 0 && numpvals > 0 )
         {
             int32_t i,nonz = 0;
@@ -304,7 +303,6 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             }
             //printf("save pvals height.%d numpvals.%d\n",height,numpvals);
         }
-//#endif
         else if ( height != 0 )
         {
             //printf("ht.%d func N ht.%d errs.%d\n",height,NOTARIZED_HEIGHT,errs);
