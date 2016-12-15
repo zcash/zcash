@@ -311,7 +311,7 @@ uint64_t komodo_paxtotal()
                         }
                         else if ( pax->validated == 0 )
                         {
-                            pax->validated = pax->komodoshis;
+                            pax->validated = pax->checktoshis;
                             if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
                                 printf("got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
                         }
