@@ -304,7 +304,7 @@ uint64_t komodo_paxtotal()
                     //bitcoin_address(coinaddr,addrtype,rmd160,20);
                     if ( (checktoshis= komodo_paxprice(&seed,pax->height,pax->source,(char *)"KMD",(uint64_t)pax->fiatoshis)) != 0 )
                     {
-                        if ( komodo_paxcmp(pax->source,pax->height,pax->komodoshis,checktoshis,seed) == 0 )
+                        if ( komodo_paxcmp(pax->source,pax->height,pax->komodoshis,checktoshis,seed) != 0 )
                         {
                             pax->marked = pax->height;
                             //printf("WITHDRAW.%s mark <- %d %.8f != %.8f\n",pax->source,pax->height,dstr(checktoshis),dstr(pax->komodoshis));
