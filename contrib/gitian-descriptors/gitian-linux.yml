@@ -1,5 +1,5 @@
 ---
-name: "zcash-1.0.3"
+name: "zcash-1.0.4"
 enable_cache: true
 distro: "debian"
 suites:
