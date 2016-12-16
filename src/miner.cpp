@@ -424,7 +424,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
         {
             fprintf(stderr,"testblockvalidity failed\n");
-            //throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+            throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
         }
     }
 
@@ -627,7 +627,7 @@ void static BitcoinMiner(CWallet *pwallet)
             } else Mining_start = 0;
             while (true)
             {
-                if ( ASSETCHAINS_SYMBOL[0] != 0 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
+                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
                 {
                     fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
                     sleep(10);
