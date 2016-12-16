@@ -43,13 +43,22 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
     for (int i = 0; i < numKeys; i++) {
         ASSERT_TRUE(pWallet->GetKeyFromPool(newKey));
         pubkeys[0] = newKey;
+        pWallet->SetAddressBook(newKey.GetID(), "", "receive");
+
         ASSERT_TRUE(pWallet->GetKeyFromPool(newKey));
         pubkeys[1] = newKey;
+        pWallet->SetAddressBook(newKey.GetID(), "", "receive");
+
         ASSERT_TRUE(pWallet->GetKeyFromPool(newKey));
         pubkeys[2] = newKey;
+        pWallet->SetAddressBook(newKey.GetID(), "", "receive");
+
         CScript result = GetScriptForMultisig(2, pubkeys);
         ASSERT_FALSE(result.size() > MAX_SCRIPT_ELEMENT_SIZE);
         CScriptID innerID(result);
+        pWallet->AddCScript(result);
+        pWallet->SetAddressBook(innerID, "", "receive");
+
         std::string address = CBitcoinAddress(innerID).ToString();
         addresses.push_back(address);
     }
