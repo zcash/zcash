@@ -132,7 +132,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             deposits = komodo_paxtotal();
             if ( KOMODO_INITDONE == 0 || (komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 && (isrealtime= komodo_isrealtime(&kmdheight)) == 0) )
             {
-                //fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f ht.%d\n",KOMODO_INITDONE,isrealtime,(double)deposits/COIN,kmdheight);
+                fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f ht.%d\n",KOMODO_INITDONE,isrealtime,(double)deposits/COIN,kmdheight);
             }
             else if ( deposits != 0 || (int32_t)mempool.GetTotalTxSize() > 0 )
             {
@@ -478,7 +478,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
         script[34] = OP_CHECKSIG;
         //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
     }
-    if ( 0 && ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
         for (i=0; i<65; i++)
             fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i));
@@ -629,7 +629,7 @@ void static BitcoinMiner(CWallet *pwallet)
             {
                 if ( ASSETCHAINS_SYMBOL[0] != 0 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
                 {
-                    //fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
+                    fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
                     sleep(10);
                     break;
                 }
