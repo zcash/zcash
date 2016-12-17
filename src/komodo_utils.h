@@ -1448,7 +1448,10 @@ void komodo_args()
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     NOTARY_PUBKEY = GetArg("-pubkey", "");
     if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
+    {
         USE_EXTERNAL_PUBKEY = 1;
+        KOMODO_PAX = 1;
+    } else KOMODO_PAX = GetArg("-pax",0);
     name = GetArg("-ac_name","");
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
         ;

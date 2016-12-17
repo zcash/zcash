@@ -551,7 +551,6 @@ CBlockTreeDB *pblocktree = NULL;
 
 // Komodo globals
 
-#define KOMODO_PAX
 #define KOMODO_ZCASH
 #include "komodo.h"
 
