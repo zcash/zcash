@@ -19,6 +19,7 @@
 
 CCriticalSection cs_metrics;
 
+boost::synchronized_value<int64_t> nNodeStartTime;
 AtomicCounter transactionsValidated;
 AtomicCounter ehSolverRuns;
 AtomicCounter solutionTargetChecks;
@@ -37,6 +38,26 @@ void TrackMinedBlock(uint256 hash)
     LOCK(cs_metrics);
     minedBlocks.increment();
     trackedBlocks->push_back(hash);
+}
+
+void MarkStartTime()
+{
+    *nNodeStartTime = GetTime();
+}
+
+int64_t GetUptime()
+{
+    return GetTime() - *nNodeStartTime;
+}
+
+double GetLocalSolPS_INTERNAL(int64_t uptime)
+{
+    return uptime > 0 ? (double)solutionTargetChecks.get() / uptime : 0;
+}
+
+double GetLocalSolPS()
+{
+    return GetLocalSolPS_INTERNAL(GetUptime());
 }
 
 static bool metrics_ThreadSafeMessageBox(const std::string& message,
@@ -118,13 +139,13 @@ int printMiningStatus(bool mining)
     return lines;
 }
 
-int printMetrics(size_t cols, int64_t nStart, bool mining)
+int printMetrics(size_t cols, bool mining)
 {
     // Number of lines that are always displayed
     int lines = 3;
 
     // Calculate uptime
-    int64_t uptime = GetTime() - nStart;
+    int64_t uptime = GetUptime();
     int days = uptime / (24 * 60 * 60);
     int hours = (uptime - (days * 24 * 60 * 60)) / (60 * 60);
     int minutes = (uptime - (((days * 24) + hours) * 60 * 60)) / 60;
@@ -145,10 +166,17 @@ int printMetrics(size_t cols, int64_t nStart, bool mining)
     std::cout << strDuration << std::endl;
     lines += (strDuration.size() / cols);
 
-    std::cout << "- " << strprintf(_("You have validated %d transactions!"), transactionsValidated.get()) << std::endl;
+    int validatedCount = transactionsValidated.get();
+    if (validatedCount > 1) {
+      std::cout << "- " << strprintf(_("You have validated %d transactions!"), validatedCount) << std::endl;
+    } else if (validatedCount == 1) {
+      std::cout << "- " << _("You have validated a transaction!") << std::endl;
+    } else {
+      std::cout << "- " << _("You have validated no transactions.") << std::endl;
+    }
 
     if (mining && loaded) {
-        double solps = uptime > 0 ? (double)solutionTargetChecks.get() / uptime : 0;
+        double solps = GetLocalSolPS_INTERNAL(uptime);
         std::string strSolps = strprintf("%.4f Sol/s", solps);
         std::cout << "- " << strprintf(_("You have contributed %s on average to the network solution rate."), strSolps) << std::endl;
         std::cout << "- " << strprintf(_("You have completed %d Equihash solver runs."), ehSolverRuns.get()) << std::endl;
@@ -248,20 +276,24 @@ void ThreadShowMetricsScreen()
     // Make this thread recognisable as the metrics screen thread
     RenameThread("zcash-metrics-screen");
 
-    // Clear screen
-    std::cout << "\e[2J";
+    // Determine whether we should render a persistent UI or rolling metrics
+    bool isTTY = isatty(STDOUT_FILENO);
+    bool isScreen = GetBoolArg("-metricsui", isTTY);
+    int64_t nRefresh = GetArg("-metricsrefreshtime", isTTY ? 1 : 600);
 
-    // Print art
-    std::cout << METRICS_ART << std::endl;
-    std::cout << std::endl;
+    if (isScreen) {
+        // Clear screen
+        std::cout << "\e[2J";
 
-    // Thank you text
-    std::cout << _("Thank you for running a Zclassic node!") << std::endl;
-    std::cout << _("You're helping to strengthen the network and contributing to a social good, all coins are created equal :)") << std::endl;
-    std::cout << std::endl;
+        // Print art
+        std::cout << METRICS_ART << std::endl;
+        std::cout << std::endl;
 
-    // Count uptime
-    int64_t nStart = GetTime();
+        // Thank you text
+        std::cout << _("Thank you for running a Zclassic node!") << std::endl;
+        std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
+        std::cout << std::endl;
+    }
 
     while (true) {
         // Number of lines that are always displayed
@@ -269,7 +301,7 @@ void ThreadShowMetricsScreen()
         int cols = 80;
 
         // Get current window size
-        if (isatty(STDOUT_FILENO)) {
+        if (isTTY) {
             struct winsize w;
             w.ws_col = 0;
             if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1 && w.ws_col != 0) {
@@ -277,8 +309,10 @@ void ThreadShowMetricsScreen()
             }
         }
 
-        // Erase below current position
-        std::cout << "\e[J";
+        if (isScreen) {
+            // Erase below current position
+            std::cout << "\e[J";
+        }
 
         // Miner status
         bool mining = GetBoolArg("-gen", false);
@@ -287,17 +321,27 @@ void ThreadShowMetricsScreen()
             lines += printNetworkStats();
         }
         lines += printMiningStatus(mining);
-        lines += printMetrics(cols, nStart, mining);
+        lines += printMetrics(cols, mining);
         lines += printMessageBox(cols);
         lines += printInitMessage();
 
-        // Explain how to exit
-        std::cout << "[" << _("Press Ctrl+C to exit") << "] [" << _("Set 'showmetrics=0' to hide") << "]" << std::endl;;
+        if (isScreen) {
+            // Explain how to exit
+            std::cout << "[" << _("Press Ctrl+C to exit") << "] [" << _("Set 'showmetrics=0' to hide") << "]" << std::endl;
+        } else {
+            // Print delineator
+            std::cout << "----------------------------------------" << std::endl;
+        }
 
-        boost::this_thread::interruption_point();
-        MilliSleep(1000);
+        int64_t nWaitEnd = GetTime() + nRefresh;
+        while (GetTime() < nWaitEnd) {
+            boost::this_thread::interruption_point();
+            MilliSleep(200);
+        }
 
-        // Return to the top of the updating section
-        std::cout << "\e[" << lines << "A";
+        if (isScreen) {
+            // Return to the top of the updating section
+            std::cout << "\e[" << lines << "A";
+        }
     }
 }

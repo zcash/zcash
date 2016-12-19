@@ -200,6 +200,10 @@ struct CBlockLocator
     {
         return vHave.empty();
     }
+
+    friend bool operator==(const CBlockLocator& a, const CBlockLocator& b) {
+        return (a.vHave == b.vHave);
+    }
 };
 
 #endif // BITCOIN_PRIMITIVES_BLOCK_H

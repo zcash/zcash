@@ -1,4 +1,4 @@
-Zclassic 1.0.3
+Zclassic 1.0.4
 ==============
 
 What is Zclassic?
@@ -66,6 +66,12 @@ https://github.com/z-classic/zclassic/wiki/1.0-User-Guide
 
 Participation in the Zcash project is subject to a
 [Code of Conduct](code_of_conduct.md).
+
+Building
+--------
+
+Build Zcash along with most dependencies from source by running
+./zcutil/build.sh. Currently only Linux is officially supported.
 
 License
 -------

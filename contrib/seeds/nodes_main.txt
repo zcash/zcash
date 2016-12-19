@@ -1,0 +1,4 @@
+# List of fixed seed nodes for mainnet
+
+# Onion nodes
+q2dmolnsfq6wooor.onion:8133

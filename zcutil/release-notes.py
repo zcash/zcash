@@ -70,9 +70,9 @@ def document_authors():
 ## Writes release note to ./doc/release-notes based on git shortlog when current version number is specified
 def generate_release_note(version, filename):
     print "Automatically generating release notes for {0} from git shortlog. Should review {1} for accuracy.".format(version, filename)
-    prev_tag = subprocess.Popen(['git describe --abbrev=0 v{0}^'.format(version)], shell=True, stdout=subprocess.PIPE).communicate()[0].strip()
-    print "Previous release tag: ", prev_tag
-    notes = subprocess.Popen(['git shortlog --no-merges {0}..v{1}'.format(prev_tag, version)], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE).communicate()[0]
+    latest_tag = subprocess.Popen(['git describe --abbrev=0'], shell=True, stdout=subprocess.PIPE).communicate()[0].strip()
+    print "Previous release tag: ", latest_tag
+    notes = subprocess.Popen(['git shortlog --no-merges {0}..HEAD'.format(latest_tag)], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE).communicate()[0]
     lines = notes.split('\n')
     lines = [alias_authors_in_release_notes(line) for line in lines]
     release_note = os.path.join(doc_dir, 'release-notes', 'release-notes-{0}.md'.format(version))

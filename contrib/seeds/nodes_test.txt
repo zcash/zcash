@@ -1,3 +1,4 @@
 # List of fixed seed nodes for testnet
 
 # Onion nodes
+mnsj6hmvtvdwx4xu.onion:18233
