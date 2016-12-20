@@ -275,9 +275,6 @@ Wallet options:
        Attempt to recover private keys from a corrupt wallet on startup
        (implies -rescan)
 
-  -sendfreetransactions
-       Send transactions as zero-fee transactions if possible (default: 0)
-
   -spendzeroconfchange
        Spend unconfirmed change when sending transactions (default: 1)
 

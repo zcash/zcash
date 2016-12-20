@@ -31,6 +31,14 @@ RPC Changes
   `AllowFullyTransparent`.
 - The `estimatepriority` RPC call now always returns -1.
 
+Changes to Transaction Fee Selection
+------------------------------------
+
+- The `-sendfreetransactions` option has been removed. This option used to
+  instruct the wallet's legacy transaction creation APIs (`sendtoaddress`,
+  `sendmany`, and `fundrawtransaction`) to use a zero fee for "small" transactions
+  that spend "old" inputs. It will now cause a warning on node startup if used.
+
 Removal of Priority Estimation
 ------------------------------
 
