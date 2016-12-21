@@ -16,6 +16,12 @@ import sys
 
 settings = {}
 
+##### Switch endian-ness #####
+def hex_switchEndian(s):
+	""" Switches the endianness of a hex string (in pairs of hex chars) """
+	pairList = [s[i]+s[i+1] for i in range(0,len(s),2)]
+	return ''.join(pairList[::-1])
+
 class BitcoinRPC:
 	def __init__(self, host, port, username, password):
 		authpair = "%s:%s" % (username, password)
@@ -69,6 +75,8 @@ def get_block_hashes(settings, max_blocks_per_call=10000):
 				print('JSON-RPC: error at height', height+x, ': ', resp_obj['error'], file=sys.stderr)
 				exit(1)
 			assert(resp_obj['id'] == x) # assume replies are in-sequence
+			if settings['rev_hash_bytes'] == 'true':
+				resp_obj['result'] = hex_switchEndian(resp_obj['result'])
 			print(resp_obj['result'])
 
 		height += num_blocks
@@ -100,6 +108,8 @@ if __name__ == '__main__':
 		settings['min_height'] = 0
 	if 'max_height' not in settings:
 		settings['max_height'] = 313000
+	if 'rev_hash_bytes' not in settings:
+		settings['rev_hash_bytes'] = 'false'
 	if 'rpcuser' not in settings or 'rpcpassword' not in settings:
 		print("Missing username and/or password in cfg file", file=stderr)
 		sys.exit(1)
@@ -108,5 +118,7 @@ if __name__ == '__main__':
 	settings['min_height'] = int(settings['min_height'])
 	settings['max_height'] = int(settings['max_height'])
 
-	get_block_hashes(settings)
+	# Force hash byte format setting to be lowercase to make comparisons easier.
+	settings['rev_hash_bytes'] = settings['rev_hash_bytes'].lower()
 
+	get_block_hashes(settings)

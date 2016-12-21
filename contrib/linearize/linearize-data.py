@@ -22,6 +22,12 @@ from collections import namedtuple
 
 settings = {}
 
+##### Switch endian-ness #####
+def hex_switchEndian(s):
+	""" Switches the endianness of a hex string (in pairs of hex chars) """
+	pairList = [s[i]+s[i+1] for i in range(0,len(s),2)]
+	return ''.join(pairList[::-1])
+
 def uint32(x):
 	return x & 0xffffffffL
 
@@ -68,17 +74,21 @@ def get_blk_dt(blk_hdr):
 	dt_ym = datetime.datetime(dt.year, dt.month, 1)
 	return (dt_ym, nTime)
 
+# When getting the list of block hashes, undo any byte reversals.
 def get_block_hashes(settings):
 	blkindex = []
 	f = open(settings['hashlist'], "r", encoding="utf8")
 	for line in f:
 		line = line.rstrip()
+		if settings['rev_hash_bytes'] == 'true':
+			line = hex_switchEndian(line)
 		blkindex.append(line)
 
 	print("Read " + str(len(blkindex)) + " hashes")
 
 	return blkindex
 
+# The block map shouldn't give or receive byte-reversed hashes.
 def mkblockmap(blkindex):
 	blkmap = {}
 	for height,hash in enumerate(blkindex):
@@ -264,6 +274,12 @@ if __name__ == '__main__':
 		settings[m.group(1)] = m.group(2)
 	f.close()
 
+	# Force hash byte format setting to be lowercase to make comparisons easier.
+	# Also place upfront in case any settings need to know about it.
+	if 'rev_hash_bytes' not in settings:
+		settings['rev_hash_bytes'] = 'false'
+	settings['rev_hash_bytes'] = settings['rev_hash_bytes'].lower()
+
 	if 'netmagic' not in settings:
 		settings['netmagic'] = 'f9beb4d9'
 	if 'genesis' not in settings:
@@ -294,9 +310,8 @@ if __name__ == '__main__':
 	blkindex = get_block_hashes(settings)
 	blkmap = mkblockmap(blkindex)
 
+	# Block hash map won't be byte-reversed. Neither should the genesis hash.
 	if not settings['genesis'] in blkmap:
 		print("Genesis block not found in hashlist")
 	else:
 		BlockDataCopier(settings, blkindex, blkmap).run()
-
-
