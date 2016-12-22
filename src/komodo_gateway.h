@@ -376,7 +376,7 @@ uint64_t komodo_paxtotal()
             }
         }
     }
-    printf("paxtotal %.8f\n",dstr(total));
+    //printf("paxtotal %.8f\n",dstr(total));
     return(total);
 }
 
@@ -485,7 +485,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         }
         if ( pax->ready == 0 )
             continue;
-        printf("redeem.%d? (%c) %p pax.%s marked.%d %.8f -> %.8f ready.%d validated.%d approved.%d\n",tokomodo,pax->type,pax,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->ready!=0,pax->validated!=0,pax->approved!=0);
+        //printf("redeem.%d? (%c) %p pax.%s marked.%d %.8f -> %.8f ready.%d validated.%d approved.%d\n",tokomodo,pax->type,pax,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->ready!=0,pax->validated!=0,pax->approved!=0);
         if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
             printf("pax.%s marked.%d %.8f -> %.8f\n",ASSETCHAINS_SYMBOL,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         txNew->vout.resize(numvouts+1);
@@ -838,7 +838,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( (pax= komodo_paxfind(txids[i],vouts[i],'A')) == 0 )
                     {
                         bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
-                        komodo_gateway_deposit(coinaddr,values[i],CURRENCIES[baseids[i]],srcvalues[i],&rmd160s[i*20],txids[i],vouts[i],'A',kmdheights[i],otherheights[i],CURRENCIES[baseids[i]],kmdheights[i]);
+                        komodo_gateway_deposit(coinaddr,srcvalues[i],CURRENCIES[baseids[i]],values[i],&rmd160s[i*20],txids[i],vouts[i],'A',kmdheights[i],otherheights[i],CURRENCIES[baseids[i]],kmdheights[i]);
                         if ( (pax= komodo_paxfind(txids[i],vouts[i],'A')) == 0 )
                             printf("unexpected null pax for approve\n");
                         else pax->validated = checktoshis;
@@ -848,7 +848,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         //komodo_paxmark(height,txids[i],vouts[i],'A',height);
                         if ( srcvalues[i] != 0 && (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                         {
-                            basesp->approved += srcvalues[i];
+                            basesp->approved += values[i];
                             didstats = 1;
                             //if ( strcmp(CURRENCIES[baseids[i]],ASSETCHAINS_SYMBOL) == 0 )
                             printf("pax.%p ########### %p approved %s += %.8f -> %.8f/%.8f\n",pax,basesp,CURRENCIES[baseids[i]],dstr(srcvalues[i]),dstr(values[i]),dstr(checktoshis));
@@ -859,7 +859,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     {
                         if ( (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                         {
-                            basesp->approved += srcvalues[i];
+                            basesp->approved += values[i];
                             didstats = 1;
                             //if ( strcmp(CURRENCIES[baseids[i]],ASSETCHAINS_SYMBOL) == 0 )
                             printf("pax.%p ########### %p approved %s += %.8f -> %.8f/%.8f\n",pax,basesp,CURRENCIES[baseids[i]],dstr(srcvalues[i]),dstr(values[i]),dstr(checktoshis));
@@ -873,7 +873,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         if ( didstats != 0 )
                             pax->didstats = 1;
                         //if ( strcmp(CURRENCIES[baseids[i]],ASSETCHAINS_SYMBOL) == 0 )
-                        printf(" i.%d approved.%d <<<<<<<<<<<<< APPROVED %p\n",i,kmdheights[i],pax);
+                        //printf(" i.%d approved.%d <<<<<<<<<<<<< APPROVED %p\n",i,kmdheights[i],pax);
                     }
                 }
             }
@@ -897,9 +897,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 if ( (pax= komodo_paxfind(txids[i],vouts[i],'X')) != 0 )
                 {
                     pax->type = opretbuf[0];
-                    if ( baseids[i] >= 0 && srcvalues[i] != 0 && (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
+                    if ( baseids[i] >= 0 && values[i] != 0 && (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                     {
-                        basesp->redeemed += srcvalues[i];
+                        basesp->redeemed += values[i];
                         pax->didstats = 1;
                         //if ( strcmp(CURRENCIES[baseids[i]],ASSETCHAINS_SYMBOL) == 0 )
                             printf("########### %p redeemed %s += %.8f\n",basesp,CURRENCIES[baseids[i]],dstr(srcvalues[i]));
