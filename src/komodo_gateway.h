@@ -190,7 +190,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
     struct pax_transaction p,*pax; int32_t i,n=0,j,len=0,incr,height,otherheight; uint8_t type,rmd160[20]; uint64_t fiatoshis; char symbol[16];
     if ( KOMODO_PAX == 0 )
         return(0);
-    incr = 34 + (iskomodo * (2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4));
+    incr = 34 + (iskomodo * (2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 2));
     for (i=0; i<4; i++)
         base[i] = opretbuf[opretlen-4+i];
     //for (i=0; i<opretlen; i++)
@@ -851,7 +851,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             for (i=0; i<n; i++)
             {
                 if ( baseids[i] < 0 )
+                {
+                    printf("baseids[%d] %d\n",i,baseids[i]);
                     continue;
+                }
                 didstats = 0;
                 seed = 0;
                 checktoshis = komodo_paxprice(&seed,kmdheights[i],CURRENCIES[baseids[i]],(char *)"KMD",(uint64_t)values[i]);
