@@ -414,7 +414,7 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
                     pax->approved = pax2->approved;
             }
             else if ( (pax2= komodo_paxfind(pax->txid,pax->vout,'X')) != 0 )
-                pax->approved = pax->heightl\;
+                pax->approved = pax->height;
                 //printf("pax %s marked.%u approved.%u validated.%llu\n",pax->symbol,pax->marked,pax->approved,(long long)pax->validated);
             if ( pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 && pax->validated != 0 )
             {
