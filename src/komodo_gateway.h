@@ -319,8 +319,10 @@ uint64_t komodo_paxtotal()
                         else if ( pax->validated == 0 )
                         {
                             pax->validated = pax->komodoshis = checktoshis;
+                            int32_t j; for (j=0; j<32; j++)
+                                printf("%02x",((uint8_t *)&pax->txid)[j]);
                             //if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
-                                printf("%p got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax,pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
+                                printf(" %p got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax,pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
                         }
                     }
                 }
