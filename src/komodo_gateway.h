@@ -494,7 +494,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         }*/
         if ( ASSETCHAINS_SYMBOL[0] != 0 && (strcmp(pax->symbol,symbol) != 0 || pax->validated == 0) )
         {
-            printf("pax->symbol.%s != %s or null pax->validated %.8f\n",pax->symbol,symbol,dstr(pax->validated));
+            //printf("pax->symbol.%s != %s or null pax->validated %.8f\n",pax->symbol,symbol,dstr(pax->validated));
             continue;
         }
         if ( pax->ready == 0 )
@@ -1006,7 +1006,7 @@ void komodo_passport_iteration()
                 if ( fread(buf,1,sizeof(buf),fp) == sizeof(buf) )
                 {
                     sp->CURRENT_HEIGHT = buf[0];
-                    if ( buf[0] != 0 && buf[0] == buf[1] && buf[2] > time(NULL)-60 )
+                    if ( buf[0] != 0 && buf[0] >= buf[1] && buf[2] > time(NULL)-60 )
                     {
                         isrealtime = 1;
                         RTmask |= (1LL << baseid);
