@@ -855,7 +855,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 //printf(" v%d %.8f k.%d ht.%d base.%d\n",vouts[i],dstr(values[i]),kmdheights[i],otherheights[i],baseids[i]);
                 if ( baseids[i] < 0 )
                 {
-                    printf("baseids[%d] %d\n",i,baseids[i]);
+                    //printf("baseids[%d] %d\n",i,baseids[i]);
                     continue;
                 }
                 didstats = 0;
@@ -926,12 +926,12 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 if ( (pax= komodo_paxfind(txids[i],vouts[i],'X')) != 0 )
                 {
                     pax->type = opretbuf[0];
-                    if ( baseids[i] >= 0 && values[i] != 0 && (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
+                    if ( baseids[i] >= 0 && srcvalues[i] != 0 && (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                     {
-                        basesp->redeemed += values[i];
+                        basesp->redeemed += srcvalues[i];
                         pax->didstats = 1;
                         //if ( strcmp(CURRENCIES[baseids[i]],ASSETCHAINS_SYMBOL) == 0 )
-                            printf("########### %p redeemed %s += %.8f\n",basesp,CURRENCIES[baseids[i]],dstr(values[i]));
+                            printf("########### %p redeemed %s += %.8f\n",basesp,CURRENCIES[baseids[i]],dstr(srcvalues[i]));
                     }
                 }
                 if ( (pax= komodo_paxmark(height,txids[i],vouts[i],'W',height)) != 0 )
