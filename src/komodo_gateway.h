@@ -487,7 +487,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             continue;
         if ( pax->type == 'A' && ASSETCHAINS_SYMBOL[0] == 0 )
         {
-            if ( (basesp= komodo_stateptrget("KMD")) != 0 )
+            if ( (basesp= komodo_stateptrget((char *)"KMD")) != 0 )
             {
                 if ( (baseid= komodo_baseid(pax->symbol)) < 0 || ((1LL << baseid) & sp->RTmask) == 0 )
                 {
