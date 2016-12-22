@@ -466,7 +466,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             else pax->validated = pax->ready = 0;
 #endif
         }
-        if ( ASSETCHAINS_SYMBOL[0] != 0 && pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && (pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis) )
         {
             if ( strcmp(ASSETCHAINS_SYMBOL,symbol) == 0 )
                 printf("miner.[%s]: skip %s %.8f when avail %.8f\n",ASSETCHAINS_SYMBOL,symbol,dstr(pax->fiatoshis),dstr(available));
