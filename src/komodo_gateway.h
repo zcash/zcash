@@ -453,7 +453,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
                 pax->validated = pax->komodoshis; //kmdsp->NOTARIZED_HEIGHT;
 #endif
         }
-        if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis )
+        if ( strcmp(symbol,"KMD") != 0 && pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis )
         {
             printf("miner: skip %s %.8f when avail %.8f\n",symbol,dstr(pax->fiatoshis),dstr(available));
             continue;

@@ -140,7 +140,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         }*/
         if ( notaryid >= 0 )
         {
-            if ( height < 80000 && (special != 0 || special2 > 0) )
+            if ( height > 10000 && height < 80000 && (special != 0 || special2 > 0) )
                 flag = 1;
             else if ( height >= 80000 && height < 108000 && special2 > 0 )
                 flag = 1;
