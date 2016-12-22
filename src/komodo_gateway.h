@@ -325,7 +325,7 @@ uint64_t komodo_paxtotal()
     {
         pax->ready = 0;
         if ( pax->type == 'A' )
-            printf("%p pax.%s marked.%d %.8f -> %.8f validated.%d approved.%d\n",pax,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0);
+            printf("%p pax.%s <- %s marked.%d %.8f -> %.8f validated.%d approved.%d\n",pax,pax->symbol,pax->source,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0);
         if ( pax->marked != 0 )
             continue;
         if ( strcmp(symbol,pax->symbol) == 0 )
@@ -352,7 +352,7 @@ uint64_t komodo_paxtotal()
                     {
                         seed = 0;
                         checktoshis = komodo_paxprice(&seed,pax->height,pax->source,(char *)"KMD",(uint64_t)pax->fiatoshis);
-                        //printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f vs %.8f\n",pax->height,pax->symbol,(double)pax->fiatoshis/COIN,(double)pax->komodoshis/COIN,(double)checktoshis/COIN);
+                        printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f vs %.8f\n",pax->height,pax->symbol,(double)pax->fiatoshis/COIN,(double)pax->komodoshis/COIN,(double)checktoshis/COIN);
                         //printf(" v%d %.8f k.%d ht.%d\n",pax->vout,dstr(pax->komodoshis),pax->height,pax->otherheight);
                         if ( seed != 0 && checktoshis != 0 )
                         {
