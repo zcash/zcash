@@ -332,7 +332,6 @@ uint64_t komodo_paxtotal()
         {
             if ( pax->marked == 0 )
             {
-                printf("pax.%s marked.%d %.8f -> %.8f validated.%d approved.%d\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0);
                 if ( komodo_is_issuer() != 0 )
                 {
                     if ( pax->validated != 0 && pax->type == 'D' )
@@ -365,6 +364,7 @@ uint64_t komodo_paxtotal()
                         }
                     }
                 }
+                printf("pax.%s marked.%d %.8f -> %.8f validated.%d approved.%d\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0);
             }
         }
     }
@@ -465,7 +465,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             continue;
         if ( strcmp(pax->symbol,symbol) != 0 || pax->validated == 0 )
         {
-            //printf("pax->symbol.%s != %s or null pax->validated %.8f\n",pax->symbol,symbol,dstr(pax->validated));
+            printf("pax->symbol.%s != %s or null pax->validated %.8f\n",pax->symbol,symbol,dstr(pax->validated));
             continue;
         }
         if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
@@ -808,8 +808,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 didstats = 0;
                 seed = 0;
                 checktoshis = komodo_paxprice(&seed,kmdheights[i],CURRENCIES[baseids[i]],(char *)"KMD",(uint64_t)srcvalues[i]);
-                /*printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f vs %.8f\n",kmdheights[i],CURRENCIES[baseids[i]],(double)srcvalues[i]/COIN,(double)values[i]/COIN,(double)checktoshis/COIN);
-                 for (j=0; j<32; j++)
+                printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f vs %.8f\n",kmdheights[i],CURRENCIES[baseids[i]],(double)srcvalues[i]/COIN,(double)values[i]/COIN,(double)checktoshis/COIN);
+                 /*for (j=0; j<32; j++)
                  printf("%02x",((uint8_t *)&txids[i])[j]);
                  printf(" v%d %.8f k.%d ht.%d base.%d\n",vouts[i],dstr(values[i]),kmdheights[i],otherheights[i],baseids[i]);*/
                 if ( (pax= komodo_paxfind(txids[i],vouts[i],'A')) == 0 )
