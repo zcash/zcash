@@ -89,7 +89,7 @@ struct pax_transaction *komodo_paxmark(int32_t height,uint256 txid,uint16_t vout
 
 void komodo_paxdelete(struct pax_transaction *pax)
 {
-    return;
+    return; // breaks when out of order
     pthread_mutex_lock(&komodo_mutex);
     HASH_DELETE(hh,PAX,pax);
     pthread_mutex_unlock(&komodo_mutex);
