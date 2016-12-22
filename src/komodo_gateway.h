@@ -369,7 +369,7 @@ uint64_t komodo_paxtotal()
             }
         }
     }
-    //printf("paxtotal %.8f\n",dstr(total));
+    printf("paxtotal %.8f\n",dstr(total));
     return(total);
 }
 
@@ -445,6 +445,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     } else opcode = 'X';
     HASH_ITER(hh,PAX,pax,tmp)
     {
+        printf("pax.%s marked.%d %.8f -> %.8f ready.%d validated.%d\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->ready!=0,pax->validated!=0);
         if ( strcmp(symbol,"KMD") == 0 && pax->approved == 0 )
             continue;
         //else if ( strcmp(symbol,"KMD") != 0 )
