@@ -419,9 +419,13 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
             if ( pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 && pax->validated != 0 )
             {
                 if ( n < sizeof(paxes)/sizeof(*paxes) )
+                {
                     paxes[n++] = pax;
+                    int32_t j; for (j=0; j<32; j++)
+                        printf("%02x",((uint8_t *)&pax->txid)[j]);
+                    printf("%s.(kmdht.%d ht.%d marked.%u approved.%d validated %.8f) %.8f\n",pax->source,pax->height,pax->otherheight,pax->marked,pax->approved,dstr(pax->validated),dstr(pax->komodoshis));
+                }
             }
-            printf("%s.(kmdht.%d ht.%d marked.%u approved.%d validated %.8f) %.8f\n",pax->source,pax->height,pax->otherheight,pax->marked,pax->approved,dstr(pax->validated),dstr(pax->komodoshis));
         }
     }
     opretstr[0] = 0;
@@ -851,9 +855,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 //printf("PAX_fiatdest ht.%d price %s %.8f -> KMD %.8f vs %.8f\n",kmdheights[i],CURRENCIES[baseids[i]],(double)values[i]/COIN,(double)srcvalues[i]/COIN,(double)checktoshis/COIN);
                 if ( srcvalues[i] == checktoshis )
                 {
-                    /*for (j=0; j<32; j++)
+                    for (j=0; j<32; j++)
                      printf("%02x",((uint8_t *)&txids[i])[j]);
-                     printf(" v%d %.8f k.%d ht.%d base.%d\n",vouts[i],dstr(values[i]),kmdheights[i],otherheights[i],baseids[i]);*/
+                     printf(" v%d %.8f k.%d ht.%d base.%d\n",vouts[i],dstr(values[i]),kmdheights[i],otherheights[i],baseids[i]);
                     if ( (pax= komodo_paxfind(txids[i],vouts[i],'A')) == 0 )
                     {
                         bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
@@ -870,7 +874,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                             basesp->approved += values[i];
                             didstats = 1;
                             //if ( strcmp(CURRENCIES[baseids[i]],ASSETCHAINS_SYMBOL) == 0 )
-                            printf("pax.%p ########### %p approved %s += %.8f -> %.8f/%.8f\n",pax,basesp,CURRENCIES[baseids[i]],dstr(values[i]),dstr(srcvalues[i]),dstr(checktoshis));
+                            printf("pax.%p ########### %p approved %s += %.8f -> %.8f/%.8f kht.%d %d\n",pax,basesp,CURRENCIES[baseids[i]],dstr(values[i]),dstr(srcvalues[i]),dstr(checktoshis),kmdheights[i],otherheights[i]);
                         }
                         //printf(" i.%d (%s) <- %.8f ADDFLAG APPROVED\n",i,coinaddr,dstr(values[i]));
                     }
