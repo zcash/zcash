@@ -398,7 +398,7 @@ static int _paxorder(const void *a,const void *b)
 
 int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic order
 {
-    struct pax_transaction *pax,*tmp,*paxes[64]; uint8_t opretbuf[16384]; int32_t i,n,ht,len=0; uint64_t total = 0;
+    struct pax_transaction *pax,*pax2,*tmp,*paxes[64]; uint8_t opretbuf[16384]; int32_t i,n,ht,len=0; uint64_t total = 0;
     if ( KOMODO_PAX == 0 )
         return(0);
     if ( komodo_isrealtime(&ht) == 0 || ASSETCHAINS_SYMBOL[0] != 0 )
@@ -408,13 +408,20 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
     {
         if ( pax->type == 'W' )
         {
-            //printf("pax %s marked.%u approved.%u validated.%llu\n",pax->symbol,pax->marked,pax->approved,(long long)pax->validated);
+            if ( (pax2= komodo_paxfind(pax->txid,pax->vout,'A')) != 0 )
+            {
+                if ( pax2->approved != 0 )
+                    pax->approved = pax2->approved;
+            }
+            else if ( (pax2= komodo_paxfind(pax->txid,pax->vout,'X')) != 0 )
+                pax->approved = pax->height;
+                //printf("pax %s marked.%u approved.%u validated.%llu\n",pax->symbol,pax->marked,pax->approved,(long long)pax->validated);
             if ( pax->marked == 0 && strcmp((char *)"KMD",pax->symbol) == 0 && pax->approved == 0 && pax->validated != 0 )
             {
                 if ( n < sizeof(paxes)/sizeof(*paxes) )
                     paxes[n++] = pax;
             }
-            //printf("%s.(kmdht.%d ht.%d marked.%u approved.%d validated %.8f) %.8f\n",pax->source,pax->height,pax->otherheight,pax->marked,pax->approved,dstr(pax->validated),dstr(pax->komodoshis));
+            printf("%s.(kmdht.%d ht.%d marked.%u approved.%d validated %.8f) %.8f\n",pax->source,pax->height,pax->otherheight,pax->marked,pax->approved,dstr(pax->validated),dstr(pax->komodoshis));
         }
     }
     opretstr[0] = 0;
@@ -856,7 +863,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         else pax->validated = checktoshis;
                         if ( (pax2= komodo_paxfind(txids[i],vouts[i],'W')) != 0 )
                             pax2->approved = kmdheights[i];
-                        //komodo_paxmark(height,txids[i],vouts[i],'W',height);
+                        komodo_paxmark(height,txids[i],vouts[i],'W',height);
                         //komodo_paxmark(height,txids[i],vouts[i],'A',height);
                         if ( srcvalues[i] != 0 && (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                         {
