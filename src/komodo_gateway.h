@@ -89,6 +89,7 @@ struct pax_transaction *komodo_paxmark(int32_t height,uint256 txid,uint16_t vout
 
 void komodo_paxdelete(struct pax_transaction *pax)
 {
+    return;
     pthread_mutex_lock(&komodo_mutex);
     HASH_DELETE(hh,PAX,pax);
     pthread_mutex_unlock(&komodo_mutex);
@@ -322,7 +323,7 @@ uint64_t komodo_paxtotal()
                             int32_t j; for (j=0; j<32; j++)
                                 printf("%02x",((uint8_t *)&pax->txid)[j]);
                             //if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
-                                printf(" %p got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax,pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
+                                printf(" v%d %p got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax->vout,pax,pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
                         }
                     }
                 }
