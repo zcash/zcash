@@ -439,6 +439,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[16384],data[16384]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t available,deposited,issued,withdrawn,approved,redeemed,mask;
     if ( KOMODO_PAX == 0 )
         return(0);
+    struct komodo_state *kmdsp = komodo_stateptrget((char *)"KMD");
     sp = komodo_stateptr(symbol,dest);
     strcpy(symbol,base);
     if ( ASSETCHAINS_SYMBOL[0] != 0 && komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
@@ -460,7 +461,6 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     {
         {
 #ifdef KOMODO_ASSETCHAINS_WAITNOTARIZE
-            struct komodo_state *kmdsp = komodo_stateptrget((char *)"KMD");
             if ( kmdsp != 0 && kmdsp->NOTARIZED_HEIGHT >= pax->height ) // assumes same chain as notarize
                 pax->validated = pax->komodoshis; //kmdsp->NOTARIZED_HEIGHT;
             else pax->validated = pax->ready = 0;
@@ -487,14 +487,14 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             continue;
         if ( pax->type == 'A' && ASSETCHAINS_SYMBOL[0] == 0 )
         {
-            if ( (basesp= komodo_stateptrget((char *)"KMD")) != 0 )
+            if ( kmdsp != 0 )
             {
                 if ( (baseid= komodo_baseid(pax->symbol)) < 0 || ((1LL << baseid) & sp->RTmask) == 0 )
                 {
                     printf("not RT for (%s) %llx baseid.%d %llx\n",pax->symbol,(long long)sp->RTmask,baseid,(long long)(1LL<<baseid));
                     continue;
                 }
-            }
+            } else continue;
         }
 
         //printf("redeem.%d? (%c) %p pax.%s marked.%d %.8f -> %.8f ready.%d validated.%d approved.%d\n",tokomodo,pax->type,pax,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->ready!=0,pax->validated!=0,pax->approved!=0);
