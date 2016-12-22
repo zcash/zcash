@@ -863,7 +863,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         else pax->validated = checktoshis;
                         if ( (pax2= komodo_paxfind(txids[i],vouts[i],'W')) != 0 )
                             pax2->approved = kmdheights[i];
-                        //komodo_paxmark(height,txids[i],vouts[i],'W',height);
+                        komodo_paxmark(height,txids[i],vouts[i],'W',height);
                         //komodo_paxmark(height,txids[i],vouts[i],'A',height);
                         if ( srcvalues[i] != 0 && (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                         {
