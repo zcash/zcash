@@ -326,11 +326,11 @@ uint64_t komodo_paxtotal()
         pax->ready = 0;
         if ( pax->marked != 0 )
             continue;
-        //printf("pax.%s marked.%d %.8f -> %.8f\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         if ( strcmp(symbol,pax->symbol) == 0 )
         {
             if ( pax->marked == 0 )
             {
+                printf("pax.%s marked.%d %.8f -> %.8f validated.%d approved.%d\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0);
                 if ( komodo_is_issuer() != 0 )
                 {
                     if ( pax->validated != 0 && pax->type == 'D' )
