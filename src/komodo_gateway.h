@@ -324,11 +324,11 @@ uint64_t komodo_paxtotal()
     HASH_ITER(hh,PAX,pax,tmp)
     {
         pax->ready = 0;
-        if ( pax->type == 'A' )
+        if ( 0 && pax->type == 'A' )
             printf("%p pax.%s <- %s marked.%d %.8f -> %.8f validated.%d approved.%d\n",pax,pax->symbol,pax->source,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0);
         if ( pax->marked != 0 )
             continue;
-        if ( strcmp(symbol,pax->symbol) == 0 )
+        if ( strcmp(symbol,pax->symbol) == 0 || pax->type == 'A' )
         {
             if ( pax->marked == 0 )
             {
@@ -364,7 +364,8 @@ uint64_t komodo_paxtotal()
                         }
                     }
                 }
-                printf("%p (%c) pax.%s marked.%d %.8f -> %.8f validated.%d approved.%d\n",pax,pax->type,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0);
+                if ( pax->ready != 0 )
+                    printf("%p (%c) pax.%s marked.%d %.8f -> %.8f validated.%d approved.%d\n",pax,pax->type,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0);
             }
         }
     }
