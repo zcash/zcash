@@ -371,7 +371,7 @@ uint64_t komodo_paxtotal()
                         }
                     }
                 }
-                if ( pax->ready != 0 )
+                if ( 0 && pax->ready != 0 )
                     printf("%p (%c) pax.%s marked.%d %.8f -> %.8f validated.%d approved.%d\n",pax,pax->type,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0);
             }
         }
@@ -453,22 +453,17 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     else
     {
         opcode = 'X';
-        printf("redeems check paxtotal\n");
         if ( komodo_paxtotal() == 0 )
             return(0);
     }
-    printf("check PAX iterations\n");
     HASH_ITER(hh,PAX,pax,tmp)
     {
-        if ( pax->ready == 0 )
-            continue;
-        printf("redeem? (%c) %p pax.%s marked.%d %.8f -> %.8f ready.%d validated.%d approved.%d\n",pax->type,pax,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->ready!=0,pax->validated!=0,pax->approved!=0);
-        //else if ( strcmp(symbol,"KMD") != 0 )
         {
 #ifdef KOMODO_ASSETCHAINS_WAITNOTARIZE
             struct komodo_state *kmdsp = komodo_stateptrget((char *)"KMD");
             if ( kmdsp != 0 && kmdsp->NOTARIZED_HEIGHT >= pax->height ) // assumes same chain as notarize
                 pax->validated = pax->komodoshis; //kmdsp->NOTARIZED_HEIGHT;
+            else pax->validated = pax->ready = 0;
 #endif
         }
         if ( ASSETCHAINS_SYMBOL[0] != 0 && pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis )
@@ -488,6 +483,9 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             printf("pax->symbol.%s != %s or null pax->validated %.8f\n",pax->symbol,symbol,dstr(pax->validated));
             continue;
         }
+        if ( pax->ready == 0 )
+            continue;
+        printf("redeem.%d? (%c) %p pax.%s marked.%d %.8f -> %.8f ready.%d validated.%d approved.%d\n",tokomodo,pax->type,pax,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->ready!=0,pax->validated!=0,pax->approved!=0);
         if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
             printf("pax.%s marked.%d %.8f -> %.8f\n",ASSETCHAINS_SYMBOL,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         txNew->vout.resize(numvouts+1);
