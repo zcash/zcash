@@ -190,9 +190,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
     struct pax_transaction p,*pax; int32_t i,n=0,j,len=0,incr,height,otherheight; uint8_t type,rmd160[20]; uint64_t fiatoshis; char symbol[16];
     if ( KOMODO_PAX == 0 )
         return(0);
-    incr = 34 + (iskomodo * (2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 2));
-    for (i=0; i<4; i++)
-        base[i] = opretbuf[opretlen-4+i];
+    incr = 34 + (iskomodo * (2*sizeof(fiatoshis) + 2*sizeof(height) + 20));
     //for (i=0; i<opretlen; i++)
     //    printf("%02x",opretbuf[i]);
     //printf(" opretlen.%d (%s)\n",opretlen,base);
@@ -227,6 +225,8 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
             }
             else
             {
+                for (i=0; i<4; i++)
+                    base[i] = opretbuf[opretlen-4+i];
                 for (j=0; j<32; j++)
                 {
                     ((uint8_t *)&txids[n])[j] = opretbuf[len++];
@@ -906,7 +906,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     }
                 }
             }
-        }
+        } else printf("n.%d from opreturns\n",n);
         //printf("extra.[%d] after %.8f\n",n,dstr(komodo_paxtotal()));
     }
     else if ( opretbuf[0] == 'X' )
