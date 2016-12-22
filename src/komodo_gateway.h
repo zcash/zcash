@@ -772,7 +772,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
                         printf("########### %p withdrawn %s += %.8f\n",basesp,base,dstr(value));
                 }
-                if ( strcmp(base,"RUB") == 0 )
+                if ( strcmp(base,"RUB") == 0 && pax->approved == 0 )
                     printf("notarize %s %.8f -> %.8f kmd.%d other.%d\n",ASSETCHAINS_SYMBOL,dstr(value),dstr(komodoshis),kmdheight,height);
             }
             komodo_gateway_deposit(coinaddr,0,(char *)"KMD",value,rmd160,txid,vout,'W',kmdheight,height,source,0);
@@ -814,8 +814,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 {
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
                     komodo_gateway_deposit(coinaddr,values[i],CURRENCIES[baseids[i]],srcvalues[i],&rmd160s[i*20],txids[i],vouts[i],'A',kmdheights[i],otherheights[i],CURRENCIES[baseids[i]],kmdheights[i]);
-                    komodo_paxmark(height,txids[i],vouts[i],'W',height);
-                    komodo_paxmark(height,txids[i],vouts[i],'A',height);
+                    if ( (pax2= komodo_paxfind(txids[i],vouts[i],'W')) != 0 )
+                        pax2->approved = kmdheights[i];
+                    //komodo_paxmark(height,txids[i],vouts[i],'W',height);
+                    //komodo_paxmark(height,txids[i],vouts[i],'A',height);
                     if ( srcvalues[i] != 0 && (basesp= komodo_stateptrget(CURRENCIES[baseids[i]])) != 0 )
                     {
                         basesp->approved += srcvalues[i];
