@@ -460,12 +460,9 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     printf("check PAX iterations\n");
     HASH_ITER(hh,PAX,pax,tmp)
     {
-        printf("redeem? (%c) %p pax.%s marked.%d %.8f -> %.8f ready.%d validated.%d approved.%d\n",pax->type,pax,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->ready!=0,pax->validated!=0,pax->approved!=0);
-        if ( strcmp(symbol,"KMD") == 0 && pax->approved == 0 )
-        {
-            printf("reject 0\n");
+        if ( pax->ready == 0 )
             continue;
-        }
+        printf("redeem? (%c) %p pax.%s marked.%d %.8f -> %.8f ready.%d validated.%d approved.%d\n",pax->type,pax,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->ready!=0,pax->validated!=0,pax->approved!=0);
         //else if ( strcmp(symbol,"KMD") != 0 )
         {
 #ifdef KOMODO_ASSETCHAINS_WAITNOTARIZE
@@ -474,23 +471,21 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
                 pax->validated = pax->komodoshis; //kmdsp->NOTARIZED_HEIGHT;
 #endif
         }
-        if ( strcmp(symbol,"KMD") != 0 && pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis )
         {
             if ( strcmp(ASSETCHAINS_SYMBOL,symbol) == 0 )
                 printf("miner.[%s]: skip %s %.8f when avail %.8f\n",ASSETCHAINS_SYMBOL,symbol,dstr(pax->fiatoshis),dstr(available));
-            printf("reject 1\n");
             continue;
         }
-        printf("pax.%s marked.%d %.8f -> %.8f ready.%d validated.%d\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->ready!=0,pax->validated!=0);
+        /*printf("pax.%s marked.%d %.8f -> %.8f ready.%d validated.%d\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->ready!=0,pax->validated!=0);
         if ( pax->marked != 0 || (pax->type != 'D' && pax->type != 'A') || pax->ready == 0 )
         {
             printf("reject 2\n");
             continue;
-        }
-        if ( strcmp(pax->symbol,symbol) != 0 || pax->validated == 0 )
+        }*/
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && (strcmp(pax->symbol,symbol) != 0 || pax->validated == 0) )
         {
             printf("pax->symbol.%s != %s or null pax->validated %.8f\n",pax->symbol,symbol,dstr(pax->validated));
-            printf("reject 3\n");
             continue;
         }
         if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
