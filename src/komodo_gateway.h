@@ -485,6 +485,18 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         }
         if ( pax->ready == 0 )
             continue;
+        if ( pax->type == 'A' && ASSETCHAINS_SYMBOL[0] == 0 )
+        {
+            if ( (basesp= komodo_stateptrget("KMD")) != 0 )
+            {
+                if ( (baseid= komodo_baseid(pax->symbol)) < 0 || ((1LL << baseid) & sp->RTmask) == 0 )
+                {
+                    printf("not RT for (%s) %llx baseid.%d %llx\n",pax->symbol,(long long)sp->RTmask,baseid,(long long)(1LL<<baseid));
+                    continue;
+                }
+            }
+        }
+
         //printf("redeem.%d? (%c) %p pax.%s marked.%d %.8f -> %.8f ready.%d validated.%d approved.%d\n",tokomodo,pax->type,pax,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->ready!=0,pax->validated!=0,pax->approved!=0);
         if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
             printf("pax.%s marked.%d %.8f -> %.8f\n",ASSETCHAINS_SYMBOL,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
@@ -997,7 +1009,7 @@ void komodo_passport_iteration()
                 if ( buf[0] != 0 && buf[0] == buf[1] )
                 {
                     buf[2] = (uint32_t)time(NULL);
-                    RTmask |= (1LL << baseid) | 1;
+                    RTmask |= (1LL << baseid);
                     memcpy(refsp->RTbufs[baseid+1],buf,sizeof(refsp->RTbufs[baseid+1]));
                     if ( refid != 0 )
                         memcpy(refsp->RTbufs[0],buf,sizeof(refsp->RTbufs[0]));
