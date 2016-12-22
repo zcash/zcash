@@ -319,8 +319,8 @@ uint64_t komodo_paxtotal()
                         else if ( pax->validated == 0 )
                         {
                             pax->validated = pax->komodoshis = checktoshis;
-                            if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
-                                printf("got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
+                            //if ( strcmp(str,ASSETCHAINS_SYMBOL) == 0 )
+                                printf("%p got WITHDRAW.%s kmd.%d ht.%d %.8f -> %.8f/%.8f\n",pax,pax->source,pax->height,pax->otherheight,dstr(pax->fiatoshis),dstr(pax->komodoshis),dstr(checktoshis));
                         }
                     }
                 }
@@ -800,7 +800,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         bitcoin_address(coinaddr,addrtype,rmd160,20);
         checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,value);
         typestr = "withdraw";
-        if ( 0 && strcmp(base,"RUB") == 0 )
+        if ( strcmp(base,"RUB") == 0 )
             printf("RUB WITHDRAW %s.height.%d vs height.%d check %.8f/%.8f vs %.8f tokomodo.%d %d seed.%llx -> (%s) len.%d\n",ASSETCHAINS_SYMBOL,kmdheight,height,dstr(checktoshis),dstr(komodoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed,coinaddr,opretlen);
         didstats = 0;
         //if ( komodo_paxcmp(base,kmdheight,komodoshis,checktoshis,seed) == 0 )
@@ -811,7 +811,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 {
                     basesp->withdrawn += value;
                     didstats = 1;
-                    //if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                    if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
                         printf("########### %p withdrawn %s += %.8f check %.8f\n",basesp,base,dstr(value),dstr(checktoshis));
                 }
                 if ( 0 && strcmp(base,"RUB") == 0 && (pax == 0 || pax->approved == 0) )
