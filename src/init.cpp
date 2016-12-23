@@ -11,6 +11,9 @@
 #include "crypto/common.h"
 #include "addrman.h"
 #include "amount.h"
+#ifdef ENABLE_MINING
+#include "base58.h"
+#endif
 #include "checkpoints.h"
 #include "compat/sanity.h"
 #include "consensus/validation.h"
@@ -163,8 +166,12 @@ void Shutdown()
 #ifdef ENABLE_WALLET
     if (pwalletMain)
         pwalletMain->Flush(false);
- #ifdef ENABLE_MINING
+#endif
+#ifdef ENABLE_MINING
+ #ifdef ENABLE_WALLET
     GenerateBitcoins(false, NULL, 0);
+ #else
+    GenerateBitcoins(false, 0);
  #endif
 #endif
     StopNode();
@@ -919,6 +926,17 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     fAlerts = GetBoolArg("-alerts", DEFAULT_ALERTS);
 
+#ifdef ENABLE_MINING
+    if (mapArgs.count("-mineraddress")) {
+        CBitcoinAddress addr;
+        if (!addr.SetString(mapArgs["-mineraddress"])) {
+            return InitError(strprintf(
+                _("Invalid address for -mineraddress=<addr>: '%s' (must be a transparent address)"),
+                mapArgs["-mineraddress"]));
+        }
+    }
+#endif
+
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 
     // Initialize libsodium
@@ -1502,10 +1520,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                                          boost::ref(cs_main), boost::cref(pindexBestHeader), nPowTargetSpacing);
     scheduler.scheduleEvery(f, nPowTargetSpacing);
 
-#if defined(ENABLE_WALLET) && defined(ENABLE_MINING)
+#ifdef ENABLE_MINING
     // Generate coins in the background
-    if (pwalletMain)
+ #ifdef ENABLE_WALLET
+    if (pwalletMain || !GetArg("-mineraddress", "").empty())
         GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1));
+ #else
+    GenerateBitcoins(GetBoolArg("-gen", false), GetArg("-genproclimit", 1));
+ #endif
 #endif
 
     // ********************************************************* Step 11: finished
