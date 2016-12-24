@@ -1201,8 +1201,8 @@ void ThreadSocketHandler()
 
                 bool select_send;
                 {
-                    TRY_LOCK(pnode->cs_vSend, lockSend);
-                    select_send = lockSend && !pnode->vSendMsg.empty();
+                    LOCK(pnode->cs_vSend);
+                    select_send = !pnode->vSendMsg.empty();
                 }
 
                 bool select_recv;
@@ -1343,9 +1343,8 @@ void ThreadSocketHandler()
             //
             if (sendSet)
             {
-                TRY_LOCK(pnode->cs_vSend, lockSend);
-                if (lockSend)
-                    SocketSendData(pnode);
+                LOCK(pnode->cs_vSend);
+                SocketSendData(pnode);
             }
 
             //
@@ -1722,7 +1721,7 @@ void ThreadMessageHandler()
 
             // Send messages
             {
-                TRY_LOCK(pnode->cs_vSend, lockSend);
+                TRY_LOCK(pnode->cs_sendProcessing, lockSend);
                 if (lockSend)
                     g_signals.SendMessages(chainparams.GetConsensus(), pnode);
             }

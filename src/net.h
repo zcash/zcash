@@ -266,6 +266,8 @@ public:
     CCriticalSection cs_hSocket;
     CCriticalSection cs_vRecv;
 
+    CCriticalSection cs_sendProcessing;
+
     std::deque<CInv> vRecvGetData;
     std::deque<CNetMessage> vRecvMsg;
     CCriticalSection cs_vRecvMsg;
