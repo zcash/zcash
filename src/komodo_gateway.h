@@ -424,9 +424,9 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
                 if ( n < sizeof(paxes)/sizeof(*paxes) )
                 {
                     paxes[n++] = pax;
-                    int32_t j; for (j=0; j<32; j++)
-                        printf("%02x",((uint8_t *)&pax->txid)[j]);
-                    printf(" %s.(kmdht.%d ht.%d marked.%u approved.%d validated %.8f) %.8f\n",pax->source,pax->height,pax->otherheight,pax->marked,pax->approved,dstr(pax->validated),dstr(pax->komodoshis));
+                    //int32_t j; for (j=0; j<32; j++)
+                    //    printf("%02x",((uint8_t *)&pax->txid)[j]);
+                    //printf(" %s.(kmdht.%d ht.%d marked.%u approved.%d validated %.8f) %.8f\n",pax->source,pax->height,pax->otherheight,pax->marked,pax->approved,dstr(pax->validated),dstr(pax->komodoshis));
                 }
             }
         }
