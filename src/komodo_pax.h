@@ -429,6 +429,7 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
         height -= 10;
     if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
     {
+        portable_mutex_lock(&komodo_mutex);
         for (i=NUM_PRICES-1; i>=0; i--)
         {
             ptr = &PVALS[36 * i];
@@ -439,11 +440,13 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
                     *kmdbtcp = ptr[MAX_CURRENCIES + 1] / 539;
                     *btcusdp = ptr[MAX_CURRENCIES + 2] / 539;
                 }
+                portable_mutex_unlock(&komodo_mutex);
                 if ( kmdbtc != 0 && btcusd != 0 )
                     return(komodo_paxcalc(&ptr[1],baseid,relid,basevolume,kmdbtc,btcusd));
                 else return(0);
             }
         }
+        portable_mutex_unlock(&komodo_mutex);
     } //else printf("paxprice invalid base.%s %d, rel.%s %d\n",base,baseid,rel,relid);
     return(0);
 }

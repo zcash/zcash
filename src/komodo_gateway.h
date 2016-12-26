@@ -424,9 +424,9 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
                 if ( n < sizeof(paxes)/sizeof(*paxes) )
                 {
                     paxes[n++] = pax;
-                    int32_t j; for (j=0; j<32; j++)
-                        printf("%02x",((uint8_t *)&pax->txid)[j]);
-                    printf(" %s.(kmdht.%d ht.%d marked.%u approved.%d validated %.8f) %.8f\n",pax->source,pax->height,pax->otherheight,pax->marked,pax->approved,dstr(pax->validated),dstr(pax->komodoshis));
+                    //int32_t j; for (j=0; j<32; j++)
+                    //    printf("%02x",((uint8_t *)&pax->txid)[j]);
+                    //printf(" %s.(kmdht.%d ht.%d marked.%u approved.%d validated %.8f) %.8f\n",pax->source,pax->height,pax->otherheight,pax->marked,pax->approved,dstr(pax->validated),dstr(pax->komodoshis));
                 }
             }
         }
@@ -640,7 +640,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             {
                 printf("WOULD REJECT %s: ht.%d (%c) matched.%d vs num.%d\n",symbol,height,opcode,matched,num);
                 // can easily happen depending on order of loading
-                if ( height > 150000 )
+                if ( height > 200000 )
                 {
                     printf("REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
                     return(-1);
