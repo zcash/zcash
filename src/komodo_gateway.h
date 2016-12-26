@@ -640,7 +640,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             {
                 printf("WOULD REJECT %s: ht.%d (%c) matched.%d vs num.%d\n",symbol,height,opcode,matched,num);
                 // can easily happen depending on order of loading
-                if ( height > 150000 )
+                if ( height > 200000 )
                 {
                     printf("REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
                     return(-1);
