@@ -39,11 +39,20 @@ OSX_PACKAGING = $(OSX_DEPLOY_SCRIPT) $(OSX_FANCY_PLIST) $(OSX_INSTALLER_ICONS) $
   $(top_srcdir)/contrib/macdeploy/detached-sig-apply.sh \
   $(top_srcdir)/contrib/macdeploy/detached-sig-create.sh
 
+
+if BUILD_DARWIN
 COVERAGE_INFO = baseline_filtered_combined.info baseline.info block_test.info \
   leveldb_baseline.info test_bitcoin_filtered.info total_coverage.info \
   baseline_filtered.info block_test_filtered.info \
   leveldb_baseline_filtered.info test_bitcoin_coverage.info test_bitcoin.info
 #  zcash-gtest.info zcash-gtest_filtered.info zcash-gtest_coverage.info
+else
+COVERAGE_INFO = baseline_filtered_combined.info baseline.info block_test.info \
+  leveldb_baseline.info test_bitcoin_filtered.info total_coverage.info \
+  baseline_filtered.info block_test_filtered.info \
+  leveldb_baseline_filtered.info test_bitcoin_coverage.info test_bitcoin.info \
+  zcash-gtest.info zcash-gtest_filtered.info zcash-gtest_coverage.info
+endif
 
 dist-hook:
 	-$(MAKE) -C $(top_distdir)/src/leveldb clean
@@ -150,6 +159,7 @@ if USE_LCOV
 baseline.info:
 	$(LCOV) -c -i -d $(abs_builddir)/src -o $@
 
+if BUILD_DARWIN
 baseline_filtered.info: baseline.info
 	$(LCOV) -r $< "/usr/include/*" \
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
@@ -157,10 +167,22 @@ baseline_filtered.info: baseline.info
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
                       "$(abs_builddir)/src/test/*" \
                       -o $@
+else
+baseline_filtered.info: baseline.info
+	$(LCOV) -r $< "/usr/include/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
+                      "$(abs_builddir)/src/gtest/*" \
+                      "$(abs_builddir)/src/test/*" \
+                      -o $@
+endif
 
 leveldb_baseline.info: baseline_filtered.info
 	$(LCOV) -c -i -d $(abs_builddir)/src/leveldb -b $(abs_builddir)/src/leveldb -o $@
 
+if BUILD_DARWIN
 leveldb_baseline_filtered.info: leveldb_baseline.info
 	$(LCOV) -r $< "/usr/include/*" \
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
@@ -168,6 +190,17 @@ leveldb_baseline_filtered.info: leveldb_baseline.info
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
                       "$(abs_builddir)/src/test/*" \
                       -o $@
+else
+leveldb_baseline_filtered.info: leveldb_baseline.info
+	$(LCOV) -r $< "/usr/include/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
+                      "$(abs_builddir)/src/gtest/*" \
+                      "$(abs_builddir)/src/test/*" \
+                      -o $@
+endif
 
 baseline_filtered_combined.info: leveldb_baseline_filtered.info baseline_filtered.info
 	$(LCOV) -a leveldb_baseline_filtered.info -a baseline_filtered.info -o $@
@@ -178,6 +211,7 @@ test_bitcoin.info: baseline_filtered_combined.info
 	$(LCOV) -z -d $(abs_builddir)/src
 	$(LCOV) -z -d $(abs_builddir)/src/leveldb
 
+if BUILD_DARWIN
 test_bitcoin_filtered.info: test_bitcoin.info
 	$(LCOV) -r $< "/usr/include/*" \
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
@@ -185,7 +219,17 @@ test_bitcoin_filtered.info: test_bitcoin.info
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
                       "$(abs_builddir)/src/test/*" \
                       -o $@
-
+else
+test_bitcoin_filtered.info: test_bitcoin.info
+	$(LCOV) -r $< "/usr/include/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
+                      "$(abs_builddir)/src/gtest/*" \
+                      "$(abs_builddir)/src/test/*" \
+                      -o $@
+endif
 
 block_test.info: test_bitcoin_filtered.info
 	$(MKDIR_P) qa/tmp
@@ -194,6 +238,7 @@ block_test.info: test_bitcoin_filtered.info
 	$(LCOV) -z -d $(abs_builddir)/src
 	$(LCOV) -z -d $(abs_builddir)/src/leveldb
 
+if BUILD_DARWIN
 block_test_filtered.info: block_test.info
 	$(LCOV) -r $< "/usr/include/*" \
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
@@ -201,12 +246,34 @@ block_test_filtered.info: block_test.info
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
                       "$(abs_builddir)/src/test/*" \
                       -o $@
+else
+block_test_filtered.info: block_test.info
+	$(LCOV) -r $< "/usr/include/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
+                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
+                      "$(abs_builddir)/src/gtest/*" \
+                      "$(abs_builddir)/src/test/*" \
+                      -o $@
+endif
 
 test_bitcoin_coverage.info: baseline_filtered_combined.info test_bitcoin_filtered.info
        $(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a test_bitcoin_filtered.info -o $@
 
+if ! BUILD_DARWIN
+zcash-gtest_coverage.info: baseline_filtered_combined.info zcash-gtest_filtered.info
+	$(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a zcash-gtest_filtered.info -o $@
+endif
+
+if BUILD_DARWIN
 total_coverage.info:  baseline_filtered_combined.info test_bitcoin_filtered.info block_test_filtered.info
        $(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a test_bitcoin_filtered.info -a block_test_filtered.info -o $@ | $(GREP) "\%" | $(AWK) '{ print substr($$3,2,50) "/" $$5 }' > coverage_percent.txt
+else
+total_coverage.info:  baseline_filtered_combined.info test_bitcoin_filtered.info zcash-gtest_filtered.info block_test_filtered.info
+	$(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a test_bitcoin_filtered.info -a zcash-gtest_filtered.info -a block_test_filtered.info -o $@ | $(GREP) "\%" | $(AWK) '{ print substr($$3,2,50) "/" $$5 }' > coverage_percent.txt
+endif
+
 
 test_bitcoin.coverage/.dirstamp:  test_bitcoin_coverage.info
        $(GENHTML) -s $< -o $(@D)
@@ -216,7 +283,11 @@ total.coverage/.dirstamp: total_coverage.info
        $(GENHTML) -s $< -o $(@D)
        @touch $@
 
+if BUILD_DARWIN
 cov: test_bitcoin.coverage/.dirstamp total.coverage/.dirstamp
+else
+cov: test_bitcoin.coverage/.dirstamp cov-zcash total.coverage/.dirstamp
+endif
 
 endif
 
