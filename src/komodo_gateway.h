@@ -856,9 +856,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         {
             for (i=0; i<n; i++)
             {
-                //for (j=0; j<32; j++)
-                //    printf("%02x",((uint8_t *)&txids[i])[j]);
-                //printf(" v%d %.8f k.%d ht.%d base.%d\n",vouts[i],dstr(values[i]),kmdheights[i],otherheights[i],baseids[i]);
+                for (j=0; j<32; j++)
+                    printf("%02x",((uint8_t *)&txids[i])[j]);
+                printf(" v%d %.8f %.8f k.%d ht.%d base.%d\n",vouts[i],dstr(values[i]),dstr(srcvalues[i]),kmdheights[i],otherheights[i],baseids[i]);
                 if ( baseids[i] < 0 )
                 {
                     //printf("baseids[%d] %d\n",i,baseids[i]);
