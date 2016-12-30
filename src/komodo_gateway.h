@@ -950,7 +950,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         basesp->redeemed += value;
                         pax->didstats = 1;
                         //if ( strcmp(CURRENCIES[baseids[i]],ASSETCHAINS_SYMBOL) == 0 )
-                            printf("ht.%d %.8f ########### %p redeemed %s += %.8f kht.%d ht.%d\n",height,dstr(value),basesp,CURRENCIES[baseids[i]],dstr(value),kmdheights[i],otherheights[i]);
+                            printf("ht.%d %.8f ########### %p redeemed %s += %.8f %.8f kht.%d ht.%d\n",height,dstr(value),basesp,CURRENCIES[baseids[i]],dstr(value),dstr(srcvalues[i]),kmdheights[i],otherheights[i]);
                     }
                 }
                 if ( (pax= komodo_paxmark(height,txids[i],vouts[i],'W',height)) != 0 )
