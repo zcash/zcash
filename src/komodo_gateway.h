@@ -861,8 +861,11 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 printf(" v%d %.8f %.8f k.%d ht.%d base.%d\n",vouts[i],dstr(values[i]),dstr(srcvalues[i]),kmdheights[i],otherheights[i],baseids[i]);
                 if ( baseids[i] < 0 )
                 {
+                    for (i=0; i<opretlen; i++)
+                        printf("%02x",opretbuf[i]);
+                    printf(" opret[%c] else path tokomodo.%d ht.%d before %.8f opretlen.%d\n",opretbuf[0],tokomodo,height,dstr(komodo_paxtotal()),opretlen);
                     //printf("baseids[%d] %d\n",i,baseids[i]);
-                    if ( (pax= komodo_paxfind(txids[i],vouts[i],'W')) != 0 )
+                    if ( (pax= komodo_paxfind(txids[i],vouts[i],'W')) != 0 || (pax= komodo_paxfind(txids[i],vouts[i],'X')) != 0 )
                     {
                         baseids[i] = komodo_baseid(pax->symbol);
                         printf("override neg1 with (%s)\n",pax->symbol);
