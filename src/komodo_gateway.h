@@ -209,16 +209,8 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                 {
                     txids[n] = p.txid;
                     vouts[n] = p.vout;
-                    if ( iskomodo != 0 )
-                    {
-                        values[n] = p.komodoshis;
-                        srcvalues[n] = p.fiatoshis;
-                    }
-                    else
-                    {
-                        values[n] = p.fiatoshis;
-                        srcvalues[n] = p.komodoshis;
-                    }
+                    values[n] = (strcmp("KMD",base) == 0) ? p.komodoshis : p.fiatoshis;
+                    srcvalues[n] = (strcmp("KMD",base) == 0) ? p.fiatoshis : p.komodoshis;
                     kmdheights[n] = p.height;
                     otherheights[n] = p.otherheight;
                     memcpy(&rmd160s[n * 20],p.rmd160,20);
@@ -926,7 +918,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     else if ( opretbuf[0] == 'X' )
     {
         tokomodo = 1;
-        if ( (n= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,opretbuf,opretlen,2)) > 0 )
+        if ( (n= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,opretbuf,opretlen,1)) > 0 )
         {
             for (i=0; i<n; i++)
             {
