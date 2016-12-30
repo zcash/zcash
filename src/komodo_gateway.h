@@ -191,6 +191,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
     if ( KOMODO_PAX == 0 )
         return(0);
     incr = 34 + (iskomodo * (2*sizeof(fiatoshis) + 2*sizeof(height) + 20));
+    //41e77b91cb68dc2aa02fa88550eae6b6d44db676a7e935337b6d1392d9718f03cb0200305c90660400000000fbcbeb1f000000bde801006201000058e7945ad08ddba1eac9c9b6c8e1e97e8016a2d152
     //for (i=0; i<opretlen; i++)
     //    printf("%02x",opretbuf[i]);
     //printf(" opretlen.%d (%s)\n",opretlen,base);
