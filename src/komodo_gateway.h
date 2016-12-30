@@ -626,7 +626,13 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         {
                             printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
                             errs++;
-                        } else matched++;
+                        }
+                        else
+                        {
+                            if ( opcode == 'X' )
+                                printf("check deposit validates %s %.8f -> %.8f\n",CURRENCIES[baseids[i]],dstr(srcvalues[i]),dstr(values[i]));
+                            matched++;
+                        }
                     }
                     else
                     {
