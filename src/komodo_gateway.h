@@ -862,7 +862,13 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 if ( baseids[i] < 0 )
                 {
                     //printf("baseids[%d] %d\n",i,baseids[i]);
-                    continue;
+                    if ( (pax= komodo_paxfind(txids[i],vouts[i],'W')) != 0 )
+                    {
+                        baseids[i] = komodo_baseid(pax->symbol);
+                        printf("override neg1 with (%s)\n",pax->symbol);
+                    }
+                    if ( baseids[i] < 0 )
+                        continue;
                 }
                 didstats = 0;
                 seed = 0;
