@@ -209,7 +209,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                 {
                     txids[n] = p.txid;
                     vouts[n] = p.vout;
-                    if ( iskomodo == 1 )
+                    if ( iskomodo != 0 )
                     {
                         values[n] = p.komodoshis;
                         srcvalues[n] = p.fiatoshis;
