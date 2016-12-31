@@ -6613,9 +6613,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 // requires LOCK(cs_vRecvMsg)
 bool ProcessMessages(const CChainParams& chainparams, CNode* pfrom)
 {
-    //if (fDebug)
-    //    LogPrintf("%s(%u messages)\n", __func__, pfrom->vRecvMsg.size());
-
     //
     // Message format
     //  (4) message start
@@ -6640,11 +6637,6 @@ bool ProcessMessages(const CChainParams& chainparams, CNode* pfrom)
 
         // get next message
         CNetMessage& msg = *it;
-
-        //if (fDebug)
-        //    LogPrintf("%s(message %u msgsz, %u bytes, complete:%s)\n", __func__,
-        //            msg.hdr.nMessageSize, msg.vRecv.size(),
-        //            msg.complete() ? "Y" : "N");
 
         // end, if an incomplete message is found
         if (!msg.complete())
