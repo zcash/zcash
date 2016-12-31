@@ -1579,7 +1579,7 @@ void ThreadMessageHandler()
 
                     if (pnode->nSendSize < SendBufferSize())
                     {
-                        if (!pnode->vRecvGetData.empty() || (!pnode->vRecvMsg.empty() && pnode->vRecvMsg[0].complete()))
+                        if (!pnode->vRecvGetData.empty() || (!pnode->vRecvMsg.empty() && pnode->vRecvMsg.front().complete()))
                         {
                             fSleep = false;
                         }
