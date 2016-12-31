@@ -266,7 +266,7 @@ public:
     std::list<CNetMessage> vRecvMsg;
     CCriticalSection cs_vRecvMsg;
     uint64_t nRecvBytes;
-    int nRecvVersion;
+    std::atomic<int> nRecvVersion;
 
     int64_t nLastSend;
     int64_t nLastRecv;
@@ -388,12 +388,13 @@ public:
     // requires LOCK(cs_vRecvMsg)
     bool ReceiveMsgBytes(const char *pch, unsigned int nBytes);
 
-    // requires LOCK(cs_vRecvMsg)
     void SetRecvVersion(int nVersionIn)
     {
         nRecvVersion = nVersionIn;
-        for (CNetMessage &msg : vRecvMsg)
-            msg.SetVersion(nVersionIn);
+    }
+    int GetRecvVersion()
+    {
+        return nRecvVersion;
     }
 
     CNode* AddRef()
