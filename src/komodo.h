@@ -23,7 +23,7 @@
 // a. automate notarization fee payouts
 // b. automated distribution of test REVS snapshot
 
-//#define KOMODO_ASSETCHAINS_WAITNOTARIZE
+#define KOMODO_ASSETCHAINS_WAITNOTARIZE
 #define KOMODO_PAXMAX (10000 * COIN)
 
 #include <stdint.h>
