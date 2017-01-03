@@ -6,6 +6,7 @@
 
 #include "memusage.h"
 #include "random.h"
+#include "version.h"
 
 #include <assert.h>
 
@@ -176,11 +177,20 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
     // case restoring the "old" anchor during a reorg must
     // have no effect.
     if (currentRoot != newrt) {
-        CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(currentRoot, CAnchorsCacheEntry())).first;
+        // Bring the current best anchor into our local cache
+        // so that its tree exists in memory.
+        {
+            ZCIncrementalMerkleTree tree;
+            assert(GetAnchorAt(currentRoot, tree));
+        }
 
-        ret->second.entered = false;
-        ret->second.flags = CAnchorsCacheEntry::DIRTY;
+        // Mark the anchor as unentered, removing it from view
+        cacheAnchors[currentRoot].entered = false;
 
+        // Mark the cache entry as dirty so it's propagated
+        cacheAnchors[currentRoot].flags = CAnchorsCacheEntry::DIRTY;
+
+        // Mark the new root as the best anchor
         hashAnchor = newrt;
     }
 }
@@ -303,16 +313,12 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
             CAnchorsMap::iterator parent_it = cacheAnchors.find(child_it->first);
 
             if (parent_it == cacheAnchors.end()) {
-                if (child_it->second.entered) {
-                    // Parent doesn't have an entry, but child has a new commitment root.
+                CAnchorsCacheEntry& entry = cacheAnchors[child_it->first];
+                entry.entered = child_it->second.entered;
+                entry.tree = child_it->second.tree;
+                entry.flags = CAnchorsCacheEntry::DIRTY;
 
-                    CAnchorsCacheEntry& entry = cacheAnchors[child_it->first];
-                    entry.entered = true;
-                    entry.tree = child_it->second.tree;
-                    entry.flags = CAnchorsCacheEntry::DIRTY;
-
-                    cachedCoinsUsage += memusage::DynamicUsage(entry.tree);
-                }
+                cachedCoinsUsage += memusage::DynamicUsage(entry.tree);
             } else {
                 if (parent_it->second.entered != child_it->second.entered) {
                     // The parent may have removed the entry.
@@ -332,14 +338,9 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
             CNullifiersMap::iterator parent_it = cacheNullifiers.find(child_it->first);
 
             if (parent_it == cacheNullifiers.end()) {
-                if (child_it->second.entered) {
-                    // Parent doesn't have an entry, but child has a SPENT nullifier.
-                    // Move the spent nullifier up.
-
-                    CNullifiersCacheEntry& entry = cacheNullifiers[child_it->first];
-                    entry.entered = true;
-                    entry.flags = CNullifiersCacheEntry::DIRTY;
-                }
+                CNullifiersCacheEntry& entry = cacheNullifiers[child_it->first];
+                entry.entered = child_it->second.entered;
+                entry.flags = CNullifiersCacheEntry::DIRTY;
             } else {
                 if (parent_it->second.entered != child_it->second.entered) {
                     parent_it->second.entered = child_it->second.entered;
@@ -469,6 +470,7 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
 {
     if (tx.IsCoinBase())
         return 0.0;
+    CAmount nTotalIn = 0;
     double dResult = 0.0;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
@@ -477,8 +479,34 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
         if (!coins->IsAvailable(txin.prevout.n)) continue;
         if (coins->nHeight < nHeight) {
             dResult += coins->vout[txin.prevout.n].nValue * (nHeight-coins->nHeight);
+            nTotalIn += coins->vout[txin.prevout.n].nValue;
         }
     }
+
+    // If a transaction contains a joinsplit, we boost the priority of the transaction.
+    // Joinsplits do not reveal any information about the value or age of a note, so we
+    // cannot apply the priority algorithm used for transparent utxos.  Instead, we pick a
+    // very large number and multiply it by the transaction's fee per 1000 bytes of data.
+    // One trillion, 1000000000000, is equivalent to 1 ZEC utxo * 10000 blocks (~17 days).
+    if (tx.vjoinsplit.size() > 0) {
+        unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+        nTotalIn += tx.GetJoinSplitValueIn();
+        CAmount fee = nTotalIn - tx.GetValueOut();
+        CFeeRate feeRate(fee, nTxSize);
+        CAmount feePerK = feeRate.GetFeePerK();
+
+        if (feePerK == 0) {
+            feePerK = 1;
+        }
+
+        dResult += 1000000000000 * double(feePerK);
+        // We cast feePerK from int64_t to double because if feePerK is a large number, say
+        // close to MAX_MONEY, the multiplication operation will result in an integer overflow.
+        // The variable dResult should never overflow since a 64-bit double in C++ is typically
+        // a double-precision floating-point number as specified by IEE 754, with a maximum
+        // value DBL_MAX of 1.79769e+308.
+    }
+
     return tx.ComputePriority(dResult);
 }
 

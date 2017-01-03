@@ -373,14 +373,14 @@ void CWallet::ChainTip(const CBlockIndex *pindex, const CBlock *pblock,
     if (added) {
         IncrementNoteWitnesses(pindex, pblock, tree);
     } else {
-        DecrementNoteWitnesses();
+        DecrementNoteWitnesses(pindex);
     }
 }
 
 void CWallet::SetBestChain(const CBlockLocator& loc)
 {
     CWalletDB walletdb(strWalletFile);
-    walletdb.WriteBestBlock(loc);
+    SetBestChainINTERNAL(walletdb, loc);
 }
 
 bool CWallet::SetMinVersion(enum WalletFeature nVersion, CWalletDB* pwalletdbIn, bool fExplicit)
@@ -630,8 +630,10 @@ void CWallet::ClearNoteWitnessCache()
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
         for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
             item.second.witnesses.clear();
+            item.second.witnessHeight = -1;
         }
     }
+    nWitnessCacheSize = 0;
 }
 
 void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
@@ -648,7 +650,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                 // Only increment witnesses that are behind the current height
                 if (nd->witnessHeight < pindex->nHeight) {
                     // Witnesses being incremented should always be either -1
-                    // (never incremented) or one below pindex
+                    // (never incremented or decremented) or one below pindex
                     assert((nd->witnessHeight == -1) ||
                            (nd->witnessHeight == pindex->nHeight - 1));
                     // Copy the witness for the previous block if we have one
@@ -739,14 +741,13 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
             }
         }
 
-        if (fFileBacked) {
-            CWalletDB walletdb(strWalletFile);
-            WriteWitnessCache(walletdb);
-        }
+        // For performance reasons, we write out the witness cache in
+        // CWallet::SetBestChain() (which also ensures that overall consistency
+        // of the wallet.dat is maintained).
     }
 }
 
-void CWallet::DecrementNoteWitnesses()
+void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
 {
     extern int32_t KOMODO_REWIND;
     {
@@ -756,10 +757,19 @@ void CWallet::DecrementNoteWitnesses()
                 CNoteData* nd = &(item.second);
                 // Check the validity of the cache
                 assert(nWitnessCacheSize >= nd->witnesses.size());
-                if (nd->witnesses.size() > 0) {
-                    nd->witnesses.pop_front();
+                // Only increment witnesses that are not above the current height
+                if (nd->witnessHeight <= pindex->nHeight) {
+                    // Witnesses being decremented should always be either -1
+                    // (never incremented or decremented) or equal to pindex
+                    assert((nd->witnessHeight == -1) ||
+                           (nd->witnessHeight == pindex->nHeight));
+                    if (nd->witnesses.size() > 0) {
+                        nd->witnesses.pop_front();
+                    }
+                    // pindex is the block being removed, so the new witness cache
+                    // height is one below it.
+                    nd->witnessHeight = pindex->nHeight - 1;
                 }
-                nd->witnessHeight -= 1;
             }
         }
         nWitnessCacheSize -= 1;
@@ -770,7 +780,6 @@ void CWallet::DecrementNoteWitnesses()
                 assert(nWitnessCacheSize >= nd->witnesses.size());
             }
         }
-        // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
         if ( nWitnessCacheSize <= 0 )
         {
             extern char ASSETCHAINS_SYMBOL[16];
@@ -778,10 +787,13 @@ void CWallet::DecrementNoteWitnesses()
         }
         if ( KOMODO_REWIND == 0 )
             assert(nWitnessCacheSize > 0);
-        if (fFileBacked) {
-            CWalletDB walletdb(strWalletFile);
-            WriteWitnessCache(walletdb);
-        }
+        //if (fFileBacked) {
+        //    CWalletDB walletdb(strWalletFile);
+        //    WriteWitnessCache(walletdb);
+        //}
+        // For performance reasons, we write out the witness cache in
+        // CWallet::SetBestChain() (which also ensures that overall consistency
+        // of the wallet.dat is maintained).
     }
 }
 
@@ -1109,6 +1121,7 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
             tmp.at(nd.first).witnesses.assign(
                 nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
         }
+        tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
     }
     // Now copy over the updated note data
     wtx.mapNoteData = tmp;

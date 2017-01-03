@@ -1,0 +1,22 @@
+From 0aa7c46227acd8ddb135c577674ad454bf2fba86 Mon Sep 17 00:00:00 2001
+From: Thomas Bernard <miniupnp@free.fr>
+Date: Fri, 11 Nov 2016 17:53:21 +0100
+Subject: [PATCH] remove unsigned/signed comparison
+
+---
+ miniupnpc/portlistingparse.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/miniupnpc/portlistingparse.c b/miniupnpc/portlistingparse.c
+index 1bed763..07f3f87 100644
+--- a/miniupnpc/portlistingparse.c
++++ b/miniupnpc/portlistingparse.c
+@@ -55,7 +55,7 @@ startelt(void * d, const char * name, int l)
+ 	pdata->curelt = PortMappingEltNone;
+ 	for(i = 0; elements[i].str; i++)
+ 	{
+-		if(strlen(elements[i].str) == l && memcmp(name, elements[i].str, l) == 0)
++		if(strlen(elements[i].str) == (size_t)l && memcmp(name, elements[i].str, l) == 0)
+ 		{
+ 			pdata->curelt = elements[i].code;
+ 			break;

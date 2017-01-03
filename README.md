@@ -1,43 +1,18 @@
-<<<<<<< HEAD
 
-Zcash
-=====
- 
-https://z.cash/
- 
-Where do I begin?
------------------
-
-We have a guide for joining the public testnet: https://github.com/zcash/zcash/wiki/Beta-Guide
-
-What is Zcash?
---------------
- 
-Zcash is an implementation of the "Zerocash" protocol. Based on Bitcoin's code, it intends to
-offer a far higher standard of privacy and anonymity through a sophisticiated zero-knowledge
-proving scheme which preserves confidentiality of transaction metadata.
- 
-**Zcash is unfinished and highly experimental.** Use at your own risk.
- 
-Participation in the Zcash project is subject to a [Code of Conduct](code_of_conduct.md).
- 
-=======
-Zcash 1.0.0
-===========
 
 What is Zcash?
 --------------
 
 [Zcash](https://z.cash/) is an implementation of the "Zerocash" protocol.
 Based on Bitcoin's code, it intends to offer a far higher standard of privacy
-and anonymity through a sophisticated zero-knowledge proving scheme that
-preserves confidentiality of transaction metadata. Technical details are
-available in our [Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf).
+through a sophisticated zero-knowledge proving scheme that preserves
+confidentiality of transaction metadata. Technical details are available
+in our [Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf).
 
 This software is the Zcash client. It downloads and stores the entire history
 of Zcash transactions; depending on the speed of your computer and network
 connection, the synchronization process could take a day or more once the
-block chain has reached a significant size.
+blockchain has reached a significant size.
 
 Security Warnings
 -----------------
@@ -165,9 +140,8 @@ Both komodod and komodo-cli recognize -ac_name=option so you can create a zcash 
 
 Where do I begin?
 -----------------
-
-We have a guide for joining the public testnet:
-https://github.com/zcash/zcash/wiki/Beta-Guide
+We have a guide for joining the main Zcash network:
+https://github.com/zcash/zcash/wiki/1.0-User-Guide
 
 ### Need Help?
 
@@ -182,7 +156,7 @@ Building
 --------
 
 Build Zcash along with most dependencies from source by running
-./zcutil/build.sh. Currently only Linux is supported.
+./zcutil/build.sh. Currently only Linux is officially supported.
 
 License
 -------

@@ -37,7 +37,7 @@ using namespace std;
  * or over the difficulty averaging window if 'lookup' is nonpositive.
  * If 'height' is nonnegative, compute the estimate at the time when a given block was found.
  */
-Value GetNetworkHashPS(int lookup, int height) {
+int64_t GetNetworkHashPS(int lookup, int height) {
     CBlockIndex *pb = chainActive.Tip();
 
     if (height >= 0 && height < chainActive.Height())
@@ -74,19 +74,60 @@ Value GetNetworkHashPS(int lookup, int height) {
     return (int64_t)(workDiff.getdouble() / timeDiff);
 }
 
-Value getnetworkhashps(const Array& params, bool fHelp)
+Value getlocalsolps(const Array& params, bool fHelp)
+{
+    if (fHelp)
+        throw runtime_error(
+            "getlocalsolps\n"
+            "\nReturns the average local solutions per second since this node was started.\n"
+            "This is the same information shown on the metrics screen (if enabled).\n"
+            "\nResult:\n"
+            "xxx.xxxxx     (numeric) Solutions per second average\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getlocalsolps", "")
+            + HelpExampleRpc("getlocalsolps", "")
+       );
+
+    LOCK(cs_main);
+    return GetLocalSolPS();
+}
+
+Value getnetworksolps(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 2)
         throw runtime_error(
-            "getnetworkhashps ( blocks height )\n"
-            "\nReturns the estimated network hashes per second based on the last n blocks.\n"
+            "getnetworksolps ( blocks height )\n"
+            "\nReturns the estimated network solutions per second based on the last n blocks.\n"
             "Pass in [blocks] to override # of blocks, -1 specifies over difficulty averaging window.\n"
             "Pass in [height] to estimate the network speed at the time when a certain block was found.\n"
             "\nArguments:\n"
             "1. blocks     (numeric, optional, default=120) The number of blocks, or -1 for blocks over difficulty averaging window.\n"
             "2. height     (numeric, optional, default=-1) To estimate at the time of the given height.\n"
             "\nResult:\n"
-            "x             (numeric) Hashes per second estimated\n"
+            "x             (numeric) Solutions per second estimated\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getnetworksolps", "")
+            + HelpExampleRpc("getnetworksolps", "")
+       );
+
+    LOCK(cs_main);
+    return GetNetworkHashPS(params.size() > 0 ? params[0].get_int() : 120, params.size() > 1 ? params[1].get_int() : -1);
+}
+
+Value getnetworkhashps(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 2)
+        throw runtime_error(
+            "getnetworkhashps ( blocks height )\n"
+            "\nDEPRECATED - left for backwards-compatibility. Use getnetworksolps instead.\n"
+            "\nReturns the estimated network solutions per second based on the last n blocks.\n"
+            "Pass in [blocks] to override # of blocks, -1 specifies over difficulty averaging window.\n"
+            "Pass in [height] to estimate the network speed at the time when a certain block was found.\n"
+            "\nArguments:\n"
+            "1. blocks     (numeric, optional, default=120) The number of blocks, or -1 for blocks over difficulty averaging window.\n"
+            "2. height     (numeric, optional, default=-1) To estimate at the time of the given height.\n"
+            "\nResult:\n"
+            "x             (numeric) Solutions per second estimated\n"
             "\nExamples:\n"
             + HelpExampleCli("getnetworkhashps", "")
             + HelpExampleRpc("getnetworkhashps", "")
@@ -209,7 +250,6 @@ endloop:
         CValidationState state;
         if (!ProcessNewBlock(chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
-        minedBlocks.increment();
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
     }
@@ -280,6 +320,8 @@ Value getmininginfo(const Array& params, bool fHelp)
             "  \"errors\": \"...\"          (string) Current errors\n"
             "  \"generate\": true|false     (boolean) If the generation is on or off (see getgenerate or setgenerate calls)\n"
             "  \"genproclimit\": n          (numeric) The processor limit for generation. -1 if no generation. (see getgenerate or setgenerate calls)\n"
+            "  \"localsolps\": xxx.xxxxx    (numeric) The average local solution rate in Sol/s since this node was started\n"
+            "  \"networksolps\": x          (numeric) The estimated network solution rate in Sol/s\n"
             "  \"pooledtx\": n              (numeric) The size of the mem pool\n"
             "  \"testnet\": true|false      (boolean) If using testnet or not\n"
             "  \"chain\": \"xxxx\",         (string) current network name as defined in BIP70 (main, test, regtest)\n"
@@ -299,7 +341,9 @@ Value getmininginfo(const Array& params, bool fHelp)
     obj.push_back(Pair("difficulty",       (double)GetNetworkDifficulty()));
     obj.push_back(Pair("errors",           GetWarnings("statusbar")));
     obj.push_back(Pair("genproclimit",     (int)GetArg("-genproclimit", -1)));
-    obj.push_back(Pair("networkhashps",    getnetworkhashps(params, false)));
+    obj.push_back(Pair("localsolps"  ,     getlocalsolps(params, false)));
+    obj.push_back(Pair("networksolps",     getnetworksolps(params, false)));
+    obj.push_back(Pair("networkhashps",    getnetworksolps(params, false)));
     obj.push_back(Pair("pooledtx",         (uint64_t)mempool.size()));
     obj.push_back(Pair("testnet",          Params().TestnetToBeDeprecatedFieldRPC()));
     obj.push_back(Pair("chain",            Params().NetworkIDString()));
@@ -483,10 +527,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
     if (vNodes.empty())
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Bitcoin is not connected!");
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Zcash is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Bitcoin is downloading blocks...");
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zcash is downloading blocks...");
 
     static unsigned int nTransactionsUpdatedLast;
 

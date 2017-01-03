@@ -3,6 +3,7 @@ $(package)_version=2.0
 $(package)_download_path=http://miniupnp.free.fr/files
 $(package)_file_name=$(package)-$($(package)_version).tar.gz
 $(package)_sha256_hash=d434ceb8986efbe199c5ca53f90ed53eab290b1e6d0530b717eb6fa49d61f93b
+$(package)_patches=fix-solaris-compilation.patch strlen-before-memcmp.patch patch-strlen-patch.patch
 
 define $(package)_set_vars
 $(package)_build_opts=CC="$($(package)_cc)"
@@ -14,7 +15,10 @@ endef
 define $(package)_preprocess_cmds
   mkdir dll && \
   sed -e 's|MINIUPNPC_VERSION_STRING \"version\"|MINIUPNPC_VERSION_STRING \"$($(package)_version)\"|' -e 's|OS/version|$(host)|' miniupnpcstrings.h.in > miniupnpcstrings.h && \
-  sed -i.old "s|miniupnpcstrings.h: miniupnpcstrings.h.in wingenminiupnpcstrings|miniupnpcstrings.h: miniupnpcstrings.h.in|" Makefile.mingw
+  sed -i.old "s|miniupnpcstrings.h: miniupnpcstrings.h.in wingenminiupnpcstrings|miniupnpcstrings.h: miniupnpcstrings.h.in|" Makefile.mingw && \
+  patch -p2 < $($(package)_patch_dir)/fix-solaris-compilation.patch && \
+  patch -p2 < $($(package)_patch_dir)/strlen-before-memcmp.patch && \
+  patch -p2 < $($(package)_patch_dir)/patch-strlen-patch.patch
 endef
 
 define $(package)_build_cmds
