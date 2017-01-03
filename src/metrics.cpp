@@ -72,6 +72,9 @@ static bool metrics_ThreadSafeMessageBox(const std::string& message,
                                       const std::string& caption,
                                       unsigned int style)
 {
+    // The SECURE flag has no effect in the metrics UI.
+    style &= ~CClientUIInterface::SECURE;
+
     std::string strCaption;
     // Check for usage of predefined caption
     switch (style) {
