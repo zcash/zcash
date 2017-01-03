@@ -123,3 +123,6 @@ qa/pull-tester/test.*/*
 /doc/doxygen/
 
 libzcashconsensus.pc
+
+contrib/debian/files
+contrib/debian/substvars
