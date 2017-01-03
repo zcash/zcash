@@ -23,8 +23,8 @@ if [ -d $BUILD_DIR ]; then
     rm -R $BUILD_DIR
 fi
 
-DEB_CMP=$BUILD_DIR/etc/bash_completion.d
 DEB_BIN=$BUILD_DIR/usr/bin
+DEB_CMP=$BUILD_DIR/usr/share/bash-completion/completions
 DEB_DOC=$BUILD_DIR/usr/share/doc/$PACKAGE_NAME
 DEB_MAN=$BUILD_DIR/usr/share/man/man1
 mkdir -p $BUILD_DIR/DEBIAN $DEB_CMP $DEB_BIN $DEB_DOC $DEB_MAN
@@ -49,6 +49,7 @@ cp -r $SRC_DEB/examples $DEB_DOC
 # Copy manpages
 cp $SRC_DEB/manpages/zcashd.1 $DEB_MAN
 cp $SRC_DEB/manpages/zcash-cli.1 $DEB_MAN
+cp $SRC_DEB/manpages/zcash-fetch-params.1 $DEB_MAN
 # Copy bash completion files
 cp $SRC_PATH/contrib/bitcoind.bash-completion $DEB_CMP/zcashd
 cp $SRC_PATH/contrib/bitcoin-cli.bash-completion $DEB_CMP/zcash-cli
@@ -57,6 +58,7 @@ gzip --best -n $DEB_DOC/changelog
 gzip --best -n $DEB_DOC/changelog.Debian
 gzip --best -n $DEB_MAN/zcashd.1
 gzip --best -n $DEB_MAN/zcash-cli.1
+gzip --best -n $DEB_MAN/zcash-fetch-params.1
 
 # Create the Debian package
 fakeroot dpkg-deb --build $BUILD_DIR
