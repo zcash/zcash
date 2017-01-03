@@ -1,4 +1,4 @@
-bin_PROGRAMS += \
+noinst_PROGRAMS += \
   zcash/GenerateParams \
   zcash/CreateJoinSplit
 
