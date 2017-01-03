@@ -20,6 +20,7 @@
 CCriticalSection cs_metrics;
 
 boost::synchronized_value<int64_t> nNodeStartTime;
+boost::synchronized_value<int64_t> nNextRefresh;
 AtomicCounter transactionsValidated;
 AtomicCounter ehSolverRuns;
 AtomicCounter solutionTargetChecks;
@@ -60,6 +61,13 @@ double GetLocalSolPS()
     return GetLocalSolPS_INTERNAL(GetUptime());
 }
 
+void TriggerRefresh()
+{
+    *nNextRefresh = GetTime();
+    // Ensure that the refresh has started before we return
+    MilliSleep(200);
+}
+
 static bool metrics_ThreadSafeMessageBox(const std::string& message,
                                       const std::string& caption,
                                       unsigned int style)
@@ -85,6 +93,9 @@ static bool metrics_ThreadSafeMessageBox(const std::string& message,
     if (u->size() > 5) {
         u->pop_back();
     }
+
+    TriggerRefresh();
+    return false;
 }
 
 static void metrics_InitMessage(const std::string& message)
@@ -333,8 +344,8 @@ void ThreadShowMetricsScreen()
             std::cout << "----------------------------------------" << std::endl;
         }
 
-        int64_t nWaitEnd = GetTime() + nRefresh;
-        while (GetTime() < nWaitEnd) {
+        *nNextRefresh = GetTime() + nRefresh;
+        while (GetTime() < *nNextRefresh) {
             boost::this_thread::interruption_point();
             MilliSleep(200);
         }
