@@ -38,6 +38,8 @@ previous release:
     contrib/DEBIAN/control
     contrib/gitian-descriptors/gitian-linux.yml
 
+    Build and commit to update versions, and then perform the following commands:
+
     help2man -n "RPC client for the Zcash daemon" src/zcash-cli > contrib/DEBIAN/manpages/zcash-cli.1
     help2man -n "Network daemon for interacting with the Zcash blockchain" src/zcashd > contrib/DEBIAN/manpages/zcashd.1
 
@@ -57,10 +59,9 @@ In `configure.ac` and `clientversion.h`:
 
 ### B2. Write release notes
 
-git shortlog helps a lot, for example:
+Run the release-notes.py script to generate release notes and update authors.md file. For example:
 
-    $ git shortlog --no-merges v${ZCASH_RELEASE_PREV}..HEAD \
-        > ./doc/release-notes/release-notes-${ZCASH_RELEASE}.md
+    $ python zcutil/release-notes.py --version $ZCASH_RELEASE
 
 Update the Debian package changelog:
 

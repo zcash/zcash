@@ -137,3 +137,8 @@ void seed_insecure_rand(bool fDeterministic)
         insecure_rand_Rw = tmp;
     }
 }
+
+int GenIdentity(int n)
+{
+    return n-1;
+}

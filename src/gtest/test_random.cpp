@@ -24,4 +24,12 @@ TEST(Random, MappedShuffle) {
     std::vector<int> em2 {0, 1, 2, 3, 4};
     EXPECT_EQ(ea2, a2);
     EXPECT_EQ(em2, m2);
+
+    auto a3 = a;
+    auto m3 = m;
+    MappedShuffle(a3.begin(), m3.begin(), a3.size(), GenIdentity);
+    std::vector<int> ea3 {8, 4, 6, 3, 5};
+    std::vector<int> em3 {0, 1, 2, 3, 4};
+    EXPECT_EQ(ea3, a3);
+    EXPECT_EQ(em3, m3);
 }

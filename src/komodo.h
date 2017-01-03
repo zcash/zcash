@@ -23,7 +23,7 @@
 // a. automate notarization fee payouts
 // b. automated distribution of test REVS snapshot
 
-//#define KOMODO_ASSETCHAINS_WAITNOTARIZE
+#define KOMODO_ASSETCHAINS_WAITNOTARIZE
 #define KOMODO_PAXMAX (10000 * COIN)
 
 #include <stdint.h>
@@ -194,7 +194,10 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
     static FILE *fp; static int32_t errs;
     struct komodo_state *sp; char fname[512],symbol[16],dest[16]; int32_t ht,func; uint8_t num,pubkeys[64][33];
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
+    {
+        KOMODO_INITDONE = (uint32_t)time(NULL);
         return;
+    }
     if ( fp == 0 )
     {
         komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"komodostate");
@@ -281,7 +284,6 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 errs++;
             //komodo_eventadd_utxo(sp,symbol,height,notaryid,txhash,voutmask,numvouts);
         }
-//#ifdef KOMODO_PAX
         else if ( pvals != 0 && numpvals > 0 )
         {
             int32_t i,nonz = 0;
@@ -301,7 +303,6 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             }
             //printf("save pvals height.%d numpvals.%d\n",height,numpvals);
         }
-//#endif
         else if ( height != 0 )
         {
             //printf("ht.%d func N ht.%d errs.%d\n",height,NOTARIZED_HEIGHT,errs);
