@@ -1,0 +1,17 @@
+*** depends/packages/packages.mk	2017-01-03 10:53:52.440371182 +0000
+--- ../../komodo-jl777/depends/packages/packages.mk	2017-01-03 09:48:21.650035146 +0000
+***************
+*** 1,12 ****
+  zcash_packages := libsnark libgmp libsodium
+- 
+- ifeq ($(build_os),darwin)
+- packages := boost openssl $(zcash_packages)
+- else
+  packages := boost openssl $(zcash_packages) googletest googlemock
+- endif
+- 
+- 
+  native_packages := native_ccache
+  
+  wallet_packages=bdb
+--- 1,5 ----
