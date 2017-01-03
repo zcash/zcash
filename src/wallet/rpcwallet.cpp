@@ -2955,7 +2955,7 @@ Value z_listreceivedbyaddress(const Array& params, bool fHelp)
     CZCPaymentAddress address(fromaddress);
     try {
         zaddr = address.Get();
-    } catch (std::runtime_error) {
+    } catch (const std::runtime_error&) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr.");
     }
 
@@ -3022,7 +3022,7 @@ Value z_getbalance(const Array& params, bool fHelp)
         CZCPaymentAddress address(fromaddress);
         try {
             zaddr = address.Get();
-        } catch (std::runtime_error) {
+        } catch (const std::runtime_error&) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
         }
         if (!pwalletMain->HaveSpendingKey(zaddr)) {
@@ -3226,7 +3226,7 @@ Value z_sendmany(const Array& params, bool fHelp)
         CZCPaymentAddress address(fromaddress);
         try {
             zaddr = address.Get();
-        } catch (std::runtime_error) {
+        } catch (const std::runtime_error&) {
             // invalid
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
         }
@@ -3273,7 +3273,7 @@ Value z_sendmany(const Array& params, bool fHelp)
                 CZCPaymentAddress zaddr(address);
                 zaddr.Get();
                 isZaddr = true;
-            } catch (std::runtime_error) {
+            } catch (const std::runtime_error&) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
             }
         }
