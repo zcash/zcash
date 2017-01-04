@@ -575,6 +575,9 @@ Value z_importkey(const Array& params, bool fHelp)
 
         pwalletMain->mapZKeyMetadata[addr].nCreateTime = 1;
 
+        // whenever a key is imported, we need to scan the whole chain
+        pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
+
         // We want to scan for transactions and notes
         if (fRescan) {
             pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
