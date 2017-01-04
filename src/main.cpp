@@ -5983,11 +5983,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
             // Track requests for our stuff
             GetMainSignals().Inventory(inv.hash);
-
-            if (pfrom->nSendSize > (SendBufferSize() * 2)) {
-                Misbehaving(pfrom->GetId(), 50);
-                return error("send buffer size() = %u", pfrom->nSendSize);
-            }
         }
 
         if (!vToFetch.empty())
