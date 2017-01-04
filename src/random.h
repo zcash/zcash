@@ -12,12 +12,6 @@
 #include <stdint.h>
 
 /**
- * Seed OpenSSL PRNG with additional entropy data
- */
-void RandAddSeed();
-void RandAddSeedPerfmon();
-
-/**
  * Functions to gather random data via the libsodium PRNG
  */
 void GetRandBytes(unsigned char* buf, size_t num);
