@@ -261,8 +261,21 @@ int printMessageBox(size_t cols)
     std::cout << _("Messages:") << std::endl;
     for (auto it = u->cbegin(); it != u->cend(); ++it) {
         std::cout << *it << std::endl;
-        // Handle wrapped lines
-        lines += (it->size() / cols);
+        // Handle newlines and wrapped lines
+        size_t i = 0;
+        size_t j = 0;
+        while (j < it->size()) {
+            i = it->find('\n', j);
+            if (i == std::string::npos) {
+                i = it->size();
+            } else {
+                // Newline
+                lines++;
+            }
+            // Wrapped lines
+            lines += ((i-j) / cols);
+            j = i + 1;
+        }
     }
     std::cout << std::endl;
     return lines;
