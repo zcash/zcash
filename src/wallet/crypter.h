@@ -16,20 +16,22 @@
 
 class uint256;
 
-const unsigned int WALLET_CRYPTO_KEY_SIZE = 32;
+const unsigned int WALLET_CRYPTO_KEY_SIZE = crypto_secretbox_KEYBYTES;
 const unsigned int WALLET_CRYPTO_SALT_SIZE = crypto_pwhash_SALTBYTES;
 
 /**
  * Private key encryption is done based on a CMasterKey,
  * which holds a salt and random encryption key.
  * 
- * CMasterKeys are encrypted using AES-256-CBC using a key
- * derived using derivation method nDerivationMethod
- * (0 == Argon2i()) and derivation iterations nDeriveIterations.
+ * CMasterKeys are encrypted using XSalsa20/Poly1305 (libsodium's
+ * crypto_secretbox) using a key derived using derivation method
+ * nDerivationMethod (0 == Argon2i()) and derivation iterations
+ * nDeriveIterations.
+ *
  * vchOtherDerivationParameters is provided for alternative algorithms
  * which may require more parameters (such as scrypt).
  * 
- * Wallet Private Keys are then encrypted using AES-256-CBC
+ * Wallet Private Keys are then encrypted using XSalsa20/Poly1305
  * with the double-sha256 of the public key as the IV, and the
  * master key's key as the encryption key (see keystore.[ch]).
  */

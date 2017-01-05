@@ -12,8 +12,6 @@
 #include <string>
 #include <vector>
 #include <boost/foreach.hpp>
-#include <openssl/aes.h>
-#include <openssl/evp.h>
 
 bool CCrypter::SetKeyFromPassphrase(
         const SecureString& strKeyData,
@@ -72,25 +70,14 @@ bool CCrypter::Encrypt(const CKeyingMaterial& vchPlaintext, std::vector<unsigned
     if (!fKeySet)
         return false;
 
-    // max ciphertext len for a n bytes of plaintext is
-    // n + AES_BLOCK_SIZE - 1 bytes
     int nLen = vchPlaintext.size();
-    int nCLen = nLen + AES_BLOCK_SIZE, nFLen = 0;
+    int nCLen = nLen + crypto_secretbox_MACBYTES;
     vchCiphertext = std::vector<unsigned char> (nCLen);
 
-    bool fOk = true;
-
-    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-    assert(ctx);
-    if (fOk) fOk = EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, chKey, chIV) != 0;
-    if (fOk) fOk = EVP_EncryptUpdate(ctx, &vchCiphertext[0], &nCLen, &vchPlaintext[0], nLen) != 0;
-    if (fOk) fOk = EVP_EncryptFinal_ex(ctx, (&vchCiphertext[0]) + nCLen, &nFLen) != 0;
-    EVP_CIPHER_CTX_free(ctx);
-
-    if (!fOk) return false;
-
-    vchCiphertext.resize(nCLen + nFLen);
-    return true;
+    return crypto_secretbox_easy(
+            &vchCiphertext[0],
+            &vchPlaintext[0], nLen,
+            chIV, chKey) == 0;
 }
 
 bool CCrypter::Decrypt(const std::vector<unsigned char>& vchCiphertext, CKeyingMaterial& vchPlaintext)
@@ -98,25 +85,14 @@ bool CCrypter::Decrypt(const std::vector<unsigned char>& vchCiphertext, CKeyingM
     if (!fKeySet)
         return false;
 
-    // plaintext will always be equal to or lesser than length of ciphertext
     int nLen = vchCiphertext.size();
-    int nPLen = nLen, nFLen = 0;
-
+    int nPLen = nLen - crypto_secretbox_MACBYTES;
     vchPlaintext = CKeyingMaterial(nPLen);
 
-    bool fOk = true;
-
-    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-    assert(ctx);
-    if (fOk) fOk = EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, chKey, chIV) != 0;
-    if (fOk) fOk = EVP_DecryptUpdate(ctx, &vchPlaintext[0], &nPLen, &vchCiphertext[0], nLen) != 0;
-    if (fOk) fOk = EVP_DecryptFinal_ex(ctx, (&vchPlaintext[0]) + nPLen, &nFLen) != 0;
-    EVP_CIPHER_CTX_free(ctx);
-
-    if (!fOk) return false;
-
-    vchPlaintext.resize(nPLen + nFLen);
-    return true;
+    return crypto_secretbox_open_easy(
+            &vchPlaintext[0],
+            &vchCiphertext[0], nLen,
+            chIV, chKey) == 0;
 }
 
 
