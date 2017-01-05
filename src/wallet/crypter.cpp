@@ -15,21 +15,40 @@
 #include <openssl/aes.h>
 #include <openssl/evp.h>
 
-bool CCrypter::SetKeyFromPassphrase(const SecureString& strKeyData, const std::vector<unsigned char>& chSalt, const unsigned int nRounds, const unsigned int nDerivationMethod)
+bool CCrypter::SetKeyFromPassphrase(
+        const SecureString& strKeyData,
+        const std::vector<unsigned char>& chSalt,
+        const unsigned int nRounds,
+        const unsigned int nDerivationMethod,
+        const std::vector<unsigned char> vchOtherDerivationParameters)
 {
     if (nRounds < 1 || chSalt.size() != WALLET_CRYPTO_SALT_SIZE)
         return false;
 
-    int i = 0;
-    if (nDerivationMethod == 0)
-        i = EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha512(), &chSalt[0],
-                          (unsigned char *)&strKeyData[0], strKeyData.size(), nRounds, chKey, chIV);
+    if (nDerivationMethod == 0) {
+        CDataStream ss(vchOtherDerivationParameters, SER_DISK, CLIENT_VERSION);
+        size_t memlimit = 0;
+        try {
+            memlimit = ReadCompactSize(ss);
+        } catch (const std::exception& e) {
+            LogPrintf("SetKeyFromPassphrase(): Invalid parameters: %s\n", e.what());
+            return false;
+        }
 
-    if (i != (int)WALLET_CRYPTO_KEY_SIZE)
-    {
-        memory_cleanse(chKey, sizeof(chKey));
-        memory_cleanse(chIV, sizeof(chIV));
-        return false;
+        unsigned char chOut[sizeof(chKey) + sizeof(chIV)];
+        if (crypto_pwhash(
+                chOut, sizeof(chOut),
+                &strKeyData[0], strKeyData.size(),
+                &chSalt[0],
+                nRounds, memlimit,
+                crypto_pwhash_ALG_DEFAULT) != 0) {
+            memory_cleanse(chOut, sizeof(chOut));
+            return false;
+        }
+
+        ::memcpy(chKey, chOut, sizeof(chKey));
+        ::memcpy(chIV, chOut + sizeof(chKey), sizeof(chIV));
+        memory_cleanse(chOut, sizeof(chOut));
     }
 
     fKeySet = true;

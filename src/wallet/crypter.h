@@ -5,16 +5,19 @@
 #ifndef BITCOIN_WALLET_CRYPTER_H
 #define BITCOIN_WALLET_CRYPTER_H
 
+#include "clientversion.h"
 #include "keystore.h"
 #include "serialize.h"
 #include "streams.h"
 #include "support/allocators/secure.h"
 #include "zcash/Address.hpp"
 
+#include "sodium.h"
+
 class uint256;
 
 const unsigned int WALLET_CRYPTO_KEY_SIZE = 32;
-const unsigned int WALLET_CRYPTO_SALT_SIZE = 8;
+const unsigned int WALLET_CRYPTO_SALT_SIZE = crypto_pwhash_SALTBYTES;
 
 /**
  * Private key encryption is done based on a CMasterKey,
@@ -22,7 +25,7 @@ const unsigned int WALLET_CRYPTO_SALT_SIZE = 8;
  * 
  * CMasterKeys are encrypted using AES-256-CBC using a key
  * derived using derivation method nDerivationMethod
- * (0 == EVP_sha512()) and derivation iterations nDeriveIterations.
+ * (0 == Argon2i()) and derivation iterations nDeriveIterations.
  * vchOtherDerivationParameters is provided for alternative algorithms
  * which may require more parameters (such as scrypt).
  * 
@@ -37,8 +40,7 @@ class CMasterKey
 public:
     std::vector<unsigned char> vchCryptedKey;
     std::vector<unsigned char> vchSalt;
-    //! 0 = EVP_sha512()
-    //! 1 = scrypt()
+    //! 0 = Argon2i()
     unsigned int nDerivationMethod;
     unsigned int nDeriveIterations;
     //! Use this for more parameters to key derivation,
@@ -58,11 +60,12 @@ public:
 
     CMasterKey()
     {
-        // 25000 rounds is just under 0.1 seconds on a 1.86 GHz Pentium M
-        // ie slightly lower than the lowest hardware we need bother supporting
-        nDeriveIterations = 25000;
         nDerivationMethod = 0;
-        vchOtherDerivationParameters = std::vector<unsigned char>(0);
+        nDeriveIterations = crypto_pwhash_OPSLIMIT_INTERACTIVE;
+        size_t memlimit = crypto_pwhash_MEMLIMIT_INTERACTIVE;
+        CDataStream ss(SER_DISK, CLIENT_VERSION);
+        WriteCompactSize(ss, memlimit);
+        vchOtherDerivationParameters = std::vector<unsigned char>(ss.begin(), ss.end());
     }
 };
 
@@ -89,7 +92,12 @@ private:
     bool fKeySet;
 
 public:
-    bool SetKeyFromPassphrase(const SecureString &strKeyData, const std::vector<unsigned char>& chSalt, const unsigned int nRounds, const unsigned int nDerivationMethod);
+    bool SetKeyFromPassphrase(
+            const SecureString &strKeyData,
+            const std::vector<unsigned char>& chSalt,
+            const unsigned int nRounds,
+            const unsigned int nDerivationMethod,
+            const std::vector<unsigned char> vchOtherDerivationParameters);
     bool Encrypt(const CKeyingMaterial& vchPlaintext, std::vector<unsigned char> &vchCiphertext);
     bool Decrypt(const std::vector<unsigned char>& vchCiphertext, CKeyingMaterial& vchPlaintext);
     bool SetKey(const CKeyingMaterial& chNewKey, const std::vector<unsigned char>& chNewIV);
