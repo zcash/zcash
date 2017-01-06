@@ -214,7 +214,7 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 }
 
 
-Value z_validateaddress(const Array& params, bool fHelp)
+UniValue z_validateaddress(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -261,7 +261,7 @@ Value z_validateaddress(const Array& params, bool fHelp)
         // address is invalid, nop here as isValid is false.
     }
 
-    Object ret;
+    UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("isvalid", isValid));
     if (isValid)
     {

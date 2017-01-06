@@ -18,7 +18,6 @@ zcash_gtest_SOURCES += \
 	wallet/gtest/test_wallet_zkeys.cpp
 endif
 zcash_gtest_SOURCES += \
-	gtest/test_jsonspirit.cpp \
 	gtest/test_tautology.cpp \
 	gtest/test_equihash.cpp \
 	gtest/test_joinsplit.cpp \

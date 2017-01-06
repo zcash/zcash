@@ -39,13 +39,13 @@ using namespace std;
 
 using namespace libzcash;
 
-extern Array TxJoinSplitToJSON(const CTransaction& tx);
+extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
 
 // Private method:
-Value z_getoperationstatus_IMPL(const Array&, bool);
+UniValue z_getoperationstatus_IMPL(const UniValue&, bool);
 
 std::string HelpRequiringPassphrase()
 {
@@ -2413,7 +2413,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     return results;
 }
 
-Value zc_sample_joinsplit(const json_spirit::Array& params, bool fHelp)
+UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
 {
     if (fHelp) {
         throw runtime_error(
@@ -2441,10 +2441,10 @@ Value zc_sample_joinsplit(const json_spirit::Array& params, bool fHelp)
     return HexStr(ss.begin(), ss.end());
 }
 
-Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
+UniValue zc_benchmark(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {
-        return Value::null;
+        return NullUniValue;
     }
 
     if (fHelp || params.size() < 2) {
@@ -2532,9 +2532,9 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         }
     }
 
-    Array results;
+    UniValue results(UniValue::VARR);
     for (auto time : sample_times) {
-        Object result;
+        UniValue result(UniValue::VOBJ);
         result.push_back(Pair("runningtime", time));
         results.push_back(result);
     }
@@ -2542,10 +2542,10 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
     return results;
 }
 
-Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
+UniValue zc_raw_receive(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {
-        return Value::null;
+        return NullUniValue;
     }
 
     if (fHelp || params.size() != 2) {
@@ -2563,7 +2563,7 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
             );
     }
 
-    RPCTypeCheck(params, boost::assign::list_of(str_type)(str_type));
+    RPCTypeCheck(params, boost::assign::list_of(UniValue::VSTR)(UniValue::VSTR));
 
     LOCK(cs_main);
 
@@ -2614,7 +2614,7 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << npt;
 
-    Object result;
+    UniValue result(UniValue::VOBJ);
     result.push_back(Pair("amount", ValueFromAmount(decrypted_note.value)));
     result.push_back(Pair("note", HexStr(ss.begin(), ss.end())));
     result.push_back(Pair("exists", (bool) witnesses[0]));
@@ -2623,10 +2623,10 @@ Value zc_raw_receive(const json_spirit::Array& params, bool fHelp)
 
 
 
-Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
+UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {
-        return Value::null;
+        return NullUniValue;
     }
 
     if (fHelp || params.size() != 5) {
@@ -2659,8 +2659,8 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
     if (!DecodeHexTx(tx, params[0].get_str()))
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
 
-    Object inputs = params[1].get_obj();
-    Object outputs = params[2].get_obj();
+    UniValue inputs = params[1].get_obj();
+    UniValue outputs = params[2].get_obj();
 
     CAmount vpub_old(0);
     CAmount vpub_new(0);
@@ -2677,9 +2677,8 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
     std::vector<SpendingKey> keys;
     std::vector<uint256> commitments;
 
-    BOOST_FOREACH(const Pair& s, inputs)
-    {
-        CZCSpendingKey spendingkey(s.value_.get_str());
+    for (const string& name_ : inputs.getKeys()) {
+        CZCSpendingKey spendingkey(inputs[name_].get_str());
         SpendingKey k = spendingkey.Get();
 
         keys.push_back(k);
@@ -2687,7 +2686,7 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
         NotePlaintext npt;
 
         {
-            CDataStream ssData(ParseHexV(s.name_, "note"), SER_NETWORK, PROTOCOL_VERSION);
+            CDataStream ssData(ParseHexV(name_, "note"), SER_NETWORK, PROTOCOL_VERSION);
             ssData >> npt;
         }
 
@@ -2720,11 +2719,10 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
         vjsin.push_back(JSInput());
     }
 
-    BOOST_FOREACH(const Pair& s, outputs)
-    {
-        CZCPaymentAddress pubaddr(s.name_);
+    for (const string& name_ : outputs.getKeys()) {
+        CZCPaymentAddress pubaddr(name_);
         PaymentAddress addrTo = pubaddr.Get();
-        CAmount nAmount = AmountFromValue(s.value_);
+        CAmount nAmount = AmountFromValue(outputs[name_]);
 
         vjsout.push_back(JSOutput(addrTo, nAmount));
     }
@@ -2804,17 +2802,17 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
         encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }
 
-    Object result;
+    UniValue result(UniValue::VOBJ);
     result.push_back(Pair("encryptednote1", encryptedNote1));
     result.push_back(Pair("encryptednote2", encryptedNote2));
     result.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
     return result;
 }
 
-Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp)
+UniValue zc_raw_keygen(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {
-        return Value::null;
+        return NullUniValue;
     }
 
     if (fHelp || params.size() != 0) {
@@ -2842,7 +2840,7 @@ Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp)
     CZCSpendingKey spendingkey(k);
     std::string viewing_hex = HexStr(viewing.begin(), viewing.end());
 
-    Object result;
+    UniValue result(UniValue::VOBJ);
     result.push_back(Pair("zcaddress", pubaddr.ToString()));
     result.push_back(Pair("zcsecretkey", spendingkey.ToString()));
     result.push_back(Pair("zcviewingkey", viewing_hex));
@@ -2850,10 +2848,10 @@ Value zc_raw_keygen(const json_spirit::Array& params, bool fHelp)
 }
 
 
-Value z_getnewaddress(const Array& params, bool fHelp)
+UniValue z_getnewaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() > 0)
         throw runtime_error(
@@ -2877,10 +2875,10 @@ Value z_getnewaddress(const Array& params, bool fHelp)
 }
 
 
-Value z_listaddresses(const Array& params, bool fHelp)
+UniValue z_listaddresses(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -2899,7 +2897,7 @@ Value z_listaddresses(const Array& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    Array ret;
+    UniValue ret(UniValue::VARR);
     std::set<libzcash::PaymentAddress> addresses;
     pwalletMain->GetPaymentAddresses(addresses);
     for (auto addr : addresses ) {
@@ -2959,10 +2957,10 @@ CAmount getBalanceZaddr(std::string address, int minDepth = 1) {
 }
 
 
-Value z_listreceivedbyaddress(const Array& params, bool fHelp)
+UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size()==0 || params.size() >2)
         throw runtime_error(
@@ -3005,11 +3003,11 @@ Value z_listreceivedbyaddress(const Array& params, bool fHelp)
     }
     
     
-    Array result;
+    UniValue result(UniValue::VARR);
     std::vector<CNotePlaintextEntry> entries;
     pwalletMain->GetFilteredNotes(entries, fromaddress, nMinDepth, false);
     for (CNotePlaintextEntry & entry : entries) {
-        Object obj;
+        UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("txid",entry.jsop.hash.ToString()));
         obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value))));
         std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
@@ -3020,10 +3018,10 @@ Value z_listreceivedbyaddress(const Array& params, bool fHelp)
 }
 
 
-Value z_getbalance(const Array& params, bool fHelp)
+UniValue z_getbalance(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size()==0 || params.size() >2)
         throw runtime_error(
@@ -3082,10 +3080,10 @@ Value z_getbalance(const Array& params, bool fHelp)
 }
 
 
-Value z_gettotalbalance(const Array& params, bool fHelp)
+UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -3125,17 +3123,17 @@ Value z_gettotalbalance(const Array& params, bool fHelp)
     CAmount nBalance = getBalanceTaddr("", nMinDepth);
     CAmount nPrivateBalance = getBalanceZaddr("", nMinDepth);
     CAmount nTotalBalance = nBalance + nPrivateBalance;
-    Object result;
+    UniValue result(UniValue::VOBJ);
     result.push_back(Pair("transparent", FormatMoney(nBalance, false)));
     result.push_back(Pair("private", FormatMoney(nPrivateBalance, false)));
     result.push_back(Pair("total", FormatMoney(nTotalBalance, false)));
     return result;
 }
 
-Value z_getoperationresult(const Array& params, bool fHelp)
+UniValue z_getoperationresult(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -3152,10 +3150,10 @@ Value z_getoperationresult(const Array& params, bool fHelp)
     return z_getoperationstatus_IMPL(params, true);
 }
 
-Value z_getoperationstatus(const Array& params, bool fHelp)
+UniValue z_getoperationstatus(const UniValue& params, bool fHelp)
 {
    if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -3172,20 +3170,20 @@ Value z_getoperationstatus(const Array& params, bool fHelp)
    return z_getoperationstatus_IMPL(params, false);
 }
 
-Value z_getoperationstatus_IMPL(const Array& params, bool fRemoveFinishedOperations=false)
+UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedOperations=false)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     std::set<AsyncRPCOperationId> filter;
     if (params.size()==1) {
-        Array ids = params[0].get_array();
-        for (Value & v : ids) {
+        UniValue ids = params[0].get_array();
+        for (UniValue & v : ids.getValues()) {
             filter.insert(v.get_str());
         }
     }
     bool useFilter = (filter.size()>0);
 
-    Array ret;
+    UniValue ret(UniValue::VARR);
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::vector<AsyncRPCOperationId> ids = q->getAllOperationIds();
 
@@ -3200,7 +3198,7 @@ Value z_getoperationstatus_IMPL(const Array& params, bool fRemoveFinishedOperati
             // throw JSONRPCError(RPC_INVALID_PARAMETER, "No operation exists for that id.");
         }
         
-        Value status = operation->getStatus();
+        UniValue status = operation->getStatus();
 
         if (fRemoveFinishedOperations) {
             // Caller is only interested in retrieving finished results
@@ -3213,12 +3211,18 @@ Value z_getoperationstatus_IMPL(const Array& params, bool fRemoveFinishedOperati
         }
     }
 
+    std::vector<UniValue> arrTmp = ret.getValues();
+
     // sort results chronologically by creation_time
-    std::sort(ret.begin(), ret.end(), [](Value a, Value b) -> bool {
+    std::sort(arrTmp.begin(), arrTmp.end(), [](UniValue a, UniValue b) -> bool {
         const int64_t t1 = find_value(a.get_obj(), "creation_time").get_int64();
         const int64_t t2 = find_value(b.get_obj(), "creation_time").get_int64();
         return t1 < t2;
     });
+
+    ret.clear();
+    ret.setArray();
+    ret.push_backV(arrTmp);
 
     return ret;
 }
@@ -3234,10 +3238,10 @@ Value z_getoperationstatus_IMPL(const Array& params, bool fRemoveFinishedOperati
 #define CTXIN_SPEND_DUST_SIZE   148
 #define CTXOUT_REGULAR_SIZE     34
 
-Value z_sendmany(const Array& params, bool fHelp)
+UniValue z_sendmany(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() < 2 || params.size() > 4)
         throw runtime_error(
@@ -3287,7 +3291,7 @@ Value z_sendmany(const Array& params, bool fHelp)
         }
     }
 
-    Array outputs = params[1].get_array();
+    UniValue outputs = params[1].get_array();
 
     if (outputs.size()==0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amounts array is empty.");
@@ -3300,15 +3304,13 @@ Value z_sendmany(const Array& params, bool fHelp)
     std::vector<SendManyRecipient> zaddrRecipients;
     CAmount nTotalOut = 0;
 
-    BOOST_FOREACH(Value& output, outputs)
-    {
-        if (output.type() != obj_type)
+    for (const UniValue& o : outputs.getValues()) {
+        if (!o.isObject())
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected object");
-        const Object& o = output.get_obj();
 
         // sanity check, report error if unknown key-value pairs
-        for (const Pair& p : o) {
-            std::string s = p.name_;
+        for (const string& name_ : o.getKeys()) {
+            std::string s = name_;
             if (s != "address" && s != "amount" && s!="memo")
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown key: ")+s);
         }
@@ -3330,9 +3332,9 @@ Value z_sendmany(const Array& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+address);
         setAddress.insert(address);
 
-        Value memoValue = find_value(o, "memo");
+        UniValue memoValue = find_value(o, "memo");
         string memo;
-        if (!memoValue.is_null()) {
+        if (!memoValue.isNull()) {
             memo = memoValue.get_str();
             if (!isZaddr) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "Memo can not be used with a taddr.  It can only be used with a zaddr.");
@@ -3344,7 +3346,7 @@ Value z_sendmany(const Array& params, bool fHelp)
             }
         }
 
-        Value av = find_value(o, "amount");
+        UniValue av = find_value(o, "amount");
         CAmount nAmount = AmountFromValue( av );
         if (nAmount < 0)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amount must be positive");
@@ -3407,12 +3409,12 @@ Value z_sendmany(const Array& params, bool fHelp)
     }
 
     // Use input parameters as the optional context info to be returned by z_getoperationstatus and z_getoperationresult.
-    Object o;
+    UniValue o(UniValue::VOBJ);
     o.push_back(Pair("fromaddress", params[0]));
     o.push_back(Pair("amounts", params[1]));
     o.push_back(Pair("minconf", nMinDepth));
     o.push_back(Pair("fee", std::stod(FormatMoney(nFee))));
-    Value contextInfo = Value(o);
+    UniValue contextInfo = o;
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
@@ -3423,10 +3425,10 @@ Value z_sendmany(const Array& params, bool fHelp)
 }
 
 
-Value z_listoperationids(const Array& params, bool fHelp)
+UniValue z_listoperationids(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -3453,7 +3455,7 @@ Value z_listoperationids(const Array& params, bool fHelp)
         useFilter = true;
     }
 
-    Array ret;
+    UniValue ret(UniValue::VARR);
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::vector<AsyncRPCOperationId> ids = q->getAllOperationIds();
     for (auto id : ids) {

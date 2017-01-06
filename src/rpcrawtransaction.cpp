@@ -55,11 +55,11 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fInclud
 }
 
 
-Array TxJoinSplitToJSON(const CTransaction& tx) {
-    Array vjoinsplit;
+UniValue TxJoinSplitToJSON(const CTransaction& tx) {
+    UniValue vjoinsplit(UniValue::VARR);
     for (unsigned int i = 0; i < tx.vjoinsplit.size(); i++) {
         const JSDescription& jsdescription = tx.vjoinsplit[i];
-        Object joinsplit;
+        UniValue joinsplit(UniValue::VOBJ);
 
         joinsplit.push_back(Pair("vpub_old", ValueFromAmount(jsdescription.vpub_old)));
         joinsplit.push_back(Pair("vpub_new", ValueFromAmount(jsdescription.vpub_new)));
@@ -67,7 +67,7 @@ Array TxJoinSplitToJSON(const CTransaction& tx) {
         joinsplit.push_back(Pair("anchor", jsdescription.anchor.GetHex()));
 
         {
-            Array nullifiers;
+            UniValue nullifiers(UniValue::VARR);
             BOOST_FOREACH(const uint256 nf, jsdescription.nullifiers) {
                 nullifiers.push_back(nf.GetHex());
             }
@@ -75,7 +75,7 @@ Array TxJoinSplitToJSON(const CTransaction& tx) {
         }
 
         {
-            Array commitments;
+            UniValue commitments(UniValue::VARR);
             BOOST_FOREACH(const uint256 commitment, jsdescription.commitments) {
                 commitments.push_back(commitment.GetHex());
             }
@@ -86,7 +86,7 @@ Array TxJoinSplitToJSON(const CTransaction& tx) {
         joinsplit.push_back(Pair("randomSeed", jsdescription.randomSeed.GetHex()));
 
         {
-            Array macs;
+            UniValue macs(UniValue::VARR);
             BOOST_FOREACH(const uint256 mac, jsdescription.macs) {
                 macs.push_back(mac.GetHex());
             }
@@ -98,7 +98,7 @@ Array TxJoinSplitToJSON(const CTransaction& tx) {
         joinsplit.push_back(Pair("proof", HexStr(ssProof.begin(), ssProof.end())));
 
         {
-            Array ciphertexts;
+            UniValue ciphertexts(UniValue::VARR);
             for (const ZCNoteEncryption::Ciphertext ct : jsdescription.ciphertexts) {
                 ciphertexts.push_back(HexStr(ct.begin(), ct.end()));
             }
@@ -145,7 +145,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
     }
     entry.push_back(Pair("vout", vout));
 
-    Array vjoinsplit = TxJoinSplitToJSON(tx);
+    UniValue vjoinsplit = TxJoinSplitToJSON(tx);
     entry.push_back(Pair("vjoinsplit", vjoinsplit));
 
     if (!hashBlock.IsNull()) {

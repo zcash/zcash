@@ -5,12 +5,9 @@
 #include "serialize.h"
 #include "streams.h"
 
-#include "json/json_spirit_reader_template.h"
-#include "json/json_spirit_utils.h"
-#include "json/json_spirit_writer_template.h"
+#include "univalue/univalue.h"
 
-using namespace json_spirit;
-Array
+UniValue
 read_json(const std::string& jsondata);
 
 // #define PRINT_JSON 1

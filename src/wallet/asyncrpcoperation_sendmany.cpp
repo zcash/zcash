@@ -29,16 +29,16 @@
 
 using namespace libzcash;
 
-int find_output(Object obj, int n) {
-    Value outputMapValue = find_value(obj, "outputmap");
-    if (outputMapValue.type() != array_type) {
+int find_output(UniValue obj, int n) {
+    UniValue outputMapValue = find_value(obj, "outputmap");
+    if (!outputMapValue.isArray()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Missing outputmap for JoinSplit operation");
     }
 
-    Array outputMap = outputMapValue.get_array();
+    UniValue outputMap = outputMapValue.get_array();
     assert(outputMap.size() == ZC_NUM_JS_OUTPUTS);
     for (size_t i = 0; i < outputMap.size(); i++) {
-        if (outputMap[i] == n) {
+        if (outputMap[i].get_int() == n) {
             return i;
         }
     }
@@ -52,7 +52,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         std::vector<SendManyRecipient> zOutputs,
         int minDepth,
         CAmount fee,
-        Value contextInfo) :
+        UniValue contextInfo) :
         fromaddress_(fromAddress), t_outputs_(tOutputs), z_outputs_(zOutputs), mindepth_(minDepth), fee_(fee), contextinfo_(contextInfo)
 {
     assert(fee_ >= 0);
@@ -94,7 +94,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
 
     // Log the context info i.e. the call parameters to z_sendmany
     if (LogAcceptCategory("zrpcunsafe")) {
-        LogPrint("zrpcunsafe", "%s: z_sendmany initialized (params=%s)\n", getId(), json_spirit::write_string( contextInfo, false));
+        LogPrint("zrpcunsafe", "%s: z_sendmany initialized (params=%s)\n", getId(), contextInfo.write());
     } else {
         LogPrint("zrpc", "%s: z_sendmany initialized\n", getId());
     }
@@ -114,7 +114,7 @@ void AsyncRPCOperation_sendmany::main() {
 
     try {
         success = main_impl();
-    } catch (const Object& objError) {
+    } catch (const UniValue& objError) {
         int code = find_value(objError, "code").get_int();
         std::string message = find_value(objError, "message").get_str();
         set_error_code(code);
@@ -307,7 +307,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                     );
         }
         
-        Object obj;
+        UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("rawtxn", EncodeHexTx(tx_)));
         sign_send_raw_transaction(obj);
         return true;
@@ -385,7 +385,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         }
 
         // Create joinsplits, where each output represents a zaddr recipient.
-        Object obj;
+        UniValue obj(UniValue::VOBJ);
         while (zOutputsDeque.size() > 0) {
             AsyncJoinSplitInfo info;
             info.vpub_old = 0;
@@ -434,7 +434,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
      * SCENARIO #3
      * Part 1: Add to the transparent value pool.
      */
-    Object obj;
+    UniValue obj(UniValue::VOBJ);
     CAmount jsChange = 0;   // this is updated after each joinsplit
     int changeOutputIndex = -1; // this is updated after each joinsplit if jsChange > 0
     bool minersFeeProcessed = false;
@@ -757,42 +757,47 @@ bool AsyncRPCOperation_sendmany::main_impl() {
  * Sign and send a raw transaction.
  * Raw transaction as hex string should be in object field "rawtxn"
  */
-void AsyncRPCOperation_sendmany::sign_send_raw_transaction(Object obj)
+void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
 {   
     // Sign the raw transaction
-    Value rawtxnValue = find_value(obj, "rawtxn");
-    if (rawtxnValue.is_null()) {
+    UniValue rawtxnValue = find_value(obj, "rawtxn");
+    if (rawtxnValue.isNull()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Missing hex data for raw transaction");
     }
     std::string rawtxn = rawtxnValue.get_str();
 
-    Value signResultValue = signrawtransaction({Value(rawtxn)}, false);
-    Object signResultObject = signResultValue.get_obj();
-    Value completeValue = find_value(signResultObject, "complete");
+    UniValue params = UniValue(UniValue::VARR);
+    params.push_back(rawtxn);
+    UniValue signResultValue = signrawtransaction(params, false);
+    UniValue signResultObject = signResultValue.get_obj();
+    UniValue completeValue = find_value(signResultObject, "complete");
     bool complete = completeValue.get_bool();
     if (!complete) {
         // TODO: #1366 Maybe get "errors" and print array vErrors into a string
         throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Failed to sign transaction");
     }
 
-    Value hexValue = find_value(signResultObject, "hex");
-    if (hexValue.is_null()) {
+    UniValue hexValue = find_value(signResultObject, "hex");
+    if (hexValue.isNull()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Missing hex data for signed transaction");
     }
     std::string signedtxn = hexValue.get_str();
 
     // Send the signed transaction
     if (!testmode) {
-        Value sendResultValue = sendrawtransaction({Value(signedtxn)}, false);
-        if (sendResultValue.is_null()) {
+        params.clear();
+        params.setArray();
+        params.push_back(signedtxn);
+        UniValue sendResultValue = sendrawtransaction(params, false);
+        if (sendResultValue.isNull()) {
             throw JSONRPCError(RPC_WALLET_ERROR, "Send raw transaction did not return an error or a txid.");
         }
 
         std::string txid = sendResultValue.get_str();
 
-        Object o;
+        UniValue o(UniValue::VOBJ);
         o.push_back(Pair("txid", txid));
-        set_result(Value(o));
+        set_result(o);
     } else {
         // Test mode does not send the transaction to the network.
 
@@ -800,11 +805,11 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(Object obj)
         CTransaction tx;
         stream >> tx;
 
-        Object o;
+        UniValue o(UniValue::VOBJ);
         o.push_back(Pair("test", 1));
         o.push_back(Pair("txid", tx.GetHash().ToString()));
         o.push_back(Pair("hex", signedtxn));
-        set_result(Value(o));
+        set_result(o);
     }
 
     // Keep the signed transaction so we can hash to the same txid
@@ -891,7 +896,7 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     return true;
 }
 
-Object AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info) {
+UniValue AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info) {
     std::vector<boost::optional < ZCIncrementalWitness>> witnesses;
     uint256 anchor;
     {
@@ -902,7 +907,7 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info) 
 }
 
 
-Object AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info, std::vector<JSOutPoint> & outPoints) {
+UniValue AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info, std::vector<JSOutPoint> & outPoints) {
     std::vector<boost::optional < ZCIncrementalWitness>> witnesses;
     uint256 anchor;
     {
@@ -912,7 +917,7 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info, 
     return perform_joinsplit(info, witnesses, anchor);
 }
 
-Object AsyncRPCOperation_sendmany::perform_joinsplit(
+UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
         AsyncJoinSplitInfo & info,
         std::vector<boost::optional < ZCIncrementalWitness>> witnesses,
         uint256 anchor)
@@ -1033,8 +1038,8 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
         encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }
 
-    Array arrInputMap;
-    Array arrOutputMap;
+    UniValue arrInputMap(UniValue::VARR);
+    UniValue arrOutputMap(UniValue::VARR);
     for (size_t i = 0; i < ZC_NUM_JS_INPUTS; i++) {
         arrInputMap.push_back(inputMap[i]);
     }
@@ -1042,7 +1047,7 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
         arrOutputMap.push_back(outputMap[i]);
     }
 
-    Object obj;
+    UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("encryptednote1", encryptedNote1));
     obj.push_back(Pair("encryptednote2", encryptedNote2));
     obj.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
@@ -1118,15 +1123,15 @@ boost::array<unsigned char, ZC_MEMO_SIZE> AsyncRPCOperation_sendmany::get_memo_f
 /**
  * Override getStatus() to append the operation's input parameters to the default status object.
  */
-Value AsyncRPCOperation_sendmany::getStatus() const {
-    Value v = AsyncRPCOperation::getStatus();
-    if (contextinfo_.is_null()) {
+UniValue AsyncRPCOperation_sendmany::getStatus() const {
+    UniValue v = AsyncRPCOperation::getStatus();
+    if (contextinfo_.isNull()) {
         return v;
     }
 
-    Object obj = v.get_obj();
+    UniValue obj = v.get_obj();
     obj.push_back(Pair("method", "z_sendmany"));
     obj.push_back(Pair("params", contextinfo_ ));
-    return Value(obj);
+    return obj;
 }
 

@@ -494,7 +494,7 @@ UniValue verifychain(const UniValue& params, bool fHelp)
 }
 
 /** Implementation of IsSuperMajority with better feedback */
-Object SoftForkMajorityDesc(int minVersion, CBlockIndex* pindex, int nRequired, const Consensus::Params& consensusParams)
+static UniValue SoftForkMajorityDesc(int minVersion, CBlockIndex* pindex, int nRequired, const Consensus::Params& consensusParams)
 {
     int nFound = 0;
     CBlockIndex* pstart = pindex;
@@ -505,7 +505,7 @@ Object SoftForkMajorityDesc(int minVersion, CBlockIndex* pindex, int nRequired, 
         pstart = pstart->pprev;
     }
 
-    Object rv;
+    UniValue rv(UniValue::VOBJ);
     rv.push_back(Pair("status", nFound >= nRequired));
     rv.push_back(Pair("found", nFound));
     rv.push_back(Pair("required", nRequired));
@@ -513,9 +513,9 @@ Object SoftForkMajorityDesc(int minVersion, CBlockIndex* pindex, int nRequired, 
     return rv;
 }
 
-Object SoftForkDesc(const std::string &name, int version, CBlockIndex* pindex, const Consensus::Params& consensusParams)
+static UniValue SoftForkDesc(const std::string &name, int version, CBlockIndex* pindex, const Consensus::Params& consensusParams)
 {
-    Object rv;
+    UniValue rv(UniValue::VOBJ);
     rv.push_back(Pair("id", name));
     rv.push_back(Pair("version", version));
     rv.push_back(Pair("enforce", SoftForkMajorityDesc(version, pindex, consensusParams.nMajorityEnforceBlockUpgrade, consensusParams)));
@@ -576,7 +576,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
 
     const Consensus::Params& consensusParams = Params().GetConsensus();
     CBlockIndex* tip = chainActive.Tip();
-    Array softforks;
+    UniValue softforks(UniValue::VARR);
     softforks.push_back(SoftForkDesc("bip34", 2, tip, consensusParams));
     softforks.push_back(SoftForkDesc("bip66", 3, tip, consensusParams));
     softforks.push_back(SoftForkDesc("bip65", 4, tip, consensusParams));

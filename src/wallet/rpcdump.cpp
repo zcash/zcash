@@ -26,8 +26,8 @@ using namespace std;
 void EnsureWalletIsUnlocked();
 bool EnsureWalletIsAvailable(bool avoidException);
 
-Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys);
-Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys);
+UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys);
+UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys);
 
 
 std::string static EncodeDumpTime(int64_t nTime) {
@@ -220,10 +220,10 @@ UniValue importaddress(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
-Value z_importwallet(const Array& params, bool fHelp)
+UniValue z_importwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -266,7 +266,7 @@ UniValue importwallet(const UniValue& params, bool fHelp)
 	return importwallet_impl(params, fHelp, false);
 }
 
-Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys)
+UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -419,10 +419,10 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
 
 
 
-Value z_exportwallet(const Array& params, bool fHelp)
+UniValue z_exportwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
     
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -461,7 +461,7 @@ UniValue dumpwallet(const UniValue& params, bool fHelp)
 	return dumpwallet_impl(params, fHelp, false);
 }
 
-Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys)
+UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -547,10 +547,10 @@ Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys)
 }
 
 
-Value z_importkey(const Array& params, bool fHelp)
+UniValue z_importkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
@@ -586,7 +586,7 @@ Value z_importkey(const Array& params, bool fHelp)
     {
         // Don't throw error in case a key is already there
         if (pwalletMain->HaveSpendingKey(addr))
-            return Value::null;
+            return NullUniValue;
 
         pwalletMain->MarkDirty();
 
@@ -604,14 +604,14 @@ Value z_importkey(const Array& params, bool fHelp)
         }
     }
 
-    return Value::null;
+    return NullUniValue;
 }
 
 
-Value z_exportkey(const Array& params, bool fHelp)
+UniValue z_exportkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() != 1)
         throw runtime_error(
