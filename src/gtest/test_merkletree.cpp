@@ -64,11 +64,8 @@ void test_tree(
     UniValue path_tests
 )
 {
-    vector<UniValue>::iterator commitment_iterator = commitment_tests.getValues().begin();
-    vector<UniValue>::iterator root_iterator = root_tests.getValues().begin();
-    vector<UniValue>::iterator ser_iterator = ser_tests.getValues().begin();
-    vector<UniValue>::iterator witness_ser_iterator = witness_ser_tests.getValues().begin();
-    vector<UniValue>::iterator path_iterator = path_tests.getValues().begin();
+    size_t witness_ser_i = 0;
+    size_t path_i = 0;
 
     Tree tree;
 
@@ -88,7 +85,7 @@ void test_tree(
     vector<Witness> witnesses;
 
     for (size_t i = 0; i < 16; i++) {
-        uint256 test_commitment = uint256S((commitment_iterator++)->get_str());
+        uint256 test_commitment = uint256S(commitment_tests[i].get_str());
 
         // Witness here
         witnesses.push_back(tree.witness());
@@ -103,10 +100,10 @@ void test_tree(
         ASSERT_TRUE(tree.last() == test_commitment);
 
         // Check tree root consistency
-        expect_test_vector(root_iterator, tree.root());
+        expect_test_vector(root_tests[i], tree.root());
 
         // Check serialization of tree
-        expect_ser_test_vector(ser_iterator, tree, tree);
+        expect_ser_test_vector(ser_tests[i], tree, tree);
 
         bool first = true; // The first witness can never form a path
         BOOST_FOREACH(Witness& wit, witnesses)
@@ -121,7 +118,7 @@ void test_tree(
                 auto path = wit.path();
 
                 {
-                    expect_test_vector(path_iterator, path);
+                    expect_test_vector(path_tests[path_i++], path);
                     
                     typedef Fr<default_r1cs_ppzksnark_pp> FieldT;
 
@@ -173,7 +170,7 @@ void test_tree(
             }
 
             // Check witness serialization
-            expect_ser_test_vector(witness_ser_iterator, wit, tree);
+            expect_ser_test_vector(witness_ser_tests[witness_ser_i++], wit, tree);
 
             ASSERT_TRUE(wit.root() == tree.root());
 
@@ -204,12 +201,11 @@ TEST(merkletree, vectors) {
 
 TEST(merkletree, emptyroots) {
     UniValue empty_roots = read_json(std::string(json_tests::merkle_roots_empty, json_tests::merkle_roots_empty + sizeof(json_tests::merkle_roots_empty)));
-    vector<UniValue>::iterator root_iterator = empty_roots.getValues().begin();
 
     libzcash::EmptyMerkleRoots<64, libzcash::SHA256Compress> emptyroots;
 
     for (size_t depth = 0; depth <= 64; depth++) {
-        expect_test_vector(root_iterator, emptyroots.empty_root(depth));
+        expect_test_vector(empty_roots[depth], emptyroots.empty_root(depth));
     }
 
     // Double check that we're testing (at least) all the empty roots we'll use.

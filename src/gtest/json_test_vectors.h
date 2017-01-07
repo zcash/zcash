@@ -31,7 +31,7 @@ void expect_deser_same(const T& expected)
 }
 
 template<typename T, typename U>
-void expect_test_vector(T& it, const U& expected)
+void expect_test_vector(T& v, const U& expected)
 {
     expect_deser_same(expected);
 
@@ -42,7 +42,7 @@ void expect_test_vector(T& it, const U& expected)
     std::cout << "\t\"" ;
     std::cout << HexStr(ss1.begin(), ss1.end()) << "\",\n";
     #else
-    std::string raw = (it++)->get_str();
+    std::string raw = v.get_str();
     CDataStream ss2(ParseHex(raw), SER_NETWORK, PROTOCOL_VERSION);
 
     ASSERT_TRUE(ss1.size() == ss2.size());
