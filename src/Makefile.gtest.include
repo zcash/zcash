@@ -11,7 +11,6 @@ zcash_gtest_SOURCES = \
 	gtest/json_test_vectors.cpp \
 	gtest/json_test_vectors.h \
 	gtest/test_foundersreward.cpp \
-	gtest/test_wallet_zkeys.cpp \
 	gtest/test_jsonspirit.cpp \
 	gtest/test_tautology.cpp \
 	gtest/test_equihash.cpp \
@@ -31,7 +30,8 @@ zcash_gtest_SOURCES = \
 	gtest/test_checkblock.cpp
 if ENABLE_WALLET
 zcash_gtest_SOURCES += \
-	wallet/gtest/test_wallet.cpp
+	wallet/gtest/test_wallet.cpp \
+	wallet/gtest/test_wallet_zkeys.cpp
 endif
 
 zcash_gtest_CPPFLAGS = -DMULTICORE -fopenmp -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC
