@@ -430,7 +430,9 @@ Value z_exportwallet(const Array& params, bool fHelp)
             "z_exportwallet \"filename\"\n"
             "\nExports all wallet keys, for taddr and zaddr, in a human-readable format.\n"
             "\nArguments:\n"
-            "1. \"filename\"    (string, required) The filename\n"
+            "1. \"filename\"    (string, required) The filename, saved in folder set by zcashd -exportdir option\n"
+            "\nResult:\n"
+            "\"path\"           (string) The full path of the destination file\n"
             "\nExamples:\n"
             + HelpExampleCli("z_exportwallet", "\"test\"")
             + HelpExampleRpc("z_exportwallet", "\"test\"")
@@ -449,7 +451,9 @@ Value dumpwallet(const Array& params, bool fHelp)
             "dumpwallet \"filename\"\n"
             "\nDumps taddr wallet keys in a human-readable format.\n"
             "\nArguments:\n"
-            "1. \"filename\"    (string, required) The filename\n"
+            "1. \"filename\"    (string, required) The filename, saved in folder set by zcashd -exportdir option\n"
+            "\nResult:\n"
+            "\"path\"           (string) The full path of the destination file\n"
             "\nExamples:\n"
             + HelpExampleCli("dumpwallet", "\"test\"")
             + HelpExampleRpc("dumpwallet", "\"test\"")
@@ -464,8 +468,24 @@ Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys)
 
     EnsureWalletIsUnlocked();
 
+    boost::filesystem::path exportdir;
+    try {
+        exportdir = GetExportDir();
+    } catch (const std::runtime_error& e) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, e.what());
+    }
+    if (exportdir.empty()) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Cannot export wallet until the zcashd -exportdir option has been set");
+    }
+    std::string unclean = params[0].get_str();
+    std::string clean = SanitizeFilename(unclean);
+    if (clean.compare(unclean) != 0) {
+        throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Filename is invalid as only alphanumeric characters are allowed.  Try '%s' instead.", clean));
+    }
+    boost::filesystem::path exportfilepath = exportdir / clean;
+
     ofstream file;
-    file.open(params[0].get_str().c_str());
+    file.open(exportfilepath.string().c_str());
     if (!file.is_open())
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot open wallet dump file");
 
@@ -523,7 +543,8 @@ Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys)
 
     file << "# End of dump\n";
     file.close();
-    return Value::null;
+
+    return exportfilepath.string();
 }
 
 
