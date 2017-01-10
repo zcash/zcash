@@ -135,6 +135,9 @@ boost::filesystem::path GetTempPath();
 void ShrinkDebugFile();
 void runCommand(std::string strCommand);
 
+/** Returns licensing information (for -version) */
+std::string LicenseInfo();
+
 inline bool IsSwitchChar(char c)
 {
 #ifdef WIN32
