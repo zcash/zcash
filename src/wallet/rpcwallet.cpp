@@ -3172,6 +3172,13 @@ Value z_getoperationstatus_IMPL(const Array& params, bool fRemoveFinishedOperati
         }
     }
 
+    // sort results chronologically by creation_time
+    std::sort(ret.begin(), ret.end(), [](Value a, Value b) -> bool {
+        const int64_t t1 = find_value(a.get_obj(), "creation_time").get_int64();
+        const int64_t t2 = find_value(b.get_obj(), "creation_time").get_int64();
+        return t1 < t2;
+    });
+
     return ret;
 }
 
