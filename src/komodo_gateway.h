@@ -824,7 +824,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             for (i=0; i<opretlen; i++)
                 printf("%02x",opretbuf[i]);
             printf(" reject obsolete withdraw request\n");
-            return;
+            return(typestr);
         }
         tokomodo = 1;
         iguana_rwnum(0,&opretbuf[34],sizeof(kmdheight),&kmdheight);
