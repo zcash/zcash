@@ -14,6 +14,7 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=SHARK -ac_supply=1401 -addnode=78.47.196.146 $1 -gen &
 ./komodod -pubkey=$pubkey -ac_name=BOTS -ac_supply=999999 -addnode=78.47.196.146 $1 -gen &
 ./komodod -pubkey=$pubkey -ac_name=MGW -ac_supply=999999 -addnode=78.47.196.146 $1 -gen &
+./komodod -pubkey=$pubkey -ac_name=MVP -ac_supply=1000000 -addnode=78.47.196.146 $1 -gen &
 
 ./komodod -pubkey=$pubkey -ac_name=USD -addnode=78.47.196.146 $1 -gen &
 ./komodod -pubkey=$pubkey -ac_name=EUR -addnode=78.47.196.146 $1 -gen &
