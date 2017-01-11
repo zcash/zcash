@@ -407,7 +407,9 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     }
                     if ( opretlen > len && scriptbuf[len] == 'A' )
                     {
-                        printf("Found extradata.[%d] %d - %d\n",opretlen-len,opretlen,len);
+                        for (i=0; i<opretlen-len; i++)
+                            printf("%02x",scriptbuf[len+i]);
+                        printf(" Found extradata.[%d] %d - %d\n",opretlen-len,opretlen,len);
                         komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen-len,j);
                     }
                 }
