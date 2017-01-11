@@ -565,7 +565,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         memcpy(script,opret,opretlen);
         for (i=0; i<8; i++)
             printf("%02x",opret[i]);
-        printf(" <- opret[%d], MINER deposits.%d (%s) vouts.%d %.8f [%c] opretlen.%d\n",opetlen,tokomodo,ASSETCHAINS_SYMBOL,numvouts,dstr(PENDING_KOMODO_TX),opretcode,opretlen);
+        printf(" <- opret, MINER deposits.%d (%s) vouts.%d %.8f opretlen.%d\n",tokomodo,ASSETCHAINS_SYMBOL,numvouts,dstr(PENDING_KOMODO_TX),opretlen);
         return(1);
     }
     return(0);
@@ -630,7 +630,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                             printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f paxmarked.%d kht.%d ht.%d\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax->marked,pax->height,pax->otherheight);
                             if ( pax->komodoshis != 0 || pax->fiatoshis != 0 )
                                 errs++;
-                            else matches++; // onetime init bypass
+                            else matched++; // onetime init bypass
                         }
                         else
                         {
@@ -819,7 +819,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     else if ( opretbuf[0] == 'W' )//&& opretlen >= 38 )
     {
-        if ( komodo_baseid(&opretbuf[opretlen-4]) >= 0 )
+        if ( komodo_baseid((char *)&opretbuf[opretlen-4]) >= 0 )
         {
             for (i=0; i<opretlen; i++)
                 printf("%02x",opretbuf[i]);
