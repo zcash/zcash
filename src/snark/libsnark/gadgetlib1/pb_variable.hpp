@@ -59,7 +59,7 @@ public:
 
     void fill_with_field_elements(protoboard<FieldT> &pb, const std::vector<FieldT>& vals) const;
     void fill_with_bits(protoboard<FieldT> &pb, const bit_vector& bits) const;
-    void fill_with_bits_of_ulong(protoboard<FieldT> &pb, const unsigned long i) const;
+    void fill_with_bits_of_uint64(protoboard<FieldT> &pb, const uint64_t i) const;
     void fill_with_bits_of_field_element(protoboard<FieldT> &pb, const FieldT &r) const;
 
     std::vector<FieldT> get_vals(const protoboard<FieldT> &pb) const;
@@ -120,7 +120,7 @@ public:
 
     void fill_with_field_elements(protoboard<FieldT> &pb, const std::vector<FieldT>& vals) const;
     void fill_with_bits(protoboard<FieldT> &pb, const bit_vector& bits) const;
-    void fill_with_bits_of_ulong(protoboard<FieldT> &pb, const unsigned long i) const;
+    void fill_with_bits_of_uint64(protoboard<FieldT> &pb, const uint64_t i) const;
     void fill_with_bits_of_field_element(protoboard<FieldT> &pb, const FieldT &r) const;
 
     std::vector<FieldT> get_vals(const protoboard<FieldT> &pb) const;

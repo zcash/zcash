@@ -54,9 +54,9 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
     }
     else
     {
-        const size_t big = 1ul<<(log2(min_size)-1);
+        const size_t big = UINT64_C(1)<<(log2(min_size)-1);
         const size_t small = min_size - big;
-        const size_t rounded_small = (1ul<<log2(small));
+        const size_t rounded_small = (UINT64_C(1)<<log2(small));
         if (big == rounded_small)
         {
             if (log2(big + rounded_small) < FieldT::s+1)

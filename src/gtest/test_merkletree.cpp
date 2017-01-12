@@ -143,7 +143,7 @@ void test_tree(
                     size_t path_index = convertVectorToInt(path.index);
 
                     commitment.bits.fill_with_bits(pb, bit_vector(commitment_bv));
-                    positions.fill_with_bits_of_ulong(pb, path_index);
+                    positions.fill_with_bits_of_uint64(pb, path_index);
 
                     authvars.generate_r1cs_witness(path_index, path.authentication_path);
                     auth.generate_r1cs_witness();

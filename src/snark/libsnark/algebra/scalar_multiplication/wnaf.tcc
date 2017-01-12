@@ -60,10 +60,10 @@ template<typename T, mp_size_t n>
 T fixed_window_wnaf_exp(const size_t window_size, const T &base, const bigint<n> &scalar)
 {
     std::vector<long> naf = find_wnaf(window_size, scalar);
-    std::vector<T> table(1ul<<(window_size-1));
+    std::vector<T> table(UINT64_C(1)<<(window_size-1));
     T tmp = base;
     T dbl = base.dbl();
-    for (size_t i = 0; i < 1ul<<(window_size-1); ++i)
+    for (size_t i = 0; i < UINT64_C(1)<<(window_size-1); ++i)
     {
         table[i] = tmp;
         tmp = tmp + dbl;

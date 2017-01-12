@@ -156,7 +156,7 @@ Fp12_2over3over2_model<n,modulus> Fp12_2over3over2_model<n,modulus>::inverse() c
 }
 
 template<mp_size_t n, const bigint<n>& modulus>
-Fp12_2over3over2_model<n,modulus> Fp12_2over3over2_model<n,modulus>::Frobenius_map(unsigned long power) const
+Fp12_2over3over2_model<n,modulus> Fp12_2over3over2_model<n,modulus>::Frobenius_map(uint64_t power) const
 {
     return Fp12_2over3over2_model<n,modulus>(c0.Frobenius_map(power),
                                              Frobenius_coeffs_c1[power % 12] * c1.Frobenius_map(power));
@@ -348,7 +348,7 @@ Fp12_2over3over2_model<n, modulus> Fp12_2over3over2_model<n,modulus>::cyclotomic
                 res = res.cyclotomic_squared();
             }
 
-            if (exponent.data[i] & (1ul<<j))
+            if (exponent.data[i] & (UINT64_C(1)<<j))
             {
                 found_one = true;
                 res = res * (*this);

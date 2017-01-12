@@ -66,7 +66,7 @@ public:
     Fp2_model operator-() const;
     Fp2_model squared() const; // default is squared_complex
     Fp2_model inverse() const;
-    Fp2_model Frobenius_map(unsigned long power) const;
+    Fp2_model Frobenius_map(uint64_t power) const;
     Fp2_model sqrt() const; // HAS TO BE A SQUARE (else does not terminate)
     Fp2_model squared_karatsuba() const;
     Fp2_model squared_complex() const;

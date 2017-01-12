@@ -214,7 +214,7 @@ T multi_exp_inner(typename std::vector<T>::const_iterator vec_start,
         const size_t bbits = b.r.num_bits();
         const size_t limit = (abits-bbits >= 20 ? 20 : abits-bbits);
 
-        if (bbits < 1ul<<limit)
+        if (bbits < UINT64_C(1)<<limit)
         {
             /*
               In this case, exponentiating to the power of a is cheaper than
@@ -420,9 +420,9 @@ window_table<T> get_window_table(const size_t scalar_size,
                                  const size_t window,
                                  const T &g)
 {
-    const size_t in_window = 1ul<<window;
+    const size_t in_window = UINT64_C(1)<<window;
     const size_t outerc = (scalar_size+window-1)/window;
-    const size_t last_in_window = 1ul<<(scalar_size - (outerc-1)*window);
+    const size_t last_in_window = UINT64_C(1)<<(scalar_size - (outerc-1)*window);
 #ifdef DEBUG
     if (!inhibit_profiling_info)
     {
