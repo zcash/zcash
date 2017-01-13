@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2016 The SuperNET Developers.                             *
+ * Copyright © 2014-2017 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -92,7 +92,7 @@ void komodo_event_undo(struct komodo_state *sp,struct komodo_event *ep)
     switch ( ep->type )
     {
         case KOMODO_EVENT_RATIFY: printf("rewind of ratify, needs to be coded.%d\n",ep->height); break;
-        case KOMODO_EVENT_NOTARIZED: printf("unexpected rewind of notarization.%d\n",ep->height); break;
+        case KOMODO_EVENT_NOTARIZED: break;
         case KOMODO_EVENT_KMDHEIGHT:
             if ( ep->height <= sp->SAVEDHEIGHT )
                 sp->SAVEDHEIGHT = ep->height;
