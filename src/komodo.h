@@ -417,7 +417,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         }
         else if ( i == 0 && j == 1 && opretlen == 149 )
         {
-            //if ( notaryid >= 0 && notaryid < 64 )
+            if ( notaryid >= 0 && notaryid < 64 )
                 komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
         }
         else
