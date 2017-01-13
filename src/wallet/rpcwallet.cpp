@@ -3166,12 +3166,10 @@ Value z_getoperationstatus_IMPL(const Array& params, bool fRemoveFinishedOperati
         if (fRemoveFinishedOperations) {
             // Caller is only interested in retrieving finished results
             if (operation->isSuccess() || operation->isFailed() || operation->isCancelled()) {
-                //ret.push_back(status);
                 toSort.push_back(ap);
                 q->popOperationForId(id);
             }
         } else {
-            //ret.push_back(status);
             toSort.push_back(ap);
         }
     }
