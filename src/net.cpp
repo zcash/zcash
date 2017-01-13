@@ -1721,9 +1721,8 @@ void ThreadMessageHandler()
 
             // Send messages
             {
-                TRY_LOCK(pnode->cs_sendProcessing, lockSend);
-                if (lockSend)
-                    g_signals.SendMessages(chainparams.GetConsensus(), pnode);
+                LOCK(pnode->cs_sendProcessing);
+                g_signals.SendMessages(chainparams.GetConsensus(), pnode);
             }
             boost::this_thread::interruption_point();
         }
