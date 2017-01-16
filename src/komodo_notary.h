@@ -13,6 +13,8 @@
  *                                                                            *
  ******************************************************************************/
 
+#define KOMODO_MAINNET_START 156720
+
 const char *Notaries_genesis[][2] =
 {
     { "jl777_testA", "03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828" },
