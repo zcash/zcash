@@ -367,30 +367,39 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
 {
     char params[256],*jsonstr,*hexstr; uint8_t script[8192]; int32_t n,len,retval = -1; cJSON *txjson,*vouts,*vout,*skey;
     sprintf(params,"[\"%s\", 1]",NOTARIZED_DESTTXID.ToString().c_str());
+    printf("src.%s dest.%s params.[%s] ht.%d notarized.%d\n",src,dest,params,height,NOTARIZED_HEIGHT);
     if ( strcmp(dest,"KMD") == 0 )
     {
         if ( KMDUSERPASS[0] != 0 )
             jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771);
         //else jsonstr = _dex_getrawtransaction();
+        else return(0); // need universal way to issue DEX* API, since notaries mine most blocks, this ok
     }
     else if ( strcmp(dest,"BTC") == 0 )
     {
         if ( BTCUSERPASS[0] != 0 )
+        {
+            printf("BTCUSERPASS.(%s)\n",BTCUSERPASS);
             jsonstr = komodo_issuemethod(BTCUSERPASS,(char *)"getrawtransaction",params,8332);
+        }
         //else jsonstr = _dex_getrawtransaction();
+        else return(0);
     }
     else return(-1);
     if ( jsonstr != 0 )
     {
+        printf("GOT.(%s)\n",jsonstr);
         if ( (txjson= cJSON_Parse(jsonstr)) != 0 )
         {
             if ( (vouts= jarray(&n,txjson,(char *)"vout")) > 0 )
             {
                 vout = jitem(vouts,n-1);
+                printf("vout.(%s)\n",jprint(vout,0));
                 if ( (skey= jobj(vout,(char *)"scriptPubKey")) != 0 )
                 {
                     if ( (hexstr= jstr(skey,(char *)"hex")) != 0 )
                     {
+                        printf("HEX.(%s)\n",hexstr);
                         len = strlen(hexstr) >> 1;
                         decode_hex(script,len,hexstr);
                         retval = komodo_verifynotarizedscript(script,len,NOTARIZED_HASH);

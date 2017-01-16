@@ -1534,6 +1534,7 @@ void komodo_args()
                 //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
             } else printf("couldnt open.(%s)\n",fname);
         }
+        printf("BTCUSERPASS.(%s)\n",BTCUSERPASS);
     }
     //fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
 }
