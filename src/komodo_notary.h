@@ -13,7 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
-#define KOMODO_MAINNET_START 156720
+#define KOMODO_MAINNET_START 156730
 
 const char *Notaries_genesis[][2] =
 {
@@ -116,7 +116,7 @@ void komodo_notarysinit(int32_t origheight,uint8_t pubkeys[64][33],int32_t num)
         memcpy(kp->pubkey,pubkeys[k],33);
         kp->notaryid = k;
         HASH_ADD_KEYPTR(hh,N.Notaries,kp->pubkey,33,kp);
-        if ( 0 && height > 10000 )
+        if ( 1 && height > 10000 )
         {
             for (i=0; i<33; i++)
                 printf("%02x",pubkeys[k][i]);
@@ -234,6 +234,7 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
 void komodo_init(int32_t height)
 {
     static int didinit; uint256 zero; int32_t i,k,n; uint8_t pubkeys[64][33];
+    printf("komodo_init ht.%d didinit.%d mainnet.%d\n",height,didinit,KOMODO_MAINNET_START);
     if ( didinit == 0 )
     {
         pthread_mutex_init(&komodo_mutex,NULL);
