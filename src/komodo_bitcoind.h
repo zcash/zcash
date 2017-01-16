@@ -376,12 +376,12 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
     {
         if ( (txjson= cJSON_Parse(jsonstr)) != 0 )
         {
-            if ( (vouts= jarray(&n,txjson,"vout")) > 0 )
+            if ( (vouts= jarray(&n,txjson,(char *)"vout")) > 0 )
             {
                 vout = jitem(vouts,n-1);
-                if ( (skey= jobj(vout,"scriptPubKey")) != 0 )
+                if ( (skey= jobj(vout,(char *)"scriptPubKey")) != 0 )
                 {
-                    if ( (hexstr= jstr(skey,"hex")) != 0 )
+                    if ( (hexstr= jstr(skey,(char *)"hex")) != 0 )
                     {
                         len = strlen(hexstr) >> 1;
                         decode_hex(script,len,hexstr);

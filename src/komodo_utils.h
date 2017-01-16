@@ -1502,7 +1502,7 @@ void komodo_args()
     }
     else
     {
-        char fname[512],username[512],password[4096]; FILE *fp;
+        char fname[512],username[512],password[4096]; int32_t iter; FILE *fp;
         ASSETCHAINS_PORT = 8777;
         for (iter=0; iter<2; iter++)
         {
