@@ -19,7 +19,6 @@
 // Todo:
 // verify: reorgs
 
-#define KOMODO_MAINNET_START 156730
 
 #define KOMODO_ASSETCHAINS_WAITNOTARIZE
 #define KOMODO_PAXMAX (10000 * COIN)
