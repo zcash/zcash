@@ -823,7 +823,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         {
             for (i=0; i<opretlen; i++)
                 printf("%02x",opretbuf[i]);
-            printf(" reject obsolete withdraw request.%s\n",(char *)&opretbuf[opretlen-4]);
+            printf(" [%s] reject obsolete withdraw request.%s\n",ASSETCHAINS_SYMBOL,(char *)&opretbuf[opretlen-4]);
             return(typestr);
         }
         tokomodo = 1;
