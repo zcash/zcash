@@ -365,7 +365,7 @@ int32_t komodo_verifynotarizedscript(uint8_t *script,int32_t len,uint256 NOTARIZ
 
 int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 NOTARIZED_HASH,uint256 NOTARIZED_DESTTXID)
 {
-    char params[256],*jsonstr,*hexstr; uint8_t script[8192]; int32_t n,len,retval = -1; cJSON *txjson,*vouts,*vout,*skey;
+    char params[256],*jsonstr,*hexstr; uint8_t script[8192]; int32_t i,n,len,retval = -1; cJSON *txjson,*vouts,*vout,*skey;
     params[0] = '[';
     params[1] = '"';
     for (i=0; i<32; i++)
