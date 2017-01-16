@@ -39,7 +39,7 @@ struct komodo_event *komodo_eventadd(struct komodo_state *sp,int32_t height,char
 void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t height,char *dest,uint256 notarized_hash,uint256 notarized_desttxid,int32_t notarizedheight)
 {
     struct komodo_event_notarized N;
-    if ( komodo_verifynotarization(symbol,dest,height,notarizedheight,notarized_hash,notarized_desttxid) != 0 )
+    if ( komodo_verifynotarization(ASSETCHAINS_SYMBOL[0]==0?(char *)"KMD":ASSETCHAINS_SYMBOL,(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "BTC" : "KMD"),height,notarizedheight,notarized_hash,notarized_desttxid) != 0 )
         printf("%s error validating notarization\n",ASSETCHAINS_SYMBOL);
     else
     {
@@ -48,7 +48,7 @@ void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t heig
         N.desttxid = notarized_desttxid;
         N.notarizedheight = notarizedheight;
         strcpy(N.dest,dest);
-        komodo_eventadd(sp,height,symbol,KOMODO_EVENT_NOTARIZED,(uint8_t *)&N,sizeof(N));
+        komodo_eventadd(sp,height,ASSETCHAINS_SYMBOL[0]==0?(char *)"KMD":ASSETCHAINS_SYMBOL,KOMODO_EVENT_NOTARIZED,(uint8_t *)&N,sizeof(N));
         if ( sp != 0 )
             komodo_notarized_update(sp,height,notarizedheight,notarized_hash,notarized_desttxid);
     }
