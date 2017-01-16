@@ -358,7 +358,7 @@ int32_t komodo_verifynotarizedscript(uint8_t *script,int32_t len,uint256 NOTARIZ
     printf(" notarized, ");
     for (i=0; i<32; i++)
         printf("%02x",((uint8_t *)&hash)[i]);
-    printf(" opreturn\n");
+    printf(" opreturn from [%s]\n",ASSETCHAINS_SYMBOL);
     return(-1);
 }
 
@@ -389,7 +389,11 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
         //else jsonstr = _dex_getrawtransaction();
         else return(0);
     }
-    else return(-1);
+    else
+    {
+        printf("[%s] verifynotarization error unexpected dest.(%s)\n",ASSETCHAINS_SYMBOL,dest);
+        return(-1);
+    }
     if ( jsonstr != 0 )
     {
         if ( (json= cJSON_Parse(jsonstr)) != 0 )
