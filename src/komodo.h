@@ -19,10 +19,6 @@
 // Todo:
 // verify: reorgs
 
-// non komodod (non-hardfork) todo:
-// a. automate notarization fee payouts
-// b. automated distribution of test REVS snapshot
-
 #define KOMODO_ASSETCHAINS_WAITNOTARIZE
 #define KOMODO_PAXMAX (10000 * COIN)
 
@@ -380,7 +376,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
             len += iguana_rwnum(0,&scriptbuf[len],sizeof(*notarizedheightp),(uint8_t *)notarizedheightp);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
-            if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
+            if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height && (height < sp->CURRENT_HEIGHT-1000 || komodo_verifynotarization(ASSETCHAINS_SYMBOL[0]==0?(char *)"KMD":ASSETCHAINS_SYMBOL,(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "BTC" : "KMD"),height,*notarizedheightp,kmdtxid,desttxid) == 0) )
             {
                 sp->NOTARIZED_HEIGHT = *notarizedheightp;
                 sp->NOTARIZED_HASH = kmdtxid;
@@ -413,7 +409,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                         komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen-len+4+3+(scriptbuf[1] == 0x4d),j);
                     }
                 }
-            } else printf("notarized.%d %llx reject ht.%d NOTARIZED.%d %s.%s DESTTXID.%s (%s)\n",notarized,(long long)signedmask,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
+            } else printf("notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s (%s)\n",notarized,(long long)signedmask,height,*notarizedheightp,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
         }
         else if ( i == 0 && j == 1 && opretlen == 149 )
         {
