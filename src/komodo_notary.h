@@ -13,7 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
-#define KOMODO_MAINNET_START 156999
+#define KOMODO_MAINNET_START 178999
 
 const char *Notaries_genesis[][2] =
 {
