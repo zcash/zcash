@@ -350,17 +350,16 @@ int32_t komodo_verifynotarizedscript(uint8_t *script,int32_t len,uint256 NOTARIZ
 {
     int32_t i; uint256 hash; char params[256];
     for (i=0; i<32; i++)
+        ((uint8_t *)&hash)[i] = script[2+i];
+    if ( hash == NOTARIZED_HASH )
+        return(0);
+    for (i=0; i<32; i++)
         printf("%02x",((uint8_t *)&NOTARIZED_HASH)[i]);
     printf(" notarized, ");
     for (i=0; i<32; i++)
-    {
-        ((uint8_t *)&hash)[i] = script[2+i];
-        printf("%02x",script[2+i]);
-    }
-    printf(" <- opreturn?\n");
-    if ( hash == NOTARIZED_HASH )
-        return(0);
-    else return(-1);
+        printf("%02x",((uint8_t *)&hash)[i]);
+    printf(" opreturn\n");
+    return(-1);
 }
 
 int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 NOTARIZED_HASH,uint256 NOTARIZED_DESTTXID)
@@ -372,7 +371,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
         sprintf(&params[i*2 + 2],"%02x",((uint8_t *)&NOTARIZED_DESTTXID)[31-i]);
     strcat(params,"\", 1]");*/
     sprintf(params,"[\"%s\", 1]",NOTARIZED_DESTTXID.ToString().c_str());
-    printf("src.%s dest.%s params.[%s] ht.%d notarized.%d\n",symbol,dest,params,height,NOTARIZED_HEIGHT);
+    //printf("src.%s dest.%s params.[%s] ht.%d notarized.%d\n",symbol,dest,params,height,NOTARIZED_HEIGHT);
     if ( strcmp(dest,"KMD") == 0 )
     {
         if ( KMDUSERPASS[0] != 0 )
