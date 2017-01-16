@@ -18,4 +18,7 @@ void MilliSleep(int64_t n);
 
 std::string DateTimeStrFormat(const char* pszFormat, int64_t nTime);
 
+/** Sanity check epoch match normal Unix epoch */
+bool ChronoSanityCheck();
+
 #endif // BITCOIN_UTIL_TIME_H

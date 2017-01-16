@@ -833,6 +833,10 @@ bool InitSanityCheck(void)
     if (!glibc_sanity_test() || !glibcxx_sanity_test())
         return false;
 
+    if (!ChronoSanityCheck()) {
+        return InitError("Clock epoch mismatch. Aborting.");
+    }
+
     return true;
 }
 
