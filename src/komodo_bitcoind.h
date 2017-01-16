@@ -365,13 +365,13 @@ int32_t komodo_verifynotarizedscript(uint8_t *script,int32_t len,uint256 NOTARIZ
 
 int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 NOTARIZED_HASH,uint256 NOTARIZED_DESTTXID)
 {
-    char params[256],*jsonstr,*hexstr; uint8_t script[8192]; int32_t i,n,len,retval = -1; cJSON *json,*txjson,*vouts,*vout,*skey;
-    params[0] = '[';
+    char params[256],*jsonstr,*hexstr; uint8_t script[8192]; int32_t n,len,retval = -1; cJSON *json,*txjson,*vouts,*vout,*skey;
+    /*params[0] = '[';
     params[1] = '"';
     for (i=0; i<32; i++)
-        sprintf(&params[i*2 + 2],"%02x",((uint8_t *)&NOTARIZED_DESTTXID)[i]);
-    strcat(params,"\", 1]");
-    //sprintf(params,"[\"%s\", 1]",NOTARIZED_DESTTXID.ToString().c_str());
+        sprintf(&params[i*2 + 2],"%02x",((uint8_t *)&NOTARIZED_DESTTXID)[31-i]);
+    strcat(params,"\", 1]");*/
+    sprintf(params,"[\"%s\", 1]",NOTARIZED_DESTTXID.ToString().c_str());
     printf("src.%s dest.%s params.[%s] ht.%d notarized.%d\n",symbol,dest,params,height,NOTARIZED_HEIGHT);
     if ( strcmp(dest,"KMD") == 0 )
     {
