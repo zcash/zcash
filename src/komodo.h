@@ -19,9 +19,7 @@
 // Todo:
 // verify: reorgs
 
-// non komodod (non-hardfork) todo:
-// a. automate notarization fee payouts
-// b. automated distribution of test REVS snapshot
+#define KOMODO_MAINNET_START 156720
 
 #define KOMODO_ASSETCHAINS_WAITNOTARIZE
 #define KOMODO_PAXMAX (10000 * COIN)

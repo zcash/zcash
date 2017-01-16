@@ -52,6 +52,12 @@ const char *Notaries_genesis[][2] =
     { "titomane_SH", "035f49d7a308dd9a209e894321f010d21b7793461b0c89d6d9231a3fe5f68d9960" },
 };
 
+const char *Notaries_elected[][2] =
+{
+    { "jl777_testA", "03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828" },
+    { "jl777_testB", "02ebfc784a4ba768aad88d44d1045d240d47b26e248cafaf1c5169a42d7a61d344" },
+};
+
 int32_t komodo_ratify_threshold(int32_t height,uint64_t signedmask)
 {
     int32_t htind,numnotaries,i,wt = 0;
@@ -245,6 +251,18 @@ void komodo_init(int32_t height)
         //for (i=0; i<sizeof(Minerids); i++)
         //    Minerids[i] = -2;
         didinit = 1;
+    }
+    else if ( height == KOMODO_MAINNET_START )
+    {
+        n = (int32_t)(sizeof(Notaries_elected)/sizeof(*Notaries_elected));
+        for (k=0; k<n; k++)
+        {
+            if ( Notaries_elected[k][0] == 0 || Notaries_elected[k][1] == 0 || Notaries_elected[k][0][0] == 0 || Notaries_elected[k][1][0] == 0 )
+                break;
+            decode_hex(pubkeys[k],33,(char *)Notaries_elected[k][1]);
+        }
+        printf("set MAINNET notaries.%d\n",k);
+        komodo_notarysinit(0,pubkeys,k);
     }
     komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0);
 }
