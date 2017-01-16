@@ -376,7 +376,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
             len += iguana_rwnum(0,&scriptbuf[len],sizeof(*notarizedheightp),(uint8_t *)notarizedheightp);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
-            if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height && (height < sp->CURRENT_HEIGHT-1000 || komodo_verifynotarization(symbol,dest,height,*notarizedheightp,kmdtxid,desttxid) == 0) )
+            if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height && (height < sp->CURRENT_HEIGHT-1000 || komodo_verifynotarization(ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,ASSETCHAINS_SYMBOL[0] == 0 ? "BTC" : "KMD",height,*notarizedheightp,kmdtxid,desttxid) == 0) )
             {
                 sp->NOTARIZED_HEIGHT = *notarizedheightp;
                 sp->NOTARIZED_HASH = kmdtxid;
