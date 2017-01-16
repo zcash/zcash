@@ -233,7 +233,8 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
 void komodo_init(int32_t height)
 {
     static int didinit; uint256 zero; int32_t i,k,n; uint8_t pubkeys[64][33];
-    printf("komodo_init ht.%d didinit.%d mainnet.%d\n",height,didinit,KOMODO_MAINNET_START);
+    if ( height != 0 )
+        printf("komodo_init ht.%d didinit.%d\n",height,didinit);
     if ( didinit == 0 )
     {
         pthread_mutex_init(&komodo_mutex,NULL);
