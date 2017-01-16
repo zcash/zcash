@@ -39,7 +39,7 @@ struct komodo_event *komodo_eventadd(struct komodo_state *sp,int32_t height,char
 void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t height,char *dest,uint256 notarized_hash,uint256 notarized_desttxid,int32_t notarizedheight)
 {
     struct komodo_event_notarized N;
-    if ( komodo_verifynotarization(symbol,dest,ht,notarized_height,notarized_hash,notarized_desttxid) != 0 )
+    if ( komodo_verifynotarization(symbol,dest,height,notarized_height,notarized_hash,notarized_desttxid) != 0 )
         printf("error validating notarization\n");
     else
     {
