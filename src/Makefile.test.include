@@ -35,7 +35,7 @@ JSON_TEST_FILES = \
   test/data/g1_compressed.json \
   test/data/g2_compressed.json
 
-RAW_TEST_FILES =
+#RAW_TEST_FILES = test/data/alertTests.raw // disabled for Zclassic
 
 GENERATED_TEST_FILES = $(JSON_TEST_FILES:.json=.json.h) $(RAW_TEST_FILES:.raw=.raw.h)
 
