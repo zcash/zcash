@@ -19,7 +19,6 @@
 #include <sys/time.h>
 #endif
 
-#include <openssl/err.h>
 #include "sodium.h"
 
 static inline int64_t GetPerformanceCounter()
@@ -37,7 +36,7 @@ static inline int64_t GetPerformanceCounter()
 
 void GetRandBytes(unsigned char* buf, size_t num)
 {
-    randombytes_buf(buf, (size_t) num);
+    randombytes_buf(buf, num);
 }
 
 uint64_t GetRand(uint64_t nMax)
