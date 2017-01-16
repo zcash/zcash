@@ -367,7 +367,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
 {
     char params[256],*jsonstr,*hexstr; uint8_t script[8192]; int32_t n,len,retval = -1; cJSON *txjson,*vouts,*vout,*skey;
     sprintf(params,"[\"%s\", 1]",NOTARIZED_DESTTXID.ToString().c_str());
-    printf("src.%s dest.%s params.[%s] ht.%d notarized.%d\n",src,dest,params,height,NOTARIZED_HEIGHT);
+    printf("src.%s dest.%s params.[%s] ht.%d notarized.%d\n",symbol,dest,params,height,NOTARIZED_HEIGHT);
     if ( strcmp(dest,"KMD") == 0 )
     {
         if ( KMDUSERPASS[0] != 0 )
