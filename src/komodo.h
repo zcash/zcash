@@ -99,8 +99,6 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             if ( 0 && sp != 0 )
                 printf("%s load[%s.%d] NOTARIZED %d %s\n",ASSETCHAINS_SYMBOL,symbol,sp->NUM_NPOINTS,notarized_height,notarized_hash.ToString().c_str());
             //if ( matched != 0 ) global independent states -> inside *sp
-            if ( komodo_verifynotarization(symbol,dest,ht,notarized_height,notarized_hash,notarized_desttxid) != 0 )
-                printf("error validating notarization\n");
             komodo_eventadd_notarized(sp,symbol,ht,dest,notarized_hash,notarized_desttxid,notarized_height);
         }
         else if ( func == 'U' ) // deprecated
