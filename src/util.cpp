@@ -534,7 +534,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 {
     boost::filesystem::ifstream streamConfig(GetConfigFile());
     if (!streamConfig.good())
-        return; // No zcash.conf file is OK
+        throw missing_zcash_conf();
 
     set<string> setOptions;
     setOptions.insert("*");
