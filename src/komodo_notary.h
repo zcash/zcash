@@ -13,7 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
-#define KOMODO_MAINNET_START 156742
+#define KOMODO_MAINNET_START 156999
 
 const char *Notaries_genesis[][2] =
 {
@@ -54,7 +54,7 @@ const char *Notaries_genesis[][2] =
     { "titomane_SH", "035f49d7a308dd9a209e894321f010d21b7793461b0c89d6d9231a3fe5f68d9960" },
 };
 
-const char *Notaries_elected[][2] =
+const char *Notaries_elected[][2] = // update with all elected notaries
 {
     { "jl777_testA", "03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828" },
     { "jl777_testB", "02ebfc784a4ba768aad88d44d1045d240d47b26e248cafaf1c5169a42d7a61d344" },
@@ -116,7 +116,7 @@ void komodo_notarysinit(int32_t origheight,uint8_t pubkeys[64][33],int32_t num)
         memcpy(kp->pubkey,pubkeys[k],33);
         kp->notaryid = k;
         HASH_ADD_KEYPTR(hh,N.Notaries,kp->pubkey,33,kp);
-        if ( 1 && height > 10000 )
+        if ( 0 && height > 10000 )
         {
             for (i=0; i<33; i++)
                 printf("%02x",pubkeys[k][i]);
@@ -234,7 +234,7 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
 void komodo_init(int32_t height)
 {
     static int didinit; uint256 zero; int32_t i,k,n; uint8_t pubkeys[64][33];
-    if ( height != 0 )
+    if ( 0 && height != 0 )
         printf("komodo_init ht.%d didinit.%d\n",height,didinit);
     if ( didinit == 0 )
     {
