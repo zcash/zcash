@@ -346,6 +346,56 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     return(retstr2);
 }
 
+int32_t komodo_verifynotarizedscript(uint8_t *script,int32_t len,uint256 NOTARIZED_HASH)
+{
+    int32_t i; uint256 hash; char params[256];
+    for (i=0; i<32; i++)
+        printf("%02x",((uint8_t *)&NOTARIZED_HASH)[i]);
+    printf(" notarized, ");
+    for (i=0; i<32; i++)
+    {
+        ((uint8_t *)&hash)[i] = script[31+2-i];
+        printf("%02x",script[31+2-i]);
+    }
+    printf(" <- opreturn?\n");
+    if ( hash == NOTARIZED_HASH )
+        return(0);
+    else return(-1);
+}
+
+int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 NOTARIZED_HASH,uint256 NOTARIZED_DESTTXID)
+{
+    char params[256],*jsonstr,*hexstr; uint8_t script[8192]; int32_t n,len,retval = -1; cJSON *txjson,*vouts,*vout,*skey;
+    sprintf(params,"[\"%s\", 1]",NOTARIZED_DESTTXID.ToString().c_str());
+    if ( strcmp(dest,"KMD") == 0 )
+        jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771);
+    else if ( strcmp(dest,"BTC") == 0 )
+        jsonstr = komodo_issuemethod(BTCUSERPASS,(char *)"getrawtransaction",params,8332);
+    else return(-1);
+    if ( jsonstr != 0 )
+    {
+        if ( (txjson= cJSON_Parse(jsonstr)) != 0 )
+        {
+            if ( (vouts= jarray(&n,txjson,"vout")) > 0 )
+            {
+                vout = jitem(vouts,n-1);
+                if ( (skey= jobj(vout,"scriptPubKey")) != 0 )
+                {
+                    if ( (hexstr= jstr(skey,"hex")) != 0 )
+                    {
+                        len = strlen(hexstr) >> 1;
+                        decode_hex(script,len,hexstr);
+                        retval = komodo_verifynotarizedscript(script,len,NOTARIZED_HASH);
+                    }
+                }
+            }
+            free_json(txjson);
+        }
+        free(jsonstr);
+    }
+    return(retval);
+}
+
 uint256 komodo_getblockhash(int32_t height)
 {
     uint256 hash; char params[128],*hexstr,*jsonstr; cJSON *result; int32_t i; uint8_t revbuf[32];

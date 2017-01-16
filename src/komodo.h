@@ -19,7 +19,6 @@
 // Todo:
 // verify: reorgs
 
-
 #define KOMODO_ASSETCHAINS_WAITNOTARIZE
 #define KOMODO_PAXMAX (10000 * COIN)
 
@@ -303,7 +302,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         else if ( height != 0 )
         {
             //printf("ht.%d func N ht.%d errs.%d\n",height,NOTARIZED_HEIGHT,errs);
-            if ( sp != 0 )
+            if ( sp != 0 && (height < sp->CURRENT_HEIGHT-1000 || komodo_verifynotarization(symbol,dest,height,sp->NOTARIZED_HEIGHT,sp->NOTARIZED_HASH,sp->NOTARIZED_DESTTXID) == 0) )
             {
                 fputc('N',fp);
                 if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
