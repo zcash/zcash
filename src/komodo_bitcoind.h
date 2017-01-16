@@ -368,9 +368,17 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
     char params[256],*jsonstr,*hexstr; uint8_t script[8192]; int32_t n,len,retval = -1; cJSON *txjson,*vouts,*vout,*skey;
     sprintf(params,"[\"%s\", 1]",NOTARIZED_DESTTXID.ToString().c_str());
     if ( strcmp(dest,"KMD") == 0 )
-        jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771);
+    {
+        if ( KMDUSERPASS[0] != 0 )
+            jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771);
+        //else jsonstr = _dex_getrawtransaction();
+    }
     else if ( strcmp(dest,"BTC") == 0 )
-        jsonstr = komodo_issuemethod(BTCUSERPASS,(char *)"getrawtransaction",params,8332);
+    {
+        if ( BTCUSERPASS[0] != 0 )
+            jsonstr = komodo_issuemethod(BTCUSERPASS,(char *)"getrawtransaction",params,8332);
+        //else jsonstr = _dex_getrawtransaction();
+    }
     else return(-1);
     if ( jsonstr != 0 )
     {
