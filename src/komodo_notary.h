@@ -13,7 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
-#define KOMODO_MAINNET_START 156735
+#define KOMODO_MAINNET_START 156742
 
 const char *Notaries_genesis[][2] =
 {
@@ -266,7 +266,7 @@ void komodo_init(int32_t height)
             decode_hex(pubkeys[k],33,(char *)Notaries_elected[k][1]);
         }
         printf("set MAINNET notaries.%d\n",k);
-        komodo_notarysinit(0,pubkeys,k);
+        komodo_notarysinit(KOMODO_MAINNET_START,pubkeys,k);
     }
     komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0);
 }
