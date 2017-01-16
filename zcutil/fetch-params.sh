@@ -24,7 +24,7 @@ function fetch_params {
 
     if ! [ -f "$output" ]; then
         echo "Retrieving: $url"
-        if [ $(sw_vers -productName) == "Mac" ]; then
+        if [[ $(sw_vers -productName) == "Mac OS X" ]]; then
             curl \
                 --output "$dlname" \
                 -# -L -C - \
