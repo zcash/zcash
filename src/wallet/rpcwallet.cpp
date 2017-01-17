@@ -3144,9 +3144,9 @@ Value z_getoperationstatus_IMPL(const Array& params, bool fRemoveFinishedOperati
     }
     bool useFilter = (filter.size()>0);
 
-    Array ret;
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::vector<AsyncRPCOperationId> ids = q->getAllOperationIds();
+    std::vector<std::pair<int64_t, Value> > toSort;
 
     for (auto id : ids) {
         if (useFilter && !filter.count(id))
@@ -3160,18 +3160,26 @@ Value z_getoperationstatus_IMPL(const Array& params, bool fRemoveFinishedOperati
         }
         
         Value status = operation->getStatus();
+        int64_t time = operation->getCreationTime();
+        std::pair<int64_t, Value> ap(time, status);
 
         if (fRemoveFinishedOperations) {
             // Caller is only interested in retrieving finished results
             if (operation->isSuccess() || operation->isFailed() || operation->isCancelled()) {
-                ret.push_back(status);
+                toSort.push_back(ap);
                 q->popOperationForId(id);
             }
         } else {
-            ret.push_back(status);
+            toSort.push_back(ap);
         }
     }
-
+    std::sort(toSort.begin(), toSort.end(), [](const std::pair<int64_t,Value> &left, const std::pair<int64_t,Value> &right){
+        return left.first < right.first;
+    });
+    Array ret;
+    for (auto item : toSort){
+        ret.push_back(item.second);
+    }
     return ret;
 }
 
