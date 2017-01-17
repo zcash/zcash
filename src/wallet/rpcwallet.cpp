@@ -3360,9 +3360,17 @@ Value z_sendmany(const Array& params, bool fHelp)
         }
     }
 
+    // Use input parameters as the optional context info to be returned by z_getoperationstatus and z_getoperationresult.
+    Object o;
+    o.push_back(Pair("fromaddress", params[0]));
+    o.push_back(Pair("amounts", params[1]));
+    o.push_back(Pair("minconf", nMinDepth));
+    o.push_back(Pair("fee", std::stod(FormatMoney(nFee))));
+    Value contextInfo = Value(o);
+
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nFee) );
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
     return operationId;
