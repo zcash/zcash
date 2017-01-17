@@ -5,7 +5,7 @@ set -e
 DATADIR=./benchmark-datadir
 
 function zcash_rpc {
-    ./src/zcash-cli -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 "$@"
+    ./src/zcash-cli -datadir="$DATADIR" -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 "$@"
 }
 
 function zcashd_generate {
@@ -15,6 +15,7 @@ function zcashd_generate {
 function zcashd_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
+    touch "$DATADIR/zcash.conf"
     ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
 }
@@ -27,6 +28,7 @@ function zcashd_stop {
 function zcashd_massif_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
+    touch "$DATADIR/zcash.conf"
     rm -f massif.out
     valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
@@ -41,6 +43,7 @@ function zcashd_massif_stop {
 function zcashd_valgrind_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
+    touch "$DATADIR/zcash.conf"
     rm -f valgrind.out
     valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
