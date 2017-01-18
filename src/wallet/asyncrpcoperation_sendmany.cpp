@@ -452,13 +452,22 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 info.notes.push_back(note);
                 outPoints.push_back(outPoint);
 
-
-                LogPrint("zrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s)\n",
+                int wtxHeight = -1;
+                int wtxDepth = -1;
+                {
+                    LOCK2(cs_main, pwalletMain->cs_wallet);
+                    const CWalletTx& wtx = pwalletMain->mapWallet[outPoint.hash];
+                    wtxHeight = mapBlockIndex[wtx.hashBlock]->nHeight;
+                    wtxDepth = wtx.GetDepthInMainChain();
+                }
+                LogPrint("zrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, height=%d, confirmations=%d)\n",
                         getId().substr(0, 10),
                         outPoint.hash.ToString().substr(0, 10),
                         outPoint.js,
                         int(outPoint.n), // uint8_t
-                        FormatMoney(noteFunds, false)
+                        FormatMoney(noteFunds, false),
+                        wtxHeight,
+                        wtxDepth
                         );
 
                 
@@ -615,12 +624,22 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 
                 jsInputValue += noteFunds;
                 
-                LogPrint("zrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s)\n",
+                int wtxHeight = -1;
+                int wtxDepth = -1;
+                {
+                    LOCK2(cs_main, pwalletMain->cs_wallet);
+                    const CWalletTx& wtx = pwalletMain->mapWallet[jso.hash];
+                    wtxHeight = mapBlockIndex[wtx.hashBlock]->nHeight;
+                    wtxDepth = wtx.GetDepthInMainChain();
+                }
+                LogPrint("zrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, height=%d, confirmations=%d)\n",
                         getId().substr(0, 10),
                         jso.hash.ToString().substr(0, 10),
                         jso.js,
                         int(jso.n), // uint8_t
-                        FormatMoney(noteFunds, false)
+                        FormatMoney(noteFunds, false),
+                        wtxHeight,
+                        wtxDepth
                         );
             }
                         
