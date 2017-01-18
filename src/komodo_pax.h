@@ -536,7 +536,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
         {
             sum += price;
             nonz++;
-            if ( i == 1 && nonz == 2 )
+            if ( 0 && i == 1 && nonz == 2 )
             {
                 diff = (((int64_t)price - (sum >> 1)) * 10000);
                 if ( diff < 0 )
@@ -563,7 +563,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     portable_mutex_unlock(&komodo_mutex);
     if ( nonz != 0 )
         sum /= nonz;
-    printf("-> %lld %s/%s\n",(long long)sum,base,rel);
+    printf("-> %lld %s/%s i.%d\n",(long long)sum,base,rel,i);
     return(sum);
 }
 
