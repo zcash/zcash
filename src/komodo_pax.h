@@ -542,7 +542,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
             diff = ((price - (sum >> 1)) * SATOSHIDEN) / price;
             if ( diff < 0 )
                 diff = -diff;
-            if ( diff < (SATOSHIDEN / 1000) )
+            if ( diff < (SATOSHIDEN / 333) )
                 break;
         }
     }
