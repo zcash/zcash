@@ -530,7 +530,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     if ( chainActive.Tip() != 0 && height > chainActive.Tip()->nHeight )
         return(0);
     portable_mutex_lock(&komodo_mutex);
-    for (i=0; i<32; i++)
+    for (i=0; i<64; i++)
     {
         if ( (price= komodo_paxpriceB(&seed,height-i,base,rel,basevolume)) != 0 )
         {
@@ -553,7 +553,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
                     diff = -diff;
                 diff /= price;
                 //printf("(%llu %llu %lld).%lld ",(long long)price,(long long)(sum>>2),(long long) (((int64_t)price - (sum >> 2)) * 10000),(long long)diff);
-                if ( diff < 15 )
+                if ( diff < 9 )
                     break;
             }
         }
