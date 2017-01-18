@@ -456,6 +456,7 @@ int32_t komodo_kmdbtcusd(int32_t rwflag,uint64_t *kmdbtcp,uint64_t *btcusdp,int3
     static uint64_t *KMDBTCS,*BTCUSDS; static int32_t maxheight = -1; int32_t incr = 10000;
     if ( height >= maxheight )
     {
+        printf("height.%d maxheight.%d incr.%d\n",height,maxheight,incr);
         if ( height >= maxheight+incr )
             incr = (height - (maxheight+incr) + 1000);
         KMDBTCS = (uint64_t *)realloc(KMDBTCS,((incr + maxheight) * sizeof(*KMDBTCS)));
