@@ -112,8 +112,14 @@ Notify the Zcash DevOps engineer/sysadmin that the release has been tagged. They
 
 Then, verify that nodes can connect to the testnet server, and update the guide on the wiki to ensure the correct hostname is listed in the recommended zcash.conf.
 
-## F. Update the Beta Guide
+## F. Update the 1.0 User Guide
+
 ## G. Publish the release announcement (blog, zcash-dev, slack)
+
+### G1. Check in with users who opened issues that were resolved in the release
+
+Contact all users who opened `user support` issues that were resolved in the release, and ask them if the release fixes or improves their issue.
+
 ## H. Make and deploy deterministic builds
 
 - Run the [Gitian deterministic build environment](https://github.com/zcash/zcash-gitian)
