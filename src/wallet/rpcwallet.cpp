@@ -2510,7 +2510,7 @@ uint64_t komodo_interestsum()
     BOOST_FOREACH(const COutput& out,vecOutputs)
     {
         CAmount nValue = out.tx->vout[out.i].nValue;
-        if ( out.tx->nLockTime != 0 )
+        if ( out.tx->nLockTime != 0 && out.fSpendable != 0 )
         {
             BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
             CBlockIndex *tipindex,*pindex = it->second;

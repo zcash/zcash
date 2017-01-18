@@ -429,7 +429,7 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
         height -= 10;
     if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
     {
-        portable_mutex_lock(&komodo_mutex);
+        //portable_mutex_lock(&komodo_mutex);
         for (i=NUM_PRICES-1; i>=0; i--)
         {
             ptr = &PVALS[36 * i];
@@ -440,18 +440,47 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
                     *kmdbtcp = ptr[MAX_CURRENCIES + 1] / 539;
                     *btcusdp = ptr[MAX_CURRENCIES + 2] / 539;
                 }
-                portable_mutex_unlock(&komodo_mutex);
+                //portable_mutex_unlock(&komodo_mutex);
                 if ( kmdbtc != 0 && btcusd != 0 )
                     return(komodo_paxcalc(&ptr[1],baseid,relid,basevolume,kmdbtc,btcusd));
                 else return(0);
             }
         }
-        portable_mutex_unlock(&komodo_mutex);
+        //portable_mutex_unlock(&komodo_mutex);
     } //else printf("paxprice invalid base.%s %d, rel.%s %d\n",base,baseid,rel,relid);
     return(0);
 }
 
-uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
+int32_t komodo_kmdbtcusd(int32_t rwflag,uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height)
+{
+    static uint64_t *KMDBTCS,*BTCUSDS; static int32_t maxheight = 0; int32_t incr = 10000;
+    if ( height >= maxheight )
+    {
+        //printf("height.%d maxheight.%d incr.%d\n",height,maxheight,incr);
+        if ( height >= maxheight+incr )
+            incr = (height - (maxheight+incr) + 1000);
+        KMDBTCS = (uint64_t *)realloc(KMDBTCS,((incr + maxheight) * sizeof(*KMDBTCS)));
+        memset(&KMDBTCS[maxheight],0,(incr * sizeof(*KMDBTCS)));
+        BTCUSDS = (uint64_t *)realloc(BTCUSDS,((incr + maxheight) * sizeof(*BTCUSDS)));
+        memset(&BTCUSDS[maxheight],0,(incr * sizeof(*BTCUSDS)));
+        maxheight += incr;
+    }
+    if ( rwflag == 0 )
+    {
+        *kmdbtcp = KMDBTCS[height];
+        *btcusdp = BTCUSDS[height];
+    }
+    else
+    {
+        KMDBTCS[height] = *kmdbtcp;
+        BTCUSDS[height] = *btcusdp;
+    }
+    if ( *kmdbtcp != 0 && *btcusdp != 0 )
+        return(0);
+    else return(-1);
+}
+
+uint64_t komodo_paxpriceB(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t lastprice,tolerance,den,densum,sum=0,votes[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],btcusds[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtcs[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtc,btcusd;
     *seedp = komodo_seed(height);
@@ -467,15 +496,19 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     }
     numvotes = (int32_t)(sizeof(Peggy_inds)/sizeof(*Peggy_inds));
     memset(votes,0,sizeof(votes));
-    memset(btcusds,0,sizeof(btcusds));
-    memset(kmdbtcs,0,sizeof(kmdbtcs));
-    for (i=0; i<numvotes; i++)
+    //if ( komodo_kmdbtcusd(0,&kmdbtc,&btcusd,height) < 0 ) crashes when via passthru GUI use
     {
-        _komodo_paxprice(&kmdbtcs[numvotes-1-i],&btcusds[numvotes-1-i],height-i,base,rel,100000,0,0);
-        //printf("(%llu %llu) ",(long long)kmdbtcs[numvotes-1-i],(long long)btcusds[numvotes-1-i]);
+        memset(btcusds,0,sizeof(btcusds));
+        memset(kmdbtcs,0,sizeof(kmdbtcs));
+        for (i=0; i<numvotes; i++)
+        {
+            _komodo_paxprice(&kmdbtcs[numvotes-1-i],&btcusds[numvotes-1-i],height-i,base,rel,100000,0,0);
+            //printf("(%llu %llu) ",(long long)kmdbtcs[numvotes-1-i],(long long)btcusds[numvotes-1-i]);
+        }
+        kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,*seedp) * 539;
+        btcusd = komodo_paxcorrelation(btcusds,numvotes,*seedp) * 539;
+        //komodo_kmdbtcusd(1,&kmdbtc,&btcusd,height);
     }
-    kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,*seedp) * 539;
-    btcusd = komodo_paxcorrelation(btcusds,numvotes,*seedp) * 539;
     for (i=nonz=0; i<numvotes; i++)
     {
         if ( (votes[numvotes-1-i]= _komodo_paxprice(0,0,height-i,base,rel,100000,kmdbtc,btcusd)) == 0 )
@@ -489,6 +522,49 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
         return(0);
     }
     return(komodo_paxcorrelation(votes,numvotes,*seedp) * basevolume / 100000);
+}
+
+uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
+{
+    int32_t i,nonz=0; int64_t diff; uint64_t price,seed,sum = 0;
+    if ( chainActive.Tip() != 0 && height > chainActive.Tip()->nHeight )
+        return(0);
+    portable_mutex_lock(&komodo_mutex);
+    for (i=0; i<17; i++)
+    {
+        if ( (price= komodo_paxpriceB(&seed,height-i,base,rel,basevolume)) != 0 )
+        {
+            sum += price;
+            nonz++;
+            if ( 0 && i == 1 && nonz == 2 )
+            {
+                diff = (((int64_t)price - (sum >> 1)) * 10000);
+                if ( diff < 0 )
+                    diff = -diff;
+                diff /= price;
+                printf("(%llu %llu %lld).%lld ",(long long)price,(long long)(sum>>1),(long long)(((int64_t)price - (sum >> 1)) * 10000),(long long)diff);
+                if ( diff < 33 )
+                    break;
+            }
+            else if ( 0 && i == 3 && nonz == 4 )
+            {
+                diff = (((int64_t)price - (sum >> 2)) * 10000);
+                if ( diff < 0 )
+                    diff = -diff;
+                diff /= price;
+                printf("(%llu %llu %lld).%lld ",(long long)price,(long long)(sum>>2),(long long) (((int64_t)price - (sum >> 2)) * 10000),(long long)diff);
+                if ( diff < 20 )
+                    break;
+            }
+        }
+        if ( height < 165000 )
+            break;
+    }
+    portable_mutex_unlock(&komodo_mutex);
+    if ( nonz != 0 )
+        sum /= nonz;
+    //printf("-> %lld %s/%s i.%d ht.%d\n",(long long)sum,base,rel,i,height);
+    return(sum);
 }
 
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel)
