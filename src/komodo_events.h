@@ -40,7 +40,7 @@ void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t heig
 {
     struct komodo_event_notarized N;
     if ( komodo_verifynotarization(symbol,dest,height,notarizedheight,notarized_hash,notarized_desttxid) != 0 )
-        printf("%s error validating notarization\n",ASSETCHAINS_SYMBOL);
+        printf("[%s] error validating notarization ht.%d notarized_height.%d\n",ASSETCHAINS_SYMBOL,height,notarizedheight);
     else
     {
         memset(&N,0,sizeof(N));
