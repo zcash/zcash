@@ -542,7 +542,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
                 if ( diff < 0 )
                     diff = -diff;
                 diff /= price;
-                printf("(%llu %llu %lld).%lld ",(long long)price,(long long)(sum>>1),(long long)(((int64_t)price - (sum >> 1)) * 10000),(long long)diff);
+                //printf("(%llu %llu %lld).%lld ",(long long)price,(long long)(sum>>1),(long long)(((int64_t)price - (sum >> 1)) * 10000),(long long)diff);
                 if ( diff < 50 )
                     break;
             }
@@ -552,7 +552,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
                 if ( diff < 0 )
                     diff = -diff;
                 diff /= price;
-                printf("(%llu %llu %lld).%lld ",(long long)price,(long long)(sum>>2),(long long) (((int64_t)price - (sum >> 2)) * 10000),(long long)diff);
+                //printf("(%llu %llu %lld).%lld ",(long long)price,(long long)(sum>>2),(long long) (((int64_t)price - (sum >> 2)) * 10000),(long long)diff);
                 if ( diff < 40 )
                     break;
             }
@@ -563,7 +563,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     portable_mutex_unlock(&komodo_mutex);
     if ( nonz != 0 )
         sum /= nonz;
-    printf("-> %lld\n",(long long)sum);
+    //printf("-> %lld\n",(long long)sum);
     return(sum);
 }
 
