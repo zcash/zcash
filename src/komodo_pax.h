@@ -494,7 +494,7 @@ uint64_t komodo_paxpriceC(uint64_t *seedp,int32_t height,char *base,char *rel,ui
 uint64_t komodo_paxpriceB(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     int32_t i,nonz=0; uint64_t price,seed,sum = 0;
-    for (i=0; i<2; i++)
+    for (i=0; i<3; i++)
     {
         if ( (price= komodo_paxpriceC(&seed,height-i,base,rel,basevolume)) != 0 )
         {
@@ -510,9 +510,9 @@ uint64_t komodo_paxpriceB(uint64_t *seedp,int32_t height,char *base,char *rel,ui
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     int32_t i,nonz=0; uint64_t price,seed,sum = 0;
-    for (i=0; i<2; i++)
+    for (i=0; i<3; i++)
     {
-        if ( (price= komodo_paxpriceB(&seed,height-i*16,base,rel,basevolume)) != 0 )
+        if ( (price= komodo_paxpriceB(&seed,height-i*17,base,rel,basevolume)) != 0 )
         {
             sum += price;
             nonz++;
