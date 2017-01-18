@@ -496,7 +496,7 @@ uint64_t komodo_paxpriceB(uint64_t *seedp,int32_t height,char *base,char *rel,ui
     }
     numvotes = (int32_t)(sizeof(Peggy_inds)/sizeof(*Peggy_inds));
     memset(votes,0,sizeof(votes));
-    //if ( komodo_kmdbtcusd(0,&kmdbtc,&btcusd,height) < 0 )
+    if ( komodo_kmdbtcusd(0,&kmdbtc,&btcusd,height) < 0 )
     {
         memset(btcusds,0,sizeof(btcusds));
         memset(kmdbtcs,0,sizeof(kmdbtcs));
@@ -507,7 +507,7 @@ uint64_t komodo_paxpriceB(uint64_t *seedp,int32_t height,char *base,char *rel,ui
         }
         kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,*seedp) * 539;
         btcusd = komodo_paxcorrelation(btcusds,numvotes,*seedp) * 539;
-        //komodo_kmdbtcusd(1,&kmdbtc,&btcusd,height);
+        komodo_kmdbtcusd(1,&kmdbtc,&btcusd,height);
     }
     for (i=nonz=0; i<numvotes; i++)
     {
