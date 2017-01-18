@@ -496,7 +496,7 @@ uint64_t komodo_paxpriceB(uint64_t *seedp,int32_t height,char *base,char *rel,ui
     }
     numvotes = (int32_t)(sizeof(Peggy_inds)/sizeof(*Peggy_inds));
     memset(votes,0,sizeof(votes));
-    //if ( komodo_kmdbtcusd(0,&kmdbtc,&btcusd,height) < 0 )
+    //if ( komodo_kmdbtcusd(0,&kmdbtc,&btcusd,height) < 0 ) crashes when via passthru GUI use
     {
         memset(btcusds,0,sizeof(btcusds));
         memset(kmdbtcs,0,sizeof(kmdbtcs));
@@ -557,8 +557,8 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
                     break;
             }
         }
-        //if ( height < KOMODO_MAINNET_START )
-        //    break;
+        if ( height < 165000 )
+            break;
     }
     portable_mutex_unlock(&komodo_mutex);
     if ( nonz != 0 )
