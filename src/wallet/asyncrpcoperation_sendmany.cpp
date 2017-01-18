@@ -799,6 +799,12 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(Object obj)
         o.push_back(Pair("hex", signedtxn));
         set_result(Value(o));
     }
+
+    // Keep the signed transaction so we can hash to the same txid
+    CDataStream stream(ParseHex(signedtxn), SER_NETWORK, PROTOCOL_VERSION);
+    CTransaction tx;
+    stream >> tx;
+    tx_ = tx;
 }
 
 
