@@ -536,27 +536,27 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
         {
             sum += price;
             nonz++;
+            if ( i == 1 && nonz == 2 )
+            {
+                diff = ((price - (sum >> 1)) * SATOSHIDEN) / price;
+                if ( diff < 0 )
+                    diff = -diff;
+                if ( diff < (SATOSHIDEN / 333) )
+                    break;
+                else printf("(%llu %llu).%lld ",price,sum>>1,diff);
+            }
+            else if ( i == 3 && nonz == 4 )
+            {
+                diff = ((price - (sum >> 2)) * SATOSHIDEN) / price;
+                if ( diff < 0 )
+                    diff = -diff;
+                if ( diff < (SATOSHIDEN / 500) )
+                    break;
+                else printf("(%llu %llu).%lld ",price,sum>>2,diff);
+            }
         }
         //if ( height < KOMODO_MAINNET_START )
         //    break;
-        if ( i == 1 && nonz == 2 )
-        {
-            diff = ((price - (sum >> 1)) * SATOSHIDEN) / price;
-            if ( diff < 0 )
-                diff = -diff;
-            printf("%lld ",(long long)diff);
-            if ( diff < (SATOSHIDEN / 333) )
-                break;
-        }
-        else if ( i == 3 && nonz == 4 )
-        {
-            diff = ((price - (sum >> 2)) * SATOSHIDEN) / price;
-            if ( diff < 0 )
-                diff = -diff;
-            printf("%lld ",(long long)diff);
-            if ( diff < (SATOSHIDEN / 500) )
-                break;
-        }
     }
     portable_mutex_unlock(&komodo_mutex);
     if ( nonz != 0 )
