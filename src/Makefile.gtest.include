@@ -1,5 +1,5 @@
 TESTS += zcash-gtest
-bin_PROGRAMS += zcash-gtest
+noinst_PROGRAMS += zcash-gtest
 
 # tool for generating our public parameters.
 # test_checktransaction.cpp MUST be before
