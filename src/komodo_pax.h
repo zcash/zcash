@@ -451,6 +451,32 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
     return(0);
 }
 
+int32_t komodo_kmdbtcusd(int32_t rwflag,uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height)
+{
+    static uint64_t *KMDBTCS,*BTCUSDS; static int32_t maxheight; int32_t incr = 10000;
+    if ( height >= maxheight )
+    {
+        KMDBTCS = realloc(KMDBTCS,((incr + maxheight) * sizeof(*KMDBTCS)));
+        memset(&KMDBTCS[maxheight],0,(incr * sizeof(*KMDBTCS)));
+        BTCUSDS = realloc(BTCUSDS,((incr + maxheight) * sizeof(*BTCUSDS)));
+        memset(&BTCUSDS[maxheight],0,(incr * sizeof(*BTCUSDS)));
+        maxheight += incr;
+    }
+    if ( rwflag == 0 )
+    {
+        *kmdbtcp = KMDBTCS[height];
+        *btcusdp = BTCUSDS[height];
+    }
+    else
+    {
+        KMDBTCS[height] = *kmdbtcp;
+        BTCUSDS[height] = *btcusdp;
+    }
+    if ( *kmdbtcp != 0 && *btcusdp != 0 )
+        return(0);
+    else return(-1);
+}
+
 uint64_t komodo_paxpriceB(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t lastprice,tolerance,den,densum,sum=0,votes[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],btcusds[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtcs[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtc,btcusd;
@@ -467,15 +493,19 @@ uint64_t komodo_paxpriceB(uint64_t *seedp,int32_t height,char *base,char *rel,ui
     }
     numvotes = (int32_t)(sizeof(Peggy_inds)/sizeof(*Peggy_inds));
     memset(votes,0,sizeof(votes));
-    memset(btcusds,0,sizeof(btcusds));
-    memset(kmdbtcs,0,sizeof(kmdbtcs));
-    for (i=0; i<numvotes; i++)
+    if ( komodo_kmdbtcusd(0,&kmdbtc,&btcusd,height) < 0 )
     {
-        _komodo_paxprice(&kmdbtcs[numvotes-1-i],&btcusds[numvotes-1-i],height-i,base,rel,100000,0,0);
-        //printf("(%llu %llu) ",(long long)kmdbtcs[numvotes-1-i],(long long)btcusds[numvotes-1-i]);
+        memset(btcusds,0,sizeof(btcusds));
+        memset(kmdbtcs,0,sizeof(kmdbtcs));
+        for (i=0; i<numvotes; i++)
+        {
+            _komodo_paxprice(&kmdbtcs[numvotes-1-i],&btcusds[numvotes-1-i],height-i,base,rel,100000,0,0);
+            //printf("(%llu %llu) ",(long long)kmdbtcs[numvotes-1-i],(long long)btcusds[numvotes-1-i]);
+        }
+        kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,*seedp) * 539;
+        btcusd = komodo_paxcorrelation(btcusds,numvotes,*seedp) * 539;
+        komodo_kmdbtcusd(1,&kmdbtc,&btcusd,height);
     }
-    kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,*seedp) * 539;
-    btcusd = komodo_paxcorrelation(btcusds,numvotes,*seedp) * 539;
     for (i=nonz=0; i<numvotes; i++)
     {
         if ( (votes[numvotes-1-i]= _komodo_paxprice(0,0,height-i,base,rel,100000,kmdbtc,btcusd)) == 0 )
