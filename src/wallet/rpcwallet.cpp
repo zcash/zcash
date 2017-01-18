@@ -2465,7 +2465,15 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         } else if (benchmarktype == "parameterloading") {
             sample_times.push_back(benchmark_parameter_loading());
         } else if (benchmarktype == "createjoinsplit") {
-            sample_times.push_back(benchmark_create_joinsplit());
+            if (params.size() < 3) {
+                sample_times.push_back(benchmark_create_joinsplit());
+            } else {
+                int nThreads = params[2].get_int();
+                std::vector<double> vals = benchmark_create_joinsplit_threaded(nThreads);
+                // Divide by nThreads^2 to get average seconds per JoinSplit because
+                // we are running one JoinSplit per thread.
+                sample_times.push_back(std::accumulate(vals.begin(), vals.end(), 0.0) / (nThreads*nThreads));
+            }
         } else if (benchmarktype == "verifyjoinsplit") {
             sample_times.push_back(benchmark_verify_joinsplit(samplejoinsplit));
         } else if (benchmarktype == "solveequihash") {

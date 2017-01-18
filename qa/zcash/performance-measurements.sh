@@ -77,7 +77,7 @@ case "$1" in
                 zcash_rpc zcbenchmark parameterloading 10
                 ;;
             createjoinsplit)
-                zcash_rpc zcbenchmark createjoinsplit 10
+                zcash_rpc zcbenchmark createjoinsplit 10 "${@:3}"
                 ;;
             verifyjoinsplit)
                 zcash_rpc zcbenchmark verifyjoinsplit 1000 "\"$RAWJOINSPLIT\""
@@ -114,7 +114,7 @@ case "$1" in
                 zcash_rpc zcbenchmark parameterloading 1
                 ;;
             createjoinsplit)
-                zcash_rpc zcbenchmark createjoinsplit 1
+                zcash_rpc zcbenchmark createjoinsplit 1 "${@:3}"
                 ;;
             verifyjoinsplit)
                 zcash_rpc zcbenchmark verifyjoinsplit 1 "\"$RAWJOINSPLIT\""
@@ -149,7 +149,7 @@ case "$1" in
                 zcash_rpc zcbenchmark parameterloading 1
                 ;;
             createjoinsplit)
-                zcash_rpc zcbenchmark createjoinsplit 1
+                zcash_rpc zcbenchmark createjoinsplit 1 "${@:3}"
                 ;;
             verifyjoinsplit)
                 zcash_rpc zcbenchmark verifyjoinsplit 1 "\"$RAWJOINSPLIT\""
