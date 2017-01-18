@@ -538,19 +538,19 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
             nonz++;
             if ( i == 1 && nonz == 2 )
             {
-                diff = ((price - (sum >> 1)) * SATOSHIDEN) / price;
+                diff = ((price - (sum >> 1)) * 10000) / price;
                 if ( diff < 0 )
                     diff = -diff;
-                if ( diff < (SATOSHIDEN / 333) )
+                if ( diff < 50 )
                     break;
                 else printf("(%llu %llu).%lld ",(long long)price,(long long)(sum>>1),(long long)diff);
             }
             else if ( i == 3 && nonz == 4 )
             {
-                diff = ((price - (sum >> 2)) * SATOSHIDEN) / price;
+                diff = ((price - (sum >> 2)) * 10000) / price;
                 if ( diff < 0 )
                     diff = -diff;
-                if ( diff < (SATOSHIDEN / 500) )
+                if ( diff < 40 )
                     break;
                 else printf("(%llu %llu).%lld ",(long long)price,(long long)(sum>>2),(long long)diff);
             }
