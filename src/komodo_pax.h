@@ -453,9 +453,11 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
 
 int32_t komodo_kmdbtcusd(int32_t rwflag,uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height)
 {
-    static uint64_t *KMDBTCS,*BTCUSDS; static int32_t maxheight; int32_t incr = 10000;
+    static uint64_t *KMDBTCS,*BTCUSDS; static int32_t maxheight = -1; int32_t incr = 10000;
     if ( height >= maxheight )
     {
+        if ( height >= maxheight+incr )
+            incr = (height - (maxheight+incr) + 1000);
         KMDBTCS = (uint64_t *)realloc(KMDBTCS,((incr + maxheight) * sizeof(*KMDBTCS)));
         memset(&KMDBTCS[maxheight],0,(incr * sizeof(*KMDBTCS)));
         BTCUSDS = (uint64_t *)realloc(BTCUSDS,((incr + maxheight) * sizeof(*BTCUSDS)));
