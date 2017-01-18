@@ -34,6 +34,8 @@
 #include "json/json_spirit_value.h"
 #include "asyncrpcqueue.h"
 
+#include <numeric>
+
 using namespace std;
 using namespace json_spirit;
 
