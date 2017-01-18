@@ -484,6 +484,26 @@ const boost::filesystem::path &ZC_GetParamsDir()
     return path;
 }
 
+// Return the user specified export directory.  Create directory if it doesn't exist.
+// If user did not set option, return an empty path.
+// If there is a filesystem problem, throw an exception.
+const boost::filesystem::path GetExportDir()
+{
+    namespace fs = boost::filesystem;
+    fs::path path;
+    if (mapArgs.count("-exportdir")) {
+        path = fs::system_complete(mapArgs["-exportdir"]);
+        if (fs::exists(path) && !fs::is_directory(path)) {
+            throw std::runtime_error(strprintf("The -exportdir '%s' already exists and is not a directory", path.string()));
+        }
+        if (!fs::exists(path) && !fs::create_directories(path)) {
+            throw std::runtime_error(strprintf("Failed to create directory at -exportdir '%s'", path.string()));
+        }
+    }
+    return path;
+}
+
+
 const boost::filesystem::path &GetDataDir(bool fNetSpecific)
 {
     namespace fs = boost::filesystem;
