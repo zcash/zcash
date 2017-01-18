@@ -35,7 +35,6 @@ previous release:
     README.md
     src/clientversion.h
     configure.ac
-    contrib/DEBIAN/control
     contrib/gitian-descriptors/gitian-linux.yml
 
     Build and commit to update versions, and then perform the following commands:
