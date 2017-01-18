@@ -543,7 +543,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
                     diff = -diff;
                 diff /= price;
                 //printf("(%llu %llu %lld).%lld ",(long long)price,(long long)(sum>>1),(long long)(((int64_t)price - (sum >> 1)) * 10000),(long long)diff);
-                if ( diff < 50 )
+                if ( diff < 20 )
                     break;
             }
             else if ( i == 3 && nonz == 4 )
@@ -553,7 +553,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
                     diff = -diff;
                 diff /= price;
                 //printf("(%llu %llu %lld).%lld ",(long long)price,(long long)(sum>>2),(long long) (((int64_t)price - (sum >> 2)) * 10000),(long long)diff);
-                if ( diff < 40 )
+                if ( diff < 25 )
                     break;
             }
         }
