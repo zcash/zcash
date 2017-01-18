@@ -527,6 +527,8 @@ uint64_t komodo_paxpriceB(uint64_t *seedp,int32_t height,char *base,char *rel,ui
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     int32_t i,nonz=0; int64_t diff; uint64_t price,seed,sum = 0;
+    if ( height > chainActive.Tip()->nHeight )
+        return(0);
     portable_mutex_lock(&komodo_mutex);
     for (i=0; i<64; i++)
     {
