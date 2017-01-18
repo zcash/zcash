@@ -563,7 +563,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     portable_mutex_unlock(&komodo_mutex);
     if ( nonz != 0 )
         sum /= nonz;
-    //printf("-> %lld\n",(long long)sum);
+    printf("-> %lld %s/%s\n",(long long)sum,base,rel);
     return(sum);
 }
 
