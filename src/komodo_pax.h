@@ -501,7 +501,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
             sum += price;
             nonz++;
         }
-        if ( height < 150000 )
+        if ( height < 1500 ) // set to future height
             break;
     }
     if ( nonz != 0 )
