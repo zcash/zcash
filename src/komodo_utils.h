@@ -1533,6 +1533,8 @@ void komodo_args()
                 fclose(fp);
                 //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
             } else printf("couldnt open.(%s)\n",fname);
+            if ( IS_KOMODO_NOTARY == 0 )
+                break;
         }
     }
     //fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
