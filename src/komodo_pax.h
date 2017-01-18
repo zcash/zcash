@@ -523,7 +523,7 @@ uint64_t komodo_paxpriceB(uint64_t *seedp,int32_t height,char *base,char *rel,ui
 
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
-    int32_t i,nonz=0; uint64_t price,seed,sum = 0;
+    int32_t i,nonz=0; int64_t diff; uint64_t price,seed,sum = 0;
     portable_mutex_lock(&komodo_mutex);
     for (i=0; i<64; i++)
     {
@@ -532,8 +532,8 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
             sum += price;
             nonz++;
         }
-        if ( height < KOMODO_MAINNET_START )
-            break;
+        //if ( height < KOMODO_MAINNET_START )
+        //    break;
         if ( i == 1 && nonz == 2 )
         {
             diff = ((price - (sum >> 1)) * SATOSHIDEN) / price;
