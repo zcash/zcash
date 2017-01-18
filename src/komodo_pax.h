@@ -456,7 +456,7 @@ int32_t komodo_kmdbtcusd(int32_t rwflag,uint64_t *kmdbtcp,uint64_t *btcusdp,int3
     static uint64_t *KMDBTCS,*BTCUSDS; static int32_t maxheight = 0; int32_t incr = 10000;
     if ( height >= maxheight )
     {
-        printf("height.%d maxheight.%d incr.%d\n",height,maxheight,incr);
+        //printf("height.%d maxheight.%d incr.%d\n",height,maxheight,incr);
         if ( height >= maxheight+incr )
             incr = (height - (maxheight+incr) + 1000);
         KMDBTCS = (uint64_t *)realloc(KMDBTCS,((incr + maxheight) * sizeof(*KMDBTCS)));
@@ -543,7 +543,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
                     diff = -diff;
                 diff /= price;
                 //printf("(%llu %llu %lld).%lld ",(long long)price,(long long)(sum>>1),(long long)(((int64_t)price - (sum >> 1)) * 10000),(long long)diff);
-                if ( diff < 20 )
+                if ( diff < 10 )
                     break;
             }
             else if ( i == 3 && nonz == 4 )
@@ -553,7 +553,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
                     diff = -diff;
                 diff /= price;
                 //printf("(%llu %llu %lld).%lld ",(long long)price,(long long)(sum>>2),(long long) (((int64_t)price - (sum >> 2)) * 10000),(long long)diff);
-                if ( diff < 25 )
+                if ( diff < 15 )
                     break;
             }
         }
