@@ -940,33 +940,6 @@ UniValue estimatefee(const UniValue& params, bool fHelp)
     return ValueFromAmount(feeRate.GetFeePerK());
 }
 
-UniValue estimatepriority(const UniValue& params, bool fHelp)
-{
-    if (fHelp || params.size() != 1)
-        throw runtime_error(
-            "estimatepriority nblocks\n"
-            "\nDEPRECATED. Estimates the approximate priority a zero-fee transaction needs to begin\n"
-            "confirmation within nblocks blocks.\n"
-            "\nArguments:\n"
-            "1. nblocks     (numeric)\n"
-            "\nResult:\n"
-            "n :    (numeric) estimated priority\n"
-            "\n"
-            "-1.0 is returned if not enough transactions and\n"
-            "blocks have been observed to make an estimate.\n"
-            "\nExample:\n"
-            + HelpExampleCli("estimatepriority", "6")
-            );
-
-    RPCTypeCheck(params, boost::assign::list_of(UniValue::VNUM));
-
-    int nBlocks = params[0].get_int();
-    if (nBlocks < 1)
-        nBlocks = 1;
-
-    return mempool.estimatePriority(nBlocks);
-}
-
 UniValue getblocksubsidy(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
@@ -1073,7 +1046,6 @@ static const CRPCCommand commands[] =
 #endif
 
     { "util",               "estimatefee",            &estimatefee,            true  },
-    { "util",               "estimatepriority",       &estimatepriority,       true  },
 };
 
 void RegisterMiningRPCCommands(CRPCTable &tableRPC)

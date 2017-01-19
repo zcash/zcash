@@ -58,7 +58,6 @@ static const CRPCConvertTable rpcCvtTable =
     //     preserve that here.
     { "submitblock",                 {{s}, {s}} },
     { "estimatefee",                 {{o}, {}} },
-    { "estimatepriority",            {{o}, {}} },
     { "getblocksubsidy",             {{o}, {}} },
     // misc
     { "getinfo",                     {{}, {}} },
