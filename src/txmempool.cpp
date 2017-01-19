@@ -1095,11 +1095,6 @@ CFeeRate CTxMemPool::estimateFee(int nBlocks) const
     LOCK(cs);
     return minerPolicyEstimator->estimateFee(nBlocks);
 }
-double CTxMemPool::estimatePriority(int nBlocks) const
-{
-    LOCK(cs);
-    return minerPolicyEstimator->estimatePriority(nBlocks);
-}
 
 bool
 CTxMemPool::WriteFeeEstimates(CAutoFile& fileout) const

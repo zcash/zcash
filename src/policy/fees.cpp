@@ -422,11 +422,6 @@ CFeeRate CBlockPolicyEstimator::estimateFee(int confTarget)
     return CFeeRate(median);
 }
 
-double CBlockPolicyEstimator::estimatePriority(int confTarget)
-{
-    return -1;
-}
-
 void CBlockPolicyEstimator::Write(CAutoFile& fileout)
 {
     fileout << nBestSeenHeight;

@@ -193,7 +193,6 @@ static const double INF_FEERATE = MAX_MONEY;
 
 // Maximum priority, used for transactions with shielded components
 static const double MAX_PRIORITY = 1e16;
-static const double INF_PRIORITY = 1e9 * MAX_MONEY;
 
 // We have to lump transactions into buckets based on feerate, but we want to be able
 // to give accurate estimates over a large range of potential feerates
@@ -227,12 +226,6 @@ public:
 
     /** Return a feerate estimate */
     CFeeRate estimateFee(int confTarget);
-
-    /** Return a priority estimate.
-     *  DEPRECATED
-     *  Returns -1
-     */
-    double estimatePriority(int confTarget);
 
     /** Write estimation data to a file */
     void Write(CAutoFile& fileout);
