@@ -57,8 +57,8 @@ using namespace std;
 //
 // Unconfirmed transactions in the memory pool often depend on other
 // transactions in the memory pool. When we select transactions from the
-// pool, we select by highest priority or fee rate, so we might consider
-// transactions that depend on transactions that aren't yet in the block.
+// pool, we select by highest fee rate, so we might consider transactions
+// that depend on transactions that aren't yet in the block.
 
 std::optional<uint64_t> last_block_num_txs;
 std::optional<uint64_t> last_block_size;
@@ -437,7 +437,6 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
         }
     }
 
-    addPriorityTxs();
     addScoreTxs();
 
     last_block_num_txs = nBlockTx;
@@ -698,80 +697,6 @@ void BlockAssembler::addScoreTxs()
                 if (waitSet.count(child)) {
                     clearedTxs.push(child);
                     waitSet.erase(child);
-                }
-            }
-        }
-    }
-}
-
-void BlockAssembler::addPriorityTxs()
-{
-    // How much of the block should be dedicated to high-priority transactions,
-    // included regardless of the fees they pay
-    unsigned int nBlockPrioritySize = GetArg("-blockprioritysize", DEFAULT_BLOCK_PRIORITY_SIZE);
-    nBlockPrioritySize = std::min(nBlockMaxSize, nBlockPrioritySize);
-
-    if (nBlockPrioritySize == 0) {
-        return;
-    }
-
-    // This vector will be sorted into a priority queue:
-    vector<TxCoinAgePriority> vecPriority;
-    TxCoinAgePriorityCompare pricomparer;
-    std::map<CTxMemPool::txiter, double, CTxMemPool::CompareIteratorByHash> waitPriMap;
-    typedef std::map<CTxMemPool::txiter, double, CTxMemPool::CompareIteratorByHash>::iterator waitPriIter;
-    double actualPriority = -1;
-
-    vecPriority.reserve(mempool.mapTx.size());
-    for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
-         mi != mempool.mapTx.end(); ++mi)
-    {
-        double dPriority = mi->GetPriority(nHeight);
-        CAmount dummy;
-        mempool.ApplyDeltas(mi->GetTx().GetHash(), dPriority, dummy);
-        vecPriority.push_back(TxCoinAgePriority(dPriority, mi));
-    }
-    std::make_heap(vecPriority.begin(), vecPriority.end(), pricomparer);
-
-    CTxMemPool::txiter iter;
-    while (!vecPriority.empty() && !blockFinished) { // add a tx from priority queue to fill the blockprioritysize
-        iter = vecPriority.front().second;
-        actualPriority = vecPriority.front().first;
-        std::pop_heap(vecPriority.begin(), vecPriority.end(), pricomparer);
-        vecPriority.pop_back();
-
-        // If tx already in block, skip
-        if (inBlock.count(iter)) {
-            assert(false); // shouldn't happen for priority txs
-            continue;
-        }
-
-        // If tx is dependent on other mempool txs which haven't yet been included
-        // then put it in the waitSet
-        if (isStillDependent(iter)) {
-            waitPriMap.insert(std::make_pair(iter, actualPriority));
-            continue;
-        }
-
-        // If this tx fits in the block add it, otherwise keep looping
-        if (TestForBlock(iter)) {
-            AddToBlock(iter);
-
-            // If now that this txs is added we've surpassed our desired priority size
-            // or have dropped below the AllowFreeThreshold, then we're done adding priority txs
-            if (nBlockSize >= nBlockPrioritySize || !AllowFree(actualPriority)) {
-                return;
-            }
-
-            // This tx was successfully added, so
-            // add transactions that depend on this one to the priority queue to try again
-            for (CTxMemPool::txiter child : mempool.GetMemPoolChildren(iter))
-            {
-                waitPriIter wpiter = waitPriMap.find(child);
-                if (wpiter != waitPriMap.end()) {
-                    vecPriority.push_back(TxCoinAgePriority(wpiter->second,child));
-                    std::push_heap(vecPriority.begin(), vecPriority.end(), pricomparer);
-                    waitPriMap.erase(wpiter);
                 }
             }
         }

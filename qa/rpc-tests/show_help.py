@@ -408,10 +408,6 @@ Block creation options:
   -blockmaxsize=<n>
        Set maximum block size in bytes (default: 2000000)
 
-  -blockprioritysize=<n>
-       Set maximum size of high-priority/low-fee transactions in bytes
-       (default: 1000000)
-
 Mining options:
 
   -gen

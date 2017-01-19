@@ -39,6 +39,14 @@ Changes to Transaction Fee Selection
   `sendmany`, and `fundrawtransaction`) to use a zero fee for "small" transactions
   that spend "old" inputs. It will now cause a warning on node startup if used.
 
+Changes to Block Template Construction
+--------------------------------------
+
+- The block template construction algorithm no longer favours transactions that
+  were previously considered "high priority" because they spent older inputs. The
+  `-blockprioritysize` config option, which configured the portion of the block
+  reserved for these transactions, has been removed and is now ignored.
+
 Removal of Priority Estimation
 ------------------------------
 

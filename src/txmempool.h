@@ -388,7 +388,7 @@ public:
                 boost::multi_index::identity<CTxMemPoolEntry>,
                 CompareTxMemPoolEntryByDescendantScore
             >,
-            // sorted by score (for mining prioritization)
+            // sorted by score (for mining prioritisation)
             boost::multi_index::ordered_unique<
                 boost::multi_index::tag<mining_score>,
                 boost::multi_index::identity<CTxMemPoolEntry>,
@@ -671,19 +671,6 @@ public:
     bool GetNullifier(const uint256 &txid, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
-};
-
-// We want to sort transactions by coin age priority
-typedef std::pair<double, CTxMemPool::txiter> TxCoinAgePriority;
-
-struct TxCoinAgePriorityCompare
-{
-    bool operator()(const TxCoinAgePriority& a, const TxCoinAgePriority& b)
-    {
-        if (a.first == b.first)
-            return CompareTxMemPoolEntryByScore()(*(b.second), *(a.second)); //Reverse order to make sort less than
-        return a.first < b.first;
-    }
 };
 
 #endif // BITCOIN_TXMEMPOOL_H
