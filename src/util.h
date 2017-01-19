@@ -140,6 +140,9 @@ void ShrinkDebugFile();
 void runCommand(std::string strCommand);
 const boost::filesystem::path GetExportDir();
 
+/** Returns licensing information (for -version) */
+std::string LicenseInfo();
+
 inline bool IsSwitchChar(char c)
 {
 #ifdef WIN32

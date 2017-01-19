@@ -71,6 +71,8 @@ static bool AppInitRPC(int argc, char* argv[])
                   "  zcash-cli [options] help <command>      " + _("Get help for a command") + "\n";
 
             strUsage += "\n" + HelpMessageCli();
+        } else {
+            strUsage += LicenseInfo();
         }
 
         fprintf(stdout, "%s", strUsage.c_str());
