@@ -591,7 +591,7 @@ Value kvupdate(const Array& params, bool fHelp)
         opretlen = komodo_opreturnscript(opretbuf,'K',keyvalue,sizeof(height)+sizeof(uint16_t)*2+keylen+valuesize);
         for (i=0; i<opretlen; i++)
             printf("%02x",opretbuf[i]);
-        printf(" opretbuf\n");
+        printf(" opretbuf keylen.%d valuesize.%d height.%d (%02x %02x %02x)\n",*(uint16_t *)&keyvalue[0],*(uint16_t *)&keyvalue[2],*(uint32_t *)&keyvalue[4],keyvalue[8],keyvalue[9],keyvalue[10]);
         EnsureWalletIsUnlocked();
         if ( (fee= opretlen * opretlen / keylen) < 100000 )
             fee = 100000;
