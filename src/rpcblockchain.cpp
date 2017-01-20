@@ -414,6 +414,9 @@ Value kvsearch(const Array& params, bool fHelp)
     LOCK(cs_main);
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
     {
+        ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
+        ret.push_back(Pair("height", (int64_t)chainActive.Tip()->nHeight));
+        ret.push_back(Pair("key",params[0].get_str()));
         if ( keylen < sizeof(key) )
         {
             memcpy(key,params[0].get_str().c_str(),keylen);
@@ -424,10 +427,7 @@ Value kvsearch(const Array& params, bool fHelp)
                 valuestr = (char *)val.data();
                 memcpy(valuestr,value,valuesize);
                 valuestr[valuesize] = 0;
-                ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
-                ret.push_back(Pair("key",params[0].get_str()));
                 ret.push_back(Pair("value",val));
-                ret.push_back(Pair("height", (int64_t)chainActive.Tip()->nHeight));
             } else ret.push_back(Pair("error",(char *)"cant find key"));
         } else ret.push_back(Pair("error",(char *)"key too big"));
     } else ret.push_back(Pair("error",(char *)"null key"));

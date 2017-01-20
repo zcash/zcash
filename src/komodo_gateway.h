@@ -703,7 +703,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     memset(kmdheights,0,sizeof(kmdheights));
     memset(otherheights,0,sizeof(otherheights));
     tokomodo = (komodo_is_issuer() == 0);
-    if ( opretbuf[0] == 'K' )
+    if ( opretbuf[0] == 'K' && opretlen != 40 )
     {
         uint16_t keylen,valuesize; uint8_t *key,*value; struct komodo_kv *ptr;
         iguana_rwnum(0,&opretbuf[1],sizeof(keylen),&keylen);
