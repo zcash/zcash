@@ -23,15 +23,14 @@
 using namespace std;
 
 CTxMemPoolEntry::CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
-                                 int64_t _nTime, double _dPriority,
-                                 unsigned int _nHeight, bool poolHasNoInputsOf,
+                                 int64_t _nTime, unsigned int _nHeight,
+                                 bool poolHasNoInputsOf,
                                  bool _spendsCoinbase, unsigned int _sigOps, uint32_t _nBranchId):
-    tx(std::make_shared<CTransaction>(_tx)), nFee(_nFee), nTime(_nTime), dPriority(_dPriority), nHeight(_nHeight),
+    tx(std::make_shared<CTransaction>(_tx)), nFee(_nFee), nTime(_nTime), nHeight(_nHeight),
     hadNoDependencies(poolHasNoInputsOf),
     spendsCoinbase(_spendsCoinbase), sigOpCount(_sigOps), nBranchId(_nBranchId)
 {
     nTxSize = ::GetSerializeSize(_tx, SER_NETWORK, PROTOCOL_VERSION);
-    nModSize = _tx.CalculateModifiedSize(nTxSize);
     nUsageSize = RecursiveDynamicUsage(*tx) + memusage::DynamicUsage(tx);
 
     nCountWithDescendants = 1;
@@ -44,15 +43,6 @@ CTxMemPoolEntry::CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
 CTxMemPoolEntry::CTxMemPoolEntry(const CTxMemPoolEntry& other)
 {
     *this = other;
-}
-
-double
-CTxMemPoolEntry::GetPriority(unsigned int currentHeight) const
-{
-    CAmount nValueIn = tx->GetValueOut()+nFee;
-    double deltaPriority = ((double)(currentHeight-nHeight)*nValueIn)/nModSize;
-    double dResult = dPriority + deltaPriority;
-    return dResult;
 }
 
 void CTxMemPoolEntry::UpdateFeeDelta(int64_t newFeeDelta)

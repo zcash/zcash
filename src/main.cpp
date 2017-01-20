@@ -1918,8 +1918,6 @@ bool AcceptToMemoryPool(
         CAmount nModifiedFees = nFees;
         pool.ApplyDelta(hash, nModifiedFees);
 
-        double dPriority = view.GetPriority(tx, chainActive.Height());
-
         // Keep track of transactions that spend a coinbase, which we re-scan
         // during reorgs to ensure COINBASE_MATURITY is still met.
         bool fSpendsCoinbase = false;
@@ -1934,7 +1932,7 @@ bool AcceptToMemoryPool(
         // For v1-v4 transactions, we don't yet know if the transaction commits
         // to consensusBranchId, but if the entry gets added to the mempool, then
         // it has passed ContextualCheckInputs and therefore this is correct.
-        CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height(), pool.HasNoInputsOf(tx), fSpendsCoinbase, nSigOps, consensusBranchId);
+        CTxMemPoolEntry entry(tx, nFees, GetTime(), chainActive.Height(), pool.HasNoInputsOf(tx), fSpendsCoinbase, nSigOps, consensusBranchId);
         unsigned int nSize = entry.GetTxSize();
 
         // No transactions are allowed with modified fee below the minimum relay fee,

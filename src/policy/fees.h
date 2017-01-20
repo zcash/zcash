@@ -191,9 +191,6 @@ static const double MIN_FEERATE = 10;
 static const double MAX_FEERATE = 1e7;
 static const double INF_FEERATE = MAX_MONEY;
 
-// Maximum priority, used for transactions with shielded components
-static const double MAX_PRIORITY = 1e16;
-
 // We have to lump transactions into buckets based on feerate, but we want to be able
 // to give accurate estimates over a large range of potential feerates
 // Therefore it makes sense to exponentially space the buckets

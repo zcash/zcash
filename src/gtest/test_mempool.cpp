@@ -113,14 +113,11 @@ TEST(Mempool, PriorityStatsDoNotCrash) {
     CAmount nFees = 0;
     int64_t nTime = 0x58e5fed9;
     unsigned int nHeight = 92045;
-    double dPriority = view.GetPriority(tx, nHeight);
 
-    CTxMemPoolEntry entry(tx, nFees, nTime, dPriority, nHeight, true, false, 0, SPROUT_BRANCH_ID);
+    CTxMemPoolEntry entry(tx, nFees, nTime, nHeight, true, false, 0, SPROUT_BRANCH_ID);
 
     // Check it does not crash (ie. the death test fails)
     EXPECT_NONFATAL_FAILURE(EXPECT_DEATH(testPool.addUnchecked(tx.GetHash(), entry), ""), "");
-
-    EXPECT_EQ(dPriority, MAX_PRIORITY);
 }
 
 // Valid overwinter v3 format tx gets rejected because overwinter hasn't activated yet.
