@@ -705,7 +705,7 @@ int32_t komodo_kvsearch(int32_t current_height,uint32_t *flagsp,int32_t *heightp
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
 {
-    uint8_t rmd160[20],rmd160s[64*20],addrtype,shortflag,pubkey33[33]; int32_t didstats,i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fiatoshis,komodoshis,checktoshis,values[64],srcvalues[64]; struct pax_transaction *pax,*pax2; struct komodo_state *basesp; double diff; uint32_t flags;
+    uint8_t rmd160[20],rmd160s[64*20],addrtype,shortflag,pubkey33[33]; int32_t didstats,i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fee,fiatoshis,komodoshis,checktoshis,values[64],srcvalues[64]; struct pax_transaction *pax,*pax2; struct komodo_state *basesp; double diff; uint32_t flags;
     const char *typestr = "unknown";
     if ( KOMODO_PAX == 0 )
         return("nopax");
@@ -730,33 +730,38 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         iguana_rwnum(0,&opretbuf[9],sizeof(flags),&flags);
         key = &opretbuf[13];
         value = &key[keylen];
-        printf("flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",flags,keylen,valuesize,kmdheight,key[0],key[1],key[2],value[0],value[1],value[2]);
-        if ( sizeof(flags)+sizeof(kmdheight)+sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1 == opretlen )
+        if ( (fee= ((flags>>2)+1)*(opretlen * opretlen / keylen)) < 100000 )
+            fee = 100000;
+        printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,kmdheight,key[0],key[1],key[2],value[0],value[1],value[2]);
+        if ( value >= fee )
         {
-            portable_mutex_lock(&KOMODO_KV_mutex);
-            HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
-            if ( ptr == 0 )
+            if ( sizeof(flags)+sizeof(kmdheight)+sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1 == opretlen )
             {
-                ptr = (struct komodo_kv *)calloc(1,sizeof(*ptr));
-                ptr->flags = flags;
-                ptr->key = (uint8_t *)calloc(1,keylen);
-                ptr->keylen = keylen;
-                memcpy(ptr->key,key,keylen);
-                HASH_ADD_KEYPTR(hh,KOMODO_KV,ptr->key,ptr->keylen,ptr);
-            }
-            else if ( (ptr->flags & KOMODO_KVPROTECTED) == 0 )
-            {
-                if ( ptr->value != 0 )
-                    free(ptr->value), ptr->value = 0;
-                if ( (ptr->valuesize= valuesize) != 0 )
+                portable_mutex_lock(&KOMODO_KV_mutex);
+                HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
+                if ( ptr == 0 )
                 {
-                    ptr->value = (uint8_t *)calloc(1,valuesize);
-                    memcpy(ptr->value,value,valuesize);
+                    ptr = (struct komodo_kv *)calloc(1,sizeof(*ptr));
+                    ptr->flags = flags;
+                    ptr->key = (uint8_t *)calloc(1,keylen);
+                    ptr->keylen = keylen;
+                    memcpy(ptr->key,key,keylen);
+                    HASH_ADD_KEYPTR(hh,KOMODO_KV,ptr->key,ptr->keylen,ptr);
                 }
-                ptr->height = kmdheight;
-                ptr->flags = flags;
-            }
-            portable_mutex_unlock(&KOMODO_KV_mutex);
+                else if ( (ptr->flags & KOMODO_KVPROTECTED) == 0 )
+                {
+                    if ( ptr->value != 0 )
+                        free(ptr->value), ptr->value = 0;
+                    if ( (ptr->valuesize= valuesize) != 0 )
+                    {
+                        ptr->value = (uint8_t *)calloc(1,valuesize);
+                        memcpy(ptr->value,value,valuesize);
+                    }
+                    ptr->height = kmdheight;
+                    ptr->flags = flags;
+                }
+                portable_mutex_unlock(&KOMODO_KV_mutex);
+            } else printf("insufficient fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,kmdheight,key[0],key[1],key[2],value[0],value[1],value[2]);
         } else printf("opretlen.%d mismatch keylen.%d valuesize.%d\n",opretlen,keylen,valuesize);
     }
     else if ( opretbuf[0] == 'D' )
