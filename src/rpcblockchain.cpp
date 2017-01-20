@@ -410,7 +410,7 @@ int32_t komodo_kvsearch(int32_t current_height,uint32_t *flagsp,int32_t *heightp
 
 Value kvsearch(const Array& params, bool fHelp)
 {
-    Object ret; uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t j,height,valuesize,keylen;
+    Object ret; uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t duration,j,height,valuesize,keylen;
     if (fHelp || params.size() != 1 )
         throw runtime_error("kvsearch key");
     LOCK(cs_main);
@@ -430,6 +430,8 @@ Value kvsearch(const Array& params, bool fHelp)
                 valuestr = (char *)val.data();
                 memcpy(valuestr,value,valuesize);
                 ret.push_back(Pair("height",height));
+                duration = ((flags >> 2) + 1) * KOMODO_KVDURATION;
+                ret.push_back(Pair("expiration", (int64_t)(height+duration)));
                 ret.push_back(Pair("flags",(int64_t)flags));
                 ret.push_back(Pair("value",val));
                 ret.push_back(Pair("valuesize",valuesize));

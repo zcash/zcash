@@ -563,7 +563,7 @@ Value paxwithdraw(const Array& params, bool fHelp)
 Value kvupdate(const Array& params, bool fHelp)
 {
     CWalletTx wtx; Object ret;
-    uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t opretlen,height; uint16_t keylen,valuesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags; struct komodo_kv *ptr; uint64_t fee;
+    uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t duration,opretlen,height; uint16_t keylen,valuesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags; struct komodo_kv *ptr; uint64_t fee;
     if (fHelp || params.size() < 2 )
         throw runtime_error("kvupdate key value [flags]");
     if (!EnsureWalletIsAvailable(fHelp))
@@ -585,6 +585,8 @@ Value kvupdate(const Array& params, bool fHelp)
         ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
         height = chainActive.Tip()->nHeight;
         ret.push_back(Pair("height", (int64_t)height));
+        duration = ((flags >> 2) + 1) * KOMODO_KVDURATION;
+        ret.push_back(Pair("expiration", (int64_t)(height+duration)));
         ret.push_back(Pair("flags",(int64_t)flags));
         ret.push_back(Pair("key",params[0].get_str()));
         ret.push_back(Pair("keylen",(int64_t)keylen));
@@ -610,6 +612,7 @@ Value kvupdate(const Array& params, bool fHelp)
         EnsureWalletIsUnlocked();
         if ( (fee= ((flags>>2)+1)*(opretlen * opretlen / keylen)) < 100000 )
             fee = 100000;
+        ret.push_back(Pair("fee",(double)fee/COIN));
         CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
         if (!destaddress.IsValid())
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest Bitcoin address");
