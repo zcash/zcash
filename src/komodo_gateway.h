@@ -671,19 +671,32 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     return(0);
 }
 
-int32_t komodo_kvsearch(uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen)
+int32_t komodo_kvsearch(int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen)
 {
-    struct komodo_kv *ptr; int32_t retval = -1;
+    struct komodo_kv *ptr; int32_t duration,retval = -1;
     *heightp = -1;
     *flagsp = 0;
     portable_mutex_lock(&KOMODO_KV_mutex);
     HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
     if ( ptr != 0 )
     {
-        *heightp = ptr->height;
-        *flagsp = ptr->flags;
-        if ( (retval= ptr->valuesize) != 0 )
-            memcpy(value,ptr->value,retval);
+        duration = ((ptr->flags >> 2) + 1) * KOMODO_KVDURATION;
+        if ( current_height > (ptr->height + duration) )
+        {
+            HASH_DELETE(hh,KOMODO_KV,ptr);
+            if ( ptr->value != 0 )
+                free(ptr->value);
+            if ( ptr->key != 0 )
+                free(ptr->key);
+            free(ptr);
+        }
+        else
+        {
+            *heightp = ptr->height;
+            *flagsp = ptr->flags;
+            if ( (retval= ptr->valuesize) != 0 )
+                memcpy(value,ptr->value,retval);
+        }
     }
     portable_mutex_unlock(&KOMODO_KV_mutex);
     return(retval);
@@ -730,14 +743,17 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 memcpy(ptr->key,key,keylen);
                 HASH_ADD_KEYPTR(hh,KOMODO_KV,ptr->key,ptr->keylen,ptr);
             }
-            if ( ptr->value != 0 )
-                free(ptr->value), ptr->value = 0;
-            if ( (ptr->valuesize= valuesize) != 0 )
+            else if ( (ptr->flags & KOMODO_KVPROTECTED) == 0 )
             {
-                ptr->value = (uint8_t *)calloc(1,valuesize);
-                memcpy(ptr->value,value,valuesize);
+                if ( ptr->value != 0 )
+                    free(ptr->value), ptr->value = 0;
+                if ( (ptr->valuesize= valuesize) != 0 )
+                {
+                    ptr->value = (uint8_t *)calloc(1,valuesize);
+                    memcpy(ptr->value,value,valuesize);
+                }
+                ptr->height = kmdheight;
             }
-            ptr->height = kmdheight;
             portable_mutex_unlock(&KOMODO_KV_mutex);
         } else printf("opretlen.%d mismatch keylen.%d valuesize.%d\n",opretlen,keylen,valuesize);
     }

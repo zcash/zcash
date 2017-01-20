@@ -475,6 +475,7 @@ Value sendtoaddress(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
+#define KOMODO_KVPROTECTED 1
 #define IGUANA_MAXSCRIPTSIZE 10001
 uint64_t PAX_fiatdest(uint64_t *seedp,int32_t tokomodo,char *destaddr,uint8_t pubkey37[37],char *coinaddr,int32_t height,char *base,int64_t fiatoshis);
 int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen);
@@ -484,7 +485,7 @@ int32_t komodo_is_issuer();
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base);
-int32_t komodo_kvsearch(uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
+int32_t komodo_kvsearch(int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
 
 Value paxdeposit(const Array& params, bool fHelp)
 {
@@ -574,7 +575,7 @@ Value kvupdate(const Array& params, bool fHelp)
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
     {
         key = (uint8_t *)params[0].get_str().c_str();
-        if ( (valuesize= komodo_kvsearch(&flags,&height,&keyvalue[keylen],key,keylen)) >= 0 && (flags & 1) != 0 )
+        if ( (valuesize= komodo_kvsearch(chainActive.Tip()->nHeight,&flags,&height,&keyvalue[keylen],key,keylen)) >= 0 && (flags & KOMODO_KVPROTECTED) != 0 )
         {
             ret.push_back(Pair("error",(char *)"cant modify write once key"));
             return ret;
@@ -604,7 +605,7 @@ Value kvupdate(const Array& params, bool fHelp)
         //    printf("%02x",opretbuf[i]);
         //printf(" opretbuf keylen.%d valuesize.%d height.%d (%02x %02x %02x)\n",*(uint16_t *)&keyvalue[0],*(uint16_t *)&keyvalue[2],*(uint32_t *)&keyvalue[4],keyvalue[8],keyvalue[9],keyvalue[10]);
         EnsureWalletIsUnlocked();
-        if ( (fee= opretlen * opretlen / keylen) < 100000 )
+        if ( (fee= ((flags>>2)+1)*(opretlen * opretlen / keylen)) < 100000 )
             fee = 100000;
         CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
         if (!destaddress.IsValid())
