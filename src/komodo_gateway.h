@@ -730,7 +730,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         iguana_rwnum(0,&opretbuf[9],sizeof(flags),&flags);
         key = &opretbuf[13];
         value = &key[keylen];
-        //printf("keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",keylen,valuesize,kmdheight,key[0],key[1],key[2],value[0],value[1],value[2]);
+        printf("keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",keylen,valuesize,kmdheight,key[0],key[1],key[2],value[0],value[1],value[2]);
         if ( sizeof(flags)+sizeof(kmdheight)+sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1 == opretlen )
         {
             portable_mutex_lock(&KOMODO_KV_mutex);
