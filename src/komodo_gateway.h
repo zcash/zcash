@@ -723,16 +723,16 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     tokomodo = (komodo_is_issuer() == 0);
     if ( opretbuf[0] == 'K' && opretlen != 40 )
     {
-        uint16_t keylen,valuesize; uint8_t *key,*value; struct komodo_kv *ptr;
+        uint16_t keylen,valuesize; uint8_t *key,*valueptr; struct komodo_kv *ptr;
         iguana_rwnum(0,&opretbuf[1],sizeof(keylen),&keylen);
         iguana_rwnum(0,&opretbuf[3],sizeof(valuesize),&valuesize);
         iguana_rwnum(0,&opretbuf[5],sizeof(kmdheight),&kmdheight);
         iguana_rwnum(0,&opretbuf[9],sizeof(flags),&flags);
         key = &opretbuf[13];
-        value = &key[keylen];
+        valueptr = &key[keylen];
         if ( (fee= ((flags>>2)+1)*(opretlen * opretlen / keylen)) < 100000 )
             fee = 100000;
-        printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,kmdheight,key[0],key[1],key[2],value[0],value[1],value[2]);
+        printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,kmdheight,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
         if ( value >= fee )
         {
             if ( sizeof(flags)+sizeof(kmdheight)+sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1 == opretlen )
@@ -755,13 +755,13 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( (ptr->valuesize= valuesize) != 0 )
                     {
                         ptr->value = (uint8_t *)calloc(1,valuesize);
-                        memcpy(ptr->value,value,valuesize);
+                        memcpy(ptr->value,valueptr,valuesize);
                     }
                     ptr->height = kmdheight;
                     ptr->flags = flags;
                 }
                 portable_mutex_unlock(&KOMODO_KV_mutex);
-            } else printf("insufficient fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,kmdheight,key[0],key[1],key[2],value[0],value[1],value[2]);
+            } else printf("insufficient fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,kmdheight,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
         } else printf("opretlen.%d mismatch keylen.%d valuesize.%d\n",opretlen,keylen,valuesize);
     }
     else if ( opretbuf[0] == 'D' )
