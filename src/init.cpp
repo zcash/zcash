@@ -1229,12 +1229,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // If you are mining, be careful setting this:
     // if you set it to zero then
     // a transaction spammer can cheaply fill blocks using
-    // 1-satoshi-fee transactions. It should be set above the real
+    // 0-fee transactions. It should be set above the real
     // cost to you of processing a transaction.
     if (mapArgs.count("-minrelaytxfee"))
     {
         CAmount n = 0;
-        if (ParseMoney(mapArgs["-minrelaytxfee"], n) && n > 0)
+        if (ParseMoney(mapArgs["-minrelaytxfee"], n))
             ::minRelayTxFee = CFeeRate(n);
         else
             return InitError(strprintf(_("Invalid amount for -minrelaytxfee=<amount>: '%s'"), mapArgs["-minrelaytxfee"]));
