@@ -717,7 +717,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             if ( ptr == 0 )
             {
                 ptr = (struct komodo_kv *)calloc(1,sizeof(*ptr));
-                ptr->key = calloc(1,keylen);
+                ptr->key = (uint8_t *)calloc(1,keylen);
                 ptr->keylen = keylen;
                 memcpy(ptr->key,key,keylen);
                 HASH_ADD_KEYPTR(hh,KOMODO_KV,ptr->key,ptr->keylen,ptr);
