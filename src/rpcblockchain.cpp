@@ -417,14 +417,14 @@ Value kvsearch(const Array& params, bool fHelp)
             memcpy(key,params[0].get_str().c_str(),keylen);
             if ( (valuesize= komodo_kvsearch(value,key,keylen)) >= 0 )
             {
-                std::string value; char *valuestr; int32_t m;
-                value.resize(valuesize+1);
-                hexstr = (char *)value.data();
+                std::string val; char *valuestr; 
+                val.resize(valuesize+1);
+                valuestr = (char *)val.data();
                 memcpy(valuestr,value,valuesize);
                 valuestr[valuesize] = 0;
                 ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
                 ret.push_back(Pair("key",params[0].get_str()));
-                ret.push_back(Pair("value",value));
+                ret.push_back(Pair("value",val));
                 ret.push_back(Pair("height", (int64_t)chainActive.Tip()->nHeight));
             } else ret.push_back(Pair("error",(char *)"cant find key"));
         } else ret.push_back(Pair("error",(char *)"key too big"));
