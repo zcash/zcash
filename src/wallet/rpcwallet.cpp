@@ -573,12 +573,17 @@ Value kvupdate(const Array& params, bool fHelp)
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
     {
         key = (uint8_t *)params[0].get_str().c_str();
+        if ( (valuesize= komodo_kvsearch(&flags,&height,&keyvalue[keylen],key,keylen)) >= 0 && (flags & 1) != 0 )
+        {
+            ret.push_back(Pair("error",(char *)"cant modify write once key"));
+            return ret;
+        }
         ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
         height = chainActive.Tip()->nHeight;
         ret.push_back(Pair("height", (int64_t)height));
-        ret.push_back(Pair("flags",flags));
+        ret.push_back(Pair("flags",(int64_t)flags));
         ret.push_back(Pair("key",params[0].get_str()));
-        ret.push_back(Pair("keylen",keylen));
+        ret.push_back(Pair("keylen",(int64_t)keylen));
         if ( params.size() == 2 && params[1].get_str().c_str() != 0 )
         {
             value = (uint8_t *)params[1].get_str().c_str();
