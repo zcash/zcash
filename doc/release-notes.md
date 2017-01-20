@@ -30,6 +30,8 @@ RPC Changes
   pool, so the impact of this change is that for such transactions, the user must specify
   `AllowFullyTransparent`.
 - The `estimatepriority` RPC call has been removed.
+- The `priority_delta` argument to the `prioritisetransaction` RPC call has been
+  removed.
 
 Changes to Transaction Fee Selection
 ------------------------------------

@@ -1916,8 +1916,7 @@ bool AcceptToMemoryPool(
         CAmount nFees = nValueIn-nValueOut;
         // nModifiedFees includes any fee deltas from PrioritiseTransaction
         CAmount nModifiedFees = nFees;
-        double nPriorityDummy = 0;
-        pool.ApplyDeltas(hash, nPriorityDummy, nModifiedFees);
+        pool.ApplyDelta(hash, nModifiedFees);
 
         double dPriority = view.GetPriority(tx, chainActive.Height());
 

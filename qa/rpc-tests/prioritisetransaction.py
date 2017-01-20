@@ -69,7 +69,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
                 break
         assert_equal(in_block_template, False)
 
-        priority_success = self.nodes[0].prioritisetransaction(priority_tx_0, 1000, int(3 * base_fee * COIN))
+        priority_success = self.nodes[0].prioritisetransaction(priority_tx_0, int(3 * base_fee * COIN))
         assert(priority_success)
 
         # Check that prioritised transaction is not in getblocktemplate()
@@ -115,7 +115,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
 
         # Node 1 doesn't get the next block, so this *shouldn't* be mined despite being prioritised on node 1
         priority_tx_1 = self.nodes[1].sendtoaddress(self.nodes[0].getnewaddress(), 0.1)
-        self.nodes[1].prioritisetransaction(priority_tx_1, 1000, int(3 * base_fee * COIN))
+        self.nodes[1].prioritisetransaction(priority_tx_1, int(3 * base_fee * COIN))
 
         # Mine block on node 0
         blk_hash = self.nodes[0].generate(1)
