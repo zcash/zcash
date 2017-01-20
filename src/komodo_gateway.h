@@ -716,7 +716,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
             if ( ptr == 0 )
             {
-                ptr = calloc(1,sizeof(*ptr));
+                ptr = (struct komodo_kv *)calloc(1,sizeof(*ptr));
                 ptr->key = calloc(1,keylen);
                 ptr->keylen = keylen;
                 memcpy(ptr->key,key,keylen);
@@ -726,11 +726,11 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 free(ptr->value), ptr->value = 0;
             if ( (ptr->valuesize= valuesize) != 0 )
             {
-                ptr->value = calloc(1,valuesize);
+                ptr->value = (uint8_t *)calloc(1,valuesize);
                 memcpy(ptr->value,value,valuesize);
             }
             portable_mutex_unlock(&KOMODO_KV_mutex);
-        } else printf("opretlen.%d mismatch keylen.%d valuesize.%d\n",opretln,keylen,valuesize);
+        } else printf("opretlen.%d mismatch keylen.%d valuesize.%d\n",opretlen,keylen,valuesize);
     }
     else if ( opretbuf[0] == 'D' )
     {

@@ -52,4 +52,4 @@ char KMDUSERPASS[4096],BTCUSERPASS[4096]; uint16_t BITCOIND_PORT = 7771;
 uint64_t PENDING_KOMODO_TX;
 
 struct komodo_kv *KOMODO_KV;
-portable_mutex_t KOMODO_KV_mutex;
+pthread_mutex_t KOMODO_KV_mutex;
