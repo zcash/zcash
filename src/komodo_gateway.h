@@ -681,6 +681,7 @@ int32_t komodo_kvsearch(int32_t current_height,uint32_t *flagsp,int32_t *heightp
     if ( ptr != 0 )
     {
         duration = ((ptr->flags >> 2) + 1) * KOMODO_KVDURATION;
+        printf("duration.%d flags.%d current.%d ht.%d\n",duration,ptr->flags,current_height,ptr->height);
         if ( current_height > (ptr->height + duration) )
         {
             HASH_DELETE(hh,KOMODO_KV,ptr);
