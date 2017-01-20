@@ -406,11 +406,11 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
 char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
 uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 int32_t komodo_minerids(uint8_t *minerids,int32_t height);
-int32_t komodo_kvsearch(int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
+int32_t komodo_kvsearch(uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
 
 Value kvsearch(const Array& params, bool fHelp)
 {
-    Object ret; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t j,height,valuesize,keylen;
+    Object ret; uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t j,height,valuesize,keylen;
     if (fHelp || params.size() != 1 )
         throw runtime_error("kvsearch key");
     LOCK(cs_main);
@@ -423,13 +423,14 @@ Value kvsearch(const Array& params, bool fHelp)
         if ( keylen < sizeof(key) )
         {
             memcpy(key,params[0].get_str().c_str(),keylen);
-            if ( (valuesize= komodo_kvsearch(&height,value,key,keylen)) >= 0 )
+            if ( (valuesize= komodo_kvsearch(&flags,&height,value,key,keylen)) >= 0 )
             {
                 std::string val; char *valuestr;
                 val.resize(valuesize);
                 valuestr = (char *)val.data();
                 memcpy(valuestr,value,valuesize);
                 ret.push_back(Pair("height",height));
+                ret.push_back(Pair("flags",flags));
                 ret.push_back(Pair("value",val));
                 ret.push_back(Pair("valuesize",valuesize));
             } else ret.push_back(Pair("error",(char *)"cant find key"));

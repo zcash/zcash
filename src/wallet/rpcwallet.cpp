@@ -404,9 +404,9 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
         for (i=0; i<opretlen; i++)
         {
             ptr[i] = opretbuf[i];
-            printf("%02x",ptr[i]);
+            //printf("%02x",ptr[i]);
         }
-        printf(" opretbuf[%d]\n",opretlen);
+        //printf(" opretbuf[%d]\n",opretlen);
         CRecipient opret = { opretpubkey, opretValue, false };
         vecSend.push_back(opret);
     }
@@ -560,12 +560,15 @@ Value paxwithdraw(const Array& params, bool fHelp)
 
 Value kvupdate(const Array& params, bool fHelp)
 {
-    CWalletTx wtx; Object ret; uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t opretlen,i,height;
-    uint16_t keylen,valuesize=0; uint8_t *key,*value=0; struct komodo_kv *ptr; uint64_t fee;
-    if (fHelp || params.size() != 2 )
+    CWalletTx wtx; Object ret;
+    uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t opretlen,height; uint16_t keylen,valuesize=0; uint8_t *key,*value=0; uint32_t flags; struct komodo_kv *ptr; uint64_t fee;
+    if (fHelp || params.size() < 2 )
         throw runtime_error("kvupdate key value");
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
+    if ( params.size() == 3 )
+        flags = atoi(params[2].get_str().c_str());
+    else flags = 0;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
     {
@@ -573,6 +576,7 @@ Value kvupdate(const Array& params, bool fHelp)
         ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
         height = chainActive.Tip()->nHeight;
         ret.push_back(Pair("height", (int64_t)height));
+        ret.push_back(Pair("flags",flags));
         ret.push_back(Pair("key",params[0].get_str()));
         ret.push_back(Pair("keylen",keylen));
         if ( params.size() == 2 && params[1].get_str().c_str() != 0 )
@@ -585,13 +589,14 @@ Value kvupdate(const Array& params, bool fHelp)
         iguana_rwnum(1,&keyvalue[0],sizeof(keylen),&keylen);
         iguana_rwnum(1,&keyvalue[2],sizeof(valuesize),&valuesize);
         iguana_rwnum(1,&keyvalue[4],sizeof(height),&height);
-        memcpy(&keyvalue[8],key,keylen);
+        iguana_rwnum(1,&keyvalue[8],sizeof(flags),&flags);
+        memcpy(&keyvalue[12],key,keylen);
         if ( value != 0 )
-            memcpy(&keyvalue[8 + keylen],value,valuesize);
-        opretlen = komodo_opreturnscript(opretbuf,'K',keyvalue,sizeof(height)+sizeof(uint16_t)*2+keylen+valuesize);
-        for (i=0; i<opretlen; i++)
-            printf("%02x",opretbuf[i]);
-        printf(" opretbuf keylen.%d valuesize.%d height.%d (%02x %02x %02x)\n",*(uint16_t *)&keyvalue[0],*(uint16_t *)&keyvalue[2],*(uint32_t *)&keyvalue[4],keyvalue[8],keyvalue[9],keyvalue[10]);
+            memcpy(&keyvalue[12 + keylen],value,valuesize);
+        opretlen = komodo_opreturnscript(opretbuf,'K',keyvalue,sizeof(flags)+sizeof(height)+sizeof(uint16_t)*2+keylen+valuesize);
+        //for (i=0; i<opretlen; i++)
+        //    printf("%02x",opretbuf[i]);
+        //printf(" opretbuf keylen.%d valuesize.%d height.%d (%02x %02x %02x)\n",*(uint16_t *)&keyvalue[0],*(uint16_t *)&keyvalue[2],*(uint32_t *)&keyvalue[4],keyvalue[8],keyvalue[9],keyvalue[10]);
         EnsureWalletIsUnlocked();
         if ( (fee= opretlen * opretlen / keylen) < 100000 )
             fee = 100000;
@@ -600,7 +605,7 @@ Value kvupdate(const Array& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest Bitcoin address");
         SendMoney(destaddress.Get(),10000,false,wtx,opretbuf,opretlen,fee);
         ret.push_back(Pair("txid",wtx.GetHash().GetHex()));
- } else ret.push_back(Pair("error",(char *)"null key"));
+    } else ret.push_back(Pair("error",(char *)"null key"));
     return ret;
 }
 

@@ -37,7 +37,7 @@
 #define KOMODO_OPRETURN_WITHDRAW 'W' // assetchain
 #define KOMODO_OPRETURN_REDEEMED 'X'
 
-struct komodo_kv { UT_hash_handle hh; uint8_t *key,*value; int32_t height; uint16_t keylen,valuesize; };
+struct komodo_kv { UT_hash_handle hh; uint8_t *key,*value; int32_t height; uint32_t flags; uint16_t keylen,valuesize; };
 
 struct komodo_event_notarized { uint256 blockhash,desttxid; int32_t notarizedheight; char dest[16]; };
 struct komodo_event_pubkeys { uint8_t num; uint8_t pubkeys[64][33]; };

@@ -671,15 +671,17 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     return(0);
 }
 
-int32_t komodo_kvsearch(int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen)
+int32_t komodo_kvsearch(uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen)
 {
     struct komodo_kv *ptr; int32_t retval = -1;
     *heightp = -1;
+    *flagsp = 0;
     portable_mutex_lock(&KOMODO_KV_mutex);
     HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
     if ( ptr != 0 )
     {
         *heightp = ptr->height;
+        *flagsp = ptr->flags;
         if ( (retval= ptr->valuesize) != 0 )
             memcpy(value,ptr->value,retval);
     }
@@ -689,7 +691,7 @@ int32_t komodo_kvsearch(int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uin
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
 {
-    uint8_t rmd160[20],rmd160s[64*20],addrtype,shortflag,pubkey33[33]; int32_t didstats,i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fiatoshis,komodoshis,checktoshis,values[64],srcvalues[64]; struct pax_transaction *pax,*pax2; struct komodo_state *basesp; double diff;
+    uint8_t rmd160[20],rmd160s[64*20],addrtype,shortflag,pubkey33[33]; int32_t didstats,i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fiatoshis,komodoshis,checktoshis,values[64],srcvalues[64]; struct pax_transaction *pax,*pax2; struct komodo_state *basesp; double diff; uint32_t flags;
     const char *typestr = "unknown";
     if ( KOMODO_PAX == 0 )
         return("nopax");
@@ -711,16 +713,18 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         iguana_rwnum(0,&opretbuf[1],sizeof(keylen),&keylen);
         iguana_rwnum(0,&opretbuf[3],sizeof(valuesize),&valuesize);
         iguana_rwnum(0,&opretbuf[5],sizeof(kmdheight),&kmdheight);
-        key = &opretbuf[9];
+        iguana_rwnum(0,&opretbuf[9],sizeof(flags),&flags);
+        key = &opretbuf[13];
         value = &key[keylen];
-        printf("keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",keylen,valuesize,kmdheight,key[0],key[1],key[2],value[0],value[1],value[2]);
-        if ( sizeof(kmdheight)+sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1 == opretlen )
+        //printf("keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",keylen,valuesize,kmdheight,key[0],key[1],key[2],value[0],value[1],value[2]);
+        if ( sizeof(flags)+sizeof(kmdheight)+sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1 == opretlen )
         {
             portable_mutex_lock(&KOMODO_KV_mutex);
             HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
             if ( ptr == 0 )
             {
                 ptr = (struct komodo_kv *)calloc(1,sizeof(*ptr));
+                ptr->flags = flags;
                 ptr->key = (uint8_t *)calloc(1,keylen);
                 ptr->keylen = keylen;
                 memcpy(ptr->key,key,keylen);
