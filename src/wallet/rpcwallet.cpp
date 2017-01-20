@@ -577,7 +577,7 @@ Value kvupdate(const Array& params, bool fHelp)
         if ( params.size() == 2 && params[1].get_str().c_str() != 0 )
         {
             value = (uint8_t *)params[1].get_str().c_str();
-            valuesize = (int32_t)strlen(params[1].get_str().c_str();
+            valuesize = (int32_t)strlen(params[1].get_str().c_str());
             ret.push_back(Pair("value",params[1].get_str()));
             ret.push_back(Pair("valuesize",valuesize));
         }
@@ -586,7 +586,7 @@ Value kvupdate(const Array& params, bool fHelp)
         memcpy(&keyvalue[4],key,keylen);
         if ( value != 0 )
             memcpy(&keyvalue[4 + keylen],value,valuesize);
-        opretlen = komodo_opreturnscript(opretbuf,'W',keyvalue,sizeof(uint16_t)*2+keylen+valuesize);
+        opretlen = komodo_opreturnscript(opretbuf,'K',keyvalue,sizeof(uint16_t)*2+keylen+valuesize);
         for (i=0; i<opretlen; i++)
             printf("%02x",opretbuf[i]);
         printf(" opretbuf\n");
