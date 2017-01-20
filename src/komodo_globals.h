@@ -27,6 +27,7 @@ int32_t komodo_longestchain();
 pthread_mutex_t komodo_mutex;
 
 #define KOMODO_ELECTION_GAP 2000    //((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)
+#define IGUANA_MAXSCRIPTSIZE 10001
 
 struct pax_transaction *PAX;
 int32_t NUM_PRICES; uint32_t *PVALS;
@@ -49,3 +50,6 @@ uint64_t ASSETCHAINS_SUPPLY = 10;
 uint32_t KOMODO_INITDONE;
 char KMDUSERPASS[4096],BTCUSERPASS[4096]; uint16_t BITCOIND_PORT = 7771;
 uint64_t PENDING_KOMODO_TX;
+
+struct komodo_kv *KOMODO_KV;
+portable_mutex_t KOMODO_KV_mutex;

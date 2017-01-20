@@ -671,6 +671,20 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     return(0);
 }
 
+int32_t komodo_kvsearch(uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen)
+{
+    struct komodo_kv *ptr; int32_t retval = -1;
+    portable_mutex_lock(&KOMODO_KV_mutex);
+    HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
+    if ( ptr != 0 )
+    {
+        if ( (retval= ptr->valuesize) != 0 )
+            memcpy(value,ptr->value,retval);
+    }
+    portable_mutex_unlock(&KOMODO_KV_mutex);
+    return(retval);
+}
+
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
 {
     uint8_t rmd160[20],rmd160s[64*20],addrtype,shortflag,pubkey33[33]; int32_t didstats,i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fiatoshis,komodoshis,checktoshis,values[64],srcvalues[64]; struct pax_transaction *pax,*pax2; struct komodo_state *basesp; double diff;
@@ -689,7 +703,36 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     memset(kmdheights,0,sizeof(kmdheights));
     memset(otherheights,0,sizeof(otherheights));
     tokomodo = (komodo_is_issuer() == 0);
-    if ( opretbuf[0] == 'D' )
+    if ( opretbuf[0] == 'K' )
+    {
+        uint16_t keylen,valuesize; uint8_t *key,*value; struct komodo_kv *ptr;
+        iguana_rwnum(0,&opretbuf[1],sizeof(keylen),&keylen);
+        iguana_rwnum(0,&opretbuf[3],sizeof(valuesize),&valuesize);
+        key = &opretbuf[5];
+        value = &key[keylen];
+        if ( sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1 == opretlen )
+        {
+            portable_mutex_lock(&KOMODO_KV_mutex);
+            HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
+            if ( ptr == 0 )
+            {
+                ptr = calloc(1,sizeof(*ptr));
+                ptr->key = calloc(1,keylen);
+                ptr->keylen = keylen;
+                memcpy(ptr->key,key,keylen);
+                HASH_ADD_KEYPTR(hh,KOMODO_KV,ptr->key,ptr->keylen,ptr);
+            }
+            if ( ptr->value != 0 )
+                free(ptr->value), ptr->value = 0;
+            if ( (ptr->valuesize= valuesize) != 0 )
+            {
+                ptr->value = calloc(1,valuesize);
+                memcpy(ptr->value,value,valuesize);
+            }
+            portable_mutex_unlock(&KOMODO_KV_mutex);
+        } else printf("opretlen.%d mismatch keylen.%d valuesize.%d\n",opretln,keylen,valuesize);
+    }
+    else if ( opretbuf[0] == 'D' )
     {
         tokomodo = 0;
         if ( opretlen == 38 ) // any KMD tx
