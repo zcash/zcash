@@ -113,7 +113,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "notaries", 1 },
     { "minerids", 1 },
     { "kvsearch", 1 },
-    { "kvupdate", 2 },
+    { "kvupdate", 3 },
 };
 
 class CRPCConvertTable

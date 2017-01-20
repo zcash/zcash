@@ -600,7 +600,8 @@ Value kvupdate(const Array& params, bool fHelp)
         memcpy(&keyvalue[12],key,keylen);
         if ( value != 0 )
             memcpy(&keyvalue[12 + keylen],value,valuesize);
-        opretlen = komodo_opreturnscript(opretbuf,'K',keyvalue,sizeof(flags)+sizeof(height)+sizeof(uint16_t)*2+keylen+valuesize);
+        if ( (opretlen= komodo_opreturnscript(opretbuf,'K',keyvalue,sizeof(flags)+sizeof(height)+sizeof(uint16_t)*2+keylen+valuesize)) == 40 )
+            opretlen++;
         //for (i=0; i<opretlen; i++)
         //    printf("%02x",opretbuf[i]);
         //printf(" opretbuf keylen.%d valuesize.%d height.%d (%02x %02x %02x)\n",*(uint16_t *)&keyvalue[0],*(uint16_t *)&keyvalue[2],*(uint32_t *)&keyvalue[4],keyvalue[8],keyvalue[9],keyvalue[10]);
