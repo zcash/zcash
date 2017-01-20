@@ -569,8 +569,10 @@ Value kvupdate(const Array& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
     if ( params.size() == 3 )
+    {
         flags = atoi(params[2].get_str().c_str());
-    else flags = 0;
+        printf("flags.%d (%s)\n",flags,params[2].get_str().c_str());
+    } else flags = 0;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
     {
