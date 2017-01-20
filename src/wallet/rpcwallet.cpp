@@ -588,7 +588,7 @@ Value kvupdate(const Array& params, bool fHelp)
         ret.push_back(Pair("flags",(int64_t)flags));
         ret.push_back(Pair("key",params[0].get_str()));
         ret.push_back(Pair("keylen",(int64_t)keylen));
-        if ( params.size() == 2 && params[1].get_str().c_str() != 0 )
+        if ( params.size() >= 2 && params[1].get_str().c_str() != 0 )
         {
             value = (uint8_t *)params[1].get_str().c_str();
             valuesize = (int32_t)strlen(params[1].get_str().c_str());
