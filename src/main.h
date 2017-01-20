@@ -135,8 +135,6 @@ static const unsigned int INVENTORY_BROADCAST_INTERVAL = 5;
  *  Limits the impact of low-fee transaction floods. */
 static const unsigned int INVENTORY_BROADCAST_MAX = 7 * INVENTORY_BROADCAST_INTERVAL;
 
-static const unsigned int DEFAULT_LIMITFREERELAY = 15;
-static const bool DEFAULT_RELAYPRIORITY = false;
 static const int64_t DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
 
 /** Default for -permitbaremultisig */

@@ -68,7 +68,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             "  \"keypoolsize\": xxxx,        (numeric, optional) how many new keys are pre-generated\n"
             "  \"unlocked_until\": ttt,      (numeric, optional) the timestamp in seconds since epoch (midnight Jan 1 1970 GMT) that the wallet is unlocked for transfers, or 0 if the wallet is locked, if wallet functionality is available and the wallet is encrypted\n"
             "  \"paytxfee\": x.xxxx,         (numeric) the transaction fee set in " + CURRENCY_UNIT + "/kB\n"
-            "  \"relayfee\": x.xxxx,         (numeric) minimum relay fee for non-free transactions in " + CURRENCY_UNIT + "/kB\n"
+            "  \"relayfee\": x.xxxx,         (numeric) minimum relay fee for transactions in " + CURRENCY_UNIT + "/kB\n"
             "  \"errors\": \"...\"           (string) message describing the latest or highest-priority error\n"
             "  \"errorstimestamp\": \"...\"  (string) timestamp associated with the latest or highest-priority error\n"
             "}\n"

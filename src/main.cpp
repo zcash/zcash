@@ -1938,32 +1938,11 @@ bool AcceptToMemoryPool(
         CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height(), pool.HasNoInputsOf(tx), fSpendsCoinbase, nSigOps, consensusBranchId);
         unsigned int nSize = entry.GetTxSize();
 
-        // Require that free transactions have sufficient priority to be mined in the next block.
-        if (GetBoolArg("-relaypriority", DEFAULT_RELAYPRIORITY) && nModifiedFees < ::minRelayTxFee.GetFeeForRelay(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
-            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
-        }
-
-        // Continuously rate-limit free (really, very-low-fee) transactions
-        // This mitigates 'penny-flooding' -- sending thousands of free transactions just to
-        // be annoying or make others' transactions take longer to confirm.
-        if (fLimitFree && nModifiedFees < ::minRelayTxFee.GetFeeForRelay(nSize))
-        {
-            static CCriticalSection csFreeLimiter;
-            static double dFreeCount;
-            static int64_t nLastTime;
-            int64_t nNow = GetTime();
-
-            LOCK(csFreeLimiter);
-
-            // Use an exponentially decaying ~10-minute window:
-            dFreeCount *= pow(1.0 - 1.0/600.0, (double)(nNow - nLastTime));
-            nLastTime = nNow;
-            // -limitfreerelay unit is thousand-bytes-per-minute
-            // At default rate it would take over a month to fill 1GB
-            if (dFreeCount >= GetArg("-limitfreerelay", DEFAULT_LIMITFREERELAY) * 10 * 1000)
-                return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "rate limited free transaction");
-            LogPrint("mempool", "Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
-            dFreeCount += nSize;
+        // No transactions are allowed with modified fee below the minimum relay fee,
+        // except from disconnected blocks. The minimum relay fee will never be more
+        // than DEFAULT_FEE zatoshis.
+        if (fLimitFree && nModifiedFees < ::minRelayTxFee.GetFeeForRelay(nSize)) {
+            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "min relay fee not met");
         }
 
         if (fRejectAbsurdFee && nFees > maxTxFee) {
@@ -7175,7 +7154,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                             LogPrint("mempool", "   invalid orphan tx %s\n", orphanHash.ToString());
                         }
                         // Has inputs but not accepted to mempool
-                        // Probably non-standard or insufficient fee/priority
+                        // Probably non-standard or insufficient fee
                         LogPrint("mempool", "   removed orphan tx %s\n", orphanHash.ToString());
                         vEraseQueue.push_back(orphanHash);
                         // Add the wtxid of this transaction to our reject filter.

@@ -479,8 +479,6 @@ std::string HelpMessage(HelpMessageMode mode)
     {
         strUsage += HelpMessageOpt("-clockoffset=<n>", "Applies offset of <n> seconds to the actual time. Incompatible with -mocktime (default: 0)");
         strUsage += HelpMessageOpt("-mocktime=<n>", "Replace actual time with <n> seconds since epoch. Incompatible with -clockoffset (default: 0)");
-        strUsage += HelpMessageOpt("-limitfreerelay=<n>", strprintf("Continuously rate-limit free transactions to <n>*1000 bytes per minute (default: %u)", DEFAULT_LIMITFREERELAY));
-        strUsage += HelpMessageOpt("-relaypriority", strprintf("Require high priority for relaying free or low-fee transactions (default: %u)", DEFAULT_RELAYPRIORITY));
         strUsage += HelpMessageOpt("-maxsigcachesize=<n>", strprintf("Limit total size of signature and bundle caches to <n> MiB (default: %u)", DEFAULT_MAX_SIG_CACHE_SIZE));
         strUsage += HelpMessageOpt("-maxtipage=<n>", strprintf("Maximum tip age in seconds to consider node in initial block download (default: %u)", DEFAULT_MAX_TIP_AGE));
     }
@@ -1227,7 +1225,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (nConnectTimeout <= 0)
         nConnectTimeout = DEFAULT_CONNECT_TIMEOUT;
 
-    // Fee-per-kilobyte amount considered the same as "free"
+    // Fee-per-kilobyte amount required for mempool acceptance and relay
     // If you are mining, be careful setting this:
     // if you set it to zero then
     // a transaction spammer can cheaply fill blocks using

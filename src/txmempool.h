@@ -28,22 +28,6 @@
 
 class CAutoFile;
 
-inline double AllowFreeThreshold()
-{
-    // 144 is the number of Bitcoin blocks per day. This has not been updated for Zcash,
-    // as it would make it harder to get shielded transactions into blocks by lowering the
-    // threshold at which we switch from priority-based selection of transactions into
-    // blocks to fee-based selection.
-    return COIN * 144 / 250;
-}
-
-inline bool AllowFree(double dPriority)
-{
-    // Large (in bytes) low-priority (new, small-coin) transactions
-    // need a fee.
-    return dPriority > AllowFreeThreshold();
-}
-
 /** Version from which we write `fee_estimates.dat` without priority information: 5.5.0-beta1 or later */
 static const int FEE_ESTIMATES_WITHOUT_PRIORITY_VERSION = 5050000;
 

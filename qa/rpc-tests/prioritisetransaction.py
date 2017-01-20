@@ -29,7 +29,6 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
         args = [
             "-blockmaxsize=11000",
             "-maxorphantx=1000",
-            "-relaypriority=true",
             "-printpriority=1",
             "-limitancestorcount=900",
             "-allowdeprecated=getnewaddress",

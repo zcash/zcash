@@ -25,7 +25,6 @@ class MempoolPackagesTest(BitcoinTestFramework):
     def setup_network(self):
         base_args = [
             "-maxorphantx=1000",
-            "-relaypriority=0",
             "-debug",
             "-allowdeprecated=getnewaddress",
         ]
