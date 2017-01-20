@@ -425,10 +425,9 @@ Value kvsearch(const Array& params, bool fHelp)
             if ( (valuesize= komodo_kvsearch(value,key,keylen)) >= 0 )
             {
                 std::string val; char *valuestr;
-                val.resize(valuesize+1);
+                val.resize(valuesize);
                 valuestr = (char *)val.data();
                 memcpy(valuestr,value,valuesize);
-                valuestr[valuesize] = 0;
                 ret.push_back(Pair("value",val));
             } else ret.push_back(Pair("error",(char *)"cant find key"));
         } else ret.push_back(Pair("error",(char *)"key too big"));
