@@ -484,6 +484,7 @@ int32_t komodo_is_issuer();
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base);
+int32_t komodo_kvsearch(uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
 
 Value paxdeposit(const Array& params, bool fHelp)
 {
@@ -563,7 +564,7 @@ Value kvupdate(const Array& params, bool fHelp)
     CWalletTx wtx; Object ret;
     uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t opretlen,height; uint16_t keylen,valuesize=0; uint8_t *key,*value=0; uint32_t flags; struct komodo_kv *ptr; uint64_t fee;
     if (fHelp || params.size() < 2 )
-        throw runtime_error("kvupdate key value");
+        throw runtime_error("kvupdate key value [flags]");
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
     if ( params.size() == 3 )
