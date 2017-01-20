@@ -405,6 +405,8 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 int32_t komodo_minerids(uint8_t *minerids,int32_t height);
 int32_t komodo_kvsearch(uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
+extern char ASSETCHAINS_SYMBOL[16];
+#define IGUANA_MAXSCRIPTSIZE 10001
 
 Value kvsearch(const Array& params, bool fHelp)
 {
@@ -417,7 +419,7 @@ Value kvsearch(const Array& params, bool fHelp)
             memcpy(key,params[0].get_str().c_str(),keylen);
             if ( (valuesize= komodo_kvsearch(value,key,keylen)) >= 0 )
             {
-                std::string val; char *valuestr; 
+                std::string val; char *valuestr;
                 val.resize(valuesize+1);
                 valuestr = (char *)val.data();
                 memcpy(valuestr,value,valuesize);
