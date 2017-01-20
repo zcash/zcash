@@ -754,6 +754,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     memcpy(ptr->value,value,valuesize);
                 }
                 ptr->height = kmdheight;
+                ptr->flags = flags;
             }
             portable_mutex_unlock(&KOMODO_KV_mutex);
         } else printf("opretlen.%d mismatch keylen.%d valuesize.%d\n",opretlen,keylen,valuesize);
