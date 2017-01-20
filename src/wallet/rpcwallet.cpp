@@ -560,7 +560,7 @@ Value paxwithdraw(const Array& params, bool fHelp)
 
 Value kvupdate(const Array& params, bool fHelp)
 {
-    CWalletTx wtx; Object ret; uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t opretlen,i;
+    CWalletTx wtx; Object ret; uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t opretlen,i,height;
     uint16_t keylen,valuesize=0; uint8_t *key,*value=0; struct komodo_kv *ptr; uint64_t fee;
     if (fHelp || params.size() != 2 )
         throw runtime_error("kvupdate key value");
@@ -571,7 +571,8 @@ Value kvupdate(const Array& params, bool fHelp)
     {
         key = (uint8_t *)params[0].get_str().c_str();
         ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
-        ret.push_back(Pair("height", (int64_t)chainActive.Tip()->nHeight));
+        height = chainActive.Tip()->nHeight;
+        ret.push_back(Pair("height", (int64_t)height));
         ret.push_back(Pair("key",params[0].get_str()));
         ret.push_back(Pair("keylen",keylen));
         if ( params.size() == 2 && params[1].get_str().c_str() != 0 )
@@ -583,10 +584,11 @@ Value kvupdate(const Array& params, bool fHelp)
         }
         iguana_rwnum(1,&keyvalue[0],sizeof(keylen),&keylen);
         iguana_rwnum(1,&keyvalue[2],sizeof(valuesize),&valuesize);
-        memcpy(&keyvalue[4],key,keylen);
+        iguana_rwnum(1,&keyvalue[4],sizeof(height),&height);
+        memcpy(&keyvalue[8],key,keylen);
         if ( value != 0 )
-            memcpy(&keyvalue[4 + keylen],value,valuesize);
-        opretlen = komodo_opreturnscript(opretbuf,'K',keyvalue,sizeof(uint16_t)*2+keylen+valuesize);
+            memcpy(&keyvalue[8 + keylen],value,valuesize);
+        opretlen = komodo_opreturnscript(opretbuf,'K',keyvalue,sizeof(height)+sizeof(uint16_t)*2+keylen+valuesize);
         for (i=0; i<opretlen; i++)
             printf("%02x",opretbuf[i]);
         printf(" opretbuf\n");

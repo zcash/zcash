@@ -671,13 +671,15 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     return(0);
 }
 
-int32_t komodo_kvsearch(uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen)
+int32_t komodo_kvsearch(int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen)
 {
     struct komodo_kv *ptr; int32_t retval = -1;
+    *heightp = -1;
     portable_mutex_lock(&KOMODO_KV_mutex);
     HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
     if ( ptr != 0 )
     {
+        *heightp = ptr->height;
         if ( (retval= ptr->valuesize) != 0 )
             memcpy(value,ptr->value,retval);
     }
@@ -708,9 +710,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         uint16_t keylen,valuesize; uint8_t *key,*value; struct komodo_kv *ptr;
         iguana_rwnum(0,&opretbuf[1],sizeof(keylen),&keylen);
         iguana_rwnum(0,&opretbuf[3],sizeof(valuesize),&valuesize);
-        key = &opretbuf[5];
+        iguana_rwnum(0,&opretbuf[5],sizeof(kmdheight),&kmdheight);
+        key = &opretbuf[9];
         value = &key[keylen];
-        if ( sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1 == opretlen )
+        if ( sizeof(kmdheight)+sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1 == opretlen )
         {
             portable_mutex_lock(&KOMODO_KV_mutex);
             HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
@@ -729,6 +732,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 ptr->value = (uint8_t *)calloc(1,valuesize);
                 memcpy(ptr->value,value,valuesize);
             }
+            ptr->height = kmdheight;
             portable_mutex_unlock(&KOMODO_KV_mutex);
         } else printf("opretlen.%d mismatch keylen.%d valuesize.%d\n",opretlen,keylen,valuesize);
     }
