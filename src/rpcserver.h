@@ -247,6 +247,7 @@ extern json_spirit::Value gettxoutsetinfo(const json_spirit::Array& params, bool
 extern json_spirit::Value gettxout(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value notaries(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value minerids(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value kvsearch(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value paxprice(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value paxpending(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value paxprices(const json_spirit::Array& params, bool fHelp);

@@ -112,6 +112,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "paxpending", 0 },
     { "notaries", 1 },
     { "minerids", 1 },
+    { "kvsearch", 1 },
 };
 
 class CRPCConvertTable

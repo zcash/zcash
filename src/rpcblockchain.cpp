@@ -404,6 +404,33 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
 char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
 uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 int32_t komodo_minerids(uint8_t *minerids,int32_t height);
+int32_t komodo_kvsearch(uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
+
+Value kvsearch(const Array& params, bool fHelp)
+{
+    Object ret; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t j,valuesize,keylen;
+    LOCK(cs_main);
+    if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
+    {
+        if ( keylen < sizeof(key) )
+        {
+            memcpy(key,params[0].get_str().c_str(),keylen);
+            if ( (valuesize= komodo_kvsearch(value,key,keylen)) >= 0 )
+            {
+                std::string value; char *valuestr; int32_t m;
+                value.resize(valuesize+1);
+                hexstr = (char *)value.data();
+                memcpy(valuestr,value,valuesize);
+                valuestr[valuesize] = 0;
+                ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
+                ret.push_back(Pair("key",params[0].get_str()));
+                ret.push_back(Pair("value",value));
+                ret.push_back(Pair("height", (int64_t)chainActive.Tip()->nHeight));
+            } else ret.push_back(Pair("error",(char *)"cant find key"));
+        } else ret.push_back(Pair("error",(char *)"key too big"));
+    } else ret.push_back(Pair("error",(char *)"null key"));
+    return ret;
+}
 
 Value minerids(const Array& params, bool fHelp)
 {
