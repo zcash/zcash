@@ -560,7 +560,7 @@ Value paxwithdraw(const Array& params, bool fHelp)
 
 Value kvupdate(const Array& params, bool fHelp)
 {
-    Object ret; uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t opretlen,j;
+    CWalletTx wtx; Object ret; uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t opretlen,i;
     uint16_t keylen,valuesize; uint8_t *key,*value=0; struct komodo_kv *ptr; uint64_t fee;
     if (fHelp || params.size() != 2 )
         throw runtime_error("kvupdate key value");
@@ -583,7 +583,7 @@ Value kvupdate(const Array& params, bool fHelp)
         memcpy(&keyvalue[4],key,keylen);
         if ( value != 0 )
             memcpy(&keyvalue[4 + keylen],value,valuesize);
-        opretlen = komodo_opreturnscript(opretbuf,'W',keyvalue,sizeof(uint16_t)*2+keylen+valuelen);
+        opretlen = komodo_opreturnscript(opretbuf,'W',keyvalue,sizeof(uint16_t)*2+keylen+valuesize);
         for (i=0; i<opretlen; i++)
             printf("%02x",opretbuf[i]);
         printf(" opretbuf\n");
@@ -593,7 +593,7 @@ Value kvupdate(const Array& params, bool fHelp)
         CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
         if (!destaddress.IsValid())
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest Bitcoin address");
-        SendMoney(destaddress.Get(),10000,fSubtractFeeFromAmount,wtx,opretbuf,opretlen,fee);
+        SendMoney(destaddress.Get(),10000,false,wtx,opretbuf,opretlen,fee);
         return wtx.GetHash().GetHex();
     } else ret.push_back(Pair("error",(char *)"null key"));
     return ret;
