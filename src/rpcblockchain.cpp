@@ -430,7 +430,7 @@ Value kvsearch(const Array& params, bool fHelp)
                 valuestr = (char *)val.data();
                 memcpy(valuestr,value,valuesize);
                 ret.push_back(Pair("height",height));
-                ret.push_back(Pair("flags",flags));
+                ret.push_back(Pair("flags",(int64_t)flags));
                 ret.push_back(Pair("value",val));
                 ret.push_back(Pair("valuesize",valuesize));
             } else ret.push_back(Pair("error",(char *)"cant find key"));
