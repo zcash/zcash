@@ -396,6 +396,8 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
     return ret;
 }
 
+#define IGUANA_MAXSCRIPTSIZE 10001
+extern char ASSETCHAINS_SYMBOL[16];
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint32_t komodo_txtime(uint256 hash);
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume);
@@ -405,8 +407,6 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 int32_t komodo_minerids(uint8_t *minerids,int32_t height);
 int32_t komodo_kvsearch(uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
-extern char ASSETCHAINS_SYMBOL[16];
-#define IGUANA_MAXSCRIPTSIZE 10001
 
 Value kvsearch(const Array& params, bool fHelp)
 {
