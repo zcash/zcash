@@ -397,6 +397,8 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
 }
 
 #define IGUANA_MAXSCRIPTSIZE 10001
+#define KOMODO_KVDURATION 1440
+#define KOMODO_KVBINARY 2
 extern char ASSETCHAINS_SYMBOL[16];
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint32_t komodo_txtime(uint256 hash);

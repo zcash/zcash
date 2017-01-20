@@ -476,6 +476,8 @@ Value sendtoaddress(const Array& params, bool fHelp)
 }
 
 #define KOMODO_KVPROTECTED 1
+#define KOMODO_KVBINARY 2
+#define KOMODO_KVDURATION 1440
 #define IGUANA_MAXSCRIPTSIZE 10001
 uint64_t PAX_fiatdest(uint64_t *seedp,int32_t tokomodo,char *destaddr,uint8_t pubkey37[37],char *coinaddr,int32_t height,char *base,int64_t fiatoshis);
 int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen);
