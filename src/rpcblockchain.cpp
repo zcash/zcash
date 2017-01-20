@@ -411,6 +411,8 @@ int32_t komodo_kvsearch(uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t
 Value kvsearch(const Array& params, bool fHelp)
 {
     Object ret; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t j,valuesize,keylen;
+    if (fHelp || params.size() != 1 )
+        throw runtime_error("kvsearch key");
     LOCK(cs_main);
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
     {

@@ -562,6 +562,8 @@ Value kvupdate(const Array& params, bool fHelp)
 {
     Object ret; uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t opretlen,j;
     uint16_t keylen,valuesize; uint8_t *key,*value=0; struct komodo_kv *ptr; uint64_t fee;
+    if (fHelp || params.size() != 2 )
+        throw runtime_error("kvupdate key value");
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
     LOCK2(cs_main, pwalletMain->cs_wallet);
