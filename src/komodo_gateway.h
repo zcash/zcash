@@ -723,8 +723,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         //printf("komodo_opreturn skip %s\n",ASSETCHAINS_SYMBOL);
         return("assetchain");
     }
-    else if ( KOMODO_PAX == 0 )
-        return("nopax");
+    //else if ( KOMODO_PAX == 0 )
+    //    return("nopax");
     memset(baseids,0xff,sizeof(baseids));
     memset(values,0,sizeof(values));
     memset(srcvalues,0,sizeof(srcvalues));
