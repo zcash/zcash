@@ -488,6 +488,7 @@ int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endian
 int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base);
 int32_t komodo_kvsearch(int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
+int32_t komodo_kvcmp(uint8_t *refvalue,uint16_t refvaluesize,uint8_t *value,uint16_t valuesize);
 
 Value paxdeposit(const Array& params, bool fHelp)
 {
@@ -565,7 +566,7 @@ Value paxwithdraw(const Array& params, bool fHelp)
 Value kvupdate(const Array& params, bool fHelp)
 {
     CWalletTx wtx; Object ret;
-    uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t duration,opretlen,height; uint16_t keylen,valuesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags; struct komodo_kv *ptr; uint64_t fee;
+    uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t duration,opretlen,height; uint16_t keylen,valuesize=0,refvaluesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags; struct komodo_kv *ptr; uint64_t fee;
     if (fHelp || params.size() < 2 )
         throw runtime_error("kvupdate key value [flags]");
     if (!EnsureWalletIsAvailable(fHelp))
@@ -573,13 +574,18 @@ Value kvupdate(const Array& params, bool fHelp)
     if ( params.size() == 3 )
     {
         flags = atoi(params[2].get_str().c_str());
-        printf("flags.%d (%s)\n",flags,params[2].get_str().c_str());
+        //printf("flags.%d (%s)\n",flags,params[2].get_str().c_str());
     } else flags = 0;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
     {
         key = (uint8_t *)params[0].get_str().c_str();
-        if ( (valuesize= komodo_kvsearch(chainActive.Tip()->nHeight,&tmpflags,&height,&keyvalue[keylen],key,keylen)) >= 0 && (tmpflags & KOMODO_KVPROTECTED) != 0 )
+        if ( params.size() >= 2 && params[1].get_str().c_str() != 0 )
+        {
+            value = (uint8_t *)params[1].get_str().c_str();
+            valuesize = (int32_t)strlen(params[1].get_str().c_str());
+        }
+        if ( (refvaluesize= komodo_kvsearch(chainActive.Tip()->nHeight,&tmpflags,&height,&keyvalue[keylen],key,keylen)) >= 0 && (tmpflags & KOMODO_KVPROTECTED) != 0 && komodo_kvcmp(refvaluesize==0?0:&keyvalue[keylen],refvaluesize,value,valuesize) != 0 )
         {
             ret.push_back(Pair("error",(char *)"cant modify write once key"));
             return ret;
@@ -594,8 +600,6 @@ Value kvupdate(const Array& params, bool fHelp)
         ret.push_back(Pair("keylen",(int64_t)keylen));
         if ( params.size() >= 2 && params[1].get_str().c_str() != 0 )
         {
-            value = (uint8_t *)params[1].get_str().c_str();
-            valuesize = (int32_t)strlen(params[1].get_str().c_str());
             ret.push_back(Pair("value",params[1].get_str()));
             ret.push_back(Pair("valuesize",valuesize));
         }

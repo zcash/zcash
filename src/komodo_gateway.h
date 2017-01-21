@@ -703,6 +703,17 @@ int32_t komodo_kvsearch(int32_t current_height,uint32_t *flagsp,int32_t *heightp
     return(retval);
 }
 
+int32_t komodo_kvcmp(uint8_t *refvalue,uint16_t refvaluesize,uint8_t *value,uint16_t valuesize)
+{
+    if ( refvalue == 0 && value == 0 )
+        return(0);
+    else if ( refvalue == 0 || value == 0 )
+        return(-1);
+    else if ( refvaluesize != valuesize )
+        return(-1);
+    else return(memcmp(refvalue,value,valuesize);
+}
+
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
 {
     uint8_t rmd160[20],rmd160s[64*20],addrtype,shortflag,pubkey33[33]; int32_t didstats,i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fee,fiatoshis,komodoshis,checktoshis,values[64],srcvalues[64]; struct pax_transaction *pax,*pax2; struct komodo_state *basesp; double diff; uint32_t flags;
@@ -723,7 +734,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     tokomodo = (komodo_is_issuer() == 0);
     if ( opretbuf[0] == 'K' && opretlen != 40 )
     {
-        uint16_t keylen,valuesize; uint8_t *key,*valueptr; struct komodo_kv *ptr;
+        uint16_t keylen,valuesize,newflag = 0,cmpval = 1; uint8_t *key,*valueptr; struct komodo_kv *ptr;
         iguana_rwnum(0,&opretbuf[1],sizeof(keylen),&keylen);
         iguana_rwnum(0,&opretbuf[3],sizeof(valuesize),&valuesize);
         iguana_rwnum(0,&opretbuf[5],sizeof(kmdheight),&kmdheight);
@@ -732,6 +743,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         valueptr = &key[keylen];
         if ( (fee= ((flags>>2)+1)*(opretlen * opretlen / keylen)) < 100000 )
             fee = 100000;
+        // 6a164b040005006a00000000000000746573743834393333
         printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,kmdheight,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
         if ( value >= fee )
         {
@@ -742,20 +754,23 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 if ( ptr == 0 )
                 {
                     ptr = (struct komodo_kv *)calloc(1,sizeof(*ptr));
-                    ptr->flags = flags;
                     ptr->key = (uint8_t *)calloc(1,keylen);
                     ptr->keylen = keylen;
                     memcpy(ptr->key,key,keylen);
+                    newflag = 1;
                     HASH_ADD_KEYPTR(hh,KOMODO_KV,ptr->key,ptr->keylen,ptr);
                 }
-                else if ( (ptr->flags & KOMODO_KVPROTECTED) == 0 )
+                if ( newflag != 0 || (ptr->flags & KOMODO_KVPROTECTED) == 0 || (cmpval= komodo_kvcmp(ptr->value,ptr->valuesize,value,valuesize)) == 0 )
                 {
-                    if ( ptr->value != 0 )
-                        free(ptr->value), ptr->value = 0;
-                    if ( (ptr->valuesize= valuesize) != 0 )
+                    if ( cmpval != 0 )
                     {
-                        ptr->value = (uint8_t *)calloc(1,valuesize);
-                        memcpy(ptr->value,valueptr,valuesize);
+                        if ( ptr->value != 0 )
+                            free(ptr->value), ptr->value = 0;
+                        if ( (ptr->valuesize= valuesize) != 0 )
+                        {
+                            ptr->value = (uint8_t *)calloc(1,valuesize);
+                            memcpy(ptr->value,valueptr,valuesize);
+                        }
                     }
                     ptr->height = kmdheight;
                     ptr->flags = flags;
