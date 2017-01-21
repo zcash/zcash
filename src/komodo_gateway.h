@@ -716,7 +716,7 @@ int32_t komodo_kvcmp(uint8_t *refvalue,uint16_t refvaluesize,uint8_t *value,uint
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
 {
-    uint8_t rmd160[20],rmd160s[64*20],addrtype,shortflag,pubkey33[33]; int32_t didstats,i,j,n,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fee,fiatoshis,komodoshis,checktoshis,values[64],srcvalues[64]; struct pax_transaction *pax,*pax2; struct komodo_state *basesp; double diff; uint32_t flags;
+    uint8_t rmd160[20],rmd160s[64*20],addrtype,shortflag,pubkey33[33],valuebuf[IGUANA_MAXSCRIPTSIZE]; int32_t didstats,i,j,n,kvheight,len,tokomodo,kmdheight,otherheights[64],kmdheights[64]; int8_t baseids[64]; char base[4],coinaddr[64],destaddr[64]; uint256 txids[64]; uint16_t vouts[64]; uint64_t convtoshis,seed; int64_t fee,fiatoshis,komodoshis,checktoshis,values[64],srcvalues[64]; struct pax_transaction *pax,*pax2; struct komodo_state *basesp; double diff; uint32_t flags;
     const char *typestr = "unknown";
     if ( ASSETCHAINS_SYMBOL[0] != 0 && komodo_baseid(ASSETCHAINS_SYMBOL) < 0 && opretbuf[0] != 'K' )
     {
@@ -749,6 +749,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         {
             if ( sizeof(flags)+sizeof(kmdheight)+sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1 == opretlen )
             {
+                komodo_kvsearch(height,&flags,&kvheight,valuebuf,key,keylen); // expire if needed
                 portable_mutex_lock(&KOMODO_KV_mutex);
                 HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
                 if ( ptr == 0 )
