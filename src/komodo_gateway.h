@@ -681,7 +681,7 @@ int32_t komodo_kvsearch(int32_t current_height,uint32_t *flagsp,int32_t *heightp
     if ( ptr != 0 )
     {
         duration = ((ptr->flags >> 2) + 1) * KOMODO_KVDURATION;
-        printf("duration.%d flags.%d current.%d ht.%d keylen.%d valuesize.%d\n",duration,ptr->flags,current_height,ptr->height,ptr->keylen,ptr->valuesize);
+        //printf("duration.%d flags.%d current.%d ht.%d keylen.%d valuesize.%d\n",duration,ptr->flags,current_height,ptr->height,ptr->keylen,ptr->valuesize);
         if ( current_height > (ptr->height + duration) )
         {
             HASH_DELETE(hh,KOMODO_KV,ptr);
@@ -744,7 +744,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         if ( (fee= ((flags>>2)+1)*(opretlen * opretlen / keylen)) < 100000 )
             fee = 100000;
         // 6a164b040005006a00000000000000746573743834393333
-        printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,kmdheight,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
+        //printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,kmdheight,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
         if ( value >= fee )
         {
             if ( sizeof(flags)+sizeof(kmdheight)+sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1 == opretlen )
