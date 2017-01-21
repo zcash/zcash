@@ -404,9 +404,9 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
         for (i=0; i<opretlen; i++)
         {
             ptr[i] = opretbuf[i];
-            printf("%02x",ptr[i]);
+            //printf("%02x",ptr[i]);
         }
-        printf(" opretbuf[%d]\n",opretlen);
+        //printf(" opretbuf[%d]\n",opretlen);
         CRecipient opret = { opretpubkey, opretValue, false };
         vecSend.push_back(opret);
     }
@@ -475,6 +475,10 @@ Value sendtoaddress(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
+#define KOMODO_KVPROTECTED 1
+#define KOMODO_KVBINARY 2
+#define KOMODO_KVDURATION 1440
+#define IGUANA_MAXSCRIPTSIZE 10001
 uint64_t PAX_fiatdest(uint64_t *seedp,int32_t tokomodo,char *destaddr,uint8_t pubkey37[37],char *coinaddr,int32_t height,char *base,int64_t fiatoshis);
 int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen);
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
@@ -483,6 +487,8 @@ int32_t komodo_is_issuer();
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base);
+int32_t komodo_kvsearch(int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
+int32_t komodo_kvcmp(uint8_t *refvalue,uint16_t refvaluesize,uint8_t *value,uint16_t valuesize);
 
 Value paxdeposit(const Array& params, bool fHelp)
 {
@@ -555,6 +561,71 @@ Value paxwithdraw(const Array& params, bool fHelp)
     opretlen = komodo_opreturnscript(opretbuf,'W',pubkey37,37);
     SendMoney(destaddress.Get(),fee,fSubtractFeeFromAmount,wtx,opretbuf,opretlen,fiatoshis);
     return wtx.GetHash().GetHex();
+}
+
+Value kvupdate(const Array& params, bool fHelp)
+{
+    CWalletTx wtx; Object ret;
+    uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t duration,opretlen,height; uint16_t keylen,valuesize=0,refvaluesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags; struct komodo_kv *ptr; uint64_t fee;
+    if (fHelp || params.size() < 2 )
+        throw runtime_error("kvupdate key value [flags]");
+    if (!EnsureWalletIsAvailable(fHelp))
+        return 0;
+    if ( params.size() == 3 )
+    {
+        flags = atoi(params[2].get_str().c_str());
+        //printf("flags.%d (%s)\n",flags,params[2].get_str().c_str());
+    } else flags = 0;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
+    {
+        key = (uint8_t *)params[0].get_str().c_str();
+        if ( params.size() >= 2 && params[1].get_str().c_str() != 0 )
+        {
+            value = (uint8_t *)params[1].get_str().c_str();
+            valuesize = (int32_t)strlen(params[1].get_str().c_str());
+        }
+        if ( (refvaluesize= komodo_kvsearch(chainActive.Tip()->nHeight,&tmpflags,&height,&keyvalue[keylen],key,keylen)) >= 0 && (tmpflags & KOMODO_KVPROTECTED) != 0 && komodo_kvcmp(refvaluesize==0?0:&keyvalue[keylen],refvaluesize,value,valuesize) != 0 )
+        {
+            ret.push_back(Pair("error",(char *)"cant modify write once key"));
+            return ret;
+        }
+        ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
+        height = chainActive.Tip()->nHeight;
+        ret.push_back(Pair("height", (int64_t)height));
+        duration = ((flags >> 2) + 1) * KOMODO_KVDURATION;
+        ret.push_back(Pair("expiration", (int64_t)(height+duration)));
+        ret.push_back(Pair("flags",(int64_t)flags));
+        ret.push_back(Pair("key",params[0].get_str()));
+        ret.push_back(Pair("keylen",(int64_t)keylen));
+        if ( params.size() >= 2 && params[1].get_str().c_str() != 0 )
+        {
+            ret.push_back(Pair("value",params[1].get_str()));
+            ret.push_back(Pair("valuesize",valuesize));
+        }
+        iguana_rwnum(1,&keyvalue[0],sizeof(keylen),&keylen);
+        iguana_rwnum(1,&keyvalue[2],sizeof(valuesize),&valuesize);
+        iguana_rwnum(1,&keyvalue[4],sizeof(height),&height);
+        iguana_rwnum(1,&keyvalue[8],sizeof(flags),&flags);
+        memcpy(&keyvalue[12],key,keylen);
+        if ( value != 0 )
+            memcpy(&keyvalue[12 + keylen],value,valuesize);
+        if ( (opretlen= komodo_opreturnscript(opretbuf,'K',keyvalue,sizeof(flags)+sizeof(height)+sizeof(uint16_t)*2+keylen+valuesize)) == 40 )
+            opretlen++;
+        //for (i=0; i<opretlen; i++)
+        //    printf("%02x",opretbuf[i]);
+        //printf(" opretbuf keylen.%d valuesize.%d height.%d (%02x %02x %02x)\n",*(uint16_t *)&keyvalue[0],*(uint16_t *)&keyvalue[2],*(uint32_t *)&keyvalue[4],keyvalue[8],keyvalue[9],keyvalue[10]);
+        EnsureWalletIsUnlocked();
+        if ( (fee= ((flags>>2)+1)*(opretlen * opretlen / keylen)) < 100000 )
+            fee = 100000;
+        ret.push_back(Pair("fee",(double)fee/COIN));
+        CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
+        if (!destaddress.IsValid())
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest Bitcoin address");
+        SendMoney(destaddress.Get(),10000,false,wtx,opretbuf,opretlen,fee);
+        ret.push_back(Pair("txid",wtx.GetHash().GetHex()));
+    } else ret.push_back(Pair("error",(char *)"null key"));
+    return ret;
 }
 
 Value listaddressgroupings(const Array& params, bool fHelp)
