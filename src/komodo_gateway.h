@@ -711,7 +711,7 @@ int32_t komodo_kvcmp(uint8_t *refvalue,uint16_t refvaluesize,uint8_t *value,uint
         return(-1);
     else if ( refvaluesize != valuesize )
         return(-1);
-    else return(memcmp(refvalue,value,valuesize);
+    else return(memcmp(refvalue,value,valuesize));
 }
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
@@ -760,7 +760,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     newflag = 1;
                     HASH_ADD_KEYPTR(hh,KOMODO_KV,ptr->key,ptr->keylen,ptr);
                 }
-                if ( newflag != 0 || (ptr->flags & KOMODO_KVPROTECTED) == 0 || (cmpval= komodo_kvcmp(ptr->value,ptr->valuesize,value,valuesize)) == 0 )
+                if ( newflag != 0 || (ptr->flags & KOMODO_KVPROTECTED) == 0 || (cmpval= komodo_kvcmp(ptr->value,ptr->valuesize,valueptr,valuesize)) == 0 )
                 {
                     if ( cmpval != 0 )
                     {
