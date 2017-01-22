@@ -16,40 +16,6 @@
 #ifndef H_KOMODOKV_H
 #define H_KOMODOKV_H
 
-int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen)
-{
-    struct komodo_kv *ptr; int32_t duration,retval = -1;
-    *heightp = -1;
-    *flagsp = 0;
-    memset(pubkeyp,0,sizeof(*pubkeyp));
-    portable_mutex_lock(&KOMODO_KV_mutex);
-    HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
-    if ( ptr != 0 )
-    {
-        duration = ((ptr->flags >> 2) + 1) * KOMODO_KVDURATION;
-        //printf("duration.%d flags.%d current.%d ht.%d keylen.%d valuesize.%d\n",duration,ptr->flags,current_height,ptr->height,ptr->keylen,ptr->valuesize);
-        if ( current_height > (ptr->height + duration) )
-        {
-            HASH_DELETE(hh,KOMODO_KV,ptr);
-            if ( ptr->value != 0 )
-                free(ptr->value);
-            if ( ptr->key != 0 )
-                free(ptr->key);
-            free(ptr);
-        }
-        else
-        {
-            *heightp = ptr->height;
-            *flagsp = ptr->flags;
-            memcpy(pubkeyp,&ptr->pubkey,sizeof(*pubkeyp));
-            if ( (retval= ptr->valuesize) != 0 )
-                memcpy(value,ptr->value,retval);
-        }
-    }
-    portable_mutex_unlock(&KOMODO_KV_mutex);
-    return(retval);
-}
-
 int32_t komodo_kvcmp(uint8_t *refvalue,uint16_t refvaluesize,uint8_t *value,uint16_t valuesize)
 {
     if ( refvalue == 0 && value == 0 )
@@ -81,6 +47,43 @@ uint64_t komodo_kvfee(uint32_t flags,int32_t opretlen,int32_t keylen)
     if ( (fee= (numdays*(opretlen * opretlen / keylen))) < 100000 )
         fee = 100000;
     return(fee);
+}
+
+int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen)
+{
+    struct komodo_kv *ptr; int32_t duration,retval = -1;
+    *heightp = -1;
+    *flagsp = 0;
+    memset(pubkeyp,0,sizeof(*pubkeyp));
+    portable_mutex_lock(&KOMODO_KV_mutex);
+    HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
+    if ( ptr != 0 )
+    {
+        duration = komodo_kvduration(ptr->flags);
+        //printf("duration.%d flags.%d current.%d ht.%d keylen.%d valuesize.%d\n",duration,ptr->flags,current_height,ptr->height,ptr->keylen,ptr->valuesize);
+        if ( current_height > (ptr->height + duration) )
+        {
+            HASH_DELETE(hh,KOMODO_KV,ptr);
+            if ( ptr->value != 0 )
+                free(ptr->value);
+            if ( ptr->key != 0 )
+                free(ptr->key);
+            free(ptr);
+        }
+        else
+        {
+            *heightp = ptr->height;
+            *flagsp = ptr->flags;
+            int32_t i; for (i=0; i<32; i++)
+                printf("%02x",((uint8_t *)&ptr->pubkey)[31-i]);
+            printf(" ptr->pubkey\n");
+            memcpy(pubkeyp,&ptr->pubkey,sizeof(*pubkeyp));
+            if ( (retval= ptr->valuesize) != 0 )
+                memcpy(value,ptr->value,retval);
+        }
+    }
+    portable_mutex_unlock(&KOMODO_KV_mutex);
+    return(retval);
 }
 
 void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
@@ -158,6 +161,12 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                     memcpy(ptr->value,valueptr,valuesize);
                 }
             }
+            for (i=0; i<32; i++)
+                printf("%02x",((uint8_t *)&ptr->pubkey)[i]);
+            printf(" <- ");
+            for (i=0; i<32; i++)
+                printf("%02x",((uint8_t *)&pubkey)[i]);
+            printf(" new pubkey\n");
             memcpy(&ptr->pubkey,&pubkey,sizeof(ptr->pubkey));
             ptr->height = height;
             ptr->flags = flags;
