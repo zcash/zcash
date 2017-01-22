@@ -506,7 +506,7 @@ Value kvupdate(const Array& params, bool fHelp)
     haveprivkey = 0;
     memset(&sig,0,sizeof(sig));
     memset(&privkey,0,sizeof(privkey));
-    memset(&refprivkey,0,sizeof(refpubkey));
+    memset(&refpubkey,0,sizeof(refpubkey));
     memset(&pubkey,0,sizeof(pubkey));
     if ( (n= (int32_t)params.size()) >= 3 )
     {
