@@ -959,7 +959,7 @@ uint256 komodo_kvsig(uint8_t *buf,int32_t len,uint256 _privkey)
     pubkey = curve25519(privkey,curve25519_basepoint9());
     sig = curve25519_shared(privkey,otherpub);
     checksig = curve25519_shared(hash,pubkey);
-    int32_t i; for (i=0; i<len; i++)
+    /*int32_t i; for (i=0; i<len; i++)
         printf("%02x",buf[i]);
     printf(" -> ");
     for (i=0; i<32; i++)
@@ -967,7 +967,7 @@ uint256 komodo_kvsig(uint8_t *buf,int32_t len,uint256 _privkey)
     printf(" -> ");
     for (i=0; i<32; i++)
         printf("%02x",((uint8_t *)&pubkey)[i]);
-    printf(" pubkey\n");
+    printf(" pubkey\n");*/
     memcpy(&usig,&sig,sizeof(usig));
     return(usig);
 }
@@ -980,7 +980,7 @@ int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,uint256 _pubkey,uint256 sig)
     {
         vcalc_sha256(0,hash.bytes,buf,len);
         checksig = curve25519_shared(hash,pubkey);
-        int32_t i; for (i=0; i<len; i++)
+        /*int32_t i; for (i=0; i<len; i++)
             printf("%02x",buf[i]);
         printf(" -> ");
         for (i=0; i<32; i++)
@@ -994,10 +994,10 @@ int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,uint256 _pubkey,uint256 sig)
         printf(" sig vs");
         for (i=0; i<32; i++)
             printf("%02x",((uint8_t *)&checksig)[i]);
-        printf(" checksig\n");
+        printf(" checksig\n");*/
         if ( memcmp(&checksig,&sig,sizeof(sig)) != 0 )
             return(-1);
-        else printf("VALIDATED\n");
+        //else printf("VALIDATED\n");
     }
     return(0);
 }

@@ -512,19 +512,19 @@ Value kvupdate(const Array& params, bool fHelp)
     if ( (n= (int32_t)params.size()) >= 3 )
     {
         flags = atoi(params[2].get_str().c_str());
-        printf("flags.%d (%s) n.%d\n",flags,params[2].get_str().c_str(),n);
+        //printf("flags.%d (%s) n.%d\n",flags,params[2].get_str().c_str(),n);
     } else flags = 0;
     if ( n >= 4 )
         privkey = komodo_kvprivkey(&pubkey,(char *)(n >= 4 ? params[3].get_str().c_str() : "password"));
     haveprivkey = 1;
     flags |= 1;
-    for (i=0; i<32; i++)
+    /*for (i=0; i<32; i++)
         printf("%02x",((uint8_t *)&privkey)[i]);
     printf(" priv, ");
     for (i=0; i<32; i++)
         printf("%02x",((uint8_t *)&pubkey)[i]);
     printf(" pubkey, privkey derived from (%s)\n",(char *)params[3].get_str().c_str());
-        //printf("flags.%d (%s)\n",flags,params[2].get_str().c_str());
+    */
     LOCK2(cs_main, pwalletMain->cs_wallet);
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
     {
@@ -539,7 +539,7 @@ Value kvupdate(const Array& params, bool fHelp)
         {
             if ( (tmpflags & KOMODO_KVPROTECTED) != 0 )
             {
-                if ( refpubkey != pubkey )
+                if ( memcmp(&refpubkey,&pubkey,sizeof(refpubkey)) != 0 )
                 {
                     ret.push_back(Pair("error",(char *)"cant modify write once key without passphrase"));
                     return ret;
@@ -549,13 +549,16 @@ Value kvupdate(const Array& params, bool fHelp)
             {
                 sig = komodo_kvsig(keyvalue,keylen+refvaluesize,privkey);
                 if ( komodo_kvsigverify(keyvalue,keylen+refvaluesize,refpubkey,sig) < 0 )
+                {
+                    ret.push_back(Pair("error",(char *)"error verifying sig, passphrase is probably wrong"));
                     printf("VERIFY ERROR\n");
-                else printf("verified immediately\n");
+                    return ret;
+                } // else printf("verified immediately\n");
             }
         }
-        for (i=0; i<32; i++)
-            printf("%02x",((uint8_t *)&sig)[i]);
-        printf(" sig for keylen.%d + valuesize.%d\n",keylen,refvaluesize);
+        //for (i=0; i<32; i++)
+        //    printf("%02x",((uint8_t *)&sig)[i]);
+        //printf(" sig for keylen.%d + valuesize.%d\n",keylen,refvaluesize);
         ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
         height = chainActive.Tip()->nHeight;
         if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
