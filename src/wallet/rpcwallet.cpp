@@ -590,6 +590,7 @@ Value kvupdate(const Array& params, bool fHelp)
         privkey = komodo_kvprivkey(&pubkey,(char *)params[3].get_str().c_str());
         haveprivkey = 1;
         flags |= 1;
+        printf("have privkey derived from (%s)\n",(char *)params[3].get_str().c_str());
         //printf("flags.%d (%s)\n",flags,params[2].get_str().c_str());
     }
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -611,6 +612,7 @@ Value kvupdate(const Array& params, bool fHelp)
                     ret.push_back(Pair("error",(char *)"cant modify write once key without passphrase"));
                     return ret;
                 }
+                printf("calc sig for keylen.%d + valuesize.%d\n",keylen,valuesize);
                 sig = komodo_kvsig(keyvalue,keylen+valuesize,privkey);
             }
         }
