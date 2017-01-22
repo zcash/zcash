@@ -943,11 +943,11 @@ uint64_t conv_NXTpassword(unsigned char *mysecret,unsigned char *mypublic,uint8_
     return(addr);
 }
 
-bits256 komodo_kvprivkey(bits256 *pubkeyp,char *passphrase)
+uint256 komodo_kvprivkey(uint256 *pubkeyp,char *passphrase)
 {
     bits256 privkey;
-    conv_NXTpassword(privkey.bytes,pubkeyp->bytes,(uint8_t *)passphrase,(int32_t)strlen(passphrase));
-    return(privkey);
+    conv_NXTpassword(privkey.bytes,(uint8_t *)pubkeyp,(uint8_t *)passphrase,(int32_t)strlen(passphrase));
+    return(uint256);
 }
 
 bits256 komodo_kvsig(uint8_t *buf,int32_t len,bits256 privkey)
