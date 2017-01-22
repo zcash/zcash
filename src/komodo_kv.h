@@ -86,7 +86,7 @@ uint64_t komodo_kvfee(uint32_t flags,int32_t opretlen,int32_t keylen)
 void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
 {
     static uint256 zeroes;
-    uint32_t flags; bits256 pubkey,refpubkey,sig; int32_t i,transferflag,hassig,coresize,haspubkey,height,kvheight; uint16_t keylen,valuesize,newflag = 0; uint8_t *key,*valueptr,valuebuf[IGUANA_MAXSCRIPTSIZE]; struct komodo_kv *ptr; char *transferpubstr;
+    uint32_t flags; bits256 pubkey,refpubkey,sig; int32_t i,transferflag,hassig,coresize,haspubkey,height,kvheight; uint16_t keylen,valuesize,newflag = 0; uint8_t *key,*valueptr,valuebuf[IGUANA_MAXSCRIPTSIZE]; struct komodo_kv *ptr; char *transferpubstr; uint64_t fee;
     iguana_rwnum(0,&opretbuf[1],sizeof(keylen),&keylen);
     iguana_rwnum(0,&opretbuf[3],sizeof(valuesize),&valuesize);
     iguana_rwnum(0,&opretbuf[5],sizeof(height),&height);
@@ -130,7 +130,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             {
                 if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 && memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
                 {
-                    transferpubstr = (char *)&value[strlen((char *)"transfer:")];
+                    transferpubstr = (char *)&valuestr[strlen((char *)"transfer:")];
                     if ( strncmp((char *)"transfer:",(char *)valueptr,strlen((char *)"transfer:")) == 0 && is_hexstr(transferpubstr,0) == 64 )
                     {
                         transferflag = 1;
