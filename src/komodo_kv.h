@@ -125,7 +125,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 {
                     if ( komodo_kvsigverify(keyvalue,keylen+refvaluesize,refpubkey,sig) < 0 )
                     {
-                        printf("komodo_kvsigverify error [%d]\n",coresize-13);
+                        //printf("komodo_kvsigverify error [%d]\n",coresize-13);
                         return;
                     }
                 }
@@ -138,9 +138,9 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 {
                     tstr = (char *)"transfer:";
                     transferpubstr = (char *)&valueptr[strlen(tstr)];
+                    printf("transfer.(%s) to [%s]? ishex.%d\n",key,transferpubstr,is_hexstr(transferpubstr,0));
                     if ( strncmp(tstr,(char *)valueptr,strlen(tstr)) == 0 && is_hexstr(transferpubstr,0) == 64 )
                     {
-                        printf("transfer.(%s) to [%s]\n",key,transferpubstr);
                         for (i=0; i<32; i++)
                             ((uint8_t *)&pubkey)[31-i] = _decode_hex(&transferpubstr[i*2]);
                     }
