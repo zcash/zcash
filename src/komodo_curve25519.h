@@ -962,12 +962,15 @@ uint256 komodo_kvsig(uint8_t *buf,int32_t len,uint256 privkey)
 
 int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,uint256 pubkey,uint256 sig)
 {
-    bits256 hash,checksig;
-    vcalc_sha256(0,hash.bytes,buf,len);
-    checksig = curve25519_shared(hash,*(bits256 *)&pubkey);
-    if ( memcmp(&checksig,&sig,sizeof(sig)) != 0 )
-        return(-1);
-    else return(0);
+    bits256 hash,checksig; static uint256 zeroes;
+    if ( memcmp(&pubkey,&zeroes,sizeof(pubkey)) != 0 )
+    {
+        vcalc_sha256(0,hash.bytes,buf,len);
+        checksig = curve25519_shared(hash,*(bits256 *)&pubkey);
+        if ( memcmp(&checksig,&sig,sizeof(sig)) != 0 )
+            return(-1);
+    }
+    return(0);
 }
 
 #endif
