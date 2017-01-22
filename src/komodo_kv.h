@@ -41,7 +41,7 @@ int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp
         {
             *heightp = ptr->height;
             *flagsp = ptr->flags;
-            memcpy(pubkeyp,ptr->pubkey,sizeof(*pubkeyp));
+            memcpy(pubkeyp,&ptr->pubkey,sizeof(*pubkeyp));
             if ( (retval= ptr->valuesize) != 0 )
                 memcpy(value,ptr->value,retval);
         }
@@ -85,8 +85,8 @@ uint64_t komodo_kvfee(uint32_t flags,int32_t opretlen,int32_t keylen)
 
 void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
 {
-    static bits256 zeroes;
-    uint32_t flags; bits256 pubkey,sig; int32_t i,transferflag,hassig,coresize,haspubkey,height,kvheight; uint16_t keylen,valuesize,newflag = 0; uint8_t *key,*valueptr,valuebuf[IGUANA_MAXSCRIPTSIZE]; struct komodo_kv *ptr; char *transferpubstr;
+    static uint256 zeroes;
+    uint32_t flags; bits256 pubkey,refpubkey,sig; int32_t i,transferflag,hassig,coresize,haspubkey,height,kvheight; uint16_t keylen,valuesize,newflag = 0; uint8_t *key,*valueptr,valuebuf[IGUANA_MAXSCRIPTSIZE]; struct komodo_kv *ptr; char *transferpubstr;
     iguana_rwnum(0,&opretbuf[1],sizeof(keylen),&keylen);
     iguana_rwnum(0,&opretbuf[3],sizeof(valuesize),&valuesize);
     iguana_rwnum(0,&opretbuf[5],sizeof(height),&height);
@@ -112,7 +112,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 for (i=0; i<32; i++)
                     ((uint8_t *)&sig)[i] = opretbuf[coresize+sizeof(bits256)+i];
             }
-            if ( komodo_kvsearch(&refpubkey,height,&flags,&kvheight,valuebuf,key,keylen) >= 0 )
+            if ( komodo_kvsearch((uint256 *)&refpubkey,height,&flags,&kvheight,valuebuf,key,keylen) >= 0 )
             {
                 if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
                 {
@@ -131,7 +131,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 && memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
                 {
                     transferpubstr = (char *)&value[strlen((char *)"transfer:")];
-                    if ( strncmp((char *)"transfer:",value,strlen((char *)"transfer:")) == 0 && is_hexstr(transferpubstr,0) == 64 )
+                    if ( strncmp((char *)"transfer:",(char *)valueptr,strlen((char *)"transfer:")) == 0 && is_hexstr(transferpubstr,0) == 64 )
                     {
                         transferflag = 1;
                         printf("transfer.(%s) to [%s]\n",key,transferpubstr);
