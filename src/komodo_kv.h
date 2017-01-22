@@ -92,7 +92,7 @@ int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp
 void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
 {
     static uint256 zeroes;
-    uint32_t flags; uint256 pubkey,refpubkey,sig; int32_t i,refvaluesize,hassig,coresize,haspubkey,height,kvheight; uint16_t keylen,valuesize,newflag = 0; uint8_t *key,*valueptr,valuebuf[IGUANA_MAXSCRIPTSIZE]; struct komodo_kv *ptr; char *transferpubstr,*tstr; uint64_t fee;
+    uint32_t flags; uint256 pubkey,refpubkey,sig; int32_t i,refvaluesize,hassig,coresize,haspubkey,height,kvheight; uint16_t keylen,valuesize,newflag = 0; uint8_t *key,*valueptr,keyvalue[IGUANA_MAXSCRIPTSIZE]; struct komodo_kv *ptr; char *transferpubstr,*tstr; uint64_t fee;
     iguana_rwnum(0,&opretbuf[1],sizeof(keylen),&keylen);
     iguana_rwnum(0,&opretbuf[3],sizeof(valuesize),&valuesize);
     iguana_rwnum(0,&opretbuf[5],sizeof(height),&height);
@@ -118,12 +118,12 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 for (i=0; i<32; i++)
                     ((uint8_t *)&sig)[i] = opretbuf[coresize+sizeof(uint256)+i];
             }
-            memcpy(keybuf,key,keylen);
-            if ( (refvaluesize= komodo_kvsearch((uint256 *)&refpubkey,height,&flags,&kvheight,&valuebuf[keylen],key,keylen)) >= 0 )
+            memcpy(keyvalue,key,keylen);
+            if ( (refvaluesize= komodo_kvsearch((uint256 *)&refpubkey,height,&flags,&kvheight,&keyvalue[keylen],key,keylen)) >= 0 )
             {
                 if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
                 {
-                    if ( komodo_kvsigverify(valuebuf,keylen+refvaluesize,refpubkey,sig) < 0 )
+                    if ( komodo_kvsigverify(keyvalue,keylen+refvaluesize,refpubkey,sig) < 0 )
                     {
                         printf("komodo_kvsigverify error [%d]\n",coresize-13);
                         return;
