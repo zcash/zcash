@@ -545,7 +545,12 @@ Value kvupdate(const Array& params, bool fHelp)
                 }
             }
             if ( keylen+refvaluesize <= sizeof(keyvalue) )
+            {
                 sig = komodo_kvsig(keyvalue,keylen+refvaluesize,privkey);
+                if ( komodo_kvsigverify(keyvalue,keylen+refvaluesize,refpubkey,sig) < 0 )
+                    printf("VERIFY ERROR\n");
+                else printf("verified immediately\n");
+            }
         }
         for (i=0; i<32; i++)
             printf("%02x",((uint8_t *)&sig)[i]);
