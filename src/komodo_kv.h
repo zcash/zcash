@@ -116,7 +116,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             {
                 if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
                 {
-                    if ( memcmp(&pubkey,&refpubkey,sizeof(pubkey)) != 0 || komodo_kvsigverify(opretbuf+13,coresize-13,refpubkey,sig) < 0 )
+                    if ( komodo_kvsigverify(opretbuf+13,coresize-13,refpubkey,sig) < 0 )
                     {
                         printf("komodo_kvsigverify error [%d]\n",coresize-13);
                         return;
@@ -162,7 +162,8 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             ptr->height = height;
             ptr->flags = flags;
             portable_mutex_unlock(&KOMODO_KV_mutex);
-        } else printf("insufficient fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
+        } else printf("size mismatch %d vs %d\n",opretlen,coresize);
+    } else printf("insufficient fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
     } else printf("opretlen.%d mismatch keylen.%d valuesize.%d\n",opretlen,keylen,valuesize);
 }
 
