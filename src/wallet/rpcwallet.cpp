@@ -498,7 +498,7 @@ Value kvupdate(const Array& params, bool fHelp)
 {
     static uint256 zeroes;
     CWalletTx wtx; Object ret;
-    uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t i,coresize,haveprivkey,duration,opretlen,height; uint16_t keylen,valuesize=0,refvaluesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags,n; struct komodo_kv *ptr; uint64_t fee; uint256 privkey,pubkey,refpubkey,sig;
+    uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t i,coresize,haveprivkey,duration,opretlen,height; uint16_t keylen=0,valuesize=0,refvaluesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags,n; struct komodo_kv *ptr; uint64_t fee; uint256 privkey,pubkey,refpubkey,sig;
     if (fHelp || params.size() < 3 )
         throw runtime_error("kvupdate key value flags/passphrase");
     if (!EnsureWalletIsAvailable(fHelp))
@@ -544,8 +544,9 @@ Value kvupdate(const Array& params, bool fHelp)
                     return ret;
                 }
             }
+            if ( keylen+refvaluesize <= sizeof(keyvalue) )
+                sig = komodo_kvsig(keyvalue,keylen+refvaluesize,privkey);
         }
-        sig = komodo_kvsig(keyvalue,keylen+refvaluesize,privkey);
         for (i=0; i<32; i++)
             printf("%02x",((uint8_t *)&sig)[i]);
         printf(" sig for keylen.%d + valuesize.%d\n",keylen,refvaluesize);

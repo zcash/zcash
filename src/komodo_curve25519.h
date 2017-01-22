@@ -963,7 +963,7 @@ uint256 komodo_kvsig(uint8_t *buf,int32_t len,uint256 _privkey)
         printf("%02x",buf[i]);
     printf(" -> ");
     for (i=0; i<32; i++)
-        printf("%02x",((uint8_t *)&hash)[i]);
+        printf("%02x",((uint8_t *)&privkey)[i]);
     printf(" -> ");
     for (i=0; i<32; i++)
         printf("%02x",((uint8_t *)&pubkey)[i]);
