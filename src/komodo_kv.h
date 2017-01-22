@@ -134,7 +134,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
             if ( ptr != 0 )
             {
-                if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 && memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
+                if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 )
                 {
                     tstr = (char *)"transfer:";
                     transferpubstr = (char *)&valueptr[strlen(tstr)];
