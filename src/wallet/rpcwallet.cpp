@@ -569,8 +569,9 @@ Value paxwithdraw(const Array& params, bool fHelp)
 
 Value kvupdate(const Array& params, bool fHelp)
 {
+    static uint256 zeroes;
     CWalletTx wtx; Object ret;
-    uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t coresize,haveprivkey,duration,opretlen,height; uint16_t keylen,valuesize=0,refvaluesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags; struct komodo_kv *ptr; uint64_t fee; uint256 privkey,pubkey,refpubkey,sig;
+    uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t i,coresize,haveprivkey,duration,opretlen,height; uint16_t keylen,valuesize=0,refvaluesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags; struct komodo_kv *ptr; uint64_t fee; uint256 privkey,pubkey,refpubkey,sig;
     if (fHelp || params.size() < 2 )
         throw runtime_error("kvupdate key value [flags] [passphrase]");
     if (!EnsureWalletIsAvailable(fHelp))
@@ -586,7 +587,7 @@ Value kvupdate(const Array& params, bool fHelp)
     memset(&pubkey,0,sizeof(pubkey));
     if ( params.size() >= 4 )
     {
-        privkey = komodo_kvprivkey(&pubkey,params[3].get_str().c_str());
+        privkey = komodo_kvprivkey(&pubkey,(char *)params[3].get_str().c_str());
         haveprivkey = 1;
         flags |= 1;
         //printf("flags.%d (%s)\n",flags,params[2].get_str().c_str());
