@@ -960,7 +960,7 @@ uint256 komodo_kvsig(uint8_t *buf,int32_t len,uint256 privkey)
     return(usig);
 }
 
-int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,bits256 pubkey,bits256 sig)
+int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,uint256 pubkey,uint256 sig)
 {
     bits256 hash,checksig;
     vcalc_sha256(0,hash.bytes,buf,len);

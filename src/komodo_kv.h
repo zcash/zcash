@@ -144,7 +144,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             else if ( ptr == 0 )
             {
                 ptr = (struct komodo_kv *)calloc(1,sizeof(*ptr));
-                ptr->pubkey = pubkey;
+                memcpy(&ptr->pubkey,&pubkey,sizeof(ptr->pubkey));
                 ptr->key = (uint8_t *)calloc(1,keylen);
                 ptr->keylen = keylen;
                 memcpy(ptr->key,key,keylen);
