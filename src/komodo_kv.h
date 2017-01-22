@@ -75,7 +75,10 @@ int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp
             *heightp = ptr->height;
             *flagsp = ptr->flags;
             int32_t i; for (i=0; i<32; i++)
+            {
                 printf("%02x",((uint8_t *)&ptr->pubkey)[31-i]);
+                ((uint8_t *)pubkeyp)[i] = ((uint8_t *)&ptr->pubkey)[31-i];
+            }
             printf(" ptr->pubkey\n");
             memcpy(pubkeyp,&ptr->pubkey,sizeof(*pubkeyp));
             if ( (retval= ptr->valuesize) != 0 )
