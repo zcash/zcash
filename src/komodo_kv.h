@@ -118,7 +118,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 for (i=0; i<32; i++)
                     ((uint8_t *)&sig)[i] = opretbuf[coresize+sizeof(uint256)+i];
             }
-            if ( (refvaluesize= komodo_kvsearch((uint256 *)&refpubkey,height,&flags,&kvheight,valuebuf,key,keylen)) >= 0 )
+            if ( (refvaluesize= komodo_kvsearch((uint256 *)&refpubkey,height,&flags,&kvheight,&valuebuf[keylen],key,keylen)) >= 0 )
             {
                 if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
                 {
