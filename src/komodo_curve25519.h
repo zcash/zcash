@@ -989,8 +989,15 @@ int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,uint256 _pubkey,uint256 sig)
         for (i=0; i<32; i++)
             printf("%02x",((uint8_t *)&pubkey)[i]);
         printf(" verify pubkey\n");
+        for (i=0; i<32; i++)
+            printf("%02x",((uint8_t *)&sig)[i]);
+        printf(" sig vs");
+        for (i=0; i<32; i++)
+            printf("%02x",((uint8_t *)&checksig)[i]);
+        printf(" checksig\n");
         if ( memcmp(&checksig,&sig,sizeof(sig)) != 0 )
             return(-1);
+        else printf("VALIDATED\n");
     }
     return(0);
 }
