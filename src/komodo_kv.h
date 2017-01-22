@@ -116,7 +116,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             {
                 if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
                 {
-                    if ( pubkey != refpubkey || komodo_kvsigverify(opretbuf+13,coresize-13,refpubkey,sig) < 0 )
+                    if ( memcmp(&pubkey,&refpubkey,sizeof(pubkey)) != 0 || komodo_kvsigverify(opretbuf+13,coresize-13,refpubkey,sig) < 0 )
                     {
                         printf("komodo_kvsigverify error [%d]\n",coresize-13);
                         return;
@@ -152,7 +152,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             }
             if ( transferflag != 0 )
             {
-                ptr->pubkey = pubkey;
+                memcpy(&ptr->pubkey,&pubkey,sizeof(ptr->pubkey));
                 ptr->height = height;
             }
             else if ( newflag != 0 || (ptr->flags & KOMODO_KVPROTECTED) == 0 )
