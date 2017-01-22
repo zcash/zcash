@@ -133,8 +133,6 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                     transferpubstr = (char *)&valueptr[strlen(tstr)];
                     if ( strncmp(tstr,(char *)valueptr,strlen(tstr)) == 0 && is_hexstr(transferpubstr,0) == 64 )
                     {
-                        memcpy(&ptr->pubkey,&pubkey,sizeof(ptr->pubkey));
-                        ptr->height = height;
                         printf("transfer.(%s) to [%s]\n",key,transferpubstr);
                         for (i=0; i<32; i++)
                             ((uint8_t *)&pubkey)[31-i] = _decode_hex(&transferpubstr[i*2]);
@@ -159,9 +157,10 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                     ptr->value = (uint8_t *)calloc(1,valuesize);
                     memcpy(ptr->value,valueptr,valuesize);
                 }
-                ptr->height = height;
-                ptr->flags = flags;
             }
+            memcpy(&ptr->pubkey,&pubkey,sizeof(ptr->pubkey));
+            ptr->height = height;
+            ptr->flags = flags;
             portable_mutex_unlock(&KOMODO_KV_mutex);
         } else printf("insufficient fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
     } else printf("opretlen.%d mismatch keylen.%d valuesize.%d\n",opretlen,keylen,valuesize);
