@@ -134,7 +134,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
             if ( ptr != 0 )
             {
-                if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 )
+                //if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 )
                 {
                     tstr = (char *)"transfer:";
                     transferpubstr = (char *)&valueptr[strlen(tstr)];
@@ -173,7 +173,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             printf(" new pubkey\n");*/
             memcpy(&ptr->pubkey,&pubkey,sizeof(ptr->pubkey));
             ptr->height = height;
-            ptr->flags = flags;
+            ptr->flags = flags | 1;
             portable_mutex_unlock(&KOMODO_KV_mutex);
         } else printf("size mismatch %d vs %d\n",opretlen,coresize);
     } else printf("insufficient fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
