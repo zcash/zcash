@@ -514,18 +514,16 @@ Value kvupdate(const Array& params, bool fHelp)
         printf("flags.%d (%s) n.%d\n",flags,params[2].get_str().c_str(),n);
     } else flags = 0;
     if ( n >= 4 )
-    {
-        privkey = komodo_kvprivkey(&pubkey,(char *)params[3].get_str().c_str());
-        haveprivkey = 1;
-        flags |= 1;
-        for (i=0; i<32; i++)
-            printf("%02x",((uint8_t *)&privkey)[i]);
-        printf(" priv, ");
-        for (i=0; i<32; i++)
-            printf("%02x",((uint8_t *)&pubkey)[i]);
-        printf(" pubkey, privkey derived from (%s)\n",(char *)params[3].get_str().c_str());
+        privkey = komodo_kvprivkey(&pubkey,(char *)(n >= 4 ? params[3].get_str().c_str() : "password"));
+    haveprivkey = 1;
+    flags |= 1;
+    for (i=0; i<32; i++)
+        printf("%02x",((uint8_t *)&privkey)[i]);
+    printf(" priv, ");
+    for (i=0; i<32; i++)
+        printf("%02x",((uint8_t *)&pubkey)[i]);
+    printf(" pubkey, privkey derived from (%s)\n",(char *)params[3].get_str().c_str());
         //printf("flags.%d (%s)\n",flags,params[2].get_str().c_str());
-    }
     LOCK2(cs_main, pwalletMain->cs_wallet);
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
     {
@@ -546,11 +544,11 @@ Value kvupdate(const Array& params, bool fHelp)
                     return ret;
                 }
             }
-            sig = komodo_kvsig(keyvalue,keylen+refvaluesize,privkey);
-            for (i=0; i<32; i++)
-                printf("%02x",((uint8_t *)&sig)[i]);
-            printf(" sig for keylen.%d + valuesize.%d\n",keylen,refvaluesize);
         }
+        sig = komodo_kvsig(keyvalue,keylen+refvaluesize,privkey);
+        for (i=0; i<32; i++)
+            printf("%02x",((uint8_t *)&sig)[i]);
+        printf(" sig for keylen.%d + valuesize.%d\n",keylen,refvaluesize);
         ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
         height = chainActive.Tip()->nHeight;
         if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
