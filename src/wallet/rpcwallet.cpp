@@ -544,10 +544,13 @@ Value kvupdate(const Array& params, bool fHelp)
                     ret.push_back(Pair("error",(char *)"cant modify write once key without passphrase"));
                     return ret;
                 }
-                printf("calc sig for keylen.%d + valuesize.%d\n",keylen,valuesize);
-                sig = komodo_kvsig(keyvalue,keylen+valuesize,privkey);
+                sig = komodo_kvsig(keyvalue,keylen+refvaluesize,privkey);
+                for (i=0; i<32; i++)
+                    printf("%02x",((uint8_t *)&sig)[i]);
+                printf(" sig for keylen.%d + valuesize.%d\n",keylen,refvaluesize);
             }
         }
+        printf("refvaluesize.%d tmpflags.%d\n",refvaluesize,tmpflags);
         ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
         height = chainActive.Tip()->nHeight;
         if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
