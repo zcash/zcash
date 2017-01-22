@@ -131,8 +131,8 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 && memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
                 {
                     tstr = (char *)"transfer:";
-                    transferpubstr = (char *)&valueptr[tlen];
-                    if ( strncmp(tstr,(char *)valueptr,strlen(tstr) == 0 && is_hexstr(transferpubstr,0) == 64 )
+                    transferpubstr = (char *)&valueptr[strlen(tstr)];
+                    if ( strncmp(tstr,(char *)valueptr,strlen(tstr)) == 0 && is_hexstr(transferpubstr,0) == 64 )
                     {
                         transferflag = 1;
                         printf("transfer.(%s) to [%s]\n",key,transferpubstr);
