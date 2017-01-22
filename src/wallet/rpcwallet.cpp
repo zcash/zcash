@@ -593,6 +593,7 @@ Value kvupdate(const Array& params, bool fHelp)
         printf("have privkey derived from (%s)\n",(char *)params[3].get_str().c_str());
         //printf("flags.%d (%s)\n",flags,params[2].get_str().c_str());
     }
+    printf("params.%d flags.%d haveprivkey.%d (%s %s)\n",params.size(),flags,haveprivkey,(char *)params[1].get_str().c_str(),(char *)params[3].get_str().c_str());
     LOCK2(cs_main, pwalletMain->cs_wallet);
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
     {
