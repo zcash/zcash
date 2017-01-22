@@ -945,18 +945,19 @@ uint64_t conv_NXTpassword(unsigned char *mysecret,unsigned char *mypublic,uint8_
 
 uint256 komodo_kvprivkey(uint256 *pubkeyp,char *passphrase)
 {
-    bits256 privkey;
-    conv_NXTpassword(privkey.bytes,(uint8_t *)pubkeyp,(uint8_t *)passphrase,(int32_t)strlen(passphrase));
-    return(uint256);
+    uint256 privkey;
+    conv_NXTpassword((uint8_t *)&privkey,(uint8_t *)pubkeyp,(uint8_t *)passphrase,(int32_t)strlen(passphrase));
+    return(privkey);
 }
 
-bits256 komodo_kvsig(uint8_t *buf,int32_t len,bits256 privkey)
+uint256 komodo_kvsig(uint8_t *buf,int32_t len,uint256 privkey)
 {
-    bits256 sig,hash,otherpub;
+    bits256 sig,hash,otherpub; uint256 usig;
     vcalc_sha256(0,hash.bytes,buf,len);
     otherpub = curve25519(hash,curve25519_basepoint9());
-    sig = curve25519_shared(privkey,otherpub);
-    return(sig);
+    sig = curve25519_shared(*(bits256 *)&privkey,otherpub);
+    memcpy(&usig,&sig,sizeof(usig));
+    return(usig);
 }
 
 int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,bits256 pubkey,bits256 sig)
