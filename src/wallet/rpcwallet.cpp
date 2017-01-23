@@ -772,6 +772,8 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     if (params.size() == 0)
         return  ValueFromAmount(pwalletMain->GetBalance());
 
+    const std::string* account = params[0].get_str() != "*" ? &params[0].get_str() : nullptr;
+
     int nMinDepth = 1;
     if (params.size() > 1)
         nMinDepth = params[1].get_int();
@@ -780,10 +782,15 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         if(params[2].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
 
+    CAmount legacyBalance = pwalletMain->GetLegacyBalance(filter, nMinDepth, account);
+
     if (params[0].get_str() == "*") {
-        // Calculate total balance a different way from GetBalance()
-        // (GetBalance() sums up all unspent TxOuts)
-        // getbalance and "getbalance * 1 true" should return the same number
+        // Calculate total balance in a very different way from GetBalance().
+        // The biggest difference is that GetBalance() sums up all unspent
+        // TxOuts paying to the wallet, while this sums up both spent and
+        // unspent TxOuts paying to the wallet, and then subtracts the values of
+        // TxIns spending from the wallet. This also has fewer restrictions on
+        // which unconfirmed transactions are considered trusted.
         CAmount nBalance = 0;
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
@@ -806,12 +813,14 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             nBalance -= allFee;
         }
 
+        assert(nBalance == legacyBalance);
+
         // inZat
         if (params.size() > 3 && params[3].get_bool()) {
             return nBalance;
+        } else {
+            return  ValueFromAmount(nBalance);
         }
-
-        return  ValueFromAmount(nBalance);
     }
 
     string strAccount = AccountFromValue(params[0]);
@@ -822,6 +831,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         return nBalance;
     }
 
+    assert(nBalance == legacyBalance);
     return ValueFromAmount(nBalance);
 }
 
@@ -972,6 +982,8 @@ UniValue sendfrom(const UniValue& params, bool fHelp)
 
     // Check funds
     CAmount nBalance = pwalletMain->GetAccountBalance(strAccount, nMinDepth, ISMINE_SPENDABLE);
+    CAmount legacyBalance = pwalletMain->GetLegacyBalance(ISMINE_SPENDABLE, nMinDepth, &strAccount);
+    assert(nBalance == legacyBalance);
     if (nAmount > nBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Account has insufficient funds");
 
@@ -1077,6 +1089,8 @@ UniValue sendmany(const UniValue& params, bool fHelp)
 
     // Check funds
     CAmount nBalance = pwalletMain->GetAccountBalance(strAccount, nMinDepth, ISMINE_SPENDABLE);
+    CAmount legacyBalance = pwalletMain->GetLegacyBalance(ISMINE_SPENDABLE, nMinDepth, &strAccount);
+    assert(nBalance == legacyBalance);
     if (totalAmount > nBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Account has insufficient funds");
 
