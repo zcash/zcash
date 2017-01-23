@@ -36,6 +36,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block);
 #include "komodo_structs.h"
 #include "komodo_globals.h"
 #include "komodo_utils.h"
+#include "komodo_curve25519.h"
 
 #include "cJSON.c"
 #include "komodo_bitcoind.h"
@@ -44,6 +45,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block);
 #include "komodo_notary.h"
 
 int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char *dest);
+#include "komodo_kv.h"
 #include "komodo_gateway.h"
 #include "komodo_events.h"
 
