@@ -39,14 +39,19 @@ struct komodo_event *komodo_eventadd(struct komodo_state *sp,int32_t height,char
 void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t height,char *dest,uint256 notarized_hash,uint256 notarized_desttxid,int32_t notarizedheight)
 {
     struct komodo_event_notarized N;
-    memset(&N,0,sizeof(N));
-    N.blockhash = notarized_hash;
-    N.desttxid = notarized_desttxid;
-    N.notarizedheight = notarizedheight;
-    strcpy(N.dest,dest);
-    komodo_eventadd(sp,height,symbol,KOMODO_EVENT_NOTARIZED,(uint8_t *)&N,sizeof(N));
-    if ( sp != 0 )
-        komodo_notarized_update(sp,height,notarizedheight,notarized_hash,notarized_desttxid);
+    if ( komodo_verifynotarization(symbol,dest,height,notarizedheight,notarized_hash,notarized_desttxid) != 0 )
+        printf("[%s] error validating notarization ht.%d notarized_height.%d\n",ASSETCHAINS_SYMBOL,height,notarizedheight);
+    else
+    {
+        memset(&N,0,sizeof(N));
+        N.blockhash = notarized_hash;
+        N.desttxid = notarized_desttxid;
+        N.notarizedheight = notarizedheight;
+        strcpy(N.dest,dest);
+        komodo_eventadd(sp,height,symbol,KOMODO_EVENT_NOTARIZED,(uint8_t *)&N,sizeof(N));
+        if ( sp != 0 )
+            komodo_notarized_update(sp,height,notarizedheight,notarized_hash,notarized_desttxid);
+    }
 }
 
 void komodo_eventadd_pubkeys(struct komodo_state *sp,char *symbol,int32_t height,uint8_t num,uint8_t pubkeys[64][33])

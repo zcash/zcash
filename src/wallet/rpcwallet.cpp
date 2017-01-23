@@ -404,9 +404,9 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
         for (i=0; i<opretlen; i++)
         {
             ptr[i] = opretbuf[i];
-            printf("%02x",ptr[i]);
+            //printf("%02x",ptr[i]);
         }
-        printf(" opretbuf[%d]\n",opretlen);
+        //printf(" opretbuf[%d]\n",opretlen);
         CRecipient opret = { opretpubkey, opretValue, false };
         vecSend.push_back(opret);
     }
@@ -475,6 +475,10 @@ Value sendtoaddress(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
+#define KOMODO_KVPROTECTED 1
+#define KOMODO_KVBINARY 2
+#define KOMODO_KVDURATION 1440
+#define IGUANA_MAXSCRIPTSIZE 10001
 uint64_t PAX_fiatdest(uint64_t *seedp,int32_t tokomodo,char *destaddr,uint8_t pubkey37[37],char *coinaddr,int32_t height,char *base,int64_t fiatoshis);
 int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen);
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
@@ -483,6 +487,129 @@ int32_t komodo_is_issuer();
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base);
+int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
+int32_t komodo_kvcmp(uint8_t *refvalue,uint16_t refvaluesize,uint8_t *value,uint16_t valuesize);
+uint64_t komodo_kvfee(uint32_t flags,int32_t opretlen,int32_t keylen);
+uint256 komodo_kvsig(uint8_t *buf,int32_t len,uint256 privkey);
+int32_t komodo_kvduration(uint32_t flags);
+uint256 komodo_kvprivkey(uint256 *pubkeyp,char *passphrase);
+int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,uint256 _pubkey,uint256 sig);
+
+Value kvupdate(const Array& params, bool fHelp)
+{
+    static uint256 zeroes;
+    CWalletTx wtx; Object ret;
+    uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t i,coresize,haveprivkey,duration,opretlen,height; uint16_t keylen=0,valuesize=0,refvaluesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags,n; struct komodo_kv *ptr; uint64_t fee; uint256 privkey,pubkey,refpubkey,sig;
+    if (fHelp || params.size() < 3 )
+        throw runtime_error("kvupdate key value flags/passphrase");
+    if (!EnsureWalletIsAvailable(fHelp))
+        return 0;
+    haveprivkey = 0;
+    memset(&sig,0,sizeof(sig));
+    memset(&privkey,0,sizeof(privkey));
+    memset(&refpubkey,0,sizeof(refpubkey));
+    memset(&pubkey,0,sizeof(pubkey));
+    if ( (n= (int32_t)params.size()) >= 3 )
+    {
+        flags = atoi(params[2].get_str().c_str());
+        //printf("flags.%d (%s) n.%d\n",flags,params[2].get_str().c_str(),n);
+    } else flags = 0;
+    if ( n >= 4 )
+        privkey = komodo_kvprivkey(&pubkey,(char *)(n >= 4 ? params[3].get_str().c_str() : "password"));
+    haveprivkey = 1;
+    flags |= 1;
+    /*for (i=0; i<32; i++)
+        printf("%02x",((uint8_t *)&privkey)[i]);
+    printf(" priv, ");
+    for (i=0; i<32; i++)
+        printf("%02x",((uint8_t *)&pubkey)[i]);
+    printf(" pubkey, privkey derived from (%s)\n",(char *)params[3].get_str().c_str());
+    */
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
+    {
+        key = (uint8_t *)params[0].get_str().c_str();
+        if ( n >= 2 && params[1].get_str().c_str() != 0 )
+        {
+            value = (uint8_t *)params[1].get_str().c_str();
+            valuesize = (int32_t)strlen(params[1].get_str().c_str());
+        }
+        memcpy(keyvalue,key,keylen);
+        if ( (refvaluesize= komodo_kvsearch(&refpubkey,chainActive.Tip()->nHeight,&tmpflags,&height,&keyvalue[keylen],key,keylen)) >= 0 )
+        {
+            if ( (tmpflags & KOMODO_KVPROTECTED) != 0 )
+            {
+                if ( memcmp(&refpubkey,&pubkey,sizeof(refpubkey)) != 0 )
+                {
+                    ret.push_back(Pair("error",(char *)"cant modify write once key without passphrase"));
+                    return ret;
+                }
+            }
+            if ( keylen+refvaluesize <= sizeof(keyvalue) )
+            {
+                sig = komodo_kvsig(keyvalue,keylen+refvaluesize,privkey);
+                if ( komodo_kvsigverify(keyvalue,keylen+refvaluesize,refpubkey,sig) < 0 )
+                {
+                    ret.push_back(Pair("error",(char *)"error verifying sig, passphrase is probably wrong"));
+                    printf("VERIFY ERROR\n");
+                    return ret;
+                } // else printf("verified immediately\n");
+            }
+        }
+        //for (i=0; i<32; i++)
+        //    printf("%02x",((uint8_t *)&sig)[i]);
+        //printf(" sig for keylen.%d + valuesize.%d\n",keylen,refvaluesize);
+        ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
+        height = chainActive.Tip()->nHeight;
+        if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
+            ret.push_back(Pair("owner",refpubkey.GetHex()));
+        ret.push_back(Pair("height", (int64_t)height));
+        duration = komodo_kvduration(flags); //((flags >> 2) + 1) * KOMODO_KVDURATION;
+        ret.push_back(Pair("expiration", (int64_t)(height+duration)));
+        ret.push_back(Pair("flags",(int64_t)flags));
+        ret.push_back(Pair("key",params[0].get_str()));
+        ret.push_back(Pair("keylen",(int64_t)keylen));
+        if ( n >= 2 && params[1].get_str().c_str() != 0 )
+        {
+            ret.push_back(Pair("value",params[1].get_str()));
+            ret.push_back(Pair("valuesize",valuesize));
+        }
+        iguana_rwnum(1,&keyvalue[0],sizeof(keylen),&keylen);
+        iguana_rwnum(1,&keyvalue[2],sizeof(valuesize),&valuesize);
+        iguana_rwnum(1,&keyvalue[4],sizeof(height),&height);
+        iguana_rwnum(1,&keyvalue[8],sizeof(flags),&flags);
+        memcpy(&keyvalue[12],key,keylen);
+        if ( value != 0 )
+            memcpy(&keyvalue[12 + keylen],value,valuesize);
+        coresize = (int32_t)(sizeof(flags)+sizeof(height)+sizeof(uint16_t)*2+keylen+valuesize);
+        if ( haveprivkey != 0 )
+        {
+            for (i=0; i<32; i++)
+                keyvalue[12 + keylen + valuesize + i] = ((uint8_t *)&pubkey)[i];
+            coresize += 32;
+            if ( refvaluesize >=0 )
+            {
+                for (i=0; i<32; i++)
+                    keyvalue[12 + keylen + valuesize + 32 + i] = ((uint8_t *)&sig)[i];
+                coresize += 32;
+            }
+        }
+        if ( (opretlen= komodo_opreturnscript(opretbuf,'K',keyvalue,coresize)) == 40 )
+            opretlen++;
+        //for (i=0; i<opretlen; i++)
+        //    printf("%02x",opretbuf[i]);
+        //printf(" opretbuf keylen.%d valuesize.%d height.%d (%02x %02x %02x)\n",*(uint16_t *)&keyvalue[0],*(uint16_t *)&keyvalue[2],*(uint32_t *)&keyvalue[4],keyvalue[8],keyvalue[9],keyvalue[10]);
+        EnsureWalletIsUnlocked();
+        fee = komodo_kvfee(flags,opretlen,keylen);
+        ret.push_back(Pair("fee",(double)fee/COIN));
+        CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
+        if (!destaddress.IsValid())
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid dest Bitcoin address");
+        SendMoney(destaddress.Get(),10000,false,wtx,opretbuf,opretlen,fee);
+        ret.push_back(Pair("txid",wtx.GetHash().GetHex()));
+    } else ret.push_back(Pair("error",(char *)"null key"));
+    return ret;
+}
 
 Value paxdeposit(const Array& params, bool fHelp)
 {
@@ -2510,7 +2637,7 @@ uint64_t komodo_interestsum()
     BOOST_FOREACH(const COutput& out,vecOutputs)
     {
         CAmount nValue = out.tx->vout[out.i].nValue;
-        if ( out.tx->nLockTime != 0 )
+        if ( out.tx->nLockTime != 0 && out.fSpendable != 0 )
         {
             BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
             CBlockIndex *tipindex,*pindex = it->second;

@@ -13,6 +13,8 @@
  *                                                                            *
  ******************************************************************************/
 
+#define KOMODO_MAINNET_START 178999
+
 const char *Notaries_genesis[][2] =
 {
     { "jl777_testA", "03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828" },
@@ -50,6 +52,12 @@ const char *Notaries_genesis[][2] =
     { "artik_NA", "0224e31f93eff0cc30eaf0b2389fbc591085c0e122c4d11862c1729d090106c842" },
     { "eclips_EU", "0339369c1f5a2028d44be7be6f8ec3b907fdec814f87d2dead97cab4edb71a42e9" },
     { "titomane_SH", "035f49d7a308dd9a209e894321f010d21b7793461b0c89d6d9231a3fe5f68d9960" },
+};
+
+const char *Notaries_elected[][2] = // update with all elected notaries
+{
+    { "jl777_testA", "03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828" },
+    { "jl777_testB", "02ebfc784a4ba768aad88d44d1045d240d47b26e248cafaf1c5169a42d7a61d344" },
 };
 
 int32_t komodo_ratify_threshold(int32_t height,uint64_t signedmask)
@@ -226,6 +234,8 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
 void komodo_init(int32_t height)
 {
     static int didinit; uint256 zero; int32_t i,k,n; uint8_t pubkeys[64][33];
+    if ( 0 && height != 0 )
+        printf("komodo_init ht.%d didinit.%d\n",height,didinit);
     if ( didinit == 0 )
     {
         pthread_mutex_init(&komodo_mutex,NULL);
@@ -245,6 +255,18 @@ void komodo_init(int32_t height)
         //for (i=0; i<sizeof(Minerids); i++)
         //    Minerids[i] = -2;
         didinit = 1;
+    }
+    else if ( height == KOMODO_MAINNET_START )
+    {
+        n = (int32_t)(sizeof(Notaries_elected)/sizeof(*Notaries_elected));
+        for (k=0; k<n; k++)
+        {
+            if ( Notaries_elected[k][0] == 0 || Notaries_elected[k][1] == 0 || Notaries_elected[k][0][0] == 0 || Notaries_elected[k][1][0] == 0 )
+                break;
+            decode_hex(pubkeys[k],33,(char *)Notaries_elected[k][1]);
+        }
+        printf("set MAINNET notaries.%d\n",k);
+        komodo_notarysinit(KOMODO_MAINNET_START,pubkeys,k);
     }
     komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0);
 }

@@ -30,9 +30,6 @@ typedef struct queue
     char name[64],initflag;
 } queue_t;
 
-union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
-typedef union _bits256 bits256;
-
 #include "mini-gmp.c"
 
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
@@ -1347,7 +1344,11 @@ void komodo_configfile(char *symbol,uint16_t port)
 #else
     while ( fname[strlen(fname)-1] != '/' )
         fname[strlen(fname)-1] = 0;
+#ifdef __APPLE__
+    strcat(fname,"Komodo.conf");
+#else
     strcat(fname,"komodo.conf");
+#endif
 #endif
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
@@ -1363,7 +1364,13 @@ int32_t komodo_userpass(char *userpass,char *symbol)
     FILE *fp; char fname[512],username[512],password[512],confname[16];
     userpass[0] = 0;
     if ( strcmp("KMD",symbol) == 0 )
+    {
+#ifdef __APPLE__
+        sprintf(confname,"Komodo.conf");
+#else
         sprintf(confname,"komodo.conf");
+#endif
+    }
     else sprintf(confname,"%s.conf",symbol);
     komodo_statefname(fname,symbol,confname);
     if ( (fp= fopen(fname,"rb")) != 0 )
@@ -1492,25 +1499,40 @@ void komodo_args()
     }
     else
     {
-        char fname[512],username[512],password[4096]; FILE *fp;
+        char fname[512],username[512],password[4096]; int32_t iter; FILE *fp;
         ASSETCHAINS_PORT = 8777;
-        strcpy(fname,GetDataDir().string().c_str());
-#ifdef WIN32
-        while ( fname[strlen(fname)-1] != '\\' )
-            fname[strlen(fname)-1] = 0;
-        strcat(fname,".komodo/komodo.conf");
-#else
-        while ( fname[strlen(fname)-1] != '/' )
-            fname[strlen(fname)-1] = 0;
-        strcat(fname,".komodo/komodo.conf");
-#endif
-        if ( (fp= fopen(fname,"rb")) != 0 )
+        for (iter=0; iter<2; iter++)
         {
-            komodo_userpass(username,password,fp);
-            sprintf(KMDUSERPASS,"%s:%s",username,password);
-            fclose(fp);
-            //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
-        } else printf("couldnt open.(%s)\n",fname);
+            strcpy(fname,GetDataDir().string().c_str());
+#ifdef WIN32
+            while ( fname[strlen(fname)-1] != '\\' )
+                fname[strlen(fname)-1] = 0;
+            if ( iter == 0 )
+                strcat(fname,".komodo\\komodo.conf");
+            else strcat(fname,".bitcoin\\bitcoin.conf");
+#else
+            while ( fname[strlen(fname)-1] != '/' )
+                fname[strlen(fname)-1] = 0;
+#ifdef __APPLE__
+            if ( iter == 0 )
+                strcat(fname,"Komodo/Komodo.conf");
+            else strcat(fname,"Bitcoin/Bitcoin.conf");
+#else
+            if ( iter == 0 )
+                strcat(fname,".komodo/komodo.conf");
+            else strcat(fname,".bitcoin/bitcoin.conf");
+#endif
+#endif
+            if ( (fp= fopen(fname,"rb")) != 0 )
+            {
+                komodo_userpass(username,password,fp);
+                sprintf(iter == 0 ? KMDUSERPASS : BTCUSERPASS,"%s:%s",username,password);
+                fclose(fp);
+                //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
+            } else printf("couldnt open.(%s)\n",fname);
+            if ( IS_KOMODO_NOTARY == 0 )
+                break;
+        }
     }
     //fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
 }

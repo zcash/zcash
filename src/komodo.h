@@ -19,10 +19,6 @@
 // Todo:
 // verify: reorgs
 
-// non komodod (non-hardfork) todo:
-// a. automate notarization fee payouts
-// b. automated distribution of test REVS snapshot
-
 #define KOMODO_ASSETCHAINS_WAITNOTARIZE
 #define KOMODO_PAXMAX (10000 * COIN)
 
@@ -40,6 +36,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block);
 #include "komodo_structs.h"
 #include "komodo_globals.h"
 #include "komodo_utils.h"
+#include "komodo_curve25519.h"
 
 #include "cJSON.c"
 #include "komodo_bitcoind.h"
@@ -48,6 +45,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block);
 #include "komodo_notary.h"
 
 int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char *dest);
+#include "komodo_kv.h"
 #include "komodo_gateway.h"
 #include "komodo_events.h"
 
@@ -191,8 +189,13 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                     
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t KMDheight,uint32_t KMDtimestamp,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout)
 {
-    static FILE *fp; static int32_t errs;
+    static FILE *fp; static int32_t errs,didinit;
     struct komodo_state *sp; char fname[512],symbol[16],dest[16]; int32_t ht,func; uint8_t num,pubkeys[64][33];
+    if ( didinit == 0 )
+    {
+        portable_mutex_init(&KOMODO_KV_mutex);
+        didinit = 1;
+    }
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
     {
         KOMODO_INITDONE = (uint32_t)time(NULL);
@@ -255,7 +258,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 errs++;
             if ( fwrite(opretbuf,1,olen,fp) != olen )
                 errs++;
-            //printf("ht.%d R opret[%d]\n",height,olen);
+//printf("ht.%d R opret[%d] sp.%p\n",height,olen,sp);
             //komodo_opreturn(height,opretvalue,opretbuf,olen,txhash,vout);
             komodo_eventadd_opreturn(sp,symbol,height,txhash,opretvalue,vout,opretbuf,olen);
         }
@@ -380,7 +383,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
             len += iguana_rwnum(0,&scriptbuf[len],sizeof(*notarizedheightp),(uint8_t *)notarizedheightp);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
-            if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
+            if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height && (height < sp->CURRENT_HEIGHT-1000 || komodo_verifynotarization(ASSETCHAINS_SYMBOL[0]==0?(char *)"KMD":ASSETCHAINS_SYMBOL,(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "BTC" : "KMD"),height,*notarizedheightp,kmdtxid,desttxid) == 0) )
             {
                 sp->NOTARIZED_HEIGHT = *notarizedheightp;
                 sp->NOTARIZED_HASH = kmdtxid;
@@ -413,7 +416,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                         komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen-len+4+3+(scriptbuf[1] == 0x4d),j);
                     }
                 }
-            } else printf("notarized.%d %llx reject ht.%d NOTARIZED.%d %s.%s DESTTXID.%s (%s)\n",notarized,(long long)signedmask,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
+            } else printf("notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s (%s)\n",notarized,(long long)signedmask,height,*notarizedheightp,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len]);
         }
         else if ( i == 0 && j == 1 && opretlen == 149 )
         {
