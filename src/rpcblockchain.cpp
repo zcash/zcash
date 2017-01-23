@@ -396,6 +396,10 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
     return ret;
 }
 
+#define IGUANA_MAXSCRIPTSIZE 10001
+#define KOMODO_KVDURATION 1440
+#define KOMODO_KVBINARY 2
+extern char ASSETCHAINS_SYMBOL[16];
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint32_t komodo_txtime(uint256 hash);
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume);
@@ -404,6 +408,42 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
 char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
 uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 int32_t komodo_minerids(uint8_t *minerids,int32_t height);
+int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
+
+Value kvsearch(const Array& params, bool fHelp)
+{
+    Object ret; uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t duration,j,height,valuesize,keylen; uint256 refpubkey; static uint256 zeroes;
+    if (fHelp || params.size() != 1 )
+        throw runtime_error("kvsearch key");
+    LOCK(cs_main);
+    if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
+    {
+        ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
+        ret.push_back(Pair("currentheight", (int64_t)chainActive.Tip()->nHeight));
+        ret.push_back(Pair("key",params[0].get_str()));
+        ret.push_back(Pair("keylen",keylen));
+        if ( keylen < sizeof(key) )
+        {
+            memcpy(key,params[0].get_str().c_str(),keylen);
+            if ( (valuesize= komodo_kvsearch(&refpubkey,chainActive.Tip()->nHeight,&flags,&height,value,key,keylen)) >= 0 )
+            {
+                std::string val; char *valuestr;
+                val.resize(valuesize);
+                valuestr = (char *)val.data();
+                memcpy(valuestr,value,valuesize);
+                if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
+                    ret.push_back(Pair("owner",refpubkey.GetHex()));
+                ret.push_back(Pair("height",height));
+                duration = ((flags >> 2) + 1) * KOMODO_KVDURATION;
+                ret.push_back(Pair("expiration", (int64_t)(height+duration)));
+                ret.push_back(Pair("flags",(int64_t)flags));
+                ret.push_back(Pair("value",val));
+                ret.push_back(Pair("valuesize",valuesize));
+            } else ret.push_back(Pair("error",(char *)"cant find key"));
+        } else ret.push_back(Pair("error",(char *)"key too big"));
+    } else ret.push_back(Pair("error",(char *)"null key"));
+    return ret;
+}
 
 Value minerids(const Array& params, bool fHelp)
 {
