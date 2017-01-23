@@ -42,9 +42,11 @@ int32_t komodo_kvduration(uint32_t flags)
 
 uint64_t komodo_kvfee(uint32_t flags,int32_t opretlen,int32_t keylen)
 {
-    int32_t numdays; uint64_t fee;
+    int32_t numdays,k; uint64_t fee;
+    if ( (k= keylen) > 32 )
+        k = 32;
     numdays = komodo_kvnumdays(flags);
-    if ( (fee= (numdays*(opretlen * opretlen / keylen))) < 100000 )
+    if ( (fee= (numdays*(opretlen * opretlen / k))) < 100000 )
         fee = 100000;
     return(fee);
 }
