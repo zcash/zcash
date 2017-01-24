@@ -372,6 +372,7 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
             return NULL;
 
         // Look for an existing connection
+        LOCK(cs_vNodes);
         CNode* pnode = FindNode((CService)addrConnect);
         if (pnode)
         {
