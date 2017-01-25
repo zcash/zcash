@@ -78,7 +78,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
             if ( nValue > 25000LL*COIN )
             {
                 exception = 0;
-                if ( txheight <= 155949 )
+                //if ( txheight <= 155949 )
                 {
                     printf(">>>>>>>>>>>> txheight.%d %.8f locktime %u vs tiptime %u <<<<<<<<<\n",txheight,(double)nValue/COIN,nLockTime,tiptime);
                 }
