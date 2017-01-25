@@ -2643,7 +2643,7 @@ Value listunspent(const Array& params, bool fHelp)
             }*/
             uint32_t locktime; int32_t txheight;
             if ( (interest= komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,pindex->nHeight,nValue)) != 0 )
-                ret.push_back(Pair("interest", ValueFromAmount(interest)));
+                entry.push_back(Pair("interest", ValueFromAmount(interest)));
             printf("locktime.%u txheight.%d pindexht.%d\n",locktime,txheight,pindex->nHeight);
         }
         entry.push_back(Pair("confirmations",out.nDepth));
