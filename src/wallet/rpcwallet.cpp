@@ -2642,9 +2642,9 @@ Value listunspent(const Array& params, bool fHelp)
                 entry.push_back(Pair("interest",ValueFromAmount(interest)));
             }*/
             uint32_t locktime; int32_t txheight;
-            if ( (interest= komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,pindex->nHeight,nValue)) != 0 )
+            if ( (interest= komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue)) != 0 )
                 entry.push_back(Pair("interest", ValueFromAmount(interest)));
-            printf("locktime.%u txheight.%d pindexht.%d\n",locktime,txheight,pindex->nHeight);
+            fprintf(stderr,"locktime.%u txheight.%d pindexht.%d\n",locktime,txheight,pindex->nHeight);
         }
         entry.push_back(Pair("confirmations",out.nDepth));
         entry.push_back(Pair("spendable", out.fSpendable));
