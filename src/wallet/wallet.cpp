@@ -2796,7 +2796,6 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
 bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
 {
     {
-        fprintf(stderr,"commit start\n");
         LOCK2(cs_main, cs_wallet);
         LogPrintf("CommitTransaction:\n%s", wtxNew.ToString());
         {
