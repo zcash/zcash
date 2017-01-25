@@ -65,7 +65,7 @@ uint64_t komodo_moneysupply(int32_t height)
 
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
-    int32_t minutes; uint64_t numerator,denominator,interest = 0;
+    int32_t minutes,exception; uint64_t numerator,denominator,interest = 0;
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         return(0);
     if ( komodo_moneysupply(txheight) < MAX_MONEY && nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= 10*COIN )
@@ -77,10 +77,10 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                 denominator = 1; // max KOMODO_INTEREST per transfer, do it at least annually!
             if ( nValue > 25000LL*COIN )
             {
+                exception = 0;
                 if ( txheight <= 155949 )
                 {
                     printf(">>>>>>>>>>>> txheight.%d %.8f locktime %u vs tiptime %u <<<<<<<<<\n",txheight,(double)nValue/COIN,nLockTime,tiptime);
-                    exception = 0;
                 }
                 if ( exception == 0 )
                 {
