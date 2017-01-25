@@ -818,7 +818,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( (pax= komodo_paxmark(height,txids[i],vouts[i],'D',height)) != 0 )
                         komodo_paxdelete(pax);
                 }
-            } else printf("opreturn none issued?\n");
+            } //else printf("opreturn none issued?\n");
         }
     }
     else if ( opretbuf[0] == 'W' )//&& opretlen >= 38 )

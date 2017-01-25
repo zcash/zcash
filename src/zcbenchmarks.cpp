@@ -95,6 +95,27 @@ double benchmark_create_joinsplit()
     return ret;
 }
 
+std::vector<double> benchmark_create_joinsplit_threaded(int nThreads)
+{
+    std::vector<double> ret;
+    std::vector<std::future<double>> tasks;
+    std::vector<std::thread> threads;
+    for (int i = 0; i < nThreads; i++) {
+        std::packaged_task<double(void)> task(&benchmark_create_joinsplit);
+        tasks.emplace_back(task.get_future());
+        threads.emplace_back(std::move(task));
+    }
+    std::future_status status;
+    for (auto it = tasks.begin(); it != tasks.end(); it++) {
+        it->wait();
+        ret.push_back(it->get());
+    }
+    for (auto it = threads.begin(); it != threads.end(); it++) {
+        it->join();
+    }
+    return ret;
+}
+
 double benchmark_verify_joinsplit(const JSDescription &joinsplit)
 {
     struct timeval tv_start;
