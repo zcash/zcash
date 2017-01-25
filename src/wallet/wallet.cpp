@@ -2205,6 +2205,7 @@ CAmount CWallet::GetImmatureWatchOnlyBalance() const
  * populate vCoins with vector of available COutputs.
  */
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue);
 
 void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const CCoinControl *coinControl, bool fIncludeZeroValue, bool fIncludeCoinBase) const
 {
@@ -2243,14 +2244,20 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                 {
 #ifdef KOMODO_ENABLE_INTEREST
                     extern char ASSETCHAINS_SYMBOL[16];
+                    uint32_t locktime; int32_t txheight; CBlockIndex *tipindex;
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight >= 60000 )
                     {
                         if ( pcoin->vout[i].nValue >= 10*COIN )
                         {
-                            interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
+                            komodo_accrued_interest(&txheight,&locktime,wtxid,i,0,pcoin->vout[i].nValue);
+                            if ( (tipindex= chainActive.Tip()) != 0 )
+                            {
+                                interest = komodo_interest(txheight,pcoin->vout[i].nValue,locktime,tipindex->nTime);
+                            } else interest = 0;
+                            //interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
                             if ( interest != 0 )
                             {
-                                //printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
+                                //printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u/%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,txheight,locktime,pcoin->nLockTime,tipindex->nTime);
                                 //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
                                 //ptr = (uint64_t *)&pcoin->vout[i].nValue;
                                 //(*ptr) += interest;
@@ -2825,7 +2832,8 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
             // Broadcast
             if (!wtxNew.AcceptToMemoryPool(false))
             {
-                // This must not fail. The transaction has already been signed and recorded.
+                fprintf(stderr,"commit failed\n");
+             // This must not fail. The transaction has already been signed and recorded.
                 LogPrintf("CommitTransaction(): Error: Transaction not valid\n");
                 return false;
             }

@@ -1084,7 +1084,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         *pfMissingInputs = false;
     auto verifier = libzcash::ProofVerifier::Strict();
     if (!CheckTransaction(tx, state, verifier))
+    {
+        fprintf(stderr,"accept failure.0\n");
         return error("AcceptToMemoryPool: CheckTransaction failed");
+    }
     // Coinbase is only valid in a block, not as a loose transaction
     if (tx.IsCoinBase())
     {
@@ -1124,7 +1127,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         {
             static uint32_t counter;
             // Disable replacement feature for now
-            if ( counter++ < 100 )
+            //if ( counter++ < 100 )
                 fprintf(stderr,"Disable replacement feature for now\n");
             return false;
         }
@@ -1171,13 +1174,16 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
         // are the actual inputs available?
         if (!view.HaveInputs(tx))
-            return state.Invalid(error("AcceptToMemoryPool: inputs already spent"),
-                                 REJECT_DUPLICATE, "bad-txns-inputs-spent");
-
+        {
+            fprintf(stderr,"accept failure.1\n");
+            return state.Invalid(error("AcceptToMemoryPool: inputs already spent"),REJECT_DUPLICATE, "bad-txns-inputs-spent");
+        }
         // are the joinsplit's requirements met?
         if (!view.HaveJoinSplitRequirements(tx))
-            return state.Invalid(error("AcceptToMemoryPool: joinsplit requirements not met"),
-                                 REJECT_DUPLICATE, "bad-txns-joinsplit-requirements-not-met");
+        {
+            fprintf(stderr,"accept failure.2\n");
+            return state.Invalid(error("AcceptToMemoryPool: joinsplit requirements not met"),REJECT_DUPLICATE, "bad-txns-joinsplit-requirements-not-met");
+        }
 
         // Bring the best block into scope
         view.GetBestBlock();
@@ -1191,7 +1197,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
         // Check for non-standard pay-to-script-hash in inputs
         if (Params().RequireStandard() && !AreInputsStandard(tx, view))
+        {
+            fprintf(stderr,"accept failure.3\n");
             return error("AcceptToMemoryPool: nonstandard transaction input");
+        }
 
         // Check that the transaction doesn't have an excessive number of
         // sigops, making it impossible to mine. Since the coinbase transaction
@@ -1201,9 +1210,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         unsigned int nSigOps = GetLegacySigOpCount(tx);
         nSigOps += GetP2SHSigOpCount(tx, view);
         if (nSigOps > MAX_STANDARD_TX_SIGOPS)
-            return state.DoS(0, error("AcceptToMemoryPool: too many sigops %s, %d > %d",
-                                   hash.ToString(), nSigOps, MAX_STANDARD_TX_SIGOPS),
-                             REJECT_NONSTANDARD, "bad-txns-too-many-sigops");
+        {
+            fprintf(stderr,"accept failure.4\n");
+            return state.DoS(0, error("AcceptToMemoryPool: too many sigops %s, %d > %d", hash.ToString(), nSigOps, MAX_STANDARD_TX_SIGOPS),REJECT_NONSTANDARD, "bad-txns-too-many-sigops");
+        }
 
         CAmount nValueOut = tx.GetValueOut();
         CAmount nFees = nValueIn-nValueOut;
@@ -1219,13 +1229,15 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             // Don't accept it if it can't get into a block
             CAmount txMinFee = GetMinRelayFee(tx, nSize, true);
             if (fLimitFree && nFees < txMinFee)
-                return state.DoS(0, error("AcceptToMemoryPool: not enough fees %s, %d < %d",
-                                        hash.ToString(), nFees, txMinFee),
-                                REJECT_INSUFFICIENTFEE, "insufficient fee");
+            {
+                fprintf(stderr,"accept failure.5\n");
+                return state.DoS(0, error("AcceptToMemoryPool: not enough fees %s, %d < %d",hash.ToString(), nFees, txMinFee),REJECT_INSUFFICIENTFEE, "insufficient fee");
+            }
         }
 
         // Require that free transactions have sufficient priority to be mined in the next block.
         if (GetBoolArg("-relaypriority", false) && nFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
+            fprintf(stderr,"accept failure.6\n");
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
         }
 
@@ -1247,19 +1259,25 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             // -limitfreerelay unit is thousand-bytes-per-minute
             // At default rate it would take over a month to fill 1GB
             if (dFreeCount >= GetArg("-limitfreerelay", 15)*10*1000)
+            {
+                fprintf(stderr,"accept failure.7\n");
                 return state.DoS(0, error("AcceptToMemoryPool: free transaction rejected by rate limiter"), REJECT_INSUFFICIENTFEE, "rate limited free transaction");
+            }
             LogPrint("mempool", "Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
             dFreeCount += nSize;
         }
 
         if (fRejectAbsurdFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000)
-            return error("AcceptToMemoryPool: absurdly high fees %s, %d > %d",
-                         hash.ToString(), nFees, ::minRelayTxFee.GetFee(nSize) * 10000);
+        {
+            fprintf(stderr,"accept failure.8\n");
+            return error("AcceptToMemoryPool: absurdly high fees %s, %d > %d",hash.ToString(), nFees, ::minRelayTxFee.GetFee(nSize) * 10000);
+        }
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
         if (!ContextualCheckInputs(tx, state, view, true, STANDARD_SCRIPT_VERIFY_FLAGS, true, Params().GetConsensus()))
         {
+            fprintf(stderr,"accept failure.9\n");
             return error("AcceptToMemoryPool: ConnectInputs failed %s", hash.ToString());
         }
 
@@ -1274,6 +1292,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // can be exploited as a DoS attack.
         if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, Params().GetConsensus()))
         {
+            fprintf(stderr,"accept failure.10\n");
             return error("AcceptToMemoryPool: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s", hash.ToString());
         }
 
@@ -1817,6 +1836,7 @@ bool NonContextualCheckInputs(const CTransaction& tx, CValidationState &state, c
 bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, const Consensus::Params& consensusParams, std::vector<CScriptCheck> *pvChecks)
 {
     if (!NonContextualCheckInputs(tx, state, inputs, fScriptChecks, flags, cacheStore, consensusParams, pvChecks)) {
+        fprintf(stderr,"ContextualCheckInputs failure.0\n");
         return false;
     }
 
@@ -1837,9 +1857,10 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
             // If prev is coinbase, check that it's matured
             if (coins->IsCoinBase()) {
                 if (nSpendHeight - coins->nHeight < COINBASE_MATURITY) {
+                    fprintf(stderr,"ContextualCheckInputs failure.1 i.%d of %d\n",i,(int32_t)tx.vin.size());
+
                     return state.Invalid(
-                        error("CheckInputs(): tried to spend coinbase at depth %d", nSpendHeight - coins->nHeight),
-                        REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
+                        error("CheckInputs(): tried to spend coinbase at depth %d", nSpendHeight - coins->nHeight),REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
                 }
             }
         }
