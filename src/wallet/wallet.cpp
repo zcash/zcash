@@ -645,10 +645,14 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                 CNoteData* nd = &(item.second);
-                // Check the validity of the cache
-                assert(nWitnessCacheSize >= nd->witnesses.size());
                 // Only increment witnesses that are behind the current height
                 if (nd->witnessHeight < pindex->nHeight) {
+                    // Check the validity of the cache
+                    // The only time a note witnessed above the current height
+                    // would be invalid here is during a reindex when blocks
+                    // have been decremented, and we are incrementing the blocks
+                    // immediately after.
+                    assert(nWitnessCacheSize >= nd->witnesses.size());
                     // Witnesses being incremented should always be either -1
                     // (never incremented or decremented) or one below pindex
                     assert((nd->witnessHeight == -1) ||
@@ -687,10 +691,11 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
                         for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                             CNoteData* nd = &(item.second);
-                            // Check the validity of the cache
-                            assert(nWitnessCacheSize >= nd->witnesses.size());
                             if (nd->witnessHeight < pindex->nHeight &&
                                     nd->witnesses.size() > 0) {
+                                // Check the validity of the cache
+                                // See earlier comment about validity.
+                                assert(nWitnessCacheSize >= nd->witnesses.size());
                                 nd->witnesses.front().append(note_commitment);
                             }
                         }
@@ -699,7 +704,8 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                     // If this is our note, witness it
                     if (txIsOurs) {
                         JSOutPoint jsoutpt {hash, i, j};
-                        if (mapWallet[hash].mapNoteData.count(jsoutpt)) {
+                        if (mapWallet[hash].mapNoteData.count(jsoutpt) &&
+                                mapWallet[hash].mapNoteData[jsoutpt].witnessHeight < pindex->nHeight) {
                             CNoteData* nd = &(mapWallet[hash].mapNoteData[jsoutpt]);
                             if (nd->witnesses.size() > 0) {
                                 // We think this can happen because we write out the
@@ -735,9 +741,10 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                 CNoteData* nd = &(item.second);
                 if (nd->witnessHeight < pindex->nHeight) {
                     nd->witnessHeight = pindex->nHeight;
+                    // Check the validity of the cache
+                    // See earlier comment about validity.
+                    assert(nWitnessCacheSize >= nd->witnesses.size());
                 }
-                // Check the validity of the cache
-                assert(nWitnessCacheSize >= nd->witnesses.size());
             }
         }
 
@@ -755,10 +762,12 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                 CNoteData* nd = &(item.second);
-                // Check the validity of the cache
-                assert(nWitnessCacheSize >= nd->witnesses.size());
                 // Only increment witnesses that are not above the current height
                 if (nd->witnessHeight <= pindex->nHeight) {
+                    // Check the validity of the cache
+                    // See comment below (this would be invalid if there was a
+                    // prior decrement).
+                    assert(nWitnessCacheSize >= nd->witnesses.size());
                     // Witnesses being decremented should always be either -1
                     // (never incremented or decremented) or equal to pindex
                     assert((nd->witnessHeight == -1) ||
@@ -777,7 +786,18 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                 CNoteData* nd = &(item.second);
                 // Check the validity of the cache
-                assert(nWitnessCacheSize >= nd->witnesses.size());
+                // Technically if there are notes witnessed above the current
+                // height, their cache will now be invalid (relative to the new
+                // value of nWitnessCacheSize). However, this would only occur
+                // during a reindex, and by the time the reindex reaches the tip
+                // of the chain again, the existing witness caches will be valid
+                // again.
+                // We don't set nWitnessCacheSize to zero at the start of the
+                // reindex because the on-disk blocks had already resulted in a
+                // chain that didn't trigger the assertion below.
+                if (nd->witnessHeight < pindex->nHeight) {
+                    assert(nWitnessCacheSize >= nd->witnesses.size());
+                }
             }
         }
         if ( nWitnessCacheSize <= 0 )
@@ -2185,6 +2205,7 @@ CAmount CWallet::GetImmatureWatchOnlyBalance() const
  * populate vCoins with vector of available COutputs.
  */
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue);
 
 void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const CCoinControl *coinControl, bool fIncludeZeroValue, bool fIncludeCoinBase) const
 {
@@ -2223,14 +2244,20 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                 {
 #ifdef KOMODO_ENABLE_INTEREST
                     extern char ASSETCHAINS_SYMBOL[16];
+                    uint32_t locktime; int32_t txheight; CBlockIndex *tipindex;
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight >= 60000 )
                     {
                         if ( pcoin->vout[i].nValue >= 10*COIN )
                         {
-                            interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
+                            komodo_accrued_interest(&txheight,&locktime,wtxid,i,0,pcoin->vout[i].nValue);
+                            if ( (tipindex= chainActive.Tip()) != 0 )
+                            {
+                                interest = komodo_interest(txheight,pcoin->vout[i].nValue,locktime,tipindex->nTime);
+                            } else interest = 0;
+                            //interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
                             if ( interest != 0 )
                             {
-                                //printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
+                                //printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u/%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,txheight,locktime,pcoin->nLockTime,tipindex->nTime);
                                 //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
                                 //ptr = (uint64_t *)&pcoin->vout[i].nValue;
                                 //(*ptr) += interest;
@@ -2805,7 +2832,8 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
             // Broadcast
             if (!wtxNew.AcceptToMemoryPool(false))
             {
-                // This must not fail. The transaction has already been signed and recorded.
+                fprintf(stderr,"commit failed\n");
+             // This must not fail. The transaction has already been signed and recorded.
                 LogPrintf("CommitTransaction(): Error: Transaction not valid\n");
                 return false;
             }

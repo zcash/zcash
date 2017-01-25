@@ -98,6 +98,14 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
             else:
                 status = results[0]["status"]
                 errorString = results[0]["error"]["message"]
+
+                # Test that the returned status object contains a params field with the operation's input parameters
+                params =results[0]["params"]
+                assert_equal(params["fee"], Decimal('0.0001')) # default
+                assert_equal(params["minconf"], Decimal('1')) # default
+                assert_equal(params["fromaddress"], mytaddr)
+                assert_equal(params["amounts"][0]["address"], myzaddr)
+                assert_equal(params["amounts"][0]["amount"], Decimal('1.23456789'))
                 break
         assert_equal("failed", status)
         assert_equal("wallet does not allow any change" in errorString, True)

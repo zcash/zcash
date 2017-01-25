@@ -1,3 +1,4 @@
+
 TESTS += komodo-gtest
 bin_PROGRAMS += komodo-gtest
 
@@ -10,6 +11,13 @@ komodo_gtest_SOURCES = \
         gtest/json_test_vectors.h \
 	# gtest/test_foundersreward.cpp \
 	gtest/test_wallet_zkeys.cpp \
+# These tests are order-dependent, because they
+# depend on global state (see #1539)
+if ENABLE_WALLET
+zcash_gtest_SOURCES += \
+	wallet/gtest/test_wallet_zkeys.cpp
+endif
+zcash_gtest_SOURCES += \
 	gtest/test_jsonspirit.cpp \
 	gtest/test_tautology.cpp \
 	gtest/test_equihash.cpp \

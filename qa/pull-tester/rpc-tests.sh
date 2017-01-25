@@ -15,6 +15,7 @@ testScripts=(
     'wallet_protectcoinbase.py'
     'wallet.py'
     'wallet_nullifiers.py'
+    'wallet_1941.py'
     'listtransactions.py'
     'mempool_resurrect_test.py'
     'txn_doublespend.py'

@@ -2,7 +2,9 @@
 
 #include "keystore.h"
 #include "random.h"
+#ifdef ENABLE_WALLET
 #include "wallet/crypter.h"
+#endif
 #include "zcash/Address.hpp"
 
 TEST(keystore_tests, store_and_retrieve_spending_key) {
@@ -44,6 +46,7 @@ TEST(keystore_tests, store_and_retrieve_note_decryptor) {
     EXPECT_EQ(ZCNoteDecryption(sk.viewing_key()), decOut);
 }
 
+#ifdef ENABLE_WALLET
 class TestCCryptoKeyStore : public CCryptoKeyStore
 {
 public:
@@ -125,3 +128,4 @@ TEST(keystore_tests, store_and_retrieve_spending_key_in_encrypted_store) {
     ASSERT_EQ(1, addrs.count(addr));
     ASSERT_EQ(1, addrs.count(addr2));
 }
+#endif
