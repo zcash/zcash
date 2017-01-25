@@ -176,6 +176,8 @@ baseline_filtered.info: baseline.info
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
                       "$(abs_builddir)/src/gtest/*" \
                       "$(abs_builddir)/src/test/*" \
+                      "$(abs_builddir)/src/wallet/gtest/*" \
+                      "$(abs_builddir)/src/wallet/test/*" \
                       -o $@
 endif
 
@@ -199,6 +201,8 @@ leveldb_baseline_filtered.info: leveldb_baseline.info
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
                       "$(abs_builddir)/src/gtest/*" \
                       "$(abs_builddir)/src/test/*" \
+                      "$(abs_builddir)/src/wallet/gtest/*" \
+                      "$(abs_builddir)/src/wallet/test/*" \
                       -o $@
 endif
 
@@ -218,6 +222,8 @@ test_bitcoin_filtered.info: test_bitcoin.info
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
                       "$(abs_builddir)/src/test/*" \
+                      "$(abs_builddir)/src/wallet/gtest/*" \
+                      "$(abs_builddir)/src/wallet/test/*" \
                       -o $@
 else
 test_bitcoin_filtered.info: test_bitcoin.info
@@ -228,6 +234,8 @@ test_bitcoin_filtered.info: test_bitcoin.info
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
                       "$(abs_builddir)/src/gtest/*" \
                       "$(abs_builddir)/src/test/*" \
+                      "$(abs_builddir)/src/wallet/gtest/*" \
+                      "$(abs_builddir)/src/wallet/test/*" \
                       -o $@
 endif
 
@@ -255,6 +263,8 @@ block_test_filtered.info: block_test.info
                       "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
                       "$(abs_builddir)/src/gtest/*" \
                       "$(abs_builddir)/src/test/*" \
+                      "$(abs_builddir)/src/wallet/gtest/*" \
+                      "$(abs_builddir)/src/wallet/test/*" \
                       -o $@
 endif
 

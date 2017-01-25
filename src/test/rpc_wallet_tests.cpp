@@ -358,16 +358,26 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==1);
     
+    // Set up paths
+    boost::filesystem::path tmppath = boost::filesystem::temp_directory_path();
+    boost::filesystem::path tmpfilename = boost::filesystem::unique_path("%%%%%%%%");
+    boost::filesystem::path exportfilepath = tmppath / tmpfilename;
+
+    // export will fail since exportdir is not set
+    BOOST_CHECK_THROW(CallRPC(string("z_exportwallet ") + tmpfilename.string()), runtime_error);
+
+    // set exportdir
+    mapArgs["-exportdir"] = tmppath.native();
+
+    // run some tests
     BOOST_CHECK_THROW(CallRPC("z_exportwallet"), runtime_error);
 
     BOOST_CHECK_THROW(CallRPC("z_exportwallet toomany args"), runtime_error);
 
-   
-    boost::filesystem::path temp = boost::filesystem::temp_directory_path() /
-            boost::filesystem::unique_path();
-    const std::string path = temp.native();
+    BOOST_CHECK_THROW(CallRPC(string("z_exportwallet invalid!*/_chars.txt")), runtime_error);
 
-    BOOST_CHECK_NO_THROW(CallRPC(string("z_exportwallet ") + path));
+    BOOST_CHECK_NO_THROW(CallRPC(string("z_exportwallet ") + tmpfilename.string()));
+
 
     auto addr = paymentAddress.Get();
     libzcash::SpendingKey key;
@@ -382,7 +392,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     EnsureWalletIsUnlocked();
 
     ifstream file;
-    file.open(path.c_str(), std::ios::in | std::ios::ate);
+    file.open(exportfilepath.string().c_str(), std::ios::in | std::ios::ate);
     BOOST_CHECK(file.is_open());
     bool fVerified = false;
     int64_t nFilesize = std::max((int64_t)1, (int64_t)file.tellg());

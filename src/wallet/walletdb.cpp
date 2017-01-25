@@ -14,6 +14,7 @@
 #include "util.h"
 #include "utiltime.h"
 #include "wallet/wallet.h"
+#include "zcash/Proof.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
@@ -411,7 +412,8 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             CWalletTx wtx;
             ssValue >> wtx;
             CValidationState state;
-            if (!(CheckTransaction(wtx, state) && (wtx.GetHash() == hash) && state.IsValid()))
+            auto verifier = libzcash::ProofVerifier::Strict();
+            if (!(CheckTransaction(wtx, state, verifier) && (wtx.GetHash() == hash) && state.IsValid()))
                 return false;
 
             // Undo serialize changes in 31600

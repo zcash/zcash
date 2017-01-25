@@ -50,7 +50,7 @@ struct WitnessAnchorData {
 
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
 public:
-    AsyncRPCOperation_sendmany(std::string fromAddress, std::vector<SendManyRecipient> tOutputs, std::vector<SendManyRecipient> zOutputs, int minDepth, CAmount fee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE);
+    AsyncRPCOperation_sendmany(std::string fromAddress, std::vector<SendManyRecipient> tOutputs, std::vector<SendManyRecipient> zOutputs, int minDepth, CAmount fee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE, Value contextInfo = Value::null);
     virtual ~AsyncRPCOperation_sendmany();
     
     // We don't want to be copied or moved around
@@ -61,10 +61,14 @@ public:
     
     virtual void main();
 
+    virtual Value getStatus() const;
+
     bool testmode = false;  // Set to true to disable sending txs and generating proofs
 
 private:
     friend class TEST_FRIEND_AsyncRPCOperation_sendmany;    // class for unit testing
+
+    Value contextinfo_;     // optional data to include in return value from getStatus()
 
     CAmount fee_;
     int mindepth_;

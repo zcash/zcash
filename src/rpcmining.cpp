@@ -405,6 +405,7 @@ static Value BIP22ValidationResult(const CValidationState& state)
     return "valid?";
 }
 
+#ifdef ENABLE_WALLET
 Value getblocktemplate(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
@@ -697,6 +698,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     return result;
 }
+#endif
 
 class submitblock_StateCatcher : public CValidationInterface
 {

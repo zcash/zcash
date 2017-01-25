@@ -79,6 +79,9 @@ void test_tree(
     // The tree doesn't have a 'last' element added since it's blank.
     ASSERT_THROW(tree.last(), std::runtime_error);
 
+    // The tree is empty.
+    ASSERT_TRUE(tree.size() == 0);
+
     // We need to witness at every single point in the tree, so
     // that the consistency of the tree and the merkle paths can
     // be checked.
@@ -92,6 +95,9 @@ void test_tree(
 
         // Now append a commitment to the tree
         tree.append(test_commitment);
+
+        // Size incremented by one.
+        ASSERT_TRUE(tree.size() == i+1);
 
         // Last element added to the tree was `test_commitment`
         ASSERT_TRUE(tree.last() == test_commitment);

@@ -309,7 +309,9 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "kvupdate",               &kvupdate,               true  },
 
     /* Mining */
+#ifdef ENABLE_WALLET
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
+#endif
     { "mining",             "getmininginfo",          &getmininginfo,          true  },
     { "mining",             "getlocalsolps",          &getlocalsolps,          true  },
     { "mining",             "getnetworksolps",        &getnetworksolps,        true  },
@@ -629,10 +631,9 @@ void StartRPCThreads()
         strAllowed += subnet.ToString() + " ";
     LogPrint("rpc", "Allowing RPC connections from: %s\n", strAllowed);
 
-    strRPCUserColonPass = mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"];
-    if (((mapArgs["-rpcpassword"] == "") ||
-         (mapArgs["-rpcuser"] == mapArgs["-rpcpassword"])) && Params().RequireRPCPassword())
+    if (mapArgs["-rpcpassword"] == "")
     {
+/*<<<<<<< HEAD
         unsigned char rand_pwd[32];
         GetRandBytes(rand_pwd, 32);
         uiInterface.ThreadSafeMessageBox(strprintf(
@@ -651,6 +652,18 @@ void StartRPCThreads()
                 "", CClientUIInterface::MSG_ERROR | CClientUIInterface::SECURE);
         StartShutdown();
         return;
+=======*/
+        LogPrintf("No rpcpassword set - using random cookie authentication\n");
+        if (!GenerateAuthCookie(&strRPCUserColonPass)) {
+            uiInterface.ThreadSafeMessageBox(
+                _("Error: A fatal internal error occured, see debug.log for details"), // Same message as AbortNode
+                "", CClientUIInterface::MSG_ERROR);
+            StartShutdown();
+            return;
+        }
+    } else {
+        strRPCUserColonPass = mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"];
+//>>>>>>> zcash/master
     }
 
     assert(rpc_io_service == NULL);
@@ -816,6 +829,8 @@ void StopRPCThreads()
             LogPrintf("%s: Warning: %s when cancelling timer\n", __func__, ec.message());
     }
     deadlineTimers.clear();
+
+    DeleteAuthCookie();
 
     rpc_io_service->stop();
     g_rpcSignals.Stopped();
