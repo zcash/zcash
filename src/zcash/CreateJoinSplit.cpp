@@ -6,6 +6,7 @@
 #include "primitives/transaction.h"
 #include "zcash/JoinSplit.hpp"
 #include "libsnark/common/profiling.hpp"
+char ASSETCHAINS_SYMBOL[16];
 
 using namespace libzcash;
 
