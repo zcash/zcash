@@ -683,7 +683,7 @@ int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 has
                 return(-1);
             }
         } else fprintf(stderr,"unexpected error notary_hash %s ht.%d at ht.%d\n",notarized_hash.ToString().c_str(),notarized_height,notary->nHeight);
-    } else if ( notarized_height > 0 && notarized_height != 73880 )
+    } else if ( notarized_height > 0 && notarized_height != 73880 && notarized_height >= KOMODO_MAINNET_START )
         fprintf(stderr,"[%s] couldnt find notarized.(%s %d) ht.%d\n",ASSETCHAINS_SYMBOL,notarized_hash.ToString().c_str(),notarized_height,pindex->nHeight);
     return(0);
 }
