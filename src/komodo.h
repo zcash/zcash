@@ -496,7 +496,8 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         hwmheight = pindex->nHeight;
     else
     {
-        printf("%s hwmheight.%d vs pindex->nHeight.%d t.%u reorg.%d\n",ASSETCHAINS_SYMBOL,hwmheight,pindex->nHeight,(uint32_t)pindex->nTime,hwmheight-pindex->nHeight);
+        if ( pindex->nHeight != hwmheight )
+            printf("%s hwmheight.%d vs pindex->nHeight.%d t.%u reorg.%d\n",ASSETCHAINS_SYMBOL,hwmheight,pindex->nHeight,(uint32_t)pindex->nTime,hwmheight-pindex->nHeight);
         komodo_event_rewind(sp,symbol,pindex->nHeight);
         komodo_stateupdate(pindex->nHeight,0,0,0,zero,0,0,0,0,-pindex->nHeight,pindex->nTime,0,0,0,0);
     }
