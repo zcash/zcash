@@ -2243,14 +2243,20 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                 {
 #ifdef KOMODO_ENABLE_INTEREST
                     extern char ASSETCHAINS_SYMBOL[16];
+                    uint32_t locktime; int32_t txheight; CBlockIndex *tipindex;
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight >= 60000 )
                     {
                         if ( pcoin->vout[i].nValue >= 10*COIN )
                         {
-                            interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
+                            komodo_accrued_interest(&txheight,&locktime,wtxid,i,0,pcoin->vout[i].nValue);
+                            if ( (tipindex= chainActive.Tip()) != 0 )
+                            {
+                                interest = komodo_interest(txheight,pcoin->vout[i].nValue,locktime,tipindex->nTime);
+                            } else interest = 0;
+                            //interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
                             if ( interest != 0 )
                             {
-                                //printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
+                                printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u/%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,txheight,locktime,pcoin->nLockTime,tipindex->nTime);
                                 //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
                                 //ptr = (uint64_t *)&pcoin->vout[i].nValue;
                                 //(*ptr) += interest;

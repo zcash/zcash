@@ -1836,6 +1836,7 @@ bool NonContextualCheckInputs(const CTransaction& tx, CValidationState &state, c
 bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, const Consensus::Params& consensusParams, std::vector<CScriptCheck> *pvChecks)
 {
     if (!NonContextualCheckInputs(tx, state, inputs, fScriptChecks, flags, cacheStore, consensusParams, pvChecks)) {
+        fprintf(stderr,"ContextualCheckInputs failure.0\n");
         return false;
     }
 
@@ -1856,9 +1857,10 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
             // If prev is coinbase, check that it's matured
             if (coins->IsCoinBase()) {
                 if (nSpendHeight - coins->nHeight < COINBASE_MATURITY) {
+                    fprintf(stderr,"ContextualCheckInputs failure.1 i.%d of %d\n",i,tx.vin.size());
+
                     return state.Invalid(
-                        error("CheckInputs(): tried to spend coinbase at depth %d", nSpendHeight - coins->nHeight),
-                        REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
+                        error("CheckInputs(): tried to spend coinbase at depth %d", nSpendHeight - coins->nHeight),REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
                 }
             }
         }
