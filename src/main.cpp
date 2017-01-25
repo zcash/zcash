@@ -1267,7 +1267,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             dFreeCount += nSize;
         }
 
-        if (fRejectAbsurdFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000)
+        if (fRejectAbsurdFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000 && nFees > COIN )
         {
             fprintf(stderr,"accept failure.8\n");
             return error("AcceptToMemoryPool: absurdly high fees %s, %d > %d",hash.ToString(), nFees, ::minRelayTxFee.GetFee(nSize) * 10000);
