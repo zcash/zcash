@@ -1857,7 +1857,7 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
             // If prev is coinbase, check that it's matured
             if (coins->IsCoinBase()) {
                 if (nSpendHeight - coins->nHeight < COINBASE_MATURITY) {
-                    fprintf(stderr,"ContextualCheckInputs failure.1 i.%d of %d\n",i,tx.vin.size());
+                    fprintf(stderr,"ContextualCheckInputs failure.1 i.%d of %d\n",i,(int32_t)tx.vin.size());
 
                     return state.Invalid(
                         error("CheckInputs(): tried to spend coinbase at depth %d", nSpendHeight - coins->nHeight),REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
