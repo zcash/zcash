@@ -2635,11 +2635,14 @@ Value listunspent(const Array& params, bool fHelp)
             BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
             CBlockIndex *tipindex,*pindex = it->second;
             uint64_t interest;
-            if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
+            fprintf(stderr,"pindex.%p tipindex.%p\n",pindex,chainActive.Tip());
+            /*if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
             {
                 interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,tipindex->nTime);
                 entry.push_back(Pair("interest",ValueFromAmount(interest)));
-            }
+            }*/
+            if ( (interest= komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,out.nHeight,nValue)) != 0 )
+                ret.push_back(Pair("interest", ValueFromAmount(interest)));
         }
         entry.push_back(Pair("confirmations",out.nDepth));
         entry.push_back(Pair("spendable", out.fSpendable));
