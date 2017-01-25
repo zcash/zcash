@@ -2789,6 +2789,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
 bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
 {
     {
+        fprintf(stderr,"commit start\n");
         LOCK2(cs_main, cs_wallet);
         LogPrintf("CommitTransaction:\n%s", wtxNew.ToString());
         {
@@ -2825,7 +2826,8 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
             // Broadcast
             if (!wtxNew.AcceptToMemoryPool(false))
             {
-                // This must not fail. The transaction has already been signed and recorded.
+                fprintf(stderr,"commit failed\n");
+             // This must not fail. The transaction has already been signed and recorded.
                 LogPrintf("CommitTransaction(): Error: Transaction not valid\n");
                 return false;
             }

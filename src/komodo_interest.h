@@ -96,8 +96,8 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     if ( exception == 0 || nValue == 4000000000000LL )
                         printf(">>>>>>>>>>>> exception.%d txheight.%d %.8f locktime %u vs tiptime %u <<<<<<<<<\n",exception,txheight,(double)nValue/COIN,nLockTime,tiptime);
                 }
-                if ( nValue == 4000000000000LL )
-                    printf(">>>>>>>>>>>> exception.%d txheight.%d %.8f locktime %u vs tiptime %u <<<<<<<<<\n",exception,txheight,(double)nValue/COIN,nLockTime,tiptime);
+                //if ( nValue == 4000000000000LL )
+                //    printf(">>>>>>>>>>>> exception.%d txheight.%d %.8f locktime %u vs tiptime %u <<<<<<<<<\n",exception,txheight,(double)nValue/COIN,nLockTime,tiptime);
                 if ( exception == 0 )
                 {
                     numerator = (nValue / 20); // assumes 5%!

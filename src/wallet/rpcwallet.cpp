@@ -2641,7 +2641,7 @@ Value listunspent(const Array& params, bool fHelp)
                 interest = komodo_interest(txheight,nValue,out.tx->nLockTime,tipindex->nTime);
                 entry.push_back(Pair("interest",ValueFromAmount(interest)));
             }
-            fprintf(stderr,"nValue %.8f pindex.%p tipindex.%p locktime.%u txheight.%d pindexht.%d\n",(double)nValue/COIN,pindex,chainActive.Tip(),locktime,txheight,pindex->nHeight);
+            //fprintf(stderr,"nValue %.8f pindex.%p tipindex.%p locktime.%u txheight.%d pindexht.%d\n",(double)nValue/COIN,pindex,chainActive.Tip(),locktime,txheight,pindex->nHeight);
         }
         entry.push_back(Pair("confirmations",out.nDepth));
         entry.push_back(Pair("spendable", out.fSpendable));
