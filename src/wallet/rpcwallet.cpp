@@ -2634,17 +2634,14 @@ Value listunspent(const Array& params, bool fHelp)
         {
             BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
             CBlockIndex *tipindex,*pindex = it->second;
-            uint64_t interest;
-            fprintf(stderr,"pindex.%p tipindex.%p\n",pindex,chainActive.Tip());
-            /*if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
+            uint64_t interest; uint32_t locktime; int32_t txheight;
+            komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue);
+            if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
             {
-                interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,tipindex->nTime);
+                interest = komodo_interest(txheight,nValue,out.tx->nLockTime,tipindex->nTime);
                 entry.push_back(Pair("interest",ValueFromAmount(interest)));
-            }*/
-            uint32_t locktime; int32_t txheight;
-            if ( (interest= komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue)) != 0 )
-                entry.push_back(Pair("interest", ValueFromAmount(interest)));
-            fprintf(stderr,"locktime.%u txheight.%d pindexht.%d\n",locktime,txheight,pindex->nHeight);
+            }
+            fprintf(stderr,"pindex.%p tipindex.%p locktime.%u txheight.%d pindexht.%d\n",pindex,chainActive.Tip(),locktime,txheight,pindex->nHeight);
         }
         entry.push_back(Pair("confirmations",out.nDepth));
         entry.push_back(Pair("spendable", out.fSpendable));
