@@ -501,6 +501,26 @@ const boost::filesystem::path &ZC_GetParamsDir()
     return path;
 }
 
+// Return the user specified export directory.  Create directory if it doesn't exist.
+// If user did not set option, return an empty path.
+// If there is a filesystem problem, throw an exception.
+const boost::filesystem::path GetExportDir()
+{
+    namespace fs = boost::filesystem;
+    fs::path path;
+    if (mapArgs.count("-exportdir")) {
+        path = fs::system_complete(mapArgs["-exportdir"]);
+        if (fs::exists(path) && !fs::is_directory(path)) {
+            throw std::runtime_error(strprintf("The -exportdir '%s' already exists and is not a directory", path.string()));
+        }
+        if (!fs::exists(path) && !fs::create_directories(path)) {
+            throw std::runtime_error(strprintf("Failed to create directory at -exportdir '%s'", path.string()));
+        }
+    }
+    return path;
+}
+
+
 const boost::filesystem::path &GetDataDir(bool fNetSpecific)
 {
     namespace fs = boost::filesystem;
@@ -556,7 +576,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 {
     boost::filesystem::ifstream streamConfig(GetConfigFile());
     if (!streamConfig.good())
-        return; // No komodo.conf file is OK
+        throw missing_zcash_conf();
 
     set<string> setOptions;
     setOptions.insert("*");
@@ -836,4 +856,17 @@ void SetThreadPriority(int nPriority)
     setpriority(PRIO_PROCESS, 0, nPriority);
 #endif // PRIO_THREAD
 #endif // WIN32
+}
+
+std::string LicenseInfo()
+{
+    return FormatParagraph(strprintf(_("Copyright (C) 2009-%i The Bitcoin Core Developers"), COPYRIGHT_YEAR)) + "\n" +
+           FormatParagraph(strprintf(_("Copyright (C) 2015-%i The Zcash Developers"), COPYRIGHT_YEAR)) + "\n" +
+           "\n" +
+           FormatParagraph(_("This is experimental software.")) + "\n" +
+           "\n" +
+           FormatParagraph(_("Distributed under the MIT software license, see the accompanying file COPYING or <http://www.opensource.org/licenses/mit-license.php>.")) + "\n" +
+           "\n" +
+           FormatParagraph(_("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit <https://www.openssl.org/> and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard.")) +
+           "\n";
 }

@@ -163,6 +163,10 @@ curve_G2 CompressedG2::to_libsnark_g2() const
 
     assert(r.is_well_formed());
 
+    if (alt_bn128_modulus_r * r != curve_G2::zero()) {
+        throw std::runtime_error("point is not in G2");
+    }
+
     return r;
 }
 

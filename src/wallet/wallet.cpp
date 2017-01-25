@@ -645,10 +645,14 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                 CNoteData* nd = &(item.second);
-                // Check the validity of the cache
-                assert(nWitnessCacheSize >= nd->witnesses.size());
                 // Only increment witnesses that are behind the current height
                 if (nd->witnessHeight < pindex->nHeight) {
+                    // Check the validity of the cache
+                    // The only time a note witnessed above the current height
+                    // would be invalid here is during a reindex when blocks
+                    // have been decremented, and we are incrementing the blocks
+                    // immediately after.
+                    assert(nWitnessCacheSize >= nd->witnesses.size());
                     // Witnesses being incremented should always be either -1
                     // (never incremented or decremented) or one below pindex
                     assert((nd->witnessHeight == -1) ||
@@ -687,10 +691,11 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
                         for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                             CNoteData* nd = &(item.second);
-                            // Check the validity of the cache
-                            assert(nWitnessCacheSize >= nd->witnesses.size());
                             if (nd->witnessHeight < pindex->nHeight &&
                                     nd->witnesses.size() > 0) {
+                                // Check the validity of the cache
+                                // See earlier comment about validity.
+                                assert(nWitnessCacheSize >= nd->witnesses.size());
                                 nd->witnesses.front().append(note_commitment);
                             }
                         }
@@ -699,7 +704,8 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                     // If this is our note, witness it
                     if (txIsOurs) {
                         JSOutPoint jsoutpt {hash, i, j};
-                        if (mapWallet[hash].mapNoteData.count(jsoutpt)) {
+                        if (mapWallet[hash].mapNoteData.count(jsoutpt) &&
+                                mapWallet[hash].mapNoteData[jsoutpt].witnessHeight < pindex->nHeight) {
                             CNoteData* nd = &(mapWallet[hash].mapNoteData[jsoutpt]);
                             if (nd->witnesses.size() > 0) {
                                 // We think this can happen because we write out the
@@ -735,9 +741,10 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                 CNoteData* nd = &(item.second);
                 if (nd->witnessHeight < pindex->nHeight) {
                     nd->witnessHeight = pindex->nHeight;
+                    // Check the validity of the cache
+                    // See earlier comment about validity.
+                    assert(nWitnessCacheSize >= nd->witnesses.size());
                 }
-                // Check the validity of the cache
-                assert(nWitnessCacheSize >= nd->witnesses.size());
             }
         }
 
@@ -755,10 +762,12 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                 CNoteData* nd = &(item.second);
-                // Check the validity of the cache
-                assert(nWitnessCacheSize >= nd->witnesses.size());
                 // Only increment witnesses that are not above the current height
                 if (nd->witnessHeight <= pindex->nHeight) {
+                    // Check the validity of the cache
+                    // See comment below (this would be invalid if there was a
+                    // prior decrement).
+                    assert(nWitnessCacheSize >= nd->witnesses.size());
                     // Witnesses being decremented should always be either -1
                     // (never incremented or decremented) or equal to pindex
                     assert((nd->witnessHeight == -1) ||
@@ -777,7 +786,18 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                 CNoteData* nd = &(item.second);
                 // Check the validity of the cache
-                assert(nWitnessCacheSize >= nd->witnesses.size());
+                // Technically if there are notes witnessed above the current
+                // height, their cache will now be invalid (relative to the new
+                // value of nWitnessCacheSize). However, this would only occur
+                // during a reindex, and by the time the reindex reaches the tip
+                // of the chain again, the existing witness caches will be valid
+                // again.
+                // We don't set nWitnessCacheSize to zero at the start of the
+                // reindex because the on-disk blocks had already resulted in a
+                // chain that didn't trigger the assertion below.
+                if (nd->witnessHeight < pindex->nHeight) {
+                    assert(nWitnessCacheSize >= nd->witnesses.size());
+                }
             }
         }
         if ( nWitnessCacheSize <= 0 )

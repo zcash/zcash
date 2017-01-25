@@ -89,6 +89,10 @@ Asynchronous calls return an OperationStatus object which is a JSON object with 
   * code : number
   * message: error message
 
+Depending on the type of asynchronous call, there may be other key-value pairs.  For example, a z_sendmany operation will also include the following in an OperationStatus object:
+
+* params : an object containing the parameters to z_sendmany
+
 Currently, as soon as you retrieve the operation status for an operation which has finished, that is it has either succeeded, failed, or been cancelled, the operation and any associated information is removed.
 
 It is currently not possible to cancel operations.
@@ -151,7 +155,7 @@ RPC_WALLET_ERROR (-4) | _Unspecified problem with wallet_
 ----------------------| -------------------------------------
 "Could not find previous JoinSplit anchor" | Try restarting node with `-reindex`.
 "Error decrypting output note of previous JoinSplit: __"  |
-"Could not find witness for note commitment" | Try restarting node with `-reindex`.
+"Could not find witness for note commitment" | Try restarting node with `-rescan`.
 "Witness for note commitment is null" | Missing witness for note commitement.
 "Witness for spendable note does not have same anchor as change input" | Invalid anchor for spendable note witness.
 "Not enough funds to pay miners fee" | Retry with sufficient funds.

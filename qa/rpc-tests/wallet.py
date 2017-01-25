@@ -301,7 +301,7 @@ class WalletTest (BitcoinTestFramework):
         opids = []
         opids.append(myopid)
 
-        timeout = 120
+        timeout = 300
         status = None
         for x in xrange(1, timeout):
             results = self.nodes[2].z_getoperationresult(opids)
