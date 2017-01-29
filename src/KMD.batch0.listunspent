@@ -1,0 +1,1190 @@
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"getinfo\",\"symbol\":\"BTC\"}"
+# RG1QE6hTqu4dadL2XSNWS9VCHjd8xNVo58 KMD 16462.32091533, REVS 289.86606506
+# RG1QE6hTqu4dadL2XSNWS9VCHjd8xNVo58 KMD 16462.32091533
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RG1QE6hTqu4dadL2XSNWS9VCHjd8xNVo58\",\"symbol\":\"KMD\"}"
+echo  "16462.32091533 <- expected amount RG1QE6hTqu4dadL2XSNWS9VCHjd8xNVo58"
+
+# RFVvyUAnQe5yon6wq7B73Z1BzfFeZKyAZA KMD 74417.52897713, REVS 500.77700000
+# RFVvyUAnQe5yon6wq7B73Z1BzfFeZKyAZA KMD 74417.52897713
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RFVvyUAnQe5yon6wq7B73Z1BzfFeZKyAZA\",\"symbol\":\"KMD\"}"
+echo  "74417.52897713 <- expected amount RFVvyUAnQe5yon6wq7B73Z1BzfFeZKyAZA"
+
+# RL9YVW2GxbYh6hM3D1J7Z2y4feK4MrwZqe KMD 9691.47954009
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RL9YVW2GxbYh6hM3D1J7Z2y4feK4MrwZqe\",\"symbol\":\"KMD\"}"
+echo  "9691.47954009 <- expected amount RL9YVW2GxbYh6hM3D1J7Z2y4feK4MrwZqe"
+
+# RRCwketDe8CXt4dMWpL4NpQntxJvmwousn KMD 201.21200152
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RRCwketDe8CXt4dMWpL4NpQntxJvmwousn\",\"symbol\":\"KMD\"}"
+echo  "201.21200152 <- expected amount RRCwketDe8CXt4dMWpL4NpQntxJvmwousn"
+
+# RWfaj9ZNmHq5A4jV411xpt1FJoyvKfVJ6c KMD 616895.10028203, REVS 3685.61452692
+# RWfaj9ZNmHq5A4jV411xpt1FJoyvKfVJ6c KMD 616895.10028203
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RWfaj9ZNmHq5A4jV411xpt1FJoyvKfVJ6c\",\"symbol\":\"KMD\"}"
+echo  "616895.10028203 <- expected amount RWfaj9ZNmHq5A4jV411xpt1FJoyvKfVJ6c"
+
+# R9dTcQWVDuaRdFqDzq4xPaFDjGbaLK6t8n KMD 1053.37494565, REVS 4.29070721
+# R9dTcQWVDuaRdFqDzq4xPaFDjGbaLK6t8n KMD 1053.37494565
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"R9dTcQWVDuaRdFqDzq4xPaFDjGbaLK6t8n\",\"symbol\":\"KMD\"}"
+echo  "1053.37494565 <- expected amount R9dTcQWVDuaRdFqDzq4xPaFDjGbaLK6t8n"
+
+# RDfCcqrNn8wgkr8CL29Z7PynpGP4w2ZySQ KMD 774.65219950
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RDfCcqrNn8wgkr8CL29Z7PynpGP4w2ZySQ\",\"symbol\":\"KMD\"}"
+echo  "774.65219950 <- expected amount RDfCcqrNn8wgkr8CL29Z7PynpGP4w2ZySQ"
+
+# REvJWEuwqmwTnanZ8bWt85wnjfrsAjnvgE KMD 3945.67461320, REVS 30.24757576
+# REvJWEuwqmwTnanZ8bWt85wnjfrsAjnvgE KMD 3945.67461320
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"REvJWEuwqmwTnanZ8bWt85wnjfrsAjnvgE\",\"symbol\":\"KMD\"}"
+echo  "3945.67461320 <- expected amount REvJWEuwqmwTnanZ8bWt85wnjfrsAjnvgE"
+
+# RXb4SUn9mQ4Q1Fa8eehn5vitcfMMCjW2Ub KMD 96831.52493750
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RXb4SUn9mQ4Q1Fa8eehn5vitcfMMCjW2Ub\",\"symbol\":\"KMD\"}"
+echo  "96831.52493750 <- expected amount RXb4SUn9mQ4Q1Fa8eehn5vitcfMMCjW2Ub"
+
+# RBpEnyzuQNj1hNdAG1pKLALpAWEUS67PBj KMD 2729058.03025689, REVS 54178.00103054
+# RBpEnyzuQNj1hNdAG1pKLALpAWEUS67PBj KMD 2729058.03025689
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RBpEnyzuQNj1hNdAG1pKLALpAWEUS67PBj\",\"symbol\":\"KMD\"}"
+echo  "2729058.03025689 <- expected amount RBpEnyzuQNj1hNdAG1pKLALpAWEUS67PBj"
+
+# RGCCkHkLTkSiQFMeFvWSPzM2rNM3rrDkfw KMD 61869.43786697
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RGCCkHkLTkSiQFMeFvWSPzM2rNM3rrDkfw\",\"symbol\":\"KMD\"}"
+echo  "61869.43786697 <- expected amount RGCCkHkLTkSiQFMeFvWSPzM2rNM3rrDkfw"
+
+# RR6soE71ZggsYm6FeSVqebtn6oruYm3Xr8 KMD 94617.81776961
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RR6soE71ZggsYm6FeSVqebtn6oruYm3Xr8\",\"symbol\":\"KMD\"}"
+echo  "94617.81776961 <- expected amount RR6soE71ZggsYm6FeSVqebtn6oruYm3Xr8"
+
+# RDobQ77wnMY8Me7RAL9oiFqVNvwkqqgPRF KMD 5315819.89184465
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RDobQ77wnMY8Me7RAL9oiFqVNvwkqqgPRF\",\"symbol\":\"KMD\"}"
+echo  "5315819.89184465 <- expected amount RDobQ77wnMY8Me7RAL9oiFqVNvwkqqgPRF"
+
+# RHSZ1CWDNhkNbbQRDrqLHRAdCshueMrt2r KMD 8661.80183095, REVS 171.90929822
+# RHSZ1CWDNhkNbbQRDrqLHRAdCshueMrt2r KMD 8661.80183095
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RHSZ1CWDNhkNbbQRDrqLHRAdCshueMrt2r\",\"symbol\":\"KMD\"}"
+echo  "8661.80183095 <- expected amount RHSZ1CWDNhkNbbQRDrqLHRAdCshueMrt2r"
+
+# RSY3GTogE7WfwukhaemrAZtPh6Gsy2q1XV KMD 4964.66964335
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSY3GTogE7WfwukhaemrAZtPh6Gsy2q1XV\",\"symbol\":\"KMD\"}"
+echo  "4964.66964335 <- expected amount RSY3GTogE7WfwukhaemrAZtPh6Gsy2q1XV"
+
+# RM4RavnpbqkyB3cVq9tyzkoPuFZ2q87qqk KMD 17816.10973847
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RM4RavnpbqkyB3cVq9tyzkoPuFZ2q87qqk\",\"symbol\":\"KMD\"}"
+echo  "17816.10973847 <- expected amount RM4RavnpbqkyB3cVq9tyzkoPuFZ2q87qqk"
+
+# RRMu7ikH1CVQmpY1vHWSZh7NTjVFbaAcUV KMD 699334.64129367
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RRMu7ikH1CVQmpY1vHWSZh7NTjVFbaAcUV\",\"symbol\":\"KMD\"}"
+echo  "699334.64129367 <- expected amount RRMu7ikH1CVQmpY1vHWSZh7NTjVFbaAcUV"
+
+# REyKZQ8q8xbRNCtpA5ABY1BsfscduWGgKv KMD 503444.41817988
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"REyKZQ8q8xbRNCtpA5ABY1BsfscduWGgKv\",\"symbol\":\"KMD\"}"
+echo  "503444.41817988 <- expected amount REyKZQ8q8xbRNCtpA5ABY1BsfscduWGgKv"
+
+# RTqh7gEJMJDpnBp62FZZAfXctj8X7sRRia KMD 18367.01200788, REVS 350.00000000
+# RTqh7gEJMJDpnBp62FZZAfXctj8X7sRRia KMD 18367.01200788
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RTqh7gEJMJDpnBp62FZZAfXctj8X7sRRia\",\"symbol\":\"KMD\"}"
+echo  "18367.01200788 <- expected amount RTqh7gEJMJDpnBp62FZZAfXctj8X7sRRia"
+
+# RJZ2DjthdsfCuaGxiE1PNCUGuvARAsMpHn KMD 2848.88502056
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RJZ2DjthdsfCuaGxiE1PNCUGuvARAsMpHn\",\"symbol\":\"KMD\"}"
+echo  "2848.88502056 <- expected amount RJZ2DjthdsfCuaGxiE1PNCUGuvARAsMpHn"
+
+# RTr3ghnoUgKMz7NVhcc2PEMmQ637J1P3CS KMD 1254936.56318998
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RTr3ghnoUgKMz7NVhcc2PEMmQ637J1P3CS\",\"symbol\":\"KMD\"}"
+echo  "1254936.56318998 <- expected amount RTr3ghnoUgKMz7NVhcc2PEMmQ637J1P3CS"
+
+# REPaLcbXYKr7D6kx6M56bwwgC7QShb8gL7 KMD 107312.62836396
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"REPaLcbXYKr7D6kx6M56bwwgC7QShb8gL7\",\"symbol\":\"KMD\"}"
+echo  "107312.62836396 <- expected amount REPaLcbXYKr7D6kx6M56bwwgC7QShb8gL7"
+
+# RY1n8qYX7hUVPiupbiX5zAbN4CtGpyKN5F KMD 368374.24120335
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RY1n8qYX7hUVPiupbiX5zAbN4CtGpyKN5F\",\"symbol\":\"KMD\"}"
+echo  "368374.24120335 <- expected amount RY1n8qYX7hUVPiupbiX5zAbN4CtGpyKN5F"
+
+# RNhyF9U3o4hTgWqnwQjHwrD1o4GqWiP1T6 KMD 7816.63087181, REVS 78.63808960
+# RNhyF9U3o4hTgWqnwQjHwrD1o4GqWiP1T6 KMD 7816.63087181
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RNhyF9U3o4hTgWqnwQjHwrD1o4GqWiP1T6\",\"symbol\":\"KMD\"}"
+echo  "7816.63087181 <- expected amount RNhyF9U3o4hTgWqnwQjHwrD1o4GqWiP1T6"
+
+# RV3JsiGCq92BXiyo4JvRVJzTAm9RTdnNKn KMD 92958.26394000
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RV3JsiGCq92BXiyo4JvRVJzTAm9RTdnNKn\",\"symbol\":\"KMD\"}"
+echo  "92958.26394000 <- expected amount RV3JsiGCq92BXiyo4JvRVJzTAm9RTdnNKn"
+
+# RRMGMXyfD4ye9ebKwGWrAme3KU2CbaWy78 KMD 26149.64106420
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RRMGMXyfD4ye9ebKwGWrAme3KU2CbaWy78\",\"symbol\":\"KMD\"}"
+echo  "26149.64106420 <- expected amount RRMGMXyfD4ye9ebKwGWrAme3KU2CbaWy78"
+
+# RE3yR2mCeG15ARgvENMbb573VqoQJcM3po KMD 17738.87416605, REVS 18.61556549
+# RE3yR2mCeG15ARgvENMbb573VqoQJcM3po KMD 17738.87416605
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RE3yR2mCeG15ARgvENMbb573VqoQJcM3po\",\"symbol\":\"KMD\"}"
+echo  "17738.87416605 <- expected amount RE3yR2mCeG15ARgvENMbb573VqoQJcM3po"
+
+# RF8Ua3mt2tMbwADn1XvYWxfJGz6fAnYBeq KMD 17817.00058850
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RF8Ua3mt2tMbwADn1XvYWxfJGz6fAnYBeq\",\"symbol\":\"KMD\"}"
+echo  "17817.00058850 <- expected amount RF8Ua3mt2tMbwADn1XvYWxfJGz6fAnYBeq"
+
+# RApWnKTepnDfPSDGX1wJnLXoNFCP5QzGWe KMD 928.65305676
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RApWnKTepnDfPSDGX1wJnLXoNFCP5QzGWe\",\"symbol\":\"KMD\"}"
+echo  "928.65305676 <- expected amount RApWnKTepnDfPSDGX1wJnLXoNFCP5QzGWe"
+
+# RQjw6VEsAECmnKxXwwWCixCsz7gfFSaKsZ KMD 19137.10414825
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RQjw6VEsAECmnKxXwwWCixCsz7gfFSaKsZ\",\"symbol\":\"KMD\"}"
+echo  "19137.10414825 <- expected amount RQjw6VEsAECmnKxXwwWCixCsz7gfFSaKsZ"
+
+# RWXYahA1NR6p5sBzXBknCaTDGmhSfhMV3a KMD 7891.18147631
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RWXYahA1NR6p5sBzXBknCaTDGmhSfhMV3a\",\"symbol\":\"KMD\"}"
+echo  "7891.18147631 <- expected amount RWXYahA1NR6p5sBzXBknCaTDGmhSfhMV3a"
+
+# RPkMn5ZH5E7xPbQdCYkZYx3WueAqYKVTyn KMD 259520.15743267
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RPkMn5ZH5E7xPbQdCYkZYx3WueAqYKVTyn\",\"symbol\":\"KMD\"}"
+echo  "259520.15743267 <- expected amount RPkMn5ZH5E7xPbQdCYkZYx3WueAqYKVTyn"
+
+# RA8GBwKDSyQas9uTAi6ThYi2jNXfrcbyZw KMD 3730.99968446
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RA8GBwKDSyQas9uTAi6ThYi2jNXfrcbyZw\",\"symbol\":\"KMD\"}"
+echo  "3730.99968446 <- expected amount RA8GBwKDSyQas9uTAi6ThYi2jNXfrcbyZw"
+
+# RJ8QYKwegf7ApdYsWo3PXrGfX3nBvpN9Zn KMD 894973.14219837
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RJ8QYKwegf7ApdYsWo3PXrGfX3nBvpN9Zn\",\"symbol\":\"KMD\"}"
+echo  "894973.14219837 <- expected amount RJ8QYKwegf7ApdYsWo3PXrGfX3nBvpN9Zn"
+
+# RW3kA5hhT2Zi19ifVLWh3eHEbF7vGHp5xr KMD 722795.20152529
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RW3kA5hhT2Zi19ifVLWh3eHEbF7vGHp5xr\",\"symbol\":\"KMD\"}"
+echo  "722795.20152529 <- expected amount RW3kA5hhT2Zi19ifVLWh3eHEbF7vGHp5xr"
+
+# RHgNtXM72MHF8BtiD9mixaotZvb1W3LsN3 KMD 755.28589451
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RHgNtXM72MHF8BtiD9mixaotZvb1W3LsN3\",\"symbol\":\"KMD\"}"
+echo  "755.28589451 <- expected amount RHgNtXM72MHF8BtiD9mixaotZvb1W3LsN3"
+
+# RWX3kh4b4vR2fsrgEm9SA4KQbWMaJEH5fa KMD 19366.30498750
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RWX3kh4b4vR2fsrgEm9SA4KQbWMaJEH5fa\",\"symbol\":\"KMD\"}"
+echo  "19366.30498750 <- expected amount RWX3kh4b4vR2fsrgEm9SA4KQbWMaJEH5fa"
+
+# RP38FcReMG1hqt4jjLVuGUzbQQPgNwEQ71 KMD 7523.80948764
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RP38FcReMG1hqt4jjLVuGUzbQQPgNwEQ71\",\"symbol\":\"KMD\"}"
+echo  "7523.80948764 <- expected amount RP38FcReMG1hqt4jjLVuGUzbQQPgNwEQ71"
+
+# RUUskhF2uWvRGsnTvhgjMkq48XgZ12EXuK KMD 7746.52199500
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUUskhF2uWvRGsnTvhgjMkq48XgZ12EXuK\",\"symbol\":\"KMD\"}"
+echo  "7746.52199500 <- expected amount RUUskhF2uWvRGsnTvhgjMkq48XgZ12EXuK"
+
+# RT7ENMvL46nwrFfNj1TLa5FEqJzTztHefH KMD 26696.69308472, REVS 529.99000000
+# RT7ENMvL46nwrFfNj1TLa5FEqJzTztHefH KMD 26696.69308472
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RT7ENMvL46nwrFfNj1TLa5FEqJzTztHefH\",\"symbol\":\"KMD\"}"
+echo  "26696.69308472 <- expected amount RT7ENMvL46nwrFfNj1TLa5FEqJzTztHefH"
+
+# RKyqUmtUmogi4qT5uWxvSh15TwFebrJS4B KMD 1711.08167983
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RKyqUmtUmogi4qT5uWxvSh15TwFebrJS4B\",\"symbol\":\"KMD\"}"
+echo  "1711.08167983 <- expected amount RKyqUmtUmogi4qT5uWxvSh15TwFebrJS4B"
+
+# RCQGZn4x3AFjQJJwW6hFHfsiQQQ1pL2Kne KMD 1846.86875964
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RCQGZn4x3AFjQJJwW6hFHfsiQQQ1pL2Kne\",\"symbol\":\"KMD\"}"
+echo  "1846.86875964 <- expected amount RCQGZn4x3AFjQJJwW6hFHfsiQQQ1pL2Kne"
+
+# RSHNubMtw3ZLmHy9QEkYmwPLy7vob6NvfP KMD 1092.25960129
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSHNubMtw3ZLmHy9QEkYmwPLy7vob6NvfP\",\"symbol\":\"KMD\"}"
+echo  "1092.25960129 <- expected amount RSHNubMtw3ZLmHy9QEkYmwPLy7vob6NvfP"
+
+# RDTcqgh4MMHLtu9FBCcULqZmP761DFmk9b KMD 82906.87674571, REVS 1438.93600000
+# RDTcqgh4MMHLtu9FBCcULqZmP761DFmk9b KMD 82906.87674571
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RDTcqgh4MMHLtu9FBCcULqZmP761DFmk9b\",\"symbol\":\"KMD\"}"
+echo  "82906.87674571 <- expected amount RDTcqgh4MMHLtu9FBCcULqZmP761DFmk9b"
+
+# RWhJ879HiwHEb9sKbdhWQuoSQAFtC4G6t4 KMD 15493.04399000
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RWhJ879HiwHEb9sKbdhWQuoSQAFtC4G6t4\",\"symbol\":\"KMD\"}"
+echo  "15493.04399000 <- expected amount RWhJ879HiwHEb9sKbdhWQuoSQAFtC4G6t4"
+
+# RLS7frPLUVeNTMGQx6rBHYmcDgvNrT4cKN KMD 732.43675323
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RLS7frPLUVeNTMGQx6rBHYmcDgvNrT4cKN\",\"symbol\":\"KMD\"}"
+echo  "732.43675323 <- expected amount RLS7frPLUVeNTMGQx6rBHYmcDgvNrT4cKN"
+
+# RTQknkEBMuz5i7m8ZM9BjbuFn8iXNxgeed KMD 5458.23813028
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RTQknkEBMuz5i7m8ZM9BjbuFn8iXNxgeed\",\"symbol\":\"KMD\"}"
+echo  "5458.23813028 <- expected amount RTQknkEBMuz5i7m8ZM9BjbuFn8iXNxgeed"
+
+# RXfY8PwT85HVhK2cgV9uRpdaLQzTsR5g1y KMD 46479.13197000
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RXfY8PwT85HVhK2cgV9uRpdaLQzTsR5g1y\",\"symbol\":\"KMD\"}"
+echo  "46479.13197000 <- expected amount RXfY8PwT85HVhK2cgV9uRpdaLQzTsR5g1y"
+
+# RHSUmLRyJwpbdsRtytkGs9GmpZghQWHje3 KMD 2197.34858012, REVS 43.61040113
+# RHSUmLRyJwpbdsRtytkGs9GmpZghQWHje3 KMD 2197.34858012
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RHSUmLRyJwpbdsRtytkGs9GmpZghQWHje3\",\"symbol\":\"KMD\"}"
+echo  "2197.34858012 <- expected amount RHSUmLRyJwpbdsRtytkGs9GmpZghQWHje3"
+
+# RJEQbNrMQUHELrYPVLPepR2Y3ruAag3hEP KMD 64966.39751162, REVS 1035.00000000
+# RJEQbNrMQUHELrYPVLPepR2Y3ruAag3hEP KMD 64966.39751162
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RJEQbNrMQUHELrYPVLPepR2Y3ruAag3hEP\",\"symbol\":\"KMD\"}"
+echo  "64966.39751162 <- expected amount RJEQbNrMQUHELrYPVLPepR2Y3ruAag3hEP"
+
+# RRBnn6p3pJfyrjFBrDrTD2RJg2AAQVSXa1 KMD 38732.60997500
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RRBnn6p3pJfyrjFBrDrTD2RJg2AAQVSXa1\",\"symbol\":\"KMD\"}"
+echo  "38732.60997500 <- expected amount RRBnn6p3pJfyrjFBrDrTD2RJg2AAQVSXa1"
+
+# RJ1DUUySYib5LcwJKFJ78PD3so2GQ89jKJ KMD 377892.70160675, REVS 7501.00000000
+# RJ1DUUySYib5LcwJKFJ78PD3so2GQ89jKJ KMD 377892.70160675
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RJ1DUUySYib5LcwJKFJ78PD3so2GQ89jKJ\",\"symbol\":\"KMD\"}"
+echo  "377892.70160675 <- expected amount RJ1DUUySYib5LcwJKFJ78PD3so2GQ89jKJ"
+
+# RKtGS9q1vcReNcEtP3MzQjfjXyomLK2716 KMD 100542.16930966
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RKtGS9q1vcReNcEtP3MzQjfjXyomLK2716\",\"symbol\":\"KMD\"}"
+echo  "100542.16930966 <- expected amount RKtGS9q1vcReNcEtP3MzQjfjXyomLK2716"
+
+# R9YZPUTTVNcnKpuQ4JgMaxYzLXmeWA3msY KMD 96830.55662225
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"R9YZPUTTVNcnKpuQ4JgMaxYzLXmeWA3msY\",\"symbol\":\"KMD\"}"
+echo  "96830.55662225 <- expected amount R9YZPUTTVNcnKpuQ4JgMaxYzLXmeWA3msY"
+
+# RLyaf3XgjHruSeJd4oj83E8btck7kYPmVz KMD 2140.79273143
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RLyaf3XgjHruSeJd4oj83E8btck7kYPmVz\",\"symbol\":\"KMD\"}"
+echo  "2140.79273143 <- expected amount RLyaf3XgjHruSeJd4oj83E8btck7kYPmVz"
+
+# RF6eSvAE12JNFZ2eT9rwFti2CJT8m13gwA KMD 968.31524937
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RF6eSvAE12JNFZ2eT9rwFti2CJT8m13gwA\",\"symbol\":\"KMD\"}"
+echo  "968.31524937 <- expected amount RF6eSvAE12JNFZ2eT9rwFti2CJT8m13gwA"
+
+# RC2nLGhFUc5Q9QFG1b38gAi9WgSgzQ9hJR KMD 41.38832712, REVS 0.82090537
+# RC2nLGhFUc5Q9QFG1b38gAi9WgSgzQ9hJR KMD 41.38832712
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RC2nLGhFUc5Q9QFG1b38gAi9WgSgzQ9hJR\",\"symbol\":\"KMD\"}"
+echo  "41.38832712 <- expected amount RC2nLGhFUc5Q9QFG1b38gAi9WgSgzQ9hJR"
+
+# RCJHEogA7SW6PxuctPLtaVnXwiu49PyZY8 KMD 1350076.86672091, REVS 100.00000000
+# RCJHEogA7SW6PxuctPLtaVnXwiu49PyZY8 KMD 1350076.86672091
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RCJHEogA7SW6PxuctPLtaVnXwiu49PyZY8\",\"symbol\":\"KMD\"}"
+echo  "1350076.86672091 <- expected amount RCJHEogA7SW6PxuctPLtaVnXwiu49PyZY8"
+
+# RJbudEMb7wEEN8QZ18fEkptxjE4QnMECUu KMD 50567.04202258, REVS 1003.32000000
+# RJbudEMb7wEEN8QZ18fEkptxjE4QnMECUu KMD 50567.04202258
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RJbudEMb7wEEN8QZ18fEkptxjE4QnMECUu\",\"symbol\":\"KMD\"}"
+echo  "50567.04202258 <- expected amount RJbudEMb7wEEN8QZ18fEkptxjE4QnMECUu"
+
+# RSdVypRznJsboL6MaP1shkaLhrVFcNx2KL KMD 589187.66272894, REVS 11685.49743445
+# RSdVypRznJsboL6MaP1shkaLhrVFcNx2KL KMD 589187.66272894
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSdVypRznJsboL6MaP1shkaLhrVFcNx2KL\",\"symbol\":\"KMD\"}"
+echo  "589187.66272894 <- expected amount RSdVypRznJsboL6MaP1shkaLhrVFcNx2KL"
+
+# RY69roX9pRXdH3yeF8WMFUDWFEoEdWDn5S KMD 100.59218694
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RY69roX9pRXdH3yeF8WMFUDWFEoEdWDn5S\",\"symbol\":\"KMD\"}"
+echo  "100.59218694 <- expected amount RY69roX9pRXdH3yeF8WMFUDWFEoEdWDn5S"
+
+# RWXwZyGf4q7cBakkY4tgupptBbCSvcBsBH KMD 1012.75625347, REVS 20.10000000
+# RWXwZyGf4q7cBakkY4tgupptBbCSvcBsBH KMD 1012.75625347
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RWXwZyGf4q7cBakkY4tgupptBbCSvcBsBH\",\"symbol\":\"KMD\"}"
+echo  "1012.75625347 <- expected amount RWXwZyGf4q7cBakkY4tgupptBbCSvcBsBH"
+
+# RA7UJPwPxqgPHn4YscYWRH5EPQVaFaaaPa KMD 45132.81116316, REVS 342.26137428
+# RA7UJPwPxqgPHn4YscYWRH5EPQVaFaaaPa KMD 45132.81116316
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RA7UJPwPxqgPHn4YscYWRH5EPQVaFaaaPa\",\"symbol\":\"KMD\"}"
+echo  "45132.81116316 <- expected amount RA7UJPwPxqgPHn4YscYWRH5EPQVaFaaaPa"
+
+# RUWFJ2c9CvJM8sp3YmaaN6EG58qkZ9M6ac KMD 5028.91865657
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUWFJ2c9CvJM8sp3YmaaN6EG58qkZ9M6ac\",\"symbol\":\"KMD\"}"
+echo  "5028.91865657 <- expected amount RUWFJ2c9CvJM8sp3YmaaN6EG58qkZ9M6ac"
+
+# RRFFxsc6kkfahR7v4paTaUZrPFisuz9Nkq KMD 155.36852443, REVS 3.08314987
+# RRFFxsc6kkfahR7v4paTaUZrPFisuz9Nkq KMD 155.36852443
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RRFFxsc6kkfahR7v4paTaUZrPFisuz9Nkq\",\"symbol\":\"KMD\"}"
+echo  "155.36852443 <- expected amount RRFFxsc6kkfahR7v4paTaUZrPFisuz9Nkq"
+
+# RKAkaVY1fgNKDbwSNiFKfWE9o5Rten6yQb KMD 15607.20311298
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RKAkaVY1fgNKDbwSNiFKfWE9o5Rten6yQb\",\"symbol\":\"KMD\"}"
+echo  "15607.20311298 <- expected amount RKAkaVY1fgNKDbwSNiFKfWE9o5Rten6yQb"
+
+# RWFSbi9ECuZWVE37jpkbiKGw7DaFYdNtts KMD 23963.90703474, REVS 475.60756080
+# RWFSbi9ECuZWVE37jpkbiKGw7DaFYdNtts KMD 23963.90703474
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RWFSbi9ECuZWVE37jpkbiKGw7DaFYdNtts\",\"symbol\":\"KMD\"}"
+echo  "23963.90703474 <- expected amount RWFSbi9ECuZWVE37jpkbiKGw7DaFYdNtts"
+
+# RYQZmzckzB1gMYZQAYorYUcRuND8J6Lm4Z KMD 774.65219950
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RYQZmzckzB1gMYZQAYorYUcRuND8J6Lm4Z\",\"symbol\":\"KMD\"}"
+echo  "774.65219950 <- expected amount RYQZmzckzB1gMYZQAYorYUcRuND8J6Lm4Z"
+
+# RUVkn1F9g7TxoPbYtegiQoFnPTusP2gzDr KMD 43088.75849296, REVS 470.88002226
+# RUVkn1F9g7TxoPbYtegiQoFnPTusP2gzDr KMD 43088.75849296
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUVkn1F9g7TxoPbYtegiQoFnPTusP2gzDr\",\"symbol\":\"KMD\"}"
+echo  "43088.75849296 <- expected amount RUVkn1F9g7TxoPbYtegiQoFnPTusP2gzDr"
+
+# RWDt2Xw6gHLdKdFEQFsNqAYYGUq37MvWYX KMD 19172.64193762
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RWDt2Xw6gHLdKdFEQFsNqAYYGUq37MvWYX\",\"symbol\":\"KMD\"}"
+echo  "19172.64193762 <- expected amount RWDt2Xw6gHLdKdFEQFsNqAYYGUq37MvWYX"
+
+# R9vBYQw9tSBhu2c1g4SQhZdhuZeeQrEBoN KMD 111664.10821907, REVS 2023.42268720
+# R9vBYQw9tSBhu2c1g4SQhZdhuZeeQrEBoN KMD 111664.10821907
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"R9vBYQw9tSBhu2c1g4SQhZdhuZeeQrEBoN\",\"symbol\":\"KMD\"}"
+echo  "111664.10821907 <- expected amount R9vBYQw9tSBhu2c1g4SQhZdhuZeeQrEBoN"
+
+# RH2udBo3386n4hatBet85WUxiGao8VVSM6 KMD 4047.94506848
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RH2udBo3386n4hatBet85WUxiGao8VVSM6\",\"symbol\":\"KMD\"}"
+echo  "4047.94506848 <- expected amount RH2udBo3386n4hatBet85WUxiGao8VVSM6"
+
+# RUFov2hPGqwtVTVVJGxUL5AGcyFSWmjRXe KMD 1011.40498451
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUFov2hPGqwtVTVVJGxUL5AGcyFSWmjRXe\",\"symbol\":\"KMD\"}"
+echo  "1011.40498451 <- expected amount RUFov2hPGqwtVTVVJGxUL5AGcyFSWmjRXe"
+
+# RG8g7LjK7hdyKp3aoKBRdwzpLy31XMXMLk KMD 972.80557592, REVS 19.29916914
+# RG8g7LjK7hdyKp3aoKBRdwzpLy31XMXMLk KMD 972.80557592
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RG8g7LjK7hdyKp3aoKBRdwzpLy31XMXMLk\",\"symbol\":\"KMD\"}"
+echo  "972.80557592 <- expected amount RG8g7LjK7hdyKp3aoKBRdwzpLy31XMXMLk"
+
+# RTDNWLv3EJeKhhwrvBdKuxBLfWz7prmv9B KMD 2420.78812342
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RTDNWLv3EJeKhhwrvBdKuxBLfWz7prmv9B\",\"symbol\":\"KMD\"}"
+echo  "2420.78812342 <- expected amount RTDNWLv3EJeKhhwrvBdKuxBLfWz7prmv9B"
+
+# RCdkLhDy7Ec2i7pwAsVmi1rnUufy2TEZmJ KMD 1589.10920508
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RCdkLhDy7Ec2i7pwAsVmi1rnUufy2TEZmJ\",\"symbol\":\"KMD\"}"
+echo  "1589.10920508 <- expected amount RCdkLhDy7Ec2i7pwAsVmi1rnUufy2TEZmJ"
+
+# RJ7RfZfip4qL9uEJs7Wr9FYtGusQiryMqE KMD 43251.49599262, REVS 857.93461385
+# RJ7RfZfip4qL9uEJs7Wr9FYtGusQiryMqE KMD 43251.49599262
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RJ7RfZfip4qL9uEJs7Wr9FYtGusQiryMqE\",\"symbol\":\"KMD\"}"
+echo  "43251.49599262 <- expected amount RJ7RfZfip4qL9uEJs7Wr9FYtGusQiryMqE"
+
+# RNW6Kkcdktbeemd2n8NVPCfgnRirzWoiZY KMD 53585.08128315, REVS 731.01000000
+# RNW6Kkcdktbeemd2n8NVPCfgnRirzWoiZY KMD 53585.08128315
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RNW6Kkcdktbeemd2n8NVPCfgnRirzWoiZY\",\"symbol\":\"KMD\"}"
+echo  "53585.08128315 <- expected amount RNW6Kkcdktbeemd2n8NVPCfgnRirzWoiZY"
+
+# RRNkPd3BmppvxVxQCLzKfg2vVT2ypNcVxv KMD 4924.65994176
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RRNkPd3BmppvxVxQCLzKfg2vVT2ypNcVxv\",\"symbol\":\"KMD\"}"
+echo  "4924.65994176 <- expected amount RRNkPd3BmppvxVxQCLzKfg2vVT2ypNcVxv"
+
+# RA2uJhw4TktHGHShKBTKoTaGjZSXU9Z2nX KMD 55939.57195639
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RA2uJhw4TktHGHShKBTKoTaGjZSXU9Z2nX\",\"symbol\":\"KMD\"}"
+echo  "55939.57195639 <- expected amount RA2uJhw4TktHGHShKBTKoTaGjZSXU9Z2nX"
+
+# RE1NYFqFG2vmhhHVY7QFC7sTp7zBxvSSP3 KMD 57862.44847739, REVS 464.78017965
+# RE1NYFqFG2vmhhHVY7QFC7sTp7zBxvSSP3 KMD 57862.44847739
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RE1NYFqFG2vmhhHVY7QFC7sTp7zBxvSSP3\",\"symbol\":\"KMD\"}"
+echo  "57862.44847739 <- expected amount RE1NYFqFG2vmhhHVY7QFC7sTp7zBxvSSP3"
+
+# RSMNwfRUZxbE5YPud3PM46YYML8XsdELf6 KMD 11629.46614499
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSMNwfRUZxbE5YPud3PM46YYML8XsdELf6\",\"symbol\":\"KMD\"}"
+echo  "11629.46614499 <- expected amount RSMNwfRUZxbE5YPud3PM46YYML8XsdELf6"
+
+# RUfJhANk7NzFapqGV1zamTgHm47LXsi8Zz KMD 2494.84014833
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUfJhANk7NzFapqGV1zamTgHm47LXsi8Zz\",\"symbol\":\"KMD\"}"
+echo  "2494.84014833 <- expected amount RUfJhANk7NzFapqGV1zamTgHm47LXsi8Zz"
+
+# RCyBEMjM6UgHAEosMCdxJb5VophihZ84hq KMD 755216.97171164
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RCyBEMjM6UgHAEosMCdxJb5VophihZ84hq\",\"symbol\":\"KMD\"}"
+echo  "755216.97171164 <- expected amount RCyBEMjM6UgHAEosMCdxJb5VophihZ84hq"
+
+# RSCe76vADETuwWAdga98c2LVdvKcNXeHmJ KMD 7436.66111520
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSCe76vADETuwWAdga98c2LVdvKcNXeHmJ\",\"symbol\":\"KMD\"}"
+echo  "7436.66111520 <- expected amount RSCe76vADETuwWAdga98c2LVdvKcNXeHmJ"
+
+# RTkvmxME9rVZBY6ABNqkkbqKvn8WUqgQqr KMD 215743.93040290, REVS 4280.65926868
+# RTkvmxME9rVZBY6ABNqkkbqKvn8WUqgQqr KMD 215743.93040290
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RTkvmxME9rVZBY6ABNqkkbqKvn8WUqgQqr\",\"symbol\":\"KMD\"}"
+echo  "215743.93040290 <- expected amount RTkvmxME9rVZBY6ABNqkkbqKvn8WUqgQqr"
+
+# R9Udy3hSfnsr6YuRkHXsuKWrZsd8oEm2jb KMD 1006939.18080157
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"R9Udy3hSfnsr6YuRkHXsuKWrZsd8oEm2jb\",\"symbol\":\"KMD\"}"
+echo  "1006939.18080157 <- expected amount R9Udy3hSfnsr6YuRkHXsuKWrZsd8oEm2jb"
+
+# RAaQjULJVvG6LLF8NVKPidX1HYtrGSWbCN KMD 4005.10943567
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RAaQjULJVvG6LLF8NVKPidX1HYtrGSWbCN\",\"symbol\":\"KMD\"}"
+echo  "4005.10943567 <- expected amount RAaQjULJVvG6LLF8NVKPidX1HYtrGSWbCN"
+
+# RNBqCY6Mcp5ZLgL8R66FzvprYKhXaraeBb KMD 10117.34846003
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RNBqCY6Mcp5ZLgL8R66FzvprYKhXaraeBb\",\"symbol\":\"KMD\"}"
+echo  "10117.34846003 <- expected amount RNBqCY6Mcp5ZLgL8R66FzvprYKhXaraeBb"
+
+# RCMjQirY1RqzJDEKLQjvN4Q35CHgy6LbEP KMD 1005.49855495
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RCMjQirY1RqzJDEKLQjvN4Q35CHgy6LbEP\",\"symbol\":\"KMD\"}"
+echo  "1005.49855495 <- expected amount RCMjQirY1RqzJDEKLQjvN4Q35CHgy6LbEP"
+
+# RUtbAxmAqv1V47932T89tt79AN6TzazXSk KMD 1277.32401175
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUtbAxmAqv1V47932T89tt79AN6TzazXSk\",\"symbol\":\"KMD\"}"
+echo  "1277.32401175 <- expected amount RUtbAxmAqv1V47932T89tt79AN6TzazXSk"
+
+# RS9erX84xJG17efdZ66qHxhsUMG15fnCsH KMD 977546.42205511, REVS 19403.85638743
+# RS9erX84xJG17efdZ66qHxhsUMG15fnCsH KMD 977546.42205511
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RS9erX84xJG17efdZ66qHxhsUMG15fnCsH\",\"symbol\":\"KMD\"}"
+echo  "977546.42205511 <- expected amount RS9erX84xJG17efdZ66qHxhsUMG15fnCsH"
+
+# RMJp33AqgWV6oH4iLgN9XaXa2WThNdWdKL KMD 8908.50029425
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RMJp33AqgWV6oH4iLgN9XaXa2WThNdWdKL\",\"symbol\":\"KMD\"}"
+echo  "8908.50029425 <- expected amount RMJp33AqgWV6oH4iLgN9XaXa2WThNdWdKL"
+
+# RLG1kAeCLx4heef3FfqcqWe9ysR1BdNMoZ KMD 1394.37395910
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RLG1kAeCLx4heef3FfqcqWe9ysR1BdNMoZ\",\"symbol\":\"KMD\"}"
+echo  "1394.37395910 <- expected amount RLG1kAeCLx4heef3FfqcqWe9ysR1BdNMoZ"
+
+# RE1wsrDNwW2NnNWM5eE162yp6haLtm5uh7 KMD 14588.33036215, REVS 289.61149547
+# RE1wsrDNwW2NnNWM5eE162yp6haLtm5uh7 KMD 14588.33036215
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RE1wsrDNwW2NnNWM5eE162yp6haLtm5uh7\",\"symbol\":\"KMD\"}"
+echo  "14588.33036215 <- expected amount RE1wsrDNwW2NnNWM5eE162yp6haLtm5uh7"
+
+# RRbV5dN4N7wUj3iLrv95SWJCZbtkV9uwoC KMD 18008.72700786
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RRbV5dN4N7wUj3iLrv95SWJCZbtkV9uwoC\",\"symbol\":\"KMD\"}"
+echo  "18008.72700786 <- expected amount RRbV5dN4N7wUj3iLrv95SWJCZbtkV9uwoC"
+
+# RTwpYxfrofdzSYg55ci6Us48jHmtS4cjKk KMD 1626.76961895
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RTwpYxfrofdzSYg55ci6Us48jHmtS4cjKk\",\"symbol\":\"KMD\"}"
+echo  "1626.76961895 <- expected amount RTwpYxfrofdzSYg55ci6Us48jHmtS4cjKk"
+
+# RP6fkbQibLJnKqJTogBpJ1sv6zX9b6widN KMD 722.28571081
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RP6fkbQibLJnKqJTogBpJ1sv6zX9b6widN\",\"symbol\":\"KMD\"}"
+echo  "722.28571081 <- expected amount RP6fkbQibLJnKqJTogBpJ1sv6zX9b6widN"
+
+# RB5AaE1vQKejds89eDxDzsWcDSfi8ixfbL KMD 9863.45132134
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RB5AaE1vQKejds89eDxDzsWcDSfi8ixfbL\",\"symbol\":\"KMD\"}"
+echo  "9863.45132134 <- expected amount RB5AaE1vQKejds89eDxDzsWcDSfi8ixfbL"
+
+# RMPUMa3sjX98GG1RQunbc4mnTqUq4E6ZU3 KMD 83629.96327501
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RMPUMa3sjX98GG1RQunbc4mnTqUq4E6ZU3\",\"symbol\":\"KMD\"}"
+echo  "83629.96327501 <- expected amount RMPUMa3sjX98GG1RQunbc4mnTqUq4E6ZU3"
+
+# RK5BnRzCP52qsTE4xR3Qysn6m6KeTgpZA6 KMD 3170.70655908, REVS 37.96790925
+# RK5BnRzCP52qsTE4xR3Qysn6m6KeTgpZA6 KMD 3170.70655908
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RK5BnRzCP52qsTE4xR3Qysn6m6KeTgpZA6\",\"symbol\":\"KMD\"}"
+echo  "3170.70655908 <- expected amount RK5BnRzCP52qsTE4xR3Qysn6m6KeTgpZA6"
+
+# RUuWvTwNAMGLpuY3GLPBAmMp8ptShkMSyN KMD 11760.26545254
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUuWvTwNAMGLpuY3GLPBAmMp8ptShkMSyN\",\"symbol\":\"KMD\"}"
+echo  "11760.26545254 <- expected amount RUuWvTwNAMGLpuY3GLPBAmMp8ptShkMSyN"
+
+# RN6TfTEYHdvFAeosYrvDaMBb2yBco47Q5a KMD 7073.16782615, REVS 44.30216197
+# RN6TfTEYHdvFAeosYrvDaMBb2yBco47Q5a KMD 7073.16782615
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RN6TfTEYHdvFAeosYrvDaMBb2yBco47Q5a\",\"symbol\":\"KMD\"}"
+echo  "7073.16782615 <- expected amount RN6TfTEYHdvFAeosYrvDaMBb2yBco47Q5a"
+
+# RV4Hf22arBv4P4s5eFsUAnXC6N11T8x9tv KMD 117108.97863641, REVS 1631.49836519
+# RV4Hf22arBv4P4s5eFsUAnXC6N11T8x9tv KMD 117108.97863641
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RV4Hf22arBv4P4s5eFsUAnXC6N11T8x9tv\",\"symbol\":\"KMD\"}"
+echo  "117108.97863641 <- expected amount RV4Hf22arBv4P4s5eFsUAnXC6N11T8x9tv"
+
+# RYBH6Ha8RJa3CcE91yxJP6z2E6mDFm3bBt KMD 163386.58575808, REVS 50.00000000
+# RYBH6Ha8RJa3CcE91yxJP6z2E6mDFm3bBt KMD 163386.58575808
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RYBH6Ha8RJa3CcE91yxJP6z2E6mDFm3bBt\",\"symbol\":\"KMD\"}"
+echo  "163386.58575808 <- expected amount RYBH6Ha8RJa3CcE91yxJP6z2E6mDFm3bBt"
+
+# RHBHVXLAnvB8y5itKBNxnM8w2zqDRGCg2q KMD 774.65219950
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RHBHVXLAnvB8y5itKBNxnM8w2zqDRGCg2q\",\"symbol\":\"KMD\"}"
+echo  "774.65219950 <- expected amount RHBHVXLAnvB8y5itKBNxnM8w2zqDRGCg2q"
+
+# RUY7YW1WmTD3hCvkXmUKLeRnNg5UsJoLbU KMD 6742.29255596, REVS 105.00000000
+# RUY7YW1WmTD3hCvkXmUKLeRnNg5UsJoLbU KMD 6742.29255596
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUY7YW1WmTD3hCvkXmUKLeRnNg5UsJoLbU\",\"symbol\":\"KMD\"}"
+echo  "6742.29255596 <- expected amount RUY7YW1WmTD3hCvkXmUKLeRnNg5UsJoLbU"
+
+# RBxjj7kxFipThuHR9i3cyumFzM2c1puiua KMD 15493.04399000
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RBxjj7kxFipThuHR9i3cyumFzM2c1puiua\",\"symbol\":\"KMD\"}"
+echo  "15493.04399000 <- expected amount RBxjj7kxFipThuHR9i3cyumFzM2c1puiua"
+
+# REQqBMStNf7gWLxvG1a9KnbSgV78Hk19Js KMD 1936.63049875
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"REQqBMStNf7gWLxvG1a9KnbSgV78Hk19Js\",\"symbol\":\"KMD\"}"
+echo  "1936.63049875 <- expected amount REQqBMStNf7gWLxvG1a9KnbSgV78Hk19Js"
+
+# RNVwzuZynZ7d4DE5CfT8CWkxsp9TtCY3BF KMD 1598.36899361, REVS 11.75449303
+# RNVwzuZynZ7d4DE5CfT8CWkxsp9TtCY3BF KMD 1598.36899361
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RNVwzuZynZ7d4DE5CfT8CWkxsp9TtCY3BF\",\"symbol\":\"KMD\"}"
+echo  "1598.36899361 <- expected amount RNVwzuZynZ7d4DE5CfT8CWkxsp9TtCY3BF"
+
+# RHTDjCzn36ERtpE2DddYZq162EL9DZcsbK KMD 1341.60124279
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RHTDjCzn36ERtpE2DddYZq162EL9DZcsbK\",\"symbol\":\"KMD\"}"
+echo  "1341.60124279 <- expected amount RHTDjCzn36ERtpE2DddYZq162EL9DZcsbK"
+
+# RBBMrEHLVicGMQx1Do5FBUFP2tk5QiTD5a KMD 753.34926401
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RBBMrEHLVicGMQx1Do5FBUFP2tk5QiTD5a\",\"symbol\":\"KMD\"}"
+echo  "753.34926401 <- expected amount RBBMrEHLVicGMQx1Do5FBUFP2tk5QiTD5a"
+
+# RWfVv2z5FrHmKPayFfSM4FZQpgBctbPHTk KMD 9212.17131564
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RWfVv2z5FrHmKPayFfSM4FZQpgBctbPHTk\",\"symbol\":\"KMD\"}"
+echo  "9212.17131564 <- expected amount RWfVv2z5FrHmKPayFfSM4FZQpgBctbPHTk"
+
+# RBy9jDvvNgvRGeyWh96rhvwLJ8zR44YTBj KMD 18464.80349033
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RBy9jDvvNgvRGeyWh96rhvwLJ8zR44YTBj\",\"symbol\":\"KMD\"}"
+echo  "18464.80349033 <- expected amount RBy9jDvvNgvRGeyWh96rhvwLJ8zR44YTBj"
+
+# RMeXSe9FBfb7UA4rWKbbyUykF5SWsQFu2a KMD 9683.15249375
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RMeXSe9FBfb7UA4rWKbbyUykF5SWsQFu2a\",\"symbol\":\"KMD\"}"
+echo  "9683.15249375 <- expected amount RMeXSe9FBfb7UA4rWKbbyUykF5SWsQFu2a"
+
+# RHGSJf8UV9zJTdszmggAPdmNzzewrc5fnQ KMD 7019.31724271
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RHGSJf8UV9zJTdszmggAPdmNzzewrc5fnQ\",\"symbol\":\"KMD\"}"
+echo  "7019.31724271 <- expected amount RHGSJf8UV9zJTdszmggAPdmNzzewrc5fnQ"
+
+# RK7jYxdWFmDNEyutSbt5mLYdAdqsJv2E7A KMD 3975.36465037
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RK7jYxdWFmDNEyutSbt5mLYdAdqsJv2E7A\",\"symbol\":\"KMD\"}"
+echo  "3975.36465037 <- expected amount RK7jYxdWFmDNEyutSbt5mLYdAdqsJv2E7A"
+
+# RUQYagJpBH5Enm8jRJcY4yfGUtKdXe5jLJ KMD 4066.92404737
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUQYagJpBH5Enm8jRJcY4yfGUtKdXe5jLJ\",\"symbol\":\"KMD\"}"
+echo  "4066.92404737 <- expected amount RUQYagJpBH5Enm8jRJcY4yfGUtKdXe5jLJ"
+
+# RKNQdaiP4PivQqtE9wE3nPHFZkkBXSmprU KMD 2128.72487792
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RKNQdaiP4PivQqtE9wE3nPHFZkkBXSmprU\",\"symbol\":\"KMD\"}"
+echo  "2128.72487792 <- expected amount RKNQdaiP4PivQqtE9wE3nPHFZkkBXSmprU"
+
+# RKiCeCxYaJNGfgvkbH1RHsVctR3JWtDNw7 KMD 8908.50029425
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RKiCeCxYaJNGfgvkbH1RHsVctR3JWtDNw7\",\"symbol\":\"KMD\"}"
+echo  "8908.50029425 <- expected amount RKiCeCxYaJNGfgvkbH1RHsVctR3JWtDNw7"
+
+# RU3zngUmo6Mg4kDSWdLazMS5ht1RxQ7DCM KMD 774.65219950
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RU3zngUmo6Mg4kDSWdLazMS5ht1RxQ7DCM\",\"symbol\":\"KMD\"}"
+echo  "774.65219950 <- expected amount RU3zngUmo6Mg4kDSWdLazMS5ht1RxQ7DCM"
+
+# RMuMHC1Gp3b8yCUD5XsQH85QpfrRm1kLyS KMD 1470662.43386573
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RMuMHC1Gp3b8yCUD5XsQH85QpfrRm1kLyS\",\"symbol\":\"KMD\"}"
+echo  "1470662.43386573 <- expected amount RMuMHC1Gp3b8yCUD5XsQH85QpfrRm1kLyS"
+
+# RNScwyFBUV5yZz6svwsVD7fVDrAydrqFRG KMD 3692.08658052
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RNScwyFBUV5yZz6svwsVD7fVDrAydrqFRG\",\"symbol\":\"KMD\"}"
+echo  "3692.08658052 <- expected amount RNScwyFBUV5yZz6svwsVD7fVDrAydrqFRG"
+
+# RYWjav2a7USMWe5qK2rtLkzRgE4Ciezb9Z KMD 1243.73516984
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RYWjav2a7USMWe5qK2rtLkzRgE4Ciezb9Z\",\"symbol\":\"KMD\"}"
+echo  "1243.73516984 <- expected amount RYWjav2a7USMWe5qK2rtLkzRgE4Ciezb9Z"
+
+# RSbNJbs7PitRvqqVMdCpzD1yKBMM3gGAQb KMD 9683.15249375
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSbNJbs7PitRvqqVMdCpzD1yKBMM3gGAQb\",\"symbol\":\"KMD\"}"
+echo  "9683.15249375 <- expected amount RSbNJbs7PitRvqqVMdCpzD1yKBMM3gGAQb"
+
+# RBbxPEyNRrJ5f3QtG6yz8hco3nFZPoLeUM KMD 774.65219950
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RBbxPEyNRrJ5f3QtG6yz8hco3nFZPoLeUM\",\"symbol\":\"KMD\"}"
+echo  "774.65219950 <- expected amount RBbxPEyNRrJ5f3QtG6yz8hco3nFZPoLeUM"
+
+# RPriQZfzzgin7y2Ns6vxdrMAa4XgZqdY6y KMD 21671.70738465, REVS 170.69524117
+# RPriQZfzzgin7y2Ns6vxdrMAa4XgZqdY6y KMD 21671.70738465
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RPriQZfzzgin7y2Ns6vxdrMAa4XgZqdY6y\",\"symbol\":\"KMD\"}"
+echo  "21671.70738465 <- expected amount RPriQZfzzgin7y2Ns6vxdrMAa4XgZqdY6y"
+
+# RFbaPjT7beKPWswQHcHSpicRJ35ZBMCPC4 KMD 4307.02827126
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RFbaPjT7beKPWswQHcHSpicRJ35ZBMCPC4\",\"symbol\":\"KMD\"}"
+echo  "4307.02827126 <- expected amount RFbaPjT7beKPWswQHcHSpicRJ35ZBMCPC4"
+
+# RSCdeeWvzpBhg2tKnCWZWKw9iAMyYWiREG KMD 12075.12037906, REVS 239.62000000
+# RSCdeeWvzpBhg2tKnCWZWKw9iAMyYWiREG KMD 12075.12037906
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSCdeeWvzpBhg2tKnCWZWKw9iAMyYWiREG\",\"symbol\":\"KMD\"}"
+echo  "12075.12037906 <- expected amount RSCdeeWvzpBhg2tKnCWZWKw9iAMyYWiREG"
+
+# RRjuStV5BMjwEueeEZT8DWBaUx9gQjRDLG KMD 1676.97635800
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RRjuStV5BMjwEueeEZT8DWBaUx9gQjRDLG\",\"symbol\":\"KMD\"}"
+echo  "1676.97635800 <- expected amount RRjuStV5BMjwEueeEZT8DWBaUx9gQjRDLG"
+
+# RUAvb7FFPvxjNTVhABeS2EbbdUi2LfGNMj KMD 25710.06172178, REVS 510.00000000
+# RUAvb7FFPvxjNTVhABeS2EbbdUi2LfGNMj KMD 25710.06172178
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUAvb7FFPvxjNTVhABeS2EbbdUi2LfGNMj\",\"symbol\":\"KMD\"}"
+echo  "25710.06172178 <- expected amount RUAvb7FFPvxjNTVhABeS2EbbdUi2LfGNMj"
+
+# RDs6US7EYgfFrKiPzMFT84PcoQWUCniwky KMD 4453.35929709
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RDs6US7EYgfFrKiPzMFT84PcoQWUCniwky\",\"symbol\":\"KMD\"}"
+echo  "4453.35929709 <- expected amount RDs6US7EYgfFrKiPzMFT84PcoQWUCniwky"
+
+# RQuMEMn1TG7CCpbmYCVcDfPqesEvEkisjC KMD 34758.47429765, REVS 689.94006658
+# RQuMEMn1TG7CCpbmYCVcDfPqesEvEkisjC KMD 34758.47429765
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RQuMEMn1TG7CCpbmYCVcDfPqesEvEkisjC\",\"symbol\":\"KMD\"}"
+echo  "34758.47429765 <- expected amount RQuMEMn1TG7CCpbmYCVcDfPqesEvEkisjC"
+
+# RVptmyXVcTSkZQNd7UMgDz73p3AdfsamLS KMD 6487.71217081
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RVptmyXVcTSkZQNd7UMgDz73p3AdfsamLS\",\"symbol\":\"KMD\"}"
+echo  "6487.71217081 <- expected amount RVptmyXVcTSkZQNd7UMgDz73p3AdfsamLS"
+
+# REe9cFdWLNNDbCgWMNHAYBU4hBjUsu8zgY KMD 4003.40256701
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"REe9cFdWLNNDbCgWMNHAYBU4hBjUsu8zgY\",\"symbol\":\"KMD\"}"
+echo  "4003.40256701 <- expected amount REe9cFdWLNNDbCgWMNHAYBU4hBjUsu8zgY"
+
+# RBNB5mKstG86jYRjrKFgJuFoUFvZKJb9Wq KMD 816561.67159376, REVS 16199.49755302
+# RBNB5mKstG86jYRjrKFgJuFoUFvZKJb9Wq KMD 816561.67159376
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RBNB5mKstG86jYRjrKFgJuFoUFvZKJb9Wq\",\"symbol\":\"KMD\"}"
+echo  "816561.67159376 <- expected amount RBNB5mKstG86jYRjrKFgJuFoUFvZKJb9Wq"
+
+# RHoouCBBapEHE6uyX7CxHGFcRwUQFGMot5 KMD 88331.27512150, REVS 1398.88449696
+# RHoouCBBapEHE6uyX7CxHGFcRwUQFGMot5 KMD 88331.27512150
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RHoouCBBapEHE6uyX7CxHGFcRwUQFGMot5\",\"symbol\":\"KMD\"}"
+echo  "88331.27512150 <- expected amount RHoouCBBapEHE6uyX7CxHGFcRwUQFGMot5"
+
+# RAvtq1kazCRZUvWvPsN7ioY2Vt1EYtgpuz KMD 541891.46150744
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RAvtq1kazCRZUvWvPsN7ioY2Vt1EYtgpuz\",\"symbol\":\"KMD\"}"
+echo  "541891.46150744 <- expected amount RAvtq1kazCRZUvWvPsN7ioY2Vt1EYtgpuz"
+
+# RLHEGDwXuXQwhYkrhwSRGSJMFuvv7EAT7i KMD 22366.16022678, REVS 443.95821128
+# RLHEGDwXuXQwhYkrhwSRGSJMFuvv7EAT7i KMD 22366.16022678
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RLHEGDwXuXQwhYkrhwSRGSJMFuvv7EAT7i\",\"symbol\":\"KMD\"}"
+echo  "22366.16022678 <- expected amount RLHEGDwXuXQwhYkrhwSRGSJMFuvv7EAT7i"
+
+# RMWZenedfv1AQtuJw1EzYj9R2FxwzFpd54 KMD 4454.25014712
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RMWZenedfv1AQtuJw1EzYj9R2FxwzFpd54\",\"symbol\":\"KMD\"}"
+echo  "4454.25014712 <- expected amount RMWZenedfv1AQtuJw1EzYj9R2FxwzFpd54"
+
+# RAEtFUqe3jwVxLywCga2eKQxT2DiewsUuN KMD 25.54297774, REVS 0.50680815
+# RAEtFUqe3jwVxLywCga2eKQxT2DiewsUuN KMD 25.54297774
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RAEtFUqe3jwVxLywCga2eKQxT2DiewsUuN\",\"symbol\":\"KMD\"}"
+echo  "25.54297774 <- expected amount RAEtFUqe3jwVxLywCga2eKQxT2DiewsUuN"
+
+# RUcDMtu7fA3ATbHHsDTsZ8KThgd1ivawym KMD 21446.21749875, REVS 241.00000000
+# RUcDMtu7fA3ATbHHsDTsZ8KThgd1ivawym KMD 21446.21749875
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUcDMtu7fA3ATbHHsDTsZ8KThgd1ivawym\",\"symbol\":\"KMD\"}"
+echo  "21446.21749875 <- expected amount RUcDMtu7fA3ATbHHsDTsZ8KThgd1ivawym"
+
+# RDndtdqjEgQ2kyiCzpeWEtf9TSDJnMBvao KMD 1093.79403237
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RDndtdqjEgQ2kyiCzpeWEtf9TSDJnMBvao\",\"symbol\":\"KMD\"}"
+echo  "1093.79403237 <- expected amount RDndtdqjEgQ2kyiCzpeWEtf9TSDJnMBvao"
+
+# RG2cAef3JbCXiQkzPgrqS52HAQrBzJiAy4 KMD 102137.83664315, REVS 2027.11216000
+# RG2cAef3JbCXiQkzPgrqS52HAQrBzJiAy4 KMD 102137.83664315
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RG2cAef3JbCXiQkzPgrqS52HAQrBzJiAy4\",\"symbol\":\"KMD\"}"
+echo  "102137.83664315 <- expected amount RG2cAef3JbCXiQkzPgrqS52HAQrBzJiAy4"
+
+# RSFJ19qzQbtYJQD98pqpkTNoBEi9gM31TA KMD 15451.81049286
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSFJ19qzQbtYJQD98pqpkTNoBEi9gM31TA\",\"symbol\":\"KMD\"}"
+echo  "15451.81049286 <- expected amount RSFJ19qzQbtYJQD98pqpkTNoBEi9gM31TA"
+
+# R9gDQRa62Eg24qwZd3Pv374bYbWf4BSLZs KMD 4066.92404737
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"R9gDQRa62Eg24qwZd3Pv374bYbWf4BSLZs\",\"symbol\":\"KMD\"}"
+echo  "4066.92404737 <- expected amount R9gDQRa62Eg24qwZd3Pv374bYbWf4BSLZs"
+
+# RTh7GDBqLRDMYLdQyE7HHooBobztNXfsdW KMD 968.31524937
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RTh7GDBqLRDMYLdQyE7HHooBobztNXfsdW\",\"symbol\":\"KMD\"}"
+echo  "968.31524937 <- expected amount RTh7GDBqLRDMYLdQyE7HHooBobztNXfsdW"
+
+# RKEkubK347PwSM9SQ9eReFng1yFrEbGN8C KMD 11415.41169287
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RKEkubK347PwSM9SQ9eReFng1yFrEbGN8C\",\"symbol\":\"KMD\"}"
+echo  "11415.41169287 <- expected amount RKEkubK347PwSM9SQ9eReFng1yFrEbGN8C"
+
+# RHMKLGnyum4miEW55qL8Mawv7KdGsjbmAB KMD 9683.15249375
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RHMKLGnyum4miEW55qL8Mawv7KdGsjbmAB\",\"symbol\":\"KMD\"}"
+echo  "9683.15249375 <- expected amount RHMKLGnyum4miEW55qL8Mawv7KdGsjbmAB"
+
+# REzcqBkARMCCxkA5rVdp61f7rovmFtq5kf KMD 130928.69826981, REVS 2597.54928401
+# REzcqBkARMCCxkA5rVdp61f7rovmFtq5kf KMD 130928.69826981
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"REzcqBkARMCCxkA5rVdp61f7rovmFtq5kf\",\"symbol\":\"KMD\"}"
+echo  "130928.69826981 <- expected amount REzcqBkARMCCxkA5rVdp61f7rovmFtq5kf"
+
+# RTuiEzbcX7N1j1oXSwBbRE5n8s31wzyuXQ KMD 8948.17705032
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RTuiEzbcX7N1j1oXSwBbRE5n8s31wzyuXQ\",\"symbol\":\"KMD\"}"
+echo  "8948.17705032 <- expected amount RTuiEzbcX7N1j1oXSwBbRE5n8s31wzyuXQ"
+
+# RVcyGvC5uYhT1UguHu1wgHxSTH6JEx8NHP KMD 5117.51239557
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RVcyGvC5uYhT1UguHu1wgHxSTH6JEx8NHP\",\"symbol\":\"KMD\"}"
+echo  "5117.51239557 <- expected amount RVcyGvC5uYhT1UguHu1wgHxSTH6JEx8NHP"
+
+# RQKrkjKAvhPvhB3f9yAjipBPutJAP7TA32 KMD 3721.26805123
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RQKrkjKAvhPvhB3f9yAjipBPutJAP7TA32\",\"symbol\":\"KMD\"}"
+echo  "3721.26805123 <- expected amount RQKrkjKAvhPvhB3f9yAjipBPutJAP7TA32"
+
+# RFwK8bejf6ANo61ipukbXxto15z55CwRUm KMD 4360.41373744
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RFwK8bejf6ANo61ipukbXxto15z55CwRUm\",\"symbol\":\"KMD\"}"
+echo  "4360.41373744 <- expected amount RFwK8bejf6ANo61ipukbXxto15z55CwRUm"
+
+# RFHBwfH6pSfzaw3WDvV84ii4SGvGpEtgjJ KMD 26947.73503767
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RFHBwfH6pSfzaw3WDvV84ii4SGvGpEtgjJ\",\"symbol\":\"KMD\"}"
+echo  "26947.73503767 <- expected amount RFHBwfH6pSfzaw3WDvV84ii4SGvGpEtgjJ"
+
+# RXKZmFmmpfAV2DAdUUXhA88RqCoyPRXcnA KMD 28641.72782430, REVS 337.66808110
+# RXKZmFmmpfAV2DAdUUXhA88RqCoyPRXcnA KMD 28641.72782430
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RXKZmFmmpfAV2DAdUUXhA88RqCoyPRXcnA\",\"symbol\":\"KMD\"}"
+echo  "28641.72782430 <- expected amount RXKZmFmmpfAV2DAdUUXhA88RqCoyPRXcnA"
+
+# RCxnQhmYdpK9vTS7PLRtXBtDk2HaRNo1qk KMD 2171.04073365, REVS 43.05910000
+# RCxnQhmYdpK9vTS7PLRtXBtDk2HaRNo1qk KMD 2171.04073365
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RCxnQhmYdpK9vTS7PLRtXBtDk2HaRNo1qk\",\"symbol\":\"KMD\"}"
+echo  "2171.04073365 <- expected amount RCxnQhmYdpK9vTS7PLRtXBtDk2HaRNo1qk"
+
+# RNFLSwnYtoA5Gjb1eHDszeGLtxaE9yPiFp KMD 56753.10185822
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RNFLSwnYtoA5Gjb1eHDszeGLtxaE9yPiFp\",\"symbol\":\"KMD\"}"
+echo  "56753.10185822 <- expected amount RNFLSwnYtoA5Gjb1eHDszeGLtxaE9yPiFp"
+
+# RPtwW4UejbAxs5PU6a1zMPcPqW7SVghMDS KMD 31741.86724191, REVS 514.45537037
+# RPtwW4UejbAxs5PU6a1zMPcPqW7SVghMDS KMD 31741.86724191
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RPtwW4UejbAxs5PU6a1zMPcPqW7SVghMDS\",\"symbol\":\"KMD\"}"
+echo  "31741.86724191 <- expected amount RPtwW4UejbAxs5PU6a1zMPcPqW7SVghMDS"
+
+# RYWPYz5qotHsukbFpzRksctMUBobmWLdkG KMD 9295.82639400
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RYWPYz5qotHsukbFpzRksctMUBobmWLdkG\",\"symbol\":\"KMD\"}"
+echo  "9295.82639400 <- expected amount RYWPYz5qotHsukbFpzRksctMUBobmWLdkG"
+
+# RBnTykMEj7GPYN1v8VtE9rrPvggZGuHzct KMD 4841.57624687
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RBnTykMEj7GPYN1v8VtE9rrPvggZGuHzct\",\"symbol\":\"KMD\"}"
+echo  "4841.57624687 <- expected amount RBnTykMEj7GPYN1v8VtE9rrPvggZGuHzct"
+
+# RYMzZx5nxKrMtTm3TNeheVn4RooTGvhsNd KMD 12756.16332851, REVS 253.10000000
+# RYMzZx5nxKrMtTm3TNeheVn4RooTGvhsNd KMD 12756.16332851
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RYMzZx5nxKrMtTm3TNeheVn4RooTGvhsNd\",\"symbol\":\"KMD\"}"
+echo  "12756.16332851 <- expected amount RYMzZx5nxKrMtTm3TNeheVn4RooTGvhsNd"
+
+# RPyKbtBPVb3FYv5iFULNUB6bq9DdvekZuz KMD 3422.63549310, REVS 51.90683618
+# RPyKbtBPVb3FYv5iFULNUB6bq9DdvekZuz KMD 3422.63549310
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RPyKbtBPVb3FYv5iFULNUB6bq9DdvekZuz\",\"symbol\":\"KMD\"}"
+echo  "3422.63549310 <- expected amount RPyKbtBPVb3FYv5iFULNUB6bq9DdvekZuz"
+
+# RVcGdBT2N6Fbqbptj3R4zhZYNB4WJQWEns KMD 77986.19708921, REVS 1548.20316000
+# RVcGdBT2N6Fbqbptj3R4zhZYNB4WJQWEns KMD 77986.19708921
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RVcGdBT2N6Fbqbptj3R4zhZYNB4WJQWEns\",\"symbol\":\"KMD\"}"
+echo  "77986.19708921 <- expected amount RVcGdBT2N6Fbqbptj3R4zhZYNB4WJQWEns"
+
+# RPZ1G1SP3qmfdmwxeLzuFYpeg2YgsyDmKm KMD 1633.25733112
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RPZ1G1SP3qmfdmwxeLzuFYpeg2YgsyDmKm\",\"symbol\":\"KMD\"}"
+echo  "1633.25733112 <- expected amount RPZ1G1SP3qmfdmwxeLzuFYpeg2YgsyDmKm"
+
+# RH4SXj2zZqfG4TfejyHcVpaoPoDv1Uonnf KMD 11621.99031627, REVS 192.14192021
+# RH4SXj2zZqfG4TfejyHcVpaoPoDv1Uonnf KMD 11621.99031627
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RH4SXj2zZqfG4TfejyHcVpaoPoDv1Uonnf\",\"symbol\":\"KMD\"}"
+echo  "11621.99031627 <- expected amount RH4SXj2zZqfG4TfejyHcVpaoPoDv1Uonnf"
+
+# RQrV64mBwDgfSSe7Tf57xApNUYKfgeAyUx KMD 4237.18880501
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RQrV64mBwDgfSSe7Tf57xApNUYKfgeAyUx\",\"symbol\":\"KMD\"}"
+echo  "4237.18880501 <- expected amount RQrV64mBwDgfSSe7Tf57xApNUYKfgeAyUx"
+
+# RV9osrAbwSAdNpm6qNXJrC2gk3nZhp3dZB KMD 111549.91672800
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RV9osrAbwSAdNpm6qNXJrC2gk3nZhp3dZB\",\"symbol\":\"KMD\"}"
+echo  "111549.91672800 <- expected amount RV9osrAbwSAdNpm6qNXJrC2gk3nZhp3dZB"
+
+# RNhXnjLYF8xWK3WJ81QGayVKspv39piE9A KMD 2186.32329008
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RNhXnjLYF8xWK3WJ81QGayVKspv39piE9A\",\"symbol\":\"KMD\"}"
+echo  "2186.32329008 <- expected amount RNhXnjLYF8xWK3WJ81QGayVKspv39piE9A"
+
+# RMtaFKtY9shLtoP3WBZqWgwGFGnN48aEms KMD 774.65219950
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RMtaFKtY9shLtoP3WBZqWgwGFGnN48aEms\",\"symbol\":\"KMD\"}"
+echo  "774.65219950 <- expected amount RMtaFKtY9shLtoP3WBZqWgwGFGnN48aEms"
+
+# REtq1LtbLVo6bz68f9TGFduNmUTKqG7vnH KMD 25088.84725730, REVS 305.62849999
+# REtq1LtbLVo6bz68f9TGFduNmUTKqG7vnH KMD 25088.84725730
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"REtq1LtbLVo6bz68f9TGFduNmUTKqG7vnH\",\"symbol\":\"KMD\"}"
+echo  "25088.84725730 <- expected amount REtq1LtbLVo6bz68f9TGFduNmUTKqG7vnH"
+
+# RS3rMPEGouBWbHKStyQg8TxVmtwFQ6ebh3 KMD 3546.25060143, REVS 39.99000000
+# RS3rMPEGouBWbHKStyQg8TxVmtwFQ6ebh3 KMD 3546.25060143
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RS3rMPEGouBWbHKStyQg8TxVmtwFQ6ebh3\",\"symbol\":\"KMD\"}"
+echo  "3546.25060143 <- expected amount RS3rMPEGouBWbHKStyQg8TxVmtwFQ6ebh3"
+
+# REEwT31zNEKL9B6ufdEeh3v39kaGXXmbHM KMD 3874.81030189
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"REEwT31zNEKL9B6ufdEeh3v39kaGXXmbHM\",\"symbol\":\"KMD\"}"
+echo  "3874.81030189 <- expected amount REEwT31zNEKL9B6ufdEeh3v39kaGXXmbHM"
+
+# RGzvr4JSHDLDQAGBwdyoUiUuaYn5sUwKNd KMD 69108.92543895, REVS 314.51750000
+# RGzvr4JSHDLDQAGBwdyoUiUuaYn5sUwKNd KMD 69108.92543895
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RGzvr4JSHDLDQAGBwdyoUiUuaYn5sUwKNd\",\"symbol\":\"KMD\"}"
+echo  "69108.92543895 <- expected amount RGzvr4JSHDLDQAGBwdyoUiUuaYn5sUwKNd"
+
+# RUNnhqkaV7SLEGCaD72mPq8nmY4c2kFpZg KMD 971.41385817
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUNnhqkaV7SLEGCaD72mPq8nmY4c2kFpZg\",\"symbol\":\"KMD\"}"
+echo  "971.41385817 <- expected amount RUNnhqkaV7SLEGCaD72mPq8nmY4c2kFpZg"
+
+# RKKuzpkq1jxGAJSbADQzUDHUbfNvVCKFpW KMD 1118.61025995
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RKKuzpkq1jxGAJSbADQzUDHUbfNvVCKFpW\",\"symbol\":\"KMD\"}"
+echo  "1118.61025995 <- expected amount RKKuzpkq1jxGAJSbADQzUDHUbfNvVCKFpW"
+
+# RMD1wVnzMmKn8uMTHaP9pYfCWkxf3QVWWE KMD 2931.50081538, REVS 40.37145505
+# RMD1wVnzMmKn8uMTHaP9pYfCWkxf3QVWWE KMD 2931.50081538
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RMD1wVnzMmKn8uMTHaP9pYfCWkxf3QVWWE\",\"symbol\":\"KMD\"}"
+echo  "2931.50081538 <- expected amount RMD1wVnzMmKn8uMTHaP9pYfCWkxf3QVWWE"
+
+# RKxR5Zafxm5WcmFFBdfWYTk55Qv6fbC4Vd KMD 8222.77359680
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RKxR5Zafxm5WcmFFBdfWYTk55Qv6fbC4Vd\",\"symbol\":\"KMD\"}"
+echo  "8222.77359680 <- expected amount RKxR5Zafxm5WcmFFBdfWYTk55Qv6fbC4Vd"
+
+# RFAPtYANyAs9hhwUBNYemugxjhpwp4YvwF KMD 19588.92575705
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RFAPtYANyAs9hhwUBNYemugxjhpwp4YvwF\",\"symbol\":\"KMD\"}"
+echo  "19588.92575705 <- expected amount RFAPtYANyAs9hhwUBNYemugxjhpwp4YvwF"
+
+# RQCEEEprmqghZHN73iG1C2XvYTTQ6FB2wE KMD 5506.18026103, REVS 90.00054364
+# RQCEEEprmqghZHN73iG1C2XvYTTQ6FB2wE KMD 5506.18026103
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RQCEEEprmqghZHN73iG1C2XvYTTQ6FB2wE\",\"symbol\":\"KMD\"}"
+echo  "5506.18026103 <- expected amount RQCEEEprmqghZHN73iG1C2XvYTTQ6FB2wE"
+
+# RDX85BbF7kJY4S33VTPgCM1tWQGwU9huTy KMD 8130.94314900
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RDX85BbF7kJY4S33VTPgCM1tWQGwU9huTy\",\"symbol\":\"KMD\"}"
+echo  "8130.94314900 <- expected amount RDX85BbF7kJY4S33VTPgCM1tWQGwU9huTy"
+
+# RCmLc2JBpPw9T9g1skg7J5Xr5kz1fyd7mx KMD 529.41438680, REVS 10.50000000
+# RCmLc2JBpPw9T9g1skg7J5Xr5kz1fyd7mx KMD 529.41438680
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RCmLc2JBpPw9T9g1skg7J5Xr5kz1fyd7mx\",\"symbol\":\"KMD\"}"
+echo  "529.41438680 <- expected amount RCmLc2JBpPw9T9g1skg7J5Xr5kz1fyd7mx"
+
+# R9ULUWEvzmHPZ4rYL5FtwkMyTWvGDZX43J KMD 15051.18125683, REVS 298.60000000
+# R9ULUWEvzmHPZ4rYL5FtwkMyTWvGDZX43J KMD 15051.18125683
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"R9ULUWEvzmHPZ4rYL5FtwkMyTWvGDZX43J\",\"symbol\":\"KMD\"}"
+echo  "15051.18125683 <- expected amount R9ULUWEvzmHPZ4rYL5FtwkMyTWvGDZX43J"
+
+# RE2f5UV1JDhUk6TeJLhz3VgxH5ePPa7SYH KMD 710.45289846
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RE2f5UV1JDhUk6TeJLhz3VgxH5ePPa7SYH\",\"symbol\":\"KMD\"}"
+echo  "710.45289846 <- expected amount RE2f5UV1JDhUk6TeJLhz3VgxH5ePPa7SYH"
+
+# RGW1zNcVLcZDHTMBqEiSEXCm2WNWBx3z9A KMD 755.28589451
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RGW1zNcVLcZDHTMBqEiSEXCm2WNWBx3z9A\",\"symbol\":\"KMD\"}"
+echo  "755.28589451 <- expected amount RGW1zNcVLcZDHTMBqEiSEXCm2WNWBx3z9A"
+
+# RW2xS8dpxjudqBX1hqxShP7FWn8EHYH4Rb KMD 166779.58408020, REVS 3310.49966000
+# RW2xS8dpxjudqBX1hqxShP7FWn8EHYH4Rb KMD 166779.58408020
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RW2xS8dpxjudqBX1hqxShP7FWn8EHYH4Rb\",\"symbol\":\"KMD\"}"
+echo  "166779.58408020 <- expected amount RW2xS8dpxjudqBX1hqxShP7FWn8EHYH4Rb"
+
+# RALRwXaEN3yS5damdDwAkmEMKvdAkVs361 KMD 25746.96382302, REVS 510.64558668
+# RALRwXaEN3yS5damdDwAkmEMKvdAkVs361 KMD 25746.96382302
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RALRwXaEN3yS5damdDwAkmEMKvdAkVs361\",\"symbol\":\"KMD\"}"
+echo  "25746.96382302 <- expected amount RALRwXaEN3yS5damdDwAkmEMKvdAkVs361"
+
+# RXk8hbw2g1iU5Vae5Aov8MmJBcNH9jTq6V KMD 4647.91319700
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RXk8hbw2g1iU5Vae5Aov8MmJBcNH9jTq6V\",\"symbol\":\"KMD\"}"
+echo  "4647.91319700 <- expected amount RXk8hbw2g1iU5Vae5Aov8MmJBcNH9jTq6V"
+
+# RPVNUvVq4BgKrrB3E1uULja2hjPW6Hv6r9 KMD 16872.68860925, REVS 334.64000000
+# RPVNUvVq4BgKrrB3E1uULja2hjPW6Hv6r9 KMD 16872.68860925
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RPVNUvVq4BgKrrB3E1uULja2hjPW6Hv6r9\",\"symbol\":\"KMD\"}"
+echo  "16872.68860925 <- expected amount RPVNUvVq4BgKrrB3E1uULja2hjPW6Hv6r9"
+
+# RWTfFTP7c9WxLhgxd2EXSsKszpDVPXHN8A KMD 19616.45270312, REVS 389.05771834
+# RWTfFTP7c9WxLhgxd2EXSsKszpDVPXHN8A KMD 19616.45270312
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RWTfFTP7c9WxLhgxd2EXSsKszpDVPXHN8A\",\"symbol\":\"KMD\"}"
+echo  "19616.45270312 <- expected amount RWTfFTP7c9WxLhgxd2EXSsKszpDVPXHN8A"
+
+# RXFr5VB9gQYC5QYv7yVvkxtjDY3zwYuvDx KMD 327.74801651, REVS 6.50475878
+# RXFr5VB9gQYC5QYv7yVvkxtjDY3zwYuvDx KMD 327.74801651
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RXFr5VB9gQYC5QYv7yVvkxtjDY3zwYuvDx\",\"symbol\":\"KMD\"}"
+echo  "327.74801651 <- expected amount RXFr5VB9gQYC5QYv7yVvkxtjDY3zwYuvDx"
+
+# RYZHjTxct7aq83rLkvb3ZrfXpPPQKdBX4z KMD 27224.94567564
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RYZHjTxct7aq83rLkvb3ZrfXpPPQKdBX4z\",\"symbol\":\"KMD\"}"
+echo  "27224.94567564 <- expected amount RYZHjTxct7aq83rLkvb3ZrfXpPPQKdBX4z"
+
+# RCKvFCXm1SLr24i2FiVN7yNmxaXpWGy2o3 KMD 3892.43363943
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RCKvFCXm1SLr24i2FiVN7yNmxaXpWGy2o3\",\"symbol\":\"KMD\"}"
+echo  "3892.43363943 <- expected amount RCKvFCXm1SLr24i2FiVN7yNmxaXpWGy2o3"
+
+# RUqYxcjB5Hy6eqK1YDimjfXfhfp5TSyCF4 KMD 9265.21407570
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUqYxcjB5Hy6eqK1YDimjfXfhfp5TSyCF4\",\"symbol\":\"KMD\"}"
+echo  "9265.21407570 <- expected amount RUqYxcjB5Hy6eqK1YDimjfXfhfp5TSyCF4"
+
+# RHUpvFhHv1umX1JsV5S8smAKAsN5CxA4HD KMD 2183.96436714, REVS 2.36599993
+# RHUpvFhHv1umX1JsV5S8smAKAsN5CxA4HD KMD 2183.96436714
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RHUpvFhHv1umX1JsV5S8smAKAsN5CxA4HD\",\"symbol\":\"KMD\"}"
+echo  "2183.96436714 <- expected amount RHUpvFhHv1umX1JsV5S8smAKAsN5CxA4HD"
+
+# RW7w9NLACVHnBW37QVTKeP6YYuYegfg1LF KMD 29049.45748125
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RW7w9NLACVHnBW37QVTKeP6YYuYegfg1LF\",\"symbol\":\"KMD\"}"
+echo  "29049.45748125 <- expected amount RW7w9NLACVHnBW37QVTKeP6YYuYegfg1LF"
+
+# RAhvJHePdAb1PF9jjZhP2F7r72ebL9pA1f KMD 3457.02047726, REVS 68.56389987
+# RAhvJHePdAb1PF9jjZhP2F7r72ebL9pA1f KMD 3457.02047726
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RAhvJHePdAb1PF9jjZhP2F7r72ebL9pA1f\",\"symbol\":\"KMD\"}"
+echo  "3457.02047726 <- expected amount RAhvJHePdAb1PF9jjZhP2F7r72ebL9pA1f"
+
+# RQ5PNbYYJgytmGQQSdbUeuh7Nekc3jcMRW KMD 15358.01719845
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RQ5PNbYYJgytmGQQSdbUeuh7Nekc3jcMRW\",\"symbol\":\"KMD\"}"
+echo  "15358.01719845 <- expected amount RQ5PNbYYJgytmGQQSdbUeuh7Nekc3jcMRW"
+
+# RLS8Y41iqJp8rBVPtsg6mDymyWmdWBQZby KMD 28274.80528175
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RLS8Y41iqJp8rBVPtsg6mDymyWmdWBQZby\",\"symbol\":\"KMD\"}"
+echo  "28274.80528175 <- expected amount RLS8Y41iqJp8rBVPtsg6mDymyWmdWBQZby"
+
+# RUYWU7rQ4vDyhhHbnyEeSMHrxt79qsnsAy KMD 1456.34613506
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUYWU7rQ4vDyhhHbnyEeSMHrxt79qsnsAy\",\"symbol\":\"KMD\"}"
+echo  "1456.34613506 <- expected amount RUYWU7rQ4vDyhhHbnyEeSMHrxt79qsnsAy"
+
+# RDCjGgoZ1tvCWop6m5wPYkr83wdFrofF6M KMD 76598.36955552, REVS 1519.19347187
+# RDCjGgoZ1tvCWop6m5wPYkr83wdFrofF6M KMD 76598.36955552
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RDCjGgoZ1tvCWop6m5wPYkr83wdFrofF6M\",\"symbol\":\"KMD\"}"
+echo  "76598.36955552 <- expected amount RDCjGgoZ1tvCWop6m5wPYkr83wdFrofF6M"
+
+# RLAEm3H2LMSNzJmveLkcf2nS18AnqWR7pJ KMD 82831.36892196, REVS 1643.94000000
+# RLAEm3H2LMSNzJmveLkcf2nS18AnqWR7pJ KMD 82831.36892196
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RLAEm3H2LMSNzJmveLkcf2nS18AnqWR7pJ\",\"symbol\":\"KMD\"}"
+echo  "82831.36892196 <- expected amount RLAEm3H2LMSNzJmveLkcf2nS18AnqWR7pJ"
+
+# RLko1vnC4k8WntCjCLwK6WcLYnzLZnCzfj KMD 34065.53877698
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RLko1vnC4k8WntCjCLwK6WcLYnzLZnCzfj\",\"symbol\":\"KMD\"}"
+echo  "34065.53877698 <- expected amount RLko1vnC4k8WntCjCLwK6WcLYnzLZnCzfj"
+
+# RSUfnwTLE36E3Nx8PptxVoAfSRtMeGQsFL KMD 67327.03192299, REVS 1282.48928243
+# RSUfnwTLE36E3Nx8PptxVoAfSRtMeGQsFL KMD 67327.03192299
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSUfnwTLE36E3Nx8PptxVoAfSRtMeGQsFL\",\"symbol\":\"KMD\"}"
+echo  "67327.03192299 <- expected amount RSUfnwTLE36E3Nx8PptxVoAfSRtMeGQsFL"
+
+# RPkkQmMmyLQe8Th7ZP5GoF6kSUs1DTNfAf KMD 1538.42929417, REVS 30.51202988
+# RPkkQmMmyLQe8Th7ZP5GoF6kSUs1DTNfAf KMD 1538.42929417
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RPkkQmMmyLQe8Th7ZP5GoF6kSUs1DTNfAf\",\"symbol\":\"KMD\"}"
+echo  "1538.42929417 <- expected amount RPkkQmMmyLQe8Th7ZP5GoF6kSUs1DTNfAf"
+
+# RSkhXmiPCxqdp4bM4ux7VxAwMoCv2Uar6d KMD 73542.70261753, REVS 1459.56877203
+# RSkhXmiPCxqdp4bM4ux7VxAwMoCv2Uar6d KMD 73542.70261753
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSkhXmiPCxqdp4bM4ux7VxAwMoCv2Uar6d\",\"symbol\":\"KMD\"}"
+echo  "73542.70261753 <- expected amount RSkhXmiPCxqdp4bM4ux7VxAwMoCv2Uar6d"
+
+# RP8AvHsUhZkbDdcfHFrRsZZn2QVNcBMPNQ KMD 8540.87460698
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RP8AvHsUhZkbDdcfHFrRsZZn2QVNcBMPNQ\",\"symbol\":\"KMD\"}"
+echo  "8540.87460698 <- expected amount RP8AvHsUhZkbDdcfHFrRsZZn2QVNcBMPNQ"
+
+# RUJvR3TXCAcizk7dXdFc6GKRFS6jZfjtyY KMD 10419.10088055, REVS 206.75776925
+# RUJvR3TXCAcizk7dXdFc6GKRFS6jZfjtyY KMD 10419.10088055
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUJvR3TXCAcizk7dXdFc6GKRFS6jZfjtyY\",\"symbol\":\"KMD\"}"
+echo  "10419.10088055 <- expected amount RUJvR3TXCAcizk7dXdFc6GKRFS6jZfjtyY"
+
+# RLZmhbeB2tXTas9grzAeqaL2RFAXVmDVpU KMD 43480.56469698, REVS 50.30001915
+# RLZmhbeB2tXTas9grzAeqaL2RFAXVmDVpU KMD 43480.56469698
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RLZmhbeB2tXTas9grzAeqaL2RFAXVmDVpU\",\"symbol\":\"KMD\"}"
+echo  "43480.56469698 <- expected amount RLZmhbeB2tXTas9grzAeqaL2RFAXVmDVpU"
+
+# REU3FkPuNbZxogpStpyhZiyPkCp58G2bh3 KMD 8489.87824564
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"REU3FkPuNbZxogpStpyhZiyPkCp58G2bh3\",\"symbol\":\"KMD\"}"
+echo  "8489.87824564 <- expected amount REU3FkPuNbZxogpStpyhZiyPkCp58G2bh3"
+
+# RGHoKLW6r7DEBtYfV6VgjeBsQQFMvZ5thw KMD 20170.47947167
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RGHoKLW6r7DEBtYfV6VgjeBsQQFMvZ5thw\",\"symbol\":\"KMD\"}"
+echo  "20170.47947167 <- expected amount RGHoKLW6r7DEBtYfV6VgjeBsQQFMvZ5thw"
+
+# RLCDEXwfJ75P1iKgWGfR9geJmjZ84A4XXJ KMD 105141.23597043, REVS 1006.07261743
+# RLCDEXwfJ75P1iKgWGfR9geJmjZ84A4XXJ KMD 105141.23597043
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RLCDEXwfJ75P1iKgWGfR9geJmjZ84A4XXJ\",\"symbol\":\"KMD\"}"
+echo  "105141.23597043 <- expected amount RLCDEXwfJ75P1iKgWGfR9geJmjZ84A4XXJ"
+
+# RW1FmQGcpPv87WZVSCaMgjj74shMb3Y6Zi KMD 33700.59190315, REVS 380.47576230
+# RW1FmQGcpPv87WZVSCaMgjj74shMb3Y6Zi KMD 33700.59190315
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RW1FmQGcpPv87WZVSCaMgjj74shMb3Y6Zi\",\"symbol\":\"KMD\"}"
+echo  "33700.59190315 <- expected amount RW1FmQGcpPv87WZVSCaMgjj74shMb3Y6Zi"
+
+# RQUMrGYr4SsHgbN56WP7tuEpWUcd62KidP KMD 61230.10078656, REVS 600.00100000
+# RQUMrGYr4SsHgbN56WP7tuEpWUcd62KidP KMD 61230.10078656
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RQUMrGYr4SsHgbN56WP7tuEpWUcd62KidP\",\"symbol\":\"KMD\"}"
+echo  "61230.10078656 <- expected amount RQUMrGYr4SsHgbN56WP7tuEpWUcd62KidP"
+
+# RP8CkGhyfhdoVpGqGbVmEmRL7gGdqKBdkt KMD 153725.02014837, REVS 3049.70000000
+# RP8CkGhyfhdoVpGqGbVmEmRL7gGdqKBdkt KMD 153725.02014837
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RP8CkGhyfhdoVpGqGbVmEmRL7gGdqKBdkt\",\"symbol\":\"KMD\"}"
+echo  "153725.02014837 <- expected amount RP8CkGhyfhdoVpGqGbVmEmRL7gGdqKBdkt"
+
+# RRupn47XfLSMhXEuShtCCPBCv8P6LYXrLN KMD 790607.74140148, REVS 15691.16324116
+# RRupn47XfLSMhXEuShtCCPBCv8P6LYXrLN KMD 790607.74140148
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RRupn47XfLSMhXEuShtCCPBCv8P6LYXrLN\",\"symbol\":\"KMD\"}"
+echo  "790607.74140148 <- expected amount RRupn47XfLSMhXEuShtCCPBCv8P6LYXrLN"
+
+# RTPiNQKiaVaBnhneiZXqpieHfF6F2RWt7y KMD 293399.52056062
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RTPiNQKiaVaBnhneiZXqpieHfF6F2RWt7y\",\"symbol\":\"KMD\"}"
+echo  "293399.52056062 <- expected amount RTPiNQKiaVaBnhneiZXqpieHfF6F2RWt7y"
+
+# RAiZZDEXN8gqgotWvxxMc4cY7shkZ6y2Es KMD 14524.72874062
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RAiZZDEXN8gqgotWvxxMc4cY7shkZ6y2Es\",\"symbol\":\"KMD\"}"
+echo  "14524.72874062 <- expected amount RAiZZDEXN8gqgotWvxxMc4cY7shkZ6y2Es"
+
+# RLkUAjyNy8CQz8SxGvLwLWMP6rj3AK8Y7S KMD 6042.28715610
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RLkUAjyNy8CQz8SxGvLwLWMP6rj3AK8Y7S\",\"symbol\":\"KMD\"}"
+echo  "6042.28715610 <- expected amount RLkUAjyNy8CQz8SxGvLwLWMP6rj3AK8Y7S"
+
+# RRX73tynW4sxCmqyYBQrS9nMcDUcXuX1yG KMD 26022.54788263, REVS 5.39446042
+# RRX73tynW4sxCmqyYBQrS9nMcDUcXuX1yG KMD 26022.54788263
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RRX73tynW4sxCmqyYBQrS9nMcDUcXuX1yG\",\"symbol\":\"KMD\"}"
+echo  "26022.54788263 <- expected amount RRX73tynW4sxCmqyYBQrS9nMcDUcXuX1yG"
+
+# RBFoJqbhcDJG3wcKu9vvenTMcc7EJTowFq KMD 14461.16736567
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RBFoJqbhcDJG3wcKu9vvenTMcc7EJTowFq\",\"symbol\":\"KMD\"}"
+echo  "14461.16736567 <- expected amount RBFoJqbhcDJG3wcKu9vvenTMcc7EJTowFq"
+
+# R9u7V63TLwJPH1shvAGHRG61aci61yy7RN KMD 20764.40163902, REVS 291.83028199
+# R9u7V63TLwJPH1shvAGHRG61aci61yy7RN KMD 20764.40163902
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"R9u7V63TLwJPH1shvAGHRG61aci61yy7RN\",\"symbol\":\"KMD\"}"
+echo  "20764.40163902 <- expected amount R9u7V63TLwJPH1shvAGHRG61aci61yy7RN"
+
+# RK6x2w56cGqJrnFiGcuR5VNWahzm8G5AiA KMD 1859.16527880
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RK6x2w56cGqJrnFiGcuR5VNWahzm8G5AiA\",\"symbol\":\"KMD\"}"
+echo  "1859.16527880 <- expected amount RK6x2w56cGqJrnFiGcuR5VNWahzm8G5AiA"
+
+# RV56pNJyghFp8ikNMqPsuaffcJxrk39Xkh KMD 25176.19648375
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RV56pNJyghFp8ikNMqPsuaffcJxrk39Xkh\",\"symbol\":\"KMD\"}"
+echo  "25176.19648375 <- expected amount RV56pNJyghFp8ikNMqPsuaffcJxrk39Xkh"
+
+# RKAxvqvC3apzrb8udG9trBxiNhhNXaLkz4 KMD 6483.53169406, REVS 5.41696484
+# RKAxvqvC3apzrb8udG9trBxiNhhNXaLkz4 KMD 6483.53169406
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RKAxvqvC3apzrb8udG9trBxiNhhNXaLkz4\",\"symbol\":\"KMD\"}"
+echo  "6483.53169406 <- expected amount RKAxvqvC3apzrb8udG9trBxiNhhNXaLkz4"
+
+# R9SHcVV3m86KDnjRo2Pxc5yeLGKxwbyChb KMD 120245.29223059
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"R9SHcVV3m86KDnjRo2Pxc5yeLGKxwbyChb\",\"symbol\":\"KMD\"}"
+echo  "120245.29223059 <- expected amount R9SHcVV3m86KDnjRo2Pxc5yeLGKxwbyChb"
+
+# RV5cgPjqt37QBHr94VL5HnXWqcwdqoqoC3 KMD 81008.20903630, REVS 1607.10337790
+# RV5cgPjqt37QBHr94VL5HnXWqcwdqoqoC3 KMD 81008.20903630
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RV5cgPjqt37QBHr94VL5HnXWqcwdqoqoC3\",\"symbol\":\"KMD\"}"
+echo  "81008.20903630 <- expected amount RV5cgPjqt37QBHr94VL5HnXWqcwdqoqoC3"
+
+# RMnuGgpEzWcxYi861E7BjGMURCFX2Szj2v KMD 14010.00244099, REVS 277.86367220
+# RMnuGgpEzWcxYi861E7BjGMURCFX2Szj2v KMD 14010.00244099
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RMnuGgpEzWcxYi861E7BjGMURCFX2Szj2v\",\"symbol\":\"KMD\"}"
+echo  "14010.00244099 <- expected amount RMnuGgpEzWcxYi861E7BjGMURCFX2Szj2v"
+
+# RF4iG6huXb9u6Pt8281WvnBjhdEtiVUnp4 KMD 674.21697725, REVS 13.37190382
+# RF4iG6huXb9u6Pt8281WvnBjhdEtiVUnp4 KMD 674.21697725
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RF4iG6huXb9u6Pt8281WvnBjhdEtiVUnp4\",\"symbol\":\"KMD\"}"
+echo  "674.21697725 <- expected amount RF4iG6huXb9u6Pt8281WvnBjhdEtiVUnp4"
+
+# RFKC68PGKwYz6rnPAbWomGZUv1BWKY8ugN KMD 1258661.38989150
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RFKC68PGKwYz6rnPAbWomGZUv1BWKY8ugN\",\"symbol\":\"KMD\"}"
+echo  "1258661.38989150 <- expected amount RFKC68PGKwYz6rnPAbWomGZUv1BWKY8ugN"
+
+# RQAzL9perFJbDKcHiJ9Lafxxce7XiKo7Sx KMD 1924794.21182562
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RQAzL9perFJbDKcHiJ9Lafxxce7XiKo7Sx\",\"symbol\":\"KMD\"}"
+echo  "1924794.21182562 <- expected amount RQAzL9perFJbDKcHiJ9Lafxxce7XiKo7Sx"
+
+# RRaSQCAWk74r5cXzZV8JqqW9JFbhF2o2nH KMD 4841.57624687
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RRaSQCAWk74r5cXzZV8JqqW9JFbhF2o2nH\",\"symbol\":\"KMD\"}"
+echo  "4841.57624687 <- expected amount RRaSQCAWk74r5cXzZV8JqqW9JFbhF2o2nH"
+
+# RU49btc37WeEiQotQZMhEaGokFYeJYc616 KMD 128958.92559312
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RU49btc37WeEiQotQZMhEaGokFYeJYc616\",\"symbol\":\"KMD\"}"
+echo  "128958.92559312 <- expected amount RU49btc37WeEiQotQZMhEaGokFYeJYc616"
+
+# RW3gz9fEadohRLZerK9r8zXkugk5swWHrf KMD 21219.62483892, REVS 421.20000000
+# RW3gz9fEadohRLZerK9r8zXkugk5swWHrf KMD 21219.62483892
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RW3gz9fEadohRLZerK9r8zXkugk5swWHrf\",\"symbol\":\"KMD\"}"
+echo  "21219.62483892 <- expected amount RW3gz9fEadohRLZerK9r8zXkugk5swWHrf"
+
+# RAFLKtQxyGECt5fBfufuCGY6rvupfKrn3U KMD 1677670.82328714
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RAFLKtQxyGECt5fBfufuCGY6rvupfKrn3U\",\"symbol\":\"KMD\"}"
+echo  "1677670.82328714 <- expected amount RAFLKtQxyGECt5fBfufuCGY6rvupfKrn3U"
+
+# RJ89radoRzRr5oDsf71QZ7BXUTiHcyVSUu KMD 52588.80320859, REVS 1043.00609779
+# RJ89radoRzRr5oDsf71QZ7BXUTiHcyVSUu KMD 52588.80320859
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RJ89radoRzRr5oDsf71QZ7BXUTiHcyVSUu\",\"symbol\":\"KMD\"}"
+echo  "52588.80320859 <- expected amount RJ89radoRzRr5oDsf71QZ7BXUTiHcyVSUu"
+
+# RKenAzKZyD58qPu2zVdjwPjDn71T34sWE4 KMD 668547.16129881, REVS 13259.45302721
+# RKenAzKZyD58qPu2zVdjwPjDn71T34sWE4 KMD 668547.16129881
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RKenAzKZyD58qPu2zVdjwPjDn71T34sWE4\",\"symbol\":\"KMD\"}"
+echo  "668547.16129881 <- expected amount RKenAzKZyD58qPu2zVdjwPjDn71T34sWE4"
+
+# R9ibGGfsFHD8MxLRL4q2a6ezxAaHHPJvLc KMD 241619.45649268, REVS 4792.09548598
+# R9ibGGfsFHD8MxLRL4q2a6ezxAaHHPJvLc KMD 241619.45649268
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"R9ibGGfsFHD8MxLRL4q2a6ezxAaHHPJvLc\",\"symbol\":\"KMD\"}"
+echo  "241619.45649268 <- expected amount R9ibGGfsFHD8MxLRL4q2a6ezxAaHHPJvLc"
+
+# RGwuMmW1ZBMrHJwJucEy5JEV3BZWv7eQnm KMD 9071868.91817425, REVS 180010.00000000
+# RGwuMmW1ZBMrHJwJucEy5JEV3BZWv7eQnm KMD 9071868.91817425
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RGwuMmW1ZBMrHJwJucEy5JEV3BZWv7eQnm\",\"symbol\":\"KMD\"}"
+echo  "9071868.91817425 <- expected amount RGwuMmW1ZBMrHJwJucEy5JEV3BZWv7eQnm"
+
+# RT6Ckpw8yM2Q7yaCxejiVTrxELGQPtnGPm KMD 25778.27244764, REVS 225.87592741
+# RT6Ckpw8yM2Q7yaCxejiVTrxELGQPtnGPm KMD 25778.27244764
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RT6Ckpw8yM2Q7yaCxejiVTrxELGQPtnGPm\",\"symbol\":\"KMD\"}"
+echo  "25778.27244764 <- expected amount RT6Ckpw8yM2Q7yaCxejiVTrxELGQPtnGPm"
+
+# RJfzvRW4cWXcjFpQZmv2PSy5GDGrnbM76Q KMD 1781.70005885
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RJfzvRW4cWXcjFpQZmv2PSy5GDGrnbM76Q\",\"symbol\":\"KMD\"}"
+echo  "1781.70005885 <- expected amount RJfzvRW4cWXcjFpQZmv2PSy5GDGrnbM76Q"
+
+# RSixxEuXMe8DacnajhgqDdrcFjeGD54drE KMD 266743.29833631
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSixxEuXMe8DacnajhgqDdrcFjeGD54drE\",\"symbol\":\"KMD\"}"
+echo  "266743.29833631 <- expected amount RSixxEuXMe8DacnajhgqDdrcFjeGD54drE"
+
+# RGf4wwbHVYYZrVPVZg6XdS3mWvbzHSebzu KMD 6387.59296405, REVS 126.73871740
+# RGf4wwbHVYYZrVPVZg6XdS3mWvbzHSebzu KMD 6387.59296405
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RGf4wwbHVYYZrVPVZg6XdS3mWvbzHSebzu\",\"symbol\":\"KMD\"}"
+echo  "6387.59296405 <- expected amount RGf4wwbHVYYZrVPVZg6XdS3mWvbzHSebzu"
+
+# RESydSaRoxRWWb1Pxn88H2kTRuV1W38dhU KMD 1243.42190050
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RESydSaRoxRWWb1Pxn88H2kTRuV1W38dhU\",\"symbol\":\"KMD\"}"
+echo  "1243.42190050 <- expected amount RESydSaRoxRWWb1Pxn88H2kTRuV1W38dhU"
+
+# RJAbNiCSRaMxUky9h8as6orZY3cu2rSW8z KMD 492782.94486222, REVS 9773.48000000
+# RJAbNiCSRaMxUky9h8as6orZY3cu2rSW8z KMD 492782.94486222
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RJAbNiCSRaMxUky9h8as6orZY3cu2rSW8z\",\"symbol\":\"KMD\"}"
+echo  "492782.94486222 <- expected amount RJAbNiCSRaMxUky9h8as6orZY3cu2rSW8z"
+
+# RSW5SvtjWiGYN3iwb2mteYP7Hn223Zk1tP KMD 343847.33707184, REVS 6001.47957339
+# RSW5SvtjWiGYN3iwb2mteYP7Hn223Zk1tP KMD 343847.33707184
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSW5SvtjWiGYN3iwb2mteYP7Hn223Zk1tP\",\"symbol\":\"KMD\"}"
+echo  "343847.33707184 <- expected amount RSW5SvtjWiGYN3iwb2mteYP7Hn223Zk1tP"
+
+# RNnzD9QxDZqo6DvzfM3Pu7GiyNkVk7dgsG KMD 155758.69136969
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RNnzD9QxDZqo6DvzfM3Pu7GiyNkVk7dgsG\",\"symbol\":\"KMD\"}"
+echo  "155758.69136969 <- expected amount RNnzD9QxDZqo6DvzfM3Pu7GiyNkVk7dgsG"
+
+# RSofHVn8U4WfqgfXCksqqgmiVSwXxnANvq KMD 4060.09161497
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSofHVn8U4WfqgfXCksqqgmiVSwXxnANvq\",\"symbol\":\"KMD\"}"
+echo  "4060.09161497 <- expected amount RSofHVn8U4WfqgfXCksqqgmiVSwXxnANvq"
+
+# RFPKxBL8iLQGmkoUukXdFU7VkXyGJLSsGw KMD 36335.50253541, REVS 413.60001059
+# RFPKxBL8iLQGmkoUukXdFU7VkXyGJLSsGw KMD 36335.50253541
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RFPKxBL8iLQGmkoUukXdFU7VkXyGJLSsGw\",\"symbol\":\"KMD\"}"
+echo  "36335.50253541 <- expected amount RFPKxBL8iLQGmkoUukXdFU7VkXyGJLSsGw"
+
+# RA9xKdNjw1H2eqPi9f9J77v7Uq1CSWdNQJ KMD 5270.01925860
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RA9xKdNjw1H2eqPi9f9J77v7Uq1CSWdNQJ\",\"symbol\":\"KMD\"}"
+echo  "5270.01925860 <- expected amount RA9xKdNjw1H2eqPi9f9J77v7Uq1CSWdNQJ"
+
+# RVFspAKoUpDMAiiEUiQQEpqdqXDMB48Jqp KMD 47464.51702590, REVS 634.55156126
+# RVFspAKoUpDMAiiEUiQQEpqdqXDMB48Jqp KMD 47464.51702590
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RVFspAKoUpDMAiiEUiQQEpqdqXDMB48Jqp\",\"symbol\":\"KMD\"}"
+echo  "47464.51702590 <- expected amount RVFspAKoUpDMAiiEUiQQEpqdqXDMB48Jqp"
+
+# RCPys8hvEfFSDkMZL7GtYA8a5GSwih67Q1 KMD 36359.70475507, REVS 100.00000000
+# RCPys8hvEfFSDkMZL7GtYA8a5GSwih67Q1 KMD 36359.70475507
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RCPys8hvEfFSDkMZL7GtYA8a5GSwih67Q1\",\"symbol\":\"KMD\"}"
+echo  "36359.70475507 <- expected amount RCPys8hvEfFSDkMZL7GtYA8a5GSwih67Q1"
+
+# R9ce1xHEaWnRRP5jrWozEfPf9ZJgX7jnxd KMD 915808.36366861, REVS 18163.44258555
+# R9ce1xHEaWnRRP5jrWozEfPf9ZJgX7jnxd KMD 915808.36366861
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"R9ce1xHEaWnRRP5jrWozEfPf9ZJgX7jnxd\",\"symbol\":\"KMD\"}"
+echo  "915808.36366861 <- expected amount R9ce1xHEaWnRRP5jrWozEfPf9ZJgX7jnxd"
+
+# RS1rdGqAhXvwFFTVyUCx695y84E3N3emcU KMD 18822.21903353, REVS 360.77089072
+# RS1rdGqAhXvwFFTVyUCx695y84E3N3emcU KMD 18822.21903353
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RS1rdGqAhXvwFFTVyUCx695y84E3N3emcU\",\"symbol\":\"KMD\"}"
+echo  "18822.21903353 <- expected amount RS1rdGqAhXvwFFTVyUCx695y84E3N3emcU"
+
+# RLgKsmgdzwNCt8CgqZ5J6cZhTat9HeZgxG KMD 62376.97840244, REVS 1045.22605497
+# RLgKsmgdzwNCt8CgqZ5J6cZhTat9HeZgxG KMD 62376.97840244
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RLgKsmgdzwNCt8CgqZ5J6cZhTat9HeZgxG\",\"symbol\":\"KMD\"}"
+echo  "62376.97840244 <- expected amount RLgKsmgdzwNCt8CgqZ5J6cZhTat9HeZgxG"
+
+# RFN4H8YYm71TjCVkHkoVFBFpg31i4ejbiu KMD 37183.30557600
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RFN4H8YYm71TjCVkHkoVFBFpg31i4ejbiu\",\"symbol\":\"KMD\"}"
+echo  "37183.30557600 <- expected amount RFN4H8YYm71TjCVkHkoVFBFpg31i4ejbiu"
+
+# RUBESyzjgZUts3fD6W7abpgMj4qRFSSszC KMD 541390.42407502, REVS 10592.65522652
+# RUBESyzjgZUts3fD6W7abpgMj4qRFSSszC KMD 541390.42407502
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RUBESyzjgZUts3fD6W7abpgMj4qRFSSszC\",\"symbol\":\"KMD\"}"
+echo  "541390.42407502 <- expected amount RUBESyzjgZUts3fD6W7abpgMj4qRFSSszC"
+
+# RSNu7Kd9p33aDrgT2AM8buy7fUSQZ2N3Gs KMD 130769.80646849, REVS 2593.58831601
+# RSNu7Kd9p33aDrgT2AM8buy7fUSQZ2N3Gs KMD 130769.80646849
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RSNu7Kd9p33aDrgT2AM8buy7fUSQZ2N3Gs\",\"symbol\":\"KMD\"}"
+echo  "130769.80646849 <- expected amount RSNu7Kd9p33aDrgT2AM8buy7fUSQZ2N3Gs"
+
+# RCrCe4dsMzXzzp7GLahubjg73VGK2rnczC KMD 6843.04832293, REVS 25.10000000
+# RCrCe4dsMzXzzp7GLahubjg73VGK2rnczC KMD 6843.04832293
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RCrCe4dsMzXzzp7GLahubjg73VGK2rnczC\",\"symbol\":\"KMD\"}"
+echo  "6843.04832293 <- expected amount RCrCe4dsMzXzzp7GLahubjg73VGK2rnczC"
+
+# RVTCRzofA2cV6FwGcvn1uGjZJmP5s9G1o9 KMD 95283.12042643, REVS 497.50723875
+# RVTCRzofA2cV6FwGcvn1uGjZJmP5s9G1o9 KMD 95283.12042643
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"listunspent\",\"address\":\"RVTCRzofA2cV6FwGcvn1uGjZJmP5s9G1o9\",\"symbol\":\"KMD\"}"
+echo  "95283.12042643 <- expected amount RVTCRzofA2cV6FwGcvn1uGjZJmP5s9G1o9"
+
+
+# total KMD 45769105.32172734 REVS 0.00000000

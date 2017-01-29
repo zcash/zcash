@@ -623,10 +623,10 @@ int8_t komodo_minerid(int32_t height)
     return(-1);
 }
 
-int32_t komodo_minerids(uint8_t *minerids,int32_t height)
+int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width)
 {
     int32_t i,n=0;
-    for (i=0; i<1000; i++,n++)
+    for (i=0; i<width; i++,n++)
     {
         if ( height-i <= 0 )
             break;

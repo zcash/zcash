@@ -1,0 +1,1151 @@
+# disable running again
+sleep 9999999
+# RG1QE6hTqu4dadL2XSNWS9VCHjd8xNVo58 KMD 16462.32091533, REVS 289.86606506
+# RG1QE6hTqu4dadL2XSNWS9VCHjd8xNVo58 KMD 16462.32091533
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RG1QE6hTqu4dadL2XSNWS9VCHjd8xNVo58\",\"symbol\":\"KMD\"}" # 16462.32091533
+sleep 13
+./komodo-cli sendtoaddress RG1QE6hTqu4dadL2XSNWS9VCHjd8xNVo58 16462.32091533
+# RFVvyUAnQe5yon6wq7B73Z1BzfFeZKyAZA KMD 74417.52897713, REVS 500.77700000
+# RFVvyUAnQe5yon6wq7B73Z1BzfFeZKyAZA KMD 74417.52897713
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RFVvyUAnQe5yon6wq7B73Z1BzfFeZKyAZA\",\"symbol\":\"KMD\"}" # 74417.52897713
+sleep 13
+./komodo-cli sendtoaddress RFVvyUAnQe5yon6wq7B73Z1BzfFeZKyAZA 74417.52897713
+# RL9YVW2GxbYh6hM3D1J7Z2y4feK4MrwZqe KMD 9691.47954009
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RL9YVW2GxbYh6hM3D1J7Z2y4feK4MrwZqe\",\"symbol\":\"KMD\"}" # 9691.47954009
+sleep 13
+./komodo-cli sendtoaddress RL9YVW2GxbYh6hM3D1J7Z2y4feK4MrwZqe 9691.47954009
+# RRCwketDe8CXt4dMWpL4NpQntxJvmwousn KMD 201.21200152
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RRCwketDe8CXt4dMWpL4NpQntxJvmwousn\",\"symbol\":\"KMD\"}" # 201.21200152
+sleep 13
+./komodo-cli sendtoaddress RRCwketDe8CXt4dMWpL4NpQntxJvmwousn 201.21200152
+# RWfaj9ZNmHq5A4jV411xpt1FJoyvKfVJ6c KMD 616895.10028203, REVS 3685.61452692
+# RWfaj9ZNmHq5A4jV411xpt1FJoyvKfVJ6c KMD 616895.10028203
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RWfaj9ZNmHq5A4jV411xpt1FJoyvKfVJ6c\",\"symbol\":\"KMD\"}" # 616895.10028203
+sleep 13
+./komodo-cli sendtoaddress RWfaj9ZNmHq5A4jV411xpt1FJoyvKfVJ6c 616895.10028203
+# R9dTcQWVDuaRdFqDzq4xPaFDjGbaLK6t8n KMD 1053.37494565, REVS 4.29070721
+# R9dTcQWVDuaRdFqDzq4xPaFDjGbaLK6t8n KMD 1053.37494565
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"R9dTcQWVDuaRdFqDzq4xPaFDjGbaLK6t8n\",\"symbol\":\"KMD\"}" # 1053.37494565
+sleep 13
+./komodo-cli sendtoaddress R9dTcQWVDuaRdFqDzq4xPaFDjGbaLK6t8n 1053.37494565
+# RDfCcqrNn8wgkr8CL29Z7PynpGP4w2ZySQ KMD 774.65219950
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RDfCcqrNn8wgkr8CL29Z7PynpGP4w2ZySQ\",\"symbol\":\"KMD\"}" # 774.65219950
+sleep 13
+./komodo-cli sendtoaddress RDfCcqrNn8wgkr8CL29Z7PynpGP4w2ZySQ 774.65219950
+# REvJWEuwqmwTnanZ8bWt85wnjfrsAjnvgE KMD 3945.67461320, REVS 30.24757576
+# REvJWEuwqmwTnanZ8bWt85wnjfrsAjnvgE KMD 3945.67461320
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"REvJWEuwqmwTnanZ8bWt85wnjfrsAjnvgE\",\"symbol\":\"KMD\"}" # 3945.67461320
+sleep 13
+./komodo-cli sendtoaddress REvJWEuwqmwTnanZ8bWt85wnjfrsAjnvgE 3945.67461320
+# RXb4SUn9mQ4Q1Fa8eehn5vitcfMMCjW2Ub KMD 96831.52493750
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RXb4SUn9mQ4Q1Fa8eehn5vitcfMMCjW2Ub\",\"symbol\":\"KMD\"}" # 96831.52493750
+sleep 13
+./komodo-cli sendtoaddress RXb4SUn9mQ4Q1Fa8eehn5vitcfMMCjW2Ub 96831.52493750
+# RBpEnyzuQNj1hNdAG1pKLALpAWEUS67PBj KMD 2729058.03025689, REVS 54178.00103054
+# RBpEnyzuQNj1hNdAG1pKLALpAWEUS67PBj KMD 2729058.03025689
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RBpEnyzuQNj1hNdAG1pKLALpAWEUS67PBj\",\"symbol\":\"KMD\"}" # 2729058.03025689
+sleep 13
+./komodo-cli sendtoaddress RBpEnyzuQNj1hNdAG1pKLALpAWEUS67PBj 2729058.03025689
+# RGCCkHkLTkSiQFMeFvWSPzM2rNM3rrDkfw KMD 61869.43786697
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RGCCkHkLTkSiQFMeFvWSPzM2rNM3rrDkfw\",\"symbol\":\"KMD\"}" # 61869.43786697
+sleep 13
+./komodo-cli sendtoaddress RGCCkHkLTkSiQFMeFvWSPzM2rNM3rrDkfw 61869.43786697
+# RR6soE71ZggsYm6FeSVqebtn6oruYm3Xr8 KMD 94617.81776961
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RR6soE71ZggsYm6FeSVqebtn6oruYm3Xr8\",\"symbol\":\"KMD\"}" # 94617.81776961
+sleep 13
+./komodo-cli sendtoaddress RR6soE71ZggsYm6FeSVqebtn6oruYm3Xr8 94617.81776961
+# RDobQ77wnMY8Me7RAL9oiFqVNvwkqqgPRF KMD 5315819.89184465
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RDobQ77wnMY8Me7RAL9oiFqVNvwkqqgPRF\",\"symbol\":\"KMD\"}" # 5315819.89184465
+sleep 13
+./komodo-cli sendtoaddress RDobQ77wnMY8Me7RAL9oiFqVNvwkqqgPRF 5315819.89184465
+# RHSZ1CWDNhkNbbQRDrqLHRAdCshueMrt2r KMD 8661.80183095, REVS 171.90929822
+# RHSZ1CWDNhkNbbQRDrqLHRAdCshueMrt2r KMD 8661.80183095
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RHSZ1CWDNhkNbbQRDrqLHRAdCshueMrt2r\",\"symbol\":\"KMD\"}" # 8661.80183095
+sleep 13
+./komodo-cli sendtoaddress RHSZ1CWDNhkNbbQRDrqLHRAdCshueMrt2r 8661.80183095
+# RSY3GTogE7WfwukhaemrAZtPh6Gsy2q1XV KMD 4964.66964335
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSY3GTogE7WfwukhaemrAZtPh6Gsy2q1XV\",\"symbol\":\"KMD\"}" # 4964.66964335
+sleep 13
+./komodo-cli sendtoaddress RSY3GTogE7WfwukhaemrAZtPh6Gsy2q1XV 4964.66964335
+# RM4RavnpbqkyB3cVq9tyzkoPuFZ2q87qqk KMD 17816.10973847
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RM4RavnpbqkyB3cVq9tyzkoPuFZ2q87qqk\",\"symbol\":\"KMD\"}" # 17816.10973847
+sleep 13
+./komodo-cli sendtoaddress RM4RavnpbqkyB3cVq9tyzkoPuFZ2q87qqk 17816.10973847
+# RRMu7ikH1CVQmpY1vHWSZh7NTjVFbaAcUV KMD 699334.64129367
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RRMu7ikH1CVQmpY1vHWSZh7NTjVFbaAcUV\",\"symbol\":\"KMD\"}" # 699334.64129367
+sleep 13
+./komodo-cli sendtoaddress RRMu7ikH1CVQmpY1vHWSZh7NTjVFbaAcUV 699334.64129367
+# REyKZQ8q8xbRNCtpA5ABY1BsfscduWGgKv KMD 503444.41817988
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"REyKZQ8q8xbRNCtpA5ABY1BsfscduWGgKv\",\"symbol\":\"KMD\"}" # 503444.41817988
+sleep 13
+./komodo-cli sendtoaddress REyKZQ8q8xbRNCtpA5ABY1BsfscduWGgKv 503444.41817988
+# RTqh7gEJMJDpnBp62FZZAfXctj8X7sRRia KMD 18367.01200788, REVS 350.00000000
+# RTqh7gEJMJDpnBp62FZZAfXctj8X7sRRia KMD 18367.01200788
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RTqh7gEJMJDpnBp62FZZAfXctj8X7sRRia\",\"symbol\":\"KMD\"}" # 18367.01200788
+sleep 13
+./komodo-cli sendtoaddress RTqh7gEJMJDpnBp62FZZAfXctj8X7sRRia 18367.01200788
+# RJZ2DjthdsfCuaGxiE1PNCUGuvARAsMpHn KMD 2848.88502056
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RJZ2DjthdsfCuaGxiE1PNCUGuvARAsMpHn\",\"symbol\":\"KMD\"}" # 2848.88502056
+sleep 13
+./komodo-cli sendtoaddress RJZ2DjthdsfCuaGxiE1PNCUGuvARAsMpHn 2848.88502056
+# RTr3ghnoUgKMz7NVhcc2PEMmQ637J1P3CS KMD 1254936.56318998
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RTr3ghnoUgKMz7NVhcc2PEMmQ637J1P3CS\",\"symbol\":\"KMD\"}" # 1254936.56318998
+sleep 13
+./komodo-cli sendtoaddress RTr3ghnoUgKMz7NVhcc2PEMmQ637J1P3CS 1254936.56318998
+# REPaLcbXYKr7D6kx6M56bwwgC7QShb8gL7 KMD 107312.62836396
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"REPaLcbXYKr7D6kx6M56bwwgC7QShb8gL7\",\"symbol\":\"KMD\"}" # 107312.62836396
+sleep 13
+./komodo-cli sendtoaddress REPaLcbXYKr7D6kx6M56bwwgC7QShb8gL7 107312.62836396
+# RY1n8qYX7hUVPiupbiX5zAbN4CtGpyKN5F KMD 368374.24120335
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RY1n8qYX7hUVPiupbiX5zAbN4CtGpyKN5F\",\"symbol\":\"KMD\"}" # 368374.24120335
+sleep 13
+./komodo-cli sendtoaddress RY1n8qYX7hUVPiupbiX5zAbN4CtGpyKN5F 368374.24120335
+# RNhyF9U3o4hTgWqnwQjHwrD1o4GqWiP1T6 KMD 7816.63087181, REVS 78.63808960
+# RNhyF9U3o4hTgWqnwQjHwrD1o4GqWiP1T6 KMD 7816.63087181
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RNhyF9U3o4hTgWqnwQjHwrD1o4GqWiP1T6\",\"symbol\":\"KMD\"}" # 7816.63087181
+sleep 13
+./komodo-cli sendtoaddress RNhyF9U3o4hTgWqnwQjHwrD1o4GqWiP1T6 7816.63087181
+# RV3JsiGCq92BXiyo4JvRVJzTAm9RTdnNKn KMD 92958.26394000
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RV3JsiGCq92BXiyo4JvRVJzTAm9RTdnNKn\",\"symbol\":\"KMD\"}" # 92958.26394000
+sleep 13
+./komodo-cli sendtoaddress RV3JsiGCq92BXiyo4JvRVJzTAm9RTdnNKn 92958.26394000
+# RRMGMXyfD4ye9ebKwGWrAme3KU2CbaWy78 KMD 26149.64106420
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RRMGMXyfD4ye9ebKwGWrAme3KU2CbaWy78\",\"symbol\":\"KMD\"}" # 26149.64106420
+sleep 13
+./komodo-cli sendtoaddress RRMGMXyfD4ye9ebKwGWrAme3KU2CbaWy78 26149.64106420
+# RE3yR2mCeG15ARgvENMbb573VqoQJcM3po KMD 17738.87416605, REVS 18.61556549
+# RE3yR2mCeG15ARgvENMbb573VqoQJcM3po KMD 17738.87416605
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RE3yR2mCeG15ARgvENMbb573VqoQJcM3po\",\"symbol\":\"KMD\"}" # 17738.87416605
+sleep 13
+./komodo-cli sendtoaddress RE3yR2mCeG15ARgvENMbb573VqoQJcM3po 17738.87416605
+# RF8Ua3mt2tMbwADn1XvYWxfJGz6fAnYBeq KMD 17817.00058850
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RF8Ua3mt2tMbwADn1XvYWxfJGz6fAnYBeq\",\"symbol\":\"KMD\"}" # 17817.00058850
+sleep 13
+./komodo-cli sendtoaddress RF8Ua3mt2tMbwADn1XvYWxfJGz6fAnYBeq 17817.00058850
+# RApWnKTepnDfPSDGX1wJnLXoNFCP5QzGWe KMD 928.65305676
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RApWnKTepnDfPSDGX1wJnLXoNFCP5QzGWe\",\"symbol\":\"KMD\"}" # 928.65305676
+sleep 13
+./komodo-cli sendtoaddress RApWnKTepnDfPSDGX1wJnLXoNFCP5QzGWe 928.65305676
+# RQjw6VEsAECmnKxXwwWCixCsz7gfFSaKsZ KMD 19137.10414825
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RQjw6VEsAECmnKxXwwWCixCsz7gfFSaKsZ\",\"symbol\":\"KMD\"}" # 19137.10414825
+sleep 13
+./komodo-cli sendtoaddress RQjw6VEsAECmnKxXwwWCixCsz7gfFSaKsZ 19137.10414825
+# RWXYahA1NR6p5sBzXBknCaTDGmhSfhMV3a KMD 7891.18147631
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RWXYahA1NR6p5sBzXBknCaTDGmhSfhMV3a\",\"symbol\":\"KMD\"}" # 7891.18147631
+sleep 13
+./komodo-cli sendtoaddress RWXYahA1NR6p5sBzXBknCaTDGmhSfhMV3a 7891.18147631
+# RPkMn5ZH5E7xPbQdCYkZYx3WueAqYKVTyn KMD 259520.15743267
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RPkMn5ZH5E7xPbQdCYkZYx3WueAqYKVTyn\",\"symbol\":\"KMD\"}" # 259520.15743267
+sleep 13
+./komodo-cli sendtoaddress RPkMn5ZH5E7xPbQdCYkZYx3WueAqYKVTyn 259520.15743267
+# RA8GBwKDSyQas9uTAi6ThYi2jNXfrcbyZw KMD 3730.99968446
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RA8GBwKDSyQas9uTAi6ThYi2jNXfrcbyZw\",\"symbol\":\"KMD\"}" # 3730.99968446
+sleep 13
+./komodo-cli sendtoaddress RA8GBwKDSyQas9uTAi6ThYi2jNXfrcbyZw 3730.99968446
+# RJ8QYKwegf7ApdYsWo3PXrGfX3nBvpN9Zn KMD 894973.14219837
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RJ8QYKwegf7ApdYsWo3PXrGfX3nBvpN9Zn\",\"symbol\":\"KMD\"}" # 894973.14219837
+sleep 13
+./komodo-cli sendtoaddress RJ8QYKwegf7ApdYsWo3PXrGfX3nBvpN9Zn 894973.14219837
+# RW3kA5hhT2Zi19ifVLWh3eHEbF7vGHp5xr KMD 722795.20152529
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RW3kA5hhT2Zi19ifVLWh3eHEbF7vGHp5xr\",\"symbol\":\"KMD\"}" # 722795.20152529
+sleep 13
+./komodo-cli sendtoaddress RW3kA5hhT2Zi19ifVLWh3eHEbF7vGHp5xr 722795.20152529
+# RHgNtXM72MHF8BtiD9mixaotZvb1W3LsN3 KMD 755.28589451
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RHgNtXM72MHF8BtiD9mixaotZvb1W3LsN3\",\"symbol\":\"KMD\"}" # 755.28589451
+sleep 13
+./komodo-cli sendtoaddress RHgNtXM72MHF8BtiD9mixaotZvb1W3LsN3 755.28589451
+# RWX3kh4b4vR2fsrgEm9SA4KQbWMaJEH5fa KMD 19366.30498750
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RWX3kh4b4vR2fsrgEm9SA4KQbWMaJEH5fa\",\"symbol\":\"KMD\"}" # 19366.30498750
+sleep 13
+./komodo-cli sendtoaddress RWX3kh4b4vR2fsrgEm9SA4KQbWMaJEH5fa 19366.30498750
+# RP38FcReMG1hqt4jjLVuGUzbQQPgNwEQ71 KMD 7523.80948764
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RP38FcReMG1hqt4jjLVuGUzbQQPgNwEQ71\",\"symbol\":\"KMD\"}" # 7523.80948764
+sleep 13
+./komodo-cli sendtoaddress RP38FcReMG1hqt4jjLVuGUzbQQPgNwEQ71 7523.80948764
+# RUUskhF2uWvRGsnTvhgjMkq48XgZ12EXuK KMD 7746.52199500
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUUskhF2uWvRGsnTvhgjMkq48XgZ12EXuK\",\"symbol\":\"KMD\"}" # 7746.52199500
+sleep 13
+./komodo-cli sendtoaddress RUUskhF2uWvRGsnTvhgjMkq48XgZ12EXuK 7746.52199500
+# RT7ENMvL46nwrFfNj1TLa5FEqJzTztHefH KMD 26696.69308472, REVS 529.99000000
+# RT7ENMvL46nwrFfNj1TLa5FEqJzTztHefH KMD 26696.69308472
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RT7ENMvL46nwrFfNj1TLa5FEqJzTztHefH\",\"symbol\":\"KMD\"}" # 26696.69308472
+sleep 13
+./komodo-cli sendtoaddress RT7ENMvL46nwrFfNj1TLa5FEqJzTztHefH 26696.69308472
+# RKyqUmtUmogi4qT5uWxvSh15TwFebrJS4B KMD 1711.08167983
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RKyqUmtUmogi4qT5uWxvSh15TwFebrJS4B\",\"symbol\":\"KMD\"}" # 1711.08167983
+sleep 13
+./komodo-cli sendtoaddress RKyqUmtUmogi4qT5uWxvSh15TwFebrJS4B 1711.08167983
+# RCQGZn4x3AFjQJJwW6hFHfsiQQQ1pL2Kne KMD 1846.86875964
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RCQGZn4x3AFjQJJwW6hFHfsiQQQ1pL2Kne\",\"symbol\":\"KMD\"}" # 1846.86875964
+sleep 13
+./komodo-cli sendtoaddress RCQGZn4x3AFjQJJwW6hFHfsiQQQ1pL2Kne 1846.86875964
+# RSHNubMtw3ZLmHy9QEkYmwPLy7vob6NvfP KMD 1092.25960129
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSHNubMtw3ZLmHy9QEkYmwPLy7vob6NvfP\",\"symbol\":\"KMD\"}" # 1092.25960129
+sleep 13
+./komodo-cli sendtoaddress RSHNubMtw3ZLmHy9QEkYmwPLy7vob6NvfP 1092.25960129
+# RDTcqgh4MMHLtu9FBCcULqZmP761DFmk9b KMD 82906.87674571, REVS 1438.93600000
+# RDTcqgh4MMHLtu9FBCcULqZmP761DFmk9b KMD 82906.87674571
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RDTcqgh4MMHLtu9FBCcULqZmP761DFmk9b\",\"symbol\":\"KMD\"}" # 82906.87674571
+sleep 13
+./komodo-cli sendtoaddress RDTcqgh4MMHLtu9FBCcULqZmP761DFmk9b 82906.87674571
+# RWhJ879HiwHEb9sKbdhWQuoSQAFtC4G6t4 KMD 15493.04399000
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RWhJ879HiwHEb9sKbdhWQuoSQAFtC4G6t4\",\"symbol\":\"KMD\"}" # 15493.04399000
+sleep 13
+./komodo-cli sendtoaddress RWhJ879HiwHEb9sKbdhWQuoSQAFtC4G6t4 15493.04399000
+# RLS7frPLUVeNTMGQx6rBHYmcDgvNrT4cKN KMD 732.43675323
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RLS7frPLUVeNTMGQx6rBHYmcDgvNrT4cKN\",\"symbol\":\"KMD\"}" # 732.43675323
+sleep 13
+./komodo-cli sendtoaddress RLS7frPLUVeNTMGQx6rBHYmcDgvNrT4cKN 732.43675323
+# RTQknkEBMuz5i7m8ZM9BjbuFn8iXNxgeed KMD 5458.23813028
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RTQknkEBMuz5i7m8ZM9BjbuFn8iXNxgeed\",\"symbol\":\"KMD\"}" # 5458.23813028
+sleep 13
+./komodo-cli sendtoaddress RTQknkEBMuz5i7m8ZM9BjbuFn8iXNxgeed 5458.23813028
+# RXfY8PwT85HVhK2cgV9uRpdaLQzTsR5g1y KMD 46479.13197000
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RXfY8PwT85HVhK2cgV9uRpdaLQzTsR5g1y\",\"symbol\":\"KMD\"}" # 46479.13197000
+sleep 13
+./komodo-cli sendtoaddress RXfY8PwT85HVhK2cgV9uRpdaLQzTsR5g1y 46479.13197000
+# RHSUmLRyJwpbdsRtytkGs9GmpZghQWHje3 KMD 2197.34858012, REVS 43.61040113
+# RHSUmLRyJwpbdsRtytkGs9GmpZghQWHje3 KMD 2197.34858012
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RHSUmLRyJwpbdsRtytkGs9GmpZghQWHje3\",\"symbol\":\"KMD\"}" # 2197.34858012
+sleep 13
+./komodo-cli sendtoaddress RHSUmLRyJwpbdsRtytkGs9GmpZghQWHje3 2197.34858012
+# RJEQbNrMQUHELrYPVLPepR2Y3ruAag3hEP KMD 64966.39751162, REVS 1035.00000000
+# RJEQbNrMQUHELrYPVLPepR2Y3ruAag3hEP KMD 64966.39751162
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RJEQbNrMQUHELrYPVLPepR2Y3ruAag3hEP\",\"symbol\":\"KMD\"}" # 64966.39751162
+sleep 13
+./komodo-cli sendtoaddress RJEQbNrMQUHELrYPVLPepR2Y3ruAag3hEP 64966.39751162
+# RRBnn6p3pJfyrjFBrDrTD2RJg2AAQVSXa1 KMD 38732.60997500
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RRBnn6p3pJfyrjFBrDrTD2RJg2AAQVSXa1\",\"symbol\":\"KMD\"}" # 38732.60997500
+sleep 13
+./komodo-cli sendtoaddress RRBnn6p3pJfyrjFBrDrTD2RJg2AAQVSXa1 38732.60997500
+# RJ1DUUySYib5LcwJKFJ78PD3so2GQ89jKJ KMD 377892.70160675, REVS 7501.00000000
+# RJ1DUUySYib5LcwJKFJ78PD3so2GQ89jKJ KMD 377892.70160675
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RJ1DUUySYib5LcwJKFJ78PD3so2GQ89jKJ\",\"symbol\":\"KMD\"}" # 377892.70160675
+sleep 13
+./komodo-cli sendtoaddress RJ1DUUySYib5LcwJKFJ78PD3so2GQ89jKJ 377892.70160675
+# RKtGS9q1vcReNcEtP3MzQjfjXyomLK2716 KMD 100542.16930966
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RKtGS9q1vcReNcEtP3MzQjfjXyomLK2716\",\"symbol\":\"KMD\"}" # 100542.16930966
+sleep 13
+./komodo-cli sendtoaddress RKtGS9q1vcReNcEtP3MzQjfjXyomLK2716 100542.16930966
+# R9YZPUTTVNcnKpuQ4JgMaxYzLXmeWA3msY KMD 96830.55662225
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"R9YZPUTTVNcnKpuQ4JgMaxYzLXmeWA3msY\",\"symbol\":\"KMD\"}" # 96830.55662225
+sleep 13
+./komodo-cli sendtoaddress R9YZPUTTVNcnKpuQ4JgMaxYzLXmeWA3msY 96830.55662225
+# RLyaf3XgjHruSeJd4oj83E8btck7kYPmVz KMD 2140.79273143
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RLyaf3XgjHruSeJd4oj83E8btck7kYPmVz\",\"symbol\":\"KMD\"}" # 2140.79273143
+sleep 13
+./komodo-cli sendtoaddress RLyaf3XgjHruSeJd4oj83E8btck7kYPmVz 2140.79273143
+# RF6eSvAE12JNFZ2eT9rwFti2CJT8m13gwA KMD 968.31524937
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RF6eSvAE12JNFZ2eT9rwFti2CJT8m13gwA\",\"symbol\":\"KMD\"}" # 968.31524937
+sleep 13
+./komodo-cli sendtoaddress RF6eSvAE12JNFZ2eT9rwFti2CJT8m13gwA 968.31524937
+# RC2nLGhFUc5Q9QFG1b38gAi9WgSgzQ9hJR KMD 41.38832712, REVS 0.82090537
+# RC2nLGhFUc5Q9QFG1b38gAi9WgSgzQ9hJR KMD 41.38832712
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RC2nLGhFUc5Q9QFG1b38gAi9WgSgzQ9hJR\",\"symbol\":\"KMD\"}" # 41.38832712
+sleep 13
+./komodo-cli sendtoaddress RC2nLGhFUc5Q9QFG1b38gAi9WgSgzQ9hJR 41.38832712
+# RCJHEogA7SW6PxuctPLtaVnXwiu49PyZY8 KMD 1350076.86672091, REVS 100.00000000
+# RCJHEogA7SW6PxuctPLtaVnXwiu49PyZY8 KMD 1350076.86672091
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RCJHEogA7SW6PxuctPLtaVnXwiu49PyZY8\",\"symbol\":\"KMD\"}" # 1350076.86672091
+sleep 13
+./komodo-cli sendtoaddress RCJHEogA7SW6PxuctPLtaVnXwiu49PyZY8 1350076.86672091
+# RJbudEMb7wEEN8QZ18fEkptxjE4QnMECUu KMD 50567.04202258, REVS 1003.32000000
+# RJbudEMb7wEEN8QZ18fEkptxjE4QnMECUu KMD 50567.04202258
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RJbudEMb7wEEN8QZ18fEkptxjE4QnMECUu\",\"symbol\":\"KMD\"}" # 50567.04202258
+sleep 13
+./komodo-cli sendtoaddress RJbudEMb7wEEN8QZ18fEkptxjE4QnMECUu 50567.04202258
+# RSdVypRznJsboL6MaP1shkaLhrVFcNx2KL KMD 589187.66272894, REVS 11685.49743445
+# RSdVypRznJsboL6MaP1shkaLhrVFcNx2KL KMD 589187.66272894
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSdVypRznJsboL6MaP1shkaLhrVFcNx2KL\",\"symbol\":\"KMD\"}" # 589187.66272894
+sleep 13
+./komodo-cli sendtoaddress RSdVypRznJsboL6MaP1shkaLhrVFcNx2KL 589187.66272894
+# RY69roX9pRXdH3yeF8WMFUDWFEoEdWDn5S KMD 100.59218694
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RY69roX9pRXdH3yeF8WMFUDWFEoEdWDn5S\",\"symbol\":\"KMD\"}" # 100.59218694
+sleep 13
+./komodo-cli sendtoaddress RY69roX9pRXdH3yeF8WMFUDWFEoEdWDn5S 100.59218694
+# RWXwZyGf4q7cBakkY4tgupptBbCSvcBsBH KMD 1012.75625347, REVS 20.10000000
+# RWXwZyGf4q7cBakkY4tgupptBbCSvcBsBH KMD 1012.75625347
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RWXwZyGf4q7cBakkY4tgupptBbCSvcBsBH\",\"symbol\":\"KMD\"}" # 1012.75625347
+sleep 13
+./komodo-cli sendtoaddress RWXwZyGf4q7cBakkY4tgupptBbCSvcBsBH 1012.75625347
+# RA7UJPwPxqgPHn4YscYWRH5EPQVaFaaaPa KMD 45132.81116316, REVS 342.26137428
+# RA7UJPwPxqgPHn4YscYWRH5EPQVaFaaaPa KMD 45132.81116316
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RA7UJPwPxqgPHn4YscYWRH5EPQVaFaaaPa\",\"symbol\":\"KMD\"}" # 45132.81116316
+sleep 13
+./komodo-cli sendtoaddress RA7UJPwPxqgPHn4YscYWRH5EPQVaFaaaPa 45132.81116316
+# RUWFJ2c9CvJM8sp3YmaaN6EG58qkZ9M6ac KMD 5028.91865657
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUWFJ2c9CvJM8sp3YmaaN6EG58qkZ9M6ac\",\"symbol\":\"KMD\"}" # 5028.91865657
+sleep 13
+./komodo-cli sendtoaddress RUWFJ2c9CvJM8sp3YmaaN6EG58qkZ9M6ac 5028.91865657
+# RRFFxsc6kkfahR7v4paTaUZrPFisuz9Nkq KMD 155.36852443, REVS 3.08314987
+# RRFFxsc6kkfahR7v4paTaUZrPFisuz9Nkq KMD 155.36852443
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RRFFxsc6kkfahR7v4paTaUZrPFisuz9Nkq\",\"symbol\":\"KMD\"}" # 155.36852443
+sleep 13
+./komodo-cli sendtoaddress RRFFxsc6kkfahR7v4paTaUZrPFisuz9Nkq 155.36852443
+# RKAkaVY1fgNKDbwSNiFKfWE9o5Rten6yQb KMD 15607.20311298
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RKAkaVY1fgNKDbwSNiFKfWE9o5Rten6yQb\",\"symbol\":\"KMD\"}" # 15607.20311298
+sleep 13
+./komodo-cli sendtoaddress RKAkaVY1fgNKDbwSNiFKfWE9o5Rten6yQb 15607.20311298
+# RWFSbi9ECuZWVE37jpkbiKGw7DaFYdNtts KMD 23963.90703474, REVS 475.60756080
+# RWFSbi9ECuZWVE37jpkbiKGw7DaFYdNtts KMD 23963.90703474
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RWFSbi9ECuZWVE37jpkbiKGw7DaFYdNtts\",\"symbol\":\"KMD\"}" # 23963.90703474
+sleep 13
+./komodo-cli sendtoaddress RWFSbi9ECuZWVE37jpkbiKGw7DaFYdNtts 23963.90703474
+# RYQZmzckzB1gMYZQAYorYUcRuND8J6Lm4Z KMD 774.65219950
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RYQZmzckzB1gMYZQAYorYUcRuND8J6Lm4Z\",\"symbol\":\"KMD\"}" # 774.65219950
+sleep 13
+./komodo-cli sendtoaddress RYQZmzckzB1gMYZQAYorYUcRuND8J6Lm4Z 774.65219950
+# RUVkn1F9g7TxoPbYtegiQoFnPTusP2gzDr KMD 43088.75849296, REVS 470.88002226
+# RUVkn1F9g7TxoPbYtegiQoFnPTusP2gzDr KMD 43088.75849296
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUVkn1F9g7TxoPbYtegiQoFnPTusP2gzDr\",\"symbol\":\"KMD\"}" # 43088.75849296
+sleep 13
+./komodo-cli sendtoaddress RUVkn1F9g7TxoPbYtegiQoFnPTusP2gzDr 43088.75849296
+# RWDt2Xw6gHLdKdFEQFsNqAYYGUq37MvWYX KMD 19172.64193762
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RWDt2Xw6gHLdKdFEQFsNqAYYGUq37MvWYX\",\"symbol\":\"KMD\"}" # 19172.64193762
+sleep 13
+./komodo-cli sendtoaddress RWDt2Xw6gHLdKdFEQFsNqAYYGUq37MvWYX 19172.64193762
+# R9vBYQw9tSBhu2c1g4SQhZdhuZeeQrEBoN KMD 111664.10821907, REVS 2023.42268720
+# R9vBYQw9tSBhu2c1g4SQhZdhuZeeQrEBoN KMD 111664.10821907
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"R9vBYQw9tSBhu2c1g4SQhZdhuZeeQrEBoN\",\"symbol\":\"KMD\"}" # 111664.10821907
+sleep 13
+./komodo-cli sendtoaddress R9vBYQw9tSBhu2c1g4SQhZdhuZeeQrEBoN 111664.10821907
+# RH2udBo3386n4hatBet85WUxiGao8VVSM6 KMD 4047.94506848
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RH2udBo3386n4hatBet85WUxiGao8VVSM6\",\"symbol\":\"KMD\"}" # 4047.94506848
+sleep 13
+./komodo-cli sendtoaddress RH2udBo3386n4hatBet85WUxiGao8VVSM6 4047.94506848
+# RUFov2hPGqwtVTVVJGxUL5AGcyFSWmjRXe KMD 1011.40498451
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUFov2hPGqwtVTVVJGxUL5AGcyFSWmjRXe\",\"symbol\":\"KMD\"}" # 1011.40498451
+sleep 13
+./komodo-cli sendtoaddress RUFov2hPGqwtVTVVJGxUL5AGcyFSWmjRXe 1011.40498451
+# RG8g7LjK7hdyKp3aoKBRdwzpLy31XMXMLk KMD 972.80557592, REVS 19.29916914
+# RG8g7LjK7hdyKp3aoKBRdwzpLy31XMXMLk KMD 972.80557592
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RG8g7LjK7hdyKp3aoKBRdwzpLy31XMXMLk\",\"symbol\":\"KMD\"}" # 972.80557592
+sleep 13
+./komodo-cli sendtoaddress RG8g7LjK7hdyKp3aoKBRdwzpLy31XMXMLk 972.80557592
+# RTDNWLv3EJeKhhwrvBdKuxBLfWz7prmv9B KMD 2420.78812342
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RTDNWLv3EJeKhhwrvBdKuxBLfWz7prmv9B\",\"symbol\":\"KMD\"}" # 2420.78812342
+sleep 13
+./komodo-cli sendtoaddress RTDNWLv3EJeKhhwrvBdKuxBLfWz7prmv9B 2420.78812342
+# RCdkLhDy7Ec2i7pwAsVmi1rnUufy2TEZmJ KMD 1589.10920508
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RCdkLhDy7Ec2i7pwAsVmi1rnUufy2TEZmJ\",\"symbol\":\"KMD\"}" # 1589.10920508
+sleep 13
+./komodo-cli sendtoaddress RCdkLhDy7Ec2i7pwAsVmi1rnUufy2TEZmJ 1589.10920508
+# RJ7RfZfip4qL9uEJs7Wr9FYtGusQiryMqE KMD 43251.49599262, REVS 857.93461385
+# RJ7RfZfip4qL9uEJs7Wr9FYtGusQiryMqE KMD 43251.49599262
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RJ7RfZfip4qL9uEJs7Wr9FYtGusQiryMqE\",\"symbol\":\"KMD\"}" # 43251.49599262
+sleep 13
+./komodo-cli sendtoaddress RJ7RfZfip4qL9uEJs7Wr9FYtGusQiryMqE 43251.49599262
+# RNW6Kkcdktbeemd2n8NVPCfgnRirzWoiZY KMD 53585.08128315, REVS 731.01000000
+# RNW6Kkcdktbeemd2n8NVPCfgnRirzWoiZY KMD 53585.08128315
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RNW6Kkcdktbeemd2n8NVPCfgnRirzWoiZY\",\"symbol\":\"KMD\"}" # 53585.08128315
+sleep 13
+./komodo-cli sendtoaddress RNW6Kkcdktbeemd2n8NVPCfgnRirzWoiZY 53585.08128315
+# RRNkPd3BmppvxVxQCLzKfg2vVT2ypNcVxv KMD 4924.65994176
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RRNkPd3BmppvxVxQCLzKfg2vVT2ypNcVxv\",\"symbol\":\"KMD\"}" # 4924.65994176
+sleep 13
+./komodo-cli sendtoaddress RRNkPd3BmppvxVxQCLzKfg2vVT2ypNcVxv 4924.65994176
+# RA2uJhw4TktHGHShKBTKoTaGjZSXU9Z2nX KMD 55939.57195639
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RA2uJhw4TktHGHShKBTKoTaGjZSXU9Z2nX\",\"symbol\":\"KMD\"}" # 55939.57195639
+sleep 13
+./komodo-cli sendtoaddress RA2uJhw4TktHGHShKBTKoTaGjZSXU9Z2nX 55939.57195639
+# RE1NYFqFG2vmhhHVY7QFC7sTp7zBxvSSP3 KMD 57862.44847739, REVS 464.78017965
+# RE1NYFqFG2vmhhHVY7QFC7sTp7zBxvSSP3 KMD 57862.44847739
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RE1NYFqFG2vmhhHVY7QFC7sTp7zBxvSSP3\",\"symbol\":\"KMD\"}" # 57862.44847739
+sleep 13
+./komodo-cli sendtoaddress RE1NYFqFG2vmhhHVY7QFC7sTp7zBxvSSP3 57862.44847739
+# RSMNwfRUZxbE5YPud3PM46YYML8XsdELf6 KMD 11629.46614499
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSMNwfRUZxbE5YPud3PM46YYML8XsdELf6\",\"symbol\":\"KMD\"}" # 11629.46614499
+sleep 13
+./komodo-cli sendtoaddress RSMNwfRUZxbE5YPud3PM46YYML8XsdELf6 11629.46614499
+# RUfJhANk7NzFapqGV1zamTgHm47LXsi8Zz KMD 2494.84014833
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUfJhANk7NzFapqGV1zamTgHm47LXsi8Zz\",\"symbol\":\"KMD\"}" # 2494.84014833
+sleep 13
+./komodo-cli sendtoaddress RUfJhANk7NzFapqGV1zamTgHm47LXsi8Zz 2494.84014833
+# RCyBEMjM6UgHAEosMCdxJb5VophihZ84hq KMD 755216.97171164
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RCyBEMjM6UgHAEosMCdxJb5VophihZ84hq\",\"symbol\":\"KMD\"}" # 755216.97171164
+sleep 13
+./komodo-cli sendtoaddress RCyBEMjM6UgHAEosMCdxJb5VophihZ84hq 755216.97171164
+# RSCe76vADETuwWAdga98c2LVdvKcNXeHmJ KMD 7436.66111520
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSCe76vADETuwWAdga98c2LVdvKcNXeHmJ\",\"symbol\":\"KMD\"}" # 7436.66111520
+sleep 13
+./komodo-cli sendtoaddress RSCe76vADETuwWAdga98c2LVdvKcNXeHmJ 7436.66111520
+# RTkvmxME9rVZBY6ABNqkkbqKvn8WUqgQqr KMD 215743.93040290, REVS 4280.65926868
+# RTkvmxME9rVZBY6ABNqkkbqKvn8WUqgQqr KMD 215743.93040290
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RTkvmxME9rVZBY6ABNqkkbqKvn8WUqgQqr\",\"symbol\":\"KMD\"}" # 215743.93040290
+sleep 13
+./komodo-cli sendtoaddress RTkvmxME9rVZBY6ABNqkkbqKvn8WUqgQqr 215743.93040290
+# R9Udy3hSfnsr6YuRkHXsuKWrZsd8oEm2jb KMD 1006939.18080157
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"R9Udy3hSfnsr6YuRkHXsuKWrZsd8oEm2jb\",\"symbol\":\"KMD\"}" # 1006939.18080157
+sleep 13
+./komodo-cli sendtoaddress R9Udy3hSfnsr6YuRkHXsuKWrZsd8oEm2jb 1006939.18080157
+# RAaQjULJVvG6LLF8NVKPidX1HYtrGSWbCN KMD 4005.10943567
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RAaQjULJVvG6LLF8NVKPidX1HYtrGSWbCN\",\"symbol\":\"KMD\"}" # 4005.10943567
+sleep 13
+./komodo-cli sendtoaddress RAaQjULJVvG6LLF8NVKPidX1HYtrGSWbCN 4005.10943567
+# RNBqCY6Mcp5ZLgL8R66FzvprYKhXaraeBb KMD 10117.34846003
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RNBqCY6Mcp5ZLgL8R66FzvprYKhXaraeBb\",\"symbol\":\"KMD\"}" # 10117.34846003
+sleep 13
+./komodo-cli sendtoaddress RNBqCY6Mcp5ZLgL8R66FzvprYKhXaraeBb 10117.34846003
+# RCMjQirY1RqzJDEKLQjvN4Q35CHgy6LbEP KMD 1005.49855495
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RCMjQirY1RqzJDEKLQjvN4Q35CHgy6LbEP\",\"symbol\":\"KMD\"}" # 1005.49855495
+sleep 13
+./komodo-cli sendtoaddress RCMjQirY1RqzJDEKLQjvN4Q35CHgy6LbEP 1005.49855495
+# RUtbAxmAqv1V47932T89tt79AN6TzazXSk KMD 1277.32401175
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUtbAxmAqv1V47932T89tt79AN6TzazXSk\",\"symbol\":\"KMD\"}" # 1277.32401175
+sleep 13
+./komodo-cli sendtoaddress RUtbAxmAqv1V47932T89tt79AN6TzazXSk 1277.32401175
+# RS9erX84xJG17efdZ66qHxhsUMG15fnCsH KMD 977546.42205511, REVS 19403.85638743
+# RS9erX84xJG17efdZ66qHxhsUMG15fnCsH KMD 977546.42205511
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RS9erX84xJG17efdZ66qHxhsUMG15fnCsH\",\"symbol\":\"KMD\"}" # 977546.42205511
+sleep 13
+./komodo-cli sendtoaddress RS9erX84xJG17efdZ66qHxhsUMG15fnCsH 977546.42205511
+# RMJp33AqgWV6oH4iLgN9XaXa2WThNdWdKL KMD 8908.50029425
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RMJp33AqgWV6oH4iLgN9XaXa2WThNdWdKL\",\"symbol\":\"KMD\"}" # 8908.50029425
+sleep 13
+./komodo-cli sendtoaddress RMJp33AqgWV6oH4iLgN9XaXa2WThNdWdKL 8908.50029425
+# RLG1kAeCLx4heef3FfqcqWe9ysR1BdNMoZ KMD 1394.37395910
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RLG1kAeCLx4heef3FfqcqWe9ysR1BdNMoZ\",\"symbol\":\"KMD\"}" # 1394.37395910
+sleep 13
+./komodo-cli sendtoaddress RLG1kAeCLx4heef3FfqcqWe9ysR1BdNMoZ 1394.37395910
+# RE1wsrDNwW2NnNWM5eE162yp6haLtm5uh7 KMD 14588.33036215, REVS 289.61149547
+# RE1wsrDNwW2NnNWM5eE162yp6haLtm5uh7 KMD 14588.33036215
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RE1wsrDNwW2NnNWM5eE162yp6haLtm5uh7\",\"symbol\":\"KMD\"}" # 14588.33036215
+sleep 13
+./komodo-cli sendtoaddress RE1wsrDNwW2NnNWM5eE162yp6haLtm5uh7 14588.33036215
+# RRbV5dN4N7wUj3iLrv95SWJCZbtkV9uwoC KMD 18008.72700786
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RRbV5dN4N7wUj3iLrv95SWJCZbtkV9uwoC\",\"symbol\":\"KMD\"}" # 18008.72700786
+sleep 13
+./komodo-cli sendtoaddress RRbV5dN4N7wUj3iLrv95SWJCZbtkV9uwoC 18008.72700786
+# RTwpYxfrofdzSYg55ci6Us48jHmtS4cjKk KMD 1626.76961895
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RTwpYxfrofdzSYg55ci6Us48jHmtS4cjKk\",\"symbol\":\"KMD\"}" # 1626.76961895
+sleep 13
+./komodo-cli sendtoaddress RTwpYxfrofdzSYg55ci6Us48jHmtS4cjKk 1626.76961895
+# RP6fkbQibLJnKqJTogBpJ1sv6zX9b6widN KMD 722.28571081
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RP6fkbQibLJnKqJTogBpJ1sv6zX9b6widN\",\"symbol\":\"KMD\"}" # 722.28571081
+sleep 13
+./komodo-cli sendtoaddress RP6fkbQibLJnKqJTogBpJ1sv6zX9b6widN 722.28571081
+# RB5AaE1vQKejds89eDxDzsWcDSfi8ixfbL KMD 9863.45132134
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RB5AaE1vQKejds89eDxDzsWcDSfi8ixfbL\",\"symbol\":\"KMD\"}" # 9863.45132134
+sleep 13
+./komodo-cli sendtoaddress RB5AaE1vQKejds89eDxDzsWcDSfi8ixfbL 9863.45132134
+# RMPUMa3sjX98GG1RQunbc4mnTqUq4E6ZU3 KMD 83629.96327501
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RMPUMa3sjX98GG1RQunbc4mnTqUq4E6ZU3\",\"symbol\":\"KMD\"}" # 83629.96327501
+sleep 13
+./komodo-cli sendtoaddress RMPUMa3sjX98GG1RQunbc4mnTqUq4E6ZU3 83629.96327501
+# RK5BnRzCP52qsTE4xR3Qysn6m6KeTgpZA6 KMD 3170.70655908, REVS 37.96790925
+# RK5BnRzCP52qsTE4xR3Qysn6m6KeTgpZA6 KMD 3170.70655908
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RK5BnRzCP52qsTE4xR3Qysn6m6KeTgpZA6\",\"symbol\":\"KMD\"}" # 3170.70655908
+sleep 13
+./komodo-cli sendtoaddress RK5BnRzCP52qsTE4xR3Qysn6m6KeTgpZA6 3170.70655908
+# RUuWvTwNAMGLpuY3GLPBAmMp8ptShkMSyN KMD 11760.26545254
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUuWvTwNAMGLpuY3GLPBAmMp8ptShkMSyN\",\"symbol\":\"KMD\"}" # 11760.26545254
+sleep 13
+./komodo-cli sendtoaddress RUuWvTwNAMGLpuY3GLPBAmMp8ptShkMSyN 11760.26545254
+# RN6TfTEYHdvFAeosYrvDaMBb2yBco47Q5a KMD 7073.16782615, REVS 44.30216197
+# RN6TfTEYHdvFAeosYrvDaMBb2yBco47Q5a KMD 7073.16782615
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RN6TfTEYHdvFAeosYrvDaMBb2yBco47Q5a\",\"symbol\":\"KMD\"}" # 7073.16782615
+sleep 13
+./komodo-cli sendtoaddress RN6TfTEYHdvFAeosYrvDaMBb2yBco47Q5a 7073.16782615
+# RV4Hf22arBv4P4s5eFsUAnXC6N11T8x9tv KMD 117108.97863641, REVS 1631.49836519
+# RV4Hf22arBv4P4s5eFsUAnXC6N11T8x9tv KMD 117108.97863641
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RV4Hf22arBv4P4s5eFsUAnXC6N11T8x9tv\",\"symbol\":\"KMD\"}" # 117108.97863641
+sleep 13
+./komodo-cli sendtoaddress RV4Hf22arBv4P4s5eFsUAnXC6N11T8x9tv 117108.97863641
+# RYBH6Ha8RJa3CcE91yxJP6z2E6mDFm3bBt KMD 163386.58575808, REVS 50.00000000
+# RYBH6Ha8RJa3CcE91yxJP6z2E6mDFm3bBt KMD 163386.58575808
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RYBH6Ha8RJa3CcE91yxJP6z2E6mDFm3bBt\",\"symbol\":\"KMD\"}" # 163386.58575808
+sleep 13
+./komodo-cli sendtoaddress RYBH6Ha8RJa3CcE91yxJP6z2E6mDFm3bBt 163386.58575808
+# RHBHVXLAnvB8y5itKBNxnM8w2zqDRGCg2q KMD 774.65219950
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RHBHVXLAnvB8y5itKBNxnM8w2zqDRGCg2q\",\"symbol\":\"KMD\"}" # 774.65219950
+sleep 13
+./komodo-cli sendtoaddress RHBHVXLAnvB8y5itKBNxnM8w2zqDRGCg2q 774.65219950
+# RUY7YW1WmTD3hCvkXmUKLeRnNg5UsJoLbU KMD 6742.29255596, REVS 105.00000000
+# RUY7YW1WmTD3hCvkXmUKLeRnNg5UsJoLbU KMD 6742.29255596
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUY7YW1WmTD3hCvkXmUKLeRnNg5UsJoLbU\",\"symbol\":\"KMD\"}" # 6742.29255596
+sleep 13
+./komodo-cli sendtoaddress RUY7YW1WmTD3hCvkXmUKLeRnNg5UsJoLbU 6742.29255596
+# RBxjj7kxFipThuHR9i3cyumFzM2c1puiua KMD 15493.04399000
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RBxjj7kxFipThuHR9i3cyumFzM2c1puiua\",\"symbol\":\"KMD\"}" # 15493.04399000
+sleep 13
+./komodo-cli sendtoaddress RBxjj7kxFipThuHR9i3cyumFzM2c1puiua 15493.04399000
+# REQqBMStNf7gWLxvG1a9KnbSgV78Hk19Js KMD 1936.63049875
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"REQqBMStNf7gWLxvG1a9KnbSgV78Hk19Js\",\"symbol\":\"KMD\"}" # 1936.63049875
+sleep 13
+./komodo-cli sendtoaddress REQqBMStNf7gWLxvG1a9KnbSgV78Hk19Js 1936.63049875
+# RNVwzuZynZ7d4DE5CfT8CWkxsp9TtCY3BF KMD 1598.36899361, REVS 11.75449303
+# RNVwzuZynZ7d4DE5CfT8CWkxsp9TtCY3BF KMD 1598.36899361
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RNVwzuZynZ7d4DE5CfT8CWkxsp9TtCY3BF\",\"symbol\":\"KMD\"}" # 1598.36899361
+sleep 13
+./komodo-cli sendtoaddress RNVwzuZynZ7d4DE5CfT8CWkxsp9TtCY3BF 1598.36899361
+# RHTDjCzn36ERtpE2DddYZq162EL9DZcsbK KMD 1341.60124279
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RHTDjCzn36ERtpE2DddYZq162EL9DZcsbK\",\"symbol\":\"KMD\"}" # 1341.60124279
+sleep 13
+./komodo-cli sendtoaddress RHTDjCzn36ERtpE2DddYZq162EL9DZcsbK 1341.60124279
+# RBBMrEHLVicGMQx1Do5FBUFP2tk5QiTD5a KMD 753.34926401
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RBBMrEHLVicGMQx1Do5FBUFP2tk5QiTD5a\",\"symbol\":\"KMD\"}" # 753.34926401
+sleep 13
+./komodo-cli sendtoaddress RBBMrEHLVicGMQx1Do5FBUFP2tk5QiTD5a 753.34926401
+# RWfVv2z5FrHmKPayFfSM4FZQpgBctbPHTk KMD 9212.17131564
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RWfVv2z5FrHmKPayFfSM4FZQpgBctbPHTk\",\"symbol\":\"KMD\"}" # 9212.17131564
+sleep 13
+./komodo-cli sendtoaddress RWfVv2z5FrHmKPayFfSM4FZQpgBctbPHTk 9212.17131564
+# RBy9jDvvNgvRGeyWh96rhvwLJ8zR44YTBj KMD 18464.80349033
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RBy9jDvvNgvRGeyWh96rhvwLJ8zR44YTBj\",\"symbol\":\"KMD\"}" # 18464.80349033
+sleep 13
+./komodo-cli sendtoaddress RBy9jDvvNgvRGeyWh96rhvwLJ8zR44YTBj 18464.80349033
+# RMeXSe9FBfb7UA4rWKbbyUykF5SWsQFu2a KMD 9683.15249375
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RMeXSe9FBfb7UA4rWKbbyUykF5SWsQFu2a\",\"symbol\":\"KMD\"}" # 9683.15249375
+sleep 13
+./komodo-cli sendtoaddress RMeXSe9FBfb7UA4rWKbbyUykF5SWsQFu2a 9683.15249375
+# RHGSJf8UV9zJTdszmggAPdmNzzewrc5fnQ KMD 7019.31724271
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RHGSJf8UV9zJTdszmggAPdmNzzewrc5fnQ\",\"symbol\":\"KMD\"}" # 7019.31724271
+sleep 13
+./komodo-cli sendtoaddress RHGSJf8UV9zJTdszmggAPdmNzzewrc5fnQ 7019.31724271
+# RK7jYxdWFmDNEyutSbt5mLYdAdqsJv2E7A KMD 3975.36465037
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RK7jYxdWFmDNEyutSbt5mLYdAdqsJv2E7A\",\"symbol\":\"KMD\"}" # 3975.36465037
+sleep 13
+./komodo-cli sendtoaddress RK7jYxdWFmDNEyutSbt5mLYdAdqsJv2E7A 3975.36465037
+# RUQYagJpBH5Enm8jRJcY4yfGUtKdXe5jLJ KMD 4066.92404737
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUQYagJpBH5Enm8jRJcY4yfGUtKdXe5jLJ\",\"symbol\":\"KMD\"}" # 4066.92404737
+sleep 13
+./komodo-cli sendtoaddress RUQYagJpBH5Enm8jRJcY4yfGUtKdXe5jLJ 4066.92404737
+# RKNQdaiP4PivQqtE9wE3nPHFZkkBXSmprU KMD 2128.72487792
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RKNQdaiP4PivQqtE9wE3nPHFZkkBXSmprU\",\"symbol\":\"KMD\"}" # 2128.72487792
+sleep 13
+./komodo-cli sendtoaddress RKNQdaiP4PivQqtE9wE3nPHFZkkBXSmprU 2128.72487792
+# RKiCeCxYaJNGfgvkbH1RHsVctR3JWtDNw7 KMD 8908.50029425
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RKiCeCxYaJNGfgvkbH1RHsVctR3JWtDNw7\",\"symbol\":\"KMD\"}" # 8908.50029425
+sleep 13
+./komodo-cli sendtoaddress RKiCeCxYaJNGfgvkbH1RHsVctR3JWtDNw7 8908.50029425
+# RU3zngUmo6Mg4kDSWdLazMS5ht1RxQ7DCM KMD 774.65219950
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RU3zngUmo6Mg4kDSWdLazMS5ht1RxQ7DCM\",\"symbol\":\"KMD\"}" # 774.65219950
+sleep 13
+./komodo-cli sendtoaddress RU3zngUmo6Mg4kDSWdLazMS5ht1RxQ7DCM 774.65219950
+# RMuMHC1Gp3b8yCUD5XsQH85QpfrRm1kLyS KMD 1470662.43386573
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RMuMHC1Gp3b8yCUD5XsQH85QpfrRm1kLyS\",\"symbol\":\"KMD\"}" # 1470662.43386573
+sleep 13
+./komodo-cli sendtoaddress RMuMHC1Gp3b8yCUD5XsQH85QpfrRm1kLyS 1470662.43386573
+# RNScwyFBUV5yZz6svwsVD7fVDrAydrqFRG KMD 3692.08658052
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RNScwyFBUV5yZz6svwsVD7fVDrAydrqFRG\",\"symbol\":\"KMD\"}" # 3692.08658052
+sleep 13
+./komodo-cli sendtoaddress RNScwyFBUV5yZz6svwsVD7fVDrAydrqFRG 3692.08658052
+# RYWjav2a7USMWe5qK2rtLkzRgE4Ciezb9Z KMD 1243.73516984
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RYWjav2a7USMWe5qK2rtLkzRgE4Ciezb9Z\",\"symbol\":\"KMD\"}" # 1243.73516984
+sleep 13
+./komodo-cli sendtoaddress RYWjav2a7USMWe5qK2rtLkzRgE4Ciezb9Z 1243.73516984
+# RSbNJbs7PitRvqqVMdCpzD1yKBMM3gGAQb KMD 9683.15249375
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSbNJbs7PitRvqqVMdCpzD1yKBMM3gGAQb\",\"symbol\":\"KMD\"}" # 9683.15249375
+sleep 13
+./komodo-cli sendtoaddress RSbNJbs7PitRvqqVMdCpzD1yKBMM3gGAQb 9683.15249375
+# RBbxPEyNRrJ5f3QtG6yz8hco3nFZPoLeUM KMD 774.65219950
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RBbxPEyNRrJ5f3QtG6yz8hco3nFZPoLeUM\",\"symbol\":\"KMD\"}" # 774.65219950
+sleep 13
+./komodo-cli sendtoaddress RBbxPEyNRrJ5f3QtG6yz8hco3nFZPoLeUM 774.65219950
+# RPriQZfzzgin7y2Ns6vxdrMAa4XgZqdY6y KMD 21671.70738465, REVS 170.69524117
+# RPriQZfzzgin7y2Ns6vxdrMAa4XgZqdY6y KMD 21671.70738465
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RPriQZfzzgin7y2Ns6vxdrMAa4XgZqdY6y\",\"symbol\":\"KMD\"}" # 21671.70738465
+sleep 13
+./komodo-cli sendtoaddress RPriQZfzzgin7y2Ns6vxdrMAa4XgZqdY6y 21671.70738465
+# RFbaPjT7beKPWswQHcHSpicRJ35ZBMCPC4 KMD 4307.02827126
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RFbaPjT7beKPWswQHcHSpicRJ35ZBMCPC4\",\"symbol\":\"KMD\"}" # 4307.02827126
+sleep 13
+./komodo-cli sendtoaddress RFbaPjT7beKPWswQHcHSpicRJ35ZBMCPC4 4307.02827126
+# RSCdeeWvzpBhg2tKnCWZWKw9iAMyYWiREG KMD 12075.12037906, REVS 239.62000000
+# RSCdeeWvzpBhg2tKnCWZWKw9iAMyYWiREG KMD 12075.12037906
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSCdeeWvzpBhg2tKnCWZWKw9iAMyYWiREG\",\"symbol\":\"KMD\"}" # 12075.12037906
+sleep 13
+./komodo-cli sendtoaddress RSCdeeWvzpBhg2tKnCWZWKw9iAMyYWiREG 12075.12037906
+# RRjuStV5BMjwEueeEZT8DWBaUx9gQjRDLG KMD 1676.97635800
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RRjuStV5BMjwEueeEZT8DWBaUx9gQjRDLG\",\"symbol\":\"KMD\"}" # 1676.97635800
+sleep 13
+./komodo-cli sendtoaddress RRjuStV5BMjwEueeEZT8DWBaUx9gQjRDLG 1676.97635800
+# RUAvb7FFPvxjNTVhABeS2EbbdUi2LfGNMj KMD 25710.06172178, REVS 510.00000000
+# RUAvb7FFPvxjNTVhABeS2EbbdUi2LfGNMj KMD 25710.06172178
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUAvb7FFPvxjNTVhABeS2EbbdUi2LfGNMj\",\"symbol\":\"KMD\"}" # 25710.06172178
+sleep 13
+./komodo-cli sendtoaddress RUAvb7FFPvxjNTVhABeS2EbbdUi2LfGNMj 25710.06172178
+# RDs6US7EYgfFrKiPzMFT84PcoQWUCniwky KMD 4453.35929709
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RDs6US7EYgfFrKiPzMFT84PcoQWUCniwky\",\"symbol\":\"KMD\"}" # 4453.35929709
+sleep 13
+./komodo-cli sendtoaddress RDs6US7EYgfFrKiPzMFT84PcoQWUCniwky 4453.35929709
+# RQuMEMn1TG7CCpbmYCVcDfPqesEvEkisjC KMD 34758.47429765, REVS 689.94006658
+# RQuMEMn1TG7CCpbmYCVcDfPqesEvEkisjC KMD 34758.47429765
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RQuMEMn1TG7CCpbmYCVcDfPqesEvEkisjC\",\"symbol\":\"KMD\"}" # 34758.47429765
+sleep 13
+./komodo-cli sendtoaddress RQuMEMn1TG7CCpbmYCVcDfPqesEvEkisjC 34758.47429765
+# RVptmyXVcTSkZQNd7UMgDz73p3AdfsamLS KMD 6487.71217081
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RVptmyXVcTSkZQNd7UMgDz73p3AdfsamLS\",\"symbol\":\"KMD\"}" # 6487.71217081
+sleep 13
+./komodo-cli sendtoaddress RVptmyXVcTSkZQNd7UMgDz73p3AdfsamLS 6487.71217081
+# REe9cFdWLNNDbCgWMNHAYBU4hBjUsu8zgY KMD 4003.40256701
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"REe9cFdWLNNDbCgWMNHAYBU4hBjUsu8zgY\",\"symbol\":\"KMD\"}" # 4003.40256701
+sleep 13
+./komodo-cli sendtoaddress REe9cFdWLNNDbCgWMNHAYBU4hBjUsu8zgY 4003.40256701
+# RBNB5mKstG86jYRjrKFgJuFoUFvZKJb9Wq KMD 816561.67159376, REVS 16199.49755302
+# RBNB5mKstG86jYRjrKFgJuFoUFvZKJb9Wq KMD 816561.67159376
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RBNB5mKstG86jYRjrKFgJuFoUFvZKJb9Wq\",\"symbol\":\"KMD\"}" # 816561.67159376
+sleep 13
+./komodo-cli sendtoaddress RBNB5mKstG86jYRjrKFgJuFoUFvZKJb9Wq 816561.67159376
+# RHoouCBBapEHE6uyX7CxHGFcRwUQFGMot5 KMD 88331.27512150, REVS 1398.88449696
+# RHoouCBBapEHE6uyX7CxHGFcRwUQFGMot5 KMD 88331.27512150
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RHoouCBBapEHE6uyX7CxHGFcRwUQFGMot5\",\"symbol\":\"KMD\"}" # 88331.27512150
+sleep 13
+./komodo-cli sendtoaddress RHoouCBBapEHE6uyX7CxHGFcRwUQFGMot5 88331.27512150
+# RAvtq1kazCRZUvWvPsN7ioY2Vt1EYtgpuz KMD 541891.46150744
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RAvtq1kazCRZUvWvPsN7ioY2Vt1EYtgpuz\",\"symbol\":\"KMD\"}" # 541891.46150744
+sleep 13
+./komodo-cli sendtoaddress RAvtq1kazCRZUvWvPsN7ioY2Vt1EYtgpuz 541891.46150744
+# RLHEGDwXuXQwhYkrhwSRGSJMFuvv7EAT7i KMD 22366.16022678, REVS 443.95821128
+# RLHEGDwXuXQwhYkrhwSRGSJMFuvv7EAT7i KMD 22366.16022678
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RLHEGDwXuXQwhYkrhwSRGSJMFuvv7EAT7i\",\"symbol\":\"KMD\"}" # 22366.16022678
+sleep 13
+./komodo-cli sendtoaddress RLHEGDwXuXQwhYkrhwSRGSJMFuvv7EAT7i 22366.16022678
+# RMWZenedfv1AQtuJw1EzYj9R2FxwzFpd54 KMD 4454.25014712
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RMWZenedfv1AQtuJw1EzYj9R2FxwzFpd54\",\"symbol\":\"KMD\"}" # 4454.25014712
+sleep 13
+./komodo-cli sendtoaddress RMWZenedfv1AQtuJw1EzYj9R2FxwzFpd54 4454.25014712
+# RAEtFUqe3jwVxLywCga2eKQxT2DiewsUuN KMD 25.54297774, REVS 0.50680815
+# RAEtFUqe3jwVxLywCga2eKQxT2DiewsUuN KMD 25.54297774
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RAEtFUqe3jwVxLywCga2eKQxT2DiewsUuN\",\"symbol\":\"KMD\"}" # 25.54297774
+sleep 13
+./komodo-cli sendtoaddress RAEtFUqe3jwVxLywCga2eKQxT2DiewsUuN 25.54297774
+# RUcDMtu7fA3ATbHHsDTsZ8KThgd1ivawym KMD 21446.21749875, REVS 241.00000000
+# RUcDMtu7fA3ATbHHsDTsZ8KThgd1ivawym KMD 21446.21749875
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUcDMtu7fA3ATbHHsDTsZ8KThgd1ivawym\",\"symbol\":\"KMD\"}" # 21446.21749875
+sleep 13
+./komodo-cli sendtoaddress RUcDMtu7fA3ATbHHsDTsZ8KThgd1ivawym 21446.21749875
+# RDndtdqjEgQ2kyiCzpeWEtf9TSDJnMBvao KMD 1093.79403237
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RDndtdqjEgQ2kyiCzpeWEtf9TSDJnMBvao\",\"symbol\":\"KMD\"}" # 1093.79403237
+sleep 13
+./komodo-cli sendtoaddress RDndtdqjEgQ2kyiCzpeWEtf9TSDJnMBvao 1093.79403237
+# RG2cAef3JbCXiQkzPgrqS52HAQrBzJiAy4 KMD 102137.83664315, REVS 2027.11216000
+# RG2cAef3JbCXiQkzPgrqS52HAQrBzJiAy4 KMD 102137.83664315
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RG2cAef3JbCXiQkzPgrqS52HAQrBzJiAy4\",\"symbol\":\"KMD\"}" # 102137.83664315
+sleep 13
+./komodo-cli sendtoaddress RG2cAef3JbCXiQkzPgrqS52HAQrBzJiAy4 102137.83664315
+# RSFJ19qzQbtYJQD98pqpkTNoBEi9gM31TA KMD 15451.81049286
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSFJ19qzQbtYJQD98pqpkTNoBEi9gM31TA\",\"symbol\":\"KMD\"}" # 15451.81049286
+sleep 13
+./komodo-cli sendtoaddress RSFJ19qzQbtYJQD98pqpkTNoBEi9gM31TA 15451.81049286
+# R9gDQRa62Eg24qwZd3Pv374bYbWf4BSLZs KMD 4066.92404737
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"R9gDQRa62Eg24qwZd3Pv374bYbWf4BSLZs\",\"symbol\":\"KMD\"}" # 4066.92404737
+sleep 13
+./komodo-cli sendtoaddress R9gDQRa62Eg24qwZd3Pv374bYbWf4BSLZs 4066.92404737
+# RTh7GDBqLRDMYLdQyE7HHooBobztNXfsdW KMD 968.31524937
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RTh7GDBqLRDMYLdQyE7HHooBobztNXfsdW\",\"symbol\":\"KMD\"}" # 968.31524937
+sleep 13
+./komodo-cli sendtoaddress RTh7GDBqLRDMYLdQyE7HHooBobztNXfsdW 968.31524937
+# RKEkubK347PwSM9SQ9eReFng1yFrEbGN8C KMD 11415.41169287
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RKEkubK347PwSM9SQ9eReFng1yFrEbGN8C\",\"symbol\":\"KMD\"}" # 11415.41169287
+sleep 13
+./komodo-cli sendtoaddress RKEkubK347PwSM9SQ9eReFng1yFrEbGN8C 11415.41169287
+# RHMKLGnyum4miEW55qL8Mawv7KdGsjbmAB KMD 9683.15249375
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RHMKLGnyum4miEW55qL8Mawv7KdGsjbmAB\",\"symbol\":\"KMD\"}" # 9683.15249375
+sleep 13
+./komodo-cli sendtoaddress RHMKLGnyum4miEW55qL8Mawv7KdGsjbmAB 9683.15249375
+# REzcqBkARMCCxkA5rVdp61f7rovmFtq5kf KMD 130928.69826981, REVS 2597.54928401
+# REzcqBkARMCCxkA5rVdp61f7rovmFtq5kf KMD 130928.69826981
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"REzcqBkARMCCxkA5rVdp61f7rovmFtq5kf\",\"symbol\":\"KMD\"}" # 130928.69826981
+sleep 13
+./komodo-cli sendtoaddress REzcqBkARMCCxkA5rVdp61f7rovmFtq5kf 130928.69826981
+# RTuiEzbcX7N1j1oXSwBbRE5n8s31wzyuXQ KMD 8948.17705032
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RTuiEzbcX7N1j1oXSwBbRE5n8s31wzyuXQ\",\"symbol\":\"KMD\"}" # 8948.17705032
+sleep 13
+./komodo-cli sendtoaddress RTuiEzbcX7N1j1oXSwBbRE5n8s31wzyuXQ 8948.17705032
+# RVcyGvC5uYhT1UguHu1wgHxSTH6JEx8NHP KMD 5117.51239557
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RVcyGvC5uYhT1UguHu1wgHxSTH6JEx8NHP\",\"symbol\":\"KMD\"}" # 5117.51239557
+sleep 13
+./komodo-cli sendtoaddress RVcyGvC5uYhT1UguHu1wgHxSTH6JEx8NHP 5117.51239557
+# RQKrkjKAvhPvhB3f9yAjipBPutJAP7TA32 KMD 3721.26805123
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RQKrkjKAvhPvhB3f9yAjipBPutJAP7TA32\",\"symbol\":\"KMD\"}" # 3721.26805123
+sleep 13
+./komodo-cli sendtoaddress RQKrkjKAvhPvhB3f9yAjipBPutJAP7TA32 3721.26805123
+# RFwK8bejf6ANo61ipukbXxto15z55CwRUm KMD 4360.41373744
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RFwK8bejf6ANo61ipukbXxto15z55CwRUm\",\"symbol\":\"KMD\"}" # 4360.41373744
+sleep 13
+./komodo-cli sendtoaddress RFwK8bejf6ANo61ipukbXxto15z55CwRUm 4360.41373744
+# RFHBwfH6pSfzaw3WDvV84ii4SGvGpEtgjJ KMD 26947.73503767
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RFHBwfH6pSfzaw3WDvV84ii4SGvGpEtgjJ\",\"symbol\":\"KMD\"}" # 26947.73503767
+sleep 13
+./komodo-cli sendtoaddress RFHBwfH6pSfzaw3WDvV84ii4SGvGpEtgjJ 26947.73503767
+# RXKZmFmmpfAV2DAdUUXhA88RqCoyPRXcnA KMD 28641.72782430, REVS 337.66808110
+# RXKZmFmmpfAV2DAdUUXhA88RqCoyPRXcnA KMD 28641.72782430
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RXKZmFmmpfAV2DAdUUXhA88RqCoyPRXcnA\",\"symbol\":\"KMD\"}" # 28641.72782430
+sleep 13
+./komodo-cli sendtoaddress RXKZmFmmpfAV2DAdUUXhA88RqCoyPRXcnA 28641.72782430
+# RCxnQhmYdpK9vTS7PLRtXBtDk2HaRNo1qk KMD 2171.04073365, REVS 43.05910000
+# RCxnQhmYdpK9vTS7PLRtXBtDk2HaRNo1qk KMD 2171.04073365
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RCxnQhmYdpK9vTS7PLRtXBtDk2HaRNo1qk\",\"symbol\":\"KMD\"}" # 2171.04073365
+sleep 13
+./komodo-cli sendtoaddress RCxnQhmYdpK9vTS7PLRtXBtDk2HaRNo1qk 2171.04073365
+# RNFLSwnYtoA5Gjb1eHDszeGLtxaE9yPiFp KMD 56753.10185822
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RNFLSwnYtoA5Gjb1eHDszeGLtxaE9yPiFp\",\"symbol\":\"KMD\"}" # 56753.10185822
+sleep 13
+./komodo-cli sendtoaddress RNFLSwnYtoA5Gjb1eHDszeGLtxaE9yPiFp 56753.10185822
+# RPtwW4UejbAxs5PU6a1zMPcPqW7SVghMDS KMD 31741.86724191, REVS 514.45537037
+# RPtwW4UejbAxs5PU6a1zMPcPqW7SVghMDS KMD 31741.86724191
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RPtwW4UejbAxs5PU6a1zMPcPqW7SVghMDS\",\"symbol\":\"KMD\"}" # 31741.86724191
+sleep 13
+./komodo-cli sendtoaddress RPtwW4UejbAxs5PU6a1zMPcPqW7SVghMDS 31741.86724191
+# RYWPYz5qotHsukbFpzRksctMUBobmWLdkG KMD 9295.82639400
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RYWPYz5qotHsukbFpzRksctMUBobmWLdkG\",\"symbol\":\"KMD\"}" # 9295.82639400
+sleep 13
+./komodo-cli sendtoaddress RYWPYz5qotHsukbFpzRksctMUBobmWLdkG 9295.82639400
+# RBnTykMEj7GPYN1v8VtE9rrPvggZGuHzct KMD 4841.57624687
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RBnTykMEj7GPYN1v8VtE9rrPvggZGuHzct\",\"symbol\":\"KMD\"}" # 4841.57624687
+sleep 13
+./komodo-cli sendtoaddress RBnTykMEj7GPYN1v8VtE9rrPvggZGuHzct 4841.57624687
+# RYMzZx5nxKrMtTm3TNeheVn4RooTGvhsNd KMD 12756.16332851, REVS 253.10000000
+# RYMzZx5nxKrMtTm3TNeheVn4RooTGvhsNd KMD 12756.16332851
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RYMzZx5nxKrMtTm3TNeheVn4RooTGvhsNd\",\"symbol\":\"KMD\"}" # 12756.16332851
+sleep 13
+./komodo-cli sendtoaddress RYMzZx5nxKrMtTm3TNeheVn4RooTGvhsNd 12756.16332851
+# RPyKbtBPVb3FYv5iFULNUB6bq9DdvekZuz KMD 3422.63549310, REVS 51.90683618
+# RPyKbtBPVb3FYv5iFULNUB6bq9DdvekZuz KMD 3422.63549310
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RPyKbtBPVb3FYv5iFULNUB6bq9DdvekZuz\",\"symbol\":\"KMD\"}" # 3422.63549310
+sleep 13
+./komodo-cli sendtoaddress RPyKbtBPVb3FYv5iFULNUB6bq9DdvekZuz 3422.63549310
+# RVcGdBT2N6Fbqbptj3R4zhZYNB4WJQWEns KMD 77986.19708921, REVS 1548.20316000
+# RVcGdBT2N6Fbqbptj3R4zhZYNB4WJQWEns KMD 77986.19708921
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RVcGdBT2N6Fbqbptj3R4zhZYNB4WJQWEns\",\"symbol\":\"KMD\"}" # 77986.19708921
+sleep 13
+./komodo-cli sendtoaddress RVcGdBT2N6Fbqbptj3R4zhZYNB4WJQWEns 77986.19708921
+# RPZ1G1SP3qmfdmwxeLzuFYpeg2YgsyDmKm KMD 1633.25733112
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RPZ1G1SP3qmfdmwxeLzuFYpeg2YgsyDmKm\",\"symbol\":\"KMD\"}" # 1633.25733112
+sleep 13
+./komodo-cli sendtoaddress RPZ1G1SP3qmfdmwxeLzuFYpeg2YgsyDmKm 1633.25733112
+# RH4SXj2zZqfG4TfejyHcVpaoPoDv1Uonnf KMD 11621.99031627, REVS 192.14192021
+# RH4SXj2zZqfG4TfejyHcVpaoPoDv1Uonnf KMD 11621.99031627
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RH4SXj2zZqfG4TfejyHcVpaoPoDv1Uonnf\",\"symbol\":\"KMD\"}" # 11621.99031627
+sleep 13
+./komodo-cli sendtoaddress RH4SXj2zZqfG4TfejyHcVpaoPoDv1Uonnf 11621.99031627
+# RQrV64mBwDgfSSe7Tf57xApNUYKfgeAyUx KMD 4237.18880501
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RQrV64mBwDgfSSe7Tf57xApNUYKfgeAyUx\",\"symbol\":\"KMD\"}" # 4237.18880501
+sleep 13
+./komodo-cli sendtoaddress RQrV64mBwDgfSSe7Tf57xApNUYKfgeAyUx 4237.18880501
+# RV9osrAbwSAdNpm6qNXJrC2gk3nZhp3dZB KMD 111549.91672800
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RV9osrAbwSAdNpm6qNXJrC2gk3nZhp3dZB\",\"symbol\":\"KMD\"}" # 111549.91672800
+sleep 13
+./komodo-cli sendtoaddress RV9osrAbwSAdNpm6qNXJrC2gk3nZhp3dZB 111549.91672800
+# RNhXnjLYF8xWK3WJ81QGayVKspv39piE9A KMD 2186.32329008
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RNhXnjLYF8xWK3WJ81QGayVKspv39piE9A\",\"symbol\":\"KMD\"}" # 2186.32329008
+sleep 13
+./komodo-cli sendtoaddress RNhXnjLYF8xWK3WJ81QGayVKspv39piE9A 2186.32329008
+# RMtaFKtY9shLtoP3WBZqWgwGFGnN48aEms KMD 774.65219950
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RMtaFKtY9shLtoP3WBZqWgwGFGnN48aEms\",\"symbol\":\"KMD\"}" # 774.65219950
+sleep 13
+./komodo-cli sendtoaddress RMtaFKtY9shLtoP3WBZqWgwGFGnN48aEms 774.65219950
+# REtq1LtbLVo6bz68f9TGFduNmUTKqG7vnH KMD 25088.84725730, REVS 305.62849999
+# REtq1LtbLVo6bz68f9TGFduNmUTKqG7vnH KMD 25088.84725730
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"REtq1LtbLVo6bz68f9TGFduNmUTKqG7vnH\",\"symbol\":\"KMD\"}" # 25088.84725730
+sleep 13
+./komodo-cli sendtoaddress REtq1LtbLVo6bz68f9TGFduNmUTKqG7vnH 25088.84725730
+# RS3rMPEGouBWbHKStyQg8TxVmtwFQ6ebh3 KMD 3546.25060143, REVS 39.99000000
+# RS3rMPEGouBWbHKStyQg8TxVmtwFQ6ebh3 KMD 3546.25060143
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RS3rMPEGouBWbHKStyQg8TxVmtwFQ6ebh3\",\"symbol\":\"KMD\"}" # 3546.25060143
+sleep 13
+./komodo-cli sendtoaddress RS3rMPEGouBWbHKStyQg8TxVmtwFQ6ebh3 3546.25060143
+# REEwT31zNEKL9B6ufdEeh3v39kaGXXmbHM KMD 3874.81030189
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"REEwT31zNEKL9B6ufdEeh3v39kaGXXmbHM\",\"symbol\":\"KMD\"}" # 3874.81030189
+sleep 13
+./komodo-cli sendtoaddress REEwT31zNEKL9B6ufdEeh3v39kaGXXmbHM 3874.81030189
+# RGzvr4JSHDLDQAGBwdyoUiUuaYn5sUwKNd KMD 69108.92543895, REVS 314.51750000
+# RGzvr4JSHDLDQAGBwdyoUiUuaYn5sUwKNd KMD 69108.92543895
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RGzvr4JSHDLDQAGBwdyoUiUuaYn5sUwKNd\",\"symbol\":\"KMD\"}" # 69108.92543895
+sleep 13
+./komodo-cli sendtoaddress RGzvr4JSHDLDQAGBwdyoUiUuaYn5sUwKNd 69108.92543895
+# RUNnhqkaV7SLEGCaD72mPq8nmY4c2kFpZg KMD 971.41385817
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUNnhqkaV7SLEGCaD72mPq8nmY4c2kFpZg\",\"symbol\":\"KMD\"}" # 971.41385817
+sleep 13
+./komodo-cli sendtoaddress RUNnhqkaV7SLEGCaD72mPq8nmY4c2kFpZg 971.41385817
+# RKKuzpkq1jxGAJSbADQzUDHUbfNvVCKFpW KMD 1118.61025995
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RKKuzpkq1jxGAJSbADQzUDHUbfNvVCKFpW\",\"symbol\":\"KMD\"}" # 1118.61025995
+sleep 13
+./komodo-cli sendtoaddress RKKuzpkq1jxGAJSbADQzUDHUbfNvVCKFpW 1118.61025995
+# RMD1wVnzMmKn8uMTHaP9pYfCWkxf3QVWWE KMD 2931.50081538, REVS 40.37145505
+# RMD1wVnzMmKn8uMTHaP9pYfCWkxf3QVWWE KMD 2931.50081538
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RMD1wVnzMmKn8uMTHaP9pYfCWkxf3QVWWE\",\"symbol\":\"KMD\"}" # 2931.50081538
+sleep 13
+./komodo-cli sendtoaddress RMD1wVnzMmKn8uMTHaP9pYfCWkxf3QVWWE 2931.50081538
+# RKxR5Zafxm5WcmFFBdfWYTk55Qv6fbC4Vd KMD 8222.77359680
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RKxR5Zafxm5WcmFFBdfWYTk55Qv6fbC4Vd\",\"symbol\":\"KMD\"}" # 8222.77359680
+sleep 13
+./komodo-cli sendtoaddress RKxR5Zafxm5WcmFFBdfWYTk55Qv6fbC4Vd 8222.77359680
+# RFAPtYANyAs9hhwUBNYemugxjhpwp4YvwF KMD 19588.92575705
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RFAPtYANyAs9hhwUBNYemugxjhpwp4YvwF\",\"symbol\":\"KMD\"}" # 19588.92575705
+sleep 13
+./komodo-cli sendtoaddress RFAPtYANyAs9hhwUBNYemugxjhpwp4YvwF 19588.92575705
+# RQCEEEprmqghZHN73iG1C2XvYTTQ6FB2wE KMD 5506.18026103, REVS 90.00054364
+# RQCEEEprmqghZHN73iG1C2XvYTTQ6FB2wE KMD 5506.18026103
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RQCEEEprmqghZHN73iG1C2XvYTTQ6FB2wE\",\"symbol\":\"KMD\"}" # 5506.18026103
+sleep 13
+./komodo-cli sendtoaddress RQCEEEprmqghZHN73iG1C2XvYTTQ6FB2wE 5506.18026103
+# RDX85BbF7kJY4S33VTPgCM1tWQGwU9huTy KMD 8130.94314900
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RDX85BbF7kJY4S33VTPgCM1tWQGwU9huTy\",\"symbol\":\"KMD\"}" # 8130.94314900
+sleep 13
+./komodo-cli sendtoaddress RDX85BbF7kJY4S33VTPgCM1tWQGwU9huTy 8130.94314900
+# RCmLc2JBpPw9T9g1skg7J5Xr5kz1fyd7mx KMD 529.41438680, REVS 10.50000000
+# RCmLc2JBpPw9T9g1skg7J5Xr5kz1fyd7mx KMD 529.41438680
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RCmLc2JBpPw9T9g1skg7J5Xr5kz1fyd7mx\",\"symbol\":\"KMD\"}" # 529.41438680
+sleep 13
+./komodo-cli sendtoaddress RCmLc2JBpPw9T9g1skg7J5Xr5kz1fyd7mx 529.41438680
+# R9ULUWEvzmHPZ4rYL5FtwkMyTWvGDZX43J KMD 15051.18125683, REVS 298.60000000
+# R9ULUWEvzmHPZ4rYL5FtwkMyTWvGDZX43J KMD 15051.18125683
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"R9ULUWEvzmHPZ4rYL5FtwkMyTWvGDZX43J\",\"symbol\":\"KMD\"}" # 15051.18125683
+sleep 13
+./komodo-cli sendtoaddress R9ULUWEvzmHPZ4rYL5FtwkMyTWvGDZX43J 15051.18125683
+# RE2f5UV1JDhUk6TeJLhz3VgxH5ePPa7SYH KMD 710.45289846
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RE2f5UV1JDhUk6TeJLhz3VgxH5ePPa7SYH\",\"symbol\":\"KMD\"}" # 710.45289846
+sleep 13
+./komodo-cli sendtoaddress RE2f5UV1JDhUk6TeJLhz3VgxH5ePPa7SYH 710.45289846
+# RGW1zNcVLcZDHTMBqEiSEXCm2WNWBx3z9A KMD 755.28589451
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RGW1zNcVLcZDHTMBqEiSEXCm2WNWBx3z9A\",\"symbol\":\"KMD\"}" # 755.28589451
+sleep 13
+./komodo-cli sendtoaddress RGW1zNcVLcZDHTMBqEiSEXCm2WNWBx3z9A 755.28589451
+# RW2xS8dpxjudqBX1hqxShP7FWn8EHYH4Rb KMD 166779.58408020, REVS 3310.49966000
+# RW2xS8dpxjudqBX1hqxShP7FWn8EHYH4Rb KMD 166779.58408020
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RW2xS8dpxjudqBX1hqxShP7FWn8EHYH4Rb\",\"symbol\":\"KMD\"}" # 166779.58408020
+sleep 13
+./komodo-cli sendtoaddress RW2xS8dpxjudqBX1hqxShP7FWn8EHYH4Rb 166779.58408020
+# RALRwXaEN3yS5damdDwAkmEMKvdAkVs361 KMD 25746.96382302, REVS 510.64558668
+# RALRwXaEN3yS5damdDwAkmEMKvdAkVs361 KMD 25746.96382302
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RALRwXaEN3yS5damdDwAkmEMKvdAkVs361\",\"symbol\":\"KMD\"}" # 25746.96382302
+sleep 13
+./komodo-cli sendtoaddress RALRwXaEN3yS5damdDwAkmEMKvdAkVs361 25746.96382302
+# RXk8hbw2g1iU5Vae5Aov8MmJBcNH9jTq6V KMD 4647.91319700
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RXk8hbw2g1iU5Vae5Aov8MmJBcNH9jTq6V\",\"symbol\":\"KMD\"}" # 4647.91319700
+sleep 13
+./komodo-cli sendtoaddress RXk8hbw2g1iU5Vae5Aov8MmJBcNH9jTq6V 4647.91319700
+# RPVNUvVq4BgKrrB3E1uULja2hjPW6Hv6r9 KMD 16872.68860925, REVS 334.64000000
+# RPVNUvVq4BgKrrB3E1uULja2hjPW6Hv6r9 KMD 16872.68860925
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RPVNUvVq4BgKrrB3E1uULja2hjPW6Hv6r9\",\"symbol\":\"KMD\"}" # 16872.68860925
+sleep 13
+./komodo-cli sendtoaddress RPVNUvVq4BgKrrB3E1uULja2hjPW6Hv6r9 16872.68860925
+# RWTfFTP7c9WxLhgxd2EXSsKszpDVPXHN8A KMD 19616.45270312, REVS 389.05771834
+# RWTfFTP7c9WxLhgxd2EXSsKszpDVPXHN8A KMD 19616.45270312
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RWTfFTP7c9WxLhgxd2EXSsKszpDVPXHN8A\",\"symbol\":\"KMD\"}" # 19616.45270312
+sleep 13
+./komodo-cli sendtoaddress RWTfFTP7c9WxLhgxd2EXSsKszpDVPXHN8A 19616.45270312
+# RXFr5VB9gQYC5QYv7yVvkxtjDY3zwYuvDx KMD 327.74801651, REVS 6.50475878
+# RXFr5VB9gQYC5QYv7yVvkxtjDY3zwYuvDx KMD 327.74801651
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RXFr5VB9gQYC5QYv7yVvkxtjDY3zwYuvDx\",\"symbol\":\"KMD\"}" # 327.74801651
+sleep 13
+./komodo-cli sendtoaddress RXFr5VB9gQYC5QYv7yVvkxtjDY3zwYuvDx 327.74801651
+# RYZHjTxct7aq83rLkvb3ZrfXpPPQKdBX4z KMD 27224.94567564
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RYZHjTxct7aq83rLkvb3ZrfXpPPQKdBX4z\",\"symbol\":\"KMD\"}" # 27224.94567564
+sleep 13
+./komodo-cli sendtoaddress RYZHjTxct7aq83rLkvb3ZrfXpPPQKdBX4z 27224.94567564
+# RCKvFCXm1SLr24i2FiVN7yNmxaXpWGy2o3 KMD 3892.43363943
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RCKvFCXm1SLr24i2FiVN7yNmxaXpWGy2o3\",\"symbol\":\"KMD\"}" # 3892.43363943
+sleep 13
+./komodo-cli sendtoaddress RCKvFCXm1SLr24i2FiVN7yNmxaXpWGy2o3 3892.43363943
+# RUqYxcjB5Hy6eqK1YDimjfXfhfp5TSyCF4 KMD 9265.21407570
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUqYxcjB5Hy6eqK1YDimjfXfhfp5TSyCF4\",\"symbol\":\"KMD\"}" # 9265.21407570
+sleep 13
+./komodo-cli sendtoaddress RUqYxcjB5Hy6eqK1YDimjfXfhfp5TSyCF4 9265.21407570
+# RHUpvFhHv1umX1JsV5S8smAKAsN5CxA4HD KMD 2183.96436714, REVS 2.36599993
+# RHUpvFhHv1umX1JsV5S8smAKAsN5CxA4HD KMD 2183.96436714
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RHUpvFhHv1umX1JsV5S8smAKAsN5CxA4HD\",\"symbol\":\"KMD\"}" # 2183.96436714
+sleep 13
+./komodo-cli sendtoaddress RHUpvFhHv1umX1JsV5S8smAKAsN5CxA4HD 2183.96436714
+# RW7w9NLACVHnBW37QVTKeP6YYuYegfg1LF KMD 29049.45748125
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RW7w9NLACVHnBW37QVTKeP6YYuYegfg1LF\",\"symbol\":\"KMD\"}" # 29049.45748125
+sleep 13
+./komodo-cli sendtoaddress RW7w9NLACVHnBW37QVTKeP6YYuYegfg1LF 29049.45748125
+# RAhvJHePdAb1PF9jjZhP2F7r72ebL9pA1f KMD 3457.02047726, REVS 68.56389987
+# RAhvJHePdAb1PF9jjZhP2F7r72ebL9pA1f KMD 3457.02047726
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RAhvJHePdAb1PF9jjZhP2F7r72ebL9pA1f\",\"symbol\":\"KMD\"}" # 3457.02047726
+sleep 13
+./komodo-cli sendtoaddress RAhvJHePdAb1PF9jjZhP2F7r72ebL9pA1f 3457.02047726
+# RQ5PNbYYJgytmGQQSdbUeuh7Nekc3jcMRW KMD 15358.01719845
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RQ5PNbYYJgytmGQQSdbUeuh7Nekc3jcMRW\",\"symbol\":\"KMD\"}" # 15358.01719845
+sleep 13
+./komodo-cli sendtoaddress RQ5PNbYYJgytmGQQSdbUeuh7Nekc3jcMRW 15358.01719845
+# RLS8Y41iqJp8rBVPtsg6mDymyWmdWBQZby KMD 28274.80528175
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RLS8Y41iqJp8rBVPtsg6mDymyWmdWBQZby\",\"symbol\":\"KMD\"}" # 28274.80528175
+sleep 13
+./komodo-cli sendtoaddress RLS8Y41iqJp8rBVPtsg6mDymyWmdWBQZby 28274.80528175
+# RUYWU7rQ4vDyhhHbnyEeSMHrxt79qsnsAy KMD 1456.34613506
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUYWU7rQ4vDyhhHbnyEeSMHrxt79qsnsAy\",\"symbol\":\"KMD\"}" # 1456.34613506
+sleep 13
+./komodo-cli sendtoaddress RUYWU7rQ4vDyhhHbnyEeSMHrxt79qsnsAy 1456.34613506
+# RDCjGgoZ1tvCWop6m5wPYkr83wdFrofF6M KMD 76598.36955552, REVS 1519.19347187
+# RDCjGgoZ1tvCWop6m5wPYkr83wdFrofF6M KMD 76598.36955552
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RDCjGgoZ1tvCWop6m5wPYkr83wdFrofF6M\",\"symbol\":\"KMD\"}" # 76598.36955552
+sleep 13
+./komodo-cli sendtoaddress RDCjGgoZ1tvCWop6m5wPYkr83wdFrofF6M 76598.36955552
+# RLAEm3H2LMSNzJmveLkcf2nS18AnqWR7pJ KMD 82831.36892196, REVS 1643.94000000
+# RLAEm3H2LMSNzJmveLkcf2nS18AnqWR7pJ KMD 82831.36892196
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RLAEm3H2LMSNzJmveLkcf2nS18AnqWR7pJ\",\"symbol\":\"KMD\"}" # 82831.36892196
+sleep 13
+./komodo-cli sendtoaddress RLAEm3H2LMSNzJmveLkcf2nS18AnqWR7pJ 82831.36892196
+# RLko1vnC4k8WntCjCLwK6WcLYnzLZnCzfj KMD 34065.53877698
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RLko1vnC4k8WntCjCLwK6WcLYnzLZnCzfj\",\"symbol\":\"KMD\"}" # 34065.53877698
+sleep 13
+./komodo-cli sendtoaddress RLko1vnC4k8WntCjCLwK6WcLYnzLZnCzfj 34065.53877698
+# RSUfnwTLE36E3Nx8PptxVoAfSRtMeGQsFL KMD 67327.03192299, REVS 1282.48928243
+# RSUfnwTLE36E3Nx8PptxVoAfSRtMeGQsFL KMD 67327.03192299
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSUfnwTLE36E3Nx8PptxVoAfSRtMeGQsFL\",\"symbol\":\"KMD\"}" # 67327.03192299
+sleep 13
+./komodo-cli sendtoaddress RSUfnwTLE36E3Nx8PptxVoAfSRtMeGQsFL 67327.03192299
+# RPkkQmMmyLQe8Th7ZP5GoF6kSUs1DTNfAf KMD 1538.42929417, REVS 30.51202988
+# RPkkQmMmyLQe8Th7ZP5GoF6kSUs1DTNfAf KMD 1538.42929417
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RPkkQmMmyLQe8Th7ZP5GoF6kSUs1DTNfAf\",\"symbol\":\"KMD\"}" # 1538.42929417
+sleep 13
+./komodo-cli sendtoaddress RPkkQmMmyLQe8Th7ZP5GoF6kSUs1DTNfAf 1538.42929417
+# RSkhXmiPCxqdp4bM4ux7VxAwMoCv2Uar6d KMD 73542.70261753, REVS 1459.56877203
+# RSkhXmiPCxqdp4bM4ux7VxAwMoCv2Uar6d KMD 73542.70261753
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSkhXmiPCxqdp4bM4ux7VxAwMoCv2Uar6d\",\"symbol\":\"KMD\"}" # 73542.70261753
+sleep 13
+./komodo-cli sendtoaddress RSkhXmiPCxqdp4bM4ux7VxAwMoCv2Uar6d 73542.70261753
+# RP8AvHsUhZkbDdcfHFrRsZZn2QVNcBMPNQ KMD 8540.87460698
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RP8AvHsUhZkbDdcfHFrRsZZn2QVNcBMPNQ\",\"symbol\":\"KMD\"}" # 8540.87460698
+sleep 13
+./komodo-cli sendtoaddress RP8AvHsUhZkbDdcfHFrRsZZn2QVNcBMPNQ 8540.87460698
+# RUJvR3TXCAcizk7dXdFc6GKRFS6jZfjtyY KMD 10419.10088055, REVS 206.75776925
+# RUJvR3TXCAcizk7dXdFc6GKRFS6jZfjtyY KMD 10419.10088055
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUJvR3TXCAcizk7dXdFc6GKRFS6jZfjtyY\",\"symbol\":\"KMD\"}" # 10419.10088055
+sleep 13
+./komodo-cli sendtoaddress RUJvR3TXCAcizk7dXdFc6GKRFS6jZfjtyY 10419.10088055
+# RLZmhbeB2tXTas9grzAeqaL2RFAXVmDVpU KMD 43480.56469698, REVS 50.30001915
+# RLZmhbeB2tXTas9grzAeqaL2RFAXVmDVpU KMD 43480.56469698
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RLZmhbeB2tXTas9grzAeqaL2RFAXVmDVpU\",\"symbol\":\"KMD\"}" # 43480.56469698
+sleep 13
+./komodo-cli sendtoaddress RLZmhbeB2tXTas9grzAeqaL2RFAXVmDVpU 43480.56469698
+# REU3FkPuNbZxogpStpyhZiyPkCp58G2bh3 KMD 8489.87824564
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"REU3FkPuNbZxogpStpyhZiyPkCp58G2bh3\",\"symbol\":\"KMD\"}" # 8489.87824564
+sleep 13
+./komodo-cli sendtoaddress REU3FkPuNbZxogpStpyhZiyPkCp58G2bh3 8489.87824564
+# RGHoKLW6r7DEBtYfV6VgjeBsQQFMvZ5thw KMD 20170.47947167
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RGHoKLW6r7DEBtYfV6VgjeBsQQFMvZ5thw\",\"symbol\":\"KMD\"}" # 20170.47947167
+sleep 13
+./komodo-cli sendtoaddress RGHoKLW6r7DEBtYfV6VgjeBsQQFMvZ5thw 20170.47947167
+# RLCDEXwfJ75P1iKgWGfR9geJmjZ84A4XXJ KMD 105141.23597043, REVS 1006.07261743
+# RLCDEXwfJ75P1iKgWGfR9geJmjZ84A4XXJ KMD 105141.23597043
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RLCDEXwfJ75P1iKgWGfR9geJmjZ84A4XXJ\",\"symbol\":\"KMD\"}" # 105141.23597043
+sleep 13
+./komodo-cli sendtoaddress RLCDEXwfJ75P1iKgWGfR9geJmjZ84A4XXJ 105141.23597043
+# RW1FmQGcpPv87WZVSCaMgjj74shMb3Y6Zi KMD 33700.59190315, REVS 380.47576230
+# RW1FmQGcpPv87WZVSCaMgjj74shMb3Y6Zi KMD 33700.59190315
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RW1FmQGcpPv87WZVSCaMgjj74shMb3Y6Zi\",\"symbol\":\"KMD\"}" # 33700.59190315
+sleep 13
+./komodo-cli sendtoaddress RW1FmQGcpPv87WZVSCaMgjj74shMb3Y6Zi 33700.59190315
+# RQUMrGYr4SsHgbN56WP7tuEpWUcd62KidP KMD 61230.10078656, REVS 600.00100000
+# RQUMrGYr4SsHgbN56WP7tuEpWUcd62KidP KMD 61230.10078656
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RQUMrGYr4SsHgbN56WP7tuEpWUcd62KidP\",\"symbol\":\"KMD\"}" # 61230.10078656
+sleep 13
+./komodo-cli sendtoaddress RQUMrGYr4SsHgbN56WP7tuEpWUcd62KidP 61230.10078656
+# RP8CkGhyfhdoVpGqGbVmEmRL7gGdqKBdkt KMD 153725.02014837, REVS 3049.70000000
+# RP8CkGhyfhdoVpGqGbVmEmRL7gGdqKBdkt KMD 153725.02014837
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RP8CkGhyfhdoVpGqGbVmEmRL7gGdqKBdkt\",\"symbol\":\"KMD\"}" # 153725.02014837
+sleep 13
+./komodo-cli sendtoaddress RP8CkGhyfhdoVpGqGbVmEmRL7gGdqKBdkt 153725.02014837
+# RRupn47XfLSMhXEuShtCCPBCv8P6LYXrLN KMD 790607.74140148, REVS 15691.16324116
+# RRupn47XfLSMhXEuShtCCPBCv8P6LYXrLN KMD 790607.74140148
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RRupn47XfLSMhXEuShtCCPBCv8P6LYXrLN\",\"symbol\":\"KMD\"}" # 790607.74140148
+sleep 13
+./komodo-cli sendtoaddress RRupn47XfLSMhXEuShtCCPBCv8P6LYXrLN 790607.74140148
+# RTPiNQKiaVaBnhneiZXqpieHfF6F2RWt7y KMD 293399.52056062
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RTPiNQKiaVaBnhneiZXqpieHfF6F2RWt7y\",\"symbol\":\"KMD\"}" # 293399.52056062
+sleep 13
+./komodo-cli sendtoaddress RTPiNQKiaVaBnhneiZXqpieHfF6F2RWt7y 293399.52056062
+# RAiZZDEXN8gqgotWvxxMc4cY7shkZ6y2Es KMD 14524.72874062
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RAiZZDEXN8gqgotWvxxMc4cY7shkZ6y2Es\",\"symbol\":\"KMD\"}" # 14524.72874062
+sleep 13
+./komodo-cli sendtoaddress RAiZZDEXN8gqgotWvxxMc4cY7shkZ6y2Es 14524.72874062
+# RLkUAjyNy8CQz8SxGvLwLWMP6rj3AK8Y7S KMD 6042.28715610
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RLkUAjyNy8CQz8SxGvLwLWMP6rj3AK8Y7S\",\"symbol\":\"KMD\"}" # 6042.28715610
+sleep 13
+./komodo-cli sendtoaddress RLkUAjyNy8CQz8SxGvLwLWMP6rj3AK8Y7S 6042.28715610
+# RRX73tynW4sxCmqyYBQrS9nMcDUcXuX1yG KMD 26022.54788263, REVS 5.39446042
+# RRX73tynW4sxCmqyYBQrS9nMcDUcXuX1yG KMD 26022.54788263
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RRX73tynW4sxCmqyYBQrS9nMcDUcXuX1yG\",\"symbol\":\"KMD\"}" # 26022.54788263
+sleep 13
+./komodo-cli sendtoaddress RRX73tynW4sxCmqyYBQrS9nMcDUcXuX1yG 26022.54788263
+# RBFoJqbhcDJG3wcKu9vvenTMcc7EJTowFq KMD 14461.16736567
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RBFoJqbhcDJG3wcKu9vvenTMcc7EJTowFq\",\"symbol\":\"KMD\"}" # 14461.16736567
+sleep 13
+./komodo-cli sendtoaddress RBFoJqbhcDJG3wcKu9vvenTMcc7EJTowFq 14461.16736567
+# R9u7V63TLwJPH1shvAGHRG61aci61yy7RN KMD 20764.40163902, REVS 291.83028199
+# R9u7V63TLwJPH1shvAGHRG61aci61yy7RN KMD 20764.40163902
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"R9u7V63TLwJPH1shvAGHRG61aci61yy7RN\",\"symbol\":\"KMD\"}" # 20764.40163902
+sleep 13
+./komodo-cli sendtoaddress R9u7V63TLwJPH1shvAGHRG61aci61yy7RN 20764.40163902
+# RK6x2w56cGqJrnFiGcuR5VNWahzm8G5AiA KMD 1859.16527880
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RK6x2w56cGqJrnFiGcuR5VNWahzm8G5AiA\",\"symbol\":\"KMD\"}" # 1859.16527880
+sleep 13
+./komodo-cli sendtoaddress RK6x2w56cGqJrnFiGcuR5VNWahzm8G5AiA 1859.16527880
+# RV56pNJyghFp8ikNMqPsuaffcJxrk39Xkh KMD 25176.19648375
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RV56pNJyghFp8ikNMqPsuaffcJxrk39Xkh\",\"symbol\":\"KMD\"}" # 25176.19648375
+sleep 13
+./komodo-cli sendtoaddress RV56pNJyghFp8ikNMqPsuaffcJxrk39Xkh 25176.19648375
+# RKAxvqvC3apzrb8udG9trBxiNhhNXaLkz4 KMD 6483.53169406, REVS 5.41696484
+# RKAxvqvC3apzrb8udG9trBxiNhhNXaLkz4 KMD 6483.53169406
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RKAxvqvC3apzrb8udG9trBxiNhhNXaLkz4\",\"symbol\":\"KMD\"}" # 6483.53169406
+sleep 13
+./komodo-cli sendtoaddress RKAxvqvC3apzrb8udG9trBxiNhhNXaLkz4 6483.53169406
+# R9SHcVV3m86KDnjRo2Pxc5yeLGKxwbyChb KMD 120245.29223059
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"R9SHcVV3m86KDnjRo2Pxc5yeLGKxwbyChb\",\"symbol\":\"KMD\"}" # 120245.29223059
+sleep 13
+./komodo-cli sendtoaddress R9SHcVV3m86KDnjRo2Pxc5yeLGKxwbyChb 120245.29223059
+# RV5cgPjqt37QBHr94VL5HnXWqcwdqoqoC3 KMD 81008.20903630, REVS 1607.10337790
+# RV5cgPjqt37QBHr94VL5HnXWqcwdqoqoC3 KMD 81008.20903630
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RV5cgPjqt37QBHr94VL5HnXWqcwdqoqoC3\",\"symbol\":\"KMD\"}" # 81008.20903630
+sleep 13
+./komodo-cli sendtoaddress RV5cgPjqt37QBHr94VL5HnXWqcwdqoqoC3 81008.20903630
+# RMnuGgpEzWcxYi861E7BjGMURCFX2Szj2v KMD 14010.00244099, REVS 277.86367220
+# RMnuGgpEzWcxYi861E7BjGMURCFX2Szj2v KMD 14010.00244099
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RMnuGgpEzWcxYi861E7BjGMURCFX2Szj2v\",\"symbol\":\"KMD\"}" # 14010.00244099
+sleep 13
+./komodo-cli sendtoaddress RMnuGgpEzWcxYi861E7BjGMURCFX2Szj2v 14010.00244099
+# RF4iG6huXb9u6Pt8281WvnBjhdEtiVUnp4 KMD 674.21697725, REVS 13.37190382
+# RF4iG6huXb9u6Pt8281WvnBjhdEtiVUnp4 KMD 674.21697725
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RF4iG6huXb9u6Pt8281WvnBjhdEtiVUnp4\",\"symbol\":\"KMD\"}" # 674.21697725
+sleep 13
+./komodo-cli sendtoaddress RF4iG6huXb9u6Pt8281WvnBjhdEtiVUnp4 674.21697725
+# RFKC68PGKwYz6rnPAbWomGZUv1BWKY8ugN KMD 1258661.38989150
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RFKC68PGKwYz6rnPAbWomGZUv1BWKY8ugN\",\"symbol\":\"KMD\"}" # 1258661.38989150
+sleep 13
+./komodo-cli sendtoaddress RFKC68PGKwYz6rnPAbWomGZUv1BWKY8ugN 1258661.38989150
+# RQAzL9perFJbDKcHiJ9Lafxxce7XiKo7Sx KMD 1924794.21182562
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RQAzL9perFJbDKcHiJ9Lafxxce7XiKo7Sx\",\"symbol\":\"KMD\"}" # 1924794.21182562
+sleep 13
+./komodo-cli sendtoaddress RQAzL9perFJbDKcHiJ9Lafxxce7XiKo7Sx 1924794.21182562
+# RRaSQCAWk74r5cXzZV8JqqW9JFbhF2o2nH KMD 4841.57624687
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RRaSQCAWk74r5cXzZV8JqqW9JFbhF2o2nH\",\"symbol\":\"KMD\"}" # 4841.57624687
+sleep 13
+./komodo-cli sendtoaddress RRaSQCAWk74r5cXzZV8JqqW9JFbhF2o2nH 4841.57624687
+# RU49btc37WeEiQotQZMhEaGokFYeJYc616 KMD 128958.92559312
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RU49btc37WeEiQotQZMhEaGokFYeJYc616\",\"symbol\":\"KMD\"}" # 128958.92559312
+sleep 13
+./komodo-cli sendtoaddress RU49btc37WeEiQotQZMhEaGokFYeJYc616 128958.92559312
+# RW3gz9fEadohRLZerK9r8zXkugk5swWHrf KMD 21219.62483892, REVS 421.20000000
+# RW3gz9fEadohRLZerK9r8zXkugk5swWHrf KMD 21219.62483892
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RW3gz9fEadohRLZerK9r8zXkugk5swWHrf\",\"symbol\":\"KMD\"}" # 21219.62483892
+sleep 13
+./komodo-cli sendtoaddress RW3gz9fEadohRLZerK9r8zXkugk5swWHrf 21219.62483892
+# RAFLKtQxyGECt5fBfufuCGY6rvupfKrn3U KMD 1677670.82328714
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RAFLKtQxyGECt5fBfufuCGY6rvupfKrn3U\",\"symbol\":\"KMD\"}" # 1677670.82328714
+sleep 13
+./komodo-cli sendtoaddress RAFLKtQxyGECt5fBfufuCGY6rvupfKrn3U 1677670.82328714
+# RJ89radoRzRr5oDsf71QZ7BXUTiHcyVSUu KMD 52588.80320859, REVS 1043.00609779
+# RJ89radoRzRr5oDsf71QZ7BXUTiHcyVSUu KMD 52588.80320859
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RJ89radoRzRr5oDsf71QZ7BXUTiHcyVSUu\",\"symbol\":\"KMD\"}" # 52588.80320859
+sleep 13
+./komodo-cli sendtoaddress RJ89radoRzRr5oDsf71QZ7BXUTiHcyVSUu 52588.80320859
+# RKenAzKZyD58qPu2zVdjwPjDn71T34sWE4 KMD 668547.16129881, REVS 13259.45302721
+# RKenAzKZyD58qPu2zVdjwPjDn71T34sWE4 KMD 668547.16129881
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RKenAzKZyD58qPu2zVdjwPjDn71T34sWE4\",\"symbol\":\"KMD\"}" # 668547.16129881
+sleep 13
+./komodo-cli sendtoaddress RKenAzKZyD58qPu2zVdjwPjDn71T34sWE4 668547.16129881
+# R9ibGGfsFHD8MxLRL4q2a6ezxAaHHPJvLc KMD 241619.45649268, REVS 4792.09548598
+# R9ibGGfsFHD8MxLRL4q2a6ezxAaHHPJvLc KMD 241619.45649268
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"R9ibGGfsFHD8MxLRL4q2a6ezxAaHHPJvLc\",\"symbol\":\"KMD\"}" # 241619.45649268
+sleep 13
+./komodo-cli sendtoaddress R9ibGGfsFHD8MxLRL4q2a6ezxAaHHPJvLc 241619.45649268
+# RGwuMmW1ZBMrHJwJucEy5JEV3BZWv7eQnm KMD 9071868.91817425, REVS 180010.00000000
+# RGwuMmW1ZBMrHJwJucEy5JEV3BZWv7eQnm KMD 9071868.91817425
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RGwuMmW1ZBMrHJwJucEy5JEV3BZWv7eQnm\",\"symbol\":\"KMD\"}" # 9071868.91817425
+sleep 13
+./komodo-cli sendtoaddress RGwuMmW1ZBMrHJwJucEy5JEV3BZWv7eQnm 9071868.91817425
+# RT6Ckpw8yM2Q7yaCxejiVTrxELGQPtnGPm KMD 25778.27244764, REVS 225.87592741
+# RT6Ckpw8yM2Q7yaCxejiVTrxELGQPtnGPm KMD 25778.27244764
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RT6Ckpw8yM2Q7yaCxejiVTrxELGQPtnGPm\",\"symbol\":\"KMD\"}" # 25778.27244764
+sleep 13
+./komodo-cli sendtoaddress RT6Ckpw8yM2Q7yaCxejiVTrxELGQPtnGPm 25778.27244764
+# RJfzvRW4cWXcjFpQZmv2PSy5GDGrnbM76Q KMD 1781.70005885
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RJfzvRW4cWXcjFpQZmv2PSy5GDGrnbM76Q\",\"symbol\":\"KMD\"}" # 1781.70005885
+sleep 13
+./komodo-cli sendtoaddress RJfzvRW4cWXcjFpQZmv2PSy5GDGrnbM76Q 1781.70005885
+# RSixxEuXMe8DacnajhgqDdrcFjeGD54drE KMD 266743.29833631
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSixxEuXMe8DacnajhgqDdrcFjeGD54drE\",\"symbol\":\"KMD\"}" # 266743.29833631
+sleep 13
+./komodo-cli sendtoaddress RSixxEuXMe8DacnajhgqDdrcFjeGD54drE 266743.29833631
+# RGf4wwbHVYYZrVPVZg6XdS3mWvbzHSebzu KMD 6387.59296405, REVS 126.73871740
+# RGf4wwbHVYYZrVPVZg6XdS3mWvbzHSebzu KMD 6387.59296405
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RGf4wwbHVYYZrVPVZg6XdS3mWvbzHSebzu\",\"symbol\":\"KMD\"}" # 6387.59296405
+sleep 13
+./komodo-cli sendtoaddress RGf4wwbHVYYZrVPVZg6XdS3mWvbzHSebzu 6387.59296405
+# RESydSaRoxRWWb1Pxn88H2kTRuV1W38dhU KMD 1243.42190050
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RESydSaRoxRWWb1Pxn88H2kTRuV1W38dhU\",\"symbol\":\"KMD\"}" # 1243.42190050
+sleep 13
+./komodo-cli sendtoaddress RESydSaRoxRWWb1Pxn88H2kTRuV1W38dhU 1243.42190050
+# RJAbNiCSRaMxUky9h8as6orZY3cu2rSW8z KMD 492782.94486222, REVS 9773.48000000
+# RJAbNiCSRaMxUky9h8as6orZY3cu2rSW8z KMD 492782.94486222
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RJAbNiCSRaMxUky9h8as6orZY3cu2rSW8z\",\"symbol\":\"KMD\"}" # 492782.94486222
+sleep 13
+./komodo-cli sendtoaddress RJAbNiCSRaMxUky9h8as6orZY3cu2rSW8z 492782.94486222
+# RSW5SvtjWiGYN3iwb2mteYP7Hn223Zk1tP KMD 343847.33707184, REVS 6001.47957339
+# RSW5SvtjWiGYN3iwb2mteYP7Hn223Zk1tP KMD 343847.33707184
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSW5SvtjWiGYN3iwb2mteYP7Hn223Zk1tP\",\"symbol\":\"KMD\"}" # 343847.33707184
+sleep 13
+./komodo-cli sendtoaddress RSW5SvtjWiGYN3iwb2mteYP7Hn223Zk1tP 343847.33707184
+# RNnzD9QxDZqo6DvzfM3Pu7GiyNkVk7dgsG KMD 155758.69136969
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RNnzD9QxDZqo6DvzfM3Pu7GiyNkVk7dgsG\",\"symbol\":\"KMD\"}" # 155758.69136969
+sleep 13
+./komodo-cli sendtoaddress RNnzD9QxDZqo6DvzfM3Pu7GiyNkVk7dgsG 155758.69136969
+# RSofHVn8U4WfqgfXCksqqgmiVSwXxnANvq KMD 4060.09161497
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSofHVn8U4WfqgfXCksqqgmiVSwXxnANvq\",\"symbol\":\"KMD\"}" # 4060.09161497
+sleep 13
+./komodo-cli sendtoaddress RSofHVn8U4WfqgfXCksqqgmiVSwXxnANvq 4060.09161497
+# RFPKxBL8iLQGmkoUukXdFU7VkXyGJLSsGw KMD 36335.50253541, REVS 413.60001059
+# RFPKxBL8iLQGmkoUukXdFU7VkXyGJLSsGw KMD 36335.50253541
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RFPKxBL8iLQGmkoUukXdFU7VkXyGJLSsGw\",\"symbol\":\"KMD\"}" # 36335.50253541
+sleep 13
+./komodo-cli sendtoaddress RFPKxBL8iLQGmkoUukXdFU7VkXyGJLSsGw 36335.50253541
+# RA9xKdNjw1H2eqPi9f9J77v7Uq1CSWdNQJ KMD 5270.01925860
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RA9xKdNjw1H2eqPi9f9J77v7Uq1CSWdNQJ\",\"symbol\":\"KMD\"}" # 5270.01925860
+sleep 13
+./komodo-cli sendtoaddress RA9xKdNjw1H2eqPi9f9J77v7Uq1CSWdNQJ 5270.01925860
+# RVFspAKoUpDMAiiEUiQQEpqdqXDMB48Jqp KMD 47464.51702590, REVS 634.55156126
+# RVFspAKoUpDMAiiEUiQQEpqdqXDMB48Jqp KMD 47464.51702590
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RVFspAKoUpDMAiiEUiQQEpqdqXDMB48Jqp\",\"symbol\":\"KMD\"}" # 47464.51702590
+sleep 13
+./komodo-cli sendtoaddress RVFspAKoUpDMAiiEUiQQEpqdqXDMB48Jqp 47464.51702590
+# RCPys8hvEfFSDkMZL7GtYA8a5GSwih67Q1 KMD 36359.70475507, REVS 100.00000000
+# RCPys8hvEfFSDkMZL7GtYA8a5GSwih67Q1 KMD 36359.70475507
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RCPys8hvEfFSDkMZL7GtYA8a5GSwih67Q1\",\"symbol\":\"KMD\"}" # 36359.70475507
+sleep 13
+./komodo-cli sendtoaddress RCPys8hvEfFSDkMZL7GtYA8a5GSwih67Q1 36359.70475507
+# R9ce1xHEaWnRRP5jrWozEfPf9ZJgX7jnxd KMD 915808.36366861, REVS 18163.44258555
+# R9ce1xHEaWnRRP5jrWozEfPf9ZJgX7jnxd KMD 915808.36366861
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"R9ce1xHEaWnRRP5jrWozEfPf9ZJgX7jnxd\",\"symbol\":\"KMD\"}" # 915808.36366861
+sleep 13
+./komodo-cli sendtoaddress R9ce1xHEaWnRRP5jrWozEfPf9ZJgX7jnxd 915808.36366861
+# RS1rdGqAhXvwFFTVyUCx695y84E3N3emcU KMD 18822.21903353, REVS 360.77089072
+# RS1rdGqAhXvwFFTVyUCx695y84E3N3emcU KMD 18822.21903353
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RS1rdGqAhXvwFFTVyUCx695y84E3N3emcU\",\"symbol\":\"KMD\"}" # 18822.21903353
+sleep 13
+./komodo-cli sendtoaddress RS1rdGqAhXvwFFTVyUCx695y84E3N3emcU 18822.21903353
+# RLgKsmgdzwNCt8CgqZ5J6cZhTat9HeZgxG KMD 62376.97840244, REVS 1045.22605497
+# RLgKsmgdzwNCt8CgqZ5J6cZhTat9HeZgxG KMD 62376.97840244
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RLgKsmgdzwNCt8CgqZ5J6cZhTat9HeZgxG\",\"symbol\":\"KMD\"}" # 62376.97840244
+sleep 13
+./komodo-cli sendtoaddress RLgKsmgdzwNCt8CgqZ5J6cZhTat9HeZgxG 62376.97840244
+# RFN4H8YYm71TjCVkHkoVFBFpg31i4ejbiu KMD 37183.30557600
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RFN4H8YYm71TjCVkHkoVFBFpg31i4ejbiu\",\"symbol\":\"KMD\"}" # 37183.30557600
+sleep 13
+./komodo-cli sendtoaddress RFN4H8YYm71TjCVkHkoVFBFpg31i4ejbiu 37183.30557600
+# RUBESyzjgZUts3fD6W7abpgMj4qRFSSszC KMD 541390.42407502, REVS 10592.65522652
+# RUBESyzjgZUts3fD6W7abpgMj4qRFSSszC KMD 541390.42407502
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RUBESyzjgZUts3fD6W7abpgMj4qRFSSszC\",\"symbol\":\"KMD\"}" # 541390.42407502
+sleep 13
+./komodo-cli sendtoaddress RUBESyzjgZUts3fD6W7abpgMj4qRFSSszC 541390.42407502
+# RSNu7Kd9p33aDrgT2AM8buy7fUSQZ2N3Gs KMD 130769.80646849, REVS 2593.58831601
+# RSNu7Kd9p33aDrgT2AM8buy7fUSQZ2N3Gs KMD 130769.80646849
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RSNu7Kd9p33aDrgT2AM8buy7fUSQZ2N3Gs\",\"symbol\":\"KMD\"}" # 130769.80646849
+sleep 13
+./komodo-cli sendtoaddress RSNu7Kd9p33aDrgT2AM8buy7fUSQZ2N3Gs 130769.80646849
+# RCrCe4dsMzXzzp7GLahubjg73VGK2rnczC KMD 6843.04832293, REVS 25.10000000
+# RCrCe4dsMzXzzp7GLahubjg73VGK2rnczC KMD 6843.04832293
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RCrCe4dsMzXzzp7GLahubjg73VGK2rnczC\",\"symbol\":\"KMD\"}" # 6843.04832293
+sleep 13
+./komodo-cli sendtoaddress RCrCe4dsMzXzzp7GLahubjg73VGK2rnczC 6843.04832293
+# RVTCRzofA2cV6FwGcvn1uGjZJmP5s9G1o9 KMD 95283.12042643, REVS 497.50723875
+# RVTCRzofA2cV6FwGcvn1uGjZJmP5s9G1o9 KMD 95283.12042643
+curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RVTCRzofA2cV6FwGcvn1uGjZJmP5s9G1o9\",\"symbol\":\"KMD\"}" # 95283.12042643
+sleep 13
+./komodo-cli sendtoaddress RVTCRzofA2cV6FwGcvn1uGjZJmP5s9G1o9 95283.12042643
+
+# total KMD 45769105.32172734 REVS 0.00000000
