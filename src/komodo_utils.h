@@ -1451,6 +1451,7 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height)
 
 void komodo_args()
 {
+    extern int64_t MAX_MONEY;
     std::string name,addn; char *dirname,fname[512],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,len;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     NOTARY_PUBKEY = GetArg("-pubkey", "");
