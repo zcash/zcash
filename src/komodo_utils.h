@@ -1449,7 +1449,7 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height)
     return(notaryid);
 }
 
-int64_t MAX_MONEY = 200000000 * COIN;
+int64_t MAX_MONEY = 200000000 * SATOSHIDEN;
 
 void komodo_args()
 {
