@@ -14,7 +14,7 @@
  ******************************************************************************/
 
 #define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))   // 5%
-int64_t MAX_MONEY = 200000000 * 100000000LL;
+//int64_t MAX_MONEY = 200000000 * 100000000LL;
 
 uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
 {
