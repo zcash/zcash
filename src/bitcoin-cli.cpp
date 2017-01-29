@@ -14,7 +14,7 @@
 
 using namespace std;
 using namespace json_spirit;
-int64_t MAX_MONEY = 200000000 * 100000000LL;
+//int64_t MAX_MONEY = 200000000 * 100000000LL;
 
 std::string HelpMessageCli()
 {
