@@ -1465,6 +1465,7 @@ void komodo_args()
     if ( name.c_str()[0] != 0 )
     {
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
+        MAX_MONEY = ASSETCHAINS_SUPPLY * COIN;
         addn = GetArg("-seednode","");
         if ( strlen(addn.c_str()) > 0 )
             ASSETCHAINS_SEED = 1;
