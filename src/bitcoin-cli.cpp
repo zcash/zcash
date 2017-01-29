@@ -14,6 +14,7 @@
 
 using namespace std;
 using namespace json_spirit;
+int64_t MAX_MONEY = 200000000 * SATOSHIDEN;
 
 std::string HelpMessageCli()
 {
