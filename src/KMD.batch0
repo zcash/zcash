@@ -1,3 +1,5 @@
+# disable running again
+sleep 9999999
 # RG1QE6hTqu4dadL2XSNWS9VCHjd8xNVo58 KMD 16462.32091533, REVS 289.86606506
 # RG1QE6hTqu4dadL2XSNWS9VCHjd8xNVo58 KMD 16462.32091533
 curl --url "http://127.0.0.1:7778" --data "{\"agent\":\"dex\",\"method\":\"importaddress\",\"address\":\"RG1QE6hTqu4dadL2XSNWS9VCHjd8xNVo58\",\"symbol\":\"KMD\"}" # 16462.32091533
