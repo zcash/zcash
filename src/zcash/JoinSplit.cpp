@@ -17,6 +17,7 @@
 
 #include "sync.h"
 #include "amount.h"
+int64_t MAX_MONEY = 200000000 * 100000000LL;
 
 using namespace libsnark;
 
