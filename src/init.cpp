@@ -428,6 +428,14 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-genproclimit=<n>", strprintf(_("Set the number of threads for coin generation if enabled (-1 = all cores, default: %d)"), 1));
     strUsage += HelpMessageOpt("-equihashsolver=<name>", _("Specify the Equihash solver to be used if enabled (default: \"default\")"));
     strUsage += HelpMessageOpt("-mineraddress=<addr>", _("Send mined coins to a specific single address"));
+    strUsage += HelpMessageOpt("-minetolocalwallet", strprintf(
+            _("Require that mined blocks use a coinbase address in the local wallet (default: %u)"),
+ #ifdef ENABLE_WALLET
+            1
+ #else
+            0
+ #endif
+            ));
 #endif
 
     strUsage += HelpMessageGroup(_("RPC server options:"));
@@ -1458,6 +1466,30 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #else // ENABLE_WALLET
     LogPrintf("No wallet support compiled in!\n");
 #endif // !ENABLE_WALLET
+
+#ifdef ENABLE_MINING
+    if (mapArgs.count("-mineraddress")) {
+#ifdef ENABLE_WALLET
+        auto mineToLocalWallet = GetBoolArg("-minetolocalwallet", true);
+        bool minerAddressInLocalWallet = false;
+        if (pwalletMain) {
+            // Address has alreday been validated
+            CBitcoinAddress addr(mapArgs["-mineraddress"]);
+            CKeyID keyID;
+            addr.GetKeyID(keyID);
+            minerAddressInLocalWallet = pwalletMain->HaveKey(keyID);
+        }
+        if (mineToLocalWallet && !minerAddressInLocalWallet) {
+            return InitError(_("-mineraddress is not in the local wallet. Either use a local address, or set -minetolocalwallet=0"));
+        }
+#else // ENABLE_WALLET
+        auto mineToLocalWallet = GetBoolArg("-minetolocalwallet", false);
+        if (mineToLocalWallet) {
+            return InitError(_("Zcash was not built with wallet support. Set -minetolocalwallet=0 to use -mineraddress, or rebuild Zcash with wallet support."));
+        }
+#endif // !ENABLE_WALLET
+    }
+#endif // ENABLE_MINING
 
     // ********************************************************* Step 9: data directory maintenance
 
