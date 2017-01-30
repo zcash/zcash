@@ -1466,14 +1466,14 @@ void komodo_args()
     if ( name.c_str()[0] != 0 )
     {
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
-        if ( (baseid= komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
-            MAX_MONEY = komodo_maxallowed(baseid);
-        else MAX_MONEY = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN;
-        printf("MAX_MONEY.%s %.8f\n",ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         addn = GetArg("-seednode","");
         if ( strlen(addn.c_str()) > 0 )
             ASSETCHAINS_SEED = 1;
         strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
+        if ( (baseid= komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
+            MAX_MONEY = komodo_maxallowed(baseid);
+        else MAX_MONEY = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN;
+        printf("baseid.%d MAX_MONEY.%s %.8f\n",baseid,ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         ASSETCHAINS_PORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC);
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
