@@ -1452,7 +1452,7 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height)
 void komodo_args()
 {
     extern int64_t MAX_MONEY;
-    std::string name,addn; char *dirname,fname[512],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,len;
+    std::string name,addn; char *dirname,fname[512],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,baseid,len;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     NOTARY_PUBKEY = GetArg("-pubkey", "");
     if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
@@ -1467,7 +1467,7 @@ void komodo_args()
     {
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
         if ( (baseid= komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
-            MAX_MONEY = komodo_maxallowed(baseid) * SATOSHIDEN;
+            MAX_MONEY = komodo_maxallowed(baseid);
         else MAX_MONEY = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN;
         printf("MAX_MONEY.%s %.8f\n",(double)MAX_MONEY/SATOSHIDEN);
         addn = GetArg("-seednode","");
