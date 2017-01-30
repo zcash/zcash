@@ -1469,7 +1469,7 @@ void komodo_args()
         if ( (baseid= komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
             MAX_MONEY = komodo_maxallowed(baseid);
         else MAX_MONEY = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN;
-        printf("MAX_MONEY.%s %.8f\n",(double)MAX_MONEY/SATOSHIDEN);
+        printf("MAX_MONEY.%s %.8f\n",ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         addn = GetArg("-seednode","");
         if ( strlen(addn.c_str()) > 0 )
             ASSETCHAINS_SEED = 1;
