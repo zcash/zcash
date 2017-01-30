@@ -655,7 +655,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     printf(" kht.%d ht.%d %.8f %.8f blockhash couldnt find vout.[%d]\n",kmdheights[i-1],otherheights[i-1],dstr(values[i-1]),dstr(srcvalues[i]),i);
                 }
             }
-            if ( height <= chainActive.Tip()->nHeight && matched != num )
+            if ( (height < chainActive.Tip()->nHeight || (height >= chainActive.Tip()->nHeight && komodo_isrealtime(&ht) != 0)) && matched != num )
             {
                 printf("WOULD REJECT %s: ht.%d (%c) matched.%d vs num.%d tip.%d isRT.%d\n",symbol,height,opcode,matched,num,(int32_t)chainActive.Tip()->nHeight,komodo_isrealtime(&ht));
                 // can easily happen depending on order of loading
