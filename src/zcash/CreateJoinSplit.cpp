@@ -7,6 +7,7 @@
 #include "zcash/JoinSplit.hpp"
 #include "libsnark/common/profiling.hpp"
 char ASSETCHAINS_SYMBOL[16];
+int64_t MAX_MONEY = 200000000 * 100000000LL;
 
 using namespace libzcash;
 

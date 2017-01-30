@@ -3,6 +3,8 @@
 #include <iostream>
 #include "crypto/common.h"
 
+int64_t MAX_MONEY = 200000000 * 100000000LL;
+
 int main(int argc, char **argv)
 {
     if (init_and_check_sodium() == -1) {

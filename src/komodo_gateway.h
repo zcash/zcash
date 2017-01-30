@@ -767,8 +767,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         }
                     }
                 }
-                else if ( kmdheight > 91800 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
-                    printf("pax %s deposit %.8f rejected kmdheight.%d %.8f KMD\n",base,dstr(fiatoshis),kmdheight,dstr(value));
+                else if ( seed != 0 && kmdheight > 91800 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                    printf("pax %s deposit %.8f rejected kmdheight.%d %.8f KMD check %.8f seed.%llu\n",base,dstr(fiatoshis),kmdheight,dstr(value),dstr(checktoshis),(long long)seed);
             }
         }
     }

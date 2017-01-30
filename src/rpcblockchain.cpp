@@ -407,7 +407,7 @@ int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *bas
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
 char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
 uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
-int32_t komodo_minerids(uint8_t *minerids,int32_t height);
+int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
 
 Value kvsearch(const Array& params, bool fHelp)
@@ -447,14 +447,14 @@ Value kvsearch(const Array& params, bool fHelp)
 
 Value minerids(const Array& params, bool fHelp)
 {
-    Object ret; Array a; uint8_t minerids[1000],pubkeys[64][33]; int32_t i,j,n,numnotaries,tally[65];
+    Object ret; Array a; uint8_t minerids[2000],pubkeys[64][33]; int32_t i,j,n,numnotaries,tally[65];
     if ( fHelp || params.size() != 1 )
         throw runtime_error("minerids needs height\n");
     LOCK(cs_main);
     int32_t height = atoi(params[0].get_str().c_str());
     if ( height <= 0 )
         height = chainActive.Tip()->nHeight;
-    if ( (n= komodo_minerids(minerids,height)) > 0 )
+    if ( (n= komodo_minerids(minerids,height,(int32_t)(sizeof(minerids)/sizeof(*minerids)))) > 0 )
     {
         memset(tally,0,sizeof(tally));
         numnotaries = komodo_notaries(pubkeys,height);
