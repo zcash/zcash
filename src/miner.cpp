@@ -544,9 +544,9 @@ void static BitcoinMiner(CWallet *pwallet)
     komodo_chosennotary(&notaryid,chainActive.Tip()->nHeight,NOTARY_PUBKEY33);
 
     std::string solver;
-    if ( notaryid >= 0 || ASSETCHAINS_SYMBOL[0] != 0 )
+    //if ( notaryid >= 0 || ASSETCHAINS_SYMBOL[0] != 0 )
         solver = "tromp";
-    else solver = "default";
+    //else solver = "default";
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
     //fprintf(stderr,"Mining with %s\n",solver.c_str());
@@ -697,7 +697,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 };
 
                 // TODO: factor this out into a function with the same API for each solver.
-                if (solver == "tromp" && notaryid >= 0 ) {
+                if (solver == "tromp" ) { //&& notaryid >= 0 ) {
                     // Create solver and initialize it.
                     equi eq(1);
                     eq.setstate(&curr_state);

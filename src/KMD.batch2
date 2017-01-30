@@ -1,0 +1,268 @@
+sleep 999999
+# RDB6rqTtXja9iRKu5KeKz36poQqQkadsvG KMD 1597.72016146
+./komodo-cli sendtoaddress RDB6rqTtXja9iRKu5KeKz36poQqQkadsvG 1597.72016146
+sleep 3
+echo  "1597.72016146 <- expected amount RDB6rqTtXja9iRKu5KeKz36poQqQkadsvG"
+
+# RFahFwS1xmwufLvidWFg3aQwi6JnZ7MV92 KMD 30956.65119641
+./komodo-cli sendtoaddress RFahFwS1xmwufLvidWFg3aQwi6JnZ7MV92 30956.65119641
+sleep 3
+echo  "30956.65119641 <- expected amount RFahFwS1xmwufLvidWFg3aQwi6JnZ7MV92"
+
+# RS3dv3trTkvMUc1qpycmcY2mZRZj527HMG KMD 8011.05479853
+./komodo-cli sendtoaddress RS3dv3trTkvMUc1qpycmcY2mZRZj527HMG 8011.05479853
+sleep 3
+echo  "8011.05479853 <- expected amount RS3dv3trTkvMUc1qpycmcY2mZRZj527HMG"
+
+# RU18xoQZeK4Kno2ER7mv8ZEKLHiTECRhkU KMD 501.64865701, REVS 9.95750000
+# RU18xoQZeK4Kno2ER7mv8ZEKLHiTECRhkU KMD 501.64865701
+./komodo-cli sendtoaddress RU18xoQZeK4Kno2ER7mv8ZEKLHiTECRhkU 501.64865701
+sleep 3
+echo  "501.64865701 <- expected amount RU18xoQZeK4Kno2ER7mv8ZEKLHiTECRhkU"
+
+# RFuD6bLb6seuKPmQqouwcjAy1yexEYGJ8Q KMD 6617.71011981
+./komodo-cli sendtoaddress RFuD6bLb6seuKPmQqouwcjAy1yexEYGJ8Q 6617.71011981
+sleep 3
+echo  "6617.71011981 <- expected amount RFuD6bLb6seuKPmQqouwcjAy1yexEYGJ8Q"
+
+# RSj2RG9yEbokDDNCn94g6wRf3y1R4HztjT KMD 58970.39868693
+./komodo-cli sendtoaddress RSj2RG9yEbokDDNCn94g6wRf3y1R4HztjT 58970.39868693
+sleep 3
+echo  "58970.39868693 <- expected amount RSj2RG9yEbokDDNCn94g6wRf3y1R4HztjT"
+
+# RLWjPQPe4zZ1ZF4VpShkiBkgkF4V9YFt7a KMD 18618.76561497
+./komodo-cli sendtoaddress RLWjPQPe4zZ1ZF4VpShkiBkgkF4V9YFt7a 18618.76561497
+sleep 3
+echo  "18618.76561497 <- expected amount RLWjPQPe4zZ1ZF4VpShkiBkgkF4V9YFt7a"
+
+# RARemRFU1R5QcRdDZqrufjks2KCzBi6bxL KMD 52766.61227268
+./komodo-cli sendtoaddress RARemRFU1R5QcRdDZqrufjks2KCzBi6bxL 52766.61227268
+sleep 3
+echo  "52766.61227268 <- expected amount RARemRFU1R5QcRdDZqrufjks2KCzBi6bxL"
+
+# REg8BhZUaxjJu8Ad4ZYsrETJwcwYL7mPkC KMD 7204.26545535
+./komodo-cli sendtoaddress REg8BhZUaxjJu8Ad4ZYsrETJwcwYL7mPkC 7204.26545535
+sleep 3
+echo  "7204.26545535 <- expected amount REg8BhZUaxjJu8Ad4ZYsrETJwcwYL7mPkC"
+
+# RMnLqCcb13npqdUMgUYAdr4bGawNe5H8yo KMD 871.48372443
+./komodo-cli sendtoaddress RMnLqCcb13npqdUMgUYAdr4bGawNe5H8yo 871.48372443
+sleep 3
+echo  "871.48372443 <- expected amount RMnLqCcb13npqdUMgUYAdr4bGawNe5H8yo"
+
+# RWCz1ibkFVpo6pBoBT7XeMZHVZy61EnYj3 KMD 681.69393556
+./komodo-cli sendtoaddress RWCz1ibkFVpo6pBoBT7XeMZHVZy61EnYj3 681.69393556
+sleep 3
+echo  "681.69393556 <- expected amount RWCz1ibkFVpo6pBoBT7XeMZHVZy61EnYj3"
+
+# RJxiu5FTx2Nqr9xHvwdq1xynExUjFKVPdf KMD 62103.45021354, REVS 50.00000000
+# RJxiu5FTx2Nqr9xHvwdq1xynExUjFKVPdf KMD 62103.45021354
+./komodo-cli sendtoaddress RJxiu5FTx2Nqr9xHvwdq1xynExUjFKVPdf 62103.45021354
+sleep 3
+echo  "62103.45021354 <- expected amount RJxiu5FTx2Nqr9xHvwdq1xynExUjFKVPdf"
+
+# RRcP4HLapHvTinSVYq6bMA3d41XeYCH2Uz KMD 9683.15249375
+./komodo-cli sendtoaddress RRcP4HLapHvTinSVYq6bMA3d41XeYCH2Uz 9683.15249375
+sleep 3
+echo  "9683.15249375 <- expected amount RRcP4HLapHvTinSVYq6bMA3d41XeYCH2Uz"
+
+# RB95bkGifi94Z4VSHGULKhCU8ML7tUbQ71 KMD 12520.16564088, REVS 138.94305839
+# RB95bkGifi94Z4VSHGULKhCU8ML7tUbQ71 KMD 12520.16564088
+./komodo-cli sendtoaddress RB95bkGifi94Z4VSHGULKhCU8ML7tUbQ71 12520.16564088
+sleep 3
+echo  "12520.16564088 <- expected amount RB95bkGifi94Z4VSHGULKhCU8ML7tUbQ71"
+
+# RKb5ay26iSzmBoqm51vPveyErH9BYG3dry KMD 3674.15911735, REVS 72.89043156
+# RKb5ay26iSzmBoqm51vPveyErH9BYG3dry KMD 3674.15911735
+./komodo-cli sendtoaddress RKb5ay26iSzmBoqm51vPveyErH9BYG3dry 3674.15911735
+sleep 3
+echo  "3674.15911735 <- expected amount RKb5ay26iSzmBoqm51vPveyErH9BYG3dry"
+
+# RNFKCPjFTQq5pFxBpehrVFzB55zE9enRyK KMD 1859.16527880
+./komodo-cli sendtoaddress RNFKCPjFTQq5pFxBpehrVFzB55zE9enRyK 1859.16527880
+sleep 3
+echo  "1859.16527880 <- expected amount RNFKCPjFTQq5pFxBpehrVFzB55zE9enRyK"
+
+# REGu6tiLygx7HjsRnEYypHiV3QotErvKxP KMD 9683.15249375
+./komodo-cli sendtoaddress REGu6tiLygx7HjsRnEYypHiV3QotErvKxP 9683.15249375
+sleep 3
+echo  "9683.15249375 <- expected amount REGu6tiLygx7HjsRnEYypHiV3QotErvKxP"
+
+# RVeVZrr24524LhN3VRhLqNG6qgH9tBPixx KMD 612851.03780014, REVS 5433.13031755
+# RVeVZrr24524LhN3VRhLqNG6qgH9tBPixx KMD 612851.03780014
+./komodo-cli sendtoaddress RVeVZrr24524LhN3VRhLqNG6qgH9tBPixx 612851.03780014
+sleep 3
+echo  "612851.03780014 <- expected amount RVeVZrr24524LhN3VRhLqNG6qgH9tBPixx"
+
+# RVGv9EP36z2SHf5zuGrGKEq6or8Q2hEPts KMD 954.83978703
+./komodo-cli sendtoaddress RVGv9EP36z2SHf5zuGrGKEq6or8Q2hEPts 954.83978703
+sleep 3
+echo  "954.83978703 <- expected amount RVGv9EP36z2SHf5zuGrGKEq6or8Q2hEPts"
+
+# RUuWvTwNAMGLpuY3GLPBAmMp8ptShkMSyN KMD 139007.63452726
+./komodo-cli sendtoaddress RUuWvTwNAMGLpuY3GLPBAmMp8ptShkMSyN 139007.63452726
+sleep 3
+echo  "139007.63452726 <- expected amount RUuWvTwNAMGLpuY3GLPBAmMp8ptShkMSyN"
+
+# RFBxwyTKGy5DtxR5CLLZSjKL5jU6fm13kp KMD 519232.27493854, REVS 10298.05578171
+# RFBxwyTKGy5DtxR5CLLZSjKL5jU6fm13kp KMD 519232.27493854
+./komodo-cli sendtoaddress RFBxwyTKGy5DtxR5CLLZSjKL5jU6fm13kp 519232.27493854
+sleep 3
+echo  "519232.27493854 <- expected amount RFBxwyTKGy5DtxR5CLLZSjKL5jU6fm13kp"
+
+# RV6EZQRiEszMydw3VjLabjGCBG1HiHrU6f KMD 19366.30498750
+./komodo-cli sendtoaddress RV6EZQRiEszMydw3VjLabjGCBG1HiHrU6f 19366.30498750
+sleep 3
+echo  "19366.30498750 <- expected amount RV6EZQRiEszMydw3VjLabjGCBG1HiHrU6f"
+
+# RB1cuwtKBpwZPZnwyJeznaij53ovj8Dm8i KMD 19106.59220646, REVS 374.39305755
+# RB1cuwtKBpwZPZnwyJeznaij53ovj8Dm8i KMD 19106.59220646
+./komodo-cli sendtoaddress RB1cuwtKBpwZPZnwyJeznaij53ovj8Dm8i 19106.59220646
+sleep 3
+echo  "19106.59220646 <- expected amount RB1cuwtKBpwZPZnwyJeznaij53ovj8Dm8i"
+
+# RK5z4QVhNBWJn5xSkpPPgdcZzms7VtFV4x KMD 3097.05949360
+./komodo-cli sendtoaddress RK5z4QVhNBWJn5xSkpPPgdcZzms7VtFV4x 3097.05949360
+sleep 3
+echo  "3097.05949360 <- expected amount RK5z4QVhNBWJn5xSkpPPgdcZzms7VtFV4x"
+
+# RTSFrcYBPZ3wMUtJCo5RC8n71R2c1ypC46 KMD 968.31524937
+./komodo-cli sendtoaddress RTSFrcYBPZ3wMUtJCo5RC8n71R2c1ypC46 968.31524937
+sleep 3
+echo  "968.31524937 <- expected amount RTSFrcYBPZ3wMUtJCo5RC8n71R2c1ypC46"
+
+# RSxDyaWzqT3VTK9WLkAKhY5WST8a9kQgr9 KMD 14268.23083290
+./komodo-cli sendtoaddress RSxDyaWzqT3VTK9WLkAKhY5WST8a9kQgr9 14268.23083290
+sleep 3
+echo  "14268.23083290 <- expected amount RSxDyaWzqT3VTK9WLkAKhY5WST8a9kQgr9"
+
+# RCZriSKpiSSmgwjumuiMP2XEC2FgYgTrBf KMD 1212.14061568, REVS 24.05385000
+# RCZriSKpiSSmgwjumuiMP2XEC2FgYgTrBf KMD 1212.14061568
+./komodo-cli sendtoaddress RCZriSKpiSSmgwjumuiMP2XEC2FgYgTrBf 1212.14061568
+sleep 3
+echo  "1212.14061568 <- expected amount RCZriSKpiSSmgwjumuiMP2XEC2FgYgTrBf"
+
+# RVUFVtJN2mVDEsADwMfZBBXXSq3G9QCvBs KMD 20418.65848567
+./komodo-cli sendtoaddress RVUFVtJN2mVDEsADwMfZBBXXSq3G9QCvBs 20418.65848567
+sleep 3
+echo  "20418.65848567 <- expected amount RVUFVtJN2mVDEsADwMfZBBXXSq3G9QCvBs"
+
+# RDx4sokytAASudNuMDDdk4R6RHJ4P8aPza KMD 10347.76210933, REVS 205.22959870
+# RDx4sokytAASudNuMDDdk4R6RHJ4P8aPza KMD 10347.76210933
+./komodo-cli sendtoaddress RDx4sokytAASudNuMDDdk4R6RHJ4P8aPza 10347.76210933
+sleep 3
+echo  "10347.76210933 <- expected amount RDx4sokytAASudNuMDDdk4R6RHJ4P8aPza"
+
+# RAPJuPCGMoPwfeHuckiea21LMek8BkH8Zr KMD 71712.83911390, REVS 500.67180183
+# RAPJuPCGMoPwfeHuckiea21LMek8BkH8Zr KMD 71712.83911390
+./komodo-cli sendtoaddress RAPJuPCGMoPwfeHuckiea21LMek8BkH8Zr 71712.83911390
+sleep 3
+echo  "71712.83911390 <- expected amount RAPJuPCGMoPwfeHuckiea21LMek8BkH8Zr"
+
+# RNszK1KnyyDoU6di3qQgCYvSL3V3ZgGNGY KMD 26725.50088275
+./komodo-cli sendtoaddress RNszK1KnyyDoU6di3qQgCYvSL3V3ZgGNGY 26725.50088275
+sleep 3
+echo  "26725.50088275 <- expected amount RNszK1KnyyDoU6di3qQgCYvSL3V3ZgGNGY"
+
+# RSWsxgczqH1uYyY6MMPePJY5jNjj7uD7Xr KMD 16435.34703311, REVS 114.80740001
+# RSWsxgczqH1uYyY6MMPePJY5jNjj7uD7Xr KMD 16435.34703311
+./komodo-cli sendtoaddress RSWsxgczqH1uYyY6MMPePJY5jNjj7uD7Xr 16435.34703311
+sleep 3
+echo  "16435.34703311 <- expected amount RSWsxgczqH1uYyY6MMPePJY5jNjj7uD7Xr"
+
+# RVxvCQ393MRnsQ8Fn8qiKm5yP6pk9GVgEr KMD 17137.93285029, REVS 340.00462653
+# RVxvCQ393MRnsQ8Fn8qiKm5yP6pk9GVgEr KMD 17137.93285029
+./komodo-cli sendtoaddress RVxvCQ393MRnsQ8Fn8qiKm5yP6pk9GVgEr 17137.93285029
+sleep 3
+echo  "17137.93285029 <- expected amount RVxvCQ393MRnsQ8Fn8qiKm5yP6pk9GVgEr"
+
+# RMKk4K7zC6QrESUxNGRTfqbBnXr2MFYsLV KMD 1302.29267891
+./komodo-cli sendtoaddress RMKk4K7zC6QrESUxNGRTfqbBnXr2MFYsLV 1302.29267891
+sleep 3
+echo  "1302.29267891 <- expected amount RMKk4K7zC6QrESUxNGRTfqbBnXr2MFYsLV"
+
+# RJaaPBFPBTtqzPZ5ZV2uu15urxhiycwg7K KMD 32805.26183900
+./komodo-cli sendtoaddress RJaaPBFPBTtqzPZ5ZV2uu15urxhiycwg7K 32805.26183900
+sleep 3
+echo  "32805.26183900 <- expected amount RJaaPBFPBTtqzPZ5ZV2uu15urxhiycwg7K"
+
+# R9isnAJ2iyyFq8BMZZJu8PiFLpnXPhXcZ7 KMD 502854.27827071
+./komodo-cli sendtoaddress R9isnAJ2iyyFq8BMZZJu8PiFLpnXPhXcZ7 502854.27827071
+sleep 3
+echo  "502854.27827071 <- expected amount R9isnAJ2iyyFq8BMZZJu8PiFLpnXPhXcZ7"
+
+# RG5eabU8sYvrfWrCu1wb2Go5vxhyVXsbAF KMD 409543.68954327, REVS 8123.68911362
+# RG5eabU8sYvrfWrCu1wb2Go5vxhyVXsbAF KMD 409543.68954327
+./komodo-cli sendtoaddress RG5eabU8sYvrfWrCu1wb2Go5vxhyVXsbAF 409543.68954327
+sleep 3
+echo  "409543.68954327 <- expected amount RG5eabU8sYvrfWrCu1wb2Go5vxhyVXsbAF"
+
+# RQWxU8AV5SkKCmz6Q3CecmAtnauESPxDod KMD 8908.50029425
+./komodo-cli sendtoaddress RQWxU8AV5SkKCmz6Q3CecmAtnauESPxDod 8908.50029425
+sleep 3
+echo  "8908.50029425 <- expected amount RQWxU8AV5SkKCmz6Q3CecmAtnauESPxDod"
+
+# RMqivy9QZ7ax1UU8ZxqaupLqDqEBAFW6MY KMD 708.48776076
+./komodo-cli sendtoaddress RMqivy9QZ7ax1UU8ZxqaupLqDqEBAFW6MY 708.48776076
+sleep 3
+echo  "708.48776076 <- expected amount RMqivy9QZ7ax1UU8ZxqaupLqDqEBAFW6MY"
+
+# RV85Dvvf4fm13xxtjmucYXDAarMcnV8EFq KMD 29057.20400324
+./komodo-cli sendtoaddress RV85Dvvf4fm13xxtjmucYXDAarMcnV8EFq 29057.20400324
+sleep 3
+echo  "29057.20400324 <- expected amount RV85Dvvf4fm13xxtjmucYXDAarMcnV8EFq"
+
+# RJzRaaqhT8R7pbVuVeY3C69X9K89UMU55E KMD 632.08133544
+./komodo-cli sendtoaddress RJzRaaqhT8R7pbVuVeY3C69X9K89UMU55E 632.08133544
+sleep 3
+echo  "632.08133544 <- expected amount RJzRaaqhT8R7pbVuVeY3C69X9K89UMU55E"
+
+# RCBSjuktzRbsz1UHKjFmTUVG6nDNhd3y2g KMD 24029.98198519
+./komodo-cli sendtoaddress RCBSjuktzRbsz1UHKjFmTUVG6nDNhd3y2g 24029.98198519
+sleep 3
+echo  "24029.98198519 <- expected amount RCBSjuktzRbsz1UHKjFmTUVG6nDNhd3y2g"
+
+# RKDnex4tqTGA9u2UqEDGS8uTxceqWGwejk KMD 10684.09534584
+./komodo-cli sendtoaddress RKDnex4tqTGA9u2UqEDGS8uTxceqWGwejk 10684.09534584
+sleep 3
+echo  "10684.09534584 <- expected amount RKDnex4tqTGA9u2UqEDGS8uTxceqWGwejk"
+
+# RYTMDSu1BjaQAdvh6a9CQFCr7h1rsGi48d KMD 302.06577591, REVS 5.99094155
+# RYTMDSu1BjaQAdvh6a9CQFCr7h1rsGi48d KMD 302.06577591
+./komodo-cli sendtoaddress RYTMDSu1BjaQAdvh6a9CQFCr7h1rsGi48d 302.06577591
+sleep 3
+echo  "302.06577591 <- expected amount RYTMDSu1BjaQAdvh6a9CQFCr7h1rsGi48d"
+
+# REhPMC2k5XAsiqd3X1afzdT6SzE9vY7MS6 KMD 9683.15249375
+./komodo-cli sendtoaddress REhPMC2k5XAsiqd3X1afzdT6SzE9vY7MS6 9683.15249375
+sleep 3
+echo  "9683.15249375 <- expected amount REhPMC2k5XAsiqd3X1afzdT6SzE9vY7MS6"
+
+# RVLd4HkkB8SsyXfXHQeHHNouNer7nv3mkL KMD 30407.13753317, REVS 411.30538288
+# RVLd4HkkB8SsyXfXHQeHHNouNer7nv3mkL KMD 30407.13753317
+./komodo-cli sendtoaddress RVLd4HkkB8SsyXfXHQeHHNouNer7nv3mkL 30407.13753317
+sleep 3
+echo  "30407.13753317 <- expected amount RVLd4HkkB8SsyXfXHQeHHNouNer7nv3mkL"
+
+# RKa3UX7xvQuYhd9LWHFGjQm8EjbLcnLxo1 KMD 4647.91319700
+./komodo-cli sendtoaddress RKa3UX7xvQuYhd9LWHFGjQm8EjbLcnLxo1 4647.91319700
+sleep 3
+echo  "4647.91319700 <- expected amount RKa3UX7xvQuYhd9LWHFGjQm8EjbLcnLxo1"
+
+# RRBhAPHb7WY2XrLSST2oymc4LYtCskzijc KMD 1914.39627638
+./komodo-cli sendtoaddress RRBhAPHb7WY2XrLSST2oymc4LYtCskzijc 1914.39627638
+sleep 3
+echo  "1914.39627638 <- expected amount RRBhAPHb7WY2XrLSST2oymc4LYtCskzijc"
+
+# RQFicXTYo7QzKhFbo3ELuBfo3eyYiUv6o6 KMD 56568.34116197
+./komodo-cli sendtoaddress RQFicXTYo7QzKhFbo3ELuBfo3eyYiUv6o6 56568.34116197
+sleep 3
+echo  "56568.34116197 <- expected amount RQFicXTYo7QzKhFbo3ELuBfo3eyYiUv6o6"
+
+# RNkRuGR4uFrcMqrPMu8X5Nwvgbc3Jxxkqk KMD 96831.52493750
+./komodo-cli sendtoaddress RNkRuGR4uFrcMqrPMu8X5Nwvgbc3Jxxkqk 96831.52493750
+sleep 3
+echo  "96831.52493750 <- expected amount RNkRuGR4uFrcMqrPMu8X5Nwvgbc3Jxxkqk"
+
+
+# total KMD 3000044.12520703 REVS 0.00000000
