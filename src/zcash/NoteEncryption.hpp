@@ -82,6 +82,11 @@ public:
 uint256 random_uint256();
 uint252 random_uint252();
 
+class note_decryption_failed : public std::runtime_error {
+public:
+    note_decryption_failed() : std::runtime_error("Could not decrypt message") { }
+};
+
 }
 
 typedef libzcash::NoteEncryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteEncryption;
