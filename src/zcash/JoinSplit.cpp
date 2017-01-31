@@ -73,7 +73,7 @@ public:
     boost::optional<r1cs_ppzksnark_verification_key<ppzksnark_ppT>> vk;
     boost::optional<r1cs_ppzksnark_processed_verification_key<ppzksnark_ppT>> vk_precomp;
     boost::optional<std::string> pkPath;
-
+    boost::optional<r1cs_ppzksnark_processed_batch_verification_key<ppzksnark_ppT>> bvk_precomp;
     JoinSplitCircuit() {}
     ~JoinSplitCircuit() {}
 
@@ -108,6 +108,7 @@ public:
     }
     void processVerifyingKey() {
         vk_precomp = r1cs_ppzksnark_verifier_process_vk(*vk);
+        bvk_precomp = r1cs_ppzksnark_batch_verifier_process_vk(*vk);//Ask Sean if this should be here
     }
     void saveVerifyingKey(std::string path) {
         if (vk) {
@@ -154,7 +155,7 @@ public:
         uint64_t vpub_new,
         const uint256& rt
     ) {
-        if (!vk || !vk_precomp) {
+        if (!vk || !vk_precomp || !bvk_precomp) {
             throw std::runtime_error("JoinSplit verifying key not loaded");
         }
 
@@ -176,6 +177,7 @@ public:
             return verifier.check(
                 *vk,
                 *vk_precomp,
+                *bvk_precomp,
                 witness,
                 r1cs_proof
             );

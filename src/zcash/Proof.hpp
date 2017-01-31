@@ -240,8 +240,11 @@ void initialize_curve_params();
 class ProofVerifier {
 private:
     bool perform_verification;
-
-    ProofVerifier(bool perform_verification) : perform_verification(perform_verification) { }
+    bool is_batch_verifier;
+    void* batch_accumulator;
+    ProofVerifier(bool perform_verification,bool is_batch_verifier = false) :
+     perform_verification(perform_verification),
+     is_batch_verifier(is_batch_verifier) { }
 
 public:
     // ProofVerifier should never be copied
@@ -261,17 +264,55 @@ public:
 
     template <typename VerificationKey,
               typename ProcessedVerificationKey,
+              typename ProcessedBatchVerificationKey,
               typename PrimaryInput,
               typename Proof
               >
     bool check(
         const VerificationKey& vk,
         const ProcessedVerificationKey& pvk,
+        const ProcessedBatchVerificationKey& pbvk,
         const PrimaryInput& pi,
         const Proof& p
     );
 };
 
+/*class BatchVerifier: public ProofVerifier {
+private:
+    batch_verification_accumulator<ppT> acc;
+    r1cs_ppzksnark_verification_key<ppT> vk;
+    r1cs_ppzksnark_processed_batch_verification_key<ppT> pvk;
+    size_t batch_size=0; //the current batch size that has already been accumulated
 }
+public:
+//initialize batch size to 0, take as input a batch accumulator object and a processed verification key.
+BatchVerifier(
+    bool perform_verification,
+    batch_verification_accumulator<ppT> acc,
+    r1cs_ppzksnark_verification_key<ppT> vk)
+:perform_verification(perform_verification), batch_size(0), acc(acc), vk(vk)
+{
+    pvk=r1cs_ppzksnark_batch_verifier_process_vk<ppT>(vk);
+}
+
+//add another proof to current batch
+void batch(r1cs_ppzksnark_proof<ppT> proof)
+{
+     batch_size++;
+     r1cs_ppzksnark_batcher<ppT>(vk, acc, primary_input, proof);
+}
+
+//check (probabilistically) that all proofs in batch are valid
+bool check()
+{
+    if (perform_verification) {
+        return r1cs_ppzksnark_batch_verifier<ppT>(pvk,acc, primary_input, proof);
+    } else {
+        return true;
+    }    
+}    
+BatchVerifier()
+*/
+//}
 
 #endif // _ZCPROOF_H_

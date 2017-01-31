@@ -1,10 +1,10 @@
 package=libsnark
 $(package)_version=0.1
-$(package)_download_path=https://github.com/zcash/$(package)/archive/
+$(package)_download_path=https://github.com/arielgabizon/$(package)/archive/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
-$(package)_sha256_hash=9422b1a2a94e6b8be61f07af7f146087c2a7d70b208d07ad076622225aa7f0e4
-$(package)_git_commit=2e6314a9f7efcd9af1c77669d7d9a229df86a777
+$(package)_sha256_hash=caf4ea716b3199730ffde39d0ef6d97a423d98e30b8a8107b3f78d1591ecf143
+$(package)_git_commit=c457991424f2545915e822348c6685a65b5766c4
 
 $(package)_dependencies=libgmp libsodium
 

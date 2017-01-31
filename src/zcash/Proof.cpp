@@ -237,15 +237,27 @@ template<>
 bool ProofVerifier::check(
     const r1cs_ppzksnark_verification_key<curve_pp>& vk,
     const r1cs_ppzksnark_processed_verification_key<curve_pp>& pvk,
+    const r1cs_ppzksnark_processed_batch_verification_key<curve_pp>& pbvk,
     const r1cs_primary_input<curve_Fr>& primary_input,
     const r1cs_ppzksnark_proof<curve_pp>& proof
 )
 {
+    if (!is_batch_verifier){
     if (perform_verification) {
         return r1cs_ppzksnark_online_verifier_strong_IC<curve_pp>(pvk, primary_input, proof);
     } else {
         return true;
     }
+    else{
+        //add new proof to the batch    
+        r1cs_ppzksnark_batcher<ppT>(vk, acc, primary_input, proof);
+        //verify batch if perform_verification is true
+        if (perform_verification) {
+            return r1cs_ppzksnark_batch_verifier<curve_pp>(pbvk,acc, primary_input, proof);
+        } else {
+            return true;
+        }
+    }
+   
 }
-
 }
