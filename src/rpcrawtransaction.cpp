@@ -62,6 +62,9 @@ Array TxJoinSplitToJSON(const CTransaction& tx) {
         const JSDescription& jsdescription = tx.vjoinsplit[i];
         Object joinsplit;
 
+        joinsplit.push_back(Pair("vpub_old", ValueFromAmount(jsdescription.vpub_old)));
+        joinsplit.push_back(Pair("vpub_new", ValueFromAmount(jsdescription.vpub_new)));
+
         joinsplit.push_back(Pair("anchor", jsdescription.anchor.GetHex()));
 
         {
@@ -80,6 +83,9 @@ Array TxJoinSplitToJSON(const CTransaction& tx) {
             joinsplit.push_back(Pair("commitments", commitments));
         }
 
+        joinsplit.push_back(Pair("onetimePubKey", jsdescription.ephemeralKey.GetHex()));
+        joinsplit.push_back(Pair("randomSeed", jsdescription.randomSeed.GetHex()));
+
         {
             Array macs;
             BOOST_FOREACH(const uint256 mac, jsdescription.macs) {
@@ -88,8 +94,17 @@ Array TxJoinSplitToJSON(const CTransaction& tx) {
             joinsplit.push_back(Pair("macs", macs));
         }
 
-        joinsplit.push_back(Pair("vpub_old", ValueFromAmount(jsdescription.vpub_old)));
-        joinsplit.push_back(Pair("vpub_new", ValueFromAmount(jsdescription.vpub_new)));
+        CDataStream ssProof(SER_NETWORK, PROTOCOL_VERSION);
+        ssProof << jsdescription.proof;
+        joinsplit.push_back(Pair("proof", HexStr(ssProof.begin(), ssProof.end())));
+
+        {
+            Array ciphertexts;
+            for (const ZCNoteEncryption::Ciphertext ct : jsdescription.ciphertexts) {
+                ciphertexts.push_back(HexStr(ct.begin(), ct.end()));
+            }
+            joinsplit.push_back(Pair("ciphertexts", ciphertexts));
+        }
 
         vjoinsplit.push_back(joinsplit);
     }
@@ -201,6 +216,33 @@ Value getrawtransaction(const Array& params, bool fHelp)
             "           ,...\n"
             "         ]\n"
             "       }\n"
+            "     }\n"
+            "     ,...\n"
+            "  ],\n"
+            "  \"vjoinsplit\" : [        (array of json objects, only for version >= 2)\n"
+            "     {\n"
+            "       \"vpub_old\" : x.xxx,         (numeric) public input value in ZEC\n"
+            "       \"vpub_new\" : x.xxx,         (numeric) public output value in ZEC\n"
+            "       \"anchor\" : \"hex\",         (string) the anchor\n"
+            "       \"nullifiers\" : [            (json array of string)\n"
+            "         \"hex\"                     (string) input note nullifier\n"
+            "         ,...\n"
+            "       ],\n"
+            "       \"commitments\" : [           (json array of string)\n"
+            "         \"hex\"                     (string) output note commitment\n"
+            "         ,...\n"
+            "       ],\n"
+            "       \"onetimePubKey\" : \"hex\",  (string) the onetime public key used to encrypt the ciphertexts\n"
+            "       \"randomSeed\" : \"hex\",     (string) the random seed\n"
+            "       \"macs\" : [                  (json array of string)\n"
+            "         \"hex\"                     (string) input note MAC\n"
+            "         ,...\n"
+            "       ],\n"
+            "       \"proof\" : \"hex\",          (string) the zero-knowledge proof\n"
+            "       \"ciphertexts\" : [           (json array of string)\n"
+            "         \"hex\"                     (string) output note ciphertext\n"
+            "         ,...\n"
+            "       ]\n"
             "     }\n"
             "     ,...\n"
             "  ],\n"
@@ -471,6 +513,33 @@ Value decoderawtransaction(const Array& params, bool fHelp)
             "           ,...\n"
             "         ]\n"
             "       }\n"
+            "     }\n"
+            "     ,...\n"
+            "  ],\n"
+            "  \"vjoinsplit\" : [        (array of json objects, only for version >= 2)\n"
+            "     {\n"
+            "       \"vpub_old\" : x.xxx,         (numeric) public input value in ZEC\n"
+            "       \"vpub_new\" : x.xxx,         (numeric) public output value in ZEC\n"
+            "       \"anchor\" : \"hex\",         (string) the anchor\n"
+            "       \"nullifiers\" : [            (json array of string)\n"
+            "         \"hex\"                     (string) input note nullifier\n"
+            "         ,...\n"
+            "       ],\n"
+            "       \"commitments\" : [           (json array of string)\n"
+            "         \"hex\"                     (string) output note commitment\n"
+            "         ,...\n"
+            "       ],\n"
+            "       \"onetimePubKey\" : \"hex\",  (string) the onetime public key used to encrypt the ciphertexts\n"
+            "       \"randomSeed\" : \"hex\",     (string) the random seed\n"
+            "       \"macs\" : [                  (json array of string)\n"
+            "         \"hex\"                     (string) input note MAC\n"
+            "         ,...\n"
+            "       ],\n"
+            "       \"proof\" : \"hex\",          (string) the zero-knowledge proof\n"
+            "       \"ciphertexts\" : [           (json array of string)\n"
+            "         \"hex\"                     (string) output note ciphertext\n"
+            "         ,...\n"
+            "       ]\n"
             "     }\n"
             "     ,...\n"
             "  ],\n"
