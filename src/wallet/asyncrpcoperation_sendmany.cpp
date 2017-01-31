@@ -51,8 +51,9 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         std::vector<SendManyRecipient> tOutputs,
         std::vector<SendManyRecipient> zOutputs,
         int minDepth,
-        CAmount fee) :
-        fromaddress_(fromAddress), t_outputs_(tOutputs), z_outputs_(zOutputs), mindepth_(minDepth), fee_(fee)
+        CAmount fee,
+        Value contextInfo) :
+        fromaddress_(fromAddress), t_outputs_(tOutputs), z_outputs_(zOutputs), mindepth_(minDepth), fee_(fee), contextinfo_(contextInfo)
 {
     assert(fee_ > 0);
 
@@ -86,7 +87,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
             isfromzaddr_ = true;
             frompaymentaddress_ = addr;
             spendingkey_ = key;
-        } catch (std::runtime_error e) {
+        } catch (const std::runtime_error& e) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("runtime error: ") + e.what());
         }
     }
@@ -106,17 +107,20 @@ void AsyncRPCOperation_sendmany::main() {
 
     try {
         success = main_impl();
-    } catch (Object objError) {
+    } catch (const Object& objError) {
         int code = find_value(objError, "code").get_int();
         std::string message = find_value(objError, "message").get_str();
         set_error_code(code);
         set_error_message(message);
-    } catch (runtime_error e) {
+    } catch (const runtime_error& e) {
         set_error_code(-1);
         set_error_message("runtime error: " + string(e.what()));
-    } catch (logic_error e) {
+    } catch (const logic_error& e) {
         set_error_code(-1);
         set_error_message("logic error: " + string(e.what()));
+    } catch (const exception& e) {
+        set_error_code(-1);
+        set_error_message("general exception: " + string(e.what()));
     } catch (...) {
         set_error_code(-2);
         set_error_message("unknown error");
@@ -448,13 +452,22 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 info.notes.push_back(note);
                 outPoints.push_back(outPoint);
 
-
-                LogPrint("zrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s)\n",
+                int wtxHeight = -1;
+                int wtxDepth = -1;
+                {
+                    LOCK2(cs_main, pwalletMain->cs_wallet);
+                    const CWalletTx& wtx = pwalletMain->mapWallet[outPoint.hash];
+                    wtxHeight = mapBlockIndex[wtx.hashBlock]->nHeight;
+                    wtxDepth = wtx.GetDepthInMainChain();
+                }
+                LogPrint("zrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, height=%d, confirmations=%d)\n",
                         getId().substr(0, 10),
                         outPoint.hash.ToString().substr(0, 10),
                         outPoint.js,
                         int(outPoint.n), // uint8_t
-                        FormatMoney(noteFunds, false)
+                        FormatMoney(noteFunds, false),
+                        wtxHeight,
+                        wtxDepth
                         );
 
                 
@@ -577,7 +590,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                         FormatMoney(plaintext.value, false)
                         );
 
-                } catch (const std::exception e) {
+                } catch (const std::exception& e) {
                     throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Error decrypting output note of previous JoinSplit: %s", e.what()));
                 }
             }
@@ -611,12 +624,22 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 
                 jsInputValue += noteFunds;
                 
-                LogPrint("zrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s)\n",
+                int wtxHeight = -1;
+                int wtxDepth = -1;
+                {
+                    LOCK2(cs_main, pwalletMain->cs_wallet);
+                    const CWalletTx& wtx = pwalletMain->mapWallet[jso.hash];
+                    wtxHeight = mapBlockIndex[wtx.hashBlock]->nHeight;
+                    wtxDepth = wtx.GetDepthInMainChain();
+                }
+                LogPrint("zrpc", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, height=%d, confirmations=%d)\n",
                         getId().substr(0, 10),
                         jso.hash.ToString().substr(0, 10),
                         jso.js,
                         int(jso.n), // uint8_t
-                        FormatMoney(noteFunds, false)
+                        FormatMoney(noteFunds, false),
+                        wtxHeight,
+                        wtxDepth
                         );
             }
                         
@@ -776,6 +799,12 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(Object obj)
         o.push_back(Pair("hex", signedtxn));
         set_result(Value(o));
     }
+
+    // Keep the signed transaction so we can hash to the same txid
+    CDataStream stream(ParseHex(signedtxn), SER_NETWORK, PROTOCOL_VERSION);
+    CTransaction tx;
+    stream >> tx;
+    tx_ = tx;
 }
 
 
@@ -1094,4 +1123,18 @@ boost::array<unsigned char, ZC_MEMO_SIZE> AsyncRPCOperation_sendmany::get_memo_f
     return memo;
 }
 
+/**
+ * Override getStatus() to append the operation's input parameters to the default status object.
+ */
+Value AsyncRPCOperation_sendmany::getStatus() const {
+    Value v = AsyncRPCOperation::getStatus();
+    if (contextinfo_.is_null()) {
+        return v;
+    }
+
+    Object obj = v.get_obj();
+    obj.push_back(Pair("method", "z_sendmany"));
+    obj.push_back(Pair("params", contextinfo_ ));
+    return Value(obj);
+}
 

@@ -5,29 +5,22 @@ $(package)_file_name=$(package)-$($(package)_version).tar.gz
 $(package)_download_file=release-$($(package)_version).tar.gz
 $(package)_sha256_hash=f73a6546fdf9fce9ff93a5015e0333a8af3062a152a9ad6bcb772c96687016cc
 
-# Determine building operating system
-ifeq ($(OS),Windows_NT)
-    uname_S := Windows
+define $(package)_set_vars
+    $(package)_build_env=AR="$($(package)_ar)" RANLIB="$($(package)_ranlib)" CC="$($(package)_cc)" CXX="$($(package)_cxx)" CXXFLAGS="$($(package)_cxxflags)"
+endef
+
+BUILD_OS := $(shell uname)
+ifeq ($(BUILD_OS),Darwin)
+    $(package)_install=ginstall
 else
-    uname_S := $(shell uname -s)
+    $(package)_install=install
 endif
 
-ifeq ($(uname_S), Darwin)
-  define $(package)_build_cmds
-    $(MAKE) -C make CXXFLAGS=-fPIC gtest.a
-  endef
+define $(package)_build_cmds
+    $(MAKE) -C make gtest.a
+endef
 
-  define $(package)_stage_cmds
-    ginstall -D ./make/gtest.a $($(package)_staging_dir)$(host_prefix)/lib/libgtest.a && \
+define $(package)_stage_cmds
+    $($(package)_install) -D ./make/gtest.a $($(package)_staging_dir)$(host_prefix)/lib/libgtest.a && \
     cp -a ./include $($(package)_staging_dir)$(host_prefix)/include
-  endef
-else
-  define $(package)_build_cmds
-    $(MAKE) -C make CXXFLAGS=-fPIC gtest.a
-  endef
-
-  define $(package)_stage_cmds
-    install -D ./make/gtest.a $($(package)_staging_dir)$(host_prefix)/lib/libgtest.a && \
-    cp -a ./include $($(package)_staging_dir)$(host_prefix)/include
-  endef
-endif
+endef

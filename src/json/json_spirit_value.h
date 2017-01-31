@@ -47,6 +47,10 @@ namespace json_spirit
         Value_impl( int                value );
         Value_impl( int64_t     value );
         Value_impl( uint64_t    value );
+#ifdef __APPLE__
+        Value_impl( long     value );
+        Value_impl( unsigned long    value );
+#endif
         Value_impl( double             value );
 
         Value_impl( const Value_impl& other );
@@ -278,6 +282,24 @@ namespace json_spirit
     ,   is_uint64_( true )
     {
     }
+
+#ifdef __APPLE__
+    template< class Config >
+    Value_impl< Config >::Value_impl( long value )
+    :   type_( int_type )
+    ,   v_( value )
+    ,   is_uint64_( true )
+    {
+    }
+
+    template< class Config >
+    Value_impl< Config >::Value_impl( unsigned long value )
+    :   type_( int_type )
+    ,   v_( static_cast< int64_t >( value ) )
+    ,   is_uint64_( true )
+    {
+    }
+#endif
 
     template< class Config >
     Value_impl< Config >::Value_impl( double value )

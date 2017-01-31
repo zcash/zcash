@@ -1,4 +1,4 @@
-Zclassic 1.0.4
+Zclassic 1.0.5
 ==============
 
 What is Zclassic?

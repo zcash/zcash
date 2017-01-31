@@ -1,5 +1,5 @@
 TESTS += zcash-gtest
-bin_PROGRAMS += zcash-gtest
+noinst_PROGRAMS += zcash-gtest
 
 # tool for generating our public parameters.
 # test_checktransaction.cpp MUST be before
@@ -9,8 +9,14 @@ zcash_gtest_SOURCES = \
 	gtest/utils.cpp \
 	gtest/test_checktransaction.cpp \
 	gtest/json_test_vectors.cpp \
-	gtest/json_test_vectors.h \
-	gtest/test_wallet_zkeys.cpp \
+	gtest/json_test_vectors.h
+# These tests are order-dependent, because they
+# depend on global state (see #1539)
+if ENABLE_WALLET
+zcash_gtest_SOURCES += \
+	wallet/gtest/test_wallet_zkeys.cpp
+endif
+zcash_gtest_SOURCES += \
 	gtest/test_jsonspirit.cpp \
 	gtest/test_tautology.cpp \
 	gtest/test_equihash.cpp \

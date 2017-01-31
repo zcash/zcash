@@ -11,6 +11,7 @@ src/qt/test/test_bitcoin-qt
 
 # Zcash utilities
 src/zcash/GenerateParams
+src/zcash/CreateJoinSplit
 
 *zcashTest.pk
 *zcashTest.vk
@@ -122,3 +123,6 @@ qa/pull-tester/test.*/*
 /doc/doxygen/
 
 libzcashconsensus.pc
+
+contrib/debian/files
+contrib/debian/substvars

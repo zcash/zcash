@@ -14,12 +14,20 @@
 #include <boost/thread.hpp>
 #include <boost/thread/synchronized_value.hpp>
 #include <string>
+
+#ifdef WIN32
+#include <io.h>
+#include <windows.h>
+#else
 #include <sys/ioctl.h>
+#endif
+
 #include <unistd.h>
 
 CCriticalSection cs_metrics;
 
 boost::synchronized_value<int64_t> nNodeStartTime;
+boost::synchronized_value<int64_t> nNextRefresh;
 AtomicCounter transactionsValidated;
 AtomicCounter ehSolverRuns;
 AtomicCounter solutionTargetChecks;
@@ -60,10 +68,20 @@ double GetLocalSolPS()
     return GetLocalSolPS_INTERNAL(GetUptime());
 }
 
+void TriggerRefresh()
+{
+    *nNextRefresh = GetTime();
+    // Ensure that the refresh has started before we return
+    MilliSleep(200);
+}
+
 static bool metrics_ThreadSafeMessageBox(const std::string& message,
                                       const std::string& caption,
                                       unsigned int style)
 {
+    // The SECURE flag has no effect in the metrics UI.
+    style &= ~CClientUIInterface::SECURE;
+
     std::string strCaption;
     // Check for usage of predefined caption
     switch (style) {
@@ -85,6 +103,9 @@ static bool metrics_ThreadSafeMessageBox(const std::string& message,
     if (u->size() > 5) {
         u->pop_back();
     }
+
+    TriggerRefresh();
+    return false;
 }
 
 static void metrics_InitMessage(const std::string& message)
@@ -247,8 +268,21 @@ int printMessageBox(size_t cols)
     std::cout << _("Messages:") << std::endl;
     for (auto it = u->cbegin(); it != u->cend(); ++it) {
         std::cout << *it << std::endl;
-        // Handle wrapped lines
-        lines += (it->size() / cols);
+        // Handle newlines and wrapped lines
+        size_t i = 0;
+        size_t j = 0;
+        while (j < it->size()) {
+            i = it->find('\n', j);
+            if (i == std::string::npos) {
+                i = it->size();
+            } else {
+                // Newline
+                lines++;
+            }
+            // Wrapped lines
+            lines += ((i-j) / cols);
+            j = i + 1;
+        }
     }
     std::cout << std::endl;
     return lines;
@@ -302,11 +336,18 @@ void ThreadShowMetricsScreen()
 
         // Get current window size
         if (isTTY) {
+        #ifdef WIN32
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+        cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+        #else
+	  cols = 80;
             struct winsize w;
             w.ws_col = 0;
             if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1 && w.ws_col != 0) {
                 cols = w.ws_col;
             }
+        #endif
         }
 
         if (isScreen) {
@@ -333,8 +374,8 @@ void ThreadShowMetricsScreen()
             std::cout << "----------------------------------------" << std::endl;
         }
 
-        int64_t nWaitEnd = GetTime() + nRefresh;
-        while (GetTime() < nWaitEnd) {
+        *nNextRefresh = GetTime() + nRefresh;
+        while (GetTime() < *nNextRefresh) {
             boost::this_thread::interruption_point();
             MilliSleep(200);
         }
