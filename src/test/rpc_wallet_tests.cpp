@@ -500,7 +500,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     BOOST_CHECK_THROW(CallRPC("z_exportkey"), runtime_error);   
 
     // error if too many args
-    BOOST_CHECK_THROW(CallRPC("z_importkey too many args"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_importkey way too many args"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_exportkey toomany args"), runtime_error);
 
     // wallet should currently be empty
