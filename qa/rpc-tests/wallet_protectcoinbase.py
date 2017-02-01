@@ -126,8 +126,10 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
             logdata = myfile.readlines()
         for logline in logdata:
             if myopid + ": z_sendmany initialized" in logline and mytaddr in logline and myzaddr in logline:
+                assert_equal(logcounter, 0) # verify order of log messages
                 logcounter = logcounter + 1
             if myopid + ": z_sendmany finished" in logline and mytxid in logline:
+                assert_equal(logcounter, 1)
                 logcounter = logcounter + 1
         assert_equal(logcounter, 2)
 
