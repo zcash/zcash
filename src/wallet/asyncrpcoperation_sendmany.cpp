@@ -94,7 +94,9 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
 
     // Log the context info i.e. the call parameters to z_sendmany
     if (LogAcceptCategory("zrpcunsafe")) {
-        LogPrint("zrpcunsafe", "%s: starting (%s)\n", getId(), json_spirit::write_string( contextInfo, false));
+        LogPrint("zrpcunsafe", "%s: z_sendmany initialized (params=%s)\n", getId(), json_spirit::write_string( contextInfo, false));
+    } else {
+        LogPrint("zrpc", "%s: z_sendmany initialized\n", getId());
     }
 }
 
@@ -139,9 +141,9 @@ void AsyncRPCOperation_sendmany::main() {
         set_state(OperationStatus::FAILED);
     }
 
-    std::string s = strprintf("%s: finished (status=%s", getId(), getStateAsString());
+    std::string s = strprintf("%s: z_sendmany finished (status=%s", getId(), getStateAsString());
     if (success) {
-        s += strprintf(", tx=%s)\n", tx_.ToString());
+        s += strprintf(", txid=%s)\n", tx_.GetHash().ToString());
     } else {
         s += strprintf(", error=%s)\n", getErrorMessage());
     }
@@ -276,11 +278,11 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
     LogPrint("zrpc", "%s: spending %s to send %s with fee %s\n",
             getId(), FormatMoney(targetAmount, false), FormatMoney(sendAmount, false), FormatMoney(minersFee, false));
-    LogPrint("zrpc", " -  transparent input: %s (to choose from)\n", FormatMoney(t_inputs_total, false));
-    LogPrint("zrpc", " -      private input: %s (to choose from)\n", FormatMoney(z_inputs_total, false));
-    LogPrint("zrpc", " - transparent output: %s\n", FormatMoney(t_outputs_total, false));
-    LogPrint("zrpc", " -     private output: %s\n", FormatMoney(z_outputs_total, false));
-    LogPrint("zrpc", " -                fee: %s\n", FormatMoney(minersFee, false));
+    LogPrint("zrpc", "%s: -  transparent input: %s (to choose from)\n", getId(), FormatMoney(t_inputs_total, false));
+    LogPrint("zrpc", "%s: -      private input: %s (to choose from)\n", getId(), FormatMoney(z_inputs_total, false));
+    LogPrint("zrpc", "%s: - transparent output: %s\n", getId(), FormatMoney(t_outputs_total, false));
+    LogPrint("zrpc", "%s: -     private output: %s\n", getId(), FormatMoney(z_outputs_total, false));
+    LogPrint("zrpc", "%s: -                fee: %s\n", getId(), FormatMoney(minersFee, false));
 
     /**
      * SCENARIO #1
