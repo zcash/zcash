@@ -743,7 +743,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                                 basesp->deposited += fiatoshis;
                                 didstats = 1;
                                 if ( 0 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
-                                    printf("########### %p deposited %s += %.8f/%.8f kmdheight.%d/%d %.8f/%.8f\n",basesp,base,dstr(fiatoshis),dstr(pax->fiatoshis),kmdheight,pax->height,dstr(value),dstr(pax->komodoshis));
+                                    printf("########### %p depositedB %s += %.8f/%.8f kmdheight.%d/%d %.8f/%.8f\n",basesp,base,dstr(fiatoshis),dstr(pax->fiatoshis),kmdheight,pax->height,dstr(value),dstr(pax->komodoshis));
                             }
                         }
                         if ( didstats != 0 )
@@ -767,9 +767,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         }
                     }
                 }
-                else if ( seed != 0 && kmdheight > 91800 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                else if ( seed != 0 && kmdheight > 182000 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
                     printf("pax %s deposit %.8f rejected kmdheight.%d %.8f KMD check %.8f seed.%llu\n",base,dstr(fiatoshis),kmdheight,dstr(value),dstr(checktoshis),(long long)seed);
-            }
+            } else printf("paxdeposit height.%d vs kmdheight.%d\n",height,kmdheight);
         }
     }
     else if ( opretbuf[0] == 'I' )
@@ -942,7 +942,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     }
                 }
             }
-        } else printf("n.%d from opreturns\n",n);
+        } //else printf("n.%d from opreturns\n",n);
         //printf("extra.[%d] after %.8f\n",n,dstr(komodo_paxtotal()));
     }
     else if ( opretbuf[0] == 'X' )

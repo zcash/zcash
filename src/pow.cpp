@@ -107,21 +107,50 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
 int32_t komodo_currentheight();
+CBlockIndex *komodo_chainactive(int32_t height);
+int8_t komodo_minerid(int32_t height,uint8_t *pubkey33);
+void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
 extern int32_t KOMODO_CHOSEN_ONE;
 #define KOMODO_ELECTION_GAP 2000
+
+int32_t komodo_eligiblenotary(int32_t *mids,int32_t *nonzpkeysp,int32_t height)
+{
+    int32_t i,duplicate; CBlockIndex *pindex; uint8_t pubkey33[33];
+    memset(mids,-1,sizeof(*mids)*66);
+    for (i=duplicate=0; i<66; i++)
+    {
+        if ( (pindex= komodo_chainactive(height-i)) != 0 )
+        {
+            komodo_index2pubkey33(pubkey33,pindex,height-i);
+            if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
+                (*nonzpkeysp)++;
+            if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
+                duplicate++;
+        }
+    }
+    if ( i == 66 && duplicate == 0 && *nonzpkeysp > 0 )
+        return(1);
+    else return(0);
+}
+
+extern std::string NOTARY_PUBKEY;
 
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
     extern int32_t KOMODO_REWIND;
-    bool fNegative,fOverflow; int32_t i,nonz=0,special=0,special2=0,notaryid=-1,flag = 0;
-    arith_uint256 bnTarget;
+    bool fNegative,fOverflow; int32_t i,nonzpkeys=0,nonz=0,special=0,special2=0,notaryid=-1,duplicate,flag = 0, mids[66];
+    arith_uint256 bnTarget; CBlockIndex *pindex;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( height == 0 )
         height = komodo_currentheight() + 1;
+    special = komodo_chosennotary(&notaryid,height,pubkey33);
+    //for (i=0; i<33; i++)
+    //    printf("%02x",pubkey33[i]);
+    //printf(" <- ht.%d\n",height);
+    flag = komodo_eligiblenotary(mids,&nonzpkeys,height);
     if ( height > 34000 ) // 0 -> non-special notary
     {
-        special = komodo_chosennotary(&notaryid,height,pubkey33);
         for (i=0; i<33; i++)
         {
             if ( pubkey33[i] != 0 )
@@ -155,6 +184,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
+        if ( nonzpkeys > 0 && height > 181500 && KOMODO_REWIND == 0 && komodo_chainactive(height) != 0 )
         {
             int32_t i;
             for (i=31; i>=0; i--)
@@ -163,9 +193,20 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             for (i=31; i>=0; i--)
                 printf("%02x",((uint8_t *)&bnTarget)[i]);
             printf(" ht.%d REWIND.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,KOMODO_REWIND,special,notaryid,height,(height % 35));
-            if ( height < 90000 || (height > 110000 && KOMODO_REWIND == 0) )
-                return error("CheckProofOfWork(): hash doesn't match nBits");
+            for (i=0; i<33; i++)
+                printf("%02x",pubkey33[i]);
+            printf(" <- pubkey\n");
+            for (i=0; i<66; i++)
+                printf("%d ",mids[i]);
+            printf(" minerids from ht.%d\n",height);
+            return error("CheckProofOfWork(): hash doesn't match nBits");
         }
+    }
+    if ( height > 180000 && nonzpkeys > 0 && strcmp((char *)NOTARY_PUBKEY.c_str(),"03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828") == 0 )
+    {
+        for (i=0; i<66; i++)
+            fprintf(stderr,"%d ",mids[i]);
+        fprintf(stderr," minerids from ht.%d\n",height);
     }
     return true;
 }
