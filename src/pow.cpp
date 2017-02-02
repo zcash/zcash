@@ -200,7 +200,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             return error("CheckProofOfWork(): hash doesn't match nBits");
         }
     }
-    if ( height > 180000 && nonzpkeys > 0 )
+    if ( height > 180000 && nonzpkeys > 0 && strcmp((char *)NOTARY_PUBKEY.c_str(),"03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828") == 0 )
     {
         for (i=0; i<66; i++)
             fprintf(stderr,"%d ",mids[i]);
