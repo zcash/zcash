@@ -116,16 +116,16 @@ extern int32_t KOMODO_CHOSEN_ONE;
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
     extern int32_t KOMODO_REWIND;
-    bool fNegative,fOverflow; int32_t i,nonz=0,special=0,special2=0,notaryid=-1,flag = 0, mids[66];
+    bool fNegative,fOverflow; int32_t i,nonz=0,special=0,special2=0,notaryid=-1,duplicate,flag = 0, mids[66];
     arith_uint256 bnTarget; CBlockIndex *pindex;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( height == 0 )
         height = komodo_currentheight() + 1;
     special = komodo_chosennotary(&notaryid,height,pubkey33);
-    for (i=0; i<33; i++)
-        printf("%02x",pubkey33[i]);
-    printf(" <- ht.%d\n",height);
+    //for (i=0; i<33; i++)
+    //    printf("%02x",pubkey33[i]);
+    //printf(" <- ht.%d\n",height);
     if ( height > 34000 ) // 0 -> non-special notary
     {
         for (i=0; i<33; i++)
@@ -152,6 +152,17 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 flag = 1;
             else if ( height >= 108000 && special2 > 0 )
                 flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
+            for (i=duplicate=0; i<66; i++)
+            {
+                if ( (pindex= komodo_chainactive(height-i)) == 0 )
+                    break;
+                komodo_index2pubkey33(pubkey33,pindex,height-i);
+                mids[i] = komodo_minerid(height-i,pubkey33);
+                if ( i > 0 && mids[i] == mids[0] )
+                    duplicate++;
+            }
+            if ( i == 66 && duplicate == 0 )
+                flag = 1;
             if ( flag != 0 )
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
         }
@@ -161,32 +172,22 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        for (i=0; i<66; i++)
+        if ( height > 180000 && KOMODO_REWIND == 0 && komodo_chainactive(height) != 0 )
         {
-            if ( (pindex= komodo_chainactive(height-i)) == 0 )
-                break;
-            komodo_index2pubkey33(pubkey33,pindex,height-i);
-            mids[i] = komodo_minerid(height-i,pubkey33);
-        }
-        if ( i == 66 )
-        {
-            if ( height > 180000 && KOMODO_REWIND == 0 && komodo_chainactive(height) != 0 )
-            {
-                int32_t i;
-                for (i=31; i>=0; i--)
-                    printf("%02x",((uint8_t *)&hash)[i]);
-                printf(" hash vs ");
-                for (i=31; i>=0; i--)
-                    printf("%02x",((uint8_t *)&bnTarget)[i]);
-                printf(" ht.%d REWIND.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,KOMODO_REWIND,special,notaryid,height,(height % 35));
-                for (i=0; i<33; i++)
-                    printf("%02x",pubkey33[i]);
-                printf(" <- pubkey\n");
-                for (i=0; i<66; i++)
-                    printf("%d ",mids[i]);
-                printf(" minerids from ht.%d\n",height);
-                return error("CheckProofOfWork(): hash doesn't match nBits");
-            }
+            int32_t i;
+            for (i=31; i>=0; i--)
+                printf("%02x",((uint8_t *)&hash)[i]);
+            printf(" hash vs ");
+            for (i=31; i>=0; i--)
+                printf("%02x",((uint8_t *)&bnTarget)[i]);
+            printf(" ht.%d REWIND.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,KOMODO_REWIND,special,notaryid,height,(height % 35));
+            for (i=0; i<33; i++)
+                printf("%02x",pubkey33[i]);
+            printf(" <- pubkey\n");
+            for (i=0; i<66; i++)
+                printf("%d ",mids[i]);
+            printf(" minerids from ht.%d\n",height);
+            return error("CheckProofOfWork(): hash doesn't match nBits");
         }
     }
     if ( flag != 0 )
