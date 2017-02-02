@@ -630,7 +630,7 @@ void static BitcoinMiner(CWallet *pwallet)
                             for (i=1; i<66; i++)
                                 if ( memcmp(pubkeys[i],pubkeys[0],33) == 0 )
                                     break;
-                            if ( i != 65 )
+                            if ( i != 66 )
                             {
                                 printf("VIOLATION at %d\n",i);
                                 for (i=0; i<66; i++)
