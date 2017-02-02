@@ -107,7 +107,7 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
 int32_t komodo_currentheight();
-CBlock *komodo_chainactive(int32_t height);
+CBlockIndex *komodo_chainactive(int32_t height);
 int8_t komodo_minerid(int32_t height,uint8_t *pubkey33);
 extern int32_t KOMODO_CHOSEN_ONE;
 #define KOMODO_ELECTION_GAP 2000
@@ -116,7 +116,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
 {
     extern int32_t KOMODO_REWIND;
     bool fNegative,fOverflow; int32_t i,nonz=0,special=0,special2=0,notaryid=-1,flag = 0; mids[66];
-    arith_uint256 bnTarget; CBlock *pindex;
+    arith_uint256 bnTarget; CBlockIndex *pindex;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( height == 0 )
