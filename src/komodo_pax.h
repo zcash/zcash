@@ -515,10 +515,10 @@ uint64_t komodo_paxpriceB(uint64_t *seedp,int32_t height,char *base,char *rel,ui
             zeroes++;
         else nonz++;
     }
+    printf("kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
+    printf("komodo_paxprice nonz.%d of numvotes.%d seed.%llu\n",nonz,numvotes,(long long)*seedp);
     if ( nonz <= (numvotes >> 1) )
     {
-        printf("kmdbtc %llu btcusd %llu\n",(long long)kmdbtc,(long long)btcusd);
-        printf("komodo_paxprice nonz.%d of numvotes.%d seed.%llu\n",nonz,numvotes,(long long)*seedp);
         return(0);
     }
     return(komodo_paxcorrelation(votes,numvotes,*seedp) * basevolume / 100000);
