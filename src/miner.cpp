@@ -521,6 +521,7 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
 
 int32_t komodo_baseid(char *origbase);
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height);
+int32_t FOUND_BLOCK;
 
 void static BitcoinMiner(CWallet *pwallet)
 {
@@ -719,8 +720,8 @@ void static BitcoinMiner(CWallet *pwallet)
                         ehSolverRuns.increment();
                         throw boost::thread_interrupted();
                     }
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 )
-                        sleep(1800);
+                    //if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 )
+                    //    sleep(1800);
                     return true;
                 };
                 std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck pos) {
@@ -771,7 +772,7 @@ void static BitcoinMiner(CWallet *pwallet)
                             for (i=0; i<32; i++)
                                 fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
                             fprintf(stderr," <- %s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
-                            sleep(60); // avoid mining forks
+                            FOUND_BLOCK = 1;
                             break;
                         }
                     } catch (EhSolverCancelledException&) {
@@ -784,6 +785,12 @@ void static BitcoinMiner(CWallet *pwallet)
                 // Check for stop or if block needs to be rebuilt
                 boost::this_thread::interruption_point();
                 // Regtest mode doesn't require peers
+                if ( FOUND_BLOCK != 0 )
+                {
+                    FOUND_BLOCK = 0;
+                    fprintf(stderr,"FOUND_BLOCK!\n");
+                    sleep(2000);
+                }
                 if (vNodes.empty() && chainparams.MiningRequiresPeers())
                 {
                     if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height > ASSETCHAINS_MINHEIGHT )
