@@ -157,7 +157,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     if ( UintToArith256(hash) > bnTarget )
     {
         {
-            if ( height > 180000 && KOMODO_REWIND == 0 && chainActive[height] != 0 )
+            if ( height > 180000 && KOMODO_REWIND == 0 )
             {
                 int32_t i;
                 for (i=31; i>=0; i--)
@@ -171,6 +171,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 printf(" <- pubkey\n");
                 for (i=0; i<66; i++)
                 {
+                    komodo_chosennotary(&notaryid,height-i,pubkey33);
                     printf("%d ",komodo_minerid(height-i,pubkey33));
                 }
                 printf(" minerids from ht.%d\n",height);
