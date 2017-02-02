@@ -637,10 +637,9 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
 {
     int32_t i,j,duplicate; CBlockIndex *pindex; uint8_t pubkey33[33];
     memset(mids,-1,sizeof(*mids)*66);
-    pindex = komodo_chainactive(height);
     for (i=duplicate=0; i<66; i++)
     {
-        if ( pindex != 0 )
+        if ( (pindex= komodo_chainactive(height-i)) != 0 )
         {
             komodo_index2pubkey33(pubkey33,pindex,height-i);
             for (j=0; j<33; j++)
@@ -652,8 +651,7 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
             }
             if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
                 duplicate++;
-            pindex = pindex->pprev;
-        } else break;
+        }
     }
     if ( i == 66 && duplicate == 0 && *nonzpkeysp > 0 )
         return(1);

@@ -133,7 +133,7 @@ int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height)
     {
         if ( strcmp(pubkeystr,(char *)Notaries_elected[i][1]) == 0 )
         {
-            printf("i.%d -> elected %s\n",i,(char *)Notaries_elected[i][1]);
+            //printf("i.%d -> elected %s\n",i,(char *)Notaries_elected[i][1]);
             return(i);
         }
     }
