@@ -126,6 +126,18 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     //for (i=0; i<33; i++)
     //    printf("%02x",pubkey33[i]);
     //printf(" <- ht.%d\n",height);
+    memset(mids,-1,sizeof(mids));
+    for (i=duplicate=0; i<66; i++)
+    {
+        if ( (pindex= komodo_chainactive(height-i)) == 0 )
+            break;
+        komodo_index2pubkey33(pubkey33,pindex,height-i);
+        mids[i] = komodo_minerid(height-i,pubkey33);
+        if ( i > 0 && mids[i] == mids[0] )
+            duplicate++;
+    }
+    if ( i == 66 && duplicate == 0 )
+        flag = 1;
     if ( height > 34000 ) // 0 -> non-special notary
     {
         for (i=0; i<33; i++)
@@ -152,17 +164,6 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 flag = 1;
             else if ( height >= 108000 && special2 > 0 )
                 flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
-            for (i=duplicate=0; i<66; i++)
-            {
-                if ( (pindex= komodo_chainactive(height-i)) == 0 )
-                    break;
-                komodo_index2pubkey33(pubkey33,pindex,height-i);
-                mids[i] = komodo_minerid(height-i,pubkey33);
-                if ( i > 0 && mids[i] == mids[0] )
-                    duplicate++;
-            }
-            if ( i == 66 && duplicate == 0 )
-                flag = 1;
             if ( flag != 0 )
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
         }
