@@ -132,8 +132,10 @@ int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height)
     for (i=0; i<sizeof(Notaries_elected)/sizeof(*Notaries_elected); i++)
     {
         if ( strcmp(pubkeystr,(char *)Notaries_elected[i][1]) == 0 )
+        {
+            printf("i.%d -> elected %s\n",(char *)Notaries_elected[i][1]);
             return(i);
-        //printf("%s\n",(char *)Notaries_elected[i][1]);
+        }
     }
     return(-1);
 }
