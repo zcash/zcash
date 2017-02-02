@@ -616,7 +616,7 @@ int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height);
 int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
 {
     int32_t num,i; CBlockIndex *pindex; uint8_t _pubkey33[33],pubkeys[64][33];
-    if ( (pindex= chainActive[height]) != 0 )
+    if ( pubkey33 == 0 && (pindex= chainActive[height]) != 0 )
     {
         if ( pubkey33 == 0 )
         {
