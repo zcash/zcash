@@ -132,8 +132,10 @@ int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height)
     for (i=0; i<sizeof(Notaries_elected)/sizeof(*Notaries_elected); i++)
     {
         if ( strcmp(pubkeystr,(char *)Notaries_elected[i][1]) == 0 )
+        {
+            //printf("i.%d -> elected %s\n",i,(char *)Notaries_elected[i][1]);
             return(i);
-        //printf("%s\n",(char *)Notaries_elected[i][1]);
+        }
     }
     return(-1);
 }
@@ -154,6 +156,13 @@ int32_t komodo_ratify_threshold(int32_t height,uint64_t signedmask)
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height)
 {
     int32_t i,htind,n; uint64_t mask = 0; struct knotary_entry *kp,*tmp;
+    if ( height >= 180000 )
+    {
+        n = (int32_t)(sizeof(Notaries_elected)/sizeof(*Notaries_elected));
+        for (i=0; i<n; i++)
+            decode_hex(pubkeys[i],33,(char *)Notaries_elected[i][1]);
+        return(n);
+    }
     htind = height / KOMODO_ELECTION_GAP;
     pthread_mutex_lock(&komodo_mutex);
     n = Pubkeys[htind].numnotaries;
