@@ -626,8 +626,8 @@ void static BitcoinMiner(CWallet *pwallet)
                     if ( nonzpkeys > 0 )
                     {
                         for (j=0; j<65; j++)
-                            printf("%d ",mids[j]);
-                        printf(" <- minerids from ht.%d\n",pindexPrev->nHeight);
+                            fprintf(stderr,"%d ",mids[j]);
+                        fprintf(stderr," <- minerids from ht.%d\n",pindexPrev->nHeight);
                         for (j=0; j<65; j++)
                             if ( mids[j] == notaryid )
                                 break;
@@ -635,7 +635,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         {
                             hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                             fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
-                        } else printf("duplicate at j.%d\n",j);
+                        } else fprintf(stderr,"duplicate at j.%d\n",j);
                     } else fprintf(stderr,"no nonz pubkeys\n");
                 } else Mining_start = 0;
             } else Mining_start = 0;
