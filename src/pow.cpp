@@ -115,7 +115,7 @@ extern int32_t KOMODO_CHOSEN_ONE;
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
     extern int32_t KOMODO_REWIND;
-    bool fNegative,fOverflow; int32_t i,nonz=0,special=0,special2=0,notaryid=-1,flag = 0;
+    bool fNegative,fOverflow; int32_t i,nonz=0,special=0,special2=0,notaryid=-1,flag = 0; mids[66];
     arith_uint256 bnTarget;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
@@ -158,8 +158,12 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     if ( UintToArith256(hash) > bnTarget )
     {
         for (i=0; i<66; i++)
-            if ( komodo_chainactive(height-i) == 0 )
+        {
+            if ( (pindex= komodo_chainactive(height-i)) == 0 )
                 break;
+            komodo_index2pubkey33(pubkey33,pindex,height-i);
+            mids[i] = komodo_minerid(height-i,pubkey33);
+        }
         if ( i == 66 )
         {
             if ( height > 180000 && KOMODO_REWIND == 0 && komodo_chainactive(height) != 0 )
@@ -175,10 +179,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                     printf("%02x",pubkey33[i]);
                 printf(" <- pubkey\n");
                 for (i=0; i<66; i++)
-                {
-                    komodo_chosennotary(&notaryid,height-i,pubkey33);
-                    printf("%d ",komodo_minerid(height-i,pubkey33));
-                }
+                    printf("%d ",mids[i]);
                 printf(" minerids from ht.%d\n",height);
                 return error("CheckProofOfWork(): hash doesn't match nBits");
             }
