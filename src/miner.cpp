@@ -625,7 +625,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,pindexPrev->nHeight);
                     if ( nonzpkeys > 0 )
                     {
-                        if ( NOTARY_PUBKEY33[0] != 0 )
+                        if ( NOTARY_PUBKEY33[0] != 0 && notaryid < 1 )
                         {
                             for (i=1; i<66; i++)
                                 if ( memcmp(pubkeys[i],pubkeys[0],33) == 0 )
