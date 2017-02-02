@@ -16,7 +16,7 @@ define $(package)_config_cmds
 endef
 
 define $(package)_preprocess_cmds
-   sed -i "" -e "s/WinIoCtl.h/winioctl.h/g" src/dbinc/win_db.h
+   sed -i -e "s/WinIoCtl.h/winioctl.h/g" src/dbinc/win_db.h
 endef
 
 define $(package)_build_cmds
