@@ -480,10 +480,9 @@ int32_t komodo_kmdbtcusd(int32_t rwflag,uint64_t *kmdbtcp,uint64_t *btcusdp,int3
     else return(-1);
 }
 
-uint64_t komodo_paxpriceB(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
+uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t lastprice,tolerance,den,densum,sum=0,votes[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],btcusds[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtcs[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtc,btcusd;
-    *seedp = komodo_seed(height);
     if ( basevolume > KOMODO_PAXMAX )
     {
         printf("komodo_paxprice overflow %.8f\n",dstr(basevolume));
@@ -529,10 +528,11 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     int32_t i,nonz=0; int64_t diff; uint64_t price,seed,sum = 0;
     if ( chainActive.Tip() != 0 && height > chainActive.Tip()->nHeight )
         return(0);
+    *seedp = komodo_seed(height);
     portable_mutex_lock(&komodo_mutex);
     for (i=0; i<17; i++)
     {
-        if ( (price= komodo_paxpriceB(&seed,height-i,base,rel,basevolume)) != 0 )
+        if ( (price= komodo_paxpriceB(*seedp,height-i,base,rel,basevolume)) != 0 )
         {
             sum += price;
             nonz++;
