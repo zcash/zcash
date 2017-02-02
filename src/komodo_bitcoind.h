@@ -606,6 +606,7 @@ void komodo_connectpindex(CBlockIndex *pindex)
 }
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
+int32_t komodo_electednotary(uint8_t *pubkey33);
 
 int8_t komodo_minerid(int32_t height)
 {
@@ -620,7 +621,7 @@ int8_t komodo_minerid(int32_t height)
                     return(i);
         }
     }
-    return(-1);
+    return(komodo_electednotary(pubkey33));
 }
 
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width)
