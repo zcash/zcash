@@ -621,7 +621,7 @@ int8_t komodo_minerid(int32_t height)
                     return(i);
         }
     }
-    return(komodo_electednotary(pubkey33));
+    return(komodo_electednotary(pubkey33,height));
 }
 
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width)
