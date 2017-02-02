@@ -113,6 +113,26 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 extern int32_t KOMODO_CHOSEN_ONE;
 #define KOMODO_ELECTION_GAP 2000
 
+int32_t komodo_eligiblenotary(int32_t *mids,int32_t *nonzpkeysp,int32_t height)
+{
+    int32_t i,duplicate; CBlockIndex *pindex; uint8_t pubkey33[33];
+    memset(mids,-1,sizeof(*mids)*66);
+    for (i=duplicate=0; i<66; i++)
+    {
+        if ( (pindex= komodo_chainactive(height-i)) != 0 )
+        {
+            komodo_index2pubkey33(pubkey33,pindex,height-i);
+            if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
+                (*nonzpkeysp)++;
+            if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
+                duplicate++;
+        }
+    }
+    if ( i == 66 && duplicate == 0 && nonzpkeys > 0 )
+        return(1);
+    else return(0);
+}
+
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
     extern int32_t KOMODO_REWIND;
@@ -126,20 +146,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     //for (i=0; i<33; i++)
     //    printf("%02x",pubkey33[i]);
     //printf(" <- ht.%d\n",height);
-    memset(mids,-1,sizeof(mids));
-    for (i=duplicate=0; i<66; i++)
-    {
-        if ( (pindex= komodo_chainactive(height-i)) != 0 )
-        {
-            komodo_index2pubkey33(pubkey33,pindex,height-i);
-            if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
-                nonzpkeys++;
-            if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
-                duplicate++;
-        }
-    }
-    if ( i == 66 && duplicate == 0 && nonzpkeys > 0 )
-        flag = 1;
+    flag = komodo_eligiblenotary(mids,&nonzpkeys,height);
     if ( height > 34000 ) // 0 -> non-special notary
     {
         for (i=0; i<33; i++)
@@ -193,7 +200,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             return error("CheckProofOfWork(): hash doesn't match nBits");
         }
     }
-    if ( height > 180000 )
+    if ( height > 180000 && nonzpkeys > 0 )
     {
         for (i=0; i<66; i++)
             fprintf(stderr,"%d ",mids[i]);

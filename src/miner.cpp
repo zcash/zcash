@@ -520,6 +520,7 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
 }
 
 int32_t komodo_baseid(char *origbase);
+int32_t komodo_eligiblenotary(int32_t *mids,int32_t *nonzpkeysp,int32_t height);
 
 void static BitcoinMiner(CWallet *pwallet)
 {
@@ -614,15 +615,25 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             // Search
             //
-            uint32_t savebits; int64_t nStart = GetTime();
+            int mids[66],nonzpkeys,j; uint32_t savebits; int64_t nStart = GetTime();
             savebits = pblock->nBits;
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
             if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
                 if ( (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 )
                 {
-                    hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
-                    fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
+                    komodo_eligiblenotary(mids,&nonzpkeys,pindexPrev->nHeight);
+                    if ( nonzpkeys > 0 )
+                    {
+                        for (j=0; j<65; j++)
+                            if ( mids[j] == notaryid )
+                                break;
+                        if ( j == 65 )
+                        {
+                            hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
+                            fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
+                        }
+                    }
                 } else Mining_start = 0;
             } else Mining_start = 0;
             while (true)
