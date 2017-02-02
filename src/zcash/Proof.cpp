@@ -228,6 +228,19 @@ ProofVerifier ProofVerifier::Strict() {
     return ProofVerifier(true);
 }
 
+ProofVerifier::ProofVerifier(bool perform_verification,bool is_batch_verifier) :
+    perform_verification(perform_verification),
+    is_batch_verifier(is_batch_verifier)
+{ 
+    batch_accumulator = (void *) new batch_verification_accumulator<curve_pp>();
+}
+
+
+//the
+ProofVerifier ProofVerifier::Batch() {
+    initialize_curve_params();
+    return ProofVerifier(false,true);
+}
 ProofVerifier ProofVerifier::Disabled() {
     initialize_curve_params();
     return ProofVerifier(false);
@@ -243,21 +256,46 @@ bool ProofVerifier::check(
 )
 {
     if (!is_batch_verifier){
-    if (perform_verification) {
-        return r1cs_ppzksnark_online_verifier_strong_IC<curve_pp>(pvk, primary_input, proof);
-    } else {
-        return true;
+        if (perform_verification) {
+            return r1cs_ppzksnark_online_verifier_strong_IC<curve_pp>(pvk, primary_input, proof);
+        } else {
+          return true;
+            }
     }
     else{
+       auto acc = (batch_verification_accumulator<curve_pp> *)batch_accumulator;
+       //batch_verification_accumulator<curve_pp> acc;
+       
         //add new proof to the batch    
-        r1cs_ppzksnark_batcher<ppT>(vk, acc, primary_input, proof);
+        r1cs_ppzksnark_batcher<curve_pp>(vk, *acc, primary_input, proof);
         //verify batch if perform_verification is true
         if (perform_verification) {
-            return r1cs_ppzksnark_batch_verifier<curve_pp>(pbvk,acc, primary_input, proof);
+            return r1cs_ppzksnark_batch_verifier<curve_pp>(pbvk,*acc, primary_input, proof);
         } else {
             return true;
         }
     }
    
+
+template<>
+bool ProofVerifier::checkBatch(
+    const r1cs_ppzksnark_verification_key<curve_pp>& vk,
+    const r1cs_ppzksnark_processed_verification_key<curve_pp>& pvk,
+    const r1cs_ppzksnark_processed_batch_verification_key<curve_pp>& pbvk,
+    const r1cs_primary_input<curve_Fr>& primary_input,
+    const r1cs_ppzksnark_proof<curve_pp>& proof
+)
+{
+    if (!is_batch_verifier){
+        return false;
+    else{
+       auto acc = (batch_verification_accumulator<curve_pp> *)batch_accumulator;
+    if (perform_verification) {
+            return r1cs_ppzksnark_batch_verifier<curve_pp>(pbvk,*acc, primary_input, proof);
+        } else {
+            return true;
+        }
+    }
+    }
 }
-}
+}//namespace libzcash

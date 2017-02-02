@@ -394,21 +394,25 @@ TEST(proofs, g2_serializes_properly)
 
 TEST(proofs, zksnark_serializes_properly)
 {
+    
     auto example = libsnark::generate_r1cs_example_with_field_input<curve_Fr>(250, 4);
     example.constraint_system.swap_AB_if_beneficial();
+    
     auto kp = libsnark::r1cs_ppzksnark_generator<curve_pp>(example.constraint_system);
     auto vkprecomp = libsnark::r1cs_ppzksnark_verifier_process_vk(kp.vk);
-
-    for (size_t i = 0; i < 20; i++) {
+    auto bvkprecomp = libsnark::r1cs_ppzksnark_batch_verifier_process_vk<curve_pp>(kp.vk);
+        for (size_t i = 0; i < 20; i++) {
         auto badproof = ZCProof::random_invalid();
         auto proof = badproof.to_libsnark_proof<libsnark::r1cs_ppzksnark_proof<curve_pp>>();
         
         auto verifierEnabled = ProofVerifier::Strict();
         auto verifierDisabled = ProofVerifier::Disabled();
+        auto verifierBatch = ProofVerifier::Batch();
         // This verifier should catch the bad proof
         ASSERT_FALSE(verifierEnabled.check(
             kp.vk,
             vkprecomp,
+            bvkprecomp,
             example.primary_input,
             proof
         ));
@@ -416,6 +420,17 @@ TEST(proofs, zksnark_serializes_properly)
         ASSERT_TRUE(verifierDisabled.check(
             kp.vk,
             vkprecomp,
+            bvkprecomp,
+            example.primary_input,
+            proof
+        ));
+        
+        // This verifier should catch the bad proof
+        verifierBatch.enable();
+        ASSERT_FALSE(verifierBatch.check(
+            kp.vk,
+            vkprecomp,
+            bvkprecomp,
             example.primary_input,
             proof
         ));
@@ -432,15 +447,26 @@ TEST(proofs, zksnark_serializes_properly)
         {
             auto verifierEnabled = ProofVerifier::Strict();
             auto verifierDisabled = ProofVerifier::Disabled();
+            auto verifierBatch = ProofVerifier::Batch();
             ASSERT_TRUE(verifierEnabled.check(
                 kp.vk,
                 vkprecomp,
+                bvkprecomp,
                 example.primary_input,
                 proof
             ));
             ASSERT_TRUE(verifierDisabled.check(
                 kp.vk,
                 vkprecomp,
+                bvkprecomp,
+                example.primary_input,
+                proof
+            ));
+            verifierBatch.enable();
+            ASSERT_TRUE(verifierBatch.check(
+                kp.vk,
+                vkprecomp,
+                bvkprecomp,
                 example.primary_input,
                 proof
             ));
@@ -658,3 +684,50 @@ TEST(proofs, g2_test_vectors)
         ASSERT_TRUE(expected.to_libsnark_g2<curve_G2>() == e);
     }
 }
+//checks batch verifier detects one bad proof out of otherwise good batch
+TEST(proofs, batch_verifier)
+{
+    
+    auto example = libsnark::generate_r1cs_example_with_field_input<curve_Fr>(250, 4);
+    example.constraint_system.swap_AB_if_beneficial();
+    
+    auto kp = libsnark::r1cs_ppzksnark_generator<curve_pp>(example.constraint_system);
+    auto vkprecomp = libsnark::r1cs_ppzksnark_verifier_process_vk(kp.vk);
+    auto bvkprecomp = libsnark::r1cs_ppzksnark_batch_verifier_process_vk<curve_pp>(kp.vk);
+    auto badproof = ZCProof::random_invalid();
+    auto proof = badproof.to_libsnark_proof<libsnark::r1cs_ppzksnark_proof<curve_pp>>();
+    auto verifierBatch = ProofVerifier::Batch();
+    // adding bad proof to batch
+    verifierBatch.check(
+            kp.vk,
+            vkprecomp,
+            bvkprecomp,
+            example.primary_input,
+            proof
+        );
+    
+    bool result;
+    // adding good proofs to batch    
+    for (size_t i = 0; i < 20; i++) {
+        auto proof = libsnark::r1cs_ppzksnark_prover<curve_pp>(
+            kp.pk,
+            example.primary_input,
+            example.auxiliary_input,
+            example.constraint_system
+        );
+
+            if(i==19) verifierBatch.enable();
+            result = verifierBatch.check(
+                kp.vk,
+                vkprecomp,
+                bvkprecomp,
+                example.primary_input,
+                proof
+            );
+            
+    }
+    ASSERT_FALSE(result);
+
+
+}
+

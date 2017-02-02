@@ -242,9 +242,7 @@ private:
     bool perform_verification;
     bool is_batch_verifier;
     void* batch_accumulator;
-    ProofVerifier(bool perform_verification,bool is_batch_verifier = false) :
-     perform_verification(perform_verification),
-     is_batch_verifier(is_batch_verifier) { }
+    ProofVerifier(bool perform_verification,bool is_batch_verifier = false) ;
 
 public:
     // ProofVerifier should never be copied
@@ -261,7 +259,22 @@ public:
     // verification, used when avoiding duplicate effort
     // such as during reindexing.
     static ProofVerifier Disabled();
+    
+    // Only allowed for batch verifier, tells it to verify 
+    // ant not just batch next time check is called
+    void  enable(){
+        //ASSERT_TRUE(is_batch_verifier);
+        perform_verification = true;
+    }
+    // Only allowed for batch verifier, tells it to verify 
+    // ant not just batch next time check is called
+    void  disble(){
+        //ASSERT_TRUE(is_batch_verifier);
+        perform_verification = false;
+    }
 
+    // Creates a batch verifier 
+    static ProofVerifier Batch();
     template <typename VerificationKey,
               typename ProcessedVerificationKey,
               typename ProcessedBatchVerificationKey,
@@ -269,6 +282,20 @@ public:
               typename Proof
               >
     bool check(
+        const VerificationKey& vk,
+        const ProcessedVerificationKey& pvk,
+        const ProcessedBatchVerificationKey& pbvk,
+        const PrimaryInput& pi,
+        const Proof& p
+    );
+    //temporary method checks batch without adding more proofs to batch
+    template <typename VerificationKey,
+              typename ProcessedVerificationKey,
+              typename ProcessedBatchVerificationKey,
+              typename PrimaryInput,
+              typename Proof
+              >
+    bool checkBatch(
         const VerificationKey& vk,
         const ProcessedVerificationKey& pvk,
         const ProcessedBatchVerificationKey& pbvk,
@@ -314,5 +341,5 @@ bool check()
 BatchVerifier()
 */
 //}
-
+}//namespace libzcash
 #endif // _ZCPROOF_H_
