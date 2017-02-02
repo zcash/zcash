@@ -109,6 +109,7 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
 int32_t komodo_currentheight();
 CBlockIndex *komodo_chainactive(int32_t height);
 int8_t komodo_minerid(int32_t height,uint8_t *pubkey33);
+void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
 extern int32_t KOMODO_CHOSEN_ONE;
 #define KOMODO_ELECTION_GAP 2000
 
