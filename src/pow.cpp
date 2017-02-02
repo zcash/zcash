@@ -116,7 +116,7 @@ extern int32_t KOMODO_CHOSEN_ONE;
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
     extern int32_t KOMODO_REWIND;
-    bool fNegative,fOverflow; int32_t i,nonz=0,special=0,special2=0,notaryid=-1,flag = 0; mids[66];
+    bool fNegative,fOverflow; int32_t i,nonz=0,special=0,special2=0,notaryid=-1,flag = 0, mids[66];
     arith_uint256 bnTarget; CBlockIndex *pindex;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
