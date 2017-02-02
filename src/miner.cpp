@@ -625,7 +625,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,pindexPrev->nHeight);
                     if ( nonzpkeys > 0 )
                     {
-                        if ( notaryid < 1 )
+                        if ( NOTARY_PUBKEY33[0] != 0 )
                         {
                             for (i=1; i<66; i++)
                                 if ( memcmp(pubkeys[i],pubkeys[0],33) == 0 )
@@ -719,7 +719,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         ehSolverRuns.increment();
                         throw boost::thread_interrupted();
                     }
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 )
                         sleep(1800);
                     return true;
                 };
