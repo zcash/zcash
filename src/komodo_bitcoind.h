@@ -616,7 +616,7 @@ int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height);
 int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
 {
     int32_t num,i; CBlockIndex *pindex; uint8_t _pubkey33[33],pubkeys[64][33];
-    if ( (pindex= chainActive[height]) != 0 )
+    /*if ( (pindex= chainActive[height]) != 0 )
     {
         if ( pubkey33 == 0 )
         {
@@ -629,7 +629,7 @@ int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
                 if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
                     return(i);
         }
-    }
+    }*/
     return(komodo_electednotary(pubkey33,height));
 }
 
@@ -645,7 +645,7 @@ int32_t komodo_eligiblenotary(int32_t *mids,int32_t *nonzpkeysp,int32_t height)
             komodo_index2pubkey33(pubkey33,pindex,height-i);
             if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
             {
-                mids[i] = *(int32_t *)pubkey33;
+                //mids[i] = *(int32_t *)pubkey33;
                 (*nonzpkeysp)++;
             }
             if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
