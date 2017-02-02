@@ -627,7 +627,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     {
                         for (j=0; j<65; j++)
                             fprintf(stderr,"%d ",mids[j]);
-                        fprintf(stderr," <- minerids from ht.%d\n",pindexPrev->nHeight);
+                        fprintf(stderr," <- prev minerids from ht.%d notary.%d\n",pindexPrev->nHeight,notaryid);
                         for (j=0; j<65; j++)
                             if ( mids[j] == notaryid )
                                 break;
