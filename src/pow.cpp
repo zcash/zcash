@@ -180,6 +180,15 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             }
         }
     }
+    if ( flag != 0 )
+    {
+        for (i=0; i<66; i++)
+        {
+            komodo_chosennotary(&notaryid,height-i,pubkey33);
+            fprintf(stderr,"%d ",komodo_minerid(height-i,pubkey33));
+        }
+        fprintf(stderr," minerids from ht.%d\n",height);
+    }
     return true;
 }
 
