@@ -113,25 +113,8 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 extern int32_t KOMODO_CHOSEN_ONE;
 #define KOMODO_ELECTION_GAP 2000
 
-int32_t komodo_eligiblenotary(int32_t *mids,int32_t *nonzpkeysp,int32_t height)
-{
-    int32_t i,duplicate; CBlockIndex *pindex; uint8_t pubkey33[33];
-    memset(mids,-1,sizeof(*mids)*66);
-    for (i=duplicate=0; i<66; i++)
-    {
-        if ( (pindex= komodo_chainactive(height-i)) != 0 )
-        {
-            komodo_index2pubkey33(pubkey33,pindex,height-i);
-            if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
-                (*nonzpkeysp)++;
-            if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
-                duplicate++;
-        }
-    }
-    if ( i == 66 && duplicate == 0 && *nonzpkeysp > 0 )
-        return(1);
-    else return(0);
-}
+int32_t komodo_eligiblenotary(int32_t *mids,int32_t *nonzpkeysp,int32_t height);
+
 
 extern std::string NOTARY_PUBKEY;
 
@@ -184,7 +167,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( nonzpkeys > 0 && height > 181500 && KOMODO_REWIND == 0 && komodo_chainactive(height) != 0 )
+        if ( nonzpkeys > 0 && height > 182500 && KOMODO_REWIND == 0 && komodo_chainactive(height) != 0 )
         {
             int32_t i;
             for (i=31; i>=0; i--)
