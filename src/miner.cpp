@@ -455,7 +455,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 //
 // Internal miner
 //
-int8_t komodo_minerid(int32_t height);
+int8_t komodo_minerid(int32_t height,uint8_t *pubkey33);
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
@@ -481,7 +481,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
     {
         for (i=0; i<65; i++)
-            fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i));
+            fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i,0));
         fprintf(stderr," minerids.special %d from ht.%d\n",komodo_is_special(chainActive.Tip()->nHeight+1,NOTARY_PUBKEY33),chainActive.Tip()->nHeight);
     }
     return CreateNewBlock(scriptPubKey);

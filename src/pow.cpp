@@ -107,7 +107,7 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
 int32_t komodo_currentheight();
-int8_t komodo_minerid(int32_t height);
+int8_t komodo_minerid(int32_t height,uint8_t *pubkey33);
 extern int32_t KOMODO_CHOSEN_ONE;
 #define KOMODO_ELECTION_GAP 2000
 
@@ -120,9 +120,9 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( height == 0 )
         height = komodo_currentheight() + 1;
+    special = komodo_chosennotary(&notaryid,height,pubkey33);
     if ( height > 34000 ) // 0 -> non-special notary
     {
-        special = komodo_chosennotary(&notaryid,height,pubkey33);
         for (i=0; i<33; i++)
         {
             if ( pubkey33[i] != 0 )
@@ -168,7 +168,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 printf("%02x",pubkey33[i]);
             printf(" <- pubkey\n");
             for (i=0; i<66; i++)
-                printf("%d ",komodo_minerid(height-i));
+                printf("%d ",komodo_minerid(height-i,pubkey33));
             printf(" minerids from ht.%d\n",height);
             if ( height < 90000 || (height > 110000 && KOMODO_REWIND == 0) )
                 return error("CheckProofOfWork(): hash doesn't match nBits");
