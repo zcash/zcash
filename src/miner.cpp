@@ -455,7 +455,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 //
 // Internal miner
 //
-int8_t komodo_minerid(int32_t height);
+int8_t komodo_minerid(int32_t height,uint8_t *pubkey33);
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
@@ -481,7 +481,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
     {
         for (i=0; i<65; i++)
-            fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i));
+            fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i,0));
         fprintf(stderr," minerids.special %d from ht.%d\n",komodo_is_special(chainActive.Tip()->nHeight+1,NOTARY_PUBKEY33),chainActive.Tip()->nHeight);
     }
     return CreateNewBlock(scriptPubKey);
@@ -520,6 +520,7 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
 }
 
 int32_t komodo_baseid(char *origbase);
+int32_t komodo_eligiblenotary(int32_t *mids,int32_t *nonzpkeysp,int32_t height);
 
 void static BitcoinMiner(CWallet *pwallet)
 {
@@ -614,15 +615,28 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             // Search
             //
-            uint32_t savebits; int64_t nStart = GetTime();
+            int mids[66],nonzpkeys,j; uint32_t savebits; int64_t nStart = GetTime();
             savebits = pblock->nBits;
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
-            if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
+            if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )//komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
                 if ( (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 )
                 {
-                    hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
-                    fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
+                    komodo_eligiblenotary(mids,&nonzpkeys,pindexPrev->nHeight);
+                    if ( nonzpkeys > 0 )
+                    {
+                        for (j=0; j<65; j++)
+                            fprintf(stderr,"%d ",mids[j]);
+                        fprintf(stderr," <- prev minerids from ht.%d notary.%d\n",pindexPrev->nHeight,notaryid);
+                        for (j=0; j<65; j++)
+                            if ( mids[j] == notaryid )
+                                break;
+                        if ( j == 65 )
+                        {
+                            hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
+                            fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
+                        } else fprintf(stderr,"duplicate at j.%d\n",j);
+                    } else fprintf(stderr,"no nonz pubkeys\n");
                 } else Mining_start = 0;
             } else Mining_start = 0;
             while (true)
