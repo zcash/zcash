@@ -116,7 +116,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
 {
     extern int32_t KOMODO_REWIND;
     bool fNegative,fOverflow; int32_t i,nonz=0,special=0,special2=0,notaryid=-1,flag = 0; mids[66];
-    arith_uint256 bnTarget;
+    arith_uint256 bnTarget; CBlock *pindex;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( height == 0 )
