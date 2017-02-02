@@ -605,7 +605,7 @@ void komodo_connectpindex(CBlockIndex *pindex)
         komodo_connectblock(pindex,block);
 }
 
-void *komodo_chainactive(int32_t height)
+CBlock *komodo_chainactive(int32_t height)
 {
     return(chainActive[height]);
 }
