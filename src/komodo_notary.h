@@ -125,7 +125,9 @@ const char *Notaries_elected[][2] =
 int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height)
 {
     char pubkeystr[67]; int32_t i;
-    init_hexbytes_noT(pubkeystr,pubkey33,33);
+    for (i=0; i<33; i++)
+        sprintf(&pubkeystr[i*2],"%02x",pubkey33[i]);
+    pubkeystr[66] = 0;
     printf("%s vs\n",pubkeystr);
     for (i=0; i<sizeof(Notaries_elected)/sizeof(*Notaries_elected); i++)
     {
