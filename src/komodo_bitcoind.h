@@ -621,6 +621,7 @@ int8_t komodo_minerid(int32_t height)
                     return(i);
         }
     }
+    printf("try electednotary %p\n",pindex);
     return(komodo_electednotary(pubkey33,height));
 }
 
