@@ -643,7 +643,7 @@ int32_t komodo_eligiblenotary(int32_t *mids,int32_t *nonzpkeysp,int32_t height)
         if ( pindex != 0 )
         {
             komodo_index2pubkey33(pubkey33,pindex,height-i);
-            if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
+            if ( (mids[i]= komodo_minerid(height-i,pubkey33) | (pindex->nHeight<<8)) >= 0 )
                 (*nonzpkeysp)++;
             if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
                 duplicate++;
