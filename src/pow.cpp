@@ -116,7 +116,7 @@ extern int32_t KOMODO_CHOSEN_ONE;
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
     extern int32_t KOMODO_REWIND;
-    bool fNegative,fOverflow; int32_t i,nonz=0,special=0,special2=0,notaryid=-1,duplicate,flag = 0, mids[66];
+    bool fNegative,fOverflow; int32_t i,nonzpkeys=0,nonz=0,special=0,special2=0,notaryid=-1,duplicate,flag = 0, mids[66];
     arith_uint256 bnTarget; CBlockIndex *pindex;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
@@ -129,14 +129,16 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     memset(mids,-1,sizeof(mids));
     for (i=duplicate=0; i<66; i++)
     {
-        if ( (pindex= komodo_chainactive(height-i)) == 0 )
-            break;
-        komodo_index2pubkey33(pubkey33,pindex,height-i);
-        mids[i] = komodo_minerid(height-i,pubkey33);
-        if ( i > 0 && mids[i] == mids[0] )
-            duplicate++;
+        if ( (pindex= komodo_chainactive(height-i)) != 0 )
+        {
+            komodo_index2pubkey33(pubkey33,pindex,height-i);
+            if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
+                nonzpkeys++;
+            if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
+                duplicate++;
+        }
     }
-    if ( i == 66 && duplicate == 0 )
+    if ( i == 66 && duplicate == 0 && nonzpkeys > 0 )
         flag = 1;
     if ( height > 34000 ) // 0 -> non-special notary
     {
@@ -173,7 +175,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( height > 181250 && KOMODO_REWIND == 0 && komodo_chainactive(height) != 0 )
+        if ( nonzpkeys > 0 && height > 181250 && KOMODO_REWIND == 0 && komodo_chainactive(height) != 0 )
         {
             int32_t i;
             for (i=31; i>=0; i--)
