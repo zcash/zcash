@@ -627,11 +627,11 @@ void static BitcoinMiner(CWallet *pwallet)
                     {
                         if ( notaryid < 2 )
                         {
-                            for (i=0; i<15; i++)
+                            for (i=0; i<66; i++)
                             {
                                 for (j=0; j<33; j++)
                                     printf("%02x",pubkeys[i][j]);
-                                printf(" p%d\n",i);
+                                printf(" p%d -> %d\n",i,komodo_minerid(pindexPrev->nHeight-i,pubkeys[i]));
                             }
                             for (j=0; j<65; j++)
                                 fprintf(stderr,"%d ",mids[j]);
