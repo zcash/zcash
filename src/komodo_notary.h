@@ -127,7 +127,7 @@ int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height)
     char pubkeystr[67]; int32_t i;
     init_hexbytes_noT(pubkeystr,pubkey33,33);
     for (i=0; i<sizeof(Notaries_elected)/sizeof(*Notaries_elected); i++)
-        if ( strcmp(pubkeystr,Notaries_elected[i]) == 0 )
+        if ( strcmp(pubkeystr,(char *)Notaries_elected[i]) == 0 )
             return(i);
     return(-1);
 }
