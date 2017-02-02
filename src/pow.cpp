@@ -166,6 +166,9 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             for (i=0; i<33; i++)
                 printf("%02x",pubkey33[i]);
             printf(" <- pubkey\n");
+            for (i=0; i<66; i++)
+                printf("%d ",komodo_minerid(height-i));
+            printf(" minerids from ht.%d\n",height);
             if ( height < 90000 || (height > 110000 && KOMODO_REWIND == 0) )
                 return error("CheckProofOfWork(): hash doesn't match nBits");
         }
