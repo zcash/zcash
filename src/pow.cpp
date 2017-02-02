@@ -113,7 +113,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 extern int32_t KOMODO_CHOSEN_ONE;
 #define KOMODO_ELECTION_GAP 2000
 
-int32_t komodo_eligiblenotary(int32_t *mids,int32_t *nonzpkeysp,int32_t height);
+int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height);
 
 
 extern std::string NOTARY_PUBKEY;
@@ -122,7 +122,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
 {
     extern int32_t KOMODO_REWIND;
     bool fNegative,fOverflow; int32_t i,nonzpkeys=0,nonz=0,special=0,special2=0,notaryid=-1,duplicate,flag = 0, mids[66];
-    arith_uint256 bnTarget; CBlockIndex *pindex;
+    arith_uint256 bnTarget; CBlockIndex *pindex; uint8_t pubkeys[66][33];
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( height == 0 )
@@ -131,7 +131,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     //for (i=0; i<33; i++)
     //    printf("%02x",pubkey33[i]);
     //printf(" <- ht.%d\n",height);
-    flag = komodo_eligiblenotary(mids,&nonzpkeys,height);
+    flag = komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,height);
     if ( height > 34000 ) // 0 -> non-special notary
     {
         for (i=0; i<33; i++)
