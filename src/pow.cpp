@@ -157,23 +157,25 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     if ( UintToArith256(hash) > bnTarget )
     {
         {
-            int32_t i;
-            for (i=31; i>=0; i--)
-                printf("%02x",((uint8_t *)&hash)[i]);
-            printf(" hash vs ");
-            for (i=31; i>=0; i--)
-                printf("%02x",((uint8_t *)&bnTarget)[i]);
-            printf(" ht.%d REWIND.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,KOMODO_REWIND,special,notaryid,height,(height % 35));
-            for (i=0; i<33; i++)
-                printf("%02x",pubkey33[i]);
-            printf(" <- pubkey\n");
-            for (i=0; i<66; i++)
+            if ( height > 180000 && KOMODO_REWIND == 0 && chainActive[height] != 0 )
             {
-                printf("%d ",komodo_minerid(height-i,pubkey33));
-            }
-            printf(" minerids from ht.%d\n",height);
-            if ( height > 180000 && KOMODO_REWIND == 0 )
+                int32_t i;
+                for (i=31; i>=0; i--)
+                    printf("%02x",((uint8_t *)&hash)[i]);
+                printf(" hash vs ");
+                for (i=31; i>=0; i--)
+                    printf("%02x",((uint8_t *)&bnTarget)[i]);
+                printf(" ht.%d REWIND.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,KOMODO_REWIND,special,notaryid,height,(height % 35));
+                for (i=0; i<33; i++)
+                    printf("%02x",pubkey33[i]);
+                printf(" <- pubkey\n");
+                for (i=0; i<66; i++)
+                {
+                    printf("%d ",komodo_minerid(height-i,pubkey33));
+                }
+                printf(" minerids from ht.%d\n",height);
                 return error("CheckProofOfWork(): hash doesn't match nBits");
+            }
         }
     }
     return true;
