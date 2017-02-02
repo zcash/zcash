@@ -719,6 +719,8 @@ void static BitcoinMiner(CWallet *pwallet)
                         ehSolverRuns.increment();
                         throw boost::thread_interrupted();
                     }
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )
+                        sleep(1800);
                     return true;
                 };
                 std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck pos) {
