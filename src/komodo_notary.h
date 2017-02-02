@@ -228,6 +228,15 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
         printf("komodo_chosennotary ht.%d illegal\n",height);
         return(-1);
     }
+    if ( height >= 180000 )
+    {
+        if ( (*notaryidp= komodo_electednotary(pubkey33,height)) >= 0 )
+        {
+            numnotaries = (int32_t)(sizeof(Notaries_elected)/sizeof(*Notaries_elected));
+            modval = ((height % numnotaries) == *notaryidp);
+            return(modval);
+        }
+    }
     htind = height / KOMODO_ELECTION_GAP;
     pthread_mutex_lock(&komodo_mutex);
     HASH_FIND(hh,Pubkeys[htind].Notaries,pubkey33,33,kp);
