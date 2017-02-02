@@ -122,6 +122,22 @@ const char *Notaries_elected[][2] =
     { "xxspot2_XX", "03d85b221ea72ebcd25373e7961f4983d12add66a92f899deaf07bab1d8b6f5573" }
 };
 
+int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height)
+{
+    char pubkeystr[67]; int32_t i;
+    for (i=0; i<33; i++)
+        sprintf(&pubkeystr[i*2],"%02x",pubkey33[i]);
+    pubkeystr[66] = 0;
+    //printf("%s vs\n",pubkeystr);
+    for (i=0; i<sizeof(Notaries_elected)/sizeof(*Notaries_elected); i++)
+    {
+        if ( strcmp(pubkeystr,(char *)Notaries_elected[i][1]) == 0 )
+            return(i);
+        //printf("%s\n",(char *)Notaries_elected[i][1]);
+    }
+    return(-1);
+}
+
 int32_t komodo_ratify_threshold(int32_t height,uint64_t signedmask)
 {
     int32_t htind,numnotaries,i,wt = 0;

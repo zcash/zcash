@@ -1441,6 +1441,8 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
 
 bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
 {
+    if ( pindex == 0 )
+        return false;
     if (!ReadBlockFromDisk(pindex->nHeight,block, pindex->GetBlockPos()))
         return false;
     if (block.GetHash() != pindex->GetBlockHash())
