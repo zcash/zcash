@@ -128,7 +128,7 @@ int32_t komodo_eligiblenotary(int32_t *mids,int32_t *nonzpkeysp,int32_t height)
                 duplicate++;
         }
     }
-    if ( i == 66 && duplicate == 0 && nonzpkeys > 0 )
+    if ( i == 66 && duplicate == 0 && *nonzpkeysp > 0 )
         return(1);
     else return(0);
 }
