@@ -164,7 +164,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 printf("%02x",((uint8_t *)&bnTarget)[i]);
             printf(" ht.%d REWIND.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,KOMODO_REWIND,special,notaryid,height,(height % 35));
             for (i=0; i<33; i++)
-                printf("%02x",pubkey[i]);
+                printf("%02x",pubkey33[i]);
             printf(" <- pubkey\n");
             if ( height < 90000 || (height > 110000 && KOMODO_REWIND == 0) )
                 return error("CheckProofOfWork(): hash doesn't match nBits");
