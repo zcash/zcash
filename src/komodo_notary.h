@@ -158,7 +158,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height)
     {
         n = (int32_t)(sizeof(Notaries_elected)/sizeof(*Notaries_elected));
         for (i=0; i<n; i++)
-            decode_hex(pubkeys[i],33,Notaries_elected[i][1]);
+            decode_hex(pubkeys[i],33,(char *)Notaries_elected[i][1]);
         return(n);
     }
     htind = height / KOMODO_ELECTION_GAP;
