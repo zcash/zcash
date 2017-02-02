@@ -605,6 +605,11 @@ void komodo_connectpindex(CBlockIndex *pindex)
         komodo_connectblock(pindex,block);
 }
 
+void *komodo_chainactive(int32_t height)
+{
+    return(chainActive[height]);
+}
+
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
 int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height);
 

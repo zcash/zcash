@@ -942,7 +942,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     }
                 }
             }
-        } else printf("n.%d from opreturns\n",n);
+        } //else printf("n.%d from opreturns\n",n);
         //printf("extra.[%d] after %.8f\n",n,dstr(komodo_paxtotal()));
     }
     else if ( opretbuf[0] == 'X' )
