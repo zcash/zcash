@@ -504,8 +504,8 @@ uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint
             _komodo_paxprice(&kmdbtcs[numvotes-1-i],&btcusds[numvotes-1-i],height-i,base,rel,100000,0,0);
             //printf("(%llu %llu) ",(long long)kmdbtcs[numvotes-1-i],(long long)btcusds[numvotes-1-i]);
         }
-        kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,*seedp) * 539;
-        btcusd = komodo_paxcorrelation(btcusds,numvotes,*seedp) * 539;
+        kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,seed) * 539;
+        btcusd = komodo_paxcorrelation(btcusds,numvotes,seed) * 539;
         //komodo_kmdbtcusd(1,&kmdbtc,&btcusd,height);
     }
     for (i=nonz=0; i<numvotes; i++)
