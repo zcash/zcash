@@ -173,7 +173,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( height > 180000 && KOMODO_REWIND == 0 && komodo_chainactive(height) != 0 )
+        if ( height > 181250 && KOMODO_REWIND == 0 && komodo_chainactive(height) != 0 )
         {
             int32_t i;
             for (i=31; i>=0; i--)
@@ -191,13 +191,10 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             return error("CheckProofOfWork(): hash doesn't match nBits");
         }
     }
-    if ( flag != 0 )
+    if ( height > 180000 )
     {
         for (i=0; i<66; i++)
-        {
-            komodo_chosennotary(&notaryid,height-i,pubkey33);
-            fprintf(stderr,"%d ",komodo_minerid(height-i,pubkey33));
-        }
+            fprintf(stderr,"%d ",mids[i]);
         fprintf(stderr," minerids from ht.%d\n",height);
     }
     return true;
