@@ -3855,6 +3855,7 @@ void UnloadBlockIndex()
 
 bool LoadBlockIndex()
 {
+    extern int32_t KOMODO_LOADINGBLOCKS;
     // Load block index from databases
     KOMODO_LOADINGBLOCKS = 1;
     if (!fReindex && !LoadBlockIndexDB())
