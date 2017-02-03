@@ -4344,7 +4344,7 @@ void static ProcessGetData(CNode* pfrom)
                     CBlock block;
                     if (!ReadBlockFromDisk(block, (*mi).second))
                     {
-                        //assert(!"cannot load block from disk");
+                        assert(!"cannot load block from disk");
                     }
                     else
                     {
