@@ -3855,9 +3855,15 @@ void UnloadBlockIndex()
 
 bool LoadBlockIndex()
 {
+    extern int32_t KOMODO_LOADINGBLOCKS;
     // Load block index from databases
+    KOMODO_LOADINGBLOCKS = 1;
     if (!fReindex && !LoadBlockIndexDB())
+    {
+        KOMODO_LOADINGBLOCKS = 0;
         return false;
+    }
+    KOMODO_LOADINGBLOCKS = 0;
     return true;
 }
 
@@ -4344,7 +4350,7 @@ void static ProcessGetData(CNode* pfrom)
                     CBlock block;
                     if (!ReadBlockFromDisk(block, (*mi).second))
                     {
-                        //assert(!"cannot load block from disk");
+                        assert(!"cannot load block from disk");
                     }
                     else
                     {
