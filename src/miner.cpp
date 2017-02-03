@@ -632,18 +632,16 @@ void static BitcoinMiner(CWallet *pwallet)
                                 if ( memcmp(pubkeys[i],pubkeys[0],33) == 0 )
                                     break;
                             if ( i != 66 )
-                            {
                                 printf("VIOLATION at %d\n",i);
-                                for (i=0; i<66; i++)
-                                {
-                                    for (j=0; j<33; j++)
-                                        printf("%02x",pubkeys[i][j]);
-                                    printf(" p%d -> %d\n",i,komodo_minerid(pindexPrev->nHeight-i,pubkeys[i]));
-                                }
-                                for (j=0; j<65; j++)
-                                    fprintf(stderr,"%d ",mids[j]);
-                                fprintf(stderr," <- prev minerids from ht.%d notary.%d VIOLATION\n",pindexPrev->nHeight,notaryid);
+                            for (i=0; i<66; i++)
+                            {
+                                for (j=0; j<33; j++)
+                                    printf("%02x",pubkeys[i][j]);
+                                printf(" p%d -> %d\n",i,komodo_minerid(pindexPrev->nHeight-i,pubkeys[i]));
                             }
+                            for (j=0; j<65; j++)
+                                fprintf(stderr,"%d ",mids[j]);
+                            fprintf(stderr," <- prev minerids from ht.%d notary.%d\n",pindexPrev->nHeight,notaryid);
                         }
                         for (j=0; j<65; j++)
                             if ( mids[j] == notaryid )
