@@ -1126,15 +1126,16 @@ void ThreadSocketHandler()
                 {
                     bool fDelete = false;
                     {
-                        TRY_LOCK(pnode->cs_vSend, lockSend);
-                        if (lockSend)
+                        TRY_LOCK(pnode->cs_inventory, lockInv);
+                        if (lockInv)
                         {
                             TRY_LOCK(pnode->cs_vRecvMsg, lockRecv);
                             if (lockRecv)
                             {
-                                TRY_LOCK(pnode->cs_inventory, lockInv);
-                                if (lockInv)
+                                TRY_LOCK(pnode->cs_vSend, lockSend);
+                                if (lockSend) {
                                     fDelete = true;
+                                }
                             }
                         }
                     }
