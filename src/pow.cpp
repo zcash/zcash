@@ -114,7 +114,7 @@ extern int32_t KOMODO_CHOSEN_ONE;
 #define KOMODO_ELECTION_GAP 2000
 
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height);
-
+int32_t KOMODO_LOADINGBLOCKS;
 
 extern std::string NOTARY_PUBKEY;
 
@@ -167,7 +167,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( nonzpkeys > 0 && height > 182500 && KOMODO_REWIND == 0 && komodo_chainactive(height) != 0 )
+        if ( KOMODO_LOADINGBLOCKS == 0 && height > 182507 && KOMODO_REWIND == 0 )//&& komodo_chainactive(height) != 0 && nonzpkeys > 0
         {
             int32_t i;
             for (i=31; i>=0; i--)
