@@ -167,7 +167,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( KOMODO_LOADINGBLOCKS == 0 && nonzpkeys > 0 && height > 182500 && KOMODO_REWIND == 0 && komodo_chainactive(height) != 0 )
+        if ( KOMODO_LOADINGBLOCKS == 0 && height > 182500 && KOMODO_REWIND == 0 )//&& komodo_chainactive(height) != 0 && nonzpkeys > 0
         {
             int32_t i;
             for (i=31; i>=0; i--)
