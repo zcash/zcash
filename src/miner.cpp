@@ -632,7 +632,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         if ( i == 33 )
                             externalflag = 1;
                         else externalflag = 0;
-                        if ( NOTARY_PUBKEY33[0] != 0 && notaryid < 1 )
+                        if ( NOTARY_PUBKEY33[0] != 0 && notaryid < 3 )
                         {
                             for (i=1; i<66; i++)
                                 if ( memcmp(pubkeys[i],pubkeys[0],33) == 0 )
