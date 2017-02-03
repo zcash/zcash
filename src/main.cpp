@@ -3856,8 +3856,13 @@ void UnloadBlockIndex()
 bool LoadBlockIndex()
 {
     // Load block index from databases
+    KOMODO_LOADINGBLOCKS = 1;
     if (!fReindex && !LoadBlockIndexDB())
+    {
+        KOMODO_LOADINGBLOCKS = 0;
         return false;
+    }
+    KOMODO_LOADINGBLOCKS = 0;
     return true;
 }
 
