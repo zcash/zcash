@@ -170,7 +170,16 @@ There is a small chance that an outbound transaction will give an error due to m
 
 To change modes:
 a) backup all privkeys (launch komodod with -exportdir=<path> and dumpwallet)
-b) start a totally new sync including wallet.dat
-c) stop it before it gets too far and import all the privkeys from a)
+b) start a totally new sync including wallet.dat, launch with same exportdir
+c) stop it before it gets too far and import all the privkeys from a) using komodo-cli importwallet filename
 d) resume sync till it gets to chaintip
+
+For example:
+./komodod -exportdir=/tmp &
+./komodo-cli dumpwallet example
+./komodo-cli stop
+mv ~/.komodo ~/.komodo.old && mkdir ~/.komodo && cp ~/.komodo.old/komodo.conf ~/.komodo.old/peers.dat ~/.komodo
+./komodod -exchange -exportdir=/tmp &
+./komodo-cli importwallet example
+
 
