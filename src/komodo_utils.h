@@ -1454,6 +1454,7 @@ void komodo_args()
     extern int64_t MAX_MONEY;
     std::string name,addn; char *dirname,fname[512],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,baseid,len;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
+    KOMODO_EXCHANGEWALLET = GetBoolArg("-exchange", false);
     NOTARY_PUBKEY = GetArg("-pubkey", "");
     if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
     {
