@@ -37,6 +37,7 @@ unsigned int nTxConfirmTarget = DEFAULT_TX_CONFIRM_TARGET;
 bool bSpendZeroConfChange = true;
 bool fSendFreeTransactions = false;
 bool fPayAtLeastCustomFee = true;
+extern int32_t KOMODO_EXCHANGEWALLET;
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
@@ -2242,28 +2243,35 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                     !IsLockedCoin((*it).first, i) && (pcoin->vout[i].nValue > 0 || fIncludeZeroValue) &&
                     (!coinControl || !coinControl->HasSelected() || coinControl->IsSelected((*it).first, i)))
                 {
-#ifdef KOMODO_ENABLE_INTEREST
-                    extern char ASSETCHAINS_SYMBOL[16];
-                    uint32_t locktime; int32_t txheight; CBlockIndex *tipindex;
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight >= 60000 )
+                    if ( KOMODO_EXCHANGEWALLET == 0 )
                     {
-                        if ( pcoin->vout[i].nValue >= 10*COIN )
+                        extern char ASSETCHAINS_SYMBOL[16];
+                        uint32_t locktime; int32_t txheight; CBlockIndex *tipindex;
+                        if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight >= 60000 )
                         {
-                            komodo_accrued_interest(&txheight,&locktime,wtxid,i,0,pcoin->vout[i].nValue);
-                            if ( (tipindex= chainActive.Tip()) != 0 )
+                            if ( pcoin->vout[i].nValue >= 10*COIN )
                             {
-                                interest = komodo_interest(txheight,pcoin->vout[i].nValue,locktime,tipindex->nTime);
-                            } else interest = 0;
-                            //interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
-                            if ( interest != 0 )
-                            {
-                                //printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u/%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,txheight,locktime,pcoin->nLockTime,tipindex->nTime);
-                                //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
-                                //ptr = (uint64_t *)&pcoin->vout[i].nValue;
-                                //(*ptr) += interest;
-                                ptr = (uint64_t *)&pcoin->vout[i].interest;
-                                (*ptr) = interest;
-                                //pcoin->vout[i].nValue += interest;
+                                komodo_accrued_interest(&txheight,&locktime,wtxid,i,0,pcoin->vout[i].nValue);
+                                if ( (tipindex= chainActive.Tip()) != 0 )
+                                {
+                                    interest = komodo_interest(txheight,pcoin->vout[i].nValue,locktime,tipindex->nTime);
+                                } else interest = 0;
+                                //interest = komodo_interest(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
+                                if ( interest != 0 )
+                                {
+                                    //printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u/%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,txheight,locktime,pcoin->nLockTime,tipindex->nTime);
+                                    //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
+                                    //ptr = (uint64_t *)&pcoin->vout[i].nValue;
+                                    //(*ptr) += interest;
+                                    ptr = (uint64_t *)&pcoin->vout[i].interest;
+                                    (*ptr) = interest;
+                                    //pcoin->vout[i].nValue += interest;
+                                }
+                                else
+                                {
+                                    ptr = (uint64_t *)&pcoin->vout[i].interest;
+                                    (*ptr) = 0;
+                                }
                             }
                             else
                             {
@@ -2277,12 +2285,6 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                             (*ptr) = 0;
                         }
                     }
-                    else
-                    {
-                        ptr = (uint64_t *)&pcoin->vout[i].interest;
-                        (*ptr) = 0;
-                    }
-#endif
                     vCoins.push_back(COutput(pcoin, i, nDepth, (mine & ISMINE_SPENDABLE) != ISMINE_NO));
                 }
             }
@@ -2337,7 +2339,7 @@ static void ApproximateBestSubset(vector<pair<CAmount, pair<const CWalletTx*,uns
 
 bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, vector<COutput> vCoins,set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet, uint64_t *interestp) const
 {
-    uint64_t interests[512],lowest_interest = 0; int32_t count = 0;
+    uint64_t interests[1024],lowest_interest = 0; int32_t count = 0;
     setCoinsRet.clear();
     memset(interests,0,sizeof(interests));
     nValueRet = 0;
@@ -2370,14 +2372,15 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
         {
             setCoinsRet.insert(coin.second);
             nValueRet += coin.first;
-            *interestp += pcoin->vout[i].interest;
+            if ( KOMODO_EXCHANGEWALLET == 0 )
+                *interestp += pcoin->vout[i].interest;
             return true;
         }
         else if (n < nTargetValue + CENT)
         {
             vValue.push_back(coin);
             nTotalLower += n;
-            if ( count < sizeof(interests)/sizeof(*interests) )
+            if ( KOMODO_EXCHANGEWALLET == 0 && count < sizeof(interests)/sizeof(*interests) )
             {
                 //fprintf(stderr,"count.%d %.8f\n",count,(double)pcoin->vout[i].interest/COIN);
                 interests[count++] = pcoin->vout[i].interest;
@@ -2386,7 +2389,8 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
         else if (n < coinLowestLarger.first)
         {
             coinLowestLarger = coin;
-            lowest_interest = pcoin->vout[i].interest;
+            if ( KOMODO_EXCHANGEWALLET == 0 )
+                lowest_interest = pcoin->vout[i].interest;
         }
     }
 
@@ -2396,7 +2400,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
         {
             setCoinsRet.insert(vValue[i].second);
             nValueRet += vValue[i].first;
-            if ( i < count )
+            if ( KOMODO_EXCHANGEWALLET == 0 && i < count )
                 *interestp += interests[i];
         }
         return true;
@@ -2408,7 +2412,8 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
             return false;
         setCoinsRet.insert(coinLowestLarger.second);
         nValueRet += coinLowestLarger.first;
-        *interestp += lowest_interest;
+        if ( KOMODO_EXCHANGEWALLET == 0 )
+            *interestp += lowest_interest;
         return true;
     }
 
@@ -2428,7 +2433,8 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
     {
         setCoinsRet.insert(coinLowestLarger.second);
         nValueRet += coinLowestLarger.first;
-        *interestp += lowest_interest;
+        if ( KOMODO_EXCHANGEWALLET == 0 )
+            *interestp += lowest_interest;
     }
     else {
         for (unsigned int i = 0; i < vValue.size(); i++)
@@ -2436,7 +2442,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
             {
                 setCoinsRet.insert(vValue[i].second);
                 nValueRet += vValue[i].first;
-                if ( i < count )
+                if ( KOMODO_EXCHANGEWALLET == 0 && i < count )
                     *interestp += interests[i];
             }
 
@@ -2495,7 +2501,8 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
             if(!out.fSpendable)
                 continue;
             nValueRet += out.tx->vout[out.i].nValue;
-            *interestp += out.tx->vout[out.i].interest;
+            if ( KOMODO_EXCHANGEWALLET == 0 )
+                *interestp += out.tx->vout[out.i].interest;
             setCoinsRet.insert(make_pair(out.tx, out.i));
         }
         return (nValueRet >= nTargetValue);
@@ -2634,13 +2641,18 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     //a chance at a free transaction.
                     //But mempool inputs might still be in the mempool, so their age stays 0
                     //fprintf(stderr,"nCredit %.8f interest %.8f\n",(double)nCredit/COIN,(double)pcoin.first->vout[pcoin.second].interest/COIN);
-                    interest2 += pcoin.first->vout[pcoin.second].interest;
+                    if ( KOMODO_EXCHANGEWALLET == 0 )
+                        interest2 += pcoin.first->vout[pcoin.second].interest;
                     int age = pcoin.first->GetDepthInMainChain();
                     if (age != 0)
                         age += 1;
                     dPriority += (double)nCredit * age;
                 }
-                //fprintf(stderr,"interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
+                if ( KOMODO_EXCHANGEWALLET != 0 )
+                {
+                    //fprintf(stderr,"KOMODO_EXCHANGEWALLET disable interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
+                    interest = 0;
+                }
                 CAmount nChange = (nValueIn - nValue + interest);
 //fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest/COIN,(double)nTotalValue/COIN);
                 if (nSubtractFeeFromAmount == 0)
