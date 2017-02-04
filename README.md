@@ -180,6 +180,6 @@ For example:
 ./komodo-cli stop
 mv ~/.komodo ~/.komodo.old && mkdir ~/.komodo && cp ~/.komodo.old/komodo.conf ~/.komodo.old/peers.dat ~/.komodo
 ./komodod -exchange -exportdir=/tmp &
-./komodo-cli importwallet example
+./komodo-cli importwallet /tmp/example
 
 
