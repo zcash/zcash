@@ -616,7 +616,7 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             // Search
             //
-            uint8_t pubkeys[66][33]; int mids[66],nonzpkeys,i,j; uint32_t savebits; int64_t nStart = GetTime();
+            uint8_t pubkeys[66][33]; int mids[66],nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
             savebits = pblock->nBits;
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
             if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )//komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
@@ -626,24 +626,28 @@ void static BitcoinMiner(CWallet *pwallet)
                     komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,pindexPrev->nHeight);
                     if ( nonzpkeys > 0 )
                     {
-                        if ( NOTARY_PUBKEY33[0] != 0 && notaryid < 1 )
+                        for (i=0; i<33; i++)
+                            if( pubkeys[0][i] != 0 )
+                                break;
+                        if ( i == 33 )
+                            externalflag = 1;
+                        else externalflag = 0;
+                        if ( NOTARY_PUBKEY33[0] != 0 && notaryid < 3 )
                         {
                             for (i=1; i<66; i++)
                                 if ( memcmp(pubkeys[i],pubkeys[0],33) == 0 )
                                     break;
-                            if ( i != 66 )
-                            {
+                            if ( externalflag == 0 && i != 66 )
                                 printf("VIOLATION at %d\n",i);
-                                for (i=0; i<66; i++)
-                                {
-                                    for (j=0; j<33; j++)
-                                        printf("%02x",pubkeys[i][j]);
-                                    printf(" p%d -> %d\n",i,komodo_minerid(pindexPrev->nHeight-i,pubkeys[i]));
-                                }
-                                for (j=0; j<65; j++)
-                                    fprintf(stderr,"%d ",mids[j]);
-                                fprintf(stderr," <- prev minerids from ht.%d notary.%d VIOLATION\n",pindexPrev->nHeight,notaryid);
+                            for (i=0; i<66; i++)
+                            {
+                                for (j=0; j<33; j++)
+                                    printf("%02x",pubkeys[i][j]);
+                                printf(" p%d -> %d\n",i,komodo_minerid(pindexPrev->nHeight-i,pubkeys[i]));
                             }
+                            for (j=0; j<65; j++)
+                                fprintf(stderr,"%d ",mids[j]);
+                            fprintf(stderr," <- prev minerids from ht.%d notary.%d\n",pindexPrev->nHeight,notaryid);
                         }
                         for (j=0; j<65; j++)
                             if ( mids[j] == notaryid )
