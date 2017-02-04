@@ -2650,7 +2650,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                 }
                 if ( KOMODO_EXCHANGEWALLET != 0 )
                 {
-                    fprintf(stderr,"KOMODO_EXCHANGEWALLET disable interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
+                    //fprintf(stderr,"KOMODO_EXCHANGEWALLET disable interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
                     interest = 0;
                 }
                 CAmount nChange = (nValueIn - nValue + interest);
