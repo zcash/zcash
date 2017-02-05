@@ -616,7 +616,7 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             // Search
             //
-            uint8_t pubkeys[66][33]; int mids[66],nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
+            uint8_t pubkeys[66][33]; int mids[66],gpucount,nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
             savebits = pblock->nBits;
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
             if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )//komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
@@ -645,9 +645,13 @@ void static BitcoinMiner(CWallet *pwallet)
                                     printf("%02x",pubkeys[i][j]);
                                 printf(" p%d -> %d\n",i,komodo_minerid(pindexPrev->nHeight-i,pubkeys[i]));
                             }
-                            for (j=0; j<65; j++)
+                            for (j=gpucount=0; j<65; j++)
+                            {
                                 fprintf(stderr,"%d ",mids[j]);
-                            fprintf(stderr," <- prev minerids from ht.%d notary.%d\n",pindexPrev->nHeight,notaryid);
+                                if ( mids[j] == -1 )
+                                    gpucount++;
+                            }
+                            fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%%\n",pindexPrev->nHeight,notaryid,gpucount,100.*(double)gpucount/j);
                         }
                         for (j=0; j<65; j++)
                             if ( mids[j] == notaryid )
