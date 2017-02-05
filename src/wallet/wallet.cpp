@@ -2657,7 +2657,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     interest = 0;
                 }
                 CAmount nChange = (nValueIn - nValue + interest);
-//fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest/COIN,(double)nTotalValue/COIN);
+fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest/COIN,(double)nTotalValue/COIN);
                 if (nSubtractFeeFromAmount == 0)
                     nChange -= nFeeRet;
 
