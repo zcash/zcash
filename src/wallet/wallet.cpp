@@ -2449,7 +2449,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
         LogPrint("selectcoins", "SelectCoins() best subset: ");
         for (unsigned int i = 0; i < vValue.size(); i++)
             if (vfBest[i])
-                LogPrint("selectcoins", "%s ", FormatMoney(vValue[i].first));
+                LogPrint("selectcoins", "%s + %s, ", FormatMoney(vValue[i].first),FormatMoney(interests[i]));
         LogPrint("selectcoins", "total %s\n", FormatMoney(nBest));
     }
 
@@ -2480,6 +2480,8 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
                 continue;
             }
             value += out.tx->vout[out.i].nValue;
+            if ( KOMODO_EXCHANGEWALLET == 0 )
+                value += out.tx->vout[out.i].interest;
         }
         if (value <= nTargetValue) {
             CAmount valueWithCoinbase = 0;
@@ -2488,12 +2490,13 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
                     continue;
                 }
                 valueWithCoinbase += out.tx->vout[out.i].nValue;
+                if ( KOMODO_EXCHANGEWALLET == 0 )
+                    valueWithCoinbase += out.tx->vout[out.i].interest;
             }
             fNeedCoinbaseCoinsRet = (valueWithCoinbase >= nTargetValue);
         }
     }
     // coin control -> return all selected outputs (we want all to go into the transaction for sure)
-    *interestp = 0;
     if (coinControl && coinControl->HasSelected())
     {
         BOOST_FOREACH(const COutput& out, vCoins)
