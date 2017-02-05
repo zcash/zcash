@@ -562,7 +562,7 @@ void static BitcoinMiner(CWallet *pwallet)
     );
 
     try {
-        //fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
+        fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
         while (true)
         {
             if (chainparams.MiningRequiresPeers())
@@ -571,7 +571,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 //    break;
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
-                //fprintf(stderr,"Wait for peers...\n");
+                fprintf(stderr,"Wait for peers...\n");
                 do {
                     bool fvNodesEmpty;
                     {
@@ -584,7 +584,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     //fprintf(stderr,"fvNodesEmpty %d IsInitialBlockDownload(%s) %d\n",(int32_t)fvNodesEmpty,ASSETCHAINS_SYMBOL,(int32_t)IsInitialBlockDownload());
 
                 } while (true);
-                //fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
+                fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
             }
             /*while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight < ASSETCHAINS_MINHEIGHT )
             {
@@ -601,7 +601,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 Mining_height = pindexPrev->nHeight+1;
                 Mining_start = (uint32_t)time(NULL);
             }
-            if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+            //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                 fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
 
             unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
@@ -624,6 +624,9 @@ void static BitcoinMiner(CWallet *pwallet)
                 if ( (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 )
                 {
                     komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,pindexPrev->nHeight);
+                    for (j=0; j<65; j++)
+                        fprintf(stderr,"%d ",mids[j]);
+                    fprintf(stderr," <- prev minerids from ht.%d notary.%d\n",pindexPrev->nHeight,notaryid);
                     if ( nonzpkeys > 0 )
                     {
                         for (i=0; i<33; i++)
