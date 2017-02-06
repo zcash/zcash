@@ -1639,8 +1639,7 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
         CTxDestination address;
         if (!ExtractDestination(txout.scriptPubKey, address))
         {
-            LogPrintf("CWalletTx::GetAmounts: Unknown transaction type found, txid %s\n",
-                     this->GetHash().ToString());
+            //LogPrintf("CWalletTx::GetAmounts: Unknown transaction type found, txid %s\n",this->GetHash().ToString()); complains on the opreturns
             address = CNoDestination();
         }
 
