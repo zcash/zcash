@@ -688,7 +688,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 crypto_generichash_blake2b_update(&curr_state,pblock->nNonce.begin(),pblock->nNonce.size());
                 // (x_1, x_2, ...) = A(I, V, n, k)
                 LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",solver, pblock->nNonce.ToString());
-                fprintf(stderr,"running solver\n");
+                //fprintf(stderr,"running solver\n");
                 std::function<bool(std::vector<unsigned char>)> validBlock =
                         [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
                         (std::vector<unsigned char> soln)
