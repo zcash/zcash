@@ -1860,6 +1860,8 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
 
             // If prev is coinbase, check that it's matured
             if (coins->IsCoinBase()) {
+                if ( ASSETCHAINS_SYMBOL[0] == 0 )
+                    COINBASE_MATURITY = _COINBASE_MATURITY;
                 if (nSpendHeight - coins->nHeight < COINBASE_MATURITY) {
                     fprintf(stderr,"ContextualCheckInputs failure.1 i.%d of %d\n",i,(int32_t)tx.vin.size());
 
