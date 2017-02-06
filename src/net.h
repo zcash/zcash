@@ -256,7 +256,7 @@ class CNode
 {
 public:
     // socket
-    uint64_t nServices;
+    std::atomic<uint64_t> nServices;
     SOCKET hSocket;
     CDataStream ssSend;
     std::string strSendCommand; // Current command being assembled in ssSend

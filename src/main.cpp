@@ -5718,7 +5718,9 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         CAddress addrMe;
         CAddress addrFrom;
         uint64_t nNonce = 1;
-        vRecv >> pfrom->nVersion >> pfrom->nServices >> nTime >> addrMe;
+        uint64_t nServices;
+        vRecv >> pfrom->nVersion >> nServices >> nTime >> addrMe;
+        pfrom->nServices = nServices;
         if (pfrom->nVersion < MIN_PEER_PROTO_VERSION)
         {
             // disconnect from peers older than this proto version
