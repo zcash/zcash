@@ -1639,8 +1639,7 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
         CTxDestination address;
         if (!ExtractDestination(txout.scriptPubKey, address))
         {
-            LogPrintf("CWalletTx::GetAmounts: Unknown transaction type found, txid %s\n",
-                     this->GetHash().ToString());
+            //LogPrintf("CWalletTx::GetAmounts: Unknown transaction type found, txid %s\n",this->GetHash().ToString()); complains on the opreturns
             address = CNoDestination();
         }
 
@@ -2449,7 +2448,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
         LogPrint("selectcoins", "SelectCoins() best subset: ");
         for (unsigned int i = 0; i < vValue.size(); i++)
             if (vfBest[i])
-                LogPrint("selectcoins", "%s ", FormatMoney(vValue[i].first));
+                LogPrint("selectcoins", "%s + %s, ", FormatMoney(vValue[i].first),FormatMoney(interests[i]));
         LogPrint("selectcoins", "total %s\n", FormatMoney(nBest));
     }
 
@@ -2480,6 +2479,8 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
                 continue;
             }
             value += out.tx->vout[out.i].nValue;
+            if ( KOMODO_EXCHANGEWALLET == 0 )
+                value += out.tx->vout[out.i].interest;
         }
         if (value <= nTargetValue) {
             CAmount valueWithCoinbase = 0;
@@ -2488,12 +2489,13 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
                     continue;
                 }
                 valueWithCoinbase += out.tx->vout[out.i].nValue;
+                if ( KOMODO_EXCHANGEWALLET == 0 )
+                    valueWithCoinbase += out.tx->vout[out.i].interest;
             }
             fNeedCoinbaseCoinsRet = (valueWithCoinbase >= nTargetValue);
         }
     }
     // coin control -> return all selected outputs (we want all to go into the transaction for sure)
-    *interestp = 0;
     if (coinControl && coinControl->HasSelected())
     {
         BOOST_FOREACH(const COutput& out, vCoins)
@@ -2654,7 +2656,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     interest = 0;
                 }
                 CAmount nChange = (nValueIn - nValue + interest);
-//fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest/COIN,(double)nTotalValue/COIN);
+fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest/COIN,(double)nTotalValue/COIN);
                 if (nSubtractFeeFromAmount == 0)
                     nChange -= nFeeRet;
 
@@ -3590,6 +3592,9 @@ int CMerkleTx::GetDepthInMainChain(const CBlockIndex* &pindexRet) const
 
 int CMerkleTx::GetBlocksToMaturity() const
 {
+    extern char ASSETCHAINS_SYMBOL[];
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        COINBASE_MATURITY = _COINBASE_MATURITY;
     if (!IsCoinBase())
         return 0;
     return max(0, (COINBASE_MATURITY+1) - GetDepthInMainChain());

@@ -162,3 +162,24 @@ License
 -------
 
 For license information see the file [COPYING](COPYING).
+
+
+NOTE TO EXCHANGES:
+https://bitcointalk.org/index.php?topic=1605144.msg17732151#msg17732151
+There is a small chance that an outbound transaction will give an error due to mismatched values in wallet calculations. There is a -exchange option that you can run komodod with, but make sure to have the entire transaction history under the same -exchange mode. Otherwise you will get wallet conflicts.
+
+To change modes:
+a) backup all privkeys (launch komodod with -exportdir=<path> and dumpwallet)
+b) start a totally new sync including wallet.dat, launch with same exportdir
+c) stop it before it gets too far and import all the privkeys from a) using komodo-cli importwallet filename
+d) resume sync till it gets to chaintip
+
+For example:
+./komodod -exportdir=/tmp &
+./komodo-cli dumpwallet example
+./komodo-cli stop
+mv ~/.komodo ~/.komodo.old && mkdir ~/.komodo && cp ~/.komodo.old/komodo.conf ~/.komodo.old/peers.dat ~/.komodo
+./komodod -exchange -exportdir=/tmp &
+./komodo-cli importwallet /tmp/example
+
+
