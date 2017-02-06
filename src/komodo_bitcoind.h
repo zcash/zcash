@@ -653,7 +653,7 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
                 duplicate++;
         }
     }
-    if ( i == 66 && duplicate == 0 && *nonzpkeysp > 0 )
+    if ( i == 66 && duplicate == 0 && (height > 186233 || *nonzpkeysp > 0) )
         return(1);
     else return(0);
 }
