@@ -350,9 +350,11 @@ CNode* FindNode(const CSubNet& subNet)
 CNode* FindNode(const std::string& addrName)
 {
     LOCK(cs_vNodes);
-    for (CNode* pnode : vNodes)
-        if (pnode->addrName == addrName)
+    for (CNode* pnode : vNodes) {
+        if (pnode->GetAddrName() == addrName) {
             return (pnode);
+        }
+    }
     return NULL;
 }
 
@@ -637,6 +639,19 @@ void CNode::AddWhitelistedRange(const CSubNet &subnet) {
     vWhitelistedRange.push_back(subnet);
 }
 
+
+std::string CNode::GetAddrName() const {
+    LOCK(cs_addrName);
+    return addrName;
+}
+
+void CNode::MaybeSetAddrName(const std::string& addrNameIn) {
+    LOCK(cs_addrName);
+    if (addrName.empty()) {
+        addrName = addrNameIn;
+    }
+}
+
 void CNode::copyStats(CNodeStats &stats)
 {
     stats.nodeid = this->GetId();
@@ -649,7 +664,7 @@ void CNode::copyStats(CNodeStats &stats)
     stats.nLastRecv = nLastRecv;
     stats.nTimeConnected = nTimeConnected;
     stats.nTimeOffset = nTimeOffset;
-    stats.addrName = addrName;
+    stats.addrName = GetAddrName();
     stats.nVersion = nVersion;
     {
         LOCK(cs_SubVer);

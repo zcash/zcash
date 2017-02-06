@@ -279,7 +279,6 @@ public:
     const int64_t nTimeConnected;
     std::atomic<int64_t> nTimeOffset;
     const CAddress addr;
-    std::string addrName;
     CService addrLocal;
     int nVersion;
     // strSubVer is whatever byte array we read from the wire. However, this field is intended
@@ -379,6 +378,9 @@ private:
 
     static uint64_t CalculateKeyedNetGroup(const CAddress& ad);
 
+
+    mutable CCriticalSection cs_addrName;
+    std::string addrName;
 public:
 
     // Regenerate the span for this CNode. This re-queries the log filter to see
@@ -703,6 +705,9 @@ public:
     //!response the time in seconds left in the current max outbound cycle
     // in case of no limit, it will always respond with 0
     static uint64_t GetMaxOutboundTimeLeftInCycle();
+    std::string GetAddrName() const;
+    //! Sets the addrName only if it was not previously set
+    void MaybeSetAddrName(const std::string& addrNameIn);
 };
 
 

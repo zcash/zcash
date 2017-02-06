@@ -362,7 +362,7 @@ int64_t GetBlockTimeout(int64_t nTime, int nValidatedQueuedBefore, const Consens
 void InitializeNode(NodeId nodeid, const CNode *pnode) {
     LOCK(cs_main);
     CNodeState &state = mapNodeState.insert(std::make_pair(nodeid, CNodeState())).first->second;
-    state.name = pnode->addrName;
+    state.name = pnode->GetAddrName();
     state.address = pnode->addr;
 }
 
