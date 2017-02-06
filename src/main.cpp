@@ -5718,6 +5718,8 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         CAddress addrMe;
         CAddress addrFrom;
         uint64_t nNonce = 1;
+        std::string strSubVer;
+        std::string cleanSubVer;
         uint64_t nServices;
         vRecv >> pfrom->nVersion >> nServices >> nTime >> addrMe;
         pfrom->nServices = nServices;
@@ -5753,8 +5755,8 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         if (!vRecv.empty())
             vRecv >> addrFrom >> nNonce;
         if (!vRecv.empty()) {
-            vRecv >> LIMITED_STRING(pfrom->strSubVer, MAX_SUBVERSION_LENGTH);
-            pfrom->cleanSubVer = SanitizeString(pfrom->strSubVer, SAFE_CHARS_SUBVERSION);
+            vRecv >> LIMITED_STRING(strSubVer, MAX_SUBVERSION_LENGTH);
+            cleanSubVer = SanitizeString(strSubVer, SAFE_CHARS_SUBVERSION);
         }
         if (!vRecv.empty()) {
             int nStartingHeight;
@@ -5784,6 +5786,11 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         if (pfrom->fInbound)
             pfrom->PushVersion();
 
+        {
+            LOCK(pfrom->cs_SubVer);
+            pfrom->strSubVer = strSubVer;
+            pfrom->cleanSubVer = cleanSubVer;
+        }
         pfrom->fClient = !(pfrom->nServices & NODE_NETWORK);
 
         // Potentially mark this peer as a preferred download peer.
@@ -5843,7 +5850,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             remoteAddr = ", peeraddr=" + pfrom->addr.ToString();
 
         LogPrintf("receive version message: %s: version %d, blocks=%d, us=%s, peer=%d%s\n",
-                  pfrom->cleanSubVer, pfrom->nVersion,
+                  cleanSubVer, pfrom->nVersion,
                   pfrom->nStartingHeight, addrMe.ToString(), pfrom->id,
                   remoteAddr);
 

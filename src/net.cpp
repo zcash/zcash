@@ -651,7 +651,10 @@ void CNode::copyStats(CNodeStats &stats)
     stats.nTimeOffset = nTimeOffset;
     stats.addrName = addrName;
     stats.nVersion = nVersion;
-    stats.cleanSubVer = cleanSubVer;
+    {
+        LOCK(cs_SubVer);
+        stats.cleanSubVer = cleanSubVer;
+    }
     stats.fInbound = fInbound;
     stats.nStartingHeight = nStartingHeight;
     {
