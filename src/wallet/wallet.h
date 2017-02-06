@@ -58,7 +58,8 @@ static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 1000;
 //! Size of witness cache
 //  Should be large enough that we can expect not to reorg beyond our cache
 //  unless there is some exceptional network disruption.
-static const unsigned int WITNESS_CACHE_SIZE = COINBASE_MATURITY+1;
+#define _COINBASE_MATURITY 100
+static const unsigned int WITNESS_CACHE_SIZE = _COINBASE_MATURITY+1;
 
 class CAccountingEntry;
 class CBlockIndex;
