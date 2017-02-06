@@ -14,6 +14,7 @@
 #include "util.h"
 #include "utilmoneystr.h"
 #include "version.h"
+#define _COINBASE_MATURITY 64
 
 using namespace std;
 
