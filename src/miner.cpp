@@ -621,6 +621,7 @@ void static BitcoinMiner(CWallet *pwallet)
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
             if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )//komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
+                j = 65;
                 if ( (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 )
                 {
                     komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,pindexPrev->nHeight);
@@ -656,12 +657,12 @@ void static BitcoinMiner(CWallet *pwallet)
                         for (j=0; j<65; j++)
                             if ( mids[j] == notaryid )
                                 break;
-                        if ( j == 65 )
-                        {
-                            hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
-                            fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
-                        } //else fprintf(stderr,"duplicate at j.%d\n",j);
                     } else fprintf(stderr,"no nonz pubkeys\n");
+                    if ( j == 65 )
+                    {
+                        hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
+                        fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
+                    } //else fprintf(stderr,"duplicate at j.%d\n",j);
                 } else Mining_start = 0;
             } else Mining_start = 0;
             while (true)
