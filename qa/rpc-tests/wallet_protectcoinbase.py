@@ -16,7 +16,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
 
     # Start nodes with -regtestprotectcoinbase to set fCoinbaseMustBeProtected to true.
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[['-regtestprotectcoinbase']] * 3 )
+        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[['-regtestprotectcoinbase', '-debug=zrpcunsafe']] * 3 )
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -114,10 +114,24 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":myzaddr, "amount": Decimal('20.0') - Decimal('0.0001')})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        self.wait_and_assert_operationid_status(myopid)
+        mytxid = self.wait_and_assert_operationid_status(myopid)
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
+
+        # Verify that debug=zrpcunsafe logs params, and that full txid is associated with opid
+        logpath = self.options.tmpdir+"/node0/regtest/debug.log"
+        logcounter = 0
+        with open(logpath, "r") as myfile:
+            logdata = myfile.readlines()
+        for logline in logdata:
+            if myopid + ": z_sendmany initialized" in logline and mytaddr in logline and myzaddr in logline:
+                assert_equal(logcounter, 0) # verify order of log messages
+                logcounter = logcounter + 1
+            if myopid + ": z_sendmany finished" in logline and mytxid in logline:
+                assert_equal(logcounter, 1)
+                logcounter = logcounter + 1
+        assert_equal(logcounter, 2)
 
         # check balances (the z_sendmany consumes 3 coinbase utxos)
         resp = self.nodes[0].z_gettotalbalance()
