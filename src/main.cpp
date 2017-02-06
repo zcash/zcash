@@ -5776,7 +5776,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             return true;
         }
 
-        pfrom->addrLocal = addrMe;
+        pfrom->SetAddrLocal(addrMe);
         if (pfrom->fInbound && addrMe.IsRoutable())
         {
             SeenLocal(addrMe);
@@ -5815,7 +5815,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                     LogPrintf("ProcessMessages: advertizing address %s\n", addr.ToString());
                     pfrom->PushAddress(addr, insecure_rand);
                 } else if (IsPeerAddrLocalGood(pfrom)) {
-                    addr.SetIP(pfrom->addrLocal);
+                    addr.SetIP(addrMe);
                     LogPrintf("ProcessMessages: advertizing address %s\n", addr.ToString());
                     pfrom->PushAddress(addr, insecure_rand);
                 }
