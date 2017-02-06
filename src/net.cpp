@@ -687,6 +687,10 @@ void CNode::copyStats(CNodeStats &stats)
     stats.fInbound = fInbound;
     stats.nStartingHeight = nStartingHeight;
     {
+        LOCK(cs_filter);
+        stats.fRelayTxes = fRelayTxes;
+    }
+    {
         LOCK(cs_vSend);
         stats.nSendBytes = nSendBytes;
     }
