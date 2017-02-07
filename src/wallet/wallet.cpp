@@ -2662,7 +2662,9 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     //But mempool inputs might still be in the mempool, so their age stays 0
                     //fprintf(stderr,"nCredit %.8f interest %.8f\n",(double)nCredit/COIN,(double)pcoin.first->vout[pcoin.second].interest/COIN);
                     if ( KOMODO_EXCHANGEWALLET == 0 )
+                    {
                         interest2 += pcoin.first->vout[pcoin.second].interest;
+                        fprintf(stderr,"%.8f ",(double)pcoin.first->vout[pcoin.second].interest/COIN);
                     int age = pcoin.first->GetDepthInMainChain();
                     if (age != 0)
                         age += 1;
@@ -2673,8 +2675,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     //fprintf(stderr,"KOMODO_EXCHANGEWALLET disable interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
                     interest = 0;
                 }
-                CAmount nChange = (nValueIn - nValue + interest);
-fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest/COIN,(double)nTotalValue/COIN);
+                CAmount nChange = (nValueIn - nValue + interest2);
+fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f interest2 %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest2/COIN,(double)interest/COIN,(double)nTotalValue/COIN);
                 if (nSubtractFeeFromAmount == 0)
                     nChange -= nFeeRet;
 
