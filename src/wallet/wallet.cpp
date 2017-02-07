@@ -2587,13 +2587,13 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
     {
         txNew.nLockTime = (uint32_t)chainActive.Tip()->nTime + 1; // set to a time close to now
     }
-    interest = 0;
     {
         LOCK2(cs_main, cs_wallet);
         {
             nFeeRet = 0;
             while (true)
             {
+                interest = 0;
                 txNew.vin.clear();
                 txNew.vout.clear();
                 wtxNew.fFromMe = true;
