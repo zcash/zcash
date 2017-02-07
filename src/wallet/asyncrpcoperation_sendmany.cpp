@@ -984,6 +984,7 @@ Object AsyncRPCOperation_sendmany::perform_joinsplit(
             info.vpub_new,
             !this->testmode);
 
+    {
         auto verifier = libdwcash::ProofVerifier::Strict();
         if (!(jsdesc.Verify(*pdwcashParams, verifier, joinSplitPubKey_))) {
             throw std::runtime_error("error verifying joinsplit");
