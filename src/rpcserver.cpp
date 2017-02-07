@@ -85,7 +85,7 @@ void RPCTypeCheck(const UniValue& params,
                   const list<UniValue::VType>& typesExpected,
                   bool fAllowNull)
 {
-    unsigned int i = 0;
+    size_t i = 0;
     BOOST_FOREACH(UniValue::VType t, typesExpected)
     {
         if (params.size() <= i)
@@ -928,7 +928,7 @@ static UniValue JSONRPCExecOne(const UniValue& req)
 static string JSONRPCExecBatch(const UniValue& vReq)
 {
     UniValue ret(UniValue::VARR);
-    for (unsigned int reqIdx = 0; reqIdx < vReq.size(); reqIdx++)
+    for (size_t reqIdx = 0; reqIdx < vReq.size(); reqIdx++)
         ret.push_back(JSONRPCExecOne(vReq[reqIdx]));
 
     return ret.write() + "\n";

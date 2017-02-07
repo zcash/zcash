@@ -306,7 +306,7 @@ UniValue gettxoutproof(const UniValue& params, bool fHelp)
     set<uint256> setTxids;
     uint256 oneTxid;
     UniValue txids = params[0].get_array();
-    for (unsigned int idx = 0; idx < txids.size(); idx++) {
+    for (size_t idx = 0; idx < txids.size(); idx++) {
         const UniValue& txid = txids[idx];
         if (txid.get_str().length() != 64 || !IsHex(txid.get_str()))
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid txid ")+txid.get_str());
@@ -436,7 +436,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
 
     CMutableTransaction rawTx;
 
-    for (unsigned int idx = 0; idx < inputs.size(); idx++) {
+    for (size_t idx = 0; idx < inputs.size(); idx++) {
         const UniValue& input = inputs[idx];
         const UniValue& o = input.get_obj();
 
@@ -731,7 +731,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     if (params.size() > 2 && !params[2].isNull()) {
         fGivenKeys = true;
         UniValue keys = params[2].get_array();
-        for (unsigned int idx = 0; idx < keys.size(); idx++) {
+        for (size_t idx = 0; idx < keys.size(); idx++) {
             UniValue k = keys[idx];
             CBitcoinSecret vchSecret;
             bool fGood = vchSecret.SetString(k.get_str());
@@ -751,7 +751,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     // Add previous txouts given in the RPC call:
     if (params.size() > 1 && !params[1].isNull()) {
         UniValue prevTxs = params[1].get_array();
-        for (unsigned int idx = 0; idx < prevTxs.size(); idx++) {
+        for (size_t idx = 0; idx < prevTxs.size(); idx++) {
             const UniValue& p = prevTxs[idx];
             if (!p.isObject())
                 throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "expected object with {\"txid'\",\"vout\",\"scriptPubKey\"}");

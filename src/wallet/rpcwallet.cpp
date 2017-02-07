@@ -1005,7 +1005,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
         totalAmount += nAmount;
 
         bool fSubtractFeeFromAmount = false;
-        for (unsigned int idx = 0; idx < subtractFeeFromAmount.size(); idx++) {
+        for (size_t idx = 0; idx < subtractFeeFromAmount.size(); idx++) {
             const UniValue& addr = subtractFeeFromAmount[idx];
             if (addr.get_str() == name_)
                 fSubtractFeeFromAmount = true;
@@ -2130,7 +2130,7 @@ UniValue lockunspent(const UniValue& params, bool fHelp)
     }
 
     UniValue outputs = params[1].get_array();
-    for (unsigned int idx = 0; idx < outputs.size(); idx++) {
+    for (size_t idx = 0; idx < outputs.size(); idx++) {
         const UniValue& output = outputs[idx];
         if (!output.isObject())
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected object");
@@ -2354,7 +2354,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     set<CBitcoinAddress> setAddress;
     if (params.size() > 2) {
         UniValue inputs = params[2].get_array();
-        for (unsigned int idx = 0; idx < inputs.size(); idx++) {
+        for (size_t idx = 0; idx < inputs.size(); idx++) {
             const UniValue& input = inputs[idx];
             CBitcoinAddress address(input.get_str());
             if (!address.IsValid())

@@ -583,11 +583,11 @@ BOOST_AUTO_TEST_CASE(script_build)
         UniValue json_good = read_json(std::string(json_tests::script_valid, json_tests::script_valid + sizeof(json_tests::script_valid)));
         UniValue json_bad = read_json(std::string(json_tests::script_invalid, json_tests::script_invalid + sizeof(json_tests::script_invalid)));
 
-        for (unsigned int idx = 0; idx < json_good.size(); idx++) {
+        for (size_t idx = 0; idx < json_good.size(); idx++) {
             const UniValue& tv = json_good[idx];
             tests_good.insert(tv.get_array().write());
         }
-        for (unsigned int idx = 0; idx < json_bad.size(); idx++) {
+        for (size_t idx = 0; idx < json_bad.size(); idx++) {
             const UniValue& tv = json_bad[idx];
             tests_bad.insert(tv.get_array().write());
         }
@@ -636,7 +636,7 @@ BOOST_AUTO_TEST_CASE(script_valid)
     // scripts.
     UniValue tests = read_json(std::string(json_tests::script_valid, json_tests::script_valid + sizeof(json_tests::script_valid)));
 
-    for (unsigned int idx = 0; idx < tests.size(); idx++) {
+    for (size_t idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
         string strTest = test.write();
         if (test.size() < 3) // Allow size > 3; extra stuff ignored (useful for comments)
@@ -661,7 +661,7 @@ BOOST_AUTO_TEST_CASE(script_invalid)
     // Scripts that should evaluate as invalid
     UniValue tests = read_json(std::string(json_tests::script_invalid, json_tests::script_invalid + sizeof(json_tests::script_invalid)));
 
-    for (unsigned int idx = 0; idx < tests.size(); idx++) {
+    for (size_t idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
         string strTest = test.write();
         if (test.size() < 3) // Allow size > 2; extra stuff ignored (useful for comments)

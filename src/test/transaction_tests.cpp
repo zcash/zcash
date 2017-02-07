@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
 
     auto verifier = libzcash::ProofVerifier::Strict();
     ScriptError err;
-    for (unsigned int idx = 0; idx < tests.size(); idx++) {
+    for (size_t idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
         string strTest = test.write();
         if (test[0].isArray())
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
             map<COutPoint, CScript> mapprevOutScriptPubKeys;
             UniValue inputs = test[0].get_array();
             bool fValid = true;
-	    for (unsigned int inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
+            for (size_t inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
 	        const UniValue& input = inputs[inpIdx];
                 if (!input.isArray())
                 {
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
 
     auto verifier = libzcash::ProofVerifier::Strict();
     ScriptError err;
-    for (unsigned int idx = 0; idx < tests.size(); idx++) {
+    for (size_t idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
         string strTest = test.write();
         if (test[0].isArray())
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
             map<COutPoint, CScript> mapprevOutScriptPubKeys;
             UniValue inputs = test[0].get_array();
             bool fValid = true;
-	    for (unsigned int inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
+	    for (size_t inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
 	        const UniValue& input = inputs[inpIdx];
                 if (!input.isArray())
                 {
