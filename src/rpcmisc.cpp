@@ -45,6 +45,7 @@ uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
 int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
 int32_t komodo_whoami(char *pubkeystr,int32_t height);
+extern int32_t KOMODO_LASTMINED;
 
 Value getinfo(const Array& params, bool fHelp)
 {
@@ -128,6 +129,8 @@ Value getinfo(const Array& params, bool fHelp)
         notaryid = komodo_whoami(pubkeystr,longestchain);
         obj.push_back(Pair("notaryid",        notaryid));
         obj.push_back(Pair("pubkey",        pubkeystr));
+        if ( KOMODO_LASTMINED != 0 )
+            obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
     }
     return obj;
 }

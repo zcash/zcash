@@ -2342,7 +2342,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
     setCoinsRet.clear();
     memset(interests,0,sizeof(interests));
     nValueRet = 0;
-    *interestp = 0;
+    //*interestp = 0;
     // List of values less than target
     pair<CAmount, pair<const CWalletTx*,unsigned int> > coinLowestLarger;
     coinLowestLarger.first = std::numeric_limits<CAmount>::max();
@@ -2458,10 +2458,12 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
 bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet,  bool& fOnlyCoinbaseCoinsRet, bool& fNeedCoinbaseCoinsRet, const CCoinControl* coinControl,uint64_t *interestp) const
 {
     // Output parameter fOnlyCoinbaseCoinsRet is set to true when the only available coins are coinbase utxos.
-    uint64_t tmp;
+    uint64_t tmp,interest = 0;
     if ( interestp == 0 )
+    {
         interestp = &tmp;
-    *interestp = 0;
+        *interestp = 0;
+    }
     vector<COutput> vCoinsNoCoinbase, vCoinsWithCoinbase;
     AvailableCoins(vCoinsNoCoinbase, true, coinControl, false, false);
     AvailableCoins(vCoinsWithCoinbase, true, coinControl, false, true);
@@ -2510,9 +2512,25 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
         return (nValueRet >= nTargetValue);
     }
 //fprintf(stderr,"nValueRet %8f vs target %.8f\n",(double)nValueRet/COIN,(double)nTargetValue/COIN);
-    return (SelectCoinsMinConf(nTargetValue, 1, 6, vCoins, setCoinsRet, nValueRet,interestp) ||
-            SelectCoinsMinConf(nTargetValue, 1, 1, vCoins, setCoinsRet, nValueRet,interestp) ||
-            (bSpendZeroConfChange && SelectCoinsMinConf(nTargetValue, 0, 1, vCoins, setCoinsRet, nValueRet,interestp)));
+    if ( SelectCoinsMinConf(nTargetValue, 1, 6, vCoins, setCoinsRet, nValueRet,&interest) != 0 )
+    {
+        *interestp += interest;
+        return(true);
+    }
+    else if ( SelectCoinsMinConf(nTargetValue, 1, 1, vCoins, setCoinsRet, nValueRet,&interest) != 0 )
+    {
+        *interestp += interest;
+        return(true);
+    }
+    else if ( bSpendZeroConfChange && SelectCoinsMinConf(nTargetValue, 0, 1, vCoins, setCoinsRet, nValueRet,&interest) != 0 )
+    {
+        *interestp += interest;
+        return(true);
+    }
+    return(false);
+    //return (SelectCoinsMinConf(nTargetValue, 1, 6, vCoins, setCoinsRet, nValueRet,interestp) ||
+    //        SelectCoinsMinConf(nTargetValue, 1, 1, vCoins, setCoinsRet, nValueRet,interestp) ||
+    //        (bSpendZeroConfChange && SelectCoinsMinConf(nTargetValue, 0, 1, vCoins, setCoinsRet, nValueRet,interestp)));
 }
 
 bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
@@ -2569,13 +2587,13 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
     {
         txNew.nLockTime = (uint32_t)chainActive.Tip()->nTime + 1; // set to a time close to now
     }
-
     {
         LOCK2(cs_main, cs_wallet);
         {
             nFeeRet = 0;
             while (true)
             {
+                interest = 0;
                 txNew.vin.clear();
                 txNew.vout.clear();
                 wtxNew.fFromMe = true;
@@ -2623,7 +2641,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                 CAmount nValueIn = 0;
                 bool fOnlyCoinbaseCoins = false;
                 bool fNeedCoinbaseCoins = false;
-                interest = interest2 = 0;
+                interest2 = 0;
                 if (!SelectCoins(nTotalValue, setCoins, nValueIn, fOnlyCoinbaseCoins, fNeedCoinbaseCoins, coinControl,&interest))
                 {
                     if (fOnlyCoinbaseCoins && Params().GetConsensus().fCoinbaseMustBeProtected) {
@@ -2644,7 +2662,10 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     //But mempool inputs might still be in the mempool, so their age stays 0
                     //fprintf(stderr,"nCredit %.8f interest %.8f\n",(double)nCredit/COIN,(double)pcoin.first->vout[pcoin.second].interest/COIN);
                     if ( KOMODO_EXCHANGEWALLET == 0 )
+                    {
                         interest2 += pcoin.first->vout[pcoin.second].interest;
+                        fprintf(stderr,"%.8f ",(double)pcoin.first->vout[pcoin.second].interest/COIN);
+                    }
                     int age = pcoin.first->GetDepthInMainChain();
                     if (age != 0)
                         age += 1;
@@ -2655,8 +2676,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     //fprintf(stderr,"KOMODO_EXCHANGEWALLET disable interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
                     interest = 0;
                 }
-                CAmount nChange = (nValueIn - nValue + interest);
-fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest/COIN,(double)nTotalValue/COIN);
+                CAmount nChange = (nValueIn - nValue + interest2);
+fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f interest2 %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest2/COIN,(double)interest/COIN,(double)nTotalValue/COIN);
                 if (nSubtractFeeFromAmount == 0)
                     nChange -= nFeeRet;
 
@@ -2782,6 +2803,8 @@ fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f total %.8f\n",(do
                 }
 
                 CAmount nFeeNeeded = GetMinimumFee(nBytes, nTxConfirmTarget, mempool);
+                if ( nFeeNeeded < 5000 )
+                    nFeeNeeded = 5000;
 
                 // If we made it here and we aren't even able to meet the relay fee on the next pass, give up
                 // because we must be at the maximum allowed fee.
