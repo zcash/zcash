@@ -115,21 +115,19 @@ static void push_lock(void* c, const CLockLocation& locklocation, bool fTry)
 
     (*lockstack).push_back(std::make_pair(c, locklocation));
 
-    if (!fTry) {
-        for (const std::pair<void*, CLockLocation> & i : (*lockstack)) {
-            if (i.first == c)
-                break;
+    for (const std::pair<void*, CLockLocation> & i : (*lockstack)) {
+        if (i.first == c)
+            break;
 
-            std::pair<void*, void*> p1 = std::make_pair(i.first, c);
-            if (lockdata.lockorders.count(p1))
-                continue;
-            lockdata.lockorders[p1] = (*lockstack);
+        std::pair<void*, void*> p1 = std::make_pair(i.first, c);
+        if (lockdata.lockorders.count(p1))
+            continue;
+        lockdata.lockorders[p1] = (*lockstack);
 
-            std::pair<void*, void*> p2 = std::make_pair(c, i.first);
-            lockdata.invlockorders.insert(p2);
-            if (lockdata.lockorders.count(p2))
-                potential_deadlock_detected(p1, lockdata.lockorders[p2], lockdata.lockorders[p1]);
-        }
+        std::pair<void*, void*> p2 = std::make_pair(c, i.first);
+        lockdata.invlockorders.insert(p2);
+        if (lockdata.lockorders.count(p2))
+            potential_deadlock_detected(p1, lockdata.lockorders[p2], lockdata.lockorders[p1]);
     }
 }
 
