@@ -507,61 +507,74 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
     } else printf("komodo_disconnect: ht.%d cant get komodo_state.(%s)\n",pindex->nHeight,ASSETCHAINS_SYMBOL);
 }
 
+
 int32_t komodo_is_notarytx(const CTransaction& tx)
 {
     uint8_t *ptr,crypto777[33];
-#ifdef KOMODO_ZCASH
-    ptr = (uint8_t *)tx.vout[0].scriptPubKey.data();
-#else
-    ptr = (uint8_t *)&tx.vout[0].scriptPubKey[0];
-#endif
-    decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
-    if ( memcmp(ptr+1,crypto777,33) == 0 )
+    if ( tx.vout.size() > 0 )
     {
-        //printf("found notarytx\n");
-        return(1);
+#ifdef KOMODO_ZCASH
+        ptr = (uint8_t *)tx.vout[0].scriptPubKey.data();
+#else
+        ptr = (uint8_t *)&tx.vout[0].scriptPubKey[0];
+#endif
+        if ( ptr != 0 )
+        {
+            decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
+            if ( memcmp(ptr+1,crypto777,33) == 0 )
+            {
+                //printf("found notarytx\n");
+                return(1);
+            }
+        }
     }
-    else return(0);
+    return(0);
 }
 
 int32_t komodo_block2height(CBlock *block)
 {
     int32_t i,n,height = 0; uint8_t *ptr;
-#ifdef KOMODO_ZCASH
-    ptr = (uint8_t *)block->vtx[0].vin[0].scriptSig.data();
-#else
-    ptr = (uint8_t *)&block->vtx[0].vin[0].scriptSig[0];
-#endif
-    if ( block->vtx[0].vin[0].scriptSig.size() > 5 )
+    if ( block->vtx[0].vin.size() > 0 )
     {
-        //for (i=0; i<6; i++)
-        //    printf("%02x",ptr[i]);
-        n = ptr[0];
-        for (i=0; i<n; i++)
+#ifdef KOMODO_ZCASH
+        ptr = (uint8_t *)block->vtx[0].vin[0].scriptSig.data();
+#else
+        ptr = (uint8_t *)&block->vtx[0].vin[0].scriptSig[0];
+#endif
+        if ( ptr != 0 && block->vtx[0].vin[0].scriptSig.size() > 5 )
         {
-            //03bb81000101(bb 187) (81 48001) (00 12288256)  <- coinbase.6 ht.12288256
-            height += ((uint32_t)ptr[i+1] << (i*8));
-            //printf("(%02x %x %d) ",ptr[i+1],((uint32_t)ptr[i+1] << (i*8)),height);
+            //for (i=0; i<6; i++)
+            //    printf("%02x",ptr[i]);
+            n = ptr[0];
+            for (i=0; i<n; i++)
+            {
+                //03bb81000101(bb 187) (81 48001) (00 12288256)  <- coinbase.6 ht.12288256
+                height += ((uint32_t)ptr[i+1] << (i*8));
+                //printf("(%02x %x %d) ",ptr[i+1],((uint32_t)ptr[i+1] << (i*8)),height);
+            }
+            //printf(" <- coinbase.%d ht.%d\n",(int32_t)block->vtx[0].vin[0].scriptSig.size(),height);
         }
-        //printf(" <- coinbase.%d ht.%d\n",(int32_t)block->vtx[0].vin[0].scriptSig.size(),height);
+        //komodo_init(height);
     }
-    //komodo_init(height);
     return(height);
 }
 
 void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
 {
     int32_t n;
+    memset(pubkey33,0,33);
+    if ( block.vtx[0].vout.size() > 0 )
+    {
 #ifdef KOMODO_ZCASH
-    uint8_t *ptr = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
+        uint8_t *ptr = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
 #else
-    uint8_t *ptr = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
+        uint8_t *ptr = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
 #endif
-    //komodo_init(0);
-    n = block.vtx[0].vout[0].scriptPubKey.size();
-    if ( n == 35 )
-        memcpy(pubkey33,ptr+1,33);
-    else memset(pubkey33,0,33);
+        //komodo_init(0);
+        n = block.vtx[0].vout[0].scriptPubKey.size();
+        if ( n == 35 )
+            memcpy(pubkey33,ptr+1,33);
+    }
 }
 
 int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex)
