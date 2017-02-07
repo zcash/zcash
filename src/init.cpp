@@ -378,7 +378,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-stopafterblockimport", strprintf("Stop running after importing blocks from disk (default: %u)", 0));
     }
     string debugCategories = "addrman, alert, bench, coindb, db, estimatefee, lock, mempool, net, partitioncheck, pow, proxy, prune, "
-                             "rand, reindex, rpc, selectcoins, zrpc, zrpcunsafe"; // Don't translate these and qt below
+                             "rand, reindex, rpc, selectcoins, zrpc, zrpcunsafe (implies zrpc)"; // Don't translate these and qt below
     if (mode == HMM_BITCOIN_QT)
         debugCategories += ", qt";
     strUsage += HelpMessageOpt("-debug=<category>", strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + ". " +
@@ -801,6 +801,15 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     const vector<string>& categories = mapMultiArgs["-debug"];
     if (GetBoolArg("-nodebug", false) || find(categories.begin(), categories.end(), string("0")) != categories.end())
         fDebug = false;
+
+    // Special case: if debug=zrpcunsafe, implies debug=zrpc, so add it to debug categories
+    if (find(categories.begin(), categories.end(), string("zrpcunsafe")) != categories.end()) {
+        if (find(categories.begin(), categories.end(), string("zrpc")) == categories.end()) {
+            LogPrintf("%s: parameter interaction: -debug=zrpcunsafe -> -debug=zrpc\n", __func__);
+            vector<string>& v = mapMultiArgs["-debug"];
+            v.push_back("zrpc");
+        }
+    }
 
     // Check for -debugnet
     if (GetBoolArg("-debugnet", false))
