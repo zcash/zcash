@@ -563,7 +563,7 @@ void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
 {
     int32_t n;
     memset(pubkey33,0,33);
-    if ( block->vtx[0].vout.size() > 0 )
+    if ( block.vtx[0].vout.size() > 0 )
     {
 #ifdef KOMODO_ZCASH
         uint8_t *ptr = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
