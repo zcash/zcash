@@ -507,6 +507,7 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
     } else printf("komodo_disconnect: ht.%d cant get komodo_state.(%s)\n",pindex->nHeight,ASSETCHAINS_SYMBOL);
 }
 
+
 int32_t komodo_is_notarytx(const CTransaction& tx)
 {
     uint8_t *ptr,crypto777[33];
@@ -515,13 +516,16 @@ int32_t komodo_is_notarytx(const CTransaction& tx)
 #else
     ptr = (uint8_t *)&tx.vout[0].scriptPubKey[0];
 #endif
-    decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
-    if ( memcmp(ptr+1,crypto777,33) == 0 )
+    if ( ptr != 0 )
     {
-        //printf("found notarytx\n");
-        return(1);
+        decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
+        if ( memcmp(ptr+1,crypto777,33) == 0 )
+        {
+            //printf("found notarytx\n");
+            return(1);
+        }
     }
-    else return(0);
+    return(0);
 }
 
 int32_t komodo_block2height(CBlock *block)
@@ -532,7 +536,7 @@ int32_t komodo_block2height(CBlock *block)
 #else
     ptr = (uint8_t *)&block->vtx[0].vin[0].scriptSig[0];
 #endif
-    if ( block->vtx[0].vin[0].scriptSig.size() > 5 )
+    if ( ptr != 0 && block->vtx[0].vin[0].scriptSig.size() > 5 )
     {
         //for (i=0; i<6; i++)
         //    printf("%02x",ptr[i]);
