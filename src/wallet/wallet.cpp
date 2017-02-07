@@ -2802,7 +2802,7 @@ fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f interest2 %.8f to
                         break;
                 }
 
-                CAmount nFeeNeeded = MAX(10000,GetMinimumFee(nBytes, nTxConfirmTarget, mempool));
+                CAmount nFeeNeeded = MAX(6000,GetMinimumFee(nBytes, nTxConfirmTarget, mempool));
 
                 // If we made it here and we aren't even able to meet the relay fee on the next pass, give up
                 // because we must be at the maximum allowed fee.
