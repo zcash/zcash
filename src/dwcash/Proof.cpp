@@ -1,6 +1,7 @@
 #include "Proof.hpp"
 
 #include <boost/static_assert.hpp>
+#include <mutex>
 
 #include "crypto/common.h"
 #include "libsnark/common/default_types/r1cs_ppzksnark_pp.hpp"
@@ -162,6 +163,10 @@ curve_G2 CompressedG2::to_libsnark_g2() const
 
     assert(r.is_well_formed());
 
+    if (alt_bn128_modulus_r * r != curve_G2::zero()) {
+        throw std::runtime_error("point is not in G2");
+    }
+
     return r;
 }
 
@@ -209,6 +214,38 @@ ZCProof ZCProof::random_invalid()
     p.g_H = curve_G1::random_element();
 
     return p;
+}
+
+std::once_flag init_public_params_once_flag;
+
+void initialize_curve_params()
+{
+    std::call_once (init_public_params_once_flag, curve_pp::init_public_params);
+}
+
+ProofVerifier ProofVerifier::Strict() {
+    initialize_curve_params();
+    return ProofVerifier(true);
+}
+
+ProofVerifier ProofVerifier::Disabled() {
+    initialize_curve_params();
+    return ProofVerifier(false);
+}
+
+template<>
+bool ProofVerifier::check(
+    const r1cs_ppzksnark_verification_key<curve_pp>& vk,
+    const r1cs_ppzksnark_processed_verification_key<curve_pp>& pvk,
+    const r1cs_primary_input<curve_Fr>& primary_input,
+    const r1cs_ppzksnark_proof<curve_pp>& proof
+)
+{
+    if (perform_verification) {
+        return r1cs_ppzksnark_online_verifier_strong_IC<curve_pp>(pvk, primary_input, proof);
+    } else {
+        return true;
+    }
 }
 
 }

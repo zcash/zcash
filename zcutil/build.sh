@@ -1,6 +1,29 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -eu -o pipefail
+
+# Allow user overrides to $MAKE. Typical usage for users who need it:
+#   MAKE=gmake ./zcutil/build.sh -j$(nproc)
+if [[ -z "${MAKE-}" ]]; then
+    MAKE=make
+fi
+
+# Allow overrides to $BUILD and $HOST for porters. Most users will not need it.
+#   BUILD=i686-pc-linux-gnu ./zcutil/build.sh
+if [[ -z "${BUILD-}" ]]; then
+    BUILD=x86_64-unknown-linux-gnu
+fi
+if [[ -z "${HOST-}" ]]; then
+    HOST=x86_64-unknown-linux-gnu
+fi
+
+# Allow override to $CC and $CXX for porters. Most users will not need it.
+if [[ -z "${CC-}" ]]; then
+    CC=gcc
+fi
+if [[ -z "${CXX-}" ]]; then
+    CXX=g++
+fi
 
 if [ "x$*" = 'x--help' ]
 then
@@ -39,10 +62,9 @@ then
     shift
 fi
 
-# BUG: parameterize the platform/host directory:
-PREFIX="$(pwd)/depends/x86_64-unknown-linux-gnu/"
+PREFIX="$(pwd)/depends/$BUILD/"
 
-HOST=x86_64-unknown-linux-gnu BUILD=x86_64-unknown-linux-gnu make "$@" -C ./depends/ V=1 NO_QT=1
+HOST="$HOST" BUILD="$BUILD" "$MAKE" "$@" -C ./depends/ V=1 NO_QT=1
 ./autogen.sh
-./configure --prefix="${PREFIX}" --host=x86_64-unknown-linux-gnu --build=x86_64-unknown-linux-gnu --with-gui=no "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" CXXFLAGS='-fwrapv -fno-strict-aliasing -Werror -g'
-make "$@" V=1
+CC="$CC" CXX="$CXX" ./configure --prefix="${PREFIX}" --host="$HOST" --build="$BUILD" --with-gui=no "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" CXXFLAGS='-fwrapv -fno-strict-aliasing -Werror -g'
+"$MAKE" "$@" V=1

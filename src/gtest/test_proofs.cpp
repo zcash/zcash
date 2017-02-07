@@ -22,6 +22,67 @@ typedef libsnark::default_r1cs_ppzksnark_pp::Fqe_type curve_Fq2;
 #include "version.h"
 #include "utilstrencodings.h"
 
+TEST(proofs, g2_subgroup_check)
+{
+    // all G2 elements are order r
+    ASSERT_TRUE(libsnark::alt_bn128_modulus_r * curve_G2::random_element() == curve_G2::zero());
+
+    // but that doesn't mean all elements that satisfy the curve equation are in G2...
+    curve_G2 p = curve_G2::one();
+
+    while (1) {
+        // This will construct an order r(2q-r) point with high probability
+        p.X = curve_Fq2::random_element();
+        try {
+            p.Y = ((p.X.squared() * p.X) + libsnark::alt_bn128_twist_coeff_b).sqrt();
+            break;
+        } catch(...) {}
+    }
+
+    ASSERT_TRUE(p.is_well_formed()); // it's on the curve
+    ASSERT_TRUE(libsnark::alt_bn128_modulus_r * p != curve_G2::zero()); // but not the order r subgroup..
+
+    {
+        // libsnark unfortunately doesn't check, and the pairing will complete
+        auto e = curve_Fr("149");
+        auto a = curve_pp::reduced_pairing(curve_G1::one(), p);
+        auto b = curve_pp::reduced_pairing(e * curve_G1::one(), p);
+
+        // though it will not preserve bilinearity
+        ASSERT_TRUE((a^e) != b);
+    }
+
+    {
+        // so, our decompression API should not allow you to decompress G2 elements of that form!
+        CompressedG2 badp(p);
+        try {
+            auto newp = badp.to_libsnark_g2<curve_G2>();
+            FAIL() << "Expected std::runtime_error";
+        } catch (std::runtime_error const & err) {
+            EXPECT_EQ(err.what(), std::string("point is not in G2"));
+        } catch(...) {
+            FAIL() << "Expected std::runtime_error";
+        }
+    }
+
+    // educational purposes: showing that E'(Fp2) is of order r(2q-r),
+    // by multiplying our random point in E' by (2q-r) = (q + q - r) to
+    // get an element in G2
+    {
+        auto p1 = libsnark::alt_bn128_modulus_q * p;
+        p1 = p1 + p1;
+        p1 = p1 - (libsnark::alt_bn128_modulus_r * p);
+
+        ASSERT_TRUE(p1.is_well_formed());
+        ASSERT_TRUE(libsnark::alt_bn128_modulus_r * p1 == curve_G2::zero());
+
+        CompressedG2 goodp(p1);
+        auto newp = goodp.to_libsnark_g2<curve_G2>();
+
+        ASSERT_TRUE(newp == p1);
+    }
+}
+
 TEST(proofs, sqrt_zero)
 {
     ASSERT_TRUE(curve_Fq::zero() == curve_Fq::zero().sqrt());
@@ -336,6 +397,29 @@ TEST(proofs, zksnark_serializes_properly)
     auto example = libsnark::generate_r1cs_example_with_field_input<curve_Fr>(250, 4);
     example.constraint_system.swap_AB_if_beneficial();
     auto kp = libsnark::r1cs_ppzksnark_generator<curve_pp>(example.constraint_system);
+    auto vkprecomp = libsnark::r1cs_ppzksnark_verifier_process_vk(kp.vk);
+
+    for (size_t i = 0; i < 20; i++) {
+        auto badproof = ZCProof::random_invalid();
+        auto proof = badproof.to_libsnark_proof<libsnark::r1cs_ppzksnark_proof<curve_pp>>();
+        
+        auto verifierEnabled = ProofVerifier::Strict();
+        auto verifierDisabled = ProofVerifier::Disabled();
+        // This verifier should catch the bad proof
+        ASSERT_FALSE(verifierEnabled.check(
+            kp.vk,
+            vkprecomp,
+            example.primary_input,
+            proof
+        ));
+        // This verifier won't!
+        ASSERT_TRUE(verifierDisabled.check(
+            kp.vk,
+            vkprecomp,
+            example.primary_input,
+            proof
+        ));
+    }
 
     for (size_t i = 0; i < 20; i++) {
         auto proof = libsnark::r1cs_ppzksnark_prover<curve_pp>(
@@ -344,6 +428,23 @@ TEST(proofs, zksnark_serializes_properly)
             example.auxiliary_input,
             example.constraint_system
         );
+
+        {
+            auto verifierEnabled = ProofVerifier::Strict();
+            auto verifierDisabled = ProofVerifier::Disabled();
+            ASSERT_TRUE(verifierEnabled.check(
+                kp.vk,
+                vkprecomp,
+                example.primary_input,
+                proof
+            ));
+            ASSERT_TRUE(verifierDisabled.check(
+                kp.vk,
+                vkprecomp,
+                example.primary_input,
+                proof
+            ));
+        }
 
         ASSERT_TRUE(libsnark::r1cs_ppzksnark_verifier_strong_IC<curve_pp>(
             kp.vk,

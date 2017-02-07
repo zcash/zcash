@@ -103,6 +103,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_gettotalbalance", 0},
     { "z_sendmany", 1},
     { "z_sendmany", 2},
+    { "z_sendmany", 3},
     { "z_getoperationstatus", 0},
     { "z_getoperationresult", 0},
     { "z_importkey", 1 }

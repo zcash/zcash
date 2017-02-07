@@ -7,6 +7,7 @@ DWCASH_LOAD_TIMEOUT=500
 DATADIR="@abs_top_builddir@/.dwcash"
 rm -rf "$DATADIR"
 mkdir -p "$DATADIR"/regtest
+touch "$DATADIR/dwcash.conf"
 touch "$DATADIR/regtest/debug.log"
 tail -q -n 1 -F "$DATADIR/regtest/debug.log" | grep -m 1 -q "Done loading" &
 WAITER=$!

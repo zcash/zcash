@@ -11,6 +11,7 @@ src/qt/test/test_bitcoin-qt
 
 # DeepWebCash utilities
 src/dwcash/GenerateParams
+src/dwcash/CreateJoinSplit
 
 *dwcashTest.pk
 *dwcashTest.vk
@@ -122,3 +123,6 @@ qa/pull-tester/test.*/*
 /doc/doxygen/
 
 libdwcashconsensus.pc
+
+contrib/debian/files
+contrib/debian/substvars

@@ -97,6 +97,24 @@ bool AppInit(int argc, char* argv[])
         try
         {
             ReadConfigFile(mapArgs, mapMultiArgs);
+        } catch (const missing_dwcash_conf& e) {
+            fprintf(stderr,
+                (_("Before starting dwcashd, you need to create a configuration file:\n"
+                   "%s\n"
+                   "It can be completely empty! That indicates you are happy with the default\n"
+                   "configuration of dwcashd. But requiring a configuration file to start ensures\n"
+                   "that dwcashd won't accidentally compromise your privacy if there was a default\n"
+                   "option you needed to change.\n"
+                   "\n"
+                   "You can look at the example configuration file for suggestions of default\n"
+                   "options that you may want to change. It should be in one of these locations,\n"
+                   "depending on how you installed DeepWebCash:\n") +
+                 _("- Source code:  %s\n"
+                   "- .deb package: %s\n")).c_str(),
+                GetConfigFile().string().c_str(),
+                "contrib/DEBIAN/examples/dwcash.conf",
+                "/usr/share/doc/dwcash/examples/dwcash.conf");
+            return false;
         } catch (const std::exception& e) {
             fprintf(stderr,"Error reading configuration file: %s\n", e.what());
             return false;

@@ -14,9 +14,10 @@
 #include "json/json_spirit_value.h"
 #include "wallet.h"
 
+#include <unordered_map>
 #include <tuple>
 
-// TODO: Compute fee based on a heuristic, e.g. (num tx output * dust threshold) + joinsplit bytes * ?
+// Default transaction fee if caller does not specify one.
 #define ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE   10000
 
 using namespace libdwcash;
@@ -41,9 +42,15 @@ struct AsyncJoinSplitInfo
     CAmount vpub_new = 0;
 };
 
+// A struct to help us track the witness and anchor for a given JSOutPoint
+struct WitnessAnchorData {
+	boost::optional<ZCIncrementalWitness> witness;
+	uint256 anchor;
+};
+
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
 public:
-    AsyncRPCOperation_sendmany(std::string fromAddress, std::vector<SendManyRecipient> tOutputs, std::vector<SendManyRecipient> zOutputs, int minDepth);
+    AsyncRPCOperation_sendmany(std::string fromAddress, std::vector<SendManyRecipient> tOutputs, std::vector<SendManyRecipient> zOutputs, int minDepth, CAmount fee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE, Value contextInfo = Value::null);
     virtual ~AsyncRPCOperation_sendmany();
     
     // We don't want to be copied or moved around
@@ -54,11 +61,16 @@ public:
     
     virtual void main();
 
+    virtual Value getStatus() const;
+
     bool testmode = false;  // Set to true to disable sending txs and generating proofs
 
 private:
     friend class TEST_FRIEND_AsyncRPCOperation_sendmany;    // class for unit testing
 
+    Value contextinfo_;     // optional data to include in return value from getStatus()
+
+    CAmount fee_;
     int mindepth_;
     std::string fromaddress_;
     bool isfromtaddr_;
@@ -70,7 +82,9 @@ private:
     uint256 joinSplitPubKey_;
     unsigned char joinSplitPrivKey_[crypto_sign_SECRETKEYBYTES];
 
-        
+    // The key is the result string from calling JSOutPoint::ToString()
+    std::unordered_map<std::string, WitnessAnchorData> jsopWitnessAnchorMap;
+
     std::vector<SendManyRecipient> t_outputs_;
     std::vector<SendManyRecipient> z_outputs_;
     std::vector<SendManyInputUTXO> t_inputs_;

@@ -1,4 +1,5 @@
-DeepWebCash 1.0.1
+DeepWebCash 1.0.5
+===========
 
 What is DeepWebCash?
 --------------
@@ -13,7 +14,7 @@ in our [Protocol Specification](https://github.com/deepwebcash/zips/raw/master/p
 This software is the DeepWebCash client. It downloads and stores the entire history
 of DeepWebCash transactions; depending on the speed of your computer and network
 connection, the synchronization process could take a day or more once the
-block chain has reached a significant size.
+blockchain has reached a significant size.
 
 Security Warnings
 -----------------

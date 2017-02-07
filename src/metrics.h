@@ -31,6 +31,11 @@ extern AtomicCounter solutionTargetChecks;
 
 void TrackMinedBlock(uint256 hash);
 
+void MarkStartTime();
+double GetLocalSolPS();
+
+void TriggerRefresh();
+
 void ConnectMetricsScreen();
 void ThreadShowMetricsScreen();
 

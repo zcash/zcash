@@ -5,7 +5,7 @@ set -e
 DATADIR=./benchmark-datadir
 
 function dwcash_rpc {
-    ./src/dwcash-cli -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 "$@"
+    ./src/dwcash-cli -datadir="$DATADIR" -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 "$@"
 }
 
 function dwcashd_generate {
@@ -15,6 +15,7 @@ function dwcashd_generate {
 function dwcashd_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
+    touch "$DATADIR/dwcash.conf"
     ./src/dwcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     DWCASHD_PID=$!
 }
@@ -27,6 +28,7 @@ function dwcashd_stop {
 function dwcashd_massif_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
+    touch "$DATADIR/dwcash.conf"
     rm -f massif.out
     valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/dwcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     DWCASHD_PID=$!
@@ -41,6 +43,7 @@ function dwcashd_massif_stop {
 function dwcashd_valgrind_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
+    touch "$DATADIR/dwcash.conf"
     rm -f valgrind.out
     valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/dwcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     DWCASHD_PID=$!
@@ -74,7 +77,7 @@ case "$1" in
                 dwcash_rpc zcbenchmark parameterloading 10
                 ;;
             createjoinsplit)
-                dwcash_rpc zcbenchmark createjoinsplit 10
+                dwcash_rpc zcbenchmark createjoinsplit 10 "${@:3}"
                 ;;
             verifyjoinsplit)
                 dwcash_rpc zcbenchmark verifyjoinsplit 1000 "\"$RAWJOINSPLIT\""
@@ -87,6 +90,12 @@ case "$1" in
                 ;;
             validatelargetx)
                 dwcash_rpc zcbenchmark validatelargetx 5
+                ;;
+            trydecryptnotes)
+                dwcash_rpc zcbenchmark trydecryptnotes 1000 "${@:3}"
+                ;;
+            incnotewitnesses)
+                dwcash_rpc zcbenchmark incnotewitnesses 100 "${@:3}"
                 ;;
             *)
                 dwcashd_stop
@@ -105,7 +114,7 @@ case "$1" in
                 dwcash_rpc zcbenchmark parameterloading 1
                 ;;
             createjoinsplit)
-                dwcash_rpc zcbenchmark createjoinsplit 1
+                dwcash_rpc zcbenchmark createjoinsplit 1 "${@:3}"
                 ;;
             verifyjoinsplit)
                 dwcash_rpc zcbenchmark verifyjoinsplit 1 "\"$RAWJOINSPLIT\""
@@ -115,6 +124,12 @@ case "$1" in
                 ;;
             verifyequihash)
                 dwcash_rpc zcbenchmark verifyequihash 1
+                ;;
+            trydecryptnotes)
+                dwcash_rpc zcbenchmark trydecryptnotes 1 "${@:3}"
+                ;;
+            incnotewitnesses)
+                dwcash_rpc zcbenchmark incnotewitnesses 1 "${@:3}"
                 ;;
             *)
                 dwcashd_massif_stop
@@ -134,7 +149,7 @@ case "$1" in
                 dwcash_rpc zcbenchmark parameterloading 1
                 ;;
             createjoinsplit)
-                dwcash_rpc zcbenchmark createjoinsplit 1
+                dwcash_rpc zcbenchmark createjoinsplit 1 "${@:3}"
                 ;;
             verifyjoinsplit)
                 dwcash_rpc zcbenchmark verifyjoinsplit 1 "\"$RAWJOINSPLIT\""
@@ -144,6 +159,12 @@ case "$1" in
                 ;;
             verifyequihash)
                 dwcash_rpc zcbenchmark verifyequihash 1
+                ;;
+            trydecryptnotes)
+                dwcash_rpc zcbenchmark trydecryptnotes 1 "${@:3}"
+                ;;
+            incnotewitnesses)
+                dwcash_rpc zcbenchmark incnotewitnesses 1 "${@:3}"
                 ;;
             *)
                 dwcashd_valgrind_stop

@@ -34,6 +34,8 @@
 #include "json/json_spirit_value.h"
 #include "asyncrpcqueue.h"
 
+#include <numeric>
+
 using namespace std;
 using namespace json_spirit;
 
@@ -1325,6 +1327,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
             entry.push_back(Pair("fee", ValueFromAmount(-nFee)));
             if (fLong)
                 WalletTxToJSON(wtx, entry);
+            entry.push_back(Pair("size", static_cast<CTransaction>(wtx).GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION)));
             ret.push_back(entry);
         }
     }
@@ -1361,6 +1364,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 entry.push_back(Pair("vout", r.vout));
                 if (fLong)
                     WalletTxToJSON(wtx, entry);
+                entry.push_back(Pair("size", static_cast<CTransaction>(wtx).GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION)));
                 ret.push_back(entry);
             }
         }
@@ -1429,6 +1433,7 @@ Value listtransactions(const Array& params, bool fHelp)
             "    \"otheraccount\": \"accountname\",  (string) For the 'move' category of transactions, the account the funds came \n"
             "                                          from (for receiving funds, positive amounts), or went to (for sending funds,\n"
             "                                          negative amounts).\n"
+            "    \"size\": n,                (numeric) Transaction size in bytes\n"
             "  }\n"
             "]\n"
 
@@ -1766,21 +1771,38 @@ Value backupwallet(const Array& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "backupwallet \"destination\"\n"
-            "\nSafely copies wallet.dat to destination, which can be a directory or a path with filename.\n"
+            "\nSafely copies wallet.dat to destination filename\n"
             "\nArguments:\n"
-            "1. \"destination\"   (string) The destination directory or file\n"
+            "1. \"destination\"   (string, required) The destination filename, saved in the directory set by -exportdir option.\n"
+            "\nResult:\n"
+            "\"path\"             (string) The full path of the destination file\n"
             "\nExamples:\n"
-            + HelpExampleCli("backupwallet", "\"backup.dat\"")
-            + HelpExampleRpc("backupwallet", "\"backup.dat\"")
+            + HelpExampleCli("backupwallet", "\"backupdata\"")
+            + HelpExampleRpc("backupwallet", "\"backupdata\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    string strDest = params[0].get_str();
-    if (!BackupWallet(*pwalletMain, strDest))
+    boost::filesystem::path exportdir;
+    try {
+        exportdir = GetExportDir();
+    } catch (const std::runtime_error& e) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, e.what());
+    }
+    if (exportdir.empty()) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Cannot backup wallet until the -exportdir option has been set");
+    }
+    std::string unclean = params[0].get_str();
+    std::string clean = SanitizeFilename(unclean);
+    if (clean.compare(unclean) != 0) {
+        throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Filename is invalid as only alphanumeric characters are allowed.  Try '%s' instead.", clean));
+    }
+    boost::filesystem::path exportfilepath = exportdir / clean;
+
+    if (!BackupWallet(*pwalletMain, exportfilepath.string()))
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: Wallet backup failed!");
 
-    return Value::null;
+    return exportfilepath.string();
 }
 
 
@@ -2465,7 +2487,15 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
         } else if (benchmarktype == "parameterloading") {
             sample_times.push_back(benchmark_parameter_loading());
         } else if (benchmarktype == "createjoinsplit") {
-            sample_times.push_back(benchmark_create_joinsplit());
+            if (params.size() < 3) {
+                sample_times.push_back(benchmark_create_joinsplit());
+            } else {
+                int nThreads = params[2].get_int();
+                std::vector<double> vals = benchmark_create_joinsplit_threaded(nThreads);
+                // Divide by nThreads^2 to get average seconds per JoinSplit because
+                // we are running one JoinSplit per thread.
+                sample_times.push_back(std::accumulate(vals.begin(), vals.end(), 0.0) / (nThreads*nThreads));
+            }
         } else if (benchmarktype == "verifyjoinsplit") {
             sample_times.push_back(benchmark_verify_joinsplit(samplejoinsplit));
         } else if (benchmarktype == "solveequihash") {
@@ -2480,6 +2510,12 @@ Value zc_benchmark(const json_spirit::Array& params, bool fHelp)
             sample_times.push_back(benchmark_verify_equihash());
         } else if (benchmarktype == "validatelargetx") {
             sample_times.push_back(benchmark_large_tx());
+        } else if (benchmarktype == "trydecryptnotes") {
+            int nAddrs = params[2].get_int();
+            sample_times.push_back(benchmark_try_decrypt_notes(nAddrs));
+        } else if (benchmarktype == "incnotewitnesses") {
+            int nTxs = params[2].get_int();
+            sample_times.push_back(benchmark_increment_note_witnesses(nTxs));
         } else {
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
         }
@@ -2707,7 +2743,10 @@ Value zc_raw_joinsplit(const json_spirit::Array& params, bool fHelp)
                          vpub_old,
                          vpub_new);
 
-    assert(jsdesc.Verify(*pdwcashParams, joinSplitPubKey));
+    {
+        auto verifier = libdwcash::ProofVerifier::Strict();
+        assert(jsdesc.Verify(*pdwcashParams, verifier, joinSplitPubKey));
+    }
 
     mtx.vjoinsplit.push_back(jsdesc);
 
@@ -2946,7 +2985,7 @@ Value z_listreceivedbyaddress(const Array& params, bool fHelp)
     CZCPaymentAddress address(fromaddress);
     try {
         zaddr = address.Get();
-    } catch (std::runtime_error) {
+    } catch (const std::runtime_error&) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr.");
     }
 
@@ -3013,7 +3052,7 @@ Value z_getbalance(const Array& params, bool fHelp)
         CZCPaymentAddress address(fromaddress);
         try {
             zaddr = address.Get();
-        } catch (std::runtime_error) {
+        } catch (const std::runtime_error&) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
         }
         if (!pwalletMain->HaveSpendingKey(zaddr)) {
@@ -3163,6 +3202,13 @@ Value z_getoperationstatus_IMPL(const Array& params, bool fRemoveFinishedOperati
         }
     }
 
+    // sort results chronologically by creation_time
+    std::sort(ret.begin(), ret.end(), [](Value a, Value b) -> bool {
+        const int64_t t1 = find_value(a.get_obj(), "creation_time").get_int64();
+        const int64_t t2 = find_value(b.get_obj(), "creation_time").get_int64();
+        return t1 < t2;
+    });
+
     return ret;
 }
 
@@ -3182,9 +3228,9 @@ Value z_sendmany(const Array& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return Value::null;
 
-    if (fHelp || params.size() < 2 || params.size() > 3)
+    if (fHelp || params.size() < 2 || params.size() > 4)
         throw runtime_error(
-            "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf )\n"
+            "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf ) ( fee )\n"
             "\nSend multiple times. Amounts are double-precision floating point numbers."
             "\nChange from a taddr flows to a new taddr address, while change from zaddr returns to itself."
             "\nWhen sending coinbase UTXOs to a zaddr, change is not allowed. The entire value of the UTXO(s) must be consumed."
@@ -3199,6 +3245,8 @@ Value z_sendmany(const Array& params, bool fHelp)
             "      \"memo\":memo        (string, optional) If the address is a zaddr, raw data represented in hexadecimal string format\n"
             "    }, ... ]\n"
             "3. minconf               (numeric, optional, default=1) Only use funds confirmed at least this many times.\n"
+            "4. fee                   (numeric, optional, default="
+            + strprintf("%s", FormatMoney(ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE)) + ") The fee amount to attach to this transaction.\n"
             "\nResult:\n"
             "\"operationid\"          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
         );
@@ -3215,7 +3263,7 @@ Value z_sendmany(const Array& params, bool fHelp)
         CZCPaymentAddress address(fromaddress);
         try {
             zaddr = address.Get();
-        } catch (std::runtime_error) {
+        } catch (const std::runtime_error&) {
             // invalid
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
         }
@@ -3239,6 +3287,7 @@ Value z_sendmany(const Array& params, bool fHelp)
     // Recipients
     std::vector<SendManyRecipient> taddrRecipients;
     std::vector<SendManyRecipient> zaddrRecipients;
+    CAmount nTotalOut = 0;
 
     BOOST_FOREACH(Value& output, outputs)
     {
@@ -3261,7 +3310,7 @@ Value z_sendmany(const Array& params, bool fHelp)
                 CZCPaymentAddress zaddr(address);
                 zaddr.Get();
                 isZaddr = true;
-            } catch (std::runtime_error) {
+            } catch (const std::runtime_error&) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
             }
         }
@@ -3294,6 +3343,8 @@ Value z_sendmany(const Array& params, bool fHelp)
         } else {
             taddrRecipients.push_back( SendManyRecipient(address, nAmount, memo) );
         }
+
+        nTotalOut += nAmount;
     }
 
     // Check the number of zaddr outputs does not exceed the limit.
@@ -3329,9 +3380,27 @@ Value z_sendmany(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
     }
 
+    // Fee in Zatoshis, not currency format)
+    CAmount nFee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE;
+    if (params.size() > 3) {
+        nFee = AmountFromValue( params[3] );
+        // Check that the user specified fee is sane.
+        if (nFee > nTotalOut) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Fee %s is greater than the sum of outputs %s", FormatMoney(nFee), FormatMoney(nTotalOut)));
+        }
+    }
+
+    // Use input parameters as the optional context info to be returned by z_getoperationstatus and z_getoperationresult.
+    Object o;
+    o.push_back(Pair("fromaddress", params[0]));
+    o.push_back(Pair("amounts", params[1]));
+    o.push_back(Pair("minconf", nMinDepth));
+    o.push_back(Pair("fee", std::stod(FormatMoney(nFee))));
+    Value contextInfo = Value(o);
+
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(fromaddress, taddrRecipients, zaddrRecipients, nMinDepth) );
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
     return operationId;

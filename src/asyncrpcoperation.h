@@ -66,7 +66,8 @@ public:
         return creation_time_;
     }
 
-    Value getStatus() const;
+    // Override this method to add data to the default status object.
+    virtual Value getStatus() const;
 
     Value getError() const;
     

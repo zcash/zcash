@@ -83,6 +83,7 @@ public:
 
     virtual bool verify(
         const ZCProof& proof,
+        ProofVerifier& verifier,
         const uint256& pubKeyHash,
         const uint256& randomSeed,
         const boost::array<uint256, NumInputs>& hmacs,
