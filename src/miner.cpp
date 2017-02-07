@@ -522,6 +522,7 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
 int32_t komodo_baseid(char *origbase);
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height);
 int32_t FOUND_BLOCK;
+extern int32_t KOMODO_LASTMINED;
 
 void static BitcoinMiner(CWallet *pwallet)
 {
@@ -641,7 +642,7 @@ void static BitcoinMiner(CWallet *pwallet)
                             if ( externalflag == 0 && i != 66 )
                                 printf("VIOLATION at %d\n",i);
                             for (i=0; i<66; i++)
-                            {
+                            {break;
                                 for (j=0; j<33; j++)
                                     printf("%02x",pubkeys[i][j]);
                                 printf(" p%d -> %d\n",i,komodo_minerid(pindexPrev->nHeight-i,pubkeys[i]));
@@ -658,7 +659,7 @@ void static BitcoinMiner(CWallet *pwallet)
                             if ( mids[j] == notaryid )
                                 break;
                     } else fprintf(stderr,"no nonz pubkeys\n");
-                    if ( j == 65 )
+                    if ( j == 65 && Mining_height > KOMODO_LASTMINED+64 )
                     {
                         hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                         fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
@@ -799,7 +800,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 {
                     FOUND_BLOCK = 0;
                     fprintf(stderr,"FOUND_BLOCK!\n");
-                    sleep(2000);
+                    //sleep(2000);
                 }
                 if (vNodes.empty() && chainparams.MiningRequiresPeers())
                 {

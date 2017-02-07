@@ -335,6 +335,11 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         return(-1);
     if ( scriptlen == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
     {
+        if ( i == 0 && j == 0 && memcmp(NOTARY_PUBKEY33,scriptbuf+1,33) == 0 )
+        {
+            printf("KOMODO_LASTMINED.%d -> %d\n",KOMODO_LASTMINED,height);
+            KOMODO_LASTMINED = height;
+        }
         decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
         /*for (k=0; k<33; k++)
             printf("%02x",crypto777[k]);
