@@ -545,7 +545,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             for (j=0; j<numvouts; j++)
             {
                 len = block.vtx[i].vout[j].scriptPubKey.size();
-                if ( len <= sizeof(scriptbuf) )
+                if ( len >= sizeof(uint32_t) && len <= sizeof(scriptbuf) )
                 {
 #ifdef KOMODO_ZCASH
                     memcpy(scriptbuf,block.vtx[i].vout[j].scriptPubKey.data(),len);
@@ -576,7 +576,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     for (j=1; j<numvouts-1; j++)
                     {
                         len = block.vtx[i].vout[j].scriptPubKey.size();
-                        if ( len <= sizeof(scriptbuf) )
+                        if ( len >= sizeof(uint32_t) && len <= sizeof(scriptbuf) )
                         {
 #ifdef KOMODO_ZCASH
                             memcpy(scriptbuf,block.vtx[i].vout[j].scriptPubKey.data(),len);
