@@ -2665,6 +2665,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     {
                         interest2 += pcoin.first->vout[pcoin.second].interest;
                         fprintf(stderr,"%.8f ",(double)pcoin.first->vout[pcoin.second].interest/COIN);
+                    }
                     int age = pcoin.first->GetDepthInMainChain();
                     if (age != 0)
                         age += 1;
