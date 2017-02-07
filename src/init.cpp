@@ -805,7 +805,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Special case: if debug=zrpcunsafe, implies debug=zrpc, so add it to debug categories
     if (find(categories.begin(), categories.end(), string("zrpcunsafe")) != categories.end()) {
         if (find(categories.begin(), categories.end(), string("zrpc")) == categories.end()) {
-            LogPrintf("%s: parameter interaction: -debug=zrpcunsafe -> -debug=zrpc\n", __func__);
+            LogPrintf("%s: parameter interaction: setting -debug=zrpcunsafe -> -debug=zrpc\n", __func__);
             vector<string>& v = mapMultiArgs["-debug"];
             v.push_back("zrpc");
         }
