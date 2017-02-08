@@ -34,7 +34,8 @@ buffering or reassembly.
 ## Prerequisites
 
 The ZeroMQ feature in Zcash requires ZeroMQ API version 4.x or
-newer. Typically, it is packaged by distributions as something like
+newer, which you will need to install if you are not using the depends
+system. Typically, it is packaged by distributions as something like
 *libzmq3-dev*. The C++ wrapper for ZeroMQ is *not* needed.
 
 In order to run the example Python client scripts in contrib/ one must
