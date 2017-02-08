@@ -71,7 +71,7 @@ void ThreadSendAlert()
     //
     CAlert alert;
     alert.nRelayUntil   = GetTime() + 15 * 60;
-    alert.nExpiration   = GetTime() + 365 * 60 * 60;
+    alert.nExpiration   = GetTime() + 90 * 24 * 60 * 60;
     alert.nID           = 1000;  // use https://github.com/zcash/zcash/wiki/specification#assigned-numbers to keep track of alert IDs
     alert.nCancel       = 0;   // cancels previous messages up to this ID number
 
@@ -86,13 +86,16 @@ void ThreadSendAlert()
     //  2000 for longer invalid proof-of-work chain 
     //  Higher numbers mean higher priority
     //  4000 or higher will put the RPC into safe mode
-    alert.nPriority     = 5000;
+    alert.nPriority     = 4000;
     alert.strComment    = "";
-    alert.strStatusBar  = "URGENT: Upgrade required: see https://z.cash";
-    alert.strRPCError   = "URGENT: Upgrade required: see https://z.cash";
+    alert.strStatusBar  = "Your client is out of date and potentially vulnerable to blockchain disruption. Update to the most recent version of Zcash (1.0.5) and use -reindex to ensure integrity of your local blockchain state. More info at: https://z.cash/support/security.html";
+    alert.strRPCError   = "Your client is out of date and potentially vulnerable to blockchain disruption. Update to the most recent version of Zcash (1.0.5) and use -reindex to ensure integrity of your local blockchain state. More info at: https://z.cash/support/security.html";
 
     // Set specific client version/versions here. If setSubVer is empty, no filtering on subver is done:
     // alert.setSubVer.insert(std::string("/MagicBean:0.7.2/"));
+	alert.setSubVer.insert(std::string("/MagicBean:1.0.0/"));
+	alert.setSubVer.insert(std::string("/MagicBean:1.0.1/"));
+	alert.setSubVer.insert(std::string("/MagicBean:1.0.2/"));
 
     // Sign
     const CChainParams& chainparams = Params();
