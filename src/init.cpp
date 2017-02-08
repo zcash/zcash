@@ -754,6 +754,13 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Set this early so that experimental features are correctly enabled/disabled
     fExperimentalMode = GetBoolArg("-experimentalfeatures", false);
 
+    // Fail early if user has set experimental options without the global flag
+    if (!fExperimentalMode) {
+        if (mapArgs.count("-developerencryptwallet")) {
+            return InitError(_("Wallet encryption requires -experimentalfeatures."));
+        }
+    }
+
     // Set this early so that parameter interactions go to console
     fPrintToConsole = GetBoolArg("-printtoconsole", false);
     fLogTimestamps = GetBoolArg("-logtimestamps", true);

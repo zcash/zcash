@@ -2002,7 +2002,7 @@ Value encryptwallet(const Array& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return Value::null;
 
-    auto fEnableWalletEncryption = GetBoolArg("-developerencryptwallet", false);
+    auto fEnableWalletEncryption = fExperimentalMode && GetBoolArg("-developerencryptwallet", false);
 
     std::string strWalletEncryptionDisabledMsg = "";
     if (!fEnableWalletEncryption) {
