@@ -100,6 +100,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
                 errorString = results[0]["error"]["message"]
 
                 # Test that the returned status object contains a params field with the operation's input parameters
+                assert_equal(results[0]["method"], "z_sendmany")
                 params =results[0]["params"]
                 assert_equal(params["fee"], Decimal('0.0001')) # default
                 assert_equal(params["minconf"], Decimal('1')) # default
