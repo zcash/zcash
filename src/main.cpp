@@ -1436,7 +1436,7 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
     komodo_block2pubkey33(pubkey33,block);
     if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus())))
     {
-        for (i=0; i<33; i++)
+        int32_t i; for (i=0; i<33; i++)
             printf("%02x",pubkey33[i]);
         fprintf(stderr," warning unexpected diff at ht.%d\n",height);
         
