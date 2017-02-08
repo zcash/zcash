@@ -1273,12 +1273,7 @@ mapNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
                         noteData.insert(std::make_pair(jsoutpt, nd));
                     }
                     break;
-                } catch (const std::runtime_error &err) {
-                    if (memcmp("Could not decrypt message", err.what(), 25) != 0) {
-                        // Unexpected failure
-                        LogPrintf("FindMyNotes(): Unexpected runtime error while testing decrypt:\n");
-                        LogPrintf("%s\n", err.what());
-                    } // else
+                } catch (const note_decryption_failed &err) {
                     // Couldn't decrypt with this decryptor
                 } catch (const std::exception &exc) {
                     // Unexpected failure
@@ -3560,9 +3555,12 @@ void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, st
 
                 outEntries.push_back(CNotePlaintextEntry{jsop, plaintext});
 
-            } catch (const std::exception &) {
+            } catch (const note_decryption_failed &err) {
                 // Couldn't decrypt with this spending key
                 throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", CZCPaymentAddress(pa).ToString()));
+            } catch (const std::exception &exc) {
+                // Unexpected failure
+                throw std::runtime_error(strprintf("Error while decrypting note for payment address %s: %s", CZCPaymentAddress(pa).ToString(), exc.what()));
             }
         }
     }

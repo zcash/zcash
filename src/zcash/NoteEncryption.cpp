@@ -129,7 +129,7 @@ typename NoteDecryption<MLEN>::Plaintext NoteDecryption<MLEN>::decrypt
                                              NULL,
                                              0,
                                              cipher_nonce, K) != 0) {
-        throw std::runtime_error("Could not decrypt message");
+        throw note_decryption_failed();
     }
 
     return plaintext;
