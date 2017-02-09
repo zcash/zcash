@@ -4312,6 +4312,15 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     }
 
 
+    if (!(pfrom->nServices & NODE_BLOOM) &&
+        (strCommand == "filterload" ||
+         strCommand == "filteradd" ||
+         strCommand == "filterclear"))
+    {
+        LOCK(cs_main);
+        Misbehaving(pfrom->GetId(), 100);
+        return false;
+    }
 
 
     if (strCommand == "version")
@@ -4924,6 +4933,13 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
     else if (strCommand == "mempool")
     {
+        if (!(pfrom->nServices & NODE_BLOOM) && !pfrom->fWhitelisted)
+        {
+            LogPrint("net", "mempool request with bloom filters disabled, disconnect peer=%d\n", pfrom->GetId());
+            pfrom->fDisconnect = true;
+            return true;
+        }
+
         LOCK2(cs_main, pfrom->cs_filter);
 
         std::vector<uint256> vtxid;
