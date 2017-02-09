@@ -1508,18 +1508,16 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
 #ifdef ENABLE_MINING
  #ifndef ENABLE_WALLET
-    auto mineToLocalWallet = GetBoolArg("-minetolocalwallet", false);
-    if (mineToLocalWallet) {
+    if (GetBoolArg("-minetolocalwallet", false)) {
         return InitError(_("Zcash was not built with wallet support. Set -minetolocalwallet=0 to use -mineraddress, or rebuild Zcash with wallet support."));
     }
-    if (!mapArgs.count("-mineraddress")) {
+    if (GetArg("-mineraddress", "").empty() && GetBoolArg("-gen", false)) {
         return InitError(_("Zcash was not built with wallet support. Set -mineraddress, or rebuild Zcash with wallet support."));
     }
  #endif // !ENABLE_WALLET
 
     if (mapArgs.count("-mineraddress")) {
  #ifdef ENABLE_WALLET
-        auto mineToLocalWallet = GetBoolArg("-minetolocalwallet", true);
         bool minerAddressInLocalWallet = false;
         if (pwalletMain) {
             // Address has alreday been validated
@@ -1528,7 +1526,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             addr.GetKeyID(keyID);
             minerAddressInLocalWallet = pwalletMain->HaveKey(keyID);
         }
-        if (mineToLocalWallet && !minerAddressInLocalWallet) {
+        if (GetBoolArg("-minetolocalwallet", true) && !minerAddressInLocalWallet) {
             return InitError(_("-mineraddress is not in the local wallet. Either use a local address, or set -minetolocalwallet=0"));
         }
  #endif // ENABLE_WALLET
