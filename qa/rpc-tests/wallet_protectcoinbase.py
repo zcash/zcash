@@ -140,6 +140,19 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         assert_equal(Decimal(resp["private"]), Decimal('19.9999'))
         assert_equal(Decimal(resp["total"]), Decimal('39.9999'))
 
+        # A custom fee of 0 is okay.  Here the node will send the note value back to itself.
+        recipients = []
+        recipients.append({"address":myzaddr, "amount": Decimal('19.9999')})
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, Decimal('0.0'))
+        mytxid = self.wait_and_assert_operationid_status(myopid)
+        self.sync_all()
+        self.nodes[1].generate(1)
+        self.sync_all()
+        resp = self.nodes[0].z_gettotalbalance()
+        assert_equal(Decimal(resp["transparent"]), Decimal('20.0'))
+        assert_equal(Decimal(resp["private"]), Decimal('19.9999'))
+        assert_equal(Decimal(resp["total"]), Decimal('39.9999'))
+
         # convert note to transparent funds
         recipients = []
         recipients.append({"address":mytaddr, "amount":Decimal('10.0')})

@@ -55,7 +55,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         Value contextInfo) :
         fromaddress_(fromAddress), t_outputs_(tOutputs), z_outputs_(zOutputs), mindepth_(minDepth), fee_(fee), contextinfo_(contextInfo)
 {
-    assert(fee_ > 0);
+    assert(fee_ >= 0);
 
     if (minDepth < 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be negative");

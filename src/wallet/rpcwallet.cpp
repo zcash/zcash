@@ -3385,7 +3385,12 @@ Value z_sendmany(const Array& params, bool fHelp)
     // Fee in Zatoshis, not currency format)
     CAmount nFee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE;
     if (params.size() > 3) {
-        nFee = AmountFromValue( params[3] );
+        if (params[3].get_real() == 0.0) {
+            nFee = 0;
+        } else {
+            nFee = AmountFromValue( params[3] );
+        }
+
         // Check that the user specified fee is sane.
         if (nFee > nTotalOut) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Fee %s is greater than the sum of outputs %s", FormatMoney(nFee), FormatMoney(nTotalOut)));
