@@ -339,6 +339,11 @@ class WalletTest (BitcoinTestFramework):
         myvjoinsplits = mytxdetails["vjoinsplit"]
         assert_greater_than(len(myvjoinsplits), 0)
 
+        # the first (probably only) joinsplit should take in all the public value
+        myjoinsplit = self.nodes[2].getrawtransaction(mytxid, 1)["vjoinsplit"][0]
+        assert_equal(myjoinsplit["vpub_old"], zsendmanynotevalue)
+        assert_equal(myjoinsplit["vpub_new"], 0)
+
         # send from private note to node 0 and node 2
         node0balance = self.nodes[0].getbalance() # 25.99794745
         node2balance = self.nodes[2].getbalance() # 16.99790000
