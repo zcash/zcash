@@ -4,14 +4,18 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "miner.h"
-#if defined(ENABLE_WALLET) && defined(ENABLE_MINING)
+#ifdef ENABLE_MINING
 #include "pow/tromp/equi_miner.h"
 #endif
 
 #include "amount.h"
+#include "base58.h"
 #include "chainparams.h"
 #include "consensus/consensus.h"
 #include "consensus/validation.h"
+#ifdef ENABLE_MINING
+#include "crypto/equihash.h"
+#endif
 #include "hash.h"
 #include "main.h"
 #include "metrics.h"
@@ -20,20 +24,20 @@
 #include "primitives/transaction.h"
 #include "random.h"
 #include "timedata.h"
+#include "ui_interface.h"
 #include "util.h"
 #include "utilmoneystr.h"
 #ifdef ENABLE_WALLET
- #ifdef ENABLE_MINING
-#include "crypto/equihash.h"
- #endif
 #include "wallet/wallet.h"
-#include <functional>
 #endif
 
 #include "sodium.h"
 
 #include <boost/thread.hpp>
 #include <boost/tuple/tuple.hpp>
+#ifdef ENABLE_MINING
+#include <functional>
+#endif
 #include <mutex>
 
 using namespace std;
@@ -383,6 +387,55 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     return pblocktemplate.release();
 }
 
+#ifdef ENABLE_WALLET
+boost::optional<CScript> GetMinerScriptPubKey(CReserveKey& reservekey)
+#else
+boost::optional<CScript> GetMinerScriptPubKey()
+#endif
+{
+    CKeyID keyID;
+    CBitcoinAddress addr;
+    if (addr.SetString(GetArg("-mineraddress", ""))) {
+        addr.GetKeyID(keyID);
+    } else {
+#ifdef ENABLE_WALLET
+        CPubKey pubkey;
+        if (!reservekey.GetReservedKey(pubkey)) {
+            return boost::optional<CScript>();
+        }
+        keyID = pubkey.GetID();
+#else
+        return boost::optional<CScript>();
+#endif
+    }
+
+    CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
+    return scriptPubKey;
+}
+
+#ifdef ENABLE_WALLET
+CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
+{
+    boost::optional<CScript> scriptPubKey = GetMinerScriptPubKey(reservekey);
+#else
+CBlockTemplate* CreateNewBlockWithKey()
+{
+    boost::optional<CScript> scriptPubKey = GetMinerScriptPubKey();
+#endif
+
+    if (!scriptPubKey) {
+        return NULL;
+    }
+    return CreateNewBlock(*scriptPubKey);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Internal miner
+//
+
+#ifdef ENABLE_MINING
+
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
 {
     // Update nExtraNonce
@@ -403,23 +456,10 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 }
 
 #ifdef ENABLE_WALLET
-//////////////////////////////////////////////////////////////////////////////
-//
-// Internal miner
-//
-
-CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
-{
-    CPubKey pubkey;
-    if (!reservekey.GetReservedKey(pubkey))
-        return NULL;
-
-    CScript scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
-    return CreateNewBlock(scriptPubKey);
-}
-
-#ifdef ENABLE_MINING
 static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
+#else
+static bool ProcessBlockFound(CBlock* pblock)
+#endif // ENABLE_WALLET
 {
     LogPrintf("%s\n", pblock->ToString());
     LogPrintf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue));
@@ -431,14 +471,18 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
             return error("ZcashMiner: generated block is stale");
     }
 
-    // Remove key from key pool
-    reservekey.KeepKey();
+#ifdef ENABLE_WALLET
+    if (GetArg("-mineraddress", "").empty()) {
+        // Remove key from key pool
+        reservekey.KeepKey();
+    }
 
     // Track how many getdata requests this block gets
     {
         LOCK(wallet.cs_wallet);
         wallet.mapRequestCount[pblock->GetHash()] = 0;
     }
+#endif
 
     // Process this block the same as if we had received it from another node
     CValidationState state;
@@ -450,15 +494,23 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
     return true;
 }
 
+#ifdef ENABLE_WALLET
 void static BitcoinMiner(CWallet *pwallet)
+#else
+void static BitcoinMiner()
+#endif
 {
     LogPrintf("ZcashMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("zcash-miner");
     const CChainParams& chainparams = Params();
 
-    // Each thread has its own key and counter
+#ifdef ENABLE_WALLET
+    // Each thread has its own key
     CReserveKey reservekey(pwallet);
+#endif
+
+    // Each thread has its own counter
     unsigned int nExtraNonce = 0;
 
     unsigned int n = chainparams.EquihashN();
@@ -500,10 +552,19 @@ void static BitcoinMiner(CWallet *pwallet)
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
 
+#ifdef ENABLE_WALLET
             unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
+#else
+            unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey());
+#endif
             if (!pblocktemplate.get())
             {
-                LogPrintf("Error in ZcashMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");
+                if (GetArg("-mineraddress", "").empty()) {
+                    LogPrintf("Error in ZcashMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");
+                } else {
+                    // Should never reach here, because -mineraddress validity is checked in init.cpp
+                    LogPrintf("Error in ZcashMiner: Invalid -mineraddress\n");
+                }
                 return;
             }
             CBlock *pblock = &pblocktemplate->block;
@@ -543,7 +604,11 @@ void static BitcoinMiner(CWallet *pwallet)
                          solver, pblock->nNonce.ToString());
 
                 std::function<bool(std::vector<unsigned char>)> validBlock =
+#ifdef ENABLE_WALLET
                         [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
+#else
+                        [&pblock, &hashTarget, &m_cs, &cancelSolver, &chainparams]
+#endif
                         (std::vector<unsigned char> soln) {
                     // Write the solution to the hash and compute the result.
                     LogPrint("pow", "- Checking solution against target\n");
@@ -558,7 +623,11 @@ void static BitcoinMiner(CWallet *pwallet)
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     LogPrintf("ZcashMiner:\n");
                     LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
+#ifdef ENABLE_WALLET
                     if (ProcessBlockFound(pblock, *pwallet, reservekey)) {
+#else
+                    if (ProcessBlockFound(pblock)) {
+#endif
                         // Ignore chain updates caused by us
                         std::lock_guard<std::mutex> lock{m_cs};
                         cancelSolver = false;
@@ -665,7 +734,11 @@ void static BitcoinMiner(CWallet *pwallet)
     c.disconnect();
 }
 
+#ifdef ENABLE_WALLET
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
+#else
+void GenerateBitcoins(bool fGenerate, int nThreads)
+#endif
 {
     static boost::thread_group* minerThreads = NULL;
 
@@ -688,9 +761,13 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
         return;
 
     minerThreads = new boost::thread_group();
-    for (int i = 0; i < nThreads; i++)
+    for (int i = 0; i < nThreads; i++) {
+#ifdef ENABLE_WALLET
         minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet));
+#else
+        minerThreads->create_thread(&BitcoinMiner);
+#endif
+    }
 }
 
 #endif // ENABLE_MINING
-#endif // ENABLE_WALLET

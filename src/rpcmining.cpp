@@ -8,7 +8,9 @@
 #include "consensus/consensus.h"
 #include "consensus/validation.h"
 #include "core_io.h"
+#ifdef ENABLE_MINING
 #include "crypto/equihash.h"
+#endif
 #include "init.h"
 #include "main.h"
 #include "metrics.h"
@@ -137,7 +139,7 @@ Value getnetworkhashps(const Array& params, bool fHelp)
     return GetNetworkHashPS(params.size() > 0 ? params[0].get_int() : 120, params.size() > 1 ? params[1].get_int() : -1);
 }
 
-#if defined(ENABLE_WALLET) && defined(ENABLE_MINING)
+#ifdef ENABLE_MINING
 Value getgenerate(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
@@ -173,8 +175,15 @@ Value generate(const Array& params, bool fHelp)
             + HelpExampleCli("generate", "11")
         );
 
-    if (pwalletMain == NULL)
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (disabled)");
+    if (GetArg("-mineraddress", "").empty()) {
+#ifdef ENABLE_WALLET
+        if (!pwalletMain) {
+            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
+        }
+#else
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "zcashd compiled without wallet and -mineraddress not set");
+#endif
+    }
     if (!Params().MineBlocksOnDemand())
         throw JSONRPCError(RPC_METHOD_NOT_FOUND, "This method can only be used on regtest");
 
@@ -182,7 +191,9 @@ Value generate(const Array& params, bool fHelp)
     int nHeightEnd = 0;
     int nHeight = 0;
     int nGenerate = params[0].get_int();
+#ifdef ENABLE_WALLET
     CReserveKey reservekey(pwalletMain);
+#endif
 
     {   // Don't keep cs_main locked
         LOCK(cs_main);
@@ -196,7 +207,11 @@ Value generate(const Array& params, bool fHelp)
     unsigned int k = Params().EquihashK();
     while (nHeight < nHeightEnd)
     {
+#ifdef ENABLE_WALLET
         unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
+#else
+        unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey());
+#endif
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Wallet keypool empty");
         CBlock *pblock = &pblocktemplate->block;
@@ -275,8 +290,15 @@ Value setgenerate(const Array& params, bool fHelp)
             + HelpExampleRpc("setgenerate", "true, 1")
         );
 
-    if (pwalletMain == NULL)
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (disabled)");
+    if (GetArg("-mineraddress", "").empty()) {
+#ifdef ENABLE_WALLET
+        if (!pwalletMain) {
+            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
+        }
+#else
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "zcashd compiled without wallet and -mineraddress not set");
+#endif
+    }
     if (Params().MineBlocksOnDemand())
         throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Use the generate method instead of setgenerate on this network");
 
@@ -294,7 +316,11 @@ Value setgenerate(const Array& params, bool fHelp)
 
     mapArgs["-gen"] = (fGenerate ? "1" : "0");
     mapArgs ["-genproclimit"] = itostr(nGenProcLimit);
+#ifdef ENABLE_WALLET
     GenerateBitcoins(fGenerate, pwalletMain, nGenProcLimit);
+#else
+    GenerateBitcoins(fGenerate, nGenProcLimit);
+#endif
 
     return Value::null;
 }
@@ -343,7 +369,7 @@ Value getmininginfo(const Array& params, bool fHelp)
     obj.push_back(Pair("pooledtx",         (uint64_t)mempool.size()));
     obj.push_back(Pair("testnet",          Params().TestnetToBeDeprecatedFieldRPC()));
     obj.push_back(Pair("chain",            Params().NetworkIDString()));
-#if defined(ENABLE_WALLET) && defined(ENABLE_MINING)
+#ifdef ENABLE_MINING
     obj.push_back(Pair("generate",         getgenerate(params, false)));
 #endif
     return obj;
@@ -401,7 +427,6 @@ static Value BIP22ValidationResult(const CValidationState& state)
     return "valid?";
 }
 
-#ifdef ENABLE_WALLET
 Value getblocktemplate(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
@@ -466,10 +491,15 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     LOCK(cs_main);
 
+    // Wallet or miner address is required because we support coinbasetxn
+    if (GetArg("-mineraddress", "").empty()) {
 #ifdef ENABLE_WALLET
-    // Wallet is required because we support coinbasetxn
-    if (pwalletMain == NULL) {
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (wallet disabled)");
+        if (!pwalletMain) {
+            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
+        }
+#else
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "zcashd compiled without wallet and -mineraddress not set");
+#endif
     }
 
     std::string strMode = "template";
@@ -599,8 +629,12 @@ Value getblocktemplate(const Array& params, bool fHelp)
             delete pblocktemplate;
             pblocktemplate = NULL;
         }
+#ifdef ENABLE_WALLET
         CReserveKey reservekey(pwalletMain);
         pblocktemplate = CreateNewBlockWithKey(reservekey);
+#else
+        pblocktemplate = CreateNewBlockWithKey();
+#endif
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 
@@ -695,12 +729,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
 
     return result;
-#else // ENABLE_WALLET
-    // Wallet is required because we support coinbasetxn
-    throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (wallet support not built)");
-#endif // !ENABLE_WALLET
 }
-#endif
 
 class submitblock_StateCatcher : public CValidationInterface
 {

@@ -11,6 +11,9 @@
 #include "crypto/common.h"
 #include "addrman.h"
 #include "amount.h"
+#ifdef ENABLE_MINING
+#include "base58.h"
+#endif
 #include "checkpoints.h"
 #include "compat/sanity.h"
 #include "consensus/validation.h"
@@ -170,8 +173,12 @@ void Shutdown()
 #ifdef ENABLE_WALLET
     if (pwalletMain)
         pwalletMain->Flush(false);
- #ifdef ENABLE_MINING
+#endif
+#ifdef ENABLE_MINING
+ #ifdef ENABLE_WALLET
     GenerateBitcoins(false, NULL, 0);
+ #else
+    GenerateBitcoins(false, 0);
  #endif
 #endif
     StopNode();
@@ -409,11 +416,6 @@ std::string HelpMessage(HelpMessageMode mode)
         debugCategories += ", qt";
     strUsage += HelpMessageOpt("-debug=<category>", strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + ". " +
         _("If <category> is not supplied or if <category> = 1, output all debugging information.") + " " + _("<category> can be:") + " " + debugCategories + ".");
-#ifdef ENABLE_WALLET
-    strUsage += HelpMessageOpt("-gen", strprintf(_("Generate coins (default: %u)"), 0));
-    strUsage += HelpMessageOpt("-genproclimit=<n>", strprintf(_("Set the number of threads for coin generation if enabled (-1 = all cores, default: %d)"), 1));
-    strUsage += HelpMessageOpt("-equihashsolver=<name>", _("Specify the Equihash solver to be used if enabled (default: \"default\")"));
-#endif
     strUsage += HelpMessageOpt("-help-debug", _("Show all debugging options (usage: --help -help-debug)"));
     strUsage += HelpMessageOpt("-logips", strprintf(_("Include IP addresses in debug output (default: %u)"), 0));
     strUsage += HelpMessageOpt("-logtimestamps", strprintf(_("Prepend debug output with timestamp (default: %u)"), 1));
@@ -443,6 +445,22 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-blockminsize=<n>", strprintf(_("Set minimum block size in bytes (default: %u)"), 0));
     strUsage += HelpMessageOpt("-blockmaxsize=<n>", strprintf(_("Set maximum block size in bytes (default: %d)"), DEFAULT_BLOCK_MAX_SIZE));
     strUsage += HelpMessageOpt("-blockprioritysize=<n>", strprintf(_("Set maximum size of high-priority/low-fee transactions in bytes (default: %d)"), DEFAULT_BLOCK_PRIORITY_SIZE));
+
+#ifdef ENABLE_MINING
+    strUsage += HelpMessageGroup(_("Mining options:"));
+    strUsage += HelpMessageOpt("-gen", strprintf(_("Generate coins (default: %u)"), 0));
+    strUsage += HelpMessageOpt("-genproclimit=<n>", strprintf(_("Set the number of threads for coin generation if enabled (-1 = all cores, default: %d)"), 1));
+    strUsage += HelpMessageOpt("-equihashsolver=<name>", _("Specify the Equihash solver to be used if enabled (default: \"default\")"));
+    strUsage += HelpMessageOpt("-mineraddress=<addr>", _("Send mined coins to a specific single address"));
+    strUsage += HelpMessageOpt("-minetolocalwallet", strprintf(
+            _("Require that mined blocks use a coinbase address in the local wallet (default: %u)"),
+ #ifdef ENABLE_WALLET
+            1
+ #else
+            0
+ #endif
+            ));
+#endif
 
     strUsage += HelpMessageGroup(_("RPC server options:"));
     strUsage += HelpMessageOpt("-server", _("Accept command line and JSON-RPC commands"));
@@ -951,6 +969,17 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     nMaxDatacarrierBytes = GetArg("-datacarriersize", nMaxDatacarrierBytes);
 
     fAlerts = GetBoolArg("-alerts", DEFAULT_ALERTS);
+
+#ifdef ENABLE_MINING
+    if (mapArgs.count("-mineraddress")) {
+        CBitcoinAddress addr;
+        if (!addr.SetString(mapArgs["-mineraddress"])) {
+            return InitError(strprintf(
+                _("Invalid address for -mineraddress=<addr>: '%s' (must be a transparent address)"),
+                mapArgs["-mineraddress"]));
+        }
+    }
+#endif
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 
@@ -1477,6 +1506,35 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     LogPrintf("No wallet support compiled in!\n");
 #endif // !ENABLE_WALLET
 
+#ifdef ENABLE_MINING
+ #ifndef ENABLE_WALLET
+    auto mineToLocalWallet = GetBoolArg("-minetolocalwallet", false);
+    if (mineToLocalWallet) {
+        return InitError(_("Zcash was not built with wallet support. Set -minetolocalwallet=0 to use -mineraddress, or rebuild Zcash with wallet support."));
+    }
+    if (!mapArgs.count("-mineraddress")) {
+        return InitError(_("Zcash was not built with wallet support. Set -mineraddress, or rebuild Zcash with wallet support."));
+    }
+ #endif // !ENABLE_WALLET
+
+    if (mapArgs.count("-mineraddress")) {
+ #ifdef ENABLE_WALLET
+        auto mineToLocalWallet = GetBoolArg("-minetolocalwallet", true);
+        bool minerAddressInLocalWallet = false;
+        if (pwalletMain) {
+            // Address has alreday been validated
+            CBitcoinAddress addr(mapArgs["-mineraddress"]);
+            CKeyID keyID;
+            addr.GetKeyID(keyID);
+            minerAddressInLocalWallet = pwalletMain->HaveKey(keyID);
+        }
+        if (mineToLocalWallet && !minerAddressInLocalWallet) {
+            return InitError(_("-mineraddress is not in the local wallet. Either use a local address, or set -minetolocalwallet=0"));
+        }
+ #endif // ENABLE_WALLET
+    }
+#endif // ENABLE_MINING
+
     // ********************************************************* Step 9: data directory maintenance
 
     // if pruning, unset the service bit and perform the initial blockstore prune
@@ -1539,10 +1597,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                                          boost::ref(cs_main), boost::cref(pindexBestHeader), nPowTargetSpacing);
     scheduler.scheduleEvery(f, nPowTargetSpacing);
 
-#if defined(ENABLE_WALLET) && defined(ENABLE_MINING)
+#ifdef ENABLE_MINING
     // Generate coins in the background
-    if (pwalletMain)
+ #ifdef ENABLE_WALLET
+    if (pwalletMain || !GetArg("-mineraddress", "").empty())
         GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1));
+ #else
+    GenerateBitcoins(GetBoolArg("-gen", false), GetArg("-genproclimit", 1));
+ #endif
 #endif
 
     // ********************************************************* Step 11: finished
