@@ -189,18 +189,20 @@ void test_tree(
     }
 }
 
+#define MAKE_STRING(x) std::string((x), (x)+sizeof(x))
+
 TEST(merkletree, vectors) {
-    UniValue root_tests = read_json(std::string(json_tests::merkle_roots, json_tests::merkle_roots + sizeof(json_tests::merkle_roots)));
-    UniValue ser_tests = read_json(std::string(json_tests::merkle_serialization, json_tests::merkle_serialization + sizeof(json_tests::merkle_serialization)));
-    UniValue witness_ser_tests = read_json(std::string(json_tests::merkle_witness_serialization, json_tests::merkle_witness_serialization + sizeof(json_tests::merkle_witness_serialization)));
-    UniValue path_tests = read_json(std::string(json_tests::merkle_path, json_tests::merkle_path + sizeof(json_tests::merkle_path)));
-    UniValue commitment_tests = read_json(std::string(json_tests::merkle_commitments, json_tests::merkle_commitments + sizeof(json_tests::merkle_commitments)));
+    UniValue root_tests = read_json(MAKE_STRING(json_tests::merkle_roots));
+    UniValue ser_tests = read_json(MAKE_STRING(json_tests::merkle_serialization));
+    UniValue witness_ser_tests = read_json(MAKE_STRING(json_tests::merkle_witness_serialization));
+    UniValue path_tests = read_json(MAKE_STRING(json_tests::merkle_path));
+    UniValue commitment_tests = read_json(MAKE_STRING(json_tests::merkle_commitments));
 
     test_tree<ZCTestingIncrementalMerkleTree, ZCTestingIncrementalWitness>(commitment_tests, root_tests, ser_tests, witness_ser_tests, path_tests);
 }
 
 TEST(merkletree, emptyroots) {
-    UniValue empty_roots = read_json(std::string(json_tests::merkle_roots_empty, json_tests::merkle_roots_empty + sizeof(json_tests::merkle_roots_empty)));
+    UniValue empty_roots = read_json(MAKE_STRING(json_tests::merkle_roots_empty));
 
     libzcash::EmptyMerkleRoots<64, libzcash::SHA256Compress> emptyroots;
 
