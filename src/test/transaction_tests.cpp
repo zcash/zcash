@@ -475,6 +475,7 @@ BOOST_AUTO_TEST_CASE(test_simple_joinsplit_invalidity)
         jsdesc->nullifiers[1] = GetRandHash();
 
         newTx.vjoinsplit.push_back(JSDescription());
+        jsdesc = &newTx.vjoinsplit[0];
         JSDescription *jsdesc2 = &newTx.vjoinsplit[1];
 
         jsdesc2->nullifiers[0] = GetRandHash();
