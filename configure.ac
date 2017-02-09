@@ -156,9 +156,15 @@ AC_ARG_ENABLE([glibc-back-compat],
   [use_glibc_compat=$enableval],
   [use_glibc_compat=no])
 
+AC_ARG_ENABLE([zmq],
+  [AS_HELP_STRING([--disable-zmq],
+  [disable ZMQ notifications])],
+  [use_zmq=$enableval],
+  [use_zmq=yes])
+
 AC_ARG_WITH([protoc-bindir],[AS_HELP_STRING([--with-protoc-bindir=BIN_DIR],[specify protoc bin path])], [protoc_bin_path=$withval], [])
 
-# Enable debug 
+# Enable debug
 AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug],
                     [use debug compiler flags and macros (default is no)])],
@@ -169,11 +175,11 @@ if test "x$enable_debug" = xyes; then
     if test "x$GCC" = xyes; then
         CFLAGS="-g3 -O0 -DDEBUG"
     fi
-    
+
     if test "x$GXX" = xyes; then
         CXXFLAGS="-g3 -O0 -DDEBUG"
     fi
-fi 
+fi
 
 ## TODO: Remove these hard-coded paths and flags. They are here for the sake of
 ##       compatibility with the legacy buildsystem.
@@ -693,6 +699,16 @@ if test x$use_pkgconfig = xyes; then
       if test x$use_qr != xno; then
         BITCOIN_QT_CHECK([PKG_CHECK_MODULES([QR], [libqrencode], [have_qrencode=yes], [have_qrencode=no])])
       fi
+
+      if test "x$use_zmq" = "xyes"; then
+        PKG_CHECK_MODULES([ZMQ],[libzmq >= 4],
+          [AC_DEFINE([ENABLE_ZMQ],[1],[Define to 1 to enable ZMQ functions])],
+          [AC_DEFINE([ENABLE_ZMQ],[0],[Define to 1 to enable ZMQ functions])
+           AC_MSG_WARN([libzmq version 4.x or greater not found, disabling])
+           use_zmq=no])
+      else
+          AC_DEFINE_UNQUOTED([ENABLE_ZMQ],[0],[Define to 1 to enable ZMQ functions])
+      fi
     ]
   )
 else
@@ -704,6 +720,29 @@ else
 
   AC_CHECK_HEADER([openssl/ssl.h],, AC_MSG_ERROR(libssl headers missing),)
   AC_CHECK_LIB([ssl],         [main],SSL_LIBS=-lssl, AC_MSG_ERROR(libssl missing))
+
+  if test "x$use_zmq" = "xyes"; then
+     AC_CHECK_HEADER([zmq.h],
+       [AC_DEFINE([ENABLE_ZMQ],[1],[Define to 1 to enable ZMQ functions])],
+       [AC_MSG_WARN([zmq.h not found, disabling zmq support])
+        use_zmq=no
+        AC_DEFINE([ENABLE_ZMQ],[0],[Define to 1 to enable ZMQ functions])])
+     AC_CHECK_LIB([zmq],[zmq_ctx_shutdown],ZMQ_LIBS=-lzmq,
+       [AC_MSG_WARN([libzmq >= 4.0 not found, disabling zmq support])
+        use_zmq=no
+        AC_DEFINE([ENABLE_ZMQ],[0],[Define to 1 to enable ZMQ functions])])
+  else
+    AC_DEFINE_UNQUOTED([ENABLE_ZMQ],[0],[Define to 1 to enable ZMQ functions])
+  fi
+
+  if test "x$use_zmq" = "xyes"; then
+    dnl Assume libzmq was built for static linking
+    case $host in
+      *mingw*)
+        ZMQ_CFLAGS="$ZMQ_CFLAGS -DZMQ_STATIC"
+      ;;
+    esac
+  fi
 
   BITCOIN_QT_CHECK(AC_CHECK_LIB([protobuf] ,[main],[PROTOBUF_LIBS=-lprotobuf], BITCOIN_QT_FAIL(libprotobuf not found)))
   if test x$use_qr != xno; then
@@ -872,6 +911,8 @@ if test x$bitcoin_enable_qt != xno; then
     AC_MSG_RESULT([no])
   fi
 fi
+
+AM_CONDITIONAL([ENABLE_ZMQ], [test "x$use_zmq" = "xyes"])
 
 AC_MSG_CHECKING([whether to build test_bitcoin])
 if test x$use_tests = xyes; then

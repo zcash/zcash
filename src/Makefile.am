@@ -50,6 +50,9 @@ if ENABLE_WALLET
 BITCOIN_INCLUDES += $(BDB_CPPFLAGS)
 EXTRA_LIBRARIES += libbitcoin_wallet.a
 endif
+if ENABLE_ZMQ
+EXTRA_LIBRARIES += libbitcoin_zmq.a
+endif
 
 if BUILD_BITCOIN_LIBS
 lib_LTLIBRARIES = libzcashconsensus.la
@@ -172,7 +175,12 @@ BITCOIN_CORE_H = \
   wallet/db.h \
   wallet/wallet.h \
   wallet/wallet_ismine.h \
-  wallet/walletdb.h
+  wallet/walletdb.h \
+  zmq/zmqabstractnotifier.h \
+  zmq/zmqconfig.h\
+  zmq/zmqnotificationinterface.h \
+  zmq/zmqpublishnotifier.h
+
 
 JSON_H = \
   json/json_spirit.h \
@@ -228,6 +236,17 @@ libbitcoin_server_a_SOURCES = \
   $(JSON_H) \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
+
+if ENABLE_ZMQ
+LIBBITCOIN_ZMQ=libbitcoin_zmq.a
+
+libbitcoin_zmq_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
+libbitcoin_zmq_a_SOURCES = \
+  zmq/zmqabstractnotifier.cpp \
+  zmq/zmqnotificationinterface.cpp \
+  zmq/zmqpublishnotifier.cpp
+endif
+
 
 # wallet: shared between bitcoind and bitcoin-qt, but only linked
 # when wallet enabled
@@ -375,6 +394,10 @@ zcashd_LDADD = \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
 
+if ENABLE_ZMQ
+zcashd_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
+endif
+
 if ENABLE_WALLET
 zcashd_LDADD += libbitcoin_wallet.a
 endif
@@ -388,7 +411,6 @@ zcashd_LDADD += \
   $(LIBZCASH) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZCASH_LIBS)
-#
 
 # bitcoin-cli binary #
 zcash_cli_SOURCES = bitcoin-cli.cpp

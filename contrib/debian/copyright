@@ -100,6 +100,19 @@ Files: depends/sources/miniupnpc-*.tar.gz
 Copyright: 2005-2016 Thomas BERNARD
 License: BSD-3clause
 
+Files: depends/sources/zeromq-*.tar.gz
+Copyright:
+ 1994, 1995, 1996, 1999, 2000, 2001, 2002, 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
+ 2007-2014 iMatix Corporation
+ 2009-2011 250bpm s.r.o.
+ 2010-2011 Miru Limited
+ 2011 VMware, Inc.
+ 2012 Spotify AB
+ 2013 Ericsson AB
+ 2014 AppDynamics Inc.
+ 2015-2016 Brocade Communications Systems Inc.
+License: LGPL-with-ZeroMQ-exception
+
 Files: depends/sources/google*.tar.gz
 Copyright: 2008 Google Inc.
 License: BSD-3clause-Google
@@ -1140,3 +1153,32 @@ Comment:
 
 License: PUB-DOM
  This work is in the public domain.
+
+License: LGPL-with-ZeroMQ-exception
+ GNU LESSER GENERAL PUBLIC LICENSE
+ Version 3, 29 June 2007
+ .
+ On Debian systems the GNU Lesser General Public License (LGPL) is
+ located in '/usr/share/common-licenses/LGPL'.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ --------------------------------------------------------------------------------
+ SPECIAL EXCEPTION GRANTED BY COPYRIGHT HOLDERS
+ .
+ As a special exception, copyright holders give you permission to link this
+ library with independent modules to produce an executable, regardless of
+ the license terms of these independent modules, and to copy and distribute
+ the resulting executable under terms of your choice, provided that you also
+ meet, for each linked independent module, the terms and conditions of
+ the license of that module. An independent module is a module which is not
+ derived from or based on this library. If you modify this library, you must
+ extend this exception to your version of the library.
+  
+ Note: this exception relieves you of any obligations under sections 4 and 5
+ of this license, and section 6 of the GNU General Public License.
+Comment:
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.

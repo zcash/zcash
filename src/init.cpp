@@ -31,7 +31,6 @@
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
 #endif
-
 #include <stdint.h>
 #include <stdio.h>
 
@@ -50,6 +49,10 @@
 
 #include "libsnark/common/profiling.hpp"
 
+#if ENABLE_ZMQ
+#include "zmq/zmqnotificationinterface.h"
+#endif
+
 using namespace std;
 
 extern void ThreadSendAlert();
@@ -60,6 +63,10 @@ ZCJoinSplit* pzcashParams = NULL;
 CWallet* pwalletMain = NULL;
 #endif
 bool fFeeEstimatesInitialized = false;
+
+#if ENABLE_ZMQ
+static CZMQNotificationInterface* pzmqNotificationInterface = NULL;
+#endif
 
 #ifdef WIN32
 // Win32 LevelDB doesn't use file descriptors, and the ones used for
@@ -199,6 +206,15 @@ void Shutdown()
     if (pwalletMain)
         pwalletMain->Flush(true);
 #endif
+
+#if ENABLE_ZMQ
+    if (pzmqNotificationInterface) {
+        UnregisterValidationInterface(pzmqNotificationInterface);
+        delete pzmqNotificationInterface;
+        pzmqNotificationInterface = NULL;
+    }
+#endif
+
 #ifndef WIN32
     try {
         boost::filesystem::remove(GetPidFile());
@@ -367,6 +383,14 @@ std::string HelpMessage(HelpMessageMode mode)
                     
 #endif
 
+#if ENABLE_ZMQ
+    strUsage += HelpMessageGroup(_("ZeroMQ notification options:"));
+    strUsage += HelpMessageOpt("-zmqpubhashblock=<address>", _("Enable publish hash block in <address>"));
+    strUsage += HelpMessageOpt("-zmqpubhashtx=<address>", _("Enable publish hash transaction in <address>"));
+    strUsage += HelpMessageOpt("-zmqpubrawblock=<address>", _("Enable publish raw block in <address>"));
+    strUsage += HelpMessageOpt("-zmqpubrawtx=<address>", _("Enable publish raw transaction in <address>"));
+#endif
+
     strUsage += HelpMessageGroup(_("Debugging/Testing options:"));
     if (showDebug)
     {
@@ -380,7 +404,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-stopafterblockimport", strprintf("Stop running after importing blocks from disk (default: %u)", 0));
     }
     string debugCategories = "addrman, alert, bench, coindb, db, estimatefee, lock, mempool, net, partitioncheck, pow, proxy, prune, "
-                             "rand, reindex, rpc, selectcoins, zrpc, zrpcunsafe (implies zrpc)"; // Don't translate these and qt below
+                             "rand, reindex, rpc, selectcoins, zmq, zrpc, zrpcunsafe (implies zrpc)"; // Don't translate these and qt below
     if (mode == HMM_BITCOIN_QT)
         debugCategories += ", qt";
     strUsage += HelpMessageOpt("-debug=<category>", strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + ". " +
@@ -1142,6 +1166,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     BOOST_FOREACH(string strDest, mapMultiArgs["-seednode"])
         AddOneShot(strDest);
+
+#if ENABLE_ZMQ
+    pzmqNotificationInterface = CZMQNotificationInterface::CreateWithArguments(mapArgs);
+
+    if (pzmqNotificationInterface) {
+        RegisterValidationInterface(pzmqNotificationInterface);
+    }
+#endif
 
     // ********************************************************* Step 7: load block chain
 
