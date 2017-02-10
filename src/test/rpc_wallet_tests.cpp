@@ -31,7 +31,7 @@
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 
-#include "univalue/univalue.h"
+#include <univalue.h>
 
 using namespace std;
 

@@ -1,16 +1,77 @@
 // Copyright 2014 BitPay Inc.
+// Copyright 2015 Bitcoin Core Developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <stdint.h>
-#include <ctype.h>
+#include <errno.h>
 #include <iomanip>
+#include <limits>
 #include <sstream>
-#include <stdexcept>      // std::runtime_error
+#include <stdexcept>
+#include <stdlib.h>
+#include <string.h>
 
 #include "univalue.h"
 
-#include "utilstrencodings.h" // ParseXX
+namespace 
+{
+static bool ParsePrechecks(const std::string& str)
+{
+    if (str.empty()) // No empty string allowed
+        return false;
+    if (str.size() >= 1 && (json_isspace(str[0]) || json_isspace(str[str.size()-1]))) // No padding allowed
+        return false;
+    if (str.size() != strlen(str.c_str())) // No embedded NUL characters allowed
+        return false;
+    return true;
+}
+
+bool ParseInt32(const std::string& str, int32_t *out)
+{
+    if (!ParsePrechecks(str))
+        return false;
+    char *endp = NULL;
+    errno = 0; // strtol will not set errno if valid
+    long int n = strtol(str.c_str(), &endp, 10);
+    if(out) *out = (int32_t)n;
+    // Note that strtol returns a *long int*, so even if strtol doesn't report a over/underflow
+    // we still have to check that the returned value is within the range of an *int32_t*. On 64-bit
+    // platforms the size of these types may be different.
+    return endp && *endp == 0 && !errno &&
+        n >= std::numeric_limits<int32_t>::min() &&
+        n <= std::numeric_limits<int32_t>::max();
+}
+
+bool ParseInt64(const std::string& str, int64_t *out)
+{
+    if (!ParsePrechecks(str))
+        return false;
+    char *endp = NULL;
+    errno = 0; // strtoll will not set errno if valid
+    long long int n = strtoll(str.c_str(), &endp, 10);
+    if(out) *out = (int64_t)n;
+    // Note that strtoll returns a *long long int*, so even if strtol doesn't report a over/underflow
+    // we still have to check that the returned value is within the range of an *int64_t*.
+    return endp && *endp == 0 && !errno &&
+        n >= std::numeric_limits<int64_t>::min() &&
+        n <= std::numeric_limits<int64_t>::max();
+}
+
+bool ParseDouble(const std::string& str, double *out)
+{
+    if (!ParsePrechecks(str))
+        return false;
+    if (str.size() >= 2 && str[0] == '0' && str[1] == 'x') // No hexadecimal floats allowed
+        return false;
+    std::istringstream text(str);
+    text.imbue(std::locale::classic());
+    double result;
+    text >> result;
+    if(out) *out = result;
+    return text.eof() && !text.fail();
+}
+}
 
 using namespace std;
 
@@ -43,7 +104,7 @@ static bool validNumStr(const string& s)
 {
     string tokenVal;
     unsigned int consumed;
-    enum jtokentype tt = getJsonToken(tokenVal, consumed, s.c_str());
+    enum jtokentype tt = getJsonToken(tokenVal, consumed, s.data(), s.data() + s.size());
     return (tt == JTOK_NUMBER);
 }
 
@@ -58,35 +119,32 @@ bool UniValue::setNumStr(const string& val_)
     return true;
 }
 
-bool UniValue::setInt(uint64_t val)
+bool UniValue::setInt(uint64_t val_)
 {
-    string s;
     ostringstream oss;
 
-    oss << val;
+    oss << val_;
 
     return setNumStr(oss.str());
 }
 
-bool UniValue::setInt(int64_t val)
+bool UniValue::setInt(int64_t val_)
 {
-    string s;
     ostringstream oss;
 
-    oss << val;
+    oss << val_;
 
     return setNumStr(oss.str());
 }
 
-bool UniValue::setFloat(double val)
+bool UniValue::setFloat(double val_)
 {
-    string s;
     ostringstream oss;
 
-    oss << std::setprecision(16) << val;
+    oss << std::setprecision(16) << val_;
 
     bool ret = setNumStr(oss.str());
-    typ = VREAL;
+    typ = VNUM;
     return ret;
 }
 
@@ -112,12 +170,12 @@ bool UniValue::setObject()
     return true;
 }
 
-bool UniValue::push_back(const UniValue& val)
+bool UniValue::push_back(const UniValue& val_)
 {
     if (typ != VARR)
         return false;
 
-    values.push_back(val);
+    values.push_back(val_);
     return true;
 }
 
@@ -131,13 +189,13 @@ bool UniValue::push_backV(const std::vector<UniValue>& vec)
     return true;
 }
 
-bool UniValue::pushKV(const std::string& key, const UniValue& val)
+bool UniValue::pushKV(const std::string& key, const UniValue& val_)
 {
     if (typ != VOBJ)
         return false;
 
     keys.push_back(key);
-    values.push_back(val);
+    values.push_back(val_);
     return true;
 }
 
@@ -148,31 +206,33 @@ bool UniValue::pushKVs(const UniValue& obj)
 
     for (unsigned int i = 0; i < obj.keys.size(); i++) {
         keys.push_back(obj.keys[i]);
-        values.push_back(obj.values[i]);
+        values.push_back(obj.values.at(i));
     }
 
     return true;
 }
 
-int UniValue::findKey(const std::string& key) const
+bool UniValue::findKey(const std::string& key, size_t& ret) const
 {
-    for (unsigned int i = 0; i < keys.size(); i++) {
-        if (keys[i] == key)
-            return (int) i;
+    for (size_t i = 0; i < keys.size(); i++) {
+        if (keys[i] == key) {
+            ret = i;
+            return true;
+        }
     }
 
-    return -1;
+    return false;
 }
 
 bool UniValue::checkObject(const std::map<std::string,UniValue::VType>& t)
 {
     for (std::map<std::string,UniValue::VType>::const_iterator it = t.begin();
-         it != t.end(); it++) {
-        int idx = findKey(it->first);
-        if (idx < 0)
+         it != t.end(); ++it) {
+        size_t idx;
+        if (!findKey(it->first, idx))
             return false;
 
-        if (values[idx].getType() != it->second)
+        if (values.at(idx).getType() != it->second)
             return false;
     }
 
@@ -184,21 +244,21 @@ const UniValue& UniValue::operator[](const std::string& key) const
     if (typ != VOBJ)
         return NullUniValue;
 
-    int index = findKey(key);
-    if (index < 0)
+    size_t index;
+    if (!findKey(key, index))
         return NullUniValue;
 
-    return values[index];
+    return values.at(index);
 }
 
-const UniValue& UniValue::operator[](unsigned int index) const
+const UniValue& UniValue::operator[](size_t index) const
 {
     if (typ != VOBJ && typ != VARR)
         return NullUniValue;
     if (index >= values.size())
         return NullUniValue;
 
-    return values[index];
+    return values.at(index);
 }
 
 const char *uvTypeName(UniValue::VType t)
@@ -210,34 +270,29 @@ const char *uvTypeName(UniValue::VType t)
     case UniValue::VARR: return "array";
     case UniValue::VSTR: return "string";
     case UniValue::VNUM: return "number";
-    case UniValue::VREAL: return "number";
     }
 
     // not reached
     return NULL;
 }
 
-const UniValue& find_value( const UniValue& obj, const std::string& name)
+const UniValue& find_value(const UniValue& obj, const std::string& name)
 {
     for (unsigned int i = 0; i < obj.keys.size(); i++)
-    {
-        if( obj.keys[i] == name )
-        {
-            return obj.values[i];
-        }
-    }
+        if (obj.keys[i] == name)
+            return obj.values.at(i);
 
     return NullUniValue;
 }
 
-std::vector<std::string> UniValue::getKeys() const
+const std::vector<std::string>& UniValue::getKeys() const
 {
     if (typ != VOBJ)
         throw std::runtime_error("JSON value is not an object as expected");
     return keys;
 }
 
-std::vector<UniValue> UniValue::getValues() const
+const std::vector<UniValue>& UniValue::getValues() const
 {
     if (typ != VOBJ && typ != VARR)
         throw std::runtime_error("JSON value is not an object or array as expected");
@@ -251,7 +306,7 @@ bool UniValue::get_bool() const
     return getBool();
 }
 
-std::string UniValue::get_str() const
+const std::string& UniValue::get_str() const
 {
     if (typ != VSTR)
         throw std::runtime_error("JSON value is not a string as expected");
@@ -280,7 +335,7 @@ int64_t UniValue::get_int64() const
 
 double UniValue::get_real() const
 {
-    if (typ != VREAL && typ != VNUM)
+    if (typ != VNUM)
         throw std::runtime_error("JSON value is not a number as expected");
     double retval;
     if (!ParseDouble(getValStr(), &retval))

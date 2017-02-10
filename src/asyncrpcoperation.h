@@ -15,7 +15,7 @@
 #include <utility>
 #include <future>
 
-#include "univalue/univalue.h"
+#include <univalue.h>
 
 using namespace std;
 

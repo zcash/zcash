@@ -31,7 +31,7 @@
 
 #include <boost/assign/list_of.hpp>
 
-#include "univalue/univalue.h"
+#include <univalue.h>
 
 #include <numeric>
 
@@ -433,6 +433,8 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
 
     // Amount
     CAmount nAmount = AmountFromValue(params[1]);
+    if (nAmount <= 0)
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
 
     // Wallet comments
     CWalletTx wtx;
@@ -824,6 +826,8 @@ UniValue movecmd(const UniValue& params, bool fHelp)
     string strFrom = AccountFromValue(params[0]);
     string strTo = AccountFromValue(params[1]);
     CAmount nAmount = AmountFromValue(params[2]);
+    if (nAmount <= 0)
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
     if (params.size() > 3)
         // unused parameter, used to be nMinDepth, keep type-checking it though
         (void)params[3].get_int();
@@ -903,6 +907,8 @@ UniValue sendfrom(const UniValue& params, bool fHelp)
     if (!address.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Zcash address");
     CAmount nAmount = AmountFromValue(params[2]);
+    if (nAmount <= 0)
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
     int nMinDepth = 1;
     if (params.size() > 3)
         nMinDepth = params[3].get_int();
@@ -1002,6 +1008,8 @@ UniValue sendmany(const UniValue& params, bool fHelp)
 
         CScript scriptPubKey = GetScriptForDestination(address.Get());
         CAmount nAmount = AmountFromValue(sendTo[name_]);
+        if (nAmount <= 0)
+            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
         totalAmount += nAmount;
 
         bool fSubtractFeeFromAmount = false;
@@ -2227,9 +2235,7 @@ UniValue settxfee(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Amount
-    CAmount nAmount = 0;
-    if (params[0].get_real() != 0.0)
-        nAmount = AmountFromValue(params[0]);        // rejects 0.0 amounts
+    CAmount nAmount = AmountFromValue(params[0]);
 
     payTxFee = CFeeRate(nAmount, 1000);
     return true;
@@ -3124,9 +3130,9 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
     CAmount nPrivateBalance = getBalanceZaddr("", nMinDepth);
     CAmount nTotalBalance = nBalance + nPrivateBalance;
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("transparent", FormatMoney(nBalance, false)));
-    result.push_back(Pair("private", FormatMoney(nPrivateBalance, false)));
-    result.push_back(Pair("total", FormatMoney(nTotalBalance, false)));
+    result.push_back(Pair("transparent", FormatMoney(nBalance)));
+    result.push_back(Pair("private", FormatMoney(nPrivateBalance)));
+    result.push_back(Pair("total", FormatMoney(nTotalBalance)));
     return result;
 }
 
@@ -3177,7 +3183,7 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
     std::set<AsyncRPCOperationId> filter;
     if (params.size()==1) {
         UniValue ids = params[0].get_array();
-        for (UniValue & v : ids.getValues()) {
+        for (const UniValue & v : ids.getValues()) {
             filter.insert(v.get_str());
         }
     }
@@ -3471,4 +3477,3 @@ UniValue z_listoperationids(const UniValue& params, bool fHelp)
 
     return ret;
 }
-

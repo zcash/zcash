@@ -277,12 +277,12 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     }
 
     LogPrint((isfromtaddr_) ? "zrpc" : "zrpcunsafe", "%s: spending %s to send %s with fee %s\n",
-            getId(), FormatMoney(targetAmount, false), FormatMoney(sendAmount, false), FormatMoney(minersFee, false));
-    LogPrint("zrpc", "%s: transparent input: %s (to choose from)\n", getId(), FormatMoney(t_inputs_total, false));
-    LogPrint("zrpcunsafe", "%s: private input: %s (to choose from)\n", getId(), FormatMoney(z_inputs_total, false));
-    LogPrint("zrpc", "%s: transparent output: %s\n", getId(), FormatMoney(t_outputs_total, false));
-    LogPrint("zrpcunsafe", "%s: private output: %s\n", getId(), FormatMoney(z_outputs_total, false));
-    LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(minersFee, false));
+            getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(minersFee));
+    LogPrint("zrpc", "%s: transparent input: %s (to choose from)\n", getId(), FormatMoney(t_inputs_total));
+    LogPrint("zrpcunsafe", "%s: private input: %s (to choose from)\n", getId(), FormatMoney(z_inputs_total));
+    LogPrint("zrpc", "%s: transparent output: %s\n", getId(), FormatMoney(t_outputs_total));
+    LogPrint("zrpcunsafe", "%s: private output: %s\n", getId(), FormatMoney(z_outputs_total));
+    LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(minersFee));
 
     /**
      * SCENARIO #1
@@ -303,7 +303,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
             LogPrint("zrpc", "%s: transparent change in transaction output (amount=%s)\n",
                     getId(),
-                    FormatMoney(change, false)
+                    FormatMoney(change)
                     );
         }
         
@@ -379,7 +379,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 add_taddr_change_output_to_tx(change);
                 LogPrint("zrpc", "%s: transparent change in transaction output (amount=%s)\n",
                         getId(),
-                        FormatMoney(change, false)
+                        FormatMoney(change)
                         );
             }
         }
@@ -472,7 +472,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                         outPoint.hash.ToString().substr(0, 10),
                         outPoint.js,
                         int(outPoint.n), // uint8_t
-                        FormatMoney(noteFunds, false),
+                        FormatMoney(noteFunds),
                         wtxHeight,
                         wtxDepth
                         );
@@ -498,7 +498,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 
                 LogPrint("zrpcunsafe", "%s: generating note for change (amount=%s)\n",
                         getId(),
-                        FormatMoney(jsChange, false)
+                        FormatMoney(jsChange)
                         );
             }
 
@@ -594,7 +594,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                     
                     LogPrint("zrpcunsafe", "%s: spending change (amount=%s)\n",
                         getId(),
-                        FormatMoney(plaintext.value, false)
+                        FormatMoney(plaintext.value)
                         );
 
                 } catch (const std::exception& e) {
@@ -644,7 +644,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                         jso.hash.ToString().substr(0, 10),
                         jso.js,
                         int(jso.n), // uint8_t
-                        FormatMoney(noteFunds, false),
+                        FormatMoney(noteFunds),
                         wtxHeight,
                         wtxDepth
                         );
@@ -736,7 +736,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
                 LogPrint("zrpcunsafe", "%s: generating note for change (amount=%s)\n",
                         getId(),
-                        FormatMoney(jsChange, false)
+                        FormatMoney(jsChange)
                         );
             }
 
@@ -879,7 +879,7 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
             entry.jsop.hash.ToString().substr(0, 10),
             entry.jsop.js,
             int(entry.jsop.n),  // uint8_t
-            FormatMoney(entry.plaintext.value, false),
+            FormatMoney(entry.plaintext.value),
             HexStr(data).substr(0, 10)
             );
     }
@@ -955,9 +955,9 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
     LogPrint("zrpcunsafe", "%s: creating joinsplit at index %d (vpub_old=%s, vpub_new=%s, in[0]=%s, in[1]=%s, out[0]=%s, out[1]=%s)\n",
             getId(),
             tx_.vjoinsplit.size(),
-            FormatMoney(info.vpub_old, false), FormatMoney(info.vpub_new, false),
-            FormatMoney(info.vjsin[0].note.value, false), FormatMoney(info.vjsin[1].note.value, false),
-            FormatMoney(info.vjsout[0].value, false), FormatMoney(info.vjsout[1].value, false)
+            FormatMoney(info.vpub_old), FormatMoney(info.vpub_new),
+            FormatMoney(info.vjsin[0].note.value), FormatMoney(info.vjsin[1].note.value),
+            FormatMoney(info.vjsout[0].value), FormatMoney(info.vjsout[1].value)
             );
 
     // Generate the proof, this can take over a minute.

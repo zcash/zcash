@@ -18,7 +18,7 @@
 
 #include <boost/function.hpp>
 
-#include "univalue/univalue.h"
+#include <univalue.h>
 
 class AsyncRPCQueue;
 class CRPCCommand;

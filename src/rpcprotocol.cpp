@@ -26,7 +26,7 @@
 #include <boost/iostreams/stream.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "univalue/univalue.h"
+#include <univalue.h>
 
 using namespace std;
 

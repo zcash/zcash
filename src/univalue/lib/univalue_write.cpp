@@ -2,14 +2,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <ctype.h>
 #include <iomanip>
 #include <sstream>
 #include <stdio.h>
 #include "univalue.h"
 #include "univalue_escapes.h"
-
-// TODO: Using UTF8
 
 using namespace std;
 
@@ -24,15 +21,8 @@ static string json_escape(const string& inS)
 
         if (escStr)
             outS += escStr;
-
-        else if (isprint(ch))
+        else
             outS += ch;
-
-        else {
-            char tmpesc[16];
-            sprintf(tmpesc, "\\u%04x", ch);
-            outS += tmpesc;
-        }
     }
 
     return outS;
@@ -60,13 +50,6 @@ string UniValue::write(unsigned int prettyIndent,
         break;
     case VSTR:
         s += "\"" + json_escape(val) + "\"";
-        break;
-    case VREAL:
-        {
-            std::stringstream ss;
-            ss << std::showpoint << std::fixed << std::setprecision(8) << get_real();
-            s += ss.str();
-        }
         break;
     case VNUM:
         s += val;
@@ -96,8 +79,6 @@ void UniValue::writeArray(unsigned int prettyIndent, unsigned int indentLevel, s
         s += values[i].write(prettyIndent, indentLevel + 1);
         if (i != (values.size() - 1)) {
             s += ",";
-            if (prettyIndent)
-                s += " ";
         }
         if (prettyIndent)
             s += "\n";
@@ -120,7 +101,7 @@ void UniValue::writeObject(unsigned int prettyIndent, unsigned int indentLevel, 
         s += "\"" + json_escape(keys[i]) + "\":";
         if (prettyIndent)
             s += " ";
-        s += values[i].write(prettyIndent, indentLevel + 1);
+        s += values.at(i).write(prettyIndent, indentLevel + 1);
         if (i != (values.size() - 1))
             s += ",";
         if (prettyIndent)

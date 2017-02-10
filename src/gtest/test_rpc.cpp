@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "univalue/univalue.h"
+#include <univalue.h>
 
 #include "chain.h"
 #include "chainparams.h"
