@@ -242,14 +242,14 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
             self.nodes[0].z_sendmany(myzaddr, recipients, 1, -1)
         except JSONRPCException,e:
             errorString = e.error['message']
-        assert_equal("Invalid amount" in errorString, True)
+        assert_equal("Amount out of range" in errorString, True)
 
         # Send will fail because fee is larger than MAX_MONEY
         try:
             self.nodes[0].z_sendmany(myzaddr, recipients, 1, Decimal('21000000.00000001'))
         except JSONRPCException,e:
             errorString = e.error['message']
-        assert_equal("Invalid amount" in errorString, True)
+        assert_equal("Amount out of range" in errorString, True)
 
         # Send will fail because fee is larger than sum of outputs
         try:
