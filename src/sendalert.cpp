@@ -95,6 +95,11 @@ void ThreadSendAlert()
     // alert.setSubVer.insert(std::string("/MagicBean:0.7.2/"));
 	alert.setSubVer.insert(std::string("/MagicBean:1.0.3/"));
 
+    // Sanity check
+    assert(alert.strComment.length() <= 65536); // max length in alert.h
+    assert(alert.strStatusBar.length() <= 256);
+    assert(alert.strRPCError.length() <= 256);
+
     // Sign
     const CChainParams& chainparams = Params();
     std::string networkID = chainparams.NetworkIDString();
