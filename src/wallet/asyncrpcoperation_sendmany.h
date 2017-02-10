@@ -16,7 +16,7 @@
 #include <unordered_map>
 #include <tuple>
 
-#include "univalue/univalue.h"
+#include <univalue.h>
 
 // Default transaction fee if caller does not specify one.
 #define ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE   10000

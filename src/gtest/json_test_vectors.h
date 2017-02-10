@@ -5,7 +5,7 @@
 #include "serialize.h"
 #include "streams.h"
 
-#include "univalue/univalue.h"
+#include <univalue.h>
 
 UniValue
 read_json(const std::string& jsondata);
