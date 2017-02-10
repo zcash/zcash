@@ -1059,7 +1059,7 @@ public:
     }
 
     void ReturnKey();
-    bool GetReservedKey(CPubKey &pubkey);
+    virtual bool GetReservedKey(CPubKey &pubkey);
     void KeepKey();
 };
 

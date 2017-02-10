@@ -126,6 +126,7 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
     return timer_stop(tv_start);
 }
 
+#ifdef ENABLE_MINING
 double benchmark_solve_equihash()
 {
     CBlock pblock;
@@ -173,6 +174,7 @@ std::vector<double> benchmark_solve_equihash_threaded(int nThreads)
     }
     return ret;
 }
+#endif // ENABLE_MINING
 
 double benchmark_verify_equihash()
 {

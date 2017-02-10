@@ -19,16 +19,15 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include "json/json_spirit_value.h"
+#include <univalue.h>
 
-using namespace json_spirit;
 using namespace std;
 
 void EnsureWalletIsUnlocked();
 bool EnsureWalletIsAvailable(bool avoidException);
 
-Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys);
-Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys);
+UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys);
+UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys);
 
 
 std::string static EncodeDumpTime(int64_t nTime) {
@@ -74,10 +73,10 @@ std::string DecodeDumpString(const std::string &str) {
     return ret.str();
 }
 
-Value importprivkey(const Array& params, bool fHelp)
+UniValue importprivkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
     
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
@@ -130,7 +129,7 @@ Value importprivkey(const Array& params, bool fHelp)
 
         // Don't throw error in case a key is already there
         if (pwalletMain->HaveKey(vchAddress))
-            return Value::null;
+            return NullUniValue;
 
         pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1;
 
@@ -145,13 +144,13 @@ Value importprivkey(const Array& params, bool fHelp)
         }
     }
 
-    return Value::null;
+    return NullUniValue;
 }
 
-Value importaddress(const Array& params, bool fHelp)
+UniValue importaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
     
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
@@ -204,7 +203,7 @@ Value importaddress(const Array& params, bool fHelp)
 
         // Don't throw error in case an address is already there
         if (pwalletMain->HaveWatchOnly(script))
-            return Value::null;
+            return NullUniValue;
 
         pwalletMain->MarkDirty();
 
@@ -218,13 +217,13 @@ Value importaddress(const Array& params, bool fHelp)
         }
     }
 
-    return Value::null;
+    return NullUniValue;
 }
 
-Value z_importwallet(const Array& params, bool fHelp)
+UniValue z_importwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -244,10 +243,10 @@ Value z_importwallet(const Array& params, bool fHelp)
 	return importwallet_impl(params, fHelp, true);
 }
 
-Value importwallet(const Array& params, bool fHelp)
+UniValue importwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
     
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -267,7 +266,7 @@ Value importwallet(const Array& params, bool fHelp)
 	return importwallet_impl(params, fHelp, false);
 }
 
-Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys)
+UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -378,13 +377,13 @@ Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys)
     if (!fGood)
         throw JSONRPCError(RPC_WALLET_ERROR, "Error adding some keys to wallet");
 
-    return Value::null;
+    return NullUniValue;
 }
 
-Value dumpprivkey(const Array& params, bool fHelp)
+UniValue dumpprivkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
     
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -420,10 +419,10 @@ Value dumpprivkey(const Array& params, bool fHelp)
 
 
 
-Value z_exportwallet(const Array& params, bool fHelp)
+UniValue z_exportwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
     
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -441,10 +440,10 @@ Value z_exportwallet(const Array& params, bool fHelp)
 	return dumpwallet_impl(params, fHelp, true);
 }
 
-Value dumpwallet(const Array& params, bool fHelp)
+UniValue dumpwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -462,7 +461,7 @@ Value dumpwallet(const Array& params, bool fHelp)
 	return dumpwallet_impl(params, fHelp, false);
 }
 
-Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys)
+UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -548,10 +547,10 @@ Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys)
 }
 
 
-Value z_importkey(const Array& params, bool fHelp)
+UniValue z_importkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
@@ -587,7 +586,7 @@ Value z_importkey(const Array& params, bool fHelp)
     {
         // Don't throw error in case a key is already there
         if (pwalletMain->HaveSpendingKey(addr))
-            return Value::null;
+            return NullUniValue;
 
         pwalletMain->MarkDirty();
 
@@ -605,14 +604,14 @@ Value z_importkey(const Array& params, bool fHelp)
         }
     }
 
-    return Value::null;
+    return NullUniValue;
 }
 
 
-Value z_exportkey(const Array& params, bool fHelp)
+UniValue z_exportkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() != 1)
         throw runtime_error(

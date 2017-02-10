@@ -3,9 +3,9 @@ $(package)_version=0.1
 $(package)_download_path=https://github.com/arielgabizon/$(package)/archive/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
+<<<<<<< HEAD
 $(package)_sha256_hash=e88d56904accbfadb818a8aa5c9bbaab0621e58195f216577abe163243e4efe2
 $(package)_git_commit=3d3a94122bb3d008a9ab30b01f756655deb92915
-
 $(package)_dependencies=libgmp libsodium
 
 define $(package)_build_cmds

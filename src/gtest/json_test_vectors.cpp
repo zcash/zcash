@@ -1,14 +1,14 @@
 #include "json_test_vectors.h"
 
-Array
+UniValue
 read_json(const std::string& jsondata)
 {
-    Value v;
+    UniValue v;
 
-    if (!read_string(jsondata, v) || v.type() != array_type)
+    if (!(v.read(jsondata) && v.isArray()))
     {
         ADD_FAILURE();
-        return Array();
+        return UniValue(UniValue::VARR);
     }
     return v.get_array();
 }
