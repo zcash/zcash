@@ -185,7 +185,21 @@ public:
             return false;
         }
     }
+ bool verify_batch(
+        ProofVerifier& verifier
+    ) {
+        if (!vk || !vk_precomp || !bvk_precomp) {
+            throw std::runtime_error("JoinSplit verifying key not loaded");
+        }
 
+        try {
+     
+
+            return verifier.checkBatch(*bvk_precomp);
+        } catch (...) {
+            return false;
+        }
+    }
     ZCProof prove(
         const boost::array<JSInput, NumInputs>& inputs,
         const boost::array<JSOutput, NumOutputs>& outputs,

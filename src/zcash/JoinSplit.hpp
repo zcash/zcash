@@ -93,7 +93,10 @@ public:
         uint64_t vpub_new,
         const uint256& rt
     ) = 0;
-
+    //temp hack added to test batch verifier
+    virtual bool verify_batch(
+        ProofVerifier& verifier
+    ) = 0;
 protected:
     JoinSplit() {}
 };

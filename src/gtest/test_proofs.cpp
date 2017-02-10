@@ -401,13 +401,13 @@ TEST(proofs, zksnark_serializes_properly)
     auto kp = libsnark::r1cs_ppzksnark_generator<curve_pp>(example.constraint_system);
     auto vkprecomp = libsnark::r1cs_ppzksnark_verifier_process_vk(kp.vk);
     auto bvkprecomp = libsnark::r1cs_ppzksnark_batch_verifier_process_vk<curve_pp>(kp.vk);
+    auto verifierBatch = ProofVerifier::Batch(); 
         for (size_t i = 0; i < 20; i++) {
         auto badproof = ZCProof::random_invalid();
         auto proof = badproof.to_libsnark_proof<libsnark::r1cs_ppzksnark_proof<curve_pp>>();
         
         auto verifierEnabled = ProofVerifier::Strict();
         auto verifierDisabled = ProofVerifier::Disabled();
-        auto verifierBatch = ProofVerifier::Batch();
         // This verifier should catch the bad proof
         ASSERT_FALSE(verifierEnabled.check(
             kp.vk,
@@ -425,16 +425,16 @@ TEST(proofs, zksnark_serializes_properly)
             proof
         ));
         
-        // This verifier should catch the bad proof
-        verifierBatch.enable();
-        ASSERT_FALSE(verifierBatch.check(
+        // Recall that for a batch verifier the check method only adds the proof to the batch and returns true
+        verifierBatch.check(
             kp.vk,
             vkprecomp,
             bvkprecomp,
             example.primary_input,
             proof
-        ));
+        );
     }
+    ASSERT_FALSE(verifierBatch.checkBatch(bvkprecomp));
 
     for (size_t i = 0; i < 20; i++) {
         auto proof = libsnark::r1cs_ppzksnark_prover<curve_pp>(
@@ -443,11 +443,10 @@ TEST(proofs, zksnark_serializes_properly)
             example.auxiliary_input,
             example.constraint_system
         );
-
+        auto verifierBatch = ProofVerifier::Batch();
         {
             auto verifierEnabled = ProofVerifier::Strict();
             auto verifierDisabled = ProofVerifier::Disabled();
-            auto verifierBatch = ProofVerifier::Batch();
             ASSERT_TRUE(verifierEnabled.check(
                 kp.vk,
                 vkprecomp,
@@ -462,15 +461,15 @@ TEST(proofs, zksnark_serializes_properly)
                 example.primary_input,
                 proof
             ));
-            verifierBatch.enable();
-            ASSERT_TRUE(verifierBatch.check(
+            verifierBatch.check(
                 kp.vk,
                 vkprecomp,
                 bvkprecomp,
                 example.primary_input,
                 proof
-            ));
+            );
         }
+        ASSERT_TRUE(verifierBatch.checkBatch(bvkprecomp));
 
         ASSERT_TRUE(libsnark::r1cs_ppzksnark_verifier_strong_IC<curve_pp>(
             kp.vk,
@@ -716,8 +715,7 @@ TEST(proofs, batch_verifier)
             example.constraint_system
         );
 
-            if(i==19) verifierBatch.enable();
-            result = verifierBatch.check(
+        verifierBatch.check(
                 kp.vk,
                 vkprecomp,
                 bvkprecomp,
@@ -726,7 +724,7 @@ TEST(proofs, batch_verifier)
             );
             
     }
-    ASSERT_FALSE(result);
+    ASSERT_FALSE(verifierBatch.checkBatch(bvkprecomp));
 
 
 }

@@ -239,10 +239,10 @@ void initialize_curve_params();
 
 class ProofVerifier {
 private:
-    bool perform_verification;
-    bool is_batch_verifier;
+    bool perform_verification;//flag for verifier performing regular verification
+    bool perform_batch_verification;//flag for whether it's a batch verifier
     void* batch_accumulator;
-    ProofVerifier(bool perform_verification,bool is_batch_verifier = false) ;
+    ProofVerifier(bool perform_verification,bool perform_batch_verification, void* batch_accumulator);
 
 public:
     // ProofVerifier should never be copied
@@ -260,21 +260,10 @@ public:
     // such as during reindexing.
     static ProofVerifier Disabled();
     
-    // Only allowed for batch verifier, tells it to verify 
-    // ant not just batch next time check is called
-    void  enable(){
-        //ASSERT_TRUE(is_batch_verifier);
-        perform_verification = true;
-    }
-    // Only allowed for batch verifier, tells it to verify 
-    // ant not just batch next time check is called
-    void  disble(){
-        //ASSERT_TRUE(is_batch_verifier);
-        perform_verification = false;
-    }
-
     // Creates a batch verifier 
     static ProofVerifier Batch();
+
+    //for a batch verifier the check method only adds proof to the batch and always returns true
     template <typename VerificationKey,
               typename ProcessedVerificationKey,
               typename ProcessedBatchVerificationKey,
@@ -289,19 +278,8 @@ public:
         const Proof& p
     );
     //temporary method checks batch without adding more proofs to batch
-    template <typename VerificationKey,
-              typename ProcessedVerificationKey,
-              typename ProcessedBatchVerificationKey,
-              typename PrimaryInput,
-              typename Proof
-              >
-    bool checkBatch(
-        const VerificationKey& vk,
-        const ProcessedVerificationKey& pvk,
-        const ProcessedBatchVerificationKey& pbvk,
-        const PrimaryInput& pi,
-        const Proof& p
-    );
+    template <typename ProcessedBatchVerificationKey>
+    bool checkBatch(const ProcessedBatchVerificationKey& pbvk);
 };
 
 /*class BatchVerifier: public ProofVerifier {

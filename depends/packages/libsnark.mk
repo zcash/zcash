@@ -3,8 +3,8 @@ $(package)_version=0.1
 $(package)_download_path=https://github.com/arielgabizon/$(package)/archive/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
-$(package)_sha256_hash=caf4ea716b3199730ffde39d0ef6d97a423d98e30b8a8107b3f78d1591ecf143
-$(package)_git_commit=c457991424f2545915e822348c6685a65b5766c4
+$(package)_sha256_hash=e88d56904accbfadb818a8aa5c9bbaab0621e58195f216577abe163243e4efe2
+$(package)_git_commit=3d3a94122bb3d008a9ab30b01f756655deb92915
 
 $(package)_dependencies=libgmp libsodium
 

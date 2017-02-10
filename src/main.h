@@ -419,7 +419,11 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
 bool CheckBlock(const CBlock& block, CValidationState& state,
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW = true, bool fCheckMerkleRoot = true);
-
+/** An experimental version of CheckBlock that also uses the joinsplit batch verifier
+ - this method currently assumes it has been given a batch verifier without checking */
+bool CheckBlockBatchVerifier(const CBlock& block, CValidationState& state,
+                libzcash::ProofVerifier& verifier,
+                bool fCheckPOW, bool fCheckMerkleRoot);
 /** Context-dependent validity checks */
 bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& state, CBlockIndex *pindexPrev);
 bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIndex *pindexPrev);
