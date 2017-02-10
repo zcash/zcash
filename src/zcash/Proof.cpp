@@ -228,8 +228,8 @@ ProofVerifier ProofVerifier::Strict() {
     return ProofVerifier(true,false,NULL);
 }
 
-ProofVerifier::ProofVerifier(bool perform_verification,bool perform_batch_verification,void* batch_accumulator) :
-    perform_verification(perform_verification),
+ProofVerifier::ProofVerifier(bool perform_reg_verification,bool perform_batch_verification,void* batch_accumulator) :
+    perform_reg_verification(perform_reg_verification),
     perform_batch_verification(perform_batch_verification),
     batch_accumulator(batch_accumulator)
 { 
@@ -238,6 +238,11 @@ ProofVerifier::ProofVerifier(bool perform_verification,bool perform_batch_verifi
 
 
 ProofVerifier ProofVerifier::Batch() {
+    initialize_curve_params();
+    void* acc = (void *) new batch_verification_accumulator<curve_pp>();
+    return ProofVerifier(false,true,acc);
+}
+ProofVerifier ProofVerifier::RegularAndBatch() {
     initialize_curve_params();
     void* acc = (void *) new batch_verification_accumulator<curve_pp>();
     return ProofVerifier(true,true,acc);
@@ -256,18 +261,15 @@ bool ProofVerifier::check(
     const r1cs_ppzksnark_proof<curve_pp>& proof
 )
 {
-    if (!perform_verification) {
-        return true;
-        
-    } 
     //if it's a batch verifier we don't perform verification but just add another proof to the batch
     if (perform_batch_verification){
         auto acc = (batch_verification_accumulator<curve_pp> *)batch_accumulator;
         r1cs_ppzksnark_batcher<curve_pp>(vk, *acc, primary_input, proof);
-        return true;
     }
-    //if verification enabled but not batch verification, run standard verifier
-    return r1cs_ppzksnark_online_verifier_strong_IC<curve_pp>(pvk, primary_input, proof);
+    if (perform_reg_verification) {
+      return r1cs_ppzksnark_online_verifier_strong_IC<curve_pp>(pvk, primary_input, proof);
+    }
+    return true;
 }
    
 

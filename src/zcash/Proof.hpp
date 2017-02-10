@@ -239,7 +239,7 @@ void initialize_curve_params();
 
 class ProofVerifier {
 private:
-    bool perform_verification;//flag for verifier performing regular verification
+    bool perform_reg_verification;//flag for verifier performing regular verification
     bool perform_batch_verification;//flag for whether it's a batch verifier
     void* batch_accumulator;
     ProofVerifier(bool perform_verification,bool perform_batch_verification, void* batch_accumulator);
@@ -262,7 +262,7 @@ public:
     
     // Creates a batch verifier 
     static ProofVerifier Batch();
-
+    static ProofVerifier RegularAndBatch();
     //for a batch verifier the check method only adds proof to the batch and always returns true
     template <typename VerificationKey,
               typename ProcessedVerificationKey,
