@@ -2048,9 +2048,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto verifier = libzcash::ProofVerifier::Strict();
     auto disabledVerifier = libzcash::ProofVerifier::Disabled();
     auto batchVerifier = libzcash::ProofVerifier::Batch();//attempting to add batch verifier
-    std::cout << "here" ;
-    return false;
-    // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
+    if(fExpensiveChecks)
+        return false;
+   // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
     /*if (!CheckBlock(block, state, fExpensiveChecks ? verifier : disabledVerifier, !fJustCheck, !fJustCheck))
        return false;*/
     // attempting to use batch verifier    
@@ -2239,7 +2239,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     int64_t nTime4 = GetTimeMicros(); nTimeCallbacks += nTime4 - nTime3;
     LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime4 - nTime3), nTimeCallbacks * 0.000001);
-
     return true;
 }
 
