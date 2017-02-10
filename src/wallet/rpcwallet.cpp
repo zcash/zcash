@@ -3130,9 +3130,9 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
     CAmount nPrivateBalance = getBalanceZaddr("", nMinDepth);
     CAmount nTotalBalance = nBalance + nPrivateBalance;
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("transparent", FormatMoney(nBalance, false)));
-    result.push_back(Pair("private", FormatMoney(nPrivateBalance, false)));
-    result.push_back(Pair("total", FormatMoney(nTotalBalance, false)));
+    result.push_back(Pair("transparent", FormatMoney(nBalance)));
+    result.push_back(Pair("private", FormatMoney(nPrivateBalance)));
+    result.push_back(Pair("total", FormatMoney(nTotalBalance)));
     return result;
 }
 
