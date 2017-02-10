@@ -629,15 +629,14 @@ TEST(proofs, g2_deserialization)
 
 TEST(proofs, g1_test_vectors)
 {
-    Array v = read_json(std::string(json_tests::g1_compressed, json_tests::g1_compressed + sizeof(json_tests::g1_compressed)));
-    Array::iterator v_iterator = v.begin();
+    UniValue v = read_json(std::string(json_tests::g1_compressed, json_tests::g1_compressed + sizeof(json_tests::g1_compressed)));
 
     curve_G1 e = curve_Fr("34958239045823") * curve_G1::one();
     for (size_t i = 0; i < 10000; i++) {
         e = (curve_Fr("34958239045823") ^ i) * e;
         auto expected = CompressedG1(e);
 
-        expect_test_vector(v_iterator, expected);
+        expect_test_vector(v[i], expected);
         ASSERT_TRUE(expected.to_libsnark_g1<curve_G1>() == e);
     }
 }
@@ -646,15 +645,14 @@ TEST(proofs, g1_test_vectors)
 
 TEST(proofs, g2_test_vectors)
 {
-    Array v = read_json(std::string(json_tests::g2_compressed, json_tests::g2_compressed + sizeof(json_tests::g2_compressed)));
-    Array::iterator v_iterator = v.begin();
+    UniValue v = read_json(std::string(json_tests::g2_compressed, json_tests::g2_compressed + sizeof(json_tests::g2_compressed)));
 
     curve_G2 e = curve_Fr("34958239045823") * curve_G2::one();
     for (size_t i = 0; i < 10000; i++) {
         e = (curve_Fr("34958239045823") ^ i) * e;
         auto expected = CompressedG2(e);
 
-        expect_test_vector(v_iterator, expected);
+        expect_test_vector(v[i], expected);
         ASSERT_TRUE(expected.to_libsnark_g2<curve_G2>() == e);
     }
 }

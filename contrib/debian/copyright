@@ -11,10 +11,6 @@ Comment: The Bitcoin Core developers encompasses the current developers listed o
  as well as the numerous contributors to the project.
  The Zcash developers are listed at https://z.cash/team.html.
 
-Files: src/json/*
-Copyright: 2007-2009, John W. Wilkinson
-License: Expat
-
 Files: src/qt/res/icons/clock*.png, src/qt/res/icons/tx*.png,
        src/qt/res/src/*.svg
 Copyright: Wladimir van der Laan
