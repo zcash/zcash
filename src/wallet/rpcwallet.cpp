@@ -3183,7 +3183,7 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
     std::set<AsyncRPCOperationId> filter;
     if (params.size()==1) {
         UniValue ids = params[0].get_array();
-        for (UniValue & v : ids.getValues()) {
+        for (const UniValue & v : ids.getValues()) {
             filter.insert(v.get_str());
         }
     }
