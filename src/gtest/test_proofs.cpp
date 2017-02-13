@@ -727,3 +727,48 @@ TEST(proofs, batch_verifier)
 
 }
 
+//checks batch verifier detects one bad proof out of otherwise good batch
+TEST(proofs, batchandreg_verifier)
+{
+    
+    auto example = libsnark::generate_r1cs_example_with_field_input<curve_Fr>(250, 4);
+    example.constraint_system.swap_AB_if_beneficial();
+    
+    auto kp = libsnark::r1cs_ppzksnark_generator<curve_pp>(example.constraint_system);
+    auto vkprecomp = libsnark::r1cs_ppzksnark_verifier_process_vk(kp.vk);
+    auto bvkprecomp = libsnark::r1cs_ppzksnark_batch_verifier_process_vk<curve_pp>(kp.vk);
+    auto badproof = ZCProof::random_invalid();
+    auto proof = badproof.to_libsnark_proof<libsnark::r1cs_ppzksnark_proof<curve_pp>>();
+    auto verifier = ProofVerifier::RegularAndBatch();
+    // adding bad proof to batch - should be false cause it's also a regular verifier
+    ASSERT_FALSE(verifier.check(
+            kp.vk,
+            vkprecomp,
+            bvkprecomp,
+            example.primary_input,
+            proof
+        ));
+    
+    bool result;
+    // adding good proofs to batch    
+    for (size_t i = 0; i < 20; i++) {
+        auto proof = libsnark::r1cs_ppzksnark_prover<curve_pp>(
+            kp.pk,
+            example.primary_input,
+            example.auxiliary_input,
+            example.constraint_system
+        );
+
+        ASSERT_TRUE(verifier.check(
+                kp.vk,
+                vkprecomp,
+                bvkprecomp,
+                example.primary_input,
+                proof
+            ));
+            
+    }
+    ASSERT_FALSE(verifier.checkBatch(bvkprecomp));
+
+
+}

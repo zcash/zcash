@@ -833,7 +833,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return InitError(_("Not enough file descriptors available."));
     if (nFD - MIN_CORE_FILEDESCRIPTORS < nMaxConnections)
         nMaxConnections = nFD - MIN_CORE_FILEDESCRIPTORS;
-
     // if using block pruning, then disable txindex
     // also disable the wallet (for now, until SPV support is implemented in wallet)
     if (GetArg("-prune", 0)) {
@@ -1069,10 +1068,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // want any of libsnark's profiling in production anyway.
     libsnark::inhibit_profiling_info = true;
     libsnark::inhibit_profiling_counters = true;
-
+   
     // Initialize Zcash circuit parameters
     ZC_LoadParams();
-
     /* Start the RPC server already.  It will be started in "warmup" mode
      * and not really process calls already (but it will signify connections
      * that the server is there and will be ready later).  Warmup mode will
@@ -1125,7 +1123,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 SetLimited(net);
         }
     }
-
     if (mapArgs.count("-whitelist")) {
         BOOST_FOREACH(const std::string& net, mapMultiArgs["-whitelist"]) {
             CSubNet subnet(net);

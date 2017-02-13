@@ -242,14 +242,14 @@ private:
     bool perform_reg_verification;//flag for verifier performing regular verification
     bool perform_batch_verification;//flag for whether it's a batch verifier
     void* batch_accumulator;
-    ProofVerifier(bool perform_verification,bool perform_batch_verification, void* batch_accumulator);
-
+    
 public:
     // ProofVerifier should never be copied
     ProofVerifier(const ProofVerifier&) = delete;
     ProofVerifier& operator=(const ProofVerifier&) = delete;
     ProofVerifier(ProofVerifier&&);
     ProofVerifier& operator=(ProofVerifier&&);
+    ProofVerifier(bool perform_verification,bool perform_batch_verification, void* batch_accumulator);
 
     // Creates a verification context that strictly verifies
     // all proofs using libsnark's API.
