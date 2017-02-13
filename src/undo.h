@@ -31,7 +31,7 @@ public:
     void Serialize(Stream &s) const {
         ::Serialize(s, VARINT(nHeight*2+(fCoinBase ? 1 : 0)));
         if (nHeight > 0)
-            ::Serialize(s, VARINT(this->nVersion));
+            ::Serialize(s, VARINT(this->nVersion, VarIntMode::NONNEGATIVE_SIGNED));
         ::Serialize(s, CTxOutCompressor(REF(txout)));
     }
 
@@ -42,7 +42,7 @@ public:
         nHeight = nCode / 2;
         fCoinBase = nCode & 1;
         if (nHeight > 0)
-            ::Unserialize(s, VARINT(this->nVersion));
+            ::Unserialize(s, VARINT(this->nVersion, VarIntMode::NONNEGATIVE_SIGNED));
         ::Unserialize(s, REF(CTxOutCompressor(REF(txout))));
     }
 };
