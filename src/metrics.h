@@ -49,6 +49,8 @@ public:
 
     bool running();
 
+    uint64_t threadCount();
+
     double rate(const AtomicCounter& count);
 };
 
