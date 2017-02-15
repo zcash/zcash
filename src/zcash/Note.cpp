@@ -74,7 +74,8 @@ NotePlaintext NotePlaintext::decrypt(const ZCNoteDecryption& decryptor,
 }
 
 ZCNoteEncryption::Ciphertext NotePlaintext::encrypt(ZCNoteEncryption& encryptor,
-                                                    const uint256& pk_enc
+                                                    const uint256& pk_enc,
+                                                    const boost::optional<uint256>& sk_enc
                                                    ) const
 {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
@@ -86,7 +87,7 @@ ZCNoteEncryption::Ciphertext NotePlaintext::encrypt(ZCNoteEncryption& encryptor,
 
     memcpy(&pt[0], &ss[0], pt.size());
 
-    return encryptor.encrypt(pk_enc, pt);
+    return encryptor.encrypt(pk_enc, pt, sk_enc);
 }
 
 }

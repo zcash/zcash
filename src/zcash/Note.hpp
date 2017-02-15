@@ -62,7 +62,8 @@ public:
                                 );
 
     ZCNoteEncryption::Ciphertext encrypt(ZCNoteEncryption& encryptor,
-                                         const uint256& pk_enc
+                                         const uint256& pk_enc,
+                                         const boost::optional<uint256>& sk_enc = boost::none
                                         ) const;
 };
 

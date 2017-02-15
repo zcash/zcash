@@ -37,10 +37,12 @@ public:
     }
 
     // Encrypts `message` with `pk_enc` and returns the ciphertext.
+    // `sk_enc` is used in place of `pk_enc` in the KDF if provided.
     // This is only called ZC_NUM_JS_OUTPUTS times for a given instantiation; 
     // but can be called 255 times before the nonce-space runs out.
     Ciphertext encrypt(const uint256 &pk_enc,
-                       const Plaintext &message
+                       const Plaintext &message,
+                       const boost::optional<uint256> &sk_enc = boost::none
                       );
 
     // Creates a NoteEncryption private key
@@ -70,6 +72,16 @@ public:
                       unsigned char nonce
                      ) const;
 
+private:
+    static Plaintext decrypt_INTERNAL(
+            const Ciphertext &ciphertext,
+            const uint256 &dhsecret,
+            const uint256 &epk,
+            const uint256 &dk_enc,
+            const uint256 &hSig,
+            unsigned char nonce);
+
+public:
     friend inline bool operator==(const NoteDecryption& a, const NoteDecryption& b) {
         return a.sk_enc == b.sk_enc && a.pk_enc == b.pk_enc;
     }

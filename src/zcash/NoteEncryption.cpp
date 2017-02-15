@@ -70,7 +70,8 @@ NoteDecryption<MLEN>::NoteDecryption(uint256 sk_enc) : sk_enc(sk_enc) {
 template<size_t MLEN>
 typename NoteEncryption<MLEN>::Ciphertext NoteEncryption<MLEN>::encrypt
                                           (const uint256 &pk_enc,
-                                           const NoteEncryption<MLEN>::Plaintext &message
+                                           const NoteEncryption<MLEN>::Plaintext &message,
+                                           const boost::optional<uint256> &sk_enc
                                           )
 {
     uint256 dhsecret;
@@ -81,7 +82,7 @@ typename NoteEncryption<MLEN>::Ciphertext NoteEncryption<MLEN>::encrypt
 
     // Construct the symmetric key
     unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
-    KDF(K, dhsecret, epk, pk_enc, hSig, nonce);
+    KDF(K, dhsecret, epk, sk_enc ? *sk_enc : pk_enc, hSig, nonce);
 
     // Increment the number of encryptions we've performed
     nonce++;
@@ -113,8 +114,24 @@ typename NoteDecryption<MLEN>::Plaintext NoteDecryption<MLEN>::decrypt
         throw std::logic_error("Could not create DH secret");
     }
 
+    try {
+        return decrypt_INTERNAL(ciphertext, dhsecret, epk, pk_enc, hSig, nonce);
+    } catch (note_decryption_failed) {
+        return decrypt_INTERNAL(ciphertext, dhsecret, epk, sk_enc, hSig, nonce);
+    }
+}
+
+template<size_t MLEN>
+typename NoteDecryption<MLEN>::Plaintext NoteDecryption<MLEN>::decrypt_INTERNAL
+                                         (const NoteDecryption<MLEN>::Ciphertext &ciphertext,
+                                          const uint256 &dhsecret,
+                                          const uint256 &epk,
+                                          const uint256 &ck_enc,
+                                          const uint256 &hSig,
+                                          unsigned char nonce)
+{
     unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
-    KDF(K, dhsecret, epk, pk_enc, hSig, nonce);
+    KDF(K, dhsecret, epk, ck_enc, hSig, nonce);
 
     // The nonce is zero because we never reuse keys
     unsigned char cipher_nonce[crypto_aead_chacha20poly1305_IETF_NPUBBYTES] = {};

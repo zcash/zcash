@@ -299,7 +299,10 @@ public:
             for (size_t i = 0; i < NumOutputs; i++) {
                 NotePlaintext pt(out_notes[i], outputs[i].memo);
 
-                out_ciphertexts[i] = pt.encrypt(encryptor, outputs[i].addr.pk_enc);
+                out_ciphertexts[i] = pt.encrypt(
+                    encryptor,
+                    outputs[i].addr.pk_enc,
+                    outputs[i].sk_enc);
             }
 
             out_ephemeralKey = encryptor.get_epk();

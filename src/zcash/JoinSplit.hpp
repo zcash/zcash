@@ -37,8 +37,12 @@ public:
     uint64_t value;
     boost::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};  // 0xF6 is invalid UTF8 as per spec, rest of array is 0x00
 
+    // Set if this is a change output
+    boost::optional<uint256> sk_enc;
+
     JSOutput();
-    JSOutput(PaymentAddress addr, uint64_t value) : addr(addr), value(value) { }
+    JSOutput(PaymentAddress addr, uint64_t value) : addr(addr), value(value), sk_enc() { }
+    JSOutput(PaymentAddress addr, uint64_t value, const uint256& sk_enc) : addr(addr), value(value), sk_enc(sk_enc) { }
 
     Note note(const uint252& phi, const uint256& r, size_t i, const uint256& h_sig) const;
 };
