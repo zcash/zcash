@@ -85,7 +85,8 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     result.push_back(Pair("version", blockindex->nVersion));
     result.push_back(Pair("merkleroot", blockindex->hashMerkleRoot.GetHex()));
     result.push_back(Pair("time", (int64_t)blockindex->nTime));
-    result.push_back(Pair("nonce", (uint64_t)blockindex->nNonce));
+    result.push_back(Pair("nonce", blockindex->nNonce.GetHex()));
+    result.push_back(Pair("solution", HexStr(blockindex->nSolution)));
     result.push_back(Pair("bits", strprintf("%08x", blockindex->nBits)));
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
