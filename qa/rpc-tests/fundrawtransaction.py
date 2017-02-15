@@ -16,7 +16,8 @@ class RawTransactionsTest(BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 3)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir)
+        self.nodes = start_nodes(3, self.options.tmpdir,
+                           extra_args=[['-experimentalfeatures', '-developerencryptwallet']] * 4)
 
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
@@ -459,7 +460,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.sync_all()
 
         # make sure funds are received at node1
-        assert_equal(oldBalance+Decimal('51.10000000'), self.nodes[0].getbalance())
+        assert_equal(oldBalance+Decimal('11.10000000'), self.nodes[0].getbalance())
 
 
 
@@ -522,7 +523,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(oldBalance+Decimal('50.19000000'), self.nodes[0].getbalance()) #0.19+block reward
+        assert_equal(oldBalance+Decimal('10.19000000'), self.nodes[0].getbalance()) #0.19+block reward
 
         #####################################################
         # test fundrawtransaction with OP_RETURN and no vin #
