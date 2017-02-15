@@ -702,7 +702,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         // create output for any change
         if (jsChange>0) {
-            info.vjsout.push_back(JSOutput(frompaymentaddress_, jsChange));
+            info.vjsout.push_back(JSOutput(frompaymentaddress_, jsChange, spendingkey_.viewing_key()));
 
             LogPrint("zrpcunsafe", "%s: generating note for change (amount=%s)\n",
                     getId(),
