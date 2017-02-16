@@ -268,6 +268,7 @@ typedef std::map<JSOutPoint, CNoteData> mapNoteData_t;
 struct CNotePlaintextEntry
 {
     JSOutPoint jsop;
+    libzcash::PaymentAddress addr;
     libzcash::NotePlaintext plaintext;
 };
 

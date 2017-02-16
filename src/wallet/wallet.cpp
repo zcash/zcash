@@ -3566,7 +3566,7 @@ void CWalletTx::GetDecryptedNotes(std::vector<CNotePlaintextEntry>& outEntries,
                         hSig,
                         (unsigned char) j);
 
-                outEntries.push_back(CNotePlaintextEntry{jsop, plaintext});
+                outEntries.push_back(CNotePlaintextEntry{jsop, pa, plaintext});
 
             } catch (const note_decryption_failed &err) {
                 // Couldn't decrypt with this spending key

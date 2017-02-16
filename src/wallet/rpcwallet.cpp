@@ -1308,16 +1308,22 @@ static void MaybePushAddress(UniValue & entry, const CTxDestination &dest)
         entry.push_back(Pair("address", addr.ToString()));
 }
 
-void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, UniValue& ret, const isminefilter& filter)
+void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, UniValue& ret, const isminefilter& filter, bool fDecrypt=false)
 {
     CAmount nFee;
     string strSentAccount;
     list<COutputEntry> listReceived;
     list<COutputEntry> listSent;
+    vector<CNotePlaintextEntry> vNotesReceived;
 
     wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount, filter);
+    if (fDecrypt) {
+        boost::optional<libzcash::PaymentAddress> filterPaymentAddress;
+        wtx.GetDecryptedNotes(vNotesReceived, pwalletMain, filterPaymentAddress, false);
+    }
 
-    bool fAllAccounts = (strAccount == string("*"));
+    // Ignore strAccount if fDecrypt == true, which is only in z_* RPC methods
+    bool fAllAccounts = fDecrypt || (strAccount == string("*"));
     bool involvesWatchonly = wtx.IsFromMe(ISMINE_WATCH_ONLY);
 
     // Sent
@@ -1328,7 +1334,10 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
             UniValue entry(UniValue::VOBJ);
             if(involvesWatchonly || (::IsMine(*pwalletMain, s.destination) & ISMINE_WATCH_ONLY))
                 entry.push_back(Pair("involvesWatchonly", true));
-            entry.push_back(Pair("account", strSentAccount));
+            // Don't show for z_* RPC methods
+            if (!fDecrypt) {
+                entry.push_back(Pair("account", strSentAccount));
+            }
             MaybePushAddress(entry, s.destination);
             entry.push_back(Pair("category", "send"));
             entry.push_back(Pair("amount", ValueFromAmount(-s.amount)));
@@ -1342,7 +1351,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
     }
 
     // Received
-    if (listReceived.size() > 0 && wtx.GetDepthInMainChain() >= nMinDepth)
+    if ((listReceived.size() > 0 || vNotesReceived.size() > 0) && wtx.GetDepthInMainChain() >= nMinDepth)
     {
         BOOST_FOREACH(const COutputEntry& r, listReceived)
         {
@@ -1354,7 +1363,10 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 UniValue entry(UniValue::VOBJ);
                 if(involvesWatchonly || (::IsMine(*pwalletMain, r.destination) & ISMINE_WATCH_ONLY))
                     entry.push_back(Pair("involvesWatchonly", true));
-                entry.push_back(Pair("account", account));
+                // Don't show for z_* RPC methods
+                if (!fDecrypt) {
+                    entry.push_back(Pair("account", account));
+                }
                 MaybePushAddress(entry, r.destination);
                 if (wtx.IsCoinBase())
                 {
@@ -1376,6 +1388,22 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 entry.push_back(Pair("size", static_cast<CTransaction>(wtx).GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION)));
                 ret.push_back(entry);
             }
+        }
+
+        for (const CNotePlaintextEntry& n : vNotesReceived) {
+            UniValue entry(UniValue::VOBJ);
+            entry.push_back(Pair("private", true));
+            entry.push_back(Pair("address", CZCPaymentAddress(n.addr).ToString()));
+            entry.push_back(Pair("category", "receive"));
+            entry.push_back(Pair("amount", ValueFromAmount(CAmount(n.plaintext.value))));
+            std::string data(n.plaintext.memo.begin(), n.plaintext.memo.end());
+            entry.push_back(Pair("memo", HexStr(data)));
+            entry.push_back(Pair("vjoinsplit", n.jsop.js));
+            entry.push_back(Pair("noteindex", n.jsop.n));
+            if (fLong)
+                WalletTxToJSON(wtx, entry);
+            entry.push_back(Pair("size", static_cast<CTransaction>(wtx).GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION)));
+            ret.push_back(entry);
         }
     }
 }
@@ -1599,6 +1627,8 @@ UniValue listaccounts(const UniValue& params, bool fHelp)
     return ret;
 }
 
+UniValue ListSinceBlock(const UniValue& params, bool fDecrypt);
+
 UniValue listsinceblock(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -1640,6 +1670,11 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
             + HelpExampleRpc("listsinceblock", "\"000000000000000bacf66f7497b7dc45ef753ee9a7d38571037cdb1a57f663ad\", 6")
         );
 
+    return ListSinceBlock(params, false);
+}
+
+UniValue ListSinceBlock(const UniValue& params, bool fDecrypt)
+{
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     CBlockIndex *pindex = NULL;
@@ -1677,7 +1712,7 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
         CWalletTx tx = (*it).second;
 
         if (depth == -1 || tx.GetDepthInMainChain() < depth)
-            ListTransactions(tx, "*", 0, true, transactions, filter);
+            ListTransactions(tx, "*", 0, true, transactions, filter, fDecrypt);
     }
 
     CBlockIndex *pblockLast = chainActive[chainActive.Height() + 1 - target_confirms];
@@ -3021,6 +3056,54 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         result.push_back(obj);
     }
     return result;
+}
+
+UniValue z_decryptsinceblock(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp)
+        throw runtime_error(
+            "z_decryptsinceblock ( \"blockhash\" target-confirmations includeWatchonly)\n"
+            "\nGet all transactions in blocks since block [blockhash], or all transactions if omitted\n"
+            "\nIdentical to listsinceblock except it also shows information from inside JoinSplit notes we can decrypt\n"
+            "\nArguments:\n"
+            "1. \"blockhash\"   (string, optional) The block hash to list transactions since\n"
+            "2. target-confirmations:    (numeric, optional) The confirmations required, must be 1 or more\n"
+            "3. includeWatchonly:        (bool, optional, default=false) Include transactions to watchonly addresses (see 'importaddress')"
+            "\nResult:\n"
+            "{\n"
+            "  \"transactions\": [\n"
+            "    \"private\" : true,         (bool) Only returned if the entry is private, ie. decrypted from a JoinSplit output.\n"
+            "    \"address\":\"zcashaddress\",    (string) The zcash address of the transaction. Not present for move transactions (category = move).\n"
+            "    \"category\":\"send|receive\",     (string) The transaction category. 'send' has negative amounts, 'receive' has positive amounts.\n"
+            "    \"amount\": x.xxx,          (numeric) The amount in btc. This is negative for the 'send' category, and for the 'move' category for moves \n"
+            "                                          outbound. It is positive for the 'receive' category, and for the 'move' category for inbound funds.\n"
+            "    \"memo\": \"...\",            (string)  (private-only) The contents of the memo field.\n"
+            "    \"vjoinsplit\" : n,         (numeric) (private-only) The vjoinsplit value\n"
+            "    \"noteindex\" : n,          (numeric) (private-only) The output note index within the JoinSplit\n"
+            "    \"vout\" : n,               (numeric) (transparent-only) The vout value\n"
+            "    \"fee\": x.xxx,             (numeric) The amount of the fee in btc. This is negative and only available for the 'send' category of transactions.\n"
+            "    \"confirmations\": n,       (numeric) The number of confirmations for the transaction. Available for 'send' and 'receive' category of transactions.\n"
+            "    \"blockhash\": \"hashvalue\",     (string) The block hash containing the transaction. Available for 'send' and 'receive' category of transactions.\n"
+            "    \"blockindex\": n,          (numeric) The block index containing the transaction. Available for 'send' and 'receive' category of transactions.\n"
+            "    \"blocktime\": xxx,         (numeric) The block time in seconds since epoch (1 Jan 1970 GMT).\n"
+            "    \"txid\": \"transactionid\",  (string) The transaction id. Available for 'send' and 'receive' category of transactions.\n"
+            "    \"time\": xxx,              (numeric) The transaction time in seconds since epoch (Jan 1 1970 GMT).\n"
+            "    \"timereceived\": xxx,      (numeric) The time received in seconds since epoch (Jan 1 1970 GMT). Available for 'send' and 'receive' category of transactions.\n"
+            "    \"comment\": \"...\",       (string) If a comment is associated with the transaction.\n"
+            "    \"to\": \"...\",            (string) If a comment to is associated with the transaction.\n"
+             "  ],\n"
+            "  \"lastblock\": \"lastblockhash\"     (string) The hash of the last block\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_decryptsinceblock", "")
+            + HelpExampleCli("z_decryptsinceblock", "\"000000000000000bacf66f7497b7dc45ef753ee9a7d38571037cdb1a57f663ad\" 6")
+            + HelpExampleRpc("z_decryptsinceblock", "\"000000000000000bacf66f7497b7dc45ef753ee9a7d38571037cdb1a57f663ad\", 6")
+        );
+
+    return ListSinceBlock(params, true);
 }
 
 
