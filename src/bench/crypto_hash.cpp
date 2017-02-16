@@ -6,6 +6,7 @@
 
 #include "bench.h"
 #include "bloom.h"
+#include "random.h"
 #include "utiltime.h"
 #include "crypto/ripemd160.h"
 #include "crypto/sha1.h"
@@ -47,7 +48,32 @@ static void SHA512(benchmark::State& state)
         CSHA512().Write(begin_ptr(in), in.size()).Finalize(hash);
 }
 
+static void FastRandom_32bit(benchmark::State& state)
+{
+    FastRandomContext rng(true);
+    uint32_t x;
+    while (state.KeepRunning()) {
+        for (int i = 0; i < 1000000; i++) {
+            x += rng.rand32();
+        }
+    }
+}
+
+static void FastRandom_1bit(benchmark::State& state)
+{
+    FastRandomContext rng(true);
+    uint32_t x;
+    while (state.KeepRunning()) {
+        for (int i = 0; i < 1000000; i++) {
+            x += rng.randbool();
+        }
+    }
+}
+
 BENCHMARK(RIPEMD160);
 BENCHMARK(SHA1);
 BENCHMARK(SHA256);
 BENCHMARK(SHA512);
+
+BENCHMARK(FastRandom_32bit);
+BENCHMARK(FastRandom_1bit);
