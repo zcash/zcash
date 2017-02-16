@@ -505,6 +505,11 @@ public:
     void GetAccountAmounts(const std::string& strAccount, CAmount& nReceived,
                            CAmount& nSent, CAmount& nFee, const isminefilter& filter) const;
 
+    void GetDecryptedNotes(std::vector<CNotePlaintextEntry>& outEntries,
+                           const CWallet* wallet,
+                           const boost::optional<libzcash::PaymentAddress>& filterPaymentAddress,
+                           bool ignoreSpent=true) const;
+
     bool IsFromMe(const isminefilter& filter) const
     {
         return (GetDebit(filter) > 0);

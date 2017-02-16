@@ -3514,22 +3514,35 @@ void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, st
             continue;
         }
 
-        if (wtx.mapNoteData.size() == 0) {
-            continue;
+        wtx.GetDecryptedNotes(outEntries,
+                              this,
+                              fFilterAddress ? boost::optional<libzcash::PaymentAddress>(filterPaymentAddress) : boost::none,
+                              ignoreSpent);
+    }
+}
+
+void CWalletTx::GetDecryptedNotes(std::vector<CNotePlaintextEntry>& outEntries,
+                                  const CWallet* wallet,
+                                  const boost::optional<libzcash::PaymentAddress>& filterPaymentAddress,
+                                  bool ignoreSpent) const
+{
+    {
+        if (mapNoteData.size() == 0) {
+            return;
         }
 
-        for (auto & pair : wtx.mapNoteData) {
+        for (auto & pair : mapNoteData) {
             JSOutPoint jsop = pair.first;
             CNoteData nd = pair.second;
             PaymentAddress pa = nd.address;
 
             // skip notes which belong to a different payment address in the wallet
-            if (fFilterAddress && !(pa == filterPaymentAddress)) {
+            if (filterPaymentAddress && !(pa == *filterPaymentAddress)) {
                 continue;
             }
 
             // skip note which has been spent
-            if (ignoreSpent && nd.nullifier && IsSpent(*nd.nullifier)) {
+            if (ignoreSpent && nd.nullifier && wallet->IsSpent(*nd.nullifier)) {
                 continue;
             }
 
@@ -3538,18 +3551,18 @@ void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, st
 
             // Get cached decryptor
             ZCNoteDecryption decryptor;
-            if (!GetNoteDecryptor(pa, decryptor)) {
+            if (!wallet->GetNoteDecryptor(pa, decryptor)) {
                 // Note decryptors are created when the wallet is loaded, so it should always exist
                 throw std::runtime_error(strprintf("Could not find note decryptor for payment address %s", CZCPaymentAddress(pa).ToString()));
             }
 
             // determine amount of funds in the note
-            auto hSig = wtx.vjoinsplit[i].h_sig(*pzcashParams, wtx.joinSplitPubKey);
+            auto hSig = vjoinsplit[i].h_sig(*pzcashParams, joinSplitPubKey);
             try {
                 NotePlaintext plaintext = NotePlaintext::decrypt(
                         decryptor,
-                        wtx.vjoinsplit[i].ciphertexts[j],
-                        wtx.vjoinsplit[i].ephemeralKey,
+                        vjoinsplit[i].ciphertexts[j],
+                        vjoinsplit[i].ephemeralKey,
                         hSig,
                         (unsigned char) j);
 
