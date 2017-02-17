@@ -3775,8 +3775,10 @@ bool InitBlockIndex() {
 
 
 bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
-{
-    auto verifier = libzcash::ProofVerifier::Strict();//batch all joinsplit proofs from all blocks in file 
+{   
+    // batch all joinsplit proofs from all blocks in file
+    // and also do regular verificaiton of eachk joinsplit 
+    auto verifier = libzcash::ProofVerifier::RegularAndBatch(); 
     const CChainParams& chainparams = Params();
     // Map of disk positions for blocks with unknown parent (only used for reindex)
     static std::multimap<uint256, CDiskBlockPos> mapBlocksUnknownParent;
