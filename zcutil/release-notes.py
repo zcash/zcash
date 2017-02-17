@@ -17,7 +17,7 @@ def apply_author_aliases(name):
         return name
 
 def parse_authors(line):
-    commit_search = re.search('(\d+)', line)
+    commit_search = re.search('\((\d+)\)', line)
     if commit_search:
         commits = commit_search.group(1)
     else:
