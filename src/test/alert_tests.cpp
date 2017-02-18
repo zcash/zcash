@@ -16,7 +16,6 @@
 #include "test/test_bitcoin.h"
 
 #include <boost/test/unit_test.hpp>
-#include "json/json_spirit_reader_template.h"
 
 #include "key.h"
 #include "alertkeys.h"

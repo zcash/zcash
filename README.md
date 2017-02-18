@@ -1,9 +1,9 @@
-Zclassic 1.0.5
+Zclassic 1.0.6
 ==============
 
 What is Zclassic?
 ----------------
-Zclassic is a Zcash fork with no 20% Founders Tax.
+Zclassic is financial freedom.
 
 Get dependencies:
 ```{r, engine='bash'}

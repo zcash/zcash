@@ -46,21 +46,25 @@ TEST(noteencryption, api)
             ASSERT_TRUE(plaintext == message);
 
             // Test wrong nonce
-            ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), (i == 0) ? 1 : (i - 1)), std::runtime_error);
+            ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), (i == 0) ? 1 : (i - 1)),
+                         libzcash::note_decryption_failed);
         
             // Test wrong ephemeral key
             {
                 ZCNoteEncryption c = ZCNoteEncryption(uint256());
 
-                ASSERT_THROW(decrypter.decrypt(ciphertext, c.get_epk(), uint256(), i), std::runtime_error);
+                ASSERT_THROW(decrypter.decrypt(ciphertext, c.get_epk(), uint256(), i),
+                             libzcash::note_decryption_failed);
             }
         
             // Test wrong seed
-            ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256S("11035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a77"), i), std::runtime_error);
+            ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256S("11035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a77"), i),
+                         libzcash::note_decryption_failed);
         
             // Test corrupted ciphertext
             ciphertext[10] ^= 0xff;
-            ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i), std::runtime_error);
+            ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i),
+                         libzcash::note_decryption_failed);
             ciphertext[10] ^= 0xff;
         }
 
@@ -69,7 +73,8 @@ TEST(noteencryption, api)
             uint256 sk_enc_2 = ZCNoteEncryption::generate_privkey(uint252());
             ZCNoteDecryption decrypter(sk_enc_2);
 
-            ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i), std::runtime_error);
+            ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i),
+                         libzcash::note_decryption_failed);
         }
 
         {
@@ -81,7 +86,8 @@ TEST(noteencryption, api)
 
             // Test wrong public key (test of KDF)
             decrypter.change_pk_enc(uint256());
-            ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i), std::runtime_error);
+            ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i),
+                         libzcash::note_decryption_failed);
         }
     }
 

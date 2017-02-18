@@ -5,12 +5,9 @@
 #include "serialize.h"
 #include "streams.h"
 
-#include "json/json_spirit_reader_template.h"
-#include "json/json_spirit_utils.h"
-#include "json/json_spirit_writer_template.h"
+#include <univalue.h>
 
-using namespace json_spirit;
-Array
+UniValue
 read_json(const std::string& jsondata);
 
 // #define PRINT_JSON 1
@@ -34,7 +31,7 @@ void expect_deser_same(const T& expected)
 }
 
 template<typename T, typename U>
-void expect_test_vector(T& it, const U& expected)
+void expect_test_vector(T& v, const U& expected)
 {
     expect_deser_same(expected);
 
@@ -45,7 +42,7 @@ void expect_test_vector(T& it, const U& expected)
     std::cout << "\t\"" ;
     std::cout << HexStr(ss1.begin(), ss1.end()) << "\",\n";
     #else
-    std::string raw = (it++)->get_str();
+    std::string raw = v.get_str();
     CDataStream ss2(ParseHex(raw), SER_NETWORK, PROTOCOL_VERSION);
 
     ASSERT_TRUE(ss1.size() == ss2.size());

@@ -1,3 +1,7 @@
+#if defined(HAVE_CONFIG_H)
+#include "config/bitcoin-config.h"
+#endif
+
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
@@ -76,6 +80,7 @@ TEST(equihash_tests, is_probably_duplicate) {
     ASSERT_TRUE(IsProbablyDuplicate<4>(p3, 4));
 }
 
+#ifdef ENABLE_MINING
 TEST(equihash_tests, check_basic_solver_cancelled) {
     Equihash<48,5> Eh48_5;
     crypto_generichash_blake2b_state state;
@@ -283,3 +288,4 @@ TEST(equihash_tests, check_optimised_solver_cancelled) {
         }), EhSolverCancelledException);
     }
 }
+#endif // ENABLE_MINING
