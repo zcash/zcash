@@ -194,8 +194,8 @@ public:
     K GetKey() {
         K ret;
         if (vchData.size() == Size) {
-            //if base58 encoded data not holds a ext key, return a !IsValid() key
-            ret.Decode(&vchData[0]);
+            // If base58 encoded data does not hold an ext key, return a !IsValid() key
+            ret.Decode(vchData.data());
         }
         return ret;
     }
