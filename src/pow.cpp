@@ -171,7 +171,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             for (i=0; i<66; i++)
                 printf("%d ",mids[i]);
             printf(" minerids from ht.%d\n",height);
-            if ( notaryid >= 0 )
+            if ( notaryid >= 0 || height > 225000 )
                 return error("CheckProofOfWork(): hash doesn't match nBits");
         }
     }
