@@ -126,7 +126,7 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
     {
         char pubkeystr[65]; int32_t notaryid;
-        notaryid = komodo_whoami(pubkeystr,longestchain);
+        notaryid = komodo_whoami(pubkeystr,(int32_t)chainActive.Tip()->nHeight);
         obj.push_back(Pair("notaryid",        notaryid));
         obj.push_back(Pair("pubkey",        pubkeystr));
         if ( KOMODO_LASTMINED != 0 )

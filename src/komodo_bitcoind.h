@@ -685,7 +685,9 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width)
 
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
 {
-    int32_t i,notaryid,minerid,limit; uint8_t _pubkey33[33];
+    int32_t i,notaryid=0,minerid,limit,nid; uint8_t _pubkey33[33];
+    if ( height >= 225000 )
+        komodo_chosennotary(&notaryid,height,_pubkey33);
     if ( height >= 34000 && notaryid >= 0 )
     {
         if ( height < 79693 )
@@ -695,11 +697,13 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
         else limit = 66;
         for (i=1; i<limit; i++)
         {
-            komodo_chosennotary(&notaryid,height-i,_pubkey33);
-            if ( komodo_minerid(height-i,_pubkey33) == notaryid )
+            komodo_chosennotary(&nid,height-i,_pubkey33);
+            if ( nid == notaryid ) //komodo_minerid(height-i,_pubkey33)
             {
-                //fprintf(stderr,"ht.%d notaryid.%d already mined -i.%d\n",height,notaryid,i);
-                return(-1);
+                if ( (0) && notaryid > 0 )
+                    fprintf(stderr,"ht.%d notaryid.%d already mined -i.%d nid.%d\n",height,notaryid,i,nid);
+                if ( height > 225000 )
+                    return(-1);
             }
         }
         //fprintf(stderr,"special notaryid.%d ht.%d limit.%d\n",notaryid,height,limit);

@@ -654,6 +654,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
                 // Correct this if GetBlockTemplate changes the order
             //    entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
             //}
+            entry.push_back(Pair("coinbasevalue", 3*COIN));
             entry.push_back(Pair("required", true));
             txCoinbase = entry;
         } else
