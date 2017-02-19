@@ -171,18 +171,8 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             for (i=0; i<66; i++)
                 printf("%d ",mids[i]);
             printf(" minerids from ht.%d\n",height);
-            if ( notaryid == -1 )
-            {
-                sleep(3);
-                komodo_chosennotary(&notaryid,height,pubkey33);
-                if ( notaryid >= 0 )
-                {
-                    flag = komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,height);
-                    printf("found notaryid.%d flag.%d\n",notaryid,flag);
-                    return(true);
-                }
-            }
-            return error("CheckProofOfWork(): hash doesn't match nBits");
+            if ( notaryid >= 0 )
+                return error("CheckProofOfWork(): hash doesn't match nBits");
         }
     }
     return true;
