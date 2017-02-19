@@ -700,7 +700,7 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
             komodo_chosennotary(&nid,height-i,_pubkey33);
             if ( nid == notaryid ) //komodo_minerid(height-i,_pubkey33)
             {
-                if ( (0) && notaryid > 0 )
+                if ( (1) && notaryid > 0 )
                     fprintf(stderr,"ht.%d notaryid.%d already mined -i.%d nid.%d\n",height,notaryid,i,nid);
                 if ( height > 225000 )
                     return(-1);
