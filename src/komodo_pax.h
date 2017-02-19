@@ -528,7 +528,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     int32_t i,nonz=0; int64_t diff; uint64_t price,seed,sum = 0;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip() != 0 && height > chainActive.Tip()->nHeight )
     {
-        if ( height != 1381319936 )
+        if ( height < 1381319936 )
             printf("height.%d vs tip.%d\n",height,chainActive.Tip()->nHeight);
         return(0);
     }
