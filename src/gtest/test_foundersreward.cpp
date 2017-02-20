@@ -100,12 +100,16 @@ TEST(founders_reward_test, general) {
 
     CChainParams params = Params();
     
-    // First testnet reward:
-    // address = t2Mcc7khmWtviJKZLn9XyqPcs2zfQDn5K4X
-    // script.ToString() = OP_HASH160 a541a6cbddeb5ff69c10d91008ac56247906f08d OP_EQUAL
-    // HexStr(script) = a914a541a6cbddeb5ff69c10d91008ac56247906f08d87
-    EXPECT_EQ(params.GetFoundersRewardScriptAtHeight(1), ParseHex("a914a541a6cbddeb5ff69c10d91008ac56247906f08d87"));
-    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(1), "t2Mcc7khmWtviJKZLn9XyqPcs2zfQDn5K4X");
+    // Fourth testnet reward:
+    // address = t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy
+    // script.ToString() = OP_HASH160 55d64928e69829d9376c776550b6cc710d427153 OP_EQUAL
+    // HexStr(script) = a91455d64928e69829d9376c776550b6cc710d42715387
+    EXPECT_EQ(params.GetFoundersRewardScriptAtHeight(1), ParseHex("a914ef775f1f997f122a062fff1a2d7443abd1f9c64287"));
+    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(1), "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi");
+    EXPECT_EQ(params.GetFoundersRewardScriptAtHeight(53126), ParseHex("a914ac67f4c072668138d88a86ff21b27207b283212f87"));
+    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(53126), "t2NGQjYMQhFndDHguvUw4wZdNdsssA6K7x2");
+    EXPECT_EQ(params.GetFoundersRewardScriptAtHeight(53127), ParseHex("a91455d64928e69829d9376c776550b6cc710d42715387"));
+    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(53127), "t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy");
 
     int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
     
