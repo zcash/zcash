@@ -44,6 +44,30 @@ public:
 };
 
 template<size_t NumInputs, size_t NumOutputs>
+class JSProofWitness {
+public:
+    uint252 phi;
+    uint256 rt;
+    uint256 h_sig;
+    boost::array<JSInput, NumInputs> inputs;
+    boost::array<Note, NumOutputs> outputs;
+    uint64_t vpub_old;
+    uint64_t vpub_new;
+
+    JSProofWitness(
+        const uint252& phi,
+        const uint256& rt,
+        const uint256& h_sig,
+        const boost::array<JSInput, NumInputs>& inputs,
+        const boost::array<Note, NumOutputs>& outputs,
+        uint64_t vpub_old,
+        uint64_t vpub_new) :
+            phi(phi), rt(rt), h_sig(h_sig),
+            inputs(inputs), outputs(outputs),
+            vpub_old(vpub_old), vpub_new(vpub_new) { }
+};
+
+template<size_t NumInputs, size_t NumOutputs>
 class JoinSplit {
 public:
     virtual ~JoinSplit() {}
@@ -59,7 +83,7 @@ public:
                          const uint256& pubKeyHash
                         );
 
-    virtual ZCProof prove(
+    virtual JSProofWitness<NumInputs, NumOutputs> witness(
         const boost::array<JSInput, NumInputs>& inputs,
         const boost::array<JSOutput, NumOutputs>& outputs,
         boost::array<Note, NumOutputs>& out_notes,
@@ -73,11 +97,14 @@ public:
         uint64_t vpub_old,
         uint64_t vpub_new,
         const uint256& rt,
-        bool computeProof = true,
         // For paymentdisclosure, we need to retrieve the esk.
         // Reference as non-const parameter with default value leads to compile error.
         // So use pointer for simplicity.
         uint256 *out_esk = nullptr
+    ) = 0;
+
+    virtual ZCProof prove(
+        const JSProofWitness<NumInputs, NumOutputs>& witness
     ) = 0;
 
     virtual bool verify(
@@ -99,6 +126,8 @@ protected:
 
 }
 
+typedef libzcash::JSProofWitness<ZC_NUM_JS_INPUTS,
+                                 ZC_NUM_JS_OUTPUTS> ZCJSProofWitness;
 typedef libzcash::JoinSplit<ZC_NUM_JS_INPUTS,
                             ZC_NUM_JS_OUTPUTS> ZCJoinSplit;
 
