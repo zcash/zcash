@@ -2,6 +2,42 @@ noinst_PROGRAMS += \
   zcash/GenerateParams \
   zcash/CreateJoinSplit
 
+if BUILD_ZCASH_PROVING_SERVICE
+noinst_PROGRAMS += zcash-proving-service
+
+# proving service daemon
+zcash_proving_service_SOURCES = zcash-proving-service.cpp
+zcash_proving_service_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+zcash_proving_service_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+zcash_proving_service_LDADD = \
+  $(LIBBITCOIN_COMMON) \
+  $(LIBZCASH) \
+  $(LIBSNARK) \
+  $(LIBBITCOIN_UTIL) \
+  $(LIBBITCOIN_CRYPTO) \
+  $(BOOST_LIBS) \
+  $(ZMQ_LIBS) \
+  $(LIBZCASH_LIBS)
+endif
+
+if ENABLE_PROVING_SERVICE
+noinst_PROGRAMS += zcash/ExampleProvingServiceClient
+
+# example client for proving service
+zcash_ExampleProvingServiceClient_SOURCES = zcash/ExampleProvingServiceClient.cpp
+zcash_ExampleProvingServiceClient_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+zcash_ExampleProvingServiceClient_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+zcash_ExampleProvingServiceClient_LDADD = \
+  $(LIBBITCOIN_COMMON) \
+  $(LIBZCASH) \
+  $(LIBSNARK) \
+  $(LIBBITCOIN_UTIL) \
+  $(LIBBITCOIN_CRYPTO) \
+  $(BOOST_LIBS) \
+  $(ZMQ_LIBS) \
+  $(LIBZCASH_LIBS)
+endif
+
 # tool for generating our public parameters
 zcash_GenerateParams_SOURCES = zcash/GenerateParams.cpp
 zcash_GenerateParams_CPPFLAGS = $(AM_CPPFLAGS)

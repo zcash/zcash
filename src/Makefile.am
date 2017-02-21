@@ -112,6 +112,10 @@ LIBZCASH_H = \
   zcash/util.h \
   zcash/Zcash.h
 
+if ENABLE_PROVING_SERVICE
+LIBZCASH_H += zcash/ProvingServiceClient.hpp
+endif
+
 .PHONY: FORCE collate-libsnark check-symbols check-security
 # bitcoin core #
 BITCOIN_CORE_H = \
@@ -526,6 +530,10 @@ libzcash_a_SOURCES = \
   zcash/circuit/note.tcc \
   zcash/circuit/prfs.tcc \
   zcash/circuit/utils.tcc
+
+if ENABLE_PROVING_SERVICE
+libzcash_a_SOURCES += zcash/ProvingServiceClient.cpp
+endif
 
 libzcash_a_CPPFLAGS = -DMULTICORE -fopenmp -fPIC -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS $(HARDENED_CPPFLAGS) -pipe -O1 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
 

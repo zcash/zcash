@@ -1,0 +1,22 @@
+diff -ur azmq-1.0-orig/CMakeLists.txt azmq-1.0/CMakeLists.txt
+--- azmq-1.0-orig/CMakeLists.txt	2017-09-25 12:08:31.487969892 +0100
++++ azmq-1.0/CMakeLists.txt	2017-09-25 12:13:45.449318390 +0100
+@@ -49,18 +49,5 @@
+                     ${ZeroMQ_INCLUDE_DIRS}
+                     ${PROJECT_SOURCE_DIR})
+ 
+-enable_testing()
+-
+-macro(add_catch_test name)
+-    if (TEST_REPORT_FORMAT)
+-        add_test(NAME ${name} COMMAND ${name} -r ${TEST_REPORT_FORMAT} -o "${name}.test_out.xml")
+-    else()
+-        add_test(NAME ${name} COMMAND ${name})
+-    endif()
+-endmacro()
+-
+-add_subdirectory(test)
+-add_subdirectory(doc)
+-
+ install(DIRECTORY ${PROJECT_SOURCE_DIR}/azmq
+         DESTINATION include)

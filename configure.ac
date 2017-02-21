@@ -149,6 +149,12 @@ AC_ARG_ENABLE([zmq],
   [use_zmq=$enableval],
   [use_zmq=yes])
 
+AC_ARG_ENABLE([proving-service],
+  [AS_HELP_STRING([--disable-proving-service],
+  [disable proving service support in daemon])],
+  [use_proving_service=$enableval],
+  [use_proving_service=yes])
+
 AC_ARG_WITH([protoc-bindir],[AS_HELP_STRING([--with-protoc-bindir=BIN_DIR],[specify protoc bin path])], [protoc_bin_path=$withval], [])
 
 AC_ARG_ENABLE(man,
@@ -227,6 +233,12 @@ AC_ARG_WITH([daemon],
   [build bitcoind daemon (default=yes)])],
   [build_bitcoind=$withval],
   [build_bitcoind=yes])
+
+AC_ARG_WITH([proving-service-daemon],
+  [AS_HELP_STRING([--with-proving-service-daemon],
+  [build zcash-proving-service (default=no)])],
+  [build_zcash_proving_service=$withval],
+  [build_zcash_proving_service=no])
 
 use_pkgconfig=yes
 case $host in
@@ -574,6 +586,7 @@ AX_BOOST_FILESYSTEM
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_THREAD
 AX_BOOST_CHRONO
+AX_BOOST_REGEX
 
 fi
 
@@ -615,7 +628,7 @@ if test x$use_tests = xyes; then
 fi
 
 if test x$use_boost = xyes; then
-BOOST_LIBS="$BOOST_LDFLAGS $BOOST_SYSTEM_LIB $BOOST_FILESYSTEM_LIB $BOOST_PROGRAM_OPTIONS_LIB $BOOST_THREAD_LIB $BOOST_CHRONO_LIB"
+BOOST_LIBS="$BOOST_LDFLAGS $BOOST_SYSTEM_LIB $BOOST_FILESYSTEM_LIB $BOOST_PROGRAM_OPTIONS_LIB $BOOST_THREAD_LIB $BOOST_CHRONO_LIB $BOOST_REGEX_LIB"
 fi
 
 if test x$use_pkgconfig = xyes; then
@@ -693,6 +706,19 @@ AC_CHECK_LIB([gmp],[[__gmpn_sub_n]],GMP_LIBS=-lgmp, [AC_MSG_ERROR(libgmp missing
 AC_CHECK_HEADER([gmpxx.h],,AC_MSG_ERROR(libgmpxx headers missing))
 AC_CHECK_LIB([gmpxx],[main],GMPXX_LIBS=-lgmpxx, [AC_MSG_ERROR(libgmpxx missing)])
 
+if test x$use_proving_service = xyes; then
+  if test "x$use_zmq" = "xyes"; then
+    AC_DEFINE([ENABLE_PROVING_SERVICE],[1],[Define to 1 to enable proving service functions])
+  else
+    AC_MSG_WARN([zmq not enabled, disabling proving service support]);
+    use_proving_service=no
+    AC_DEFINE([ENABLE_PROVING_SERVICE],[0],[Define to 1 to enable proving service functions])
+  fi
+else
+  AC_DEFINE_UNQUOTED([ENABLE_PROVING_SERVICE],[0],[Define to 1 to enable proving service functions])
+fi
+AM_CONDITIONAL([ENABLE_PROVING_SERVICE], [test x$use_proving_service = xyes])
+
 RUST_LIBS=""
 if test x$enable_rust != xno; then
   RUST_LIBS="-lrustzcash"
@@ -738,6 +764,20 @@ if test x$build_bitcoin_libs = xyes; then
 fi
 
 AC_MSG_RESULT($build_bitcoin_libs)
+
+AC_MSG_CHECKING([whether to build zcash-proving-service])
+if test x$build_zcash_proving_service = xyes; then
+  if test "x$use_zmq" = "xyes"; then
+    AC_MSG_RESULT([yes])
+    BUILD_ZCASH_PROVING_SERVICE="yes"
+  else
+    AC_MSG_ERROR([zcash-proving-service requires ZMQ.]);
+  fi
+else
+  AC_MSG_RESULT([no])
+  BUILD_ZCASH_PROVING_SERVICE=""
+fi
+AM_CONDITIONAL([BUILD_ZCASH_PROVING_SERVICE], [test x$BUILD_ZCASH_PROVING_SERVICE = xyes])
 
 AC_LANG_POP
 

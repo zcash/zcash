@@ -68,6 +68,9 @@ public:
     // This is a zk-SNARK which ensures that this JoinSplit is valid.
     libzcash::ZCProof proof;
 
+    // In-memory only
+    ZCJSProofWitness witness;
+
     JSDescription(): vpub_old(0), vpub_new(0) { }
 
     JSDescription(ZCJoinSplit& params,

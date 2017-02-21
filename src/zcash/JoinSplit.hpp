@@ -26,6 +26,15 @@ public:
             Note note,
             SpendingKey key) : witness(witness), note(note), key(key) { }
 
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(witness);
+        READWRITE(note);
+        READWRITE(key);
+    }
+
     uint256 nullifier() const {
         return note.nullifier(key);
     }
@@ -54,6 +63,7 @@ public:
     uint64_t vpub_old;
     uint64_t vpub_new;
 
+    JSProofWitness() { }
     JSProofWitness(
         const uint252& phi,
         const uint256& rt,
@@ -65,6 +75,19 @@ public:
             phi(phi), rt(rt), h_sig(h_sig),
             inputs(inputs), outputs(outputs),
             vpub_old(vpub_old), vpub_new(vpub_new) { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(phi);
+        READWRITE(rt);
+        READWRITE(h_sig);
+        READWRITE(inputs);
+        READWRITE(outputs);
+        READWRITE(vpub_old);
+        READWRITE(vpub_new);
+    }
 };
 
 template<size_t NumInputs, size_t NumOutputs>

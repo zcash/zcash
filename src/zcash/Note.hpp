@@ -20,6 +20,16 @@ public:
 
     Note();
 
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(a_pk);
+        READWRITE(value);
+        READWRITE(rho);
+        READWRITE(r);
+    }
+
     uint256 cm() const;
     uint256 nullifier(const SpendingKey& a_sk) const;
 };
