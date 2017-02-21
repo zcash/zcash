@@ -655,13 +655,24 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     printf(" kht.%d ht.%d %.8f %.8f blockhash couldnt find vout.[%d]\n",kmdheights[i-1],otherheights[i-1],dstr(values[i-1]),dstr(srcvalues[i]),i);
                 }
             }
-            if ( (height < chainActive.Tip()->nHeight || (height >= chainActive.Tip()->nHeight && komodo_isrealtime(&ht) != 0)) && matched != num )
+            if ( height < 225000 && ASSETCHAINS_SYMBOL[0] == 0 )
             {
-                printf("WOULD REJECT %s: ht.%d (%c) matched.%d vs num.%d tip.%d isRT.%d\n",symbol,height,opcode,matched,num,(int32_t)chainActive.Tip()->nHeight,komodo_isrealtime(&ht));
-                // can easily happen depending on order of loading
-                if ( height > 200000 )
+                if ( (height < chainActive.Tip()->nHeight || (height >= chainActive.Tip()->nHeight && komodo_isrealtime(&ht) != 0)) && matched != num )
                 {
-                    printf("REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
+                    printf("WOULD REJECT %s: ht.%d (%c) matched.%d vs num.%d tip.%d isRT.%d\n",symbol,height,opcode,matched,num,(int32_t)chainActive.Tip()->nHeight,komodo_isrealtime(&ht));
+                    // can easily happen depending on order of loading
+                    if ( height > 200000 )
+                    {
+                        printf("REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
+                        return(-1);
+                    }
+                }
+            }
+            else
+            {
+                if ( height < chainActive.Tip()->nHeight && matched != num )
+                {
+                    printf("REJECT %s: ht.%d (%c) matched.%d vs num.%d tip.%d isRT.%d\n",symbol,height,opcode,matched,num,(int32_t)chainActive.Tip()->nHeight,komodo_isrealtime(&ht));
                     return(-1);
                 }
             }
