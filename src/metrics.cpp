@@ -101,6 +101,11 @@ static bool metrics_ThreadSafeMessageBox(const std::string& message,
     return false;
 }
 
+static bool metrics_ThreadSafeQuestion(const std::string& /* ignored interactive message */, const std::string& message, const std::string& caption, unsigned int style)
+{
+    return metrics_ThreadSafeMessageBox(message, caption, style);
+}
+
 static void metrics_InitMessage(const std::string& message)
 {
     *initMessage = message;
@@ -110,6 +115,8 @@ void ConnectMetricsScreen()
 {
     uiInterface.ThreadSafeMessageBox.disconnect_all_slots();
     uiInterface.ThreadSafeMessageBox.connect(metrics_ThreadSafeMessageBox);
+    uiInterface.ThreadSafeQuestion.disconnect_all_slots();
+    uiInterface.ThreadSafeQuestion.connect(metrics_ThreadSafeQuestion);
     uiInterface.InitMessage.disconnect_all_slots();
     uiInterface.InitMessage.connect(metrics_InitMessage);
 }
