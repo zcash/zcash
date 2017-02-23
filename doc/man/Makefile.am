@@ -1,1 +1,1 @@
-dist_man1_MANS=bitcoind.1 bitcoin-qt.1 bitcoin-cli.1 bitcoin-tx.1
+dist_man1_MANS=zcashd.1 zcash-cli.1 zcash-fetch-params.1 zcash-tx.1
