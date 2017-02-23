@@ -37,13 +37,6 @@ previous release:
     configure.ac
     contrib/gitian-descriptors/gitian-linux.yml
 
-Build and commit to update versions, and then perform the following commands:
-
-    help2man -n "RPC client for the Zcash daemon" src/zcash-cli > contrib/debian/manpages/zcash-cli.1
-    help2man -n "Network daemon for interacting with the Zcash blockchain" src/zcashd > contrib/debian/manpages/zcashd.1
-
-Check the version number in the man pages as they use the commit id e.g. 1.0.6-xxxxxxx which may need to be manually cleaned up.  Also check the titles use "zcashd" and "zcash-cli", not "zcash".
-
 In `configure.ac` and `clientversion.h`:
 
 - Increment `CLIENT_VERSION_BUILD` according to the following schema:
@@ -59,6 +52,12 @@ In `configure.ac` and `clientversion.h`:
 
 If this release changes the behavior of the protocol or fixes a serious bug, we may
 also wish to change the `PROTOCOL_VERSION` in `version.h`.
+
+Build and commit to update versions, and then perform the following command:
+
+    $ bash contrib/devtools/gen-manpages.sh
+
+Commit the changes.
 
 ### B2. Write release notes
 
