@@ -37,11 +37,12 @@ previous release:
     configure.ac
     contrib/gitian-descriptors/gitian-linux.yml
 
-    Build and commit to update versions, and then perform the following commands:
+Build and commit to update versions, and then perform the following commands:
 
-    help2man -n "RPC client for the Zcash daemon" src/zcash-cli > contrib/DEBIAN/manpages/zcash-cli.1
-    help2man -n "Network daemon for interacting with the Zcash blockchain" src/zcashd > contrib/DEBIAN/manpages/zcashd.1
+    help2man -n "RPC client for the Zcash daemon" src/zcash-cli > contrib/debian/manpages/zcash-cli.1
+    help2man -n "Network daemon for interacting with the Zcash blockchain" src/zcashd > contrib/debian/manpages/zcashd.1
 
+Check the version number in the man pages as they use the commit id e.g. 1.0.6-xxxxxxx which may need to be manually cleaned up.  Also check the titles use "zcashd" and "zcash-cli", not "zcash".
 
 In `configure.ac` and `clientversion.h`:
 
@@ -65,13 +66,17 @@ Run the release-notes.py script to generate release notes and update authors.md 
 
     $ python zcutil/release-notes.py --version $ZCASH_RELEASE
 
+Add the newly created release notes to the Git repository:
+
+    $ git add doc/release-notes/release-notes-$ZCASH_RELEASE.md
+
 Update the Debian package changelog:
 
     export DEBVERSION="${ZCASH_RELEASE}"
     export DEBEMAIL="${DEBEMAIL:-team@z.cash}"
     export DEBFULLNAME="${DEBFULLNAME:-Zcash Company}"
 
-    dch -v $DEBVERSION -D jessie -c contrib/DEBIAN/changelog
+    dch -v $DEBVERSION -D jessie -c contrib/debian/changelog
 
 (`dch` comes from the devscripts package.)
 
