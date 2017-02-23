@@ -38,9 +38,9 @@ public:
     }
 };
 
-class ViewingKey : public uint256 {
+class ReceivingKey : public uint256 {
 public:
-    ViewingKey(uint256 sk_enc) : uint256(sk_enc) { }
+    ReceivingKey(uint256 sk_enc) : uint256(sk_enc) { }
 
     uint256 pk_enc();
 };
@@ -52,7 +52,7 @@ public:
 
     static SpendingKey random();
 
-    ViewingKey viewing_key() const;
+    ReceivingKey receiving_key() const;
     PaymentAddress address() const;
 };
 

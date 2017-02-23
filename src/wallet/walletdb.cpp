@@ -106,7 +106,7 @@ bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey,
 }
 
 bool CWalletDB::WriteCryptedZKey(const libzcash::PaymentAddress & addr,
-                                 const libzcash::ViewingKey &vk,
+                                 const libzcash::ReceivingKey &rk,
                                  const std::vector<unsigned char>& vchCryptedSecret,
                                  const CKeyMetadata &keyMeta)
 {
@@ -116,7 +116,7 @@ bool CWalletDB::WriteCryptedZKey(const libzcash::PaymentAddress & addr,
     if (!Write(std::make_pair(std::string("zkeymeta"), addr), keyMeta))
         return false;
 
-    if (!Write(std::make_pair(std::string("czkey"), addr), std::make_pair(vk, vchCryptedSecret), false))
+    if (!Write(std::make_pair(std::string("czkey"), addr), std::make_pair(rk, vchCryptedSecret), false))
         return false;
     if (fEraseUnencryptedKey)
     {
@@ -585,14 +585,14 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             libzcash::PaymentAddress addr;
             ssKey >> addr;
             // Deserialization of a pair is just one item after another
-            uint256 vkValue;
-            ssValue >> vkValue;
-            libzcash::ViewingKey vk(vkValue);
+            uint256 rkValue;
+            ssValue >> rkValue;
+            libzcash::ReceivingKey rk(rkValue);
             vector<unsigned char> vchCryptedSecret;
             ssValue >> vchCryptedSecret;
             wss.nCKeys++;
 
-            if (!pwallet->LoadCryptedZKey(addr, vk, vchCryptedSecret))
+            if (!pwallet->LoadCryptedZKey(addr, rk, vchCryptedSecret))
             {
                 strErr = "Error reading wallet database: LoadCryptedZKey failed";
                 return false;

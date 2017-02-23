@@ -12,12 +12,12 @@ uint256 PaymentAddress::GetHash() const {
     return Hash(ss.begin(), ss.end());
 }
 
-uint256 ViewingKey::pk_enc() {
+uint256 ReceivingKey::pk_enc() {
     return ZCNoteEncryption::generate_pubkey(*this);
 }
 
-ViewingKey SpendingKey::viewing_key() const {
-    return ViewingKey(ZCNoteEncryption::generate_privkey(*this));
+ReceivingKey SpendingKey::receiving_key() const {
+    return ReceivingKey(ZCNoteEncryption::generate_privkey(*this));
 }
 
 SpendingKey SpendingKey::random() {
@@ -25,7 +25,7 @@ SpendingKey SpendingKey::random() {
 }
 
 PaymentAddress SpendingKey::address() const {
-    return PaymentAddress(PRF_addr_a_pk(*this), viewing_key().pk_enc());
+    return PaymentAddress(PRF_addr_a_pk(*this), receiving_key().pk_enc());
 }
 
 }

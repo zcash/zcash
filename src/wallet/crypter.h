@@ -201,7 +201,7 @@ public:
         }
     }
     virtual bool AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
-                                       const libzcash::ViewingKey &vk,
+                                       const libzcash::ReceivingKey &rk,
                                        const std::vector<unsigned char> &vchCryptedSecret);
     bool AddSpendingKey(const libzcash::SpendingKey &sk);
     bool HaveSpendingKey(const libzcash::PaymentAddress &address) const

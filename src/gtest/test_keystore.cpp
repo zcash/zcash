@@ -43,7 +43,7 @@ TEST(keystore_tests, store_and_retrieve_note_decryptor) {
 
     keyStore.AddSpendingKey(sk);
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
-    EXPECT_EQ(ZCNoteDecryption(sk.viewing_key()), decOut);
+    EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
 }
 
 #ifdef ENABLE_WALLET
@@ -72,13 +72,13 @@ TEST(keystore_tests, store_and_retrieve_spending_key_in_encrypted_store) {
     ASSERT_TRUE(keyStore.GetSpendingKey(addr, keyOut));
     ASSERT_EQ(sk, keyOut);
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
-    EXPECT_EQ(ZCNoteDecryption(sk.viewing_key()), decOut);
+    EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
 
     ASSERT_TRUE(keyStore.EncryptKeys(vMasterKey));
     ASSERT_TRUE(keyStore.HaveSpendingKey(addr));
     ASSERT_FALSE(keyStore.GetSpendingKey(addr, keyOut));
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
-    EXPECT_EQ(ZCNoteDecryption(sk.viewing_key()), decOut);
+    EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
 
     // Unlocking with a random key should fail
     uint256 r2 {GetRandHash()};
@@ -109,19 +109,19 @@ TEST(keystore_tests, store_and_retrieve_spending_key_in_encrypted_store) {
     ASSERT_TRUE(keyStore.GetSpendingKey(addr2, keyOut));
     ASSERT_EQ(sk2, keyOut);
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr2, decOut));
-    EXPECT_EQ(ZCNoteDecryption(sk2.viewing_key()), decOut);
+    EXPECT_EQ(ZCNoteDecryption(sk2.receiving_key()), decOut);
 
     ASSERT_TRUE(keyStore.Lock());
     ASSERT_TRUE(keyStore.HaveSpendingKey(addr2));
     ASSERT_FALSE(keyStore.GetSpendingKey(addr2, keyOut));
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr2, decOut));
-    EXPECT_EQ(ZCNoteDecryption(sk2.viewing_key()), decOut);
+    EXPECT_EQ(ZCNoteDecryption(sk2.receiving_key()), decOut);
 
     ASSERT_TRUE(keyStore.Unlock(vMasterKey));
     ASSERT_TRUE(keyStore.GetSpendingKey(addr2, keyOut));
     ASSERT_EQ(sk2, keyOut);
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr2, decOut));
-    EXPECT_EQ(ZCNoteDecryption(sk2.viewing_key()), decOut);
+    EXPECT_EQ(ZCNoteDecryption(sk2.receiving_key()), decOut);
 
     keyStore.GetPaymentAddresses(addrs);
     ASSERT_EQ(2, addrs.size());

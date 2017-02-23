@@ -2667,7 +2667,7 @@ UniValue zc_raw_receive(const UniValue& params, bool fHelp)
         }
     }
 
-    ZCNoteDecryption decryptor(k.viewing_key());
+    ZCNoteDecryption decryptor(k.receiving_key());
 
     NotePlaintext npt = NotePlaintext::decrypt(
         decryptor,
@@ -2908,20 +2908,20 @@ UniValue zc_raw_keygen(const UniValue& params, bool fHelp)
 
     auto k = SpendingKey::random();
     auto addr = k.address();
-    auto viewing_key = k.viewing_key();
+    auto receiving_key = k.receiving_key();
 
-    CDataStream viewing(SER_NETWORK, PROTOCOL_VERSION);
+    CDataStream receiving(SER_NETWORK, PROTOCOL_VERSION);
 
-    viewing << viewing_key;
+    receiving << receiving_key;
 
     CZCPaymentAddress pubaddr(addr);
     CZCSpendingKey spendingkey(k);
-    std::string viewing_hex = HexStr(viewing.begin(), viewing.end());
+    std::string receiving_hex = HexStr(receiving.begin(), receiving.end());
 
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("zcaddress", pubaddr.ToString()));
     result.push_back(Pair("zcsecretkey", spendingkey.ToString()));
-    result.push_back(Pair("zcviewingkey", viewing_hex));
+    result.push_back(Pair("zcviewingkey", receiving_hex));
     return result;
 }
 
