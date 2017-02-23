@@ -3203,17 +3203,17 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
             // It's possible that the operation was removed from the internal queue and map during this loop
             // throw JSONRPCError(RPC_INVALID_PARAMETER, "No operation exists for that id.");
         }
-        
-        UniValue status = operation->getStatus();
 
+        UniValue obj = operation->getStatus();
+        std::string s = obj["status"].get_str();
         if (fRemoveFinishedOperations) {
             // Caller is only interested in retrieving finished results
-            if (operation->isSuccess() || operation->isFailed() || operation->isCancelled()) {
-                ret.push_back(status);
+            if ("success"==s || "failed"==s || "cancelled"==s) {
+                ret.push_back(obj);
                 q->popOperationForId(id);
             }
         } else {
-            ret.push_back(status);
+            ret.push_back(obj);
         }
     }
 
