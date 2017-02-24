@@ -46,6 +46,50 @@ TEST(keystore_tests, store_and_retrieve_note_decryptor) {
     EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
 }
 
+TEST(keystore_tests, StoreAndRetrieveViewingKey) {
+    CBasicKeyStore keyStore;
+    libzcash::ViewingKey vkOut;
+    libzcash::SpendingKey skOut;
+    ZCNoteDecryption decOut;
+
+    auto sk = libzcash::SpendingKey::random();
+    auto vk = sk.viewing_key();
+    auto addr = sk.address();
+
+    // Sanity-check: we can't get a viewing key we haven't added
+    EXPECT_FALSE(keyStore.HaveViewingKey(addr));
+    EXPECT_FALSE(keyStore.GetViewingKey(addr, vkOut));
+
+    // and we shouldn't have a spending key or decryptor either
+    EXPECT_FALSE(keyStore.HaveSpendingKey(addr));
+    EXPECT_FALSE(keyStore.GetSpendingKey(addr, skOut));
+    EXPECT_FALSE(keyStore.GetNoteDecryptor(addr, decOut));
+
+    keyStore.AddViewingKey(vk);
+    EXPECT_TRUE(keyStore.HaveViewingKey(addr));
+    EXPECT_TRUE(keyStore.GetViewingKey(addr, vkOut));
+    EXPECT_EQ(vk, vkOut);
+
+    // We should still not have the spending key...
+    EXPECT_FALSE(keyStore.HaveSpendingKey(addr));
+    EXPECT_FALSE(keyStore.GetSpendingKey(addr, skOut));
+
+    // ... but we should have a decryptor
+    EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
+    EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
+
+    keyStore.RemoveViewingKey(vk);
+    EXPECT_FALSE(keyStore.HaveViewingKey(addr));
+    EXPECT_FALSE(keyStore.GetViewingKey(addr, vkOut));
+    EXPECT_FALSE(keyStore.HaveSpendingKey(addr));
+    EXPECT_FALSE(keyStore.GetSpendingKey(addr, skOut));
+
+    // We still have a decryptor because those are cached in memory
+    // (and also we only remove viewing keys when adding a spending key)
+    EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
+    EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
+}
+
 #ifdef ENABLE_WALLET
 class TestCCryptoKeyStore : public CCryptoKeyStore
 {

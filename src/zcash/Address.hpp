@@ -40,9 +40,37 @@ public:
 
 class ReceivingKey : public uint256 {
 public:
+    ReceivingKey() { }
     ReceivingKey(uint256 sk_enc) : uint256(sk_enc) { }
 
-    uint256 pk_enc();
+    uint256 pk_enc() const;
+};
+
+class ViewingKey {
+public:
+    uint256 a_pk;
+    ReceivingKey sk_enc;
+
+    ViewingKey() : a_pk(), sk_enc() { }
+    ViewingKey(uint256 a_pk, ReceivingKey sk_enc) : a_pk(a_pk), sk_enc(sk_enc) { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(a_pk);
+        READWRITE(sk_enc);
+    }
+
+    PaymentAddress address() const;
+
+    friend inline bool operator==(const ViewingKey& a, const ViewingKey& b) {
+        return a.a_pk == b.a_pk && a.sk_enc == b.sk_enc;
+    }
+    friend inline bool operator<(const ViewingKey& a, const ViewingKey& b) {
+        return (a.a_pk < b.a_pk ||
+                (a.a_pk == b.a_pk && a.sk_enc < b.sk_enc));
+    }
 };
 
 class SpendingKey : public uint252 {
@@ -53,6 +81,7 @@ public:
     static SpendingKey random();
 
     ReceivingKey receiving_key() const;
+    ViewingKey viewing_key() const;
     PaymentAddress address() const;
 };
 
