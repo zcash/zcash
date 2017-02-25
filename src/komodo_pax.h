@@ -604,7 +604,7 @@ uint64_t PAX_fiatdest(uint64_t *seedp,int32_t tokomodo,char *destaddr,uint8_t pu
     *seedp = komodo_seed(height);
     if ( (baseid= komodo_baseid(origbase)) < 0 || baseid == MAX_CURRENCIES )
     {
-        if ( origbase[0] != 0 )
+        if ( 0 && origbase[0] != 0 )
             printf("[%s] PAX_fiatdest illegal base.(%s)\n",ASSETCHAINS_SYMBOL,origbase);
         return(0);
     }
