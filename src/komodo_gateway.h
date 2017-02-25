@@ -658,7 +658,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
                     }
                 }
-                else
+                else if ( kmdheights[i-1] > 0 && otherheights[i-1] > 0 )
                 {
                     hash = block.GetHash();
                     for (j=0; j<32; j++)
