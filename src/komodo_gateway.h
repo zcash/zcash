@@ -466,8 +466,14 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     if ( tokomodo == 0 )
     {
         opcode = 'I';
-        if ( komodo_isrealtime(&ht) == 0 )
-            return(0);
+        for (i=0; i<10; i++)
+        {
+            if ( komodo_isrealtime(&ht) != 0 )
+                break;
+            sleep(1);
+        }
+        printf("%s not realtime ht.%d\n",ASSETCHAINS_SYMBOL,ht);
+        return(0);
     }
     else
     {
