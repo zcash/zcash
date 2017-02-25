@@ -2386,7 +2386,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
             }
             if ( nTotalLower > 2*nTargetValue + CENT )
             {
-                fprintf(stderr,"why bother with all the utxo if we have double what is needed?\n");
+                //fprintf(stderr,"why bother with all the utxo if we have double what is needed?\n");
                 break;
             }
         }
