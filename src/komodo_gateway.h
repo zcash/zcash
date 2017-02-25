@@ -472,8 +472,11 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
                 break;
             sleep(1);
         }
-        printf("%s not realtime ht.%d\n",ASSETCHAINS_SYMBOL,ht);
-        return(0);
+        if ( i == 10 )
+        {
+            printf("%s not realtime ht.%d\n",ASSETCHAINS_SYMBOL,ht);
+            return(0);
+        }
     }
     else
     {
