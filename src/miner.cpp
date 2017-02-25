@@ -400,7 +400,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         else if ( komodo_is_issuer() != 0 )
         {
             komodo_gateway_deposits(&txNew,ASSETCHAINS_SYMBOL,0);
-            if ( txNew.vout.size() > 1 )
+            //if ( txNew.vout.size() > 1 )
                 fprintf(stderr,"%s txNew numvouts.%d\n",ASSETCHAINS_SYMBOL,(int32_t)txNew.vout.size());
         }
         pblock->vtx[0] = txNew;

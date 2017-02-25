@@ -493,6 +493,8 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             if ( kmdsp != 0 && (kmdsp->NOTARIZED_HEIGHT >= pax->height || kmdsp->CURRENT_HEIGHT > pax->height+30) ) // assumes same chain as notarize
                 pax->validated = pax->komodoshis; //kmdsp->NOTARIZED_HEIGHT;
             else pax->validated = pax->ready = 0;
+#else
+            pax->validated = pax->komodoshis;
 #endif
         }
         if ( ASSETCHAINS_SYMBOL[0] != 0 && (pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis) )
