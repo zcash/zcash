@@ -552,7 +552,8 @@ void static BitcoinMiner(CWallet *pwallet)
     //else solver = "default";
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
-    //fprintf(stderr,"Mining with %s\n",solver.c_str());
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        fprintf(stderr,"Mining with %s\n",solver.c_str());
     std::mutex m_cs;
     bool cancelSolver = false;
     boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
@@ -563,7 +564,8 @@ void static BitcoinMiner(CWallet *pwallet)
     );
 
     try {
-        //fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
         while (true)
         {
             if (chainparams.MiningRequiresPeers())
@@ -602,7 +604,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 Mining_height = pindexPrev->nHeight+1;
                 Mining_start = (uint32_t)time(NULL);
             }
-            if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
                 fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
 
             unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
@@ -668,7 +670,7 @@ void static BitcoinMiner(CWallet *pwallet)
             } else Mining_start = 0;
             while (true)
             {
-                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
+                if ( ASSETCHAINS_SYMBOL[0] != 0 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
                 {
                     fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
                     sleep(10);
