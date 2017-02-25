@@ -423,8 +423,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         CValidationState state;
         if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
         {
-            fprintf(stderr,"testblockvalidity failed\n");
-            throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+            fprintf(stderr,"warning: testblockvalidity failed\n");
+            //throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
         }
     }
 
