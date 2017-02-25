@@ -482,4 +482,26 @@ BOOST_AUTO_TEST_CASE(chacha20_testvector)
                  "fab78c9");
 }
 
+BOOST_AUTO_TEST_CASE(countbits_tests)
+{
+    FastRandomContext ctx;
+    for (int i = 0; i <= 64; ++i) {
+        if (i == 0) {
+            // Check handling of zero.
+            BOOST_CHECK_EQUAL(CountBits(0), 0);
+        } else if (i < 10) {
+            for (uint64_t j = 1 << (i - 1); (j >> i) == 0; ++j) {
+                // Exhaustively test up to 10 bits
+                BOOST_CHECK_EQUAL(CountBits(j), i);
+            }
+        } else {
+            for (int k = 0; k < 1000; k++) {
+                // Randomly test 1000 samples of each length above 10 bits.
+                uint64_t j = ((uint64_t)1) << (i - 1) | ctx.randbits(i - 1);
+                BOOST_CHECK_EQUAL(CountBits(j), i);
+            }
+        }
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
