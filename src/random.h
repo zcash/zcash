@@ -143,6 +143,17 @@ public:
         }
     }
 
+    /** Generate a random integer in the range [0..range). */
+    uint64_t randrange(uint64_t range)
+    {
+        --range;
+        int bits = CountBits(range);
+        while (true) {
+            uint64_t ret = randbits(bits);
+            if (ret <= range) return ret;
+        }
+    }
+
     /** Generate a random 32-bit integer. */
     uint32_t rand32() { return randbits(32); }
 

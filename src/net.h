@@ -424,7 +424,7 @@ public:
         // after addresses were pushed.
         if (addr.IsValid() && !addrKnown.contains(addr.GetKey())) {
             if (vAddrToSend.size() >= MAX_ADDR_TO_SEND) {
-                vAddrToSend[insecure_rand.rand32() % vAddrToSend.size()] = addr;
+                vAddrToSend[insecure_rand.randrange(vAddrToSend.size())] = addr;
             } else {
                 vAddrToSend.push_back(addr);
             }
