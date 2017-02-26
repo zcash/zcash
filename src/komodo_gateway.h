@@ -1063,7 +1063,7 @@ void komodo_passport_iteration()
                         {
                             if ( time(NULL) < starttime+maxseconds )
                                 n = 0;
-                            else printf("expire passport loop %s -> %s\n",ASSETCHAINS_SYMBOL,base);
+                            else printf("expire passport loop %s -> %s at %ld\n",ASSETCHAINS_SYMBOL,base,lastpos[baseid]);
                         }
                         n++;
                     }
