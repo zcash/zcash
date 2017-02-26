@@ -378,7 +378,7 @@ uint64_t komodo_paxtotal()
                         }
                     }
                 }
-                if ( 0 && pax->ready != 0 )
+                if ( pax->ready != 0 )
                     printf("%p (%c) pax.%s marked.%d %.8f -> %.8f validated.%d approved.%d\n",pax,pax->type,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0);
             }
         }
