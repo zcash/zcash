@@ -751,7 +751,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         printf("%02x",pubkey33[i]);
                     printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
                 }
-                if ( komodo_paxcmp(base,kmdheight,value,checktoshis,seed) == 0 )
+                if ( komodo_paxcmp(base,kmdheight,value,checktoshis,kmdheight < chainActive.Tip()->nHeight ? seed : 0) == 0 )
                 {
                     if ( (pax= komodo_paxfind(txid,vout,'D')) == 0 )
                     {
