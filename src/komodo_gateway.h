@@ -466,13 +466,13 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     if ( tokomodo == 0 )
     {
         opcode = 'I';
-        for (i=0; i<10; i++)
+        for (i=0; i<3; i++)
         {
             if ( komodo_isrealtime(&ht) != 0 )
                 break;
             sleep(1);
         }
-        if ( i == 10 )
+        if ( i == 3 )
         {
             printf("%s not realtime ht.%d\n",ASSETCHAINS_SYMBOL,ht);
             return(0);
@@ -1010,7 +1010,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 void komodo_passport_iteration()
 {
     static long lastpos[34]; static char userpass[33][1024];
-    FILE *fp; int32_t baseid,isrealtime,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3]; cJSON *infoobj,*result; uint64_t RTmask = 0;
+    FILE *fp; int32_t baseid,n,isrealtime,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
     //printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
     while ( KOMODO_INITDONE == 0 )
     {
@@ -1034,6 +1034,7 @@ void komodo_passport_iteration()
         KOMODO_PASSPORT_INITDONE = 1;
         return;
     }
+    starttime = (uint32_t)time(NULL);
     //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=32; baseid>=0; baseid--)
     {
@@ -1045,6 +1046,7 @@ void komodo_passport_iteration()
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"komodostate");
             komodo_nameset(symbol,dest,base);
             sp = komodo_stateptrget(symbol);
+            n = 0;
             if ( (fp= fopen(fname,"rb")) != 0 && sp != 0 )
             {
                 fseek(fp,0,SEEK_END);
@@ -1053,8 +1055,16 @@ void komodo_passport_iteration()
                     if ( 0 && lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
                         printf("passport refid.%d %s fname.(%s) base.%s\n",refid,symbol,fname,base);
                     fseek(fp,lastpos[baseid],SEEK_SET);
-                    while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
-                        ;
+                    while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 && n < 1000 )
+                    {
+                        if ( n == 999 )
+                        {
+                            if ( time(NULL) < starttime+5 )
+                                n = 0;
+                            else printf("expire passport loop %s\n",ASSETCHAINS_SYMBOL,base);
+                        }
+                        n++;
+                    }
                     lastpos[baseid] = ftell(fp);
                     if ( 0 && lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
                         printf("from.(%s) lastpos[%s] %ld\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid]);
