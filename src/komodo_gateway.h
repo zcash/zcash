@@ -509,9 +509,10 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             printf("reject 2\n");
             continue;
         }*/
-        if ( ASSETCHAINS_SYMBOL[0] != 0 && (strcmp(pax->symbol,symbol) != 0 || pax->validated == 0) )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && (strcmp(pax->symbol,symbol) != 0 || pax->validated == 0 || pax->ready == 0) )
         {
-            //printf("pax->symbol.%s != %s or null pax->validated %.8f\n",pax->symbol,symbol,dstr(pax->validated));
+            if ( strcmp(pax->symbol,ASSETCHAINS_SYMBOL) == 0 )
+                printf("pax->symbol.%s != %s or null pax->validated %.8f ready.%d ht.(%d %d)\n",pax->symbol,symbol,dstr(pax->validated),pax->ready,kmdsp->CURRENT_HEIGHT,pax->height);
             continue;
         }
         if ( pax->ready == 0 )
@@ -1072,7 +1073,7 @@ void komodo_passport_iteration()
                                 n = 0;
                             else
                             {
-                                printf("expire passport loop %s -> %s at %ld\n",ASSETCHAINS_SYMBOL,base,lastpos[baseid]);
+                                //printf("expire passport loop %s -> %s at %ld\n",ASSETCHAINS_SYMBOL,base,lastpos[baseid]);
                                 expired++;
                             }
                         }
