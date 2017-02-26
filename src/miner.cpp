@@ -424,6 +424,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
         {
             fprintf(stderr,"warning: testblockvalidity failed\n");
+            return(0);
             //throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
         }
     }
@@ -606,8 +607,13 @@ void static BitcoinMiner(CWallet *pwallet)
             }
             if ( ASSETCHAINS_SYMBOL[0] != 0 )
                 fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
-
-            unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
+            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey);
+            if ( ptr == 0 )
+            {
+                fprintf(stderr,"created illegal block, retry\n");
+                continue;
+            }
+            unique_ptr<CBlockTemplate> pblocktemplate(ptr);
             if (!pblocktemplate.get())
             {
                 LogPrintf("Error in KomodoMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");

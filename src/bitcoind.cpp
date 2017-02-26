@@ -41,6 +41,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     // Tell the main threads to shutdown.
     while (!fShutdown)
     {
+        //fprintf(stderr,"call passport iteration\n");
         MilliSleep(10000);
         komodo_passport_iteration();
         fShutdown = ShutdownRequested();
@@ -188,7 +189,7 @@ bool AppInit(int argc, char* argv[])
     } catch (...) {
         PrintExceptionContinue(NULL, "AppInit()");
     }
-
+    fprintf(stderr,"fRet.%d\n",(int32_t)fRet);
     if (!fRet)
     {
         threadGroup.interrupt_all();
