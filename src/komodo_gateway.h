@@ -84,8 +84,8 @@ struct pax_transaction *komodo_paxmark(int32_t height,uint256 txid,uint16_t vout
     if ( pax != 0 )
     {
         pax->marked = mark;
-        if ( height > 214700 || pax->height > 214700 )
-            printf("mark ht.%d %.8f %.8f\n",pax->height,dstr(pax->komodoshis),dstr(pax->fiatoshis));
+        //if ( height > 214700 || pax->height > 214700 )
+        //    printf("mark ht.%d %.8f %.8f\n",pax->height,dstr(pax->komodoshis),dstr(pax->fiatoshis));
         
     }
     pthread_mutex_unlock(&komodo_mutex);
@@ -634,9 +634,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             {
                 if ( (sp= komodo_stateptrget(CURRENCIES[baseids[i-1]])) != 0 && (sp->RTmask & (1LL << baseids[i-1])) == 0 )
                 {
-                    printf("skip checkdeposit.%s not RT\n",CURRENCIES[baseids[i-1]]);
+                    /*printf("skip checkdeposit.%s not RT %llx\n",CURRENCIES[baseids[i-1]],(long long)sp->RTmask);
                     matched++;
-                    continue;
+                    continue;*/
                 }
                 if ( (pax= komodo_paxfinds(txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
                 {
