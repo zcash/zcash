@@ -1010,8 +1010,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 void komodo_passport_iteration()
 {
     static long lastpos[34]; static char userpass[33][1024]; int32_t maxseconds = 7;
-    FILE *fp; int32_t baseid,n,ht,isrealtime,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
+    FILE *fp; int32_t baseid,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
     //printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
+    expired = 0;
     while ( KOMODO_INITDONE == 0 )
     {
         fprintf(stderr,"[%s] PASSPORT iteration waiting for KOMODO_INITDONE\n",ASSETCHAINS_SYMBOL);
@@ -1063,7 +1064,11 @@ void komodo_passport_iteration()
                         {
                             if ( time(NULL) < starttime+maxseconds )
                                 n = 0;
-                            else printf("expire passport loop %s -> %s at %ld\n",ASSETCHAINS_SYMBOL,base,lastpos[baseid]);
+                            else
+                            {
+                                printf("expire passport loop %s -> %s at %ld\n",ASSETCHAINS_SYMBOL,base,lastpos[baseid]);
+                                expired++;
+                            }
                         }
                         n++;
                     }
@@ -1115,7 +1120,10 @@ void komodo_passport_iteration()
     }
     komodo_paxtotal();
     refsp->RTmask = RTmask;
-    KOMODO_PASSPORT_INITDONE = 1;
-    //printf("done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
+    if ( expired == 0 && KOMODO_PASSPORT_INITDONE == 0 )
+    {
+        KOMODO_PASSPORT_INITDONE = 1;
+        printf("done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
+    }
 }
 
