@@ -281,7 +281,7 @@ int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t che
 uint64_t komodo_paxtotal()
 {
     struct pax_transaction *pax,*pax2,*tmp,*tmp2; char symbol[16],dest[16],*str; int32_t i,ht; int64_t checktoshis; uint64_t seed,total = 0; struct komodo_state *basesp;
-    if ( KOMODO_PAX == 0 )
+    if ( KOMODO_PAX == 0 || KOMODO_PASSPORT_INITDONE == 0 )
         return(0);
     if ( komodo_isrealtime(&ht) == 0 )
         return(0);
@@ -406,7 +406,7 @@ static int _paxorder(const void *a,const void *b)
 int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic order
 {
     struct pax_transaction *pax,*pax2,*tmp,*paxes[64]; uint8_t opretbuf[16384]; int32_t i,n,ht,len=0; uint64_t total = 0;
-    if ( KOMODO_PAX == 0 )
+    if ( KOMODO_PAX == 0 || KOMODO_PASSPORT_INITDONE == 0 )
         return(0);
     if ( komodo_isrealtime(&ht) == 0 || ASSETCHAINS_SYMBOL[0] != 0 )
         return(0);
@@ -455,7 +455,7 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t tokomodo)
 {
     struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[16384],data[16384]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t available,deposited,issued,withdrawn,approved,redeemed,mask;
-    if ( KOMODO_PAX == 0 )
+    if ( KOMODO_PAX == 0 || KOMODO_PASSPORT_INITDONE == 0 )
         return(0);
     struct komodo_state *kmdsp = komodo_stateptrget((char *)"KMD");
     sp = komodo_stateptr(symbol,dest);
@@ -586,7 +586,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
     int32_t i,j,n,ht,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t available,deposited,issued,withdrawn,approved,redeemed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *sp;
-    if ( KOMODO_PAX == 0 || komodo_isrealtime(&ht) == 0 )
+    if ( KOMODO_PAX == 0 || komodo_isrealtime(&ht) == 0 || KOMODO_PASSPORT_INITDONE == 0 )
         return(0);
     memset(baseids,0xff,sizeof(baseids));
     memset(values,0,sizeof(values));
