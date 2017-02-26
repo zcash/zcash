@@ -499,7 +499,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         }
         if ( ASSETCHAINS_SYMBOL[0] != 0 && (pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis) )
         {
-            if ( strcmp(ASSETCHAINS_SYMBOL,symbol) == 0 )
+            if ( height > 214700 || strcmp(ASSETCHAINS_SYMBOL,symbol) == 0 )
                 printf("miner.[%s]: skip %s %.8f when avail %.8f deposited %.8f, issued %.8f withdrawn %.8f approved %.8f redeemed %.8f\n",ASSETCHAINS_SYMBOL,symbol,dstr(pax->fiatoshis),dstr(available),dstr(deposited),dstr(issued),dstr(withdrawn),dstr(approved),dstr(redeemed));
             continue;
         }
@@ -511,7 +511,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         }*/
         if ( ASSETCHAINS_SYMBOL[0] != 0 && (strcmp(pax->symbol,symbol) != 0 || pax->validated == 0 || pax->ready == 0) )
         {
-            if ( strcmp(pax->symbol,ASSETCHAINS_SYMBOL) == 0 )
+            if ( height > 214700 || strcmp(pax->symbol,ASSETCHAINS_SYMBOL) == 0 )
                 printf("pax->symbol.%s != %s or null pax->validated %.8f ready.%d ht.(%d %d)\n",pax->symbol,symbol,dstr(pax->validated),pax->ready,kmdsp->CURRENT_HEIGHT,pax->height);
             continue;
         }
@@ -796,7 +796,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         }
                     }
                 }
-                else if ( seed != 0 && kmdheight > 182000 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                else if ( kmdheight > 182000 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 ) //seed != 0 &&
                     printf("pax %s deposit %.8f rejected kmdheight.%d %.8f KMD check %.8f seed.%llu\n",base,dstr(fiatoshis),kmdheight,dstr(value),dstr(checktoshis),(long long)seed);
             } //else printf("paxdeposit height.%d vs kmdheight.%d\n",height,kmdheight);
         }
