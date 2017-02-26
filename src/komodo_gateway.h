@@ -463,20 +463,20 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     if ( ASSETCHAINS_SYMBOL[0] != 0 && komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
         return(0);
     PENDING_KOMODO_TX = 0;
+    for (i=0; i<3; i++)
+    {
+        if ( komodo_isrealtime(&ht) != 0 )
+            break;
+        sleep(1);
+    }
+    if ( i == 3 )
+    {
+        printf("%s not realtime ht.%d\n",ASSETCHAINS_SYMBOL,ht);
+        return(0);
+    }
     if ( tokomodo == 0 )
     {
         opcode = 'I';
-        for (i=0; i<3; i++)
-        {
-            if ( komodo_isrealtime(&ht) != 0 )
-                break;
-            sleep(1);
-        }
-        if ( i == 3 )
-        {
-            printf("%s not realtime ht.%d\n",ASSETCHAINS_SYMBOL,ht);
-            return(0);
-        }
     }
     else
     {
@@ -626,6 +626,12 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         {
             for (i=1; i<n-1; i++)
             {
+                if ( (sp= komodo_stateptrget(CURRENCIES[baseids[i-1]])) != 0 && (sp->RTmask & (1LL << baseid)) == 0 )
+                {
+                    printf("skip checkdeposit.%s not RT\n",CURRENCIES[baseids[i-1]]);
+                    matched++;
+                    continue;
+                }
                 if ( (pax= komodo_paxfinds(txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
                 {
                     pax->type = opcode;
