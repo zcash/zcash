@@ -2669,7 +2669,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend,
                     if ( KOMODO_EXCHANGEWALLET == 0 )
                     {
                         interest2 += pcoin.first->vout[pcoin.second].interest;
-                        //fprintf(stderr,"%.8f ",(double)pcoin.first->vout[pcoin.second].interest/COIN);
+                        fprintf(stderr,"%.8f ",(double)pcoin.first->vout[pcoin.second].interest/COIN);
                     }
                     int age = pcoin.first->GetDepthInMainChain();
                     if (age != 0)

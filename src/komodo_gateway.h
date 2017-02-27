@@ -683,6 +683,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 if ( height > 0 && (height < chainActive.Tip()->nHeight || (height >= chainActive.Tip()->nHeight && komodo_isrealtime(&ht) != 0)) && matched != num )
                 {
                     printf("WOULD REJECT %s: ht.%d (%c) matched.%d vs num.%d tip.%d isRT.%d\n",symbol,height,opcode,matched,num,(int32_t)chainActive.Tip()->nHeight,komodo_isrealtime(&ht));
+                    // can easily happen depending on order of loading
                     if ( height > 200000 )
                     {
                         printf("REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
@@ -750,7 +751,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         printf("%02x",pubkey33[i]);
                     printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
                 }
-                if ( komodo_paxcmp(base,kmdheight,value,checktoshis,kmdheight <= 225000 ? seed : 0) == 0 )
+                if ( komodo_paxcmp(base,kmdheight,value,checktoshis,kmdheight < 225000 ? seed : 0) == 0 )
                 {
                     if ( (pax= komodo_paxfind(txid,vout,'D')) == 0 )
                     {
