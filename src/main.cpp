@@ -3062,9 +3062,18 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
                          REJECT_INVALID, "bad-diffbits");
 
     // Check timestamp against prev
-    if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast())
+    int64_t prevTime = 0;
+    // Testnet will hard fork at block 53127 to fix issue #2113.
+    // This could be a suitable time to address time warping, #1889, which also involves a hard fork.
+    if (chainParams.NetworkIDString() == "test" && nHeight >= 53127) {
+        prevTime = pindexPrev->GetBlockTime();
+    } else {
+        prevTime = pindexPrev->GetMedianTimePast();
+    }
+    if (block.GetBlockTime() <= prevTime) {
         return state.Invalid(error("%s: block's timestamp is too early", __func__),
                              REJECT_INVALID, "time-too-old");
+    }
 
     if(fCheckpointsEnabled)
     {
