@@ -61,7 +61,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
 
         # 11 kb blocks will only hold about 50 txs, so this will fill mempool with older txs
         taddr = self.nodes[1].getnewaddress()
-        for _ in range(300):
+        for _ in range(900):
             self.nodes[0].sendtoaddress(taddr, 0.1)
         self.nodes[0].generate(1)
         self.sync_all()
@@ -72,25 +72,25 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
 
         # Check that priority_tx_0 is not in block_template() prior to prioritisation
         block_template = self.nodes[0].getblocktemplate()
-        in_mempool = True
+        in_block_template = False
         for tx in block_template['transactions']:
             if tx['hash'] == priority_tx_0:
-                in_mempool == False
+                in_block_template = True
                 break
-        assert(in_mempool)
+        assert_equal(in_block_template, False)
 
         priority_result = self.nodes[0].prioritisetransaction(priority_tx_0, 1000, int(3 * base_fee * COIN))
 
         # Check that prioritized transaction is in getblocktemplate()
-        prioritized = False
+        in_block_template = False
         block_template = self.nodes[0].getblocktemplate()
         for tx in block_template['transactions']:
             if tx['hash'] == priority_tx_0:
-                prioritized = True
+                in_block_template = True
                 break
         # NOTE: getblocktemplate() should return prioritized transaction, but is not
         # Noted by user in issue #1884
-        assert_equal(prioritized, False)
+        assert_equal(in_block_template, False)
 
         # Node 1 doesn't get the next block, so this *shouldn't* be mined despite being prioritized on node 1
         priority_tx_1 = self.nodes[1].sendtoaddress(self.nodes[0].getnewaddress(), 0.1)
