@@ -134,7 +134,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             {
                 //fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f ht.%d\n",KOMODO_INITDONE,isrealtime,(double)deposits/COIN,kmdheight);
             }
-            else if ( deposits != 0 || (int32_t)mempool.GetTotalTxSize() > 0 )
+            else if ( komodo_isrealtime(&kmdheight) != 0 && (deposits != 0 || (int32_t)mempool.GetTotalTxSize() > 0) )
             {
                 fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d RT.%u KOMODO_ON_DEMAND.%d\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),isrealtime,KOMODO_ON_DEMAND);
                 break;
@@ -400,7 +400,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         else if ( komodo_is_issuer() != 0 )
         {
             komodo_gateway_deposits(&txNew,ASSETCHAINS_SYMBOL,0);
-            if ( txNew.vout.size() > 1 )
+            //if ( txNew.vout.size() > 1 )
                 fprintf(stderr,"%s txNew numvouts.%d\n",ASSETCHAINS_SYMBOL,(int32_t)txNew.vout.size());
         }
         pblock->vtx[0] = txNew;
@@ -423,8 +423,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         CValidationState state;
         if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
         {
-            fprintf(stderr,"testblockvalidity failed\n");
-            throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+            fprintf(stderr,"warning: testblockvalidity failed\n");
+            return(0);
+            //throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
         }
     }
 
@@ -552,7 +553,8 @@ void static BitcoinMiner(CWallet *pwallet)
     //else solver = "default";
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
-    //fprintf(stderr,"Mining with %s\n",solver.c_str());
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        fprintf(stderr,"Mining with %s\n",solver.c_str());
     std::mutex m_cs;
     bool cancelSolver = false;
     boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
@@ -563,7 +565,8 @@ void static BitcoinMiner(CWallet *pwallet)
     );
 
     try {
-        //fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
         while (true)
         {
             if (chainparams.MiningRequiresPeers())
@@ -602,10 +605,15 @@ void static BitcoinMiner(CWallet *pwallet)
                 Mining_height = pindexPrev->nHeight+1;
                 Mining_start = (uint32_t)time(NULL);
             }
-            if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
                 fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
-
-            unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
+            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey);
+            if ( ptr == 0 )
+            {
+                fprintf(stderr,"created illegal block, retry\n");
+                continue;
+            }
+            unique_ptr<CBlockTemplate> pblocktemplate(ptr);
             if (!pblocktemplate.get())
             {
                 LogPrintf("Error in KomodoMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");
@@ -668,7 +676,7 @@ void static BitcoinMiner(CWallet *pwallet)
             } else Mining_start = 0;
             while (true)
             {
-                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
+                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT ) // skips when it shouldnt
                 {
                     fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
                     sleep(10);
