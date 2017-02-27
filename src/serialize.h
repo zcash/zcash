@@ -238,16 +238,16 @@ template<typename Stream> inline void Unserialize(Stream& s, bool& a, int, int=0
 /**
  * Compact Size
  * size <  253        -- 1 byte
- * size <= USHRT_MAX  -- 3 bytes  (253 + 2 bytes)
- * size <= UINT_MAX   -- 5 bytes  (254 + 4 bytes)
- * size >  UINT_MAX   -- 9 bytes  (255 + 8 bytes)
+ * size <= 0xFFFF     -- 3 bytes  (253 + 2 bytes)
+ * size <= 0xFFFFFFFF -- 5 bytes  (254 + 4 bytes)
+ * size >  0xFFFFFFFF -- 9 bytes  (255 + 8 bytes)
  */
 inline unsigned int GetSizeOfCompactSize(uint64_t nSize)
 {
-    if (nSize < 253)             return sizeof(unsigned char);
-    else if (nSize <= std::numeric_limits<unsigned short>::max()) return sizeof(unsigned char) + sizeof(unsigned short);
-    else if (nSize <= std::numeric_limits<unsigned int>::max())  return sizeof(unsigned char) + sizeof(unsigned int);
-    else                         return sizeof(unsigned char) + sizeof(uint64_t);
+    if (nSize < 253)                return 1;
+    else if (nSize <= 0xFFFFu)      return 3;
+    else if (nSize <= 0xFFFFFFFFu)  return 5;
+    else                            return 9;
 }
 
 template<typename Stream>
@@ -257,12 +257,12 @@ void WriteCompactSize(Stream& os, uint64_t nSize)
     {
         ser_writedata8(os, nSize);
     }
-    else if (nSize <= std::numeric_limits<unsigned short>::max())
+    else if (nSize <= 0xFFFFu)
     {
         ser_writedata8(os, 253);
         ser_writedata16(os, nSize);
     }
-    else if (nSize <= std::numeric_limits<unsigned int>::max())
+    else if (nSize <= 0xFFFFFFFFu)
     {
         ser_writedata8(os, 254);
         ser_writedata32(os, nSize);
@@ -272,7 +272,6 @@ void WriteCompactSize(Stream& os, uint64_t nSize)
         ser_writedata8(os, 255);
         ser_writedata64(os, nSize);
     }
-    return;
 }
 
 template<typename Stream>
