@@ -337,7 +337,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
     {
         if ( i == 0 && j == 0 && memcmp(NOTARY_PUBKEY33,scriptbuf+1,33) == 0 )
         {
-            printf("KOMODO_LASTMINED.%d -> %d\n",KOMODO_LASTMINED,height);
+            printf("%s KOMODO_LASTMINED.%d -> %d\n",ASSETCHAINS_SYMBOL,KOMODO_LASTMINED,height);
             KOMODO_LASTMINED = height;
         }
         decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
@@ -495,6 +495,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         fprintf(stderr,"unexpected null komodostateptr.[%s]\n",ASSETCHAINS_SYMBOL);
         return;
     }
+    //fprintf(stderr,"%s connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
     numnotaries = komodo_notaries(pubkeys,pindex->nHeight);
     calc_rmd160_sha256(rmd160,pubkeys[0],33);
     if ( pindex->nHeight > hwmheight )
@@ -605,6 +606,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             komodo_stateupdate(height,0,0,0,zero,0,0,0,0,height,(uint32_t)pindex->nTime,0,0,0,0);
     } else fprintf(stderr,"komodo_connectblock: unexpected null pindex\n");
     //KOMODO_INITDONE = (uint32_t)time(NULL);
+    //fprintf(stderr,"%s end connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
 }
 
 
