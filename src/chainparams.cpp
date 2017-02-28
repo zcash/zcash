@@ -259,10 +259,12 @@ public:
 
         checkpointData = (Checkpoints::CCheckpointData) {
             boost::assign::map_list_of
-            ( 0, consensus.hashGenesisBlock),
-            genesis.nTime,
-            0,
-            0
+            (0, consensus.hashGenesisBlock)
+            (38000, uint256S("0x001e9a2d2e2892b88e9998cf7b079b41d59dd085423a921fe8386cecc42287b8")),
+            1486897419,  // * UNIX timestamp of last checkpoint block
+            47163,       // * total number of transactions between genesis and last checkpoint
+                         //   (the tx=... number in the SetBestChain debug.log lines)
+            715          //   total number of tx / (checkpoint block height / (24 * 24))
         };
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
