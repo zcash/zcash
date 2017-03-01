@@ -660,7 +660,7 @@ void RelayTransaction(const CTransaction& tx, const CDataStream& ss);
 class CAddrDB
 {
 private:
-    boost::filesystem::path pathAddr;
+    fs::path pathAddr;
 public:
     CAddrDB();
     bool Write(const CAddrMan& addr);

@@ -47,7 +47,7 @@ static boost::uuids::random_generator uuidgen;
 // Subclass of PaymentDisclosureDB to add debugging methods
 class PaymentDisclosureDBTest : public PaymentDisclosureDB {
 public:
-    PaymentDisclosureDBTest(const boost::filesystem::path& dbPath) : PaymentDisclosureDB(dbPath) {}
+    PaymentDisclosureDBTest(const fs::path& dbPath) : PaymentDisclosureDB(dbPath) {}
 
     void DebugDumpAllStdout() {
         ASSERT_NE(db, nullptr);
@@ -89,8 +89,8 @@ public:
 TEST(paymentdisclosure, mainnet) {
     SelectParams(CBaseChainParams::MAIN);
 
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
     PaymentDisclosureDBTest mydb(pathTemp);

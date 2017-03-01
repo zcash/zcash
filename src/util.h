@@ -69,7 +69,7 @@ static inline bool error(const char* format, const Args&... args)
     return LogError("main", format, args...);
 }
 
-const boost::filesystem::path &ZC_GetParamsDir();
+const fs::path &ZC_GetParamsDir();
 
 void PrintExceptionContinue(const std::exception *pex, const char* pszThread);
 void ParseParameters(int argc, const char*const argv[]);
@@ -77,15 +77,15 @@ void FileCommit(FILE *fileout);
 bool TruncateFile(FILE *file, unsigned int length);
 int RaiseFileDescriptorLimit(int nMinFD);
 void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length);
-bool RenameOver(boost::filesystem::path src, boost::filesystem::path dest);
-bool TryCreateDirectory(const boost::filesystem::path& p);
-boost::filesystem::path GetDefaultDataDir();
-const boost::filesystem::path &GetDataDir(bool fNetSpecific = true);
+bool RenameOver(fs::path src, fs::path dest);
+bool TryCreateDirectory(const fs::path& p);
+fs::path GetDefaultDataDir();
+const fs::path &GetDataDir(bool fNetSpecific = true);
 void ClearDatadirCache();
-boost::filesystem::path GetConfigFile(const std::string& confPath);
+fs::path GetConfigFile(const std::string& confPath);
 #ifndef WIN32
-boost::filesystem::path GetPidFile();
-void CreatePidFile(const boost::filesystem::path &path, pid_t pid);
+fs::path GetPidFile();
+void CreatePidFile(const fs::path &path, pid_t pid);
 #endif
 class missing_zcash_conf : public std::runtime_error {
 public:
@@ -93,10 +93,10 @@ public:
 };
 void ReadConfigFile(const std::string& confPath, std::map<std::string, std::string>& mapSettingsRet, std::map<std::string, std::vector<std::string> >& mapMultiSettingsRet);
 #ifdef WIN32
-boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
+fs::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
 void runCommand(const std::string& strCommand);
-const boost::filesystem::path GetExportDir();
+const fs::path GetExportDir();
 
 /** Returns privacy notice (for -version, -help and metrics screen) */
 std::string PrivacyInfo();

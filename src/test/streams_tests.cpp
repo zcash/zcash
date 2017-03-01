@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(streams_buffered_file)
     // We can explicitly close the file, or the destructor will do it.
     bf.fclose();
 
-    boost::filesystem::remove("streams_test_tmp");
+    fs::remove("streams_test_tmp");
 }
 
 BOOST_AUTO_TEST_CASE(streams_buffered_file_rand)
@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE(streams_buffered_file_rand)
                 maxPos = currentPos;
         }
     }
-    boost::filesystem::remove("streams_test_tmp");
+    fs::remove("streams_test_tmp");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

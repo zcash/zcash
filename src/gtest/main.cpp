@@ -17,12 +17,12 @@ int main(int argc, char **argv) {
   assert(init_and_check_sodium() != -1);
   ECC_Start();
 
-  boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
-  boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
-  boost::filesystem::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
+  fs::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
+  fs::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
+  fs::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
 
     static_assert(
-        sizeof(boost::filesystem::path::value_type) == sizeof(codeunit),
+        sizeof(fs::path::value_type) == sizeof(codeunit),
         "librustzcash not configured correctly");
     auto sapling_spend_str = sapling_spend.native();
     auto sapling_output_str = sapling_output.native();

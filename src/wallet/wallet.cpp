@@ -883,15 +883,15 @@ bool CWallet::Verify()
     LogPrintf("Using wallet %s\n", walletFile);
     uiInterface.InitMessage(_("Verifying wallet..."));
 
-    if (walletFile != boost::filesystem::basename(walletFile) + boost::filesystem::extension(walletFile)) {
-        boost::filesystem::path path(walletFile);
+    if (walletFile != fs::basename(walletFile) + fs::extension(walletFile)) {
+        fs::path path(walletFile);
         if (path.is_absolute()) {
-            if (!boost::filesystem::exists(path.parent_path())) {
+            if (!fs::exists(path.parent_path())) {
                 return UIError(strprintf(_("Absolute path %s does not exist"), walletFile));
             }
         } else {
-            boost::filesystem::path full_path = GetDataDir() / path;
-            if (!boost::filesystem::exists(full_path.parent_path())) {
+            fs::path full_path = GetDataDir() / path;
+            if (!fs::exists(full_path.parent_path())) {
                 return UIError(strprintf(_("Relative path %s does not exist"), walletFile));
             }
         }
@@ -900,12 +900,12 @@ bool CWallet::Verify()
     if (!bitdb.Open(GetDataDir()))
     {
         // try moving the database env out of the way
-        boost::filesystem::path pathDatabase = GetDataDir() / "database";
-        boost::filesystem::path pathDatabaseBak = GetDataDir() / strprintf("database.%d.bak", GetTime());
+        fs::path pathDatabase = GetDataDir() / "database";
+        fs::path pathDatabaseBak = GetDataDir() / strprintf("database.%d.bak", GetTime());
         try {
-            boost::filesystem::rename(pathDatabase, pathDatabaseBak);
+            fs::rename(pathDatabase, pathDatabaseBak);
             LogPrintf("Moved old %s to %s. Retrying.\n", pathDatabase.string(), pathDatabaseBak.string());
-        } catch (const boost::filesystem::filesystem_error&) {
+        } catch (const fs::filesystem_error&) {
             // failure is ok (well, not really, but it's not worse than what we started with)
         }
 
@@ -923,7 +923,7 @@ bool CWallet::Verify()
             return false;
     }
 
-    if (boost::filesystem::exists(GetDataDir() / walletFile))
+    if (fs::exists(GetDataDir() / walletFile))
     {
         CDBEnv::VerifyResult r = bitdb.Verify(walletFile, CWalletDB::Recover);
         if (r == CDBEnv::RECOVER_OK)

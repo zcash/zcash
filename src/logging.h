@@ -53,7 +53,7 @@ bool LogAcceptCategory(const char* category);
     return false;                                 \
 }())
 
-boost::filesystem::path GetDebugLogPath();
+fs::path GetDebugLogPath();
 void ShrinkDebugFile();
 
 #endif // ZCASH_LOGGING_H

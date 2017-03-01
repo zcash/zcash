@@ -28,8 +28,8 @@
 #if 0
 TEST(FoundersRewardTest, create_testnet_2of3multisig) {
     SelectParams(CBaseChainParams::TESTNET);
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
     bool fFirstRun;
     auto pWallet = std::make_shared<CWallet>("wallet.dat");
