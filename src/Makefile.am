@@ -154,6 +154,7 @@ BITCOIN_CORE_H = \
   core_memusage.h \
   deprecation.h \
   experimental_features.h \
+  fs.h \
   hash.h \
   httprpc.h \
   httpserver.h \
@@ -414,6 +415,7 @@ libbitcoin_util_a_SOURCES = \
   compat/glibc_sanity.cpp \
   compat/glibcxx_sanity.cpp \
   compat/strnlen.cpp \
+  fs.cpp \
   logging.cpp \
   random.cpp \
   rpc/protocol.cpp \
