@@ -365,6 +365,14 @@ template libzcash::PaymentAddress CZCEncoding<libzcash::PaymentAddress,
                                               CChainParams::ZCPAYMENT_ADDRRESS,
                                               libzcash::SerializedPaymentAddressSize>::Get() const;
 
+// Explicit instantiations for libzcash::ViewingKey
+template bool CZCEncoding<libzcash::ViewingKey,
+                          CChainParams::ZCVIEWING_KEY,
+                          libzcash::SerializedViewingKeySize>::Set(const libzcash::ViewingKey& vk);
+template libzcash::ViewingKey CZCEncoding<libzcash::ViewingKey,
+                                          CChainParams::ZCVIEWING_KEY,
+                                          libzcash::SerializedViewingKeySize>::Get() const;
+
 // Explicit instantiations for libzcash::SpendingKey
 template bool CZCEncoding<libzcash::SpendingKey,
                           CChainParams::ZCSPENDING_KEY,

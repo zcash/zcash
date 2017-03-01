@@ -118,6 +118,17 @@ public:
     CZCPaymentAddress(const libzcash::PaymentAddress& addr) { Set(addr); }
 };
 
+class CZCViewingKey : public CZCEncoding<libzcash::ViewingKey, CChainParams::ZCVIEWING_KEY, libzcash::SerializedViewingKeySize> {
+protected:
+    std::string PrependName(const std::string& s) const { return "viewing key" + s; }
+
+public:
+    CZCViewingKey() {}
+
+    CZCViewingKey(const std::string& strViewingKey) { SetString(strViewingKey.c_str(), 3); }
+    CZCViewingKey(const libzcash::ViewingKey& vk) { Set(vk); }
+};
+
 class CZCSpendingKey : public CZCEncoding<libzcash::SpendingKey, CChainParams::ZCSPENDING_KEY, libzcash::SerializedSpendingKeySize> {
 protected:
     std::string PrependName(const std::string& s) const { return "spending key" + s; }
