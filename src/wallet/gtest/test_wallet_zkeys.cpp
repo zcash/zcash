@@ -1,11 +1,10 @@
 #include <gtest/gtest.h>
 
+#include "fs.h"
 #include "zcash/Address.hpp"
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
 #include "util.h"
-
-#include <boost/filesystem.hpp>
 
 /**
  * This test covers Sapling methods on CWallet

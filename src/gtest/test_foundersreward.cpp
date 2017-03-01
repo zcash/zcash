@@ -4,6 +4,7 @@
 #include "utilmoneystr.h"
 #include "chainparams.h"
 #include "consensus/funding.h"
+#include "fs.h"
 #include "key_io.h"
 #include "utilstrencodings.h"
 #include "zcash/Address.hpp"
@@ -13,7 +14,6 @@
 #include <string>
 #include <set>
 #include <vector>
-#include <boost/filesystem.hpp>
 #include "util.h"
 #include "utiltest.h"
 

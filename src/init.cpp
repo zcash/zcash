@@ -16,6 +16,7 @@
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "experimental_features.h"
+#include "fs.h"
 #include "httpserver.h"
 #include "httprpc.h"
 #include "key.h"

@@ -7,6 +7,7 @@
 #include "config/bitcoin-config.h"
 #endif
 
+#include "fs.h"
 #include "main.h"
 #include "net.h"
 
@@ -24,7 +25,6 @@
 #include <fcntl.h>
 #endif
 
-#include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
 // Dump addresses to peers.dat every 15 minutes (900s)

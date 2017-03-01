@@ -6,12 +6,12 @@
 
 #include "logging.h"
 
+#include "fs.h"
 #include "serialize.h"
 #include "util.h"
 
 #include <set>
 
-#include <boost/filesystem/operations.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/once.hpp>
 #include <boost/thread/tss.hpp>

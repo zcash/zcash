@@ -10,6 +10,7 @@
 #include "chain.h"
 #include "chainparams.h"
 #include "clientversion.h"
+#include "fs.h"
 #include "test/data/alertTests.raw.h"
 
 #include "main.h"
@@ -26,7 +27,6 @@
 
 #include <fstream>
 
-#include <boost/filesystem/operations.hpp>
 #include <boost/foreach.hpp>
 #include <boost/test/unit_test.hpp>
 

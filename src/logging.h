@@ -7,12 +7,11 @@
 #ifndef ZCASH_LOGGING_H
 #define ZCASH_LOGGING_H
 
+#include "fs.h"
 #include "tinyformat.h"
 
 #include <atomic>
 #include <string>
-
-#include <boost/filesystem/path.hpp>
 
 #include <tracing.h>
 

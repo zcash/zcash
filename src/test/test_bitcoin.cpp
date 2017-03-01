@@ -14,6 +14,7 @@
 #ifdef ENABLE_MINING
 #include "crypto/equihash.h"
 #endif
+#include "fs.h"
 #include "key.h"
 #include "main.h"
 #include "miner.h"
@@ -27,7 +28,6 @@
 
 #include "test/testutil.h"
 
-#include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/thread.hpp>
 

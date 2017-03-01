@@ -3,11 +3,11 @@
 
 #include "chainparamsbase.h"
 #include "consensus/upgrades.h"
+#include "fs.h"
 #include "key.h"
 #include "pubkey.h"
 #include "txdb.h"
 
-#include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
 /** Basic testing setup.

@@ -12,6 +12,7 @@
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "consensus/consensus.h"
+#include "fs.h"
 #include "init.h"
 #include "key_io.h"
 #include "main.h"
@@ -32,7 +33,6 @@
 #include <assert.h>
 
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
 using namespace std;

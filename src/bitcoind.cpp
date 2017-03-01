@@ -4,6 +4,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "clientversion.h"
+#include "fs.h"
 #include "rpc/server.h"
 #include "init.h"
 #include "main.h"
@@ -14,7 +15,6 @@
 #include "httprpc.h"
 
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
 #include <stdio.h>

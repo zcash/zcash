@@ -4,6 +4,7 @@
 #include "chainparams.h"
 #include "clientversion.h"
 #include "deprecation.h"
+#include "fs.h"
 #include "init.h"
 #include "ui_interface.h"
 #include "util.h"
@@ -11,7 +12,6 @@
 
 #include "test/testutil.h"
 
-#include <boost/filesystem/operations.hpp>
 #include <fstream>
 
 using namespace boost::placeholders;

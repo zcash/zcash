@@ -4,11 +4,10 @@
 
 #include "bench.h"
 
+#include "fs.h"
 #include "key.h"
 #include "main.h"
 #include "util.h"
-
-#include <boost/filesystem.hpp>
 
 #include "librustzcash.h"
 

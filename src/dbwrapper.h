@@ -6,12 +6,11 @@
 #define BITCOIN_DBWRAPPER_H
 
 #include "clientversion.h"
+#include "fs.h"
 #include "serialize.h"
 #include "streams.h"
 #include "util.h"
 #include "version.h"
-
-#include <boost/filesystem/path.hpp>
 
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>

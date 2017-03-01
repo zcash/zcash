@@ -3,7 +3,6 @@
 #include <map>
 #include <thread>
 #include <unistd.h>
-#include <boost/filesystem.hpp>
 
 #include "coins.h"
 #include "util.h"

@@ -4,6 +4,7 @@
 
 #include "clientversion.h"
 #include "consensus/validation.h"
+#include "fs.h"
 #include "main.h"
 #include "proof_verifier.h"
 #include "test/test_bitcoin.h"
@@ -12,8 +13,6 @@
 
 #include <cstdio>
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/test/unit_test.hpp>
 
 

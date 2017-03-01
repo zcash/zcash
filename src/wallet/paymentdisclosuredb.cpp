@@ -4,10 +4,9 @@
 
 #include "wallet/paymentdisclosuredb.h"
 
+#include "fs.h"
 #include "util.h"
 #include "dbwrapper.h"
-
-#include <boost/filesystem.hpp>
 
 using namespace std;
 

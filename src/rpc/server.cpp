@@ -5,6 +5,7 @@
 
 #include "rpc/server.h"
 
+#include "fs.h"
 #include "init.h"
 #include "key_io.h"
 #include "random.h"
@@ -19,7 +20,6 @@
 #include <univalue.h>
 
 #include <boost/bind/bind.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/stream.hpp>

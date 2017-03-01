@@ -6,6 +6,7 @@
 #include "wallet/walletdb.h"
 
 #include "consensus/validation.h"
+#include "fs.h"
 #include "key_io.h"
 #include "main.h"
 #include "proof_verifier.h"
@@ -17,7 +18,6 @@
 #include "wallet/wallet.h"
 #include "zcash/Proof.hpp"
 
-#include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
