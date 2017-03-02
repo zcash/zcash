@@ -67,6 +67,53 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
 }
 
 /**
+ * This test covers methods on CWallet
+ * AddViewingKey()
+ * RemoveViewingKey()
+ * LoadViewingKey()
+ */
+TEST(wallet_zkeys_tests, StoreAndLoadViewingKeys) {
+    SelectParams(CBaseChainParams::MAIN);
+
+    CWallet wallet;
+
+    // wallet should be empty
+    std::set<libzcash::PaymentAddress> addrs;
+    wallet.GetPaymentAddresses(addrs);
+    ASSERT_EQ(0, addrs.size());
+
+    // manually add new viewing key to wallet
+    auto sk = libzcash::SpendingKey::random();
+    auto vk = sk.viewing_key();
+    ASSERT_TRUE(wallet.AddViewingKey(vk));
+
+    // verify wallet did add it
+    auto addr = sk.address();
+    ASSERT_TRUE(wallet.HaveViewingKey(addr));
+    // and that we don't have the corresponding spending key
+    ASSERT_FALSE(wallet.HaveSpendingKey(addr));
+
+    // verify viewing key stored correctly
+    libzcash::ViewingKey vkOut;
+    wallet.GetViewingKey(addr, vkOut);
+    ASSERT_EQ(vk, vkOut);
+
+    // Load a second viewing key into the wallet
+    auto sk2 = libzcash::SpendingKey::random();
+    ASSERT_TRUE(wallet.LoadViewingKey(sk2.viewing_key()));
+
+    // verify wallet did add it
+    auto addr2 = sk2.address();
+    ASSERT_TRUE(wallet.HaveViewingKey(addr2));
+    ASSERT_FALSE(wallet.HaveSpendingKey(addr2));
+
+    // Remove the first viewing key
+    ASSERT_TRUE(wallet.RemoveViewingKey(vk));
+    ASSERT_FALSE(wallet.HaveViewingKey(addr));
+    ASSERT_TRUE(wallet.HaveViewingKey(addr2));
+}
+
+/**
  * This test covers methods on CWalletDB
  * WriteZKey()
  */
@@ -136,6 +183,50 @@ TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
     // check metadata is now the same
     m = wallet.mapZKeyMetadata[addr];
     ASSERT_EQ(m.nCreateTime, now);
+}
+
+/**
+ * This test covers methods on CWalletDB
+ * WriteViewingKey()
+ */
+TEST(wallet_zkeys_tests, WriteViewingKeyDirectToDB) {
+    SelectParams(CBaseChainParams::TESTNET);
+
+    // Get temporary and unique path for file.
+    // Note: / operator to append paths
+    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
+    boost::filesystem::create_directories(pathTemp);
+    mapArgs["-datadir"] = pathTemp.string();
+
+    bool fFirstRun;
+    CWallet wallet("wallet-vkey.dat");
+    ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
+
+    // No default CPubKey set
+    ASSERT_TRUE(fFirstRun);
+
+    // create random viewing key and add it to database directly, bypassing wallet
+    auto sk = libzcash::SpendingKey::random();
+    auto vk = sk.viewing_key();
+    auto addr = sk.address();
+    int64_t now = GetTime();
+    CKeyMetadata meta(now);
+    CWalletDB db("wallet-vkey.dat");
+    db.WriteViewingKey(vk);
+
+    // wallet should not be aware of viewing key
+    ASSERT_FALSE(wallet.HaveViewingKey(addr));
+
+    // load the wallet again
+    ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
+
+    // wallet can now see the viewing key
+    ASSERT_TRUE(wallet.HaveViewingKey(addr));
+
+    // check key is the same
+    libzcash::ViewingKey vkOut;
+    wallet.GetViewingKey(addr, vkOut);
+    ASSERT_EQ(vk, vkOut);
 }
 
 

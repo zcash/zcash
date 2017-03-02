@@ -954,6 +954,12 @@ public:
     //! Adds an encrypted spending key to the store, and saves it to disk (virtual method, declared in crypter.h)
     bool AddCryptedSpendingKey(const libzcash::PaymentAddress &address, const libzcash::ReceivingKey &rk, const std::vector<unsigned char> &vchCryptedSecret);
 
+    //! Adds a viewing key to the store, and saves it to disk.
+    bool AddViewingKey(const libzcash::ViewingKey &vk);
+    bool RemoveViewingKey(const libzcash::ViewingKey &vk);
+    //! Adds a viewing key to the store, without saving it to disk (used by LoadWallet)
+    bool LoadViewingKey(const libzcash::ViewingKey &dest);
+
     /** 
      * Increment the next transaction order id
      * @return next transaction order id

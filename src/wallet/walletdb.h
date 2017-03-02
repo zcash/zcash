@@ -140,6 +140,9 @@ public:
                           const std::vector<unsigned char>& vchCryptedSecret,
                           const CKeyMetadata &keyMeta);
 
+    bool WriteViewingKey(const libzcash::ViewingKey &vk);
+    bool EraseViewingKey(const libzcash::ViewingKey &vk);
+
 private:
     CWalletDB(const CWalletDB&);
     void operator=(const CWalletDB&);
