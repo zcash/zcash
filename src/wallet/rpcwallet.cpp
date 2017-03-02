@@ -3302,7 +3302,7 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
 #define Z_SENDMANY_MAX_ZADDR_OUTPUTS    ((MAX_TX_SIZE / JSDescription().GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION)) - 1)
 
 // transaction.h comment: spending taddr output requires CTxIn >= 148 bytes and typical taddr txout is 34 bytes
-#define CTXIN_SPEND_DUST_SIZE   148
+#define CTXIN_SPEND_SIZE        148
 #define CTXOUT_REGULAR_SIZE     34
 
 UniValue z_sendmany(const UniValue& params, bool fHelp)
@@ -3443,7 +3443,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     CTransaction tx(mtx);
     txsize += tx.GetSerializeSize(SER_NETWORK, tx.nVersion);
     if (fromTaddr) {
-        txsize += CTXIN_SPEND_DUST_SIZE;
+        txsize += CTXIN_SPEND_SIZE;
         txsize += CTXOUT_REGULAR_SIZE;      // There will probably be taddr change
     }
     txsize += CTXOUT_REGULAR_SIZE * taddrRecipients.size();

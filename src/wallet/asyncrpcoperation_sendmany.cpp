@@ -246,15 +246,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     CAmount selectedUTXOAmount = 0;
     bool selectedUTXOCoinbase = false;
     if (isfromtaddr_) {
-        // Get dust threshold
-        CKey secret;
-        secret.MakeNewKey(true);
-        CScript scriptPubKey = GetScriptForDestination(secret.GetPubKey().GetID());
-        CTxOut out(CAmount(1), scriptPubKey);
-        CAmount dustThreshold = out.GetDustThreshold(minRelayTxFee);
-        CAmount dustChange = -1;
-
         std::vector<SendManyInputUTXO> selectedTInputs;
+
         for (SendManyInputUTXO & t : t_inputs_) {
             bool b = std::get<3>(t);
             if (b) {
@@ -262,20 +255,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             }
             selectedUTXOAmount += std::get<2>(t);
             selectedTInputs.push_back(t);
-            if (selectedUTXOAmount >= targetAmount) {
-                // Select another utxo if there is change less than the dust threshold.
-                dustChange = selectedUTXOAmount - targetAmount;
-                if (dustChange == 0 || dustChange >= dustThreshold) {
-                    break;
-                }
-            }
-        }
-
-        // If there is transparent change, is it valid or is it dust?
-        if (dustChange < dustThreshold && dustChange != 0) {
-            throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
-                strprintf("Insufficient transparent funds, have %s, need %s more to avoid creating invalid change output %s (dust threshold is %s)",
-                FormatMoney(t_inputs_total), FormatMoney(dustThreshold - dustChange), FormatMoney(dustChange), FormatMoney(dustThreshold)));
+            if (selectedUTXOAmount >= targetAmount)
+                break;
         }
 
         t_inputs_ = selectedTInputs;
