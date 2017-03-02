@@ -238,7 +238,6 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
 
 fs::path GetDefaultDataDir()
 {
-    namespace fs = fs;
     // Windows < Vista: C:\Documents and Settings\Username\Application Data\Zcash
     // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zcash
     // Mac: ~/Library/Application Support/Zcash
@@ -274,7 +273,6 @@ static fs::path ZC_GetDefaultBaseParamsDir()
 {
     // Copied from GetDefaultDataDir and adapter for zcash params.
 
-    namespace fs = fs;
     // Windows < Vista: C:\Documents and Settings\Username\Application Data\ZcashParams
     // Windows >= Vista: C:\Users\Username\AppData\Roaming\ZcashParams
     // Mac: ~/Library/Application Support/ZcashParams
@@ -303,8 +301,6 @@ static fs::path ZC_GetDefaultBaseParamsDir()
 
 const fs::path &ZC_GetParamsDir()
 {
-    namespace fs = fs;
-
     LOCK(csPathCached); // Reuse the same lock as upstream.
 
     fs::path &path = zc_paramsPathCached;
@@ -331,7 +327,6 @@ const fs::path &ZC_GetParamsDir()
 // If there is a filesystem problem, throw an exception.
 const fs::path GetExportDir()
 {
-    namespace fs = fs;
     fs::path path;
     if (mapArgs.count("-exportdir")) {
         path = fs::system_complete(mapArgs["-exportdir"]);
@@ -348,7 +343,6 @@ const fs::path GetExportDir()
 
 const fs::path &GetDataDir(bool fNetSpecific)
 {
-    namespace fs = fs;
 
     LOCK(csPathCached);
 
@@ -590,8 +584,6 @@ void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length) {
 #ifdef WIN32
 fs::path GetSpecialFolderPath(int nFolder, bool fCreate)
 {
-    namespace fs = fs;
-
     char pszPath[MAX_PATH] = "";
 
     if(SHGetSpecialFolderPathA(NULL, pszPath, nFolder, fCreate))
