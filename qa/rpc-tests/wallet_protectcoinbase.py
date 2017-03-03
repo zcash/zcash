@@ -174,15 +174,6 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         assert_equal(Decimal(resp["private"]), Decimal('9.9998'))
         assert_equal(Decimal(resp["total"]), Decimal('39.9998'))
 
-        # z_sendmany will return an error if there is transparent change output considered dust.
-        # UTXO selection in z_sendmany sorts in ascending order, so smallest utxos are consumed first.
-        # At this point in time, unspent notes all have a value of 10.0 and standard z_sendmany fee is 0.0001.
-        recipients = []
-        amount = Decimal('10.0') - Decimal('0.00010000') - Decimal('0.00000001')    # this leaves change at 1 zatoshi less than dust threshold
-        recipients.append({"address":self.nodes[0].getnewaddress(), "amount":amount })
-        myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        self.wait_and_assert_operationid_status(myopid, "failed", "Insufficient transparent funds, have 10.00, need 0.00000053 more to avoid creating invalid change output 0.00000001 (dust threshold is 0.00000054)")
-
         # Send will fail because send amount is too big, even when including coinbase utxos
         errorString = ""
         try:
@@ -213,9 +204,10 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         errorString = ''
         recipients = []
         num_t_recipients = 2500
-        amount_per_recipient = Decimal('0.00000546') # dust threshold
-        # Note that regtest chainparams does not require standard tx, so setting the amount to be
-        # less than the dust threshold, e.g. 0.00000001 will not result in mempool rejection.
+        # We set the amount to be less than the prior dust threshold in order to test that the threshold
+        # has been removed. Note that regtest chainparams does not require standard tx, so this would
+        # not by itself have resulted in mempool rejection.
+        amount_per_recipient = Decimal('0.00000001')
         for i in xrange(0,num_t_recipients):
             newtaddr = self.nodes[2].getnewaddress()
             recipients.append({"address":newtaddr, "amount":amount_per_recipient})

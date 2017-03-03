@@ -575,8 +575,11 @@ BOOST_AUTO_TEST_CASE(test_IsStandard)
     string reason;
     BOOST_CHECK(IsStandardTx(t, reason));
 
-    t.vout[0].nValue = 53; // dust
-    BOOST_CHECK(!IsStandardTx(t, reason));
+    t.vout[0].nValue = 53; // dust in Bitcoin, but not in Zcash
+    BOOST_CHECK(IsStandardTx(t, reason));
+
+    t.vout[0].nValue = 0; // still not dust
+    BOOST_CHECK(IsStandardTx(t, reason));
 
     t.vout[0].nValue = 2730; // not dust
     BOOST_CHECK(IsStandardTx(t, reason));
@@ -654,7 +657,7 @@ BOOST_AUTO_TEST_CASE(test_IsStandardV2)
     BOOST_CHECK(IsStandardTx(t, reason));
 
     // v2 transactions can still be non-standard for the same reasons as v1.
-    t.vout[0].nValue = 53; // dust
+    t.vout[0].scriptPubKey = CScript() << OP_1;
     BOOST_CHECK(!IsStandardTx(t, reason));
 
     // v3 is not standard.
