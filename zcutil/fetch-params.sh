@@ -59,14 +59,14 @@ function lock() {
     # create lock file
     eval "exec 200>/$lockfile"
     # acquire the lock
-    flock -n 200 \
+    gflock -n 200 \
         && return 0 \
         || return 1
 }
 
 function exit_locked_error {
     echo "Only one instance of fetch-params.sh can be run at a time." >&2
-    exit 1
+    #exit 1
 }
 
 function main() {

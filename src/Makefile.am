@@ -1,6 +1,7 @@
 DIST_SUBDIRS = secp256k1 univalue
 AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS)
 
+
 if EMBEDDED_LEVELDB
 LEVELDB_CPPFLAGS += -I$(srcdir)/leveldb/include
 LEVELDB_CPPFLAGS += -I$(srcdir)/leveldb/helpers/memenv
@@ -90,6 +91,7 @@ LIBZCASH_H = \
 # bitcoin core #
 BITCOIN_CORE_H = \
   addrman.h \
+  alert.h \
   amount.h \
   arith_uint256.h \
   asyncrpcoperation.h \
@@ -192,7 +194,9 @@ libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
 # server: shared between bitcoind and bitcoin-qt
 libbitcoin_server_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS)
 libbitcoin_server_a_SOURCES = \
+  sendalert.cpp \
   addrman.cpp \
+  alert.cpp \
   alertkeys.h \
   asyncrpcoperation.cpp \
   asyncrpcqueue.cpp \
