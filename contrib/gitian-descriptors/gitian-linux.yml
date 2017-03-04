@@ -1,5 +1,5 @@
 ---
-name: "zcash-1.0.6"
+name: "zcash-1.0.7"
 enable_cache: true
 distro: "debian"
 suites:
@@ -134,4 +134,3 @@ script: |
   mv $SOURCEDIST $OUTDIR/src
   mv ${OUTDIR}/${DISTNAME}-x86_64-*-debug.tar.gz ${OUTDIR}/${DISTNAME}-linux64-debug.tar.gz
   mv ${OUTDIR}/${DISTNAME}-x86_64-*.tar.gz ${OUTDIR}/${DISTNAME}-linux64.tar.gz
-
