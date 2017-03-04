@@ -51,6 +51,12 @@ case $host in
   ;;
 esac
 
+case "$target_os" in
+  darwin*)
+    LIBTOOL_APP_LDFLAGS="$LIBTOOL_APP_LDFLAGS -static -Wl,dynamic_lookup"
+  ;;
+esac
+
 BUILD_EXEEXT=
 case $build in
   *mingw*)
