@@ -116,6 +116,12 @@ void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height)
     struct komodo_event *ep;
     if ( sp != 0 )
     {
+        if ( ASSETCHAINS_SYMBOL[0] == 0 && height <= KOMODO_LASTMINED && prevKOMODO_LASTMINED != 0 )
+        {
+            printf("undo KOMODO_LASTMINED %d <- %d\n",KOMODO_LASTMINED,prevKOMODO_LASTMINED);
+            KOMODO_LASTMINED = prevKOMODO_LASTMINED;
+            prevKOMODO_LASTMINED = 0;
+        }
         while ( sp->Komodo_events != 0 && sp->Komodo_numevents > 0 )
         {
             if ( (ep= sp->Komodo_events[sp->Komodo_numevents-1]) != 0 )
