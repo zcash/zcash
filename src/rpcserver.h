@@ -169,6 +169,8 @@ extern json_spirit::Value importwallet(const json_spirit::Array& params, bool fH
 extern json_spirit::Value getgenerate(const json_spirit::Array& params, bool fHelp); // in rpcmining.cpp
 extern json_spirit::Value setgenerate(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value generate(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getlocalsolps(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getnetworksolps(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getnetworkhashps(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getmininginfo(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value prioritisetransaction(const json_spirit::Array& params, bool fHelp);
@@ -243,8 +245,17 @@ extern json_spirit::Value getblockhash(const json_spirit::Array& params, bool fH
 extern json_spirit::Value getblock(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value gettxoutsetinfo(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value gettxout(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value notaries(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value minerids(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value kvsearch(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value kvupdate(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value paxprice(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value paxpending(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value paxprices(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value paxdeposit(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value paxwithdraw(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value verifychain(const json_spirit::Array& params, bool fHelp);
-extern json_spirit::Value getchaintips(const json_spirit::Array& params, bool fHelp);
+//extern json_spirit::Value getchaintips(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value invalidateblock(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value reconsiderblock(const json_spirit::Array& params, bool fHelp);
 
@@ -263,6 +274,7 @@ extern json_spirit::Value z_sendmany(const json_spirit::Array& params, bool fHel
 extern json_spirit::Value z_getoperationstatus(const json_spirit::Array& params, bool fHelp); // in rpcwallet.cpp
 extern json_spirit::Value z_getoperationresult(const json_spirit::Array& params, bool fHelp); // in rpcwallet.cpp
 extern json_spirit::Value z_listoperationids(const json_spirit::Array& params, bool fHelp); // in rpcwallet.cpp
+extern json_spirit::Value z_validateaddress(const json_spirit::Array& params, bool fHelp); // in rpcmisc.cpp
 
 
 // in rest.cpp

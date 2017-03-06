@@ -16,6 +16,12 @@
 #include "util.h"
 #include "utilstrencodings.h"
 
+#ifdef __APPLE__
+#ifdef HAVE_GETADDRINFO_A
+#undef HAVE_GETADDRINFO_A
+#endif
+#endif
+
 #ifdef HAVE_GETADDRINFO_A
 #include <netdb.h>
 #endif

@@ -11,6 +11,7 @@
 #include "crypto/equihash.h"
 #include "init.h"
 #include "main.h"
+#include "metrics.h"
 #include "miner.h"
 #include "net.h"
 #include "pow.h"
@@ -36,7 +37,7 @@ using namespace std;
  * or over the difficulty averaging window if 'lookup' is nonpositive.
  * If 'height' is nonnegative, compute the estimate at the time when a given block was found.
  */
-Value GetNetworkHashPS(int lookup, int height) {
+int64_t GetNetworkHashPS(int lookup, int height) {
     CBlockIndex *pb = chainActive.Tip();
 
     if (height >= 0 && height < chainActive.Height())
@@ -73,19 +74,60 @@ Value GetNetworkHashPS(int lookup, int height) {
     return (int64_t)(workDiff.getdouble() / timeDiff);
 }
 
-Value getnetworkhashps(const Array& params, bool fHelp)
+Value getlocalsolps(const Array& params, bool fHelp)
+{
+    if (fHelp)
+        throw runtime_error(
+            "getlocalsolps\n"
+            "\nReturns the average local solutions per second since this node was started.\n"
+            "This is the same information shown on the metrics screen (if enabled).\n"
+            "\nResult:\n"
+            "xxx.xxxxx     (numeric) Solutions per second average\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getlocalsolps", "")
+            + HelpExampleRpc("getlocalsolps", "")
+       );
+
+    LOCK(cs_main);
+    return GetLocalSolPS();
+}
+
+Value getnetworksolps(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 2)
         throw runtime_error(
-            "getnetworkhashps ( blocks height )\n"
-            "\nReturns the estimated network hashes per second based on the last n blocks.\n"
+            "getnetworksolps ( blocks height )\n"
+            "\nReturns the estimated network solutions per second based on the last n blocks.\n"
             "Pass in [blocks] to override # of blocks, -1 specifies over difficulty averaging window.\n"
             "Pass in [height] to estimate the network speed at the time when a certain block was found.\n"
             "\nArguments:\n"
             "1. blocks     (numeric, optional, default=120) The number of blocks, or -1 for blocks over difficulty averaging window.\n"
             "2. height     (numeric, optional, default=-1) To estimate at the time of the given height.\n"
             "\nResult:\n"
-            "x             (numeric) Hashes per second estimated\n"
+            "x             (numeric) Solutions per second estimated\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getnetworksolps", "")
+            + HelpExampleRpc("getnetworksolps", "")
+       );
+
+    LOCK(cs_main);
+    return GetNetworkHashPS(params.size() > 0 ? params[0].get_int() : 120, params.size() > 1 ? params[1].get_int() : -1);
+}
+
+Value getnetworkhashps(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 2)
+        throw runtime_error(
+            "getnetworkhashps ( blocks height )\n"
+            "\nDEPRECATED - left for backwards-compatibility. Use getnetworksolps instead.\n"
+            "\nReturns the estimated network solutions per second based on the last n blocks.\n"
+            "Pass in [blocks] to override # of blocks, -1 specifies over difficulty averaging window.\n"
+            "Pass in [height] to estimate the network speed at the time when a certain block was found.\n"
+            "\nArguments:\n"
+            "1. blocks     (numeric, optional, default=120) The number of blocks, or -1 for blocks over difficulty averaging window.\n"
+            "2. height     (numeric, optional, default=-1) To estimate at the time of the given height.\n"
+            "\nResult:\n"
+            "x             (numeric) Solutions per second estimated\n"
             "\nExamples:\n"
             + HelpExampleCli("getnetworkhashps", "")
             + HelpExampleRpc("getnetworkhashps", "")
@@ -115,7 +157,7 @@ Value getgenerate(const Array& params, bool fHelp)
     return GetBoolArg("-gen", false);
 }
 
-int32_t komodo_blockcheck(CBlock *block,uint32_t *nBitsp);
+extern uint8_t NOTARY_PUBKEY33[33];
 
 Value generate(const Array& params, bool fHelp)
 {
@@ -156,7 +198,7 @@ Value generate(const Array& params, bool fHelp)
     unsigned int k = Params().EquihashK();
     while (nHeight < nHeightEnd)
     {
-        auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
+        unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Wallet keypool empty");
         CBlock *pblock = &pblocktemplate->block;
@@ -193,23 +235,20 @@ Value generate(const Array& params, bool fHelp)
             std::function<bool(std::vector<unsigned char>)> validBlock =
                     [&pblock](std::vector<unsigned char> soln)
             {
-                int32_t retval; uint32_t nBits;
+                LOCK(cs_main);
                 pblock->nSolution = soln;
-                nBits = pblock->nBits;
-                if ( (retval= komodo_blockcheck(pblock,&nBits)) == 0 )
-                {
-                    return CheckProofOfWork(pblock->GetHash(), nBits, Params().GetConsensus());
-                }
-                else if ( retval < 0 ) // komodo rejects, ie. prior to notarized blockhash
-                    return(false);
-                return true;
+                solutionTargetChecks.increment();
+                return CheckProofOfWork(chainActive.Height(),NOTARY_PUBKEY33,pblock->GetHash(), pblock->nBits, Params().GetConsensus());
             };
-            if (EhBasicSolveUncancellable(n, k, curr_state, validBlock))
+            bool found = EhBasicSolveUncancellable(n, k, curr_state, validBlock);
+            ehSolverRuns.increment();
+            if (found) {
                 goto endloop;
+            }
         }
 endloop:
         CValidationState state;
-        if (!ProcessNewBlock(state, NULL, pblock, true, NULL))
+        if (!ProcessNewBlock(chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
@@ -281,6 +320,8 @@ Value getmininginfo(const Array& params, bool fHelp)
             "  \"errors\": \"...\"          (string) Current errors\n"
             "  \"generate\": true|false     (boolean) If the generation is on or off (see getgenerate or setgenerate calls)\n"
             "  \"genproclimit\": n          (numeric) The processor limit for generation. -1 if no generation. (see getgenerate or setgenerate calls)\n"
+            "  \"localsolps\": xxx.xxxxx    (numeric) The average local solution rate in Sol/s since this node was started\n"
+            "  \"networksolps\": x          (numeric) The estimated network solution rate in Sol/s\n"
             "  \"pooledtx\": n              (numeric) The size of the mem pool\n"
             "  \"testnet\": true|false      (boolean) If using testnet or not\n"
             "  \"chain\": \"xxxx\",         (string) current network name as defined in BIP70 (main, test, regtest)\n"
@@ -300,7 +341,9 @@ Value getmininginfo(const Array& params, bool fHelp)
     obj.push_back(Pair("difficulty",       (double)GetNetworkDifficulty()));
     obj.push_back(Pair("errors",           GetWarnings("statusbar")));
     obj.push_back(Pair("genproclimit",     (int)GetArg("-genproclimit", -1)));
-    obj.push_back(Pair("networkhashps",    getnetworkhashps(params, false)));
+    obj.push_back(Pair("localsolps"  ,     getlocalsolps(params, false)));
+    obj.push_back(Pair("networksolps",     getnetworksolps(params, false)));
+    obj.push_back(Pair("networkhashps",    getnetworksolps(params, false)));
     obj.push_back(Pair("pooledtx",         (uint64_t)mempool.size()));
     obj.push_back(Pair("testnet",          Params().TestnetToBeDeprecatedFieldRPC()));
     obj.push_back(Pair("chain",            Params().NetworkIDString()));
@@ -362,6 +405,7 @@ static Value BIP22ValidationResult(const CValidationState& state)
     return "valid?";
 }
 
+#ifdef ENABLE_WALLET
 Value getblocktemplate(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
@@ -400,10 +444,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
             "      }\n"
             "      ,...\n"
             "  ],\n"
-            "  \"coinbaseaux\" : {                  (json object) data that should be included in the coinbase's scriptSig content\n"
-            "      \"flags\" : \"flags\"            (string) \n"
-            "  },\n"
-            "  \"coinbasevalue\" : n,               (numeric) maximum allowable input to coinbase transaction, including the generation award and transaction fees (in Satoshis)\n"
+//            "  \"coinbaseaux\" : {                  (json object) data that should be included in the coinbase's scriptSig content\n"
+//            "      \"flags\" : \"flags\"            (string) \n"
+//            "  },\n"
+//            "  \"coinbasevalue\" : n,               (numeric) maximum allowable input to coinbase transaction, including the generation award and transaction fees (in Satoshis)\n"
             "  \"coinbasetxn\" : { ... },           (json object) information for coinbase transaction\n"
             "  \"target\" : \"xxxx\",               (string) The hash target\n"
             "  \"mintime\" : xxx,                   (numeric) The minimum timestamp appropriate for next block time in seconds since epoch (Jan 1 1970 GMT)\n"
@@ -426,8 +470,15 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     LOCK(cs_main);
 
+    // Wallet is required because we support coinbasetxn
+    if (pwalletMain == NULL) {
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (disabled)");
+    }
+
     std::string strMode = "template";
     Value lpval = Value::null;
+    // TODO: Re-enable coinbasevalue once a specification has been written
+    bool coinbasetxn = true;
     if (params.size() > 0)
     {
         const Object& oparam = params[0].get_obj();
@@ -477,10 +528,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
     if (vNodes.empty())
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Bitcoin is not connected!");
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Zcash is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Bitcoin is downloading blocks...");
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zcash is downloading blocks...");
 
     static unsigned int nTransactionsUpdatedLast;
 
@@ -540,7 +591,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
         // Clear pindexPrev so future calls make a new block, despite any failures from here on
         pindexPrev = NULL;
 
-        // Store the pindexBest used before CreateNewBlock, to avoid races
+        // Store the pindexBest used before CreateNewBlockWithKey, to avoid races
         nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
         CBlockIndex* pindexPrevNew = chainActive.Tip();
         nStart = GetTime();
@@ -551,12 +602,12 @@ Value getblocktemplate(const Array& params, bool fHelp)
             delete pblocktemplate;
             pblocktemplate = NULL;
         }
-        CScript scriptDummy = CScript() << OP_TRUE;
-        pblocktemplate = CreateNewBlock(scriptDummy);
+        CReserveKey reservekey(pwalletMain);
+        pblocktemplate = CreateNewBlockWithKey(reservekey);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 
-        // Need to update only after we know CreateNewBlock succeeded
+        // Need to update only after we know CreateNewBlockWithKey succeeded
         pindexPrev = pindexPrevNew;
     }
     CBlock* pblock = &pblocktemplate->block; // pointer for convenience
@@ -567,6 +618,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     static const Array aCaps = boost::assign::list_of("proposal");
 
+    Value txCoinbase = Value::null;
     Array transactions;
     map<uint256, int64_t> setTxIndex;
     int i = 0;
@@ -575,7 +627,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
 
-        if (tx.IsCoinBase())
+        if (tx.IsCoinBase() && !coinbasetxn)
             continue;
 
         Object entry;
@@ -596,7 +648,17 @@ Value getblocktemplate(const Array& params, bool fHelp)
         entry.push_back(Pair("fee", pblocktemplate->vTxFees[index_in_template]));
         entry.push_back(Pair("sigops", pblocktemplate->vTxSigOps[index_in_template]));
 
-        transactions.push_back(entry);
+        if (tx.IsCoinBase()) {
+            // Show founders' reward if it is required
+            //if (pblock->vtx[0].vout.size() > 1) {
+                // Correct this if GetBlockTemplate changes the order
+            //    entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
+            //}
+            entry.push_back(Pair("coinbasevalue", 3*COIN));
+            entry.push_back(Pair("required", true));
+            txCoinbase = entry;
+        } else
+            transactions.push_back(entry);
     }
 
     Object aux;
@@ -617,8 +679,13 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("version", pblock->nVersion));
     result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
     result.push_back(Pair("transactions", transactions));
-    result.push_back(Pair("coinbaseaux", aux));
-    result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
+    if (coinbasetxn) {
+        assert(txCoinbase.type() == obj_type);
+        result.push_back(Pair("coinbasetxn", txCoinbase));
+    } else {
+        result.push_back(Pair("coinbaseaux", aux));
+        result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
+    }
     result.push_back(Pair("longpollid", chainActive.Tip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast)));
     result.push_back(Pair("target", hashTarget.GetHex()));
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
@@ -632,6 +699,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     return result;
 }
+#endif
 
 class submitblock_StateCatcher : public CValidationInterface
 {
@@ -695,7 +763,7 @@ Value submitblock(const Array& params, bool fHelp)
     CValidationState state;
     submitblock_StateCatcher sc(block.GetHash());
     RegisterValidationInterface(&sc);
-    bool fAccepted = ProcessNewBlock(state, NULL, &block, true, NULL);
+    bool fAccepted = ProcessNewBlock(chainActive.Tip()->nHeight+1,state, NULL, &block, true, NULL);
     UnregisterValidationInterface(&sc);
     if (fBlockPresent)
     {
@@ -782,8 +850,7 @@ Value getblocksubsidy(const Array& params, bool fHelp)
             "1. height         (numeric, optional) The block height.  If not provided, defaults to the current height of the chain.\n"
             "\nResult:\n"
             "{\n"
-            "  \"miner\" : x.xxx           (numeric) The mining reward amount in ZEC.\n"
-            "  \"founders\" : x.xxx        (numeric) The founders reward amount in ZEC.\n"
+            "  \"miner\" : x.xxx           (numeric) The mining reward amount in KMD.\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")
@@ -796,11 +863,6 @@ Value getblocksubsidy(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
-    /*CAmount nFoundersReward = 0;
-    if ((nHeight > 0) && (nHeight < Params().GetConsensus().nSubsidyHalvingInterval)) {
-        nFoundersReward = nReward/5;
-        nReward -= nFoundersReward;
-    }*/
     Object result;
     result.push_back(Pair("miner", ValueFromAmount(nReward)));
     //result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));

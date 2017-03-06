@@ -96,8 +96,8 @@ Value getpeerinfo(const Array& params, bool fHelp)
             "    \"timeoffset\": ttt,         (numeric) The time offset in seconds\n"
             "    \"pingtime\": n,             (numeric) ping time\n"
             "    \"pingwait\": n,             (numeric) ping wait\n"
-            "    \"version\": v,              (numeric) The peer version, such as 7001\n"
-            "    \"subver\": \"/Satoshi:0.8.5/\",  (string) The string version\n"
+            "    \"version\": v,              (numeric) The peer version, such as 170002\n"
+            "    \"subver\": \"/MagicBean:x.y.z[-v]/\",  (string) The string version\n"
             "    \"inbound\": true|false,     (boolean) Inbound (true) or Outbound (false)\n"
             "    \"startingheight\": n,       (numeric) The starting height (block) of the peer\n"
             "    \"banscore\": n,             (numeric) The ban score\n"
@@ -163,6 +163,36 @@ Value getpeerinfo(const Array& params, bool fHelp)
     }
 
     return ret;
+}
+
+int32_t komodo_longestchain()
+{
+    int32_t ht,n=0,num=0,maxheight=0,height = 0;
+    LOCK(cs_main);
+    vector<CNodeStats> vstats;
+    CopyNodeStats(vstats);
+    BOOST_FOREACH(const CNodeStats& stats, vstats)
+    {
+        CNodeStateStats statestats;
+        bool fStateStats = GetNodeStateStats(stats.nodeid,statestats);
+        ht = 0;
+        if ( stats.nStartingHeight > ht )
+            ht = stats.nStartingHeight;
+        if ( statestats.nSyncHeight > ht )
+            ht = statestats.nSyncHeight;
+        if ( statestats.nCommonHeight > ht )
+            ht = statestats.nCommonHeight;
+        if ( maxheight == 0 || ht > maxheight*1.01 )
+            maxheight = ht, num = 1;
+        else if ( ht > maxheight*0.99 )
+            num++;
+        n++;
+        if ( ht > height )
+            height = ht;
+    }
+    if ( num > (n >> 1) )
+        return(height);
+    else return(0);
 }
 
 Value addnode(const Array& params, bool fHelp)
@@ -387,7 +417,7 @@ Value getnetworkinfo(const Array& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"version\": xxxxx,                      (numeric) the server version\n"
-            "  \"subversion\": \"/Satoshi:x.x.x/\",     (string) the server subversion string\n"
+            "  \"subversion\": \"/MagicBean:x.y.z[-v]/\",     (string) the server subversion string\n"
             "  \"protocolversion\": xxxxx,              (numeric) the protocol version\n"
             "  \"localservices\": \"xxxxxxxxxxxxxxxx\", (string) the services we offer to the network\n"
             "  \"timeoffset\": xxxxx,                   (numeric) the time offset\n"

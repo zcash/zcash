@@ -43,7 +43,7 @@ void CDBEnv::EnvShutdown()
     if (ret != 0)
         LogPrintf("CDBEnv::EnvShutdown: Error %d shutting down database environment: %s\n", ret, DbEnv::strerror(ret));
     if (!fMockDb)
-        DbEnv(0).remove(strPath.c_str(), 0);
+        DbEnv(u_int32_t{0}).remove(strPath.c_str(), 0);
 }
 
 void CDBEnv::Reset()
@@ -82,7 +82,8 @@ bool CDBEnv::Open(const boost::filesystem::path& pathIn)
     boost::filesystem::path pathLogDir = pathIn / "database";
     TryCreateDirectory(pathLogDir);
     boost::filesystem::path pathErrorFile = pathIn / "db.log";
-    LogPrintf("CDBEnv::Open: LogDir=%s ErrorFile=%s\n", pathLogDir.string(), pathErrorFile.string());
+    LogPrintf("CDBEnv::Open: LogDir=%s ErrorFile=%s pathIn.(%s)\n", pathLogDir.string(), pathErrorFile.string(),pathIn.string());
+    //fprintf(stderr,"strPath.(%s)\n",strPath.c_str());
 
     unsigned int nEnvFlags = 0;
     if (GetBoolArg("-privdb", true))

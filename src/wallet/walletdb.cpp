@@ -14,6 +14,7 @@
 #include "util.h"
 #include "utiltime.h"
 #include "wallet/wallet.h"
+#include "zcash/Proof.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
@@ -100,6 +101,26 @@ bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey,
     {
         Erase(std::make_pair(std::string("key"), vchPubKey));
         Erase(std::make_pair(std::string("wkey"), vchPubKey));
+    }
+    return true;
+}
+
+bool CWalletDB::WriteCryptedZKey(const libzcash::PaymentAddress & addr,
+                                 const libzcash::ViewingKey &vk,
+                                 const std::vector<unsigned char>& vchCryptedSecret,
+                                 const CKeyMetadata &keyMeta)
+{
+    const bool fEraseUnencryptedKey = true;
+    nWalletDBUpdated++;
+
+    if (!Write(std::make_pair(std::string("zkeymeta"), addr), keyMeta))
+        return false;
+
+    if (!Write(std::make_pair(std::string("czkey"), addr), std::make_pair(vk, vchCryptedSecret), false))
+        return false;
+    if (fEraseUnencryptedKey)
+    {
+        Erase(std::make_pair(std::string("zkey"), addr));
     }
     return true;
 }
@@ -348,6 +369,7 @@ public:
     unsigned int nCKeys;
     unsigned int nKeyMeta;
     unsigned int nZKeys;
+    unsigned int nCZKeys;
     unsigned int nZKeyMeta;
     bool fIsEncrypted;
     bool fAnyUnordered;
@@ -355,7 +377,7 @@ public:
     vector<uint256> vWalletUpgrade;
 
     CWalletScanState() {
-        nKeys = nCKeys = nKeyMeta = nZKeys = nZKeyMeta = 0;
+        nKeys = nCKeys = nKeyMeta = nZKeys = nCZKeys = nZKeyMeta = 0;
         fIsEncrypted = false;
         fAnyUnordered = false;
         nFileVersion = 0;
@@ -390,7 +412,8 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             CWalletTx wtx;
             ssValue >> wtx;
             CValidationState state;
-            if (!(CheckTransaction(wtx, state) && (wtx.GetHash() == hash) && state.IsValid()))
+            auto verifier = libzcash::ProofVerifier::Strict();
+            if (!(CheckTransaction(wtx, state, verifier) && (wtx.GetHash() == hash) && state.IsValid()))
                 return false;
 
             // Undo serialize changes in 31600
@@ -557,6 +580,25 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             }
             wss.fIsEncrypted = true;
         }
+        else if (strType == "czkey")
+        {
+            libzcash::PaymentAddress addr;
+            ssKey >> addr;
+            // Deserialization of a pair is just one item after another
+            uint256 vkValue;
+            ssValue >> vkValue;
+            libzcash::ViewingKey vk(vkValue);
+            vector<unsigned char> vchCryptedSecret;
+            ssValue >> vchCryptedSecret;
+            wss.nCKeys++;
+
+            if (!pwallet->LoadCryptedZKey(addr, vk, vchCryptedSecret))
+            {
+                strErr = "Error reading wallet database: LoadCryptedZKey failed";
+                return false;
+            }
+            wss.fIsEncrypted = true;
+        }
         else if (strType == "keymeta")
         {
             CPubKey vchPubKey;
@@ -651,7 +693,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
 static bool IsKeyType(string strType)
 {
     return (strType== "key" || strType == "wkey" ||
-            strType == "zkey" ||
+            strType == "zkey" || strType == "czkey" ||
             strType == "mkey" || strType == "ckey");
 }
 
@@ -736,9 +778,8 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
     LogPrintf("Keys: %u plaintext, %u encrypted, %u w/ metadata, %u total\n",
            wss.nKeys, wss.nCKeys, wss.nKeyMeta, wss.nKeys + wss.nCKeys);
 
-    // TODO: Keep track of encrypted ZKeys
-    LogPrintf("ZKeys: %u plaintext, -- encrypted, %u w/metadata, %u total\n",
-           wss.nZKeys, wss.nZKeyMeta, wss.nZKeys + 0);
+    LogPrintf("ZKeys: %u plaintext, %u encrypted, %u w/metadata, %u total\n",
+           wss.nZKeys, wss.nCZKeys, wss.nZKeyMeta, wss.nZKeys + wss.nCZKeys);
 
     // nTimeFirstKey is only reliable if all keys have metadata
     if ((wss.nKeys + wss.nCKeys) != wss.nKeyMeta)
@@ -846,7 +887,7 @@ DBErrors CWalletDB::ZapWalletTx(CWallet* pwallet, vector<CWalletTx>& vWtx)
 void ThreadFlushWalletDB(const string& strFile)
 {
     // Make this thread recognisable as the wallet flushing thread
-    RenameThread("bitcoin-wallet");
+    RenameThread("zcash-wallet");
 
     static bool fOneThread;
     if (fOneThread)

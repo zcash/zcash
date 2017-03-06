@@ -107,9 +107,10 @@ bool fPrintToDebugLog = true;
 bool fDaemon = false;
 bool fServer = false;
 string strMiscWarning;
-bool fLogTimestamps = false;
-bool fLogIPs = false;
-volatile bool fReopenDebugLog = false;
+bool fLogTimestamps = DEFAULT_LOGTIMESTAMPS;
+bool fLogTimeMicros = DEFAULT_LOGTIMEMICROS;
+bool fLogIPs = DEFAULT_LOGIPS;
+std::atomic<bool> fReopenDebugLog(false);
 CTranslationInterface translationInterface;
 
 /** Init OpenSSL library multithreading support */
@@ -216,6 +217,7 @@ bool LogAcceptCategory(const char* category)
 
         // if not debugging everything and not debugging specific category, LogPrint does nothing.
         if (setCategories.count(string("")) == 0 &&
+            setCategories.count(string("1")) == 0 &&
             setCategories.count(string(category)) == 0)
             return false;
     }
@@ -399,16 +401,25 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
     strMiscWarning = message;
 }
 
+extern char ASSETCHAINS_SYMBOL[16];
+//int64_t MAX_MONEY = 200000000 * 100000000LL;
+
 boost::filesystem::path GetDefaultDataDir()
 {
     namespace fs = boost::filesystem;
+    char symbol[16];
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        strcpy(symbol,ASSETCHAINS_SYMBOL);
+    else symbol[0] = 0;
     // Windows < Vista: C:\Documents and Settings\Username\Application Data\Zcash
     // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zcash
     // Mac: ~/Library/Application Support/Zcash
     // Unix: ~/.zcash
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Komodo";
+    if ( symbol[0] == 0 )
+        return GetSpecialFolderPath(CSIDL_APPDATA) / "Komodo";
+    else return GetSpecialFolderPath(CSIDL_APPDATA) / "Komodo" / symbol;
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -420,10 +431,19 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    return pathRet / "Komodo";
+    if ( symbol[0] == 0 )
+        return pathRet / "Komodo";
+    else
+    {
+        pathRet /= "Komodo";
+        TryCreateDirectory(pathRet);
+        return pathRet / symbol;
+    }
 #else
     // Unix
-    return pathRet / ".komodo";
+    if ( symbol[0] == 0 )
+        return pathRet / ".komodo";
+    else return pathRet / ".komodo" / symbol;
 #endif
 #endif
 }
@@ -478,10 +498,29 @@ const boost::filesystem::path &ZC_GetParamsDir()
         return path;
 
     path = ZC_GetBaseParamsDir();
-    path /= BaseParams().DataDir();
 
     return path;
 }
+
+// Return the user specified export directory.  Create directory if it doesn't exist.
+// If user did not set option, return an empty path.
+// If there is a filesystem problem, throw an exception.
+const boost::filesystem::path GetExportDir()
+{
+    namespace fs = boost::filesystem;
+    fs::path path;
+    if (mapArgs.count("-exportdir")) {
+        path = fs::system_complete(mapArgs["-exportdir"]);
+        if (fs::exists(path) && !fs::is_directory(path)) {
+            throw std::runtime_error(strprintf("The -exportdir '%s' already exists and is not a directory", path.string()));
+        }
+        if (!fs::exists(path) && !fs::create_directories(path)) {
+            throw std::runtime_error(strprintf("Failed to create directory at -exportdir '%s'", path.string()));
+        }
+    }
+    return path;
+}
+
 
 const boost::filesystem::path &GetDataDir(bool fNetSpecific)
 {
@@ -509,7 +548,8 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
         path /= BaseParams().DataDir();
 
     fs::create_directories(path);
-
+    //std::string assetpath = path + "/assets";
+    //boost::filesystem::create_directory(assetpath);
     return path;
 }
 
@@ -521,7 +561,11 @@ void ClearDatadirCache()
 
 boost::filesystem::path GetConfigFile()
 {
-    boost::filesystem::path pathConfigFile(GetArg("-conf", "komodo.conf"));
+    char confname[512];
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        sprintf(confname,"%s.conf",ASSETCHAINS_SYMBOL);
+    else strcpy(confname,"komodo.conf");
+    boost::filesystem::path pathConfigFile(GetArg("-conf",confname));
     if (!pathConfigFile.is_complete())
         pathConfigFile = GetDataDir(false) / pathConfigFile;
 
@@ -533,7 +577,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 {
     boost::filesystem::ifstream streamConfig(GetConfigFile());
     if (!streamConfig.good())
-        return; // No komodo.conf file is OK
+        throw missing_zcash_conf();
 
     set<string> setOptions;
     setOptions.insert("*");
@@ -813,4 +857,18 @@ void SetThreadPriority(int nPriority)
     setpriority(PRIO_PROCESS, 0, nPriority);
 #endif // PRIO_THREAD
 #endif // WIN32
+}
+
+std::string LicenseInfo()
+{
+    return FormatParagraph(strprintf(_("Copyright (C) 2009-%i The Bitcoin Core Developers"), COPYRIGHT_YEAR)) + "\n" +
+           FormatParagraph(strprintf(_("Copyright (C) 2015-%i The Zcash Developers"), COPYRIGHT_YEAR)) + "\n" +
+        FormatParagraph(strprintf(_("Copyright (C) 2015-%i jl777 and SuperNET developers"), COPYRIGHT_YEAR)) + "\n" +
+        "\n" +
+           FormatParagraph(_("This is experimental software.")) + "\n" +
+           "\n" +
+           FormatParagraph(_("Distributed under the MIT software license, see the accompanying file COPYING or <http://www.opensource.org/licenses/mit-license.php>.")) + "\n" +
+           "\n" +
+           FormatParagraph(_("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit <https://www.openssl.org/> and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard.")) +
+           "\n";
 }

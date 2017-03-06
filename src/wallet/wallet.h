@@ -15,6 +15,7 @@
 #include "primitives/transaction.h"
 #include "tinyformat.h"
 #include "ui_interface.h"
+#include "util.h"
 #include "utilstrencodings.h"
 #include "validationinterface.h"
 #include "wallet/crypter.h"
@@ -57,7 +58,8 @@ static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 1000;
 //! Size of witness cache
 //  Should be large enough that we can expect not to reorg beyond our cache
 //  unless there is some exceptional network disruption.
-static const unsigned int WITNESS_CACHE_SIZE = COINBASE_MATURITY;
+#define _COINBASE_MATURITY 100
+static const unsigned int WITNESS_CACHE_SIZE = _COINBASE_MATURITY+1;
 
 class CAccountingEntry;
 class CBlockIndex;
@@ -159,7 +161,11 @@ public:
     // Transaction hash
     uint256 hash;
     // Index into CTransaction.vjoinsplit
+#ifdef __APPLE__
+    uint64_t js;
+#else
     size_t js;
+#endif
     // Index into JSDescription fields of length ZC_NUM_JS_OUTPUTS
     uint8_t n;
 
@@ -200,12 +206,19 @@ class CNoteData
 public:
     libzcash::PaymentAddress address;
 
-    // It's okay to cache the nullifier in the wallet, because we are storing
-    // the spending key there too, which could be used to derive this.
-    // If PR #1210 is merged, we need to revisit the threat model and decide
-    // whether it is okay to store this unencrypted while the spending key is
-    // encrypted.
-    uint256 nullifier;
+    /**
+     * Cached note nullifier. May not be set if the wallet was not unlocked when
+     * this was CNoteData was created. If not set, we always assume that the
+     * note has not been spent.
+     *
+     * It's okay to cache the nullifier in the wallet, because we are storing
+     * the spending key there too, which could be used to derive this.
+     * If the wallet is encrypted, this means that someone with access to the
+     * locked wallet cannot spend notes, but can connect received notes to the
+     * transactions they are spent in. This is the same security semantics as
+     * for transparent addresses.
+     */
+    boost::optional<uint256> nullifier;
 
     /**
      * Cached incremental witnesses for spendable Notes.
@@ -213,8 +226,22 @@ public:
      */
     std::list<ZCIncrementalWitness> witnesses;
 
-    CNoteData() : address(), nullifier() { }
-    CNoteData(libzcash::PaymentAddress a, uint256 n) : address {a}, nullifier {n} { }
+    /**
+     * Block height corresponding to the most current witness.
+     *
+     * When we first create a CNoteData in CWallet::FindMyNotes, this is set to
+     * -1 as a placeholder. The next time CWallet::ChainTip is called, we can
+     * determine what height the witness cache for this note is valid for (even
+     * if no witnesses were cached), and so can set the correct value in
+     * CWallet::IncrementNoteWitnesses and CWallet::DecrementNoteWitnesses.
+     */
+    int witnessHeight;
+
+    CNoteData() : address(), nullifier(), witnessHeight {-1} { }
+    CNoteData(libzcash::PaymentAddress a) :
+            address {a}, nullifier(), witnessHeight {-1} { }
+    CNoteData(libzcash::PaymentAddress a, uint256 n) :
+            address {a}, nullifier {n}, witnessHeight {-1} { }
 
     ADD_SERIALIZE_METHODS;
 
@@ -223,6 +250,7 @@ public:
         READWRITE(address);
         READWRITE(nullifier);
         READWRITE(witnesses);
+        READWRITE(witnessHeight);
     }
 
     friend bool operator<(const CNoteData& a, const CNoteData& b) {
@@ -241,7 +269,7 @@ public:
 
 typedef std::map<JSOutPoint, CNoteData> mapNoteData_t;
 
-
+/** Decrypted note and its location in a transaction. */
 struct CNotePlaintextEntry
 {
     JSOutPoint jsop;
@@ -260,7 +288,7 @@ public:
     uint256 hashBlock;
     std::vector<uint256> vMerkleBranch;
     int nIndex;
-
+    
     // memory only
     mutable bool fMerkleVerified;
 
@@ -556,7 +584,7 @@ public:
 class CWallet : public CCryptoKeyStore, public CValidationInterface
 {
 private:
-    bool SelectCoins(const CAmount& nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet, const CCoinControl *coinControl = NULL) const;
+    bool SelectCoins(const CAmount& nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet, bool& fOnlyCoinbaseCoinsRet, bool& fNeedCoinbaseCoinsRet, const CCoinControl *coinControl = NULL,uint64_t *interestp = NULL) const;
 
     CWalletDB *pwalletdbEncryption;
 
@@ -598,11 +626,58 @@ public:
      */
     int64_t nWitnessCacheSize;
 
+    void ClearNoteWitnessCache();
+
 protected:
+    /**
+     * pindex is the new tip being connected.
+     */
     void IncrementNoteWitnesses(const CBlockIndex* pindex,
                                 const CBlock* pblock,
-                                ZCIncrementalMerkleTree tree);
-    void DecrementNoteWitnesses();
+                                ZCIncrementalMerkleTree& tree);
+    /**
+     * pindex is the old tip being disconnected.
+     */
+    void DecrementNoteWitnesses(const CBlockIndex* pindex);
+
+    template <typename WalletDB>
+    void SetBestChainINTERNAL(WalletDB& walletdb, const CBlockLocator& loc) {
+        if (!walletdb.TxnBegin()) {
+            // This needs to be done atomically, so don't do it at all
+            LogPrintf("SetBestChain(): Couldn't start atomic write\n");
+            return;
+        }
+        try {
+            for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+                if (!walletdb.WriteTx(wtxItem.first, wtxItem.second)) {
+                    LogPrintf("SetBestChain(): Failed to write CWalletTx, aborting atomic write\n");
+                    walletdb.TxnAbort();
+                    return;
+                }
+            }
+            if (!walletdb.WriteWitnessCacheSize(nWitnessCacheSize)) {
+                LogPrintf("SetBestChain(): Failed to write nWitnessCacheSize, aborting atomic write\n");
+                walletdb.TxnAbort();
+                return;
+            }
+            if (!walletdb.WriteBestBlock(loc)) {
+                LogPrintf("SetBestChain(): Failed to write best block, aborting atomic write\n");
+                walletdb.TxnAbort();
+                return;
+            }
+        } catch (const std::exception &exc) {
+            // Unexpected failure
+            LogPrintf("SetBestChain(): Unexpected error during atomic write:\n");
+            LogPrintf("%s\n", exc.what());
+            walletdb.TxnAbort();
+            return;
+        }
+        if (!walletdb.TxnCommit()) {
+            // Couldn't commit all to db, but in-memory state is fine
+            LogPrintf("SetBestChain(): Couldn't commit atomic write\n");
+            return;
+        }
+    }
 
 private:
     template <class T>
@@ -667,7 +742,56 @@ public:
         nWitnessCacheSize = 0;
     }
 
+    /**
+     * The reverse mapping of nullifiers to notes.
+     *
+     * The mapping cannot be updated while an encrypted wallet is locked,
+     * because we need the SpendingKey to create the nullifier (#1502). This has
+     * several implications for transactions added to the wallet while locked:
+     *
+     * - Parent transactions can't be marked dirty when a child transaction that
+     *   spends their output notes is updated.
+     *
+     *   - We currently don't cache any note values, so this is not a problem,
+     *     yet.
+     *
+     * - GetFilteredNotes can't filter out spent notes.
+     *
+     *   - Per the comment in CNoteData, we assume that if we don't have a
+     *     cached nullifier, the note is not spent.
+     *
+     * Another more problematic implication is that the wallet can fail to
+     * detect transactions on the blockchain that spend our notes. There are two
+     * possible cases in which this could happen:
+     *
+     * - We receive a note when the wallet is locked, and then spend it using a
+     *   different wallet client.
+     *
+     * - We spend from a PaymentAddress we control, then we export the
+     *   SpendingKey and import it into a new wallet, and reindex/rescan to find
+     *   the old transactions.
+     *
+     * The wallet will only miss "pure" spends - transactions that are only
+     * linked to us by the fact that they contain notes we spent. If it also
+     * sends notes to us, or interacts with our transparent addresses, we will
+     * detect the transaction and add it to the wallet (again without caching
+     * nullifiers for new notes). As by default JoinSplits send change back to
+     * the origin PaymentAddress, the wallet should rarely miss transactions.
+     *
+     * To work around these issues, whenever the wallet is unlocked, we scan all
+     * cached notes, and cache any missing nullifiers. Since the wallet must be
+     * unlocked in order to spend notes, this means that GetFilteredNotes will
+     * always behave correctly within that context (and any other uses will give
+     * correct responses afterwards), for the transactions that the wallet was
+     * able to detect. Any missing transactions can be rediscovered by:
+     *
+     * - Unlocking the wallet (to fill all nullifier caches).
+     *
+     * - Restarting the node with -reindex (which operates on a locked wallet
+     *   but with the now-cached nullifiers).
+     */
     std::map<uint256, JSOutPoint> mapNullifiersToNotes;
+
     std::map<uint256, CWalletTx> mapWallet;
 
     int64_t nOrderPosNext;
@@ -686,8 +810,8 @@ public:
     //! check whether we are allowed to upgrade (or already support) to the named feature
     bool CanSupportFeature(enum WalletFeature wf) { AssertLockHeld(cs_wallet); return nWalletMaxVersion >= wf; }
 
-    void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl = NULL, bool fIncludeZeroValue=false) const;
-    bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet) const;
+    void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl = NULL, bool fIncludeZeroValue=false, bool fIncludeCoinBase=true) const;
+    bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet,uint64_t *interestp) const;
 
     bool IsSpent(const uint256& hash, unsigned int n) const;
     bool IsSpent(const uint256& nullifier) const;
@@ -751,7 +875,10 @@ public:
     bool LoadZKey(const libzcash::SpendingKey &key);
     //! Load spending key metadata (used by LoadWallet)
     bool LoadZKeyMetadata(const libzcash::PaymentAddress &addr, const CKeyMetadata &meta);
-
+    //! Adds an encrypted spending key to the store, without saving it to disk (used by LoadWallet)
+    bool LoadCryptedZKey(const libzcash::PaymentAddress &addr, const libzcash::ViewingKey &vk, const std::vector<unsigned char> &vchCryptedSecret);
+    //! Adds an encrypted spending key to the store, and saves it to disk (virtual method, declared in crypter.h)
+    bool AddCryptedSpendingKey(const libzcash::PaymentAddress &address, const libzcash::ViewingKey &vk, const std::vector<unsigned char> &vchCryptedSecret);
 
     /** 
      * Increment the next transaction order id
@@ -770,7 +897,8 @@ public:
     TxItems OrderedTxItems(std::list<CAccountingEntry>& acentries, std::string strAccount = "");
 
     void MarkDirty();
-    void UpdateNullifierNoteMap(const CWalletTx& wtx);
+    bool UpdateNullifierNoteMap();
+    void UpdateNullifierNoteMapWithTx(const CWalletTx& wtx);
     bool AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb);
     void SyncTransaction(const CTransaction& tx, const CBlock* pblock);
     bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate);
@@ -810,6 +938,12 @@ public:
 
     std::set<CTxDestination> GetAccountAddresses(std::string strAccount) const;
 
+    boost::optional<uint256> GetNoteNullifier(
+        const JSDescription& jsdesc,
+        const libzcash::PaymentAddress& address,
+        const ZCNoteDecryption& dec,
+        const uint256& hSig,
+        uint8_t n) const;
     mapNoteData_t FindMyNotes(const CTransaction& tx) const;
     bool IsFromMe(const uint256& nullifier) const;
     void GetNoteWitnesses(
@@ -830,6 +964,7 @@ public:
     CAmount GetCredit(const CTransaction& tx, const isminefilter& filter) const;
     CAmount GetChange(const CTransaction& tx) const;
     void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, ZCIncrementalMerkleTree tree, bool added);
+    /** Saves witness caches and best block locator to disk. */
     void SetBestChain(const CBlockLocator& loc);
 
     DBErrors LoadWallet(bool& fFirstRunRet);
@@ -905,7 +1040,7 @@ public:
     void SetBroadcastTransactions(bool broadcast) { fBroadcastTransactions = broadcast; }
     
     /* Find notes filtered by payment address, min depth, ability to spend */
-    bool GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, size_t minDepth, bool ignoreSpent=true);
+    void GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, int minDepth=1, bool ignoreSpent=true);
     
 };
 

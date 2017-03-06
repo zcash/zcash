@@ -6,6 +6,7 @@
 
 #include "script/script.h"
 #include "script/standard.h"
+#include "streams.h"
 #include "util.h"
 
 #include <string>
@@ -58,15 +59,14 @@ bool CCrypter::Encrypt(const CKeyingMaterial& vchPlaintext, std::vector<unsigned
     int nCLen = nLen + AES_BLOCK_SIZE, nFLen = 0;
     vchCiphertext = std::vector<unsigned char> (nCLen);
 
-    EVP_CIPHER_CTX ctx;
-
     bool fOk = true;
 
-    EVP_CIPHER_CTX_init(&ctx);
-    if (fOk) fOk = EVP_EncryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, chKey, chIV) != 0;
-    if (fOk) fOk = EVP_EncryptUpdate(&ctx, &vchCiphertext[0], &nCLen, &vchPlaintext[0], nLen) != 0;
-    if (fOk) fOk = EVP_EncryptFinal_ex(&ctx, (&vchCiphertext[0]) + nCLen, &nFLen) != 0;
-    EVP_CIPHER_CTX_cleanup(&ctx);
+    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+    assert(ctx);
+    if (fOk) fOk = EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, chKey, chIV) != 0;
+    if (fOk) fOk = EVP_EncryptUpdate(ctx, &vchCiphertext[0], &nCLen, &vchPlaintext[0], nLen) != 0;
+    if (fOk) fOk = EVP_EncryptFinal_ex(ctx, (&vchCiphertext[0]) + nCLen, &nFLen) != 0;
+    EVP_CIPHER_CTX_free(ctx);
 
     if (!fOk) return false;
 
@@ -85,15 +85,14 @@ bool CCrypter::Decrypt(const std::vector<unsigned char>& vchCiphertext, CKeyingM
 
     vchPlaintext = CKeyingMaterial(nPLen);
 
-    EVP_CIPHER_CTX ctx;
-
     bool fOk = true;
 
-    EVP_CIPHER_CTX_init(&ctx);
-    if (fOk) fOk = EVP_DecryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, chKey, chIV) != 0;
-    if (fOk) fOk = EVP_DecryptUpdate(&ctx, &vchPlaintext[0], &nPLen, &vchCiphertext[0], nLen) != 0;
-    if (fOk) fOk = EVP_DecryptFinal_ex(&ctx, (&vchPlaintext[0]) + nPLen, &nFLen) != 0;
-    EVP_CIPHER_CTX_cleanup(&ctx);
+    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+    assert(ctx);
+    if (fOk) fOk = EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, chKey, chIV) != 0;
+    if (fOk) fOk = EVP_DecryptUpdate(ctx, &vchPlaintext[0], &nPLen, &vchCiphertext[0], nLen) != 0;
+    if (fOk) fOk = EVP_DecryptFinal_ex(ctx, (&vchPlaintext[0]) + nPLen, &nFLen) != 0;
+    EVP_CIPHER_CTX_free(ctx);
 
     if (!fOk) return false;
 
@@ -135,12 +134,29 @@ static bool DecryptKey(const CKeyingMaterial& vMasterKey, const std::vector<unsi
     return key.VerifyPubKey(vchPubKey);
 }
 
+static bool DecryptSpendingKey(const CKeyingMaterial& vMasterKey,
+                               const std::vector<unsigned char>& vchCryptedSecret,
+                               const libzcash::PaymentAddress& address,
+                               libzcash::SpendingKey& sk)
+{
+    CKeyingMaterial vchSecret;
+    if(!DecryptSecret(vMasterKey, vchCryptedSecret, address.GetHash(), vchSecret))
+        return false;
+
+    if (vchSecret.size() != libzcash::SerializedSpendingKeySize)
+        return false;
+
+    CSecureDataStream ss(vchSecret, SER_NETWORK, PROTOCOL_VERSION);
+    ss >> sk;
+    return sk.address() == address;
+}
+
 bool CCryptoKeyStore::SetCrypted()
 {
     LOCK(cs_KeyStore);
     if (fUseCrypto)
         return true;
-    if (!mapKeys.empty())
+    if (!(mapKeys.empty() && mapSpendingKeys.empty()))
         return false;
     fUseCrypto = true;
     return true;
@@ -176,6 +192,21 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
             const std::vector<unsigned char> &vchCryptedSecret = (*mi).second.second;
             CKey key;
             if (!DecryptKey(vMasterKeyIn, vchCryptedSecret, vchPubKey, key))
+            {
+                keyFail = true;
+                break;
+            }
+            keyPass = true;
+            if (fDecryptionThoroughlyChecked)
+                break;
+        }
+        CryptedSpendingKeyMap::const_iterator skmi = mapCryptedSpendingKeys.begin();
+        for (; skmi != mapCryptedSpendingKeys.end(); ++skmi)
+        {
+            const libzcash::PaymentAddress &address = (*skmi).first;
+            const std::vector<unsigned char> &vchCryptedSecret = (*skmi).second;
+            libzcash::SpendingKey sk;
+            if (!DecryptSpendingKey(vMasterKeyIn, vchCryptedSecret, address, sk))
             {
                 keyFail = true;
                 break;
@@ -267,10 +298,66 @@ bool CCryptoKeyStore::GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) co
     return false;
 }
 
+bool CCryptoKeyStore::AddSpendingKey(const libzcash::SpendingKey &sk)
+{
+    {
+        LOCK(cs_SpendingKeyStore);
+        if (!IsCrypted())
+            return CBasicKeyStore::AddSpendingKey(sk);
+
+        if (IsLocked())
+            return false;
+
+        std::vector<unsigned char> vchCryptedSecret;
+        CSecureDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << sk;
+        CKeyingMaterial vchSecret(ss.begin(), ss.end());
+        auto address = sk.address();
+        if (!EncryptSecret(vMasterKey, vchSecret, address.GetHash(), vchCryptedSecret))
+            return false;
+
+        if (!AddCryptedSpendingKey(address, sk.viewing_key(), vchCryptedSecret))
+            return false;
+    }
+    return true;
+}
+
+bool CCryptoKeyStore::AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
+                                            const libzcash::ViewingKey &vk,
+                                            const std::vector<unsigned char> &vchCryptedSecret)
+{
+    {
+        LOCK(cs_SpendingKeyStore);
+        if (!SetCrypted())
+            return false;
+
+        mapCryptedSpendingKeys[address] = vchCryptedSecret;
+        mapNoteDecryptors.insert(std::make_pair(address, ZCNoteDecryption(vk)));
+    }
+    return true;
+}
+
+bool CCryptoKeyStore::GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey &skOut) const
+{
+    {
+        LOCK(cs_SpendingKeyStore);
+        if (!IsCrypted())
+            return CBasicKeyStore::GetSpendingKey(address, skOut);
+
+        CryptedSpendingKeyMap::const_iterator mi = mapCryptedSpendingKeys.find(address);
+        if (mi != mapCryptedSpendingKeys.end())
+        {
+            const std::vector<unsigned char> &vchCryptedSecret = (*mi).second;
+            return DecryptSpendingKey(vMasterKey, vchCryptedSecret, address, skOut);
+        }
+    }
+    return false;
+}
+
 bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
 {
     {
-        LOCK(cs_KeyStore);
+        LOCK2(cs_KeyStore, cs_SpendingKeyStore);
         if (!mapCryptedKeys.empty() || IsCrypted())
             return false;
 
@@ -287,6 +374,20 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
                 return false;
         }
         mapKeys.clear();
+        BOOST_FOREACH(SpendingKeyMap::value_type& mSpendingKey, mapSpendingKeys)
+        {
+            const libzcash::SpendingKey &sk = mSpendingKey.second;
+            CSecureDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+            ss << sk;
+            CKeyingMaterial vchSecret(ss.begin(), ss.end());
+            libzcash::PaymentAddress address = sk.address();
+            std::vector<unsigned char> vchCryptedSecret;
+            if (!EncryptSecret(vMasterKeyIn, vchSecret, address.GetHash(), vchCryptedSecret))
+                return false;
+            if (!AddCryptedSpendingKey(address, sk.viewing_key(), vchCryptedSecret))
+                return false;
+        }
+        mapSpendingKeys.clear();
     }
     return true;
 }

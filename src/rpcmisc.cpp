@@ -23,6 +23,8 @@
 #include "json/json_spirit_utils.h"
 #include "json/json_spirit_value.h"
 
+#include "zcash/Address.hpp"
+
 using namespace json_spirit;
 using namespace std;
 
@@ -39,8 +41,16 @@ using namespace std;
  *
  * Or alternatively, create a specific query method for the information.
  **/
+uint64_t komodo_interestsum();
+int32_t komodo_longestchain();
+int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
+int32_t komodo_whoami(char *pubkeystr,int32_t height);
+extern int32_t KOMODO_LASTMINED;
+
 Value getinfo(const Array& params, bool fHelp)
 {
+    uint256 notarized_hash,notarized_desttxid;
+    int32_t notarized_height,longestchain;
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getinfo\n"
@@ -77,18 +87,28 @@ Value getinfo(const Array& params, bool fHelp)
 
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
+    notarized_height = komodo_notarized_height(&notarized_hash,&notarized_desttxid);
 
     Object obj;
     obj.push_back(Pair("version", CLIENT_VERSION));
     obj.push_back(Pair("protocolversion", PROTOCOL_VERSION));
+    obj.push_back(Pair("notarized", notarized_height));
+    obj.push_back(Pair("notarizedhash", notarized_hash.ToString()));
+    obj.push_back(Pair("notarizedtxid", notarized_desttxid.ToString()));
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
         obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
+        obj.push_back(Pair("interest",       ValueFromAmount(komodo_interestsum())));
     }
 #endif
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
+    if ( (longestchain= komodo_longestchain()) != 0 && chainActive.Height() > longestchain )
+        longestchain = chainActive.Height();
+    obj.push_back(Pair("longestchain",        longestchain));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
+    if ( chainActive.Tip() != 0 )
+        obj.push_back(Pair("tiptime", (int)chainActive.Tip()->nTime));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string())));
     obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
@@ -104,6 +124,14 @@ Value getinfo(const Array& params, bool fHelp)
 #endif
     obj.push_back(Pair("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK())));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
+    {
+        char pubkeystr[65]; int32_t notaryid;
+        notaryid = komodo_whoami(pubkeystr,(int32_t)chainActive.Tip()->nHeight);
+        obj.push_back(Pair("notaryid",        notaryid));
+        obj.push_back(Pair("pubkey",        pubkeystr));
+        if ( KOMODO_LASTMINED != 0 )
+            obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
+    }
     return obj;
 }
 
@@ -212,6 +240,69 @@ Value validateaddress(const Array& params, bool fHelp)
     }
     return ret;
 }
+
+
+Value z_validateaddress(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "z_validateaddress \"zaddr\"\n"
+            "\nReturn information about the given z address.\n"
+            "\nArguments:\n"
+            "1. \"zaddr\"     (string, required) The z address to validate\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"isvalid\" : true|false,      (boolean) If the address is valid or not. If not, this is the only property returned.\n"
+            "  \"address\" : \"zaddr\",         (string) The z address validated\n"
+            "  \"ismine\" : true|false,       (boolean) If the address is yours or not\n"
+            "  \"payingkey\" : \"hex\",         (string) The hex value of the paying key, a_pk\n"
+            "  \"transmissionkey\" : \"hex\",   (string) The hex value of the transmission key, pk_enc\n"
+
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("validateaddress", "\"zcWsmqT4X2V4jgxbgiCzyrAfRT1vi1F4sn7M5Pkh66izzw8Uk7LBGAH3DtcSMJeUb2pi3W4SQF8LMKkU2cUuVP68yAGcomL\"")
+        );
+
+
+#ifdef ENABLE_WALLET
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+#else
+    LOCK(cs_main);
+#endif
+
+    bool isValid = false;
+    bool isMine = false;
+    std::string payingKey, transmissionKey;
+
+    string strAddress = params[0].get_str();
+    try {
+        CZCPaymentAddress address(strAddress);
+        libzcash::PaymentAddress addr = address.Get();
+
+#ifdef ENABLE_WALLET
+        isMine = pwalletMain->HaveSpendingKey(addr);
+#endif
+        payingKey = addr.a_pk.GetHex();
+        transmissionKey = addr.pk_enc.GetHex();
+        isValid = true;
+    } catch (std::runtime_error e) {
+        // address is invalid, nop here as isValid is false.
+    }
+
+    Object ret;
+    ret.push_back(Pair("isvalid", isValid));
+    if (isValid)
+    {
+        ret.push_back(Pair("address", strAddress));
+        ret.push_back(Pair("payingkey", payingKey));
+        ret.push_back(Pair("transmissionkey", transmissionKey));
+#ifdef ENABLE_WALLET
+        ret.push_back(Pair("ismine", isMine));
+#endif
+    }
+    return ret;
+}
+
 
 /**
  * Used by addmultisigaddress / createmultisig:

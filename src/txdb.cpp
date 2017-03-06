@@ -266,7 +266,7 @@ bool CBlockTreeDB::ReadFlag(const std::string &name, bool &fValue) {
     return true;
 }
 
-int32_t komodo_blockindexcheck(CBlockIndex *pindex,uint32_t *nBitsp);
+void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
 
 bool CBlockTreeDB::LoadBlockIndexGuts()
 {
@@ -297,6 +297,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nFile          = diskindex.nFile;
                 pindexNew->nDataPos       = diskindex.nDataPos;
                 pindexNew->nUndoPos       = diskindex.nUndoPos;
+                pindexNew->hashAnchor     = diskindex.hashAnchor;
                 pindexNew->nVersion       = diskindex.nVersion;
                 pindexNew->hashMerkleRoot = diskindex.hashMerkleRoot;
                 pindexNew->nTime          = diskindex.nTime;
@@ -305,16 +306,10 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nSolution      = diskindex.nSolution;
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
-
-                int32_t retval; uint32_t nBits;
-                nBits = pindexNew->nBits;
-                if ( (retval= komodo_blockindexcheck(pindexNew,&nBits)) == 0 )
-                {
-                    if (!CheckProofOfWork(pindexNew->GetBlockHash(), nBits, Params().GetConsensus()))
-                        return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
-                }
-                else if ( retval < 0 ) // komodo rejects, ie. prior to notarized blockhash
-                    return(false);
+                uint8_t pubkey33[33];
+                komodo_index2pubkey33(pubkey33,pindexNew,pindexNew->nHeight);
+                if (!CheckProofOfWork(pindexNew->nHeight,pubkey33,pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
+                    return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
                 pcursor->Next();
             } else {
                 break; // if shutdown requested or finished loading block index

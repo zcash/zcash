@@ -5,7 +5,7 @@ set -e
 DATADIR=./benchmark-datadir
 
 function zcash_rpc {
-    ./src/zcash-cli -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 "$@"
+    ./src/zcash-cli -datadir="$DATADIR" -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 "$@"
 }
 
 function zcashd_generate {
@@ -15,7 +15,8 @@ function zcashd_generate {
 function zcashd_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
-    ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
+    touch "$DATADIR/zcash.conf"
+    ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
 }
 
@@ -27,8 +28,9 @@ function zcashd_stop {
 function zcashd_massif_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
+    touch "$DATADIR/zcash.conf"
     rm -f massif.out
-    valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
+    valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
 }
 
@@ -41,8 +43,9 @@ function zcashd_massif_stop {
 function zcashd_valgrind_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
+    touch "$DATADIR/zcash.conf"
     rm -f valgrind.out
-    valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 &
+    valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
 }
 
@@ -74,19 +77,25 @@ case "$1" in
                 zcash_rpc zcbenchmark parameterloading 10
                 ;;
             createjoinsplit)
-                zcash_rpc zcbenchmark createjoinsplit 10
+                zcash_rpc zcbenchmark createjoinsplit 10 "${@:3}"
                 ;;
             verifyjoinsplit)
                 zcash_rpc zcbenchmark verifyjoinsplit 1000 "\"$RAWJOINSPLIT\""
                 ;;
             solveequihash)
-                zcash_rpc zcbenchmark solveequihash 10 "${@:3}"
+                zcash_rpc zcbenchmark solveequihash 50 "${@:3}"
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1000
                 ;;
             validatelargetx)
                 zcash_rpc zcbenchmark validatelargetx 5
+                ;;
+            trydecryptnotes)
+                zcash_rpc zcbenchmark trydecryptnotes 1000 "${@:3}"
+                ;;
+            incnotewitnesses)
+                zcash_rpc zcbenchmark incnotewitnesses 100 "${@:3}"
                 ;;
             *)
                 zcashd_stop
@@ -105,7 +114,7 @@ case "$1" in
                 zcash_rpc zcbenchmark parameterloading 1
                 ;;
             createjoinsplit)
-                zcash_rpc zcbenchmark createjoinsplit 1
+                zcash_rpc zcbenchmark createjoinsplit 1 "${@:3}"
                 ;;
             verifyjoinsplit)
                 zcash_rpc zcbenchmark verifyjoinsplit 1 "\"$RAWJOINSPLIT\""
@@ -115,6 +124,12 @@ case "$1" in
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1
+                ;;
+            trydecryptnotes)
+                zcash_rpc zcbenchmark trydecryptnotes 1 "${@:3}"
+                ;;
+            incnotewitnesses)
+                zcash_rpc zcbenchmark incnotewitnesses 1 "${@:3}"
                 ;;
             *)
                 zcashd_massif_stop
@@ -134,7 +149,7 @@ case "$1" in
                 zcash_rpc zcbenchmark parameterloading 1
                 ;;
             createjoinsplit)
-                zcash_rpc zcbenchmark createjoinsplit 1
+                zcash_rpc zcbenchmark createjoinsplit 1 "${@:3}"
                 ;;
             verifyjoinsplit)
                 zcash_rpc zcbenchmark verifyjoinsplit 1 "\"$RAWJOINSPLIT\""
@@ -144,6 +159,12 @@ case "$1" in
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1
+                ;;
+            trydecryptnotes)
+                zcash_rpc zcbenchmark trydecryptnotes 1 "${@:3}"
+                ;;
+            incnotewitnesses)
+                zcash_rpc zcbenchmark incnotewitnesses 1 "${@:3}"
                 ;;
             *)
                 zcashd_valgrind_stop

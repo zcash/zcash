@@ -36,6 +36,14 @@ class JoinSplitTest(BitcoinTestFramework):
         receive_result = self.nodes[0].zcrawreceive(zcsecretkey, joinsplit_result["encryptednote1"])
         assert_equal(receive_result["exists"], True)
 
+        # The pure joinsplit we create should be mined in the next block
+        # despite other transactions being in the mempool.
+        addrtest = self.nodes[0].getnewaddress()
+        for xx in range(0,10):
+            self.nodes[0].generate(1)
+            for x in range(0,50):
+                self.nodes[0].sendtoaddress(addrtest, 0.01);
+
         joinsplit_tx = self.nodes[0].createrawtransaction([], {})
         joinsplit_result = self.nodes[0].zcrawjoinsplit(joinsplit_tx, {receive_result["note"] : zcsecretkey}, {zcaddress: 39.8}, 0, 0.1)
 

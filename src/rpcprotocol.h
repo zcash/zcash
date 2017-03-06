@@ -14,6 +14,7 @@
 #include <boost/iostreams/stream.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
+#include <boost/filesystem.hpp>
 
 #include "json/json_spirit_reader_template.h"
 #include "json/json_spirit_utils.h"
@@ -69,7 +70,7 @@ enum RPCErrorCode
     //! Wallet errors
     RPC_WALLET_ERROR                = -4,  //! Unspecified problem with wallet (key not found etc.)
     RPC_WALLET_INSUFFICIENT_FUNDS   = -6,  //! Not enough funds in wallet or account
-    RPC_WALLET_INVALID_ACCOUNT_NAME = -11, //! Invalid account name
+    RPC_WALLET_ACCOUNTS_UNSUPPORTED = -11, //! Accounts are unsupported
     RPC_WALLET_KEYPOOL_RAN_OUT      = -12, //! Keypool ran out, call keypoolrefill first
     RPC_WALLET_UNLOCK_NEEDED        = -13, //! Enter the wallet passphrase with walletpassphrase first
     RPC_WALLET_PASSPHRASE_INCORRECT = -14, //! The wallet passphrase entered was incorrect
@@ -164,5 +165,14 @@ std::string JSONRPCRequest(const std::string& strMethod, const json_spirit::Arra
 json_spirit::Object JSONRPCReplyObj(const json_spirit::Value& result, const json_spirit::Value& error, const json_spirit::Value& id);
 std::string JSONRPCReply(const json_spirit::Value& result, const json_spirit::Value& error, const json_spirit::Value& id);
 json_spirit::Object JSONRPCError(int code, const std::string& message);
+
+/** Get name of RPC authentication cookie file */
+boost::filesystem::path GetAuthCookieFile();
+/** Generate a new RPC authentication cookie and write it to disk */
+bool GenerateAuthCookie(std::string *cookie_out);
+/** Read the RPC authentication cookie from disk */
+bool GetAuthCookie(std::string *cookie_out);
+/** Delete RPC authentication cookie from disk */
+void DeleteAuthCookie();
 
 #endif // BITCOIN_RPCPROTOCOL_H

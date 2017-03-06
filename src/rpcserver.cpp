@@ -253,7 +253,7 @@ Value help(const Array& params, bool fHelp)
 
 Value stop(const Array& params, bool fHelp)
 {
-    // Accept the deprecated and ignored 'detach' boolean argument
+   // Accept the deprecated and ignored 'detach' boolean argument
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "stop\n"
@@ -291,7 +291,7 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "getblockcount",          &getblockcount,          true  },
     { "blockchain",         "getblock",               &getblock,               true  },
     { "blockchain",         "getblockhash",           &getblockhash,           true  },
-    { "blockchain",         "getchaintips",           &getchaintips,           true  },
+    //{ "blockchain",         "getchaintips",           &getchaintips,           true  },
     { "blockchain",         "getdifficulty",          &getdifficulty,          true  },
     { "blockchain",         "getmempoolinfo",         &getmempoolinfo,         true  },
     { "blockchain",         "getrawmempool",          &getrawmempool,          true  },
@@ -300,10 +300,21 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "verifytxoutproof",       &verifytxoutproof,       true  },
     { "blockchain",         "gettxoutsetinfo",        &gettxoutsetinfo,        true  },
     { "blockchain",         "verifychain",            &verifychain,            true  },
+    { "blockchain",         "paxprice",               &paxprice,               true  },
+    { "blockchain",         "paxpending",             &paxpending,             true  },
+    { "blockchain",         "paxprices",              &paxprices,              true  },
+    { "blockchain",         "notaries",               &notaries,               true  },
+    { "blockchain",         "minerids",               &minerids,               true  },
+    { "blockchain",         "kvsearch",               &kvsearch,               true  },
+    { "blockchain",         "kvupdate",               &kvupdate,               true  },
 
     /* Mining */
+#ifdef ENABLE_WALLET
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
+#endif
     { "mining",             "getmininginfo",          &getmininginfo,          true  },
+    { "mining",             "getlocalsolps",          &getlocalsolps,          true  },
+    { "mining",             "getnetworksolps",        &getnetworksolps,        true  },
     { "mining",             "getnetworkhashps",       &getnetworkhashps,       true  },
     { "mining",             "prioritisetransaction",  &prioritisetransaction,  true  },
     { "mining",             "submitblock",            &submitblock,            true  },
@@ -330,6 +341,7 @@ static const CRPCCommand vRPCCommands[] =
     { "util",               "verifymessage",          &verifymessage,          true  },
     { "util",               "estimatefee",            &estimatefee,            true  },
     { "util",               "estimatepriority",       &estimatepriority,       true  },
+    { "util",               "z_validateaddress",      &z_validateaddress,      true  }, /* uses wallet if enabled */
 
     /* Not shown in help */
     { "hidden",             "invalidateblock",        &invalidateblock,        true  },
@@ -397,7 +409,10 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "z_exportkey",            &z_exportkey,            true  },
     { "wallet",             "z_importkey",            &z_importkey,            true  },
     { "wallet",             "z_exportwallet",         &z_exportwallet,         true  },
-    { "wallet",             "z_importwallet",         &z_importwallet,         true  }
+    { "wallet",             "z_importwallet",         &z_importwallet,         true  },
+    
+    { "wallet",             "paxdeposit",             &paxdeposit,             true  },
+    { "wallet",             "paxwithdraw",            &paxwithdraw,            true  }
 #endif // ENABLE_WALLET
 };
 
@@ -616,28 +631,39 @@ void StartRPCThreads()
         strAllowed += subnet.ToString() + " ";
     LogPrint("rpc", "Allowing RPC connections from: %s\n", strAllowed);
 
-    strRPCUserColonPass = mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"];
-    if (((mapArgs["-rpcpassword"] == "") ||
-         (mapArgs["-rpcuser"] == mapArgs["-rpcpassword"])) && Params().RequireRPCPassword())
+    if (mapArgs["-rpcpassword"] == "")
     {
+/*<<<<<<< HEAD
         unsigned char rand_pwd[32];
         GetRandBytes(rand_pwd, 32);
         uiInterface.ThreadSafeMessageBox(strprintf(
-            _("To use bitcoind, or the -server option to komodo-qt, you must set an rpcpassword in the configuration file:\n"
+            _("To use komodod you must set an rpcpassword in the configuration file:\n"
               "%s\n"
               "It is recommended you use the following random password:\n"
-              "rpcuser=bitcoinrpc\n"
+              "rpcuser=zcashrpc\n"
               "rpcpassword=%s\n"
               "(you do not need to remember this password)\n"
               "The username and password MUST NOT be the same.\n"
               "If the file does not exist, create it with owner-readable-only file permissions.\n"
               "It is also recommended to set alertnotify so you are notified of problems;\n"
-              "for example: alertnotify=echo %%s | mail -s \"Bitcoin Alert\" admin@foo.com\n"),
+              "for example: alertnotify=echo %%s | mail -s \"Komodo Alert\" admin@foo.com\n"),
                 GetConfigFile().string(),
                 EncodeBase58(&rand_pwd[0],&rand_pwd[0]+32)),
                 "", CClientUIInterface::MSG_ERROR | CClientUIInterface::SECURE);
         StartShutdown();
         return;
+=======*/
+        LogPrintf("No rpcpassword set - using random cookie authentication\n");
+        if (!GenerateAuthCookie(&strRPCUserColonPass)) {
+            uiInterface.ThreadSafeMessageBox(
+                _("Error: A fatal internal error occured, see debug.log for details"), // Same message as AbortNode
+                "", CClientUIInterface::MSG_ERROR);
+            StartShutdown();
+            return;
+        }
+    } else {
+        strRPCUserColonPass = mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"];
+//>>>>>>> zcash/master
     }
 
     assert(rpc_io_service == NULL);
@@ -749,7 +775,8 @@ void StartRPCThreads()
     g_rpcSignals.Started();
 
     // Launch one async rpc worker.  The ability to launch multiple workers is not recommended at present and thus the option is disabled.
-    getAsyncRPCQueue()->addWorker();
+    //for (int i=0; i<32; i++)
+        getAsyncRPCQueue()->addWorker();
 /*   
     int n = GetArg("-rpcasyncthreads", 1);
     if (n<1) {
@@ -802,6 +829,8 @@ void StopRPCThreads()
             LogPrintf("%s: Warning: %s when cancelling timer\n", __func__, ec.message());
     }
     deadlineTimers.clear();
+
+    DeleteAuthCookie();
 
     rpc_io_service->stop();
     g_rpcSignals.Stopped();
@@ -960,15 +989,16 @@ static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
         conn->stream() << HTTPError(HTTP_UNAUTHORIZED, false) << std::flush;
         return false;
     }
-
     JSONRequest jreq;
     try
     {
         // Parse request
         Value valRequest;
         if (!read_string(strRequest, valRequest))
+        {
+            fprintf(stderr,"CANTPARSE.(%s)\n",strRequest.c_str());
             throw JSONRPCError(RPC_PARSE_ERROR, "Parse error");
-
+        }
         // Return immediately if in warmup
         {
             LOCK(cs_rpcWarmup);
@@ -1024,9 +1054,15 @@ void ServiceConnection(AcceptedConnection *conn)
         // Read HTTP message headers and body
         ReadHTTPMessage(conn->stream(), mapHeaders, strRequest, nProto, MAX_SIZE);
 
+        // TODO #1856: Re-enable support for persistent connections.
+        // We have disabled support for HTTP Keep-Alive until resolution of #1680, upstream rpc deadlock.
+        // Close connection immediately.
+        fRun = false;
+        /*
         // HTTP Keep-Alive is false; close connection immediately
         if ((mapHeaders["connection"] == "close") || (!GetBoolArg("-rpckeepalive", true)))
             fRun = false;
+        */
 
         // Process via JSON-RPC API
         if (strURI == "/") {
@@ -1068,7 +1104,7 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
 }
 
 std::string HelpExampleCli(string methodname, string args){
-    return "> bitcoin-cli " + methodname + " " + args + "\n";
+    return "> zcash-cli " + methodname + " " + args + "\n";
 }
 
 std::string HelpExampleRpc(string methodname, string args){

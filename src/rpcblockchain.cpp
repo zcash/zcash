@@ -272,6 +272,22 @@ Value getblockhash(const Array& params, bool fHelp)
     return pblockindex->GetBlockHash().GetHex();
 }
 
+uint256 _komodo_getblockhash(int32_t nHeight)
+{
+    uint256 hash;
+    LOCK(cs_main);
+    if ( nHeight >= 0 && nHeight <= chainActive.Height() )
+    {
+        CBlockIndex* pblockindex = chainActive[nHeight];
+        hash = pblockindex->GetBlockHash();
+        int32_t i;
+        for (i=0; i<32; i++)
+            printf("%02x",((uint8_t *)&hash)[i]);
+        printf(" blockhash.%d\n",nHeight);
+    } else memset(&hash,0,sizeof(hash));
+    return(hash);
+}
+
 Value getblock(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
@@ -380,6 +396,261 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
     return ret;
 }
 
+#define IGUANA_MAXSCRIPTSIZE 10001
+#define KOMODO_KVDURATION 1440
+#define KOMODO_KVBINARY 2
+extern char ASSETCHAINS_SYMBOL[16];
+uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+uint32_t komodo_txtime(uint256 hash);
+uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume);
+int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel);
+int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
+char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
+uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
+int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
+int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
+
+Value kvsearch(const Array& params, bool fHelp)
+{
+    Object ret; uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t duration,j,height,valuesize,keylen; uint256 refpubkey; static uint256 zeroes;
+    if (fHelp || params.size() != 1 )
+        throw runtime_error("kvsearch key");
+    LOCK(cs_main);
+    if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
+    {
+        ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
+        ret.push_back(Pair("currentheight", (int64_t)chainActive.Tip()->nHeight));
+        ret.push_back(Pair("key",params[0].get_str()));
+        ret.push_back(Pair("keylen",keylen));
+        if ( keylen < sizeof(key) )
+        {
+            memcpy(key,params[0].get_str().c_str(),keylen);
+            if ( (valuesize= komodo_kvsearch(&refpubkey,chainActive.Tip()->nHeight,&flags,&height,value,key,keylen)) >= 0 )
+            {
+                std::string val; char *valuestr;
+                val.resize(valuesize);
+                valuestr = (char *)val.data();
+                memcpy(valuestr,value,valuesize);
+                if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
+                    ret.push_back(Pair("owner",refpubkey.GetHex()));
+                ret.push_back(Pair("height",height));
+                duration = ((flags >> 2) + 1) * KOMODO_KVDURATION;
+                ret.push_back(Pair("expiration", (int64_t)(height+duration)));
+                ret.push_back(Pair("flags",(int64_t)flags));
+                ret.push_back(Pair("value",val));
+                ret.push_back(Pair("valuesize",valuesize));
+            } else ret.push_back(Pair("error",(char *)"cant find key"));
+        } else ret.push_back(Pair("error",(char *)"key too big"));
+    } else ret.push_back(Pair("error",(char *)"null key"));
+    return ret;
+}
+
+Value minerids(const Array& params, bool fHelp)
+{
+    Object ret; Array a; uint8_t minerids[2000],pubkeys[64][33]; int32_t i,j,n,numnotaries,tally[65];
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("minerids needs height\n");
+    LOCK(cs_main);
+    int32_t height = atoi(params[0].get_str().c_str());
+    if ( height <= 0 )
+        height = chainActive.Tip()->nHeight;
+    if ( (n= komodo_minerids(minerids,height,(int32_t)(sizeof(minerids)/sizeof(*minerids)))) > 0 )
+    {
+        memset(tally,0,sizeof(tally));
+        numnotaries = komodo_notaries(pubkeys,height);
+        if ( numnotaries > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                if ( minerids[i] >= numnotaries )
+                    tally[64]++;
+                else tally[minerids[i]]++;
+            }
+            for (i=0; i<64; i++)
+            {
+                Object item; std::string hex,kmdaddress; char *hexstr,kmdaddr[64],*ptr; int32_t m;
+                hex.resize(66);
+                hexstr = (char *)hex.data();
+                for (j=0; j<33; j++)
+                    sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
+                item.push_back(Pair("notaryid", i));
+                
+                bitcoin_address(kmdaddr,60,pubkeys[i],33);
+                m = (int32_t)strlen(kmdaddr);
+                kmdaddress.resize(m);
+                ptr = (char *)kmdaddress.data();
+                memcpy(ptr,kmdaddr,m);
+                item.push_back(Pair("KMDaddress", kmdaddress));
+                
+                item.push_back(Pair("pubkey", hex));
+                item.push_back(Pair("blocks", tally[i]));
+                a.push_back(item);
+            }
+            Object item;
+            item.push_back(Pair("pubkey", (char *)"external miners"));
+            item.push_back(Pair("blocks", tally[64]));
+            a.push_back(item);
+        }
+        ret.push_back(Pair("mined", a));
+    } else ret.push_back(Pair("error", (char *)"couldnt extract minerids"));
+    return ret;
+}
+
+Value notaries(const Array& params, bool fHelp)
+{
+    Array a; Object ret; int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("notaries height\n");
+    LOCK(cs_main);
+    int32_t height = atoi(params[0].get_str().c_str());
+    if ( height < 0 )
+        height = chainActive.Tip()->nHeight;
+    //fprintf(stderr,"notaries as of height.%d\n",height);
+    //if ( height > chainActive.Height()+20000 )
+    //    throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+    //else
+    {
+        if ( (n= komodo_notaries(pubkeys,height)) > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                Object item;
+                std::string btcaddress,kmdaddress,hex;
+                hex.resize(66);
+                hexstr = (char *)hex.data();
+                for (j=0; j<33; j++)
+                    sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
+                item.push_back(Pair("pubkey", hex));
+
+                bitcoin_address(btcaddr,0,pubkeys[i],33);
+                m = (int32_t)strlen(btcaddr);
+                btcaddress.resize(m);
+                ptr = (char *)btcaddress.data();
+                memcpy(ptr,btcaddr,m);
+                item.push_back(Pair("BTCaddress", btcaddress));
+
+                bitcoin_address(kmdaddr,60,pubkeys[i],33);
+                m = (int32_t)strlen(kmdaddr);
+                kmdaddress.resize(m);
+                ptr = (char *)kmdaddress.data();
+                memcpy(ptr,kmdaddr,m);
+                item.push_back(Pair("KMDaddress", kmdaddress));
+                a.push_back(item);
+            }
+        }
+        ret.push_back(Pair("notaries", a));
+        ret.push_back(Pair("numnotaries", n));
+    }
+    return ret;
+}
+
+int32_t komodo_pending_withdraws(char *opretstr);
+int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base);
+extern char CURRENCIES[][8];
+
+Value paxpending(const Array& params, bool fHelp)
+{
+    Object ret; Array a; char opretbuf[10000*2]; int32_t opretlen,baseid; uint64_t available,deposited,issued,withdrawn,approved,redeemed;
+    if ( fHelp || params.size() != 0 )
+        throw runtime_error("paxpending needs no args\n");
+    LOCK(cs_main);
+    if ( (opretlen= komodo_pending_withdraws(opretbuf)) > 0 )
+        ret.push_back(Pair("withdraws", opretbuf));
+    else ret.push_back(Pair("withdraws", (char *)""));
+    for (baseid=0; baseid<32; baseid++)
+    {
+        Object item,obj;
+        if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,CURRENCIES[baseid]) == 0 )
+        {
+            if ( deposited != 0 || issued != 0 || withdrawn != 0 || approved != 0 || redeemed != 0 )
+            {
+                item.push_back(Pair("available", ValueFromAmount(available)));
+                item.push_back(Pair("deposited", ValueFromAmount(deposited)));
+                item.push_back(Pair("issued", ValueFromAmount(issued)));
+                item.push_back(Pair("withdrawn", ValueFromAmount(withdrawn)));
+                item.push_back(Pair("approved", ValueFromAmount(approved)));
+                item.push_back(Pair("redeemed", ValueFromAmount(redeemed)));
+                obj.push_back(Pair(CURRENCIES[baseid],item));
+                a.push_back(obj);
+            }
+        }
+    }
+    ret.push_back(Pair("fiatstatus", a));
+    return ret;
+}
+
+Value paxprice(const Array& params, bool fHelp)
+{
+    if ( fHelp || params.size() < 3 || params.size() > 4 )
+        throw runtime_error("paxprice \"base\" \"rel\" height amount\n");
+    LOCK(cs_main);
+    Object ret; uint64_t basevolume=0,relvolume,seed;
+    std::string base = params[0].get_str();
+    std::string rel = params[1].get_str();
+    int32_t height = atoi(params[2].get_str().c_str());
+    if ( params.size() == 3 || (basevolume= COIN * atof(params[3].get_str().c_str())) == 0 )
+        basevolume = COIN;
+    relvolume = komodo_paxprice(&seed,height,(char *)base.c_str(),(char *)rel.c_str(),basevolume);
+    ret.push_back(Pair("base", base));
+    ret.push_back(Pair("rel", rel));
+    ret.push_back(Pair("height", height));
+    char seedstr[32];
+    sprintf(seedstr,"%llu",(long long)seed);
+    ret.push_back(Pair("seed", seedstr));
+    if ( height < 0 || height > chainActive.Height() )
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+    else
+    {
+        CBlockIndex *pblockindex = chainActive[height];
+        ret.push_back(Pair("timestamp", (int64_t)pblockindex->nTime));
+        if ( basevolume != 0 && relvolume != 0 )
+        {
+            ret.push_back(Pair("price",((double)relvolume / (double)basevolume)));
+            ret.push_back(Pair("invprice",((double)basevolume / (double)relvolume)));
+            ret.push_back(Pair("basevolume", ValueFromAmount(basevolume)));
+            ret.push_back(Pair("relvolume", ValueFromAmount(relvolume)));
+        } else ret.push_back(Pair("error", "overflow or error in one or more of parameters"));
+    }
+    return ret;
+}
+
+Value paxprices(const Array& params, bool fHelp)
+{
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("paxprices \"base\" \"rel\" maxsamples\n");
+    LOCK(cs_main);
+    Object ret; uint64_t relvolume,prices[4096]; uint32_t i,n; int32_t heights[sizeof(prices)/sizeof(*prices)];
+    std::string base = params[0].get_str();
+    std::string rel = params[1].get_str();
+    int32_t maxsamples = atoi(params[2].get_str().c_str());
+    if ( maxsamples < 1 )
+        maxsamples = 1;
+    else if ( maxsamples > sizeof(heights)/sizeof(*heights) )
+        maxsamples = sizeof(heights)/sizeof(*heights);
+    ret.push_back(Pair("base", base));
+    ret.push_back(Pair("rel", rel));
+    n = komodo_paxprices(heights,prices,maxsamples,(char *)base.c_str(),(char *)rel.c_str());
+    Array a;
+    for (i=0; i<n; i++)
+    {
+        Object item;
+        if ( heights[i] < 0 || heights[i] > chainActive.Height() )
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+        else
+        {
+            CBlockIndex *pblockindex = chainActive[heights[i]];
+            
+            item.push_back(Pair("t", (int64_t)pblockindex->nTime));
+            item.push_back(Pair("p", (double)prices[i] / COIN));
+            a.push_back(item);
+        }
+    }
+    ret.push_back(Pair("array", a));
+    return ret;
+}
+
+uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue);
+
 Value gettxout(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 2 || params.size() > 3)
@@ -448,9 +719,11 @@ Value gettxout(const Array& params, bool fHelp)
     ret.push_back(Pair("bestblock", pindex->GetBlockHash().GetHex()));
     if ((unsigned int)coins.nHeight == MEMPOOL_HEIGHT)
         ret.push_back(Pair("confirmations", 0));
-    else
-        ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
+    else ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
+    uint64_t interest; int32_t txheight; uint32_t locktime;
+    if ( (interest= komodo_accrued_interest(&txheight,&locktime,hash,n,coins.nHeight,coins.vout[n].nValue)) != 0 )
+        ret.push_back(Pair("interest", ValueFromAmount(interest)));
     Object o;
     ScriptPubKeyToJSON(coins.vout[n].scriptPubKey, o, true);
     ret.push_back(Pair("scriptPubKey", o));
@@ -533,6 +806,7 @@ Value getblockchaininfo(const Array& params, bool fHelp)
             "  \"difficulty\": xxxxxx,     (numeric) the current difficulty\n"
             "  \"verificationprogress\": xxxx, (numeric) estimate of verification progress [0..1]\n"
             "  \"chainwork\": \"xxxx\"     (string) total amount of work in active chain, in hexadecimal\n"
+            "  \"commitments\": xxxxxx,    (numeric) the current number of note commitments in the commitment tree\n"
             "  \"softforks\": [            (array) status of softforks in progress\n"
             "     {\n"
             "        \"id\": \"xxxx\",        (string) name of softfork\n"
@@ -563,6 +837,10 @@ Value getblockchaininfo(const Array& params, bool fHelp)
     obj.push_back(Pair("verificationprogress",  Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.Tip())));
     obj.push_back(Pair("chainwork",             chainActive.Tip()->nChainWork.GetHex()));
     obj.push_back(Pair("pruned",                fPruneMode));
+
+    ZCIncrementalMerkleTree tree;
+    pcoinsTip->GetAnchorAt(pcoinsTip->GetBestAnchor(), tree);
+    obj.push_back(Pair("commitments",           tree.size()));
 
     const Consensus::Params& consensusParams = Params().GetConsensus();
     CBlockIndex* tip = chainActive.Tip();

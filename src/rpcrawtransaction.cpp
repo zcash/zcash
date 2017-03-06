@@ -55,41 +55,8 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, Object& out, bool fIncludeH
     out.push_back(Pair("addresses", a));
 }
 
-void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
-{
-    entry.push_back(Pair("txid", tx.GetHash().GetHex()));
-    entry.push_back(Pair("version", tx.nVersion));
-    entry.push_back(Pair("locktime", (int64_t)tx.nLockTime));
-    Array vin;
-    BOOST_FOREACH(const CTxIn& txin, tx.vin) {
-        Object in;
-        if (tx.IsCoinBase())
-            in.push_back(Pair("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
-        else {
-            in.push_back(Pair("txid", txin.prevout.hash.GetHex()));
-            in.push_back(Pair("vout", (int64_t)txin.prevout.n));
-            Object o;
-            o.push_back(Pair("asm", txin.scriptSig.ToString()));
-            o.push_back(Pair("hex", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
-            in.push_back(Pair("scriptSig", o));
-        }
-        in.push_back(Pair("sequence", (int64_t)txin.nSequence));
-        vin.push_back(in);
-    }
-    entry.push_back(Pair("vin", vin));
-    Array vout;
-    for (unsigned int i = 0; i < tx.vout.size(); i++) {
-        const CTxOut& txout = tx.vout[i];
-        Object out;
-        out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
-        out.push_back(Pair("n", (int64_t)i));
-        Object o;
-        ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
-        out.push_back(Pair("scriptPubKey", o));
-        vout.push_back(out);
-    }
-    entry.push_back(Pair("vout", vout));
 
+Array TxJoinSplitToJSON(const CTransaction& tx) {
     Array vjoinsplit;
     for (unsigned int i = 0; i < tx.vjoinsplit.size(); i++) {
         const JSDescription& jsdescription = tx.vjoinsplit[i];
@@ -126,7 +93,58 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 
         vjoinsplit.push_back(joinsplit);
     }
+    return vjoinsplit;
+}
 
+uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+
+void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
+{
+    entry.push_back(Pair("txid", tx.GetHash().GetHex()));
+    entry.push_back(Pair("version", tx.nVersion));
+    entry.push_back(Pair("locktime", (int64_t)tx.nLockTime));
+    Array vin;
+    BOOST_FOREACH(const CTxIn& txin, tx.vin) {
+        Object in;
+        if (tx.IsCoinBase())
+            in.push_back(Pair("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
+        else {
+            in.push_back(Pair("txid", txin.prevout.hash.GetHex()));
+            in.push_back(Pair("vout", (int64_t)txin.prevout.n));
+            Object o;
+            o.push_back(Pair("asm", txin.scriptSig.ToString()));
+            o.push_back(Pair("hex", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
+            in.push_back(Pair("scriptSig", o));
+        }
+        in.push_back(Pair("sequence", (int64_t)txin.nSequence));
+        vin.push_back(in);
+    }
+    entry.push_back(Pair("vin", vin));
+    Array vout;
+    BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+    CBlockIndex *tipindex,*pindex = it->second;
+    uint64_t interest;
+    for (unsigned int i = 0; i < tx.vout.size(); i++) {
+        const CTxOut& txout = tx.vout[i];
+        Object out;
+        out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
+        if ( pindex != 0 && tx.nLockTime != 0 && (tipindex= chainActive.Tip()) != 0 )
+        {
+            extern char ASSETCHAINS_SYMBOL[16];
+            interest = komodo_interest(pindex->nHeight,txout.nValue,tx.nLockTime,tipindex->nTime);
+            if ( 0 && strcmp("REVS",ASSETCHAINS_SYMBOL) == 0 )
+                fprintf(stderr,"TxtoJSON interest %llu %.8f (%d %llu %u %u)\n",(long long)interest,(double)interest/COIN,(int32_t)pindex->nHeight,(long long)txout.nValue,(uint32_t)tx.nLockTime,(int32_t)tipindex->nTime);
+            out.push_back(Pair("interest", ValueFromAmount(interest)));
+        }
+        out.push_back(Pair("n", (int64_t)i));
+        Object o;
+        ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
+        out.push_back(Pair("scriptPubKey", o));
+        vout.push_back(out);
+    }
+    entry.push_back(Pair("vout", vout));
+
+    Array vjoinsplit = TxJoinSplitToJSON(tx);
     entry.push_back(Pair("vjoinsplit", vjoinsplit));
 
     if (!hashBlock.IsNull()) {
@@ -233,6 +251,56 @@ Value getrawtransaction(const Array& params, bool fHelp)
     result.push_back(Pair("hex", strHex));
     TxToJSON(tx, hashBlock, result);
     return result;
+}
+
+int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid,int32_t n)
+{
+    int32_t i,m; uint8_t *ptr;
+    LOCK(cs_main);
+    /*CCoins coins;
+     for (iter=0; iter<2; iter++)
+     {
+     if ( iter == 0 )
+     {
+     LOCK(mempool.cs);
+     CCoinsViewMemPool view(pcoinsTip,mempool);
+     if ( view.GetCoins(txid,coins) == 0 )
+     {
+     //fprintf(stderr,"cant get view\n");
+     continue;
+     }
+     mempool.pruneSpent(txid, coins); // TODO: this should be done by the CCoinsViewMemPool
+     }
+     else if ( pcoinsTip->GetCoins(txid,coins) == 0 )
+     {
+     //fprintf(stderr,"cant get pcoinsTip->GetCoins\n");
+     continue;
+     }
+     if ( n < 0 || (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
+     {
+     fprintf(stderr,"iter.%d n.%d vs voutsize.%d\n",iter,n,(int32_t)coins.vout.size());
+     continue;
+     }
+     ptr = (uint8_t *)coins.vout[n].scriptPubKey.data();
+     m = coins.vout[n].scriptPubKey.size();
+     for (i=0; i<maxsize&&i<m; i++)
+     scriptPubKey[i] = ptr[i];
+     return(i);
+     }*/
+    CTransaction tx;
+    uint256 hashBlock;
+    if ( GetTransaction(txid,tx,hashBlock,true) == 0 )
+        return(-1);
+    else if ( n <= tx.vout.size() ) // vout.size() seems off by 1
+    {
+        ptr = (uint8_t *)tx.vout[n].scriptPubKey.data();
+        m = tx.vout[n].scriptPubKey.size();
+        for (i=0; i<maxsize&&i<m; i++)
+            scriptPubKey[i] = ptr[i];
+        //fprintf(stderr,"got scriptPubKey via rawtransaction\n");
+        return(i);
+    }
+    return(-1);
 }
 
 Value gettxoutproof(const Array& params, bool fHelp)

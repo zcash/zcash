@@ -71,6 +71,36 @@ void IncrementalMerkleTree<Depth, Hash>::wfcheck() const {
 }
 
 template<size_t Depth, typename Hash>
+Hash IncrementalMerkleTree<Depth, Hash>::last() const {
+    if (right) {
+        return *right;
+    } else if (left) {
+        return *left;
+    } else {
+        throw std::runtime_error("tree has no cursor");
+    }
+}
+
+template<size_t Depth, typename Hash>
+size_t IncrementalMerkleTree<Depth, Hash>::size() const {
+    size_t ret = 0;
+    if (left) {
+        ret++;
+    }
+    if (right) {
+        ret++;
+    }
+    // Treat occupation of parents array as a binary number
+    // (right-shifted by 1)
+    for (size_t i = 0; i < parents.size(); i++) {
+        if (parents[i]) {
+            ret += (1 << (i+1));
+        }
+    }
+    return ret;
+}
+
+template<size_t Depth, typename Hash>
 void IncrementalMerkleTree<Depth, Hash>::append(Hash obj) {
     if (is_complete(Depth)) {
         throw std::runtime_error("tree is full");

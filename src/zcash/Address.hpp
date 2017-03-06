@@ -7,6 +7,9 @@
 
 namespace libzcash {
 
+const size_t SerializedPaymentAddressSize = 64;
+const size_t SerializedSpendingKeySize = 32;
+
 class PaymentAddress {
 public:
     uint256 a_pk;
@@ -22,6 +25,9 @@ public:
         READWRITE(a_pk);
         READWRITE(pk_enc);
     }
+
+    //! Get the 256-bit SHA256d hash of this payment address.
+    uint256 GetHash() const;
 
     friend inline bool operator==(const PaymentAddress& a, const PaymentAddress& b) {
         return a.a_pk == b.a_pk && a.pk_enc == b.pk_enc;

@@ -94,6 +94,16 @@ TEST(checktransaction_tests, valid_transaction) {
     EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
 }
 
+TEST(checktransaction_tests, BadVersionTooLow) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.nVersion = 0;
+
+    CTransaction tx(mtx);
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
 TEST(checktransaction_tests, bad_txns_vin_empty) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vjoinsplit.resize(0);
@@ -121,17 +131,30 @@ TEST(checktransaction_tests, bad_txns_oversize) {
     CMutableTransaction mtx = GetValidTransaction();
 
     mtx.vin[0].scriptSig = CScript();
-    // 18 * (520char + DROP) + OP_1 = 9433 bytes
     std::vector<unsigned char> vchData(520);
-    for (unsigned int i = 0; i < 4000; ++i)
+    for (unsigned int i = 0; i < 190; ++i)
         mtx.vin[0].scriptSig << vchData << OP_DROP;
     mtx.vin[0].scriptSig << OP_1;
 
-    CTransaction tx(mtx);
+    {
+        // Transaction is just under the limit...
+        CTransaction tx(mtx);
+        CValidationState state;
+        ASSERT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    }
 
-    MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-oversize", false)).Times(1);
-    CheckTransactionWithoutProofVerification(tx, state);
+    // Not anymore!
+    mtx.vin[1].scriptSig << vchData << OP_DROP;
+    mtx.vin[1].scriptSig << OP_1;
+
+    {
+        CTransaction tx(mtx);
+        ASSERT_EQ(::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION), 100202);
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-oversize", false)).Times(1);
+        CheckTransactionWithoutProofVerification(tx, state);
+    }
 }
 
 TEST(checktransaction_tests, bad_txns_vout_negative) {

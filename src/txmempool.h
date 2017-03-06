@@ -92,7 +92,7 @@ private:
     unsigned int nTransactionsUpdated;
     CBlockPolicyEstimator* minerPolicyEstimator;
 
-    uint64_t totalTxSize; //! sum of all mempool tx' byte sizes
+    uint64_t totalTxSize = 0; //! sum of all mempool tx' byte sizes
 
 public:
     mutable CCriticalSection cs;

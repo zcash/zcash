@@ -1,31 +1,28 @@
 
-Zcash
-=====
- 
-https://z.cash/
- 
-Where do I begin?
------------------
- 
-We have a guide for joining the public testnet: https://github.com/zcash/zcash/wiki/Public-Alpha-Guide
- 
+=======
+Zcash 1.0.5
+===========
+
 What is Zcash?
 --------------
- 
-Zcash is an implementation of the "Zerocash" protocol. Based on Bitcoin's code, it intends to
-offer a far higher standard of privacy and anonymity through a sophisticiated zero-knowledge
-proving scheme which preserves confidentiality of transaction metadata.
- 
-**Zcash is unfinished and highly experimental.** Use at your own risk.
- 
-Participation in the Zcash project is subject to a [Code of Conduct](code_of_conduct.md).
- 
+
+[Zcash](https://z.cash/) is an implementation of the "Zerocash" protocol.
+Based on Bitcoin's code, it intends to offer a far higher standard of privacy
+through a sophisticated zero-knowledge proving scheme that preserves
+confidentiality of transaction metadata. Technical details are available
+in our [Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf).
+
+This software is the Zcash client. It downloads and stores the entire history
+of Zcash transactions; depending on the speed of your computer and network
+connection, the synchronization process could take a day or more once the
+blockchain has reached a significant size.
+
 Security Warnings
 -----------------
  
 See important security warnings in
 [doc/security-warnings.md](doc/security-warnings.md).
- 
+
 License
 -------
  
@@ -41,7 +38,7 @@ Dependencies
  
 ```
 #The following packages are needed:
-sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libboost-all-dev libssl-dev libprotobuf-dev protobuf-compiler libqt4-dev libqrencode-dev libdb++-dev ntp ntpdate
+sudo apt-get install build-essential pkg-config libcurl-gnutls-dev libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libboost-all-dev libssl-dev libprotobuf-dev protobuf-compiler libqt4-dev libqrencode-dev libdb++-dev ntp ntpdate
 ```
  
 Komodo
@@ -50,17 +47,23 @@ Komodo
 ```
 git clone https://github.com/jl777/komodo
 cd komodo
-./autogen.sh
-./configure --with-incompatible-bdb --with-gui
-# This command might finish with: configure: error: libgmp headers missing. This can be ignored.
 ./zcutil/fetch-params.sh
-cp ~/.zcash-params/testnet3/z9* ~/.zcash-params
 
 # -j8 uses 8 threads - replace 8 with number of threads you want to use
 ./zcutil/build.sh -j8
 #This can take some time.
 ```
  
+# to update an existing version, git checkout dPoW if not on that branch already
+
+git pull
+
+./zcutil/fetch-params.sh
+
+./zcutil/build.sh -j8
+
+To reset the blockchain, from ~/.komodo rm -rf blocks chainstate debug.log komodostate db.log
+
 Create komodo.conf
 ------------------
  
@@ -124,5 +127,59 @@ tail -f ~/.komodo/debug.log
 
 #To view all command
 ./src/komodo-cli help
+
+ASSETCHAINS: -ac_name=name -ac_supply=nnnnn
+
+Both komodod and komodo-cli recognize -ac_name=option so you can create a zcash fork from the commandline
+
 ```
+
+=======
+
+**Zcash is unfinished and highly experimental.** Use at your own risk.
+
+Where do I begin?
+-----------------
+We have a guide for joining the main Zcash network:
+https://github.com/zcash/zcash/wiki/1.0-User-Guide
+
+### Need Help?
+
+* See the documentation at the [Zcash Wiki](https://github.com/zcash/zcash/wiki)
+  for help and more information.
+* Ask for help on the [Zcash](https://forum.z.cash/) forum.
+
+Participation in the Zcash project is subject to a
+[Code of Conduct](code_of_conduct.md).
+
+Building
+--------
+
+Build Zcash along with most dependencies from source by running
+./zcutil/build.sh. Currently only Linux is officially supported.
+
+License
+-------
+
+For license information see the file [COPYING](COPYING).
+
+
+NOTE TO EXCHANGES:
+https://bitcointalk.org/index.php?topic=1605144.msg17732151#msg17732151
+There is a small chance that an outbound transaction will give an error due to mismatched values in wallet calculations. There is a -exchange option that you can run komodod with, but make sure to have the entire transaction history under the same -exchange mode. Otherwise you will get wallet conflicts.
+
+To change modes:
+a) backup all privkeys (launch komodod with -exportdir=<path> and dumpwallet)
+b) start a totally new sync including wallet.dat, launch with same exportdir
+c) stop it before it gets too far and import all the privkeys from a) using komodo-cli importwallet filename
+d) resume sync till it gets to chaintip
+
+For example:
+./komodod -exportdir=/tmp &
+./komodo-cli dumpwallet example
+./komodo-cli stop
+mv ~/.komodo ~/.komodo.old && mkdir ~/.komodo && cp ~/.komodo.old/komodo.conf ~/.komodo.old/peers.dat ~/.komodo
+./komodod -exchange -exportdir=/tmp &
+./komodo-cli importwallet /tmp/example
+
 

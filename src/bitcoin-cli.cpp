@@ -14,6 +14,8 @@
 
 using namespace std;
 using namespace json_spirit;
+int64_t MAX_MONEY = 200000000 * 100000000LL;
+uint64_t komodo_maxallowed(int32_t baseid) { return(100000000LL * 1000000); } // stub
 
 std::string HelpMessageCli()
 {
@@ -56,12 +58,28 @@ public:
 
 };
 
+#include "uint256.h"
+#include "arith_uint256.h"
+
+#include "komodo_structs.h"
+
+#include "komodo_globals.h"
+#include "komodo_utils.h"
+#include "cJSON.c"
+#include "komodo_notary.h"
+
+void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t KMDheight,uint32_t KMDtimestamp,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout)
+{
+    
+}
+
 static bool AppInitRPC(int argc, char* argv[])
 {
     //
     // Parameters
     //
     ParseParameters(argc, argv);
+    komodo_args();
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help") || mapArgs.count("-version")) {
         std::string strUsage = _("Komodo RPC client version") + " " + FormatFullVersion() + "\n";
         if (!mapArgs.count("-version")) {
@@ -71,6 +89,8 @@ static bool AppInitRPC(int argc, char* argv[])
                   "  komodo-cli [options] help <command>      " + _("Get help for a command") + "\n";
 
             strUsage += "\n" + HelpMessageCli();
+        } else {
+            strUsage += LicenseInfo();
         }
 
         fprintf(stdout, "%s", strUsage.c_str());
@@ -96,12 +116,6 @@ static bool AppInitRPC(int argc, char* argv[])
 
 Object CallRPC(const string& strMethod, const Array& params)
 {
-    if (mapArgs["-rpcuser"] == "" && mapArgs["-rpcpassword"] == "")
-        throw runtime_error(strprintf(
-            _("You must set rpcpassword=<password> in the configuration file:\n%s\n"
-              "If the file does not exist, create it with owner-readable-only file permissions."),
-                GetConfigFile().string().c_str()));
-
     // Connect to localhost
     bool fUseSSL = GetBoolArg("-rpcssl", false);
     boost::asio::io_service io_service;
@@ -115,10 +129,24 @@ Object CallRPC(const string& strMethod, const Array& params)
     if (!fConnected)
         throw CConnectionFailed("couldn't connect to server");
 
+    // Find credentials to use
+    std::string strRPCUserColonPass;
+    if (mapArgs["-rpcpassword"] == "") {
+        // Try fall back to cookie-based authentication if no password is provided
+        if (!GetAuthCookie(&strRPCUserColonPass)) {
+            throw runtime_error(strprintf(
+                _("You must set rpcpassword=<password> in the configuration file:\n%s\n"
+                  "If the file does not exist, create it with owner-readable-only file permissions."),
+                    GetConfigFile().string().c_str()));
+
+        }
+    } else {
+        strRPCUserColonPass = mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"];
+    }
+
     // HTTP basic authentication
-    string strUserPass64 = EncodeBase64(mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"]);
     map<string, string> mapRequestHeaders;
-    mapRequestHeaders["Authorization"] = string("Basic ") + strUserPass64;
+    mapRequestHeaders["Authorization"] = string("Basic ") + EncodeBase64(strRPCUserColonPass);
 
     // Send request
     string strRequest = JSONRPCRequest(strMethod, params, 1);
