@@ -53,7 +53,11 @@ In `configure.ac` and `clientversion.h`:
 If this release changes the behavior of the protocol or fixes a serious bug, we may
 also wish to change the `PROTOCOL_VERSION` in `version.h`.
 
-Build and commit to update versions, and then perform the following command:
+Commit these changes. (Be sure to do this before building, or else the built binary will include the flag `-dirty`)
+
+Build by running `./zcutil/build.sh`.
+
+Then perform the following command:
 
     $ bash contrib/devtools/gen-manpages.sh
 
@@ -101,8 +105,11 @@ Run `./fetch-params.sh`.
 
 ## D. Make tag for the newly merged result
 
-In this example, we ensure master is up to date with the
-previous merged PR, then:
+Checkout master and pull the latest version to ensure master is up to date with the release PR which was merged in before.
+
+Check the last commit on the local and remote versions of master to make sure they are the same.
+
+Then create the git tag:
 
     $ git tag -s v${ZCASH_RELEASE}
     $ git push origin v${ZCASH_RELEASE}
