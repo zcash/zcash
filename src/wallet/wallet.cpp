@@ -977,7 +977,8 @@ void CWallet::MarkDirty()
 }
 
 /**
- * Ensure that every note in the wallet has a cached nullifier.
+ * Ensure that every note in the wallet (for which we possess a spending key)
+ * has a cached nullifier.
  */
 bool CWallet::UpdateNullifierNoteMap()
 {
@@ -991,16 +992,17 @@ bool CWallet::UpdateNullifierNoteMap()
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                 if (!item.second.nullifier) {
-                    auto i = item.first.js;
-                    GetNoteDecryptor(item.second.address, dec);
-                    auto hSig = wtxItem.second.vjoinsplit[i].h_sig(
-                        *pzcashParams, wtxItem.second.joinSplitPubKey);
-                    item.second.nullifier = GetNoteNullifier(
-                        wtxItem.second.vjoinsplit[i],
-                        item.second.address,
-                        dec,
-                        hSig,
-                        item.first.n);
+                    if (GetNoteDecryptor(item.second.address, dec)) {
+                        auto i = item.first.js;
+                        auto hSig = wtxItem.second.vjoinsplit[i].h_sig(
+                            *pzcashParams, wtxItem.second.joinSplitPubKey);
+                        item.second.nullifier = GetNoteNullifier(
+                            wtxItem.second.vjoinsplit[i],
+                            item.second.address,
+                            dec,
+                            hSig,
+                            item.first.n);
+                    }
                 }
             }
             UpdateNullifierNoteMapWithTx(wtxItem.second);
@@ -1262,7 +1264,9 @@ boost::optional<uint256> CWallet::GetNoteNullifier(const JSDescription& jsdesc,
         hSig,
         (unsigned char) n);
     auto note = note_pt.note(address);
-    // SpendingKeys are only available if the wallet is unlocked
+    // SpendingKeys are only available if:
+    // - We have them (this isn't a viewing key)
+    // - The wallet is unlocked
     libzcash::SpendingKey key;
     if (GetSpendingKey(address, key)) {
         ret = note.nullifier(key);
@@ -3639,7 +3643,7 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
  * Find notes in the wallet filtered by payment address, min depth and ability to spend.
  * These notes are decrypted and added to the output parameter vector, outEntries.
  */
-void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, int minDepth, bool ignoreSpent)
+void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, int minDepth, bool ignoreSpent, bool ignoreUnspendable)
 {
     bool fFilterAddress = false;
     libzcash::PaymentAddress filterPaymentAddress;
@@ -3674,6 +3678,11 @@ void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, st
 
             // skip note which has been spent
             if (ignoreSpent && nd.nullifier && IsSpent(*nd.nullifier)) {
+                continue;
+            }
+
+            // skip notes which cannot be spent
+            if (ignoreUnspendable && !HaveSpendingKey(pa)) {
                 continue;
             }
 
