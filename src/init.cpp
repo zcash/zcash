@@ -58,6 +58,10 @@
 #include "zmq/zmqnotificationinterface.h"
 #endif
 
+#if ENABLE_PROTON
+#include "amqp/amqpnotificationinterface.h"
+#endif
+
 using namespace std;
 
 extern void ThreadSendAlert();
@@ -71,6 +75,10 @@ bool fFeeEstimatesInitialized = false;
 
 #if ENABLE_ZMQ
 static CZMQNotificationInterface* pzmqNotificationInterface = NULL;
+#endif
+
+#if ENABLE_PROTON
+static AMQPNotificationInterface* pAMQPNotificationInterface = NULL;
 #endif
 
 #ifdef WIN32
@@ -230,6 +238,14 @@ void Shutdown()
         UnregisterValidationInterface(pzmqNotificationInterface);
         delete pzmqNotificationInterface;
         pzmqNotificationInterface = NULL;
+    }
+#endif
+
+#if ENABLE_PROTON
+    if (pAMQPNotificationInterface) {
+        UnregisterValidationInterface(pAMQPNotificationInterface);
+        delete pAMQPNotificationInterface;
+        pAMQPNotificationInterface = NULL;
     }
 #endif
 
@@ -406,6 +422,14 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-zmqpubhashtx=<address>", _("Enable publish hash transaction in <address>"));
     strUsage += HelpMessageOpt("-zmqpubrawblock=<address>", _("Enable publish raw block in <address>"));
     strUsage += HelpMessageOpt("-zmqpubrawtx=<address>", _("Enable publish raw transaction in <address>"));
+#endif
+
+#if ENABLE_PROTON
+    strUsage += HelpMessageGroup(_("AMQP 1.0 notification options:"));
+    strUsage += HelpMessageOpt("-amqppubhashblock=<address>", _("Enable publish hash block in <address>"));
+    strUsage += HelpMessageOpt("-amqppubhashtx=<address>", _("Enable publish hash transaction in <address>"));
+    strUsage += HelpMessageOpt("-amqppubrawblock=<address>", _("Enable publish raw block in <address>"));
+    strUsage += HelpMessageOpt("-amqppubrawtx=<address>", _("Enable publish raw transaction in <address>"));
 #endif
 
     strUsage += HelpMessageGroup(_("Debugging/Testing options:"));
@@ -1227,6 +1251,21 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (pzmqNotificationInterface) {
         RegisterValidationInterface(pzmqNotificationInterface);
+    }
+#endif
+
+#if ENABLE_PROTON
+    pAMQPNotificationInterface = AMQPNotificationInterface::CreateWithArguments(mapArgs);
+
+    if (pAMQPNotificationInterface) {
+
+        // AMQP support is currently an experimental feature, so fail if user configured AMQP notifications
+        // without enabling experimental features.
+        if (!fExperimentalMode) {
+            return InitError(_("AMQP support requires -experimentalfeatures."));
+        }
+
+        RegisterValidationInterface(pAMQPNotificationInterface);
     }
 #endif
 
