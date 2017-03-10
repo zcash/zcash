@@ -21,8 +21,6 @@ if test -z $with_miniupnpc && test -n "@no_upnp@"; then
   with_miniupnpc=no
 fi
 
-with_gui=no
-
 if test x@host_os@ = xdarwin; then
   BREW=no
   PORT=no

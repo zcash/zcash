@@ -31,7 +31,7 @@ files: []
 script: |
   WRAP_DIR=$HOME/wrapped
   HOSTS="x86_64-unknown-linux-gnu"
-  CONFIGFLAGS="--enable-glibc-back-compat --enable-reduce-exports --disable-bench --disable-gui-tests --with-gui=no --enable-hardening"
+  CONFIGFLAGS="--enable-glibc-back-compat --enable-reduce-exports --disable-bench --enable-hardening"
   MAKEOPTS="V=1"
   FAKETIME_HOST_PROGS=""
   FAKETIME_PROGS="date ar ranlib nm strip objcopy"
