@@ -7,7 +7,6 @@ src/zcash-cli
 src/zcash-gtest
 src/zcash-tx
 src/test/test_bitcoin
-src/qt/test/test_bitcoin-qt
 
 # Zcash utilities
 src/zcash/GenerateParams
@@ -41,15 +40,10 @@ src/config/bitcoin-config.h
 src/config/bitcoin-config.h.in
 src/config/stamp-h1
 share/setup.nsi
-share/qt/Info.plist
 
+cache/
+venv-mnf/
 src/univalue/gen
-
-src/qt/*.moc
-src/qt/moc_*.cpp
-src/qt/forms/ui_*.h
-
-src/qt/test/moc*.cpp
 
 .deps
 .dirstamp
@@ -79,22 +73,15 @@ src/qt/test/moc*.cpp
 *.lo
 *.la
 
-# Compilation and Qt preprocessor part
-*.qm
+# Compilation
 Makefile
-bitcoin-qt
-Bitcoin-Qt.app
 
 # Unit-tests
 Makefile.test
-bitcoin-qt_test
 src/test/buildenv.py
 
 # Resources cpp
 qrc_*.cpp
-
-# Qt creator
-*.pro.user
 
 # Mac specific
 .DS_Store
