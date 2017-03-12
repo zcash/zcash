@@ -217,7 +217,7 @@ void komodo_notarysinit(int32_t origheight,uint8_t pubkeys[64][33],int32_t num)
         memcpy(kp->pubkey,pubkeys[k],33);
         kp->notaryid = k;
         HASH_ADD_KEYPTR(hh,N.Notaries,kp->pubkey,33,kp);
-        if ( 0 && height > 10000 )
+        if ( 1 && height > 10000 )
         {
             for (i=0; i<33; i++)
                 printf("%02x",pubkeys[k][i]);
