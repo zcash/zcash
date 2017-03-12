@@ -272,9 +272,9 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
         {
             *notaryidp = kp->notaryid;
             modval = ((height % numnotaries) == kp->notaryid);
-            //printf("found notary.%d ht.%d modval.%d\n",kp->notaryid,height,modval);
+            printf("found notary.%d ht.%d modval.%d\n",kp->notaryid,height,modval);
         } else printf("unexpected zero notaries at height.%d\n",height);
-    }
+    } else printf("cant find kp at htind.%d ht.%d\n",htind,height);
     //int32_t i; for (i=0; i<33; i++)
     //    printf("%02x",pubkey33[i]);
     //printf(" ht.%d notary.%d special.%d htind.%d num.%d\n",height,*notaryidp,modval,htind,numnotaries);
