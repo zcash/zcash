@@ -599,14 +599,14 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     memset(otherheights,0,sizeof(otherheights));
     n = block.vtx[0].vout.size();
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
-    fprintf(stderr,"ht.%d n.%d nValue %.8f\n",height,n,dstr(block.vtx[0].vout[1].nValue));
+    //fprintf(stderr,"ht.%d n.%d nValue %.8f\n",height,n,dstr(block.vtx[0].vout[1].nValue));
     if ( KOMODO_PAX == 0 || komodo_isrealtime(&ht) == 0 || KOMODO_PASSPORT_INITDONE == 0 )
         return(0);
     if ( n <= 2 || script[0] != 0x6a )
     {
         if ( n == 2 && block.vtx[0].vout[1].nValue != 0 )
         {
-            fprintf(stderr,"ht.%d illegal nonz output %.8f\n",height,dstr(block.vtx[0].vout[1].nValue));
+            fprintf(stderr,"ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
             if ( height > 236000 )
                 return(-1);
         }
