@@ -368,7 +368,7 @@ void komodo_init(int32_t height)
         //    Minerids[i] = -2;
         didinit = 1;
     }
-    else if ( height == KOMODO_MAINNET_START )
+    else if ( 0 && height == KOMODO_MAINNET_START )
     {
         n = (int32_t)(sizeof(Notaries_elected)/sizeof(*Notaries_elected));
         for (k=0; k<n; k++)
@@ -378,7 +378,7 @@ void komodo_init(int32_t height)
             decode_hex(pubkeys[k],33,(char *)Notaries_elected[k][1]);
         }
         printf("set MAINNET notaries.%d\n",k);
-        //komodo_notarysinit(KOMODO_MAINNET_START,pubkeys,k);
+        komodo_notarysinit(KOMODO_MAINNET_START,pubkeys,k);
     }
     komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0);
 }
