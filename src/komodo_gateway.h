@@ -710,7 +710,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             }
         }
         //printf("opretlen.%d num.%d\n",opretlen,num);
-    }
+    } else return(-1);
     return(0);
 }
 
