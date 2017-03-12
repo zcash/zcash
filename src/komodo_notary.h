@@ -140,6 +140,9 @@ int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height)
     decode_hex(legacy33,33,(char *)"0252b6185bf8ea7efe8bbc345ddc8da87329149f30233088387abd716d4aa9e974");
     if ( memcmp(pubkey33,legacy33,33) == 0 )
         return(64);
+    decode_hex(legacy33,33,(char *)"03517fcac101fed480ae4f2caf775560065957930d8c1facc83e30077e45bdd199");
+    if ( memcmp(pubkey33,legacy33,33) == 0 )
+        return(65);
     return(-1);
 }
 
