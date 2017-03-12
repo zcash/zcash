@@ -3872,6 +3872,7 @@ bool LoadBlockIndex()
         return false;
     }
     KOMODO_LOADINGBLOCKS = 0;
+    fprintf(stderr,"finished loading blocks\n");
     return true;
 }
 
