@@ -124,7 +124,7 @@ const char *Notaries_elected[][2] =
 
 int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height)
 {
-    char pubkeystr[67]; int32_t i;
+    char pubkeystr[67]; int32_t i; uint8_t legacy33[33];
     for (i=0; i<33; i++)
         sprintf(&pubkeystr[i*2],"%02x",pubkey33[i]);
     pubkeystr[66] = 0;
@@ -137,6 +137,9 @@ int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height)
             return(i);
         }
     }
+    decode_hex(legacy33,33,(char *)"0252b6185bf8ea7efe8bbc345ddc8da87329149f30233088387abd716d4aa9e974");
+    if ( memcmp(pubkey33,legacy33,33) == 0 )
+        return(63);
     return(-1);
 }
 
@@ -229,7 +232,7 @@ void komodo_notarysinit(int32_t origheight,uint8_t pubkeys[64][33],int32_t num)
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
 {
     // -1 if not notary, 0 if notary, 1 if special notary
-    struct knotary_entry *kp; uint8_t legacy33[33]; int32_t numnotaries=0,htind,modval = -1;
+    struct knotary_entry *kp; int32_t numnotaries=0,htind,modval = -1;
     komodo_init(0);
     *notaryidp = -1;
     if ( height < 0 || height >= KOMODO_MAXBLOCKS )
@@ -246,9 +249,6 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
             return(modval);
         }
     }
-    decode_hex(legacy33,33,(char *)"0252b6185bf8ea7efe8bbc345ddc8da87329149f30233088387abd716d4aa9e974");
-    if ( memcmp(pubkey33,legacy33,33) == 0 )
-        return(63);
     //if ( height >= 250000 )
         return(-1);
     htind = height / KOMODO_ELECTION_GAP;
