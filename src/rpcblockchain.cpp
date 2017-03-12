@@ -447,7 +447,7 @@ Value kvsearch(const Array& params, bool fHelp)
 
 Value minerids(const Array& params, bool fHelp)
 {
-    Object ret; Array a; uint8_t minerids[2000],pubkeys[64][33]; int32_t i,j,n,numnotaries,tally[65];
+    Object ret; Array a; uint8_t minerids[2000],pubkeys[65][33]; int32_t i,j,n,numnotaries,tally[66];
     if ( fHelp || params.size() != 1 )
         throw runtime_error("minerids needs height\n");
     LOCK(cs_main);
