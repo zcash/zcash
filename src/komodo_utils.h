@@ -1457,10 +1457,10 @@ void komodo_args()
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
     NOTARY_PUBKEY = GetArg("-pubkey", "");
+    KOMODO_PAX = 1;
     if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
     {
         USE_EXTERNAL_PUBKEY = 1;
-        KOMODO_PAX = 1;
     } else KOMODO_PAX = GetArg("-pax",0);
     name = GetArg("-ac_name","");
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
