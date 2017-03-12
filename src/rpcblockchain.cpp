@@ -447,7 +447,7 @@ Value kvsearch(const Array& params, bool fHelp)
 
 Value minerids(const Array& params, bool fHelp)
 {
-    Object ret; Array a; uint8_t minerids[2000],pubkeys[65][33]; int32_t i,j,n,numnotaries,tally[66];
+    Object ret; Array a; uint8_t minerids[2000],pubkeys[65][33]; int32_t i,j,n,numnotaries,tally[129];
     if ( fHelp || params.size() != 1 )
         throw runtime_error("minerids needs height\n");
     LOCK(cs_main);
@@ -463,7 +463,7 @@ Value minerids(const Array& params, bool fHelp)
             for (i=0; i<n; i++)
             {
                 if ( minerids[i] >= numnotaries )
-                    tally[64]++;
+                    tally[128]++;
                 else tally[minerids[i]]++;
             }
             for (i=0; i<64; i++)
@@ -488,7 +488,7 @@ Value minerids(const Array& params, bool fHelp)
             }
             Object item;
             item.push_back(Pair("pubkey", (char *)"external miners"));
-            item.push_back(Pair("blocks", tally[64]));
+            item.push_back(Pair("blocks", tally[128]));
             a.push_back(item);
         }
         ret.push_back(Pair("mined", a));
