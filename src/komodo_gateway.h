@@ -601,6 +601,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     memset(otherheights,0,sizeof(otherheights));
     n = block.vtx[0].vout.size();
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
+    fprintf(stderr,"ht.%d n.%d nValue %.8f\n",height,n,dstr(block.vtx[0].vout[1].nValue));
     if ( n <= 2 || script[0] != 0x6a )
     {
         if ( n == 2 && block.vtx[0].vout[1].nValue != 0 )
