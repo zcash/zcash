@@ -602,7 +602,15 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     n = block.vtx[0].vout.size();
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     if ( n <= 2 || script[0] != 0x6a )
+    {
+        if ( n == 2 && block.vtx[0].vout[1].nValue != 0 )
+        {
+            fprintf(stderr,"illegal nonz output %.8f\n",dstr(block.vtx[0].vout[1].nValue));
+            if ( height > 236000 )
+                return(-1);
+        }
         return(0);
+    }
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
