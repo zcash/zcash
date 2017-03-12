@@ -137,17 +137,20 @@ int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height)
             return(i);
         }
     }
-    for (i=0; i<sizeof(Notaries_genesis)/sizeof(*Notaries_genesis); i++)
+    if ( height < 300000 )
     {
-        if ( strcmp(pubkeystr,(char *)Notaries_genesis[i][1]) == 0 )
+        for (i=0; i<sizeof(Notaries_genesis)/sizeof(*Notaries_genesis); i++)
         {
-            //printf("i.%d -> elected %s\n",i,(char *)Notaries_elected[i][1]);
-            return(i+64);
+            if ( strcmp(pubkeystr,(char *)Notaries_genesis[i][1]) == 0 )
+            {
+                //printf("i.%d -> elected %s\n",i,(char *)Notaries_elected[i][1]);
+                return(i+64);
+            }
         }
+        decode_hex(legacy33,33,(char *)"0252b6185bf8ea7efe8bbc345ddc8da87329149f30233088387abd716d4aa9e974");
+        if ( memcmp(pubkey33,legacy33,33) == 0 )
+            return(128);
     }
-    decode_hex(legacy33,33,(char *)"0252b6185bf8ea7efe8bbc345ddc8da87329149f30233088387abd716d4aa9e974");
-    if ( memcmp(pubkey33,legacy33,33) == 0 )
-        return(128);
     return(-1);
 }
 
