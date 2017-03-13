@@ -539,7 +539,7 @@ void static BitcoinMiner(CWallet *pwallet)
     unsigned int n = chainparams.EquihashN();
     unsigned int k = chainparams.EquihashK();
     int32_t notaryid = -1;
-    while ( ASSETCHAIN_INIT == 0 || KOMODO_INITDONE == 0 )
+    while ( chainActive.Tip()->nHeight != 235300 && (ASSETCHAIN_INIT == 0 || KOMODO_INITDONE == 0) )
     {
         sleep(1);
         if ( komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
@@ -553,8 +553,8 @@ void static BitcoinMiner(CWallet *pwallet)
     //else solver = "default";
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
-    if ( ASSETCHAINS_SYMBOL[0] != 0 )
-        fprintf(stderr,"Mining with %s\n",solver.c_str());
+    //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        fprintf(stderr,"notaryid.%d Mining with %s\n",notaryid,solver.c_str());
     std::mutex m_cs;
     bool cancelSolver = false;
     boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
