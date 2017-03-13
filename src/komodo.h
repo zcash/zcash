@@ -554,7 +554,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         if ( numvouts == 2 && block.vtx[0].vout[1].nValue != 0 )
                         {
                             fprintf(stderr,"ht.%d numvouts.%d value %.8f\n",height,numvouts,dstr(block.vtx[0].vout[1].nValue));
-                            if ( height > 235300 && block.vtx[0].vout[1].nValue >= 100000*COIN )
+                            if ( height >= 235300 && block.vtx[0].vout[1].nValue >= 100000*COIN )
                                 block.vtx[0].vout[1].nValue = 0;
                             break;
                         }

@@ -652,7 +652,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         if ( n == 2 && block.vtx[0].vout[1].nValue != 0 )
         {
             //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
-            if ( height > 235300 )
+            if ( height >= 235300 )
                 return(-1);
         }
         return(0);
