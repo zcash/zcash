@@ -863,7 +863,22 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 bool CheckTransaction(const CTransaction& tx, CValidationState &state,
                       libzcash::ProofVerifier& verifier)
 {
-    // Don't count coinbase transactions because mining skews the count
+    static uint256 array[15]; int32_t j,k,n;
+    if ( *(int32_t *)&array[0] == 0 )
+        komodo_bannedset(array,(int32_t)(sizeof(array)/sizeof(*array)));
+        n = tx[i].vin.size();
+    for (j=0; j<n; j++)
+    {
+        for (k=0; k<sizeof(array)/sizeof(*array); k++)
+        {
+            if ( tx[i].vin[j].prevout.hash == array[k] && tx[i].vin[j].prevout.n == 1 )
+            {
+                printf("MEMPOOL: banned tx.%d being used at ht.%d txi.%d vini.%d\n",k,(int32_t)chainActive.Tip()->nHeight,i,j);
+                return(false);
+            }
+        }
+    }
+ // Don't count coinbase transactions because mining skews the count
     if (!tx.IsCoinBase()) {
         transactionsValidated.increment();
     }
