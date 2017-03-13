@@ -710,7 +710,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
                     {
                         //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-                        int32_t z; uint256 tmp = pblock->GetHash();
+                        int32_t z; uint256 tmp = hashTarget;//pblock->GetHash();
                         for (z=0; z<32; z++)
                             fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
                             fprintf(stderr," missed target\n");
