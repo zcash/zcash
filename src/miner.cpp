@@ -636,7 +636,7 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             uint8_t pubkeys[66][33]; int mids[66],gpucount,nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
             savebits = pblock->nBits;
-            arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
+            ari`th_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
             if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )//komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
                 j = 65;
