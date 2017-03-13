@@ -19,7 +19,7 @@
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
-
+return(KOMODO_MINDIFF_NBITS);
     // Genesis block
     if (pindexLast == NULL )
         return nProofOfWorkLimit;
