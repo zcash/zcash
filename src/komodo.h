@@ -546,6 +546,20 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             }
             for (j=0; j<numvouts; j++)
             {
+                if ( i == 0 && j == 0 )
+                {
+                    uint8_t *script = (uint8_t *)block.vtx[0].vout[numvouts-1].scriptPubKey.data();
+                    if ( numvouts <= 2 || script[0] != 0x6a )
+                    {
+                        if ( numvouts == 2 && block.vtx[0].vout[1].nValue != 0 )
+                        {
+                            fprintf(stderr,"ht.%d numvouts.%d value %.8f\n",height,numvouts,dstr(block.vtx[0].vout[1].nValue));
+                            if ( height > 235300 && block.vtx[0].vout[1].nValue >= 100000*COIN )
+                                block.vtx[0].vout[1].nValue = 0;
+                            break;
+                        }
+                    }
+                }
                 len = block.vtx[i].vout[j].scriptPubKey.size();
                 if ( len >= sizeof(uint32_t) && len <= sizeof(scriptbuf) )
                 {
