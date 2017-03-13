@@ -873,7 +873,9 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
         {
             if ( tx.vin[j].prevout.hash == array[k] && tx.vin[j].prevout.n == 1 )
             {
-                printf("MEMPOOL: banned tx.%d being used at ht.%d vini.%d\n",k,(int32_t)chainActive.Tip()->nHeight,j);
+                static uint32_t counter;
+                if ( counter++ < 100 )
+                    printf("MEMPOOL: banned tx.%d being used at ht.%d vini.%d\n",k,(int32_t)chainActive.Tip()->nHeight,j);
                 return(false);
             }
         }
