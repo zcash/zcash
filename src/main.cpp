@@ -3189,7 +3189,10 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
         return state.DoS(100, error("CheckBlock(): out-of-bounds SigOpCount"),
                          REJECT_INVALID, "bad-blk-sigops", true);
     if ( komodo_check_deposit(height,block) < 0 )
+    {
+        fprintf(stderr,"check deposit rejection\n");
         return(false);
+    }
     return true;
 }
 
