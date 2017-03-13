@@ -121,7 +121,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     // Create new block
     unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
     if(!pblocktemplate.get())
+    {
+        fprintf(stderr,"pblocktemplate.get() failure\n");
         return NULL;
+    }
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
     if ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight >= ASSETCHAINS_MINHEIGHT )
     {
@@ -469,7 +472,9 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     else
     {
         if (!reservekey.GetReservedKey(pubkey))
+        {
             return NULL;
+        }
         scriptPubKey.resize(35);
         ptr = (uint8_t *)pubkey.begin();
         script = (uint8_t *)scriptPubKey.data();
@@ -610,7 +615,9 @@ void static BitcoinMiner(CWallet *pwallet)
             CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey);
             if ( ptr == 0 )
             {
-                fprintf(stderr,"created illegal block, retry\n");
+                static int32_t counter;
+                if ( counter++ < 100 )
+                    fprintf(stderr,"created illegal block, retry\n");
                 continue;
             }
             unique_ptr<CBlockTemplate> pblocktemplate(ptr);
