@@ -546,7 +546,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             }
             for (j=0; j<numvouts; j++)
             {
-                if ( i == 0 && j == 0 )
+                /*if ( i == 0 && j == 0 )
                 {
                     uint8_t *script = (uint8_t *)block.vtx[0].vout[numvouts-1].scriptPubKey.data();
                     if ( numvouts <= 2 || script[0] != 0x6a )
@@ -559,7 +559,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                             break;
                         }
                     }
-                }
+                }*/
                 len = block.vtx[i].vout[j].scriptPubKey.size();
                 if ( len >= sizeof(uint32_t) && len <= sizeof(scriptbuf) )
                 {

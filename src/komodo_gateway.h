@@ -610,8 +610,8 @@ char *banned_txids[] =
 void komodo_bannedset(uint256 *array,int32_t max)
 {
     int32_t i;
-    for (i=0; i<sizeof(banned)/sizeof(*banned); i++)
-        array[i] = uint256S(banned[i]);
+    for (i=0; i<sizeof(banned_txids)/sizeof(*banned_txids); i++)
+        array[i] = uint256S(banned_txids[i]);
     if ( i != max )
         printf("banned txid array error i.%d != max.%d\n",i,max);
     else printf("set %d banned txids\n",max);
@@ -620,7 +620,7 @@ void komodo_bannedset(uint256 *array,int32_t max)
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
     static uint256 array[15];
-    int32_t i,j,n,ht,txn_count,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t available,deposited,issued,withdrawn,approved,redeemed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *sp;
+    int32_t i,j,k,n,ht,txn_count,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t available,deposited,issued,withdrawn,approved,redeemed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *sp;
     if ( *(int32_t *)&array[0] == 0 )
         komodo_bannedset(array,(int32_t)(sizeof(array)/sizeof(*array)));
     memset(baseids,0xff,sizeof(baseids));
@@ -635,10 +635,13 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         n = block.vtx[i].vin.size();
         for (j=0; j<n; j++)
         {
-            if ( block.vtx[i].vin[j].prevout.hash == array[k] && block.vtx[i].vin[j].prevout.n == 1 )
+            for (k=0; k<sizeof(array)/sizeof(*array); k++)
             {
-                printf("banned tx.%d being used at ht.%d txi.%d vini.%d\n",k,height,i,j);
-                return(-1);
+                if ( block.vtx[i].vin[j].prevout.hash == array[k] && block.vtx[i].vin[j].prevout.n == 1 )
+                {
+                    printf("banned tx.%d being used at ht.%d txi.%d vini.%d\n",k,height,i,j);
+                    return(-1);
+                }
             }
         }
     }
