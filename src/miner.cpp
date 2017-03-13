@@ -626,6 +626,7 @@ void static BitcoinMiner(CWallet *pwallet)
             // Search
             //
             uint8_t pubkeys[66][33]; int mids[66],gpucount,nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
+pblock->nBits = KOMODO_MINDIFF_NBITS;
             savebits = pblock->nBits;
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
             int32_t z; for (z=0; z<32; z++)
