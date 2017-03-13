@@ -710,7 +710,7 @@ void static BitcoinMiner(CWallet *pwallet)
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
                     {
                         //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-                            fprintf(stderr,"missed target %s %s\n",UintToArith256(pblock->GetHash()).GetHex(),hashTarget.GetHex().c_str());
+                            fprintf(stderr,"missed target %s \n",UintToArith256(pblock->GetHash()).GetHex());
                         return false;
                     }
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+ROUNDROBIN_DELAY )
