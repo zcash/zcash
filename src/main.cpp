@@ -3448,13 +3448,25 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
 
     // NOTE: CheckBlockHeader is called by CheckBlock
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
+    {
+        fprintf(stderr,"TestBlockValidity failure A\n");
         return false;
+    }
     if (!CheckBlock(indexDummy.nHeight,0,block, state, verifier, fCheckPOW, fCheckMerkleRoot))
+    {
+        fprintf(stderr,"TestBlockValidity failure B\n");
         return false;
+    }
     if (!ContextualCheckBlock(block, state, pindexPrev))
+    {
+        fprintf(stderr,"TestBlockValidity failure C\n");
         return false;
+    }
     if (!ConnectBlock(block, state, &indexDummy, viewNew, true))
+    {
+        fprintf(stderr,"TestBlockValidity failure D\n");
         return false;
+    }
     assert(state.IsValid());
 
     return true;
