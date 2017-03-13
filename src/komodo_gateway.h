@@ -639,7 +639,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             {
                 if ( block.vtx[i].vin[j].prevout.hash == array[k] && block.vtx[i].vin[j].prevout.n == 1 )
                 {
-                    //printf("banned tx.%d being used at ht.%d txi.%d vini.%d\n",k,height,i,j);
+                    printf("banned tx.%d being used at ht.%d txi.%d vini.%d\n",k,height,i,j);
                     return(-1);
                 }
             }
@@ -757,8 +757,18 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 }
             }
         }
+        else
+        {
+            printf("no opreturn entries to check\n");
+            return(-1);
+        }
         //printf("opretlen.%d num.%d\n",opretlen,num);
-    } else return(-1);
+    }
+    else
+    {
+        printf("not proper vout with opreturn format\n");
+        return(-1);
+    }
     return(0);
 }
 
