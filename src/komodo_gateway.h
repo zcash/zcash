@@ -588,30 +588,61 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     return(0);
 }
 
-int32_t komodo_check_deposit(int32_t height,CBlock *block) // verify above block is valid pax pricing
+char *banned_txids[] =
 {
-    int32_t i,j,n,ht,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t available,deposited,issued,withdrawn,approved,redeemed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *sp;
+    "c85dcffb16d5a45bd239021ad33443414d60224760f11d535ae2063e5709efee", // 235296
+    "a01671c8775328a41304e31a6693bbd35e9acbab28ab117f729eaba9cb769461", // 235265
+    "fa9943525f2e6c32cbc243294b08187e314d83a2870830180380c3c12a9fd33c", // 235253
+};
+
+void komodo_bannedset(uint256 *array,int32_t max)
+{
+    int32_t i;
+    for (i=0; i<sizeof(banned)/sizeof(*banned); i++)
+        array[i] = uint256S(banned[i]);
+    if ( i != max )
+        printf("banned txid array error i.%d != max.%d\n",i,max);
+    else printf("set %d banned txids\n",max);
+}
+
+int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
+{
+    static uint256 array[15];
+    int32_t i,j,n,ht,txn_count,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t available,deposited,issued,withdrawn,approved,redeemed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *sp;
+    if ( *(int32_t *)&array[0] == 0 )
+        komodo_bannedset(array,(int32_t)(sizeof(array)/sizeof(*array)));
     memset(baseids,0xff,sizeof(baseids));
     memset(values,0,sizeof(values));
     memset(srcvalues,0,sizeof(srcvalues));
     memset(rmd160s,0,sizeof(rmd160s));
     memset(kmdheights,0,sizeof(kmdheights));
     memset(otherheights,0,sizeof(otherheights));
-    n = block->vtx[0].vout.size();
-    script = (uint8_t *)block->vtx[0].vout[n-1].scriptPubKey.data();
+    txn_count = block.vtx.size();
+    for (i=0; i<txn_count; i++)
+    {
+        n = block.vtx[i].vin.size();
+        for (j=0; j<n; j++)
+        {
+            if ( block.vtx[i].vin[j].prevout.hash == array[k] && block.vtx[i].vin[j].prevout.n == 1 )
+            {
+                printf("banned tx.%d being used at ht.%d txi.%d vini.%d\n",k,height,i,j);
+                return(-1);
+            }
+        }
+    }
+    n = block.vtx[0].vout.size();
+    script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     if ( n <= 2 || script[0] != 0x6a )
     {
-        if ( n == 2 && block->vtx[0].vout[1].nValue != 0 )
+        if ( n == 2 && block.vtx[0].vout[1].nValue != 0 )
         {
-            //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block->vtx[0].vout[1].nValue),n);
-            //if ( height > 235300 && block->vtx[0].vout[1].nValue >= 100000*COIN )
-            //    block->vtx[0].vout[1].nValue = 0;
-            if ( height > 236000 )
+            //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
+            if ( height > 235300 )
                 return(-1);
         }
         return(0);
     }
-    //fprintf(stderr,"ht.%d n.%d nValue %.8f (%d %d %d)\n",height,n,dstr(block->vtx[0].vout[1].nValue),KOMODO_PAX,komodo_isrealtime(&ht),KOMODO_PASSPORT_INITDONE);
+    //fprintf(stderr,"ht.%d n.%d nValue %.8f (%d %d %d)\n",height,n,dstr(block.vtx[0].vout[1].nValue),KOMODO_PAX,komodo_isrealtime(&ht),KOMODO_PASSPORT_INITDONE);
     if ( komodo_isrealtime(&ht) == 0 || KOMODO_PASSPORT_INITDONE == 0 ) //KOMODO_PAX == 0 || 
         return(0);
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
@@ -629,7 +660,7 @@ int32_t komodo_check_deposit(int32_t height,CBlock *block) // verify above block
         opcode = 'I';
         if ( komodo_baseid(symbol) < 0 )
         {
-            if ( block->vtx[0].vout.size() != 1 )
+            if ( block.vtx[0].vout.size() != 1 )
             {
                 printf("%s has more than one coinbase?\n",symbol);
                 return(-1);
@@ -637,7 +668,7 @@ int32_t komodo_check_deposit(int32_t height,CBlock *block) // verify above block
             return(0);
         }
     }
-    if ( script[offset] == opcode && opretlen < block->vtx[0].vout[n-1].scriptPubKey.size() )
+    if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
     {
         if ( (num= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,&script[offset],opretlen,opcode == 'X')) > 0 )
         {
@@ -657,11 +688,11 @@ int32_t komodo_check_deposit(int32_t height,CBlock *block) // verify above block
                         printf("checkdeposit.[%s]: skip %s %.8f when avail %.8f deposited %.8f, issued %.8f withdrawn %.8f approved %.8f redeemed %.8f\n",ASSETCHAINS_SYMBOL,symbol,dstr(pax->fiatoshis),dstr(available),dstr(deposited),dstr(issued),dstr(withdrawn),dstr(approved),dstr(redeemed));
                         continue;
                     }
-                    if ( ((opcode == 'I' && (pax->fiatoshis == 0 || pax->fiatoshis == block->vtx[0].vout[i].nValue)) || (opcode == 'X' && (pax->komodoshis == 0 || pax->komodoshis == block->vtx[0].vout[i].nValue))) )
+                    if ( ((opcode == 'I' && (pax->fiatoshis == 0 || pax->fiatoshis == block.vtx[0].vout[i].nValue)) || (opcode == 'X' && (pax->komodoshis == 0 || pax->komodoshis == block.vtx[0].vout[i].nValue))) )
                     {
                         if ( pax->marked != 0 && height >= 80820 )
                         {
-                            printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f paxmarked.%d kht.%d ht.%d\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block->vtx[0].vout[i].nValue),pax->marked,pax->height,pax->otherheight);
+                            printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f paxmarked.%d kht.%d ht.%d\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax->marked,pax->height,pax->otherheight);
                             if ( pax->komodoshis != 0 || pax->fiatoshis != 0 )
                                 errs++;
                             else matched++; // onetime init bypass
@@ -678,12 +709,12 @@ int32_t komodo_check_deposit(int32_t height,CBlock *block) // verify above block
                         for (j=0; j<32; j++)
                             printf("%02x",((uint8_t *)&txids[i-1])[j]);
                         printf(" cant paxfind %c txid\n",opcode);
-                        printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block->vtx[0].vout[i].nValue),pax);
+                        printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f pax.%p\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax);
                     }
                 }
                 else if ( kmdheights[i-1] > 0 && otherheights[i-1] > 0 )
                 {
-                    hash = block->GetHash();
+                    hash = block.GetHash();
                     for (j=0; j<32; j++)
                         printf("%02x",((uint8_t *)&hash)[j]);
                     printf(" kht.%d ht.%d %.8f %.8f blockhash couldnt find vout.[%d]\n",kmdheights[i-1],otherheights[i-1],dstr(values[i-1]),dstr(srcvalues[i]),i);

@@ -2026,11 +2026,9 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         // but it must be corrected before txout nversion ever influences a network rule.
         if (outsBlock.nVersion < 0)
             outs->nVersion = outsBlock.nVersion;
-            if ( i != 0 || tx.vout.size() != 2 || tx.vout[1].nValue < COIN )
-            {
-                if (*outs != outsBlock)
-                    fClean = fClean && error("DisconnectBlock(): added transaction mismatch? database corrupted");
-            }
+        if (*outs != outsBlock)
+            fClean = fClean && error("DisconnectBlock(): added transaction mismatch? database corrupted");
+
         // remove outputs
         outs->Clear();
         }
@@ -3131,7 +3129,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
     return true;
 }
 
-int32_t komodo_check_deposit(int32_t height,CBlock *block);
+int32_t komodo_check_deposit(int32_t height,const CBlock& block);
 bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidationState& state,
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW, bool fCheckMerkleRoot)
@@ -3190,7 +3188,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     if (nSigOps > MAX_BLOCK_SIGOPS)
         return state.DoS(100, error("CheckBlock(): out-of-bounds SigOpCount"),
                          REJECT_INVALID, "bad-blk-sigops", true);
-    if ( komodo_check_deposit(height,(CBlock *)&block) < 0 )
+    if ( komodo_check_deposit(height,block) < 0 )
         return(false);
     return true;
 }
