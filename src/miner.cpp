@@ -698,7 +698,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 crypto_generichash_blake2b_update(&curr_state,pblock->nNonce.begin(),pblock->nNonce.size());
                 // (x_1, x_2, ...) = A(I, V, n, k)
                 LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",solver, pblock->nNonce.ToString());
-                fprintf(stderr,"running solver\n");
+                //fprintf(stderr,"running solver\n");
                 std::function<bool(std::vector<unsigned char>)> validBlock =
                         [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
                         (std::vector<unsigned char> soln)
@@ -710,12 +710,12 @@ void static BitcoinMiner(CWallet *pwallet)
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
                     {
                         //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-                            fprintf(stderr,"missed target %s %s\n",UintToArith256(pblock->GetHash()).ToString.c_str(),hashTarget.ToString.c_str());
+                            fprintf(stderr,"missed target %s %s\n",UintToArith256(pblock->GetHash()).GetHex(),hashTarget.GetHex());
                         return false;
                     }
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+ROUNDROBIN_DELAY )
                     {
-                        printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+ROUNDROBIN_DELAY-time(NULL)));
+                        //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+ROUNDROBIN_DELAY-time(NULL)));
                         int32_t nseconds = Mining_start+ROUNDROBIN_DELAY-time(NULL);
                         if ( nseconds > 0 )
                             sleep(nseconds);
@@ -821,19 +821,19 @@ void static BitcoinMiner(CWallet *pwallet)
                 }
                 if ((UintToArith256(pblock->nNonce) & 0xffff) == 0xffff)
                 {
-                    //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                         fprintf(stderr,"0xffff, break\n");
                     break;
                 }
                 if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                 {
-                    //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                         fprintf(stderr,"timeout, break\n");
                     break;
                 }
                 if ( pindexPrev != chainActive.Tip() )
                 {
-                    //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                         fprintf(stderr,"Tip advanced, break\n");
                     break;
                 }
