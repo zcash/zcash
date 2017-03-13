@@ -639,7 +639,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             {
                 if ( block.vtx[i].vin[j].prevout.hash == array[k] && block.vtx[i].vin[j].prevout.n == 1 )
                 {
-                    printf("banned tx.%d being used at ht.%d txi.%d vini.%d\n",k,height,i,j);
+                    //printf("banned tx.%d being used at ht.%d txi.%d vini.%d\n",k,height,i,j);
                     return(-1);
                 }
             }
