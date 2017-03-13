@@ -100,7 +100,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 
 #define ASSETCHAINS_MINHEIGHT 100
 #define KOMODO_ELECTION_GAP 2000
-#define ROUNDROBIN_DELAY 60
+#define ROUNDROBIN_DELAY 61
 extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE;
 extern char ASSETCHAINS_SYMBOL[16];
 extern std::string NOTARY_PUBKEY;
@@ -626,16 +626,12 @@ void static BitcoinMiner(CWallet *pwallet)
             // Search
             //
             uint8_t pubkeys[66][33]; int mids[66],gpucount,nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
-pblock->nBits = KOMODO_MINDIFF_NBITS;
             savebits = pblock->nBits;
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
-            int32_t z; for (z=0; z<32; z++)
-                fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
-            fprintf(stderr,"savebits.%x\n",savebits);
             if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )//komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
                 j = 65;
-                if ( (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 )
+                if ( (height >= 235300 && height < 236000) || (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 )
                 {
                     komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,pindexPrev->nHeight);
                     if ( nonzpkeys > 0 )
@@ -671,7 +667,7 @@ pblock->nBits = KOMODO_MINDIFF_NBITS;
                             if ( mids[j] == notaryid )
                                 break;
                     } else fprintf(stderr,"no nonz pubkeys\n");
-                    if ( j == 65 && Mining_height > KOMODO_MAYBEMINED+3 && Mining_height > KOMODO_LASTMINED+64 )
+                    if ( (height >= 235300 && height < 236000) || (j == 65 && Mining_height > KOMODO_MAYBEMINED+3 && Mining_height > KOMODO_LASTMINED+64) )
                     {
                         hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                         fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
@@ -715,10 +711,6 @@ pblock->nBits = KOMODO_MINDIFF_NBITS;
                     {
                         //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                         //     fprintf(stderr," missed target\n");
-                        arith_uint256 tmp = UintToArith256(pblock->GetHash());
-                        int32_t z; for (z=0; z<32; z++)
-                            fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
-                        fprintf(stderr," > target savebits.%x\n",pblock->nBits);
                         return false;
                     }
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+ROUNDROBIN_DELAY )
