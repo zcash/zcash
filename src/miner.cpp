@@ -605,7 +605,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 Mining_height = pindexPrev->nHeight+1;
                 Mining_start = (uint32_t)time(NULL);
             }
-            //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
                 fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
             CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey);
             if ( ptr == 0 )
@@ -627,7 +627,7 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             uint8_t pubkeys[66][33]; int mids[66],gpucount,nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
             savebits = pblock->nBits;
-            arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
+            ari`th_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
             if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )//komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
                 j = 65;
