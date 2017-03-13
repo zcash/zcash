@@ -651,7 +651,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     {
         if ( n == 2 && block.vtx[0].vout[1].nValue > COIN/10 )
         {
-            //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
+            fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
             if ( height >= 235300 )
                 return(-1);
         }
@@ -757,8 +757,18 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 }
             }
         }
+        else
+        {
+            printf("no opreturn entries to check\n");
+            return(-1);
+        }
         //printf("opretlen.%d num.%d\n",opretlen,num);
-    } else return(-1);
+    }
+    else
+    {
+        printf("not proper vout with opreturn format\n");
+        return(-1);
+    }
     return(0);
 }
 
