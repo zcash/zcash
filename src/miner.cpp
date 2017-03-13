@@ -575,7 +575,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 //    break;
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
-                fprintf(stderr,"Wait for peers...\n");
+                //fprintf(stderr,"Wait for peers...\n");
                 do {
                     bool fvNodesEmpty;
                     {
@@ -585,10 +585,10 @@ void static BitcoinMiner(CWallet *pwallet)
                     if (!fvNodesEmpty && !IsInitialBlockDownload())
                         break;
                     MilliSleep(5000);
-                    fprintf(stderr,"fvNodesEmpty %d IsInitialBlockDownload(%s) %d\n",(int32_t)fvNodesEmpty,ASSETCHAINS_SYMBOL,(int32_t)IsInitialBlockDownload());
+                    //fprintf(stderr,"fvNodesEmpty %d IsInitialBlockDownload(%s) %d\n",(int32_t)fvNodesEmpty,ASSETCHAINS_SYMBOL,(int32_t)IsInitialBlockDownload());
 
                 } while (true);
-                fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
+                //fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
             }
             /*while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight < ASSETCHAINS_MINHEIGHT )
             {
@@ -715,6 +715,10 @@ pblock->nBits = KOMODO_MINDIFF_NBITS;
                     {
                         //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                         //     fprintf(stderr," missed target\n");
+                        arith_uint256 tmp = UintToArith256(pblock->GetHash());
+                        int32_t z; for (z=0; z<32; z++)
+                            fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
+                        fprintf(stderr," > target savebits.%x\n",pblock->nBits);
                         return false;
                     }
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+ROUNDROBIN_DELAY )
