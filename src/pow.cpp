@@ -19,7 +19,6 @@
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
-
     // Genesis block
     if (pindexLast == NULL )
         return nProofOfWorkLimit;
@@ -156,7 +155,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( KOMODO_LOADINGBLOCKS == 0 && height > 188000 && KOMODO_REWIND == 0 )//186269, 182507&& komodo_chainactive(height) != 0 && nonzpkeys > 0
+        if ( (height < 235300 || height >= 236000) && KOMODO_LOADINGBLOCKS == 0 && height > 188000 && KOMODO_REWIND == 0 )//186269, 182507&& komodo_chainactive(height) != 0 && nonzpkeys > 0
         {
             int32_t i;
             for (i=31; i>=0; i--)

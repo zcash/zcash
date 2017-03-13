@@ -1527,7 +1527,7 @@ bool IsInitialBlockDownload()
     }
     bool state;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        state = (chainActive.Height() < pindexBestHeader->nHeight - 24*6) ||
+        state = (chainActive.Height() > 236000 && chainActive.Height() < pindexBestHeader->nHeight - 24*6) ||
                     pindexBestHeader->GetBlockTime() < (GetTime() - chainParams.MaxTipAge());
     else state = (chainActive.Height() < pindexBestHeader->nHeight - 100);
     if (!state)
@@ -3206,7 +3206,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     int nHeight = pindexPrev->nHeight+1;
 
     // Check proof of work
-    if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
+    if ( (nHeight < 235300 || nHeight > 236000) && block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
     {
         cout << block.nBits << " block.nBits vs. calc " << GetNextWorkRequired(pindexPrev, &block, consensusParams) << endl;
         return state.DoS(100, error("%s: incorrect proof of work", __func__),
@@ -3412,6 +3412,8 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
         fRequested |= fForceProcessing;
         if (!checked) {
+            if ( pfrom != 0 )
+                Misbehaving(pfrom->GetId(), 1);
             return error("%s: CheckBlock FAILED", __func__);
         }
 
