@@ -696,7 +696,8 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("curtime", pblock->GetBlockTime()));
     result.push_back(Pair("bits", strprintf("%08x", pblock->nBits)));
     result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
-    cout << result;
+
+    fprintf(stderr,"return complete template\n");
     return result;
 }
 #endif
