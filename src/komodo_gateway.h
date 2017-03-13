@@ -614,7 +614,7 @@ void komodo_bannedset(uint256 *array,int32_t max)
         array[i] = uint256S(banned_txids[i]);
     if ( i != max )
         printf("banned txid array error i.%d != max.%d\n",i,max);
-    else printf("set %d banned txids\n",max);
+    //else printf("set %d banned txids\n",max);
 }
 
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
