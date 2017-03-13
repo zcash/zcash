@@ -3413,7 +3413,7 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
         fRequested |= fForceProcessing;
         if (!checked) {
             if ( pfrom != 0 )
-                Misbehaving(pfrom->GetId(), 20);
+                Misbehaving(pfrom->GetId(), 1);
             return error("%s: CheckBlock FAILED", __func__);
         }
 
