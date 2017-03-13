@@ -588,7 +588,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     return(0);
 }
 
-char *banned_txids[] =
+const char *banned_txids[] =
 {
     "78cb4e21245c26b015b888b14c4f5096e18137d2741a6de9734d62b07014dfca", //233559
     "00697be658e05561febdee1aafe368b821ca33fbb89b7027365e3d77b5dfede5", //234172
