@@ -530,7 +530,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     if (vNodes.empty())
         throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Zcash is not connected!");
 
-    if (chainActive.Tip()->nHeight != 235300 && IsInitialBlockDownload())
+    if (IsInitialBlockDownload())
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zcash is downloading blocks...");
 
     static unsigned int nTransactionsUpdatedLast;
@@ -697,7 +697,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("bits", strprintf("%08x", pblock->nBits)));
     result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
 
-    fprintf(stderr,"return complete template\n");
+    //fprintf(stderr,"return complete template\n");
     return result;
 }
 #endif
