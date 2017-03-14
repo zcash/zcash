@@ -124,7 +124,7 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tr
     CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(rt, CAnchorsCacheEntry())).first;
     ret->second.entered = true;
     ret->second.tree = tree;
-    cachedCoinsUsage += memusage::DynamicUsage(ret->second.tree);
+    cachedCoinsUsage += ret->second.tree.DynamicMemoryUsage();
 
     return true;
 }
@@ -163,7 +163,7 @@ void CCoinsViewCache::PushAnchor(const ZCIncrementalMerkleTree &tree) {
 
         if (insertRet.second) {
             // An insert took place
-            cachedCoinsUsage += memusage::DynamicUsage(ret->second.tree);
+            cachedCoinsUsage += ret->second.tree.DynamicMemoryUsage();
         }
 
         hashAnchor = newrt;
@@ -318,7 +318,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                 entry.tree = child_it->second.tree;
                 entry.flags = CAnchorsCacheEntry::DIRTY;
 
-                cachedCoinsUsage += memusage::DynamicUsage(entry.tree);
+                cachedCoinsUsage += entry.tree.DynamicMemoryUsage();
             } else {
                 if (parent_it->second.entered != child_it->second.entered) {
                     // The parent may have removed the entry.
