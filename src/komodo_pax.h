@@ -402,7 +402,8 @@ uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t re
             {
                 baseusd = (((uint64_t)pvalb * 1000000000) / pvals[USD]);
                 usdvol = komodo_paxvol(basevolume,baseusd);
-                usdkmd = ((uint64_t)kmdbtc * 1000000000) / btcusd;
+                //usdkmd = ((uint64_t)kmdbtc * 1000000000) / btcusd;
+                usdkmd = ((uint64_t)kmdbtc * btcusd) / 1000000000;
                 if ( height >= 236000-10 )
                 {
                     usdkmd = ((uint64_t)kmdbtc * btcusd) / 1000000000;
