@@ -372,7 +372,7 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
 
 uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t basevolume,uint64_t refkmdbtc,uint64_t refbtcusd)
 {
-    uint32_t pvalb,pvalr; uint64_t usdvol,baseusd,usdkmd,baserel,ranked[32];
+    uint32_t pvalb,pvalr; uint64_t kmdbtc,btcusd,usdvol,baseusd,usdkmd,baserel,ranked[32];
     if ( basevolume > KOMODO_PAXMAX )
     {
         printf("paxcalc overflow %.8f\n",dstr(basevolume));
