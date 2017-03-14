@@ -393,8 +393,9 @@ uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t re
                 baseusd = (((uint64_t)pvalb * 1000000000) / pvals[USD]);
                 usdvol = komodo_paxvol(basevolume,baseusd);
                 usdkmd = ((uint64_t)kmdbtc * 1000000000) / btcusd;
-                if ( height > 235900 )
+                if ( height >= 235900 )
                 {
+                    usdkmd = ((uint64_t)kmdbtc * btcusd);
                     printf("ht.%d kmdbtc.%llu btcusd.%llu base -> USD %llu, usdkmd %llu usdvol %llu -> %llu\n",height,(long long)kmdbtc,(long long)btcusd,(long long)baseusd,(long long)usdkmd,(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)));
                     printf("usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %.8f\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,dstr(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd)));
                 }
