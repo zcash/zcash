@@ -531,7 +531,7 @@ uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint
             nonz++;
             sum += votes[numvotes-1-i];
             if ( (i % 10) == 0 )
-                fprintf(stderr,"%llu ",(long long)votes[numvotes-1-i]);
+                fprintf(stderr,"[%llu] ",(long long)votes[numvotes-1-i]);
         }
     }
     fprintf(stderr,"kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
