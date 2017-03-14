@@ -530,11 +530,12 @@ uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint
         {
             nonz++;
             sum += votes[numvotes-1-i];
-            fprintf(stderr,"%.8f ",(double)votes[numvotes-1-i]/1000000);
+            if ( (i % 10) == 0 )
+                fprintf(stderr,"%.8f ",(double)votes[numvotes-1-i]/1000000);
         }
     }
-    printf("kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
-    printf("komodo_paxprice nonz.%d of numvotes.%d seed.%llu %.8f\n",nonz,numvotes,(long long)seed,nonz!=0?dstr((double)sum/nonz):0);
+    fprintf(stderr,"kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
+    fprintf(stderr,"komodo_paxprice nonz.%d of numvotes.%d seed.%llu %.8f\n",nonz,numvotes,(long long)seed,nonz!=0?dstr((double)sum/nonz):0);
     if ( nonz <= (numvotes >> 1) )
     {
         return(0);
