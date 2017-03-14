@@ -875,7 +875,11 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
             {
                 static uint32_t counter;
                 if ( counter++ < 100 )
+<<<<<<< Updated upstream
                     printf("MEMPOOL: banned tx.%d being used at ht.%d vini.%d\n",k,(int32_t)chainActive.Tip()->nHeight,j);
+=======
+                    fprintf(stderr,"MEMPOOL: banned tx.%d being used at ht.%d vini.%d\n",k,(int32_t)chainActive.Tip()->nHeight,j);
+>>>>>>> Stashed changes
                 return(false);
             }
         }
