@@ -520,6 +520,7 @@ uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint
         {
             nonz++;
             sum += votes[numvotes-1-i];
+            printf("%.8f ",(double)votes[numvotes-1-i]/1000000000);
         }
     }
     printf("kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
