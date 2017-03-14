@@ -409,7 +409,7 @@ uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t re
                     price = ((uint64_t)10000000000 * MINDENOMS[USD] / MINDENOMS[baseid]) / komodo_paxvol(usdvol,usdkmd);
                     //fprintf(stderr,"ht.%d kmdbtc.%llu btcusd.%llu base -> USD %llu, usdkmd %llu usdvol %llu -> %llu\n",height,(long long)kmdbtc,(long long)btcusd,(long long)baseusd,(long long)usdkmd,(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)));
                     //fprintf(stderr,"usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %llu %llu\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)),(long long)price);
-                    fprintf(stderr,"usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %llu\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)));
+                    //fprintf(stderr,"usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %llu\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)));
                     //price = (uint64_t)((long long)MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]));
                 } else price = (MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100));
                 return(price);
@@ -533,12 +533,12 @@ uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint
         {
             nonz++;
             sum += votes[numvotes-1-i];
-            if ( (i % 10) == 0 )
-                fprintf(stderr,"[%llu] ",(long long)votes[numvotes-1-i]);
+            //if ( (i % 10) == 0 )
+            //    fprintf(stderr,"[%llu] ",(long long)votes[numvotes-1-i]);
         }
     }
-    fprintf(stderr,"kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
-    fprintf(stderr,"komodo_paxprice nonz.%d of numvotes.%d seed.%llu %.8f\n",nonz,numvotes,(long long)seed,nonz!=0?dstr(1000. * (double)sum/nonz):0);
+    //fprintf(stderr,"kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
+    //fprintf(stderr,"komodo_paxprice nonz.%d of numvotes.%d seed.%llu %.8f\n",nonz,numvotes,(long long)seed,nonz!=0?dstr(1000. * (double)sum/nonz):0);
     if ( nonz <= (numvotes >> 1) )
     {
         return(0);
