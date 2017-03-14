@@ -405,9 +405,9 @@ uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t re
                 usdkmd = ((uint64_t)kmdbtc * 1000000000) / btcusd;
                 if ( height >= 236000-10 )
                 {
-                    usdkmd = ((uint64_t)kmdbtc * btcusd) / 100000000;
+                    usdkmd = ((uint64_t)kmdbtc * btcusd) / 1000000000;
                     fprintf(stderr,"ht.%d kmdbtc.%llu btcusd.%llu base -> USD %llu, usdkmd %llu usdvol %llu -> %llu\n",height,(long long)kmdbtc,(long long)btcusd,(long long)baseusd,(long long)usdkmd,(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)));
-                    fprintf(stderr,"usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %.8f\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,dstr(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)));
+                    fprintf(stderr,"usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %.8f\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)));
                 }
                 return(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100));
             } //else printf("zero val in KMD conv %llu %llu %llu\n",(long long)pvals[USD],(long long)kmdbtc,(long long)btcusd);
@@ -531,11 +531,11 @@ uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint
             nonz++;
             sum += votes[numvotes-1-i];
             if ( (i % 10) == 0 )
-                fprintf(stderr,"%.8f ",(double)votes[numvotes-1-i]/100000);
+                fprintf(stderr,"%llu ",(long long)votes[numvotes-1-i]);
         }
     }
     fprintf(stderr,"kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
-    fprintf(stderr,"komodo_paxprice nonz.%d of numvotes.%d seed.%llu %.8f\n",nonz,numvotes,(long long)seed,nonz!=0?dstr(100. * (double)sum/nonz):0);
+    fprintf(stderr,"komodo_paxprice nonz.%d of numvotes.%d seed.%llu %.8f\n",nonz,numvotes,(long long)seed,nonz!=0?dstr((double)sum/nonz):0);
     if ( nonz <= (numvotes >> 1) )
     {
         return(0);
