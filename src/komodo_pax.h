@@ -517,7 +517,7 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
         memset(kmdbtcs,0,sizeof(kmdbtcs));
         for (i=0; i<numvotes; i++)
         {
-            _komodo_paxprice(&kmdbtcs[numvotes-1-i],&btcusds[numvotes-1-i],height-i,base,rel,100000,0,0);
+            _komodo_paxprice(&kmdbtcs[numvotes-1-i],&btcusds[numvotes-1-i],height-i,base,rel,1000000,0,0);
             //printf("(%llu %llu) ",(long long)kmdbtcs[numvotes-1-i],(long long)btcusds[numvotes-1-i]);
         }
         kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,seed) * 539;
@@ -526,7 +526,7 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
     }
     for (i=nonz=0; i<numvotes; i++)
     {
-        if ( (votes[numvotes-1-i]= _komodo_paxprice(0,0,height-i,base,rel,100000,kmdbtc,btcusd)) == 0 )
+        if ( (votes[numvotes-1-i]= _komodo_paxprice(0,0,height-i,base,rel,1000000,kmdbtc,btcusd)) == 0 )
             zeroes++;
         else
         {
@@ -542,7 +542,7 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
     {
         return(0);
     }
-    return(komodo_paxcorrelation(votes,numvotes,seed) * basevolume / 100000);
+    return(komodo_paxcorrelation(votes,numvotes,seed) * basevolume / 1000000);
 }
 
 uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint64_t basevolume)
@@ -552,8 +552,8 @@ uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint
         return(_komodo_paxpriceB(seed,height,base,rel,basevolume));
     else
     {
-        baseusd = _komodo_paxpriceB(seed,height,base,rel,1000 * SATOSHIDEN);
-        usdkmd = _komodo_paxpriceB(seed,height,(char *)"USD",(char *)"KMD",1000 * SATOSHIDEN);
+        baseusd = _komodo_paxpriceB(seed,height,base,rel,SATOSHIDEN);
+        usdkmd = _komodo_paxpriceB(seed,height,(char *)"USD",(char *)"KMD",SATOSHIDEN);
         basekmd = (komodo_paxvol(baseusd,usdkmd) * basevolume);
         printf("baseusd.%llu usdkmd.%llu %llu\n",(long long)baseusd,(long long)usdkmd,(long long)basekmd);
         return(basekmd);
