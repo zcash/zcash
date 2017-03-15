@@ -548,7 +548,7 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
 uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     uint64_t baseusd,basekmd,usdkmd; int32_t baseid = komodo_baseid(base);
-    if ( height >= 236000 || strcmp(rel,"KMD") == 0 )
+    if ( height >= 236000 && strcmp(rel,"KMD") == 0 )
     {
         usdkmd = _komodo_paxpriceB(seed,height,(char *)"USD",(char *)"KMD",SATOSHIDEN);
         if ( strcmp("USD",base) == 0 )
