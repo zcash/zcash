@@ -553,7 +553,7 @@ uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint
     else
     {
         baseusd = _komodo_paxpriceB(seed,height,base,(char *)"USD",basevolume);
-        basekmd = _komodo_paxpriceB(seed,height,(char *)"USD",(char *)"KMD",baseusd);
+        basekmd = _komodo_paxpriceB(seed,height,(char *)"USD",(char *)"KMD",basevolume);
         //basekmd = (komodo_paxvol(baseusd,usdkmd));
         //printf("baseusd.%llu usdkmd.%llu %llu\n",(long long)baseusd,(long long)usdkmd,(long long)basekmd);
         return(basekmd);
