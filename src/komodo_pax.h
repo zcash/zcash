@@ -548,9 +548,9 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
 uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     uint64_t baseusd,basekmd; int32_t baseid = komodo_baseid(base);
-    if ( strcmp(rel,"KMD") != 0 || baseid < 0 || MINDENOMS[baseid] == MINDENOMS[USD] )
-        return(_komodo_paxpriceB(seed,height,base,rel,basevolume));
-    else
+    //if ( strcmp(rel,"KMD") != 0 || baseid < 0 || MINDENOMS[baseid] == MINDENOMS[USD] )
+    //    return(_komodo_paxpriceB(seed,height,base,rel,basevolume));
+    //else
     {
         baseusd = _komodo_paxpriceB(seed,height,base,(char *)"USD",basevolume);
         basekmd = _komodo_paxpriceB(seed,height,(char *)"USD",(char *)"KMD",basevolume);
