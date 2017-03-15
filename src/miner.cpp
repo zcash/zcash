@@ -572,7 +572,7 @@ void static BitcoinMiner(CWallet *pwallet)
     );
 
     try {
-        //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
             fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
         while (true)
         {
@@ -582,7 +582,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 //    break;
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
-                fprintf(stderr,"Wait for peers...\n");
+                //fprintf(stderr,"Wait for peers...\n");
                 do {
                     bool fvNodesEmpty;
                     {
@@ -592,10 +592,10 @@ void static BitcoinMiner(CWallet *pwallet)
                     if (!fvNodesEmpty && !IsInitialBlockDownload())
                         break;
                     MilliSleep(5000);
-                    fprintf(stderr,"fvNodesEmpty %d IsInitialBlockDownload(%s) %d\n",(int32_t)fvNodesEmpty,ASSETCHAINS_SYMBOL,(int32_t)IsInitialBlockDownload());
+                    //fprintf(stderr,"fvNodesEmpty %d IsInitialBlockDownload(%s) %d\n",(int32_t)fvNodesEmpty,ASSETCHAINS_SYMBOL,(int32_t)IsInitialBlockDownload());
 
                 } while (true);
-                fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
+                //fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
             }
             /*while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight < ASSETCHAINS_MINHEIGHT )
             {
@@ -612,7 +612,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 Mining_height = pindexPrev->nHeight+1;
                 Mining_start = (uint32_t)time(NULL);
             }
-            //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
                 fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
             CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey);
             if ( ptr == 0 )

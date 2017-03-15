@@ -1549,7 +1549,7 @@ bool IsInitialBlockDownload()
     else state = (chainActive.Height() < pindexBestHeader->nHeight - 100);
     if (!state)
     {
-        fprintf(stderr,"lockIBDState true ht.%d t.%d\n",chainActive.Height(),pindexBestHeader->GetBlockTime());
+        fprintf(stderr,"lockIBDState true ht.%d t.%d\n",(int32_t)chainActive.Height(),(int32_t)pindexBestHeader->GetBlockTime());
         lockIBDState = true;
     }
     return state;
