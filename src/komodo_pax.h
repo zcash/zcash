@@ -445,9 +445,10 @@ uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t re
         return(_komodo_paxcalc(height,pvals,baseid,relid,basevolume,refkmdbtc,refbtcusd));
     {
         baseusd = _komodo_paxcalc(height,pvals,baseid,USD,basevolume,refkmdbtc,refbtcusd);
-        usdkmd = _komodo_paxcalc(height,pvals,USD,MAX_CURRENCIES,baseusd,refkmdbtc,refbtcusd));
+        usdkmd = _komodo_paxcalc(height,pvals,USD,MAX_CURRENCIES,baseusd,refkmdbtc,refbtcusd);
         basekmd = komodo_paxvol(usdvol,usdkmd);
         printf("baseusd.%llu usdkmd.%llu %llu\n",(long long)baseusd,(long long)usdkmd,(long long)basekmd);
+        return(basekmd);
     }
 }
 
