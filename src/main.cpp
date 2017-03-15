@@ -1545,6 +1545,8 @@ bool IsInitialBlockDownload()
     bool state; CBlockIndex *ptr = chainActive.Tip();
     if ( ptr == 0 )
         ptr = pindexBestHeader;
+    else if ( pindexBestHeader != 0 && pindexBestHeader->nHeight > ptr->nHeight )
+        ptr = pindexBestHeader;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         state = (chainActive.Height() < ptr->nHeight - 24*6) ||
                     ptr->GetBlockTime() < (GetTime() - chainParams.MaxTipAge());
