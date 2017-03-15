@@ -370,7 +370,7 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
     return(sum);
 }
 
-uint64_t _komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t basevolume,uint64_t refkmdbtc,uint64_t refbtcusd)
+uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t basevolume,uint64_t refkmdbtc,uint64_t refbtcusd)
 {
     uint32_t pvalb,pvalr; uint64_t price,kmdbtc,btcusd,usdvol,baseusd,usdkmd,baserel,ranked[32];
     if ( basevolume > KOMODO_PAXMAX )
@@ -438,21 +438,6 @@ uint64_t _komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t r
     return(0);
 }
 
-uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t basevolume,uint64_t refkmdbtc,uint64_t refbtcusd)
-{
-    uint64_t baseusd,basekmd,usdkmd;
-    if ( relid != MAX_CURRENCIES || MINDENOMS[baseid] == MINDENOMS[USD] )
-        return(_komodo_paxcalc(height,pvals,baseid,relid,basevolume,refkmdbtc,refbtcusd));
-    else
-    {
-        baseusd = _komodo_paxcalc(height,pvals,baseid,USD,100000,refkmdbtc,refbtcusd);
-        usdkmd = _komodo_paxcalc(height,pvals,USD,MAX_CURRENCIES,100000,refkmdbtc,refbtcusd);
-        basekmd = (komodo_paxvol(baseusd,usdkmd) * basevolume) / 1000000000;
-        printf("baseusd.%llu usdkmd.%llu %llu\n",(long long)baseusd,(long long)usdkmd,(long long)basekmd);
-        return(basekmd);
-    }
-}
-
 uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,char *base,char *rel,uint64_t basevolume,uint64_t kmdbtc,uint64_t btcusd)
 {
     int32_t baseid=-1,relid=-1,i; uint32_t *ptr;
@@ -511,7 +496,7 @@ int32_t komodo_kmdbtcusd(int32_t rwflag,uint64_t *kmdbtcp,uint64_t *btcusdp,int3
     else return(-1);
 }
 
-uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint64_t basevolume)
+uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t lastprice,tolerance,den,densum,sum=0,votes[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],btcusds[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtcs[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtc,btcusd;
     if ( basevolume > KOMODO_PAXMAX )
@@ -558,6 +543,21 @@ uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint
         return(0);
     }
     return(komodo_paxcorrelation(votes,numvotes,seed) * basevolume / 100000);
+}
+
+uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint64_t basevolume)
+{
+    uint64_t baseusd,basekmd,usdkmd; int32_t baseid = komodo_baseid(base);
+    if ( strcmp(rel,"KMD") != 0 || baseid < 0 || MINDENOMS[baseid] == MINDENOMS[USD] )
+        return(_komodo_paxpriceB(seed,height,base,rel,basevolume));
+    else
+    {
+        baseusd = _komodo_paxpriceB(seed,height,base,rel,SATOSHIDEN);
+        usdkmd = _komodo_paxpriceB(seed,height,"USD","KMD",SATOSHIDEN);
+        basekmd = (komodo_paxvol(baseusd,usdkmd) * basevolume) / 1000000000;
+        printf("baseusd.%llu usdkmd.%llu %llu\n",(long long)baseusd,(long long)usdkmd,(long long)basekmd);
+        return(basekmd);
+    }
 }
 
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
