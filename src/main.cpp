@@ -1544,12 +1544,12 @@ bool IsInitialBlockDownload()
     }
     bool state;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        state = (chainActive.Height() > 236000 && chainActive.Height() < pindexBestHeader->nHeight - 24*6) ||
+        state = (chainActive.Height() < pindexBestHeader->nHeight - 24*6) ||
                     pindexBestHeader->GetBlockTime() < (GetTime() - chainParams.MaxTipAge());
     else state = (chainActive.Height() < pindexBestHeader->nHeight - 100);
     if (!state)
     {
-        //fprintf(stderr,"lockIBDState tru\n");
+        fprintf(stderr,"lockIBDState true ht.%d t.%d\n",chainActive.Height(),pindexBestHeader->GetBlockTime());
         lockIBDState = true;
     }
     return state;
