@@ -1528,12 +1528,12 @@ bool IsInitialBlockDownload()
     LOCK(cs_main);
     if (fImporting || fReindex)
     {
-        //fprintf(stderr,"fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
+        //fprintf(stderr,"IsInitialBlockDownload: fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
         return true;
     }
     if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
     {
-        //fprintf(stderr,"checkpoint -> initialdownload\n");
+        //fprintf(stderr,"IsInitialBlockDownload: checkpoint -> initialdownload\n");
         return true;
     }
     static bool lockIBDState = false;
@@ -1542,14 +1542,18 @@ bool IsInitialBlockDownload()
         //fprintf(stderr,"lockIBDState true %d < %d\n",chainActive.Height(),pindexBestHeader->nHeight - 10);
         return false;
     }
-    bool state;
+    bool state; CBlockIndex *ptr = chainActive.Tip();
+    if ( ptr == 0 )
+        ptr = pindexBestHeader;
+    else if ( pindexBestHeader != 0 && pindexBestHeader->nHeight > ptr->nHeight )
+        ptr = pindexBestHeader;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        state = (chainActive.Height() > 236000 && chainActive.Height() < pindexBestHeader->nHeight - 24*6) ||
-                    pindexBestHeader->GetBlockTime() < (GetTime() - chainParams.MaxTipAge());
-    else state = (chainActive.Height() < pindexBestHeader->nHeight - 100);
+        state = (chainActive.Height() < ptr->nHeight - 24*6) ||
+                    ptr->GetBlockTime() < (GetTime() - chainParams.MaxTipAge());
+    else state = (chainActive.Height() < ptr->nHeight - 100);
+    //fprintf(stderr,"state.%d  ht.%d vs %d, t.%u %u\n",state,(int32_t)chainActive.Height(),(uint32_t)ptr->nHeight,(int32_t)ptr->GetBlockTime(),(uint32_t)(GetTime() - chainParams.MaxTipAge()));
     if (!state)
     {
-        //fprintf(stderr,"lockIBDState tru\n");
         lockIBDState = true;
     }
     return state;
