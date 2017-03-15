@@ -440,7 +440,7 @@ uint64_t _komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t r
 
 uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t basevolume,uint64_t refkmdbtc,uint64_t refbtcusd)
 {
-    uint64_t baseusd,basekmd;
+    uint64_t baseusd,basekmd,usdkmd;
     if ( relid != MAX_CURRENCIES || MINDENOMS[baseid] == MINDENOMS[USD] )
         return(_komodo_paxcalc(height,pvals,baseid,relid,basevolume,refkmdbtc,refbtcusd));
     else
