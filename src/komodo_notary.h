@@ -124,7 +124,7 @@ const char *Notaries_elected[][2] =
 
 int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height)
 {
-    char pubkeystr[67]; int32_t i;
+    char pubkeystr[67]; int32_t i; uint8_t legacy33[33];
     for (i=0; i<33; i++)
         sprintf(&pubkeystr[i*2],"%02x",pubkey33[i]);
     pubkeystr[66] = 0;
@@ -137,6 +137,20 @@ int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height)
             return(i);
         }
     }
+    /*if ( height < 300000 )
+    {
+        for (i=0; i<sizeof(Notaries_genesis)/sizeof(*Notaries_genesis); i++)
+        {
+            if ( strcmp(pubkeystr,(char *)Notaries_genesis[i][1]) == 0 )
+            {
+                //printf("i.%d -> elected %s\n",i,(char *)Notaries_elected[i][1]);
+                return(i+64);
+            }
+        }
+        decode_hex(legacy33,33,(char *)"0252b6185bf8ea7efe8bbc345ddc8da87329149f30233088387abd716d4aa9e974");
+        if ( memcmp(pubkey33,legacy33,33) == 0 )
+            return(128);
+    }*/
     return(-1);
 }
 
@@ -246,6 +260,8 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
             return(modval);
         }
     }
+    if ( height >= 300000 )
+        return(-1);
     htind = height / KOMODO_ELECTION_GAP;
     pthread_mutex_lock(&komodo_mutex);
     HASH_FIND(hh,Pubkeys[htind].Notaries,pubkey33,33,kp);
@@ -258,7 +274,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
             modval = ((height % numnotaries) == kp->notaryid);
             //printf("found notary.%d ht.%d modval.%d\n",kp->notaryid,height,modval);
         } else printf("unexpected zero notaries at height.%d\n",height);
-    }
+    } //else printf("cant find kp at htind.%d ht.%d\n",htind,height);
     //int32_t i; for (i=0; i<33; i++)
     //    printf("%02x",pubkey33[i]);
     //printf(" ht.%d notary.%d special.%d htind.%d num.%d\n",height,*notaryidp,modval,htind,numnotaries);
@@ -352,7 +368,7 @@ void komodo_init(int32_t height)
         //    Minerids[i] = -2;
         didinit = 1;
     }
-    else if ( height == KOMODO_MAINNET_START )
+    else if ( 0 && height == KOMODO_MAINNET_START )
     {
         n = (int32_t)(sizeof(Notaries_elected)/sizeof(*Notaries_elected));
         for (k=0; k<n; k++)

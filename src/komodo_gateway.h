@@ -495,9 +495,19 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             continue;
         {
 #ifdef KOMODO_ASSETCHAINS_WAITNOTARIZE
-            if ( kmdsp != 0 && (kmdsp->NOTARIZED_HEIGHT >= pax->height || kmdsp->CURRENT_HEIGHT > pax->height+30) ) // assumes same chain as notarize
-                pax->validated = pax->komodoshis; //kmdsp->NOTARIZED_HEIGHT;
-            else pax->validated = pax->ready = 0;
+            if ( pax->height > 236000 )
+            {
+                if ( kmdsp != 0 && kmdsp->NOTARIZED_HEIGHT >= pax->height )
+                    pax->validated = pax->komodoshis;
+                else if ( kmdsp->CURRENT_HEIGHT > pax->height+30 )
+                    pax->validated = pax->ready = 0;
+            }
+            else
+            {
+                if ( kmdsp != 0 && (kmdsp->NOTARIZED_HEIGHT >= pax->height || kmdsp->CURRENT_HEIGHT > pax->height+30) ) // assumes same chain as notarize
+                    pax->validated = pax->komodoshis;
+                else pax->validated = pax->ready = 0;
+            }
 #else
             pax->validated = pax->komodoshis;
 #endif
@@ -588,20 +598,77 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     return(0);
 }
 
+const char *banned_txids[] =
+{
+    "78cb4e21245c26b015b888b14c4f5096e18137d2741a6de9734d62b07014dfca", //233559
+    "00697be658e05561febdee1aafe368b821ca33fbb89b7027365e3d77b5dfede5", //234172
+    "e909465788b32047c472d73e882d79a92b0d550f90be008f76e1edaee6d742ea", //234187
+    "f56c6873748a327d0b92b8108f8ec8505a2843a541b1926022883678fb24f9dc", //234188
+    "abf08be07d8f5b3a433ddcca7ef539e79a3571632efd6d0294ec0492442a0204", //234213
+    "3b854b996cc982fba8c06e76cf507ae7eed52ab92663f4c0d7d10b3ed879c3b0", //234367
+    "fa9e474c2cda3cb4127881a40eb3f682feaba3f3328307d518589024a6032cc4", //234635
+    "ca746fa13e0113c4c0969937ea2c66de036d20274efad4ce114f6b699f1bc0f3", //234662
+    "43ce88438de4973f21b1388ffe66e68fda592da38c6ef939be10bb1b86387041", //234697
+    "0aeb748de82f209cd5ff7d3a06f65543904c4c17387c9d87c65fd44b14ad8f8c", //234899
+    "bbd3a3d9b14730991e1066bd7c626ca270acac4127131afe25f877a5a886eb25", //235252
+    "fa9943525f2e6c32cbc243294b08187e314d83a2870830180380c3c12a9fd33c", //235253
+    "a01671c8775328a41304e31a6693bbd35e9acbab28ab117f729eaba9cb769461", //235265
+    "2ef49d2d27946ad7c5d5e4ab5c089696762ff04e855f8ab48e83bdf0cc68726d", //235295
+    "c85dcffb16d5a45bd239021ad33443414d60224760f11d535ae2063e5709efee", //235296
+};
+
+void komodo_bannedset(uint256 *array,int32_t max)
+{
+    int32_t i;
+    for (i=0; i<sizeof(banned_txids)/sizeof(*banned_txids); i++)
+        array[i] = uint256S(banned_txids[i]);
+    if ( i != max )
+        printf("banned txid array error i.%d != max.%d\n",i,max);
+    //else printf("set %d banned txids\n",max);
+}
+
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
-    int32_t i,j,n,ht,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t available,deposited,issued,withdrawn,approved,redeemed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *sp;
-    if ( KOMODO_PAX == 0 || komodo_isrealtime(&ht) == 0 || KOMODO_PASSPORT_INITDONE == 0 )
-        return(0);
+    static uint256 array[15];
+    int32_t i,j,k,n,ht,txn_count,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t available,deposited,issued,withdrawn,approved,redeemed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *sp;
+    if ( *(int32_t *)&array[0] == 0 )
+        komodo_bannedset(array,(int32_t)(sizeof(array)/sizeof(*array)));
     memset(baseids,0xff,sizeof(baseids));
     memset(values,0,sizeof(values));
     memset(srcvalues,0,sizeof(srcvalues));
     memset(rmd160s,0,sizeof(rmd160s));
     memset(kmdheights,0,sizeof(kmdheights));
     memset(otherheights,0,sizeof(otherheights));
+    txn_count = block.vtx.size();
+    for (i=0; i<txn_count; i++)
+    {
+        n = block.vtx[i].vin.size();
+        for (j=0; j<n; j++)
+        {
+            for (k=0; k<sizeof(array)/sizeof(*array); k++)
+            {
+                if ( block.vtx[i].vin[j].prevout.hash == array[k] && block.vtx[i].vin[j].prevout.n == 1 )
+                {
+                    printf("banned tx.%d being used at ht.%d txi.%d vini.%d\n",k,height,i,j);
+                    return(-1);
+                }
+            }
+        }
+    }
     n = block.vtx[0].vout.size();
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     if ( n <= 2 || script[0] != 0x6a )
+    {
+        if ( n == 2 && block.vtx[0].vout[1].nValue > COIN/10 )
+        {
+            //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
+            if ( height >= 235300 )
+                return(-1);
+        }
+        return(0);
+    }
+    //fprintf(stderr,"ht.%d n.%d nValue %.8f (%d %d %d)\n",height,n,dstr(block.vtx[0].vout[1].nValue),KOMODO_PAX,komodo_isrealtime(&ht),KOMODO_PASSPORT_INITDONE);
+    if ( komodo_isrealtime(&ht) == 0 || KOMODO_PASSPORT_INITDONE == 0 ) //KOMODO_PAX == 0 || 
         return(0);
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
@@ -700,7 +767,17 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 }
             }
         }
+        else
+        {
+            printf("no opreturn entries to check\n");
+            return(-1);
+        }
         //printf("opretlen.%d num.%d\n",opretlen,num);
+    }
+    else
+    {
+        printf("not proper vout with opreturn format\n");
+        return(-1);
     }
     return(0);
 }

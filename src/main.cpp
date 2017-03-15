@@ -863,7 +863,24 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 bool CheckTransaction(const CTransaction& tx, CValidationState &state,
                       libzcash::ProofVerifier& verifier)
 {
-    // Don't count coinbase transactions because mining skews the count
+    static uint256 array[15]; int32_t j,k,n;
+    if ( *(int32_t *)&array[0] == 0 )
+        komodo_bannedset(array,(int32_t)(sizeof(array)/sizeof(*array)));
+    n = tx.vin.size();
+    for (j=0; j<n; j++)
+    {
+        for (k=0; k<sizeof(array)/sizeof(*array); k++)
+        {
+            if ( tx.vin[j].prevout.hash == array[k] && tx.vin[j].prevout.n == 1 )
+            {
+                static uint32_t counter;
+                if ( counter++ < 100 )
+                    printf("MEMPOOL: banned tx.%d being used at ht.%d vini.%d\n",k,(int32_t)chainActive.Tip()->nHeight,j);
+                return(false);
+            }
+        }
+    }
+ // Don't count coinbase transactions because mining skews the count
     if (!tx.IsCoinBase()) {
         transactionsValidated.increment();
     }
@@ -1527,7 +1544,7 @@ bool IsInitialBlockDownload()
     }
     bool state;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        state = (chainActive.Height() < pindexBestHeader->nHeight - 24*6) ||
+        state = (chainActive.Height() > 236000 && chainActive.Height() < pindexBestHeader->nHeight - 24*6) ||
                     pindexBestHeader->GetBlockTime() < (GetTime() - chainParams.MaxTipAge());
     else state = (chainActive.Height() < pindexBestHeader->nHeight - 100);
     if (!state)
@@ -3189,7 +3206,12 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
         return state.DoS(100, error("CheckBlock(): out-of-bounds SigOpCount"),
                          REJECT_INVALID, "bad-blk-sigops", true);
     if ( komodo_check_deposit(height,block) < 0 )
+    {
+        static uint32_t counter;
+        if ( counter++ < 100 )
+            fprintf(stderr,"check deposit rejection\n");
         return(false);
+    }
     return true;
 }
 
@@ -3206,7 +3228,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     int nHeight = pindexPrev->nHeight+1;
 
     // Check proof of work
-    if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
+    if ( (nHeight < 235300 || nHeight > 236000) && block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
     {
         cout << block.nBits << " block.nBits vs. calc " << GetNextWorkRequired(pindexPrev, &block, consensusParams) << endl;
         return state.DoS(100, error("%s: incorrect proof of work", __func__),
@@ -3412,6 +3434,8 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
         fRequested |= fForceProcessing;
         if (!checked) {
+            if ( pfrom != 0 )
+                Misbehaving(pfrom->GetId(), 1);
             return error("%s: CheckBlock FAILED", __func__);
         }
 
@@ -3446,13 +3470,25 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
 
     // NOTE: CheckBlockHeader is called by CheckBlock
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
+    {
+        fprintf(stderr,"TestBlockValidity failure A\n");
         return false;
+    }
     if (!CheckBlock(indexDummy.nHeight,0,block, state, verifier, fCheckPOW, fCheckMerkleRoot))
+    {
+        fprintf(stderr,"TestBlockValidity failure B\n");
         return false;
+    }
     if (!ContextualCheckBlock(block, state, pindexPrev))
+    {
+        fprintf(stderr,"TestBlockValidity failure C\n");
         return false;
+    }
     if (!ConnectBlock(block, state, &indexDummy, viewNew, true))
+    {
+        fprintf(stderr,"TestBlockValidity failure D\n");
         return false;
+    }
     assert(state.IsValid());
 
     return true;
@@ -3872,6 +3908,7 @@ bool LoadBlockIndex()
         return false;
     }
     KOMODO_LOADINGBLOCKS = 0;
+    fprintf(stderr,"finished loading blocks\n");
     return true;
 }
 

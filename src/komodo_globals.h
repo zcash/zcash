@@ -24,6 +24,7 @@ int32_t komodo_isrealtime(int32_t *kmdheightp);
 uint64_t komodo_paxtotal();
 int32_t komodo_longestchain();
 uint64_t komodo_maxallowed(int32_t baseid);
+void komodo_bannedset(uint256 *array,int32_t max);
 
 pthread_mutex_t komodo_mutex;
 
@@ -40,7 +41,7 @@ struct komodo_state KOMODO_STATES[34];
 int COINBASE_MATURITY = _COINBASE_MATURITY;//100;
 
 int32_t IS_KOMODO_NOTARY,KOMODO_REWIND,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAINS_SEED,KOMODO_ON_DEMAND,KOMODO_EXTERNAL_NOTARIES,KOMODO_PASSPORT_INITDONE,KOMODO_PAX,KOMODO_EXCHANGEWALLET;
-int32_t KOMODO_LASTMINED;
+int32_t KOMODO_LASTMINED,prevKOMODO_LASTMINED;
 std::string NOTARY_PUBKEY,ASSETCHAINS_NOTARIES;
 uint8_t NOTARY_PUBKEY33[33];
 
