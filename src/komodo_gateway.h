@@ -661,7 +661,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     {
         if ( n == 2 && block.vtx[0].vout[1].nValue > COIN/10 )
         {
-fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
+            //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
             if ( height >= 235300 )
                 return(-1);
         }
@@ -701,9 +701,9 @@ fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",heigh
             {
                 if ( (sp= komodo_stateptrget(CURRENCIES[baseids[i-1]])) != 0 && (sp->RTmask & (1LL << baseids[i-1])) == 0 )
                 {
-                    printf("checkdeposit.%s not RT %llx\n",CURRENCIES[baseids[i-1]],(long long)sp->RTmask);
-                    //matched++;
-                    //continue;
+                    /*printf("skip checkdeposit.%s not RT %llx\n",CURRENCIES[baseids[i-1]],(long long)sp->RTmask);
+                    matched++;
+                    continue;*/
                 }
                 if ( (pax= komodo_paxfinds(txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
                 {
@@ -724,7 +724,7 @@ fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",heigh
                         }
                         else
                         {
-                            //if ( opcode == 'X' && strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i]]) == 0 )
+                            if ( opcode == 'X' && strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i]]) == 0 )
                                 printf("check deposit validates %s %.8f -> %.8f\n",CURRENCIES[baseids[i]],dstr(srcvalues[i]),dstr(values[i]));
                             matched++;
                         }
@@ -756,7 +756,7 @@ fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",heigh
                         printf("REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
                         return(-1);
                     }
-                } else printf("accept paxdeposit\n");
+                }
             }
             else
             {

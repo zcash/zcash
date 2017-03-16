@@ -620,7 +620,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 //static uint32_t counter;
                 //if ( counter++ < 100 )
                     fprintf(stderr,"created illegal block, retry\n");
-                continue;
+                //continue;
             }
             unique_ptr<CBlockTemplate> pblocktemplate(ptr);
             if (!pblocktemplate.get())
