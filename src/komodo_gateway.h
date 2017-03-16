@@ -17,7 +17,7 @@
 
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base)
 {
-    int32_t baseid; struct komodo_state *sp; int64_t netliability,maxallowed;
+    int32_t baseid; struct komodo_state *sp; int64_t netliability,maxallowed,maxval;
     *available = *deposited = *issued = *withdrawn = *approved = *redeemed = 0;
     if ( (baseid= komodo_baseid(base)) >= 0 )
     {
@@ -29,7 +29,10 @@ int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,
             *approved = sp->approved;
             *redeemed = sp->redeemed;
             //netliability = (sp->deposited - sp->withdrawn) - sp->shorted;
-            netliability = (sp->issued - MAX(sp->approved,sp->withdrawn)) - sp->shorted;
+            maxval = sp->approved;
+            if ( sp->withdrawn > maxval )
+                maxval = sp->withdrawn;
+            netliability = (sp->issued - maxval) - sp->shorted;
             maxallowed = komodo_maxallowed(baseid);
             if ( netliability < maxallowed )
                 *available = (maxallowed - netliability);
