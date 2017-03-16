@@ -921,7 +921,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                                     pax->didstats = 1;
                                     pax->height = pax2->height;
                                     pax->otherheight = height;
-                                    if ( 0 && strcmp(CURRENCIES[baseids[i]],ASSETCHAINS_SYMBOL) == 0 )
+                                    if ( strcmp("USD",ASSETCHAINS_SYMBOL) == 0 && strcmp(CURRENCIES[baseids[i]],ASSETCHAINS_SYMBOL) == 0 )
                                         printf("########### %p issuedb %s += %.8f kmdheight.%d %.8f other.%d\n",basesp,CURRENCIES[baseids[i]],dstr(pax->fiatoshis),pax->height,dstr(pax->komodoshis),pax->otherheight);
                                 }
                             }
