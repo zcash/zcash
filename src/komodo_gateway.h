@@ -878,7 +878,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                                     {
                                         char str[65]; bits256 tmp;
                                         memcpy(&tmp,&pax2->txid,sizeof(tmp));
-                                        printf("########### %p issueda %s += %.8f kmdheight.%d %.8f other.%d %s\n",basesp,base,dstr(pax2->fiatoshis),pax2->height,dstr(pax2->komodoshis),pax2->otherheight,bits256_str(str,tmp));
+                                        printf("########### %p issueda %s += %.8f kmdheight.%d %.8f other.%d (%s)\n",basesp,base,dstr(pax2->fiatoshis),pax2->height,dstr(pax2->komodoshis),pax2->otherheight,bits256_str(str,tmp));
                                     }
                                 }
                             }
