@@ -54,15 +54,31 @@ class MempoolSpendCoinbaseTest(BitcoinTestFramework):
         assert_raises(JSONRPCException, self.nodes[0].sendrawtransaction, spends_raw[1])
 
         # mempool should have just spend_101:
+        mempoolinfo = self.nodes[0].getmempoolinfo()
+        assert_equal(mempoolinfo['size'], 1)
         assert_equal(self.nodes[0].getrawmempool(), [ spend_101_id ])
+
+        # the size of the memory pool should be greater than 1x ~100 bytes
+        assert_greater_than(mempoolinfo['bytes'], 100)
+        # the actual memory usage should be strictly greater than the size
+        # of the memory pool
+        assert_greater_than(mempoolinfo['usage'], mempoolinfo['bytes'])
 
         # mine a block, spend_101 should get confirmed
         self.nodes[0].generate(1)
+        mempoolinfo = self.nodes[0].getmempoolinfo()
+        assert_equal(mempoolinfo['size'], 0)
+        assert_equal(mempoolinfo['bytes'], 0)
+        assert_equal(mempoolinfo['usage'], 0)
         assert_equal(set(self.nodes[0].getrawmempool()), set())
 
         # ... and now height 102 can be spent:
         spend_102_id = self.nodes[0].sendrawtransaction(spends_raw[1])
+        mempoolinfo = self.nodes[0].getmempoolinfo()
+        assert_equal(mempoolinfo['size'], 1)
         assert_equal(self.nodes[0].getrawmempool(), [ spend_102_id ])
+        assert_greater_than(mempoolinfo['bytes'], 100)
+        assert_greater_than(mempoolinfo['usage'], mempoolinfo['bytes'])
 
 if __name__ == '__main__':
     MempoolSpendCoinbaseTest().main()
