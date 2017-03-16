@@ -426,10 +426,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         CValidationState state;
         if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
         {
-            //static uint32_t counter;
-            //if ( counter++ < 100 )
+            static uint32_t counter;
+            if ( counter++ < 100 )
                 fprintf(stderr,"warning: testblockvalidity failed\n");
-            //return(0);
+            return(0);
             //throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
         }
     }
@@ -612,15 +612,15 @@ void static BitcoinMiner(CWallet *pwallet)
                 Mining_height = pindexPrev->nHeight+1;
                 Mining_start = (uint32_t)time(NULL);
             }
-            //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
                 fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
             CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey);
             if ( ptr == 0 )
             {
-                //static uint32_t counter;
-                //if ( counter++ < 100 )
+                static uint32_t counter;
+                if ( counter++ < 100 )
                     fprintf(stderr,"created illegal block, retry\n");
-                //continue;
+                continue;
             }
             unique_ptr<CBlockTemplate> pblocktemplate(ptr);
             if (!pblocktemplate.get())
