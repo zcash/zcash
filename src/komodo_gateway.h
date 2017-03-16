@@ -344,7 +344,7 @@ uint64_t komodo_paxtotal()
     {
         pax->ready = 0;
         if ( 1 && pax->fiatoshis > 9000*SATOSHIDEN )//pax->type == 'A' )
-            printf("%p pax.%s <- %s marked.%d %.8f -> %.8f validated.%d approved.%d\n",pax,pax->symbol,pax->source,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0);
+            printf("(%s) pax.%s <- %s marked.%d %.8f -> %.8f validated.%d approved.%d\n",pax->coinaddr,pax->symbol,pax->source,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0);
         if ( pax->marked != 0 )
             continue;
         if ( strcmp(symbol,pax->symbol) == 0 || pax->type == 'A' )
