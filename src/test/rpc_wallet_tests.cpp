@@ -271,6 +271,16 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 3.125);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+
+    /*
+     * getblock
+     */
+    BOOST_CHECK_THROW(CallRPC("getblock too many args"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("getblock -1"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("getblock 2147483647"), runtime_error); // allowed, but > height of active chain tip
+    BOOST_CHECK_THROW(CallRPC("getblock 2147483648"), runtime_error); // not allowed, > int32 used for nHeight
+    BOOST_CHECK_THROW(CallRPC("getblock 100badchars"), runtime_error);
+    BOOST_CHECK_NO_THROW(CallRPC("getblock 0"));
 }
 
 BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
