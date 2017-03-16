@@ -60,12 +60,22 @@ struct pax_transaction *komodo_paxfind(uint256 txid,uint16_t vout,uint8_t type)
     return(pax);
 }
 
-struct pax_transaction *komodo_paxfinds(uint256 txid,uint16_t vout)
+struct pax_transaction *komodo_paxfinds(int32_t strictflag,uint256 txid,uint16_t vout)
 {
     struct pax_transaction *pax; int32_t i; uint8_t types[] = { 'I', 'D', 'X', 'A', 'W' };
-    for (i=0; i<sizeof(types)/sizeof(*types); i++)
-        if ( (pax= komodo_paxfind(txid,vout,types[i])) != 0 )
+    if ( strictflag != 0 )
+    {
+        if ( (pax= komodo_paxfind(txid,vout,'I')) != 0 )
             return(pax);
+        if ( (pax= komodo_paxfind(txid,vout,'X')) != 0 )
+            return(pax);
+    }
+    else
+    {
+        for (i=0; i<sizeof(types)/sizeof(*types); i++)
+            if ( (pax= komodo_paxfind(txid,vout,types[i])) != 0 )
+                return(pax);
+    }
     return(0);
 }
 
@@ -248,7 +258,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                 vouts[n] = opretbuf[len++];
                 vouts[n] = (opretbuf[len++] << 8) | vouts[n];
                 baseids[n] = komodo_baseid(base);
-                if ( (pax= komodo_paxfinds(txids[n],vouts[n])) != 0 )
+                if ( (pax= komodo_paxfinds(0,txids[n],vouts[n])) != 0 )
                 {
                     values[n] = (strcmp("KMD",base) == 0) ? pax->komodoshis : pax->fiatoshis;
                     srcvalues[n] = (strcmp("KMD",base) == 0) ? pax->fiatoshis : pax->komodoshis;
@@ -716,7 +726,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     matched++;
                     continue;*/
                 }
-                if ( (pax= komodo_paxfinds(txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
+                if ( (pax= komodo_paxfinds(1,txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
                 {
                     pax->type = opcode;
                     if ( opcode == 'I' && (pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis) )
@@ -724,7 +734,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         printf("checkdeposit.[%s]: skip %s %.8f when avail %.8f deposited %.8f, issued %.8f withdrawn %.8f approved %.8f redeemed %.8f\n",ASSETCHAINS_SYMBOL,symbol,dstr(pax->fiatoshis),dstr(available),dstr(deposited),dstr(issued),dstr(withdrawn),dstr(approved),dstr(redeemed));
                         continue;
                     }
-                    if ( ((opcode == 'I' && (pax->fiatoshis == 0 || pax->fiatoshis == block.vtx[0].vout[i].nValue)) || (opcode == 'X' && (pax->komodoshis == 0 || pax->komodoshis == block.vtx[0].vout[i].nValue))) )
+                    if ( (opcode == 'I' && pax->fiatoshis == block.vtx[0].vout[i].nValue) || (opcode == 'X' && pax->komodoshis == block.vtx[0].vout[i].nValue) )
                     {
                         if ( pax->marked != 0 && height >= 80820 )
                         {
