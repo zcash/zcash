@@ -661,7 +661,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     {
         total = 0;
         for (i=1; i<n; i++)
-            total += block.vtx[0].vout[1].nValue;
+            total += block.vtx[0].vout[i].nValue;
         if ( total > COIN/10 )
         {
             //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
