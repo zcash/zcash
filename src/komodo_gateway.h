@@ -343,8 +343,10 @@ uint64_t komodo_paxtotal()
     HASH_ITER(hh,PAX,pax,tmp)
     {
         pax->ready = 0;
+        char str[65]; bits256 tmp;
+        memcpy(&tmp,pax->txid,sizeof(tmp));
         if ( 1 && pax->fiatoshis > 9000*SATOSHIDEN )//pax->type == 'A' )
-            printf("(%s).%c pax.%s <- %s marked.%d %.8f -> %.8f validated.%d approved.%d\n",pax->coinaddr,pax->type,pax->symbol,pax->source,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0);
+            printf("(%s).%c pax.%s <- %s marked.%d %.8f -> %.8f validated.%d approved.%d %s\n",pax->coinaddr,pax->type,pax->symbol,pax->source,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->validated != 0,pax->approved != 0,bits256_str(str,tmp));
         if ( pax->marked != 0 )
             continue;
         if ( strcmp(symbol,pax->symbol) == 0 || pax->type == 'A' )
