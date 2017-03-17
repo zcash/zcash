@@ -702,6 +702,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         //printf(" height.%d checkdeposit n.%d [%02x] [%c] %d vs %d\n",height,n,script[0],script[offset],script[offset],'X');
         opcode = 'X';
         strcpy(symbol,(char *)"KMD");
+        return(-1); // no redeems for now
     }
     else
     {
