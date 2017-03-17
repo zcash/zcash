@@ -383,7 +383,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         // Add fees
         txNew.vout[0].nValue += nFees;
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
-        fprintf(stderr,"set coinbase height to %d\n",nHeight);
+        //fprintf(stderr,"set coinbase height to %d\n",nHeight);
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             int32_t i,opretlen; uint8_t opret[256],*ptr;
@@ -577,7 +577,7 @@ void static BitcoinMiner(CWallet *pwallet)
             fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
         while (true)
         {
-            if (chainparams.MiningRequiresPeers()) //chainActive.Tip()->nHeight != 235300 &&
+            if (0 && chainparams.MiningRequiresPeers()) //chainActive.Tip()->nHeight != 235300 &&
             {
                 //if ( ASSETCHAINS_SEED != 0 && chainActive.Tip()->nHeight < 100 )
                 //    break;
