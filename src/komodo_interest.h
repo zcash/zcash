@@ -104,7 +104,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                 if ( exception == 0 )
                 {
                     numerator = (nValue / 20); // assumes 5%!
-                    if ( txheight < 30000 )
+                    if ( txheight < 300000 )
                         interest = (numerator / denominator);
                     else interest = (numerator * minutes) / ((uint64_t)365 * 24 * 60);
                 }
