@@ -503,7 +503,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     else
     {
         opcode = 'X';
-        if ( komodo_paxtotal() == 0 )
+        if ( 1 || komodo_paxtotal() == 0 )
             return(0);
     }
     HASH_ITER(hh,PAX,pax,tmp)
@@ -514,7 +514,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
 #ifdef KOMODO_ASSETCHAINS_WAITNOTARIZE
             if ( pax->height > 236000 )
             {
-                if ( pax->type == 'D' || (kmdsp != 0 && kmdsp->NOTARIZED_HEIGHT >= pax->height) )
+                if ( kmdsp != 0 && kmdsp->NOTARIZED_HEIGHT >= pax->height )
                     pax->validated = pax->komodoshis;
                 else if ( kmdsp->CURRENT_HEIGHT > pax->height+30 )
                     pax->validated = pax->ready = 0;
