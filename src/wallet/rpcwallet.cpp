@@ -627,12 +627,23 @@ Value paxdeposit(const Array& params, bool fHelp)
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
-    int64_t fiatoshis = atof(params[1].get_str().c_str()) * COIN;
+    int32_t baseid,errflag = 0; int64_t minval,maxallowed,fiatoshis = atof(params[1].get_str().c_str()) * COIN;
     std::string base = params[2].get_str();
     std::string dest;
     height = chainActive.Tip()->nHeight;
+    baseid = komodo_baseid((char *)base.c_str());
     if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,(char *)base.c_str()) != 0 || available < fiatoshis )
+        errflag = 1;
+    minval = approved;
+    if ( withdrawn < minval )
+        minval = withdrawn;
+    netliability = (deposited - minval);
+    maxallowed = komodo_maxallowed(baseid);
+    if ( fiatoshis > (maxallowed - netliability) )
+        errflag = 1;
+    if ( errflag != 0 )
         throw runtime_error("paxdeposit not enough available inventory");
+
     komodoshis = PAX_fiatdest(&seed,0,destaddr,pubkey37,(char *)params[0].get_str().c_str(),height,(char *)base.c_str(),fiatoshis);
     dest.append(destaddr);
     CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
