@@ -42,7 +42,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     while (!fShutdown)
     {
         //fprintf(stderr,"call passport iteration\n");
-        MilliSleep(10000);
+        MilliSleep(10000/100);
         komodo_passport_iteration();
         fShutdown = ShutdownRequested();
     }
