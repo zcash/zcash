@@ -489,7 +489,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     else
     {
         opcode = 'X';
-        if ( komodo_paxtotal() == 0 )
+        if ( 1 || komodo_paxtotal() == 0 )
             return(0);
     }
     HASH_ITER(hh,PAX,pax,tmp)
@@ -684,6 +684,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         //    printf("%02x",script[i]);
         //printf(" height.%d checkdeposit n.%d [%02x] [%c] %d vs %d\n",height,n,script[0],script[offset],script[offset],'X');
         opcode = 'X';
+        if ( height >= 235300 )
+            return(-1);
         strcpy(symbol,(char *)"KMD");
     }
     else
@@ -984,7 +986,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         } // else printf("withdraw %s paxcmp ht.%d %d error value %.8f -> %.8f vs %.8f\n",base,kmdheight,height,dstr(value),dstr(komodoshis),dstr(checktoshis));
         // need to allocate pax
     }
-    else if ( tokomodo != 0 && opretbuf[0] == 'A' )
+    else if ( height < 236000 && tokomodo != 0 && opretbuf[0] == 'A' )
     {
         tokomodo = 1;
         if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
@@ -1063,7 +1065,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         } //else printf("n.%d from opreturns\n",n);
         //printf("extra.[%d] after %.8f\n",n,dstr(komodo_paxtotal()));
     }
-    else if ( opretbuf[0] == 'X' )
+    else if ( height < 236000 && opretbuf[0] == 'X' )
     {
         tokomodo = 1;
         if ( (n= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,opretbuf,opretlen,1)) > 0 )
