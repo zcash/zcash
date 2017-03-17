@@ -253,7 +253,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                 for (j=0; j<32; j++)
                 {
                     ((uint8_t *)&txids[n])[j] = opretbuf[len++];
-                    //printf("%02x",((uint8_t *)&txids[n])[j]);
+                    printf("%02x",((uint8_t *)&txids[n])[j]);
                 }
                 vouts[n] = opretbuf[len++];
                 vouts[n] = (opretbuf[len++] << 8) | vouts[n];
@@ -267,7 +267,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                     memcpy(&rmd160s[n * 20],pax->rmd160,20);
                 }
             }
-            //printf(" komodo_issued_opreturn issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
+            printf(" komodo_issued_opreturn issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
         }
     }
     return(n);
@@ -729,7 +729,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     matched++;
                     continue;*/
                 }
-                if ( (pax= komodo_paxfinds(opcode == 'I',txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
+                if ( (pax= komodo_paxfinds(0,txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
                 {
                     pax->type = opcode;
                     if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) < 0 )
