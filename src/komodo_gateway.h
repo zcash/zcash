@@ -726,7 +726,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     matched++;
                     continue;*/
                 }
-                if ( (pax= komodo_paxfinds(1,txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
+                if ( (pax= komodo_paxfinds(0,txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
                 {
                     pax->type = opcode;
                     if ( opcode == 'I' && (pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis) )
