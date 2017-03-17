@@ -496,8 +496,6 @@ uint256 komodo_kvsig(uint8_t *buf,int32_t len,uint256 privkey);
 int32_t komodo_kvduration(uint32_t flags);
 uint256 komodo_kvprivkey(uint256 *pubkeyp,char *passphrase);
 int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,uint256 _pubkey,uint256 sig);
-uint64_t komodo_maxallowed(int32_t baseid);
-int32_t komodo_baseid(char *origbase);
 
 Value kvupdate(const Array& params, bool fHelp)
 {
@@ -629,23 +627,15 @@ Value paxdeposit(const Array& params, bool fHelp)
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
-    int32_t baseid,errflag = 0; int64_t netliability,minval,maxallowed,fiatoshis = atof(params[1].get_str().c_str()) * COIN;
+    int64_t fiatoshis = atof(params[1].get_str().c_str()) * COIN;
     std::string base = params[2].get_str();
     std::string dest;
     height = chainActive.Tip()->nHeight;
-    baseid = komodo_baseid((char *)base.c_str());
     if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,(char *)base.c_str()) != 0 || available < fiatoshis )
-        errflag = 1;
-    minval = approved;
-    if ( withdrawn < minval )
-        minval = withdrawn;
-    netliability = (deposited - minval);
-    maxallowed = komodo_maxallowed(baseid);
-    if ( fiatoshis > (maxallowed - netliability) )
-        errflag = 1;
-    if ( errflag != 0 )
+    {
+        fprintf(stderr,"available %llu vs fiatoshis %llu\n",(long long)available,(long long)fiatoshis);
         throw runtime_error("paxdeposit not enough available inventory");
-
+    }
     komodoshis = PAX_fiatdest(&seed,0,destaddr,pubkey37,(char *)params[0].get_str().c_str(),height,(char *)base.c_str(),fiatoshis);
     dest.append(destaddr);
     CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
