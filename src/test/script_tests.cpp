@@ -305,11 +305,6 @@ public:
     {
         return comment;
     }
-
-    const CScript& GetScriptPubKey()
-    {
-        return creditTx.vout[0].scriptPubKey;
-    }
 };
 }
 

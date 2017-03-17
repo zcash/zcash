@@ -120,13 +120,6 @@ public:
         running = false;
         cond.notify_all();
     }
-
-    /** Return current depth of queue */
-    size_t Depth()
-    {
-        std::unique_lock<std::mutex> lock(cs);
-        return queue.size();
-    }
 };
 
 struct HTTPPathHandler
