@@ -601,8 +601,8 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         data[len++] = 0;
         if ( pax != 0 )
         {
-            for (i=0; i<len; i++)
-                printf("%02x",((uint8_t *)&pax->txid)[i]);
+            for (i=0; i<32; i++)
+                printf("%02x",((uint8_t *)&pax->txid)[32-1-i]);
             printf(" <- data[%d]\n",len);
         }
         opretlen = komodo_opreturnscript(opret,opcode,data,len);
