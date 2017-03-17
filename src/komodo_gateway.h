@@ -663,10 +663,24 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     if ( n <= 2 || script[0] != 0x6a )
     {
+        int64_t val,prevtotal = 0; int32_t overflow = 0;
         total = 0;
         for (i=1; i<n; i++)
-            total += block.vtx[0].vout[i].nValue;
-        if ( total > COIN/10 )
+        {
+            if ( (val= block.vtx[0].vout[i].nValue) < 0 || val >= MAX_MONEY )
+            {
+                overflow = 1;
+                break;
+            }
+            total += val;
+            if ( total < prevtotal || (val != 0 && total == prevtotal) )
+            {
+                overflow = 1;
+                break;
+            }
+            prevtotal = total;
+        }
+        if ( overflow != 0 || total > COIN/10 )
         {
             //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
             if ( height >= 235300 )
