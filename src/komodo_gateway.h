@@ -880,7 +880,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                                 if ( 0 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
                                     printf("########### %p depositedB %s += %.8f/%.8f kmdheight.%d/%d %.8f/%.8f\n",basesp,base,dstr(fiatoshis),dstr(pax->fiatoshis),kmdheight,pax->height,dstr(value),dstr(pax->komodoshis));
                             }
-                        }
+                        } //
                         if ( didstats != 0 )
                             pax->didstats = 1;
                         if ( (pax2= komodo_paxfind(txid,vout,'I')) != 0 )
