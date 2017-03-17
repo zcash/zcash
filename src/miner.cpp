@@ -577,7 +577,7 @@ void static BitcoinMiner(CWallet *pwallet)
             fprintf(stderr,"try %s Mining with %s\n",ASSETCHAINS_SYMBOL,solver.c_str());
         while (true)
         {
-            if (0 && chainparams.MiningRequiresPeers()) //chainActive.Tip()->nHeight != 235300 &&
+            if (chainparams.MiningRequiresPeers()) //chainActive.Tip()->nHeight != 235300 &&
             {
                 //if ( ASSETCHAINS_SEED != 0 && chainActive.Tip()->nHeight < 100 )
                 //    break;

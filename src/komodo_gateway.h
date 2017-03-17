@@ -1092,7 +1092,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         } //else printf("n.%d from opreturns\n",n);
         //printf("extra.[%d] after %.8f\n",n,dstr(komodo_paxtotal()));
     }
-    else if ( opretbuf[0] == 'X' )
+    else if ( opretbuf[0] == 'x' )
     {
         tokomodo = 1;
         if ( (n= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,opretbuf,opretlen,1)) > 0 )
