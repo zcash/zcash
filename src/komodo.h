@@ -431,7 +431,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             {
                 printf("pricefeed.%llx\n",(long long)signedmask);
                 komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
-            }
+            } else printf("ht.%d null signedmask for pricefeed?\n",height);
         }
         else
         {
