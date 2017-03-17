@@ -65,7 +65,7 @@ struct pax_transaction *komodo_paxfinds(int32_t strictflag,uint256 txid,uint16_t
     struct pax_transaction *pax; int32_t i; uint8_t types[] = { 'I', 'D', 'X', 'A', 'W' };
     if ( strictflag != 0 )
     {
-        if ( (pax= komodo_paxfind(txid,vout,'I')) != 0 )
+        if ( (pax= komodo_paxfind(txid,vout,'D')) != 0 )
             return(pax);
         //if ( (pax= komodo_paxfind(txid,vout,'X')) != 0 )
         //    return(pax);
