@@ -3258,7 +3258,6 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         else if ( komodo_checkpoint(&notarized_height,nHeight,hash) < 0 )
             return state.DoS(100, error("%s: forked chain %d older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
     }
-
     // Reject block.nVersion < 4 blocks
     if (block.nVersion < 4)
         return state.Invalid(error("%s : rejected nVersion<4 block", __func__),
