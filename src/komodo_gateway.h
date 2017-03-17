@@ -442,7 +442,7 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
                 if ( pax2->approved != 0 )
                     pax->approved = pax2->approved;
             }
-            else if ( (pax2= komodo_paxfind(pax->txid,pax->vout,'X')) != 0 )
+            else if ( (pax2= komodo_paxfind(pax->txid,pax->vout,'x')) != 0 )
                 pax->approved = pax->height;
             //printf("pending_withdraw: pax %s marked.%u approved.%u validated.%llu\n",pax->symbol,pax->marked,pax->approved,(long long)pax->validated);
             if ( pax->marked == 0 && pax->approved == 0 && pax->validated != 0 ) //strcmp((char *)"KMD",pax->symbol) == 0 &&
@@ -477,7 +477,7 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t tokomodo)
 {
     struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[16384],data[16384]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t available,deposited,issued,withdrawn,approved,redeemed,mask;
-    if ( KOMODO_PAX == 0 || KOMODO_PASSPORT_INITDONE == 0 )
+    if ( KOMODO_PAX == 0 || KOMODO_PASSPORT_INITDONE == 0 || ASSETCHAINS_SYMBOL[0] == 0 )
         return(0);
     struct komodo_state *kmdsp = komodo_stateptrget((char *)"KMD");
     sp = komodo_stateptr(symbol,dest);
