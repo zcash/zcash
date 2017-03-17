@@ -132,7 +132,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
         memcpy(pax->buf,buf,sizeof(pax->buf));
         HASH_ADD_KEYPTR(hh,PAX,pax->buf,sizeof(pax->buf),pax);
         addflag = 1;
-        if ( 0 && ASSETCHAINS_SYMBOL[0] == 0 )
+        if ( 1 && ASSETCHAINS_SYMBOL[0] == 0 )
         {
             int32_t i; for (i=0; i<32; i++)
                 printf("%02x",((uint8_t *)&txid)[i]);
@@ -599,9 +599,12 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         for (i=0; symbol[i]!=0; i++)
             data[len++] = symbol[i];
         data[len++] = 0;
-        for (i=0; i<len; i++)
-            printf("%02x",data[i]);
-        printf(" <- data[%d]\n",len);
+        if ( pax != 0 )
+        {
+            for (i=0; i<len; i++)
+                printf("%02x",((uint8_t *)&pax->txid)[i]);
+            printf(" <- data[%d]\n",len);
+        }
         opretlen = komodo_opreturnscript(opret,opcode,data,len);
         txNew->vout.resize(numvouts+1);
         txNew->vout[numvouts].nValue = 0;
