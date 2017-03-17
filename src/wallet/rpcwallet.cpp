@@ -629,7 +629,7 @@ Value paxdeposit(const Array& params, bool fHelp)
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address");
-    int32_t baseid,errflag = 0; int64_t minval,maxallowed,fiatoshis = atof(params[1].get_str().c_str()) * COIN;
+    int32_t baseid,errflag = 0; int64_t netliability,minval,maxallowed,fiatoshis = atof(params[1].get_str().c_str()) * COIN;
     std::string base = params[2].get_str();
     std::string dest;
     height = chainActive.Tip()->nHeight;
