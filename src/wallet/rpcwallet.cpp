@@ -496,6 +496,8 @@ uint256 komodo_kvsig(uint8_t *buf,int32_t len,uint256 privkey);
 int32_t komodo_kvduration(uint32_t flags);
 uint256 komodo_kvprivkey(uint256 *pubkeyp,char *passphrase);
 int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,uint256 _pubkey,uint256 sig);
+uint64_t komodo_maxallowed(int32_t baseid);
+int32_t komodo_baseid(char *origbase);
 
 Value kvupdate(const Array& params, bool fHelp)
 {
