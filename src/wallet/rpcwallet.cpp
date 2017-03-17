@@ -634,7 +634,7 @@ Value paxdeposit(const Array& params, bool fHelp)
     std::string dest;
     height = chainActive.Tip()->nHeight;
     baseid = komodo_baseid((char *)base.c_str());
-    if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,(char *)base.c_str()) != 0 )
+    /*if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,(char *)base.c_str()) != 0 )
         errflag = 1;
     else
     {
@@ -652,7 +652,7 @@ Value paxdeposit(const Array& params, bool fHelp)
         }
     }
     if ( errflag != 0 )
-        throw runtime_error("paxdeposit not enough available inventory");
+        throw runtime_error("paxdeposit not enough available inventory");*/
     komodoshis = PAX_fiatdest(&seed,0,destaddr,pubkey37,(char *)params[0].get_str().c_str(),height,(char *)base.c_str(),fiatoshis);
     dest.append(destaddr);
     CBitcoinAddress destaddress(CRYPTO777_KMDADDR);
