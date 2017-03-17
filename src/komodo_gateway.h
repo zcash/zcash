@@ -17,7 +17,7 @@
 
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base)
 {
-    int32_t baseid; struct komodo_state *sp; int64_t netliability,maxallowed;
+    int32_t baseid; struct komodo_state *sp; int64_t netliability,maxallowed,maxval;
     *available = *deposited = *issued = *withdrawn = *approved = *redeemed = 0;
     if ( (baseid= komodo_baseid(base)) >= 0 )
     {
@@ -28,11 +28,14 @@ int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,
             *withdrawn = sp->withdrawn;
             *approved = sp->approved;
             *redeemed = sp->redeemed;
-            netliability = (sp->deposited - sp->withdrawn) - sp->shorted;
+            maxval = sp->approved;
+            if ( sp->withdrawn > maxval )
+                maxval = sp->withdrawn;
+            netliability = (sp->issued - maxval) - sp->shorted;
             maxallowed = komodo_maxallowed(baseid);
             if ( netliability < maxallowed )
                 *available = (maxallowed - netliability);
-            //printf("%p %s %.8f %.8f %.8f %.8f %.8f\n",sp,base,dstr(*deposited),dstr(*issued),dstr(*withdrawn),dstr(*approved),dstr(*redeemed));
+            //printf("%llu - %llu %s %.8f %.8f %.8f %.8f %.8f\n",(long long)maxallowed,(long long)netliability,base,dstr(*deposited),dstr(*issued),dstr(*withdrawn),dstr(*approved),dstr(*redeemed));
             return(0);
         } else printf("pax_fiatstatus cant get basesp.%s\n",base);
     } // else printf("pax_fiatstatus illegal base.%s\n",base);
@@ -265,7 +268,7 @@ int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t che
     if ( seed == 0 && checkvalue != 0 )
     {
         ratio = ((value << 6) / checkvalue);
-        if ( ratio >= 63 && ratio <= 65 )
+        if ( ratio >= 62 && ratio <= 66 )
             return(0);
         else
         {
@@ -486,7 +489,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     else
     {
         opcode = 'X';
-        if ( komodo_paxtotal() == 0 )
+        if ( 1 || komodo_paxtotal() == 0 )
             return(0);
     }
     HASH_ITER(hh,PAX,pax,tmp)
@@ -528,6 +531,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         {
             if ( strcmp(pax->symbol,ASSETCHAINS_SYMBOL) == 0 )
                 printf("pax->symbol.%s != %s or null pax->validated %.8f ready.%d ht.(%d %d)\n",pax->symbol,symbol,dstr(pax->validated),pax->ready,kmdsp->CURRENT_HEIGHT,pax->height);
+            pax->marked = pax->fiatoshis;
             continue;
         }
         if ( pax->ready == 0 )
@@ -571,7 +575,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             PENDING_KOMODO_TX += pax->komodoshis;
             printf(" len.%d vout.%u DEPOSIT %.8f <- pax.%s pending ht %d %d %.8f | ",len,pax->vout,(double)txNew->vout[numvouts].nValue/COIN,symbol,pax->height,pax->otherheight,dstr(PENDING_KOMODO_TX));
         }
-        if ( numvouts++ >= 64 )
+        if ( numvouts++ >= 1 )
             break;
     }
     if ( numvouts > 1 )
@@ -659,10 +663,24 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     if ( n <= 2 || script[0] != 0x6a )
     {
+        int64_t val,prevtotal = 0; int32_t overflow = 0;
         total = 0;
         for (i=1; i<n; i++)
-            total += block.vtx[0].vout[i].nValue;
-        if ( total > COIN/10 )
+        {
+            if ( (val= block.vtx[0].vout[i].nValue) < 0 || val >= MAX_MONEY )
+            {
+                overflow = 1;
+                break;
+            }
+            total += val;
+            if ( total < prevtotal || (val != 0 && total == prevtotal) )
+            {
+                overflow = 1;
+                break;
+            }
+            prevtotal = total;
+        }
+        if ( overflow != 0 || total > COIN/10 )
         {
             //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
             if ( height >= 235300 )
@@ -670,6 +688,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         return(0);
     }
+    
     //fprintf(stderr,"ht.%d n.%d nValue %.8f (%d %d %d)\n",height,n,dstr(block.vtx[0].vout[1].nValue),KOMODO_PAX,komodo_isrealtime(&ht),KOMODO_PASSPORT_INITDONE);
     if ( komodo_isrealtime(&ht) == 0 || KOMODO_PASSPORT_INITDONE == 0 ) //KOMODO_PAX == 0 || 
         return(0);
@@ -680,6 +699,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         //    printf("%02x",script[i]);
         //printf(" height.%d checkdeposit n.%d [%02x] [%c] %d vs %d\n",height,n,script[0],script[offset],script[offset],'X');
         opcode = 'X';
+        if ( height >= 235300 )
+            return(-1);
         strcpy(symbol,(char *)"KMD");
     }
     else
@@ -859,7 +880,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                                 if ( 0 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
                                     printf("########### %p depositedB %s += %.8f/%.8f kmdheight.%d/%d %.8f/%.8f\n",basesp,base,dstr(fiatoshis),dstr(pax->fiatoshis),kmdheight,pax->height,dstr(value),dstr(pax->komodoshis));
                             }
-                        }
+                        } //
                         if ( didstats != 0 )
                             pax->didstats = 1;
                         if ( (pax2= komodo_paxfind(txid,vout,'I')) != 0 )
@@ -881,8 +902,13 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         }
                     }
                 }
-                else if ( kmdheight > 238000 && (kmdheight > 214700 || strcmp(base,ASSETCHAINS_SYMBOL) == 0) ) //seed != 0 &&
-                    printf("pax %s deposit %.8f rejected kmdheight.%d %.8f KMD check %.8f seed.%llu\n",base,dstr(fiatoshis),kmdheight,dstr(value),dstr(checktoshis),(long long)seed);
+                else
+                {
+                    if ( (pax= komodo_paxfind(txid,vout,'D')) != 0 )
+                        pax->marked = checktoshis;
+                    if ( kmdheight > 238000 && (kmdheight > 214700 || strcmp(base,ASSETCHAINS_SYMBOL) == 0) ) //seed != 0 &&
+                        printf("pax %s deposit %.8f rejected kmdheight.%d %.8f KMD check %.8f seed.%llu\n",base,dstr(fiatoshis),kmdheight,dstr(value),dstr(checktoshis),(long long)seed);
+                }
             } //else printf("paxdeposit height.%d vs kmdheight.%d\n",height,kmdheight);
         }
     }
@@ -935,7 +961,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             } //else printf("opreturn none issued?\n");
         }
     }
-    else if ( opretbuf[0] == 'W' )//&& opretlen >= 38 )
+    else if ( height < 236000 && opretbuf[0] == 'W' )//&& opretlen >= 38 )
     {
         if ( komodo_baseid((char *)&opretbuf[opretlen-4]) >= 0 && strcmp(ASSETCHAINS_SYMBOL,(char *)&opretbuf[opretlen-4]) == 0 )
         {
@@ -980,7 +1006,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         } // else printf("withdraw %s paxcmp ht.%d %d error value %.8f -> %.8f vs %.8f\n",base,kmdheight,height,dstr(value),dstr(komodoshis),dstr(checktoshis));
         // need to allocate pax
     }
-    else if ( tokomodo != 0 && opretbuf[0] == 'A' )
+    else if ( height < 236000 && tokomodo != 0 && opretbuf[0] == 'A' )
     {
         tokomodo = 1;
         if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
@@ -1059,7 +1085,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         } //else printf("n.%d from opreturns\n",n);
         //printf("extra.[%d] after %.8f\n",n,dstr(komodo_paxtotal()));
     }
-    else if ( opretbuf[0] == 'X' )
+    else if ( height < 236000 && opretbuf[0] == 'X' )
     {
         tokomodo = 1;
         if ( (n= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,opretbuf,opretlen,1)) > 0 )
