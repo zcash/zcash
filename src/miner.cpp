@@ -403,7 +403,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         else if ( komodo_is_issuer() != 0 )
         {
             komodo_gateway_deposits(&txNew,ASSETCHAINS_SYMBOL,0);
-            //if ( txNew.vout.size() > 1 )
+            if ( txNew.vout.size() > 1 )
                 fprintf(stderr,"%s txNew numvouts.%d\n",ASSETCHAINS_SYMBOL,(int32_t)txNew.vout.size());
         }
         pblock->vtx[0] = txNew;
@@ -612,7 +612,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 Mining_height = pindexPrev->nHeight+1;
                 Mining_start = (uint32_t)time(NULL);
             }
-            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                 fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
             CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey);
             if ( ptr == 0 )

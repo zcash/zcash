@@ -634,7 +634,7 @@ Value paxdeposit(const Array& params, bool fHelp)
     std::string dest;
     height = chainActive.Tip()->nHeight;
     baseid = komodo_baseid((char *)base.c_str());
-    if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,(char *)base.c_str()) != 0 || available < fiatoshis )
+    if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,(char *)base.c_str()) != 0 )
         errflag = 1;
     else
     {
