@@ -941,7 +941,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             } //else printf("opreturn none issued?\n");
         }
     }
-    else if ( opretbuf[0] == 'W' )//&& opretlen >= 38 )
+    else if ( height < 236000 && opretbuf[0] == 'W' )//&& opretlen >= 38 )
     {
         if ( komodo_baseid((char *)&opretbuf[opretlen-4]) >= 0 && strcmp(ASSETCHAINS_SYMBOL,(char *)&opretbuf[opretlen-4]) == 0 )
         {

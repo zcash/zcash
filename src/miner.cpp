@@ -633,7 +633,9 @@ void static BitcoinMiner(CWallet *pwallet)
             {
                 if ( pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
                 {
-                    fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
+                    static uint32_t counter;
+                    if ( counter++ < 10 )
+                        fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
                     sleep(10);
                     continue;
                 } else fprintf(stderr,"vouts.%d mining.%d vs %d\n",(int32_t)pblock->vtx[0].vout.size(),Mining_height,ASSETCHAINS_MINHEIGHT);
