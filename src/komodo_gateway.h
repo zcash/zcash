@@ -132,7 +132,7 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
         memcpy(pax->buf,buf,sizeof(pax->buf));
         HASH_ADD_KEYPTR(hh,PAX,pax->buf,sizeof(pax->buf),pax);
         addflag = 1;
-        if ( 1 && ASSETCHAINS_SYMBOL[0] == 0 )
+        if ( 0 && ASSETCHAINS_SYMBOL[0] == 0 )
         {
             int32_t i; for (i=0; i<32; i++)
                 printf("%02x",((uint8_t *)&txid)[i]);
