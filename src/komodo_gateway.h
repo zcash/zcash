@@ -514,7 +514,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
 #ifdef KOMODO_ASSETCHAINS_WAITNOTARIZE
             if ( pax->height > 236000 )
             {
-                if ( kmdsp != 0 && kmdsp->NOTARIZED_HEIGHT >= pax->height )
+                if ( pax->type == 'D' || (kmdsp != 0 && kmdsp->NOTARIZED_HEIGHT >= pax->height) )
                     pax->validated = pax->komodoshis;
                 else if ( kmdsp->CURRENT_HEIGHT > pax->height+30 )
                     pax->validated = pax->ready = 0;
