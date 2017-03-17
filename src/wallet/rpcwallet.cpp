@@ -672,6 +672,7 @@ Value paxwithdraw(const Array& params, bool fHelp)
         return(0);
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
+    throw runtime_error("paxwithdraw deprecated");
     if (fHelp || params.size() != 2)
         throw runtime_error("paxwithdraw address fiatamount");
     if ( komodo_isrealtime(&kmdheight) == 0 )
