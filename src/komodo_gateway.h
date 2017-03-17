@@ -253,7 +253,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                 for (j=0; j<32; j++)
                 {
                     ((uint8_t *)&txids[n])[j] = opretbuf[len++];
-                    printf("%02x",((uint8_t *)&txids[n])[j]);
+                    //printf("%02x",((uint8_t *)&txids[n])[j]);
                 }
                 vouts[n] = opretbuf[len++];
                 vouts[n] = (opretbuf[len++] << 8) | vouts[n];
@@ -267,7 +267,7 @@ int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t
                     memcpy(&rmd160s[n * 20],pax->rmd160,20);
                 }
             }
-            printf(" komodo_issued_opreturn issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
+            //printf(" komodo_issued_opreturn issuedtxid v%d i.%d opretlen.%d\n",vouts[n],n,opretlen);
         }
     }
     return(n);
@@ -599,7 +599,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         for (i=0; symbol[i]!=0; i++)
             data[len++] = symbol[i];
         data[len++] = 0;
-        if ( pax != 0 )
+        if ( 0 && pax != 0 )
         {
             for (i=0; i<32; i++)
                 printf("%02x",((uint8_t *)&pax->txid)[32-1-i]);
@@ -868,7 +868,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         {
                             basesp->deposited += fiatoshis;
                             didstats = 1;
-                            if ( 1 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                            if ( 0 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
                                 printf("########### %p deposited %s += %.8f kmdheight.%d %.8f\n",basesp,base,dstr(fiatoshis),kmdheight,dstr(value));
                         } else printf("cant get stateptr.(%s)\n",base);
                         komodo_gateway_deposit(coinaddr,value,base,fiatoshis,rmd160,txid,vout,'D',kmdheight,height,(char *)"KMD",0);
@@ -885,7 +885,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                             {
                                 basesp->deposited += fiatoshis;
                                 didstats = 1;
-                                if ( 1 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                                if ( 0 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
                                     printf("########### %p depositedB %s += %.8f/%.8f kmdheight.%d/%d %.8f/%.8f\n",basesp,base,dstr(fiatoshis),dstr(pax->fiatoshis),kmdheight,pax->height,dstr(value),dstr(pax->komodoshis));
                             }
                         }
@@ -903,7 +903,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                                 {
                                     basesp->issued += pax2->fiatoshis;
                                     pax2->didstats = 1;
-                                    if ( 1 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                                    if ( 0 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
                                     {
                                         char str[65]; bits256 tmp;
                                         memcpy(&tmp,&pax2->txid,sizeof(tmp));
