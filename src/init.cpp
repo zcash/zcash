@@ -1464,6 +1464,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     uiInterface.InitMessage(_("Activating best chain..."));
     // scan for better chains in the block chain database, that are not yet connected in the active best chain
     CValidationState state;
+    extern int32_t KOMODO_REWIND;
     if ( KOMODO_REWIND < 0 )
     {
         KOMODO_REWIND = 0;
