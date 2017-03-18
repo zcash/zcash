@@ -479,7 +479,8 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
     }
     if ( i == 3 )
     {
-        printf("%s not realtime ht.%d\n",ASSETCHAINS_SYMBOL,ht);
+        if ( tokomodo == 0 )
+            printf("%s not realtime ht.%d\n",ASSETCHAINS_SYMBOL,ht);
         return(0);
     }
     if ( tokomodo == 0 )
@@ -575,7 +576,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             PENDING_KOMODO_TX += pax->komodoshis;
             printf(" len.%d vout.%u DEPOSIT %.8f <- pax.%s pending ht %d %d %.8f | ",len,pax->vout,(double)txNew->vout[numvouts].nValue/COIN,symbol,pax->height,pax->otherheight,dstr(PENDING_KOMODO_TX));
         }
-        if ( numvouts++ >= 1 )
+        if ( numvouts++ >= 64 )
             break;
     }
     if ( numvouts > 1 )
@@ -693,6 +694,13 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
+        extern int32_t KOMODO_REWIND;
+        if ( KOMODO_REWIND < 0 )
+        {
+            fprintf(stderr,"rewind.%d\n",KOMODO_REWIND);
+            sleep(3);
+            KOMODO_REWIND = 0;
+        }
         for (i=0; i<opretlen; i++)
             printf("%02x",script[i]);
         printf(" height.%d checkdeposit n.%d [%02x] [%c] %d vs %d\n",height,n,script[0],script[offset],script[offset],'X');

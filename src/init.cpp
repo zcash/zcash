@@ -641,6 +641,8 @@ static void ZC_LoadParams()
 /** Initialize bitcoin.
  *  @pre Parameters should be parsed and config file should be read.
  */
+extern int32_t KOMODO_REWIND;
+
 bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 {
     // ********************************************************* Step 1: setup
@@ -1244,10 +1246,13 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     LogPrintf("Prune: pruned datadir may not have more than %d blocks; -checkblocks=%d may fail\n",
                         MIN_BLOCKS_TO_KEEP, GetArg("-checkblocks", 288));
                 }
-                if (!CVerifyDB().VerifyDB(pcoinsdbview, GetArg("-checklevel", 3),
-                                          GetArg("-checkblocks", 288))) {
-                    strLoadError = _("Corrupted block database detected");
-                    break;
+                if ( KOMODO_REWIND >= 0 )
+                {
+                    if (!CVerifyDB().VerifyDB(pcoinsdbview, GetArg("-checklevel", 3),
+                                              GetArg("-checkblocks", 288))) {
+                        strLoadError = _("Corrupted block database detected");
+                        break;
+                    }
                 }
             } catch (const std::exception& e) {
                 if (fDebug) LogPrintf("%s\n", e.what());
@@ -1456,13 +1461,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (mapArgs.count("-blocknotify"))
         uiInterface.NotifyBlockTip.connect(BlockNotifyCallback);
-
-    uiInterface.InitMessage(_("Activating best chain..."));
-    // scan for better chains in the block chain database, that are not yet connected in the active best chain
-    CValidationState state;
-    if ( !ActivateBestChain(state))
-        strErrors << "Failed to connect best block";
-
+    if ( KOMODO_REWIND >= 0 )
+    {
+        uiInterface.InitMessage(_("Activating best chain..."));
+        // scan for better chains in the block chain database, that are not yet connected in the active best chain
+        CValidationState state;
+        if ( !ActivateBestChain(state))
+            strErrors << "Failed to connect best block";
+    }
     std::vector<boost::filesystem::path> vImportFiles;
     if (mapArgs.count("-loadblock"))
     {

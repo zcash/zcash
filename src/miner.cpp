@@ -663,7 +663,7 @@ void static BitcoinMiner(CWallet *pwallet)
                         if ( i == 33 )
                             externalflag = 1;
                         else externalflag = 0;
-                        if ( NOTARY_PUBKEY33[0] != 0 && notaryid < 3 )
+                        if ( NOTARY_PUBKEY33[0] != 0 && (notaryid < 3 || notaryid == 34 || notaryid == 51 || notaryid == 52) )
                         {
                             for (i=1; i<66; i++)
                                 if ( memcmp(pubkeys[i],pubkeys[0],33) == 0 )
@@ -678,19 +678,21 @@ void static BitcoinMiner(CWallet *pwallet)
                             }
                             for (j=gpucount=0; j<65; j++)
                             {
-                                if ( mids[j] >= 0 )
+                                if ( mids[j] >= 0 || notaryid == 34 )
                                     fprintf(stderr,"%d ",mids[j]);
                                 else fprintf(stderr,"GPU ");
                                 if ( mids[j] == -1 )
                                     gpucount++;
                             }
-                            fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%%\n",pindexPrev->nHeight,notaryid,gpucount,100.*(double)gpucount/j);
+                            fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%% t.%u\n",pindexPrev->nHeight,notaryid,gpucount,100.*(double)gpucount/j,(uint32_t)time(NULL));
                         }
                         for (j=0; j<65; j++)
                             if ( mids[j] == notaryid )
                                 break;
+                        if ( j == 65 )
+                            KOMODO_LASTMINED = 0;
                     } else fprintf(stderr,"no nonz pubkeys\n");
-                    if ( (Mining_height >= 235300 && Mining_height < 236000) || (j == 65 && Mining_height > KOMODO_MAYBEMINED+3 && Mining_height > KOMODO_LASTMINED+64) )
+                    if ( (Mining_height >= 235300 && Mining_height < 236000) || (j == 65 && Mining_height > KOMODO_MAYBEMINED+1 && Mining_height > KOMODO_LASTMINED+64) )
                     {
                         hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                         fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
