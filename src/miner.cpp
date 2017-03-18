@@ -562,7 +562,7 @@ void static BitcoinMiner(CWallet *pwallet)
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
-        fprintf(stderr,"notaryid.%d Mining with %s\n",notaryid,solver.c_str());
+        fprintf(stderr,"notaryid.%d Mining.%s with %s\n",notaryid,ASSETCHAINS_SYMBOL,solver.c_str());
     std::mutex m_cs;
     bool cancelSolver = false;
     boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
@@ -678,7 +678,9 @@ void static BitcoinMiner(CWallet *pwallet)
                             }
                             for (j=gpucount=0; j<65; j++)
                             {
-                                fprintf(stderr,"%d ",mids[j]);
+                                if ( mids[j] >= 0 )
+                                    fprintf(stderr,"%d ",mids[j]);
+                                else fprintf(stderr,"GPU ");
                                 if ( mids[j] == -1 )
                                     gpucount++;
                             }

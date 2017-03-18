@@ -3916,7 +3916,7 @@ bool LoadBlockIndex()
         return false;
     }
     KOMODO_LOADINGBLOCKS = 0;
-    fprintf(stderr,"finished loading blocks\n");
+    fprintf(stderr,"finished loading blocks %s\n",ASSETCHAINS_SYMBOL);
     return true;
 }
 
