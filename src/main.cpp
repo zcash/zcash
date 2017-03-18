@@ -2771,8 +2771,8 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     }
     if ( KOMODO_REWIND != 0 && chainActive.Tip()->nHeight > KOMODO_REWIND )
     {
-        static int32_t didinit;
-        if ( didinit++ == 0 )
+        //static int32_t didinit;
+        //if ( didinit++ == 0 )
         {
             while (chainActive.Tip()->nHeight > KOMODO_REWIND )
             {
