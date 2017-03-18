@@ -2781,7 +2781,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
             didinit++;
             return(true);
         }
-        if ( didinit == 0 )
+        //if ( didinit == 0 )
         {
             while (chainActive.Tip()->nHeight >= KOMODO_REWIND )
             {
