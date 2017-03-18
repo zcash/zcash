@@ -1164,7 +1164,7 @@ void komodo_passport_iteration()
         base = (char *)CURRENCIES[baseid];
         if ( baseid+1 != refid )
         {
-            if ( baseid == 32 )
+            if ( baseid == 32 || ASSETCHAINS_SYMBOL[0] == 0 )
             {
                 komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"komodostate");
                 komodo_nameset(symbol,dest,base);
