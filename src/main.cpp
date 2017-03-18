@@ -2775,7 +2775,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         //if ( didinit++ == 0 )
         if ( chainActive.Tip()->nHeight == KOMODO_REWIND )
         {
-            fprintf(stderr,"reached rewind.%d, ./komodo-cli stop now\n");
+            fprintf(stderr,"reached rewind.%d, ./komodo-cli stop now\n",KOMODO_REWIND);
             sleep(3);
             return(false);
         }
