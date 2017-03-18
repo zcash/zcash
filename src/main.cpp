@@ -2779,7 +2779,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
             pindexFork = chainActive.FindFork(pindexMostWork);
             sleep(3);
             didinit++;
-            return(false);
+            return(true);
         }
         if ( didinit == 0 )
         {
