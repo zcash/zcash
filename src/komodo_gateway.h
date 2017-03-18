@@ -1156,7 +1156,7 @@ void komodo_passport_iteration()
     starttime = (uint32_t)time(NULL);
     //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=32; baseid>=0; baseid--)
-    {
+    {break;
         if ( time(NULL) >= starttime+maxseconds )
             break;
         sp = 0;
