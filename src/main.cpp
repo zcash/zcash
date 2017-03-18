@@ -2772,8 +2772,16 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     if ( KOMODO_REWIND < 0 )
     {
         fprintf(stderr,"chaintip %d vs rewind.%d\n",(int32_t)chainActive.Tip()->nHeight,KOMODO_REWIND);
+        for (i=0; i<-KOMODO_REWIND; i++)
+        {
+            if ( !DisconnectTip(state) )
+            {
+                //InvalidateBlock(state,chainActive.Tip());
+                return false;
+            }
+        }
         sleep(3);
-        KOMODO_REWIND++;
+        KOMODO_REWIND = 0;
     }
     /*if ( KOMODO_REWIND != 0 && chainActive.Tip()->nHeight >= KOMODO_REWIND )
     {
