@@ -2874,6 +2874,7 @@ bool ActivateBestChain(CValidationState &state, CBlock *pblock) {
                 if ( KOMODO_REWIND == 0 )
                     return false;
                 fprintf(stderr,"ActivateBestChainStep rewind case\n");
+                return true;
             }
             pindexNewTip = chainActive.Tip();
             fInitialDownload = IsInitialBlockDownload();
