@@ -119,7 +119,7 @@ extern std::string NOTARY_PUBKEY;
 
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
-    extern int32_t KOMODO_REWIND;
+    //extern int32_t KOMODO_REWIND;
     bool fNegative,fOverflow; int32_t i,nonzpkeys=0,nonz=0,special=0,special2=0,notaryid=-1,duplicate,flag = 0, mids[66];
     arith_uint256 bnTarget; CBlockIndex *pindex; uint8_t pubkeys[66][33];
 
@@ -155,7 +155,8 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( (height < 235300 || height >= 236000) && KOMODO_LOADINGBLOCKS == 0 && height > 188000 && KOMODO_REWIND == 0 )//186269, 182507&& komodo_chainactive(height) != 0 && nonzpkeys > 0
+        if ( (height < 235300 || height >= 236000) && KOMODO_LOADINGBLOCKS == 0 && height > 188000 )
+            //&& KOMODO_REWIND == 0 )//186269, 182507&& komodo_chainactive(height) != 0 && nonzpkeys > 0
         {
             int32_t i;
             for (i=31; i>=0; i--)
@@ -163,7 +164,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             printf(" hash vs ");
             for (i=31; i>=0; i--)
                 printf("%02x",((uint8_t *)&bnTarget)[i]);
-            printf(" ht.%d REWIND.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,KOMODO_REWIND,special,notaryid,height,(height % 35));
+            printf(" ht.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,special,notaryid,height,(height % 35));
             for (i=0; i<33; i++)
                 printf("%02x",pubkey33[i]);
             printf(" <- pubkey\n");
