@@ -1456,13 +1456,17 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (mapArgs.count("-blocknotify"))
         uiInterface.NotifyBlockTip.connect(BlockNotifyCallback);
-
-    uiInterface.InitMessage(_("Activating best chain..."));
-    // scan for better chains in the block chain database, that are not yet connected in the active best chain
-    CValidationState state;
-    if ( !ActivateBestChain(state))
-        strErrors << "Failed to connect best block";
-
+    extern int32_t KOMODO_REWIND;
+    if ( KOMODO_REWIND < 0 )
+        KOMODO_REWIND = 0;
+    else
+    {
+        uiInterface.InitMessage(_("Activating best chain..."));
+        // scan for better chains in the block chain database, that are not yet connected in the active best chain
+        CValidationState state;
+        if ( !ActivateBestChain(state))
+            strErrors << "Failed to connect best block";
+    }
     std::vector<boost::filesystem::path> vImportFiles;
     if (mapArgs.count("-loadblock"))
     {
