@@ -678,7 +678,9 @@ void static BitcoinMiner(CWallet *pwallet)
                             }
                             for (j=gpucount=0; j<65; j++)
                             {
-                                fprintf(stderr,"%d ",mids[j]);
+                                if ( mids[j] >= 0 )
+                                    fprintf(stderr,"%d ",mids[j]);
+                                else fprintf(stderr,"GPU ");
                                 if ( mids[j] == -1 )
                                     gpucount++;
                             }
