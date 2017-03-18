@@ -2785,7 +2785,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
                 fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
                 if ( !DisconnectTip(state) )
                 {
-                    InvalidateBlock(state,chainActive.Tip())
+                    InvalidateBlock(state,chainActive.Tip());
                     return false;
                 }
             }
