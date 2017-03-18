@@ -88,6 +88,12 @@ AC_ARG_ENABLE([mining],
   [enable_mining=$enableval],
   [enable_mining=yes])
 
+AC_ARG_ENABLE([rust],
+  [AS_HELP_STRING([--enable-rust],
+  [enable rust (default is yes)])],
+  [enable_rust=$enableval],
+  [enable_rust=yes])
+
 AC_ARG_WITH([miniupnpc],
   [AS_HELP_STRING([--with-miniupnpc],
   [enable UPNP (default is yes if libminiupnpc is found)])],
@@ -751,7 +757,12 @@ CPPFLAGS="-I$LIBSNARK_INCDIR $CPPFLAGS"
 AC_CHECK_HEADER([libsnark/gadgetlib1/gadget.hpp],,AC_MSG_ERROR(libsnark headers missing))
 AC_CHECK_LIB([snark],[main],LIBSNARK_LIBS=-lsnark, [AC_MSG_ERROR(libsnark missing)], [-lgmpxx])
 
-LIBZCASH_LIBS="-lrustzcash -lsnark -lgmp -lgmpxx -lboost_system-mt -lcrypto -lsodium -fopenmp"
+RUST_LIBS=""
+if test x$enable_rust != xno; then
+  RUST_LIBS="-lrustzcash"
+fi
+
+LIBZCASH_LIBS="-lsnark -lgmp -lgmpxx -lboost_system-mt -lcrypto -lsodium -fopenmp $RUST_LIBS"
 
 CXXFLAGS_TEMP="$CXXFLAGS"
 LIBS_TEMP="$LIBS"
@@ -819,6 +830,16 @@ else
   AC_MSG_RESULT(no)
 fi
 
+dnl enable rust
+AC_MSG_CHECKING([if rust should be enabled])
+if test x$enable_rust != xno; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(ENABLE_RUST, 1, [Define to 1 to enable Rust language dependent functions])
+
+else
+  AC_MSG_RESULT(no)
+fi
+
 dnl enable upnp support
 AC_MSG_CHECKING([whether to build with support for UPnP])
 if test x$have_miniupnpc = xno; then
@@ -873,6 +894,7 @@ AM_CONDITIONAL([BUILD_DARWIN], [test x$BUILD_OS = xdarwin])
 AM_CONDITIONAL([TARGET_WINDOWS], [test x$TARGET_OS = xwindows])
 AM_CONDITIONAL([ENABLE_WALLET],[test x$enable_wallet = xyes])
 AM_CONDITIONAL([ENABLE_MINING],[test x$enable_mining = xyes])
+AM_CONDITIONAL([ENABLE_RUST],[test x$enable_rust = xyes])
 AM_CONDITIONAL([ENABLE_TESTS],[test x$BUILD_TEST = xyes])
 AM_CONDITIONAL([USE_LCOV],[test x$use_lcov = xyes])
 AM_CONDITIONAL([USE_COMPARISON_TOOL],[test x$use_comparison_tool != xno])
