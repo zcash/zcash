@@ -684,7 +684,7 @@ void static BitcoinMiner(CWallet *pwallet)
                                 if ( mids[j] == -1 )
                                     gpucount++;
                             }
-                            fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%%\n",pindexPrev->nHeight,notaryid,gpucount,100.*(double)gpucount/j);
+                            fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%% t.%u\n",pindexPrev->nHeight,notaryid,gpucount,100.*(double)gpucount/j,(uint32_t)time(NULL));
                         }
                         for (j=0; j<65; j++)
                             if ( mids[j] == notaryid )
