@@ -1244,14 +1244,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     LogPrintf("Prune: pruned datadir may not have more than %d blocks; -checkblocks=%d may fail\n",
                         MIN_BLOCKS_TO_KEEP, GetArg("-checkblocks", 288));
                 }
-                extern int32_t KOMODO_REWIND;
-                if ( KOMODO_REWIND == 0 )
-                {
-                    if (!CVerifyDB().VerifyDB(pcoinsdbview, GetArg("-checklevel", 3),
-                                              GetArg("-checkblocks", 288))) {
-                        strLoadError = _("Corrupted block database detected");
-                        break;
-                    }
+                if (!CVerifyDB().VerifyDB(pcoinsdbview, GetArg("-checklevel", 3),
+                                          GetArg("-checkblocks", 288))) {
+                    strLoadError = _("Corrupted block database detected");
+                    break;
                 }
             } catch (const std::exception& e) {
                 if (fDebug) LogPrintf("%s\n", e.what());
@@ -1464,7 +1460,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     uiInterface.InitMessage(_("Activating best chain..."));
     // scan for better chains in the block chain database, that are not yet connected in the active best chain
     CValidationState state;
-    if (!ActivateBestChain(state))
+    if ( !ActivateBestChain(state))
         strErrors << "Failed to connect best block";
 
     std::vector<boost::filesystem::path> vImportFiles;

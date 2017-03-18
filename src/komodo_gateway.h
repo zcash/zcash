@@ -1127,7 +1127,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 
 void komodo_passport_iteration()
 {
-    static long lastpos[34]; static char userpass[33][1024]; int32_t maxseconds = 17;
+    static long lastpos[34]; static char userpass[33][1024]; int32_t maxseconds = 1;
     FILE *fp; int32_t baseid,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
     //printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
     expired = 0;
@@ -1176,7 +1176,7 @@ void komodo_passport_iteration()
                     if ( 0 && lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
                         printf("passport refid.%d %s fname.(%s) base.%s\n",refid,symbol,fname,base);
                     fseek(fp,lastpos[baseid],SEEK_SET);
-                    while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 && n < 10000 )
+                    while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 && n < 1000 )
                     {
                         if ( n == 999 )
                         {
@@ -1207,7 +1207,7 @@ void komodo_passport_iteration()
                         isrealtime = 1;
                         RTmask |= (1LL << baseid);
                         memcpy(refsp->RTbufs[baseid+1],buf,sizeof(refsp->RTbufs[baseid+1]));
-                    } else if ( (time(NULL)-buf[2]) > 1800 )
+                    } else if ( (time(NULL)-buf[2]) > 1800 && ASSETCHAINS_SYMBOL[0] != 0 )
                         fprintf(stderr,"[%s]: %s not RT %u %u %d\n",ASSETCHAINS_SYMBOL,base,buf[0],buf[1],(int32_t)(time(NULL)-buf[2]));
                 } //else fprintf(stderr,"%s size error RT\n",base);
                 fclose(fp);

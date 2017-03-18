@@ -1548,8 +1548,8 @@ bool IsInitialBlockDownload()
     else if ( pindexBestHeader != 0 && pindexBestHeader->nHeight > ptr->nHeight )
         ptr = pindexBestHeader;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        state = (chainActive.Height() < ptr->nHeight - 24*6) ||
-                    ptr->GetBlockTime() < (GetTime() - chainParams.MaxTipAge());
+        state = ((chainActive.Height() < ptr->nHeight - 24*6) ||
+                    ptr->GetBlockTime() < (GetTime() - chainParams.MaxTipAge()));
     else state = (chainActive.Height() < ptr->nHeight - 100);
     //fprintf(stderr,"state.%d  ht.%d vs %d, t.%u %u\n",state,(int32_t)chainActive.Height(),(uint32_t)ptr->nHeight,(int32_t)ptr->GetBlockTime(),(uint32_t)(GetTime() - chainParams.MaxTipAge()));
     if (!state)
@@ -2758,7 +2758,6 @@ static void PruneBlockIndexCandidates() {
  * pblock is either NULL or a pointer to a CBlock corresponding to pindexMostWork.
  */
 static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMostWork, CBlock *pblock) {
-    extern int32_t KOMODO_REWIND;
     AssertLockHeld(cs_main);
     bool fInvalidFound = false;
     const CBlockIndex *pindexOldTip = chainActive.Tip();
@@ -2769,30 +2768,28 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         if (!DisconnectTip(state))
             return false;
     }
+    /*fprintf(stderr,"chaintip %d vs rewind.%d\n",(int32_t)chainActive.Tip()->nHeight,KOMODO_REWIND);
     if ( KOMODO_REWIND != 0 && chainActive.Tip()->nHeight >= KOMODO_REWIND )
     {
-        //static int32_t didinit;
-        //if ( didinit++ == 0 )
-        if ( chainActive.Tip()->nHeight == KOMODO_REWIND+1 )
+        fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
+        while ( chainActive.Tip()->nHeight > KOMODO_REWIND )
+        {
+            if ( !DisconnectTip(state) )
+            {
+                //InvalidateBlock(state,chainActive.Tip());
+                return false;
+            }
+        }
+        fprintf(stderr,"end rewind ht.%d\n",chainActive.Tip()->nHeight);
+        if ( chainActive.Tip()->nHeight == KOMODO_REWIND )
         {
             fprintf(stderr,"reached rewind.%d, best to do: ./komodo-cli stop\n",KOMODO_REWIND);
             sleep(3);
-            return(false);
+            return(true);
         }
-        {
-            while (chainActive.Tip()->nHeight > KOMODO_REWIND )
-            {
-                fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
-                if ( !DisconnectTip(state) )
-                {
-                    InvalidateBlock(state,chainActive.Tip());
-                    return false;
-                }
-            }
-            pindexOldTip = chainActive.Tip();
-            pindexFork = chainActive.FindFork(pindexMostWork);
-        }
-    }
+        pindexOldTip = chainActive.Tip();
+        pindexFork = chainActive.FindFork(pindexMostWork);
+    }*/
     // Build list of new blocks to connect.
     std::vector<CBlockIndex*> vpindexToConnect;
     bool fContinue = true;
@@ -2868,7 +2865,6 @@ bool ActivateBestChain(CValidationState &state, CBlock *pblock) {
 
             if (!ActivateBestChainStep(state, pindexMostWork, pblock && pblock->GetHash() == pindexMostWork->GetBlockHash() ? pblock : NULL))
                 return false;
-
             pindexNewTip = chainActive.Tip();
             fInitialDownload = IsInitialBlockDownload();
         }
