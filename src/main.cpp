@@ -2775,9 +2775,11 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         //if ( didinit++ == 0 )
         if ( chainActive.Tip()->nHeight == KOMODO_REWIND )
         {
-            pindexMostWork = chainActive.Tip();
+            pindexOldTip = pindexMostWork = chainActive.Tip();
             fprintf(stderr,"reached rewind.%d, best to do: ./komodo-cli stop\n",KOMODO_REWIND);
-            return(false);
+            pindexFork = chainActive.FindFork(pindexMostWork);
+            sleep(3);
+            //return(false);
         }
         {
             while (chainActive.Tip()->nHeight > KOMODO_REWIND )
