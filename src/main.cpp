@@ -2870,12 +2870,7 @@ bool ActivateBestChain(CValidationState &state, CBlock *pblock) {
                 return true;
 
             if (!ActivateBestChainStep(state, pindexMostWork, pblock && pblock->GetHash() == pindexMostWork->GetBlockHash() ? pblock : NULL))
-            {
-                if ( KOMODO_REWIND == 0 )
-                    return false;
-                fprintf(stderr,"ActivateBestChainStep rewind case\n");
-                return true;
-            }
+                return false;
             pindexNewTip = chainActive.Tip();
             fInitialDownload = IsInitialBlockDownload();
         }
