@@ -694,6 +694,13 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
+        extern int32_t KOMODO_REWIND;
+        if ( KOMODO_REWIND < 0 )
+        {
+            fprintf(stderr,"rewind.%d\n",KOMODO_REWIND);
+            sleep(3);
+            KOMODO_REWIND = 0;
+        }
         for (i=0; i<opretlen; i++)
             printf("%02x",script[i]);
         printf(" height.%d checkdeposit n.%d [%02x] [%c] %d vs %d\n",height,n,script[0],script[offset],script[offset],'X');
