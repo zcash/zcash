@@ -2771,17 +2771,17 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     }
     if ( KOMODO_REWIND != 0 && chainActive.Tip()->nHeight >= KOMODO_REWIND )
     {
-        //static int32_t didinit;
-        //if ( didinit++ == 0 )
+        static int32_t didinit;
         if ( chainActive.Tip()->nHeight == KOMODO_REWIND )
         {
             pindexOldTip = pindexMostWork = chainActive.Tip();
             fprintf(stderr,"reached rewind.%d, best to do: ./komodo-cli stop\n",KOMODO_REWIND);
             pindexFork = chainActive.FindFork(pindexMostWork);
-            KOMODO_REWIND = 0;
             sleep(3);
-            //return(false);
+            didinit++;
+            return(false);
         }
+        if ( didinit == 0 )
         {
             while (chainActive.Tip()->nHeight > KOMODO_REWIND )
             {
@@ -2870,8 +2870,11 @@ bool ActivateBestChain(CValidationState &state, CBlock *pblock) {
                 return true;
 
             if (!ActivateBestChainStep(state, pindexMostWork, pblock && pblock->GetHash() == pindexMostWork->GetBlockHash() ? pblock : NULL))
-                return false;
-
+            {
+                if ( KOMODO_REWIND == 0 )
+                    return false;
+                fprintf(stderr,"ActivateBestChainStep rewind case\n");
+            }
             pindexNewTip = chainActive.Tip();
             fInitialDownload = IsInitialBlockDownload();
         }
