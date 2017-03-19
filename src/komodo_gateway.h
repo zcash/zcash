@@ -727,8 +727,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         while ( KOMODO_PASSPORT_INITDONE == 0 )
         {
-            fprintf(stderr,".");
-            sleep(3);
+            komodo_passport_iteration();
+            //sleep(3);
         }
         if ( KOMODO_PASSPORT_INITDONE == 0 ) // komodo_isrealtime(&ht) == 0 ||  init time already in DB
             return(0);
