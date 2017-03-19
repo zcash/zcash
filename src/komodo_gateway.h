@@ -736,7 +736,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             return(0);
         // f9510bbd58f90ea133653005a6e3087779fd838317518ba63cce2b0fc381dff6 1337
         // 7b6e26d9ffbb7cc1b71185c38906b71632324d1c9df3a2596d09e1353a714c27 1338
-        if ( baseid == USD && (height == 1337 || height == 1338 || height == 1339 || height == 1344) )
+        if ( baseid == USD && (height <= 1344) )
             return(0);
     }
     if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
