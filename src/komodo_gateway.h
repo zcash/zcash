@@ -736,7 +736,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             return(0);
         // f9510bbd58f90ea133653005a6e3087779fd838317518ba63cce2b0fc381dff6 1337
         // 7b6e26d9ffbb7cc1b71185c38906b71632324d1c9df3a2596d09e1353a714c27 1338
-        if ( baseid == USD && (height <= 1344) )
+        if ( baseid == USD && (height <= 1400) )
             return(0);
     }
     if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
@@ -819,9 +819,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     }
     else
     {
-        for (i=0; i<opretlen; i++)
+        for (i=0; i<opretlen&&i<100; i++)
             printf("%02x",script[i]);
-        printf(" height.%d checkdeposit n.%d [%02x] [%c] %d ",height,n,script[0],script[offset],script[offset]);
+        printf(" height.%d checkdeposit n.%d [%02x] [%c] %d len.%d ",height,n,script[0],script[offset],script[offset],opretlen);
         printf("not proper vout with opreturn format ht.%d\n",height);
         return(-1);
     }
