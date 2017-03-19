@@ -737,7 +737,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             komodo_passport_iteration();
         if ( baseid == USD )
         {
-            if ( baseid == USD && (height <= 2000 || height == 3282 || height == 3328 || height == 3468) )
+            if ( baseid == USD && (height <= 2000 || height == 3275 || height == 3282 || height == 3328 || height == 3468) )
             return(0);
         }
     }
