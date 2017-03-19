@@ -3213,7 +3213,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     if (nSigOps > MAX_BLOCK_SIGOPS)
         return state.DoS(100, error("CheckBlock(): out-of-bounds SigOpCount"),
                          REJECT_INVALID, "bad-blk-sigops", true);
-    if ( komodo_check_deposit(height,block) < 0 )
+    if ( komodo_check_deposit(ASSETCHAINS_SYMBOL[0] == 0 height : (int32_t)pindex->nHeight,block) < 0 )
     {
         static uint32_t counter;
         if ( counter++ < 100 )
