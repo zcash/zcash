@@ -812,10 +812,30 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else
         {
-            for (i=0; i<n; i++)
-                printf("%.8f ",dstr(block.vtx[0].vout[i].nValue));
-            printf("no opreturn entries to check ht.%d\n",height);
-            return(-1);
+            int64_t val,prevtotal = 0; int32_t overflow = 0;
+            total = 0;
+            for (i=1; i<n; i++)
+            {
+                if ( (val= block.vtx[0].vout[i].nValue) < 0 || val >= MAX_MONEY )
+                {
+                    overflow = 1;
+                    break;
+                }
+                total += val;
+                if ( total < prevtotal || (val != 0 && total == prevtotal) )
+                {
+                    overflow = 1;
+                    break;
+                }
+                prevtotal = total;
+            }
+            if ( overflow != 0 || total > COIN/10 )
+            {
+                for (i=0; i<n; i++)
+                    printf("%.8f ",dstr(block.vtx[0].vout[i].nValue));
+                printf("no opreturn entries to check ht.%d\n",height);
+                return(-1);
+            } else return(0);
         }
         //printf("opretlen.%d num.%d\n",opretlen,num);
     }
