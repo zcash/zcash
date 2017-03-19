@@ -817,7 +817,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     }
     else
     {
-        printf("not proper vout with opreturn format\n");
+        printf("not proper vout with opreturn format ht.%d\n",height);
         return(-1);
     }
     return(0);
