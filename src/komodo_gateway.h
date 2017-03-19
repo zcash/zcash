@@ -734,7 +734,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         if ( KOMODO_PASSPORT_INITDONE == 0 ) // komodo_isrealtime(&ht) == 0 ||  init time already in DB
             return(0);
-        if ( baseid == USD && (height == 1344 || height == 1399) )
+        if ( baseid == USD && (height == 1339 || height == 1344) )
             return(0);
     }
     if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
