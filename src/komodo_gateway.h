@@ -704,9 +704,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             KOMODO_REWIND = 0;
         }
         // 6a35506c65617365206d616b6520796f75722047697420636f6d6d6974206d65737361676573206d6f726520696e74657265737469 height.241778 checkdeposit n.4 [6a] [P] 80 vs 88
-        for (i=0; i<opretlen; i++)
-            printf("%02x",script[i]);
-        printf(" height.%d checkdeposit n.%d [%02x] [%c] %d vs %d\n",height,n,script[0],script[offset],script[offset],'X');
+        //for (i=0; i<opretlen; i++)
+        //    printf("%02x",script[i]);
+        //printf(" height.%d checkdeposit n.%d [%02x] [%c] %d vs %d\n",height,n,script[0],script[offset],script[offset],'X');
         opcode = 'X';
         if ( height >= 235300 )
             return(-1);
@@ -734,7 +734,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         if ( KOMODO_PASSPORT_INITDONE == 0 ) // komodo_isrealtime(&ht) == 0 ||  init time already in DB
             return(0);
-        if ( baseid == USD && (height <= 4000 || komodo_isrealtime(&ht) == 0) )
+        if ( baseid == USD && height <= 4000 )
             return(0);
     }
     if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
