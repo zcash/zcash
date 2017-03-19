@@ -709,6 +709,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         if ( height >= 235300 )
             return(-1);
         strcpy(symbol,(char *)"KMD");
+        if ( komodo_isrealtime(&ht) == 0 || KOMODO_PASSPORT_INITDONE == 0 ) // init time already in DB
+            return(0);
     }
     else
     {
@@ -723,15 +725,18 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             }
             return(0);
         }
+        while ( KOMODO_PASSPORT_INITDONE == 0 )
+        {
+            fprintf(stderr,".");
+            sleep(3);
+        }
+        if ( KOMODO_PASSPORT_INITDONE == 0 ) // komodo_isrealtime(&ht) == 0 ||  init time already in DB
+            return(0);
     }
-    if ( komodo_isrealtime(&ht) == 0 || KOMODO_PASSPORT_INITDONE == 0 ) // init time already in DB
-        return(0);
     if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
     {
-        printf("inside if\n");
         if ( (num= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,&script[offset],opretlen,opcode == 'X')) > 0 )
         {
-            printf("num.%d\n",num);
             for (i=1; i<n-1; i++)
             {
                 if ( (sp= komodo_stateptrget(CURRENCIES[baseids[i-1]])) != 0 && (sp->RTmask & (1LL << baseids[i-1])) == 0 )
