@@ -1208,7 +1208,7 @@ void komodo_passport_iteration()
                             n++;
                         }
                         lastpos[baseid] = ftell(fp);
-                        if ( lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
+                        //if ( lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
                             printf("from.(%s) lastpos[%s] %ld isrt.%d\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid],komodo_isrealtime(&ht));
                     } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                     fclose(fp);
