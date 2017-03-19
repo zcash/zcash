@@ -806,7 +806,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else
         {
-            printf("no opreturn entries to check\n");
+            printf("no opreturn entries to check ht.%d %d\n",height,ht);
             return(-1);
         }
         //printf("opretlen.%d num.%d\n",opretlen,num);
