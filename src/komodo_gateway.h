@@ -734,7 +734,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         if ( KOMODO_PASSPORT_INITDONE == 0 ) // komodo_isrealtime(&ht) == 0 ||  init time already in DB
             return(0);
-        if ( baseid == USD && height <= 3900 )
+        if ( 0 && baseid == USD && height <= 3900 )
             return(0);
     }
     if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
@@ -1192,8 +1192,8 @@ void komodo_passport_iteration()
                     fseek(fp,0,SEEK_END);
                     if ( ftell(fp) > lastpos[baseid] )
                     {
-                        //if ( 0 && lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
-                            printf("passport refid.%d %s fname.(%s) base.%s %ld %ld\n",refid,symbol,fname,base,ftell(fp),lastpos[baseid]);
+                        if ( strcmp(symbol,"KMD") != 0 )
+                            printf("%s passport refid.%d %s fname.(%s) base.%s %ld %ld\n",ASSETCHAINS_SYMBOL,refid,symbol,fname,base,ftell(fp),lastpos[baseid]);
                         fseek(fp,lastpos[baseid],SEEK_SET);
                         while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 && n < 1000 )
                         {
