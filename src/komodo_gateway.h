@@ -462,7 +462,7 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
 
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t tokomodo)
 {
-    struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[16384],data[16384]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t available,deposited,issued,withdrawn,approved,redeemed,mask;
+    struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[16384],data[16384]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t available,deposited,issued,withdrawn,approved,redeemed,mask,sum = 0;
     if ( KOMODO_PASSPORT_INITDONE == 0 )//KOMODO_PAX == 0 ||
         return(0);
     struct komodo_state *kmdsp = komodo_stateptrget((char *)"KMD");
@@ -552,6 +552,12 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         //printf("redeem.%d? (%c) %p pax.%s marked.%d %.8f -> %.8f ready.%d validated.%d approved.%d\n",tokomodo,pax->type,pax,pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->ready!=0,pax->validated!=0,pax->approved!=0);
         if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
             printf("pax.%s marked.%d %.8f -> %.8f\n",ASSETCHAINS_SYMBOL,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis));
+        if ( opcode == 'I' )
+        {
+            sum += pax->fiatoshis;
+            if ( sum > available )
+                break;
+        }
         txNew->vout.resize(numvouts+1);
         txNew->vout[numvouts].nValue = (opcode == 'I') ? pax->fiatoshis : pax->komodoshis;
         txNew->vout[numvouts].scriptPubKey.resize(25);
@@ -731,7 +737,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             komodo_passport_iteration();
         if ( baseid == USD )
         {
-            if ( baseid == USD && height <= 2000 )// || height == 3282 || height == 3328 || height == 3468) )
+            if ( baseid == USD && (height <= 2000 || height == 3282 || height == 3328 || height == 3468) )
             return(0);
         }
     }
