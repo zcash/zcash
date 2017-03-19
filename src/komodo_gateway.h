@@ -768,9 +768,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         }
                         else
                         {
-                            if ( strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i]]) == 0 )
-                                printf("check deposit validates %s %.8f -> %.8f\n",CURRENCIES[baseids[i]],dstr(srcvalues[i]),dstr(values[i]));
                         }
+                        if ( strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]) == 0 )
+                            printf("check deposit validates %s %.8f -> %.8f\n",CURRENCIES[baseids[i]],dstr(srcvalues[i]),dstr(values[i]));
                     }
                     else
                     {
