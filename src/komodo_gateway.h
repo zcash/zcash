@@ -701,6 +701,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             sleep(3);
             KOMODO_REWIND = 0;
         }
+        // 6a35506c65617365206d616b6520796f75722047697420636f6d6d6974206d65737361676573206d6f726520696e74657265737469 height.241778 checkdeposit n.4 [6a] [P] 80 vs 88
         for (i=0; i<opretlen; i++)
             printf("%02x",script[i]);
         printf(" height.%d checkdeposit n.%d [%02x] [%c] %d vs %d\n",height,n,script[0],script[offset],script[offset],'X');
@@ -723,12 +724,14 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             return(0);
         }
     }
-    if ( komodo_isrealtime(&ht) == 0 || KOMODO_PASSPORT_INITDONE == 0 ) //KOMODO_PAX == 0 ||
+    if ( komodo_isrealtime(&ht) == 0 || KOMODO_PASSPORT_INITDONE == 0 ) // init time already in DB
         return(0);
     if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
     {
+        printf("inside if\n");
         if ( (num= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,&script[offset],opretlen,opcode == 'X')) > 0 )
         {
+            printf("num.%d\n",num);
             for (i=1; i<n-1; i++)
             {
                 if ( (sp= komodo_stateptrget(CURRENCIES[baseids[i-1]])) != 0 && (sp->RTmask & (1LL << baseids[i-1])) == 0 )
@@ -747,18 +750,15 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     }
                     if ( pax->fiatoshis == block.vtx[0].vout[i].nValue )
                     {
+                        matched++;
                         if ( pax->marked != 0 && height >= 80820 )
                         {
                             printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f paxmarked.%d kht.%d ht.%d\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax->marked,pax->height,pax->otherheight);
-                            if ( pax->komodoshis != 0 || pax->fiatoshis != 0 )
-                                errs++;
-                            else matched++; // onetime init bypass
                         }
                         else
                         {
-                            if ( opcode == 'X' && strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i]]) == 0 )
+                            if ( strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i]]) == 0 )
                                 printf("check deposit validates %s %.8f -> %.8f\n",CURRENCIES[baseids[i]],dstr(srcvalues[i]),dstr(values[i]));
-                            matched++;
                         }
                     }
                     else

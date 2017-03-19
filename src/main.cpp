@@ -3435,7 +3435,7 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
         komodo_currentheight_set(chainActive.Tip()->nHeight);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier);
-    else checked = CheckBlock(0,0,*pblock, state, verifier);
+    else checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier);
     {
         LOCK(cs_main);
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
