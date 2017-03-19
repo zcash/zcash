@@ -532,7 +532,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         {
             if ( strcmp(pax->symbol,ASSETCHAINS_SYMBOL) == 0 )
                 printf("pax->symbol.%s != %s or null pax->validated %.8f ready.%d ht.(%d %d)\n",pax->symbol,symbol,dstr(pax->validated),pax->ready,kmdsp->CURRENT_HEIGHT,pax->height);
-            pax->marked = pax->fiatoshis;
+            pax->marked = pax->height;
             continue;
         }
         if ( pax->ready == 0 )
