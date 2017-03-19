@@ -738,7 +738,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         // 7b6e26d9ffbb7cc1b71185c38906b71632324d1c9df3a2596d09e1353a714c27 1338
         if ( baseid == USD )
         {
-            if ( (height < 4000 && (opretlen == 48897 || opretlen == 9474)) || (height <= 2200 || height == 3282 || height == 3328 || height == 3468) )
+            if ( (height < 4000 && (opretlen == 39 || opretlen == 141 || opretlen == 107 || opretlen == 48897 || opretlen == 9474)) || (height <= 2200 || height == 3282 || height == 3328 || height == 3468) )
             return(0);
         }
     }
