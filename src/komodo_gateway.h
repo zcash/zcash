@@ -812,6 +812,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else
         {
+            for (i=0; i<n; i++)
+                printf("%.8f ",dstr(block.vtx[0].vout[i].nValue));
             printf("no opreturn entries to check ht.%d\n",height);
             return(-1);
         }
