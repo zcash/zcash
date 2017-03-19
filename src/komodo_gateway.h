@@ -632,6 +632,8 @@ void komodo_bannedset(uint256 *array,int32_t max)
     //else printf("set %d banned txids\n",max);
 }
 
+void komodo_passport_iteration();
+
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
     static uint256 array[15];
