@@ -734,7 +734,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         if ( KOMODO_PASSPORT_INITDONE == 0 ) // komodo_isrealtime(&ht) == 0 ||  init time already in DB
             return(0);
-        if ( 0 && baseid == USD && height <= 3900 )
+        if ( baseid == USD && height == 1344 )
             return(0);
     }
     if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
@@ -817,6 +817,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     }
     else
     {
+        for (i=0; i<opretlen; i++)
+            printf("%02x",script[i]);
+        printf(" height.%d checkdeposit n.%d [%02x] [%c] %d ",height,n,script[0],script[offset],script[offset]);
         printf("not proper vout with opreturn format ht.%d\n",height);
         return(-1);
     }
