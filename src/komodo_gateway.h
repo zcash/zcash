@@ -725,13 +725,13 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             }
             return(0);
         }
-        while ( KOMODO_PASSPORT_INITDONE == 0 )
+        /*while ( KOMODO_PASSPORT_INITDONE == 0 )
         {
             fprintf(stderr,".");
             sleep(3);
         }
         if ( KOMODO_PASSPORT_INITDONE == 0 ) // komodo_isrealtime(&ht) == 0 ||  init time already in DB
-            return(0);
+            return(0);*/
         if ( baseid == USD && (height <= 4000 || komodo_isrealtime(&ht) == 0) )
             return(0);
     }
@@ -1208,7 +1208,7 @@ void komodo_passport_iteration()
                             n++;
                         }
                         lastpos[baseid] = ftell(fp);
-                        //if ( lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
+                        if ( lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
                             printf("from.(%s) lastpos[%s] %ld isrt.%d\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid],komodo_isrealtime(&ht));
                     } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                     fclose(fp);
