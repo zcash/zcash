@@ -737,8 +737,163 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             komodo_passport_iteration();
         if ( baseid == USD )
         {
-            if ( baseid == USD && (height <= 2000 || height == 3275 || height == 3282 || height == 3328 || height == 3468) )
+            if ( height <= 2000 || height == 3275 || height == 3282 || height == 3328 || height == 3468 )
             return(0);
+        }
+        else if ( baseid == EUR )
+        {
+            if ( height == 1313 )
+                return(0);
+        }
+        else if ( baseid == JPY )
+        {
+            if ( height == 1014 )
+                return(0);
+        }
+        else if ( baseid == GBP )
+        {
+            if ( height == 997 )
+                return(0);
+        }
+        else if ( baseid == AUD )
+        {
+            if ( height == 985 )
+                return(0);
+        }
+        else if ( baseid == CAD )
+        {
+            if ( height == 1181 )
+                return(0);
+        }
+        else if ( baseid == CHF )
+        {
+            if ( height == 960 )
+                return(0);
+        }
+        else if ( baseid == NZD )
+        {
+            if ( height == 1113 )
+                return(0);
+        }
+        else if ( baseid == CNY )
+        {
+            if ( height == 982 )
+                return(0);
+        }
+        else if ( baseid == RUB )
+        {
+            if ( height == 1074 )
+                return(0);
+        }
+        else if ( baseid == MXN )
+        {
+            if ( height == 1069 )
+                return(0);
+        }
+        else if ( baseid == BRL )
+        {
+            if ( height == 972 )
+                return(0);
+        }
+        else if ( baseid == INR )
+        {
+            if ( height == 788 )
+                return(0);
+        }
+        else if ( baseid == PLN )
+        {
+            if ( height == 1009 )
+                return(0);
+        }
+        else if ( baseid == HKD )
+        {
+            if ( height == 1002 )
+                return(0);
+        }
+        else if ( baseid == TRY )
+        {
+            if ( height == 991 )
+                return(0);
+        }
+        else if ( baseid == NOK )
+        {
+            if ( height == 962 )
+                return(0);
+        }
+        else if ( baseid == ZAR )
+        {
+            if ( height == 956 )
+                return(0);
+        }
+        else if ( baseid == SEK )
+        {
+            if ( height == 943 )
+                return(0);
+        }
+        else if ( baseid == CZK )
+        {
+            if ( height == 1079 )
+                return(0);
+        }
+        else if ( baseid == HUF )
+        {
+            if ( height == 2378 )
+                return(0);
+        }
+        else if ( baseid == DKK )
+        {
+            if ( height == 1214 )
+                return(0);
+        }
+        else if ( baseid == ILS )
+        {
+            if ( height == 1010 )
+                return(0);
+        }
+        else if ( baseid == MYR )
+        {
+            if ( height == 1015 )
+                return(0);
+        }
+        else if ( baseid == PHP )
+        {
+            if ( height == 1154 )
+                return(0);
+        }
+        else if ( baseid == KRW )
+        {
+            if ( height == 1010 )
+                return(0);
+        }
+        else if ( baseid == RON )
+        {
+            if ( height == 1003 )
+                return(0);
+        }
+        else if ( baseid == SGD )
+        {
+            if ( height == 1010 )
+                return(0);
+        }
+        else if ( baseid == THB )
+        {
+            if ( height == 968 )
+                return(0);
+        }
+        else if ( baseid == BGN )
+        {
+            if ( height == 1030 )
+                return(0);
+        }
+        else if ( baseid == HRK )
+        {
+            if ( height == 1022 )
+                return(0);
+        }
+        else if ( baseid == IDR )
+        {
+            if ( height == 720 )
+                return(0);
         }
     }
     if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
@@ -1258,7 +1413,7 @@ void komodo_passport_iteration()
                             isrealtime = 1;
                             RTmask |= (1LL << baseid);
                             memcpy(refsp->RTbufs[baseid+1],buf,sizeof(refsp->RTbufs[baseid+1]));
-                        } else if ( (time(NULL)-buf[2]) > 1800 && ASSETCHAINS_SYMBOL[0] != 0 )
+                        } else if ( KOMODO_PAX != 0 && (time(NULL)-buf[2]) > 1800 && ASSETCHAINS_SYMBOL[0] != 0 )
                             fprintf(stderr,"[%s]: %s not RT %u %u %d\n",ASSETCHAINS_SYMBOL,base,buf[0],buf[1],(int32_t)(time(NULL)-buf[2]));
                     } //else fprintf(stderr,"%s size error RT\n",base);
                     fclose(fp);
