@@ -739,6 +739,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         while ( KOMODO_PASSPORT_INITDONE == 0 )
             komodo_passport_iteration();
         // grandfathering preexisting
+        if ( height < 300 )
+            return(0);
         if ( baseid == USD ) // 6820 in balance calcs
         {
             if ( height <= 2000 || height == 3275 || height == 3282 || height == 3328 || height == 3468 || height == 6820 )
@@ -746,7 +748,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == EUR )
         {
-            if ( height == 1313 || height == 1288 || height == 1263 || height == 1262 || height == 211 || height == 210 || height == 188 || height == 185 || height == 182 || height == 181 || height == 171 || height == 170 || height == 169 || height == 168 || height == 167 || height == 166 || height == 165 || height == 164 || height == 163 || height == 162 )
+            if ( height == 1313 || height == 1288 || height == 1263 || height == 1262 || height <= 211 || height == 210 || height == 188 || height == 185 || height == 182 || height == 181 || height == 171 || height == 170 || height == 169 || height == 168 || height == 167 || height == 166 || height == 165 || height == 164 || height == 163 || height == 162 )
                 return(0);
         }
         else if ( baseid == JPY )
