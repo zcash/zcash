@@ -743,157 +743,157 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == EUR )
         {
-            if ( height == 1313 || height == 1288 )
+            if ( height == 1313 || height == 1288 || height == 1263 )
                 return(0);
         }
         else if ( baseid == JPY )
         {
-            if ( height == 1014 || height == 998 )
+            if ( height == 1014 || height == 998 || height == 973 )
                 return(0);
         }
         else if ( baseid == GBP )
         {
-            if ( height == 997 || height == 970 )
+            if ( height == 997 || height == 970 || height == 953 )
                 return(0);
         }
         else if ( baseid == AUD )
         {
-            if ( height == 985 || height == 958 )
+            if ( height == 985 || height == 958 || height == 936 )
                 return(0);
         }
         else if ( baseid == CAD )
         {
-            if ( height == 1181 || height == 1179 )
+            if ( height == 1181 || height == 1179 || height == 1159 )
                 return(0);
         }
         else if ( baseid == CHF )
         {
-            if ( height == 960 || height == 931 )
+            if ( height == 960 || height == 931 || height == 914 )
                 return(0);
         }
         else if ( baseid == NZD )
         {
-            if ( height == 1113 || height == 1083 )
+            if ( height == 1113 || height == 1083 || height == 1067 )
                 return(0);
         }
         else if ( baseid == CNY )
         {
-            if ( height == 982 || height == 957 )
+            if ( height == 982 || height == 957 || height == 931 )
                 return(0);
         }
         else if ( baseid == RUB )
         {
-            if ( height == 1074 || height == 1040 )
+            if ( height == 1074 || height == 1040 || height == 1014 )
                 return(0);
         }
         else if ( baseid == MXN )
         {
-            if ( height == 1069 || height == 1048 )
+            if ( height == 1069 || height == 1048 || height == 1028 )
                 return(0);
         }
         else if ( baseid == BRL )
         {
-            if ( height == 972 || height == 943 )
+            if ( height == 972 || height == 943 || height == 922 )
                 return(0);
         }
         else if ( baseid == INR )
         {
-            if ( height == 788 || height == 786 )
+            if ( height == 788 || height == 786 || height == 775 )
                 return(0);
         }
         else if ( baseid == PLN )
         {
-            if ( height == 1009 || height == 984 )
+            if ( height == 1009 || height == 984 || height == 960 )
                 return(0);
         }
         else if ( baseid == HKD )
         {
-            if ( height == 1002 || height == 979 )
+            if ( height == 1002 || height == 979 || height == 947 )
                 return(0);
         }
         else if ( baseid == TRY )
         {
-            if ( height == 991 || height == 974 )
+            if ( height == 991 || height == 974 || height == 949 )
                 return(0);
         }
         else if ( baseid == NOK )
         {
-            if ( height == 962 || height == 911 )
+            if ( height == 962 || height == 911 || height == 907 )
                 return(0);
         }
         else if ( baseid == ZAR )
         {
-            if ( height == 956 || height == 937 )
+            if ( height == 956 || height == 937 || height == 906 )
                 return(0);
         }
         else if ( baseid == SEK )
         {
-            if ( height == 943 || height == 925 )
+            if ( height == 943 || height == 925 || height == 896 )
                 return(0);
         }
         else if ( baseid == CZK )
         {
-            if ( height == 1079 || height == 1054 )
+            if ( height == 1079 || height == 1054 || height == 1032 )
                 return(0);
         }
         else if ( baseid == HUF )
         {
-            if ( height == 2378 || height == 2376 )
+            if ( height == 2378 || height == 2376 || height == 2371 )
                 return(0);
         }
         else if ( baseid == DKK )
         {
-            if ( height == 1214 || height == 1186 )
+            if ( height == 1214 || height == 1186 || height == 1158 )
                 return(0);
         }
         else if ( baseid == ILS )
         {
-            if ( height == 1010 || height == 985 )
+            if ( height == 1010 || height == 985 || height == 954 )
                 return(0);
         }
         else if ( baseid == MYR )
         {
-            if ( height == 1015 || height == 984 )
+            if ( height == 1015 || height == 984 || height == 950 )
                 return(0);
         }
         else if ( baseid == PHP )
         {
-            if ( height == 1154 || height == 1114 )
+            if ( height == 1154 || height == 1114 || height == 1077 )
                 return(0);
         }
         else if ( baseid == KRW )
         {
-            if ( height == 1010 || height == 950 )
+            if ( height == 1010 || height == 950 || height == 916 )
                 return(0);
         }
         else if ( baseid == RON )
         {
-            if ( height == 1003 || height == 973 )
+            if ( height == 1003 || height == 973 || height == 940 )
                 return(0);
         }
         else if ( baseid == SGD )
         {
-            if ( height == 1010 || height == 984 )
+            if ( height == 1010 || height == 984 || height == 951 )
                 return(0);
         }
         else if ( baseid == THB )
         {
-            if ( height == 968 || height == 933 )
+            if ( height == 968 || height == 933 || height == 898 )
                 return(0);
         }
         else if ( baseid == BGN )
         {
-            if ( height == 1030 || height == 995 )
+            if ( height == 1030 || height == 995 || height == 960 )
                 return(0);
         }
         else if ( baseid == HRK )
         {
-            if ( height == 1022 || height == 999 )
+            if ( height == 1022 || height == 999 || height == 969 )
                 return(0);
         }
         else if ( baseid == IDR )
         {
-            if ( height == 720 || height == 715 )
+            if ( height == 720 || height == 715 || height == 714 )
                 return(0);
         }
     }
