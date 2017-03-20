@@ -735,6 +735,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         while ( KOMODO_PASSPORT_INITDONE == 0 )
             komodo_passport_iteration();
+        // grandfathering preexisting
         if ( baseid == USD )
         {
             if ( height <= 2000 || height == 3275 || height == 3282 || height == 3328 || height == 3468 )
@@ -742,157 +743,157 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == EUR )
         {
-            if ( height == 1313 )
+            if ( height == 1313 || height == 1288 )
                 return(0);
         }
         else if ( baseid == JPY )
         {
-            if ( height == 1014 )
+            if ( height == 1014 || height == 998 )
                 return(0);
         }
         else if ( baseid == GBP )
         {
-            if ( height == 997 )
+            if ( height == 997 || height == 970 )
                 return(0);
         }
         else if ( baseid == AUD )
         {
-            if ( height == 985 )
+            if ( height == 985 || height == 958 )
                 return(0);
         }
         else if ( baseid == CAD )
         {
-            if ( height == 1181 )
+            if ( height == 1181 || height == 1179 )
                 return(0);
         }
         else if ( baseid == CHF )
         {
-            if ( height == 960 )
+            if ( height == 960 || height == 931 )
                 return(0);
         }
         else if ( baseid == NZD )
         {
-            if ( height == 1113 )
+            if ( height == 1113 || height == 1083 )
                 return(0);
         }
         else if ( baseid == CNY )
         {
-            if ( height == 982 )
+            if ( height == 982 || height == 957 )
                 return(0);
         }
         else if ( baseid == RUB )
         {
-            if ( height == 1074 )
+            if ( height == 1074 || height == 1040 )
                 return(0);
         }
         else if ( baseid == MXN )
         {
-            if ( height == 1069 )
+            if ( height == 1069 || height == 1048 )
                 return(0);
         }
         else if ( baseid == BRL )
         {
-            if ( height == 972 )
+            if ( height == 972 || height == 943 )
                 return(0);
         }
         else if ( baseid == INR )
         {
-            if ( height == 788 )
+            if ( height == 788 || height == 786 )
                 return(0);
         }
         else if ( baseid == PLN )
         {
-            if ( height == 1009 )
+            if ( height == 1009 || height == 984 )
                 return(0);
         }
         else if ( baseid == HKD )
         {
-            if ( height == 1002 )
+            if ( height == 1002 || height == 979 )
                 return(0);
         }
         else if ( baseid == TRY )
         {
-            if ( height == 991 )
+            if ( height == 991 || height == 974 )
                 return(0);
         }
         else if ( baseid == NOK )
         {
-            if ( height == 962 )
+            if ( height == 962 || height == 911 )
                 return(0);
         }
         else if ( baseid == ZAR )
         {
-            if ( height == 956 )
+            if ( height == 956 || height == 937 )
                 return(0);
         }
         else if ( baseid == SEK )
         {
-            if ( height == 943 )
+            if ( height == 943 || height == 925 )
                 return(0);
         }
         else if ( baseid == CZK )
         {
-            if ( height == 1079 )
+            if ( height == 1079 || height == 1054 )
                 return(0);
         }
         else if ( baseid == HUF )
         {
-            if ( height == 2378 )
+            if ( height == 2378 || height == 2376 )
                 return(0);
         }
         else if ( baseid == DKK )
         {
-            if ( height == 1214 )
+            if ( height == 1214 || height == 1186 )
                 return(0);
         }
         else if ( baseid == ILS )
         {
-            if ( height == 1010 )
+            if ( height == 1010 || height == 985 )
                 return(0);
         }
         else if ( baseid == MYR )
         {
-            if ( height == 1015 )
+            if ( height == 1015 || height == 984 )
                 return(0);
         }
         else if ( baseid == PHP )
         {
-            if ( height == 1154 )
+            if ( height == 1154 || height == 1114 )
                 return(0);
         }
         else if ( baseid == KRW )
         {
-            if ( height == 1010 )
+            if ( height == 1010 || height == 950 )
                 return(0);
         }
         else if ( baseid == RON )
         {
-            if ( height == 1003 )
+            if ( height == 1003 || height == 973 )
                 return(0);
         }
         else if ( baseid == SGD )
         {
-            if ( height == 1010 )
+            if ( height == 1010 || height == 984 )
                 return(0);
         }
         else if ( baseid == THB )
         {
-            if ( height == 968 )
+            if ( height == 968 || height == 933 )
                 return(0);
         }
         else if ( baseid == BGN )
         {
-            if ( height == 1030 )
+            if ( height == 1030 || height == 995 )
                 return(0);
         }
         else if ( baseid == HRK )
         {
-            if ( height == 1022 )
+            if ( height == 1022 || height == 999 )
                 return(0);
         }
         else if ( baseid == IDR )
         {
-            if ( height == 720 )
+            if ( height == 720 || height == 715 )
                 return(0);
         }
     }
@@ -913,7 +914,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     pax->type = opcode;
                     if ( opcode == 'I' && (pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis) )
                     {
-                        printf("checkdeposit.[%s]: skip %s %.8f when avail %.8f deposited %.8f, issued %.8f withdrawn %.8f approved %.8f redeemed %.8f\n",ASSETCHAINS_SYMBOL,symbol,dstr(pax->fiatoshis),dstr(available),dstr(deposited),dstr(issued),dstr(withdrawn),dstr(approved),dstr(redeemed));
+                        printf("checkdeposit.[%s.%d]: skip %s %.8f when avail %.8f deposited %.8f, issued %.8f withdrawn %.8f approved %.8f redeemed %.8f\n",ASSETCHAINS_SYMBOL,height,symbol,dstr(pax->fiatoshis),dstr(available),dstr(deposited),dstr(issued),dstr(withdrawn),dstr(approved),dstr(redeemed));
                         return(-1);
                     }
                     if ( pax->fiatoshis == block.vtx[0].vout[i].nValue )
@@ -927,7 +928,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         {
                         }
                         if ( strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]) == 0 )
-                            printf("check deposit validates %s %.8f -> %.8f (%.8f %.8f %.8f)\n",CURRENCIES[baseids[i-1]],dstr(srcvalues[i-1]),dstr(values[i-1]),dstr(pax->komodoshis),dstr(pax->fiatoshis),dstr(block.vtx[0].vout[i].nValue));
+                            printf("check deposit validates %s.%d %.8f -> %.8f (%.8f %.8f %.8f)\n",CURRENCIES[baseids[i-1]],height,dstr(srcvalues[i-1]),dstr(values[i-1]),dstr(pax->komodoshis),dstr(pax->fiatoshis),dstr(block.vtx[0].vout[i].nValue));
                     }
                     else
                     {
