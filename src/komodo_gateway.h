@@ -741,17 +741,17 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         // grandfathering preexisting
         if ( baseid == USD ) // 6820 in balance calcs
         {
-            if ( height <= 2000 || height == 3275 || height == 3282 || height == 3328 || height == 3468 )
+            if ( height <= 2000 || height == 3275 || height == 3282 || height == 3328 || height == 3468 || height == 6820 )
             return(0);
         }
         else if ( baseid == EUR )
         {
-            if ( height == 1313 || height == 1288 || height == 1263 || height == 1262 || height == 211 || height == 210 || height == 188 || height == 185 || height == 182 || height == 181 || height == 171 || height == 170 || height == 169 || height == 168 || height == 167 || height == 166 || height == 165 || height == 164 || height == 163 )
+            if ( height == 1313 || height == 1288 || height == 1263 || height == 1262 || height == 211 || height == 210 || height == 188 || height == 185 || height == 182 || height == 181 || height == 171 || height == 170 || height == 169 || height == 168 || height == 167 || height == 166 || height == 165 || height == 164 || height == 163 || height == 162 )
                 return(0);
         }
         else if ( baseid == JPY )
         {
-            if ( height == 1014 || height == 998 || height == 973 || height == 139 || height == 971 || height == 141 || height == 816 || height == 814 || height == 803 || height == 142 || height == 782 || height == 145 || height == 181 || height == 186 || height == 192 || height == 190 || height == 189 || height == 255 || height == 218 || height == 233 || height == 259 || height == 278 || height == 361 || height == 367 || height == 733 || height == 688 )
+            if ( height == 1014 || height == 998 || height == 973 || height == 139 || height == 971 || height == 141 || height == 816 || height == 814 || height == 803 || height == 142 || height == 782 || height == 145 || height == 181 || height == 186 || height == 192 || height == 190 || height == 189 || height == 255 || height == 218 || height == 233 || height == 259 || height == 278 || height == 361 || height == 367 || height == 733 || height == 688 || height == 468 )
                 return(0);
         }
         else if ( baseid == GBP )
@@ -939,7 +939,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                             printf("%02x",((uint8_t *)&txids[i-1])[j]);
                         printf(" cant paxfind %c txid\n",opcode);
                         printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f pax.%p ht.%d\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax,height);
-                        if ( height > 200000 )
+                        if ( height > 200000 || pax->height > 200000 )
                             return(-1);
                     }
                 }
@@ -949,7 +949,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     for (j=0; j<32; j++)
                         printf("%02x",((uint8_t *)&hash)[j]);
                     printf(" kht.%d ht.%d %.8f %.8f blockhash couldnt find vout.[%d]\n",kmdheights[i-1],otherheights[i-1],dstr(values[i-1]),dstr(srcvalues[i]),i);
-                    if ( height > 200000 )
+                    if ( height > 200000 || pax->height > 200000 )
                         return(-1);
                 }
             }
