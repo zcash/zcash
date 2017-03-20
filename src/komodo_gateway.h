@@ -994,7 +994,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 printf(" script.[%d] ",opretlen);
                 for (i=0; i<n; i++)
                     printf("%.8f ",dstr(block.vtx[0].vout[i].nValue));
-                printf("no opreturn entries to check ht.%d\n",height);
+                printf("no opreturn entries to check ht.%d %s\n",height,ASSETCHAINS_SYMBOL);
                 return(-1);
             } else return(0);
         }
@@ -1005,7 +1005,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         for (i=0; i<opretlen&&i<100; i++)
             printf("%02x",script[i]);
         printf(" height.%d checkdeposit n.%d [%02x] [%c] %d len.%d ",height,n,script[0],script[offset],script[offset],opretlen);
-        printf("not proper vout with opreturn format ht.%d\n",height);
+        printf("not proper vout with opreturn format %s ht.%d\n",ASSETCHAINS_SYMBOL,height);
         return(-1);
     }
     return(0);
