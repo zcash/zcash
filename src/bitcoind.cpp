@@ -44,9 +44,9 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         //fprintf(stderr,"call passport iteration\n");
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
-            MilliSleep(10000);
             komodo_passport_iteration();
-        }
+            MilliSleep(10000);
+        } else MilliSleep(1000);
         fShutdown = ShutdownRequested();
     }
     if (threadGroup)
