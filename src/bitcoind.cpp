@@ -192,7 +192,6 @@ bool AppInit(int argc, char* argv[])
     } catch (...) {
         PrintExceptionContinue(NULL, "AppInit()");
     }
-    fprintf(stderr,"fRet.%d\n",(int32_t)fRet);
     if (!fRet)
     {
         threadGroup.interrupt_all();

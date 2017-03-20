@@ -768,17 +768,17 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == CHF )
         {
-            if ( height == 960 || height == 931 || height == 914 || height == 122 || height == 912 || height == 141 || height == 780 || height == 145 || height == 777 || height == 151 || height == 775 || height == 765 || height == 195 || height == 764 )
+            if ( height == 960 || height == 931 || height == 914 || height == 122 || height == 912 || height == 141 || height == 780 || height == 145 || height == 777 || height == 151 || height == 775 || height == 765 || height == 195 || height == 764 || height == 737 )
                 return(0);
         }
         else if ( baseid == NZD )
         {
-            if ( height == 1113 || height == 1083 || height == 1067 || height == 265 || height == 1064 || height == 920 || height == 913 || height == 124 || height == 911 || height == 903 )
+            if ( height == 1113 || height == 1083 || height == 1067 || height == 265 || height == 1064 || height == 920 || height == 913 || height == 124 || height == 911 || height == 903 || height == 900 )
                 return(0);
         }
         else if ( baseid == CNY )
         {
-            if ( height == 982 || height == 957 || height == 931 || height == 119 || height == 929 || height == 134 || height == 782 || height == 137 || height == 775 || height == 143 || height == 772 || height == 186 || height == 763 )
+            if ( height == 982 || height == 957 || height == 931 || height == 119 || height == 929 || height == 134 || height == 782 || height == 137 || height == 775 || height == 143 || height == 772 || height == 186 || height == 763 || height == 761 )
                 return(0);
         }
         else if ( baseid == RUB )
@@ -788,12 +788,12 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == MXN )
         {
-            if ( height == 1069 || height == 1048 || height == 1028 || height == 121 || height == 1027 || height == 146 || height == 894 || height == 891 || height == 148 || height == 882 || height == 879 || height == 151 || height == 856 || height == 158 )
+            if ( height == 1069 || height == 1048 || height == 1028 || height == 121 || height == 1027 || height == 146 || height == 894 || height == 891 || height == 148 || height == 882 || height == 879 || height == 151 || height == 856 || height == 158 || height == 822 )
                 return(0);
         }
         else if ( baseid == BRL )
         {
-            if ( height == 972 || height == 943 || height == 922 || height == 118 || height == 920 || height == 145 || height == 787 || height == 783 || height == 147 || height == 781 || height == 774 || height == 148 || height == 771 || height == 154 )
+            if ( height == 972 || height == 943 || height == 922 || height == 118 || height == 920 || height == 145 || height == 787 || height == 783 || height == 147 || height == 781 || height == 774 || height == 148 || height == 771 || height == 154 || height == 751 )
                 return(0);
         }
         else if ( baseid == INR )
@@ -803,7 +803,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == PLN )
         {
-            if ( height == 1009 || height == 984 || height == 960 || height == 959 || height == 798 || height == 794 || height == 792 || height == 782 || height == 775 )
+            if ( height == 1009 || height == 984 || height == 960 || height == 959 || height == 798 || height == 794 || height == 792 || height == 782 || height == 775 || height == 755 )
                 return(0);
         }
         else if ( baseid == HKD )
@@ -813,7 +813,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == TRY )
         {
-            if ( height == 991 || height == 974 || height == 949 || height == 141 || height == 948 || height == 783 || height == 153 || height == 781 || height == 779 || height == 776 || height == 768 )
+            if ( height == 991 || height == 974 || height == 949 || height == 141 || height == 948 || height == 783 || height == 153 || height == 781 || height == 779 || height == 776 || height == 768 || height == 765 )
                 return(0);
         }
         else if ( baseid == NOK )
@@ -823,27 +823,27 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == ZAR )
         {
-            if ( height == 956 || height == 937 || height == 906 || height == 905 || height == 122 || height == 756 || height == 754 || height == 752 || height == 749 || height == 742 )
+            if ( height == 956 || height == 937 || height == 906 || height == 905 || height == 122 || height == 756 || height == 754 || height == 752 || height == 749 || height == 742 || height == 739 )
                 return(0);
         }
         else if ( baseid == SEK )
         {
-            if ( height == 943 || height == 925 || height == 896 || height == 147 || height == 894 || height == 759 || height == 751 || height == 749 || height == 742 || height == 740 )
+            if ( height == 943 || height == 925 || height == 896 || height == 147 || height == 894 || height == 759 || height == 751 || height == 749 || height == 742 || height == 740 || height == 716 )
                 return(0);
         }
         else if ( baseid == CZK )
         {
-            if ( height == 1079 || height == 1054 || height == 1032 || height == 121 || height == 1030 || height == 182 || height == 876 || height == 873 || height == 871 || height == 184 || height == 862 || height == 185 || height == 861 || height == 186 )
+            if ( height == 1079 || height == 1054 || height == 1032 || height == 121 || height == 1030 || height == 182 || height == 876 || height == 873 || height == 871 || height == 184 || height == 862 || height == 185 || height == 861 || height == 186 || height == 838 )
                 return(0);
         }
         else if ( baseid == HUF )
         {
-            if ( height == 2378 || height == 2376 || height == 2371 || height == 1330 || height == 2326 || height == 1344 || height == 2305 || height == 2304 || height == 2171 || height == 2168 || height == 2166 )
+            if ( height == 2378 || height == 2376 || height == 2371 || height == 1330 || height == 2326 || height == 1344 || height == 2305 || height == 2304 || height == 2171 || height == 2168 || height == 2166 || height == 2156 )
                 return(0);
         }
         else if ( baseid == DKK )
         {
-            if ( height == 1214 || height == 1186 || height == 1158 || height == 126 || height == 1156 || height == 329 || height == 1021 || height == 1016 || height == 1014 || height == 333 || height == 1003 || height == 1002 )
+            if ( height == 1214 || height == 1186 || height == 1158 || height == 126 || height == 1156 || height == 329 || height == 1021 || height == 1016 || height == 1014 || height == 333 || height == 1003 || height == 1002 || height == 978 )
                 return(0);
         }
         else if ( baseid == ILS )
@@ -853,7 +853,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == MYR )
         {
-            if ( height == 1015 || height == 984 || height == 950 || height == 949 || height == 823 || height == 820 || height == 818 || height == 812 || height == 809 || height == 126 )
+            if ( height == 1015 || height == 984 || height == 950 || height == 949 || height == 823 || height == 820 || height == 818 || height == 812 || height == 809 || height == 126 || height == 789 )
                 return(0);
         }
         else if ( baseid == PHP )
@@ -863,12 +863,12 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == KRW )
         {
-            if ( height == 1010 || height == 950 || height == 916 || height == 138 || height == 914 || height == 140 || height == 785 || height == 782 || height == 781 || height == 142 || height == 775 || height == 148 || height == 772 )
+            if ( height == 1010 || height == 950 || height == 916 || height == 138 || height == 914 || height == 140 || height == 785 || height == 782 || height == 781 || height == 142 || height == 775 || height == 148 || height == 772 || height == 751 )
                 return(0);
         }
         else if ( baseid == RON )
         {
-            if ( height == 1003 || height == 973 || height == 940 || height == 939 || height == 806 || height == 802 || height == 800 || height == 793 || height == 789 )
+            if ( height == 1003 || height == 973 || height == 940 || height == 939 || height == 806 || height == 802 || height == 800 || height == 793 || height == 789 || height == 768 )
                 return(0);
         }
         else if ( baseid == SGD )
@@ -883,17 +883,17 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == BGN )
         {
-            if ( height == 1030 || height == 995 || height == 960 || height == 959 || height == 830 || height == 822 || height == 819 || height == 810 || height == 809 )
+            if ( height == 1030 || height == 995 || height == 960 || height == 959 || height == 830 || height == 822 || height == 819 || height == 810 || height == 809 || height == 781 )
                 return(0);
         }
         else if ( baseid == HRK )
         {
-            if ( height == 1022 || height == 999 || height == 969 || height == 967 || height == 832 || height == 829 || height == 827 || height == 817 || height == 792 )
+            if ( height == 1022 || height == 999 || height == 969 || height == 967 || height == 832 || height == 829 || height == 827 || height == 817 || height == 792 || height == 754 )
                 return(0);
         }
         else if ( baseid == IDR )
         {
-            if ( height == 720 || height == 715 || height == 714 || height == 696 || height == 695 || height == 694 || height == 693 || height == 119 || height == 689 || height == 120 || height == 669 || height == 123 )
+            if ( height == 720 || height == 715 || height == 714 || height == 696 || height == 695 || height == 694 || height == 693 || height == 119 || height == 689 || height == 120 || height == 669 || height == 123 || height == 662 )
                 return(0);
         }
     }
