@@ -748,7 +748,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == EUR )
         {
-            if ( height == 785 || height == 1313 || height == 1288 || height == 1263 || height == 1262 || height <= 211 || height == 210 || height == 188 || height == 185 || height == 182 || height == 181 || height == 171 || height == 170 || height == 169 || height == 168 || height == 167 || height == 166 || height == 165 || height == 164 || height == 163 || height == 162 )
+            if ( height == 787 || height == 785 || height == 1313 || height == 1288 || height == 1263 || height == 1262 || height <= 211 || height == 210 || height == 188 || height == 185 || height == 182 || height == 181 || height == 171 || height == 170 || height == 169 || height == 168 || height == 167 || height == 166 || height == 165 || height == 164 || height == 163 || height == 162 )
                 return(0);
         }
         else if ( baseid == JPY )
@@ -768,7 +768,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == CAD )
         {
-            if ( height == 794 || height == 1181 || height == 1179 || height == 1159 || height == 1134 || height == 1132 || height == 121 || height == 970 || height == 119 || height == 299 || height == 302 || height == 303 || height == 306 || height == 308 || height == 355 || height == 362 || height == 367 || height == 363 || height == 364 || height == 380 || height == 373 || height == 390 || height == 437 || height == 375 )
+            if ( height == 798 || height == 794 || height == 1181 || height == 1179 || height == 1159 || height == 1134 || height == 1132 || height == 121 || height == 970 || height == 119 || height == 299 || height == 302 || height == 303 || height == 306 || height == 308 || height == 355 || height == 362 || height == 367 || height == 363 || height == 364 || height == 380 || height == 373 || height == 390 || height == 437 || height == 375 )
                 return(0);
         }
         else if ( baseid == CHF )
@@ -778,7 +778,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == NZD )
         {
-            if ( height == 777 || height == 1113 || height == 1083 || height == 1067 || height == 265 || height == 1064 || height == 920 || height == 913 || height == 124 || height == 911 || height == 903 || height == 900 || height == 879 || height == 122 || height == 266 || height == 269 || height == 270 || height == 278 || height == 307 || height == 318 || height == 322 || height == 335 || height == 395 || height == 406 || height == 314 )
+            if ( height == 785 || height == 777 || height == 1113 || height == 1083 || height == 1067 || height == 265 || height == 1064 || height == 920 || height == 913 || height == 124 || height == 911 || height == 903 || height == 900 || height == 879 || height == 122 || height == 266 || height == 269 || height == 270 || height == 278 || height == 307 || height == 318 || height == 322 || height == 335 || height == 395 || height == 406 || height == 314 )
                 return(0);
         }
         else if ( baseid == CNY )
@@ -788,7 +788,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == RUB )
         {
-            if ( height == 801 || height == 1074 || height == 1040 || height == 1014 || height == 163 || height == 1013 || height == 877 || height == 867 || height == 863 || height == 834 || height == 158 || height == 126 || height == 106 || height == 105 || height == 174 || height == 175 || height == 176 || height == 177 || height == 181 || height == 183 || height == 184 || height == 187 )
+            if ( height == 802 || height == 801 || height == 1074 || height == 1040 || height == 1014 || height == 163 || height == 1013 || height == 877 || height == 867 || height == 863 || height == 834 || height == 158 || height == 126 || height == 106 || height == 105 || height == 174 || height == 175 || height == 176 || height == 177 || height == 181 || height == 183 || height == 184 || height == 187 )
                 return(0);
         }
         else if ( baseid == MXN )
@@ -941,8 +941,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                             printf("%02x",((uint8_t *)&txids[i-1])[j]);
                         printf(" cant paxfind %c txid [%d]\n",opcode,height);
                         printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f pax.%p ht.%d\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax,height);
-                        if ( height > 200000 || pax->height > 200000 )
-                            return(-1);
+                        return(-1);
                     }
                 }
                 else //if ( kmdheights[i-1] > 0 && otherheights[i-1] > 0 )
@@ -951,8 +950,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     for (j=0; j<32; j++)
                         printf("%02x",((uint8_t *)&hash)[j]);
                     printf(" kht.%d ht.%d %.8f %.8f blockhash couldnt find vout.[%d] ht.%d\n",kmdheights[i-1],otherheights[i-1],dstr(values[i-1]),dstr(srcvalues[i]),i,height);
-                    //if ( height > 200000 || pax->height > 200000 )
-                        return(-1);
+                    return(-1);
                 }
             }
             if ( ASSETCHAINS_SYMBOL[0] == 0 )
@@ -972,9 +970,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             {
                 if ( height > 0 && (height < chainActive.Tip()->nHeight || (height >= chainActive.Tip()->nHeight && komodo_isrealtime(&ht) != 0)) && matched != num )
                 {
-                    printf("REJECT %s: ht.%d (%c) matched.%d vs num.%d tip.%d isRT.%d\n",symbol,height,opcode,matched,num,(int32_t)chainActive.Tip()->nHeight,komodo_isrealtime(&ht));
-                    return(-1);
                 }
+                printf("REJECT %s: ht.%d (%c) matched.%d vs num.%d tip.%d isRT.%d\n",symbol,height,opcode,matched,num,(int32_t)chainActive.Tip()->nHeight,komodo_isrealtime(&ht));
+                return(-1);
             }
         }
         else
