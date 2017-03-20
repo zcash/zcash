@@ -545,7 +545,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<< notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
                 notarized = 1;
             }
-            if ( NOTARY_PUBKEY33[0] != 0 )
+            if ( NOTARY_PUBKEY33[0] != 0 && ASSETCHAINS_SYMBOL[0] == 0 )
                 printf("(tx.%d: ",i);
             for (j=0; j<numvouts; j++)
             {
@@ -563,7 +563,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         }
                     }
                 }*/
-                if ( NOTARY_PUBKEY33[0] != 0 )
+                if ( NOTARY_PUBKEY33[0] != 0 && ASSETCHAINS_SYMBOL[0] == 0 )
                     printf("%.8f ",dstr(block.vtx[i].vout[j].nValue));
                 len = block.vtx[i].vout[j].scriptPubKey.size();
                 if ( len >= sizeof(uint32_t) && len <= sizeof(scriptbuf) )
@@ -582,7 +582,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     }
                 }
             }
-            if ( NOTARY_PUBKEY33[0] != 0 )
+            if ( NOTARY_PUBKEY33[0] != 0 && ASSETCHAINS_SYMBOL[0] == 0 )
                 printf(") ");
             //printf("%s ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d notarized.%d special.%d isratification.%d\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts,notarized,specialtx,isratification);
             if ( notarized != 0 && (notarizedheight != 0 || specialtx != 0) )
@@ -624,7 +624,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 }
             }
         }
-        if ( NOTARY_PUBKEY33[0] != 0 )
+        if ( NOTARY_PUBKEY33[0] != 0 && ASSETCHAINS_SYMBOL[0] == 0 )
             printf("%s ht.%d\n",ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL,height);
         if ( pindex->nHeight == hwmheight )
             komodo_stateupdate(height,0,0,0,zero,0,0,0,0,height,(uint32_t)pindex->nTime,0,0,0,0);
