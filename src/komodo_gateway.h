@@ -853,7 +853,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == MYR )
         {
-            if ( height == 1015 || height == 984 || height == 950 || height == 949 || height == 823 || height == 820 || height == 818 || height == 812 || height == 809 || height == 126 || height == 789 || height == 144 || height == 746 )
+            if ( height == 1015 || height == 984 || height == 950 || height == 949 || height == 823 || height == 820 || height == 818 || height == 812 || height == 809 || height == 126 || height == 789 || height == 144 || height == 746 || height == 146 )
                 return(0);
         }
         else if ( baseid == PHP )
