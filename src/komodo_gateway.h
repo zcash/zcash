@@ -873,7 +873,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == SGD )
         {
-            if ( height == 1010 || height == 984 || height == 951 || height == 950 || height == 801 || height == 798 || height == 792 || height == 788 || height == 122 || height == 769 || height == 120 || height == 158 )
+            if ( height == 1010 || height == 984 || height == 951 || height == 950 || height == 801 || height == 798 || height == 792 || height == 788 || height == 122 || height == 769 || height == 120 || height == 158 || height == 160 )
                 return(0);
         }
         else if ( baseid == THB )
@@ -883,17 +883,17 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == BGN )
         {
-            if ( height == 1030 || height == 995 || height == 960 || height == 959 || height == 830 || height == 822 || height == 819 || height == 810 || height == 809 || height == 781 )
+            if ( height == 1030 || height == 995 || height == 960 || height == 959 || height == 830 || height == 822 || height == 819 || height == 810 || height == 809 || height == 781 || height == 124 )
                 return(0);
         }
         else if ( baseid == HRK )
         {
-            if ( height == 1022 || height == 999 || height == 969 || height == 967 || height == 832 || height == 829 || height == 827 || height == 817 || height == 792 || height == 754 )
+            if ( height == 1022 || height == 999 || height == 969 || height == 967 || height == 832 || height == 829 || height == 827 || height == 817 || height == 792 || height == 754 || height == 125 )
                 return(0);
         }
         else if ( baseid == IDR )
         {
-            if ( height == 720 || height == 715 || height == 714 || height == 696 || height == 695 || height == 694 || height == 693 || height == 119 || height == 689 || height == 120 || height == 669 || height == 123 || height == 662 || height == 122 || height == 634 )
+            if ( height == 720 || height == 715 || height == 714 || height == 696 || height == 695 || height == 694 || height == 693 || height == 119 || height == 689 || height == 120 || height == 669 || height == 123 || height == 662 || height == 122 || height == 634 || height == 121 )
                 return(0);
         }
     }
