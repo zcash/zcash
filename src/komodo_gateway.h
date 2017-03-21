@@ -108,6 +108,8 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
     struct pax_transaction *pax; uint8_t buf[35]; int32_t addflag = 0; struct komodo_state *sp; char str[16],dest[16],*s;
     //if ( KOMODO_PAX == 0 )
     //    return;
+    if ( strcmp(symbol,ASSETCHAINS_SYMBOL) != 0 )
+        return;
     sp = komodo_stateptr(str,dest);
     pthread_mutex_lock(&komodo_mutex);
     pax_keyset(buf,txid,vout,type);
@@ -902,8 +904,6 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 return(0);
         }
     }
-    if ( strcmp(ASSETCHAINS_SYMBOL,"EUR") == 0 )
-        printf("%s height.%d\n",ASSETCHAINS_SYMBOL,height);
     if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
     {
         if ( (num= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,&script[offset],opretlen,opcode == 'X')) > 0 )
@@ -1102,7 +1102,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         } //
                         if ( didstats != 0 )
                             pax->didstats = 1;
-                        if ( (0 && pax2= komodo_paxfind(txid,vout,'I')) != 0 )
+                        if ( 0 && (pax2= komodo_paxfind(txid,vout,'I')) != 0 )
                         {
                             pax2->fiatoshis = pax->fiatoshis;
                             pax2->komodoshis = pax->komodoshis;
