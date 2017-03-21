@@ -710,7 +710,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
 {
     if (tx.nLockTime == 0)
         return true;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600*3 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && nBlockTime != 1477598030 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
     {
         fprintf(stderr,"IsFinalTx reject locktime %u vs nBlockTime %u\n",tx.nLockTime,(uint32_t)nBlockTime);
         return(false); // need to prevent pastdating tx
