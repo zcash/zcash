@@ -587,7 +587,10 @@ Value paxprice(const Array& params, bool fHelp)
     Object ret; uint64_t basevolume=0,relvolume,seed;
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
-    int32_t height = atoi(params[2].get_str().c_str());
+    int32_t height;
+    if ( params.size() == 2 )
+        height = chainActive.Tip()->nHeight;
+    else height = atoi(params[2].get_str().c_str());
     if ( params.size() == 3 || (basevolume= COIN * atof(params[3].get_str().c_str())) == 0 )
         basevolume = 1;
     basevolume *= COIN;
@@ -603,7 +606,8 @@ Value paxprice(const Array& params, bool fHelp)
     else
     {
         CBlockIndex *pblockindex = chainActive[height];
-        ret.push_back(Pair("timestamp", (int64_t)pblockindex->nTime));
+        if ( pblockindex != 0 )
+            ret.push_back(Pair("timestamp", (int64_t)pblockindex->nTime));
         if ( basevolume != 0 && relvolume != 0 )
         {
             ret.push_back(Pair("price",((double)relvolume / (double)basevolume)));
