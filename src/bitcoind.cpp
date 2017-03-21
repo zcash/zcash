@@ -42,8 +42,11 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     while (!fShutdown)
     {
         //fprintf(stderr,"call passport iteration\n");
-        MilliSleep(10000);
-        komodo_passport_iteration();
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        {
+            komodo_passport_iteration();
+            MilliSleep(10000);
+        } else MilliSleep(1000);
         fShutdown = ShutdownRequested();
     }
     if (threadGroup)
@@ -189,7 +192,6 @@ bool AppInit(int argc, char* argv[])
     } catch (...) {
         PrintExceptionContinue(NULL, "AppInit()");
     }
-    fprintf(stderr,"fRet.%d\n",(int32_t)fRet);
     if (!fRet)
     {
         threadGroup.interrupt_all();
