@@ -723,7 +723,7 @@ int32_t komodo_grandfathered(uint32_t locktime)
         1488740061, 1489381998, 1489368980, 1489394298, 1489379223, 1489373356, 1489381621, 1489385381,
         1489383213, 1489419739, 1489381922, 1489511155, 1489372632, 1489519630, 1489683097, 1489695388,
         1489817053, 1489814059, 1489958883, 1490111575, 1490111662, 1490111716, 1490111757, 1490112310,
-        1490112397, 1490116047, 1490114274,
+        1490112397, 1490114274, 1490116047,
     };
     int32_t i;
     if ( locktime <= grandfathered[sizeof(grandfathered)/sizeof(*grandfathered) - 1] )
@@ -735,7 +735,7 @@ int32_t komodo_grandfathered(uint32_t locktime)
     return(-1);
 }
 
-#define KOMODO_GRANDFATHER_TIME 0
+#define KOMODO_GRANDFATHER_TIME (1490114274 + 3600*12)
 
 bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int flags)
 {
