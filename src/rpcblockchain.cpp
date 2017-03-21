@@ -611,8 +611,8 @@ Value paxprice(const Array& params, bool fHelp)
         {
             ret.push_back(Pair("price",((double)relvolume / (double)basevolume)));
             ret.push_back(Pair("invprice",((double)basevolume / (double)relvolume)));
-            ret.push_back(Pair("basevolume",(COIN/1000) * ValueFromAmount(basevolume)));
-            ret.push_back(Pair("relvolume",(COIN/1000) *  ValueFromAmount(relvolume)));
+            ret.push_back(Pair("basevolume",ValueFromAmount((COIN/1000) * basevolume)));
+            ret.push_back(Pair("relvolume",ValueFromAmount((COIN/1000) * relvolume)));
         } else ret.push_back(Pair("error", "overflow or error in one or more of parameters"));
     }
     return ret;
