@@ -884,12 +884,12 @@ int32_t komodo_validate_interest(const CTransaction& tx)
     {
         locktime = komodo_interest_args(&txheight,&tiptime,&value,tx.GetHash(),0);
         if ( tiptime == 0 )
-            tiptime = activeChain.Tip()->nBlockTime;
+            tiptime = chainActive.Tip()->nBlockTime;
         if ( (int64_t)tx.nLockTime < tiptime-3600 )
         {
             if ( komodo_grandfathered(tiptime) < 0 )
             {
-                fprintf(stderr,"komodo_validate_interest reject locktime %u vs nBlockTime %u tiptime.%u\n",tx.nLockTime,(uint32_t)activeChain.Tip()->nBlockTime,tiptime);
+                fprintf(stderr,"komodo_validate_interest reject locktime %u vs nBlockTime %u tiptime.%u\n",tx.nLockTime,(uint32_t)chainActive.Tip()->nBlockTime,tiptime);
                 return(-1);
             }
         }
