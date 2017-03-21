@@ -748,7 +748,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == EUR )
         {
-            if ( height < 1000 || height == 1094 || height == 1092 || height == 1080 || height == 1053 || height == 1005 || height == 822 || height == 821 || height == 810 || height == 797 || height == 790 || height == 787 || height == 785 || height == 1313 || height == 1288 || height == 1263 || height == 1262 || height <= 211 || height == 210 || height == 188 || height == 185 || height == 182 || height == 181 || height == 171 || height == 170 || height == 169 || height == 168 || height == 167 || height == 166 || height == 165 || height == 164 || height == 163 || height == 162 )
+            if ( height < 1000 || height == 1111 || height == 1094 || height == 1092 || height == 1080 || height == 1053 || height == 1005 || height == 822 || height == 821 || height == 810 || height == 797 || height == 790 || height == 787 || height == 785 || height == 1313 || height == 1288 || height == 1263 || height == 1262 || height <= 211 || height == 210 || height == 188 || height == 185 || height == 182 || height == 181 || height == 171 || height == 170 || height == 169 || height == 168 || height == 167 || height == 166 || height == 165 || height == 164 || height == 163 || height == 162 )
                 return(0);
         }
         else if ( baseid == JPY )
@@ -843,7 +843,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == HUF )
         {
-            if ( height == 1448 || height == 1442 || height == 1418 || height == 1407 || height == 1406 || height == 1392 || height == 1391 || height == 1387 || height == 1383 || height == 1335 || height == 1337 || height == 1338 || height == 1649 || height == 2378 || height == 2376 || height == 2371 || height == 1330 || height == 2326 || height == 1344 || height == 2305 || height == 2304 || height == 2171 || height == 2168 || height == 2166 || height == 2156 || height == 2135 || height == 1343 || height == 1342 || height == 1341 || height == 1340 || height == 1339 || height == 1336 || height == 1334 || height == 1333 || height == 1346 || height == 1400 || height == 1525 || height == 1509 )
+            if ( height == 1451 || height == 1448 || height == 1442 || height == 1418 || height == 1407 || height == 1406 || height == 1392 || height == 1391 || height == 1387 || height == 1383 || height == 1335 || height == 1337 || height == 1338 || height == 1649 || height == 2378 || height == 2376 || height == 2371 || height == 1330 || height == 2326 || height == 1344 || height == 2305 || height == 2304 || height == 2171 || height == 2168 || height == 2166 || height == 2156 || height == 2135 || height == 1343 || height == 1342 || height == 1341 || height == 1340 || height == 1339 || height == 1336 || height == 1334 || height == 1333 || height == 1346 || height == 1400 || height == 1525 || height == 1509 )
                 return(0);
         }
         else if ( baseid == DKK )
@@ -1100,13 +1100,13 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         } //
                         if ( didstats != 0 )
                             pax->didstats = 1;
-                        if ( (pax2= komodo_paxfind(txid,vout,'I')) != 0 )
+                        if ( (0 && pax2= komodo_paxfind(txid,vout,'I')) != 0 )
                         {
                             pax2->fiatoshis = pax->fiatoshis;
                             pax2->komodoshis = pax->komodoshis;
                             pax->marked = pax2->marked = pax->height;
                             pax2->height = pax->height = height;
-                            if ( 0 && pax2->didstats == 0 )
+                            if ( pax2->didstats == 0 )
                             {
                                 if ( (basesp= komodo_stateptrget(base)) != 0 )
                                 {
