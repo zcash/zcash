@@ -719,7 +719,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
     {
         locktime = komodo_interest_args(&txheight,&tiptime,&value,hash,0);
         if ( tiptime == 0 )
-            timetime = nBlockTime;
+            tiptime = nBlockTime;
         if ( (int64_t)tx.nLockTime < tiptime-3600 )
         {
             for (i=0; i<sizeof(grandfathered)/sizeof(*grandfathered); i++)
@@ -727,7 +727,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
                     break;
             if ( i == sizeof(grandfathered)/sizeof(*grandfathered) )
             {
-                fprintf(stderr,"IsFinalTx reject locktime %u vs nBlockTime %u\n",tx.nLockTime,(uint32_t)nBlockTime);
+                fprintf(stderr,"IsFinalTx reject locktime %u vs nBlockTime %u tiptime.%u\n",tx.nLockTime,(uint32_t)nBlockTime,tiptime);
                 return(false); // need to prevent pastdating tx
             }
         }
