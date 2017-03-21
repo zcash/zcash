@@ -708,12 +708,23 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
 
 bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
 {
+    static uin32_t grandfathered[] =
+    {
+        1477262681, 1477262990, 1477598030, 1477269321, 1480625490, 1482008580, 1485678643, 1485972116, 1486039258, 1486096477, 1486159886, 1486236495, 1486305013, 1486390414, 1486390791, 1486391232, 1486395617, 1486415304, 1486439074, 1486507244, 1486536946, 1486766037, 1486766559, 1486768230, 1486768294, 1487355181, 1487356312, 1487449891, 1487467926, 1487614001, 1487639158, 1489298992, 1489299229, 1489299737, 1489299939, 1489300155, 1489300326, 1489300370, 1489408020, 1489408285, 1489438206, 1489463334, 1489519879, 1489519942, 1489519818, 1489597387, 1489663030, 1489687820, 1489796259, 1489838437, 1489847404, 1490022684
+    };
+    int32_t i;
     if (tx.nLockTime == 0)
         return true;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && nBlockTime != 1477598030 && nBlockTime != 1477269321 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
     {
-        fprintf(stderr,"IsFinalTx reject locktime %u vs nBlockTime %u\n",tx.nLockTime,(uint32_t)nBlockTime);
-        return(false); // need to prevent pastdating tx
+        for (i=0; i<sizeof(grandfathered)/sizeof(*grandfathered); i++)
+            if ( nBlockTime == grandfathered[i] )
+                break;
+        if ( i == sizeof(grandfathered)/sizeof(*grandfathered) )
+        {
+            fprintf(stderr,"IsFinalTx reject locktime %u vs nBlockTime %u\n",tx.nLockTime,(uint32_t)nBlockTime);
+            return(false); // need to prevent pastdating tx
+        }
     }
     if ((int64_t)tx.nLockTime < ((int64_t)tx.nLockTime < LOCKTIME_THRESHOLD ? (int64_t)nBlockHeight : nBlockTime))
         return true;

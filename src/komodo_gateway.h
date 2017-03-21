@@ -694,15 +694,22 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             }
             prevtotal = total;
         }
-        if ( overflow != 0 || total > COIN/10 )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
-            //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
-            if ( height >= 235300 )
+            if ( overflow != 0 || total > COIN/10 )
+            {
+                //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
+                if ( height >= 235300 )
+                    return(-1);
+            }
+        }
+        else
+        {
+            if ( overflow != 0 || total > 0 )
                 return(-1);
         }
         return(0);
     }
-    
     //fprintf(stderr,"ht.%d n.%d nValue %.8f (%d %d %d)\n",height,n,dstr(block.vtx[0].vout[1].nValue),KOMODO_PAX,komodo_isrealtime(&ht),KOMODO_PASSPORT_INITDONE);
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
@@ -745,7 +752,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             return(0);
         if ( baseid == USD ) // 6820 in balance calcs
         {
-            if ( height <= 2000 || height == 2968 || height == 2960 || height == 2649 || height == 3275 || height == 3282 || height == 3328 || height == 3468 )
+            if ( height <= 6821 || height <= 2000 || height == 2968 || height == 2960 || height == 2649 || height == 3275 || height == 3282 || height == 3328 || height == 3468 )
             return(0);
         }
         else if ( baseid == EUR )
