@@ -1,5 +1,6 @@
 #!/bin/bash  
 set -x
+delay=10
 source pubkey.txt
 echo $pubkey
 
@@ -19,68 +20,68 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=KV -ac_supply=1000000 -addnode=78.47.196.146 $1  &
 ./komodod -pubkey=$pubkey -ac_name=CEAL -ac_supply=366666666 -addnode=78.47.196.146 $1  &
 ./komodod -pubkey=$pubkey -ac_name=MESH -ac_supply=1000000 -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 
 ./komodod -pubkey=$pubkey -ac_name=USD -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=EUR -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=JPY -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=GBP -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=AUD -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=CAD -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=CHF -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=NZD -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=CNY -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=RUB -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=MXN -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=BRL -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=INR -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=HKD -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=TRY -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=ZAR -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=PLN -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=NOK -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=SEK -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=DKK -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=CZK -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=HUF -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=ILS -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=KRW -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=MYR -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=PHP -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=RON -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=SGD -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=THB -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=BGN -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=IDR -addnode=78.47.196.146 $1  &
-sleep 10
+sleep $delay
 ./komodod -pubkey=$pubkey -ac_name=HRK -addnode=78.47.196.146 $1  &
