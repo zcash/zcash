@@ -735,7 +735,7 @@ int32_t komodo_grandfathered(uint32_t locktime)
     return(-1);
 }
 
-#define KOMODO_GRANDFATHER_TIME (1490114274 + 3600*12)
+#define KOMODO_GRANDFATHER_TIME (1490114274 + 3600*24)
 
 bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int flags)
 {
@@ -744,7 +744,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int 
         return true;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
     {
-        if ( komodo_grandfathered(tx.nLockTime) < 0 && nBlockTime > KOMODO_GRANDFATHER_TIME )
+        if ( komodo_grandfathered(tx.nLockTime) < 0 )//&& nBlockTime > KOMODO_GRANDFATHER_TIME )
         {
             fprintf(stderr,"[%d] IsFinalTx reject locktime %u vs nBlockTime %u\n",(int32_t)(tx.nLockTime-nBlockTime),tx.nLockTime,(uint32_t)nBlockTime);
             return(false); // need to prevent pastdating tx
