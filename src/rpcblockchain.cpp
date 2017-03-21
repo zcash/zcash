@@ -581,7 +581,7 @@ Value paxpending(const Array& params, bool fHelp)
 
 Value paxprice(const Array& params, bool fHelp)
 {
-    if ( fHelp || params.size() > 3 || params.size() < 2 )
+    if ( fHelp || params.size() > 4 || params.size() < 2 )
         throw runtime_error("paxprice \"base\" \"rel\" height\n");
     LOCK(cs_main);
     Object ret; uint64_t basevolume=0,relvolume,seed;
