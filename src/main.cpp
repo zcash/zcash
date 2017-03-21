@@ -708,7 +708,7 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
 
 int32_t komodo_grandfathered(uint32_t nBlockTime)
 {
-    static uint32_t grandfathered[] =
+    static uint32_t grandfathered[] = //1477262652
     {
         1477262681, 1477262990, 1477598030, 1477269321, 1480625490, 1482008580, 1485678643, 1485972116, 1486039258, 1486096477, 1486159886, 1486236495, 1486305013, 1486390414, 1486390791, 1486391232, 1486395617, 1486415304, 1486439074, 1486507244, 1486536946, 1486766037, 1486766559, 1486768230, 1486768294, 1487355181, 1487356312, 1487449891, 1487467926, 1487614001, 1487639158, 1489298992, 1489299229, 1489299737, 1489299939, 1489300155, 1489300326, 1489300370, 1489408020, 1489408285, 1489438206, 1489463334, 1489519879, 1489519942, 1489519818, 1489597387, 1489663030, 1489687820, 1489796259, 1489838437, 1489847404, 1490022684, 1490117937, 1490118373
     };
@@ -726,10 +726,10 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int 
         return true;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
     {
-        if ( komodo_grandfathered(nBlockTime) < 0 )
+        if ( komodo_grandfathered(tx.nLockTime) < 0 )
         {
-            fprintf(stderr,"IsFinalTx reject locktime %u vs nBlockTime %u\n",tx.nLockTime,(uint32_t)nBlockTime);
-            return(false); // need to prevent pastdating tx
+            fprintf(stderr,"[%d] IsFinalTx reject locktime %u vs nBlockTime %u\n",(int32_t)(tx.nLockTime-nBlockTime),tx.nLockTime,(uint32_t)nBlockTime);
+            //return(false); // need to prevent pastdating tx
         } else fprintf(stderr,"IsFinalTx grandfather locktime %u vs nBlockTime %u\n",tx.nLockTime,(uint32_t)nBlockTime);
     }
     if ((int64_t)tx.nLockTime < ((int64_t)tx.nLockTime < LOCKTIME_THRESHOLD ? (int64_t)nBlockHeight : nBlockTime))
@@ -887,10 +887,10 @@ int32_t komodo_validate_interest(const CTransaction& tx)
             tiptime = chainActive.Tip()->nTime;
         if ( (int64_t)tx.nLockTime < tiptime-3600 )
         {
-            if ( komodo_grandfathered(tiptime) < 0 )
+            if ( komodo_grandfathered(locktime) < 0 )
             {
-                fprintf(stderr,"komodo_validate_interest reject locktime %u vs nBlockTime %u tiptime.%u\n",tx.nLockTime,(uint32_t)chainActive.Tip()->nTime,tiptime);
-                return(-1);
+                fprintf(stderr,"komodo_validate_interest reject locktime %u/%u vs nBlockTime %u tiptime.%u\n",(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,tiptime);
+                //return(-1);
             }
         }
     }
