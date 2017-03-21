@@ -951,7 +951,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     hash = block.GetHash();
                     for (j=0; j<32; j++)
                         printf("%02x",((uint8_t *)&hash)[j]);
-                    printf(" kht.%d ht.%d %.8f %.8f blockhash couldnt find vout.[%d] ht.%d %s\n",kmdheights[i-1],otherheights[i-1],dstr(values[i-1]),dstr(srcvalues[i]),i,height,ASSETCHAINS_SYMBOL);
+                    printf(" kht.%d ht.%d %.8f %.8f blockhash couldnt find vout.[%d] ht.%d %s for [%s]\n",kmdheights[i-1],otherheights[i-1],dstr(values[i-1]),dstr(srcvalues[i]),i,height,ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]);
                     return(-1);
                 }
             }
