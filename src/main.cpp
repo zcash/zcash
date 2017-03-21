@@ -717,7 +717,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
         return true;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )
     {
-        locktime = komodo_interest_args(&txheight,&tiptime,&value,hash,0);
+        locktime = komodo_interest_args(&txheight,&tiptime,&value,tx.GetHash(),0);
         if ( tiptime == 0 )
             tiptime = nBlockTime;
         if ( (int64_t)tx.nLockTime < tiptime-3600 )
