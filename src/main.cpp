@@ -706,7 +706,7 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
     return true;
 }
 
-bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
+bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int flags)
 {
     static uint32_t grandfathered[] =
     {
@@ -715,7 +715,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
     int32_t i;
     if (tx.nLockTime == 0)
         return true;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
     {
         for (i=0; i<sizeof(grandfathered)/sizeof(*grandfathered); i++)
             if ( nBlockTime == grandfathered[i] )
@@ -771,7 +771,7 @@ bool CheckFinalTx(const CTransaction &tx, int flags)
                              ? chainActive.Tip()->GetMedianTimePast()
                              : GetAdjustedTime();
 
-    return IsFinalTx(tx, nBlockHeight, nBlockTime);
+    return IsFinalTx(tx, nBlockHeight, nBlockTime,flags);
 }
 
 /**
@@ -3292,7 +3292,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         int64_t nLockTimeCutoff = (nLockTimeFlags & LOCKTIME_MEDIAN_TIME_PAST)
                                 ? pindexPrev->GetMedianTimePast()
                                 : block.GetBlockTime();
-        if (!IsFinalTx(tx, nHeight, nLockTimeCutoff)) {
+        if (!IsFinalTx(tx, nHeight, nLockTimeCutoff,0)) {
             return state.DoS(10, error("%s: contains a non-final transaction", __func__), REJECT_INVALID, "bad-txns-nonfinal");
         }
     }
