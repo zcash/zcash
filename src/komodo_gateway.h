@@ -745,7 +745,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             return(0);
         if ( baseid == USD ) // 6820 in balance calcs
         {
-            if ( height <= 2000 || height == 3275 || height == 3282 || height == 3328 || height == 3468 )
+            if ( height <= 2000 || height == 2649 || height == 3275 || height == 3282 || height == 3328 || height == 3468 )
             return(0);
         }
         else if ( baseid == EUR )
