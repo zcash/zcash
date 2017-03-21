@@ -728,7 +728,7 @@ int32_t komodo_grandfathered(uint32_t locktime)
     if ( locktime <= grandfathered[sizeof(grandfathered)/sizeof(*grandfathered) - 1] )
     {
         for (i=0; i<sizeof(grandfathered)/sizeof(*grandfathered); i++)
-            if ( nBlockTime == grandfathered[i] )
+            if ( locktime == grandfathered[i] )
                 return(i);
     }
     return(-1);
