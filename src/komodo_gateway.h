@@ -902,6 +902,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 return(0);
         }
     }
+    if ( strcmp(ASSETCHAINS_SYMBOL,"EUR") == 0 )
+        printf("%s height.%d\n",ASSETCHAINS_SYMBOL,height);
     if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
     {
         if ( (num= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,&script[offset],opretlen,opcode == 'X')) > 0 )
