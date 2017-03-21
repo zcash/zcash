@@ -719,7 +719,10 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int 
     {
         for (i=0; i<sizeof(grandfathered)/sizeof(*grandfathered); i++)
             if ( nBlockTime == grandfathered[i] )
+            {
+                fprintf(stderr,"IsFinalTx grandfather locktime %u vs nBlockTime %u\n",tx.nLockTime,(uint32_t)nBlockTime);
                 break;
+            }
         if ( i == sizeof(grandfathered)/sizeof(*grandfathered) )
         {
             fprintf(stderr,"IsFinalTx reject locktime %u vs nBlockTime %u\n",tx.nLockTime,(uint32_t)nBlockTime);
