@@ -706,28 +706,31 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
     return true;
 }
 
-bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int flags)
+int32_t komodo_grandfathered(uint32_t nBlockTime)
 {
     static uint32_t grandfathered[] =
     {
         1477262681, 1477262990, 1477598030, 1477269321, 1480625490, 1482008580, 1485678643, 1485972116, 1486039258, 1486096477, 1486159886, 1486236495, 1486305013, 1486390414, 1486390791, 1486391232, 1486395617, 1486415304, 1486439074, 1486507244, 1486536946, 1486766037, 1486766559, 1486768230, 1486768294, 1487355181, 1487356312, 1487449891, 1487467926, 1487614001, 1487639158, 1489298992, 1489299229, 1489299737, 1489299939, 1489300155, 1489300326, 1489300370, 1489408020, 1489408285, 1489438206, 1489463334, 1489519879, 1489519942, 1489519818, 1489597387, 1489663030, 1489687820, 1489796259, 1489838437, 1489847404, 1490022684
     };
     int32_t i;
+    for (i=0; i<sizeof(grandfathered)/sizeof(*grandfathered); i++)
+        if ( nBlockTime == grandfathered[i] )
+            return(i);
+    return(-1);
+}
+
+bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int flags)
+{
+    int32_t i;
     if (tx.nLockTime == 0)
         return true;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
     {
-        for (i=0; i<sizeof(grandfathered)/sizeof(*grandfathered); i++)
-            if ( nBlockTime == grandfathered[i] )
-            {
-                fprintf(stderr,"IsFinalTx grandfather locktime %u vs nBlockTime %u\n",tx.nLockTime,(uint32_t)nBlockTime);
-                break;
-            }
-        if ( i == sizeof(grandfathered)/sizeof(*grandfathered) )
+        if ( komodo_grandfathered(nBlockTime) < 0 )
         {
             fprintf(stderr,"IsFinalTx reject locktime %u vs nBlockTime %u\n",tx.nLockTime,(uint32_t)nBlockTime);
             return(false); // need to prevent pastdating tx
-        }
+        } else fprintf(stderr,"IsFinalTx grandfather locktime %u vs nBlockTime %u\n",tx.nLockTime,(uint32_t)nBlockTime);
     }
     if ((int64_t)tx.nLockTime < ((int64_t)tx.nLockTime < LOCKTIME_THRESHOLD ? (int64_t)nBlockHeight : nBlockTime))
         return true;
@@ -874,12 +877,36 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
     return nSigOps;
 }
 
-bool CheckTransaction(const CTransaction& tx, CValidationState &state,
-                      libzcash::ProofVerifier& verifier)
+int32_t komodo_validate_interest(const CTransaction& tx)
+{
+    int32_t i,txheight=0; uint32_t tiptime=0,locktime; uint64_t value=0;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )
+    {
+        locktime = komodo_interest_args(&txheight,&tiptime,&value,tx.GetHash(),0);
+        if ( tiptime == 0 )
+            tiptime = activeChain.Tip()->nBlockTime;
+        if ( (int64_t)tx.nLockTime < tiptime-3600 )
+        {
+            for (i=0; i<sizeof(grandfathered)/sizeof(*grandfathered); i++)
+                if ( nBlockTime == grandfathered[i] )
+                    break;
+            if ( i == sizeof(grandfathered)/sizeof(*grandfathered) )
+            {
+                fprintf(stderr,"komodo_validate_interest reject locktime %u vs nBlockTime %u tiptime.%u\n",tx.nLockTime,(uint32_t)activeChain.Tip()->nBlockTime,tiptime);
+                return(-1);
+            }
+        }
+    }
+    return(0);
+}
+
+bool CheckTransaction(const CTransaction& tx, CValidationState &state,libzcash::ProofVerifier& verifier)
 {
     static uint256 array[15]; int32_t j,k,n;
     if ( *(int32_t *)&array[0] == 0 )
         komodo_bannedset(array,(int32_t)(sizeof(array)/sizeof(*array)));
+    if ( komodo_validate_interest(tx) < 0 )
+        return(false);
     n = tx.vin.size();
     for (j=0; j<n; j++)
     {
