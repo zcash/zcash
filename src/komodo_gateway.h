@@ -108,8 +108,8 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
     struct pax_transaction *pax; uint8_t buf[35]; int32_t addflag = 0; struct komodo_state *sp; char str[16],dest[16],*s;
     //if ( KOMODO_PAX == 0 )
     //    return;
-    if ( strcmp(symbol,ASSETCHAINS_SYMBOL) != 0 )
-        return;
+    //if ( strcmp(symbol,ASSETCHAINS_SYMBOL) != 0 )
+    //    return;
     sp = komodo_stateptr(str,dest);
     pthread_mutex_lock(&komodo_mutex);
     pax_keyset(buf,txid,vout,type);
@@ -929,7 +929,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         matched++;
                         if ( pax->marked != 0 && height >= 80820 )
                         {
-                            printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f paxmarked.%d kht.%d ht.%d\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax->marked,pax->height,pax->otherheight);
+                            printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f paxmarked.%d kht.%d ht.%d [%s].%d\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax->marked,pax->height,pax->otherheight,ASSETCHAINS_SYMBOL,height);
                         }
                         else
                         {
@@ -942,7 +942,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         for (j=0; j<32; j++)
                             printf("%02x",((uint8_t *)&txids[i-1])[j]);
                         printf(" cant paxfind %c txid [%d]\n",opcode,height);
-                        printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f pax.%p ht.%d\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax,height);
+                        printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f pax.%p [%s] ht.%d\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax,ASSETCHAINS_SYMBOL,height);
                         return(-1);
                     }
                 }
