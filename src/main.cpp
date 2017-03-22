@@ -713,7 +713,8 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int 
         return true;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
     {
-        if ( nBlockTime > 1490159171 ) // 246748
+        if ( nBlockHeight > 246748 )
+        //if ( nBlockTime > 1490159171 ) // 246748
         {
             fprintf(stderr,"[%d] IsFinalTx reject locktime %u vs nBlockTime %u\n",(int32_t)(tx.nLockTime-nBlockTime),tx.nLockTime,(uint32_t)nBlockTime);
             return(false); // need to prevent pastdating tx
@@ -874,11 +875,12 @@ int32_t komodo_validate_interest(const CTransaction& tx)
             tiptime = chainActive.Tip()->nTime;
         if ( (int64_t)tx.nLockTime < tiptime-3600 )
         {
-            if ( tiptime > 1490159171 ) // 246748
+            //if ( tiptime > 1490159171 ) // 246748
+            if ( txheight > 246748 )
             {
                 static uint32_t counter;
                 if ( counter++ < 100 )
-                    fprintf(stderr,"komodo_validate_interest reject locktime %u/%u vs nBlockTime %u tiptime.%u\n",(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,tiptime);
+                    fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u tiptime.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,tiptime);
                 return(-1);
             }
         }
