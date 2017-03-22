@@ -17,6 +17,45 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+void AtomicTimer::start()
+{
+    std::unique_lock<std::mutex> lock(mtx);
+    if (threads < 1) {
+        start_time = GetTime();
+    }
+    ++threads;
+}
+
+void AtomicTimer::stop()
+{
+    std::unique_lock<std::mutex> lock(mtx);
+    // Ignore excess calls to stop()
+    if (threads > 0) {
+        --threads;
+        if (threads < 1) {
+            int64_t time_span = GetTime() - start_time;
+            total_time += time_span;
+        }
+    }
+}
+
+bool AtomicTimer::running()
+{
+    std::unique_lock<std::mutex> lock(mtx);
+    return threads > 0;
+}
+
+double AtomicTimer::rate(const AtomicCounter& count)
+{
+    std::unique_lock<std::mutex> lock(mtx);
+    int64_t duration = total_time;
+    if (threads > 0) {
+        // Timer is running, so get the latest count
+        duration += GetTime() - start_time;
+    }
+    return duration > 0 ? (double)count.get() / duration : 0;
+}
+
 CCriticalSection cs_metrics;
 
 boost::synchronized_value<int64_t> nNodeStartTime;
