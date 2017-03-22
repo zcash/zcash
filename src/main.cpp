@@ -891,8 +891,8 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,libzcash::
     static uint256 array[15]; int32_t j,k,n;
     if ( *(int32_t *)&array[0] == 0 )
         komodo_bannedset(array,(int32_t)(sizeof(array)/sizeof(*array)));
-    //if ( komodo_validate_interest(tx) < 0 )
-    //    return(false);
+    if ( komodo_validate_interest(tx) < 0 )
+        return(false);
     n = tx.vin.size();
     for (j=0; j<n; j++)
     {
