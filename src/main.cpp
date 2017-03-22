@@ -874,7 +874,7 @@ int32_t komodo_validate_interest(const CTransaction& tx)
             tiptime = chainActive.Tip()->nTime;
         if ( (int64_t)tx.nLockTime < tiptime-3600 )
         {
-            if ( tiptime > 1490159171 ) // 246748
+            if ( tiptime >= 1490159171 ) // 246748
             {
                 static uint32_t counter;
                 if ( counter++ < 100 )
