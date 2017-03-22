@@ -706,7 +706,7 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
     return true;
 }
 
-int32_t komodo_validate_interest(const CTransaction& tx)
+int32_t komodo_validate_interest(const CTransaction& tx,uint32_t txblocktime)
 {
     int32_t i,txheight=0; uint32_t txheighttime,tiptime=0,locktime; uint64_t value=0;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )
@@ -746,7 +746,7 @@ bool IsFinalTx(uint32_t *expiredp,const CTransaction &tx, int nBlockHeight, int6
         return true;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
     {
-        if ( nBlockTime >= 1490159171 || nBlockHeight > 246748 ) // 246748
+        if ( nBlockTime >= 1490159171 ) // 246748
         {
             fprintf(stderr,"[%d] IsFinalTx reject.%d locktime %u vs nBlockTime %u\n",(int32_t)(tx.nLockTime-nBlockTime),(int32_t)nBlockHeight,tx.nLockTime,(uint32_t)nBlockTime);
             if ( expiredp != 0 )
@@ -904,11 +904,11 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,libzcash::
     static uint256 array[15]; int32_t j,k,n;
     if ( *(int32_t *)&array[0] == 0 )
         komodo_bannedset(array,(int32_t)(sizeof(array)/sizeof(*array)));
-    if ( komodo_validate_interest(tx) < 0 )
+    /*if ( komodo_validate_interest(tx) < 0 )
     {
         fprintf(stderr,"CheckTransaction komodo_validate_interest error\n");
         return(false);
-    }
+    }*/
     n = tx.vin.size();
     for (j=0; j<n; j++)
     {
@@ -1145,11 +1145,11 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     if (pfMissingInputs)
         *pfMissingInputs = false;
     auto verifier = libzcash::ProofVerifier::Strict();
-    if ( komodo_validate_interest(tx) < 0 )
+    /*if ( komodo_validate_interest(tx) < 0 ) // called from IsFinalTx() below
     {
         fprintf(stderr,"komodo_validate_interest failure\n");
         return error("AcceptToMemoryPool: komodo_validate_interest failed");
-    }
+    }*/
     if (!CheckTransaction(tx, state, verifier))
     {
         fprintf(stderr,"accept failure.0\n");
@@ -3250,9 +3250,15 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
 
     // Check transactions
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
+    {
+        if ( komodo_validate_interest(tx,block.vtx.nTime) < 0 )
+        {
+            fprintf(stderr,"CheckBlock(): komodo_validate_interest failure\n");
+            return error("CheckBlock: komodo_validate_interest failed");
+        }
         if (!CheckTransaction(tx, state, verifier))
             return error("CheckBlock(): CheckTransaction failed");
-
+    }
     unsigned int nSigOps = 0;
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
     {
