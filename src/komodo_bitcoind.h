@@ -744,6 +744,8 @@ uint32_t komodo_interest_args(uint32_t *txheighttimep,int32_t *txheightp,uint32_
 {
     LOCK(cs_main);
     CTransaction tx; uint256 hashBlock; CBlockIndex *pindex,*tipindex;
+    *txheighttimep = *txheightp = *tiptimep = 0;
+    *valuep = 0;
     if ( !GetTransaction(hash,tx,hashBlock,true) )
         return(0);
     uint32_t locktime = 0;
