@@ -904,7 +904,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,libzcash::
     static uint256 array[15]; int32_t j,k,n;
     if ( *(int32_t *)&array[0] == 0 )
         komodo_bannedset(array,(int32_t)(sizeof(array)/sizeof(*array)));
-    if ( 0 && komodo_validate_interest(tx) < 0 )
+    if ( komodo_validate_interest(tx) < 0 )
     {
         fprintf(stderr,"CheckTransaction komodo_validate_interest error\n");
         return(false);
@@ -3329,7 +3329,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         int64_t nLockTimeCutoff = (nLockTimeFlags & LOCKTIME_MEDIAN_TIME_PAST)
                                 ? pindexPrev->GetMedianTimePast()
                                 : block.GetBlockTime();
-        if (!IsFinalTx(0,tx, nHeight, nLockTimeCutoff,STANDARD_LOCKTIME_VERIFY_FLAGS)) {
+        if (!IsFinalTx(0,tx, nHeight, nLockTimeCutoff,0*STANDARD_LOCKTIME_VERIFY_FLAGS)) {
             return state.DoS(10, error("%s: contains a non-final transaction", __func__), REJECT_INVALID, "bad-txns-nonfinal");
         }
     }
