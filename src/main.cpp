@@ -721,18 +721,18 @@ int32_t komodo_validate_interest(const CTransaction& tx,uint32_t txblocktime)
             if ( counter0++ < 3 )
                 fprintf(stderr,"error getting txheighttime, set to tiptime.%u\n",txheighttime);
         }
-        if ( (int64_t)tx.nLockTime < txheighttime-3600 )
+        if ( (int64_t)tx.nLockTime < txblocktime-3600 )//txheighttime-3600 )
         {
             if ( txheighttime > 1490159171 )//|| (txheight == 0 && txheighttime >= 1490159171) ) // 246748
             {
                 // komodo_validate_interest reject.0 locktime 1490193206/0 vs nBlockTime 1490202625 txheighttime.1490202625 tiptime.0
                 //static uint32_t counter;
                 //if ( counter++ < 100 )
-                    fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u txheighttime.%u tiptime.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,txheighttime,tiptime);
+                    fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u txheighttime.%u tiptime.%u txb.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,txheighttime,tiptime,txblocktime);
                 return(-1);
-            } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime);
+            } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u txb.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime,txblocktime);
         }
-        fprintf(stderr,"validateinterest accept.%d locktime %u/%u vs txheighttime.%u tiptime.%u\n",(int32_t)txheight,(int32_t)tx.nLockTime,locktime,txheighttime,tiptime);
+        fprintf(stderr,"validateinterest accept.%d locktime %u/%u vs txheighttime.%u tiptime.%u txb.%u\n",(int32_t)txheight,(int32_t)tx.nLockTime,locktime,txheighttime,tiptime,txblocktime);
     }
     return(0);
 }
@@ -3251,7 +3251,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     // Check transactions
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
     {
-        if ( komodo_validate_interest(tx,block.vtx.nTime) < 0 )
+        if ( komodo_validate_interest(tx,block.nTime) < 0 )
         {
             fprintf(stderr,"CheckBlock(): komodo_validate_interest failure\n");
             return error("CheckBlock: komodo_validate_interest failed");
