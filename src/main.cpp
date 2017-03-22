@@ -735,7 +735,7 @@ int32_t komodo_grandfathered(uint32_t locktime)
     return(-1);
 }
 
-#define KOMODO_GRANDFATHER_TIME (1490114274 + 3600*24)
+#define KOMODO_GRANDFATHER_TIME (1490155211 + 3600) //(1490114274 + 3600*24)
 
 bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int flags)
 {
