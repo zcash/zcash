@@ -183,7 +183,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->nTime = GetAdjustedTime();
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
         CCoinsViewCache view(pcoinsTip);
-        uin32_t expired;
+        uint32_t expired;
         
         // Priority order to process transactions
         list<COrphan> vOrphan; // list memory doesn't move
@@ -206,7 +206,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             {
                 if ( expired != 0 )
                 {
-                    fprintf(stderr,"expire from mempool tx.(%d %d) %.8f\n",tx.vins.size(),tx.vouts.size(),(double)tx.vouts[0].nValue/COIN);
+                    fprintf(stderr,"expire from mempool tx.\n");//(%d %d) %.8f\n",tx.vins.size(),tx.vouts.size(),(double)tx.vouts[0].nValue/COIN);
                 }
                 continue;
             }
