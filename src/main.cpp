@@ -3320,7 +3320,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         int64_t nLockTimeCutoff = (nLockTimeFlags & LOCKTIME_MEDIAN_TIME_PAST)
                                 ? pindexPrev->GetMedianTimePast()
                                 : block.GetBlockTime();
-        if (!IsFinalTx(tx, nHeight, nLockTimeCutoff,STANDARD_LOCKTIME_VERIFY_FLAGS)) {
+        if (!IsFinalTx(tx, nHeight, nLockTimeCutoff,0*STANDARD_LOCKTIME_VERIFY_FLAGS)) {
             return state.DoS(10, error("%s: contains a non-final transaction", __func__), REJECT_INVALID, "bad-txns-nonfinal");
         }
     }
