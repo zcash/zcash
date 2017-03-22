@@ -738,11 +738,11 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int 
     int32_t i;
     if (tx.nLockTime == 0)
         return true;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )//&& (int64_t)tx.nLockTime < nBlockTime-3600 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
     {
         //if ( komodo_validate_interest(tx) < 0 )
         //    return(false);
-        if ( nBlockTime >= 1490159171 ) // 246748
+        if ( nBlockTime >= 1490159171 || nBlockHeight > 246748 ) // 246748
         {
             fprintf(stderr,"[%d] IsFinalTx reject.%d locktime %u vs nBlockTime %u\n",(int32_t)(tx.nLockTime-nBlockTime),(int32_t)nBlockHeight,tx.nLockTime,(uint32_t)nBlockTime);
             return(false); // need to prevent pastdating tx
