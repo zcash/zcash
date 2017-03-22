@@ -876,7 +876,9 @@ int32_t komodo_validate_interest(const CTransaction& tx)
         {
             if ( tiptime > 1490159171 ) // 246748
             {
-                fprintf(stderr,"komodo_validate_interest reject locktime %u/%u vs nBlockTime %u tiptime.%u\n",(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,tiptime);
+                static uint32_t counter;
+                if ( counter++ < 100 )
+                    fprintf(stderr,"komodo_validate_interest reject locktime %u/%u vs nBlockTime %u tiptime.%u\n",(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,tiptime);
                 return(-1);
             }
         }
