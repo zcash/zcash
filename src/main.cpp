@@ -721,7 +721,7 @@ int32_t komodo_validate_interest(const CTransaction& tx)
         }
         if ( (int64_t)tx.nLockTime < txheighttime-3600 )
         {
-            if ( txheighttime > 1490159171 || (txheight == 0 && txheighttime >= 1490159171) ) // 246748
+            if ( txheighttime > 1490159171 )//|| (txheight == 0 && txheighttime >= 1490159171) ) // 246748
             {
                 static uint32_t counter;
                 if ( counter++ < 100 )
@@ -733,18 +733,20 @@ int32_t komodo_validate_interest(const CTransaction& tx)
     return(0);
 }
 
-bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int flags)
+bool IsFinalTx(uint32_t *expiredp,const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int flags)
 {
     int32_t i;
+    if ( expiredp != 0 )
+        *expiredp = 0;
     if (tx.nLockTime == 0)
         return true;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
     {
-        //if ( komodo_validate_interest(tx) < 0 )
-        //    return(false);
         if ( nBlockTime >= 1490159171 || nBlockHeight > 246748 ) // 246748
         {
             fprintf(stderr,"[%d] IsFinalTx reject.%d locktime %u vs nBlockTime %u\n",(int32_t)(tx.nLockTime-nBlockTime),(int32_t)nBlockHeight,tx.nLockTime,(uint32_t)nBlockTime);
+            if ( expiredp != 0 )
+                *expiredp = nBlockTime-3600;
             return(false); // need to prevent pastdating tx
         } else fprintf(stderr,"IsFinalTx grandfather.%d locktime %u vs nBlockTime %u\n",(int32_t)nBlockHeight,tx.nLockTime,(uint32_t)nBlockTime);
     }
@@ -793,7 +795,7 @@ bool CheckFinalTx(const CTransaction &tx, int flags)
                              ? chainActive.Tip()->GetMedianTimePast()
                              : GetAdjustedTime();
 
-    return IsFinalTx(tx, nBlockHeight, nBlockTime,flags);
+    return IsFinalTx(0,tx, nBlockHeight, nBlockTime,flags);
 }
 
 /**
@@ -899,7 +901,10 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,libzcash::
     if ( *(int32_t *)&array[0] == 0 )
         komodo_bannedset(array,(int32_t)(sizeof(array)/sizeof(*array)));
     if ( komodo_validate_interest(tx) < 0 )
+    {
+        fprintf(stderr,"CheckTransaction komodo_validate_interest error\n");
         return(false);
+    }
     n = tx.vin.size();
     for (j=0; j<n; j++)
     {
@@ -3320,7 +3325,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         int64_t nLockTimeCutoff = (nLockTimeFlags & LOCKTIME_MEDIAN_TIME_PAST)
                                 ? pindexPrev->GetMedianTimePast()
                                 : block.GetBlockTime();
-        if (!IsFinalTx(tx, nHeight, nLockTimeCutoff,0*STANDARD_LOCKTIME_VERIFY_FLAGS)) {
+        if (!IsFinalTx(0,tx, nHeight, nLockTimeCutoff,0*STANDARD_LOCKTIME_VERIFY_FLAGS)) {
             return state.DoS(10, error("%s: contains a non-final transaction", __func__), REJECT_INVALID, "bad-txns-nonfinal");
         }
     }
