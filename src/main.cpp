@@ -728,7 +728,7 @@ int32_t komodo_validate_interest(const CTransaction& tx,uint32_t txblocktime)
                 cmptime = txblocktime;
         }
         else if ( (cmptime= txheighttime) == 0 )
-            cmptime = txblockime;
+            cmptime = txblocktime;
         if ( cmptime != 0 && (int64_t)tx.nLockTime < cmptime-3600 )
         {
             if ( txheighttime > 1490159171 || (locktime == 0 && txheighttime >= 1490159171) ) // 246748
