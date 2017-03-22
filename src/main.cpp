@@ -719,7 +719,7 @@ int32_t komodo_validate_interest(const CTransaction& tx)
         }
         if ( (int64_t)tx.nLockTime < prevblocktime-3600 )
         {
-            if ( tiptime > 1490159171 || (txheight == 0 && prevblocktime >= 1490159171) ) // 246748
+            if ( prevblocktime > 1490159171 || (txheight == 0 && prevblocktime >= 1490159171) ) // 246748
             {
                 static uint32_t counter;
                 if ( counter++ < 100 )
