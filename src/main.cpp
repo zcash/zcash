@@ -708,26 +708,26 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
 
 int32_t komodo_validate_interest(const CTransaction& tx)
 {
-    int32_t i,txheight=0; uint32_t prevblocktime=0,locktime; uint64_t value=0;
+    int32_t i,txheight=0; uint32_t txheighttime,tiptime=0,locktime; uint64_t value=0;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )
     {
-        locktime = komodo_interest_args(&txheight,&prevblocktime,&value,tx.GetHash(),0);
-        if ( prevblocktime == 0 )
+        locktime = komodo_interest_args(&txheighttime,&txheight,&tiptime,&value,tx.GetHash(),0);
+        if ( txheighttime == 0 )
         {
             static uint32_t counter0;
-            prevblocktime = chainActive.Tip()->nTime;
+            txheighttime = chainActive.Tip()->nTime;
             if ( counter0++ < 3 )
-                fprintf(stderr,"error getting prevblocktime, set to tiptime.%u\n",prevblocktime);
+                fprintf(stderr,"error getting txheighttime, set to tiptime.%u\n",txheighttime);
         }
-        if ( (int64_t)tx.nLockTime < prevblocktime-3600 )
+        if ( (int64_t)tx.nLockTime < txheighttime-3600 )
         {
-            if ( prevblocktime > 1490159171 || (txheight == 0 && prevblocktime >= 1490159171) ) // 246748
+            if ( txheighttime > 1490159171 || (txheight == 0 && txheighttime >= 1490159171) ) // 246748
             {
                 static uint32_t counter;
                 if ( counter++ < 100 )
-                    fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u prevblocktime.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,prevblocktime);
+                    fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u txheighttime.%u tiptime.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,txheighttime,tiptime);
                 return(-1);
-            } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs nBlockTime %u\n",(int32_t)txheight,tx.nLockTime,(uint32_t)prevblocktime);
+            } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime);
         }
     }
     return(0);
