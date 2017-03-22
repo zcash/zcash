@@ -727,7 +727,7 @@ int32_t komodo_validate_interest(const CTransaction& tx)
                 if ( counter++ < 100 )
                     fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u txheighttime.%u tiptime.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,txheighttime,tiptime);
                 return(-1);
-            } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs nBlockTime %u txheighttime.%u\n",(int32_t)txheight,tx.nLockTime,(uint32_t)prevblocktime,txheighttime);
+            } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime);
         }
     }
     return(0);
