@@ -715,9 +715,9 @@ int32_t komodo_validate_interest(const CTransaction& tx)
         if ( txheighttime == 0 )
         {
             static uint32_t counter0;
-            txheighttime = tiptime;
+            txheighttime = chainActive.Tip()->nTime;
             if ( counter0++ < 3 )
-                fprintf(stderr,"error getting txheighttime, set to tiptime.%u\n",tiptime);
+                fprintf(stderr,"error getting txheighttime, set to tiptime.%u\n",txheighttime);
         }
         if ( (int64_t)tx.nLockTime < txheighttime-3600 )
         {
