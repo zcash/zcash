@@ -706,12 +706,14 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
     return true;
 }
 
-int32_t komodo_validate_interest(const CTransaction& tx)
+int32_t komodo_validate_interest(const CTransaction& tx,uint32_t txblocktime)
 {
-    int32_t i,txheight=0; uint32_t txheighttime,tiptime=0,locktime; uint64_t value=0;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )
+    int32_t i,txheight=0; uint32_t cmptime,txheighttime,tiptime=0,locktime; uint64_t value=0;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && txblocktime >= 1473793441 )
     {
         locktime = komodo_interest_args(&txheighttime,&txheight,&tiptime,&value,tx.GetHash(),0);
+        if ( tiptime == 0 )
+            tiptime = (int32_t)chainActive.Tip()->nTime;
         if ( txheighttime == 0 )
         {
             static uint32_t counter0;
@@ -719,32 +721,50 @@ int32_t komodo_validate_interest(const CTransaction& tx)
             if ( counter0++ < 3 )
                 fprintf(stderr,"error getting txheighttime, set to tiptime.%u\n",txheighttime);
         }
-        if ( (int64_t)tx.nLockTime < txheighttime-3600 )
+        if ( txheighttime != 0 && txblocktime != 0 )
         {
-            if ( txheighttime > 1490159171 || (txheight == 0 && txheighttime >= 1490159171) ) // 246748
-            {
-                static uint32_t counter;
-                if ( counter++ < 100 )
-                    fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u txheighttime.%u tiptime.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,txheighttime,tiptime);
-                return(-1);
-            } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime);
+            cmptime = txheighttime;
+            if ( txblocktime < cmptime )
+                cmptime = txblocktime;
         }
+        else if ( (cmptime= txheighttime) == 0 )
+            cmptime = txblocktime;
+        if ( tiptime != 0 && tiptime < cmptime )
+            cmptime = tiptime;
+        //validateinterest accept.246749 locktime 1490205024/1490205024 vs txheighttime.1490205794 tiptime.1490159171 txb.1490205794
+        //komodo_validate_interest reject.246749 locktime 1490201846/1490201846 vs nBlockTime 1490159171 txheighttime.1490205794 tiptime.1490159171 txb.1490205794
+        //CheckBlock(): komodo_validate_interest failure
+        if ( cmptime != 0 && (int64_t)tx.nLockTime < cmptime-3600 )
+        {
+            if ( txheighttime > 1490159171 || (locktime == 0 && txheighttime >= 1490159171) ) // 246748
+            {
+                // komodo_validate_interest reject.0 locktime 1490193206/0 vs nBlockTime 1490202625 txheighttime.1490202625 tiptime.0
+                //static uint32_t counter;
+                //if ( counter++ < 100 )
+                    fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u txheighttime.%u tiptime.%u txb.%u cmp.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,txheighttime,tiptime,txblocktime,cmptime);
+                return(-1);
+            } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime,txblocktime,cmptime);
+        }
+        fprintf(stderr,"validateinterest accept.%d locktime %u/%u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,(int32_t)tx.nLockTime,locktime,txheighttime,tiptime,txblocktime,cmptime);
     }
     return(0);
 }
 
-bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int flags)
+bool IsFinalTx(uint32_t *expiredp,const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int flags)
 {
     int32_t i;
+    if ( expiredp != 0 )
+        *expiredp = 0;
     if (tx.nLockTime == 0)
         return true;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && (int64_t)tx.nLockTime < nBlockTime-3600 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && nBlockTime >= 1473793441 ) //&& (int64_t)tx.nLockTime < nBlockTime-3600
     {
-        //if ( komodo_validate_interest(tx) < 0 )
-        //    return(false);
-        if ( nBlockTime >= 1490159171 || nBlockHeight > 246748 ) // 246748
+        if ( komodo_validate_interest(tx,nBlockTime) < 0 )
+        //if ( nBlockTime >= 1490159171 ) // 246748
         {
             fprintf(stderr,"[%d] IsFinalTx reject.%d locktime %u vs nBlockTime %u\n",(int32_t)(tx.nLockTime-nBlockTime),(int32_t)nBlockHeight,tx.nLockTime,(uint32_t)nBlockTime);
+            if ( expiredp != 0 )
+                *expiredp = nBlockTime-3600;
             return(false); // need to prevent pastdating tx
         } else fprintf(stderr,"IsFinalTx grandfather.%d locktime %u vs nBlockTime %u\n",(int32_t)nBlockHeight,tx.nLockTime,(uint32_t)nBlockTime);
     }
@@ -793,7 +813,7 @@ bool CheckFinalTx(const CTransaction &tx, int flags)
                              ? chainActive.Tip()->GetMedianTimePast()
                              : GetAdjustedTime();
 
-    return IsFinalTx(tx, nBlockHeight, nBlockTime,flags);
+    return IsFinalTx(0,tx, nBlockHeight, nBlockTime,flags);
 }
 
 /**
@@ -898,8 +918,11 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,libzcash::
     static uint256 array[15]; int32_t j,k,n;
     if ( *(int32_t *)&array[0] == 0 )
         komodo_bannedset(array,(int32_t)(sizeof(array)/sizeof(*array)));
-    if ( komodo_validate_interest(tx) < 0 )
+    /*if ( komodo_validate_interest(tx) < 0 )
+    {
+        fprintf(stderr,"CheckTransaction komodo_validate_interest error\n");
         return(false);
+    }*/
     n = tx.vin.size();
     for (j=0; j<n; j++)
     {
@@ -1136,11 +1159,11 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     if (pfMissingInputs)
         *pfMissingInputs = false;
     auto verifier = libzcash::ProofVerifier::Strict();
-    if ( komodo_validate_interest(tx) < 0 )
+    /*if ( komodo_validate_interest(tx) < 0 ) // called from IsFinalTx() below
     {
         fprintf(stderr,"komodo_validate_interest failure\n");
         return error("AcceptToMemoryPool: komodo_validate_interest failed");
-    }
+    }*/
     if (!CheckTransaction(tx, state, verifier))
     {
         fprintf(stderr,"accept failure.0\n");
@@ -3241,9 +3264,15 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
 
     // Check transactions
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
+    {
+        if ( komodo_validate_interest(tx,block.nTime) < 0 )
+        {
+            fprintf(stderr,"CheckBlock(): komodo_validate_interest failure\n");
+            return error("CheckBlock: komodo_validate_interest failed");
+        }
         if (!CheckTransaction(tx, state, verifier))
             return error("CheckBlock(): CheckTransaction failed");
-
+    }
     unsigned int nSigOps = 0;
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
     {
@@ -3320,7 +3349,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         int64_t nLockTimeCutoff = (nLockTimeFlags & LOCKTIME_MEDIAN_TIME_PAST)
                                 ? pindexPrev->GetMedianTimePast()
                                 : block.GetBlockTime();
-        if (!IsFinalTx(tx, nHeight, nLockTimeCutoff,0*STANDARD_LOCKTIME_VERIFY_FLAGS)) {
+        if (!IsFinalTx(0,tx, nHeight, nLockTimeCutoff,0*STANDARD_LOCKTIME_VERIFY_FLAGS)) {
             return state.DoS(10, error("%s: contains a non-final transaction", __func__), REJECT_INVALID, "bad-txns-nonfinal");
         }
     }

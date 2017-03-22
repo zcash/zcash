@@ -183,7 +183,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->nTime = GetAdjustedTime();
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
         CCoinsViewCache view(pcoinsTip);
-
+        uint32_t expired;
+        
         // Priority order to process transactions
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
@@ -201,9 +202,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                                     ? nMedianTimePast
                                     : pblock->GetBlockTime();
 
-            if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, nLockTimeCutoff,STANDARD_LOCKTIME_VERIFY_FLAGS))
+            if (tx.IsCoinBase() || !IsFinalTx(&expired,tx, nHeight, nLockTimeCutoff,STANDARD_LOCKTIME_VERIFY_FLAGS))
+            {
+                if ( expired != 0 )
+                {
+                    fprintf(stderr,"expire from mempool tx.\n");//(%d %d) %.8f\n",tx.vins.size(),tx.vouts.size(),(double)tx.vouts[0].nValue/COIN);
+                }
                 continue;
-
+            }
             COrphan* porphan = NULL;
             double dPriority = 0;
             CAmount nTotalIn = 0;
