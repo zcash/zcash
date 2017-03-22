@@ -729,6 +729,11 @@ int32_t komodo_validate_interest(const CTransaction& tx,uint32_t txblocktime)
         }
         else if ( (cmptime= txheighttime) == 0 )
             cmptime = txblocktime;
+        if ( tiptime != 0 && tiptime < cmptime )
+            cmptime = tiptime;
+        //validateinterest accept.246749 locktime 1490205024/1490205024 vs txheighttime.1490205794 tiptime.1490159171 txb.1490205794
+        //komodo_validate_interest reject.246749 locktime 1490201846/1490201846 vs nBlockTime 1490159171 txheighttime.1490205794 tiptime.1490159171 txb.1490205794
+        //CheckBlock(): komodo_validate_interest failure
         if ( cmptime != 0 && (int64_t)tx.nLockTime < cmptime-3600 )
         {
             if ( txheighttime > 1490159171 || (locktime == 0 && txheighttime >= 1490159171) ) // 246748
@@ -736,11 +741,11 @@ int32_t komodo_validate_interest(const CTransaction& tx,uint32_t txblocktime)
                 // komodo_validate_interest reject.0 locktime 1490193206/0 vs nBlockTime 1490202625 txheighttime.1490202625 tiptime.0
                 //static uint32_t counter;
                 //if ( counter++ < 100 )
-                    fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u txheighttime.%u tiptime.%u txb.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,txheighttime,tiptime,txblocktime);
+                    fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u txheighttime.%u tiptime.%u txb.%u cmp.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,txheighttime,tiptime,txblocktime,cmptime);
                 return(-1);
-            } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u txb.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime,txblocktime);
+            } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime,txblocktime,cmptime);
         }
-        fprintf(stderr,"validateinterest accept.%d locktime %u/%u vs txheighttime.%u tiptime.%u txb.%u\n",(int32_t)txheight,(int32_t)tx.nLockTime,locktime,txheighttime,tiptime,txblocktime);
+        fprintf(stderr,"validateinterest accept.%d locktime %u/%u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,(int32_t)tx.nLockTime,locktime,txheighttime,tiptime,txblocktime,cmptime);
     }
     return(0);
 }
