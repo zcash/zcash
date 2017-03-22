@@ -712,6 +712,8 @@ int32_t komodo_validate_interest(const CTransaction& tx)
     if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )
     {
         locktime = komodo_interest_args(&txheighttime,&txheight,&tiptime,&value,tx.GetHash(),0);
+        if ( tiptime == 0 )
+            tiptime = (int32_t)chainActive.Tip()->nTime;
         if ( txheighttime == 0 )
         {
             static uint32_t counter0;
@@ -723,12 +725,14 @@ int32_t komodo_validate_interest(const CTransaction& tx)
         {
             if ( txheighttime > 1490159171 )//|| (txheight == 0 && txheighttime >= 1490159171) ) // 246748
             {
+                // komodo_validate_interest reject.0 locktime 1490193206/0 vs nBlockTime 1490202625 txheighttime.1490202625 tiptime.0
                 static uint32_t counter;
                 if ( counter++ < 100 )
                     fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u txheighttime.%u tiptime.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,txheighttime,tiptime);
                 return(-1);
             } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime);
         }
+        fprintf(stderr,"validateinterest accept.%d locktime %u/%u vs txheighttime.%u tiptime.%u\n",(int32_t)txheight,(int32_t)tx.nLockTime,locktime,txheighttime,tiptime);
     }
     return(0);
 }
