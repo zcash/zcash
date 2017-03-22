@@ -55,6 +55,7 @@ public:
 extern AtomicCounter transactionsValidated;
 extern AtomicCounter ehSolverRuns;
 extern AtomicCounter solutionTargetChecks;
+extern AtomicTimer miningTimer;
 
 void TrackMinedBlock(uint256 hash);
 

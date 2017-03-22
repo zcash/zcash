@@ -64,6 +64,7 @@ AtomicCounter transactionsValidated;
 AtomicCounter ehSolverRuns;
 AtomicCounter solutionTargetChecks;
 AtomicCounter minedBlocks;
+AtomicTimer miningTimer;
 
 boost::synchronized_value<std::list<uint256>> trackedBlocks;
 
@@ -90,14 +91,9 @@ int64_t GetUptime()
     return GetTime() - *nNodeStartTime;
 }
 
-double GetLocalSolPS_INTERNAL(int64_t uptime)
-{
-    return uptime > 0 ? (double)solutionTargetChecks.get() / uptime : 0;
-}
-
 double GetLocalSolPS()
 {
-    return GetLocalSolPS_INTERNAL(GetUptime());
+    return miningTimer.rate(solutionTargetChecks);
 }
 
 void TriggerRefresh()
@@ -240,7 +236,7 @@ int printMetrics(size_t cols, bool mining)
     }
 
     if (mining && loaded) {
-        double solps = GetLocalSolPS_INTERNAL(uptime);
+        double solps = GetLocalSolPS();
         std::string strSolps = strprintf("%.4f Sol/s", solps);
         std::cout << "- " << strprintf(_("You have contributed %s on average to the network solution rate."), strSolps) << std::endl;
         std::cout << "- " << strprintf(_("You have completed %d Equihash solver runs."), ehSolverRuns.get()) << std::endl;
