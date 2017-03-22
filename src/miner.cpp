@@ -846,7 +846,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 }
                 if ((UintToArith256(pblock->nNonce) & 0xffff) == 0xffff)
                 {
-                    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                    //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                         fprintf(stderr,"0xffff, break\n");
                     break;
                 }
