@@ -905,7 +905,7 @@ int32_t komodo_validate_interest(const CTransaction& tx)
             tiptime = chainActive.Tip()->nTime;
         if ( (int64_t)tx.nLockTime < tiptime-3600 )
         {
-            if ( komodo_grandfathered(tx.nLockTime) < 0 && tiptime  > KOMODO_GRANDFATHER_TIME )
+            if ( komodo_grandfathered(tx.nLockTime) < 0 )//&& tiptime  > KOMODO_GRANDFATHER_TIME )
             {
                 fprintf(stderr,"komodo_validate_interest reject locktime %u/%u vs nBlockTime %u tiptime.%u\n",(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,tiptime);
                 return(-1);
