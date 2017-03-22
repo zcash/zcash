@@ -714,8 +714,10 @@ int32_t komodo_validate_interest(const CTransaction& tx)
         locktime = komodo_interest_args(&txheight,&prevblocktime,&value,tx.GetHash(),0);
         if ( prevblocktime == 0 )
         {
+            static uint32_t counter0;
             prevblocktime = chainActive.Tip()->nTime;
-            fprintf(stderr,"error getting prevblocktime, set to tiptime.%u\n",prevblocktime);
+            if ( counter0++ < 100 )
+                fprintf(stderr,"error getting prevblocktime, set to tiptime.%u\n",prevblocktime);
         }
         if ( (int64_t)tx.nLockTime < prevblocktime-3600 )
         {
