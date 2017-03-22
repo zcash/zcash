@@ -677,7 +677,7 @@ void static BitcoinMiner(CWallet *pwallet)
                             if ( externalflag == 0 && i != 66 )
                                 printf("VIOLATION at %d\n",i);
                             for (i=0; i<66; i++)
-                            {break;
+                            { break;
                                 for (j=0; j<33; j++)
                                     printf("%02x",pubkeys[i][j]);
                                 printf(" p%d -> %d\n",i,komodo_minerid(pindexPrev->nHeight-i,pubkeys[i]));
