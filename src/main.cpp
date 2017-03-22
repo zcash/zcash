@@ -715,9 +715,9 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime,int 
     {
         if ( nBlockTime >= 1490159171 ) // 246748
         {
-            fprintf(stderr,"[%d] IsFinalTx reject locktime %u vs nBlockTime %u\n",(int32_t)(tx.nLockTime-nBlockTime),tx.nLockTime,(uint32_t)nBlockTime);
+            fprintf(stderr,"[%d] IsFinalTx reject.%d locktime %u vs nBlockTime %u\n",(int32_t)(tx.nLockTime-nBlockTime),(int32_t)nBlockHeight,tx.nLockTime,(uint32_t)nBlockTime);
             return(false); // need to prevent pastdating tx
-        } else fprintf(stderr,"IsFinalTx grandfather locktime %u vs nBlockTime %u\n",tx.nLockTime,(uint32_t)nBlockTime);
+        } else fprintf(stderr,"IsFinalTx grandfather.%d locktime %u vs nBlockTime %u\n",(int32_t)nBlockHeight,tx.nLockTime,(uint32_t)nBlockTime);
     }
     if ((int64_t)tx.nLockTime < ((int64_t)tx.nLockTime < LOCKTIME_THRESHOLD ? (int64_t)nBlockHeight : nBlockTime))
         return true;
@@ -878,7 +878,7 @@ int32_t komodo_validate_interest(const CTransaction& tx)
             {
                 static uint32_t counter;
                 if ( counter++ < 100 )
-                    fprintf(stderr,"komodo_validate_interest reject locktime %u/%u vs nBlockTime %u tiptime.%u\n",(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,tiptime);
+                    fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u tiptime.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,tiptime);
                 return(-1);
             }
         }
