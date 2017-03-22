@@ -723,11 +723,11 @@ int32_t komodo_validate_interest(const CTransaction& tx)
         }
         if ( (int64_t)tx.nLockTime < txheighttime-3600 )
         {
-            if ( txheighttime > 1490159171 || (txheight == 0 && txheighttime >= 1490159171) ) // 246748
+            if ( txheighttime > 1490159171 )//|| (txheight == 0 && txheighttime >= 1490159171) ) // 246748
             {
                 // komodo_validate_interest reject.0 locktime 1490193206/0 vs nBlockTime 1490202625 txheighttime.1490202625 tiptime.0
-                static uint32_t counter;
-                if ( counter++ < 100 )
+                //static uint32_t counter;
+                //if ( counter++ < 100 )
                     fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u txheighttime.%u tiptime.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,txheighttime,tiptime);
                 return(-1);
             } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime);
