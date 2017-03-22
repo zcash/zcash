@@ -741,6 +741,7 @@ int32_t komodo_validate_interest(const CTransaction& tx,uint32_t txblocktime)
                 // komodo_validate_interest reject.0 locktime 1490193206/0 vs nBlockTime 1490202625 txheighttime.1490202625 tiptime.0
                 //static uint32_t counter;
                 //if ( counter++ < 100 )
+                if ( tx.nLockTime != 1477258935 )
                     fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u txheighttime.%u tiptime.%u txb.%u cmp.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,txheighttime,tiptime,txblocktime,cmptime);
                 return(-1);
             } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime,txblocktime,cmptime);
@@ -3267,7 +3268,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     {
         if ( komodo_validate_interest(tx,block.nTime) < 0 )
         {
-            fprintf(stderr,"CheckBlock(): komodo_validate_interest failure\n");
+            //fprintf(stderr,"CheckBlock(): komodo_validate_interest failure\n");
             return error("CheckBlock: komodo_validate_interest failed");
         }
         if (!CheckTransaction(tx, state, verifier))
