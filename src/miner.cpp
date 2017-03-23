@@ -202,13 +202,13 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                                     ? nMedianTimePast
                                     : pblock->GetBlockTime();
 
-            if (tx.IsCoinBase() || !IsFinalTx(&expired,tx, nHeight, nLockTimeCutoff,STANDARD_LOCKTIME_VERIFY_FLAGS,pblock->nTime))
+            if (tx.IsCoinBase() || !IsFinalTx(&expired,tx, nHeight, nLockTimeCutoff,STANDARD_LOCKTIME_VERIFY_FLAGS,chainActive.Tip()->nTime+600))
             {
                 if ( expired != 0 )
                 {
-                    fprintf(stderr,"expire from mempool tx. need to verify this works\n");//(%d %d) %.8f\n",tx.vins.size(),tx.vouts.size(),(double)tx.vouts[0].nValue/COIN);
-                    list<CTransaction> removed;
-                    mempool.remove(tx, removed, true);
+                    //fprintf(stderr,"expire from mempool tx. need to verify this works\n");//(%d %d) %.8f\n",tx.vins.size(),tx.vouts.size(),(double)tx.vouts[0].nValue/COIN);
+                    //list<CTransaction> removed;
+                    //mempool.remove(tx, removed, true);
                 }
                 continue;
             } //else fprintf(stderr,"coinbase or is finaltx (%d %u)\n",(int32_t)nHeight,(uint32_t)tx.nLockTime);
