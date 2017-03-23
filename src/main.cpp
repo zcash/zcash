@@ -714,13 +714,11 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,uint3
     if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )//1473793441 )
     {
         prevblocktime = 0;
-        if ( (locktime= komodo_interest_args(&txheighttime,&txheight,&tiptime,&value,tx.GetHash(),0)) != 0 && txheight > 0 )
-        {
-            if ( txheight == 0 )
-                txheight = (int32_t)chainActive.Tip()->nHeight + 1;
-            if ( (prev= komodo_chainactive(txheight-1)) != 0 )
-                prevblocktime = prev->nTime;
-        }
+        locktime = komodo_interest_args(&txheighttime,&txheight,&tiptime,&value,tx.GetHash(),0);
+        if ( txheight == 0 )
+            txheight = (int32_t)chainActive.Tip()->nHeight + 1;
+        if ( (prev= komodo_chainactive(txheight-1)) != 0 )
+            prevblocktime = prev->nTime;
         if ( tiptime == 0 )
             tiptime = (int32_t)chainActive.Tip()->nTime;
         if ( txheighttime == 0 )
