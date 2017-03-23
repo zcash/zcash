@@ -712,7 +712,7 @@ uint32_t komodo_heightstamp(int32_t height);
 
 int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32_t txheightarg)
 {
-    int32_t i; uint32_t cmptime; uint64_t value=0; CBlockIndex *prev;
+    int32_t i; uint32_t cmptime; uint64_t value=0; CBlockIndex *tip=0;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )//1473793441 )
     {
         /* uint32_t prevblocktime=0,cmptime=0,txheighttime=0,tiptime=0,locktime=0;
@@ -761,9 +761,17 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
                 } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime,txblocktime,cmptime);
             }
         }*/
+        tip = chainActive.Tip();
         if ( txheightarg == 0 )
-            txheightarg = chainActive.Tip()->nHeight;
-        else txheightarg--;
+        {
+            if ( tip != 0 )
+                txheightarg = tip->nHeight + 1;
+            else
+            {
+                fprintf(stderr,"couldnt get chaintip for [%d]\n",txheightarg);
+                return(-1);
+            }
+        }
         if ( (cmptime= komodo_heightstamp(txheightarg-1)) == 0 )
         {
             fprintf(stderr,"couldnt get prev.[%d] use tiptime.%u\n",txheightarg-1,cmptime);
@@ -779,14 +787,14 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
             {
                 if ( tx.nLockTime != 1477258935 )
                 {
-                    fprintf(stderr,"komodo_validate_interest reject.%d  [%d] locktime %u tiptime.%u cmp.%u\n",txheightarg,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,(uint32_t)chainActive.Tip()->nTime,cmptime);
+                    fprintf(stderr,"komodo_validate_interest reject.%d  [%d] locktime %u tiptime.%u cmp.%u\n",txheightarg,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,(uint32_t)tip != 0 ? tip->nTime : 0,cmptime);
                 }
                 if ( expiredp != 0 )
                     *expiredp = cmptime-3600;
                 return(-1);
             }
         }
-        fprintf(stderr,"validateinterest accept.%d [%d] tip.%d locktime %u cmp.%u\n",(int32_t)txheightarg,(int32_t)(tx.nLockTime - (cmptime-3600)),(int32_t)chainActive.Tip()->nHeight,(int32_t)tx.nLockTime,cmptime);
+        fprintf(stderr,"validateinterest accept.%d [%d] tip.%d locktime %u cmp.%u\n",(int32_t)txheightarg,(int32_t)(tx.nLockTime - (cmptime-3600)),(int32_t)tip != 0 ? tip->nHeight : 0,(int32_t)tx.nLockTime,cmptime);
     }
     return(0);
 }

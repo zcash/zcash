@@ -596,11 +596,13 @@ int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex)
 
 CBlockIndex *komodo_chainactive(int32_t height)
 {
-    if ( chainActive.Tip() != 0 && height <= chainActive.Tip()->nHeight )
+    if ( chainActive.Tip() != 0 )
     {
-        return(chainActive[height]);
+        if ( height <= chainActive.Tip()->nHeight )
+            return(chainActive[height]);
+        else fprintf(stderr,"komodo_chainactive height %d > active.%d\n",height,chainActive.Tip()->nHeight);
     }
-    fprintf(stderr,"komodo_chainactive height %d > active.%d\n",height,chainActive.Tip()->nHeight);
+    fprintf(stderr,"komodo_chainactive null chainActive.Tip() height %d\n",height);
     return(0);
 }
 
