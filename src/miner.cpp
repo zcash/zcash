@@ -183,7 +183,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->nTime = GetAdjustedTime();
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
         CCoinsViewCache view(pcoinsTip);
-
+        uint32_t expired;
+        
         // Priority order to process transactions
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
@@ -201,9 +202,16 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                                     ? nMedianTimePast
                                     : pblock->GetBlockTime();
 
-            if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, nLockTimeCutoff,STANDARD_LOCKTIME_VERIFY_FLAGS))
+            if (tx.IsCoinBase() || !IsFinalTx(&expired,tx, nHeight, nLockTimeCutoff,STANDARD_LOCKTIME_VERIFY_FLAGS,chainActive.Tip()->nTime))
+            {
+                if ( expired != 0 )
+                {
+                    fprintf(stderr,"expire from mempool tx. need to verify this works\n");//(%d %d) %.8f\n",tx.vins.size(),tx.vouts.size(),(double)tx.vouts[0].nValue/COIN);
+                    list<CTransaction> removed;
+                    mempool.remove(tx, removed, true);
+                }
                 continue;
-
+            } //else fprintf(stderr,"coinbase or is finaltx (%d %u)\n",(int32_t)nHeight,(uint32_t)tx.nLockTime);
             COrphan* porphan = NULL;
             double dPriority = 0;
             CAmount nTotalIn = 0;
@@ -430,8 +438,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             static uint32_t counter;
             if ( counter++ < 100 )
                 fprintf(stderr,"warning: testblockvalidity failed\n");
-            return(0);
-            //throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+            //return(0);
+            throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
         }
     }
 
@@ -505,7 +513,19 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
     {
         LOCK(cs_main);
         if (pblock->hashPrevBlock != chainActive.Tip()->GetBlockHash())
+        {
+            uint256 hash; int32_t i;
+            hash = pblock->hashPrevBlock;
+            for (i=31; i>=0; i--)
+                fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+            fprintf(stderr," <- prev (stale)\n");
+            hash = chainActive.Tip()->GetBlockHash();
+            for (i=31; i>=0; i--)
+                fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+            fprintf(stderr," <- chainTip (stale)\n");
+
             return error("KomodoMiner: generated block is stale");
+        }
     }
 
     // Remove key from key pool
@@ -671,7 +691,7 @@ void static BitcoinMiner(CWallet *pwallet)
                             if ( externalflag == 0 && i != 66 )
                                 printf("VIOLATION at %d\n",i);
                             for (i=0; i<66; i++)
-                            {break;
+                            { break;
                                 for (j=0; j<33; j++)
                                     printf("%02x",pubkeys[i][j]);
                                 printf(" p%d -> %d\n",i,komodo_minerid(pindexPrev->nHeight-i,pubkeys[i]));

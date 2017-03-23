@@ -520,8 +520,8 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
         }
         if ( ASSETCHAINS_SYMBOL[0] != 0 && (pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis) )
         {
-            if ( pax->height > 214700 || strcmp(ASSETCHAINS_SYMBOL,symbol) == 0 )
-                printf("miner.[%s]: skip %s %.8f when avail %.8f deposited %.8f, issued %.8f withdrawn %.8f approved %.8f redeemed %.8f\n",ASSETCHAINS_SYMBOL,symbol,dstr(pax->fiatoshis),dstr(available),dstr(deposited),dstr(issued),dstr(withdrawn),dstr(approved),dstr(redeemed));
+            //if ( pax->height > 214700 || strcmp(ASSETCHAINS_SYMBOL,symbol) == 0 )
+            //    printf("miner.[%s]: skip %s %.8f when avail %.8f deposited %.8f, issued %.8f withdrawn %.8f approved %.8f redeemed %.8f\n",ASSETCHAINS_SYMBOL,symbol,dstr(pax->fiatoshis),dstr(available),dstr(deposited),dstr(issued),dstr(withdrawn),dstr(approved),dstr(redeemed));
             continue;
         }
         /*printf("pax.%s marked.%d %.8f -> %.8f ready.%d validated.%d\n",pax->symbol,pax->marked,dstr(pax->komodoshis),dstr(pax->fiatoshis),pax->ready!=0,pax->validated!=0);
@@ -717,8 +717,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         extern int32_t KOMODO_REWIND;
         if ( KOMODO_REWIND < 0 )
         {
-            fprintf(stderr,"rewind.%d\n",KOMODO_REWIND);
-            sleep(3);
+            fprintf(stderr,">>>>>>> rewind.%d will pause here for a minute. issue command and stop\n",KOMODO_REWIND);
+            sleep(60);
             KOMODO_REWIND = 0;
         }
         // 6a35506c65617365206d616b6520796f75722047697420636f6d6d6974206d65737361676573206d6f726520696e74657265737469 height.241778 checkdeposit n.4 [6a] [P] 80 vs 88
@@ -1213,7 +1213,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 {
                     basesp->withdrawn += value;
                     didstats = 1;
-                    if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                    if ( 0 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
                         printf("########### %p withdrawn %s += %.8f check %.8f\n",basesp,base,dstr(value),dstr(checktoshis));
                 }
                 if ( 0 && strcmp(base,"RUB") == 0 && (pax == 0 || pax->approved == 0) )
