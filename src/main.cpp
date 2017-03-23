@@ -790,7 +790,7 @@ bool IsFinalTx(uint32_t *expiredp,const CTransaction &tx, int nBlockHeight, int6
         return true;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )//&& nBlockTime >= 1473793441 ) //&& (int64_t)tx.nLockTime < nBlockTime-3600
     {
-        if ( komodo_validate_interest(expiredp,tx,nBlockHeight) < 0 ) //if ( nBlockTime >= 1490159171 ) // 246748
+        if ( komodo_validate_interest(expiredp,tx,nBlockHeight-1) < 0 ) //if ( nBlockTime >= 1490159171 ) // 246748
         {
             fprintf(stderr,"[%d] IsFinalTx reject.%d locktime %u vs nBlockTime %u\n",(int32_t)(tx.nLockTime-nBlockTime),(int32_t)nBlockHeight,tx.nLockTime,(uint32_t)nBlockTime);
             return(false); // need to prevent pastdating tx
@@ -3308,7 +3308,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     // Check transactions
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
     {
-        if ( komodo_validate_interest(0,tx,height != 0 ? height : komodo_block2height((CBlock *)&block)) < 0 )
+        if ( komodo_validate_interest(0,tx,komodo_block2height((CBlock *)&block)) < 0 )
         {
             //fprintf(stderr,"CheckBlock(%d:%d) %d, %u: komodo_validate_interest failure blocksize.%d\n",height,komodo_block2height((CBlock *)&block),pindex!=0?(int32_t)pindex->nHeight:0,pindex!=0?(int32_t)pindex->nTime:0,(int32_t)block.vtx.size());
             return error("CheckBlock: komodo_validate_interest failed");
