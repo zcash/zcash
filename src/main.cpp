@@ -767,7 +767,7 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
             {
                 if ( tx.nLockTime != 1477258935 )
                 {
-                    fprintf(stderr,"komodo_validate_interest reject.%d  [%d] locktime %u vs nBlockTime %u tiptime.%u cmp.%u\n",txheightarg,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,(uint32_t)chainActive.Tip()->nTime,cmptime);
+                    fprintf(stderr,"komodo_validate_interest reject.%d  [%d] locktime %u tiptime.%u cmp.%u\n",txheightarg,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,(uint32_t)chainActive.Tip()->nTime,cmptime);
                 }
                 if ( expiredp != 0 )
                     *expiredp = cmptime-3600;
