@@ -763,6 +763,8 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
             cmptime = prev->nTime + 600;
         if ( cmptime > 0 && txheightarg > 246748 )
         {
+            if ( txheightarg < 247205 )
+                cmptime -= 600;
             if ( (int64_t)tx.nLockTime < cmptime-3600 )
             {
                 if ( tx.nLockTime != 1477258935 )
