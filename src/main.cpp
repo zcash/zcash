@@ -709,7 +709,7 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
 int32_t komodo_validate_interest(const CTransaction& tx,uint32_t txblocktime)
 {
     int32_t i,txheight=0; uint32_t cmptime,txheighttime,tiptime=0,locktime; uint64_t value=0;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && txblocktime >= 1473793441 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && txblocktime >= 1490159171 - 24*3600*100 )//1473793441 )
     {
         locktime = komodo_interest_args(&txheighttime,&txheight,&tiptime,&value,tx.GetHash(),0);
         if ( tiptime == 0 )
@@ -758,7 +758,7 @@ bool IsFinalTx(uint32_t *expiredp,const CTransaction &tx, int nBlockHeight, int6
         *expiredp = 0;
     if (tx.nLockTime == 0)
         return true;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD && nBlockTime >= 1473793441 ) //&& (int64_t)tx.nLockTime < nBlockTime-3600
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )//&& nBlockTime >= 1473793441 ) //&& (int64_t)tx.nLockTime < nBlockTime-3600
     {
         if ( komodo_validate_interest(tx,nBlockTime) < 0 )
         //if ( nBlockTime >= 1490159171 ) // 246748
