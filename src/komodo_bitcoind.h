@@ -594,6 +594,25 @@ int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex)
     return(0);
 }
 
+CBlockIndex *komodo_chainactive(int32_t height)
+{
+    if ( chainActive.Tip() != 0 && height <= chainActive.Tip()->nHeight )
+    {
+        return(chainActive[height]);
+    } else return(0);
+}
+
+uint32_t komodo_heightstamp(int32_t height)
+{
+    CBlock block; CBlockIndex *ptr;
+    if ( (ptr= komodo_chainactive(height)) != 0 )
+    {
+        if ( komodo_blockload(block,ptr) == 0 && komodo_block2height(&block) == height )
+            return(block.nTime);
+    }
+    return(0);
+}
+
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
     CBlock block;
@@ -616,14 +635,6 @@ void komodo_connectpindex(CBlockIndex *pindex)
     CBlock block;
     if ( komodo_blockload(block,pindex) == 0 )
         komodo_connectblock(pindex,block);
-}
-
-CBlockIndex *komodo_chainactive(int32_t height)
-{
-    if ( chainActive.Tip() != 0 && height <= chainActive.Tip()->nHeight )
-    {
-        return(chainActive[height]);
-    } else return(0);
 }
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);

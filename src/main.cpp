@@ -708,6 +708,8 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
     return true;
 }
 
+uint32_t komodo_heightstamp(int32_t height);
+
 int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32_t txheightarg)
 {
     int32_t i; uint32_t cmptime; uint64_t value=0; CBlockIndex *prev;
@@ -759,9 +761,13 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
                 } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime,txblocktime,cmptime);
             }
         }*/
-        if ( (prev= komodo_chainactive(txheightarg-1)) != 0 )
-            cmptime = prev->nTime + 600;
-        else fprintf(stderr,"couldnt get prev.[%d]\n",txheightarg-1);
+        if ( (cmptime= komodo_heightstamp(txheightarg-1)) == 0 )
+        {
+            cmptime = chainActive.Tip()->nTime;
+            fprintf(stderr,"couldnt get prev.[%d] use tiptime.%u\n",txheightarg-1,cmptime);
+        }
+        //if ( (prev= komodo_chainactive(txheightarg-1)) != 0 )
+        //    cmptime = prev->nTime + 600;
         if ( cmptime > 0 && txheightarg > 246748 )
         {
             if ( txheightarg < 247205 )
