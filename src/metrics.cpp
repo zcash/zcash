@@ -203,7 +203,18 @@ int printMiningStatus(bool mining)
             std::cout << strprintf(_("You are mining with the %s solver on %d threads."),
                                    GetArg("-equihashsolver", "default"), nThreads) << std::endl;
         } else {
-            std::cout << _("Mining is paused.") << std::endl;
+            bool fvNodesEmpty;
+            {
+                LOCK(cs_vNodes);
+                fvNodesEmpty = vNodes.empty();
+            }
+            if (fvNodesEmpty) {
+                std::cout << _("Mining is paused while waiting for connections.") << std::endl;
+            } else if (IsInitialBlockDownload()) {
+                std::cout << _("Mining is paused while downloading blocks.") << std::endl;
+            } else {
+                std::cout << _("Mining is paused (a JoinSplit may be in progress).") << std::endl;
+            }
         }
         lines++;
     } else {
