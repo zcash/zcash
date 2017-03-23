@@ -605,7 +605,7 @@ CBlockIndex *komodo_chainactive(int32_t height)
 uint32_t komodo_heightstamp(int32_t height)
 {
     CBlock block; CBlockIndex *ptr;
-    if ( (ptr= komodo_chainactive(height)) != 0 )
+    if ( height > 0 && (ptr= komodo_chainactive(height)) != 0 )
     {
         if ( komodo_blockload(block,ptr) == 0 && komodo_block2height(&block) == height )
             return(block.nTime);

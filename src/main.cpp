@@ -761,6 +761,8 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
                 } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime,txblocktime,cmptime);
             }
         }*/
+        if ( txheightarg == 0 )
+            txheightarg = chainActive.Tip()->nHeight + 1;
         if ( (cmptime= komodo_heightstamp(txheightarg-1)) == 0 )
         {
             cmptime = chainActive.Tip()->nTime;
