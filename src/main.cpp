@@ -741,11 +741,12 @@ int32_t komodo_validate_interest(const CTransaction& tx,uint32_t txblocktime)
                 // komodo_validate_interest reject.0 locktime 1490193206/0 vs nBlockTime 1490202625 txheighttime.1490202625 tiptime.0
                 //static uint32_t counter;
                 //if ( counter++ < 100 )
+                if ( tx.nLockTime != 1477258935 )
                     fprintf(stderr,"komodo_validate_interest reject.%d locktime %u/%u vs nBlockTime %u txheighttime.%u tiptime.%u txb.%u cmp.%u\n",txheight,(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,txheighttime,tiptime,txblocktime,cmptime);
                 return(-1);
             } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime,txblocktime,cmptime);
         }
-        fprintf(stderr,"validateinterest accept.%d locktime %u/%u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,(int32_t)tx.nLockTime,locktime,txheighttime,tiptime,txblocktime,cmptime);
+        fprintf(stderr,"validateinterest accept.%d tip.%d locktime %u/%u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,(int32_t)chainActive.Tip()->nHeight,(int32_t)tx.nLockTime,locktime,txheighttime,tiptime,txblocktime,cmptime);
     }
     return(0);
 }
@@ -1610,9 +1611,9 @@ bool IsInitialBlockDownload()
     else if ( pindexBestHeader != 0 && pindexBestHeader->nHeight > ptr->nHeight )
         ptr = pindexBestHeader;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        state = ((chainActive.Height() < ptr->nHeight - 24*6) ||
+        state = ((chainActive.Height() < ptr->nHeight - 24*60) ||
                     ptr->GetBlockTime() < (GetTime() - chainParams.MaxTipAge()));
-    else state = (chainActive.Height() < ptr->nHeight - 100);
+    else state = (chainActive.Height() < ptr->nHeight - 3);
     //fprintf(stderr,"state.%d  ht.%d vs %d, t.%u %u\n",state,(int32_t)chainActive.Height(),(uint32_t)ptr->nHeight,(int32_t)ptr->GetBlockTime(),(uint32_t)(GetTime() - chainParams.MaxTipAge()));
     if (!state)
     {
@@ -2948,7 +2949,7 @@ bool ActivateBestChain(CValidationState &state, CBlock *pblock) {
             }
             // Notify external listeners about the new tip.
             uiInterface.NotifyBlockTip(hashNewTip);
-        }
+        } //else fprintf(stderr,"initial download skips propagation\n");
     } while(pindexMostWork != chainActive.Tip());
     CheckBlockIndex();
 
@@ -3199,6 +3200,21 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
 {
     uint8_t pubkey33[33];
     // Check timestamp
+    if ( 0 )
+    {
+        uint256 hash; int32_t i;
+        hash = blockhdr.GetHash();
+        for (i=31; i>=0; i--)
+            fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+        fprintf(stderr," <- CheckBlockHeader\n");
+        if ( chainActive.Tip() != 0 )
+        {
+            hash = chainActive.Tip()->GetBlockHash();
+            for (i=31; i>=0; i--)
+                fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+            fprintf(stderr," <- chainTip\n");
+        }
+    }
     if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
     // Check block version
@@ -3267,7 +3283,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     {
         if ( komodo_validate_interest(tx,block.nTime) < 0 )
         {
-            fprintf(stderr,"CheckBlock(): komodo_validate_interest failure\n");
+            fprintf(stderr,"CheckBlock(%d:%d) %d, %u: komodo_validate_interest failure blocksize.%d\n",height,komodo_block2height((CBlock *)&block),pindex!=0?(int32_t)pindex->nHeight:0,pindex!=0?(int32_t)pindex->nTime:0,(int32_t)block.vtx.size());
             return error("CheckBlock: komodo_validate_interest failed");
         }
         if (!CheckTransaction(tx, state, verifier))

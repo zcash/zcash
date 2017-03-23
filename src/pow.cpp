@@ -111,7 +111,7 @@ int8_t komodo_minerid(int32_t height,uint8_t *pubkey33);
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
 extern int32_t KOMODO_CHOSEN_ONE;
 #define KOMODO_ELECTION_GAP 2000
-
+ 
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height);
 int32_t KOMODO_LOADINGBLOCKS;
 
