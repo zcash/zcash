@@ -600,7 +600,7 @@ CBlockIndex *komodo_chainactive(int32_t height)
     {
         return(chainActive[height]);
     }
-    fprintf(stderr,"komodo_chainactive height %d > %d active.%d\n",height,chainActive.Tip()->nHeight);
+    fprintf(stderr,"komodo_chainactive height %d > active.%d\n",height,chainActive.Tip()->nHeight);
     return(0);
 }
 
