@@ -761,6 +761,7 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
         }*/
         if ( (prev= komodo_chainactive(txheightarg-1)) != 0 )
             cmptime = prev->nTime + 600;
+        else fprintf(stderr,"couldnt get prev.[%d]\n",txheightarg-1);
         if ( cmptime > 0 && txheightarg > 246748 )
         {
             if ( txheightarg < 247205 )
@@ -790,7 +791,7 @@ bool IsFinalTx(uint32_t *expiredp,const CTransaction &tx, int nBlockHeight, int6
         return true;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && flags == STANDARD_LOCKTIME_VERIFY_FLAGS && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )//&& nBlockTime >= 1473793441 ) //&& (int64_t)tx.nLockTime < nBlockTime-3600
     {
-        if ( komodo_validate_interest(expiredp,tx,nBlockHeight-1) < 0 ) //if ( nBlockTime >= 1490159171 ) // 246748
+        if ( komodo_validate_interest(expiredp,tx,nBlockHeight) < 0 ) //if ( nBlockTime >= 1490159171 ) // 246748
         {
             fprintf(stderr,"[%d] IsFinalTx reject.%d locktime %u vs nBlockTime %u\n",(int32_t)(tx.nLockTime-nBlockTime),(int32_t)nBlockHeight,tx.nLockTime,(uint32_t)nBlockTime);
             return(false); // need to prevent pastdating tx
