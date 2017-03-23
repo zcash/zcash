@@ -1247,7 +1247,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                         MIN_BLOCKS_TO_KEEP, GetArg("-checkblocks", 288));
                 }
                 uint256 hash(uint256S("0000005213c9cea80d42aae6e917487485d0b197a83ffbc0bcd0aef6e38c6ded"));
-                //uint256 hash2(uint256S("05a8cd56e2118713ed5931300868fbcd96f573c5051b3568f053658b2a5a1115"));
+                uint256 hash2(uint256S("05a8cd56e2118713ed5931300868fbcd96f573c5051b3568f053658b2a5a1115"));
                 CValidationState state;
                 {
                     LOCK(cs_main);
@@ -1255,6 +1255,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     {
                         CBlockIndex* pblockindex;
                         if ( (pblockindex= mapBlockIndex[hash]) != 0 )
+                            InvalidateBlock(state, pblockindex);
+                    }
+                    if ( mapBlockIndex.count(hash2) != 0 )
+                    {
+                        CBlockIndex* pblockindex;
+                        if ( (pblockindex= mapBlockIndex[hash2]) != 0 )
                             InvalidateBlock(state, pblockindex);
                     }
                 }
