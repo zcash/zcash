@@ -514,11 +514,11 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
         {
             uint256 hash; int32_t i;
             hash = pblock->hashPrevBlock;
-            for (i=0; i<32; i++)
+            for (i=31; i>=0; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
             fprintf(stderr," <- prev (stale)\n");
             hash = chainActive.Tip()->GetBlockHash();
-            for (i=0; i<32; i++)
+            for (i=31; i>=0; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
             fprintf(stderr," <- chainTip (stale)\n");
 

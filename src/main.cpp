@@ -3203,11 +3203,11 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
     {
         uint256 hash; int32_t i;
         hash = blockhdr.GetHash();
-        for (i=0; i<32; i++)
+        for (i=31; i>=0; i--)
             fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
         fprintf(stderr," <- CheckBlockHeader\n");
         hash = chainActive.Tip()->GetBlockHash();
-        for (i=0; i<32; i++)
+        for (i=31; i>=0; i--)
             fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
         fprintf(stderr," <- chainTip\n");
     }
