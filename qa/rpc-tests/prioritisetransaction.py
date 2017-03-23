@@ -81,6 +81,30 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
 
         priority_result = self.nodes[0].prioritisetransaction(priority_tx_0, 1000, int(3 * base_fee * COIN))
 
+        # Check that prioritized transaction is not in getblocktemplate()
+        # (not updated because no new txns)
+        in_block_template = False
+        block_template = self.nodes[0].getblocktemplate()
+        for tx in block_template['transactions']:
+            if tx['hash'] == priority_tx_0:
+                in_block_template = True
+                break
+        assert_equal(in_block_template, False)
+
+        self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
+
+        # Check that prioritized transaction is not in getblocktemplate()
+        # (too soon)
+        in_block_template = False
+        block_template = self.nodes[0].getblocktemplate()
+        for tx in block_template['transactions']:
+            if tx['hash'] == priority_tx_0:
+                in_block_template = True
+                break
+        assert_equal(in_block_template, False)
+
+        sleep(10)
+
         # Check that prioritized transaction is in getblocktemplate()
         in_block_template = False
         block_template = self.nodes[0].getblocktemplate()
@@ -88,9 +112,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
             if tx['hash'] == priority_tx_0:
                 in_block_template = True
                 break
-        # NOTE: getblocktemplate() should return prioritized transaction, but is not
-        # Noted by user in issue #1884
-        assert_equal(in_block_template, False)
+        assert_equal(in_block_template, True)
 
         # Node 1 doesn't get the next block, so this *shouldn't* be mined despite being prioritized on node 1
         priority_tx_1 = self.nodes[1].sendtoaddress(self.nodes[0].getnewaddress(), 0.1)
