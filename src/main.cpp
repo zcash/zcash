@@ -3198,7 +3198,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
 {
     uint8_t pubkey33[33];
     // Check timestamp
-    if ( 1 )
+    if ( 0 )
     {
         uint256 hash; int32_t i;
         hash = blockhdr.GetHash();
