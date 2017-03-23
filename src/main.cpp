@@ -746,7 +746,7 @@ int32_t komodo_validate_interest(const CTransaction& tx,uint32_t txblocktime)
                 return(-1);
             } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime,txblocktime,cmptime);
         }
-        fprintf(stderr,"validateinterest accept.%d locktime %u/%u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,(int32_t)tx.nLockTime,locktime,txheighttime,tiptime,txblocktime,cmptime);
+        fprintf(stderr,"validateinterest accept.%d tip.%d locktime %u/%u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,(int32_t)chainActive.Tip()->nHeight,(int32_t)tx.nLockTime,locktime,txheighttime,tiptime,txblocktime,cmptime);
     }
     return(0);
 }
