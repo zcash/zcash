@@ -207,6 +207,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 if ( expired != 0 )
                 {
                     fprintf(stderr,"expire from mempool tx.\n");//(%d %d) %.8f\n",tx.vins.size(),tx.vouts.size(),(double)tx.vouts[0].nValue/COIN);
+                    list<CTransaction> removed;
+                    mempool.remove(tx, removed, true);
                 }
                 continue;
             }
@@ -436,8 +438,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             static uint32_t counter;
             if ( counter++ < 100 )
                 fprintf(stderr,"warning: testblockvalidity failed\n");
-            return(0);
-            //throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+            //return(0);
+            throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
         }
     }
 
