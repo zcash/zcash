@@ -511,7 +511,19 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
     {
         LOCK(cs_main);
         if (pblock->hashPrevBlock != chainActive.Tip()->GetBlockHash())
+        {
+            uint256 hash; int32_t i;
+            hash = pblock->hashPrevBlock;
+            for (i=0; i<32; i++)
+                fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+            fprintf(stderr," <- prev\n");
+            hash = chainActive.Tip()->GetBlockHash();
+            for (i=0; i<32; i++)
+                fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+            fprintf(stderr," <- chainTip\n");
+
             return error("KomodoMiner: generated block is stale");
+        }
     }
 
     // Remove key from key pool
