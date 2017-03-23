@@ -2949,7 +2949,7 @@ bool ActivateBestChain(CValidationState &state, CBlock *pblock) {
             }
             // Notify external listeners about the new tip.
             uiInterface.NotifyBlockTip(hashNewTip);
-        }
+        } else fprintf(stderr,"initial download skips propagation\n");
     } while(pindexMostWork != chainActive.Tip());
     CheckBlockIndex();
 
