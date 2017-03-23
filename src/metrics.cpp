@@ -156,16 +156,32 @@ void ConnectMetricsScreen()
     uiInterface.InitMessage.connect(metrics_InitMessage);
 }
 
-int printNetworkStats()
+int printStats(bool mining)
 {
-    LOCK2(cs_main, cs_vNodes);
+    // Number of lines that are always displayed
+    int lines = 4;
 
-    std::cout << "           " << _("Block height") << " | " << chainActive.Height() << std::endl;
-    std::cout << "  " << _("Network solution rate") << " | " << GetNetworkHashPS(120, -1) << " Sol/s" << std::endl;
-    std::cout << "            " << _("Connections") << " | " << vNodes.size() << std::endl;
+    int height;
+    size_t connections;
+    int64_t netsolps;
+    {
+        LOCK2(cs_main, cs_vNodes);
+        height = chainActive.Height();
+        connections = vNodes.size();
+        netsolps = GetNetworkHashPS(120, -1);
+    }
+    auto localsolps = GetLocalSolPS();
+
+    std::cout << "           " << _("Block height") << " | " << height << std::endl;
+    std::cout << "            " << _("Connections") << " | " << connections << std::endl;
+    std::cout << "  " << _("Network solution rate") << " | " << netsolps << " Sol/s" << std::endl;
+    if (mining && miningTimer.running()) {
+        std::cout << "    " << _("Local solution rate") << " | " << strprintf("%.4f Sol/s", localsolps) << std::endl;
+        lines++;
+    }
     std::cout << std::endl;
 
-    return 4;
+    return lines;
 }
 
 int printMiningStatus(bool mining)
@@ -236,11 +252,8 @@ int printMetrics(size_t cols, bool mining)
     }
 
     if (mining && loaded) {
-        double solps = GetLocalSolPS();
-        std::string strSolps = strprintf("%.4f Sol/s", solps);
-        std::cout << "- " << strprintf(_("You have contributed %s on average to the network solution rate."), strSolps) << std::endl;
         std::cout << "- " << strprintf(_("You have completed %d Equihash solver runs."), ehSolverRuns.get()) << std::endl;
-        lines += 2;
+        lines++;
 
         int mined = 0;
         int orphaned = 0;
@@ -395,7 +408,7 @@ void ThreadShowMetricsScreen()
 #endif
 
         if (loaded) {
-            lines += printNetworkStats();
+            lines += printStats(mining);
         }
         lines += printMiningStatus(mining);
         lines += printMetrics(cols, mining);
