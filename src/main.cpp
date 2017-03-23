@@ -759,7 +759,7 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
                 } else fprintf(stderr,"validateinterest grandfather.%d locktime %u vs txheighttime.%u tiptime.%u txb.%u cmp.%u\n",(int32_t)txheight,tx.nLockTime,txheighttime,tiptime,txblocktime,cmptime);
             }
         }*/
-        if ( (prev= komodo_chainactive(txheight-1)) != 0 )
+        if ( (prev= komodo_chainactive(txheightarg-1)) != 0 )
             cmptime = prev->nTime + 600;
         if ( cmptime > 0 && txheightarg > 246748 )
         {

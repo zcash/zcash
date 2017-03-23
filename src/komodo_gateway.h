@@ -645,7 +645,7 @@ int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
     if ( i != max )
         printf("banned txid array error i.%d != max.%d\n",i,max);
     //else printf("set %d banned txids\n",max);
-    *allvoutsp = i-1;
+    *indallvoutsp = i-1;
     return(0);
 }
 
