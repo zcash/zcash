@@ -762,11 +762,12 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
             }
         }*/
         if ( txheightarg == 0 )
-            txheightarg = chainActive.Tip()->nHeight + 1;
+            txheightarg = chainActive.Tip()->nHeight;
+        else txheightarg--;
         if ( (cmptime= komodo_heightstamp(txheightarg-1)) == 0 )
         {
-            cmptime = chainActive.Tip()->nTime;
             fprintf(stderr,"couldnt get prev.[%d] use tiptime.%u\n",txheightarg-1,cmptime);
+            return(-1);
         }
         //if ( (prev= komodo_chainactive(txheightarg-1)) != 0 )
         //    cmptime = prev->nTime + 600;
