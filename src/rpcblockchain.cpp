@@ -406,7 +406,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel);
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
 char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
-uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
+//uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
 
@@ -581,15 +581,18 @@ Value paxpending(const Array& params, bool fHelp)
 
 Value paxprice(const Array& params, bool fHelp)
 {
-    if ( fHelp || params.size() < 3 || params.size() > 4 )
-        throw runtime_error("paxprice \"base\" \"rel\" height amount\n");
+    if ( fHelp || params.size() > 4 || params.size() < 2 )
+        throw runtime_error("paxprice \"base\" \"rel\" height\n");
     LOCK(cs_main);
     Object ret; uint64_t basevolume=0,relvolume,seed;
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
-    int32_t height = atoi(params[2].get_str().c_str());
-    if ( params.size() == 3 || (basevolume= COIN * atof(params[3].get_str().c_str())) == 0 )
-        basevolume = COIN;
+    int32_t height;
+    if ( params.size() == 2 )
+        height = chainActive.Tip()->nHeight;
+    else height = atoi(params[2].get_str().c_str());
+    //if ( params.size() == 3 || (basevolume= COIN * atof(params[3].get_str().c_str())) == 0 )
+        basevolume = 1;
     relvolume = komodo_paxprice(&seed,height,(char *)base.c_str(),(char *)rel.c_str(),basevolume);
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
@@ -602,13 +605,14 @@ Value paxprice(const Array& params, bool fHelp)
     else
     {
         CBlockIndex *pblockindex = chainActive[height];
-        ret.push_back(Pair("timestamp", (int64_t)pblockindex->nTime));
+        if ( pblockindex != 0 )
+            ret.push_back(Pair("timestamp", (int64_t)pblockindex->nTime));
         if ( basevolume != 0 && relvolume != 0 )
         {
             ret.push_back(Pair("price",((double)relvolume / (double)basevolume)));
             ret.push_back(Pair("invprice",((double)basevolume / (double)relvolume)));
-            ret.push_back(Pair("basevolume", ValueFromAmount(basevolume)));
-            ret.push_back(Pair("relvolume", ValueFromAmount(relvolume)));
+            ret.push_back(Pair("basevolume",ValueFromAmount(basevolume)));
+            ret.push_back(Pair("relvolume",ValueFromAmount(relvolume)));
         } else ret.push_back(Pair("error", "overflow or error in one or more of parameters"));
     }
     return ret;

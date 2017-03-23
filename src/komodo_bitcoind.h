@@ -740,10 +740,12 @@ int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 has
     return(0);
 }
 
-uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n)
+uint32_t komodo_interest_args(uint32_t *txheighttimep,int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n)
 {
     LOCK(cs_main);
     CTransaction tx; uint256 hashBlock; CBlockIndex *pindex,*tipindex;
+    *txheighttimep = *txheightp = *tiptimep = 0;
+    *valuep = 0;
     if ( !GetTransaction(hash,tx,hashBlock,true) )
         return(0);
     uint32_t locktime = 0;
@@ -753,6 +755,7 @@ uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *va
         {
             *valuep = tx.vout[n].nValue;
             *txheightp = pindex->nHeight;
+            *txheighttimep = pindex->nTime;
             *tiptimep = tipindex->nTime;
             locktime = tx.nLockTime;
             //fprintf(stderr,"tx locktime.%u %.8f height.%d | tiptime.%u\n",locktime,(double)*valuep/COIN,*txheightp,*tiptimep);
@@ -764,8 +767,8 @@ uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *va
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue)
 {
-    uint64_t value; uint32_t tiptime;
-    if ( (*locktimep= komodo_interest_args(txheightp,&tiptime,&value,hash,n)) != 0 )
+    uint64_t value; uint32_t tiptime,txheighttimep;
+    if ( (*locktimep= komodo_interest_args(&txheighttimep,txheightp,&tiptime,&value,hash,n)) != 0 )
     {
         if ( (checkvalue == 0 || value == checkvalue) && (checkheight == 0 || *txheightp == checkheight) )
             return(komodo_interest(*txheightp,value,*locktimep,tiptime));
