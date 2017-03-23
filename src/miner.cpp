@@ -211,7 +211,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     mempool.remove(tx, removed, true);
                 }
                 continue;
-            } else fprintf(stderr,"coinbase or is finaltx (%d %u)\n",(int32_t)nHeight,(uint32_t)nLockTimeCutoff);
+            } else fprintf(stderr,"coinbase or is finaltx (%d %u)\n",(int32_t)nHeight,(uint32_t)tx.nLockTime);
             COrphan* porphan = NULL;
             double dPriority = 0;
             CAmount nTotalIn = 0;
