@@ -710,10 +710,15 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
 
 int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,uint32_t txblocktime)
 {
-    int32_t i,txheight=0; uint32_t cmptime,txheighttime,tiptime=0,locktime; uint64_t value=0;
+    int32_t i,txheight=0; uint32_t prevblocktime,cmptime,txheighttime,tiptime=0,locktime; uint64_t value=0; CBlockIndex *prev;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )//1473793441 )
     {
-        locktime = komodo_interest_args(&txheighttime,&txheight,&tiptime,&value,tx.GetHash(),0);
+        prevblocktime = 0;
+        if ( (locktime= komodo_interest_args(&txheighttime,&txheight,&tiptime,&value,tx.GetHash(),0)) != 0 && txheight > 0 )
+        {
+            if ( (prev= komodo_chainactive(txheight-1)) != 0 )
+                prevblocktime = prev->nTime;
+        }
         if ( tiptime == 0 )
             tiptime = (int32_t)chainActive.Tip()->nTime;
         if ( txheighttime == 0 )
@@ -733,6 +738,8 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,uint3
             cmptime = txblocktime;
         if ( tiptime != 0 && tiptime < cmptime )
             cmptime = tiptime;
+        if ( locktime != 0 && prevblocktime != 0 && prevblocktime < cmptime )
+            cmptime = prevblocktime;
         if ( cmptime >= 1490159171 - 24*3600 )
         {
             if ( cmptime != 0 && (int64_t)tx.nLockTime < cmptime-3600 )
@@ -740,7 +747,9 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,uint3
                 if ( txheighttime > 1490159171 || (locktime == 0 && txheighttime >= 1490159171) ) // 246748
                 {
                     if ( tx.nLockTime != 1477258935 )
+                    {
                         fprintf(stderr,"komodo_validate_interest reject.%d  [%d] locktime %u/%u vs nBlockTime %u txheighttime.%u tiptime.%u txb.%u cmp.%u\n",txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,locktime,(uint32_t)chainActive.Tip()->nTime,txheighttime,tiptime,txblocktime,cmptime);
+                    }
                     if ( expiredp != 0 )
                         *expiredp = cmptime-3600;
                     return(-1);

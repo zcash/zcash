@@ -620,7 +620,10 @@ void komodo_connectpindex(CBlockIndex *pindex)
 
 CBlockIndex *komodo_chainactive(int32_t height)
 {
-    return(chainActive[height]);
+    if ( chainActive.Tip() != 0 && height <= chainActive.Tip()->nHeight )
+    {
+        return(chainActive[height]);
+    } else return(0);
 }
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
