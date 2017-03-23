@@ -199,8 +199,12 @@ int printMiningStatus(bool mining)
             else
                 nThreads = boost::thread::hardware_concurrency();
         }
-        std::cout << strprintf(_("You are mining with the %s solver on %d threads."),
-                               GetArg("-equihashsolver", "default"), nThreads) << std::endl;
+        if (miningTimer.running()) {
+            std::cout << strprintf(_("You are mining with the %s solver on %d threads."),
+                                   GetArg("-equihashsolver", "default"), nThreads) << std::endl;
+        } else {
+            std::cout << _("Mining is paused.") << std::endl;
+        }
         lines++;
     } else {
         std::cout << _("You are currently not mining.") << std::endl;
@@ -409,8 +413,8 @@ void ThreadShowMetricsScreen()
 
         if (loaded) {
             lines += printStats(mining);
+            lines += printMiningStatus(mining);
         }
-        lines += printMiningStatus(mining);
         lines += printMetrics(cols, mining);
         lines += printMessageBox(cols);
         lines += printInitMessage();
