@@ -558,7 +558,7 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
             "\nAdds a zkey (as returned by z_exportkey) to your wallet.\n"
             "\nArguments:\n"
             "1. \"zkey\"             (string, required) The zkey (see z_exportkey)\n"
-            "2. rescan             (boolean or \"whenkeyisnew\", optional, default=\"whenkeyisnew\") Rescan the wallet for transactions\n"
+            "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
             "3. startHeight        (numeric, optional, default=0) Block height to start rescan from\n"
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
@@ -567,11 +567,11 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
             "\nImport the zkey with rescan\n"
             + HelpExampleCli("z_importkey", "\"mykey\"") +
             "\nImport the zkey with partial rescan\n"
-            + HelpExampleCli("z_importkey", "\"mykey\", \"whenkeyisnew\", 30000") +
+            + HelpExampleCli("z_importkey", "\"mykey\" whenkeyisnew 30000") +
             "\nRe-import the zkey with longer partial rescan\n"
-            + HelpExampleCli("z_importkey", "\"mykey\", true, 20000") +
+            + HelpExampleCli("z_importkey", "\"mykey\" yes 20000") +
             "\nAs a JSON-RPC call\n"
-            + HelpExampleRpc("z_importkey", "\"mykey\", false")
+            + HelpExampleRpc("z_importkey", "\"mykey\", \"no\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -585,12 +585,21 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
         auto rescan = params[1].get_str();
         if (rescan.compare("whenkeyisnew") != 0) {
             fIgnoreExistingKey = false;
-            UniValue jVal;
-            if (!jVal.read(std::string("[")+rescan+std::string("]")) ||
-                !jVal.isArray() || jVal.size()!=1 || !jVal[0].isBool()) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "rescan must be bool or \"whenkeyisnew\"");
+            if (rescan.compare("yes") == 0) {
+                fRescan = true;
+            } else if (rescan.compare("no") == 0) {
+                fRescan = false;
+            } else {
+                // Handle older API
+                UniValue jVal;
+                if (!jVal.read(std::string("[")+rescan+std::string("]")) ||
+                    !jVal.isArray() || jVal.size()!=1 || !jVal[0].isBool()) {
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "rescan must be \"yes\", \"no\" or \"whenkeyisnew\"");
+                }
+                fRescan = jVal[0].getBool();
             }
-            fRescan = jVal[0].getBool();
         }
     }
 

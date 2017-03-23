@@ -102,7 +102,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         self.sync_all()
 
         # Import the key on node 1, only scanning the last few blocks.
-        self.nodes[1].z_importkey(key, 'true', self.nodes[1].getblockchaininfo()['blocks'] - 100)
+        self.nodes[1].z_importkey(key, 'yes', self.nodes[1].getblockchaininfo()['blocks'] - 100)
 
         # Confirm that the balance on node 1 is zero, as we have not
         # rescanned over the older transactions
@@ -110,7 +110,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         assert_equal(Decimal(resp), 0)
 
         # Re-import the key on node 1, scanning from before the transaction.
-        self.nodes[1].z_importkey(key, 'true', self.nodes[1].getblockchaininfo()['blocks'] - 110)
+        self.nodes[1].z_importkey(key, 'yes', self.nodes[1].getblockchaininfo()['blocks'] - 110)
 
         # Confirm that the balance on node 1 is valid now (node 1 must
         # have rescanned)
