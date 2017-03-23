@@ -710,7 +710,7 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
 
 int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32_t txheightarg)
 {
-    int32_t i; uint64_t value=0; CBlockIndex *prev;
+    int32_t i; uint32_t cmptime; uint64_t value=0; CBlockIndex *prev;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )//1473793441 )
     {
         /* uint32_t prevblocktime=0,cmptime=0,txheighttime=0,tiptime=0,locktime=0;
