@@ -628,26 +628,35 @@ const char *banned_txids[] =
     "a01671c8775328a41304e31a6693bbd35e9acbab28ab117f729eaba9cb769461", //235265
     "2ef49d2d27946ad7c5d5e4ab5c089696762ff04e855f8ab48e83bdf0cc68726d", //235295
     "c85dcffb16d5a45bd239021ad33443414d60224760f11d535ae2063e5709efee", //235296
+    // all vouts banned
+    "305dc96d8bc23a69d3db955e03a6a87c1832673470c32fe25473a46cc473c7d1", //247204
 };
 
-void komodo_bannedset(uint256 *array,int32_t max)
+int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
 {
     int32_t i;
+    if ( sizeof(banned_txids)/sizeof(*banned_txids) > max )
+    {
+        fprintf(stderr,"komodo_bannedset: buffer too small %ld vs %d\n",sizeof(banned_txids)/sizeof(*banned_txids),max);
+        exit(-1);
+    }
     for (i=0; i<sizeof(banned_txids)/sizeof(*banned_txids); i++)
         array[i] = uint256S(banned_txids[i]);
     if ( i != max )
         printf("banned txid array error i.%d != max.%d\n",i,max);
     //else printf("set %d banned txids\n",max);
+    *allvoutsp = i-1;
+    return(0);
 }
 
 void komodo_passport_iteration();
 
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
-    static uint256 array[15];
+    static uint256 array[64]; static int32_t numbanned,indallvouts;
     int32_t i,j,k,n,ht,baseid,txn_count,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t total,available,deposited,issued,withdrawn,approved,redeemed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *sp;
     if ( *(int32_t *)&array[0] == 0 )
-        komodo_bannedset(array,(int32_t)(sizeof(array)/sizeof(*array)));
+        numbanned = komodo_bannedset(&indallvouts,array,(int32_t)(sizeof(array)/sizeof(*array)));
     memset(baseids,0xff,sizeof(baseids));
     memset(values,0,sizeof(values));
     memset(srcvalues,0,sizeof(srcvalues));
@@ -662,9 +671,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             n = block.vtx[i].vin.size();
             for (j=0; j<n; j++)
             {
-                for (k=0; k<sizeof(array)/sizeof(*array); k++)
+                for (k=0; k<numbanned; k++)
                 {
-                    if ( block.vtx[i].vin[j].prevout.hash == array[k] && block.vtx[i].vin[j].prevout.n == 1 )
+                    if ( block.vtx[i].vin[j].prevout.hash == array[k] && (block.vtx[i].vin[j].prevout.n == 1 || j >= indallvouts)  )
                     {
                         printf("banned tx.%d being used at ht.%d txi.%d vini.%d\n",k,height,i,j);
                         return(-1);
