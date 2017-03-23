@@ -516,11 +516,11 @@ static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& rese
             hash = pblock->hashPrevBlock;
             for (i=0; i<32; i++)
                 fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
-            fprintf(stderr," <- prev\n");
+            fprintf(stderr," <- prev (stale)\n");
             hash = chainActive.Tip()->GetBlockHash();
             for (i=0; i<32; i++)
                 fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
-            fprintf(stderr," <- chainTip\n");
+            fprintf(stderr," <- chainTip (stale)\n");
 
             return error("KomodoMiner: generated block is stale");
         }
