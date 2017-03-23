@@ -109,7 +109,7 @@ base_uint<BITS>& base_uint<BITS>::operator/=(const base_uint& b)
 template <unsigned int BITS>
 int base_uint<BITS>::CompareTo(const base_uint<BITS>& b) const
 {
-    if ( pn == 0 || b.pn == 0 )
+    if ( (uint64_t)pn < 0x1000 || (uint64_t)b.pn <= 0x1000 )
     {
         fprintf(stderr,"CompareTo null %p or %p\n",pn,b.pn);
         return(0);
