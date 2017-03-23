@@ -3268,7 +3268,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     {
         if ( komodo_validate_interest(tx,block.nTime) < 0 )
         {
-            //fprintf(stderr,"CheckBlock(): komodo_validate_interest failure\n");
+            fprintf(stderr,"CheckBlock(%d): komodo_validate_interest failure\n",height);
             return error("CheckBlock: komodo_validate_interest failed");
         }
         if (!CheckTransaction(tx, state, verifier))
