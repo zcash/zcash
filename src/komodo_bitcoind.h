@@ -818,11 +818,11 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
             {
                 if ( tx.nLockTime != 1477258935 )
                 {
-                    fprintf(stderr,"komodo_validate_interest reject.%d [%d] locktime %u cmp.%u\n",txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,cmptime);
+                    fprintf(stderr,"komodo_validate_interest reject.%d [%d] locktime %u cmp2.%u\n",txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,cmptime);
                 }
                 return(-1);
             }
-            fprintf(stderr,"validateinterest accept.%d [%d] locktime %u cmp.%u\n",(int32_t)txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(int32_t)tx.nLockTime,cmptime);
+            fprintf(stderr,"validateinterest accept.%d [%d] locktime %u cmp2.%u\n",(int32_t)txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(int32_t)tx.nLockTime,cmptime);
         }
     }
     return(0);
