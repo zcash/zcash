@@ -207,8 +207,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 if ( expired != 0 )
                 {
                     fprintf(stderr,"expire from mempool tx. need to verify this works\n");//(%d %d) %.8f\n",tx.vins.size(),tx.vouts.size(),(double)tx.vouts[0].nValue/COIN);
-                    list<CTransaction> removed;
-                    mempool.remove(tx, removed, true);
+                    //list<CTransaction> removed;
+                    //mempool.remove(tx, removed, true);
                 }
                 continue;
             } //else fprintf(stderr,"coinbase or is finaltx (%d %u)\n",(int32_t)nHeight,(uint32_t)tx.nLockTime);
