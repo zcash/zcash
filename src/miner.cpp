@@ -114,6 +114,7 @@ int32_t komodo_baseid(char *origbase);
 int32_t komodo_is_issuer();
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
+int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -429,8 +430,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
-        CValidationState tmpstate;
-        if ( !TestBlockValidity(tmpstate, *pblock, pindexPrev, false, false))
+        CValidationState state;
+        if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
         {
             static uint32_t counter;
             if ( counter++ < 100 )
@@ -887,8 +888,8 @@ void static BitcoinMiner(CWallet *pwallet)
                     // Changing pblock->nTime can change work required on testnet:
                     hashTarget.SetCompact(pblock->nBits);
                 }
-                CValidationState state;
-                if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
+                CValidationState tmpstate;
+                if ( !TestBlockValidity(tmpstate, *pblock, pindexPrev, false, false))
                 {
                     fprintf(stderr,"formerly valid mining block became invalid, likely due to tx expiration\n");
                     break;
