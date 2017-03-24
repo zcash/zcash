@@ -46,6 +46,7 @@ class CValidationInterface;
 class CValidationState;
 
 struct CNodeStateStats;
+#define DEFAULT_MEMPOOL_EXPIRY 1
 
 /** Default for -blockmaxsize and -blockminsize, which control the range of sizes the mining code will create **/
 static const unsigned int DEFAULT_BLOCK_MAX_SIZE = MAX_BLOCK_SIZE;
@@ -351,7 +352,7 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason);
  * Check if transaction is final and can be included in a block with the
  * specified height and time. Consensus critical.
  */
-bool IsFinalTx(uint32_t *expiredp,const CTransaction &tx, int nBlockHeight, int64_t nBlockTime, int flags,uint32_t prevblocktime);
+bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime);
 
 /**
  * Check if transaction will be final in the next block to be created.

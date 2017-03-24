@@ -804,3 +804,27 @@ int32_t komodo_isrealtime(int32_t *kmdheightp)
         return(1);
     else return(0);
 }
+
+int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime)
+{
+    uint32_t cmptime = nTime;
+    if ( KOMODO_REWIND == 0 && ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD ) //1473793441 )
+    {
+        if ( txheight > 246748 )
+        {
+            if ( txheight < 247205 )
+                cmptime -= 600;
+            if ( (int64_t)tx.nLockTime < cmptime-3600 )
+            {
+                if ( tx.nLockTime != 1477258935 )
+                {
+                    fprintf(stderr,"komodo_validate_interest reject.%d [%d] locktime %u cmp.%u\n",txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,cmptime);
+                }
+                return(-1);
+            }
+        }
+        fprintf(stderr,"validateinterest accept.%d [%d] locktime %u cmp.%u\n",(int32_t)txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(int32_t)tx.nLockTime,cmptime);
+    }
+    return(0);
+}
+
