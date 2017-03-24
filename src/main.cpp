@@ -715,7 +715,7 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
     int32_t i; uint32_t cmptime=0,tiptime=0,locktime=0; uint64_t value=0; CBlockIndex *tip=0;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )//1473793441 )
     {
-        if ( txheightarg == 0 )
+        if ( txheight == 0 )
             locktime = komodo_interest_args(&prevblocktime,&txheight,&tiptime,&value,tx.GetHash(),0);
         /* uint32_t prevblocktime=0,cmptime=0,txheighttime=0,tiptime=0,locktime=0;
         prevblocktime = 0;
