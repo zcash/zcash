@@ -720,13 +720,13 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
-        extern int32_t KOMODO_REWIND;
+        /*extern int32_t KOMODO_REWIND;
         if ( KOMODO_REWIND < 0 )
         {
             fprintf(stderr,">>>>>>> rewind.%d will pause here for a minute. issue command and stop\n",KOMODO_REWIND);
             sleep(60);
             KOMODO_REWIND = 0;
-        }
+        }*/
         // 6a35506c65617365206d616b6520796f75722047697420636f6d6d6974206d65737361676573206d6f726520696e74657265737469 height.241778 checkdeposit n.4 [6a] [P] 80 vs 88
         //for (i=0; i<opretlen; i++)
         //    printf("%02x",script[i]);
