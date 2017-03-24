@@ -731,7 +731,7 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
             cmptime = prevblocktime + 600;
         else
         {
-            fprintf(stderr,"couldnt get cmptime for [%d] t%u\n",txheight,prevblocktime);
+            //fprintf(stderr,"couldnt get cmptime for [%d] t%u\n",txheight,prevblocktime);
             return(-1);
         }
         /* uint32_t prevblocktime=0,cmptime=0,txheighttime=0,tiptime=0,locktime=0;
