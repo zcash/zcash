@@ -607,6 +607,9 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     int nRescanHeight = 0;
     if (params.size() > 2)
         nRescanHeight = params[2].get_int();
+    if (nRescanHeight < 0 || nRescanHeight > chainActive.Height()) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+    }
 
     string strSecret = params[0].get_str();
     CZCSpendingKey spendingkey(strSecret);
