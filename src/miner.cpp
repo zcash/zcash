@@ -429,8 +429,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
-        CValidationState state;
-        if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
+        CValidationState tmpstate;
+        if ( !TestBlockValidity(tmpstate, *pblock, pindexPrev, false, false))
         {
             static uint32_t counter;
             if ( counter++ < 100 )
