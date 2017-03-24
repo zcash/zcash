@@ -822,7 +822,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
                 }
                 return(-1);
             }
-            if ( dispflag != 0 )
+            if ( 0 && dispflag != 0 )
                 fprintf(stderr,"validateinterest.%d accept.%d [%d] locktime %u cmp2.%u\n",dispflag,(int32_t)txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(int32_t)tx.nLockTime,cmptime);
         }
     }
