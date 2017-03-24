@@ -723,17 +723,22 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
             if ( (pindex= mapBlockIndex[hashBlock]) != 0 )
             {
                 txheight = pindex->nHeight;
+                prevblocktime = pindex->nTime;
                 if ( (previndex= pindex->pprev) != 0 )
                     prevblocktime = previndex->nTime;
             }
         }
-        if ( prevblocktime != 0 )
-            cmptime = prevblocktime + 600;
-        else if ( txheight > 246748 )
+        if ( prevblocktime == 0 )
         {
-            //fprintf(stderr,"couldnt get cmptime for [%d] t%u\n",txheight,prevblocktime);
-            return(-1);
-        } else return(0);
+            if ( activeChain.Tip() != 0 && height == activeChain.Tip()->nHeight+1 )
+                prevblocktime = activeChain.Tip()->nTime;
+            else
+            {
+                fprintf(stderr,"couldnt get prevblocktime for [%d]\n",txheight);
+                return(-1);
+            }
+        }
+        cmptime = prevblocktime + 600;
         /* uint32_t prevblocktime=0,cmptime=0,txheighttime=0,tiptime=0,locktime=0;
         prevblocktime = 0;
         locktime = komodo_interest_args(&txheighttime,&txheight,&tiptime,&value,tx.GetHash(),0);
