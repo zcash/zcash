@@ -994,7 +994,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,libzcash::
     {
         for (k=0; k<numbanned; k++)
         {
-            if ( tx.vin[j].prevout.hash == array[k] && (tx.vin[j].prevout.n == 1 || j >= indallvouts) )
+            if ( tx.vin[j].prevout.hash == array[k] && (tx.vin[j].prevout.n == 1 || k >= indallvouts) )
             {
                 static uint32_t counter;
                 if ( counter++ < 100 )
