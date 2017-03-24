@@ -3331,7 +3331,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
     {
         uint32_t prevtime = 0; CBlockIndex *ptr;
-        if ( height == chainActive.Tip()->nHeight+1 )
+        if ( chainActive.Tip() != 0 && height == chainActive.Tip()->nHeight+1 )
             prevtime = chainActive.Tip()->nTime;
         else if ( pindex != 0 )
         {
@@ -3340,7 +3340,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
         }
         if ( prevtime == 0 )
         {
-            if ( height > 0 && (ptr= chainActive[height-1]) )
+            if ( height > 0 && (ptr= chainActive[height-1]) != 0 )
                 prevtime = ptr->nTime;
         }
         if ( komodo_validate_interest(0,tx,height,prevtime) < 0 )
