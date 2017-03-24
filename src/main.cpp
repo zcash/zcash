@@ -723,7 +723,7 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
             if ( (pindex= mapBlockIndex[hashBlock]) != 0 )
             {
                 txheight = pindex->nHeight;
-                if ( (previndex= mapBlockIndex[pindex->hashPrevBlock]) != 0 )
+                if ( (previndex= pindex->pprev) != 0 )
                     prevblocktime = previndex->nTime;
             }
         }
