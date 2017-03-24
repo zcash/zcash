@@ -114,7 +114,7 @@ int32_t komodo_baseid(char *origbase);
 int32_t komodo_is_issuer();
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
-int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime);
+int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -205,7 +205,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
             if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, nLockTimeCutoff))
                 continue;
-            if ( 0 && komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime) < 0 )
+            if ( 0 && komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,2) < 0 )
             {
                 fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure\n");
                 continue;
