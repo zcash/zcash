@@ -610,7 +610,7 @@ uint32_t komodo_heightstamp(int32_t height)
 {
     CBlockIndex *ptr;
     if ( height > 0 && (ptr= komodo_chainactive(height)) != 0 )
-        reeturn(ptr->nTime);
+        return(ptr->nTime);
     else fprintf(stderr,"komodo_heightstamp null ptr for block.%d\n",height);
     return(0);
 }
