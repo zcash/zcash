@@ -806,14 +806,14 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
             {
                 if ( tx.nLockTime != 1477258935 )
                 {
-                    fprintf(stderr,"komodo_validate_interest reject.%d  [%d] locktime %u tiptime.%u cmp.%u\n",txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,(uint32_t)(tip != 0 ? tip->nTime : 0),cmptime);
+                    //fprintf(stderr,"komodo_validate_interest reject.%d  [%d] locktime %u tiptime.%u cmp.%u\n",txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,(uint32_t)(tip != 0 ? tip->nTime : 0),cmptime);
                 }
                 if ( expiredp != 0 )
                     *expiredp = cmptime-3600;
                 return(-1);
             }
         }
-        fprintf(stderr,"validateinterest accept.%d [%d] tip.%d locktime %u cmp.%u\n",(int32_t)txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(int32_t)(tip != 0 ? tip->nHeight : 0),(int32_t)tx.nLockTime,cmptime);
+        fprintf(stderr,"validateinterest strict.%d accept.%d [%d] tip.%d locktime %u cmp.%u\n",strictflag,(int32_t)txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(int32_t)(tip != 0 ? tip->nHeight : 0),(int32_t)tx.nLockTime,cmptime);
     }
     return(0);
 }
