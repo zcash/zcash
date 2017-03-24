@@ -717,8 +717,8 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
     {
         //locktime = komodo_interest_args(&prevblocktime,&txheight,&tiptime,&value,tx.GetHash(),0);
         LOCK(cs_main);
-        uint256 hashBlock; CBlockIndex *pindex,*previndex;
-        if ( GetTransaction(tx.GetHash(),tx,hashBlock,true) )
+        CTransaction gettx; uint256 hashBlock; CBlockIndex *pindex,*previndex;
+        if ( GetTransaction(tx.GetHash(),gettx,hashBlock,true) )
         {
             if ( (pindex= mapBlockIndex[hashBlock]) != 0 )
             {
