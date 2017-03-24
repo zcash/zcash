@@ -713,7 +713,7 @@ uint32_t komodo_heightstamp(int32_t height);
 int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32_t txheight,uint32_t prevblocktime)
 {
     int32_t i; uint32_t cmptime=0,tiptime=0,locktime=0; uint64_t value=0; CBlockIndex *tip=0;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )//1473793441 )
+    if ( KOMODO_REWIND == 0 && ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD )//1473793441 )
     {
         //locktime = komodo_interest_args(&prevblocktime,&txheight,&tiptime,&value,tx.GetHash(),0);
         LOCK(cs_main);
@@ -794,7 +794,7 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
                 cmptime -= 600;
             if ( (int64_t)tx.nLockTime < cmptime-3600 )
             {
-                //if ( tx.nLockTime != 1477258935 )
+                if ( tx.nLockTime != 1477258935 )
                 {
                     fprintf(stderr,"komodo_validate_interest reject.%d  [%d] locktime %u tiptime.%u cmp.%u\n",txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,(uint32_t)(tip != 0 ? tip->nTime : 0),cmptime);
                 }
@@ -2885,7 +2885,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         if (!DisconnectTip(state))
             return false;
     }
-    if ( KOMODO_REWIND != 0 && chainActive.Tip()->nHeight >= KOMODO_REWIND )
+    if ( KOMODO_REWIND != 0 && (KOMODO_REWIND < 0 || chainActive.Tip()->nHeight >= KOMODO_REWIND) )
     {
         fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
         while ( chainActive.Tip()->nHeight > KOMODO_REWIND )
@@ -3346,7 +3346,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
         }
         if ( komodo_validate_interest(0,tx,height,prevtime) < 0 )
         {
-            fprintf(stderr,"CheckBlock(%d:%d) %d, %u: komodo_validate_interest failure blocksize.%d tiptime.%u %u\n",height,komodo_block2height((CBlock *)&block),pindex!=0?(int32_t)pindex->nHeight:0,pindex!=0?(int32_t)pindex->nTime:0,(int32_t)block.vtx.size(),chainActive.Tip()->nTime,prevtime);
+            //fprintf(stderr,"CheckBlock(%d:%d) %d, %u: komodo_validate_interest failure blocksize.%d tiptime.%u %u\n",height,komodo_block2height((CBlock *)&block),pindex!=0?(int32_t)pindex->nHeight:0,pindex!=0?(int32_t)pindex->nTime:0,(int32_t)block.vtx.size(),chainActive.Tip()->nTime,prevtime);
             return error("CheckBlock: komodo_validate_interest failed");
         }
         if (!CheckTransaction(tx, state, verifier))
