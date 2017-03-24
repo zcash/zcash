@@ -24,7 +24,7 @@ int32_t komodo_isrealtime(int32_t *kmdheightp);
 uint64_t komodo_paxtotal();
 int32_t komodo_longestchain();
 uint64_t komodo_maxallowed(int32_t baseid);
-void komodo_bannedset(uint256 *array,int32_t max);
+int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max);
 
 pthread_mutex_t komodo_mutex;
 
