@@ -788,7 +788,7 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
                 return(-1);
             }
         }
-        fprintf(stderr,"validateinterest accept.%d [%d] tip.%d locktime %u:%u cmp.%u\n",(int32_t)txheighta,(int32_t)(tx.nLockTime - (cmptime-3600)),(int32_t)(tip != 0 ? tip->nHeight : 0),(int32_t)tx.nLockTime,locktime,cmptime);
+        fprintf(stderr,"validateinterest accept.%d [%d] tip.%d locktime %u:%u cmp.%u\n",(int32_t)txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(int32_t)(tip != 0 ? tip->nHeight : 0),(int32_t)tx.nLockTime,locktime,cmptime);
     }
     return(0);
 }
