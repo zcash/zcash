@@ -608,16 +608,10 @@ CBlockIndex *komodo_chainactive(int32_t height)
 
 uint32_t komodo_heightstamp(int32_t height)
 {
-    CBlock block; CBlockIndex *ptr;
+    CBlockIndex *ptr;
     if ( height > 0 && (ptr= komodo_chainactive(height)) != 0 )
-    {
-        if ( komodo_blockload(block,ptr) == 0 )
-        {
-            if ( komodo_block2height(&block) == height )
-                return(block.nTime);
-            else fprintf(stderr,"komodo_heightstamp block2height %d != %d\n",komodo_block2height(&block),height);
-        } else fprintf(stderr,"komodo_heightstamp cant load block.%d\n",height);
-    } else fprintf(stderr,"komodo_heightstamp null ptr for block.%d\n",height);
+        reeturn(ptr->nTime);
+    else fprintf(stderr,"komodo_heightstamp null ptr for block.%d\n",height);
     return(0);
 }
 
