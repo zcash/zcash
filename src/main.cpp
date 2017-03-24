@@ -2890,12 +2890,11 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         fprintf(stderr,"rewind ht.%d\n",chainActive.Tip()->nHeight);
         while ( chainActive.Tip()->nHeight > KOMODO_REWIND )
         {
-            InvalidateBlock(state,chainActive.Tip());
-            /*if ( !DisconnectTip(state) )
+            if ( !DisconnectTip(state) )
             {
                 InvalidateBlock(state,chainActive.Tip());
                 return false;
-            }*/
+            }
         }
         fprintf(stderr,"reached rewind.%d, best to do: ./komodo-cli stop\n",KOMODO_REWIND);
         sleep(60);
