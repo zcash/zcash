@@ -205,7 +205,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
             if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, nLockTimeCutoff))
                 continue;
-            if ( 0 && komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,2) < 0 )
+            if ( komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,2) < 0 )
             {
                 fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure\n");
                 continue;
