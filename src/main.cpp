@@ -730,7 +730,7 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
         }
         if ( prevblocktime == 0 )
         {
-            if ( activeChain.Tip() != 0 && height == activeChain.Tip()->nHeight+1 )
+            if ( chainActive.Tip.Tip() != 0 && txheight == chainActive.Tip.Tip()->nHeight+1 )
                 prevblocktime = activeChain.Tip()->nTime;
             else
             {
