@@ -794,7 +794,7 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
                 cmptime -= 600;
             if ( (int64_t)tx.nLockTime < cmptime-3600 )
             {
-                if ( tx.nLockTime != 1477258935 )
+                //if ( tx.nLockTime != 1477258935 )
                 {
                     fprintf(stderr,"komodo_validate_interest reject.%d  [%d] locktime %u tiptime.%u cmp.%u\n",txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,(uint32_t)(tip != 0 ? tip->nTime : 0),cmptime);
                 }
@@ -3331,9 +3331,22 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     // Check transactions
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
     {
-        if ( komodo_validate_interest(0,tx,height,block.nTime) < 0 )
+        uint32_t prevtime = 0; CBlockIndex *ptr;
+        if ( height == chainActive.Tip()->nHeight+1 )
+            prevtime = chainActive.Tip()->nTime;
+        else if ( pindex != 0 )
         {
-            fprintf(stderr,"CheckBlock(%d:%d) %d, %u: komodo_validate_interest failure blocksize.%d tiptime.%u %u\n",height,komodo_block2height((CBlock *)&block),pindex!=0?(int32_t)pindex->nHeight:0,pindex!=0?(int32_t)pindex->nTime:0,(int32_t)block.vtx.size(),chainActive.Tip()->nTime,block.nTime);
+            if ( (ptr= pindex->pprev) != 0 )
+                prevtime = ptr->nTime;
+        }
+        if ( prevtime == 0 )
+        {
+            if ( height > 0 && (ptr= chainActive[height-1]) )
+                prevtime = ptr->nTime;
+        }
+        if ( komodo_validate_interest(0,tx,height,prevtime) < 0 )
+        {
+            fprintf(stderr,"CheckBlock(%d:%d) %d, %u: komodo_validate_interest failure blocksize.%d tiptime.%u %u\n",height,komodo_block2height((CBlock *)&block),pindex!=0?(int32_t)pindex->nHeight:0,pindex!=0?(int32_t)pindex->nTime:0,(int32_t)block.vtx.size(),chainActive.Tip()->nTime,prevtime);
             return error("CheckBlock: komodo_validate_interest failed");
         }
         if (!CheckTransaction(tx, state, verifier))
