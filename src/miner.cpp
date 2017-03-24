@@ -114,6 +114,7 @@ int32_t komodo_baseid(char *origbase);
 int32_t komodo_is_issuer();
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
+int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -202,16 +203,13 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                                     ? nMedianTimePast
                                     : pblock->GetBlockTime();
 
-            if (tx.IsCoinBase() || !IsFinalTx(&expired,tx, nHeight, nLockTimeCutoff,STANDARD_LOCKTIME_VERIFY_FLAGS,chainActive.Tip()->nTime))
-            {
-                if ( expired != 0 )
-                {
-                    fprintf(stderr,"expire from mempool tx. need to verify this works\n");//(%d %d) %.8f\n",tx.vins.size(),tx.vouts.size(),(double)tx.vouts[0].nValue/COIN);
-                    //list<CTransaction> removed;
-                    //mempool.remove(tx, removed, true);
-                }
+            if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, nLockTimeCutoff))
                 continue;
-            } //else fprintf(stderr,"coinbase or is finaltx (%d %u)\n",(int32_t)nHeight,(uint32_t)tx.nLockTime);
+            if ( komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,2) < 0 )
+            {
+                fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure\n");
+                continue;
+            }
             COrphan* porphan = NULL;
             double dPriority = 0;
             CAmount nTotalIn = 0;
@@ -438,8 +436,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             static uint32_t counter;
             if ( counter++ < 100 )
                 fprintf(stderr,"warning: testblockvalidity failed\n");
-            //return(0);
-            throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+            return(0);
         }
     }
 
@@ -890,6 +887,12 @@ void static BitcoinMiner(CWallet *pwallet)
                 {
                     // Changing pblock->nTime can change work required on testnet:
                     hashTarget.SetCompact(pblock->nBits);
+                }
+                CValidationState tmpstate;
+                if ( !TestBlockValidity(tmpstate, *pblock, pindexPrev, false, false))
+                {
+                    fprintf(stderr,"formerly valid mining block became invalid, likely due to tx expiration\n");
+                    break;
                 }
             }
         }
