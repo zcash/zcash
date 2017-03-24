@@ -326,15 +326,16 @@ void FinalizeNode(NodeId nodeid) {
     mapNodeState.erase(nodeid);
 }
     
-void LimitMempoolSize(CTxMemPool& pool, size_t limit, unsigned long age) {
-    int expired = pool.Expire(GetTime() - age);
+void LimitMempoolSize(CTxMemPool& pool, size_t limit, unsigned long age)
+{
+/*    int expired = pool.Expire(GetTime() - age);
     if (expired != 0)
         LogPrint("mempool", "Expired %i transactions from the memory pool\n", expired);
     
     std::vector<uint256> vNoSpendsRemaining;
     pool.TrimToSize(limit, &vNoSpendsRemaining);
     BOOST_FOREACH(const uint256& removed, vNoSpendsRemaining)
-    pcoinsTip->Uncache(removed);
+    pcoinsTip->Uncache(removed);*/
 }
     
 // Requires cs_main.
