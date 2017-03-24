@@ -757,7 +757,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
 
 void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
 {
-    //extern int32_t KOMODO_REWIND;
+    extern int32_t KOMODO_REWIND;
     {
         LOCK(cs_wallet);
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
