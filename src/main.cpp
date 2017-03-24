@@ -730,15 +730,20 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
         }
         if ( prevblocktime == 0 )
         {
-            if ( chainActive.Tip() != 0 && txheight == chainActive.Tip()->nHeight+1 )
-                prevblocktime = chainActive.Tip()->nTime;
-            else
+            if ( chainActive.Tip() != 0 )
             {
-                prevblocktime = chainActive.Tip()->nTime;
-                fprintf(stderr,"couldnt get prevblocktime for [%d] use tiptime.%u\n",txheight,prevblocktime);
-                //return(-1);
+                if ( txheight == 0 || txheight == chainActive.Tip()->nHeight+1 )
+                    prevblocktime = chainActive.Tip()->nTime;
+                else
+                {
+                    prevblocktime = chainActive.Tip()->nTime;
+                    fprintf(stderr,"couldnt get prevblocktime for [%d]  tiptime.%u\n",txheight,prevblocktime);
+                    //return(-1);
+                }
             }
         }
+        if ( prevblocktime == 0 )
+            return(-1);
         cmptime = prevblocktime + 600;
         /* uint32_t prevblocktime=0,cmptime=0,txheighttime=0,tiptime=0,locktime=0;
         prevblocktime = 0;
