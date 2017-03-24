@@ -810,7 +810,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
     uint32_t cmptime = nTime;
     if ( KOMODO_REWIND == 0 && ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD ) //1473793441 )
     {
-        if ( txheight > 246748-24*3600*3600 )
+        if ( txheight > 246748-1000 )
         {
             if ( txheight < 247205 )
                 cmptime -= 600;
@@ -818,7 +818,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
             {
                 if ( tx.nLockTime != 1477258935 || dispflag != 0 )
                 {
-                    fprintf(stderr,"komodo_validate_interest reject.%d [%d] locktime %u cmp2.%u\n",txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,cmptime);
+                    fprintf(stderr,"komodo_validate_interest.%d reject.%d [%d] locktime %u cmp2.%u\n",dispflag,txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,cmptime);
                 }
                 return(-1);
             }
