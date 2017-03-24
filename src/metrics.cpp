@@ -333,7 +333,7 @@ void ThreadShowMetricsScreen()
 
         // Security warning text
         std::cout << std::endl;
-        std::cout << _("In order to ensure you are adequately protecting your privacy when using Zcash, please see https://z.cash/support/security/index.html") << std::endl;
+        std::cout << strprintf(_("In order to ensure you are adequately protecting your privacy when using Zcash, please see %s"), "https://z.cash/support/security/index.html") << std::endl;
         std::cout << std::endl;
     }
 

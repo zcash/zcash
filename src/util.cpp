@@ -878,7 +878,8 @@ void SetThreadPriority(int nPriority)
 
 std::string LicenseInfo()
 {
-    return FormatParagraph(strprintf(_("Copyright (C) 2009-%i The Bitcoin Core Developers"), COPYRIGHT_YEAR)) + "\n" +
+    return "\n" + FormatParagraph(strprintf(_("In order to ensure you are adequately protecting your privacy when using Zcash, please see %s"), "https://z.cash/support/security/index.html")) + "\n" + "\n" +
+           FormatParagraph(strprintf(_("Copyright (C) 2009-%i The Bitcoin Core Developers"), COPYRIGHT_YEAR)) + "\n" +
            FormatParagraph(strprintf(_("Copyright (C) 2015-%i The Zcash Developers"), COPYRIGHT_YEAR)) + "\n" +
            "\n" +
            FormatParagraph(_("This is experimental software.")) + "\n" +

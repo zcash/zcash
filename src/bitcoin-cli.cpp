@@ -65,8 +65,9 @@ static bool AppInitRPC(int argc, char* argv[])
     ParseParameters(argc, argv);
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help") || mapArgs.count("-version")) {
         std::string strUsage = _("Zcash RPC client version") + " " + FormatFullVersion() + "\n";
-        strUsage += "\n" + _("In order to ensure you are adequately protecting your privacy when using Zcash, please see https://z.cash/support/security/index.html") + "\n";
         if (!mapArgs.count("-version")) {
+            strUsage += "\n" + strprintf(_("In order to ensure you are adequately protecting your privacy when using Zcash, please see %s"), "https://z.cash/support/security/index.html") + "\n";
+
             strUsage += "\n" + _("Usage:") + "\n" +
                   "  zcash-cli [options] <command> [params]  " + _("Send command to Zcash") + "\n" +
                   "  zcash-cli [options] help                " + _("List commands") + "\n" +
