@@ -731,7 +731,7 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
             cmptime = prevblocktime + 600;
         else
         {
-            fprintf(stderr,"couldnt get cmptime for [%d] t%u\n",txheight,prevblocktime);
+            //fprintf(stderr,"couldnt get cmptime for [%d] t%u\n",txheight,prevblocktime);
             return(-1);
         }
         /* uint32_t prevblocktime=0,cmptime=0,txheighttime=0,tiptime=0,locktime=0;
@@ -2888,7 +2888,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     if ( KOMODO_REWIND != 0 )
     {
         fprintf(stderr,"rewind start ht.%d\n",chainActive.Tip()->nHeight);
-        while ( chainActive.Tip()->nHeight > KOMODO_REWIND )
+        while ( KOMODO_REWIND > 0 && chainActive.Tip()->nHeight > KOMODO_REWIND )
         {
             if ( !DisconnectTip(state) )
             {
@@ -2897,7 +2897,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
             }
         }
         fprintf(stderr,"reached rewind.%d, best to do: ./komodo-cli stop\n",KOMODO_REWIND);
-        sleep(3600);
+        sleep(60);
         KOMODO_REWIND = 0;
         return(true);
     }
