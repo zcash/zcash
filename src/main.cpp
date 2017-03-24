@@ -734,8 +734,9 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
                 prevblocktime = chainActive.Tip()->nTime;
             else
             {
-                fprintf(stderr,"couldnt get prevblocktime for [%d]\n",txheight);
-                return(-1);
+                prevblocktime = chainActive.Tip()->nTime;
+                fprintf(stderr,"couldnt get prevblocktime for [%d] use tiptime.%u\n",txheight,prevblocktime);
+                //return(-1);
             }
         }
         cmptime = prevblocktime + 600;
