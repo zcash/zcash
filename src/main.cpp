@@ -813,7 +813,8 @@ int32_t komodo_validate_interest(uint32_t *expiredp,const CTransaction& tx,int32
                 return(-1);
             }
         }
-        fprintf(stderr,"validateinterest strict.%d accept.%d [%d] tip.%d locktime %u cmp.%u\n",strictflag,(int32_t)txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(int32_t)(tip != 0 ? tip->nHeight : 0),(int32_t)tx.nLockTime,cmptime);
+        if ( strictflag != 0 )
+            fprintf(stderr,"validateinterest strict.%d accept.%d [%d] tip.%d locktime %u cmp.%u\n",strictflag,(int32_t)txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(int32_t)(tip != 0 ? tip->nHeight : 0),(int32_t)tx.nLockTime,cmptime);
     }
     return(0);
 }
@@ -2421,7 +2422,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             if ( height > 0 && (ptr= chainActive[height-1]) != 0 )
                 prevtime = ptr->nTime;
         }*/
-        if ( komodo_validate_interest(0,tx,pindex->nHeight,prevtime,1) < 0 )
+        if ( komodo_validate_interest(0,tx,pindex->nHeight,prevtime,2) < 0 )
         {
             //fprintf(stderr,"CheckBlock(%d:%d) %d, %u: komodo_validate_interest failure blocksize.%d tiptime.%u %u\n",height,komodo_block2height((CBlock *)&block),pindex!=0?(int32_t)pindex->nHeight:0,pindex!=0?(int32_t)pindex->nTime:0,(int32_t)block.vtx.size(),chainActive.Tip()->nTime,prevtime);
             return state.DoS(10, error("ConnectBlock(): validate interest failed"),REJECT_INVALID, "bad-apr-calc");
