@@ -813,7 +813,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
         if ( txheight > 246748 )
         {
             if ( txheight < 247205 )
-                cmptime -= 600;
+                cmptime -= 16000;
             if ( (int64_t)tx.nLockTime < cmptime-3600 )
             {
                 if ( tx.nLockTime != 1477258935 || dispflag != 0 )
