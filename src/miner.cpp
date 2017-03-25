@@ -663,9 +663,10 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             // Search
             //
-            uint8_t pubkeys[66][33]; int mids[66],gpucount,nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
+            uint8_t pubkeys[66][33]; int mids[256],gpucount,roundrobin_delay,nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
             savebits = pblock->nBits;
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
+            roundrobin_delay = ROUNDROBIN_DELAY;
             if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )//komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
                 j = 65;
@@ -701,7 +702,15 @@ void static BitcoinMiner(CWallet *pwallet)
                                 if ( mids[j] == -1 )
                                     gpucount++;
                             }
-                            fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%% t.%u\n",pindexPrev->nHeight,notaryid,gpucount,100.*(double)gpucount/j,(uint32_t)time(NULL));
+                            if ( gpucount > j/3 )
+                            {
+                                int32_t delta;
+                                i = ((height + notaryid) % 64);
+                                delta = sqrt((double)(gpucount - j/3) / 2);
+                                roundrobin_delay -= delta;
+                                roundrobin_delay += (delta * i) / 64;
+                            }
+                            fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%% t.%u %d\n",pindexPrev->nHeight,notaryid,gpucount,100.*(double)gpucount/j,(uint32_t)time(NULL),roundrobin_delay);
                         }
                         for (j=0; j<65; j++)
                             if ( mids[j] == notaryid )
@@ -755,10 +764,10 @@ void static BitcoinMiner(CWallet *pwallet)
                         //     fprintf(stderr," missed target\n");
                         return false;
                     }
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+ROUNDROBIN_DELAY )
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
                     {
-                        //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+ROUNDROBIN_DELAY-time(NULL)));
-                        int32_t nseconds = Mining_start+ROUNDROBIN_DELAY-time(NULL);
+                        //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+roundrobin_delay-time(NULL)));
+                        int32_t nseconds = Mining_start+roundrobin_delay-time(NULL);
                         if ( nseconds > 0 )
                             sleep(nseconds);
                         MilliSleep((rand() % 1700) + 1);
