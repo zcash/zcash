@@ -706,7 +706,7 @@ void static BitcoinMiner(CWallet *pwallet)
                             if ( gpucount > j/3 )
                             {
                                 int32_t delta;
-                                i = ((height + notaryid) % 64);
+                                i = ((Mining_height + notaryid) % 64);
                                 delta = sqrt((double)(gpucount - j/3) / 2);
                                 roundrobin_delay -= delta;
                                 roundrobin_delay += (delta * i) / 64;
