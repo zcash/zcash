@@ -198,7 +198,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height)
 void komodo_notarysinit(int32_t origheight,uint8_t pubkeys[64][33],int32_t num)
 {
     static int32_t hwmheight;
-    int32_t k,i,htind,nonz,height; struct knotary_entry *kp; struct knotaries_entry N;
+    int32_t k,i,htind,height; struct knotary_entry *kp; struct knotaries_entry N;
     if ( Pubkeys == 0 )
         Pubkeys = (struct knotaries_entry *)calloc(KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP,sizeof(*Pubkeys));
     memset(&N,0,sizeof(N));
@@ -217,7 +217,7 @@ void komodo_notarysinit(int32_t origheight,uint8_t pubkeys[64][33],int32_t num)
         memcpy(kp->pubkey,pubkeys[k],33);
         kp->notaryid = k;
         HASH_ADD_KEYPTR(hh,N.Notaries,kp->pubkey,33,kp);
-        if ( 1 && height > 10000 )
+        if ( 0 && height > 10000 )
         {
             for (i=0; i<33; i++)
                 printf("%02x",pubkeys[k][i]);
@@ -260,7 +260,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33)
             return(modval);
         }
     }
-    if ( height >= 248000 )//300000 )
+    if ( height >= 250000 )//300000 )
         return(-1);
     htind = height / KOMODO_ELECTION_GAP;
     pthread_mutex_lock(&komodo_mutex);
@@ -345,7 +345,7 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
 
 void komodo_init(int32_t height)
 {
-    static int didinit; uint256 zero; int32_t i,k,n; uint8_t pubkeys[64][33];
+    static int didinit; uint256 zero; int32_t k,n; uint8_t pubkeys[64][33];
     if ( 0 && height != 0 )
         printf("komodo_init ht.%d didinit.%d\n",height,didinit);
     if ( didinit == 0 )
