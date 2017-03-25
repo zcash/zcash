@@ -5,6 +5,7 @@
 #include "uint256.h"
 
 #include <atomic>
+#include <mutex>
 #include <string>
 
 struct AtomicCounter {
@@ -20,14 +21,41 @@ struct AtomicCounter {
         --value;
     }
 
-    int get(){
+    int get() const {
         return value.load();
     }
+};
+
+class AtomicTimer {
+private:
+    std::mutex mtx;
+    uint64_t threads;
+    int64_t start_time;
+    int64_t total_time;
+
+public:
+    AtomicTimer() : threads(0), start_time(0), total_time(0) {}
+
+    /**
+     * Starts timing on first call, and counts the number of calls.
+     */
+    void start();
+
+    /**
+     * Counts number of calls, and stops timing after it has been called as
+     * many times as start().
+     */
+    void stop();
+
+    bool running();
+
+    double rate(const AtomicCounter& count);
 };
 
 extern AtomicCounter transactionsValidated;
 extern AtomicCounter ehSolverRuns;
 extern AtomicCounter solutionTargetChecks;
+extern AtomicTimer miningTimer;
 
 void TrackMinedBlock(uint256 hash);
 
