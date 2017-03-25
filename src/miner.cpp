@@ -114,6 +114,7 @@ int32_t komodo_baseid(char *origbase);
 int32_t komodo_is_issuer();
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
+int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -202,16 +203,13 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                                     ? nMedianTimePast
                                     : pblock->GetBlockTime();
 
-            if (tx.IsCoinBase() || !IsFinalTx(&expired,tx, nHeight, nLockTimeCutoff,STANDARD_LOCKTIME_VERIFY_FLAGS,chainActive.Tip()->nTime))
-            {
-                if ( expired != 0 )
-                {
-                    fprintf(stderr,"expire from mempool tx. need to verify this works\n");//(%d %d) %.8f\n",tx.vins.size(),tx.vouts.size(),(double)tx.vouts[0].nValue/COIN);
-                    list<CTransaction> removed;
-                    mempool.remove(tx, removed, true);
-                }
+            if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, nLockTimeCutoff))
                 continue;
-            } //else fprintf(stderr,"coinbase or is finaltx (%d %u)\n",(int32_t)nHeight,(uint32_t)tx.nLockTime);
+            if ( komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,2) < 0 )
+            {
+                fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure\n");
+                continue;
+            }
             COrphan* porphan = NULL;
             double dPriority = 0;
             CAmount nTotalIn = 0;
@@ -427,7 +425,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         pblock->hashReserved   = uint256();
-        UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
+        //UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
         pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
@@ -438,8 +436,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             static uint32_t counter;
             if ( counter++ < 100 )
                 fprintf(stderr,"warning: testblockvalidity failed\n");
-            //return(0);
-            throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+            return(0);
         }
     }
 
@@ -552,6 +549,7 @@ int32_t komodo_baseid(char *origbase);
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height);
 int32_t FOUND_BLOCK,KOMODO_MAYBEMINED;
 extern int32_t KOMODO_LASTMINED;
+int32_t roundrobin_delay;
 
 void static BitcoinMiner(CWallet *pwallet)
 {
@@ -666,9 +664,10 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             // Search
             //
-            uint8_t pubkeys[66][33]; int mids[66],gpucount,nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
+            uint8_t pubkeys[66][33]; int mids[256],gpucount,nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
             savebits = pblock->nBits;
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
+            roundrobin_delay = ROUNDROBIN_DELAY;
             if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )//komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
             {
                 j = 65;
@@ -704,7 +703,15 @@ void static BitcoinMiner(CWallet *pwallet)
                                 if ( mids[j] == -1 )
                                     gpucount++;
                             }
-                            fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%% t.%u\n",pindexPrev->nHeight,notaryid,gpucount,100.*(double)gpucount/j,(uint32_t)time(NULL));
+                            if ( gpucount > j/3 )
+                            {
+                                double delta;
+                                i = ((Mining_height + notaryid) % 64);
+                                delta = sqrt((double)gpucount - j/3);
+                                roundrobin_delay += ((delta * i) / 64) - delta;
+                                //fprintf(stderr,"delta.%f %f %f\n",delta,(double)(gpucount - j/3) / 2,(delta * i) / 64);
+                            }
+                            fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%% t.%u %d\n",pindexPrev->nHeight,notaryid,gpucount,100.*(double)gpucount/j,(uint32_t)time(NULL),roundrobin_delay);
                         }
                         for (j=0; j<65; j++)
                             if ( mids[j] == notaryid )
@@ -758,10 +765,10 @@ void static BitcoinMiner(CWallet *pwallet)
                         //     fprintf(stderr," missed target\n");
                         return false;
                     }
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+ROUNDROBIN_DELAY )
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
                     {
-                        //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+ROUNDROBIN_DELAY-time(NULL)));
-                        int32_t nseconds = Mining_start+ROUNDROBIN_DELAY-time(NULL);
+                        //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+roundrobin_delay-time(NULL)));
+                        int32_t nseconds = Mining_start+roundrobin_delay-time(NULL);
                         if ( nseconds > 0 )
                             sleep(nseconds);
                         MilliSleep((rand() % 1700) + 1);
@@ -885,12 +892,18 @@ void static BitcoinMiner(CWallet *pwallet)
                 // Update nNonce and nTime
                 pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
                 pblock->nBits = savebits;
-                UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
+                //UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
                 if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
                 {
                     // Changing pblock->nTime can change work required on testnet:
                     hashTarget.SetCompact(pblock->nBits);
                 }
+                /*CValidationState tmpstate;
+                if ( !TestBlockValidity(tmpstate, *pblock, pindexPrev, false, false))
+                {
+                    fprintf(stderr,"formerly valid mining block became invalid, likely due to tx expiration\n");
+                    break;
+                }*/
             }
         }
     }
