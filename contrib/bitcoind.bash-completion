@@ -16,7 +16,7 @@ _zcashd() {
     _get_comp_words_by_ref -n = cur prev words cword
 
     case "$cur" in
-        -conf=*|-pid=*|-loadblock=*|-rpccookiefile=*|-wallet=*|-rpcsslcertificatechainfile=*|-rpcsslprivatekeyfile=*)
+        -conf=*|-pid=*|-loadblock=*|-rpccookiefile=*|-wallet=*)
             cur="${cur#*=}"
             _filedir
             return 0
