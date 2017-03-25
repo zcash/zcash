@@ -721,17 +721,6 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
-        /*extern int32_t KOMODO_REWIND;
-        if ( KOMODO_REWIND < 0 )
-        {
-            fprintf(stderr,">>>>>>> rewind.%d will pause here for a minute. issue command and stop\n",KOMODO_REWIND);
-            sleep(60);
-            KOMODO_REWIND = 0;
-        }*/
-        // 6a35506c65617365206d616b6520796f75722047697420636f6d6d6974206d65737361676573206d6f726520696e74657265737469 height.241778 checkdeposit n.4 [6a] [P] 80 vs 88
-        //for (i=0; i<opretlen; i++)
-        //    printf("%02x",script[i]);
-        //printf(" height.%d checkdeposit n.%d [%02x] [%c] %d vs %d\n",height,n,script[0],script[offset],script[offset],'X');
         opcode = 'X';
         if ( height >= 235300 )
             return(-1);
@@ -993,33 +982,6 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else
         {
-            /*int64_t val,prevtotal = 0; int32_t overflow = 0;
-            total = 0;
-            for (i=1; i<n; i++)
-            {
-                if ( (val= block.vtx[0].vout[i].nValue) < 0 || val >= MAX_MONEY )
-                {
-                    overflow = 1;
-                    break;
-                }
-                total += val;
-                if ( total < prevtotal || (val != 0 && total == prevtotal) )
-                {
-                    overflow = 1;
-                    break;
-                }
-                prevtotal = total;
-            }
-            if ( overflow != 0 || total > COIN/10 )
-            {
-                for (i=0; i<opretlen&&i<100; i++)
-                    printf("%02x",script[i]);
-                printf(" script.[%d] ",opretlen);
-                for (i=0; i<n; i++)
-                    printf("%.8f ",dstr(block.vtx[0].vout[i].nValue));
-                printf("no opreturn entries to check ht.%d %s\n",height,ASSETCHAINS_SYMBOL);
-                return(-1);
-            } else return(0);*/
             for (i=0; i<n; i++)
                 printf("%.8f ",dstr(block.vtx[0].vout[i].nValue));
             printf("no opreturn entries to check ht.%d %s\n",height,ASSETCHAINS_SYMBOL);

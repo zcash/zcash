@@ -707,7 +707,7 @@ void static BitcoinMiner(CWallet *pwallet)
                             {
                                 double delta;
                                 i = ((Mining_height + notaryid) % 64);
-                                delta = sqrt((double)gpucount - j/3);
+                                delta = sqrt((double)gpucount - j/3) / 2.;
                                 roundrobin_delay += ((delta * i) / 64) - delta;
                                 //fprintf(stderr,"delta.%f %f %f\n",delta,(double)(gpucount - j/3) / 2,(delta * i) / 64);
                             }
