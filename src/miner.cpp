@@ -425,13 +425,13 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         pblock->hashReserved   = uint256();
-        UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
+        //UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
         pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
         CValidationState state;
-        if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
+        if ( 0 && !TestBlockValidity(state, *pblock, pindexPrev, false, false))
         {
             static uint32_t counter;
             if ( counter++ < 100 )
