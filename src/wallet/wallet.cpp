@@ -757,7 +757,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
 
 void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
 {
-    //extern int32_t KOMODO_REWIND;
+    extern int32_t KOMODO_REWIND;
     {
         LOCK(cs_wallet);
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -806,7 +806,7 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
             extern char ASSETCHAINS_SYMBOL[16];
             fprintf(stderr,"%s nWitnessCacheSize.%d\n",ASSETCHAINS_SYMBOL,(int32_t)nWitnessCacheSize);
         }
-        //if ( KOMODO_REWIND == 0 )
+        if ( KOMODO_REWIND == 0 )
             assert(nWitnessCacheSize > 0);
         //if (fFileBacked) {
         //    CWalletDB walletdb(strWalletFile);
