@@ -4,6 +4,54 @@
 #include "utiltime.h"
 
 
+TEST(Metrics, AtomicTimer) {
+    AtomicTimer t;
+    SetMockTime(100);
+
+    EXPECT_FALSE(t.running());
+
+    t.start();
+    EXPECT_TRUE(t.running());
+
+    t.start();
+    EXPECT_TRUE(t.running());
+
+    t.stop();
+    EXPECT_TRUE(t.running());
+
+    t.stop();
+    EXPECT_FALSE(t.running());
+
+    // Additional calls to stop() are ignored.
+    t.stop();
+    EXPECT_FALSE(t.running());
+
+    t.start();
+    EXPECT_TRUE(t.running());
+
+    AtomicCounter c;
+    EXPECT_EQ(0, t.rate(c));
+
+    c.increment();
+    EXPECT_EQ(0, t.rate(c));
+
+    SetMockTime(101);
+    EXPECT_EQ(1, t.rate(c));
+
+    c.decrement();
+    EXPECT_EQ(0, t.rate(c));
+
+    SetMockTime(102);
+    EXPECT_EQ(0, t.rate(c));
+
+    c.increment();
+    EXPECT_EQ(0.5, t.rate(c));
+
+    t.stop();
+    EXPECT_FALSE(t.running());
+    EXPECT_EQ(0.5, t.rate(c));
+}
+
 TEST(Metrics, GetLocalSolPS) {
     SetMockTime(100);
     miningTimer.start();
