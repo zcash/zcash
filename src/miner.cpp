@@ -431,7 +431,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
         CValidationState state;
-        if ( 0 && !TestBlockValidity(state, *pblock, pindexPrev, false, false))
+        if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
         {
             static uint32_t counter;
             if ( counter++ < 100 )
@@ -882,18 +882,18 @@ void static BitcoinMiner(CWallet *pwallet)
                 // Update nNonce and nTime
                 pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
                 pblock->nBits = savebits;
-                UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
+                //UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
                 if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
                 {
                     // Changing pblock->nTime can change work required on testnet:
                     hashTarget.SetCompact(pblock->nBits);
                 }
-                CValidationState tmpstate;
+                /*CValidationState tmpstate;
                 if ( !TestBlockValidity(tmpstate, *pblock, pindexPrev, false, false))
                 {
                     fprintf(stderr,"formerly valid mining block became invalid, likely due to tx expiration\n");
                     break;
-                }
+                }*/
             }
         }
     }
