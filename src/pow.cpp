@@ -178,10 +178,10 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     if ( height > 240000 )
     {
         for (i=31; i>=0; i--)
-            printf("%02x",((uint8_t *)&hash)[i]);
-        printf(" hash vs ");
+            fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+        fprintf(stderr," hash vs ");
         for (i=31; i>=0; i--)
-            printf("%02x",((uint8_t *)&bnTarget)[i]);
+            fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
         fprintf(stderr," POW ok for ht.%d notaryid.%d\n",height,notaryid);
     }
     return true;
