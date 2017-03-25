@@ -184,7 +184,10 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         fprintf(stderr," hash vs ");
         for (i=31; i>=0; i--)
             fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-        fprintf(stderr," POW ok for ht.%d notaryid.%d\n",height,notaryid);
+        fprintf(stderr," POW ok for ht.%d notaryid.%d: ",height,notaryid);
+        for (i=0; i<33; i++)
+            fprintf(stderr,"%02x",pubkey33[i]);
+        fprintf(stderr,"\n");
     }
     return true;
 }
