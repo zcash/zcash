@@ -549,6 +549,7 @@ int32_t komodo_baseid(char *origbase);
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height);
 int32_t FOUND_BLOCK,KOMODO_MAYBEMINED;
 extern int32_t KOMODO_LASTMINED;
+int32_t roundrobin_delay;
 
 void static BitcoinMiner(CWallet *pwallet)
 {
@@ -663,7 +664,7 @@ void static BitcoinMiner(CWallet *pwallet)
             //
             // Search
             //
-            uint8_t pubkeys[66][33]; int mids[256],gpucount,roundrobin_delay,nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
+            uint8_t pubkeys[66][33]; int mids[256],gpucount,nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
             savebits = pblock->nBits;
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
             roundrobin_delay = ROUNDROBIN_DELAY;
