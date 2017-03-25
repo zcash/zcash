@@ -177,7 +177,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             } else fprintf(stderr,"skip return error height.%d loading.%d\n",height,KOMODO_LOADINGBLOCKS);
         } else fprintf(stderr,"skip height.%d loading.%d\n",height,KOMODO_LOADINGBLOCKS);
     }
-    if ( height > 240000 )
+    if ( height > 248000 )
     {
         for (i=31; i>=0; i--)
             fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
