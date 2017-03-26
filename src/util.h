@@ -142,6 +142,9 @@ void ShrinkDebugFile();
 void runCommand(const std::string& strCommand);
 const boost::filesystem::path GetExportDir();
 
+/** Returns privacy notice (for -version, -help and metrics screen) */
+std::string PrivacyInfo();
+
 /** Returns licensing information (for -version) */
 std::string LicenseInfo();
 
