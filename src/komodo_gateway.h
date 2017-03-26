@@ -941,8 +941,10 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         if ( strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]) == 0 )
                         {
                             //check deposit validates AUD.1047 [3] 0.14585530 -> 0.01000000 (0.14585530 0.01000000 0.01000000)
-                            checktoshis = komodo_paxprice(&seed,pax->height,CURRENCIES[baseids[i-1]],(char *)"KMD",(uint64_t)pax->komodoshis);
-                            if ( komodo_paxcmp(CURRENCIES[baseids[i-1]],pax->height,pax->fiatoshis,checktoshis,0) == 0 )
+                            char destaddr[64],coinaddr[64]; uint8_t pubkey33[33];
+                            checktoshis = PAX_fiatdest(&seed,0,destaddr,pubkey33,coinaddr,pax->height,CURRENCIES[baseids[i-1]],pax->fiatoshis);
+                            //checktoshis = komodo_paxprice(&seed,pax->height,CURRENCIES[baseids[i-1]],(char *)"KMD",(uint64_t)pax->komodoshis);
+                            if ( komodo_paxcmp(CURRENCIES[baseids[i-1]],pax->height,pax->komodoshis,checktoshis,0) == 0 )
                                 printf("paxcmp PASS ");
                             else printf("paxcmp FAIL ");
 
