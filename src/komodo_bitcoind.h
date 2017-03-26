@@ -348,18 +348,21 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 
 int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
 {
-    char *jsonstr,params[256]; cJSON *json; int32_t height = 0,txid_height = 0,txid_confirmations = 0;
+    char *jsonstr,params[256]; cJSON *json,*item; int32_t height = 0,txid_height = 0,txid_confirmations = 0;
     params[0] = 0;
     *kmdnotarized_heightp = 0;
     if ( KMDUSERPASS[0] != 0 )
     {
         if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getinfo",params,7771)) != 0 )
         {
-            printf("(%s)\n",jsonstr);
+            //printf("(%s)\n",jsonstr);
             if ( (json= cJSON_Parse(jsonstr)) != 0 )
             {
-                *kmdnotarized_heightp = jint(json,(char *)"notarized");
-                height = jint(json,(char *)"blocks");
+                if ( (item= jobj(json,"result")) != 0 )
+                {
+                    *kmdnotarized_heightp = jint(item,(char *)"notarized");
+                    height = jint(item,(char *)"blocks");
+                }
                 free_json(json);
             }
             free(jsonstr);
@@ -367,13 +370,16 @@ int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
         sprintf(params,"[\"%s\", 1]",txidstr);
         if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771)) != 0 )
         {
-            printf("(%s)\n",jsonstr);
+            //printf("(%s)\n",jsonstr);
             if ( (json= cJSON_Parse(jsonstr)) != 0 )
             {
-                txid_confirmations = jint(json,(char *)"confirmations");
-                printf("height.%d tconfs.%d\n",height,txid_confirmations);
-                if ( txid_confirmations > 0 && height > txid_confirmations )
-                    txid_height = height - txid_confirmations;
+                if ( (item= jobj(json,"result")) != 0 )
+                {
+                    txid_confirmations = jint(item,(char *)"confirmations");
+                    printf("height.%d tconfs.%d\n",height,txid_confirmations);
+                    if ( txid_confirmations > 0 && height > txid_confirmations )
+                        txid_height = height - txid_confirmations;
+                }
                 free_json(json);
             }
             free(jsonstr);
