@@ -47,7 +47,7 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
 int32_t komodo_whoami(char *pubkeystr,int32_t height);
 extern int32_t KOMODO_LASTMINED;
 extern char ASSETCHAINS_SYMBOL[];
-int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp);
+int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
 #define KOMODO_VERSION "0.1.0"
 
 Value getinfo(const Array& params, bool fHelp)
@@ -102,7 +102,7 @@ Value getinfo(const Array& params, bool fHelp)
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
         int32_t kmdnotarized_height,txid_height;
-        txid_height = notarizedtxid_height((char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
+        txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
         obj.push_back(Pair("notarizedtxid_height", txid_height));
         obj.push_back(Pair("kmdnotarized_height", kmdnotarized_height));
         obj.push_back(Pair("notarized_confirms", txid_height < kmdnotarized_height ? (kmdnotarized_height - txid_height) : 0));

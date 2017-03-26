@@ -346,14 +346,25 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     return(retstr2);
 }
 
-int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
+int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp)
 {
-    char *jsonstr,params[256]; cJSON *json,*item; int32_t height = 0,txid_height = 0,txid_confirmations = 0;
+    char *jsonstr,params[256],*userpass; uint16_t port; cJSON *json,*item; int32_t height = 0,txid_height = 0,txid_confirmations = 0;
     params[0] = 0;
     *kmdnotarized_heightp = 0;
-    if ( KMDUSERPASS[0] != 0 )
+    if ( strcmp(dest,"KMD") == 0 )
     {
-        if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getinfo",params,7771)) != 0 )
+        port = 7771;
+        userpass = KMDUSERPASS;
+    }
+    else if ( strcmp(dest,"BTC") == 0 )
+    {
+        port = 8332;
+        userpass = BTCUSERPASS;
+    }
+    else return(0);
+    if ( userpass[0] != 0 )
+    {
+        if ( (jsonstr= komodo_issuemethod(userpass,(char *)"getinfo",params,port)) != 0 )
         {
             //printf("(%s)\n",jsonstr);
             if ( (json= cJSON_Parse(jsonstr)) != 0 )
@@ -368,7 +379,7 @@ int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
             free(jsonstr);
         }
         sprintf(params,"[\"%s\", 1]",txidstr);
-        if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771)) != 0 )
+        if ( (jsonstr= komodo_issuemethod(userpass,(char *)"getrawtransaction",params,port)) != 0 )
         {
             //printf("(%s)\n",jsonstr);
             if ( (json= cJSON_Parse(jsonstr)) != 0 )
