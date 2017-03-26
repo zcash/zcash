@@ -102,7 +102,7 @@ Value getinfo(const Array& params, bool fHelp)
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
         int32_t kmdnotarized_height,txid_height;
-        txid_height = notarizedtxid_height(notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
+        txid_height = notarizedtxid_height((char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
         obj.push_back(Pair("notarizedtxid_height", txid_height));
         obj.push_back(Pair("kmdnotarized_height", kmdnotarized_height));
         obj.push_back(Pair("notarized_confirms", kmdnotarized_height));
