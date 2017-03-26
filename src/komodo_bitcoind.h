@@ -358,7 +358,7 @@ int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
             //printf("(%s)\n",jsonstr);
             if ( (json= cJSON_Parse(jsonstr)) != 0 )
             {
-                if ( (item= jobj(json,"result")) != 0 )
+                if ( (item= jobj(json,(char *)"result")) != 0 )
                 {
                     *kmdnotarized_heightp = jint(item,(char *)"notarized");
                     height = jint(item,(char *)"blocks");
@@ -373,7 +373,7 @@ int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
             //printf("(%s)\n",jsonstr);
             if ( (json= cJSON_Parse(jsonstr)) != 0 )
             {
-                if ( (item= jobj(json,"result")) != 0 )
+                if ( (item= jobj(json,(char *)"result")) != 0 )
                 {
                     txid_confirmations = jint(item,(char *)"confirmations");
                     printf("height.%d tconfs.%d\n",height,txid_confirmations);
