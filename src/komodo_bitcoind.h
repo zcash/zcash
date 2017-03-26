@@ -357,8 +357,8 @@ int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
         {
             if ( (json= cJSON_Parse(jsonstr)) != 0 )
             {
-                *kmdnotarized_heightp = jint(json,"notarized");
-                height = jint(json,"blocks");
+                *kmdnotarized_heightp = jint(json,(char *)"notarized");
+                height = jint(json,(char *)"blocks");
                 free_json(json);
             }
             free(jsonstr);
@@ -368,8 +368,8 @@ int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
         {
             if ( (json= cJSON_Parse(jsonstr)) != 0 )
             {
-                txid_confirmations = jint(json,"confirmations");
-                if ( confirmations > 0 && height > confirmations )
+                txid_confirmations = jint(json,(char *)"confirmations");
+                if ( txid_confirmations > 0 && height > txid_confirmations )
                     txid_height = height - txid_confirmations;
                 free_json(json);
             }
