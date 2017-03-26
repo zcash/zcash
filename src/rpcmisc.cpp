@@ -102,8 +102,9 @@ Value getinfo(const Array& params, bool fHelp)
     if ( txid_height > 0 )
         obj.push_back(Pair("notarizedtxid_height", txid_height));
     else obj.push_back(Pair("notarizedtxid_height", "mempool"));
-    obj.push_back(Pair(ASSETCHAINS_SYMBOL[0] == 0 ? "BTCnotarized_height" :"KMDnotarized_height", kmdnotarized_height));
-    obj.push_back(Pair("notarized_confirms", txid_height < kmdnotarized_height ? (kmdnotarized_height - txid_height) : 0));
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        obj.push_back(Pair("KMDnotarized_height", kmdnotarized_height));
+    obj.push_back(Pair("notarized_confirms", txid_height < kmdnotarized_height ? (kmdnotarized_height - txid_height + 1) : 0));
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));

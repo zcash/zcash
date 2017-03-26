@@ -371,8 +371,8 @@ int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heig
             {
                 if ( (item= jobj(json,(char *)"result")) != 0 )
                 {
-                    *kmdnotarized_heightp = jint(item,(char *)"notarized");
                     height = jint(item,(char *)"blocks");
+                    *kmdnotarized_heightp = strcmp(dest,"KMD") == 0 ? jint(item,(char *)"notarized") : height;
                 }
                 free_json(json);
             }
