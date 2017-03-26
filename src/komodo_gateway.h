@@ -584,7 +584,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             PENDING_KOMODO_TX += pax->komodoshis;
             printf(" len.%d vout.%u DEPOSIT %.8f <- pax.%s pending ht %d %d %.8f | ",len,pax->vout,(double)txNew->vout[numvouts].nValue/COIN,symbol,pax->height,pax->otherheight,dstr(PENDING_KOMODO_TX));
         }
-        if ( numvouts++ >= 64 )
+        if ( numvouts++ >= 1 )
             break;
     }
     if ( numvouts > 1 )
@@ -939,7 +939,14 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         {
                         }
                         if ( strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]) == 0 )
+                        {
+                            //check deposit validates AUD.1047 [3] 0.14585530 -> 0.01000000 (0.14585530 0.01000000 0.01000000)
+                            if ( komodo_paxcmp(CURRENCIES[baseids[i-1]],pax->height,pax->fiatoshis,block.vtx[0].vout[i].nValue,0) == 0 )
+                                printf("paxcmp PASS ");
+                            else printf("paxcmp FAIL ");
+
                             printf("check deposit validates %s.%d [%d] %.8f -> %.8f (%.8f %.8f %.8f)\n",CURRENCIES[baseids[i-1]],height,i,dstr(srcvalues[i-1]),dstr(values[i-1]),dstr(pax->komodoshis),dstr(pax->fiatoshis),dstr(block.vtx[0].vout[i].nValue));
+                        }
                     }
                     else if ( strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]) == 0 )
                     {
