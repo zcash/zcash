@@ -128,7 +128,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                 numerator = (nValue * KOMODO_INTEREST);
                 if ( txheight < 250000 && tiptime < activation )
                 {
-                    if ( txheight >= 250000 && numerator * minutes < 365 * 24 * 60 )
+                    if ( txheight < 250000 && numerator * minutes < 365 * 24 * 60 )
                         interest = (numerator / denominator) / COIN;
                     else interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60)) / COIN;
                 }
