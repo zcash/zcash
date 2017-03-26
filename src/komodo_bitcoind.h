@@ -355,6 +355,7 @@ int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
     {
         if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getinfo",params,7771)) != 0 )
         {
+            printf("(%s)\n",jsonstr);
             if ( (json= cJSON_Parse(jsonstr)) != 0 )
             {
                 *kmdnotarized_heightp = jint(json,(char *)"notarized");
@@ -366,9 +367,11 @@ int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
         sprintf(params,"[\"%s\", 1]",txidstr);
         if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771)) != 0 )
         {
+            printf("(%s)\n",jsonstr);
             if ( (json= cJSON_Parse(jsonstr)) != 0 )
             {
                 txid_confirmations = jint(json,(char *)"confirmations");
+                printf("height.%d tconfs.%d\n",height,txid_confirmations);
                 if ( txid_confirmations > 0 && height > txid_confirmations )
                     txid_height = height - txid_confirmations;
                 free_json(json);
