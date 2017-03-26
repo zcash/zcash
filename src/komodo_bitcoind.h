@@ -378,7 +378,7 @@ int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
                     txid_confirmations = jint(item,(char *)"confirmations");
                     if ( txid_confirmations > 0 && height > txid_confirmations )
                         txid_height = height - txid_confirmations;
-                    printf("height.%d tconfs.%d txid_height.%d\n",height,txid_confirmations,txid_height);
+                    //printf("height.%d tconfs.%d txid_height.%d\n",height,txid_confirmations,txid_height);
                 }
                 free_json(json);
             }

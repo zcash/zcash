@@ -105,7 +105,7 @@ Value getinfo(const Array& params, bool fHelp)
         txid_height = notarizedtxid_height((char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
         obj.push_back(Pair("notarizedtxid_height", txid_height));
         obj.push_back(Pair("kmdnotarized_height", kmdnotarized_height));
-        obj.push_back(Pair("notarized_confirms", kmdnotarized_height > txid_height ? (txid_height - txid_height) : 0));
+        obj.push_back(Pair("notarized_confirms", txid_height > kmdnotarized_height ? (txid_height - kmdnotarized_height) : 0));
     }
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
