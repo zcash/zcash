@@ -110,11 +110,13 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     if ( txheight < 250000 )
                         interest = (numerator / denominator);
                     else interest = (numerator * minutes) / ((uint64_t)365 * 24 * 60);
+                    fprintf(stderr,">25000 KMD\n");
                 }
                 else
                 {
                     numerator = (nValue * KOMODO_INTEREST);
                     interest = (numerator / denominator) / COIN;
+                    fprintf(stderr,"exception\n");
                 }
             }
             else
@@ -126,12 +128,18 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     else interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60)) / COIN;
                 */
                 numerator = (nValue * KOMODO_INTEREST);
-                if ( txheight < 250000 || numerator * minutes < 365 * 24 * 60 )
+                if ( (txheight < 250000 && tiptime < activation) || numerator * minutes < 365 * 24 * 60 )
+                {
                     interest = (numerator / denominator) / COIN;
+                    fprintf(stderr,"txheight < 250000 || numerator * minutes < 365 * 24 * 60\n");
+                }
                 else
                 {
                     if ( tiptime < activation )
+                    {
                         interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60)) / COIN;
+                        fprintf(stderr,"tiptime < activation\n");
+                    }
                     else
                     {
                         numerator = (nValue / 20); // assumes 5%!
