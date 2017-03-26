@@ -652,7 +652,8 @@ void komodo_passport_iteration();
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
     static uint256 array[64]; static int32_t numbanned,indallvouts;
-    int32_t i,j,k,n,ht,baseid,txn_count,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t total,available,deposited,issued,withdrawn,approved,redeemed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *sp;
+    int32_t i,j,k,n,ht,baseid,txn_count,activation,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t total,available,deposited,issued,withdrawn,approved,redeemed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *sp;
+    activation = 235300;
     if ( *(int32_t *)&array[0] == 0 )
         numbanned = komodo_bannedset(&indallvouts,array,(int32_t)(sizeof(array)/sizeof(*array)));
     memset(baseids,0xff,sizeof(baseids));
@@ -706,7 +707,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             if ( overflow != 0 || total > COIN/10 )
             {
                 //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
-                if ( height >= 235300 )
+                if ( height >= activation )
                     return(-1);
             }
         }
@@ -985,7 +986,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             for (i=0; i<n; i++)
                 printf("%.8f ",dstr(block.vtx[0].vout[i].nValue));
             printf("no opreturn entries to check ht.%d %s\n",height,ASSETCHAINS_SYMBOL);
-            return(-1);
+            if ( height >= activation )
+                return(-1);
         }
         //printf("opretlen.%d num.%d\n",opretlen,num);
     }
@@ -995,7 +997,6 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             printf("%02x",script[i]);
         printf(" height.%d checkdeposit n.%d [%02x] [%c] %d len.%d ",height,n,script[0],script[offset],script[offset],opretlen);
         printf("not proper vout with opreturn format %s ht.%d\n",ASSETCHAINS_SYMBOL,height);
-exit(-1);
         return(-1);
     }
     return(0);
