@@ -99,8 +99,10 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("notarizedhash", notarized_hash.ToString()));
     obj.push_back(Pair("notarizedtxid", notarized_desttxid.ToString()));
     txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
-    obj.push_back(Pair("notarizedtxid_height", txid_height));
-    obj.push_back(Pair("kmdnotarized_height", kmdnotarized_height));
+    if ( txid_height > 0 )
+        obj.push_back(Pair("notarizedtxid_height", txid_height));
+    else obj.push_back(Pair("notarizedtxid_height", "mempool"));
+    obj.push_back(Pair(ASSETCHAINS_SYMBOL[0] == 0 ? "BTCnotarized_height" :"KMDnotarized_height", kmdnotarized_height));
     obj.push_back(Pair("notarized_confirms", txid_height < kmdnotarized_height ? (kmdnotarized_height - txid_height) : 0));
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
