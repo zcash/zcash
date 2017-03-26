@@ -584,7 +584,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
             PENDING_KOMODO_TX += pax->komodoshis;
             printf(" len.%d vout.%u DEPOSIT %.8f <- pax.%s pending ht %d %d %.8f | ",len,pax->vout,(double)txNew->vout[numvouts].nValue/COIN,symbol,pax->height,pax->otherheight,dstr(PENDING_KOMODO_TX));
         }
-        if ( numvouts++ >= 64 )
+        if ( numvouts++ >= 1 )
             break;
     }
     if ( numvouts > 1 )
@@ -652,7 +652,7 @@ void komodo_passport_iteration();
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
     static uint256 array[64]; static int32_t numbanned,indallvouts;
-    int32_t i,j,k,n,ht,baseid,txn_count,activation,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t total,available,deposited,issued,withdrawn,approved,redeemed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *sp;
+    int32_t i,j,k,n,ht,baseid,txn_count,activation,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t total,available,deposited,issued,withdrawn,approved,redeemed,checktoshis,seed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *sp;
     activation = 235300;
     if ( *(int32_t *)&array[0] == 0 )
         numbanned = komodo_bannedset(&indallvouts,array,(int32_t)(sizeof(array)/sizeof(*array)));
@@ -939,7 +939,17 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         {
                         }
                         if ( strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]) == 0 )
-                            printf("check deposit validates %s.%d [%d] %.8f -> %.8f (%.8f %.8f %.8f)\n",CURRENCIES[baseids[i-1]],height,i,dstr(srcvalues[i-1]),dstr(values[i-1]),dstr(pax->komodoshis),dstr(pax->fiatoshis),dstr(block.vtx[0].vout[i].nValue));
+                        {
+                            //check deposit validates AUD.1047 [3] 0.14585530 -> 0.01000000 (0.14585530 0.01000000 0.01000000)
+                            char destaddr[64],coinaddr[64]; uint8_t pubkey33[33];
+                            checktoshis = PAX_fiatdest(&seed,0,destaddr,pubkey33,coinaddr,pax->height,CURRENCIES[baseids[i-1]],pax->fiatoshis);
+                            //checktoshis = komodo_paxprice(&seed,pax->height,CURRENCIES[baseids[i-1]],(char *)"KMD",(uint64_t)pax->komodoshis);
+                            if ( komodo_paxcmp(CURRENCIES[baseids[i-1]],pax->height,pax->komodoshis,checktoshis,seed) < 0 )
+                            {
+                                printf("paxcmp FAIL when check deposit validates %s.%d [%d] %.8f -> %.8f (%.8f %.8f %.8f)\n",CURRENCIES[baseids[i-1]],height,i,dstr(srcvalues[i-1]),dstr(values[i-1]),dstr(pax->komodoshis),dstr(pax->fiatoshis),dstr(block.vtx[0].vout[i].nValue));
+                                return(-1);
+                            } //else printf("check deposit validates %s.%d [%d] %.8f -> %.8f (%.8f %.8f %.8f)\n",CURRENCIES[baseids[i-1]],height,i,dstr(srcvalues[i-1]),dstr(values[i-1]),dstr(pax->komodoshis),dstr(pax->fiatoshis),dstr(block.vtx[0].vout[i].nValue));
+                        }
                     }
                     else if ( strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]) == 0 )
                     {
@@ -1092,7 +1102,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                                 {
                                     basesp->issued += pax2->fiatoshis;
                                     pax2->didstats = 1;
-                                    if ( 1 && strcmp(base,"USD") == 0 )
+                                    if ( 0 && strcmp(base,"USD") == 0 )
                                         printf("########### %p issueda %s += %.8f kmdheight.%d %.8f other.%d [%d]\n",basesp,base,dstr(pax2->fiatoshis),pax2->height,dstr(pax2->komodoshis),pax2->otherheight,height);
                                 }
                             }
