@@ -66,7 +66,8 @@ uint64_t komodo_moneysupply(int32_t height)
 
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
-    int32_t minutes,exception; uint64_t numerator,denominator,interest = 0;
+    int32_t minutes,exception; uint64_t numerator,denominator,interest = 0; uint32_t activation;
+    activation = 1490531630;  // 1491350400 5th April
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         return(0);
     if ( komodo_moneysupply(txheight) < MAX_MONEY && nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= 10*COIN )
@@ -106,7 +107,9 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                 if ( exception == 0 )
                 {
                     numerator = (nValue / 20); // assumes 5%!
-                    interest = (numerator / denominator);
+                    if ( txheight < 250000 )
+                        interest = (numerator / denominator);
+                    else interest = (numerator * minutes) / ((uint64_t)365 * 24 * 60);
                 }
                 else
                 {
@@ -116,20 +119,19 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
             }
             else
             {
-                if ( txheight < 250000 || numerator * minutes < 365 * 24 * 60 )
-                {
+                /* 250000 algo
                     numerator = (nValue * KOMODO_INTEREST);
-                    if ( txheight >= 250000 )
-                        printf("numerator * minutes < 365 * 24 * 60\n");
+                    if ( txheight < 250000 || numerator * minutes < 365 * 24 * 60 )
+                        interest = (numerator / denominator) / COIN;
+                    else interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60)) / COIN;
+                */
+                numerator = (nValue * KOMODO_INTEREST);
+                if ( txheight < 250000 || numerator * minutes < 365 * 24 * 60 )
                     interest = (numerator / denominator) / COIN;
-                }
                 else
                 {
-                    if ( tiptime < 1490531630  )  // 1491350400 5th April
-                    {
-                        numerator = (nValue * KOMODO_INTEREST);
+                    if ( tiptime < activation )
                         interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60)) / COIN;
-                    }
                     else
                     {
                         numerator = (nValue / 20); // assumes 5%!
