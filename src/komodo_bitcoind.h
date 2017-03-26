@@ -376,15 +376,15 @@ int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
                 if ( (item= jobj(json,(char *)"result")) != 0 )
                 {
                     txid_confirmations = jint(item,(char *)"confirmations");
-                    printf("height.%d tconfs.%d\n",height,txid_confirmations);
                     if ( txid_confirmations > 0 && height > txid_confirmations )
                         txid_height = height - txid_confirmations;
+                    printf("height.%d tconfs.%d txid_height.%d\n",height,txid_confirmations,txid_height);
                 }
                 free_json(json);
             }
             free(jsonstr);
         }
-    } else printf("no KMDUSERPASS\n");
+    }
     return(txid_height);
 }
 
