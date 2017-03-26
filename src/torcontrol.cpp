@@ -261,6 +261,7 @@ static std::pair<std::string,std::string> SplitTorReplyLine(const std::string &s
 }
 
 /** Parse reply arguments in the form 'METHODS=COOKIE,SAFECOOKIE COOKIEFILE=".../control_auth_cookie"'.
+ * Returns a map of keys to values, or an empty map if there was an error.
  * Grammar is implicitly defined in https://spec.torproject.org/control-spec by
  * the server reply formats for PROTOCOLINFO (S3.21), AUTHCHALLENGE (S3.24),
  * and ADD_ONION (S3.27). See also sections 2.1 and 2.3.
@@ -444,6 +445,13 @@ void TorController::add_onion_cb(TorControlConnection& conn, const TorControlRep
             if ((i = m.find("PrivateKey")) != m.end())
                 private_key = i->second;
         }
+        if (service_id.empty()) {
+            LogPrintf("tor: Error parsing ADD_ONION parameters:\n");
+            for (const std::string &s : reply.lines) {
+                LogPrintf("    %s\n", SanitizeString(s));
+            }
+            return;
+        }
 
         service = CService(service_id+".onion", GetListenPort(), false);
         LogPrintf("tor: Got service ID %s, advertizing service %s\n", service_id, service.ToString());
@@ -521,6 +529,10 @@ void TorController::authchallenge_cb(TorControlConnection& conn, const TorContro
         std::pair<std::string,std::string> l = SplitTorReplyLine(reply.lines[0]);
         if (l.first == "AUTHCHALLENGE") {
             std::map<std::string,std::string> m = ParseTorReplyMapping(l.second);
+            if (m.empty()) {
+                LogPrintf("tor: Error parsing AUTHCHALLENGE parameters: %s\n", SanitizeString(l.second));
+                return;
+            }
             std::vector<uint8_t> serverHash = ParseHex(m["SERVERHASH"]);
             std::vector<uint8_t> serverNonce = ParseHex(m["SERVERNONCE"]);
             LogPrint("tor", "tor: AUTHCHALLENGE ServerHash %s ServerNonce %s\n", HexStr(serverHash), HexStr(serverNonce));
