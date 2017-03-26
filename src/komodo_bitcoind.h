@@ -348,7 +348,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 
 int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
 {
-    char *jsonstr,params[256]; int32_t height = 0,txid_height = 0,confirmations = 0;
+    char *jsonstr,params[256]; cJSON *json; int32_t height = 0,txid_height = 0,txid_confirmations = 0;
     params[0] = 0;
     *kmdnotarized_heightp = 0;
     if ( KMDUSERPASS[0] != 0 )
@@ -368,7 +368,7 @@ int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
         {
             if ( (json= cJSON_Parse(jsonstr)) != 0 )
             {
-                confirmations = jint(json,"confirmations");
+                txid_confirmations = jint(json,"confirmations");
                 if ( confirmations > 0 && height > confirmations )
                     txid_height = height - txid_confirmations;
                 free_json(json);
