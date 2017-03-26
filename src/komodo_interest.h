@@ -80,7 +80,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
             denominator = (((uint64_t)365 * 24 * 60) / minutes);
             if ( denominator == 0 )
                 denominator = 1; // max KOMODO_INTEREST per transfer, do it at least annually!
-            if ( nValue > 25000LL*COIN )
+            if ( nValue > 25000LL*COIN || txheight >= 250000 )
             {
                 exception = 0;
                 if ( txheight <= 155949 )
@@ -108,7 +108,12 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     numerator = (nValue / 20); // assumes 5%!
                     if ( txheight < 250000 )
                         interest = (numerator / denominator);
-                    else interest = (numerator * minutes) / ((uint64_t)365 * 24 * 60);
+                    else
+                    {
+                        if ( nValue < 100000LL*COIN )
+                            interest = (numerator * minutes) / ((uint64_t)365 * 24 * 60);
+                        else interest = (numerator / denominator);
+                    }
                 }
                 else
                 {
