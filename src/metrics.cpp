@@ -331,9 +331,8 @@ void ThreadShowMetricsScreen()
         std::cout << _("Thank you for running a Zcash node!") << std::endl;
         std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
 
-        // Security warning text
-        std::cout << std::endl;
-        std::cout << strprintf(_("In order to ensure you are adequately protecting your privacy when using Zcash, please see %s"), "https://z.cash/support/security/index.html") << std::endl;
+        // Privacy notice text
+        std::cout << PrivacyInfo();
         std::cout << std::endl;
     }
 
