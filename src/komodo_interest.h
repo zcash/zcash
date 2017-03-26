@@ -123,7 +123,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     interest = (numerator / denominator) / COIN;
                 else interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60)) / COIN;
             }
-            //fprintf(stderr,"komodo_interest %lld %.8f nLockTime.%u tiptime.%u minutes.%d interest %lld %.8f (%llu / %llu)\n",(long long)nValue,(double)nValue/COIN,nLockTime,tiptime,minutes,(long long)interest,(double)interest/COIN,(long long)numerator,(long long)denominator);
+            fprintf(stderr,"komodo_interest %lld %.8f nLockTime.%u tiptime.%u minutes.%d interest %lld %.8f (%llu / %llu)\n",(long long)nValue,(double)nValue/COIN,nLockTime,tiptime,minutes,(long long)interest,(double)interest/COIN,(long long)numerator,(long long)denominator);
         }
     }
     return(interest);
