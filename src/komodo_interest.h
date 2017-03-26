@@ -126,7 +126,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     else interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60)) / COIN;
                 */
                 numerator = (nValue * KOMODO_INTEREST);
-                if ( txheight < 250000 && tiptime < activation )
+                if ( txheight < 250000 || tiptime < activation )
                 {
                     if ( txheight < 250000 || numerator * minutes < 365 * 24 * 60 )
                         interest = (numerator / denominator) / COIN;
@@ -138,9 +138,9 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60));
                     //fprintf(stderr,"interest %llu %.8f <- numerator.%llu minutes.%d\n",(long long)interest,(double)interest/COIN,(long long)numerator,(int32_t)minutes);
                 }
-                if ( 0 && numerator == (nValue * KOMODO_INTEREST) )
-                    fprintf(stderr,"komodo_interest.%d %lld %.8f nLockTime.%u tiptime.%u minutes.%d interest %lld %.8f (%llu / %llu) prod.%llu\n",txheight,(long long)nValue,(double)nValue/COIN,nLockTime,tiptime,minutes,(long long)interest,(double)interest/COIN,(long long)numerator,(long long)denominator,(long long)(numerator * minutes));
             }
+            if ( 0 && numerator == (nValue * KOMODO_INTEREST) )
+                fprintf(stderr,"komodo_interest.%d %lld %.8f nLockTime.%u tiptime.%u minutes.%d interest %lld %.8f (%llu / %llu) prod.%llu\n",txheight,(long long)nValue,(double)nValue/COIN,nLockTime,tiptime,minutes,(long long)interest,(double)interest/COIN,(long long)numerator,(long long)denominator,(long long)(numerator * minutes));
         }
     }
     return(interest);
