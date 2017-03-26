@@ -111,7 +111,7 @@ Value getinfo(const Array& params, bool fHelp)
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
         obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
-        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
             obj.push_back(Pair("interest",       ValueFromAmount(komodo_interestsum())));
     }
 #endif

@@ -375,7 +375,7 @@ int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
             }
             free(jsonstr);
         }
-    }
+    } else printf("no KMDUSERPASS\n");
     return(txid_height);
 }
 
