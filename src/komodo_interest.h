@@ -111,8 +111,15 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     else
                     {
                         if ( nValue < 100000LL*COIN )
+                        {
+                            printf("post 250K, < 100000 KMD path\n");
                             interest = (numerator * minutes) / ((uint64_t)365 * 24 * 60);
-                        else interest = (numerator / denominator);
+                        }
+                        else
+                        {
+                            printf("post 250K, > 100000 KMD path\n");
+                            interest = (numerator / denominator);
+                        }
                     }
                 }
                 else
