@@ -281,6 +281,8 @@ int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t che
     }
     else if ( checkvalue != 0 )
     {
+        if ( checkvalue != value )
+            fprintf(stderr,"(%.8f != %.8f) ",(double)value/COIN,(double)checkvalue/COIN);
         ratio = ((value << 10) / checkvalue);
         if ( ratio >= 1023 && ratio <= 1025 )
             return(0);
