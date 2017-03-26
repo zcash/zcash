@@ -1100,7 +1100,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                                 {
                                     basesp->issued += pax2->fiatoshis;
                                     pax2->didstats = 1;
-                                    if ( 1 && strcmp(base,"USD") == 0 )
+                                    if ( 0 && strcmp(base,"USD") == 0 )
                                         printf("########### %p issueda %s += %.8f kmdheight.%d %.8f other.%d [%d]\n",basesp,base,dstr(pax2->fiatoshis),pax2->height,dstr(pax2->komodoshis),pax2->otherheight,height);
                                 }
                             }
