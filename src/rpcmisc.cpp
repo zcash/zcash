@@ -46,6 +46,9 @@ int32_t komodo_longestchain();
 int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
 int32_t komodo_whoami(char *pubkeystr,int32_t height);
 extern int32_t KOMODO_LASTMINED;
+extern char ASSETCHAINS_SYMBOL[];
+int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp);
+#define KOMODO_VERSION "0.1.0"
 
 Value getinfo(const Array& params, bool fHelp)
 {
@@ -92,14 +95,24 @@ Value getinfo(const Array& params, bool fHelp)
     Object obj;
     obj.push_back(Pair("version", CLIENT_VERSION));
     obj.push_back(Pair("protocolversion", PROTOCOL_VERSION));
+    obj.push_back(Pair("KMDversion", KOMODO_VERSION));
     obj.push_back(Pair("notarized", notarized_height));
     obj.push_back(Pair("notarizedhash", notarized_hash.ToString()));
     obj.push_back(Pair("notarizedtxid", notarized_desttxid.ToString()));
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    {
+        int32_t kmdnotarized_height,txid_height;
+        txid_height = notarizedtxid_height(notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
+        obj.push_back(Pair("notarizedtxid_height", txid_height));
+        obj.push_back(Pair("kmdnotarized_height", kmdnotarized_height));
+        obj.push_back(Pair("notarized_confirms", kmdnotarized_height));
+    }
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
         obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
-        obj.push_back(Pair("interest",       ValueFromAmount(komodo_interestsum())));
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            obj.push_back(Pair("interest",       ValueFromAmount(komodo_interestsum())));
     }
 #endif
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));

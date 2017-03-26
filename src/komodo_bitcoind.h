@@ -346,6 +346,39 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     return(retstr2);
 }
 
+int32_t notarizedtxid_height(char *txidstr,int32_t *kmdnotarized_heightp)
+{
+    char *jsonstr,params[256]; int32_t height = 0,txid_height = 0,confirmations = 0;
+    params[0] = 0;
+    *kmdnotarized_heightp = 0;
+    if ( KMDUSERPASS[0] != 0 )
+    {
+        if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getinfo",params,7771)) != 0 )
+        {
+            if ( (json= cJSON_Parse(jsonstr)) != 0 )
+            {
+                *kmdnotarized_heightp = jint(json,"notarized");
+                height = jint(json,"blocks");
+                free_json(json);
+            }
+            free(jsonstr);
+        }
+        sprintf(params,"[\"%s\", 1]",txidstr);
+        if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771)) != 0 )
+        {
+            if ( (json= cJSON_Parse(jsonstr)) != 0 )
+            {
+                confirmations = jint(json,"confirmations");
+                if ( confirmations > 0 && height > confirmations )
+                    txid_height = height - txid_confirmations;
+                free_json(json);
+            }
+            free(jsonstr);
+        }
+    }
+    return(txid_height);
+}
+
 int32_t komodo_verifynotarizedscript(int32_t height,uint8_t *script,int32_t len,uint256 NOTARIZED_HASH)
 {
     int32_t i; uint256 hash; char params[256];

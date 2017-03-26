@@ -703,11 +703,11 @@ void static BitcoinMiner(CWallet *pwallet)
                                 if ( mids[j] == -1 )
                                     gpucount++;
                             }
-                            if ( gpucount > j/3 )
+                            if ( gpucount > j/2 )
                             {
                                 double delta;
                                 i = ((Mining_height + notaryid) % 64);
-                                delta = sqrt((double)gpucount - j/3) / 2.;
+                                delta = sqrt((double)gpucount - j/2) / 2.;
                                 roundrobin_delay += ((delta * i) / 64) - delta;
                                 //fprintf(stderr,"delta.%f %f %f\n",delta,(double)(gpucount - j/3) / 2,(delta * i) / 64);
                             }
