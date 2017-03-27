@@ -1,0 +1,2 @@
+#!/bin/bash
+./komodo-cli -ac_name=WLC $1 $2 $3 $4 $5 $6
