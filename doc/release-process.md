@@ -4,7 +4,7 @@ Meta: There should always be a single release engineer to disambiguate responsib
 
 ## Pre-release
 
-Check all of the following:
+The following should have been checked well in advance of the release:
 
 - All dependencies have been updated as appropriate:
   - BDB
@@ -15,6 +15,9 @@ Check all of the following:
   - libsodium
   - miniupnpc
   - OpenSSL
+
+
+## Release process
 
 ## A. Define the release version as:
 
@@ -30,7 +33,10 @@ previous release:
     $ ZCASH_RELEASE_PREV=1.0.0-beta1
 
 ## B. Create a new release branch / github PR
-### B1. Update (commit) version in sources
+
+### B1. Check that you are up-to-date with current master, then create a release branch.
+
+### B2. Update (commit) version in sources.
 
     README.md
     src/clientversion.h
@@ -63,7 +69,7 @@ Then perform the following command:
 
 Commit the changes.
 
-### B2. Write release notes
+### B3. Generate release notes
 
 Run the release-notes.py script to generate release notes and update authors.md file. For example:
 
@@ -83,13 +89,13 @@ Update the Debian package changelog:
 
 (`dch` comes from the devscripts package.)
 
-### B3. Change the network magics
+### B4. Change the network magics
 
 If this release breaks backwards compatibility, change the network magic
 numbers. Set the four `pchMessageStart` in `CTestNetParams` in `chainparams.cpp`
 to random values.
 
-### B4. Merge the previous changes
+### B5. Merge the previous changes
 
 Do the normal pull-request, review, testing process for this release PR.
 
