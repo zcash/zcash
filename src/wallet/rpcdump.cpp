@@ -700,9 +700,6 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_importkey", "\"mykey\", \"no\"")
         );
 
-    if (fPruneMode)
-        throw JSONRPCError(RPC_WALLET_ERROR, "Importing keys is disabled in pruned mode");
-
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
@@ -731,6 +728,9 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
             }
         }
     }
+
+    if (fRescan && fPruneMode)
+        throw JSONRPCError(RPC_WALLET_ERROR, "Rescan is disabled in pruned mode");
 
     // Height to rescan from
     int nRescanHeight = 0;
