@@ -492,7 +492,7 @@ int32_t komodo_kvduration(uint32_t flags);
 uint256 komodo_kvprivkey(uint256 *pubkeyp,char *passphrase);
 int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,uint256 _pubkey,uint256 sig);
 
-Value kvupdate(const Array& params, bool fHelp)
+UniValue kvupdate(const Array& params, bool fHelp)
 {
     static uint256 zeroes;
     CWalletTx wtx; Object ret;
@@ -608,7 +608,7 @@ Value kvupdate(const Array& params, bool fHelp)
     return ret;
 }
 
-Value paxdeposit(const Array& params, bool fHelp)
+UniValue paxdeposit(const Array& params, bool fHelp)
 {
     uint64_t available,deposited,issued,withdrawn,approved,redeemed,seed,komodoshis = 0; int32_t height; char destaddr[64]; uint8_t i,pubkey37[33];
     bool fSubtractFeeFromAmount = false;
@@ -650,7 +650,7 @@ Value paxdeposit(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
-Value paxwithdraw(const Array& params, bool fHelp)
+UniValue paxwithdraw(const Array& params, bool fHelp)
 {
     CWalletTx wtx; std::string dest; int32_t kmdheight; uint64_t seed,komodoshis = 0; char destaddr[64]; uint8_t i,pubkey37[37]; bool fSubtractFeeFromAmount = false;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )

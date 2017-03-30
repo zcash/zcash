@@ -325,10 +325,7 @@ uint256 _komodo_getblockhash(int32_t nHeight)
     return(hash);
 }
 
-//Value getblock(const Array& params, bool fHelp)
-//=======
 UniValue getblockheader(const UniValue& params, bool fHelp)
-//>>>>>>> zcash/master
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
@@ -529,7 +526,7 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
 
-Value kvsearch(const Array& params, bool fHelp)
+UniValue kvsearch(const Array& params, bool fHelp)
 {
     Object ret; uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t duration,j,height,valuesize,keylen; uint256 refpubkey; static uint256 zeroes;
     if (fHelp || params.size() != 1 )
@@ -564,7 +561,7 @@ Value kvsearch(const Array& params, bool fHelp)
     return ret;
 }
 
-Value minerids(const Array& params, bool fHelp)
+UniValue minerids(const Array& params, bool fHelp)
 {
     Object ret; Array a; uint8_t minerids[2000],pubkeys[65][33]; int32_t i,j,n,numnotaries,tally[129];
     if ( fHelp || params.size() != 1 )
@@ -615,7 +612,7 @@ Value minerids(const Array& params, bool fHelp)
     return ret;
 }
 
-Value notaries(const Array& params, bool fHelp)
+UniValue notaries(const Array& params, bool fHelp)
 {
     Array a; Object ret; int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
     if ( fHelp || params.size() != 1 )
@@ -667,7 +664,7 @@ int32_t komodo_pending_withdraws(char *opretstr);
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base);
 extern char CURRENCIES[][8];
 
-Value paxpending(const Array& params, bool fHelp)
+UniValue paxpending(const Array& params, bool fHelp)
 {
     Object ret; Array a; char opretbuf[10000*2]; int32_t opretlen,baseid; uint64_t available,deposited,issued,withdrawn,approved,redeemed;
     if ( fHelp || params.size() != 0 )
@@ -698,7 +695,7 @@ Value paxpending(const Array& params, bool fHelp)
     return ret;
 }
 
-Value paxprice(const Array& params, bool fHelp)
+UniValue paxprice(const Array& params, bool fHelp)
 {
     if ( fHelp || params.size() > 4 || params.size() < 2 )
         throw runtime_error("paxprice \"base\" \"rel\" height\n");
@@ -737,7 +734,7 @@ Value paxprice(const Array& params, bool fHelp)
     return ret;
 }
 
-Value paxprices(const Array& params, bool fHelp)
+UniValue paxprices(const Array& params, bool fHelp)
 {
     if ( fHelp || params.size() != 3 )
         throw runtime_error("paxprices \"base\" \"rel\" maxsamples\n");
@@ -774,10 +771,7 @@ Value paxprices(const Array& params, bool fHelp)
 
 uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue);
 
-//Value gettxout(const Array& params, bool fHelp)
-//=======
 UniValue gettxout(const UniValue& params, bool fHelp)
-//>>>>>>> zcash/master
 {
     if (fHelp || params.size() < 2 || params.size() > 3)
         throw runtime_error(
