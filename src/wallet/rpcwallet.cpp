@@ -492,10 +492,10 @@ int32_t komodo_kvduration(uint32_t flags);
 uint256 komodo_kvprivkey(uint256 *pubkeyp,char *passphrase);
 int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,uint256 _pubkey,uint256 sig);
 
-UniValue kvupdate(const Array& params, bool fHelp)
+UniValue kvupdate(const UniValue& params, bool fHelp)
 {
     static uint256 zeroes;
-    CWalletTx wtx; Object ret;
+    CWalletTx wtx; UniValue ret(UniValue::VOBJ);
     uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t i,coresize,haveprivkey,duration,opretlen,height; uint16_t keylen=0,valuesize=0,refvaluesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags,n; struct komodo_kv *ptr; uint64_t fee; uint256 privkey,pubkey,refpubkey,sig;
     if (fHelp || params.size() < 3 )
         throw runtime_error("kvupdate key value flags/passphrase");
@@ -608,7 +608,7 @@ UniValue kvupdate(const Array& params, bool fHelp)
     return ret;
 }
 
-UniValue paxdeposit(const Array& params, bool fHelp)
+UniValue paxdeposit(const UniValue& params, bool fHelp)
 {
     uint64_t available,deposited,issued,withdrawn,approved,redeemed,seed,komodoshis = 0; int32_t height; char destaddr[64]; uint8_t i,pubkey37[33];
     bool fSubtractFeeFromAmount = false;
@@ -650,7 +650,7 @@ UniValue paxdeposit(const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
-UniValue paxwithdraw(const Array& params, bool fHelp)
+UniValue paxwithdraw(const UniValue& params, bool fHelp)
 {
     CWalletTx wtx; std::string dest; int32_t kmdheight; uint64_t seed,komodoshis = 0; char destaddr[64]; uint8_t i,pubkey37[37]; bool fSubtractFeeFromAmount = false;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )

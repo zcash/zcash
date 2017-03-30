@@ -526,9 +526,9 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
 
-UniValue kvsearch(const Array& params, bool fHelp)
+UniValue kvsearch(const UniValue& params, bool fHelp)
 {
-    Object ret; uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t duration,j,height,valuesize,keylen; uint256 refpubkey; static uint256 zeroes;
+    UniValue ret(UniValue::VOBJ); uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t duration,j,height,valuesize,keylen; uint256 refpubkey; static uint256 zeroes;
     if (fHelp || params.size() != 1 )
         throw runtime_error("kvsearch key");
     LOCK(cs_main);
@@ -561,9 +561,9 @@ UniValue kvsearch(const Array& params, bool fHelp)
     return ret;
 }
 
-UniValue minerids(const Array& params, bool fHelp)
+UniValue minerids(const UniValue& params, bool fHelp)
 {
-    Object ret; Array a; uint8_t minerids[2000],pubkeys[65][33]; int32_t i,j,n,numnotaries,tally[129];
+    UniValue ret(UniValue::VOBJ); Array a; uint8_t minerids[2000],pubkeys[65][33]; int32_t i,j,n,numnotaries,tally[129];
     if ( fHelp || params.size() != 1 )
         throw runtime_error("minerids needs height\n");
     LOCK(cs_main);
@@ -612,9 +612,9 @@ UniValue minerids(const Array& params, bool fHelp)
     return ret;
 }
 
-UniValue notaries(const Array& params, bool fHelp)
+UniValue notaries(const UniValue& params, bool fHelp)
 {
-    Array a; Object ret; int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
+    Array a; UniValue ret(UniValue::VOBJ); int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("notaries height\n");
     LOCK(cs_main);
@@ -664,9 +664,9 @@ int32_t komodo_pending_withdraws(char *opretstr);
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base);
 extern char CURRENCIES[][8];
 
-UniValue paxpending(const Array& params, bool fHelp)
+UniValue paxpending(const UniValue& params, bool fHelp)
 {
-    Object ret; Array a; char opretbuf[10000*2]; int32_t opretlen,baseid; uint64_t available,deposited,issued,withdrawn,approved,redeemed;
+    UniValue ret(UniValue::VOBJ); Array a; char opretbuf[10000*2]; int32_t opretlen,baseid; uint64_t available,deposited,issued,withdrawn,approved,redeemed;
     if ( fHelp || params.size() != 0 )
         throw runtime_error("paxpending needs no args\n");
     LOCK(cs_main);
@@ -695,12 +695,12 @@ UniValue paxpending(const Array& params, bool fHelp)
     return ret;
 }
 
-UniValue paxprice(const Array& params, bool fHelp)
+UniValue paxprice(const UniValue& params, bool fHelp)
 {
     if ( fHelp || params.size() > 4 || params.size() < 2 )
         throw runtime_error("paxprice \"base\" \"rel\" height\n");
     LOCK(cs_main);
-    Object ret; uint64_t basevolume=0,relvolume,seed;
+    UniValue ret(UniValue::VOBJ); uint64_t basevolume=0,relvolume,seed;
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
     int32_t height;
@@ -734,12 +734,12 @@ UniValue paxprice(const Array& params, bool fHelp)
     return ret;
 }
 
-UniValue paxprices(const Array& params, bool fHelp)
+UniValue paxprices(const UniValue& params, bool fHelp)
 {
     if ( fHelp || params.size() != 3 )
         throw runtime_error("paxprices \"base\" \"rel\" maxsamples\n");
     LOCK(cs_main);
-    Object ret; uint64_t relvolume,prices[4096]; uint32_t i,n; int32_t heights[sizeof(prices)/sizeof(*prices)];
+    UniValue ret(UniValue::VOBJ); uint64_t relvolume,prices[4096]; uint32_t i,n; int32_t heights[sizeof(prices)/sizeof(*prices)];
     std::string base = params[0].get_str();
     std::string rel = params[1].get_str();
     int32_t maxsamples = atoi(params[2].get_str().c_str());
