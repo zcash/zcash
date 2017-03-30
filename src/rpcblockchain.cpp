@@ -750,10 +750,10 @@ UniValue paxprices(const UniValue& params, bool fHelp)
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
     n = komodo_paxprices(heights,prices,maxsamples,(char *)base.c_str(),(char *)rel.c_str());
-    Array a;
+    UniValue a(UniValue::VARR);
     for (i=0; i<n; i++)
     {
-        Object item;
+        UniValue item(UniValue::VOBJ);
         if ( heights[i] < 0 || heights[i] > chainActive.Height() )
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
         else
