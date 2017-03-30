@@ -614,7 +614,7 @@ UniValue minerids(const UniValue& params, bool fHelp)
 
 UniValue notaries(const UniValue& params, bool fHelp)
 {
-    Array a; UniValue ret(UniValue::VOBJ); int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
+    UniValue a(UniValue::VARR); UniValue ret(UniValue::VOBJ); int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("notaries height\n");
     LOCK(cs_main);
@@ -630,7 +630,7 @@ UniValue notaries(const UniValue& params, bool fHelp)
         {
             for (i=0; i<n; i++)
             {
-                Object item;
+                UniValue item(UniValue::VOBJ);
                 std::string btcaddress,kmdaddress,hex;
                 hex.resize(66);
                 hexstr = (char *)hex.data();
@@ -675,7 +675,7 @@ UniValue paxpending(const UniValue& params, bool fHelp)
     else ret.push_back(Pair("withdraws", (char *)""));
     for (baseid=0; baseid<32; baseid++)
     {
-        Object item,obj;
+        UniValue item(UniValue::VOBJ); UniValue obj(UniValue::VOBJ);
         if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,CURRENCIES[baseid]) == 0 )
         {
             if ( deposited != 0 || issued != 0 || withdrawn != 0 || approved != 0 || redeemed != 0 )
