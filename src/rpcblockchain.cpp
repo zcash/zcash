@@ -563,7 +563,7 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
 
 UniValue minerids(const UniValue& params, bool fHelp)
 {
-    UniValue ret(UniValue::VOBJ); Array a; uint8_t minerids[2000],pubkeys[65][33]; int32_t i,j,n,numnotaries,tally[129];
+    UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR); uint8_t minerids[2000],pubkeys[65][33]; int32_t i,j,n,numnotaries,tally[129];
     if ( fHelp || params.size() != 1 )
         throw runtime_error("minerids needs height\n");
     LOCK(cs_main);
@@ -584,7 +584,7 @@ UniValue minerids(const UniValue& params, bool fHelp)
             }
             for (i=0; i<64; i++)
             {
-                Object item; std::string hex,kmdaddress; char *hexstr,kmdaddr[64],*ptr; int32_t m;
+                UniValue item(UniValue::VOBJ); std::string hex,kmdaddress; char *hexstr,kmdaddr[64],*ptr; int32_t m;
                 hex.resize(66);
                 hexstr = (char *)hex.data();
                 for (j=0; j<33; j++)
@@ -602,7 +602,7 @@ UniValue minerids(const UniValue& params, bool fHelp)
                 item.push_back(Pair("blocks", tally[i]));
                 a.push_back(item);
             }
-            Object item;
+            UniValue item(UniValue::VOBJ);
             item.push_back(Pair("pubkey", (char *)"external miners"));
             item.push_back(Pair("blocks", tally[128]));
             a.push_back(item);
@@ -666,7 +666,7 @@ extern char CURRENCIES[][8];
 
 UniValue paxpending(const UniValue& params, bool fHelp)
 {
-    UniValue ret(UniValue::VOBJ); Array a; char opretbuf[10000*2]; int32_t opretlen,baseid; uint64_t available,deposited,issued,withdrawn,approved,redeemed;
+    UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR); char opretbuf[10000*2]; int32_t opretlen,baseid; uint64_t available,deposited,issued,withdrawn,approved,redeemed;
     if ( fHelp || params.size() != 0 )
         throw runtime_error("paxpending needs no args\n");
     LOCK(cs_main);
