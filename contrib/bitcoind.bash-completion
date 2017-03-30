@@ -1,5 +1,6 @@
-# bash programmable completion for bitcoind(1) and bitcoin-qt(1)
-# Copyright (c) 2012-2016 The Bitcoin Core developers
+# bash programmable completion for zcashd(1)
+# Copyright (c) 2012-2017 The Bitcoin Core developers
+# Copyright (c) 2016-2017 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,7 +8,7 @@ _zcashd() {
     local cur prev words=() cword
     local bitcoind
 
-    # save and use original argument to invoke bitcoind for -help
+    # save and use original argument to invoke zcashd for -help
     # it might not be in $PATH
     bitcoind="$1"
 
@@ -15,7 +16,7 @@ _zcashd() {
     _get_comp_words_by_ref -n = cur prev words cword
 
     case "$cur" in
-        -conf=*|-pid=*|-loadblock=*|-rootcertificates=*|-rpccookiefile=*|-wallet=*|-rpcsslcertificatechainfile=*|-rpcsslprivatekeyfile=*)
+        -conf=*|-pid=*|-loadblock=*|-rpccookiefile=*|-wallet=*)
             cur="${cur#*=}"
             _filedir
             return 0

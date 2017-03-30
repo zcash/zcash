@@ -91,6 +91,7 @@ Asynchronous calls return an OperationStatus object which is a JSON object with 
 
 Depending on the type of asynchronous call, there may be other key-value pairs.  For example, a z_sendmany operation will also include the following in an OperationStatus object:
 
+* method : name of operation e.g. z_sendmany
 * params : an object containing the parameters to z_sendmany
 
 Currently, as soon as you retrieve the operation status for an operation which has finished, that is it has either succeeded, failed, or been cancelled, the operation and any associated information is removed.
