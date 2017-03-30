@@ -615,7 +615,7 @@ UniValue paxdeposit(const UniValue& params, bool fHelp)
     if ( komodo_is_issuer() != 0 )
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxdeposit only from KMD");
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        throw runtime_error("paxdeposit needs wallet"); //return Value::null;
     if (fHelp || params.size() != 3)
         throw runtime_error("paxdeposit address fiatoshis base");
     LOCK2(cs_main, pwalletMain->cs_wallet);
