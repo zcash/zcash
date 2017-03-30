@@ -20,7 +20,7 @@
 #include <univalue.h>
 
 using namespace std;
-using namespace json_spirit;
+
 int64_t MAX_MONEY = 200000000 * 100000000LL;
 uint64_t komodo_maxallowed(int32_t baseid) { return(100000000LL * 1000000); } // stub
 
