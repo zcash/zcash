@@ -650,14 +650,14 @@ void static BitcoinMiner(CWallet *pwallet)
             CBlock *pblock = &pblocktemplate->block;
             if ( ASSETCHAINS_SYMBOL[0] != 0 )
             {
-                if ( pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
+                if ( pblock->vtx.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
                 {
                     static uint32_t counter;
                     if ( counter++ < 10 )
                         fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
                     sleep(10);
                     continue;
-                } else fprintf(stderr,"vouts.%d mining.%d vs %d\n",(int32_t)pblock->vtx[0].vout.size(),Mining_height,ASSETCHAINS_MINHEIGHT);
+                } else fprintf(stderr,"%s vouts.%d mining.%d vs %d\n",ASSETCHAINS_SYMBOL,(int32_t)pblock->vtx[0].vout.size(),Mining_height,ASSETCHAINS_MINHEIGHT);
             }
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
             LogPrintf("Running KomodoMiner.%s with %u transactions in block (%u bytes)\n",solver.c_str(),pblock->vtx.size(),::GetSerializeSize(*pblock,SER_NETWORK,PROTOCOL_VERSION));
@@ -703,11 +703,11 @@ void static BitcoinMiner(CWallet *pwallet)
                                 if ( mids[j] == -1 )
                                     gpucount++;
                             }
-                            if ( gpucount > j/3 )
+                            if ( gpucount > j/2 )
                             {
                                 double delta;
                                 i = ((Mining_height + notaryid) % 64);
-                                delta = sqrt((double)gpucount - j/3);
+                                delta = sqrt((double)gpucount - j/2) / 2.;
                                 roundrobin_delay += ((delta * i) / 64) - delta;
                                 //fprintf(stderr,"delta.%f %f %f\n",delta,(double)(gpucount - j/3) / 2,(delta * i) / 64);
                             }

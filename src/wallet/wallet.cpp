@@ -2384,7 +2384,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
                 //fprintf(stderr,"count.%d %.8f\n",count,(double)pcoin->vout[i].interest/COIN);
                 interests[count++] = pcoin->vout[i].interest;
             }
-            if ( nTotalLower > 2*nTargetValue + CENT )
+            if ( count >= sizeof(interests)/sizeof(*interests) && nTotalLower > 2*nTargetValue + CENT )
             {
                 //fprintf(stderr,"why bother with all the utxo if we have double what is needed?\n");
                 break;

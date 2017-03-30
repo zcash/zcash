@@ -1355,7 +1355,7 @@ void komodo_configfile(char *symbol,uint16_t port)
         komodo_userpass(username,password,fp);
         sprintf(KMDUSERPASS,"%s:%s",username,password);
         fclose(fp);
-        //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
+//printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
     } else printf("couldnt open.(%s)\n",fname);
 }
 
