@@ -56,6 +56,9 @@ In `configure.ac` and `clientversion.h`:
 
 - Change `CLIENT_VERSION_IS_RELEASE` to false while Zcash is in beta-test phase.
 
+If this release changes the behavior of the protocol or fixes a serious bug, we may
+also wish to change the `PROTOCOL_VERSION` in `version.h`.
+
 ### B2. Write release notes
 
 Run the release-notes.py script to generate release notes and update authors.md file. For example:

@@ -98,7 +98,7 @@ def main():
             os.makedirs(options.tmpdir)
         initialize_chain(options.tmpdir)
 
-        nodes = start_nodes(1, options.tmpdir, extra_args=[['-developerencryptwallet']])
+        nodes = start_nodes(1, options.tmpdir, extra_args=[['-experimentalfeatures', '-developerencryptwallet']])
 
         run_test(nodes, options.tmpdir)
 
