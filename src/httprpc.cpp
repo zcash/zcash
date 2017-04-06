@@ -122,10 +122,12 @@ static bool HTTPReq_JSONRPC(HTTPRequest* req, const std::string &)
         if (valRequest.isObject()) {
             jreq.parse(valRequest);
 
+            LogPrint("rpc", "Calling RPC method %s\n", jreq.strMethod);
             UniValue result = tableRPC.execute(jreq.strMethod, jreq.params);
 
             // Send reply
             strReply = JSONRPCReply(result, NullUniValue, jreq.id);
+            LogPrint("rpc", "Reply: %s\n", strReply);
 
         // array of requests
         } else if (valRequest.isArray())

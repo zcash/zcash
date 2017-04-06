@@ -16,7 +16,7 @@ function zcashd_start {
     rm -rf "$DATADIR"
     mkdir -p "$DATADIR"
     touch "$DATADIR/zcash.conf"
-    ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
+    ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 -debug=http -debug=rpc &
     ZCASHD_PID=$!
 }
 

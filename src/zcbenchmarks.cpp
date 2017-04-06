@@ -129,28 +129,34 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
 #ifdef ENABLE_MINING
 double benchmark_solve_equihash()
 {
+    LogPrintf("- benchmark_solve_equihash() called\n");
     CBlock pblock;
     CEquihashInput I{pblock};
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << I;
 
+    LogPrintf("- Initialising state\n");
     unsigned int n = Params(CBaseChainParams::MAIN).EquihashN();
     unsigned int k = Params(CBaseChainParams::MAIN).EquihashK();
     crypto_generichash_blake2b_state eh_state;
     EhInitialiseState(n, k, eh_state);
+    LogPrintf("- Loading input\n");
     crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
 
+    LogPrintf("- Loading nonce\n");
     uint256 nonce;
     randombytes_buf(nonce.begin(), 32);
     crypto_generichash_blake2b_update(&eh_state,
                                     nonce.begin(),
                                     nonce.size());
 
+    LogPrintf("- Starting solveequihash run\n");
     struct timeval tv_start;
     timer_start(tv_start);
     std::set<std::vector<unsigned int>> solns;
     EhOptimisedSolveUncancellable(n, k, eh_state,
                                   [](std::vector<unsigned char> soln) { return false; });
+    LogPrintf("- Finished solveequihash run\n");
     return timer_stop(tv_start);
 }
 

@@ -2552,6 +2552,7 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
         ss >> samplejoinsplit;
     }
 
+    LogPrintf("Starting benchmark %s\n", benchmarktype);
     for (int i = 0; i < samplecount; i++) {
         if (benchmarktype == "sleep") {
             sample_times.push_back(benchmark_sleep());
@@ -2594,12 +2595,14 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
         }
     }
 
+    LogPrintf("Collating results\n");
     UniValue results(UniValue::VARR);
     for (auto time : sample_times) {
         UniValue result(UniValue::VOBJ);
         result.push_back(Pair("runningtime", time));
         results.push_back(result);
     }
+    LogPrintf("Results: %s\n", results.write());
 
     return results;
 }

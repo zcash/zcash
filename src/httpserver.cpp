@@ -93,6 +93,7 @@ public:
         if (queue.size() >= maxDepth) {
             return false;
         }
+        LogPrint("http", "Queued item for URI %s\n", ((HTTPWorkItem*)item)->req->GetURI());
         queue.push_back(item);
         cond.notify_one();
         return true;
@@ -110,6 +111,7 @@ public:
                     break;
                 i = queue.front();
                 queue.pop_front();
+                LogPrint("http", "Grabbed item for URI %s\n", ((HTTPWorkItem*)i)->req->GetURI());
             }
             (*i)();
             delete i;
