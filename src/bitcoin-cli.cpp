@@ -240,7 +240,7 @@ UniValue CallRPC(const string& strMethod, const UniValue& params)
     // Parse reply
     UniValue valReply(UniValue::VSTR);
     if (!valReply.read(response.body))
-        throw runtime_error("couldn't parse reply from server");
+        throw runtime_error(strprintf("couldn't parse reply from server: %s", response.body));
     const UniValue& reply = valReply.get_obj();
     if (reply.empty())
         throw runtime_error("expected reply to have result, error and id properties");
