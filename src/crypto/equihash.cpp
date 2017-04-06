@@ -16,6 +16,10 @@
 #include "config/bitcoin-config.h"
 #endif
 
+#if defined(__APPLE__)
+#include "compat/endian.h"
+#endif
+
 #include "crypto/equihash.h"
 #include "util.h"
 
