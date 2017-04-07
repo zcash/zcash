@@ -30,20 +30,30 @@ ZCJoinSplit *pzcashParams;
 extern bool fPrintToConsole;
 extern void noui_connect();
 
+JoinSplitTestingSetup::JoinSplitTestingSetup()
+{
+    boost::filesystem::path pk_path = ZC_GetParamsDir() / "sprout-proving.key";
+    boost::filesystem::path vk_path = ZC_GetParamsDir() / "sprout-verifying.key";
+    pzcashParams = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
+}
+
+JoinSplitTestingSetup::~JoinSplitTestingSetup()
+{
+    delete pzcashParams;
+}
+
 BasicTestingSetup::BasicTestingSetup()
 {
-        assert(init_and_check_sodium() != -1);
-        ECC_Start();
-        pzcashParams = ZCJoinSplit::Unopened();
-        SetupEnvironment();
-        fPrintToDebugLog = false; // don't want to write to debug.log file
-        fCheckBlockIndex = true;
-        SelectParams(CBaseChainParams::MAIN);
+    assert(init_and_check_sodium() != -1);
+    ECC_Start();
+    SetupEnvironment();
+    fPrintToDebugLog = false; // don't want to write to debug.log file
+    fCheckBlockIndex = true;
+    SelectParams(CBaseChainParams::MAIN);
 }
 BasicTestingSetup::~BasicTestingSetup()
 {
-        ECC_Stop();
-        delete pzcashParams;
+    ECC_Stop();
 }
 
 TestingSetup::TestingSetup()
