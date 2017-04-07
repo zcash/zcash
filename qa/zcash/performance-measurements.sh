@@ -8,6 +8,16 @@ function zcash_rpc {
     ./src/zcash-cli -datadir="$DATADIR" -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 "$@"
 }
 
+function zcash_rpc_slow {
+    # Timeout of 1 hour
+    ./src/zcash-cli -datadir="$DATADIR" -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 -rpcclienttimeout=3600 "$@"
+}
+
+function zcash_rpc_veryslow {
+    # Timeout of 2.5 hours
+    ./src/zcash-cli -datadir="$DATADIR" -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 -rpcclienttimeout=9000 "$@"
+}
+
 function zcashd_generate {
     zcash_rpc generate 101 > /dev/null
 }
@@ -83,7 +93,7 @@ case "$1" in
                 zcash_rpc zcbenchmark verifyjoinsplit 1000 "\"$RAWJOINSPLIT\""
                 ;;
             solveequihash)
-                zcash_rpc zcbenchmark solveequihash 50 "${@:3}"
+                zcash_rpc_slow zcbenchmark solveequihash 50 "${@:3}"
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1000
@@ -114,13 +124,13 @@ case "$1" in
                 zcash_rpc zcbenchmark parameterloading 1
                 ;;
             createjoinsplit)
-                zcash_rpc zcbenchmark createjoinsplit 1 "${@:3}"
+                zcash_rpc_slow zcbenchmark createjoinsplit 1 "${@:3}"
                 ;;
             verifyjoinsplit)
                 zcash_rpc zcbenchmark verifyjoinsplit 1 "\"$RAWJOINSPLIT\""
                 ;;
             solveequihash)
-                zcash_rpc zcbenchmark solveequihash 1 "${@:3}"
+                zcash_rpc_slow zcbenchmark solveequihash 1 "${@:3}"
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1
@@ -149,13 +159,13 @@ case "$1" in
                 zcash_rpc zcbenchmark parameterloading 1
                 ;;
             createjoinsplit)
-                zcash_rpc zcbenchmark createjoinsplit 1 "${@:3}"
+                zcash_rpc_veryslow zcbenchmark createjoinsplit 1 "${@:3}"
                 ;;
             verifyjoinsplit)
                 zcash_rpc zcbenchmark verifyjoinsplit 1 "\"$RAWJOINSPLIT\""
                 ;;
             solveequihash)
-                zcash_rpc zcbenchmark solveequihash 1 "${@:3}"
+                zcash_rpc_veryslow zcbenchmark solveequihash 1 "${@:3}"
                 ;;
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1
