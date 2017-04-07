@@ -1156,13 +1156,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         } catch (const std::runtime_error & e) {
             BOOST_CHECK( string(e.what()).find("unsupported joinsplit input")!= string::npos);
         }
-        
-        info.vjsin.clear();
-        try {
-            proxy.perform_joinsplit(info);
-        } catch (const std::runtime_error & e) {
-            BOOST_CHECK( string(e.what()).find("JoinSplit verifying key not loaded")!= string::npos);
-        }
     }
     
 }
