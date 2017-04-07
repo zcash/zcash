@@ -48,21 +48,16 @@ class JoinSplit {
 public:
     virtual ~JoinSplit() {}
 
-    static JoinSplit<NumInputs, NumOutputs>* Generate();
-    static JoinSplit<NumInputs, NumOutputs>* Unopened();
+    static void Generate(const std::string r1csPath,
+                         const std::string vkPath,
+                         const std::string pkPath);
+    static JoinSplit<NumInputs, NumOutputs>* Prepared(const std::string vkPath,
+                                                      const std::string pkPath);
+
     static uint256 h_sig(const uint256& randomSeed,
                          const boost::array<uint256, NumInputs>& nullifiers,
                          const uint256& pubKeyHash
                         );
-
-    // TODO: #789
-    virtual void setProvingKeyPath(std::string) = 0;
-    virtual void loadProvingKey() = 0;
-
-    virtual void saveProvingKey(std::string path) = 0;
-    virtual void loadVerifyingKey(std::string path) = 0;
-    virtual void saveVerifyingKey(std::string path) = 0;
-    virtual void saveR1CS(std::string path) = 0;
 
     virtual ZCProof prove(
         const boost::array<JSInput, NumInputs>& inputs,
