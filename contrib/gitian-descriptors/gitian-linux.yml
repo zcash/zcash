@@ -1,5 +1,5 @@
 ---
-name: "zcash-1.0.5"
+name: "zcash-1.0.8"
 enable_cache: true
 distro: "debian"
 suites:
@@ -31,8 +31,8 @@ files: []
 script: |
   WRAP_DIR=$HOME/wrapped
   HOSTS="x86_64-unknown-linux-gnu"
-  CONFIGFLAGS="--enable-glibc-back-compat --enable-reduce-exports --disable-bench --disable-gui-tests --with-gui=no --enable-hardening"
-  MAKEOPTS="V=1 NO_QT=1"
+  CONFIGFLAGS="--enable-glibc-back-compat --enable-reduce-exports --disable-bench --enable-hardening"
+  MAKEOPTS="V=1"
   FAKETIME_HOST_PROGS=""
   FAKETIME_PROGS="date ar ranlib nm strip objcopy"
   HOST_CFLAGS="-fwrapv -fno-strict-aliasing -Werror -g"
@@ -134,4 +134,3 @@ script: |
   mv $SOURCEDIST $OUTDIR/src
   mv ${OUTDIR}/${DISTNAME}-x86_64-*-debug.tar.gz ${OUTDIR}/${DISTNAME}-linux64-debug.tar.gz
   mv ${OUTDIR}/${DISTNAME}-x86_64-*.tar.gz ${OUTDIR}/${DISTNAME}-linux64.tar.gz
-

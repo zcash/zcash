@@ -13,7 +13,6 @@
 #include <chrono>
 
 using namespace std;
-using namespace json_spirit;
 
 static boost::uuids::random_generator uuidgen;
 
@@ -109,34 +108,34 @@ void AsyncRPCOperation::main() {
     */
 
     // Otherwise, if the operation was a success:
-    Value v("We have a result!");
+    UniValue v(UniValue::VSTR, "We have a result!");
     set_result(v);
     set_state(OperationStatus::SUCCESS);
 }
 
 /**
- * Return the error of the completed operation as a Value object.
- * If there is no error, return null Value.
+ * Return the error of the completed operation as a UniValue object.
+ * If there is no error, return null UniValue.
  */
-Value AsyncRPCOperation::getError() const {
+UniValue AsyncRPCOperation::getError() const {
     if (!isFailed()) {
-        return Value::null;
+        return NullUniValue;
     }
 
     std::lock_guard<std::mutex> guard(lock_);
-    Object error;
+    UniValue error(UniValue::VOBJ);
     error.push_back(Pair("code", this->error_code_));
     error.push_back(Pair("message", this->error_message_));
-    return Value(error);
+    return error;
 }
 
 /**
- * Return the result of the completed operation as a Value object.
- * If the operation did not succeed, return null Value.
+ * Return the result of the completed operation as a UniValue object.
+ * If the operation did not succeed, return null UniValue.
  */
-Value AsyncRPCOperation::getResult() const {
+UniValue AsyncRPCOperation::getResult() const {
     if (!isSuccess()) {
-        return Value::null;
+        return NullUniValue;
     }
 
     std::lock_guard<std::mutex> guard(lock_);
@@ -145,24 +144,24 @@ Value AsyncRPCOperation::getResult() const {
 
 
 /**
- * Returns a status Value object.
+ * Returns a status UniValue object.
  * If the operation has failed, it will include an error object.
  * If the operation has succeeded, it will include the result value.
  * If the operation was cancelled, there will be no error object or result value.
  */
-Value AsyncRPCOperation::getStatus() const {
+UniValue AsyncRPCOperation::getStatus() const {
     OperationStatus status = this->getState();
-    Object obj;
+    UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("id", this->id_));
     obj.push_back(Pair("status", OperationStatusMap[status]));
     obj.push_back(Pair("creation_time", this->creation_time_));
     // TODO: Issue #1354: There may be other useful metadata to return to the user.
-    Value err = this->getError();
-    if (!err.is_null()) {
+    UniValue err = this->getError();
+    if (!err.isNull()) {
         obj.push_back(Pair("error", err.get_obj()));
     }
-    Value result = this->getResult();
-    if (!result.is_null()) {
+    UniValue result = this->getResult();
+    if (!result.isNull()) {
         obj.push_back(Pair("result", result));
 
         // Include execution time for successful operation
@@ -170,7 +169,7 @@ Value AsyncRPCOperation::getStatus() const {
         obj.push_back(Pair("execution_secs", elapsed_seconds.count()));
 
     }
-    return Value(obj);
+    return obj;
 }
 
 /**

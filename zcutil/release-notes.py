@@ -17,7 +17,7 @@ def apply_author_aliases(name):
         return name
 
 def parse_authors(line):
-    commit_search = re.search('(\d+)', line)
+    commit_search = re.search('\((\d+)\)', line)
     if commit_search:
         commits = commit_search.group(1)
     else:
@@ -70,6 +70,8 @@ def document_authors():
 ## Writes release note to ./doc/release-notes based on git shortlog when current version number is specified
 def generate_release_note(version, filename):
     print "Automatically generating release notes for {0} from git shortlog. Should review {1} for accuracy.".format(version, filename)
+    # fetches latest tags, so that latest_tag will be correct
+    subprocess.Popen(['git fetch -t'], shell=True, stdout=subprocess.PIPE).communicate()[0]
     latest_tag = subprocess.Popen(['git describe --abbrev=0'], shell=True, stdout=subprocess.PIPE).communicate()[0].strip()
     print "Previous release tag: ", latest_tag
     notes = subprocess.Popen(['git shortlog --no-merges {0}..HEAD'.format(latest_tag)], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE).communicate()[0]
