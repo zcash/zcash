@@ -5,7 +5,11 @@ What is Zclassic?
 ----------------
 Zclassic is financial freedom.
 
-Get dependencies:
+Install
+-----------------
+### Linux
+
+Get dependencies
 ```{r, engine='bash'}
 
 sudo apt-get install \
@@ -24,6 +28,45 @@ Install
 ./src/zcashd
 ```
 
+### Windows
+Get dependencies
+```{r, engine='bash'}
+
+sudo apt-get install \
+      build-essential pkg-config libc6-dev m4 g++-multilib \
+      autoconf libtool ncurses-dev unzip git python \
+      zlib1g-dev wget bsdmainutils automake mingw-w64
+```
+
+Install (Cross-Compiled, building on Windows is not supported yet)
+```{r, engine='bash'}
+# Build
+./zcutil/build-win.sh -j$(nproc)
+```
+The exe will save to `src` which you can then move to a windows machine
+
+### Mac
+Get dependencies
+```{r, engine='bash'}
+
+#install xcode
+xcode-select --install
+
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+brew install cmake autoconf libtool automake coreutils pkgconfig gmp wget
+
+brew install gcc5 --without-multilib 
+```
+
+Install
+```{r, engine='bash'}
+# Build
+./zcutil/build-mac.sh -j$(nproc)
+# fetch key
+./zcutil/fetch-params.sh
+# Run
+./src/zcashd
+```
 
 About
 --------------
