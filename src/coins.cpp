@@ -101,7 +101,7 @@ CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const
         // version as fresh.
         ret->second.flags = CCoinsCacheEntry::FRESH;
     }
-    cachedCoinsUsage += memusage::DynamicUsage(ret->second.coins);
+    cachedCoinsUsage += ret->second.coins.DynamicMemoryUsage();
     return ret;
 }
 
@@ -124,7 +124,7 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tr
     CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(rt, CAnchorsCacheEntry())).first;
     ret->second.entered = true;
     ret->second.tree = tree;
-    cachedCoinsUsage += memusage::DynamicUsage(ret->second.tree);
+    cachedCoinsUsage += ret->second.tree.DynamicMemoryUsage();
 
     return true;
 }
@@ -163,7 +163,7 @@ void CCoinsViewCache::PushAnchor(const ZCIncrementalMerkleTree &tree) {
 
         if (insertRet.second) {
             // An insert took place
-            cachedCoinsUsage += memusage::DynamicUsage(ret->second.tree);
+            cachedCoinsUsage += ret->second.tree.DynamicMemoryUsage();
         }
 
         hashAnchor = newrt;
@@ -224,7 +224,7 @@ CCoinsModifier CCoinsViewCache::ModifyCoins(const uint256 &txid) {
             ret.first->second.flags = CCoinsCacheEntry::FRESH;
         }
     } else {
-        cachedCoinUsage = memusage::DynamicUsage(ret.first->second.coins);
+        cachedCoinUsage = ret.first->second.coins.DynamicMemoryUsage();
     }
     // Assume that whenever ModifyCoins is called, the entry will be modified.
     ret.first->second.flags |= CCoinsCacheEntry::DIRTY;
@@ -284,7 +284,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                     assert(it->second.flags & CCoinsCacheEntry::FRESH);
                     CCoinsCacheEntry& entry = cacheCoins[it->first];
                     entry.coins.swap(it->second.coins);
-                    cachedCoinsUsage += memusage::DynamicUsage(entry.coins);
+                    cachedCoinsUsage += entry.coins.DynamicMemoryUsage();
                     entry.flags = CCoinsCacheEntry::DIRTY | CCoinsCacheEntry::FRESH;
                 }
             } else {
@@ -292,13 +292,13 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                     // The grandparent does not have an entry, and the child is
                     // modified and being pruned. This means we can just delete
                     // it from the parent.
-                    cachedCoinsUsage -= memusage::DynamicUsage(itUs->second.coins);
+                    cachedCoinsUsage -= itUs->second.coins.DynamicMemoryUsage();
                     cacheCoins.erase(itUs);
                 } else {
                     // A normal modification.
-                    cachedCoinsUsage -= memusage::DynamicUsage(itUs->second.coins);
+                    cachedCoinsUsage -= itUs->second.coins.DynamicMemoryUsage();
                     itUs->second.coins.swap(it->second.coins);
-                    cachedCoinsUsage += memusage::DynamicUsage(itUs->second.coins);
+                    cachedCoinsUsage += itUs->second.coins.DynamicMemoryUsage();
                     itUs->second.flags |= CCoinsCacheEntry::DIRTY;
                 }
             }
@@ -318,7 +318,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                 entry.tree = child_it->second.tree;
                 entry.flags = CAnchorsCacheEntry::DIRTY;
 
-                cachedCoinsUsage += memusage::DynamicUsage(entry.tree);
+                cachedCoinsUsage += entry.tree.DynamicMemoryUsage();
             } else {
                 if (parent_it->second.entered != child_it->second.entered) {
                     // The parent may have removed the entry.
@@ -525,6 +525,6 @@ CCoinsModifier::~CCoinsModifier()
         cache.cacheCoins.erase(it);
     } else {
         // If the coin still exists after the modification, add the new usage
-        cache.cachedCoinsUsage += memusage::DynamicUsage(it->second.coins);
+        cache.cachedCoinsUsage += it->second.coins.DynamicMemoryUsage();
     }
 }

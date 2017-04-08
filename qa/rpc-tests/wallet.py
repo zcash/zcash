@@ -67,14 +67,14 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance("*"), 21)
 
         # Node0 should have three unspent outputs.
-        # Create a couple of transactions to send them to node2, submit them through 
-        # node1, and make sure both node0 and node2 pick them up properly: 
+        # Create a couple of transactions to send them to node2, submit them through
+        # node1, and make sure both node0 and node2 pick them up properly:
         node0utxos = self.nodes[0].listunspent(1)
         assert_equal(len(node0utxos), 3)
 
         # create both transactions
         txns_to_send = []
-        for utxo in node0utxos: 
+        for utxo in node0utxos:
             inputs = []
             outputs = {}
             inputs.append({ "txid" : utxo["txid"], "vout" : utxo["vout"]})
@@ -159,7 +159,7 @@ class WalletTest (BitcoinTestFramework):
 
         #check if we can list zero value tx as available coins
         #1. create rawtx
-        #2. hex-changed one output to 0.0 
+        #2. hex-changed one output to 0.0
         #3. sign and send
         #4. check if recipient (node0) can list the zero value tx
         usp = self.nodes[1].listunspent()
@@ -339,6 +339,15 @@ class WalletTest (BitcoinTestFramework):
         myvjoinsplits = mytxdetails["vjoinsplit"]
         assert_greater_than(len(myvjoinsplits), 0)
 
+        # the first (probably only) joinsplit should take in all the public value
+        myjoinsplit = self.nodes[2].getrawtransaction(mytxid, 1)["vjoinsplit"][0]
+        assert_equal(myjoinsplit["vpub_old"], zsendmanynotevalue)
+        assert_equal(myjoinsplit["vpub_new"], 0)
+        assert("onetimePubKey" in myjoinsplit.keys())
+        assert("randomSeed" in myjoinsplit.keys())
+        assert("ciphertexts" in myjoinsplit.keys())
+
+
         # send from private note to node 0 and node 2
         node0balance = self.nodes[0].getbalance() # 25.99794745
         node2balance = self.nodes[2].getbalance() # 16.99790000
@@ -370,6 +379,38 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(Decimal(self.nodes[0].getbalance("*")), node0balance)
         assert_equal(Decimal(self.nodes[2].getbalance()), node2balance)
         assert_equal(Decimal(self.nodes[2].getbalance("*")), node2balance)
+
+        #send a tx with value in a string (PR#6380 +)
+        txId  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), "2")
+        txObj = self.nodes[0].gettransaction(txId)
+        assert_equal(txObj['amount'], Decimal('-2.00000000'))
+
+        txId  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), "0.0001")
+        txObj = self.nodes[0].gettransaction(txId)
+        assert_equal(txObj['amount'], Decimal('-0.00010000'))
+
+        #check if JSON parser can handle scientific notation in strings
+        txId  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), "1e-4")
+        txObj = self.nodes[0].gettransaction(txId)
+        assert_equal(txObj['amount'], Decimal('-0.00010000'))
+
+        #this should fail
+        errorString = ""
+        try:
+            txId  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), "1f-4")
+        except JSONRPCException,e:
+            errorString = e.error['message']
+
+        assert_equal("Invalid amount" in errorString, True);
+
+        errorString = ""
+        try:
+            self.nodes[0].generate("2") #use a string to as block amount parameter must fail because it's not interpreted as amount
+        except JSONRPCException,e:
+            errorString = e.error['message']
+
+        assert_equal("not an integer" in errorString, True);
+
 
 if __name__ == '__main__':
     WalletTest ().main ()

@@ -9,7 +9,7 @@
 #include "script/script.h"
 #include "serialize.h"
 #include "streams.h"
-#include "univalue/univalue.h"
+#include <univalue.h>
 #include "util.h"
 #include "utilstrencodings.h"
 #include "version.h"
@@ -22,7 +22,7 @@
 
 using namespace std;
 
-CScript ParseScript(std::string s)
+CScript ParseScript(const std::string& s)
 {
     CScript result;
 

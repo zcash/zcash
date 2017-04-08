@@ -25,9 +25,7 @@ struct CCheckpointData {
     int64_t nTransactionsLastCheckpoint;
     double fTransactionsPerDay;
 };
-
-//! Returns true if block passes checkpoint checks
-bool CheckBlock(const CCheckpointData& data, int nHeight, const uint256& hash);
+    bool CheckBlock(const CCheckpointData& data, int nHeight, const uint256& hash);
 
 //! Return conservative estimate of total number of blocks, 0 if unknown
 int GetTotalBlocksEstimate(const CCheckpointData& data);
