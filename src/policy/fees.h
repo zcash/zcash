@@ -73,7 +73,9 @@ static const double DEFAULT_DECAY = .998;
  * We will instantiate two instances of this class, one to track transactions
  * that were included in a block due to fee, and one for tx's included due to
  * priority.  We will lump transactions into a bucket according to their approximate
- * fee or priority and then track how long it took for those txs to be included in a block
+ * fee or priority and then track how long it took for those txs to be included
+ * in a block. There is always a bucket into which any given double value
+ * (representing a fee or priority) falls.
  *
  * The tracking of unconfirmed (mempool) transactions is completely independent of the
  * historical tracking of transactions that have been confirmed in a block.
@@ -118,9 +120,14 @@ private:
     std::vector<int> oldUnconfTxs;
 
 public:
+    /** Find the bucket index of a given value */
+    unsigned int FindBucketIndex(double val);
+
     /**
      * Initialize the data structures.  This is called by BlockPolicyEstimator's
-     * constructor with default values.
+     * constructor with default values.  A final bucket is created implicitly for
+     * values greater than the last upper limit in defaultBuckets.
+     *
      * @param defaultBuckets contains the upper limits for the bucket boundaries
      * @param maxConfirms max number of confirms to track
      * @param decay how much to decay the historical moving average per block
