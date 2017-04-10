@@ -135,7 +135,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         return NULL;
     }
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    if ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight >= ASSETCHAINS_MINHEIGHT )
+    if ( ASSETCHAINS_SYMBOL[0] != 0 && komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 && chainActive.Tip()->nHeight >= ASSETCHAINS_MINHEIGHT )
     {
         isrealtime = komodo_isrealtime(&kmdheight);
         deposits = komodo_paxtotal();
@@ -549,7 +549,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
         script[34] = OP_CHECKSIG;
         //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
     }
-    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+    if ( 1 && ASSETCHAINS_SYMBOL[0] != 0 )
     {
         for (i=0; i<65; i++)
             fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i,0));
