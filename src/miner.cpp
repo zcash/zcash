@@ -736,7 +736,7 @@ void static BitcoinMiner()
             CBlock *pblock = &pblocktemplate->block;
             if ( ASSETCHAINS_SYMBOL[0] != 0 )
             {
-                if ( pblock->vtx.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
+                if ( pblock->vtx.size() == 1 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
                 {
                     static uint32_t counter;
                     if ( counter++ < 10 )
