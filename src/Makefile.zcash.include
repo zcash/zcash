@@ -7,15 +7,18 @@ zcash_GenerateParams_SOURCES = zcash/GenerateParams.cpp
 zcash_GenerateParams_LDADD = \
   $(BOOST_LIBS) \
   $(LIBZCASH) \
+  $(LIBSNARK) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZCASH_LIBS)
 
 # tool for profiling the creation of joinsplits
 zcash_CreateJoinSplit_SOURCES = zcash/CreateJoinSplit.cpp
+zcash_CreateJoinSplit_CPPFLAGS = $(BITCOIN_INCLUDES)
 zcash_CreateJoinSplit_LDADD = \
   $(LIBBITCOIN_COMMON) \
   $(LIBZCASH) \
+  $(LIBSNARK) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(BOOST_LIBS) \
