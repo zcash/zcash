@@ -1004,14 +1004,10 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     }
     else
     {
-        static uint32_t counter;
-        if ( counter++ < 100 )
-        {
-            for (i=0; i<opretlen&&i<100; i++)
-                printf("%02x",script[i]);
-            printf(" height.%d checkdeposit n.%d [%02x] [%c] %d len.%d ",height,n,script[0],script[offset],script[offset],opretlen);
-            printf("not proper vout with opreturn format %s ht.%d\n",ASSETCHAINS_SYMBOL,height);
-        }
+        for (i=0; i<opretlen&&i<100; i++)
+            printf("%02x",script[i]);
+        printf(" height.%d checkdeposit n.%d [%02x] [%c] %d opcode.%d len.%d ",height,n,script[0],script[offset],script[offset],opcode,opretlen);
+        printf("not proper vout with opreturn format %s ht.%d cmp.%d %d\n",ASSETCHAINS_SYMBOL,height,script[offset] == opcode,block.vtx[0].vout[n-1].scriptPubKey.size());
         return(-1);
     }
     return(0);
