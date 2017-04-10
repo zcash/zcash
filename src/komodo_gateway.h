@@ -720,6 +720,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     }
     //fprintf(stderr,"ht.%d n.%d nValue %.8f (%d %d %d)\n",height,n,dstr(block.vtx[0].vout[1].nValue),KOMODO_PAX,komodo_isrealtime(&ht),KOMODO_PASSPORT_INITDONE);
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
+    printf("offset.%d opretlen.%d [%02x %02x %02x %02x]\n",offset,operetlen,script[0],script[1],script[2],script[3]);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         opcode = 'X';
