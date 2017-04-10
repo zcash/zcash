@@ -549,7 +549,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
         script[34] = OP_CHECKSIG;
         //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
     }
-    if ( 1 && ASSETCHAINS_SYMBOL[0] != 0 )
+    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
     {
         for (i=0; i<65; i++)
             fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i,0));
@@ -708,7 +708,7 @@ void static BitcoinMiner()
                 Mining_height = pindexPrev->nHeight+1;
                 Mining_start = (uint32_t)time(NULL);
             }
-            if ( 1 && ASSETCHAINS_SYMBOL[0] != 0 )
+            if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                 fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
 #ifdef ENABLE_WALLET
             CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey);
