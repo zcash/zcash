@@ -119,27 +119,43 @@ BOOST_AUTO_TEST_CASE(util_ParseTorReplyMapping)
             {"Foo", "Bar Baz"},
         });
 
-    // Escapes (which are left escaped by the parser)
+    // Escapes
     CheckParseTorReplyMapping(
         "Foo=\"Bar\\ Baz\"", {
-            {"Foo", "Bar\\ Baz"},
+            {"Foo", "Bar Baz"},
         });
     CheckParseTorReplyMapping(
         "Foo=\"Bar\\Baz\"", {
-            {"Foo", "Bar\\Baz"},
+            {"Foo", "BarBaz"},
         });
     CheckParseTorReplyMapping(
         "Foo=\"Bar\\@Baz\"", {
-            {"Foo", "Bar\\@Baz"},
+            {"Foo", "Bar@Baz"},
         });
     CheckParseTorReplyMapping(
         "Foo=\"Bar\\\"Baz\" Spam=\"\\\"Eggs\\\"\"", {
-            {"Foo", "Bar\\\"Baz"},
-            {"Spam", "\\\"Eggs\\\""},
+            {"Foo", "Bar\"Baz"},
+            {"Spam", "\"Eggs\""},
         });
     CheckParseTorReplyMapping(
         "Foo=\"Bar\\\\Baz\"", {
-            {"Foo", "Bar\\\\Baz"},
+            {"Foo", "Bar\\Baz"},
+        });
+
+    // C escapes
+    CheckParseTorReplyMapping(
+        "Foo=\"Bar\\nBaz\\t\" Spam=\"\\rEggs\" Octals=\"\\1a\\11\\17\\18\\81\\377\\378\\400\" Final=Check", {
+            {"Foo", "Bar\nBaz\t"},
+            {"Spam", "\rEggs"},
+            {"Octals", "\1a\11\17\1" "881\377\37" "8400"},
+            {"Final", "Check"},
+        });
+    CheckParseTorReplyMapping(
+        "Valid=Mapping Bare=\"Escape\\\"", {});
+    CheckParseTorReplyMapping(
+        "OneOctal=\"OneEnd\\1\" TwoOctal=\"TwoEnd\\11\"", {
+            {"OneOctal", "OneEnd\1"},
+            {"TwoOctal", "TwoEnd\11"},
         });
 
     // A more complex valid grammar. PROTOCOLINFO accepts a VersionLine that
