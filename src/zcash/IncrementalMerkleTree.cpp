@@ -1,6 +1,5 @@
 #include <stdexcept>
 
-#include <boost/foreach.hpp>
 
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "crypto/sha256.h"

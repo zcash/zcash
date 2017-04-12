@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <vector>
 
-#include <boost/foreach.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/locks.hpp>
 #include <boost/thread/mutex.hpp>

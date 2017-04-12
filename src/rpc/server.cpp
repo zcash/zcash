@@ -20,7 +20,6 @@
 #include <univalue.h>
 
 #include <boost/bind/bind.hpp>
-#include <boost/foreach.hpp>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/shared_ptr.hpp>

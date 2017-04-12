@@ -18,7 +18,6 @@
 #include "wallet/wallet.h"
 #include "zcash/Proof.hpp"
 
-#include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 

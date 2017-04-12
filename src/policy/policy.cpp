@@ -12,7 +12,6 @@
 #include "util.h"
 #include "utilstrencodings.h"
 
-#include <boost/foreach.hpp>
 
     /**
      * Check transaction inputs to mitigate two
