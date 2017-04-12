@@ -6,6 +6,7 @@
 #include "prevector.h"
 #include "test_random.h"
 
+#include "reverse_iterator.h"
 #include "serialize.h"
 #include "streams.h"
 

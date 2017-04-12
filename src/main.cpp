@@ -27,6 +27,7 @@
 #include "net.h"
 #include "policy/policy.h"
 #include "pow.h"
+#include "reverse_iterator.h"
 #include "txmempool.h"
 #include "ui_interface.h"
 #include "undo.h"

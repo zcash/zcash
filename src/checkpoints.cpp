@@ -6,6 +6,7 @@
 
 #include "chainparams.h"
 #include "main.h"
+#include "reverse_iterator.h"
 #include "uint256.h"
 
 #include <stdint.h>
