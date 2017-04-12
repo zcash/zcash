@@ -199,6 +199,8 @@ BOOST_AUTO_TEST_CASE(TxConfirmStats_FindBucketIndex)
     BOOST_CHECK_EQUAL(txcs.FindBucketIndex(43.0), 3);
     BOOST_CHECK_EQUAL(txcs.FindBucketIndex(INF_FEERATE), 3);
     BOOST_CHECK_EQUAL(txcs.FindBucketIndex(2.0*INF_FEERATE), 3);
+    BOOST_CHECK_EQUAL(txcs.FindBucketIndex(std::numeric_limits<double>::infinity()), 3);
+    BOOST_CHECK_EQUAL(txcs.FindBucketIndex(2.0*std::numeric_limits<double>::infinity()), 3);
     BOOST_CHECK_EQUAL(txcs.FindBucketIndex(nan("")), 0);
 }
 
