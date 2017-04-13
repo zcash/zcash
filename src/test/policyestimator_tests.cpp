@@ -183,4 +183,25 @@ BOOST_AUTO_TEST_CASE(BlockPolicyEstimates)
     }
 }
 
+
+BOOST_AUTO_TEST_CASE(TxConfirmStats_FindBucketIndex)
+{
+    std::vector<double> buckets {0.0, 3.5, 42.0};
+    TxConfirmStats txcs;
+
+    txcs.Initialize(buckets, MAX_BLOCK_CONFIRMS, DEFAULT_DECAY, "Test");
+
+    BOOST_CHECK_EQUAL(txcs.FindBucketIndex(-1.0), 0);
+    BOOST_CHECK_EQUAL(txcs.FindBucketIndex(0.0), 0);
+    BOOST_CHECK_EQUAL(txcs.FindBucketIndex(1.0), 1);
+    BOOST_CHECK_EQUAL(txcs.FindBucketIndex(3.5), 1);
+    BOOST_CHECK_EQUAL(txcs.FindBucketIndex(4.0), 2);
+    BOOST_CHECK_EQUAL(txcs.FindBucketIndex(43.0), 3);
+    BOOST_CHECK_EQUAL(txcs.FindBucketIndex(INF_FEERATE), 3);
+    BOOST_CHECK_EQUAL(txcs.FindBucketIndex(2.0*INF_FEERATE), 3);
+    BOOST_CHECK_EQUAL(txcs.FindBucketIndex(std::numeric_limits<double>::infinity()), 3);
+    BOOST_CHECK_EQUAL(txcs.FindBucketIndex(2.0*std::numeric_limits<double>::infinity()), 3);
+    BOOST_CHECK_EQUAL(txcs.FindBucketIndex(nan("")), 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
