@@ -473,6 +473,7 @@ zcashd_LDADD = \
   $(LIBZCASH) \
   $(LIBRUSTZCASH) \
   $(LIBLEVELDB) \
+  $(LIBLEVELDB_SSE42) \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
 
