@@ -4,6 +4,7 @@
 #include "core_io.h"
 #include "primitives/transaction.h"
 #include "txmempool.h"
+#include "policy/fees.h"
 
 // Fake the input of transaction 5295156213414ed77f6e538e7e8ebe14492156906b9fe995b242477818789364
 // - 532639cc6bebed47c1c69ae36dd498c68a012e74ad12729adbd3dbb56f8f3f4a, 0
@@ -83,4 +84,6 @@ TEST(Mempool, PriorityStatsDoNotCrash) {
 
     // Check it does not crash (ie. the death test fails)
     EXPECT_NONFATAL_FAILURE(EXPECT_DEATH(testPool.addUnchecked(tx.GetHash(), entry), ""), "");
+
+    EXPECT_EQ(dPriority, MAX_PRIORITY);
 }
