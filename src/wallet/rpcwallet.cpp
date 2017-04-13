@@ -2260,6 +2260,7 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
             "  \"keypoololdest\": xxxxxx,    (numeric) the timestamp (seconds since GMT epoch) of the oldest pre-generated key in the key pool\n"
             "  \"keypoolsize\": xxxx,        (numeric) how many new keys are pre-generated\n"
             "  \"unlocked_until\": ttt,      (numeric) the timestamp in seconds since epoch (midnight Jan 1 1970 GMT) that the wallet is unlocked for transfers, or 0 if the wallet is locked\n"
+            "  \"paytxfee\": x.xxxx,         (numeric) the transaction fee configuration, set in ZEC/KB\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getwalletinfo", "")
@@ -2278,6 +2279,7 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("keypoolsize",   (int)pwalletMain->GetKeyPoolSize()));
     if (pwalletMain->IsCrypted())
         obj.push_back(Pair("unlocked_until", nWalletUnlockTime));
+    obj.push_back(Pair("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK())));
     return obj;
 }
 
@@ -2417,6 +2419,60 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     }
 
     return results;
+}
+
+UniValue fundrawtransaction(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+                            "fundrawtransaction \"hexstring\"\n"
+                            "\nAdd inputs to a transaction until it has enough in value to meet its out value.\n"
+                            "This will not modify existing inputs, and will add one change output to the outputs.\n"
+                            "Note that inputs which were signed may need to be resigned after completion since in/outputs have been added.\n"
+                            "The inputs added will not be signed, use signrawtransaction for that.\n"
+                            "\nArguments:\n"
+                            "1. \"hexstring\"    (string, required) The hex string of the raw transaction\n"
+                            "\nResult:\n"
+                            "{\n"
+                            "  \"hex\":       \"value\", (string)  The resulting raw transaction (hex-encoded string)\n"
+                            "  \"fee\":       n,         (numeric) The fee added to the transaction\n"
+                            "  \"changepos\": n          (numeric) The position of the added change output, or -1\n"
+                            "}\n"
+                            "\"hex\"             \n"
+                            "\nExamples:\n"
+                            "\nCreate a transaction with no inputs\n"
+                            + HelpExampleCli("createrawtransaction", "\"[]\" \"{\\\"myaddress\\\":0.01}\"") +
+                            "\nAdd sufficient unsigned inputs to meet the output value\n"
+                            + HelpExampleCli("fundrawtransaction", "\"rawtransactionhex\"") +
+                            "\nSign the transaction\n"
+                            + HelpExampleCli("signrawtransaction", "\"fundedtransactionhex\"") +
+                            "\nSend the transaction\n"
+                            + HelpExampleCli("sendrawtransaction", "\"signedtransactionhex\"")
+                            );
+
+    RPCTypeCheck(params, boost::assign::list_of(UniValue::VSTR));
+
+    // parse hex string from parameter
+    CTransaction origTx;
+    if (!DecodeHexTx(origTx, params[0].get_str()))
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+
+    CMutableTransaction tx(origTx);
+    CAmount nFee;
+    string strFailReason;
+    int nChangePos = -1;
+    if(!pwalletMain->FundTransaction(tx, nFee, nChangePos, strFailReason))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, strFailReason);
+
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("hex", EncodeHexTx(tx)));
+    result.push_back(Pair("changepos", nChangePos));
+    result.push_back(Pair("fee", ValueFromAmount(nFee)));
+
+    return result;
 }
 
 UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
@@ -3203,17 +3259,17 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
             // It's possible that the operation was removed from the internal queue and map during this loop
             // throw JSONRPCError(RPC_INVALID_PARAMETER, "No operation exists for that id.");
         }
-        
-        UniValue status = operation->getStatus();
 
+        UniValue obj = operation->getStatus();
+        std::string s = obj["status"].get_str();
         if (fRemoveFinishedOperations) {
             // Caller is only interested in retrieving finished results
-            if (operation->isSuccess() || operation->isFailed() || operation->isCancelled()) {
-                ret.push_back(status);
+            if ("success"==s || "failed"==s || "cancelled"==s) {
+                ret.push_back(obj);
                 q->popOperationForId(id);
             }
         } else {
-            ret.push_back(status);
+            ret.push_back(obj);
         }
     }
 

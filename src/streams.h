@@ -295,8 +295,8 @@ public:
         return (*this);
     }
 
-    void GetAndClear(CSerializeData &data) {
-        data.insert(data.end(), begin(), end());
+    void GetAndClear(CSerializeData &d) {
+        d.insert(d.end(), begin(), end());
         clear();
     }
 };

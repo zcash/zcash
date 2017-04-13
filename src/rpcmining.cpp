@@ -206,9 +206,9 @@ UniValue generate(const UniValue& params, bool fHelp)
     while (nHeight < nHeightEnd)
     {
 #ifdef ENABLE_WALLET
-        unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
+        std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
 #else
-        unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey());
+        std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey());
 #endif
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Wallet keypool empty");
@@ -651,8 +651,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     UniValue transactions(UniValue::VARR);
     map<uint256, int64_t> setTxIndex;
     int i = 0;
-    BOOST_FOREACH (CTransaction& tx, pblock->vtx)
-    {
+    BOOST_FOREACH (const CTransaction& tx, pblock->vtx) {
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
 
@@ -763,6 +762,12 @@ UniValue submitblock(const UniValue& params, bool fHelp)
             "      \"workid\" : \"id\"    (string, optional) if the server provided a workid, it MUST be included with submissions\n"
             "    }\n"
             "\nResult:\n"
+            "\"duplicate\" - node already has valid copy of block\n"
+            "\"duplicate-invalid\" - node already has block, but it is invalid\n"
+            "\"duplicate-inconclusive\" - node already has block but has not validated it\n"
+            "\"inconclusive\" - node has not validated the block, it may not be on the node's current best chain\n"
+            "\"rejected\" - block was rejected as invalid\n"
+            "For more information on submitblock parameters and results, see: https://github.com/bitcoin/bips/blob/master/bip-0022.mediawiki#block-submission\n"
             "\nExamples:\n"
             + HelpExampleCli("submitblock", "\"mydata\"")
             + HelpExampleRpc("submitblock", "\"mydata\"")

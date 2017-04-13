@@ -125,6 +125,7 @@ class CSubNet
 
         friend bool operator==(const CSubNet& a, const CSubNet& b);
         friend bool operator!=(const CSubNet& a, const CSubNet& b);
+        friend bool operator<(const CSubNet& a, const CSubNet& b);
 };
 
 /** A combination of a network address (CNetAddr) and a (TCP) port */
@@ -202,5 +203,9 @@ std::string NetworkErrorString(int err);
 bool CloseSocket(SOCKET& hSocket);
 /** Disable or enable blocking-mode for a socket */
 bool SetSocketNonBlocking(SOCKET& hSocket, bool fNonBlocking);
+/**
+ * Convert milliseconds to a struct timeval for e.g. select.
+ */
+struct timeval MillisToTimeval(int64_t nTimeout);
 
 #endif // BITCOIN_NETBASE_H

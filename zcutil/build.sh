@@ -33,7 +33,7 @@ Usage:
 $0 --help
   Show this help message and exit.
 
-$0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ MAKEARGS... ]
+$0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --disable-rust ] [ MAKEARGS... ]
   Build Zcash and most of its transitive dependencies from
   source. MAKEARGS are applied to both dependencies and Zcash itself.
 
@@ -43,6 +43,9 @@ $0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ MAKEARGS... ]
 
   If --disable-mining is passed, Zcash is configured to not build any mining
   code. It must be passed after the test arguments, if present.
+
+  If --disable-rust is passed, Zcash is configured to not build any Rust language
+  assets. It must be passed after mining/test arguments, if present.
 EOF
     exit 0
 fi
@@ -73,9 +76,17 @@ then
     shift
 fi
 
+# If --disable-rust is the next argument, disable Rust code:
+RUST_ARG=''
+if [ "x${1:-}" = 'x--disable-rust' ]
+then
+    RUST_ARG='--enable-rust=no'
+    shift
+fi
+
 PREFIX="$(pwd)/depends/$BUILD/"
 
-HOST="$HOST" BUILD="$BUILD" "$MAKE" "$@" -C ./depends/ V=1 NO_QT=1
+HOST="$HOST" BUILD="$BUILD" NO_RUST="$RUST_ARG" "$MAKE" "$@" -C ./depends/ V=1
 ./autogen.sh
-CC="$CC" CXX="$CXX" ./configure --prefix="${PREFIX}" --host="$HOST" --build="$BUILD" --with-gui=no "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" CXXFLAGS='-fwrapv -fno-strict-aliasing -Werror -g'
+CC="$CC" CXX="$CXX" ./configure --prefix="${PREFIX}" --host="$HOST" --build="$BUILD" "$RUST_ARG" "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" CXXFLAGS='-fwrapv -fno-strict-aliasing -Werror -g'
 "$MAKE" "$@" V=1
