@@ -7,6 +7,7 @@
 #include "memusage.h"
 #include "random.h"
 #include "version.h"
+#include "policy/fees.h"
 
 #include <assert.h>
 
@@ -101,7 +102,7 @@ CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const
         // version as fresh.
         ret->second.flags = CCoinsCacheEntry::FRESH;
     }
-    cachedCoinsUsage += memusage::DynamicUsage(ret->second.coins);
+    cachedCoinsUsage += ret->second.coins.DynamicMemoryUsage();
     return ret;
 }
 
@@ -124,7 +125,7 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tr
     CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(rt, CAnchorsCacheEntry())).first;
     ret->second.entered = true;
     ret->second.tree = tree;
-    cachedCoinsUsage += memusage::DynamicUsage(ret->second.tree);
+    cachedCoinsUsage += ret->second.tree.DynamicMemoryUsage();
 
     return true;
 }
@@ -163,7 +164,7 @@ void CCoinsViewCache::PushAnchor(const ZCIncrementalMerkleTree &tree) {
 
         if (insertRet.second) {
             // An insert took place
-            cachedCoinsUsage += memusage::DynamicUsage(ret->second.tree);
+            cachedCoinsUsage += ret->second.tree.DynamicMemoryUsage();
         }
 
         hashAnchor = newrt;
@@ -224,7 +225,7 @@ CCoinsModifier CCoinsViewCache::ModifyCoins(const uint256 &txid) {
             ret.first->second.flags = CCoinsCacheEntry::FRESH;
         }
     } else {
-        cachedCoinUsage = memusage::DynamicUsage(ret.first->second.coins);
+        cachedCoinUsage = ret.first->second.coins.DynamicMemoryUsage();
     }
     // Assume that whenever ModifyCoins is called, the entry will be modified.
     ret.first->second.flags |= CCoinsCacheEntry::DIRTY;
@@ -284,7 +285,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                     assert(it->second.flags & CCoinsCacheEntry::FRESH);
                     CCoinsCacheEntry& entry = cacheCoins[it->first];
                     entry.coins.swap(it->second.coins);
-                    cachedCoinsUsage += memusage::DynamicUsage(entry.coins);
+                    cachedCoinsUsage += entry.coins.DynamicMemoryUsage();
                     entry.flags = CCoinsCacheEntry::DIRTY | CCoinsCacheEntry::FRESH;
                 }
             } else {
@@ -292,13 +293,13 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                     // The grandparent does not have an entry, and the child is
                     // modified and being pruned. This means we can just delete
                     // it from the parent.
-                    cachedCoinsUsage -= memusage::DynamicUsage(itUs->second.coins);
+                    cachedCoinsUsage -= itUs->second.coins.DynamicMemoryUsage();
                     cacheCoins.erase(itUs);
                 } else {
                     // A normal modification.
-                    cachedCoinsUsage -= memusage::DynamicUsage(itUs->second.coins);
+                    cachedCoinsUsage -= itUs->second.coins.DynamicMemoryUsage();
                     itUs->second.coins.swap(it->second.coins);
-                    cachedCoinsUsage += memusage::DynamicUsage(itUs->second.coins);
+                    cachedCoinsUsage += itUs->second.coins.DynamicMemoryUsage();
                     itUs->second.flags |= CCoinsCacheEntry::DIRTY;
                 }
             }
@@ -318,7 +319,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                 entry.tree = child_it->second.tree;
                 entry.flags = CAnchorsCacheEntry::DIRTY;
 
-                cachedCoinsUsage += memusage::DynamicUsage(entry.tree);
+                cachedCoinsUsage += entry.tree.DynamicMemoryUsage();
             } else {
                 if (parent_it->second.entered != child_it->second.entered) {
                     // The parent may have removed the entry.
@@ -443,7 +444,17 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
 {
     if (tx.IsCoinBase())
         return 0.0;
-    CAmount nTotalIn = 0;
+
+    // Joinsplits do not reveal any information about the value or age of a note, so we
+    // cannot apply the priority algorithm used for transparent utxos.  Instead, we just
+    // use the maximum priority whenever a transaction contains any JoinSplits.
+    // (Note that coinbase transactions cannot contain JoinSplits.)
+    // FIXME: this logic is partially duplicated between here and CreateNewBlock in miner.cpp.
+
+    if (tx.vjoinsplit.size() > 0) {
+        return MAX_PRIORITY;
+    }
+
     double dResult = 0.0;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
@@ -452,32 +463,7 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
         if (!coins->IsAvailable(txin.prevout.n)) continue;
         if (coins->nHeight < nHeight) {
             dResult += coins->vout[txin.prevout.n].nValue * (nHeight-coins->nHeight);
-            nTotalIn += coins->vout[txin.prevout.n].nValue;
         }
-    }
-
-    // If a transaction contains a joinsplit, we boost the priority of the transaction.
-    // Joinsplits do not reveal any information about the value or age of a note, so we
-    // cannot apply the priority algorithm used for transparent utxos.  Instead, we pick a
-    // very large number and multiply it by the transaction's fee per 1000 bytes of data.
-    // One trillion, 1000000000000, is equivalent to 1 ZEC utxo * 10000 blocks (~17 days).
-    if (tx.vjoinsplit.size() > 0) {
-        unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
-        nTotalIn += tx.GetJoinSplitValueIn();
-        CAmount fee = nTotalIn - tx.GetValueOut();
-        CFeeRate feeRate(fee, nTxSize);
-        CAmount feePerK = feeRate.GetFeePerK();
-
-        if (feePerK == 0) {
-            feePerK = 1;
-        }
-
-        dResult += 1000000000000 * double(feePerK);
-        // We cast feePerK from int64_t to double because if feePerK is a large number, say
-        // close to MAX_MONEY, the multiplication operation will result in an integer overflow.
-        // The variable dResult should never overflow since a 64-bit double in C++ is typically
-        // a double-precision floating-point number as specified by IEE 754, with a maximum
-        // value DBL_MAX of 1.79769e+308.
     }
 
     return tx.ComputePriority(dResult);
@@ -498,6 +484,6 @@ CCoinsModifier::~CCoinsModifier()
         cache.cacheCoins.erase(it);
     } else {
         // If the coin still exists after the modification, add the new usage
-        cache.cachedCoinsUsage += memusage::DynamicUsage(it->second.coins);
+        cache.cachedCoinsUsage += it->second.coins.DynamicMemoryUsage();
     }
 }

@@ -212,19 +212,87 @@ BOOST_AUTO_TEST_CASE(json_parse_errors)
     BOOST_CHECK_THROW(ParseNonRFCJSONValue("3J98t1WpEZ73CNmQviecrnyiWrnqRhWNL"), std::runtime_error);
 }
 
-BOOST_AUTO_TEST_CASE(rpc_boostasiotocnetaddr)
+BOOST_AUTO_TEST_CASE(rpc_ban)
 {
-    // Check IPv4 addresses
-    BOOST_CHECK_EQUAL(BoostAsioToCNetAddr(boost::asio::ip::address::from_string("1.2.3.4")).ToString(), "1.2.3.4");
-    BOOST_CHECK_EQUAL(BoostAsioToCNetAddr(boost::asio::ip::address::from_string("127.0.0.1")).ToString(), "127.0.0.1");
-    // Check IPv6 addresses
-    BOOST_CHECK_EQUAL(BoostAsioToCNetAddr(boost::asio::ip::address::from_string("::1")).ToString(), "::1");
-    BOOST_CHECK_EQUAL(BoostAsioToCNetAddr(boost::asio::ip::address::from_string("123:4567:89ab:cdef:123:4567:89ab:cdef")).ToString(),
-                                         "123:4567:89ab:cdef:123:4567:89ab:cdef");
-    // v4 compatible must be interpreted as IPv4
-    BOOST_CHECK_EQUAL(BoostAsioToCNetAddr(boost::asio::ip::address::from_string("::0:127.0.0.1")).ToString(), "127.0.0.1");
-    // v4 mapped must be interpreted as IPv4
-    BOOST_CHECK_EQUAL(BoostAsioToCNetAddr(boost::asio::ip::address::from_string("::ffff:127.0.0.1")).ToString(), "127.0.0.1");
+    BOOST_CHECK_NO_THROW(CallRPC(string("clearbanned")));
+    
+    UniValue r;
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("setban 127.0.0.0 add")));
+    BOOST_CHECK_THROW(r = CallRPC(string("setban 127.0.0.0:8334")), runtime_error); //portnumber for setban not allowed
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
+    UniValue ar = r.get_array();
+    UniValue o1 = ar[0].get_obj();
+    UniValue adr = find_value(o1, "address");
+    BOOST_CHECK_EQUAL(adr.get_str(), "127.0.0.0/255.255.255.255");
+    BOOST_CHECK_NO_THROW(CallRPC(string("setban 127.0.0.0 remove")));;
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
+    ar = r.get_array();
+    BOOST_CHECK_EQUAL(ar.size(), 0);
+
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("setban 127.0.0.0/24 add 1607731200 true")));
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
+    ar = r.get_array();
+    o1 = ar[0].get_obj();
+    adr = find_value(o1, "address");
+    UniValue banned_until = find_value(o1, "banned_until");
+    BOOST_CHECK_EQUAL(adr.get_str(), "127.0.0.0/255.255.255.0");
+    BOOST_CHECK_EQUAL(banned_until.get_int64(), 1607731200); // absolute time check
+
+    BOOST_CHECK_NO_THROW(CallRPC(string("clearbanned")));
+
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("setban 127.0.0.0/24 add 200")));
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
+    ar = r.get_array();
+    o1 = ar[0].get_obj();
+    adr = find_value(o1, "address");
+    banned_until = find_value(o1, "banned_until");
+    BOOST_CHECK_EQUAL(adr.get_str(), "127.0.0.0/255.255.255.0");
+    int64_t now = GetTime();    
+    BOOST_CHECK(banned_until.get_int64() > now);
+    BOOST_CHECK(banned_until.get_int64()-now <= 200);
+
+    // must throw an exception because 127.0.0.1 is in already banned suubnet range
+    BOOST_CHECK_THROW(r = CallRPC(string("setban 127.0.0.1 add")), runtime_error);
+
+    BOOST_CHECK_NO_THROW(CallRPC(string("setban 127.0.0.0/24 remove")));;
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
+    ar = r.get_array();
+    BOOST_CHECK_EQUAL(ar.size(), 0);
+
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("setban 127.0.0.0/255.255.0.0 add")));
+    BOOST_CHECK_THROW(r = CallRPC(string("setban 127.0.1.1 add")), runtime_error);
+
+    BOOST_CHECK_NO_THROW(CallRPC(string("clearbanned")));
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
+    ar = r.get_array();
+    BOOST_CHECK_EQUAL(ar.size(), 0);
+
+
+    BOOST_CHECK_THROW(r = CallRPC(string("setban test add")), runtime_error); //invalid IP
+
+    //IPv6 tests
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("setban FE80:0000:0000:0000:0202:B3FF:FE1E:8329 add")));
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
+    ar = r.get_array();
+    o1 = ar[0].get_obj();
+    adr = find_value(o1, "address");
+    BOOST_CHECK_EQUAL(adr.get_str(), "fe80::202:b3ff:fe1e:8329/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
+
+    BOOST_CHECK_NO_THROW(CallRPC(string("clearbanned")));
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("setban 2001:db8::/30 add")));
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
+    ar = r.get_array();
+    o1 = ar[0].get_obj();
+    adr = find_value(o1, "address");
+    BOOST_CHECK_EQUAL(adr.get_str(), "2001:db8::/ffff:fffc:0:0:0:0:0:0");
+
+    BOOST_CHECK_NO_THROW(CallRPC(string("clearbanned")));
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("setban 2001:4d48:ac57:400:cacf:e9ff:fe1d:9c63/128 add")));
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
+    ar = r.get_array();
+    o1 = ar[0].get_obj();
+    adr = find_value(o1, "address");
+    BOOST_CHECK_EQUAL(adr.get_str(), "2001:4d48:ac57:400:cacf:e9ff:fe1d:9c63/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

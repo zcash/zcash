@@ -21,6 +21,7 @@
 #include "rpcprotocol.h"
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "sodium.h"
+#include "miner.h"
 
 #include <iostream>
 #include <chrono>
@@ -112,6 +113,14 @@ void AsyncRPCOperation_sendmany::main() {
 
     bool success = false;
 
+#ifdef ENABLE_MINING
+  #ifdef ENABLE_WALLET
+    GenerateBitcoins(false, NULL, 0);
+  #else
+    GenerateBitcoins(false, 0);
+  #endif
+#endif
+
     try {
         success = main_impl();
     } catch (const UniValue& objError) {
@@ -132,6 +141,14 @@ void AsyncRPCOperation_sendmany::main() {
         set_error_code(-2);
         set_error_message("unknown error");
     }
+
+#ifdef ENABLE_MINING
+  #ifdef ENABLE_WALLET
+    GenerateBitcoins(GetBoolArg("-gen",false), pwalletMain, GetArg("-genproclimit", 1));
+  #else
+    GenerateBitcoins(GetBoolArg("-gen",false), GetArg("-genproclimit", 1));
+  #endif
+#endif
 
     stop_execution_clock();
 

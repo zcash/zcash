@@ -18,7 +18,7 @@
 using namespace std;
 
 CTxMemPoolEntry::CTxMemPoolEntry():
-    nFee(0), nTxSize(0), nModSize(0), nTime(0), dPriority(0.0), hadNoDependencies(false)
+    nFee(0), nTxSize(0), nModSize(0), nUsageSize(0), nTime(0), dPriority(0.0), hadNoDependencies(false)
 {
     nHeight = MEMPOOL_HEIGHT;
 }
@@ -31,6 +31,7 @@ CTxMemPoolEntry::CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
 {
     nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
     nModSize = tx.CalculateModifiedSize(nTxSize);
+    nUsageSize = RecursiveDynamicUsage(tx);
 }
 
 CTxMemPoolEntry::CTxMemPoolEntry(const CTxMemPoolEntry& other)
@@ -106,6 +107,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     }
     nTransactionsUpdated++;
     totalTxSize += entry.GetTxSize();
+    cachedInnerUsage += entry.DynamicMemoryUsage();
     minerPolicyEstimator->processTransaction(entry, fCurrentEstimate);
 
     return true;
@@ -156,6 +158,7 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
 
             removed.push_back(tx);
             totalTxSize -= mapTx[hash].GetTxSize();
+            cachedInnerUsage -= mapTx[hash].DynamicMemoryUsage();
             mapTx.erase(hash);
             nTransactionsUpdated++;
             minerPolicyEstimator->removeTx(hash);
@@ -176,7 +179,7 @@ void CTxMemPool::removeCoinbaseSpends(const CCoinsViewCache *pcoins, unsigned in
                 continue;
             const CCoins *coins = pcoins->AccessCoins(txin.prevout.hash);
             if (fSanityCheck) assert(coins);
-            if (!coins || (coins->IsCoinBase() && nMemPoolHeight - coins->nHeight < COINBASE_MATURITY)) {
+            if (!coins || (coins->IsCoinBase() && ((signed long)nMemPoolHeight) - coins->nHeight < COINBASE_MATURITY)) {
                 transactionsToRemove.push_back(tx);
                 break;
             }
@@ -275,6 +278,7 @@ void CTxMemPool::clear()
     mapTx.clear();
     mapNextTx.clear();
     totalTxSize = 0;
+    cachedInnerUsage = 0;
     ++nTransactionsUpdated;
 }
 
@@ -286,6 +290,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
     LogPrint("mempool", "Checking mempool with %u transactions and %u inputs\n", (unsigned int)mapTx.size(), (unsigned int)mapNextTx.size());
 
     uint64_t checkTotal = 0;
+    uint64_t innerUsage = 0;
 
     CCoinsViewCache mempoolDuplicate(const_cast<CCoinsViewCache*>(pcoins));
 
@@ -294,6 +299,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
     for (std::map<uint256, CTxMemPoolEntry>::const_iterator it = mapTx.begin(); it != mapTx.end(); it++) {
         unsigned int i = 0;
         checkTotal += it->second.GetTxSize();
+        innerUsage += it->second.DynamicMemoryUsage();
         const CTransaction& tx = it->second.GetTx();
         bool fDependsWait = false;
         BOOST_FOREACH(const CTxIn &txin, tx.vin) {
@@ -379,6 +385,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
     }
 
     assert(totalTxSize == checkTotal);
+    assert(innerUsage == cachedInnerUsage);
 }
 
 void CTxMemPool::queryHashes(vector<uint256>& vtxid)
@@ -505,4 +512,9 @@ bool CCoinsViewMemPool::GetCoins(const uint256 &txid, CCoins &coins) const {
 
 bool CCoinsViewMemPool::HaveCoins(const uint256 &txid) const {
     return mempool.exists(txid) || base->HaveCoins(txid);
+}
+
+size_t CTxMemPool::DynamicMemoryUsage() const {
+    LOCK(cs);
+    return memusage::DynamicUsage(mapTx) + memusage::DynamicUsage(mapNextTx) + memusage::DynamicUsage(mapDeltas) + cachedInnerUsage;
 }

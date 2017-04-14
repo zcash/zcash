@@ -110,7 +110,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
     const CChainParams& chainparams = Params();
     // Create new block
-    unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
+    std::unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
     if(!pblocktemplate.get())
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
@@ -518,12 +518,14 @@ void static BitcoinMiner()
             cancelSolver = true;
         }
     );
+    miningTimer.start();
 
     try {
         while (true) {
             if (chainparams.MiningRequiresPeers()) {
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
+                miningTimer.stop();
                 do {
                     bool fvNodesEmpty;
                     {
@@ -534,6 +536,7 @@ void static BitcoinMiner()
                         break;
                     MilliSleep(1000);
                 } while (true);
+                miningTimer.start();
             }
 
             //
@@ -711,16 +714,19 @@ void static BitcoinMiner()
     }
     catch (const boost::thread_interrupted&)
     {
+        miningTimer.stop();
         c.disconnect();
         LogPrintf("ZcashMiner terminated\n");
         throw;
     }
     catch (const std::runtime_error &e)
     {
+        miningTimer.stop();
         c.disconnect();
         LogPrintf("ZcashMiner runtime error: %s\n", e.what());
         return;
     }
+    miningTimer.stop();
     c.disconnect();
 }
 
