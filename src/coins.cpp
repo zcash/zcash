@@ -7,6 +7,7 @@
 #include "memusage.h"
 #include "random.h"
 #include "version.h"
+#include "policy/fees.h"
 
 #include <assert.h>
 
@@ -470,7 +471,18 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
 {
     if (tx.IsCoinBase())
         return 0.0;
-    CAmount nTotalIn = 0;
+    //CAmount nTotalIn = 0;
+    
+    // Joinsplits do not reveal any information about the value or age of a note, so we
+    // cannot apply the priority algorithm used for transparent utxos.  Instead, we just
+    // use the maximum priority whenever a transaction contains any JoinSplits.
+    // (Note that coinbase transactions cannot contain JoinSplits.)
+    // FIXME: this logic is partially duplicated between here and CreateNewBlock in miner.cpp.
+    
+    if (tx.vjoinsplit.size() > 0) {
+            return MAX_PRIORITY;
+        }
+
     double dResult = 0.0;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
@@ -479,7 +491,7 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
         if (!coins->IsAvailable(txin.prevout.n)) continue;
         if (coins->nHeight < nHeight) {
             dResult += coins->vout[txin.prevout.n].nValue * (nHeight-coins->nHeight);
-            nTotalIn += coins->vout[txin.prevout.n].nValue;
+            //nTotalIn += coins->vout[txin.prevout.n].nValue;
         }
     }
 
@@ -488,7 +500,7 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
     // cannot apply the priority algorithm used for transparent utxos.  Instead, we pick a
     // very large number and multiply it by the transaction's fee per 1000 bytes of data.
     // One trillion, 1000000000000, is equivalent to 1 ZEC utxo * 10000 blocks (~17 days).
-    if (tx.vjoinsplit.size() > 0) {
+    /*if (tx.vjoinsplit.size() > 0) {
         unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
         nTotalIn += tx.GetJoinSplitValueIn();
         CAmount fee = nTotalIn - tx.GetValueOut();
@@ -505,7 +517,7 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
         // The variable dResult should never overflow since a 64-bit double in C++ is typically
         // a double-precision floating-point number as specified by IEE 754, with a maximum
         // value DBL_MAX of 1.79769e+308.
-    }
+    }*/
 
     return tx.ComputePriority(dResult);
 }
