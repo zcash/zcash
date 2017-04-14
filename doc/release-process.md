@@ -77,7 +77,7 @@ Run the release-notes.py script to generate release notes and update authors.md 
 
 Add the newly created release notes to the Git repository:
 
-    $ git add doc/release-notes/release-notes-$ZCASH_RELEASE.md
+    $ git add ./doc/authors.md ./doc/release-notes/release-notes-$ZCASH_RELEASE.md
 
 Update the Debian package changelog:
 
