@@ -1,8 +1,8 @@
-zcash (v1.0.8+1) jessie; urgency=high
+zcash (1.0.8+1) jessie; urgency=high
 
   * 1.0.8-1 release.
 
- -- Zcash Company <team@z.cash>  Thu, 13 Apr 2017 17:44:23 -0700
+ -- Zcash Company <team@z.cash>  Thu, 13 Apr 2017 20:20:37 -0700
 
 zcash (1.0.8) jessie; urgency=medium
 
