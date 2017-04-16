@@ -113,6 +113,10 @@ if ENABLE_ZMQ
 test_test_bitcoin_LDADD += $(ZMQ_LIBS)
 endif
 
+if ENABLE_PROTON
+test_test_bitcoin_LDADD += $(PROTON_LIBS)
+endif
+
 nodist_test_test_bitcoin_SOURCES = $(GENERATED_TEST_FILES)
 
 $(BITCOIN_TESTS): $(GENERATED_TEST_FILES)

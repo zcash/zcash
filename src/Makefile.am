@@ -55,6 +55,9 @@ endif
 if ENABLE_ZMQ
 EXTRA_LIBRARIES += libbitcoin_zmq.a
 endif
+if ENABLE_PROTON
+EXTRA_LIBRARIES += libbitcoin_proton.a
+endif
 
 if BUILD_BITCOIN_LIBS
 lib_LTLIBRARIES = libzcashconsensus.la
@@ -92,6 +95,11 @@ BITCOIN_CORE_H = \
   addrman.h \
   alert.h \
   amount.h \
+  amqp/amqpabstractnotifier.h \
+  amqp/amqpconfig.h \
+  amqp/amqpnotificationinterface.h \
+  amqp/amqppublishnotifier.h \
+  amqp/amqpsender.h \
   arith_uint256.h \
   asyncrpcoperation.h \
   asyncrpcqueue.h \
@@ -245,6 +253,15 @@ libbitcoin_zmq_a_SOURCES = \
   zmq/zmqpublishnotifier.cpp
 endif
 
+if ENABLE_PROTON
+LIBBITCOIN_PROTON=libbitcoin_proton.a
+
+libbitcoin_proton_a_CPPFLAGS = $(BITCOIN_INCLUDES)
+libbitcoin_proton_a_SOURCES = \
+  amqp/amqpabstractnotifier.cpp \
+  amqp/amqpnotificationinterface.cpp \
+  amqp/amqppublishnotifier.cpp
+endif
 
 # wallet: zcashd, but only linked when wallet enabled
 libbitcoin_wallet_a_CPPFLAGS = $(BITCOIN_INCLUDES)
@@ -402,6 +419,10 @@ zcashd_LDADD += \
   $(LIBZCASH) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZCASH_LIBS)
+
+if ENABLE_PROTON
+zcashd_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)
+endif
 
 # bitcoin-cli binary #
 zcash_cli_SOURCES = bitcoin-cli.cpp
