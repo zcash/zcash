@@ -977,8 +977,10 @@ int32_t komodo_scriptitemlen(int32_t *opretlenp,uint8_t *script)
             opretlen = script[len++];
         else if ( opretlen == 0x4d )
         {
-            opretlen = script[len++];
-            opretlen = (opretlen << 8) | script[len++];
+            opretlen = script[len] + (script[len+1] << 8);
+            len += 2;
+            //opretlen = script[len++];
+            //opretlen = (opretlen << 8) | script[len++];
         }
     }
     *opretlenp = opretlen;

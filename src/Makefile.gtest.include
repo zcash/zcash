@@ -18,14 +18,15 @@ zcash_gtest_SOURCES += \
 	wallet/gtest/test_wallet_zkeys.cpp
 endif
 zcash_gtest_SOURCES += \
-	gtest/test_jsonspirit.cpp \
 	gtest/test_tautology.cpp \
 	gtest/test_equihash.cpp \
 	gtest/test_joinsplit.cpp \
 	gtest/test_keystore.cpp \
 	gtest/test_noteencryption.cpp \
+	gtest/test_mempool.cpp \
 	gtest/test_merkletree.cpp \
 	gtest/test_metrics.cpp \
+	gtest/test_miner.cpp \
 	gtest/test_pow.cpp \
 	gtest/test_random.cpp \
 	gtest/test_rpc.cpp \
@@ -44,11 +45,14 @@ komodo_gtest_CPPFLAGS = -DMULTICORE -fopenmp -DBINARY_OUTPUT -DCURVE_ALT_BN128 -
 
 komodo_gtest_LDADD = -lgtest -lgmock $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CRYPTO) $(LIBBITCOIN_UNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
   $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1)
+if ENABLE_ZMQ
+zcash_gtest_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
+endif
 if ENABLE_WALLET
 komodo_gtest_LDADD += $(LIBBITCOIN_WALLET)
 endif
 
-komodo_gtest_LDADD += $(LIBBITCOIN_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(LIBZCASH) $(LIBZCASH_LIBS)
+komodo_gtest_LDADD += $(LIBZCASH_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(LIBZCASH) $(LIBZCASH_LIBS)
 
 komodo_gtest_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 

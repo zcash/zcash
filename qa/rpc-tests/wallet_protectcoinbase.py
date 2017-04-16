@@ -16,7 +16,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
 
     # Start nodes with -regtestprotectcoinbase to set fCoinbaseMustBeProtected to true.
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[['-regtestprotectcoinbase']] * 3 )
+        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[['-regtestprotectcoinbase', '-debug=zrpcunsafe']] * 3 )
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -100,6 +100,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
                 errorString = results[0]["error"]["message"]
 
                 # Test that the returned status object contains a params field with the operation's input parameters
+                assert_equal(results[0]["method"], "z_sendmany")
                 params =results[0]["params"]
                 assert_equal(params["fee"], Decimal('0.0001')) # default
                 assert_equal(params["minconf"], Decimal('1')) # default
@@ -114,12 +115,39 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":myzaddr, "amount": Decimal('20.0') - Decimal('0.0001')})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        self.wait_and_assert_operationid_status(myopid)
+        mytxid = self.wait_and_assert_operationid_status(myopid)
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
 
+        # Verify that debug=zrpcunsafe logs params, and that full txid is associated with opid
+        logpath = self.options.tmpdir+"/node0/regtest/debug.log"
+        logcounter = 0
+        with open(logpath, "r") as myfile:
+            logdata = myfile.readlines()
+        for logline in logdata:
+            if myopid + ": z_sendmany initialized" in logline and mytaddr in logline and myzaddr in logline:
+                assert_equal(logcounter, 0) # verify order of log messages
+                logcounter = logcounter + 1
+            if myopid + ": z_sendmany finished" in logline and mytxid in logline:
+                assert_equal(logcounter, 1)
+                logcounter = logcounter + 1
+        assert_equal(logcounter, 2)
+
         # check balances (the z_sendmany consumes 3 coinbase utxos)
+        resp = self.nodes[0].z_gettotalbalance()
+        assert_equal(Decimal(resp["transparent"]), Decimal('20.0'))
+        assert_equal(Decimal(resp["private"]), Decimal('19.9999'))
+        assert_equal(Decimal(resp["total"]), Decimal('39.9999'))
+
+        # A custom fee of 0 is okay.  Here the node will send the note value back to itself.
+        recipients = []
+        recipients.append({"address":myzaddr, "amount": Decimal('19.9999')})
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, Decimal('0.0'))
+        mytxid = self.wait_and_assert_operationid_status(myopid)
+        self.sync_all()
+        self.nodes[1].generate(1)
+        self.sync_all()
         resp = self.nodes[0].z_gettotalbalance()
         assert_equal(Decimal(resp["transparent"]), Decimal('20.0'))
         assert_equal(Decimal(resp["private"]), Decimal('19.9999'))
@@ -153,7 +181,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         amount = Decimal('10.0') - Decimal('0.00010000') - Decimal('0.00000001')    # this leaves change at 1 zatoshi less than dust threshold
         recipients.append({"address":self.nodes[0].getnewaddress(), "amount":amount })
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        self.wait_and_assert_operationid_status(myopid, "failed", "Insufficient transparent funds, have 10.00, need 0.00000545 more to avoid creating invalid change output 0.00000001 (dust threshold is 0.00000546)")
+        self.wait_and_assert_operationid_status(myopid, "failed", "Insufficient transparent funds, have 10.00, need 0.00000053 more to avoid creating invalid change output 0.00000001 (dust threshold is 0.00000054)")
 
         # Send will fail because send amount is too big, even when including coinbase utxos
         errorString = ""
@@ -214,14 +242,14 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
             self.nodes[0].z_sendmany(myzaddr, recipients, 1, -1)
         except JSONRPCException,e:
             errorString = e.error['message']
-        assert_equal("Invalid amount" in errorString, True)
+        assert_equal("Amount out of range" in errorString, True)
 
         # Send will fail because fee is larger than MAX_MONEY
         try:
             self.nodes[0].z_sendmany(myzaddr, recipients, 1, Decimal('21000000.00000001'))
         except JSONRPCException,e:
             errorString = e.error['message']
-        assert_equal("Invalid amount" in errorString, True)
+        assert_equal("Amount out of range" in errorString, True)
 
         # Send will fail because fee is larger than sum of outputs
         try:
