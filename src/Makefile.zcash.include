@@ -15,8 +15,8 @@ zcash_GenerateParams_LDADD = \
 zcash_CreateJoinSplit_SOURCES = zcash/CreateJoinSplit.cpp
 zcash_CreateJoinSplit_LDADD = \
   $(LIBBITCOIN_COMMON) \
+  $(LIBZCASH) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH) \
   $(BOOST_LIBS) \
   $(LIBZCASH_LIBS)

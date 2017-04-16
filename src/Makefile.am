@@ -1,4 +1,4 @@
-DIST_SUBDIRS = secp256k1
+DIST_SUBDIRS = secp256k1 univalue
 AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS)
 
 
@@ -21,6 +21,7 @@ BITCOIN_CONFIG_INCLUDES=-I$(builddir)/config
 BITCOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS) $(CRYPTO_CFLAGS) $(SSL_CFLAGS)
 
 BITCOIN_INCLUDES += -I$(srcdir)/secp256k1/include
+BITCOIN_INCLUDES += -I$(srcdir)/univalue/include
 
 LIBBITCOIN_SERVER=libbitcoin_server.a
 LIBBITCOIN_WALLET=libbitcoin_wallet.a
@@ -28,13 +29,15 @@ LIBBITCOIN_COMMON=libbitcoin_common.a
 LIBBITCOIN_CLI=libbitcoin_cli.a
 LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
-LIBBITCOIN_UNIVALUE=univalue/libbitcoin_univalue.a
-LIBBITCOINQT=qt/libbitcoinqt.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
+LIBUNIVALUE=univalue/libunivalue.la
 LIBZCASH=libzcash.a -lcurl
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
+
+$(LIBUNIVALUE): $(wildcard univalue/lib/*)
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C univalue/
 
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
@@ -42,13 +45,15 @@ EXTRA_LIBRARIES = \
   crypto/libbitcoin_crypto.a \
   libbitcoin_util.a \
   libbitcoin_common.a \
-  univalue/libbitcoin_univalue.a \
   libbitcoin_server.a \
   libbitcoin_cli.a \
   libzcash.a
 if ENABLE_WALLET
 BITCOIN_INCLUDES += $(BDB_CPPFLAGS)
 EXTRA_LIBRARIES += libbitcoin_wallet.a
+endif
+if ENABLE_ZMQ
+EXTRA_LIBRARIES += libbitcoin_zmq.a
 endif
 
 if BUILD_BITCOIN_LIBS
@@ -110,9 +115,12 @@ BITCOIN_CORE_H = \
   consensus/params.h \
   consensus/validation.h \
   core_io.h \
+  core_memusage.h \
   eccryptoverify.h \
   ecwrapper.h \
   hash.h \
+  httprpc.h \
+  httpserver.h \
   init.h \
   key.h \
   keystore.h \
@@ -150,11 +158,13 @@ BITCOIN_CORE_H = \
   support/allocators/secure.h \
   support/allocators/zeroafterfree.h \
   support/cleanse.h \
+  support/events.h \
   support/pagelocker.h \
   sync.h \
   threadsafety.h \
   timedata.h \
   tinyformat.h \
+  torcontrol.h \
   txdb.h \
   txmempool.h \
   ui_interface.h \
@@ -172,18 +182,12 @@ BITCOIN_CORE_H = \
   wallet/db.h \
   wallet/wallet.h \
   wallet/wallet_ismine.h \
-  wallet/walletdb.h
+  wallet/walletdb.h \
+  zmq/zmqabstractnotifier.h \
+  zmq/zmqconfig.h\
+  zmq/zmqnotificationinterface.h \
+  zmq/zmqpublishnotifier.h
 
-JSON_H = \
-  json/json_spirit.h \
-  json/json_spirit_error_position.h \
-  json/json_spirit_reader.h \
-  json/json_spirit_reader_template.h \
-  json/json_spirit_stream_reader.h \
-  json/json_spirit_utils.h \
-  json/json_spirit_value.h \
-  json/json_spirit_writer.h \
-  json/json_spirit_writer_template.h
 
 obj/build.h: FORCE
 	@$(MKDIR_P) $(builddir)/obj
@@ -191,8 +195,8 @@ obj/build.h: FORCE
 	  $(abs_top_srcdir)
 libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
 
-# server: shared between bitcoind and bitcoin-qt
-libbitcoin_server_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS)
+# server: zcashd
+libbitcoin_server_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
 libbitcoin_server_a_SOURCES = \
   sendalert.cpp \
   addrman.cpp \
@@ -203,6 +207,8 @@ libbitcoin_server_a_SOURCES = \
   bloom.cpp \
   chain.cpp \
   checkpoints.cpp \
+  httprpc.cpp \
+  httpserver.cpp \
   init.cpp \
   leveldbwrapper.cpp \
   main.cpp \
@@ -222,15 +228,25 @@ libbitcoin_server_a_SOURCES = \
   rpcserver.cpp \
   script/sigcache.cpp \
   timedata.cpp \
+  torcontrol.cpp \
   txdb.cpp \
   txmempool.cpp \
   validationinterface.cpp \
-  $(JSON_H) \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
-# wallet: shared between bitcoind and bitcoin-qt, but only linked
-# when wallet enabled
+if ENABLE_ZMQ
+LIBBITCOIN_ZMQ=libbitcoin_zmq.a
+
+libbitcoin_zmq_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
+libbitcoin_zmq_a_SOURCES = \
+  zmq/zmqabstractnotifier.cpp \
+  zmq/zmqnotificationinterface.cpp \
+  zmq/zmqpublishnotifier.cpp
+endif
+
+
+# wallet: zcashd, but only linked when wallet enabled
 libbitcoin_wallet_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_wallet_a_SOURCES = \
   utiltest.cpp \
@@ -248,13 +264,8 @@ libbitcoin_wallet_a_SOURCES = \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
-EQUIHASH_TROMP_SOURCES = \
-  pow/tromp/equi_miner.h \
-  pow/tromp/equi.h \
-  pow/tromp/osx_barrier.h
-
 # crypto primitives library
-crypto_libbitcoin_crypto_a_CPPFLAGS = $(BITCOIN_CONFIG_INCLUDES) -DEQUIHASH_TROMP_ATOMIC
+crypto_libbitcoin_crypto_a_CPPFLAGS = $(BITCOIN_CONFIG_INCLUDES)
 crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/common.h \
   crypto/equihash.cpp \
@@ -271,18 +282,21 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha256.cpp \
   crypto/sha256.h \
   crypto/sha512.cpp \
-  crypto/sha512.h \
+  crypto/sha512.h
+
+if ENABLE_MINING
+EQUIHASH_TROMP_SOURCES = \
+  pow/tromp/equi_miner.h \
+  pow/tromp/equi.h \
+  pow/tromp/osx_barrier.h
+
+crypto_libbitcoin_crypto_a_CPPFLAGS += \
+  -DEQUIHASH_TROMP_ATOMIC
+crypto_libbitcoin_crypto_a_SOURCES += \
   ${EQUIHASH_TROMP_SOURCES}
+endif
 
-# univalue JSON library
-univalue_libbitcoin_univalue_a_SOURCES = \
-  univalue/univalue.cpp \
-  univalue/univalue.h \
-  univalue/univalue_escapes.h \
-  univalue/univalue_read.cpp \
-  univalue/univalue_write.cpp
-
-# common: shared between bitcoind, and bitcoin-qt and non-server tools
+# common: shared between zcashd and non-server tools
 libbitcoin_common_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_common_a_SOURCES = \
   amount.cpp \
@@ -339,7 +353,7 @@ if GLIBC_BACK_COMPAT
 libbitcoin_util_a_SOURCES += compat/glibc_compat.cpp
 endif
 
-# cli: shared between bitcoin-cli and bitcoin-qt
+# cli: zcash-cli
 libbitcoin_cli_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_cli_a_SOURCES = \
   rpcclient.cpp \
@@ -361,13 +375,17 @@ endif
 komodod_LDADD = \
   $(LIBBITCOIN_SERVER) \
   $(LIBBITCOIN_COMMON) \
-  $(LIBBITCOIN_UNIVALUE) \
+  $(LIBUNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZCASH) \
   $(LIBLEVELDB) \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
+
+if ENABLE_ZMQ
+komodod_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
+endif
 
 if ENABLE_WALLET
 komodod_LDADD += libbitcoin_wallet.a
@@ -379,14 +397,15 @@ komodod_LDADD += \
   $(SSL_LIBS) \
   $(CRYPTO_LIBS) \
   $(MINIUPNPC_LIBS) \
+  $(EVENT_PTHREADS_LIBS) \
+  $(EVENT_LIBS) \
   $(LIBZCASH) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZCASH_LIBS)
-#
 
 # bitcoin-cli binary #
 komodo_cli_SOURCES = bitcoin-cli.cpp
-komodo_cli_CPPFLAGS = $(BITCOIN_INCLUDES)
+komodo_cli_CPPFLAGS = $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)
 komodo_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
@@ -395,10 +414,12 @@ endif
 
 komodo_cli_LDADD = \
   $(LIBBITCOIN_CLI) \
+  $(LIBUNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(BOOST_LIBS) \
   $(SSL_LIBS) \
   $(CRYPTO_LIBS) \
+  $(EVENT_LIBS) \
   $(LIBZCASH) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBZCASH_LIBS)
@@ -415,7 +436,7 @@ endif
 
 # FIXME: Is libzcash needed for zcash_tx?
 komodo_tx_LDADD = \
-  $(LIBBITCOIN_UNIVALUE) \
+  $(LIBUNIVALUE) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
   $(LIBSECP256K1) \
@@ -447,7 +468,7 @@ libzcash_a_CPPFLAGS = -DMULTICORE -fopenmp -fPIC -DBINARY_OUTPUT -DCURVE_ALT_BN1
 
 libzcash_a_CXXFLAGS = $(HARDENED_CXXFLAGS) -fwrapv -fno-strict-aliasing
 
-libzcash_a_LDFLAGS = $(HARDENED_LDFLAGS)
+#libzcash_a_LDFLAGS = $(HARDENED_LDFLAGS)
 
 libzcash_a_CPPFLAGS += -DMONTGOMERY_OUTPUT
 
@@ -501,7 +522,7 @@ clean-local:
 
 .mm.o:
 	$(AM_V_CXX) $(OBJCXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	  $(CPPFLAGS) $(AM_CXXFLAGS) $(QT_INCLUDES) $(CXXFLAGS)  -c -o $@ $<
+	  $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)  -c -o $@ $<
 
 check-symbols: $(bin_PROGRAMS)
 if GLIBC_BACK_COMPAT
@@ -523,13 +544,5 @@ endif
 #include Makefile.test.include
 #include Makefile.gtest.include
 #endif
-
-if ENABLE_QT
-include Makefile.qt.include
-endif
-
-if ENABLE_QT_TESTS
-include Makefile.qttest.include
-endif
 
 include Makefile.zcash.include

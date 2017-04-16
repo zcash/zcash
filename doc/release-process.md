@@ -4,7 +4,7 @@ Meta: There should always be a single release engineer to disambiguate responsib
 
 ## Pre-release
 
-Check all of the following:
+The following should have been checked well in advance of the release:
 
 - All dependencies have been updated as appropriate:
   - BDB
@@ -15,6 +15,9 @@ Check all of the following:
   - libsodium
   - miniupnpc
   - OpenSSL
+
+
+## Release process
 
 ## A. Define the release version as:
 
@@ -30,18 +33,15 @@ previous release:
     $ ZCASH_RELEASE_PREV=1.0.0-beta1
 
 ## B. Create a new release branch / github PR
-### B1. Update (commit) version in sources
+
+### B1. Check that you are up-to-date with current master, then create a release branch.
+
+### B2. Update (commit) version in sources.
 
     README.md
     src/clientversion.h
     configure.ac
     contrib/gitian-descriptors/gitian-linux.yml
-
-    Build and commit to update versions, and then perform the following commands:
-
-    help2man -n "RPC client for the Zcash daemon" src/zcash-cli > contrib/DEBIAN/manpages/zcash-cli.1
-    help2man -n "Network daemon for interacting with the Zcash blockchain" src/zcashd > contrib/DEBIAN/manpages/zcashd.1
-
 
 In `configure.ac` and `clientversion.h`:
 
@@ -56,11 +56,28 @@ In `configure.ac` and `clientversion.h`:
 
 - Change `CLIENT_VERSION_IS_RELEASE` to false while Zcash is in beta-test phase.
 
-### B2. Write release notes
+If this release changes the behavior of the protocol or fixes a serious bug, we may
+also wish to change the `PROTOCOL_VERSION` in `version.h`.
+
+Commit these changes. (Be sure to do this before building, or else the built binary will include the flag `-dirty`)
+
+Build by running `./zcutil/build.sh`.
+
+Then perform the following command:
+
+    $ bash contrib/devtools/gen-manpages.sh
+
+Commit the changes.
+
+### B3. Generate release notes
 
 Run the release-notes.py script to generate release notes and update authors.md file. For example:
 
     $ python zcutil/release-notes.py --version $ZCASH_RELEASE
+
+Add the newly created release notes to the Git repository:
+
+    $ git add doc/release-notes/release-notes-$ZCASH_RELEASE.md
 
 Update the Debian package changelog:
 
@@ -68,17 +85,17 @@ Update the Debian package changelog:
     export DEBEMAIL="${DEBEMAIL:-team@z.cash}"
     export DEBFULLNAME="${DEBFULLNAME:-Zcash Company}"
 
-    dch -v $DEBVERSION -D jessie -c contrib/DEBIAN/changelog
+    dch -v $DEBVERSION -D jessie -c contrib/debian/changelog
 
 (`dch` comes from the devscripts package.)
 
-### B3. Change the network magics
+### B4. Change the network magics
 
 If this release breaks backwards compatibility, change the network magic
 numbers. Set the four `pchMessageStart` in `CTestNetParams` in `chainparams.cpp`
 to random values.
 
-### B4. Merge the previous changes
+### B5. Merge the previous changes
 
 Do the normal pull-request, review, testing process for this release PR.
 
@@ -94,8 +111,11 @@ Run `./fetch-params.sh`.
 
 ## D. Make tag for the newly merged result
 
-In this example, we ensure master is up to date with the
-previous merged PR, then:
+Checkout master and pull the latest version to ensure master is up to date with the release PR which was merged in before.
+
+Check the last commit on the local and remote versions of master to make sure they are the same.
+
+Then create the git tag:
 
     $ git tag -s v${ZCASH_RELEASE}
     $ git push origin v${ZCASH_RELEASE}

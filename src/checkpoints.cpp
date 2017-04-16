@@ -23,11 +23,10 @@ namespace Checkpoints {
      * fast multicore CPU, it won't be much higher than 1.
      */
     static const double SIGCHECK_VERIFICATION_FACTOR = 5.0;
-
     bool CheckBlock(const CCheckpointData& data, int nHeight, const uint256& hash)
     {
         const MapCheckpoints& checkpoints = data.mapCheckpoints;
-
+        
         MapCheckpoints::const_iterator i = checkpoints.find(nHeight);
         if (i == checkpoints.end()) return true;
         return hash == i->second;

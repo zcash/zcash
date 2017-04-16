@@ -19,16 +19,15 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include "json/json_spirit_value.h"
+#include <univalue.h>
 
-using namespace json_spirit;
 using namespace std;
 
 void EnsureWalletIsUnlocked();
 bool EnsureWalletIsAvailable(bool avoidException);
 
-Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys);
-Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys);
+UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys);
+UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys);
 
 
 std::string static EncodeDumpTime(int64_t nTime) {
@@ -74,10 +73,10 @@ std::string DecodeDumpString(const std::string &str) {
     return ret.str();
 }
 
-Value importprivkey(const Array& params, bool fHelp)
+UniValue importprivkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
     
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
@@ -130,7 +129,7 @@ Value importprivkey(const Array& params, bool fHelp)
 
         // Don't throw error in case a key is already there
         if (pwalletMain->HaveKey(vchAddress))
-            return Value::null;
+            return NullUniValue;
 
         pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1;
 
@@ -145,13 +144,13 @@ Value importprivkey(const Array& params, bool fHelp)
         }
     }
 
-    return Value::null;
+    return NullUniValue;
 }
 
-Value importaddress(const Array& params, bool fHelp)
+UniValue importaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
     
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
@@ -204,7 +203,7 @@ Value importaddress(const Array& params, bool fHelp)
 
         // Don't throw error in case an address is already there
         if (pwalletMain->HaveWatchOnly(script))
-            return Value::null;
+            return NullUniValue;
 
         pwalletMain->MarkDirty();
 
@@ -218,13 +217,13 @@ Value importaddress(const Array& params, bool fHelp)
         }
     }
 
-    return Value::null;
+    return NullUniValue;
 }
 
-Value z_importwallet(const Array& params, bool fHelp)
+UniValue z_importwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -244,10 +243,10 @@ Value z_importwallet(const Array& params, bool fHelp)
 	return importwallet_impl(params, fHelp, true);
 }
 
-Value importwallet(const Array& params, bool fHelp)
+UniValue importwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
     
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -267,7 +266,7 @@ Value importwallet(const Array& params, bool fHelp)
 	return importwallet_impl(params, fHelp, false);
 }
 
-Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys)
+UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -378,13 +377,13 @@ Value importwallet_impl(const Array& params, bool fHelp, bool fImportZKeys)
     if (!fGood)
         throw JSONRPCError(RPC_WALLET_ERROR, "Error adding some keys to wallet");
 
-    return Value::null;
+    return NullUniValue;
 }
 
-Value dumpprivkey(const Array& params, bool fHelp)
+UniValue dumpprivkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
     
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -420,10 +419,10 @@ Value dumpprivkey(const Array& params, bool fHelp)
 
 
 
-Value z_exportwallet(const Array& params, bool fHelp)
+UniValue z_exportwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
     
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -441,10 +440,10 @@ Value z_exportwallet(const Array& params, bool fHelp)
 	return dumpwallet_impl(params, fHelp, true);
 }
 
-Value dumpwallet(const Array& params, bool fHelp)
+UniValue dumpwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -462,7 +461,7 @@ Value dumpwallet(const Array& params, bool fHelp)
 	return dumpwallet_impl(params, fHelp, false);
 }
 
-Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys)
+UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -548,26 +547,31 @@ Value dumpwallet_impl(const Array& params, bool fHelp, bool fDumpZKeys)
 }
 
 
-Value z_importkey(const Array& params, bool fHelp)
+UniValue z_importkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "z_importkey \"zkey\" ( rescan )\n"
+            "z_importkey \"zkey\" ( rescan startHeight )\n"
             "\nAdds a zkey (as returned by z_exportkey) to your wallet.\n"
             "\nArguments:\n"
             "1. \"zkey\"             (string, required) The zkey (see z_exportkey)\n"
-            "2. rescan             (boolean, optional, default=true) Rescan the wallet for transactions\n"
+            "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
+            "3. startHeight        (numeric, optional, default=0) Block height to start rescan from\n"
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
             "\nExport a zkey\n"
             + HelpExampleCli("z_exportkey", "\"myaddress\"") +
             "\nImport the zkey with rescan\n"
             + HelpExampleCli("z_importkey", "\"mykey\"") +
+            "\nImport the zkey with partial rescan\n"
+            + HelpExampleCli("z_importkey", "\"mykey\" whenkeyisnew 30000") +
+            "\nRe-import the zkey with longer partial rescan\n"
+            + HelpExampleCli("z_importkey", "\"mykey\" yes 20000") +
             "\nAs a JSON-RPC call\n"
-            + HelpExampleRpc("z_importkey", "\"mykey\", false")
+            + HelpExampleRpc("z_importkey", "\"mykey\", \"no\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -576,8 +580,36 @@ Value z_importkey(const Array& params, bool fHelp)
 
     // Whether to perform rescan after import
     bool fRescan = true;
-    if (params.size() > 1)
-        fRescan = params[1].get_bool();
+    bool fIgnoreExistingKey = true;
+    if (params.size() > 1) {
+        auto rescan = params[1].get_str();
+        if (rescan.compare("whenkeyisnew") != 0) {
+            fIgnoreExistingKey = false;
+            if (rescan.compare("yes") == 0) {
+                fRescan = true;
+            } else if (rescan.compare("no") == 0) {
+                fRescan = false;
+            } else {
+                // Handle older API
+                UniValue jVal;
+                if (!jVal.read(std::string("[")+rescan+std::string("]")) ||
+                    !jVal.isArray() || jVal.size()!=1 || !jVal[0].isBool()) {
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "rescan must be \"yes\", \"no\" or \"whenkeyisnew\"");
+                }
+                fRescan = jVal[0].getBool();
+            }
+        }
+    }
+
+    // Height to rescan from
+    int nRescanHeight = 0;
+    if (params.size() > 2)
+        nRescanHeight = params[2].get_int();
+    if (nRescanHeight < 0 || nRescanHeight > chainActive.Height()) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+    }
 
     string strSecret = params[0].get_str();
     CZCSpendingKey spendingkey(strSecret);
@@ -586,33 +618,36 @@ Value z_importkey(const Array& params, bool fHelp)
 
     {
         // Don't throw error in case a key is already there
-        if (pwalletMain->HaveSpendingKey(addr))
-            return Value::null;
+        if (pwalletMain->HaveSpendingKey(addr)) {
+            if (fIgnoreExistingKey) {
+                return NullUniValue;
+            }
+        } else {
+            pwalletMain->MarkDirty();
 
-        pwalletMain->MarkDirty();
+            if (!pwalletMain-> AddZKey(key))
+                throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
 
-        if (!pwalletMain-> AddZKey(key))
-            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
-
-        pwalletMain->mapZKeyMetadata[addr].nCreateTime = 1;
+            pwalletMain->mapZKeyMetadata[addr].nCreateTime = 1;
+        }
 
         // whenever a key is imported, we need to scan the whole chain
         pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
 
         // We want to scan for transactions and notes
         if (fRescan) {
-            pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
+            pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
         }
     }
 
-    return Value::null;
+    return NullUniValue;
 }
 
 
-Value z_exportkey(const Array& params, bool fHelp)
+UniValue z_exportkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
-        return Value::null;
+        return NullUniValue;
 
     if (fHelp || params.size() != 1)
         throw runtime_error(

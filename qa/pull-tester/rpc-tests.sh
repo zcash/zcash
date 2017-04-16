@@ -11,6 +11,7 @@ export BITCOIND=${REAL_BITCOIND}
 #Run the tests
 
 testScripts=(
+    'prioritisetransaction.py'
     'wallet_treestate.py'
     'wallet_protectcoinbase.py'
     'wallet.py'
@@ -29,8 +30,13 @@ testScripts=(
     'zapwallettxes.py'
     'proxy_test.py'
     'merkle_blocks.py'
+    'fundrawtransaction.py'
     'signrawtransactions.py'
     'walletbackup.py'
+    'nodehandling.py'
+    'reindex.py'
+    'decodescript.py'
+    'disablewallet.py'
     'zcjoinsplit.py'
     'zcjoinsplitdoublespend.py'
     'getblocktemplate.py'
@@ -46,16 +52,18 @@ testScriptsExt=(
     'invalidateblock.py'
     'keypool.py'
     'receivedby.py'
-    'reindex.py'
     'rpcbind_test.py'
 #   'script_test.py'
     'smartfees.py'
     'maxblocksinflight.py'
     'invalidblockrequest.py'
-    'rawtransactions.py'
 #    'forknotify.py'
     'p2p-acceptblock.py'
 );
+
+if [ "x$ENABLE_ZMQ" = "x1" ]; then
+  testScripts+=('zmq_test.py')
+fi
 
 extArg="-extended"
 passOn=${@#$extArg}
