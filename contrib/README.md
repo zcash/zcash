@@ -1,3 +1,5 @@
+*** Warning: This document has not been updated for Zcash and may be inaccurate. ***
+
 Wallet Tools
 ---------------------
 

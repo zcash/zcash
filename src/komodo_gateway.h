@@ -720,6 +720,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     }
     //fprintf(stderr,"ht.%d n.%d nValue %.8f (%d %d %d)\n",height,n,dstr(block.vtx[0].vout[1].nValue),KOMODO_PAX,komodo_isrealtime(&ht),KOMODO_PASSPORT_INITDONE);
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
+    //printf("offset.%d opretlen.%d [%02x %02x %02x %02x]\n",offset,opretlen,script[0],script[1],script[2],script[3]);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         opcode = 'X';
@@ -1006,8 +1007,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     {
         for (i=0; i<opretlen&&i<100; i++)
             printf("%02x",script[i]);
-        printf(" height.%d checkdeposit n.%d [%02x] [%c] %d len.%d ",height,n,script[0],script[offset],script[offset],opretlen);
-        printf("not proper vout with opreturn format %s ht.%d\n",ASSETCHAINS_SYMBOL,height);
+        printf(" height.%d checkdeposit n.%d [%02x] [%c] %d opcode.%d len.%d ",height,n,script[0],script[offset],script[offset],opcode,opretlen);
+        printf("not proper vout with opreturn format %s ht.%d cmp.%d %d\n",ASSETCHAINS_SYMBOL,height,script[offset] == opcode,(int32_t)block.vtx[0].vout[n-1].scriptPubKey.size());
         return(-1);
     }
     return(0);

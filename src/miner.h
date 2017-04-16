@@ -8,12 +8,15 @@
 
 #include "primitives/block.h"
 
+#include <boost/optional.hpp>
 #include <stdint.h>
 
 class CBlockIndex;
-class CReserveKey;
 class CScript;
+#ifdef ENABLE_WALLET
+class CReserveKey;
 class CWallet;
+#endif
 namespace Consensus { struct Params; };
 
 struct CBlockTemplate
@@ -23,13 +26,27 @@ struct CBlockTemplate
     std::vector<int64_t> vTxSigOps;
 };
 
-/** Run the miner threads */
-void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads);
 /** Generate a new block, without valid proof-of-work */
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn);
+#ifdef ENABLE_WALLET
+boost::optional<CScript> GetMinerScriptPubKey(CReserveKey& reservekey);
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey);
+#else
+boost::optional<CScript> GetMinerScriptPubKey();
+CBlockTemplate* CreateNewBlockWithKey();
+#endif
+
+#ifdef ENABLE_MINING
 /** Modify the extranonce in a block */
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce);
+/** Run the miner threads */
+ #ifdef ENABLE_WALLET
+void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads);
+ #else
+void GenerateBitcoins(bool fGenerate, int nThreads);
+ #endif
+#endif
+
 void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev);
 
 #endif // BITCOIN_MINER_H

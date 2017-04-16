@@ -500,7 +500,7 @@ class FormatArg
         void format(std::ostream& out, const char* fmtBegin,
                     const char* fmtEnd, int ntrunc) const
         {
-/*<<<<<<< HEAD
+/*
             // It would be nice if we could do this from the destructor, but we
             // can't if TINYFORMAT_ERROR is used to throw an exception!
             m_fmt = printFormatStringLiteral(m_out, m_fmt);

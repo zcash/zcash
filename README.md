@@ -1,6 +1,4 @@
-
-=======
-Zcash 1.0.5
+Zcash 1.0.8
 ===========
 
 What is Zcash?
@@ -38,7 +36,7 @@ Dependencies
  
 ```
 #The following packages are needed:
-sudo apt-get install build-essential pkg-config libcurl-gnutls-dev libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libboost-all-dev libssl-dev libprotobuf-dev protobuf-compiler libqt4-dev libqrencode-dev libdb++-dev ntp ntpdate
+sudo apt-get install build-essential pkg-config libcurl-gnutls-dev libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libboost-all-dev libssl-dev libprotobuf-dev protobuf-compiler libqt4-dev libqrencode-dev libdb++-dev ntp ntpdate
 ```
  
 Komodo
