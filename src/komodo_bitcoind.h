@@ -346,6 +346,60 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     return(retstr2);
 }
 
+int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp)
+{
+    char *jsonstr,params[256],*userpass; uint16_t port; cJSON *json,*item; int32_t height = 0,txid_height = 0,txid_confirmations = 0;
+    params[0] = 0;
+    *kmdnotarized_heightp = 0;
+    if ( strcmp(dest,"KMD") == 0 )
+    {
+        port = 7771;
+        userpass = KMDUSERPASS;
+    }
+    else if ( strcmp(dest,"BTC") == 0 )
+    {
+        port = 8332;
+        userpass = BTCUSERPASS;
+    }
+    else return(0);
+    if ( userpass[0] != 0 )
+    {
+        if ( (jsonstr= komodo_issuemethod(userpass,(char *)"getinfo",params,port)) != 0 )
+        {
+            //printf("(%s)\n",jsonstr);
+            if ( (json= cJSON_Parse(jsonstr)) != 0 )
+            {
+                if ( (item= jobj(json,(char *)"result")) != 0 )
+                {
+                    height = jint(item,(char *)"blocks");
+                    *kmdnotarized_heightp = strcmp(dest,"KMD") == 0 ? jint(item,(char *)"notarized") : height;
+                }
+                free_json(json);
+            }
+            free(jsonstr);
+        }
+        sprintf(params,"[\"%s\", 1]",txidstr);
+        if ( (jsonstr= komodo_issuemethod(userpass,(char *)"getrawtransaction",params,port)) != 0 )
+        {
+            //printf("(%s)\n",jsonstr);
+            if ( (json= cJSON_Parse(jsonstr)) != 0 )
+            {
+                if ( (item= jobj(json,(char *)"result")) != 0 )
+                {
+                    txid_confirmations = jint(item,(char *)"confirmations");
+                    if ( txid_confirmations > 0 && height > txid_confirmations )
+                        txid_height = height - txid_confirmations;
+                    else txid_height = height;
+                    //printf("height.%d tconfs.%d txid_height.%d\n",height,txid_confirmations,txid_height);
+                }
+                free_json(json);
+            }
+            free(jsonstr);
+        }
+    }
+    return(txid_height);
+}
+
 int32_t komodo_verifynotarizedscript(int32_t height,uint8_t *script,int32_t len,uint256 NOTARIZED_HASH)
 {
     int32_t i; uint256 hash; char params[256];
@@ -818,7 +872,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
             {
                 if ( tx.nLockTime != 1477258935 || dispflag != 0 )
                 {
-                    fprintf(stderr,"komodo_validate_interest.%d reject.%d [%d] locktime %u cmp2.%u\n",dispflag,txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,cmptime);
+                    //fprintf(stderr,"komodo_validate_interest.%d reject.%d [%d] locktime %u cmp2.%u\n",dispflag,txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,cmptime);
                 }
                 return(-1);
             }
