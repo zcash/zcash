@@ -635,6 +635,7 @@ void CWallet::ClearNoteWitnessCache()
         }
     }
     nWitnessCacheSize = 0;
+    fprintf(stderr,"Clear witness cache\n");
 }
 
 void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
@@ -669,6 +670,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
             }
         }
         if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
+            fprintf(stderr,"increment nWitnesscache -> %d\n",(int32_t)nWitnessCacheSize);
             nWitnessCacheSize += 1;
         }
 
@@ -782,6 +784,7 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
                 }
             }
         }
+        fprintf(stderr,"decrement witness cache -> %d\n",(int32_t)nWitnessCacheSize);
         nWitnessCacheSize -= 1;
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
