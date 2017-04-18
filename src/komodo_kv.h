@@ -83,11 +83,15 @@ int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp
             }
             //printf(" ptr->pubkey\n");
             memcpy(pubkeyp,&ptr->pubkey,sizeof(*pubkeyp));
-            if ( (retval= ptr->valuesize) != 0 )
+            if ( (retval= ptr->valuesize) > 0 )
                 memcpy(value,ptr->value,retval);
         }
     }
     portable_mutex_unlock(&KOMODO_KV_mutex);
+    if ( retval < 0 )
+    {
+        // search rawmempool
+    }
     return(retval);
 }
 
