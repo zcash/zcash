@@ -46,8 +46,9 @@ typedef u32 au32;
 // can't save memory in such small buckets
 #define SAVEMEM 1
 #elif RESTBITS >= 8
-// take advantage of law of large numbers (sum of 2^8 random numbers)
-// this reduces (200,9) memory to under 144MB, with negligible discarding
+// an expected size of at least 512 has such relatively small
+// standard deviation that we can reduce capacity with negligible discarding
+// this value reduces (200,9) memory to under 144MB
 #define SAVEMEM 9/14
 #endif
 #endif
@@ -72,7 +73,7 @@ static const u32 NBLOCKS = (NHASHES+HASHESPERBLAKE-1)/HASHESPERBLAKE;
 static const u32 MAXSOLS = 8;
 
 // tree node identifying its children as two different slots in
-// a bucket on previous layer with the same rest bits (x-tra hash)
+// a bucket on previous layer with corresponding rest bits (x-tra hash)
 struct tree {
   u32 bid_s0_s1; // manual bitfields
 
