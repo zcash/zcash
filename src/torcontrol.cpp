@@ -290,7 +290,8 @@ static std::map<std::string,std::string> ParseTorReplyMapping(const std::string 
             ++ptr; // skip opening '"'
             bool escape_next = false;
             while (ptr < s.size() && (escape_next || s[ptr] != '"')) {
-                escape_next = (s[ptr] == '\\');
+                // Repeated backslashes must be interpreted as pairs
+                escape_next = (s[ptr] == '\\' && !escape_next);
                 value.push_back(s[ptr]);
                 ++ptr;
             }
@@ -298,7 +299,7 @@ static std::map<std::string,std::string> ParseTorReplyMapping(const std::string 
                 return std::map<std::string,std::string>();
             ++ptr; // skip closing '"'
             /**
-             * Escape value. Per https://spec.torproject.org/control-spec section 2.1.1:
+             * Unescape value. Per https://spec.torproject.org/control-spec section 2.1.1:
              *
              *   For future-proofing, controller implementors MAY use the following
              *   rules to be compatible with buggy Tor implementations and with
@@ -310,10 +311,10 @@ static std::map<std::string,std::string> ParseTorReplyMapping(const std::string 
             std::string escaped_value;
             for (size_t i = 0; i < value.size(); ++i) {
                 if (value[i] == '\\') {
-                    // This will always be valid, because if the final character
-                    // in the QuotedString was a \ then the parser would already
-                    // have returned above, due to a missing terminating
-                    // double-quote.
+                    // This will always be valid, because if the QuotedString
+                    // ended in an odd number of backslashes, then the parser
+                    // would already have returned above, due to a missing
+                    // terminating double-quote.
                     ++i;
                     if (value[i] == 'n') {
                         escaped_value.push_back('\n');

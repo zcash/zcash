@@ -151,6 +151,11 @@ BOOST_AUTO_TEST_CASE(util_ParseTorReplyMapping)
             {"Final", "Check"},
         });
     CheckParseTorReplyMapping(
+        "Valid=Mapping Escaped=\"Escape\\\\\"", {
+            {"Valid", "Mapping"},
+            {"Escaped", "Escape\\"},
+        });
+    CheckParseTorReplyMapping(
         "Valid=Mapping Bare=\"Escape\\\"", {});
     CheckParseTorReplyMapping(
         "OneOctal=\"OneEnd\\1\" TwoOctal=\"TwoEnd\\11\"", {
