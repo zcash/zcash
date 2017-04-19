@@ -57,6 +57,7 @@
 
 #if ENABLE_ZMQ
 #include "zmq/zmqnotificationinterface.h"
+#include <zmq.h>
 #endif
 
 #if ENABLE_PROTON
@@ -406,6 +407,12 @@ std::string HelpMessage(HelpMessageMode mode)
             CURRENCY_UNIT, FormatMoney(CWallet::minTxFee.GetFeePerK())));
     strUsage += HelpMessageOpt("-paytxfee=<amt>", strprintf(_("Fee (in %s/kB) to add to transactions you send (default: %s)"),
         CURRENCY_UNIT, FormatMoney(payTxFee.GetFeePerK())));
+#if ENABLE_PROVING_SERVICE
+    // Uncomment when out of experimental features
+    //strUsage += HelpMessageOpt("-provingservice=<address>", _("Use proving service at <address> for creating shielded transactions"));
+    //strUsage += HelpMessageOpt("-provingservicepubkey=<pubkey>", _("Public key for the proving service"));
+    //strUsage += HelpMessageOpt("-provingserviceclientkey=<clientkey>", _("Client key for authenticating with the proving service, if required"));
+#endif
     strUsage += HelpMessageOpt("-rescan", _("Rescan the block chain for missing wallet transactions") + " " + _("on startup"));
     strUsage += HelpMessageOpt("-salvagewallet", _("Attempt to recover private keys from a corrupt wallet.dat") + " " + _("on startup"));
     strUsage += HelpMessageOpt("-sendfreetransactions", strprintf(_("Send transactions as zero-fee transactions if possible (default: %u)"), 0));
@@ -790,6 +797,13 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         else if (mapArgs.count("-paymentdisclosure")) {
             return InitError(_("Payment disclosure requires -experimentalfeatures."));
         }
+#if ENABLE_PROVING_SERVICE
+        if (mapArgs.count("-provingservice") ||
+                mapArgs.count("-provingservicepubkey") ||
+                mapArgs.count("-provingserviceclientkey")) {
+            return InitError(_("Proving service requires -experimentalfeatures."));
+        }
+#endif
     }
 
     // Set this early so that parameter interactions go to console
@@ -1035,6 +1049,20 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
 
+#if ENABLE_PROVING_SERVICE
+    if (mapArgs.count("-provingservice")) {
+        if (GetArg("-provingservicepubkey", "").length() != 40) {
+            return InitError(_("Invalid proving service public key"));
+        }
+        auto secretKey = GetArg("-provingserviceclientkey", "");
+        if (!secretKey.empty()) {
+            char tmp [41];
+            if (secretKey.length() != 40 || zmq_curve_public(tmp, secretKey.c_str()) != 0) {
+                return InitError(_("Invalid proving service client key"));
+            }
+        }
+    }
+#endif
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 

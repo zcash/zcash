@@ -14,6 +14,7 @@ class ProvingServiceClient
 {
 private:
     std::string log_id;
+    bool enableZAddresses;
 
     std::string zmqUrl;
     char zmqServerKey[41];
@@ -21,12 +22,29 @@ private:
     char zmqSecretKey[41];
 
 public:
-    ProvingServiceClient() {}
+    ProvingServiceClient() : log_id(""), enableZAddresses(false), zmqUrl("") {}
 
     /**
      * Create a ProvingServiceClient with a random client keypair.
      */
     ProvingServiceClient(std::string id, char* url, char* serverKey);
+
+    void set_log_id(std::string id)
+    {
+        log_id = id;
+    }
+
+    /**
+     * Create a ProvingServiceClient using the configured options.
+     */
+    void configure_from_options();
+
+    bool is_configured();
+
+    bool z_addresses_enabled()
+    {
+        return enableZAddresses;
+    }
 
     boost::optional<std::vector<ZCProof>> get_proofs(std::vector<ZCJSProofWitness> witnesses);
 };

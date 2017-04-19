@@ -12,11 +12,34 @@
 
 using namespace libzcash;
 
-ProvingServiceClient::ProvingServiceClient(std::string id, char* url, char* serverKey) : log_id(id), zmqUrl(url)
+ProvingServiceClient::ProvingServiceClient(std::string id, char* url, char* serverKey) : log_id(id), enableZAddresses(false), zmqUrl(url)
 {
     assert(strlen(serverKey) == 40);
     std::memcpy(zmqServerKey, serverKey, 41);
     assert(zmq_curve_keypair(zmqPublicKey, zmqSecretKey) == 0);
+}
+
+void ProvingServiceClient::configure_from_options()
+{
+    enableZAddresses = GetBoolArg("-i-control-the-proving-service-and-want-to-send-it-my-zkeys", false);
+    zmqUrl = GetArg("-provingservice", "");
+
+    if (!zmqUrl.empty()) {
+        // Parameters are checked in init.cpp
+        std::memcpy(zmqServerKey, GetArg("-provingservicepubkey", "").c_str(), 41);
+        auto secretKey = GetArg("-provingserviceclientkey", "");
+        if (secretKey.empty()) {
+            assert(zmq_curve_keypair(zmqPublicKey, zmqSecretKey) == 0);
+        } else {
+            std::memcpy(zmqSecretKey, secretKey.c_str(), 41);
+            assert(zmq_curve_public(zmqPublicKey, zmqSecretKey) == 0);
+        }
+    }
+}
+
+bool ProvingServiceClient::is_configured()
+{
+    return !zmqUrl.empty();
 }
 
 boost::optional<std::vector<libzcash::ZCProof>> ProvingServiceClient::get_proofs(std::vector<ZCJSProofWitness> witnesses)

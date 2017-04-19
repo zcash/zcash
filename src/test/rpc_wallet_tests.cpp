@@ -1174,6 +1174,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         info.vjsin.clear();
         try {
             proxy.perform_joinsplit(info);
+            BOOST_ERROR( "Expected perform_joinsplit() to fail");
         } catch (const std::runtime_error & e) {
             BOOST_CHECK( string(e.what()).find("error verifying joinsplit")!= string::npos);
         }

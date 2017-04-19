@@ -99,6 +99,16 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be zero when sending from zaddr");
     }
 
+#if ENABLE_PROVING_SERVICE
+    provingService_.set_log_id(getId());
+    provingService_.configure_from_options();
+
+    // Throw an error if proving service is configured and not explicitly enabled for z-addresses
+    if (isfromzaddr_ && provingService_.is_configured() && !provingService_.z_addresses_enabled()) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Proving service is not enabled for z-addresses, for security");
+    }
+#endif
+
     // Log the context info i.e. the call parameters to z_sendmany
     if (LogAcceptCategory("zrpcunsafe")) {
         LogPrint("zrpcunsafe", "%s: z_sendmany initialized (params=%s)\n", getId(), contextInfo.write());
@@ -748,19 +758,84 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 }
 
 
+void AsyncRPCOperation_sendmany::update_joinsplit_sig(CMutableTransaction& mtx)
+{
+    // Empty output script.
+    CScript scriptCode;
+    CTransaction signTx(mtx);
+    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
+
+    // Add the signature
+    if (!(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
+            dataToBeSigned.begin(), 32,
+            joinSplitPrivKey_
+            ) == 0))
+    {
+        throw std::runtime_error("crypto_sign_detached failed");
+    }
+
+    // Sanity check
+    if (!(crypto_sign_verify_detached(&mtx.joinSplitSig[0],
+            dataToBeSigned.begin(), 32,
+            mtx.joinSplitPubKey.begin()
+            ) == 0))
+    {
+        throw std::runtime_error("crypto_sign_verify_detached failed");
+    }
+}
+
 /**
  * Sign and send a raw transaction.
  * Raw transaction as hex string should be in object field "rawtxn"
  */
 void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
-{   
-    // Sign the raw transaction
+{
     UniValue rawtxnValue = find_value(obj, "rawtxn");
     if (rawtxnValue.isNull()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Missing hex data for raw transaction");
     }
     std::string rawtxn = rawtxnValue.get_str();
 
+#if ENABLE_PROVING_SERVICE
+    if (!testmode && provingService_.is_configured()) {
+        CDataStream stream(ParseHex(rawtxn), SER_NETWORK, PROTOCOL_VERSION);
+        CTransaction tx;
+        stream >> tx;
+        CMutableTransaction mtx(tx);
+
+        if (mtx.vjoinsplit.size() != witnesses_.size()) {
+            throw std::runtime_error("Invalid usage");
+        }
+
+        auto res = provingService_.get_proofs(witnesses_);
+        if (!res) {
+            throw std::runtime_error(strprintf("Failed to fetch proofs from proving service"));
+        }
+        auto proofs = *res;
+
+        if (mtx.vjoinsplit.size() != proofs.size()) {
+            throw std::runtime_error(strprintf("Proving service returned %d proofs, expected %d", proofs.size(), tx.vjoinsplit.size()));
+        }
+
+        auto verifier = libzcash::ProofVerifier::Strict();
+        for (size_t i = 0; i < mtx.vjoinsplit.size(); i++) {
+            mtx.vjoinsplit[i].proof = proofs[i];
+
+            if (!(mtx.vjoinsplit[i].Verify(*pzcashParams, verifier, joinSplitPubKey_))) {
+                throw std::runtime_error("Proving service returned invalid proof");
+            }
+        }
+
+        update_joinsplit_sig(mtx);
+
+        CTransaction rawTx(mtx);
+        stream.clear();
+        stream << rawTx;
+        rawtxn = HexStr(stream.begin(), stream.end());
+    }
+#endif
+
+    // Sign the raw transaction
     UniValue params = UniValue(UniValue::VARR);
     params.push_back(rawtxn);
     UniValue signResultValue = signrawtransaction(params, false);
@@ -959,7 +1034,12 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
             FormatMoney(info.vjsout[0].value), FormatMoney(info.vjsout[1].value)
             );
 
-    // Generate the proof, this can take over a minute.
+    // If generating the proof here, this can take over a minute.
+#if ENABLE_PROVING_SERVICE
+    bool generateProof = !(this->testmode || provingService_.is_configured());
+#else
+    bool generateProof = !this->testmode;
+#endif
     boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs
             {info.vjsin[0], info.vjsin[1]};
     boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs
@@ -979,38 +1059,25 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
             outputMap,
             info.vpub_old,
             info.vpub_new,
-            !this->testmode,
+            generateProof,
             &esk); // parameter expects pointer to esk, so pass in address
-    {
+
+    // If testmode is set, we want to trigger the following error (for detection in the unit test)
+    if (generateProof || this->testmode) {
         auto verifier = libzcash::ProofVerifier::Strict();
         if (!(jsdesc.Verify(*pzcashParams, verifier, joinSplitPubKey_))) {
             throw std::runtime_error("error verifying joinsplit");
         }
+#if ENABLE_PROVING_SERVICE
+    } else if (!this->testmode) {
+        witnesses_.push_back(jsdesc.witness);
+#endif
     }
 
     mtx.vjoinsplit.push_back(jsdesc);
 
-    // Empty output script.
-    CScript scriptCode;
-    CTransaction signTx(mtx);
-    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
-
-    // Add the signature
-    if (!(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
-            dataToBeSigned.begin(), 32,
-            joinSplitPrivKey_
-            ) == 0))
-    {
-        throw std::runtime_error("crypto_sign_detached failed");
-    }
-
-    // Sanity check
-    if (!(crypto_sign_verify_detached(&mtx.joinSplitSig[0],
-            dataToBeSigned.begin(), 32,
-            mtx.joinSplitPubKey.begin()
-            ) == 0))
-    {
-        throw std::runtime_error("crypto_sign_verify_detached failed");
+    if (generateProof) {
+        update_joinsplit_sig(mtx);
     }
 
     CTransaction rawTx(mtx);

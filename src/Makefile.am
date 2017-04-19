@@ -438,8 +438,6 @@ zcashd_LDADD = \
   $(LIBUNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH) \
-  $(LIBSNARK) \
   $(LIBLEVELDB) \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
@@ -453,6 +451,8 @@ zcashd_LDADD += libbitcoin_wallet.a
 endif
 
 zcashd_LDADD += \
+  $(LIBZCASH) \
+  $(LIBSNARK) \
   $(BOOST_LIBS) \
   $(BDB_LIBS) \
   $(SSL_LIBS) \

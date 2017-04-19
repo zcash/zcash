@@ -13,6 +13,9 @@
 #include "zcash/Address.hpp"
 #include "wallet.h"
 #include "paymentdisclosure.h"
+#if ENABLE_PROVING_SERVICE
+#include "zcash/ProvingServiceClient.hpp"
+#endif
 
 #include <unordered_map>
 #include <tuple>
@@ -94,6 +97,11 @@ private:
     std::vector<SendManyInputJSOP> z_inputs_;
     
     CTransaction tx_;
+
+#if ENABLE_PROVING_SERVICE
+    ProvingServiceClient provingService_;
+    std::vector<ZCJSProofWitness> witnesses_;
+#endif
    
     void add_taddr_change_output_to_tx(CAmount amount);
     void add_taddr_outputs_to_tx();
@@ -113,6 +121,8 @@ private:
         AsyncJoinSplitInfo & info,
         std::vector<boost::optional < ZCIncrementalWitness>> witnesses,
         uint256 anchor);
+
+    void update_joinsplit_sig(CMutableTransaction& mtx); // throws exception if there was an error
 
     void sign_send_raw_transaction(UniValue obj);     // throws exception if there was an error
 
