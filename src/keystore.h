@@ -174,6 +174,12 @@ public:
                 setAddress.insert((*mi).first);
                 mi++;
             }
+            ViewingKeyMap::const_iterator mvi = mapViewingKeys.begin();
+            while (mvi != mapViewingKeys.end())
+            {
+                setAddress.insert((*mvi).first);
+                mvi++;
+            }
         }
     }
 

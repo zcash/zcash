@@ -65,6 +65,11 @@ TEST(keystore_tests, StoreAndRetrieveViewingKey) {
     EXPECT_FALSE(keyStore.GetSpendingKey(addr, skOut));
     EXPECT_FALSE(keyStore.GetNoteDecryptor(addr, decOut));
 
+    // and we can't find it in our list of addresses
+    std::set<libzcash::PaymentAddress> addresses;
+    keyStore.GetPaymentAddresses(addresses);
+    EXPECT_FALSE(addresses.count(addr));
+
     keyStore.AddViewingKey(vk);
     EXPECT_TRUE(keyStore.HaveViewingKey(addr));
     EXPECT_TRUE(keyStore.GetViewingKey(addr, vkOut));
@@ -78,11 +83,19 @@ TEST(keystore_tests, StoreAndRetrieveViewingKey) {
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
     EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
 
+    // ... and we should find it in our list of addresses
+    addresses.clear();
+    keyStore.GetPaymentAddresses(addresses);
+    EXPECT_TRUE(addresses.count(addr));
+
     keyStore.RemoveViewingKey(vk);
     EXPECT_FALSE(keyStore.HaveViewingKey(addr));
     EXPECT_FALSE(keyStore.GetViewingKey(addr, vkOut));
     EXPECT_FALSE(keyStore.HaveSpendingKey(addr));
     EXPECT_FALSE(keyStore.GetSpendingKey(addr, skOut));
+    addresses.clear();
+    keyStore.GetPaymentAddresses(addresses);
+    EXPECT_FALSE(addresses.count(addr));
 
     // We still have a decryptor because those are cached in memory
     // (and also we only remove viewing keys when adding a spending key)
