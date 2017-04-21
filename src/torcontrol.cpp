@@ -329,13 +329,14 @@ static std::map<std::string,std::string> ParseTorReplyMapping(const std::string 
                         // octal digit if encountered sooner.
                         for (j = 1; j < 3 && (i+j) < value.size() && '0' <= value[i+j] && value[i+j] <= '7'; ++j) {}
                         // Tor restricts first digit to 0-3 for three-digit octals.
-                        if (j < 3 || ('0' <= value[i] && value[i] <= '3')) {
-                            escaped_value.push_back(strtol(value.substr(i, j).c_str(), NULL, 8));
-                            // Account for automatic incrementing at loop end
-                            i += j - 1;
-                        } else {
-                            escaped_value.push_back(value[i]);
+                        // A leading digit of 4-7 would therefore be interpreted as
+                        // a two-digit octal.
+                        if (j == 3 && value[i] > '3') {
+                            j--;
                         }
+                        escaped_value.push_back(strtol(value.substr(i, j).c_str(), NULL, 8));
+                        // Account for automatic incrementing at loop end
+                        i += j - 1;
                     } else {
                         escaped_value.push_back(value[i]);
                     }

@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(util_ParseTorReplyMapping)
         "Foo=\"Bar\\nBaz\\t\" Spam=\"\\rEggs\" Octals=\"\\1a\\11\\17\\18\\81\\377\\378\\400\" Final=Check", {
             {"Foo", "Bar\nBaz\t"},
             {"Spam", "\rEggs"},
-            {"Octals", "\1a\11\17\1" "881\377\37" "8400"},
+            {"Octals", "\1a\11\17\1" "881\377\37" "8\40" "0"},
             {"Final", "Check"},
         });
     CheckParseTorReplyMapping(
