@@ -327,7 +327,7 @@ static std::map<std::string,std::string> ParseTorReplyMapping(const std::string 
                         // Octal escape sequences have a limit of three octal digits,
                         // but terminate at the first character that is not a valid
                         // octal digit if encountered sooner.
-                        for (j = 1; '0' <= value[i+j] && value[i+j] <= '7' && j < 3; ++j) {}
+                        for (j = 1; j < 3 && (i+j) < value.size() && '0' <= value[i+j] && value[i+j] <= '7'; ++j) {}
                         // Tor restricts first digit to 0-3 for three-digit octals.
                         if (j < 3 || ('0' <= value[i] && value[i] <= '3')) {
                             escaped_value.push_back(strtol(value.substr(i, j).c_str(), NULL, 8));
