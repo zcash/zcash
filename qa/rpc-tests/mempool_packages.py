@@ -88,7 +88,7 @@ class MempoolPackagesTest(BitcoinTestFramework):
 
         # Check that descendant modified fees includes fee deltas from
         # prioritisetransaction
-        self.nodes[0].prioritisetransaction(chain[-1], 1000)
+        self.nodes[0].prioritisetransaction(chain[-1], 0, 1000)
         mempool = self.nodes[0].getrawmempool(True)
 
         descendant_fees = 0
@@ -104,7 +104,7 @@ class MempoolPackagesTest(BitcoinTestFramework):
 
         # Check that prioritising a tx before it's added to the mempool works
         self.nodes[0].generate(1)
-        self.nodes[0].prioritisetransaction(chain[-1], 2000)
+        self.nodes[0].prioritisetransaction(chain[-1], None, 2000)
         self.nodes[0].invalidateblock(self.nodes[0].getbestblockhash())
         mempool = self.nodes[0].getrawmempool(True)
 

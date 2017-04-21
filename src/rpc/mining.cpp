@@ -375,26 +375,31 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
 // NOTE: Unlike wallet RPCs (which use ZEC values), mining RPCs follow GBT (BIP 22) in using zatoshi amounts.
 UniValue prioritisetransaction(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 2)
-        throw runtime_error(
-            "prioritisetransaction <txid> <fee delta>\n"
+    if (fHelp || params.size() != 3)
+        throw std::runtime_error(
+            "prioritisetransaction <txid> <priority delta> <fee delta>\n"
             "Accepts the transaction into mined blocks at a higher (or lower) priority\n"
             "\nArguments:\n"
             "1. \"txid\"       (string, required) The transaction id.\n"
-            "2. fee_delta      (numeric, required) The fee value (in " + MINOR_CURRENCY_UNIT + ") to add (or subtract, if negative).\n"
+            "2. priority_delta (numeric, optional) Fee-independent priority adjustment. Not supported, so must be zero or null.\n"
+            "3. fee_delta      (numeric, required) The fee value (in " + MINOR_CURRENCY_UNIT + ") to add (or subtract, if negative).\n"
             "                  The modified fee is not actually paid, only the algorithm for selecting transactions into a block\n"
             "                  considers the transaction as it would have paid a higher (or lower) fee.\n"
             "\nResult\n"
             "true              (boolean) Returns true\n"
             "\nExamples:\n"
-            + HelpExampleCli("prioritisetransaction", "\"txid\" 10000")
-            + HelpExampleRpc("prioritisetransaction", "\"txid\", 10000")
+            + HelpExampleCli("prioritisetransaction", "\"txid\" 0.0 10000")
+            + HelpExampleRpc("prioritisetransaction", "\"txid\", 0.0, 10000")
         );
 
     LOCK(cs_main);
 
     uint256 hash = ParseHashStr(params[0].get_str(), "txid");
-    CAmount nAmount = params[1].get_int64();
+    CAmount nAmount = params[2].get_int64();
+
+    if (!(params[1].isNull() || params[1].get_real() == 0)) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Priority is not supported, and adjustment thereof must be zero.");
+    }
 
     mempool.PrioritiseTransaction(hash, params[0].get_str(), nAmount);
     return true;

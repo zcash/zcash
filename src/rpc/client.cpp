@@ -52,7 +52,7 @@ static const CRPCConvertTable rpcCvtTable =
     { "generate",                    {{o}, {}} },
     { "setgenerate",                 {{o}, {o}} },
     { "getmininginfo",               {{}, {}} },
-    { "prioritisetransaction",       {{s, o}, {}} },
+    { "prioritisetransaction",       {{s, o, o}, {}} },
     { "getblocktemplate",            {{}, {o}} },
     // NB: The second argument _should_ be an object, but upstream treats it as a string, so we
     //     preserve that here.
