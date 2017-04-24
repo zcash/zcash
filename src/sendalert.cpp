@@ -71,9 +71,9 @@ void ThreadSendAlert()
     //
     CAlert alert;
     alert.nRelayUntil   = GetTime() + 15 * 60;
-    alert.nExpiration   = GetTime() + 20 * 365 * 24 * 60 * 60;
-    alert.nID           = 1002;  // use https://github.com/zcash/zcash/wiki/specification#assigned-numbers to keep track of alert IDs
-    alert.nCancel       = 1000;  // cancels previous messages up to this ID number
+    alert.nExpiration   = GetTime() + 6 * 30 * 24 * 60 * 60;
+    alert.nID           = 1003;  // use https://github.com/zcash/zcash/wiki/specification#assigned-numbers to keep track of alert IDs
+    alert.nCancel       = 1001;  // cancels previous messages up to this ID number
 
     // These versions are protocol versions
     // 170002 : 1.0.0
@@ -86,9 +86,9 @@ void ThreadSendAlert()
     //  2000 for longer invalid proof-of-work chain
     //  Higher numbers mean higher priority
     //  4000 or higher will put the RPC into safe mode
-    alert.nPriority     = 4000;
+    alert.nPriority     = 1500;
     alert.strComment    = "";
-    alert.strStatusBar  = "Your client is out of date and potentially vulnerable to blockchain disruption. Please update to the most recent version of Zcash and use -reindex to ensure integrity of your blockchain state. More info at: https://z.cash/support/security/";
+    alert.strStatusBar  = "Your client is out of date and vulnerable to denial of service. Please update to the most recent version of Zcash (1.0.8-1 or later). More info at: https://z.cash/support/security/";
     alert.strRPCError   = alert.strStatusBar;
 
     // Set specific client version/versions here. If setSubVer is empty, no filtering on subver is done:
@@ -96,9 +96,13 @@ void ThreadSendAlert()
     const std::vector<std::string> useragents = {"MagicBean", "BeanStalk", "AppleSeed", "EleosZcash"};
 
     BOOST_FOREACH(const std::string& useragent, useragents) {
-        alert.setSubVer.insert(std::string("/"+useragent+":1.0.0/"));
-        alert.setSubVer.insert(std::string("/"+useragent+":1.0.1/"));
-        alert.setSubVer.insert(std::string("/"+useragent+":1.0.2/"));
+        alert.setSubVer.insert(std::string("/"+useragent+":1.0.3/"));
+        alert.setSubVer.insert(std::string("/"+useragent+":1.0.4/"));
+        alert.setSubVer.insert(std::string("/"+useragent+":1.0.5/"));
+        alert.setSubVer.insert(std::string("/"+useragent+":1.0.6/"));
+        alert.setSubVer.insert(std::string("/"+useragent+":1.0.7/"));
+        alert.setSubVer.insert(std::string("/"+useragent+":1.0.7-1/"));
+        alert.setSubVer.insert(std::string("/"+useragent+":1.0.8/"));
     }
 
     // Sanity check
