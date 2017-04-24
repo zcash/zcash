@@ -11,7 +11,6 @@ Install
 
 Get dependencies
 ```{r, engine='bash'}
-
 sudo apt-get install \
       build-essential pkg-config libc6-dev m4 g++-multilib \
       autoconf libtool ncurses-dev unzip git python \
@@ -31,7 +30,6 @@ Install
 ### Windows
 Get dependencies
 ```{r, engine='bash'}
-
 sudo apt-get install \
       build-essential pkg-config libc6-dev m4 g++-multilib \
       autoconf libtool ncurses-dev unzip git python \
@@ -48,7 +46,6 @@ The exe will save to `src` which you can then move to a windows machine
 ### Mac
 Get dependencies
 ```{r, engine='bash'}
-
 #install xcode
 xcode-select --install
 
