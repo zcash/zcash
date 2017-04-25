@@ -36,7 +36,9 @@ previous release:
 
 ### B1. Check that you are up-to-date with current master, then create a release branch.
 
-### B2. Update (commit) version in sources.
+### B2. Update (commit) version and deprecation in sources.
+
+Update the client version in these files:
 
     README.md
     src/clientversion.h
@@ -55,6 +57,11 @@ In `configure.ac` and `clientversion.h`:
   - 0-24: `1.0.1-beta1`-`1.0.1-beta25`
 
 - Change `CLIENT_VERSION_IS_RELEASE` to false while Zcash is in beta-test phase.
+
+Update `APPROX_RELEASE_HEIGHT` and `WEEKS_UNTIL_DEPRECATION` in `src/deprecation.h`
+so that `APPROX_RELEASE_HEIGHT` will be reached shortly after release, and
+`WEEKS_UNTIL_DEPRECATION` is the number of weeks from release day until the
+deprecation target (as defined by the current deprecation policy).
 
 If this release changes the behavior of the protocol or fixes a serious bug, we may
 also wish to change the `PROTOCOL_VERSION` in `version.h`.
