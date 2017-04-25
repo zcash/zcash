@@ -585,6 +585,76 @@ r1cs_ppzksnark_proof<ppT> r1cs_ppzksnark_prover(const r1cs_ppzksnark_proving_key
 }
 
 template <typename ppT>
+r1cs_ppzksnark_proof<ppT> r1cs_ppzksnark_prover_streaming(std::ifstream &proving_key_file,
+                                                          const r1cs_ppzksnark_primary_input<ppT> &primary_input,
+                                                          const r1cs_ppzksnark_auxiliary_input<ppT> &auxiliary_input,
+                                                          const r1cs_ppzksnark_constraint_system<ppT> &constraint_system)
+{
+    enter_block("Call to r1cs_ppzksnark_prover_streaming");
+
+    const Fr<ppT> d1 = Fr<ppT>::random_element(),
+        d2 = Fr<ppT>::random_element(),
+        d3 = Fr<ppT>::random_element();
+
+    enter_block("Compute the polynomial H");
+    const qap_witness<Fr<ppT> > qap_wit = r1cs_to_qap_witness_map(constraint_system, primary_input, auxiliary_input, d1, d2, d3);
+    leave_block("Compute the polynomial H");
+
+    enter_block("Compute the proof");
+
+    r1cs_ppzksnark_proof<ppT> proof;
+
+    enter_block("Compute answer to A-query", false);
+    {
+        knowledge_commitment_vector<G1<ppT>, G1<ppT> > A_query;
+        proving_key_file >> A_query;
+        proof.g_A = r1cs_compute_proof_kc<ppT, G1<ppT>, G1<ppT> >(qap_wit, A_query, qap_wit.d1);
+    }
+    leave_block("Compute answer to A-query", false);
+
+    enter_block("Compute answer to B-query", false);
+    {
+        knowledge_commitment_vector<G2<ppT>, G1<ppT> > B_query;
+        proving_key_file >> B_query;
+        proof.g_B = r1cs_compute_proof_kc<ppT, G2<ppT>, G1<ppT> >(qap_wit, B_query, qap_wit.d2);
+    }
+    leave_block("Compute answer to B-query", false);
+
+    enter_block("Compute answer to C-query", false);
+    {
+        knowledge_commitment_vector<G1<ppT>, G1<ppT> > C_query;
+        proving_key_file >> C_query;
+        proof.g_C = r1cs_compute_proof_kc<ppT, G1<ppT>, G1<ppT> >(qap_wit, C_query, qap_wit.d3);
+    }
+    leave_block("Compute answer to C-query", false);
+
+    enter_block("Compute answer to H-query", false);
+    {
+        G1_vector<ppT> H_query;
+        proving_key_file >> H_query;
+        proof.g_H = r1cs_compute_proof_H<ppT>(qap_wit, H_query);
+    }
+    leave_block("Compute answer to H-query", false);
+
+    enter_block("Compute answer to K-query", false);
+    {
+        G1_vector<ppT> K_query;
+        proving_key_file >> K_query;
+        G1<ppT> zk_shift = qap_wit.d1*K_query[qap_wit.num_variables()+1] +
+                           qap_wit.d2*K_query[qap_wit.num_variables()+2] +
+                           qap_wit.d3*K_query[qap_wit.num_variables()+3];
+        proof.g_K = r1cs_compute_proof_K<ppT>(qap_wit, K_query, zk_shift);
+    }
+    leave_block("Compute answer to K-query", false);
+
+    leave_block("Compute the proof");
+
+    leave_block("Call to r1cs_ppzksnark_prover_streaming");
+
+    return proof;
+}
+
+template <typename ppT>
 r1cs_ppzksnark_processed_verification_key<ppT> r1cs_ppzksnark_verifier_process_vk(const r1cs_ppzksnark_verification_key<ppT> &vk)
 {
     enter_block("Call to r1cs_ppzksnark_verifier_process_vk");
