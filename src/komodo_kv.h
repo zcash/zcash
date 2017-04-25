@@ -107,7 +107,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
     if ( keylen+13 > opretlen )
     {
         printf("komodo_kvupdate: keylen.%d + 13 > opretlen.%d\n",keylen,opretlen);
-        retrurn;
+        return;
     }
     valueptr = &key[keylen];
     fee = komodo_kvfee(flags,opretlen,keylen);
