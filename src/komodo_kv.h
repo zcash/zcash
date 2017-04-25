@@ -104,6 +104,11 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
     iguana_rwnum(0,&opretbuf[5],sizeof(height),&height);
     iguana_rwnum(0,&opretbuf[9],sizeof(flags),&flags);
     key = &opretbuf[13];
+    if ( keylen+13 > opretlen )
+    {
+        printf("komodo_kvupdate: keylen.%d + 13 > opretlen.%d\n",keylen,opretlen);
+        retrurn;
+    }
     valueptr = &key[keylen];
     fee = komodo_kvfee(flags,opretlen,keylen);
     //printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
