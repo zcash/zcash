@@ -293,11 +293,15 @@ public:
         // estimate that it doesn't matter if we check every time.
         pb.constraint_system.swap_AB_if_beneficial();
 
-        r1cs_ppzksnark_proving_key<ppzksnark_ppT> pk;
-        loadFromFile(pkPath, pk);
+        std::ifstream fh(pkPath, std::ios::binary);
 
-        return ZCProof(r1cs_ppzksnark_prover<ppzksnark_ppT>(
-            pk,
+        // TODO
+        if(!fh.is_open()) {
+            throw std::runtime_error((boost::format("could not load param file at %s") % pkPath).str());
+        }
+
+        return ZCProof(r1cs_ppzksnark_prover_streaming<ppzksnark_ppT>(
+            fh,
             primary_input,
             aux_input,
             pb.constraint_system
