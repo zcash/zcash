@@ -597,6 +597,7 @@ static bool ProcessBlockFound(CBlock* pblock)
         }
     }
     // Track how many getdata requests this block gets
+    if ( 0 )
     {
         LOCK(wallet.cs_wallet);
         wallet.mapRequestCount[pblock->GetHash()] = 0;
