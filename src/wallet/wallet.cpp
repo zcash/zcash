@@ -811,10 +811,10 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
         }
         if ( KOMODO_REWIND == 0 )
             assert(nWitnessCacheSize > 0);
-        //if (fFileBacked) {
-        //    CWalletDB walletdb(strWalletFile);
-        //    WriteWitnessCache(walletdb);
-        //}
+        if (fFileBacked) {
+            CWalletDB walletdb(strWalletFile);
+            WriteWitnessCache(walletdb);
+        }
         // For performance reasons, we write out the witness cache in
         // CWallet::SetBestChain() (which also ensures that overall consistency
         // of the wallet.dat is maintained).
