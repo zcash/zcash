@@ -645,7 +645,10 @@ void static BitcoinMiner()
     {
         sleep(1);
         if ( komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
+        {
+            sleep(60);
             break;
+        }
     }
     komodo_chosennotary(&notaryid,chainActive.Tip()->nHeight,NOTARY_PUBKEY33);
 
