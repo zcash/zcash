@@ -746,8 +746,8 @@ void static BitcoinMiner()
                     static uint32_t counter;
                     if ( counter++ < 10 )
                         fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
-                    sleep(10);
-                    continue;
+                    sleep(60);
+                    //continue;
                 } else fprintf(stderr,"%s vouts.%d mining.%d vs %d\n",ASSETCHAINS_SYMBOL,(int32_t)pblock->vtx[0].vout.size(),Mining_height,ASSETCHAINS_MINHEIGHT);
             }
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
