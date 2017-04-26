@@ -2660,6 +2660,7 @@ bool static DisconnectTip(CValidationState &state) {
         SyncWithWallets(tx, NULL);
     }
     // Update cached incremental witnesses
+    fprintf(stderr,"chaintip false\n");
     GetMainSignals().ChainTip(pindexDelete, &block, newTree, false);
     return true;
 }
@@ -2730,6 +2731,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         SyncWithWallets(tx, pblock);
     }
     // Update cached incremental witnesses
+    fprintf(stderr,"chaintip true\n");
     GetMainSignals().ChainTip(pindexNew, pblock, oldTree, true);
 
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;

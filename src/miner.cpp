@@ -647,7 +647,7 @@ void static BitcoinMiner()
         if ( komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
             break;
     }
-    sleep(60);
+    //sleep(60);
     komodo_chosennotary(&notaryid,chainActive.Tip()->nHeight,NOTARY_PUBKEY33);
 
     std::string solver;
