@@ -786,7 +786,7 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
             }
         }
         fprintf(stderr,"decrement witness cache -> %d\n",(int32_t)nWitnessCacheSize);
-        if ( nWitnessCacheSize > 0 )
+        if ( nWitnessCacheSize > 1 )
             nWitnessCacheSize -= 1;
         else
         {
