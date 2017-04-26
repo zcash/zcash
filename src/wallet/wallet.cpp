@@ -786,7 +786,13 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
             }
         }
         fprintf(stderr,"decrement witness cache -> %d\n",(int32_t)nWitnessCacheSize);
-        nWitnessCacheSize -= 1;
+        if ( nWitnessCacheSize > 0 )
+            nWitnessCacheSize -= 1;
+        else
+        {
+            extern char ASSETCHAINS_SYMBOL[16];
+            fprintf(stderr,"%s nWitnessCacheSize.%d\n",ASSETCHAINS_SYMBOL,(int32_t)nWitnessCacheSize);
+        }
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                 CNoteData* nd = &(item.second);
@@ -804,11 +810,6 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
                     assert(nWitnessCacheSize >= nd->witnesses.size());
                 }
             }
-        }
-        if ( nWitnessCacheSize <= 0 )
-        {
-            extern char ASSETCHAINS_SYMBOL[16];
-            fprintf(stderr,"%s nWitnessCacheSize.%d\n",ASSETCHAINS_SYMBOL,(int32_t)nWitnessCacheSize);
         }
         if ( KOMODO_REWIND == 0 )
             assert(nWitnessCacheSize > 0);
