@@ -644,8 +644,8 @@ void static BitcoinMiner()
     while (  (ASSETCHAIN_INIT == 0 || KOMODO_INITDONE == 0) ) //chainActive.Tip()->nHeight != 235300 &&
     {
         sleep(1);
-        if ( komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
-            break;
+        //if ( komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
+        //    break;
     }
     komodo_chosennotary(&notaryid,chainActive.Tip()->nHeight,NOTARY_PUBKEY33);
 
