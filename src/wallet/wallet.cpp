@@ -635,6 +635,7 @@ void CWallet::ClearNoteWitnessCache()
         }
     }
     nWitnessCacheSize = 0;
+    //fprintf(stderr,"Clear witness cache\n");
 }
 
 void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
@@ -669,6 +670,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
             }
         }
         if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
+            //fprintf(stderr,"increment nWitnesscache -> %d\n",(int32_t)nWitnessCacheSize);
             nWitnessCacheSize += 1;
         }
 
@@ -782,6 +784,7 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
                 }
             }
         }
+        //fprintf(stderr,"decrement witness cache -> %d\n",(int32_t)nWitnessCacheSize);
         nWitnessCacheSize -= 1;
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
@@ -2761,7 +2764,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 if ( KOMODO_EXCHANGEWALLET != 0 )
                 {
                     //fprintf(stderr,"KOMODO_EXCHANGEWALLET disable interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
-                    interest = 0;
+                    interest = 0; // interest2 also
                 }
                 CAmount nChange = (nValueIn - nValue + interest2);
 fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f interest2 %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest2/COIN,(double)interest/COIN,(double)nTotalValue/COIN);
