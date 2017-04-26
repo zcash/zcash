@@ -708,8 +708,11 @@ void static BitcoinMiner()
                 Mining_height = pindexPrev->nHeight+1;
                 Mining_start = (uint32_t)time(NULL);
             }
-            if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            {
                 fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
+                sleep(3);
+            }
 #ifdef ENABLE_WALLET
             CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey);
 #else
@@ -862,6 +865,8 @@ void static BitcoinMiner()
                             sleep(nseconds);
                         MilliSleep((rand() % 1700) + 1);
                     }
+                    else if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                        sleep(3);
                     KOMODO_CHOSEN_ONE = 1;
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
