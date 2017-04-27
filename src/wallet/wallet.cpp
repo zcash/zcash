@@ -672,7 +672,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
             }
         }
         if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
-            fprintf(stderr,"increment nWitnesscache -> %d\n",(int32_t)nWitnessCacheSize);
+            //fprintf(stderr,"increment nWitnesscache -> %d\n",(int32_t)nWitnessCacheSize);
             nWitnessCacheSize += 1;
         }
 
