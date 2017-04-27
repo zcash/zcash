@@ -38,6 +38,7 @@ bool bSpendZeroConfChange = true;
 bool fSendFreeTransactions = false;
 bool fPayAtLeastCustomFee = true;
 extern int32_t KOMODO_EXCHANGEWALLET;
+extern char ASSETCHAINS_SYMBOL[16];
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
@@ -373,9 +374,9 @@ void CWallet::ChainTip(const CBlockIndex *pindex, const CBlock *pblock,
 {
     if (added) {
         IncrementNoteWitnesses(pindex, pblock, tree);
-    } else {
+    } else if ( ASSETCHAINS_SYMBOL[0] == 0 || nWitnessCacheSize > 1 ){
         DecrementNoteWitnesses(pindex);
-    }
+    } else fprintf(stderr,"would have decremented %s nWitnessCacheSize.%d\n",ASSETCHAINS_SYMBOL,nWitnessCacheSize);
 }
 
 void CWallet::SetBestChain(const CBlockLocator& loc)
@@ -790,7 +791,6 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
             nWitnessCacheSize -= 1;
         else
         {
-            extern char ASSETCHAINS_SYMBOL[16];
             fprintf(stderr,"%s nWitnessCacheSize.%d\n",ASSETCHAINS_SYMBOL,(int32_t)nWitnessCacheSize);
         }
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -2242,7 +2242,6 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                 {
                     if ( KOMODO_EXCHANGEWALLET == 0 )
                     {
-                        extern char ASSETCHAINS_SYMBOL[16];
                         uint32_t locktime; int32_t txheight; CBlockIndex *tipindex;
                         if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight >= 60000 )
                         {
@@ -3727,7 +3726,6 @@ int CMerkleTx::GetDepthInMainChain(const CBlockIndex* &pindexRet) const
 
 int CMerkleTx::GetBlocksToMaturity() const
 {
-    extern char ASSETCHAINS_SYMBOL[];
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         COINBASE_MATURITY = _COINBASE_MATURITY;
     if (!IsCoinBase())
