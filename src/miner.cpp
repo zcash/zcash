@@ -106,7 +106,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
 }
 
-#define ASSETCHAINS_MINHEIGHT 100
+#define ASSETCHAINS_MINHEIGHT 128
 #define KOMODO_ELECTION_GAP 2000
 #define ROUNDROBIN_DELAY 61
 extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
