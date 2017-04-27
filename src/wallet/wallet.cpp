@@ -643,7 +643,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                                      const CBlock* pblockIn,
                                      ZCIncrementalMerkleTree& tree)
 {
-    fprintf(stderr,"A increment witness cache -> %d\n",(int32_t)nWitnessCacheSize);
+    //fprintf(stderr,"A increment witness cache -> %d\n",(int32_t)nWitnessCacheSize);
     {
         LOCK(cs_wallet);
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -786,7 +786,7 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
                 }
             }
         }
-        fprintf(stderr,"decrement witness cache -> %d\n",(int32_t)nWitnessCacheSize);
+        //fprintf(stderr,"decrement witness cache -> %d\n",(int32_t)nWitnessCacheSize);
         if ( nWitnessCacheSize > 1 )
             nWitnessCacheSize -= 1;
         else
