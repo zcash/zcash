@@ -713,7 +713,7 @@ void static BitcoinMiner()
             }
             if ( ASSETCHAINS_SYMBOL[0] != 0 )
             {
-                fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
+                //fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
                 sleep(3);
             }
 #ifdef ENABLE_WALLET

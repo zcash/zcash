@@ -187,7 +187,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             ptr->flags = flags | 1;
             portable_mutex_unlock(&KOMODO_KV_mutex);
         } //else printf("size mismatch %d vs %d\n",opretlen,coresize);
-    } else printf("insufficient fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
+    } 
 }
 
 #endif
