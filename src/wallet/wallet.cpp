@@ -38,6 +38,7 @@ bool bSpendZeroConfChange = true;
 bool fSendFreeTransactions = false;
 bool fPayAtLeastCustomFee = true;
 extern int32_t KOMODO_EXCHANGEWALLET;
+extern char ASSETCHAINS_SYMBOL[16];
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
@@ -373,9 +374,9 @@ void CWallet::ChainTip(const CBlockIndex *pindex, const CBlock *pblock,
 {
     if (added) {
         IncrementNoteWitnesses(pindex, pblock, tree);
-    } else {
+    } else if ( ASSETCHAINS_SYMBOL[0] == 0 || nWitnessCacheSize > 1 ){
         DecrementNoteWitnesses(pindex);
-    }
+    } else fprintf(stderr,"would have decremented %s nWitnessCacheSize.%d\n",ASSETCHAINS_SYMBOL,(int32_t)nWitnessCacheSize);
 }
 
 void CWallet::SetBestChain(const CBlockLocator& loc)
@@ -635,12 +636,14 @@ void CWallet::ClearNoteWitnessCache()
         }
     }
     nWitnessCacheSize = 0;
+    //fprintf(stderr,"Clear witness cache\n");
 }
 
 void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                                      const CBlock* pblockIn,
                                      ZCIncrementalMerkleTree& tree)
 {
+    //fprintf(stderr,"A increment witness cache -> %d\n",(int32_t)nWitnessCacheSize);
     {
         LOCK(cs_wallet);
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -669,6 +672,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
             }
         }
         if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
+            //fprintf(stderr,"increment nWitnesscache -> %d\n",(int32_t)nWitnessCacheSize);
             nWitnessCacheSize += 1;
         }
 
@@ -782,7 +786,13 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
                 }
             }
         }
-        nWitnessCacheSize -= 1;
+        //fprintf(stderr,"decrement witness cache -> %d\n",(int32_t)nWitnessCacheSize);
+        if ( nWitnessCacheSize > 1 )
+            nWitnessCacheSize -= 1;
+        else
+        {
+            fprintf(stderr,"%s nWitnessCacheSize.%d\n",ASSETCHAINS_SYMBOL,(int32_t)nWitnessCacheSize);
+        }
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
             for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
                 CNoteData* nd = &(item.second);
@@ -800,11 +810,6 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
                     assert(nWitnessCacheSize >= nd->witnesses.size());
                 }
             }
-        }
-        if ( nWitnessCacheSize <= 0 )
-        {
-            extern char ASSETCHAINS_SYMBOL[16];
-            fprintf(stderr,"%s nWitnessCacheSize.%d\n",ASSETCHAINS_SYMBOL,(int32_t)nWitnessCacheSize);
         }
         if ( KOMODO_REWIND == 0 )
             assert(nWitnessCacheSize > 0);
@@ -2237,7 +2242,6 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                 {
                     if ( KOMODO_EXCHANGEWALLET == 0 )
                     {
-                        extern char ASSETCHAINS_SYMBOL[16];
                         uint32_t locktime; int32_t txheight; CBlockIndex *tipindex;
                         if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight >= 60000 )
                         {
@@ -2761,7 +2765,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 if ( KOMODO_EXCHANGEWALLET != 0 )
                 {
                     //fprintf(stderr,"KOMODO_EXCHANGEWALLET disable interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
-                    interest = 0;
+                    interest = 0; // interest2 also
                 }
                 CAmount nChange = (nValueIn - nValue + interest2);
 fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest %.8f interest2 %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest2/COIN,(double)interest/COIN,(double)nTotalValue/COIN);
@@ -3722,7 +3726,6 @@ int CMerkleTx::GetDepthInMainChain(const CBlockIndex* &pindexRet) const
 
 int CMerkleTx::GetBlocksToMaturity() const
 {
-    extern char ASSETCHAINS_SYMBOL[];
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         COINBASE_MATURITY = _COINBASE_MATURITY;
     if (!IsCoinBase())
