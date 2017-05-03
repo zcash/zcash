@@ -200,7 +200,7 @@ bool CheckBlockIndex(int &txBlockIndex, int blockIndex)
     	return false;
     // checks for absolute blockIndex
     else if (txBlockIndex >= 0) {
-        ssize_t blockDelta = txBlockIndex - blockIndex;
+        int blockDelta = txBlockIndex - blockIndex;
         // blockDelta must be negative
         if (blockDelta > 0)
             return false;
@@ -443,7 +443,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     bool fSuccess = false;
 
                     // check for overflow before casting
-                    if ((vchBlockIndex.size() > 0x7ffffff) || (vchBlockHash.size() > 32))
+                    if ((vchBlockIndex.size() > sizeof(int)) || (vchBlockHash.size() > 32))
                         return set_error(serror, SCRIPT_ERR_CHECKBLOCKATHEIGHT);
                     else
                     {
