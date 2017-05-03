@@ -1565,7 +1565,7 @@ bool IsInitialBlockDownload()
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         state = ((chainActive.Height() < ptr->nHeight - 24*60) ||
                     ptr->GetBlockTime() < (GetTime() - chainParams.MaxTipAge()));
-    else state = (chainActive.Height() < ptr->nHeight - 3);
+    else state = (chainActive.Height() < ptr->nHeight - 10);
     //fprintf(stderr,"state.%d  ht.%d vs %d, t.%u %u\n",state,(int32_t)chainActive.Height(),(uint32_t)ptr->nHeight,(int32_t)ptr->GetBlockTime(),(uint32_t)(GetTime() - chainParams.MaxTipAge()));
     if (!state)
     {
@@ -2231,6 +2231,7 @@ static int64_t nTimeTotal = 0;
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck)
 {
     const CChainParams& chainparams = Params();
+    //fprintf(stderr,"connectblock ht.%d\n",(int32_t)pindex->nHeight);
     AssertLockHeld(cs_main);
 /*<<<<<<< HEA
     // Check it again in case a previous version let a bad block in
@@ -2659,6 +2660,7 @@ bool static DisconnectTip(CValidationState &state) {
         SyncWithWallets(tx, NULL);
     }
     // Update cached incremental witnesses
+    //fprintf(stderr,"chaintip false\n");
     GetMainSignals().ChainTip(pindexDelete, &block, newTree, false);
     return true;
 }
@@ -2729,6 +2731,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         SyncWithWallets(tx, pblock);
     }
     // Update cached incremental witnesses
+    //fprintf(stderr,"chaintip true\n");
     GetMainSignals().ChainTip(pindexNew, pblock, oldTree, true);
 
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;

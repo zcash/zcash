@@ -106,7 +106,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
 }
 
-#define ASSETCHAINS_MINHEIGHT 100
+#define ASSETCHAINS_MINHEIGHT 128
 #define KOMODO_ELECTION_GAP 2000
 #define ROUNDROBIN_DELAY 61
 extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
@@ -451,6 +451,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     return pblocktemplate.release();
 }
 
+/*
 #ifdef ENABLE_WALLET
 boost::optional<CScript> GetMinerScriptPubKey(CReserveKey& reservekey)
 #else
@@ -477,7 +478,7 @@ boost::optional<CScript> GetMinerScriptPubKey()
     return scriptPubKey;
 }
 
-/*#ifdef ENABLE_WALLET
+#ifdef ENABLE_WALLET
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
     boost::optional<CScript> scriptPubKey = GetMinerScriptPubKey(reservekey);
@@ -596,6 +597,7 @@ static bool ProcessBlockFound(CBlock* pblock)
         }
     }
     // Track how many getdata requests this block gets
+    //if ( 0 )
     {
         LOCK(wallet.cs_wallet);
         wallet.mapRequestCount[pblock->GetHash()] = 0;
@@ -640,12 +642,13 @@ void static BitcoinMiner()
     unsigned int n = chainparams.EquihashN();
     unsigned int k = chainparams.EquihashK();
     int32_t notaryid = -1;
-    while (  (ASSETCHAIN_INIT == 0 || KOMODO_INITDONE == 0) ) //chainActive.Tip()->nHeight != 235300 &&
+    while ( (ASSETCHAIN_INIT == 0 || KOMODO_INITDONE == 0) ) //chainActive.Tip()->nHeight != 235300 &&
     {
         sleep(1);
         if ( komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
             break;
     }
+    //sleep(60);
     komodo_chosennotary(&notaryid,chainActive.Tip()->nHeight,NOTARY_PUBKEY33);
 
     std::string solver;
@@ -708,8 +711,11 @@ void static BitcoinMiner()
                 Mining_height = pindexPrev->nHeight+1;
                 Mining_start = (uint32_t)time(NULL);
             }
-            if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-                fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            {
+                //fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
+                sleep(3);
+            }
 #ifdef ENABLE_WALLET
             CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey);
 #else
@@ -862,6 +868,8 @@ void static BitcoinMiner()
                             sleep(nseconds);
                         MilliSleep((rand() % 1700) + 1);
                     }
+                    else if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                        sleep(3);
                     KOMODO_CHOSEN_ONE = 1;
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
