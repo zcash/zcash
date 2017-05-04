@@ -30,7 +30,7 @@ To create a backup of your wallet, use:
 
 The backup will be an exact copy of the current state of your wallet.dat file stored in the export directory you specified in the config file. The file path will also be returned.
 
-If you generate a new Zcash address, it will not be included in the backup file.
+If you generate a new Zcash address, it will not be reflected in the backup file.
 
 If your original `wallet.dat` file becomes inaccessible for whatever reason, you can use your backup by placing it into your data directory and renaming it to `wallet.dat`.
 
@@ -40,7 +40,7 @@ If you prefer to have an export of your private keys in human readable format, y
 
 `zcash-cli z_exportwallet <nameofbackup>`
 
-This will generate a text file in the export directory with all transparent and shielded private keys with their associated public addresses. It will also return the file path.
+This will generate a file in the export directory listing all transparent and shielded private keys with their associated public addresses. The file path will be returned in the command line.
 
 To import keys into a wallet which were previously exported to a file, use:
 
@@ -54,7 +54,7 @@ If you prefer to export a single private key for a shielded address, you can use
 
 This will return the private key and will not create a new file.
 
-For exporting a single private key for a transparent address, you can use the command inherited from Bitcoin:
+For exporting a single private key for a transparent address, you can use the command inherited from bitcoin:
 
 `zcash-cli dumpprivkey <t-address>`
 
@@ -82,4 +82,4 @@ See the command's help documentation for instructions on fine-tuning the wallet 
 
 ### Using `dumpwallet`
 
-This command inherited from Bitcoin is depreciated. If you use it, they will export private keys in a similar fashion as `z_exportwallet` but only for transparent addresses.
+This command inherited from bitcoin is depreciated. It will export private keys in a similar fashion as `z_exportwallet` but only for transparent addresses.
