@@ -12,7 +12,9 @@
 
 #include <boost/foreach.hpp>
 
+#if defined(BITCOIN_ZCASHCONSENSUS_H)
 #include "main.h"
+#endif
 
 using namespace std;
 
@@ -307,7 +309,7 @@ public:
         return false;
     }
 
-#ifdef BITCOIN_TX // zen-tx does not have access to chain state so no replay protection is possible
+#ifndef BITCOIN_ZCASHCONSENSUS_H // zen-tx does not have access to chain state so no replay protection is possible
     bool operator()(const CKeyID &keyID) const {
         script->clear();
         *script << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
