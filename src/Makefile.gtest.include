@@ -5,6 +5,7 @@ noinst_PROGRAMS += zcash-gtest
 # test_checktransaction.cpp MUST be before
 # any test that calls SelectParams().
 zcash_gtest_SOURCES = \
+        script/standard.cpp \
 	gtest/main.cpp \
 	gtest/utils.cpp \
 	gtest/test_checktransaction.cpp \
