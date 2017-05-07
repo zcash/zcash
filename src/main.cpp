@@ -7143,8 +7143,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
         LOCK(cs_main);
 
-        std::vector<CInv> vToFetch;
-
         for (unsigned int nInv = 0; nInv < vInv.size(); nInv++)
         {
             const CInv &inv = vInv[nInv];
@@ -7180,9 +7178,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 return error("send buffer size() = %u", pfrom->nSendSize);
             }
         }
-
-        if (!vToFetch.empty())
-            pfrom->PushMessage("getdata", vToFetch);
     }
 
 
