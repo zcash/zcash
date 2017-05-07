@@ -443,6 +443,14 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 // Implemented by: @movrcx; See: https://github.com/zencashio/zen/issues/12
                 case OP_CHECKBLOCKATHEIGHT:
                 {
+                    if (!(flags & SCRIPT_VERIFY_CHECKBLOCKATHEIGHT)) {
+                        // not enabled; treat as a NOP5
+                        if (flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) {
+                            return set_error(serror, SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS);
+                        }
+                        break;
+                    }
+
                     // we need two objects on the stack
                     if (stack.size() < 2)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);

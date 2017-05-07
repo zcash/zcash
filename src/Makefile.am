@@ -176,6 +176,7 @@ BITCOIN_CORE_H = \
   utilstrencodings.h \
   utiltime.h \
   validationinterface.h \
+  versionbits.h \
   version.h \
   wallet/asyncrpcoperation_sendmany.h \
   wallet/crypter.h \
@@ -232,6 +233,7 @@ libbitcoin_server_a_SOURCES = \
   txdb.cpp \
   txmempool.cpp \
   validationinterface.cpp \
+  versionbits.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 

@@ -50,6 +50,14 @@ public:
         consensus.nPowMaxAdjustUp = 16; // 16% adjustment up
         consensus.nPowTargetSpacing = 2.5 * 60;
         consensus.fPowAllowMinDifficultyBlocks = false;
+        consensus.nRuleChangeActivationThreshold = 1916; // 95% of 2016
+        consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
+
+        // Deployment of OP_CHECKBLOCKATHEIGHT softfork
+        consensus.vDeployments[Consensus::DEPLOYMENT_CBAH].bit = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_CBAH].nStartTime = 1493596800; // May 1, 2017
+        consensus.vDeployments[Consensus::DEPLOYMENT_CBAH].nTimeout = 1525132800; // May 1, 2018
+
         /**
          * The message start string should be awesome! ⓩ❤
          */
@@ -212,6 +220,14 @@ public:
         consensus.powLimit = uint256S("07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
         consensus.fPowAllowMinDifficultyBlocks = true;
+        consensus.nRuleChangeActivationThreshold = 1512; // 75% for testchains
+        consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
+
+        // Deployment of OP_CHECKBLOCKATHEIGHT softfork
+        consensus.vDeployments[Consensus::DEPLOYMENT_CBAH].bit = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_CBAH].nStartTime = 1493596800; // May 1, 2017
+        consensus.vDeployments[Consensus::DEPLOYMENT_CBAH].nTimeout = 1525132800; // May 1, 2018
+
         pchMessageStart[0] = 0xfa;
         pchMessageStart[1] = 0x1a;
         pchMessageStart[2] = 0xf9;
@@ -303,6 +319,13 @@ public:
         assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
         consensus.nPowMaxAdjustDown = 0; // Turn off adjustment down
         consensus.nPowMaxAdjustUp = 0; // Turn off adjustment up
+        consensus.nRuleChangeActivationThreshold = 1512; // 75% for testchains
+
+        // Deployment of OP_CHECKBLOCKATHEIGHT softfork
+        consensus.vDeployments[Consensus::DEPLOYMENT_CBAH].bit = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_CBAH].nStartTime = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_CBAH].nTimeout = 999999999999ULL;
+
         pchMessageStart[0] = 0xaa;
         pchMessageStart[1] = 0xe8;
         pchMessageStart[2] = 0x3f;
