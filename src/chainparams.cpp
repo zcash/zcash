@@ -294,7 +294,7 @@ public:
         strCurrencyUnits = "REG";
         consensus.fCoinbaseMustBeProtected = false;
         consensus.nSubsidySlowStartInterval = 0;
-        consensus.nSubsidyHalvingInterval = 150;
+        consensus.nSubsidyHalvingInterval = 840000;
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;
