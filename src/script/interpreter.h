@@ -85,6 +85,10 @@ enum
     //
     // See BIP65 for details.
     SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9),
+
+    // Verify OP_CHECKBLOCKATHEIGHT
+    SCRIPT_VERIFY_CHECKBLOCKATHEIGHT = (1U << 10),
+
 };
 
 uint256 SignatureHash(const CScript &scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType);
