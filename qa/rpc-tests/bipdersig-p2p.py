@@ -5,59 +5,39 @@
 #
 
 from test_framework.test_framework import ComparisonTestFramework
-from test_framework.util import *
+from test_framework.util import start_nodes
 from test_framework.mininode import CTransaction, NetworkThread
 from test_framework.blocktools import create_coinbase, create_block
 from test_framework.comptool import TestInstance, TestManager
 from test_framework.script import CScript
-from binascii import hexlify, unhexlify
+from binascii import unhexlify
 import cStringIO
 import time
 
-# A canonical signature consists of: 
-# <30> <total len> <02> <len R> <R> <02> <len S> <S> <hashtype>
-def unDERify(tx):
-    '''
-    Make the signature in vin 0 of a tx non-DER-compliant,
-    by adding padding after the S-value.
-    '''
-    scriptSig = CScript(tx.vin[0].scriptSig)
-    newscript = []
-    for i in scriptSig:
-        if (len(newscript) == 0):
-            newscript.append(i[0:-1] + '\0' + i[-1])
-        else:
-            newscript.append(i)
-    tx.vin[0].scriptSig = CScript(newscript)
-    
+
 '''
 This test is meant to exercise BIP66 (DER SIG).
 Connect to a single node.
-Mine 2 (version 2) blocks (save the coinbases for later).
-Generate 98 more version 2 blocks, verify the node accepts.
-Mine 749 version 3 blocks, verify the node accepts.
-Check that the new DERSIG rules are not enforced on the 750th version 3 block.
-Check that the new DERSIG rules are enforced on the 751st version 3 block.
-Mine 199 new version blocks.
-Mine 1 old-version block.
-Mine 1 new version block.
-Mine 1 old version block, see that the node rejects.
+Mine a coinbase block, and then ...
+Mine 1 version 4 block.
+Check that the DERSIG rules are enforced.
+
+TODO: factor out common code from {bipdersig-p2p,bip65-cltv-p2p}.py.
 '''
-            
 class BIP66Test(ComparisonTestFramework):
 
     def __init__(self):
         self.num_nodes = 1
 
     def setup_network(self):
-        # Must set the blockversion for this test
-        self.nodes = start_nodes(1, self.options.tmpdir, 
-                                 extra_args=[['-debug', '-whitelist=127.0.0.1', '-blockversion=2']],
+        self.nodes = start_nodes(1, self.options.tmpdir,
+                                 extra_args=[['-debug', '-whitelist=127.0.0.1']],
                                  binary=[self.options.testbinary])
+        self.is_network_split = False
 
     def run_test(self):
         test = TestManager(self, self.options.tmpdir)
-        test.add_all_connections(self.nodes)
+        # Don't call test.add_all_connections because there is only one node.
         NetworkThread().start() # Start up network handling in another thread
         test.run()
 
@@ -72,112 +52,48 @@ class BIP66Test(ComparisonTestFramework):
         tx.deserialize(f)
         return tx
 
-    def get_tests(self):
+    def invalidate_transaction(self, tx):
+        '''
+        Make the signature in vin 0 of a tx non-DER-compliant,
+        by adding padding after the S-value.
 
-        self.coinbase_blocks = self.nodes[0].generate(2)
+        A canonical signature consists of:
+        <30> <total len> <02> <len R> <R> <02> <len S> <S> <hashtype>
+        '''
+        scriptSig = CScript(tx.vin[0].scriptSig)
+        newscript = []
+        for i in scriptSig:
+            if (len(newscript) == 0):
+                newscript.append(i[0:-1] + '\0' + i[-1])
+            else:
+                newscript.append(i)
+        tx.vin[0].scriptSig = CScript(newscript)
+
+    def get_tests(self):
+        self.coinbase_blocks = self.nodes[0].generate(1)
         self.tip = int ("0x" + self.nodes[0].getbestblockhash() + "L", 0)
         self.nodeaddress = self.nodes[0].getnewaddress()
-        self.last_block_time = time.time()
+        self.block_time = time.time() + 1
 
-        ''' 98 more version 2 blocks '''
-        test_blocks = []
-        for i in xrange(98):
-            block = create_block(self.tip, create_coinbase(2), self.last_block_time + 1)
-            block.nVersion = 2
+        '''Check that the rules are enforced.'''
+        for valid in (True, False):
+            spendtx = self.create_transaction(self.nodes[0],
+                                              self.coinbase_blocks[0],
+                                              self.nodeaddress, 1.0)
+            if not valid:
+                self.invalidate_transaction(spendtx)
+                spendtx.rehash()
+
+            block = create_block(self.tip, create_coinbase(1), self.block_time)
+            block.nVersion = 4
+            block.vtx.append(spendtx)
+            block.hashMerkleRoot = block.calc_merkle_root()
             block.rehash()
             block.solve()
-            test_blocks.append([block, True])
-            self.last_block_time += 1
+            self.block_time += 1
             self.tip = block.sha256
-        yield TestInstance(test_blocks, sync_every_block=False)
+            yield TestInstance([[block, valid]])
 
-        ''' Mine 749 version 3 blocks '''
-        test_blocks = []
-        for i in xrange(749):
-            block = create_block(self.tip, create_coinbase(2), self.last_block_time + 1)
-            block.nVersion = 3
-            block.rehash()
-            block.solve()
-            test_blocks.append([block, True])
-            self.last_block_time += 1
-            self.tip = block.sha256
-        yield TestInstance(test_blocks, sync_every_block=False)
-
-        ''' 
-        Check that the new DERSIG rules are not enforced in the 750th
-        version 3 block.
-        '''
-        spendtx = self.create_transaction(self.nodes[0],
-                self.coinbase_blocks[0], self.nodeaddress, 1.0)
-        unDERify(spendtx)
-        spendtx.rehash()
-
-        block = create_block(self.tip, create_coinbase(2), self.last_block_time + 1)
-        block.nVersion = 3
-        block.vtx.append(spendtx)
-        block.hashMerkleRoot = block.calc_merkle_root()
-        block.rehash()
-        block.solve()
-
-        self.last_block_time += 1
-        self.tip = block.sha256
-        yield TestInstance([[block, True]])
-
-        ''' 
-        Check that the new DERSIG rules are enforced in the 751st version 3
-        block.
-        '''
-        spendtx = self.create_transaction(self.nodes[0],
-                self.coinbase_blocks[1], self.nodeaddress, 1.0)
-        unDERify(spendtx)
-        spendtx.rehash()
-
-        block = create_block(self.tip, create_coinbase(1), self.last_block_time + 1)
-        block.nVersion = 3
-        block.vtx.append(spendtx)
-        block.hashMerkleRoot = block.calc_merkle_root()
-        block.rehash()
-        block.solve()
-        self.last_block_time += 1
-        yield TestInstance([[block, False]])
-
-        ''' Mine 199 new version blocks on last valid tip '''
-        test_blocks = []
-        for i in xrange(199):
-            block = create_block(self.tip, create_coinbase(1), self.last_block_time + 1)
-            block.nVersion = 3
-            block.rehash()
-            block.solve()
-            test_blocks.append([block, True])
-            self.last_block_time += 1
-            self.tip = block.sha256
-        yield TestInstance(test_blocks, sync_every_block=False)
-
-        ''' Mine 1 old version block '''
-        block = create_block(self.tip, create_coinbase(1), self.last_block_time + 1)
-        block.nVersion = 2
-        block.rehash()
-        block.solve()
-        self.last_block_time += 1
-        self.tip = block.sha256
-        yield TestInstance([[block, True]])
-
-        ''' Mine 1 new version block '''
-        block = create_block(self.tip, create_coinbase(1), self.last_block_time + 1)
-        block.nVersion = 3
-        block.rehash()
-        block.solve()
-        self.last_block_time += 1
-        self.tip = block.sha256
-        yield TestInstance([[block, True]])
-
-        ''' Mine 1 old version block, should be invalid '''
-        block = create_block(self.tip, create_coinbase(1), self.last_block_time + 1)
-        block.nVersion = 2
-        block.rehash()
-        block.solve()
-        self.last_block_time += 1
-        yield TestInstance([[block, False]])
 
 if __name__ == '__main__':
     BIP66Test().main()
