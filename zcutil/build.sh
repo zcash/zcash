@@ -33,7 +33,7 @@ Usage:
 $0 --help
   Show this help message and exit.
 
-$0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --disable-rust ] [ --disable-proton ] [ MAKEARGS... ]
+$0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --disable-rust ] [ --enable-proton ] [ MAKEARGS... ]
   Build Zcash and most of its transitive dependencies from
   source. MAKEARGS are applied to both dependencies and Zcash itself.
 
@@ -45,11 +45,11 @@ $0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --disable-rust ] 
   code. It must be passed after the test arguments, if present.
 
   If --disable-rust is passed, Zcash is configured to not build any Rust language
-  assets. It must be passed after mining/test arguments, if present.
+  assets. It must be passed after test/mining arguments, if present.
 
-  If --disable-proton is passed, Zcash is configured to not build the Apache
-  Qpid Proton library required for AMQP support.  It must be passed after the
-  test arguments, if present.
+  If --enable-proton is passed, Zcash is configured to build the Apache Qpid Proton
+  library required for AMQP support. This library is not built by default.
+  It must be passed after the test/mining/Rust arguments, if present.
 EOF
     exit 0
 fi
@@ -88,11 +88,11 @@ then
     shift
 fi
 
-# If --disable-proton is the next argument, disable building Proton code:
-PROTON_ARG=''
-if [ "x${1:-}" = 'x--disable-proton' ]
+# If --enable-proton is the next argument, enable building Proton code:
+PROTON_ARG='--enable-proton=no'
+if [ "x${1:-}" = 'x--enable-proton' ]
 then
-    PROTON_ARG='--enable-proton=no'
+    PROTON_ARG=''
     shift
 fi
 
