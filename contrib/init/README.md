@@ -1,10 +1,6 @@
 Sample configuration files for:
 
-SystemD: bitcoind.service
-Upstart: bitcoind.conf
-OpenRC:  bitcoind.openrc
-         bitcoind.openrcconf
-CentOS:  bitcoind.init
+systemd: zcashd.service
 
 have been made available to assist packagers in creating node packages here.
 

@@ -1,0 +1,21 @@
+[Unit]
+Description=Zcash daemon
+After=network.target
+
+[Service]
+Type=simple
+User=zcash
+Group=zcash
+WorkingDirectory=/home/zcash/.zcash
+ExecStart=/usr/bin/zcashd
+Restart=always
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/zcash/.zcash
+ReadOnlyPaths=/home/zcash/.zcash/zcash.conf
+
+[Install]
+WantedBy=multi-user.target
