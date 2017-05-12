@@ -20,7 +20,7 @@ For all methods, you will need to include an export directory setting in your co
 
 `exportdir=/path/to/chosen/export/directory`
 
-You may chose any directory as the location for export & backup files. If the directory doesn't exist, it will be created.
+You may chose any directory within the home directory as the location for export & backup files. If the directory doesn't exist, it will be created.
 
 Note that zcashd will need to be stopped and restarted for edits in the config file to take effect. 
 
