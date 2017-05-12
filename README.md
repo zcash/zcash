@@ -1,5 +1,7 @@
 Zclassic 1.0.8
 ==============
+NOTICE, the default ports have changed! The p2p port is now 8033 and rpcport is 8023
+
 
 What is Zclassic?
 ----------------
