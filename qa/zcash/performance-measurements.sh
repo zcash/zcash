@@ -1,8 +1,8 @@
 #!/bin/bash
 
-set -e
-
 DATADIR=./benchmark-datadir
+SHA256CMD="$(command -v sha256sum || echo shasum)"
+SHA256ARGS="$(command -v sha256sum >/dev/null || echo '-a 256')"
 
 function zcash_rpc {
     ./src/zcash-cli -datadir="$DATADIR" -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 "$@"
@@ -24,7 +24,7 @@ function zcashd_generate {
 
 function zcashd_start {
     rm -rf "$DATADIR"
-    mkdir -p "$DATADIR"
+    mkdir -p "$DATADIR/regtest"
     touch "$DATADIR/zcash.conf"
     ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
@@ -37,7 +37,7 @@ function zcashd_stop {
 
 function zcashd_massif_start {
     rm -rf "$DATADIR"
-    mkdir -p "$DATADIR"
+    mkdir -p "$DATADIR/regtest"
     touch "$DATADIR/zcash.conf"
     rm -f massif.out
     valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
@@ -52,7 +52,7 @@ function zcashd_massif_stop {
 
 function zcashd_valgrind_start {
     rm -rf "$DATADIR"
-    mkdir -p "$DATADIR"
+    mkdir -p "$DATADIR/regtest"
     touch "$DATADIR/zcash.conf"
     rm -f valgrind.out
     valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
@@ -63,6 +63,28 @@ function zcashd_valgrind_stop {
     zcash_rpc stop > /dev/null
     wait $ZCASHD_PID
     cat valgrind.out
+}
+
+function extract_benchmark_data {
+    if [ -f "block-107134.tar.gz" ]; then
+        # Check the hash of the archive:
+        "$SHA256CMD" $SHA256ARGS -c <<EOF
+299a36b3445a9a0631eb9eb0b9e76c3e9e7493a98d6621ffd6dc362d3d86cbe8  block-107134.tar.gz
+EOF
+        ARCHIVE_RESULT=$?
+    else
+        echo "block-107134.tar.gz not found."
+        ARCHIVE_RESULT=1
+    fi
+    if [ $ARCHIVE_RESULT -ne 0 ]; then
+        zcashd_stop
+        echo
+        echo "Please generate it using qa/zcash/create_benchmark_archive.py"
+        echo "and place it in the base directory of the repository."
+        echo "Usage details are inside the Python script."
+        exit 1
+    fi
+    tar xzf block-107134.tar.gz -C "$DATADIR/regtest"
 }
 
 # Precomputation
@@ -107,6 +129,10 @@ case "$1" in
             incnotewitnesses)
                 zcash_rpc zcbenchmark incnotewitnesses 100 "${@:3}"
                 ;;
+            connectblockslow)
+                extract_benchmark_data
+                zcash_rpc zcbenchmark connectblockslow 10
+                ;;
             *)
                 zcashd_stop
                 echo "Bad arguments."
@@ -140,6 +166,10 @@ case "$1" in
                 ;;
             incnotewitnesses)
                 zcash_rpc zcbenchmark incnotewitnesses 1 "${@:3}"
+                ;;
+            connectblockslow)
+                extract_benchmark_data
+                zcash_rpc zcbenchmark connectblockslow 1
                 ;;
             *)
                 zcashd_massif_stop
@@ -175,6 +205,10 @@ case "$1" in
                 ;;
             incnotewitnesses)
                 zcash_rpc zcbenchmark incnotewitnesses 1 "${@:3}"
+                ;;
+            connectblockslow)
+                extract_benchmark_data
+                zcash_rpc zcbenchmark connectblockslow 1
                 ;;
             *)
                 zcashd_valgrind_stop
