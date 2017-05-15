@@ -125,6 +125,7 @@ BITCOIN_CORE_H = \
   core_io.h \
   core_memusage.h \
   eccryptoverify.h \
+  deprecation.h \
   ecwrapper.h \
   hash.h \
   httprpc.h \
@@ -215,6 +216,7 @@ libbitcoin_server_a_SOURCES = \
   bloom.cpp \
   chain.cpp \
   checkpoints.cpp \
+  deprecation.cpp \
   httprpc.cpp \
   httpserver.cpp \
   init.cpp \
