@@ -1687,11 +1687,12 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 
 bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, const Consensus::Params& consensusParams, std::vector<CScriptCheck> *pvChecks)
 {
-    if (!Consensus::CheckTxInputs(tx, state, inputs, GetSpendHeight(inputs), consensusParams))
-        return false;
-
     if (!tx.IsCoinBase())
     {
+        if (!Consensus::CheckTxInputs(tx, state, inputs, GetSpendHeight(inputs), consensusParams)) {
+            return false;
+        }
+
         if (pvChecks)
             pvChecks->reserve(tx.vin.size());
 
