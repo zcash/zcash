@@ -10,6 +10,7 @@ import subprocess
 import traceback
 import unittest
 import random
+from cStringIO import StringIO
 
 
 def main(args=sys.argv[1:]):
@@ -34,7 +35,9 @@ def main(args=sys.argv[1:]):
 # Top-level flow:
 def main_logged(release, releaseprev):
     verify_releaseprev_tag(releaseprev)
-    verify_git_clean_master()
+    initialize_git(release)
+    patch_version_in_files(release, releaseprev)
+
     raise NotImplementedError(main_logged)
 
 
@@ -81,7 +84,7 @@ def verify_releaseprev_tag(releaseprev):
         )
 
 
-def verify_git_clean_master():
+def initialize_git(release):
     junk = sh_out('git', 'status', '--porcelain')
     if junk.strip():
         raise SystemExit('There are uncommitted changes:\n' + junk)
@@ -94,8 +97,18 @@ def verify_git_clean_master():
             ),
         )
 
-    out = sh_out('git', 'pull', '--ff-only')
-    logging.debug('+ git pull --ff-only\n%s', out)
+    logging.info('Pulling to latest master.')
+    sh_out_logged('git', 'pull', '--ff-only')
+
+    branch = 'release-' + release.vtext
+    logging.info('Creating release branch: %r', branch)
+    sh_out_logged('git', 'checkout', '-b', branch)
+    return branch
+
+
+def patch_version_in_files(release, releaseprev):
+    patch_README(release, releaseprev)
+    patch_clientversion_h(release, releaseprev)
 
 
 # Helper code:
@@ -104,6 +117,36 @@ def chdir_to_repo(repo):
         dn = os.path.dirname
         repo = dn(dn(os.path.abspath(sys.argv[0])))
     os.chdir(repo)
+
+
+def patch_README(release, releaseprev):
+    with PathPatcher('README.md') as (inf, outf):
+        firstline = inf.readline()
+        assert firstline == 'Zcash {}\n'.format(releaseprev.novtext), \
+            repr(firstline)
+
+        outf.write('Zcash {}\n'.format(release.novtext))
+        outf.write(inf.read())
+
+
+def patch_clientversion_h(release, releaseprev):
+    rgx = re.compile(
+        r'^(#define CLIENT_VERSION_(MAJOR|MINOR|REVISION|BUILD)) \d+$'
+    )
+    with PathPatcher('src/clientversion.h') as (inf, outf):
+        for line in inf:
+            m = rgx.match(line)
+            if m:
+                prefix, label = m.groups()
+                repl = {
+                    'MAJOR': release.major,
+                    'MINOR': release.minor,
+                    'REVISION': release.patch,
+                    'BUILD': release.build,
+                }[label]
+                outf.write('{} {}\n'.format(prefix, repl))
+            else:
+                outf.write(line)
 
 
 def initialize_logging():
@@ -132,6 +175,12 @@ def initialize_logging():
 def sh_out(*args):
     logging.debug('Run: %r', args)
     return subprocess.check_output(args)
+
+
+def sh_out_logged(*args):
+    out = sh_out(*args)
+    logging.debug('Output:\n%s', out)
+    return out
 
 
 class Version (object):
@@ -175,12 +224,22 @@ class Version (object):
         self.betarc = betarc
         self.hotfix = hotfix
 
-        self.vtext = 'v{}.{}.{}'.format(major, minor, patch)
-        if hotfix is not None:
-            self.vtext += '-{}{}'.format(
-                '' if betarc is None else betarc,
-                hotfix,
-            )
+        self.novtext = '{}.{}.{}'.format(major, minor, patch)
+
+        if hotfix is None:
+            self.build = 50
+        else:
+            assert hotfix > 0, hotfix
+            if betarc is None:
+                assert hotfix < 50, hotfix
+                self.build = 50 + hotfix
+                self.novtext += '-{}'.format(hotfix)
+            else:
+                assert hotfix < 26, hotfix
+                self.novtext += '-{}{}'.format(betarc, hotfix)
+                self.build = {'beta': 0, 'rc': 25}[betarc] + hotfix - 1
+
+        self.vtext = 'v' + self.novtext
 
     def __repr__(self):
         return '<Version {}>'.format(self.vtext)
@@ -203,26 +262,49 @@ class Version (object):
         return cmp(self._sort_tup(), other._sort_tup())
 
 
+class PathPatcher (object):
+    def __init__(self, path):
+        self._path = path
+
+    def __enter__(self):
+        logging.info('Patching %r', self._path)
+        self._inf = file(self._path, 'r')
+        self._outf = StringIO()
+        return (self._inf, self._outf)
+
+    def __exit__(self, et, ev, tb):
+        if (et, ev, tb) == (None, None, None):
+            self._inf.close()
+            with file(self._path, 'w') as f:
+                f.write(self._outf.getvalue())
+
+
 # Unit Tests
 class TestVersion (unittest.TestCase):
-    ValidVersions = [
+    ValidVersionsAndBuilds = [
         # These are taken from: git tag --list | grep '^v1'
-        'v1.0.0-beta1',
-        'v1.0.0-beta2',
-        'v1.0.0-rc1',
-        'v1.0.0-rc2',
-        'v1.0.0-rc3',
-        'v1.0.0-rc4',
-        'v1.0.0',
-        'v1.0.1',
-        'v1.0.2',
-        'v1.0.3',
-        'v1.0.4',
-        'v1.0.5',
-        'v1.0.6',
-        'v1.0.7-1',
-        'v1.0.8',
-        'v1.0.8-1',
+        ('v1.0.0-beta1', 0),
+        ('v1.0.0-beta2', 1),
+        ('v1.0.0-rc1', 25),
+        ('v1.0.0-rc2', 26),
+        ('v1.0.0-rc3', 27),
+        ('v1.0.0-rc4', 28),
+        ('v1.0.0', 50),
+        ('v1.0.1', 50),
+        ('v1.0.2', 50),
+        ('v1.0.3', 50),
+        ('v1.0.4', 50),
+        ('v1.0.5', 50),
+        ('v1.0.6', 50),
+        ('v1.0.7-1', 51),
+        ('v1.0.8', 50),
+        ('v1.0.8-1', 51),
+    ]
+
+    ValidVersions = [
+        v
+        for (v, _)
+        in ValidVersionsAndBuilds
     ]
 
     def test_arg_parse_and_vtext_identity(self):
@@ -258,6 +340,11 @@ class TestVersion (unittest.TestCase):
             rng.shuffle(vec)
             vec.sort()
             self.assertEqual(vec, expected)
+
+    def test_build_nums(self):
+        for (text, expected) in self.ValidVersionsAndBuilds:
+            version = Version.parse_arg(text)
+            self.assertEqual(version.build, expected)
 
 
 if __name__ == '__main__':
