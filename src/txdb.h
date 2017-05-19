@@ -31,6 +31,7 @@ class CCoinsViewDB : public CCoinsView
 {
 protected:
     CLevelDBWrapper db;
+    CCoinsViewDB(std::string dbName, size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 public:
     CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 
