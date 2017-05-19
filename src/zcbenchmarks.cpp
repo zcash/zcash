@@ -542,7 +542,7 @@ double benchmark_connectblock_slow()
 
     // Undo alterations to global state
     mapBlockIndex.erase(hashPrev);
-    SelectParamsFromCommandLine();
+    SelectParams(ChainNameFromCommandLine());
 
     return duration;
 }
