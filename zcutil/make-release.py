@@ -251,10 +251,16 @@ class TestVersion (unittest.TestCase):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) >= 2 and sys.argv[1] == 'test':
-        sys.argv.pop(1)
-        if len(sys.argv) == 1:
-            sys.argv.append('--verbose')
+    actualargs = sys.argv
+    sys.argv = [sys.argv[0], '--verbose']
+
+    print '=== Self Test ==='
+    try:
         unittest.main()
-    else:
-        main()
+    except SystemExit as e:
+        if e.args[0] != 0:
+            raise
+
+    sys.argv = actualargs
+    print '=== Running ==='
+    main()
