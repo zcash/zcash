@@ -108,7 +108,8 @@ def initialize_git(release):
 
 def patch_version_in_files(release, releaseprev):
     patch_README(release, releaseprev)
-    patch_clientversion_h(release, releaseprev)
+    patch_clientversion_h(release)
+    patch_configure_ac(release)
 
 
 # Helper code:
@@ -129,16 +130,31 @@ def patch_README(release, releaseprev):
         outf.write(inf.read())
 
 
-def patch_clientversion_h(release, releaseprev):
-    rgx = re.compile(
-        r'^(#define CLIENT_VERSION_(MAJOR|MINOR|REVISION|BUILD|IS_RELEASE))'
-        r' \d+$'
+def patch_clientversion_h(release):
+    _patch_build_defs(
+        release,
+        'src/clientversion.h',
+        (r'^(#define CLIENT_VERSION_(MAJOR|MINOR|REVISION|BUILD|IS_RELEASE))'
+         r' \d+()$'),
     )
-    with PathPatcher('src/clientversion.h') as (inf, outf):
+
+
+def patch_configure_ac(release):
+    _patch_build_defs(
+        release,
+        'configure.ac',
+        (r'^(define\(_CLIENT_VERSION_(MAJOR|MINOR|REVISION|BUILD|IS_RELEASE),)'
+         r' \d+(\))$'),
+    )
+
+
+def _patch_build_defs(release, path, pattern):
+    rgx = re.compile(pattern)
+    with PathPatcher(path) as (inf, outf):
         for line in inf:
             m = rgx.match(line)
             if m:
-                prefix, label = m.groups()
+                prefix, label, suffix = m.groups()
                 repl = {
                     'MAJOR': release.major,
                     'MINOR': release.minor,
@@ -148,7 +164,7 @@ def patch_clientversion_h(release, releaseprev):
                         'false' if release.betarc == 'beta' else 'true'
                     ),
                 }[label]
-                outf.write('{} {}\n'.format(prefix, repl))
+                outf.write('{} {}{}\n'.format(prefix, repl, suffix))
             else:
                 outf.write(line)
 
