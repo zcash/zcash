@@ -28,7 +28,7 @@ def main(args=sys.argv[1:]):
         raise SystemExit(1)
     except:
         logging.error(traceback.format_exc())
-        raise
+        raise SystemExit(2)
 
 
 # Top-level flow:
