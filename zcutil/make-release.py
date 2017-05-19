@@ -63,7 +63,7 @@ class Version (object):
     '''A release version.'''
 
     RGX = re.compile(
-        r'^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-([1-9]\d*))?$',
+        r'^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-(beta|rc)?([1-9]\d*))?$',
     )
 
     @staticmethod
@@ -77,23 +77,33 @@ class Version (object):
                 ),
             )
         else:
-            [major, minor, patch, _, hotfix] = m.groups()
+            [major, minor, patch, _, betarc, hotfix] = m.groups()
             return Version(
                 int(major),
                 int(minor),
                 int(patch),
+                betarc,
                 int(hotfix) if hotfix is not None else None,
             )
 
-    def __init__(self, major, minor, patch, hotfix):
+    def __init__(self, major, minor, patch, betarc, hotfix):
+        for i in [major, minor, patch]:
+            assert type(i) is int, i
+        assert betarc in {None, 'rc', 'beta'}, betarc
+        assert hotfix is None or type(hotfix) is int, hotfix
+
         self.major = major
         self.minor = minor
         self.patch = patch
+        self.betarc = betarc
         self.hotfix = hotfix
 
         self.vtext = 'v{}.{}.{}'.format(major, minor, patch)
         if hotfix is not None:
-            self.vtext += '-{}'.format(hotfix)
+            self.vtext += '-{}{}'.format(
+                '' if betarc is None else betarc,
+                hotfix,
+            )
 
     def __repr__(self):
         return '<Version {}>'.format(self.vtext)
@@ -135,7 +145,6 @@ class TestVersion (unittest.TestCase):
         cases = [
             'v07.0.0',
             'v1.0.03',
-            'v1.0.0-rc2',
             'v1.2.3-0',  # Hotfix numbers must begin w/ 1
             'v1.2.3~0',
             'v1.2.3+0',
