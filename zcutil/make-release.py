@@ -6,7 +6,10 @@ import sys
 import time
 import logging
 import argparse
+import subprocess
+import traceback
 import unittest
+import random
 
 
 def main(args=sys.argv[1:]):
@@ -17,9 +20,61 @@ def main(args=sys.argv[1:]):
     opts = parse_args(args)
     initialize_logging()
     logging.debug('argv %r parsed %r', sys.argv, opts)
-    raise NotImplementedError((main, opts))
+
+    try:
+        main_logged(opts.RELEASE_VERSION, opts.RELEASE_PREV)
+    except SystemExit as e:
+        logging.error(str(e))
+        raise
+    except:
+        logging.error(traceback.format_exc())
+        raise
 
 
+# Top-level flow:
+def main_logged(release, releaseprev):
+    verify_releaseprev_tag(releaseprev)
+    raise NotImplementedError(main_logged)
+
+
+def parse_args(args):
+    p = argparse.ArgumentParser(description=main.__doc__)
+    p.add_argument(
+        'RELEASE_VERSION',
+        type=Version.parse_arg,
+        help='The release version: vX.Y.Z-N',
+    )
+    p.add_argument(
+        'RELEASE_PREV',
+        type=Version.parse_arg,
+        help='The previously released version.',
+    )
+    return p.parse_args(args)
+
+
+def verify_releaseprev_tag(releaseprev):
+    candidates = []
+    for tag in sh_out('git', 'tag', '--list').splitlines():
+        if tag.startswith('v1'):  # Ignore v0.* bitcoin tags and other stuff.
+            candidates.append(Version.parse_arg(tag))
+
+    candidates.sort()
+    try:
+        latest = candidates[-1]
+    except IndexError:
+        raise SystemExit('No previous releases found by `git tag --list`.')
+
+    if releaseprev != latest:
+        raise SystemExit(
+            'The latest candidate in `git tag --list` is {} not {}'
+            .format(
+                latest.vtext,
+                releaseprev.vtext,
+            ),
+        )
+
+
+# Helper code:
 def chdir_to_repo():
     dn = os.path.dirname
     repodir = dn(dn(os.path.abspath(sys.argv[0])))
@@ -49,14 +104,9 @@ def initialize_logging():
     logging.info('zcash make-release.py logging to: %r', logname)
 
 
-def parse_args(args):
-    p = argparse.ArgumentParser(description=main.__doc__)
-    p.add_argument(
-        'RELEASE_VERSION',
-        type=Version.parse_arg,
-        help='The release version: vX.Y.Z-N',
-    )
-    return p.parse_args(args)
+def sh_out(*args):
+    logging.debug('Run: %r', args)
+    return subprocess.check_output(args)
 
 
 class Version (object):
@@ -91,6 +141,8 @@ class Version (object):
             assert type(i) is int, i
         assert betarc in {None, 'rc', 'beta'}, betarc
         assert hotfix is None or type(hotfix) is int, hotfix
+        if betarc is not None:
+            assert hotfix is not None, (betarc, hotfix)
 
         self.major = major
         self.minor = minor
@@ -108,36 +160,48 @@ class Version (object):
     def __repr__(self):
         return '<Version {}>'.format(self.vtext)
 
+    def _sort_tup(self):
+        if self.hotfix is None:
+            prio = 2
+        else:
+            prio = {'beta': 0, 'rc': 1, None: 3}[self.betarc]
+
+        return (
+            self.major,
+            self.minor,
+            self.patch,
+            prio,
+            self.hotfix,
+        )
+
+    def __cmp__(self, other):
+        return cmp(self._sort_tup(), other._sort_tup())
+
 
 # Unit Tests
 class TestVersion (unittest.TestCase):
+    ValidVersions = [
+        # These are taken from: git tag --list | grep '^v1'
+        'v1.0.0-beta1',
+        'v1.0.0-beta2',
+        'v1.0.0-rc1',
+        'v1.0.0-rc2',
+        'v1.0.0-rc3',
+        'v1.0.0-rc4',
+        'v1.0.0',
+        'v1.0.1',
+        'v1.0.2',
+        'v1.0.3',
+        'v1.0.4',
+        'v1.0.5',
+        'v1.0.6',
+        'v1.0.7-1',
+        'v1.0.8',
+        'v1.0.8-1',
+    ]
+
     def test_arg_parse_and_vtext_identity(self):
-        cases = [
-            'v0.0.0',
-            'v1.0.0',
-            'v1.0.0-7',
-            'v1.2.3-1',
-
-            # These are taken from: git tag --list | grep '^v1'
-            'v1.0.0',
-            'v1.0.0-beta1',
-            'v1.0.0-beta2',
-            'v1.0.0-rc1',
-            'v1.0.0-rc2',
-            'v1.0.0-rc3',
-            'v1.0.0-rc4',
-            'v1.0.1',
-            'v1.0.2',
-            'v1.0.3',
-            'v1.0.4',
-            'v1.0.5',
-            'v1.0.6',
-            'v1.0.7-1',
-            'v1.0.8',
-            'v1.0.8-1',
-        ]
-
-        for case in cases:
+        for case in self.ValidVersions:
             v = Version.parse_arg(case)
             self.assertEqual(v.vtext, case)
 
@@ -157,6 +221,18 @@ class TestVersion (unittest.TestCase):
                 Version.parse_arg,
                 case,
             )
+
+    def test_version_sort(self):
+        expected = [Version.parse_arg(v) for v in self.ValidVersions]
+
+        rng = random.Random()
+        rng.seed(0)
+
+        for _ in range(1024):
+            vec = list(expected)
+            rng.shuffle(vec)
+            vec.sort()
+            self.assertEqual(vec, expected)
 
 
 if __name__ == '__main__':
