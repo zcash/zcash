@@ -18,6 +18,7 @@ if [ ! -d $BUILD_PATH ]; then
 fi
 
 PACKAGE_VERSION=$($SRC_PATH/src/zcashd --version | grep version | cut -d' ' -f4 | tr -d v)
+DEBVERSION=$(echo $PACKAGE_VERSION | sed 's/-beta/~beta/' | sed 's/-rc/~rc/' | sed 's/-/+/')
 BUILD_DIR="$BUILD_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64"
 
 if [ -d $BUILD_DIR ]; then
@@ -63,7 +64,7 @@ cd $SRC_PATH/contrib
 
 # Create the control file
 dpkg-shlibdeps $DEB_BIN/zcashd $DEB_BIN/zcash-cli
-dpkg-gencontrol -P$BUILD_DIR
+dpkg-gencontrol -P$BUILD_DIR -v$DEBVERSION
 
 # Create the Debian package
 fakeroot dpkg-deb --build $BUILD_DIR
