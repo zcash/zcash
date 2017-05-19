@@ -94,6 +94,9 @@ def verify_git_clean_master():
             ),
         )
 
+    out = sh_out('git', 'pull', '--ff-only')
+    logging.debug('+ git pull --ff-only\n%s', out)
+
 
 # Helper code:
 def chdir_to_repo(repo):
