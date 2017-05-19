@@ -63,7 +63,7 @@ class Version (object):
     '''A release version.'''
 
     RGX = re.compile(
-        r'^v([1-9]\d*)\.([1-9]\d*)\.([1-9]\d*)(-([1-9]\d*))?$',
+        r'^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-([1-9]\d*))?$',
     )
 
     @staticmethod
@@ -106,7 +106,7 @@ class TestVersion (unittest.TestCase):
             'v0.0.0',
             'v1.0.0',
             'v1.0.0-7',
-            'v1.2.3-0',
+            'v1.2.3-1',
         ]
 
         for case in cases:
@@ -118,6 +118,7 @@ class TestVersion (unittest.TestCase):
             'v07.0.0',
             'v1.0.03',
             'v1.0.0-rc2',
+            'v1.2.3-0',  # Hotfix numbers must begin w/ 1
             'v1.2.3~0',
             '1.2.3',
         ]
