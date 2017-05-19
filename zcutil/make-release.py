@@ -16,8 +16,8 @@ def main(args=sys.argv[1:]):
     """
     Perform the final Zcash release process up to the git tag.
     """
-    chdir_to_repo()
     opts = parse_args(args)
+    chdir_to_repo(opts.REPO)
     initialize_logging()
     logging.debug('argv %r parsed %r', sys.argv, opts)
 
@@ -40,6 +40,12 @@ def main_logged(release, releaseprev):
 
 def parse_args(args):
     p = argparse.ArgumentParser(description=main.__doc__)
+    p.add_argument(
+        '--repo',
+        dest='REPO',
+        type=str,
+        help='Path to repository root.',
+    )
     p.add_argument(
         'RELEASE_VERSION',
         type=Version.parse_arg,
@@ -90,10 +96,11 @@ def verify_git_clean_master():
 
 
 # Helper code:
-def chdir_to_repo():
-    dn = os.path.dirname
-    repodir = dn(dn(os.path.abspath(sys.argv[0])))
-    os.chdir(repodir)
+def chdir_to_repo(repo):
+    if repo is None:
+        dn = os.path.dirname
+        repo = dn(dn(os.path.abspath(sys.argv[0])))
+    os.chdir(repo)
 
 
 def initialize_logging():
