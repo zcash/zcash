@@ -131,7 +131,8 @@ def patch_README(release, releaseprev):
 
 def patch_clientversion_h(release, releaseprev):
     rgx = re.compile(
-        r'^(#define CLIENT_VERSION_(MAJOR|MINOR|REVISION|BUILD)) \d+$'
+        r'^(#define CLIENT_VERSION_(MAJOR|MINOR|REVISION|BUILD|IS_RELEASE))'
+        r' \d+$'
     )
     with PathPatcher('src/clientversion.h') as (inf, outf):
         for line in inf:
@@ -143,6 +144,9 @@ def patch_clientversion_h(release, releaseprev):
                     'MINOR': release.minor,
                     'REVISION': release.patch,
                     'BUILD': release.build,
+                    'IS_RELEASE': (
+                        'false' if release.betarc == 'beta' else 'true'
+                    ),
                 }[label]
                 outf.write('{} {}\n'.format(prefix, repl))
             else:
