@@ -25,7 +25,7 @@ def main(args=sys.argv[1:]):
         main_logged(opts.RELEASE_VERSION, opts.RELEASE_PREV)
     except SystemExit as e:
         logging.error(str(e))
-        raise
+        raise SystemExit(1)
     except:
         logging.error(traceback.format_exc())
         raise
@@ -34,6 +34,7 @@ def main(args=sys.argv[1:]):
 # Top-level flow:
 def main_logged(release, releaseprev):
     verify_releaseprev_tag(releaseprev)
+    verify_git_clean_master()
     raise NotImplementedError(main_logged)
 
 
@@ -70,6 +71,20 @@ def verify_releaseprev_tag(releaseprev):
             .format(
                 latest.vtext,
                 releaseprev.vtext,
+            ),
+        )
+
+
+def verify_git_clean_master():
+    junk = sh_out('git', 'status', '--porcelain')
+    if junk.strip():
+        raise SystemExit('There are uncommitted changes:\n' + junk)
+
+    branch = sh_out('git', 'rev-parse', '--abbrev-ref', 'HEAD').strip()
+    if branch != 'master':
+        raise SystemExit(
+            "Expected branch 'master', found branch {!r}".format(
+                branch,
             ),
         )
 
