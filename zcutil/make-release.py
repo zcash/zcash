@@ -120,6 +120,7 @@ class TestVersion (unittest.TestCase):
             'v1.0.0-rc2',
             'v1.2.3-0',  # Hotfix numbers must begin w/ 1
             'v1.2.3~0',
+            'v1.2.3+0',
             '1.2.3',
         ]
 
