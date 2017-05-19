@@ -11,6 +11,9 @@
 #include "chainparams.h"
 #include "consensus/consensus.h"
 #include "consensus/validation.h"
+#ifdef ENABLE_MINING
+#include "crypto/equihash.h"
+#endif
 #include "key.h"
 #include "main.h"
 #include "miner.h"
@@ -149,6 +152,7 @@ TestingSetup::~TestingSetup()
         boost::filesystem::remove_all(pathTemp);
 }
 
+#ifdef ENABLE_MINING
 TestChain100Setup::TestChain100Setup() : TestingSetup(CBaseChainParams::REGTEST)
 {
     // Generate a 100-block chain:
@@ -170,6 +174,9 @@ CBlock
 TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>& txns, const CScript& scriptPubKey)
 {
     const CChainParams& chainparams = Params();
+    unsigned int n = chainparams.GetConsensus().nEquihashN;
+    unsigned int k = chainparams.GetConsensus().nEquihashK;
+
     CBlockTemplate *pblocktemplate = CreateNewBlock(chainparams, scriptPubKey);
     CBlock& block = pblocktemplate->block;
 
@@ -181,9 +188,37 @@ TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>&
     unsigned int extraNonce = 0;
     IncrementExtraNonce(&block, chainActive.Tip(), extraNonce);
 
-    while (!CheckProofOfWork(block.GetHash(), block.nBits, chainparams.GetConsensus())) {
+    // Hash state
+    crypto_generichash_blake2b_state eh_state;
+    EhInitialiseState(n, k, eh_state);
+
+    // I = the block header minus nonce and solution.
+    CEquihashInput I{block};
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << I;
+
+    // H(I||...
+    crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
+
+    bool found = false;
+    do {
         block.nNonce = ArithToUint256(UintToArith256(block.nNonce) + 1);
-    }
+
+        // H(I||V||...
+        crypto_generichash_blake2b_state curr_state;
+        curr_state = eh_state;
+        crypto_generichash_blake2b_update(&curr_state,
+                                          block.nNonce.begin(),
+                                          block.nNonce.size());
+
+        // (x_1, x_2, ...) = A(I, V, n, k)
+        std::function<bool(std::vector<unsigned char>)> validBlock =
+                [&block, &chainparams](std::vector<unsigned char> soln) {
+            block.nSolution = soln;
+            return CheckProofOfWork(block.GetHash(), block.nBits, chainparams.GetConsensus());
+        };
+        found = EhBasicSolveUncancellable(n, k, curr_state, validBlock);
+    } while (!found);
 
     CValidationState state;
     ProcessNewBlock(state, chainparams, NULL, &block, true, NULL);
@@ -196,6 +231,7 @@ TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>&
 TestChain100Setup::~TestChain100Setup()
 {
 }
+#endif // ENABLE_MINING
 
 
 CTxMemPoolEntry TestMemPoolEntryHelper::FromTx(CMutableTransaction &tx, CTxMemPool *pool) {

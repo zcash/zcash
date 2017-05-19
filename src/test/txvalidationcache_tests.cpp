@@ -26,6 +26,7 @@ ToMemPool(CMutableTransaction& tx)
     return AcceptToMemoryPool(mempool, state, tx, false, NULL, false);
 }
 
+#ifdef ENABLE_MINING
 BOOST_FIXTURE_TEST_CASE(tx_mempool_block_doublespend, TestChain100Setup)
 {
     // Make sure skipping validation of transctions that were
@@ -82,5 +83,6 @@ BOOST_FIXTURE_TEST_CASE(tx_mempool_block_doublespend, TestChain100Setup)
     // block with spends[0] is accepted:
     BOOST_CHECK_EQUAL(mempool.size(), 0);
 }
+#endif // ENABLE_MINING
 
 BOOST_AUTO_TEST_SUITE_END()
