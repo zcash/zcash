@@ -66,14 +66,14 @@ function zcashd_valgrind_stop {
 }
 
 function extract_benchmark_data {
-    if [ -f "block-107134.tar.gz" ]; then
+    if [ -f "block-107134.tar.xz" ]; then
         # Check the hash of the archive:
         "$SHA256CMD" $SHA256ARGS -c <<EOF
-299a36b3445a9a0631eb9eb0b9e76c3e9e7493a98d6621ffd6dc362d3d86cbe8  block-107134.tar.gz
+4bd5ad1149714394e8895fa536725ed5d6c32c99812b962bfa73f03b5ffad4bb  block-107134.tar.xz
 EOF
         ARCHIVE_RESULT=$?
     else
-        echo "block-107134.tar.gz not found."
+        echo "block-107134.tar.xz not found."
         ARCHIVE_RESULT=1
     fi
     if [ $ARCHIVE_RESULT -ne 0 ]; then
@@ -84,7 +84,7 @@ EOF
         echo "Usage details are inside the Python script."
         exit 1
     fi
-    tar xzf block-107134.tar.gz -C "$DATADIR/regtest"
+    xzcat block-107134.tar.xz | tar x -C "$DATADIR/regtest"
 }
 
 # Precomputation
