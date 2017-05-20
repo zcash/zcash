@@ -43,6 +43,15 @@ def main_logged(release, releaseprev, releaseheight):
     patch_version_in_files(release, releaseprev)
     patch_release_height(releaseheight)
 
+    logging.info('Committing version changes.')
+    sh_log(
+        'git',
+        'commit',
+        '--all',
+        '-m', 'make-release.py versioning changes.',
+    )
+
+    build()
     raise NotImplementedError(main_logged)
 
 
@@ -141,6 +150,12 @@ def patch_release_height(releaseheight):
                         suffix,
                     ),
                 )
+
+
+def build():
+    logging.info('Building...')
+    nproc = sh_out('nproc').strip()
+    sh_log('./zcutil/build.sh', '-j', nproc)
 
 
 # Helper code:
