@@ -3,7 +3,6 @@
 import os
 import re
 import sys
-import time
 import logging
 import argparse
 import subprocess
@@ -236,11 +235,10 @@ def _patch_build_defs(release, path, pattern):
 
 
 def initialize_logging():
-    TIME_FMT = '%Y-%m-%dT%H:%M:%S'
-    logname = './zcash-make-release.{}.log'.format(time.strftime(TIME_FMT))
+    logname = './zcash-make-release.log'
     fmtr = logging.Formatter(
         '%(asctime)s L%(lineno)-4d %(levelname)-5s | %(message)s',
-        TIME_FMT,
+        '%Y-%m-%d %H:%M:%S'
     )
 
     hout = logging.StreamHandler(sys.stdout)
@@ -255,7 +253,7 @@ def initialize_logging():
     root.setLevel(logging.DEBUG)
     root.addHandler(hout)
     root.addHandler(hpath)
-    logging.info('zcash make-release.py logging to: %r', logname)
+    logging.info('zcash make-release.py debug log: %r', logname)
 
 
 def sh_out(*args):
