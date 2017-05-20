@@ -23,7 +23,11 @@ def main(args=sys.argv[1:]):
     logging.debug('argv %r parsed %r', sys.argv, opts)
 
     try:
-        main_logged(opts.RELEASE_VERSION, opts.RELEASE_PREV)
+        main_logged(
+            opts.RELEASE_VERSION,
+            opts.RELEASE_PREV,
+            opts.RELEASE_HEIGHT,
+        )
     except SystemExit as e:
         logging.error(str(e))
         raise SystemExit(1)
@@ -33,10 +37,11 @@ def main(args=sys.argv[1:]):
 
 
 # Top-level flow:
-def main_logged(release, releaseprev):
+def main_logged(release, releaseprev, releaseheight):
     verify_releaseprev_tag(releaseprev)
     initialize_git(release)
     patch_version_in_files(release, releaseprev)
+    patch_release_height(releaseheight)
 
     raise NotImplementedError(main_logged)
 
@@ -58,6 +63,11 @@ def parse_args(args):
         'RELEASE_PREV',
         type=Version.parse_arg,
         help='The previously released version.',
+    )
+    p.add_argument(
+        'RELEASE_HEIGHT',
+        type=int,
+        help='A block height approximately occuring on release day.',
     )
     return p.parse_args(args)
 
@@ -110,6 +120,27 @@ def patch_version_in_files(release, releaseprev):
     patch_README(release, releaseprev)
     patch_clientversion_h(release)
     patch_configure_ac(release)
+    patch_gitian_linux_yml(release, releaseprev)
+
+
+def patch_release_height(releaseheight):
+    rgx = re.compile(
+        r'^(static const int APPROX_RELEASE_HEIGHT = )\d+(;)$',
+    )
+    with PathPatcher('src/deprecation.h') as (inf, outf):
+        for line in inf:
+            m = rgx.match(line)
+            if m is None:
+                outf.write(line)
+            else:
+                [prefix, suffix] = m.groups()
+                outf.write(
+                    '{}{}{}\n'.format(
+                        prefix,
+                        releaseheight,
+                        suffix,
+                    ),
+                )
 
 
 # Helper code:
@@ -146,6 +177,20 @@ def patch_configure_ac(release):
         (r'^(define\(_CLIENT_VERSION_(MAJOR|MINOR|REVISION|BUILD|IS_RELEASE),)'
          r' \d+(\))$'),
     )
+
+
+def patch_gitian_linux_yml(release, releaseprev):
+    path = 'contrib/gitian-descriptors/gitian-linux.yml'
+    with PathPatcher(path) as (inf, outf):
+        outf.write(inf.readline())
+
+        secondline = inf.readline()
+        assert secondline == 'name: "zcash-{}"\n'.format(
+            releaseprev.novtext
+        ), repr(secondline)
+
+        outf.write('name: "zcash-{}"\n'.format(release.novtext))
+        outf.write(inf.read())
 
 
 def _patch_build_defs(release, path, pattern):
