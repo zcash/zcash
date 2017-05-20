@@ -108,11 +108,11 @@ def initialize_git(release):
         )
 
     logging.info('Pulling to latest master.')
-    sh_out_logged('git', 'pull', '--ff-only')
+    sh_log('git', 'pull', '--ff-only')
 
     branch = 'release-' + release.vtext
     logging.info('Creating release branch: %r', branch)
-    sh_out_logged('git', 'checkout', '-b', branch)
+    sh_log('git', 'checkout', '-b', branch)
     return branch
 
 
@@ -238,14 +238,19 @@ def initialize_logging():
 
 
 def sh_out(*args):
-    logging.debug('Run: %r', args)
+    logging.debug('Run (out): %r', args)
     return subprocess.check_output(args)
 
 
-def sh_out_logged(*args):
-    out = sh_out(*args)
-    logging.debug('Output:\n%s', out)
-    return out
+def sh_log(*args):
+    logging.debug('Run (log): %r', args)
+    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    logging.debug('PID: %r', p.pid)
+    for line in p.stdout:
+        logging.debug('> %s', line.rstrip())
+    status = p.wait()
+    if status != 0:
+        raise SystemExit('Nonzero exit status: {!r}'.format(status))
 
 
 class Version (object):
