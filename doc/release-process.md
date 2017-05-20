@@ -31,14 +31,6 @@ Example:
 
     $ ./zcutil/make-release.py v1.0.8-1 v1.0.9
 
-Build by running `./zcutil/build.sh`.
-
-Then perform the following command:
-
-    $ bash contrib/devtools/gen-manpages.sh
-
-Commit the changes.
-
 ### B3. Generate release notes
 
 Run the release-notes.py script to generate release notes and update authors.md file. For example:

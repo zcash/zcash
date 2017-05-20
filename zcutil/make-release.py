@@ -42,16 +42,11 @@ def main_logged(release, releaseprev, releaseheight):
     initialize_git(release)
     patch_version_in_files(release, releaseprev)
     patch_release_height(releaseheight)
-
-    logging.info('Committing version changes.')
-    sh_log(
-        'git',
-        'commit',
-        '--all',
-        '-m', 'make-release.py versioning changes.',
-    )
+    commit('Versioning changes.')
 
     build()
+    gen_manpages()
+    commit('Updated manpages.')
     raise NotImplementedError(main_logged)
 
 
@@ -158,7 +153,18 @@ def build():
     sh_log('./zcutil/build.sh', '-j', nproc)
 
 
+def gen_manpages():
+    logging.info('Generating manpages.')
+    sh_log('./contrib/devtools/gen-manpages.sh')
+
+
 # Helper code:
+def commit(message):
+    logging.info('Committing: %r', message)
+    fullmsg = 'make-release.py: {}'.format(message)
+    sh_log('git', 'commit', '--all', '-m', fullmsg)
+
+
 def chdir_to_repo(repo):
     if repo is None:
         dn = os.path.dirname
@@ -258,9 +264,14 @@ def sh_out(*args):
 
 
 def sh_log(*args):
-    logging.debug('Run (log): %r', args)
-    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    logging.debug('PID: %r', p.pid)
+    PIPE = subprocess.PIPE
+    try:
+        p = subprocess.Popen(args, stdout=PIPE, stderr=PIPE)
+    except OSError:
+        logging.error('Error launching %r...', args)
+        raise
+
+    logging.debug('Run (log PID %r): %r', p.pid, args)
     for line in p.stdout:
         logging.debug('> %s', line.rstrip())
     status = p.wait()
