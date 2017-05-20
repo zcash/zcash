@@ -10,6 +10,7 @@ import traceback
 import unittest
 import random
 from cStringIO import StringIO
+from functools import wraps
 
 
 def main(args=sys.argv[1:]):
@@ -33,20 +34,6 @@ def main(args=sys.argv[1:]):
     except:
         logging.error(traceback.format_exc())
         raise SystemExit(2)
-
-
-# Top-level flow:
-def main_logged(release, releaseprev, releaseheight):
-    verify_releaseprev_tag(releaseprev)
-    initialize_git(release)
-    patch_version_in_files(release, releaseprev)
-    patch_release_height(releaseheight)
-    commit('Versioning changes.')
-
-    build()
-    gen_manpages()
-    commit('Updated manpages.')
-    raise NotImplementedError(main_logged)
 
 
 def parse_args(args):
@@ -75,6 +62,32 @@ def parse_args(args):
     return p.parse_args(args)
 
 
+# Top-level flow:
+def main_logged(release, releaseprev, releaseheight):
+    verify_releaseprev_tag(releaseprev)
+    initialize_git(release)
+    patch_version_in_files(release, releaseprev)
+    patch_release_height(releaseheight)
+    commit('Versioning changes.')
+
+    build()
+    gen_manpages()
+    commit('Updated manpages.')
+
+    raise NotImplementedError(main_logged)
+
+
+def phase(message):
+    def deco(f):
+        @wraps(f)
+        def g(*a, **kw):
+            logging.info('%s', message)
+            return f(*a, **kw)
+        return g
+    return deco
+
+
+@phase('Checking RELEASE_PREV tag.')
 def verify_releaseprev_tag(releaseprev):
     candidates = []
     for tag in sh_out('git', 'tag', '--list').splitlines():
@@ -97,6 +110,7 @@ def verify_releaseprev_tag(releaseprev):
         )
 
 
+@phase('Initializing git.')
 def initialize_git(release):
     junk = sh_out('git', 'status', '--porcelain')
     if junk.strip():
@@ -119,6 +133,7 @@ def initialize_git(release):
     return branch
 
 
+@phase('Patching versioning in files.')
 def patch_version_in_files(release, releaseprev):
     patch_README(release, releaseprev)
     patch_clientversion_h(release)
@@ -126,6 +141,7 @@ def patch_version_in_files(release, releaseprev):
     patch_gitian_linux_yml(release, releaseprev)
 
 
+@phase('Patching release height for auto-senescence.')
 def patch_release_height(releaseheight):
     rgx = re.compile(
         r'^(static const int APPROX_RELEASE_HEIGHT = )\d+(;)$',
@@ -146,14 +162,14 @@ def patch_release_height(releaseheight):
                 )
 
 
+@phase('Building...')
 def build():
-    logging.info('Building...')
     nproc = sh_out('nproc').strip()
     sh_log('./zcutil/build.sh', '-j', nproc)
 
 
+@phase('Generating manpages.')
 def gen_manpages():
-    logging.info('Generating manpages.')
     sh_log('./contrib/devtools/gen-manpages.sh')
 
 
@@ -361,7 +377,7 @@ class PathPatcher (object):
         self._path = path
 
     def __enter__(self):
-        logging.info('Patching %r', self._path)
+        logging.debug('Patching %r', self._path)
         self._inf = file(self._path, 'r')
         self._outf = StringIO()
         return (self._inf, self._outf)
