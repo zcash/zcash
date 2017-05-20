@@ -20,7 +20,7 @@ def main(args=sys.argv[1:]):
     opts = parse_args(args)
     chdir_to_repo(opts.REPO)
     initialize_logging()
-    logging.debug('argv %r parsed %r', sys.argv, opts)
+    logging.debug('argv %r', sys.argv)
 
     try:
         main_logged(
