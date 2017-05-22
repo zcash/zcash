@@ -74,7 +74,9 @@ def main_logged(release, releaseprev, releaseheight):
     gen_manpages()
     commit('Updated manpages.')
 
-    raise NotImplementedError(main_logged)
+    gen_release_notes(release)
+    update_debian_changelog(release)
+    commit('Updated release notes and changelog.')
 
 
 def phase(message):
@@ -171,6 +173,30 @@ def build():
 @phase('Generating manpages.')
 def gen_manpages():
     sh_log('./contrib/devtools/gen-manpages.sh')
+
+
+@phase('Generating release notes.')
+def gen_release_notes(release):
+    sh_log('python', './zcutil/release-notes.py', '--version', release.novtext)
+    sh_log(
+        'git',
+        'add',
+        './doc/authors.md',
+        './doc/release-notes/release-notes-{}.md'.format(release.novtext),
+    )
+
+
+@phase('Updating debian changelog.')
+def update_debian_changelog(release):
+    os.environ['DEBEMAIL'] = 'team@z.cash'
+    os.environ['DEBFULLNAME'] = 'Zcash Company'
+    sh_log(
+        'debchange',
+        '--newversion', release.debversion,
+        '--distribution', 'stable',
+        '--changelog', './contrib/debian/changelog',
+        '{} release.'.format(release.novtext),
+    )
 
 
 # Helper code:
@@ -280,7 +306,7 @@ def sh_out(*args):
 def sh_log(*args):
     PIPE = subprocess.PIPE
     try:
-        p = subprocess.Popen(args, stdout=PIPE, stderr=PIPE)
+        p = subprocess.Popen(args, stdout=PIPE, stderr=PIPE, stdin=None)
     except OSError:
         logging.error('Error launching %r...', args)
         raise
@@ -334,8 +360,6 @@ class Version (object):
         self.betarc = betarc
         self.hotfix = hotfix
 
-        self.novtext = '{}.{}.{}'.format(major, minor, patch)
-
         if hotfix is None:
             self.build = 50
         else:
@@ -343,13 +367,42 @@ class Version (object):
             if betarc is None:
                 assert hotfix < 50, hotfix
                 self.build = 50 + hotfix
-                self.novtext += '-{}'.format(hotfix)
             else:
                 assert hotfix < 26, hotfix
-                self.novtext += '-{}{}'.format(betarc, hotfix)
                 self.build = {'beta': 0, 'rc': 25}[betarc] + hotfix - 1
 
-        self.vtext = 'v' + self.novtext
+    @property
+    def novtext(self):
+        return self._novtext(debian=False)
+
+    @property
+    def vtext(self):
+        return 'v' + self.novtext
+
+    @property
+    def debversion(self):
+        return self._novtext(debian=True)
+
+    def _novtext(self, debian):
+        novtext = '{}.{}.{}'.format(self.major, self.minor, self.patch)
+
+        if self.hotfix is None:
+            return novtext
+        else:
+            assert self.hotfix > 0, self.hotfix
+            if self.betarc is None:
+                assert self.hotfix < 50, self.hotfix
+                sep = '+' if debian else '-'
+                return '{}{}{}'.format(novtext, sep, self.hotfix)
+            else:
+                assert self.hotfix < 26, self.hotfix
+                sep = '~' if debian else '-'
+                return '{}{}{}{}'.format(
+                    novtext,
+                    sep,
+                    self.betarc,
+                    self.hotfix,
+                )
 
     def __repr__(self):
         return '<Version {}>'.format(self.vtext)
