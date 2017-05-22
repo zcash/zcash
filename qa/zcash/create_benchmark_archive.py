@@ -1,17 +1,21 @@
 import binascii
+import calendar
 import json
 import plyvel
 import progressbar
 import os
+import stat
 import struct
 import subprocess
 import sys
+import tarfile
+import time
 
 ZCASH_CLI = './src/zcash-cli'
 USAGE = """
 Requirements:
-- faketime
-- tar
+- find
+- xz
 - %s (edit ZCASH_CLI in this script to alter the path)
 - A running mainnet zcashd using the default datadir with -txindex=1
 
@@ -26,7 +30,7 @@ LD_LIBRARY_PATH=src/leveldb python qa/zcash/create_benchmark_archive.py
 """ % ZCASH_CLI
 
 def check_deps():
-    if subprocess.call(['which', 'faketime', 'tar', ZCASH_CLI], stdout=subprocess.PIPE):
+    if subprocess.call(['which', 'find', 'xz', ZCASH_CLI], stdout=subprocess.PIPE):
         print USAGE
         sys.exit()
 
@@ -132,6 +136,24 @@ def compress_script(script):
     result.extend(script)
     return bytes(result)
 
+def deterministic_filter(tarinfo):
+    tarinfo.uid = tarinfo.gid = 0
+    tarinfo.uname = tarinfo.gname = "root"
+    tarinfo.mtime = calendar.timegm(time.strptime('2017-05-17', '%Y-%m-%d'))
+    tarinfo.mode |= stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP
+    tarinfo.mode &= ~stat.S_IWGRP
+    if tarinfo.isdir():
+        tarinfo.mode |= \
+            stat.S_IXUSR | \
+            stat.S_IXGRP | \
+            stat.S_IXOTH
+    else:
+        tarinfo.mode &= \
+            ~stat.S_IXUSR & \
+            ~stat.S_IXGRP & \
+            ~stat.S_IXOTH
+    return tarinfo
+
 def create_benchmark_archive(blk_hash):
     blk = json.loads(subprocess.check_output([ZCASH_CLI, 'getblock', blk_hash]))
     print 'Height: %d' % blk['height']
@@ -226,9 +248,14 @@ def create_benchmark_archive(blk_hash):
 
     # Make reproducible archive
     os.remove('%s/LOG' % db_path)
-    archive_name = 'block-%d.tar.gz' % blk['height']
-    subprocess.check_call(['faketime', '2017-05-17T00:00:00Z', 'tar', 'czf', archive_name, '--mtime=2017-05-17T00:00:00Z', 'benchmark'])
-    print 'Created archive %s' % archive_name
+    files = subprocess.check_output(['find', 'benchmark']).strip().split('\n')
+    archive_name = 'block-%d.tar' % blk['height']
+    tar = tarfile.open(archive_name, 'w')
+    for name in sorted(files):
+        tar.add(name, recursive=False, filter=deterministic_filter)
+    tar.close()
+    subprocess.check_call(['xz', '-6', archive_name])
+    print 'Created archive %s.xz' % archive_name
     subprocess.call(['rm', '-r', 'benchmark'])
 
 if __name__ == '__main__':
