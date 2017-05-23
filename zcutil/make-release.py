@@ -279,7 +279,7 @@ def _patch_build_defs(release, path, pattern):
                     'REVISION': release.patch,
                     'BUILD': release.build,
                     'IS_RELEASE': (
-                        'false' if release.betarc == 'beta' else 'true'
+                        'false' if release.build < 50 else 'true'
                     ),
                 }[label]
                 outf.write('{} {}{}\n'.format(prefix, repl, suffix))
