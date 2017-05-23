@@ -96,8 +96,15 @@ def phase(message):
 @phase('Checking RELEASE_PREV tag.')
 def verify_releaseprev_tag(releaseprev):
     candidates = []
+
+    # Any tag beginning with a 'v' followed by [1-9] must be a version
+    # matching our Version parser. Tags beginning with v0 may exist from
+    # upstream and those do not follow our schema and are silently
+    # ignored. Any other tag is silently ignored.
+    candidatergx = re.compile('^v[1-9].*$')
+
     for tag in sh_out('git', 'tag', '--list').splitlines():
-        if tag.startswith('v1'):  # Ignore v0.* bitcoin tags and other stuff.
+        if candidatergx.match(tag):
             candidates.append(Version.parse_arg(tag))
 
     candidates.sort()
