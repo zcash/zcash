@@ -473,6 +473,9 @@ class TestVersion (unittest.TestCase):
         ('v1.0.7-1', 51),
         ('v1.0.8', 50),
         ('v1.0.8-1', 51),
+        ('v1.0.9', 50),
+        ('v1.0.10', 50),
+        ('v7.42.1000', 50),
     ]
 
     ValidVersions = [
