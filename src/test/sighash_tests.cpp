@@ -108,16 +108,16 @@ std::uniform_int_distribution<int> sapling_version_dist(
     CTransaction::SAPLING_MAX_CURRENT_VERSION);
 
 void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t consensusBranchId) {
-    tx.fOverwintered = insecure_randrange(2);
+    tx.fOverwintered = insecure_randbool();
     if (tx.fOverwintered) {
-        if (insecure_randrange(2)) {
+        if (insecure_randbool()) {
             tx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
             tx.nVersion = sapling_version_dist(rng);
         } else {
             tx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
             tx.nVersion = overwinter_version_dist(rng);
         }
-        tx.nExpiryHeight = (insecure_randrange(2)) ? insecure_randrange(TX_EXPIRY_HEIGHT_THRESHOLD) : 0;
+        tx.nExpiryHeight = (insecure_randbool()) ? insecure_randrange(TX_EXPIRY_HEIGHT_THRESHOLD) : 0;
     } else {
         tx.nVersion = insecure_randbits(31);
     }
@@ -126,19 +126,19 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
     tx.vShieldedSpend.clear();
     tx.vShieldedOutput.clear();
     tx.vJoinSplit.clear();
-    tx.nLockTime = (insecure_randrange(2)) ? insecure_rand() : 0;
-    int ins = (insecure_randrange(4)) + 1;
-    int outs = fSingle ? ins : (insecure_randrange(4)) + 1;
-    int shielded_spends = (insecure_randrange(4)) + 1;
-    int shielded_outs = (insecure_randrange(4)) + 1;
-    int joinsplits = (insecure_randrange(4));
+    tx.nLockTime = (insecure_randbool()) ? insecure_rand() : 0;
+    int ins = (insecure_randbits(2)) + 1;
+    int outs = fSingle ? ins : (insecure_randbits(2)) + 1;
+    int shielded_spends = (insecure_randbits(2)) + 1;
+    int shielded_outs = (insecure_randbits(2)) + 1;
+    int joinsplits = (insecure_randbits(2));
     for (int in = 0; in < ins; in++) {
         tx.vin.push_back(CTxIn());
         CTxIn &txin = tx.vin.back();
         txin.prevout.hash = insecure_rand256();
-        txin.prevout.n = insecure_randrange(4);
+        txin.prevout.n = insecure_randbits(2);
         RandomScript(txin.scriptSig);
-        txin.nSequence = (insecure_randrange(2)) ? insecure_rand() : (unsigned int)-1;
+        txin.nSequence = (insecure_randbool()) ? insecure_rand() : (unsigned int)-1;
     }
     for (int out = 0; out < outs; out++) {
         tx.vout.push_back(CTxOut());
@@ -172,7 +172,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
     if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
         for (int js = 0; js < joinsplits; js++) {
             JSDescription jsdesc;
-            if (insecure_randrange(2) == 0) {
+            if (insecure_randbool() == 0) {
                 jsdesc.vpub_old = insecure_randrange(100000000);
             } else {
                 jsdesc.vpub_new = insecure_randrange(100000000);

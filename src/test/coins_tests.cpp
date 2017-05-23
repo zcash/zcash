@@ -143,7 +143,7 @@ public:
             return false;
         }
         coins = it->second;
-        if (coins.IsPruned() && insecure_randrange(2) == 0) {
+        if (coins.IsPruned() && insecure_randbool() == 0) {
             // Randomly return false in case of an empty entry.
             return false;
         }
@@ -508,12 +508,12 @@ BOOST_AUTO_TEST_CASE(coins_cache_simulation_test)
 
         if (insecure_randrange(100) == 0) {
             // Every 100 iterations, change the cache stack.
-            if (stack.size() > 0 && insecure_randrange(2) == 0) {
+            if (stack.size() > 0 && insecure_randbool() == 0) {
                 stack.back()->Flush();
                 delete stack.back();
                 stack.pop_back();
             }
-            if (stack.size() == 0 || (stack.size() < 4 && insecure_randrange(2))) {
+            if (stack.size() == 0 || (stack.size() < 4 && insecure_randbool())) {
                 CCoinsView* tip = &base;
                 if (stack.size() > 0) {
                     tip = stack.back();
@@ -665,12 +665,12 @@ BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
 
         if (insecure_randrange(100) == 0) {
             // Every 100 iterations, change the cache stack.
-            if (stack.size() > 0 && insecure_randrange(2) == 0) {
+            if (stack.size() > 0 && insecure_randbool() == 0) {
                 stack.back()->Flush();
                 delete stack.back();
                 stack.pop_back();
             }
-            if (stack.size() == 0 || (stack.size() < 4 && insecure_randrange(2))) {
+            if (stack.size() == 0 || (stack.size() < 4 && insecure_randbool())) {
                 CCoinsView* tip = &base;
                 if (stack.size() > 0) {
                     tip = stack.back();

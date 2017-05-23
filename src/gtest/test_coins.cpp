@@ -146,7 +146,7 @@ public:
             return false;
         }
         coins = it->second;
-        if (coins.IsPruned() && insecure_randrange(2) == 0) {
+        if (coins.IsPruned() && insecure_randbool() == 0) {
             // Randomly return false in case of an empty entry.
             return false;
         }
