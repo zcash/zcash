@@ -44,11 +44,11 @@ Run the release script, which will verify you are on the latest clean
 checkout of master, create a branch, then commit standard automated
 changes to that branch locally:
 
-    $ ./zcutil/make-release.py <RELEASE> <RELEASE_PREV>
+    $ ./zcutil/make-release.py <RELEASE> <RELEASE_PREV> <APPROX_RELEASE_HEIGHT>
 
 Example:
 
-    $ ./zcutil/make-release.py v1.0.8-1 v1.0.9
+    $ ./zcutil/make-release.py v1.0.9 v1.0.8-1 120000
 
 ### Create, Review, and Merge the release branch pull request
 
