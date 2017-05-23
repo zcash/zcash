@@ -10,7 +10,6 @@
 #include "uint256.h"
 #include "arith_uint256.h"
 #include "version.h"
-#include "test_random.h"
 #include "test/test_bitcoin.h"
 
 #include <vector>

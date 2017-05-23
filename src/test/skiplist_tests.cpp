@@ -4,7 +4,6 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "main.h"
-#include "test_random.h"
 #include "util/system.h"
 #include "test/test_bitcoin.h"
 

@@ -11,7 +11,6 @@
 #include "crypto/sha512.h"
 #include "crypto/hmac_sha256.h"
 #include "crypto/hmac_sha512.h"
-#include "test_random.h"
 #include "util/strencodings.h"
 #include "test/test_bitcoin.h"
 

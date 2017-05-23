@@ -4,7 +4,6 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "coins.h"
-#include "test_random.h"
 #include "script/standard.h"
 #include "uint256.h"
 #include "util/strencodings.h"
