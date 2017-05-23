@@ -68,15 +68,19 @@ def main_logged(release, releaseprev, releaseheight):
     initialize_git(release)
     patch_version_in_files(release, releaseprev)
     patch_release_height(releaseheight)
-    commit('Versioning changes.')
+    commit('Versioning changes for {}.'.format(release.novtext))
 
     build()
     gen_manpages()
-    commit('Updated manpages.')
+    commit('Updated manpages for {}.'.format(release.novtext))
 
     gen_release_notes(release)
     update_debian_changelog(release)
-    commit('Updated release notes and changelog.')
+    commit(
+        'Updated release notes and changelog for {}.'.format(
+            release.novtext,
+        ),
+    )
 
 
 def phase(message):
