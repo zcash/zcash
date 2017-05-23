@@ -12,12 +12,12 @@ function zcash_rpc {
 
 function zcash_rpc_slow {
     # Timeout of 1 hour
-    ./src/zcash-cli -datadir="$DATADIR" -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 -rpcclienttimeout=3600 "$@"
+    zcash_rpc -rpcclienttimeout=3600 "$@"
 }
 
 function zcash_rpc_veryslow {
     # Timeout of 2.5 hours
-    ./src/zcash-cli -datadir="$DATADIR" -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 -rpcclienttimeout=9000 "$@"
+    zcash_rpc -rpcclienttimeout=9000 "$@"
 }
 
 function zcashd_generate {
