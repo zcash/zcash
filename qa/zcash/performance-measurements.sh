@@ -34,7 +34,7 @@ function zcashd_start {
 
 function zcashd_stop {
     zcash_rpc stop > /dev/null
-    wait $ZCASH_PID
+    wait $ZCASHD_PID
 }
 
 function zcashd_massif_start {
