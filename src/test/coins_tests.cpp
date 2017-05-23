@@ -143,7 +143,7 @@ public:
             return false;
         }
         coins = it->second;
-        if (coins.IsPruned() && insecure_rand() % 2 == 0) {
+        if (coins.IsPruned() && insecure_randrange(2) == 0) {
             // Randomly return false in case of an empty entry.
             return false;
         }
@@ -209,7 +209,7 @@ public:
             if (it->second.flags & CCoinsCacheEntry::DIRTY) {
                 // Same optimization used in CCoinsViewDB is to only write dirty entries.
                 map_[it->first] = it->second.coins;
-                if (it->second.coins.IsPruned() && insecure_rand() % 3 == 0) {
+                if (it->second.coins.IsPruned() && insecure_randrange(3) == 0) {
                     // Randomly delete empty entries on write.
                     map_.erase(it->first);
                 }
@@ -275,12 +275,12 @@ public:
     {
         CMutableTransaction mutableTx;
 
-        sproutNullifier = GetRandHash();
+        sproutNullifier = insecure_rand256();
         JSDescription jsd;
         jsd.nullifiers[0] = sproutNullifier;
         mutableTx.vJoinSplit.emplace_back(jsd);
         
-        saplingNullifier = GetRandHash();
+        saplingNullifier = insecure_rand256();
         SpendDescription sd;
         sd.nullifier = saplingNullifier;
         mutableTx.vShieldedSpend.push_back(sd);
@@ -312,8 +312,8 @@ uint256 appendRandomSproutCommitment(SproutMerkleTree &tree)
 }
 
 template<typename Tree> void AppendRandomLeaf(Tree &tree);
-template<> void AppendRandomLeaf(SproutMerkleTree &tree) { tree.append(GetRandHash()); }
-template<> void AppendRandomLeaf(SaplingMerkleTree &tree) { tree.append(GetRandHash()); }
+template<> void AppendRandomLeaf(SproutMerkleTree &tree) { tree.append(insecure_rand256()); }
+template<> void AppendRandomLeaf(SaplingMerkleTree &tree) { tree.append(insecure_rand256()); }
 template<> void AppendRandomLeaf(OrchardMerkleFrontier &tree) {
     // OrchardMerkleFrontier only has APIs to append entire bundles, but
     // fortunately the tests only require that the tree root change.
@@ -462,7 +462,7 @@ BOOST_AUTO_TEST_CASE(coins_cache_simulation_test)
     std::vector<uint256> txids;
     txids.resize(NUM_SIMULATION_ITERATIONS / 8);
     for (unsigned int i = 0; i < txids.size(); i++) {
-        txids[i] = GetRandHash();
+        txids[i] = insecure_rand256();
     }
 
     for (unsigned int i = 0; i < NUM_SIMULATION_ITERATIONS; i++) {
@@ -472,7 +472,7 @@ BOOST_AUTO_TEST_CASE(coins_cache_simulation_test)
             CCoins& coins = result[txid];
             CCoinsModifier entry = stack.back()->ModifyCoins(txid);
             BOOST_CHECK(coins == *entry);
-            if (insecure_rand() % 5 == 0 || coins.IsPruned()) {
+            if (insecure_randrange(5) == 0 || coins.IsPruned()) {
                 if (coins.IsPruned()) {
                     added_an_entry = true;
                 } else {
@@ -490,7 +490,7 @@ BOOST_AUTO_TEST_CASE(coins_cache_simulation_test)
         }
 
         // Once every 1000 iterations and at the end, verify the full cache.
-        if (insecure_rand() % 1000 == 1 || i == NUM_SIMULATION_ITERATIONS - 1) {
+        if (insecure_randrange(1000) == 1 || i == NUM_SIMULATION_ITERATIONS - 1) {
             for (std::map<uint256, CCoins>::iterator it = result.begin(); it != result.end(); it++) {
                 const CCoins* coins = stack.back()->AccessCoins(it->first);
                 if (coins) {
@@ -506,14 +506,14 @@ BOOST_AUTO_TEST_CASE(coins_cache_simulation_test)
             }
         }
 
-        if (insecure_rand() % 100 == 0) {
+        if (insecure_randrange(100) == 0) {
             // Every 100 iterations, change the cache stack.
-            if (stack.size() > 0 && insecure_rand() % 2 == 0) {
+            if (stack.size() > 0 && insecure_randrange(2) == 0) {
                 stack.back()->Flush();
                 delete stack.back();
                 stack.pop_back();
             }
-            if (stack.size() == 0 || (stack.size() < 4 && insecure_rand() % 2)) {
+            if (stack.size() == 0 || (stack.size() < 4 && insecure_randrange(2))) {
                 CCoinsView* tip = &base;
                 if (stack.size() > 0) {
                     tip = stack.back();
@@ -614,7 +614,7 @@ BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
             unsigned int height = insecure_rand();
 
             // 1/10 times create a coinbase
-            if (insecure_rand() % 10 == 0 || coinbaseids.size() < 10) {
+            if (insecure_randrange(10) == 0 || coinbaseids.size() < 10) {
                 coinbaseids[tx.GetHash()] = tx.vout[0].nValue;
                 assert(CTransaction(tx).IsCoinBase());
             }
@@ -622,7 +622,7 @@ BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
             else {
                 uint256 prevouthash;
                 // equally likely to spend coinbase or non coinbase
-                std::set<uint256>::iterator txIt = alltxids.lower_bound(GetRandHash());
+                std::set<uint256>::iterator txIt = alltxids.lower_bound(insecure_rand256());
                 if (txIt == alltxids.end()) {
                     txIt = alltxids.begin();
                 }
@@ -652,7 +652,7 @@ BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
         }
 
         // Once every 1000 iterations and at the end, verify the full cache.
-        if (insecure_rand() % 1000 == 1 || i == NUM_SIMULATION_ITERATIONS - 1) {
+        if (insecure_randrange(1000) == 1 || i == NUM_SIMULATION_ITERATIONS - 1) {
             for (std::map<uint256, CCoins>::iterator it = result.begin(); it != result.end(); it++) {
                 const CCoins* coins = stack.back()->AccessCoins(it->first);
                 if (coins) {
@@ -663,14 +663,14 @@ BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
             }
         }
 
-        if (insecure_rand() % 100 == 0) {
+        if (insecure_randrange(100) == 0) {
             // Every 100 iterations, change the cache stack.
-            if (stack.size() > 0 && insecure_rand() % 2 == 0) {
+            if (stack.size() > 0 && insecure_randrange(2) == 0) {
                 stack.back()->Flush();
                 delete stack.back();
                 stack.pop_back();
             }
-            if (stack.size() == 0 || (stack.size() < 4 && insecure_rand() % 2)) {
+            if (stack.size() == 0 || (stack.size() < 4 && insecure_randrange(2))) {
                 CCoinsView* tip = &base;
                 if (stack.size() > 0) {
                     tip = stack.back();
