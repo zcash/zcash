@@ -1,4 +1,6 @@
 #!/bin/bash
+set -u
+
 
 DATADIR=./benchmark-datadir
 SHA256CMD="$(command -v sha256sum || echo shasum)"
