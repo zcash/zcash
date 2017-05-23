@@ -136,7 +136,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 {
                     if ( komodo_kvsigverify(keyvalue,keylen+refvaluesize,refpubkey,sig) < 0 )
                     {
-                        //printf("komodo_kvsigverify error [%d]\n",coresize-13);
+                        printf("komodo_kvsigverify error [%d]\n",coresize-13);
                         return;
                     }
                 }
@@ -165,6 +165,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 memcpy(ptr->key,key,keylen);
                 newflag = 1;
                 HASH_ADD_KEYPTR(hh,KOMODO_KV,ptr->key,ptr->keylen,ptr);
+                //printf("KV add.(%s) (%s)\n",ptr->key,valueptr);
             }
             if ( newflag != 0 || (ptr->flags & KOMODO_KVPROTECTED) == 0 )
             {
