@@ -1,21 +1,27 @@
 #!/bin/bash
+set -u
+
 
 DATADIR=./benchmark-datadir
 SHA256CMD="$(command -v sha256sum || echo shasum)"
 SHA256ARGS="$(command -v sha256sum >/dev/null || echo '-a 256')"
 
 function zcash_rpc {
-    ./src/zcash-cli -datadir="$DATADIR" -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 "$@"
+    ./src/zcash-cli -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 "$@"
 }
 
 function zcash_rpc_slow {
     # Timeout of 1 hour
-    ./src/zcash-cli -datadir="$DATADIR" -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 -rpcclienttimeout=3600 "$@"
+    zcash_rpc -rpcclienttimeout=3600 "$@"
 }
 
 function zcash_rpc_veryslow {
     # Timeout of 2.5 hours
-    ./src/zcash-cli -datadir="$DATADIR" -rpcwait -rpcuser=user -rpcpassword=password -rpcport=5983 -rpcclienttimeout=9000 "$@"
+    zcash_rpc -rpcclienttimeout=9000 "$@"
+}
+
+function zcash_rpc_wait_for_start {
+    zcash_rpc -rpcwait getinfo > /dev/null
 }
 
 function zcashd_generate {
@@ -28,11 +34,12 @@ function zcashd_start {
     touch "$DATADIR/zcash.conf"
     ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
+    zcash_rpc_wait_for_start
 }
 
 function zcashd_stop {
     zcash_rpc stop > /dev/null
-    wait $ZCASH_PID
+    wait $ZCASHD_PID
 }
 
 function zcashd_massif_start {
@@ -42,6 +49,7 @@ function zcashd_massif_start {
     rm -f massif.out
     valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
+    zcash_rpc_wait_for_start
 }
 
 function zcashd_massif_stop {
@@ -57,6 +65,7 @@ function zcashd_valgrind_start {
     rm -f valgrind.out
     valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
+    zcash_rpc_wait_for_start
 }
 
 function zcashd_valgrind_stop {
