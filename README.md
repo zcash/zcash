@@ -23,6 +23,14 @@ See important security warnings in
 
 **Zcash is unfinished and highly experimental.** Use at your own risk.
 
+Deprecation Policy
+------------------
+
+This release is considered deprecated 16 weeks after the release day. There
+is an automatic deprecation feature which will halt the node some time after
+this 16 week time period. The automatic feature is based on block height
+and can be explicitly disabled.
+
 Where do I begin?
 -----------------
 We have a guide for joining the main Zcash network:
