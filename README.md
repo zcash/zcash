@@ -27,9 +27,9 @@ Deprecation Policy
 ------------------
 
 This release is considered deprecated 16 weeks after the release day. There
-is an automatic deprecation feature which will halt the node some time after
-this 16 week time period. The automatic feature is based on block height
-and can be explicitly disabled.
+is an automatic deprecation shutdown feature which will halt the node some
+time after this 16 week time period. The automatic feature is based on block
+height and can be explicitly disabled.
 
 Where do I begin?
 -----------------
