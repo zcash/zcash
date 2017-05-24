@@ -15,6 +15,11 @@ of Zcash transactions; depending on the speed of your computer and network
 connection, the synchronization process could take a day or more once the
 blockchain has reached a significant size.
 
+Awesomeness Warnings
+--------------------
+
+Zcash CI is awesome. Beware the awesomeness.
+
 Security Warnings
 -----------------
 
