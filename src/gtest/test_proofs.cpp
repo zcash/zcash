@@ -22,6 +22,51 @@ typedef libsnark::default_r1cs_ppzksnark_pp::Fqe_type curve_Fq2;
 #include "version.h"
 #include "utilstrencodings.h"
 
+TEST(proofs, g1_pairing_at_infinity)
+{
+    for (size_t i = 0; i < 100; i++) {
+        auto r1 = curve_G1::random_element();
+        auto r2 = curve_G2::random_element();
+        ASSERT_TRUE(
+            curve_pp::reduced_pairing(curve_G1::zero(), r2) ==
+            curve_GT::one()
+        );
+        ASSERT_TRUE(
+            curve_pp::final_exponentiation(
+                curve_pp::double_miller_loop(
+                    curve_pp::precompute_G1(curve_G1::zero()),
+                    curve_pp::precompute_G2(r2),
+                    curve_pp::precompute_G1(curve_G1::zero()),
+                    curve_pp::precompute_G2(r2)
+                )
+            ) ==
+            curve_GT::one()
+        );
+        ASSERT_TRUE(
+            curve_pp::final_exponentiation(
+                curve_pp::double_miller_loop(
+                    curve_pp::precompute_G1(r1),
+                    curve_pp::precompute_G2(r2),
+                    curve_pp::precompute_G1(curve_G1::zero()),
+                    curve_pp::precompute_G2(r2)
+                )
+            ) ==
+            curve_pp::reduced_pairing(r1, r2)
+        );
+        ASSERT_TRUE(
+            curve_pp::final_exponentiation(
+                curve_pp::double_miller_loop(
+                    curve_pp::precompute_G1(curve_G1::zero()),
+                    curve_pp::precompute_G2(r2),
+                    curve_pp::precompute_G1(r1),
+                    curve_pp::precompute_G2(r2)
+                )
+            ) ==
+            curve_pp::reduced_pairing(r1, r2)
+        );
+    }
+}
+
 TEST(proofs, g2_subgroup_check)
 {
     // all G2 elements are order r

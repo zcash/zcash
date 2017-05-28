@@ -1,4 +1,6 @@
+#include <cstdio>
 #include <future>
+#include <map>
 #include <thread>
 #include <unistd.h>
 #include <boost/filesystem.hpp>
@@ -9,6 +11,7 @@
 #include "primitives/transaction.h"
 #include "base58.h"
 #include "crypto/equihash.h"
+#include "chain.h"
 #include "chainparams.h"
 #include "consensus/validation.h"
 #include "main.h"
@@ -17,6 +20,7 @@
 #include "script/sign.h"
 #include "sodium.h"
 #include "streams.h"
+#include "txdb.h"
 #include "utiltest.h"
 #include "wallet/wallet.h"
 
@@ -320,5 +324,84 @@ double benchmark_increment_note_witnesses(size_t nTxs)
     timer_start(tv_start);
     wallet.ChainTip(&index2, &block2, tree, true);
     return timer_stop(tv_start);
+}
+
+// Fake the input of a given block
+class FakeCoinsViewDB : public CCoinsViewDB {
+    uint256 hash;
+    ZCIncrementalMerkleTree t;
+
+public:
+    FakeCoinsViewDB(std::string dbName, uint256& hash) : CCoinsViewDB(dbName, 100, false, false), hash(hash) {}
+
+    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
+        if (rt == t.root()) {
+            tree = t;
+            return true;
+        }
+        return false;
+    }
+
+    bool GetNullifier(const uint256 &nf) const {
+        return false;
+    }
+
+    uint256 GetBestBlock() const {
+        return hash;
+    }
+
+    uint256 GetBestAnchor() const {
+        return t.root();
+    }
+
+    bool BatchWrite(CCoinsMap &mapCoins,
+                    const uint256 &hashBlock,
+                    const uint256 &hashAnchor,
+                    CAnchorsMap &mapAnchors,
+                    CNullifiersMap &mapNullifiers) {
+        return false;
+    }
+
+    bool GetStats(CCoinsStats &stats) const {
+        return false;
+    }
+};
+
+double benchmark_connectblock_slow()
+{
+    // Test for issue 2017-05-01.a
+    SelectParams(CBaseChainParams::MAIN);
+    CBlock block;
+    FILE* fp = fopen((GetDataDir() / "benchmark/block-107134.dat").string().c_str(), "rb");
+    if (!fp) throw new std::runtime_error("Failed to open block data file");
+    CAutoFile blkFile(fp, SER_DISK, CLIENT_VERSION);
+    blkFile >> block;
+    blkFile.fclose();
+
+    // Fake its inputs
+    auto hashPrev = uint256S("00000000159a41f468e22135942a567781c3f3dc7ad62257993eb3c69c3f95ef");
+    FakeCoinsViewDB fakeDB("benchmark/block-107134-inputs", hashPrev);
+    CCoinsViewCache view(&fakeDB);
+
+    // Fake the chain
+    CBlockIndex index(block);
+    index.nHeight = 107134;
+    CBlockIndex indexPrev;
+    indexPrev.phashBlock = &hashPrev;
+    indexPrev.nHeight = index.nHeight - 1;
+    index.pprev = &indexPrev;
+    mapBlockIndex.insert(std::make_pair(hashPrev, &indexPrev));
+
+    CValidationState state;
+    struct timeval tv_start;
+    timer_start(tv_start);
+    assert(ConnectBlock(block, state, &index, view, true));
+    auto duration = timer_stop(tv_start);
+
+    // Undo alterations to global state
+    mapBlockIndex.erase(hashPrev);
+    SelectParamsFromCommandLine();
+
+    return duration;
 }
 
