@@ -151,6 +151,9 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     // We can't make transactions until we have inputs
     // Therefore, load 100 blocks :)
     std::vector<CTransaction*>txFirst;
+    unique_ptr<equi> peq;
+    if (solver == "tromp")
+        peq.reset(new equi(1));
     for (unsigned int i = 0; i < sizeof(blockinfo)/sizeof(*blockinfo); ++i)
     {
         // Simple block creation, nothing special yet:
@@ -202,17 +205,17 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
                                               pblock->nNonce.begin(),
                                               pblock->nNonce.size());
 
-            // Create solver and initialize it.
-            equi eq(1);
+            // initialize it.
+            equi& eq = *peq;
             eq.setstate(&curr_state);
 
             // Intialization done, start algo driver.
             eq.digit0(0);
-            eq.xfull = eq.bfull = eq.hfull = 0;
+            eq.bfull = eq.hfull = 0;
             eq.showbsizes(0);
             for (u32 r = 1; r < WK; r++) {
                 (r&1) ? eq.digitodd(r, 0) : eq.digiteven(r, 0);
-                eq.xfull = eq.bfull = eq.hfull = 0;
+                eq.bfull = eq.hfull = 0;
                 eq.showbsizes(r);
             }
             eq.digitK(0);
@@ -236,7 +239,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
                 pblock->nSolution = soln;
 
                 CValidationState state;
-                
+
                 if (ProcessNewBlock(state, NULL, pblock, true, NULL) && state.IsValid()) {
                     goto foundit;
                 }
