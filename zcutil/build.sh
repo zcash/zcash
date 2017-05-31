@@ -102,7 +102,7 @@ eval "$MAKE" --version
 eval "$CC" --version
 eval "$CXX" --version
 as --version
-ld --version
+ld -v
 
 HOST="$HOST" BUILD="$BUILD" NO_RUST="$RUST_ARG" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
 ./autogen.sh
