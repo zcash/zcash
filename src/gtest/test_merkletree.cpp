@@ -95,7 +95,7 @@ void test_tree(
         expect_ser_test_vector(ser_tests[i], tree, tree);
 
         bool first = true; // The first witness can never form a path
-        BOOST_FOREACH(Witness& wit, witnesses)
+        for (Witness& wit : witnesses)
         {
             // Append the same commitment to all the witnesses
             wit.append(test_commitment);
@@ -121,7 +121,7 @@ void test_tree(
         // Tree should be full now
         ASSERT_THROW(tree.append(uint256()), std::runtime_error);
 
-        BOOST_FOREACH(Witness& wit, witnesses)
+        for (Witness& wit : witnesses)
         {
             ASSERT_THROW(wit.append(uint256()), std::runtime_error);
         }

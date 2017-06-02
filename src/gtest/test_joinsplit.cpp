@@ -281,7 +281,7 @@ for test_input in TEST_VECTORS:
         }
     };
 
-    BOOST_FOREACH(std::vector<std::string>& v, tests) {
+    for (std::vector<std::string>& v : tests) {
         Ed25519VerificationKey joinSplitPubKey;
         auto pubKeyBytes = uint256S(v[3]);
         std::copy(pubKeyBytes.begin(), pubKeyBytes.end(), joinSplitPubKey.bytes);

@@ -99,7 +99,7 @@ void ThreadSendAlert()
     // alert.setSubVer.insert(std::string("/MagicBean:0.7.2/"));
     const std::vector<std::string> useragents = {}; //{"MagicBean", "BeanStalk", "AppleSeed", "EleosZcash"};
 
-    BOOST_FOREACH(const std::string& useragent, useragents) {
+    for (const std::string& useragent : useragents) {
     }
 
     // Sanity check
@@ -161,7 +161,7 @@ void ThreadSendAlert()
     int nSent = 0;
     {
         LOCK(cs_vNodes);
-        BOOST_FOREACH(CNode* pnode, vNodes)
+        for (CNode* pnode : vNodes)
         {
             if (alert2.RelayTo(pnode))
             {

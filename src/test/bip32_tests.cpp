@@ -85,7 +85,7 @@ void RunTest(const TestVector &test) {
     key.SetMaster(&seed[0], seed.size());
     pubkey = key.Neuter();
     KeyIO keyIO(Params());
-    BOOST_FOREACH(const TestDerivation &derive, test.vDerive) {
+    for (const TestDerivation &derive : test.vDerive) {
         unsigned char data[74];
         key.Encode(data);
         pubkey.Encode(data);
