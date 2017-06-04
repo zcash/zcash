@@ -56,7 +56,11 @@ void TxConfirmStats::ClearCurrent(unsigned int nBlockHeight)
 unsigned int TxConfirmStats::FindBucketIndex(double val)
 {
     auto it = bucketMap.lower_bound(val);
-    assert(it != bucketMap.end());
+    //assert(it != bucketMap.end());
+    if ( it != bucketMap.end() )
+    {
+        fprintf(stderr,"FindBucketIndex violation: from val %f\n",val);
+    }
     return it->second;
 }
 

@@ -391,7 +391,8 @@ extern char ASSETCHAINS_SYMBOL[16];
 
 CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTransaction& tx,uint32_t tiptime) const
 {
-    *interestp = 0;
+    if ( interestp != 0 )
+        *interestp = 0;
     if ( tx.IsCoinBase() != 0 )
         return 0;
     CAmount value,nResult = 0;
