@@ -59,7 +59,7 @@ unsigned int TxConfirmStats::FindBucketIndex(double val)
     //assert(it != bucketMap.end());
     if ( it != bucketMap.end() )
     {
-        printf("FindBucketIndex violation: %p != %p from val %f\n",it,bucketMap.end(),val);
+        fprintf(stderr,"FindBucketIndex violation: from val %f\n",val);
     }
     return it->second;
 }
