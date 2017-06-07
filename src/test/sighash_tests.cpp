@@ -119,7 +119,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
         }
         tx.nExpiryHeight = (insecure_randrange(2)) ? insecure_randrange(TX_EXPIRY_HEIGHT_THRESHOLD) : 0;
     } else {
-        tx.nVersion = insecure_rand() & 0x7FFFFFFF;
+        tx.nVersion = insecure_randbits(31);
     }
     tx.vin.clear();
     tx.vout.clear();
