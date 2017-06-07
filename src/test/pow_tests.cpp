@@ -144,9 +144,9 @@ void GetBlockProofEquivalentTimeImpl(const Consensus::Params& params) {
     }
 
     for (int j = 0; j < 1000; j++) {
-        CBlockIndex *p1 = &blocks[insecure_randrange(10000)];
-        CBlockIndex *p2 = &blocks[insecure_randrange(10000)];
-        CBlockIndex *p3 = &blocks[insecure_randrange(10000)];
+        CBlockIndex *p1 = &blocks[InsecureRandRange(10000)];
+        CBlockIndex *p2 = &blocks[InsecureRandRange(10000)];
+        CBlockIndex *p3 = &blocks[InsecureRandRange(10000)];
 
         int64_t tdiff = GetBlockProofEquivalentTime(*p1, *p2, *p3, params);
         BOOST_CHECK_EQUAL(tdiff, p1->GetBlockTime() - p2->GetBlockTime());

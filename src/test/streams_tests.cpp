@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(streams_buffered_file)
 BOOST_AUTO_TEST_CASE(streams_buffered_file_rand)
 {
     // Make this test deterministic.
-    seed_insecure_rand(true);
+    SeedInsecureRand(true);
 
     for (int rep = 0; rep < 500; ++rep) {
         FILE* file = fopen("streams_test_tmp", "w+b");

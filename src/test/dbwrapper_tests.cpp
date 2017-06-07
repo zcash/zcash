@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(dbwrapper)
         path ph = temp_directory_path() / unique_path();
         CDBWrapper dbw(ph, (1 << 20), true, false);
         char key = 'k';
-        uint256 in = insecure_rand256();
+        uint256 in = InsecureRand256();
         uint256 res;
 
         BOOST_CHECK(dbw.Write(key, in));
@@ -51,11 +51,11 @@ BOOST_AUTO_TEST_CASE(dbwrapper_batch)
         CDBWrapper dbw(ph, (1 << 20), true, false);
 
         char key = 'i';
-        uint256 in = insecure_rand256();
+        uint256 in = InsecureRand256();
         char key2 = 'j';
-        uint256 in2 = insecure_rand256();
+        uint256 in2 = InsecureRand256();
         char key3 = 'k';
-        uint256 in3 = insecure_rand256();
+        uint256 in3 = InsecureRand256();
 
         uint256 res;
         CDBBatch batch(dbw);
@@ -87,10 +87,10 @@ BOOST_AUTO_TEST_CASE(dbwrapper_iterator)
 
         // The two keys are intentionally chosen for ordering
         char key = 'j';
-        uint256 in = insecure_rand256();
+        uint256 in = InsecureRand256();
         BOOST_CHECK(dbw.Write(key, in));
         char key2 = 'k';
-        uint256 in2 = insecure_rand256();
+        uint256 in2 = InsecureRand256();
         BOOST_CHECK(dbw.Write(key2, in2));
 
         boost::scoped_ptr<CDBIterator> it(const_cast<CDBWrapper*>(&dbw)->NewIterator());

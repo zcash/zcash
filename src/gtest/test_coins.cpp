@@ -146,7 +146,7 @@ public:
             return false;
         }
         coins = it->second;
-        if (coins.IsPruned() && insecure_randbool() == 0) {
+        if (coins.IsPruned() && InsecureRandBool() == 0) {
             // Randomly return false in case of an empty entry.
             return false;
         }
@@ -212,7 +212,7 @@ public:
             if (it->second.flags & CCoinsCacheEntry::DIRTY) {
                 // Same optimization used in CCoinsViewDB is to only write dirty entries.
                 map_[it->first] = it->second.coins;
-                if (it->second.coins.IsPruned() && insecure_randrange(3) == 0) {
+                if (it->second.coins.IsPruned() && InsecureRandRange(3) == 0) {
                     // Randomly delete empty entries on write.
                     map_.erase(it->first);
                 }

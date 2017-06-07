@@ -90,9 +90,9 @@ uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, un
 void static RandomScript(CScript &script) {
     static const opcodetype oplist[] = {OP_FALSE, OP_1, OP_2, OP_3, OP_CHECKSIG, OP_IF, OP_VERIF, OP_RETURN};
     script = CScript();
-    int ops = (insecure_randrange(10));
+    int ops = (InsecureRandRange(10));
     for (int i=0; i<ops; i++)
-        script << oplist[insecure_randrange(sizeof(oplist)/sizeof(oplist[0]))];
+        script << oplist[InsecureRandRange(sizeof(oplist)/sizeof(oplist[0]))];
 }
 
 // Overwinter tx version numbers are selected randomly from current version range.
@@ -108,51 +108,51 @@ std::uniform_int_distribution<int> sapling_version_dist(
     CTransaction::SAPLING_MAX_CURRENT_VERSION);
 
 void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t consensusBranchId) {
-    tx.fOverwintered = insecure_randbool();
+    tx.fOverwintered = InsecureRandBool();
     if (tx.fOverwintered) {
-        if (insecure_randbool()) {
+        if (InsecureRandBool()) {
             tx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
             tx.nVersion = sapling_version_dist(rng);
         } else {
             tx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
             tx.nVersion = overwinter_version_dist(rng);
         }
-        tx.nExpiryHeight = (insecure_randbool()) ? insecure_randrange(TX_EXPIRY_HEIGHT_THRESHOLD) : 0;
+        tx.nExpiryHeight = (InsecureRandBool()) ? InsecureRandRange(TX_EXPIRY_HEIGHT_THRESHOLD) : 0;
     } else {
-        tx.nVersion = insecure_randbits(31);
+        tx.nVersion = InsecureRandBits(31);
     }
     tx.vin.clear();
     tx.vout.clear();
     tx.vShieldedSpend.clear();
     tx.vShieldedOutput.clear();
     tx.vJoinSplit.clear();
-    tx.nLockTime = (insecure_randbool()) ? insecure_rand() : 0;
-    int ins = (insecure_randbits(2)) + 1;
-    int outs = fSingle ? ins : (insecure_randbits(2)) + 1;
-    int shielded_spends = (insecure_randbits(2)) + 1;
-    int shielded_outs = (insecure_randbits(2)) + 1;
-    int joinsplits = (insecure_randbits(2));
+    tx.nLockTime = (InsecureRandBool()) ? InsecureRand32() : 0;
+    int ins = (InsecureRandBits(2)) + 1;
+    int outs = fSingle ? ins : (InsecureRandBits(2)) + 1;
+    int shielded_spends = (InsecureRandBits(2)) + 1;
+    int shielded_outs = (InsecureRandBits(2)) + 1;
+    int joinsplits = (InsecureRandBits(2));
     for (int in = 0; in < ins; in++) {
         tx.vin.push_back(CTxIn());
         CTxIn &txin = tx.vin.back();
-        txin.prevout.hash = insecure_rand256();
-        txin.prevout.n = insecure_randbits(2);
+        txin.prevout.hash = InsecureRand256();
+        txin.prevout.n = InsecureRandBits(2);
         RandomScript(txin.scriptSig);
-        txin.nSequence = (insecure_randbool()) ? insecure_rand() : (unsigned int)-1;
+        txin.nSequence = (InsecureRandBool()) ? InsecureRand32() : (unsigned int)-1;
     }
     for (int out = 0; out < outs; out++) {
         tx.vout.push_back(CTxOut());
         CTxOut &txout = tx.vout.back();
-        txout.nValue = insecure_randrange(100000000);
+        txout.nValue = InsecureRandRange(100000000);
         RandomScript(txout.scriptPubKey);
     }
     if (tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
-        tx.valueBalanceSapling = insecure_randrange(100000000);
+        tx.valueBalanceSapling = InsecureRandRange(100000000);
         for (int spend = 0; spend < shielded_spends; spend++) {
             SpendDescription sdesc;
             zcash_test_harness_random_jubjub_point(sdesc.cv.begin());
             zcash_test_harness_random_jubjub_base(sdesc.anchor.begin());
-            sdesc.nullifier = insecure_rand256();
+            sdesc.nullifier = InsecureRand256();
             zcash_test_harness_random_jubjub_point(sdesc.rk.begin());
             GetRandBytes(sdesc.zkproof.begin(), sdesc.zkproof.size());
             tx.vShieldedSpend.push_back(sdesc);
@@ -172,17 +172,17 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
     if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
         for (int js = 0; js < joinsplits; js++) {
             JSDescription jsdesc;
-            if (insecure_randbool() == 0) {
-                jsdesc.vpub_old = insecure_randrange(100000000);
+            if (InsecureRandBool() == 0) {
+                jsdesc.vpub_old = InsecureRandRange(100000000);
             } else {
-                jsdesc.vpub_new = insecure_randrange(100000000);
+                jsdesc.vpub_new = InsecureRandRange(100000000);
             }
 
-            jsdesc.anchor = insecure_rand256();
-            jsdesc.nullifiers[0] = insecure_rand256();
-            jsdesc.nullifiers[1] = insecure_rand256();
-            jsdesc.ephemeralKey = insecure_rand256();
-            jsdesc.randomSeed = insecure_rand256();
+            jsdesc.anchor = InsecureRand256();
+            jsdesc.nullifiers[0] = InsecureRand256();
+            jsdesc.nullifiers[1] = InsecureRand256();
+            jsdesc.ephemeralKey = InsecureRand256();
+            jsdesc.randomSeed = InsecureRand256();
             GetRandBytes(jsdesc.ciphertexts[0].begin(), jsdesc.ciphertexts[0].size());
             GetRandBytes(jsdesc.ciphertexts[1].begin(), jsdesc.ciphertexts[1].size());
             {
@@ -190,8 +190,8 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
                 GetRandBytes(zkproof.begin(), zkproof.size());
                 jsdesc.proof = zkproof;
             }
-            jsdesc.macs[0] = insecure_rand256();
-            jsdesc.macs[1] = insecure_rand256();
+            jsdesc.macs[0] = InsecureRand256();
+            jsdesc.macs[1] = InsecureRand256();
 
             tx.vJoinSplit.push_back(jsdesc);
         }
@@ -217,7 +217,7 @@ BOOST_FIXTURE_TEST_SUITE(sighash_tests, BasicTestingSetup)
 BOOST_AUTO_TEST_CASE(sighash_test)
 {
     uint32_t overwinterBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
-    seed_insecure_rand(false);
+    SeedInsecureRand(false);
 
     #if defined(PRINT_SIGHASH_JSON)
     std::cout << "[\n";
@@ -229,14 +229,14 @@ BOOST_AUTO_TEST_CASE(sighash_test)
     nRandomTests = 500;
     #endif
     for (int i=0; i<nRandomTests; i++) {
-        int nHashType = insecure_rand();
+        int nHashType = InsecureRand32();
         // Exclude ZFUTURE as its branch ID can't be represented as a JSON int32
-        uint32_t consensusBranchId = NetworkUpgradeInfo[insecure_randrange(Consensus::MAX_NETWORK_UPGRADES - 1)].nBranchId;
+        uint32_t consensusBranchId = NetworkUpgradeInfo[InsecureRandRange(Consensus::MAX_NETWORK_UPGRADES - 1)].nBranchId;
         CMutableTransaction txTo;
         RandomTransaction(txTo, (nHashType & 0x1f) == SIGHASH_SINGLE, consensusBranchId);
         CScript scriptCode;
         RandomScript(scriptCode);
-        int nIn = insecure_randrange(txTo.vin.size());
+        int nIn = InsecureRandRange(txTo.vin.size());
         // We don't generate v5 transactions here; we have separate ZIP 244 test vectors.
         const PrecomputedTransactionData txdata(txTo, {});
 

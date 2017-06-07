@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(DoS_bantime)
 CTransaction RandomOrphan()
 {
     std::map<uint256, COrphanTx>::iterator it;
-    it = mapOrphanTransactions.lower_bound(insecure_rand256());
+    it = mapOrphanTransactions.lower_bound(InsecureRand256());
     if (it == mapOrphanTransactions.end())
         it = mapOrphanTransactions.begin();
     return it->second.tx;
@@ -141,7 +141,7 @@ BOOST_DATA_TEST_CASE(DoS_mapOrphans, boost::unit_test::data::xrange(static_cast<
         CMutableTransaction tx;
         tx.vin.resize(1);
         tx.vin[0].prevout.n = 0;
-        tx.vin[0].prevout.hash = insecure_rand256();
+        tx.vin[0].prevout.hash = InsecureRand256();
         tx.vin[0].scriptSig << OP_1;
         tx.vout.resize(1);
         tx.vout[0].nValue = 1*CENT;
