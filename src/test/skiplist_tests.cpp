@@ -35,8 +35,8 @@ BOOST_AUTO_TEST_CASE(skiplist_test)
     }
 
     for (int i=0; i < 1000; i++) {
-        int from = insecure_rand() % (SKIPLIST_LENGTH - 1);
-        int to = insecure_rand() % (from + 1);
+        int from = insecure_randrange(SKIPLIST_LENGTH - 1);
+        int to = insecure_randrange(from + 1);
 
         BOOST_CHECK(vIndex[SKIPLIST_LENGTH - 1].GetAncestor(from) == &vIndex[from]);
         BOOST_CHECK(vIndex[from].GetAncestor(to) == &vIndex[to]);

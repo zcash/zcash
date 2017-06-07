@@ -92,7 +92,7 @@ void static RandomScript(CScript &script) {
     script = CScript();
     int ops = (insecure_randrange(10));
     for (int i=0; i<ops; i++)
-        script << oplist[insecure_rand() % (sizeof(oplist)/sizeof(oplist[0]))];
+        script << oplist[insecure_randrange(sizeof(oplist)/sizeof(oplist[0]))];
 }
 
 // Overwinter tx version numbers are selected randomly from current version range.
@@ -117,7 +117,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
             tx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
             tx.nVersion = overwinter_version_dist(rng);
         }
-        tx.nExpiryHeight = (insecure_randrange(2)) ? insecure_rand() % TX_EXPIRY_HEIGHT_THRESHOLD : 0;
+        tx.nExpiryHeight = (insecure_randrange(2)) ? insecure_randrange(TX_EXPIRY_HEIGHT_THRESHOLD) : 0;
     } else {
         tx.nVersion = insecure_rand() & 0x7FFFFFFF;
     }
@@ -231,12 +231,12 @@ BOOST_AUTO_TEST_CASE(sighash_test)
     for (int i=0; i<nRandomTests; i++) {
         int nHashType = insecure_rand();
         // Exclude ZFUTURE as its branch ID can't be represented as a JSON int32
-        uint32_t consensusBranchId = NetworkUpgradeInfo[insecure_rand() % (Consensus::MAX_NETWORK_UPGRADES - 1)].nBranchId;
+        uint32_t consensusBranchId = NetworkUpgradeInfo[insecure_randrange(Consensus::MAX_NETWORK_UPGRADES - 1)].nBranchId;
         CMutableTransaction txTo;
         RandomTransaction(txTo, (nHashType & 0x1f) == SIGHASH_SINGLE, consensusBranchId);
         CScript scriptCode;
         RandomScript(scriptCode);
-        int nIn = insecure_rand() % txTo.vin.size();
+        int nIn = insecure_randrange(txTo.vin.size());
         // We don't generate v5 transactions here; we have separate ZIP 244 test vectors.
         const PrecomputedTransactionData txdata(txTo, {});
 
