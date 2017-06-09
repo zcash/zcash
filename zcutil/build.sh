@@ -33,7 +33,7 @@ Usage:
 $0 --help
   Show this help message and exit.
 
-$0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --disable-rust ] [ MAKEARGS... ]
+$0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --disable-rust ] [ --enable-proton ] [ MAKEARGS... ]
   Build Zcash and most of its transitive dependencies from
   source. MAKEARGS are applied to both dependencies and Zcash itself.
 
@@ -45,7 +45,11 @@ $0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --disable-rust ] 
   code. It must be passed after the test arguments, if present.
 
   If --disable-rust is passed, Zcash is configured to not build any Rust language
-  assets. It must be passed after mining/test arguments, if present.
+  assets. It must be passed after test/mining arguments, if present.
+
+  If --enable-proton is passed, Zcash is configured to build the Apache Qpid Proton
+  library required for AMQP support. This library is not built by default.
+  It must be passed after the test/mining/Rust arguments, if present.
 EOF
     exit 0
 fi
@@ -84,9 +88,23 @@ then
     shift
 fi
 
+# If --enable-proton is the next argument, enable building Proton code:
+PROTON_ARG='--enable-proton=no'
+if [ "x${1:-}" = 'x--enable-proton' ]
+then
+    PROTON_ARG=''
+    shift
+fi
+
 PREFIX="$(pwd)/depends/$BUILD/"
 
-HOST="$HOST" BUILD="$BUILD" NO_RUST="$RUST_ARG" "$MAKE" "$@" -C ./depends/ V=1
+eval "$MAKE" --version
+eval "$CC" --version
+eval "$CXX" --version
+as --version
+ld --version
+
+HOST="$HOST" BUILD="$BUILD" NO_RUST="$RUST_ARG" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
 ./autogen.sh
-CC="$CC" CXX="$CXX" ./configure --prefix="${PREFIX}" --host="$HOST" --build="$BUILD" "$RUST_ARG" "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" CXXFLAGS='-fwrapv -fno-strict-aliasing -Werror -g'
+CC="$CC" CXX="$CXX" ./configure --prefix="${PREFIX}" --host="$HOST" --build="$BUILD" "$RUST_ARG" "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" CXXFLAGS='-fwrapv -fno-strict-aliasing -Werror -g'
 "$MAKE" "$@" V=1

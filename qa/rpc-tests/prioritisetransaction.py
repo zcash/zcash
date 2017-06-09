@@ -7,6 +7,8 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
 from time import *
 from test_framework.mininode import COIN
+import time
+
 
 class PrioritiseTransactionTest (BitcoinTestFramework):
 
@@ -67,7 +69,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
         self.sync_all()
 
         # Create tx of lower value to be prioritized on node 0
-        # Older transactions get mined first, so this lower value, newer tx is unlikely to be mined without prioritization
+        # Older transactions get mined first, so this lower value, newer tx is unlikely to be mined without prioritisation
         priority_tx_0 = self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
 
         # Check that priority_tx_0 is not in block_template() prior to prioritisation
@@ -79,18 +81,49 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
                 break
         assert_equal(in_block_template, False)
 
-        priority_result = self.nodes[0].prioritisetransaction(priority_tx_0, 1000, int(3 * base_fee * COIN))
+        priority_success = self.nodes[0].prioritisetransaction(priority_tx_0, 1000, int(3 * base_fee * COIN))
+        assert(priority_success)
 
-        # Check that prioritized transaction is in getblocktemplate()
+        # Check that prioritized transaction is not in getblocktemplate()
+        # (not updated because no new txns)
         in_block_template = False
         block_template = self.nodes[0].getblocktemplate()
         for tx in block_template['transactions']:
             if tx['hash'] == priority_tx_0:
                 in_block_template = True
                 break
-        # NOTE: getblocktemplate() should return prioritized transaction, but is not
-        # Noted by user in issue #1884
         assert_equal(in_block_template, False)
+
+        # Sending a new transaction will make getblocktemplate refresh within 10s
+        self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
+
+        # Check that prioritized transaction is not in getblocktemplate()
+        # (too soon)
+        in_block_template = False
+        block_template = self.nodes[0].getblocktemplate()
+        for tx in block_template['transactions']:
+            if tx['hash'] == priority_tx_0:
+                in_block_template = True
+                break
+        assert_equal(in_block_template, False)
+
+        # Check that prioritized transaction is in getblocktemplate()
+        # getblocktemplate() will refresh after 1 min, or after 10 sec if new transaction is added to mempool
+        # Mempool is probed every 10 seconds. We'll give getblocktemplate() a maximum of 30 seconds to refresh
+        block_template = self.nodes[0].getblocktemplate()
+        start = time.time();
+        in_block_template = False
+        while in_block_template == False:
+            for tx in block_template['transactions']:
+                if tx['hash'] == priority_tx_0:
+                    in_block_template = True
+                    break
+            if time.time() - start > 30:
+                raise AssertionError("Test timed out because prioritised transaction was not returned by getblocktemplate within 30 seconds.")
+            sleep(1)
+            block_template = self.nodes[0].getblocktemplate()
+
+        assert(in_block_template)
 
         # Node 1 doesn't get the next block, so this *shouldn't* be mined despite being prioritized on node 1
         priority_tx_1 = self.nodes[1].sendtoaddress(self.nodes[0].getnewaddress(), 0.1)

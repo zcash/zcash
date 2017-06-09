@@ -2,7 +2,7 @@ dnl require autoconf 2.60 (AS_ECHO/AS_ECHO_N)
 AC_PREREQ([2.60])
 define(_CLIENT_VERSION_MAJOR, 1)
 define(_CLIENT_VERSION_MINOR, 0)
-define(_CLIENT_VERSION_REVISION, 8)
+define(_CLIENT_VERSION_REVISION, 9)
 define(_CLIENT_VERSION_BUILD, 51)
 define(_ZC_BUILD_VAL, m4_if(m4_eval(_CLIENT_VERSION_BUILD < 25), 1, m4_incr(_CLIENT_VERSION_BUILD), m4_eval(_CLIENT_VERSION_BUILD < 50), 1, m4_eval(_CLIENT_VERSION_BUILD - 24), m4_eval(_CLIENT_VERSION_BUILD == 50), 1, , m4_eval(_CLIENT_VERSION_BUILD - 50)))
 define(_CLIENT_VERSION_SUFFIX, m4_if(m4_eval(_CLIENT_VERSION_BUILD < 25), 1, _CLIENT_VERSION_REVISION-beta$1, m4_eval(_CLIENT_VERSION_BUILD < 50), 1, _CLIENT_VERSION_REVISION-rc$1, m4_eval(_CLIENT_VERSION_BUILD == 50), 1, _CLIENT_VERSION_REVISION, _CLIENT_VERSION_REVISION-$1)))
@@ -105,6 +105,12 @@ AC_ARG_ENABLE([upnp-default],
   [if UPNP is enabled, turn it on at startup (default is no)])],
   [use_upnp_default=$enableval],
   [use_upnp_default=no])
+
+AC_ARG_ENABLE([proton],
+  [AS_HELP_STRING([--disable-proton],
+  [disable Proton (AMQP messaging)])],
+  [use_proton=$enableval],
+  [use_proton=yes])
 
 AC_ARG_ENABLE(tests,
     AS_HELP_STRING([--enable-tests],[compile tests (default is yes)]),
@@ -533,6 +539,23 @@ if test x$enable_wallet != xno; then
     BITCOIN_FIND_BDB62
 fi
 
+dnl Check Qpid Proton headers and library exist
+if test x$use_proton = xyes; then
+  AC_CHECK_HEADERS([proton/connection.hpp],
+    [],
+    [AC_MSG_WARN([Proton headers not found, disabling Proton support])
+    use_proton=no])
+ AC_CHECK_LIB([qpid-proton-cpp], [main],
+    [PROTON_LIBS="-lqpid-proton-cpp -lqpid-proton"],
+    [AC_MSG_WARN([Proton libraries not found, disabling Proton support])
+    use_proton=no])
+fi
+if test x$use_proton = xyes; then
+    AC_DEFINE(ENABLE_PROTON, 1, [Define to 1 to enable Proton functions])
+else
+    AC_DEFINE(ENABLE_PROTON, 0, [Define to 1 to enable Proton functions])
+fi
+
 dnl Check for libminiupnpc (optional)
 if test x$use_upnp != xno; then
   AC_CHECK_HEADERS(
@@ -882,6 +905,8 @@ fi
 
 AM_CONDITIONAL([ENABLE_ZMQ], [test "x$use_zmq" = "xyes"])
 
+AM_CONDITIONAL([ENABLE_PROTON], [test "x$use_proton" = "xyes"])
+
 AC_MSG_CHECKING([whether to build test_bitcoin])
 if test x$use_tests = xyes; then
   AC_MSG_RESULT([yes])
@@ -940,6 +965,7 @@ AC_SUBST(GMP_LIBS)
 AC_SUBST(GMPXX_LIBS)
 AC_SUBST(LIBSNARK_LIBS)
 AC_SUBST(LIBZCASH_LIBS)
+AC_SUBST(PROTON_LIBS)
 AC_CONFIG_FILES([Makefile src/Makefile doc/man/Makefile share/setup.nsi src/test/buildenv.py])
 AC_CONFIG_FILES([qa/pull-tester/run-bitcoind-for-test.sh],[chmod +x qa/pull-tester/run-bitcoind-for-test.sh])
 AC_CONFIG_FILES([qa/pull-tester/tests-config.sh],[chmod +x qa/pull-tester/tests-config.sh])

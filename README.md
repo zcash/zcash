@@ -1,7 +1,7 @@
-Zclassic 1.0.8-2
-==============
-NOTICE, the default ports have changed! The p2p port is now 8033 and rpcport is 8023
+Zclassic v1.0.9
+===========
 
+NOTICE, the default ports have changed! The p2p port is now 8033 and rpcport is 8023
 
 What is Zclassic?
 ----------------
@@ -88,6 +88,14 @@ See important security warnings in
 [doc/security-warnings.md](doc/security-warnings.md).
 
 **Zclassic and Zcash are unfinished and highly experimental.** Use at your own risk.
+
+Deprecation Policy
+------------------
+
+This release is considered deprecated 16 weeks after the release day. There
+is an automatic deprecation shutdown feature which will halt the node some
+time after this 16 week time period. The automatic feature is based on block
+height and can be explicitly disabled.
 
 Where do I begin?
 -----------------
