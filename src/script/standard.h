@@ -52,8 +52,7 @@ static const unsigned int STANDARD_SCRIPT_VERIFY_FLAGS = MANDATORY_SCRIPT_VERIFY
                                                          SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS |
                                                          SCRIPT_VERIFY_CLEANSTACK |
                                                          SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY |
-                                                         SCRIPT_VERIFY_LOW_S |
-                                                         SCRIPT_VERIFY_CHECKBLOCKATHEIGHT;
+                                                         SCRIPT_VERIFY_LOW_S;
 
 /** For convenience, standard but not mandatory verify flags. */
 static const unsigned int STANDARD_NOT_MANDATORY_VERIFY_FLAGS = STANDARD_SCRIPT_VERIFY_FLAGS & ~MANDATORY_SCRIPT_VERIFY_FLAGS;
@@ -63,14 +62,10 @@ enum txnouttype
     TX_NONSTANDARD,
     // 'standard' transaction types:
     TX_PUBKEY,
-    TX_PUBKEY_REPLAY,
     TX_PUBKEYHASH,
-    TX_PUBKEYHASH_REPLAY,
     TX_SCRIPTHASH,
     TX_MULTISIG,
-    TX_MULTISIG_REPLAY,
     TX_NULL_DATA,
-    TX_NULL_DATA_REPLAY,
 };
 
 class CNoDestination {

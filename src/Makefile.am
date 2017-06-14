@@ -176,7 +176,6 @@ BITCOIN_CORE_H = \
   utilstrencodings.h \
   utiltime.h \
   validationinterface.h \
-  versionbits.h \
   version.h \
   wallet/asyncrpcoperation_sendmany.h \
   wallet/crypter.h \
@@ -233,7 +232,6 @@ libbitcoin_server_a_SOURCES = \
   txdb.cpp \
   txmempool.cpp \
   validationinterface.cpp \
-  versionbits.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
@@ -428,8 +426,8 @@ zcash_cli_LDADD = \
 #
 
 # zcash-tx binary #
-zcash_tx_SOURCES = bitcoin-tx.cpp script/standard.cpp
-zcash_tx_CPPFLAGS = $(BITCOIN_INCLUDES) -DBITCOIN_TX
+zcash_tx_SOURCES = bitcoin-tx.cpp
+zcash_tx_CPPFLAGS = $(BITCOIN_INCLUDES)
 zcash_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
