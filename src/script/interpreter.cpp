@@ -14,10 +14,6 @@
 #include "script/script.h"
 #include "uint256.h"
 
-#include "main.h"
-#include <boost/algorithm/hex.hpp>
-#include <boost/algorithm/string.hpp>
-
 using namespace std;
 
 typedef vector<unsigned char> valtype;
@@ -190,40 +186,6 @@ bool static IsDefinedHashtypeSignature(const valtype &vchSig) {
         return false;
 
     return true;
-}
-
-// Generic anti-replay protection using Script
-bool CheckBlockIndex(int &txBlockIndex, int blockIndex)
-{
-    // checks for relative txBlockIndex
-    if (txBlockIndex < 0)
-    	return false;
-    // checks for absolute blockIndex
-    else if (txBlockIndex >= 0) {
-        int blockDelta = txBlockIndex - blockIndex;
-        // blockDelta must be negative
-        if (blockDelta > 0)
-            return false;
-        // blockDelta must be greater than 100 but lesser than 262144
-        if ((blockDelta > -101) || (blockDelta < -262144) && (blockDelta != 0))
-            return false;
-        // check if txBlockIndex refers to an actual block
-        if (txBlockIndex > blockIndex)
-            return false;
-        return true;
-    }
-
-    return false;
-}
-
-// Generic anti-replay protection using Script
-bool CheckBlockHash(uint256 &txBlockHash, uint256 &blockHash)
-{
-    // OP_CHECKBLOCKATHEIGHT matches active chain
-    if (txBlockHash == blockHash)
-        return true;
-
-    return false;
 }
 
 bool static CheckSignatureEncoding(const valtype &vchSig, unsigned int flags, ScriptError* serror) {
@@ -417,104 +379,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     break;
                 }
 
-#ifndef BITCOIN_ZCASHCONSENSUS_H // zen-tx can't process OP_CHECKBLOCKATHEIGHT because it requires an active chain
-                case OP_CHECKBLOCKATHEIGHT:
-                {
-                    // we need two objects on the stack
-                    if (stack.size() < 2)
-                        return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-
-                    valtype vchBlockHash(stacktop(-2));
-                    valtype vchBlockIndex(stacktop(-1));
-
-                    if ((vchBlockIndex.size() > sizeof(int)) || (vchBlockHash.size() > 32))
-                        return set_error(serror, SCRIPT_ERR_CHECKBLOCKATHEIGHT);
-
-                    // since we can't access chain data then we treat OP_CHECKBLOCKATHEIGHT as a NOP
-                    popstack(stack);
-                    popstack(stack);
-                    stack.push_back(vchTrue);
-                }
-                break;
-#else
-                // Generic anti-replay protection using Script
-                // https://github.com/luke-jr/bips/blob/bip-noreplay/bip-noreplay.mediawiki
-                // Author: Luke Dashjr <luke+bip@dashjr.org>
-                // Implemented by: @movrcx; See: https://github.com/zencashio/zen/issues/12
-                case OP_CHECKBLOCKATHEIGHT:
-                {
-                    if (!(flags & SCRIPT_VERIFY_CHECKBLOCKATHEIGHT)) {
-                        // not enabled; treat as a NOP5
-                        if (flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) {
-                            return set_error(serror, SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS);
-                        }
-                        break;
-                    }
-
-                    // we need two objects on the stack
-                    if (stack.size() < 2)
-                        return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-
-                    CBlockIndex *currentBlock = chainActive.Tip();
-                    valtype vchBlockHash(stacktop(-2));
-                    valtype vchBlockIndex(stacktop(-1));
-                    int txBlockIndex;
-                    uint256 blockHash;
-                    uint256 txBlockHash;
-                    bool fSuccess = false;
-
-                    // check for overflow before casting
-                    if ((vchBlockIndex.size() > sizeof(int)) || (vchBlockHash.size() > 32))
-                        return set_error(serror, SCRIPT_ERR_CHECKBLOCKATHEIGHT);
-                    else
-                    {
-                        // get txBlockIndex from stack vch
-                        txBlockIndex = *reinterpret_cast<const uint16_t*>(&vchBlockIndex[0]);
-
-                        // get txBlockHash from stack vch and convert to hex string
-                        std::string str;
-                        boost::algorithm::hex(vchBlockHash.begin(), vchBlockHash.end(), back_inserter(str));
-                        boost::algorithm::to_lower(str);
-                        txBlockHash.SetHex(str);
-                    }
-
-                    if (currentBlock == NULL)
-                        return set_error(serror, SCRIPT_ERR_CHECKBLOCKATHEIGHT_UNVERIFIED);
-                    else
-                    {
-                        // relative blockIndex lookups are not permitted
-                        if (txBlockIndex < 0)
-                            return set_error(serror, SCRIPT_ERR_CHECKBLOCKATHEIGHT);
-                        else if (txBlockIndex >= 0)
-                            blockHash.SetHex(chainActive[txBlockIndex]->GetBlockHash().GetHex());
-
-                        // ensure we are not doing any null comparisons
-                        if (blockHash.IsNull() || txBlockHash.IsNull())
-                            return set_error(serror, SCRIPT_ERR_CHECKBLOCKATHEIGHT_UNVERIFIED);
-
-                        // check tx against blockchain
-                        fSuccess = ((CheckBlockIndex(txBlockIndex, currentBlock->nHeight)) && (CheckBlockHash(txBlockHash, blockHash)));
-                    }
-
-                    // pop OP_CHECKBLOCKATHEIGHT related vars off the stack
-                    popstack(stack);
-                    popstack(stack);
-                    stack.push_back(fSuccess ? vchTrue : vchFalse);
-
-                    if (opcode == OP_CHECKBLOCKATHEIGHT)
-                    {
-                        if (fSuccess)
-                        {
-                            popstack(stack);
-                        }
-                        else
-                            return set_error(serror, SCRIPT_ERR_CHECKBLOCKATHEIGHT);
-                    }
-                }
-                break;
-#endif
-
-                case OP_NOP1: case OP_NOP3: case OP_NOP4:
+                case OP_NOP1: case OP_NOP3: case OP_NOP4: case OP_NOP5:
                 case OP_NOP6: case OP_NOP7: case OP_NOP8: case OP_NOP9: case OP_NOP10:
                 {
                     if (flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS)
