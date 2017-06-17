@@ -27,4 +27,10 @@ struct TestingSetup: public BasicTestingSetup {
     ~TestingSetup();
 };
 
+// Setup w.r.t. zk-SNARK API
+struct JoinSplitTestingSetup: public BasicTestingSetup {
+    JoinSplitTestingSetup();
+    ~JoinSplitTestingSetup();
+};
+
 #endif
