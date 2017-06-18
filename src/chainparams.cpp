@@ -317,6 +317,8 @@ public:
         genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000009");
         genesis.nSolution = ParseHex("05ffd6ad016271ade20cfce093959c3addb2079629f9f123c52ef920caa316531af5af3f");
         consensus.hashGenesisBlock = genesis.GetHash();
+	nDefaultPort = 18033;
+	assert(consensus.hashGenesisBlock == uint256S("0x0575f78ee8dc057deee78ef691876e3be29833aaee5e189bb0459c087451305a"));
         nPruneAfterHeight = 1000;
 
         vFixedSeeds.clear(); //! Regtest mode doesn't have any fixed seeds.
