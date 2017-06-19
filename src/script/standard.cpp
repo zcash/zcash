@@ -31,6 +31,7 @@ const char* GetTxnOutputType(txnouttype t)
     case TX_PUBKEYHASH_REPLAY: return "pubkeyhashreplay";
     case TX_SCRIPTHASH: return "scripthash";
     case TX_MULTISIG: return "multisig";
+    case TX_MULTISIG_REPLAY: return "multisigreplay";
     case TX_NULL_DATA: return "nulldata";
     }
     return NULL;
@@ -55,6 +56,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
 
         // Sender provides N pubkeys, receivers provides M signatures
         mTemplates.insert(make_pair(TX_MULTISIG, CScript() << OP_SMALLINTEGER << OP_PUBKEYS << OP_SMALLINTEGER << OP_CHECKMULTISIG));
+        mTemplates.insert(make_pair(TX_MULTISIG_REPLAY, CScript() << OP_SMALLINTEGER << OP_PUBKEYS << OP_SMALLINTEGER << OP_CHECKMULTISIG << OP_SMALLDATA << OP_SMALLDATA << OP_NOP5));
 
         // Empty, provably prunable, data-carrying output
         if (GetBoolArg("-datacarrier", true))

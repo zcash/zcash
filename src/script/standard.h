@@ -67,6 +67,7 @@ enum txnouttype
     TX_PUBKEYHASH_REPLAY,
     TX_SCRIPTHASH,
     TX_MULTISIG,
+    TX_MULTISIG_REPLAY,
     TX_NULL_DATA,
 };
 
