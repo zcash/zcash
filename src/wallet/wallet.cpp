@@ -4769,7 +4769,7 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
     if (chainActive.Tip() && chainActive.Tip() != pindexRescan)
     {
         // We can't rescan beyond non-pruned blocks, stop and throw an error.
-        // This might happen if a user uses a old wallet within a pruned node,
+        // This might happen if a user uses an old wallet within a pruned node,
         // or if they ran -disablewallet for a longer time, then decided to re-enable.
         if (fPruneMode)
         {
