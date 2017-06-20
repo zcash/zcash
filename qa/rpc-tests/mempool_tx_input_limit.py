@@ -31,20 +31,34 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         recipients = []
         recipients.append({"address": to_addr, "amount": amount})
         myopid = self.nodes[0].z_sendmany(from_addr, recipients)
+        return self.wait_and_assert_operationid_status(myopid)
 
+    def wait_and_assert_operationid_status(self, myopid, in_status='success', in_errormsg=None):
+        print('waiting for async operation {}'.format(myopid))
         opids = []
         opids.append(myopid)
-
-        timeout = 120
+        timeout = 300
         status = None
+        errormsg = None
+        txid = None
         for x in xrange(1, timeout):
             results = self.nodes[0].z_getoperationresult(opids)
             if len(results)==0:
                 sleep(1)
             else:
                 status = results[0]["status"]
-                assert_equal("success", status)
-                return results[0]["result"]["txid"]
+                if status == "failed":
+                    errormsg = results[0]['error']['message']
+                elif status == "success":
+                    txid = results[0]['result']['txid']
+                break
+        print('...returned status: {}'.format(status))
+        assert_equal(in_status, status)
+        if errormsg is not None:
+            assert(in_errormsg is not None)
+            assert_equal(in_errormsg in errormsg, True)
+            print('...returned error: {}'.format(errormsg))
+        return txid
 
     def run_test(self):
         start_count = self.nodes[0].getblockcount()
@@ -106,20 +120,20 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         recipients = []
         spend_taddr_amount = spend_zaddr_amount - Decimal('0.0001')
         spend_taddr_output = Decimal('8')
+
         # Create three outputs
-        self.call_z_sendmany(node0_zaddr, node1_taddr, spend_taddr_output - Decimal('0.0001'))
-        self.nodes[1].generate(1)
-        self.sync_all()
-        self.call_z_sendmany(node0_zaddr, node1_taddr, spend_taddr_output - Decimal('0.0001'))
-        self.nodes[1].generate(1)
-        self.sync_all()
-        self.call_z_sendmany(node0_zaddr, node1_taddr, spend_taddr_amount - spend_taddr_output - spend_taddr_output - Decimal('0.0001')) # note amount less fees
+        recipients.append({"address":self.nodes[1].getnewaddress(), "amount": spend_taddr_output})
+        recipients.append({"address":self.nodes[1].getnewaddress(), "amount": spend_taddr_output})
+        recipients.append({"address":self.nodes[1].getnewaddress(), "amount": spend_taddr_amount - spend_taddr_output - spend_taddr_output})
+
+        myopid = self.nodes[0].z_sendmany(node0_zaddr, recipients)
+        self.wait_and_assert_operationid_status(myopid)
         self.nodes[1].generate(1)
         self.sync_all()
 
         # Should use three UTXOs and fail
         try:
-            self.nodes[1].sendtoaddress(node0_taddr, spend_taddr_amount - Decimal('1'))
+            self.nodes[1].sendfrom("", node0_taddr, spend_taddr_amount - Decimal('1'))
             assert(False)
         except JSONRPCException,e:
             msg = e.error['message']
