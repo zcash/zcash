@@ -204,17 +204,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds, no unspent notes found for zaddr from address.");
     }
 
-    // Check mempooltxinputlimit to avoid creating a transaction which the local mempool rejects
-    if (isfromtaddr_) {
-        size_t limit = (size_t)GetArg("-mempooltxinputlimit", 0);
-        if (limit > 0) {
-            size_t n = t_inputs_.size();
-            if (n > limit) {
-                throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Too many transparent inputs %zu > limit %zu", n, limit));
-            }
-        }
-    }
-
     CAmount t_inputs_total = 0;
     for (SendManyInputUTXO & t : t_inputs_) {
         t_inputs_total += std::get<2>(t);
@@ -291,6 +280,15 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         t_inputs_ = selectedTInputs;
         t_inputs_total = selectedUTXOAmount;
+
+        // Check mempooltxinputlimit to avoid creating a transaction which the local mempool rejects
+        size_t limit = (size_t)GetArg("-mempooltxinputlimit", 0);
+        if (limit > 0) {
+            size_t n = t_inputs_.size();
+            if (n > limit) {
+                throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Too many transparent inputs %zu > limit %zu", n, limit));
+            }
+        }
 
         // update the transaction with these inputs
         CMutableTransaction rawTx(tx_);
