@@ -12,8 +12,12 @@
 # ********
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
+from test_framework.authproxy import JSONRPCException
+from test_framework.util import initialize_chain_clean, start_node, \
+    connect_nodes, stop_node, sync_blocks
+
 import os.path
+import time
 
 def calc_usage(blockdir):
     return sum(os.path.getsize(blockdir+f) for f in os.listdir(blockdir) if os.path.isfile(blockdir+f))/(1024*1024)

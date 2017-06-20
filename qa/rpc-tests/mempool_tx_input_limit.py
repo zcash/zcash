@@ -4,10 +4,12 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
-import os
-import shutil
-from time import sleep
+from test_framework.authproxy import JSONRPCException
+from test_framework.util import assert_equal, initialize_chain_clean, \
+    start_node, connect_nodes
+
+import time
+from decimal import Decimal
 
 # Test -mempooltxinputlimit
 class MempoolTxInputLimitTest(BitcoinTestFramework):
@@ -44,7 +46,7 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         for x in xrange(1, timeout):
             results = self.nodes[0].z_getoperationresult(opids)
             if len(results)==0:
-                sleep(1)
+                time.sleep(1)
             else:
                 status = results[0]["status"]
                 if status == "failed":
@@ -90,7 +92,7 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         for x in xrange(1, timeout):
             results = self.nodes[0].z_getoperationresult(opids)
             if len(results)==0:
-                sleep(1)
+                time.sleep(1)
             else:
                 status = results[0]["status"]
                 msg = results[0]["error"]["message"]

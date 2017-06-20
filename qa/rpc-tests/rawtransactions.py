@@ -9,9 +9,11 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
-from pprint import pprint
-from time import sleep
+from test_framework.authproxy import JSONRPCException
+from test_framework.util import assert_equal, initialize_chain_clean, \
+    start_nodes, connect_nodes_bi
+
+from decimal import Decimal
 
 # Create one-input, one-output, no-fee transaction:
 class RawTransactionsTest(BitcoinTestFramework):

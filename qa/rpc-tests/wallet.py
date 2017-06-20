@@ -5,8 +5,13 @@
 
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
-from time import *
+from test_framework.authproxy import JSONRPCException
+from test_framework.util import assert_equal, assert_greater_than, \
+    initialize_chain_clean, start_nodes, start_node, connect_nodes_bi, \
+    stop_nodes, sync_blocks, sync_mempools, wait_bitcoinds
+
+import time
+from decimal import Decimal
 
 class WalletTest (BitcoinTestFramework):
 
@@ -306,7 +311,7 @@ class WalletTest (BitcoinTestFramework):
         for x in xrange(1, timeout):
             results = self.nodes[2].z_getoperationresult(opids)
             if len(results)==0:
-                sleep(1)
+                time.sleep(1)
             else:
                 status = results[0]["status"]
                 mytxid = results[0]["result"]["txid"]
@@ -363,7 +368,7 @@ class WalletTest (BitcoinTestFramework):
         for x in xrange(1, timeout):
             results = self.nodes[2].z_getoperationresult(opids)
             if len(results)==0:
-                sleep(1)
+                time.sleep(1)
             else:
                 status = results[0]["status"]
                 break

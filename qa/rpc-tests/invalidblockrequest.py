@@ -5,11 +5,11 @@
 #
 
 from test_framework.test_framework import ComparisonTestFramework
-from test_framework.util import *
+from test_framework.util import assert_equal
 from test_framework.comptool import TestManager, TestInstance
-from test_framework.mininode import *
-from test_framework.blocktools import *
-import logging
+from test_framework.mininode import NetworkThread
+from test_framework.blocktools import create_block, create_coinbase, create_transaction
+
 import copy
 import time
 

@@ -8,10 +8,9 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
-from decimal import Decimal
-import os
-import shutil
+from test_framework.util import assert_equal, connect_nodes, \
+    sync_blocks, gather_inputs
+
 
 class TxnMallTest(BitcoinTestFramework):
 

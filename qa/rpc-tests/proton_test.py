@@ -14,21 +14,13 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
+from test_framework.util import assert_equal, bytes_to_hex_str, \
+    start_nodes
+
 from proton.handlers import MessagingHandler
 from proton.reactor import Container
-import binascii
-import struct
-import threading
 
-try:
-    import http.client as httplib
-except ImportError:
-    import httplib
-try:
-    import urllib.parse as urlparse
-except ImportError:
-    import urlparse
+import threading
 
 
 class Server(MessagingHandler):

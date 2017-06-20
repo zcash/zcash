@@ -4,9 +4,10 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
-from time import *
+from test_framework.util import assert_equal, initialize_chain_clean, \
+    start_node, connect_nodes
 from test_framework.mininode import COIN
+
 import time
 
 
@@ -37,7 +38,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
         for x in xrange(1, timeout):
             results = self.nodes[0].z_getoperationresult(opids)
             if len(results)==0:
-                sleep(1)
+                time.sleep(1)
             else:
                 status = results[0]["status"]
                 if status == "failed":
@@ -120,7 +121,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
                     break
             if time.time() - start > 30:
                 raise AssertionError("Test timed out because prioritised transaction was not returned by getblocktemplate within 30 seconds.")
-            sleep(1)
+            time.sleep(1)
             block_template = self.nodes[0].getblocktemplate()
 
         assert(in_block_template)
