@@ -9,7 +9,7 @@ import os
 import shutil
 from time import sleep
 
-# Create one-input, one-output, no-fee transaction:
+# Test -mempooltxinputlimit
 class MempoolTxInputLimitTest(BitcoinTestFramework):
 
     alert_filename = None  # Set by setup_network
