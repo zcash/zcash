@@ -42,6 +42,7 @@ class ZMQTest (BitcoinTestFramework):
         assert_equal(topic, b"hashtx")
         body = msg[1]
         nseq = msg[2]
+        [nseq] # hush pyflakes
         msgSequence = struct.unpack('<I', msg[-1])[-1]
         assert_equal(msgSequence, 0) #must be sequence 0 on hashtx
 

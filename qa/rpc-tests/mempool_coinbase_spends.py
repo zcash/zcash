@@ -35,8 +35,6 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
         return signresult["hex"]
 
     def run_test(self):
-        start_count = self.nodes[0].getblockcount()
-
         # Mine three blocks. After this, nodes[0] blocks
         # 101, 102, and 103 are spend-able.
         new_blocks = self.nodes[1].generate(4)
@@ -68,6 +66,7 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
 
         # Broadcast and mine 103_1:
         spend_103_1_id = self.nodes[0].sendrawtransaction(spend_103_1_raw)
+        [spend_103_1_id] # hush pyflakes
         self.nodes[0].generate(1)
 
         # ... now put spend_101 and spend_102_1 in memory pools:

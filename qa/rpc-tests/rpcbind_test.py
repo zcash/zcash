@@ -120,7 +120,6 @@ def main():
     check_json_precision()
 
     success = False
-    nodes = []
     try:
         print("Initializing test directory "+options.tmpdir)
         if not os.path.isdir(options.tmpdir):

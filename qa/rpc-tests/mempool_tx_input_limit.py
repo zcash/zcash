@@ -63,8 +63,6 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         return txid
 
     def run_test(self):
-        start_count = self.nodes[0].getblockcount()
-
         self.nodes[0].generate(100)
         self.sync_all()
         # Mine three blocks. After this, nodes[0] blocks
@@ -118,7 +116,6 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         assert_equal(set(self.nodes[0].getrawmempool()), set())
 
         # Check 2: sendfrom is limited by -mempooltxinputlimit
-        node1_taddr = self.nodes[1].getnewaddress();
         recipients = []
         spend_taddr_amount = spend_zaddr_amount - Decimal('0.0001')
         spend_taddr_output = Decimal('8')

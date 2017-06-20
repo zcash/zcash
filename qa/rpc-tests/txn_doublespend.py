@@ -76,7 +76,7 @@ class TxnMallTest(BitcoinTestFramework):
             assert_equal(tx2["confirmations"], 0)
 
         # Now give doublespend to miner:
-        mutated_txid = self.nodes[2].sendrawtransaction(doublespend["hex"])
+        self.nodes[2].sendrawtransaction(doublespend["hex"])
         # ... mine a block...
         self.nodes[2].generate(1)
 

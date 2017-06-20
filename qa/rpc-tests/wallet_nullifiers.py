@@ -154,6 +154,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
                 status = results[0]["status"]
                 assert_equal("success", status)
                 mytxid = results[0]["result"]["txid"]
+                [mytxid] # hush pyflakes
                 break
 
         self.sync_all()

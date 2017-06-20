@@ -194,7 +194,7 @@ class PruneTest(BitcoinTestFramework):
         try:
             self.nodes[2].getblock(self.forkhash)
             raise AssertionError("Old block wasn't pruned so can't test redownload")
-        except JSONRPCException as e:
+        except JSONRPCException:
             print "Will need to redownload block",self.forkheight
 
         # Verify that we have enough history to reorg back to the fork point
@@ -257,7 +257,7 @@ class PruneTest(BitcoinTestFramework):
             newtx = newtx + rawtx[94:]
             # Appears to be ever so slightly faster to sign with SIGHASH_NONE
             signresult = node.signrawtransaction(newtx,None,None,"NONE")
-            txid = node.sendrawtransaction(signresult["hex"], True)
+            node.sendrawtransaction(signresult["hex"], True)
         # Mine a full sized block which will be these transactions we just created
         node.generate(1)
 
