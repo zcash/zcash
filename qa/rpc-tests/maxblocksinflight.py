@@ -61,7 +61,7 @@ class TestManager(NodeConnCB):
                         current_invs = []
                 if len(current_invs) > 0:
                     self.connection.send_message(msg_inv(current_invs))
-                
+
                 # Wait and see how many blocks were requested
                 time.sleep(2)
 
@@ -80,7 +80,7 @@ class TestManager(NodeConnCB):
         self.disconnectOkay = True
         self.connection.disconnect_node()
 
-        
+
 class MaxBlocksInFlightTest(BitcoinTestFramework):
     def add_options(self, parser):
         parser.add_option("--testbinary", dest="testbinary",

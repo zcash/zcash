@@ -5,7 +5,7 @@
 
 # Test for -rpcbind, as well as -rpcallowip and -rpcconnect
 
-# Add python-bitcoinrpc to module search path:
+# Dependency: python-bitcoinrpc
 
 from test_framework.util import assert_equal, check_json_precision, \
     initialize_chain, start_nodes, stop_nodes, wait_bitcoinds, \

@@ -13,7 +13,7 @@ class BlockStore(object):
     def __init__(self, datadir):
         self.blockDB = dbm.open(datadir + "/blocks", 'c')
         self.currentBlock = 0L
-    
+
     def close(self):
         self.blockDB.close()
 

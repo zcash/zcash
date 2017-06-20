@@ -13,7 +13,7 @@ from test_framework.util import assert_equal, bytes_to_hex_str, start_nodes
 import zmq
 import struct
 
-class ZMQTest (BitcoinTestFramework):
+class ZMQTest(BitcoinTestFramework):
 
     port = 28332
 
@@ -44,7 +44,7 @@ class ZMQTest (BitcoinTestFramework):
         nseq = msg[2]
         [nseq] # hush pyflakes
         msgSequence = struct.unpack('<I', msg[-1])[-1]
-        assert_equal(msgSequence, 0) #must be sequence 0 on hashtx
+        assert_equal(msgSequence, 0) # must be sequence 0 on hashtx
 
         msg = self.zmqSubSocket.recv_multipart()
         topic = msg[0]
