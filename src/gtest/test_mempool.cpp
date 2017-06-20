@@ -96,6 +96,9 @@ TEST(Mempool, TxInputLimit) {
     bool missingInputs;
 
     // Create an obviously-invalid transaction
+    // We intentionally set tx.nVersion = 0 to reliably trigger an error, as
+    // it's the first check that occurs after the -mempooltxinputlimit check,
+    // and it means that we don't have to mock out a lot of global state.
     CMutableTransaction mtx;
     mtx.nVersion = 0;
     mtx.vin.resize(10);
@@ -121,7 +124,8 @@ TEST(Mempool, TxInputLimit) {
     CValidationState state3;
     CTransaction tx3(mtx);
     EXPECT_FALSE(AcceptToMemoryPool(pool, state3, tx3, false, &missingInputs));
-    EXPECT_NE(state3.GetRejectReason(), "bad-txns-version-too-low");
+    // The -mempooltxinputlimit check doesn't set a reason
+    EXPECT_EQ(state3.GetRejectReason(), "");
 
     // Clear the limit
     mapArgs.erase("-mempooltxinputlimit");

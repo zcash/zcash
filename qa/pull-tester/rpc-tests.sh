@@ -26,6 +26,7 @@ testScripts=(
     'rest.py'
     'mempool_spendcoinbase.py'
     'mempool_coinbase_spends.py'
+    'mempool_tx_input_limit.py'
     'httpbasics.py'
     'zapwallettxes.py'
     'proxy_test.py'
