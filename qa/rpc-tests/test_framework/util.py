@@ -213,6 +213,10 @@ def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, binary=None):
 def log_filename(dirname, n_node, logname):
     return os.path.join(dirname, "node"+str(n_node), "regtest", logname)
 
+def check_node(i):
+    bitcoind_processes[i].poll()
+    return bitcoind_processes[i].returncode
+
 def stop_node(node, i):
     node.stop()
     bitcoind_processes[i].wait()
