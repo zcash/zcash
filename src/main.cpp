@@ -2078,19 +2078,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                              REJECT_INVALID, "bad-txns-BIP30");
     }
 
-    unsigned int flags = SCRIPT_VERIFY_P2SH;
+    unsigned int flags = SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
 
-    // Start enforcing the DERSIG (BIP66) rules, for block.nVersion=3 blocks,
-    // when 75% of the network has upgraded:
-    if (block.nVersion >= 3) {
-        flags |= SCRIPT_VERIFY_DERSIG;
-    }
-
-    // Start enforcing CHECKLOCKTIMEVERIFY, (BIP65) for block.nVersion=4
-    // blocks, when 75% of the network has upgraded:
-    if (block.nVersion >= 4) {
-        flags |= SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
-    }
+    // DERSIG (BIP66) is also always enforced, but does not have a flag.
 
     CBlockUndo blockundo;
 
@@ -3103,11 +3093,10 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         }
     }
 
-    // Enforce block.nVersion=2 rule that the coinbase starts with serialized block height
-    // if 750 of the last 1,000 blocks are version 2 or greater (51/100 if testnet):
-    // Since MIN_BLOCK_VERSION = 4 all blocks with nHeight > 0 should satisfy this.
-    // This rule is not applied to the genesis block, which didn't include the height
-    // in the coinbase.
+    // Enforce BIP 34 rule that the coinbase starts with serialized block height.
+    // In Zcash this has been enforced since launch, except that the genesis
+    // block didn't include the height in the coinbase (see Zcash protocol spec
+    // section '6.8 Bitcoin Improvement Proposals').
     if (nHeight > 0)
     {
         CScript expect = CScript() << nHeight;
