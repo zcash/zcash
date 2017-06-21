@@ -143,7 +143,7 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         assert_equal(set(self.nodes[1].getrawmempool()), set())
 
         # Should use two UTXOs and succeed
-        spend_taddr_id2 = self.nodes[1].sendtoaddress(node0_taddr, spend_taddr_output + spend_taddr_output - Decimal('1'))
+        spend_taddr_id2 = self.nodes[1].sendfrom("", node0_taddr, spend_taddr_output + spend_taddr_output - Decimal('1'))
 
         # Spend should be in the mempool
         assert_equal(set(self.nodes[1].getrawmempool()), set([ spend_taddr_id2 ]))
