@@ -6,7 +6,7 @@
 #define ZCASH_DEPRECATION_H
 
 // Deprecation policy is 4th third-Tuesday after a release
-static const int APPROX_RELEASE_HEIGHT = 120500;
+static const int APPROX_RELEASE_HEIGHT = 136000;
 static const int WEEKS_UNTIL_DEPRECATION = 18;
 static const int DEPRECATION_HEIGHT = APPROX_RELEASE_HEIGHT + (WEEKS_UNTIL_DEPRECATION * 7 * 24 * 24);
 
