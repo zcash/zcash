@@ -380,7 +380,8 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 }
                 case OP_NOP5:
                 {
-                    if (stack.size() == 2) {
+                    // If it is OP_CHECKBLOCKATHEIGHT then there are should be 3 args in stack: 2 params and 1 ret value from the prev opcode
+                    if (stack.size() == 3) {
                         popstack(stack);
                         popstack(stack);
                     }
