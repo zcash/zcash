@@ -4358,6 +4358,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             return false;
         }
 
+        if (pfrom->nVersion == 10300)
+            pfrom->nVersion = 300;
         if (!vRecv.empty())
             vRecv >> addrFrom >> nNonce;
         if (!vRecv.empty()) {
@@ -4416,8 +4418,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             }
 
             // Get recent addresses
-            pfrom->PushMessage("getaddr");
-            pfrom->fGetAddr = true;
+            if (pfrom->fOneShot || pfrom->nVersion >= CADDR_TIME_VERSION || addrman.size() < 1000)
+            {
+                pfrom->PushMessage("getaddr");
+                pfrom->fGetAddr = true;
+            }
             addrman.Good(pfrom->addr);
         } else {
             if (((CNetAddr)pfrom->addr) == (CNetAddr)addrFrom)
@@ -4476,6 +4481,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         vector<CAddress> vAddr;
         vRecv >> vAddr;
 
+        // Don't want addr from older versions unless seeding
+        if (pfrom->nVersion < CADDR_TIME_VERSION && addrman.size() > 1000)
+            return true;
         if (vAddr.size() > 1000)
         {
             Misbehaving(pfrom->GetId(), 20);
@@ -4510,6 +4518,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                     multimap<uint256, CNode*> mapMix;
                     BOOST_FOREACH(CNode* pnode, vNodes)
                     {
+                        if (pnode->nVersion < CADDR_TIME_VERSION)
+                            continue;
                         unsigned int nPointer;
                         memcpy(&nPointer, &pnode, sizeof(nPointer));
                         uint256 hashKey = ArithToUint256(UintToArith256(hashRand) ^ nPointer);
@@ -4960,20 +4970,23 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
     else if (strCommand == "ping")
     {
-        uint64_t nonce = 0;
-        vRecv >> nonce;
-        // Echo the message back with the nonce. This allows for two useful features:
-        //
-        // 1) A remote node can quickly check if the connection is operational
-        // 2) Remote nodes can measure the latency of the network thread. If this node
-        //    is overloaded it won't respond to pings quickly and the remote node can
-        //    avoid sending us more work, like chain download requests.
-        //
-        // The nonce stops the remote getting confused between different pings: without
-        // it, if the remote node sends a ping once per second and this node takes 5
-        // seconds to respond to each, the 5th ping the remote sends would appear to
-        // return very quickly.
-        pfrom->PushMessage("pong", nonce);
+        if (pfrom->nVersion > BIP0031_VERSION)
+        {
+            uint64_t nonce = 0;
+            vRecv >> nonce;
+            // Echo the message back with the nonce. This allows for two useful features:
+            //
+            // 1) A remote node can quickly check if the connection is operational
+            // 2) Remote nodes can measure the latency of the network thread. If this node
+            //    is overloaded it won't respond to pings quickly and the remote node can
+            //    avoid sending us more work, like chain download requests.
+            //
+            // The nonce stops the remote getting confused between different pings: without
+            // it, if the remote node sends a ping once per second and this node takes 5
+            // seconds to respond to each, the 5th ping the remote sends would appear to
+            // return very quickly.
+            pfrom->PushMessage("pong", nonce);
+        }
     }
 
 
@@ -5301,8 +5314,14 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             }
             pto->fPingQueued = false;
             pto->nPingUsecStart = GetTimeMicros();
-            pto->nPingNonceSent = nonce;
-            pto->PushMessage("ping", nonce);
+            if (pto->nVersion > BIP0031_VERSION) {
+                pto->nPingNonceSent = nonce;
+                pto->PushMessage("ping", nonce);
+            } else {
+                // Peer is too old to support ping command with nonce, pong will never arrive.
+                pto->nPingNonceSent = 0;
+                pto->PushMessage("ping");
+            }
         }
 
         TRY_LOCK(cs_main, lockMain); // Acquire cs_main for IsInitialBlockDownload() and CNodeState()
