@@ -92,3 +92,28 @@ TEST(Metrics, GetLocalSolPS) {
     SetMockTime(104);
     EXPECT_EQ(1, GetLocalSolPS());
 }
+
+TEST(Metrics, EstimateNetHeightInner) {
+    // Ensure that the (rounded) current height is returned if the tip is current
+    SetMockTime(15000);
+    EXPECT_EQ(100, EstimateNetHeightInner(100, 14250, 50, 7500, 150));
+    SetMockTime(15150);
+    EXPECT_EQ(100, EstimateNetHeightInner(101, 14400, 50, 7500, 150));
+
+    // Ensure that correct estimates are returned if the tip is in the past
+    SetMockTime(15300); // Tip is 2 blocks behind
+    EXPECT_EQ(100, EstimateNetHeightInner(100, 14250, 50, 7500, 150));
+    SetMockTime(15900); // Tip is 6 blocks behind
+    EXPECT_EQ(110, EstimateNetHeightInner(100, 14250, 50, 7500, 150));
+
+    // More complex calculations:
+    SetMockTime(20000);
+    // - Checkpoint spacing: 200
+    //   -> Average spacing: 175
+    //   -> estimated height: 127 -> 130
+    EXPECT_EQ(130, EstimateNetHeightInner(100, 14250, 50, 5250, 150));
+    // - Checkpoint spacing: 50
+    //   -> Average spacing: 100
+    //   -> estimated height: 153 -> 150
+    EXPECT_EQ(150, EstimateNetHeightInner(100, 14250, 50, 12000, 150));
+}

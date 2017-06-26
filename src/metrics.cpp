@@ -5,6 +5,7 @@
 #include "metrics.h"
 
 #include "chainparams.h"
+#include "checkpoints.h"
 #include "main.h"
 #include "ui_interface.h"
 #include "util.h"
@@ -103,6 +104,30 @@ double GetLocalSolPS()
     return miningTimer.rate(solutionTargetChecks);
 }
 
+int EstimateNetHeightInner(int height, int64_t tipmediantime,
+                           int heightLastCheckpoint, int64_t timeLastCheckpoint,
+                           int64_t targetSpacing)
+{
+    // We average the target spacing with the observed spacing to the last
+    // checkpoint, and use that to estimate the current network height.
+    int medianHeight = height - CBlockIndex::nMedianTimeSpan / 2;
+    double checkpointSpacing = (double (tipmediantime - timeLastCheckpoint)) / (medianHeight - heightLastCheckpoint);
+    double averageSpacing = (targetSpacing + checkpointSpacing) / 2;
+    int netheight = medianHeight + ((GetTime() - tipmediantime) / averageSpacing);
+    // Round to nearest ten to reduce noise
+    return ((netheight + 5) / 10) * 10;
+}
+
+int EstimateNetHeight(int height, int64_t tipmediantime, CChainParams chainParams)
+{
+    auto checkpointData = chainParams.Checkpoints();
+    return EstimateNetHeightInner(
+        height, tipmediantime,
+        Checkpoints::GetTotalBlocksEstimate(checkpointData),
+        checkpointData.nTimeLastCheckpoint,
+        chainParams.GetConsensus().nPowTargetSpacing);
+}
+
 void TriggerRefresh()
 {
     *nNextRefresh = GetTime();
@@ -169,17 +194,25 @@ int printStats(bool mining)
     int lines = 4;
 
     int height;
+    int64_t tipmediantime;
     size_t connections;
     int64_t netsolps;
     {
         LOCK2(cs_main, cs_vNodes);
         height = chainActive.Height();
+        tipmediantime = chainActive.Tip()->GetMedianTimePast();
         connections = vNodes.size();
         netsolps = GetNetworkHashPS(120, -1);
     }
     auto localsolps = GetLocalSolPS();
 
-    std::cout << "           " << _("Block height") << " | " << height << std::endl;
+    if (IsInitialBlockDownload()) {
+        int netheight = EstimateNetHeight(height, tipmediantime, Params());
+        int downloadPercent = height * 100 / netheight;
+        std::cout << "     " << _("Downloading blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
+    } else {
+        std::cout << "           " << _("Block height") << " | " << height << std::endl;
+    }
     std::cout << "            " << _("Connections") << " | " << connections << std::endl;
     std::cout << "  " << _("Network solution rate") << " | " << netsolps << " Sol/s" << std::endl;
     if (mining && miningTimer.running()) {
