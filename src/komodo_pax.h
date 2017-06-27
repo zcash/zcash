@@ -552,7 +552,7 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
         for (i=0; i<numvotes; i++)
         {
             _komodo_paxprice(&kmdbtcs[numvotes-1-i],&btcusds[numvotes-1-i],height-i,base,rel,100000,0,0);
-            //printf("(%llu %llu) ",(long long)kmdbtcs[numvotes-1-i],(long long)btcusds[numvotes-1-i]);
+printf("(%llu %llu) ",(long long)kmdbtcs[numvotes-1-i],(long long)btcusds[numvotes-1-i]);
         }
         kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,seed) * 539;
         btcusd = komodo_paxcorrelation(btcusds,numvotes,seed) * 539;
@@ -570,8 +570,8 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
             //    fprintf(stderr,"[%llu] ",(long long)votes[numvotes-1-i]);
         }
     }
-    //fprintf(stderr,"kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
-    //fprintf(stderr,"komodo_paxprice nonz.%d of numvotes.%d seed.%llu %.8f\n",nonz,numvotes,(long long)seed,nonz!=0?dstr(1000. * (double)sum/nonz):0);
+fprintf(stderr,"kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
+fprintf(stderr,"komodo_paxprice nonz.%d of numvotes.%d seed.%llu %.8f\n",nonz,numvotes,(long long)seed,nonz!=0?dstr(1000. * (double)sum/nonz):0);
     if ( nonz <= (numvotes >> 1) )
     {
         return(0);
@@ -617,7 +617,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip() != 0 && height > chainActive.Tip()->nHeight )
     {
         if ( height < 100000000 )
-            printf("height.%d vs tip.%d\n",height,chainActive.Tip()->nHeight);
+            printf("komodo_paxprice height.%d vs tip.%d\n",height,chainActive.Tip()->nHeight);
         return(0);
     }
     *seedp = komodo_seed(height);
@@ -655,7 +655,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     portable_mutex_unlock(&komodo_mutex);
     if ( nonz != 0 )
         sum /= nonz;
-    //printf("-> %lld %s/%s i.%d ht.%d\n",(long long)sum,base,rel,i,height);
+printf("-> %lld %s/%s i.%d ht.%d\n",(long long)sum,base,rel,i,height);
     return(sum);
 }
 
