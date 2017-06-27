@@ -410,7 +410,7 @@ uint64_t komodo_paxcorrelation(int32_t dispflag,uint64_t *votes,int32_t numvotes
         }
     }
     if ( dispflag != 0 )
-        printf("k.%d numvotes.%d -> corr %.8f\n",k,numvotes,dstr(corr));
+        printf("k.%d numvotes.%d -> corr %.8f\n",k,numvotes,dstr(sum));
     return(sum);
 }
 
@@ -542,7 +542,7 @@ int32_t komodo_kmdbtcusd(int32_t rwflag,uint64_t *kmdbtcp,uint64_t *btcusdp,int3
 
 uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
-    int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t corr,lastprice,tolerance,den,densum,sum=0,votes[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],btcusds[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtcs[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtc,btcusd;
+    int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t lastprice,tolerance,den,densum,sum=0,votes[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],btcusds[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtcs[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtc,btcusd;
     if ( basevolume > KOMODO_PAXMAX )
     {
         printf("komodo_paxprice overflow %.8f\n",dstr(basevolume));
