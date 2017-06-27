@@ -575,12 +575,12 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
         {
             nonz++;
             sum += votes[numvotes-1-i];
-            if ( (i % 10) == 0 )
+            //if ( (i % 10) == 0 )
                 fprintf(stderr,"[%llu] ",(long long)votes[numvotes-1-i]);
         }
     }
 fprintf(stderr,"kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
-fprintf(stderr,"komodo_paxprice nonz.%d of numvotes.%d seed.%llu %.8f\n",nonz,numvotes,(long long)seed,nonz!=0?dstr(1000. * (double)sum/nonz):0);
+fprintf(stderr,"komodo_paxprice nonz.%d of numvotes.%d seed.%llu %.8f sum.%llu\n",nonz,numvotes,(long long)seed,nonz!=0?dstr(1000. * (double)sum/nonz):0,(long long)sum);
     if ( nonz <= (numvotes >> 1) )
     {
         return(0);
@@ -604,22 +604,6 @@ uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint
     } else return(_komodo_paxpriceB(seed,height,base,rel,basevolume));
 }
 
-/*uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint64_t basevolume)
-{
-    uint64_t baseusd,basekmd,usdkmd; int32_t baseid = komodo_baseid(base);
-    //if ( strcmp(rel,"KMD") != 0 || baseid < 0 || MINDENOMS[baseid] == MINDENOMS[USD] )
-    //    return(_komodo_paxpriceB(seed,height,base,rel,basevolume));
-    //else
-    {
-        baseusd = _komodo_paxpriceB(seed,height,base,(char *)"USD",SATOSHIDEN);
-        usdkmd = _komodo_paxpriceB(seed,height,(char *)"USD",(char *)"KMD",SATOSHIDEN);
-        basekmd = (komodo_paxvol(basevolume,baseusd) * usdkmd) / 10000000;
-        if ( strcmp("KMD",base) == 0 )
-            printf("baseusd.%llu usdkmd.%llu %llu\n",(long long)baseusd,(long long)usdkmd,(long long)basekmd);
-        return(basekmd);
-    }
-}*/
-
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     int32_t i,nonz=0; int64_t diff; uint64_t price,seed,sum = 0;
@@ -637,7 +621,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
         {
             sum += price;
             nonz++;
-            if ( 0 && i == 1 && nonz == 2 )
+            /*if ( 0 && i == 1 && nonz == 2 )
             {
                 diff = (((int64_t)price - (sum >> 1)) * 10000);
                 if ( diff < 0 )
@@ -656,7 +640,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
                 printf("(%llu %llu %lld).%lld ",(long long)price,(long long)(sum>>2),(long long) (((int64_t)price - (sum >> 2)) * 10000),(long long)diff);
                 if ( diff < 20 )
                     break;
-            }
+            }*/
         }
         if ( height < 165000 || height > 236000 )
             break;
@@ -664,7 +648,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     portable_mutex_unlock(&komodo_mutex);
     if ( nonz != 0 )
         sum /= nonz;
-printf("-> %lld %s/%s i.%d ht.%d\n",(long long)sum,base,rel,i,height);
+printf("-> %lld %s/%s i.%d ht.%d nonz.%d\n",(long long)sum,base,rel,i,height,nonz);
     return(sum);
 }
 
