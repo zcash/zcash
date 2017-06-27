@@ -342,7 +342,7 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
     }
 }
 
-uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
+uint64_t komodo_paxcorrelation(int32_t dispflag,uint64_t *votes,int32_t numvotes,uint64_t seed)
 {
     int32_t i,j,k,ind,zeroes,wt,nonz; int64_t delta; uint64_t lastprice,tolerance,den,densum,sum=0;
     for (sum=i=zeroes=nonz=0; i<numvotes; i++)
@@ -359,9 +359,16 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
     {
         if ( votes[i] == 0 )
             votes[i] = lastprice;
-        else lastprice = votes[i];
+        else
+        {
+            if ( dispflag != 0 )
+                printf("%.8f ",dstr(votes[i]));
+            lastprice = votes[i];
+        }
     }
     tolerance = sum / 50;
+    if ( dispflag != 0 )
+        printf("lastprice %.8f tolerance %.8f\n",dstr(lastprice),dstr(tolerance));
     for (k=0; k<numvotes; k++)
     {
         ind = Peggy_inds[(k + seed) % numvotes];
@@ -399,8 +406,11 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
             //sum = (sum * basevolume);
             //printf("paxprice seed.%llx sum %.8f densum %.8f\n",(long long)seed,dstr(sum),dstr(densum));
             break;
-        }
+        } else if ( dispflag != 0 )
+            printf("%d ",wt);
     }
+    if ( dispflag != 0 && k == numvotes )
+        printf("not enough correlation\n");
     return(sum);
 }
 
@@ -440,9 +450,6 @@ uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t re
                 if ( height >= 236000-10 )
                 {
                     usdkmd = ((uint64_t)kmdbtc * btcusd) / 1000000000;
-                    //if ( height > 380000 && baseid == USD )
-                    //    price = usdkmd;
-                    //else
                     price = ((uint64_t)10000000000 * MINDENOMS[USD] / MINDENOMS[baseid]) / komodo_paxvol(usdvol,usdkmd);
                     //fprintf(stderr,"ht.%d kmdbtc.%llu btcusd.%llu base -> USD %llu, usdkmd %llu usdvol %llu -> %llu\n",height,(long long)kmdbtc,(long long)btcusd,(long long)baseusd,(long long)usdkmd,(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)));
                     //fprintf(stderr,"usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %llu %llu\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)),(long long)price);
@@ -557,8 +564,8 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
             _komodo_paxprice(&kmdbtcs[numvotes-1-i],&btcusds[numvotes-1-i],height-i,base,rel,100000,0,0);
             //printf("(%llu %llu) ",(long long)kmdbtcs[numvotes-1-i],(long long)btcusds[numvotes-1-i]);
         }
-        kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,seed) * 539;
-        btcusd = komodo_paxcorrelation(btcusds,numvotes,seed) * 539;
+        kmdbtc = komodo_paxcorrelation(0,kmdbtcs,numvotes,seed) * 539;
+        btcusd = komodo_paxcorrelation(0,btcusds,numvotes,seed) * 539;
         //komodo_kmdbtcusd(1,&kmdbtc,&btcusd,height);
     }
     for (i=nonz=0; i<numvotes; i++)
@@ -582,7 +589,7 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
     {
         return(0);
     }
-    return(komodo_paxcorrelation(votes,numvotes,seed) * basevolume / 100000);
+    return(komodo_paxcorrelation(height > 380000,votes,numvotes,seed) * basevolume / 100000);
 }
 
 uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint64_t basevolume)
