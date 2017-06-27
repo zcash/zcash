@@ -708,7 +708,7 @@ UniValue paxprice(const UniValue& params, bool fHelp)
         height = chainActive.Tip()->nHeight;
     else height = atoi(params[2].get_str().c_str());
     //if ( params.size() == 3 || (basevolume= COIN * atof(params[3].get_str().c_str())) == 0 )
-        basevolume = 1;
+        basevolume = 100000;
     relvolume = komodo_paxprice(&seed,height,(char *)base.c_str(),(char *)rel.c_str(),basevolume);
     ret.push_back(Pair("base", base));
     ret.push_back(Pair("rel", rel));
