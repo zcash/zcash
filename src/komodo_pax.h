@@ -399,18 +399,19 @@ uint64_t komodo_paxcorrelation(int32_t dispflag,uint64_t *votes,int32_t numvotes
                 den = peggy_smooth_coeffs[j];
                 densum += den;
                 sum += (den * votes[(ind + j) % numvotes]);
-                //printf("(%llu/%llu %.8f) ",(long long)sum,(long long)densum,(double)sum/densum);
+                if ( dispflag != 0 )
+                    printf("(%llu/%llu %.8f) ",(long long)sum,(long long)densum,(double)sum/densum);
             }
             if ( densum != 0 )
                 sum /= densum;
-            //sum = (sum * basevolume);
-            //printf("paxprice seed.%llx sum %.8f densum %.8f\n",(long long)seed,dstr(sum),dstr(densum));
+            if ( dispflag != 0 )
+                printf("paxprice seed.%llx sum %.8f densum %.8f ind.%d\n",(long long)seed,dstr(sum),dstr(densum),ind);
             break;
         } else if ( dispflag != 0 )
             printf("%d ",wt);
     }
-    if ( dispflag != 0 && k == numvotes )
-        printf("not enough correlation\n");
+    if ( dispflag != 0 )
+        printf("k.%d numvotes.%d\n",k,numvotes);
     return(sum);
 }
 
