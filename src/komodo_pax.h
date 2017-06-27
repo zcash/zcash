@@ -352,7 +352,10 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
         else sum += votes[i], nonz++;
     }
     if ( nonz < (numvotes >> 2) )
+    {
+        printf("komodo_paxcorrelation not enough votes: nonz.%d numvotes.%d\n",nonz,numvotes);
         return(0);
+    }
     sum /= nonz;
     lastprice = sum;
     for (i=0; i<numvotes; i++)
@@ -375,12 +378,12 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
                 {
                     if ( (delta= (votes[i] - votes[j])) < 0 )
                         delta = -delta;
-                        if ( delta <= tolerance )
-                        {
-                            wt++;
-                            if ( wt > (numvotes >> 1) )
-                                break;
-                        }
+                    if ( delta <= tolerance )
+                    {
+                        wt++;
+                        if ( wt > (numvotes >> 1) )
+                            break;
+                    }
                 }
             }
         }
@@ -397,9 +400,9 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
             if ( densum != 0 )
                 sum /= densum;
             //sum = (sum * basevolume);
-            //printf("paxprice seed.%llx sum %.8f densum %.8f\n",(long long)seed,dstr(sum),dstr(densum));
+printf("paxprice seed.%llx sum %.8f densum %.8f\n",(long long)seed,dstr(sum),dstr(densum));
             break;
-        }
+        } else printf("correlation k.%d not enough wt: wt.%d vs numvotes.%d\n",k,wt,numvotes);
     }
     return(sum);
 }
@@ -552,7 +555,7 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
         for (i=0; i<numvotes; i++)
         {
             _komodo_paxprice(&kmdbtcs[numvotes-1-i],&btcusds[numvotes-1-i],height-i,base,rel,100000,0,0);
-printf("(%llu %llu) ",(long long)kmdbtcs[numvotes-1-i],(long long)btcusds[numvotes-1-i]);
+//printf("(%llu %llu) ",(long long)kmdbtcs[numvotes-1-i],(long long)btcusds[numvotes-1-i]);
         }
         kmdbtc = komodo_paxcorrelation(kmdbtcs,numvotes,seed) * 539;
         btcusd = komodo_paxcorrelation(btcusds,numvotes,seed) * 539;
