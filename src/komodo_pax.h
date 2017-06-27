@@ -402,8 +402,10 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
             //sum = (sum * basevolume);
 printf("paxprice seed.%llx sum %.8f densum %.8f\n",(long long)seed,dstr(sum),dstr(densum));
             break;
-        } else printf("correlation k.%d not enough wt: wt.%d vs numvotes.%d\n",k,wt,numvotes);
+        } else fprintf(stderr,"%d ",wt);
     }
+    if ( k == numvotes )
+        printf("not enough correlation wt tolerance %lld\n",(long long)tolerance);
     return(sum);
 }
 
