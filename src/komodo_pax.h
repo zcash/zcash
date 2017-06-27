@@ -361,8 +361,8 @@ uint64_t komodo_paxcorrelation(int32_t dispflag,uint64_t *votes,int32_t numvotes
             votes[i] = lastprice;
         else
         {
-            if ( dispflag != 0 )
-                printf("%.8f ",dstr(votes[i]));
+            //if ( dispflag != 0 )
+            //    printf("%.8f ",dstr(votes[i]));
             lastprice = votes[i];
         }
     }
@@ -399,19 +399,18 @@ uint64_t komodo_paxcorrelation(int32_t dispflag,uint64_t *votes,int32_t numvotes
                 den = peggy_smooth_coeffs[j];
                 densum += den;
                 sum += (den * votes[(ind + j) % numvotes]);
-                if ( dispflag != 0 )
-                    printf("(%llu/%llu %.8f) ",(long long)sum,(long long)densum,(double)sum/densum);
+                //if ( dispflag != 0 )
+                //    printf("(%llu/%llu %.8f) ",(long long)sum,(long long)densum,(double)sum/densum);
             }
             if ( densum != 0 )
                 sum /= densum;
-            if ( dispflag != 0 )
-                printf("paxprice seed.%llx sum %.8f densum %.8f ind.%d\n",(long long)seed,dstr(sum),dstr(densum),ind);
+            //if ( dispflag != 0 )
+            //    printf("paxprice seed.%llx sum %.8f densum %.8f ind.%d\n",(long long)seed,dstr(sum),dstr(densum),ind);
             break;
-        } else if ( dispflag != 0 )
-            printf("%d ",wt);
+        }
     }
     if ( dispflag != 0 )
-        printf("k.%d numvotes.%d\n",k,numvotes);
+        printf("k.%d numvotes.%d -> corr %.8f\n",k,numvotes,dstr(corr));
     return(sum);
 }
 
@@ -577,18 +576,16 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
         {
             nonz++;
             sum += votes[numvotes-1-i];
-            if ( height > 380000 )
-                fprintf(stderr,"[%llu] ",(long long)votes[numvotes-1-i]);
+            //if ( height > 380000 )
+            //    fprintf(stderr,"[%llu] ",(long long)votes[numvotes-1-i]);
         }
     }
+    if ( nonz <= (numvotes >> 1) )
+        return(0);
     if ( height > 380000 )
     {
-        fprintf(stderr,"kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
+        fprintf(stderr,"ht.%d kmdbtc %llu btcusd %llu ",height,(long long)kmdbtc,(long long)btcusd);
         fprintf(stderr,"komodo_paxprice nonz.%d of numvotes.%d seed.%llu %.8f\n",nonz,numvotes,(long long)seed,nonz!=0?dstr(1000. * (double)sum/nonz):0);
-    }
-    if ( nonz <= (numvotes >> 1) )
-    {
-        return(0);
     }
     corr = komodo_paxcorrelation(height > 380000,votes,numvotes,seed);
     if ( height > 380000 )
