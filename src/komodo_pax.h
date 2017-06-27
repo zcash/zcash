@@ -364,7 +364,9 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
             votes[i] = lastprice;
         else lastprice = votes[i];
     }
-    tolerance = sum / 50;
+    // jl777 consensus change: tolerance = sum / 50;
+    tolerance = sum / 10;
+    printf("lastprice %.8f ",dstr(lastprice));
     for (k=0; k<numvotes; k++)
     {
         ind = Peggy_inds[(k + seed) % numvotes];
@@ -402,7 +404,7 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
             //sum = (sum * basevolume);
 printf("paxprice seed.%llx sum %.8f densum %.8f\n",(long long)seed,dstr(sum),dstr(densum));
             break;
-        } else fprintf(stderr,"%d ",wt);
+        } //else fprintf(stderr,"%d ",wt);
     }
     if ( k == numvotes )
         printf("not enough correlation wt tolerance %lld\n",(long long)tolerance);
