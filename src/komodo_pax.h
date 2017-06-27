@@ -592,7 +592,7 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
     }
     corr = komodo_paxcorrelation(height > 380000,votes,numvotes,seed);
     if ( height > 380000 )
-        printf("corr %.8f basevolume %llu / 100000\n",dstr(corr),basevolume);
+        printf("corr %.8f basevolume %llu / 100000\n",dstr(corr),(long long)basevolume);
     return(corr * basevolume / 100000);
 }
 
