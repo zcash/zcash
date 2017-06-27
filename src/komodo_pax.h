@@ -543,7 +543,7 @@ int32_t komodo_kmdbtcusd(int32_t rwflag,uint64_t *kmdbtcp,uint64_t *btcusdp,int3
 
 uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
-    int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t lastprice,tolerance,den,densum,sum=0,votes[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],btcusds[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtcs[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtc,btcusd;
+    int32_t i,j,k,ind,zeroes,numvotes,wt,nonz; int64_t delta; uint64_t corr,lastprice,tolerance,den,densum,sum=0,votes[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],btcusds[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtcs[sizeof(Peggy_inds)/sizeof(*Peggy_inds)],kmdbtc,btcusd;
     if ( basevolume > KOMODO_PAXMAX )
     {
         printf("komodo_paxprice overflow %.8f\n",dstr(basevolume));
@@ -590,7 +590,10 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
     {
         return(0);
     }
-    return(komodo_paxcorrelation(height > 380000,votes,numvotes,seed) * basevolume / 100000);
+    corr = komodo_paxcorrelation(height > 380000,votes,numvotes,seed);
+    if ( height > 380000 )
+        printf("corr %.8f basevolume %llu / 100000\n",dstr(corr),basevolume);
+    return(corr * basevolume / 100000);
 }
 
 uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint64_t basevolume)
@@ -642,7 +645,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
         {
             sum += price;
             nonz++;
-            if ( 0 && i == 1 && nonz == 2 )
+            /*if ( 0 && i == 1 && nonz == 2 )
             {
                 diff = (((int64_t)price - (sum >> 1)) * 10000);
                 if ( diff < 0 )
@@ -661,7 +664,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
                 printf("(%llu %llu %lld).%lld ",(long long)price,(long long)(sum>>2),(long long) (((int64_t)price - (sum >> 2)) * 10000),(long long)diff);
                 if ( diff < 20 )
                     break;
-            }
+            }*/
         }
         if ( height < 165000 || height > 236000 )
             break;
