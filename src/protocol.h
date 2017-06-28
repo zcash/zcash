@@ -76,13 +76,16 @@ enum {
     // See BIP 64 for details on how this is implemented.
     NODE_GETUTXO = (1 << 1),
 
-    // Bits 24-31 are reserved for temporary experiments. Just pick a bit that
-    // isn't getting used, or one not being used much, and notify the
-    // bitcoin-development mailing list. Remember that service bits are just
-    // unauthenticated advertisements, so your code must be robust against
-    // collisions and other cases where nodes may be advertising a service they
-    // do not actually support. Other service bits should be allocated via the
-    // BIP process.
+    // Used to detect badly serialized addresses in "version" messages from
+    // Zcash v1.0.10 nodes. (See the comment where it is used.)
+    NODE_RESERVED_BAD_SERIALIZATION = (3 << 30),
+
+    // Bits 24-29 are reserved for temporary experiments. Just pick a bit that
+    // isn't getting used, or one not being used much, and notify #zcash-dev.
+    // Remember that service bits are just unauthenticated advertisements, so
+    // your code must be robust against collisions and other cases where nodes
+    // may be advertising a service they do not actually support. Other service
+    // bits should be allocated via the ZIP process.
 };
 
 /** A CService with information about it as peer */

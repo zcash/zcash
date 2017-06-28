@@ -4358,6 +4358,28 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             return false;
         }
 
+        // Detect incorrectly serialized addresses from Zcash v1.0.10 nodes.
+        // Such an address will have an extra 4-byte nTime field that gets
+        // interpreted as part of an nServices bitfield. Assuming that this
+        // extra nTime field represents a timestamp after 2004-01-10 13:37:04,
+        // bit 30 or 31 of nServices will be set, so we use that to detect
+        // badly serialized addresses.
+        //
+        // The irony that we were trying to remove unneeded workarounds for
+        // old Bitcoin peer versions when we made the mistake in v1.0.10 is
+        // not lost on us. It will be possible to remove this workaround
+        // after auto-senescence of v1.0.10 nodes, or after a hard fork.
+        //
+        if ((addrMe.nServices & NODE_RESERVED_BAD_SERIALIZATION) != 0) {
+            // disconnect
+            LogPrintf("peer=%d using incorrectly encoded 'version' message (nServices=%u); disconnecting\n",
+                      pfrom->id, addrMe.nServices);
+            pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
+                               string("Detected incorrectly encoded address in 'version' message"));
+            pfrom->fDisconnect = true;
+            return false;
+        }
+
         if (pfrom->nVersion == 10300)
             pfrom->nVersion = 300;
         if (!vRecv.empty())
@@ -4459,6 +4481,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     else if (pfrom->nVersion == 0)
     {
         // Must have a version message before anything else
+        LogPrintf("receive non-version message without version message from peer %d\n",
+                  pfrom->id);
         Misbehaving(pfrom->GetId(), 1);
         return false;
     }
