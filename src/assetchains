@@ -14,7 +14,14 @@ function komodo_asset ()
         gen=""
     fi
 
-    $komodo_binary -pubkey=$pubkey -ac_name=$1 -ac_supply=$2 -addnode=$seed_ip $gen $args &
+    if [ -n "$2" ]
+    then
+        supply=" -ac_supply=$2"
+    else
+        supply=" "
+    fi
+
+    $komodo_binary -pubkey=$pubkey -ac_name=$1 $supply -addnode=$seed_ip $gen $args &
     sleep $delay
 }
 
@@ -31,7 +38,8 @@ komodo_asset HODL 9999999
 komodo_asset SHARK 1401
 komodo_asset BOTS 999999
 komodo_asset MGW 999999
-komodo_asset MVP 1000000
+#komodo_asset MVP 1000000
+komodo_asset COQUI 72000000
 komodo_asset WLC 210000000
 komodo_asset KV 1000000
 komodo_asset CEAL 366666666
