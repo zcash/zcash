@@ -14,7 +14,14 @@ function komodo_asset ()
         gen=""
     fi
 
-    $komodo_binary -pubkey=$pubkey -ac_name=$1 -ac_supply=$2 -addnode=$seed_ip $gen $args &
+    if [ -n "$2" ]
+    then
+        supply=" -ac_supply=$2"
+    else
+        supply=" "
+    fi
+
+    $komodo_binary -pubkey=$pubkey -ac_name=$1 $supply -addnode=$seed_ip $gen $args &
     sleep $delay
 }
 
