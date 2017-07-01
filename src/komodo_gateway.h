@@ -968,8 +968,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         printf("%.8f ",dstr(block.vtx[0].vout[j].nValue));
                     printf("vout values\n");
                     for (j=0; j<32; j++)
-                        printf("%02x",((uint8_t *)&hash)[j]);
-                    printf(" kht.%d ht.%d %.8f %.8f blockhash couldnt find vout.[%d of %d] ht.%d %s for [%s]\n",kmdheights[i-1],otherheights[i-1],dstr(values[i-1]),dstr(srcvalues[i]),i,n,height,ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]);
+                        printf("%02x",((uint8_t *)&txids[i-1])[j]);
+                    printf(" kht.%d ht.%d %.8f %.8f couldnt find vout.[%d of %d] ht.%d %s for [%s]\n",kmdheights[i-1],otherheights[i-1],dstr(values[i-1]),dstr(srcvalues[i]),i,n,height,ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]);
                     if ( ASSETCHAINS_SYMBOL[0] != 0 || height >= activation )
                         return(-1);
                 }
