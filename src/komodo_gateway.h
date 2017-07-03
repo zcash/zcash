@@ -745,6 +745,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         while ( KOMODO_PASSPORT_INITDONE == 0 )
             komodo_passport_iteration();
+        else komodo_passport_iteration();
         // grandfathering preexisting
         if ( height < 777 )
             return(0);
