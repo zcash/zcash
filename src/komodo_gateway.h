@@ -1134,7 +1134,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                         printf("pax %s deposit %.8f rejected kmdheight.%d %.8f KMD check %.8f seed.%llu\n",base,dstr(fiatoshis),kmdheight,dstr(value),dstr(checktoshis),(long long)seed);
                 }
             } //else printf("[%s] %s paxdeposit height.%d vs kmdheight.%d\n",ASSETCHAINS_SYMBOL,base,height,kmdheight);
-        } else printf("unsupported size.%d for opreturn D\n",opretlen);
+        } //else printf("unsupported size.%d for opreturn D\n",opretlen);
     }
     else if ( opretbuf[0] == 'I' )
     {
