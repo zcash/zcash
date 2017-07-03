@@ -38,10 +38,6 @@ Files: depends/sources/openssl-*.tar.gz
 Copyright: 1998-2016 The OpenSSL Project and 1995-1998 Eric Young
 License: OpenSSL+SSLeay
 
-Files: depends/sources/miniupnpc-*.tar.gz
-Copyright: 2005-2016 Thomas BERNARD
-License: BSD-3clause
-
 Files: depends/sources/zeromq-*.tar.gz
 Copyright:
  1994, 1995, 1996, 1999, 2000, 2001, 2002, 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
