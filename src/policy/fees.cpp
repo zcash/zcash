@@ -55,13 +55,14 @@ void TxConfirmStats::ClearCurrent(unsigned int nBlockHeight)
 
 unsigned int TxConfirmStats::FindBucketIndex(double val)
 {
+    extern char ASSETCHAINS_SYMBOL[];
     auto it = bucketMap.lower_bound(val);
     //assert(it != bucketMap.end());
     if ( it != bucketMap.end() )
     {
         static uint32_t counter;
         if ( counter++ < 10 )
-            fprintf(stderr,"FindBucketIndex violation: from val %f\n",val);
+            fprintf(stderr,"%s FindBucketIndex violation: from val %f\n",ASSETCHAINS_SYMBOL,val);
     }
     return it->second;
 }
