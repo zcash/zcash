@@ -918,9 +918,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             {
                 if ( (sp= komodo_stateptrget(CURRENCIES[baseids[i-1]])) != 0 && (sp->RTmask & (1LL << baseids[i-1])) == 0 )
                 {
-                    /*printf("skip checkdeposit.%s not RT %llx\n",CURRENCIES[baseids[i-1]],(long long)sp->RTmask);
+                    printf("[%s] skip checkdeposit.%s not RT %llx\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]],(long long)sp->RTmask);
                     matched++;
-                    continue;*/
+                    continue;
                 }
                 if ( (pax= komodo_paxfinds(txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
                 {
