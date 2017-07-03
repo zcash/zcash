@@ -1054,6 +1054,13 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         tokomodo = 0;
         if ( opretlen >= 38 ) // any KMD tx
         {
+            if ( opretlen > 38 )
+            {
+                iguana_rwnum(0,&opretbuf[36],sizeof(kmdheight),&kmdheight);
+                for (i=0; i<opretlen; i++)
+                    printf("%02x",opretbuf[i]);
+                printf(" extra size kmdheight.%d\n",kmdheight);
+            }
             iguana_rwnum(0,&opretbuf[34],sizeof(kmdheight),&kmdheight);
             memset(base,0,sizeof(base));
             PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&fiatoshis);
