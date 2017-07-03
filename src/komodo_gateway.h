@@ -1060,10 +1060,10 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             bitcoin_address(coinaddr,addrtype,rmd160,20);
             checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,fiatoshis);
             typestr = "deposit";
-            if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 && (kmdheight > 195000 || kmdheight <= height) )
+            if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )//&& (kmdheight > 195000 || kmdheight <= height) )
             {
                 didstats = 0;
-                if ( strcmp("AUD",ASSETCHAINS_SYMBOL) && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
+                if ( strcmp("AUD",ASSETCHAINS_SYMBOL) )
                 {
                     printf("(%s) (%s) kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d seed.%llx\n",ASSETCHAINS_SYMBOL,base,kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed);
                     for (i=0; i<32; i++)
