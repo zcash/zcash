@@ -916,7 +916,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         {
             for (i=1; i<n-1; i++)
             {
-                if ( ASSETCHAINS_SYMBOL[0] != 0 && (sp= komodo_stateptrget(CURRENCIES[baseids[i-1]])) != 0 )
+                if ( ASSETCHAINS_SYMBOL[0] != 0 && (sp= komodo_stateptrget(ASSETCHAINS_SYMBOL)) != 0 )
                 {
                     int32_t rtflag = 0;
                     while ( (sp->RTmask & (1LL << baseids[i-1])) == 0 )
