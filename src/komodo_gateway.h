@@ -1395,6 +1395,7 @@ void komodo_passport_iteration()
         {
             if ( baseid == 32 || ASSETCHAINS_SYMBOL[0] == 0 )
             {
+                refsp->RTmask &= ~(1LL << baseid);
                 komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"komodostate");
                 komodo_nameset(symbol,dest,base);
                 sp = komodo_stateptrget(symbol);
@@ -1447,6 +1448,7 @@ void komodo_passport_iteration()
         }
         else
         {
+            refsp->RTmask &= ~(1LL << baseid);
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
@@ -1469,7 +1471,7 @@ void komodo_passport_iteration()
             refsp->RTbufs[0][2] = 0;
     }
     komodo_paxtotal();
-    refsp->RTmask = RTmask;
+    refsp->RTmask |= RTmask;
     if ( expired == 0 && KOMODO_PASSPORT_INITDONE == 0 )
     {
         KOMODO_PASSPORT_INITDONE = 1;
