@@ -270,7 +270,7 @@ int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t che
     if ( seed == 0 && checkvalue != 0 )
     {
         ratio = ((value << 6) / checkvalue);
-        if ( ratio >= 62 && ratio <= 66 )
+        if ( ratio >= 60 && ratio <= 67 )
             return(0);
         else
         {
