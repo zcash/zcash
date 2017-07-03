@@ -846,7 +846,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == CZK )
         {
-            if ( height == 1084 || height == 1085 || height == 1086 || height == 778 || height == 1079 || height == 1054 || height == 1032 || height == 121 || height == 1030 || height == 182 || height == 876 || height == 873 || height == 871 || height == 184 || height == 862 || height == 185 || height == 861 || height == 186 || height == 838 || height == 238 || height == 242 || height == 246 || height == 248 || height == 250 || height == 251 || height == 256 || height == 282 || height == 322 || height == 343 || height == 433 || height == 323 || height == 276 )
+            if ( height < 1000 || height == 1084 || height == 1085 || height == 1086 || height == 778 || height == 1079 || height == 1054 || height == 1032 || height == 121 || height == 1030 || height == 182 || height == 876 || height == 873 || height == 871 || height == 184 || height == 862 || height == 185 || height == 861 || height == 186 || height == 838 || height == 238 || height == 242 || height == 246 || height == 248 || height == 250 || height == 251 || height == 256 || height == 282 || height == 322 || height == 343 || height == 433 || height == 323 || height == 276 )
                 return(0);
         }
         else if ( baseid == HUF )
