@@ -916,11 +916,15 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         {
             for (i=1; i<n-1; i++)
             {
-                if ( (sp= komodo_stateptrget(CURRENCIES[baseids[i-1]])) != 0 && (sp->RTmask & (1LL << baseids[i-1])) == 0 )
+                if ( (sp= komodo_stateptrget(CURRENCIES[baseids[i-1]])) != 0 )
                 {
-                    printf("[%s] skip checkdeposit.%s not RT %llx\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]],(long long)sp->RTmask);
-                    matched++;
-                    continue;
+                    while ((sp->RTmask & (1LL << baseids[i-1])) == 0 )
+                    {
+                        printf("[%s] skip checkdeposit.%s not RT %llx\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]],(long long)sp->RTmask);
+                        sleep(10);
+                        //matched++;
+                        //continue;
+                    }
                 }
                 if ( (pax= komodo_paxfinds(txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
                 {
