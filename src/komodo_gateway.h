@@ -1073,7 +1073,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     printf("%02x",pubkey33[i]);
                 printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
             }
-            if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 )//&& (kmdheight > 195000 || kmdheight <= height) )
+            if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 && (kmdheight > 195000 || kmdheight <= height) )
             {
                 didstats = 0;
                 if ( komodo_paxcmp(base,kmdheight,value,checktoshis,kmdheight < 225000 ? seed : 0) == 0 )
