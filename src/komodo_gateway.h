@@ -1434,12 +1434,13 @@ void komodo_passport_iteration()
                     if ( fread(buf,1,sizeof(buf),fp) == sizeof(buf) )
                     {
                         sp->CURRENT_HEIGHT = buf[0];
-                        if ( buf[0] != 0 && buf[0] >= buf[1] && buf[2] > time(NULL)-300 )
+                        if ( buf[0] != 0 && buf[0] >= buf[1] && buf[2] > time(NULL)-60 )
                         {
                             isrealtime = 1;
                             RTmask |= (1LL << baseid);
                             memcpy(refsp->RTbufs[baseid+1],buf,sizeof(refsp->RTbufs[baseid+1]));
-                        } else if ( KOMODO_PAX != 0 && (time(NULL)-buf[2]) > 1800 && ASSETCHAINS_SYMBOL[0] != 0 )
+                        }
+                        else if ( KOMODO_PAX != 0 && (time(NULL)-buf[2]) > 60 && ASSETCHAINS_SYMBOL[0] != 0 )
                             fprintf(stderr,"[%s]: %s not RT %u %u %d\n",ASSETCHAINS_SYMBOL,base,buf[0],buf[1],(int32_t)(time(NULL)-buf[2]));
                     } //else fprintf(stderr,"%s size error RT\n",base);
                     fclose(fp);
