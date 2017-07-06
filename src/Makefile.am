@@ -449,8 +449,8 @@ zcash_cli_LDADD = \
 #
 
 # zcash-tx binary #
-zcash_tx_SOURCES = bitcoin-tx.cpp
-zcash_tx_CPPFLAGS = $(BITCOIN_INCLUDES)
+zcash_tx_SOURCES = bitcoin-tx.cpp script/standard.cpp
+zcash_tx_CPPFLAGS = $(BITCOIN_INCLUDES) -DZCASH_TX
 zcash_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS

@@ -5,6 +5,7 @@ noinst_PROGRAMS += zcash-gtest
 # test_checktransaction.cpp MUST be before
 # any test that calls SelectParams().
 zcash_gtest_SOURCES = \
+	script/standard.cpp \
 	gtest/main.cpp \
 	gtest/utils.cpp \
 	gtest/test_checktransaction.cpp \
@@ -41,7 +42,7 @@ zcash_gtest_SOURCES += \
 	wallet/gtest/test_wallet.cpp
 endif
 
-zcash_gtest_CPPFLAGS = -DMULTICORE -fopenmp -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC $(BITCOIN_INCLUDES)
+zcash_gtest_CPPFLAGS = -DMULTICORE -fopenmp -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC $(BITCOIN_INCLUDES) -DZCASH_TX
 
 zcash_gtest_LDADD = -lgtest -lgmock $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CRYPTO) $(LIBUNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
   $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1)

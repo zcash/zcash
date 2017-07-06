@@ -5,6 +5,7 @@
 
 #include "script/standard.h"
 
+#include "main.h"
 #include "pubkey.h"
 #include "script/script.h"
 #include "util.h"
@@ -26,12 +27,9 @@ const char* GetTxnOutputType(txnouttype t)
     {
     case TX_NONSTANDARD: return "nonstandard";
     case TX_PUBKEY: return "pubkey";
-    case TX_PUBKEY_REPLAY: return "pubkeyreplay";
     case TX_PUBKEYHASH: return "pubkeyhash";
-    case TX_PUBKEYHASH_REPLAY: return "pubkeyhashreplay";
     case TX_SCRIPTHASH: return "scripthash";
     case TX_MULTISIG: return "multisig";
-    case TX_MULTISIG_REPLAY: return "multisigreplay";
     case TX_NULL_DATA: return "nulldata";
     }
     return NULL;
@@ -48,15 +46,15 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
     {
         // Standard tx, sender provides pubkey, receiver adds signature
         mTemplates.insert(make_pair(TX_PUBKEY, CScript() << OP_PUBKEY << OP_CHECKSIG));
-        mTemplates.insert(make_pair(TX_PUBKEY_REPLAY, CScript() << OP_PUBKEY << OP_CHECKSIG << OP_SMALLDATA << OP_SMALLDATA << OP_NOP5));
+        mTemplates.insert(make_pair(TX_PUBKEY, CScript() << OP_PUBKEY << OP_CHECKSIG << OP_SMALLDATA << OP_SMALLDATA << OP_NOP5));
 
         // Bitcoin address tx, sender provides hash of pubkey, receiver provides signature and pubkey
         mTemplates.insert(make_pair(TX_PUBKEYHASH, CScript() << OP_DUP << OP_HASH160 << OP_PUBKEYHASH << OP_EQUALVERIFY << OP_CHECKSIG));
-        mTemplates.insert(make_pair(TX_PUBKEYHASH_REPLAY, CScript() << OP_DUP << OP_HASH160 << OP_PUBKEYHASH << OP_EQUALVERIFY << OP_CHECKSIG << OP_SMALLDATA << OP_SMALLDATA << OP_NOP5));
+        mTemplates.insert(make_pair(TX_PUBKEYHASH, CScript() << OP_DUP << OP_HASH160 << OP_PUBKEYHASH << OP_EQUALVERIFY << OP_CHECKSIG << OP_SMALLDATA << OP_SMALLDATA << OP_NOP5));
 
         // Sender provides N pubkeys, receivers provides M signatures
         mTemplates.insert(make_pair(TX_MULTISIG, CScript() << OP_SMALLINTEGER << OP_PUBKEYS << OP_SMALLINTEGER << OP_CHECKMULTISIG));
-        mTemplates.insert(make_pair(TX_MULTISIG_REPLAY, CScript() << OP_SMALLINTEGER << OP_PUBKEYS << OP_SMALLINTEGER << OP_CHECKMULTISIG << OP_SMALLDATA << OP_SMALLDATA << OP_NOP5));
+        mTemplates.insert(make_pair(TX_MULTISIG, CScript() << OP_SMALLINTEGER << OP_PUBKEYS << OP_SMALLINTEGER << OP_CHECKMULTISIG << OP_SMALLDATA << OP_SMALLDATA << OP_NOP5));
 
         // Empty, provably prunable, data-carrying output
         if (GetBoolArg("-datacarrier", true))
@@ -73,6 +71,9 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
         vSolutionsRet.push_back(hashBytes);
         return true;
     }
+
+    // OP_CHECKBLOCKATHEIGHT parameters
+    vector<unsigned char> vchBlockHash, vchBlockHeight;
 
     // Scan templates
     const CScript& script1 = scriptPubKey;
@@ -148,9 +149,51 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
             }
             else if (opcode2 == OP_SMALLDATA)
             {
+                // Possible values of OP_CHECKBLOCKATHEIGHT parameters
+                if (vch1.size() <= sizeof(int))
+                    vchBlockHeight = vch1;
+                else
+                    vchBlockHash = vch1;
+
                 // small pushdata, <= nMaxDatacarrierBytes
                 if (vch1.size() > nMaxDatacarrierBytes)
                     break;
+            }
+            else if (opcode2 == OP_NOP5)
+            {
+                // Full-fledged implementation of the OP_CHECKBLOCKATHEIGHT opcode for verification of vout's
+
+#ifndef ZCASH_TX // This is a workaround. zcash-tx does not have access to chain state so no replay protection is possible
+
+                if (vchBlockHeight.size() == 0 || vchBlockHash.size() == 0)
+                {
+                    LogPrintf("%s: %s: OP_CHECKBLOCKATHEIGHT verification failed. Bad params.", __FILE__, __func__);
+                    break;
+                }
+
+                const int32_t nHeight = CScriptNum(vchBlockHeight, true, sizeof(int)).getint();
+
+                if (nHeight < 0 || nHeight > chainActive.Height())
+                {
+                    LogPrintf("%s: %s: OP_CHECKBLOCKATHEIGHT verification failed. Transaction is non-final. Referenced height: %d", __FILE__, __func__, nHeight);
+                    break;
+                }
+
+                CBlockIndex* pblockindex = chainActive[nHeight];
+
+                vector<unsigned char> vchCompareTo(pblockindex->GetBlockHash().begin(), pblockindex->GetBlockHash().end());
+                vchCompareTo.erase(vchCompareTo.begin(), vchCompareTo.end() - vchBlockHash.size());
+
+                if (vchCompareTo != vchBlockHash)
+                {
+                    LogPrintf("%s: %s: OP_CHECKBLOCKATHEIGHT verification failed. vout block height: %d", __FILE__, __func__, nHeight);
+                    break;
+                }
+#endif
+                if (opcode1 != opcode2 || vch1 != vch2)
+                {
+                    break;
+                }
             }
             else if (opcode1 != opcode2 || vch1 != vch2)
             {
