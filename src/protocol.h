@@ -108,8 +108,8 @@ public:
             READWRITE(nTime);
         uint64_t nServicesInt = nServices;
         READWRITE(nServicesInt);
-        nServices = (ServiceFlags)nServicesInt;
-        READWRITE(*(CService*)this);
+        nServices = static_cast<ServiceFlags>(nServicesInt);
+        READWRITEAS(CService, *this);
     }
 
     // TODO: make private (improves encapsulation)
