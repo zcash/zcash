@@ -382,7 +382,7 @@ public:
     }
 
     template<typename T>
-    CBaseDataStream& operator>>(T& obj)
+    CBaseDataStream& operator>>(T&& obj)
     {
         // Unserialize from this stream
         ::Unserialize(*this, obj);
@@ -531,7 +531,7 @@ public:
     }
 
     template<typename T>
-    CAutoFile& operator>>(T& obj)
+    CAutoFile& operator>>(T&& obj)
     {
         // Unserialize from this stream
         if (!file)
@@ -683,7 +683,7 @@ public:
     }
 
     template<typename T>
-    CBufferedFile& operator>>(T& obj) {
+    CBufferedFile& operator>>(T&& obj) {
         // Unserialize from this stream
         ::Unserialize(*this, obj);
         return (*this);
