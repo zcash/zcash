@@ -1,0 +1,4 @@
+OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+Memory: {{ ansible_memtotal_mb }} MB
+CPU: {{ ansible_processor[1] }}
+{{ buildbot_worker_version.stdout }}
