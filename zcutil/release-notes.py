@@ -4,6 +4,21 @@ import argparse
 from itertools import islice
 from operator import itemgetter
 
+TEMP_RELEASE_NOTES_HEADER = [
+    '(note: this is a temporary file, to be added-to by anybody, and moved to\n',
+    'release-notes at release time)\n',
+    '\n',
+    'Notable changes\n',
+    '===============\n',
+    '\n',
+]
+
+RELEASE_NOTES_CHANGELOG_HEADING = [
+    'Changelog\n',
+    '=========\n',
+    '\n',
+]
+
 author_aliases = {
     'Simon': 'Simon Liu',
     'bitcartel': 'Simon Liu',
@@ -77,9 +92,22 @@ def generate_release_note(version, filename):
     notes = subprocess.Popen(['git shortlog --no-merges {0}..HEAD'.format(latest_tag)], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE).communicate()[0]
     lines = notes.split('\n')
     lines = [alias_authors_in_release_notes(line) for line in lines]
+    temp_release_note = os.path.join(doc_dir, 'release-notes.md')
+    with open(temp_release_note, 'r') as f:
+        notable_changes = f.readlines()
+        # Assumes that all notable changes are appended to the default header
+        if len(notable_changes) > 6:
+            notable_changes = notable_changes[3:] + ['\n']
+        else:
+            notable_changes = []
     release_note = os.path.join(doc_dir, 'release-notes', 'release-notes-{0}.md'.format(version))
     with open(release_note, 'w') as f:
+        f.writelines(notable_changes)
+        f.writelines(RELEASE_NOTES_CHANGELOG_HEADING)
         f.writelines('\n'.join(lines))
+    # Clear temporary release notes file
+    with open(temp_release_note, 'w') as f:
+        f.writelines(TEMP_RELEASE_NOTES_HEADER)
 
 def main(version, filename):
     if version != None:
