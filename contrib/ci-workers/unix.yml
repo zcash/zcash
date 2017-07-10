@@ -4,30 +4,43 @@
   become: true
   gather_facts: False
 
+  vars_files:
+    - vars/default.yml
+
   pre_tasks:
-    - set_fact:
-        python_raw: "test -e /usr/bin/python || test -e /usr/bin/python2 || test -e /usr/bin/python2.7 || test -e /usr/local/bin/python2.7 || (test -e /usr/bin/apt && apt -qqy update && apt install -qqy python) || (test -e /usr/bin/dnf && dnf install -qqy python2) || (test -e /usr/sbin/pkg && pkg install -qqy python2)"
-    - name: Install Python 2 for Ansible and Buildbot [bash]
-      raw: bash -c "'{{ python_raw }}'"
-      ignore_errors: true
+    - name: Install Python 2 for Ansible and Buildbot
+      raw: test -e /usr/bin/python || test -e /usr/bin/python2 || test -e /usr/bin/python2.7 || test -e /usr/local/bin/python2.7 || (test -e /usr/bin/apt && apt -qqy update && apt install -qqy python) || (test -e /usr/bin/dnf && dnf install -qqy python2) || (test -e /usr/sbin/pkg && pkg install -qqy python2)
       register: output
       changed_when:
         - output.stdout != ""
         - output.stdout != "\r\n"
-    - name: Install Python 2 for Ansible and Buildbot [tcsh]
-      raw: tcsh -c "{{ python_raw }}"
+
+    - name: Check if Python is in the configured location
+      raw: test -e {{ ansible_python_interpreter }}
       ignore_errors: true
-      register: output
-      changed_when:
-        - output.stdout != ""
-        - output.stdout != "\r\n"
+      register: python_check
+      when: ansible_python_interpreter is defined
+
+    - name: Fail if configured Python is unavailable
+      fail:
+        msg: Python is not accessible at {{ ansible_python_interpreter }} on this host! Please set the inventory variable 'ansible_python_interpreter' to the location of the Python 2 binary.
+      when: ansible_python_interpreter is defined and python_check.rc == 1
+
+    - name: Check if Python is in the default location
+      raw: test -e /usr/bin/python
+      ignore_errors: true
+      register: python_check
+      when: ansible_python_interpreter is undefined
+
+    - name: Fail if default Python is unavailable
+      fail:
+        msg: Python is not accessible at /usr/bin/python on this host! Please set the inventory variable 'ansible_python_interpreter' to the location of the Python 2 binary.
+      when: ansible_python_interpreter is undefined and python_check.rc == 1
+
     - name: Gathering Facts
       setup:
 
   tasks:
-    - name: Get default dependencies
-      include_vars: "vars/default.yml"
-
     - name: Get dependencies for distribution
       include_vars: "{{ item }}"
       with_first_found:
