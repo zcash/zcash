@@ -72,6 +72,18 @@ class WalletTest (BitcoinTestFramework):
         node0utxos = self.nodes[0].listunspent(1)
         assert_equal(len(node0utxos), 3)
 
+        # Check 'generated' field of listunspent
+        # Node 0: has one coinbase utxo and two regular utxos
+        assert_equal(sum(int(uxto["generated"] is True) for uxto in node0utxos), 1)
+        # Node 1: has 101 coinbase utxos and no regular utxos
+        node1utxos = self.nodes[1].listunspent(1)
+        assert_equal(len(node1utxos), 101)
+        assert_equal(sum(int(uxto["generated"] is True) for uxto in node1utxos), 101)
+        # Node 2: has no coinbase utxos and two regular utxos
+        node2utxos = self.nodes[2].listunspent(1)
+        assert_equal(len(node2utxos), 2)
+        assert_equal(sum(int(uxto["generated"] is True) for uxto in node2utxos), 0)
+
         # create both transactions
         txns_to_send = []
         for utxo in node0utxos:
