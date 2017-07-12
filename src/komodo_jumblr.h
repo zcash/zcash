@@ -162,10 +162,17 @@ int32_t Jumblr_secretaddr(char *secretaddr)
 int32_t jumblr_addresstype(char *addr)
 {
     if ( addr[0] == 'z' && addr[1] == 'c' && strlen(addr) >= 40 )
+    {
+        printf("zaddr.(%s)\n",addr);
         return('z');
+    }
     else if ( strlen(addr) < 40 )
+    {
+        printf("taddr.(%s)\n",addr);
         return('t');
-    else return(-1);
+    }
+    printf("strange.(%s)\n",addr);
+    return(-1);
 }
 
 struct jumblr_item *jumblr_opidfind(char *opid)
