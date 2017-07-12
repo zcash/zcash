@@ -465,7 +465,7 @@ void jumblr_opidsupdate()
 void jumblr_iteration()
 {
     static int32_t lastheight;
-    char *zaddr,*retstr,secretaddr[64]; int32_t iter,height,counter,chosen_one,n; uint64_t amount=0,total=0; double fee; struct jumblr_item *ptr,*tmp; uint8_t r,s;
+    char *zaddr,*addr,*retstr,secretaddr[64]; int32_t iter,height,counter,chosen_one,n; uint64_t amount=0,total=0; double fee; struct jumblr_item *ptr,*tmp; uint8_t r,s;
     height = (int32_t)chainActive.Tip()->nHeight;
     if ( lastheight == height )
         return;
@@ -481,13 +481,18 @@ void jumblr_iteration()
             {
                 if ( (zaddr= jumblr_zgetnewaddress()) != 0 )
                 {
+                    if ( zaddr[0] == '"' && zaddr[strlen(zaddr)-1] == '"' )
+                    {
+                        zaddr[strlen(zaddr)-1] = 0;
+                        addr = zaddr+1;
+                    } else addr = zaddr;
                     amount = 0;
                     if ( (height % (JUMBLR_SYNCHRONIZED_BLOCKS*JUMBLR_SYNCHRONIZED_BLOCKS)) == 0 && total >= SATOSHIDEN * ((JUMBLR_INCR + 3*fee)*100 + 3*JUMBLR_TXFEE) )
                         amount = SATOSHIDEN * ((JUMBLR_INCR + 3*fee)*100 + 3*JUMBLR_TXFEE);
                     else if ( (r & 3) == 0 && total >= SATOSHIDEN * ((JUMBLR_INCR + 3*fee)*10 + 3*JUMBLR_TXFEE) )
                         amount = SATOSHIDEN * ((JUMBLR_INCR + 3*fee)*10 + 3*JUMBLR_TXFEE);
                     else amount = SATOSHIDEN * ((JUMBLR_INCR + 3*fee) + 3*JUMBLR_TXFEE);
-                    if ( amount > 0 && (retstr= jumblr_sendt_to_z(Jumblr_deposit,zaddr,dstr(amount))) != 0 )
+                    if ( amount > 0 && (retstr= jumblr_sendt_to_z(Jumblr_deposit,addr,dstr(amount))) != 0 )
                     {
                         printf("sendt_to_z.(%s)\n",retstr);
                         free(retstr);
