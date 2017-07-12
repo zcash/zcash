@@ -229,6 +229,7 @@ char *jumblr_sendt_to_z(char *taddr,char *zaddr,double amount)
     if ( jumblr_addresstype(zaddr) != 'z' || jumblr_addresstype(taddr) != 't' )
         return(clonestr((char *)"{\"error\":\"illegal address in t to z\"}"));
     sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}, {\"address\":\"%s\",\"amount\":%.8f}], 1, %.8f]",taddr,zaddr,amount-fee-JUMBLR_TXFEE,JUMBLR_ADDR,fee,JUMBLR_TXFEE);
+    printf("t -> z: %s\n",params);
     return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_sendmany",params,7771));
 }
 
@@ -238,6 +239,7 @@ char *jumblr_sendz_to_z(char *zaddrS,char *zaddrD,double amount)
     if ( jumblr_addresstype(zaddrS) != 'z' || jumblr_addresstype(zaddrD) != 'z' )
         return(clonestr((char *)"{\"error\":\"illegal address in z to z\"}"));
     sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}, {\"address\":\"%s\",\"amount\":%.8f}], 1, %.8f]",zaddrS,zaddrD,amount-fee-JUMBLR_TXFEE,JUMBLR_ADDR,fee,JUMBLR_TXFEE);
+    printf("z -> z: %s\n",params);
     return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_sendmany",params,7771));
 }
 
@@ -247,6 +249,7 @@ char *jumblr_sendz_to_t(char *zaddr,char *taddr,double amount)
     if ( jumblr_addresstype(zaddr) != 'z' || jumblr_addresstype(taddr) != 't' )
         return(clonestr((char *)"{\"error\":\"illegal address in z to t\"}"));
     sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}, {\"address\":\"%s\",\"amount\":%.8f}], 1, %.8f]",zaddr,taddr,amount-fee-JUMBLR_TXFEE,JUMBLR_ADDR,fee,JUMBLR_TXFEE);
+    printf("z -> t: %s\n",params);
     return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_sendmany",params,7771));
 }
 
@@ -303,7 +306,7 @@ int64_t jumblr_balance(char *addr)
     {
         if ( (retstr= jumblr_listunspent(addr)) != 0 )
         {
-            printf("jumblr.[%s].(%s)\n","KMD",retstr);
+            //printf("jumblr.[%s].(%s)\n","KMD",retstr);
             if ( (retjson= cJSON_Parse(retstr)) != 0 )
             {
                 if ( (n= cJSON_GetArraySize(retjson)) > 0 && is_cJSON_Array(retjson) != 0 )
