@@ -464,11 +464,14 @@ void jumblr_opidsupdate()
 
 void jumblr_iteration()
 {
-    static int32_t lastheight;
+    static int32_t lastheight; static uint32_t lasttime;
     char *zaddr,*addr,*retstr,secretaddr[64]; int32_t iter,height,counter,chosen_one,n; uint64_t amount=0,total=0; double fee; struct jumblr_item *ptr,*tmp; uint8_t r,s;
     height = (int32_t)chainActive.Tip()->nHeight;
     if ( lastheight == height )
         return;
+    if ( time(NULL) < lasttime+60 )
+        return;
+    lasttime = (uint32_t)time(NULL);
     if ( (height % JUMBLR_SYNCHRONIZED_BLOCKS) != 0 )
         return;
     fee = JUMBLR_INCR * JUMBLR_FEE;
@@ -519,7 +522,12 @@ void jumblr_iteration()
                             {
                                 if ( (zaddr= jumblr_zgetnewaddress()) != 0 )
                                 {
-                                    if ( (retstr= jumblr_sendz_to_z(ptr->dest,zaddr,dstr(total))) != 0 )
+                                    if ( zaddr[0] == '"' && zaddr[strlen(zaddr)-1] == '"' )
+                                    {
+                                        zaddr[strlen(zaddr)-1] = 0;
+                                        addr = zaddr+1;
+                                    } else addr = zaddr;
+                                    if ( (retstr= jumblr_sendz_to_z(ptr->dest,addr,dstr(total))) != 0 )
                                     {
                                         printf("n.%d counter.%d chosen_one.%d sendz_to_z.(%s)\n",n,counter,chosen_one,retstr);
                                         free(retstr);
