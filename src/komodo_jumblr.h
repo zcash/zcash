@@ -33,6 +33,11 @@
 #define JUMBLR_TXFEE 0.01
 #define SMALLVAL 0.000000000000001
 
+#define JUMBLR_ERROR_DUPLICATEDEPOSIT -1
+#define JUMBLR_ERROR_SECRETCANTBEDEPOSIT -2
+#define JUMBLR_ERROR_TOOMANYSECRETS -3
+#define JUMBLR_ERROR_IMPORTADDRESS -4
+
 struct jumblr_item
 {
     UT_hash_handle hh;
@@ -90,20 +95,31 @@ int32_t Jumblr_secretaddrfind(char *searchaddr)
 int32_t Jumblr_secretaddradd(char *secretaddr) // external
 {
     int32_t ind;
-    if ( secretaddr != 0 && secretaddr[0] != 0 && Jumblr_numsecretaddrs < JUMBLR_MAXSECRETADDRS )
+    if ( secretaddr != 0 && secretaddr[0] != 0 )
     {
-        if ( (ind= Jumblr_secretaddrfind(secretaddr)) < 0 )
+        if ( Jumblr_numsecretaddrs < JUMBLR_MAXSECRETADDRS )
         {
-            safecopy(Jumblr_secretaddrs[Jumblr_numsecretaddrs],secretaddr,64);
-            Jumblr_numsecretaddrs++;
-        } else return(ind);
+            if ( strcmp(Jumblr_deposit,secretaddr) != 0 )
+            {
+                if ( (ind= Jumblr_secretaddrfind(secretaddr)) < 0 )
+                {
+                    safecopy(Jumblr_secretaddrs[Jumblr_numsecretaddrs],secretaddr,64);
+                    Jumblr_numsecretaddrs++;
+                } else return(ind);
+            } else return(JUMBLR_ERROR_SECRETCANTBEDEPOSIT);
+        } else return(JUMBLR_ERROR_TOOMANYSECRETS);
+    }
+    else
+    {
+        memset(Jumblr_secretaddrs,0,sizeof(Jumblr_secretaddrs));
+        Jumblr_numsecretaddrs = 0;
     }
     return(Jumblr_numsecretaddrs);
 }
 
 int32_t Jumblr_depositaddradd(char *depositaddr) // external
 {
-    int32_t ind,retval = -1; char *retstr; cJSON *retjson;
+    int32_t ind,retval = JUMBLR_ERROR_DUPLICATEDEPOSIT; char *retstr; cJSON *retjson;
     if ( depositaddr == 0 )
         depositaddr = (char *)"";
     if ( (ind= Jumblr_secretaddrfind(depositaddr)) < 0 )
@@ -115,6 +131,7 @@ int32_t Jumblr_depositaddradd(char *depositaddr) // external
             {
                 if ( jobj(retjson,(char *)"error") == 0 || is_cJSON_Null(jobj(retjson,(char *)"error")) != 0 )
                     retval = 0;
+                else retval = JUMBLR_ERROR_IMPORTADDRESS;
                 free_json(retjson);
             }
             free(retstr);
