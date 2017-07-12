@@ -36,7 +36,7 @@
 #define JUMBLR_ERROR_DUPLICATEDEPOSIT -1
 #define JUMBLR_ERROR_SECRETCANTBEDEPOSIT -2
 #define JUMBLR_ERROR_TOOMANYSECRETS -3
-#define JUMBLR_ERROR_IMPORTADDRESS -4
+#define JUMBLR_ERROR_NOTINWALLET -4
 
 struct jumblr_item
 {
@@ -81,6 +81,13 @@ char *jumblr_importaddress(char *address)
     return(jumblr_issuemethod(KMDUSERPASS,(char *)"importaddress",params,7771));
 }
 
+char *jumblr_validateaddress(char *addr)
+{
+    char params[1024];
+    sprintf(params,"[\"%s\"]",addr);
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"validateaddress",params,7771));
+}
+
 int32_t Jumblr_secretaddrfind(char *searchaddr)
 {
     int32_t i;
@@ -119,19 +126,19 @@ int32_t Jumblr_secretaddradd(char *secretaddr) // external
 
 int32_t Jumblr_depositaddradd(char *depositaddr) // external
 {
-    int32_t ind,retval = JUMBLR_ERROR_DUPLICATEDEPOSIT; char *retstr; cJSON *retjson;
+    int32_t ind,retval = JUMBLR_ERROR_DUPLICATEDEPOSIT; char *retstr; cJSON *retjson,*ismine;
     if ( depositaddr == 0 )
         depositaddr = (char *)"";
     if ( (ind= Jumblr_secretaddrfind(depositaddr)) < 0 )
     {
         safecopy(Jumblr_deposit,depositaddr,sizeof(Jumblr_deposit));
-        if ( (retstr= jumblr_importaddress(depositaddr)) != 0 )
+        if ( (retstr= jumblr_validateaddress(depositaddr)) != 0 )
         {
             if ( (retjson= cJSON_Parse(retstr)) != 0 )
             {
-                if ( jobj(retjson,(char *)"error") == 0 || is_cJSON_Null(jobj(retjson,(char *)"error")) != 0 )
+                if ( (ismine= jobj(retjson,(char *)"ismine")) != 0 && is_cJSON_True(ismine) != 0 )
                     retval = 0;
-                else retval = JUMBLR_ERROR_IMPORTADDRESS;
+                else retval = JUMBLR_ERROR_NOTINWALLET;
                 free_json(retjson);
             }
             free(retstr);
@@ -180,13 +187,6 @@ struct jumblr_item *jumblr_opidadd(char *opid)
             printf("jumblr_opidadd.(%s) ERROR, couldnt find after add\n",opid);
     }
     return(ptr);
-}
-
-char *jumblr_validateaddress(char *addr)
-{
-    char params[1024];
-    sprintf(params,"[\"%s\"]",addr);
-    return(jumblr_issuemethod(KMDUSERPASS,(char *)"validateaddress",params,7771));
 }
 
 char *jumblr_zgetnewaddress()
