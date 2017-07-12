@@ -41,6 +41,8 @@ using namespace std;
  * Or alternatively, create a specific query method for the information.
  **/
 
+char *Jumblr_depositaddradd(char *depositaddr);
+int32_t Jumblr_secretaddradd(char *secretaddr);
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
 int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
@@ -48,7 +50,7 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height);
 extern int32_t KOMODO_LASTMINED;
 extern char ASSETCHAINS_SYMBOL[];
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
-#define KOMODO_VERSION "0.1.0"
+#define KOMODO_VERSION "0.1.1"
 
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
@@ -187,6 +189,40 @@ public:
     }
 };
 #endif
+
+UniValue jumblr_deposit(const UniValue& params, bool fHelp)
+{
+    char *retstr; UniValue result(UniValue::VOBJ);
+    if (fHelp || params.size() != 1)
+        throw runtime_error("jumblr_deposit \"depositaddress\"\n");
+    CBitcoinAddress address(params[0].get_str());
+    bool isValid = address.IsValid();
+    if ( isValid != 0 )
+    {
+        string addr = params[0].get_str();
+        if ( (retstr= Jumblr_depositaddradd(addr.c_str())) == 0 )
+            result.push_back(Pair("result", (char *)"null return from Jumblr_depositaddradd"));
+        else result.push_back(Pair("result", retstr));
+    } else result.push_back(Pair("error", "invalid address"));
+    return(result);
+}
+
+UniValue jumblr_secret(const UniValue& params, bool fHelp)
+{
+    int32_t retval; UniValue result(UniValue::VOBJ);
+    if (fHelp || params.size() != 1)
+        throw runtime_error("jumblr_secret \"secretaddress\"\n");
+    CBitcoinAddress address(params[0].get_str());
+    bool isValid = address.IsValid();
+    if ( isValid != 0 )
+    {
+        string addr = params[0].get_str();
+        retval = Jumblr_secretaddradd(addr.c_str());
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("num", retval));
+    } else result.push_back(Pair("error", "invalid address"));
+    return(result);
+}
 
 UniValue validateaddress(const UniValue& params, bool fHelp)
 {

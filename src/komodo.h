@@ -46,6 +46,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block);
 
 int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char *dest);
 #include "komodo_kv.h"
+#include "komodo_jumblr.h"
 #include "komodo_gateway.h"
 #include "komodo_events.h"
 

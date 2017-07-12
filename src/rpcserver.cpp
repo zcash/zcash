@@ -336,6 +336,8 @@ static const CRPCCommand vRPCCommands[] =
     { "util",               "estimatefee",            &estimatefee,            true  },
     { "util",               "estimatepriority",       &estimatepriority,       true  },
     { "util",               "z_validateaddress",      &z_validateaddress,      true  }, /* uses wallet if enabled */
+    { "util",               "jumblr_deposit",       &jumblr_depositaddr,       true  },
+    { "util",               "jumblr_secret",        &jumblr_secretaddr,       true  },
 
     /* Not shown in help */
     { "hidden",             "invalidateblock",        &invalidateblock,        true  },
