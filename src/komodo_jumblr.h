@@ -44,7 +44,7 @@ struct jumblr_item
 char Jumblr_secretaddrs[JUMBLR_MAXSECRETADDRS][64],Jumblr_deposit[64];
 int32_t Jumblr_numsecretaddrs; // if 0 -> run silent mode
 
-char *jumblr_issuemethod(char *usepass,char *method,char *params,uint16_t port)
+char *jumblr_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 {
     cJSON *retjson,*resjson = 0; char *retstr;
     if ( (retstr= komodo_issuemethod(userpass,method,params,port)) != 0 )
@@ -103,7 +103,7 @@ int32_t Jumblr_secretaddradd(char *secretaddr) // external
 
 int32_t Jumblr_depositaddradd(char *depositaddr) // external
 {
-    int32_t ind,retal = -1; char *retstr; cJSON *retjson;
+    int32_t ind,retval = -1; char *retstr; cJSON *retjson;
     if ( depositaddr == 0 )
         depositaddr = (char *)"";
     if ( (ind= Jumblr_secretaddrfind(depositaddr)) < 0 )
@@ -113,6 +113,8 @@ int32_t Jumblr_depositaddradd(char *depositaddr) // external
         {
             if ( (retjson= cJSON_Parse(retstr)) != 0 )
             {
+                if ( jobj(retjson,(char *)"error") == 0 || is_cJSON_Null(jobj(retjson,(char *)"error")) != 0 )
+                    retval = 0;
                 free_json(retjson);
             }
             free(retstr);
