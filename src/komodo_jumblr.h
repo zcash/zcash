@@ -31,6 +31,7 @@
 #define JUMBLR_INCR (99.65 / 100)
 #define JUMBLR_FEE 0.001
 #define JUMBLR_TXFEE 0.01
+#define SMALLVAL 0.000000000000001
 
 struct jumblr_item
 {
@@ -77,9 +78,10 @@ int32_t Jumblr_secretaddradd(char *secretaddr) // external
 
 char *Jumblr_depositaddradd(char *depositaddr) // external
 {
+    int32_t ind;
     if ( depositaddr == 0 )
         depositaddr = (char *)"";
-    if ( (ind= Jumblr_secretaddrfind(secretaddr)) < 0 )
+    if ( (ind= Jumblr_secretaddrfind(depositaddr)) < 0 )
     {
         safecopy(Jumblr_deposit,depositaddr,sizeof(Jumblr_deposit));
         return(jumblr_importaddress(depositaddr));
@@ -401,7 +403,7 @@ void jumblr_opidsupdate()
 void jumblr_iteration()
 {
     static int32_t lastheight;
-    char *zaddr,*retstr; int32_t iter,height,counter,chosen_one,n; uint64_t amount=0,total=0; double fee; struct jumblr_item *ptr,*tmp; uint8_t r,s;
+    char *zaddr,*retstr,secretaddr[64]; int32_t iter,height,counter,chosen_one,n; uint64_t amount=0,total=0; double fee; struct jumblr_item *ptr,*tmp; uint8_t r,s;
     height = (int32_t)chainActive.Tip()->nHeight;
     if ( lastheight == height )
         return;
