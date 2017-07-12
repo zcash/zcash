@@ -860,7 +860,7 @@ void static BitcoinMiner()
                         //     fprintf(stderr," missed target\n");
                         return false;
                     }
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 && Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
+                    if ( /*ASSETCHAINS_SYMBOL[0] == 0 &&*/ Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
                     {
                         //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+roundrobin_delay-time(NULL)));
                         int32_t nseconds = Mining_start+roundrobin_delay-time(NULL);
