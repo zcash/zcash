@@ -118,8 +118,8 @@ struct jumblr_item *jumblr_opidfind(char *opid)
 
 struct jumblr_item *jumblr_opidadd(char *opid)
 {
-    struct jumblr_item *ptr;
-    if ( (ptr= jumblr_opidfind(opid)) == 0 )
+    struct jumblr_item *ptr = 0;
+    if ( opid != 0 && (ptr= jumblr_opidfind(opid)) == 0 )
     {
         ptr = (struct jumblr_item *)calloc(1,sizeof(*ptr));
         safecopy(ptr->opid,opid,sizeof(ptr->opid));
@@ -382,6 +382,7 @@ void jumblr_opidsupdate()
         {
             if ( (n= cJSON_GetArraySize(array)) > 0 )
             {
+                printf("%s -> n%d\n",retstr,n);
                 for (i=0; i<n; i++)
                 {
                     if ( (ptr= jumblr_opidadd(jstri(array,i))) != 0 )
