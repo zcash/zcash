@@ -201,7 +201,7 @@ UniValue jumblr_deposit(const UniValue& params, bool fHelp)
     {
         string addr = params[0].get_str();
         if ( (retval= Jumblr_depositaddradd((char *)addr.c_str())) >= 0 )
-            result.push_back(Pair("result", retval);
+            result.push_back(Pair("result", retval));
         else result.push_back(Pair("error", retval));
     } else result.push_back(Pair("error", "invalid address"));
     return(result);
