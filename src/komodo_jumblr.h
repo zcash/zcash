@@ -51,14 +51,14 @@ char *jumblr_issuemethod(char *usepass,char *method,char *params,uint16_t port)
     {
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
         {
-            if ( jobj(retjson,"result") != 0 )
-                resjson = jduplicate(jobj(retjson,"result"));
-            else if ( jobj(retjson,"error") != 0 )
-                resjson = jduplicate(jobj(retjson,"error"));
+            if ( jobj(retjson,(char *)"result") != 0 )
+                resjson = jduplicate(jobj(retjson,(char *)"result"));
+            else if ( jobj(retjson,(char *)"error") != 0 )
+                resjson = jduplicate(jobj(retjson,(char *)"error"));
             else
             {
                 resjson = cJSON_CreateObject();
-                jaddstr(resjson,"error","cant parse return");
+                jaddstr(resjson,(char *)"error",(char *)"cant parse return");
             }
             free_json(retjson);
         }
@@ -66,7 +66,7 @@ char *jumblr_issuemethod(char *usepass,char *method,char *params,uint16_t port)
     }
     if ( resjson != 0 )
         return(jprint(resjson,1));
-    else return(clonestr("{\"error\":\"unknown error\"}"));
+    else return(clonestr((char *)"{\"error\":\"unknown error\"}"));
 }
 
 char *jumblr_importaddress(char *address)
@@ -351,7 +351,7 @@ void jumblr_opidupdate(struct jumblr_item *ptr)
         {
             if ( (retjson= cJSON_Parse(retstr)) != 0 )
             {
-                if ( cJSON_GetArraySize(retjson) == 1 && is_cJSON_array(retjson) != 0 )
+                if ( cJSON_GetArraySize(retjson) == 1 && is_cJSON_Array(retjson) != 0 )
                 {
                     item = jitem(retjson,0);
                     //printf("%s\n",jprint(item,0));
