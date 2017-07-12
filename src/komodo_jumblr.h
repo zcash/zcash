@@ -44,11 +44,36 @@ struct jumblr_item
 char Jumblr_secretaddrs[JUMBLR_MAXSECRETADDRS][64],Jumblr_deposit[64];
 int32_t Jumblr_numsecretaddrs; // if 0 -> run silent mode
 
+char *jumblr_issuemethod(char *usepass,char *method,char *params,uint16_t port)
+{
+    cJSON *retjson,*resjson = 0; char *retstr;
+    if ( (retstr= komodo_issuemethod(userpass,method,params,port)) != 0 )
+    {
+        if ( (retjson= cJSON_Parse(retstr)) != 0 )
+        {
+            if ( jobj(retjson,"result") != 0 )
+                resjson = jduplicate(jobj(retjson,"result"));
+            else if ( jobj(retjson,"error") != 0 )
+                resjson = jduplicate(jobj(retjson,"error"));
+            else
+            {
+                resjson = cJSON_CreateObject();
+                jaddstr(resjson,"error","cant parse return");
+            }
+            free_json(retjson);
+        }
+        free(retstr);
+    }
+    if ( resjson != 0 )
+        return(jprint(resjson,1));
+    else return(clonestr("{\"error\":\"unknown error\"}"));
+}
+
 char *jumblr_importaddress(char *address)
 {
     char params[1024];
     sprintf(params,"[\"%s\", \"%s\", false]",address,address);
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"importaddress",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"importaddress",params,7771));
 }
 
 int32_t Jumblr_secretaddrfind(char *searchaddr)
@@ -76,16 +101,24 @@ int32_t Jumblr_secretaddradd(char *secretaddr) // external
     return(Jumblr_numsecretaddrs);
 }
 
-char *Jumblr_depositaddradd(char *depositaddr) // external
+int32_t Jumblr_depositaddradd(char *depositaddr) // external
 {
-    int32_t ind;
+    int32_t ind,retal = -1; char *retstr; cJSON *retjson;
     if ( depositaddr == 0 )
         depositaddr = (char *)"";
     if ( (ind= Jumblr_secretaddrfind(depositaddr)) < 0 )
     {
         safecopy(Jumblr_deposit,depositaddr,sizeof(Jumblr_deposit));
-        return(jumblr_importaddress(depositaddr));
-    } else return(clonestr((char *)"{\"error\":\"cant make a secret address a depositaddress\"}"));
+        if ( (retstr= jumblr_importaddress(depositaddr)) != 0 )
+        {
+            if ( (retjson= cJSON_Parse(retstr)) != 0 )
+            {
+                free_json(retjson);
+            }
+            free(retstr);
+        }
+    }
+    return(retval);
 }
 
 int32_t Jumblr_secretaddr(char *secretaddr)
@@ -134,35 +167,35 @@ char *jumblr_validateaddress(char *addr)
 {
     char params[1024];
     sprintf(params,"[\"%s\"]",addr);
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"validateaddress",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"validateaddress",params,7771));
 }
 
 char *jumblr_zgetnewaddress()
 {
     char params[1024];
     sprintf(params,"[]");
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"z_getnewaddress",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_getnewaddress",params,7771));
 }
 
 char *jumblr_zlistoperationids()
 {
     char params[1024];
     sprintf(params,"[]");
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"z_listoperationids",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_listoperationids",params,7771));
 }
 
 char *jumblr_zgetoperationresult(char *opid)
 {
     char params[1024];
     sprintf(params,"[[\"%s\"]]",opid);
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"z_getoperationresult",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_getoperationresult",params,7771));
 }
 
 char *jumblr_zgetoperationstatus(char *opid)
 {
     char params[1024];
     sprintf(params,"[[\"%s\"]]",opid);
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"z_getoperationstatus",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_getoperationstatus",params,7771));
 }
 
 char *jumblr_sendt_to_z(char *taddr,char *zaddr,double amount)
@@ -171,7 +204,7 @@ char *jumblr_sendt_to_z(char *taddr,char *zaddr,double amount)
     if ( jumblr_addresstype(zaddr) != 'z' || jumblr_addresstype(taddr) != 't' )
         return(clonestr((char *)"{\"error\":\"illegal address in t to z\"}"));
     sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}, {\"address\":\"%s\",\"amount\":%.8f}], 1, %.8f]",taddr,zaddr,amount-fee-JUMBLR_TXFEE,JUMBLR_ADDR,fee,JUMBLR_TXFEE);
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"z_sendmany",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_sendmany",params,7771));
 }
 
 char *jumblr_sendz_to_z(char *zaddrS,char *zaddrD,double amount)
@@ -180,7 +213,7 @@ char *jumblr_sendz_to_z(char *zaddrS,char *zaddrD,double amount)
     if ( jumblr_addresstype(zaddrS) != 'z' || jumblr_addresstype(zaddrD) != 'z' )
         return(clonestr((char *)"{\"error\":\"illegal address in z to z\"}"));
     sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}, {\"address\":\"%s\",\"amount\":%.8f}], 1, %.8f]",zaddrS,zaddrD,amount-fee-JUMBLR_TXFEE,JUMBLR_ADDR,fee,JUMBLR_TXFEE);
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"z_sendmany",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_sendmany",params,7771));
 }
 
 char *jumblr_sendz_to_t(char *zaddr,char *taddr,double amount)
@@ -189,42 +222,42 @@ char *jumblr_sendz_to_t(char *zaddr,char *taddr,double amount)
     if ( jumblr_addresstype(zaddr) != 'z' || jumblr_addresstype(taddr) != 't' )
         return(clonestr((char *)"{\"error\":\"illegal address in z to t\"}"));
     sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}, {\"address\":\"%s\",\"amount\":%.8f}], 1, %.8f]",zaddr,taddr,amount-fee-JUMBLR_TXFEE,JUMBLR_ADDR,fee,JUMBLR_TXFEE);
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"z_sendmany",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_sendmany",params,7771));
 }
 
 char *jumblr_zlistreceivedbyaddress(char *addr)
 {
     char params[1024];
     sprintf(params,"[\"%s\", 1]",addr);
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"z_listreceivedbyaddress",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_listreceivedbyaddress",params,7771));
 }
 
 char *jumblr_getreceivedbyaddress(char *addr)
 {
     char params[1024];
     sprintf(params,"[\"%s\", 1]",addr);
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"getreceivedbyaddress",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"getreceivedbyaddress",params,7771));
 }
 
 char *jumblr_importprivkey(char *wifstr)
 {
     char params[1024];
     sprintf(params,"[\"%s\", \"\", false]",wifstr);
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"importprivkey",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"importprivkey",params,7771));
 }
 
 char *jumblr_zgetbalance(char *addr)
 {
     char params[1024];
     sprintf(params,"[\"%s\", 1]",addr);
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"z_getbalance",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_getbalance",params,7771));
 }
 
 char *jumblr_listunspent(char *coinaddr)
 {
     char params[1024];
     sprintf(params,"[1, 99999999, [\"%s\"]]",coinaddr);
-    return(komodo_issuemethod(KMDUSERPASS,(char *)"listunspent",params,7771));
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"listunspent",params,7771));
 }
 
 int64_t jumblr_receivedby(char *addr)
@@ -248,7 +281,7 @@ int64_t jumblr_balance(char *addr)
             printf("jumblr.[%s].(%s)\n","KMD",retstr);
             if ( (retjson= cJSON_Parse(retstr)) != 0 )
             {
-                if ( (n= cJSON_GetArraySize(retjson)) > 0 )
+                if ( (n= cJSON_GetArraySize(retjson)) > 0 && is_cJSON_Array(retjson) != 0 )
                     for (i=0; i<n; i++)
                         balance += SATOSHIDEN * jdouble(jitem(retjson,i),(char *)"amount");
                 free_json(retjson);
@@ -318,7 +351,7 @@ void jumblr_opidupdate(struct jumblr_item *ptr)
         {
             if ( (retjson= cJSON_Parse(retstr)) != 0 )
             {
-                if ( cJSON_GetArraySize(retjson) == 1 )
+                if ( cJSON_GetArraySize(retjson) == 1 && is_cJSON_array(retjson) != 0 )
                 {
                     item = jitem(retjson,0);
                     //printf("%s\n",jprint(item,0));
@@ -380,7 +413,7 @@ void jumblr_opidsupdate()
     {
         if ( (array= cJSON_Parse(retstr)) != 0 )
         {
-            if ( (n= cJSON_GetArraySize(array)) > 0 )
+            if ( (n= cJSON_GetArraySize(array)) > 0 && is_cJSON_Array(array) != 0 )
             {
                 printf("%s -> n%d\n",retstr,n);
                 for (i=0; i<n; i++)
