@@ -494,10 +494,12 @@ void jumblr_zaddrinit(char *zaddr)
                                 ptr->amount = (total * SATOSHIDEN);
                                 ptr->status = 1;
                                 strcpy(ptr->dest,zaddr);
+                                if ( jumblr_addresstype(ptr->dest) != 'z' )
+                                    printf("error setting dest type to Z: %s\n",jprint(item,0));
                                 if ( jumblr_numvins(txid) == 0 )
                                 {
                                     z_z = 1;
-                                    strcpy(ptr->src,"zcaddr");
+                                    strcpy(ptr->src,zaddr);
                                     if ( jumblr_addresstype(ptr->src) != 'z' )
                                         printf("error setting address type to Z: %s\n",jprint(item,0));
                                 }
