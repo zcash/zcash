@@ -297,6 +297,30 @@ char *jumblr_listunspent(char *coinaddr)
     return(jumblr_issuemethod(KMDUSERPASS,(char *)"listunspent",params,7771));
 }
 
+char *jumblr_gettransaction(char *txidstr)
+{
+    char params[1024];
+    sprintf(params,"[\"%s\", 1]",txidstr);
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771));
+}
+
+int32_t jumblr_numvins(bits256 txid)
+{
+    char txidstr[65],params[1024],*retstr; cJSON *retjson,*vins; int32_t numvins = -1;
+    bits256_str(txidstr,txid);
+    if ( (retstr= jumblr_gettransaction(txidstr)) != 0 )
+    {
+        if ( (retjson= cJSON_Parse(retstr)) != 0 )
+        {
+            if ( (vins= jarray(&n,retjson,"vin")) != 0 )
+                numvins = n;
+            free_json(retjson);
+        }
+        free(retstr);
+    }
+    return(numvins);
+}
+
 int64_t jumblr_receivedby(char *addr)
 {
     char *retstr; int64_t total = 0;
@@ -445,7 +469,7 @@ void jumblr_prune(struct jumblr_item *ptr)
 
 void jumblr_zaddrinit(char *zaddr)
 {
-    struct jumblr_item *ptr; char *retstr; cJSON *item,*array; double total; bits256 txid; char txidstr[65],t_z,z_z;
+    struct jumblr_item *ptr; char *retstr,*totalstr; cJSON *item,*array; double total; bits256 txid; char txidstr[65],t_z,z_z;
     if ( (totalstr= jumblr_zgetbalance(zaddr)) != 0 )
     {
         if ( (total= atof(total)) > SMALLVAL )
@@ -457,9 +481,9 @@ void jumblr_zaddrinit(char *zaddr)
                     if ( cJSON_GetArraySize(array) == 1 && is_cJSON_Array(array) != 0 )
                     {
                         item = jitem(array,0);
-                        if ( (uint64_t)(total * SATOSHIDEN) == (uint64_t)(jdouble(item,"amount") * SATOSHIDEN) )
+                        if ( (uint64_t)(total * SATOSHIDEN) == (uint64_t)(jdouble(item,(char *)"amount") * SATOSHIDEN) )
                         {
-                            txid = jbits256(item,"txid");
+                            txid = jbits256(item,(char *)"txid");
                             bits256_str(txidstr,txid);
                             if ( (ptr= jumblr_opidadd(txidstr)) != 0 )
                             {
@@ -482,7 +506,7 @@ void jumblr_zaddrinit(char *zaddr)
                                 }
                                 printf("%s %s %.8f t_z.%d z_z.%d\n",zaddr,txidstr,total,t_z,z_z); // cant be z->t from spend
                             }
-                        } else printf("mismatched %s total %.8f vs %.8f\n",zaddr,total,jdouble(item,"amount"));
+                        } else printf("mismatched %s total %.8f vs %.8f\n",zaddr,total,jdouble(item,(char *)"amount"));
                     }
                     free_json(array);
                 }
