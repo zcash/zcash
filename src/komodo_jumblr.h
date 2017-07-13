@@ -708,7 +708,7 @@ void jumblr_iteration()
                             chosen_one = -chosen_one;
                         chosen_one %= counter;
                         printf("jumblr z->t chosen_one.%d of %d, from %d\n",chosen_one,counter,n);
-                    } else printf("n.%d counter.%d chosen.%d\n",n,counter,chosen);
+                    } else printf("n.%d counter.%d chosen.%d\n",n,counter,chosen_one);
                 }
             }
             break;
