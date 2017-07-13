@@ -530,6 +530,9 @@ class CTransaction(object):
             self.vin = []
             self.vout = []
             self.nLockTime = 0
+            self.vjoinsplit = []
+            self.joinSplitPubKey = None
+            self.joinSplitSig = None
             self.sha256 = None
             self.hash = None
         else:
@@ -537,6 +540,9 @@ class CTransaction(object):
             self.vin = copy.deepcopy(tx.vin)
             self.vout = copy.deepcopy(tx.vout)
             self.nLockTime = tx.nLockTime
+            self.vjoinsplit = copy.deepcopy(tx.vjoinsplit)
+            self.joinSplitPubKey = tx.joinSplitPubKey
+            self.joinSplitSig = tx.joinSplitSig
             self.sha256 = None
             self.hash = None
 
@@ -545,6 +551,11 @@ class CTransaction(object):
         self.vin = deser_vector(f, CTxIn)
         self.vout = deser_vector(f, CTxOut)
         self.nLockTime = struct.unpack("<I", f.read(4))[0]
+        if self.nVersion >= 2:
+            self.vjoinsplit = deser_vector(f, JSDescription)
+            if len(self.vjoinsplit) > 0:
+                self.joinSplitPubKey = deser_uint256(f)
+                self.joinSplitSig = f.read(64)
         self.sha256 = None
         self.hash = None
 
@@ -554,6 +565,11 @@ class CTransaction(object):
         r += ser_vector(self.vin)
         r += ser_vector(self.vout)
         r += struct.pack("<I", self.nLockTime)
+        if self.nVersion >= 2:
+            r += ser_vector(self.vjoinsplit)
+            if len(self.vjoinsplit) > 0:
+                r += ser_uint256(self.joinSplitPubKey)
+                r += self.joinSplitSig
         return r
 
     def rehash(self):
@@ -573,8 +589,15 @@ class CTransaction(object):
         return True
 
     def __repr__(self):
-        return "CTransaction(nVersion=%i vin=%s vout=%s nLockTime=%i)" \
+        r = "CTransaction(nVersion=%i vin=%s vout=%s nLockTime=%i" \
             % (self.nVersion, repr(self.vin), repr(self.vout), self.nLockTime)
+        if self.nVersion >= 2:
+            r += " vjoinsplit=%s" % repr(self.vjoinsplit)
+            if len(self.vjoinsplit) > 0:
+                r += " joinSplitPubKey=%064x joinSplitSig=%064x" \
+                    (self.joinSplitPubKey, self.joinSplitSig)
+        r += ")"
+        return r
 
 
 class CBlockHeader(object):
