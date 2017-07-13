@@ -84,7 +84,8 @@ char *jumblr_importaddress(char *address)
 char *jumblr_validateaddress(char *addr)
 {
     char params[1024];
-    sprintf(params,"[\"%s\"]",addr);
+    sprintf(params,"\"%s\"",addr);
+    printf("validateaddress.%s\n",params);
     return(jumblr_issuemethod(KMDUSERPASS,(char *)"validateaddress",params,7771));
 }
 
@@ -132,13 +133,15 @@ int32_t Jumblr_depositaddradd(char *depositaddr) // external
         depositaddr = (char *)"";
     if ( (ind= Jumblr_secretaddrfind(depositaddr)) < 0 )
     {
-        safecopy(Jumblr_deposit,depositaddr,sizeof(Jumblr_deposit));
         if ( (retstr= jumblr_validateaddress(depositaddr)) != 0 )
         {
             if ( (retjson= cJSON_Parse(retstr)) != 0 )
             {
                 if ( (ismine= jobj(retjson,(char *)"ismine")) != 0 && is_cJSON_True(ismine) != 0 )
+                {
                     retval = 0;
+                    safecopy(Jumblr_deposit,depositaddr,sizeof(Jumblr_deposit));
+                }
                 else
                 {
                     retval = JUMBLR_ERROR_NOTINWALLET;
