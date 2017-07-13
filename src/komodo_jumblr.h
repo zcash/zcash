@@ -312,11 +312,11 @@ int32_t jumblr_numvins(bits256 txid)
     {
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
         {
-            if ( (vins= jarray(&n,retjson,(char *)"vin")) != 0 )
+            if ( jobj(retjson,(char *)"vin") != 0 && ((vins= jarray(&n,retjson,(char *)"vin")) == 0 || n == 0) )
             {
                 numvins = n;
-                printf("numvins.%d\n",n);
-            } else printf("no vin.(%s)\n",retstr);
+                //printf("numvins.%d\n",n);
+            } //else printf("no vin.(%s)\n",retstr);
             free_json(retjson);
         }
         free(retstr);
