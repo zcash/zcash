@@ -490,7 +490,7 @@ void jumblr_zaddrinit(char *zaddr)
                     if ( cJSON_GetArraySize(array) == 1 && is_cJSON_Array(array) != 0 )
                     {
                         item = jitem(array,0);
-                        if ( (uint64_t)(total * SATOSHIDEN) == (uint64_t)(jdouble(item,(char *)"amount") * SATOSHIDEN) )
+                        if ( (uint64_t)((total+0.0000000049) * SATOSHIDEN) == (uint64_t)((jdouble(item,(char *)"amount")+0.0000000049) * SATOSHIDEN) )
                         {
                             txid = jbits256(item,(char *)"txid");
                             bits256_str(txidstr,txid);
