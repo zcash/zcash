@@ -478,6 +478,7 @@ void jumblr_zaddrinit(char *zaddr)
             {
                 if ( (array= cJSON_Parse(retstr)) != 0 )
                 {
+                    t_z = z_z = 0;
                     if ( cJSON_GetArraySize(array) == 1 && is_cJSON_Array(array) != 0 )
                     {
                         item = jitem(array,0);
@@ -659,11 +660,13 @@ void jumblr_iteration()
             {
                 jumblr_opidsupdate();
                 chosen_one = -1;
+                printf("Jumblr_numsecretaddrs.%d\n",Jumblr_numsecretaddrs);
                 for (iter=0; iter<2; iter++)
                 {
                     counter = n = 0;
                     HASH_ITER(hh,Jumblrs,ptr,tmp)
                     {
+                        printf("status.%d %c %c %.8f\n",ptr->status,jumblr_addresstype(ptr->src),jumblr_addresstype(ptr->dest),dstr(ptr->amount));
                         if ( ptr->status > 0 && jumblr_addresstype(ptr->src) == 'z' && jumblr_addresstype(ptr->dest) == 'z' )
                         {
                             if ( ptr->spent == 0 && (total= jumblr_balance(ptr->dest)) >= (fee + JUMBLR_FEE)*SATOSHIDEN )
