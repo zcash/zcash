@@ -1107,9 +1107,9 @@ void AsyncRPCOperation_sendmany::add_taddr_change_output_to_tx(CAmount amount) {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
-    if ( 0 )
-        CScript scriptPubKey = GetScriptForDestination(fromaddress.Get());
-    else
+    //if ( 0 )
+    //    CScript scriptPubKey = GetScriptForDestination(fromaddress.Get());
+    //else
     {
         CReserveKey keyChange(pwalletMain);
         CPubKey vchPubKey;
