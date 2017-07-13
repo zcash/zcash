@@ -445,7 +445,7 @@ void jumblr_prune(struct jumblr_item *ptr)
 
 void jumblr_zaddrinit(char *zaddr)
 {
-    char *retstr; cJSON *item,*array; double total; bits256 txid; char txidstr[65],t_z,z_z;
+    struct jumblr_item *ptr; char *retstr; cJSON *item,*array; double total; bits256 txid; char txidstr[65],t_z,z_z;
     if ( (totalstr= jumblr_zgetbalance(zaddr)) != 0 )
     {
         if ( (total= atof(total)) > SMALLVAL )
