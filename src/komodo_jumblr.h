@@ -344,7 +344,7 @@ int64_t jumblr_receivedby(char *addr)
 
 int64_t jumblr_balance(char *addr)
 {
-    char *retstr; double val; int64_t balance = 0; //cJSON *retjson; int32_t i,n; 
+    char *retstr; double val; int64_t balance = 0; //cJSON *retjson; int32_t i,n;
     /*if ( jumblr_addresstype(addr) == 't' )
     {
         if ( (retstr= jumblr_listunspent(addr)) != 0 )
@@ -587,13 +587,13 @@ void jumblr_iteration()
         }
     }
     height = (int32_t)chainActive.Tip()->nHeight;
-    if ( time(NULL) < lasttime+6 )
+    if ( time(NULL) < lasttime+50 )
         return;
     lasttime = (uint32_t)time(NULL);
     if ( lastheight == height )
         return;
     lastheight = height;
-    if ( (height % JUMBLR_SYNCHRONIZED_BLOCKS) != 0 )
+    if ( (height % JUMBLR_SYNCHRONIZED_BLOCKS) != JUMBLR_SYNCHRONIZED_BLOCKS-3 && (height % JUMBLR_SYNCHRONIZED_BLOCKS) != JUMBLR_SYNCHRONIZED_BLOCKS-2 )
         return;
     fee = JUMBLR_INCR * JUMBLR_FEE;
     OS_randombytes(&r,sizeof(r));
