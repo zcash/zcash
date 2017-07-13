@@ -255,10 +255,10 @@ char *jumblr_sendz_to_t(char *zaddr,char *taddr,double amount)
     return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_sendmany",params,7771));
 }
 
-char *jumblr_zlistaddresses(char *addr)
+char *jumblr_zlistaddresses()
 {
     char params[1024];
-    sprintf(params,"[\"%s\", 1]",addr);
+    sprintf(params,"[]");
     return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_listaddresses",params,7771));
 }
 
