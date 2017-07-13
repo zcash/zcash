@@ -312,7 +312,7 @@ int32_t jumblr_numvins(bits256 txid)
     {
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
         {
-            if ( (vins= jarray(&n,retjson,"vin")) != 0 )
+            if ( (vins= jarray(&n,retjson,(char *)"vin")) != 0 )
                 numvins = n;
             free_json(retjson);
         }
@@ -472,7 +472,7 @@ void jumblr_zaddrinit(char *zaddr)
     struct jumblr_item *ptr; char *retstr,*totalstr; cJSON *item,*array; double total; bits256 txid; char txidstr[65],t_z,z_z;
     if ( (totalstr= jumblr_zgetbalance(zaddr)) != 0 )
     {
-        if ( (total= atof(total)) > SMALLVAL )
+        if ( (total= atof(totalstr)) > SMALLVAL )
         {
             if ( (retstr= jumblr_zlistreceivedbyaddress(zaddr)) != 0 )
             {
