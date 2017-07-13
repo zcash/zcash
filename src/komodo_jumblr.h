@@ -580,11 +580,12 @@ void jumblr_iteration()
         }
     }
     height = (int32_t)chainActive.Tip()->nHeight;
-    if ( time(NULL) < lasttime+60 )
+    if ( time(NULL) < lasttime+6 )
         return;
     lasttime = (uint32_t)time(NULL);
     if ( lastheight == height )
         return;
+    lastheight = height;
     if ( (height % JUMBLR_SYNCHRONIZED_BLOCKS) != 0 )
         return;
     fee = JUMBLR_INCR * JUMBLR_FEE;
