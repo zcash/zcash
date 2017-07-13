@@ -134,7 +134,7 @@ public:
     // Delegated methods
     
     void add_taddr_change_output_to_tx(CAmount amount) {
-        delegate->add_taddr_change_output_to_tx(amount);
+        delegate->add_taddr_change_output_to_tx(0,amount);
     }
     
     void add_taddr_outputs_to_tx() {
