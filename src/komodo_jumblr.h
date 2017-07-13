@@ -520,7 +520,7 @@ void jumblr_zaddrinit(char *zaddr)
                                 }
                                 printf("%s %s %.8f t_z.%d z_z.%d\n",zaddr,txidstr,total,t_z,z_z); // cant be z->t from spend
                             }
-                        } else printf("mismatched %s total %.8f vs %.8f -> %lld\n",zaddr,total,jdouble(item,(char *)"amount"),(long long)((uint64_t)(total * SATOSHIDEN) - (uint64_t)(jdouble(item,(char *)"amount") * SATOSHIDEN)));
+                        } else printf("mismatched %s %s total %.8f vs %.8f -> %lld\n",zaddr,totalstr,dstr(SATOSHIDEN * total),dstr(SATOSHIDEN * jdouble(item,(char *)"amount")),(long long)((uint64_t)(total * SATOSHIDEN) - (uint64_t)(jdouble(item,(char *)"amount") * SATOSHIDEN)));
                     }
                     free_json(array);
                 }
