@@ -318,7 +318,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         CAmount change = funds - fundsSpent;
         
         if (change > 0) {
-            add_taddr_change_output_to_tx(change);
+            add_taddr_change_output_to_tx(0,change);
 
             LogPrint("zrpc", "%s: transparent change in transaction output (amount=%s)\n",
                     getId(),
@@ -395,7 +395,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                     "allow any change as there is currently no way to specify a change address "
                     "in z_sendmany.", FormatMoney(change)));
             } else {
-                add_taddr_change_output_to_tx(change);
+                add_taddr_change_output_to_tx(&fromtaddr_,change);
                 LogPrint("zrpc", "%s: transparent change in transaction output (amount=%s)\n",
                         getId(),
                         FormatMoney(change)
@@ -1102,23 +1102,24 @@ void AsyncRPCOperation_sendmany::add_taddr_outputs_to_tx() {
     tx_ = CTransaction(rawTx);
 }
 
-void AsyncRPCOperation_sendmany::add_taddr_change_output_to_tx(CAmount amount) {
+void AsyncRPCOperation_sendmany::add_taddr_change_output_to_tx(CBitcoinAddress *fromaddress,CAmount amount) {
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
-    //if ( 0 )
-    //    CScript scriptPubKey = GetScriptForDestination(fromaddress.Get());
-    //else
-    //{
-        CReserveKey keyChange(pwalletMain);
-        CPubKey vchPubKey;
+    CScript scriptPubKey;
+    CReserveKey keyChange(pwalletMain);
+    CPubKey vchPubKey;
+    if ( fromaddress != 0 )
+        scriptPubKey = GetScriptForDestination(fromaddress->Get());
+    else
+    {
         bool ret = keyChange.GetReservedKey(vchPubKey);
         if (!ret) {
             throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Could not generate a taddr to use as a change address"); // should never fail, as we just unlocked
         }
-        CScript scriptPubKey = GetScriptForDestination(vchPubKey.GetID());
-    //}
+        scriptPubKey = GetScriptForDestination(vchPubKey.GetID());
+    }
     CTxOut out(amount, scriptPubKey);
 
     CMutableTransaction rawTx(tx_);
