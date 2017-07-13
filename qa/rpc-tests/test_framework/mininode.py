@@ -30,6 +30,14 @@ from threading import RLock
 from threading import Thread
 import logging
 import copy
+from pyblake2 import blake2b
+
+from .equihash import (
+    gbp_basic,
+    gbp_validate,
+    hash_nonce,
+    zcash_person,
+)
 
 BIP0031_VERSION = 60000
 MY_VERSION = 170002  # past bip-31 for ping/pong
@@ -736,7 +744,13 @@ class CBlock(CBlockHeader):
             hashes = newhashes
         return uint256_from_str(hashes[0])
 
-    def is_valid(self):
+    def is_valid(self, n=48, k=5):
+        # H(I||...
+        digest = blake2b(digest_size=(512/n)*n/8, person=zcash_person(n, k))
+        digest.update(super(CBlock, self).serialize()[:108])
+        hash_nonce(digest, self.nNonce)
+        if not gbp_validate(self.nSolution, digest, n, k):
+            return False
         self.calc_sha256()
         target = uint256_from_compact(self.nBits)
         if self.sha256 > target:
@@ -748,12 +762,25 @@ class CBlock(CBlockHeader):
             return False
         return True
 
-    def solve(self):
-        self.calc_sha256()
+    def solve(self, n=48, k=5):
         target = uint256_from_compact(self.nBits)
-        while self.sha256 > target:
+        # H(I||...
+        digest = blake2b(digest_size=(512/n)*n/8, person=zcash_person(n, k))
+        digest.update(super(CBlock, self).serialize()[:108])
+        self.nNonce = 0
+        while True:
+            # H(I||V||...
+            curr_digest = digest.copy()
+            hash_nonce(curr_digest, self.nNonce)
+            # (x_1, x_2, ...) = A(I, V, n, k)
+            solns = gbp_basic(curr_digest, n, k)
+            for soln in solns:
+                assert(gbp_validate(curr_digest, soln, n, k))
+                self.nSolution = soln
+                self.rehash()
+                if self.sha256 <= target:
+                    return
             self.nNonce += 1
-            self.rehash()
 
     def __repr__(self):
         return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashReserved=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%s vtx=%s)" \

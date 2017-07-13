@@ -7,7 +7,7 @@
 from mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint, ser_string
 
 # Create a block (with regtest difficulty)
-def create_block(hashprev, coinbase, nTime=None):
+def create_block(hashprev, coinbase, nTime=None, nBits=None):
     block = CBlock()
     if nTime is None:
         import time
@@ -15,7 +15,10 @@ def create_block(hashprev, coinbase, nTime=None):
     else:
         block.nTime = nTime
     block.hashPrevBlock = hashprev
-    block.nBits = 0x207fffff # Will break after a difficulty adjustment...
+    if nBits is None:
+        block.nBits = 0x200f0f0f # Will break after a difficulty adjustment...
+    else:
+        block.nBits = nBits
     block.vtx.append(coinbase)
     block.hashMerkleRoot = block.calc_merkle_root()
     block.calc_sha256()
