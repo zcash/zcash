@@ -306,7 +306,7 @@ char *jumblr_gettransaction(char *txidstr)
 
 int32_t jumblr_numvins(bits256 txid)
 {
-    char txidstr[65],params[1024],*retstr; cJSON *retjson,*vins; int32_t numvins = -1;
+    char txidstr[65],params[1024],*retstr; cJSON *retjson,*vins; int32_t n,numvins = -1;
     bits256_str(txidstr,txid);
     if ( (retstr= jumblr_gettransaction(txidstr)) != 0 )
     {
