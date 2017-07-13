@@ -139,7 +139,11 @@ int32_t Jumblr_depositaddradd(char *depositaddr) // external
             {
                 if ( (ismine= jobj(retjson,(char *)"ismine")) != 0 && is_cJSON_True(ismine) != 0 )
                     retval = 0;
-                else retval = JUMBLR_ERROR_NOTINWALLET;
+                else
+                {
+                    retval = JUMBLR_ERROR_NOTINWALLET;
+                    printf("%s not in wallet: ismine.%p %d %s\n",ismine,is_cJSON_True(ismine),jprint(retjson,0));
+                }
                 free_json(retjson);
             }
             free(retstr);
