@@ -41,9 +41,9 @@
 struct jumblr_item
 {
     UT_hash_handle hh;
-    int64_t amount,fee,txfee;
+    int64_t amount,fee,txfee; // fee and txfee not really used (yet)
     uint32_t spent,pad;
-    char opid[64],src[128],dest[128],status;
+    char opid[66],src[128],dest[128],status;
 } *Jumblrs;
 
 char Jumblr_secretaddrs[JUMBLR_MAXSECRETADDRS][64],Jumblr_deposit[64];
@@ -446,15 +446,51 @@ void jumblr_prune(struct jumblr_item *ptr)
 void jumblr_zaddrinit(char *zaddr)
 {
     //[{"txid":"8186f4e9868dc8525126a92f2fe93ea86272b091609fafdc418a76a7fda34ebd","amount":1.00749152,"memo":"f600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}]
-    char *retstr; cJSON *item;
-    if ( (retstr= jumblr_zlistreceivedbyaddress(zaddr)) != 0 )
+    char *retstr; cJSON *item; double total; bits256 txid; char txidstr[65],t_z,z_t;
+    if ( (totalstr= jumblr_zgetbalance(zaddr)) != 0 )
     {
-        if ( (item= cJSON_Parse(retstr)) != 0 )
+        if ( (total= atof(total)) > SMALLVAL )
         {
-            printf("%s %s %s\n",zaddr,jumblr_zgetbalance(zaddr),jprint(item,0));
-            free_json(item);
+            if ( (retstr= jumblr_zlistreceivedbyaddress(zaddr)) != 0 )
+            {
+                if ( (array= cJSON_Parse(retstr)) != 0 )
+                {
+                    if ( cJSON_GetArraySize(array) == 1 && is_cJSON_Array(array) != 0 )
+                    {
+                        item = jitem(array,0);
+                        if ( (uint64_t)(total * SATOSHIDEN) == (uint64_t)(jdouble(item,"amount") * SATOSHIDEN) )
+                        {
+                            txid = jbits256(item,"txid");
+                            bits256_str(txidstr,txid);
+                            if ( (ptr= jumblr_opidadd(txidstr)) != 0 )
+                            {
+                                ptr->amount = (total * SATOSHIDEN);
+                                ptr->status = 1;
+                                strcpy(ptr->dest,zaddr);
+                                if ( jumblr_numvins(txid) == 0 )
+                                {
+                                    z_z = 1;
+                                    strcpy(ptr->src,"zcaddr");
+                                    if ( jumblr_addresstype(ptr->src) != 'z' )
+                                        printf("error setting address type to Z: %s\n",jprint(item,0));
+                                }
+                                else
+                                {
+                                    t_z = 1;
+                                    strcpy(ptr->src,"taddr");
+                                    if ( jumblr_addresstype(ptr->src) != 't' )
+                                        printf("error setting address type to T: %s\n",jprint(item,0));
+                                }
+                                printf("%s %s %.8f t_z.%d z_z.%d\n",zaddr,txidstr,total,t_z,z_z); // cant be z->t from spend
+                            }
+                        } else printf("mismatched %s total %.8f vs %.8f\n",zaddr,total,jdouble(item,"amount"));
+                    }
+                    free_json(array);
+                }
+                free(retstr);
+            }
         }
-        free(retstr);
+        free(totalstr);
     }
 }
 
@@ -555,7 +591,7 @@ void jumblr_iteration()
                 counter = n = 0;
                 HASH_ITER(hh,Jumblrs,ptr,tmp)
                 {
-                    if ( jumblr_addresstype(ptr->src) == 't' && jumblr_addresstype(ptr->dest) == 'z' )
+                    if ( ptr->status > 0 && jumblr_addresstype(ptr->src) == 't' && jumblr_addresstype(ptr->dest) == 'z' )
                     {
                         if ( ptr->spent == 0 && (total= jumblr_balance(ptr->dest)) >= (fee + JUMBLR_FEE)*SATOSHIDEN )
                         {
@@ -605,7 +641,7 @@ void jumblr_iteration()
                     counter = n = 0;
                     HASH_ITER(hh,Jumblrs,ptr,tmp)
                     {
-                        if ( jumblr_addresstype(ptr->src) == 'z' && jumblr_addresstype(ptr->dest) == 'z' )
+                        if ( ptr->status > 0 && jumblr_addresstype(ptr->src) == 'z' && jumblr_addresstype(ptr->dest) == 'z' )
                         {
                             if ( ptr->spent == 0 && (total= jumblr_balance(ptr->dest)) >= (fee + JUMBLR_FEE)*SATOSHIDEN )
                             {
