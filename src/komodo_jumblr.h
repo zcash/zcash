@@ -27,8 +27,8 @@
 #define JUMBLR_ADDR "RGhxXpXSSBTBm9EvNsXnTQczthMCxHX91t"
 #define JUMBLR_BTCADDR "18RmTJe9qMech8siuhYfMtHo8RtcN1obC6"
 #define JUMBLR_MAXSECRETADDRS 777
-#define JUMBLR_SYNCHRONIZED_BLOCKS 2 // 60
-#define JUMBLR_INCR (99.65 / 100)
+#define JUMBLR_SYNCHRONIZED_BLOCKS 2 //10
+#define JUMBLR_INCR 9.965
 #define JUMBLR_FEE 0.001
 #define JUMBLR_TXFEE 0.01
 #define SMALLVAL 0.000000000000001
@@ -110,9 +110,10 @@ int32_t Jumblr_secretaddradd(char *secretaddr) // external
             {
                 if ( (ind= Jumblr_secretaddrfind(secretaddr)) < 0 )
                 {
-                    safecopy(Jumblr_secretaddrs[Jumblr_numsecretaddrs],secretaddr,64);
-                    Jumblr_numsecretaddrs++;
-                } else return(ind);
+                    ind = Jumblr_numsecretaddrs++;
+                    safecopy(Jumblr_secretaddrs[ind],secretaddr,64);
+                }
+                return(ind);
             } else return(JUMBLR_ERROR_SECRETCANTBEDEPOSIT);
         } else return(JUMBLR_ERROR_TOOMANYSECRETS);
     }
@@ -225,7 +226,7 @@ char *jumblr_zgetoperationstatus(char *opid)
 
 char *jumblr_sendt_to_z(char *taddr,char *zaddr,double amount)
 {
-    char params[1024]; double fee = (amount-3*JUMBLR_TXFEE) * JUMBLR_FEE;
+    char params[1024]; double fee = ((amount-3*JUMBLR_TXFEE) * JUMBLR_FEE) * 1.5;
     if ( jumblr_addresstype(zaddr) != 'z' || jumblr_addresstype(taddr) != 't' )
         return(clonestr((char *)"{\"error\":\"illegal address in t to z\"}"));
     sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}, {\"address\":\"%s\",\"amount\":%.8f}], 1, %.8f]",taddr,zaddr,amount-fee-JUMBLR_TXFEE,JUMBLR_ADDR,fee,JUMBLR_TXFEE);
@@ -238,14 +239,15 @@ char *jumblr_sendz_to_z(char *zaddrS,char *zaddrD,double amount)
     char params[1024]; double fee = (amount-2*JUMBLR_TXFEE) * JUMBLR_FEE;
     if ( jumblr_addresstype(zaddrS) != 'z' || jumblr_addresstype(zaddrD) != 'z' )
         return(clonestr((char *)"{\"error\":\"illegal address in z to z\"}"));
-    sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}, {\"address\":\"%s\",\"amount\":%.8f}], 1, %.8f]",zaddrS,zaddrD,amount-fee-JUMBLR_TXFEE,JUMBLR_ADDR,fee,JUMBLR_TXFEE);
+    //sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}, {\"address\":\"%s\",\"amount\":%.8f}], 1, %.8f]",zaddrS,zaddrD,amount-fee-JUMBLR_TXFEE,JUMBLR_ADDR,fee,JUMBLR_TXFEE);
+    sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}], 1, %.8f]",zaddrS,zaddrD,amount-fee-JUMBLR_TXFEE,JUMBLR_TXFEE);
     printf("z -> z: %s\n",params);
     return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_sendmany",params,7771));
 }
 
 char *jumblr_sendz_to_t(char *zaddr,char *taddr,double amount)
 {
-    char params[1024]; double fee = (amount-JUMBLR_TXFEE) * JUMBLR_FEE;
+    char params[1024]; double fee = ((amount-JUMBLR_TXFEE) * JUMBLR_FEE) * 1.5;
     if ( jumblr_addresstype(zaddr) != 'z' || jumblr_addresstype(taddr) != 't' )
         return(clonestr((char *)"{\"error\":\"illegal address in z to t\"}"));
     sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}, {\"address\":\"%s\",\"amount\":%.8f}], 1, %.8f]",zaddr,taddr,amount-fee-JUMBLR_TXFEE,JUMBLR_ADDR,fee,JUMBLR_TXFEE);
@@ -443,7 +445,7 @@ void jumblr_opidsupdate()
         {
             if ( (n= cJSON_GetArraySize(array)) > 0 && is_cJSON_Array(array) != 0 )
             {
-                printf("%s -> n%d\n",retstr,n);
+                //printf("%s -> n%d\n",retstr,n);
                 for (i=0; i<n; i++)
                 {
                     if ( (ptr= jumblr_opidadd(jstri(array,i))) != 0 )
@@ -477,6 +479,7 @@ void jumblr_iteration()
     fee = JUMBLR_INCR * JUMBLR_FEE;
     OS_randombytes(&r,sizeof(r));
     s = ((r >> 2) % 3);
+    s = 2;
     switch ( s )
     {
         case 0: // public -> z, need to importprivkey
@@ -573,14 +576,14 @@ void jumblr_iteration()
                                     Jumblr_secretaddr(secretaddr);
                                     if ( (retstr= jumblr_sendz_to_t(ptr->dest,secretaddr,dstr(total))) != 0 )
                                     {
-                                        printf("sendz_to_t.(%s)\n",retstr);
+                                        printf("%s sendz_to_t.(%s)\n",secretaddr,retstr);
                                         free(retstr);
-                                    }
+                                    } else printf("null return from jumblr_sendz_to_t\n");
                                     ptr->spent = (uint32_t)time(NULL);
                                     break;
                                 }
                                 counter++;
-                            }
+                            } else printf("z->t spent.%u total %.8f error\n",ptr->spent,dstr(total));
                         }
                         n++;
                     }
