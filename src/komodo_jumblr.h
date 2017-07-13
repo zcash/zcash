@@ -255,6 +255,13 @@ char *jumblr_sendz_to_t(char *zaddr,char *taddr,double amount)
     return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_sendmany",params,7771));
 }
 
+char *jumblr_zlistaddresses(char *addr)
+{
+    char params[1024];
+    sprintf(params,"[\"%s\", 1]",addr);
+    return(jumblr_issuemethod(KMDUSERPASS,(char *)"z_listaddresses",params,7771));
+}
+
 char *jumblr_zlistreceivedbyaddress(char *addr)
 {
     char params[1024];
@@ -436,6 +443,20 @@ void jumblr_prune(struct jumblr_item *ptr)
     }
 }
 
+void jumblr_zaddrinit(char *zaddr)
+{
+    char *retstr; cJSON *item;
+    if ( (retstr= jumblr_zlistreceivedbyaddress(zaddr)) != 0 )
+    {
+        if ( (item= cJSON_Parse(retstr)) != 0 )
+        {
+            printf("%s\n",jprint(item,0));
+            free_json(item);
+        }
+        free(retstr);
+    }
+}
+
 void jumblr_opidsupdate()
 {
     char *retstr; cJSON *array; int32_t i,n; struct jumblr_item *ptr;
@@ -467,13 +488,29 @@ void jumblr_opidsupdate()
 void jumblr_iteration()
 {
     static int32_t lastheight; static uint32_t lasttime;
-    char *zaddr,*addr,*retstr,secretaddr[64]; int32_t iter,height,counter,chosen_one,n; uint64_t amount=0,total=0; double fee; struct jumblr_item *ptr,*tmp; uint8_t r,s;
+    char *zaddr,*addr,*retstr,secretaddr[64]; cJSON *array; int32_t i,iter,height,counter,chosen_one,n; uint64_t amount=0,total=0; double fee; struct jumblr_item *ptr,*tmp; uint8_t r,s;
+    if ( lasttime == 0 )
+    {
+        if ( (retstr= jumblr_zlistaddresses()) != 0 )
+        {
+            if ( (array= cJSON_Parse(retstr)) != 0 )
+            {
+                if ( (n= cJSON_GetArraySize(array)) > 0 && is_cJSON_Array(array) != 0 )
+                {
+                    for (i=0; i<n; i++)
+                        jumblr_zaddrinit(jstri(array,i));
+                }
+                free_json(array);
+            }
+            free(retstr);
+        }
+    }
     height = (int32_t)chainActive.Tip()->nHeight;
-    if ( lastheight == height )
-        return;
     if ( time(NULL) < lasttime+60 )
         return;
     lasttime = (uint32_t)time(NULL);
+    if ( lastheight == height )
+        return;
     if ( (height % JUMBLR_SYNCHRONIZED_BLOCKS) != 0 )
         return;
     fee = JUMBLR_INCR * JUMBLR_FEE;
