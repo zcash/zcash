@@ -450,6 +450,8 @@ void jumblr_opidupdate(struct jumblr_item *ptr)
 void jumblr_prune(struct jumblr_item *ptr)
 {
     struct jumblr_item *tmp; char oldsrc[128]; int32_t flag = 1;
+    if ( is_hexstr(ptr->opid,0) == 64 )
+        return;
     printf("jumblr_prune %s\n",ptr->opid);
     strcpy(oldsrc,ptr->src);
     free(jumblr_zgetoperationresult(ptr->opid));
@@ -460,11 +462,14 @@ void jumblr_prune(struct jumblr_item *ptr)
         {
             if ( strcmp(oldsrc,ptr->dest) == 0 )
             {
-                printf("jumblr_prune %s (%s -> %s) matched oldsrc\n",ptr->opid,ptr->src,ptr->dest);
-                free(jumblr_zgetoperationresult(ptr->opid));
-                strcpy(oldsrc,ptr->src);
-                flag = 1;
-                break;
+                if ( is_hexstr(ptr->opid,0) != 64 )
+                {
+                    printf("jumblr_prune %s (%s -> %s) matched oldsrc\n",ptr->opid,ptr->src,ptr->dest);
+                    free(jumblr_zgetoperationresult(ptr->opid));
+                    strcpy(oldsrc,ptr->src);
+                    flag = 1;
+                    break;
+                }
             }
         }
     }
@@ -500,6 +505,9 @@ void jumblr_zaddrinit(char *zaddr)
                                 {
                                     z_z = 1;
                                     strcpy(ptr->src,zaddr);
+                                    ptr->src[3] = '0';
+                                    ptr->src[4] = '0';
+                                    ptr->src[5] = '0';
                                     if ( jumblr_addresstype(ptr->src) != 'z' )
                                         printf("error setting address type to Z: %s\n",jprint(item,0));
                                 }
@@ -585,7 +593,7 @@ void jumblr_iteration()
     s = 2;
     switch ( s )
     {
-        case 0: // public -> z, need to importprivkey
+        case 0: // t -> z
             if ( Jumblr_deposit[0] != 0 && (total= jumblr_balance(Jumblr_deposit)) >= (JUMBLR_INCR + 3*(fee+JUMBLR_TXFEE))*SATOSHIDEN )
             {
                 if ( (zaddr= jumblr_zgetnewaddress()) != 0 )
@@ -635,7 +643,7 @@ void jumblr_iteration()
                                     } else addr = zaddr;
                                     if ( (retstr= jumblr_sendz_to_z(ptr->dest,addr,dstr(total))) != 0 )
                                     {
-                                        printf("n.%d counter.%d chosen_one.%d sendz_to_z.(%s)\n",n,counter,chosen_one,retstr);
+                                        printf("n.%d counter.%d chosen_one.%d send z_to_z.(%s)\n",n,counter,chosen_one,retstr);
                                         free(retstr);
                                     }
                                     ptr->spent = (uint32_t)time(NULL);
@@ -660,18 +668,17 @@ void jumblr_iteration()
                 }
             }
             break;
-        case 2: // z -> public
+        case 2: // z -> t
             if ( Jumblr_numsecretaddrs > 0 )
             {
                 jumblr_opidsupdate();
                 chosen_one = -1;
-                printf("Jumblr_numsecretaddrs.%d\n",Jumblr_numsecretaddrs);
                 for (iter=0; iter<2; iter++)
                 {
                     counter = n = 0;
                     HASH_ITER(hh,Jumblrs,ptr,tmp)
                     {
-                        printf("status.%d %c %c %.8f\n",ptr->status,jumblr_addresstype(ptr->src),jumblr_addresstype(ptr->dest),dstr(ptr->amount));
+                        //printf("status.%d %c %c %.8f\n",ptr->status,jumblr_addresstype(ptr->src),jumblr_addresstype(ptr->dest),dstr(ptr->amount));
                         if ( ptr->status > 0 && jumblr_addresstype(ptr->src) == 'z' && jumblr_addresstype(ptr->dest) == 'z' )
                         {
                             if ( ptr->spent == 0 && (total= jumblr_balance(ptr->dest)) >= (fee + JUMBLR_FEE)*SATOSHIDEN )
@@ -681,7 +688,7 @@ void jumblr_iteration()
                                     Jumblr_secretaddr(secretaddr);
                                     if ( (retstr= jumblr_sendz_to_t(ptr->dest,secretaddr,dstr(total))) != 0 )
                                     {
-                                        printf("%s sendz_to_t.(%s)\n",secretaddr,retstr);
+                                        printf("%s send z_to_t.(%s)\n",secretaddr,retstr);
                                         free(retstr);
                                     } else printf("null return from jumblr_sendz_to_t\n");
                                     ptr->spent = (uint32_t)time(NULL);
