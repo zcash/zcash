@@ -234,6 +234,36 @@ def ser_int_vector(l):
     return r
 
 
+def deser_char_vector(f):
+    nit = struct.unpack("<B", f.read(1))[0]
+    if nit == 253:
+        nit = struct.unpack("<H", f.read(2))[0]
+    elif nit == 254:
+        nit = struct.unpack("<I", f.read(4))[0]
+    elif nit == 255:
+        nit = struct.unpack("<Q", f.read(8))[0]
+    r = []
+    for i in xrange(nit):
+        t = struct.unpack("<B", f.read(1))[0]
+        r.append(t)
+    return r
+
+
+def ser_char_vector(l):
+    r = ""
+    if len(l) < 253:
+        r = chr(len(l))
+    elif len(l) < 0x10000:
+        r = chr(253) + struct.pack("<H", len(l))
+    elif len(l) < 0x100000000L:
+        r = chr(254) + struct.pack("<I", len(l))
+    else:
+        r = chr(255) + struct.pack("<Q", len(l))
+    for i in l:
+        r += chr(i)
+    return r
+
+
 # Objects that map to bitcoind objects, which can be serialized/deserialized
 
 class CAddress(object):
@@ -608,20 +638,24 @@ class CBlockHeader(object):
             self.nVersion = header.nVersion
             self.hashPrevBlock = header.hashPrevBlock
             self.hashMerkleRoot = header.hashMerkleRoot
+            self.hashReserved = header.hashReserved
             self.nTime = header.nTime
             self.nBits = header.nBits
             self.nNonce = header.nNonce
+            self.nSolution = header.nSolution
             self.sha256 = header.sha256
             self.hash = header.hash
             self.calc_sha256()
 
     def set_null(self):
-        self.nVersion = 1
+        self.nVersion = 4
         self.hashPrevBlock = 0
         self.hashMerkleRoot = 0
+        self.hashReserved = 0
         self.nTime = 0
         self.nBits = 0
         self.nNonce = 0
+        self.nSolution = []
         self.sha256 = None
         self.hash = None
 
@@ -629,9 +663,11 @@ class CBlockHeader(object):
         self.nVersion = struct.unpack("<i", f.read(4))[0]
         self.hashPrevBlock = deser_uint256(f)
         self.hashMerkleRoot = deser_uint256(f)
+        self.hashReserved = deser_uint256(f)
         self.nTime = struct.unpack("<I", f.read(4))[0]
         self.nBits = struct.unpack("<I", f.read(4))[0]
-        self.nNonce = struct.unpack("<I", f.read(4))[0]
+        self.nNonce = deser_uint256(f)
+        self.nSolution = deser_char_vector(f)
         self.sha256 = None
         self.hash = None
 
@@ -640,9 +676,11 @@ class CBlockHeader(object):
         r += struct.pack("<i", self.nVersion)
         r += ser_uint256(self.hashPrevBlock)
         r += ser_uint256(self.hashMerkleRoot)
+        r += ser_uint256(self.hashReserved)
         r += struct.pack("<I", self.nTime)
         r += struct.pack("<I", self.nBits)
-        r += struct.pack("<I", self.nNonce)
+        r += ser_uint256(self.nNonce)
+        r += ser_char_vector(self.nSolution)
         return r
 
     def calc_sha256(self):
@@ -651,9 +689,11 @@ class CBlockHeader(object):
             r += struct.pack("<i", self.nVersion)
             r += ser_uint256(self.hashPrevBlock)
             r += ser_uint256(self.hashMerkleRoot)
+            r += ser_uint256(self.hashReserved)
             r += struct.pack("<I", self.nTime)
             r += struct.pack("<I", self.nBits)
-            r += struct.pack("<I", self.nNonce)
+            r += ser_uint256(self.nNonce)
+            r += ser_char_vector(self.nSolution)
             self.sha256 = uint256_from_str(hash256(r))
             self.hash = hash256(r)[::-1].encode('hex_codec')
 
@@ -663,9 +703,9 @@ class CBlockHeader(object):
         return self.sha256
 
     def __repr__(self):
-        return "CBlockHeader(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x nTime=%s nBits=%08x nNonce=%08x)" \
-            % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot,
-               time.ctime(self.nTime), self.nBits, self.nNonce)
+        return "CBlockHeader(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashReserved=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%s)" \
+            % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot, self.hashReserved,
+               time.ctime(self.nTime), self.nBits, self.nNonce, repr(self.nSolution))
 
 
 class CBlock(CBlockHeader):
@@ -716,9 +756,10 @@ class CBlock(CBlockHeader):
             self.rehash()
 
     def __repr__(self):
-        return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x nTime=%s nBits=%08x nNonce=%08x vtx=%s)" \
+        return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashReserved=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%s vtx=%s)" \
             % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot,
-               time.ctime(self.nTime), self.nBits, self.nNonce, repr(self.vtx))
+               self.hashReserved, time.ctime(self.nTime), self.nBits,
+               self.nNonce, repr(self.nSolution), repr(self.vtx))
 
 
 class CUnsignedAlert(object):
