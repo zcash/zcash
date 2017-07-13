@@ -344,8 +344,8 @@ int64_t jumblr_receivedby(char *addr)
 
 int64_t jumblr_balance(char *addr)
 {
-    char *retstr; double val; cJSON *retjson; int32_t i,n; int64_t balance = 0;
-    if ( jumblr_addresstype(addr) == 't' )
+    char *retstr; double val; int64_t balance = 0; //cJSON *retjson; int32_t i,n; 
+    /*if ( jumblr_addresstype(addr) == 't' )
     {
         if ( (retstr= jumblr_listunspent(addr)) != 0 )
         {
@@ -360,7 +360,7 @@ int64_t jumblr_balance(char *addr)
             free(retstr);
         }
     }
-    else if ( (retstr= jumblr_zgetbalance(addr)) != 0 )
+    else*/ if ( (retstr= jumblr_zgetbalance(addr)) != 0 )
     {
         if ( (val= atof(retstr)) > SMALLVAL )
             balance = val * SATOSHIDEN;
