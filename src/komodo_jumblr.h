@@ -84,7 +84,7 @@ char *jumblr_importaddress(char *address)
 char *jumblr_validateaddress(char *addr)
 {
     char params[1024];
-    sprintf(params,"\"%s\"",addr);
+    sprintf(params,"[\"%s\"]",addr);
     printf("validateaddress.%s\n",params);
     return(jumblr_issuemethod(KMDUSERPASS,(char *)"validateaddress",params,7771));
 }
