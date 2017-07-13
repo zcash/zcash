@@ -27,7 +27,7 @@
 #define JUMBLR_ADDR "RGhxXpXSSBTBm9EvNsXnTQczthMCxHX91t"
 #define JUMBLR_BTCADDR "18RmTJe9qMech8siuhYfMtHo8RtcN1obC6"
 #define JUMBLR_MAXSECRETADDRS 777
-#define JUMBLR_SYNCHRONIZED_BLOCKS 2 //10
+#define JUMBLR_SYNCHRONIZED_BLOCKS 10
 #define JUMBLR_INCR 9.965
 #define JUMBLR_FEE 0.001
 #define JUMBLR_TXFEE 0.01
@@ -590,7 +590,6 @@ void jumblr_iteration()
     fee = JUMBLR_INCR * JUMBLR_FEE;
     OS_randombytes(&r,sizeof(r));
     s = ((r >> 2) % 3);
-    s = 2;
     switch ( s )
     {
         case 0: // t -> z
@@ -683,7 +682,7 @@ void jumblr_iteration()
                         {
                             if ( (total= jumblr_balance(ptr->dest)) >= (fee + JUMBLR_FEE)*SATOSHIDEN )
                             {
-                                if ( iter == 1 && n == chosen_one )
+                                if ( iter == 1 && counter == chosen_one )
                                 {
                                     Jumblr_secretaddr(secretaddr);
                                     if ( (retstr= jumblr_sendz_to_t(ptr->dest,secretaddr,dstr(total))) != 0 )
@@ -695,7 +694,7 @@ void jumblr_iteration()
                                     break;
                                 }
                                 counter++;
-                            } else printf("z->t spent.%u total %.8f error\n",ptr->spent,dstr(total));
+                            } //else printf("z->t spent.%u total %.8f error\n",ptr->spent,dstr(total));
                         }
                         n++;
                     }
@@ -708,7 +707,7 @@ void jumblr_iteration()
                             chosen_one = -chosen_one;
                         chosen_one %= counter;
                         printf("jumblr z->t chosen_one.%d of %d, from %d\n",chosen_one,counter,n);
-                    } else printf("n.%d counter.%d chosen.%d\n",n,counter,chosen_one);
+                    } //else printf("n.%d counter.%d chosen.%d\n",n,counter,chosen_one);
                 }
             }
             break;
