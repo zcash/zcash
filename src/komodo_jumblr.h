@@ -628,9 +628,9 @@ void jumblr_iteration()
                 counter = n = 0;
                 HASH_ITER(hh,Jumblrs,ptr,tmp)
                 {
-                    if ( ptr->status > 0 && jumblr_addresstype(ptr->src) == 't' && jumblr_addresstype(ptr->dest) == 'z' )
+                    if ( ptr->spent == 0 && ptr->status > 0 && jumblr_addresstype(ptr->src) == 't' && jumblr_addresstype(ptr->dest) == 'z' )
                     {
-                        if ( ptr->spent == 0 && (total= jumblr_balance(ptr->dest)) >= (fee + JUMBLR_FEE)*SATOSHIDEN )
+                        if ( (total= jumblr_balance(ptr->dest)) >= (fee + JUMBLR_FEE)*SATOSHIDEN )
                         {
                             if ( iter == 1 && counter == chosen_one )
                             {
@@ -679,9 +679,9 @@ void jumblr_iteration()
                     HASH_ITER(hh,Jumblrs,ptr,tmp)
                     {
                         //printf("status.%d %c %c %.8f\n",ptr->status,jumblr_addresstype(ptr->src),jumblr_addresstype(ptr->dest),dstr(ptr->amount));
-                        if ( ptr->status > 0 && jumblr_addresstype(ptr->src) == 'z' && jumblr_addresstype(ptr->dest) == 'z' )
+                        if ( ptr->spent == 0 && ptr->status > 0 && jumblr_addresstype(ptr->src) == 'z' && jumblr_addresstype(ptr->dest) == 'z' )
                         {
-                            if ( ptr->spent == 0 && (total= jumblr_balance(ptr->dest)) >= (fee + JUMBLR_FEE)*SATOSHIDEN )
+                            if ( (total= jumblr_balance(ptr->dest)) >= (fee + JUMBLR_FEE)*SATOSHIDEN )
                             {
                                 if ( iter == 1 && n == chosen_one )
                                 {
@@ -708,7 +708,7 @@ void jumblr_iteration()
                             chosen_one = -chosen_one;
                         chosen_one %= counter;
                         printf("jumblr z->t chosen_one.%d of %d, from %d\n",chosen_one,counter,n);
-                    }
+                    } else printf("n.%d counter.%d chosen.%d\n",n,counter,chosen);
                 }
             }
             break;
