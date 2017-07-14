@@ -566,10 +566,51 @@ void jumblr_opidsupdate()
     }
 }
 
+uint64_t jumblr_increment(uint8_t r,int32_t height,uint64_t total,uint64_t biggest,uint64_t medium, uint64_t smallest)
+{
+    int32_t i,n; uint64_t incrs[1000],remains = total;
+    height /= JUMBLR_SYNCHRONIZED_BLOCKS;
+    if ( (height % JUMBLR_SYNCHRONIZED_BLOCKS) == 0 || total >= 100*biggest )
+    {
+        if ( total >= biggest )
+            return(biggest);
+        else if ( total >= medium )
+            return(medium);
+        else if ( total >= smallest )
+            return(smallest);
+        else return(0);
+    }
+    else
+    {
+        n = 0;
+        while ( remains > smallest && n < sizeof(incrs)/sizeof(*incrs) )
+        {
+            if ( remains >= biggest )
+                incrs[n] = biggest;
+            else if ( remains >= medium )
+                incrs[n] = medium;
+            else if ( remains >= smallest )
+                incrs[n] = smallest;
+            else break;
+            remains -= incrs[n];
+            n++;
+        }
+        if ( n > 0 )
+        {
+            r %= n;
+            for (i=0; i<n; i++)
+                printf("%.8f ",dstr(incrs[i]));
+            printf("n.%d incrs r.%d -> %.8f\n",n,r,incrs[r]);
+            return(incrs[r]);
+        }
+    }
+    return(0);
+}
+
 void jumblr_iteration()
 {
     static int32_t lastheight; static uint32_t lasttime;
-    char *zaddr,*addr,*retstr,secretaddr[64]; cJSON *array; int32_t i,iter,height,counter,chosen_one,n; uint64_t amount=0,total=0; double fee; struct jumblr_item *ptr,*tmp; uint8_t r,s;
+    char *zaddr,*addr,*retstr,secretaddr[64]; cJSON *array; int32_t i,iter,height,counter,chosen_one,n; uint64_t smallest,medium,biggest,amount=0,total=0; double fee; struct jumblr_item *ptr,*tmp; uint16_t r,s;
     if ( lasttime == 0 )
     {
         if ( (retstr= jumblr_zlistaddresses()) != 0 )
@@ -596,12 +637,17 @@ void jumblr_iteration()
     if ( (height % JUMBLR_SYNCHRONIZED_BLOCKS) != JUMBLR_SYNCHRONIZED_BLOCKS-3 )
         return;
     fee = JUMBLR_INCR * JUMBLR_FEE;
+    smallest = SATOSHIDEN * ((JUMBLR_INCR + 3*fee) + 3*JUMBLR_TXFEE);
+    medium = SATOSHIDEN * ((JUMBLR_INCR + 3*fee)*10 + 3*JUMBLR_TXFEE);
+    biggest = SATOSHIDEN * ((JUMBLR_INCR + 3*fee)*777 + 3*JUMBLR_TXFEE);
     OS_randombytes(&r,sizeof(r));
-    s = ((r >> 2) % 3);
+    s = (r % 3);
+    printf("jumblr_iteration r.%u s.%u\n",r,s);
     switch ( s )
     {
         case 0: // t -> z
-            if ( Jumblr_deposit[0] != 0 && (total= jumblr_balance(Jumblr_deposit)) >= (JUMBLR_INCR + 3*(fee+JUMBLR_TXFEE))*SATOSHIDEN )
+        default:
+            if ( Jumblr_deposit[0] != 0 && (total= jumblr_balance(Jumblr_deposit)) >= smallest )
             {
                 if ( (zaddr= jumblr_zgetnewaddress()) != 0 )
                 {
@@ -610,12 +656,14 @@ void jumblr_iteration()
                         zaddr[strlen(zaddr)-1] = 0;
                         addr = zaddr+1;
                     } else addr = zaddr;
+                    amount = jumblr_increment(r/3,height,total,biggest,medium,smallest);
+                /*       
                     amount = 0;
                     if ( (height % (JUMBLR_SYNCHRONIZED_BLOCKS*JUMBLR_SYNCHRONIZED_BLOCKS)) == 0 && total >= SATOSHIDEN * ((JUMBLR_INCR + 3*fee)*100 + 3*JUMBLR_TXFEE) )
-                        amount = SATOSHIDEN * ((JUMBLR_INCR + 3*fee)*100 + 3*JUMBLR_TXFEE);
+                    amount = SATOSHIDEN * ((JUMBLR_INCR + 3*fee)*100 + 3*JUMBLR_TXFEE);
                     else if ( (r & 3) == 0 && total >= SATOSHIDEN * ((JUMBLR_INCR + 3*fee)*10 + 3*JUMBLR_TXFEE) )
                         amount = SATOSHIDEN * ((JUMBLR_INCR + 3*fee)*10 + 3*JUMBLR_TXFEE);
-                    else amount = SATOSHIDEN * ((JUMBLR_INCR + 3*fee) + 3*JUMBLR_TXFEE);
+                    else amount = SATOSHIDEN * ((JUMBLR_INCR + 3*fee) + 3*JUMBLR_TXFEE);*/
                     if ( amount > 0 && (retstr= jumblr_sendt_to_z(Jumblr_deposit,addr,dstr(amount))) != 0 )
                     {
                         printf("sendt_to_z.(%s)\n",retstr);
