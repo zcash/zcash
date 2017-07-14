@@ -154,9 +154,9 @@ uint256 CMutableTransaction::GetHash() const
     return SerializeHash(*this);
 }
 
-void CTransaction::UpdateHash() const
+void CTransaction::UpdateHash()
 {
-    *const_cast<uint256*>(&hash) = SerializeHash(*this);
+    hash = SerializeHash(*this);
 }
 
 CTransaction::CTransaction() : nVersion(CTransaction::MIN_CURRENT_VERSION), vin(), vout(), nLockTime(0), vjoinsplit(), joinSplitPubKey(), joinSplitSig() { }
@@ -168,14 +168,14 @@ CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion
 }
 
 CTransaction& CTransaction::operator=(const CTransaction &tx) {
-    *const_cast<int*>(&nVersion) = tx.nVersion;
-    *const_cast<std::vector<CTxIn>*>(&vin) = tx.vin;
-    *const_cast<std::vector<CTxOut>*>(&vout) = tx.vout;
-    *const_cast<unsigned int*>(&nLockTime) = tx.nLockTime;
-    *const_cast<std::vector<JSDescription>*>(&vjoinsplit) = tx.vjoinsplit;
-    *const_cast<uint256*>(&joinSplitPubKey) = tx.joinSplitPubKey;
-    *const_cast<joinsplit_sig_t*>(&joinSplitSig) = tx.joinSplitSig;
-    *const_cast<uint256*>(&hash) = tx.hash;
+    nVersion = tx.nVersion;
+    vin = tx.vin;
+    vout = tx.vout;
+    nLockTime = tx.nLockTime;
+    vjoinsplit = tx.vjoinsplit;
+    joinSplitPubKey = tx.joinSplitPubKey;
+    joinSplitSig = tx.joinSplitSig;
+    hash = tx.hash;
     return *this;
 }
 

@@ -306,13 +306,15 @@ struct CMutableTransaction;
 
 /** The basic transaction that is broadcasted on the network and contained in
  * blocks.  A transaction can contain multiple inputs and outputs.
+ *
+ * This version has a cached hash value, and requires calling UpdateHash
+ * after any modifications are made.
  */
 class CTransaction
 {
 private:
     /** Memory only. */
-    const uint256 hash;
-    void UpdateHash() const;
+    uint256 hash;
 
 public:
     typedef boost::array<unsigned char, 64> joinsplit_sig_t;
@@ -324,18 +326,16 @@ public:
     static_assert(MIN_CURRENT_VERSION >= MIN_TX_VERSION,
                   "standard rule for tx version should be consistent with network rule");
 
-    // The local variables are made const to prevent unintended modification
-    // without updating the cached hash value. However, CTransaction is not
-    // actually immutable; deserialization and assignment are implemented,
-    // and bypass the constness. This is safe, as they update the entire
-    // structure, including the hash.
-    const int32_t nVersion;
-    const std::vector<CTxIn> vin;
-    const std::vector<CTxOut> vout;
-    const uint32_t nLockTime;
-    const std::vector<JSDescription> vjoinsplit;
-    const uint256 joinSplitPubKey;
-    const joinsplit_sig_t joinSplitSig = {{0}};
+    // Modification of any of the fields below requires a call to
+    // UpdateHash() before further use. Consider using CMutableTransaction
+    // instead if frequent modification is needed.
+    int32_t nVersion;
+    std::vector<CTxIn> vin;
+    std::vector<CTxOut> vout;
+    std::vector<JSDescription> vjoinsplit;
+    uint32_t nLockTime;
+    uint256 joinSplitPubKey;
+    joinsplit_sig_t joinSplitSig = {{0}};
 
     /** Construct a CTransaction that qualifies as IsNull() */
     CTransaction();
@@ -403,9 +403,11 @@ public:
     }
 
     std::string ToString() const;
+
+    void UpdateHash();
 };
 
-/** A mutable version of CTransaction. */
+/** A version of CTransaction without cached hash. */
 struct CMutableTransaction
 {
     int32_t nVersion;
