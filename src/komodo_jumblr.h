@@ -640,7 +640,7 @@ void jumblr_iteration()
     smallest = SATOSHIDEN * ((JUMBLR_INCR + 3*fee) + 3*JUMBLR_TXFEE);
     medium = SATOSHIDEN * ((JUMBLR_INCR + 3*fee)*10 + 3*JUMBLR_TXFEE);
     biggest = SATOSHIDEN * ((JUMBLR_INCR + 3*fee)*777 + 3*JUMBLR_TXFEE);
-    OS_randombytes(&r,sizeof(r));
+    OS_randombytes((uint8_t *)&r,sizeof(r));
     s = (r % 3);
     printf("jumblr_iteration r.%u s.%u\n",r,s);
     switch ( s )
