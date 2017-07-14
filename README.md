@@ -21,7 +21,7 @@ Security Warnings
 See important security warnings in
 [doc/security-warnings.md](doc/security-warnings.md).
 
-**Zcash is unfinished and highly experimental.** Use at your own risk.
+**Zcash is experimental and a work-in-progress.** Use at your own risk.
 
 Deprecation Policy
 ------------------
