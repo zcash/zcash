@@ -80,10 +80,6 @@
       with_items: "{{ python_modules }}"
       notify: restart buildbot-worker
 
-    - name: Get installed Buildbot version
-      command: buildbot-worker --version
-      register: buildbot_worker_version
-
     - name: Set up the Buildbot worker user
       user:
         name: "{{ buildbot_worker_user }}"
