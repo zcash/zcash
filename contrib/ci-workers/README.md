@@ -26,8 +26,8 @@ installation for use as a Buildbot worker in Zcash's CI.
     [zcash-ci-worker-unix]
     some-name ansible_host=<INSTANCE_IP> ansible_ssh_user=<USERNAME>
 
-- Run `ansible-playbook -i inventory/hosts unix.yml`, passing in the worker's
-  Buildbot name and password.
+- Run `ansible-playbook -e buildbot_worker_host_template=templates/host.ec2.j2 -i inventory/hosts unix.yml`,
+  passing in the worker's Buildbot name and password.
   - After a successful run, the worker should be connected to dev-ci.z.cash and
     visible in its worker list.
 

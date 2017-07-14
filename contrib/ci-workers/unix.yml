@@ -104,7 +104,7 @@
 
     - name: Set host details for Buildbot worker
       template:
-        src: templates/host.j2
+        src: "{{ buildbot_worker_host_template }}"
         dest: "~/{{ buildbot_worker_name }}/info/host"
       become_user: "{{ buildbot_worker_user }}"
 
