@@ -600,7 +600,7 @@ uint64_t jumblr_increment(uint8_t r,int32_t height,uint64_t total,uint64_t bigge
             r %= n;
             for (i=0; i<n; i++)
                 printf("%.8f ",dstr(incrs[i]));
-            printf("n.%d incrs r.%d -> %.8f\n",n,r,incrs[r]);
+            printf("n.%d incrs r.%d -> %.8f\n",n,r,dstr(incrs[r]));
             return(incrs[r]);
         }
     }
