@@ -33,6 +33,7 @@ dist_deps: []
 buildbot_modules:
   - pip # Needs to be updated first so Buildbot installs
   - buildbot-worker
+  - pyflakes
 
 # Python modules required to run the Zcash RPC test suite
 rpc_test_modules:
