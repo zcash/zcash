@@ -342,6 +342,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     mtx.nVersion = 2;
     crypto_sign_keypair(joinSplitPubKey_.begin(), joinSplitPrivKey_);
     mtx.joinSplitPubKey = joinSplitPubKey_;
+    mtx.nLockTime = (uint32_t)time(NULL) - 60; // jl777
     tx_ = CTransaction(mtx);
 
     // Copy zinputs and zoutputs to more flexible containers
@@ -1099,7 +1100,7 @@ void AsyncRPCOperation_sendmany::add_taddr_outputs_to_tx() {
         CTxOut out(nAmount, scriptPubKey);
         rawTx.vout.push_back(out);
     }
-
+    rawTx.nLockTime = (uint32_t)time(NULL) - 60; // jl777
     tx_ = CTransaction(rawTx);
 }
 
@@ -1125,6 +1126,7 @@ void AsyncRPCOperation_sendmany::add_taddr_change_output_to_tx(CBitcoinAddress *
 
     CMutableTransaction rawTx(tx_);
     rawTx.vout.push_back(out);
+    rawTx.nLockTime = (uint32_t)time(NULL) - 60; // jl777
     tx_ = CTransaction(rawTx);
 }
 
