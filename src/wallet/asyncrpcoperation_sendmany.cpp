@@ -292,6 +292,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             CTxIn in(COutPoint(txid, vout));
             rawTx.vin.push_back(in);
         }
+        rawTx.nLockTime = (uint32_t)time(NULL) - 60; // jl777
         tx_ = CTransaction(rawTx);
     }
 
