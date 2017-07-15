@@ -4,8 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
 
-from mininode import *
-from script import CScript, CScriptOp
+from mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint, ser_string
 
 # Create a block (with regtest difficulty)
 def create_block(hashprev, coinbase, nTime=None):

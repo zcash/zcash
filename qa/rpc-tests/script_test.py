@@ -20,13 +20,12 @@ NOTE: This test is very slow and may take more than 40 minutes to run.
 '''
 
 from test_framework.test_framework import ComparisonTestFramework
-from test_framework.util import *
 from test_framework.comptool import TestInstance, TestManager
-from test_framework.mininode import *
-from test_framework.blocktools import *
-from test_framework.script import *
-import logging
-import copy
+from test_framework.mininode import NetworkThread
+from test_framework.blocktools import create_block, create_coinbase, create_transaction
+from test_framework.script import CScript, CScriptOp, CScriptNum, OPCODES_BY_NAME
+
+import os
 import json
 
 script_valid_file   = "../../src/test/data/script_valid.json"

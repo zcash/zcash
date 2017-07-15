@@ -5,8 +5,11 @@
 
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
-from time import *
+from test_framework.util import assert_equal, start_node, \
+    start_nodes, connect_nodes_bi, bitcoind_processes
+
+import time
+from decimal import Decimal
 
 class WalletNullifiersTest (BitcoinTestFramework):
 
@@ -32,7 +35,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         for x in xrange(1, timeout):
             results = self.nodes[0].z_getoperationresult(opids)
             if len(results)==0:
-                sleep(1)
+                time.sleep(1)
             else:
                 status = results[0]["status"]
                 assert_equal("success", status)
@@ -73,7 +76,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         for x in xrange(1, timeout):
             results = self.nodes[0].z_getoperationresult(opids)
             if len(results)==0:
-                sleep(1)
+                time.sleep(1)
             else:
                 status = results[0]["status"]
                 assert_equal("success", status)
@@ -105,7 +108,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         for x in xrange(1, timeout):
             results = self.nodes[2].z_getoperationresult(opids)
             if len(results)==0:
-                sleep(1)
+                time.sleep(1)
             else:
                 status = results[0]["status"]
                 assert_equal("success", status)
@@ -146,11 +149,12 @@ class WalletNullifiersTest (BitcoinTestFramework):
         for x in xrange(1, timeout):
             results = self.nodes[1].z_getoperationresult(opids)
             if len(results)==0:
-                sleep(1)
+                time.sleep(1)
             else:
                 status = results[0]["status"]
                 assert_equal("success", status)
                 mytxid = results[0]["result"]["txid"]
+                [mytxid] # hush pyflakes
                 break
 
         self.sync_all()
