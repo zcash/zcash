@@ -36,6 +36,7 @@ zcash_gtest_SOURCES += \
 	gtest/test_circuit.cpp \
 	gtest/test_txid.cpp \
 	gtest/test_libzcash_utils.cpp \
+	gtest/test_libsnark.cpp \
 	gtest/test_proofs.cpp \
 	gtest/test_checkblock.cpp
 if ENABLE_WALLET
@@ -43,7 +44,7 @@ zcash_gtest_SOURCES += \
 	wallet/gtest/test_wallet.cpp
 endif
 
-zcash_gtest_CPPFLAGS = -DMULTICORE -fopenmp -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC $(BITCOIN_INCLUDES)
+zcash_gtest_CPPFLAGS = -DMULTICORE -fopenmp -DMONTGOMERY_OUTPUT -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DNO_PT_COMPRESSION=1 -DSTATIC $(BITCOIN_INCLUDES)
 
 zcash_gtest_LDADD = -lgtest -lgmock $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CRYPTO) $(LIBUNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
   $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1)
@@ -54,7 +55,7 @@ if ENABLE_WALLET
 zcash_gtest_LDADD += $(LIBBITCOIN_WALLET)
 endif
 
-zcash_gtest_LDADD += $(LIBZCASH_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(LIBZCASH) $(LIBZCASH_LIBS)
+zcash_gtest_LDADD += $(LIBZCASH_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(LIBZCASH) $(LIBSNARK) $(LIBZCASH_LIBS)
 
 if ENABLE_PROTON
 zcash_gtest_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)
