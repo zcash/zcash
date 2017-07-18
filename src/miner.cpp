@@ -798,7 +798,9 @@ void static BitcoinMiner()
                             if ( gpucount > j/2 )
                             {
                                 double delta;
-                                i = ((Mining_height + notaryid) % 64);
+                                if ( notaryid < 0 )
+                                    i = (rand() % 64);
+                                else i = ((Mining_height + notaryid) % 64);
                                 delta = sqrt((double)gpucount - j/2) / 2.;
                                 roundrobin_delay += ((delta * i) / 64) - delta;
                                 //fprintf(stderr,"delta.%f %f %f\n",delta,(double)(gpucount - j/3) / 2,(delta * i) / 64);
@@ -869,7 +871,9 @@ void static BitcoinMiner()
                         MilliSleep((rand() % 1700) + 1);
                     }
                     else if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                        sleep(3);
+                    {
+                        sleep(rand() % 30);
+                    }
                     KOMODO_CHOSEN_ONE = 1;
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);

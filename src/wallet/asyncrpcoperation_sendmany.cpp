@@ -292,6 +292,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             CTxIn in(COutPoint(txid, vout));
             rawTx.vin.push_back(in);
         }
+        rawTx.nLockTime = (uint32_t)time(NULL) - 60; // jl777
         tx_ = CTransaction(rawTx);
     }
 
@@ -318,7 +319,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         CAmount change = funds - fundsSpent;
         
         if (change > 0) {
-            add_taddr_change_output_to_tx(change);
+            add_taddr_change_output_to_tx(0,change);
 
             LogPrint("zrpc", "%s: transparent change in transaction output (amount=%s)\n",
                     getId(),
@@ -341,6 +342,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     mtx.nVersion = 2;
     crypto_sign_keypair(joinSplitPubKey_.begin(), joinSplitPrivKey_);
     mtx.joinSplitPubKey = joinSplitPubKey_;
+    mtx.nLockTime = (uint32_t)time(NULL) - 60; // jl777
     tx_ = CTransaction(mtx);
 
     // Copy zinputs and zoutputs to more flexible containers
@@ -395,7 +397,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                     "allow any change as there is currently no way to specify a change address "
                     "in z_sendmany.", FormatMoney(change)));
             } else {
-                add_taddr_change_output_to_tx(change);
+                add_taddr_change_output_to_tx(&fromtaddr_,change);
                 LogPrint("zrpc", "%s: transparent change in transaction output (amount=%s)\n",
                         getId(),
                         FormatMoney(change)
@@ -1098,26 +1100,33 @@ void AsyncRPCOperation_sendmany::add_taddr_outputs_to_tx() {
         CTxOut out(nAmount, scriptPubKey);
         rawTx.vout.push_back(out);
     }
-
+    rawTx.nLockTime = (uint32_t)time(NULL) - 60; // jl777
     tx_ = CTransaction(rawTx);
 }
 
-void AsyncRPCOperation_sendmany::add_taddr_change_output_to_tx(CAmount amount) {
+void AsyncRPCOperation_sendmany::add_taddr_change_output_to_tx(CBitcoinAddress *fromaddress,CAmount amount) {
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
+    CScript scriptPubKey;
     CReserveKey keyChange(pwalletMain);
     CPubKey vchPubKey;
-    bool ret = keyChange.GetReservedKey(vchPubKey);
-    if (!ret) {
-        throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Could not generate a taddr to use as a change address"); // should never fail, as we just unlocked
+    if ( fromaddress != 0 )
+        scriptPubKey = GetScriptForDestination(fromaddress->Get());
+    else
+    {
+        bool ret = keyChange.GetReservedKey(vchPubKey);
+        if (!ret) {
+            throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Could not generate a taddr to use as a change address"); // should never fail, as we just unlocked
+        }
+        scriptPubKey = GetScriptForDestination(vchPubKey.GetID());
     }
-    CScript scriptPubKey = GetScriptForDestination(vchPubKey.GetID());
     CTxOut out(amount, scriptPubKey);
 
     CMutableTransaction rawTx(tx_);
     rawTx.vout.push_back(out);
+    rawTx.nLockTime = (uint32_t)time(NULL) - 60; // jl777
     tx_ = CTransaction(rawTx);
 }
 
