@@ -93,6 +93,10 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         }
     }
 
+    if (isfromzaddr_ && minDepth==0) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be zero when sending from zaddr");
+    }
+
     // Log the context info i.e. the call parameters to z_sendmany
     if (LogAcceptCategory("zrpcunsafe")) {
         LogPrint("zrpcunsafe", "%s: z_sendmany initialized (params=%s)\n", getId(), contextInfo.write());

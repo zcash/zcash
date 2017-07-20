@@ -975,7 +975,19 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         std::string msg = operation->getErrorMessage();
         BOOST_CHECK( msg.find("Insufficient funds, no UTXOs found") != string::npos);
     }
+
+    // minconf cannot be zero when sending from zaddr
+    {
+        try {
+            std::vector<SendManyRecipient> recipients = {SendManyRecipient(taddr1, 100.0, "DEADBEEF")};
+            std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(zaddr1, recipients, {}, 0));
+            BOOST_CHECK(false); // Fail test if an exception is not thrown
+        } catch (const UniValue& objError) {
+            BOOST_CHECK(find_error(objError, "Minconf cannot be zero when sending from zaddr"));
+        }
+    }
     
+
     // there are no unspent notes to spend
     {
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(taddr1,100.0, "DEADBEEF") };
