@@ -13,6 +13,9 @@
 
 #include <boost/algorithm/string.hpp> // boost::trim
 
+/** WWW-Authenticate to present with 401 Unauthorized response */
+static const char* WWW_AUTH_HEADER_DATA = "Basic realm=\"jsonrpc\"";
+
 /** Simple one-shot callback timer to be used by the RPC mechanism to e.g.
  * re-lock the wellet.
  */
@@ -94,6 +97,7 @@ static bool HTTPReq_JSONRPC(HTTPRequest* req, const std::string &)
     // Check authorization
     std::pair<bool, std::string> authHeader = req->GetHeader("authorization");
     if (!authHeader.first) {
+        req->WriteHeader("WWW-Authenticate", WWW_AUTH_HEADER_DATA);
         req->WriteReply(HTTP_UNAUTHORIZED);
         return false;
     }
@@ -106,6 +110,7 @@ static bool HTTPReq_JSONRPC(HTTPRequest* req, const std::string &)
            shouldn't have their RPC port exposed. */
         MilliSleep(250);
 
+        req->WriteHeader("WWW-Authenticate", WWW_AUTH_HEADER_DATA);
         req->WriteReply(HTTP_UNAUTHORIZED);
         return false;
     }
