@@ -3,6 +3,20 @@
 This folder contains the Ansible playbooks for configuring a fresh OS
 installation for use as a Buildbot worker in Zcash's CI.
 
+# Criteria for Adding Workers
+
+a. Don't add workers until users complain about a problem on a platform
+   that doesn't yet have workers or if we anticipate many users will use
+   a platform, we may pre-emptively add an unsupported worker for it.
+
+b. Prioritize the platforms that seem to have the most users.
+
+c. When adding workers start by adding workers for the "most common"
+   variant of any distro, then if users later encounter problems with a
+   sub-variant, we can consider adding new workers at that point.
+   Example: add Ubuntu Desktop before Xubuntu, on the assumption the
+   former has a larger population base.
+
 # Setting up a latent worker on Amazon EC2
 
 - Add a regular (non-latent) worker to the master.cfg for dev-ci.z.cash, and
