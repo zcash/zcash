@@ -106,12 +106,17 @@ double GetLocalSolPS()
 
 int EstimateNetHeightInner(int height, int64_t tipmediantime,
                            int heightLastCheckpoint, int64_t timeLastCheckpoint,
-                           int64_t targetSpacing)
+                           int64_t genesisTime, int64_t targetSpacing)
 {
     // We average the target spacing with the observed spacing to the last
-    // checkpoint, and use that to estimate the current network height.
-    int medianHeight = height - CBlockIndex::nMedianTimeSpan / 2;
-    double checkpointSpacing = (double (tipmediantime - timeLastCheckpoint)) / (medianHeight - heightLastCheckpoint);
+    // checkpoint (either from below or above depending on the current height),
+    // and use that to estimate the current network height.
+    int medianHeight = height > CBlockIndex::nMedianTimeSpan ?
+            height - (1 + ((CBlockIndex::nMedianTimeSpan - 1) / 2)) :
+            height / 2;
+    double checkpointSpacing = medianHeight > heightLastCheckpoint ?
+            (double (tipmediantime - timeLastCheckpoint)) / (medianHeight - heightLastCheckpoint) :
+            (double (timeLastCheckpoint - genesisTime)) / heightLastCheckpoint;
     double averageSpacing = (targetSpacing + checkpointSpacing) / 2;
     int netheight = medianHeight + ((GetTime() - tipmediantime) / averageSpacing);
     // Round to nearest ten to reduce noise
@@ -125,6 +130,7 @@ int EstimateNetHeight(int height, int64_t tipmediantime, CChainParams chainParam
         height, tipmediantime,
         Checkpoints::GetTotalBlocksEstimate(checkpointData),
         checkpointData.nTimeLastCheckpoint,
+        chainParams.GenesisBlock().nTime,
         chainParams.GetConsensus().nPowTargetSpacing);
 }
 
