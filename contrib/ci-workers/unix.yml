@@ -99,14 +99,18 @@
     - name: Set admin details for Buildbot worker
       copy:
         content: "{{ buildbot_worker_admin }}"
-        dest: "~/{{ buildbot_worker_name }}/info/admin"
-      become_user: "{{ buildbot_worker_user }}"
+        dest: "~{{ buildbot_worker_user }}/{{ buildbot_worker_name }}/info/admin"
+        owner: "{{ buildbot_worker_user }}"
+        group: "{{ buildbot_worker_user }}"
+        mode: "0644"
 
     - name: Set host details for Buildbot worker
       template:
         src: "{{ buildbot_worker_host_template }}"
-        dest: "~/{{ buildbot_worker_name }}/info/host"
-      become_user: "{{ buildbot_worker_user }}"
+        dest: "~{{ buildbot_worker_user }}/{{ buildbot_worker_name }}/info/host"
+        owner: "{{ buildbot_worker_user }}"
+        group: "{{ buildbot_worker_user }}"
+        mode: "0644"
 
     - name: Copy Buildbot worker systemd service unit
       template:
