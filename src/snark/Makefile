@@ -253,7 +253,9 @@ $(HEADERS_DEST): $(PREFIX)/include/libsnark/%: src/%
 install: $(INSTALL_LIBS) $(HEADERS_DEST) $(DEPINST_EXISTS)
 	mkdir -p $(PREFIX)/lib
 	cp -v $(INSTALL_LIBS) $(PREFIX)/lib/
+ifneq ($(NO_COPY_DEPINST),1)
 	cp -rv $(DEPINST)/include $(PREFIX)
+endif
 endif
 
 doxy:
