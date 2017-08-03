@@ -67,6 +67,12 @@
         package_deps: "{{ buildbot_deps + fetch_deps + conf_deps + build_deps + link_deps + dist_deps }}"
         python_modules: "{{ buildbot_modules + rpc_test_modules }}"
 
+    - name: Update rolling release [Arch Linux]
+      pacman:
+        update_cache: yes
+        upgrade: yes
+      when: ansible_distribution == 'Archlinux'
+
     - name: Install required packages
       package:
         name: "{{ item }}"
