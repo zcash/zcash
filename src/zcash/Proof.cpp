@@ -6,6 +6,7 @@
 #include "crypto/common.h"
 #include "libsnark/common/default_types/r1cs_ppzksnark_pp.hpp"
 #include "libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp"
+#include "zcash_sprout_verifier.h"
 
 using namespace libsnark;
 
@@ -242,6 +243,43 @@ bool ProofVerifier::check(
 )
 {
     if (perform_verification) {
+        std::vector<curve_G1> ic;
+        ic.push_back(vk.encoded_IC_query.first);
+        size_t i = 0;
+        for (size_t index: vk.encoded_IC_query.rest.indices) {
+            while (ic.size() - 1 < index) {
+                ic.push_back(curve_G1::zero());
+            }
+            ic.push_back(vk.encoded_IC_query.rest.values[i]);
+            ++i;
+        }
+
+        if (!rust_sprout_verifier(
+            &vk.alphaA_g2,
+            &vk.alphaB_g1,
+            &vk.alphaC_g2,
+            &vk.rC_Z_g2,
+            &vk.gamma_g2,
+            &vk.gamma_beta_g1,
+            &vk.gamma_beta_g2,
+            &ic[0],
+            ic.size(),
+
+            &primary_input[0],
+            primary_input.size(),
+
+            &proof.g_A.g,
+            &proof.g_A.h,
+            &proof.g_B.g,
+            &proof.g_B.h,
+            &proof.g_C.g,
+            &proof.g_C.h,
+            &proof.g_K,
+            &proof.g_H
+        ))
+        {
+            return false;
+        }
         return r1cs_ppzksnark_online_verifier_strong_IC<curve_pp>(pvk, primary_input, proof);
     } else {
         return true;
