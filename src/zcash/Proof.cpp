@@ -254,7 +254,7 @@ bool ProofVerifier::check(
             ++i;
         }
 
-        if (!rust_sprout_verifier(
+        bool rust_valid = rust_sprout_verifier(
             &vk.alphaA_g2,
             &vk.alphaB_g1,
             &vk.alphaC_g2,
@@ -276,11 +276,11 @@ bool ProofVerifier::check(
             &proof.g_C.h,
             &proof.g_K,
             &proof.g_H
-        ))
-        {
-            return false;
-        }
-        return r1cs_ppzksnark_online_verifier_strong_IC<curve_pp>(pvk, primary_input, proof);
+        );
+        bool libsnark_valid = r1cs_ppzksnark_online_verifier_strong_IC<curve_pp>(pvk, primary_input, proof);
+
+        assert(rust_valid == libsnark_valid);
+        return libsnark_valid;
     } else {
         return true;
     }
