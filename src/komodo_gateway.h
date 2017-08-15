@@ -449,7 +449,7 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
     if ( n > 0 )
     {
         opretbuf[len++] = 'A';
-        qsort(paxes,n,sizeof(*paxes),_paxorder);
+        mergesort(paxes,n,sizeof(*paxes),_paxorder);
         for (i=0; i<n; i++)
         {
             if ( len < (sizeof(opretbuf)>>3)*7 )
