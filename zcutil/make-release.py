@@ -177,8 +177,27 @@ def patch_release_height(releaseheight):
 
 @phase('Building...')
 def build():
+    base_dir = os.getcwd()
+    depends_dir = os.path.join(base_dir, 'depends')
+    src_dir = os.path.join(base_dir, 'src')
     nproc = sh_out('nproc').strip()
-    sh_log('./zcutil/build.sh', '-j', nproc)
+    sh_progress([
+        'Staging boost...',
+        'Staging libevent...',
+        'Staging zeromq...',
+        'Staging libgmp...',
+        'Staging libsodium...',
+        "Leaving directory '%s'" % depends_dir,
+        'config.status: creating libzcashconsensus.pc',
+        "Entering directory '%s'" % src_dir,
+        'httpserver.cpp',
+        'torcontrol.cpp',
+        'gtest/test_tautology.cpp',
+        'gtest/test_metrics.cpp',
+        'test/equihash_tests.cpp',
+        'test/util_tests.cpp',
+        "Leaving directory '%s'" % src_dir,
+        ], './zcutil/build.sh', '-j', nproc)
 
 
 @phase('Generating manpages.')
@@ -325,6 +344,37 @@ def sh_log(*args):
     logging.debug('Run (log PID %r): %r', p.pid, args)
     for line in p.stdout:
         logging.debug('> %s', line.rstrip())
+    status = p.wait()
+    if status != 0:
+        raise SystemExit('Nonzero exit status: {!r}'.format(status))
+
+
+def sh_progress(markers, *args):
+    try:
+        import progressbar
+    except:
+        sh_log(*args)
+        return
+
+    PIPE = subprocess.PIPE
+    try:
+        p = subprocess.Popen(args, stdout=PIPE, stderr=PIPE, stdin=None)
+    except OSError:
+        logging.error('Error launching %r...', args)
+        raise
+
+    pbar = progressbar.ProgressBar(max_value=len(markers))
+    marker = 0
+    pbar.update(marker)
+    logging.debug('Run (log PID %r): %r', p.pid, args)
+    for line in p.stdout:
+        logging.debug('> %s', line.rstrip())
+        for idx, val in enumerate(markers[marker:]):
+            if val in line:
+                marker += idx + 1
+                pbar.update(marker)
+                break
+    pbar.finish()
     status = p.wait()
     if status != 0:
         raise SystemExit('Nonzero exit status: {!r}'.format(status))
