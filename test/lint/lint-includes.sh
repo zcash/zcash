@@ -91,7 +91,6 @@ EXPECTED_BOOST_INCLUDES=(
     boost/thread/locks.hpp
     boost/thread/mutex.hpp
     boost/thread/once.hpp
-    boost/thread/recursive_mutex.hpp
     boost/thread/synchronized_value.hpp
     boost/thread/thread.hpp
     boost/thread/tss.hpp
