@@ -270,7 +270,7 @@ int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t che
     if ( seed == 0 && checkvalue != 0 )
     {
         ratio = ((value << 6) / checkvalue);
-        if ( ratio >= 62 && ratio <= 66 )
+        if ( ratio >= 60 && ratio <= 67 )
             return(0);
         else
         {
@@ -652,7 +652,7 @@ void komodo_passport_iteration();
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
     static uint256 array[64]; static int32_t numbanned,indallvouts;
-    int32_t i,j,k,n,ht,baseid,txn_count,activation,num,opretlen,offset=1,errs=0,matched=0,kmdheights[64],otherheights[64]; uint256 hash,txids[64]; char symbol[16],base[16]; uint16_t vouts[64]; int8_t baseids[64]; uint8_t *script,opcode,rmd160s[64*20]; uint64_t total,available,deposited,issued,withdrawn,approved,redeemed,checktoshis,seed; int64_t values[64],srcvalues[64]; struct pax_transaction *pax; struct komodo_state *sp;
+    int32_t i,j,k,n,ht,baseid,txn_count,activation,num,opretlen,offset=1,errs=0,matched=0,kmdheights[256],otherheights[256]; uint256 hash,txids[256]; char symbol[16],base[16]; uint16_t vouts[256]; int8_t baseids[256]; uint8_t *script,opcode,rmd160s[256*20]; uint64_t total,available,deposited,issued,withdrawn,approved,redeemed,checktoshis,seed; int64_t values[256],srcvalues[256]; struct pax_transaction *pax; struct komodo_state *sp;
     activation = 235300;
     if ( *(int32_t *)&array[0] == 0 )
         numbanned = komodo_bannedset(&indallvouts,array,(int32_t)(sizeof(array)/sizeof(*array)));
@@ -745,6 +745,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         while ( KOMODO_PASSPORT_INITDONE == 0 )
             komodo_passport_iteration();
+        komodo_passport_iteration();
         // grandfathering preexisting
         if ( height < 777 )
             return(0);
@@ -845,7 +846,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else if ( baseid == CZK )
         {
-            if ( height == 1084 || height == 1085 || height == 1086 || height == 778 || height == 1079 || height == 1054 || height == 1032 || height == 121 || height == 1030 || height == 182 || height == 876 || height == 873 || height == 871 || height == 184 || height == 862 || height == 185 || height == 861 || height == 186 || height == 838 || height == 238 || height == 242 || height == 246 || height == 248 || height == 250 || height == 251 || height == 256 || height == 282 || height == 322 || height == 343 || height == 433 || height == 323 || height == 276 )
+            if ( height < 1000 || height == 1084 || height == 1085 || height == 1086 || height == 778 || height == 1079 || height == 1054 || height == 1032 || height == 121 || height == 1030 || height == 182 || height == 876 || height == 873 || height == 871 || height == 184 || height == 862 || height == 185 || height == 861 || height == 186 || height == 838 || height == 238 || height == 242 || height == 246 || height == 248 || height == 250 || height == 251 || height == 256 || height == 282 || height == 322 || height == 343 || height == 433 || height == 323 || height == 276 )
                 return(0);
         }
         else if ( baseid == HUF )
@@ -915,11 +916,20 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         {
             for (i=1; i<n-1; i++)
             {
-                if ( (sp= komodo_stateptrget(CURRENCIES[baseids[i-1]])) != 0 && (sp->RTmask & (1LL << baseids[i-1])) == 0 )
+                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && (sp= komodo_stateptrget(ASSETCHAINS_SYMBOL)) != 0 && strcmp(CURRENCIES[baseids[i-1]],ASSETCHAINS_SYMBOL) == 0 )
                 {
-                    /*printf("skip checkdeposit.%s not RT %llx\n",CURRENCIES[baseids[i-1]],(long long)sp->RTmask);
-                    matched++;
-                    continue;*/
+                    int32_t rtflag = 0;
+                    while ( (sp->RTmask & (1LL << 32)) == 0 )
+                    {
+                        if ( rtflag == 0 )
+                            printf("[%s] skip checkdeposit.%s not RT %llx\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]],(long long)sp->RTmask);
+                        sleep(60);
+                        rtflag = 1;
+                        //matched++;
+                        //continue;
+                    }
+                    if ( rtflag != 0 )
+                        printf("[%s] %s reached RT\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]);
                 }
                 if ( (pax= komodo_paxfinds(txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
                 {
@@ -968,8 +978,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                         printf("%.8f ",dstr(block.vtx[0].vout[j].nValue));
                     printf("vout values\n");
                     for (j=0; j<32; j++)
-                        printf("%02x",((uint8_t *)&hash)[j]);
-                    printf(" kht.%d ht.%d %.8f %.8f blockhash couldnt find vout.[%d of %d] ht.%d %s for [%s]\n",kmdheights[i-1],otherheights[i-1],dstr(values[i-1]),dstr(srcvalues[i]),i,n,height,ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]);
+                        printf("%02x",((uint8_t *)&txids[i-1])[j]);
+                    printf(" kht.%d ht.%d %.8f %.8f couldnt find vout.[%d of %d] ht.%d %s for [%s]\n",kmdheights[i-1],otherheights[i-1],dstr(values[i-1]),dstr(srcvalues[i]),i,n,height,ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]);
                     if ( ASSETCHAINS_SYMBOL[0] != 0 || height >= activation )
                         return(-1);
                 }
@@ -1049,20 +1059,23 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
             PAX_pubkey(0,&opretbuf[1],&addrtype,rmd160,base,&shortflag,&fiatoshis);
             bitcoin_address(coinaddr,addrtype,rmd160,20);
             checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,kmdheight,base,fiatoshis);
+            if ( komodo_paxcmp(base,kmdheight,value,checktoshis,kmdheight < 225000 ? seed : 0) != 0 )
+                checktoshis = PAX_fiatdest(&seed,tokomodo,destaddr,pubkey33,coinaddr,height,base,fiatoshis);
             typestr = "deposit";
+            if ( 0 && strcmp("NOK",base) == 0 )
+            {
+                printf("[%s] %s paxdeposit height.%d vs kmdheight.%d\n",ASSETCHAINS_SYMBOL,base,height,kmdheight);
+                printf("(%s) (%s) kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d seed.%llx\n",ASSETCHAINS_SYMBOL,base,kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed);
+                for (i=0; i<32; i++)
+                    printf("%02x",((uint8_t *)&txid)[i]);
+                printf(" <- txid.v%u ",vout);
+                for (i=0; i<33; i++)
+                    printf("%02x",pubkey33[i]);
+                printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
+            }
             if ( strcmp(base,ASSETCHAINS_SYMBOL) == 0 && (kmdheight > 195000 || kmdheight <= height) )
             {
                 didstats = 0;
-                if ( 0 && kmdheight > 214700 && strcmp(base,ASSETCHAINS_SYMBOL) == 0 )
-                {
-                    printf("(%s) (%s) kmdheight.%d vs height.%d check %.8f vs %.8f tokomodo.%d %d seed.%llx\n",ASSETCHAINS_SYMBOL,base,kmdheight,height,dstr(checktoshis),dstr(value),komodo_is_issuer(),strncmp(ASSETCHAINS_SYMBOL,base,strlen(base)) == 0,(long long)seed);
-                    for (i=0; i<32; i++)
-                        printf("%02x",((uint8_t *)&txid)[i]);
-                    printf(" <- txid.v%u ",vout);
-                    for (i=0; i<33; i++)
-                        printf("%02x",pubkey33[i]);
-                    printf(" checkpubkey check %.8f v %.8f dest.(%s) kmdheight.%d height.%d\n",dstr(checktoshis),dstr(value),destaddr,kmdheight,height);
-                }
                 if ( komodo_paxcmp(base,kmdheight,value,checktoshis,kmdheight < 225000 ? seed : 0) == 0 )
                 {
                     if ( (pax= komodo_paxfind(txid,vout,'D')) == 0 )
@@ -1120,8 +1133,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( kmdheight > 238000 && (kmdheight > 214700 || strcmp(base,ASSETCHAINS_SYMBOL) == 0) ) //seed != 0 &&
                         printf("pax %s deposit %.8f rejected kmdheight.%d %.8f KMD check %.8f seed.%llu\n",base,dstr(fiatoshis),kmdheight,dstr(value),dstr(checktoshis),(long long)seed);
                 }
-            } //else printf("paxdeposit height.%d vs kmdheight.%d\n",height,kmdheight);
-        }
+            } //else printf("[%s] %s paxdeposit height.%d vs kmdheight.%d\n",ASSETCHAINS_SYMBOL,base,height,kmdheight);
+        } //else printf("unsupported size.%d for opreturn D\n",opretlen);
     }
     else if ( opretbuf[0] == 'I' )
     {
@@ -1350,7 +1363,10 @@ void komodo_passport_iteration()
     }
     refsp = komodo_stateptr(symbol,dest);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    {
         refid = 33;
+        jumblr_iteration();
+    }
     else
     {
         refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1; // illegal base -> baseid.-1 -> 0
@@ -1384,6 +1400,7 @@ void komodo_passport_iteration()
         {
             if ( baseid == 32 || ASSETCHAINS_SYMBOL[0] == 0 )
             {
+                refsp->RTmask &= ~(1LL << baseid);
                 komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"komodostate");
                 komodo_nameset(symbol,dest,base);
                 sp = komodo_stateptrget(symbol);
@@ -1422,12 +1439,13 @@ void komodo_passport_iteration()
                     if ( fread(buf,1,sizeof(buf),fp) == sizeof(buf) )
                     {
                         sp->CURRENT_HEIGHT = buf[0];
-                        if ( buf[0] != 0 && buf[0] >= buf[1] && buf[2] > time(NULL)-300 )
+                        if ( buf[0] != 0 && buf[0] >= buf[1] && buf[2] > time(NULL)-60 )
                         {
                             isrealtime = 1;
                             RTmask |= (1LL << baseid);
                             memcpy(refsp->RTbufs[baseid+1],buf,sizeof(refsp->RTbufs[baseid+1]));
-                        } else if ( KOMODO_PAX != 0 && (time(NULL)-buf[2]) > 1800 && ASSETCHAINS_SYMBOL[0] != 0 )
+                        }
+                        else if ( KOMODO_PAX != 0 && (time(NULL)-buf[2]) > 60 && ASSETCHAINS_SYMBOL[0] != 0 )
                             fprintf(stderr,"[%s]: %s not RT %u %u %d\n",ASSETCHAINS_SYMBOL,base,buf[0],buf[1],(int32_t)(time(NULL)-buf[2]));
                     } //else fprintf(stderr,"%s size error RT\n",base);
                     fclose(fp);
@@ -1436,6 +1454,7 @@ void komodo_passport_iteration()
         }
         else
         {
+            refsp->RTmask &= ~(1LL << baseid);
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
@@ -1458,7 +1477,7 @@ void komodo_passport_iteration()
             refsp->RTbufs[0][2] = 0;
     }
     komodo_paxtotal();
-    refsp->RTmask = RTmask;
+    refsp->RTmask |= RTmask;
     if ( expired == 0 && KOMODO_PASSPORT_INITDONE == 0 )
     {
         KOMODO_PASSPORT_INITDONE = 1;

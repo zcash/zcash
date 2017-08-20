@@ -281,6 +281,7 @@ bits256 bits256_doublesha256(char *deprecated,uint8_t *data,int32_t datalen)
     return(hash);
 }
 
+
 // rmd160: the five basic functions F(), G() and H()
 #define F(x, y, z)        ((x) ^ (y) ^ (z))
 #define G(x, y, z)        (((x) & (y)) | (~(x) & (z)))
@@ -657,6 +658,22 @@ void calc_rmd160(char deprecated[41],uint8_t buf[20],uint8_t *msg,int32_t len)
     rmd160_vprocess(&md,msg,len);
     rmd160_vdone(&md, buf);
 }
+#undef F
+#undef G
+#undef H
+#undef I
+#undef J
+#undef ROLc
+#undef FF
+#undef GG
+#undef HH
+#undef II
+#undef JJ
+#undef FFF
+#undef GGG
+#undef HHH
+#undef III
+#undef JJJ
 
 static const uint32_t crc32_tab[] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
