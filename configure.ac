@@ -401,7 +401,7 @@ case $host in
 
      ZC_REQUIRE_TOOL(WINDRES, windres)
 
-     CPPFLAGS="$CPPFLAGS -D_MT -DWIN32 -D_WINDOWS -DBOOST_THREAD_USE_LIB -D_WIN32_WINNT=0x0601"
+     CPPFLAGS="$CPPFLAGS -D_MT -DWIN32 -D_WINDOWS -DBOOST_THREAD_USE_LIB -D_WIN32_WINNT=0x0601 -D_WIN32_IE=0x0501 -DWIN32_LEAN_AND_MEAN"
      LEVELDB_TARGET_FLAGS="-DOS_WINDOWS"
 
      dnl libtool insists upon adding -nostdlib and a list of objects/libs to link against.
