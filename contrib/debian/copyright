@@ -38,10 +38,6 @@ Files: depends/sources/openssl-*.tar.gz
 Copyright: 1998-2016 The OpenSSL Project and 1995-1998 Eric Young
 License: OpenSSL+SSLeay
 
-Files: depends/sources/miniupnpc-*.tar.gz
-Copyright: 2005-2016 Thomas BERNARD
-License: BSD-3clause
-
 Files: depends/sources/zeromq-*.tar.gz
 Copyright:
  1994, 1995, 1996, 1999, 2000, 2001, 2002, 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
@@ -62,6 +58,14 @@ License: BSD-3clause-Google
 Files: depends/sources/qpid-proton-*.tar.gz
 Copyright: 2012-2017 The Apache Software Foundation
 License: Apache-Qpid-Proton-with-BSD-Subcomponents
+
+Files: src/secp256k1/build-aux/m4/ax_jni_include_dir.m4
+Copyright: 2008 Don Anderson <dda@sleepycat.com>
+License: GNU-All-permissive-License
+
+Files: src/secp256k1/build-aux/m4/ax_prog_cc_for_build.m4
+Copyright: 2008 Paolo Bonzini <bonzini@gnu.org>
+License: GNU-All-permissive-License
 
 License: Boost-Software-License-1.0
  Permission is hereby granted, free of charge, to any person or organization
@@ -1311,4 +1315,10 @@ License: Apache-Qpid-Proton-with-BSD-Subcomponents
  the source code in these setup files are subject to the terms and
  conditions in the license:
  proton-c/bindings/python/setuputils/PYZMQ_LICENSE.BSD.
+
+License: GNU-All-permissive-License
+ Copying and distribution of this file, with or without modification, are
+ permitted in any medium without royalty provided the copyright notice
+ and this notice are preserved. This file is offered as-is, without any
+ warranty.
 

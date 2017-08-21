@@ -19,7 +19,9 @@ zcash_gtest_SOURCES += \
 endif
 zcash_gtest_SOURCES += \
 	gtest/test_tautology.cpp \
+	gtest/test_deprecation.cpp \
 	gtest/test_equihash.cpp \
+	gtest/test_httprpc.cpp \
 	gtest/test_joinsplit.cpp \
 	gtest/test_keystore.cpp \
 	gtest/test_noteencryption.cpp \
@@ -31,6 +33,7 @@ zcash_gtest_SOURCES += \
 	gtest/test_random.cpp \
 	gtest/test_rpc.cpp \
 	gtest/test_transaction.cpp \
+	gtest/test_validation.cpp \
 	gtest/test_circuit.cpp \
 	gtest/test_txid.cpp \
 	gtest/test_libzcash_utils.cpp \
@@ -52,7 +55,7 @@ if ENABLE_WALLET
 zcash_gtest_LDADD += $(LIBBITCOIN_WALLET)
 endif
 
-zcash_gtest_LDADD += $(LIBZCASH_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(LIBZCASH) $(LIBZCASH_LIBS)
+zcash_gtest_LDADD += $(LIBZCASH_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(LIBZCASH) $(LIBZCASH_LIBS)
 
 if ENABLE_PROTON
 zcash_gtest_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)

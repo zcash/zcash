@@ -2,8 +2,8 @@ dnl require autoconf 2.60 (AS_ECHO/AS_ECHO_N)
 AC_PREREQ([2.60])
 define(_CLIENT_VERSION_MAJOR, 1)
 define(_CLIENT_VERSION_MINOR, 0)
-define(_CLIENT_VERSION_REVISION, 8)
-define(_CLIENT_VERSION_BUILD, 51)
+define(_CLIENT_VERSION_REVISION, 11)
+define(_CLIENT_VERSION_BUILD, 50)
 define(_ZC_BUILD_VAL, m4_if(m4_eval(_CLIENT_VERSION_BUILD < 25), 1, m4_incr(_CLIENT_VERSION_BUILD), m4_eval(_CLIENT_VERSION_BUILD < 50), 1, m4_eval(_CLIENT_VERSION_BUILD - 24), m4_eval(_CLIENT_VERSION_BUILD == 50), 1, , m4_eval(_CLIENT_VERSION_BUILD - 50)))
 define(_CLIENT_VERSION_SUFFIX, m4_if(m4_eval(_CLIENT_VERSION_BUILD < 25), 1, _CLIENT_VERSION_REVISION-beta$1, m4_eval(_CLIENT_VERSION_BUILD < 50), 1, _CLIENT_VERSION_REVISION-rc$1, m4_eval(_CLIENT_VERSION_BUILD == 50), 1, _CLIENT_VERSION_REVISION, _CLIENT_VERSION_REVISION-$1)))
 define(_CLIENT_VERSION_IS_RELEASE, true)
@@ -93,18 +93,6 @@ AC_ARG_ENABLE([rust],
   [enable rust (default is yes)])],
   [enable_rust=$enableval],
   [enable_rust=yes])
-
-AC_ARG_WITH([miniupnpc],
-  [AS_HELP_STRING([--with-miniupnpc],
-  [enable UPNP (default is yes if libminiupnpc is found)])],
-  [use_upnp=$withval],
-  [use_upnp=auto])
-
-AC_ARG_ENABLE([upnp-default],
-  [AS_HELP_STRING([--enable-upnp-default],
-  [if UPNP is enabled, turn it on at startup (default is no)])],
-  [use_upnp_default=$enableval],
-  [use_upnp_default=no])
 
 AC_ARG_ENABLE([proton],
   [AS_HELP_STRING([--disable-proton],
@@ -557,15 +545,6 @@ else
     AC_DEFINE(ENABLE_PROTON, 0, [Define to 1 to enable Proton functions])
 fi
 
-dnl Check for libminiupnpc (optional)
-if test x$use_upnp != xno; then
-  AC_CHECK_HEADERS(
-    [miniupnpc/miniwget.h miniupnpc/miniupnpc.h miniupnpc/upnpcommands.h miniupnpc/upnperrors.h],
-    [AC_CHECK_LIB([miniupnpc], [main],[MINIUPNPC_LIBS=-lminiupnpc], [have_miniupnpc=no])],
-    [have_miniupnpc=no]
-  )
-fi
-
 if test x$build_bitcoin_utils$build_bitcoind$use_tests = xnonono; then
     use_boost=no
 else
@@ -877,33 +856,6 @@ else
   AC_MSG_RESULT(no)
 fi
 
-dnl enable upnp support
-AC_MSG_CHECKING([whether to build with support for UPnP])
-if test x$have_miniupnpc = xno; then
-  if test x$use_upnp = xyes; then
-     AC_MSG_ERROR("UPnP requested but cannot be built. use --without-miniupnpc")
-  fi
-  AC_MSG_RESULT(no)
-else
-  if test x$use_upnp != xno; then
-    AC_MSG_RESULT(yes)
-    AC_MSG_CHECKING([whether to build with UPnP enabled by default])
-    use_upnp=yes
-    upnp_setting=0
-    if test x$use_upnp_default != xno; then
-      use_upnp_default=yes
-      upnp_setting=1
-    fi
-    AC_MSG_RESULT($use_upnp_default)
-    AC_DEFINE_UNQUOTED([USE_UPNP],[$upnp_setting],[UPnP support not compiled if undefined, otherwise value (0 or 1) determines default state])
-    if test x$TARGET_OS = xwindows; then
-      MINIUPNPC_CPPFLAGS="-DSTATICLIB -DMINIUPNP_STATICLIB"
-    fi
-  else
-    AC_MSG_RESULT(no)
-  fi
-fi
-
 AM_CONDITIONAL([ENABLE_ZMQ], [test "x$use_zmq" = "xyes"])
 
 AM_CONDITIONAL([ENABLE_PROTON], [test "x$use_proton" = "xyes"])
@@ -956,12 +908,9 @@ AC_SUBST(COPYRIGHT_YEAR, _COPYRIGHT_YEAR)
 
 AC_SUBST(RELDFLAGS)
 AC_SUBST(LIBTOOL_APP_LDFLAGS)
-AC_SUBST(USE_UPNP)
 AC_SUBST(BOOST_LIBS)
 AC_SUBST(TESTDEFS)
 AC_SUBST(LEVELDB_TARGET_FLAGS)
-AC_SUBST(MINIUPNPC_CPPFLAGS)
-AC_SUBST(MINIUPNPC_LIBS)
 AC_SUBST(GMP_LIBS)
 AC_SUBST(GMPXX_LIBS)
 AC_SUBST(LIBSNARK_LIBS)
@@ -994,7 +943,7 @@ PKGCONFIG_LIBDIR_TEMP="$PKG_CONFIG_LIBDIR"
 unset PKG_CONFIG_LIBDIR
 PKG_CONFIG_LIBDIR="$PKGCONFIG_LIBDIR_TEMP"
 
-ac_configure_args="${ac_configure_args} --disable-shared --with-pic --with-bignum=no"
+ac_configure_args="${ac_configure_args} --disable-shared --with-pic --with-bignum=no --enable-module-recovery"
 AC_CONFIG_SUBDIRS([src/secp256k1 src/univalue])
 
 AC_OUTPUT

@@ -2334,6 +2334,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "  {\n"
             "    \"txid\" : \"txid\",        (string) the transaction id \n"
             "    \"vout\" : n,               (numeric) the vout value\n"
+            "    \"generated\" : true|false  (boolean) true if txout is a coinbase transaction output\n"
             "    \"address\" : \"address\",  (string) the zcash address\n"
             "    \"account\" : \"account\",  (string) DEPRECATED. The associated account, or \"\" for the default account\n"
             "    \"scriptPubKey\" : \"key\", (string) the script key\n"
@@ -2396,6 +2397,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
         UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
         entry.push_back(Pair("vout", out.i));
+        entry.push_back(Pair("generated", out.tx->IsCoinBase()));
         CTxDestination address;
         if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
             entry.push_back(Pair("address", CBitcoinAddress(address).ToString()));
@@ -2589,6 +2591,11 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
         } else if (benchmarktype == "incnotewitnesses") {
             int nTxs = params[2].get_int();
             sample_times.push_back(benchmark_increment_note_witnesses(nTxs));
+        } else if (benchmarktype == "connectblockslow") {
+            if (Params().NetworkIDString() != "regtest") {
+                throw JSONRPCError(RPC_TYPE_ERROR, "Benchmark must be run in regtest mode");
+            }
+            sample_times.push_back(benchmark_connectblock_slow());
         } else {
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
         }

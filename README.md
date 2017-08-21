@@ -1,4 +1,4 @@
-Zcash 1.0.8-1
+Zcash 1.0.11
 =============
 
 What is Zcash?
@@ -21,7 +21,15 @@ Security Warnings
 See important security warnings in
 [doc/security-warnings.md](doc/security-warnings.md).
 
-**Zcash is unfinished and highly experimental.** Use at your own risk.
+**Zcash is experimental and a work-in-progress.** Use at your own risk.
+
+Deprecation Policy
+------------------
+
+This release is considered deprecated 16 weeks after the release day. There
+is an automatic deprecation shutdown feature which will halt the node some
+time after this 16 week time period. The automatic feature is based on block
+height and can be explicitly disabled.
 
 Where do I begin?
 -----------------

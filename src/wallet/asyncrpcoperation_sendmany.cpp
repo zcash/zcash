@@ -93,6 +93,10 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         }
     }
 
+    if (isfromzaddr_ && minDepth==0) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be zero when sending from zaddr");
+    }
+
     // Log the context info i.e. the call parameters to z_sendmany
     if (LogAcceptCategory("zrpcunsafe")) {
         LogPrint("zrpcunsafe", "%s: z_sendmany initialized (params=%s)\n", getId(), contextInfo.write());
@@ -203,7 +207,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     if (isfromzaddr_ && !find_unspent_notes()) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds, no unspent notes found for zaddr from address.");
     }
-    
+
     CAmount t_inputs_total = 0;
     for (SendManyInputUTXO & t : t_inputs_) {
         t_inputs_total += std::get<2>(t);
@@ -281,6 +285,15 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         t_inputs_ = selectedTInputs;
         t_inputs_total = selectedUTXOAmount;
 
+        // Check mempooltxinputlimit to avoid creating a transaction which the local mempool rejects
+        size_t limit = (size_t)GetArg("-mempooltxinputlimit", 0);
+        if (limit > 0) {
+            size_t n = t_inputs_.size();
+            if (n > limit) {
+                throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Too many transparent inputs %zu > limit %zu", n, limit));
+            }
+        }
+
         // update the transaction with these inputs
         CMutableTransaction rawTx(tx_);
         for (SendManyInputUTXO & t : t_inputs_) {
@@ -342,9 +355,14 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     tx_ = CTransaction(mtx);
 
     // Copy zinputs and zoutputs to more flexible containers
-    std::deque<SendManyInputJSOP> zInputsDeque;
+    std::deque<SendManyInputJSOP> zInputsDeque; // zInputsDeque stores minimum numbers of notes for target amount
+    CAmount tmp = 0;
     for (auto o : z_inputs_) {
         zInputsDeque.push_back(o);
+        tmp += std::get<2>(o);
+        if (tmp >= targetAmount) {
+            break;
+        }
     }
     std::deque<SendManyRecipient> zOutputsDeque;
     for (auto o : z_outputs_) {
@@ -442,283 +460,220 @@ bool AsyncRPCOperation_sendmany::main_impl() {
      * zaddr -> taddrs
      *       -> zaddrs
      * 
-     * Processing order:
-     * Part 1: taddrs and miners fee
-     * Part 2: zaddrs 
-     */
-    
-    /**
-     * SCENARIO #3
-     * Part 1: Add to the transparent value pool.
+     * Send to zaddrs by chaining JoinSplits together and immediately consuming any change
+     * Send to taddrs by creating dummy z outputs and accumulating value in a change note
+     * which is used to set vpub_new in the last chained joinsplit.
      */
     UniValue obj(UniValue::VOBJ);
     CAmount jsChange = 0;   // this is updated after each joinsplit
     int changeOutputIndex = -1; // this is updated after each joinsplit if jsChange > 0
-    bool minersFeeProcessed = false;
-
+    bool vpubNewProcessed = false;  // updated when vpub_new for miner fee and taddr outputs is set in last joinsplit
+    CAmount vpubNewTarget = minersFee;
     if (t_outputs_total > 0) {
         add_taddr_outputs_to_tx();
-        CAmount taddrTargetAmount = t_outputs_total + minersFee;
-        minersFeeProcessed = true;
-        while (zInputsDeque.size() > 0 && taddrTargetAmount > 0) {
-            AsyncJoinSplitInfo info;
-            info.vpub_old = 0;
-            info.vpub_new = 0;
-            std::vector<JSOutPoint> outPoints;
-            int n = 0;
-            while (n++ < ZC_NUM_JS_INPUTS && taddrTargetAmount > 0) {
-                SendManyInputJSOP o = zInputsDeque.front();
-                JSOutPoint outPoint = std::get<0>(o);
-                Note note = std::get<1>(o);
-                CAmount noteFunds = std::get<2>(o);
-                zInputsDeque.pop_front();
-
-                info.notes.push_back(note);
-                outPoints.push_back(outPoint);
-
-                int wtxHeight = -1;
-                int wtxDepth = -1;
-                {
-                    LOCK2(cs_main, pwalletMain->cs_wallet);
-                    const CWalletTx& wtx = pwalletMain->mapWallet[outPoint.hash];
-                    wtxHeight = mapBlockIndex[wtx.hashBlock]->nHeight;
-                    wtxDepth = wtx.GetDepthInMainChain();
-                }
-                LogPrint("zrpcunsafe", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, height=%d, confirmations=%d)\n",
-                        getId(),
-                        outPoint.hash.ToString().substr(0, 10),
-                        outPoint.js,
-                        int(outPoint.n), // uint8_t
-                        FormatMoney(noteFunds),
-                        wtxHeight,
-                        wtxDepth
-                        );
-
-                
-                // Put value back into the value pool
-                if (noteFunds >= taddrTargetAmount) {
-                    jsChange = noteFunds - taddrTargetAmount;
-                    info.vpub_new += taddrTargetAmount;
-                } else {
-                    info.vpub_new += noteFunds;
-                }
-
-                taddrTargetAmount -= noteFunds;
-                if (taddrTargetAmount <= 0) {
-                    break;
-                }
-            }
-
-            if (jsChange > 0) {
-                info.vjsout.push_back(JSOutput());
-                info.vjsout.push_back(JSOutput(frompaymentaddress_, jsChange));
-                
-                LogPrint("zrpcunsafe", "%s: generating note for change (amount=%s)\n",
-                        getId(),
-                        FormatMoney(jsChange)
-                        );
-            }
-
-            obj = perform_joinsplit(info, outPoints);
-
-            if (jsChange > 0) {
-                changeOutputIndex = find_output(obj, 1);
-            }
-        }
+        vpubNewTarget += t_outputs_total;
     }
 
+    // Keep track of treestate within this transaction
+    boost::unordered_map<uint256, ZCIncrementalMerkleTree, CCoinsKeyHasher> intermediates;
+    std::vector<uint256> previousCommitments;
 
-    /**
-     * SCENARIO #3
-     * Part 2: Send to zaddrs by chaining JoinSplits together and immediately consuming any change
-     */            
-    if (z_outputs_total>0) {
+    while (!vpubNewProcessed) {
+        AsyncJoinSplitInfo info;
+        info.vpub_old = 0;
+        info.vpub_new = 0;
 
-        // Keep track of treestate within this transaction 
-        boost::unordered_map<uint256, ZCIncrementalMerkleTree, CCoinsKeyHasher> intermediates;
-        std::vector<uint256> previousCommitments;
-        
-        while (zOutputsDeque.size() > 0) {
-            AsyncJoinSplitInfo info;
-            info.vpub_old = 0;
-            info.vpub_new = 0;
+        CAmount jsInputValue = 0;
+        uint256 jsAnchor;
+        std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
 
-            CAmount jsInputValue = 0;
-            uint256 jsAnchor;
-            std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+        JSDescription prevJoinSplit;
 
-            JSDescription prevJoinSplit;
+        // Keep track of previous JoinSplit and its commitments
+        if (tx_.vjoinsplit.size() > 0) {
+            prevJoinSplit = tx_.vjoinsplit.back();
+        }
 
-            // Keep track of previous JoinSplit and its commitments
-            if (tx_.vjoinsplit.size() > 0) {
-                prevJoinSplit = tx_.vjoinsplit.back();
+        // If there is no change, the chain has terminated so we can reset the tracked treestate.
+        if (jsChange==0 && tx_.vjoinsplit.size() > 0) {
+            intermediates.clear();
+            previousCommitments.clear();
+        }
+
+        //
+        // Consume change as the first input of the JoinSplit.
+        //
+        if (jsChange > 0) {
+            LOCK2(cs_main, pwalletMain->cs_wallet);
+
+            // Update tree state with previous joinsplit
+            ZCIncrementalMerkleTree tree;
+            auto it = intermediates.find(prevJoinSplit.anchor);
+            if (it != intermediates.end()) {
+                tree = it->second;
+            } else if (!pcoinsTip->GetAnchorAt(prevJoinSplit.anchor, tree)) {
+                throw JSONRPCError(RPC_WALLET_ERROR, "Could not find previous JoinSplit anchor");
             }
-            
-            // If there is no change, the chain has terminated so we can reset the tracked treestate.
-            if (jsChange==0 && tx_.vjoinsplit.size() > 0) {
-                intermediates.clear();
-                previousCommitments.clear();
+
+            assert(changeOutputIndex != -1);
+            boost::optional<ZCIncrementalWitness> changeWitness;
+            int n = 0;
+            for (const uint256& commitment : prevJoinSplit.commitments) {
+                tree.append(commitment);
+                previousCommitments.push_back(commitment);
+                if (!changeWitness && changeOutputIndex == n++) {
+                    changeWitness = tree.witness();
+                } else if (changeWitness) {
+                    changeWitness.get().append(commitment);
+                }
             }
+            if (changeWitness) {
+                    witnesses.push_back(changeWitness);
+            }
+            jsAnchor = tree.root();
+            intermediates.insert(std::make_pair(tree.root(), tree));    // chained js are interstitial (found in between block boundaries)
+
+            // Decrypt the change note's ciphertext to retrieve some data we need
+            ZCNoteDecryption decryptor(spendingkey_.viewing_key());
+            auto hSig = prevJoinSplit.h_sig(*pzcashParams, tx_.joinSplitPubKey);
+            try {
+                NotePlaintext plaintext = NotePlaintext::decrypt(
+                        decryptor,
+                        prevJoinSplit.ciphertexts[changeOutputIndex],
+                        prevJoinSplit.ephemeralKey,
+                        hSig,
+                        (unsigned char) changeOutputIndex);
+
+                Note note = plaintext.note(frompaymentaddress_);
+                info.notes.push_back(note);
+
+                jsInputValue += plaintext.value;
+
+                LogPrint("zrpcunsafe", "%s: spending change (amount=%s)\n",
+                    getId(),
+                    FormatMoney(plaintext.value)
+                    );
+
+            } catch (const std::exception& e) {
+                throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Error decrypting output note of previous JoinSplit: %s", e.what()));
+            }
+        }
+
+
+        //
+        // Consume spendable non-change notes
+        //
+        std::vector<Note> vInputNotes;
+        std::vector<JSOutPoint> vOutPoints;
+        std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
+        uint256 inputAnchor;
+        int numInputsNeeded = (jsChange>0) ? 1 : 0;
+        while (numInputsNeeded++ < ZC_NUM_JS_INPUTS && zInputsDeque.size() > 0) {
+            SendManyInputJSOP t = zInputsDeque.front();
+            JSOutPoint jso = std::get<0>(t);
+            Note note = std::get<1>(t);
+            CAmount noteFunds = std::get<2>(t);
+            zInputsDeque.pop_front();
+
+            WitnessAnchorData wad = jsopWitnessAnchorMap[ jso.ToString() ];
+            vInputWitnesses.push_back(wad.witness);
+            if (inputAnchor.IsNull()) {
+                inputAnchor = wad.anchor;
+            } else if (inputAnchor != wad.anchor) {
+                throw JSONRPCError(RPC_WALLET_ERROR, "Selected input notes do not share the same anchor");
+            }
+
+            vOutPoints.push_back(jso);
+            vInputNotes.push_back(note);
             
-            //
-            // Consume change as the first input of the JoinSplit.
-            //
-            if (jsChange > 0) {
+            jsInputValue += noteFunds;
+            
+            int wtxHeight = -1;
+            int wtxDepth = -1;
+            {
                 LOCK2(cs_main, pwalletMain->cs_wallet);
-
-                // Update tree state with previous joinsplit                
-                ZCIncrementalMerkleTree tree;
-                auto it = intermediates.find(prevJoinSplit.anchor);
-                if (it != intermediates.end()) {
-                    tree = it->second;
-                } else if (!pcoinsTip->GetAnchorAt(prevJoinSplit.anchor, tree)) {
-                    throw JSONRPCError(RPC_WALLET_ERROR, "Could not find previous JoinSplit anchor");
+                const CWalletTx& wtx = pwalletMain->mapWallet[jso.hash];
+                // Zero confirmaton notes belong to transactions which have not yet been mined
+                if (mapBlockIndex.find(wtx.hashBlock) == mapBlockIndex.end()) {
+                    throw JSONRPCError(RPC_WALLET_ERROR, strprintf("mapBlockIndex does not contain block hash %s", wtx.hashBlock.ToString()));
                 }
-                
-                assert(changeOutputIndex != -1);
-                boost::optional<ZCIncrementalWitness> changeWitness;
-                int n = 0;
-                for (const uint256& commitment : prevJoinSplit.commitments) {
-                    tree.append(commitment);
-                    previousCommitments.push_back(commitment);
-                    if (!changeWitness && changeOutputIndex == n++) {
-                        changeWitness = tree.witness();
-                    } else if (changeWitness) {
-                        changeWitness.get().append(commitment);
-                    }
-                }
-                if (changeWitness) {
-                        witnesses.push_back(changeWitness);
-                }
-                jsAnchor = tree.root();
-                intermediates.insert(std::make_pair(tree.root(), tree));    // chained js are interstitial (found in between block boundaries)
-
-                // Decrypt the change note's ciphertext to retrieve some data we need
-                ZCNoteDecryption decryptor(spendingkey_.viewing_key());
-                auto hSig = prevJoinSplit.h_sig(*pzcashParams, tx_.joinSplitPubKey);
-                try {
-                    NotePlaintext plaintext = NotePlaintext::decrypt(
-                            decryptor,
-                            prevJoinSplit.ciphertexts[changeOutputIndex],
-                            prevJoinSplit.ephemeralKey,
-                            hSig,
-                            (unsigned char) changeOutputIndex);
-
-                    Note note = plaintext.note(frompaymentaddress_);
-                    info.notes.push_back(note);
+                wtxHeight = mapBlockIndex[wtx.hashBlock]->nHeight;
+                wtxDepth = wtx.GetDepthInMainChain();
+            }
+            LogPrint("zrpcunsafe", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, height=%d, confirmations=%d)\n",
+                    getId(),
+                    jso.hash.ToString().substr(0, 10),
+                    jso.js,
+                    int(jso.n), // uint8_t
+                    FormatMoney(noteFunds),
+                    wtxHeight,
+                    wtxDepth
+                    );
+        }
                     
-                    jsInputValue += plaintext.value;
-                    
-                    LogPrint("zrpcunsafe", "%s: spending change (amount=%s)\n",
-                        getId(),
-                        FormatMoney(plaintext.value)
-                        );
+        // Add history of previous commitments to witness
+        if (vInputNotes.size() > 0) {
 
-                } catch (const std::exception& e) {
-                    throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Error decrypting output note of previous JoinSplit: %s", e.what()));
-                }
+            if (vInputWitnesses.size()==0) {
+                throw JSONRPCError(RPC_WALLET_ERROR, "Could not find witness for note commitment");
             }
-
             
-            //
-            // Consume spendable non-change notes
-            //
-            std::vector<Note> vInputNotes;
-            std::vector<JSOutPoint> vOutPoints;
-            std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
-            uint256 inputAnchor;
-            int numInputsNeeded = (jsChange>0) ? 1 : 0;
-            while (numInputsNeeded++ < ZC_NUM_JS_INPUTS && zInputsDeque.size() > 0) {
-                SendManyInputJSOP t = zInputsDeque.front();
-                JSOutPoint jso = std::get<0>(t);
-                Note note = std::get<1>(t);
-                CAmount noteFunds = std::get<2>(t);
-                zInputsDeque.pop_front();
-
-                WitnessAnchorData wad = jsopWitnessAnchorMap[ jso.ToString() ];
-                vInputWitnesses.push_back(wad.witness);
-                if (inputAnchor.IsNull()) {
-                    inputAnchor = wad.anchor;
-                } else if (inputAnchor != wad.anchor) {
-                    throw JSONRPCError(RPC_WALLET_ERROR, "Selected input notes do not share the same anchor");
+            for (auto & optionalWitness : vInputWitnesses) {
+                if (!optionalWitness) {
+                    throw JSONRPCError(RPC_WALLET_ERROR, "Witness for note commitment is null");
                 }
-
-                vOutPoints.push_back(jso);
-                vInputNotes.push_back(note);
-                
-                jsInputValue += noteFunds;
-                
-                int wtxHeight = -1;
-                int wtxDepth = -1;
-                {
-                    LOCK2(cs_main, pwalletMain->cs_wallet);
-                    const CWalletTx& wtx = pwalletMain->mapWallet[jso.hash];
-                    wtxHeight = mapBlockIndex[wtx.hashBlock]->nHeight;
-                    wtxDepth = wtx.GetDepthInMainChain();
-                }
-                LogPrint("zrpcunsafe", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, height=%d, confirmations=%d)\n",
-                        getId(),
-                        jso.hash.ToString().substr(0, 10),
-                        jso.js,
-                        int(jso.n), // uint8_t
-                        FormatMoney(noteFunds),
-                        wtxHeight,
-                        wtxDepth
-                        );
-            }
-                        
-            // Add history of previous commitments to witness 
-            if (vInputNotes.size() > 0) {
-
-                if (vInputWitnesses.size()==0) {
-                    throw JSONRPCError(RPC_WALLET_ERROR, "Could not find witness for note commitment");
-                }
-                
-                for (auto & optionalWitness : vInputWitnesses) {
-                    if (!optionalWitness) {
-                        throw JSONRPCError(RPC_WALLET_ERROR, "Witness for note commitment is null");
+                ZCIncrementalWitness w = *optionalWitness; // could use .get();
+                if (jsChange > 0) {
+                    for (const uint256& commitment : previousCommitments) {
+                        w.append(commitment);
                     }
-                    ZCIncrementalWitness w = *optionalWitness; // could use .get();
-                    if (jsChange > 0) {
-                        for (const uint256& commitment : previousCommitments) {
-                            w.append(commitment);
-                        }
-                        if (jsAnchor != w.root()) {
-                            throw JSONRPCError(RPC_WALLET_ERROR, "Witness for spendable note does not have same anchor as change input");
-                        }
+                    if (jsAnchor != w.root()) {
+                        throw JSONRPCError(RPC_WALLET_ERROR, "Witness for spendable note does not have same anchor as change input");
                     }
-                    witnesses.push_back(w);
                 }
-
-                // The jsAnchor is null if this JoinSplit is at the start of a new chain
-                if (jsAnchor.IsNull()) {                   
-                    jsAnchor = inputAnchor;                   
-                }
-
-                // Add spendable notes as inputs
-                std::copy(vInputNotes.begin(), vInputNotes.end(), std::back_inserter(info.notes));
+                witnesses.push_back(w);
             }
 
-            
-            //
-            // Find recipient to transfer funds to
-            //            
+            // The jsAnchor is null if this JoinSplit is at the start of a new chain
+            if (jsAnchor.IsNull()) {
+                jsAnchor = inputAnchor;
+            }
+
+            // Add spendable notes as inputs
+            std::copy(vInputNotes.begin(), vInputNotes.end(), std::back_inserter(info.notes));
+        }
+
+        // Find recipient to transfer funds to
+        std::string address, hexMemo;
+        CAmount value = 0;
+        if (zOutputsDeque.size() > 0) {
             SendManyRecipient smr = zOutputsDeque.front();
-            std::string address = std::get<0>(smr);
-            CAmount value = std::get<1>(smr);
-            std::string hexMemo = std::get<2>(smr);
+            address = std::get<0>(smr);
+            value = std::get<1>(smr);
+            hexMemo = std::get<2>(smr);
             zOutputsDeque.pop_front();
+        }
 
-            // Will we have any change?  Has the miners fee been processed yet?
-            jsChange = 0;
-            CAmount outAmount = value;
-            if (!minersFeeProcessed) {
-                if (jsInputValue < minersFee) {
-                    throw JSONRPCError(RPC_WALLET_ERROR, "Not enough funds to pay miners fee");
-                }
-                outAmount += minersFee;
+        // Reset change
+        jsChange = 0;
+        CAmount outAmount = value;
+
+        // Set vpub_new in the last joinsplit (when there are no more notes to spend or zaddr outputs to satisfy)
+        if (zOutputsDeque.size() == 0 && zInputsDeque.size() == 0) {
+            assert(!vpubNewProcessed);
+            if (jsInputValue < vpubNewTarget) {
+                throw JSONRPCError(RPC_WALLET_ERROR,
+                    strprintf("Insufficient funds for vpub_new %s (miners fee %s, taddr outputs %s)",
+                    FormatMoney(vpubNewTarget), FormatMoney(minersFee), FormatMoney(t_outputs_total)));
             }
-            
+            outAmount += vpubNewTarget;
+            info.vpub_new += vpubNewTarget; // funds flowing back to public pool
+            vpubNewProcessed = true;
+            jsChange = jsInputValue - outAmount;
+            assert(jsChange >= 0);
+        }
+        else {
+            // This is not the last joinsplit, so compute change and any amount still due to the recipient
             if (jsInputValue > outAmount) {
                 jsChange = jsInputValue - outAmount;
             } else if (outAmount > jsInputValue) {
@@ -729,41 +684,43 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
                 // reduce the amount being sent right now to the value of all inputs
                 value = jsInputValue;
-                if (!minersFeeProcessed) {
-                    value -= minersFee;
-                }
             }
-            
-            if (!minersFeeProcessed) {
-                minersFeeProcessed = true;
-                info.vpub_new += minersFee; // funds flowing back to public pool
-            }
-            
-            // create output for recipient
+        }
+
+        // create output for recipient
+        if (address.empty()) {
+            assert(value==0);
+            info.vjsout.push_back(JSOutput());  // dummy output while we accumulate funds into a change note for vpub_new
+        } else {
             PaymentAddress pa = CZCPaymentAddress(address).Get();
             JSOutput jso = JSOutput(pa, value);
             if (hexMemo.size() > 0) {
                 jso.memo = get_memo_from_hex_string(hexMemo);
             }
             info.vjsout.push_back(jso);
-                        
-            // create output for any change
-            if (jsChange>0) {
-                info.vjsout.push_back(JSOutput(frompaymentaddress_, jsChange));
+        }
 
-                LogPrint("zrpcunsafe", "%s: generating note for change (amount=%s)\n",
-                        getId(),
-                        FormatMoney(jsChange)
-                        );
-            }
+        // create output for any change
+        if (jsChange>0) {
+            info.vjsout.push_back(JSOutput(frompaymentaddress_, jsChange));
 
-            obj = perform_joinsplit(info, witnesses, jsAnchor);
+            LogPrint("zrpcunsafe", "%s: generating note for change (amount=%s)\n",
+                    getId(),
+                    FormatMoney(jsChange)
+                    );
+        }
 
-            if (jsChange > 0) {
-                changeOutputIndex = find_output(obj, 1);
-            }
+        obj = perform_joinsplit(info, witnesses, jsAnchor);
+
+        if (jsChange > 0) {
+            changeOutputIndex = find_output(obj, 1);
         }
     }
+
+    // Sanity check in case changes to code block above exits loop by invoking 'break'
+    assert(zInputsDeque.size() == 0);
+    assert(zOutputsDeque.size() == 0);
+    assert(vpubNewProcessed);
 
     sign_send_raw_transaction(obj);
     return true;

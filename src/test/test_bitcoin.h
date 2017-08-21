@@ -1,6 +1,7 @@
 #ifndef BITCOIN_TEST_TEST_BITCOIN_H
 #define BITCOIN_TEST_TEST_BITCOIN_H
 
+#include "pubkey.h"
 #include "txdb.h"
 
 #include <boost/filesystem.hpp>
@@ -10,6 +11,8 @@
  * This just configures logging and chain parameters.
  */
 struct BasicTestingSetup {
+    ECCVerifyHandle globalVerifyHandle;
+
     BasicTestingSetup();
     ~BasicTestingSetup();
 };

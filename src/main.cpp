@@ -14,6 +14,7 @@
 #include "checkpoints.h"
 #include "checkqueue.h"
 #include "consensus/validation.h"
+#include "deprecation.h"
 #include "init.h"
 #include "merkleblock.h"
 #include "metrics.h"
@@ -1057,6 +1058,17 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     if (pfMissingInputs)
         *pfMissingInputs = false;
 
+    // Node operator can choose to reject tx by number of transparent inputs
+    static_assert(std::numeric_limits<size_t>::max() >= std::numeric_limits<int64_t>::max(), "size_t too small");
+    size_t limit = (size_t) GetArg("-mempooltxinputlimit", 0);
+    if (limit > 0) {
+        size_t n = tx.vin.size();
+        if (n > limit) {
+            LogPrint("mempool", "Dropping txid %s : too many transparent inputs %zu > limit %zu\n", tx.GetHash().ToString(), n, limit );
+            return false;
+        }
+    }
+
     auto verifier = libzcash::ProofVerifier::Strict();
     if (!CheckTransaction(tx, state, verifier))
         return error("AcceptToMemoryPool: CheckTransaction failed");
@@ -1686,11 +1698,12 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 
 bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, const Consensus::Params& consensusParams, std::vector<CScriptCheck> *pvChecks)
 {
-    if (!Consensus::CheckTxInputs(tx, state, inputs, GetSpendHeight(inputs), consensusParams))
-        return false;
-
     if (!tx.IsCoinBase())
     {
+        if (!Consensus::CheckTxInputs(tx, state, inputs, GetSpendHeight(inputs), consensusParams)) {
+            return false;
+        }
+
         if (pvChecks)
             pvChecks->reserve(tx.vin.size());
 
@@ -2076,19 +2089,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                              REJECT_INVALID, "bad-txns-BIP30");
     }
 
-    unsigned int flags = SCRIPT_VERIFY_P2SH;
+    unsigned int flags = SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
 
-    // Start enforcing the DERSIG (BIP66) rules, for block.nVersion=3 blocks,
-    // when 75% of the network has upgraded:
-    if (block.nVersion >= 3) {
-        flags |= SCRIPT_VERIFY_DERSIG;
-    }
-
-    // Start enforcing CHECKLOCKTIMEVERIFY, (BIP65) for block.nVersion=4
-    // blocks, when 75% of the network has upgraded:
-    if (block.nVersion >= 4) {
-        flags |= SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
-    }
+    // DERSIG (BIP66) is also always enforced, but does not have a flag.
 
     CBlockUndo blockundo;
 
@@ -2519,6 +2522,8 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     }
     // Update cached incremental witnesses
     GetMainSignals().ChainTip(pindexNew, pblock, oldTree, true);
+
+    EnforceNodeDeprecation(pindexNew->nHeight);
 
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
@@ -3099,11 +3104,10 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         }
     }
 
-    // Enforce block.nVersion=2 rule that the coinbase starts with serialized block height
-    // if 750 of the last 1,000 blocks are version 2 or greater (51/100 if testnet):
-    // Since MIN_BLOCK_VERSION = 4 all blocks with nHeight > 0 should satisfy this.
-    // This rule is not applied to the genesis block, which didn't include the height
-    // in the coinbase.
+    // Enforce BIP 34 rule that the coinbase starts with serialized block height.
+    // In Zcash this has been enforced since launch, except that the genesis
+    // block didn't include the height in the coinbase (see Zcash protocol spec
+    // section '6.8 Bitcoin Improvement Proposals').
     if (nHeight > 0)
     {
         CScript expect = CScript() << nHeight;
@@ -3612,6 +3616,8 @@ bool static LoadBlockIndexDB()
         chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(),
         DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
         Checkpoints::GuessVerificationProgress(chainparams.Checkpoints(), chainActive.Tip()));
+
+    EnforceNodeDeprecation(chainActive.Height(), true);
 
     return true;
 }

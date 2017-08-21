@@ -124,8 +124,7 @@ BITCOIN_CORE_H = \
   consensus/validation.h \
   core_io.h \
   core_memusage.h \
-  eccryptoverify.h \
-  ecwrapper.h \
+  deprecation.h \
   hash.h \
   httprpc.h \
   httpserver.h \
@@ -204,7 +203,7 @@ obj/build.h: FORCE
 libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
 
 # server: zcashd
-libbitcoin_server_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
+libbitcoin_server_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
 libbitcoin_server_a_SOURCES = \
   sendalert.cpp \
   addrman.cpp \
@@ -215,6 +214,7 @@ libbitcoin_server_a_SOURCES = \
   bloom.cpp \
   chain.cpp \
   checkpoints.cpp \
+  deprecation.cpp \
   httprpc.cpp \
   httpserver.cpp \
   init.cpp \
@@ -324,8 +324,6 @@ libbitcoin_common_a_SOURCES = \
   compressor.cpp \
   core_read.cpp \
   core_write.cpp \
-  eccryptoverify.cpp \
-  ecwrapper.cpp \
   hash.cpp \
   key.cpp \
   keystore.cpp \
@@ -413,7 +411,6 @@ zcashd_LDADD += \
   $(BDB_LIBS) \
   $(SSL_LIBS) \
   $(CRYPTO_LIBS) \
-  $(MINIUPNPC_LIBS) \
   $(EVENT_PTHREADS_LIBS) \
   $(EVENT_LIBS) \
   $(LIBZCASH) \
@@ -503,8 +500,6 @@ libzcashconsensus_la_SOURCES = \
   crypto/sha1.cpp \
   crypto/sha256.cpp \
   crypto/sha512.cpp \
-  eccryptoverify.cpp \
-  ecwrapper.cpp \
   hash.cpp \
   primitives/transaction.cpp \
   pubkey.cpp \
@@ -519,8 +514,8 @@ if GLIBC_BACK_COMPAT
 endif
 
 libzcashconsensus_la_LDFLAGS = -no-undefined $(RELDFLAGS)
-libzcashconsensus_la_LIBADD = $(CRYPTO_LIBS)
-libzcashconsensus_la_CPPFLAGS = $(CRYPTO_CFLAGS) -I$(builddir)/obj -DBUILD_BITCOIN_INTERNAL
+libzcashconsensus_la_LIBADD = $(LIBSECP256K1)
+libzcashconsensus_la_CPPFLAGS = -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
 
 endif
 #
