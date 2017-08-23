@@ -53,6 +53,12 @@ bool AtomicTimer::running()
     return threads > 0;
 }
 
+uint64_t AtomicTimer::threadCount()
+{
+    std::unique_lock<std::mutex> lock(mtx);
+    return threads;
+}
+
 double AtomicTimer::rate(const AtomicCounter& count)
 {
     std::unique_lock<std::mutex> lock(mtx);
@@ -199,15 +205,8 @@ int printMiningStatus(bool mining)
     int lines = 1;
 
     if (mining) {
-        int nThreads = GetArg("-genproclimit", 1);
-        if (nThreads < 0) {
-            // In regtest threads defaults to 1
-            if (Params().DefaultMinerThreads())
-                nThreads = Params().DefaultMinerThreads();
-            else
-                nThreads = boost::thread::hardware_concurrency();
-        }
-        if (miningTimer.running()) {
+        auto nThreads = miningTimer.threadCount();
+        if (nThreads > 0) {
             std::cout << strprintf(_("You are mining with the %s solver on %d threads."),
                                    GetArg("-equihashsolver", "default"), nThreads) << std::endl;
         } else {
