@@ -24,8 +24,7 @@ Building
 --------
 
 Build VoteCoin along with most dependencies from source by running
-cd ./zcutil
-./votecoin_build.sh.
+cd ./zcutil && ./votecoin_build.sh
 
 License
 -------
