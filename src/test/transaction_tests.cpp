@@ -42,7 +42,6 @@ static std::map<string, unsigned int> mapFlagNames = boost::assign::map_list_of
     (string("NONE"), (unsigned int)SCRIPT_VERIFY_NONE)
     (string("P2SH"), (unsigned int)SCRIPT_VERIFY_P2SH)
     (string("STRICTENC"), (unsigned int)SCRIPT_VERIFY_STRICTENC)
-    (string("DERSIG"), (unsigned int)SCRIPT_VERIFY_DERSIG)
     (string("LOW_S"), (unsigned int)SCRIPT_VERIFY_LOW_S)
     (string("SIGPUSHONLY"), (unsigned int)SCRIPT_VERIFY_SIGPUSHONLY)
     (string("MINIMALDATA"), (unsigned int)SCRIPT_VERIFY_MINIMALDATA)
@@ -98,6 +97,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
     //
     // verifyFlags is a comma separated list of script verification flags to apply, or "NONE"
     UniValue tests = read_json(std::string(json_tests::tx_valid, json_tests::tx_valid + sizeof(json_tests::tx_valid)));
+    std::string comment("");
 
     auto verifier = libzcash::ProofVerifier::Strict();
     ScriptError err;
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
         {
             if (test.size() != 3 || !test[1].isStr() || !test[2].isStr())
             {
-                BOOST_ERROR("Bad test: " << strTest);
+                BOOST_ERROR("Bad test: " << strTest << comment);
                 continue;
             }
 
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
             }
             if (!fValid)
             {
-                BOOST_ERROR("Bad test: " << strTest);
+                BOOST_ERROR("Bad test: " << strTest << comment);
                 continue;
             }
 
@@ -143,23 +143,30 @@ BOOST_AUTO_TEST_CASE(tx_valid)
             stream >> tx;
 
             CValidationState state;
-            BOOST_CHECK_MESSAGE(CheckTransaction(tx, state, verifier), strTest);
-            BOOST_CHECK(state.IsValid());
+            BOOST_CHECK_MESSAGE(CheckTransaction(tx, state, verifier), strTest + comment);
+            BOOST_CHECK_MESSAGE(state.IsValid(), comment);
 
             for (unsigned int i = 0; i < tx.vin.size(); i++)
             {
                 if (!mapprevOutScriptPubKeys.count(tx.vin[i].prevout))
                 {
-                    BOOST_ERROR("Bad test: " << strTest);
+                    BOOST_ERROR("Bad test: " << strTest << comment);
                     break;
                 }
 
                 unsigned int verify_flags = ParseScriptFlags(test[2].get_str());
                 BOOST_CHECK_MESSAGE(VerifyScript(tx.vin[i].scriptSig, mapprevOutScriptPubKeys[tx.vin[i].prevout],
                                                  verify_flags, TransactionSignatureChecker(&tx, i), &err),
-                                    strTest);
-                BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_OK, ScriptErrorString(err));
+                                    strTest + comment);
+                BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_OK, ScriptErrorString(err) + comment);
             }
+
+            comment = "";
+        }
+        else if (test.size() == 1)
+        {
+            comment += "\n# ";
+            comment += test[0].write();
         }
     }
 }
@@ -174,6 +181,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
     //
     // verifyFlags is a comma separated list of script verification flags to apply, or "NONE"
     UniValue tests = read_json(std::string(json_tests::tx_invalid, json_tests::tx_invalid + sizeof(json_tests::tx_invalid)));
+    std::string comment("");
 
     auto verifier = libzcash::ProofVerifier::Strict();
     ScriptError err;
@@ -184,7 +192,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
         {
             if (test.size() != 3 || !test[1].isStr() || !test[2].isStr())
             {
-                BOOST_ERROR("Bad test: " << strTest);
+                BOOST_ERROR("Bad test: " << strTest << comment);
                 continue;
             }
 
@@ -209,7 +217,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
             }
             if (!fValid)
             {
-                BOOST_ERROR("Bad test: " << strTest);
+                BOOST_ERROR("Bad test: " << strTest << comment);
                 continue;
             }
 
@@ -225,7 +233,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
             {
                 if (!mapprevOutScriptPubKeys.count(tx.vin[i].prevout))
                 {
-                    BOOST_ERROR("Bad test: " << strTest);
+                    BOOST_ERROR("Bad test: " << strTest << comment);
                     break;
                 }
 
@@ -233,8 +241,15 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
                 fValid = VerifyScript(tx.vin[i].scriptSig, mapprevOutScriptPubKeys[tx.vin[i].prevout],
                                       verify_flags, TransactionSignatureChecker(&tx, i), &err);
             }
-            BOOST_CHECK_MESSAGE(!fValid, strTest);
-            BOOST_CHECK_MESSAGE(err != SCRIPT_ERR_OK, ScriptErrorString(err));
+            BOOST_CHECK_MESSAGE(!fValid, strTest + comment);
+            BOOST_CHECK_MESSAGE(err != SCRIPT_ERR_OK, ScriptErrorString(err) + comment);
+
+            comment = "";
+        }
+        else if (test.size() == 1)
+        {
+            comment += "\n# ";
+            comment += test[0].write();
         }
     }
 }

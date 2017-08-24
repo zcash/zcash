@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2017 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -15,10 +16,12 @@
 
 /** 
  * secp256k1:
- * const unsigned int PRIVATE_KEY_SIZE = 279;
- * const unsigned int PUBLIC_KEY_SIZE  = 65;
- * const unsigned int SIGNATURE_SIZE   = 72;
- *
+ */
+const unsigned int PUBLIC_KEY_SIZE             = 65;
+const unsigned int COMPRESSED_PUBLIC_KEY_SIZE  = 33;
+const unsigned int SIGNATURE_SIZE              = 72;
+const unsigned int COMPACT_SIGNATURE_SIZE      = 65;
+/**
  * see www.keylength.com
  * script supports up to 75 for single byte push
  */
@@ -42,15 +45,18 @@ private:
      * Just store the serialized data.
      * Its length can very cheaply be computed from the first byte.
      */
-    unsigned char vch[65];
+    unsigned char vch[PUBLIC_KEY_SIZE];
+    static_assert(
+        PUBLIC_KEY_SIZE >= COMPRESSED_PUBLIC_KEY_SIZE,
+        "COMPRESSED_PUBLIC_KEY_SIZE is larger than PUBLIC_KEY_SIZE");
 
     //! Compute the length of a pubkey with a given first byte.
     unsigned int static GetLen(unsigned char chHeader)
     {
         if (chHeader == 2 || chHeader == 3)
-            return 33;
+            return COMPRESSED_PUBLIC_KEY_SIZE;
         if (chHeader == 4 || chHeader == 6 || chHeader == 7)
-            return 65;
+            return PUBLIC_KEY_SIZE;
         return 0;
     }
 
@@ -129,7 +135,7 @@ public:
     void Unserialize(Stream& s, int nType, int nVersion)
     {
         unsigned int len = ::ReadCompactSize(s);
-        if (len <= 65) {
+        if (len <= PUBLIC_KEY_SIZE) {
             s.read((char*)vch, len);
         } else {
             // invalid pubkey, skip available data
@@ -168,7 +174,7 @@ public:
     //! Check whether this is a compressed public key.
     bool IsCompressed() const
     {
-        return size() == 33;
+        return size() == COMPRESSED_PUBLIC_KEY_SIZE;
     }
 
     /**
@@ -176,6 +182,11 @@ public:
      * If this public key is not fully valid, the return value will be false.
      */
     bool Verify(const uint256& hash, const std::vector<unsigned char>& vchSig) const;
+
+    /**
+     * Check whether a signature is normalized (lower-S).
+     */
+    static bool CheckLowS(const std::vector<unsigned char>& vchSig);
 
     //! Recover a public key from a compact signature.
     bool RecoverCompact(const uint256& hash, const std::vector<unsigned char>& vchSig);
@@ -203,6 +214,17 @@ struct CExtPubKey {
     void Encode(unsigned char code[74]) const;
     void Decode(const unsigned char code[74]);
     bool Derive(CExtPubKey& out, unsigned int nChild) const;
+};
+
+/** Users of this module must hold an ECCVerifyHandle. The constructor and
+ *  destructor of these are not allowed to run in parallel, though. */
+class ECCVerifyHandle
+{
+    static int refcount;
+
+public:
+    ECCVerifyHandle();
+    ~ECCVerifyHandle();
 };
 
 #endif // BITCOIN_PUBKEY_H

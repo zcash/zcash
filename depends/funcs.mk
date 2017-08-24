@@ -22,7 +22,7 @@ endef
 define fetch_file
 (test -f $$($(1)_source_dir)/$(4) || \
   ( mkdir -p $$($(1)_download_dir) && echo Fetching $(1)... && \
-  ( $(build_DOWNLOAD) "$$($(1)_download_dir)/$(4).temp" "$(FALLBACK_DOWNLOAD_PATH)/$(4)" || \
+  ( $(build_DOWNLOAD) "$$($(1)_download_dir)/$(4).temp" "$(PRIORITY_DOWNLOAD_PATH)/$(4)" || \
     $(build_DOWNLOAD) "$$($(1)_download_dir)/$(4).temp" "$(2)/$(3)" ) && \
     echo "$(5)  $$($(1)_download_dir)/$(4).temp" > $$($(1)_download_dir)/.$(4).hash && \
     $(build_SHA256SUM) -c $$($(1)_download_dir)/.$(4).hash && \
@@ -42,6 +42,10 @@ $(foreach dep,$($(1)_all_dependencies),$(eval $(1)_build_id_deps+=$(dep)-$($(dep
 $(eval $(1)_build_id_long:=$(1)-$($(1)_version)-$($(1)_recipe_hash)-$(release_type) $($(1)_build_id_deps))
 $(eval $(1)_build_id:=$(shell echo -n "$($(1)_build_id_long)" | $(build_SHA256SUM) | cut -c-$(HASH_LENGTH)))
 final_build_id_long+=$($(package)_build_id_long)
+
+#override platform specific files and hashes
+$(eval $(1)_file_name=$(if $($(1)_file_name_$(host_os)),$($(1)_file_name_$(host_os)),$($(1)_file_name)))
+$(eval $(1)_sha256_hash=$(if $($(1)_sha256_hash_$(host_os)),$($(1)_sha256_hash_$(host_os)),$($(1)_sha256_hash)))
 
 #compute package-specific paths
 $(1)_build_subdir?=.

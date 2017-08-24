@@ -1,5 +1,4 @@
-Zclassic v1.0.9
-===========
+Zclassic v1.0.10-1
 
 NOTICE, the default ports have changed! The p2p port is now 8033 and rpcport is 8023
 
@@ -54,7 +53,7 @@ xcode-select --install
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 brew install cmake autoconf libtool automake coreutils pkgconfig gmp wget
 
-brew install gcc5 --without-multilib 
+brew install gcc5 --without-multilib
 ```
 
 Install
