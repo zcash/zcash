@@ -20,11 +20,29 @@ Security Warnings
 
 **VoteCoin is experimental and a work-in-progress.** Use at your own risk.
 
+
 Building
 --------
 
 Build VoteCoin along with most dependencies from source by running
-cd ./zcutil && ./votecoin_build.sh
+
+    cd ./zcutil
+    ./votecoin_build.sh
+
+
+Running
+-------
+
+    mkdir -p ~/.votecoin
+    echo "rpcuser=admin" >~/.votecoin/votecoin.conf
+    echo "rpcpassword=`head -c 32 /dev/urandom | base64`" >>~/.votecoin/votecoin.conf
+    echo "gen=1" >>~/.votecoin/votecoin.conf
+    echo "genproclimit=-1" >>~/.votecoin/votecoin.conf
+    echo "equihashsolver=tromp" >>~/.votecoin/votecoin.conf
+    $ ./src/votecoind
+
+Note, you may set gen=0 to disable mining.
+
 
 License
 -------
