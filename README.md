@@ -48,6 +48,33 @@ Running
     $ ./src/votecoind
 
 
+Generating Transparent address
+------------------------------
+
+    $ ./src/votecoin-cli getnewaddress
+    t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1
+
+
+Generating Shielded address
+---------------------------
+
+    $ ./src/votecoin-cli z_getnewaddress
+    zcBqWB8VDjVER7uLKb4oHp2v54v2a1jKd9o4FY7mdgQ3gDfG8MiZLvdQga8JK3t58yjXGjQHzMzkGUxSguSs6ZzqpgTNiZG
+
+
+Show balances
+-------------
+
+    $ ./src/votecoin-cli getbalance
+    $ ./src/votecoin-cli z_getbalance t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1
+    $ ./src/votecoin-cli z_getbalance zcBqWB8VDjVER7uLKb4oHp2v54v2a1jKd9o4FY7mdgQ3gDfG8MiZLvdQga8JK3t58yjXGjQHzMzkGUxSguSs6ZzqpgTNiZG
+
+
+Export wallet to a file (dump private keys)
+-------------------------------------------
+
+    $ ./src/votecoin-cli z_exportwallet exportfilename
+
 
 License
 -------
