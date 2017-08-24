@@ -29,19 +29,24 @@ Build VoteCoin along with most dependencies from source by running
     cd ./zcutil
     ./votecoin_build.sh
 
+This will also setup your votecoin.conf file in ~/.votecoin directory, if the file does not exist yet
+
+
+Mining
+------
+
+If you wish to start mining, add these lines to ~/.votecoin/votecoin.conf:
+
+    gen=1
+    genproclimit=-1
+    equihashsolver=tromp
+
 
 Running
 -------
 
-    mkdir -p ~/.votecoin
-    echo "rpcuser=admin" >~/.votecoin/votecoin.conf
-    echo "rpcpassword=`head -c 32 /dev/urandom | base64`" >>~/.votecoin/votecoin.conf
-    echo "gen=1" >>~/.votecoin/votecoin.conf
-    echo "genproclimit=-1" >>~/.votecoin/votecoin.conf
-    echo "equihashsolver=tromp" >>~/.votecoin/votecoin.conf
     $ ./src/votecoind
 
-Note, you may set gen=0 to disable mining.
 
 
 License
