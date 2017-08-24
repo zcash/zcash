@@ -17,6 +17,6 @@ if [ ! -r ~/.votecoin/votecoin.conf ]; then
 fi
 
 cd ../src/
-mv zcashd votecoind
-mv zcash-cli votecoin-cli
-mv zcash-tx votecoin-tx
+mv -f zcashd votecoind
+mv -f zcash-cli votecoin-cli
+mv -f zcash-tx votecoin-tx
