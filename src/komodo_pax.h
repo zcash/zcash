@@ -240,7 +240,7 @@ int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize)
                     double KMDBTC,BTCUSD,CNYUSD; uint32_t pvals[128];
                     if ( dpow_readprices(&data[len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals) > 0 )
                     {
-                        if ( 0 && lastcrc != crc32 )
+                        if ( 1 && lastcrc != crc32 )
                         {
                             for (i=0; i<32; i++)
                                 printf("%u ",pvals[i]);
@@ -570,8 +570,8 @@ uint64_t _komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uin
             //    fprintf(stderr,"[%llu] ",(long long)votes[numvotes-1-i]);
         }
     }
-    fprintf(stderr,"kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
-    fprintf(stderr,"komodo_paxprice nonz.%d of numvotes.%d seed.%llu %.8f\n",nonz,numvotes,(long long)seed,nonz!=0?dstr(1000. * (double)sum/nonz):0);
+    //fprintf(stderr,"kmdbtc %llu btcusd %llu ",(long long)kmdbtc,(long long)btcusd);
+    //fprintf(stderr,"komodo_paxprice nonz.%d of numvotes.%d seed.%llu %.8f\n",nonz,numvotes,(long long)seed,nonz!=0?dstr(1000. * (double)sum/nonz):0);
     if ( nonz <= (numvotes >> 1) )
     {
         return(0);
@@ -585,12 +585,12 @@ uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint
     if ( height >= 236000 && strcmp(rel,"kmd") == 0 )
     {
         usdkmd = _komodo_paxpriceB(seed,height,(char *)"USD",(char *)"KMD",SATOSHIDEN);
-        printf("komodo_paxpriceB USDKMD %llu\n",(long long)usdkmd);
         if ( strcmp("usd",base) == 0 )
             return(komodo_paxvol(basevolume,usdkmd) * 10);
         baseusd = _komodo_paxpriceB(seed,height,base,(char *)"USD",SATOSHIDEN);
         basekmd = (komodo_paxvol(basevolume,baseusd) * usdkmd) / 10000000;
-        printf("komodo_paxpriceB baseusd.%llu usdkmd.%llu %llu\n",(long long)baseusd,(long long)usdkmd,(long long)basekmd);
+        //if ( strcmp("KMD",base) == 0 )
+        //    printf("baseusd.%llu usdkmd.%llu %llu\n",(long long)baseusd,(long long)usdkmd,(long long)basekmd);
         return(basekmd);
     } else return(_komodo_paxpriceB(seed,height,base,rel,basevolume));
 }
