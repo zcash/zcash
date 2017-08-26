@@ -185,8 +185,8 @@ double PAX_BTCUSD(int32_t height,uint32_t btcusd)
         btcfactor = 100000.;
     else btcfactor = 1000.;
     BTCUSD = ((double)btcusd / (1000000000. / btcfactor));
-    if ( BTCUSD < 43 )
-        BTCUSD *= 100;
+    if ( height < 500000 && BTCUSD > 20000 )
+        BTCUSD /= 100;
     return(BTCUSD);
 }
 
