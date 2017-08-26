@@ -328,7 +328,11 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
             btcusd = pvals[i++];
             cnyusd = pvals[i++];
             KMDBTC = ((double)kmdbtc / (1000000000. * 1000.));
-            BTCUSD = ((double)btcusd / (1000000000. / 1000.));
+            double btcfactor;
+            if ( height > 464538 )
+                btcfactor = 100000.;
+            else btcfactor = 1000.;
+            BTCUSD = ((double)btcusd / (1000000000. / btcfactor));
             CNYUSD = ((double)cnyusd / 1000000000.);
             portable_mutex_lock(&komodo_mutex);
             PVALS = (uint32_t *)realloc(PVALS,(NUM_PRICES+1) * sizeof(*PVALS) * 36);
@@ -336,7 +340,7 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
             memcpy(&PVALS[36 * NUM_PRICES + 1],pvals,sizeof(*pvals) * 35);
             NUM_PRICES++;
             portable_mutex_unlock(&komodo_mutex);
-            if ( 0 )
+            if ( 1 )
                 printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d (%llu %llu %llu)\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES,(long long)kmdbtc,(long long)btcusd,(long long)cnyusd);
         }
     }
