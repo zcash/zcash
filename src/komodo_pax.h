@@ -176,6 +176,9 @@ void pax_rank(uint64_t *ranked,uint32_t *pvals)
     //printf("sum %llu\n",(long long)sum);
 };
 
+#define BTCFACTOR_TIMESTAMP 1503746319
+#define BTCFACTOR_HEIGHT 466266
+
 int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,double *BTCUSDp,double *CNYUSDp,uint32_t *pvals)
 {
     uint32_t kmdbtc,btcusd,cnyusd; int32_t i,n,nonz,len = 0;
@@ -193,7 +196,7 @@ int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,doubl
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&cnyusd);
     *KMDBTCp = ((double)kmdbtc / (1000000000. * 1000.));
     double btcfactor;
-    if ( *timestamp > 1503746319 )
+    if ( *timestamp > BTCFACTOR_TIMESTAMP )
         btcfactor = 100000.;
     else btcfactor = 1000.;
     *BTCUSDp = ((double)btcusd / (1000000000. / btcfactor));
@@ -333,7 +336,7 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
             cnyusd = pvals[i++];
             KMDBTC = ((double)kmdbtc / (1000000000. * 1000.));
             double btcfactor;
-            if ( height >= 466266 )
+            if ( height >= BTCFACTOR_HEIGHT )
                 btcfactor = 100000.;
             else btcfactor = 1000.;
             BTCUSD = ((double)btcusd / (1000000000. / btcfactor));
@@ -447,8 +450,7 @@ uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t re
                 usdkmd = ((uint64_t)kmdbtc * 1000000000) / btcusd;
                 if ( height >= 236000-10 )
                 {
-                    if ( height > 466266 )
-                        usdkmd = ((uint64_t)kmdbtc * btcusd) / ((height > 466266) ? 10000000 : 1000000000);
+                    usdkmd = ((uint64_t)kmdbtc * btcusd) / ((height >= BTCFACTOR_HEIGHT) ? 10000000 : 1000000000);
                     price = ((uint64_t)10000000000 * MINDENOMS[USD] / MINDENOMS[baseid]) / komodo_paxvol(usdvol,usdkmd);
                     //fprintf(stderr,"ht.%d kmdbtc.%llu btcusd.%llu base -> USD %llu, usdkmd %llu usdvol %llu -> %llu\n",height,(long long)kmdbtc,(long long)btcusd,(long long)baseusd,(long long)usdkmd,(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)));
                     //fprintf(stderr,"usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %llu %llu\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)),(long long)price);
