@@ -336,8 +336,8 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
             memcpy(&PVALS[36 * NUM_PRICES + 1],pvals,sizeof(*pvals) * 35);
             NUM_PRICES++;
             portable_mutex_unlock(&komodo_mutex);
-            if ( 0 )
-                printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d (%llu %llu %llu)\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES,(long long)kmdbtc,(long long)btcusd,(long long)cnyusd);
+            if ( 1 )
+                printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d (%llu %llu %llu) btcpval.%u\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES,(long long)kmdbtc,(long long)btcusd,(long long)cnyusd,pvals[33]);
         }
     }
 }
