@@ -262,7 +262,7 @@ int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize)
             } else printf("fread.%d error != fsize.%d\n",retval,fsize);
         } else printf("fsize.%d > maxsize.%d or data[%d]\n",fsize,maxsize,(int32_t)sizeof(data));
         fclose(fp);
-    }
+    } else printf("couldnt open %s\n",fname);
     return(n);
 }
 
