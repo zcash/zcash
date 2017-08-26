@@ -192,7 +192,11 @@ int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,doubl
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&btcusd); // *= 1000
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&cnyusd);
     *KMDBTCp = ((double)kmdbtc / (1000000000. * 1000.));
-    *BTCUSDp = ((double)btcusd / (1000000000. / 1000.));
+    double btcfactor;
+    if ( *timestamp > 1503746319 )
+        btcfactor = 100000.;
+    else btcfactor = 1000.;
+    *BTCUSDp = ((double)btcusd / (1000000000. / btcfactor));
     *CNYUSDp = ((double)cnyusd / 1000000000.);
     for (i=nonz=0; i<n-3; i++)
     {
@@ -328,7 +332,11 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
             btcusd = pvals[i++];
             cnyusd = pvals[i++];
             KMDBTC = ((double)kmdbtc / (1000000000. * 1000.));
-            BTCUSD = ((double)btcusd / (1000000000. / 1000.));
+            double btcfactor;
+            if ( height >= 466266 )
+                btcfactor = 100000.;
+            else btcfactor = 1000.;
+            BTCUSD = ((double)btcusd / (1000000000. / btcfactor));
             CNYUSD = ((double)cnyusd / 1000000000.);
             portable_mutex_lock(&komodo_mutex);
             PVALS = (uint32_t *)realloc(PVALS,(NUM_PRICES+1) * sizeof(*PVALS) * 36);
@@ -336,8 +344,8 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
             memcpy(&PVALS[36 * NUM_PRICES + 1],pvals,sizeof(*pvals) * 35);
             NUM_PRICES++;
             portable_mutex_unlock(&komodo_mutex);
-            if ( 1 )
-                printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d (%llu %llu %llu) btcpval.%u\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES,(long long)kmdbtc,(long long)btcusd,(long long)cnyusd,pvals[33]);
+            if ( 0 )
+                printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d (%llu %llu %llu)\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES,(long long)kmdbtc,(long long)btcusd,(long long)cnyusd);
         }
     }
 }
@@ -439,7 +447,8 @@ uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t re
                 usdkmd = ((uint64_t)kmdbtc * 1000000000) / btcusd;
                 if ( height >= 236000-10 )
                 {
-                    usdkmd = ((uint64_t)kmdbtc * btcusd) / 1000000000;
+                    if ( height > 466266 )
+                        usdkmd = ((uint64_t)kmdbtc * btcusd) / ((height > 466266) ? 10000000 : 1000000000);
                     price = ((uint64_t)10000000000 * MINDENOMS[USD] / MINDENOMS[baseid]) / komodo_paxvol(usdvol,usdkmd);
                     //fprintf(stderr,"ht.%d kmdbtc.%llu btcusd.%llu base -> USD %llu, usdkmd %llu usdvol %llu -> %llu\n",height,(long long)kmdbtc,(long long)btcusd,(long long)baseusd,(long long)usdkmd,(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)));
                     //fprintf(stderr,"usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %llu %llu\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)),(long long)price);
@@ -474,7 +483,7 @@ uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t re
 
 uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,char *base,char *rel,uint64_t basevolume,uint64_t kmdbtc,uint64_t btcusd)
 {
-    int32_t baseid=-1,relid=-1,i; uint32_t *ptr;
+    int32_t baseid=-1,relid=-1,i; uint32_t *ptr,*pvals;
     if ( height > 10 )
         height -= 10;
     if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
@@ -485,14 +494,15 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
             ptr = &PVALS[36 * i];
             if ( *ptr < height )
             {
+                pvals = &ptr[1];
                 if ( kmdbtcp != 0 && btcusdp != 0 )
                 {
-                    *kmdbtcp = ptr[MAX_CURRENCIES + 1] / 539;
-                    *btcusdp = ptr[MAX_CURRENCIES + 2] / 539;
+                    *kmdbtcp = pvals[MAX_CURRENCIES] / 539;
+                    *btcusdp = pvals[MAX_CURRENCIES + 1] / 539;
                 }
                 //portable_mutex_unlock(&komodo_mutex);
                 if ( kmdbtc != 0 && btcusd != 0 )
-                    return(komodo_paxcalc(height,&ptr[1],baseid,relid,basevolume,kmdbtc,btcusd));
+                    return(komodo_paxcalc(height,pvals,baseid,relid,basevolume,kmdbtc,btcusd));
                 else return(0);
             }
         }
