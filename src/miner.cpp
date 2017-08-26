@@ -411,7 +411,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                         ptr[i] = opret[i];
                     txNew.vout[1].nValue = 0;
                     //fprintf(stderr,"opretlen.%d\n",opretlen);
-                } else printf("null opretlen for prices\n");
+                } //else printf("null opretlen for prices\n");
             }
         }
         else if ( komodo_is_issuer() != 0 )

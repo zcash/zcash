@@ -262,7 +262,7 @@ int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize)
             } else printf("fread.%d error != fsize.%d\n",retval,fsize);
         } else printf("fsize.%d > maxsize.%d or data[%d]\n",fsize,maxsize,(int32_t)sizeof(data));
         fclose(fp);
-    } else printf("couldnt open %s\n",fname);
+    } //else printf("couldnt open %s\n",fname);
     return(n);
 }
 
@@ -683,11 +683,12 @@ void komodo_paxpricefeed(int32_t height,uint8_t *pricefeed,int32_t opretlen)
     numpvals = dpow_readprices(pricefeed,&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
     memset(&zero,0,sizeof(zero));
     komodo_stateupdate(height,0,0,0,zero,0,0,pvals,numpvals,0,0,0,0,0,0);
+    if ( 1 )
     {
         int32_t i;
         for (i=0; i<numpvals; i++)
             printf("%u ",pvals[i]);
-        printf("komodo_paxpricefeed vout OP_RETURN.%d prices numpvals.%d opretlen.%d\n",height,numpvals,opretlen);
+        printf("komodo_paxpricefeed vout OP_RETURN.%d prices numpvals.%d opretlen.%d kmdbtc %.8f BTCUSD %.8f CNYUSD %.8f\n",height,numpvals,opretlen,KMDBTC,BTCUSD,CNYUSD);
     }
 }
 
