@@ -116,7 +116,7 @@ extern uint8_t NOTARY_PUBKEY33[33];
 uint32_t Mining_start,Mining_height;
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33);
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33]);
-int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize);
+int32_t komodo_pax_opreturn(int32_t height,uint8_t *opret,int32_t maxsize);
 uint64_t komodo_paxtotal();
 int32_t komodo_baseid(char *origbase);
 int32_t komodo_is_issuer();
@@ -402,7 +402,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             int32_t i,opretlen; uint8_t opret[256],*ptr;
             if ( (nHeight % 60) == 0 || komodo_gateway_deposits(&txNew,(char *)"KMD",1) == 0 )
             {
-                if ( (opretlen= komodo_pax_opreturn(opret,sizeof(opret))) > 0 ) // have pricefeed
+                if ( (opretlen= komodo_pax_opreturn((int32_t)nHeight,opret,sizeof(opret))) > 0 ) // have pricefeed
                 {
                     txNew.vout.resize(2);
                     txNew.vout[1].scriptPubKey.resize(opretlen);

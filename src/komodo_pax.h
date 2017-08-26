@@ -176,10 +176,21 @@ void pax_rank(uint64_t *ranked,uint32_t *pvals)
     //printf("sum %llu\n",(long long)sum);
 };
 
-#define BTCFACTOR_TIMESTAMP 1503746319
 #define BTCFACTOR_HEIGHT 466266
 
-int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,double *BTCUSDp,double *CNYUSDp,uint32_t *pvals)
+double PAX_BTCUSD(int32_t height,uint32_t btcusd)
+{
+    double btcfactor,BTCUSD;
+    if ( height >= BTCFACTOR_HEIGHT )
+        btcfactor = 100000.;
+    else btcfactor = 1000.;
+    BTCUSD = ((double)btcusd / (1000000000. / btcfactor));
+    if ( BTCUSD < 43 )
+        BTCUSD *= 100;
+    return(BTCUSD);
+}
+
+int32_t dpow_readprices(int32_t height,uint8_t *data,uint32_t *timestampp,double *KMDBTCp,double *BTCUSDp,double *CNYUSDp,uint32_t *pvals)
 {
     uint32_t kmdbtc,btcusd,cnyusd; int32_t i,n,nonz,len = 0;
     if ( data[0] == 'P' && data[5] == 35 )
@@ -195,11 +206,7 @@ int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,doubl
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&btcusd); // *= 1000
     len += iguana_rwnum(0,&data[len],sizeof(uint32_t),(void *)&cnyusd);
     *KMDBTCp = ((double)kmdbtc / (1000000000. * 1000.));
-    double btcfactor;
-    if ( *timestamp > BTCFACTOR_TIMESTAMP )
-        btcfactor = 100000.;
-    else btcfactor = 1000.;
-    *BTCUSDp = ((double)btcusd / (1000000000. / btcfactor));
+    *BTCUSDp = PAX_BTCUSD(height,btcusd);
     *CNYUSDp = ((double)cnyusd / 1000000000.);
     for (i=nonz=0; i<n-3; i++)
     {
@@ -222,7 +229,7 @@ int32_t dpow_readprices(uint8_t *data,uint32_t *timestampp,double *KMDBTCp,doubl
     return(n);
 }
 
-int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize)
+int32_t komodo_pax_opreturn(int32_t height,uint8_t *opret,int32_t maxsize)
 {
     static uint32_t lastcrc;
     FILE *fp; char fname[512]; uint32_t crc32,check,timestamp; int32_t i,n=0,retval,fsize,len=0; uint8_t data[8192];
@@ -245,7 +252,7 @@ int32_t komodo_pax_opreturn(uint8_t *opret,int32_t maxsize)
                 if ( check == crc32 )
                 {
                     double KMDBTC,BTCUSD,CNYUSD; uint32_t pvals[128];
-                    if ( dpow_readprices(&data[len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals) > 0 )
+                    if ( dpow_readprices(height,&data[len],&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals) > 0 )
                     {
                         if ( 0 && lastcrc != crc32 )
                         {
@@ -335,11 +342,7 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
             btcusd = pvals[i++];
             cnyusd = pvals[i++];
             KMDBTC = ((double)kmdbtc / (1000000000. * 1000.));
-            double btcfactor;
-            if ( height >= BTCFACTOR_HEIGHT )
-                btcfactor = 100000.;
-            else btcfactor = 1000.;
-            BTCUSD = ((double)btcusd / (1000000000. / btcfactor));
+            BTCUSD = PAX_BTCUSD(height,btcusd);
             CNYUSD = ((double)cnyusd / 1000000000.);
             portable_mutex_lock(&komodo_mutex);
             PVALS = (uint32_t *)realloc(PVALS,(NUM_PRICES+1) * sizeof(*PVALS) * 36);
@@ -347,7 +350,7 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
             memcpy(&PVALS[36 * NUM_PRICES + 1],pvals,sizeof(*pvals) * 35);
             NUM_PRICES++;
             portable_mutex_unlock(&komodo_mutex);
-            if ( 0 )
+            if ( 1 )
                 printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d (%llu %llu %llu)\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES,(long long)kmdbtc,(long long)btcusd,(long long)cnyusd);
         }
     }
@@ -417,7 +420,7 @@ uint64_t komodo_paxcorrelation(uint64_t *votes,int32_t numvotes,uint64_t seed)
 
 uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t relid,uint64_t basevolume,uint64_t refkmdbtc,uint64_t refbtcusd)
 {
-    uint32_t pvalb,pvalr; uint64_t price,kmdbtc,btcusd,usdvol,baseusd,usdkmd,baserel,ranked[32];
+    uint32_t pvalb,pvalr; double BTCUSD; uint64_t price,kmdbtc,btcusd,usdvol,baseusd,usdkmd,baserel,ranked[32];
     if ( basevolume > KOMODO_PAXMAX )
     {
         printf("paxcalc overflow %.8f\n",dstr(basevolume));
@@ -450,7 +453,10 @@ uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t re
                 usdkmd = ((uint64_t)kmdbtc * 1000000000) / btcusd;
                 if ( height >= 236000-10 )
                 {
-                    usdkmd = ((uint64_t)kmdbtc * btcusd) / ((height >= BTCFACTOR_HEIGHT) ? 10000000 : 1000000000);
+                    BTCUSD = PAX_BTCUSD(height,btcusd);
+                    if ( height >= BTCFACTOR_HEIGHT && BTCUSD >= 43 )
+                        usdkmd = ((uint64_t)kmdbtc * btcusd) / 10000000;
+                    else usdkmd = ((uint64_t)kmdbtc * btcusd) / 1000000000;
                     price = ((uint64_t)10000000000 * MINDENOMS[USD] / MINDENOMS[baseid]) / komodo_paxvol(usdvol,usdkmd);
                     //fprintf(stderr,"ht.%d kmdbtc.%llu btcusd.%llu base -> USD %llu, usdkmd %llu usdvol %llu -> %llu\n",height,(long long)kmdbtc,(long long)btcusd,(long long)baseusd,(long long)usdkmd,(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)));
                     //fprintf(stderr,"usdkmd.%llu basevolume.%llu baseusd.%llu paxvol.%llu usdvol.%llu -> %llu %llu\n",(long long)usdkmd,(long long)basevolume,(long long)baseusd,(long long)komodo_paxvol(basevolume,baseusd),(long long)usdvol,(long long)(MINDENOMS[USD] * komodo_paxvol(usdvol,usdkmd) / (MINDENOMS[baseid]/100)),(long long)price);
@@ -692,7 +698,7 @@ int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *bas
 void komodo_paxpricefeed(int32_t height,uint8_t *pricefeed,int32_t opretlen)
 {
     double KMDBTC,BTCUSD,CNYUSD; uint32_t numpvals,timestamp,pvals[128]; uint256 zero;
-    numpvals = dpow_readprices(pricefeed,&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
+    numpvals = dpow_readprices(height,pricefeed,&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
     memset(&zero,0,sizeof(zero));
     komodo_stateupdate(height,0,0,0,zero,0,0,pvals,numpvals,0,0,0,0,0,0);
     if ( 1 )
