@@ -76,6 +76,8 @@ Export wallet to a file (dump private keys)
 
     $ ./src/votecoin-cli z_exportwallet exportfilename
 
+You may need to specify export directory path using for example "exportdir=/tmp" in your ~/.votecoin/votecoin.conf
+
 
 License
 -------
