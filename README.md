@@ -26,10 +26,11 @@ Building
 
 Build VoteCoin along with most dependencies from source by running
 
-    cd ./zcutil
-    ./votecoin_build.sh
+    git clone https://github.com/Tomas-M/VoteCoin.git
+    cd ./VoteCoin/zcutil
+    ./votecoin_build_debian.sh # for debian based systems
 
-This will also setup your votecoin.conf file in ~/.votecoin directory, if the file does not exist yet
+This will also setup your votecoin.conf file in ~/.votecoin directory, if the file does not exist yet.
 
 
 Mining

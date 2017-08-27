@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-apt-get install \
+sudo apt-get install \
       build-essential pkg-config libc6-dev m4 g++-multilib \
       autoconf libtool ncurses-dev unzip git python python-zmq \
       zlib1g-dev wget bsdmainutils automake
@@ -17,6 +17,6 @@ if [ ! -r ~/.votecoin/votecoin.conf ]; then
 fi
 
 cd ../src/
-mv -f zcashd votecoind
-mv -f zcash-cli votecoin-cli
-mv -f zcash-tx votecoin-tx
+cp -f zcashd votecoind
+cp -f zcash-cli votecoin-cli
+cp -f zcash-tx votecoin-tx
