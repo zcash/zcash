@@ -31,29 +31,6 @@ static const char DB_REINDEX_FLAG = 'R';
 static const char DB_LAST_BLOCK = 'l';
 
 
-void static BatchWriteAnchor(CLevelDBBatch &batch,
-                             const uint256 &croot,
-                             const ZCIncrementalMerkleTree &tree,
-                             const bool &entered)
-{
-    if (!entered)
-        batch.Erase(make_pair(DB_ANCHOR, croot));
-    else {
-        batch.Write(make_pair(DB_ANCHOR, croot), tree);
-    }
-}
-
-void static BatchWriteNullifier(CLevelDBBatch &batch, const uint256 &nf, const bool &entered) {
-    if (!entered)
-        batch.Erase(make_pair(DB_NULLIFIER, nf));
-    else
-        batch.Write(make_pair(DB_NULLIFIER, nf), true);
-}
-
-void static BatchWriteHashBestAnchor(CLevelDBBatch &batch, const uint256 &hash) {
-    batch.Write(DB_BEST_ANCHOR, hash);
-}
-
 CCoinsViewDB::CCoinsViewDB(std::string dbName, size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / dbName, nCacheSize, fMemory, fWipe) {
 }
 
@@ -126,7 +103,11 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
 
     for (CAnchorsMap::iterator it = mapAnchors.begin(); it != mapAnchors.end();) {
         if (it->second.flags & CAnchorsCacheEntry::DIRTY) {
-            BatchWriteAnchor(batch, it->first, it->second.tree, it->second.entered);
+            if (!it->second.entered)
+                batch.Erase(make_pair(DB_ANCHOR, it->first));
+            else {
+                batch.Write(make_pair(DB_ANCHOR, it->first), it->second.tree);
+            }
             // TODO: changed++?
         }
         CAnchorsMap::iterator itOld = it++;
@@ -135,7 +116,10 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
 
     for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end();) {
         if (it->second.flags & CNullifiersCacheEntry::DIRTY) {
-            BatchWriteNullifier(batch, it->first, it->second.entered);
+            if (!it->second.entered)
+                batch.Erase(make_pair(DB_NULLIFIER, it->first));
+            else
+                batch.Write(make_pair(DB_NULLIFIER, it->first), true);
             // TODO: changed++?
         }
         CNullifiersMap::iterator itOld = it++;
@@ -145,7 +129,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
     if (!hashBlock.IsNull())
         batch.Write(DB_BEST_BLOCK, hashBlock);
     if (!hashAnchor.IsNull())
-        BatchWriteHashBestAnchor(batch, hashAnchor);
+        batch.Write(DB_BEST_ANCHOR, hashAnchor);
 
     LogPrint("coindb", "Committing %u changed transactions (out of %u) to coin database...\n", (unsigned int)changed, (unsigned int)count);
     return db.WriteBatch(batch);
