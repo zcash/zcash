@@ -2,6 +2,8 @@ Release Process
 ====================
 Meta: There should always be a single release engineer to disambiguate responsibility.
 
+If this is a hotfix release, please see `./hotfix-process.md` before proceeding.
+
 ## Pre-release
 
 ### Github Milestone
@@ -39,6 +41,11 @@ release, so if you suspect this is necessary, double check with the
 whole engineering team.
 
 ## Release process
+
+In the commands below, <RELEASE> and <RELEASE_PREV> are prefixed with a v, ie.
+v1.0.9 (not 1.0.9).
+
+### Create the release branch
 
 Run the release script, which will verify you are on the latest clean
 checkout of master, create a branch, then commit standard automated
