@@ -27,6 +27,7 @@ def main(args=sys.argv[1:]):
             opts.RELEASE_VERSION,
             opts.RELEASE_PREV,
             opts.RELEASE_HEIGHT,
+            opts.HOTFIX,
         )
     except SystemExit as e:
         logging.error(str(e))
@@ -43,6 +44,12 @@ def parse_args(args):
         dest='REPO',
         type=str,
         help='Path to repository root.',
+    )
+    p.add_argument(
+        '--hotfix',
+        action='store_true',
+        dest='HOTFIX',
+        help='Use if this is a hotfix release from a non-master branch.',
     )
     p.add_argument(
         'RELEASE_VERSION',
@@ -63,9 +70,9 @@ def parse_args(args):
 
 
 # Top-level flow:
-def main_logged(release, releaseprev, releaseheight):
+def main_logged(release, releaseprev, releaseheight, hotfix):
     verify_releaseprev_tag(releaseprev)
-    initialize_git(release)
+    initialize_git(release, hotfix)
     patch_version_in_files(release, releaseprev)
     patch_release_height(releaseheight)
     commit('Versioning changes for {}.'.format(release.novtext))
@@ -124,16 +131,20 @@ def verify_releaseprev_tag(releaseprev):
 
 
 @phase('Initializing git.')
-def initialize_git(release):
+def initialize_git(release, hotfix):
     junk = sh_out('git', 'status', '--porcelain')
     if junk.strip():
         raise SystemExit('There are uncommitted changes:\n' + junk)
 
     branch = sh_out('git', 'rev-parse', '--abbrev-ref', 'HEAD').strip()
-    if branch != 'master':
+    if hotfix:
+        expected = 'hotfix-' + release.vtext
+    else:
+        expected = 'master'
+    if branch != expected:
         raise SystemExit(
-            "Expected branch 'master', found branch {!r}".format(
-                branch,
+            "Expected branch {!r}, found branch {!r}".format(
+                expected, branch,
             ),
         )
 
