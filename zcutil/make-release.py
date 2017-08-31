@@ -72,6 +72,7 @@ def parse_args(args):
 # Top-level flow:
 def main_logged(release, releaseprev, releaseheight, hotfix):
     verify_releaseprev_tag(releaseprev)
+    verify_version(release, releaseprev, hotfix)
     initialize_git(release, hotfix)
     patch_version_in_files(release, releaseprev)
     patch_release_height(releaseheight)
@@ -126,6 +127,26 @@ def verify_releaseprev_tag(releaseprev):
             .format(
                 latest.vtext,
                 releaseprev.vtext,
+            ),
+        )
+
+
+@phase('Checking version.')
+def verify_version(release, releaseprev, hotfix):
+    if not hotfix:
+        return
+
+    expected = Version(
+        releaseprev.major,
+        releaseprev.minor,
+        releaseprev.patch,
+        releaseprev.betarc,
+        releaseprev.hotfix + 1 if releaseprev.hotfix else 1,
+    )
+    if release != expected:
+        raise SystemExit(
+            "Expected {!r}, given {!r}".format(
+                expected, release,
             ),
         )
 
