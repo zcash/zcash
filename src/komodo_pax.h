@@ -185,7 +185,7 @@ double PAX_BTCUSD(int32_t height,uint32_t btcusd)
         btcfactor = 100000.;
     else btcfactor = 1000.;
     BTCUSD = ((double)btcusd / (1000000000. / btcfactor));
-    if ( height < 500000 && BTCUSD > 20000 )
+    if ( height >= BTCFACTOR_HEIGHT && height < 500000 && BTCUSD > 20000 && btcfactor == 100000. )
         BTCUSD /= 100;
     return(BTCUSD);
 }
@@ -454,7 +454,7 @@ uint64_t komodo_paxcalc(int32_t height,uint32_t *pvals,int32_t baseid,int32_t re
                 if ( height >= 236000-10 )
                 {
                     BTCUSD = PAX_BTCUSD(height,btcusd);
-                    if ( height < 500000 && BTCUSD > 20000 )
+                    if ( height < BTCFACTOR_HEIGHT || (height < 500000 && BTCUSD > 20000) )
                         usdkmd = ((uint64_t)kmdbtc * btcusd) / 1000000000;
                     else usdkmd = ((uint64_t)kmdbtc * btcusd) / 10000000;
                     ///if ( height >= BTCFACTOR_HEIGHT && BTCUSD >= 43 )
