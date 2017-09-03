@@ -75,7 +75,7 @@ if BUILD_BITCOIND
 endif
 
 if BUILD_BITCOIN_UTILS
-  bin_PROGRAMS += zcash-cli zcash-tx
+  bin_PROGRAMS += zcash-cli zcash-tx zcash-addrgen
 endif
 
 LIBZCASH_H = \
@@ -463,6 +463,23 @@ zcash_tx_LDADD = \
   $(LIBZCASH_LIBS)
 
 zcash_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
+#
+
+# zcash-addrgen (just copy&pasted from zcash-tx)
+zcash_addrgen_SOURCES = zcash-addrgen.cc
+zcash_addrgen_CPPFLAGS = $(BITCOIN_INCLUDES)
+zcash_addrgen_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+
+zcash_addrgen_LDADD = \
+  $(LIBUNIVALUE) \
+  $(LIBBITCOIN_COMMON) \
+  $(LIBBITCOIN_UTIL) \
+  $(LIBSECP256K1) \
+  $(LIBZCASH) \
+  $(LIBBITCOIN_CRYPTO) \
+  $(LIBZCASH_LIBS)
+
+zcash_addrgen_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 #
 
 # zcash protocol primitives #
