@@ -48,15 +48,13 @@ class LargeWalletTest(BitcoinTestFramework):
                 self.nodes[1].generate(1)
                 self.sync_all()
 
-        assert_equal(set(self.nodes[1].getrawmempool()), set(inputs))
-        print(self.nodes[1].getmempoolinfo())
         self.nodes[1].generate(1)
-        print(self.nodes[1].getmempoolinfo())
         self.sync_all()
         print('Node 0: %d transactions, %d UTXOs' %
               (len(self.nodes[0].listtransactions()), len(self.nodes[0].listunspent())))
         print('Node 1: %d transactions, %d UTXOs' %
               (len(self.nodes[1].listtransactions()), len(self.nodes[1].listunspent())))
+        assert_equal(len(self.nodes[0].listunspent()), len(inputs))
 
 if __name__ == '__main__':
     LargeWalletTest().main()
