@@ -525,6 +525,22 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 //uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
+/*uint64_t conv_NXTpassword(unsigned char *mysecret,unsigned char *mypublic,uint8_t *pass,int32_t passlen);
+
+
+UniValue passphrasewif(const UniValue& params, bool fHelp)
+{
+    UniValue ret(UniValue::VOBJ); char *passphrase,wifstr[64],coinaddr[64]; uint8_t tmptype,pubkey33[33]; void *ctx; uint256 privkey,pubkey;
+    passphrase = params[0].get_str().c_str();
+    conv_NXTpassword((void *)&privkey,(void *)&pubkey,(uint8_t *)passphrase,(int32_t)strlen(passphrase));
+    ctx = bitcoin_ctx();
+    bitcoin_priv2pub(ctx,pubkey33,coinaddr,privkey,0,60);
+    bitcoin_priv2wif(0,wifstr,privkey,188);
+    free(ctx);
+    ret.push_back(Pair("address",coinaddr));
+    ret.push_back(Pair("wif",wifstr));
+    return ret;
+}*/
 
 UniValue kvsearch(const UniValue& params, bool fHelp)
 {
