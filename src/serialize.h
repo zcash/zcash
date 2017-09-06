@@ -32,6 +32,9 @@
 
 static const unsigned int MAX_SIZE = 0x02000000;
 
+/** Maximum amount of memory (in bytes) to allocate at once when deserializing vectors. */
+static const unsigned int MAX_VECTOR_ALLOCATE = 5000000;
+
 /**
  * Dummy data type to identify deserializing constructors.
  *
@@ -775,7 +778,7 @@ void Unserialize_impl(Stream& is, prevector<N, T>& v, const V&)
     unsigned int nMid = 0;
     while (nMid < nSize)
     {
-        nMid += 5000000 / sizeof(T);
+        nMid += MAX_VECTOR_ALLOCATE / sizeof(T);
         if (nMid > nSize)
             nMid = nSize;
         v.resize(nMid);
@@ -843,7 +846,7 @@ void Unserialize_impl(Stream& is, std::vector<T, A>& v, const V&)
     unsigned int nMid = 0;
     while (nMid < nSize)
     {
-        nMid += 5000000 / sizeof(T);
+        nMid += MAX_VECTOR_ALLOCATE / sizeof(T);
         if (nMid > nSize)
             nMid = nSize;
         v.resize(nMid);
