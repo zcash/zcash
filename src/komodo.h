@@ -16,6 +16,12 @@
 #ifndef H_KOMODO_H
 #define H_KOMODO_H
 
+#ifdef _WIN32
+#define printf(...)
+#endif
+
+
+[11:05
 // Todo:
 // verify: reorgs
 
