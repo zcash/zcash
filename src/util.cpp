@@ -604,7 +604,14 @@ boost::filesystem::path GetConfigFile()
     char confname[512];
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         sprintf(confname,"%s.conf",ASSETCHAINS_SYMBOL);
-    else strcpy(confname,"komodo.conf");
+    else
+    {
+#ifdef __APPLE__
+        strcpy(confname,"Komodo.conf");
+#else
+        strcpy(confname,"komodo.conf");
+#endif
+    }
     boost::filesystem::path pathConfigFile(GetArg("-conf",confname));
     if (!pathConfigFile.is_complete())
         pathConfigFile = GetDataDir(false) / pathConfigFile;
