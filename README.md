@@ -47,7 +47,7 @@ The above mentioned command should configure your votecoin already by creating ~
 Mining
 ------
 
-If you wish to start mining, add these lines to ~/.votecoin/votecoin.conf:
+If you wish to start mining, append these lines at the end of ~/.votecoin/votecoin.conf:
 
     gen=1
     genproclimit=-1
