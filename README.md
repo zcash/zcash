@@ -33,6 +33,17 @@ Build VoteCoin along with most dependencies from source by running
 This will also setup your votecoin.conf file in ~/.votecoin directory, if the file does not exist yet.
 
 
+Configuring
+-----------
+
+The above mentioned command should configure your votecoin already by creating ~/.votecoin/votecoin.conf for you. The file can be generated manually by running
+
+    mkdir -p ~/.votecoin
+    echo "addnode=mainnet.votecoin.site" >~/.votecoin/votecoin.conf
+    echo "rpcuser=username" >>~/.votecoin/votecoin.conf
+    echo "rpcpassword=`head -c 32 /dev/urandom | base64`" >>~/.votecoin/votecoin.conf
+
+
 Mining
 ------
 
