@@ -9,7 +9,7 @@
 # To use:
 # - Copy to qa/rpc-tests/wallet_large.py
 # - Add wallet_large.py to RPC tests list
-# - ./qa/pull-tester/rpc-tests.sh wallet_large --noshutdown
+# - ./qa/pull-tester/rpc-tests.sh wallet_large --nocleanup
 # - Archive the resulting /tmp/test###### directory
 #
 
