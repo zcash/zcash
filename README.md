@@ -82,6 +82,25 @@ Show balances
     $ ./src/votecoin-cli z_getbalance zcBqWB8VDjVER7uLKb4oHp2v54v2a1jKd9o4FY7mdgQ3gDfG8MiZLvdQga8JK3t58yjXGjQHzMzkGUxSguSs6ZzqpgTNiZG
 
 
+Make transaction
+----------------
+
+    $ ./src/votecoin-cli z_sendmany FROM_ADDR '[{"address": "TO_ADDR", "amount": 123}]' 1 0
+
+In the above mentioned example, both FROM_ADDR and TO_ADDR can be either T addresses or Z addresses or combination.
+The last two numbers (1 0) stand for minConf and fee. In the example above, the coins on FROM_ADDR must have
+at least 1 confirmation, and fee is set to zero.
+
+Remember that coinbase transaction (sending newly mined coins) must be done from a T address to a Z address.
+So if you wish to send newly mined coins to a T address, you need to send them to a Z address first and then
+make another transaction from that Z address to the T address destination.
+
+After a transaction is executed using z_sendmany, you can check its status by using:
+
+    $ ./src/votecoin-cli z_getoperationresult
+
+
+
 Export wallet to a file (dump private keys)
 -------------------------------------------
 
