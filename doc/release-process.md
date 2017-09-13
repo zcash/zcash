@@ -91,6 +91,22 @@ signed. **CAUTION:** Remember the `v` at the beginning here:
 - If all is well, the DevOps engineer will build the Debian packages and update the
   [apt.z.cash package repository](https://apt.z.cash).
 
+## Add release notes to GitHub
+
+- Go to the [GitHub tags page](https://github.com/zcash/zcash/tags).
+- Click "Add release notes" beside the tag for this release.
+- Copy the release blog post into the release description, and edit to suit
+  publication on GitHub. See previous release notes for examples.
+- Click "Publish release" if publishing the release blog post now, or
+  "Save draft" to store the notes internally (and then return later to publish
+  once the blog post is up).
+
+Note that some GitHub releases are marked as "Verified", and others as
+"Unverified". This is related to the GPG signature on the release tag - in
+particular, GitHub needs the corresponding public key to be uploaded to a
+corresponding GitHub account. If this release is marked as "Unverified", click
+the marking to see what GitHub wants to be done.
+
 ## Post Release Task List
 
 ### Deploy testnet
@@ -106,6 +122,6 @@ Then, verify that nodes can connect to the testnet server, and update the guide 
 
 ### Update the 1.0 User Guide
 
-### Publish the release announcement (blog, zcash-dev, slack)
+### Publish the release announcement (blog, github, zcash-dev, slack)
 
 ## Celebrate
