@@ -17,6 +17,7 @@
 #include "main.h"
 #include "miner.h"
 #include "pow.h"
+#include "rpcserver.h"
 #include "script/sign.h"
 #include "sodium.h"
 #include "streams.h"
@@ -403,5 +404,19 @@ double benchmark_connectblock_slow()
     SelectParamsFromCommandLine();
 
     return duration;
+}
+
+double benchmark_sendtoaddress(CAmount amount)
+{
+    UniValue params(UniValue::VARR);
+    auto addr = getnewaddress(params, false);
+
+    params.push_back(addr);
+    params.push_back(ValueFromAmount(amount));
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+    auto txid = sendtoaddress(params, false);
+    return timer_stop(tv_start);
 }
 
