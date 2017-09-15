@@ -1,7 +1,6 @@
 package=libsnark
-$(package)_download_path=https://github.com/z-classic/$(package)/archive/
+$(package)_download_path=https://github.com/ZencashOfficial/$(package)/releases/download/v20170131/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
-$(package)_download_file=$($(package)_git_commit).tar.gz
 
 $(package)_sha256_hash=0c243deec42b133948cd5d77848f7988a79e82e5bf570c39d9a96ee7a42f5302
 $(package)_git_commit=3854b20c25e8bc567aab2b558dec84d45f4a3e73
