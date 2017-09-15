@@ -18,13 +18,24 @@ repository:
     $ git branch hotfix-<RELEASE> <RELEASE_PREV>
     $ git push 'git@github.com:zcash/zcash' hotfix-<RELEASE>
 
+## Implement hotfix changes
+
+Hotfix changes are implemented the same way as regular changes (developers work
+in separate branches per change, and push the branches to their own repositories),
+except that the branches are based on the hotfix branch instead of master:
+
+    $ git checkout hotfix-<RELEASE>
+    $ git checkout -b <BRANCH_NAME>
+
 ## Merge hotfix PRs
 
-Developer should create hotfix PRs based on the hotfix branch. Each PR should be
-reviewed as normal, and then the following process should be used to merge:
+Hotfix PRs are created like regular PRs, except using the hotfix branch as the
+base instead of master. Each PR should be reviewed as normal, and then the
+following process should be used to merge:
 
-- A CI merge build is manually run, by force-triggering the pr-merge builder
-  with the following fields set:
+- A CI merge build is manually run by logging into the CI server, going to the
+  pr-merge builder, clicking the "force" button, and entering the following
+  values:
 
   - Repository: https://github.com/<DevUser>/zcash
     - <DevUser> must be in the set of "safe" users as-specified in the CI
