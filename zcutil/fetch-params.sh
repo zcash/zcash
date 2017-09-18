@@ -28,7 +28,7 @@ function fetch_params {
             --retry-connrefused --waitretry=3 --timeout=30 \
             "$url"
 
-        "$SHA256CMD" $SHA256ARGS --check <<EOF
+        "$SHA256CMD" $SHA256ARGS -c <<EOF
 $expectedhash  $dlname
 EOF
 

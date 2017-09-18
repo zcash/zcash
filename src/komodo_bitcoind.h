@@ -346,6 +346,60 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     return(retstr2);
 }
 
+int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp)
+{
+    char *jsonstr,params[256],*userpass; uint16_t port; cJSON *json,*item; int32_t height = 0,txid_height = 0,txid_confirmations = 0;
+    params[0] = 0;
+    *kmdnotarized_heightp = 0;
+    if ( strcmp(dest,"KMD") == 0 )
+    {
+        port = 7771;
+        userpass = KMDUSERPASS;
+    }
+    else if ( strcmp(dest,"BTC") == 0 )
+    {
+        port = 8332;
+        userpass = BTCUSERPASS;
+    }
+    else return(0);
+    if ( userpass[0] != 0 )
+    {
+        if ( (jsonstr= komodo_issuemethod(userpass,(char *)"getinfo",params,port)) != 0 )
+        {
+            //printf("(%s)\n",jsonstr);
+            if ( (json= cJSON_Parse(jsonstr)) != 0 )
+            {
+                if ( (item= jobj(json,(char *)"result")) != 0 )
+                {
+                    height = jint(item,(char *)"blocks");
+                    *kmdnotarized_heightp = strcmp(dest,"KMD") == 0 ? jint(item,(char *)"notarized") : height;
+                }
+                free_json(json);
+            }
+            free(jsonstr);
+        }
+        sprintf(params,"[\"%s\", 1]",txidstr);
+        if ( (jsonstr= komodo_issuemethod(userpass,(char *)"getrawtransaction",params,port)) != 0 )
+        {
+            //printf("(%s)\n",jsonstr);
+            if ( (json= cJSON_Parse(jsonstr)) != 0 )
+            {
+                if ( (item= jobj(json,(char *)"result")) != 0 )
+                {
+                    txid_confirmations = jint(item,(char *)"confirmations");
+                    if ( txid_confirmations > 0 && height > txid_confirmations )
+                        txid_height = height - txid_confirmations;
+                    else txid_height = height;
+                    //printf("height.%d tconfs.%d txid_height.%d\n",height,txid_confirmations,txid_height);
+                }
+                free_json(json);
+            }
+            free(jsonstr);
+        }
+    }
+    return(txid_height);
+}
+
 int32_t komodo_verifynotarizedscript(int32_t height,uint8_t *script,int32_t len,uint256 NOTARIZED_HASH)
 {
     int32_t i; uint256 hash; char params[256];
@@ -499,6 +553,7 @@ uint32_t komodo_txtime(uint256 hash)
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
     char symbol[16],dest[16]; struct komodo_state *sp;
+    //fprintf(stderr,"disconnect ht.%d\n",pindex->nHeight);
     komodo_init(pindex->nHeight);
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
@@ -594,6 +649,27 @@ int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex)
     return(0);
 }
 
+CBlockIndex *komodo_chainactive(int32_t height)
+{
+    if ( chainActive.Tip() != 0 )
+    {
+        if ( height <= chainActive.Tip()->nHeight )
+            return(chainActive[height]);
+        // else fprintf(stderr,"komodo_chainactive height %d > active.%d\n",height,chainActive.Tip()->nHeight);
+    }
+    //fprintf(stderr,"komodo_chainactive null chainActive.Tip() height %d\n",height);
+    return(0);
+}
+
+uint32_t komodo_heightstamp(int32_t height)
+{
+    CBlockIndex *ptr;
+    if ( height > 0 && (ptr= komodo_chainactive(height)) != 0 )
+        return(ptr->nTime);
+    else fprintf(stderr,"komodo_heightstamp null ptr for block.%d\n",height);
+    return(0);
+}
+
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
     CBlock block;
@@ -616,11 +692,6 @@ void komodo_connectpindex(CBlockIndex *pindex)
     CBlock block;
     if ( komodo_blockload(block,pindex) == 0 )
         komodo_connectblock(pindex,block);
-}
-
-CBlockIndex *komodo_chainactive(int32_t height)
-{
-    return(chainActive[height]);
 }
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
@@ -740,10 +811,12 @@ int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 has
     return(0);
 }
 
-uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n)
+uint32_t komodo_interest_args(uint32_t *txheighttimep,int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n)
 {
     LOCK(cs_main);
     CTransaction tx; uint256 hashBlock; CBlockIndex *pindex,*tipindex;
+    *txheighttimep = *txheightp = *tiptimep = 0;
+    *valuep = 0;
     if ( !GetTransaction(hash,tx,hashBlock,true) )
         return(0);
     uint32_t locktime = 0;
@@ -753,6 +826,7 @@ uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *va
         {
             *valuep = tx.vout[n].nValue;
             *txheightp = pindex->nHeight;
+            *txheighttimep = pindex->nTime;
             *tiptimep = tipindex->nTime;
             locktime = tx.nLockTime;
             //fprintf(stderr,"tx locktime.%u %.8f height.%d | tiptime.%u\n",locktime,(double)*valuep/COIN,*txheightp,*tiptimep);
@@ -764,8 +838,8 @@ uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *va
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue)
 {
-    uint64_t value; uint32_t tiptime;
-    if ( (*locktimep= komodo_interest_args(txheightp,&tiptime,&value,hash,n)) != 0 )
+    uint64_t value; uint32_t tiptime,txheighttimep;
+    if ( (*locktimep= komodo_interest_args(&txheighttimep,txheightp,&tiptime,&value,hash,n)) != 0 )
     {
         if ( (checkvalue == 0 || value == checkvalue) && (checkheight == 0 || *txheightp == checkheight) )
             return(komodo_interest(*txheightp,value,*locktimep,tiptime));
@@ -781,7 +855,32 @@ int32_t komodo_isrealtime(int32_t *kmdheightp)
     if ( (sp= komodo_stateptrget((char *)"KMD")) != 0 )
         *kmdheightp = sp->CURRENT_HEIGHT;
     else *kmdheightp = 0;
-    if ( (pindex= chainActive.Tip()) != 0 && pindex->nHeight == (int32_t)komodo_longestchain() )
+    if ( (pindex= chainActive.Tip()) != 0 && pindex->nHeight >= (int32_t)komodo_longestchain() )
         return(1);
     else return(0);
 }
+
+int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag)
+{
+    uint32_t cmptime = nTime;
+    if ( KOMODO_REWIND == 0 && ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD ) //1473793441 )
+    {
+        if ( txheight > 246748 )
+        {
+            if ( txheight < 247205 )
+                cmptime -= 16000;
+            if ( (int64_t)tx.nLockTime < cmptime-3600 )
+            {
+                if ( tx.nLockTime != 1477258935 || dispflag != 0 )
+                {
+                    //fprintf(stderr,"komodo_validate_interest.%d reject.%d [%d] locktime %u cmp2.%u\n",dispflag,txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,cmptime);
+                }
+                return(-1);
+            }
+            if ( 0 && dispflag != 0 )
+                fprintf(stderr,"validateinterest.%d accept.%d [%d] locktime %u cmp2.%u\n",dispflag,(int32_t)txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(int32_t)tx.nLockTime,cmptime);
+        }
+    }
+    return(0);
+}
+

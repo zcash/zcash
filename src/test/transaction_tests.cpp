@@ -23,19 +23,20 @@
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/assign/list_of.hpp>
-#include "json/json_spirit_writer_template.h"
+
+#include <univalue.h>
 
 #include "zcash/Note.hpp"
 #include "zcash/Address.hpp"
 #include "zcash/Proof.hpp"
 
 using namespace std;
-using namespace json_spirit;
 
 // In script_tests.cpp
-extern Array read_json(const std::string& jsondata);
+extern UniValue read_json(const std::string& jsondata);
 
 static std::map<string, unsigned int> mapFlagNames = boost::assign::map_list_of
     (string("NONE"), (unsigned int)SCRIPT_VERIFY_NONE)
@@ -96,33 +97,32 @@ BOOST_AUTO_TEST_CASE(tx_valid)
     // ... where all scripts are stringified scripts.
     //
     // verifyFlags is a comma separated list of script verification flags to apply, or "NONE"
-    Array tests = read_json(std::string(json_tests::tx_valid, json_tests::tx_valid + sizeof(json_tests::tx_valid)));
+    UniValue tests = read_json(std::string(json_tests::tx_valid, json_tests::tx_valid + sizeof(json_tests::tx_valid)));
 
     auto verifier = libzcash::ProofVerifier::Strict();
     ScriptError err;
-    BOOST_FOREACH(Value& tv, tests)
-    {
-        Array test = tv.get_array();
-        string strTest = write_string(tv, false);
-        if (test[0].type() == array_type)
+    for (size_t idx = 0; idx < tests.size(); idx++) {
+        UniValue test = tests[idx];
+        string strTest = test.write();
+        if (test[0].isArray())
         {
-            if (test.size() != 3 || test[1].type() != str_type || test[2].type() != str_type)
+            if (test.size() != 3 || !test[1].isStr() || !test[2].isStr())
             {
                 BOOST_ERROR("Bad test: " << strTest);
                 continue;
             }
 
             map<COutPoint, CScript> mapprevOutScriptPubKeys;
-            Array inputs = test[0].get_array();
+            UniValue inputs = test[0].get_array();
             bool fValid = true;
-            BOOST_FOREACH(Value& input, inputs)
-            {
-                if (input.type() != array_type)
+            for (size_t inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
+	        const UniValue& input = inputs[inpIdx];
+                if (!input.isArray())
                 {
                     fValid = false;
                     break;
                 }
-                Array vinput = input.get_array();
+                UniValue vinput = input.get_array();
                 if (vinput.size() != 3)
                 {
                     fValid = false;
@@ -173,33 +173,32 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
     // ... where all scripts are stringified scripts.
     //
     // verifyFlags is a comma separated list of script verification flags to apply, or "NONE"
-    Array tests = read_json(std::string(json_tests::tx_invalid, json_tests::tx_invalid + sizeof(json_tests::tx_invalid)));
+    UniValue tests = read_json(std::string(json_tests::tx_invalid, json_tests::tx_invalid + sizeof(json_tests::tx_invalid)));
 
     auto verifier = libzcash::ProofVerifier::Strict();
     ScriptError err;
-    BOOST_FOREACH(Value& tv, tests)
-    {
-        Array test = tv.get_array();
-        string strTest = write_string(tv, false);
-        if (test[0].type() == array_type)
+    for (size_t idx = 0; idx < tests.size(); idx++) {
+        UniValue test = tests[idx];
+        string strTest = test.write();
+        if (test[0].isArray())
         {
-            if (test.size() != 3 || test[1].type() != str_type || test[2].type() != str_type)
+            if (test.size() != 3 || !test[1].isStr() || !test[2].isStr())
             {
                 BOOST_ERROR("Bad test: " << strTest);
                 continue;
             }
 
             map<COutPoint, CScript> mapprevOutScriptPubKeys;
-            Array inputs = test[0].get_array();
+            UniValue inputs = test[0].get_array();
             bool fValid = true;
-            BOOST_FOREACH(Value& input, inputs)
-            {
-                if (input.type() != array_type)
+	    for (size_t inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
+	        const UniValue& input = inputs[inpIdx];
+                if (!input.isArray())
                 {
                     fValid = false;
                     break;
                 }
-                Array vinput = input.get_array();
+                UniValue vinput = input.get_array();
                 if (vinput.size() != 3)
                 {
                     fValid = false;
@@ -475,6 +474,7 @@ BOOST_AUTO_TEST_CASE(test_simple_joinsplit_invalidity)
         jsdesc->nullifiers[1] = GetRandHash();
 
         newTx.vjoinsplit.push_back(JSDescription());
+        jsdesc = &newTx.vjoinsplit[0]; // Fixes #2026. Related PR #2078.
         JSDescription *jsdesc2 = &newTx.vjoinsplit[1];
 
         jsdesc2->nullifiers[0] = GetRandHash();
@@ -560,7 +560,7 @@ BOOST_AUTO_TEST_CASE(test_IsStandard)
     string reason;
     BOOST_CHECK(IsStandardTx(t, reason));
 
-    t.vout[0].nValue = 501; // dust
+    t.vout[0].nValue = 53; // dust
     BOOST_CHECK(!IsStandardTx(t, reason));
 
     t.vout[0].nValue = 2730; // not dust
@@ -639,7 +639,7 @@ BOOST_AUTO_TEST_CASE(test_IsStandardV2)
     BOOST_CHECK(IsStandardTx(t, reason));
 
     // v2 transactions can still be non-standard for the same reasons as v1.
-    t.vout[0].nValue = 501; // dust
+    t.vout[0].nValue = 53; // dust
     BOOST_CHECK(!IsStandardTx(t, reason));
 
     // v3 is not standard.

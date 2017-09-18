@@ -1,0 +1,88 @@
+#!/bin/bash  
+set -x
+delay=10
+source pubkey.txt
+echo $pubkey
+
+./komodod -pubkey=$pubkey -ac_name=REVS -ac_supply=1300000 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=SUPERNET -ac_supply=816061 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=DEX -ac_supply=999999 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=PANGEA -ac_supply=999999 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=JUMBLR -ac_supply=999999 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=BET -ac_supply=999999 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=CRYPTO -ac_supply=999999 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=HODL -ac_supply=9999999 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=SHARK -ac_supply=1401 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=BOTS -ac_supply=999999 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=MGW -ac_supply=999999 -addnode=78.47.196.146 $1 &
+#./komodod -pubkey=$pubkey -ac_name=MVP -ac_supply=1000000 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=COQUI -ac_supply=72000000 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=WLC -ac_supply=210000000 -addnode=148.251.190.89 $1 &
+./komodod -pubkey=$pubkey -ac_name=KV -ac_supply=1000000 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=CEAL -ac_supply=366666666 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=MESH -ac_supply=1000007 -addnode=78.47.196.146 $1 &
+sleep $delay
+
+./komodod -pubkey=$pubkey -ac_name=USD -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=EUR -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=JPY -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=GBP -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=AUD -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=CAD -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=CHF -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=NZD -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=CNY -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=RUB -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=MXN -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=BRL -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=INR -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=HKD -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=TRY -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=ZAR -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=PLN -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=NOK -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=SEK -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=DKK -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=CZK -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=HUF -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=ILS -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=KRW -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=MYR -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=PHP -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=RON -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=SGD -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=THB -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=BGN -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=IDR -addnode=78.47.196.146 $1  &
+sleep $delay
+./komodod -pubkey=$pubkey -ac_name=HRK -addnode=78.47.196.146 $1  &

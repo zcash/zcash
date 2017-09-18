@@ -56,7 +56,7 @@ struct CDiskBlockPos
 
 };
 
-enum BlockStatus {
+enum BlockStatus: uint32_t {
     //! Unused.
     BLOCK_VALID_UNKNOWN      =    0,
 
@@ -141,6 +141,9 @@ public:
     //! The anchor for the tree state up to the start of this block
     uint256 hashAnchor;
 
+    //! (memory only) The anchor for the tree state up to the end of this block
+    uint256 hashAnchorEnd;
+
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
@@ -167,6 +170,7 @@ public:
         nChainTx = 0;
         nStatus = 0;
         hashAnchor = uint256();
+        hashAnchorEnd = uint256();
         nSequenceId = 0;
 
         nVersion       = 0;

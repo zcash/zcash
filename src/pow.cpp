@@ -16,10 +16,13 @@
 
 #include "sodium.h"
 
+#ifdef ENABLE_RUST
+#include "librustzcash.h"
+#endif // ENABLE_RUST
+
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
-
     // Genesis block
     if (pindexLast == NULL )
         return nProofOfWorkLimit;
@@ -96,6 +99,14 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
     // H(I||V||...
     crypto_generichash_blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
 
+    #ifdef ENABLE_RUST
+    // Ensure that our Rust interactions are working in production builds. This is
+    // temporary and should be removed.
+    {
+        assert(librustzcash_xor(0x0f0f0f0f0f0f0f0f, 0x1111111111111111) == 0x1e1e1e1e1e1e1e1e);
+    }
+    #endif // ENABLE_RUST
+
     bool isValid;
     EhIsValidSolution(n, k, state, pblock->nSolution, isValid);
     if (!isValid)
@@ -112,7 +123,7 @@ int8_t komodo_minerid(int32_t height,uint8_t *pubkey33);
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
 extern int32_t KOMODO_CHOSEN_ONE;
 #define KOMODO_ELECTION_GAP 2000
-
+ 
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height);
 int32_t KOMODO_LOADINGBLOCKS;
 
@@ -156,24 +167,39 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( KOMODO_LOADINGBLOCKS == 0 && height > 188000 && KOMODO_REWIND == 0 )//186269, 182507&& komodo_chainactive(height) != 0 && nonzpkeys > 0
+        if ( (height < 235300 || height >= 236000) && KOMODO_LOADINGBLOCKS == 0 && height > 188000 )
+            //&&  )//186269, 182507&& komodo_chainactive(height) != 0 && nonzpkeys > 0
         {
-            int32_t i;
             for (i=31; i>=0; i--)
                 printf("%02x",((uint8_t *)&hash)[i]);
             printf(" hash vs ");
             for (i=31; i>=0; i--)
                 printf("%02x",((uint8_t *)&bnTarget)[i]);
-            printf(" ht.%d REWIND.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,KOMODO_REWIND,special,notaryid,height,(height % 35));
+            printf(" ht.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,special,notaryid,height,(height % 35));
             for (i=0; i<33; i++)
                 printf("%02x",pubkey33[i]);
             printf(" <- pubkey\n");
             for (i=0; i<66; i++)
                 printf("%d ",mids[i]);
             printf(" minerids from ht.%d\n",height);
-            if ( notaryid >= 0 )
+            if ( KOMODO_REWIND == 0 && (notaryid >= 0 || height > 225000) )
+            {
+                fprintf(stderr,"pow error height.%d loading.%d notaryid.%d\n",height,KOMODO_LOADINGBLOCKS,notaryid);
                 return error("CheckProofOfWork(): hash doesn't match nBits");
-        }
+            } else fprintf(stderr,"skip return error height.%d loading.%d\n",height,KOMODO_LOADINGBLOCKS);
+        } //else fprintf(stderr,"skip height.%d loading.%d\n",height,KOMODO_LOADINGBLOCKS);
+    }
+    if ( 0 && height > 248000 )
+    {
+        for (i=31; i>=0; i--)
+            fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+        fprintf(stderr," hash vs ");
+        for (i=31; i>=0; i--)
+            fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
+        fprintf(stderr," POW ok for ht.%d notaryid.%d: ",height,notaryid);
+        for (i=0; i<33; i++)
+            fprintf(stderr,"%02x",pubkey33[i]);
+        fprintf(stderr,"\n");
     }
     return true;
 }

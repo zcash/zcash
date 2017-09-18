@@ -44,13 +44,22 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
     for (int i = 0; i < numKeys; i++) {
         ASSERT_TRUE(pWallet->GetKeyFromPool(newKey));
         pubkeys[0] = newKey;
+        pWallet->SetAddressBook(newKey.GetID(), "", "receive");
+
         ASSERT_TRUE(pWallet->GetKeyFromPool(newKey));
         pubkeys[1] = newKey;
+        pWallet->SetAddressBook(newKey.GetID(), "", "receive");
+
         ASSERT_TRUE(pWallet->GetKeyFromPool(newKey));
         pubkeys[2] = newKey;
+        pWallet->SetAddressBook(newKey.GetID(), "", "receive");
+
         CScript result = GetScriptForMultisig(2, pubkeys);
         ASSERT_FALSE(result.size() > MAX_SCRIPT_ELEMENT_SIZE);
         CScriptID innerID(result);
+        pWallet->AddCScript(result);
+        pWallet->SetAddressBook(innerID, "", "receive");
+
         std::string address = CBitcoinAddress(innerID).ToString();
         addresses.push_back(address);
     }
@@ -92,12 +101,16 @@ TEST(founders_reward_test, general) {
 
     CChainParams params = Params();
     
-    // First testnet reward:
-    // address = t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi
-    // script = OP_HASH160 ef775f1f997f122a062fff1a2d7443abd1f9c642 OP_EQUAL
-    // raw script = a914ef775f1f997f122a062fff1a2d7443abd1f9c64287
+    // Fourth testnet reward:
+    // address = t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy
+    // script.ToString() = OP_HASH160 55d64928e69829d9376c776550b6cc710d427153 OP_EQUAL
+    // HexStr(script) = a91455d64928e69829d9376c776550b6cc710d42715387
     EXPECT_EQ(params.GetFoundersRewardScriptAtHeight(1), ParseHex("a914ef775f1f997f122a062fff1a2d7443abd1f9c64287"));
     EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(1), "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi");
+    EXPECT_EQ(params.GetFoundersRewardScriptAtHeight(53126), ParseHex("a914ac67f4c072668138d88a86ff21b27207b283212f87"));
+    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(53126), "t2NGQjYMQhFndDHguvUw4wZdNdsssA6K7x2");
+    EXPECT_EQ(params.GetFoundersRewardScriptAtHeight(53127), ParseHex("a91455d64928e69829d9376c776550b6cc710d42715387"));
+    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(53127), "t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy");
 
     int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
     

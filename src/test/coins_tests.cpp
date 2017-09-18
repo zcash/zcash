@@ -143,9 +143,9 @@ public:
                      memusage::DynamicUsage(cacheAnchors) +
                      memusage::DynamicUsage(cacheNullifiers);
         for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
-            ret += memusage::DynamicUsage(it->second.coins);
+            ret += it->second.coins.DynamicMemoryUsage();
         }
-        BOOST_CHECK_EQUAL(memusage::DynamicUsage(*this), ret);
+        BOOST_CHECK_EQUAL(DynamicMemoryUsage(), ret);
     }
 
 };
@@ -756,7 +756,7 @@ BOOST_AUTO_TEST_CASE(coins_coinbase_spends)
 
     {
         CTransaction tx2(mtx2);
-        BOOST_CHECK(NonContextualCheckInputs(tx2, state, cache, false, SCRIPT_VERIFY_NONE, false, Params().GetConsensus()));
+        BOOST_CHECK(Consensus::CheckTxInputs(tx2, state, cache, 100+COINBASE_MATURITY, Params().GetConsensus()));
     }
 
     mtx2.vout.resize(1);
@@ -765,7 +765,7 @@ BOOST_AUTO_TEST_CASE(coins_coinbase_spends)
 
     {
         CTransaction tx2(mtx2);
-        BOOST_CHECK(!NonContextualCheckInputs(tx2, state, cache, false, SCRIPT_VERIFY_NONE, false, Params().GetConsensus()));
+        BOOST_CHECK(!Consensus::CheckTxInputs(tx2, state, cache, 100+COINBASE_MATURITY, Params().GetConsensus()));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-coinbase-spend-has-transparent-outputs");
     }
 }

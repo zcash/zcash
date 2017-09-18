@@ -20,12 +20,11 @@
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
-#include "json/json_spirit_utils.h"
-#include "json/json_spirit_value.h"
+
+#include <univalue.h>
 
 #include "zcash/Address.hpp"
 
-using namespace json_spirit;
 using namespace std;
 
 /**
@@ -41,16 +40,21 @@ using namespace std;
  *
  * Or alternatively, create a specific query method for the information.
  **/
+
+int32_t Jumblr_depositaddradd(char *depositaddr);
+int32_t Jumblr_secretaddradd(char *secretaddr);
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
 int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
 int32_t komodo_whoami(char *pubkeystr,int32_t height);
 extern int32_t KOMODO_LASTMINED;
+extern char ASSETCHAINS_SYMBOL[];
+int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
+#define KOMODO_VERSION "0.1.1"
 
-Value getinfo(const Array& params, bool fHelp)
+UniValue getinfo(const UniValue& params, bool fHelp)
 {
-    uint256 notarized_hash,notarized_desttxid;
-    int32_t notarized_height,longestchain;
+    uint256 notarized_hash,notarized_desttxid; int32_t notarized_height,longestchain,kmdnotarized_height,txid_height;
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getinfo\n"
@@ -89,17 +93,26 @@ Value getinfo(const Array& params, bool fHelp)
     GetProxy(NET_IPV4, proxy);
     notarized_height = komodo_notarized_height(&notarized_hash,&notarized_desttxid);
 
-    Object obj;
+    UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("version", CLIENT_VERSION));
     obj.push_back(Pair("protocolversion", PROTOCOL_VERSION));
+    obj.push_back(Pair("KMDversion", KOMODO_VERSION));
     obj.push_back(Pair("notarized", notarized_height));
     obj.push_back(Pair("notarizedhash", notarized_hash.ToString()));
     obj.push_back(Pair("notarizedtxid", notarized_desttxid.ToString()));
+    txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
+    if ( txid_height > 0 )
+        obj.push_back(Pair("notarizedtxid_height", txid_height));
+    else obj.push_back(Pair("notarizedtxid_height", "mempool"));
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        obj.push_back(Pair("KMDnotarized_height", kmdnotarized_height));
+    obj.push_back(Pair("notarized_confirms", txid_height < kmdnotarized_height ? (kmdnotarized_height - txid_height + 1) : 0));
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
         obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
-        obj.push_back(Pair("interest",       ValueFromAmount(komodo_interestsum())));
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            obj.push_back(Pair("interest",       ValueFromAmount(komodo_interestsum())));
     }
 #endif
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
@@ -126,51 +139,46 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
     {
         char pubkeystr[65]; int32_t notaryid;
-        notaryid = komodo_whoami(pubkeystr,(int32_t)chainActive.Tip()->nHeight);
-        obj.push_back(Pair("notaryid",        notaryid));
-        obj.push_back(Pair("pubkey",        pubkeystr));
-        if ( KOMODO_LASTMINED != 0 )
-            obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
+        if ( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.Tip()->nHeight)) >= 0 )
+        {
+            obj.push_back(Pair("notaryid",        notaryid));
+            obj.push_back(Pair("pubkey",        pubkeystr));
+            if ( KOMODO_LASTMINED != 0 )
+                obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
+        }
     }
     return obj;
 }
 
 #ifdef ENABLE_WALLET
-class DescribeAddressVisitor : public boost::static_visitor<Object>
+class DescribeAddressVisitor : public boost::static_visitor<UniValue>
 {
-private:
-    isminetype mine;
-
 public:
-    DescribeAddressVisitor(isminetype mineIn) : mine(mineIn) {}
+    UniValue operator()(const CNoDestination &dest) const { return UniValue(UniValue::VOBJ); }
 
-    Object operator()(const CNoDestination &dest) const { return Object(); }
-
-    Object operator()(const CKeyID &keyID) const {
-        Object obj;
+    UniValue operator()(const CKeyID &keyID) const {
+        UniValue obj(UniValue::VOBJ);
         CPubKey vchPubKey;
         obj.push_back(Pair("isscript", false));
-        if (mine == ISMINE_SPENDABLE) {
-            pwalletMain->GetPubKey(keyID, vchPubKey);
+        if (pwalletMain && pwalletMain->GetPubKey(keyID, vchPubKey)) {
             obj.push_back(Pair("pubkey", HexStr(vchPubKey)));
             obj.push_back(Pair("iscompressed", vchPubKey.IsCompressed()));
         }
         return obj;
     }
 
-    Object operator()(const CScriptID &scriptID) const {
-        Object obj;
+    UniValue operator()(const CScriptID &scriptID) const {
+        UniValue obj(UniValue::VOBJ);
+        CScript subscript;
         obj.push_back(Pair("isscript", true));
-        if (mine != ISMINE_NO) {
-            CScript subscript;
-            pwalletMain->GetCScript(scriptID, subscript);
+        if (pwalletMain && pwalletMain->GetCScript(scriptID, subscript)) {
             std::vector<CTxDestination> addresses;
             txnouttype whichType;
             int nRequired;
             ExtractDestinations(subscript, whichType, addresses, nRequired);
             obj.push_back(Pair("script", GetTxnOutputType(whichType)));
             obj.push_back(Pair("hex", HexStr(subscript.begin(), subscript.end())));
-            Array a;
+            UniValue a(UniValue::VARR);
             BOOST_FOREACH(const CTxDestination& addr, addresses)
                 a.push_back(CBitcoinAddress(addr).ToString());
             obj.push_back(Pair("addresses", a));
@@ -182,7 +190,41 @@ public:
 };
 #endif
 
-Value validateaddress(const Array& params, bool fHelp)
+UniValue jumblr_deposit(const UniValue& params, bool fHelp)
+{
+    int32_t retval; UniValue result(UniValue::VOBJ);
+    if (fHelp || params.size() != 1)
+        throw runtime_error("jumblr_deposit \"depositaddress\"\n");
+    CBitcoinAddress address(params[0].get_str());
+    bool isValid = address.IsValid();
+    if ( isValid != 0 )
+    {
+        string addr = params[0].get_str();
+        if ( (retval= Jumblr_depositaddradd((char *)addr.c_str())) >= 0 )
+            result.push_back(Pair("result", retval));
+        else result.push_back(Pair("error", retval));
+    } else result.push_back(Pair("error", "invalid address"));
+    return(result);
+}
+
+UniValue jumblr_secret(const UniValue& params, bool fHelp)
+{
+    int32_t retval; UniValue result(UniValue::VOBJ);
+    if (fHelp || params.size() != 1)
+        throw runtime_error("jumblr_secret \"secretaddress\"\n");
+    CBitcoinAddress address(params[0].get_str());
+    bool isValid = address.IsValid();
+    if ( isValid != 0 )
+    {
+        string addr = params[0].get_str();
+        retval = Jumblr_secretaddradd((char *)addr.c_str());
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("num", retval));
+    } else result.push_back(Pair("error", "invalid address"));
+    return(result);
+}
+
+UniValue validateaddress(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -215,7 +257,7 @@ Value validateaddress(const Array& params, bool fHelp)
     CBitcoinAddress address(params[0].get_str());
     bool isValid = address.IsValid();
 
-    Object ret;
+    UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("isvalid", isValid));
     if (isValid)
     {
@@ -229,11 +271,9 @@ Value validateaddress(const Array& params, bool fHelp)
 #ifdef ENABLE_WALLET
         isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
         ret.push_back(Pair("ismine", (mine & ISMINE_SPENDABLE) ? true : false));
-        if (mine != ISMINE_NO) {
-            ret.push_back(Pair("iswatchonly", (mine & ISMINE_WATCH_ONLY) ? true: false));
-            Object detail = boost::apply_visitor(DescribeAddressVisitor(mine), dest);
-            ret.insert(ret.end(), detail.begin(), detail.end());
-        }
+        ret.push_back(Pair("iswatchonly", (mine & ISMINE_WATCH_ONLY) ? true: false));
+        UniValue detail = boost::apply_visitor(DescribeAddressVisitor(), dest);
+        ret.pushKVs(detail);
         if (pwalletMain && pwalletMain->mapAddressBook.count(dest))
             ret.push_back(Pair("account", pwalletMain->mapAddressBook[dest].name));
 #endif
@@ -242,7 +282,7 @@ Value validateaddress(const Array& params, bool fHelp)
 }
 
 
-Value z_validateaddress(const Array& params, bool fHelp)
+UniValue z_validateaddress(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -289,7 +329,7 @@ Value z_validateaddress(const Array& params, bool fHelp)
         // address is invalid, nop here as isValid is false.
     }
 
-    Object ret;
+    UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("isvalid", isValid));
     if (isValid)
     {
@@ -307,10 +347,10 @@ Value z_validateaddress(const Array& params, bool fHelp)
 /**
  * Used by addmultisigaddress / createmultisig:
  */
-CScript _createmultisig_redeemScript(const Array& params)
+CScript _createmultisig_redeemScript(const UniValue& params)
 {
     int nRequired = params[0].get_int();
-    const Array& keys = params[1].get_array();
+    const UniValue& keys = params[1].get_array();
 
     // Gather public keys
     if (nRequired < 1)
@@ -368,7 +408,7 @@ CScript _createmultisig_redeemScript(const Array& params)
     return result;
 }
 
-Value createmultisig(const Array& params, bool fHelp)
+UniValue createmultisig(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 2 || params.size() > 2)
     {
@@ -404,14 +444,14 @@ Value createmultisig(const Array& params, bool fHelp)
     CScriptID innerID(inner);
     CBitcoinAddress address(innerID);
 
-    Object result;
+    UniValue result(UniValue::VOBJ);
     result.push_back(Pair("address", address.ToString()));
     result.push_back(Pair("redeemScript", HexStr(inner.begin(), inner.end())));
 
     return result;
 }
 
-Value verifymessage(const Array& params, bool fHelp)
+UniValue verifymessage(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 3)
         throw runtime_error(
@@ -465,7 +505,7 @@ Value verifymessage(const Array& params, bool fHelp)
     return (pubkey.GetID() == keyID);
 }
 
-Value setmocktime(const Array& params, bool fHelp)
+UniValue setmocktime(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -479,10 +519,19 @@ Value setmocktime(const Array& params, bool fHelp)
     if (!Params().MineBlocksOnDemand())
         throw runtime_error("setmocktime for regression testing (-regtest mode) only");
 
-    LOCK(cs_main);
+    // cs_vNodes is locked and node send/receive times are updated
+    // atomically with the time change to prevent peers from being
+    // disconnected because we think we haven't communicated with them
+    // in a long time.
+    LOCK2(cs_main, cs_vNodes);
 
-    RPCTypeCheck(params, boost::assign::list_of(int_type));
+    RPCTypeCheck(params, boost::assign::list_of(UniValue::VNUM));
     SetMockTime(params[0].get_int64());
 
-    return Value::null;
+    uint64_t t = GetTime();
+    BOOST_FOREACH(CNode* pnode, vNodes) {
+        pnode->nLastSend = pnode->nLastRecv = t;
+    }
+
+    return NullUniValue;
 }

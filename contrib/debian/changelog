@@ -1,8 +1,32 @@
+zcash (1.0.8) jessie; urgency=medium
+
+  * 1.0.8 release.
+
+ -- Zcash Company <team@z.cash>  Mon, 27 Mar 2017 21:30:07 +0100
+
+zcash (1.0.7+1) jessie; urgency=medium
+
+  * 1.0.7-1 release.
+
+ -- Zcash Company <team@z.cash>  Wed, 08 Mar 2017 13:51:11 -0800
+
+zcash (1.0.7) jessie; urgency=medium
+
+  * 1.0.7 release.
+
+ -- Zcash Company <team@z.cash>  Fri, 03 Mar 2017 20:55:04 -0800
+
+zcash (1.0.6) jessie; urgency=medium
+
+  * 1.0.6 release.
+
+ -- Zcash Company <team@z.cash>  Fri, 10 Feb 2017 10:23:00 -0800
+
 zcash (1.0.5) jessie; urgency=medium
 
   * 1.0.5 release.
 
- -- Zcash Company <team@z.cash>  Thu, 19 Jan 2016 19:23:40 -0700
+ -- Zcash Company <team@z.cash>  Thu, 19 Jan 2017 19:23:40 -0700
 
 zcash (1.0.4) jessie; urgency=medium
 

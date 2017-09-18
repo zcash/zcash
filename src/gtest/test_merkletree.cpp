@@ -57,18 +57,15 @@ void expect_ser_test_vector(B& b, const C& c, const A& tree) {
 
 template<typename Tree, typename Witness>
 void test_tree(
-    Array commitment_tests,
-    Array root_tests,
-    Array ser_tests,
-    Array witness_ser_tests,
-    Array path_tests
+    UniValue commitment_tests,
+    UniValue root_tests,
+    UniValue ser_tests,
+    UniValue witness_ser_tests,
+    UniValue path_tests
 )
 {
-    Array::iterator commitment_iterator = commitment_tests.begin();
-    Array::iterator root_iterator = root_tests.begin();
-    Array::iterator ser_iterator = ser_tests.begin();
-    Array::iterator witness_ser_iterator = witness_ser_tests.begin();
-    Array::iterator path_iterator = path_tests.begin();
+    size_t witness_ser_i = 0;
+    size_t path_i = 0;
 
     Tree tree;
 
@@ -88,7 +85,7 @@ void test_tree(
     vector<Witness> witnesses;
 
     for (size_t i = 0; i < 16; i++) {
-        uint256 test_commitment = uint256S((commitment_iterator++)->get_str());
+        uint256 test_commitment = uint256S(commitment_tests[i].get_str());
 
         // Witness here
         witnesses.push_back(tree.witness());
@@ -103,10 +100,10 @@ void test_tree(
         ASSERT_TRUE(tree.last() == test_commitment);
 
         // Check tree root consistency
-        expect_test_vector(root_iterator, tree.root());
+        expect_test_vector(root_tests[i], tree.root());
 
         // Check serialization of tree
-        expect_ser_test_vector(ser_iterator, tree, tree);
+        expect_ser_test_vector(ser_tests[i], tree, tree);
 
         bool first = true; // The first witness can never form a path
         BOOST_FOREACH(Witness& wit, witnesses)
@@ -121,7 +118,7 @@ void test_tree(
                 auto path = wit.path();
 
                 {
-                    expect_test_vector(path_iterator, path);
+                    expect_test_vector(path_tests[path_i++], path);
                     
                     typedef Fr<default_r1cs_ppzksnark_pp> FieldT;
 
@@ -173,7 +170,7 @@ void test_tree(
             }
 
             // Check witness serialization
-            expect_ser_test_vector(witness_ser_iterator, wit, tree);
+            expect_ser_test_vector(witness_ser_tests[witness_ser_i++], wit, tree);
 
             ASSERT_TRUE(wit.root() == tree.root());
 
@@ -192,24 +189,25 @@ void test_tree(
     }
 }
 
+#define MAKE_STRING(x) std::string((x), (x)+sizeof(x))
+
 TEST(merkletree, vectors) {
-    Array root_tests = read_json(std::string(json_tests::merkle_roots, json_tests::merkle_roots + sizeof(json_tests::merkle_roots)));
-    Array ser_tests = read_json(std::string(json_tests::merkle_serialization, json_tests::merkle_serialization + sizeof(json_tests::merkle_serialization)));
-    Array witness_ser_tests = read_json(std::string(json_tests::merkle_witness_serialization, json_tests::merkle_witness_serialization + sizeof(json_tests::merkle_witness_serialization)));
-    Array path_tests = read_json(std::string(json_tests::merkle_path, json_tests::merkle_path + sizeof(json_tests::merkle_path)));
-    Array commitment_tests = read_json(std::string(json_tests::merkle_commitments, json_tests::merkle_commitments + sizeof(json_tests::merkle_commitments)));
+    UniValue root_tests = read_json(MAKE_STRING(json_tests::merkle_roots));
+    UniValue ser_tests = read_json(MAKE_STRING(json_tests::merkle_serialization));
+    UniValue witness_ser_tests = read_json(MAKE_STRING(json_tests::merkle_witness_serialization));
+    UniValue path_tests = read_json(MAKE_STRING(json_tests::merkle_path));
+    UniValue commitment_tests = read_json(MAKE_STRING(json_tests::merkle_commitments));
 
     test_tree<ZCTestingIncrementalMerkleTree, ZCTestingIncrementalWitness>(commitment_tests, root_tests, ser_tests, witness_ser_tests, path_tests);
 }
 
 TEST(merkletree, emptyroots) {
-    Array empty_roots = read_json(std::string(json_tests::merkle_roots_empty, json_tests::merkle_roots_empty + sizeof(json_tests::merkle_roots_empty)));
-    Array::iterator root_iterator = empty_roots.begin();
+    UniValue empty_roots = read_json(MAKE_STRING(json_tests::merkle_roots_empty));
 
     libzcash::EmptyMerkleRoots<64, libzcash::SHA256Compress> emptyroots;
 
     for (size_t depth = 0; depth <= 64; depth++) {
-        expect_test_vector(root_iterator, emptyroots.empty_root(depth));
+        expect_test_vector(empty_roots[depth], emptyroots.empty_root(depth));
     }
 
     // Double check that we're testing (at least) all the empty roots we'll use.

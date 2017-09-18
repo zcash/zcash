@@ -11,11 +11,20 @@
 #include "utilstrencodings.h"
 
 #include <boost/filesystem/operations.hpp>
+#include <stdio.h>
+
+#include <event2/buffer.h>
+#include <event2/keyvalq_struct.h>
+#include "support/events.h"
+
+#include <univalue.h>
 
 using namespace std;
-using namespace json_spirit;
+
 int64_t MAX_MONEY = 200000000 * 100000000LL;
 uint64_t komodo_maxallowed(int32_t baseid) { return(100000000LL * 1000000); } // stub
+
+static const int DEFAULT_HTTP_CLIENT_TIMEOUT=900;
 
 std::string HelpMessageCli()
 {
@@ -32,9 +41,7 @@ std::string HelpMessageCli()
     strUsage += HelpMessageOpt("-rpcwait", _("Wait for RPC server to start"));
     strUsage += HelpMessageOpt("-rpcuser=<user>", _("Username for JSON-RPC connections"));
     strUsage += HelpMessageOpt("-rpcpassword=<pw>", _("Password for JSON-RPC connections"));
-
-    strUsage += HelpMessageGroup(_("SSL options: (see the Bitcoin Wiki for SSL setup instructions)"));
-    strUsage += HelpMessageOpt("-rpcssl", _("Use OpenSSL (https) for JSON-RPC connections"));
+    strUsage += HelpMessageOpt("-rpcclienttimeout=<n>", strprintf(_("Timeout in seconds during HTTP requests, or 0 for no timeout. (default: %d)"), DEFAULT_HTTP_CLIENT_TIMEOUT));
 
     return strUsage;
 }
@@ -81,7 +88,7 @@ static bool AppInitRPC(int argc, char* argv[])
     ParseParameters(argc, argv);
     komodo_args();
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help") || mapArgs.count("-version")) {
-        std::string strUsage = _("Komodo RPC client version") + " " + FormatFullVersion() + "\n";
+        std::string strUsage = _("Komodo RPC client version") + " " + FormatFullVersion() + "\n" + PrivacyInfo();
         if (!mapArgs.count("-version")) {
             strUsage += "\n" + _("Usage:") + "\n" +
                   "  komodo-cli [options] <command> [params]  " + _("Send command to Komodo") + "\n" +
@@ -111,32 +118,108 @@ static bool AppInitRPC(int argc, char* argv[])
         fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
         return false;
     }
+    if (GetBoolArg("-rpcssl", false))
+    {
+        fprintf(stderr, "Error: SSL mode for RPC (-rpcssl) is no longer supported.\n");
+        return false;
+    }
     return true;
 }
 
-Object CallRPC(const string& strMethod, const Array& params)
+
+/** Reply structure for request_done to fill in */
+struct HTTPReply
 {
-    // Connect to localhost
-    bool fUseSSL = GetBoolArg("-rpcssl", false);
-    boost::asio::io_service io_service;
-    boost::asio::ssl::context context(io_service, boost::asio::ssl::context::sslv23);
-    context.set_options(boost::asio::ssl::context::no_sslv2 | boost::asio::ssl::context::no_sslv3);
-    boost::asio::ssl::stream<boost::asio::ip::tcp::socket> sslStream(io_service, context);
-    SSLIOStreamDevice<boost::asio::ip::tcp> d(sslStream, fUseSSL);
-    boost::iostreams::stream< SSLIOStreamDevice<boost::asio::ip::tcp> > stream(d);
+    HTTPReply(): status(0), error(-1) {}
 
-    const bool fConnected = d.connect(GetArg("-rpcconnect", "127.0.0.1"), GetArg("-rpcport", itostr(BaseParams().RPCPort())));
-    if (!fConnected)
-        throw CConnectionFailed("couldn't connect to server");
+    int status;
+    int error;
+    std::string body;
+};
 
-    // Find credentials to use
+const char *http_errorstring(int code)
+{
+    switch(code) {
+#if LIBEVENT_VERSION_NUMBER >= 0x02010300
+    case EVREQ_HTTP_TIMEOUT:
+        return "timeout reached";
+    case EVREQ_HTTP_EOF:
+        return "EOF reached";
+    case EVREQ_HTTP_INVALID_HEADER:
+        return "error while reading header, or invalid header";
+    case EVREQ_HTTP_BUFFER_ERROR:
+        return "error encountered while reading or writing";
+    case EVREQ_HTTP_REQUEST_CANCEL:
+        return "request was canceled";
+    case EVREQ_HTTP_DATA_TOO_LONG:
+        return "response body is larger than allowed";
+#endif
+    default:
+        return "unknown";
+    }
+}
+
+static void http_request_done(struct evhttp_request *req, void *ctx)
+{
+    HTTPReply *reply = static_cast<HTTPReply*>(ctx);
+
+    if (req == NULL) {
+        /* If req is NULL, it means an error occurred while connecting: the
+         * error code will have been passed to http_error_cb.
+         */
+        reply->status = 0;
+        return;
+    }
+
+    reply->status = evhttp_request_get_response_code(req);
+
+    struct evbuffer *buf = evhttp_request_get_input_buffer(req);
+    if (buf)
+    {
+        size_t size = evbuffer_get_length(buf);
+        const char *data = (const char*)evbuffer_pullup(buf, size);
+        if (data)
+            reply->body = std::string(data, size);
+        evbuffer_drain(buf, size);
+    }
+}
+
+#if LIBEVENT_VERSION_NUMBER >= 0x02010300
+static void http_error_cb(enum evhttp_request_error err, void *ctx)
+{
+    HTTPReply *reply = static_cast<HTTPReply*>(ctx);
+    reply->error = err;
+}
+#endif
+
+UniValue CallRPC(const string& strMethod, const UniValue& params)
+{
+    std::string host = GetArg("-rpcconnect", "127.0.0.1");
+    int port = GetArg("-rpcport", BaseParams().RPCPort());
+
+    // Obtain event base
+    raii_event_base base = obtain_event_base();
+
+    // Synchronously look up hostname
+    raii_evhttp_connection evcon = obtain_evhttp_connection_base(base.get(), host, port);
+    evhttp_connection_set_timeout(evcon.get(), GetArg("-rpcclienttimeout", DEFAULT_HTTP_CLIENT_TIMEOUT));
+
+    HTTPReply response;
+    raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&response);
+    if (req == NULL)
+        throw runtime_error("create http request failed");
+#if LIBEVENT_VERSION_NUMBER >= 0x02010300
+    evhttp_request_set_error_cb(req.get(), http_error_cb);
+#endif
+
+    // Get credentials
     std::string strRPCUserColonPass;
     if (mapArgs["-rpcpassword"] == "") {
         // Try fall back to cookie-based authentication if no password is provided
         if (!GetAuthCookie(&strRPCUserColonPass)) {
             throw runtime_error(strprintf(
-                _("You must set rpcpassword=<password> in the configuration file:\n%s\n"
-                  "If the file does not exist, create it with owner-readable-only file permissions."),
+                _("Could not locate RPC credentials. No authentication cookie could be found,\n"
+                  "and no rpcpassword is set in the configuration file (%s)."),
                     GetConfigFile().string().c_str()));
 
         }
@@ -144,36 +227,40 @@ Object CallRPC(const string& strMethod, const Array& params)
         strRPCUserColonPass = mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"];
     }
 
-    // HTTP basic authentication
-    map<string, string> mapRequestHeaders;
-    mapRequestHeaders["Authorization"] = string("Basic ") + EncodeBase64(strRPCUserColonPass);
+    struct evkeyvalq* output_headers = evhttp_request_get_output_headers(req.get());
+    assert(output_headers);
+    evhttp_add_header(output_headers, "Host", host.c_str());
+    evhttp_add_header(output_headers, "Connection", "close");
+    evhttp_add_header(output_headers, "Authorization", (std::string("Basic ") + EncodeBase64(strRPCUserColonPass)).c_str());
 
-    // Send request
-    string strRequest = JSONRPCRequest(strMethod, params, 1);
-    string strPost = HTTPPost(strRequest, mapRequestHeaders);
-    stream << strPost << std::flush;
+    // Attach request data
+    std::string strRequest = JSONRPCRequest(strMethod, params, 1);
+    struct evbuffer* output_buffer = evhttp_request_get_output_buffer(req.get());
+    assert(output_buffer);
+    evbuffer_add(output_buffer, strRequest.data(), strRequest.size());
 
-    // Receive HTTP reply status
-    int nProto = 0;
-    int nStatus = ReadHTTPStatus(stream, nProto);
+    int r = evhttp_make_request(evcon.get(), req.get(), EVHTTP_REQ_POST, "/");
+    req.release(); // ownership moved to evcon in above call
+    if (r != 0) {
+        throw CConnectionFailed("send http request failed");
+    }
 
-    // Receive HTTP reply message headers and body
-    map<string, string> mapHeaders;
-    string strReply;
-    ReadHTTPMessage(stream, mapHeaders, strReply, nProto, std::numeric_limits<size_t>::max());
+    event_base_dispatch(base.get());
 
-    if (nStatus == HTTP_UNAUTHORIZED)
+    if (response.status == 0)
+        throw CConnectionFailed(strprintf("couldn't connect to server: %s (code %d)\n(make sure server is running and you are connecting to the correct RPC port)", http_errorstring(response.error), response.error));
+    else if (response.status == HTTP_UNAUTHORIZED)
         throw runtime_error("incorrect rpcuser or rpcpassword (authorization failed)");
-    else if (nStatus >= 400 && nStatus != HTTP_BAD_REQUEST && nStatus != HTTP_NOT_FOUND && nStatus != HTTP_INTERNAL_SERVER_ERROR)
-        throw runtime_error(strprintf("server returned HTTP error %d", nStatus));
-    else if (strReply.empty())
+    else if (response.status >= 400 && response.status != HTTP_BAD_REQUEST && response.status != HTTP_NOT_FOUND && response.status != HTTP_INTERNAL_SERVER_ERROR)
+        throw runtime_error(strprintf("server returned HTTP error %d", response.status));
+    else if (response.body.empty())
         throw runtime_error("no response from server");
 
     // Parse reply
-    Value valReply;
-    if (!read_string(strReply, valReply))
+    UniValue valReply(UniValue::VSTR);
+    if (!valReply.read(response.body))
         throw runtime_error("couldn't parse reply from server");
-    const Object& reply = valReply.get_obj();
+    const UniValue& reply = valReply.get_obj();
     if (reply.empty())
         throw runtime_error("expected reply to have result, error and id properties");
 
@@ -198,35 +285,43 @@ int CommandLineRPC(int argc, char *argv[])
 
         // Parameters default to strings
         std::vector<std::string> strParams(&argv[2], &argv[argc]);
-        Array params = RPCConvertValues(strMethod, strParams);
+        UniValue params = RPCConvertValues(strMethod, strParams);
 
         // Execute and handle connection failures with -rpcwait
         const bool fWait = GetBoolArg("-rpcwait", false);
         do {
             try {
-                const Object reply = CallRPC(strMethod, params);
+                const UniValue reply = CallRPC(strMethod, params);
 
                 // Parse reply
-                const Value& result = find_value(reply, "result");
-                const Value& error  = find_value(reply, "error");
+                const UniValue& result = find_value(reply, "result");
+                const UniValue& error  = find_value(reply, "error");
 
-                if (error.type() != null_type) {
+                if (!error.isNull()) {
                     // Error
-                    const int code = find_value(error.get_obj(), "code").get_int();
+                    int code = error["code"].get_int();
                     if (fWait && code == RPC_IN_WARMUP)
                         throw CConnectionFailed("server in warmup");
-                    strPrint = "error: " + write_string(error, false);
+                    strPrint = "error: " + error.write();
                     nRet = abs(code);
+                    if (error.isObject())
+                    {
+                        UniValue errCode = find_value(error, "code");
+                        UniValue errMsg  = find_value(error, "message");
+                        strPrint = errCode.isNull() ? "" : "error code: "+errCode.getValStr()+"\n";
+
+                        if (errMsg.isStr())
+                            strPrint += "error message:\n"+errMsg.get_str();
+                    }
                 } else {
                     // Result
-                    if (result.type() == null_type)
+                    if (result.isNull())
                         strPrint = "";
-                    else if (result.type() == str_type)
+                    else if (result.isStr())
                         strPrint = result.get_str();
                     else
-                        strPrint = write_string(result, true);
+                        strPrint = result.write(2);
                 }
-
                 // Connection succeeded, no need to retry.
                 break;
             }
@@ -259,6 +354,10 @@ int CommandLineRPC(int argc, char *argv[])
 int main(int argc, char* argv[])
 {
     SetupEnvironment();
+    if (!SetupNetworking()) {
+        fprintf(stderr, "Error: Initializing networking failed\n");
+        exit(1);
+    }
 
     try {
         if(!AppInitRPC(argc, argv))

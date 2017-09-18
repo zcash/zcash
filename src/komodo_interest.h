@@ -66,13 +66,18 @@ uint64_t komodo_moneysupply(int32_t height)
 
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
-    int32_t minutes,exception; uint64_t numerator,denominator,interest = 0;
+    int32_t minutes,exception; uint64_t numerator,denominator,interest = 0; uint32_t activation;
+    activation = 1491350400;  // 1491350400 5th April
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         return(0);
     if ( komodo_moneysupply(txheight) < MAX_MONEY && nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= 10*COIN )
     {
         if ( (minutes= (tiptime - nLockTime) / 60) >= 60 )
         {
+            if ( minutes > 365 * 24 * 60 )
+                minutes = 365 * 24 * 60;
+            if ( txheight >= 250000 )
+                minutes -= 59;
             denominator = (((uint64_t)365 * 24 * 60) / minutes);
             if ( denominator == 0 )
                 denominator = 1; // max KOMODO_INTEREST per transfer, do it at least annually!
@@ -102,7 +107,9 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                 if ( exception == 0 )
                 {
                     numerator = (nValue / 20); // assumes 5%!
-                    interest = (numerator / denominator);
+                    if ( txheight < 250000 )
+                        interest = (numerator / denominator);
+                    else interest = (numerator * minutes) / ((uint64_t)365 * 24 * 60);
                 }
                 else
                 {
@@ -112,10 +119,28 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
             }
             else
             {
+                /* 250000 algo
+                    numerator = (nValue * KOMODO_INTEREST);
+                    if ( txheight < 250000 || numerator * minutes < 365 * 24 * 60 )
+                        interest = (numerator / denominator) / COIN;
+                    else interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60)) / COIN;
+                */
                 numerator = (nValue * KOMODO_INTEREST);
-                interest = (numerator / denominator) / COIN;
+                if ( txheight < 250000 || tiptime < activation )
+                {
+                    if ( txheight < 250000 || numerator * minutes < 365 * 24 * 60 )
+                        interest = (numerator / denominator) / COIN;
+                    else interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60)) / COIN;
+                }
+                else
+                {
+                    numerator = (nValue / 20); // assumes 5%!
+                    interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60));
+                    //fprintf(stderr,"interest %llu %.8f <- numerator.%llu minutes.%d\n",(long long)interest,(double)interest/COIN,(long long)numerator,(int32_t)minutes);
+                }
             }
-            //fprintf(stderr,"komodo_interest %lld %.8f nLockTime.%u tiptime.%u minutes.%d interest %lld %.8f (%llu / %llu)\n",(long long)nValue,(double)nValue/COIN,nLockTime,tiptime,minutes,(long long)interest,(double)interest/COIN,(long long)numerator,(long long)denominator);
+            if ( 0 && numerator == (nValue * KOMODO_INTEREST) )
+                fprintf(stderr,"komodo_interest.%d %lld %.8f nLockTime.%u tiptime.%u minutes.%d interest %lld %.8f (%llu / %llu) prod.%llu\n",txheight,(long long)nValue,(double)nValue/COIN,nLockTime,tiptime,minutes,(long long)interest,(double)interest/COIN,(long long)numerator,(long long)denominator,(long long)(numerator * minutes));
         }
     }
     return(interest);
