@@ -49,6 +49,7 @@ using namespace std;
  */
 
 CCriticalSection cs_main;
+extern uint8_t NOTARY_PUBKEY33[33];
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -4974,7 +4975,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                     break;
             }
             pfrom->PushMessage("headers", vHeaders);
-        } else fprintf(stderr,"ignore getheaders from peer.%d %d prev.%d\n",(int32_t)pfrom->id,(int32_t)(pindex ? pindex->nHeight : -1),pfrom->lasthdrsreq);
+        }
+        else if ( NOTARY_PUBKEY33[0] != 0 )
+            fprintf(stderr,"you can ignore redundant getheaders from peer.%d %d prev.%d\n",(int32_t)pfrom->id,(int32_t)(pindex ? pindex->nHeight : -1),pfrom->lasthdrsreq);
     }
 
 
