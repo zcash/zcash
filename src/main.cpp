@@ -4494,7 +4494,10 @@ void static ProcessGetData(CNode* pfrom)
                     else
                     {
                         if (inv.type == MSG_BLOCK)
+                        {
+                            fprintf(stderr,"send block %d\n",komodo_block2height(&block));
                             pfrom->PushMessage("block", block);
+                        }
                         else // MSG_FILTERED_BLOCK)
                         {
                             LOCK(pfrom->cs_filter);
@@ -4957,6 +4960,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         vector<CBlock> vHeaders;
         int nLimit = MAX_HEADERS_RESULTS;
         LogPrint("net", "getheaders %d to %s from peer=%d\n", (pindex ? pindex->nHeight : -1), hashStop.ToString(), pfrom->id);
+        fprintf(stderr,"getheaders from %d\n",(int32_t)(pindex ? pindex->nHeight : -1));
         for (; pindex; pindex = chainActive.Next(pindex))
         {
             vHeaders.push_back(pindex->GetBlockHeader());
