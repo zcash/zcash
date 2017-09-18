@@ -4965,7 +4965,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         int nLimit = MAX_HEADERS_RESULTS;
         LogPrint("net", "getheaders %d to %s from peer=%d\n", (pindex ? pindex->nHeight : -1), hashStop.ToString(), pfrom->id);
         fprintf(stderr,"getheaders from %d prev.%d\n",(int32_t)(pindex ? pindex->nHeight : -1),pfrom->lasthdrsreq);
-        if ( pfrom->lasthdrsreq != (int32_t)(pindex ? pindex->nHeight : -1) )
+        if ( pfrom->lasthdrsreq >= chainActive.Height()-MAX_HEADERS_RESULTS || pfrom->lasthdrsreq != (int32_t)(pindex ? pindex->nHeight : -1) )
         {
             for (; pindex; pindex = chainActive.Next(pindex))
             {
