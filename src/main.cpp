@@ -4964,9 +4964,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         vector<CBlock> vHeaders;
         int nLimit = MAX_HEADERS_RESULTS;
         LogPrint("net", "getheaders %d to %s from peer=%d\n", (pindex ? pindex->nHeight : -1), hashStop.ToString(), pfrom->id);
-        fprintf(stderr,"getheaders from %d prev.%d\n",(int32_t)(pindex ? pindex->nHeight : -1),pfrom->lasthdrsreq);
         if ( pfrom->lasthdrsreq >= chainActive.Height()-MAX_HEADERS_RESULTS || pfrom->lasthdrsreq != (int32_t)(pindex ? pindex->nHeight : -1) )
         {
+            pfrom->lasthdrsreq = (int32_t)(pindex ? pindex->nHeight : -1);
             for (; pindex; pindex = chainActive.Next(pindex))
             {
                 vHeaders.push_back(pindex->GetBlockHeader());
@@ -4974,8 +4974,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                     break;
             }
             pfrom->PushMessage("headers", vHeaders);
-            pfrom->lasthdrsreq = (int32_t)(pindex ? pindex->nHeight : -1);
-        }
+        } else fprintf(stderr,"ignore getheaders from peer.%d %d prev.%d\n",(int32_t)pfrom->id,(int32_t)(pindex ? pindex->nHeight : -1),pfrom->lasthdrsreq);
     }
 
 
