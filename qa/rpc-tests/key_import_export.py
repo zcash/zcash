@@ -97,6 +97,10 @@ class KeyImportExportTest (BitcoinTestFramework):
         ipkaddr = charlie.importprivkey(privkey, '', True)
         assert_equal(addr, ipkaddr)
 
+        # Verify idempotent behavior:
+        ipkaddr2 = charlie.importprivkey(privkey, '', True)
+        assert_equal(addr, ipkaddr2)
+
         # importprivkey should have rescanned, so this should pass:
         verify_utxos(charlie, amounts[:4])
 
