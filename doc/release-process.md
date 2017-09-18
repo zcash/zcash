@@ -122,6 +122,10 @@ Then, verify that nodes can connect to the testnet server, and update the guide 
 
 ### Update the 1.0 User Guide
 
+This also means updating [the translations](https://github.com/zcash/zcash-docs).
+Coordinate with the translation team for now. Suggestions for improving this
+part of the process should be added to #2596.
+
 ### Publish the release announcement (blog, github, zcash-dev, slack)
 
 ## Celebrate
