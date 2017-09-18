@@ -4495,7 +4495,11 @@ void static ProcessGetData(CNode* pfrom)
                     {
                         if (inv.type == MSG_BLOCK)
                         {
-                            fprintf(stderr,"send block %d\n",komodo_block2height(&block));
+                            uint256 hash; int32_t z;
+                            hash = block.GetHash();
+                            for (z=0; z<32; z++)
+                                printf("%02x",((uint8_t *)&hash)[z]);
+                            fprintf(stderr," send block %d\n",komodo_block2height(&block));
                             pfrom->PushMessage("block", block);
                         }
                         else // MSG_FILTERED_BLOCK)
