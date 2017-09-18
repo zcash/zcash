@@ -4964,14 +4964,18 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         vector<CBlock> vHeaders;
         int nLimit = MAX_HEADERS_RESULTS;
         LogPrint("net", "getheaders %d to %s from peer=%d\n", (pindex ? pindex->nHeight : -1), hashStop.ToString(), pfrom->id);
-        //fprintf(stderr,"getheaders from %d\n",(int32_t)(pindex ? pindex->nHeight : -1));
-        for (; pindex; pindex = chainActive.Next(pindex))
+        fprintf(stderr,"getheaders from %d prev.%d\n",(int32_t)(pindex ? pindex->nHeight : -1),pfrom->lasthdrsreq);
+        if ( pfrom->lasthdrsreq != (int32_t)(pindex ? pindex->nHeight : -1) )
         {
-            vHeaders.push_back(pindex->GetBlockHeader());
-            if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
-                break;
+            for (; pindex; pindex = chainActive.Next(pindex))
+            {
+                vHeaders.push_back(pindex->GetBlockHeader());
+                if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
+                    break;
+            }
+            pfrom->PushMessage("headers", vHeaders);
+            pfrom->lasthdrsreq = (int32_t)(pindex ? pindex->nHeight : -1);
         }
-        pfrom->PushMessage("headers", vHeaders);
     }
 
 
