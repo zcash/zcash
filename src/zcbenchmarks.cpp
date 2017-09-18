@@ -31,6 +31,39 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 
 using namespace libzcash;
+// This method is based on Shutdown from init.cpp
+void pre_wallet_load()
+{
+    LogPrintf("%s: In progress...\n", __func__);
+    if (ShutdownRequested())
+        throw new std::runtime_error("The node is shutting down");
+
+    if (pwalletMain)
+        pwalletMain->Flush(false);
+#ifdef ENABLE_MINING
+    GenerateBitcoins(false, NULL, 0);
+#endif
+    UnregisterNodeSignals(GetNodeSignals());
+    if (pwalletMain)
+        pwalletMain->Flush(true);
+
+    UnregisterValidationInterface(pwalletMain);
+    delete pwalletMain;
+    pwalletMain = NULL;
+    bitdb.Reset();
+    RegisterNodeSignals(GetNodeSignals());
+    LogPrintf("%s: done\n", __func__);
+}
+
+void post_wallet_load(){
+    RegisterValidationInterface(pwalletMain);
+#ifdef ENABLE_MINING
+    // Generate coins in the background
+    if (pwalletMain || !GetArg("-mineraddress", "").empty())
+        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1));
+#endif    
+}
+
 
 void timer_start(timeval &tv_start)
 {
@@ -420,3 +453,15 @@ double benchmark_sendtoaddress(CAmount amount)
     return timer_stop(tv_start);
 }
 
+double benchmark_loadwallet()
+{
+    pre_wallet_load();
+    struct timeval tv_start;
+    bool fFirstRunRet=true;
+    timer_start(tv_start);
+    pwalletMain = new CWallet("wallet.dat");
+    DBErrors nLoadWalletRet = pwalletMain->LoadWallet(fFirstRunRet);
+    auto res = timer_stop(tv_start);
+    post_wallet_load();
+    return res;
+}

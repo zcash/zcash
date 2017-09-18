@@ -56,7 +56,7 @@ function use_200k_benchmark {
 
 function zcashd_start {
     case "$1" in
-        sendtoaddress)
+        sendtoaddress|loadwallet)
             case "$2" in
                 200k-recv)
                     use_200k_benchmark 0
@@ -86,7 +86,7 @@ function zcashd_stop {
 
 function zcashd_massif_start {
     case "$1" in
-        sendtoaddress)
+        sendtoaddress|loadwallet)
             case "$2" in
                 200k-recv)
                     use_200k_benchmark 0
@@ -202,6 +202,9 @@ case "$1" in
                 ;;
             sendtoaddress)
                 zcash_rpc zcbenchmark sendtoaddress 10 "${@:4}"
+                ;;
+            loadwallet)
+                zcash_rpc zcbenchmark loadwallet 10 
                 ;;
             *)
                 zcashd_stop
