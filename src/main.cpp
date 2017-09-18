@@ -4497,7 +4497,7 @@ void static ProcessGetData(CNode* pfrom)
                         {
                             uint256 hash; int32_t z;
                             hash = block.GetHash();
-                            for (z=0; z<32; z++)
+                            for (z=31; z>=0; z--)
                                 fprintf(stderr,"%02x",((uint8_t *)&hash)[z]);
                             fprintf(stderr," send block %d\n",komodo_block2height(&block));
                             pfrom->PushMessage("block", block);
