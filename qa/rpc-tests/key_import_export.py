@@ -94,7 +94,8 @@ class KeyImportExportTest (BitcoinTestFramework):
         verify_utxos(bob, amounts[:4])
 
         logging.info("Importing privkey into charlie...")
-        charlie.importprivkey(privkey, '', True)
+        ipkaddr = charlie.importprivkey(privkey, '', True)
+        assert_equal(addr, ipkaddr)
 
         # importprivkey should have rescanned, so this should pass:
         verify_utxos(charlie, amounts[:4])
