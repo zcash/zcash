@@ -144,7 +144,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
         }
     }
 
-    return NullUniValue;
+    return CBitcoinAddress(vchAddress).ToString();
 }
 
 UniValue importaddress(const UniValue& params, bool fHelp)
