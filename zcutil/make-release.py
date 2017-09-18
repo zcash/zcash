@@ -335,8 +335,9 @@ def sh_out(*args):
 
 def sh_log(*args):
     PIPE = subprocess.PIPE
+    STDOUT = subprocess.STDOUT
     try:
-        p = subprocess.Popen(args, stdout=PIPE, stderr=PIPE, stdin=None)
+        p = subprocess.Popen(args, stdout=PIPE, stderr=STDOUT, stdin=None)
     except OSError:
         logging.error('Error launching %r...', args)
         raise
@@ -357,8 +358,9 @@ def sh_progress(markers, *args):
         return
 
     PIPE = subprocess.PIPE
+    STDOUT = subprocess.STDOUT
     try:
-        p = subprocess.Popen(args, stdout=PIPE, stderr=PIPE, stdin=None)
+        p = subprocess.Popen(args, stdout=PIPE, stderr=STDOUT, stdin=None)
     except OSError:
         logging.error('Error launching %r...', args)
         raise
