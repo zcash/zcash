@@ -2603,6 +2603,11 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
             }
             auto amount = AmountFromValue(params[2]);
             sample_times.push_back(benchmark_sendtoaddress(amount));
+        } else if (benchmarktype == "loadwallet") {
+            if (Params().NetworkIDString() != "regtest") {
+                throw JSONRPCError(RPC_TYPE_ERROR, "Benchmark must be run in regtest mode");
+            }
+            sample_times.push_back(benchmark_loadwallet());
         } else {
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
         }
