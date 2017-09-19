@@ -40,6 +40,16 @@ process. If these were not anticipated correctly, this could block the
 release, so if you suspect this is necessary, double check with the
 whole engineering team.
 
+## Release dependencies
+
+The release script has the following dependencies:
+
+- `help2man`
+- `debchange` (part of the devscripts Debian package)
+
+You can optionally install the `progressbar2` Python module with pip to have a
+progress bar displayed during the build process.
+
 ## Release process
 
 In the commands below, <RELEASE> and <RELEASE_PREV> are prefixed with a v, ie.
