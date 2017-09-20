@@ -803,6 +803,10 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true, fAcceptCoinbase);
 
     BOOST_FOREACH(const COutput& out, vecOutputs) {
+        if (!out.fSpendable) {
+            continue;
+        }
+
         if (out.nDepth < mindepth_) {
             continue;
         }
