@@ -6,7 +6,7 @@
 from time import sleep
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_greater_than, sync_blocks
+from test_framework.util import assert_equal, assert_greater_than, sync_blocks, start_nodes, initialize_chain_clean, connect_nodes_bi
 
 import logging
 
@@ -15,38 +15,27 @@ logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 class KeyImportExportTest (BitcoinTestFramework):
 
+    def setup_chain(self):
+        print("Initializing test directory "+self.options.tmpdir)
+        initialize_chain_clean(self.options.tmpdir, 4)
+
+    def setup_network(self, split=False):
+        self.nodes = start_nodes(4, self.options.tmpdir )
+        connect_nodes_bi(self.nodes,0,1)
+        connect_nodes_bi(self.nodes,1,2)
+        connect_nodes_bi(self.nodes,0,2)
+        connect_nodes_bi(self.nodes,0,3)
+        self.is_network_split=False
+        self.sync_all()
+
     def run_test(self):
         [alice, bob, charlie, miner] = self.nodes
 
-        def wait_until_miner_sees(txid):
-            attempts = 123
-            delay = 0.5
-
-            for _ in range(attempts):
-                try:
-                    miner.getrawtransaction(txid)
-                except Exception:
-                    logging.debug(
-                        'txid %r not yet seen by miner; sleep %r',
-                        txid,
-                        delay,
-                    )
-                    sleep(delay)
-                else:
-                    return
-
-            raise Exception(
-                'miner failed to see txid {!r} after {!r} attempts...'.format(
-                    txid,
-                    attempts,
-                ),
-            )
-
         def alice_to_bob(amount):
             txid = alice.sendtoaddress(addr, Decimal(amount))
-            wait_until_miner_sees(txid)
+            self.sync_all()
             miner.generate(1)
-            sync_blocks(self.nodes)
+            self.sync_all()
 
         def verify_utxos(node, amounts):
             utxos = node.listunspent(1, 10**9, [addr])
@@ -64,9 +53,11 @@ class KeyImportExportTest (BitcoinTestFramework):
                     amounts, utxos)
                 raise
 
-        # The first address already mutated by the startup process, ignore it:
-        # BUG: Why is this necessary?
-        bob.getnewaddress()
+        # Seed Alice with some funds
+        alice.generate(10)
+        self.sync_all()
+        miner.generate(100)
+        self.sync_all()
 
         # Now get a pristine address for receiving transfers:
         addr = bob.getnewaddress()
