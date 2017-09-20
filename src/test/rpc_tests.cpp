@@ -5,7 +5,7 @@
 #include "rpcserver.h"
 #include "rpcclient.h"
 
-#include "base58.h"
+#include "key_io.h"
 #include "netbase.h"
 #include "utilstrencodings.h"
 

@@ -5,13 +5,13 @@
 
 #include "wallet/wallet.h"
 
-#include "base58.h"
 #include "checkpoints.h"
 #include "coincontrol.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "consensus/consensus.h"
 #include "init.h"
+#include "key_io.h"
 #include "main.h"
 #include "net.h"
 #include "script/script.h"

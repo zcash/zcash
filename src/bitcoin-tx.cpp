@@ -2,12 +2,12 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "base58.h"
 #include "clientversion.h"
 #include "coins.h"
 #include "consensus/consensus.h"
 #include "consensus/upgrades.h"
 #include "core_io.h"
+#include "key_io.h"
 #include "keystore.h"
 #include "primitives/transaction.h"
 #include "script/script.h"
