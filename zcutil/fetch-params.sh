@@ -6,27 +6,83 @@ PARAMS_DIR="$HOME/.zcash-params"
 
 SPROUT_PKEY_NAME='sprout-proving.key'
 SPROUT_VKEY_NAME='sprout-verifying.key'
-SPROUT_PKEY_URL="https://z.cash/downloads/$SPROUT_PKEY_NAME"
-SPROUT_VKEY_URL="https://z.cash/downloads/$SPROUT_VKEY_NAME"
+SPROUT_URL="https://z.cash/downloads"
+SPROUT_IPFS="/ipfs/QmZKKx7Xup7LiAtFRhYsE1M7waXcv9ir9eCECyXAFGxhEo"
 
 SHA256CMD="$(command -v sha256sum || echo shasum)"
 SHA256ARGS="$(command -v sha256sum >/dev/null || echo '-a 256')"
 
+WGETCMD="$(command -v wget || echo '')"
+IPFSCMD="$(command -v ipfs || echo '')"
+
+# fetch methods can be disabled with ZC_DISABLE_SOMETHING=1
+ZC_DISABLE_WGET="${ZC_DISABLE_WGET:-}"
+ZC_DISABLE_IPFS="${ZC_DISABLE_IPFS:-}"
+
+function fetch_wget {
+    if [ -z "$WGETCMD" ] || ! [ -z "$ZC_DISABLE_WGET" ]; then
+        return 1
+    fi
+
+    local filename="$1"
+    local dlname="$2"
+
+    cat <<EOF
+
+Retrieving (wget): $SPROUT_URL/$filename
+EOF
+
+    wget \
+        --progress=dot:giga \
+        --output-document="$dlname" \
+        --continue \
+        --retry-connrefused --waitretry=3 --timeout=30 \
+        "$SPROUT_URL/$filename"
+}
+
+function fetch_ipfs {
+    if [ -z "$IPFSCMD" ] || ! [ -z "$ZC_DISABLE_IPFS" ]; then
+        return 1
+    fi
+
+    local filename="$1"
+    local dlname="$2"
+
+    cat <<EOF
+
+Retrieving (ipfs): $SPROUT_IPFS/$filename
+EOF
+
+    ipfs get --output "$dlname" "$SPROUT_IPFS/$filename"
+}
+
+function fetch_failure {
+    cat >&2 <<EOF
+
+Failed to fetch the Zcash zkSNARK parameters!
+Try installing one of the following programs and make sure you're online:
+
+ * ipfs
+ * wget
+
+EOF
+    exit 1
+}
+
 function fetch_params {
-    local url="$1"
+    local filename="$1"
     local output="$2"
     local dlname="${output}.dl"
     local expectedhash="$3"
 
     if ! [ -f "$output" ]
     then
-        echo "Retrieving: $url"
-        wget \
-            --progress=dot:giga \
-            --output-document="$dlname" \
-            --continue \
-            --retry-connrefused --waitretry=3 --timeout=30 \
-            "$url"
+        for method in wget ipfs failure; do
+            if "fetch_$method" "$filename" "$dlname"; then
+                echo "Download successful!"
+                break
+            fi
+        done
 
         "$SHA256CMD" $SHA256ARGS -c <<EOF
 $expectedhash  $dlname
@@ -37,8 +93,8 @@ EOF
         if [ $CHECKSUM_RESULT -eq 0 ]; then
             mv -v "$dlname" "$output"
         else
-           echo "Failed to verify parameter checksums!"
-           exit 1
+            echo "Failed to verify parameter checksums!" >&2
+            exit 1
         fi
     fi
 }
@@ -100,8 +156,8 @@ EOF
 
     cd "$PARAMS_DIR"
 
-    fetch_params "$SPROUT_PKEY_URL" "$PARAMS_DIR/$SPROUT_PKEY_NAME" "8bc20a7f013b2b58970cddd2e7ea028975c88ae7ceb9259a5344a16bc2c0eef7"
-    fetch_params "$SPROUT_VKEY_URL" "$PARAMS_DIR/$SPROUT_VKEY_NAME" "4bd498dae0aacfd8e98dc306338d017d9c08dd0918ead18172bd0aec2fc5df82"
+    fetch_params "$SPROUT_PKEY_NAME" "$PARAMS_DIR/$SPROUT_PKEY_NAME" "8bc20a7f013b2b58970cddd2e7ea028975c88ae7ceb9259a5344a16bc2c0eef7"
+    fetch_params "$SPROUT_VKEY_NAME" "$PARAMS_DIR/$SPROUT_VKEY_NAME" "4bd498dae0aacfd8e98dc306338d017d9c08dd0918ead18172bd0aec2fc5df82"
 }
 
 main
