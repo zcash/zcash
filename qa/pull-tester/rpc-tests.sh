@@ -34,6 +34,7 @@ testScripts=(
     'fundrawtransaction.py'
     'signrawtransactions.py'
     'walletbackup.py'
+    'key_import_export.py'
     'nodehandling.py'
     'reindex.py'
     'decodescript.py'
