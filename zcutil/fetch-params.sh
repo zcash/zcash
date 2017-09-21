@@ -77,7 +77,7 @@ function fetch_params {
 
     if ! [ -f "$output" ]
     then
-        for method in ipfs wget failure; do
+        for method in wget ipfs failure; do
             if "fetch_$method" "$filename" "$dlname"; then
                 echo "Download successful!"
                 break
