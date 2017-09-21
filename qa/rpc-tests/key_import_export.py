@@ -62,6 +62,7 @@ class KeyImportExportTest (BitcoinTestFramework):
         # Now get a pristine address for receiving transfers:
         addr = bob.getnewaddress()
         verify_utxos(bob, [])
+        verify_utxos(charlie, [])
 
         # the amounts of each txn embodied which generates a single UTXO:
         amounts = map(Decimal, ['2.3', '3.7', '0.1', '0.5', '1.0', '0.19'])
@@ -83,16 +84,20 @@ class KeyImportExportTest (BitcoinTestFramework):
             alice_to_bob(amount)
 
         verify_utxos(bob, amounts[:4])
+        verify_utxos(charlie, [])
 
         logging.info("Importing privkey into charlie...")
         ipkaddr = charlie.importprivkey(privkey, '', True)
         assert_equal(addr, ipkaddr)
 
+        # importprivkey should have rescanned, so this should pass:
+        verify_utxos(charlie, amounts[:4])
+
         # Verify idempotent behavior:
         ipkaddr2 = charlie.importprivkey(privkey, '', True)
         assert_equal(addr, ipkaddr2)
 
-        # importprivkey should have rescanned, so this should pass:
+        # amounts should be unchanged
         verify_utxos(charlie, amounts[:4])
 
         logging.info("Sending post-import txns...")
