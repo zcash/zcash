@@ -81,7 +81,7 @@ void ThreadShowMetricsScreen();
  * Heart: img2txt -W 40 -H 20 -f utf8 -d none 2000px-Heart_corazón.svg.png
  */
 const std::string METRICS_ART =
-"   ____   ____     __         _________        .__          \n"
+"   ____   ____     __         _________         __          \n"
 "   \\   \\ /   /____/  |_  ____ \\_   ___ \\  ____ |__| ____    \n"
 "    \\   Y   /  _ \\   __\\/ __ \\/    \\  \\/ /  _ \\|  |/    \\   \n"
 "     \\     (  <_> )  | \\  ___/\\     \\___(  <_> )  |   |  \\  \n"
