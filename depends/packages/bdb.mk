@@ -15,6 +15,10 @@ define $(package)_config_cmds
   ../dist/$($(package)_autoconf)
 endef
 
+define $(package)_preprocess_cmds
+   sed -i -e "s/WinIoCtl.h/winioctl.h/g" src/dbinc/win_db.h
+endef
+
 define $(package)_build_cmds
   $(MAKE) libdb_cxx-6.2.a libdb-6.2.a
 endef

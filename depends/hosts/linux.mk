@@ -1,4 +1,4 @@
-linux_CFLAGS=-pipe
+linux_CFLAGS=-pipe -fPIC
 linux_CXXFLAGS=$(linux_CFLAGS)
 
 linux_release_CFLAGS=-O1
