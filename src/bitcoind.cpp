@@ -54,6 +54,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     }
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Start
@@ -183,6 +184,7 @@ int main(int argc, char* argv[])
 
     // Connect bitcoind signal handlers
     noui_connect();
+
 
     return (AppInit(argc, argv) ? 0 : 1);
 }
