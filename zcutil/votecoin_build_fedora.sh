@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+cd "$(dirname "$(readlink -f "$0")")"    #'"%#@!
+
 sudo dnf install \
       git pkgconfig automake autoconf ncurses-devel python \
       python-zmq wget gtest-devel gcc gcc-c++ libtool patch
