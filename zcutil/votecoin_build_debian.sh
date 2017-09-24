@@ -9,7 +9,7 @@ sudo apt-get install \
 
 ./fetch-params.sh || exit 1
 
-./build.sh --disable-rust -j$(nproc) || exit 1
+./build.sh --disable-tests --disable-rust -j$(nproc) || exit 1
 
 if [ ! -r ~/.votecoin/votecoin.conf ]; then
    mkdir -p ~/.votecoin
