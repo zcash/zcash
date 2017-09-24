@@ -414,10 +414,24 @@ int printInitMessage()
     return 2;
 }
 
+#ifdef WIN32
+void setCursorPosition(int x, int y)
+{
+    static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    std::cout.flush();
+    COORD coord = { (SHORT)x, (SHORT)y };
+    SetConsoleCursorPosition(hOut, coord);
+}
+#endif
+
 void ThreadShowMetricsScreen()
 {
     // Make this thread recognisable as the metrics screen thread
     RenameThread("zcash-metrics-screen");
+
+#ifdef WIN32
+    bool clearedAfterLoaded = false;
+#endif
 
     // Determine whether we should render a persistent UI or rolling metrics
     bool isTTY = isatty(STDOUT_FILENO);
@@ -426,7 +440,11 @@ void ThreadShowMetricsScreen()
 
     if (isScreen) {
         // Clear screen
+#ifdef WIN32
+        setCursorPosition(0, 0);
+#else
         std::cout << "\e[2J";
+#endif
 
         // Print art
         std::cout << METRICS_ART << std::endl;
@@ -435,10 +453,6 @@ void ThreadShowMetricsScreen()
         // Thank you text
         std::cout << _("Thank you for running a VoteCoin node!") << std::endl;
         std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
-
-        // Privacy notice text
-        std::cout << PrivacyInfo();
-        std::cout << std::endl;
     }
 
     while (true) {
@@ -463,8 +477,28 @@ void ThreadShowMetricsScreen()
         }
 
         if (isScreen) {
+#ifdef WIN32
+        setCursorPosition(0, 12);
+        if (loaded)
+        {
+           if (!clearedAfterLoaded)
+           {
+              std::cout << std::string(cols, ' ');
+              std::cout << std::string(cols, ' ');
+              std::cout << std::string(cols, ' ');
+              std::cout << std::string(cols, ' ');
+              std::cout << std::string(cols, ' ');
+              std::cout << std::string(cols, ' ');
+              std::cout << std::string(cols, ' ');
+              std::cout << std::string(cols, ' ');
+              setCursorPosition(0, 12);
+           }
+           clearedAfterLoaded=true;
+        }
+#else
             // Erase below current position
             std::cout << "\e[J";
+#endif
         }
 
         // Miner status
@@ -498,7 +532,11 @@ void ThreadShowMetricsScreen()
 
         if (isScreen) {
             // Return to the top of the updating section
+#ifdef WIN32
+            setCursorPosition(0, 12);
+#else
             std::cout << "\e[" << lines << "A";
+#endif
         }
     }
 }
