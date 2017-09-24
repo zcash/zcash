@@ -787,6 +787,10 @@ boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate)
 {
     namespace fs = boost::filesystem;
 
+    fs::path path;
+    path = fs::system_complete(".");
+    if (fs::exists(path)) return path;
+
     char pszPath[MAX_PATH] = "";
 
     if(SHGetSpecialFolderPathA(NULL, pszPath, nFolder, fCreate))
