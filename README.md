@@ -47,11 +47,11 @@ The above mentioned command should configure your votecoin already by creating ~
 Mining
 ------
 
-If you wish to start mining, append these lines at the end of ~/.votecoin/votecoin.conf:
+Mining with CPU is currently worthless. If you plan to mine VoteCoin, you should
+join a pool. There are several pools in operation at the moment, for example:
 
-    gen=1
-    genproclimit=-1
-    equihashsolver=tromp
+    http://pool.votecoin.site
+    http://votecoinmine.site
 
 
 Running
