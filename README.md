@@ -59,8 +59,8 @@ Installing
 
 Compiled binaries can be found in ./src directory. Copy them to your working path:
 
-    cp ./scr/votecoin-cli /usr/bin
-    cp ./scr/votecoind /usr/bin
+    cp ./src/votecoin-cli /usr/bin
+    cp ./src/votecoind /usr/bin
     cp ./zcutil/vot /usr/bin
 
 
