@@ -28,7 +28,7 @@ Build VoteCoin along with most dependencies from source by running
 
     git clone https://github.com/Tomas-M/VoteCoin.git
     cd ./VoteCoin/zcutil
-    ./votecoin_build_debian.sh # for debian based systems
+    ./votecoin_build_debian.sh # for debian/ubuntu based systems
 
 This will also setup your votecoin.conf file in ~/.votecoin directory, if the file does not exist yet.
 
@@ -54,38 +54,51 @@ join a pool. There are several pools in operation at the moment, for example:
     http://votecoinmine.site
 
 
+Installing
+----------
+
+Compiled binaries can be found in ./src directory. Copy them to your working path:
+
+    cp ./scr/votecoin-cli /usr/bin
+    cp ./scr/votecoind /usr/bin
+    cp ./zcutil/vot /usr/bin
+
+
 Running
 -------
 
-    $ ./src/votecoind
+    $ votecoind
 
 
 Generating Transparent address
 ------------------------------
 
-    $ ./src/votecoin-cli getnewaddress
+Once votecoind daemon is running, you may use votecoin-cli from another console to send commands to the daemon. For example, to generate new transparent address,
+simply call:
+
+    $ votecoin-cli getnewaddress
     t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1
 
 
 Generating Shielded address
 ---------------------------
 
-    $ ./src/votecoin-cli z_getnewaddress
+    $ votecoin-cli z_getnewaddress
     zcBqWB8VDjVER7uLKb4oHp2v54v2a1jKd9o4FY7mdgQ3gDfG8MiZLvdQga8JK3t58yjXGjQHzMzkGUxSguSs6ZzqpgTNiZG
 
 
 Show balances
 -------------
 
-    $ ./src/votecoin-cli getbalance
-    $ ./src/votecoin-cli z_getbalance t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1
-    $ ./src/votecoin-cli z_getbalance zcBqWB8VDjVER7uLKb4oHp2v54v2a1jKd9o4FY7mdgQ3gDfG8MiZLvdQga8JK3t58yjXGjQHzMzkGUxSguSs6ZzqpgTNiZG
+    $ votecoin-cli getbalance
+    $ votecoin-cli z_getbalance t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1
+    $ votecoin-cli z_getbalance zcBqWB8VDjVER7uLKb4oHp2v54v2a1jKd9o4FY7mdgQ3gDfG8MiZLvdQga8JK3t58yjXGjQHzMzkGUxSguSs6ZzqpgTNiZG
 
 
 Make transaction
 ----------------
 
-    $ ./src/votecoin-cli z_sendmany FROM_ADDR '[{"address": "TO_ADDR", "amount": 123}]' 1 0
+    $ votecoin-cli z_sendmany FROM_ADDR '[{"address": "TO_ADDR", "amount": 123}]' 1 0
 
 In the above mentioned example, both FROM_ADDR and TO_ADDR can be either T addresses or Z addresses or combination.
 The last two numbers (1 0) stand for minConf and fee. In the example above, the coins on FROM_ADDR must have
@@ -97,16 +110,34 @@ make another transaction from that Z address to the T address destination.
 
 After a transaction is executed using z_sendmany, you can check its status by using:
 
-    $ ./src/votecoin-cli z_getoperationresult
+    $ votecoin-cli z_getoperationresult
 
 
 
 Export wallet to a file (dump private keys)
 -------------------------------------------
 
-    $ ./src/votecoin-cli z_exportwallet exportfilename
+    $ votecoin-cli z_exportwallet exportfilename
 
 You may need to specify export directory path using for example "exportdir=/tmp" in your ~/.votecoin/votecoin.conf
+
+
+Shortcut
+--------
+
+There is a script called 'vot' for easier operation. It calls votecoin-cli with proper syntax. You may use it instead of votecoin-cli for selected commands:
+
+   $ vot addr ... generate new T address
+   $ vot zaddr ... generate new Z address
+   $ vot send FROM TO AMOUNT ... send coins FROM address to TO address of given AMOUNT, with zero fee
+   $ vot status ... show status of last transaction. Empty status means transaction still in progress
+   $ vot totals ... show total balances in your entire wallet
+   $ vot list ... list all addresses and their balances (non-zero only)
+   $ vot export ... show all your wallet addresses including their private keys
+
+Remember that the last two commands need to export your wallet to a temporary file, so if you are using a computer in shared environment (eg. a server where
+other users can login) then you need to make sure other users do not have access to the exported file. The exported file is deleted after the vot script
+finishes, but is accessible while the script is still running (eg. fetching balances etc).
 
 
 License

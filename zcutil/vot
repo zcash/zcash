@@ -1,0 +1,79 @@
+#!/bin/bash
+
+TMP=/tmp
+
+help()
+{
+   echo ""
+   echo "Helper script to make VoteCoin operations easier"
+   echo "Supported syntax:"
+   echo ""
+   echo "   $0 addr"
+   echo "   $0 zaddr"
+   echo "   $0 send FROM TO AMOUNT"
+   echo "   $0 status"
+   echo "   $0 totals"
+   echo "   $0 list"
+   echo "   $0 export"
+   exit
+}
+
+
+if [ "$1" = "addr" ]; then
+   votecoin-cli getnewaddress
+   exit
+fi
+
+
+if [ "$1" = "zaddr" ]; then
+   votecoin-cli z_getnewaddress
+   exit
+fi
+
+
+if [ "$1" = "send" ]; then
+   votecoin-cli z_sendmany $2 '[{"address": "'$3'", "amount": '$4'}]' 1 0
+   exit
+fi
+
+
+if [ "$1" = "status" ]; then
+   votecoin-cli z_getoperationresult
+   exit
+fi
+
+
+if [ "$1" = "totals" ]; then
+   votecoin-cli z_gettotalbalance
+   exit
+fi
+
+
+if [ "$1" = "export" ]; then
+   EXP=exportfilename$$
+   votecoin-cli z_exportwallet $EXP
+   cat $TMP/$EXP
+   rm -f $TMP/$EXP
+   export
+fi
+
+
+if [ "$1" = "list" ]; then
+   EXP=exportfilename$$
+   votecoin-cli z_exportwallet $EXP
+
+   cat $TMP/$EXP | cut -d = -f 3 | grep "^t1" | while read LINE; do
+      echo -ne $LINE" "
+      votecoin-cli z_getbalance $LINE
+   done | fgrep -v " 0.000000"
+
+   cat $TMP/$EXP | cut -d = -f 2 | grep "^z" | while read LINE; do
+      echo -ne $LINE" "
+      votecoin-cli z_getbalance $LINE
+   done | fgrep -v " 0.000000"
+
+   rm -f $TMP/$EXP >/dev/null
+   exit
+fi
+
+help
