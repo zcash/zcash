@@ -645,7 +645,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
     ClearDatadirCache();
     extern uint16_t BITCOIND_PORT;
     BITCOIND_PORT = GetArg("-rpcport",BaseParams().RPCPort());
-    fprintf(stderr,"from conf file %s RPC %u, used to be %u\n",ASSETCHAINS_SYMBOL,BITCOIND_PORT,BITCOIND_PORT);
+    //fprintf(stderr,"from conf file %s RPC %u, used to be %u\n",ASSETCHAINS_SYMBOL,BITCOIND_PORT,BITCOIND_PORT);
 }
 
 #ifndef WIN32
