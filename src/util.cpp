@@ -643,6 +643,8 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
     }
     // If datadir is changed in .conf file:
     ClearDatadirCache();
+    BITCOIND_PORT = GetArg("-rpcport",BITCOIND_PORT);
+    fprintf(stderr,"from conf file %s RPC %u, used to be %u\n",ASSETCHAINS_SYMBOL,BITCOIND_PORT,BITCOIND_PORT);
 }
 
 #ifndef WIN32
