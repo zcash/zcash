@@ -1413,9 +1413,9 @@ void komodo_passport_iteration()
                         if ( ASSETCHAINS_SYMBOL[0] != 0 )
                             printf("%s passport refid.%d %s fname.(%s) base.%s %ld %ld\n",ASSETCHAINS_SYMBOL,refid,symbol,fname,base,ftell(fp),lastpos[baseid]);
                         fseek(fp,lastpos[baseid],SEEK_SET);
-                        while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 && n < 1000 )
+                        while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 && n < 10000 )
                         {
-                            if ( n == 999 )
+                            if ( n == 9999 )
                             {
                                 if ( time(NULL) < starttime+maxseconds )
                                     n = 0;
