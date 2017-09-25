@@ -644,7 +644,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
     // If datadir is changed in .conf file:
     ClearDatadirCache();
     extern uint16_t BITCOIND_PORT;
-    BITCOIND_PORT = GetArg("-rpcport",BITCOIND_PORT);
+    BITCOIND_PORT = GetArg("-rpcport",BaseParams().RPCPort());
     fprintf(stderr,"from conf file %s RPC %u, used to be %u\n",ASSETCHAINS_SYMBOL,BITCOIND_PORT,BITCOIND_PORT);
 }
 
