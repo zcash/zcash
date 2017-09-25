@@ -1562,7 +1562,8 @@ void komodo_args()
                 break;
         }
     }
-    //fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
+    BITCOIND_PORT = GetArg("-rpcport", BaseParams().RPCPort());
+    fprintf(stderr,"%s RPC %u\n",ASSETCHAINS_SYMBOL,BITCOIND_PORT);
 }
 
 void komodo_nameset(char *symbol,char *dest,char *source)
