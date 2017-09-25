@@ -149,6 +149,12 @@ AC_ARG_ENABLE([zmq],
   [use_zmq=$enableval],
   [use_zmq=yes])
 
+AC_ARG_ENABLE([websocketpp],
+  [AS_HELP_STRING([--enable-websocketpp],
+  [enable WebSocket support in the proving service daemon])],
+  [use_websocketpp=$enableval],
+  [use_websocketpp=no])
+
 AC_ARG_ENABLE([proving-service],
   [AS_HELP_STRING([--disable-proving-service],
   [disable proving service support in daemon])],
@@ -706,6 +712,17 @@ AC_CHECK_LIB([gmp],[[__gmpn_sub_n]],GMP_LIBS=-lgmp, [AC_MSG_ERROR(libgmp missing
 AC_CHECK_HEADER([gmpxx.h],,AC_MSG_ERROR(libgmpxx headers missing))
 AC_CHECK_LIB([gmpxx],[main],GMPXX_LIBS=-lgmpxx, [AC_MSG_ERROR(libgmpxx missing)])
 
+# websocketpp is header-only, so just use autoconf
+if test "x$use_websocketpp" = "xyes"; then
+  AC_CHECK_HEADER([websocketpp/version.hpp],
+    [AC_DEFINE([ENABLE_WEBSOCKET],[1],[Define to 1 to enable WebSocket functions])],
+    [AC_MSG_WARN([websocketpp/version.hpp not found, disabling websocket support])
+     use_websocketpp=no
+     AC_DEFINE([ENABLE_WEBSOCKET],[0],[Define to 1 to enable WebSocket functions])])
+else
+  AC_DEFINE_UNQUOTED([ENABLE_WEBSOCKET],[0],[Define to 1 to enable WebSocket functions])
+fi
+
 if test x$use_proving_service = xyes; then
   if test "x$use_zmq" = "xyes"; then
     AC_DEFINE([ENABLE_PROVING_SERVICE],[1],[Define to 1 to enable proving service functions])
@@ -767,11 +784,11 @@ AC_MSG_RESULT($build_bitcoin_libs)
 
 AC_MSG_CHECKING([whether to build zcash-proving-service])
 if test x$build_zcash_proving_service = xyes; then
-  if test "x$use_zmq" = "xyes"; then
+  if test "x$use_zmq" = "xyes" -o "x$use_websocketpp" = "xyes"; then
     AC_MSG_RESULT([yes])
     BUILD_ZCASH_PROVING_SERVICE="yes"
   else
-    AC_MSG_ERROR([zcash-proving-service requires ZMQ.]);
+    AC_MSG_ERROR([zcash-proving-service requires ZMQ or WebSocket.]);
   fi
 else
   AC_MSG_RESULT([no])
@@ -833,6 +850,8 @@ fi
 AM_CONDITIONAL([ENABLE_ZMQ], [test "x$use_zmq" = "xyes"])
 
 AM_CONDITIONAL([ENABLE_PROTON], [test "x$use_proton" = "xyes"])
+
+AM_CONDITIONAL([ENABLE_WEBSOCKET], [test "x$use_websocketpp" = "xyes"])
 
 AC_MSG_CHECKING([whether to build test_bitcoin])
 if test x$use_tests = xyes; then

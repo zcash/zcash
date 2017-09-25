@@ -127,6 +127,16 @@ then
     shift
 fi
 
+# If --enable-websocketpp is the next argument, enable building WebSocket code:
+WEBSOCKETPP_DEP='no-websocketpp'
+WEBSOCKETPP_ARG=''
+if [ "x${1:-}" = 'x--enable-websocketpp' ]
+then
+    WEBSOCKETPP_DEP=''
+    WEBSOCKETPP_ARG='--enable-websocketpp'
+    shift
+fi
+
 PREFIX="$(pwd)/depends/$BUILD/"
 
 eval "$MAKE" --version
@@ -135,7 +145,7 @@ eval "$CXX" --version
 as --version
 ld -v
 
-HOST="$HOST" BUILD="$BUILD" NO_RUST="$RUST_ARG" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
+HOST="$HOST" BUILD="$BUILD" NO_RUST="$RUST_ARG" NO_PROTON="$PROTON_ARG" NO_WEBSOCKETPP="$WEBSOCKETPP_DEP" "$MAKE" "$@" -C ./depends/ V=1
 ./autogen.sh
-CC="$CC" CXX="$CXX" ./configure --prefix="${PREFIX}" --host="$HOST" --build="$BUILD" "$RUST_ARG" "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" "$LIBS_ARG" $CONFIGURE_FLAGS --enable-werror CXXFLAGS='-g'
+CC="$CC" CXX="$CXX" ./configure --prefix="${PREFIX}" --host="$HOST" --build="$BUILD" "$RUST_ARG" "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" "$LIBS_ARG" "$WEBSOCKETPP_ARG" $CONFIGURE_FLAGS --enable-werror CXXFLAGS='-g'
 "$MAKE" "$@" V=1
