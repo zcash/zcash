@@ -54,7 +54,7 @@ if [ "$1" = "export" ]; then
    votecoin-cli z_exportwallet $EXP
    cat $TMP/$EXP
    rm -f $TMP/$EXP
-   export
+   exit
 fi
 
 
