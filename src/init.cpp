@@ -42,7 +42,6 @@
 
 #ifndef WIN32
 #include <signal.h>
-#include <conio.h>
 #endif
 
 #include <boost/algorithm/string/predicate.hpp>

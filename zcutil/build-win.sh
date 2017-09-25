@@ -23,7 +23,8 @@ CXXFLAGS="-DPTW32_STATIC_LIB -DCURVE_ALT_BN128 -fopenmp -pthread" CONFIG_SITE=$P
 sed -i 's/-lboost_system-mt /-lboost_system-mt-s /' configure
 CC="${CC}" CXX="${CXX}" make V=1
 
-cd ../src/
+cd src
 cp -f zcashd.exe votecoind.exe
 cp -f zcash-cli.exe votecoin-cli.exe
 cp -f zcash-tx.exe votecoin-tx.exe
+cd ..
