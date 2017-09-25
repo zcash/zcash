@@ -21,10 +21,21 @@ Security Warnings
 **VoteCoin is experimental and a work-in-progress.** Use at your own risk.
 
 
+Windows release
+---------------
+
+There is a precompiled Windows version of VoteCoin. You can download it from
+https://github.com/Tomas-M/VoteCoin/releases/
+The download is 853 MB due to zkSNARK proving key which is included in the release.
+Simply unzip and read README.txt. If you use precompiled Windows binaries, you can
+skip to the section "Running" in this document now.
+
+
 Building
 --------
 
-Build VoteCoin along with most dependencies from source by running
+If you prefer to build VoteCoin from source code, you can do so by running
+the following commands in Linux:
 
     git clone https://github.com/Tomas-M/VoteCoin.git
     cd ./VoteCoin/zcutil
@@ -50,8 +61,8 @@ Mining
 Mining with CPU is currently worthless. If you plan to mine VoteCoin, you should
 join a pool. There are several pools in operation at the moment, for example:
 
-    http://pool.votecoin.site
-    http://votecoinmine.site
+    http://pool.votecoin.site ... the official mining pool from VoteCoin developers
+    http://votecoinmine.site ... unofficial pool
 
 
 Installing
