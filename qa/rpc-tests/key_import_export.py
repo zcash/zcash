@@ -3,10 +3,9 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-from time import sleep
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_greater_than, sync_blocks, start_nodes, initialize_chain_clean, connect_nodes_bi
+from test_framework.util import assert_equal, assert_greater_than, start_nodes, initialize_chain_clean, connect_nodes_bi
 
 import logging
 
@@ -32,7 +31,7 @@ class KeyImportExportTest (BitcoinTestFramework):
         [alice, bob, charlie, miner] = self.nodes
 
         def alice_to_bob(amount):
-            txid = alice.sendtoaddress(addr, Decimal(amount))
+            alice.sendtoaddress(addr, Decimal(amount))
             self.sync_all()
             miner.generate(1)
             self.sync_all()
