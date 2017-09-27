@@ -41,6 +41,14 @@ static void SHA256(benchmark::State& state)
         CSHA256().Write(begin_ptr(in), in.size()).Finalize(hash);
 }
 
+static void SHA256D64_1024(benchmark::State& state)
+{
+    std::vector<uint8_t> in(64 * 1024, 0);
+    while (state.KeepRunning()) {
+        SHA256D64(in.data(), in.data(), 1024);
+    }
+}
+
 static void SHA512(benchmark::State& state)
 {
     uint8_t hash[CSHA512::OUTPUT_SIZE];
@@ -76,5 +84,6 @@ BENCHMARK(SHA1);
 BENCHMARK(SHA256);
 BENCHMARK(SHA512);
 
+BENCHMARK(SHA256D64_1024); // 7400
 BENCHMARK(FastRandom_32bit);
 BENCHMARK(FastRandom_1bit);
