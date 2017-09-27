@@ -27,6 +27,7 @@ LIBBITCOIN_CLI=libbitcoin_cli.a
 LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBBITCOIN_CRYPTO_SSE41=crypto/libbitcoin_crypto_sse41.a
+LIBBITCOIN_CRYPTO_AVX2=crypto/libbitcoin_crypto_avx2.a
 LIBRUSTZCASH=$(top_builddir)/target/$(RUST_TARGET)/release/librustzcash.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
 LIBUNIVALUE=univalue/libunivalue.la
@@ -143,6 +144,7 @@ $(LIBUNIVALUE): $(wildcard univalue/lib/*) $(wildcard univalue/include/*)
 EXTRA_LIBRARIES += \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBBITCOIN_CRYPTO_SSE41) \
+  $(LIBBITCOIN_CRYPTO_AVX2) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_SERVER) \
@@ -456,6 +458,14 @@ crypto_libbitcoin_crypto_sse41_a_CPPFLAGS += -DENABLE_SSE41
 endif
 crypto_libbitcoin_crypto_sse41_a_SOURCES = crypto/sha256_sse41.cpp
 
+crypto_libbitcoin_crypto_avx2_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libbitcoin_crypto_avx2_a_CPPFLAGS = $(AM_CPPFLAGS)
+if ENABLE_AVX2
+crypto_libbitcoin_crypto_avx2_a_CXXFLAGS += $(AVX2_CXXFLAGS)
+crypto_libbitcoin_crypto_avx2_a_CPPFLAGS += -DENABLE_AVX2
+endif
+crypto_libbitcoin_crypto_avx2_a_SOURCES = crypto/sha256_avx2.cpp
+
 # common: shared between zcashd and non-server tools
 libbitcoin_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
@@ -556,6 +566,7 @@ zcashd_LDADD = \
   $(LIBBITCOIN_ZMQ) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBBITCOIN_CRYPTO_SSE41) \
+  $(LIBBITCOIN_CRYPTO_AVX2) \
   $(LIBZCASH) \
   $(LIBRUSTZCASH) \
   $(LIBLEVELDB) \
@@ -592,6 +603,7 @@ zcash_cli_LDADD = \
   $(LIBRUSTZCASH) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBBITCOIN_CRYPTO_SSE41) \
+  $(LIBBITCOIN_CRYPTO_AVX2) \
   $(LIBSECP256K1) \
   $(LIBZCASH_LIBS)
 #
@@ -616,6 +628,7 @@ zcash_tx_LDADD = \
   $(LIBRUSTZCASH) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBBITCOIN_CRYPTO_SSE41) \
+  $(LIBBITCOIN_CRYPTO_AVX2) \
   $(LIBZCASH_LIBS)
 
 zcash_tx_LDADD += $(BOOST_LIBS)
