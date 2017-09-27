@@ -247,6 +247,9 @@ case "$1" in
             sendtoaddress)
                 zcash_rpc zcbenchmark sendtoaddress 1 "${@:4}"
                 ;;
+            loadwallet)
+                # The initial load is sufficient for measurement
+                ;;
             *)
                 zcashd_massif_stop
                 echo "Bad arguments to memory."
