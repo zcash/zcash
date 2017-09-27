@@ -8,7 +8,6 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_node, connect_nodes_bi, sync_blocks
 
-import sys
 import time
 from decimal import Decimal
 
@@ -117,7 +116,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
 
         # Shield coinbase utxos from node 0 of value 40, standard fee of 0.00010000
         result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr)
-        mytxid = self.wait_and_assert_operationid_status(0, result['opid'])
+        self.wait_and_assert_operationid_status(0, result['opid'])
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
@@ -131,7 +130,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
 
         # Shield coinbase utxos from any node 2 taddr, and set fee to 0
         result = self.nodes[2].z_shieldcoinbase("*", myzaddr, 0)
-        mytxid = self.wait_and_assert_operationid_status(2, result['opid'])
+        self.wait_and_assert_operationid_status(2, result['opid'])
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
@@ -181,7 +180,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         result = self.nodes[2].z_shieldcoinbase(mytaddr, myzaddr, 0)
         assert_equal(result["shieldingUTXOs"], Decimal('7'))
         assert_equal(result["remainingUTXOs"], Decimal('13'))
-        mytxid = self.wait_and_assert_operationid_status(2, result['opid'])
+        self.wait_and_assert_operationid_status(2, result['opid'])
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
