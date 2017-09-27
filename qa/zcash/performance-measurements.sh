@@ -65,7 +65,7 @@ function zcashd_start {
                     use_200k_benchmark 1
                     ;;
                 *)
-                    echo "Bad arguments."
+                    echo "Bad arguments to zcashd_start."
                     exit 1
             esac
             ;;
@@ -95,7 +95,7 @@ function zcashd_massif_start {
                     use_200k_benchmark 1
                     ;;
                 *)
-                    echo "Bad arguments."
+                    echo "Bad arguments to zcashd_massif_start."
                     exit 1
             esac
             ;;
@@ -208,7 +208,7 @@ case "$1" in
                 ;;
             *)
                 zcashd_stop
-                echo "Bad arguments."
+                echo "Bad arguments to time."
                 exit 1
         esac
         zcashd_stop
@@ -249,7 +249,7 @@ case "$1" in
                 ;;
             *)
                 zcashd_massif_stop
-                echo "Bad arguments."
+                echo "Bad arguments to memory."
                 exit 1
         esac
         zcashd_massif_stop
@@ -288,7 +288,7 @@ case "$1" in
                 ;;
             *)
                 zcashd_valgrind_stop
-                echo "Bad arguments."
+                echo "Bad arguments to valgrind."
                 exit 1
         esac
         zcashd_valgrind_stop
@@ -309,12 +309,12 @@ case "$1" in
                 rm -f valgrind.out
                 ;;
             *)
-                echo "Bad arguments."
+                echo "Bad arguments to valgrind-tests."
                 exit 1
         esac
         ;;
     *)
-        echo "Bad arguments."
+        echo "Invalid benchmark type."
         exit 1
 esac
 
