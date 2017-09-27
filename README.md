@@ -138,13 +138,13 @@ Shortcut
 
 There is a script called 'vot' for easier operation. It calls votecoin-cli with proper syntax. You may use it instead of votecoin-cli for selected commands:
 
-   $ vot addr ... generate new T address
-   $ vot zaddr ... generate new Z address
-   $ vot send FROM TO AMOUNT ... send coins FROM address to TO address of given AMOUNT, with zero fee
-   $ vot status ... show status of last transaction. Empty status means transaction still in progress
-   $ vot totals ... show total balances in your entire wallet
-   $ vot list ... list all addresses and their balances (non-zero only)
-   $ vot export ... show all your wallet addresses including their private keys
+    $ vot addr ... generate new T address
+    $ vot zaddr ... generate new Z address
+    $ vot send FROM TO AMOUNT ... send coins FROM address to TO address of given AMOUNT, with zero fee
+    $ vot status ... show status of last transaction. Empty status means transaction still in progress
+    $ vot totals ... show total balances in your entire wallet
+    $ vot list ... list all addresses and their balances (non-zero only)
+    $ vot export ... show all your wallet addresses including their private keys
 
 Remember that the last two commands need to export your wallet to a temporary file, so if you are using a computer in shared environment (eg. a server where
 other users can login) then you need to make sure other users do not have access to the exported file. The exported file is deleted after the vot script
