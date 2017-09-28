@@ -1066,7 +1066,7 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
     setTips.insert(chainActive.Tip());
 
     /* Construct the output array.  */
-    UniValue res(UniValue::VARR); CBlockIndex *forked;
+    UniValue res(UniValue::VARR); const CBlockIndex *forked;
     BOOST_FOREACH(const CBlockIndex* block, setTips)
     {
         UniValue obj(UniValue::VOBJ);
