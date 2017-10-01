@@ -102,7 +102,7 @@ static bool HTTPReq_JSONRPC(HTTPRequest* req, const std::string &)
         return false;
     }
 
-    if ( (0) && !RPCAuthorized(authHeader.second)) {
+    if (!RPCAuthorized(authHeader.second)) {
         LogPrintf("ThreadRPCServer incorrect password attempt from %s\n", req->GetPeer().ToString());
 
         /* Deter brute-forcing
@@ -128,7 +128,7 @@ static bool HTTPReq_JSONRPC(HTTPRequest* req, const std::string &)
             jreq.parse(valRequest);
             
             if (!RPCAuthorized(authHeader.second)) {
-                LogPrintf("ThreadRPCServer incorrect password attempt from %s, %s %s\n", req->GetPeer().ToString(),jreq.strMethod.ToString(), jreq.params.ToString());
+                LogPrintf("ThreadRPCServer incorrect password attempt from %s\n", req->GetPeer().ToString());
                 MilliSleep(250);
                 
                 req->WriteHeader("WWW-Authenticate", WWW_AUTH_HEADER_DATA);
