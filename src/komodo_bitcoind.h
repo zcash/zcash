@@ -340,7 +340,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
         sprintf(url,(char *)"http://127.0.0.1:%u",port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
         //printf("postdata.(%s) USERPASS.(%s)\n",postdata,KMDUSERPASS);
-        LogPrintf("komodo_issuemethod userpass.(%s) %s %s port.%u\n",userpass,method,params,port);
+        //LogPrintf("komodo_issuemethod userpass.(%s) %s %s port.%u\n",userpass,method,params,port);
         retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,userpass,method,params);
         //retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
