@@ -1510,6 +1510,7 @@ void komodo_args()
             extern int COINBASE_MATURITY;
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
             COINBASE_MATURITY = 1;
+            LogPrintf("ASSETCHAINS_PORT %s %u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT);
         }
         ASSETCHAINS_NOTARIES = GetArg("-ac_notaries","");
         komodo_assetchain_pubkeys((char *)ASSETCHAINS_NOTARIES.c_str());

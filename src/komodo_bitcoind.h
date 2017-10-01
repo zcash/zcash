@@ -340,6 +340,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
         sprintf(url,(char *)"http://127.0.0.1:%u",port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
         //printf("postdata.(%s) USERPASS.(%s)\n",postdata,KMDUSERPASS);
+        //LogPrintf("komodo_issuemethod userpass.(%s) %s %s port.%u\n",userpass,method,params,port);
         retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,userpass,method,params);
         //retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
@@ -353,7 +354,7 @@ int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heig
     *kmdnotarized_heightp = 0;
     if ( strcmp(dest,"KMD") == 0 )
     {
-        port = BITCOIND_PORT;
+        port = 7771;
         userpass = KMDUSERPASS;
     }
     else if ( strcmp(dest,"BTC") == 0 )
@@ -431,8 +432,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
     if ( strcmp(dest,"KMD") == 0 )
     {
         if ( KMDUSERPASS[0] != 0 )
-            jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,BITCOIND_PORT);
-        //else jsonstr = _dex_getrawtransaction();
+            jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771);
         else return(0); // need universal way to issue DEX* API, since notaries mine most blocks, this ok
     }
     else if ( strcmp(dest,"BTC") == 0 )
