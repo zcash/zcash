@@ -354,7 +354,7 @@ int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heig
     *kmdnotarized_heightp = 0;
     if ( strcmp(dest,"KMD") == 0 )
     {
-        port = BITCOIND_PORT;
+        port = 7771;
         userpass = KMDUSERPASS;
     }
     else if ( strcmp(dest,"BTC") == 0 )
@@ -432,8 +432,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
     if ( strcmp(dest,"KMD") == 0 )
     {
         if ( KMDUSERPASS[0] != 0 )
-            jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,BITCOIND_PORT);
-        //else jsonstr = _dex_getrawtransaction();
+            jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771);
         else return(0); // need universal way to issue DEX* API, since notaries mine most blocks, this ok
     }
     else if ( strcmp(dest,"BTC") == 0 )
