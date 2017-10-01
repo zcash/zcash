@@ -1384,7 +1384,7 @@ void komodo_passport_iteration()
         return;
     }*/
     starttime = (uint32_t)time(NULL);
-    if ( starttime == lasttime )
+    if ( 0 && starttime == lasttime )
     {
         usleep(1000);
         return;
@@ -1430,7 +1430,7 @@ void komodo_passport_iteration()
                             n++;
                         }
                         lastpos[baseid] = ftell(fp);
-                        if ( lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
+                        if ( strcmp(symbol,"KMD") == 0 ) //lastpos[baseid] == 0 &&
                             printf("from.(%s) lastpos[%s] %ld isrt.%d\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid],komodo_isrealtime(&ht));
                     } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                     fclose(fp);
