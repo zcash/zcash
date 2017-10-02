@@ -29,6 +29,11 @@ link_deps:
 # Additional distribution-specific dependencies
 dist_deps: []
 
+# Additional grind-specific dependencies
+grind_deps:
+  - lcov
+  - valgrind
+
 # Python modules required for a Zcash Buildbot worker
 buildbot_modules:
   - pip # Needs to be updated first so Buildbot installs
