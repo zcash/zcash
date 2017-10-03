@@ -4,7 +4,8 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
 
-from mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint, ser_string
+from mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
+from script import CScript, OP_0
 
 # Create a block (with regtest difficulty)
 def create_block(hashprev, coinbase, nTime=None, nBits=None):
@@ -45,7 +46,7 @@ def create_coinbase(heightAdjust = 0):
     global counter
     coinbase = CTransaction()
     coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff), 
-                ser_string(serialize_script_num(counter+heightAdjust)), 0xffffffff))
+                CScript([counter+heightAdjust, OP_0]), 0xffffffff))
     counter += 1
     coinbaseoutput = CTxOut()
     coinbaseoutput.nValue = 50*100000000
