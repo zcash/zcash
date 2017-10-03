@@ -38,7 +38,7 @@ class BIP65Test(ComparisonTestFramework):
 
     def run_test(self):
         test = TestManager(self, self.options.tmpdir)
-        # Don't call test.add_all_connections because there is only one node.
+        test.add_all_connections(self.nodes)
         NetworkThread().start() # Start up network handling in another thread
         test.run()
 
