@@ -465,3 +465,12 @@ double benchmark_loadwallet()
     post_wallet_load();
     return res;
 }
+
+double benchmark_listunspent()
+{
+    UniValue params(UniValue::VARR);
+    struct timeval tv_start;
+    timer_start(tv_start);
+    auto unspent = listunspent(params, false);
+    return timer_stop(tv_start);
+}

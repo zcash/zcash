@@ -56,7 +56,7 @@ function use_200k_benchmark {
 
 function zcashd_start {
     case "$1" in
-        sendtoaddress|loadwallet)
+        sendtoaddress|loadwallet|listunspent)
             case "$2" in
                 200k-recv)
                     use_200k_benchmark 0
@@ -86,7 +86,7 @@ function zcashd_stop {
 
 function zcashd_massif_start {
     case "$1" in
-        sendtoaddress|loadwallet)
+        sendtoaddress|loadwallet|listunspent)
             case "$2" in
                 200k-recv)
                     use_200k_benchmark 0
@@ -206,6 +206,9 @@ case "$1" in
             loadwallet)
                 zcash_rpc zcbenchmark loadwallet 10 
                 ;;
+            listunspent)
+                zcash_rpc zcbenchmark listunspent 10
+                ;;
             *)
                 zcashd_stop
                 echo "Bad arguments to time."
@@ -249,6 +252,9 @@ case "$1" in
                 ;;
             loadwallet)
                 # The initial load is sufficient for measurement
+                ;;
+            listunspent)
+                zcash_rpc zcbenchmark listunspent 1
                 ;;
             *)
                 zcashd_massif_stop
