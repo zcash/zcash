@@ -1468,7 +1468,7 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height)
     return(notaryid);
 }
 
-void komodo_args()
+void komodo_args(char *argv0)
 {
     extern int64_t MAX_MONEY;
     std::string name,addn; char *dirname,fname[512],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,baseid,len;
@@ -1482,6 +1482,8 @@ void komodo_args()
         KOMODO_PAX = 1;
     } else KOMODO_PAX = GetArg("-pax",0);
     name = GetArg("-ac_name","");
+    if ( argv0 != 0 && (strcmp(argv0,"mnzd") == 0 || strcmp(argv0,"mnz-cli") == 0) )
+        name = "MNZ";
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
