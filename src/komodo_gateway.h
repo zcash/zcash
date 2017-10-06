@@ -1365,7 +1365,7 @@ void komodo_passport_iteration()
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         refid = 33;
-        limit = 100000;
+        limit = 1000000;
         jumblr_iteration();
     }
     else
@@ -1384,7 +1384,7 @@ void komodo_passport_iteration()
         return;
     }*/
     starttime = (uint32_t)time(NULL);
-    if ( starttime == lasttime )
+    if ( 0 && starttime == lasttime )
     {
         usleep(1000);
         return;
