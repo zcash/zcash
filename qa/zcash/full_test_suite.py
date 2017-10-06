@@ -5,6 +5,7 @@
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 
@@ -23,6 +24,61 @@ def repofile(filename):
 #
 # Custom test runners
 #
+
+RE_RPATH_RUNPATH = re.compile('No RPATH.*No RUNPATH')
+RE_FORTIFY_AVAILABLE = re.compile('FORTIFY_SOURCE support available.*Yes')
+RE_FORTIFY_USED = re.compile('Binary compiled with FORTIFY_SOURCE support.*Yes')
+
+def test_rpath_runpath(filename):
+    output = subprocess.check_output(
+        [repofile('qa/zcash/checksec.sh'), '--file', repofile(filename)]
+    )
+    if RE_RPATH_RUNPATH.search(output):
+        print('PASS: %s has no RPATH or RUNPATH.' % filename)
+        return True
+    else:
+        print('FAIL: %s has an RPATH or a RUNPATH.' % filename)
+        print(output)
+        return False
+
+def test_fortify_source(filename):
+    proc = subprocess.Popen(
+        [repofile('qa/zcash/checksec.sh'), '--fortify-file', repofile(filename)],
+        stdout=subprocess.PIPE,
+    )
+    line1 = proc.stdout.readline()
+    line2 = proc.stdout.readline()
+    proc.terminate()
+    if RE_FORTIFY_AVAILABLE.search(line1) and RE_FORTIFY_USED.search(line2):
+        print('PASS: %s has FORTIFY_SOURCE.' % filename)
+        return True
+    else:
+        print('FAIL: %s is missing FORTIFY_SOURCE.' % filename)
+        return False
+
+def check_security_hardening():
+    ret = True
+
+    # PIE, RELRO, Canary, and NX are tested by make check-security.
+    ret &= subprocess.call(['make', '-C', repofile('src'), 'check-security']) == 0
+
+    ret &= test_rpath_runpath('src/zcashd')
+    ret &= test_rpath_runpath('src/zcash-cli')
+    ret &= test_rpath_runpath('src/zcash-gtest')
+    ret &= test_rpath_runpath('src/zcash-tx')
+    ret &= test_rpath_runpath('src/test/test_bitcoin')
+    ret &= test_rpath_runpath('src/zcash/GenerateParams')
+
+    # NOTE: checksec.sh does not reliably determine whether FORTIFY_SOURCE
+    # is enabled for the entire binary. See issue #915.
+    ret &= test_fortify_source('src/zcashd')
+    ret &= test_fortify_source('src/zcash-cli')
+    ret &= test_fortify_source('src/zcash-gtest')
+    ret &= test_fortify_source('src/zcash-tx')
+    ret &= test_fortify_source('src/test/test_bitcoin')
+    ret &= test_fortify_source('src/zcash/GenerateParams')
+
+    return ret
 
 def ensure_no_dot_so_in_depends():
     arch_dir = os.path.join(
@@ -72,7 +128,7 @@ STAGES = [
 STAGE_COMMANDS = {
     'btest': [repofile('src/test/test_bitcoin'), '-p'],
     'gtest': [repofile('src/zcash-gtest')],
-    'sec-hard': [repofile('qa/zcash/check-security-hardening.sh')],
+    'sec-hard': check_security_hardening,
     'no-dot-so': ensure_no_dot_so_in_depends,
     'secp256k1': ['make', '-C', repofile('src/secp256k1'), 'check'],
     'univalue': ['make', '-C', repofile('src/univalue'), 'check'],
