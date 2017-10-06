@@ -1494,14 +1494,14 @@ void komodo_args(char *argv0)
     name = GetArg("-ac_name","");
     if ( argv0 != 0 )
     {
-        printf("ARGV0.(%s)\n",argv0);
         len = (int32_t)strlen(argv0);
         for (i=0; i<sizeof(argv0suffix)/sizeof(*argv0suffix); i++)
         {
             n = (int32_t)strlen(argv0suffix[i]);
             if ( strcmp(&argv0[len - n],argv0suffix[i]) == 0 )
             {
-                name.c_str() = argv0names[i];
+                printf("ARGV0.(%s) -> matches suffix (%s) -> ac_name.(%s)\n",argv0,argv0suffix[i],argv0names[i]);
+                name = argv0names[i];
                 break;
             }
         }
