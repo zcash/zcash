@@ -1470,13 +1470,13 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height)
 
 char *argv0suffix[] =
 {
-    "mnzd", "mnz-cli", "mnzd.exe", "mnz-cli.exe"
+    (char *)"mnzd", (char *)"mnz-cli", (char *)"mnzd.exe", (char *)"mnz-cli.exe"
 };
 
 char *argv0names[] =
 {
-    "MNZ", "MNZ", "MNZ", "MNZ"
-}
+    (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"MNZ"
+};
 
 void komodo_args(char *argv0)
 {
