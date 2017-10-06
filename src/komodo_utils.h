@@ -1468,10 +1468,20 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height)
     return(notaryid);
 }
 
+char *argv0suffix[] =
+{
+    "mnzd", "mnz-cli", "mnzd.exe", "mnz-cli.exe"
+};
+
+char *argv0names[] =
+{
+    "MNZ", "MNZ", "MNZ", "MNZ"
+}
+
 void komodo_args(char *argv0)
 {
     extern int64_t MAX_MONEY;
-    std::string name,addn; char *dirname,fname[512],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,baseid,len;
+    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,baseid,len,n;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
@@ -1485,8 +1495,16 @@ void komodo_args(char *argv0)
     if ( argv0 != 0 )
     {
         printf("ARGV0.(%s)\n",argv0);
-        if ( strcmp(argv0,"mnzd") == 0 || strcmp(argv0,"mnz-cli") == 0 )
-            name = "MNZ";
+        len = (int32_t)strlen(argv0);
+        for (i=0; i<sizeof(argv0suffix)/sizeof(*argv0suffix); i++)
+        {
+            n = (int32_t)strlen(argv0suffix[i]);
+            if ( strcmp(&argv0[len - n],argv0suffix[i]) == 0 )
+            {
+                name.c_str() = argv0names[i];
+                break;
+            }
+        }
     }
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
     {
