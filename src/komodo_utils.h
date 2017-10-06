@@ -1482,8 +1482,12 @@ void komodo_args(char *argv0)
         KOMODO_PAX = 1;
     } else KOMODO_PAX = GetArg("-pax",0);
     name = GetArg("-ac_name","");
-    if ( argv0 != 0 && (strcmp(argv0,"mnzd") == 0 || strcmp(argv0,"mnz-cli") == 0) )
-        name = "MNZ";
+    if ( argv0 != 0 )
+    {
+        printf("ARGV0.(%s)\n",argv0);
+        if ( strcmp(argv0,"mnzd") == 0 || strcmp(argv0,"mnz-cli") == 0 )
+            name = "MNZ";
+    }
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
