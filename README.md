@@ -39,10 +39,25 @@ sudo apt-get install build-essential pkg-config libcurl3-gnutls-dev libc6-dev li
 
 Komodo
 ------
+We have a release process that goes through several stages before it reaches master. This allows the most conservative users just use the master branch, which is only updated after the other branches have signed off on a release.
+
+99% of the activity is in the dev branch, this is where I am testing each change one by one and there are literally thousands of updates. Only use this branch if you really want to be on the bleeding edge. I try to keep things stable, but there are times where necessarily there are bugs in the dev branch, since I am actively developing and debugging here. A good rule is to wait for at least 4 hours from the last update before using the dev branch (unless you know what you are doing)
+
+After things look good in the dev branch, it is propagated to the beta branch, this is the version the notary nodes use. They are knowledegable command line server guys and so they have a keen eye for anything that wasnt caught during the dev cycle.
+
+After the notary nodes verify things are working and the latest release is deemed stable, it is propagated to the dPoW branch. From here an automated Jenkins process builds it for all OS, and since the notary nodes are all unix, it is possible for some issues to be caught at this stage. The dPoW branch is what goes into the GUI installers.
+
+After the GUI are updated and released and it is verified that no significant support issues were created, the master branch is finally updated.
+
+Master branch: exchanges and users that build from the repo without changing branches
+dPoW branch: autobuild into GUI installers, unix, osx, windows
+beta branch: notary nodes, command line unix
+dev branch: bleeding edge, possibly wont even compile, multiple updates per hour
 
 ```
 git clone https://github.com/jl777/komodo
 cd komodo
+#you might want to: git checkout <branch>; git pull
 ./zcutil/fetch-params.sh
 # -j8 uses 8 threads - replace 8 with number of threads you want to use
 ./zcutil/build.sh -j8
