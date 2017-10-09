@@ -21,6 +21,7 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=KV -ac_supply=1000000 -addnode=78.47.196.146 $1 &
 ./komodod -pubkey=$pubkey -ac_name=CEAL -ac_supply=366666666 -addnode=78.47.196.146 $1 &
 ./komodod -pubkey=$pubkey -ac_name=MESH -ac_supply=1000007 -addnode=78.47.196.146 $1 &
+./komodod -pubkey=$pubkey -ac_name=MNZ -ac_supply=257142858 -addnode=51.15.138.138 $1 &
 sleep $delay
 
 ./komodod -pubkey=$pubkey -ac_name=USD -addnode=78.47.196.146 $1  &
