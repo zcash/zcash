@@ -431,7 +431,24 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
     if ( strcmp(dest,"KMD") == 0 )
     {
         if ( KMDUSERPASS[0] != 0 )
-            jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771);
+        {
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771);
+            else
+            {
+                CTransaction tx; uint256 hashBlock; int32_t numvouts,len; uint8_t *ptr;
+                if ( GetTransaction(txid,tx,hashBlock,true) == 0 )
+                    return(-1);
+                if ( (numvouts= tx.vout.size()) > 0 )
+                {
+                    ptr = (uint8_t *)tx.vout[numvouts - 1].scriptPubKey.data();
+                    len = tx.vout[numvouts - 1].scriptPubKey.size();
+                    retval = komodo_verifynotarizedscript(height,ptr,len,NOTARIZED_HASH);
+                    printf("direct verify ht.%d -> %d\n",height,retval);
+                    return(retval);
+                }
+            }
+        }
         //else jsonstr = _dex_getrawtransaction();
         else return(0); // need universal way to issue DEX* API, since notaries mine most blocks, this ok
     }
