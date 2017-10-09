@@ -86,6 +86,14 @@ void UnregisterAllValidationInterfaces();
 
 class CValidationInterface {
 protected:
+    /**
+     * Notifies listeners when the block chain tip advances.
+     *
+     * When multiple blocks are connected at once, UpdatedBlockTip will be called on the final tip
+     * but may not be called on every intermediate tip.
+     *
+     * Called on a background thread.
+     */
     virtual void UpdatedBlockTip(const CBlockIndex *pindex) {}
     virtual BatchScanner* GetBatchScanner() { return nullptr; }
     virtual void SyncTransaction(const CTransaction &tx, const CBlock *pblock, const int nHeight) {}
