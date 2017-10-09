@@ -3736,38 +3736,53 @@ bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams,
         int nNewHeight;
         {
             LOCK(cs_main);
-            pindexMostWork = FindMostWorkChain();
+            CBlockIndex* starting_tip = chainActive.Tip();
+            bool blocks_connected = false;
+            do {
+                // We absolutely may not unlock cs_main until we've made forward progress
+                // (with the exception of shutdown due to hardware issues, low disk space, etc).
+                //
+                if (pindexMostWork == nullptr) {
+                    pindexMostWork = FindMostWorkChain();
+                }
 
-            // Whether we have anything to do at all.
-            if (pindexMostWork == NULL || pindexMostWork == chainActive.Tip())
-                return true;
+                // Whether we have anything to do at all.
+                if (pindexMostWork == nullptr || pindexMostWork == chainActive.Tip()) {
+                    break;
+                }
 
-            if (!ActivateBestChainStep(state, chainparams, pindexMostWork, pblock && pblock->GetHash() == pindexMostWork->GetBlockHash() ? pblock : NULL))
-                return false;
+                if (!ActivateBestChainStep(state, chainparams, pindexMostWork, pblock && pblock->GetHash() == pindexMostWork->GetBlockHash() ? pblock : nullptr))
+                    return false;
+                blocks_connected = true;
 
-            pindexNewTip = chainActive.Tip();
-            fInitialDownload = IsInitialBlockDownload(chainparams.GetConsensus());
-            nNewHeight = chainActive.Height();
-        }
-        // When we reach this point, we switched to a new tip (stored in pindexNewTip).
+                pindexNewTip = chainActive.Tip();
+                nNewHeight = chainActive.Height();
+            } while (!chainActive.Tip() || (starting_tip && CBlockIndexWorkComparator()(chainActive.Tip(), starting_tip)));
+            if (!blocks_connected) return true;
 
-        // Notifications/callbacks that can run without cs_main
-        // Always notify the UI if a new block tip was connected
-        uiInterface.NotifyBlockTip(fInitialDownload, pindexNewTip);
-        if (!fInitialDownload) {
-            uint256 hashNewTip = pindexNewTip->GetBlockHash();
-            // Relay inventory, but don't relay old inventory during initial block download.
-            int nBlockEstimate = 0;
-            if (fCheckpointsEnabled)
-                nBlockEstimate = Checkpoints::GetTotalBlocksEstimate(chainparams.Checkpoints());
-            {
-                LOCK(cs_vNodes);
-                for (CNode* pnode : vNodes)
-                    if (nNewHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate))
-                        pnode->PushInventory(CInv(MSG_BLOCK, hashNewTip));
+            const CBlockIndex* pindexFork = chainActive.FindFork(starting_tip);
+            bool fInitialDownload = IsInitialBlockDownload(chainparams.GetConsensus());
+
+            if (pindexFork != pindexNewTip) {
+                // Always notify the UI if a new block tip was connected
+                uiInterface.NotifyBlockTip(fInitialDownload, pindexNewTip);
+                if (!fInitialDownload) {
+                    uint256 hashNewTip = pindexNewTip->GetBlockHash();
+                    // Relay inventory, but don't relay old inventory during initial block download.
+                    int nBlockEstimate = 0;
+                    if (fCheckpointsEnabled)
+                        nBlockEstimate = Checkpoints::GetTotalBlocksEstimate(chainparams.Checkpoints());
+                    {
+                        LOCK(cs_vNodes);
+                        for (CNode* pnode : vNodes)
+                            if (nNewHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate))
+                                pnode->PushInventory(CInv(MSG_BLOCK, hashNewTip));
+                    }
+                    // Notify external listeners about the new tip.
+                    GetMainSignals().UpdatedBlockTip(pindexNewTip);
+                }
             }
-            // Notify external listeners about the new tip.
-            GetMainSignals().UpdatedBlockTip(pindexNewTip);
+        // When we reach this point, we switched to a new tip (stored in pindexNewTip).
         }
     } while (pindexNewTip != pindexMostWork);
     CheckBlockIndex(chainparams.GetConsensus());
