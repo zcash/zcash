@@ -47,7 +47,7 @@ double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficul
     int nShiftAmount = (powLimit >> 24) & 0xff;
 
     double dDiff =
-        (double)(powLimit & 0x00ffffff) / 
+        (double)(powLimit & 0x00ffffff) /
         (double)(bits & 0x00ffffff);
 
     while (nShift < nShiftAmount)
@@ -606,14 +606,14 @@ UniValue minerids(const UniValue& params, bool fHelp)
                 for (j=0; j<33; j++)
                     sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
                 item.push_back(Pair("notaryid", i));
-                
+
                 bitcoin_address(kmdaddr,60,pubkeys[i],33);
                 m = (int32_t)strlen(kmdaddr);
                 kmdaddress.resize(m);
                 ptr = (char *)kmdaddress.data();
                 memcpy(ptr,kmdaddr,m);
                 item.push_back(Pair("KMDaddress", kmdaddress));
-                
+
                 item.push_back(Pair("pubkey", hex));
                 item.push_back(Pair("blocks", tally[i]));
                 a.push_back(item);
@@ -775,7 +775,7 @@ UniValue paxprices(const UniValue& params, bool fHelp)
         else
         {
             CBlockIndex *pblockindex = chainActive[heights[i]];
-            
+
             item.push_back(Pair("t", (int64_t)pblockindex->nTime));
             item.push_back(Pair("p", (double)prices[i] / COIN));
             a.push_back(item);
@@ -976,7 +976,11 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
 
     ZCIncrementalMerkleTree tree;
     pcoinsTip->GetAnchorAt(pcoinsTip->GetBestAnchor(), tree);
+    #ifdef __APPLE__
+    obj.push_back(Pair("commitments",           (uint64_t)tree.size()));
+    #else
     obj.push_back(Pair("commitments",           tree.size()));
+    #endif
 
     const Consensus::Params& consensusParams = Params().GetConsensus();
     CBlockIndex* tip = chainActive.Tip();
@@ -1055,9 +1059,7 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
         setTips.insert(item.second);
     BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
     {
-        const CBlockIndex* pprev=0;
-        if ( item.second != 0 )
-            pprev = item.second->pprev;
+        const CBlockIndex* pprev = item.second->pprev;
         if (pprev)
             setTips.erase(pprev);
     }
@@ -1066,40 +1068,38 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
     setTips.insert(chainActive.Tip());
 
     /* Construct the output array.  */
-    UniValue res(UniValue::VARR); const CBlockIndex *forked;
+    UniValue res(UniValue::VARR);
     BOOST_FOREACH(const CBlockIndex* block, setTips)
     {
         UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("height", block->nHeight));
         obj.push_back(Pair("hash", block->phashBlock->GetHex()));
-        forked = chainActive.FindFork(block);
-        if ( forked != 0 )
-        {
-            const int branchLen = block->nHeight - forked->nHeight;
-            obj.push_back(Pair("branchlen", branchLen));
-            
-            string status;
-            if (chainActive.Contains(block)) {
-                // This block is part of the currently active chain.
-                status = "active";
-            } else if (block->nStatus & BLOCK_FAILED_MASK) {
-                // This block or one of its ancestors is invalid.
-                status = "invalid";
-            } else if (block->nChainTx == 0) {
-                // This block cannot be connected because full block data for it or one of its parents is missing.
-                status = "headers-only";
-            } else if (block->IsValid(BLOCK_VALID_SCRIPTS)) {
-                // This block is fully validated, but no longer part of the active chain. It was probably the active block once, but was reorganized.
-                status = "valid-fork";
-            } else if (block->IsValid(BLOCK_VALID_TREE)) {
-                // The headers for this block are valid, but it has not been validated. It was probably never part of the most-work chain.
-                status = "valid-headers";
-            } else {
-                // No clue.
-                status = "unknown";
-            }
-            obj.push_back(Pair("status", status));
+
+        const int branchLen = block->nHeight - chainActive.FindFork(block)->nHeight;
+        obj.push_back(Pair("branchlen", branchLen));
+
+        string status;
+        if (chainActive.Contains(block)) {
+            // This block is part of the currently active chain.
+            status = "active";
+        } else if (block->nStatus & BLOCK_FAILED_MASK) {
+            // This block or one of its ancestors is invalid.
+            status = "invalid";
+        } else if (block->nChainTx == 0) {
+            // This block cannot be connected because full block data for it or one of its parents is missing.
+            status = "headers-only";
+        } else if (block->IsValid(BLOCK_VALID_SCRIPTS)) {
+            // This block is fully validated, but no longer part of the active chain. It was probably the active block once, but was reorganized.
+            status = "valid-fork";
+        } else if (block->IsValid(BLOCK_VALID_TREE)) {
+            // The headers for this block are valid, but it has not been validated. It was probably never part of the most-work chain.
+            status = "valid-headers";
+        } else {
+            // No clue.
+            status = "unknown";
         }
+        obj.push_back(Pair("status", status));
+
         res.push_back(obj);
     }
 

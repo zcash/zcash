@@ -47,13 +47,13 @@ JSDescription JSDescription::Randomized(
             const uint256& anchor,
             boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
             boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
-#ifdef __APPLE__
+            #ifdef __LP64__
             boost::array<uint64_t, ZC_NUM_JS_INPUTS>& inputMap,
             boost::array<uint64_t, ZC_NUM_JS_OUTPUTS>& outputMap,
-#else
+            #else
             boost::array<size_t, ZC_NUM_JS_INPUTS>& inputMap,
             boost::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap,
-#endif
+            #endif
             CAmount vpub_old,
             CAmount vpub_new,
             bool computeProof,
@@ -151,7 +151,7 @@ CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::MIN_CURRENT_
 CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
                                                                    vjoinsplit(tx.vjoinsplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
 {
-    
+
 }
 
 uint256 CMutableTransaction::GetHash() const

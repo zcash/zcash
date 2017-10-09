@@ -20,7 +20,9 @@
 #include <stdint.h>
 #include <memory.h>
 #include <string.h>
-
+#ifdef _WIN32
+#include <sodium.h>
+#endif
 bits320 fmul(const bits320 in2,const bits320 in);
 bits320 fexpand(bits256 basepoint);
 bits256 fcontract(const bits320 input);
@@ -144,7 +146,7 @@ bits320 fsquare_times(const bits320 in,uint64_t count)
         t[2] = ((uint128_t) d0) * r2 + ((uint128_t) r1) * r1 + (((uint128_t) d4) * (r3     ));
         t[3] = ((uint128_t) d0) * r3 + ((uint128_t) d1) * r2 + (((uint128_t) r4) * (d419   ));
         t[4] = ((uint128_t) d0) * r4 + ((uint128_t) d1) * r3 + (((uint128_t) r2) * (r2     ));
-        
+
         r0 = (uint64_t)t[0] & 0x7ffffffffffffLL; c = (uint64_t)(t[0] >> 51);
         t[1] += c;      r1 = (uint64_t)t[1] & 0x7ffffffffffffLL; c = (uint64_t)(t[1] >> 51);
         t[2] += c;      r2 = (uint64_t)t[2] & 0x7ffffffffffffLL; c = (uint64_t)(t[2] >> 51);
@@ -401,9 +403,9 @@ div_by_2_25(const limb v)
  * On entry: |output[i]| < 280*2^54 */
 static void freduce_coefficients(limb *output) {
     unsigned i;
-    
+
     output[10] = 0;
-    
+
     for (i = 0; i < 10; i += 2) {
         limb over = div_by_2_26(output[i]);
         /* The entry condition (that |output[i]| < 280*2^54) means that over is, at
@@ -412,7 +414,7 @@ static void freduce_coefficients(limb *output) {
          * 281*2^54. */
         output[i] -= over << 26;
         output[i+1] += over;
-        
+
         /* For the first iteration, |output[i+1]| < 281*2^54, thus |over| <
          * 281*2^29. When this is added to the next limb, the resulting bound can
          * be approximated as 281*2^54.
@@ -427,9 +429,9 @@ static void freduce_coefficients(limb *output) {
     output[0] += output[10] << 4;
     output[0] += output[10] << 1;
     output[0] += output[10];
-    
+
     output[10] = 0;
-    
+
     /* Now output[1..9] are reduced, and |output[0]| < 2^26 + 19*281*2^29
      * So |over| will be no more than 2^16. */
     {
@@ -437,7 +439,7 @@ static void freduce_coefficients(limb *output) {
         output[0] -= over << 26;
         output[1] += over;
     }
-    
+
     /* Now output[0,2..9] are reduced, and |output[1]| < 2^25 + 2^16 < 2^26. The
      * bound on |output[1]| is sufficient to meet our needs. */
 }
@@ -576,11 +578,11 @@ static void fcontract32(u8 *output, limb *input_limbs)
     int j;
     s32 input[10];
     s32 mask;
-    
+
     /* |input_limbs[i]| < 2^26, so it's valid to convert to an s32. */
     for (i = 0; i < 10; i++)
         input[i] = (s32)input_limbs[i];
-    
+
     for (j = 0; j < 2; ++j) {
         for (i = 0; i < 9; ++i) {
             if ((i & 1) == 1) {
@@ -597,7 +599,7 @@ static void fcontract32(u8 *output, limb *input_limbs)
                 input[i+1] = input[i+1] - carry;
             }
         }
-        
+
         /* There's no greater limb for input[9] to borrow from, but we can multiply
          * by 19 and borrow from input[0], which is valid mod 2^255-19. */
         {
@@ -606,19 +608,19 @@ static void fcontract32(u8 *output, limb *input_limbs)
             input[9] = input[9] + (carry << 25);
             input[0] = input[0] - (carry * 19);
         }
-        
+
         /* After the first iteration, input[1..9] are non-negative and fit within
          * 25 or 26 bits, depending on position. However, input[0] may be
          * negative. */
     }
-    
+
     /* The first borrow-propagation pass above ended with every limb
      except (possibly) input[0] non-negative.
-     
+
      If input[0] was negative after the first pass, then it was because of a
      carry from input[9]. On entry, input[9] < 2^26 so the carry was, at most,
      one, since (2**26-1) >> 25 = 1. Thus input[0] >= -19.
-     
+
      In the second pass, each limb is decreased by at most one. Thus the second
      borrow-propagation pass could only have wrapped around to decrease
      input[0] again if the first pass left input[0] negative *and* input[1]
@@ -630,7 +632,7 @@ static void fcontract32(u8 *output, limb *input_limbs)
         input[0] = input[0] + (carry << 26);
         input[1] = input[1] - carry;
     }
-    
+
     /* All input[i] are now non-negative. However, there might be values between
      * 2^25 and 2^26 in a limb which is, nominally, 25 bits wide. */
     for (j = 0; j < 2; j++) {
@@ -645,21 +647,21 @@ static void fcontract32(u8 *output, limb *input_limbs)
                 input[i+1] += carry;
             }
         }
-        
+
         {
             const s32 carry = input[9] >> 25;
             input[9] &= 0x1ffffff;
             input[0] += 19*carry;
         }
     }
-    
+
     /* If the first carry-chain pass, just above, ended up with a carry from
      * input[9], and that caused input[0] to be out-of-bounds, then input[0] was
      * < 2^26 + 2*19, because the carry was, at most, two.
      *
      * If the second pass carried from input[9] again then input[0] is < 2*19 and
      * the input[9] -> input[0] carry didn't push input[0] out of bounds. */
-    
+
     /* It still remains the case that input might be between 2^255-19 and 2^255.
      * In this case, input[1..9] must take their maximum value and input[0] must
      * be >= (2^255-19) & 0x3ffffff, which is 0x3ffffed. */
@@ -671,11 +673,11 @@ static void fcontract32(u8 *output, limb *input_limbs)
             mask &= s32_eq(input[i], 0x3ffffff);
         }
     }
-    
+
     /* mask is either 0xffffffff (if input >= 2^255-19) and zero otherwise. Thus
      * this conditionally subtracts 2^255-19. */
     input[0] -= mask & 0x3ffffed;
-    
+
     for (i = 1; i < 10; i++) {
         if ((i & 1) == 1) {
             input[i] -= mask & 0x1ffffff;
@@ -683,7 +685,7 @@ static void fcontract32(u8 *output, limb *input_limbs)
             input[i] -= mask & 0x3ffffff;
         }
     }
-    
+
     input[1] <<= 2;
     input[2] <<= 3;
     input[3] <<= 5;
@@ -882,12 +884,18 @@ inline bits320 crecip(const bits320 z)
     /* 2^255 - 21 */ return(fmul(t0, a));
 }
 
+#ifndef _WIN32
 void OS_randombytes(unsigned char *x,long xlen);
+#endif
 
 bits256 rand256(int32_t privkeyflag)
 {
     bits256 randval;
+    #ifndef __WIN32
     OS_randombytes(randval.bytes,sizeof(randval));
+    #else
+    randombytes_buf(randval.bytes,sizeof(randval));
+    #endif
     if ( privkeyflag != 0 )
         randval.bytes[0] &= 0xf8, randval.bytes[31] &= 0x7f, randval.bytes[31] |= 0x40;
     return(randval);
