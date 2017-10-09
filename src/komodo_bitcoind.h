@@ -437,7 +437,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
             else
             {
                 CTransaction tx; uint256 hashBlock; int32_t numvouts,len; uint8_t *ptr;
-                if ( GetTransaction(txid,tx,hashBlock,true) == 0 )
+                if ( GetTransaction(NOTARIZED_DESTTXID,tx,hashBlock,true) == 0 )
                     return(-1);
                 if ( (numvouts= tx.vout.size()) > 0 )
                 {
