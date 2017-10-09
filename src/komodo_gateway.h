@@ -1352,8 +1352,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 void komodo_passport_iteration()
 {
     static long lastpos[34]; static char userpass[33][1024]; static uint32_t lasttime;
-    int32_t maxseconds = 30;
-    FILE *fp; int32_t baseid,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
+    int32_t maxseconds = 10;
+    FILE *fp; int32_t baseid,limit,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
     //printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
     expired = 0;
     while ( KOMODO_INITDONE == 0 )
@@ -1365,10 +1365,12 @@ void komodo_passport_iteration()
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         refid = 33;
+        limit = 1000000;
         jumblr_iteration();
     }
     else
     {
+        limit = 10000;
         refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1; // illegal base -> baseid.-1 -> 0
         if ( refid == 0 )
         {
@@ -1382,7 +1384,7 @@ void komodo_passport_iteration()
         return;
     }*/
     starttime = (uint32_t)time(NULL);
-    if ( starttime == lasttime )
+    if ( 0 && starttime == lasttime )
     {
         usleep(1000);
         return;
@@ -1413,9 +1415,9 @@ void komodo_passport_iteration()
                         if ( ASSETCHAINS_SYMBOL[0] != 0 )
                             printf("%s passport refid.%d %s fname.(%s) base.%s %ld %ld\n",ASSETCHAINS_SYMBOL,refid,symbol,fname,base,ftell(fp),lastpos[baseid]);
                         fseek(fp,lastpos[baseid],SEEK_SET);
-                        while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 && n < 1000 )
+                        while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 && n < limit )
                         {
-                            if ( n == 999 )
+                            if ( n == limit-1 )
                             {
                                 if ( time(NULL) < starttime+maxseconds )
                                     n = 0;

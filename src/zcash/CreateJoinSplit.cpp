@@ -8,6 +8,7 @@
 #include "libsnark/common/profiling.hpp"
 char ASSETCHAINS_SYMBOL[16];
 int64_t MAX_MONEY = 200000000 * 100000000LL;
+uint16_t BITCOIND_PORT = 7771;
 
 using namespace libzcash;
 
