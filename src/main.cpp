@@ -3731,50 +3731,61 @@ bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams,
     do {
         boost::this_thread::interruption_point();
 
-        bool fInitialDownload;
-        int nNewHeight;
         {
+            int nNewHeight;
             LOCK(cs_main);
-            if (pindexMostWork == NULL) {
-                pindexMostWork = FindMostWorkChain();
+            CBlockIndex* starting_tip = chainActive.Tip();
+            bool blocks_connected = false;
+            do {
+                // We absolutely may not unlock cs_main until we've made forward progress
+                // (with the exception of shutdown due to hardware issues, low disk space, etc).
+                if (pindexMostWork == nullptr) {
+                    pindexMostWork = FindMostWorkChain();
+                }
+
+                // Whether we have anything to do at all.
+                if (pindexMostWork == nullptr || pindexMostWork == chainActive.Tip()) {
+                    break;
+                }
+
+                bool fInvalidFound = false;
+                if (!ActivateBestChainStep(state, chainparams, pindexMostWork, pblock && pblock->GetHash() == pindexMostWork->GetBlockHash() ? pblock : nullptr, fInvalidFound))
+                    return false;
+                blocks_connected = true;
+
+                if (fInvalidFound) {
+                    // Wipe cache, we may need another branch now.
+                    pindexMostWork = NULL;
+                }
+                pindexNewTip = chainActive.Tip();
+                nNewHeight = chainActive.Height();
+            } while (!chainActive.Tip() || (starting_tip && CBlockIndexWorkComparator()(chainActive.Tip(), starting_tip)));
+            if (!blocks_connected) return true;
+
+            const CBlockIndex* pindexFork = chainActive.FindFork(starting_tip);
+            bool fInitialDownload = IsInitialBlockDownload(chainparams.GetConsensus());
+
+            if (pindexFork != pindexNewTip) {
+                // Always notify the UI if a new block tip was connected
+                uiInterface.NotifyBlockTip(fInitialDownload, pindexNewTip);
+                if (!fInitialDownload) {
+                    uint256 hashNewTip = pindexNewTip->GetBlockHash();
+                    // Relay inventory, but don't relay old inventory during initial block download.
+                    int nBlockEstimate = 0;
+                    if (fCheckpointsEnabled)
+                        nBlockEstimate = Checkpoints::GetTotalBlocksEstimate(chainparams.Checkpoints());
+                    {
+                        LOCK(cs_vNodes);
+                        for (CNode* pnode : vNodes)
+                            if (nNewHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate))
+                                pnode->PushInventory(CInv(MSG_BLOCK, hashNewTip));
+                    }
+                    // Notify external listeners about the new tip.
+                    GetMainSignals().UpdatedBlockTip(pindexNewTip);
+                }
             }
-
-            // Whether we have anything to do at all.
-            if (pindexMostWork == NULL || pindexMostWork == chainActive.Tip())
-                return true;
-
-            bool fInvalidFound = false;
-            if (!ActivateBestChainStep(state, chainparams, pindexMostWork, pblock && pblock->GetHash() == pindexMostWork->GetBlockHash() ? pblock : NULL, fInvalidFound))
-                return false;
-
-            if (fInvalidFound) {
-                // Wipe cache, we may need another branch now.
-                pindexMostWork = NULL;
-            }
-            pindexNewTip = chainActive.Tip();
-            fInitialDownload = IsInitialBlockDownload(chainparams.GetConsensus());
-            nNewHeight = chainActive.Height();
         }
         // When we reach this point, we switched to a new tip (stored in pindexNewTip).
-
-        // Notifications/callbacks that can run without cs_main
-        // Always notify the UI if a new block tip was connected
-        uiInterface.NotifyBlockTip(fInitialDownload, pindexNewTip);
-        if (!fInitialDownload) {
-            uint256 hashNewTip = pindexNewTip->GetBlockHash();
-            // Relay inventory, but don't relay old inventory during initial block download.
-            int nBlockEstimate = 0;
-            if (fCheckpointsEnabled)
-                nBlockEstimate = Checkpoints::GetTotalBlocksEstimate(chainparams.Checkpoints());
-            {
-                LOCK(cs_vNodes);
-                for (CNode* pnode : vNodes)
-                    if (nNewHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate))
-                        pnode->PushInventory(CInv(MSG_BLOCK, hashNewTip));
-            }
-            // Notify external listeners about the new tip.
-            GetMainSignals().UpdatedBlockTip(pindexNewTip);
-        }
     } while (pindexNewTip != pindexMostWork);
     CheckBlockIndex(chainparams.GetConsensus());
 
