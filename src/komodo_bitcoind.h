@@ -16,8 +16,8 @@
 // komodo functions that interact with bitcoind C++
 
 #ifdef _WIN32
-#include <curl.h>
-#include <easy.h>
+#include <curl/curl.h>
+#include <curl/easy.h>
 #else
 #include <curl/curl.h>
 #include <curl/easy.h>
@@ -164,7 +164,7 @@ try_again:
     curl_handle = curl_easy_init();
     init_string(&s);
     headers = curl_slist_append(0,"Expect:");
-    
+
   	curl_easy_setopt(curl_handle,CURLOPT_USERAGENT,"mozilla/4.0");//"Mozilla/4.0 (compatible; )");
     curl_easy_setopt(curl_handle,CURLOPT_HTTPHEADER,	headers);
     curl_easy_setopt(curl_handle,CURLOPT_URL,		url);
@@ -193,7 +193,7 @@ try_again:
                 bracket0 = (char *)"[";
                 bracket1 = (char *)"]";
             }
-            
+
             databuf = (char *)malloc(256 + strlen(command) + strlen(params));
             sprintf(databuf,"{\"id\":\"jl777\",\"method\":\"%s\",\"params\":%s%s%s}",command,bracket0,params,bracket1);
             //printf("url.(%s) userpass.(%s) databuf.(%s)\n",url,userpass,databuf);
@@ -233,7 +233,7 @@ try_again:
         free(s.ptr);
         sleep((1<<numretries));
         goto try_again;
-        
+
     }
     else
     {
@@ -340,7 +340,6 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
         sprintf(url,(char *)"http://127.0.0.1:%u",port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
         //printf("postdata.(%s) USERPASS.(%s)\n",postdata,KMDUSERPASS);
-        //LogPrintf("komodo_issuemethod userpass.(%s) %s %s port.%u\n",userpass,method,params,port);
         retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,userpass,method,params);
         //retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
@@ -433,6 +432,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
     {
         if ( KMDUSERPASS[0] != 0 )
             jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771);
+        //else jsonstr = _dex_getrawtransaction();
         else return(0); // need universal way to issue DEX* API, since notaries mine most blocks, this ok
     }
     else if ( strcmp(dest,"BTC") == 0 )
@@ -481,7 +481,7 @@ uint256 komodo_getblockhash(int32_t height)
     uint256 hash; char params[128],*hexstr,*jsonstr; cJSON *result; int32_t i; uint8_t revbuf[32];
     memset(&hash,0,sizeof(hash));
     sprintf(params,"[%d]",height);
-    if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getblockhash",params,BITCOIND_PORT)) != 0 )
+    if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getblockhash",params,7771)) != 0 )
     {
         if ( (result= cJSON_Parse(jsonstr)) != 0 )
         {
@@ -883,4 +883,3 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
     }
     return(0);
 }
-

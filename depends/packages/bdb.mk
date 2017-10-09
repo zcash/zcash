@@ -15,6 +15,17 @@ define $(package)_config_cmds
   ../dist/$($(package)_autoconf)
 endef
 
+
+ifeq ($(build_os),darwin)
+define $(package)_preprocess_cmds
+   sed -i -e "s/WinIoCtl.h/winioctl.h/g" src/dbinc/win_db.h
+endef
+else ifeq ($(host_os),mingw32)
+define $(package)_preprocess_cmds
+	sed -i "s/WinIoCtl.h/winioctl.h/g" src/dbinc/win_db.h
+endef
+endif
+
 define $(package)_build_cmds
   $(MAKE) libdb_cxx-6.2.a libdb-6.2.a
 endef
