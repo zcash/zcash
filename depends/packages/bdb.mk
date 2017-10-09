@@ -20,7 +20,7 @@ ifeq ($(build_os),darwin)
 define $(package)_preprocess_cmds
    sed -i -e "s/WinIoCtl.h/winioctl.h/g" src/dbinc/win_db.h
 endef
-else ifeq ($(build_os), mingw32)
+else ifeq ($(host_os),mingw32)
 define $(package)_preprocess_cmds
 	sed -i "s/WinIoCtl.h/winioctl.h/g" src/dbinc/win_db.h
 endef
