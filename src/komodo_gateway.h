@@ -1147,7 +1147,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 {
                     if ( baseids[i] < 0 )
                     {
-                        printf("%d of %d illegal baseid.%d\n",i,n,baseids[i]);
+                        static uint32_t counter;
+                        if ( counter++ < 3 )
+                            printf("%d of %d illegal baseid.%d, this can be ignored\n",i,n,baseids[i]);
                         continue;
                     }
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
@@ -1384,6 +1386,8 @@ void komodo_passport_iteration()
         return;
     }*/
     starttime = (uint32_t)time(NULL);
+    if ( lasttime == 0 )
+        limit = 10;
     if ( 0 && starttime == lasttime )
     {
         usleep(1000);
