@@ -20,6 +20,11 @@
 
 #include <stdio.h>
 
+#ifdef _WIN32
+#define frpintf(...)
+#define printf(...)
+#endif
+
 /* Introduction text for doxygen: */
 
 /*! \mainpage Developer documentation
@@ -113,7 +118,11 @@ bool AppInit(int argc, char* argv[])
         {
             //if ( komodo_is_issuer() != 0 )
             //    komodo_passport_iteration();
+            #ifdef _WIN32
+            boost::this_thread::sleep_for(boost::chrono::seconds(1));
+            #else
             sleep(1);
+            #endif
         }
         printf("initialized %s\n",ASSETCHAINS_SYMBOL);
         if (!boost::filesystem::is_directory(GetDataDir(false)))

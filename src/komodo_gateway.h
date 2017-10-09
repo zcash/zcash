@@ -1147,7 +1147,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                 {
                     if ( baseids[i] < 0 )
                     {
-                        printf("%d of %d illegal baseid.%d\n",i,n,baseids[i]);
+                        static uint32_t counter;
+                        if ( counter++ < 3 )
+                            printf("%d of %d illegal baseid.%d, this can be ignored\n",i,n,baseids[i]);
                         continue;
                     }
                     bitcoin_address(coinaddr,60,&rmd160s[i*20],20);
@@ -1351,7 +1353,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
 
 void komodo_passport_iteration()
 {
-    static long lastpos[34]; static char userpass[33][1024]; static uint32_t lasttime;
+    static long lastpos[34]; static char userpass[33][1024]; static uint32_t lasttime,callcounter;
     int32_t maxseconds = 10;
     FILE *fp; int32_t baseid,limit,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
     //printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
@@ -1365,12 +1367,12 @@ void komodo_passport_iteration()
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         refid = 33;
-        limit = 1000000;
+        limit = 10000000;
         jumblr_iteration();
     }
     else
     {
-        limit = 10000;
+        limit = 10000000;
         refid = komodo_baseid(ASSETCHAINS_SYMBOL)+1; // illegal base -> baseid.-1 -> 0
         if ( refid == 0 )
         {
@@ -1384,6 +1386,8 @@ void komodo_passport_iteration()
         return;
     }*/
     starttime = (uint32_t)time(NULL);
+    if ( callcounter++ < 1 )
+        limit = 10000;
     if ( 0 && starttime == lasttime )
     {
         usleep(1000);
