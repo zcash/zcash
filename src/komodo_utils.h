@@ -1483,10 +1483,20 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height)
     return(notaryid);
 }
 
-void komodo_args()
+char *argv0suffix[] =
+{
+    (char *)"mnzd", (char *)"mnz-cli", (char *)"mnzd.exe", (char *)"mnz-cli.exe"
+};
+
+char *argv0names[] =
+{
+    (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"MNZ"
+};
+
+void komodo_args(char *argv0)
 {
     extern int64_t MAX_MONEY;
-    std::string name,addn; char *dirname,fname[512],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,baseid,len;
+    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,baseid,len,n;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
@@ -1497,6 +1507,20 @@ void komodo_args()
         KOMODO_PAX = 1;
     } else KOMODO_PAX = GetArg("-pax",0);
     name = GetArg("-ac_name","");
+		if ( argv0 != 0 )
+		{
+    		len = (int32_t)strlen(argv0);
+      	for (i=0; i<sizeof(argv0suffix)/sizeof(*argv0suffix); i++)
+      	{
+        		n = (int32_t)strlen(argv0suffix[i]);
+        		if ( strcmp(&argv0[len - n],argv0suffix[i]) == 0 )
+        		{
+            		printf("ARGV0.(%s) -> matches suffix (%s) -> ac_name.(%s)\n",argv0,argv0suffix[i],argv0names[i]);
+            		name = argv0names[i];
+            		break;
+            }
+        }
+    }
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
@@ -1529,6 +1553,7 @@ void komodo_args()
             extern int COINBASE_MATURITY;
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
             COINBASE_MATURITY = 1;
+						LogPrintf("ASSETCHAINS_PORT %s %u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT);
         }
         ASSETCHAINS_NOTARIES = GetArg("-ac_notaries","");
         komodo_assetchain_pubkeys((char *)ASSETCHAINS_NOTARIES.c_str());
@@ -1581,6 +1606,7 @@ void komodo_args()
                 break;
         }
     }
+		BITCOIND_PORT = GetArg("-rpcport", BaseParams().RPCPort());
     //fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
 }
 
