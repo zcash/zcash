@@ -140,14 +140,21 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     numerator = (nValue / 20); // assumes 5%!
                     if ( txheight < 250000 )
                         interest = (numerator / denominator);
-                    else interest = (numerator * minutes) / ((uint64_t)365 * 24 * 60);
+                    else if ( txheight < 1000000 )
+                    {
+                        interest = (numerator * minutes) / ((uint64_t)365 * 24 * 60);
+                        interestnew = _komodo_interestnew(nValue,nLockTime,tiptime);
+                        //if ( interest < interestnew || interestnew < 0.9999*interest )
+                            fprintf(stderr,"path0 current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
+                    }
+                    else interest = _komodo_interestnew(nValue,nLockTime,tiptime);
                 }
                 else if ( txheight < 1000000 )
                 {
                     numerator = (nValue * KOMODO_INTEREST);
                     interest = (numerator / denominator) / COIN;
                     interestnew = _komodo_interestnew(nValue,nLockTime,tiptime);
-                    //if ( interest < interestnew || interestnew < 0.9999*interest )
+                    if ( interest < interestnew )
                         fprintf(stderr,"path0 current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
                 }
                 else interest = _komodo_interestnew(nValue,nLockTime,tiptime);
