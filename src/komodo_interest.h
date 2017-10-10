@@ -13,13 +13,15 @@
  *                                                                            *
  ******************************************************************************/
 
+#define dstr(x) ((double)(x) / SATOSHIDEN)
+
 #define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))   // 5%
 int64_t MAX_MONEY = 200000000 * 100000000LL;
 
 uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
 {
     static uint64_t *interests; static int32_t maxheight;
-    uint64_t total; int32_t ind,incr = 100000;
+    uint64_t total; int32_t ind,incr = 10000;
     if ( height >= maxheight )
     {
         if ( interests == 0 )
@@ -36,16 +38,20 @@ uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
     }
     ind = (height << 1);
     if ( paidinterest < 0 ) // request
+    {
         return(interests[ind]);
+    }
     else
     {
         if ( interests[ind + 1] != paidinterest )
         {
+            fprintf(stderr,"interests.%d %.8f %.8f vs paidinterest.%d\n",height,dstr(interests[ind]),dstr(interests[ind+1]),dstr(paidinterest));
             interests[ind + 1] = paidinterest;
-            if ( height == 0 )
-                interests[ind] = interests[ind + 1];
-            else interests[ind] = interests[ind - 2] + interests[ind + 1];
-            total = interests[ind];
+            if ( height <= 1 )
+                interests[ind] = 0;
+            else interests[ind] = interests[ind - 2] + interests[ind - 1];
+            total = interests[ind] + paidinterest;
+            fprintf(stderr,"reset interests[height.%d to maxheight.%d] <- %.8f\n",height,maxheight,dstr(total));
             for (++height; height<maxheight; height++)
             {
                 ind = (height << 1);
@@ -53,13 +59,14 @@ uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
                 interests[ind + 1] = 0;
             }
         }
+        else fprintf(stderr,"interests.%d %.8f %.8f\n",height,dstr(interests[ind]),dstr(interests[ind+1]));
     }
     return(0);
 }
 
 uint64_t komodo_moneysupply(int32_t height)
 {
-    if ( height <= 1 || ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( height <= 1 || ASSETCHAINS_SYMBOL[0] != 0 )
         return(0);
     else return(COIN * 100000000 + (height-1) * 3 + komodo_earned_interest(height,-1));
 }
@@ -137,8 +144,8 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     numerator = (nValue * KOMODO_INTEREST);
                     interest = (numerator / denominator) / COIN;
                     interestnew = _komodo_interestnew(nValue,nLockTime,tiptime);
-                    //if ( interest != interestnew )
-                        printf("path0 current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
+                    if ( interest != interestnew )
+                        fprintf(stderr,"path0 current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
                 }
                 else interest = _komodo_interestnew(nValue,nLockTime,tiptime);
             }
@@ -164,7 +171,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     //fprintf(stderr,"interest %llu %.8f <- numerator.%llu minutes.%d\n",(long long)interest,(double)interest/COIN,(long long)numerator,(int32_t)minutes);
                     interestnew = _komodo_interestnew(nValue,nLockTime,tiptime);
                     if ( interest != interestnew )
-                        printf("path1 current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
+                        fprintf(stderr,"path1 current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
                 }
                 else interest = _komodo_interestnew(nValue,nLockTime,tiptime);
             }
