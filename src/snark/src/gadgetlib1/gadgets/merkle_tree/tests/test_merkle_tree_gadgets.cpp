@@ -15,6 +15,8 @@
 #include "gadgetlib1/gadgets/merkle_tree/merkle_tree_check_update_gadget.hpp"
 #include "gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp"
 
+#include <gtest/gtest.h>
+
 using namespace libsnark;
 
 template<typename ppT>
@@ -28,7 +30,7 @@ void test_all_merkle_tree_gadgets()
     test_merkle_tree_check_update_gadget<FieldT, sha256_two_to_one_hash_gadget<FieldT> >();
 }
 
-int main(void)
+TEST(gadgetlib1, merkle_tree)
 {
     start_profiling();
 

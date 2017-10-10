@@ -17,6 +17,8 @@
 #include "relations/constraint_satisfaction_problems/r1cs/examples/r1cs_examples.hpp"
 #include "zk_proof_systems/ppzksnark/r1cs_ppzksnark/examples/run_r1cs_ppzksnark.hpp"
 
+#include <gtest/gtest.h>
+
 using namespace libsnark;
 
 template<typename ppT>
@@ -28,12 +30,12 @@ void test_r1cs_ppzksnark(size_t num_constraints,
     const bool test_serialization = true;
     r1cs_example<Fr<ppT> > example = generate_r1cs_example_with_binary_input<Fr<ppT> >(num_constraints, input_size);
     const bool bit = run_r1cs_ppzksnark<ppT>(example, test_serialization);
-    assert(bit);
+    EXPECT_TRUE(bit);
 
     print_header("(leave) Test R1CS ppzkSNARK");
 }
 
-int main()
+TEST(zk_proof_systems, r1cs_ppzksnark)
 {
     default_r1cs_ppzksnark_pp::init_public_params();
     start_profiling();

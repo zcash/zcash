@@ -17,6 +17,8 @@
 #include "reductions/r1cs_to_qap/r1cs_to_qap.hpp"
 #include "relations/constraint_satisfaction_problems/r1cs/examples/r1cs_examples.hpp"
 
+#include <gtest/gtest.h>
+
 using namespace libsnark;
 
 template<typename FieldT>
@@ -28,7 +30,7 @@ void test_qap(const size_t qap_degree, const size_t num_inputs, const bool binar
       See the transformation from R1CS to QAP for why this is the case.
       So we need that qap_degree >= num_inputs + 1.
     */
-    assert(num_inputs + 1 <= qap_degree);
+    ASSERT_LE(num_inputs + 1, qap_degree);
     enter_block("Call to test_qap");
 
     const size_t num_constraints = qap_degree - num_inputs - 1;
@@ -51,7 +53,7 @@ void test_qap(const size_t qap_degree, const size_t num_inputs, const bool binar
     leave_block("Generate constraint system and assignment");
 
     enter_block("Check satisfiability of constraint system");
-    assert(example.constraint_system.is_satisfied(example.primary_input, example.auxiliary_input));
+    EXPECT_TRUE(example.constraint_system.is_satisfied(example.primary_input, example.auxiliary_input));
     leave_block("Check satisfiability of constraint system");
 
     const FieldT t = FieldT::random_element(),
@@ -72,17 +74,17 @@ void test_qap(const size_t qap_degree, const size_t num_inputs, const bool binar
     leave_block("Compute QAP witness");
 
     enter_block("Check satisfiability of QAP instance 1");
-    assert(qap_inst_1.is_satisfied(qap_wit));
+    EXPECT_TRUE(qap_inst_1.is_satisfied(qap_wit));
     leave_block("Check satisfiability of QAP instance 1");
 
     enter_block("Check satisfiability of QAP instance 2");
-    assert(qap_inst_2.is_satisfied(qap_wit));
+    EXPECT_TRUE(qap_inst_2.is_satisfied(qap_wit));
     leave_block("Check satisfiability of QAP instance 2");
 
     leave_block("Call to test_qap");
 }
 
-int main()
+TEST(relations, qap)
 {
     start_profiling();
 
