@@ -45,7 +45,7 @@ uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
     {
         if ( interests[ind + 1] != paidinterest )
         {
-            fprintf(stderr,"interests.%d %.8f %.8f vs paidinterest.%d\n",height,dstr(interests[ind]),dstr(interests[ind+1]),dstr(paidinterest));
+            fprintf(stderr,"interests.%d %.8f %.8f vs paidinterest %.8f\n",height,dstr(interests[ind]),dstr(interests[ind+1]),dstr(paidinterest));
             interests[ind + 1] = paidinterest;
             if ( height <= 1 )
                 interests[ind] = 0;
