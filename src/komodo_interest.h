@@ -13,6 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
+#define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 
 #define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))   // 5%
