@@ -173,7 +173,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60));
                     //fprintf(stderr,"interest %llu %.8f <- numerator.%llu minutes.%d\n",(long long)interest,(double)interest/COIN,(long long)numerator,(int32_t)minutes);
                     interestnew = _komodo_interestnew(nValue,nLockTime,tiptime);
-                    if ( interest < interestnew || (interestnew < 0.9999*interest && (interest-interestnew) > 50000) )
+                    if ( interest < interestnew )//|| (interestnew < 0.9999*interest && (interest-interestnew) > 50000) )
                         fprintf(stderr,"path1 current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
                 }
                 else interest = _komodo_interestnew(nValue,nLockTime,tiptime);
