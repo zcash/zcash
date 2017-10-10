@@ -61,7 +61,7 @@ uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
                 interests[ind + 1] = 0;
             }
         }
-        else fprintf(stderr,"interests.%d %.8f %.8f\n",height,dstr(interests[ind]),dstr(interests[ind+1]));
+        //else fprintf(stderr,"interests.%d %.8f %.8f\n",height,dstr(interests[ind]),dstr(interests[ind+1]));
     }
     return(0);
 }
