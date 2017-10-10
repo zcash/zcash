@@ -23,6 +23,7 @@ uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
 {
     static uint64_t *interests; static int32_t maxheight;
     uint64_t total; int32_t ind,incr = 10000;
+    // need to make interests persistent before 2030
     if ( height >= maxheight )
     {
         if ( interests == 0 )
@@ -145,7 +146,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     numerator = (nValue * KOMODO_INTEREST);
                     interest = (numerator / denominator) / COIN;
                     interestnew = _komodo_interestnew(nValue,nLockTime,tiptime);
-                    if ( interest != interestnew )
+                    if ( interest < interestnew || interestnew < 0.9999*interest )
                         fprintf(stderr,"path0 current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
                 }
                 else interest = _komodo_interestnew(nValue,nLockTime,tiptime);
@@ -171,7 +172,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60));
                     //fprintf(stderr,"interest %llu %.8f <- numerator.%llu minutes.%d\n",(long long)interest,(double)interest/COIN,(long long)numerator,(int32_t)minutes);
                     interestnew = _komodo_interestnew(nValue,nLockTime,tiptime);
-                    if ( interest != interestnew )
+                    if ( interest < interestnew || interestnew < 0.9999*interest )
                         fprintf(stderr,"path1 current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
                 }
                 else interest = _komodo_interestnew(nValue,nLockTime,tiptime);
