@@ -23,7 +23,7 @@ uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
 {
     static uint64_t *interests; static int32_t maxheight;
     uint64_t total; int32_t ind,incr = 10000;
-    // need to make interests persistent before 2030
+    // need to make interests persistent before 2030, or just hardfork interest/mining rewards disable after MAX_MONEY is exceeded
     if ( height >= maxheight )
     {
         if ( interests == 0 )
@@ -45,7 +45,7 @@ uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
     }
     else
     {
-        if ( interests[ind + 1] != paidinterest )
+        if ( interests[ind + 1] != paidinterest ) // need to handle skips like at 80000
         {
             fprintf(stderr,"interests.%d %.8f %.8f vs paidinterest %.8f\n",height,dstr(interests[ind]),dstr(interests[ind+1]),dstr(paidinterest));
             interests[ind + 1] = paidinterest;
@@ -68,7 +68,7 @@ uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
 
 uint64_t komodo_moneysupply(int32_t height)
 {
-    if ( height <= 1 || ASSETCHAINS_SYMBOL[0] != 0 )
+    if ( height <= 1 || ASSETCHAINS_SYMBOL[0] == 0 )
         return(0);
     else return(COIN * 100000000 + (height-1) * 3 + komodo_earned_interest(height,-1));
 }
