@@ -24,6 +24,7 @@ uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
     static uint64_t *interests; static int32_t maxheight;
     uint64_t total; int32_t ind,incr = 10000;
     // need to make interests persistent before 2030, or just hardfork interest/mining rewards disable after MAX_MONEY is exceeded
+    return(0);
     if ( height >= maxheight )
     {
         if ( interests == 0 )
@@ -47,13 +48,13 @@ uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
     {
         if ( interests[ind + 1] != paidinterest ) // need to handle skips like at 80000
         {
-            fprintf(stderr,"interests.%d %.8f %.8f vs paidinterest %.8f\n",height,dstr(interests[ind]),dstr(interests[ind+1]),dstr(paidinterest));
+            //fprintf(stderr,"interests.%d %.8f %.8f vs paidinterest %.8f\n",height,dstr(interests[ind]),dstr(interests[ind+1]),dstr(paidinterest));
             interests[ind + 1] = paidinterest;
             if ( height <= 1 )
                 interests[ind] = 0;
             else interests[ind] = interests[ind - 2] + interests[ind - 1];
             total = interests[ind] + paidinterest;
-            fprintf(stderr,"reset interests[height.%d to maxheight.%d] <- %.8f\n",height,maxheight,dstr(total));
+            //fprintf(stderr,"reset interests[height.%d to maxheight.%d] <- %.8f\n",height,maxheight,dstr(total));
             for (++height; height<maxheight; height++)
             {
                 ind = (height << 1);
@@ -146,7 +147,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     numerator = (nValue * KOMODO_INTEREST);
                     interest = (numerator / denominator) / COIN;
                     interestnew = _komodo_interestnew(nValue,nLockTime,tiptime);
-                    if ( interest < interestnew || interestnew < 0.9999*interest )
+                    //if ( interest < interestnew || interestnew < 0.9999*interest )
                         fprintf(stderr,"path0 current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
                 }
                 else interest = _komodo_interestnew(nValue,nLockTime,tiptime);
