@@ -83,7 +83,7 @@ bool run_r1cs_ppzksnark(const r1cs_example<Fr<ppT> > &example,
     }
 
     print_header("R1CS ppzkSNARK Prover");
-    r1cs_ppzksnark_proof<ppT> proof = r1cs_ppzksnark_prover<ppT>(keypair.pk, example.primary_input, example.auxiliary_input);
+    r1cs_ppzksnark_proof<ppT> proof = r1cs_ppzksnark_prover<ppT>(keypair.pk, example.primary_input, example.auxiliary_input, example.constraint_system);
     printf("\n"); print_indent(); print_mem("after prover");
 
     if (test_serialization)

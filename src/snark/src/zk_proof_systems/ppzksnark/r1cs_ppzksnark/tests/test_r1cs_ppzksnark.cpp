@@ -11,7 +11,7 @@
 #include <cassert>
 #include <cstdio>
 
-#include "common/default_types/r1cs_ppzksnark_pp.hpp"
+#include "algebra/curves/alt_bn128/alt_bn128_pp.hpp"
 #include "common/profiling.hpp"
 #include "common/utils.hpp"
 #include "relations/constraint_satisfaction_problems/r1cs/examples/r1cs_examples.hpp"
@@ -29,6 +29,7 @@ void test_r1cs_ppzksnark(size_t num_constraints,
 
     const bool test_serialization = true;
     r1cs_example<Fr<ppT> > example = generate_r1cs_example_with_binary_input<Fr<ppT> >(num_constraints, input_size);
+    example.constraint_system.swap_AB_if_beneficial();
     const bool bit = run_r1cs_ppzksnark<ppT>(example, test_serialization);
     EXPECT_TRUE(bit);
 
@@ -37,8 +38,7 @@ void test_r1cs_ppzksnark(size_t num_constraints,
 
 TEST(zk_proof_systems, r1cs_ppzksnark)
 {
-    default_r1cs_ppzksnark_pp::init_public_params();
     start_profiling();
 
-    test_r1cs_ppzksnark<default_r1cs_ppzksnark_pp>(1000, 100);
+    test_r1cs_ppzksnark<alt_bn128_pp>(1000, 20);
 }
