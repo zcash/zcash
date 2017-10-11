@@ -10,6 +10,7 @@
 #include <cstring>
 #include <vector>
 
+#include "algebra/curves/alt_bn128/alt_bn128_pp.hpp"
 #include "algebra/fields/field_utils.hpp"
 #include "common/profiling.hpp"
 #include "common/utils.hpp"
@@ -91,9 +92,13 @@ TEST(relations, qap)
 
     enter_block("Test QAP with binary input");
 
+    test_qap<Fr<alt_bn128_pp> >(1ul << 21, num_inputs, true);
+
     leave_block("Test QAP with binary input");
 
     enter_block("Test QAP with field input");
+
+    test_qap<Fr<alt_bn128_pp> >(1ul << 21, num_inputs, false);
 
     leave_block("Test QAP with field input");
 }

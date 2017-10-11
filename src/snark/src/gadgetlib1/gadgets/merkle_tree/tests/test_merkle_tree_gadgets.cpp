@@ -5,6 +5,7 @@
  * @copyright  MIT license (see LICENSE file)
  *****************************************************************************/
 
+#include "algebra/curves/alt_bn128/alt_bn128_pp.hpp"
 #ifdef CURVE_BN128
 #include "algebra/curves/bn128/bn128_pp.hpp"
 #endif
@@ -28,6 +29,9 @@ void test_all_merkle_tree_gadgets()
 TEST(gadgetlib1, merkle_tree)
 {
     start_profiling();
+
+    alt_bn128_pp::init_public_params();
+    test_all_merkle_tree_gadgets<alt_bn128_pp>();
 
 #ifdef CURVE_BN128       // BN128 has fancy dependencies so it may be disabled
     bn128_pp::init_public_params();
