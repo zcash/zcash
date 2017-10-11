@@ -10,7 +10,6 @@
 #include <cstring>
 #include <vector>
 
-#include "algebra/curves/mnt/mnt6/mnt6_pp.hpp"
 #include "algebra/fields/field_utils.hpp"
 #include "common/profiling.hpp"
 #include "common/utils.hpp"
@@ -88,30 +87,13 @@ TEST(relations, qap)
 {
     start_profiling();
 
-    mnt6_pp::init_public_params();
-
     const size_t num_inputs = 10;
 
-    const size_t basic_domain_size = 1ul<<mnt6_Fr::s;
-    const size_t step_domain_size = (1ul<<10) + (1ul<<8);
-    const size_t extended_domain_size = 1ul<<(mnt6_Fr::s+1);
-    const size_t extended_domain_size_special = extended_domain_size-1;
-
     enter_block("Test QAP with binary input");
-
-    test_qap<Fr<mnt6_pp> >(basic_domain_size, num_inputs, true);
-    test_qap<Fr<mnt6_pp> >(step_domain_size, num_inputs, true);
-    test_qap<Fr<mnt6_pp> >(extended_domain_size, num_inputs, true);
-    test_qap<Fr<mnt6_pp> >(extended_domain_size_special, num_inputs, true);
 
     leave_block("Test QAP with binary input");
 
     enter_block("Test QAP with field input");
-
-    test_qap<Fr<mnt6_pp> >(basic_domain_size, num_inputs, false);
-    test_qap<Fr<mnt6_pp> >(step_domain_size, num_inputs, false);
-    test_qap<Fr<mnt6_pp> >(extended_domain_size, num_inputs, false);
-    test_qap<Fr<mnt6_pp> >(extended_domain_size_special, num_inputs, false);
 
     leave_block("Test QAP with field input");
 }

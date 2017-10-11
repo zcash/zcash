@@ -5,9 +5,6 @@
  * @copyright  MIT license (see LICENSE file)
  *****************************************************************************/
 #include "common/profiling.hpp"
-#include "algebra/curves/edwards/edwards_pp.hpp"
-#include "algebra/curves/mnt/mnt4/mnt4_pp.hpp"
-#include "algebra/curves/mnt/mnt6/mnt6_pp.hpp"
 #ifdef CURVE_BN128
 #include "algebra/curves/bn128/bn128_pp.hpp"
 #endif
@@ -139,27 +136,6 @@ void test_output()
 
 TEST(algebra, groups)
 {
-    edwards_pp::init_public_params();
-    test_group<G1<edwards_pp> >();
-    test_output<G1<edwards_pp> >();
-    test_group<G2<edwards_pp> >();
-    test_output<G2<edwards_pp> >();
-    test_mul_by_q<G2<edwards_pp> >();
-
-    mnt4_pp::init_public_params();
-    test_group<G1<mnt4_pp> >();
-    test_output<G1<mnt4_pp> >();
-    test_group<G2<mnt4_pp> >();
-    test_output<G2<mnt4_pp> >();
-    test_mul_by_q<G2<mnt4_pp> >();
-
-    mnt6_pp::init_public_params();
-    test_group<G1<mnt6_pp> >();
-    test_output<G1<mnt6_pp> >();
-    test_group<G2<mnt6_pp> >();
-    test_output<G2<mnt6_pp> >();
-    test_mul_by_q<G2<mnt6_pp> >();
-
     alt_bn128_pp::init_public_params();
     test_group<G1<alt_bn128_pp> >();
     test_output<G1<alt_bn128_pp> >();
