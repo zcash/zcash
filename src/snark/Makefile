@@ -70,20 +70,14 @@ endif
 
 # FIXME: most of these are broken due to removed code.
 DISABLED_EXECUTABLES = \
-	src/algebra/curves/tests/test_bilinearity \
-	src/algebra/curves/tests/test_groups \
-	src/algebra/fields/tests/test_fields \
 	src/common/routing_algorithms/profiling/profile_routing_algorithms \
 	src/common/routing_algorithms/tests/test_routing_algorithms \
 	src/gadgetlib1/gadgets/cpu_checkers/fooram/examples/test_fooram \
 	src/gadgetlib1/gadgets/hashes/knapsack/tests/test_knapsack_gadget \
-	src/gadgetlib1/gadgets/hashes/sha256/tests/test_sha256_gadget \
-	src/gadgetlib1/gadgets/merkle_tree/tests/test_merkle_tree_gadgets \
 	src/gadgetlib1/gadgets/routing/profiling/profile_routing_gadgets \
 	src/gadgetlib1/gadgets/set_commitment/tests/test_set_commitment_gadget \
 	src/gadgetlib1/gadgets/verifiers/tests/test_r1cs_ppzksnark_verifier_gadget \
 	src/reductions/ram_to_r1cs/examples/demo_arithmetization \
-	src/relations/arithmetic_programs/qap/tests/test_qap \
 	src/relations/arithmetic_programs/ssp/tests/test_ssp \
 	src/zk_proof_systems/pcd/r1cs_pcd/r1cs_mp_ppzkpcd/profiling/profile_r1cs_mp_ppzkpcd \
 	src/zk_proof_systems/pcd/r1cs_pcd/r1cs_mp_ppzkpcd/tests/test_r1cs_mp_ppzkpcd \
@@ -94,7 +88,6 @@ DISABLED_EXECUTABLES = \
 	src/zk_proof_systems/ppzksnark/r1cs_gg_ppzksnark/profiling/profile_r1cs_gg_ppzksnark \
 	src/zk_proof_systems/ppzksnark/r1cs_gg_ppzksnark/tests/test_r1cs_gg_ppzksnark \
 	src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/profiling/profile_r1cs_ppzksnark \
-	src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/tests/test_r1cs_ppzksnark \
 	src/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark \
 	src/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark_generator \
 	src/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark_prover \
@@ -108,15 +101,25 @@ DISABLED_EXECUTABLES = \
 	src/zk_proof_systems/zksnark/ram_zksnark/profiling/profile_ram_zksnark \
 	src/zk_proof_systems/zksnark/ram_zksnark/tests/test_ram_zksnark
 
-EXECUTABLES = \
-	src/algebra/fields/tests/test_bigint
+EXECUTABLES =
 
-EXECUTABLES_WITH_GTEST = \
-	src/gadgetlib2/examples/tutorial \
-	src/gadgetlib2/tests/gadgetlib2_test
+EXECUTABLES_WITH_GTEST =
 
 EXECUTABLES_WITH_SUPERCOP = \
 	src/zk_proof_systems/ppzkadsnark/r1cs_ppzkadsnark/examples/demo_r1cs_ppzkadsnark
+
+GTEST_TESTS = src/gtests
+
+GTEST_SRCS = \
+	src/algebra/curves/tests/test_bilinearity.cpp \
+	src/algebra/curves/tests/test_groups.cpp \
+	src/algebra/fields/tests/test_bigint.cpp \
+	src/algebra/fields/tests/test_fields.cpp \
+	src/gadgetlib1/gadgets/hashes/sha256/tests/test_sha256_gadget.cpp \
+	src/gadgetlib1/gadgets/merkle_tree/tests/test_merkle_tree_gadgets.cpp \
+	src/relations/arithmetic_programs/qap/tests/test_qap.cpp \
+	src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/tests/test_r1cs_ppzksnark.cpp \
+	src/gtests.cpp
 
 DOCS = README.html
 
@@ -168,9 +171,10 @@ endif
 
 LIB_OBJS  =$(patsubst %.cpp,%.o,$(LIB_SRCS))
 EXEC_OBJS =$(patsubst %,%.o,$(EXECUTABLES) $(EXECUTABLES_WITH_GTEST) $(EXECUTABLES_WITH_SUPERCOP))
+GTEST_OBJS =$(patsubst %.cpp,%.o,$(GTEST_SRCS))
 
 all: \
-     $(if $(NO_GTEST),,$(EXECUTABLES_WITH_GTEST)) \
+     $(if $(NO_GTEST),,$(EXECUTABLES_WITH_GTEST) $(GTEST_TESTS)) \
      $(if $(NO_SUPERCOP),,$(EXECUTABLES_WITH_SUPERCOP)) \
      $(EXECUTABLES) \
      $(if $(NO_DOCS),,doc)
@@ -183,9 +187,9 @@ $(DEPINST_EXISTS):
 	touch $@
 
 # In order to detect changes to #include dependencies. -MMD below generates a .d file for each .o file. Include the .d file.
--include $(patsubst %.o,%.d, $(LIB_OBJS) $(EXEC_OBJS) )
+-include $(patsubst %.o,%.d, $(LIB_OBJS) $(GTEST_OBJS) $(EXEC_OBJS) )
 
-$(LIB_OBJS) $(EXEC_OBJS): %.o: %.cpp
+$(LIB_OBJS) $(if $(NO_GTEST),,$(GTEST_OBJS)) $(EXEC_OBJS): %.o: %.cpp
 	$(CXX) -o $@   $< -c -MMD $(CXXFLAGS)
 
 LIBGTEST_A = $(DEPINST)/lib/libgtest.a
@@ -225,6 +229,9 @@ $(EXECUTABLES_WITH_GTEST): %: %.o $(LIBSNARK_A) $(if $(COMPILE_GTEST),$(LIBGTEST
 $(EXECUTABLES_WITH_SUPERCOP): %: %.o $(LIBSNARK_A) $(DEPINST_EXISTS)
 	$(CXX) -o $@   $@.o $(LIBSNARK_A) $(CXXFLAGS) $(LDFLAGS) $(SUPERCOP_LDLIBS) $(LDLIBS)
 
+$(GTEST_TESTS): %: $(GTEST_OBJS) $(LIBSNARK_A) $(if $(COMPILE_GTEST),$(LIBGTEST_A)) $(DEPINST_EXISTS)
+	$(CXX) -o $@   $(GTEST_OBJS) $(LIBSNARK_A) $(CXXFLAGS) $(LDFLAGS) $(GTEST_LDLIBS) $(LDLIBS)
+
 
 ifeq ($(STATIC),1)
 LIB_FILE = $(LIBSNARK_A)
@@ -258,16 +265,19 @@ ifneq ($(NO_COPY_DEPINST),1)
 endif
 endif
 
+check: $(GTEST_TESTS)
+	$(GTEST_TESTS)
+
 doxy:
 	doxygen doxygen.conf
 
 # Clean generated files, except locally-compiled dependencies
 clean:
 	$(RM) \
-		$(LIB_OBJS) $(EXEC_OBJS) \
-		$(EXECUTABLES) $(EXECUTABLES_WITH_GTEST) $(EXECUTABLES_WITH_SUPERCOP) \
+		$(LIB_OBJS) $(GTEST_OBJS) $(EXEC_OBJS) \
+		$(EXECUTABLES) $(EXECUTABLES_WITH_GTEST) $(EXECUTABLES_WITH_SUPERCOP) $(GTEST_TESTS) \
 		$(DOCS) \
-		${patsubst %.o,%.d,${LIB_OBJS} ${EXEC_OBJS}} \
+		${patsubst %.o,%.d,${LIB_OBJS} ${GTEST_OBJS} ${EXEC_OBJS}} \
 		libsnark.so $(LIBSNARK_A) \
 	$(RM) -fr doxygen/ \
 	$(RM) $(LIBGTEST_A) $(DEPINST)/lib/gtest-all.o
