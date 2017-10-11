@@ -19,7 +19,7 @@ DEPINST = depinst
 
 CXXFLAGS += -I$(DEPINST)/include -Isrc
 LDFLAGS += -L$(DEPINST)/lib -Wl,-rpath,$(DEPINST)/lib
-LDLIBS += -lgmpxx -lgmp -lboost_program_options
+LDLIBS += -lgmpxx -lgmp -lboost_program_options-mt -lsodium
 # OpenSSL and its dependencies (needed explicitly for static builds):
 LDLIBS += -lcrypto -ldl -lz
 # List of .a files to include within libsnark.a and libsnark.so:
