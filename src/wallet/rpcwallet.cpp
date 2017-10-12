@@ -2609,6 +2609,8 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
                 throw JSONRPCError(RPC_TYPE_ERROR, "Benchmark must be run in regtest mode");
             }
             sample_times.push_back(benchmark_loadwallet());
+        } else if (benchmarktype == "listunspent") {
+            sample_times.push_back(benchmark_listunspent());
         } else {
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
         }
