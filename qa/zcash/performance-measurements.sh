@@ -234,6 +234,9 @@ case "$1" in
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1
                 ;;
+            validatelargetx)
+                zcash_rpc zcbenchmark validatelargetx 1
+                ;;
             trydecryptnotes)
                 zcash_rpc zcbenchmark trydecryptnotes 1 "${@:3}"
                 ;;
