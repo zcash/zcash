@@ -1,10 +1,10 @@
 rust_packages := rust librustzcash
 zcash_packages := libsnark libgmp libsodium
 
-ifeq ($(build_os),darwin)
-packages := boost openssl libevent zeromq $(zcash_packages)
+ifeq ($(host_os),linux)
+	packages := boost openssl libevent zeromq $(zcash_packages) googletest googlemock
 else
-packages := boost openssl libevent zeromq $(zcash_packages) googletest googlemock
+	packages := boost openssl libevent zeromq $(zcash_packages) googletest googlemock libcurl
 endif
 
 

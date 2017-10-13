@@ -12,6 +12,11 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
+#ifdef _WIN32
+#include <sodium.h>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread.hpp>
+#endif
 
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
@@ -108,13 +113,13 @@ static inline int32_t sha256_vcompress(struct sha256_vstate * md,uint8_t *buf)
         LOAD32H(W[i],buf + (4*i));
     for (i=16; i<64; i++) // fill W[16..63]
         W[i] = Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W[i - 15]) + W[i - 16];
-    
+
 #define RND(a,b,c,d,e,f,g,h,i,ki)                    \
 t0 = h + Sigma1(e) + Ch(e, f, g) + ki + W[i];   \
 t1 = Sigma0(a) + Maj(a, b, c);                  \
 d += t0;                                        \
 h  = t0 + t1;
-    
+
     RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],0,0x428a2f98);
     RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],1,0x71374491);
     RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],2,0xb5c0fbcf);
@@ -345,19 +350,19 @@ static int32_t rmd160_vcompress(struct rmd160_vstate *md,uint8_t *buf)
 {
     uint32_t aa,bb,cc,dd,ee,aaa,bbb,ccc,ddd,eee,X[16];
     int i;
-    
+
     /* load words X */
     for (i = 0; i < 16; i++){
         LOAD32L(X[i], buf + (4 * i));
     }
-    
+
     /* load state */
     aa = aaa = md->state[0];
     bb = bbb = md->state[1];
     cc = ccc = md->state[2];
     dd = ddd = md->state[3];
     ee = eee = md->state[4];
-    
+
     /* round 1 */
     FF(aa, bb, cc, dd, ee, X[ 0], 11);
     FF(ee, aa, bb, cc, dd, X[ 1], 14);
@@ -375,7 +380,7 @@ static int32_t rmd160_vcompress(struct rmd160_vstate *md,uint8_t *buf)
     FF(cc, dd, ee, aa, bb, X[13],  7);
     FF(bb, cc, dd, ee, aa, X[14],  9);
     FF(aa, bb, cc, dd, ee, X[15],  8);
-    
+
     /* round 2 */
     GG(ee, aa, bb, cc, dd, X[ 7],  7);
     GG(dd, ee, aa, bb, cc, X[ 4],  6);
@@ -393,7 +398,7 @@ static int32_t rmd160_vcompress(struct rmd160_vstate *md,uint8_t *buf)
     GG(bb, cc, dd, ee, aa, X[14],  7);
     GG(aa, bb, cc, dd, ee, X[11], 13);
     GG(ee, aa, bb, cc, dd, X[ 8], 12);
-    
+
     /* round 3 */
     HH(dd, ee, aa, bb, cc, X[ 3], 11);
     HH(cc, dd, ee, aa, bb, X[10], 13);
@@ -411,7 +416,7 @@ static int32_t rmd160_vcompress(struct rmd160_vstate *md,uint8_t *buf)
     HH(aa, bb, cc, dd, ee, X[11], 12);
     HH(ee, aa, bb, cc, dd, X[ 5],  7);
     HH(dd, ee, aa, bb, cc, X[12],  5);
-    
+
     /* round 4 */
     II(cc, dd, ee, aa, bb, X[ 1], 11);
     II(bb, cc, dd, ee, aa, X[ 9], 12);
@@ -429,7 +434,7 @@ static int32_t rmd160_vcompress(struct rmd160_vstate *md,uint8_t *buf)
     II(ee, aa, bb, cc, dd, X[ 5],  6);
     II(dd, ee, aa, bb, cc, X[ 6],  5);
     II(cc, dd, ee, aa, bb, X[ 2], 12);
-    
+
     /* round 5 */
     JJ(bb, cc, dd, ee, aa, X[ 4],  9);
     JJ(aa, bb, cc, dd, ee, X[ 0], 15);
@@ -447,7 +452,7 @@ static int32_t rmd160_vcompress(struct rmd160_vstate *md,uint8_t *buf)
     JJ(dd, ee, aa, bb, cc, X[ 6],  8);
     JJ(cc, dd, ee, aa, bb, X[15],  5);
     JJ(bb, cc, dd, ee, aa, X[13],  6);
-    
+
     /* parallel round 1 */
     JJJ(aaa, bbb, ccc, ddd, eee, X[ 5],  8);
     JJJ(eee, aaa, bbb, ccc, ddd, X[14],  9);
@@ -465,7 +470,7 @@ static int32_t rmd160_vcompress(struct rmd160_vstate *md,uint8_t *buf)
     JJJ(ccc, ddd, eee, aaa, bbb, X[10], 14);
     JJJ(bbb, ccc, ddd, eee, aaa, X[ 3], 12);
     JJJ(aaa, bbb, ccc, ddd, eee, X[12],  6);
-    
+
     /* parallel round 2 */
     III(eee, aaa, bbb, ccc, ddd, X[ 6],  9);
     III(ddd, eee, aaa, bbb, ccc, X[11], 13);
@@ -483,7 +488,7 @@ static int32_t rmd160_vcompress(struct rmd160_vstate *md,uint8_t *buf)
     III(bbb, ccc, ddd, eee, aaa, X[ 9], 15);
     III(aaa, bbb, ccc, ddd, eee, X[ 1], 13);
     III(eee, aaa, bbb, ccc, ddd, X[ 2], 11);
-    
+
     /* parallel round 3 */
     HHH(ddd, eee, aaa, bbb, ccc, X[15],  9);
     HHH(ccc, ddd, eee, aaa, bbb, X[ 5],  7);
@@ -501,7 +506,7 @@ static int32_t rmd160_vcompress(struct rmd160_vstate *md,uint8_t *buf)
     HHH(aaa, bbb, ccc, ddd, eee, X[ 0], 13);
     HHH(eee, aaa, bbb, ccc, ddd, X[ 4],  7);
     HHH(ddd, eee, aaa, bbb, ccc, X[13],  5);
-    
+
     /* parallel round 4 */
     GGG(ccc, ddd, eee, aaa, bbb, X[ 8], 15);
     GGG(bbb, ccc, ddd, eee, aaa, X[ 6],  5);
@@ -519,7 +524,7 @@ static int32_t rmd160_vcompress(struct rmd160_vstate *md,uint8_t *buf)
     GGG(eee, aaa, bbb, ccc, ddd, X[ 7],  5);
     GGG(ddd, eee, aaa, bbb, ccc, X[10], 15);
     GGG(ccc, ddd, eee, aaa, bbb, X[14],  8);
-    
+
     /* parallel round 5 */
     FFF(bbb, ccc, ddd, eee, aaa, X[12] ,  8);
     FFF(aaa, bbb, ccc, ddd, eee, X[15] ,  5);
@@ -537,7 +542,7 @@ static int32_t rmd160_vcompress(struct rmd160_vstate *md,uint8_t *buf)
     FFF(ddd, eee, aaa, bbb, ccc, X[ 3] , 13);
     FFF(ccc, ddd, eee, aaa, bbb, X[ 9] , 11);
     FFF(bbb, ccc, ddd, eee, aaa, X[11] , 11);
-    
+
     /* combine results */
     ddd += cc + md->state[1];               /* final result for md->state[0] */
     md->state[1] = md->state[2] + dd + eee;
@@ -545,7 +550,7 @@ static int32_t rmd160_vcompress(struct rmd160_vstate *md,uint8_t *buf)
     md->state[3] = md->state[4] + aa + bbb;
     md->state[4] = md->state[0] + bb + ccc;
     md->state[0] = ddd;
-    
+
     return 0;
 }
 
@@ -622,10 +627,10 @@ int rmd160_vdone(struct rmd160_vstate * md, unsigned char *out)
     }
     /* increase the length of the message */
     md->length += md->curlen * 8;
-    
+
     /* append the '1' bit */
     md->buf[md->curlen++] = (unsigned char)0x80;
-    
+
     /* if the length is currently above 56 bytes we append zeros
      * then compress.  Then we can fall back to padding zeros and length
      * encoding like normal.
@@ -724,13 +729,13 @@ static const uint32_t crc32_tab[] = {
 uint32_t calc_crc32(uint32_t crc,const void *buf,size_t size)
 {
 	const uint8_t *p;
-    
+
 	p = (const uint8_t *)buf;
 	crc = crc ^ ~0U;
-    
+
 	while (size--)
 		crc = crc32_tab[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
-    
+
 	return crc ^ ~0U;
 }
 
@@ -1106,6 +1111,7 @@ double OS_milliseconds()
     return(millis);
 }
 
+#ifndef _WIN32
 void OS_randombytes(unsigned char *x,long xlen)
 {
     static int fd = -1;
@@ -1135,6 +1141,7 @@ void OS_randombytes(unsigned char *x,long xlen)
         xlen -= i;
     }
 }
+#endif
 
 void lock_queue(queue_t *queue)
 {
@@ -1181,7 +1188,11 @@ void *queue_delete(queue_t *queue,struct queueitem *copy,int32_t copysize)
     {
         DL_FOREACH(queue->list,item)
         {
+						#ifdef _WIN32
+						if ( item == copy || (item->allocsize == copysize && memcmp((void *)((intptr_t)item + sizeof(struct queueitem)),(void *)((intptr_t)copy + sizeof(struct queueitem)),copysize) == 0) )
+						#else
             if ( item == copy || (item->allocsize == copysize && memcmp((void *)((long)item + sizeof(struct queueitem)),(void *)((long)copy + sizeof(struct queueitem)),copysize) == 0) )
+						#endif
             {
                 DL_DELETE(queue->list,item);
                 portable_mutex_unlock(&queue->mutex);
@@ -1326,7 +1337,11 @@ void komodo_configfile(char *symbol,uint16_t port)
         memcpy(&buf[sizeof(r)],&r2,sizeof(r2));
         memcpy(&buf[sizeof(r)+sizeof(r2)],symbol,strlen(symbol));
         crc = calc_crc32(0,(uint8_t *)buf,(int32_t)(sizeof(r)+sizeof(r2)+strlen(symbol)));
+				#ifdef _WIN32
+				randombytes_buf(buf2,sizeof(buf2));
+				#else
         OS_randombytes(buf2,sizeof(buf2));
+				#endif
         for (i=0; i<sizeof(buf2); i++)
             sprintf(&password[i*2],"%02x",buf2[i]);
         password[i*2] = 0;
@@ -1460,7 +1475,7 @@ char *iguanafmtstr = (char *)"curl --url \"http://127.0.0.1:7778\" --data \"{\\\
 
 int32_t komodo_whoami(char *pubkeystr,int32_t height)
 {
-    int32_t i,notaryid; 
+    int32_t i,notaryid;
     for (i=0; i<33; i++)
         sprintf(&pubkeystr[i<<1],"%02x",NOTARY_PUBKEY33[i]);
     pubkeystr[66] = 0;
@@ -1468,10 +1483,20 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height)
     return(notaryid);
 }
 
-void komodo_args()
+char *argv0suffix[] =
+{
+    (char *)"mnzd", (char *)"mnz-cli", (char *)"mnzd.exe", (char *)"mnz-cli.exe"
+};
+
+char *argv0names[] =
+{
+    (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"MNZ"
+};
+
+void komodo_args(char *argv0)
 {
     extern int64_t MAX_MONEY;
-    std::string name,addn; char *dirname,fname[512],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,baseid,len;
+    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4]; FILE *fp; int32_t i,baseid,len,n;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
@@ -1482,6 +1507,20 @@ void komodo_args()
         KOMODO_PAX = 1;
     } else KOMODO_PAX = GetArg("-pax",0);
     name = GetArg("-ac_name","");
+		if ( argv0 != 0 )
+		{
+    		len = (int32_t)strlen(argv0);
+      	for (i=0; i<sizeof(argv0suffix)/sizeof(*argv0suffix); i++)
+      	{
+        		n = (int32_t)strlen(argv0suffix[i]);
+        		if ( strcmp(&argv0[len - n],argv0suffix[i]) == 0 )
+        		{
+            		printf("ARGV0.(%s) -> matches suffix (%s) -> ac_name.(%s)\n",argv0,argv0suffix[i],argv0names[i]);
+            		name = argv0names[i];
+            		break;
+            }
+        }
+    }
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
@@ -1501,7 +1540,11 @@ void komodo_args()
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
             fprintf(stderr,"waiting for datadir\n");
+						#ifndef _WIN32
             sleep(3);
+						#else
+						boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
+						#endif
         }
         //fprintf(stderr,"Got datadir.(%s)\n",dirname);
         if ( ASSETCHAINS_SYMBOL[0] != 0 )
@@ -1510,6 +1553,7 @@ void komodo_args()
             extern int COINBASE_MATURITY;
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
             COINBASE_MATURITY = 1;
+						LogPrintf("ASSETCHAINS_PORT %s %u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT);
         }
         ASSETCHAINS_NOTARIES = GetArg("-ac_notaries","");
         komodo_assetchain_pubkeys((char *)ASSETCHAINS_NOTARIES.c_str());
@@ -1562,6 +1606,7 @@ void komodo_args()
                 break;
         }
     }
+		BITCOIND_PORT = GetArg("-rpcport", BaseParams().RPCPort());
     //fprintf(stderr,"%s chain params initialized\n",ASSETCHAINS_SYMBOL);
 }
 
@@ -1595,6 +1640,3 @@ struct komodo_state *komodo_stateptr(char *symbol,char *dest)
     komodo_nameset(symbol,dest,ASSETCHAINS_SYMBOL);
     return(komodo_stateptrget(symbol));
 }
-
-
-
