@@ -32,6 +32,7 @@ else
 LIBBITCOIN_SERVER=libbitcoin_server.a
 endif
 
+
 LIBBITCOIN_WALLET=libbitcoin_wallet.a
 LIBBITCOIN_COMMON=libbitcoin_common.a
 LIBBITCOIN_CLI=libbitcoin_cli.a
