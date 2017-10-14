@@ -8,7 +8,7 @@
 #include "util.h"
 #include "utilstrencodings.h"
 
-#ifndef WIN32
+#ifndef _WIN32
 # include <arpa/inet.h>
 #endif
 

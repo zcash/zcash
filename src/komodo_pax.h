@@ -233,7 +233,7 @@ int32_t komodo_pax_opreturn(int32_t height,uint8_t *opret,int32_t maxsize)
 {
     static uint32_t lastcrc;
     FILE *fp; char fname[512]; uint32_t crc32,check,timestamp; int32_t i,n=0,retval,fsize,len=0; uint8_t data[8192];
-#ifdef WIN32
+#ifdef _WIN32
     sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"komodofeed");
 #else
     sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),(char *)"komodofeed");

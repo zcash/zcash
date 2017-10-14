@@ -1305,7 +1305,7 @@ void komodo_statefname(char *fname,char *symbol,char *str)
     }
     else
     {
-#ifdef WIN32
+#ifdef _WIN32
         strcat(fname,"\\");
 #else
         strcat(fname,"/");
@@ -1315,7 +1315,7 @@ void komodo_statefname(char *fname,char *symbol,char *str)
     {
         strcat(fname,symbol);
         //printf("statefname.(%s) -> (%s)\n",symbol,fname);
-#ifdef WIN32
+#ifdef _WIN32
         strcat(fname,"\\");
 #else
         strcat(fname,"/");
@@ -1347,7 +1347,7 @@ void komodo_configfile(char *symbol,uint16_t port)
         password[i*2] = 0;
         sprintf(buf,"%s.conf",symbol);
         BITCOIND_PORT = port;
-#ifdef WIN32
+#ifdef _WIN32
         sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),buf);
 #else
         sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),buf);
@@ -1371,7 +1371,7 @@ void komodo_configfile(char *symbol,uint16_t port)
         }
     }
     strcpy(fname,GetDataDir().string().c_str());
-#ifdef WIN32
+#ifdef _WIN32
     while ( fname[strlen(fname)-1] != '\\' )
         fname[strlen(fname)-1] = 0;
     strcat(fname,"komodo.conf");
@@ -1576,7 +1576,7 @@ void komodo_args(char *argv0)
         for (iter=0; iter<2; iter++)
         {
             strcpy(fname,GetDataDir().string().c_str());
-#ifdef WIN32
+#ifdef _WIN32
             while ( fname[strlen(fname)-1] != '\\' )
                 fname[strlen(fname)-1] = 0;
             if ( iter == 0 )
