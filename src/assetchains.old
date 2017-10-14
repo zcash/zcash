@@ -1,6 +1,6 @@
 #!/bin/bash  
 set -x
-delay=10
+delay=60
 source pubkey.txt
 echo $pubkey
 

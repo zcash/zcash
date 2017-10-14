@@ -2365,7 +2365,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 return false;
             control.Add(vChecks);
         }
-        komodo_earned_interest(pindex->nHeight,sum);
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            komodo_earned_interest(pindex->nHeight,sum);
         CTxUndo undoDummy;
         if (i > 0) {
             blockundo.vtxundo.push_back(CTxUndo());
