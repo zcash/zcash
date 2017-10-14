@@ -1580,8 +1580,8 @@ void komodo_args(char *argv0)
             while ( fname[strlen(fname)-1] != '\\' )
                 fname[strlen(fname)-1] = 0;
             if ( iter == 0 )
-                strcat(fname,".komodo\\komodo.conf");
-            else strcat(fname,".bitcoin\\bitcoin.conf");
+                strcat(fname,"Komodo\\komodo.conf");
+            else strcat(fname,"Bitcoin\\bitcoin.conf");
 #else
             while ( fname[strlen(fname)-1] != '/' )
                 fname[strlen(fname)-1] = 0;
