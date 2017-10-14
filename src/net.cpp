@@ -17,7 +17,7 @@
 #include "ui_interface.h"
 #include "crypto/common.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <string.h>
 #else
 #include <fcntl.h>
@@ -42,7 +42,7 @@
 
 // Fix for ancient MinGW versions, that don't have defined these in ws2tcpip.h.
 // Todo: Can be removed when our pull-tester is upgraded to a modern MinGW version.
-#ifdef WIN32
+#ifdef _WIN32
 #ifndef PROTECTION_LEVEL_UNRESTRICTED
 #define PROTECTION_LEVEL_UNRESTRICTED 10
 #endif
@@ -930,7 +930,7 @@ static void AcceptConnection(const ListenSocket& hListenSocket) {
     // According to the internet TCP_NODELAY is not carried into accepted sockets
     // on all platforms.  Set it again here just to be sure.
     int set = 1;
-#ifdef WIN32
+#ifdef _WIN32
     setsockopt(hSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&set, sizeof(int));
 #else
     setsockopt(hSocket, IPPROTO_TCP, TCP_NODELAY, (void*)&set, sizeof(int));
@@ -1727,7 +1727,7 @@ bool BindListenPort(const CService &addrBind, string& strError, bool fWhiteliste
     }
 
 
-#ifndef WIN32
+#ifndef _WIN32
 #ifdef SO_NOSIGPIPE
     // Different way of disabling SIGPIPE on BSD
     setsockopt(hListenSocket, SOL_SOCKET, SO_NOSIGPIPE, (void*)&nOne, sizeof(int));
@@ -1753,13 +1753,13 @@ bool BindListenPort(const CService &addrBind, string& strError, bool fWhiteliste
     // and enable it by default or not. Try to enable it, if possible.
     if (addrBind.IsIPv6()) {
 #ifdef IPV6_V6ONLY
-#ifdef WIN32
+#ifdef _WIN32
         setsockopt(hListenSocket, IPPROTO_IPV6, IPV6_V6ONLY, (const char*)&nOne, sizeof(int));
 #else
         setsockopt(hListenSocket, IPPROTO_IPV6, IPV6_V6ONLY, (void*)&nOne, sizeof(int));
 #endif
 #endif
-#ifdef WIN32
+#ifdef _WIN32
         int nProtLevel = PROTECTION_LEVEL_UNRESTRICTED;
         setsockopt(hListenSocket, IPPROTO_IPV6, IPV6_PROTECTION_LEVEL, (const char*)&nProtLevel, sizeof(int));
 #endif
@@ -1800,7 +1800,7 @@ void static Discover(boost::thread_group& threadGroup)
     if (!fDiscover)
         return;
 
-#ifdef WIN32
+#ifdef _WIN32
     // Get local host IP
     char pszHostName[256] = "";
     if (gethostname(pszHostName, sizeof(pszHostName)) != SOCKET_ERROR)
@@ -1945,7 +1945,7 @@ public:
         delete pnodeLocalHost;
         pnodeLocalHost = NULL;
 
-#ifdef WIN32
+#ifdef _WIN32
         // Shutdown Windows Sockets
         WSACleanup();
 #endif
