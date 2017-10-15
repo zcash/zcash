@@ -6,7 +6,7 @@
 #include "random.h"
 
 #include "support/cleanse.h"
-#ifdef WIN32
+#ifdef _WIN32
 #include "compat.h" // for Windows API
 #endif
 #include "serialize.h"        // for begin_ptr(vec)
@@ -15,7 +15,7 @@
 
 #include <limits>
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/time.h>
 #endif
 
@@ -24,7 +24,7 @@
 static inline int64_t GetPerformanceCounter()
 {
     int64_t nCounter = 0;
-#ifdef WIN32
+#ifdef _WIN32
     QueryPerformanceCounter((LARGE_INTEGER*)&nCounter);
 #else
     timeval t;

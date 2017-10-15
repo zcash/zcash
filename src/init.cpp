@@ -40,7 +40,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <signal.h>
 #endif
 
@@ -74,7 +74,7 @@ bool fFeeEstimatesInitialized = false;
 static CZMQNotificationInterface* pzmqNotificationInterface = NULL;
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 // Win32 LevelDB doesn't use file descriptors, and the ones used for
 // accessing block files don't count towards the fd_set size limit
 // anyway.
@@ -236,7 +236,7 @@ void Shutdown()
     }
 #endif
 
-#ifndef WIN32
+#ifndef _WIN32
     try {
         boost::filesystem::remove(GetPidFile());
     } catch (const boost::filesystem::filesystem_error& e) {
@@ -334,7 +334,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-maxorphantx=<n>", strprintf(_("Keep at most <n> unconnectable transactions in memory (default: %u)"), DEFAULT_MAX_ORPHAN_TRANSACTIONS));
     strUsage += HelpMessageOpt("-par=<n>", strprintf(_("Set the number of script verification threads (%u to %d, 0 = auto, <0 = leave that many cores free, default: %d)"),
         -(int)boost::thread::hardware_concurrency(), MAX_SCRIPTCHECK_THREADS, DEFAULT_SCRIPTCHECK_THREADS));
-#ifndef WIN32
+#ifndef _WIN32
     strUsage += HelpMessageOpt("-pid=<file>", strprintf(_("Specify pid file (default: %s)"), "komodod.pid"));
 #endif
     strUsage += HelpMessageOpt("-prune=<n>", strprintf(_("Reduce storage requirements by pruning (deleting) old blocks. This mode disables wallet support and is incompatible with -txindex. "
@@ -716,7 +716,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Disable confusing "helpful" text message on abort, Ctrl-C
     _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 #endif
-#ifdef WIN32
+#ifdef _WIN32
     // Enable Data Execution Prevention (DEP)
     // Minimum supported OS versions: WinXP SP3, WinVista >= SP1, Win Server 2008
     // A failure is non-critical and needs no further attention!
@@ -733,7 +733,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (!SetupNetworking())
         return InitError("Error: Initializing networking failed");
 
-#ifndef WIN32
+#ifndef _WIN32
     if (GetBoolArg("-sysperms", false)) {
 #ifdef ENABLE_WALLET
         if (!GetBoolArg("-disablewallet", false))
@@ -1047,7 +1047,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return InitError(strprintf(_("Cannot obtain a lock on data directory %s. Komodo is probably already running.") + " %s.", strDataDir, e.what()));
     }
 
-#ifndef WIN32
+#ifndef _WIN32
     CreatePidFile(GetPidFile(), getpid());
 #endif
     if (GetBoolArg("-shrinkdebugfile", !fDebug))

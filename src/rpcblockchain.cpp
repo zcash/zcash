@@ -309,7 +309,7 @@ UniValue getblockhash(const UniValue& params, bool fHelp)
     return pblockindex->GetBlockHash().GetHex();
 }
 
-uint256 _komodo_getblockhash(int32_t nHeight)
+/*uint256 _komodo_getblockhash(int32_t nHeight)
 {
     uint256 hash;
     LOCK(cs_main);
@@ -323,7 +323,7 @@ uint256 _komodo_getblockhash(int32_t nHeight)
         printf(" blockhash.%d\n",nHeight);
     } else memset(&hash,0,sizeof(hash));
     return(hash);
-}
+}*/
 
 UniValue getblockheader(const UniValue& params, bool fHelp)
 {

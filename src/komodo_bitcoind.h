@@ -431,7 +431,10 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
     if ( strcmp(dest,"KMD") == 0 )
     {
         if ( KMDUSERPASS[0] != 0 )
-            jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771);
+        {
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771);
+        }
         //else jsonstr = _dex_getrawtransaction();
         else return(0); // need universal way to issue DEX* API, since notaries mine most blocks, this ok
     }
@@ -476,7 +479,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
     return(retval);
 }
 
-uint256 komodo_getblockhash(int32_t height)
+/*uint256 komodo_getblockhash(int32_t height)
 {
     uint256 hash; char params[128],*hexstr,*jsonstr; cJSON *result; int32_t i; uint8_t revbuf[32];
     memset(&hash,0,sizeof(hash));
@@ -502,12 +505,12 @@ uint256 komodo_getblockhash(int32_t height)
     return(hash);
 }
 
-uint256 _komodo_getblockhash(int32_t height);
+uint256 _komodo_getblockhash(int32_t height);*/
 
 uint64_t komodo_seed(int32_t height)
 {
     uint64_t seed = 0;
-    if ( 0 ) // problem during init time, seeds are needed for loading blockindex, so null seeds...
+    /*if ( 0 ) // problem during init time, seeds are needed for loading blockindex, so null seeds...
     {
         uint256 hash,zero; CBlockIndex *pindex;
         memset(&hash,0,sizeof(hash));
@@ -524,7 +527,7 @@ uint64_t komodo_seed(int32_t height)
         printf(" seed.%d\n",height);
         seed = arith_uint256(hash.GetHex()).GetLow64();
     }
-    else
+    else*/
     {
         seed = (height << 13) ^ (height << 2);
         seed <<= 21;

@@ -106,7 +106,9 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
     key = &opretbuf[13];
     if ( keylen+13 > opretlen )
     {
-        printf("komodo_kvupdate: keylen.%d + 13 > opretlen.%d\n",keylen,opretlen);
+        static uint32_t counter;
+        if ( counter++ < 3 )
+            printf("komodo_kvupdate: keylen.%d + 13 > opretlen.%d, this can be ignored\n",keylen,opretlen);
         return;
     }
     valueptr = &key[keylen];
