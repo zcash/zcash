@@ -110,6 +110,13 @@ def ensure_no_dot_so_in_depends():
 
     return exit_code == 0
 
+def util_test():
+    return subprocess.call(
+        [repofile('src/test/bitcoin-util-test.py')],
+        cwd=repofile('src'),
+        env={'PYTHONPATH': repofile('src/test'), 'srcdir': repofile('src')}
+    ) == 0
+
 
 #
 # Tests
@@ -120,6 +127,7 @@ STAGES = [
     'gtest',
     'sec-hard',
     'no-dot-so',
+    'util-test',
     'secp256k1',
     'univalue',
     'rpc',
@@ -130,6 +138,7 @@ STAGE_COMMANDS = {
     'gtest': [repofile('src/zcash-gtest')],
     'sec-hard': check_security_hardening,
     'no-dot-so': ensure_no_dot_so_in_depends,
+    'util-test': util_test,
     'secp256k1': ['make', '-C', repofile('src/secp256k1'), 'check'],
     'univalue': ['make', '-C', repofile('src/univalue'), 'check'],
     'rpc': [repofile('qa/pull-tester/rpc-tests.sh')],
