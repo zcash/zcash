@@ -666,7 +666,7 @@ class CScript(bytes):
             else:
                 other = CScriptOp.encode_op_pushdata(bignum.bn2vch(other))
         elif isinstance(other, (bytes, bytearray)):
-            other = CScriptOp.encode_op_pushdata(other)
+            other = bytes(CScriptOp.encode_op_pushdata(other))
         return other
 
     def __add__(self, other):
