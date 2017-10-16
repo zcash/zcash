@@ -185,6 +185,7 @@ def main():
         passed &= run_stage(s)
 
     if not passed:
+        print("!!! One or more test stages failed !!!")
         sys.exit(1)
 
 if __name__ == '__main__':
