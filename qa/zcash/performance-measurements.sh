@@ -154,6 +154,13 @@ EOF
     xzcat block-107134.tar.xz | tar x -C "$DATADIR/regtest"
 }
 
+
+if [ $# -lt 2 ]
+then
+    echo "$0 : two arguments are required!"
+    exit 1
+fi
+
 # Precomputation
 case "$1" in
     *)
