@@ -2663,7 +2663,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
             nFeeRet = 0;
             while (true)
             {
-                interest = 0;
+                //interest = 0;
                 txNew.vin.clear();
                 txNew.vout.clear();
                 wtxNew.fFromMe = true;
