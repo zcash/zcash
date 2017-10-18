@@ -36,10 +36,14 @@ LIBSNARK=snark/build/lib/libsnark.a
 LIBUNIVALUE=univalue/libunivalue.la
 LIBZCASH=libzcash.a
 
-# libsnark is added as a dependency here solely to ensure it is built early, so
-# that its header files are collated for use in later build steps.
-$(LIBSECP256K1): $(LIBSNARK) $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
+$(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
+
+# A phony target is included here to ensure libsnark is built first, so that its
+# header files are collated for use in later build steps.
+# See https://stackoverflow.com/a/10726725
+-include collate-libsnark
+collate-libsnark: $(LIBSNARK)
 
 LIBSNARK_CXXFLAGS = -fPIC -DBINARY_OUTPUT -DNO_PT_COMPRESSION=1
 LIBSNARK_CONFIG_FLAGS = CURVE=ALT_BN128 MULTICORE=1 NO_PROCPS=1 NO_DOCS=1 STATIC=1 NO_SUPERCOP=1 FEATUREFLAGS=-DMONTGOMERY_OUTPUT NO_COPY_DEPINST=1
@@ -103,7 +107,7 @@ LIBZCASH_H = \
   zcash/util.h \
   zcash/Zcash.h
 
-.PHONY: FORCE check-symbols check-security
+.PHONY: FORCE collate-libsnark check-symbols check-security
 # bitcoin core #
 BITCOIN_CORE_H = \
   addrman.h \
