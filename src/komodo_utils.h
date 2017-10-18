@@ -1507,17 +1507,17 @@ void komodo_args(char *argv0)
         KOMODO_PAX = 1;
     } else KOMODO_PAX = GetArg("-pax",0);
     name = GetArg("-ac_name","");
-		if ( argv0 != 0 )
-		{
-    		len = (int32_t)strlen(argv0);
-      	for (i=0; i<sizeof(argv0suffix)/sizeof(*argv0suffix); i++)
-      	{
-        		n = (int32_t)strlen(argv0suffix[i]);
-        		if ( strcmp(&argv0[len - n],argv0suffix[i]) == 0 )
-        		{
-            		printf("ARGV0.(%s) -> matches suffix (%s) -> ac_name.(%s)\n",argv0,argv0suffix[i],argv0names[i]);
-            		name = argv0names[i];
-            		break;
+    if ( argv0 != 0 )
+    {
+        len = (int32_t)strlen(argv0);
+        for (i=0; i<sizeof(argv0suffix)/sizeof(*argv0suffix); i++)
+        {
+            n = (int32_t)strlen(argv0suffix[i]);
+            if ( strcmp(&argv0[len - n],argv0suffix[i]) == 0 )
+            {
+                //printf("ARGV0.(%s) -> matches suffix (%s) -> ac_name.(%s)\n",argv0,argv0suffix[i],argv0names[i]);
+                name = argv0names[i];
+                break;
             }
         }
     }
