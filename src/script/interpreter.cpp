@@ -13,6 +13,8 @@
 #include "pubkey.h"
 #include "script/script.h"
 #include "uint256.h"
+#include "cryptoconditions/include/cryptoconditions.h"
+
 
 using namespace std;
 
@@ -934,6 +936,51 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 }
                 break;
 
+                case OP_CHECKCRYPTOCONDITION:
+                case OP_CHECKCRYPTOCONDITIONVERIFY:
+                {
+                    // (fulfillment condition -- bool)
+
+                    if (stack.size() < 2)
+                        return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
+
+                    valtype& vchFulfillment = stacktop(-2);
+                    valtype& vchCondition   = stacktop(-1);
+
+                    // Hard limit fulfillment size
+                    if (vchFulfillment.size() > 1024 * 10) {
+                        return set_error(serror, SCRIPT_ERR_CRYPTOCONDITION_INVALID_FULFILLMENT);
+                    }
+
+                    CC *cond = (CC*) calloc(1, sizeof(CC));
+                    char *fulfillmentBin = (char*) vchFulfillment.data();
+                    int rc = cc_readFulfillmentBinary(cond, fulfillmentBin, vchFulfillment.size());
+                    if (rc != 0) {
+                        return set_error(serror, SCRIPT_ERR_CRYPTOCONDITION_INVALID_FULFILLMENT);
+                    }
+
+                    char *condBin = (char*) &vchCondition[0];
+                    // TODO: Should nHashType be hardcoded?
+                    // Other types use the last byte of the signature
+                    char *msg = (char*) checker.GetMessage(script, SIGHASH_ALL).begin();
+;
+                    bool fSuccess = cc_verify(cond, msg, 32, condBin, vchCondition.size());
+
+                    popstack(stack);
+                    popstack(stack);
+
+                    stack.push_back(fSuccess ? vchTrue : vchFalse);
+
+                    if (opcode == OP_CHECKCRYPTOCONDITIONVERIFY)
+                    {
+                        if (fSuccess)
+                            popstack(stack);
+                        else
+                            return set_error(serror, SCRIPT_ERR_CRYPTOCONDITION_VERIFY);
+                    }
+                }
+                break;
+
                 default:
                     return set_error(serror, SCRIPT_ERR_BAD_OPCODE);
             }
@@ -1145,6 +1192,11 @@ bool TransactionSignatureChecker::CheckLockTime(const CScriptNum& nLockTime) con
         return false;
 
     return true;
+}
+
+uint256 TransactionSignatureChecker::GetMessage(const CScript& scriptCode, int nHashType) const
+{
+    return SignatureHash(scriptCode, *txTo, nIn, nHashType);
 }
 
 

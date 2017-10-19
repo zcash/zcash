@@ -102,6 +102,12 @@ public:
          return false;
     }
 
+    virtual uint256 GetMessage(const CScript& scriptCode, int nHashType) const
+    {
+        uint256 blob;
+        return blob;
+    }
+
     virtual ~BaseSignatureChecker() {}
 };
 
@@ -118,6 +124,7 @@ public:
     TransactionSignatureChecker(const CTransaction* txToIn, unsigned int nInIn) : txTo(txToIn), nIn(nInIn) {}
     bool CheckSig(const std::vector<unsigned char>& scriptSig, const std::vector<unsigned char>& vchPubKey, const CScript& scriptCode) const;
     bool CheckLockTime(const CScriptNum& nLockTime) const;
+    uint256 GetMessage(const CScript& scriptCode, int nHashType) const;
 };
 
 class MutableTransactionSignatureChecker : public TransactionSignatureChecker

@@ -22,6 +22,9 @@
 #define PACKED __attribute__((packed))
 #endif*/
 
+#ifndef KOMODO_STRUCTS_H
+#define KOMODO_STRUCTS_H
+
 #define GENESIS_NBITS 0x1f00ffff
 #define KOMODO_MINRATIFY ((height < 90000) ? 7 : 11)
 #define KOMODO_MAXBLOCKS 5000000
@@ -88,3 +91,5 @@ struct komodo_state
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
 };
+
+#endif /* KOMODO_STRUCTS_H */
