@@ -129,6 +129,7 @@ STAGES = [
     'no-dot-so',
     'util-test',
     'secp256k1',
+    'libsnark',
     'univalue',
     'rpc',
 ]
@@ -140,6 +141,7 @@ STAGE_COMMANDS = {
     'no-dot-so': ensure_no_dot_so_in_depends,
     'util-test': util_test,
     'secp256k1': ['make', '-C', repofile('src/secp256k1'), 'check'],
+    'libsnark': ['make', '-C', repofile('src'), 'libsnark-tests'],
     'univalue': ['make', '-C', repofile('src/univalue'), 'check'],
     'rpc': [repofile('qa/pull-tester/rpc-tests.sh')],
 }
@@ -169,9 +171,16 @@ def run_stage(stage):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--list-stages', dest='list', action='store_true')
     parser.add_argument('stage', nargs='*', default=STAGES,
                         help='One of %s'%STAGES)
     args = parser.parse_args()
+
+    # Check for list
+    if args.list:
+        for s in STAGES:
+            print(s)
+        sys.exit(0)
 
     # Check validity of stages
     for s in args.stage:
