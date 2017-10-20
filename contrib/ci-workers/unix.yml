@@ -101,6 +101,15 @@
         shell: /bin/bash
         state: present
 
+    - name: Get absolute path to Buildbot worker home directory
+      command: echo ~
+      register: homedir
+      become_user: "{{ buildbot_worker_user }}"
+
+    - name: Save absolute path to Buildbot worker home directory
+      set_fact:
+        buildbot_worker_dir: "{{ homedir.stdout }}"
+
     - name: Install required Python modules
       pip:
         name: "{{ item }}"
