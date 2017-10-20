@@ -88,12 +88,11 @@
       include: tasks/install-pip.yml
       when: ansible_distribution == 'CentOS'
 
-    - name: Install required Python modules
+    - name: Install required Python system modules
       pip:
         name: "{{ item }}"
         state: latest
-      with_items: "{{ python_modules }}"
-      notify: restart buildbot-worker
+      with_items: "{{ system_modules }}"
 
     - name: Set up the Buildbot worker user
       user:
@@ -102,9 +101,18 @@
         shell: /bin/bash
         state: present
 
+    - name: Install required Python modules
+      pip:
+        name: "{{ item }}"
+        state: latest
+        virtualenv: "~{{ buildbot_worker_user }}/venv"
+      with_items: "{{ python_modules }}"
+      become_user: "{{ buildbot_worker_user }}"
+      notify: restart buildbot-worker
+
     - name: Create Buildbot worker
       command: >
-        buildbot-worker create-worker ~/{{ buildbot_worker_name }}
+        ~{{ buildbot_worker_user }}/venv/bin/buildbot-worker create-worker ~/{{ buildbot_worker_name }}
         {{ buildbot_master_host }}:{{ buildbot_master_port }}
         {{ buildbot_worker_name|quote }} {{ buildbot_worker_password|quote }}
       args:
@@ -123,6 +131,14 @@
       template:
         src: "{{ buildbot_worker_host_template }}"
         dest: "~{{ buildbot_worker_user }}/{{ buildbot_worker_name }}/info/host"
+        owner: "{{ buildbot_worker_user }}"
+        group: "{{ buildbot_worker_user }}"
+        mode: "0644"
+
+    - name: Install custom bashrc for virtualenv
+      copy:
+        src: bashrc
+        dest: "~{{ buildbot_worker_user }}/.bashrc"
         owner: "{{ buildbot_worker_user }}"
         group: "{{ buildbot_worker_user }}"
         mode: "0644"
