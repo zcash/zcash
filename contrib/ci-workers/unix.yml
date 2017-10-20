@@ -72,6 +72,10 @@
         package_deps: "{{ buildbot_deps + fetch_deps + conf_deps + build_deps + link_deps + dist_deps }}"
         python_modules: "{{ buildbot_modules + rpc_test_modules }}"
 
+    - name: Install Homebrew [MacOSX]
+      include: tasks/install-brew.yml
+      when: ansible_distribution == 'MacOSX'
+
     - name: Update rolling release [Arch Linux]
       pacman:
         update_cache: yes
@@ -83,15 +87,17 @@
         name: "{{ item }}"
         state: present
       with_items: "{{ package_deps }}"
+      become_user: "{{ ansible_ssh_user if ansible_distribution == 'MacOSX' else 'root' }}"
 
-    - name: Install pip [CentOS]
+    - name: Install pip [CentOS, MacOSX]
       include: tasks/install-pip.yml
-      when: ansible_distribution == 'CentOS'
+      when: ansible_distribution in ['CentOS', 'MacOSX']
 
     - name: Install required Python system modules
       pip:
         name: "{{ item }}"
         state: latest
+        executable: "{{ '/usr/local/bin/pip' if ansible_distribution == 'MacOSX' else omit }}"
       with_items: "{{ system_modules }}"
 
     - name: Set up the Buildbot worker user
@@ -115,6 +121,7 @@
         name: "{{ item }}"
         state: latest
         virtualenv: "~{{ buildbot_worker_user }}/venv"
+        virtualenv_command: "{{ '/usr/local/bin/virtualenv' if ansible_distribution == 'MacOSX' else omit }}"
       with_items: "{{ python_modules }}"
       become_user: "{{ buildbot_worker_user }}"
       notify: restart buildbot-worker
@@ -133,7 +140,7 @@
         content: "{{ buildbot_worker_admin }}"
         dest: "~{{ buildbot_worker_user }}/{{ buildbot_worker_name }}/info/admin"
         owner: "{{ buildbot_worker_user }}"
-        group: "{{ buildbot_worker_user }}"
+        group: "{{ omit if ansible_distribution == 'MacOSX' else buildbot_worker_user }}"
         mode: "0644"
 
     - name: Set host details for Buildbot worker
@@ -141,7 +148,7 @@
         src: "{{ buildbot_worker_host_template }}"
         dest: "~{{ buildbot_worker_user }}/{{ buildbot_worker_name }}/info/host"
         owner: "{{ buildbot_worker_user }}"
-        group: "{{ buildbot_worker_user }}"
+        group: "{{ omit if ansible_distribution == 'MacOSX' else buildbot_worker_user }}"
         mode: "0644"
 
     - name: Install custom bashrc for virtualenv
@@ -149,7 +156,7 @@
         src: bashrc
         dest: "~{{ buildbot_worker_user }}/.bashrc"
         owner: "{{ buildbot_worker_user }}"
-        group: "{{ buildbot_worker_user }}"
+        group: "{{ omit if ansible_distribution == 'MacOSX' else buildbot_worker_user }}"
         mode: "0644"
 
     - name: Copy Buildbot worker systemd service unit
@@ -159,13 +166,32 @@
         owner: root
         group: root
         mode: "0644"
+      when: ansible_distribution != 'MacOSX'
       notify: reload systemd
 
-    - name: Start Buildbot worker.
+    - name: Copy Buildbot worker launchd service unit
+      template:
+        src: templates/buildbot-worker.plist.j2
+        dest: "/Library/LaunchDaemons/net.buildbot.worker.plist"
+        owner: root
+        group: wheel
+        mode: "0644"
+      when: ansible_distribution == 'MacOSX'
+
+    - name: Start Buildbot worker
       service:
         name: buildbot-worker
         state: started
         enabled: yes
+      when: ansible_distribution != 'MacOSX'
+
+    - name: Load Buildbot worker service [MacOSX]
+      command: launchctl load /Library/LaunchDaemons/net.buildbot.worker.plist
+      when: ansible_distribution == 'MacOSX'
+
+    - name: Start Buildbot worker [MacOSX]
+      command: launchctl start net.buildbot.worker
+      when: ansible_distribution == 'MacOSX'
 
   handlers:
     - name: restart buildbot-worker

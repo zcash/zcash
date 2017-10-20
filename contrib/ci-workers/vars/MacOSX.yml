@@ -1,0 +1,5 @@
+---
+buildbot_deps:
+  - coreutils # For gnproc etc.
+# Already installed
+build_deps: []
