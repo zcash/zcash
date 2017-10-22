@@ -515,7 +515,8 @@ endif
 libzcashconsensus_la_LDFLAGS = -no-undefined $(RELDFLAGS)
 libzcashconsensus_la_LIBADD = $(CRYPTO_LIBS)
 libzcashconsensus_la_CPPFLAGS = $(CRYPTO_CFLAGS) -I$(builddir)/obj -DBUILD_BITCOIN_INTERNAL \
-								-I$(builddir)/cryptoconditions/src/asn
+								-I$(builddir)/cryptoconditions/src/asn \
+								-I$(builddir)/cryptoconditions/src
 
 endif
 #
