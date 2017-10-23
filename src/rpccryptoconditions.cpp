@@ -375,6 +375,14 @@ UniValue verifytxoutproofcc(const UniValue& params, bool fHelp)
     return res;
 }
 
+CC *ConditionFromValue(const UniValue& condition) {
+    std::string encoded = condition.write();
+    char *err = new char[1000];
+    CC *cond = cc_conditionFromJSONString(encoded.c_str(), err);
+    if (NULL == cond)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, err);
+}
+
 UniValue createrawtransactioncc(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 2)
@@ -409,7 +417,7 @@ UniValue createrawtransactioncc(const UniValue& params, bool fHelp)
         );
 
     LOCK(cs_main);
-    RPCTypeCheck(params, boost::assign::list_of(UniValue::VARR)(UniValue::VARR));
+    //RPCTypeCheck(params, boost::assign::list_of(UniValue::VARR)(UniValue::VARR));
 
     UniValue inputs = params[0].get_array();
     UniValue outputs = params[1].get_array();
@@ -429,6 +437,9 @@ UniValue createrawtransactioncc(const UniValue& params, bool fHelp)
         if (nOutput < 0)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, vout must be positive");
 
+        CC *cond = ConditionFromValue(find_value(output, "condition"));
+        char *ffillBin = new char[1024*1024];
+
         CTxIn in(COutPoint(txid, nOutput));
         rawTx.vin.push_back(in);
     }
@@ -436,13 +447,7 @@ UniValue createrawtransactioncc(const UniValue& params, bool fHelp)
     for (size_t idx = 0; idx < outputs.size(); idx++) {
         const UniValue& output = outputs[idx].get_obj();
 
-        const UniValue& condition = find_value(output, "condition");
-        std::string encoded = condition.write();
-        fprintf(stderr, "%s\n", encoded.c_str());
-        char *err = new char[1000];
-        CC *cond = cc_conditionFromJSONString(encoded.c_str(), err);
-        if (NULL == cond)
-            throw JSONRPCError(RPC_INVALID_PARAMETER, err);
+        CC *cond = ConditionFromValue(find_value(output, "condition"));
         char *condBin = new char[1000];
         size_t binLength = cc_conditionBinary(cond, condBin);
         std::vector<char> condVec(condBin, condBin + binLength);
