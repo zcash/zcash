@@ -80,7 +80,8 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
         else matched = (strcmp(symbol,ASSETCHAINS_SYMBOL) == 0);
         if ( fread(&ht,1,sizeof(ht),fp) != sizeof(ht) )
             errs++;
-        //printf("fpos.%ld func.(%d %c) ht.%d ",ftell(fp),func,func,ht);
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            printf("matched.%d fpos.%ld func.(%d %c) ht.%d ",matched,ftell(fp),func,func,ht);
         if ( func == 'P' )
         {
             if ( (num= fgetc(fp)) <= 64 )
@@ -204,6 +205,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
     {
         KOMODO_INITDONE = (uint32_t)time(NULL);
+        printf("[%s] no komodo_stateptr\n",ASSETCHAINS_SYMBOL);
         return;
     }
     if ( fp == 0 )
