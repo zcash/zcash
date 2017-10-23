@@ -320,26 +320,48 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
 
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
 {
-    struct notarized_checkpoint *np = 0; int32_t i; char symbol[16],dest[16]; struct komodo_state *sp;
+    struct notarized_checkpoint *np = 0; int32_t i,flag = 0; char symbol[16],dest[16]; struct komodo_state *sp;
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
         if ( sp->NUM_NPOINTS > 0 )
         {
-            for (i=0; i<sp->NUM_NPOINTS; i++)
+            flag = 0;
+            if ( sp->last_NPOINTSi < sp->NUM_POINTS && sp->last_NPOINTSi > 0 )
             {
-                if ( sp->NPOINTS[i].nHeight >= nHeight )
-                    break;
-                np = &sp->NPOINTS[i];
+                np = &sp->NPOINTS[sp->last_NPOINTSi-1];
+                for (i=sp->last_NPOINTSi; i<sp->NUM_NPOINTS; i++)
+                {
+                    if ( sp->NPOINTS[i].nHeight >= nHeight )
+                    {
+                        flag = 1;
+                        break;
+                    }
+                    np = &sp->NPOINTS[i];
+                    sp->last_NPOINTSi = i;
+                }
+            }
+            if ( flag == 0 )
+            {
+                np = 0;
+                for (i=0; i<sp->NUM_NPOINTS; i++)
+                {
+                    if ( sp->NPOINTS[i].nHeight >= nHeight )
+                        break;
+                    np = &sp->NPOINTS[i];
+                    sp->last_NPOINTSi = i;
+                }
             }
         }
         if ( np != 0 )
         {
+            char str[65],str2[65]; printf("[%s] notarized_ht.%d %s -> %s\n",ASSETCHAINS_SYMBOL,np->notarized_height,bits256_str(str,np->notarized_hash),bits256_str(str2,np->notarized_desttxid));
             *notarized_hashp = np->notarized_hash;
             *notarized_desttxidp = np->notarized_desttxid;
             return(np->notarized_height);
         }
     }
     memset(notarized_hashp,0,sizeof(*notarized_hashp));
+    memset(notarized_desttxidp,0,sizeof(*notarized_desttxidp));
     return(0);
 }
 
