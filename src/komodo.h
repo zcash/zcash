@@ -80,8 +80,8 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
         else matched = (strcmp(symbol,ASSETCHAINS_SYMBOL) == 0);
         if ( fread(&ht,1,sizeof(ht),fp) != sizeof(ht) )
             errs++;
-        if ( ASSETCHAINS_SYMBOL[0] != 0 )
-            printf("matched.%d fpos.%ld func.(%d %c) ht.%d ",matched,ftell(fp),func,func,ht);
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && func != 'T' )
+            printf("matched.%d fpos.%ld func.(%d %c) ht.%d\n",matched,ftell(fp),func,func,ht);
         if ( func == 'P' )
         {
             if ( (num= fgetc(fp)) <= 64 )
