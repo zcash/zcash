@@ -354,7 +354,7 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
         }
         if ( np != 0 )
         {
-            char str[65],str2[65]; printf("[%s] notarized_ht.%d %s -> %s\n",ASSETCHAINS_SYMBOL,np->notarized_height,bits256_str(str,np->notarized_hash),bits256_str(str2,np->notarized_desttxid));
+            char str[65],str2[65]; printf("[%s] notarized_ht.%d\n",ASSETCHAINS_SYMBOL,np->notarized_height);
             *notarized_hashp = np->notarized_hash;
             *notarized_desttxidp = np->notarized_desttxid;
             return(np->notarized_height);
