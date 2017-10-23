@@ -170,7 +170,7 @@ int32_t komodo_ratify_threshold(int32_t height,uint64_t signedmask)
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height)
 {
     int32_t i,htind,n; uint64_t mask = 0; struct knotary_entry *kp,*tmp;
-    if ( height >= 180000 )
+    if ( height >= 180000 || ASSETCHAINS_SYMBOL[0] != 0 )
     {
         n = (int32_t)(sizeof(Notaries_elected)/sizeof(*Notaries_elected));
         for (i=0; i<n; i++)
@@ -289,6 +289,8 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
         printf("komodo_notarized_update REJECT notarized_height %d > %d nHeight\n",notarized_height,nHeight);
         return;
     }
+    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+        printf("[%s] komodo_notarized_update nHeight.%d notarized_height.%d\n",ASSETCHAINS_SYMBOL,nHeight,notarized_height);
     portable_mutex_lock(&komodo_mutex);
     sp->NPOINTS = (struct notarized_checkpoint *)realloc(sp->NPOINTS,(sp->NUM_NPOINTS+1) * sizeof(*sp->NPOINTS));
     np = &sp->NPOINTS[sp->NUM_NPOINTS++];
@@ -320,26 +322,48 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
 
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
 {
-    struct notarized_checkpoint *np = 0; int32_t i; char symbol[16],dest[16]; struct komodo_state *sp;
+    struct notarized_checkpoint *np = 0; int32_t i,flag = 0; char symbol[16],dest[16]; struct komodo_state *sp;
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
         if ( sp->NUM_NPOINTS > 0 )
         {
-            for (i=0; i<sp->NUM_NPOINTS; i++)
+            flag = 0;
+            if ( sp->last_NPOINTSi < sp->NUM_NPOINTS && sp->last_NPOINTSi > 0 )
             {
-                if ( sp->NPOINTS[i].nHeight >= nHeight )
-                    break;
-                np = &sp->NPOINTS[i];
+                np = &sp->NPOINTS[sp->last_NPOINTSi-1];
+                for (i=sp->last_NPOINTSi; i<sp->NUM_NPOINTS; i++)
+                {
+                    if ( sp->NPOINTS[i].nHeight >= nHeight )
+                    {
+                        flag = 1;
+                        break;
+                    }
+                    np = &sp->NPOINTS[i];
+                    sp->last_NPOINTSi = i;
+                }
+            }
+            if ( flag == 0 )
+            {
+                np = 0;
+                for (i=0; i<sp->NUM_NPOINTS; i++)
+                {
+                    if ( sp->NPOINTS[i].nHeight >= nHeight )
+                        break;
+                    np = &sp->NPOINTS[i];
+                    sp->last_NPOINTSi = i;
+                }
             }
         }
         if ( np != 0 )
         {
+            //char str[65],str2[65]; printf("[%s] notarized_ht.%d\n",ASSETCHAINS_SYMBOL,np->notarized_height);
             *notarized_hashp = np->notarized_hash;
             *notarized_desttxidp = np->notarized_desttxid;
             return(np->notarized_height);
         }
     }
     memset(notarized_hashp,0,sizeof(*notarized_hashp));
+    memset(notarized_desttxidp,0,sizeof(*notarized_desttxidp));
     return(0);
 }
 

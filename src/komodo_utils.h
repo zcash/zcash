@@ -1261,9 +1261,9 @@ void iguana_initQ(queue_t *Q,char *name)
         free(item);
 }
 
-void komodo_userpass(char *username,char *password,FILE *fp)
+uint16_t komodo_userpass(char *username,char *password,FILE *fp)
 {
-    char *rpcuser,*rpcpassword,*str,line[8192];
+    char *rpcuser,*rpcpassword,*str,line[8192]; uint16_t port = 0;
     rpcuser = rpcpassword = 0;
     username[0] = password[0] = 0;
     while ( fgets(line,sizeof(line),fp) != 0 )
@@ -1275,6 +1275,11 @@ void komodo_userpass(char *username,char *password,FILE *fp)
             rpcuser = parse_conf_line(str,(char *)"rpcuser");
         else if ( (str= strstr(line,(char *)"rpcpassword")) != 0 )
             rpcpassword = parse_conf_line(str,(char *)"rpcpassword");
+        else if ( (str= strstr(line,(char *)"rpcport")) != 0 )
+        {
+            port = atoi(parse_conf_line(str,(char *)"rpcport"));
+            //printf("rpcport.%u in file\n",port);
+        }
     }
     if ( rpcuser != 0 && rpcpassword != 0 )
     {
@@ -1286,6 +1291,7 @@ void komodo_userpass(char *username,char *password,FILE *fp)
         free(rpcuser);
     if ( rpcpassword != 0 )
         free(rpcpassword);
+    return(port);
 }
 
 void komodo_statefname(char *fname,char *symbol,char *str)
@@ -1328,7 +1334,7 @@ void komodo_statefname(char *fname,char *symbol,char *str)
 void komodo_configfile(char *symbol,uint16_t port)
 {
     static char myusername[512],mypassword[8192];
-    FILE *fp; uint8_t buf2[33]; char fname[512],buf[128],username[512],password[8192]; uint32_t crc,r,r2,i;
+    FILE *fp; uint16_t kmdport; uint8_t buf2[33]; char fname[512],buf[128],username[512],password[8192]; uint32_t crc,r,r2,i;
     if ( symbol != 0 && port != 0 )
     {
         r = (uint32_t)time(NULL);
@@ -1386,16 +1392,17 @@ void komodo_configfile(char *symbol,uint16_t port)
 #endif
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
-        komodo_userpass(username,password,fp);
+        if ( (kmdport= komodo_userpass(username,password,fp)) != 0 )
+            KMD_PORT = kmdport;
         sprintf(KMDUSERPASS,"%s:%s",username,password);
         fclose(fp);
 //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
     } else printf("couldnt open.(%s)\n",fname);
 }
 
-int32_t komodo_userpass(char *userpass,char *symbol)
+uint16_t komodo_userpass(char *userpass,char *symbol)
 {
-    FILE *fp; char fname[512],username[512],password[512],confname[16];
+    FILE *fp; uint16_t port = 0; char fname[512],username[512],password[512],confname[16];
     userpass[0] = 0;
     if ( strcmp("KMD",symbol) == 0 )
     {
@@ -1409,12 +1416,12 @@ int32_t komodo_userpass(char *userpass,char *symbol)
     komodo_statefname(fname,symbol,confname);
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
-        komodo_userpass(username,password,fp);
+        port = komodo_userpass(username,password,fp);
         sprintf(userpass,"%s:%s",username,password);
         fclose(fp);
         return((int32_t)strlen(userpass));
     }
-    return(-1);
+    return(port);
 }
 
 uint32_t komodo_assetmagic(char *symbol,uint64_t supply)
