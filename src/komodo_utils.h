@@ -1334,7 +1334,7 @@ void komodo_statefname(char *fname,char *symbol,char *str)
 void komodo_configfile(char *symbol,uint16_t port)
 {
     static char myusername[512],mypassword[8192];
-    FILE *fp; uint16_t port; uint8_t buf2[33]; char fname[512],buf[128],username[512],password[8192]; uint32_t crc,r,r2,i;
+    FILE *fp; uint16_t kmdport; uint8_t buf2[33]; char fname[512],buf[128],username[512],password[8192]; uint32_t crc,r,r2,i;
     if ( symbol != 0 && port != 0 )
     {
         r = (uint32_t)time(NULL);
@@ -1392,8 +1392,8 @@ void komodo_configfile(char *symbol,uint16_t port)
 #endif
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
-        if ( (port= komodo_userpass(username,password,fp)) != 0 )
-            KMD_PORT = port;
+        if ( (kmdport= komodo_userpass(username,password,fp)) != 0 )
+            KMD_PORT = kmdport;
         sprintf(KMDUSERPASS,"%s:%s",username,password);
         fclose(fp);
 //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
