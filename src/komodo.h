@@ -392,7 +392,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             opretlen += (scriptbuf[len++] << 8);
         }
         if ( ASSETCHAINS_SYMBOL[0] != 0 )
-            printf("notarized.%d notarizedht.%d sp.Nht %d sp.ht %d opretlen.%d (%c %d)\n",notarized,*notarizedheightp,sp->NOTARIZED_HEIGHT,sp->CURRENT_HEIGHT,opretlen,scriptbuf[len+32*2+4]);
+            printf("notarized.%d notarizedht.%d sp.Nht %d sp.ht %d opretlen.%d (%c %d)\n",notarized,*notarizedheightp,sp->NOTARIZED_HEIGHT,sp->CURRENT_HEIGHT,opretlen,scriptbuf[len+32*2+4],scriptbuf[len+32*2+4]);
         if ( j == 1 && opretlen >= 32*2+4 && strcmp(ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+32*2+4]) == 0 )
         {
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&kmdtxid);
