@@ -41,12 +41,13 @@ void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t heig
     struct komodo_event_notarized N;
     if ( komodo_verifynotarization(symbol,dest,height,notarizedheight,notarized_hash,notarized_desttxid) != 0 )
     {
-        if ( height > 50000 )
+        if ( height > 50000 || ASSETCHAINS_SYMBOL[0] != 0 )
             printf("[%s] error validating notarization ht.%d notarized_height.%d, if on a pruned %s node this can be ignored\n",ASSETCHAINS_SYMBOL,height,notarizedheight,dest);
     }
     else
     {
-        //fprintf(stderr,"validated %s ht.%d notarized %d\n",ASSETCHAINS_SYMBOL,height,notarizedheight);
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            fprintf(stderr,"validated [%s] ht.%d notarized %d\n",ASSETCHAINS_SYMBOL,height,notarizedheight);
         memset(&N,0,sizeof(N));
         N.blockhash = notarized_hash;
         N.desttxid = notarized_desttxid;
