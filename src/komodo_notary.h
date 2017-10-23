@@ -331,15 +331,18 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
             if ( sp->last_NPOINTSi < sp->NUM_NPOINTS && sp->last_NPOINTSi > 0 )
             {
                 np = &sp->NPOINTS[sp->last_NPOINTSi-1];
-                for (i=sp->last_NPOINTSi; i<sp->NUM_NPOINTS; i++)
+                if ( np->nHeight < nHeight )
                 {
-                    if ( sp->NPOINTS[i].nHeight >= nHeight )
+                    for (i=sp->last_NPOINTSi; i<sp->NUM_NPOINTS; i++)
                     {
-                        flag = 1;
-                        break;
+                        if ( sp->NPOINTS[i].nHeight >= nHeight )
+                        {
+                            flag = 1;
+                            break;
+                        }
+                        np = &sp->NPOINTS[i];
+                        sp->last_NPOINTSi = i;
                     }
-                    np = &sp->NPOINTS[i];
-                    sp->last_NPOINTSi = i;
                 }
             }
             if ( flag == 0 )
