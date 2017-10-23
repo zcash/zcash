@@ -322,7 +322,7 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
 
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
 {
-    struct notarized_checkpoint *np = 0; int32_t i,flag = 0; char symbol[16],dest[16]; struct komodo_state *sp;
+    struct notarized_checkpoint *np = 0; int32_t i=0,flag = 0; char symbol[16],dest[16]; struct komodo_state *sp;
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
         if ( sp->NUM_NPOINTS > 0 )
@@ -351,7 +351,10 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
                 for (i=0; i<sp->NUM_NPOINTS; i++)
                 {
                     if ( sp->NPOINTS[i].nHeight >= nHeight )
+                    {
+                        printf("i.%d np->ht %d [%d].ht %d >= nHeight.%d\n",i,np->nHeight,i,sp->NPOINTS[i].nHeight,nHeight);
                         break;
+                    }
                     np = &sp->NPOINTS[i];
                     sp->last_NPOINTSi = i;
                 }
@@ -360,6 +363,8 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
         if ( np != 0 )
         {
             //char str[65],str2[65]; printf("[%s] notarized_ht.%d\n",ASSETCHAINS_SYMBOL,np->notarized_height);
+            if ( np->nHeight >= nHeight || (i < sp->NUM_NPOINTS && np[1].nHeight < nHeight) )
+                printf("flag.%d i.%d np->ht %d [1].ht %d >= nHeight.%d\n",flag,i,np->nHeight,np[1].nHeight,nHeight);
             *notarized_hashp = np->notarized_hash;
             *notarized_desttxidp = np->notarized_desttxid;
             return(np->notarized_height);
