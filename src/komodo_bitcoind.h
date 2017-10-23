@@ -436,7 +436,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
             if ( ASSETCHAINS_SYMBOL[0] != 0 )
             {
                 jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,KMD_PORT);
-printf("userpass.(%s) got (%s)\n",KMDUSERPASS,jsonstr);
+//printf("userpass.(%s) got (%s)\n",KMDUSERPASS,jsonstr);
             }
         }//else jsonstr = _dex_getrawtransaction();
         else return(0); // need universal way to issue DEX* API, since notaries mine most blocks, this ok
