@@ -208,7 +208,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         printf("[%s] no komodo_stateptr\n",ASSETCHAINS_SYMBOL);
         return;
     }
-    printf("[%s] (%s) -> (%s)\n",ASSETCHAINS_SYMBOL,symbol,dest);
+    //printf("[%s] (%s) -> (%s)\n",ASSETCHAINS_SYMBOL,symbol,dest);
     if ( fp == 0 )
     {
         komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"komodostate");
