@@ -196,7 +196,7 @@ try_again:
 
             databuf = (char *)malloc(256 + strlen(command) + strlen(params));
             sprintf(databuf,"{\"id\":\"jl777\",\"method\":\"%s\",\"params\":%s%s%s}",command,bracket0,params,bracket1);
-            printf("url.(%s) userpass.(%s) databuf.(%s)\n",url,userpass,databuf);
+            //printf("url.(%s) userpass.(%s) databuf.(%s)\n",url,userpass,databuf);
             //
         } //else if ( specialcase != 0 ) fprintf(stderr,"databuf.(%s)\n",params);
         curl_easy_setopt(curl_handle,CURLOPT_POST,1L);
@@ -339,7 +339,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     {
         sprintf(url,(char *)"http://127.0.0.1:%u",port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
-        printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,KMDUSERPASS);
+        //printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,KMDUSERPASS);
         retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,userpass,method,params);
         //retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
@@ -353,7 +353,7 @@ int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heig
     *kmdnotarized_heightp = 0;
     if ( strcmp(dest,"KMD") == 0 )
     {
-        port = 7771;
+        port = KMD_PORT;
         userpass = KMDUSERPASS;
     }
     else if ( strcmp(dest,"BTC") == 0 )
@@ -435,7 +435,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
         {
             if ( ASSETCHAINS_SYMBOL[0] != 0 )
             {
-                jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,7771);
+                jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,KMD_PORT);
 printf("userpass.(%s) got (%s)\n",KMDUSERPASS,jsonstr);
             }
         }//else jsonstr = _dex_getrawtransaction();
