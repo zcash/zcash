@@ -19,6 +19,7 @@ $(package)_config_opts_i686_linux=address-model=32 architecture=x86
 $(package)_toolset_$(host_os)=gcc
 $(package)_archiver_$(host_os)=$($(package)_ar)
 $(package)_toolset_darwin=gcc
+$(package)_archiver_darwin=$($(package)_ar)
 $(package)_config_libraries=chrono,filesystem,program_options,system,thread,test
 $(package)_cxxflags=-fvisibility=hidden
 $(package)_cxxflags_linux=-fPIC
@@ -34,10 +35,18 @@ define $(package)_config_cmds
   ./bootstrap.sh --without-icu --with-libraries=$(boost_config_libraries)
 endef
 
+ifeq ($(host_os),linux)
 define $(package)_build_cmds
   ./b2 -d2 -j2 -d1 --prefix=$($(package)_staging_prefix_dir) $($(package)_config_opts) cxxflags=-std=c++11 stage
 endef
-
 define $(package)_stage_cmds
   ./b2 -d0 -j4 --prefix=$($(package)_staging_prefix_dir) $($(package)_config_opts) cxxflags=-std=c++11 install
 endef
+else
+define $(package)_build_cmds
+  ./b2 -d2 -j2 -d1 --prefix=$($(package)_staging_prefix_dir) $($(package)_config_opts) stage
+endef
+define $(package)_stage_cmds
+  ./b2 -d0 -j4 --prefix=$($(package)_staging_prefix_dir) $($(package)_config_opts) install
+endef
+endif
