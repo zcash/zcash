@@ -14,7 +14,7 @@
 #include "libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp"
 #include "libsnark/gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp"
 #include "libsnark/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.hpp"
-
+#include "tinyformat.h"
 #include "sync.h"
 #include "amount.h"
 
@@ -49,7 +49,7 @@ void loadFromFile(const std::string path, T& objIn) {
     std::ifstream fh(path, std::ios::binary);
 
     if(!fh.is_open()) {
-        throw std::runtime_error((boost::format("could not load param file at %s") % path).str());
+        throw std::runtime_error(strprintf("could not load param file at %s", path));
     }
 
     ss << fh.rdbuf();
@@ -296,7 +296,7 @@ public:
         std::ifstream fh(pkPath, std::ios::binary);
 
         if(!fh.is_open()) {
-            throw std::runtime_error((boost::format("could not load param file at %s") % pkPath).str());
+            throw std::runtime_error(strprintf("could not load param file at %s", pkPath));
         }
 
         return ZCProof(r1cs_ppzksnark_prover_streaming<ppzksnark_ppT>(
