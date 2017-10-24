@@ -157,7 +157,7 @@ EOF
 
 if [ $# -lt 2 ]
 then
-    echo "$0 : two arguments are required!"
+    echo "$0 : At least two arguments are required!"
     exit 1
 fi
 
