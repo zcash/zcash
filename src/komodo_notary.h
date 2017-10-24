@@ -13,6 +13,8 @@
  *                                                                            *
  ******************************************************************************/
 
+#include "komodo_cJSON.h"
+
 #define KOMODO_MAINNET_START 178999
 
 const char *Notaries_genesis[][2] =
