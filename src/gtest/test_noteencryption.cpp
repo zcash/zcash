@@ -7,6 +7,15 @@
 #include "zcash/prf.h"
 #include "crypto/sha256.h"
 
+class TestNoteEncryption : public ZCNoteEncryption {
+public:
+    TestNoteEncryption(uint256 hSig) : ZCNoteEncryption(hSig) {}
+
+    void reset_nonce() {
+        nonce = 0;
+    }
+};
+
 class TestNoteDecryption : public ZCNoteDecryption {
 public:
     TestNoteDecryption(uint256 sk_enc) : ZCNoteDecryption(sk_enc) {}
@@ -16,12 +25,21 @@ public:
     }
 };
 
+// Declared here but implemented below to reduce diff
+void test_encryption(
+    ZCNoteEncryption b,
+    const uint256 sk_enc,
+    const uint256 pk_enc,
+    const boost::array<unsigned char, ZC_NOTEPLAINTEXT_SIZE> message,
+    const boost::optional<uint256> &tweak_param
+);
+
 TEST(noteencryption, api)
 {
     uint256 sk_enc = ZCNoteEncryption::generate_privkey(uint252(uint256S("21035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a07")));
     uint256 pk_enc = ZCNoteEncryption::generate_pubkey(sk_enc);
 
-    ZCNoteEncryption b = ZCNoteEncryption(uint256());
+    auto b = TestNoteEncryption(uint256());
     for (size_t i = 0; i < 100; i++)
     {
         ZCNoteEncryption c = ZCNoteEncryption(uint256());
@@ -35,8 +53,20 @@ TEST(noteencryption, api)
         message[i] = (unsigned char) i;
     }
 
+    test_encryption(b, sk_enc, pk_enc, message, boost::none);
+    b.reset_nonce();
+    test_encryption(b, sk_enc, pk_enc, message, sk_enc);
+}
+
+void test_encryption(
+    ZCNoteEncryption b,
+    const uint256 sk_enc,
+    const uint256 pk_enc,
+    const boost::array<unsigned char, ZC_NOTEPLAINTEXT_SIZE> message,
+    const boost::optional<uint256> &tweak_param = boost::none
+) {
     for (int i = 0; i < 255; i++) {
-        auto ciphertext = b.encrypt(pk_enc, message);
+        auto ciphertext = b.encrypt(pk_enc, message, tweak_param);
 
         {
             ZCNoteDecryption decrypter(sk_enc);
@@ -86,8 +116,13 @@ TEST(noteencryption, api)
 
             // Test wrong public key (test of KDF)
             decrypter.change_pk_enc(uint256());
-            ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i),
-                         libzcash::note_decryption_failed);
+            if (tweak_param) {
+                // Wrong public key doesn't matter here, as sk_enc is used in KDF
+                ASSERT_TRUE(plaintext == message);
+            } else {
+                ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i),
+                             libzcash::note_decryption_failed);
+            }
         }
     }
 
