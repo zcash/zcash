@@ -29,9 +29,15 @@ define $(package)_config_cmds
   $($(package)_autoconf) --host=$(host) --build=$(build)
 endef
 
+ifeq ($(build_os),darwin)
+define $(package)_build_cmds
+	$(MAKE)
+endef
+else
 define $(package)_build_cmds
   $(MAKE) CPPFLAGS='-fPIC'
 endef
+endif
 
 define $(package)_stage_cmds
   $(MAKE) DESTDIR=$($(package)_staging_dir) install ; echo '=== staging find for $(package):' ; find $($(package)_staging_dir)

@@ -173,7 +173,7 @@ bool AppInit(int argc, char* argv[])
             exit(1);
         }
 
-#ifndef WIN32
+#ifndef _WIN32
         fDaemon = GetBoolArg("-daemon", false);
         if (fDaemon)
         {

@@ -8,7 +8,7 @@
 #include "config/bitcoin-config.h"
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #ifdef _WIN32_WINNT
 #undef _WIN32_WINNT
 #endif
@@ -49,7 +49,7 @@ static inline size_t GetSystemPageSize()
 
 bool MemoryPageLocker::Lock(const void* addr, size_t len)
 {
-#ifdef WIN32
+#ifdef _WIN32
     return VirtualLock(const_cast<void*>(addr), len) != 0;
 #else
     return mlock(addr, len) == 0;
@@ -58,7 +58,7 @@ bool MemoryPageLocker::Lock(const void* addr, size_t len)
 
 bool MemoryPageLocker::Unlock(const void* addr, size_t len)
 {
-#ifdef WIN32
+#ifdef _WIN32
     return VirtualUnlock(const_cast<void*>(addr), len) != 0;
 #else
     return munlock(addr, len) == 0;

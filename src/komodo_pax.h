@@ -233,7 +233,7 @@ int32_t komodo_pax_opreturn(int32_t height,uint8_t *opret,int32_t maxsize)
 {
     static uint32_t lastcrc;
     FILE *fp; char fname[512]; uint32_t crc32,check,timestamp; int32_t i,n=0,retval,fsize,len=0; uint8_t data[8192];
-#ifdef WIN32
+#ifdef _WIN32
     sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),(char *)"komodofeed");
 #else
     sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),(char *)"komodofeed");
@@ -638,7 +638,11 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
     if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip() != 0 && height > chainActive.Tip()->nHeight )
     {
         if ( height < 100000000 )
-            printf("komodo_paxprice height.%d vs tip.%d\n",height,chainActive.Tip()->nHeight);
+        {
+            static uint32_t counter;
+            if ( counter++ < 3 )
+                printf("komodo_paxprice height.%d vs tip.%d\n",height,chainActive.Tip()->nHeight);
+        }
         return(0);
     }
     *seedp = komodo_seed(height);

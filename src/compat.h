@@ -10,7 +10,7 @@
 #include "config/bitcoin-config.h"
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #ifdef _WIN32_WINNT
 #undef _WIN32_WINNT
 #endif
@@ -46,7 +46,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #define MSG_DONTWAIT        0
 #else
 typedef u_int SOCKET;
@@ -64,7 +64,7 @@ typedef u_int SOCKET;
 #define SOCKET_ERROR        -1
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #ifndef S_IRUSR
 #define S_IRUSR             0400
 #define S_IWUSR             0200
@@ -78,7 +78,7 @@ typedef u_int SOCKET;
 #define MSG_NOSIGNAL 0
 #endif
 
-#ifndef WIN32
+#ifndef _WIN32
 // PRIO_MAX is not defined on Solaris
 #ifndef PRIO_MAX
 #define PRIO_MAX 20
@@ -94,7 +94,7 @@ size_t strnlen( const char *start, size_t max_len);
 #endif // HAVE_DECL_STRNLEN
 
 bool static inline IsSelectableSocket(SOCKET s) {
-#ifdef WIN32
+#ifdef _WIN32
     return true;
 #else
     return (s < FD_SETSIZE);
