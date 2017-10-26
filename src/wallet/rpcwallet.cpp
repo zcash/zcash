@@ -3527,16 +3527,9 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    bool fEnableShieldCoinbase = fExperimentalMode && GetBoolArg("-zshieldcoinbase", false);
-    std::string strDisabledMsg = "";
-    if (!fEnableShieldCoinbase) {
-        strDisabledMsg = "\nWARNING: z_shieldcoinbase is DISABLED but can be enabled as an experimental feature.\n";
-    }
-
     if (fHelp || params.size() < 2 || params.size() > 3)
         throw runtime_error(
             "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee )\n"
-            + strDisabledMsg +
             "\nShield transparent coinbase funds by sending to a shielded zaddr.  This is an asynchronous operation and utxos"
             "\nselected for shielding will be locked.  If there is an error, they are unlocked.  The RPC call `listlockunspent`"
             "\ncan be used to return a list of locked utxos.  The number of coinbase utxos selected for shielding is limited by"
@@ -3557,10 +3550,6 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             "  \"remainingValue\": xxx       (numeric) Value of coinbase utxos still available for shielding.\n"
             "}\n"
         );
-
-    if (!fEnableShieldCoinbase) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error: z_shieldcoinbase is disabled.");
-    }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 

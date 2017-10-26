@@ -790,8 +790,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (!fExperimentalMode) {
         if (mapArgs.count("-developerencryptwallet")) {
             return InitError(_("Wallet encryption requires -experimentalfeatures."));
-        } else if (mapArgs.count("-zshieldcoinbase")) {
-            return InitError(_("RPC call z_shieldcoinbase requires -experimentalfeatures."));
         }
     }
 
