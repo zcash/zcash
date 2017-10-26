@@ -12,7 +12,10 @@
 #include "serialize.h"
 #include "uint256.h"
 #include "consensus/consensus.h"
+
+#ifndef __APPLE__
 #include <stdint.h>
+#endif
 
 #include <boost/array.hpp>
 
