@@ -50,6 +50,7 @@
 
     - name: Gathering Facts
       setup:
+      tags: deps
 
     - name: Fail if Python is the wrong version
       fail:
@@ -66,21 +67,25 @@
             - "vars/{{ ansible_distribution }}.yml"
             - "vars/{{ ansible_os_family }}.yml"
           skip: true
+      tags: deps
 
     - name: Collate dependencies
       set_fact:
         package_deps: "{{ buildbot_deps + fetch_deps + conf_deps + build_deps + link_deps + dist_deps }}"
         python_modules: "{{ buildbot_modules + rpc_test_modules }}"
+      tags: deps
 
     - name: Install Homebrew [MacOSX]
       include: tasks/install-brew.yml
       when: ansible_distribution == 'MacOSX'
+      tags: deps
 
     - name: Update rolling release [Arch Linux]
       pacman:
         update_cache: yes
         upgrade: yes
       when: ansible_distribution == 'Archlinux'
+      tags: deps
 
     - name: Install required packages
       package:
@@ -88,6 +93,7 @@
         state: present
       with_items: "{{ package_deps }}"
       become_user: "{{ ansible_ssh_user if ansible_distribution == 'MacOSX' else 'root' }}"
+      tags: deps
 
     - name: Install pip [CentOS, MacOSX]
       include: tasks/install-pip.yml
