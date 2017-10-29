@@ -2,6 +2,21 @@
 
 set -eu -o pipefail
 
+function cmd_pref() {
+    if type -p "$2" > /dev/null; then
+        eval "$1=$2"
+    else
+        eval "$1=$3"
+    fi
+}
+
+# If a g-prefixed version of the command exists, use it preferentially.
+function gprefix() {
+    cmd_pref "$1" "g$2" "$2"
+}
+
+gprefix READLINK readlink
+
 # Allow user overrides to $MAKE. Typical usage for users who need it:
 #   MAKE=gmake ./zcutil/build.sh -j$(nproc)
 if [[ -z "${MAKE-}" ]]; then
@@ -58,7 +73,7 @@ EOF
 fi
 
 set -x
-cd "$(dirname "$(readlink -f "$0")")/.."
+cd "$(dirname "$("$READLINK" -f "$0")")/.."
 
 # If --enable-lcov is the first argument, enable lcov coverage support:
 LCOV_ARG=''
