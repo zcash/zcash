@@ -16,6 +16,7 @@ function gprefix() {
 }
 
 gprefix READLINK readlink
+cd "$(dirname "$("$READLINK" -f "$0")")/.."
 
 # Allow user overrides to $MAKE. Typical usage for users who need it:
 #   MAKE=gmake ./zcutil/build.sh -j$(nproc)
@@ -26,10 +27,10 @@ fi
 # Allow overrides to $BUILD and $HOST for porters. Most users will not need it.
 #   BUILD=i686-pc-linux-gnu ./zcutil/build.sh
 if [[ -z "${BUILD-}" ]]; then
-    BUILD=x86_64-unknown-linux-gnu
+    BUILD="$(./depends/config.guess)"
 fi
 if [[ -z "${HOST-}" ]]; then
-    HOST=x86_64-unknown-linux-gnu
+    HOST="$BUILD"
 fi
 
 # Allow override to $CC and $CXX for porters. Most users will not need it.
@@ -73,7 +74,6 @@ EOF
 fi
 
 set -x
-cd "$(dirname "$("$READLINK" -f "$0")")/.."
 
 # If --enable-lcov is the first argument, enable lcov coverage support:
 LCOV_ARG=''
