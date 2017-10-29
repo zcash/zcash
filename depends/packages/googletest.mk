@@ -11,8 +11,9 @@ define $(package)_build_cmds
 endef
 
 define $(package)_stage_cmds
-  install -D ./googlemock/make/gmock.a $($(package)_staging_dir)$(host_prefix)/lib/libgmock.a && \
-  install -D ./googletest/make/gtest.a $($(package)_staging_dir)$(host_prefix)/lib/libgtest.a && \
+  mkdir -p $($(package)_staging_dir)$(host_prefix)/lib && \
+  install ./googlemock/make/gmock.a $($(package)_staging_dir)$(host_prefix)/lib/libgmock.a && \
+  install ./googletest/make/gtest.a $($(package)_staging_dir)$(host_prefix)/lib/libgtest.a && \
   cp -a ./googlemock/include $($(package)_staging_dir)$(host_prefix)/ && \
   cp -a ./googletest/include $($(package)_staging_dir)$(host_prefix)/
 endef
