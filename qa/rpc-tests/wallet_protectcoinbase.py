@@ -11,6 +11,7 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
 
 import sys
 import time
+import timeit
 from decimal import Decimal
 
 class WalletProtectCoinbaseTest (BitcoinTestFramework):
@@ -244,9 +245,22 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         amount_per_recipient = Decimal('0.00000546') # dust threshold
         # Note that regtest chainparams does not require standard tx, so setting the amount to be
         # less than the dust threshold, e.g. 0.00000001 will not result in mempool rejection.
+        start_time = timeit.default_timer()
         for i in xrange(0,num_t_recipients):
             newtaddr = self.nodes[2].getnewaddress()
             recipients.append({"address":newtaddr, "amount":amount_per_recipient})
+        elapsed = timeit.default_timer() - start_time
+        print("...invoked getnewaddress() {} times in {} seconds".format(num_t_recipients, elapsed))
+
+        # Issue #2263 Workaround START
+        # HTTP connection to node 0 may fall into a state, during the few minutes it takes to process
+        # loop above to create new addresses, that when z_sendmany is called with a large amount of
+        # rpc data in recipients, the connection fails with a 'broken pipe' error.  Making a RPC call
+        # to node 0 before calling z_sendmany appears to fix this issue, perhaps putting the HTTP
+        # connection into a good state to handle a large amount of data in recipients.
+        self.nodes[0].getinfo()
+        # Issue #2263 Workaround END
+
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
         try:
             self.wait_and_assert_operationid_status(myopid)
