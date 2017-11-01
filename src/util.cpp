@@ -892,7 +892,7 @@ std::string PrivacyInfo()
 {
     return "\n" +
            FormatParagraph(strprintf(_("In order to ensure you are adequately protecting your privacy when using Zcash, please see <%s>."),
-                                     "https://z.cash/support/security/index.html")) + "\n";
+                                     "https://z.cash/support/security/")) + "\n";
 }
 
 std::string LicenseInfo()
