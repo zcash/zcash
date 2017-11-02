@@ -110,6 +110,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_sendmany", 2},
     { "z_sendmany", 3},
     { "z_shieldcoinbase", 2},
+    { "z_shieldcoinbase", 3},
     { "z_getoperationstatus", 0},
     { "z_getoperationresult", 0},
     { "z_importkey", 2 },

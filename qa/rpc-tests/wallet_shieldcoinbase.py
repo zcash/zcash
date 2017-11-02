@@ -18,11 +18,11 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 4)
 
     def setup_network(self, split=False):
-        args = ['-regtestprotectcoinbase', '-debug=zrpcunsafe', '-experimentalfeatures', '-zshieldcoinbase']
+        args = ['-regtestprotectcoinbase', '-debug=zrpcunsafe']
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))
         self.nodes.append(start_node(1, self.options.tmpdir, args))
-        args2 = ['-regtestprotectcoinbase', '-debug=zrpcunsafe', '-experimentalfeatures', '-zshieldcoinbase', "-mempooltxinputlimit=7"]
+        args2 = ['-regtestprotectcoinbase', '-debug=zrpcunsafe', "-mempooltxinputlimit=7"]
         self.nodes.append(start_node(2, self.options.tmpdir, args2))
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
@@ -114,6 +114,20 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
             errorString = e.error['message']
         assert_equal("Insufficient coinbase funds" in errorString, True)
 
+        # Shielding will fail because limit parameter must be at least 0
+        try:
+            self.nodes[0].z_shieldcoinbase("*", myzaddr, Decimal('0.001'), -1)
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert_equal("Limit on maximum number of utxos cannot be negative" in errorString, True)
+
+        # Shielding will fail because limit parameter is absurdly large
+        try:
+            self.nodes[0].z_shieldcoinbase("*", myzaddr, Decimal('0.001'), 99999999999999)
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert_equal("JSON integer out of range" in errorString, True)
+
         # Shield coinbase utxos from node 0 of value 40, standard fee of 0.00010000
         result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr)
         self.wait_and_assert_operationid_status(0, result['opid'])
@@ -151,14 +165,15 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
 
         # Shielding the 800 utxos will occur over two transactions, since max tx size is 100,000 bytes.
         # We don't verify shieldingValue as utxos are not selected in any specific order, so value can change on each test run.
-        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, 0)
+        # We set an unrealistically high limit parameter of 99999, to verify that max tx size will constrain the number of utxos.
+        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, 0, 99999)
         assert_equal(result["shieldingUTXOs"], Decimal('662'))
         assert_equal(result["remainingUTXOs"], Decimal('138'))
         remainingValue = result["remainingValue"]
         opid1 = result['opid']
 
         # Verify that utxos are locked (not available for selection) by queuing up another shielding operation
-        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr)
+        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, 0, 0)
         assert_equal(result["shieldingValue"], Decimal(remainingValue))
         assert_equal(result["shieldingUTXOs"], Decimal('138'))
         assert_equal(result["remainingValue"], Decimal('0'))
@@ -176,12 +191,31 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
 
         # Verify maximum number of utxos which node 2 can shield is limited by option -mempooltxinputlimit
+        # This option is used when the limit parameter is set to 0.
         mytaddr = self.nodes[2].getnewaddress()
-        result = self.nodes[2].z_shieldcoinbase(mytaddr, myzaddr, 0)
+        result = self.nodes[2].z_shieldcoinbase(mytaddr, myzaddr, Decimal('0.0001'), 0)
         assert_equal(result["shieldingUTXOs"], Decimal('7'))
         assert_equal(result["remainingUTXOs"], Decimal('13'))
         self.wait_and_assert_operationid_status(2, result['opid'])
         self.sync_all()
+        self.nodes[1].generate(1)
+        self.sync_all()
+
+        # Verify maximum number of utxos which node 0 can shield is set by default limit parameter of 50
+        self.nodes[0].generate(200)
+        self.sync_all()
+        mytaddr = self.nodes[0].getnewaddress()
+        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, Decimal('0.0001'))
+        assert_equal(result["shieldingUTXOs"], Decimal('50'))
+        assert_equal(result["remainingUTXOs"], Decimal('50'))
+        self.wait_and_assert_operationid_status(0, result['opid'])
+
+        # Verify maximum number of utxos which node 0 can shield can be set by the limit parameter
+        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, Decimal('0.0001'), 33)
+        assert_equal(result["shieldingUTXOs"], Decimal('33'))
+        assert_equal(result["remainingUTXOs"], Decimal('17'))
+        self.wait_and_assert_operationid_status(0, result['opid'])
+        sync_blocks(self.nodes)  # don't sync on mempool as node 2 will reject thix tx due to its mempooltxinputlimit
         self.nodes[1].generate(1)
         self.sync_all()
 
