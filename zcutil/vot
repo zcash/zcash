@@ -11,6 +11,7 @@ help()
    echo "   $0 addr"
    echo "   $0 zaddr"
    echo "   $0 send FROM TO AMOUNT"
+   echo "   $0 sendto TO AMOUNT"
    echo "   $0 status"
    echo "   $0 totals"
    echo "   $0 list"
@@ -33,6 +34,12 @@ fi
 
 if [ "$1" = "send" ]; then
    votecoin-cli z_sendmany $2 '[{"address": "'$3'", "amount": '$4'}]' 1 0
+   exit
+fi
+
+
+if [ "$1" = "sendto" ]; then
+   votecoin-cli sendtoaddress $2 $3
    exit
 fi
 
