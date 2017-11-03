@@ -25,7 +25,6 @@
 
 #define KOMODO_ASSETCHAINS_WAITNOTARIZE
 #define KOMODO_PAXMAX (10000 * COIN)
-#define KOMODO_ENDOFERA 7777777
 
 #include <stdint.h>
 #include <stdio.h>

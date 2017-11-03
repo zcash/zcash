@@ -16,6 +16,7 @@
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 
+#define KOMODO_ENDOFERA 7777777
 #define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))   // 5%
 int64_t MAX_MONEY = 200000000 * 100000000LL;
 
