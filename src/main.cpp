@@ -66,8 +66,8 @@ BlockMap mapBlockIndex;
 CChain chainActive;
 CBlockIndex *pindexBestHeader = NULL;
 static std::atomic<int64_t> nTimeBestReceived(0); // Used only to inform the wallet of when we last received a block
-CWaitableCriticalSection g_best_block_mutex;
-CConditionVariable g_best_block_cv;
+Mutex g_best_block_mutex;
+std::condition_variable g_best_block_cv;
 uint256 g_best_block;
 int g_best_block_height;
 int nScriptCheckThreads = 0;

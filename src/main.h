@@ -169,8 +169,8 @@ extern const std::string strMessageMagic;
 //! (and cannot) hold cs_main. So the g_best_block_height and g_best_block variables
 //! (protected by g_best_block_mutex) provide the needed height and block
 //! hash respectively to getblocktemplate without it requiring cs_main.
-extern CWaitableCriticalSection g_best_block_mutex;
-extern CConditionVariable g_best_block_cv;
+extern Mutex g_best_block_mutex;
+extern std::condition_variable g_best_block_cv;
 extern int g_best_block_height;
 extern uint256 g_best_block;
 
