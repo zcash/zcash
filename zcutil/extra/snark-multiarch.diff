@@ -1,0 +1,3387 @@
+diff --git a/src/snark/AUTHORS b/src/snark/AUTHORS
+index 1b2d7a2..cdc8d66 100644
+--- a/src/snark/AUTHORS
++++ b/src/snark/AUTHORS
+@@ -17,3 +17,6 @@ External contributors:
+     Tadanori TERUYA
+     Sean Bowe
+     Daira Hopwood
++    @mugatu on forum.z.cash
++    David Mercer
++    Joshua Yabut
+diff --git a/src/snark/Makefile b/src/snark/Makefile
+index cceffb9..ac86490 100644
+--- a/src/snark/Makefile
++++ b/src/snark/Makefile
+@@ -6,6 +6,13 @@
+ #* @copyright  MIT license (see LICENSE file)
+ #*******************************************************************************/
+ 
++# Determine building operating system
++ifeq ($(OS),Windows_NT)
++    uname_S := Windows
++else
++    uname_S := $(shell uname -s)
++endif
++
+ # To override these, use "make OPTFLAGS=..." etc.
+ CURVE = BN128
+ OPTFLAGS = -O2 -march=native -mtune=native
+@@ -19,7 +26,9 @@ DEPINST = depinst
+ 
+ CXXFLAGS += -I$(DEPINST)/include -Isrc
+ LDFLAGS += -L$(DEPINST)/lib -Wl,-rpath,$(DEPINST)/lib
+-LDLIBS += -lgmpxx -lgmp -lboost_program_options-mt -lsodium
++LDLIBS += -lgmpxx -lgmp -lboost_program_options
++# OpenSSL and its dependencies (needed explicitly for static builds):
++LDLIBS += -lcrypto -ldl -lz
+ # List of .a files to include within libsnark.a and libsnark.so:
+ AR_LIBS =
+ # List of library files to install:
+@@ -68,14 +77,20 @@ endif
+ 
+ # FIXME: most of these are broken due to removed code.
+ DISABLED_EXECUTABLES = \
++	src/algebra/curves/tests/test_bilinearity \
++	src/algebra/curves/tests/test_groups \
++	src/algebra/fields/tests/test_fields \
+ 	src/common/routing_algorithms/profiling/profile_routing_algorithms \
+ 	src/common/routing_algorithms/tests/test_routing_algorithms \
+ 	src/gadgetlib1/gadgets/cpu_checkers/fooram/examples/test_fooram \
+ 	src/gadgetlib1/gadgets/hashes/knapsack/tests/test_knapsack_gadget \
++	src/gadgetlib1/gadgets/hashes/sha256/tests/test_sha256_gadget \
++	src/gadgetlib1/gadgets/merkle_tree/tests/test_merkle_tree_gadgets \
+ 	src/gadgetlib1/gadgets/routing/profiling/profile_routing_gadgets \
+ 	src/gadgetlib1/gadgets/set_commitment/tests/test_set_commitment_gadget \
+ 	src/gadgetlib1/gadgets/verifiers/tests/test_r1cs_ppzksnark_verifier_gadget \
+ 	src/reductions/ram_to_r1cs/examples/demo_arithmetization \
++	src/relations/arithmetic_programs/qap/tests/test_qap \
+ 	src/relations/arithmetic_programs/ssp/tests/test_ssp \
+ 	src/zk_proof_systems/pcd/r1cs_pcd/r1cs_mp_ppzkpcd/profiling/profile_r1cs_mp_ppzkpcd \
+ 	src/zk_proof_systems/pcd/r1cs_pcd/r1cs_mp_ppzkpcd/tests/test_r1cs_mp_ppzkpcd \
+@@ -86,6 +101,7 @@ DISABLED_EXECUTABLES = \
+ 	src/zk_proof_systems/ppzksnark/r1cs_gg_ppzksnark/profiling/profile_r1cs_gg_ppzksnark \
+ 	src/zk_proof_systems/ppzksnark/r1cs_gg_ppzksnark/tests/test_r1cs_gg_ppzksnark \
+ 	src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/profiling/profile_r1cs_ppzksnark \
++	src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/tests/test_r1cs_ppzksnark \
+ 	src/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark \
+ 	src/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark_generator \
+ 	src/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark_prover \
+@@ -99,26 +115,16 @@ DISABLED_EXECUTABLES = \
+ 	src/zk_proof_systems/zksnark/ram_zksnark/profiling/profile_ram_zksnark \
+ 	src/zk_proof_systems/zksnark/ram_zksnark/tests/test_ram_zksnark
+ 
+-EXECUTABLES =
++EXECUTABLES = \
++	src/algebra/fields/tests/test_bigint
+ 
+-EXECUTABLES_WITH_GTEST =
++EXECUTABLES_WITH_GTEST = \
++	src/gadgetlib2/examples/tutorial \
++	src/gadgetlib2/tests/gadgetlib2_test
+ 
+ EXECUTABLES_WITH_SUPERCOP = \
+ 	src/zk_proof_systems/ppzkadsnark/r1cs_ppzkadsnark/examples/demo_r1cs_ppzkadsnark
+ 
+-GTEST_TESTS = src/gtests
+-
+-GTEST_SRCS = \
+-	src/algebra/curves/tests/test_bilinearity.cpp \
+-	src/algebra/curves/tests/test_groups.cpp \
+-	src/algebra/fields/tests/test_bigint.cpp \
+-	src/algebra/fields/tests/test_fields.cpp \
+-	src/gadgetlib1/gadgets/hashes/sha256/tests/test_sha256_gadget.cpp \
+-	src/gadgetlib1/gadgets/merkle_tree/tests/test_merkle_tree_gadgets.cpp \
+-	src/relations/arithmetic_programs/qap/tests/test_qap.cpp \
+-	src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/tests/test_r1cs_ppzksnark.cpp \
+-	src/gtests.cpp
+-
+ DOCS = README.html
+ 
+ LIBSNARK_A = libsnark.a
+@@ -169,10 +175,9 @@ endif
+ 
+ LIB_OBJS  =$(patsubst %.cpp,%.o,$(LIB_SRCS))
+ EXEC_OBJS =$(patsubst %,%.o,$(EXECUTABLES) $(EXECUTABLES_WITH_GTEST) $(EXECUTABLES_WITH_SUPERCOP))
+-GTEST_OBJS =$(patsubst %.cpp,%.o,$(GTEST_SRCS))
+ 
+ all: \
+-     $(if $(NO_GTEST),,$(EXECUTABLES_WITH_GTEST) $(GTEST_TESTS)) \
++     $(if $(NO_GTEST),,$(EXECUTABLES_WITH_GTEST)) \
+      $(if $(NO_SUPERCOP),,$(EXECUTABLES_WITH_SUPERCOP)) \
+      $(EXECUTABLES) \
+      $(if $(NO_DOCS),,doc)
+@@ -185,9 +190,9 @@ $(DEPINST_EXISTS):
+ 	touch $@
+ 
+ # In order to detect changes to #include dependencies. -MMD below generates a .d file for each .o file. Include the .d file.
+--include $(patsubst %.o,%.d, $(LIB_OBJS) $(GTEST_OBJS) $(EXEC_OBJS) )
++-include $(patsubst %.o,%.d, $(LIB_OBJS) $(EXEC_OBJS) )
+ 
+-$(LIB_OBJS) $(if $(NO_GTEST),,$(GTEST_OBJS)) $(EXEC_OBJS): %.o: %.cpp
++$(LIB_OBJS) $(EXEC_OBJS): %.o: %.cpp
+ 	$(CXX) -o $@   $< -c -MMD $(CXXFLAGS)
+ 
+ LIBGTEST_A = $(DEPINST)/lib/libgtest.a
+@@ -198,6 +203,14 @@ $(LIBGTEST_A): $(GTESTDIR)/src/gtest-all.cc $(DEPINST_EXISTS)
+ 
+ # libsnark.a will contains all of our relevant object files, and we also mash in the .a files of relevant dependencies built by ./prepare-depends.sh
+ $(LIBSNARK_A): $(LIB_OBJS) $(AR_LIBS)
++ifeq ($(uname_S), Darwin)
++	( \
++	  echo " $(LIBSNARK_A)"; \
++	  echo " $(LIB_OBJS)"; \
++	  if [ -n "$(AR_LIBS)" ]; then for AR_LIB in $(AR_LIBS); do echo addlib $$AR_LIB; done; fi; \
++	) | xargs  $(AR) -r
++	 $(AR) s $(LIBSNARK_A)
++else
+ 	( \
+ 	  echo "create $(LIBSNARK_A)"; \
+ 	  echo "addmod $(LIB_OBJS)"; \
+@@ -206,6 +219,7 @@ $(LIBSNARK_A): $(LIB_OBJS) $(AR_LIBS)
+ 	  echo "end"; \
+ 	) | $(AR) -M
+ 	$(AR) s $(LIBSNARK_A)
++endif
+ 
+ libsnark.so: $(LIBSNARK_A) $(DEPINST_EXISTS)
+ 	$(CXX) -o $@   --shared -Wl,--whole-archive $(LIBSNARK_A) $(CXXFLAGS) $(LDFLAGS) -Wl,--no-whole-archive $(LDLIBS)
+@@ -227,9 +241,6 @@ $(EXECUTABLES_WITH_GTEST): %: %.o $(LIBSNARK_A) $(if $(COMPILE_GTEST),$(LIBGTEST
+ $(EXECUTABLES_WITH_SUPERCOP): %: %.o $(LIBSNARK_A) $(DEPINST_EXISTS)
+ 	$(CXX) -o $@   $@.o $(LIBSNARK_A) $(CXXFLAGS) $(LDFLAGS) $(SUPERCOP_LDLIBS) $(LDLIBS)
+ 
+-$(GTEST_TESTS): %: $(GTEST_OBJS) $(LIBSNARK_A) $(if $(COMPILE_GTEST),$(LIBGTEST_A)) $(DEPINST_EXISTS)
+-	$(CXX) -o $@   $(GTEST_OBJS) $(LIBSNARK_A) $(CXXFLAGS) $(LDFLAGS) $(GTEST_LDLIBS) $(LDLIBS)
+-
+ 
+ ifeq ($(STATIC),1)
+ LIB_FILE = $(LIBSNARK_A)
+@@ -258,13 +269,8 @@ $(HEADERS_DEST): $(PREFIX)/include/libsnark/%: src/%
+ install: $(INSTALL_LIBS) $(HEADERS_DEST) $(DEPINST_EXISTS)
+ 	mkdir -p $(PREFIX)/lib
+ 	cp -v $(INSTALL_LIBS) $(PREFIX)/lib/
+-ifneq ($(NO_COPY_DEPINST),1)
+ 	cp -rv $(DEPINST)/include $(PREFIX)
+ endif
+-endif
+-
+-check: $(GTEST_TESTS)
+-	$(GTEST_TESTS)
+ 
+ doxy:
+ 	doxygen doxygen.conf
+@@ -272,10 +278,10 @@ doxy:
+ # Clean generated files, except locally-compiled dependencies
+ clean:
+ 	$(RM) \
+-		$(LIB_OBJS) $(GTEST_OBJS) $(EXEC_OBJS) \
+-		$(EXECUTABLES) $(EXECUTABLES_WITH_GTEST) $(EXECUTABLES_WITH_SUPERCOP) $(GTEST_TESTS) \
++		$(LIB_OBJS) $(EXEC_OBJS) \
++		$(EXECUTABLES) $(EXECUTABLES_WITH_GTEST) $(EXECUTABLES_WITH_SUPERCOP) \
+ 		$(DOCS) \
+-		${patsubst %.o,%.d,${LIB_OBJS} ${GTEST_OBJS} ${EXEC_OBJS}} \
++		${patsubst %.o,%.d,${LIB_OBJS} ${EXEC_OBJS}} \
+ 		libsnark.so $(LIBSNARK_A) \
+ 	$(RM) -fr doxygen/ \
+ 	$(RM) $(LIBGTEST_A) $(DEPINST)/lib/gtest-all.o
+diff --git a/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g1.cpp b/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g1.cpp
+index bf7f43d..7f329d6 100644
+--- a/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g1.cpp
++++ b/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g1.cpp
+@@ -6,16 +6,17 @@
+  *****************************************************************************/
+ 
+ #include "algebra/curves/alt_bn128/alt_bn128_g1.hpp"
++#include "common/assert_except.hpp"
+ 
+ namespace libsnark {
+ 
+ #ifdef PROFILE_OP_COUNTS
+-long long alt_bn128_G1::add_cnt = 0;
+-long long alt_bn128_G1::dbl_cnt = 0;
++int64_t alt_bn128_G1::add_cnt = 0;
++int64_t alt_bn128_G1::dbl_cnt = 0;
+ #endif
+ 
+-std::vector<size_t> alt_bn128_G1::wnaf_window_table;
+-std::vector<size_t> alt_bn128_G1::fixed_base_exp_window_table;
++std::vector<uint64_t> alt_bn128_G1::wnaf_window_table;
++std::vector<uint64_t> alt_bn128_G1::fixed_base_exp_window_table;
+ alt_bn128_G1 alt_bn128_G1::G1_zero;
+ alt_bn128_G1 alt_bn128_G1::G1_one;
+ 
+@@ -256,7 +257,7 @@ alt_bn128_G1 alt_bn128_G1::add(const alt_bn128_G1 &other) const
+ alt_bn128_G1 alt_bn128_G1::mixed_add(const alt_bn128_G1 &other) const
+ {
+ #ifdef DEBUG
+-    assert(other.is_special());
++    assert_except(other.is_special());
+ #endif
+ 
+     // handle special cases having to do with O
+diff --git a/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g1.hpp b/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g1.hpp
+index da11a2e..567f2fa 100644
+--- a/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g1.hpp
++++ b/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g1.hpp
+@@ -20,11 +20,11 @@ std::istream& operator>>(std::istream &, alt_bn128_G1&);
+ class alt_bn128_G1 {
+ public:
+ #ifdef PROFILE_OP_COUNTS
+-    static long long add_cnt;
+-    static long long dbl_cnt;
++    static int64_t add_cnt;
++    static int64_t dbl_cnt;
+ #endif
+-    static std::vector<size_t> wnaf_window_table;
+-    static std::vector<size_t> fixed_base_exp_window_table;
++    static std::vector<uint64_t> wnaf_window_table;
++    static std::vector<uint64_t> fixed_base_exp_window_table;
+     static alt_bn128_G1 G1_zero;
+     static alt_bn128_G1 G1_one;
+ 
+diff --git a/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g2.cpp b/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g2.cpp
+index c4152e4..98f4710 100644
+--- a/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g2.cpp
++++ b/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g2.cpp
+@@ -6,16 +6,17 @@
+  *****************************************************************************/
+ 
+ #include "algebra/curves/alt_bn128/alt_bn128_g2.hpp"
++#include "common/assert_except.hpp"
+ 
+ namespace libsnark {
+ 
+ #ifdef PROFILE_OP_COUNTS
+-long long alt_bn128_G2::add_cnt = 0;
+-long long alt_bn128_G2::dbl_cnt = 0;
++int64_t alt_bn128_G2::add_cnt = 0;
++int64_t alt_bn128_G2::dbl_cnt = 0;
+ #endif
+ 
+-std::vector<size_t> alt_bn128_G2::wnaf_window_table;
+-std::vector<size_t> alt_bn128_G2::fixed_base_exp_window_table;
++std::vector<uint64_t> alt_bn128_G2::wnaf_window_table;
++std::vector<uint64_t> alt_bn128_G2::fixed_base_exp_window_table;
+ alt_bn128_G2 alt_bn128_G2::G2_zero;
+ alt_bn128_G2 alt_bn128_G2::G2_one;
+ 
+@@ -266,7 +267,7 @@ alt_bn128_G2 alt_bn128_G2::add(const alt_bn128_G2 &other) const
+ alt_bn128_G2 alt_bn128_G2::mixed_add(const alt_bn128_G2 &other) const
+ {
+ #ifdef DEBUG
+-    assert(other.is_special());
++    assert_except(other.is_special());
+ #endif
+ 
+     // handle special cases having to do with O
+diff --git a/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g2.hpp b/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g2.hpp
+index a996a2d..57bad1a 100644
+--- a/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g2.hpp
++++ b/src/snark/src/algebra/curves/alt_bn128/alt_bn128_g2.hpp
+@@ -20,11 +20,11 @@ std::istream& operator>>(std::istream &, alt_bn128_G2&);
+ class alt_bn128_G2 {
+ public:
+ #ifdef PROFILE_OP_COUNTS
+-    static long long add_cnt;
+-    static long long dbl_cnt;
++    static int64_t add_cnt;
++    static int64_t dbl_cnt;
+ #endif
+-    static std::vector<size_t> wnaf_window_table;
+-    static std::vector<size_t> fixed_base_exp_window_table;
++    static std::vector<uint64_t> wnaf_window_table;
++    static std::vector<uint64_t> fixed_base_exp_window_table;
+     static alt_bn128_G2 G2_zero;
+     static alt_bn128_G2 G2_one;
+ 
+diff --git a/src/snark/src/algebra/curves/alt_bn128/alt_bn128_pairing.cpp b/src/snark/src/algebra/curves/alt_bn128/alt_bn128_pairing.cpp
+index db556c5..07b6a8c 100644
+--- a/src/snark/src/algebra/curves/alt_bn128/alt_bn128_pairing.cpp
++++ b/src/snark/src/algebra/curves/alt_bn128/alt_bn128_pairing.cpp
+@@ -324,7 +324,7 @@ alt_bn128_ate_G2_precomp alt_bn128_ate_precompute_G2(const alt_bn128_G2& Q)
+     bool found_one = false;
+     alt_bn128_ate_ell_coeffs c;
+ 
+-    for (long i = loop_count.max_bits(); i >= 0; --i)
++    for (int64_t i = loop_count.max_bits(); i >= 0; --i)
+     {
+         const bool bit = loop_count.test_bit(i);
+         if (!found_one)
+@@ -378,7 +378,7 @@ alt_bn128_Fq12 alt_bn128_ate_miller_loop(const alt_bn128_ate_G1_precomp &prec_P,
+     const bigint<alt_bn128_Fr::num_limbs> &loop_count = alt_bn128_ate_loop_count;
+     alt_bn128_ate_ell_coeffs c;
+ 
+-    for (long i = loop_count.max_bits(); i >= 0; --i)
++    for (int64_t i = loop_count.max_bits(); i >= 0; --i)
+     {
+         const bool bit = loop_count.test_bit(i);
+         if (!found_one)
+@@ -432,7 +432,7 @@ alt_bn128_Fq12 alt_bn128_ate_double_miller_loop(const alt_bn128_ate_G1_precomp &
+     size_t idx = 0;
+ 
+     const bigint<alt_bn128_Fr::num_limbs> &loop_count = alt_bn128_ate_loop_count;
+-    for (long i = loop_count.max_bits(); i >= 0; --i)
++    for (int64_t i = loop_count.max_bits(); i >= 0; --i)
+     {
+         const bool bit = loop_count.test_bit(i);
+         if (!found_one)
+diff --git a/src/snark/src/algebra/curves/curve_utils.tcc b/src/snark/src/algebra/curves/curve_utils.tcc
+index 251d75d..38140cd 100644
+--- a/src/snark/src/algebra/curves/curve_utils.tcc
++++ b/src/snark/src/algebra/curves/curve_utils.tcc
+@@ -16,7 +16,7 @@ GroupT scalar_mul(const GroupT &base, const bigint<m> &scalar)
+     GroupT result = GroupT::zero();
+ 
+     bool found_one = false;
+-    for (long i = scalar.max_bits() - 1; i >= 0; --i)
++    for (int64_t i = scalar.max_bits() - 1; i >= 0; --i)
+     {
+         if (found_one)
+         {
+diff --git a/src/snark/src/algebra/curves/tests/test_bilinearity.cpp b/src/snark/src/algebra/curves/tests/test_bilinearity.cpp
+index fe6593b..18e68f7 100644
+--- a/src/snark/src/algebra/curves/tests/test_bilinearity.cpp
++++ b/src/snark/src/algebra/curves/tests/test_bilinearity.cpp
+@@ -4,13 +4,17 @@
+  *             and contributors (see AUTHORS).
+  * @copyright  MIT license (see LICENSE file)
+  *****************************************************************************/
++#include <iostream>
+ #include "common/profiling.hpp"
++//#include "algebra/curves/edwards/edwards_pp.hpp"
+ #ifdef CURVE_BN128
+ #include "algebra/curves/bn128/bn128_pp.hpp"
+ #endif
+ #include "algebra/curves/alt_bn128/alt_bn128_pp.hpp"
+-
+-#include <gtest/gtest.h>
++//#include "algebra/curves/mnt/mnt4/mnt4_pp.hpp"
++//#include "algebra/curves/mnt/mnt6/mnt6_pp.hpp"
++#include "algebra/curves/alt_bn128/alt_bn128_pairing.hpp"
++#include "algebra/curves/alt_bn128/alt_bn128_pairing.cpp"
+ 
+ using namespace libsnark;
+ 
+@@ -45,11 +49,11 @@ void pairing_test()
+     ans1.print();
+     ans2.print();
+     ans3.print();
+-    EXPECT_EQ(ans1, ans2);
+-    EXPECT_EQ(ans2, ans3);
++    assert(ans1 == ans2);
++    assert(ans2 == ans3);
+ 
+-    EXPECT_NE(ans1, GT_one);
+-    EXPECT_EQ((ans1^Fr<ppT>::field_char()), GT_one);
++    assert(ans1 != GT_one);
++    assert((ans1^Fr<ppT>::field_char()) == GT_one);
+     printf("\n\n");
+ }
+ 
+@@ -69,7 +73,7 @@ void double_miller_loop_test()
+     const Fqk<ppT> ans_1 = ppT::miller_loop(prec_P1, prec_Q1);
+     const Fqk<ppT> ans_2 = ppT::miller_loop(prec_P2, prec_Q2);
+     const Fqk<ppT> ans_12 = ppT::double_miller_loop(prec_P1, prec_Q1, prec_P2, prec_Q2);
+-    EXPECT_EQ(ans_1 * ans_2, ans_12);
++    assert(ans_1 * ans_2 == ans_12);
+ }
+ 
+ template<typename ppT>
+@@ -98,17 +102,31 @@ void affine_pairing_test()
+     ans1.print();
+     ans2.print();
+     ans3.print();
+-    EXPECT_EQ(ans1, ans2);
+-    EXPECT_EQ(ans2, ans3);
++    assert(ans1 == ans2);
++    assert(ans2 == ans3);
+ 
+-    EXPECT_NE(ans1, GT_one);
+-    EXPECT_EQ((ans1^Fr<ppT>::field_char()), GT_one);
++    assert(ans1 != GT_one);
++    assert((ans1^Fr<ppT>::field_char()) == GT_one);
+     printf("\n\n");
+ }
+ 
+-TEST(algebra, bilinearity)
++int main(void)
+ {
+     start_profiling();
++    edwards_pp::init_public_params();
++    pairing_test<edwards_pp>();
++    double_miller_loop_test<edwards_pp>();
++
++    mnt6_pp::init_public_params();
++    pairing_test<mnt6_pp>();
++    double_miller_loop_test<mnt6_pp>();
++    affine_pairing_test<mnt6_pp>();
++
++    mnt4_pp::init_public_params();
++    pairing_test<mnt4_pp>();
++    double_miller_loop_test<mnt4_pp>();
++    affine_pairing_test<mnt4_pp>();
++
+     alt_bn128_pp::init_public_params();
+     pairing_test<alt_bn128_pp>();
+     double_miller_loop_test<alt_bn128_pp>();
+diff --git a/src/snark/src/algebra/curves/tests/test_groups.cpp b/src/snark/src/algebra/curves/tests/test_groups.cpp
+index 7bb7c31..4f64334 100644
+--- a/src/snark/src/algebra/curves/tests/test_groups.cpp
++++ b/src/snark/src/algebra/curves/tests/test_groups.cpp
+@@ -5,14 +5,15 @@
+  * @copyright  MIT license (see LICENSE file)
+  *****************************************************************************/
+ #include "common/profiling.hpp"
++//#include "algebra/curves/edwards/edwards_pp.hpp"
++//#include "algebra/curves/mnt/mnt4/mnt4_pp.hpp"
++//#include "algebra/curves/mnt/mnt6/mnt6_pp.hpp"
+ #ifdef CURVE_BN128
+ #include "algebra/curves/bn128/bn128_pp.hpp"
+ #endif
+ #include "algebra/curves/alt_bn128/alt_bn128_pp.hpp"
+ #include <sstream>
+ 
+-#include <gtest/gtest.h>
+-
+ using namespace libsnark;
+ 
+ template<typename GroupT>
+@@ -24,31 +25,31 @@ void test_mixed_add()
+     el = GroupT::zero();
+     el.to_special();
+     result = base.mixed_add(el);
+-    EXPECT_EQ(result, base + el);
++    assert(result == base + el);
+ 
+     base = GroupT::zero();
+     el = GroupT::random_element();
+     el.to_special();
+     result = base.mixed_add(el);
+-    EXPECT_EQ(result, base + el);
++    assert(result == base + el);
+ 
+     base = GroupT::random_element();
+     el = GroupT::zero();
+     el.to_special();
+     result = base.mixed_add(el);
+-    EXPECT_EQ(result, base + el);
++    assert(result == base + el);
+ 
+     base = GroupT::random_element();
+     el = GroupT::random_element();
+     el.to_special();
+     result = base.mixed_add(el);
+-    EXPECT_EQ(result, base + el);
++    assert(result == base + el);
+ 
+     base = GroupT::random_element();
+     el = base;
+     el.to_special();
+     result = base.mixed_add(el);
+-    EXPECT_EQ(result, base.dbl());
++    assert(result == base.dbl());
+ }
+ 
+ template<typename GroupT>
+@@ -59,53 +60,53 @@ void test_group()
+     bigint<1> randsum = bigint<1>("121160274");
+ 
+     GroupT zero = GroupT::zero();
+-    EXPECT_EQ(zero, zero);
++    assert(zero == zero);
+     GroupT one = GroupT::one();
+-    EXPECT_EQ(one, one);
++    assert(one == one);
+     GroupT two = bigint<1>(2l) * GroupT::one();
+-    EXPECT_EQ(two, two);
++    assert(two == two);
+     GroupT five = bigint<1>(5l) * GroupT::one();
+ 
+     GroupT three = bigint<1>(3l) * GroupT::one();
+     GroupT four = bigint<1>(4l) * GroupT::one();
+ 
+-    EXPECT_EQ(two+five, three+four);
++    assert(two+five == three+four);
+ 
+     GroupT a = GroupT::random_element();
+     GroupT b = GroupT::random_element();
+ 
+-    EXPECT_NE(one, zero);
+-    EXPECT_NE(a, zero);
+-    EXPECT_NE(a, one);
++    assert(one != zero);
++    assert(a != zero);
++    assert(a != one);
+ 
+-    EXPECT_NE(b, zero);
+-    EXPECT_NE(b, one);
++    assert(b != zero);
++    assert(b != one);
+ 
+-    EXPECT_EQ(a.dbl(), a + a);
+-    EXPECT_EQ(b.dbl(), b + b);
+-    EXPECT_EQ(one.add(two), three);
+-    EXPECT_EQ(two.add(one), three);
+-    EXPECT_EQ(a + b, b + a);
+-    EXPECT_EQ(a - a, zero);
+-    EXPECT_EQ(a - b, a + (-b));
+-    EXPECT_EQ(a - b, (-b) + a);
++    assert(a.dbl() == a + a);
++    assert(b.dbl() == b + b);
++    assert(one.add(two) == three);
++    assert(two.add(one) == three);
++    assert(a + b == b + a);
++    assert(a - a == zero);
++    assert(a - b == a + (-b));
++    assert(a - b == (-b) + a);
+ 
+     // handle special cases
+-    EXPECT_EQ(zero + (-a), -a);
+-    EXPECT_EQ(zero - a, -a);
+-    EXPECT_EQ(a - zero, a);
+-    EXPECT_EQ(a + zero, a);
+-    EXPECT_EQ(zero + a, a);
++    assert(zero + (-a) == -a);
++    assert(zero - a == -a);
++    assert(a - zero == a);
++    assert(a + zero == a);
++    assert(zero + a == a);
+ 
+-    EXPECT_EQ((a + b).dbl(), (a + b) + (b + a));
+-    EXPECT_EQ(bigint<1>("2") * (a + b), (a + b) + (b + a));
++    assert((a + b).dbl() == (a + b) + (b + a));
++    assert(bigint<1>("2") * (a + b) == (a + b) + (b + a));
+ 
+-    EXPECT_EQ((rand1 * a) + (rand2 * a), (randsum * a));
++    assert((rand1 * a) + (rand2 * a) == (randsum * a));
+ 
+-    EXPECT_EQ(GroupT::order() * a, zero);
+-    EXPECT_EQ(GroupT::order() * one, zero);
+-    EXPECT_NE((GroupT::order() * a) - a, zero);
+-    EXPECT_NE((GroupT::order() * one) - one, zero);
++    assert(GroupT::order() * a == zero);
++    assert(GroupT::order() * one == zero);
++    assert((GroupT::order() * a) - a != zero);
++    assert((GroupT::order() * one) - one != zero);
+ 
+     test_mixed_add<GroupT>();
+ }
+@@ -114,7 +115,7 @@ template<typename GroupT>
+ void test_mul_by_q()
+ {
+     GroupT a = GroupT::random_element();
+-    EXPECT_EQ((GroupT::base_field_char()*a), a.mul_by_q());
++    assert((GroupT::base_field_char()*a) == a.mul_by_q());
+ }
+ 
+ template<typename GroupT>
+@@ -128,14 +129,36 @@ void test_output()
+         ss << g;
+         GroupT gg;
+         ss >> gg;
+-        EXPECT_EQ(g, gg);
++        assert(g == gg);
+         /* use a random point in next iteration */
+         g = GroupT::random_element();
+     }
+ }
+ 
+-TEST(algebra, groups)
++int main(void)
+ {
++/*
++    edwards_pp::init_public_params();
++    test_group<G1<edwards_pp> >();
++    test_output<G1<edwards_pp> >();
++    test_group<G2<edwards_pp> >();
++    test_output<G2<edwards_pp> >();
++    test_mul_by_q<G2<edwards_pp> >();
++
++    mnt4_pp::init_public_params();
++    test_group<G1<mnt4_pp> >();
++    test_output<G1<mnt4_pp> >();
++    test_group<G2<mnt4_pp> >();
++    test_output<G2<mnt4_pp> >();
++    test_mul_by_q<G2<mnt4_pp> >();
++
++    mnt6_pp::init_public_params();
++    test_group<G1<mnt6_pp> >();
++    test_output<G1<mnt6_pp> >();
++    test_group<G2<mnt6_pp> >();
++    test_output<G2<mnt6_pp> >();
++    test_mul_by_q<G2<mnt6_pp> >();
++*/
+     alt_bn128_pp::init_public_params();
+     test_group<G1<alt_bn128_pp> >();
+     test_output<G1<alt_bn128_pp> >();
+diff --git a/src/snark/src/algebra/evaluation_domain/domains/basic_radix2_domain.tcc b/src/snark/src/algebra/evaluation_domain/domains/basic_radix2_domain.tcc
+index d315e83..16dcd54 100644
+--- a/src/snark/src/algebra/evaluation_domain/domains/basic_radix2_domain.tcc
++++ b/src/snark/src/algebra/evaluation_domain/domains/basic_radix2_domain.tcc
+@@ -15,15 +15,16 @@
+ #define BASIC_RADIX2_DOMAIN_TCC_
+ 
+ #include "algebra/evaluation_domain/domains/basic_radix2_domain_aux.hpp"
++#include "common/assert_except.hpp"
+ 
+ namespace libsnark {
+ 
+ template<typename FieldT>
+ basic_radix2_domain<FieldT>::basic_radix2_domain(const size_t m) : evaluation_domain<FieldT>(m)
+ {
+-    assert(m > 1);
++    assert_except(m > 1);
+     const size_t logm = log2(m);
+-    assert(logm <= (FieldT::s));
++    assert_except(logm <= (FieldT::s));
+ 
+     omega = get_root_of_unity<FieldT>(m);
+ }
+@@ -32,7 +33,7 @@ template<typename FieldT>
+ void basic_radix2_domain<FieldT>::FFT(std::vector<FieldT> &a)
+ {
+     enter_block("Execute FFT");
+-    assert(a.size() == this->m);
++    assert_except(a.size() == this->m);
+     _basic_radix2_FFT(a, omega);
+     leave_block("Execute FFT");
+ }
+@@ -41,7 +42,7 @@ template<typename FieldT>
+ void basic_radix2_domain<FieldT>::iFFT(std::vector<FieldT> &a)
+ {
+     enter_block("Execute inverse FFT");
+-    assert(a.size() == this->m);
++    assert_except(a.size() == this->m);
+     _basic_radix2_FFT(a, omega.inverse());
+ 
+     const FieldT sconst = FieldT(a.size()).inverse();
+@@ -91,7 +92,7 @@ FieldT basic_radix2_domain<FieldT>::compute_Z(const FieldT &t)
+ template<typename FieldT>
+ void basic_radix2_domain<FieldT>::add_poly_Z(const FieldT &coeff, std::vector<FieldT> &H)
+ {
+-    assert(H.size() == this->m+1);
++    assert_except(H.size() == this->m+1);
+     H[this->m] += coeff;
+     H[0] -= coeff;
+ }
+diff --git a/src/snark/src/algebra/evaluation_domain/domains/basic_radix2_domain_aux.tcc b/src/snark/src/algebra/evaluation_domain/domains/basic_radix2_domain_aux.tcc
+index 138b82d..f42e424 100644
+--- a/src/snark/src/algebra/evaluation_domain/domains/basic_radix2_domain_aux.tcc
++++ b/src/snark/src/algebra/evaluation_domain/domains/basic_radix2_domain_aux.tcc
+@@ -21,6 +21,7 @@
+ #include "algebra/fields/field_utils.hpp"
+ #include "common/profiling.hpp"
+ #include "common/utils.hpp"
++#include "common/assert_except.hpp"
+ 
+ namespace libsnark {
+ 
+@@ -38,7 +39,7 @@ template<typename FieldT>
+ void _basic_serial_radix2_FFT(std::vector<FieldT> &a, const FieldT &omega)
+ {
+     const size_t n = a.size(), logn = log2(n);
+-    assert(n == (1u << logn));
++    assert_except(n == (1u << logn));
+ 
+     /* swapping in place (from Storer's book) */
+     for (size_t k = 0; k < n; ++k)
+@@ -74,11 +75,11 @@ void _basic_serial_radix2_FFT(std::vector<FieldT> &a, const FieldT &omega)
+ template<typename FieldT>
+ void _basic_parallel_radix2_FFT_inner(std::vector<FieldT> &a, const FieldT &omega, const size_t log_cpus)
+ {
+-    const size_t num_cpus = 1ul<<log_cpus;
++    const size_t num_cpus = UINT64_C(1)<<log_cpus;
+ 
+     const size_t m = a.size();
+     const size_t log_m = log2(m);
+-    assert(m == 1ul<<log_m);
++    assert_except(m == UINT64_C(1)<<log_m);
+ 
+     if (log_m < log_cpus)
+     {
+@@ -90,7 +91,7 @@ void _basic_parallel_radix2_FFT_inner(std::vector<FieldT> &a, const FieldT &omeg
+     std::vector<std::vector<FieldT> > tmp(num_cpus);
+     for (size_t j = 0; j < num_cpus; ++j)
+     {
+-        tmp[j].resize(1ul<<(log_m-log_cpus), FieldT::zero());
++        tmp[j].resize(UINT64_C(1)<<(log_m-log_cpus), FieldT::zero());
+     }
+ 
+ #ifdef MULTICORE
+@@ -102,7 +103,7 @@ void _basic_parallel_radix2_FFT_inner(std::vector<FieldT> &a, const FieldT &omeg
+         const FieldT omega_step = omega^(j<<(log_m - log_cpus));
+ 
+         FieldT elt = FieldT::one();
+-        for (size_t i = 0; i < 1ul<<(log_m - log_cpus); ++i)
++        for (size_t i = 0; i < UINT64_C(1)<<(log_m - log_cpus); ++i)
+         {
+             for (size_t s = 0; s < num_cpus; ++s)
+             {
+@@ -135,7 +136,7 @@ void _basic_parallel_radix2_FFT_inner(std::vector<FieldT> &a, const FieldT &omeg
+ #endif
+     for (size_t i = 0; i < num_cpus; ++i)
+     {
+-        for (size_t j = 0; j < 1ul<<(log_m - log_cpus); ++j)
++        for (size_t j = 0; j < UINT64_C(1)<<(log_m - log_cpus); ++j)
+         {
+             // now: i = idx >> (log_m - log_cpus) and j = idx % (1u << (log_m - log_cpus)), for idx = ((i<<(log_m-log_cpus))+j) % (1u << log_m)
+             a[(j<<log_cpus) + i] = tmp[i][j];
+@@ -189,7 +190,7 @@ std::vector<FieldT> _basic_radix2_lagrange_coeffs(const size_t m, const FieldT &
+         return std::vector<FieldT>(1, FieldT::one());
+     }
+ 
+-    assert(m == (1u << log2(m)));
++    assert_except(m == (1u << log2(m)));
+ 
+     const FieldT omega = get_root_of_unity<FieldT>(m);
+ 
+diff --git a/src/snark/src/algebra/evaluation_domain/evaluation_domain.tcc b/src/snark/src/algebra/evaluation_domain/evaluation_domain.tcc
+index 8e3ea7a..d5fa5b5 100644
+--- a/src/snark/src/algebra/evaluation_domain/evaluation_domain.tcc
++++ b/src/snark/src/algebra/evaluation_domain/evaluation_domain.tcc
+@@ -22,15 +22,18 @@
+ #include <cassert>
+ #include "algebra/fields/field_utils.hpp"
+ #include "algebra/evaluation_domain/domains/basic_radix2_domain.hpp"
++#include "algebra/evaluation_domain/domains/extended_radix2_domain.hpp"
++#include "algebra/evaluation_domain/domains/step_radix2_domain.hpp"
++#include "common/assert_except.hpp"
+ 
+ namespace libsnark {
+ 
+ template<typename FieldT>
+ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t min_size)
+ {
+-    assert(min_size > 1);
++    assert_except(min_size > 1);
+     const size_t log_min_size = log2(min_size);
+-    assert(log_min_size <= (FieldT::s+1));
++    assert_except(log_min_size <= (FieldT::s+1));
+ 
+     std::shared_ptr<evaluation_domain<FieldT> > result;
+     if (min_size == (1u << log_min_size))
+@@ -41,7 +44,7 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
+             {
+                 print_indent(); printf("* Selected domain: extended_radix2\n");
+             }
+-            assert(0);
++            result.reset(new extended_radix2_domain<FieldT>(min_size));
+         }
+         else
+         {
+@@ -54,9 +57,9 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
+     }
+     else
+     {
+-        const size_t big = 1ul<<(log2(min_size)-1);
++        const size_t big = UINT64_C(1)<<(log2(min_size)-1);
+         const size_t small = min_size - big;
+-        const size_t rounded_small = (1ul<<log2(small));
++        const size_t rounded_small = (UINT64_C(1)<<log2(small));
+         if (big == rounded_small)
+         {
+             if (log2(big + rounded_small) < FieldT::s+1)
+@@ -73,7 +76,7 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
+                 {
+                     print_indent(); printf("* Selected domain: extended_radix2\n");
+                 }
+-                assert(0);
++                result.reset(new extended_radix2_domain<FieldT>(big + rounded_small));
+             }
+         }
+         else
+@@ -82,7 +85,7 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
+             {
+                 print_indent(); printf("* Selected domain: step_radix2\n");
+             }
+-            assert(0);
++            result.reset(new step_radix2_domain<FieldT>(big + rounded_small));
+         }
+     }
+ 
+@@ -92,8 +95,8 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
+ template<typename FieldT>
+ FieldT lagrange_eval(const size_t m, const std::vector<FieldT> &domain, const FieldT &t, const size_t idx)
+ {
+-    assert(m == domain.size());
+-    assert(idx < m);
++    assert_except(m == domain.size());
++    assert_except(idx < m);
+ 
+     FieldT num = FieldT::one();
+     FieldT denom = FieldT::one();
+diff --git a/src/snark/src/algebra/exponentiation/exponentiation.hpp b/src/snark/src/algebra/exponentiation/exponentiation.hpp
+index a8a2c92..836ebf0 100644
+--- a/src/snark/src/algebra/exponentiation/exponentiation.hpp
++++ b/src/snark/src/algebra/exponentiation/exponentiation.hpp
+@@ -22,7 +22,7 @@ template<typename FieldT, mp_size_t m>
+ FieldT power(const FieldT &base, const bigint<m> &exponent);
+ 
+ template<typename FieldT>
+-FieldT power(const FieldT &base, const unsigned long exponent);
++FieldT power(const FieldT &base, const uint64_t exponent);
+ 
+ } // libsnark
+ 
+diff --git a/src/snark/src/algebra/exponentiation/exponentiation.tcc b/src/snark/src/algebra/exponentiation/exponentiation.tcc
+index dd557eb..7ac3bf5 100644
+--- a/src/snark/src/algebra/exponentiation/exponentiation.tcc
++++ b/src/snark/src/algebra/exponentiation/exponentiation.tcc
+@@ -25,7 +25,7 @@ FieldT power(const FieldT &base, const bigint<m> &exponent)
+ 
+     bool found_one = false;
+ 
+-    for (long i = exponent.max_bits() - 1; i >= 0; --i)
++    for (int64_t i = exponent.max_bits() - 1; i >= 0; --i)
+     {
+         if (found_one)
+         {
+@@ -43,7 +43,7 @@ FieldT power(const FieldT &base, const bigint<m> &exponent)
+ }
+ 
+ template<typename FieldT>
+-FieldT power(const FieldT &base, const unsigned long exponent)
++FieldT power(const FieldT &base, const uint64_t exponent)
+ {
+     return power<FieldT>(base, bigint<1>(exponent));
+ }
+diff --git a/src/snark/src/algebra/fields/bigint.hpp b/src/snark/src/algebra/fields/bigint.hpp
+index ff00dd5..dc47a7e 100644
+--- a/src/snark/src/algebra/fields/bigint.hpp
++++ b/src/snark/src/algebra/fields/bigint.hpp
+@@ -33,7 +33,7 @@ public:
+     mp_limb_t data[n] = {0};
+ 
+     bigint() = default;
+-    bigint(const unsigned long x); /// Initalize from a small integer
++    bigint(const uint64_t x); /// Initalize from a small integer
+     bigint(const char* s); /// Initialize from a string containing an integer in decimal notation
+     bigint(const mpz_t r); /// Initialize from MPZ element
+ 
+@@ -46,7 +46,7 @@ public:
+     size_t max_bits() const { return n * GMP_NUMB_BITS; }
+     size_t num_bits() const;
+ 
+-    unsigned long as_ulong() const; /* return the last limb of the integer */
++    uint64_t as_ulong() const; /* return the last limb of the integer */
+     void to_mpz(mpz_t r) const;
+     bool test_bit(const std::size_t bitno) const;
+ 
+diff --git a/src/snark/src/algebra/fields/bigint.tcc b/src/snark/src/algebra/fields/bigint.tcc
+index f81addf..1faa4f9 100644
+--- a/src/snark/src/algebra/fields/bigint.tcc
++++ b/src/snark/src/algebra/fields/bigint.tcc
+@@ -13,13 +13,14 @@
+ #include <climits>
+ #include <cstring>
+ #include "sodium.h"
++#include "common/assert_except.hpp"
+ 
+ namespace libsnark {
+ 
+ template<mp_size_t n>
+-bigint<n>::bigint(const unsigned long x) /// Initalize from a small integer
++bigint<n>::bigint(const uint64_t x) /// Initalize from a small integer
+ {
+-    static_assert(ULONG_MAX <= GMP_NUMB_MAX, "unsigned long does not fit in a GMP limb");
++    static_assert(UINT64_MAX <= GMP_NUMB_MAX, "uint64_t does not fit in a GMP limb");
+     this->data[0] = x;
+ }
+ 
+@@ -31,12 +32,12 @@ bigint<n>::bigint(const char* s) /// Initialize from a string containing an inte
+ 
+     for (size_t i = 0; i < l; ++i)
+     {
+-        assert(s[i] >= '0' && s[i] <= '9');
++        assert_except(s[i] >= '0' && s[i] <= '9');
+         s_copy[i] = s[i] - '0';
+     }
+ 
+     mp_size_t limbs_written = mpn_set_str(this->data, s_copy, l, 10);
+-    assert(limbs_written <= n);
++    assert_except(limbs_written <= n);
+ 
+     delete[] s_copy;
+ }
+@@ -53,7 +54,7 @@ bigint<n>::bigint(const mpz_t r) /// Initialize from MPZ element
+         mpz_fdiv_q_2exp(k, k, GMP_NUMB_BITS);
+     }
+ 
+-    assert(mpz_sgn(k) == 0);
++    assert_except(mpz_sgn(k) == 0);
+     mpz_clear(k);
+ }
+ 
+@@ -105,7 +106,7 @@ template<mp_size_t n>
+ size_t bigint<n>::num_bits() const
+ {
+ /*
+-    for (long i = max_bits(); i >= 0; --i)
++    for (int64_t i = max_bits(); i >= 0; --i)
+     {
+         if (this->test_bit(i))
+         {
+@@ -115,7 +116,7 @@ size_t bigint<n>::num_bits() const
+ 
+     return 0;
+ */
+-    for (long i = n-1; i >= 0; --i)
++    for (int64_t i = n-1; i >= 0; --i)
+     {
+         mp_limb_t x = this->data[i];
+         if (x == 0)
+@@ -124,14 +125,14 @@ size_t bigint<n>::num_bits() const
+         }
+         else
+         {
+-            return ((i+1) * GMP_NUMB_BITS) - __builtin_clzl(x);
++            return ((i+1) * GMP_NUMB_BITS) - __builtin_clzll(x);
+         }
+     }
+     return 0;
+ }
+ 
+ template<mp_size_t n>
+-unsigned long bigint<n>::as_ulong() const
++uint64_t bigint<n>::as_ulong() const
+ {
+     return this->data[0];
+ }
+@@ -186,7 +187,7 @@ inline void bigint<n>::div_qr(bigint<n-d+1>& quotient, bigint<d>& remainder,
+                               const bigint<n>& dividend, const bigint<d>& divisor)
+ {
+     static_assert(n >= d, "dividend must not be smaller than divisor for bigint::div_qr");
+-    assert(divisor.data[d-1] != 0);
++    assert_except(divisor.data[d-1] != 0);
+     mpn_tdiv_qr(quotient.data, remainder.data, 0, dividend.data, n, divisor.data, d);
+ }
+ 
+@@ -223,7 +224,7 @@ inline bool bigint<n>::operator>(const bigint<n>& other) const
+ template<mp_size_t n>
+ bigint<n>& bigint<n>::randomize()
+ {
+-    assert(GMP_NUMB_BITS == sizeof(mp_limb_t) * 8);
++    assert_except(GMP_NUMB_BITS == sizeof(mp_limb_t) * 8);
+ 
+     randombytes_buf(this->data, sizeof(mp_limb_t) * n);
+ 
+@@ -262,12 +263,12 @@ std::istream& operator>>(std::istream &in, bigint<n> &b)
+ 
+     for (size_t i = 0; i < l; ++i)
+     {
+-        assert(s[i] >= '0' && s[i] <= '9');
++        assert_except(s[i] >= '0' && s[i] <= '9');
+         s_copy[i] = s[i] - '0';
+     }
+ 
+     mp_size_t limbs_written = mpn_set_str(b.data, s_copy, l, 10);
+-    assert(limbs_written <= n);
++    assert_except(limbs_written <= n);
+ 
+     delete[] s_copy;
+ #endif
+diff --git a/src/snark/src/algebra/fields/field_utils.hpp b/src/snark/src/algebra/fields/field_utils.hpp
+index a07ecfe..8358e48 100644
+--- a/src/snark/src/algebra/fields/field_utils.hpp
++++ b/src/snark/src/algebra/fields/field_utils.hpp
+@@ -16,13 +16,13 @@ namespace libsnark {
+ 
+ // returns root of unity of order n (for n a power of 2), if one exists
+ template<typename FieldT>
+-FieldT get_root_of_unity(const size_t n);
++FieldT get_root_of_unity(const uint64_t n);
+ 
+ template<typename FieldT>
+-std::vector<FieldT> pack_int_vector_into_field_element_vector(const std::vector<size_t> &v, const size_t w);
++std::vector<FieldT> pack_int_vector_into_field_element_vector(const std::vector<uint64_t> &v, const uint64_t w);
+ 
+ template<typename FieldT>
+-std::vector<FieldT> pack_bit_vector_into_field_element_vector(const bit_vector &v, const size_t chunk_bits);
++std::vector<FieldT> pack_bit_vector_into_field_element_vector(const bit_vector &v, const uint64_t chunk_bits);
+ 
+ template<typename FieldT>
+ std::vector<FieldT> pack_bit_vector_into_field_element_vector(const bit_vector &v);
+@@ -37,7 +37,7 @@ template<typename FieldT>
+ bit_vector convert_field_element_to_bit_vector(const FieldT &el);
+ 
+ template<typename FieldT>
+-bit_vector convert_field_element_to_bit_vector(const FieldT &el, const size_t bitcount);
++bit_vector convert_field_element_to_bit_vector(const FieldT &el, const uint64_t bitcount);
+ 
+ template<typename FieldT>
+ FieldT convert_bit_vector_to_field_element(const bit_vector &v);
+diff --git a/src/snark/src/algebra/fields/field_utils.tcc b/src/snark/src/algebra/fields/field_utils.tcc
+index 13197b2..a092860 100644
+--- a/src/snark/src/algebra/fields/field_utils.tcc
++++ b/src/snark/src/algebra/fields/field_utils.tcc
+@@ -11,6 +11,7 @@
+ #define FIELD_UTILS_TCC_
+ 
+ #include "common/utils.hpp"
++#include "common/assert_except.hpp"
+ 
+ namespace libsnark {
+ 
+@@ -21,14 +22,14 @@ FieldT coset_shift()
+ }
+ 
+ template<typename FieldT>
+-FieldT get_root_of_unity(const size_t n)
++FieldT get_root_of_unity(const uint64_t n)
+ {
+-    const size_t logn = log2(n);
+-    assert(n == (1u << logn));
+-    assert(logn <= FieldT::s);
++    const uint64_t logn = log2(n);
++    assert_except(n == (1u << logn));
++    assert_except(logn <= FieldT::s);
+ 
+     FieldT omega = FieldT::root_of_unity;
+-    for (size_t i = FieldT::s; i > logn; --i)
++    for (uint64_t i = FieldT::s; i > logn; --i)
+     {
+         omega *= omega;
+     }
+@@ -37,21 +38,21 @@ FieldT get_root_of_unity(const size_t n)
+ }
+ 
+ template<typename FieldT>
+-std::vector<FieldT> pack_int_vector_into_field_element_vector(const std::vector<size_t> &v, const size_t w)
++std::vector<FieldT> pack_int_vector_into_field_element_vector(const std::vector<uint64_t> &v, const uint64_t w)
+ {
+-    const size_t chunk_bits = FieldT::capacity();
+-    const size_t repacked_size = div_ceil(v.size() * w, chunk_bits);
++    const uint64_t chunk_bits = FieldT::capacity();
++    const uint64_t repacked_size = div_ceil(v.size() * w, chunk_bits);
+     std::vector<FieldT> result(repacked_size);
+ 
+-    for (size_t i = 0; i < repacked_size; ++i)
++    for (uint64_t i = 0; i < repacked_size; ++i)
+     {
+         bigint<FieldT::num_limbs> b;
+-        for (size_t j = 0; j < chunk_bits; ++j)
++        for (uint64_t j = 0; j < chunk_bits; ++j)
+         {
+-            const size_t word_index = (i * chunk_bits + j) / w;
+-            const size_t pos_in_word = (i * chunk_bits + j) % w;
+-            const size_t word_or_0 = (word_index < v.size() ? v[word_index] : 0);
+-            const size_t bit = (word_or_0 >> pos_in_word) & 1;
++            const uint64_t word_index = (i * chunk_bits + j) / w;
++            const uint64_t pos_in_word = (i * chunk_bits + j) % w;
++            const uint64_t word_or_0 = (word_index < v.size() ? v[word_index] : 0);
++            const uint64_t bit = (word_or_0 >> pos_in_word) & 1;
+ 
+             b.data[j / GMP_NUMB_BITS] |= bit << (j % GMP_NUMB_BITS);
+         }
+@@ -62,11 +63,11 @@ std::vector<FieldT> pack_int_vector_into_field_element_vector(const std::vector<
+ }
+ 
+ template<typename FieldT>
+-std::vector<FieldT> pack_bit_vector_into_field_element_vector(const bit_vector &v, const size_t chunk_bits)
++std::vector<FieldT> pack_bit_vector_into_field_element_vector(const bit_vector &v, const uint64_t chunk_bits)
+ {
+-    assert(chunk_bits <= FieldT::capacity());
++    assert_except(chunk_bits <= FieldT::capacity());
+ 
+-    const size_t repacked_size = div_ceil(v.size(), chunk_bits);
++    const uint64_t repacked_size = div_ceil(v.size(), chunk_bits);
+     std::vector<FieldT> result(repacked_size);
+ 
+     for (size_t i = 0; i < repacked_size; ++i)
+@@ -131,7 +132,7 @@ bit_vector convert_field_element_to_bit_vector(const FieldT &el)
+ }
+ 
+ template<typename FieldT>
+-bit_vector convert_field_element_to_bit_vector(const FieldT &el, const size_t bitcount)
++bit_vector convert_field_element_to_bit_vector(const FieldT &el, const uint64_t bitcount)
+ {
+     bit_vector result = convert_field_element_to_bit_vector(el);
+     result.resize(bitcount);
+@@ -142,7 +143,7 @@ bit_vector convert_field_element_to_bit_vector(const FieldT &el, const size_t bi
+ template<typename FieldT>
+ FieldT convert_bit_vector_to_field_element(const bit_vector &v)
+ {
+-    assert(v.size() <= FieldT::size_in_bits());
++    assert_except(v.size() <= FieldT::size_in_bits());
+ 
+     FieldT res = FieldT::zero();
+     FieldT c = FieldT::one();
+@@ -164,14 +165,14 @@ void batch_invert(std::vector<FieldT> &vec)
+ 
+     for (auto el : vec)
+     {
+-        assert(!el.is_zero());
++        assert_except(!el.is_zero());
+         prod.emplace_back(acc);
+         acc = acc * el;
+     }
+ 
+     FieldT acc_inverse = acc.inverse();
+ 
+-    for (long i = vec.size()-1; i >= 0; --i)
++    for (int64_t i = vec.size()-1; i >= 0; --i)
+     {
+         const FieldT old_el = vec[i];
+         vec[i] = acc_inverse * prod[i];
+diff --git a/src/snark/src/algebra/fields/fp.hpp b/src/snark/src/algebra/fields/fp.hpp
+index a498683..384e574 100644
+--- a/src/snark/src/algebra/fields/fp.hpp
++++ b/src/snark/src/algebra/fields/fp.hpp
+@@ -44,15 +44,15 @@ public:
+     static const mp_size_t num_limbs = n;
+     static const constexpr bigint<n>& mod = modulus;
+ #ifdef PROFILE_OP_COUNTS
+-    static long long add_cnt;
+-    static long long sub_cnt;
+-    static long long mul_cnt;
+-    static long long sqr_cnt;
+-    static long long inv_cnt;
++    static int64_t add_cnt;
++    static int64_t sub_cnt;
++    static int64_t mul_cnt;
++    static int64_t sqr_cnt;
++    static int64_t inv_cnt;
+ #endif
+-    static size_t num_bits;
++    static uint64_t num_bits;
+     static bigint<n> euler; // (modulus-1)/2
+-    static size_t s; // modulus = 2^s * t + 1
++    static uint64_t s; // modulus = 2^s * t + 1
+     static bigint<n> t; // with t odd
+     static bigint<n> t_minus_1_over_2; // (t-1)/2
+     static Fp_model<n, modulus> nqr; // a quadratic nonresidue
+@@ -67,9 +67,9 @@ public:
+ 
+     Fp_model() {};
+     Fp_model(const bigint<n> &b);
+-    Fp_model(const long x, const bool is_unsigned=false);
++    Fp_model(const int64_t x, const bool is_unsigned=false);
+ 
+-    void set_ulong(const unsigned long x);
++    void set_ulong(const uint64_t x);
+ 
+     void mul_reduce(const bigint<n> &other);
+ 
+@@ -82,7 +82,7 @@ public:
+     /* Return the last limb of the standard representation of the
+        field element. E.g. on 64-bit architectures Fp(123).as_ulong()
+        and Fp(2^64+123).as_ulong() would both return 123. */
+-    unsigned long as_ulong() const;
++    uint64_t as_ulong() const;
+ 
+     bool operator==(const Fp_model& other) const;
+     bool operator!=(const Fp_model& other) const;
+@@ -93,7 +93,7 @@ public:
+     Fp_model& operator+=(const Fp_model& other);
+     Fp_model& operator-=(const Fp_model& other);
+     Fp_model& operator*=(const Fp_model& other);
+-    Fp_model& operator^=(const unsigned long pow);
++    Fp_model& operator^=(const uint64_t pow);
+ 
+     template<mp_size_t m>
+     Fp_model& operator^=(const bigint<m> &pow);
+@@ -107,12 +107,12 @@ public:
+     Fp_model inverse() const;
+     Fp_model sqrt() const; // HAS TO BE A SQUARE (else does not terminate)
+ 
+-    Fp_model operator^(const unsigned long pow) const;
++    Fp_model operator^(const uint64_t pow) const;
+     template<mp_size_t m>
+     Fp_model operator^(const bigint<m> &pow) const;
+ 
+-    static size_t size_in_bits() { return num_bits; }
+-    static size_t capacity() { return num_bits - 1; }
++    static uint64_t size_in_bits() { return num_bits; }
++    static uint64_t capacity() { return num_bits - 1; }
+     static bigint<n> field_char() { return modulus; }
+ 
+     static Fp_model<n, modulus> zero();
+@@ -125,29 +125,29 @@ public:
+ 
+ #ifdef PROFILE_OP_COUNTS
+ template<mp_size_t n, const bigint<n>& modulus>
+-long long Fp_model<n, modulus>::add_cnt = 0;
++int64_t Fp_model<n, modulus>::add_cnt = 0;
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-long long Fp_model<n, modulus>::sub_cnt = 0;
++int64_t Fp_model<n, modulus>::sub_cnt = 0;
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-long long Fp_model<n, modulus>::mul_cnt = 0;
++int64_t Fp_model<n, modulus>::mul_cnt = 0;
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-long long Fp_model<n, modulus>::sqr_cnt = 0;
++int64_t Fp_model<n, modulus>::sqr_cnt = 0;
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-long long Fp_model<n, modulus>::inv_cnt = 0;
++int64_t Fp_model<n, modulus>::inv_cnt = 0;
+ #endif
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-size_t Fp_model<n, modulus>::num_bits;
++uint64_t Fp_model<n, modulus>::num_bits;
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+ bigint<n> Fp_model<n, modulus>::euler;
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-size_t Fp_model<n, modulus>::s;
++uint64_t Fp_model<n, modulus>::s;
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+ bigint<n> Fp_model<n, modulus>::t;
+diff --git a/src/snark/src/algebra/fields/fp.tcc b/src/snark/src/algebra/fields/fp.tcc
+index 566e993..3d220e2 100644
+--- a/src/snark/src/algebra/fields/fp.tcc
++++ b/src/snark/src/algebra/fields/fp.tcc
+@@ -173,13 +173,13 @@ void Fp_model<n,modulus>::mul_reduce(const bigint<n> &other)
+             /* calculate res = res + k * mod * b^i */
+             mp_limb_t carryout = mpn_addmul_1(res+i, modulus.data, n, k);
+             carryout = mpn_add_1(res+n+i, res+n+i, n-i, carryout);
+-            assert(carryout == 0);
++            assert_except(carryout == 0);
+         }
+ 
+         if (mpn_cmp(res+n, modulus.data, n) >= 0)
+         {
+             const mp_limb_t borrow = mpn_sub(res+n, res+n, n, modulus.data, n);
+-            assert(borrow == 0);
++            assert_except(borrow == 0);
+         }
+ 
+         mpn_copyi(this->mont_repr.data, res+n, n);
+@@ -194,7 +194,7 @@ Fp_model<n,modulus>::Fp_model(const bigint<n> &b)
+ }
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-Fp_model<n,modulus>::Fp_model(const long x, const bool is_unsigned)
++Fp_model<n,modulus>::Fp_model(const int64_t x, const bool is_unsigned)
+ {
+     if (is_unsigned || x >= 0)
+     {
+@@ -203,14 +203,14 @@ Fp_model<n,modulus>::Fp_model(const long x, const bool is_unsigned)
+     else
+     {
+         const mp_limb_t borrow = mpn_sub_1(this->mont_repr.data, modulus.data, n, -x);
+-        assert(borrow == 0);
++        assert_except(borrow == 0);
+     }
+ 
+     mul_reduce(Rsquared);
+ }
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-void Fp_model<n,modulus>::set_ulong(const unsigned long x)
++void Fp_model<n,modulus>::set_ulong(const uint64_t x)
+ {
+     this->mont_repr.clear();
+     this->mont_repr.data[0] = x;
+@@ -237,7 +237,7 @@ bigint<n> Fp_model<n,modulus>::as_bigint() const
+ }
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-unsigned long Fp_model<n,modulus>::as_ulong() const
++uint64_t Fp_model<n,modulus>::as_ulong() const
+ {
+     return this->as_bigint().as_ulong();
+ }
+@@ -391,7 +391,7 @@ Fp_model<n,modulus>& Fp_model<n,modulus>::operator+=(const Fp_model<n,modulus>&
+         if (carry || mpn_cmp(scratch, modulus.data, n) >= 0)
+         {
+             const mp_limb_t borrow = mpn_sub(scratch, scratch, n+1, modulus.data, n);
+-            assert(borrow == 0);
++            assert_except(borrow == 0);
+         }
+ 
+         mpn_copyi(this->mont_repr.data, scratch, n);
+@@ -483,7 +483,7 @@ Fp_model<n,modulus>& Fp_model<n,modulus>::operator-=(const Fp_model<n,modulus>&
+         }
+ 
+         const mp_limb_t borrow = mpn_sub(scratch, scratch, n+1, other.mont_repr.data, n);
+-        assert(borrow == 0);
++        assert_except(borrow == 0);
+ 
+         mpn_copyi(this->mont_repr.data, scratch, n);
+     }
+@@ -502,7 +502,7 @@ Fp_model<n,modulus>& Fp_model<n,modulus>::operator*=(const Fp_model<n,modulus>&
+ }
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-Fp_model<n,modulus>& Fp_model<n,modulus>::operator^=(const unsigned long pow)
++Fp_model<n,modulus>& Fp_model<n,modulus>::operator^=(const uint64_t pow)
+ {
+     (*this) = power<Fp_model<n, modulus> >(*this, pow);
+     return (*this);
+@@ -538,7 +538,7 @@ Fp_model<n,modulus> Fp_model<n,modulus>::operator*(const Fp_model<n,modulus>& ot
+ }
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-Fp_model<n,modulus> Fp_model<n,modulus>::operator^(const unsigned long pow) const
++Fp_model<n,modulus> Fp_model<n,modulus>::operator^(const uint64_t pow) const
+ {
+     Fp_model<n, modulus> r(*this);
+     return (r ^= pow);
+@@ -626,7 +626,7 @@ Fp_model<n,modulus>& Fp_model<n,modulus>::invert()
+     this->inv_cnt++;
+ #endif
+ 
+-    assert(!this->is_zero());
++    assert_except(!this->is_zero());
+ 
+     bigint<n> g; /* gp should have room for vn = n limbs */
+ 
+@@ -637,7 +637,7 @@ Fp_model<n,modulus>& Fp_model<n,modulus>::invert()
+ 
+     /* computes gcd(u, v) = g = u*s + v*t, so s*u will be 1 (mod v) */
+     const mp_size_t gn = mpn_gcdext(g.data, s, &sn, this->mont_repr.data, n, v.data, n);
+-    assert(gn == 1 && g.data[0] == 1); /* inverse exists */
++    assert_except(gn == 1 && g.data[0] == 1); /* inverse exists */
+ 
+     mp_limb_t q; /* division result fits into q, as sn <= n+1 */
+     /* sn < 0 indicates negative sn; will fix up later */
+@@ -658,7 +658,7 @@ Fp_model<n,modulus>& Fp_model<n,modulus>::invert()
+     if (sn < 0)
+     {
+         const mp_limb_t borrow = mpn_sub_n(this->mont_repr.data, modulus.data, this->mont_repr.data, n);
+-        assert(borrow == 0);
++        assert_except(borrow == 0);
+     }
+ 
+     mul_reduce(Rcubed);
+@@ -684,13 +684,13 @@ Fp_model<n, modulus> Fp_model<n,modulus>::random_element() /// returns random el
+         r.mont_repr.randomize();
+ 
+         /* clear all bits higher than MSB of modulus */
+-        size_t bitno = GMP_NUMB_BITS * n - 1;
++        uint64_t bitno = GMP_NUMB_BITS * n - 1;
+         while (modulus.test_bit(bitno) == false)
+         {
+-            const std::size_t part = bitno/GMP_NUMB_BITS;
+-            const std::size_t bit = bitno - (GMP_NUMB_BITS*part);
++            const uint64_t part = bitno/GMP_NUMB_BITS;
++            const uint64_t bit = bitno - (GMP_NUMB_BITS*part);
+ 
+-            r.mont_repr.data[part] &= ~(1ul<<bit);
++            r.mont_repr.data[part] &= ~(1ull<<bit);
+ 
+             bitno--;
+         }
+@@ -710,7 +710,7 @@ Fp_model<n,modulus> Fp_model<n,modulus>::sqrt() const
+ 
+     Fp_model<n,modulus> one = Fp_model<n,modulus>::one();
+ 
+-    size_t v = Fp_model<n,modulus>::s;
++    uint64_t v = Fp_model<n,modulus>::s;
+     Fp_model<n,modulus> z = Fp_model<n,modulus>::nqr_to_t;
+     Fp_model<n,modulus> w = (*this)^Fp_model<n,modulus>::t_minus_1_over_2;
+     Fp_model<n,modulus> x = (*this) * w;
+@@ -734,7 +734,7 @@ Fp_model<n,modulus> Fp_model<n,modulus>::sqrt() const
+ 
+     while (b != one)
+     {
+-        size_t m = 0;
++        uint64_t m = 0;
+         Fp_model<n,modulus> b2m = b;
+         while (b2m != one)
+         {
+diff --git a/src/snark/src/algebra/fields/fp12_2over3over2.hpp b/src/snark/src/algebra/fields/fp12_2over3over2.hpp
+index 1de9d88..69d057a 100644
+--- a/src/snark/src/algebra/fields/fp12_2over3over2.hpp
++++ b/src/snark/src/algebra/fields/fp12_2over3over2.hpp
+@@ -66,7 +66,7 @@ public:
+     Fp12_2over3over2_model squared_karatsuba() const;
+     Fp12_2over3over2_model squared_complex() const;
+     Fp12_2over3over2_model inverse() const;
+-    Fp12_2over3over2_model Frobenius_map(unsigned long power) const;
++    Fp12_2over3over2_model Frobenius_map(uint64_t power) const;
+     Fp12_2over3over2_model unitary_inverse() const;
+     Fp12_2over3over2_model cyclotomic_squared() const;
+ 
+@@ -78,7 +78,7 @@ public:
+     Fp12_2over3over2_model cyclotomic_exp(const bigint<m> &exponent) const;
+ 
+     static bigint<n> base_field_char() { return modulus; }
+-    static size_t extension_degree() { return 12; }
++    static uint64_t extension_degree() { return 12; }
+ 
+     friend std::ostream& operator<< <n, modulus>(std::ostream &out, const Fp12_2over3over2_model<n, modulus> &el);
+     friend std::istream& operator>> <n, modulus>(std::istream &in, Fp12_2over3over2_model<n, modulus> &el);
+diff --git a/src/snark/src/algebra/fields/fp12_2over3over2.tcc b/src/snark/src/algebra/fields/fp12_2over3over2.tcc
+index 2fbc0b6..d985d68 100644
+--- a/src/snark/src/algebra/fields/fp12_2over3over2.tcc
++++ b/src/snark/src/algebra/fields/fp12_2over3over2.tcc
+@@ -156,7 +156,7 @@ Fp12_2over3over2_model<n,modulus> Fp12_2over3over2_model<n,modulus>::inverse() c
+ }
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-Fp12_2over3over2_model<n,modulus> Fp12_2over3over2_model<n,modulus>::Frobenius_map(unsigned long power) const
++Fp12_2over3over2_model<n,modulus> Fp12_2over3over2_model<n,modulus>::Frobenius_map(uint64_t power) const
+ {
+     return Fp12_2over3over2_model<n,modulus>(c0.Frobenius_map(power),
+                                              Frobenius_coeffs_c1[power % 12] * c1.Frobenius_map(power));
+@@ -339,16 +339,16 @@ Fp12_2over3over2_model<n, modulus> Fp12_2over3over2_model<n,modulus>::cyclotomic
+     Fp12_2over3over2_model<n,modulus> res = Fp12_2over3over2_model<n,modulus>::one();
+ 
+     bool found_one = false;
+-    for (long i = m-1; i >= 0; --i)
++    for (int64_t i = m-1; i >= 0; --i)
+     {
+-        for (long j = GMP_NUMB_BITS - 1; j >= 0; --j)
++        for (int64_t j = GMP_NUMB_BITS - 1; j >= 0; --j)
+         {
+             if (found_one)
+             {
+                 res = res.cyclotomic_squared();
+             }
+ 
+-            if (exponent.data[i] & (1ul<<j))
++            if (exponent.data[i] & (UINT64_C(1)<<j))
+             {
+                 found_one = true;
+                 res = res * (*this);
+@@ -390,7 +390,7 @@ std::istream& operator>>(std::istream& in, std::vector<Fp12_2over3over2_model<n,
+ {
+     v.clear();
+ 
+-    size_t s;
++    uint64_t s;
+     in >> s;
+ 
+     char b;
+diff --git a/src/snark/src/algebra/fields/fp2.hpp b/src/snark/src/algebra/fields/fp2.hpp
+index f077269..f194f5e 100644
+--- a/src/snark/src/algebra/fields/fp2.hpp
++++ b/src/snark/src/algebra/fields/fp2.hpp
+@@ -37,7 +37,7 @@ public:
+     typedef Fp_model<n, modulus> my_Fp;
+ 
+     static bigint<2*n> euler; // (modulus^2-1)/2
+-    static size_t s;       // modulus^2 = 2^s * t + 1
++    static uint64_t s;       // modulus^2 = 2^s * t + 1
+     static bigint<2*n> t;  // with t odd
+     static bigint<2*n> t_minus_1_over_2; // (t-1)/2
+     static my_Fp non_residue; // X^4-non_residue irreducible over Fp; used for constructing Fp2 = Fp[X] / (X^2 - non_residue)
+@@ -66,7 +66,7 @@ public:
+     Fp2_model operator-() const;
+     Fp2_model squared() const; // default is squared_complex
+     Fp2_model inverse() const;
+-    Fp2_model Frobenius_map(unsigned long power) const;
++    Fp2_model Frobenius_map(uint64_t power) const;
+     Fp2_model sqrt() const; // HAS TO BE A SQUARE (else does not terminate)
+     Fp2_model squared_karatsuba() const;
+     Fp2_model squared_complex() const;
+@@ -74,7 +74,7 @@ public:
+     template<mp_size_t m>
+     Fp2_model operator^(const bigint<m> &other) const;
+ 
+-    static size_t size_in_bits() { return 2*my_Fp::size_in_bits(); }
++    static uint64_t size_in_bits() { return 2*my_Fp::size_in_bits(); }
+     static bigint<n> base_field_char() { return modulus; }
+ 
+     friend std::ostream& operator<< <n, modulus>(std::ostream &out, const Fp2_model<n, modulus> &el);
+@@ -94,7 +94,7 @@ template<mp_size_t n, const bigint<n>& modulus>
+ bigint<2*n> Fp2_model<n, modulus>::euler;
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-size_t Fp2_model<n, modulus>::s;
++uint64_t Fp2_model<n, modulus>::s;
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+ bigint<2*n> Fp2_model<n, modulus>::t;
+diff --git a/src/snark/src/algebra/fields/fp2.tcc b/src/snark/src/algebra/fields/fp2.tcc
+index 1632a04..84aa303 100644
+--- a/src/snark/src/algebra/fields/fp2.tcc
++++ b/src/snark/src/algebra/fields/fp2.tcc
+@@ -136,7 +136,7 @@ Fp2_model<n,modulus> Fp2_model<n,modulus>::inverse() const
+ }
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-Fp2_model<n,modulus> Fp2_model<n,modulus>::Frobenius_map(unsigned long power) const
++Fp2_model<n,modulus> Fp2_model<n,modulus>::Frobenius_map(uint64_t power) const
+ {
+     return Fp2_model<n,modulus>(c0,
+                                 Frobenius_coeffs_c1[power % 2] * c1);
+@@ -151,7 +151,7 @@ Fp2_model<n,modulus> Fp2_model<n,modulus>::sqrt() const
+ 
+     Fp2_model<n,modulus> one = Fp2_model<n,modulus>::one();
+ 
+-    size_t v = Fp2_model<n,modulus>::s;
++    unsigned long long v = Fp2_model<n,modulus>::s;
+     Fp2_model<n,modulus> z = Fp2_model<n,modulus>::nqr_to_t;
+     Fp2_model<n,modulus> w = (*this)^Fp2_model<n,modulus>::t_minus_1_over_2;
+     Fp2_model<n,modulus> x = (*this) * w;
+@@ -175,7 +175,7 @@ Fp2_model<n,modulus> Fp2_model<n,modulus>::sqrt() const
+ 
+     while (b != one)
+     {
+-        size_t m = 0;
++        unsigned long long m = 0;
+         Fp2_model<n,modulus> b2m = b;
+         while (b2m != one)
+         {
+@@ -239,7 +239,7 @@ std::istream& operator>>(std::istream& in, std::vector<Fp2_model<n, modulus> > &
+ {
+     v.clear();
+ 
+-    size_t s;
++    unsigned long long s;
+     in >> s;
+ 
+     char b;
+diff --git a/src/snark/src/algebra/fields/fp3.hpp b/src/snark/src/algebra/fields/fp3.hpp
+index 53b178a..ce74cd9 100644
+--- a/src/snark/src/algebra/fields/fp3.hpp
++++ b/src/snark/src/algebra/fields/fp3.hpp
+@@ -37,7 +37,7 @@ public:
+     typedef Fp_model<n, modulus> my_Fp;
+ 
+     static bigint<3*n> euler; // (modulus^3-1)/2
+-    static size_t s;       // modulus^3 = 2^s * t + 1
++    static uint64_t s;       // modulus^3 = 2^s * t + 1
+     static bigint<3*n> t;  // with t odd
+     static bigint<3*n> t_minus_1_over_2; // (t-1)/2
+     static my_Fp non_residue; // X^6-non_residue irreducible over Fp; used for constructing Fp3 = Fp[X] / (X^3 - non_residue)
+@@ -67,13 +67,13 @@ public:
+     Fp3_model operator-() const;
+     Fp3_model squared() const;
+     Fp3_model inverse() const;
+-    Fp3_model Frobenius_map(unsigned long power) const;
++    Fp3_model Frobenius_map(uint64_t power) const;
+     Fp3_model sqrt() const; // HAS TO BE A SQUARE (else does not terminate)
+ 
+     template<mp_size_t m>
+     Fp3_model operator^(const bigint<m> &other) const;
+ 
+-    static size_t size_in_bits() { return 3*my_Fp::size_in_bits(); }
++    static uint64_t size_in_bits() { return 3*my_Fp::size_in_bits(); }
+     static bigint<n> base_field_char() { return modulus; }
+ 
+     friend std::ostream& operator<< <n, modulus>(std::ostream &out, const Fp3_model<n, modulus> &el);
+@@ -93,7 +93,7 @@ template<mp_size_t n, const bigint<n>& modulus>
+ bigint<3*n> Fp3_model<n, modulus>::euler;
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-size_t Fp3_model<n, modulus>::s;
++uint64_t Fp3_model<n, modulus>::s;
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+ bigint<3*n> Fp3_model<n, modulus>::t;
+diff --git a/src/snark/src/algebra/fields/fp3.tcc b/src/snark/src/algebra/fields/fp3.tcc
+index 590a2a9..e531530 100644
+--- a/src/snark/src/algebra/fields/fp3.tcc
++++ b/src/snark/src/algebra/fields/fp3.tcc
+@@ -137,7 +137,7 @@ Fp3_model<n,modulus> Fp3_model<n,modulus>::inverse() const
+ }
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-Fp3_model<n,modulus> Fp3_model<n,modulus>::Frobenius_map(unsigned long power) const
++Fp3_model<n,modulus> Fp3_model<n,modulus>::Frobenius_map(uint64_t power) const
+ {
+     return Fp3_model<n,modulus>(c0,
+                                 Frobenius_coeffs_c1[power % 3] * c1,
+@@ -149,7 +149,7 @@ Fp3_model<n,modulus> Fp3_model<n,modulus>::sqrt() const
+ {
+     Fp3_model<n,modulus> one = Fp3_model<n,modulus>::one();
+ 
+-    size_t v = Fp3_model<n,modulus>::s;
++    uint64_t v = Fp3_model<n,modulus>::s;
+     Fp3_model<n,modulus> z = Fp3_model<n,modulus>::nqr_to_t;
+     Fp3_model<n,modulus> w = (*this)^Fp3_model<n,modulus>::t_minus_1_over_2;
+     Fp3_model<n,modulus> x = (*this) * w;
+@@ -173,7 +173,7 @@ Fp3_model<n,modulus> Fp3_model<n,modulus>::sqrt() const
+ 
+     while (b != one)
+     {
+-        size_t m = 0;
++        uint64_t m = 0;
+         Fp3_model<n,modulus> b2m = b;
+         while (b2m != one)
+         {
+@@ -237,7 +237,7 @@ std::istream& operator>>(std::istream& in, std::vector<Fp3_model<n, modulus> > &
+ {
+     v.clear();
+ 
+-    size_t s;
++    uint64_t s;
+     in >> s;
+ 
+     char b;
+diff --git a/src/snark/src/algebra/fields/fp6_3over2.hpp b/src/snark/src/algebra/fields/fp6_3over2.hpp
+index 335d61c..8a888f0 100644
+--- a/src/snark/src/algebra/fields/fp6_3over2.hpp
++++ b/src/snark/src/algebra/fields/fp6_3over2.hpp
+@@ -63,7 +63,7 @@ public:
+     Fp6_3over2_model operator-() const;
+     Fp6_3over2_model squared() const;
+     Fp6_3over2_model inverse() const;
+-    Fp6_3over2_model Frobenius_map(unsigned long power) const;
++    Fp6_3over2_model Frobenius_map(uint64_t power) const;
+ 
+     static my_Fp2 mul_by_non_residue(const my_Fp2 &elt);
+ 
+@@ -71,7 +71,7 @@ public:
+     Fp6_3over2_model operator^(const bigint<m> &other) const;
+ 
+     static bigint<n> base_field_char() { return modulus; }
+-    static size_t extension_degree() { return 6; }
++    static uint64_t extension_degree() { return 6; }
+ 
+     friend std::ostream& operator<< <n, modulus>(std::ostream &out, const Fp6_3over2_model<n, modulus> &el);
+     friend std::istream& operator>> <n, modulus>(std::istream &in, Fp6_3over2_model<n, modulus> &el);
+diff --git a/src/snark/src/algebra/fields/fp6_3over2.tcc b/src/snark/src/algebra/fields/fp6_3over2.tcc
+index f4fffde..de9b83d 100644
+--- a/src/snark/src/algebra/fields/fp6_3over2.tcc
++++ b/src/snark/src/algebra/fields/fp6_3over2.tcc
+@@ -149,7 +149,7 @@ Fp6_3over2_model<n,modulus> Fp6_3over2_model<n,modulus>::inverse() const
+ }
+ 
+ template<mp_size_t n, const bigint<n>& modulus>
+-Fp6_3over2_model<n,modulus> Fp6_3over2_model<n,modulus>::Frobenius_map(unsigned long power) const
++Fp6_3over2_model<n,modulus> Fp6_3over2_model<n,modulus>::Frobenius_map(uint64_t power) const
+ {
+     return Fp6_3over2_model<n,modulus>(c0.Frobenius_map(power),
+                                        Frobenius_coeffs_c1[power % 6] * c1.Frobenius_map(power),
+@@ -194,7 +194,7 @@ std::istream& operator>>(std::istream& in, std::vector<Fp6_3over2_model<n, modul
+ {
+     v.clear();
+ 
+-    size_t s;
++    uint64_t s;
+     in >> s;
+ 
+     char b;
+diff --git a/src/snark/src/algebra/fields/tests/test_bigint.cpp b/src/snark/src/algebra/fields/tests/test_bigint.cpp
+index d2da59e..6392f27 100644
+--- a/src/snark/src/algebra/fields/tests/test_bigint.cpp
++++ b/src/snark/src/algebra/fields/tests/test_bigint.cpp
+@@ -7,13 +7,11 @@
+ 
+ #include "algebra/fields/bigint.hpp"
+ 
+-#include <gtest/gtest.h>
+-
+ using namespace libsnark;
+ 
+-TEST(algebra, bigint)
++void test_bigint()
+ {
+-    static_assert(ULONG_MAX == 0xFFFFFFFFFFFFFFFFul, "unsigned long not 64-bit");
++    static_assert(UINT64_MAX == 0xFFFFFFFFFFFFFFFFul, "uint64_t not 64-bit");
+     static_assert(GMP_NUMB_BITS == 64, "GMP limb not 64-bit");
+ 
+     const char *b1_decimal = "76749407";
+@@ -22,76 +20,88 @@ TEST(algebra, bigint)
+     const char *b2_binary = "0000000000000000000000000000010101111101101000000110100001011010"
+                             "1101101010001001000001101000101000100110011001110001111110100010";
+ 
+-    bigint<1> b0 = bigint<1>(0ul);
++    bigint<1> b0 = bigint<1>(UINT64_C(0));
+     bigint<1> b1 = bigint<1>(b1_decimal);
+     bigint<2> b2 = bigint<2>(b2_decimal);
+ 
+-    EXPECT_EQ(b0.as_ulong(), 0ul);
+-    EXPECT_TRUE(b0.is_zero());
+-    EXPECT_EQ(b1.as_ulong(), 76749407ul);
+-    EXPECT_FALSE(b1.is_zero());
+-    EXPECT_EQ(b2.as_ulong(), 15747124762497195938ul);
+-    EXPECT_FALSE(b2.is_zero());
+-    EXPECT_NE(b0, b1);
+-    EXPECT_FALSE(b0 == b1);
+-
+-    EXPECT_EQ(b2.max_bits(), 128);
+-    EXPECT_EQ(b2.num_bits(), 99);
++    assert(b0.as_ulong() == UINT64_C(0));
++    assert(b0.is_zero());
++    assert(b1.as_ulong() == UINT64_C(76749407));
++    assert(!(b1.is_zero()));
++    assert(b2.as_ulong() == UINT64_C(15747124762497195938));
++    assert(!(b2.is_zero()));
++    assert(b0 != b1);
++    assert(!(b0 == b1));
++
++    assert(b2.max_bits() == 128);
++    assert(b2.num_bits() == 99);
+     for (size_t i = 0; i < 128; i++) {
+-        EXPECT_EQ(b2.test_bit(i), (b2_binary[127-i] == '1'));
++        assert(b2.test_bit(i) == (b2_binary[127-i] == '1'));
+     }
+ 
+     bigint<3> b3 = b2 * b1;
+ 
+-    EXPECT_EQ(b3, bigint<3>(b3_decimal));
+-    EXPECT_FALSE(b3.is_zero());
++    assert(b3 == bigint<3>(b3_decimal));
++    assert(!(b3.is_zero()));
+ 
+     bigint<3> b3a { b3 };
+-    EXPECT_EQ(b3a, bigint<3>(b3_decimal));
+-    EXPECT_EQ(b3a, b3);
+-    EXPECT_FALSE(b3a.is_zero());
++    assert(b3a == bigint<3>(b3_decimal));
++    assert(b3a == b3);
++    assert(!(b3a.is_zero()));
+ 
+     mpz_t m3;
+     mpz_init(m3);
+     b3.to_mpz(m3);
+     bigint<3> b3b { m3 };
+-    EXPECT_EQ(b3b, b3);
++    assert(b3b == b3);
+ 
+     bigint<2> quotient;
+     bigint<2> remainder;
+     bigint<3>::div_qr(quotient, remainder, b3, b2);
+-    EXPECT_LT(quotient.num_bits(), GMP_NUMB_BITS);
+-    EXPECT_EQ(quotient.as_ulong(), b1.as_ulong());
++    assert(quotient.num_bits() < GMP_NUMB_BITS);
++    assert(quotient.as_ulong() == b1.as_ulong());
+     bigint<1> b1inc = bigint<1>("76749408");
+     bigint<1> b1a = quotient.shorten(b1inc, "test");
+-    EXPECT_EQ(b1a, b1);
+-    EXPECT_TRUE(remainder.is_zero());
++    assert(b1a == b1);
++    assert(remainder.is_zero());
+     remainder.limit(b2, "test");
+ 
+-    EXPECT_THROW((void)(quotient.shorten(b1, "test")), std::domain_error);
+-    EXPECT_THROW(remainder.limit(remainder, "test"), std::domain_error);
++    try {
++        (void)(quotient.shorten(b1, "test"));
++        assert(false);
++    } catch (std::domain_error) {}
++    try {
++        remainder.limit(remainder, "test");
++        assert(false);
++    } catch (std::domain_error) {}
+ 
+     bigint<1> br = bigint<1>("42");
+     b3 += br;
+-    EXPECT_NE(b3, b3a);
+-    EXPECT_GT(b3, b3a);
+-    EXPECT_FALSE(b3a > b3);
++    assert(b3 != b3a);
++    assert(b3 > b3a);
++    assert(!(b3a > b3));
+ 
+     bigint<3>::div_qr(quotient, remainder, b3, b2);
+-    EXPECT_LT(quotient.num_bits(), GMP_NUMB_BITS);
+-    EXPECT_EQ(quotient.as_ulong(), b1.as_ulong());
+-    EXPECT_LT(remainder.num_bits(), GMP_NUMB_BITS);
+-    EXPECT_EQ(remainder.as_ulong(), 42);
++    assert(quotient.num_bits() < GMP_NUMB_BITS);
++    assert(quotient.as_ulong() == b1.as_ulong());
++    assert(remainder.num_bits() < GMP_NUMB_BITS);
++    assert(remainder.as_ulong() == 42);
+ 
+     b3a.clear();
+-    EXPECT_TRUE(b3a.is_zero());
+-    EXPECT_EQ(b3a.num_bits(), 0);
+-    EXPECT_FALSE(b3.is_zero());
++    assert(b3a.is_zero());
++    assert(b3a.num_bits() == 0);
++    assert(!(b3.is_zero()));
+ 
+     bigint<4> bx = bigint<4>().randomize();
+     bigint<4> by = bigint<4>().randomize();
+-    EXPECT_FALSE(bx == by);
++    assert(!(bx == by));
+ 
+     // TODO: test serialization
+ }
+ 
++int main(void)
++{
++    test_bigint();
++    return 0;
++}
++
+diff --git a/src/snark/src/algebra/fields/tests/test_fields.cpp b/src/snark/src/algebra/fields/tests/test_fields.cpp
+index 969800d..a05f601 100644
+--- a/src/snark/src/algebra/fields/tests/test_fields.cpp
++++ b/src/snark/src/algebra/fields/tests/test_fields.cpp
+@@ -5,6 +5,9 @@
+  * @copyright  MIT license (see LICENSE file)
+  *****************************************************************************/
+ #include "common/profiling.hpp"
++#include "algebra/curves/edwards/edwards_pp.hpp"
++#include "algebra/curves/mnt/mnt4/mnt4_pp.hpp"
++#include "algebra/curves/mnt/mnt6/mnt6_pp.hpp"
+ #ifdef CURVE_BN128
+ #include "algebra/curves/bn128/bn128_pp.hpp"
+ #endif
+@@ -12,8 +15,6 @@
+ #include "algebra/fields/fp6_3over2.hpp"
+ #include "algebra/fields/fp12_2over3over2.hpp"
+ 
+-#include <gtest/gtest.h>
+-
+ using namespace libsnark;
+ 
+ template<typename FieldT>
+@@ -28,25 +29,25 @@ void test_field()
+     FieldT a = FieldT::random_element();
+     FieldT a_ser;
+     a_ser = reserialize<FieldT>(a);
+-    EXPECT_EQ(a_ser, a);
++    assert(a_ser == a);
+ 
+     FieldT b = FieldT::random_element();
+     FieldT c = FieldT::random_element();
+     FieldT d = FieldT::random_element();
+ 
+-    EXPECT_NE(a, zero);
+-    EXPECT_NE(a, one);
++    assert(a != zero);
++    assert(a != one);
+ 
+-    EXPECT_EQ(a * a, a.squared());
+-    EXPECT_EQ((a + b).squared(), a.squared() + a*b + b*a + b.squared());
+-    EXPECT_EQ((a + b)*(c + d), a*c + a*d + b*c + b*d);
+-    EXPECT_EQ(a - b, a + (-b));
+-    EXPECT_EQ(a - b, (-b) + a);
++    assert(a * a == a.squared());
++    assert((a + b).squared() == a.squared() + a*b + b*a + b.squared());
++    assert((a + b)*(c + d) == a*c + a*d + b*c + b*d);
++    assert(a - b == a + (-b));
++    assert(a - b == (-b) + a);
+ 
+-    EXPECT_EQ((a ^ rand1) * (a ^ rand2), (a^randsum));
++    assert((a ^ rand1) * (a ^ rand2) == (a^randsum));
+ 
+-    EXPECT_EQ(a * a.inverse(), one);
+-    EXPECT_EQ((a + b) * c.inverse(), a * c.inverse() + (b.inverse() * c).inverse());
++    assert(a * a.inverse() == one);
++    assert((a + b) * c.inverse() == a * c.inverse() + (b.inverse() * c).inverse());
+ 
+ }
+ 
+@@ -57,7 +58,7 @@ void test_sqrt()
+     {
+         FieldT a = FieldT::random_element();
+         FieldT asq = a.squared();
+-        EXPECT_TRUE(asq.sqrt() == a || asq.sqrt() == -a);
++        assert(asq.sqrt() == a || asq.sqrt() == -a);
+     }
+ }
+ 
+@@ -65,21 +66,21 @@ template<typename FieldT>
+ void test_two_squarings()
+ {
+     FieldT a = FieldT::random_element();
+-    EXPECT_EQ(a.squared(), a * a);
+-    EXPECT_EQ(a.squared(), a.squared_complex());
+-    EXPECT_EQ(a.squared(), a.squared_karatsuba());
++    assert(a.squared() == a * a);
++    assert(a.squared() == a.squared_complex());
++    assert(a.squared() == a.squared_karatsuba());
+ }
+ 
+ template<typename FieldT>
+ void test_Frobenius()
+ {
+     FieldT a = FieldT::random_element();
+-    EXPECT_EQ(a.Frobenius_map(0), a);
++    assert(a.Frobenius_map(0) == a);
+     FieldT a_q = a ^ FieldT::base_field_char();
+     for (size_t power = 1; power < 10; ++power)
+     {
+         const FieldT a_qi = a.Frobenius_map(power);
+-        EXPECT_EQ(a_qi, a_q);
++        assert(a_qi == a_q);
+ 
+         a_q = a_q ^ FieldT::base_field_char();
+     }
+@@ -88,10 +89,49 @@ void test_Frobenius()
+ template<typename FieldT>
+ void test_unitary_inverse()
+ {
+-    EXPECT_EQ(FieldT::extension_degree() % 2, 0);
++    assert(FieldT::extension_degree() % 2 == 0);
+     FieldT a = FieldT::random_element();
+     FieldT aqcubed_minus1 = a.Frobenius_map(FieldT::extension_degree()/2) * a.inverse();
+-    EXPECT_EQ(aqcubed_minus1.inverse(), aqcubed_minus1.unitary_inverse());
++    assert(aqcubed_minus1.inverse() == aqcubed_minus1.unitary_inverse());
++}
++
++template<typename FieldT>
++void test_cyclotomic_squaring();
++
++template<>
++void test_cyclotomic_squaring<Fqk<edwards_pp> >()
++{
++    typedef Fqk<edwards_pp> FieldT;
++    assert(FieldT::extension_degree() % 2 == 0);
++    FieldT a = FieldT::random_element();
++    FieldT a_unitary = a.Frobenius_map(FieldT::extension_degree()/2) * a.inverse();
++    // beta = a^((q^(k/2)-1)*(q+1))
++    FieldT beta = a_unitary.Frobenius_map(1) * a_unitary;
++    assert(beta.cyclotomic_squared() == beta.squared());
++}
++
++template<>
++void test_cyclotomic_squaring<Fqk<mnt4_pp> >()
++{
++    typedef Fqk<mnt4_pp> FieldT;
++    assert(FieldT::extension_degree() % 2 == 0);
++    FieldT a = FieldT::random_element();
++    FieldT a_unitary = a.Frobenius_map(FieldT::extension_degree()/2) * a.inverse();
++    // beta = a^(q^(k/2)-1)
++    FieldT beta = a_unitary;
++    assert(beta.cyclotomic_squared() == beta.squared());
++}
++
++template<>
++void test_cyclotomic_squaring<Fqk<mnt6_pp> >()
++{
++    typedef Fqk<mnt6_pp> FieldT;
++    assert(FieldT::extension_degree() % 2 == 0);
++    FieldT a = FieldT::random_element();
++    FieldT a_unitary = a.Frobenius_map(FieldT::extension_degree()/2) * a.inverse();
++    // beta = a^((q^(k/2)-1)*(q+1))
++    FieldT beta = a_unitary.Frobenius_map(1) * a_unitary;
++    assert(beta.cyclotomic_squared() == beta.squared());
+ }
+ 
+ template<typename ppT>
+@@ -157,16 +197,16 @@ void test_Fp4_tom_cook()
+         c2 = - (FieldT(5)*(FieldT(4).inverse()))* v0 + (FieldT(2)*(FieldT(3).inverse()))*(v1 + v2) - FieldT(24).inverse()*(v3 + v4) + FieldT(4)*v6 + beta*v6;
+         c3 = FieldT(12).inverse() * (FieldT(5)*v0 - FieldT(7)*v1) - FieldT(24).inverse()*(v2 - FieldT(7)*v3 + v4 + v5) + FieldT(15)*v6;
+ 
+-        EXPECT_EQ(res, correct_res);
++        assert(res == correct_res);
+ 
+         // {v0, v3, v4, v5}
+         const FieldT u = (FieldT::one() - beta).inverse();
+-        EXPECT_EQ(v0, u * c0 + beta * u * c2 - beta * u * FieldT(2).inverse() * v1 - beta * u * FieldT(2).inverse() * v2 + beta * v6);
+-        EXPECT_EQ(v3, - FieldT(15) * u * c0 - FieldT(30) * u * c1 - FieldT(3) * (FieldT(4) + beta) * u * c2 - FieldT(6) * (FieldT(4) + beta) * u * c3 + (FieldT(24) - FieldT(3) * beta * FieldT(2).inverse()) * u * v1 + (-FieldT(8) + beta * FieldT(2).inverse()) * u * v2
++        assert(v0 == u * c0 + beta * u * c2 - beta * u * FieldT(2).inverse() * v1 - beta * u * FieldT(2).inverse() * v2 + beta * v6);
++        assert(v3 == - FieldT(15) * u * c0 - FieldT(30) * u * c1 - FieldT(3) * (FieldT(4) + beta) * u * c2 - FieldT(6) * (FieldT(4) + beta) * u * c3 + (FieldT(24) - FieldT(3) * beta * FieldT(2).inverse()) * u * v1 + (-FieldT(8) + beta * FieldT(2).inverse()) * u * v2
+                - FieldT(3) * (-FieldT(16) + beta) * v6);
+-        EXPECT_EQ(v4, - FieldT(15) * u * c0 + FieldT(30) * u * c1 - FieldT(3) * (FieldT(4) + beta) * u * c2 + FieldT(6) * (FieldT(4) + beta) * u * c3 + (FieldT(24) - FieldT(3) * beta * FieldT(2).inverse()) * u * v2 + (-FieldT(8) + beta * FieldT(2).inverse()) * u * v1
++        assert(v4 == - FieldT(15) * u * c0 + FieldT(30) * u * c1 - FieldT(3) * (FieldT(4) + beta) * u * c2 + FieldT(6) * (FieldT(4) + beta) * u * c3 + (FieldT(24) - FieldT(3) * beta * FieldT(2).inverse()) * u * v2 + (-FieldT(8) + beta * FieldT(2).inverse()) * u * v1
+                - FieldT(3) * (-FieldT(16) + beta) * v6);
+-        EXPECT_EQ(v5, - FieldT(80) * u * c0 - FieldT(240) * u * c1 - FieldT(8) * (FieldT(9) + beta) * u * c2 - FieldT(24) * (FieldT(9) + beta) * u * c3 - FieldT(2) * (-FieldT(81) + beta) * u * v1 + (-FieldT(81) + beta) * u * v2
++        assert(v5 == - FieldT(80) * u * c0 - FieldT(240) * u * c1 - FieldT(8) * (FieldT(9) + beta) * u * c2 - FieldT(24) * (FieldT(9) + beta) * u * c3 - FieldT(2) * (-FieldT(81) + beta) * u * v1 + (-FieldT(81) + beta) * u * v2
+                - FieldT(8) * (-FieldT(81) + beta) * v6);
+ 
+         // c0 + beta c2 - (beta v1)/2 - (beta v2)/ 2 - (-1 + beta) beta v6,
+@@ -176,8 +216,22 @@ void test_Fp4_tom_cook()
+     }
+ }
+ 
+-TEST(algebra, fields)
++int main(void)
+ {
++    edwards_pp::init_public_params();
++    test_all_fields<edwards_pp>();
++    test_cyclotomic_squaring<Fqk<edwards_pp> >();
++
++    mnt4_pp::init_public_params();
++    test_all_fields<mnt4_pp>();
++    test_Fp4_tom_cook<mnt4_Fq4>();
++    test_two_squarings<Fqe<mnt4_pp> >();
++    test_cyclotomic_squaring<Fqk<mnt4_pp> >();
++
++    mnt6_pp::init_public_params();
++    test_all_fields<mnt6_pp>();
++    test_cyclotomic_squaring<Fqk<mnt6_pp> >();
++
+     alt_bn128_pp::init_public_params();
+     test_field<alt_bn128_Fq6>();
+     test_Frobenius<alt_bn128_Fq6>();
+diff --git a/src/snark/src/algebra/scalar_multiplication/kc_multiexp.tcc b/src/snark/src/algebra/scalar_multiplication/kc_multiexp.tcc
+index e9c08d4..6052033 100644
+--- a/src/snark/src/algebra/scalar_multiplication/kc_multiexp.tcc
++++ b/src/snark/src/algebra/scalar_multiplication/kc_multiexp.tcc
+@@ -8,6 +8,8 @@
+ #ifndef KC_MULTIEXP_TCC_
+ #define KC_MULTIEXP_TCC_
+ 
++#include "common/assert_except.hpp"
++
+ namespace libsnark {
+ 
+ template<typename T1, typename T2, mp_size_t n>
+@@ -50,7 +52,7 @@ knowledge_commitment<T1, T2> kc_multi_exp_with_mixed_addition(const knowledge_co
+     while (index_it != vec.indices.end() && *index_it < max_idx)
+     {
+         const size_t scalar_position = (*index_it) - min_idx;
+-        assert(scalar_position < scalar_length);
++        assert_except(scalar_position < scalar_length);
+ 
+         const FieldT scalar = *(scalar_start + scalar_position);
+ 
+diff --git a/src/snark/src/algebra/scalar_multiplication/multiexp.tcc b/src/snark/src/algebra/scalar_multiplication/multiexp.tcc
+index a6b14c4..5dd19a6 100644
+--- a/src/snark/src/algebra/scalar_multiplication/multiexp.tcc
++++ b/src/snark/src/algebra/scalar_multiplication/multiexp.tcc
+@@ -22,6 +22,7 @@
+ 
+ #include "common/profiling.hpp"
+ #include "common/utils.hpp"
++#include "common/assert_except.hpp"
+ #include "algebra/scalar_multiplication/wnaf.hpp"
+ 
+ namespace libsnark {
+@@ -40,7 +41,7 @@ public:
+ #if defined(__x86_64__) && defined(USE_ASM)
+         if (n == 3)
+         {
+-            long res;
++            int64_t res;
+             __asm__
+                 ("// check for overflow           \n\t"
+                  "mov $0, %[res]                  \n\t"
+@@ -58,7 +59,7 @@ public:
+         }
+         else if (n == 4)
+         {
+-            long res;
++            int64_t res;
+             __asm__
+                 ("// check for overflow           \n\t"
+                  "mov $0, %[res]                  \n\t"
+@@ -77,7 +78,7 @@ public:
+         }
+         else if (n == 5)
+         {
+-            long res;
++            int64_t res;
+             __asm__
+                 ("// check for overflow           \n\t"
+                  "mov $0, %[res]                  \n\t"
+@@ -119,7 +120,7 @@ T naive_exp(typename std::vector<T>::const_iterator vec_start,
+         bigint<FieldT::num_limbs> scalar_bigint = scalar_it->as_bigint();
+         result = result + opt_window_wnaf_exp(*vec_it, scalar_bigint, scalar_bigint.num_bits());
+     }
+-    assert(scalar_it == scalar_end);
++    assert_except(scalar_it == scalar_end);
+ 
+     return result;
+ }
+@@ -139,7 +140,7 @@ T naive_plain_exp(typename std::vector<T>::const_iterator vec_start,
+     {
+         result = result + (*scalar_it) * (*vec_it);
+     }
+-    assert(scalar_it == scalar_end);
++    assert_except(scalar_it == scalar_end);
+ 
+     return result;
+ }
+@@ -185,15 +186,15 @@ T multi_exp_inner(typename std::vector<T>::const_iterator vec_start,
+         opt_q.emplace_back(ordered_exponent<n>(i, scalar_it->as_bigint()));
+     }
+     std::make_heap(opt_q.begin(),opt_q.end());
+-    assert(scalar_it == scalar_end);
++    assert_except(scalar_it == scalar_end);
+ 
+     if (vec_len != odd_vec_len)
+     {
+         g.emplace_back(T::zero());
+-        opt_q.emplace_back(ordered_exponent<n>(odd_vec_len - 1, bigint<n>(0ul)));
++        opt_q.emplace_back(ordered_exponent<n>(odd_vec_len - 1, bigint<n>(UINT64_C(0))));
+     }
+-    assert(g.size() % 2 == 1);
+-    assert(opt_q.size() == g.size());
++    assert_except(g.size() % 2 == 1);
++    assert_except(opt_q.size() == g.size());
+ 
+     T opt_result = T::zero();
+ 
+@@ -214,7 +215,7 @@ T multi_exp_inner(typename std::vector<T>::const_iterator vec_start,
+         const size_t bbits = b.r.num_bits();
+         const size_t limit = (abits-bbits >= 20 ? 20 : abits-bbits);
+ 
+-        if (bbits < 1ul<<limit)
++        if (bbits < UINT64_C(1)<<limit)
+         {
+             /*
+               In this case, exponentiating to the power of a is cheaper than
+@@ -329,7 +330,7 @@ T multi_exp_with_mixed_addition(typename std::vector<T>::const_iterator vec_star
+                                 const size_t chunks,
+                                 const bool use_multiexp)
+ {
+-    assert(std::distance(vec_start, vec_end) == std::distance(scalar_start, scalar_end));
++    assert_except(std::distance(vec_start, vec_end) == std::distance(scalar_start, scalar_end));
+     enter_block("Process scalar vector");
+     auto value_it = vec_start;
+     auto scalar_it = scalar_start;
+@@ -389,7 +390,7 @@ size_t get_exp_window_size(const size_t num_scalars)
+ #endif
+     }
+     size_t window = 1;
+-    for (long i = T::fixed_base_exp_window_table.size()-1; i >= 0; --i)
++    for (int64_t i = T::fixed_base_exp_window_table.size()-1; i >= 0; --i)
+     {
+ #ifdef DEBUG
+         if (!inhibit_profiling_info)
+@@ -420,9 +421,9 @@ window_table<T> get_window_table(const size_t scalar_size,
+                                  const size_t window,
+                                  const T &g)
+ {
+-    const size_t in_window = 1ul<<window;
++    const size_t in_window = UINT64_C(1)<<window;
+     const size_t outerc = (scalar_size+window-1)/window;
+-    const size_t last_in_window = 1ul<<(scalar_size - (outerc-1)*window);
++    const size_t last_in_window = UINT64_C(1)<<(scalar_size - (outerc-1)*window);
+ #ifdef DEBUG
+     if (!inhibit_profiling_info)
+     {
+diff --git a/src/snark/src/algebra/scalar_multiplication/wnaf.hpp b/src/snark/src/algebra/scalar_multiplication/wnaf.hpp
+index a7ecd59..d6c4326 100644
+--- a/src/snark/src/algebra/scalar_multiplication/wnaf.hpp
++++ b/src/snark/src/algebra/scalar_multiplication/wnaf.hpp
+@@ -18,7 +18,7 @@ namespace libsnark {
+  * Find the wNAF representation of the given scalar relative to the given window size.
+  */
+ template<mp_size_t n>
+-std::vector<long> find_wnaf(const size_t window_size, const bigint<n> &scalar);
++std::vector<int64_t> find_wnaf(const size_t window_size, const bigint<n> &scalar);
+ 
+ /**
+  * In additive notation, use wNAF exponentiation (with the given window size) to compute scalar * base.
+diff --git a/src/snark/src/algebra/scalar_multiplication/wnaf.tcc b/src/snark/src/algebra/scalar_multiplication/wnaf.tcc
+index a5e47e8..4f2e407 100644
+--- a/src/snark/src/algebra/scalar_multiplication/wnaf.tcc
++++ b/src/snark/src/algebra/scalar_multiplication/wnaf.tcc
+@@ -17,15 +17,15 @@
+ namespace libsnark {
+ 
+ template<mp_size_t n>
+-std::vector<long> find_wnaf(const size_t window_size, const bigint<n> &scalar)
++std::vector<int64_t> find_wnaf(const size_t window_size, const bigint<n> &scalar)
+ {
+     const size_t length = scalar.max_bits(); // upper bound
+-    std::vector<long> res(length+1);
++    std::vector<int64_t> res(length+1);
+     bigint<n> c = scalar;
+-    long j = 0;
++    int64_t j = 0;
+     while (!c.is_zero())
+     {
+-        long u;
++        int64_t u;
+         if ((c.data[0] & 1) == 1)
+         {
+             u = c.data[0] % (1u << (window_size+1));
+@@ -59,11 +59,11 @@ std::vector<long> find_wnaf(const size_t window_size, const bigint<n> &scalar)
+ template<typename T, mp_size_t n>
+ T fixed_window_wnaf_exp(const size_t window_size, const T &base, const bigint<n> &scalar)
+ {
+-    std::vector<long> naf = find_wnaf(window_size, scalar);
+-    std::vector<T> table(1ul<<(window_size-1));
++    std::vector<int64_t> naf = find_wnaf(window_size, scalar);
++    std::vector<T> table(UINT64_C(1)<<(window_size-1));
+     T tmp = base;
+     T dbl = base.dbl();
+-    for (size_t i = 0; i < 1ul<<(window_size-1); ++i)
++    for (size_t i = 0; i < UINT64_C(1)<<(window_size-1); ++i)
+     {
+         table[i] = tmp;
+         tmp = tmp + dbl;
+@@ -71,7 +71,7 @@ T fixed_window_wnaf_exp(const size_t window_size, const T &base, const bigint<n>
+ 
+     T res = T::zero();
+     bool found_nonzero = false;
+-    for (long i = naf.size()-1; i >= 0; --i)
++    for (int64_t i = naf.size()-1; i >= 0; --i)
+     {
+         if (found_nonzero)
+         {
+@@ -99,7 +99,7 @@ template<typename T, mp_size_t n>
+ T opt_window_wnaf_exp(const T &base, const bigint<n> &scalar, const size_t scalar_bits)
+ {
+     size_t best = 0;
+-    for (long i = T::wnaf_window_table.size() - 1; i >= 0; --i)
++    for (int64_t i = T::wnaf_window_table.size() - 1; i >= 0; --i)
+     {
+         if (scalar_bits >= T::wnaf_window_table[i])
+         {
+diff --git a/src/snark/src/common/data_structures/merkle_tree.tcc b/src/snark/src/common/data_structures/merkle_tree.tcc
+index 281700b..ce28b12 100644
+--- a/src/snark/src/common/data_structures/merkle_tree.tcc
++++ b/src/snark/src/common/data_structures/merkle_tree.tcc
+@@ -66,14 +66,14 @@ merkle_tree<HashT>::merkle_tree(const size_t depth,
+     assert(log2(contents_as_vector.size()) <= depth);
+     for (size_t address = 0; address < contents_as_vector.size(); ++address)
+     {
+-        const size_t idx = address + (1ul<<depth) - 1;
++        const size_t idx = address + (UINT64_C(1)<<depth) - 1;
+         values[idx] = contents_as_vector[address];
+         hashes[idx] = contents_as_vector[address];
+         hashes[idx].resize(digest_size);
+     }
+ 
+-    size_t idx_begin = (1ul<<depth) - 1;
+-    size_t idx_end = contents_as_vector.size() + ((1ul<<depth) - 1);
++    size_t idx_begin = (UINT64_C(1)<<depth) - 1;
++    size_t idx_end = contents_as_vector.size() + ((UINT64_C(1)<<depth) - 1);
+ 
+     for (int layer = depth; layer > 0; --layer)
+     {
+@@ -100,13 +100,13 @@ merkle_tree<HashT>::merkle_tree(const size_t depth,
+ 
+     if (!contents.empty())
+     {
+-        assert(contents.rbegin()->first < 1ul<<depth);
++        assert(contents.rbegin()->first < UINT64_C(1)<<depth);
+ 
+         for (auto it = contents.begin(); it != contents.end(); ++it)
+         {
+             const size_t address = it->first;
+             const bit_vector value = it->second;
+-            const size_t idx = address + (1ul<<depth) - 1;
++            const size_t idx = address + (UINT64_C(1)<<depth) - 1;
+ 
+             values[address] = value;
+             hashes[idx] = value;
+@@ -167,7 +167,7 @@ void merkle_tree<HashT>::set_value(const size_t address,
+                                    const bit_vector &value)
+ {
+     assert(log2(address) <= depth);
+-    size_t idx = address + (1ul<<depth) - 1;
++    size_t idx = address + (UINT64_C(1)<<depth) - 1;
+ 
+     assert(value.size() == value_size);
+     values[address] = value;
+@@ -201,7 +201,7 @@ typename HashT::merkle_authentication_path_type merkle_tree<HashT>::get_path(con
+ {
+     typename HashT::merkle_authentication_path_type result(depth);
+     assert(log2(address) <= depth);
+-    size_t idx = address + (1ul<<depth) - 1;
++    size_t idx = address + (UINT64_C(1)<<depth) - 1;
+ 
+     for (size_t layer = depth; layer > 0; --layer)
+     {
+@@ -209,7 +209,7 @@ typename HashT::merkle_authentication_path_type merkle_tree<HashT>::get_path(con
+         auto it = hashes.find(sibling_idx);
+         if (layer == depth)
+         {
+-            auto it2 = values.find(sibling_idx - ((1ul<<depth) - 1));
++            auto it2 = values.find(sibling_idx - ((UINT64_C(1)<<depth) - 1));
+             result[layer-1] = (it2 == values.end() ? bit_vector(value_size, false) : it2->second);
+             result[layer-1].resize(digest_size);
+         }
+@@ -227,7 +227,7 @@ typename HashT::merkle_authentication_path_type merkle_tree<HashT>::get_path(con
+ template<typename HashT>
+ void merkle_tree<HashT>::dump() const
+ {
+-    for (size_t i = 0; i < 1ul<<depth; ++i)
++    for (size_t i = 0; i < UINT64_C(1)<<depth; ++i)
+     {
+         auto it = values.find(i);
+         printf("[%zu] -> ", i);
+diff --git a/src/snark/src/common/data_structures/sparse_vector.hpp b/src/snark/src/common/data_structures/sparse_vector.hpp
+index 8b134f4..20f1bc2 100644
+--- a/src/snark/src/common/data_structures/sparse_vector.hpp
++++ b/src/snark/src/common/data_structures/sparse_vector.hpp
+@@ -32,9 +32,9 @@ std::istream& operator>>(std::istream &in, sparse_vector<T> &v);
+ template<typename T>
+ struct sparse_vector {
+ 
+-    std::vector<size_t> indices;
++    std::vector<uint64_t> indices;
+     std::vector<T> values;
+-    size_t domain_size_ = 0;
++    uint64_t domain_size_ = 0;
+ 
+     sparse_vector() = default;
+     sparse_vector(const sparse_vector<T> &other) = default;
+@@ -44,7 +44,7 @@ struct sparse_vector {
+     sparse_vector<T>& operator=(const sparse_vector<T> &other) = default;
+     sparse_vector<T>& operator=(sparse_vector<T> &&other) = default;
+ 
+-    T operator[](const size_t idx) const;
++    T operator[](const uint64_t idx) const;
+ 
+     bool operator==(const sparse_vector<T> &other) const;
+     bool operator==(const std::vector<T> &other) const;
+@@ -52,15 +52,15 @@ struct sparse_vector {
+     bool is_valid() const;
+     bool empty() const;
+ 
+-    size_t domain_size() const; // return domain_size_
+-    size_t size() const; // return the number of indices (representing the number of non-zero entries)
+-    size_t size_in_bits() const; // return the number bits needed to store the sparse vector
++    uint64_t domain_size() const; // return domain_size_
++    uint64_t size() const; // return the number of indices (representing the number of non-zero entries)
++    uint64_t size_in_bits() const; // return the number bits needed to store the sparse vector
+ 
+     /* return a pair consisting of the accumulated value and the sparse vector of non-accumuated values */
+     template<typename FieldT>
+     std::pair<T, sparse_vector<T> > accumulate(const typename std::vector<FieldT>::const_iterator &it_begin,
+                                                const typename std::vector<FieldT>::const_iterator &it_end,
+-                                               const size_t offset) const;
++                                               const uint64_t offset) const;
+ 
+     friend std::ostream& operator<< <T>(std::ostream &out, const sparse_vector<T> &v);
+     friend std::istream& operator>> <T>(std::istream &in, sparse_vector<T> &v);
+diff --git a/src/snark/src/common/data_structures/sparse_vector.tcc b/src/snark/src/common/data_structures/sparse_vector.tcc
+index cfc5d75..906ed16 100644
+--- a/src/snark/src/common/data_structures/sparse_vector.tcc
++++ b/src/snark/src/common/data_structures/sparse_vector.tcc
+@@ -29,7 +29,7 @@ sparse_vector<T>::sparse_vector(std::vector<T> &&v) :
+ }
+ 
+ template<typename T>
+-T sparse_vector<T>::operator[](const size_t idx) const
++T sparse_vector<T>::operator[](const uint64_t idx) const
+ {
+     auto it = std::lower_bound(indices.begin(), indices.end(), idx);
+     return (it != indices.end() && *it == idx) ? values[it - indices.begin()] : T();
+@@ -43,7 +43,7 @@ bool sparse_vector<T>::operator==(const sparse_vector<T> &other) const
+         return false;
+     }
+ 
+-    size_t this_pos = 0, other_pos = 0;
++    uint64_t this_pos = 0, other_pos = 0;
+     while (this_pos < this->indices.size() && other_pos < other.indices.size())
+     {
+         if (this->indices[this_pos] == other.indices[other_pos])
+@@ -103,8 +103,8 @@ bool sparse_vector<T>::operator==(const std::vector<T> &other) const
+         return false;
+     }
+ 
+-    size_t j = 0;
+-    for (size_t i = 0; i < other.size(); ++i)
++    uint64_t j = 0;
++    for (uint64_t i = 0; i < other.size(); ++i)
+     {
+         if (this->indices[j] == i)
+         {
+@@ -134,7 +134,7 @@ bool sparse_vector<T>::is_valid() const
+         return false;
+     }
+ 
+-    for (size_t i = 0; i + 1 < indices.size(); ++i)
++    for (uint64_t i = 0; i + 1 < indices.size(); ++i)
+     {
+         if (indices[i] >= indices[i+1])
+         {
+@@ -157,42 +157,42 @@ bool sparse_vector<T>::empty() const
+ }
+ 
+ template<typename T>
+-size_t sparse_vector<T>::domain_size() const
++uint64_t sparse_vector<T>::domain_size() const
+ {
+     return domain_size_;
+ }
+ 
+ template<typename T>
+-size_t sparse_vector<T>::size() const
++uint64_t sparse_vector<T>::size() const
+ {
+     return indices.size();
+ }
+ 
+ template<typename T>
+-size_t sparse_vector<T>::size_in_bits() const
++uint64_t sparse_vector<T>::size_in_bits() const
+ {
+-    return indices.size() * (sizeof(size_t) * 8 + T::size_in_bits());
++    return indices.size() * (sizeof(uint64_t) * 8 + T::size_in_bits());
+ }
+ 
+ template<typename T>
+ template<typename FieldT>
+ std::pair<T, sparse_vector<T> > sparse_vector<T>::accumulate(const typename std::vector<FieldT>::const_iterator &it_begin,
+                                                              const typename std::vector<FieldT>::const_iterator &it_end,
+-                                                             const size_t offset) const
++                                                             const uint64_t offset) const
+ {
+     // TODO: does not really belong here.
+-    const size_t chunks = 1;
++    const uint64_t chunks = 1;
+     const bool use_multiexp = true;
+ 
+     T accumulated_value = T::zero();
+     sparse_vector<T> resulting_vector;
+     resulting_vector.domain_size_ = domain_size_;
+ 
+-    const size_t range_len = it_end - it_begin;
++    const uint64_t range_len = it_end - it_begin;
+     bool in_block = false;
+-    size_t first_pos = -1, last_pos = -1; // g++ -flto emits unitialized warning, even though in_block guards for such cases.
++    uint64_t first_pos = -1, last_pos = -1; // g++ -flto emits unitialized warning, even though in_block guards for such cases.
+ 
+-    for (size_t i = 0; i < indices.size(); ++i)
++    for (uint64_t i = 0; i < indices.size(); ++i)
+     {
+         const bool matching_pos = (offset <= indices[i] && indices[i] < offset + range_len);
+         // printf("i = %zu, pos[i] = %zu, offset = %zu, w_size = %zu\n", i, indices[i], offset, w_size);
+@@ -265,7 +265,7 @@ std::ostream& operator<<(std::ostream& out, const sparse_vector<T> &v)
+ {
+     out << v.domain_size_ << "\n";
+     out << v.indices.size() << "\n";
+-    for (const size_t& i : v.indices)
++    for (const uint64_t& i : v.indices)
+     {
+         out << i << "\n";
+     }
+@@ -285,11 +285,11 @@ std::istream& operator>>(std::istream& in, sparse_vector<T> &v)
+     in >> v.domain_size_;
+     consume_newline(in);
+ 
+-    size_t s;
++    uint64_t s;
+     in >> s;
+     consume_newline(in);
+     v.indices.resize(s);
+-    for (size_t i = 0; i < s; ++i)
++    for (uint64_t i = 0; i < s; ++i)
+     {
+         in >> v.indices[i];
+         consume_newline(in);
+@@ -300,7 +300,7 @@ std::istream& operator>>(std::istream& in, sparse_vector<T> &v)
+     consume_newline(in);
+     v.values.reserve(s);
+ 
+-    for (size_t i = 0; i < s; ++i)
++    for (uint64_t i = 0; i < s; ++i)
+     {
+         T t;
+         in >> t;
+diff --git a/src/snark/src/common/profiling.cpp b/src/snark/src/common/profiling.cpp
+index d227203..e4a2146 100644
+--- a/src/snark/src/common/profiling.cpp
++++ b/src/snark/src/common/profiling.cpp
+@@ -26,27 +26,44 @@
+ #include <proc/readproc.h>
+ #endif
+ 
++#ifdef __MACH__ // required to build on MacOS
++#include <time.h>
++#include <sys/time.h>
++#include <mach/clock.h>
++#include <mach/mach.h>
++#endif
++
+ namespace libsnark {
+ 
+-long long get_nsec_time()
++int64_t get_nsec_time()
+ {
+     auto timepoint = std::chrono::high_resolution_clock::now();
+     return std::chrono::duration_cast<std::chrono::nanoseconds>(timepoint.time_since_epoch()).count();
+ }
+ 
+ /* Return total CPU time consumsed by all threads of the process, in nanoseconds. */
+-long long get_nsec_cpu_time()
++int64_t get_nsec_cpu_time()
+ {
+     ::timespec ts;
++    #ifdef __MACH__
++    clock_serv_t cclock;
++    mach_timespec_t mts;
++    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
++    clock_get_time(cclock, &mts);
++    mach_port_deallocate(mach_task_self(), cclock);
++    ts.tv_sec = mts.tv_sec;
++    ts.tv_nsec = mts.tv_nsec;
++    #else
+     if ( ::clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts) )
+         throw ::std::runtime_error("clock_gettime(CLOCK_PROCESS_CPUTIME_ID) failed");
+         // If we expected this to work, don't silently ignore failures, because that would hide the problem and incur an unnecessarily system-call overhead. So if we ever observe this exception, we should probably add a suitable #ifdef .
+         //TODO: clock_gettime(CLOCK_PROCESS_CPUTIME_ID) is not supported by native Windows. What about Cygwin? Should we #ifdef on CLOCK_PROCESS_CPUTIME_ID or on __linux__?
++    #endif
+     return ts.tv_sec * 1000000000ll + ts.tv_nsec;
+ }
+ 
+-long long start_time, last_time;
+-long long start_cpu_time, last_cpu_time;
++int64_t start_time, last_time;
++int64_t start_cpu_time, last_cpu_time;
+ 
+ void start_profiling()
+ {
+@@ -57,20 +74,20 @@ void start_profiling()
+ }
+ 
+ std::map<std::string, size_t> invocation_counts;
+-std::map<std::string, long long> enter_times;
+-std::map<std::string, long long> last_times;
+-std::map<std::string, long long> cumulative_times;
++std::map<std::string, int64_t> enter_times;
++std::map<std::string, int64_t> last_times;
++std::map<std::string, int64_t> cumulative_times;
+ //TODO: Instead of analogous maps for time and cpu_time, use a single struct-valued map
+-std::map<std::string, long long> enter_cpu_times;
+-std::map<std::string, long long> last_cpu_times;
+-std::map<std::pair<std::string, std::string>, long long> op_counts;
+-std::map<std::pair<std::string, std::string>, long long> cumulative_op_counts; // ((msg, data_point), value)
++std::map<std::string, int64_t> enter_cpu_times;
++std::map<std::string, int64_t> last_cpu_times;
++std::map<std::pair<std::string, std::string>, int64_t> op_counts;
++std::map<std::pair<std::string, std::string>, int64_t> cumulative_op_counts; // ((msg, data_point), value)
+     // TODO: Convert op_counts and cumulative_op_counts from pair to structs
+ size_t indentation = 0;
+ 
+ std::vector<std::string> block_names;
+ 
+-std::list<std::pair<std::string, long long*> > op_data_points = {
++std::list<std::pair<std::string, int64_t*> > op_data_points = {
+ #ifdef PROFILE_OP_COUNTS
+     std::make_pair("Fradd", &Fr<default_ec_pp>::add_cnt),
+     std::make_pair("Frsub", &Fr<default_ec_pp>::sub_cnt),
+@@ -98,7 +115,7 @@ void clear_profiling_counters()
+     cumulative_times.clear();
+ }
+ 
+-void print_cumulative_time_entry(const std::string &key, const long long factor)
++void print_cumulative_time_entry(const std::string &key, const int64_t factor)
+ {
+     const double total_ms = (cumulative_times.at(key) * 1e-6);
+     const size_t cnt = invocation_counts.at(key);
+@@ -106,7 +123,7 @@ void print_cumulative_time_entry(const std::string &key, const long long factor)
+     printf("   %-45s: %12.5fms = %lld * %0.5fms (%zu invocations, %0.5fms = %lld * %0.5fms per invocation)\n", key.c_str(), total_ms, factor, total_ms/factor, cnt, avg_ms, factor, avg_ms/factor);
+ }
+ 
+-void print_cumulative_times(const long long factor)
++void print_cumulative_times(const int64_t factor)
+ {
+     printf("Dumping times:\n");
+     for (auto& kv : cumulative_times)
+@@ -155,7 +172,7 @@ void print_op_profiling(const std::string &msg)
+ 
+     printf("(opcounts) = (");
+     bool first = true;
+-    for (std::pair<std::string, long long*> p : op_data_points)
++    for (std::pair<std::string, int64_t*> p : op_data_points)
+     {
+         if (!first)
+         {
+@@ -171,14 +188,14 @@ void print_op_profiling(const std::string &msg)
+ #endif
+ }
+ 
+-static void print_times_from_last_and_start(long long     now, long long     last,
+-                                            long long cpu_now, long long cpu_last)
++static void print_times_from_last_and_start(int64_t     now, int64_t     last,
++                                            int64_t cpu_now, int64_t cpu_last)
+ {
+-    long long time_from_start = now - start_time;
+-    long long time_from_last = now - last;
++    int64_t time_from_start = now - start_time;
++    int64_t time_from_last = now - last;
+ 
+-    long long cpu_time_from_start = cpu_now - start_cpu_time;
+-    long long cpu_time_from_last = cpu_now - cpu_last;
++    int64_t cpu_time_from_start = cpu_now - start_cpu_time;
++    int64_t cpu_time_from_last = cpu_now - cpu_last;
+ 
+     if (time_from_last != 0) {
+         double parallelism_from_last = 1.0 * cpu_time_from_last / time_from_last;
+@@ -199,8 +216,8 @@ void print_time(const char* msg)
+         return;
+     }
+ 
+-    long long now = get_nsec_time();
+-    long long cpu_now = get_nsec_cpu_time();
++    int64_t now = get_nsec_time();
++    int64_t cpu_now = get_nsec_cpu_time();
+ 
+     printf("%-35s\t", msg);
+     print_times_from_last_and_start(now, last_time, cpu_now, last_cpu_time);
+@@ -231,7 +248,7 @@ void print_indent()
+ 
+ void op_profiling_enter(const std::string &msg)
+ {
+-    for (std::pair<std::string, long long*> p : op_data_points)
++    for (std::pair<std::string, int64_t*> p : op_data_points)
+     {
+         op_counts[std::make_pair(msg, p.first)] = *(p.second);
+     }
+@@ -245,9 +262,9 @@ void enter_block(const std::string &msg, const bool indent)
+     }
+ 
+     block_names.emplace_back(msg);
+-    long long t = get_nsec_time();
++    int64_t t = get_nsec_time();
+     enter_times[msg] = t;
+-    long long cpu_t = get_nsec_cpu_time();
++    int64_t cpu_t = get_nsec_cpu_time();
+     enter_cpu_times[msg] = cpu_t;
+ 
+     if (inhibit_profiling_info)
+@@ -288,15 +305,15 @@ void leave_block(const std::string &msg, const bool indent)
+ 
+     ++invocation_counts[msg];
+ 
+-    long long t = get_nsec_time();
++    int64_t t = get_nsec_time();
+     last_times[msg] = (t - enter_times[msg]);
+     cumulative_times[msg] += (t - enter_times[msg]);
+ 
+-    long long cpu_t = get_nsec_cpu_time();
++    int64_t cpu_t = get_nsec_cpu_time();
+     last_cpu_times[msg] = (cpu_t - enter_cpu_times[msg]);
+ 
+ #ifdef PROFILE_OP_COUNTS
+-    for (std::pair<std::string, long long*> p : op_data_points)
++    for (std::pair<std::string, int64_t*> p : op_data_points)
+     {
+         cumulative_op_counts[std::make_pair(msg, p.first)] += *(p.second)-op_counts[std::make_pair(msg, p.first)];
+     }
+diff --git a/src/snark/src/common/profiling.hpp b/src/snark/src/common/profiling.hpp
+index 9619117..4a49610 100644
+--- a/src/snark/src/common/profiling.hpp
++++ b/src/snark/src/common/profiling.hpp
+@@ -22,7 +22,7 @@
+ namespace libsnark {
+ 
+ void start_profiling();
+-long long get_nsec_time();
++int64_t get_nsec_time();
+ void print_time(const char* msg);
+ void print_header(const char* msg);
+ 
+@@ -31,13 +31,13 @@ void print_indent();
+ extern bool inhibit_profiling_info;
+ extern bool inhibit_profiling_counters;
+ extern std::map<std::string, size_t> invocation_counts;
+-extern std::map<std::string, long long> last_times;
+-extern std::map<std::string, long long> cumulative_times;
++extern std::map<std::string, int64_t> last_times;
++extern std::map<std::string, int64_t> cumulative_times;
+ 
+ void clear_profiling_counters();
+ 
+-void print_cumulative_time_entry(const std::string &key, const long long factor=1);
+-void print_cumulative_times(const long long factor=1);
++void print_cumulative_time_entry(const std::string &key, const int64_t factor=1);
++void print_cumulative_times(const int64_t factor=1);
+ void print_cumulative_op_counts(const bool only_fq=false);
+ 
+ void enter_block(const std::string &msg, const bool indent=true);
+diff --git a/src/snark/src/common/serialization.tcc b/src/snark/src/common/serialization.tcc
+index 398f978..7983c9f 100644
+--- a/src/snark/src/common/serialization.tcc
++++ b/src/snark/src/common/serialization.tcc
+@@ -17,6 +17,7 @@
+ #include <cassert>
+ #include <sstream>
+ #include "common/utils.hpp"
++#include "common/assert_except.hpp"
+ 
+ namespace libsnark {
+ 
+@@ -69,7 +70,7 @@ T reserialize(const T &obj)
+     ss << obj;
+     T tmp;
+     ss >> tmp;
+-    assert(obj == tmp);
++    assert_except(obj == tmp);
+     return tmp;
+ }
+ 
+diff --git a/src/snark/src/common/utils.cpp b/src/snark/src/common/utils.cpp
+index dd114fd..5bcaf82 100644
+--- a/src/snark/src/common/utils.cpp
++++ b/src/snark/src/common/utils.cpp
+@@ -15,11 +15,11 @@
+ 
+ namespace libsnark {
+ 
+-size_t log2(size_t n)
++uint64_t log2(uint64_t n)
+ /* returns ceil(log2(n)), so 1ul<<log2(n) is the smallest power of 2,
+    that is not less than n. */
+ {
+-    size_t r = ((n & (n-1)) == 0 ? 0 : 1); // add 1 if n is not power of 2
++    uint64_t r = ((n & (n-1)) == 0 ? 0 : 1); // add 1 if n is not power of 2
+ 
+     while (n > 1)
+     {
+@@ -30,10 +30,10 @@ size_t log2(size_t n)
+     return r;
+ }
+ 
+-size_t bitreverse(size_t n, const size_t l)
++uint64_t bitreverse(uint64_t n, const uint64_t l)
+ {
+-    size_t r = 0;
+-    for (size_t k = 0; k < l; ++k)
++    uint64_t r = 0;
++    for (uint64_t k = 0; k < l; ++k)
+     {
+         r = (r << 1) | (n & 1);
+         n >>= 1;
+@@ -41,20 +41,20 @@ size_t bitreverse(size_t n, const size_t l)
+     return r;
+ }
+ 
+-bit_vector int_list_to_bits(const std::initializer_list<unsigned long> &l, const size_t wordsize)
++bit_vector int_list_to_bits(const std::initializer_list<uint64_t> &l, const size_t wordsize)
+ {
+     bit_vector res(wordsize*l.size());
+-    for (size_t i = 0; i < l.size(); ++i)
++    for (uint64_t i = 0; i < l.size(); ++i)
+     {
+-        for (size_t j = 0; j < wordsize; ++j)
++        for (uint64_t j = 0; j < wordsize; ++j)
+         {
+-            res[i*wordsize + j] = (*(l.begin()+i) & (1ul<<(wordsize-1-j)));
++            res[i*wordsize + j] = (*(l.begin()+i) & (UINT64_C(1)<<(wordsize-1-j)));
+         }
+     }
+     return res;
+ }
+ 
+-long long div_ceil(long long x, long long y)
++int64_t div_ceil(int64_t x, int64_t y)
+ {
+     return (x + (y-1)) / y;
+ }
+@@ -68,7 +68,7 @@ bool is_little_endian()
+ 
+ std::string FORMAT(const std::string &prefix, const char* format, ...)
+ {
+-    const static size_t MAX_FMT = 256;
++    const static uint64_t MAX_FMT = 256;
+     char buf[MAX_FMT];
+     va_list args;
+     va_start(args, format);
+@@ -81,7 +81,7 @@ std::string FORMAT(const std::string &prefix, const char* format, ...)
+ void serialize_bit_vector(std::ostream &out, const bit_vector &v)
+ {
+     out << v.size() << "\n";
+-    for (size_t i = 0; i < v.size(); ++i)
++    for (uint64_t i = 0; i < v.size(); ++i)
+     {
+         out << v[i] << "\n";
+     }
+@@ -89,10 +89,10 @@ void serialize_bit_vector(std::ostream &out, const bit_vector &v)
+ 
+ void deserialize_bit_vector(std::istream &in, bit_vector &v)
+ {
+-    size_t size;
++    uint64_t size;
+     in >> size;
+     v.resize(size);
+-    for (size_t i = 0; i < size; ++i)
++    for (uint64_t i = 0; i < size; ++i)
+     {
+         bool b;
+         in >> b;
+diff --git a/src/snark/src/common/utils.hpp b/src/snark/src/common/utils.hpp
+index d7d9e89..6879f80 100644
+--- a/src/snark/src/common/utils.hpp
++++ b/src/snark/src/common/utils.hpp
+@@ -21,13 +21,13 @@ namespace libsnark {
+ typedef std::vector<bool> bit_vector;
+ 
+ /// returns ceil(log2(n)), so 1ul<<log2(n) is the smallest power of 2, that is not less than n
+-size_t log2(size_t n);
++uint64_t log2(uint64_t n);
+ 
+-inline size_t exp2(size_t k) { return 1ul << k; }
++inline uint64_t exp2(uint64_t k) { return 1ull << k; }
+ 
+-size_t bitreverse(size_t n, const size_t l);
+-bit_vector int_list_to_bits(const std::initializer_list<unsigned long> &l, const size_t wordsize);
+-long long div_ceil(long long x, long long y);
++uint64_t bitreverse(uint64_t n, const uint64_t l);
++bit_vector int_list_to_bits(const std::initializer_list<uint64_t> &l, const uint64_t wordsize);
++int64_t div_ceil(int64_t x, int64_t y);
+ 
+ bool is_little_endian();
+ 
+@@ -46,8 +46,13 @@ void UNUSED(Types&&...) {}
+ void serialize_bit_vector(std::ostream &out, const bit_vector &v);
+ void deserialize_bit_vector(std::istream &in, bit_vector &v);
+ 
++#ifdef __APPLE__
+ template<typename T>
+-size_t size_in_bits(const std::vector<T> &v);
++unsigned long size_in_bits(const std::vector<T> &v);
++#else
++template<typename T>
++uint64_t size_in_bits(const std::vector<T> &v);
++#endif
+ 
+ #define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
+ 
+diff --git a/src/snark/src/common/utils.tcc b/src/snark/src/common/utils.tcc
+index f97178f..4afdc8b 100644
+--- a/src/snark/src/common/utils.tcc
++++ b/src/snark/src/common/utils.tcc
+@@ -12,11 +12,19 @@
+ 
+ namespace libsnark {
+ 
++#ifdef __APPLE__
++template<typename T>
++unsigned long size_in_bits(const std::vector<T> &v)
++{
++    return v.size() * T::size_in_bits();
++}
++#else
+ template<typename T>
+ size_t size_in_bits(const std::vector<T> &v)
+ {
+     return v.size() * T::size_in_bits();
+ }
++#endif
+ 
+ } // libsnark
+ 
+diff --git a/src/snark/src/gadgetlib1/gadgets/basic_gadgets.tcc b/src/snark/src/gadgetlib1/gadgets/basic_gadgets.tcc
+index 213b190..bcd2f2c 100644
+--- a/src/snark/src/gadgetlib1/gadgets/basic_gadgets.tcc
++++ b/src/snark/src/gadgetlib1/gadgets/basic_gadgets.tcc
+@@ -275,11 +275,11 @@ void test_disjunction_gadget(const size_t n)
+     disjunction_gadget<FieldT> d(pb, inputs, output, "d");
+     d.generate_r1cs_constraints();
+ 
+-    for (size_t w = 0; w < 1ul<<n; ++w)
++    for (size_t w = 0; w < UINT64_C(1)<<n; ++w)
+     {
+         for (size_t j = 0; j < n; ++j)
+         {
+-            pb.val(inputs[j]) = FieldT((w & (1ul<<j)) ? 1 : 0);
++            pb.val(inputs[j]) = FieldT((w & (UINT64_C(1)<<j)) ? 1 : 0);
+         }
+ 
+         d.generate_r1cs_witness();
+@@ -366,11 +366,11 @@ void test_conjunction_gadget(const size_t n)
+     conjunction_gadget<FieldT> c(pb, inputs, output, "c");
+     c.generate_r1cs_constraints();
+ 
+-    for (size_t w = 0; w < 1ul<<n; ++w)
++    for (size_t w = 0; w < UINT64_C(1)<<n; ++w)
+     {
+         for (size_t j = 0; j < n; ++j)
+         {
+-            pb.val(inputs[j]) = (w & (1ul<<j)) ? FieldT::one() : FieldT::zero();
++            pb.val(inputs[j]) = (w & (UINT64_C(1)<<j)) ? FieldT::one() : FieldT::zero();
+         }
+ 
+         c.generate_r1cs_witness();
+@@ -378,13 +378,13 @@ void test_conjunction_gadget(const size_t n)
+ #ifdef DEBUG
+         printf("positive test for %zu\n", w);
+ #endif
+-        assert(pb.val(output) == (w == (1ul<<n) - 1 ? FieldT::one() : FieldT::zero()));
++        assert(pb.val(output) == (w == (UINT64_C(1)<<n) - 1 ? FieldT::one() : FieldT::zero()));
+         assert(pb.is_satisfied());
+ 
+ #ifdef DEBUG
+         printf("negative test for %zu\n", w);
+ #endif
+-        pb.val(output) = (w == (1ul<<n) - 1 ? FieldT::zero() : FieldT::one());
++        pb.val(output) = (w == (UINT64_C(1)<<n) - 1 ? FieldT::zero() : FieldT::one());
+         assert(!pb.is_satisfied());
+     }
+ 
+@@ -454,9 +454,9 @@ void test_comparison_gadget(const size_t n)
+     comparison_gadget<FieldT> cmp(pb, n, A, B, less, less_or_eq, "cmp");
+     cmp.generate_r1cs_constraints();
+ 
+-    for (size_t a = 0; a < 1ul<<n; ++a)
++    for (size_t a = 0; a < UINT64_C(1)<<n; ++a)
+     {
+-        for (size_t b = 0; b < 1ul<<n; ++b)
++        for (size_t b = 0; b < UINT64_C(1)<<n; ++b)
+         {
+             pb.val(A) = FieldT(a);
+             pb.val(B) = FieldT(b);
+@@ -523,16 +523,16 @@ void test_inner_product_gadget(const size_t n)
+     inner_product_gadget<FieldT> g(pb, A, B, result, "g");
+     g.generate_r1cs_constraints();
+ 
+-    for (size_t i = 0; i < 1ul<<n; ++i)
++    for (size_t i = 0; i < UINT64_C(1)<<n; ++i)
+     {
+-        for (size_t j = 0; j < 1ul<<n; ++j)
++        for (size_t j = 0; j < UINT64_C(1)<<n; ++j)
+         {
+             size_t correct = 0;
+             for (size_t k = 0; k < n; ++k)
+             {
+-                pb.val(A[k]) = (i & (1ul<<k) ? FieldT::one() : FieldT::zero());
+-                pb.val(B[k]) = (j & (1ul<<k) ? FieldT::one() : FieldT::zero());
+-                correct += ((i & (1ul<<k)) && (j & (1ul<<k)) ? 1 : 0);
++                pb.val(A[k]) = (i & (UINT64_C(1)<<k) ? FieldT::one() : FieldT::zero());
++                pb.val(B[k]) = (j & (UINT64_C(1)<<k) ? FieldT::one() : FieldT::zero());
++                correct += ((i & (UINT64_C(1)<<k)) && (j & (UINT64_C(1)<<k)) ? 1 : 0);
+             }
+ 
+             g.generate_r1cs_witness();
+@@ -587,7 +587,7 @@ void loose_multiplexing_gadget<FieldT>::generate_r1cs_witness()
+ {
+     /* assumes that idx can be fit in ulong; true for our purposes for now */
+     const bigint<FieldT::num_limbs> valint = this->pb.val(index).as_bigint();
+-    unsigned long idx = valint.as_ulong();
++    uint64_t idx = valint.as_ulong();
+     const bigint<FieldT::num_limbs> arrsize(arr.size());
+ 
+     if (idx >= arr.size() || mpn_cmp(valint.data, arrsize.data, FieldT::num_limbs) >= 0)
+@@ -619,7 +619,7 @@ void test_loose_multiplexing_gadget(const size_t n)
+     protoboard<FieldT> pb;
+ 
+     pb_variable_array<FieldT> arr;
+-    arr.allocate(pb, 1ul<<n, "arr");
++    arr.allocate(pb, UINT64_C(1)<<n, "arr");
+     pb_variable<FieldT> index, result, success_flag;
+     index.allocate(pb, "index");
+     result.allocate(pb, "result");
+@@ -628,20 +628,20 @@ void test_loose_multiplexing_gadget(const size_t n)
+     loose_multiplexing_gadget<FieldT> g(pb, arr, index, result, success_flag, "g");
+     g.generate_r1cs_constraints();
+ 
+-    for (size_t i = 0; i < 1ul<<n; ++i)
++    for (size_t i = 0; i < UINT64_C(1)<<n; ++i)
+     {
+-        pb.val(arr[i]) = FieldT((19*i) % (1ul<<n));
++        pb.val(arr[i]) = FieldT((19*i) % (UINT64_C(1)<<n));
+     }
+ 
+-    for (int idx = -1; idx <= (int)(1ul<<n); ++idx)
++    for (int idx = -1; idx <= (int)(UINT64_C(1)<<n); ++idx)
+     {
+         pb.val(index) = FieldT(idx);
+         g.generate_r1cs_witness();
+ 
+-        if (0 <= idx && idx <= (int)(1ul<<n) - 1)
++        if (0 <= idx && idx <= (int)(UINT64_C(1)<<n) - 1)
+         {
+             printf("demuxing element %d (in bounds)\n", idx);
+-            assert(pb.val(result) == FieldT((19*idx) % (1ul<<n)));
++            assert(pb.val(result) == FieldT((19*idx) % (UINT64_C(1)<<n)));
+             assert(pb.val(success_flag) == FieldT::one());
+             assert(pb.is_satisfied());
+             pb.val(result) -= FieldT::one();
+diff --git a/src/snark/src/gadgetlib1/gadgets/hashes/sha256/sha256_aux.tcc b/src/snark/src/gadgetlib1/gadgets/hashes/sha256/sha256_aux.tcc
+index 8ab67be..148fe79 100644
+--- a/src/snark/src/gadgetlib1/gadgets/hashes/sha256/sha256_aux.tcc
++++ b/src/snark/src/gadgetlib1/gadgets/hashes/sha256/sha256_aux.tcc
+@@ -285,7 +285,7 @@ void majority_gadget<FieldT>::generate_r1cs_witness()
+ {
+     for (size_t i = 0; i < 32; ++i)
+     {
+-        const long v = (this->pb.lc_val(X[i]) + this->pb.lc_val(Y[i]) + this->pb.lc_val(Z[i])).as_ulong();
++        const int64_t v = (this->pb.lc_val(X[i]) + this->pb.lc_val(Y[i]) + this->pb.lc_val(Z[i])).as_ulong();
+         this->pb.val(result_bits[i]) = FieldT(v / 2);
+     }
+ 
+diff --git a/src/snark/src/gadgetlib1/gadgets/hashes/sha256/sha256_components.hpp b/src/snark/src/gadgetlib1/gadgets/hashes/sha256/sha256_components.hpp
+index c2f31e3..13bbc07 100644
+--- a/src/snark/src/gadgetlib1/gadgets/hashes/sha256/sha256_components.hpp
++++ b/src/snark/src/gadgetlib1/gadgets/hashes/sha256/sha256_components.hpp
+@@ -78,7 +78,7 @@ public:
+     pb_linear_combination_array<FieldT> g;
+     pb_linear_combination_array<FieldT> h;
+     pb_variable<FieldT> W;
+-    long K;
++    int64_t K;
+     pb_linear_combination_array<FieldT> new_a;
+     pb_linear_combination_array<FieldT> new_e;
+ 
+@@ -92,7 +92,7 @@ public:
+                                  const pb_linear_combination_array<FieldT> &g,
+                                  const pb_linear_combination_array<FieldT> &h,
+                                  const pb_variable<FieldT> &W,
+-                                 const long &K,
++                                 const int64_t &K,
+                                  const pb_linear_combination_array<FieldT> &new_a,
+                                  const pb_linear_combination_array<FieldT> &new_e,
+                                  const std::string &annotation_prefix);
+diff --git a/src/snark/src/gadgetlib1/gadgets/hashes/sha256/sha256_components.tcc b/src/snark/src/gadgetlib1/gadgets/hashes/sha256/sha256_components.tcc
+index e8f233a..b0e0063 100644
+--- a/src/snark/src/gadgetlib1/gadgets/hashes/sha256/sha256_components.tcc
++++ b/src/snark/src/gadgetlib1/gadgets/hashes/sha256/sha256_components.tcc
+@@ -16,7 +16,7 @@
+ 
+ namespace libsnark {
+ 
+-const unsigned long SHA256_K[64] =  {
++const uint64_t SHA256_K[64] =  {
+     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+     0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+@@ -27,7 +27,7 @@ const unsigned long SHA256_K[64] =  {
+     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+ };
+ 
+-const unsigned long SHA256_H[8] = {
++const uint64_t SHA256_H[8] = {
+     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+ };
+ 
+@@ -149,7 +149,7 @@ sha256_round_function_gadget<FieldT>::sha256_round_function_gadget(protoboard<Fi
+                                                                    const pb_linear_combination_array<FieldT> &g,
+                                                                    const pb_linear_combination_array<FieldT> &h,
+                                                                    const pb_variable<FieldT> &W,
+-                                                                   const long &K,
++                                                                   const int64_t &K,
+                                                                    const pb_linear_combination_array<FieldT> &new_a,
+                                                                    const pb_linear_combination_array<FieldT> &new_e,
+                                                                    const std::string &annotation_prefix) :
+diff --git a/src/snark/src/gadgetlib1/gadgets/hashes/sha256/tests/test_sha256_gadget.cpp b/src/snark/src/gadgetlib1/gadgets/hashes/sha256/tests/test_sha256_gadget.cpp
+index 0bfaf3a..471928f 100644
+--- a/src/snark/src/gadgetlib1/gadgets/hashes/sha256/tests/test_sha256_gadget.cpp
++++ b/src/snark/src/gadgetlib1/gadgets/hashes/sha256/tests/test_sha256_gadget.cpp
+@@ -10,8 +10,6 @@
+ #include "common/profiling.hpp"
+ #include "gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp"
+ 
+-#include <gtest/gtest.h>
+-
+ using namespace libsnark;
+ 
+ template<typename FieldT>
+@@ -37,10 +35,10 @@ void test_two_to_one()
+     f.generate_r1cs_witness();
+     output.generate_r1cs_witness(hash_bv);
+ 
+-    EXPECT_TRUE(pb.is_satisfied());
++    assert(pb.is_satisfied());
+ }
+ 
+-TEST(gadgetlib1, sha256)
++int main(void)
+ {
+     start_profiling();
+     default_ec_pp::init_public_params();
+diff --git a/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_authentication_path_variable.tcc b/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_authentication_path_variable.tcc
+index d773051..b3d805d 100644
+--- a/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_authentication_path_variable.tcc
++++ b/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_authentication_path_variable.tcc
+@@ -41,7 +41,7 @@ void merkle_authentication_path_variable<FieldT, HashT>::generate_r1cs_witness(c
+ 
+     for (size_t i = 0; i < tree_depth; ++i)
+     {
+-        if (address & (1ul << (tree_depth-1-i)))
++        if (address & (UINT64_C(1) << (tree_depth-1-i)))
+         {
+             left_digests[i].generate_r1cs_witness(path[i]);
+         }
+@@ -58,7 +58,7 @@ merkle_authentication_path merkle_authentication_path_variable<FieldT, HashT>::g
+     merkle_authentication_path result;
+     for (size_t i = 0; i < tree_depth; ++i)
+     {
+-        if (address & (1ul << (tree_depth-1-i)))
++        if (address & (UINT64_C(1) << (tree_depth-1-i)))
+         {
+             result.emplace_back(left_digests[i].get_digest());
+         }
+diff --git a/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.tcc b/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.tcc
+index 6002a58..2fde4f6 100644
+--- a/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.tcc
++++ b/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.tcc
+@@ -144,10 +144,10 @@ void test_merkle_tree_check_read_gadget()
+     bit_vector address_bits;
+ 
+     size_t address = 0;
+-    for (long level = tree_depth-1; level >= 0; --level)
++    for (int64_t level = tree_depth-1; level >= 0; --level)
+     {
+         const bool computed_is_right = (std::rand() % 2);
+-        address |= (computed_is_right ? 1ul << (tree_depth-1-level) : 0);
++        address |= (computed_is_right ? UINT64_C(1) << (tree_depth-1-level) : 0);
+         address_bits.push_back(computed_is_right);
+         bit_vector other(digest_len);
+         std::generate(other.begin(), other.end(), [&]() { return std::rand() % 2; });
+diff --git a/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_update_gadget.hpp b/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_update_gadget.hpp
+index 6ec0ca1..2d6840d 100644
+--- a/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_update_gadget.hpp
++++ b/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_update_gadget.hpp
+@@ -19,6 +19,7 @@
+ 
+ #include "common/data_structures/merkle_tree.hpp"
+ #include "gadgetlib1/gadget.hpp"
++#include "gadgetlib1/gadgets/hashes/crh_gadget.hpp"
+ #include "gadgetlib1/gadgets/hashes/hash_io.hpp"
+ #include "gadgetlib1/gadgets/hashes/digest_selector_gadget.hpp"
+ #include "gadgetlib1/gadgets/merkle_tree/merkle_authentication_path_variable.hpp"
+diff --git a/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_update_gadget.tcc b/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_update_gadget.tcc
+index 1ac08ed..3e73904 100644
+--- a/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_update_gadget.tcc
++++ b/src/snark/src/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_update_gadget.tcc
+@@ -197,10 +197,10 @@ void test_merkle_tree_check_update_gadget()
+     bit_vector address_bits;
+ 
+     size_t address = 0;
+-    for (long level = tree_depth-1; level >= 0; --level)
++    for (int64_t level = tree_depth-1; level >= 0; --level)
+     {
+         const bool computed_is_right = (std::rand() % 2);
+-        address |= (computed_is_right ? 1ul << (tree_depth-1-level) : 0);
++        address |= (computed_is_right ? UINT64_C(1) << (tree_depth-1-level) : 0);
+         address_bits.push_back(computed_is_right);
+         bit_vector other(digest_len);
+         std::generate(other.begin(), other.end(), [&]() { return std::rand() % 2; });
+diff --git a/src/snark/src/gadgetlib1/gadgets/merkle_tree/tests/test_merkle_tree_gadgets.cpp b/src/snark/src/gadgetlib1/gadgets/merkle_tree/tests/test_merkle_tree_gadgets.cpp
+index 27b52f9..8d52c57 100644
+--- a/src/snark/src/gadgetlib1/gadgets/merkle_tree/tests/test_merkle_tree_gadgets.cpp
++++ b/src/snark/src/gadgetlib1/gadgets/merkle_tree/tests/test_merkle_tree_gadgets.cpp
+@@ -5,36 +5,44 @@
+  * @copyright  MIT license (see LICENSE file)
+  *****************************************************************************/
+ 
+-#include "algebra/curves/alt_bn128/alt_bn128_pp.hpp"
+ #ifdef CURVE_BN128
+ #include "algebra/curves/bn128/bn128_pp.hpp"
+ #endif
++#include "algebra/curves/edwards/edwards_pp.hpp"
++#include "algebra/curves/mnt/mnt4/mnt4_pp.hpp"
++#include "algebra/curves/mnt/mnt6/mnt6_pp.hpp"
+ #include "gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.hpp"
+ #include "gadgetlib1/gadgets/merkle_tree/merkle_tree_check_update_gadget.hpp"
+ #include "gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp"
+ 
+-#include <gtest/gtest.h>
+-
+ using namespace libsnark;
+ 
+ template<typename ppT>
+ void test_all_merkle_tree_gadgets()
+ {
+     typedef Fr<ppT> FieldT;
++    test_merkle_tree_check_read_gadget<FieldT, CRH_with_bit_out_gadget<FieldT> >();
+     test_merkle_tree_check_read_gadget<FieldT, sha256_two_to_one_hash_gadget<FieldT> >();
+ 
++    test_merkle_tree_check_update_gadget<FieldT, CRH_with_bit_out_gadget<FieldT> >();
+     test_merkle_tree_check_update_gadget<FieldT, sha256_two_to_one_hash_gadget<FieldT> >();
+ }
+ 
+-TEST(gadgetlib1, merkle_tree)
++int main(void)
+ {
+     start_profiling();
+ 
+-    alt_bn128_pp::init_public_params();
+-    test_all_merkle_tree_gadgets<alt_bn128_pp>();
+-
+ #ifdef CURVE_BN128       // BN128 has fancy dependencies so it may be disabled
+     bn128_pp::init_public_params();
+     test_all_merkle_tree_gadgets<bn128_pp>();
+ #endif
++
++    edwards_pp::init_public_params();
++    test_all_merkle_tree_gadgets<edwards_pp>();
++
++    mnt4_pp::init_public_params();
++    test_all_merkle_tree_gadgets<mnt4_pp>();
++
++    mnt6_pp::init_public_params();
++    test_all_merkle_tree_gadgets<mnt6_pp>();
+ }
+diff --git a/src/snark/src/gadgetlib1/pb_variable.hpp b/src/snark/src/gadgetlib1/pb_variable.hpp
+index fdf64d0..a6c7174 100644
+--- a/src/snark/src/gadgetlib1/pb_variable.hpp
++++ b/src/snark/src/gadgetlib1/pb_variable.hpp
+@@ -59,7 +59,7 @@ public:
+ 
+     void fill_with_field_elements(protoboard<FieldT> &pb, const std::vector<FieldT>& vals) const;
+     void fill_with_bits(protoboard<FieldT> &pb, const bit_vector& bits) const;
+-    void fill_with_bits_of_ulong(protoboard<FieldT> &pb, const unsigned long i) const;
++    void fill_with_bits_of_ulong(protoboard<FieldT> &pb, const uint64_t i) const;
+     void fill_with_bits_of_field_element(protoboard<FieldT> &pb, const FieldT &r) const;
+ 
+     std::vector<FieldT> get_vals(const protoboard<FieldT> &pb) const;
+@@ -120,7 +120,7 @@ public:
+ 
+     void fill_with_field_elements(protoboard<FieldT> &pb, const std::vector<FieldT>& vals) const;
+     void fill_with_bits(protoboard<FieldT> &pb, const bit_vector& bits) const;
+-    void fill_with_bits_of_ulong(protoboard<FieldT> &pb, const unsigned long i) const;
++    void fill_with_bits_of_ulong(protoboard<FieldT> &pb, const uint64_t i) const;
+     void fill_with_bits_of_field_element(protoboard<FieldT> &pb, const FieldT &r) const;
+ 
+     std::vector<FieldT> get_vals(const protoboard<FieldT> &pb) const;
+diff --git a/src/snark/src/gadgetlib1/pb_variable.tcc b/src/snark/src/gadgetlib1/pb_variable.tcc
+index b36b3f8..77c9f13 100644
+--- a/src/snark/src/gadgetlib1/pb_variable.tcc
++++ b/src/snark/src/gadgetlib1/pb_variable.tcc
+@@ -65,7 +65,7 @@ void pb_variable_array<FieldT>::fill_with_bits_of_field_element(protoboard<Field
+ }
+ 
+ template<typename FieldT>
+-void pb_variable_array<FieldT>::fill_with_bits_of_ulong(protoboard<FieldT> &pb, const unsigned long i) const
++void pb_variable_array<FieldT>::fill_with_bits_of_ulong(protoboard<FieldT> &pb, const uint64_t i) const
+ {
+     this->fill_with_bits_of_field_element(pb, FieldT(i, true));
+ }
+@@ -232,7 +232,7 @@ void pb_linear_combination_array<FieldT>::fill_with_bits_of_field_element(protob
+ }
+ 
+ template<typename FieldT>
+-void pb_linear_combination_array<FieldT>::fill_with_bits_of_ulong(protoboard<FieldT> &pb, const unsigned long i) const
++void pb_linear_combination_array<FieldT>::fill_with_bits_of_ulong(protoboard<FieldT> &pb, const uint64_t i) const
+ {
+     this->fill_with_bits_of_field_element(pb, FieldT(i));
+ }
+diff --git a/src/snark/src/relations/arithmetic_programs/qap/tests/test_qap.cpp b/src/snark/src/relations/arithmetic_programs/qap/tests/test_qap.cpp
+index e20f589..0054eaf 100644
+--- a/src/snark/src/relations/arithmetic_programs/qap/tests/test_qap.cpp
++++ b/src/snark/src/relations/arithmetic_programs/qap/tests/test_qap.cpp
+@@ -10,15 +10,13 @@
+ #include <cstring>
+ #include <vector>
+ 
+-#include "algebra/curves/alt_bn128/alt_bn128_pp.hpp"
++#include "algebra/curves/mnt/mnt6/mnt6_pp.hpp"
+ #include "algebra/fields/field_utils.hpp"
+ #include "common/profiling.hpp"
+ #include "common/utils.hpp"
+ #include "reductions/r1cs_to_qap/r1cs_to_qap.hpp"
+ #include "relations/constraint_satisfaction_problems/r1cs/examples/r1cs_examples.hpp"
+ 
+-#include <gtest/gtest.h>
+-
+ using namespace libsnark;
+ 
+ template<typename FieldT>
+@@ -30,7 +28,7 @@ void test_qap(const size_t qap_degree, const size_t num_inputs, const bool binar
+       See the transformation from R1CS to QAP for why this is the case.
+       So we need that qap_degree >= num_inputs + 1.
+     */
+-    ASSERT_LE(num_inputs + 1, qap_degree);
++    assert(num_inputs + 1 <= qap_degree);
+     enter_block("Call to test_qap");
+ 
+     const size_t num_constraints = qap_degree - num_inputs - 1;
+@@ -53,7 +51,7 @@ void test_qap(const size_t qap_degree, const size_t num_inputs, const bool binar
+     leave_block("Generate constraint system and assignment");
+ 
+     enter_block("Check satisfiability of constraint system");
+-    EXPECT_TRUE(example.constraint_system.is_satisfied(example.primary_input, example.auxiliary_input));
++    assert(example.constraint_system.is_satisfied(example.primary_input, example.auxiliary_input));
+     leave_block("Check satisfiability of constraint system");
+ 
+     const FieldT t = FieldT::random_element(),
+@@ -74,31 +72,44 @@ void test_qap(const size_t qap_degree, const size_t num_inputs, const bool binar
+     leave_block("Compute QAP witness");
+ 
+     enter_block("Check satisfiability of QAP instance 1");
+-    EXPECT_TRUE(qap_inst_1.is_satisfied(qap_wit));
++    assert(qap_inst_1.is_satisfied(qap_wit));
+     leave_block("Check satisfiability of QAP instance 1");
+ 
+     enter_block("Check satisfiability of QAP instance 2");
+-    EXPECT_TRUE(qap_inst_2.is_satisfied(qap_wit));
++    assert(qap_inst_2.is_satisfied(qap_wit));
+     leave_block("Check satisfiability of QAP instance 2");
+ 
+     leave_block("Call to test_qap");
+ }
+ 
+-TEST(relations, qap)
++int main()
+ {
+     start_profiling();
+ 
++    mnt6_pp::init_public_params();
++
+     const size_t num_inputs = 10;
+ 
++    const size_t basic_domain_size = UINT64_C(1)<<mnt6_Fr::s;
++    const size_t step_domain_size = (UINT64_C(1)<<10) + (UINT64_C(1)<<8);
++    const size_t extended_domain_size = UINT64_C(1)<<(mnt6_Fr::s+1);
++    const size_t extended_domain_size_special = extended_domain_size-1;
++
+     enter_block("Test QAP with binary input");
+ 
+-    test_qap<Fr<alt_bn128_pp> >(1ul << 21, num_inputs, true);
++    test_qap<Fr<mnt6_pp> >(basic_domain_size, num_inputs, true);
++    test_qap<Fr<mnt6_pp> >(step_domain_size, num_inputs, true);
++    test_qap<Fr<mnt6_pp> >(extended_domain_size, num_inputs, true);
++    test_qap<Fr<mnt6_pp> >(extended_domain_size_special, num_inputs, true);
+ 
+     leave_block("Test QAP with binary input");
+ 
+     enter_block("Test QAP with field input");
+ 
+-    test_qap<Fr<alt_bn128_pp> >(1ul << 21, num_inputs, false);
++    test_qap<Fr<mnt6_pp> >(basic_domain_size, num_inputs, false);
++    test_qap<Fr<mnt6_pp> >(step_domain_size, num_inputs, false);
++    test_qap<Fr<mnt6_pp> >(extended_domain_size, num_inputs, false);
++    test_qap<Fr<mnt6_pp> >(extended_domain_size_special, num_inputs, false);
+ 
+     leave_block("Test QAP with field input");
+ }
+diff --git a/src/snark/src/relations/variable.hpp b/src/snark/src/relations/variable.hpp
+index a9a1449..c63f57b 100644
+--- a/src/snark/src/relations/variable.hpp
++++ b/src/snark/src/relations/variable.hpp
+@@ -26,7 +26,7 @@ namespace libsnark {
+  * Mnemonic typedefs.
+  */
+ typedef size_t var_index_t;
+-typedef long integer_coeff_t;
++typedef int64_t integer_coeff_t;
+ 
+ /**
+  * Forward declaration.
+diff --git a/src/snark/src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/examples/run_r1cs_ppzksnark.tcc b/src/snark/src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/examples/run_r1cs_ppzksnark.tcc
+index 00af6fe..9bc8758 100644
+--- a/src/snark/src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/examples/run_r1cs_ppzksnark.tcc
++++ b/src/snark/src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/examples/run_r1cs_ppzksnark.tcc
+@@ -83,7 +83,7 @@ bool run_r1cs_ppzksnark(const r1cs_example<Fr<ppT> > &example,
+     }
+ 
+     print_header("R1CS ppzkSNARK Prover");
+-    r1cs_ppzksnark_proof<ppT> proof = r1cs_ppzksnark_prover<ppT>(keypair.pk, example.primary_input, example.auxiliary_input, example.constraint_system);
++    r1cs_ppzksnark_proof<ppT> proof = r1cs_ppzksnark_prover<ppT>(keypair.pk, example.primary_input, example.auxiliary_input);
+     printf("\n"); print_indent(); print_mem("after prover");
+ 
+     if (test_serialization)
+diff --git a/src/snark/src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp b/src/snark/src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp
+index 36f6c14..a068b09 100644
+--- a/src/snark/src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp
++++ b/src/snark/src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp
+@@ -394,8 +394,7 @@ r1cs_ppzksnark_keypair<ppT> r1cs_ppzksnark_generator(
+ template<typename ppT>
+ r1cs_ppzksnark_proof<ppT> r1cs_ppzksnark_prover(const r1cs_ppzksnark_proving_key<ppT> &pk,
+                                                 const r1cs_ppzksnark_primary_input<ppT> &primary_input,
+-                                                const r1cs_ppzksnark_auxiliary_input<ppT> &auxiliary_input,
+-                                                const r1cs_ppzksnark_constraint_system<ppT> &constraint_system);
++                                                const r1cs_ppzksnark_auxiliary_input<ppT> &auxiliary_input);
+ 
+ /*
+  Below are four variants of verifier algorithm for the R1CS ppzkSNARK.
+diff --git a/src/snark/src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/tests/test_r1cs_ppzksnark.cpp b/src/snark/src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/tests/test_r1cs_ppzksnark.cpp
+index 6c6e518..6f8b575 100644
+--- a/src/snark/src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/tests/test_r1cs_ppzksnark.cpp
++++ b/src/snark/src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/tests/test_r1cs_ppzksnark.cpp
+@@ -11,14 +11,12 @@
+ #include <cassert>
+ #include <cstdio>
+ 
+-#include "algebra/curves/alt_bn128/alt_bn128_pp.hpp"
++#include "common/default_types/r1cs_ppzksnark_pp.hpp"
+ #include "common/profiling.hpp"
+ #include "common/utils.hpp"
+ #include "relations/constraint_satisfaction_problems/r1cs/examples/r1cs_examples.hpp"
+ #include "zk_proof_systems/ppzksnark/r1cs_ppzksnark/examples/run_r1cs_ppzksnark.hpp"
+ 
+-#include <gtest/gtest.h>
+-
+ using namespace libsnark;
+ 
+ template<typename ppT>
+@@ -29,16 +27,16 @@ void test_r1cs_ppzksnark(size_t num_constraints,
+ 
+     const bool test_serialization = true;
+     r1cs_example<Fr<ppT> > example = generate_r1cs_example_with_binary_input<Fr<ppT> >(num_constraints, input_size);
+-    example.constraint_system.swap_AB_if_beneficial();
+     const bool bit = run_r1cs_ppzksnark<ppT>(example, test_serialization);
+-    EXPECT_TRUE(bit);
++    assert(bit);
+ 
+     print_header("(leave) Test R1CS ppzkSNARK");
+ }
+ 
+-TEST(zk_proof_systems, r1cs_ppzksnark)
++int main()
+ {
++    default_r1cs_ppzksnark_pp::init_public_params();
+     start_profiling();
+ 
+-    test_r1cs_ppzksnark<alt_bn128_pp>(1000, 20);
++    test_r1cs_ppzksnark<default_r1cs_ppzksnark_pp>(1000, 100);
+ }

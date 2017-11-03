@@ -2,6 +2,8 @@
 
 cd "$(dirname "$(readlink -f "$0")")/.."    #'"%#@!
 
+patch -p 1 < ./zcutil/extra/snark-multiarch.diff
+
 HOST=x86_64-w64-mingw32
 CXX=x86_64-w64-mingw32-g++-posix
 CC=x86_64-w64-mingw32-gcc-posix
