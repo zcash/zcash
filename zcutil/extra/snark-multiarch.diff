@@ -736,15 +736,13 @@ index 138b82d..f42e424 100644
      const FieldT omega = get_root_of_unity<FieldT>(m);
  
 diff --git a/src/snark/src/algebra/evaluation_domain/evaluation_domain.tcc b/src/snark/src/algebra/evaluation_domain/evaluation_domain.tcc
-index 8e3ea7a..d5fa5b5 100644
+index 8e3ea7a..d0e28c8 100644
 --- a/src/snark/src/algebra/evaluation_domain/evaluation_domain.tcc
 +++ b/src/snark/src/algebra/evaluation_domain/evaluation_domain.tcc
-@@ -22,15 +22,18 @@
+@@ -22,15 +22,16 @@
  #include <cassert>
  #include "algebra/fields/field_utils.hpp"
  #include "algebra/evaluation_domain/domains/basic_radix2_domain.hpp"
-+#include "algebra/evaluation_domain/domains/extended_radix2_domain.hpp"
-+#include "algebra/evaluation_domain/domains/step_radix2_domain.hpp"
 +#include "common/assert_except.hpp"
  
  namespace libsnark {
@@ -760,16 +758,16 @@ index 8e3ea7a..d5fa5b5 100644
  
      std::shared_ptr<evaluation_domain<FieldT> > result;
      if (min_size == (1u << log_min_size))
-@@ -41,7 +44,7 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
+@@ -41,7 +42,7 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
              {
                  print_indent(); printf("* Selected domain: extended_radix2\n");
              }
 -            assert(0);
-+            result.reset(new extended_radix2_domain<FieldT>(min_size));
++            assert_except(0);
          }
          else
          {
-@@ -54,9 +57,9 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
+@@ -54,9 +55,9 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
      }
      else
      {
@@ -781,25 +779,25 @@ index 8e3ea7a..d5fa5b5 100644
          if (big == rounded_small)
          {
              if (log2(big + rounded_small) < FieldT::s+1)
-@@ -73,7 +76,7 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
+@@ -73,7 +74,7 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
                  {
                      print_indent(); printf("* Selected domain: extended_radix2\n");
                  }
 -                assert(0);
-+                result.reset(new extended_radix2_domain<FieldT>(big + rounded_small));
++                assert_except(0);
              }
          }
          else
-@@ -82,7 +85,7 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
+@@ -82,7 +83,7 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
              {
                  print_indent(); printf("* Selected domain: step_radix2\n");
              }
 -            assert(0);
-+            result.reset(new step_radix2_domain<FieldT>(big + rounded_small));
++            assert_except(0);
          }
      }
  
-@@ -92,8 +95,8 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
+@@ -92,8 +93,8 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
  template<typename FieldT>
  FieldT lagrange_eval(const size_t m, const std::vector<FieldT> &domain, const FieldT &t, const size_t idx)
  {
