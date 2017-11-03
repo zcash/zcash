@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# actually untested, sorry
+
 cd "$(dirname "$(readlink -f "$0")")"    #'"%#@!
 
 sudo dnf install \
@@ -21,3 +23,9 @@ cd ../src/
 cp -f zcashd votecoind
 cp -f zcash-cli votecoin-cli
 cp -f zcash-tx votecoin-tx
+
+echo ""
+echo "--------------------------------------------------------------------------"
+echo "Compilation complete. Now you can run ./src/votecoind to start the daemon."
+echo "It will use configuration file from ~/.votecoin/votecoin.conf"
+echo ""
