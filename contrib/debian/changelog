@@ -1,3 +1,15 @@
+zcash (1.0.12) stable; urgency=medium
+
+  * 1.0.12 release.
+
+ -- Zcash Company <team@z.cash>  Thu, 28 Sep 2017 01:26:44 +0100
+
+zcash (1.0.12~rc1) stable; urgency=medium
+
+  * 1.0.12-rc1 release.
+
+ -- Zcash Company <team@z.cash>  Sat, 23 Sep 2017 10:51:36 +0100
+
 zcash (1.0.11) stable; urgency=medium
 
   * 1.0.11 release.

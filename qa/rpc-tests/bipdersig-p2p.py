@@ -12,7 +12,6 @@ from test_framework.comptool import TestInstance, TestManager
 from test_framework.script import CScript
 from binascii import unhexlify
 import cStringIO
-import time
 
 
 '''
@@ -37,7 +36,7 @@ class BIP66Test(ComparisonTestFramework):
 
     def run_test(self):
         test = TestManager(self, self.options.tmpdir)
-        # Don't call test.add_all_connections because there is only one node.
+        test.add_all_connections(self.nodes)
         NetworkThread().start() # Start up network handling in another thread
         test.run()
 
@@ -71,9 +70,9 @@ class BIP66Test(ComparisonTestFramework):
 
     def get_tests(self):
         self.coinbase_blocks = self.nodes[0].generate(1)
+        self.nodes[0].generate(100)
         self.tip = int ("0x" + self.nodes[0].getbestblockhash() + "L", 0)
         self.nodeaddress = self.nodes[0].getnewaddress()
-        self.block_time = time.time() + 1
 
         '''Check that the rules are enforced.'''
         for valid in (True, False):
@@ -84,13 +83,17 @@ class BIP66Test(ComparisonTestFramework):
                 self.invalidate_transaction(spendtx)
                 spendtx.rehash()
 
-            block = create_block(self.tip, create_coinbase(1), self.block_time)
+            gbt = self.nodes[0].getblocktemplate()
+            self.block_time = gbt["mintime"] + 1
+            self.block_bits = int("0x" + gbt["bits"], 0)
+
+            block = create_block(self.tip, create_coinbase(101),
+                                 self.block_time, self.block_bits)
             block.nVersion = 4
             block.vtx.append(spendtx)
             block.hashMerkleRoot = block.calc_merkle_root()
             block.rehash()
             block.solve()
-            self.block_time += 1
             self.tip = block.sha256
             yield TestInstance([[block, valid]])
 

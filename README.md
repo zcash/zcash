@@ -1,5 +1,4 @@
-VoteCoin 1.0.11
-===============
+VoteCoin 1.0.12
 
 What is VoteCoin?
 -----------------
@@ -114,6 +113,12 @@ Make transaction
 In the above mentioned example, both FROM_ADDR and TO_ADDR can be either T addresses or Z addresses or combination.
 The last two numbers (1 0) stand for minConf and fee. In the example above, the coins on FROM_ADDR must have
 at least 1 confirmation, and fee is set to zero.
+
+Alternatively, if you don't care from which address the coins are sent, you can use:
+
+    $ votecoin-cli sendtoaddress TO_ADDR 123
+
+In that case, coins may be combined from multiple addresses.
 
 Remember that coinbase transaction (sending newly mined coins) must be done from a T address to a Z address.
 So if you wish to send newly mined coins to a T address, you need to send them to a Z address first and then

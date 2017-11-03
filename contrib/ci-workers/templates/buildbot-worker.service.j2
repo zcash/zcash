@@ -7,9 +7,9 @@ After=network.target
 Type=forking
 PIDFile=/home/{{ buildbot_worker_user }}/{{ buildbot_worker_name }}/twistd.pid
 WorkingDirectory=/home/{{ buildbot_worker_user }}
-ExecStart=/usr/local/bin/buildbot-worker start {{ buildbot_worker_name }}
-ExecReload=/usr/local/bin/buildbot-worker restart {{ buildbot_worker_name }}
-ExecStop=/usr/local/bin/buildbot-worker stop {{ buildbot_worker_name }}
+ExecStart={{ pip_bin_dir }}/buildbot-worker start {{ buildbot_worker_name }}
+ExecReload={{ pip_bin_dir }}/buildbot-worker restart {{ buildbot_worker_name }}
+ExecStop={{ pip_bin_dir }}/buildbot-worker stop {{ buildbot_worker_name }}
 Restart=always
 User={{ buildbot_worker_user }}
 

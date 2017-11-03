@@ -19,7 +19,7 @@
       prompt: "Buildbot worker password (provided by ZECC)"
 
   pre_tasks:
-    - name: Install Python 2 for Ansible and Buildbot
+    - name: Install Python 2.7 for Ansible and Buildbot
       raw: test -e /usr/bin/python || test -e /usr/bin/python2 || test -e /usr/bin/python2.7 || test -e /usr/local/bin/python2.7 || (test -e /usr/bin/apt && apt -qqy update && apt install -qqy python) || (test -e /usr/bin/dnf && dnf install -qqy python2) || (test -e /usr/sbin/pkg && pkg install -qqy python2)
       register: output
       changed_when:
@@ -34,7 +34,7 @@
 
     - name: Fail if configured Python is unavailable
       fail:
-        msg: Python is not accessible at {{ ansible_python_interpreter }} on this host! Please set the inventory variable 'ansible_python_interpreter' to the location of the Python 2 binary.
+        msg: "Python is not accessible at {{ ansible_python_interpreter }} on this host! Please set the inventory variable 'ansible_python_interpreter' to the location of the Python 2.7 binary."
       when: ansible_python_interpreter is defined and python_check.rc == 1
 
     - name: Check if Python is in the default location
@@ -45,11 +45,16 @@
 
     - name: Fail if default Python is unavailable
       fail:
-        msg: Python is not accessible at /usr/bin/python on this host! Please set the inventory variable 'ansible_python_interpreter' to the location of the Python 2 binary.
+        msg: Python is not accessible at /usr/bin/python on this host! Please set the inventory variable 'ansible_python_interpreter' to the location of the Python 2.7 binary.
       when: ansible_python_interpreter is undefined and python_check.rc == 1
 
     - name: Gathering Facts
       setup:
+
+    - name: Fail if Python is the wrong version
+      fail:
+        msg: "The Python binary at {{ ansible_python.executable }} is version {{ ansible_python_version }}! Please set the inventory variable 'ansible_python_interpreter' to the location of the Python 2.7 binary."
+      when: ansible_python.version.major != 2 or ansible_python.version.minor != 7
 
   tasks:
     - name: Get dependencies for distribution
@@ -67,11 +72,21 @@
         package_deps: "{{ buildbot_deps + fetch_deps + conf_deps + build_deps + link_deps + dist_deps }}"
         python_modules: "{{ buildbot_modules + rpc_test_modules }}"
 
+    - name: Update rolling release [Arch Linux]
+      pacman:
+        update_cache: yes
+        upgrade: yes
+      when: ansible_distribution == 'Archlinux'
+
     - name: Install required packages
       package:
         name: "{{ item }}"
         state: present
       with_items: "{{ package_deps }}"
+
+    - name: Install pip [CentOS]
+      include: tasks/install-pip.yml
+      when: ansible_distribution == 'CentOS'
 
     - name: Install required Python modules
       pip:
@@ -99,14 +114,18 @@
     - name: Set admin details for Buildbot worker
       copy:
         content: "{{ buildbot_worker_admin }}"
-        dest: "~/{{ buildbot_worker_name }}/info/admin"
-      become_user: "{{ buildbot_worker_user }}"
+        dest: "~{{ buildbot_worker_user }}/{{ buildbot_worker_name }}/info/admin"
+        owner: "{{ buildbot_worker_user }}"
+        group: "{{ buildbot_worker_user }}"
+        mode: "0644"
 
     - name: Set host details for Buildbot worker
       template:
         src: "{{ buildbot_worker_host_template }}"
-        dest: "~/{{ buildbot_worker_name }}/info/host"
-      become_user: "{{ buildbot_worker_user }}"
+        dest: "~{{ buildbot_worker_user }}/{{ buildbot_worker_name }}/info/host"
+        owner: "{{ buildbot_worker_user }}"
+        group: "{{ buildbot_worker_user }}"
+        mode: "0644"
 
     - name: Copy Buildbot worker systemd service unit
       template:

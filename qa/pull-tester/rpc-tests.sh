@@ -14,6 +14,7 @@ testScripts=(
     'prioritisetransaction.py'
     'wallet_treestate.py'
     'wallet_protectcoinbase.py'
+    'wallet_shieldcoinbase.py'
     'wallet.py'
     'wallet_nullifiers.py'
     'wallet_1941.py'
@@ -34,6 +35,7 @@ testScripts=(
     'fundrawtransaction.py'
     'signrawtransactions.py'
     'walletbackup.py'
+    'key_import_export.py'
     'nodehandling.py'
     'reindex.py'
     'decodescript.py'
@@ -83,7 +85,7 @@ function runTestScript
 
     echo -e "=== Running testscript ${testName} ==="
 
-    if eval "$@" | sed 's/^/  /'
+    if eval "$@"
     then
         successCount=$(expr $successCount + 1)
         echo "--- Success: ${testName} ---"

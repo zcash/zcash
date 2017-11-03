@@ -287,6 +287,7 @@ extern UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp); // 
 extern UniValue z_getbalance(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 extern UniValue z_gettotalbalance(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 extern UniValue z_sendmany(const UniValue& params, bool fHelp); // in rpcwallet.cpp
+extern UniValue z_shieldcoinbase(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 extern UniValue z_getoperationstatus(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 extern UniValue z_getoperationresult(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 extern UniValue z_listoperationids(const UniValue& params, bool fHelp); // in rpcwallet.cpp
