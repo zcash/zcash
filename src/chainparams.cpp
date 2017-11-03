@@ -127,12 +127,13 @@ public:
             (0, consensus.hashGenesisBlock)
             (10, uint256S("0x003fa6a6bbcea855fb76e478fda40c28b454e74537fbeb889e50b41710d4d41e"))
             (10000, uint256S("0x00000fbda97b62268d2eb2ed9e63ae23a9a02c3f6cb7023cd56443a215c9c0ed"))
-            (16800, uint256S("0x0000009771cf774a233ca47b5ceee89dd9296c82e8c9b0a96d00f57b26d5925c")),
-            1506271828,    // * UNIX timestamp of last checkpoint block
-            31242,         // * total number of transactions between genesis and last checkpoint
+            (16800, uint256S("0x0000009771cf774a233ca47b5ceee89dd9296c82e8c9b0a96d00f57b26d5925c"))
+            (39555, uint256S("0x0000000bbc03146dfb317de60c346b518e88defa4232db6f64b43a515b6d4df2")),
+            1509706593,    // * UNIX timestamp of last checkpoint block
+            109408,        // * total number of transactions between genesis and last checkpoint
                            //   (the tx=... number in the SetBestChain debug.log lines)
-            1071           // * estimated number of transactions per day after checkpoint
-                           //   total number of tx / (checkpoint block height / (24 * 24))
+            1593           // * estimated number of transactions per day after checkpoint
+                           //   total number of tx / checkpoint block height * 576
         };
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
