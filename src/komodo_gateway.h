@@ -1370,7 +1370,7 @@ void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
         }
         if ( filesize > buflen-1 )
         {
-            *allocsizep = filesize+1;
+            *allocsizep = filesize;
             *bufp = buf = (uint8_t *)realloc(buf,(long)*allocsizep);
         }
         rewind(fp);
