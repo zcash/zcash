@@ -345,10 +345,23 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"komodostate");
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
-            while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
-                ;
+            uint8_t *filedata; long datalen,fpos;
+            if ( (filedata= OS_fileptr(&datalen,fname)) != 0 )
+            {
+                fpos = 0;
+                fprintf(stderr,"processing %s %ldKB\n",fname,datalen/1024);
+                while ( komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest) >= 0 )
+                    ;
+                fprintf(stderr,"took %d seconds to process %s %ldKB\n",(int32_t)(time(NULL)-starttime),fname,datalen/1024);
+                free(filedata);
+                fseek(fp,fpos,SEEK_SET);
+            }
+            else
+            {
+                while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
+                    ;
+            }
         } else fp = fopen(fname,"wb+");
-        printf("fname.(%s) fpos.%ld\n",fname,ftell(fp));
         KOMODO_INITDONE = (uint32_t)time(NULL);
     }
     if ( height <= 0 )
