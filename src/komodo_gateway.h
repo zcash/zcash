@@ -1351,11 +1351,11 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     return(typestr);
 }
 
-void *OS_loadfile(char *fname,char **bufp,long *lenp,long *allocsizep)
+void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
 {
     FILE *fp;
     long  filesize,buflen = *allocsizep;
-    char *buf = *bufp;
+    uint8_t *buf = *bufp;
     *lenp = 0;
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
@@ -1371,7 +1371,7 @@ void *OS_loadfile(char *fname,char **bufp,long *lenp,long *allocsizep)
         if ( filesize > buflen-1 )
         {
             *allocsizep = filesize+1;
-            *bufp = buf = realloc(buf,(long)*allocsizep);
+            *bufp = buf = (uint8_t *)realloc(buf,(long)*allocsizep);
         }
         rewind(fp);
         if ( buf == 0 )
@@ -1391,10 +1391,10 @@ void *OS_loadfile(char *fname,char **bufp,long *lenp,long *allocsizep)
 
 uint8_t *OS_fileptr(long *allocsizep,char *fname)
 {
-    long filesize = 0; char *buf = 0; void *retptr;
+    long filesize = 0; uint8_t *buf = 0; void *retptr;
     *allocsizep = 0;
     retptr = OS_loadfile(fname,&buf,&filesize,allocsizep);
-    return(retptr);
+    return((uint8_t *)retptr);
 }
 
 long komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long fpos,long datalen,char *symbol,char *dest);
