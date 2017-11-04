@@ -1397,7 +1397,7 @@ uint8_t *OS_fileptr(long *allocsizep,char *fname)
     return((uint8_t *)retptr);
 }
 
-long komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long fpos,long datalen,char *symbol,char *dest);
+long komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *fposp,long datalen,char *symbol,char *dest);
 
 void komodo_passport_iteration()
 {
