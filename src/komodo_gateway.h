@@ -1351,11 +1351,59 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     return(typestr);
 }
 
+void *OS_loadfile(char *fname,char **bufp,long *lenp,long *allocsizep)
+{
+    FILE *fp;
+    long  filesize,buflen = *allocsizep;
+    char *buf = *bufp;
+    *lenp = 0;
+    if ( (fp= fopen(fname,"rb")) != 0 )
+    {
+        fseek(fp,0,SEEK_END);
+        filesize = ftell(fp);
+        if ( filesize == 0 )
+        {
+            fclose(fp);
+            *lenp = 0;
+            printf("OS_loadfile null size.(%s)\n",fname);
+            return(0);
+        }
+        if ( filesize > buflen-1 )
+        {
+            *allocsizep = filesize+1;
+            *bufp = buf = realloc(buf,(long)*allocsizep);
+        }
+        rewind(fp);
+        if ( buf == 0 )
+            printf("Null buf ???\n");
+        else
+        {
+            if ( fread(buf,1,(long)filesize,fp) != (unsigned long)filesize )
+                printf("error reading filesize.%ld\n",(long)filesize);
+            buf[filesize] = 0;
+        }
+        fclose(fp);
+        *lenp = filesize;
+        //printf("loaded.(%s)\n",buf);
+    } //else printf("OS_loadfile couldnt load.(%s)\n",fname);
+    return(buf);
+}
+
+uint8_t *OS_fileptr(long *allocsizep,char *fname)
+{
+    long filesize = 0; char *buf = 0; void *retptr;
+    *allocsizep = 0;
+    retptr = OS_loadfile(fname,&buf,&filesize,allocsizep);
+    return(retptr);
+}
+
+long komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long fpos,long datalen,char *symbol,char *dest);
+
 void komodo_passport_iteration()
 {
     static long lastpos[34]; static char userpass[33][1024]; static uint32_t lasttime,callcounter;
     int32_t maxseconds = 10;
-    FILE *fp; int32_t baseid,limit,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
+    FILE *fp; uint8_t *filedata; long fpos,datalen; int32_t baseid,limit,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
     //printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
     expired = 0;
     while ( KOMODO_INITDONE == 0 )
@@ -1411,7 +1459,17 @@ void komodo_passport_iteration()
                 komodo_nameset(symbol,dest,base);
                 sp = komodo_stateptrget(symbol);
                 n = 0;
-                if ( (fp= fopen(fname,"rb")) != 0 && sp != 0 )
+                if ( (filedata= OS_fileptr(&datalen,fname)) != 0 )
+                {
+                    fpos = 0;
+                    while ( komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest) >= 0 )
+                        ;
+                    printf("took %d seconds to process %s %ldKB\n",(int32_t)(time(NULL)-starttime),fname,datalen/1024);
+                    lastpos[baseid] = fpos;
+                    free(filedata), filedata = 0;
+                    datalen = 0;
+                }
+                else if ( (fp= fopen(fname,"rb")) != 0 && sp != 0 )
                 {
                     fseek(fp,0,SEEK_END);
                     if ( ftell(fp) > lastpos[baseid] )
