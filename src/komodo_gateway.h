@@ -1473,7 +1473,7 @@ void komodo_passport_iteration()
                 else if ( (fp= fopen(fname,"rb")) != 0 && sp != 0 )
                 {
                     fseek(fp,0,SEEK_END);
-                    printf("couldnt OS_fileptr(%s), freading %ldKB\n",fname,ftell(fp)/1024)
+                    printf("couldnt OS_fileptr(%s), freading %ldKB\n",fname,ftell(fp)/1024);
                     if ( ftell(fp) > lastpos[baseid] )
                     {
                         if ( ASSETCHAINS_SYMBOL[0] != 0 )
