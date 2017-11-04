@@ -354,7 +354,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                     ;
                 fprintf(stderr,"took %d seconds to process %s %ldKB\n",(int32_t)(time(NULL)-starttime),fname,datalen/1024);
                 free(filedata);
-                fseek(fp,fpos,SEEK_SET);
+                fseek(fp,0,SEEK_END);
             }
             else
             {
