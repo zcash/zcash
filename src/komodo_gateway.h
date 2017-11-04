@@ -1452,7 +1452,7 @@ void komodo_passport_iteration()
         base = (char *)CURRENCIES[baseid];
         if ( baseid+1 != refid )
         {
-            if ( baseid == 32 || ASSETCHAINS_SYMBOL[0] == 0 )
+            if ( baseid == 32 || strcmp(ASSETCHAINS_SYMBOL,base) == 0 )
             {
                 refsp->RTmask &= ~(1LL << baseid);
                 komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"komodostate");
@@ -1462,6 +1462,7 @@ void komodo_passport_iteration()
                 if ( (filedata= OS_fileptr(&datalen,fname)) != 0 )
                 {
                     fpos = 0;
+                    printf("processing %s %ldKB\n",fname,datalen/1024);
                     while ( komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest) >= 0 )
                         ;
                     printf("took %d seconds to process %s %ldKB\n",(int32_t)(time(NULL)-starttime),fname,datalen/1024);
@@ -1472,6 +1473,7 @@ void komodo_passport_iteration()
                 else if ( (fp= fopen(fname,"rb")) != 0 && sp != 0 )
                 {
                     fseek(fp,0,SEEK_END);
+                    printf("couldnt OS_fileptr(%s), freading %ldKB\n",fname,ftell(fp)/1024)
                     if ( ftell(fp) > lastpos[baseid] )
                     {
                         if ( ASSETCHAINS_SYMBOL[0] != 0 )

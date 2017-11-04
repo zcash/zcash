@@ -238,7 +238,7 @@ long komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *f
                 errs++;
             if ( memread(&notarized_desttxid,sizeof(notarized_desttxid),filedata,&fpos,datalen) != sizeof(notarized_desttxid) )
                 errs++;
-            //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && sp != 0 )
+            if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && sp != 0 )
                 printf("%s load[%s.%d -> %s] NOTARIZED %d %s\n",ASSETCHAINS_SYMBOL,symbol,sp->NUM_NPOINTS,dest,notarized_height,notarized_hash.ToString().c_str());
             //if ( matched != 0 ) global independent states -> inside *sp
             komodo_eventadd_notarized(sp,symbol,ht,dest,notarized_hash,notarized_desttxid,notarized_height);
