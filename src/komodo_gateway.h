@@ -1442,7 +1442,6 @@ void komodo_passport_iteration()
         return;
     }
     lasttime = starttime;
-    //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=32; baseid>=0; baseid--)
     {
         if ( time(NULL) >= starttime+maxseconds )
@@ -1450,6 +1449,7 @@ void komodo_passport_iteration()
         sp = 0;
         isrealtime = 0;
         base = (char *)CURRENCIES[baseid];
+        printf("PASSPORT %s baseid+1 %d refid.%d\n",ASSETCHAINS_SYMBOL,baseid+1,refid);
         if ( baseid+1 != refid )
         {
             if ( baseid == 32 || strcmp(ASSETCHAINS_SYMBOL,base) == 0 )
@@ -1462,10 +1462,10 @@ void komodo_passport_iteration()
                 if ( (filedata= OS_fileptr(&datalen,fname)) != 0 )
                 {
                     fpos = 0;
-                    printf("processing %s %ldKB\n",fname,datalen/1024);
+                    fprintf(stderr,"processing %s %ldKB\n",fname,datalen/1024);
                     while ( komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest) >= 0 )
                         ;
-                    printf("took %d seconds to process %s %ldKB\n",(int32_t)(time(NULL)-starttime),fname,datalen/1024);
+                    fprintf(stderr,"took %d seconds to process %s %ldKB\n",(int32_t)(time(NULL)-starttime),fname,datalen/1024);
                     lastpos[baseid] = fpos;
                     free(filedata), filedata = 0;
                     datalen = 0;
@@ -1473,7 +1473,7 @@ void komodo_passport_iteration()
                 else if ( (fp= fopen(fname,"rb")) != 0 && sp != 0 )
                 {
                     fseek(fp,0,SEEK_END);
-                    printf("couldnt OS_fileptr(%s), freading %ldKB\n",fname,ftell(fp)/1024);
+                    fprintf(stderr,"couldnt OS_fileptr(%s), freading %ldKB\n",fname,ftell(fp)/1024);
                     if ( ftell(fp) > lastpos[baseid] )
                     {
                         if ( ASSETCHAINS_SYMBOL[0] != 0 )
@@ -1498,7 +1498,7 @@ void komodo_passport_iteration()
                             printf("from.(%s) lastpos[%s] %ld isrt.%d\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid],komodo_isrealtime(&ht));
                     } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                     fclose(fp);
-                } //else printf("error.(%s) %p\n",fname,sp);
+                } else fprintf(stderr,"load error.(%s) %p\n",fname,sp);
                 komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
                 if ( (fp= fopen(fname,"rb")) != 0 )
                 {
