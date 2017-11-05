@@ -274,7 +274,7 @@ int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t che
             return(0);
         else
         {
-            if ( kmdheight >= 238000 )
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
                 printf("ht.%d ignore mismatched %s value %lld vs checkvalue %lld -> ratio.%d\n",kmdheight,symbol,(long long)value,(long long)checkvalue,ratio);
             return(-1);
         }
@@ -1418,6 +1418,8 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
             for (i=0; i<n; i++)
             {
                 memcpy(&tmp,&inds[i * sizeof(uint32_t)],sizeof(uint32_t));
+                if ( i > n-10 )
+                    printf("%d: tmp.%08x prevpos100.%u\n",i,tmp,prevpos100);
                 if ( (i % 100) == 0 )
                     prevpos100 = tmp;
                 else
@@ -1498,7 +1500,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
             if ( (indfp= fopen(indfname,"rb+")) != 0 )
             {
                 lastfpos = fpos = validated;
-                fprintf(stderr,"validated %ld -> %ld vs indcounter %u, prevpos100 %u offset.%ld\n",validated,validated/sizeof(uint32_t),indcounter,prevpos100,indcounter * sizeof(uint32_t));
+                fprintf(stderr,"validated %ld -> indcounter %u, prevpos100 %u offset.%ld\n",validated,indcounter,prevpos100,indcounter * sizeof(uint32_t));
                 fseek(indfp,indcounter * sizeof(uint32_t),SEEK_SET);
                 if ( ftell(indfp) == indcounter * sizeof(uint32_t) )
                 {
@@ -1510,7 +1512,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
                     printf("unexpected komodostate.ind validate failure %s datalen.%ld\n",indfname,datalen);
                 else
                 {
-                    printf("%s validated updated from validated.%ld to %ld [%ld]\n",indfname,validated,fpos,fpos-validated);
+                    printf("%s validated updated from validated.%ld to %ld new.[%ld] -> indcounter %u, prevpos100 %u offset.%ld\n",indfname,validated,fpos,fpos-validated,indcounter,prevpos100,indcounter * sizeof(uint32_t));
                     finished = 1;
                 }
             }
