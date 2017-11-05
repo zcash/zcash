@@ -1149,7 +1149,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( baseids[i] < 0 )
                     {
                         static uint32_t counter;
-                        if ( counter++ < 3 )
+                        if ( ++counter < 1 )
                             printf("%d of %d illegal baseid.%d, this can be ignored\n",i,n,baseids[i]);
                         continue;
                     }
@@ -1356,12 +1356,12 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
 
 void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_t *filedata,long datalen,char *symbol,char *dest)
 {
-    uint8_t func; long lastK,lastT,lastN,lastV,fpos=0,lastfpos=0; int32_t i,count,doissue,iter,numn,numv,numN,numV,numR; uint32_t tmp,prevpos100,offset;
+    uint8_t func; long lastK,lastT,lastN,lastV,fpos,lastfpos; int32_t i,count,doissue,iter,numn,numv,numN,numV,numR; uint32_t tmp,prevpos100,offset;
     count = numR = numN = numV = numn = numv = 0;
     lastK = lastT = lastN = lastV = -1;
     for (iter=0; iter<2; iter++)
     {
-        for (prevpos100=i=0; i<n; i++)
+        for (latfpos=fpos=prevpos100=i=0; i<n; i++)
         {
             tmp = inds[i];
             if ( (i % 100) == 0 )
