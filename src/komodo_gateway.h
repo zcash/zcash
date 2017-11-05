@@ -1471,7 +1471,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
     strcat(indfname,".ind");
     if ( (filedata= OS_fileptr(&datalen,fname)) != 0 )
     {
-        if ( datalen >= (1LL << 32) || GetArg("-genind",0) != 0 || (processed= komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter)) < 0 )
+        if ( datalen >= (1LL << 32) || GetArg("-genind",0) != 0 || (processed= komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest)) < 0 )
         {
             lastfpos = fpos = 0;
             indcounter = prevpos100 = 0;
