@@ -1504,7 +1504,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
                         lastfpos = komodo_indfile_update(indfp,&prevpos100,lastfpos,fpos,func,&indcounter);
                 }
                 fclose(indfp);
-                if ( komodo_stateind_validate(sp,indfname,filedata,datalen,&prevpos100,&indcounter,system,dest) < 0 )
+                if ( komodo_stateind_validate(sp,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest) < 0 )
                     printf("unexpected komodostate.ind validate failure %s datalen.%ld\n",indfname,datalen);
                 else
                 {
