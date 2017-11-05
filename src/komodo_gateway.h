@@ -1351,10 +1351,12 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     return(typestr);
 }
 
+int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *fposp,long datalen,char *symbol,char *dest);
+
 void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_t *filedata,long datalen,char *symbol,char *dest)
 {
     uint8_t func; long fpos;
-    komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest);
+    //komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest);
     // scan backwards to set all the sp-> fields to the current valid value
 }
 
@@ -1403,8 +1405,6 @@ uint8_t *OS_fileptr(long *allocsizep,char *fname)
     retptr = OS_loadfile(fname,&buf,&filesize,allocsizep);
     return((uint8_t *)retptr);
 }
-
-int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *fposp,long datalen,char *symbol,char *dest);
 
 long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *filedata,long datalen,uint32_t *prevpos100p,uint32_t *indcounterp,char *symbol,char *dest)
 {
@@ -1466,7 +1466,7 @@ long komodo_indfile_update(FILE *indfp,uint32_t *prevpos100p,long lastfpos,long 
 int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,char *dest)
 {
     FILE *indfp; char indfname[1024]; uint8_t *filedata; long processed=-1,datalen,fpos,lastfpos; uint32_t tmp,prevpos100,indcounter,starttime; int32_t func,finished = 0;
-    stattime = (uint32_t)time(NULL);
+    starttime = (uint32_t)time(NULL);
     safecopy(indfname,fname,sizeof(indfname)-4);
     strcat(indfname,".ind");
     if ( (filedata= OS_fileptr(&datalen,fname)) != 0 )
