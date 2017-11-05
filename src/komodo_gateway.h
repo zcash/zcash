@@ -1408,10 +1408,11 @@ uint8_t *OS_fileptr(long *allocsizep,char *fname)
 
 long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *filedata,long datalen,uint32_t *prevpos100p,uint32_t *indcounterp,char *symbol,char *dest)
 {
-    FILE *fp; long fsize,fpos=-1; uint8_t *inds,func; int32_t i,n; uint32_t offset,tmp,prevpos100 = 0;
+    FILE *fp; long fsize,lastfpos,fpos=-1; uint8_t *inds,func; int32_t i,n; uint32_t offset,tmp,prevpos100 = 0;
     *indcounterp = *prevpos100p = 0;
     if ( (inds= OS_fileptr(&fsize,indfname)) != 0 )
     {
+        lastfpos = 0;
         fprintf(stderr,"validate %s fsize.%ld datalen.%ld n.%ld\n",indfname,fsize,datalen,fsize / sizeof(uint32_t));
         if ( (fsize % sizeof(uint32_t)) == 0 )
         {
@@ -1428,12 +1429,13 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
                     func = (tmp & 0xff);
                     offset = (tmp >> 8);
                     fpos = prevpos100 + offset;
-                    if ( fpos >= datalen || filedata[fpos] != func )
+                    if ( fpos >= datalen || filedata[lastfpos] != func )
                     {
                         printf("validate.%d error (%u %d) prev100 %u -> fpos.%ld datalen.%ld [%d]\n",i,offset,func,prevpos100,fpos,datalen,fpos < datalen ? filedata[fpos] : -1);
                         return(-1);
                     }
                 }
+                lastfpos = fpos;
             }
             *indcounterp = n;
             *prevpos100p = prevpos100;
@@ -1441,7 +1443,7 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
             if ( sp != 0 )
                 komodo_stateind_set(sp,(uint32_t *)inds,n,filedata,fpos,symbol,dest);
             free(inds);
-            return(datalen);
+            return(fpos);
         } else printf("wrong filesize %s %ld\n",indfname,fsize);
     }
     free(inds);
@@ -1454,7 +1456,7 @@ long komodo_indfile_update(FILE *indfp,uint32_t *prevpos100p,long lastfpos,long 
     uint32_t tmp;
     if ( indfp != 0 )
     {
-        tmp = ((uint32_t)(lastfpos - *prevpos100p) << 8) | (func & 0xff);
+        tmp = ((uint32_t)(newfpos - *prevpos100p) << 8) | (func & 0xff);
         if ( ftell(indfp)/sizeof(uint32_t) != *indcounterp )
             printf("indfp fpos %ld -> ind.%ld vs counter.%u\n",ftell(indfp),ftell(indfp)/sizeof(uint32_t),*indcounterp);
         fprintf(stderr,"ftell.%ld indcounter.%u lastfpos.%ld newfpos.%ld func.%02x\n",ftell(indfp),*indcounterp,lastfpos,newfpos,func);
@@ -1534,7 +1536,6 @@ void komodo_passport_iteration()
     static long lastpos[34]; static char userpass[33][1024]; static uint32_t lasttime,callcounter;
     int32_t maxseconds = 10;
     FILE *fp; uint8_t *filedata; long fpos,datalen,lastfpos; int32_t baseid,limit,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
-    printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
     expired = 0;
     while ( KOMODO_INITDONE == 0 )
     {
