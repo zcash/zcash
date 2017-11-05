@@ -1048,7 +1048,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         komodo_kvupdate(opretbuf,opretlen,value);
         return("kv");
     }
-    else if ( KOMODO_PAX == 0 )
+    else if ( ASSETCHAINS_SYMBOL[0] == 0 && KOMODO_PAX == 0 )
         return("nopax");
     if ( opretbuf[0] == 'D' )
     {
@@ -1566,7 +1566,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
     strcat(indfname,".ind");
     if ( (filedata= OS_fileptr(&datalen,fname)) != 0 )
     {
-        if ( datalen >= (1LL << 32) || GetArg("-genind",0) != 0 || (validated= komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest)) < 0 )
+        if ( 1 )//datalen >= (1LL << 32) || GetArg("-genind",0) != 0 || (validated= komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest)) < 0 )
         {
             lastfpos = fpos = 0;
             indcounter = prevpos100 = 0;
