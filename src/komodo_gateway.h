@@ -1371,8 +1371,8 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
                 func = (tmp & 0xff);
                 offset = (tmp >> 8);
                 fpos = prevpos100 + offset;
-                if ( lastfpos >= datalen || filedata[lastfpos] != func )
-                    printf("lastfpos.%ld >= datalen.%ld or [%d] != fund.%d\n",lastfpos,datalen,filedata[lastfpos],func);
+                if ( lastfpos >= datalen || (filedata[lastfpos] != func && func != 0) )
+                    printf("lastfpos.%ld >= datalen.%ld or [%d] != func.%d\n",lastfpos,datalen,filedata[lastfpos],func);
                 else if ( iter == 0 )
                 {
                     switch ( func )
