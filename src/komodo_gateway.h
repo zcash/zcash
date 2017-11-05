@@ -1408,7 +1408,7 @@ uint8_t *OS_fileptr(long *allocsizep,char *fname)
 
 long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *filedata,long datalen,uint32_t *prevpos100p,uint32_t *indcounterp,char *symbol,char *dest)
 {
-    FILE *fp; long fsize,lastfpos,fpos=-1; uint8_t *inds,func; int32_t i,n; uint32_t offset,tmp,prevpos100 = 0;
+    FILE *fp; long fsize,lastfpos=0,fpos=-1; uint8_t *inds,func; int32_t i,n; uint32_t offset,tmp,prevpos100 = 0;
     *indcounterp = *prevpos100p = 0;
     if ( (inds= OS_fileptr(&fsize,indfname)) != 0 )
     {
