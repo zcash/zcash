@@ -1413,7 +1413,7 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
     if ( (inds= OS_fileptr(&fsize,indfname)) != 0 )
     {
         lastfpos = 0;
-        fprintf(stderr,"validate %s fsize.%ld datalen.%ld n.%ld\n",indfname,fsize,datalen,fsize / sizeof(uint32_t));
+        fprintf(stderr,"validate %s fsize.%ld datalen.%ld n.%ld lastfpos.%ld\n",indfname,fsize,datalen,fsize / sizeof(uint32_t),lastfpos);
         if ( (fsize % sizeof(uint32_t)) == 0 )
         {
             n = (int32_t)(fsize / sizeof(uint32_t));
@@ -1431,7 +1431,8 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
                     fpos = prevpos100 + offset;
                     if ( lastfpos >= datalen || filedata[lastfpos] != func )
                     {
-                        printf("validate.%d error (%u %d) prev100 %u -> fpos.%ld datalen.%ld [%d] (%c) vs (%c)\n",i,offset,func,prevpos100,fpos,datalen,lastfpos < datalen ? filedata[lastfpos] : -1,func,filedata[lastfpos]);
+                        printf("validate.%d error (%u %d) prev100 %u -> fpos.%ld datalen.%ld [%d] (%c) vs (%c) lastfpos.%ld\n",i,offset,func,prevpos100,fpos,datalen,lastfpos < datalen ? filedata[lastfpos] : -1,func,filedata[lastfpos],lastfpos);
+                        exit(-1);
                         return(-1);
                     }
                 }
