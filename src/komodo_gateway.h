@@ -1356,7 +1356,7 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
 
 void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_t *filedata,long datalen,char *symbol,char *dest)
 {
-    uint8_t func; long lastK,lastT,lastN,lastV,fpos=0,lastfpos=0; int32_t i,count,doissue,iter,numn,numv,numN,numV; uint32_t tmp,prevpos100;
+    uint8_t func; long lastK,lastT,lastN,lastV,fpos=0,lastfpos=0; int32_t i,count,doissue,iter,numn,numv,numN,numV; uint32_t tmp,prevpos100,offset;
     count = numN = numV = numn = numv = 0;
     lastK = lastT = lastN = lastV;
     for (iter=0; iter<2; iter++)
@@ -1437,42 +1437,12 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
             lastfpos = fpos;
         }
     }
-
-    else if ( func == 'K' ) // KMD height: stop after 1st
+    /*else if ( func == 'K' ) // KMD height: stop after 1st
     else if ( func == 'T' ) // KMD height+timestamp: stop after 1st
         
     else if ( func == 'N' ) // notarization, scan backwards 1440+ blocks;
     else if ( func == 'V' ) // price feed: can stop after 1440+
-    else if ( func == 'R' ) // opreturn:
-    {
-        uint16_t olen,v; uint64_t ovalue; uint256 txid; uint8_t opret[16384];
-        if ( memread(&txid,sizeof(txid),filedata,&fpos,datalen) != sizeof(txid) )
-            errs++;
-        if ( memread(&v,sizeof(v),filedata,&fpos,datalen) != sizeof(v) )
-            errs++;
-        if ( memread(&ovalue,sizeof(ovalue),filedata,&fpos,datalen) != sizeof(ovalue) )
-            errs++;
-        if ( memread(&olen,sizeof(olen),filedata,&fpos,datalen) != sizeof(olen) )
-            errs++;
-        if ( olen < sizeof(opret) )
-        {
-            if ( memread(opret,olen,filedata,&fpos,datalen) != olen )
-                errs++;
-            if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && matched != 0 )
-            {
-                int32_t i;  for (i=0; i<olen; i++)
-                    printf("%02x",opret[i]);
-                printf(" %s.%d load[%s] opret[%c] len.%d %.8f\n",ASSETCHAINS_SYMBOL,ht,symbol,opret[0],olen,(double)ovalue/COIN);
-            }
-            komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen); // global shared state -> global PAX
-        } else
-        {
-            int32_t i;
-            for (i=0; i<olen; i++)
-                filedata[fpos++];
-            //printf("illegal olen.%u\n",olen);
-        }
-    }
+    else if ( func == 'R' ) // opreturn:*/
 }
 
 void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
