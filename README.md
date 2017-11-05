@@ -66,7 +66,7 @@ The above mentioned command should configure your votecoin already by creating ~
 Mining
 ------
 
-Mining with CPU is currently worthless. If you plan to mine VoteCoin, you should
+Solo mining with CPU is currently not worth. If you plan to mine VoteCoin, you should
 join a pool. There are several pools in operation at the moment, for example:
 
     http://pool.votecoin.site
