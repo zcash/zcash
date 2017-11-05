@@ -1357,8 +1357,8 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
 void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_t *filedata,long datalen,char *symbol,char *dest)
 {
     uint8_t func; long lastK,lastT,lastN,lastV,fpos=0,lastfpos=0; int32_t i,count,doissue,iter,numn,numv,numN,numV; uint32_t tmp,prevpos100,offset;
-    count = numN = numV = numn = numv = 0;
-    lastK = lastT = lastN = lastV;
+    count = numR = numN = numV = numn = numv = 0;
+    lastK = lastT = lastN = lastV = -1;
     for (iter=0; iter<2; iter++)
     {
         for (prevpos100=i=0; i<n; i++)
@@ -1396,7 +1396,9 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
                             lastV = lastfpos;
                             numV++;
                             break;
-                        case 'R': break;
+                        case 'R':
+                            numR++;
+                            break;
                     }
                 }
                 else
@@ -1428,7 +1430,7 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
                         doissue = 1;
                     if ( doissue != 0 )
                     {
-                        printf("issue %c total.%d lastfpos.%ld\n",func,count,lastfpos);
+                        //printf("issue %c total.%d lastfpos.%ld\n",func,count,lastfpos);
                         komodo_parsestatefiledata(sp,filedata,&lastfpos,datalen,symbol,dest);
                         count++;
                     }
@@ -1437,6 +1439,7 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
             lastfpos = fpos;
         }
     }
+    printf("numR.%d numV.%d numN.%d count.%d\n",numR,numV,numN,count);
     /*else if ( func == 'K' ) // KMD height: stop after 1st
     else if ( func == 'T' ) // KMD height+timestamp: stop after 1st
         
