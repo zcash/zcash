@@ -69,8 +69,15 @@ Mining
 Mining with CPU is currently worthless. If you plan to mine VoteCoin, you should
 join a pool. There are several pools in operation at the moment, for example:
 
-    http://pool.votecoin.site ... the official mining pool from VoteCoin developers, 0% fee
-    http://votecoinmine.site ... unofficial pool, 1% fee
+    http://pool.votecoin.site
+    http://votecoinmine.site
+    http://nibirupool.com
+    https://luckpool.org/
+    https://zsolo.bid/
+    http://votecoin.catspool.org/
+    https://multipool.es
+    http://pcmining.xyz:8080
+
 
 
 Installing
