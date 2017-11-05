@@ -328,7 +328,7 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t KMDheight,uint32_t KMDtimestamp,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout)
 {
     static FILE *fp; static int32_t errs,didinit;
-    struct komodo_state *sp; char fname[512],symbol[16],dest[16]; int32_t ht,func; uint8_t num,pubkeys[64][33];
+    struct komodo_state *sp; char fname[512],symbol[16],dest[16]; int32_t retval,ht,func; uint8_t num,pubkeys[64][33];
     if ( didinit == 0 )
     {
         portable_mutex_init(&KOMODO_KV_mutex);
@@ -346,10 +346,11 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"komodostate");
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
-            if ( komodo_faststateinit(sp,fname,symbol,dest) == 0 )
+            if ( (retval= komodo_faststateinit(sp,fname,symbol,dest)) == 0 )
                 fseek(fp,0,SEEK_END);
             else
             {
+                fprintf(stderr,"komodo_faststateinit retval.%d\n",retval);)
                 while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
                     ;
             }
