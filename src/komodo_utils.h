@@ -1512,7 +1512,7 @@ void komodo_args(char *argv0)
     {
         USE_EXTERNAL_PUBKEY = 1;
         KOMODO_PAX = 1;
-    } else KOMODO_PAX = GetArg("-pax",0);
+    } else KOMODO_PAX = GetArg("-pax",1);
     name = GetArg("-ac_name","");
     if ( argv0 != 0 )
     {

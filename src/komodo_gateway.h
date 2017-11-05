@@ -1050,7 +1050,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     }
     //else if ( KOMODO_PAX == 0 )
     //    return("nopax");
-    printf("OPRET.%c\n",opretbuf[0]);
     if ( opretbuf[0] == 'D' )
     {
         tokomodo = 0;
