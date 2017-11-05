@@ -1372,7 +1372,7 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
                 offset = (tmp >> 8);
                 fpos = prevpos100 + offset;
                 if ( lastfpos >= datalen || (filedata[lastfpos] != func && func != 0) )
-                    printf("lastfpos.%ld >= datalen.%ld or [%d] != func.%d\n",lastfpos,datalen,filedata[lastfpos],func);
+                    printf("i.%d/n.%d lastfpos.%ld >= datalen.%ld or [%d] != func.%d\n",i,n,lastfpos,datalen,filedata[lastfpos],func);
                 else if ( iter == 0 )
                 {
                     switch ( func )
@@ -1422,7 +1422,7 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
                     }
                     else if ( func == 'V' )
                     {
-                        if ( numv > numV-1440 )
+                        if ( KOMODO_PAX != 0 || numv > numV-1440 )
                             doissue = 1;
                         numv++;
                     }
