@@ -1356,7 +1356,7 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
 
 void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_t *filedata,long datalen,char *symbol,char *dest)
 {
-    uint8_t func; long lastK,lastT,lastN,lastV,fpos=0,lastfpos=0; int32_t i,count,doissue,iter,numn,numv,numN,numV; uint32_t tmp,prevpos100,offset;
+    uint8_t func; long lastK,lastT,lastN,lastV,fpos=0,lastfpos=0; int32_t i,count,doissue,iter,numn,numv,numN,numV,numR; uint32_t tmp,prevpos100,offset;
     count = numR = numN = numV = numn = numv = 0;
     lastK = lastT = lastN = lastV = -1;
     for (iter=0; iter<2; iter++)
