@@ -1452,7 +1452,7 @@ long komodo_indfile_update(FILE *indfp,uint32_t *prevpos100p,long lastfpos,long 
     {
         tmp = ((uint32_t)(lastfpos - *prevpos100p) << 8) | (func & 0xff);
         if ( ftell(indfp)/sizeof(uint32_t) != *indcounterp )
-            printf("indfp fpos %ld -> ind.%d vs counter.%u\n",ftell(indfp),ftell(indfp)/sizeof(uint32_t),*indcounterp);
+            printf("indfp fpos %ld -> ind.%ld vs counter.%u\n",ftell(indfp),ftell(indfp)/sizeof(uint32_t),*indcounterp);
             fwrite(&tmp,1,sizeof(tmp),indfp), (*indcounterp)++;
         if ( (*indcounterp % 100) == 0 )
         {
@@ -1485,7 +1485,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
             if ( indfp != 0 )
             {
                 fclose(indfp);
-                if ( komodo_stateind_validate(0,indfname,filedata,datalen,symbol,dest) < 0 )
+                if ( komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest) < 0 )
                     printf("unexpected komodostate.ind validate failure %s datalen.%ld\n",indfname,datalen);
                 else printf("%s validated\n",indfname);
             }
@@ -1504,7 +1504,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
                         lastfpos = komodo_indfile_update(indfp,&prevpos100,lastfpos,fpos,func,&indcounter);
                 }
                 fclose(indfp);
-                if ( komodo_stateind_validate(sp,indfname,filedata,datalen,system,dest) < 0 )
+                if ( komodo_stateind_validate(sp,indfname,filedata,datalen,&prevpos100,&indcountersystem,dest) < 0 )
                     printf("unexpected komodostate.ind validate failure %s datalen.%ld\n",indfname,datalen);
                 else
                 {
