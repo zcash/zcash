@@ -1441,7 +1441,7 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
             if ( sp != 0 )
                 komodo_stateind_set(sp,(uint32_t *)inds,n,filedata,fpos,symbol,dest);
             free(inds);
-            return(fpos);
+            return(datalen);
         } else printf("wrong filesize %s %ld\n",indfname,fsize);
     }
     free(inds);
@@ -1490,9 +1490,9 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
             if ( indfp != 0 )
             {
                 fclose(indfp);
-                if ( komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest) < 0 )
+                if ( (fpos= komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest)) < 0 )
                     printf("unexpected komodostate.ind validate failure %s datalen.%ld\n",indfname,datalen);
-                else printf("%s validated\n",indfname);
+                else printf("%s validated fpos.%ld\n",indfname,fpos);
             }
             finished = 1;
             fprintf(stderr,"took %d seconds to process %s %ldKB\n",(int32_t)(time(NULL)-starttime),fname,datalen/1024);
