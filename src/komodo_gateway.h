@@ -1459,7 +1459,7 @@ long komodo_indfile_update(FILE *indfp,uint32_t *prevpos100p,long lastfpos,long 
         tmp = ((uint32_t)(newfpos - *prevpos100p) << 8) | (func & 0xff);
         if ( ftell(indfp)/sizeof(uint32_t) != *indcounterp )
             printf("indfp fpos %ld -> ind.%ld vs counter.%u\n",ftell(indfp),ftell(indfp)/sizeof(uint32_t),*indcounterp);
-        //fprintf(stderr,"ftell.%ld indcounter.%u lastfpos.%ld newfpos.%ld func.%02x\n",ftell(indfp),*indcounterp,lastfpos,newfpos,func);
+        fprintf(stderr,"ftell.%ld indcounter.%u lastfpos.%ld newfpos.%ld func.%02x\n",ftell(indfp),*indcounterp,lastfpos,newfpos,func);
         fwrite(&tmp,1,sizeof(tmp),indfp), (*indcounterp)++;
         if ( (*indcounterp % 100) == 0 )
         {
@@ -1504,18 +1504,21 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
             if ( (indfp= fopen(indfname,"rb+")) != 0 )
             {
                 lastfpos = fpos = validated;
-                fprintf(stderr,"validated %ld -> indcounter %u, prevpos100 %u offset.%ld\n",validated,indcounter,prevpos100,indcounter * sizeof(uint32_t));
-                fseek(indfp,indcounter * sizeof(uint32_t),SEEK_SET);
-                if ( ftell(indfp) == indcounter * sizeof(uint32_t) )
+                fprintf(stderr,"datalen.%ld validated %ld -> indcounter %u, prevpos100 %u offset.%ld\n",datalen,validated,indcounter,prevpos100,indcounter * sizeof(uint32_t));
+                if ( fpos < datalen )
                 {
-                    while ( (func= komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest)) >= 0 )
+                    fseek(indfp,indcounter * sizeof(uint32_t),SEEK_SET);
+                    if ( ftell(indfp) == indcounter * sizeof(uint32_t) )
                     {
-                        lastfpos = komodo_indfile_update(indfp,&prevpos100,lastfpos,fpos,func,&indcounter);
-                        if ( lastfpos != fpos )
-                            fprintf(stderr,"unexpected lastfpos.%ld != %ld\n",lastfpos,fpos);
+                        while ( (func= komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest)) >= 0 )
+                        {
+                            lastfpos = komodo_indfile_update(indfp,&prevpos100,lastfpos,fpos,func,&indcounter);
+                            if ( lastfpos != fpos )
+                                fprintf(stderr,"unexpected lastfpos.%ld != %ld\n",lastfpos,fpos);
+                        }
                     }
+                    fclose(indfp);
                 }
-                fclose(indfp);
                 if ( komodo_stateind_validate(sp,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest) < 0 )
                     printf("unexpected komodostate.ind validate failure %s datalen.%ld\n",indfname,datalen);
                 else
