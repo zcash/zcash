@@ -1413,7 +1413,7 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
     if ( (inds= OS_fileptr(&fsize,indfname)) != 0 )
     {
         lastfpos = 0;
-        fprintf(stderr,"validate %s fsize.%ld datalen.%ld n.%ld lastfpos.%ld\n",indfname,fsize,datalen,fsize / sizeof(uint32_t),lastfpos);
+        //fprintf(stderr,"validate %s fsize.%ld datalen.%ld n.%ld lastfpos.%ld\n",indfname,fsize,datalen,fsize / sizeof(uint32_t),lastfpos);
         if ( (fsize % sizeof(uint32_t)) == 0 )
         {
             n = (int32_t)(fsize / sizeof(uint32_t));
@@ -1432,7 +1432,6 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
                     if ( lastfpos >= datalen || filedata[lastfpos] != func )
                     {
                         printf("validate.%d error (%u %d) prev100 %u -> fpos.%ld datalen.%ld [%d] (%c) vs (%c) lastfpos.%ld\n",i,offset,func,prevpos100,fpos,datalen,lastfpos < datalen ? filedata[lastfpos] : -1,func,filedata[lastfpos],lastfpos);
-                        exit(-1);
                         return(-1);
                     }
                 }
@@ -1460,7 +1459,7 @@ long komodo_indfile_update(FILE *indfp,uint32_t *prevpos100p,long lastfpos,long 
         tmp = ((uint32_t)(newfpos - *prevpos100p) << 8) | (func & 0xff);
         if ( ftell(indfp)/sizeof(uint32_t) != *indcounterp )
             printf("indfp fpos %ld -> ind.%ld vs counter.%u\n",ftell(indfp),ftell(indfp)/sizeof(uint32_t),*indcounterp);
-        fprintf(stderr,"ftell.%ld indcounter.%u lastfpos.%ld newfpos.%ld func.%02x\n",ftell(indfp),*indcounterp,lastfpos,newfpos,func);
+        //fprintf(stderr,"ftell.%ld indcounter.%u lastfpos.%ld newfpos.%ld func.%02x\n",ftell(indfp),*indcounterp,lastfpos,newfpos,func);
         fwrite(&tmp,1,sizeof(tmp),indfp), (*indcounterp)++;
         if ( (*indcounterp % 100) == 0 )
         {
