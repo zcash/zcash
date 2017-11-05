@@ -1377,10 +1377,10 @@ void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
             printf("OS_loadfile null size.(%s)\n",fname);
             return(0);
         }
-        if ( filesize > buflen-1 )
+        if ( filesize > buflen )
         {
             *allocsizep = filesize;
-            *bufp = buf = (uint8_t *)realloc(buf,(long)*allocsizep);
+            *bufp = buf = (uint8_t *)realloc(buf,(long)*allocsizep+64);
         }
         rewind(fp);
         if ( buf == 0 )
@@ -1441,8 +1441,8 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
             *prevpos100p = prevpos100;
             if ( sp != 0 )
                 komodo_stateind_set(sp,(uint32_t *)inds,n,filedata,fpos,symbol,dest);
-            else free(inds);
             printf("free inds.%p %s validated[%d] fpos.%ld datalen.%ld, offset %ld vs fsize.%ld\n",inds,indfname,i,fpos,datalen,i * sizeof(uint32_t),fsize);
+            free(inds);
             return(fpos);
         } else printf("wrong filesize %s %ld\n",indfname,fsize);
     }
