@@ -192,11 +192,143 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
         return(func);
     } else return(-1);
 }
-                    
+
+int32_t memread(void *dest,int32_t size,uint8_t *filedata,long *fposp,long datalen)
+{
+    if ( *fposp+size <= datalen )
+    {
+        memcpy(dest,&filedata[*fposp],size);
+        (*fposp) += size;
+        return(size);
+    }
+    return(-1);
+}
+
+int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *fposp,long datalen,char *symbol,char *dest)
+{
+    static int32_t errs;
+    int32_t func= -1,ht,notarized_height,num,matched=0; uint256 notarized_hash,notarized_desttxid; uint8_t pubkeys[64][33]; long fpos = *fposp;
+    if ( fpos < datalen )
+    {
+        func = filedata[fpos++];
+        if ( ASSETCHAINS_SYMBOL[0] == 0 && strcmp(symbol,"KMD") == 0 )
+            matched = 1;
+        else matched = (strcmp(symbol,ASSETCHAINS_SYMBOL) == 0);
+        if ( memread(&ht,sizeof(ht),filedata,&fpos,datalen) != sizeof(ht) )
+            errs++;
+        if ( func == 'P' )
+        {
+            if ( (num= filedata[fpos++]) <= 64 )
+            {
+                if ( memread(pubkeys,33*num,filedata,&fpos,datalen) != 33*num )
+                    errs++;
+                else
+                {
+                    //printf("updated %d pubkeys at %s ht.%d\n",num,symbol,ht);
+                    if ( (KOMODO_EXTERNAL_NOTARIES != 0 && matched != 0) || (strcmp(symbol,"KMD") == 0 && KOMODO_EXTERNAL_NOTARIES == 0) )
+                        komodo_eventadd_pubkeys(sp,symbol,ht,num,pubkeys);
+                }
+            } else printf("illegal num.%d\n",num);
+        }
+        else if ( func == 'N' )
+        {
+            if ( memread(&notarized_height,sizeof(notarized_height),filedata,&fpos,datalen) != sizeof(notarized_height) )
+                errs++;
+            if ( memread(&notarized_hash,sizeof(notarized_hash),filedata,&fpos,datalen) != sizeof(notarized_hash) )
+                errs++;
+            if ( memread(&notarized_desttxid,sizeof(notarized_desttxid),filedata,&fpos,datalen) != sizeof(notarized_desttxid) )
+                errs++;
+            if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && sp != 0 )
+                printf("%s load[%s.%d -> %s] NOTARIZED %d %s\n",ASSETCHAINS_SYMBOL,symbol,sp->NUM_NPOINTS,dest,notarized_height,notarized_hash.ToString().c_str());
+            //if ( matched != 0 ) global independent states -> inside *sp
+            komodo_eventadd_notarized(sp,symbol,ht,dest,notarized_hash,notarized_desttxid,notarized_height);
+        }
+        else if ( func == 'U' ) // deprecated
+        {
+            uint8_t n,nid; uint256 hash; uint64_t mask;
+            n = filedata[fpos++];
+            nid = filedata[fpos++];
+            //printf("U %d %d\n",n,nid);
+            if ( memread(&mask,sizeof(mask),filedata,&fpos,datalen) != sizeof(mask) )
+                errs++;
+            if ( memread(&hash,sizeof(hash),filedata,&fpos,datalen) != sizeof(hash) )
+                errs++;
+        }
+        else if ( func == 'K' )
+        {
+            int32_t kheight;
+            if ( memread(&kheight,sizeof(kheight),filedata,&fpos,datalen) != sizeof(kheight) )
+                errs++;
+             komodo_eventadd_kmdheight(sp,symbol,ht,kheight,0);
+        }
+        else if ( func == 'T' )
+        {
+            int32_t kheight,ktimestamp;
+            if ( memread(&kheight,sizeof(kheight),filedata,&fpos,datalen) != sizeof(kheight) )
+                errs++;
+            if ( memread(&ktimestamp,sizeof(ktimestamp),filedata,&fpos,datalen) != sizeof(ktimestamp) )
+                errs++;
+            //if ( matched != 0 ) global independent states -> inside *sp
+            //printf("%s.%d load[%s] ht.%d t.%u\n",ASSETCHAINS_SYMBOL,ht,symbol,kheight,ktimestamp);
+            komodo_eventadd_kmdheight(sp,symbol,ht,kheight,ktimestamp);
+        }
+        else if ( func == 'R' )
+        {
+            uint16_t olen,v; uint64_t ovalue; uint256 txid; uint8_t opret[16384];
+            if ( memread(&txid,sizeof(txid),filedata,&fpos,datalen) != sizeof(txid) )
+                errs++;
+            if ( memread(&v,sizeof(v),filedata,&fpos,datalen) != sizeof(v) )
+                errs++;
+            if ( memread(&ovalue,sizeof(ovalue),filedata,&fpos,datalen) != sizeof(ovalue) )
+                errs++;
+            if ( memread(&olen,sizeof(olen),filedata,&fpos,datalen) != sizeof(olen) )
+                errs++;
+            if ( olen < sizeof(opret) )
+            {
+                if ( memread(opret,olen,filedata,&fpos,datalen) != olen )
+                    errs++;
+                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && matched != 0 )
+                {
+                    int32_t i;  for (i=0; i<olen; i++)
+                        printf("%02x",opret[i]);
+                    printf(" %s.%d load[%s] opret[%c] len.%d %.8f\n",ASSETCHAINS_SYMBOL,ht,symbol,opret[0],olen,(double)ovalue/COIN);
+                }
+                komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen); // global shared state -> global PAX
+            } else
+            {
+                int32_t i;
+                for (i=0; i<olen; i++)
+                    filedata[fpos++];
+                //printf("illegal olen.%u\n",olen);
+            }
+        }
+        else if ( func == 'D' )
+        {
+            printf("unexpected function D[%d]\n",ht);
+        }
+        else if ( func == 'V' )
+        {
+            int32_t numpvals; uint32_t pvals[128];
+            numpvals = filedata[fpos++];
+            if ( numpvals*sizeof(uint32_t) <= sizeof(pvals) && memread(pvals,(int32_t)(sizeof(uint32_t)*numpvals),filedata,&fpos,datalen) == numpvals*sizeof(uint32_t) )
+            {
+                //if ( matched != 0 ) global shared state -> global PVALS
+                //printf("%s load[%s] prices %d\n",ASSETCHAINS_SYMBOL,symbol,ht);
+                komodo_eventadd_pricefeed(sp,symbol,ht,pvals,numpvals);
+                //printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
+            } else printf("error loading pvals[%d]\n",numpvals);
+        }
+        else printf("[%s] %s illegal func.(%d %c)\n",ASSETCHAINS_SYMBOL,symbol,func,func);
+        *fposp = fpos;
+        return(func);
+    }
+    return(-1);
+}
+
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t KMDheight,uint32_t KMDtimestamp,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout)
 {
     static FILE *fp; static int32_t errs,didinit;
-    struct komodo_state *sp; char fname[512],symbol[16],dest[16]; int32_t ht,func; uint8_t num,pubkeys[64][33];
+    struct komodo_state *sp; char fname[512],symbol[16],dest[16]; int32_t retval,ht,func; uint8_t num,pubkeys[64][33];
     if ( didinit == 0 )
     {
         portable_mutex_init(&KOMODO_KV_mutex);
@@ -214,10 +346,15 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"komodostate");
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
-            while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
-                ;
+            if ( (retval= komodo_faststateinit(sp,fname,symbol,dest)) > 0 )
+                fseek(fp,0,SEEK_END);
+            else
+            {
+                fprintf(stderr,"komodo_faststateinit retval.%d\n",retval);
+                while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
+                    ;
+            }
         } else fp = fopen(fname,"wb+");
-        printf("fname.(%s) fpos.%ld\n",fname,ftell(fp));
         KOMODO_INITDONE = (uint32_t)time(NULL);
     }
     if ( height <= 0 )

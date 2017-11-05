@@ -1,0 +1,5 @@
+rm -rf ~/.komodo/$1/chainstate
+rm -rf ~/.komodo/$1/database
+rm -rf ~/.komodo/$1/blocks
+rm -rf ~/.komodo/$1/komodostate
+
