@@ -1048,8 +1048,9 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         komodo_kvupdate(opretbuf,opretlen,value);
         return("kv");
     }
-    else if ( KOMODO_PAX == 0 )
-        return("nopax");
+    //else if ( KOMODO_PAX == 0 )
+    //    return("nopax");
+    printf("OPRET.%c\n",opretbuf[0]);
     if ( opretbuf[0] == 'D' )
     {
         tokomodo = 0;
@@ -1149,7 +1150,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( baseids[i] < 0 )
                     {
                         static uint32_t counter;
-                        if ( ++counter < 1 )
+                        if ( counter++ < 0 )
                             printf("%d of %d illegal baseid.%d, this can be ignored\n",i,n,baseids[i]);
                         continue;
                     }
@@ -1361,7 +1362,7 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
     lastK = lastT = lastN = lastV = -1;
     for (iter=0; iter<2; iter++)
     {
-        for (lastfpos=fpos=prevpos100=i=0; i<n; i++)
+        for (latfpos=fpos=prevpos100=i=0; i<n; i++)
         {
             tmp = inds[i];
             if ( (i % 100) == 0 )
