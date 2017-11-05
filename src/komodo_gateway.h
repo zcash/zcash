@@ -1413,7 +1413,7 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
     if ( (inds= OS_fileptr(&fsize,indfname)) != 0 )
     {
         lastfpos = 0;
-        //fprintf(stderr,"validate %s fsize.%ld datalen.%ld n.%ld lastfpos.%ld\n",indfname,fsize,datalen,fsize / sizeof(uint32_t),lastfpos);
+        fprintf(stderr,"inds.%p validate %s fsize.%ld datalen.%ld n.%ld lastfpos.%ld\n",inds,indfname,fsize,datalen,fsize / sizeof(uint32_t),lastfpos);
         if ( (fsize % sizeof(uint32_t)) == 0 )
         {
             n = (int32_t)(fsize / sizeof(uint32_t));
@@ -1439,9 +1439,9 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
             }
             *indcounterp = n;
             *prevpos100p = prevpos100;
-            printf("%s validated[%d] fpos.%ld datalen.%ld, offset %ld vs fsize.%ld\n",indfname,i,fpos,datalen,i * sizeof(uint32_t),fsize);
             if ( sp != 0 )
                 komodo_stateind_set(sp,(uint32_t *)inds,n,filedata,fpos,symbol,dest);
+            printf("free inds.%p %s validated[%d] fpos.%ld datalen.%ld, offset %ld vs fsize.%ld\n",inds,indfname,i,fpos,datalen,i * sizeof(uint32_t),fsize);
             free(inds);
             return(fpos);
         } else printf("wrong filesize %s %ld\n",indfname,fsize);
@@ -1519,6 +1519,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
                     }
                     fclose(indfp);
                 }
+                printf("call validate datalen.%ld\n",datalen);
                 if ( komodo_stateind_validate(sp,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest) < 0 )
                     printf("unexpected komodostate.ind validate failure %s datalen.%ld\n",indfname,datalen);
                 else
@@ -1528,6 +1529,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
                 }
             }
         } else printf("komodo_faststateinit unexpected case\n");
+        printf("free filedata.%p\n",filedata);
         free(filedata);
         return(finished == 1);
     }
