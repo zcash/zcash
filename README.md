@@ -70,7 +70,6 @@ Solo mining with CPU is currently not worth. If you plan to mine VoteCoin, you s
 join a pool. There are several pools in operation at the moment, for example:
 
     http://pool.votecoin.site
-    http://votecoinmine.site
     http://nibirupool.com
     https://luckpool.org/
     https://zsolo.bid/
