@@ -1437,6 +1437,7 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
                 }
                 lastfpos = fpos;
             }
+fpos=datalen;
             *indcounterp = n;
             *prevpos100p = prevpos100;
             if ( sp != 0 )
