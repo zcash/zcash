@@ -1466,20 +1466,19 @@ long komodo_indfile_update(FILE *indfp,uint32_t *prevpos100p,long lastfpos,long 
 
 int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,char *dest)
 {
-    FILE *indfp; char indfname[1024]; uint8_t *filedata; long processed=-1,datalen,fpos,lastfpos; uint32_t tmp,prevpos100,indcounter,starttime; int32_t func,finished = 0;
+    FILE *indfp; char indfname[1024]; uint8_t *filedata; long validated=-1,datalen,fpos,lastfpos; uint32_t tmp,prevpos100,indcounter,starttime; int32_t func,finished = 0;
     starttime = (uint32_t)time(NULL);
     safecopy(indfname,fname,sizeof(indfname)-4);
     strcat(indfname,".ind");
     if ( (filedata= OS_fileptr(&datalen,fname)) != 0 )
     {
-        fprintf(stderr,"faststateinit %s datalen.%ld\n",indfname,datalen);
-        if ( datalen >= (1LL << 32) || GetArg("-genind",0) != 0 || (processed= komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest)) < 0 )
+        if ( datalen >= (1LL << 32) || GetArg("-genind",0) != 0 || (validated= komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest)) < 0 )
         {
             lastfpos = fpos = 0;
             indcounter = prevpos100 = 0;
             if ( (indfp= fopen(indfname,"wb")) != 0 )
                 fwrite(&prevpos100,1,sizeof(prevpos100),indfp), indcounter++;
-            fprintf(stderr,"processing %s %ldKB\n",fname,datalen/1024);
+            fprintf(stderr,"processing %s %ldKB, validated.%ld\n",fname,datalen/1024,validated);
             while ( (func= komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest)) >= 0 )
             {
                 lastfpos = komodo_indfile_update(indfp,&prevpos100,lastfpos,fpos,func,&indcounter);
@@ -1494,11 +1493,12 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
             finished = 1;
             fprintf(stderr,"took %d seconds to process %s %ldKB\n",(int32_t)(time(NULL)-starttime),fname,datalen/1024);
         }
-        else if ( processed > 0 )
+        else if ( validated > 0 )
         {
             if ( (indfp= fopen(indfname,"rb+")) != 0 )
             {
-                lastfpos = fpos = processed;
+                lastfpos = fpos = validated;
+                fprintf(stderr,"validated %ld -> %ld vs indcounter %u, prevpos100 %u offset.%ld\n",validated,validated/sizeof(uint32_t),indcounter,prevpos100,indcounter * sizeof(uint32_t));
                 fseek(indfp,indcounter * sizeof(uint32_t),SEEK_SET);
                 if ( ftell(indfp) == indcounter * sizeof(uint32_t) )
                 {
@@ -1510,7 +1510,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
                     printf("unexpected komodostate.ind validate failure %s datalen.%ld\n",indfname,datalen);
                 else
                 {
-                    printf("%s validated updated from processed.%ld to %ld [%ld]\n",indfname,processed,fpos,fpos-processed);
+                    printf("%s validated updated from validated.%ld to %ld [%ld]\n",indfname,validated,fpos,fpos-validated);
                     finished = 1;
                 }
             }
@@ -1518,7 +1518,6 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
         free(filedata);
         return(finished == 1);
     }
-    fprintf(stderr,"faststateinit return -1\n");
     return(-1);
 }
 
