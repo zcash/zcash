@@ -1351,6 +1351,13 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     return(typestr);
 }
 
+void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_t *filedata,long datalen,char *symbol,char *dest)
+{
+    uint8_t func; long fpos;
+    komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest);
+    // scan backwards to set all the sp-> fields to the current valid value
+}
+
 void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
 {
     FILE *fp;
@@ -1397,7 +1404,120 @@ uint8_t *OS_fileptr(long *allocsizep,char *fname)
     return((uint8_t *)retptr);
 }
 
-long komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *fposp,long datalen,char *symbol,char *dest);
+int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *fposp,long datalen,char *symbol,char *dest);
+
+long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *filedata,long datalen,uint32_t *prevpos100p,uint32_t *indcounterp,char *symbol,char *dest)
+{
+    FILE *fp; long fsize,fpos=-1; uint8_t *inds,func; int32_t i,n; uint32_t offset,tmp,prevpos100 = 0;
+    *indcounterp = *prevpos100p = 0;
+    if ( (inds= OS_fileptr(&fsize,indfname)) != 0 )
+    {
+        if ( (fsize % sizeof(uint32_t)) == 0 )
+        {
+            n = (int32_t)(fsize / sizeof(uint32_t));
+            for (i=0; i<n; i++)
+            {
+                memcpy(&tmp,&inds[i * sizeof(uint32_t)],sizeof(uint32_t));
+                if ( (i % 100) == 0 )
+                    prevpos100 = tmp;
+                else
+                {
+                    func = (tmp & 0xff);
+                    offset = (tmp >> 8);
+                    fpos = prevpos100 + offset;
+                    if ( fpos >= datalen || filedata[fpos] != func )
+                    {
+                        printf("validate.%d error (%u %d) prev100 %u -> fpos.%ld datalen.%ld [%d]\n",i,offset,func,prevpos100,fpos,datalen,fpos < datalen ? filedata[fpos] : -1);
+                        return(-1);
+                    }
+                }
+            }
+            *indcounterp = n;
+            *prevpos100p = prevpos100;
+            printf("%s validated[%d] fpos.%ld datalen.%ld\n",indfname,i,fpos,datalen);
+            if ( sp != 0 )
+                komodo_stateind_set(sp,(uint32_t *)inds,n,filedata,fpos,symbol,dest);
+            free(inds);
+            return(fpos);
+        } else printf("wrong filesize %s %ld\n",indfname,fsize);
+    }
+    free(inds);
+    return(-1);
+}
+
+long komodo_indfile_update(FILE *indfp,uint32_t *prevpos100p,long lastfpos,long newfpos,uint8_t func,uint32_t *indcounterp)
+{
+    uint32_t tmp;
+    if ( indfp != 0 )
+    {
+        tmp = ((uint32_t)(lastfpos - *prevpos100p) << 8) | (func & 0xff);
+        if ( ftell(indfp)/sizeof(uint32_t) != *indcounterp )
+            printf("indfp fpos %ld -> ind.%d vs counter.%u\n",ftell(indfp),ftell(indfp)/sizeof(uint32_t),*indcounterp);
+            fwrite(&tmp,1,sizeof(tmp),indfp), (*indcounterp)++;
+        if ( (*indcounterp % 100) == 0 )
+        {
+            *prevpos100p = (uint32_t)newfpos;
+            fwrite(prevpos100p,1,sizeof(*prevpos100p),indfp), (*indcounterp)++;
+        }
+    }
+    return(newfpos);
+}
+
+int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,char *dest)
+{
+    FILE *indfp; char indfname[1024]; uint8_t *filedata; long processed=-1,datalen,fpos,lastfpos; uint32_t tmp,prevpos100,indcounter,starttime; int32_t func,finished = 0;
+    stattime = (uint32_t)time(NULL);
+    safecopy(indfname,fname,sizeof(indfname)-4);
+    strcat(indfname,".ind");
+    if ( (filedata= OS_fileptr(&datalen,fname)) != 0 )
+    {
+        if ( datalen >= (1LL << 32) || GetArg("-genind",0) != 0 || (processed= komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter)) < 0 )
+        {
+            lastfpos = fpos = 0;
+            indcounter = prevpos100 = 0;
+            if ( (indfp= fopen(indfname,"wb")) != 0 )
+                fwrite(&prevpos100,1,sizeof(prevpos100),indfp), indcounter++;
+            fprintf(stderr,"processing %s %ldKB\n",fname,datalen/1024);
+            while ( (func= komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest)) >= 0 )
+            {
+                lastfpos = komodo_indfile_update(indfp,&prevpos100,lastfpos,fpos,func,&indcounter);
+            }
+            if ( indfp != 0 )
+            {
+                fclose(indfp);
+                if ( komodo_stateind_validate(0,indfname,filedata,datalen,symbol,dest) < 0 )
+                    printf("unexpected komodostate.ind validate failure %s datalen.%ld\n",indfname,datalen);
+                else printf("%s validated\n",indfname);
+            }
+            finished = 1;
+            fprintf(stderr,"took %d seconds to process %s %ldKB\n",(int32_t)(time(NULL)-starttime),fname,datalen/1024);
+        }
+        else if ( processed > 0 )
+        {
+            if ( (indfp= fopen(indfname,"rb+")) != 0 )
+            {
+                lastfpos = fpos = processed;
+                fseek(indfp,indcounter * sizeof(uint32_t),SEEK_SET);
+                if ( ftell(indfp) == indcounter * sizeof(uint32_t) )
+                {
+                    while ( (func= komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest)) >= 0 )
+                        lastfpos = komodo_indfile_update(indfp,&prevpos100,lastfpos,fpos,func,&indcounter);
+                }
+                fclose(indfp);
+                if ( komodo_stateind_validate(sp,indfname,filedata,datalen,system,dest) < 0 )
+                    printf("unexpected komodostate.ind validate failure %s datalen.%ld\n",indfname,datalen);
+                else
+                {
+                    printf("%s validated updated from processed.%ld to %ld [%ld]\n",indfname,processed,fpos,fpos-processed);
+                    finished = 1;
+                }
+            }
+        } else printf("komodo_faststateinit unexpected case\n");
+        free(filedata);
+        return(finished == 1);
+    }
+    return(-1);
+}
 
 void komodo_passport_iteration()
 {

@@ -204,10 +204,10 @@ int32_t memread(void *dest,int32_t size,uint8_t *filedata,long *fposp,long datal
     return(-1);
 }
 
-long komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *fposp,long datalen,char *symbol,char *dest)
+int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *fposp,long datalen,char *symbol,char *dest)
 {
     static int32_t errs;
-    int32_t func,ht,notarized_height,num,matched=0; uint256 notarized_hash,notarized_desttxid; uint8_t pubkeys[64][33]; long fpos = *fposp;
+    int32_t func= -1,ht,notarized_height,num,matched=0; uint256 notarized_hash,notarized_desttxid; uint8_t pubkeys[64][33]; long fpos = *fposp;
     if ( fpos < datalen )
     {
         func = filedata[fpos++];
@@ -320,8 +320,9 @@ long komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *f
         }
         else printf("[%s] %s illegal func.(%d %c)\n",ASSETCHAINS_SYMBOL,symbol,func,func);
         *fposp = fpos;
-        return(fpos);
-    } else return(-1);
+        return(func);
+    }
+    return(-1);
 }
 
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t KMDheight,uint32_t KMDtimestamp,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout)
@@ -345,17 +346,8 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"komodostate");
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
-            uint8_t *filedata; long datalen,fpos; uint32_t starttime = (uint32_t)time(NULL);
-            if ( (filedata= OS_fileptr(&datalen,fname)) != 0 )
-            {
-                fpos = 0;
-                fprintf(stderr,"processing %s %ldKB\n",fname,datalen/1024);
-                while ( komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest) >= 0 )
-                    ;
-                fprintf(stderr,"took %d seconds to process %s %ldKB\n",(int32_t)(time(NULL)-starttime),fname,datalen/1024);
-                free(filedata);
+            if ( komodo_faststateinit(sp,fname) == 0 )
                 fseek(fp,0,SEEK_END);
-            }
             else
             {
                 while ( komodo_parsestatefile(sp,fp,symbol,dest) >= 0 )
