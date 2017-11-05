@@ -1361,7 +1361,7 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
     lastK = lastT = lastN = lastV = -1;
     for (iter=0; iter<2; iter++)
     {
-        for (latfpos=fpos=prevpos100=i=0; i<n; i++)
+        for (lastfpos=fpos=prevpos100=i=0; i<n; i++)
         {
             tmp = inds[i];
             if ( (i % 100) == 0 )
