@@ -1420,7 +1420,7 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
             for (i=0; i<n; i++)
             {
                 memcpy(&tmp,&inds[i * sizeof(uint32_t)],sizeof(uint32_t));
-                if ( i > n-10 )
+                if ( 0 && i > n-10 )
                     printf("%d: tmp.%08x [%c] prevpos100.%u\n",i,tmp,tmp&0xff,prevpos100);
                 if ( (i % 100) == 0 )
                     prevpos100 = tmp;
@@ -1439,7 +1439,7 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
             }
             *indcounterp = n;
             *prevpos100p = prevpos100;
-            printf("%s validated[%d] fpos.%ld datalen.%ld\n",indfname,i,fpos,datalen);
+            printf("%s validated[%d] fpos.%ld datalen.%ld, offset %ld vs fsize.%ld\n",indfname,i,fpos,datalen,i * sizeof(uint32_t),fsize);
             if ( sp != 0 )
                 komodo_stateind_set(sp,(uint32_t *)inds,n,filedata,fpos,symbol,dest);
             free(inds);
