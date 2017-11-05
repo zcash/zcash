@@ -346,7 +346,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"komodostate");
         if ( (fp= fopen(fname,"rb+")) != 0 )
         {
-            if ( komodo_faststateinit(sp,fname) == 0 )
+            if ( komodo_faststateinit(sp,fname,symbol,dest) == 0 )
                 fseek(fp,0,SEEK_END);
             else
             {
