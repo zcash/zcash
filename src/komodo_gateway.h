@@ -1048,8 +1048,8 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         komodo_kvupdate(opretbuf,opretlen,value);
         return("kv");
     }
-    //else if ( KOMODO_PAX == 0 )
-    //    return("nopax");
+    else if ( KOMODO_PAX == 0 )
+        return("nopax");
     if ( opretbuf[0] == 'D' )
     {
         tokomodo = 0;
