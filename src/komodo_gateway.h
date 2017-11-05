@@ -1418,7 +1418,7 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
         {
             n = (int32_t)(fsize / sizeof(uint32_t));
             for (i=0; i<n; i++)
-            {
+            {break;
                 memcpy(&tmp,&inds[i * sizeof(uint32_t)],sizeof(uint32_t));
                 if ( 0 && i > n-10 )
                     printf("%d: tmp.%08x [%c] prevpos100.%u\n",i,tmp,tmp&0xff,prevpos100);
