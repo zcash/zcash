@@ -1429,9 +1429,9 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
                     func = (tmp & 0xff);
                     offset = (tmp >> 8);
                     fpos = prevpos100 + offset;
-                    if ( fpos >= datalen || filedata[lastfpos] != func )
+                    if ( lastfpos >= datalen || filedata[lastfpos] != func )
                     {
-                        printf("validate.%d error (%u %d) prev100 %u -> fpos.%ld datalen.%ld [%d]\n",i,offset,func,prevpos100,fpos,datalen,fpos < datalen ? filedata[fpos] : -1);
+                        printf("validate.%d error (%u %d) prev100 %u -> fpos.%ld datalen.%ld [%d] (%c) vs (%c)\n",i,offset,func,prevpos100,fpos,datalen,lastfpos < datalen ? filedata[lastfpos] : -1,func,filedata[lastfpos]);
                         return(-1);
                     }
                 }
