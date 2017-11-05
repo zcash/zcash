@@ -1442,6 +1442,7 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
         } else printf("wrong filesize %s %ld\n",indfname,fsize);
     }
     free(inds);
+    fprintf(stderr,"indvalidate return -1\n");
     return(-1);
 }
 
@@ -1471,6 +1472,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
     strcat(indfname,".ind");
     if ( (filedata= OS_fileptr(&datalen,fname)) != 0 )
     {
+        fprintf(stderr,"faststateinit %s datalen.%ld\n",indfname,datalen);
         if ( datalen >= (1LL << 32) || GetArg("-genind",0) != 0 || (processed= komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest)) < 0 )
         {
             lastfpos = fpos = 0;
@@ -1516,6 +1518,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
         free(filedata);
         return(finished == 1);
     }
+    fprintf(stderr,"faststateinit return -1\n");
     return(-1);
 }
 
