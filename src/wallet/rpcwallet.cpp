@@ -480,6 +480,7 @@ uint64_t PAX_fiatdest(uint64_t *seedp,int32_t tokomodo,char *destaddr,uint8_t pu
 int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen);
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
 extern char ASSETCHAINS_SYMBOL[16];
+extern int32_t KOMODO_PAX;
 int32_t komodo_is_issuer();
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
@@ -612,6 +613,8 @@ UniValue paxdeposit(const UniValue& params, bool fHelp)
 {
     uint64_t available,deposited,issued,withdrawn,approved,redeemed,seed,komodoshis = 0; int32_t height; char destaddr[64]; uint8_t i,pubkey37[33];
     bool fSubtractFeeFromAmount = false;
+    if ( KOMODO_PAX == 0 )
+        throw JSONRPCError(RPC_TYPE_ERROR, "paxdeposit disabled, since pax not enabled with komodod -pax");
     if ( komodo_is_issuer() != 0 )
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxdeposit only from KMD");
     if (!EnsureWalletIsAvailable(fHelp))

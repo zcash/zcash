@@ -16,9 +16,11 @@
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 
+#define KOMODO_ENDOFERA 7777777
 #define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))   // 5%
 int64_t MAX_MONEY = 200000000 * 100000000LL;
 
+#ifdef notanymore
 uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
 {
     static uint64_t *interests; static int32_t maxheight;
@@ -73,6 +75,7 @@ uint64_t komodo_moneysupply(int32_t height)
         return(0);
     else return(COIN * 100000000 + (height-1) * 3 + komodo_earned_interest(height,-1));
 }
+#endif
 
 uint64_t _komodo_interestnew(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
@@ -90,7 +93,7 @@ uint64_t _komodo_interestnew(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime
 uint64_t komodo_interestnew(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
     uint64_t interest = 0;
-    if ( komodo_moneysupply(txheight) < MAX_MONEY && nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= 10*COIN )
+    if ( txheight < KOMODO_ENDOFERA && nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= 10*COIN ) //komodo_moneysupply(txheight) < MAX_MONEY &&
         interest = _komodo_interestnew(nValue,nLockTime,tiptime);
     return(interest);
 }
@@ -101,7 +104,9 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
     activation = 1491350400;  // 1491350400 5th April
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         return(0);
-    if ( komodo_moneysupply(txheight) < MAX_MONEY && nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= 10*COIN )
+    if ( txheight >= KOMODO_ENDOFERA )
+        return(0);
+    if ( nLockTime >= LOCKTIME_THRESHOLD && tiptime != 0 && nLockTime < tiptime && nValue >= 10*COIN ) //komodo_moneysupply(txheight) < MAX_MONEY && 
     {
         if ( (minutes= (tiptime - nLockTime) / 60) >= 60 )
         {
