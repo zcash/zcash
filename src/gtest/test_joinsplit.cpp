@@ -5,6 +5,7 @@
 #include <boost/foreach.hpp>
 
 #include "zcash/prf.h"
+#include "util.h"
 
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
@@ -12,6 +13,8 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 
 using namespace libzcash;
+
+extern ZCJoinSplit* params;
 
 void test_full_api(ZCJoinSplit* js)
 {
@@ -219,8 +222,6 @@ void invokeAPIFailure(
 
 TEST(joinsplit, h_sig)
 {
-    auto js = ZCJoinSplit::Unopened();
-
 /*
 // by Taylor Hornby
 
@@ -284,7 +285,7 @@ for test_input in TEST_VECTORS:
     };
 
     BOOST_FOREACH(std::vector<std::string>& v, tests) {
-        auto expected = js->h_sig(
+        auto expected = ZCJoinSplit::h_sig(
             uint256S(v[0]),
             {uint256S(v[1]), uint256S(v[2])},
             uint256S(v[3])
@@ -292,8 +293,6 @@ for test_input in TEST_VECTORS:
 
         EXPECT_EQ(expected, uint256S(v[4]));
     }
-
-    delete js;
 }
 
 void increment_note_witnesses(
@@ -311,8 +310,6 @@ void increment_note_witnesses(
 
 TEST(joinsplit, full_api_test)
 {
-    auto js = ZCJoinSplit::Generate();
-
     {
         std::vector<ZCIncrementalWitness> witnesses;
         ZCIncrementalMerkleTree tree;
@@ -331,7 +328,7 @@ TEST(joinsplit, full_api_test)
         increment_note_witnesses(note5.cm(), witnesses, tree);
 
         // Should work
-        invokeAPI(js,
+        invokeAPI(params,
         {
             JSInput(),
             JSInput()
@@ -345,7 +342,7 @@ TEST(joinsplit, full_api_test)
         tree.root());
 
         // lhs > MAX_MONEY
-        invokeAPIFailure(js,
+        invokeAPIFailure(params,
         {
             JSInput(),
             JSInput()
@@ -360,7 +357,7 @@ TEST(joinsplit, full_api_test)
         "nonsensical vpub_old value");
 
         // rhs > MAX_MONEY
-        invokeAPIFailure(js,
+        invokeAPIFailure(params,
         {
             JSInput(),
             JSInput()
@@ -375,7 +372,7 @@ TEST(joinsplit, full_api_test)
         "nonsensical vpub_new value");
 
         // input witness for the wrong element
-        invokeAPIFailure(js,
+        invokeAPIFailure(params,
         {
             JSInput(witnesses[0], note1, sk),
             JSInput()
@@ -391,7 +388,7 @@ TEST(joinsplit, full_api_test)
 
         // input witness doesn't match up with
         // real root
-        invokeAPIFailure(js,
+        invokeAPIFailure(params,
         {
             JSInput(witnesses[1], note1, sk),
             JSInput()
@@ -406,7 +403,7 @@ TEST(joinsplit, full_api_test)
         "joinsplit not anchored to the correct root");
 
         // input is in the tree now! this should work
-        invokeAPI(js,
+        invokeAPI(params,
         {
             JSInput(witnesses[1], note1, sk),
             JSInput()
@@ -420,7 +417,7 @@ TEST(joinsplit, full_api_test)
         tree.root());
 
         // Wrong secret key
-        invokeAPIFailure(js,
+        invokeAPIFailure(params,
         {
             JSInput(witnesses[1], note1, SpendingKey::random()),
             JSInput()
@@ -435,7 +432,7 @@ TEST(joinsplit, full_api_test)
         "input note not authorized to spend with given key");
 
         // Absurd input value
-        invokeAPIFailure(js,
+        invokeAPIFailure(params,
         {
             JSInput(witnesses[3], note3, sk),
             JSInput()
@@ -450,7 +447,7 @@ TEST(joinsplit, full_api_test)
         "nonsensical input note value");
 
         // Absurd total input value
-        invokeAPIFailure(js,
+        invokeAPIFailure(params,
         {
             JSInput(witnesses[4], note4, sk),
             JSInput(witnesses[5], note5, sk)
@@ -465,7 +462,7 @@ TEST(joinsplit, full_api_test)
         "nonsensical left hand size of joinsplit balance");
 
         // Absurd output value
-        invokeAPIFailure(js,
+        invokeAPIFailure(params,
         {
             JSInput(),
             JSInput()
@@ -480,7 +477,7 @@ TEST(joinsplit, full_api_test)
         "nonsensical output value");
 
         // Absurd total output value
-        invokeAPIFailure(js,
+        invokeAPIFailure(params,
         {
             JSInput(),
             JSInput()
@@ -495,7 +492,7 @@ TEST(joinsplit, full_api_test)
         "nonsensical right hand side of joinsplit balance");
 
         // Absurd total output value
-        invokeAPIFailure(js,
+        invokeAPIFailure(params,
         {
             JSInput(),
             JSInput()
@@ -510,22 +507,7 @@ TEST(joinsplit, full_api_test)
         "invalid joinsplit balance");
     }
 
-    test_full_api(js);
-
-    js->saveProvingKey("./zcashTest.pk");
-    js->saveVerifyingKey("./zcashTest.vk");
-
-    delete js;
-
-    js = ZCJoinSplit::Unopened();
-
-    js->setProvingKeyPath("./zcashTest.pk");
-    js->loadProvingKey();
-    js->loadVerifyingKey("./zcashTest.vk");
-
-    test_full_api(js);
-
-    delete js;
+    test_full_api(params);
 }
 
 TEST(joinsplit, note_plaintexts)

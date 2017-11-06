@@ -6,6 +6,7 @@
 #include "data/tx_valid.json.h"
 #include "test/test_bitcoin.h"
 
+#include "init.h"
 #include "clientversion.h"
 #include "consensus/validation.h"
 #include "core_io.h"
@@ -85,7 +86,7 @@ string FormatScriptFlags(unsigned int flags)
     return ret.substr(0, ret.size() - 1);
 }
 
-BOOST_FIXTURE_TEST_SUITE(transaction_tests, BasicTestingSetup)
+BOOST_FIXTURE_TEST_SUITE(transaction_tests, JoinSplitTestingSetup)
 
 BOOST_AUTO_TEST_CASE(tx_valid)
 {
@@ -326,9 +327,6 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
     // Also, it's generally libzcash's job to ensure the
     // integrity of the scheme through its own tests.
 
-    // construct the r1cs keypair
-    auto p = ZCJoinSplit::Generate();
-
     // construct a merkle tree
     ZCIncrementalMerkleTree merkleTree;
 
@@ -362,8 +360,8 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
     auto verifier = libzcash::ProofVerifier::Strict();
 
     {
-        JSDescription jsdesc(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
-        BOOST_CHECK(jsdesc.Verify(*p, verifier, pubKeyHash));
+        JSDescription jsdesc(*pzcashParams, pubKeyHash, rt, inputs, outputs, 0, 0);
+        BOOST_CHECK(jsdesc.Verify(*pzcashParams, verifier, pubKeyHash));
 
         CDataStream ss(SER_DISK, CLIENT_VERSION);
         ss << jsdesc;
@@ -372,20 +370,20 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
         ss >> jsdesc_deserialized;
 
         BOOST_CHECK(jsdesc_deserialized == jsdesc);
-        BOOST_CHECK(jsdesc_deserialized.Verify(*p, verifier, pubKeyHash));
+        BOOST_CHECK(jsdesc_deserialized.Verify(*pzcashParams, verifier, pubKeyHash));
     }
 
     {
         // Ensure that the balance equation is working.
-        BOOST_CHECK_THROW(JSDescription(*p, pubKeyHash, rt, inputs, outputs, 10, 0), std::invalid_argument);
-        BOOST_CHECK_THROW(JSDescription(*p, pubKeyHash, rt, inputs, outputs, 0, 10), std::invalid_argument);
+        BOOST_CHECK_THROW(JSDescription(*pzcashParams, pubKeyHash, rt, inputs, outputs, 10, 0), std::invalid_argument);
+        BOOST_CHECK_THROW(JSDescription(*pzcashParams, pubKeyHash, rt, inputs, outputs, 0, 10), std::invalid_argument);
     }
 
     {
         // Ensure that it won't verify if the root is changed.
-        auto test = JSDescription(*p, pubKeyHash, rt, inputs, outputs, 0, 0);
+        auto test = JSDescription(*pzcashParams, pubKeyHash, rt, inputs, outputs, 0, 0);
         test.anchor = GetRandHash();
-        BOOST_CHECK(!test.Verify(*p, verifier, pubKeyHash));
+        BOOST_CHECK(!test.Verify(*pzcashParams, verifier, pubKeyHash));
     }
 }
 

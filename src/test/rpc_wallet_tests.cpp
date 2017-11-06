@@ -1175,7 +1175,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         try {
             proxy.perform_joinsplit(info);
         } catch (const std::runtime_error & e) {
-            BOOST_CHECK( string(e.what()).find("JoinSplit verifying key not loaded")!= string::npos);
+            BOOST_CHECK( string(e.what()).find("error verifying joinsplit")!= string::npos);
         }
     }
 
@@ -1372,7 +1372,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
         try {
             proxy.perform_joinsplit(info);
         } catch (const std::runtime_error & e) {
-            BOOST_CHECK( string(e.what()).find("JoinSplit verifying key not loaded")!= string::npos);
+            BOOST_CHECK( string(e.what()).find("error verifying joinsplit")!= string::npos);
         }
     }
 

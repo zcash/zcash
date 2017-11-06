@@ -14,7 +14,7 @@
 #include "libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp"
 #include "libsnark/gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp"
 #include "libsnark/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.hpp"
-
+#include "tinyformat.h"
 #include "sync.h"
 #include "amount.h"
 
@@ -28,7 +28,7 @@ CCriticalSection cs_ParamsIO;
 CCriticalSection cs_LoadKeys;
 
 template<typename T>
-void saveToFile(std::string path, T& obj) {
+void saveToFile(const std::string path, T& obj) {
     LOCK(cs_ParamsIO);
 
     std::stringstream ss;
@@ -42,14 +42,14 @@ void saveToFile(std::string path, T& obj) {
 }
 
 template<typename T>
-void loadFromFile(std::string path, boost::optional<T>& objIn) {
+void loadFromFile(const std::string path, T& objIn) {
     LOCK(cs_ParamsIO);
 
     std::stringstream ss;
     std::ifstream fh(path, std::ios::binary);
 
     if(!fh.is_open()) {
-        throw std::runtime_error((boost::format("could not load param file at %s") % path).str());
+        throw std::runtime_error(strprintf("could not load param file at %s", path));
     }
 
     ss << fh.rdbuf();
@@ -69,77 +69,33 @@ public:
     typedef default_r1cs_ppzksnark_pp ppzksnark_ppT;
     typedef Fr<ppzksnark_ppT> FieldT;
 
-    boost::optional<r1cs_ppzksnark_proving_key<ppzksnark_ppT>> pk;
-    boost::optional<r1cs_ppzksnark_verification_key<ppzksnark_ppT>> vk;
-    boost::optional<r1cs_ppzksnark_processed_verification_key<ppzksnark_ppT>> vk_precomp;
-    boost::optional<std::string> pkPath;
+    r1cs_ppzksnark_verification_key<ppzksnark_ppT> vk;
+    r1cs_ppzksnark_processed_verification_key<ppzksnark_ppT> vk_precomp;
+    std::string pkPath;
 
-    JoinSplitCircuit() {}
+    JoinSplitCircuit(const std::string vkPath, const std::string pkPath) : pkPath(pkPath) {
+        loadFromFile(vkPath, vk);
+        vk_precomp = r1cs_ppzksnark_verifier_process_vk(vk);
+    }
     ~JoinSplitCircuit() {}
 
-    void setProvingKeyPath(std::string path) {
-        pkPath = path;
-    }
-
-    void loadProvingKey() {
-        LOCK(cs_LoadKeys);
-
-        if (!pk) {
-            if (!pkPath) {
-                throw std::runtime_error("proving key path unknown");
-            }
-            loadFromFile(*pkPath, pk);
-        }
-    }
-
-    void saveProvingKey(std::string path) {
-        if (pk) {
-            saveToFile(path, *pk);
-        } else {
-            throw std::runtime_error("cannot save proving key; key doesn't exist");
-        }
-    }
-    void loadVerifyingKey(std::string path) {
-        LOCK(cs_LoadKeys);
-
-        loadFromFile(path, vk);
-
-        processVerifyingKey();
-    }
-    void processVerifyingKey() {
-        vk_precomp = r1cs_ppzksnark_verifier_process_vk(*vk);
-    }
-    void saveVerifyingKey(std::string path) {
-        if (vk) {
-            saveToFile(path, *vk);
-        } else {
-            throw std::runtime_error("cannot save verifying key; key doesn't exist");
-        }
-    }
-    void saveR1CS(std::string path) {
-        auto r1cs = generate_r1cs();
-
-        saveToFile(path, r1cs);
-    }
-
-    r1cs_constraint_system<FieldT> generate_r1cs() {
+    static void generate(const std::string r1csPath,
+                         const std::string vkPath,
+                         const std::string pkPath)
+    {
         protoboard<FieldT> pb;
 
         joinsplit_gadget<FieldT, NumInputs, NumOutputs> g(pb);
         g.generate_r1cs_constraints();
 
-        return pb.get_constraint_system();
-    }
+        auto r1cs = pb.get_constraint_system();
 
-    void generate() {
-        LOCK(cs_LoadKeys);
+        saveToFile(r1csPath, r1cs);
 
-        const r1cs_constraint_system<FieldT> constraint_system = generate_r1cs();
-        r1cs_ppzksnark_keypair<ppzksnark_ppT> keypair = r1cs_ppzksnark_generator<ppzksnark_ppT>(constraint_system);
+        r1cs_ppzksnark_keypair<ppzksnark_ppT> keypair = r1cs_ppzksnark_generator<ppzksnark_ppT>(r1cs);
 
-        pk = keypair.pk;
-        vk = keypair.vk;
-        processVerifyingKey();
+        saveToFile(vkPath, keypair.vk);
+        saveToFile(pkPath, keypair.pk);
     }
 
     bool verify(
@@ -154,10 +110,6 @@ public:
         uint64_t vpub_new,
         const uint256& rt
     ) {
-        if (!vk || !vk_precomp) {
-            throw std::runtime_error("JoinSplit verifying key not loaded");
-        }
-
         try {
             auto r1cs_proof = proof.to_libsnark_proof<r1cs_ppzksnark_proof<ppzksnark_ppT>>();
 
@@ -174,8 +126,8 @@ public:
             );
 
             return verifier.check(
-                *vk,
-                *vk_precomp,
+                vk,
+                vk_precomp,
                 witness,
                 r1cs_proof
             );
@@ -200,10 +152,6 @@ public:
         const uint256& rt,
         bool computeProof
     ) {
-        if (computeProof && !pk) {
-            throw std::runtime_error("JoinSplit proving key not loaded");
-        }
-
         if (vpub_old > MAX_MONEY) {
             throw std::invalid_argument("nonsensical vpub_old value");
         }
@@ -345,8 +293,14 @@ public:
         // estimate that it doesn't matter if we check every time.
         pb.constraint_system.swap_AB_if_beneficial();
 
-        return ZCProof(r1cs_ppzksnark_prover<ppzksnark_ppT>(
-            *pk,
+        std::ifstream fh(pkPath, std::ios::binary);
+
+        if(!fh.is_open()) {
+            throw std::runtime_error(strprintf("could not load param file at %s", pkPath));
+        }
+
+        return ZCProof(r1cs_ppzksnark_prover_streaming<ppzksnark_ppT>(
+            fh,
             primary_input,
             aux_input,
             pb.constraint_system
@@ -355,20 +309,20 @@ public:
 };
 
 template<size_t NumInputs, size_t NumOutputs>
-JoinSplit<NumInputs, NumOutputs>* JoinSplit<NumInputs, NumOutputs>::Generate()
+void JoinSplit<NumInputs, NumOutputs>::Generate(const std::string r1csPath,
+                                                const std::string vkPath,
+                                                const std::string pkPath)
 {
     initialize_curve_params();
-    auto js = new JoinSplitCircuit<NumInputs, NumOutputs>();
-    js->generate();
-
-    return js;
+    JoinSplitCircuit<NumInputs, NumOutputs>::generate(r1csPath, vkPath, pkPath);
 }
 
 template<size_t NumInputs, size_t NumOutputs>
-JoinSplit<NumInputs, NumOutputs>* JoinSplit<NumInputs, NumOutputs>::Unopened()
+JoinSplit<NumInputs, NumOutputs>* JoinSplit<NumInputs, NumOutputs>::Prepared(const std::string vkPath,
+                                                                             const std::string pkPath)
 {
     initialize_curve_params();
-    return new JoinSplitCircuit<NumInputs, NumOutputs>();
+    return new JoinSplitCircuit<NumInputs, NumOutputs>(vkPath, pkPath);
 }
 
 template<size_t NumInputs, size_t NumOutputs>

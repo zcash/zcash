@@ -431,6 +431,92 @@ r1cs_ppzksnark_keypair<ppT> r1cs_ppzksnark_generator(
     return r1cs_ppzksnark_keypair<ppT>(std::move(pk), std::move(vk));
 }
 
+template <typename ppT, typename T1, typename T2>
+knowledge_commitment<T1, T2> r1cs_compute_proof_kc(const qap_witness<Fr<ppT> > &qap_wit,
+                                                   const knowledge_commitment_vector<T1, T2> &kcv,
+                                                   const Fr<ppT>  &zk_shift)
+{
+    knowledge_commitment<T1, T2> returnval = kcv[0] + (zk_shift * kcv[qap_wit.num_variables()+1]);
+
+#ifdef DEBUG
+    assert(kcv.domain_size() == qap_wit.num_variables()+2);
+#endif
+
+#ifdef MULTICORE
+    const size_t chunks = omp_get_max_threads(); // to override, set OMP_NUM_THREADS env var or call omp_set_num_threads()
+#else
+    const size_t chunks = 1;
+#endif
+
+    returnval = returnval + kc_multi_exp_with_mixed_addition<T1, T2, Fr<ppT> >(
+        kcv,
+        1,
+        1 + qap_wit.num_variables(),
+        qap_wit.coefficients_for_ABCs.begin(),
+        qap_wit.coefficients_for_ABCs.begin()+qap_wit.num_variables(),
+        chunks,
+        true
+    );
+
+    return returnval;
+}
+
+
+
+template <typename ppT>
+G1<ppT> r1cs_compute_proof_K(const qap_witness<Fr<ppT>> &qap_wit, const G1_vector<ppT> &K_query, const G1<ppT> &zk_shift)
+{
+#ifdef DEBUG
+    assert(K_query.size() == qap_wit.num_variables()+4);
+#endif
+
+#ifdef MULTICORE
+    const size_t chunks = omp_get_max_threads(); // to override, set OMP_NUM_THREADS env var or call omp_set_num_threads()
+#else
+    const size_t chunks = 1;
+#endif
+
+    G1<ppT> g_K = K_query[0] + zk_shift;
+    g_K = g_K + multi_exp_with_mixed_addition<G1<ppT>, Fr<ppT> >(
+        K_query.begin()+1,
+        K_query.begin()+1+qap_wit.num_variables(),
+        qap_wit.coefficients_for_ABCs.begin(),
+        qap_wit.coefficients_for_ABCs.begin()+qap_wit.num_variables(),
+        chunks,
+        true
+    );
+
+    return g_K;
+}
+
+
+template <typename ppT>
+G1<ppT> r1cs_compute_proof_H(const qap_witness<Fr<ppT> > &qap_wit, const G1_vector<ppT> &H_query)
+{
+    G1<ppT> g_H = G1<ppT>::zero();
+
+#ifdef DEBUG
+    assert(H_query.size() == qap_wit.degree()+1);
+#endif
+
+#ifdef MULTICORE
+    const size_t chunks = omp_get_max_threads(); // to override, set OMP_NUM_THREADS env var or call omp_set_num_threads()
+#else
+    const size_t chunks = 1;
+#endif
+
+    g_H = g_H + multi_exp<G1<ppT>, Fr<ppT> >(
+        H_query.begin(),
+        H_query.begin()+qap_wit.degree()+1,
+        qap_wit.coefficients_for_H.begin(),
+        qap_wit.coefficients_for_H.begin()+qap_wit.degree()+1,
+        chunks,
+        true
+    );
+
+    return g_H;
+}
+
 template <typename ppT>
 r1cs_ppzksnark_proof<ppT> r1cs_ppzksnark_prover(const r1cs_ppzksnark_proving_key<ppT> &pk,
                                                 const r1cs_ppzksnark_primary_input<ppT> &primary_input,
@@ -457,67 +543,36 @@ r1cs_ppzksnark_proof<ppT> r1cs_ppzksnark_prover(const r1cs_ppzksnark_proving_key
     assert(qap_inst.is_satisfied(qap_wit));
 #endif
 
-    knowledge_commitment<G1<ppT>, G1<ppT> > g_A = pk.A_query[0] + qap_wit.d1*pk.A_query[qap_wit.num_variables()+1];
-    knowledge_commitment<G2<ppT>, G1<ppT> > g_B = pk.B_query[0] + qap_wit.d2*pk.B_query[qap_wit.num_variables()+1];
-    knowledge_commitment<G1<ppT>, G1<ppT> > g_C = pk.C_query[0] + qap_wit.d3*pk.C_query[qap_wit.num_variables()+1];
-
-    G1<ppT> g_H = G1<ppT>::zero();
-    G1<ppT> g_K = (pk.K_query[0] +
-                   qap_wit.d1*pk.K_query[qap_wit.num_variables()+1] +
-                   qap_wit.d2*pk.K_query[qap_wit.num_variables()+2] +
-                   qap_wit.d3*pk.K_query[qap_wit.num_variables()+3]);
-
 #ifdef DEBUG
     for (size_t i = 0; i < qap_wit.num_inputs() + 1; ++i)
     {
         assert(pk.A_query[i].g == G1<ppT>::zero());
     }
-    assert(pk.A_query.domain_size() == qap_wit.num_variables()+2);
-    assert(pk.B_query.domain_size() == qap_wit.num_variables()+2);
-    assert(pk.C_query.domain_size() == qap_wit.num_variables()+2);
-    assert(pk.H_query.size() == qap_wit.degree()+1);
-    assert(pk.K_query.size() == qap_wit.num_variables()+4);
-#endif
-
-#ifdef MULTICORE
-    const size_t chunks = omp_get_max_threads(); // to override, set OMP_NUM_THREADS env var or call omp_set_num_threads()
-#else
-    const size_t chunks = 1;
 #endif
 
     enter_block("Compute the proof");
 
     enter_block("Compute answer to A-query", false);
-    g_A = g_A + kc_multi_exp_with_mixed_addition<G1<ppT>, G1<ppT>, Fr<ppT> >(pk.A_query,
-                                                                             1, 1+qap_wit.num_variables(),
-                                                                             qap_wit.coefficients_for_ABCs.begin(), qap_wit.coefficients_for_ABCs.begin()+qap_wit.num_variables(),
-                                                                             chunks, true);
+    auto g_A = r1cs_compute_proof_kc<ppT, G1<ppT>, G1<ppT> >(qap_wit, pk.A_query, qap_wit.d1);
     leave_block("Compute answer to A-query", false);
 
     enter_block("Compute answer to B-query", false);
-    g_B = g_B + kc_multi_exp_with_mixed_addition<G2<ppT>, G1<ppT>, Fr<ppT> >(pk.B_query,
-                                                                             1, 1+qap_wit.num_variables(),
-                                                                             qap_wit.coefficients_for_ABCs.begin(), qap_wit.coefficients_for_ABCs.begin()+qap_wit.num_variables(),
-                                                                             chunks, true);
+    auto g_B = r1cs_compute_proof_kc<ppT, G2<ppT>, G1<ppT> >(qap_wit, pk.B_query, qap_wit.d2);
     leave_block("Compute answer to B-query", false);
 
     enter_block("Compute answer to C-query", false);
-    g_C = g_C + kc_multi_exp_with_mixed_addition<G1<ppT>, G1<ppT>, Fr<ppT> >(pk.C_query,
-                                                                             1, 1+qap_wit.num_variables(),
-                                                                             qap_wit.coefficients_for_ABCs.begin(), qap_wit.coefficients_for_ABCs.begin()+qap_wit.num_variables(),
-                                                                             chunks, true);
+    auto g_C = r1cs_compute_proof_kc<ppT, G1<ppT>, G1<ppT> >(qap_wit, pk.C_query, qap_wit.d3);
     leave_block("Compute answer to C-query", false);
 
     enter_block("Compute answer to H-query", false);
-    g_H = g_H + multi_exp<G1<ppT>, Fr<ppT> >(pk.H_query.begin(), pk.H_query.begin()+qap_wit.degree()+1,
-                                             qap_wit.coefficients_for_H.begin(), qap_wit.coefficients_for_H.begin()+qap_wit.degree()+1,
-                                             chunks, true);
+    auto g_H = r1cs_compute_proof_H<ppT>(qap_wit, pk.H_query);
     leave_block("Compute answer to H-query", false);
 
     enter_block("Compute answer to K-query", false);
-    g_K = g_K + multi_exp_with_mixed_addition<G1<ppT>, Fr<ppT> >(pk.K_query.begin()+1, pk.K_query.begin()+1+qap_wit.num_variables(),
-                                                                 qap_wit.coefficients_for_ABCs.begin(), qap_wit.coefficients_for_ABCs.begin()+qap_wit.num_variables(),
-                                                                 chunks, true);
+    G1<ppT> zk_shift = qap_wit.d1*pk.K_query[qap_wit.num_variables()+1] +
+                       qap_wit.d2*pk.K_query[qap_wit.num_variables()+2] +
+                       qap_wit.d3*pk.K_query[qap_wit.num_variables()+3];
+    G1<ppT> g_K = r1cs_compute_proof_K<ppT>(qap_wit, pk.K_query, zk_shift);
     leave_block("Compute answer to K-query", false);
 
     leave_block("Compute the proof");
@@ -525,7 +580,76 @@ r1cs_ppzksnark_proof<ppT> r1cs_ppzksnark_prover(const r1cs_ppzksnark_proving_key
     leave_block("Call to r1cs_ppzksnark_prover");
 
     r1cs_ppzksnark_proof<ppT> proof = r1cs_ppzksnark_proof<ppT>(std::move(g_A), std::move(g_B), std::move(g_C), std::move(g_H), std::move(g_K));
-    //proof.print_size();
+
+    return proof;
+}
+
+template <typename ppT>
+r1cs_ppzksnark_proof<ppT> r1cs_ppzksnark_prover_streaming(std::ifstream &proving_key_file,
+                                                          const r1cs_ppzksnark_primary_input<ppT> &primary_input,
+                                                          const r1cs_ppzksnark_auxiliary_input<ppT> &auxiliary_input,
+                                                          const r1cs_ppzksnark_constraint_system<ppT> &constraint_system)
+{
+    enter_block("Call to r1cs_ppzksnark_prover_streaming");
+
+    const Fr<ppT> d1 = Fr<ppT>::random_element(),
+        d2 = Fr<ppT>::random_element(),
+        d3 = Fr<ppT>::random_element();
+
+    enter_block("Compute the polynomial H");
+    const qap_witness<Fr<ppT> > qap_wit = r1cs_to_qap_witness_map(constraint_system, primary_input, auxiliary_input, d1, d2, d3);
+    leave_block("Compute the polynomial H");
+
+    enter_block("Compute the proof");
+
+    r1cs_ppzksnark_proof<ppT> proof;
+
+    enter_block("Compute answer to A-query", false);
+    {
+        knowledge_commitment_vector<G1<ppT>, G1<ppT> > A_query;
+        proving_key_file >> A_query;
+        proof.g_A = r1cs_compute_proof_kc<ppT, G1<ppT>, G1<ppT> >(qap_wit, A_query, qap_wit.d1);
+    }
+    leave_block("Compute answer to A-query", false);
+
+    enter_block("Compute answer to B-query", false);
+    {
+        knowledge_commitment_vector<G2<ppT>, G1<ppT> > B_query;
+        proving_key_file >> B_query;
+        proof.g_B = r1cs_compute_proof_kc<ppT, G2<ppT>, G1<ppT> >(qap_wit, B_query, qap_wit.d2);
+    }
+    leave_block("Compute answer to B-query", false);
+
+    enter_block("Compute answer to C-query", false);
+    {
+        knowledge_commitment_vector<G1<ppT>, G1<ppT> > C_query;
+        proving_key_file >> C_query;
+        proof.g_C = r1cs_compute_proof_kc<ppT, G1<ppT>, G1<ppT> >(qap_wit, C_query, qap_wit.d3);
+    }
+    leave_block("Compute answer to C-query", false);
+
+    enter_block("Compute answer to H-query", false);
+    {
+        G1_vector<ppT> H_query;
+        proving_key_file >> H_query;
+        proof.g_H = r1cs_compute_proof_H<ppT>(qap_wit, H_query);
+    }
+    leave_block("Compute answer to H-query", false);
+
+    enter_block("Compute answer to K-query", false);
+    {
+        G1_vector<ppT> K_query;
+        proving_key_file >> K_query;
+        G1<ppT> zk_shift = qap_wit.d1*K_query[qap_wit.num_variables()+1] +
+                           qap_wit.d2*K_query[qap_wit.num_variables()+2] +
+                           qap_wit.d3*K_query[qap_wit.num_variables()+3];
+        proof.g_K = r1cs_compute_proof_K<ppT>(qap_wit, K_query, zk_shift);
+    }
+    leave_block("Compute answer to K-query", false);
+
+    leave_block("Compute the proof");
+
+    leave_block("Call to r1cs_ppzksnark_prover_streaming");
 
     return proof;
 }
