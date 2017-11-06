@@ -614,7 +614,9 @@ UniValue paxdeposit(const UniValue& params, bool fHelp)
     uint64_t available,deposited,issued,withdrawn,approved,redeemed,seed,komodoshis = 0; int32_t height; char destaddr[64]; uint8_t i,pubkey37[33];
     bool fSubtractFeeFromAmount = false;
     if ( KOMODO_PAX == 0 )
-        throw JSONRPCError(RPC_TYPE_ERROR, "paxdeposit disabled, since pax not enabled with komodod -pax");
+    {
+        throw runtime_error("paxdeposit dispabled without -pax");
+    }
     if ( komodo_is_issuer() != 0 )
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxdeposit only from KMD");
     if (!EnsureWalletIsAvailable(fHelp))
