@@ -1407,12 +1407,12 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
                     if ( func == 'K' )
                     {
                         if ( lastK == lastfpos )
-                            doissue = 1, printf("trigger lastK\n");
+                            doissue = 1;
                     }
                     else if ( func == 'T' )
                     {
                         if ( lastT == lastfpos )
-                            doissue = 1, printf("trigger lastT\n");
+                            doissue = 1;
                     }
                     else if ( func == 'N' )
                     {
