@@ -1422,7 +1422,7 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
                     }
                     else if ( func == 'V' )
                     {
-                        if ( KOMODO_PAX != 0 || numv > numV-1440 )
+                        if ( KOMODO_PAX != 0 && numv > numV-1440 )
                             doissue = 1;
                         numv++;
                     }
