@@ -4457,8 +4457,7 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
         return AbortNode(state, std::string("System error: ") + e.what());
     }
 
-    if (fCheckForPruning)
-        FlushStateToDisk(chainparams, state, FLUSH_STATE_NONE); // we just allocated more disk space for block files
+    FlushStateToDisk(chainparams, state, FLUSH_STATE_NONE);
 
     return true;
 }
