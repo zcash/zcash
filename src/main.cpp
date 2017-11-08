@@ -3863,7 +3863,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     RenderPoolMetrics("transparent", transparentPool);
 
     {
-        WaitableLock lock(g_best_block_mutex);
+        WAIT_LOCK(g_best_block_mutex, lock);
         g_best_block = pindexNew->GetBlockHash();
         g_best_block_height = pindexNew->nHeight;
         g_best_block_cv.notify_all();
