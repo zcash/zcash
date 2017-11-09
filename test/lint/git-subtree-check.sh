@@ -49,6 +49,7 @@ if [ -z "$latest_squash" ]; then
     exit 2
 fi
 set $latest_squash
+old=$1
 rev=$2
 
 # get the tree in the current commit
