@@ -22,6 +22,8 @@
 #include "wallet/wallet.h"
 #endif
 
+#include "komodo_defs.h"
+
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
