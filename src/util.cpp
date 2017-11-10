@@ -15,6 +15,7 @@
 #include "sync.h"
 #include "utilstrencodings.h"
 #include "utiltime.h"
+#include "komodo_defs.h"
 
 #include <stdarg.h>
 
