@@ -42,7 +42,7 @@
  */
 
 static bool fDaemon;
-extern char ASSETCHAINS_SYMBOL[16];
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 void komodo_passport_iteration();
 
 void WaitForShutdown(boost::thread_group* threadGroup)

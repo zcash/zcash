@@ -30,7 +30,7 @@ using namespace std;
  * + Contains no strange transactions
  */
 void *chainparams_commandline(void *ptr);
-extern char ASSETCHAINS_SYMBOL[16];
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint16_t ASSETCHAINS_PORT;
 extern uint32_t ASSETCHAIN_INIT;
 extern uint32_t ASSETCHAINS_MAGIC;

@@ -1402,7 +1402,7 @@ void komodo_configfile(char *symbol,uint16_t port)
 
 uint16_t komodo_userpass(char *userpass,char *symbol)
 {
-    FILE *fp; uint16_t port = 0; char fname[512],username[512],password[512],confname[16];
+    FILE *fp; uint16_t port = 0; char fname[512],username[512],password[512],confname[KOMODO_ASSETCHAIN_MAXLEN];
     userpass[0] = 0;
     if ( strcmp("KMD",symbol) == 0 )
     {

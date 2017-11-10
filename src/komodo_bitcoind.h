@@ -559,7 +559,7 @@ uint32_t komodo_txtime(uint256 hash)
 
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
-    char symbol[16],dest[16]; struct komodo_state *sp;
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
     //fprintf(stderr,"disconnect ht.%d\n",pindex->nHeight);
     komodo_init(pindex->nHeight);
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )

@@ -144,7 +144,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
         if ( pindex != 0 && tx.nLockTime != 0 && (tipindex= chainActive.Tip()) != 0 )
         {
-            extern char ASSETCHAINS_SYMBOL[16];
+            extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
             interest = komodo_interest(pindex->nHeight,txout.nValue,tx.nLockTime,tipindex->nTime);
             if ( 0 && strcmp("REVS",ASSETCHAINS_SYMBOL) == 0 )
                 fprintf(stderr,"TxtoJSON interest %llu %.8f (%d %llu %u %u)\n",(long long)interest,(double)interest/COIN,(int32_t)pindex->nHeight,(long long)txout.nValue,(uint32_t)tx.nLockTime,(int32_t)tipindex->nTime);

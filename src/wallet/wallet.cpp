@@ -38,7 +38,7 @@ bool bSpendZeroConfChange = true;
 bool fSendFreeTransactions = false;
 bool fPayAtLeastCustomFee = true;
 extern int32_t KOMODO_EXCHANGEWALLET;
-extern char ASSETCHAINS_SYMBOL[16];
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)

@@ -60,7 +60,7 @@ struct komodo_event
     uint16_t len;
     int32_t height;
     uint8_t type,reorged;
-    char symbol[16];
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN];
     uint8_t space[];
 };
 
@@ -71,7 +71,7 @@ struct pax_transaction
     uint64_t komodoshis,fiatoshis,validated;
     int32_t marked,height,otherheight,approved,didstats,ready;
     uint16_t vout;
-    char symbol[16],source[16],coinaddr[64]; uint8_t rmd160[20],type,buf[35];
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN],source[KOMODO_ASSETCHAIN_MAXLEN],coinaddr[64]; uint8_t rmd160[20],type,buf[35];
 };
 
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
