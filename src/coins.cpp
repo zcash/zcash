@@ -8,6 +8,7 @@
 #include "random.h"
 #include "version.h"
 #include "policy/fees.h"
+#include "komodo_defs.h"
 
 #include <assert.h>
 
