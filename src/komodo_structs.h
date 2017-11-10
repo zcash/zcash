@@ -40,6 +40,7 @@
 #define KOMODO_KVPROTECTED 1
 #define KOMODO_KVBINARY 2
 #define KOMODO_KVDURATION 1440
+#define KOMODO_ASSETCHAIN_MAXLEN 65
 
 union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
 typedef union _bits256 bits256;
