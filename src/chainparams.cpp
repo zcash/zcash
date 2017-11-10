@@ -30,6 +30,8 @@ using namespace std;
  * + Contains no strange transactions
  */
 void *chainparams_commandline(void *ptr);
+#include "komodo_defs.h"
+
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint16_t ASSETCHAINS_PORT;
 extern uint32_t ASSETCHAIN_INIT;
