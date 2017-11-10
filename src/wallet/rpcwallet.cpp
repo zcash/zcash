@@ -471,6 +471,7 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
 
     return wtx.GetHash().GetHex();
 }
+#include "komodo_defs.h"
 
 #define KOMODO_KVPROTECTED 1
 #define KOMODO_KVBINARY 2
