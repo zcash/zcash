@@ -15,6 +15,7 @@
 
 #ifndef H_KOMODOEVENTS_H
 #define H_KOMODOEVENTS_H
+#include "komodo_defs.h"
 
 struct komodo_event *komodo_eventadd(struct komodo_state *sp,int32_t height,char *symbol,uint8_t type,uint8_t *data,uint16_t datalen)
 {

@@ -13,6 +13,8 @@
  *                                                                            *
  ******************************************************************************/
 
+#include "komodo_defs.h"
+
 #include "komodo_cJSON.h"
 
 #define KOMODO_MAINNET_START 178999

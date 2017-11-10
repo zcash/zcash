@@ -15,6 +15,7 @@
 
 #ifndef H_KOMODO_H
 #define H_KOMODO_H
+#include "komodo_defs.h"
 
 #ifdef _WIN32
 #define printf(...)

@@ -14,6 +14,7 @@
  ******************************************************************************/
 
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
+#include "komodo_defs.h"
 
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base)
 {

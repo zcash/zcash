@@ -12,6 +12,8 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
+#include "komodo_defs.h"
+
 #ifdef _WIN32
 #include <sodium.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
