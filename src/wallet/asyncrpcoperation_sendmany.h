@@ -12,6 +12,7 @@
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Address.hpp"
 #include "wallet.h"
+#include "paymentdisclosure.h"
 
 #include <unordered_map>
 #include <tuple>
@@ -65,6 +66,8 @@ public:
 
     bool testmode = false;  // Set to true to disable sending txs and generating proofs
 
+    bool paymentDisclosureMode = false; // Set to true to save esk for encrypted notes in payment disclosure database.
+
 private:
     friend class TEST_FRIEND_AsyncRPCOperation_sendmany;    // class for unit testing
 
@@ -113,6 +116,8 @@ private:
 
     void sign_send_raw_transaction(UniValue obj);     // throws exception if there was an error
 
+    // payment disclosure!
+    std::vector<PaymentDisclosureKeyInfo> paymentDisclosureData_;
 };
 
 

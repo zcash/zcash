@@ -29,6 +29,9 @@
 
 #include "asyncrpcoperation_shieldcoinbase.h"
 
+#include "paymentdisclosure.h"
+#include "paymentdisclosuredb.h"
+
 using namespace libzcash;
 
 static int find_output(UniValue obj, int n) {
@@ -80,6 +83,9 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
 
     // Lock UTXOs
     lock_utxos();
+
+    // Enable payment disclosure if requested
+    paymentDisclosureMode = fExperimentalMode && GetBoolArg("-paymentdisclosure", false);
 }
 
 AsyncRPCOperation_shieldcoinbase::~AsyncRPCOperation_shieldcoinbase() {
@@ -150,6 +156,21 @@ void AsyncRPCOperation_shieldcoinbase::main() {
     LogPrintf("%s",s);
 
     unlock_utxos(); // clean up
+
+    // !!! Payment disclosure START
+    if (success && paymentDisclosureMode && paymentDisclosureData_.size()>0) {
+        uint256 txidhash = tx_.GetHash();
+        std::shared_ptr<PaymentDisclosureDB> db = PaymentDisclosureDB::sharedInstance();
+        for (PaymentDisclosureKeyInfo p : paymentDisclosureData_) {
+            p.first.hash = txidhash;
+            if (!db->Put(p.first, p.second)) {
+                LogPrint("paymentdisclosure", "%s: Payment Disclosure: Error writing entry to database for key %s\n", getId(), p.first.ToString());
+            } else {
+                LogPrint("paymentdisclosure", "%s: Payment Disclosure: Successfully added entry to database for key %s\n", getId(), p.first.ToString());
+            }
+        }
+    }
+    // !!! Payment disclosure END
 }
 
 
@@ -319,6 +340,9 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
             {info.vjsout[0], info.vjsout[1]};
     boost::array<size_t, ZC_NUM_JS_INPUTS> inputMap;
     boost::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
+
+    uint256 esk; // payment disclosure - secret
+
     JSDescription jsdesc = JSDescription::Randomized(
             *pzcashParams,
             joinSplitPubKey_,
@@ -329,8 +353,8 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
             outputMap,
             info.vpub_old,
             info.vpub_new,
-            !this->testmode);
-
+            !this->testmode,
+            &esk); // parameter expects pointer to esk, so pass in address
     {
         auto verifier = libzcash::ProofVerifier::Strict();
         if (!(jsdesc.Verify(*pzcashParams, verifier, joinSplitPubKey_))) {
@@ -398,6 +422,27 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
     for (size_t i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
         arrOutputMap.push_back(outputMap[i]);
     }
+
+    // !!! Payment disclosure START
+    unsigned char buffer[32] = {0};
+    memcpy(&buffer[0], &joinSplitPrivKey_[0], 32); // private key in first half of 64 byte buffer
+    std::vector<unsigned char> vch(&buffer[0], &buffer[0] + 32);
+    uint256 joinSplitPrivKey = uint256(vch);
+    size_t js_index = tx_.vjoinsplit.size() - 1;
+    uint256 placeholder;
+    for (int i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
+        uint8_t mapped_index = outputMap[i];
+        // placeholder for txid will be filled in later when tx has been finalized and signed.
+        PaymentDisclosureKey pdKey = {placeholder, js_index, mapped_index};
+        JSOutput output = outputs[mapped_index];
+        libzcash::PaymentAddress zaddr = output.addr;  // randomized output
+        PaymentDisclosureInfo pdInfo = {PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL, esk, joinSplitPrivKey, zaddr};
+        paymentDisclosureData_.push_back(PaymentDisclosureKeyInfo(pdKey, pdInfo));
+
+        CZCPaymentAddress address(zaddr);
+        LogPrint("paymentdisclosure", "%s: Payment Disclosure: js=%d, n=%d, zaddr=%s\n", getId(), js_index, int(mapped_index), address.ToString());
+    }
+    // !!! Payment disclosure END
 
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("encryptednote1", encryptedNote1));

@@ -198,7 +198,8 @@ public:
         uint64_t vpub_old,
         uint64_t vpub_new,
         const uint256& rt,
-        bool computeProof
+        bool computeProof,
+        uint256 *out_esk // Payment disclosure
     ) {
         if (computeProof && !pk) {
             throw std::runtime_error("JoinSplit proving key not loaded");
@@ -303,6 +304,12 @@ public:
             }
 
             out_ephemeralKey = encryptor.get_epk();
+
+            // !!! Payment disclosure START
+            if (out_esk != nullptr) {
+                *out_esk = encryptor.get_esk();
+            }
+            // !!! Payment disclosure END
         }
 
         // Authenticate h_sig with each of the input

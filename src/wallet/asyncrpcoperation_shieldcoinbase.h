@@ -18,6 +18,8 @@
 
 #include <univalue.h>
 
+#include "paymentdisclosure.h"
+
 // Default transaction fee if caller does not specify one.
 #define SHIELD_COINBASE_DEFAULT_MINERS_FEE   10000
 
@@ -55,6 +57,8 @@ public:
 
     bool testmode = false;  // Set to true to disable sending txs and generating proofs
 
+    bool paymentDisclosureMode = false; // Set to true to save esk for encrypted notes in payment disclosure database.
+
 private:
     friend class TEST_FRIEND_AsyncRPCOperation_shieldcoinbase;    // class for unit testing
 
@@ -80,6 +84,9 @@ private:
     void lock_utxos();
 
     void unlock_utxos();
+
+    // payment disclosure!
+    std::vector<PaymentDisclosureKeyInfo> paymentDisclosureData_;
 };
 
 
