@@ -150,7 +150,8 @@ public:
         uint64_t vpub_old,
         uint64_t vpub_new,
         const uint256& rt,
-        bool computeProof
+        bool computeProof,
+        uint256 *out_esk // Payment disclosure
     ) {
         if (vpub_old > MAX_MONEY) {
             throw std::invalid_argument("nonsensical vpub_old value");
@@ -251,6 +252,12 @@ public:
             }
 
             out_ephemeralKey = encryptor.get_epk();
+
+            // !!! Payment disclosure START
+            if (out_esk != nullptr) {
+                *out_esk = encryptor.get_esk();
+            }
+            // !!! Payment disclosure END
         }
 
         // Authenticate h_sig with each of the input

@@ -73,7 +73,11 @@ public:
         uint64_t vpub_old,
         uint64_t vpub_new,
         const uint256& rt,
-        bool computeProof = true
+        bool computeProof = true,
+        // For paymentdisclosure, we need to retrieve the esk.
+        // Reference as non-const parameter with default value leads to compile error.
+        // So use pointer for simplicity.
+        uint256 *out_esk = nullptr
     ) = 0;
 
     virtual bool verify(
