@@ -50,6 +50,7 @@ Jack Grigg (36):
       Fix NPE in rpc_wallet_tests
       make-release.py: Versioning changes for 1.0.13-rc1.
       make-release.py: Updated manpages for 1.0.13-rc1.
+      Change auto-senescence cycle to 16 weeks
 
 Jason Davies (1):
       Replace "bitcoin" with "Zcash".
