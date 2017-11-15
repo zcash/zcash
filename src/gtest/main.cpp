@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 #include "crypto/common.h"
 #include "pubkey.h"
-
-#include "libsnark/common/default_types/r1cs_ppzksnark_pp.hpp"
-#include "libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp"
 #include "zcash/JoinSplit.hpp"
 #include "util.h"
+
+#include <libsnark/common/default_types/r1cs_ppzksnark_pp.hpp>
+#include <libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp>
 
 struct ECCryptoClosure
 {
