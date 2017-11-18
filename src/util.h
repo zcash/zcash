@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include <boost/thread/condition_variable.hpp> // for boost::thread_interrupted
 #include <boost/thread/exceptions.hpp>
 
 extern std::map<std::string, std::string> mapArgs;
