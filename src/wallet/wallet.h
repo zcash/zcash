@@ -627,6 +627,10 @@ public:
     }
 
     std::string ToString() const;
+
+    bool operator==(const COutput& rhs) const {
+        return tx == rhs.tx && i == rhs.i && nDepth == rhs.nDepth && fSpendable == rhs.fSpendable;
+    }
 };
 
 
@@ -1010,7 +1014,7 @@ public:
     /**
      * populate vCoins with vector of available COutputs.
      */
-    void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl = NULL, bool fIncludeZeroValue=false, bool fIncludeCoinBase=true) const;
+    void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl = NULL, bool fIncludeZeroValue=false, bool fIncludeCoinBase=true, boost::optional<CAmount> amount = boost::none) const;
 
     /**
      * Shuffle and select coins until nTargetValue is reached while avoiding

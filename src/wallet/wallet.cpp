@@ -3207,12 +3207,13 @@ CAmount CWallet::GetImmatureWatchOnlyBalance() const
     return nTotal;
 }
 
-void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const CCoinControl *coinControl, bool fIncludeZeroValue, bool fIncludeCoinBase) const
+void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const CCoinControl *coinControl, bool fIncludeZeroValue, bool fIncludeCoinBase, boost::optional<CAmount> amount) const
 {
     vCoins.clear();
 
     {
         LOCK2(cs_main, cs_wallet);
+        CAmount currentAmount = 0;
         for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
         {
             const uint256& wtxid = it->first;
@@ -3239,9 +3240,17 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                 if (!(IsSpent(wtxid, i)) && mine != ISMINE_NO &&
                     !IsLockedCoin((*it).first, i) && (pcoin->vout[i].nValue > 0 || fIncludeZeroValue) &&
                     (!coinControl || !coinControl->HasSelected() || coinControl->fAllowOtherInputs || coinControl->IsSelected((*it).first, i)))
+                {
                         vCoins.push_back(COutput(pcoin, i, nDepth,
                                                  ((mine & ISMINE_SPENDABLE) != ISMINE_NO) ||
                                                   (coinControl && coinControl->fAllowWatchOnly && (mine & ISMINE_WATCH_SOLVABLE) != ISMINE_NO)));
+                    if (vCoins.back().fSpendable) {
+                        currentAmount += pcoin->vout[i].nValue;
+                    }
+                    if (amount && currentAmount > *amount) {
+                        return;
+                    }
+                }
             }
         }
     }
@@ -3398,8 +3407,8 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
 {
     // Output parameter fOnlyCoinbaseCoinsRet is set to true when the only available coins are coinbase utxos.
     vector<COutput> vCoinsNoCoinbase, vCoinsWithCoinbase;
-    AvailableCoins(vCoinsNoCoinbase, true, coinControl, false, false);
-    AvailableCoins(vCoinsWithCoinbase, true, coinControl, false, true);
+    AvailableCoins(vCoinsNoCoinbase, true, coinControl, false, false, nTargetValue);
+    AvailableCoins(vCoinsWithCoinbase, true, coinControl, false, true, nTargetValue);
     fOnlyCoinbaseCoinsRet = vCoinsNoCoinbase.size() == 0 && vCoinsWithCoinbase.size() > 0;
 
     // If coinbase utxos can only be sent to zaddrs, exclude any coinbase utxos from coin selection.
