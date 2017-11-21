@@ -2,7 +2,7 @@
 
 **Summary**
 
-Use z_shieldcoinbase RPC call to shield coinbase UTXOs.
+Use `z_shieldcoinbase` RPC call to shield coinbase UTXOs.
 
 **Who should read this document**
 
@@ -14,25 +14,25 @@ The current Zcash protocol includes a consensus rule that coinbase rewards must 
 
 ## User Experience Challenges
 
-A user can use the z_sendmany RPC call to shield coinbase funds, but the call was not designed for sweeping up many utxos, and offered a suboptimal user experience.
+A user can use the z_sendmany RPC call to shield coinbase funds, but the call was not designed for sweeping up many UTXOs, and offered a suboptimal user experience.
 
 If customers send mining pool payouts to their online wallet, the service provider must sort through UTXOs to correctly determine the non-coinbase UTXO funds that can be withdrawn or transferred by customers to another transparent address.
 
 ## Solution
 
-The z_shieldcoinbase call makes it easy to sweep up coinbase rewards from multiple coinbase utxos across multiple coinbase reward addresses.
+The z_shieldcoinbase call makes it easy to sweep up coinbase rewards from multiple coinbase UTXOs across multiple coinbase reward addresses.
 
     z_shieldcoinbase fromaddress toaddress (fee) (limit)
 
-Where the default fee is 0.0010000 ZEC and the default limit on the maximum number of UTXOs to shield is 50.
+The default fee is 0.0010000 ZEC and the default limit on the maximum number of UTXOs to shield is 50.
 
 ## Examples
 
-Sweep up coinbase utxos from a transparent address you use for mining:
+Sweep up coinbase UTXOs from a transparent address you use for mining:
 
     zcash-cli z_shieldcoinbase tMyMiningAddress zMyPrivateAddress
 
-Sweep up coinbase utxos from multiple transparent addresses to a shielded address:
+Sweep up coinbase UTXOs from multiple transparent addresses to a shielded address:
 
     zcash-cli z_shieldcoinbase "*" zMyPrivateAddress
 
@@ -40,7 +40,7 @@ Sweep up with a fee of 1.23 ZEC:
 
     zcash-cli z_shieldcoinbase tMyMiningAddress zMyPrivateAddress 1.23
 
-Sweep up with a fee of 0.1 ZEC and set limit on the maximum number of utxos to shield at 25:
+Sweep up with a fee of 0.1 ZEC and set limit on the maximum number of UTXOs to shield at 25:
 
     zcash-cli z_shieldcoinbase "*" zMyPrivateAddress 0.1 25
 
@@ -55,10 +55,10 @@ When you invoke
 JSON will be returned immediately, with the following data fields populated:
 
 - operationid: a temporary id to use with `z_getoperationstatus` and `z_getoperationresult` to get the status and result of the operation.
-- shieldedUTXOs: number of coinbase utxos being shielded
-- shieldedValue: value of coinbase utxos being shielded.
-- remainingUTXOs: number of coinbase utxos still available for shielding.
-- remainingValue: value of coinbase utxos still available for shielding
+- shieldedUTXOs: number of coinbase UTXOs being shielded
+- shieldedValue: value of coinbase UTXOs being shielded.
+- remainingUTXOs: number of coinbase UTXOs still available for shielding.
+- remainingValue: value of coinbase UTXOs still available for shielding
 
 ### Locking UTXOs
 
@@ -68,13 +68,13 @@ You can use the RPC call `lockunspent` to see which UTXOs have been locked.  You
 
 ### Limits, Performance and Transaction Confirmation
 
-The number of coinbase utxos selected for shielding can be adjusted by setting the limit parameter. The default value is 50.
+The number of coinbase UTXOs selected for shielding can be adjusted by setting the limit parameter. The default value is 50.
 
 If the limit parameter is set to zero, the zcashd `mempooltxinputlimit` option will be used instead, where the default value for `mempooltxinputlimit` is zero, which means no limit.
 
 Any limit is constrained by a hard limit due to the consensus rule defining a maximum transaction size of 100,000 bytes.
 
-In general, the more utxos that are selected, the longer it takes for the transaction to be verified.  Due to the quadratic hashing problem, some miners use the `mempooltxinputlimit` option to reject transactions with a large number of UTXO inputs.
+In general, the more UTXOs that are selected, the longer it takes for the transaction to be verified.  Due to the quadratic hashing problem, some miners use the `mempooltxinputlimit` option to reject transactions with a large number of UTXO inputs.
 
 Currently, as of November 2017, there is no commonly agreed upon limit, but as a rule of thumb (a form of emergent consensus) if a transaction has less than 100 UTXO inputs, the transaction will be mined promptly by the majority of mining pools, but if it has many more UTXO inputs, such as 500, it might take several days to be mined by a miner who has higher or no limits.
 
@@ -84,14 +84,14 @@ The transaction created is a shielded transaction.  It consists of a single join
 
 The number of coinbase UTXOs is determined by a user configured limit.
 
-If no limit is set (in the case when limit parameter and `mempooltxinputlimit` options are set to zero) the behaviour of z_shieldcoinbase is to consume as many utxos as possible, with `z_shieldcoinbase` constructing a transaction up to the size limit of 100,000 bytes.
+If no limit is set (in the case when limit parameter and `mempooltxinputlimit` options are set to zero) the behaviour of z_shieldcoinbase is to consume as many UTXOs as possible, with `z_shieldcoinbase` constructing a transaction up to the size limit of 100,000 bytes.
 
 As a result, the maximum number of inputs that can be selected is:
 
-- P2PKH coinbase utxos ~ 662
-- 2-of-3 multisig P2SH coinbase utxos ~ 244.
+- P2PKH coinbase UTXOs ~ 662
+- 2-of-3 multisig P2SH coinbase UTXOs ~ 244.
 
-Here is an example of using `z_shieldcoinbase` on testnet to shield multi-sig coinbase utxos.
+Here is an example of using `z_shieldcoinbase` on testnet to shield multi-sig coinbase UTXOs.
 
 - Block 141042 is almost ~2 MB in size (the maximum size for a block) and contains 1 coinbase reward transaction and 20 transactions, each indivually created by a call to z_shieldcoinbase.
   - https://explorer.testnet.z.cash/block/0050552a78e97c89f666713c8448d49ad1d7263274422272696187dedf6c0d03
