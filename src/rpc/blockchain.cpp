@@ -28,16 +28,19 @@ using namespace std;
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
 
-double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficulty)
+/* Calculate the difficulty for a given block index,
+ * or the block index of the given chain.
+ */
+double GetDifficultyINTERNAL(const CChain& chain, const CBlockIndex* blockindex, bool networkDifficulty)
 {
     // Floating point number that is a multiple of the minimum difficulty,
     // minimum difficulty = 1.0.
     if (blockindex == NULL)
     {
-        if (chainActive.Tip() == NULL)
+        if (chain.Tip() == NULL)
             return 1.0;
         else
-            blockindex = chainActive.Tip();
+            blockindex = chain.Tip();
     }
 
     uint32_t bits;
@@ -51,7 +54,6 @@ double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficul
         UintToArith256(Params().GetConsensus().powLimit).GetCompact();
     int nShift = (bits >> 24) & 0xff;
     int nShiftAmount = (powLimit >> 24) & 0xff;
-
     double dDiff =
         (double)(powLimit & 0x00ffffff) /
         (double)(bits & 0x00ffffff);
@@ -72,12 +74,12 @@ double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficul
 
 double GetDifficulty(const CBlockIndex* blockindex)
 {
-    return GetDifficultyINTERNAL(blockindex, false);
+    return GetDifficultyINTERNAL(chainActive, blockindex, false);
 }
 
 double GetNetworkDifficulty(const CBlockIndex* blockindex)
 {
-    return GetDifficultyINTERNAL(blockindex, true);
+    return GetDifficultyINTERNAL(chainActive, blockindex, true);
 }
 
 static UniValue ValuePoolDesc(
