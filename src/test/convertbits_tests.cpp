@@ -16,8 +16,8 @@ BOOST_AUTO_TEST_CASE(convertbits_deterministic)
         std::vector<unsigned char> input(32, i);
         std::vector<unsigned char> data;
         std::vector<unsigned char> output;
-        ConvertBits<8, 5, true>(data, input.begin(), input.end());
-        ConvertBits<5, 8, false>(output, data.begin(), data.end());
+        ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, input.begin(), input.end());
+        ConvertBits<5, 8, false>([&](unsigned char c) { output.push_back(c); }, data.begin(), data.end());
         BOOST_CHECK_EQUAL(data.size(), 52);
         BOOST_CHECK_EQUAL(output.size(), 32);
         BOOST_CHECK(input == output);
@@ -27,8 +27,8 @@ BOOST_AUTO_TEST_CASE(convertbits_deterministic)
         std::vector<unsigned char> input(43, i);
         std::vector<unsigned char> data;
         std::vector<unsigned char> output;
-        ConvertBits<8, 5, true>(data, input.begin(), input.end());
-        ConvertBits<5, 8, false>(output, data.begin(), data.end());
+        ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, input.begin(), input.end());
+        ConvertBits<5, 8, false>([&](unsigned char c) { output.push_back(c); }, data.begin(), data.end());
         BOOST_CHECK_EQUAL(data.size(), 69);
         BOOST_CHECK_EQUAL(output.size(), 43);
         BOOST_CHECK(input == output);
@@ -41,8 +41,8 @@ BOOST_AUTO_TEST_CASE(convertbits_random)
         auto input = libzcash::random_uint256();
         std::vector<unsigned char> data;
         std::vector<unsigned char> output;
-        ConvertBits<8, 5, true>(data, input.begin(), input.end());
-        ConvertBits<5, 8, false>(output, data.begin(), data.end());
+        ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, input.begin(), input.end());
+        ConvertBits<5, 8, false>([&](unsigned char c) { output.push_back(c); }, data.begin(), data.end());
         BOOST_CHECK_EQUAL(data.size(), 52);
         BOOST_CHECK_EQUAL(output.size(), 32);
         BOOST_CHECK(input == uint256(output));
