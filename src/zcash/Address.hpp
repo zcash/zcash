@@ -1,5 +1,5 @@
-#ifndef _ZCADDRESS_H_
-#define _ZCADDRESS_H_
+#ifndef ZC_ADDRESS_H_
+#define ZC_ADDRESS_H_
 
 #include "uint256.h"
 #include "uint252.h"
@@ -58,4 +58,4 @@ public:
 
 }
 
-#endif // _ZCADDRESS_H_
+#endif // ZC_ADDRESS_H_
