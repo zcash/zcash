@@ -1,3 +1,4 @@
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "crypto/common.h"
 #include "pubkey.h"
@@ -25,6 +26,6 @@ int main(int argc, char **argv) {
   boost::filesystem::path vk_path = ZC_GetParamsDir() / "sprout-verifying.key";
   params = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
   
-  testing::InitGoogleTest(&argc, argv);
+  testing::InitGoogleMock(&argc, argv);
   return RUN_ALL_TESTS();
 }
