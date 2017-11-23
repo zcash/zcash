@@ -147,6 +147,10 @@ Fp3_model<n,modulus> Fp3_model<n,modulus>::Frobenius_map(unsigned long power) co
 template<mp_size_t n, const bigint<n>& modulus>
 Fp3_model<n,modulus> Fp3_model<n,modulus>::sqrt() const
 {
+    if (is_zero()) {
+        return *this;
+    }
+
     Fp3_model<n,modulus> one = Fp3_model<n,modulus>::one();
 
     size_t v = Fp3_model<n,modulus>::s;
@@ -154,19 +158,6 @@ Fp3_model<n,modulus> Fp3_model<n,modulus>::sqrt() const
     Fp3_model<n,modulus> w = (*this)^Fp3_model<n,modulus>::t_minus_1_over_2;
     Fp3_model<n,modulus> x = (*this) * w;
     Fp3_model<n,modulus> b = x * w; // b = (*this)^t
-
-#if DEBUG
-    // check if square with euler's criterion
-    Fp3_model<n,modulus> check = b;
-    for (size_t i = 0; i < v-1; ++i)
-    {
-        check = check.squared();
-    }
-    if (check != one)
-    {
-        assert(0);
-    }
-#endif
 
     // compute square root with Tonelli--Shanks
     // (does not terminate if not a square!)
