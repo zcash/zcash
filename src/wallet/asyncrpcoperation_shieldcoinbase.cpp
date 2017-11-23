@@ -231,6 +231,21 @@ bool AsyncRPCOperation_shieldcoinbase::main_impl() {
     return true;
 }
 
+// Helper method that converts a hex txn string to a CTransaction
+static CTransaction toCTransaction(const std::string &signedtxn)
+{
+    vector<unsigned char> parsedHexTxn;
+    try {
+        parsedHexTxn = ParseHex(signedtxn);
+    } catch (...) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Invalid hex string for signed transaction");
+    }
+
+    CDataStream stream(parsedHexTxn, SER_NETWORK, PROTOCOL_VERSION);
+    CTransaction tx;
+    stream >> tx;
+    return tx;
+}
 
 /**
  * Sign and send a raw transaction.
@@ -279,11 +294,7 @@ void AsyncRPCOperation_shieldcoinbase::sign_send_raw_transaction(UniValue obj)
         set_result(o);
     } else {
         // Test mode does not send the transaction to the network.
-
-        CDataStream stream(ParseHex(signedtxn), SER_NETWORK, PROTOCOL_VERSION);
-        CTransaction tx;
-        stream >> tx;
-
+        CTransaction tx(toCTransaction(signedtxn));
         UniValue o(UniValue::VOBJ);
         o.push_back(Pair("test", 1));
         o.push_back(Pair("txid", tx.GetHash().ToString()));
@@ -292,10 +303,7 @@ void AsyncRPCOperation_shieldcoinbase::sign_send_raw_transaction(UniValue obj)
     }
 
     // Keep the signed transaction so we can hash to the same txid
-    CDataStream stream(ParseHex(signedtxn), SER_NETWORK, PROTOCOL_VERSION);
-    CTransaction tx;
-    stream >> tx;
-    tx_ = tx;
+    tx_ = toCTransaction(signedtxn);
 }
 
 

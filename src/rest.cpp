@@ -447,8 +447,14 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
     switch (rf) {
     case RF_HEX: {
         // convert hex to bin, continue then with bin part
-        std::vector<unsigned char> strRequestV = ParseHex(strRequestMutable);
+        std::vector<unsigned char> strRequestV;
+        try {
+             strRequestV = ParseHex(strRequestMutable);
+        } catch (...) {
+            return RESTERR(req, HTTP_INTERNAL_SERVER_ERROR, "Parse error");
+        }
         strRequestMutable.assign(strRequestV.begin(), strRequestV.end());
+        // FALLTHROUGH
     }
 
     case RF_BINARY: {

@@ -108,7 +108,14 @@ void ThreadSendAlert()
     const CChainParams& chainparams = Params();
     std::string networkID = chainparams.NetworkIDString();
     bool fIsTestNet = networkID.compare("test") == 0;
-    std::vector<unsigned char> vchTmp(ParseHex(fIsTestNet ? pszTestNetPrivKey : pszPrivKey));
+    std::vector<unsigned char> vchTmp;
+    try {
+        vchTmp = ParseHex(fIsTestNet ? pszTestNetPrivKey : pszPrivKey);
+    } catch (...) {
+        printf("ThreadSendAlert() : Invalid hex string for privkey\n");
+        return;
+    }
+
     CPrivKey vchPrivKey(vchTmp.begin(), vchTmp.end());
 
     CDataStream sMsg(SER_NETWORK, CLIENT_VERSION);

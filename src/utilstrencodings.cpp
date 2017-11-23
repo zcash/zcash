@@ -82,18 +82,25 @@ bool IsHex(const string& str)
 vector<unsigned char> ParseHex(const char* psz)
 {
     // convert hex dump to vector
+    const char* orig = psz;
     vector<unsigned char> vch;
-    while (true)
+    while (*psz)
     {
-        while (isspace(*psz))
+        if (isspace(*psz))
+        {
             psz++;
+            continue;
+        }
+
         signed char c = HexDigit(*psz++);
         if (c == (signed char)-1)
-            break;
+            throw runtime_error("Invalid hex string: " + std::string(orig));
+
         unsigned char n = (c << 4);
         c = HexDigit(*psz++);
         if (c == (signed char)-1)
-            break;
+            throw runtime_error("Invalid hex string: " + std::string(orig));
+
         n |= c;
         vch.push_back(n);
     }
@@ -674,4 +681,3 @@ bool ParseFixedPoint(const std::string &val, int decimals, int64_t *amount_out)
 
     return true;
 }
-

@@ -95,9 +95,9 @@ bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx)
     if (!IsHex(strHexTx))
         return false;
 
-    vector<unsigned char> txData(ParseHex(strHexTx));
-    CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
     try {
+        vector<unsigned char> txData(ParseHex(strHexTx));
+        CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
         ssData >> tx;
     }
     catch (const std::exception&) {
@@ -112,9 +112,9 @@ bool DecodeHexBlk(CBlock& block, const std::string& strHexBlk)
     if (!IsHex(strHexBlk))
         return false;
 
-    std::vector<unsigned char> blockData(ParseHex(strHexBlk));
-    CDataStream ssBlock(blockData, SER_NETWORK, PROTOCOL_VERSION);
     try {
+        std::vector<unsigned char> blockData(ParseHex(strHexBlk));
+        CDataStream ssBlock(blockData, SER_NETWORK, PROTOCOL_VERSION);
         ssBlock >> block;
     }
     catch (const std::exception&) {
