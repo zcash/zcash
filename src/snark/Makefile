@@ -17,7 +17,7 @@ CXXFLAGS += -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-comment -Wfatal-
 DEPSRC = depsrc
 DEPINST = depinst
 
-CXXFLAGS += -I$(DEPINST)/include -Isrc
+CXXFLAGS += -I$(DEPINST)/include -Ilibsnark
 LDFLAGS += -L$(DEPINST)/lib -Wl,-rpath,$(DEPINST)/lib
 LDLIBS += -lgmpxx -lgmp -lboost_program_options-mt -lsodium
 # List of .a files to include within libsnark.a and libsnark.so:
@@ -44,23 +44,23 @@ ifneq ($(NO_SUPERCOP),1)
 endif
 
 LIB_SRCS = \
-	src/algebra/curves/alt_bn128/alt_bn128_g1.cpp \
-	src/algebra/curves/alt_bn128/alt_bn128_g2.cpp \
-	src/algebra/curves/alt_bn128/alt_bn128_init.cpp \
-	src/algebra/curves/alt_bn128/alt_bn128_pairing.cpp \
-	src/algebra/curves/alt_bn128/alt_bn128_pp.cpp \
-	src/common/profiling.cpp \
-	src/common/utils.cpp \
-	src/gadgetlib1/constraint_profiling.cpp \
+	libsnark/algebra/curves/alt_bn128/alt_bn128_g1.cpp \
+	libsnark/algebra/curves/alt_bn128/alt_bn128_g2.cpp \
+	libsnark/algebra/curves/alt_bn128/alt_bn128_init.cpp \
+	libsnark/algebra/curves/alt_bn128/alt_bn128_pairing.cpp \
+	libsnark/algebra/curves/alt_bn128/alt_bn128_pp.cpp \
+	libsnark/common/profiling.cpp \
+	libsnark/common/utils.cpp \
+	libsnark/gadgetlib1/constraint_profiling.cpp \
 
 ifeq ($(CURVE),BN128)
 	LIB_SRCS += \
-	        src/algebra/curves/bn128/bn128_g1.cpp \
-		src/algebra/curves/bn128/bn128_g2.cpp \
-		src/algebra/curves/bn128/bn128_gt.cpp \
-		src/algebra/curves/bn128/bn128_init.cpp \
-		src/algebra/curves/bn128/bn128_pairing.cpp \
-		src/algebra/curves/bn128/bn128_pp.cpp
+		libsnark/algebra/curves/bn128/bn128_g1.cpp \
+		libsnark/algebra/curves/bn128/bn128_g2.cpp \
+		libsnark/algebra/curves/bn128/bn128_gt.cpp \
+		libsnark/algebra/curves/bn128/bn128_init.cpp \
+		libsnark/algebra/curves/bn128/bn128_pairing.cpp \
+		libsnark/algebra/curves/bn128/bn128_pp.cpp
 
 	CXXFLAGS += -DBN_SUPPORT_SNARK
 	AR_LIBS += $(DEPINST)/lib/libzm.a
@@ -68,56 +68,56 @@ endif
 
 # FIXME: most of these are broken due to removed code.
 DISABLED_EXECUTABLES = \
-	src/common/routing_algorithms/profiling/profile_routing_algorithms \
-	src/common/routing_algorithms/tests/test_routing_algorithms \
-	src/gadgetlib1/gadgets/cpu_checkers/fooram/examples/test_fooram \
-	src/gadgetlib1/gadgets/hashes/knapsack/tests/test_knapsack_gadget \
-	src/gadgetlib1/gadgets/routing/profiling/profile_routing_gadgets \
-	src/gadgetlib1/gadgets/set_commitment/tests/test_set_commitment_gadget \
-	src/gadgetlib1/gadgets/verifiers/tests/test_r1cs_ppzksnark_verifier_gadget \
-	src/reductions/ram_to_r1cs/examples/demo_arithmetization \
-	src/relations/arithmetic_programs/ssp/tests/test_ssp \
-	src/zk_proof_systems/pcd/r1cs_pcd/r1cs_mp_ppzkpcd/profiling/profile_r1cs_mp_ppzkpcd \
-	src/zk_proof_systems/pcd/r1cs_pcd/r1cs_mp_ppzkpcd/tests/test_r1cs_mp_ppzkpcd \
-	src/zk_proof_systems/pcd/r1cs_pcd/r1cs_sp_ppzkpcd/profiling/profile_r1cs_sp_ppzkpcd \
-	src/zk_proof_systems/pcd/r1cs_pcd/r1cs_sp_ppzkpcd/tests/test_r1cs_sp_ppzkpcd \
-	src/zk_proof_systems/ppzksnark/bacs_ppzksnark/profiling/profile_bacs_ppzksnark \
-	src/zk_proof_systems/ppzksnark/bacs_ppzksnark/tests/test_bacs_ppzksnark \
-	src/zk_proof_systems/ppzksnark/r1cs_gg_ppzksnark/profiling/profile_r1cs_gg_ppzksnark \
-	src/zk_proof_systems/ppzksnark/r1cs_gg_ppzksnark/tests/test_r1cs_gg_ppzksnark \
-	src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/profiling/profile_r1cs_ppzksnark \
-	src/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark \
-	src/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark_generator \
-	src/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark_prover \
-	src/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark_verifier \
-	src/zk_proof_systems/ppzksnark/ram_ppzksnark/profiling/profile_ram_ppzksnark \
-	src/zk_proof_systems/ppzksnark/ram_ppzksnark/tests/test_ram_ppzksnark \
-	src/zk_proof_systems/ppzksnark/tbcs_ppzksnark/profiling/profile_tbcs_ppzksnark \
-	src/zk_proof_systems/ppzksnark/tbcs_ppzksnark/tests/test_tbcs_ppzksnark \
-	src/zk_proof_systems/ppzksnark/uscs_ppzksnark/profiling/profile_uscs_ppzksnark \
-	src/zk_proof_systems/ppzksnark/uscs_ppzksnark/tests/test_uscs_ppzksnark \
-	src/zk_proof_systems/zksnark/ram_zksnark/profiling/profile_ram_zksnark \
-	src/zk_proof_systems/zksnark/ram_zksnark/tests/test_ram_zksnark
+	libsnark/common/routing_algorithms/profiling/profile_routing_algorithms \
+	libsnark/common/routing_algorithms/tests/test_routing_algorithms \
+	libsnark/gadgetlib1/gadgets/cpu_checkers/fooram/examples/test_fooram \
+	libsnark/gadgetlib1/gadgets/hashes/knapsack/tests/test_knapsack_gadget \
+	libsnark/gadgetlib1/gadgets/routing/profiling/profile_routing_gadgets \
+	libsnark/gadgetlib1/gadgets/set_commitment/tests/test_set_commitment_gadget \
+	libsnark/gadgetlib1/gadgets/verifiers/tests/test_r1cs_ppzksnark_verifier_gadget \
+	libsnark/reductions/ram_to_r1cs/examples/demo_arithmetization \
+	libsnark/relations/arithmetic_programs/ssp/tests/test_ssp \
+	libsnark/zk_proof_systems/pcd/r1cs_pcd/r1cs_mp_ppzkpcd/profiling/profile_r1cs_mp_ppzkpcd \
+	libsnark/zk_proof_systems/pcd/r1cs_pcd/r1cs_mp_ppzkpcd/tests/test_r1cs_mp_ppzkpcd \
+	libsnark/zk_proof_systems/pcd/r1cs_pcd/r1cs_sp_ppzkpcd/profiling/profile_r1cs_sp_ppzkpcd \
+	libsnark/zk_proof_systems/pcd/r1cs_pcd/r1cs_sp_ppzkpcd/tests/test_r1cs_sp_ppzkpcd \
+	libsnark/zk_proof_systems/ppzksnark/bacs_ppzksnark/profiling/profile_bacs_ppzksnark \
+	libsnark/zk_proof_systems/ppzksnark/bacs_ppzksnark/tests/test_bacs_ppzksnark \
+	libsnark/zk_proof_systems/ppzksnark/r1cs_gg_ppzksnark/profiling/profile_r1cs_gg_ppzksnark \
+	libsnark/zk_proof_systems/ppzksnark/r1cs_gg_ppzksnark/tests/test_r1cs_gg_ppzksnark \
+	libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/profiling/profile_r1cs_ppzksnark \
+	libsnark/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark \
+	libsnark/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark_generator \
+	libsnark/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark_prover \
+	libsnark/zk_proof_systems/ppzksnark/ram_ppzksnark/examples/demo_ram_ppzksnark_verifier \
+	libsnark/zk_proof_systems/ppzksnark/ram_ppzksnark/profiling/profile_ram_ppzksnark \
+	libsnark/zk_proof_systems/ppzksnark/ram_ppzksnark/tests/test_ram_ppzksnark \
+	libsnark/zk_proof_systems/ppzksnark/tbcs_ppzksnark/profiling/profile_tbcs_ppzksnark \
+	libsnark/zk_proof_systems/ppzksnark/tbcs_ppzksnark/tests/test_tbcs_ppzksnark \
+	libsnark/zk_proof_systems/ppzksnark/uscs_ppzksnark/profiling/profile_uscs_ppzksnark \
+	libsnark/zk_proof_systems/ppzksnark/uscs_ppzksnark/tests/test_uscs_ppzksnark \
+	libsnark/zk_proof_systems/zksnark/ram_zksnark/profiling/profile_ram_zksnark \
+	libsnark/zk_proof_systems/zksnark/ram_zksnark/tests/test_ram_zksnark
 
 EXECUTABLES =
 
 EXECUTABLES_WITH_GTEST =
 
 EXECUTABLES_WITH_SUPERCOP = \
-	src/zk_proof_systems/ppzkadsnark/r1cs_ppzkadsnark/examples/demo_r1cs_ppzkadsnark
+	libsnark/zk_proof_systems/ppzkadsnark/r1cs_ppzkadsnark/examples/demo_r1cs_ppzkadsnark
 
-GTEST_TESTS = src/gtests
+GTEST_TESTS = libsnark/gtests
 
 GTEST_SRCS = \
-	src/algebra/curves/tests/test_bilinearity.cpp \
-	src/algebra/curves/tests/test_groups.cpp \
-	src/algebra/fields/tests/test_bigint.cpp \
-	src/algebra/fields/tests/test_fields.cpp \
-	src/gadgetlib1/gadgets/hashes/sha256/tests/test_sha256_gadget.cpp \
-	src/gadgetlib1/gadgets/merkle_tree/tests/test_merkle_tree_gadgets.cpp \
-	src/relations/arithmetic_programs/qap/tests/test_qap.cpp \
-	src/zk_proof_systems/ppzksnark/r1cs_ppzksnark/tests/test_r1cs_ppzksnark.cpp \
-	src/gtests.cpp
+	libsnark/algebra/curves/tests/test_bilinearity.cpp \
+	libsnark/algebra/curves/tests/test_groups.cpp \
+	libsnark/algebra/fields/tests/test_bigint.cpp \
+	libsnark/algebra/fields/tests/test_fields.cpp \
+	libsnark/gadgetlib1/gadgets/hashes/sha256/tests/test_sha256_gadget.cpp \
+	libsnark/gadgetlib1/gadgets/merkle_tree/tests/test_merkle_tree_gadgets.cpp \
+	libsnark/relations/arithmetic_programs/qap/tests/test_qap.cpp \
+	libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/tests/test_r1cs_ppzksnark.cpp \
+	libsnark/gtests.cpp
 
 DOCS = README.html
 
@@ -192,7 +192,7 @@ $(LIB_OBJS) $(if $(NO_GTEST),,$(GTEST_OBJS)) $(EXEC_OBJS): %.o: %.cpp
 
 LIBGTEST_A = $(DEPINST)/lib/libgtest.a
 
-$(LIBGTEST_A): $(GTESTDIR)/src/gtest-all.cc $(DEPINST_EXISTS)
+$(LIBGTEST_A): $(GTESTDIR)/libsnark/gtest-all.cc $(DEPINST_EXISTS)
 	$(CXX) -o $(DEPINST)/lib/gtest-all.o   -I $(GTESTDIR) -c -isystem $(GTESTDIR)/include $< $(CXXFLAGS)
 	$(AR) -rv $(LIBGTEST_A) $(DEPINST)/lib/gtest-all.o
 
@@ -205,13 +205,13 @@ $(LIBSNARK_A): $(LIB_OBJS) $(AR_LIBS)
 libsnark.so: $(LIBSNARK_A) $(DEPINST_EXISTS)
 	$(CXX) -o $@   --shared -Wl,--whole-archive $(LIBSNARK_A) $(CXXFLAGS) $(LDFLAGS) -Wl,--no-whole-archive $(LDLIBS)
 
-src/gadgetlib2/tests/gadgetlib2_test: \
-	src/gadgetlib2/tests/adapters_UTEST.cpp \
-	src/gadgetlib2/tests/constraint_UTEST.cpp \
-	src/gadgetlib2/tests/gadget_UTEST.cpp \
-	src/gadgetlib2/tests/integration_UTEST.cpp \
-	src/gadgetlib2/tests/protoboard_UTEST.cpp \
-	src/gadgetlib2/tests/variable_UTEST.cpp
+libsnark/gadgetlib2/tests/gadgetlib2_test: \
+	libsnark/gadgetlib2/tests/adapters_UTEST.cpp \
+	libsnark/gadgetlib2/tests/constraint_UTEST.cpp \
+	libsnark/gadgetlib2/tests/gadget_UTEST.cpp \
+	libsnark/gadgetlib2/tests/integration_UTEST.cpp \
+	libsnark/gadgetlib2/tests/protoboard_UTEST.cpp \
+	libsnark/gadgetlib2/tests/variable_UTEST.cpp
 
 $(EXECUTABLES): %: %.o $(LIBSNARK_A) $(DEPINST_EXISTS)
 	$(CXX) -o $@   $@.o $(LIBSNARK_A) $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
@@ -243,10 +243,10 @@ ifeq ($(PREFIX),)
 install:
 	$(error Please provide PREFIX. E.g. make install PREFIX=/usr)
 else
-HEADERS_SRC=$(shell find src -name '*.hpp' -o -name '*.tcc')
-HEADERS_DEST=$(patsubst src/%,$(PREFIX)/include/libsnark/%,$(HEADERS_SRC))
+HEADERS_SRC=$(shell find libsnark -name '*.hpp' -o -name '*.tcc')
+HEADERS_DEST=$(patsubst libsnark/%,$(PREFIX)/include/libsnark/%,$(HEADERS_SRC))
 
-$(HEADERS_DEST): $(PREFIX)/include/libsnark/%: src/%
+$(HEADERS_DEST): $(PREFIX)/include/libsnark/%: libsnark/%
 	mkdir -p $(shell dirname $@)
 	cp $< $@
 
