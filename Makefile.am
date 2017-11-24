@@ -14,32 +14,11 @@ endif
 
 BITCOIND_BIN=$(top_builddir)/src/$(BITCOIN_DAEMON_NAME)$(EXEEXT)
 BITCOIN_CLI_BIN=$(top_builddir)/src/$(BITCOIN_CLI_NAME)$(EXEEXT)
-BITCOIN_WIN_INSTALLER=$(PACKAGE)-$(PACKAGE_VERSION)-win$(WINDOWS_BITS)-setup$(EXEEXT)
-
-##OSX_APP=Bitcoin-Qt.app
-##OSX_DMG=Bitcoin-Core.dmg
-##OSX_BACKGROUND_IMAGE=background.tiff
-##OSX_DEPLOY_SCRIPT=$(top_srcdir)/contrib/macdeploy/macdeployqtplus
-##OSX_FANCY_PLIST=$(top_srcdir)/contrib/macdeploy/fancy.plist
-##OSX_BASE_LPROJ_DIR=$(top_srcdir)/contrib/macdeploy/Base.lproj/InfoPlist.strings
-##OSX_INSTALLER_ICONS=$(top_srcdir)/src/qt/res/icons/bitcoin.icns
-##OSX_PLIST=$(top_srcdir)/share/qt/Info.plist #not installed
-##OSX_QT_TRANSLATIONS = da,de,es,hu,ru,uk,zh_CN,zh_TW
 
 DIST_DOCS = $(wildcard doc/*.md) $(wildcard doc/release-notes/*.md)
 
 BIN_CHECKS=$(top_srcdir)/contrib/devtools/symbol-check.py \
            $(top_srcdir)/contrib/devtools/security-check.py
-
-WINDOWS_PACKAGING = $(top_srcdir)/share/pixmaps/bitcoin.ico \
-  $(top_srcdir)/share/pixmaps/nsis-header.bmp \
-  $(top_srcdir)/share/pixmaps/nsis-wizard.bmp
-
-##OSX_PACKAGING = $(OSX_DEPLOY_SCRIPT) $(OSX_FANCY_PLIST) $(OSX_INSTALLER_ICONS) $(OSX_BASE_LPROJ_DIR) \
-##  $(top_srcdir)/contrib/macdeploy/$(OSX_BACKGROUND_IMAGE) \
-##  $(top_srcdir)/contrib/macdeploy/DS_Store \
-##  $(top_srcdir)/contrib/macdeploy/detached-sig-apply.sh \
-##  $(top_srcdir)/contrib/macdeploy/detached-sig-create.sh
 
 COVERAGE_INFO = baseline_filtered_combined.info baseline.info \
   leveldb_baseline.info test_bitcoin_filtered.info total_coverage.info \
@@ -60,83 +39,8 @@ distcheck-hook:
 distcleancheck:
 	@:
 
-$(BITCOIN_WIN_INSTALLER): all-recursive
-	$(MKDIR_P) $(top_builddir)/release
-	STRIPPROG="$(STRIP)" $(INSTALL_STRIP_PROGRAM) $(BITCOIND_BIN) $(top_builddir)/release
-	STRIPPROG="$(STRIP)" $(INSTALL_STRIP_PROGRAM) $(BITCOIN_CLI_BIN) $(top_builddir)/release
-	@test -f $(MAKENSIS) && $(MAKENSIS) -V2 $(top_builddir)/share/setup.nsi || \
-	  echo error: could not build $@
-	@echo built $@
-
 $(if $(findstring src/,$(MAKECMDGOALS)),$(MAKECMDGOALS), none): FORCE
 	$(MAKE) -C src $(patsubst src/%,%,$@)
-
-##$(OSX_APP)/Contents/PkgInfo:
-##	$(MKDIR_P) $(@D)
-##	@echo "APPL????" > $@
-##
-##$(OSX_APP)/Contents/Resources/empty.lproj:
-##	$(MKDIR_P) $(@D)
-##	@touch $@
-##
-##$(OSX_APP)/Contents/Info.plist: $(OSX_PLIST)
-##	$(MKDIR_P) $(@D)
-##	$(INSTALL_DATA) $< $@
-##
-##$(OSX_APP)/Contents/Resources/bitcoin.icns: $(OSX_INSTALLER_ICONS)
-##	$(MKDIR_P) $(@D)
-##	$(INSTALL_DATA) $< $@
-##
-##$(OSX_APP)/Contents/MacOS/Bitcoin-Qt: $(BITCOIN_QT_BIN)
-##	$(MKDIR_P) $(@D)
-##	STRIPPROG="$(STRIP)" $(INSTALL_STRIP_PROGRAM)  $< $@
-##
-##$(OSX_APP)/Contents/Resources/Base.lproj/InfoPlist.strings: $(OSX_BASE_LPROJ_DIR)
-##	$(MKDIR_P) $(@D)
-##	$(INSTALL_DATA) $< $@
-##
-##OSX_APP_BUILT=$(OSX_APP)/Contents/PkgInfo $(OSX_APP)/Contents/Resources/empty.lproj \
-##  $(OSX_APP)/Contents/Resources/bitcoin.icns $(OSX_APP)/Contents/Info.plist \
-##  $(OSX_APP)/Contents/MacOS/Bitcoin-Qt $(OSX_APP)/Contents/Resources/Base.lproj/InfoPlist.strings
-##
-##if BUILD_DARWIN
-##$(OSX_DMG): $(OSX_APP_BUILT) $(OSX_PACKAGING)
-##	$(OSX_DEPLOY_SCRIPT) $(OSX_APP) -add-qt-tr $(OSX_QT_TRANSLATIONS) -translations-dir=$(QT_TRANSLATION_DIR) -dmg -fancy $(OSX_FANCY_PLIST) -verbose 2
-##
-##deploydir: $(OSX_DMG)
-##else
-##APP_DIST_DIR=$(top_builddir)/dist
-##APP_DIST_EXTRAS=$(APP_DIST_DIR)/.background/$(OSX_BACKGROUND_IMAGE) $(APP_DIST_DIR)/.DS_Store $(APP_DIST_DIR)/Applications
-##
-##$(APP_DIST_DIR)/Applications:
-##	@rm -f $@
-##	@cd $(@D); $(LN_S) /Applications $(@F)
-##
-##$(APP_DIST_EXTRAS): $(APP_DIST_DIR)/$(OSX_APP)/Contents/MacOS/Bitcoin-Qt
-##
-##$(OSX_DMG): $(APP_DIST_EXTRAS)
-##	$(GENISOIMAGE) -no-cache-inodes -D -l -probe -V "Bitcoin-Core" -no-pad -r -apple -o $@ dist
-##
-##$(APP_DIST_DIR)/.background/$(OSX_BACKGROUND_IMAGE): contrib/macdeploy/$(OSX_BACKGROUND_IMAGE)
-##	$(MKDIR_P) $(@D)
-##	$(INSTALL) $< $@
-##$(APP_DIST_DIR)/.DS_Store: contrib/macdeploy/DS_Store
-##	$(INSTALL) $< $@
-##
-##$(APP_DIST_DIR)/$(OSX_APP)/Contents/MacOS/Bitcoin-Qt: $(OSX_APP_BUILT) $(OSX_PACKAGING)
-##	INSTALLNAMETOOL=$(INSTALLNAMETOOL)  OTOOL=$(OTOOL) STRIP=$(STRIP) $(OSX_DEPLOY_SCRIPT) $(OSX_APP) -translations-dir=$(QT_TRANSLATION_DIR) -add-qt-tr $(OSX_QT_TRANSLATIONS) -verbose 2
-##
-##deploydir: $(APP_DIST_EXTRAS)
-##endif
-##
-##if TARGET_DARWIN
-##appbundle: $(OSX_APP_BUILT)
-##deploy: $(OSX_DMG)
-##endif
-
-if TARGET_WINDOWS
-deploy: $(BITCOIN_WIN_INSTALLER)
-endif
 
 $(BITCOIND_BIN): FORCE
 	$(MAKE) -C src $(@F)
@@ -250,11 +154,9 @@ EXTRA_DIST = $(top_srcdir)/share/genbuild.sh qa/pull-tester/rpc-tests.sh qa/pull
 install-exec-hook:
 	mv $(DESTDIR)$(bindir)/fetch-params.sh $(DESTDIR)$(bindir)/zcash-fetch-params
 
-CLEANFILES = $(OSX_DMG) $(BITCOIN_WIN_INSTALLER)
-
 .INTERMEDIATE: $(COVERAGE_INFO)
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-man
 
 clean-local:
-	rm -rf test_bitcoin.coverage/ zcash-gtest.coverage/ total.coverage/ $(OSX_APP)
+	rm -rf test_bitcoin.coverage/ zcash-gtest.coverage/ total.coverage/
