@@ -1831,7 +1831,7 @@ bool CWalletTx::RelayWalletTransaction()
     {
         if (GetDepthInMainChain() == 0) {
             LogPrintf("Relaying wtx %s\n", GetHash().ToString());
-            RelayTransaction((CTransaction)*this);
+            net::RelayTransaction((CTransaction)*this);
             return true;
         }
     }

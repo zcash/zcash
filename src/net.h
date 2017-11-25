@@ -30,14 +30,19 @@
 #include <boost/foreach.hpp>
 #include <boost/signals2/signal.hpp>
 
+// FWD
 class CAddrMan;
-class CBlockIndex;
 class CScheduler;
-class CNode;
-
+class CTransaction;
 namespace boost {
     class thread_group;
 } // namespace boost
+
+namespace net
+{
+
+// FWD
+class CNode;
 
 /** Time between pings automatically sent out for latency probing and keepalive (in seconds). */
 static const int PING_INTERVAL = 2 * 60;
@@ -58,8 +63,13 @@ static const size_t SETASKFOR_MAX_SZ = 2 * MAX_INV_SZ;
 /** The maximum number of peer connections to maintain. */
 static const unsigned int DEFAULT_MAX_PEER_CONNECTIONS = 125;
 
-unsigned int ReceiveFloodSize();
-unsigned int SendBufferSize();
+namespace args
+{
+    unsigned int BanTime();
+    unsigned int ReceiveFloodSize();
+    unsigned int SendBufferSize();
+    unsigned short ListenPort();
+}
 
 void AddOneShot(const std::string& strDest);
 void AddressCurrentlyConnected(const CService& addr);
@@ -69,7 +79,6 @@ CNode* FindNode(const std::string& addrName);
 CNode* FindNode(const CService& ip);
 CNode* ConnectNode(CAddress addrConnect, const char *pszDest = NULL);
 bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOutbound = NULL, const char *strDest = NULL, bool fOneShot = false);
-unsigned short GetListenPort();
 bool BindListenPort(const CService &bindAddr, std::string& strError, bool fWhitelisted = false);
 void StartNode(boost::thread_group& threadGroup, CScheduler& scheduler);
 bool StopNode();
@@ -131,6 +140,8 @@ bool GetLocal(CService &addr, const CNetAddr *paddrPeer = NULL);
 bool IsReachable(enum Network net);
 bool IsReachable(const CNetAddr &addr);
 CAddress GetLocalAddress(const CNetAddr *paddrPeer = NULL);
+void RelayTransaction(const CTransaction& tx);
+void RelayTransaction(const CTransaction& tx, const CDataStream& ss);
 
 
 extern bool fDiscover;
@@ -184,9 +195,6 @@ public:
     std::string addrLocal;
 };
 
-
-
-
 class CNetMessage {
 public:
     bool in_data;                   // parsing header (false) or data (true)
@@ -224,10 +232,6 @@ public:
     int readHeader(const char *pch, unsigned int nBytes);
     int readData(const char *pch, unsigned int nBytes);
 };
-
-
-
-
 
 /** Information about a peer */
 class CNode
@@ -380,8 +384,6 @@ public:
         nRefCount--;
     }
 
-
-
     void AddAddressKnown(const CAddress& addr)
     {
         addrKnown.insert(addr.GetKey());
@@ -393,14 +395,13 @@ public:
         // SendMessages will filter it again for knowns that were added
         // after addresses were pushed.
         if (addr.IsValid() && !addrKnown.contains(addr.GetKey())) {
-            if (vAddrToSend.size() >= MAX_ADDR_TO_SEND) {
+            if (vAddrToSend.size() >= net::MAX_ADDR_TO_SEND) {
                 vAddrToSend[insecure_rand() % vAddrToSend.size()] = addr;
             } else {
                 vAddrToSend.push_back(addr);
             }
         }
     }
-
 
     void AddInventoryKnown(const CInv& inv)
     {
@@ -431,7 +432,6 @@ public:
     void EndMessage() UNLOCK_FUNCTION(cs_vSend);
 
     void PushVersion();
-
 
     void PushMessage(const char* pszCommand)
     {
@@ -629,12 +629,6 @@ public:
     static uint64_t GetTotalBytesSent();
 };
 
-
-
-class CTransaction;
-void RelayTransaction(const CTransaction& tx);
-void RelayTransaction(const CTransaction& tx, const CDataStream& ss);
-
 /** Access to the (IP) address database (peers.dat) */
 class CAddrDB
 {
@@ -645,5 +639,7 @@ public:
     bool Write(const CAddrMan& addr);
     bool Read(CAddrMan& addr);
 };
+
+} // namespace net
 
 #endif // BITCOIN_NET_H

@@ -204,10 +204,10 @@ int printStats(bool mining)
     size_t connections;
     int64_t netsolps;
     {
-        LOCK2(cs_main, cs_vNodes);
+        LOCK2(cs_main, net::cs_vNodes);
         height = chainActive.Height();
         tipmediantime = chainActive.Tip()->GetMedianTimePast();
-        connections = vNodes.size();
+        connections = net::vNodes.size();
         netsolps = GetNetworkHashPS(120, -1);
     }
     auto localsolps = GetLocalSolPS();
@@ -244,8 +244,8 @@ int printMiningStatus(bool mining)
         } else {
             bool fvNodesEmpty;
             {
-                LOCK(cs_vNodes);
-                fvNodesEmpty = vNodes.empty();
+                LOCK(net::cs_vNodes);
+                fvNodesEmpty = net::vNodes.empty();
             }
             if (fvNodesEmpty) {
                 std::cout << _("Mining is paused while waiting for connections.") << std::endl;

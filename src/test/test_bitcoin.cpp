@@ -78,12 +78,12 @@ TestingSetup::TestingSetup()
         nScriptCheckThreads = 3;
         for (int i=0; i < nScriptCheckThreads-1; i++)
             threadGroup.create_thread(&ThreadScriptCheck);
-        RegisterNodeSignals(GetNodeSignals());
+        RegisterNodeSignals(net::GetNodeSignals());
 }
 
 TestingSetup::~TestingSetup()
 {
-        UnregisterNodeSignals(GetNodeSignals());
+        UnregisterNodeSignals(net::GetNodeSignals());
         threadGroup.interrupt_all();
         threadGroup.join_all();
 #ifdef ENABLE_WALLET

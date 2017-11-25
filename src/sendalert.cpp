@@ -148,7 +148,7 @@ void ThreadSendAlert()
     // Confirm
     if (!mapArgs.count("-sendalert"))
         return;
-    while (vNodes.size() < 1 && !ShutdownRequested())
+    while (net::vNodes.size() < 1 && !ShutdownRequested())
         MilliSleep(500);
     if (ShutdownRequested())
         return;
@@ -157,8 +157,8 @@ void ThreadSendAlert()
     printf("ThreadSendAlert() : Sending alert\n");
     int nSent = 0;
     {
-        LOCK(cs_vNodes);
-        BOOST_FOREACH(CNode* pnode, vNodes)
+        LOCK(net::cs_vNodes);
+        BOOST_FOREACH(net::CNode* pnode, net::vNodes)
         {
             if (alert2.RelayTo(pnode))
             {

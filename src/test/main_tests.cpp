@@ -89,7 +89,7 @@ bool ReturnTrue() { return true; }
 
 BOOST_AUTO_TEST_CASE(test_combiner_all)
 {
-    boost::signals2::signal<bool (), CombinerAll> Test;
+    boost::signals2::signal<bool (), net::CombinerAll> Test;
     BOOST_CHECK(Test());
     Test.connect(&ReturnFalse);
     BOOST_CHECK(!Test());

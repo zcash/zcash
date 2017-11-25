@@ -480,7 +480,7 @@ TorController::~TorController()
         reconnect_ev = 0;
     }
     if (service.IsValid()) {
-        RemoveLocal(service);
+        net::RemoveLocal(service);
     }
 }
 
@@ -504,14 +504,14 @@ void TorController::add_onion_cb(TorControlConnection& conn, const TorControlRep
             return;
         }
 
-        service = CService(service_id+".onion", GetListenPort(), false);
+        service = CService(service_id+".onion", net::args::ListenPort(), false);
         LogPrintf("tor: Got service ID %s, advertizing service %s\n", service_id, service.ToString());
         if (WriteBinaryFile(GetPrivateKeyFile(), private_key)) {
             LogPrint("tor", "tor: Cached service private key to %s\n", GetPrivateKeyFile());
         } else {
             LogPrintf("tor: Error writing service private key to %s\n", GetPrivateKeyFile());
         }
-        AddLocal(service, LOCAL_MANUAL);
+        net::AddLocal(service, net::LOCAL_MANUAL);
         // ... onion requested - keep connection open
     } else if (reply.code == 510) { // 510 Unrecognized command
         LogPrintf("tor: Add onion failed with unrecognized command (You probably need to upgrade Tor)\n");
@@ -530,7 +530,7 @@ void TorController::auth_cb(TorControlConnection& conn, const TorControlReply& r
         if (GetArg("-onion", "") == "") {
             proxyType addrOnion = proxyType(CService("127.0.0.1", 9050), true);
             SetProxy(NET_TOR, addrOnion);
-            SetLimited(NET_TOR, false);
+            net::SetLimited(NET_TOR, false);
         }
 
         // Finally - now create the service
@@ -539,7 +539,7 @@ void TorController::auth_cb(TorControlConnection& conn, const TorControlReply& r
         // Request hidden service, redirect port.
         // Note that the 'virtual' port doesn't have to be the same as our internal port, but this is just a convenient
         // choice.  TODO; refactor the shutdown sequence some day.
-        conn.Command(strprintf("ADD_ONION %s Port=%i,127.0.0.1:%i", private_key, GetListenPort(), GetListenPort()),
+        conn.Command(strprintf("ADD_ONION %s Port=%i,127.0.0.1:%i", private_key, net::args::ListenPort(), net::args::ListenPort()),
             boost::bind(&TorController::add_onion_cb, this, _1, _2));
     } else {
         LogPrintf("tor: Authentication failed\n");
@@ -694,7 +694,7 @@ void TorController::disconnected_cb(TorControlConnection& conn)
 {
     // Stop advertizing service when disconnected
     if (service.IsValid())
-        RemoveLocal(service);
+        net::RemoveLocal(service);
     service = CService();
     if (!reconnect)
         return;
