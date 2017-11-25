@@ -159,6 +159,18 @@ Fp3_model<n,modulus> Fp3_model<n,modulus>::sqrt() const
     Fp3_model<n,modulus> x = (*this) * w;
     Fp3_model<n,modulus> b = x * w; // b = (*this)^t
 
+
+    // check if square with euler's criterion
+    Fp3_model<n,modulus> check = b;
+    for (size_t i = 0; i < v-1; ++i)
+    {
+        check = check.squared();
+    }
+    if (check != one)
+    {
+        assert_except(0);
+    }
+
     // compute square root with Tonelli--Shanks
     // (does not terminate if not a square!)
 
