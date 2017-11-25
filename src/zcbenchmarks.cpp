@@ -97,11 +97,7 @@ double benchmark_parameter_loading()
     struct timeval tv_start;
     timer_start(tv_start);
 
-    auto newParams = ZCJoinSplit::Unopened();
-
-    newParams->loadVerifyingKey(vk_path.string());
-    newParams->setProvingKeyPath(pk_path.string());
-    newParams->loadProvingKey();
+    auto newParams = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
 
     double ret = timer_stop(tv_start);
 

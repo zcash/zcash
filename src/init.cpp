@@ -53,7 +53,7 @@
 #include <boost/thread.hpp>
 #include <openssl/crypto.h>
 
-#include "libsnark/common/profiling.hpp"
+#include <libsnark/common/profiling.hpp>
 
 #if ENABLE_ZMQ
 #include "zmq/zmqnotificationinterface.h"
@@ -689,18 +689,14 @@ static void ZC_LoadParams()
         return;
     }
 
-    pzcashParams = ZCJoinSplit::Unopened();
-
     LogPrintf("Loading verifying key from %s\n", vk_path.string().c_str());
     gettimeofday(&tv_start, 0);
 
-    pzcashParams->loadVerifyingKey(vk_path.string());
+    pzcashParams = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
 
     gettimeofday(&tv_end, 0);
     elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
     LogPrintf("Loaded verifying key in %fs seconds.\n", elapsed);
-
-    pzcashParams->setProvingKeyPath(pk_path.string());
 }
 
 bool AppInitServers(boost::thread_group& threadGroup)
@@ -813,6 +809,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (!fExperimentalMode) {
         if (mapArgs.count("-developerencryptwallet")) {
             return InitError(_("Wallet encryption requires -experimentalfeatures."));
+        }
+        else if (mapArgs.count("-paymentdisclosure")) {
+            return InitError(_("Payment disclosure requires -experimentalfeatures."));
         }
     }
 
