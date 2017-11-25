@@ -6,6 +6,7 @@ depinst/
 depsrc/
 README.html
 doxygen/
+src/gtests
 src/gadgetlib2/examples/tutorial
 src/gadgetlib2/tests/gadgetlib2_test
 
