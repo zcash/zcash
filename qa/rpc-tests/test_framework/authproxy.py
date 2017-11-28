@@ -55,7 +55,7 @@ log = logging.getLogger("BitcoinRPC")
 
 class JSONRPCException(Exception):
     def __init__(self, rpc_error):
-        Exception.__init__(self)
+        Exception.__init__(self, rpc_error.get("message"))
         self.error = rpc_error
 
 
