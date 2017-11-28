@@ -73,6 +73,7 @@ join a pool. There are several pools in operation at the moment, for example:
     http://pool.votecoin.site
     http://nibirupool.com
     https://luckpool.org/
+    https://pool.miningspeed.com
     https://zsolo.bid/
     http://votecoin.catspool.org/
     https://multipool.es
