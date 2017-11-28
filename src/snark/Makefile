@@ -27,13 +27,13 @@ INSTALL_LIBS = $(LIB_FILE)
 # Sentinel file to check existence of this directory (since directories don't work as a Make dependency):
 DEPINST_EXISTS = $(DEPINST)/.exists
 
-
-COMPILE_GTEST :=
 ifneq ($(NO_GTEST),1)
-	GTESTDIR=/usr/src/gtest
-# Compile GTest from sourcecode if we can (e.g., Ubuntu). Otherwise use precompiled one (e.g., Fedora).
-# See https://code.google.com/p/googletest/wiki/FAQ#Why_is_it_not_recommended_to_install_a_pre-compiled_copy_of_Goog .
-	COMPILE_GTEST :=$(shell test -d $(GTESTDIR) && echo -n 1)
+	# Compile GTest from sourcecode if we can (e.g., Ubuntu). Otherwise use precompiled one (e.g., Fedora).
+	# See https://github.com/google/googletest/blob/master/googletest/docs/FAQ.md#why-is-it-not-recommended-to-install-a-pre-compiled-copy-of-google-test-for-example-into-usrlocal
+	ifneq ($(NO_COMPILE_LIBGTEST),1)
+		GTESTDIR=/usr/src/gtest
+		COMPILE_LIBGTEST = $(shell test -d $(GTESTDIR) && echo -n 1)
+	endif
 	GTEST_LDLIBS += -lgtest -lpthread
 endif
 
@@ -221,13 +221,13 @@ src/gadgetlib2/tests/gadgetlib2_test: \
 $(EXECUTABLES): %: %.o $(LIBSNARK_A) $(DEPINST_EXISTS)
 	$(CXX) -o $@   $@.o $(LIBSNARK_A) $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 
-$(EXECUTABLES_WITH_GTEST): %: %.o $(LIBSNARK_A) $(if $(COMPILE_GTEST),$(LIBGTEST_A)) $(DEPINST_EXISTS)
+$(EXECUTABLES_WITH_GTEST): %: %.o $(LIBSNARK_A) $(if $(COMPILE_LIBGTEST),$(LIBGTEST_A)) $(DEPINST_EXISTS)
 	$(CXX) -o $@   $@.o $(LIBSNARK_A) $(CXXFLAGS) $(LDFLAGS) $(GTEST_LDLIBS) $(LDLIBS)
 
 $(EXECUTABLES_WITH_SUPERCOP): %: %.o $(LIBSNARK_A) $(DEPINST_EXISTS)
 	$(CXX) -o $@   $@.o $(LIBSNARK_A) $(CXXFLAGS) $(LDFLAGS) $(SUPERCOP_LDLIBS) $(LDLIBS)
 
-$(GTEST_TESTS): %: $(GTEST_OBJS) $(LIBSNARK_A) $(if $(COMPILE_GTEST),$(LIBGTEST_A)) $(DEPINST_EXISTS)
+$(GTEST_TESTS): %: $(GTEST_OBJS) $(LIBSNARK_A) $(if $(COMPILE_LIBGTEST),$(LIBGTEST_A)) $(DEPINST_EXISTS)
 	$(CXX) -o $@   $(GTEST_OBJS) $(LIBSNARK_A) $(CXXFLAGS) $(LDFLAGS) $(GTEST_LDLIBS) $(LDLIBS)
 
 
