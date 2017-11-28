@@ -271,6 +271,16 @@ class WalletTest (BitcoinTestFramework):
         for i in xrange(0,num_t_recipients):
             newtaddr = self.nodes[2].getnewaddress()
             recipients.append({"address":newtaddr, "amount":amount_per_recipient})
+
+        # Issue #2759 Workaround START
+        # HTTP connection to node 0 may fall into a state, during the few minutes it takes to process
+        # loop above to create new addresses, that when z_sendmany is called with a large amount of
+        # rpc data in recipients, the connection fails with a 'broken pipe' error.  Making a RPC call
+        # to node 0 before calling z_sendmany appears to fix this issue, perhaps putting the HTTP
+        # connection into a good state to handle a large amount of data in recipients.
+        self.nodes[0].getinfo()
+        # Issue #2759 Workaround END
+
         try:
             self.nodes[0].z_sendmany(myzaddr, recipients)
         except JSONRPCException,e:
@@ -288,6 +298,11 @@ class WalletTest (BitcoinTestFramework):
         for i in xrange(0,num_z_recipients):
             newzaddr = self.nodes[2].z_getnewaddress()
             recipients.append({"address":newzaddr, "amount":amount_per_recipient})
+
+        # Issue #2759 Workaround START
+        self.nodes[0].getinfo()
+        # Issue #2759 Workaround END
+
         try:
             self.nodes[0].z_sendmany(myzaddr, recipients)
         except JSONRPCException,e:
