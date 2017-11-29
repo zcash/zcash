@@ -7,6 +7,7 @@ buildbot_deps:
 
 # Dependencies required to download files
 fetch_deps:
+  - curl # For depends/
   - git
   - wget # For zcutil/fetch-params.sh
 
@@ -18,6 +19,7 @@ conf_deps:
 
 # Dependencies required to compile Zcash
 build_deps:
+  - cmake
   - g++
   - gcc
   - make

@@ -2,5 +2,6 @@
 buildbot_deps:
   - python2-pip
 build_deps:
+  - cmake
   - multilib/gcc
   - make

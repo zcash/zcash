@@ -2,6 +2,7 @@
 buildbot_deps: [] # Empty to remove python-pip
 build_deps:
   - bzip2
+  - cmake
   - gcc
   - gcc-c++
   - make
