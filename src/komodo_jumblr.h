@@ -27,6 +27,7 @@
 #ifdef _WIN32
 #include <wincrypt.h>
 #endif
+#include "komodo_defs.h"
 
 #define JUMBLR_ADDR "RGhxXpXSSBTBm9EvNsXnTQczthMCxHX91t"
 #define JUMBLR_BTCADDR "18RmTJe9qMech8siuhYfMtHo8RtcN1obC6"
@@ -629,6 +630,8 @@ void jumblr_iteration()
 {
     static int32_t lastheight; static uint32_t lasttime;
     char *zaddr,*addr,*retstr,secretaddr[64]; cJSON *array; int32_t i,iter,height,counter,chosen_one,n; uint64_t smallest,medium,biggest,amount=0,total=0; double fee; struct jumblr_item *ptr,*tmp; uint16_t r,s;
+    if ( JUMBLR_PAUSE != 0 )
+        return;
     if ( lasttime == 0 )
     {
         if ( (retstr= jumblr_zlistaddresses()) != 0 )

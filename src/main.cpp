@@ -1491,7 +1491,7 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
 }
 
 //uint64_t komodo_moneysupply(int32_t height);
-extern char ASSETCHAINS_SYMBOL[16];
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint32_t ASSETCHAINS_MAGIC;
 extern uint64_t ASSETCHAINS_SUPPLY;
 
