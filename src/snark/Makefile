@@ -198,13 +198,8 @@ $(LIBGTEST_A): $(GTESTDIR)/src/gtest-all.cc $(DEPINST_EXISTS)
 
 # libsnark.a will contains all of our relevant object files, and we also mash in the .a files of relevant dependencies built by ./prepare-depends.sh
 $(LIBSNARK_A): $(LIB_OBJS) $(AR_LIBS)
-	( \
-	  echo "create $(LIBSNARK_A)"; \
-	  echo "addmod $(LIB_OBJS)"; \
-	  if [ -n "$(AR_LIBS)" ]; then for AR_LIB in $(AR_LIBS); do echo addlib $$AR_LIB; done; fi; \
-	  echo "save"; \
-	  echo "end"; \
-	) | $(AR) -M
+	$(AR) q $(LIBSNARK_A) $(LIB_OBJS)
+	if [ -n "$(AR_LIBS)" ]; then mkdir -p tmp-ar; cd tmp-ar; for AR_LIB in $(AR_LIBS); do $(AR) x $$AR_LIB; done; $(AR) qc $(LIBSNARK_A) tmp-ar/*; cd ..; rm -r tmp-ar; fi;
 	$(AR) s $(LIBSNARK_A)
 
 libsnark.so: $(LIBSNARK_A) $(DEPINST_EXISTS)
