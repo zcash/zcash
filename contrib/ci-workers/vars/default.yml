@@ -16,6 +16,7 @@ conf_deps:
   - autoconf
   - automake
   - m4
+  - pkg-config
 
 # Dependencies required to compile Zcash
 build_deps:
