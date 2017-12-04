@@ -428,7 +428,7 @@ UniValue z_exportwallet(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "z_exportwallet \"filename\"\n"
-            "\nExports all wallet keys, for taddr and zaddr, in a human-readable format.\n"
+            "\nExports all wallet keys, for taddr and zaddr, in a human-readable format.  Overwriting an existing file is not permitted.\n"
             "\nArguments:\n"
             "1. \"filename\"    (string, required) The filename, saved in folder set by zcashd -exportdir option\n"
             "\nResult:\n"
@@ -449,7 +449,7 @@ UniValue dumpwallet(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "dumpwallet \"filename\"\n"
-            "\nDumps taddr wallet keys in a human-readable format.\n"
+            "\nDumps taddr wallet keys in a human-readable format.  Overwriting an existing file is not permitted.\n"
             "\nArguments:\n"
             "1. \"filename\"    (string, required) The filename, saved in folder set by zcashd -exportdir option\n"
             "\nResult:\n"
@@ -483,6 +483,10 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
         throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Filename is invalid as only alphanumeric characters are allowed.  Try '%s' instead.", clean));
     }
     boost::filesystem::path exportfilepath = exportdir / clean;
+
+    if (boost::filesystem::exists(exportfilepath)) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot overwrite existing file " + exportfilepath.string());
+    }
 
     ofstream file;
     file.open(exportfilepath.string().c_str());
