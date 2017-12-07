@@ -338,6 +338,8 @@ static const CRPCCommand vRPCCommands[] =
     { "util",               "z_validateaddress",      &z_validateaddress,      true  }, /* uses wallet if enabled */
     { "util",               "jumblr_deposit",       &jumblr_deposit,       true  },
     { "util",               "jumblr_secret",        &jumblr_secret,       true  },
+    { "util",               "jumblr_pause",        &jumblr_pause,       true  },
+    { "util",               "jumblr_resume",        &jumblr_resume,       true  },
 
     /* Not shown in help */
     { "hidden",             "invalidateblock",        &invalidateblock,        true  },
