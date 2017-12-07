@@ -12,6 +12,8 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
+#include "komodo_defs.h"
+
 #ifdef _WIN32
 #include <sodium.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -1402,7 +1404,7 @@ void komodo_configfile(char *symbol,uint16_t port)
 
 uint16_t komodo_userpass(char *userpass,char *symbol)
 {
-    FILE *fp; uint16_t port = 0; char fname[512],username[512],password[512],confname[16];
+    FILE *fp; uint16_t port = 0; char fname[512],username[512],password[512],confname[KOMODO_ASSETCHAIN_MAXLEN];
     userpass[0] = 0;
     if ( strcmp("KMD",symbol) == 0 )
     {

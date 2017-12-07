@@ -16,6 +16,8 @@
 #ifndef H_KOMODOKV_H
 #define H_KOMODOKV_H
 
+#include "komodo_defs.h"
+
 int32_t komodo_kvcmp(uint8_t *refvalue,uint16_t refvaluesize,uint8_t *value,uint16_t valuesize)
 {
     if ( refvalue == 0 && value == 0 )
@@ -107,7 +109,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
     if ( keylen+13 > opretlen )
     {
         static uint32_t counter;
-        if ( counter++ < 3 )
+        if ( ++counter < 1 )
             printf("komodo_kvupdate: keylen.%d + 13 > opretlen.%d, this can be ignored\n",keylen,opretlen);
         return;
     }
