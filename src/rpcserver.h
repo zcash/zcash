@@ -248,6 +248,8 @@ extern UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp);
 
 extern UniValue jumblr_deposit(const UniValue& params, bool fHelp);
 extern UniValue jumblr_secret(const UniValue& params, bool fHelp);
+extern UniValue jumblr_pause(const UniValue& params, bool fHelp);
+extern UniValue jumblr_resume(const UniValue& params, bool fHelp);
 
 extern UniValue getrawtransaction(const UniValue& params, bool fHelp); // in rcprawtransaction.cpp
 extern UniValue listunspent(const UniValue& params, bool fHelp);
