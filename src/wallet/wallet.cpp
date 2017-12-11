@@ -3658,13 +3658,26 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
  */
 void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, int minDepth, bool ignoreSpent, bool ignoreUnspendable)
 {
-    bool fFilterAddress = false;
-    libzcash::PaymentAddress filterPaymentAddress;
+    std::set<PaymentAddress> filterAddresses;
+
     if (address.length() > 0) {
-        filterPaymentAddress = CZCPaymentAddress(address).Get();
-        fFilterAddress = true;
+        filterAddresses.insert(CZCPaymentAddress(address).Get());
     }
 
+    GetFilteredNotes(outEntries, filterAddresses, minDepth, ignoreSpent, ignoreUnspendable);
+}
+
+/**
+ * Find notes in the wallet filtered by payment addresses, min depth and ability to spend.
+ * These notes are decrypted and added to the output parameter vector, outEntries.
+ */
+void CWallet::GetFilteredNotes(
+    std::vector<CNotePlaintextEntry>& outEntries,
+    std::set<PaymentAddress>& filterAddresses,
+    int minDepth,
+    bool ignoreSpent,
+    bool ignoreUnspendable)
+{
     LOCK2(cs_main, cs_wallet);
 
     for (auto & p : mapWallet) {
@@ -3685,7 +3698,7 @@ void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, st
             PaymentAddress pa = nd.address;
 
             // skip notes which belong to a different payment address in the wallet
-            if (fFilterAddress && !(pa == filterPaymentAddress)) {
+            if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
                 continue;
             }
 
@@ -3719,7 +3732,7 @@ void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, st
                         hSig,
                         (unsigned char) j);
 
-                outEntries.push_back(CNotePlaintextEntry{jsop, plaintext});
+                outEntries.push_back(CNotePlaintextEntry{jsop, pa, plaintext});
 
             } catch (const note_decryption_failed &err) {
                 // Couldn't decrypt with this spending key
