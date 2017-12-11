@@ -16,6 +16,7 @@ testScripts=(
     'wallet_treestate.py'
     'wallet_protectcoinbase.py'
     'wallet_shieldcoinbase.py'
+    'wallet_mergetoaddress.py'
     'wallet.py'
     'wallet_overwintertx.py'
     'wallet_nullifiers.py'
