@@ -26,34 +26,6 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
         self.is_network_split=False
         self.sync_all()
 
-    # Returns txid if operation was a success or None
-    def wait_and_assert_operationid_status(self, myopid, in_status='success', in_errormsg=None):
-        print('waiting for async operation {}'.format(myopid))
-        opids = []
-        opids.append(myopid)
-        timeout = 300
-        status = None
-        errormsg = None
-        txid = None
-        for x in xrange(1, timeout):
-            results = self.nodes[0].z_getoperationresult(opids)
-            if len(results)==0:
-                time.sleep(1)
-            else:
-                status = results[0]["status"]
-                if status == "failed":
-                    errormsg = results[0]['error']['message']
-                elif status == "success":
-                    txid = results[0]['result']['txid']
-                break
-        print('...returned status: {}'.format(status))
-        assert_equal(in_status, status)
-        if errormsg is not None:
-            assert(in_errormsg is not None)
-            assert_equal(in_errormsg in errormsg, True)
-            print('...returned error: {}'.format(errormsg))
-        return txid
-
     def run_test (self):
         # tx priority is calculated: priority = sum(input_value_in_base_units * input_age)/size_in_bytes
 

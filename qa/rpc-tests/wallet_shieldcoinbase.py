@@ -6,9 +6,9 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_node, connect_nodes_bi, sync_blocks, sync_mempools
+    start_node, connect_nodes_bi, sync_blocks, sync_mempools, \
+    wait_and_assert_operationid_status
 
-import time
 from decimal import Decimal
 
 class WalletShieldCoinbaseTest (BitcoinTestFramework):
@@ -29,34 +29,6 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         connect_nodes_bi(self.nodes,0,2)
         self.is_network_split=False
         self.sync_all()
-
-    # Returns txid if operation was a success or None
-    def wait_and_assert_operationid_status(self, nodeid, myopid, in_status='success', in_errormsg=None):
-        print('waiting for async operation {}'.format(myopid))
-        opids = []
-        opids.append(myopid)
-        timeout = 300
-        status = None
-        errormsg = None
-        txid = None
-        for x in xrange(1, timeout):
-            results = self.nodes[nodeid].z_getoperationresult(opids)
-            if len(results)==0:
-                time.sleep(1)
-            else:
-                status = results[0]["status"]
-                if status == "failed":
-                    errormsg = results[0]['error']['message']
-                elif status == "success":
-                    txid = results[0]['result']['txid']
-                break
-        print('...returned status: {}'.format(status))
-        assert_equal(in_status, status)
-        if errormsg is not None:
-            assert(in_errormsg is not None)
-            assert_equal(in_errormsg in errormsg, True)
-            print('...returned error: {}'.format(errormsg))
-        return txid
 
     def run_test (self):
         print "Mining blocks..."
@@ -130,7 +102,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
 
         # Shield coinbase utxos from node 0 of value 40, standard fee of 0.00010000
         result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr)
-        self.wait_and_assert_operationid_status(0, result['opid'])
+        wait_and_assert_operationid_status(self.nodes[0], result['opid'])
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
@@ -144,7 +116,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
 
         # Shield coinbase utxos from any node 2 taddr, and set fee to 0
         result = self.nodes[2].z_shieldcoinbase("*", myzaddr, 0)
-        self.wait_and_assert_operationid_status(2, result['opid'])
+        wait_and_assert_operationid_status(self.nodes[2], result['opid'])
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
@@ -181,8 +153,8 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         opid2 = result['opid']
 
         # wait for both aysnc operations to complete
-        self.wait_and_assert_operationid_status(0, opid1)
-        self.wait_and_assert_operationid_status(0, opid2)
+        wait_and_assert_operationid_status(self.nodes[0], opid1)
+        wait_and_assert_operationid_status(self.nodes[0], opid2)
 
         # sync_all() invokes sync_mempool() but node 2's mempool limit will cause tx1 and tx2 to be rejected.
         # So instead, we sync on blocks and mempool for node 0 and node 1, and after a new block is generated
@@ -198,7 +170,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         result = self.nodes[2].z_shieldcoinbase(mytaddr, myzaddr, Decimal('0.0001'), 0)
         assert_equal(result["shieldingUTXOs"], Decimal('7'))
         assert_equal(result["remainingUTXOs"], Decimal('13'))
-        self.wait_and_assert_operationid_status(2, result['opid'])
+        wait_and_assert_operationid_status(self.nodes[2], result['opid'])
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
@@ -210,13 +182,13 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, Decimal('0.0001'))
         assert_equal(result["shieldingUTXOs"], Decimal('50'))
         assert_equal(result["remainingUTXOs"], Decimal('50'))
-        self.wait_and_assert_operationid_status(0, result['opid'])
+        wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
         # Verify maximum number of utxos which node 0 can shield can be set by the limit parameter
         result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, Decimal('0.0001'), 33)
         assert_equal(result["shieldingUTXOs"], Decimal('33'))
         assert_equal(result["remainingUTXOs"], Decimal('17'))
-        self.wait_and_assert_operationid_status(0, result['opid'])
+        wait_and_assert_operationid_status(self.nodes[0], result['opid'])
         # Don't sync node 2 which rejects the tx due to its mempooltxinputlimit
         sync_blocks(self.nodes[:2])
         sync_mempools(self.nodes[:2])
