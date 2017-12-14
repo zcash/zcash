@@ -77,6 +77,25 @@ double GetNetworkDifficulty(const CBlockIndex* blockindex)
     return GetDifficultyINTERNAL(blockindex, true);
 }
 
+static UniValue ValuePoolDesc(
+    const std::string &name,
+    const boost::optional<CAmount> chainValue,
+    const boost::optional<CAmount> valueDelta)
+{
+    UniValue rv(UniValue::VOBJ);
+    rv.push_back(Pair("id", name));
+    rv.push_back(Pair("monitored", (bool)chainValue));
+    if (chainValue) {
+        rv.push_back(Pair("chainValue", ValueFromAmount(*chainValue)));
+        rv.push_back(Pair("chainValueZat", *chainValue));
+    }
+    if (valueDelta) {
+        rv.push_back(Pair("valueDelta", ValueFromAmount(*valueDelta)));
+        rv.push_back(Pair("valueDeltaZat", *valueDelta));
+    }
+    return rv;
+}
+
 UniValue blockheaderToJSON(const CBlockIndex* blockindex)
 {
     UniValue result(UniValue::VOBJ);
@@ -137,6 +156,10 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
     result.push_back(Pair("anchor", blockindex->hashAnchorEnd.GetHex()));
+
+    UniValue valuePools(UniValue::VARR);
+    valuePools.push_back(ValuePoolDesc("sprout", blockindex->nChainSproutValue, blockindex->nSproutValue));
+    result.push_back(Pair("valuePools", valuePools));
 
     if (blockindex->pprev)
         result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
@@ -688,8 +711,12 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     pcoinsTip->GetAnchorAt(pcoinsTip->GetBestAnchor(), tree);
     obj.push_back(Pair("commitments",           tree.size()));
 
-    const Consensus::Params& consensusParams = Params().GetConsensus();
     CBlockIndex* tip = chainActive.Tip();
+    UniValue valuePools(UniValue::VARR);
+    valuePools.push_back(ValuePoolDesc("sprout", tip->nChainSproutValue, boost::none));
+    obj.push_back(Pair("valuePools",            valuePools));
+
+    const Consensus::Params& consensusParams = Params().GetConsensus();
     UniValue softforks(UniValue::VARR);
     softforks.push_back(SoftForkDesc("bip34", 2, tip, consensusParams));
     softforks.push_back(SoftForkDesc("bip66", 3, tip, consensusParams));
