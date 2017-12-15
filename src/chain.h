@@ -357,7 +357,7 @@ public:
         // this index was storing them.
         // TODO: See if we can get away with not serializing the boost::optional
         // one-byte header, without requiring users to reindex on upgrade.
-        if (nType & SER_DISK && nVersion >= SPROUT_VALUE_VERSION) {
+        if ((nType & SER_DISK) && (nVersion >= SPROUT_VALUE_VERSION)) {
             READWRITE(nSproutValue);
         }
     }
