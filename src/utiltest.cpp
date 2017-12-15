@@ -47,7 +47,9 @@ CWalletTx GetValidReceive(ZCJoinSplit& params,
     // Empty output script.
     CScript scriptCode;
     CTransaction signTx(mtx);
-    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
+    //fifth parameter amount will not be used for joinsplit signing, value arbitrary, also arbitrary decision what to use for sigverion
+    //This is just to get this merge commit to compile later will remove sigversion parameter as choosing sigversion by block height
+    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL,0, SIGVERSION_BASE);
 
     // Add the signature
     assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
@@ -131,7 +133,7 @@ CWalletTx GetValidSpend(ZCJoinSplit& params,
     // Empty output script.
     CScript scriptCode;
     CTransaction signTx(mtx);
-    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
+    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL,0,SIGVERSION_BASE);
 
     // Add the signature
     assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,

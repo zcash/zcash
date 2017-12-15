@@ -774,7 +774,7 @@ bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
         // IsStandardTx() will have already returned false
         // and this method isn't called.
         vector<vector<unsigned char> > stack;
-        if (!EvalScript(stack, tx.vin[i].scriptSig, SCRIPT_VERIFY_NONE, BaseSignatureChecker()))
+        if (!EvalScript(stack, tx.vin[i].scriptSig, SCRIPT_VERIFY_NONE, BaseSignatureChecker(), SIGVERSION_BASE))
             return false;
 
         if (whichType == TX_SCRIPTHASH)
@@ -999,7 +999,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             CScript scriptCode;
             uint256 dataToBeSigned;
             try {
-                dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL);
+                dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, SIGVERSION_BASE);
             } catch (std::logic_error ex) {
                 return state.DoS(100, error("CheckTransaction(): error computing signature hash"),
                                  REJECT_INVALID, "error-computing-signature-hash");
