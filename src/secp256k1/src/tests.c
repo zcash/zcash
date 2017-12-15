@@ -270,7 +270,7 @@ void run_sha256_tests(void) {
     int i;
     for (i = 0; i < 8; i++) {
         unsigned char out[32];
-        secp256k1_sha256_t hasher;
+        secp256k1_sha256 hasher;
         secp256k1_sha256_initialize(&hasher);
         secp256k1_sha256_write(&hasher, (const unsigned char*)(inputs[i]), strlen(inputs[i]));
         secp256k1_sha256_finalize(&hasher, out);
@@ -313,7 +313,7 @@ void run_hmac_sha256_tests(void) {
     };
     int i;
     for (i = 0; i < 6; i++) {
-        secp256k1_hmac_sha256_t hasher;
+        secp256k1_hmac_sha256 hasher;
         unsigned char out[32];
         secp256k1_hmac_sha256_initialize(&hasher, (const unsigned char*)(keys[i]), strlen(keys[i]));
         secp256k1_hmac_sha256_write(&hasher, (const unsigned char*)(inputs[i]), strlen(inputs[i]));
@@ -345,7 +345,7 @@ void run_rfc6979_hmac_sha256_tests(void) {
         {0x75, 0x97, 0x88, 0x7c, 0xbd, 0x76, 0x32, 0x1f, 0x32, 0xe3, 0x04, 0x40, 0x67, 0x9a, 0x22, 0xcf, 0x7f, 0x8d, 0x9d, 0x2e, 0xac, 0x39, 0x0e, 0x58, 0x1f, 0xea, 0x09, 0x1c, 0xe2, 0x02, 0xba, 0x94}
     };
 
-    secp256k1_rfc6979_hmac_sha256_t rng;
+    secp256k1_rfc6979_hmac_sha256 rng;
     unsigned char out[32];
     int i;
 
