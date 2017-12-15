@@ -59,7 +59,7 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
             "3. \"output_index\"    (string, required) \n"
             "4. \"message\"         (string, optional) \n"
             "\nResult:\n"
-            "\"paymentblob\"        (string) Hex string of payment blob\n"
+            "\"paymentdisclosure\"  (string) Hex data string, with \"zpd:\" prefix.\n"
             "\nExamples:\n"
             + HelpExampleCli("z_getpaymentdisclosure", "96f12882450429324d5f3b48630e3168220e49ab7b0f066e5c2935a6b88bb0f2 0 0 \"refund\"")
             + HelpExampleRpc("z_getpaymentdisclosure", "\"96f12882450429324d5f3b48630e3168220e49ab7b0f066e5c2935a6b88bb0f2\", 0, 0, \"refund\"")
@@ -134,7 +134,7 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << pd;
     string strHex = HexStr(ss.begin(), ss.end());
-    return strHex;
+    return PAYMENT_DISCLOSURE_BLOB_STRING_PREFIX + strHex;
 }
 
 
@@ -160,10 +160,10 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
             "\nEXPERIMENTAL FEATURE\n"
             + strPaymentDisclosureDisabledMsg +
             "\nArguments:\n"
-            "1. \"paymentdisclosure\"     (string, required) Hex data string\n"
+            "1. \"paymentdisclosure\"     (string, required) Hex data string, with \"zpd:\" prefix.\n"
             "\nExamples:\n"
-            + HelpExampleCli("z_validatepaymentdisclosure", "\"hexblob\"")
-            + HelpExampleRpc("z_validatepaymentdisclosure", "\"hexblob\"")
+            + HelpExampleCli("z_validatepaymentdisclosure", "\"zpd:706462ff004c561a0447ba2ec51184e6c204...\"")
+            + HelpExampleRpc("z_validatepaymentdisclosure", "\"zpd:706462ff004c561a0447ba2ec51184e6c204...\"")
         );
 
     if (!fEnablePaymentDisclosure) {
@@ -174,7 +174,13 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
 
     EnsureWalletIsUnlocked();
 
-    string hexInput = params[0].get_str();
+    // Verify the payment disclosure input begins with "zpd:" prefix.
+    string strInput = params[0].get_str();
+    size_t pos = strInput.find(PAYMENT_DISCLOSURE_BLOB_STRING_PREFIX);
+    if (pos != 0) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, payment disclosure prefix not found.");
+    }
+    string hexInput = strInput.substr(strlen(PAYMENT_DISCLOSURE_BLOB_STRING_PREFIX));
     if (!IsHex(hexInput))
     {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected payment disclosure data in hexadecimal format.");

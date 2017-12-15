@@ -87,7 +87,9 @@ public:
 
 // This test creates random payment disclosure blobs and checks that they can be
 // 1. inserted and retrieved from a database
-// 2. serialized and deserialized without corruption 
+// 2. serialized and deserialized without corruption
+// Note that the zpd: prefix is not part of the payment disclosure blob itself.  It is only
+// used as convention to improve the user experience when sharing payment disclosure blobs.
 TEST(paymentdisclosure, mainnet) {
     ECC_Start();
     SelectParams(CBaseChainParams::MAIN);

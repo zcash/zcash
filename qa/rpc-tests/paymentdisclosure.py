@@ -175,6 +175,17 @@ class PaymentDisclosureTest (BitcoinTestFramework):
         assert_equal(result["message"], message)
         assert_equal(result["value"], output_value_sum)
 
+        # Confirm that payment disclosure begins with prefix zpd:
+        assert(pd.startswith("zpd:"))
+
+        # Confirm that payment disclosure without prefix zpd: fails validation
+        try:
+            self.nodes[1].z_validatepaymentdisclosure(pd[4:])
+            assert(False)
+        except JSONRPCException as e:
+            errorString = e.error['message']
+            assert("payment disclosure prefix not found" in errorString)
+
         # Check that total value of output index 0 and index 1 should equal shielding amount of 40 less standard fee.
         pd = self.nodes[0].z_getpaymentdisclosure(txid, 0, 1)
         result = self.nodes[0].z_validatepaymentdisclosure(pd)
