@@ -7,7 +7,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_nodes, connect_nodes_bi, stop_node
+    start_nodes, connect_nodes_bi, stop_node, wait_and_assert_operationid_status
 
 import sys
 import time
@@ -160,7 +160,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":myzaddr, "amount": shieldvalue})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        mytxid = self.wait_and_assert_operationid_status(myopid)
+        mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
@@ -193,7 +193,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":myzaddr, "amount": Decimal('19.9999')})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, Decimal('0.0'))
-        mytxid = self.wait_and_assert_operationid_status(myopid)
+        mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
@@ -210,7 +210,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":mytaddr, "amount": unshieldvalue})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
-        mytxid = self.wait_and_assert_operationid_status(myopid)
+        mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert(mytxid is not None)
         self.sync_all()
 
@@ -236,7 +236,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         amount = Decimal('10.0') - Decimal('0.00010000') - Decimal('0.00000001')    # this leaves change at 1 zatoshi less than dust threshold
         recipients.append({"address":self.nodes[0].getnewaddress(), "amount":amount })
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        self.wait_and_assert_operationid_status(myopid, "failed", "Insufficient transparent funds, have 10.00, need 0.00000053 more to avoid creating invalid change output 0.00000001 (dust threshold is 0.00000054)")
+        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient transparent funds, have 10.00, need 0.00000053 more to avoid creating invalid change output 0.00000001 (dust threshold is 0.00000054)")
 
         # Send will fail because send amount is too big, even when including coinbase utxos
         errorString = ""
@@ -250,9 +250,9 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":self.nodes[1].getnewaddress(), "amount":Decimal('10000.0')})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        self.wait_and_assert_operationid_status(myopid, "failed", "Insufficient transparent funds, have 10.00, need 10000.0001")
+        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient transparent funds, have 10.00, need 10000.0001")
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
-        self.wait_and_assert_operationid_status(myopid, "failed", "Insufficient protected funds, have 9.9998, need 10000.0001")
+        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient protected funds, have 9.9998, need 10000.0001")
 
         # Send will fail because of insufficient funds unless sender uses coinbase utxos
         try:
@@ -289,7 +289,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
 
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
         try:
-            self.wait_and_assert_operationid_status(myopid)
+            wait_and_assert_operationid_status(self.nodes[0], myopid)
         except JSONRPCException as e:
             print("JSONRPC error: "+e.error['message'])
             assert(False)
@@ -354,7 +354,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
             newzaddr = self.nodes[2].z_getnewaddress()
             recipients.append({"address":newzaddr, "amount":amount_per_recipient})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients, minconf, custom_fee)
-        self.wait_and_assert_operationid_status(myopid)
+        wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()

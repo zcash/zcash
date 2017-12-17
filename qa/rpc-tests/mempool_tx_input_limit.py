@@ -6,7 +6,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_node, connect_nodes
+    start_node, connect_nodes, wait_and_assert_operationid_status
 
 import time
 from decimal import Decimal
@@ -33,34 +33,7 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         recipients = []
         recipients.append({"address": to_addr, "amount": amount})
         myopid = self.nodes[0].z_sendmany(from_addr, recipients)
-        return self.wait_and_assert_operationid_status(myopid)
-
-    def wait_and_assert_operationid_status(self, myopid, in_status='success', in_errormsg=None):
-        print('waiting for async operation {}'.format(myopid))
-        opids = []
-        opids.append(myopid)
-        timeout = 300
-        status = None
-        errormsg = None
-        txid = None
-        for x in xrange(1, timeout):
-            results = self.nodes[0].z_getoperationresult(opids)
-            if len(results)==0:
-                time.sleep(1)
-            else:
-                status = results[0]["status"]
-                if status == "failed":
-                    errormsg = results[0]['error']['message']
-                elif status == "success":
-                    txid = results[0]['result']['txid']
-                break
-        print('...returned status: {}'.format(status))
-        assert_equal(in_status, status)
-        if errormsg is not None:
-            assert(in_errormsg is not None)
-            assert_equal(in_errormsg in errormsg, True)
-            print('...returned error: {}'.format(errormsg))
-        return txid
+        return wait_and_assert_operationid_status(self.nodes[0], myopid)
 
     def run_test(self):
         self.nodes[0].generate(100)
@@ -126,7 +99,7 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         recipients.append({"address":self.nodes[1].getnewaddress(), "amount": spend_taddr_amount - spend_taddr_output - spend_taddr_output})
 
         myopid = self.nodes[0].z_sendmany(node0_zaddr, recipients)
-        self.wait_and_assert_operationid_status(myopid)
+        wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.nodes[1].generate(1)
         self.sync_all()
 

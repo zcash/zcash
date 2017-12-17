@@ -6,9 +6,8 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_node, connect_nodes_bi
+    start_node, connect_nodes_bi, wait_and_assert_operationid_status
 
-import time
 from decimal import Decimal
 
 class PaymentDisclosureTest (BitcoinTestFramework):
@@ -30,34 +29,6 @@ class PaymentDisclosureTest (BitcoinTestFramework):
         connect_nodes_bi(self.nodes,0,2)
         self.is_network_split=False
         self.sync_all()
-
-    # Returns txid if operation was a success or None
-    def wait_and_assert_operationid_status(self, nodeid, myopid, in_status='success', in_errormsg=None):
-        print('waiting for async operation {}'.format(myopid))
-        opids = []
-        opids.append(myopid)
-        timeout = 300
-        status = None
-        errormsg = None
-        txid = None
-        for x in xrange(1, timeout):
-            results = self.nodes[nodeid].z_getoperationresult(opids)
-            if len(results)==0:
-                time.sleep(1)
-            else:
-                status = results[0]["status"]
-                if status == "failed":
-                    errormsg = results[0]['error']['message']
-                elif status == "success":
-                    txid = results[0]['result']['txid']
-                break
-        print('...returned status: {}'.format(status))
-        assert_equal(in_status, status)
-        if errormsg is not None:
-            assert(in_errormsg is not None)
-            assert(in_errormsg in errormsg)
-            print('...returned error: {}'.format(errormsg))
-        return txid
 
     def run_test (self):
         print "Mining blocks..."
@@ -97,7 +68,7 @@ class PaymentDisclosureTest (BitcoinTestFramework):
         # Shield coinbase utxos from node 0 of value 40, standard fee of 0.00010000
         recipients = [{"address":myzaddr, "amount":Decimal('40.0')-Decimal('0.0001')}]
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        txid = self.wait_and_assert_operationid_status(0, myopid)
+        txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Check the tx has joinsplits
         assert( len(self.nodes[0].getrawtransaction("" + txid, 1)["vjoinsplit"]) > 0 )
@@ -196,7 +167,7 @@ class PaymentDisclosureTest (BitcoinTestFramework):
         node1zaddr = self.nodes[1].z_getnewaddress()
         recipients = [{"address":node1zaddr, "amount":Decimal('1')}]
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
-        txid = self.wait_and_assert_operationid_status(0, myopid)
+        txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
