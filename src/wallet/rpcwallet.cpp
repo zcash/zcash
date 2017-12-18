@@ -2902,26 +2902,23 @@ UniValue zc_raw_keygen(const UniValue& params, bool fHelp)
             "Output: {\n"
             "  \"zcaddress\": zcaddr,\n"
             "  \"zcsecretkey\": zcsecretkey,\n"
+            "  \"zcviewingkey\": zcviewingkey,\n"
             "}\n"
             );
     }
 
     auto k = SpendingKey::random();
     auto addr = k.address();
-    auto receiving_key = k.receiving_key();
-
-    CDataStream receiving(SER_NETWORK, PROTOCOL_VERSION);
-
-    receiving << receiving_key;
+    auto viewing_key = k.viewing_key();
 
     CZCPaymentAddress pubaddr(addr);
     CZCSpendingKey spendingkey(k);
-    std::string receiving_hex = HexStr(receiving.begin(), receiving.end());
+    CZCViewingKey viewingkey(viewing_key);
 
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("zcaddress", pubaddr.ToString()));
     result.push_back(Pair("zcsecretkey", spendingkey.ToString()));
-    result.push_back(Pair("zcviewingkey", receiving_hex));
+    result.push_back(Pair("zcviewingkey", viewingkey.ToString()));
     return result;
 }
 
