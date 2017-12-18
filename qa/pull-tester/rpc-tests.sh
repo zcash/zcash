@@ -43,6 +43,7 @@ testScripts=(
     'disablewallet.py'
     'zcjoinsplit.py'
     'zcjoinsplitdoublespend.py'
+    'zkey_import_export.py'
     'getblocktemplate.py'
     'bip65-cltv-p2p.py'
     'bipdersig-p2p.py'
