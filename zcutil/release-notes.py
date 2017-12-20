@@ -83,7 +83,8 @@ def document_authors():
                 f.write("{0} ({1})\n".format(n, c))
 
 ## Writes release note to ./doc/release-notes based on git shortlog when current version number is specified
-def generate_release_note(version, filename, prev, clear):
+def generate_release_note(version, prev, clear):
+    filename = 'release-notes-{0}.md'.format(version)
     print "Automatically generating release notes for {0} from git shortlog. Should review {1} for accuracy.".format(version, filename)
     if prev:
         latest_tag = prev
@@ -103,7 +104,7 @@ def generate_release_note(version, filename, prev, clear):
             notable_changes = notable_changes[3:] + ['\n']
         else:
             notable_changes = []
-    release_note = os.path.join(doc_dir, 'release-notes', 'release-notes-{0}.md'.format(version))
+    release_note = os.path.join(doc_dir, 'release-notes', filename)
     with open(release_note, 'w') as f:
         f.writelines(notable_changes)
         f.writelines(RELEASE_NOTES_CHANGELOG_HEADING)
@@ -113,9 +114,9 @@ def generate_release_note(version, filename, prev, clear):
         with open(temp_release_note, 'w') as f:
             f.writelines(TEMP_RELEASE_NOTES_HEADER)
 
-def main(version, filename, prev, clear):
+def main(version, prev, clear):
     if version != None:
-        generate_release_note(version, filename, prev, clear)
+        generate_release_note(version, prev, clear)
     document_authors()
 
 if __name__ == "__main__":
@@ -128,12 +129,10 @@ if __name__ == "__main__":
     root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     doc_dir = os.path.join(root_dir, 'doc')
     version = None
-    filename = None
     prev = None
     clear = False
     if args.version:
         version = args.version
-        filename = 'release-notes-{0}.md'.format(version)
         prev = args.prev
         clear = args.clear
-    main(version, filename, prev, clear)
+    main(version, prev, clear)
