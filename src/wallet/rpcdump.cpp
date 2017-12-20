@@ -694,8 +694,9 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
 
     // Height to rescan from
     int nRescanHeight = 0;
-    if (params.size() > 2)
+    if (params.size() > 2) {
         nRescanHeight = params[2].get_int();
+    }
     if (nRescanHeight < 0 || nRescanHeight > chainActive.Height()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     }
@@ -706,8 +707,9 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     auto addr = vkey.address();
 
     {
-        if (pwalletMain->HaveSpendingKey(addr))
+        if (pwalletMain->HaveSpendingKey(addr)) {
             throw JSONRPCError(RPC_WALLET_ERROR, "The wallet already contains the private key for this viewing key");
+        }
 
         // Don't throw error in case a viewing key is already there
         if (pwalletMain->HaveViewingKey(addr)) {
@@ -717,8 +719,9 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
         } else {
             pwalletMain->MarkDirty();
 
-            if (!pwalletMain->AddViewingKey(vkey))
+            if (!pwalletMain->AddViewingKey(vkey)) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "Error adding viewing key to wallet");
+            }
         }
 
         // We want to scan for transactions and notes

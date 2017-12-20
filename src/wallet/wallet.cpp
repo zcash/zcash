@@ -252,22 +252,27 @@ bool CWallet::LoadZKey(const libzcash::SpendingKey &key)
 
 bool CWallet::AddViewingKey(const libzcash::ViewingKey &vk)
 {
-    if (!CCryptoKeyStore::AddViewingKey(vk))
+    if (!CCryptoKeyStore::AddViewingKey(vk)) {
         return false;
+    }
     nTimeFirstKey = 1; // No birthday information for viewing keys.
-    if (!fFileBacked)
+    if (!fFileBacked) {
         return true;
+    }
     return CWalletDB(strWalletFile).WriteViewingKey(vk);
 }
 
 bool CWallet::RemoveViewingKey(const libzcash::ViewingKey &vk)
 {
     AssertLockHeld(cs_wallet);
-    if (!CCryptoKeyStore::RemoveViewingKey(vk))
+    if (!CCryptoKeyStore::RemoveViewingKey(vk)) {
         return false;
-    if (fFileBacked)
-        if (!CWalletDB(strWalletFile).EraseViewingKey(vk))
+    }
+    if (fFileBacked) {
+        if (!CWalletDB(strWalletFile).EraseViewingKey(vk)) {
             return false;
+        }
+    }
 
     return true;
 }
