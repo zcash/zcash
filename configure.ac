@@ -743,6 +743,7 @@ dnl Check for OpenMP support
 AX_OPENMP(
   [AC_DEFINE(HAVE_OPENMP, 1, [Define if OpenMP is enabled])
    AM_CONDITIONAL([HAVE_OPENMP], [true])
+   CPPFLAGS="$CPPFLAGS -DMULTICORE"
    CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"],
   [AC_MSG_WARN([OpenMP not supported, disabling multithreading])
    AC_DEFINE(HAVE_OPENMP, 0, [Define if OpenMP is enabled])
