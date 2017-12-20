@@ -63,7 +63,7 @@ CWalletTx GetValidReceive(ZCJoinSplit& params,
 libzcash::Note GetNote(ZCJoinSplit& params,
                        const libzcash::SpendingKey& sk,
                        const CTransaction& tx, size_t js, size_t n) {
-    ZCNoteDecryption decryptor {sk.viewing_key()};
+    ZCNoteDecryption decryptor {sk.receiving_key()};
     auto hSig = tx.vjoinsplit[js].h_sig(params, tx.joinSplitPubKey);
     auto note_pt = libzcash::NotePlaintext::decrypt(
         decryptor,

@@ -89,7 +89,7 @@ void test_full_api(ZCJoinSplit* js)
     // Recipient should decrypt
     // Now the recipient should spend the money again
     auto h_sig = js->h_sig(randomSeed, nullifiers, pubKeyHash);
-    ZCNoteDecryption decryptor(recipient_key.viewing_key());
+    ZCNoteDecryption decryptor(recipient_key.receiving_key());
 
     auto note_pt = NotePlaintext::decrypt(
         decryptor,

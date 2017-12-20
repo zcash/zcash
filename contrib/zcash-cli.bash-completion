@@ -82,8 +82,12 @@ _zcash_cli() {
                 COMPREPLY=( $( compgen -W "add remove" -- "$cur" ) )
                 return 0
                 ;;
-            fundrawtransaction|getblock|getblockheader|getmempoolancestors|getmempooldescendants|getrawtransaction|gettransaction|listaccounts|listreceivedbyaccount|listreceivedbyaddress|sendrawtransaction|z_importkey)
+            fundrawtransaction|getblock|getblockheader|getmempoolancestors|getmempooldescendants|getrawtransaction|gettransaction|listaccounts|listreceivedbyaccount|listreceivedbyaddress|sendrawtransaction)
                 COMPREPLY=( $( compgen -W "true false" -- "$cur" ) )
+                return 0
+                ;;
+            z_importkey|z_importviewingkey)
+                COMPREPLY=( $( compgen -W "yes no whenkeyisnew" -- "$cur" ) )
                 return 0
                 ;;
             move|setaccount)
