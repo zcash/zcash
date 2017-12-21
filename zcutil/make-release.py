@@ -26,6 +26,7 @@ def main(args=sys.argv[1:]):
         main_logged(
             opts.RELEASE_VERSION,
             opts.RELEASE_PREV,
+            opts.RELEASE_FROM,
             opts.RELEASE_HEIGHT,
             opts.HOTFIX,
         )
@@ -62,6 +63,11 @@ def parse_args(args):
         help='The previously released version.',
     )
     p.add_argument(
+        'RELEASE_FROM',
+        type=Version.parse_arg,
+        help='The previously released non-beta non-RC version. May be the same as RELEASE_PREV.',
+    )
+    p.add_argument(
         'RELEASE_HEIGHT',
         type=int,
         help='A block height approximately occuring on release day.',
@@ -70,8 +76,8 @@ def parse_args(args):
 
 
 # Top-level flow:
-def main_logged(release, releaseprev, releaseheight, hotfix):
-    verify_releaseprev_tag(releaseprev)
+def main_logged(release, releaseprev, releasefrom, releaseheight, hotfix):
+    verify_tags(releaseprev, releasefrom)
     verify_version(release, releaseprev, hotfix)
     initialize_git(release, hotfix)
     patch_version_in_files(release, releaseprev)
@@ -82,7 +88,7 @@ def main_logged(release, releaseprev, releaseheight, hotfix):
     gen_manpages()
     commit('Updated manpages for {}.'.format(release.novtext))
 
-    gen_release_notes(release)
+    gen_release_notes(release, releasefrom)
     update_debian_changelog(release)
     commit(
         'Updated release notes and changelog for {}.'.format(
@@ -101,8 +107,8 @@ def phase(message):
     return deco
 
 
-@phase('Checking RELEASE_PREV tag.')
-def verify_releaseprev_tag(releaseprev):
+@phase('Checking tags.')
+def verify_tags(releaseprev, releasefrom):
     candidates = []
 
     # Any tag beginning with a 'v' followed by [1-9] must be a version
@@ -129,6 +135,31 @@ def verify_releaseprev_tag(releaseprev):
                 releaseprev.vtext,
             ),
         )
+
+    candidates.reverse()
+    prev_tags = []
+    for candidate in candidates:
+        if releasefrom == candidate:
+            break
+        else:
+            prev_tags.append(candidate)
+    else:
+        raise SystemExit(
+            '{} does not appear in `git tag --list`'
+            .format(
+                releasefrom.vtext,
+            ),
+        )
+
+    for tag in prev_tags:
+        if not tag.betarc:
+            raise SystemExit(
+                '{} appears to be a more recent non-beta non-RC release than {}'
+                .format(
+                    tag.vtext,
+                    releasefrom.vtext,
+                ),
+            )
 
 
 @phase('Checking version.')
@@ -238,8 +269,18 @@ def gen_manpages():
 
 
 @phase('Generating release notes.')
-def gen_release_notes(release):
-    sh_log('python', './zcutil/release-notes.py', '--version', release.novtext)
+def gen_release_notes(release, releasefrom):
+    release_notes = [
+        'python',
+        './zcutil/release-notes.py',
+        '--version',
+        release.novtext,
+        '--prev',
+        releasefrom.vtext,
+    ]
+    if not release.betarc:
+        release_notes.append('--clear')
+    sh_log(*release_notes)
     sh_log(
         'git',
         'add',
