@@ -34,6 +34,7 @@ int main(int argc, char** argv)
     if (argc < 3 || numJSDescs <= 0) {
         std::cerr << "Usage: ExampleProvingServiceClient [provingServiceAddress] [provingServicePubKey] (numJSDescs)" << std::endl;
         std::cerr << "provingServiceAddress is a ZMQ address, e.g. tcp://localhost:8234" << std::endl;
+        std::cerr << "provingServicePubKey is printed out by the server; surround it with single quotes in Bash" << std::endl;
         std::cerr << "If provided, numJSDescs must be a positive integer." << std::endl;
         return 1;
     }
