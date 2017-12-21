@@ -1,8 +1,8 @@
 package=zeromq
-$(package)_version=4.2.1
+$(package)_version=4.2.3
 $(package)_download_path=https://github.com/zeromq/libzmq/releases/download/v$($(package)_version)/
 $(package)_file_name=$(package)-$($(package)_version).tar.gz
-$(package)_sha256_hash=27d1e82a099228ee85a7ddb2260f40830212402c605a4a10b5e5498a7e0e9d03
+$(package)_sha256_hash=8f1e2b2aade4dbfde98d82366d61baef2f62e812530160d2e6d0a5bb24e40bc0
 $(package)_dependencies=libsodium
 
 define $(package)_set_vars
