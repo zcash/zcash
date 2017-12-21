@@ -70,6 +70,10 @@ def document_authors():
         f.write('Zcash Contributors\n==================\n\n')
         total_contrib = {}
         for notes in os.listdir(os.path.join(doc_dir, 'release-notes')):
+            # Commits are duplicated across beta, RC and final release notes,
+            # except for the pre-launch release notes.
+            if ('-beta' in notes or '-rc' in notes) and '1.0.0-' not in notes:
+                continue
             authors = authors_in_release_notes(notes)
             for author in authors:
                 commits = int(authors[author])
