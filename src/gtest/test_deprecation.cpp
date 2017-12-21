@@ -24,7 +24,7 @@ static bool ThreadSafeMessageBox(MockUIInterface *mock,
                                  const std::string& caption,
                                  unsigned int style)
 {
-    mock->ThreadSafeMessageBox(message, caption, style);
+    return mock->ThreadSafeMessageBox(message, caption, style);
 }
 
 class DeprecationTest : public ::testing::Test {
