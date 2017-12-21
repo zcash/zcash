@@ -408,10 +408,10 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-paytxfee=<amt>", strprintf(_("Fee (in %s/kB) to add to transactions you send (default: %s)"),
         CURRENCY_UNIT, FormatMoney(payTxFee.GetFeePerK())));
 #if ENABLE_PROVING_SERVICE
-    // Uncomment when out of experimental features
-    //strUsage += HelpMessageOpt("-provingservice=<address>", _("Use proving service at <address> for creating shielded transactions"));
-    //strUsage += HelpMessageOpt("-provingservicepubkey=<pubkey>", _("Public key for the proving service"));
-    //strUsage += HelpMessageOpt("-provingserviceclientkey=<clientkey>", _("Client key for authenticating with the proving service, if required"));
+    // Reword when out of experimental features
+    strUsage += HelpMessageOpt("-provingservice=<address>", _("EXPERIMENTAL: Use proving service at <address> for creating shielded transactions"));
+    strUsage += HelpMessageOpt("-provingservicepubkey=<pubkey>", _("EXPERIMENTAL: Public key for the proving service"));
+    strUsage += HelpMessageOpt("-provingserviceclientkey=<clientkey>", _("EXPERIMENTAL: Client key for authenticating with the proving service, if required"));
 #endif
     strUsage += HelpMessageOpt("-rescan", _("Rescan the block chain for missing wallet transactions") + " " + _("on startup"));
     strUsage += HelpMessageOpt("-salvagewallet", _("Attempt to recover private keys from a corrupt wallet.dat") + " " + _("on startup"));
