@@ -26,7 +26,7 @@ void expect_deser_same(const T& expected)
     CDataStream ss2(SER_NETWORK, PROTOCOL_VERSION);
     ss2 << object;
 
-    ASSERT_TRUE(serialized_size == ss2.size());
+    ASSERT_EQ(serialized_size, ss2.size());
     ASSERT_TRUE(memcmp(&*ss1.begin(), &*ss2.begin(), serialized_size) == 0);
 }
 
@@ -45,7 +45,7 @@ void expect_test_vector(T& v, const U& expected)
     std::string raw = v.get_str();
     CDataStream ss2(ParseHex(raw), SER_NETWORK, PROTOCOL_VERSION);
 
-    ASSERT_TRUE(ss1.size() == ss2.size());
+    ASSERT_EQ(ss1.size(), ss2.size());
     ASSERT_TRUE(memcmp(&*ss1.begin(), &*ss2.begin(), ss1.size()) == 0);
     #endif
 }
