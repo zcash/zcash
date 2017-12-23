@@ -46,9 +46,6 @@ template<size_t Depth, typename Hash>
 EmptyMerkleRoots<Depth, Hash> PathFiller<Depth, Hash>::emptyroots;
 
 template<size_t Depth, typename Hash>
-EmptyMerkleRoots<Depth, Hash> IncrementalMerkleTree<Depth, Hash>::emptyroots;
-
-template<size_t Depth, typename Hash>
 void IncrementalMerkleTree<Depth, Hash>::wfcheck() const {
     if (parents.size() >= Depth) {
         throw std::ios_base::failure("tree has too many parents");
