@@ -10,8 +10,8 @@ build_darwin_SHA256SUM = shasum -a 256
 build_darwin_DOWNLOAD = curl --connect-timeout $(DOWNLOAD_CONNECT_TIMEOUT) --retry $(DOWNLOAD_RETRIES) -L -f -o
 
 #darwin host on darwin builder. overrides darwin host preferences.
-darwin_CC= gcc-5
-darwin_CXX= g++-5
+darwin_CC= gcc-5 -mmacosx-version-min=$(OSX_MIN_VERSION)
+darwin_CXX= g++-5 -mmacosx-version-min=$(OSX_MIN_VERSION)
 darwin_AR:=$(shell xcrun -f ar)
 darwin_RANLIB:=$(shell xcrun -f ranlib)
 darwin_STRIP:=$(shell xcrun -f strip)
