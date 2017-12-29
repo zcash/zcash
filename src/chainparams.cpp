@@ -131,12 +131,12 @@ public:
             0            // * estimated number of transactions per day after checkpoint
                             //   total number of tx / (checkpoint block height / (24 * 24))
         };
+      // Founders reward script expects a vector of 2-of-3 multisig addresses
+       vFoundersRewardAddress = {
+       };
+       assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
 
     }
-    // Founders reward script expects a vector of 2-of-3 multisig addresses
-     vFoundersRewardAddress = {
-       };
-     assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
 
 };
 static CMainParams mainParams;
@@ -207,12 +207,12 @@ public:
                          //   (the tx=... number in the SetBestChain debug.log lines)
             0          //   total number of tx / (checkpoint block height / (24 * 24))
         };
+       // Founders reward script expects a vector of 2-of-3 multisig addresses
+         vFoundersRewardAddress = {
+         };
+         assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
 
-       }
-    // Founders reward script expects a vector of 2-of-3 multisig addresses
-     vFoundersRewardAddress = {
-       };
-     assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
+    }
 
 };
 static CTestNetParams testNetParams;
