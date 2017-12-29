@@ -1,5 +1,5 @@
 
-What is Zcash?
+What is ZcashPlus?
 --------------
 Simply Zcash Without Founders rewards. You keep %100 whatever you mine
 
