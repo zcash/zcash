@@ -103,14 +103,14 @@ signed. **CAUTION:** Remember the `v` at the beginning here:
 
 ## Make and deploy deterministic builds
 
-- Run the [Gitian deterministic build environment](https://github.com/zcash/zcash-gitian)
-- Compare the uploaded [build manifests on gitian.sigs](https://github.com/zcash/gitian.sigs)
+- Run the [Gitian deterministic build environment](https://github.com/zcashplus/zcashplus-gitian)
+- Compare the uploaded [build manifests on gitian.sigs](https://github.com/zcashplus/gitian.sigs)
 - If all is well, the DevOps engineer will build the Debian packages and update the
   [apt.z.cash package repository](https://apt.z.cash).
 
 ## Add release notes to GitHub
 
-- Go to the [GitHub tags page](https://github.com/zcash/zcash/tags).
+- Go to the [GitHub tags page](https://github.com/zcashplus/zcashplus/tags).
 - Click "Add release notes" beside the tag for this release.
 - Copy the release blog post into the release description, and edit to suit
   publication on GitHub. See previous release notes for examples.
@@ -139,7 +139,7 @@ Then, verify that nodes can connect to the testnet server, and update the guide 
 
 ### Update the 1.0 User Guide
 
-This also means updating [the translations](https://github.com/zcash/zcash-docs).
+This also means updating [the translations](https://github.com/zcashplus/zcashplus-docs).
 Coordinate with the translation team for now. Suggestions for improving this
 part of the process should be added to #2596.
 

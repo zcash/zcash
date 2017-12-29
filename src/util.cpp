@@ -444,13 +444,13 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
 boost::filesystem::path GetDefaultDataDir()
 {
     namespace fs = boost::filesystem;
-    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Zcash
-    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zcash
-    // Mac: ~/Library/Application Support/Zcash
-    // Unix: ~/.zcash
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\ZcashPlus
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\ZcashPlus
+    // Mac: ~/Library/Application Support/ZcashPlus
+    // Unix: ~/.zcashplus
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Zcash";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "ZcashPlus";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -462,10 +462,10 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    return pathRet / "Zcash";
+    return pathRet / "ZcashPlus";
 #else
     // Unix
-    return pathRet / ".zcash";
+    return pathRet / ".zcashplus";
 #endif
 #endif
 }
@@ -480,13 +480,13 @@ static boost::filesystem::path ZC_GetBaseParamsDir()
     // Copied from GetDefaultDataDir and adapter for zcash params.
 
     namespace fs = boost::filesystem;
-    // Windows < Vista: C:\Documents and Settings\Username\Application Data\ZcashParams
-    // Windows >= Vista: C:\Users\Username\AppData\Roaming\ZcashParams
-    // Mac: ~/Library/Application Support/ZcashParams
-    // Unix: ~/.zcash-params
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\ZcashPlusParams
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\ZcashPlusParams
+    // Mac: ~/Library/Application Support/ZcashPlusParams
+    // Unix: ~/.zcashplus-params
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "ZcashParams";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "ZcashPlusParams";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -498,10 +498,10 @@ static boost::filesystem::path ZC_GetBaseParamsDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    return pathRet / "ZcashParams";
+    return pathRet / "ZcashPlusParams";
 #else
     // Unix
-    return pathRet / ".zcash-params";
+    return pathRet / ".zcashplus-params";
 #endif
 #endif
 }
@@ -900,6 +900,8 @@ std::string LicenseInfo()
     return "\n" +
            FormatParagraph(strprintf(_("Copyright (C) 2009-%i The Bitcoin Core Developers"), COPYRIGHT_YEAR)) + "\n" +
            FormatParagraph(strprintf(_("Copyright (C) 2015-%i The Zcash Developers"), COPYRIGHT_YEAR)) + "\n" +
+           FormatParagraph(strprintf(_("Copyright (C) 2017-%i The Zcash Plus Developers"), COPYRIGHT_YEAR)) + "\n" +
+
            "\n" +
            FormatParagraph(_("This is experimental software.")) + "\n" +
            "\n" +

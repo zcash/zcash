@@ -2,7 +2,7 @@
 
 set -eu
 
-PARAMS_DIR="$HOME/.zcash-params"
+PARAMS_DIR="$HOME/.zcashplus-params"
 
 SPROUT_PKEY_NAME='sprout-proving.key'
 SPROUT_VKEY_NAME='sprout-verifying.key'

@@ -4,7 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
 ZCASH_LOAD_TIMEOUT=500
-DATADIR="@abs_top_builddir@/.zcash"
+DATADIR="@abs_top_builddir@/.zcashplus"
 rm -rf "$DATADIR"
 mkdir -p "$DATADIR"/regtest
 touch "$DATADIR/zcash.conf"

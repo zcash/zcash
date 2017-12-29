@@ -43,7 +43,7 @@ related to the DNS seed operation.
 
 If these expectations cannot be satisfied the operator should discontinue
 providing services and contact the active Zcash development team as well as
-creating an issue in the [Zcash repository](https://github.com/zcash/zcash).
+creating an issue in the [Zcash Plus repository](https://github.com/zcashplus/zcashplus).
 
 Behavior outside of these expectations may be reasonable in some
 situations but should be discussed in public in advance.
