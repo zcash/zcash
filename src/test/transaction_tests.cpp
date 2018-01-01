@@ -147,6 +147,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
             BOOST_CHECK_MESSAGE(CheckTransaction(tx, state, verifier), strTest + comment);
             BOOST_CHECK_MESSAGE(state.IsValid(), comment);
 
+            CachedHashes cachedHashes(tx);
             for (unsigned int i = 0; i < tx.vin.size(); i++)
             {
                 if (!mapprevOutScriptPubKeys.count(tx.vin[i].prevout))
@@ -158,7 +159,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
                 CAmount amount = 0;
                 unsigned int verify_flags = ParseScriptFlags(test[2].get_str());
                 BOOST_CHECK_MESSAGE(VerifyScript(tx.vin[i].scriptSig, mapprevOutScriptPubKeys[tx.vin[i].prevout],
-                                                 verify_flags, TransactionSignatureChecker(&tx, i, amount), &err),
+                                                 verify_flags, TransactionSignatureChecker(&tx, i, amount, cachedHashes), &err),
                                     strTest + comment);
                 BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_OK, ScriptErrorString(err) + comment);
             }
@@ -231,6 +232,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
             CValidationState state;
             fValid = CheckTransaction(tx, state, verifier) && state.IsValid();
 
+            CachedHashes cachedHashes(tx);
             for (unsigned int i = 0; i < tx.vin.size() && fValid; i++)
             {
                 if (!mapprevOutScriptPubKeys.count(tx.vin[i].prevout))
@@ -242,7 +244,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
                 unsigned int verify_flags = ParseScriptFlags(test[2].get_str());
                 CAmount amount = 0;
                 fValid = VerifyScript(tx.vin[i].scriptSig, mapprevOutScriptPubKeys[tx.vin[i].prevout],
-                                      verify_flags, TransactionSignatureChecker(&tx, i, amount), &err);
+                                      verify_flags, TransactionSignatureChecker(&tx, i, amount, cachedHashes), &err);
             }
             BOOST_CHECK_MESSAGE(!fValid, strTest + comment);
             BOOST_CHECK_MESSAGE(err != SCRIPT_ERR_OK, ScriptErrorString(err) + comment);
