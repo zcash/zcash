@@ -84,9 +84,9 @@ int zcashconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int
 
          // Regardless of the verification result, the tx did not error.
          set_error(err, zcashconsensus_ERR_OK);
-
+        CachedHashes cachedHashes(tx);
         CAmount am(0);
-        return VerifyScript(tx.vin[nIn].scriptSig, CScript(scriptPubKey, scriptPubKey + scriptPubKeyLen), flags, TransactionSignatureChecker(&tx, nIn, am), NULL);
+        return VerifyScript(tx.vin[nIn].scriptSig, CScript(scriptPubKey, scriptPubKey + scriptPubKeyLen), flags, TransactionSignatureChecker(&tx, nIn, am, cachedHashes), NULL);
     } catch (const std::exception&) {
         return set_error(err, zcashconsensus_ERR_TX_DESERIALIZE); // Error deserializing
     }
