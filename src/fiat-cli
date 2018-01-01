@@ -51,3 +51,6 @@ echo kv; fiat/kv $1 $2 $3 $4
 echo ceal; fiat/ceal $1 $2 $3 $4
 echo mesh; fiat/mesh $1 $2 $3 $4
 echo mnz; fiat/mnz $1 $2 $3 $4
+echo mnz; fiat/axo $1 $2 $3 $4
+echo mnz; fiat/etomic $1 $2 $3 $4
+echo mnz; fiat/btch $1 $2 $3 $4
