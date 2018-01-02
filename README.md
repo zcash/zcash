@@ -59,7 +59,7 @@ brew install gcc5 --without-multilib
 Install
 ```{r, engine='bash'}
 # Build
-./zcutil/build-mac.sh -j$(nproc)
+./zcutil/build-mac.sh -j$(sysctl -n hw.ncpu)
 # fetch key
 ./zcutil/fetch-params.sh
 # Run
