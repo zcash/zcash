@@ -709,7 +709,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         fwrite(&signedmask,1,sizeof(signedmask),signedfp);
                         fflush(signedfp);
                     }
-                    printf("[%s] ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<< notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
+                     printf("[%s] ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<<  notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
                 }
                 notarized = 1;
             }
