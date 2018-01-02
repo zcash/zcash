@@ -21,7 +21,7 @@ _zcashd() {
             _filedir
             return 0
             ;;
-        -datadir=*)
+        -datadir=*|-exportdir=*)
             cur="${cur#*=}"
             _filedir -d
             return 0
