@@ -35,7 +35,7 @@ komodo_asset JUMBLR 999999
 komodo_asset BET 999999
 komodo_asset CRYPTO 999999
 komodo_asset HODL 9999999
-komodo_asset SHARK 1401
+#komodo_asset SHARK 1401
 komodo_asset MSHARK 1400000
 komodo_asset BOTS 999999
 komodo_asset MGW 999999
