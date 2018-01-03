@@ -6,6 +6,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
+from test_framework.mininode import COIN
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, connect_nodes_bi, stop_node, wait_and_assert_operationid_status
 
@@ -22,6 +23,7 @@ def check_value_pool(node, name, total):
             found = True
             assert_equal(pool['monitored'], True)
             assert_equal(pool['chainValue'], total)
+            assert_equal(pool['chainValueZat'], total * COIN)
     assert(found)
 
 class WalletProtectCoinbaseTest (BitcoinTestFramework):
