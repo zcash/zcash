@@ -12,12 +12,12 @@ public:
         protoboard<FieldT>& pb,
         digest_variable<FieldT> leaf,
         digest_variable<FieldT> root,
-        pb_variable<FieldT>& enforce
-    ) : gadget<FieldT>(pb) {
-        positions.allocate(pb, INCREMENTAL_MERKLE_TREE_DEPTH);
+        pb_variable<FieldT>& enforce,
+	const std::string &annotation_prefix
+		       ) : gadget<FieldT>(pb, FMT(annotation_prefix, " merkle_tree_gadget")) {
+	positions.allocate(pb, INCREMENTAL_MERKLE_TREE_DEPTH, FMT(this->annotation_prefix, " positions"));
         authvars.reset(new merkle_authentication_path_variable<FieldT, sha256_gadget>(
-            pb, INCREMENTAL_MERKLE_TREE_DEPTH, "auth"
-        ));
+										      pb, INCREMENTAL_MERKLE_TREE_DEPTH, FMT(this->annotation_prefix, " auth")));
         auth.reset(new merkle_tree_check_read_gadget<FieldT, sha256_gadget>(
             pb,
             INCREMENTAL_MERKLE_TREE_DEPTH,
@@ -26,7 +26,7 @@ public:
             root,
             *authvars,
             enforce,
-            ""
+            FMT(this->annotation_prefix, " check")
         ));
     }
 
@@ -39,7 +39,7 @@ public:
             generate_boolean_r1cs_constraint<FieldT>(
                 this->pb,
                 positions[i],
-                "boolean_positions"
+                FMT(this->annotation_prefix, " boolean_positions")
             );
         }
 

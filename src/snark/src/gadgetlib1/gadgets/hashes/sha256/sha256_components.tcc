@@ -88,7 +88,7 @@ sha256_message_schedule_gadget<FieldT>::sha256_message_schedule_gadget(protoboar
         compute_sigma1[i].reset(new small_sigma_gadget<FieldT>(pb, W_bits[i-2], sigma1[i], 17, 19, 10, FMT(this->annotation_prefix, " compute_sigma1_%zu", i)));
 
         /* unreduced_W = sigma0(W_{i-15}) + sigma1(W_{i-2}) + W_{i-7} + W_{i-16} before modulo 2^32 */
-        unreduced_W[i].allocate(pb, FMT(this->annotation_prefix, "unreduced_W_%zu", i));
+        unreduced_W[i].allocate(pb, FMT(this->annotation_prefix, " unreduced_W_%zu", i));
 
         /* allocate the bit representation of packed_W[i] */
         W_bits[i].allocate(pb, 32, FMT(this->annotation_prefix, " W_bits_%zu", i));

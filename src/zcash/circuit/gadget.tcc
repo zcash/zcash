@@ -41,7 +41,7 @@ public:
     // for different output `rho`.
     BOOST_STATIC_ASSERT(NumOutputs <= 2);
 
-    joinsplit_gadget(protoboard<FieldT> &pb) : gadget<FieldT>(pb) {
+    joinsplit_gadget(protoboard<FieldT> &pb) : gadget<FieldT>(pb, "joinsplit") {
         // Verification
         {
             // The verification inputs are all bit-strings of various
@@ -49,23 +49,23 @@ public:
             // pack them into as few field elements as possible. (The
             // more verification inputs you have, the more expensive
             // verification is.)
-            zk_packed_inputs.allocate(pb, verifying_field_element_size());
+            zk_packed_inputs.allocate(pb, verifying_field_element_size(), FMT(this->annotation_prefix, " zk_packed_inputs"));
             pb.set_input_sizes(verifying_field_element_size());
-
-            alloc_uint256(zk_unpacked_inputs, zk_merkle_root);
-            alloc_uint256(zk_unpacked_inputs, zk_h_sig);
-
+	    
+            alloc_uint256(zk_unpacked_inputs, zk_merkle_root, FMT(this->annotation_prefix, " zk_merkle_root"));
+	    alloc_uint256(zk_unpacked_inputs, zk_h_sig, FMT(this->annotation_prefix, " zk_h_sig"));
+	    
             for (size_t i = 0; i < NumInputs; i++) {
-                alloc_uint256(zk_unpacked_inputs, zk_input_nullifiers[i]);
-                alloc_uint256(zk_unpacked_inputs, zk_input_macs[i]);
+                alloc_uint256(zk_unpacked_inputs, zk_input_nullifiers[i], FMT(this->annotation_prefix, " zk_input_nullifiers[%d]", i));
+		alloc_uint256(zk_unpacked_inputs, zk_input_macs[i], FMT(this->annotation_prefix, " zk_input_macs[%d]", i));
             }
 
             for (size_t i = 0; i < NumOutputs; i++) {
-                alloc_uint256(zk_unpacked_inputs, zk_output_commitments[i]);
+                alloc_uint256(zk_unpacked_inputs, zk_output_commitments[i], FMT(this->annotation_prefix, " zk_output_commitments[%d]", i));
             }
 
-            alloc_uint64(zk_unpacked_inputs, zk_vpub_old);
-            alloc_uint64(zk_unpacked_inputs, zk_vpub_new);
+	    alloc_uint64(zk_unpacked_inputs, zk_vpub_old, FMT(this->annotation_prefix, " zk_vpub_old"));
+	    alloc_uint64(zk_unpacked_inputs, zk_vpub_new, FMT(this->annotation_prefix, " zk_vpub_new"));
 
             assert(zk_unpacked_inputs.size() == verifying_input_bit_size());
 
@@ -76,7 +76,7 @@ public:
                 zk_unpacked_inputs,
                 zk_packed_inputs,
                 FieldT::capacity(),
-                "unpacker"
+                FMT(this->annotation_prefix, " unpacker")
             ));
         }
 
@@ -86,11 +86,11 @@ public:
         // 
         // The first variable of our constraint system is constrained
         // to be one automatically for us, and is known as `ONE`.
-        ZERO.allocate(pb);
+        ZERO.allocate(pb, "ZERO");
 
-        zk_phi.reset(new digest_variable<FieldT>(pb, 252, ""));
+        zk_phi.reset(new digest_variable<FieldT>(pb, 252, FMT(this->annotation_prefix, " zk_phi")));
 
-        zk_total_uint64.allocate(pb, 64);
+        zk_total_uint64.allocate(pb, 64, FMT(this->annotation_prefix, " zk_total"));
 
         for (size_t i = 0; i < NumInputs; i++) {
             // Input note gadget for commitments, macs, nullifiers,
@@ -99,7 +99,8 @@ public:
                 pb,
                 ZERO,
                 zk_input_nullifiers[i],
-                *zk_merkle_root
+                *zk_merkle_root,
+		FMT(this->annotation_prefix, " zk_mac_authentication[%d]", i)
             ));
 
             // The input keys authenticate h_sig to prevent
@@ -110,7 +111,8 @@ public:
                 zk_input_notes[i]->a_sk->bits,
                 zk_h_sig->bits,
                 i ? true : false,
-                zk_input_macs[i]
+                zk_input_macs[i],
+		FMT(this->annotation_prefix, " zk_mac_authentication[%d]", i)
             ));
         }
 
@@ -121,7 +123,8 @@ public:
                 zk_phi->bits,
                 zk_h_sig->bits,
                 i ? true : false,
-                zk_output_commitments[i]
+                zk_output_commitments[i],
+		FMT(this->annotation_prefix, " zk_output_notes[%d]", i)
             ));
         }
     }
@@ -167,14 +170,14 @@ public:
                 1,
                 left_side,
                 right_side
-            ));
+            ), FMT(this->annotation_prefix, " balance_check"));
 
             // #854: Ensure that left_side is a 64-bit integer.
             for (size_t i = 0; i < 64; i++) {
                 generate_boolean_r1cs_constraint<FieldT>(
                     this->pb,
                     zk_total_uint64[i],
-                    ""
+                    FMT(this->annotation_prefix, " ensure_left_is_64")
                 );
             }
 
@@ -182,7 +185,7 @@ public:
                 1,
                 left_side,
                 packed_addition(zk_total_uint64)
-            ));
+            ), FMT(this->annotation_prefix, " ensure_left_is_total"));
         }
     }
 
@@ -333,17 +336,19 @@ public:
 
     void alloc_uint256(
         pb_variable_array<FieldT>& packed_into,
-        std::shared_ptr<digest_variable<FieldT>>& var
+        std::shared_ptr<digest_variable<FieldT>>& var,
+	const std::string &annotation = ""
     ) {
-        var.reset(new digest_variable<FieldT>(this->pb, 256, ""));
+        var.reset(new digest_variable<FieldT>(this->pb, 256, annotation));
         packed_into.insert(packed_into.end(), var->bits.begin(), var->bits.end());
     }
 
     void alloc_uint64(
         pb_variable_array<FieldT>& packed_into,
-        pb_variable_array<FieldT>& integer
+        pb_variable_array<FieldT>& integer,
+	const std::string &annotation = ""
     ) {
-        integer.allocate(this->pb, 64, "");
+        integer.allocate(this->pb, 64, annotation);
         packed_into.insert(packed_into.end(), integer.begin(), integer.end());
     }
 };

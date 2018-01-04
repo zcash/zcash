@@ -4,9 +4,9 @@ public:
     pb_variable_array<FieldT> value;
     std::shared_ptr<digest_variable<FieldT>> r;
 
-    note_gadget(protoboard<FieldT> &pb) : gadget<FieldT>(pb) {
-        value.allocate(pb, 64);
-        r.reset(new digest_variable<FieldT>(pb, 256, ""));
+    note_gadget(protoboard<FieldT> &pb, const std::string &annotation_prefix) : gadget<FieldT>(pb, FMT(annotation_prefix, " note_gadget")) {
+	value.allocate(pb, 64, FMT(this->annotation_prefix, " note_gadget_value"));
+        r.reset(new digest_variable<FieldT>(pb, 256, FMT(this->annotation_prefix, " note_gadget_r")));
     }
 
     void generate_r1cs_constraints() {
@@ -14,7 +14,7 @@ public:
             generate_boolean_r1cs_constraint<FieldT>(
                 this->pb,
                 value[i],
-                "boolean_value"
+                FMT(this->annotation_prefix, " boolean_value")
             );
         }
 
@@ -48,18 +48,20 @@ public:
         protoboard<FieldT>& pb,
         pb_variable<FieldT>& ZERO,
         std::shared_ptr<digest_variable<FieldT>> nullifier,
-        digest_variable<FieldT> rt
-    ) : note_gadget<FieldT>(pb) {
-        a_sk.reset(new digest_variable<FieldT>(pb, 252, ""));
-        a_pk.reset(new digest_variable<FieldT>(pb, 256, ""));
-        rho.reset(new digest_variable<FieldT>(pb, 256, ""));
-        commitment.reset(new digest_variable<FieldT>(pb, 256, ""));
+        digest_variable<FieldT> rt,
+	const std::string &annotation_prefix
+		      ) : note_gadget<FieldT>(pb, annotation_prefix) {
+        a_sk.reset(new digest_variable<FieldT>(pb, 252, FMT(this->annotation_prefix, " a_sk")));
+        a_pk.reset(new digest_variable<FieldT>(pb, 256, FMT(this->annotation_prefix, " a_pk")));
+        rho.reset(new digest_variable<FieldT>(pb, 256, FMT(this->annotation_prefix, " rho")));
+        commitment.reset(new digest_variable<FieldT>(pb, 256, FMT(this->annotation_prefix, " commitment")));
 
         spend_authority.reset(new PRF_addr_a_pk_gadget<FieldT>(
             pb,
             ZERO,
             a_sk->bits,
-            a_pk
+            a_pk,
+	    FMT(this->annotation_prefix, " addr_a_pk")
         ));
 
         expose_nullifiers.reset(new PRF_nf_gadget<FieldT>(
@@ -67,7 +69,8 @@ public:
             ZERO,
             a_sk->bits,
             rho->bits,
-            nullifier
+            nullifier,
+	    FMT(this->annotation_prefix, " nf")
         ));
 
         commit_to_inputs.reset(new note_commitment_gadget<FieldT>(
@@ -77,16 +80,18 @@ public:
             this->value,
             rho->bits,
             this->r->bits,
-            commitment
+            commitment,
+	    FMT(this->annotation_prefix, " nc")
         ));
 
-        value_enforce.allocate(pb);
+        value_enforce.allocate(pb, FMT(this->annotation_prefix, " value_enforce"));
 
         witness_input.reset(new merkle_tree_gadget<FieldT>(
             pb,
             *commitment,
             rt,
-            value_enforce
+            value_enforce,
+	    FMT(this->annotation_prefix, " mt")
         ));
     }
 
@@ -105,13 +110,13 @@ public:
         // Given `enforce` is boolean constrained:
         // If `value` is zero, `enforce` _can_ be zero.
         // If `value` is nonzero, `enforce` _must_ be one.
-        generate_boolean_r1cs_constraint<FieldT>(this->pb, value_enforce,"");
+        generate_boolean_r1cs_constraint<FieldT>(this->pb, value_enforce, FMT(this->annotation_prefix, " value_enforce"));
 
         this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(
             packed_addition(this->value),
             (1 - value_enforce),
-            0
-        ), "");
+            0),
+	    FMT(this->annotation_prefix, " value_enforce"));
 
         witness_input->generate_r1cs_constraints();
     }
@@ -181,10 +186,11 @@ public:
         pb_variable_array<FieldT>& phi,
         pb_variable_array<FieldT>& h_sig,
         bool nonce,
-        std::shared_ptr<digest_variable<FieldT>> commitment
-    ) : note_gadget<FieldT>(pb) {
-        rho.reset(new digest_variable<FieldT>(pb, 256, ""));
-        a_pk.reset(new digest_variable<FieldT>(pb, 256, ""));
+        std::shared_ptr<digest_variable<FieldT>> commitment,
+	const std::string &annotation_prefix
+		       ) : note_gadget<FieldT>(pb, annotation_prefix) {
+        rho.reset(new digest_variable<FieldT>(pb, 256, FMT(this->annotation_prefix, " output_note_rho")));
+        a_pk.reset(new digest_variable<FieldT>(pb, 256, FMT(this->annotation_prefix, " output_note_a_pk")));
 
         // Do not allow the caller to choose the same "rho"
         // for any two valid notes in a given view of the
@@ -196,7 +202,8 @@ public:
             phi,
             h_sig,
             nonce,
-            rho
+            rho,
+	    FMT(this->annotation_prefix, " prevent_fairie_gold")
         ));
 
         // Commit to the output notes publicly without
@@ -208,7 +215,8 @@ public:
             this->value,
             rho->bits,
             this->r->bits,
-            commitment
+            commitment,
+	    FMT(this->annotation_prefix, " commit_to_outputs")
         ));
     }
 

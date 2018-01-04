@@ -15,8 +15,9 @@ public:
         bool d,
         pb_variable_array<FieldT> x,
         pb_variable_array<FieldT> y,
-        std::shared_ptr<digest_variable<FieldT>> result
-    ) : gadget<FieldT>(pb), result(result) {
+        std::shared_ptr<digest_variable<FieldT>> result,
+	const std::string &annotation_prefix
+	       ) : gadget<FieldT>(pb, FMT(annotation_prefix, " PRF_gadget")), result(result) {
 
         pb_linear_combination_array<FieldT> IV = SHA256_default_IV(pb);
 
@@ -30,14 +31,14 @@ public:
             discriminants,
             x,
             y
-        }, "PRF_block"));
+	      }, FMT(this->annotation_prefix, " block")));
 
         hasher.reset(new sha256_compression_function_gadget<FieldT>(
             pb,
             IV,
             block->bits,
             *result,
-        "PRF_hasher"));
+	    FMT(this->annotation_prefix, " hasher")));
     }
 
     void generate_r1cs_constraints() {
@@ -66,8 +67,9 @@ public:
         protoboard<FieldT>& pb,
         pb_variable<FieldT>& ZERO,
         pb_variable_array<FieldT>& a_sk,
-        std::shared_ptr<digest_variable<FieldT>> result
-    ) : PRF_gadget<FieldT>(pb, ZERO, 1, 1, 0, 0, a_sk, gen256zeroes(ZERO), result) {}
+        std::shared_ptr<digest_variable<FieldT>> result,
+	const std::string &annotation_prefix
+			 ) : PRF_gadget<FieldT>(pb, ZERO, 1, 1, 0, 0, a_sk, gen256zeroes(ZERO), result, annotation_prefix) {}
 };
 
 template<typename FieldT>
@@ -78,8 +80,9 @@ public:
         pb_variable<FieldT>& ZERO,
         pb_variable_array<FieldT>& a_sk,
         pb_variable_array<FieldT>& rho,
-        std::shared_ptr<digest_variable<FieldT>> result
-    ) : PRF_gadget<FieldT>(pb, ZERO, 1, 1, 1, 0, a_sk, rho, result) {}
+        std::shared_ptr<digest_variable<FieldT>> result,
+	const std::string &annotation_prefix
+		  ) : PRF_gadget<FieldT>(pb, ZERO, 1, 1, 1, 0, a_sk, rho, result, annotation_prefix) {}
 };
 
 template<typename FieldT>
@@ -91,8 +94,9 @@ public:
         pb_variable_array<FieldT>& a_sk,
         pb_variable_array<FieldT>& h_sig,
         bool nonce,
-        std::shared_ptr<digest_variable<FieldT>> result
-    ) : PRF_gadget<FieldT>(pb, ZERO, 0, nonce, 0, 0, a_sk, h_sig, result) {}
+        std::shared_ptr<digest_variable<FieldT>> result,
+	const std::string &annotation_prefix
+		  ) : PRF_gadget<FieldT>(pb, ZERO, 0, nonce, 0, 0, a_sk, h_sig, result, annotation_prefix) {}
 };
 
 template<typename FieldT>
@@ -104,6 +108,7 @@ public:
         pb_variable_array<FieldT>& phi,
         pb_variable_array<FieldT>& h_sig,
         bool nonce,
-        std::shared_ptr<digest_variable<FieldT>> result
-    ) : PRF_gadget<FieldT>(pb, ZERO, 0, nonce, 1, 0, phi, h_sig, result) {}
+        std::shared_ptr<digest_variable<FieldT>> result,
+	const std::string &annotation_prefix
+    ) : PRF_gadget<FieldT>(pb, ZERO, 0, nonce, 1, 0, phi, h_sig, result, annotation_prefix) {}
 };
