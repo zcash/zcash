@@ -78,6 +78,7 @@ join a pool. There are several pools in operation at the moment, for example:
     http://votecoin.catspool.org/
     https://multipool.es
     http://pcmining.xyz:8080
+    https://vot.lucky-mining.com.ua
 
 
 
