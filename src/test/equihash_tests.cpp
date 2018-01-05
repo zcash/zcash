@@ -15,6 +15,8 @@
 
 #include "sodium.h"
 
+#include "librustzcash.h"
+
 #include <sstream>
 #include <set>
 #include <vector>
@@ -87,6 +89,9 @@ void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, c
 
 void TestEquihashValidator(unsigned int n, unsigned int k, const std::string &I, const arith_uint256 &nonce, std::vector<uint32_t> soln, bool expected) {
     size_t cBitLen { n/(k+1) };
+    auto minimal = GetMinimalFromIndices(soln, cBitLen);
+
+    // First test the C++ validator
     crypto_generichash_blake2b_state state;
     EhInitialiseState(n, k, state);
     uint256 V = ArithToUint256(nonce);
@@ -97,7 +102,15 @@ void TestEquihashValidator(unsigned int n, unsigned int k, const std::string &I,
     PrintSolution(strm, soln);
     BOOST_TEST_MESSAGE(strm.str());
     bool isValid;
-    EhIsValidSolution(n, k, state, GetMinimalFromIndices(soln, cBitLen), isValid);
+    EhIsValidSolution(n, k, state, minimal, isValid);
+    BOOST_CHECK(isValid == expected);
+
+    // The Rust validator should have the exact same result
+    isValid = librustzcash_eh_isvalid(
+        n, k,
+        (unsigned char*)&I[0], I.size(),
+        V.begin(), V.size(),
+        minimal.data(), minimal.size());
     BOOST_CHECK(isValid == expected);
 }
 

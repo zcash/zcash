@@ -14,6 +14,7 @@
 #include "uint256.h"
 #include "util.h"
 
+#include <librustzcash.h>
 #include "sodium.h"
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
@@ -105,6 +106,15 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const Consensus::Params& 
     // I||V
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << I;
+
+    // Check with the Rust validator
+    bool isValidWithRust = librustzcash_eh_isvalid(
+        n, k,
+        (unsigned char*)&ss[0], ss.size(),
+        pblock->nNonce.begin(), pblock->nNonce.size(),
+        pblock->nSolution.data(), pblock->nSolution.size());
+
+    // Now check with the C++ validator
     ss << pblock->nNonce;
 
     // H(I||V||...
@@ -112,6 +122,13 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const Consensus::Params& 
 
     bool isValid;
     EhIsValidSolution(n, k, state, pblock->nSolution, isValid);
+
+    if (isValid != isValidWithRust) {
+        return error(
+            "CheckEquihashSolution(): C++ validator says %s but Rust validator says %s",
+            isValid, isValidWithRust);
+    }
+
     if (!isValid)
         return error("CheckEquihashSolution(): invalid solution");
 
