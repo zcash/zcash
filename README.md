@@ -1,3 +1,6 @@
+NOTICE: We are mainly using v1.0.5 which is still p2p port 8133 and rpcport is 8232
+
+
 Zclassic v1.0.10-1
 
 NOTICE, the default ports have changed! The p2p port is now 8033 and rpcport is 8023
