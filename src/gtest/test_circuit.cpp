@@ -97,8 +97,8 @@ bool test_merkle_gadget(
     pb_variable<FieldT> commitment2_read;
     commitment2_read.allocate(pb);
 
-    merkle_tree_gadget<FieldT> mgadget1(pb, commitment1, root, commitment1_read);
-    merkle_tree_gadget<FieldT> mgadget2(pb, commitment2, root, commitment2_read);
+    merkle_tree_gadget<FieldT> mgadget1(pb, commitment1, root, commitment1_read, "mgadget_1");
+    merkle_tree_gadget<FieldT> mgadget2(pb, commitment2, root, commitment2_read, "mgadget_2");
 
     commitment1.generate_r1cs_constraints();
     commitment2.generate_r1cs_constraints();
