@@ -14,7 +14,7 @@ public:
             generate_boolean_r1cs_constraint<FieldT>(
                 this->pb,
                 value[i],
-                FMT(this->annotation_prefix, " boolean_value")
+                FMT(this->annotation_prefix, " boolean_value[%d]", i)
             );
         }
 

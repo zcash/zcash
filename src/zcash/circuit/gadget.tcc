@@ -177,7 +177,7 @@ public:
                 generate_boolean_r1cs_constraint<FieldT>(
                     this->pb,
                     zk_total_uint64[i],
-                    FMT(this->annotation_prefix, " ensure_left_is_64")
+                    FMT(this->annotation_prefix, " ensure_left_is_64[%d]", i)
                 );
             }
 
