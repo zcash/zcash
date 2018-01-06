@@ -83,6 +83,8 @@ BITCOIN_TESTS =\
   test/skiplist_tests.cpp \
   test/test_bitcoin.cpp \
   test/test_bitcoin.h \
+  test/test_util.cpp \
+  test/test_util.h \
   test/timedata_tests.cpp \
   test/torcontrol_tests.cpp \
   test/transaction_tests.cpp \

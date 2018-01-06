@@ -14,6 +14,7 @@
 #include "script/sign.h"
 #include "util.h"
 #include "test/test_bitcoin.h"
+#include "test/test_util.h"
 
 #if defined(HAVE_CONSENSUS_LIB)
 #include "script/zcashconsensus.h"
@@ -35,22 +36,6 @@ using namespace std;
 // #define UPDATE_JSON_TESTS
 
 static const unsigned int flags = SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC;
-
-unsigned int ParseScriptFlags(string strFlags);
-string FormatScriptFlags(unsigned int flags);
-
-UniValue
-read_json(const std::string& jsondata)
-{
-    UniValue v;
-
-    if (!v.read(jsondata) || !v.isArray())
-    {
-        BOOST_ERROR("Parse error.");
-        return UniValue(UniValue::VARR);
-    }
-    return v.get_array();
-}
 
 BOOST_FIXTURE_TEST_SUITE(script_tests, BasicTestingSetup)
 

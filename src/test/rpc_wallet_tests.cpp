@@ -10,10 +10,10 @@
 #include "wallet/wallet.h"
 
 #include "test/test_bitcoin.h"
+#include "test/test_util.h"
 
 #include "zcash/Address.hpp"
 
-#include "rpcserver.h"
 #include "asyncrpcqueue.h"
 #include "asyncrpcoperation.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
@@ -32,13 +32,11 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/optional.hpp>
 
 #include <univalue.h>
 
 using namespace std;
-
-extern UniValue createArgs(int nRequired, const char* address1 = NULL, const char* address2 = NULL);
-extern UniValue CallRPC(string args);
 
 extern CWallet* pwalletMain;
 
