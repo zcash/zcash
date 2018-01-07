@@ -1,12 +1,11 @@
 #include <gtest/gtest.h>
 
+#include "gtest/utils.h"
 #include "primitives/transaction.h"
 #include "zcash/Note.hpp"
 #include "zcash/Address.hpp"
 
 extern ZCJoinSplit* params;
-extern int GenZero(int n);
-extern int GenMax(int n);
 
 TEST(Transaction, JSDescriptionRandomized) {
     // construct a merkle tree
