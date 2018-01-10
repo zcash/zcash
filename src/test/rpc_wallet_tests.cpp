@@ -134,8 +134,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_THROW(CallRPC("listunspent string"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("listunspent 0 string"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("listunspent 0 1 not_array"), runtime_error);
-    BOOST_CHECK_THROW(CallRPC("listunspent 0 1 [] extra"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("listunspent 0 1 [] not_number"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("listunspent 0 1 [] 1 extra"), runtime_error);
     BOOST_CHECK_NO_THROW(r = CallRPC("listunspent 0 1 []"));
+    BOOST_CHECK_NO_THROW(r = CallRPC("listunspent 0 1 [] 1"));
     BOOST_CHECK(r.get_array().empty());
 
     /*********************************
