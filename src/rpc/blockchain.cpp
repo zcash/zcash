@@ -93,14 +93,22 @@ static UniValue ValuePoolDesc(
     return rv;
 }
 
-UniValue blockheaderToJSON(const CBlockIndex* blockindex)
+static int ComputeNextBlockAndDepth(const CBlockIndex* tip, const CBlockIndex* blockindex, const CBlockIndex*& next)
+{
+    next = tip->GetAncestor(blockindex->nHeight + 1);
+    if (next && next->pprev == blockindex) {
+        return tip->nHeight - blockindex->nHeight + 1;
+    }
+    next = nullptr;
+    return blockindex == tip ? 1 : -1;
+}
+
+UniValue blockheaderToJSON(const CBlockIndex* tip, const CBlockIndex* blockindex)
 {
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("hash", blockindex->GetBlockHash().GetHex()));
-    int confirmations = -1;
-    // Only report confirmations if the block is on the main chain
-    if (chainActive.Contains(blockindex))
-        confirmations = chainActive.Height() - blockindex->nHeight + 1;
+    const CBlockIndex* pnext;
+    int confirmations = ComputeNextBlockAndDepth(tip, blockindex, pnext);
     result.push_back(Pair("confirmations", confirmations));
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", blockindex->nVersion));
@@ -115,20 +123,17 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
 
     if (blockindex->pprev)
         result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
-    CBlockIndex *pnext = chainActive.Next(blockindex);
     if (pnext)
         result.push_back(Pair("nextblockhash", pnext->GetBlockHash().GetHex()));
     return result;
 }
 
-UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails)
+UniValue blockToJSON(const CBlock& block, const CBlockIndex* tip, const CBlockIndex* blockindex, bool txDetails)
 {
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("hash", block.GetHash().GetHex()));
-    int confirmations = -1;
-    // Only report confirmations if the block is on the main chain
-    if (chainActive.Contains(blockindex))
-        confirmations = chainActive.Height() - blockindex->nHeight + 1;
+    const CBlockIndex* pnext;
+    int confirmations = ComputeNextBlockAndDepth(tip, blockindex, pnext);
     result.push_back(Pair("confirmations", confirmations));
     result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
     result.push_back(Pair("height", blockindex->nHeight));
@@ -163,7 +168,6 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
 
     if (blockindex->pprev)
         result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
-    CBlockIndex *pnext = chainActive.Next(blockindex);
     if (pnext)
         result.push_back(Pair("nextblockhash", pnext->GetBlockHash().GetHex()));
     return result;
@@ -388,7 +392,7 @@ UniValue getblockheader(const UniValue& params, bool fHelp)
         return strHex;
     }
 
-    return blockheaderToJSON(pblockindex);
+    return blockheaderToJSON(chainActive.Tip(), pblockindex);
 }
 
 UniValue getblock(const UniValue& params, bool fHelp)
@@ -500,7 +504,7 @@ UniValue getblock(const UniValue& params, bool fHelp)
         return strHex;
     }
 
-    return blockToJSON(block, pblockindex, verbosity >= 2);
+    return blockToJSON(block, chainActive.Tip(), pblockindex, verbosity >= 2);
 }
 
 UniValue gettxoutsetinfo(const UniValue& params, bool fHelp)
