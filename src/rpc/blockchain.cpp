@@ -924,10 +924,10 @@ UniValue verifychain(const UniValue& params, bool fHelp)
 }
 
 /** Implementation of IsSuperMajority with better feedback */
-static UniValue SoftForkMajorityDesc(int minVersion, CBlockIndex* pindex, int nRequired, const Consensus::Params& consensusParams)
+static UniValue SoftForkMajorityDesc(int minVersion, const CBlockIndex* pindex, int nRequired, const Consensus::Params& consensusParams)
 {
     int nFound = 0;
-    CBlockIndex* pstart = pindex;
+    const CBlockIndex* pstart = pindex;
     for (int i = 0; i < consensusParams.nMajorityWindow && pstart != NULL; i++)
     {
         if (pstart->nVersion >= minVersion)
@@ -943,7 +943,7 @@ static UniValue SoftForkMajorityDesc(int minVersion, CBlockIndex* pindex, int nR
     return rv;
 }
 
-static UniValue SoftForkDesc(const std::string &name, int version, CBlockIndex* pindex, const Consensus::Params& consensusParams)
+static UniValue SoftForkDesc(const std::string &name, int version, const CBlockIndex* pindex, const Consensus::Params& consensusParams)
 {
     UniValue rv(UniValue::VOBJ);
     rv.pushKV("id", name);
