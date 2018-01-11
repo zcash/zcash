@@ -659,8 +659,6 @@ UniValue getblockheader(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getblockheader", "\"00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09\"")
         );
 
-    LOCK(cs_main);
-
     std::string strHash = params[0].get_str();
     uint256 hash(uint256S(strHash));
 
@@ -668,10 +666,16 @@ UniValue getblockheader(const UniValue& params, bool fHelp)
     if (params.size() > 1)
         fVerbose = params[1].get_bool();
 
-    if (mapBlockIndex.count(hash) == 0)
+    const CBlockIndex* pblockindex = nullptr;
+    const CBlockIndex* tip;
+    {
+        LOCK(cs_main);
+        if (mapBlockIndex.count(hash) > 0) pblockindex = mapBlockIndex[hash];
+        tip = chainActive.Tip();
+    }
+    if (!pblockindex) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
-
-    CBlockIndex* pblockindex = mapBlockIndex[hash];
+    }
 
     if (!fVerbose)
     {
@@ -681,7 +685,7 @@ UniValue getblockheader(const UniValue& params, bool fHelp)
         return strHex;
     }
 
-    return blockheaderToJSON(chainActive.Tip(), pblockindex);
+    return blockheaderToJSON(tip, pblockindex);
 }
 
 UniValue getblock(const UniValue& params, bool fHelp)
