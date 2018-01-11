@@ -622,6 +622,8 @@ void UnregisterNodeSignals(CNodeSignals& nodeSignals)
 
 CBlockIndex* FindForkInGlobalIndex(const CChain& chain, const CBlockLocator& locator)
 {
+    AssertLockHeld(cs_main);
+
     // Find the first block the caller has in the main chain
     for (const uint256& hash : locator.vHave) {
         BlockMap::iterator mi = mapBlockIndex.find(hash);
@@ -4446,6 +4448,8 @@ bool ReconsiderBlock(CValidationState& state, CBlockIndex *pindex) {
 
 CBlockIndex* AddToBlockIndex(const CBlockHeader& block, const Consensus::Params& consensusParams)
 {
+    AssertLockHeld(cs_main);
+
     // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator it = mapBlockIndex.find(hash);
@@ -5329,6 +5333,8 @@ fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix)
 
 CBlockIndex * InsertBlockIndex(uint256 hash)
 {
+    AssertLockHeld(cs_main);
+
     if (hash.IsNull())
         return NULL;
 
@@ -5349,6 +5355,8 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
 
 bool static LoadBlockIndexDB(const CChainParams& chainparams)
 {
+    AssertLockHeld(cs_main);
+
     if (!pblocktree->LoadBlockIndexGuts(InsertBlockIndex, chainparams))
         return false;
 
