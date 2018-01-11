@@ -1039,20 +1039,21 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
 
+    const CBlockIndex* const tip = chainActive.Tip();
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("chain",                 Params().NetworkIDString());
     obj.pushKV("blocks",                (int)chainActive.Height());
     obj.pushKV("initial_block_download_complete", !IsInitialBlockDownload(Params().GetConsensus()));
     obj.pushKV("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1);
-    obj.pushKV("bestblockhash",         chainActive.Tip()->GetBlockHash().GetHex());
+    obj.pushKV("bestblockhash",         tip->GetBlockHash().GetHex());
     obj.pushKV("difficulty",            (double)GetNetworkDifficulty());
-    obj.pushKV("verificationprogress",  Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.Tip()));
-    obj.pushKV("chainwork",             chainActive.Tip()->nChainWork.GetHex());
+    obj.pushKV("verificationprogress",  Checkpoints::GuessVerificationProgress(Params().Checkpoints(), tip));
+    obj.pushKV("chainwork",             tip->nChainWork.GetHex());
     obj.pushKV("pruned",                fPruneMode);
     obj.pushKV("size_on_disk",          CalculateCurrentUsage());
 
     if (IsInitialBlockDownload(Params().GetConsensus()))
-        obj.pushKV("estimatedheight",       EstimateNetHeight(Params().GetConsensus(), (int)chainActive.Height(), chainActive.Tip()->GetMedianTimePast()));
+        obj.pushKV("estimatedheight",       EstimateNetHeight(Params().GetConsensus(), (int)chainActive.Height(), tip->GetMedianTimePast()));
     else
         obj.pushKV("estimatedheight",       (int)chainActive.Height());
 
@@ -1060,7 +1061,6 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), tree);
     obj.pushKV("commitments",           static_cast<uint64_t>(tree.size()));
 
-    CBlockIndex* tip = chainActive.Tip();
     UniValue valuePools(UniValue::VARR);
     valuePools.push_back(ValuePoolDesc("sprout", tip->nChainSproutValue, std::nullopt));
     valuePools.push_back(ValuePoolDesc("sapling", tip->nChainSaplingValue, std::nullopt));
@@ -1088,7 +1088,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
 
     if (fPruneMode)
     {
-        CBlockIndex *block = chainActive.Tip();
+        const CBlockIndex *block = tip;
         while (block && block->pprev && (block->pprev->nStatus & BLOCK_HAVE_DATA))
             block = block->pprev;
 
