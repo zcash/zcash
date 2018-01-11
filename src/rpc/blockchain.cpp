@@ -33,15 +33,7 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fInclud
  */
 double GetDifficultyINTERNAL(const CChain& chain, const CBlockIndex* blockindex, bool networkDifficulty)
 {
-    // Floating point number that is a multiple of the minimum difficulty,
-    // minimum difficulty = 1.0.
-    if (blockindex == NULL)
-    {
-        if (chain.Tip() == NULL)
-            return 1.0;
-        else
-            blockindex = chain.Tip();
-    }
+    assert(blockindex);
 
     uint32_t bits;
     if (networkDifficulty) {
@@ -660,7 +652,7 @@ UniValue verifychain(const UniValue& params, bool fHelp)
 static UniValue SoftForkMajorityDesc(int minVersion, const CBlockIndex* pindex, int nRequired, const Consensus::Params& consensusParams)
 {
     int nFound = 0;
-    CBlockIndex* pstart = pindex;
+    const CBlockIndex* pstart = pindex;
     for (int i = 0; i < consensusParams.nMajorityWindow && pstart != NULL; i++)
     {
         if (pstart->nVersion >= minVersion)
@@ -770,14 +762,15 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
 
+    const CBlockIndex* tip = chainActive.Tip();
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("chain",                 Params().NetworkIDString()));
     obj.push_back(Pair("blocks",                (int)chainActive.Height()));
     obj.push_back(Pair("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1));
-    obj.push_back(Pair("bestblockhash",         chainActive.Tip()->GetBlockHash().GetHex()));
+    obj.push_back(Pair("bestblockhash",         tip->GetBlockHash().GetHex()));
     obj.push_back(Pair("difficulty",            (double)GetNetworkDifficulty()));
-    obj.push_back(Pair("verificationprogress",  Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.Tip())));
-    obj.push_back(Pair("chainwork",             chainActive.Tip()->nChainWork.GetHex()));
+    obj.push_back(Pair("verificationprogress",  Checkpoints::GuessVerificationProgress(Params().Checkpoints(), tip)));
+    obj.push_back(Pair("chainwork",             tip->nChainWork.GetHex()));
     obj.push_back(Pair("pruned",                fPruneMode));
     obj.push_back(Pair("size_on_disk",          CalculateCurrentUsage()));
 
@@ -785,7 +778,6 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), tree);
     obj.push_back(Pair("commitments",           static_cast<uint64_t>(tree.size())));
 
-    CBlockIndex* tip = chainActive.Tip();
     UniValue valuePools(UniValue::VARR);
     valuePools.push_back(ValuePoolDesc("sprout", tip->nChainSproutValue, boost::none));
     valuePools.push_back(ValuePoolDesc("sapling", tip->nChainSaplingValue, boost::none));
@@ -811,7 +803,8 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
 
     if (fPruneMode)
     {
-        CBlockIndex *block = chainActive.Tip();
+        const CBlockIndex* block = tip;
+        assert(block);
         while (block && block->pprev && (block->pprev->nStatus & BLOCK_HAVE_DATA))
             block = block->pprev;
 
