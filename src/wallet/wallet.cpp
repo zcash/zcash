@@ -4803,6 +4803,8 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
 
     RegisterValidationInterface(walletInstance);
 
+    LOCK(cs_main);
+
     CBlockIndex *pindexRescan = chainActive.Genesis();
     if (clearWitnessCaches || GetBoolArg("-rescan", false)) {
         walletInstance->ClearNoteWitnessCache();
