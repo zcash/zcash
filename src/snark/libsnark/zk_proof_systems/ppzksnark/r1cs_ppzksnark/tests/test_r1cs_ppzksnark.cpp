@@ -38,6 +38,8 @@ void test_r1cs_ppzksnark(size_t num_constraints,
 
 TEST(zk_proof_systems, r1cs_ppzksnark)
 {
+    alt_bn128_pp::init_public_params();
+
     start_profiling();
 
     test_r1cs_ppzksnark<alt_bn128_pp>(1000, 20);

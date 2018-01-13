@@ -86,6 +86,8 @@ void test_qap(const size_t qap_degree, const size_t num_inputs, const bool binar
 
 TEST(relations, qap)
 {
+    alt_bn128_pp::init_public_params();
+
     start_profiling();
 
     const size_t num_inputs = 10;
