@@ -216,7 +216,7 @@ ZCProof ZCProof::random_invalid()
     return p;
 }
 
-std::once_flag init_public_params_once_flag;
+static std::once_flag init_public_params_once_flag;
 
 void initialize_curve_params()
 {
