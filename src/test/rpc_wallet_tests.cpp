@@ -40,8 +40,27 @@ using namespace std;
 
 extern CWallet* pwalletMain;
 
+namespace {
+
 bool find_error(const UniValue& objError, const std::string& expected) {
     return find_value(objError, "message").get_str().find(expected) != string::npos;
+}
+
+/** Set the working directory for the duration of the scope. */
+class PushCurrentDirectory {
+public:
+    PushCurrentDirectory(const std::string &new_cwd)
+        : old_cwd(boost::filesystem::current_path()) {
+        boost::filesystem::current_path(new_cwd);
+    }
+
+    ~PushCurrentDirectory() {
+        boost::filesystem::current_path(old_cwd);
+    }
+private:
+    boost::filesystem::path old_cwd;
+};
+
 }
 
 BOOST_FIXTURE_TEST_SUITE(rpc_wallet_tests, TestingSetup)
@@ -1212,7 +1231,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     strWalletPass.reserve(100);
     strWalletPass = "hello";
 
-    boost::filesystem::current_path(GetArg("-datadir","/tmp/thisshouldnothappen"));
+    PushCurrentDirectory push_dir(GetArg("-datadir","/tmp/thisshouldnothappen"));
     BOOST_CHECK(pwalletMain->EncryptWallet(strWalletPass));
 
     // Verify we can still list the keys imported
