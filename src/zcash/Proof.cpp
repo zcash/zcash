@@ -202,6 +202,7 @@ r1cs_ppzksnark_proof<curve_pp> ZCProof::to_libsnark_proof() const
 
 ZCProof ZCProof::random_invalid()
 {
+    initialize_curve_params();
     ZCProof p;
     p.g_A = curve_G1::random_element();
     p.g_A_prime = curve_G1::random_element();
