@@ -517,6 +517,10 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-rpcservertimeout=<n>", strprintf("Timeout during HTTP requests (default: %d)", DEFAULT_HTTP_SERVER_TIMEOUT));
     }
 
+    strUsage += HelpMessageGroup(_("Zcash network parameter options:"));
+    strUsage += HelpMessageOpt("-sprout-proving-key", _("Path to the Sprout proving key"));
+    strUsage += HelpMessageOpt("-sprout-verifying-key", _("Path to the Sprout verifying key"));
+
     // Disabled until we can lock notes and also tune performance of libsnark which by default uses multiple threads
     //strUsage += HelpMessageOpt("-rpcasyncthreads=<n>", strprintf(_("Set the number of threads to service Async RPC calls (default: %d)"), 1));
 
@@ -668,23 +672,48 @@ bool InitSanityCheck(void)
     return true;
 }
 
+static boost::filesystem::path ZC_KeyPath(const char* key_arg, const char* default_file_name)
+{
+    bool key_file_specified = !!mapArgs.count(key_arg);
+    boost::filesystem::path path = key_file_specified ?
+        boost::filesystem::path(mapArgs[key_arg]) :
+        ZC_GetParamsDir() / default_file_name;
+
+    if (!boost::filesystem::exists(path)) {
+        if (key_file_specified) {
+            uiInterface.ThreadSafeMessageBox(strprintf(
+                _("Cannot find the Zcash key parameter file at the specified path:\n"
+                  "%s\n"),
+                    path),
+                "", CClientUIInterface::MSG_ERROR);
+        } else {
+            uiInterface.ThreadSafeMessageBox(strprintf(
+                _("Cannot find the Zcash network parameters in the following directory:\n"
+                  "%s\n"
+                  "Please run 'zcash-fetch-params' or './zcutil/fetch-params.sh' and then restart."),
+                    ZC_GetParamsDir()),
+                "", CClientUIInterface::MSG_ERROR);
+        }
+        StartShutdown();
+        return boost::filesystem::path();
+    }
+
+    return path;
+}
 
 static void ZC_LoadParams()
 {
     struct timeval tv_start, tv_end;
     float elapsed;
 
-    boost::filesystem::path pk_path = ZC_GetParamsDir() / "sprout-proving.key";
-    boost::filesystem::path vk_path = ZC_GetParamsDir() / "sprout-verifying.key";
-
-    if (!(boost::filesystem::exists(pk_path) && boost::filesystem::exists(vk_path))) {
-        uiInterface.ThreadSafeMessageBox(strprintf(
-            _("Cannot find the Zcash network parameters in the following directory:\n"
-              "%s\n"
-              "Please run 'zcash-fetch-params' or './zcutil/fetch-params.sh' and then restart."),
-                ZC_GetParamsDir()),
-            "", CClientUIInterface::MSG_ERROR);
-        StartShutdown();
+    boost::filesystem::path pk_path =
+        ZC_KeyPath("-sprout-proving-key", "sprout-proving.key");
+    if (pk_path.empty()) {
+        return;
+    }
+    boost::filesystem::path vk_path =
+        ZC_KeyPath("-sprout-verifying-key", "sprout-verifying.key");
+    if (vk_path.empty()) {
         return;
     }
 
