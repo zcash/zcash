@@ -16,13 +16,12 @@ JSDescription::JSDescription(ZCJoinSplit& params,
             const boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             CAmount vpub_old,
             CAmount vpub_new,
-            bool computeProof) : vpub_old(vpub_old), vpub_new(vpub_new), anchor(anchor)
+            bool computeProof,
+            uint256 *esk // payment disclosure
+            ) : vpub_old(vpub_old), vpub_new(vpub_new), anchor(anchor)
 {
     boost::array<libzcash::Note, ZC_NUM_JS_OUTPUTS> notes;
 
-    if (computeProof) {
-        params.loadProvingKey();
-    }
     proof = params.prove(
         inputs,
         outputs,
@@ -37,7 +36,8 @@ JSDescription::JSDescription(ZCJoinSplit& params,
         vpub_old,
         vpub_new,
         anchor,
-        computeProof
+        computeProof,
+        esk // payment disclosure
     );
 }
 
@@ -52,7 +52,9 @@ JSDescription JSDescription::Randomized(
             CAmount vpub_old,
             CAmount vpub_new,
             bool computeProof,
-            std::function<int(int)> gen)
+            uint256 *esk, // payment disclosure
+            std::function<int(int)> gen
+        )
 {
     // Randomize the order of the inputs and outputs
     inputMap = {0, 1};
@@ -65,7 +67,9 @@ JSDescription JSDescription::Randomized(
 
     return JSDescription(
         params, pubKeyHash, anchor, inputs, outputs,
-        vpub_old, vpub_new, computeProof);
+        vpub_old, vpub_new, computeProof,
+        esk // payment disclosure
+    );
 }
 
 bool JSDescription::Verify(

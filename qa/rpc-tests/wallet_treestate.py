@@ -6,7 +6,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_nodes, connect_nodes_bi
+    start_nodes, connect_nodes_bi, wait_and_assert_operationid_status
 
 import time
 from decimal import Decimal
@@ -26,30 +26,6 @@ class WalletTreeStateTest (BitcoinTestFramework):
         self.is_network_split=False
         self.sync_all()
 
-    def wait_and_assert_operationid_status(self, myopid, in_status='success', in_errormsg=None):
-        print('waiting for async operation {}'.format(myopid))
-        opids = []
-        opids.append(myopid)
-        timeout = 300
-        status = None
-        errormsg = None
-        for x in xrange(1, timeout):
-            results = self.nodes[0].z_getoperationresult(opids)
-            if len(results)==0:
-                time.sleep(1)
-            else:
-                status = results[0]["status"]
-                if status == "failed":
-                    errormsg = results[0]['error']['message']
-                break
-        print('...returned status: {}'.format(status))
-        print('...error msg: {}'.format(errormsg))
-        assert_equal(in_status, status)
-        if errormsg is not None:
-            assert(in_errormsg is not None)
-            assert_equal(in_errormsg in errormsg, True)
-            print('...returned error: {}'.format(errormsg))
-
     def run_test (self):
         print "Mining blocks..."
 
@@ -65,17 +41,17 @@ class WalletTreeStateTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":myzaddr, "amount":Decimal('10.0') - Decimal('0.0001')})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        self.wait_and_assert_operationid_status(myopid)
+        wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        self.wait_and_assert_operationid_status(myopid)
+        wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        self.wait_and_assert_operationid_status(myopid)
+        wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
@@ -92,7 +68,7 @@ class WalletTreeStateTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":self.nodes[2].z_getnewaddress(), "amount":Decimal('10.0') - Decimal('0.0001')})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        self.wait_and_assert_operationid_status(myopid)
+        wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Tx 2 will consume all three notes, which must take at least two joinsplits.  This is regardless of
         # the z_sendmany implementation because there are only two inputs per joinsplit.
@@ -115,7 +91,7 @@ class WalletTreeStateTest (BitcoinTestFramework):
         self.sync_all()
 
         # Wait for Tx 2 to be created
-        self.wait_and_assert_operationid_status(myopid)
+        wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Note that a bug existed in v1.0.0-1.0.3 where Tx 2 creation would fail with an error:
         # "Witness for spendable note does not have same anchor as change input"

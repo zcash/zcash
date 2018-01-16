@@ -17,6 +17,8 @@
 #include "asyncrpcqueue.h"
 #include "asyncrpcoperation.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
+#include "wallet/asyncrpcoperation_shieldcoinbase.h"
+
 #include "rpcprotocol.h"
 #include "init.h"
 
@@ -289,20 +291,20 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
 
     LOCK(pwalletMain->cs_wallet);
 
-    
+
     BOOST_CHECK_THROW(CallRPC("z_getbalance too many args"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_getbalance invalidaddress"), runtime_error);
     BOOST_CHECK_NO_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab"));
     BOOST_CHECK_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab -1"), runtime_error);
     BOOST_CHECK_NO_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab 0"));
     BOOST_CHECK_THROW(CallRPC("z_getbalance tnRZ8bPq2pff3xBWhTJhNkVUkm2uhzksDeW5PvEa7aFKGT9Qi3YgTALZfjaY4jU3HLVKBtHdSXxoPoLA3naMPcHBcY88FcF 1"), runtime_error);
-   
-    
+
+
     BOOST_CHECK_THROW(CallRPC("z_gettotalbalance too manyargs"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_gettotalbalance -1"), runtime_error);
     BOOST_CHECK_NO_THROW(CallRPC("z_gettotalbalance 0"));
-    
-    
+
+
     BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress too many args"), runtime_error);
     // negative minconf not allowed
     BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab -1"), runtime_error);
@@ -374,7 +376,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     CZCPaymentAddress paymentAddress = pwalletMain->GenerateNewZKey();
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==1);
-    
+
     // Set up paths
     boost::filesystem::path tmppath = boost::filesystem::temp_directory_path();
     boost::filesystem::path tmpfilename = boost::filesystem::unique_path("%%%%%%%%");
@@ -402,10 +404,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
 
     std::string s1 = paymentAddress.ToString();
     std::string s2 = CZCSpendingKey(key).ToString();
-    
+
     // There's no way to really delete a private key so we will read in the
     // exported wallet file and search for the spending key and payment address.
-    
+
     EnsureWalletIsUnlocked();
 
     ifstream file;
@@ -434,7 +436,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    
+
     // error if no args
     BOOST_CHECK_THROW(CallRPC("z_importwallet"), runtime_error);
 
@@ -446,7 +448,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     auto testPaymentAddress = testSpendingKey.address();
     std::string testAddr = CZCPaymentAddress(testPaymentAddress).ToString();
     std::string testKey = CZCSpendingKey(testSpendingKey).ToString();
-    
+
     // create test data using the random key
     std::string format_str = "# Wallet dump created by Zcash v0.11.2.0.z8-9155cc6-dirty (2016-08-11 11:37:00 -0700)\n"
             "# * Created on 2016-08-12T21:55:36Z\n"
@@ -458,10 +460,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
             "%s 2016-08-12T21:55:36Z # zaddr=%s\n"
             "\n"
             "\n# End of dump";
-    
+
     boost::format formatobject(format_str);
     std::string testWalletDump = (formatobject % testKey % testAddr).str();
-    
+
     // write test data to file
     boost::filesystem::path temp = boost::filesystem::temp_directory_path() /
             boost::filesystem::unique_path();
@@ -474,19 +476,19 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     std::set<libzcash::PaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
-    
+
     // import test data from file into wallet
     BOOST_CHECK_NO_THROW(CallRPC(string("z_importwallet ") + path));
-        
+
     // wallet should now have one zkey
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==1);
-    
+
     // check that we have the spending key for the address
     CZCPaymentAddress address(testAddr);
     auto addr = address.Get();
     BOOST_CHECK(pwalletMain->HaveSpendingKey(addr));
-    
+
     // Verify the spending key is the same as the test data
     libzcash::SpendingKey k;
     BOOST_CHECK(pwalletMain->GetSpendingKey(addr, k));
@@ -504,10 +506,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     UniValue retValue;
     int n1 = 1000; // number of times to import/export
     int n2 = 1000; // number of addresses to create and list
-   
+
     // error if no args
-    BOOST_CHECK_THROW(CallRPC("z_importkey"), runtime_error);   
-    BOOST_CHECK_THROW(CallRPC("z_exportkey"), runtime_error);   
+    BOOST_CHECK_THROW(CallRPC("z_importkey"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_exportkey"), runtime_error);
 
     // error if too many args
     BOOST_CHECK_THROW(CallRPC("z_importkey way too many args"), runtime_error);
@@ -548,7 +550,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     for (UniValue element : arr.getValues()) {
         myaddrs.insert(element.get_str());
     }
-    
+
     // Make new addresses for the set
     for (int i=0; i<n2; i++) {
         myaddrs.insert((pwalletMain->GenerateNewZKey()).ToString());
@@ -558,19 +560,19 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     int numAddrs = myaddrs.size();
     BOOST_CHECK(numAddrs == n1+n2);
     pwalletMain->GetPaymentAddresses(addrs);
-    BOOST_CHECK(addrs.size()==numAddrs);  
-    
+    BOOST_CHECK(addrs.size()==numAddrs);
+
     // Ask wallet to list addresses
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
     arr = retValue.get_array();
     BOOST_CHECK(arr.size() == numAddrs);
-  
+
     // Create a set from them
     std::unordered_set<std::string> listaddrs;
     for (UniValue element : arr.getValues()) {
         listaddrs.insert(element.get_str());
     }
-    
+
     // Verify the two sets of addresses are the same
     BOOST_CHECK(listaddrs.size() == numAddrs);
     BOOST_CHECK(myaddrs == listaddrs);
@@ -623,19 +625,19 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations)
     BOOST_CHECK(ids.size()==0);
 
     std::shared_ptr<AsyncRPCOperation> op1 = std::make_shared<AsyncRPCOperation>();
-    q->addOperation(op1);    
+    q->addOperation(op1);
     BOOST_CHECK(q->getOperationCount() == 1);
-    
+
     OperationStatus status = op1->getState();
     BOOST_CHECK(status == OperationStatus::READY);
-    
+
     AsyncRPCOperationId id1 = op1->getId();
     int64_t creationTime1 = op1->getCreationTime();
- 
+
     q->addWorker();
     BOOST_CHECK(q->getNumberOfWorkers() == 1);
- 
-    // an AsyncRPCOperation doesn't do anything so will finish immediately 
+
+    // an AsyncRPCOperation doesn't do anything so will finish immediately
     std::this_thread::sleep_for(std::chrono::seconds(1));
     BOOST_CHECK(q->getOperationCount() == 0);
 
@@ -649,7 +651,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations)
     BOOST_CHECK_EQUAL(op1->getResult().isNull(), false);
     BOOST_CHECK_EQUAL(op1->getStateAsString(), "success");
     BOOST_CHECK_NE(op1->getStateAsString(), "executing");
-    
+
     // Create a second operation which just sleeps
     std::shared_ptr<AsyncRPCOperation> op2(new MockSleepOperation(2500));
     AsyncRPCOperationId id2 = op2->getId();
@@ -683,8 +685,8 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations)
     BOOST_CHECK_EQUAL(op2->isSuccess(), true);
     BOOST_CHECK_EQUAL(op2->isCancelled(), false);
     BOOST_CHECK_EQUAL(op3->isCancelled(), true);
-    
-   
+
+
     v = q->getAllOperationIds();
     std::copy( v.begin(), v.end(), std::inserter( opids, opids.end() ) );
     BOOST_CHECK(opids.size() == 3);
@@ -702,7 +704,7 @@ class CountOperation : public AsyncRPCOperation {
 public:
     CountOperation() {}
     virtual ~CountOperation() {}
-    virtual void main() {  
+    virtual void main() {
         set_state(OperationStatus::EXECUTING);
         gCounter++;
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -714,7 +716,7 @@ public:
 BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations_parallel_wait)
 {
     gCounter = 0;
-    
+
     std::shared_ptr<AsyncRPCQueue> q = std::make_shared<AsyncRPCQueue>();
     q->addWorker();
     q->addWorker();
@@ -739,7 +741,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations_parallel_wait)
 BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations_parallel_cancel)
 {
     gCounter = 0;
-    
+
     std::shared_ptr<AsyncRPCQueue> q = std::make_shared<AsyncRPCQueue>();
     q->addWorker();
     q->addWorker();
@@ -755,7 +757,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations_parallel_cancel)
     q->closeAndWait();
 
     int numSuccess = 0;
-    int numCancelled = 0; 
+    int numCancelled = 0;
     for (auto & id : ids) {
         std::shared_ptr<AsyncRPCOperation> ptr = q->popOperationForId(id);
         if (ptr->isCancelled()) {
@@ -764,7 +766,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations_parallel_cancel)
             numSuccess++;
         }
     }
-        
+
     BOOST_CHECK_EQUAL(numOperations, numSuccess+numCancelled);
     BOOST_CHECK_EQUAL(gCounter.load(), numSuccess);
     BOOST_CHECK(q->getOperationCount() == 0);
@@ -790,19 +792,19 @@ BOOST_AUTO_TEST_CASE(rpc_z_getoperations)
     BOOST_CHECK_NO_THROW(CallRPC("z_getoperationresult [\"opid-1234\"]"));
     BOOST_CHECK_THROW(CallRPC("z_getoperationresult [] toomanyargs"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_getoperationresult not_an_array"), runtime_error);
-    
+
     std::shared_ptr<AsyncRPCOperation> op1 = std::make_shared<AsyncRPCOperation>();
     q->addOperation(op1);
     std::shared_ptr<AsyncRPCOperation> op2 = std::make_shared<AsyncRPCOperation>();
     q->addOperation(op2);
-    
+
     BOOST_CHECK(q->getOperationCount() == 2);
     BOOST_CHECK(q->getNumberOfWorkers() == 0);
     q->addWorker();
     BOOST_CHECK(q->getNumberOfWorkers() == 1);
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     BOOST_CHECK(q->getOperationCount() == 0);
-    
+
     // Check if too many args
     BOOST_CHECK_THROW(CallRPC("z_listoperationids toomany args"), runtime_error);
 
@@ -817,28 +819,28 @@ BOOST_AUTO_TEST_CASE(rpc_z_getoperations)
     // idempotent
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getoperationstatus"));
     array = retValue.get_array();
-    BOOST_CHECK(array.size() == 2);   
-    
+    BOOST_CHECK(array.size() == 2);
+
     for (UniValue v : array.getValues()) {
         UniValue obj = v.get_obj();
         UniValue id = find_value(obj, "id");
-        
+
         UniValue result;
         // removes result from internal storage
         BOOST_CHECK_NO_THROW(result = CallRPC("z_getoperationresult [\"" + id.get_str() + "\"]"));
         UniValue resultArray = result.get_array();
         BOOST_CHECK(resultArray.size() == 1);
-        
+
         UniValue resultObj = resultArray[0].get_obj();
         UniValue resultId = find_value(resultObj, "id");
         BOOST_CHECK_EQUAL(id.get_str(), resultId.get_str());
-        
-        // verify the operation has been removed 
+
+        // verify the operation has been removed
         BOOST_CHECK_NO_THROW(result = CallRPC("z_getoperationresult [\"" + id.get_str() + "\"]"));
         resultArray = result.get_array();
         BOOST_CHECK(resultArray.size() == 0);
     }
-    
+
     // operations removed
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getoperationstatus"));
     array = retValue.get_array();
@@ -905,8 +907,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     std::string zaddr1 = pa.ToString();
     BOOST_CHECK_THROW(CallRPC(string("z_sendmany tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ ")
             + "[{\"address\":\"" + zaddr1 + "\", \"amount\":123.456}]"), runtime_error);
-    
-    // Test constructor of AsyncRPCOperation_sendmany 
+
+    // Test constructor of AsyncRPCOperation_sendmany
     try {
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany("",{}, {}, -1));
     } catch (const UniValue& objError) {
@@ -959,13 +961,13 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     LOCK(pwalletMain->cs_wallet);
 
     UniValue retValue;
- 
+
     // add keys manually
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
     std::string taddr1 = retValue.get_str();
     CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
     std::string zaddr1 = pa.ToString();
-    
+
     // there are no utxos to spend
     {
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1,100.0, "DEADBEEF") };
@@ -986,7 +988,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
             BOOST_CHECK(find_error(objError, "Minconf cannot be zero when sending from zaddr"));
         }
     }
-    
+
 
     // there are no unspent notes to spend
     {
@@ -1004,7 +1006,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(zaddr1, recipients, {}, 1) );
         std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
         TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
-        
+
         std::string memo = "DEADBEEF";
         boost::array<unsigned char, ZC_MEMO_SIZE> array = proxy.get_memo_from_hex_string(memo);
         BOOST_CHECK_EQUAL(array[0], 0xDE);
@@ -1014,28 +1016,28 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         for (int i=4; i<ZC_MEMO_SIZE; i++) {
             BOOST_CHECK_EQUAL(array[i], 0x00);  // zero padding
         }
-        
+
         // memo is longer than allowed
         std::vector<char> v (2 * (ZC_MEMO_SIZE+1));
         std::fill(v.begin(),v.end(), 'A');
         std::string bigmemo(v.begin(), v.end());
-        
+
         try {
             proxy.get_memo_from_hex_string(bigmemo);
         } catch (const UniValue& objError) {
             BOOST_CHECK( find_error(objError, "too big"));
         }
-        
+
         // invalid hexadecimal string
         std::fill(v.begin(),v.end(), '@'); // not a hex character
         std::string badmemo(v.begin(), v.end());
-        
+
         try {
             proxy.get_memo_from_hex_string(badmemo);
         } catch (const UniValue& objError) {
             BOOST_CHECK( find_error(objError, "hexadecimal format"));
         }
-        
+
         // odd length hexadecimal string
         std::fill(v.begin(),v.end(), 'A');
         v.resize(v.size() - 1);
@@ -1047,25 +1049,25 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
             BOOST_CHECK( find_error(objError, "hexadecimal format"));
         }
     }
-    
-    
+
+
     // add_taddr_change_output_to_tx() will append a vout to a raw transaction
     {
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1,100.0, "DEADBEEF") };
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(zaddr1, recipients, {}, 1) );
         std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
         TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
-        
+
         CTransaction tx = proxy.getTx();
         BOOST_CHECK(tx.vout.size() == 0);
-        
+
         CAmount amount = 123.456;
         proxy.add_taddr_change_output_to_tx(amount);
         tx = proxy.getTx();
         BOOST_CHECK(tx.vout.size() == 1);
         CTxOut out = tx.vout[0];
         BOOST_CHECK_EQUAL(out.nValue, amount);
-        
+
         amount = 1.111;
         proxy.add_taddr_change_output_to_tx(amount);
         tx = proxy.getTx();
@@ -1073,7 +1075,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         out = tx.vout[1];
         BOOST_CHECK_EQUAL(out.nValue, amount);
     }
-    
+
     // add_taddr_outputs_to_tx() will append many vouts to a raw transaction
     {
         std::vector<SendManyRecipient> recipients = {
@@ -1084,33 +1086,33 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(zaddr1, recipients, {}, 1) );
         std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
         TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
-        
+
         proxy.add_taddr_outputs_to_tx();
-        
+
         CTransaction tx = proxy.getTx();
         BOOST_CHECK(tx.vout.size() == 3);
         BOOST_CHECK_EQUAL(tx.vout[0].nValue, CAmount(1.23));
         BOOST_CHECK_EQUAL(tx.vout[1].nValue, CAmount(4.56));
         BOOST_CHECK_EQUAL(tx.vout[2].nValue, CAmount(7.89));
     }
-    
+
 
     // Raw joinsplit is a zaddr->zaddr
     {
         std::string raw = "020000000000000000000100000000000000001027000000000000183a0d4c46c369078705e39bcfebee59a978dbd210ce8de3efc9555a03fbabfd3cea16693d730c63850d7e48ccde79854c19adcb7e9dcd7b7d18805ee09083f6b16e1860729d2d4a90e2f2acd009cf78b5eb0f4a6ee4bdb64b1262d7ce9eb910c460b02022991e968d0c50ee44908e4ccccbc591d0053bcca154dd6d6fc400a29fa686af4682339832ccea362a62aeb9df0d5aa74f86a1e75ac0f48a8ccc41e0a940643c6c33e1d09223b0a46eaf47a1bb4407cfc12b1dcf83a29c0cef51e45c7876ca5b9e5bae86d92976eb3ef68f29cd29386a8be8451b50f82bf9da10c04651868655194da8f6ed3d241bb5b5ff93a3e2bbe44644544d88bcde5cc35978032ee92699c7a61fcbb395e7583f47e698c4d53ede54f956629400bf510fb5e22d03158cc10bdcaaf29e418ef18eb6480dd9c8b9e2a377809f9f32a556ef872febd0021d4ad013aa9f0b7255e98e408d302abefd33a71180b720271835b487ab309e160b06dfe51932120fb84a7ede16b20c53599a11071592109e10260f265ee60d48c62bfe24074020e9b586ce9e9356e68f2ad1a9538258234afe4b83a209f178f45202270eaeaeecaf2ce3100b2c5a714f75f35777a9ebff5ebf47059d2bbf6f3726190216468f2b152673b766225b093f3a2f827c86d6b48b42117fec1d0ac38dd7af700308dcfb02eba821612b16a2c164c47715b9b0c93900893b1aba2ea03765c94d87022db5be06ab338d1912e0936dfe87586d0a8ee49144a6cd2e306abdcb652faa3e0222739deb23154d778b50de75069a4a2cce1208cd1ced3cb4744c9888ce1c2fcd2e66dc31e62d3aa9e423d7275882525e9981f92e84ac85975b8660739407efbe1e34c2249420fde7e17db3096d5b22e83d051d01f0e6e7690dca7d168db338aadf0897fedac10de310db2b1bff762d322935dddbb60c2efb8b15d231fa17b84630371cb275c209f0c4c7d0c68b150ea5cd514122215e3f7fcfb351d69514788d67c2f3c8922581946e3a04bdf1f07f15696ca76eb95b10698bf1188fd882945c57657515889d042a6fc45d38cbc943540c4f0f6d1c45a1574c81f3e42d1eb8702328b729909adee8a5cfed7c79d54627d1fd389af941d878376f7927b9830ca659bf9ab18c5ca5192d52d02723008728d03701b8ab3e1c4a3109409ec0b13df334c7deec3523eeef4c97b5603e643de3a647b873f4c1b47fbfc6586ba66724f112e51fc93839648005043620aa3ce458e246d77977b19c53d98e3e812de006afc1a79744df236582943631d04cc02941ac4be500e4ed9fb9e3e7cc187b1c4050fad1d9d09d5fd70d5d01d615b439d8c0015d2eb10398bcdbf8c4b2bd559dbe4c288a186aed3f86f608da4d582e120c4a896e015e2241900d1daeccd05db968852677c71d752bec46de9962174b46f980e8cc603654daf8b98a3ee92dac066033954164a89568b70b1780c2ce2410b2f816dbeddb2cd463e0c8f21a52cf6427d9647a6fd4bafa8fb4cd4d47ac057b0160bee86c6b2fb8adce214c2bcdda277512200adf0eaa5d2114a2c077b009836a68ec254bfe56f51d147b9afe2ddd9cb917c0c2de19d81b7b8fd9f4574f51fa1207630dc13976f4d7587c962f761af267de71f3909a576e6bedaf6311633910d291ac292c467cc8331ef577aef7646a5d949322fa0367a49f20597a13def53136ee31610395e3e48d291fd8f58504374031fe9dcfba5e06086ebcf01a9106f6a4d6e16e19e4c5bb893f7da79419c94eca31a384be6fa1747284dee0fc3bbc8b1b860172c10b29c1594bb8c747d7fe05827358ff2160f49050001625ffe2e880bd7fc26cd0ffd89750745379a8e862816e08a5a2008043921ab6a4976064ac18f7ee37b6628bc0127d8d5ebd3548e41d8881a082d86f20b32e33094f15a0e6ea6074b08c6cd28142de94713451640a55985051f5577eb54572699d838cb34a79c8939e981c0c277d06a6e2ce69ccb74f8a691ff08f81d8b99e6a86223d29a2b7c8e7b041aba44ea678ae654277f7e91cbfa79158b989164a3d549d9f4feb0cc43169699c13e321fe3f4b94258c75d198ff9184269cd6986c55409e07528c93f64942c6c283ce3917b4bf4c3be2fe3173c8c38cccb35f1fbda0ca88b35a599c0678cb22aa8eabea8249dbd2e4f849fffe69803d299e435ebcd7df95854003d8eda17a74d98b4be0e62d45d7fe48c06a6f464a14f8e0570077cc631279092802a89823f031eef5e1028a6d6fdbd502869a731ee7d28b4d6c71b419462a30d31442d3ee444ffbcbd16d558c9000c97e949c2b1f9d6f6d8db7b9131ebd963620d3fc8595278d6f8fdf49084325373196d53e64142fa5a23eccd6ef908c4d80b8b3e6cc334b7f7012103a3682e4678e9b518163d262a39a2c1a69bf88514c52b7ccd7cc8dc80e71f7c2ec0701cff982573eb0c2c4daeb47fa0b586f4451c10d1da2e5d182b03dd067a5e971b3a6138ca6667aaf853d2ac03b80a1d5870905f2cfb6c78ec3c3719c02f973d638a0f973424a2b0f2b0023f136d60092fe15fba4bc180b9176bd0ff576e053f1af6939fe9ca256203ffaeb3e569f09774d2a6cbf91873e56651f4d6ff77e0b5374b0a1a201d7e523604e0247644544cc571d48c458a4f96f45580b";
         UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("rawtxn", raw));
-        
+
         // we have the spending key for the dummy recipient zaddr1
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 0.0005, "ABCD") };
-        
+
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(zaddr1, {}, recipients, 1) );
         std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
         TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
-        
+
         // Enable test mode so tx is not sent
         static_cast<AsyncRPCOperation_sendmany *>(operation.get())->testmode = true;
-        
+
         // Pretend that the operation completed successfully
         proxy.set_state(OperationStatus::SUCCESS);
 
@@ -1122,21 +1124,21 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         std::string hex = find_value(resultObj, "hex").get_str();
         BOOST_CHECK_EQUAL(hex, raw);
     }
-    
-    
+
+
     // Test the perform_joinsplit methods.
     {
         // Dummy input so the operation object can be instantiated.
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 0.0005, "ABCD") };
-        
+
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(zaddr1, {}, recipients, 1) );
         std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
-        TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr); 
+        TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
 
         // Enable test mode so tx is not sent and proofs are not generated
         static_cast<AsyncRPCOperation_sendmany *>(operation.get())->testmode = true;
-        
-        AsyncJoinSplitInfo info;        
+
+        AsyncJoinSplitInfo info;
         std::vector<boost::optional < ZCIncrementalWitness>> witnesses;
         uint256 anchor;
         try {
@@ -1158,7 +1160,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         } catch (const std::runtime_error & e) {
             BOOST_CHECK( string(e.what()).find("number of notes")!= string::npos);
         }
-        
+
         info.notes.clear();
         info.vjsin.push_back(JSInput());
         info.vjsin.push_back(JSInput());
@@ -1168,15 +1170,15 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         } catch (const std::runtime_error & e) {
             BOOST_CHECK( string(e.what()).find("unsupported joinsplit input")!= string::npos);
         }
-        
+
         info.vjsin.clear();
         try {
             proxy.perform_joinsplit(info);
         } catch (const std::runtime_error & e) {
-            BOOST_CHECK( string(e.what()).find("JoinSplit verifying key not loaded")!= string::npos);
+            BOOST_CHECK( string(e.what()).find("error verifying joinsplit")!= string::npos);
         }
     }
-    
+
 }
 
 
@@ -1214,29 +1216,167 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
 
     boost::filesystem::current_path(GetArg("-datadir","/tmp/thisshouldnothappen"));
     BOOST_CHECK(pwalletMain->EncryptWallet(strWalletPass));
-    
+
     // Verify we can still list the keys imported
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
     arr = retValue.get_array();
     BOOST_CHECK(arr.size() == n);
-    
+
     // Try to add a new key, but we can't as the wallet is locked
     BOOST_CHECK_THROW(CallRPC("z_getnewaddress"), runtime_error);
-    
+
     // We can't call RPC walletpassphrase as that invokes RPCRunLater which breaks tests.
     // So we manually unlock.
     BOOST_CHECK(pwalletMain->Unlock(strWalletPass));
-    
+
     // Now add a key
     BOOST_CHECK_NO_THROW(CallRPC("z_getnewaddress"));
-    
+
     // Verify the key has been added
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
     arr = retValue.get_array();
-    BOOST_CHECK(arr.size() == n+1);    
+    BOOST_CHECK(arr.size() == n+1);
 
     // We can't simulate over RPC the wallet closing and being reloaded
     // but there are tests for this in gtest.
 }
+
+
+
+BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
+{
+    SelectParams(CBaseChainParams::TESTNET);
+
+    LOCK(pwalletMain->cs_wallet);
+
+    BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase toofewargs"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase too many args shown here"), runtime_error);
+
+    // bad from address
+    BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
+            "INVALIDtmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+
+    // bad from address
+    BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
+    "** tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+
+    // bad to address
+    BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
+    "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ INVALIDtnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+
+    // invalid fee amount, cannot be negative
+    BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
+            "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
+            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
+            "-0.0001"
+            ), runtime_error);
+
+    // invalid fee amount, bigger than MAX_MONEY
+    BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
+            "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
+            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
+            "21000001"
+            ), runtime_error);
+
+    // invalid limit, must be at least 0
+    BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
+    "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
+    "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
+    "100 -1"
+    ), runtime_error);
+
+    // Test constructor of AsyncRPCOperation_sendmany
+    std::string testnetzaddr = "ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP";
+    std::string mainnetzaddr = "zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U";
+
+    try {
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase({}, testnetzaddr, -1 ));
+    } catch (const UniValue& objError) {
+        BOOST_CHECK( find_error(objError, "Fee is out of range"));
+    }
+
+    try {
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase({}, testnetzaddr, 1));
+    } catch (const UniValue& objError) {
+        BOOST_CHECK( find_error(objError, "Empty inputs"));
+    }
+
+    // Testnet payment addresses begin with 'zt'.  This test detects an incorrect prefix.
+    try {
+        std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,0} };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(inputs, mainnetzaddr, 1) );
+    } catch (const UniValue& objError) {
+        BOOST_CHECK( find_error(objError, "payment address is for wrong network type"));
+    }
+
+}
+
+
+
+BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
+{
+    SelectParams(CBaseChainParams::TESTNET);
+
+    LOCK(pwalletMain->cs_wallet);
+
+    UniValue retValue;
+
+    // Test that option -mempooltxinputlimit is respected.
+    mapArgs["-mempooltxinputlimit"] = "1";
+
+    // Add keys manually
+    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
+    std::string zaddr = pa.ToString();
+
+    // Supply 2 inputs when mempool limit is 1
+    {
+        std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,0}, ShieldCoinbaseUTXO{uint256(),0,0} };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(inputs, zaddr) );
+        operation->main();
+        BOOST_CHECK(operation->isFailed());
+        std::string msg = operation->getErrorMessage();
+        BOOST_CHECK( msg.find("Number of inputs 2 is greater than mempooltxinputlimit of 1") != string::npos);
+    }
+
+    // Insufficient funds
+    {
+        std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,0} };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(inputs, zaddr) );
+        operation->main();
+        BOOST_CHECK(operation->isFailed());
+        std::string msg = operation->getErrorMessage();
+        BOOST_CHECK( msg.find("Insufficient coinbase funds") != string::npos);
+    }
+
+    // Test the perform_joinsplit methods.
+    {
+        // Dummy input so the operation object can be instantiated.
+        std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,100000} };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(inputs, zaddr) );
+        std::shared_ptr<AsyncRPCOperation_shieldcoinbase> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_shieldcoinbase> (operation);
+        TEST_FRIEND_AsyncRPCOperation_shieldcoinbase proxy(ptr);
+        static_cast<AsyncRPCOperation_shieldcoinbase *>(operation.get())->testmode = true;
+
+        ShieldCoinbaseJSInfo info;
+        info.vjsin.push_back(JSInput());
+        info.vjsin.push_back(JSInput());
+        info.vjsin.push_back(JSInput());
+        try {
+            proxy.perform_joinsplit(info);
+        } catch (const std::runtime_error & e) {
+            BOOST_CHECK( string(e.what()).find("unsupported joinsplit input")!= string::npos);
+        }
+
+        info.vjsin.clear();
+        try {
+            proxy.perform_joinsplit(info);
+        } catch (const std::runtime_error & e) {
+            BOOST_CHECK( string(e.what()).find("error verifying joinsplit")!= string::npos);
+        }
+    }
+
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

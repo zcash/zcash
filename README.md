@@ -1,4 +1,4 @@
-Zcash 1.0.11
+Zcash 1.0.14
 =============
 
 What is Zcash?
@@ -18,8 +18,8 @@ blockchain has reached a significant size.
 Security Warnings
 -----------------
 
-See important security warnings in
-[doc/security-warnings.md](doc/security-warnings.md).
+See important security warnings on the
+[Security Information page](https://z.cash/support/security/).
 
 **Zcash is experimental and a work-in-progress.** Use at your own risk.
 

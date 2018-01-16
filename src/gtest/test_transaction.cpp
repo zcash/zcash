@@ -62,7 +62,7 @@ TEST(Transaction, JSDescriptionRandomized) {
             *params, pubKeyHash, rt,
             inputs, outputs,
             inputMap, outputMap,
-            0, 0, false, GenZero);
+            0, 0, false, nullptr, GenZero);
 
         boost::array<size_t, ZC_NUM_JS_INPUTS> expectedInputMap {1, 0};
         boost::array<size_t, ZC_NUM_JS_OUTPUTS> expectedOutputMap {1, 0};
@@ -75,7 +75,7 @@ TEST(Transaction, JSDescriptionRandomized) {
             *params, pubKeyHash, rt,
             inputs, outputs,
             inputMap, outputMap,
-            0, 0, false, GenMax);
+            0, 0, false, nullptr, GenMax);
 
         boost::array<size_t, ZC_NUM_JS_INPUTS> expectedInputMap {0, 1};
         boost::array<size_t, ZC_NUM_JS_OUTPUTS> expectedOutputMap {0, 1};

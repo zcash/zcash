@@ -2,6 +2,22 @@
 
 set -eu -o pipefail
 
+function cmd_pref() {
+    if type -p "$2" > /dev/null; then
+        eval "$1=$2"
+    else
+        eval "$1=$3"
+    fi
+}
+
+# If a g-prefixed version of the command exists, use it preferentially.
+function gprefix() {
+    cmd_pref "$1" "g$2" "$2"
+}
+
+gprefix READLINK readlink
+cd "$(dirname "$("$READLINK" -f "$0")")/.."
+
 # Allow user overrides to $MAKE. Typical usage for users who need it:
 #   MAKE=gmake ./zcutil/build.sh -j$(nproc)
 if [[ -z "${MAKE-}" ]]; then
@@ -11,10 +27,10 @@ fi
 # Allow overrides to $BUILD and $HOST for porters. Most users will not need it.
 #   BUILD=i686-pc-linux-gnu ./zcutil/build.sh
 if [[ -z "${BUILD-}" ]]; then
-    BUILD=x86_64-unknown-linux-gnu
+    BUILD="$(./depends/config.guess)"
 fi
 if [[ -z "${HOST-}" ]]; then
-    HOST=x86_64-unknown-linux-gnu
+    HOST="$BUILD"
 fi
 
 # Allow override to $CC and $CXX for porters. Most users will not need it.
@@ -58,7 +74,6 @@ EOF
 fi
 
 set -x
-cd "$(dirname "$(readlink -f "$0")")/.."
 
 # If --enable-lcov is the first argument, enable lcov coverage support:
 LCOV_ARG=''
@@ -117,5 +132,5 @@ ld -v
 
 HOST="$HOST" BUILD="$BUILD" NO_RUST="$RUST_ARG" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
 ./autogen.sh
-CC="$CC" CXX="$CXX" ./configure --prefix="${PREFIX}" --host="$HOST" --build="$BUILD" "$RUST_ARG" "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" "$LIBS_ARG" CXXFLAGS='-fwrapv -fno-strict-aliasing -Werror -g'
+CC="$CC" CXX="$CXX" ./configure --prefix="${PREFIX}" --host="$HOST" --build="$BUILD" "$RUST_ARG" "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" "$LIBS_ARG" --enable-werror CXXFLAGS='-g'
 "$MAKE" "$@" V=1
