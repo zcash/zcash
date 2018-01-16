@@ -106,7 +106,7 @@ if [ "x${ENABLE_BITCOIND}${ENABLE_UTILS}${ENABLE_WALLET}" = "x111" ]; then
         then
             runTestScript \
                 "${testScripts[$i]}" \
-                "${BUILDDIR}/qa/rpc-tests/${testScripts[$i]}" \
+                "${BUILDDIR}/qa/rpc_tests/${testScripts[$i]}" \
                 --srcdir "${BUILDDIR}/src" ${passOn}
         fi
     done
@@ -116,7 +116,7 @@ if [ "x${ENABLE_BITCOIND}${ENABLE_UTILS}${ENABLE_WALLET}" = "x111" ]; then
         then
             runTestScript \
                 "${testScriptsExt[$i]}" \
-                "${BUILDDIR}/qa/rpc-tests/${testScriptsExt[$i]}" \
+                "${BUILDDIR}/qa/rpc_tests/${testScriptsExt[$i]}" \
                 --srcdir "${BUILDDIR}/src" ${passOn}
         fi
     done

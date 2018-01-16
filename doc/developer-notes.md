@@ -111,7 +111,7 @@ Run with the -testnet option to run with "play zcash" on the test network, if yo
 are testing multi-machine code that needs to operate across the internet.
 
 If you are testing something that can run on one machine, run with the -regtest option.
-In regression test mode, blocks can be created on-demand; see qa/rpc-tests/ for tests
+In regression test mode, blocks can be created on-demand; see qa/rpc_tests/ for tests
 that run in -regtest mode.
 
 **DEBUG_LOCKORDER**
