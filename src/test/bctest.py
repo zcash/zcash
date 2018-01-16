@@ -7,9 +7,9 @@ import os
 import json
 import sys
 
-def bctest(testDir, testObj, exeext):
+def bctest(testDir, testObj, execprogs):
 
-	execprog = testObj['exec'] + exeext
+	execprog = execprogs[testObj['exec']]
 	execargs = testObj['args']
 	execrun = [execprog] + execargs
 	stdinCfg = None
@@ -42,13 +42,13 @@ def bctest(testDir, testObj, exeext):
 		print("Return code mismatch for " + outputFn)
 		sys.exit(1)
 
-def bctester(testDir, input_basename, buildenv):
+def bctester(testDir, input_basename, execprogs):
 	input_filename = testDir + "/" + input_basename
 	raw_data = open(input_filename).read()
 	input_data = json.loads(raw_data)
 
 	for testObj in input_data:
-		bctest(testDir, testObj, buildenv.exeext)
+		bctest(testDir, testObj, execprogs)
 
 	sys.exit(0)
 
