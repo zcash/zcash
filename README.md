@@ -1,6 +1,8 @@
 Zcash 1.0.14
 =============
 
+[Español](README_es.md)
+
 What is Zcash?
 --------------
 
