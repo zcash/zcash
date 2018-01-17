@@ -383,12 +383,7 @@ public:
             *const_cast<bool*>(&fOverwintered) = header >> 31;
             *const_cast<int32_t*>(&this->nVersion) = header & 0x7FFFFFFF;
         } else {
-            // When serializing v1 and v2, the 4 byte header is nVersion
-            uint32_t header = this->nVersion;
-            // When serializing Overwintered tx, the 4 byte header is the combination of fOverwintered and nVersion
-            if (fOverwintered) {
-                header |= 1 << 31;
-            }
+            uint32_t header = GetHeader();
             READWRITE(header);
         }
         nVersion = this->nVersion;
@@ -426,6 +421,16 @@ public:
 
     const uint256& GetHash() const {
         return hash;
+    }
+
+    uint32_t GetHeader() const {
+        // When serializing v1 and v2, the 4 byte header is nVersion
+        uint32_t header = this->nVersion;
+        // When serializing Overwintered tx, the 4 byte header is the combination of fOverwintered and nVersion
+        if (fOverwintered) {
+            header |= 1 << 31;
+        }
+        return header;
     }
 
     // Return sum of txouts.

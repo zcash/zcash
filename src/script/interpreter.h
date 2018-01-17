@@ -90,7 +90,7 @@ enum
 
 struct PrecomputedTransactionData
 {
-    uint256 hashPrevouts, hashSequence, hashOutputs;
+    uint256 hashPrevouts, hashSequence, hashOutputs, hashJoinSplits;
 
     PrecomputedTransactionData(const CTransaction& tx);
 };
