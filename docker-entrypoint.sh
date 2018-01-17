@@ -3,6 +3,7 @@ set -e
 
 if [ "$1" = 'zcash-cli' -o "$1" = 'zcashd' ]; then
 	mkdir -p ${ZCASH_DATA}
+	chown -R zcash:zcash ${ZCASH_DATA}
 
 	if [ ! -s ${ZCASH_CONF} ]; then
 		cat <<-EOF > ${ZCASH_CONF}
@@ -15,4 +16,4 @@ if [ "$1" = 'zcash-cli' -o "$1" = 'zcashd' ]; then
 
 fi
 
-exec "$@"
+exec gosu zcash "$@"
