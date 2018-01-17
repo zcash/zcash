@@ -90,6 +90,9 @@ public:
         consensus.nPowMaxAdjustDown = 32; // 32% adjustment down
         consensus.nPowMaxAdjustUp = 16; // 16% adjustment up
         consensus.nPowTargetSpacing = 2.5 * 60;
+        consensus.vUpgrades[Consensus::BASE_SPROUT].nActivationHeight =
+            Consensus::NetworkUpgrade::ALWAYS_ACTIVE;
+
         /**
          * The message start string should be awesome! ⓩ❤
          */
@@ -241,6 +244,9 @@ public:
         consensus.nPowMaxAdjustDown = 32; // 32% adjustment down
         consensus.nPowMaxAdjustUp = 16; // 16% adjustment up
         consensus.nPowTargetSpacing = 2.5 * 60;
+        consensus.vUpgrades[Consensus::BASE_SPROUT].nActivationHeight =
+            Consensus::NetworkUpgrade::ALWAYS_ACTIVE;
+
         pchMessageStart[0] = 0xfa;
         pchMessageStart[1] = 0x1a;
         pchMessageStart[2] = 0xf9;
@@ -341,6 +347,8 @@ public:
         consensus.nPowMaxAdjustDown = 0; // Turn off adjustment down
         consensus.nPowMaxAdjustUp = 0; // Turn off adjustment up
         consensus.nPowTargetSpacing = 2.5 * 60;
+        consensus.vUpgrades[Consensus::BASE_SPROUT].nActivationHeight =
+            Consensus::NetworkUpgrade::ALWAYS_ACTIVE;
 
         pchMessageStart[0] = 0xaa;
         pchMessageStart[1] = 0xe8;

@@ -9,6 +9,47 @@
 #include "uint256.h"
 
 namespace Consensus {
+
+/**
+ * Index into Params.vUpgrades and NetworkUpgradeInfo
+ *
+ * Being array indices, these MUST be numbered consecutively.
+ *
+ * The order of these indices MUST match the order of the upgrades on-chain, as
+ * several functions depends on the enum being sorted.
+ */
+enum UpgradeIndex {
+    // Sprout must be first
+    BASE_SPROUT,
+    // NOTE: Also add new upgrades to NetworkUpgradeInfo in upgrades.cpp
+    MAX_NETWORK_UPGRADES
+};
+
+struct NetworkUpgrade {
+    /**
+     * Height of the first block for which the new consensus rules will be active
+     */
+    int nActivationHeight;
+
+    /**
+     * Special value for nActivationHeight indicating that the upgrade is always active.
+     * This is useful for testing, as it means tests don't need to deal with the activation
+     * process (namely, faking a chain of somewhat-arbitrary length).
+     *
+     * New blockchains that want to enable upgrade rules from the beginning can also use
+     * this value. However, additional care must be taken to ensure the genesis block
+     * satisfies the enabled rules.
+     */
+    static constexpr int ALWAYS_ACTIVE = 0;
+
+    /**
+     * Special value for nActivationHeight indicating that the upgrade will never activate.
+     * This is useful when adding upgrade code that has a testnet activation height, but
+     * should remain disabled on mainnet.
+     */
+    static constexpr int NO_ACTIVATION_HEIGHT = -1;
+};
+
 /**
  * Parameters that influence chain consensus.
  */
@@ -39,6 +80,7 @@ struct Params {
     int nMajorityEnforceBlockUpgrade;
     int nMajorityRejectBlockOutdated;
     int nMajorityWindow;
+    NetworkUpgrade vUpgrades[MAX_NETWORK_UPGRADES];
     /** Proof of work parameters */
     uint256 powLimit;
     int64_t nPowAveragingWindow;
