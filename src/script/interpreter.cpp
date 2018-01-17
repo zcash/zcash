@@ -1074,6 +1074,15 @@ uint256 GetOutputsHash(const CTransaction& txTo) {
     return ss.GetHash();
 }
 
+uint256 GetJoinSplitsHash(const CTransaction& txTo) {
+    CHashWriter ss(SER_GETHASH, 0);
+    for (unsigned int n = 0; n < txTo.vjoinsplit.size(); n++) {
+        ss << txTo.vjoinsplit[n];
+    }
+    ss << txTo.joinSplitPubKey;
+    return ss.GetHash();
+}
+
 } // anon namespace
 
 CachedHashes::CachedHashes(const CTransaction& txTo)
@@ -1081,6 +1090,7 @@ CachedHashes::CachedHashes(const CTransaction& txTo)
     hashPrevouts = GetPrevoutHash(txTo);
     hashSequence = GetSequenceHash(txTo);
     hashOutputs = GetOutputsHash(txTo);
+    hashJoinSplits = GetJoinSplitsHash(txTo);
 }
 
 uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType, const CAmount& amount, SigVersion sigversion, const CachedHashes* cache)
@@ -1094,6 +1104,7 @@ uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsig
         uint256 hashPrevouts;
         uint256 hashSequence;
         uint256 hashOutputs;
+        uint256 hashJoinSplits;
 
         if (!(nHashType & SIGHASH_ANYONECANPAY)) {
             hashPrevouts = cache ? cache->hashPrevouts : GetPrevoutHash(txTo);
@@ -1103,7 +1114,6 @@ uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsig
             hashSequence = cache ? cache->hashSequence : GetSequenceHash(txTo);
         }
 
-
         if ((nHashType & 0x1f) != SIGHASH_SINGLE && (nHashType & 0x1f) != SIGHASH_NONE) {
             hashOutputs = cache ? cache->hashOutputs : GetOutputsHash(txTo);
         } else if ((nHashType & 0x1f) == SIGHASH_SINGLE && nIn < txTo.vout.size()) {
@@ -1112,27 +1122,44 @@ uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsig
             hashOutputs = ss.GetHash();
         }
 
-        CHashWriter ss(SER_GETHASH, 0);
+        if (!txTo.vjoinsplit.empty()) {
+            hashJoinSplits = cache ? cache->hashJoinSplits : GetJoinSplitsHash(txTo);
+        }
+
+        unsigned char personalization[16] = {};
+        memcpy(personalization, "ZcashSigHash", 12);
+        memcpy(personalization+12, BLOCK_BRANCH_ID, 4);
+
+        CBLAKE2bWriter ss(SER_GETHASH, 0, personalization);
         // Version
         ss << txTo.nVersion;
+        // Version branchId
+        ss << txTo.nVersionBranch;
         // Input prevouts/nSequence (none/all, depending on flags)
         ss << hashPrevouts;
         ss << hashSequence;
-        // The input being signed (replacing the scriptSig with scriptCode + amount)
-        // The prevout may already be contained in hashPrevout, and the nSequence
-        // may already be contained in hashSequence.
-        if (nIn != NOT_AN_INPUT)
-            ss << txTo.vin[nIn].prevout;
-        ss << scriptCode;
-        ss << amount;
-        if (nIn != NOT_AN_INPUT)
-            ss << txTo.vin[nIn].nSequence;
         // Outputs (none/one/all, depending on flags)
         ss << hashOutputs;
+        // JoinSplits
+        ss << hashJoinSplits;
         // Locktime
         ss << txTo.nLockTime;
+        // Expiry time
+        ss << txTo.nExpiryTime;
         // Sighash type
         ss << nHashType;
+
+        // If this hash is for a transparent input signature
+        // (i.e. not for txTo.joinSplitSig):
+        if (nIn != NOT_AN_INPUT){
+            // The input being signed (replacing the scriptSig with scriptCode + amount)
+            // The prevout may already be contained in hashPrevout, and the nSequence
+            // may already be contained in hashSequence.
+            ss << txTo.vin[nIn].prevout;
+            ss << scriptCode;
+            ss << amount;
+            ss << txTo.vin[nIn].nSequence;
+        }
 
         return ss.GetHash();
     }

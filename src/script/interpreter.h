@@ -92,7 +92,7 @@ enum
 
 struct CachedHashes
 {
-    uint256 hashPrevouts, hashSequence, hashOutputs;
+    uint256 hashPrevouts, hashSequence, hashOutputs, hashJoinSplits;
 
     CachedHashes(const CTransaction& tx);
 };
