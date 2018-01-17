@@ -138,6 +138,7 @@ BITCOIN_CORE_H = \
   compressor.h \
   consensus/consensus.h \
   consensus/params.h \
+  consensus/upgrades.h \
   consensus/validation.h \
   core_io.h \
   core_memusage.h \
@@ -354,6 +355,7 @@ libbitcoin_common_a_SOURCES = \
   chainparams.cpp \
   coins.cpp \
   compressor.cpp \
+  consensus/upgrades.cpp \
   core_read.cpp \
   core_write.cpp \
   hash.cpp \
