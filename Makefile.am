@@ -146,8 +146,8 @@ cov: test_bitcoin.coverage/.dirstamp cov-zcash total.coverage/.dirstamp
 
 endif
 
-dist_bin_SCRIPTS = zcutil/fetch-params.sh
-dist_noinst_SCRIPTS = autogen.sh zcutil/build-debian-package.sh zcutil/build.sh
+dist_bin_SCRIPTS = acutil/fetch-params.sh
+dist_noinst_SCRIPTS = autogen.sh acutil/build-debian-package.sh acutil/build.sh
 
 EXTRA_DIST = $(top_srcdir)/share/genbuild.sh qa/pull-tester/rpc-tests.sh qa/pull-tester/run-bitcoin-cli qa/rpc-tests qa/zcash $(DIST_DOCS) $(BIN_CHECKS)
 

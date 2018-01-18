@@ -44,7 +44,7 @@ daemon operation.
 
 By default, the AMQP feature is automatically compiled in if the
 necessary prerequisites are found.  To disable, use --disable-proton
-during the *configure* step of building zcashd:
+during the *configure* step of building animecoind:
 
     $ ./configure --disable-proton (other options)
 
@@ -69,13 +69,13 @@ The address must be a valid AMQP address, where the same address can be
 used in more than notification.  Note that SSL and SASL addresses are
 not currently supported.
 
-Launch zcashd like this:
+Launch animecoind like this:
 
-    $ zcashd -amqppubhashtx=amqp://127.0.0.1:5672
+    $ animecoind -amqppubhashtx=amqp://127.0.0.1:5672
 
 Or this:
 
-    $ zcashd -amqppubhashtx=amqp://127.0.0.1:5672 \
+    $ animecoind -amqppubhashtx=amqp://127.0.0.1:5672 \
         -amqppubrawtx=amqp://127.0.0.1:5672 \
         -amqppubrawblock=amqp://127.0.0.1:5672 \
         -amqppubhashblock=amqp://127.0.0.1:5672 \
@@ -89,19 +89,19 @@ the topic is `hashtx` (no null terminator) and the body is the hexadecimal
 transaction hash (32 bytes).  This transaction hash and the block hash
 found in `hashblock` are in RPC byte order.
 
-These options can also be provided in zcash.conf.
+These options can also be provided in animecoin.conf.
 
 Please see `contrib/amqp/amqp_sub.py` for a working example of an
 AMQP server listening for messages.
 
 ## Remarks
 
-From the perspective of zcashd, the local end of an AMQP link is write-only.
+From the perspective of animecoind, the local end of an AMQP link is write-only.
 
 No information is broadcast that wasn't already received from the public
 P2P network.
 
-No authentication or authorization is done on peers that zcashd connects
+No authentication or authorization is done on peers that animecoind connects
 to; it is assumed that the AMQP link is exposed only to trusted entities,
 using other means such as firewalling.
 
@@ -114,10 +114,10 @@ Note that when the block chain tip changes, a reorganisation may occur
 and just the tip will be notified. It is up to the subscriber to
 retrieve the chain from the last known block to the new tip.
 
-At present, zcashd does not try to resend a notification if there was
+At present, animecoind does not try to resend a notification if there was
 a problem confirming receipt.  Support for delivery guarantees such as
 *at-least-once* and *exactly-once* will be added in in a future update.
 
-Currently, zcashd appends an up-counting sequence number to each notification
+Currently, animecoind appends an up-counting sequence number to each notification
 which allows listeners to detect lost notifications.
 

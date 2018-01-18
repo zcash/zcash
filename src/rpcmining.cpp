@@ -144,7 +144,7 @@ UniValue getgenerate(const UniValue& params, bool fHelp)
         throw runtime_error(
             "getgenerate\n"
             "\nReturn if the server is set to generate coins or not. The default is false.\n"
-            "It is set with the command line argument -gen (or zcash.conf setting gen)\n"
+            "It is set with the command line argument -gen (or animecoin.conf setting gen)\n"
             "It can also be set with the setgenerate call.\n"
             "\nResult\n"
             "true|false      (boolean) If the server is set to generate coins or not\n"
@@ -179,7 +179,7 @@ UniValue generate(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
         }
 #else
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "zcashd compiled without wallet and -mineraddress not set");
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "animecoind compiled without wallet and -mineraddress not set");
 #endif
     }
     if (!Params().MineBlocksOnDemand())
@@ -294,7 +294,7 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
         }
 #else
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "zcashd compiled without wallet and -mineraddress not set");
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "animecoind compiled without wallet and -mineraddress not set");
 #endif
     }
     if (Params().MineBlocksOnDemand())
@@ -496,7 +496,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
         }
 #else
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "zcashd compiled without wallet and -mineraddress not set");
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "animecoind compiled without wallet and -mineraddress not set");
 #endif
     }
 
@@ -677,11 +677,6 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         entry.push_back(Pair("sigops", pblocktemplate->vTxSigOps[index_in_template]));
 
         if (tx.IsCoinBase()) {
-            // Show founders' reward if it is required
-            if (pblock->vtx[0].vout.size() > 1) {
-                // Correct this if GetBlockTemplate changes the order
-                entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
-            }
             entry.push_back(Pair("required", true));
             txCoinbase = entry;
         } else {
@@ -878,13 +873,12 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "getblocksubsidy height\n"
-            "\nReturns block subsidy reward, taking into account the mining slow start and the founders reward, of block at index provided.\n"
+            "\nReturns block subsidy reward, taking into account the mining slow start, of block at index provided.\n"
             "\nArguments:\n"
             "1. height         (numeric, optional) The block height.  If not provided, defaults to the current height of the chain.\n"
             "\nResult:\n"
             "{\n"
             "  \"miner\" : x.xxx           (numeric) The mining reward amount in " + CURRENCY_UNIT + ".\n"
-            "  \"founders\" : x.xxx        (numeric) The founders reward amount in " + CURRENCY_UNIT + ".\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")
@@ -897,13 +891,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
-    CAmount nFoundersReward = 0;
-    if ((nHeight > 0) && (nHeight <= Params().GetConsensus().GetLastFoundersRewardBlockHeight())) {
-        nFoundersReward = nReward/5;
-        nReward -= nFoundersReward;
-    }
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("miner", ValueFromAmount(nReward)));
-    result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));
     return result;
 }

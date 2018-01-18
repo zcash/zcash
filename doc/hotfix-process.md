@@ -53,7 +53,7 @@ However, there are a few notable differences:
 
 - When running the release script, use the `--hotfix` flag:
 
-    $ ./zcutil/make-release.py --hotfix <RELEASE> <RELEASE_PREV> <APPROX_RELEASE_HEIGHT>
+    $ ./acutil/make-release.py --hotfix <RELEASE> <RELEASE_PREV> <APPROX_RELEASE_HEIGHT>
 
 - To review the automated changes in git:
 

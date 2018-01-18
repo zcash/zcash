@@ -11,13 +11,13 @@ import sys
 import tarfile
 import time
 
-ZCASH_CLI = './src/zcash-cli'
+ANIMECOIN_CLI = './src/animecoin-cli'
 USAGE = """
 Requirements:
 - find
 - xz
-- %s (edit ZCASH_CLI in this script to alter the path)
-- A running mainnet zcashd using the default datadir with -txindex=1
+- %s (edit ANIMECOIN_CLI in this script to alter the path)
+- A running mainnet animecoind using the default datadir with -txindex=1
 
 Example usage:
 
@@ -27,10 +27,10 @@ virtualenv venv
 pip install --global-option=build_ext --global-option="-L$(pwd)/src/leveldb/" --global-option="-I$(pwd)/src/leveldb/include/" plyvel
 pip install progressbar2
 LD_LIBRARY_PATH=src/leveldb python qa/zcash/create_benchmark_archive.py
-""" % ZCASH_CLI
+""" % ANIMECOIN_CLI
 
 def check_deps():
-    if subprocess.call(['which', 'find', 'xz', ZCASH_CLI], stdout=subprocess.PIPE):
+    if subprocess.call(['which', 'find', 'xz', ANIMECOIN_CLI], stdout=subprocess.PIPE):
         print USAGE
         sys.exit()
 
@@ -155,15 +155,15 @@ def deterministic_filter(tarinfo):
     return tarinfo
 
 def create_benchmark_archive(blk_hash):
-    blk = json.loads(subprocess.check_output([ZCASH_CLI, 'getblock', blk_hash]))
+    blk = json.loads(subprocess.check_output([ANIMECOIN_CLI, 'getblock', blk_hash]))
     print 'Height: %d' % blk['height']
     print 'Transactions: %d' % len(blk['tx'])
 
     os.mkdir('benchmark')
     with open('benchmark/block-%d.dat' % blk['height'], 'wb') as f:
-        f.write(binascii.unhexlify(subprocess.check_output([ZCASH_CLI, 'getblock', blk_hash, 'false']).strip()))
+        f.write(binascii.unhexlify(subprocess.check_output([ANIMECOIN_CLI, 'getblock', blk_hash, 'false']).strip()))
 
-    txs = [json.loads(subprocess.check_output([ZCASH_CLI, 'getrawtransaction', tx, '1'])
+    txs = [json.loads(subprocess.check_output([ANIMECOIN_CLI, 'getrawtransaction', tx, '1'])
                      ) for tx in blk['tx']]
 
     js_txs = len([tx for tx in txs if len(tx['vjoinsplit']) > 0])
@@ -188,7 +188,7 @@ def create_benchmark_archive(blk_hash):
     bar = progressbar.ProgressBar(redirect_stdout=True)
     print 'Collecting input coins for block'
     for tx in bar(unique_inputs.keys()):
-        rawtx = json.loads(subprocess.check_output([ZCASH_CLI, 'getrawtransaction', tx, '1']))
+        rawtx = json.loads(subprocess.check_output([ANIMECOIN_CLI, 'getrawtransaction', tx, '1']))
 
         mask_size = 0
         mask_code = 0
@@ -236,7 +236,7 @@ def create_benchmark_archive(blk_hash):
                     binascii.unhexlify(rawtx['vout'][i]['scriptPubKey']['hex'])))
         # - VARINT(nHeight)
         coins.extend(encode_varint(json.loads(
-            subprocess.check_output([ZCASH_CLI, 'getblockheader', rawtx['blockhash']])
+            subprocess.check_output([ANIMECOIN_CLI, 'getblockheader', rawtx['blockhash']])
             )['height']))
 
         db_key = b'c' + bytes(binascii.unhexlify(tx)[::-1])

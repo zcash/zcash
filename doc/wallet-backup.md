@@ -16,19 +16,19 @@ These instructions are specific for the officially supported Zcash Linux client.
 
 There are multiple ways to make sure you have at least one other copy of the private keys needed to spend your ZEC and view your shielded ZEC.
 
-For all methods, you will need to include an export directory setting in your config file (`zcash.conf` located in the data directory which is `~/.zcash/` unless it's been overridden with `datadir=` setting):
+For all methods, you will need to include an export directory setting in your config file (`animecoin.conf` located in the data directory which is `~/.animecoin/` unless it's been overridden with `datadir=` setting):
 
 `exportdir=/path/to/chosen/export/directory`
 
 You may chose any directory within the home directory as the location for export & backup files. If the directory doesn't exist, it will be created.
 
-Note that zcashd will need to be stopped and restarted for edits in the config file to take effect. 
+Note that animecoind will need to be stopped and restarted for edits in the config file to take effect. 
 
 ### Using `backupwallet`
 
 To create a backup of your wallet, use:
 
-`zcash-cli backupwallet <nameofbackup>`.
+`animecoin-cli backupwallet <nameofbackup>`.
 
 The backup will be an exact copy of the current state of your wallet.dat file stored in the export directory you specified in the config file. The file path will also be returned.
 
@@ -40,51 +40,51 @@ If your original `wallet.dat` file becomes inaccessible for whatever reason, you
 
 If you prefer to have an export of your private keys in human readable format, you can use:
 
-`zcash-cli z_exportwallet <nameofbackup>`
+`animecoin-cli z_exportwallet <nameofbackup>`
 
 This will generate a file in the export directory listing all transparent and shielded private keys with their associated public addresses. The file path will be returned in the command line.
 
 To import keys into a wallet which were previously exported to a file, use:
 
-`zcash-cli z_importwallet </path/to/exportdir/nameofbackup>`
+`animecoin-cli z_importwallet </path/to/exportdir/nameofbackup>`
 
 ### Using `z_exportkey`, `z_importkey`, `dumpprivkey` & `importprivkey`
 
 If you prefer to export a single private key for a shielded address, you can use:
 
-`zcash-cli z_exportkey <z-address>`
+`animecoin-cli z_exportkey <z-address>`
 
 This will return the private key and will not create a new file.
 
 For exporting a single private key for a transparent address, you can use the command inherited from Bitcoin:
 
-`zcash-cli dumpprivkey <t-address>`
+`animecoin-cli dumpprivkey <t-address>`
 
 This will return the private key and will not create a new file.
 
 To import a private key for a shielded address, use:
 
-`zcash-cli z_importkey <z-priv-key>`
+`animecoin-cli z_importkey <z-priv-key>`
 
 This will add the key to your wallet and rescan the wallet for associated transactions if it is not already part of the wallet.
 
 The rescanning process can take a few minutes for a new private key. To skip it, instead use:
 
-`zcash-cli z_importkey <z-private-key> no`
+`animecoin-cli z_importkey <z-private-key> no`
 
 For other instructions on fine-tuning the wallet rescan, see the command's help documentation:
 
-`zcash-cli help z_importkey`
+`animecoin-cli help z_importkey`
 
 To import a private key for a transparent address, use:
 
-`zcash-cli importprivkey <t-priv-key>`
+`animecoin-cli importprivkey <t-priv-key>`
 
 This has the same functionality as `z_importkey` but works with transparent addresses.
 
 See the command's help documentation for instructions on fine-tuning the wallet rescan:
 
-`zcash-cli help importprivkey`
+`animecoin-cli help importprivkey`
 
 ### Using `dumpwallet`
 

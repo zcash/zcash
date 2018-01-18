@@ -2,10 +2,10 @@
 *.deb
 *.exe
 src/bitcoin
-src/zcashd
-src/zcash-cli
+src/animecoind
+src/animecoin-cli
 src/zcash-gtest
-src/zcash-tx
+src/animecoin-tx
 src/test/test_bitcoin
 
 # Zcash utilities
@@ -56,7 +56,7 @@ src/univalue/gen
 *.pyc
 *.o
 *.o-*
-.zcash
+.animecoin
 *.a
 *.pb.cc
 *.pb.h

@@ -15,7 +15,7 @@ from functools import wraps
 
 def main(args=sys.argv[1:]):
     """
-    Perform the final Zcash release process up to the git tag.
+    Perform the final AnimeCoin release process up to the git tag.
     """
     opts = parse_args(args)
     chdir_to_repo(opts.REPO)
@@ -260,7 +260,7 @@ def build():
         'test/equihash_tests.cpp',
         'test/util_tests.cpp',
         "Leaving directory '%s'" % src_dir,
-        ], './zcutil/build.sh', '-j', nproc)
+        ], './acutil/build.sh', '-j', nproc)
 
 
 @phase('Generating manpages.')
@@ -272,7 +272,7 @@ def gen_manpages():
 def gen_release_notes(release, releasefrom):
     release_notes = [
         'python',
-        './zcutil/release-notes.py',
+        './acutil/release-notes.py',
         '--version',
         release.novtext,
         '--prev',
@@ -292,7 +292,7 @@ def gen_release_notes(release, releasefrom):
 @phase('Updating debian changelog.')
 def update_debian_changelog(release):
     os.environ['DEBEMAIL'] = 'team@z.cash'
-    os.environ['DEBFULLNAME'] = 'Zcash Company'
+    os.environ['DEBFULLNAME'] = 'AnimeCoin comunity'
     sh_log(
         'debchange',
         '--newversion', release.debversion,
@@ -319,10 +319,10 @@ def chdir_to_repo(repo):
 def patch_README(release, releaseprev):
     with PathPatcher('README.md') as (inf, outf):
         firstline = inf.readline()
-        assert firstline == 'Zcash {}\n'.format(releaseprev.novtext), \
+        assert firstline == 'AnimeCoin {}\n'.format(releaseprev.novtext), \
             repr(firstline)
 
-        outf.write('Zcash {}\n'.format(release.novtext))
+        outf.write('AnimeCoin {}\n'.format(release.novtext))
         outf.write(inf.read())
 
 
@@ -350,11 +350,11 @@ def patch_gitian_linux_yml(release, releaseprev):
         outf.write(inf.readline())
 
         secondline = inf.readline()
-        assert secondline == 'name: "zcash-{}"\n'.format(
+        assert secondline == 'name: "animecoin-{}"\n'.format(
             releaseprev.novtext
         ), repr(secondline)
 
-        outf.write('name: "zcash-{}"\n'.format(release.novtext))
+        outf.write('name: "animecoin-{}"\n'.format(release.novtext))
         outf.write(inf.read())
 
 
@@ -380,7 +380,7 @@ def _patch_build_defs(release, path, pattern):
 
 
 def initialize_logging():
-    logname = './zcash-make-release.log'
+    logname = './animecoin-make-release.log'
     fmtr = logging.Formatter(
         '%(asctime)s L%(lineno)-4d %(levelname)-5s | %(message)s',
         '%Y-%m-%d %H:%M:%S'
@@ -398,7 +398,7 @@ def initialize_logging():
     root.setLevel(logging.DEBUG)
     root.addHandler(hout)
     root.addHandler(hpath)
-    logging.info('zcash make-release.py debug log: %r', logname)
+    logging.info('animecoin make-release.py debug log: %r', logname)
 
 
 def sh_out(*args):

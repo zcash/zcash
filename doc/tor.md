@@ -33,7 +33,7 @@ outgoing connections be anonymized, but more is possible.
 
 In a typical situation, this suffices to run behind a Tor proxy:
 
-	./zcashd -proxy=127.0.0.1:9050
+	./animecoind -proxy=127.0.0.1:9050
 
 
 2. Run a Zcash hidden server
@@ -44,11 +44,11 @@ reachable from the Tor network. Add these lines to your /etc/tor/torrc (or equiv
 config file):
 
 	HiddenServiceDir /var/lib/tor/zcash-service/
-	HiddenServicePort 8233 127.0.0.1:8233
-	HiddenServicePort 18233 127.0.0.1:18233
+	HiddenServicePort 9933 127.0.0.1:9933
+	HiddenServicePort 19933 127.0.0.1:19933
 
 The directory can be different of course, but (both) port numbers should be equal to
-your zcashd's P2P listen port (8233 by default).
+your animecoind's P2P listen port (9933 by default).
 
 	-externalip=X   You can tell Zcash about its publicly reachable address using
 	                this option, and this can be a .onion address. Given the above
@@ -70,25 +70,25 @@ your zcashd's P2P listen port (8233 by default).
 
 In a typical situation, where you're only reachable via Tor, this should suffice:
 
-	./zcashd -proxy=127.0.0.1:9050 -externalip=zctestseie6wxgio.onion -listen
+	./animecoind -proxy=127.0.0.1:9050 -externalip=zctestseie6wxgio.onion -listen
 
 (obviously, replace the Onion address with your own). It should be noted that you still
 listen on all devices and another node could establish a clearnet connection, when knowing
 your address. To mitigate this, additionally bind the address of your Tor proxy:
 
-	./zcashd ... -bind=127.0.0.1
+	./animecoind ... -bind=127.0.0.1
 
 If you don't care too much about hiding your node, and want to be reachable on IPv4
 as well, use `discover` instead:
 
-	./zcashd ... -discover
+	./animecoind ... -discover
 
-and open port 8233 on your firewall (or use -upnp).
+and open port 9933 on your firewall (or use -upnp).
 
 If you only want to use Tor to reach onion addresses, but not use it as a proxy
 for normal IPv4/IPv6 communication, use:
 
-	./zcashd -onion=127.0.0.1:9050 -externalip=zctestseie6wxgio.onion -discover
+	./animecoind -onion=127.0.0.1:9050 -externalip=zctestseie6wxgio.onion -discover
 
 
 3. Automatically listen on Tor
@@ -110,12 +110,12 @@ and, if not disabled, configured using the `-torcontrol` and `-torpassword` sett
 To show verbose debugging information, pass `-debug=tor`.
 
 Connecting to Tor's control socket API requires one of two authentication methods to be 
-configured. For cookie authentication the user running zcashd must have write access 
+configured. For cookie authentication the user running animecoind must have write access 
 to the `CookieAuthFile` specified in Tor configuration. In some cases this is 
 preconfigured and the creation of a hidden service is automatic. If permission problems 
 are seen with `-debug=tor` they can be resolved by adding both the user running tor and 
-the user running zcashd to the same group and setting permissions appropriately. On 
-Debian-based systems the user running zcashd can be added to the debian-tor group, 
+the user running animecoind to the same group and setting permissions appropriately. On 
+Debian-based systems the user running animecoind can be added to the debian-tor group, 
 which has the appropriate permissions. An alternative authentication method is the use 
 of the `-torpassword` flag and a `hash-password` which can be enabled and specified in 
 Tor configuration.
@@ -125,18 +125,18 @@ Tor configuration.
 -----------------------------------
 
 To test your set-up, you might want to try connecting via Tor on a different computer to just a
-a single Zcash hidden server. Launch zcashd as follows:
+a single Zcash hidden server. Launch animecoind as follows:
 
-	./zcashd -onion=127.0.0.1:9050 -connect=zctestseie6wxgio.onion
+	./animecoind -onion=127.0.0.1:9050 -connect=zctestseie6wxgio.onion
 
-Now use zcash-cli to verify there is only a single peer connection.
+Now use animecoin-cli to verify there is only a single peer connection.
 
-	zcash-cli getpeerinfo
+	animecoin-cli getpeerinfo
 
 	[
 	    {
 	        "id" : 1,
-	        "addr" : "zctestseie6wxgio.onion:18233",
+	        "addr" : "zctestseie6wxgio.onion:19933",
 	        ...
 	        "version" : 170002,
 	        "subver" : "/MagicBean:1.0.0/",
@@ -146,4 +146,4 @@ Now use zcash-cli to verify there is only a single peer connection.
 
 To connect to multiple Tor nodes, use:
 
-	./zcashd -onion=127.0.0.1:9050 -addnode=zctestseie6wxgio.onion -dnsseed=0 -onlynet=onion
+	./animecoind -onion=127.0.0.1:9050 -addnode=zctestseie6wxgio.onion -dnsseed=0 -onlynet=onion

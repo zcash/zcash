@@ -53,7 +53,7 @@ READELF_CMD = os.getenv('READELF', '/usr/bin/readelf')
 CPPFILT_CMD = os.getenv('CPPFILT', '/usr/bin/c++filt')
 # Allowed NEEDED libraries
 ALLOWED_LIBRARIES = {
-# zcashd
+# animecoind
 'libgcc_s.so.1', # GCC base support
 'libc.so.6', # C library
 'libstdc++.so.6', # C++ standard library

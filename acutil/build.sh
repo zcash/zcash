@@ -19,13 +19,13 @@ gprefix READLINK readlink
 cd "$(dirname "$("$READLINK" -f "$0")")/.."
 
 # Allow user overrides to $MAKE. Typical usage for users who need it:
-#   MAKE=gmake ./zcutil/build.sh -j$(nproc)
+#   MAKE=gmake ./acutil/build.sh -j$(nproc)
 if [[ -z "${MAKE-}" ]]; then
     MAKE=make
 fi
 
 # Allow overrides to $BUILD and $HOST for porters. Most users will not need it.
-#   BUILD=i686-pc-linux-gnu ./zcutil/build.sh
+#   BUILD=i686-pc-linux-gnu ./acutil/build.sh
 if [[ -z "${BUILD-}" ]]; then
     BUILD="$(./depends/config.guess)"
 fi
@@ -50,24 +50,24 @@ $0 --help
   Show this help message and exit.
 
 $0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --disable-rust ] [ --enable-proton ] [ --disable-libs ] [ MAKEARGS... ]
-  Build Zcash and most of its transitive dependencies from
-  source. MAKEARGS are applied to both dependencies and Zcash itself.
+  Build AnimeCoin and most of its transitive dependencies from
+  source. MAKEARGS are applied to both dependencies and AnimeCoin itself.
 
-  If --enable-lcov is passed, Zcash is configured to add coverage
+  If --enable-lcov is passed, AnimeCoin is configured to add coverage
   instrumentation, thus enabling "make cov" to work.
-  If --disable-tests is passed instead, the Zcash tests are not built.
+  If --disable-tests is passed instead, the AnimeCoin tests are not built.
 
-  If --disable-mining is passed, Zcash is configured to not build any mining
+  If --disable-mining is passed, AnimeCoin is configured to not build any mining
   code. It must be passed after the test arguments, if present.
 
-  If --disable-rust is passed, Zcash is configured to not build any Rust language
+  If --disable-rust is passed, AnimeCoin is configured to not build any Rust language
   assets. It must be passed after test/mining arguments, if present.
 
-  If --enable-proton is passed, Zcash is configured to build the Apache Qpid Proton
+  If --enable-proton is passed, AnimeCoin is configured to build the Apache Qpid Proton
   library required for AMQP support. This library is not built by default.
   It must be passed after the test/mining/Rust arguments, if present.
 
-  If --disable-libs is passed, Zcash is configured to not build any libraries like
+  If --disable-libs is passed, AnimeCoin is configured to not build any libraries like
   'libzcashconsensus'.
 EOF
     exit 0

@@ -447,7 +447,7 @@ boost::filesystem::path GetDefaultDataDir()
     // Windows < Vista: C:\Documents and Settings\Username\Application Data\Zcash
     // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zcash
     // Mac: ~/Library/Application Support/Zcash
-    // Unix: ~/.zcash
+    // Unix: ~/.animecoin
 #ifdef WIN32
     // Windows
     return GetSpecialFolderPath(CSIDL_APPDATA) / "Zcash";
@@ -465,7 +465,7 @@ boost::filesystem::path GetDefaultDataDir()
     return pathRet / "Zcash";
 #else
     // Unix
-    return pathRet / ".zcash";
+    return pathRet / ".animecoin";
 #endif
 #endif
 }
@@ -582,7 +582,7 @@ void ClearDatadirCache()
 
 boost::filesystem::path GetConfigFile()
 {
-    boost::filesystem::path pathConfigFile(GetArg("-conf", "zcash.conf"));
+    boost::filesystem::path pathConfigFile(GetArg("-conf", "animecoin.conf"));
     if (!pathConfigFile.is_complete())
         pathConfigFile = GetDataDir(false) / pathConfigFile;
 
@@ -601,7 +601,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 
     for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
     {
-        // Don't overwrite existing settings so command line settings override zcash.conf
+        // Don't overwrite existing settings so command line settings override animecoin.conf
         string strKey = string("-") + it->string_key;
         if (mapSettingsRet.count(strKey) == 0)
         {
@@ -618,7 +618,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 #ifndef WIN32
 boost::filesystem::path GetPidFile()
 {
-    boost::filesystem::path pathPidFile(GetArg("-pid", "zcashd.pid"));
+    boost::filesystem::path pathPidFile(GetArg("-pid", "animecoind.pid"));
     if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;
 }
@@ -891,8 +891,8 @@ void SetThreadPriority(int nPriority)
 std::string PrivacyInfo()
 {
     return "\n" +
-           FormatParagraph(strprintf(_("In order to ensure you are adequately protecting your privacy when using Zcash, please see <%s>."),
-                                     "https://z.cash/support/security/")) + "\n";
+           FormatParagraph(strprintf(_("In order to ensure you are adequately protecting your privacy when using AnimeCoin, please see <%s>."),
+                                     "")) + "\n";
 }
 
 std::string LicenseInfo()
@@ -900,6 +900,7 @@ std::string LicenseInfo()
     return "\n" +
            FormatParagraph(strprintf(_("Copyright (C) 2009-%i The Bitcoin Core Developers"), COPYRIGHT_YEAR)) + "\n" +
            FormatParagraph(strprintf(_("Copyright (C) 2015-%i The Zcash Developers"), COPYRIGHT_YEAR)) + "\n" +
+           FormatParagraph(strprintf(_("Copyright (C) 2018-%i The AnimeCoin Developers"), COPYRIGHT_YEAR)) + "\n" +
            "\n" +
            FormatParagraph(_("This is experimental software.")) + "\n" +
            "\n" +

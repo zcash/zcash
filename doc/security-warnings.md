@@ -49,7 +49,7 @@ Side-Channel Attacks
 
 This implementation of Zcash is not resistant to side-channel attacks. You
 should assume (even unprivileged) users who are running on the hardware, or who
-are physically near the hardware, that your `zcashd` process is running on will
+are physically near the hardware, that your `animecoind` process is running on will
 be able to:
 
 - Determine the values of your secret spending keys, as well as which notes you
@@ -64,7 +64,7 @@ be able to:
   each note ciphertext on the blockchain.
 
 You should ensure no other users have the ability to execute code (even
-unprivileged) on the hardware your `zcashd` process runs on until these
+unprivileged) on the hardware your `animecoind` process runs on until these
 vulnerabilities are fully analyzed and fixed.
 
 REST Interface
@@ -77,9 +77,9 @@ security review.
 RPC Interface
 ---------------
 
-Users should choose a strong RPC password. If no RPC username and password are set, zcashd will not start and will print an error message with a suggestion for a strong random password. If the client knows the RPC password, they have at least full access to the node. In addition, certain RPC commands can be misused to overwrite files and/or take over the account that is running zcashd. (In the future we may restrict these commands, but full node access – including the ability to spend from and export keys held by the wallet – would still be possible unless wallet methods are disabled.)
+Users should choose a strong RPC password. If no RPC username and password are set, animecoind will not start and will print an error message with a suggestion for a strong random password. If the client knows the RPC password, they have at least full access to the node. In addition, certain RPC commands can be misused to overwrite files and/or take over the account that is running animecoind. (In the future we may restrict these commands, but full node access – including the ability to spend from and export keys held by the wallet – would still be possible unless wallet methods are disabled.)
 
-Users should also refrain from changing the default setting that only allows RPC connections from localhost. Allowing connections from remote hosts would enable a MITM to execute arbitrary RPC commands, which could lead to compromise of the account running zcashd and loss of funds. For multi-user services that use one or more zcashd instances on the backend, the parameters passed in by users should be controlled to prevent confused-deputy attacks which could spend from any keys held by that zcashd.
+Users should also refrain from changing the default setting that only allows RPC connections from localhost. Allowing connections from remote hosts would enable a MITM to execute arbitrary RPC commands, which could lead to compromise of the account running animecoind and loss of funds. For multi-user services that use one or more animecoind instances on the backend, the parameters passed in by users should be controlled to prevent confused-deputy attacks which could spend from any keys held by that animecoind.
 
 Block Chain Reorganization: Major Differences
 -------------------------------------------------

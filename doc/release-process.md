@@ -61,12 +61,12 @@ Run the release script, which will verify you are on the latest clean
 checkout of master, create a branch, then commit standard automated
 changes to that branch locally:
 
-    $ ./zcutil/make-release.py <RELEASE> <RELEASE_PREV> <RELEASE_FROM> <APPROX_RELEASE_HEIGHT>
+    $ ./acutil/make-release.py <RELEASE> <RELEASE_PREV> <RELEASE_FROM> <APPROX_RELEASE_HEIGHT>
 
 Examples:
 
-    $ ./zcutil/make-release.py v1.0.9 v1.0.8-1 v1.0.8-1 120000
-    $ ./zcutil/make-release.py v1.0.13 v1.0.13-rc1 v1.0.12 222900
+    $ ./acutil/make-release.py v1.0.9 v1.0.8-1 v1.0.8-1 120000
+    $ ./acutil/make-release.py v1.0.13 v1.0.13-rc1 v1.0.12 222900
 
 ### Create, Review, and Merge the release branch pull request
 
@@ -136,7 +136,7 @@ Notify the Zcash DevOps engineer/sysadmin that the release has been tagged. They
 * often the same server can be re-used, and the role idempotently handles upgrades, but if not then they also need to update DNS records
 * possible manual steps: blowing away the `testnet3` dir, deleting old parameters, restarting DNS seeder
 
-Then, verify that nodes can connect to the testnet server, and update the guide on the wiki to ensure the correct hostname is listed in the recommended zcash.conf.
+Then, verify that nodes can connect to the testnet server, and update the guide on the wiki to ensure the correct hostname is listed in the recommended animecoin.conf.
 
 ### Update the 1.0 User Guide
 

@@ -17,13 +17,13 @@ BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
             VALUE "CompanyName",        "Zcash"
-            VALUE "FileDescription",    "zcash-cli (JSON-RPC client for Zcash)"
+            VALUE "FileDescription",    "animecoin-cli (JSON-RPC client for Zcash)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
-            VALUE "InternalName",       "zcash-cli"
+            VALUE "InternalName",       "animecoin-cli"
             VALUE "LegalCopyright",     COPYRIGHT_STR
             VALUE "LegalTrademarks1",   "Distributed under the MIT software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
-            VALUE "OriginalFilename",   "zcash-cli.exe"
-            VALUE "ProductName",        "zcash-cli"
+            VALUE "OriginalFilename",   "animecoin-cli.exe"
+            VALUE "ProductName",        "animecoin-cli"
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
         END
     END
