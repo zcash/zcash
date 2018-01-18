@@ -19,11 +19,11 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 4)
 
     def setup_network(self, split=False):
-        args = ['-debug=zrpcunsafe']
+        args = ['-debug=zrpcunsafe', '-experimentalfeatures', '-zmergetoaddress']
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))
         self.nodes.append(start_node(1, self.options.tmpdir, args))
-        args2 = ['-debug=zrpcunsafe', '-mempooltxinputlimit=7']
+        args2 = ['-debug=zrpcunsafe', '-experimentalfeatures', '-zmergetoaddress', '-mempooltxinputlimit=7']
         self.nodes.append(start_node(2, self.options.tmpdir, args2))
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)

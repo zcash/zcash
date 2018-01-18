@@ -3759,9 +3759,16 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
+    auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-zmergetoaddress", false);
+    std::string strDisabledMsg = "";
+    if (!fEnableMergeToAddress) {
+        strDisabledMsg = "\nWARNING: z_mergetoaddress is DISABLED but can be enabled as an experimental feature.\n";
+    }
+
     if (fHelp || params.size() < 2 || params.size() > 6)
         throw runtime_error(
             "z_mergetoaddress [\"fromaddress\", ... ] \"toaddress\" ( fee ) ( transparent_limit ) ( shielded_limit ) ( memo )\n"
+            + strDisabledMsg +
             "\nMerge multiple UTXOs and notes into a single UTXO or note.  Coinbase UTXOs are ignored; use `z_shieldcoinbase`"
             "\nto combine those into a single note."
             "\n\nThis is an asynchronous operation, and UTXOs selected for merging will be locked.  If there is an error, they"
@@ -3806,6 +3813,10 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             + HelpExampleCli("z_mergetoaddress", "'[\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"]' ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf")
             + HelpExampleRpc("z_mergetoaddress", "[\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"], \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
         );
+
+    if (!fEnableMergeToAddress) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Error: z_mergetoaddress is disabled.");
+    }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
