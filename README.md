@@ -1,4 +1,4 @@
-AnimeCoin 0.0.1
+AnimeCoin 1.0.1
 =============
 
 What is AnimeCoin?
