@@ -40,7 +40,7 @@
  * 1. Copy your private key into alertkeys.h.  Don't commit this file!
  *    See sendalert.cpp for more info.
  *
- * 2. Set the GENERATE_ALERTS_FLAG to true.
+ * 2. change #undef GENERATE_ALERTS_FLAG to #define GENERATE_ALERTS_FLAG
  *
  * 3. Build and run:
  *    test_bitcoin -t Generate_Alert_Test_Data
@@ -52,16 +52,16 @@
  *    src/test/data/alertTests.raw.h
  *
  * 5. Clean up...
- *    - Set GENERATE_ALERTS_FLAG back to false.
+ *    - #undef GENERATE_ALERTS_FLAG
  *    - Remove your private key from alertkeys.h
  *
  * 6. Build and verify the new test data:
  *    test_bitcoin -t Alert_tests
  *
  */
-#define GENERATE_ALERTS_FLAG false
+#undef GENERATE_ALERTS_FLAG
 
-#if GENERATE_ALERTS_FLAG
+#ifdef GENERATE_ALERTS_FLAG
 
 // NOTE:
 // A function SignAndSave() was used by Bitcoin Core to create alert test data
