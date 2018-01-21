@@ -1,0 +1,3 @@
+build --copt=-iquote --copt=src
+build --copt=-fopenmp --linkopt=-l:libgomp.a  # Force static linking of libgomp
+build --crosstool_top=@zcash_cc_toolchain//:cc_toolchain

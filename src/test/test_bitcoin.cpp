@@ -19,6 +19,11 @@
 #include "wallet/wallet.h"
 #endif
 
+#ifdef BAZEL_BUILD
+// This defines main
+#include <boost/test/included/unit_test.hpp>
+#endif
+
 #include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/thread.hpp>
