@@ -13,8 +13,8 @@
 
 #include <boost/filesystem/path.hpp>
 
-#include <leveldb/db.h>
-#include <leveldb/write_batch.h>
+#include "leveldb/db.h"
+#include "leveldb/write_batch.h"
 
 class leveldb_error : public std::runtime_error
 {

@@ -5,8 +5,8 @@
 
 #include "pubkey.h"
 
-#include <secp256k1.h>
-#include <secp256k1_recovery.h>
+#include "secp256k1.h"
+#include "secp256k1_recovery.h"
 
 namespace
 {
