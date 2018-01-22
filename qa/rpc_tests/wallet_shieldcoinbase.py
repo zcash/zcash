@@ -6,7 +6,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_node, connect_nodes_bi, sync_blocks, sync_mempools, \
+    connect_nodes_bi, sync_blocks, sync_mempools, \
     wait_and_assert_operationid_status
 
 from decimal import Decimal
@@ -20,10 +20,10 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
     def setup_network(self, split=False):
         args = ['-regtestprotectcoinbase', '-debug=zrpcunsafe']
         self.nodes = []
-        self.nodes.append(start_node(0, self.options.tmpdir, args))
-        self.nodes.append(start_node(1, self.options.tmpdir, args))
+        self.nodes.append(self.start_node(0, args))
+        self.nodes.append(self.start_node(1, args))
         args2 = ['-regtestprotectcoinbase', '-debug=zrpcunsafe', "-mempooltxinputlimit=7"]
-        self.nodes.append(start_node(2, self.options.tmpdir, args2))
+        self.nodes.append(self.start_node(2, args2))
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)

@@ -5,15 +5,14 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, start_node, \
-    gather_inputs
+from test_framework.util import assert_equal, gather_inputs
 
 
 class JoinSplitTest(BitcoinTestFramework):
     def setup_network(self):
         self.nodes = []
         self.is_network_split = False
-        self.nodes.append(start_node(0, self.options.tmpdir))
+        self.nodes.append(self.start_node(0))
 
     def run_test(self):
         zckeypair = self.nodes[0].zcrawkeygen()

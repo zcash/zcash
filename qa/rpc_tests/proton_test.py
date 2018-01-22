@@ -14,8 +14,7 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, bytes_to_hex_str, \
-    start_nodes
+from test_framework.util import assert_equal, bytes_to_hex_str
 
 from proton.handlers import MessagingHandler
 from proton.reactor import Container
@@ -76,7 +75,7 @@ class ProtonTest (BitcoinTestFramework):
         self.t1 = threading.Thread(target=self.container.run)
         self.t1.start()
 
-        return start_nodes(4, self.options.tmpdir, extra_args=[
+        return self.start_nodes(4, extra_args=[
             ['-experimentalfeatures', '-debug=amqp', '-amqppubhashtx=amqp://127.0.0.1:'+str(self.port),
              '-amqppubhashblock=amqp://127.0.0.1:'+str(self.port)],
             [],

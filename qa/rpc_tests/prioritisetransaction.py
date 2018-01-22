@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_node, connect_nodes
+    connect_nodes
 from test_framework.mininode import COIN
 
 import time
@@ -20,8 +20,8 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
     def setup_network(self, split=False):
         self.nodes = []
         # Start nodes with tiny block size of 11kb
-        self.nodes.append(start_node(0, self.options.tmpdir, ["-blockprioritysize=7000", "-blockmaxsize=11000", "-maxorphantx=1000", "-relaypriority=true", "-printpriority=1"]))
-        self.nodes.append(start_node(1, self.options.tmpdir, ["-blockprioritysize=7000", "-blockmaxsize=11000", "-maxorphantx=1000", "-relaypriority=true", "-printpriority=1"]))
+        self.nodes.append(self.start_node(0, ["-blockprioritysize=7000", "-blockmaxsize=11000", "-maxorphantx=1000", "-relaypriority=true", "-printpriority=1"]))
+        self.nodes.append(self.start_node(1, ["-blockprioritysize=7000", "-blockmaxsize=11000", "-maxorphantx=1000", "-relaypriority=true", "-printpriority=1"]))
         connect_nodes(self.nodes[1], 0)
         self.is_network_split=False
         self.sync_all()

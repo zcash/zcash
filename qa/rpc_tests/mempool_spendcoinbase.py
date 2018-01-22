@@ -15,8 +15,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, assert_greater_than, assert_raises, \
-    start_node
+from test_framework.util import assert_equal, assert_greater_than, assert_raises
 
 
 # Create one-input, one-output, no-fee transaction:
@@ -26,7 +25,7 @@ class MempoolSpendCoinbaseTest(BitcoinTestFramework):
         # Just need one node for this test
         args = ["-checkmempool", "-debug=mempool"]
         self.nodes = []
-        self.nodes.append(start_node(0, self.options.tmpdir, args))
+        self.nodes.append(self.start_node(0, args))
         self.is_network_split = False
 
     def create_tx(self, from_txid, to_address, amount):

@@ -8,7 +8,7 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import initialize_chain_clean, start_nodes
+from test_framework.util import initialize_chain_clean
 
 
 class DisableWalletTest (BitcoinTestFramework):
@@ -18,7 +18,7 @@ class DisableWalletTest (BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 1)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(1, self.options.tmpdir, [['-disablewallet']])
+        self.nodes = self.start_nodes(1, [['-disablewallet']])
         self.is_network_split = False
         self.sync_all()
 

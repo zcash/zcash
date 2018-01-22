@@ -10,7 +10,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_raises, \
-    initialize_chain_clean, start_node, connect_nodes
+    initialize_chain_clean, connect_nodes
 
 
 class MerkleBlockTest(BitcoinTestFramework):
@@ -22,11 +22,11 @@ class MerkleBlockTest(BitcoinTestFramework):
     def setup_network(self):
         self.nodes = []
         # Nodes 0/1 are "wallet" nodes
-        self.nodes.append(start_node(0, self.options.tmpdir, ["-debug"]))
-        self.nodes.append(start_node(1, self.options.tmpdir, ["-debug"]))
+        self.nodes.append(self.start_node(0, ["-debug"]))
+        self.nodes.append(self.start_node(1, ["-debug"]))
         # Nodes 2/3 are used for testing
-        self.nodes.append(start_node(2, self.options.tmpdir, ["-debug"]))
-        self.nodes.append(start_node(3, self.options.tmpdir, ["-debug", "-txindex"]))
+        self.nodes.append(self.start_node(2, ["-debug"]))
+        self.nodes.append(self.start_node(3, ["-debug", "-txindex"]))
         connect_nodes(self.nodes[0], 1)
         connect_nodes(self.nodes[0], 2)
         connect_nodes(self.nodes[0], 3)

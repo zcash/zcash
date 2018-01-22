@@ -7,7 +7,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
-    initialize_chain_clean, start_nodes, start_node, connect_nodes_bi, \
+    initialize_chain_clean, connect_nodes_bi, \
     stop_nodes, sync_blocks, sync_mempools, wait_bitcoinds
 
 import time
@@ -20,7 +20,7 @@ class WalletTest (BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 4)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir)
+        self.nodes = self.start_nodes(3)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -164,7 +164,7 @@ class WalletTest (BitcoinTestFramework):
         txid2 = self.nodes[1].sendtoaddress(self.nodes[0].getnewaddress(), 1)
         sync_mempools(self.nodes)
 
-        self.nodes.append(start_node(3, self.options.tmpdir))
+        self.nodes.append(self.start_node(3))
         connect_nodes_bi(self.nodes, 0, 3)
         sync_blocks(self.nodes)
 
@@ -205,7 +205,7 @@ class WalletTest (BitcoinTestFramework):
         #do some -walletbroadcast tests
         stop_nodes(self.nodes)
         wait_bitcoinds()
-        self.nodes = start_nodes(3, self.options.tmpdir, [["-walletbroadcast=0"],["-walletbroadcast=0"],["-walletbroadcast=0"]])
+        self.nodes = self.start_nodes(3, [["-walletbroadcast=0"],["-walletbroadcast=0"],["-walletbroadcast=0"]])
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -234,7 +234,7 @@ class WalletTest (BitcoinTestFramework):
         #restart the nodes with -walletbroadcast=1
         stop_nodes(self.nodes)
         wait_bitcoinds()
-        self.nodes = start_nodes(3, self.options.tmpdir)
+        self.nodes = self.start_nodes(3)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)

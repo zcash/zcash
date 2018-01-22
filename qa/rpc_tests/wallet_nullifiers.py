@@ -5,8 +5,8 @@
 
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, start_node, \
-    start_nodes, connect_nodes_bi, bitcoind_processes
+from test_framework.util import assert_equal, connect_nodes_bi, \
+    bitcoind_processes
 
 import time
 from decimal import Decimal
@@ -14,8 +14,8 @@ from decimal import Decimal
 class WalletNullifiersTest (BitcoinTestFramework):
 
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir,
-                           extra_args=[['-experimentalfeatures', '-developerencryptwallet']] * 4)
+        return self.start_nodes(4,
+                                extra_args=[['-experimentalfeatures', '-developerencryptwallet']] * 4)
 
     def run_test (self):
         # add zaddr to node 0
@@ -58,7 +58,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         bitcoind_processes[1].wait()
 
         # restart node 1
-        self.nodes[1] = start_node(1, self.options.tmpdir)
+        self.nodes[1] = self.start_node(1)
         connect_nodes_bi(self.nodes, 0, 1)
         connect_nodes_bi(self.nodes, 1, 2)
         self.sync_all()

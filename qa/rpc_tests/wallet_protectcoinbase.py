@@ -8,7 +8,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import COIN
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_nodes, connect_nodes_bi, stop_node, wait_and_assert_operationid_status
+    connect_nodes_bi, stop_node, wait_and_assert_operationid_status
 
 import sys
 import time
@@ -34,7 +34,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
 
     # Start nodes with -regtestprotectcoinbase to set fCoinbaseMustBeProtected to true.
     def setup_network(self, split=False):
-        self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[['-regtestprotectcoinbase', '-debug=zrpcunsafe']] * 4 )
+        self.nodes = self.start_nodes(4, extra_args=[['-regtestprotectcoinbase', '-debug=zrpcunsafe']] * 4 )
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)

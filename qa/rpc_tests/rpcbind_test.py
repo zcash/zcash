@@ -8,8 +8,8 @@
 # Dependency: python-bitcoinrpc
 
 from test_framework.util import assert_equal, check_json_precision, \
-    initialize_chain, start_nodes, stop_nodes, wait_bitcoinds, \
-    bitcoind_processes, rpc_port
+    initialize_chain, stop_nodes, wait_bitcoinds, \
+    bitcoind_processes, rpc_port, start_nodes
 from test_framework.authproxy import AuthServiceProxy
 from test_framework.netutil import addr_to_hex, get_bind_addrs, all_interfaces
 
@@ -19,44 +19,49 @@ import shutil
 import tempfile
 import traceback
 
-def run_bind_test(tmpdir, allow_ips, connect_to, addresses, expected):
-    '''
-    Start a node with requested rpcallowip and rpcbind parameters,
-    then try to connect, and check if the set of bound addresses
-    matches the expected set.
-    '''
-    expected = [(addr_to_hex(addr), port) for (addr, port) in expected]
-    base_args = ['-disablewallet', '-nolisten']
-    if allow_ips:
-        base_args += ['-rpcallowip=' + x for x in allow_ips]
-    binds = ['-rpcbind='+addr for addr in addresses]
-    nodes = start_nodes(1, tmpdir, [base_args + binds], connect_to)
-    try:
-        pid = bitcoind_processes[0].pid
-        assert_equal(set(get_bind_addrs(pid)), set(expected))
-    finally:
-        stop_nodes(nodes)
-        wait_bitcoinds()
 
-def run_allowip_test(tmpdir, allow_ips, rpchost, rpcport):
-    '''
-    Start a node with rpcwallow IP, and request getinfo
-    at a non-localhost IP.
-    '''
-    base_args = ['-disablewallet', '-nolisten'] + ['-rpcallowip='+x for x in allow_ips]
-    nodes = start_nodes(1, tmpdir, [base_args])
-    try:
-        # connect to node through non-loopback interface
-        url = "http://rt:rt@%s:%d" % (rpchost, rpcport,)
-        node = AuthServiceProxy(url)
-        node.getinfo()
-    finally:
-        node = None # make sure connection will be garbage collected and closed
-        stop_nodes(nodes)
-        wait_bitcoinds()
+def run_test(testbinary, clibinary, tmpdir, sprout_proving_key, sprout_verifying_key):
+    def run_bind_test(allow_ips, connect_to, addresses, expected):
+        '''
+        Start a node with requested rpcallowip and rpcbind parameters,
+        then try to connect, and check if the set of bound addresses
+        matches the expected set.
+        '''
+        expected = [(addr_to_hex(addr), port) for (addr, port) in expected]
+        base_args = ['-disablewallet', '-nolisten']
+        if allow_ips:
+            base_args += ['-rpcallowip=' + x for x in allow_ips]
+        binds = ['-rpcbind='+addr for addr in addresses]
+        nodes = start_nodes(1, testbinary, clibinary, tmpdir, [base_args + binds],
+                            sprout_proving_key = sprout_proving_key,
+                            sprout_verifying_key = sprout_verifying_key,
+                            rpchost = connect_to)
+        try:
+            pid = bitcoind_processes[0].pid
+            assert_equal(set(get_bind_addrs(pid)), set(expected))
+        finally:
+            stop_nodes(nodes)
+            wait_bitcoinds()
 
+    def run_allowip_test(allow_ips, rpchost, rpcport):
+        '''
+        Start a node with rpcwallow IP, and request getinfo
+        at a non-localhost IP.
+        '''
+        base_args = ['-disablewallet', '-nolisten'] + ['-rpcallowip='+x for x in allow_ips]
+        nodes = start_nodes(1, testbinary, clibinary, tmpdir, [base_args],
+                            sprout_proving_key = sprout_proving_key,
+                            sprout_verifying_key = sprout_verifying_key)
+        try:
+            # connect to node through non-loopback interface
+            url = "http://rt:rt@%s:%d" % (rpchost, rpcport,)
+            node = AuthServiceProxy(url)
+            node.getinfo()
+        finally:
+            node = None # make sure connection will be garbage collected and closed
+            stop_nodes(nodes)
+            wait_bitcoinds()
 
-def run_test(tmpdir):
     assert(sys.platform == 'linux2') # due to OS-specific network stats queries, this test works only on Linux
     # find the first non-loopback interface for testing
     non_loopback_ip = None
@@ -113,6 +118,18 @@ def main():
                       help="Source directory containing bitcoind/bitcoin-cli (default: %default%)")
     parser.add_option("--tmpdir", dest="tmpdir", default=tempfile.mkdtemp(prefix="test"),
                       help="Root directory for datadirs")
+    parser.add_option("--testbinary", dest="testbinary",
+                      default = os.getenv("BITCOIND", "bitcoind"),
+                      help="bitcoind binary to test")
+    parser.add_option("--clibinary", dest="clibinary",
+                      default = os.getenv("BITCOINCLI", "bitcoin-cli"),
+                      help="bitcoin-cli binary to test")
+    parser.add_option("--sprout-proving-key", dest="sprout_proving_key",
+                      default = None,
+                      help="Path to the Sprout proving key")
+    parser.add_option("--sprout-verifying-key", dest="sprout_verifying_key",
+                      default = None,
+                      help="Path to the Sprout verifying key")
     (options, args) = parser.parse_args()
 
     os.environ['PATH'] = options.srcdir+":"+os.environ['PATH']
@@ -124,7 +141,8 @@ def main():
         print("Initializing test directory "+options.tmpdir)
         if not os.path.isdir(options.tmpdir):
             os.makedirs(options.tmpdir)
-        initialize_chain(options.tmpdir)
+        initialize_chain(options.testbinary, options.clibinary, options.tmpdir,
+                         options.sprout_proving_key, options.sprout_verifying_key)
 
         run_test(options.tmpdir)
 

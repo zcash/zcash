@@ -6,7 +6,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_node, connect_nodes, wait_and_assert_operationid_status
+    connect_nodes, wait_and_assert_operationid_status
 
 import time
 from decimal import Decimal
@@ -19,8 +19,8 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
     def setup_network(self):
         args = ["-checkmempool", "-debug=mempool", "-mempooltxinputlimit=2"]
         self.nodes = []
-        self.nodes.append(start_node(0, self.options.tmpdir, args))
-        self.nodes.append(start_node(1, self.options.tmpdir, args))
+        self.nodes.append(self.start_node(0, args))
+        self.nodes.append(self.start_node(1, args))
         connect_nodes(self.nodes[1], 0)
         self.is_network_split = False
         self.sync_all

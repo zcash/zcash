@@ -36,8 +36,7 @@ and confirm again balances are correct.
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_nodes, start_node, connect_nodes, stop_node, \
-    sync_blocks, sync_mempools
+    connect_nodes, stop_node, sync_blocks, sync_mempools
 
 import os
 import shutil
@@ -62,7 +61,7 @@ class WalletBackupTest(BitcoinTestFramework):
 
         # nodes 1, 2,3 are spenders, let's give them a keypool=100
         extra_args = [["-keypool=100", ed0], ["-keypool=100", ed1], ["-keypool=100", ed2], []]
-        self.nodes = start_nodes(4, self.options.tmpdir, extra_args)
+        self.nodes = self.start_nodes(4, extra_args)
         connect_nodes(self.nodes[0], 3)
         connect_nodes(self.nodes[1], 3)
         connect_nodes(self.nodes[2], 3)
@@ -94,9 +93,9 @@ class WalletBackupTest(BitcoinTestFramework):
 
     # As above, this mirrors the original bash test.
     def start_three(self):
-        self.nodes[0] = start_node(0, self.options.tmpdir)
-        self.nodes[1] = start_node(1, self.options.tmpdir)
-        self.nodes[2] = start_node(2, self.options.tmpdir)
+        self.nodes[0] = self.start_node(0)
+        self.nodes[1] = self.start_node(1)
+        self.nodes[2] = self.start_node(2)
         connect_nodes(self.nodes[0], 3)
         connect_nodes(self.nodes[1], 3)
         connect_nodes(self.nodes[2], 3)

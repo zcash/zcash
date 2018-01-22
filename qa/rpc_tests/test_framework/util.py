@@ -85,7 +85,15 @@ def initialize_datadir(dirname, n):
         f.write("listenonion=0\n");
     return datadir
 
-def initialize_chain(test_dir):
+def parameter_args(sprout_proving_key, sprout_verifying_key):
+    res = []
+    if sprout_proving_key:
+        res.append("-sprout-proving-key=%s" % sprout_proving_key)
+    if sprout_verifying_key:
+        res.append("-sprout-verifying-key=%s" % sprout_verifying_key)
+    return res
+
+def initialize_chain(testbinary, clibinary, test_dir, sprout_proving_key, sprout_verifying_key):
     """
     Create (or copy from cache) a 200-block-long chain and
     4 wallets.
@@ -97,15 +105,16 @@ def initialize_chain(test_dir):
         # Create cache directories, run bitcoinds:
         for i in range(4):
             datadir=initialize_datadir("cache", i)
-            args = [ os.getenv("BITCOIND", "bitcoind"), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
+            param_args = parameter_args(sprout_proving_key, sprout_verifying_key)
+            args = [ testbinary, "-keypool=1", "-datadir="+datadir, "-discover=0" ] + param_args
             if i > 0:
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
             bitcoind_processes[i] = subprocess.Popen(args)
-            if os.getenv("PYTHON_DEBUG", ""):
+            if True or os.getenv("PYTHON_DEBUG", ""):
                 print "initialize_chain: bitcoind started, calling bitcoin-cli -rpcwait getblockcount"
-            subprocess.check_call([ os.getenv("BITCOINCLI", "bitcoin-cli"), "-datadir="+datadir,
+            subprocess.check_call([ clibinary, "-datadir="+datadir,
                                     "-rpcwait", "getblockcount"], stdout=devnull)
-            if os.getenv("PYTHON_DEBUG", ""):
+            if True or os.getenv("PYTHON_DEBUG", ""):
                 print "initialize_chain: bitcoin-cli -rpcwait getblockcount completed"
         devnull.close()
         rpcs = []
@@ -175,23 +184,23 @@ def _rpchost_to_args(rpchost):
         rv += ['-rpcport=' + rpcport]
     return rv
 
-def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=None):
+def start_node(i, binary, clibinary, dirname, extra_args=None, sprout_proving_key=None, sprout_verifying_key=None, rpchost=None, timewait=None):
     """
     Start a bitcoind and return RPC connection to it
     """
+    param_args = parameter_args(sprout_proving_key, sprout_verifying_key)
     datadir = os.path.join(dirname, "node"+str(i))
-    if binary is None:
-        binary = os.getenv("BITCOIND", "bitcoind")
-    args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest" ]
+    args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest" ] + param_args
     if extra_args is not None: args.extend(extra_args)
     bitcoind_processes[i] = subprocess.Popen(args)
     devnull = open("/dev/null", "w+")
-    if os.getenv("PYTHON_DEBUG", ""):
+    if True or os.getenv("PYTHON_DEBUG", ""):
         print "start_node: bitcoind started, calling bitcoin-cli -rpcwait getblockcount"
-    subprocess.check_call([ os.getenv("BITCOINCLI", "bitcoin-cli"), "-datadir="+datadir] +
-                          _rpchost_to_args(rpchost)  +
-                          ["-rpcwait", "getblockcount"], stdout=devnull)
-    if os.getenv("PYTHON_DEBUG", ""):
+    subprocess.check_call([ clibinary, "-datadir="+datadir] +
+                          _rpchost_to_args(rpchost) + param_args +
+                          ["-rpcwait", "getblockcount"],
+                          stdout=devnull)
+    if True or os.getenv("PYTHON_DEBUG", ""):
         print "start_node: calling bitcoin-cli -rpcwait getblockcount returned"
     devnull.close()
     url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
@@ -202,13 +211,14 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     proxy.url = url # store URL on proxy for info
     return proxy
 
-def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, binary=None):
+def start_nodes(num_nodes, binary, clibinary, dirname, extra_args=None, sprout_proving_key=None, sprout_verifying_key=None, rpchost=None):
     """
     Start multiple bitcoinds, return RPC connections to them
     """
     if extra_args is None: extra_args = [ None for i in range(num_nodes) ]
+    if isinstance(binary, basestring): binary = [binary] * num_nodes
     if binary is None: binary = [ None for i in range(num_nodes) ]
-    return [ start_node(i, dirname, extra_args[i], rpchost, binary=binary[i]) for i in range(num_nodes) ]
+    return [ start_node(i, binary[i], clibinary, dirname, extra_args[i], sprout_proving_key, sprout_verifying_key, rpchost) for i in range(num_nodes) ]
 
 def log_filename(dirname, n_node, logname):
     return os.path.join(dirname, "node"+str(n_node), "regtest", logname)
@@ -393,7 +403,7 @@ def wait_and_assert_operationid_status(node, myopid, in_status='success', in_err
     if errormsg is not None:
         assert(in_errormsg is not None)
         assert_equal(in_errormsg in errormsg, True)
-    if os.getenv("PYTHON_DEBUG", ""):
+    if True or os.getenv("PYTHON_DEBUG", ""):
         print('...returned status: {}'.format(status))
         if errormsg is not None:
             print('...returned error: {}'.format(errormsg))

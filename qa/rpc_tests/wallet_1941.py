@@ -7,7 +7,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    initialize_datadir, start_nodes, start_node, connect_nodes_bi, \
+    initialize_datadir, connect_nodes_bi, \
     bitcoind_processes, wait_and_assert_operationid_status
 
 from decimal import Decimal
@@ -22,12 +22,12 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
 
     # Start nodes with -regtestprotectcoinbase to set fCoinbaseMustBeProtected to true.
     def setup_network(self, split=False):
-        self.nodes = start_nodes(1, self.options.tmpdir, extra_args=[['-regtestprotectcoinbase','-debug=zrpc']] )
+        self.nodes = self.start_nodes(1, extra_args=[['-regtestprotectcoinbase','-debug=zrpc']] )
         self.is_network_split=False
 
     def add_second_node(self):
         initialize_datadir(self.options.tmpdir, 1)
-        self.nodes.append(start_node(1, self.options.tmpdir, extra_args=['-regtestprotectcoinbase','-debug=zrpc']))
+        self.nodes.append(self.start_node(1, extra_args=['-regtestprotectcoinbase','-debug=zrpc']))
         self.nodes[1].setmocktime(starttime + 9000)
         connect_nodes_bi(self.nodes,0,1)
         self.sync_all()
@@ -35,7 +35,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
     def restart_second_node(self, extra_args=[]):
         self.nodes[1].stop()
         bitcoind_processes[1].wait()
-        self.nodes[1] = start_node(1, self.options.tmpdir, extra_args=['-regtestprotectcoinbase','-debug=zrpc'] + extra_args)
+        self.nodes[1] = self.start_node(1, extra_args=['-regtestprotectcoinbase','-debug=zrpc'] + extra_args)
         self.nodes[1].setmocktime(starttime + 9000)
         connect_nodes_bi(self.nodes, 0, 1)
         self.sync_all()

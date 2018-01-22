@@ -4,8 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_nodes
+from test_framework.util import assert_equal, initialize_chain_clean
 
 
 class DecodeScriptTest(BitcoinTestFramework):
@@ -16,7 +15,7 @@ class DecodeScriptTest(BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 1)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(1, self.options.tmpdir)
+        self.nodes = self.start_nodes(1)
         self.is_network_split = False
 
     def decodescript_script_sig(self):

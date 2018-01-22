@@ -9,7 +9,7 @@
 
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import check_json_precision, initialize_chain, \
-    start_nodes, start_node, stop_nodes, wait_bitcoinds, bitcoind_processes
+    stop_nodes, wait_bitcoinds, bitcoind_processes, start_node, start_nodes
 
 import os
 import sys
@@ -38,12 +38,12 @@ def check_array_result(object_array, to_match, expected):
     if num_matched == 0:
         raise AssertionError("No objects matched %s"%(str(to_match)))
 
-def run_test(nodes, tmpdir):
+def run_test(nodes, testbinary, clibinary, tmpdir):
     # Encrypt wallet and wait to terminate
     nodes[0].encryptwallet('test')
     bitcoind_processes[0].wait()
     # Restart node 0
-    nodes[0] = start_node(0, tmpdir)
+    nodes[0] = start_node(0, testbinary = testbinary, clibinary = clibinary, tmpdir = tmpdir)
     # Keep creating keys
     addr = nodes[0].getnewaddress()
     try:
@@ -83,6 +83,18 @@ def main():
                       help="Source directory containing bitcoind/bitcoin-cli (default: %default%)")
     parser.add_option("--tmpdir", dest="tmpdir", default=tempfile.mkdtemp(prefix="test"),
                       help="Root directory for datadirs")
+    parser.add_option("--testbinary", dest="testbinary",
+                      default = os.getenv("BITCOIND", "bitcoind"),
+                      help="bitcoind binary to test")
+    parser.add_option("--clibinary", dest="clibinary",
+                      default = os.getenv("BITCOINCLI", "bitcoin-cli"),
+                      help="bitcoin-cli binary to test")
+    parser.add_option("--sprout-proving-key", dest="sprout_proving_key",
+                      default = None,
+                      help="Path to the Sprout proving key")
+    parser.add_option("--sprout-verifying-key", dest="sprout_verifying_key",
+                      default = None,
+                      help="Path to the Sprout verifying key")
     (options, args) = parser.parse_args()
 
     os.environ['PATH'] = options.srcdir+":"+os.environ['PATH']
@@ -95,11 +107,19 @@ def main():
         print("Initializing test directory "+options.tmpdir)
         if not os.path.isdir(options.tmpdir):
             os.makedirs(options.tmpdir)
-        initialize_chain(options.tmpdir)
+        initialize_chain(options.testbinary, options.clibinary, options.tmpdir,
+                         options.sprout_proving_key, options.sprout_verifying_key)
 
-        nodes = start_nodes(1, options.tmpdir, extra_args=[['-experimentalfeatures', '-developerencryptwallet']])
+        nodes = start_nodes(
+            1,
+            binary = options.testbinary,
+            clibinary = options.clibinary,
+            sprout_proving_key = options.sprout_proving_key,
+            sprout_verifying_key = options.sprout_verifying_key,
+            dirname = options.tmpdir,
+            extra_args=[['-experimentalfeatures', '-developerencryptwallet']])
 
-        run_test(nodes, options.tmpdir)
+        run_test(nodes, options.testbinary, options.clibinary, options.tmpdir)
 
         success = True
 

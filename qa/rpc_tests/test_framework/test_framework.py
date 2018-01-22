@@ -16,7 +16,7 @@ import traceback
 from authproxy import JSONRPCException
 from util import assert_equal, check_json_precision, \
     initialize_chain, initialize_chain_clean, \
-    start_nodes, connect_nodes_bi, stop_nodes, \
+    start_node, start_nodes, connect_nodes_bi, stop_nodes, \
     sync_blocks, sync_mempools, wait_bitcoinds
 
 
@@ -31,12 +31,17 @@ class BitcoinTestFramework(object):
     def add_options(self, parser):
         pass
 
+    def postprocess_options(self):
+        pass
+
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain(self.options.tmpdir)
+        initialize_chain(self.options.testbinary, self.options.clibinary,
+                         self.options.tmpdir, self.options.sprout_proving_key,
+                         self.options.sprout_verifying_key)
 
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir)
+        return self.start_nodes(4)
 
     def setup_network(self, split = False):
         self.nodes = self.setup_nodes()
@@ -99,8 +104,21 @@ class BitcoinTestFramework(object):
                           help="Root directory for datadirs")
         parser.add_option("--tracerpc", dest="trace_rpc", default=False, action="store_true",
                           help="Print out all RPC calls as they are made")
+        parser.add_option("--testbinary", dest="testbinary",
+                          default = os.getenv("BITCOIND", "bitcoind"),
+                          help="bitcoind binary to test")
+        parser.add_option("--clibinary", dest="clibinary",
+                          default = os.getenv("BITCOINCLI", "bitcoin-cli"),
+                          help="bitcoin-cli binary to test")
+        parser.add_option("--sprout-proving-key", dest="sprout_proving_key",
+                          default = None,
+                          help="Path to the Sprout proving key")
+        parser.add_option("--sprout-verifying-key", dest="sprout_verifying_key",
+                          default = None,
+                          help="Path to the Sprout verifying key")
         self.add_options(parser)
         (self.options, self.args) = parser.parse_args()
+        self.postprocess_options()
 
         if self.options.trace_rpc:
             import logging
@@ -150,6 +168,29 @@ class BitcoinTestFramework(object):
             print("Failed")
             sys.exit(1)
 
+    def start_node(self, i, extra_args=None, rpchost=None, timewait=None, binary=None, clibinary=None, dirname=None):
+        return start_node(
+            i,
+            binary or self.options.testbinary,
+            clibinary or self.options.clibinary,
+            dirname or self.options.tmpdir,
+            sprout_proving_key = self.options.sprout_proving_key,
+            sprout_verifying_key = self.options.sprout_verifying_key,
+            extra_args = extra_args,
+            rpchost = rpchost,
+            timewait = timewait)
+
+    def start_nodes(self, num_nodes, extra_args=None, rpchost=None, binary=None, clibinary=None, dirname=None):
+        return start_nodes(
+            num_nodes,
+            binary or self.options.testbinary,
+            clibinary or self.options.clibinary,
+            dirname or self.options.tmpdir,
+            sprout_proving_key = self.options.sprout_proving_key,
+            sprout_verifying_key = self.options.sprout_verifying_key,
+            extra_args = extra_args,
+            rpchost = rpchost)
+
 
 # Test framework for doing p2p comparison testing, which sets up some bitcoind
 # binaries:
@@ -164,19 +205,20 @@ class ComparisonTestFramework(BitcoinTestFramework):
         self.num_nodes = 2
 
     def add_options(self, parser):
-        parser.add_option("--testbinary", dest="testbinary",
-                          default=os.getenv("BITCOIND", "bitcoind"),
-                          help="bitcoind binary to test")
         parser.add_option("--refbinary", dest="refbinary",
-                          default=os.getenv("BITCOIND", "bitcoind"),
+                          default=None,
                           help="bitcoind binary to use for reference nodes (if any)")
+
+    def postprocess_options(self):
+        if not self.options.refbinary:
+            self.options.refbinary = self.options.testbinary
 
     def setup_chain(self):
         print "Initializing test directory "+self.options.tmpdir
         initialize_chain_clean(self.options.tmpdir, self.num_nodes)
 
     def setup_network(self):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir,
-                                    extra_args=[['-debug', '-whitelist=127.0.0.1']] * self.num_nodes,
-                                    binary=[self.options.testbinary] +
-                                           [self.options.refbinary]*(self.num_nodes-1))
+        binaries = [self.options.testbinary] + [self.options.refbinary]*(self.num_nodes-1)
+        self.nodes = self.start_nodes(self.num_nodes,
+                                      extra_args=[['-debug', '-whitelist=127.0.0.1']] * self.num_nodes,
+                                      binary = binaries)
