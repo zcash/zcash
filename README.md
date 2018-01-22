@@ -12,7 +12,7 @@ It downloads and stores the entire history of Komodo transactions; depending on 
 - Komodo Platform public material: [Komodo Platform public material](https://docs.google.com/document/d/1AbhWrtagu4vYdkl-vsWz-HSNyNvK-W-ZasHCqe7CZy0)
 ## List of Komodo Platform Technologies
 Delayed Proof of Work (dPoW) - Additional security layer.
-zk-SNARKs - Komodo Platform�s privacy technology
+zk-SNARKs - Komodo Platform's privacy technology
 Jumblr - Decentralized tumbler for KMD and other cryptocurrencies
 Assetchains - Easy way to fork Komodo coin
 Pegged Assets - Chains that maintain a peg to fiat currencies
@@ -26,15 +26,14 @@ Block Time: 1M 2s
 Block Reward: 3KMD
 Mining Algorithm: Equihash 
 ## About this Project
-Komodo has being evolved from Zcash project, where we used some of their codebase and extended it with new technologies.
-Same Zcash is based on Bitcoin's code, with differnece Zcash intends to offer a far higher standard of privacy through a sophisticated zero-knowledge proving scheme that preserves confidentiality of transaction metadata. Technical details are available in our [Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf). 
+Komodo is based on Zcash and has been  by our innovative consensus algorithm called dPoW which utilizes Bitcoin's hashrate to store Komodo blockchain information into the Bitcoin blockchain. Other new and native Komodo features are the privacy technology called JUMBLR or our assetchain capabilities (one click plug and play blockchain solutions). More details are available under https://komodoplatform.com/. 
 ## Getting started
 Dependencies
 ------------
 
 ```
 #The following packages are needed:
-sudo apt-get install build-essential pkg-config libcurl3-gnutls-dev libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libboost-all-dev libssl-dev libprotobuf-dev protobuf-compiler libqt4-dev libqrencode-dev libdb++-dev ntp ntpdate
+sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python python-zmq zlib1g-dev wget libcurl3-gnutls-dev bsdmainutils automake
 ```
 
 Komodo
