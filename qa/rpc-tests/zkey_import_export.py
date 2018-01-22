@@ -113,7 +113,8 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         alice_zaddr = alice.z_getnewaddress()
         res = alice.z_shieldcoinbase("*", alice_zaddr)
         self.wait_and_assert_operationid_status(alice, res['opid'])
-        miner.generate(6)
+        self.sync_all()
+        miner.generate(1)
         self.sync_all()
 
         # Now get a pristine z-address for receiving transfers:
