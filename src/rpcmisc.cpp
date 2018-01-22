@@ -47,7 +47,7 @@ uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
 int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
 int32_t komodo_whoami(char *pubkeystr,int32_t height);
-extern int32_t KOMODO_LASTMINED;
+extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE;
 extern char ASSETCHAINS_SYMBOL[];
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
 #define KOMODO_VERSION "0.1.1"
@@ -221,6 +221,26 @@ UniValue jumblr_secret(const UniValue& params, bool fHelp)
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("num", retval));
     } else result.push_back(Pair("error", "invalid address"));
+    return(result);
+}
+
+UniValue jumblr_pause(const UniValue& params, bool fHelp)
+{
+    int32_t retval; UniValue result(UniValue::VOBJ);
+    if (fHelp )
+        throw runtime_error("jumblr_pause\n");
+    JUMBLR_PAUSE = 1;
+    result.push_back(Pair("result", "paused"));
+    return(result);
+}
+
+UniValue jumblr_resume(const UniValue& params, bool fHelp)
+{
+    int32_t retval; UniValue result(UniValue::VOBJ);
+    if (fHelp )
+        throw runtime_error("jumblr_resume\n");
+    JUMBLR_PAUSE = 0;
+    result.push_back(Pair("result", "resumed"));
     return(result);
 }
 

@@ -13,6 +13,8 @@
  *                                                                            *
  ******************************************************************************/
 
+#include "komodo_defs.h"
+
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t kheight,uint32_t ktime,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout);
 void komodo_init(int32_t height);
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp);
@@ -30,6 +32,7 @@ pthread_mutex_t komodo_mutex;
 
 #define KOMODO_ELECTION_GAP 2000    //((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)
 #define IGUANA_MAXSCRIPTSIZE 10001
+#define KOMODO_ASSETCHAIN_MAXLEN 65
 
 struct pax_transaction *PAX;
 int32_t NUM_PRICES; uint32_t *PVALS;
@@ -41,11 +44,11 @@ struct komodo_state KOMODO_STATES[34];
 int COINBASE_MATURITY = _COINBASE_MATURITY;//100;
 
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAINS_SEED,KOMODO_ON_DEMAND,KOMODO_EXTERNAL_NOTARIES,KOMODO_PASSPORT_INITDONE,KOMODO_PAX,KOMODO_EXCHANGEWALLET,KOMODO_REWIND;
-int32_t KOMODO_LASTMINED,prevKOMODO_LASTMINED;
+int32_t KOMODO_LASTMINED,prevKOMODO_LASTMINED,JUMBLR_PAUSE;
 std::string NOTARY_PUBKEY,ASSETCHAINS_NOTARIES;
 uint8_t NOTARY_PUBKEY33[33];
 
-char ASSETCHAINS_SYMBOL[16];
+char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 uint16_t ASSETCHAINS_PORT;
 uint32_t ASSETCHAIN_INIT;
 uint32_t ASSETCHAINS_MAGIC = 2387029918;
