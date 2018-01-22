@@ -32,8 +32,18 @@ extern void noui_connect();
 
 JoinSplitTestingSetup::JoinSplitTestingSetup()
 {
-    boost::filesystem::path pk_path = ZC_GetParamsDir() / "sprout-proving.key";
-    boost::filesystem::path vk_path = ZC_GetParamsDir() / "sprout-verifying.key";
+    boost::filesystem::path pk_path =
+#ifdef SPROUT_PROVING_KEY
+        SPROUT_PROVING_KEY;
+#else
+        ZC_GetParamsDir() / "sprout-proving.key";
+#endif
+    boost::filesystem::path vk_path =
+#ifdef SPROUT_VERIFYING_KEY
+        SPROUT_VERIFYING_KEY;
+#else
+        ZC_GetParamsDir() / "sprout-verifying.key";
+#endif
     pzcashParams = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
 }
 

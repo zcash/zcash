@@ -21,8 +21,18 @@ int main(int argc, char **argv) {
   libsnark::default_r1cs_ppzksnark_pp::init_public_params();
   libsnark::inhibit_profiling_info = true;
   libsnark::inhibit_profiling_counters = true;
-  boost::filesystem::path pk_path = ZC_GetParamsDir() / "sprout-proving.key";
-  boost::filesystem::path vk_path = ZC_GetParamsDir() / "sprout-verifying.key";
+  boost::filesystem::path pk_path =
+#ifdef SPROUT_PROVING_KEY
+      SPROUT_PROVING_KEY;
+#else
+      ZC_GetParamsDir() / "sprout-proving.key";
+#endif
+  boost::filesystem::path vk_path =
+#ifdef SPROUT_VERIFYING_KEY
+      SPROUT_VERIFYING_KEY;
+#else
+      ZC_GetParamsDir() / "sprout-verifying.key";
+#endif
   params = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
   
   testing::InitGoogleMock(&argc, argv);
