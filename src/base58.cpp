@@ -357,26 +357,26 @@ DATA_TYPE CZCEncoding<DATA_TYPE, PREFIX, SER_SIZE>::Get() const
     return ret;
 }
 
-// Explicit instantiations for libzcash::PaymentAddress
-template bool CZCEncoding<libzcash::PaymentAddress,
+// Explicit instantiations for libsodatoken::PaymentAddress
+template bool CZCEncoding<libsodatoken::PaymentAddress,
                           CChainParams::ZCPAYMENT_ADDRRESS,
-                          libzcash::SerializedPaymentAddressSize>::Set(const libzcash::PaymentAddress& addr);
-template libzcash::PaymentAddress CZCEncoding<libzcash::PaymentAddress,
+                          libsodatoken::SerializedPaymentAddressSize>::Set(const libsodatoken::PaymentAddress& addr);
+template libsodatoken::PaymentAddress CZCEncoding<libsodatoken::PaymentAddress,
                                               CChainParams::ZCPAYMENT_ADDRRESS,
-                                              libzcash::SerializedPaymentAddressSize>::Get() const;
+                                              libsodatoken::SerializedPaymentAddressSize>::Get() const;
 
-// Explicit instantiations for libzcash::ViewingKey
-template bool CZCEncoding<libzcash::ViewingKey,
+// Explicit instantiations for libsodatoken::ViewingKey
+template bool CZCEncoding<libsodatoken::ViewingKey,
                           CChainParams::ZCVIEWING_KEY,
-                          libzcash::SerializedViewingKeySize>::Set(const libzcash::ViewingKey& vk);
-template libzcash::ViewingKey CZCEncoding<libzcash::ViewingKey,
+                          libsodatoken::SerializedViewingKeySize>::Set(const libsodatoken::ViewingKey& vk);
+template libsodatoken::ViewingKey CZCEncoding<libsodatoken::ViewingKey,
                                           CChainParams::ZCVIEWING_KEY,
-                                          libzcash::SerializedViewingKeySize>::Get() const;
+                                          libsodatoken::SerializedViewingKeySize>::Get() const;
 
-// Explicit instantiations for libzcash::SpendingKey
-template bool CZCEncoding<libzcash::SpendingKey,
+// Explicit instantiations for libsodatoken::SpendingKey
+template bool CZCEncoding<libsodatoken::SpendingKey,
                           CChainParams::ZCSPENDING_KEY,
-                          libzcash::SerializedSpendingKeySize>::Set(const libzcash::SpendingKey& sk);
-template libzcash::SpendingKey CZCEncoding<libzcash::SpendingKey,
+                          libsodatoken::SerializedSpendingKeySize>::Set(const libsodatoken::SpendingKey& sk);
+template libsodatoken::SpendingKey CZCEncoding<libsodatoken::SpendingKey,
                                            CChainParams::ZCSPENDING_KEY,
-                                           libzcash::SerializedSpendingKeySize>::Get() const;
+                                           libsodatoken::SerializedSpendingKeySize>::Get() const;

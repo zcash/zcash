@@ -1,10 +1,10 @@
-# bash programmable completion for zcash-cli(1)
+# bash programmable completion for sodatoken-cli(1)
 # Copyright (c) 2012-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-# call $zcash-cli for RPC
-_zcash_rpc() {
+# call $sodatoken-cli for RPC
+_sodatoken_rpc() {
     # determine already specified args necessary for RPC
     local rpcargs=()
     for i in ${COMP_LINE}; do
@@ -14,25 +14,25 @@ _zcash_rpc() {
                 ;;
         esac
     done
-    $zcash_cli "${rpcargs[@]}" "$@"
+    $sodatoken_cli "${rpcargs[@]}" "$@"
 }
 
 # Add wallet accounts to COMPREPLY
-_zcash_accounts() {
+_sodatoken_accounts() {
     local accounts
-    # Accounts are deprecated in Zcash
-    #accounts=$(_zcash_rpc listaccounts | awk -F '"' '{ print $2 }')
+    # Accounts are deprecated in SodaToken
+    #accounts=$(_sodatoken_rpc listaccounts | awk -F '"' '{ print $2 }')
     accounts="\\\"\\\""
     COMPREPLY=( "${COMPREPLY[@]}" $( compgen -W "$accounts" -- "$cur" ) )
 }
 
-_zcash_cli() {
+_sodatoken_cli() {
     local cur prev words=() cword
-    local zcash_cli
+    local sodatoken_cli
 
-    # save and use original argument to invoke zcash-cli for -help, help and RPC
-    # as zcash-cli might not be in $PATH
-    zcash_cli="$1"
+    # save and use original argument to invoke sodatoken-cli for -help, help and RPC
+    # as sodatoken-cli might not be in $PATH
+    sodatoken_cli="$1"
 
     COMPREPLY=()
     _get_comp_words_by_ref -n = cur prev words cword
@@ -62,7 +62,7 @@ _zcash_cli() {
     if ((cword > 3)); then
         case ${words[cword-3]} in
             addmultisigaddress)
-                _zcash_accounts
+                _sodatoken_accounts
                 return 0
                 ;;
             getbalance|gettxout|importaddress|importpubkey|importprivkey|listreceivedbyaccount|listreceivedbyaddress|listsinceblock)
@@ -91,7 +91,7 @@ _zcash_cli() {
                 return 0
                 ;;
             move|setaccount)
-                _zcash_accounts
+                _sodatoken_accounts
                 return 0
                 ;;
         esac
@@ -107,7 +107,7 @@ _zcash_cli() {
             return 0
             ;;
         getaccountaddress|getaddressesbyaccount|getbalance|getnewaddress|getreceivedbyaccount|listtransactions|move|sendfrom|sendmany)
-            _zcash_accounts
+            _sodatoken_accounts
             return 0
             ;;
     esac
@@ -131,12 +131,12 @@ _zcash_cli() {
 
             # only parse -help if senseful
             if [[ -z "$cur" || "$cur" =~ ^- ]]; then
-                helpopts=$($zcash_cli -help 2>&1 | awk '$1 ~ /^-/ { sub(/=.*/, "="); print $1 }' )
+                helpopts=$($sodatoken_cli -help 2>&1 | awk '$1 ~ /^-/ { sub(/=.*/, "="); print $1 }' )
             fi
 
             # only parse help if senseful
             if [[ -z "$cur" || "$cur" =~ ^[a-z] ]]; then
-                commands=$(_zcash_rpc help 2>/dev/null | awk '$1 ~ /^[a-z]/ { print $1; }')
+                commands=$(_sodatoken_rpc help 2>/dev/null | awk '$1 ~ /^[a-z]/ { print $1; }')
             fi
 
             COMPREPLY=( $( compgen -W "$helpopts $commands" -- "$cur" ) )
@@ -149,7 +149,7 @@ _zcash_cli() {
             ;;
     esac
 } &&
-complete -F _zcash_cli zcash-cli
+complete -F _sodatoken_cli sodatoken-cli
 
 # Local variables:
 # mode: shell-script

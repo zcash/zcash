@@ -12,20 +12,20 @@ Jack Grigg (14):
       Fix prioritisetransaction RPC test
       torcontrol: Handle escapes in Tor QuotedStrings
       torcontrol: Add missing copyright header
-      Convert Zcash versions to Debian format
+      Convert SodaToken versions to Debian format
       [manpage] Handle build numbers in versions
       Address Daira's comments
       Address Daira's further comments
       Correctly handle three-digit octals with leading digit 4-7
       Check that >3-digit octals are truncated.
-      Implement automatic shutdown of deprecated Zcash versions
+      Implement automatic shutdown of deprecated SodaToken versions
       Wrap messages nicely on metrics screen
       Regenerate miner tests
       Add a benchmark for calling ConnectBlock on a block with many inputs
       Remove additional sources of determinism from benchmark archive
 
 Jay Graber (2):
-      Change help text examples to use Zcash addresses
+      Change help text examples to use SodaToken addresses
       Poll on getblocktemplate result rather than use bare sleep to avoid race condition.
 
 Nathan Wilcox (39):
@@ -34,7 +34,7 @@ Nathan Wilcox (39):
       Start on a make-release.py script; currently just arg parsing and unittests [unittests fail].
       Update version spec by altering test; also update regex to pass single 0 digits in major/minor/patch.
       Add another case from debian-style versions.
-      Add all of the zcash release tags in my current repo as positive test vector.
+      Add all of the sodatoken release tags in my current repo as positive test vector.
       Add support for beta/rc release versions.
       Add version sorting, assert that RELEASE_PREV is the most recent release.
       Make SystemExit errors less redundant in output; verify clean git status on master.
@@ -57,8 +57,8 @@ Nathan Wilcox (39):
       First full-release-branch version of script; rewrite large swatch of release-process.md. [Manually tested.]
       Enable set -u mode.
       Fix a variable name typo.
-      Reuse zcash_rpc.
-      Do not use `-rpcwait` on all `zcash_rpc` invocations, only block when starting zcashd.
+      Reuse sodatoken_rpc.
+      Do not use `-rpcwait` on all `sodatoken_rpc` invocations, only block when starting sodatokend.
       Fix `release-process.md` doc usage for `make-release.py` to have correct arguments and order.
       Include release version in commit comments.
       Examine all future versions which are assumed to follow the same Version parser schema.
@@ -86,5 +86,5 @@ Simon Liu (5):
       Patch to build Proton with minimal dependencies.
 
 emilrus (1):
-      Replace bitcoind with zcashd
+      Replace bitcoind with sodatokend
 

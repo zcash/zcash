@@ -2,11 +2,11 @@
 #define ZC_NOTE_H_
 
 #include "uint256.h"
-#include "Zcash.h"
+#include "SodaToken.h"
 #include "Address.hpp"
 #include "NoteEncryption.hpp"
 
-namespace libzcash {
+namespace libsodatoken {
 
 class Note {
 public:

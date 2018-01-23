@@ -14,7 +14,7 @@
 #include "util.h"
 #include "utiltime.h"
 #include "wallet/wallet.h"
-#include "zcash/Proof.hpp"
+#include "sodatoken/Proof.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
@@ -105,8 +105,8 @@ bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey,
     return true;
 }
 
-bool CWalletDB::WriteCryptedZKey(const libzcash::PaymentAddress & addr,
-                                 const libzcash::ReceivingKey &rk,
+bool CWalletDB::WriteCryptedZKey(const libsodatoken::PaymentAddress & addr,
+                                 const libsodatoken::ReceivingKey &rk,
                                  const std::vector<unsigned char>& vchCryptedSecret,
                                  const CKeyMetadata &keyMeta)
 {
@@ -131,7 +131,7 @@ bool CWalletDB::WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey)
     return Write(std::make_pair(std::string("mkey"), nID), kMasterKey, true);
 }
 
-bool CWalletDB::WriteZKey(const libzcash::PaymentAddress& addr, const libzcash::SpendingKey& key, const CKeyMetadata &keyMeta)
+bool CWalletDB::WriteZKey(const libsodatoken::PaymentAddress& addr, const libsodatoken::SpendingKey& key, const CKeyMetadata &keyMeta)
 {
     nWalletDBUpdated++;
 
@@ -142,13 +142,13 @@ bool CWalletDB::WriteZKey(const libzcash::PaymentAddress& addr, const libzcash::
     return Write(std::make_pair(std::string("zkey"), addr), key, false);
 }
 
-bool CWalletDB::WriteViewingKey(const libzcash::ViewingKey &vk)
+bool CWalletDB::WriteViewingKey(const libsodatoken::ViewingKey &vk)
 {
     nWalletDBUpdated++;
     return Write(std::make_pair(std::string("vkey"), vk), '1');
 }
 
-bool CWalletDB::EraseViewingKey(const libzcash::ViewingKey &vk)
+bool CWalletDB::EraseViewingKey(const libsodatoken::ViewingKey &vk)
 {
     nWalletDBUpdated++;
     return Erase(std::make_pair(std::string("vkey"), vk));
@@ -424,7 +424,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             CWalletTx wtx;
             ssValue >> wtx;
             CValidationState state;
-            auto verifier = libzcash::ProofVerifier::Strict();
+            auto verifier = libsodatoken::ProofVerifier::Strict();
             if (!(CheckTransaction(wtx, state, verifier) && (wtx.GetHash() == hash) && state.IsValid()))
                 return false;
 
@@ -485,7 +485,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "vkey")
         {
-            libzcash::ViewingKey vk;
+            libsodatoken::ViewingKey vk;
             ssKey >> vk;
             char fYes;
             ssValue >> fYes;
@@ -498,9 +498,9 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "zkey")
         {
-            libzcash::PaymentAddress addr;
+            libsodatoken::PaymentAddress addr;
             ssKey >> addr;
-            libzcash::SpendingKey key;
+            libsodatoken::SpendingKey key;
             ssValue >> key;
 
             if (!pwallet->LoadZKey(key))
@@ -607,12 +607,12 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "czkey")
         {
-            libzcash::PaymentAddress addr;
+            libsodatoken::PaymentAddress addr;
             ssKey >> addr;
             // Deserialization of a pair is just one item after another
             uint256 rkValue;
             ssValue >> rkValue;
-            libzcash::ReceivingKey rk(rkValue);
+            libsodatoken::ReceivingKey rk(rkValue);
             vector<unsigned char> vchCryptedSecret;
             ssValue >> vchCryptedSecret;
             wss.nCKeys++;
@@ -641,7 +641,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "zkeymeta")
         {
-            libzcash::PaymentAddress addr;
+            libsodatoken::PaymentAddress addr;
             ssKey >> addr;
             CKeyMetadata keyMeta;
             ssValue >> keyMeta;
@@ -913,7 +913,7 @@ DBErrors CWalletDB::ZapWalletTx(CWallet* pwallet, vector<CWalletTx>& vWtx)
 void ThreadFlushWalletDB(const string& strFile)
 {
     // Make this thread recognisable as the wallet flushing thread
-    RenameThread("zcash-wallet");
+    RenameThread("sodatoken-wallet");
 
     static bool fOneThread;
     if (fOneThread)

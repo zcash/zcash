@@ -5,9 +5,9 @@
 #include "version.h"
 #include "streams.h"
 
-#include "zcash/util.h"
+#include "sodatoken/util.h"
 
-namespace libzcash {
+namespace libsodatoken {
 
 Note::Note() {
     a_pk = random_uint256();

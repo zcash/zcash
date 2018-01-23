@@ -5,7 +5,7 @@ Incoming viewing keys
 ---------------------
 
 Support for incoming viewing keys, as described in
-[the Zcash protocol spec](https://github.com/zcash/zips/blob/master/protocol/protocol.pdf),
+[the SodaToken protocol spec](https://github.com/sodatoken/zips/blob/master/protocol/protocol.pdf),
 has been added to the wallet.
 
 Use the `z_exportviewingkey` RPC method to obtain the incoming viewing key for a
@@ -28,7 +28,7 @@ watch-only addresses.
   cannot detect spends, and so the "balance" is just the sum of all received
   notes, including ones that have been spent. Some future use-cases for incoming
   viewing keys will include synchronization data to keep their balances accurate
-  (e.g. [#2542](https://github.com/zcash/zcash/issues/2542)).
+  (e.g. [#2542](https://github.com/sodatoken/sodatoken/BinaryOmen/sodatoken2/issues/2542)).
 
 Changelog
 =========
@@ -59,10 +59,10 @@ Jack Grigg (40):
       Check if OpenMP is available before using it
       [libsnark] Use POSIX-compliant ar arguments
       Include endian-ness compatibility layer in Equihash implementation
-      build: Split hardening/fPIE options out in Zcash-specific binaries
+      build: Split hardening/fPIE options out in SodaToken-specific binaries
       Change --enable-werror to apply to all warnings, use it in build.sh
-      Move Zcash flags into configure.ac
-      ViewingKey -> ReceivingKey per zcash/zips#117
+      Move SodaToken flags into configure.ac
+      ViewingKey -> ReceivingKey per sodatoken/zips#117
       Implement viewing key storage in the keystore
       Factor out common logic from CZCPaymentAddress and CZCSpendingKey
       Track net value entering and exiting the Sprout circuit
@@ -75,7 +75,7 @@ Jack Grigg (40):
       Implement viewing key storage in the wallet
       Add RPC methods for exporting/importing viewing keys
       Update wallet logic to account for viewing keys
-      Add watch-only support to Zcash RPC methods
+      Add watch-only support to SodaToken RPC methods
       Modify zcrawkeygen RPC method to set "zcviewingkey" to the viewing key
       Cleanup: Add braces for clarity
       Add cautions to z_getbalance and z_gettotalbalance help text about viewing keys
@@ -155,6 +155,6 @@ syd (13):
       Get rid of fp3 from libsnark, it is not used.
       InitGoogleMock instead of InitGoogleTest per CR
       Get rid of underscore prefixes for include guards.
-      Rename bash completion files so that they refer to zcash and not bitcoin.
+      Rename bash completion files so that they refer to sodatoken and not bitcoin.
       Fix libsnark test failure.
 

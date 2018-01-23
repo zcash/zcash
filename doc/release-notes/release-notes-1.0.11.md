@@ -17,7 +17,7 @@ Daira Hopwood (7):
 
 Jack Grigg (17):
       Pull in temporary release notes during the release process
-      Ansible playbook for installing Zcash dependencies and Buildbot worker
+      Ansible playbook for installing SodaToken dependencies and Buildbot worker
       Variable overrides for Debian, Ubuntu and Fedora
       Variable overrides for FreeBSD
       Simplify Python installation, inform user if they need to manually configure

@@ -3,8 +3,8 @@
 
 #include <stdexcept>
 
-#include "zcash/NoteEncryption.hpp"
-#include "zcash/prf.h"
+#include "sodatoken/NoteEncryption.hpp"
+#include "sodatoken/prf.h"
 #include "crypto/sha256.h"
 
 class TestNoteDecryption : public ZCNoteDecryption {
@@ -47,24 +47,24 @@ TEST(noteencryption, api)
 
             // Test wrong nonce
             ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), (i == 0) ? 1 : (i - 1)),
-                         libzcash::note_decryption_failed);
+                         libsodatoken::note_decryption_failed);
         
             // Test wrong ephemeral key
             {
                 ZCNoteEncryption c = ZCNoteEncryption(uint256());
 
                 ASSERT_THROW(decrypter.decrypt(ciphertext, c.get_epk(), uint256(), i),
-                             libzcash::note_decryption_failed);
+                             libsodatoken::note_decryption_failed);
             }
         
             // Test wrong seed
             ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256S("11035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a77"), i),
-                         libzcash::note_decryption_failed);
+                         libsodatoken::note_decryption_failed);
         
             // Test corrupted ciphertext
             ciphertext[10] ^= 0xff;
             ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i),
-                         libzcash::note_decryption_failed);
+                         libsodatoken::note_decryption_failed);
             ciphertext[10] ^= 0xff;
         }
 
@@ -74,7 +74,7 @@ TEST(noteencryption, api)
             ZCNoteDecryption decrypter(sk_enc_2);
 
             ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i),
-                         libzcash::note_decryption_failed);
+                         libsodatoken::note_decryption_failed);
         }
 
         {
@@ -87,7 +87,7 @@ TEST(noteencryption, api)
             // Test wrong public key (test of KDF)
             decrypter.change_pk_enc(uint256());
             ASSERT_THROW(decrypter.decrypt(ciphertext, b.get_epk(), uint256(), i),
-                         libzcash::note_decryption_failed);
+                         libsodatoken::note_decryption_failed);
         }
     }
 
@@ -124,7 +124,7 @@ uint256 test_prf(
 TEST(noteencryption, prf_addr)
 {
     for (size_t i = 0; i < 100; i++) {
-        uint252 a_sk = libzcash::random_uint252();
+        uint252 a_sk = libsodatoken::random_uint252();
         uint256 rest;
         ASSERT_TRUE(
             test_prf(0xc0, a_sk, rest) == PRF_addr_a_pk(a_sk)
@@ -132,7 +132,7 @@ TEST(noteencryption, prf_addr)
     }
 
     for (size_t i = 0; i < 100; i++) {
-        uint252 a_sk = libzcash::random_uint252();
+        uint252 a_sk = libsodatoken::random_uint252();
         uint256 rest;
         *rest.begin() = 0x01;
         ASSERT_TRUE(
@@ -144,8 +144,8 @@ TEST(noteencryption, prf_addr)
 TEST(noteencryption, prf_nf)
 {
     for (size_t i = 0; i < 100; i++) {
-        uint252 a_sk = libzcash::random_uint252();
-        uint256 rho = libzcash::random_uint256();
+        uint252 a_sk = libsodatoken::random_uint252();
+        uint256 rho = libsodatoken::random_uint256();
         ASSERT_TRUE(
             test_prf(0xe0, a_sk, rho) == PRF_nf(a_sk, rho)
         );
@@ -155,16 +155,16 @@ TEST(noteencryption, prf_nf)
 TEST(noteencryption, prf_pk)
 {
     for (size_t i = 0; i < 100; i++) {
-        uint252 a_sk = libzcash::random_uint252();
-        uint256 h_sig = libzcash::random_uint256();
+        uint252 a_sk = libsodatoken::random_uint252();
+        uint256 h_sig = libsodatoken::random_uint256();
         ASSERT_TRUE(
             test_prf(0x00, a_sk, h_sig) == PRF_pk(a_sk, 0, h_sig)
         );
     }
 
     for (size_t i = 0; i < 100; i++) {
-        uint252 a_sk = libzcash::random_uint252();
-        uint256 h_sig = libzcash::random_uint256();
+        uint252 a_sk = libsodatoken::random_uint252();
+        uint256 h_sig = libsodatoken::random_uint256();
         ASSERT_TRUE(
             test_prf(0x40, a_sk, h_sig) == PRF_pk(a_sk, 1, h_sig)
         );
@@ -178,16 +178,16 @@ TEST(noteencryption, prf_pk)
 TEST(noteencryption, prf_rho)
 {
     for (size_t i = 0; i < 100; i++) {
-        uint252 phi = libzcash::random_uint252();
-        uint256 h_sig = libzcash::random_uint256();
+        uint252 phi = libsodatoken::random_uint252();
+        uint256 h_sig = libsodatoken::random_uint256();
         ASSERT_TRUE(
             test_prf(0x20, phi, h_sig) == PRF_rho(phi, 0, h_sig)
         );
     }
 
     for (size_t i = 0; i < 100; i++) {
-        uint252 phi = libzcash::random_uint252();
-        uint256 h_sig = libzcash::random_uint256();
+        uint252 phi = libsodatoken::random_uint252();
+        uint256 h_sig = libsodatoken::random_uint256();
         ASSERT_TRUE(
             test_prf(0x60, phi, h_sig) == PRF_rho(phi, 1, h_sig)
         );

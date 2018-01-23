@@ -21,7 +21,7 @@ Jack Grigg (32):
       Change function names to not clash with Bitcoin, apply to correct binaries
       Add bash completion files to Debian package
       Always bash-complete the default account
-      Add Zcash RPC commands to CLI argument completion
+      Add SodaToken RPC commands to CLI argument completion
       Document behaviour of CWallet::SetBestChain
       Fix indentation
       Generate JS for trydecryptnotes, make number of addresses a variable
@@ -39,7 +39,7 @@ Jack Grigg (32):
       Update man pages
 
 Jay Graber (2):
-      Replace bitcoin with zcash in rpcprotocol.cpp
+      Replace bitcoin with sodatoken in rpcprotocol.cpp
       Gather release notes from previous release to HEAD
 
 Jeffrey Walton (1):

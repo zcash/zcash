@@ -1,28 +1,28 @@
-# Zcash Payment API
+# SodaToken Payment API
 
 ## Overview
 
-Zcash extends the Bitcoin Core API with new RPC calls to support private Zcash payments.
+SodaToken extends the Bitcoin Core API with new RPC calls to support private SodaToken payments.
 
-Zcash payments make use of two address formats:
+SodaToken payments make use of two address formats:
 
 * taddr - an address for transparent funds (just like a Bitcoin address, value stored in UTXOs)
 * zaddr - an address for private funds (value stored in objects called notes)
 
-When transferring funds from one taddr to another taddr, you can use either the existing Bitcoin RPC calls or the new Zcash RPC calls.
+When transferring funds from one taddr to another taddr, you can use either the existing Bitcoin RPC calls or the new SodaToken RPC calls.
 
-When a transfer involves zaddrs, you must use the new Zcash RPC calls.
+When a transfer involves zaddrs, you must use the new SodaToken RPC calls.
 
 
 ## Compatibility with Bitcoin Core
 
-Zcash supports all commands in the Bitcoin Core API (as of version 0.11.2).   Where applicable, Zcash will extend commands in a backwards-compatible way to enable additional functionality.
+SodaToken supports all commands in the Bitcoin Core API (as of version 0.11.2).   Where applicable, SodaToken will extend commands in a backwards-compatible way to enable additional functionality.
 
 We do not recommend use of accounts which are now deprecated in Bitcoin Core.  Where the account parameter exists in the API, please use “” as its value, otherwise an error will be returned.
 
 To support multiple users in a single node’s wallet, consider using getnewaddress or z_getnewaddress to obtain a new address for each user.  Also consider mapping multiple addresses to each user.
 
-## List of Zcash API commands
+## List of SodaToken API commands
 
 Optional parameters are denoted in [square brackets].
 
@@ -61,10 +61,10 @@ z_validateaddress | zaddr | Return information about a given zaddr.<br><br>Outpu
 
 Command | Parameters | Description
 --- | --- | ---
-z_exportkey | zaddr | _Requires an unlocked wallet or an unencrypted wallet._<br><br>Return a zkey for a given zaddr belonging to the node’s wallet.<br><br>The key will be returned as a string formatted using Base58Check as described in the Zcash protocol spec.<br><br>Output:AKWUAkypwQjhZ6LLNaMuuuLcmZ6gt5UFyo8m3jGutvALmwZKLdR5
-z_importkey | zkey [rescan=true] | _Wallet must be unlocked._<br><br>Add a zkey as returned by z_exportkey to a node's wallet.<br><br>The key should be formatted using Base58Check as described in the Zcash protocol spec.<br><br>Set rescan to true (the default) to rescan the entire local block database for transactions affecting any address or pubkey script in the wallet (including transactions affecting the newly-added address for this spending key).
+z_exportkey | zaddr | _Requires an unlocked wallet or an unencrypted wallet._<br><br>Return a zkey for a given zaddr belonging to the node’s wallet.<br><br>The key will be returned as a string formatted using Base58Check as described in the SodaToken protocol spec.<br><br>Output:AKWUAkypwQjhZ6LLNaMuuuLcmZ6gt5UFyo8m3jGutvALmwZKLdR5
+z_importkey | zkey [rescan=true] | _Wallet must be unlocked._<br><br>Add a zkey as returned by z_exportkey to a node's wallet.<br><br>The key should be formatted using Base58Check as described in the SodaToken protocol spec.<br><br>Set rescan to true (the default) to rescan the entire local block database for transactions affecting any address or pubkey script in the wallet (including transactions affecting the newly-added address for this spending key).
 z_exportwallet | filename | _Requires an unlocked wallet or an unencrypted wallet._<br><br>Creates or overwrites a file with taddr private keys and zaddr private keys in a human-readable format.<br><br>Filename is the file in which the wallet dump will be placed. May be prefaced by an absolute file path. An existing file with that name will be overwritten.<br><br>No value is returned but a JSON-RPC error will be reported if a failure occurred.
-z_importwallet | filename | _Requires an unlocked wallet or an unencrypted wallet._<br><br>Imports private keys from a file in wallet export file format (see z_exportwallet). These keys will be added to the keys currently in the wallet. This call may need to rescan all or parts of the block chain for transactions affecting the newly-added keys, which may take several minutes.<br><br>Filename is the file to import. The path is relative to zcashd’s working directory.<br><br>No value is returned but a JSON-RPC error will be reported if a failure occurred.
+z_importwallet | filename | _Requires an unlocked wallet or an unencrypted wallet._<br><br>Imports private keys from a file in wallet export file format (see z_exportwallet). These keys will be added to the keys currently in the wallet. This call may need to rescan all or parts of the block chain for transactions affecting the newly-added keys, which may take several minutes.<br><br>Filename is the file to import. The path is relative to sodatokend’s working directory.<br><br>No value is returned but a JSON-RPC error will be reported if a failure occurred.
 
 ### Payment
 
@@ -101,13 +101,13 @@ It is currently not possible to cancel operations.
 
 Command | Parameters | Description
 --- | --- | ---
-z_getoperationresult <br>| [operationids] | Return OperationStatus JSON objects for all completed operations the node is currently aware of, and then remove the operation from memory.<br><br>Operationids is an optional array to filter which operations you want to receive status objects for.<br><br>Output is a list of operation status objects, where the status is either "failed", "cancelled" or "success".<br>[<br>{“operationid”: “opid-11ee…”,<br>“status”: “cancelled”},<br>{“operationid”: “opid-9876”, “status”: ”failed”},<br>{“operationid”: “opid-0e0e”,<br>“status”:”success”,<br>“execution_time”:”25”,<br>“result”: {“txid”:”af3887654…”,...}<br>},<br>]<br><br> Examples:<br>zcash-cli z_getoperationresult '["opid-8120fa20-5ee7-4587-957b-f2579c2d882b"]'<br> zcash-cli z_getoperationresult
+z_getoperationresult <br>| [operationids] | Return OperationStatus JSON objects for all completed operations the node is currently aware of, and then remove the operation from memory.<br><br>Operationids is an optional array to filter which operations you want to receive status objects for.<br><br>Output is a list of operation status objects, where the status is either "failed", "cancelled" or "success".<br>[<br>{“operationid”: “opid-11ee…”,<br>“status”: “cancelled”},<br>{“operationid”: “opid-9876”, “status”: ”failed”},<br>{“operationid”: “opid-0e0e”,<br>“status”:”success”,<br>“execution_time”:”25”,<br>“result”: {“txid”:”af3887654…”,...}<br>},<br>]<br><br> Examples:<br>sodatoken-cli z_getoperationresult '["opid-8120fa20-5ee7-4587-957b-f2579c2d882b"]'<br> sodatoken-cli z_getoperationresult
 z_getoperationstatus <br>| [operationids] | Return OperationStatus JSON objects for all operations the node is currently aware of.<br><br>Operationids is an optional array to filter which operations you want to receive status objects for.<br><br>Output is a list of operation status objects.<br>[<br>{“operationid”: “opid-12ee…”,<br>“status”: “queued”},<br>{“operationid”: “opd-098a…”, “status”: ”executing”},<br>{“operationid”: “opid-9876”, “status”: ”failed”}<br>]<br><br>When the operation succeeds, the status object will also include the result.<br><br>{“operationid”: “opid-0e0e”,<br>“status”:”success”,<br>“execution_time”:”25”,<br>“result”: {“txid”:”af3887654…”,...}<br>}
 z_listoperationids <br>| [state] | Return a list of operationids for all operations which the node is currently aware of.<br><br>State is an optional string parameter to filter the operations you want listed by their state.  Acceptable parameter values are ‘queued’, ‘executing’, ‘success’, ‘failed’, ‘cancelled’.<br><br>[“opid-0e0e…”, “opid-1af4…”, … ]
 
 ## Asynchronous RPC call Error Codes
 
-Zcash error codes are defined in https://github.com/zcash/zcash/blob/master/src/rpcprotocol.h
+SodaToken error codes are defined in https://github.com/sodatoken/sodatoken/BinaryOmen/sodatoken2/blob/master/src/rpcprotocol.h
 
 ### z_sendmany error codes
 

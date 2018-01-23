@@ -1,7 +1,7 @@
 #ifndef ZC_JOINSPLIT_H_
 #define ZC_JOINSPLIT_H_
 
-#include "Zcash.h"
+#include "SodaToken.h"
 #include "Proof.hpp"
 #include "Address.hpp"
 #include "Note.hpp"
@@ -13,7 +13,7 @@
 
 #include <boost/array.hpp>
 
-namespace libzcash {
+namespace libsodatoken {
 
 class JSInput {
 public:
@@ -99,7 +99,7 @@ protected:
 
 }
 
-typedef libzcash::JoinSplit<ZC_NUM_JS_INPUTS,
+typedef libsodatoken::JoinSplit<ZC_NUM_JS_INPUTS,
                             ZC_NUM_JS_OUTPUTS> ZCJoinSplit;
 
 #endif // ZC_JOINSPLIT_H_

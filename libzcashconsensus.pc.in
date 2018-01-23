@@ -3,9 +3,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: Zcash consensus library
-Description: Library for the Zcash consensus protocol.
+Name: SodaToken consensus library
+Description: Library for the SodaToken consensus protocol.
 Version: @PACKAGE_VERSION@
-Libs: -L${libdir} -lzcashconsensus
+Libs: -L${libdir} -lsodatokenconsensus
 Cflags: -I${includedir}
 Requires.private: libcrypto

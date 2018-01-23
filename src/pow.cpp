@@ -17,7 +17,7 @@
 #include "sodium.h"
 
 #ifdef ENABLE_RUST
-#include "librustzcash.h"
+#include "librustsodatoken.h"
 #endif // ENABLE_RUST
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
@@ -104,7 +104,7 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
     // Ensure that our Rust interactions are working in production builds. This is
     // temporary and should be removed.
     {
-        assert(librustzcash_xor(0x0f0f0f0f0f0f0f0f, 0x1111111111111111) == 0x1e1e1e1e1e1e1e1e);
+        assert(librustsodatoken_xor(0x0f0f0f0f0f0f0f0f, 0x1111111111111111) == 0x1e1e1e1e1e1e1e1e);
     }
     #endif // ENABLE_RUST
 

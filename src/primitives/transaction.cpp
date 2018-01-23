@@ -12,15 +12,15 @@
 JSDescription::JSDescription(ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& anchor,
-            const boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
-            const boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+            const boost::array<libsodatoken::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+            const boost::array<libsodatoken::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             CAmount vpub_old,
             CAmount vpub_new,
             bool computeProof,
             uint256 *esk // payment disclosure
             ) : vpub_old(vpub_old), vpub_new(vpub_new), anchor(anchor)
 {
-    boost::array<libzcash::Note, ZC_NUM_JS_OUTPUTS> notes;
+    boost::array<libsodatoken::Note, ZC_NUM_JS_OUTPUTS> notes;
 
     proof = params.prove(
         inputs,
@@ -45,8 +45,8 @@ JSDescription JSDescription::Randomized(
             ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& anchor,
-            boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
-            boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+            boost::array<libsodatoken::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+            boost::array<libsodatoken::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             boost::array<size_t, ZC_NUM_JS_INPUTS>& inputMap,
             boost::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap,
             CAmount vpub_old,
@@ -74,7 +74,7 @@ JSDescription JSDescription::Randomized(
 
 bool JSDescription::Verify(
     ZCJoinSplit& params,
-    libzcash::ProofVerifier& verifier,
+    libsodatoken::ProofVerifier& verifier,
     const uint256& pubKeyHash
 ) const {
     return params.verify(

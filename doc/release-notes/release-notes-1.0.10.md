@@ -4,7 +4,7 @@ Notable changes
 Signature validation using libsecp256k1
 ---------------------------------------
 
-ECDSA signatures inside Zcash transactions now use validation using
+ECDSA signatures inside SodaToken transactions now use validation using
 [https://github.com/bitcoin/secp256k1](libsecp256k1) instead of OpenSSL.
 
 Depending on the platform, this means a significant speedup for raw signature
@@ -30,7 +30,7 @@ Daira Hopwood (8):
       Repair tests for strict DER signatures.     While we're at it, repair a similar test for CLTV, and make the repaired RPC tests run by default.
       Make transaction test failures print the comments preceding the test JSON.
       Fix a comment that was made stale before launch by #1016 (commit 542da61).
-      Delete test that is redundant and inapplicable to Zcash.
+      Delete test that is redundant and inapplicable to SodaToken.
 
 Jack Grigg (20):
       Fix incorrect locking in CCryptoKeyStore
@@ -47,7 +47,7 @@ Jack Grigg (20):
       Remove redundant `= 0` initialisations
       Ensure that ECDSA constant sizes are correctly-sized
       Add test for -mempooltxinputlimit
-      Hold an ECCVerifyHandle in zcash-gtest
+      Hold an ECCVerifyHandle in sodatoken-gtest
       Additional testing of -mempooltxinputlimit
       Fix comment
       Use sendfrom for both t-addr calls

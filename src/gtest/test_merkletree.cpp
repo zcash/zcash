@@ -16,8 +16,8 @@
 #include "serialize.h"
 #include "streams.h"
 
-#include "zcash/IncrementalMerkleTree.hpp"
-#include "zcash/util.h"
+#include "sodatoken/IncrementalMerkleTree.hpp"
+#include "sodatoken/util.h"
 
 #include <libsnark/common/default_types/r1cs_ppzksnark_pp.hpp>
 #include <libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp>
@@ -41,7 +41,7 @@ void expect_deser_same(const ZCTestingIncrementalWitness& expected)
 }
 
 template<>
-void expect_deser_same(const libzcash::MerklePath& expected)
+void expect_deser_same(const libsodatoken::MerklePath& expected)
 {
     // This deserialization check is pointless for MerklePath,
     // since we only serialize it to check it against test
@@ -204,7 +204,7 @@ TEST(merkletree, vectors) {
 TEST(merkletree, emptyroots) {
     UniValue empty_roots = read_json(MAKE_STRING(json_tests::merkle_roots_empty));
 
-    libzcash::EmptyMerkleRoots<64, libzcash::SHA256Compress> emptyroots;
+    libsodatoken::EmptyMerkleRoots<64, libsodatoken::SHA256Compress> emptyroots;
 
     for (size_t depth = 0; depth <= 64; depth++) {
         expect_test_vector(empty_roots[depth], emptyroots.empty_root(depth));

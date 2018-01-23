@@ -1,5 +1,5 @@
-Building Zcash
+Building SodaToken
 
-See the Zcash github wiki (https://github.com/zcash/zcash/wiki) for instructions on building zcashd,
+See the SodaToken github wiki (https://github.com/sodatoken/sodatoken/BinaryOmen/sodatoken2/wiki) for instructions on building sodatokend,
 the intended-for-services, no-graphical-interface, reference
-implementation of Zcash.
+implementation of SodaToken.

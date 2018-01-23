@@ -2,18 +2,18 @@
 *.deb
 *.exe
 src/bitcoin
-src/zcashd
-src/zcash-cli
-src/zcash-gtest
-src/zcash-tx
+src/sodatokend
+src/sodatoken-cli
+src/sodatoken-gtest
+src/sodatoken-tx
 src/test/test_bitcoin
 
-# Zcash utilities
-src/zcash/GenerateParams
-src/zcash/CreateJoinSplit
+# SodaToken utilities
+src/sodatoken/GenerateParams
+src/sodatoken/CreateJoinSplit
 
-*zcashTest.pk
-*zcashTest.vk
+*sodatokenTest.pk
+*sodatokenTest.vk
 
 # autoreconf
 Makefile.in
@@ -56,7 +56,7 @@ src/univalue/gen
 *.pyc
 *.o
 *.o-*
-.zcash
+.sodatoken
 *.a
 *.pb.cc
 *.pb.h
@@ -92,7 +92,7 @@ build
 *.gcda
 /*.info
 test_bitcoin.coverage/
-zcash-gtest.coverage/
+sodatoken-gtest.coverage/
 total.coverage/
 coverage_percent.txt
 
@@ -109,7 +109,7 @@ qa/pull-tester/test.*/*
 
 /doc/doxygen/
 
-libzcashconsensus.pc
+libsodatokenconsensus.pc
 
 contrib/debian/files
 contrib/debian/substvars

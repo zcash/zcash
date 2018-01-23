@@ -1,5 +1,5 @@
 #!/bin/sh
-# postrm script for zcash
+# postrm script for sodatoken
 #
 # see: dh_installdeb(1)
 

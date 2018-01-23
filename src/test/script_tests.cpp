@@ -16,7 +16,7 @@
 #include "test/test_bitcoin.h"
 
 #if defined(HAVE_CONSENSUS_LIB)
-#include "script/zcashconsensus.h"
+#include "script/sodatokenconsensus.h"
 #endif
 
 #include <fstream>
@@ -97,7 +97,7 @@ void DoTest(const CScript& scriptPubKey, const CScript& scriptSig, int flags, bo
 #if defined(HAVE_CONSENSUS_LIB)
     CDataStream stream(SER_NETWORK, PROTOCOL_VERSION);
     stream << tx2;
-    BOOST_CHECK_MESSAGE(zcashconsensus_verify_script(begin_ptr(scriptPubKey), scriptPubKey.size(), (const unsigned char*)&stream[0], stream.size(), 0, flags, NULL) == expect,message);
+    BOOST_CHECK_MESSAGE(sodatokenconsensus_verify_script(begin_ptr(scriptPubKey), scriptPubKey.size(), (const unsigned char*)&stream[0], stream.size(), 0, flags, NULL) == expect,message);
 #endif
 }
 

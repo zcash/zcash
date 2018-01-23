@@ -1,6 +1,6 @@
 /*
-See the Zcash protocol specification for more information.
-https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
+See the SodaToken protocol specification for more information.
+https://github.com/sodatoken/zips/blob/master/protocol/protocol.pdf
 */
 
 #ifndef ZC_NOTE_ENCRYPTION_H_
@@ -10,9 +10,9 @@ https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
 #include "uint256.h"
 #include "uint252.h"
 
-#include "zcash/Zcash.h"
+#include "sodatoken/SodaToken.h"
 
-namespace libzcash {
+namespace libsodatoken {
 
 #define NOTEENCRYPTION_AUTH_BYTES 16
 
@@ -117,9 +117,9 @@ public:
 
 }
 
-typedef libzcash::NoteEncryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteEncryption;
-typedef libzcash::NoteDecryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteDecryption;
+typedef libsodatoken::NoteEncryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteEncryption;
+typedef libsodatoken::NoteDecryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteDecryption;
 
-typedef libzcash::PaymentDisclosureNoteDecryption<ZC_NOTEPLAINTEXT_SIZE> ZCPaymentDisclosureNoteDecryption;
+typedef libsodatoken::PaymentDisclosureNoteDecryption<ZC_NOTEPLAINTEXT_SIZE> ZCPaymentDisclosureNoteDecryption;
 
 #endif /* ZC_NOTE_ENCRYPTION_H_ */

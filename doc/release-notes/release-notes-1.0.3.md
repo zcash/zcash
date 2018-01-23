@@ -7,7 +7,7 @@ Jack Grigg (5):
 
 Jay Graber (4):
       Document z_sendmany error code messages in payment-api.md
-      s/Bitcoin/Zcash in JSONRPCError
+      s/Bitcoin/SodaToken in JSONRPCError
       Change format of z_sendmany error code documentation.
       Release-notes.py script to generate release notes and add contributors to authors.md
 
