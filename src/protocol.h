@@ -99,9 +99,16 @@ public:
             Init();
         if (nType & SER_DISK)
             READWRITE(nVersion);
+
+        // Normally nVersion will be >= CADDR_TIME_VERSION for all nodes.
+        // However, in the initial "version" message, the version negotiation
+        // is not complete and so nVersion will be set to INIT_PROTO_VERSION.
+        // In this case the older encoding of an address that omits nTime
+        // is used.
         if ((nType & SER_DISK) ||
             (nVersion >= CADDR_TIME_VERSION && !(nType & SER_GETHASH)))
             READWRITE(nTime);
+
         READWRITE(nServices);
         READWRITE(*(CService*)this);
     }
