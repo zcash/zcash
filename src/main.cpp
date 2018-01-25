@@ -708,35 +708,10 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
     return true;
 }
 
-bool CheckFinalTx(const CTransaction &tx, int flags)
+bool CheckFinalTx(const CTransaction &tx)
 {
     AssertLockHeld(cs_main);
-
-    // By convention a negative value for flags indicates that the
-    // current network-enforced consensus rules should be used. In
-    // a future soft-fork scenario that would mean checking which
-    // rules would be enforced for the next block and setting the
-    // appropriate flags. At the present time no soft-forks are
-    // scheduled, so no flags are set.
-    flags = std::max(flags, 0);
-
-    // CheckFinalTx() uses chainActive.Height()+1 to evaluate
-    // nLockTime because when IsFinalTx() is called within
-    // CBlock::AcceptBlock(), the height of the block *being*
-    // evaluated is what is used. Thus if we want to know if a
-    // transaction can be part of the *next* block, we need to call
-    // IsFinalTx() with one more than chainActive.Height().
-    const int nBlockHeight = chainActive.Height() + 1;
-
-    // Timestamps on the other hand don't get any special treatment,
-    // because we can't know what timestamp the next block will have,
-    // and there aren't timestamp applications where it matters.
-    // However this changes once median past time-locks are enforced:
-    const int64_t nBlockTime = (flags & LOCKTIME_MEDIAN_TIME_PAST)
-                             ? chainActive.Tip()->GetMedianTimePast()
-                             : GetAdjustedTime();
-
-    return IsFinalTx(tx, nBlockHeight, nBlockTime);
+    return IsFinalTx(tx, chainActive.Height() + 1, GetAdjustedTime());
 }
 
 /**
@@ -774,7 +749,7 @@ bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
         // IsStandardTx() will have already returned false
         // and this method isn't called.
         vector<vector<unsigned char> > stack;
-        if (!EvalScript(stack, tx.vin[i].scriptSig, SCRIPT_VERIFY_NONE, BaseSignatureChecker()))
+        if (!EvalScript(stack, tx.vin[i].scriptSig, SCRIPT_VERIFY_NONE, BaseSignatureChecker(), SIGVERSION_BASE))
             return false;
 
         if (whichType == TX_SCRIPTHASH)
@@ -999,7 +974,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             CScript scriptCode;
             uint256 dataToBeSigned;
             try {
-                dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL);
+                dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, SIGVERSION_BASE);
             } catch (std::logic_error ex) {
                 return state.DoS(100, error("CheckTransaction(): error computing signature hash"),
                                  REJECT_INVALID, "error-computing-signature-hash");
@@ -1089,8 +1064,9 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     // Only accept nLockTime-using transactions that can be mined in the next
     // block; we don't want our mempool filled up with transactions that can't
     // be mined yet.
-    if (!CheckFinalTx(tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
-        return state.DoS(0, false, REJECT_NONSTANDARD, "non-final");
+    if (!CheckFinalTx(tx))
+        return state.DoS(0, error("AcceptToMemoryPool: non-final"),
+                         REJECT_NONSTANDARD, "non-final");
 
     // is it already in the memory pool?
     uint256 hash = tx.GetHash();
@@ -1235,7 +1211,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
-        if (!ContextualCheckInputs(tx, state, view, true, STANDARD_SCRIPT_VERIFY_FLAGS, true, Params().GetConsensus()))
+        CachedHashes cachedHashes(tx);
+        if (!ContextualCheckInputs(tx, state, view, true, STANDARD_SCRIPT_VERIFY_FLAGS, true, cachedHashes, Params().GetConsensus()))
         {
             return error("AcceptToMemoryPool: ConnectInputs failed %s", hash.ToString());
         }
@@ -1249,7 +1226,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // There is a similar check in CreateNewBlock() to prevent creating
         // invalid blocks, however allowing such transactions into the mempool
         // can be exploited as a DoS attack.
-        if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, Params().GetConsensus()))
+        if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, cachedHashes, Params().GetConsensus()))
         {
             return error("AcceptToMemoryPool: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s", hash.ToString());
         }
@@ -1614,7 +1591,7 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 
 bool CScriptCheck::operator()() {
     const CScript &scriptSig = ptxTo->vin[nIn].scriptSig;
-    if (!VerifyScript(scriptSig, scriptPubKey, nFlags, CachingTransactionSignatureChecker(ptxTo, nIn, cacheStore), &error)) {
+    if (!VerifyScript(scriptSig, scriptPubKey, nFlags, CachingTransactionSignatureChecker(ptxTo, nIn, amount, cacheStore, *cachedHashes), &error)) {
         return ::error("CScriptCheck(): %s:%d VerifySignature failed: %s", ptxTo->GetHash().ToString(), nIn, ScriptErrorString(error));
     }
     return true;
@@ -1697,7 +1674,7 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 }
 }// namespace Consensus
 
-bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, const Consensus::Params& consensusParams, std::vector<CScriptCheck> *pvChecks)
+bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, CachedHashes& cachedHashes, const Consensus::Params& consensusParams, std::vector<CScriptCheck> *pvChecks)
 {
     if (!tx.IsCoinBase())
     {
@@ -1722,7 +1699,7 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
                 assert(coins);
 
                 // Verify signature
-                CScriptCheck check(*coins, tx, i, flags, cacheStore);
+                CScriptCheck check(*coins, tx, i, flags, cacheStore, &cachedHashes);
                 if (pvChecks) {
                     pvChecks->push_back(CScriptCheck());
                     check.swap(pvChecks->back());
@@ -1734,9 +1711,9 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
                         // arguments; if so, don't trigger DoS protection to
                         // avoid splitting the network between upgraded and
                         // non-upgraded nodes.
-                        CScriptCheck check(*coins, tx, i,
-                                flags & ~STANDARD_NOT_MANDATORY_VERIFY_FLAGS, cacheStore);
-                        if (check())
+                        CScriptCheck check2(*coins, tx, i,
+                                flags & ~STANDARD_NOT_MANDATORY_VERIFY_FLAGS, cacheStore, &cachedHashes);
+                        if (check2())
                             return state.Invalid(false, REJECT_NONSTANDARD, strprintf("non-mandatory-script-verify-flag (%s)", ScriptErrorString(check.GetScriptError())));
                     }
                     // Failures of other flags indicate a transaction that is
@@ -2125,6 +2102,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         assert(tree.root() == old_tree_root);
     }
 
+    std::vector<CachedHashes> cachedHashes;
+    cachedHashes.reserve(block.vtx.size()); // Required so that pointers to individual CachedHashes don't get invalidated
     for (unsigned int i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction &tx = block.vtx[i];
@@ -2154,10 +2133,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 return state.DoS(100, error("ConnectBlock(): too many sigops"),
                                  REJECT_INVALID, "bad-blk-sigops");
 
+            cachedHashes.emplace_back(tx);
             nFees += view.GetValueIn(tx)-tx.GetValueOut();
 
             std::vector<CScriptCheck> vChecks;
-            if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, false, chainparams.GetConsensus(), nScriptCheckThreads ? &vChecks : NULL))
+            if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, false, cachedHashes[i], chainparams.GetConsensus(), nScriptCheckThreads ? &vChecks : NULL))
                 return false;
             control.Add(vChecks);
         }
@@ -3113,15 +3093,10 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
     const Consensus::Params& consensusParams = Params().GetConsensus();
 
     // Check that all transactions are finalized
-    BOOST_FOREACH(const CTransaction& tx, block.vtx) {
-        int nLockTimeFlags = 0;
-        int64_t nLockTimeCutoff = (nLockTimeFlags & LOCKTIME_MEDIAN_TIME_PAST)
-                                ? pindexPrev->GetMedianTimePast()
-                                : block.GetBlockTime();
-        if (!IsFinalTx(tx, nHeight, nLockTimeCutoff)) {
+    BOOST_FOREACH(const CTransaction& tx, block.vtx)
+        if (!IsFinalTx(tx, nHeight, block.GetBlockTime())) {
             return state.DoS(10, error("%s: contains a non-final transaction", __func__), REJECT_INVALID, "bad-txns-nonfinal");
         }
-    }
 
     // Enforce BIP 34 rule that the coinbase starts with serialized block height.
     // In Zcash this has been enforced since launch, except that the genesis

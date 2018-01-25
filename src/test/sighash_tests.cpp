@@ -143,7 +143,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
         // Empty output script.
         CScript scriptCode;
         CTransaction signTx(tx);
-        uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
+        uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, SIGVERSION_BASE);
 
         assert(crypto_sign_detached(&tx.joinSplitSig[0], NULL,
                                     dataToBeSigned.begin(), 32,
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(sighash_test)
 
         uint256 sh, sho;
         sho = SignatureHashOld(scriptCode, txTo, nIn, nHashType);
-        sh = SignatureHash(scriptCode, txTo, nIn, nHashType);
+        sh = SignatureHash(scriptCode, txTo, nIn, nHashType, 0, SIGVERSION_BASE);
         #if defined(PRINT_SIGHASH_JSON)
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << txTo;
@@ -250,7 +250,7 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           continue;
         }
 
-        sh = SignatureHash(scriptCode, tx, nIn, nHashType);
+        sh = SignatureHash(scriptCode, tx, nIn, nHashType, 0, SIGVERSION_BASE);
         BOOST_CHECK_MESSAGE(sh.GetHex() == sigHashHex, strTest);
     }
 }

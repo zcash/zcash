@@ -19,13 +19,4 @@ static const unsigned int MAX_TX_SIZE = 100000;
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
 static const int COINBASE_MATURITY = 100;
 
-/** Flags for LockTime() */
-enum {
-    /* Use GetMedianTimePast() instead of nTime for end point timestamp. */
-    LOCKTIME_MEDIAN_TIME_PAST = (1 << 1),
-};
-
-/** Used as the flags parameter to CheckFinalTx() in non-consensus code */
-static const unsigned int STANDARD_LOCKTIME_VERIFY_FLAGS = LOCKTIME_MEDIAN_TIME_PAST;
-
 #endif // BITCOIN_CONSENSUS_CONSENSUS_H

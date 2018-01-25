@@ -44,6 +44,7 @@ class CInv;
 class CScriptCheck;
 class CValidationInterface;
 class CValidationState;
+class CachedHashes;
 
 struct CNodeStateStats;
 
@@ -329,7 +330,7 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& ma
  * instead of being performed inline.
  */
 bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &view, bool fScriptChecks,
-                           unsigned int flags, bool cacheStore, const Consensus::Params& consensusParams,
+                           unsigned int flags, bool cacheStore, CachedHashes& cachedHashes, const Consensus::Params& consensusParams,
                            std::vector<CScriptCheck> *pvChecks = NULL);
 
 /** Apply the effects of this transaction on the UTXO set represented by view */
@@ -354,10 +355,8 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime);
  * Check if transaction will be final in the next block to be created.
  *
  * Calls IsFinalTx() with current block height and appropriate block time.
- *
- * See consensus/consensus.h for flag definitions.
  */
-bool CheckFinalTx(const CTransaction &tx, int flags = -1);
+bool CheckFinalTx(const CTransaction &tx);
 
 /** 
  * Closure representing one script verification
@@ -367,27 +366,31 @@ class CScriptCheck
 {
 private:
     CScript scriptPubKey;
+    CAmount amount;
     const CTransaction *ptxTo;
     unsigned int nIn;
     unsigned int nFlags;
     bool cacheStore;
     ScriptError error;
+    CachedHashes *cachedHashes;
 
 public:
-    CScriptCheck(): ptxTo(0), nIn(0), nFlags(0), cacheStore(false), error(SCRIPT_ERR_UNKNOWN_ERROR) {}
-    CScriptCheck(const CCoins& txFromIn, const CTransaction& txToIn, unsigned int nInIn, unsigned int nFlagsIn, bool cacheIn) :
-        scriptPubKey(txFromIn.vout[txToIn.vin[nInIn].prevout.n].scriptPubKey),
-        ptxTo(&txToIn), nIn(nInIn), nFlags(nFlagsIn), cacheStore(cacheIn), error(SCRIPT_ERR_UNKNOWN_ERROR) { }
+    CScriptCheck(): amount(0), ptxTo(0), nIn(0), nFlags(0), cacheStore(false), error(SCRIPT_ERR_UNKNOWN_ERROR) {}
+    CScriptCheck(const CCoins& txFromIn, const CTransaction& txToIn, unsigned int nInIn, unsigned int nFlagsIn, bool cacheIn, CachedHashes* cachedHashesIn) :
+        scriptPubKey(txFromIn.vout[txToIn.vin[nInIn].prevout.n].scriptPubKey), amount(txFromIn.vout[txToIn.vin[nInIn].prevout.n].nValue),
+        ptxTo(&txToIn), nIn(nInIn), nFlags(nFlagsIn), cacheStore(cacheIn), error(SCRIPT_ERR_UNKNOWN_ERROR), cachedHashes(cachedHashesIn) { }
 
     bool operator()();
 
     void swap(CScriptCheck &check) {
         scriptPubKey.swap(check.scriptPubKey);
         std::swap(ptxTo, check.ptxTo);
+        std::swap(amount, check.amount);
         std::swap(nIn, check.nIn);
         std::swap(nFlags, check.nFlags);
         std::swap(cacheStore, check.cacheStore);
         std::swap(error, check.error);
+        std::swap(cachedHashes, check.cachedHashes);
     }
 
     ScriptError GetScriptError() const { return error; }
