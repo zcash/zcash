@@ -182,8 +182,8 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 /*
         {
         arith_uint256 try_nonce(0);
-        unsigned int n = Params().EquihashN();
-        unsigned int k = Params().EquihashK();
+        unsigned int n = Params().GetConsensus().nEquihashN;
+        unsigned int k = Params().GetConsensus().nEquihashK;
 
         // Hash state
         crypto_generichash_blake2b_state eh_state;
