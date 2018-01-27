@@ -49,6 +49,7 @@ komodo_asset MNZ 257142858
 komodo_asset AXO 200000000
 komodo_asset ETOMIC 100000000
 komodo_asset BTCH 20998641
+komodo_asset VOTE 49999999999
 
 #komodo_asset USD
 #komodo_asset EUR
