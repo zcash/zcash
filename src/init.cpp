@@ -1425,7 +1425,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 if (!fReindex) {
                     uiInterface.InitMessage(_("Rewinding blocks..."));
                     if (!RewindBlockIndex(chainparams)) {
-                        strLoadError = _("Unable to rewind the database to a pre-fork state. You will need to redownload the blockchain");
+                        strLoadError = _("Unable to rewind the database to a pre-upgrade state. You will need to redownload the blockchain");
                         break;
                     }
                 }
