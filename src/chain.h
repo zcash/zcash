@@ -95,8 +95,12 @@ enum BlockStatus: uint32_t {
     BLOCK_FAILED_CHILD       =   64, //! descends from failed block
     BLOCK_FAILED_MASK        =   BLOCK_FAILED_VALID | BLOCK_FAILED_CHILD,
 
-    BLOCK_OPT_WITNESS       =   128, //! block data in blk*.data was received with a witness-enforcing client
+    BLOCK_ACTIVATES_UPGRADE  =   128, //! block activates a network upgrade
 };
+
+//! Short-hand for the highest consensus validity we implement.
+//! Blocks with this validity are assumed to satisfy all consensus rules.
+static const BlockStatus BLOCK_VALID_CONSENSUS = BLOCK_VALID_SCRIPTS;
 
 /** The block chain is a tree shaped structure starting with the
  * genesis block at the root, with each block potentially having multiple
@@ -142,6 +146,11 @@ public:
     //! Verification status of this block. See enum BlockStatus
     unsigned int nStatus;
 
+    //! Branch ID corresponding to the consensus rules used to validate this block.
+    //! Only accurate if block validity is BLOCK_VALID_CONSENSUS.
+    //! Persisted at each activation height, memory-only for intervening blocks.
+    uint32_t nConsensusBranchId;
+
     //! The anchor for the tree state up to the start of this block
     uint256 hashAnchor;
 
@@ -182,6 +191,7 @@ public:
         nTx = 0;
         nChainTx = 0;
         nStatus = 0;
+        nConsensusBranchId = 0;
         hashAnchor = uint256();
         hashAnchorEnd = uint256();
         nSequenceId = 0;
@@ -343,6 +353,8 @@ public:
             READWRITE(VARINT(nDataPos));
         if (nStatus & BLOCK_HAVE_UNDO)
             READWRITE(VARINT(nUndoPos));
+        if (nStatus & BLOCK_ACTIVATES_UPGRADE)
+            READWRITE(nConsensusBranchId);
         READWRITE(hashAnchor);
 
         // block header

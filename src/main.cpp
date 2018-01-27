@@ -13,6 +13,7 @@
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "checkqueue.h"
+#include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "deprecation.h"
 #include "init.h"
@@ -2222,6 +2223,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             pindex->nStatus |= BLOCK_HAVE_UNDO;
         }
 
+        // Now that all consensus rules have been validated, set nConsensusBranchId.
+        // Move this if BLOCK_VALID_CONSENSUS is ever altered.
+        static_assert(BLOCK_VALID_CONSENSUS == BLOCK_VALID_SCRIPTS,
+            "nConsensusBranchId must be set after all consensus rules have been validated.");
+        if (IsActivationHeightForAnyUpgrade(pindex->nHeight, Params().GetConsensus())) {
+            pindex->nStatus |= BLOCK_ACTIVATES_UPGRADE;
+            pindex->nConsensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
+        } else if (pindex->pprev) {
+            pindex->nConsensusBranchId = pindex->pprev->nConsensusBranchId;
+        }
+
         pindex->RaiseValidity(BLOCK_VALID_SCRIPTS);
         setDirtyBlockIndex.insert(pindex);
     }
@@ -2855,9 +2867,6 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     pindexNew->nDataPos = pos.nPos;
     pindexNew->nUndoPos = 0;
     pindexNew->nStatus |= BLOCK_HAVE_DATA;
-    if (IsWitnessEnabled(pindexNew->pprev, Params().GetConsensus())) {
-        pindexNew->nStatus |= BLOCK_OPT_WITNESS;
-    }
     pindexNew->RaiseValidity(BLOCK_VALID_TRANSACTIONS);
     setDirtyBlockIndex.insert(pindexNew);
 
@@ -3565,6 +3574,13 @@ bool static LoadBlockIndexDB()
                 pindex->nChainSproutValue = pindex->nSproutValue;
             }
         }
+        // Construct in-memory chain of branch IDs.
+        // Relies on invariant: a block that does not activate a network upgrade
+        // will always be valid under the same consensus rules as its parent.
+        // Activation blocks will have non-zero branch IDs (read from disk).
+        if (pindex->IsValid(BLOCK_VALID_CONSENSUS) && pindex->nConsensusBranchId == 0 && pindex->pprev) {
+            pindex->nConsensusBranchId = pindex->pprev->nConsensusBranchId;
+        }
         if (pindex->IsValid(BLOCK_VALID_TRANSACTIONS) && (pindex->nChainTx || pindex->pprev == NULL))
             setBlockIndexCandidates.insert(pindex);
         if (pindex->nStatus & BLOCK_FAILED_MASK && (!pindexBestInvalid || pindex->nChainWork > pindexBestInvalid->nChainWork))
@@ -3752,9 +3768,25 @@ bool RewindBlockIndex(const CChainParams& params)
 {
     LOCK(cs_main);
 
+    // RewindBlockIndex is called after LoadBlockIndex, so at this point every block
+    // index will have nConsensusBranchId set based on the values previously persisted
+    // to disk. By definition, a non-zero nConsensusBranchId means that the block was
+    // fully-validated under the corresponding consensus rules. Thus we can quickly
+    // identify whether the current active chain matches our expected sequence of
+    // consensus rule changes, with two checks:
+    //
+    // - BLOCK_ACTIVATES_UPGRADE is set only on blocks that activate upgrades.
+    // - nConsensusBranchId for each block matches what we expect.
+    auto sufficientlyValidated = [&params](const CBlockIndex* pindex) {
+        auto consensus = params.GetConsensus();
+        bool fFlagSet = pindex->nStatus & BLOCK_ACTIVATES_UPGRADE;
+        bool fFlagExpected = IsActivationHeightForAnyUpgrade(pindex->nHeight, consensus);
+        return fFlagSet == fFlagExpected && pindex->nConsensusBranchId == CurrentEpochBranchId(pindex->nHeight, consensus);
+    };
+
     int nHeight = 1;
     while (nHeight <= chainActive.Height()) {
-        if (IsWitnessEnabled(chainActive[nHeight - 1], params.GetConsensus()) && !(chainActive[nHeight]->nStatus & BLOCK_OPT_WITNESS)) {
+        if (!sufficientlyValidated(chainActive[nHeight])) {
             break;
         }
         nHeight++;
@@ -3791,24 +3823,31 @@ bool RewindBlockIndex(const CChainParams& params)
         // this block or some successor doesn't HAVE_DATA, so we were unable to
         // rewind all the way.  Blocks remaining on chainActive at this point
         // must not have their validity reduced.
-        if (IsWitnessEnabled(pindexIter->pprev, params.GetConsensus()) && !(pindexIter->nStatus & BLOCK_OPT_WITNESS) && !chainActive.Contains(pindexIter)) {
+        if (!sufficientlyValidated(pindexIter) && !chainActive.Contains(pindexIter)) {
             // Reduce validity
-            pindexIter->nStatus = std::min<unsigned int>(pindexIter->nStatus & BLOCK_VALID_MASK, BLOCK_VALID_TREE) | (pindexIter->nStatus & ~BLOCK_VALID_MASK);
-            // Remove have-data flags.
+            pindexIter->nStatus =
+                std::min<unsigned int>(pindexIter->nStatus & BLOCK_VALID_MASK, BLOCK_VALID_TREE) |
+                (pindexIter->nStatus & ~BLOCK_VALID_MASK);
+            // Remove have-data flags
             pindexIter->nStatus &= ~(BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO);
-            // Remove storage location.
+            // Remove branch ID
+            pindexIter->nStatus &= ~BLOCK_ACTIVATES_UPGRADE;
+            pindexIter->nConsensusBranchId = 0;
+            // Remove storage location
             pindexIter->nFile = 0;
             pindexIter->nDataPos = 0;
             pindexIter->nUndoPos = 0;
             // Remove various other things
             pindexIter->nTx = 0;
             pindexIter->nChainTx = 0;
+            pindexIter->nSproutValue = boost::none;
+            pindexIter->nChainSproutValue = boost::none;
             pindexIter->nSequenceId = 0;
-            // Make sure it gets written.
+            // Make sure it gets written
             setDirtyBlockIndex.insert(pindexIter);
-            // Update indexes
+            // Update indices
             setBlockIndexCandidates.erase(pindexIter);
-            std::pair<std::multimap<CBlockIndex*, CBlockIndex*>::iterator, std::multimap<CBlockIndex*, CBlockIndex*>::iterator> ret = mapBlocksUnlinked.equal_range(pindexIter->pprev);
+            auto ret = mapBlocksUnlinked.equal_range(pindexIter->pprev);
             while (ret.first != ret.second) {
                 if (ret.first->second == pindexIter) {
                     mapBlocksUnlinked.erase(ret.first++);
