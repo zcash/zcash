@@ -1,7 +1,7 @@
 #!/bin/bash
 source pubkey.txt
 args=("$@")
-seed_ip='78.47.196.146'
+seed_ip=`getent hosts aseed.mewhub.com | awk '{ print $1 }'`
 komodo_binary='./komodod'
 delay=20
 
@@ -50,35 +50,35 @@ komodo_asset AXO 200000000
 komodo_asset ETOMIC 100000000
 komodo_asset BTCH 20998641
 
-komodo_asset USD
-komodo_asset EUR
-komodo_asset JPY
-komodo_asset GBP
-komodo_asset AUD
-komodo_asset CAD
-komodo_asset CHF
-komodo_asset NZD
-komodo_asset CNY
-komodo_asset RUB
-komodo_asset MXN
-komodo_asset BRL
-komodo_asset INR
-komodo_asset HKD
-komodo_asset TRY
-komodo_asset ZAR
-komodo_asset PLN
-komodo_asset NOK
-komodo_asset SEK
-komodo_asset DKK
-komodo_asset CZK
-komodo_asset HUF
-komodo_asset ILS
-komodo_asset KRW
-komodo_asset MYR
-komodo_asset PHP
-komodo_asset RON
-komodo_asset SGD
-komodo_asset THB
-komodo_asset BGN
-komodo_asset IDR
-komodo_asset HRK
+#komodo_asset USD
+#komodo_asset EUR
+#komodo_asset JPY
+#komodo_asset GBP
+#komodo_asset AUD
+#komodo_asset CAD
+#komodo_asset CHF
+#komodo_asset NZD
+#komodo_asset CNY
+#komodo_asset RUB
+#komodo_asset MXN
+#komodo_asset BRL
+#komodo_asset INR
+#komodo_asset HKD
+#komodo_asset TRY
+#komodo_asset ZAR
+#komodo_asset PLN
+#komodo_asset NOK
+#komodo_asset SEK
+#komodo_asset DKK
+#komodo_asset CZK
+#komodo_asset HUF
+#komodo_asset ILS
+#komodo_asset KRW
+#komodo_asset MYR
+#komodo_asset PHP
+#komodo_asset RON
+#komodo_asset SGD
+#komodo_asset THB
+#komodo_asset BGN
+#komodo_asset IDR
+#komodo_asset HRK
