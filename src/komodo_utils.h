@@ -1494,12 +1494,12 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height)
 
 char *argv0suffix[] =
 {
-    (char *)"mnzd", (char *)"mnz-cli", (char *)"mnzd.exe", (char *)"mnz-cli.exe"
+    (char *)"mnzd", (char *)"mnz-cli", (char *)"mnzd.exe", (char *)"mnz-cli.exe", (char *)"btchd", (char *)"btch-cli", (char *)"btchd.exe", (char *)"btch-cli.exe"
 };
 
 char *argv0names[] =
 {
-    (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"MNZ"
+    (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"BTCH", (char *)"BTCH", (char *)"BTCH", (char *)"BTCH"
 };
 
 void komodo_args(char *argv0)
