@@ -521,18 +521,18 @@ libsodatoken_a_SOURCES = \
   sodatoken/circuit/prfs.tcc \
   sodatoken/circuit/utils.tcc
 
-libsodatoken_a_CPPFLAGS = -DMULTICORE -fopenmp -fPIC -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS $(HARDENED_CPPFLAGS) -pipe -O1 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
+libzcash_a_CPPFLAGS = -DMULTICORE -fopenmp -fPIC -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS $(HARDENED_CPPFLAGS) -pipe -O1 -g -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
 
-libsodatoken_a_CXXFLAGS = $(HARDENED_CXXFLAGS) -fwrapv -fno-strict-aliasing
+libzcash_a_CXXFLAGS = $(HARDENED_CXXFLAGS) -fwrapv -fno-strict-aliasing
 
-libsodatoken_a_LDFLAGS = $(HARDENED_LDFLAGS)
+libzcash_a_LDFLAGS = $(HARDENED_LDFLAGS)
 
-libsodatoken_a_CPPFLAGS += -DMONTGOMERY_OUTPUT
+libzcash_a_CPPFLAGS += -DMONTGOMERY_OUTPUT
 
 # sodatokenconsensus library #
 if BUILD_BITCOIN_LIBS
-include_HEADERS = script/sodatokenconsensus.h
-libsodatokenconsensus_la_SOURCES = \
+include_HEADERS = script/zcashconsensus.h
+libzcashconsensus_la_SOURCES = \
   crypto/equihash.cpp \
   crypto/hmac_sha512.cpp \
   crypto/ripemd160.cpp \
@@ -542,7 +542,7 @@ libsodatokenconsensus_la_SOURCES = \
   hash.cpp \
   primitives/transaction.cpp \
   pubkey.cpp \
-  script/sodatokenconsensus.cpp \
+  script/zcashconsensus.cpp \
   script/interpreter.cpp \
   script/script.cpp \
   uint256.cpp \
@@ -552,10 +552,10 @@ if GLIBC_BACK_COMPAT
   libsodatokenconsensus_la_SOURCES += compat/glibc_compat.cpp
 endif
 
-libsodatokenconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
-libsodatokenconsensus_la_LIBADD = $(LIBSECP256K1)
-libsodatokenconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
-libsodatokenconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libzcashconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
+libzcashconsensus_la_LIBADD = $(LIBSECP256K1)
+libzcashconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
+libzcashconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
 endif
 #
