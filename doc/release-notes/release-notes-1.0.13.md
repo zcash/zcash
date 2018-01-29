@@ -5,7 +5,7 @@ Ariel Gabizon (1):
       boost::format -> tinyformat
 
 Bruno Arueira (1):
-      Removes out bitcoin mention in favor for zcash
+      Removes out bitcoin mention in favor for sodatoken
 
 Cory Fields (1):
       httpserver: explicitly detach worker threads
@@ -21,12 +21,12 @@ Jack Grigg (47):
       Add benchmark for listunspent
       [Test] MiniNode: Implement JSDescription parsing
       [Test] MiniNode: Implement v2 CTransaction parsing
-      [Test] MiniNode: Implement Zcash block parsing
+      [Test] MiniNode: Implement SodaToken block parsing
       [Test] MiniNode: Update protocol version and network magics
-      [Test] MiniNode: Use Zcash PoW
+      [Test] MiniNode: Use SodaToken PoW
       [Test] MiniNode: Fix coinbase creation
       [Test] MiniNode: Coerce OP_PUSHDATA bytearrays to bytes
-      [Test] MiniNode: Implement Zcash coinbase
+      [Test] MiniNode: Implement SodaToken coinbase
       Fix BIP65 and BIP66 tests
       Un-indent RPC test output in test runner
       Replace full-test-suite.sh with a new test suite driver script
@@ -63,10 +63,10 @@ Jack Grigg (47):
       make-release.py: Updated manpages for 1.0.13.
 
 Jason Davies (1):
-      Replace "bitcoin" with "Zcash".
+      Replace "bitcoin" with "SodaToken".
 
 Jay Graber (1):
-      s/zcash/Zcash
+      s/sodatoken/SodaToken
 
 Jonathan "Duke" Leto (1):
       Fix bug where performance-measurements.sh fails hards when given no args
@@ -82,10 +82,10 @@ Sean Bowe (5):
       Integrate low memory prover.
 
 Simon Liu (7):
-      Replace 'bitcoin address' with 'zcash address'.
+      Replace 'bitcoin address' with 'sodatoken address'.
       Closes #2639. z_shieldcoinbase is now supported, no longer experimental.
       Closes #2263 fixing broken pipe error.
-      Closes #2576. Update link to security info on z.cash website.
+      Closes #2576. Update link to security info on sodatoken.org website.
       Closes #2639. Adds optional limit parameter with a default value of 50.
       Fix an issue where qa test wallet_shieldcoinbase could hang.
       Add payment disclosure as experimental feature.

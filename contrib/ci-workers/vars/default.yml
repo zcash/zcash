@@ -10,19 +10,19 @@ fetch_deps:
   - git
   - wget # For zcutil/fetch-params.sh
 
-# Dependencies required to configure Zcash
+# Dependencies required to configure SodaToken
 conf_deps:
   - autoconf
   - automake
   - m4
 
-# Dependencies required to compile Zcash
+# Dependencies required to compile SodaToken
 build_deps:
   - g++
   - gcc
   - make
 
-# Dependencies required to link Zcash
+# Dependencies required to link SodaToken
 link_deps:
   - libtool
 
@@ -34,13 +34,13 @@ grind_deps:
   - lcov
   - valgrind
 
-# Python modules required for a Zcash Buildbot worker
+# Python modules required for a SodaToken Buildbot worker
 buildbot_modules:
   - pip # Needs to be updated first so Buildbot installs
   - buildbot-worker
   - pyflakes
 
-# Python modules required to run the Zcash RPC test suite
+# Python modules required to run the SodaToken RPC test suite
 rpc_test_modules:
   - pyblake2
   - pyzmq

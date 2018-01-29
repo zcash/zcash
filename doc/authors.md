@@ -1,4 +1,4 @@
-Zcash Contributors
+SodaToken Contributors
 ==================
 
 Jack Grigg (558)

@@ -11,7 +11,7 @@
 
 #include "test/test_bitcoin.h"
 
-#include "zcash/Address.hpp"
+#include "sodatoken/Address.hpp"
 
 #include "rpcserver.h"
 #include "asyncrpcqueue.h"
@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateaddress)
     BOOST_CHECK_THROW(CallRPC("z_validateaddress toomany args"), runtime_error);
 
     // Wallet should be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libsodatoken::PaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
@@ -368,7 +368,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // wallet should be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libsodatoken::PaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
@@ -399,7 +399,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
 
 
     auto addr = paymentAddress.Get();
-    libzcash::SpendingKey key;
+    libsodatoken::SpendingKey key;
     BOOST_CHECK(pwalletMain->GetSpendingKey(addr, key));
 
     std::string s1 = paymentAddress.ToString();
@@ -444,13 +444,13 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     BOOST_CHECK_THROW(CallRPC("z_importwallet toomany args"), runtime_error);
 
     // create a random key locally
-    auto testSpendingKey = libzcash::SpendingKey::random();
+    auto testSpendingKey = libsodatoken::SpendingKey::random();
     auto testPaymentAddress = testSpendingKey.address();
     std::string testAddr = CZCPaymentAddress(testPaymentAddress).ToString();
     std::string testKey = CZCSpendingKey(testSpendingKey).ToString();
 
     // create test data using the random key
-    std::string format_str = "# Wallet dump created by Zcash v0.11.2.0.z8-9155cc6-dirty (2016-08-11 11:37:00 -0700)\n"
+    std::string format_str = "# Wallet dump created by SodaToken v0.11.2.0.z8-9155cc6-dirty (2016-08-11 11:37:00 -0700)\n"
             "# * Created on 2016-08-12T21:55:36Z\n"
             "# * Best block at time of backup was 0 (0de0a3851fef2d433b9b4f51d4342bdd24c5ddd793eb8fba57189f07e9235d52),\n"
             "#   mined on 2009-01-03T18:15:05Z\n"
@@ -473,7 +473,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     file << std::flush;
 
     // wallet should currently be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libsodatoken::PaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
@@ -490,7 +490,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     BOOST_CHECK(pwalletMain->HaveSpendingKey(addr));
 
     // Verify the spending key is the same as the test data
-    libzcash::SpendingKey k;
+    libsodatoken::SpendingKey k;
     BOOST_CHECK(pwalletMain->GetSpendingKey(addr, k));
     CZCSpendingKey spendingkey(k);
     BOOST_CHECK_EQUAL(testKey, spendingkey.ToString());
@@ -516,7 +516,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     BOOST_CHECK_THROW(CallRPC("z_exportkey toomany args"), runtime_error);
 
     // error if invalid args
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libsodatoken::SpendingKey::random();
     std::string prefix = std::string("z_importkey ") + CZCSpendingKey(sk).ToString() + " yes ";
     BOOST_CHECK_THROW(CallRPC(prefix + "-1"), runtime_error);
     BOOST_CHECK_THROW(CallRPC(prefix + "2147483647"), runtime_error); // allowed, but > height of active chain tip
@@ -524,14 +524,14 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     BOOST_CHECK_THROW(CallRPC(prefix + "100badchars"), runtime_error);
 
     // wallet should currently be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libsodatoken::PaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
     // verify import and export key
     for (int i = 0; i < n1; i++) {
         // create a random key locally
-        auto testSpendingKey = libzcash::SpendingKey::random();
+        auto testSpendingKey = libsodatoken::SpendingKey::random();
         auto testPaymentAddress = testSpendingKey.address();
         std::string testAddr = CZCPaymentAddress(testPaymentAddress).ToString();
         std::string testKey = CZCSpendingKey(testSpendingKey).ToString();
@@ -1192,7 +1192,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     int n = 100;
 
     // wallet should currently be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libsodatoken::PaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 

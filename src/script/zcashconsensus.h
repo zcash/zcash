@@ -33,31 +33,31 @@ extern "C" {
 
 #define ZCASHCONSENSUS_API_VER 0
 
-typedef enum zcashconsensus_error_t
+typedef enum sodatokenconsensus_error_t
 {
-    zcashconsensus_ERR_OK = 0,
-    zcashconsensus_ERR_TX_INDEX,
-    zcashconsensus_ERR_TX_SIZE_MISMATCH,
-    zcashconsensus_ERR_TX_DESERIALIZE,
-} zcashconsensus_error;
+    sodatokenconsensus_ERR_OK = 0,
+    sodatokenconsensus_ERR_TX_INDEX,
+    sodatokenconsensus_ERR_TX_SIZE_MISMATCH,
+    sodatokenconsensus_ERR_TX_DESERIALIZE,
+} sodatokenconsensus_error;
 
 /** Script verification flags */
 enum
 {
-    zcashconsensus_SCRIPT_FLAGS_VERIFY_NONE                = 0,
-    zcashconsensus_SCRIPT_FLAGS_VERIFY_P2SH                = (1U << 0), // evaluate P2SH (BIP16) subscripts
-    zcashconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9), // enable CHECKLOCKTIMEVERIFY (BIP65)
+    sodatokenconsensus_SCRIPT_FLAGS_VERIFY_NONE                = 0,
+    sodatokenconsensus_SCRIPT_FLAGS_VERIFY_P2SH                = (1U << 0), // evaluate P2SH (BIP16) subscripts
+    sodatokenconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9), // enable CHECKLOCKTIMEVERIFY (BIP65)
 };
 
 /// Returns 1 if the input nIn of the serialized transaction pointed to by
 /// txTo correctly spends the scriptPubKey pointed to by scriptPubKey under
 /// the additional constraints specified by flags.
 /// If not NULL, err will contain an error/success code for the operation
-EXPORT_SYMBOL int zcashconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
+EXPORT_SYMBOL int sodatokenconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
                                     const unsigned char *txTo        , unsigned int txToLen,
-                                    unsigned int nIn, unsigned int flags, zcashconsensus_error* err);
+                                    unsigned int nIn, unsigned int flags, sodatokenconsensus_error* err);
 
-EXPORT_SYMBOL unsigned int zcashconsensus_version();
+EXPORT_SYMBOL unsigned int sodatokenconsensus_version();
 
 #ifdef __cplusplus
 } // extern "C"

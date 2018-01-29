@@ -9,7 +9,7 @@
 #include "serialize.h"
 #include "streams.h"
 #include "support/allocators/secure.h"
-#include "zcash/Address.hpp"
+#include "sodatoken/Address.hpp"
 
 class uint256;
 
@@ -200,11 +200,11 @@ public:
             mi++;
         }
     }
-    virtual bool AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
-                                       const libzcash::ReceivingKey &rk,
+    virtual bool AddCryptedSpendingKey(const libsodatoken::PaymentAddress &address,
+                                       const libsodatoken::ReceivingKey &rk,
                                        const std::vector<unsigned char> &vchCryptedSecret);
-    bool AddSpendingKey(const libzcash::SpendingKey &sk);
-    bool HaveSpendingKey(const libzcash::PaymentAddress &address) const
+    bool AddSpendingKey(const libsodatoken::SpendingKey &sk);
+    bool HaveSpendingKey(const libsodatoken::PaymentAddress &address) const
     {
         {
             LOCK(cs_SpendingKeyStore);
@@ -214,8 +214,8 @@ public:
         }
         return false;
     }
-    bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey &skOut) const;
-    void GetPaymentAddresses(std::set<libzcash::PaymentAddress> &setAddress) const
+    bool GetSpendingKey(const libsodatoken::PaymentAddress &address, libsodatoken::SpendingKey &skOut) const;
+    void GetPaymentAddresses(std::set<libsodatoken::PaymentAddress> &setAddress) const
     {
         if (!IsCrypted())
         {

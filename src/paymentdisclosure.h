@@ -1,4 +1,4 @@
-// Copyright (c) 2017 The Zcash developers
+// Copyright (c) 2017 The SodaToken developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -34,16 +34,16 @@ typedef JSOutPoint PaymentDisclosureKey;
 
 struct PaymentDisclosureInfo {
     uint8_t version;          // 0 = experimental, 1 = first production version, etc.
-    uint256 esk;              // zcash/NoteEncryption.cpp
+    uint256 esk;              // sodatoken/NoteEncryption.cpp
     uint256 joinSplitPrivKey; // primitives/transaction.h
     // ed25519 - not tied to implementation e.g. libsodium, see ed25519 rfc
 
-    libzcash::PaymentAddress zaddr;
+    libsodatoken::PaymentAddress zaddr;
 
     PaymentDisclosureInfo() : version(PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL) {
     }
 
-    PaymentDisclosureInfo(uint8_t v, uint256 esk, uint256 key, libzcash::PaymentAddress zaddr) : version(v), esk(esk), joinSplitPrivKey(key), zaddr(zaddr) { }
+    PaymentDisclosureInfo(uint8_t v, uint256 esk, uint256 key, libsodatoken::PaymentAddress zaddr) : version(v), esk(esk), joinSplitPrivKey(key), zaddr(zaddr) { }
 
     ADD_SERIALIZE_METHODS;
 
@@ -71,11 +71,11 @@ struct PaymentDisclosureInfo {
 struct PaymentDisclosurePayload {
     int32_t marker = PAYMENT_DISCLOSURE_PAYLOAD_MAGIC_BYTES;  // to be disjoint from transaction encoding
     uint8_t version;        // 0 = experimental, 1 = first production version, etc.
-    uint256 esk;            // zcash/NoteEncryption.cpp
+    uint256 esk;            // sodatoken/NoteEncryption.cpp
     uint256 txid;           // primitives/transaction.h
     size_t js;              // Index into CTransaction.vjoinsplit
     uint8_t n;              // Index into JSDescription fields of length ZC_NUM_JS_OUTPUTS
-    libzcash::PaymentAddress zaddr; // zcash/Address.hpp
+    libsodatoken::PaymentAddress zaddr; // sodatoken/Address.hpp
     std::string message;     // parameter to RPC call
 
     ADD_SERIALIZE_METHODS;

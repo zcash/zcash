@@ -1,7 +1,7 @@
-rust_packages := rust librustzcash
+rust_packages := rust librustsodatoken
 proton_packages := proton
-zcash_packages := libgmp libsodium
-packages := boost openssl libevent zeromq $(zcash_packages) googletest
+sodatoken_packages := libgmp libsodium
+packages := boost openssl libevent zeromq $(sodatoken_packages) googletest
 native_packages := native_ccache
 
 wallet_packages=bdb

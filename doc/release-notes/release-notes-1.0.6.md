@@ -25,10 +25,10 @@ Jack Grigg (33):
       Switch miner to P2PKH, add -mineraddress option
       Update help text for mining options
       Correct #ifdef nesting of miner headers and helper functions
-      Add ZMQ libs to zcash-gtest
+      Add ZMQ libs to sodatoken-gtest
       Fix python syntax in ZMQ RPC test
       [qa] py2: Unfiddle strings into bytes explicitly in ZMQ RPC test
-      Bitcoin -> Zcash in ZMQ docs
+      Bitcoin -> SodaToken in ZMQ docs
       Add ZeroMQ license to contrib/debian/copyright
       [depends] ZeroMQ 4.2.1
       Clarify that user only needs libzmq if not using depends system
@@ -37,16 +37,16 @@ Jack Grigg (33):
       Add test to check for presence of vpub_old & vpub_new in getrawtransaction
       Add a flag for enabling experimental features
       Require -experimentalmode for wallet encryption
-      Migrate Zcash-specific code to UniValue
+      Migrate SodaToken-specific code to UniValue
       Manually iterate over UniValue arrays in tests
       Remove JSON Spirit from contrib/debian/copyright
       unsigned int -> size_t for comparing with UniValue.size()
       [cleanup] Remove unused import
       [cleanup] Simplify test code
       Squashed 'src/univalue/' content from commit 9ef5b78
-      Update UniValue includes in Zcash-specific code
+      Update UniValue includes in SodaToken-specific code
       UniValue::getValues const reference
-      Get rid of fPlus argument to FormatMoney in Zcash-specific code
+      Get rid of fPlus argument to FormatMoney in SodaToken-specific code
 
 Jeff Garzik (4):
       Add ZeroMQ support. Notify blocks and transactions via ZeroMQ

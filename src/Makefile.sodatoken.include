@@ -1,0 +1,28 @@
+noinst_PROGRAMS += \
+  sodatoken/GenerateParams \
+  sodatoken/CreateJoinSplit
+
+# tool for generating our public parameters
+sodatoken_GenerateParams_SOURCES = sodatoken/GenerateParams.cpp
+sodatoken_GenerateParams_CPPFLAGS = $(AM_CPPFLAGS)
+sodatoken_GenerateParams_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+sodatoken_GenerateParams_LDADD = \
+  $(BOOST_LIBS) \
+  $(LIBZCASH) \
+  $(LIBSNARK) \
+  $(LIBBITCOIN_UTIL) \
+  $(LIBBITCOIN_CRYPTO) \
+  $(LIBZCASH_LIBS)
+
+# tool for profiling the creation of joinsplits
+sodatoken_CreateJoinSplit_SOURCES = sodatoken/CreateJoinSplit.cpp
+sodatoken_CreateJoinSplit_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+sodatoken_CreateJoinSplit_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+sodatoken_CreateJoinSplit_LDADD = \
+  $(LIBBITCOIN_COMMON) \
+  $(LIBZCASH) \
+  $(LIBSNARK) \
+  $(LIBBITCOIN_UTIL) \
+  $(LIBBITCOIN_CRYPTO) \
+  $(BOOST_LIBS) \
+  $(LIBZCASH_LIBS)

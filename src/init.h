@@ -8,7 +8,7 @@
 
 #include <string>
 
-#include "zcash/JoinSplit.hpp"
+#include "sodatoken/JoinSplit.hpp"
 
 class CScheduler;
 class CWallet;
@@ -19,7 +19,7 @@ class thread_group;
 } // namespace boost
 
 extern CWallet* pwalletMain;
-extern ZCJoinSplit* pzcashParams;
+extern ZCJoinSplit* psodatokenParams;
 
 void StartShutdown();
 bool ShutdownRequested();
