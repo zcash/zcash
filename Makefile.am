@@ -9,7 +9,7 @@ GZIP_ENV="-9n"
 
 if BUILD_BITCOIN_LIBS
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libsodatokenconsensus.pc
+pkgconfig_DATA = libzcashconsensus.pc
 endif
 
 BITCOIND_BIN=$(top_builddir)/src/$(BITCOIN_DAEMON_NAME)$(EXEEXT)
