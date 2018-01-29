@@ -1,6 +1,6 @@
 ---
-- name: Configure a Buildbot worker for Zcash CI
-  hosts: zcash-ci-worker-unix
+- name: Configure a Buildbot worker for SodaToken CI
+  hosts: sodatoken-ci-worker-unix
   become: true
   gather_facts: False
 
@@ -11,7 +11,7 @@
   vars_prompt:
     - name: "buildbot_worker_admin"
       prompt: "Admin details"
-      default: "Zcash <sysadmin@z.cash>"
+      default: "SodaToken <sysadmin@sodatoken.org>"
     - name: "buildbot_worker_name"
       prompt: "Buildbot worker name (provided by ZECC)"
       private: no

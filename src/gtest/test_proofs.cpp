@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "zcash/Proof.hpp"
+#include "sodatoken/Proof.hpp"
 
 #include <iostream>
 
@@ -7,7 +7,7 @@
 #include <libsnark/relations/constraint_satisfaction_problems/r1cs/examples/r1cs_examples.hpp>
 #include <libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp>
 
-using namespace libzcash;
+using namespace libsodatoken;
 
 typedef libsnark::default_r1cs_ppzksnark_pp curve_pp;
 typedef libsnark::default_r1cs_ppzksnark_pp::G1_type curve_G1;

@@ -6,7 +6,7 @@ set -e
 set -x
 
 BUILD_PATH="/tmp/zcbuild"
-PACKAGE_NAME="zcash"
+PACKAGE_NAME="sodatoken"
 SRC_PATH=`pwd`
 SRC_DEB=$SRC_PATH/contrib/debian
 SRC_DOC=$SRC_PATH/doc
@@ -17,7 +17,7 @@ if [ ! -d $BUILD_PATH ]; then
     mkdir $BUILD_PATH
 fi
 
-PACKAGE_VERSION=$($SRC_PATH/src/zcashd --version | grep version | cut -d' ' -f4 | tr -d v)
+PACKAGE_VERSION=$($SRC_PATH/src/sodatokend --version | grep version | cut -d' ' -f4 | tr -d v)
 DEBVERSION=$(echo $PACKAGE_VERSION | sed 's/-beta/~beta/' | sed 's/-rc/~rc/' | sed 's/-/+/')
 BUILD_DIR="$BUILD_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64"
 
@@ -38,32 +38,32 @@ chmod 0755 -R $BUILD_DIR/*
 #cp $SRC_DEB/preinst $BUILD_DIR/DEBIAN
 #cp $SRC_DEB/prerm $BUILD_DIR/DEBIAN
 # Copy binaries
-cp $SRC_PATH/src/zcashd $DEB_BIN
-cp $SRC_PATH/src/zcash-cli $DEB_BIN
-cp $SRC_PATH/zcutil/fetch-params.sh $DEB_BIN/zcash-fetch-params
+cp $SRC_PATH/src/sodatokend $DEB_BIN
+cp $SRC_PATH/src/sodatoken-cli $DEB_BIN
+cp $SRC_PATH/zcutil/fetch-params.sh $DEB_BIN/sodatoken-fetch-params
 # Copy docs
 cp $SRC_PATH/doc/release-notes/release-notes-1.0.0.md $DEB_DOC/changelog
 cp $SRC_DEB/changelog $DEB_DOC/changelog.Debian
 cp $SRC_DEB/copyright $DEB_DOC
 cp -r $SRC_DEB/examples $DEB_DOC
 # Copy manpages
-cp $SRC_DOC/man/zcashd.1 $DEB_MAN
-cp $SRC_DOC/man/zcash-cli.1 $DEB_MAN
-cp $SRC_DOC/man/zcash-fetch-params.1 $DEB_MAN
+cp $SRC_DOC/man/sodatokend.1 $DEB_MAN
+cp $SRC_DOC/man/sodatoken-cli.1 $DEB_MAN
+cp $SRC_DOC/man/sodatoken-fetch-params.1 $DEB_MAN
 # Copy bash completion files
-cp $SRC_PATH/contrib/zcashd.bash-completion $DEB_CMP/zcashd
-cp $SRC_PATH/contrib/zcash-cli.bash-completion $DEB_CMP/zcash-cli
+cp $SRC_PATH/contrib/sodatokend.bash-completion $DEB_CMP/sodatokend
+cp $SRC_PATH/contrib/sodatoken-cli.bash-completion $DEB_CMP/sodatoken-cli
 # Gzip files
 gzip --best -n $DEB_DOC/changelog
 gzip --best -n $DEB_DOC/changelog.Debian
-gzip --best -n $DEB_MAN/zcashd.1
-gzip --best -n $DEB_MAN/zcash-cli.1
-gzip --best -n $DEB_MAN/zcash-fetch-params.1
+gzip --best -n $DEB_MAN/sodatokend.1
+gzip --best -n $DEB_MAN/sodatoken-cli.1
+gzip --best -n $DEB_MAN/sodatoken-fetch-params.1
 
 cd $SRC_PATH/contrib
 
 # Create the control file
-dpkg-shlibdeps $DEB_BIN/zcashd $DEB_BIN/zcash-cli
+dpkg-shlibdeps $DEB_BIN/sodatokend $DEB_BIN/sodatoken-cli
 dpkg-gencontrol -P$BUILD_DIR -v$DEBVERSION
 
 # Create the Debian package

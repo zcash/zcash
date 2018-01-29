@@ -30,9 +30,9 @@
 
 #include <univalue.h>
 
-#include "zcash/Note.hpp"
-#include "zcash/Address.hpp"
-#include "zcash/Proof.hpp"
+#include "sodatoken/Note.hpp"
+#include "sodatoken/Address.hpp"
+#include "sodatoken/Proof.hpp"
 
 using namespace std;
 
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
     UniValue tests = read_json(std::string(json_tests::tx_valid, json_tests::tx_valid + sizeof(json_tests::tx_valid)));
     std::string comment("");
 
-    auto verifier = libzcash::ProofVerifier::Strict();
+    auto verifier = libsodatoken::ProofVerifier::Strict();
     ScriptError err;
     for (size_t idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
     UniValue tests = read_json(std::string(json_tests::tx_invalid, json_tests::tx_invalid + sizeof(json_tests::tx_invalid)));
     std::string comment("");
 
-    auto verifier = libzcash::ProofVerifier::Strict();
+    auto verifier = libsodatoken::ProofVerifier::Strict();
     ScriptError err;
     for (size_t idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
@@ -264,7 +264,7 @@ BOOST_AUTO_TEST_CASE(basic_transaction_tests)
     CMutableTransaction tx;
     stream >> tx;
     CValidationState state;
-    auto verifier = libzcash::ProofVerifier::Strict();
+    auto verifier = libsodatoken::ProofVerifier::Strict();
     BOOST_CHECK_MESSAGE(CheckTransaction(tx, state, verifier) && state.IsValid(), "Simple deserialized transaction should be valid.");
 
     // Check that duplicate txins fail
@@ -324,16 +324,16 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
     // on all platforms and would gently push us down an ugly
     // path. We should just fix the assertions.
     //
-    // Also, it's generally libzcash's job to ensure the
+    // Also, it's generally libsodatoken's job to ensure the
     // integrity of the scheme through its own tests.
 
     // construct a merkle tree
     ZCIncrementalMerkleTree merkleTree;
 
-    libzcash::SpendingKey k = libzcash::SpendingKey::random();
-    libzcash::PaymentAddress addr = k.address();
+    libsodatoken::SpendingKey k = libsodatoken::SpendingKey::random();
+    libsodatoken::PaymentAddress addr = k.address();
 
-    libzcash::Note note(addr.a_pk, 100, uint256(), uint256());
+    libsodatoken::Note note(addr.a_pk, 100, uint256(), uint256());
 
     // commitment from coin
     uint256 commitment = note.cm();
@@ -348,20 +348,20 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
 
     // create JSDescription
     uint256 pubKeyHash;
-    boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
-        libzcash::JSInput(witness, note, k),
-        libzcash::JSInput() // dummy input of zero value
+    boost::array<libsodatoken::JSInput, ZC_NUM_JS_INPUTS> inputs = {
+        libsodatoken::JSInput(witness, note, k),
+        libsodatoken::JSInput() // dummy input of zero value
     };
-    boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs = {
-        libzcash::JSOutput(addr, 50),
-        libzcash::JSOutput(addr, 50)
+    boost::array<libsodatoken::JSOutput, ZC_NUM_JS_OUTPUTS> outputs = {
+        libsodatoken::JSOutput(addr, 50),
+        libsodatoken::JSOutput(addr, 50)
     };
 
-    auto verifier = libzcash::ProofVerifier::Strict();
+    auto verifier = libsodatoken::ProofVerifier::Strict();
 
     {
-        JSDescription jsdesc(*pzcashParams, pubKeyHash, rt, inputs, outputs, 0, 0);
-        BOOST_CHECK(jsdesc.Verify(*pzcashParams, verifier, pubKeyHash));
+        JSDescription jsdesc(*psodatokenParams, pubKeyHash, rt, inputs, outputs, 0, 0);
+        BOOST_CHECK(jsdesc.Verify(*psodatokenParams, verifier, pubKeyHash));
 
         CDataStream ss(SER_DISK, CLIENT_VERSION);
         ss << jsdesc;
@@ -370,26 +370,26 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
         ss >> jsdesc_deserialized;
 
         BOOST_CHECK(jsdesc_deserialized == jsdesc);
-        BOOST_CHECK(jsdesc_deserialized.Verify(*pzcashParams, verifier, pubKeyHash));
+        BOOST_CHECK(jsdesc_deserialized.Verify(*psodatokenParams, verifier, pubKeyHash));
     }
 
     {
         // Ensure that the balance equation is working.
-        BOOST_CHECK_THROW(JSDescription(*pzcashParams, pubKeyHash, rt, inputs, outputs, 10, 0), std::invalid_argument);
-        BOOST_CHECK_THROW(JSDescription(*pzcashParams, pubKeyHash, rt, inputs, outputs, 0, 10), std::invalid_argument);
+        BOOST_CHECK_THROW(JSDescription(*psodatokenParams, pubKeyHash, rt, inputs, outputs, 10, 0), std::invalid_argument);
+        BOOST_CHECK_THROW(JSDescription(*psodatokenParams, pubKeyHash, rt, inputs, outputs, 0, 10), std::invalid_argument);
     }
 
     {
         // Ensure that it won't verify if the root is changed.
-        auto test = JSDescription(*pzcashParams, pubKeyHash, rt, inputs, outputs, 0, 0);
+        auto test = JSDescription(*psodatokenParams, pubKeyHash, rt, inputs, outputs, 0, 0);
         test.anchor = GetRandHash();
-        BOOST_CHECK(!test.Verify(*pzcashParams, verifier, pubKeyHash));
+        BOOST_CHECK(!test.Verify(*psodatokenParams, verifier, pubKeyHash));
     }
 }
 
 BOOST_AUTO_TEST_CASE(test_simple_joinsplit_invalidity)
 {
-    auto verifier = libzcash::ProofVerifier::Strict();
+    auto verifier = libsodatoken::ProofVerifier::Strict();
     CMutableTransaction tx;
     tx.nVersion = 2;
     {

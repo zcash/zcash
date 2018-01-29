@@ -3,7 +3,7 @@
 
 #include "consensus/validation.h"
 #include "main.h"
-#include "zcash/Proof.hpp"
+#include "sodatoken/Proof.hpp"
 
 class MockCValidationState : public CValidationState {
 public:
@@ -23,7 +23,7 @@ public:
 };
 
 TEST(CheckBlock, VersionTooLow) {
-    auto verifier = libzcash::ProofVerifier::Strict();
+    auto verifier = libsodatoken::ProofVerifier::Strict();
 
     CBlock block;
     block.nVersion = 1;

@@ -277,8 +277,8 @@ def gbp_validate(digest, minimal, n, k):
 
     return True
 
-def zcash_person(n, k):
-    return b'ZcashPoW' + struct.pack('<II', n, k)
+def sodatoken_person(n, k):
+    return b'SodaTokenPoW' + struct.pack('<II', n, k)
 
 def print_hash(h):
     if type(h) == bytearray:

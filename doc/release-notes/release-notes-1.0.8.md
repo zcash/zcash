@@ -15,12 +15,12 @@ Daira Hopwood (15):
       Remove QT gunk from Makefiles.
       Remove some more QT-related stragglers.
       Update documentation for QT removal.
-      Update which libraries are allowed to be linked to zcashd by symbol-check.py.
+      Update which libraries are allowed to be linked to sodatokend by symbol-check.py.
       Remove NO_QT make option.
       .gitignore cache/ and venv-mnf/
       Remove unused packages and patches.
       Delete -rootcertificates from bash completion script.
-      Line-wrap privacy notice. Use <> around URL and end sentence with '.'. Include privacy notice in help text for zcashd -help.
+      Line-wrap privacy notice. Use <> around URL and end sentence with '.'. Include privacy notice in help text for sodatokend -help.
       Update version numbers.
       Improvement to release process doc.
       Generate man pages.
@@ -52,7 +52,7 @@ Jack Grigg (25):
       Expand on reasons for mining being paused
       Simplify z_importkey by making rescan a string
       Revert "Closes #1680, temporary fix for rpc deadlock inherited from upstream."
-      Add libevent to zcash-gtest
+      Add libevent to sodatoken-gtest
       [depends] libevent 2.1.8
       Test boolean fallback in z_importkey
       Require that z_importkey height parameter be in valid range
@@ -70,8 +70,8 @@ Jack Grigg (25):
 Jay Graber (5):
       Document returned results of submitblock
       Edit release-process.md for clarity
-      Add security warning to zcash-cli --help and --version message output
-      Add security warning to zcashd metrics display
+      Add security warning to sodatoken-cli --help and --version message output
+      Add security warning to sodatokend metrics display
       Add security message to license text, rm url from translation string
 
 Jonas Schnelli (1):
@@ -114,7 +114,7 @@ Pieter Wuille (3):
       Fix interrupted HTTP RPC connection workaround for Python 3.5+
 
 Sean Bowe (2):
-      Introduce librustzcash and Rust to depends system.
+      Introduce librustsodatoken and Rust to depends system.
       Allow Rust-language related assets to be disabled with `--disable-rust`.
 
 Simon Liu (4):

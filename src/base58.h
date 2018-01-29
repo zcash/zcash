@@ -20,7 +20,7 @@
 #include "script/script.h"
 #include "script/standard.h"
 #include "support/allocators/zeroafterfree.h"
-#include "zcash/Address.hpp"
+#include "sodatoken/Address.hpp"
 
 #include <string>
 #include <vector>
@@ -107,7 +107,7 @@ public:
     DATA_TYPE Get() const;
 };
 
-class CZCPaymentAddress : public CZCEncoding<libzcash::PaymentAddress, CChainParams::ZCPAYMENT_ADDRRESS, libzcash::SerializedPaymentAddressSize> {
+class CZCPaymentAddress : public CZCEncoding<libsodatoken::PaymentAddress, CChainParams::ZCPAYMENT_ADDRRESS, libsodatoken::SerializedPaymentAddressSize> {
 protected:
     std::string PrependName(const std::string& s) const { return "payment address" + s; }
 
@@ -115,10 +115,10 @@ public:
     CZCPaymentAddress() {}
 
     CZCPaymentAddress(const std::string& strAddress) { SetString(strAddress.c_str(), 2); }
-    CZCPaymentAddress(const libzcash::PaymentAddress& addr) { Set(addr); }
+    CZCPaymentAddress(const libsodatoken::PaymentAddress& addr) { Set(addr); }
 };
 
-class CZCViewingKey : public CZCEncoding<libzcash::ViewingKey, CChainParams::ZCVIEWING_KEY, libzcash::SerializedViewingKeySize> {
+class CZCViewingKey : public CZCEncoding<libsodatoken::ViewingKey, CChainParams::ZCVIEWING_KEY, libsodatoken::SerializedViewingKeySize> {
 protected:
     std::string PrependName(const std::string& s) const { return "viewing key" + s; }
 
@@ -126,10 +126,10 @@ public:
     CZCViewingKey() {}
 
     CZCViewingKey(const std::string& strViewingKey) { SetString(strViewingKey.c_str(), 3); }
-    CZCViewingKey(const libzcash::ViewingKey& vk) { Set(vk); }
+    CZCViewingKey(const libsodatoken::ViewingKey& vk) { Set(vk); }
 };
 
-class CZCSpendingKey : public CZCEncoding<libzcash::SpendingKey, CChainParams::ZCSPENDING_KEY, libzcash::SerializedSpendingKeySize> {
+class CZCSpendingKey : public CZCEncoding<libsodatoken::SpendingKey, CChainParams::ZCSPENDING_KEY, libsodatoken::SerializedSpendingKeySize> {
 protected:
     std::string PrependName(const std::string& s) const { return "spending key" + s; }
 
@@ -137,7 +137,7 @@ public:
     CZCSpendingKey() {}
 
     CZCSpendingKey(const std::string& strAddress) { SetString(strAddress.c_str(), 2); }
-    CZCSpendingKey(const libzcash::SpendingKey& addr) { Set(addr); }
+    CZCSpendingKey(const libsodatoken::SpendingKey& addr) { Set(addr); }
 };
 
 /** base58-encoded Bitcoin addresses.

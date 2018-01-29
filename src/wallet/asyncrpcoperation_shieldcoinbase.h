@@ -1,4 +1,4 @@
-// Copyright (c) 2017 The Zcash developers
+// Copyright (c) 2017 The SodaToken developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,8 +9,8 @@
 #include "amount.h"
 #include "base58.h"
 #include "primitives/transaction.h"
-#include "zcash/JoinSplit.hpp"
-#include "zcash/Address.hpp"
+#include "sodatoken/JoinSplit.hpp"
+#include "sodatoken/Address.hpp"
 #include "wallet.h"
 
 #include <unordered_map>
@@ -23,7 +23,7 @@
 // Default transaction fee if caller does not specify one.
 #define SHIELD_COINBASE_DEFAULT_MINERS_FEE   10000
 
-using namespace libzcash;
+using namespace libsodatoken;
 
 struct ShieldCoinbaseUTXO {
     uint256 txid;

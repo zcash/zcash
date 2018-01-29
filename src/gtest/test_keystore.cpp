@@ -5,17 +5,17 @@
 #ifdef ENABLE_WALLET
 #include "wallet/crypter.h"
 #endif
-#include "zcash/Address.hpp"
+#include "sodatoken/Address.hpp"
 
 TEST(keystore_tests, store_and_retrieve_spending_key) {
     CBasicKeyStore keyStore;
-    libzcash::SpendingKey skOut;
+    libsodatoken::SpendingKey skOut;
 
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libsodatoken::PaymentAddress> addrs;
     keyStore.GetPaymentAddresses(addrs);
     EXPECT_EQ(0, addrs.size());
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libsodatoken::SpendingKey::random();
     auto addr = sk.address();
 
     // Sanity-check: we can't get a key we haven't added
@@ -36,7 +36,7 @@ TEST(keystore_tests, store_and_retrieve_note_decryptor) {
     CBasicKeyStore keyStore;
     ZCNoteDecryption decOut;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libsodatoken::SpendingKey::random();
     auto addr = sk.address();
 
     EXPECT_FALSE(keyStore.GetNoteDecryptor(addr, decOut));
@@ -48,11 +48,11 @@ TEST(keystore_tests, store_and_retrieve_note_decryptor) {
 
 TEST(keystore_tests, StoreAndRetrieveViewingKey) {
     CBasicKeyStore keyStore;
-    libzcash::ViewingKey vkOut;
-    libzcash::SpendingKey skOut;
+    libsodatoken::ViewingKey vkOut;
+    libsodatoken::SpendingKey skOut;
     ZCNoteDecryption decOut;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libsodatoken::SpendingKey::random();
     auto vk = sk.viewing_key();
     auto addr = sk.address();
 
@@ -66,7 +66,7 @@ TEST(keystore_tests, StoreAndRetrieveViewingKey) {
     EXPECT_FALSE(keyStore.GetNoteDecryptor(addr, decOut));
 
     // and we can't find it in our list of addresses
-    std::set<libzcash::PaymentAddress> addresses;
+    std::set<libsodatoken::PaymentAddress> addresses;
     keyStore.GetPaymentAddresses(addresses);
     EXPECT_FALSE(addresses.count(addr));
 
@@ -115,12 +115,12 @@ TEST(keystore_tests, store_and_retrieve_spending_key_in_encrypted_store) {
     TestCCryptoKeyStore keyStore;
     uint256 r {GetRandHash()};
     CKeyingMaterial vMasterKey (r.begin(), r.end());
-    libzcash::SpendingKey keyOut;
+    libsodatoken::SpendingKey keyOut;
     ZCNoteDecryption decOut;
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libsodatoken::PaymentAddress> addrs;
 
     // 1) Test adding a key to an unencrypted key store, then encrypting it
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libsodatoken::SpendingKey::random();
     auto addr = sk.address();
     EXPECT_FALSE(keyStore.GetNoteDecryptor(addr, decOut));
 
@@ -157,7 +157,7 @@ TEST(keystore_tests, store_and_retrieve_spending_key_in_encrypted_store) {
     ASSERT_EQ(1, addrs.count(addr));
 
     // 2) Test adding a spending key to an already-encrypted key store
-    auto sk2 = libzcash::SpendingKey::random();
+    auto sk2 = libsodatoken::SpendingKey::random();
     auto addr2 = sk2.address();
     EXPECT_FALSE(keyStore.GetNoteDecryptor(addr2, decOut));
 

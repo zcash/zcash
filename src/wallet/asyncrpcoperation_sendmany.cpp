@@ -1,4 +1,4 @@
-// Copyright (c) 2016 The Zcash developers
+// Copyright (c) 2016 The SodaToken developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -19,7 +19,7 @@
 #include "script/interpreter.h"
 #include "utiltime.h"
 #include "rpcprotocol.h"
-#include "zcash/IncrementalMerkleTree.hpp"
+#include "sodatoken/IncrementalMerkleTree.hpp"
 #include "sodium.h"
 #include "miner.h"
 
@@ -30,7 +30,7 @@
 
 #include "paymentdisclosuredb.h"
 
-using namespace libzcash;
+using namespace libsodatoken;
 
 int find_output(UniValue obj, int n) {
     UniValue outputMapValue = find_value(obj, "outputmap");
@@ -556,7 +556,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
             // Decrypt the change note's ciphertext to retrieve some data we need
             ZCNoteDecryption decryptor(spendingkey_.receiving_key());
-            auto hSig = prevJoinSplit.h_sig(*pzcashParams, tx_.joinSplitPubKey);
+            auto hSig = prevJoinSplit.h_sig(*psodatokenParams, tx_.joinSplitPubKey);
             try {
                 NotePlaintext plaintext = NotePlaintext::decrypt(
                         decryptor,
@@ -960,9 +960,9 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
             );
 
     // Generate the proof, this can take over a minute.
-    boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs
+    boost::array<libsodatoken::JSInput, ZC_NUM_JS_INPUTS> inputs
             {info.vjsin[0], info.vjsin[1]};
-    boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs
+    boost::array<libsodatoken::JSOutput, ZC_NUM_JS_OUTPUTS> outputs
             {info.vjsout[0], info.vjsout[1]};
     boost::array<size_t, ZC_NUM_JS_INPUTS> inputMap;
     boost::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
@@ -970,7 +970,7 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
     uint256 esk; // payment disclosure - secret
 
     JSDescription jsdesc = JSDescription::Randomized(
-            *pzcashParams,
+            *psodatokenParams,
             joinSplitPubKey_,
             anchor,
             inputs,
@@ -982,8 +982,8 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
             !this->testmode,
             &esk); // parameter expects pointer to esk, so pass in address
     {
-        auto verifier = libzcash::ProofVerifier::Strict();
-        if (!(jsdesc.Verify(*pzcashParams, verifier, joinSplitPubKey_))) {
+        auto verifier = libsodatoken::ProofVerifier::Strict();
+        if (!(jsdesc.Verify(*psodatokenParams, verifier, joinSplitPubKey_))) {
             throw std::runtime_error("error verifying joinsplit");
         }
     }
@@ -1026,7 +1026,7 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
         ss2 << ((unsigned char) 0x00);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[0];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey_);
+        ss2 << jsdesc.h_sig(*psodatokenParams, joinSplitPubKey_);
 
         encryptedNote1 = HexStr(ss2.begin(), ss2.end());
     }
@@ -1035,7 +1035,7 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
         ss2 << ((unsigned char) 0x01);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[1];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey_);
+        ss2 << jsdesc.h_sig(*psodatokenParams, joinSplitPubKey_);
 
         encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }
@@ -1062,7 +1062,7 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
         // placeholder for txid will be filled in later when tx has been finalized and signed.
         PaymentDisclosureKey pdKey = {placeholder, js_index, mapped_index};
         JSOutput output = outputs[mapped_index];
-        libzcash::PaymentAddress zaddr = output.addr;  // randomized output
+        libsodatoken::PaymentAddress zaddr = output.addr;  // randomized output
         PaymentDisclosureInfo pdInfo = {PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL, esk, joinSplitPrivKey, zaddr};
         paymentDisclosureData_.push_back(PaymentDisclosureKeyInfo(pdKey, pdInfo));
 

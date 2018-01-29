@@ -10,7 +10,7 @@
 #include "wallet/db.h"
 #include "key.h"
 #include "keystore.h"
-#include "zcash/Address.hpp"
+#include "sodatoken/Address.hpp"
 
 #include <list>
 #include <stdint.h>
@@ -134,14 +134,14 @@ public:
     static bool Recover(CDBEnv& dbenv, const std::string& filename);
 
     /// Write spending key to wallet database, where key is payment address and value is spending key.
-    bool WriteZKey(const libzcash::PaymentAddress& addr, const libzcash::SpendingKey& key, const CKeyMetadata &keyMeta);
-    bool WriteCryptedZKey(const libzcash::PaymentAddress & addr,
-                          const libzcash::ReceivingKey & rk,
+    bool WriteZKey(const libsodatoken::PaymentAddress& addr, const libsodatoken::SpendingKey& key, const CKeyMetadata &keyMeta);
+    bool WriteCryptedZKey(const libsodatoken::PaymentAddress & addr,
+                          const libsodatoken::ReceivingKey & rk,
                           const std::vector<unsigned char>& vchCryptedSecret,
                           const CKeyMetadata &keyMeta);
 
-    bool WriteViewingKey(const libzcash::ViewingKey &vk);
-    bool EraseViewingKey(const libzcash::ViewingKey &vk);
+    bool WriteViewingKey(const libsodatoken::ViewingKey &vk);
+    bool EraseViewingKey(const libsodatoken::ViewingKey &vk);
 
 private:
     CWalletDB(const CWalletDB&);
