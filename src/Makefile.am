@@ -104,7 +104,7 @@ LIBZCASH_H = \
   sodatoken/prf.h \
   sodatoken/Proof.hpp \
   sodatoken/util.h \
-  sodatoken/SodaToken.h
+  sodatoken/Sodatoken.h
 
 .PHONY: FORCE collate-libsnark check-symbols check-security
 # bitcoin core #

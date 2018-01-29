@@ -80,7 +80,7 @@ Kevin Gallagher (24):
       Include contrib/devtools/split-debug.sh from upstream
       Adds faketime to Gitian build dependencies
       Inlude crypto/equihash.tcc in list of sources for dist
-      Adds sodatoken/SodaToken.h to LIBZCASH sources
+      Adds sodatoken/Sodatoken.h to LIBZCASH sources
       Adds sodatoken/Proof.hpp to LIBZCASH_H
       Add alertkeys.h to libbitcoin_server_a_SOURCES
       Adds files in src/sodatoken/circuit to libsodatoken_a_SOURCES

@@ -10,7 +10,7 @@ https://github.com/sodatoken/zips/blob/master/protocol/protocol.pdf
 #include "uint256.h"
 #include "uint252.h"
 
-#include "sodatoken/SodaToken.h"
+#include "sodatoken/Sodatoken.h"
 
 namespace libsodatoken {
 

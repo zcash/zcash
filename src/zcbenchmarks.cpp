@@ -27,7 +27,7 @@
 
 #include "zcbenchmarks.h"
 
-#include "sodatoken/SodaToken.h"
+#include "sodatoken/Sodatoken.h"
 #include "sodatoken/IncrementalMerkleTree.hpp"
 
 using namespace libsodatoken;

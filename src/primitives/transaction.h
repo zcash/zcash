@@ -16,7 +16,7 @@
 #include <boost/array.hpp>
 
 #include "sodatoken/NoteEncryption.hpp"
-#include "sodatoken/SodaToken.h"
+#include "sodatoken/Sodatoken.h"
 #include "sodatoken/JoinSplit.hpp"
 #include "sodatoken/Proof.hpp"
 

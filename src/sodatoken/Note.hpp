@@ -2,7 +2,7 @@
 #define ZC_NOTE_H_
 
 #include "uint256.h"
-#include "SodaToken.h"
+#include "Sodatoken.h"
 #include "Address.hpp"
 #include "NoteEncryption.hpp"
 

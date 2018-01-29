@@ -8,7 +8,7 @@
 #include "uint256.h"
 #include "serialize.h"
 
-#include "SodaToken.h"
+#include "Sodatoken.h"
 
 namespace libsodatoken {
 
