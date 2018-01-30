@@ -503,6 +503,8 @@ UniValue kvupdate(const UniValue& params, bool fHelp)
         throw runtime_error("kvupdate key value flags/passphrase");
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        return(0);
     haveprivkey = 0;
     memset(&sig,0,sizeof(sig));
     memset(&privkey,0,sizeof(privkey));
