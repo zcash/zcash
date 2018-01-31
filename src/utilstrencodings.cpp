@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <errno.h>
+#include <iomanip>
 #include <limits>
 
 using namespace std;
@@ -44,6 +45,13 @@ string SanitizeFilename(const string& str)
             strResult.push_back(str[i]);
     }
     return strResult;
+}
+
+std::string HexInt(uint32_t val)
+{
+    std::stringstream ss;
+    ss << std::setfill('0') << std::setw(sizeof(uint32_t) * 2) << std::hex << val;
+    return ss.str();
 }
 
 const signed char p_util_hexdigit[256] =
