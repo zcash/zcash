@@ -2798,7 +2798,6 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 if (!sign) {
                     BOOST_FOREACH (CTxIn& vin, txNew.vin)
                         vin.scriptSig = CScript();
-                    txNew.wit.SetNull();
                 }
 
                 // Embed the constructed transaction data in wtxNew.
