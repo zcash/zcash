@@ -22,6 +22,7 @@ enum UpgradeIndex {
     // Sprout must be first
     BASE_SPROUT,
     UPGRADE_TESTDUMMY,
+    UPGRADE_OVERWINTER,
     // NOTE: Also add new upgrades to NetworkUpgradeInfo in upgrades.cpp
     MAX_NETWORK_UPGRADES
 };
