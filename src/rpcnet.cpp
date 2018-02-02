@@ -13,6 +13,7 @@
 #include "timedata.h"
 #include "util.h"
 #include "version.h"
+#include "deprecation.h"
 
 #include <boost/foreach.hpp>
 
@@ -396,6 +397,33 @@ static UniValue GetNetworksInfo()
         networks.push_back(obj);
     }
     return networks;
+}
+
+UniValue getdeprecationinfo(const UniValue& params, bool fHelp)
+{
+    const CChainParams& chainparams = Params();
+    if (fHelp || params.size() != 0 || chainparams.NetworkIDString() != "main")
+        throw runtime_error(
+            "getdeprecationinfo\n"
+            "Returns an object containing current version and deprecation block height. Applicable only on mainnet.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"version\": xxxxx,                      (numeric) the server version\n"
+            "  \"subversion\": \"/MagicBean:x.y.z[-v]/\",     (string) the server subversion string\n"
+            "  \"deprecationheight\": xxxxx,            (numeric) the block height at which this version will deprecate and shut down (unless -disabledeprecation is set)\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getdeprecationinfo", "")
+            + HelpExampleRpc("getdeprecationinfo", "")
+        );
+
+    UniValue obj(UniValue::VOBJ);
+    obj.push_back(Pair("version", CLIENT_VERSION));
+    obj.push_back(Pair("subversion",
+        FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<string>())));
+    obj.push_back(Pair("deprecationheight", DEPRECATION_HEIGHT));
+
+    return obj;
 }
 
 UniValue getnetworkinfo(const UniValue& params, bool fHelp)
