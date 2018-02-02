@@ -45,6 +45,8 @@ public:
 
 
 CMutableTransaction GetValidTransaction() {
+    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+
     CMutableTransaction mtx;
     mtx.vin.resize(2);
     mtx.vin[0].prevout.hash = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
@@ -74,7 +76,7 @@ CMutableTransaction GetValidTransaction() {
     // Empty output script.
     CScript scriptCode;
     CTransaction signTx(mtx);
-    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, SIGVERSION_BASE);
+    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
     if (dataToBeSigned == one) {
         throw std::runtime_error("SignatureHash failed");
     }
@@ -352,23 +354,27 @@ TEST(checktransaction_tests, bad_txns_prevout_null) {
 }
 
 TEST(checktransaction_tests, bad_txns_invalid_joinsplit_signature) {
+    SelectParams(CBaseChainParams::REGTEST);
+
     CMutableTransaction mtx = GetValidTransaction();
     mtx.joinSplitSig[0] += 1;
     CTransaction tx(mtx);
 
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
-    CheckTransactionWithoutProofVerification(tx, state);
+    ContextualCheckTransaction(tx, state, 0, 100);
 }
 
 TEST(checktransaction_tests, non_canonical_ed25519_signature) {
+    SelectParams(CBaseChainParams::REGTEST);
+
     CMutableTransaction mtx = GetValidTransaction();
 
     // Check that the signature is valid before we add L
     {
         CTransaction tx(mtx);
         MockCValidationState state;
-        EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, 0, 100));
     }
 
     // Copied from libsodium/crypto_sign/ed25519/ref10/open.c
@@ -389,7 +395,7 @@ TEST(checktransaction_tests, non_canonical_ed25519_signature) {
 
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
-    CheckTransactionWithoutProofVerification(tx, state);
+    ContextualCheckTransaction(tx, state, 0, 100);
 }
 
 TEST(checktransaction_tests, OverwinterConstructors) {
