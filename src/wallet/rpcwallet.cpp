@@ -618,7 +618,7 @@ UniValue paxdeposit(const UniValue& params, bool fHelp)
     bool fSubtractFeeFromAmount = false;
     if ( KOMODO_PAX == 0 )
     {
-        throw runtime_error("paxdeposit dispabled without -pax");
+        throw runtime_error("paxdeposit disabled without -pax");
     }
     if ( komodo_is_issuer() != 0 )
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxdeposit only from KMD");
