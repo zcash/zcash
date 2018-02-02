@@ -3227,10 +3227,12 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                              std::set<CTxDestination>* onlyFilterByDests) const
 {
     assert(nMinDepth >= 0);
+    AssertLockHeld(cs_main);
+    AssertLockHeld(cs_wallet);
+
     vCoins.clear();
 
     {
-        LOCK2(cs_main, cs_wallet);
         for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
         {
             const uint256& wtxid = it->first;
