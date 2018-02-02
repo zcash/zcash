@@ -6,6 +6,7 @@
 #include "clientversion.h"
 #include "coins.h"
 #include "consensus/consensus.h"
+#include "consensus/upgrades.h"
 #include "core_io.h"
 #include "keystore.h"
 #include "primitives/transaction.h"
@@ -70,7 +71,7 @@ static bool AppInitRawTx(int argc, char* argv[])
         strUsage += HelpMessageOpt("nversion=N", _("Set TX version to N"));
         strUsage += HelpMessageOpt("outaddr=VALUE:ADDRESS", _("Add address-based output to TX"));
         strUsage += HelpMessageOpt("outscript=VALUE:SCRIPT", _("Add raw script output to TX"));
-        strUsage += HelpMessageOpt("sign=SIGHASH-FLAGS", _("Add zero or more signatures to transaction") + ". " +
+        strUsage += HelpMessageOpt("sign=HEIGHT:SIGHASH-FLAGS", _("Add zero or more signatures to transaction") + ". " +
             _("This command requires JSON registers:") +
             _("prevtxs=JSON object") + ", " +
             _("privatekeys=JSON object") + ". " +
@@ -334,10 +335,27 @@ static CAmount AmountFromValue(const UniValue& value)
     return amount;
 }
 
-static void MutateTxSign(CMutableTransaction& tx, const string& flagStr)
+static void MutateTxSign(CMutableTransaction& tx, const string& strInput)
 {
-    int nHashType = SIGHASH_ALL;
+    // separate HEIGHT:SIGHASH-FLAGS in string
+    size_t pos = strInput.find(':');
+    if ((pos == 0) ||
+        (pos == (strInput.size() - 1)))
+        throw runtime_error("Invalid sighash flag separator");
 
+    // extract and validate HEIGHT
+    string strHeight = strInput.substr(0, pos);
+    int nHeight = atoi(strHeight);
+    if (nHeight <= 0) {
+        throw runtime_error("invalid height");
+    }
+
+    // extract and validate SIGHASH-FLAGS
+    int nHashType = SIGHASH_ALL;
+    string flagStr;
+    if (pos != string::npos) {
+        flagStr = strInput.substr(pos + 1, string::npos);
+    }
     if (flagStr.size() > 0)
         if (!findSighashFlags(nHashType, flagStr))
             throw runtime_error("unknown sighash flag/sign option");
@@ -427,6 +445,9 @@ static void MutateTxSign(CMutableTransaction& tx, const string& flagStr)
 
     bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
 
+    // Grab the consensus branch ID for the given height
+    auto consensusBranchId = CurrentEpochBranchId(nHeight, Params().GetConsensus());
+
     // Sign what we can:
     for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
         CTxIn& txin = mergedTx.vin[i];
@@ -441,14 +462,14 @@ static void MutateTxSign(CMutableTransaction& tx, const string& flagStr)
         SignatureData sigdata;
         // Only sign SIGHASH_SINGLE if there's a corresponding output:
         if (!fHashSingle || (i < mergedTx.vout.size()))
-            ProduceSignature(MutableTransactionSignatureCreator(&keystore, &mergedTx, i, amount, nHashType), prevPubKey, sigdata);
+            ProduceSignature(MutableTransactionSignatureCreator(&keystore, &mergedTx, i, amount, nHashType), prevPubKey, sigdata, consensusBranchId);
 
         // ... and merge in other signatures:
         BOOST_FOREACH(const CTransaction& txv, txVariants)
-            sigdata = CombineSignatures(prevPubKey, MutableTransactionSignatureChecker(&mergedTx, i, amount), sigdata, DataFromTransaction(txv, i));
+            sigdata = CombineSignatures(prevPubKey, MutableTransactionSignatureChecker(&mergedTx, i, amount), sigdata, DataFromTransaction(txv, i), consensusBranchId);
         UpdateTransaction(mergedTx, i, sigdata);
 
-        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, MutableTransactionSignatureChecker(&mergedTx, i, amount)))
+        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, MutableTransactionSignatureChecker(&mergedTx, i, amount), consensusBranchId))
             fComplete = false;
     }
 

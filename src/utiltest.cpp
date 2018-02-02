@@ -4,6 +4,8 @@
 
 #include "utiltest.h"
 
+#include "consensus/upgrades.h"
+
 CWalletTx GetValidReceive(ZCJoinSplit& params,
                           const libzcash::SpendingKey& sk, CAmount value,
                           bool randomInputs) {
@@ -45,11 +47,10 @@ CWalletTx GetValidReceive(ZCJoinSplit& params,
     mtx.vjoinsplit.push_back(jsdesc);
 
     // Empty output script.
+    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
     CScript scriptCode;
     CTransaction signTx(mtx);
-    //fifth parameter amount will not be used for joinsplit signing, value arbitrary, also arbitrary decision what to use for sigverion
-    //This is just to get this merge commit to compile later will remove sigversion parameter as choosing sigversion by block height
-    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL,0, SIGVERSION_BASE);
+    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
 
     // Add the signature
     assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
@@ -131,9 +132,10 @@ CWalletTx GetValidSpend(ZCJoinSplit& params,
     mtx.vjoinsplit.push_back(jsdesc);
 
     // Empty output script.
+    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
     CScript scriptCode;
     CTransaction signTx(mtx);
-    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL,0,SIGVERSION_BASE);
+    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
 
     // Add the signature
     assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,

@@ -13,6 +13,7 @@
 #include "crypto/equihash.h"
 #include "chain.h"
 #include "chainparams.h"
+#include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "main.h"
 #include "miner.h"
@@ -251,8 +252,9 @@ double benchmark_large_tx()
     }
 
     // Sign for all the inputs
+    auto consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
     for (size_t i = 0; i < NUM_INPUTS; i++) {
-        SignSignature(tempKeystore, prevPubKey, spending_tx, i, 1000000, SIGHASH_ALL);
+        SignSignature(tempKeystore, prevPubKey, spending_tx, i, 1000000, SIGHASH_ALL, consensusBranchId);
     }
 
     // Serialize:
@@ -278,6 +280,7 @@ double benchmark_large_tx()
                             prevPubKey,
                             STANDARD_SCRIPT_VERIFY_FLAGS,
                             TransactionSignatureChecker(&final_spending_tx, i, 1000000),
+                            consensusBranchId,
                             &serror));
     }
     return timer_stop(tv_start);
