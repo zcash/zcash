@@ -242,6 +242,10 @@ double benchmark_large_tx(size_t nInputs)
     auto orig_tx = CTransaction(m_orig_tx);
 
     CMutableTransaction spending_tx;
+    spending_tx.fOverwintered = true;
+    spending_tx.nVersion = 3;
+    spending_tx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+
     auto input_hash = orig_tx.GetHash();
     // Add nInputs inputs
     for (size_t i = 0; i < nInputs; i++) {
@@ -260,12 +264,13 @@ double benchmark_large_tx(size_t nInputs)
     // Benchmark signature verification costs:
     struct timeval tv_start;
     timer_start(tv_start);
+    PrecomputedTransactionData txdata(final_spending_tx);
     for (size_t i = 0; i < nInputs; i++) {
         ScriptError serror = SCRIPT_ERR_OK;
         assert(VerifyScript(final_spending_tx.vin[i].scriptSig,
                             prevPubKey,
                             STANDARD_SCRIPT_VERIFY_FLAGS,
-                            TransactionSignatureChecker(&final_spending_tx, i, 1000000),
+                            TransactionSignatureChecker(&final_spending_tx, i, 1000000, txdata),
                             consensusBranchId,
                             &serror));
     }
