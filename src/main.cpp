@@ -3977,6 +3977,26 @@ bool RewindBlockIndex(const CChainParams& params)
     }
 
     // nHeight is now the height of the first insufficiently-validated block, or tipheight + 1
+    auto rewindLength = chainActive.Height() - nHeight;
+    if (rewindLength > 0 && rewindLength > MAX_REORG_LENGTH) {
+        auto pindexOldTip = chainActive.Tip();
+        auto pindexRewind = chainActive[nHeight - 1];
+        auto msg = strprintf(_(
+            "A block chain rewind has been detected that would roll back %d blocks! "
+            "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
+            ), rewindLength, MAX_REORG_LENGTH) + "\n\n" +
+            _("Rewind details") + ":\n" +
+            "- " + strprintf(_("Current tip:   %s, height %d"),
+                pindexOldTip->phashBlock->GetHex(), pindexOldTip->nHeight) + "\n" +
+            "- " + strprintf(_("Rewinding to:  %s, height %d"),
+                pindexRewind->phashBlock->GetHex(), pindexRewind->nHeight) + "\n\n" +
+            _("Please help, human!");
+        LogPrintf("*** %s\n", msg);
+        uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
+        StartShutdown();
+        return false;
+    }
+
     CValidationState state;
     CBlockIndex* pindex = chainActive.Tip();
     while (chainActive.Height() >= nHeight) {
