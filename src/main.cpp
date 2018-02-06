@@ -1484,8 +1484,9 @@ bool AcceptToMemoryPool(
 {
     AssertLockHeld(cs_main);
     LOCK(pool.cs); // mempool "read lock" (held through pool.addUnchecked())
-    if (pfMissingInputs)
+    if (pfMissingInputs) {
         *pfMissingInputs = false;
+    }
 
     int nextBlockHeight = chainActive.Height() + 1;
 
