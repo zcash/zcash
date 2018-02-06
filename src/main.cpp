@@ -1483,6 +1483,7 @@ bool AcceptToMemoryPool(
         bool* pfMissingInputs, bool fRejectAbsurdFee)
 {
     AssertLockHeld(cs_main);
+    LOCK(pool.cs); // mempool "read lock" (held through pool.addUnchecked())
     if (pfMissingInputs)
         *pfMissingInputs = false;
 
@@ -1536,8 +1537,6 @@ bool AcceptToMemoryPool(
         return false;
 
     // Check for conflicts with in-memory transactions
-    {
-    LOCK(pool.cs); // protect pool.mapNextTx
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
         COutPoint outpoint = tx.vin[i].prevout;
@@ -1559,15 +1558,12 @@ bool AcceptToMemoryPool(
             return false;
         }
     }
-    }
 
     {
         CCoinsView dummy;
         CCoinsViewCache view(&dummy);
 
         CAmount nValueIn = 0;
-        {
-        LOCK(pool.cs);
         CCoinsViewMemPool viewMemPool(pcoinsTip, pool);
         view.SetBackend(viewMemPool);
 
@@ -1609,9 +1605,7 @@ bool AcceptToMemoryPool(
 
         nValueIn = view.GetValueIn(tx);
 
-        // we have all inputs cached now, so switch back to dummy, so we don't need to keep lock on mempool
         view.SetBackend(dummy);
-        }
 
         // Check for non-standard pay-to-script-hash in inputs
         if (chainparams.RequireStandard() && !AreInputsStandard(tx, view, consensusBranchId))
@@ -1723,9 +1717,6 @@ bool AcceptToMemoryPool(
         }
 
         {
-            // We lock to prevent other threads from accessing the mempool between adding and evicting
-            LOCK(pool.cs);
-
             // Store transaction in memory
             pool.addUnchecked(hash, entry, !IsInitialBlockDownload(chainparams.GetConsensus()));
 
