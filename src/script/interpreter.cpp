@@ -14,6 +14,7 @@
 #include "script/script.h"
 #include "uint256.h"
 #include "cryptoconditions/include/cryptoconditions.h"
+#include "komodo_cryptoconditions.h"
 
 
 using namespace std;
@@ -963,8 +964,8 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     // TODO: Should nHashType be hardcoded?
                     // Other types use the last byte of the signature
                     char *msg = (char*) checker.GetMessage(script, SIGHASH_ALL).begin();
-;
-                    bool fSuccess = cc_verify(cond, msg, 32, condBin, vchCondition.size());
+
+                    bool fSuccess = cc_verify(cond, msg, 32, condBin, vchCondition.size(), komodoCCAux, NULL);
 
                     popstack(stack);
                     popstack(stack);
