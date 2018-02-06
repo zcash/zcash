@@ -147,9 +147,9 @@ public:
     unsigned int nStatus;
 
     //! Branch ID corresponding to the consensus rules used to validate this block.
-    //! Only accurate if block validity is BLOCK_VALID_CONSENSUS.
+    //! Only cached if block validity is BLOCK_VALID_CONSENSUS.
     //! Persisted at each activation height, memory-only for intervening blocks.
-    uint32_t nConsensusBranchId;
+    boost::optional<uint32_t> nCachedBranchId;
 
     //! The anchor for the tree state up to the start of this block
     uint256 hashAnchor;
@@ -191,7 +191,7 @@ public:
         nTx = 0;
         nChainTx = 0;
         nStatus = 0;
-        nConsensusBranchId = 0;
+        nCachedBranchId = boost::none;
         hashAnchor = uint256();
         hashAnchorEnd = uint256();
         nSequenceId = 0;
@@ -353,8 +353,18 @@ public:
             READWRITE(VARINT(nDataPos));
         if (nStatus & BLOCK_HAVE_UNDO)
             READWRITE(VARINT(nUndoPos));
-        if (nStatus & BLOCK_ACTIVATES_UPGRADE)
-            READWRITE(nConsensusBranchId);
+        if (nStatus & BLOCK_ACTIVATES_UPGRADE) {
+            if (ser_action.ForRead()) {
+                uint32_t branchId;
+                READWRITE(branchId);
+                nCachedBranchId = branchId;
+            } else {
+                // nCachedBranchId must always be set if BLOCK_ACTIVATES_UPGRADE is set.
+                assert(nCachedBranchId);
+                uint32_t branchId = *nCachedBranchId;
+                READWRITE(branchId);
+            }
+        }
         READWRITE(hashAnchor);
 
         // block header

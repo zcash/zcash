@@ -2223,15 +2223,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             pindex->nStatus |= BLOCK_HAVE_UNDO;
         }
 
-        // Now that all consensus rules have been validated, set nConsensusBranchId.
+        // Now that all consensus rules have been validated, set nCachedBranchId.
         // Move this if BLOCK_VALID_CONSENSUS is ever altered.
         static_assert(BLOCK_VALID_CONSENSUS == BLOCK_VALID_SCRIPTS,
-            "nConsensusBranchId must be set after all consensus rules have been validated.");
+            "nCachedBranchId must be set after all consensus rules have been validated.");
         if (IsActivationHeightForAnyUpgrade(pindex->nHeight, Params().GetConsensus())) {
             pindex->nStatus |= BLOCK_ACTIVATES_UPGRADE;
-            pindex->nConsensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
+            pindex->nCachedBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
         } else if (pindex->pprev) {
-            pindex->nConsensusBranchId = pindex->pprev->nConsensusBranchId;
+            pindex->nCachedBranchId = pindex->pprev->nCachedBranchId;
         }
 
         pindex->RaiseValidity(BLOCK_VALID_SCRIPTS);
@@ -3577,9 +3577,15 @@ bool static LoadBlockIndexDB()
         // Construct in-memory chain of branch IDs.
         // Relies on invariant: a block that does not activate a network upgrade
         // will always be valid under the same consensus rules as its parent.
-        // Activation blocks will have non-zero branch IDs (read from disk).
-        if (pindex->IsValid(BLOCK_VALID_CONSENSUS) && pindex->nConsensusBranchId == 0 && pindex->pprev) {
-            pindex->nConsensusBranchId = pindex->pprev->nConsensusBranchId;
+        // Genesis block has a branch ID of zero by definition, but has no
+        // validity status because it is side-loaded into a fresh chain.
+        // Activation blocks will have branch IDs set (read from disk).
+        if (pindex->pprev) {
+            if (pindex->IsValid(BLOCK_VALID_CONSENSUS) && !pindex->nCachedBranchId) {
+                pindex->nCachedBranchId = pindex->pprev->nCachedBranchId;
+            }
+        } else {
+            pindex->nCachedBranchId = NetworkUpgradeInfo[Consensus::BASE_SPROUT].nBranchId;
         }
         if (pindex->IsValid(BLOCK_VALID_TRANSACTIONS) && (pindex->nChainTx || pindex->pprev == NULL))
             setBlockIndexCandidates.insert(pindex);
@@ -3769,19 +3775,21 @@ bool RewindBlockIndex(const CChainParams& params)
     LOCK(cs_main);
 
     // RewindBlockIndex is called after LoadBlockIndex, so at this point every block
-    // index will have nConsensusBranchId set based on the values previously persisted
-    // to disk. By definition, a non-zero nConsensusBranchId means that the block was
+    // index will have nCachedBranchId set based on the values previously persisted
+    // to disk. By definition, a set nCachedBranchId means that the block was
     // fully-validated under the corresponding consensus rules. Thus we can quickly
     // identify whether the current active chain matches our expected sequence of
     // consensus rule changes, with two checks:
     //
     // - BLOCK_ACTIVATES_UPGRADE is set only on blocks that activate upgrades.
-    // - nConsensusBranchId for each block matches what we expect.
+    // - nCachedBranchId for each block matches what we expect.
     auto sufficientlyValidated = [&params](const CBlockIndex* pindex) {
         auto consensus = params.GetConsensus();
         bool fFlagSet = pindex->nStatus & BLOCK_ACTIVATES_UPGRADE;
         bool fFlagExpected = IsActivationHeightForAnyUpgrade(pindex->nHeight, consensus);
-        return fFlagSet == fFlagExpected && pindex->nConsensusBranchId == CurrentEpochBranchId(pindex->nHeight, consensus);
+        return fFlagSet == fFlagExpected &&
+            pindex->nCachedBranchId &&
+            *pindex->nCachedBranchId == CurrentEpochBranchId(pindex->nHeight, consensus);
     };
 
     int nHeight = 1;
@@ -3832,7 +3840,7 @@ bool RewindBlockIndex(const CChainParams& params)
             pindexIter->nStatus &= ~(BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO);
             // Remove branch ID
             pindexIter->nStatus &= ~BLOCK_ACTIVATES_UPGRADE;
-            pindexIter->nConsensusBranchId = 0;
+            pindexIter->nCachedBranchId = boost::none;
             // Remove storage location
             pindexIter->nFile = 0;
             pindexIter->nDataPos = 0;
