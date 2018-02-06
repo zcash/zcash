@@ -38,13 +38,15 @@ UpgradeState NetworkUpgradeState(
     if (nActivationHeight == Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT) {
         return UPGRADE_DISABLED;
     } else if (nHeight >= nActivationHeight) {
-        // From ZIP ???:
+        // From ZIP 200:
         //
         // ACTIVATION_HEIGHT
-        //     The block height at which the network upgrade rules will come into effect.
+        //     The non-zero block height at which the network upgrade rules will come
+        //     into effect, and be enforced as part of the blockchain consensus.
         //
         //     For removal of ambiguity, the block at height ACTIVATION_HEIGHT - 1 is
-        //     subject to the pre-upgrade consensus rules.
+        //     subject to the pre-upgrade consensus rules, and would be the last common
+        //     block in the event of a persistent pre-upgrade branch.
         return UPGRADE_ACTIVE;
     } else {
         return UPGRADE_PENDING;
