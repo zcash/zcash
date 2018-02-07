@@ -33,6 +33,7 @@ zcash_gtest_SOURCES += \
 	gtest/test_random.cpp \
 	gtest/test_rpc.cpp \
 	gtest/test_transaction.cpp \
+	gtest/test_upgrades.cpp \
 	gtest/test_validation.cpp \
 	gtest/test_circuit.cpp \
 	gtest/test_txid.cpp \
