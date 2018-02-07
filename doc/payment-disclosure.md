@@ -28,7 +28,7 @@ The ZIP describes a method of proving that a payment was sent to a shielded addr
 
 ### Example Use Case
 
-Alice the customer sends 10 ZEC to Bob the merchant at the shielded address shown on their website.  However, Bob is not sure if he received the funds.
+Alice the customer sends 10 ANI to Bob the merchant at the shielded address shown on their website.  However, Bob is not sure if he received the funds.
 
 Alice's node is running with payment disclosure enabled, so Alice generates a payment disclosure and provides it to Bob, who verifies the payment was made.
 

@@ -76,7 +76,7 @@ Review the automated changes in git:
 
 Push the resulting branch to github:
 
-    $ git push 'git@github.com:$YOUR_GITHUB_NAME/zcash' $(git rev-parse --abbrev-ref HEAD)
+    $ git push 'git@github.com:$YOUR_GITHUB_NAME/AnimeCoin' $(git rev-parse --abbrev-ref HEAD)
 
 Then create the PR on github. Complete the standard review process,
 then merge, then wait for CI to complete.
@@ -111,7 +111,7 @@ signed. **CAUTION:** Remember the `v` at the beginning here:
 
 ## Add release notes to GitHub
 
-- Go to the [GitHub tags page](https://github.com/zcash/zcash/tags).
+- Go to the [GitHub tags page](https://github.com/ANIME-AnimeCoin/AnimeCoin/tags).
 - Click "Add release notes" beside the tag for this release.
 - Copy the release blog post into the release description, and edit to suit
   publication on GitHub. See previous release notes for examples.
@@ -129,9 +129,9 @@ the marking to see what GitHub wants to be done.
 
 ### Deploy testnet
 
-Notify the Zcash DevOps engineer/sysadmin that the release has been tagged. They update some variables in the company's automation code and then run an Ansible playbook, which:
+Notify the AnimeCoin DevOps engineer/sysadmin that the release has been tagged. They update some variables in the company's automation code and then run an Ansible playbook, which:
 
-* builds Zcash based on the specified branch
+* builds AnimeCoin based on the specified branch
 * deploys it as a public service (e.g. betatestnet.z.cash, mainnet.z.cash)
 * often the same server can be re-used, and the role idempotently handles upgrades, but if not then they also need to update DNS records
 * possible manual steps: blowing away the `testnet3` dir, deleting old parameters, restarting DNS seeder

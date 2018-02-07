@@ -1,4 +1,4 @@
-Zcash Contributors
+AnimeCoin Contributors
 ==================
 
 Jack Grigg (558)
