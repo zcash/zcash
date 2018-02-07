@@ -195,7 +195,7 @@ case "$1" in
                 zcash_rpc zcbenchmark verifyequihash 1000
                 ;;
             validatelargetx)
-                zcash_rpc zcbenchmark validatelargetx 5
+                zcash_rpc zcbenchmark validatelargetx 10 "${@:3}"
                 ;;
             trydecryptnotes)
                 zcash_rpc zcbenchmark trydecryptnotes 1000 "${@:3}"

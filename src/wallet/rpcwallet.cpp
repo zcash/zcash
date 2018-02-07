@@ -2581,7 +2581,12 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
         } else if (benchmarktype == "verifyequihash") {
             sample_times.push_back(benchmark_verify_equihash());
         } else if (benchmarktype == "validatelargetx") {
-            sample_times.push_back(benchmark_large_tx());
+            // Number of inputs in the spending transaction that we will simulate
+            int nInputs = 555;
+            if (params.size() >= 3) {
+                nInputs = params[2].get_int();
+            }
+            sample_times.push_back(benchmark_large_tx(nInputs));
         } else if (benchmarktype == "trydecryptnotes") {
             int nAddrs = params[2].get_int();
             sample_times.push_back(benchmark_try_decrypt_notes(nAddrs));
