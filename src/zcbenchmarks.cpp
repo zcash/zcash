@@ -222,11 +222,8 @@ double benchmark_verify_equihash()
     return timer_stop(tv_start);
 }
 
-double benchmark_large_tx()
+double benchmark_large_tx(size_t nInputs)
 {
-    // Number of inputs in the spending transaction that we will simulate
-    const size_t NUM_INPUTS = 555;
-
     // Create priv/pub key
     CKey priv;
     priv.MakeNewKey(false);
@@ -246,26 +243,15 @@ double benchmark_large_tx()
 
     CMutableTransaction spending_tx;
     auto input_hash = orig_tx.GetHash();
-    // Add NUM_INPUTS inputs
-    for (size_t i = 0; i < NUM_INPUTS; i++) {
+    // Add nInputs inputs
+    for (size_t i = 0; i < nInputs; i++) {
         spending_tx.vin.emplace_back(input_hash, 0);
     }
 
     // Sign for all the inputs
     auto consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
-    for (size_t i = 0; i < NUM_INPUTS; i++) {
+    for (size_t i = 0; i < nInputs; i++) {
         SignSignature(tempKeystore, prevPubKey, spending_tx, i, 1000000, SIGHASH_ALL, consensusBranchId);
-    }
-
-    // Serialize:
-    {
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << spending_tx;
-        //std::cout << "SIZE OF SPENDING TX: " << ss.size() << std::endl;
-
-        auto error = MAX_TX_SIZE / 20; // 5% error
-        assert(ss.size() < MAX_TX_SIZE + error);
-        assert(ss.size() > MAX_TX_SIZE - error);
     }
 
     // Spending tx has all its inputs signed and does not need to be mutated anymore
@@ -274,7 +260,7 @@ double benchmark_large_tx()
     // Benchmark signature verification costs:
     struct timeval tv_start;
     timer_start(tv_start);
-    for (size_t i = 0; i < NUM_INPUTS; i++) {
+    for (size_t i = 0; i < nInputs; i++) {
         ScriptError serror = SCRIPT_ERR_OK;
         assert(VerifyScript(final_spending_tx.vin[i].scriptSig,
                             prevPubKey,
