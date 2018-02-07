@@ -16,11 +16,11 @@ is a common reason.)
 
 Check that dependencies are properly hosted by looking at the `check-depends` builder:
 
-  https://ci.z.cash/#/builders/1
+
 
 Check that there are no surprising performance regressions:
 
-  https://speed.z.cash
+
 
 Ensure that new performance metrics appear on that site.
 
@@ -102,13 +102,6 @@ signed. **CAUTION:** Remember the `v` at the beginning here:
     $ git tag -s v1.0.9
     $ git push origin v1.0.9
 
-## Make and deploy deterministic builds
-
-- Run the [Gitian deterministic build environment](https://github.com/zcash/zcash-gitian)
-- Compare the uploaded [build manifests on gitian.sigs](https://github.com/zcash/gitian.sigs)
-- If all is well, the DevOps engineer will build the Debian packages and update the
-  [apt.z.cash package repository](https://apt.z.cash).
-
 ## Add release notes to GitHub
 
 - Go to the [GitHub tags page](https://github.com/ANIME-AnimeCoin/AnimeCoin/tags).
@@ -132,7 +125,7 @@ the marking to see what GitHub wants to be done.
 Notify the AnimeCoin DevOps engineer/sysadmin that the release has been tagged. They update some variables in the company's automation code and then run an Ansible playbook, which:
 
 * builds AnimeCoin based on the specified branch
-* deploys it as a public service (e.g. betatestnet.z.cash, mainnet.z.cash)
+* deploys it as a public service 
 * often the same server can be re-used, and the role idempotently handles upgrades, but if not then they also need to update DNS records
 * possible manual steps: blowing away the `testnet3` dir, deleting old parameters, restarting DNS seeder
 
@@ -140,10 +133,6 @@ Then, verify that nodes can connect to the testnet server, and update the guide 
 
 ### Update the 1.0 User Guide
 
-This also means updating [the translations](https://github.com/zcash/zcash-docs).
-Coordinate with the translation team for now. Suggestions for improving this
-part of the process should be added to #2596.
-
-### Publish the release announcement (blog, github, zcash-dev, slack)
+### Publish the release announcement (blog, github, animecoin-dev, slack)
 
 ## Celebrate
