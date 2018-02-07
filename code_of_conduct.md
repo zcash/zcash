@@ -41,15 +41,6 @@ is deemed necessary and appropriate to the circumstances. Maintainers are
 obligated to maintain confidentiality with regard to the reporter of an
 incident.
 
-You may send reports to [our Conduct email](mailto:conduct@z.cash).
-
-If you wish to contact specific maintainers directly, the following have made
-themselves available for conduct issues:
-
-- Daira Hopwood (daira at z.cash)
-- Sean Bowe (sean at z.cash)
-
-
 This Code of Conduct is adapted from the [Contributor Covenant][homepage],
 version 1.3.0, available at
 [https://www.contributor-covenant.org/version/1/3/0/][version]
