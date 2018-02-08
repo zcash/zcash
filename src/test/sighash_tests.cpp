@@ -2,6 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "data/sighash.json.h"
 #include "main.h"
@@ -93,10 +94,26 @@ void static RandomScript(CScript &script) {
 }
 
 void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
-    tx.nVersion = insecure_rand();
+    tx.fOverwintered = insecure_rand() % 2;
+    if (tx.fOverwintered) {
+        // Versions outside known ranges throw an exception during parsing
+        auto range =
+            CTransaction::OVERWINTER_MAX_CURRENT_VERSION - CTransaction::OVERWINTER_MIN_CURRENT_VERSION;
+        if (range > 0) {
+            tx.nVersion =
+                (insecure_rand() % range) +
+                CTransaction::OVERWINTER_MIN_CURRENT_VERSION;
+        } else {
+            tx.nVersion = CTransaction::OVERWINTER_MIN_CURRENT_VERSION;
+        }
+        tx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+    } else {
+        tx.nVersion = insecure_rand() & 0x7FFFFFFF;
+    }
     tx.vin.clear();
     tx.vout.clear();
     tx.nLockTime = (insecure_rand() % 2) ? insecure_rand() : 0;
+    tx.nExpiryHeight = (insecure_rand() % 2) ? insecure_rand() : 0;
     int ins = (insecure_rand() % 4) + 1;
     int outs = fSingle ? ins : (insecure_rand() % 4) + 1;
     int joinsplits = (insecure_rand() % 4);
@@ -187,13 +204,15 @@ BOOST_AUTO_TEST_CASE(sighash_test)
         std::cout << HexStr(scriptCode) << "\", ";
         std::cout << nIn << ", ";
         std::cout << nHashType << ", \"";
-        std::cout << sho.GetHex() << "\"]";
+        std::cout << (txTo.fOverwintered ? sh.GetHex() : sho.GetHex()) << "\"]";
         if (i+1 != nRandomTests) {
           std::cout << ",";
         }
         std::cout << "\n";
         #endif
-        BOOST_CHECK(sh == sho);
+        if (!txTo.fOverwintered) {
+            BOOST_CHECK(sh == sho);
+        }
     }
     #if defined(PRINT_SIGHASH_JSON)
     std::cout << "]\n";
@@ -234,7 +253,16 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           stream >> tx;
 
           CValidationState state;
-          if (tx.nVersion < SPROUT_MIN_TX_VERSION) {
+          if (tx.fOverwintered) {
+              if (tx.nVersion == 3 && tx.nExpiryHeight > TX_EXPIRY_HEIGHT_THRESHOLD) {
+                  // Transaction must be invalid
+                  BOOST_CHECK_MESSAGE(!CheckTransactionWithoutProofVerification(tx, state), strTest);
+                  BOOST_CHECK(!state.IsValid());
+              } else {
+                  BOOST_CHECK_MESSAGE(CheckTransactionWithoutProofVerification(tx, state), strTest);
+                  BOOST_CHECK(state.IsValid());
+              }
+          } else if (tx.nVersion < OVERWINTER_MIN_TX_VERSION) {
               // Transaction must be invalid
               BOOST_CHECK_MESSAGE(!CheckTransactionWithoutProofVerification(tx, state), strTest);
               BOOST_CHECK(!state.IsValid());
