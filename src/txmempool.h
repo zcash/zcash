@@ -51,11 +51,12 @@ private:
     unsigned int nHeight; //! Chain height when entering the mempool
     bool hadNoDependencies; //! Not dependent on any other txs when it entered the mempool
     bool spendsCoinbase; //! keep track of transactions that spend a coinbase
+    uint32_t nBranchId; //! Branch ID this transaction is known to commit to, cached for efficiency
 
 public:
     CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
                     int64_t _nTime, double _dPriority, unsigned int _nHeight,
-                    bool poolHasNoInputsOf, bool spendsCoinbase);
+                    bool poolHasNoInputsOf, bool spendsCoinbase, uint32_t nBranchId);
     CTxMemPoolEntry();
     CTxMemPoolEntry(const CTxMemPoolEntry& other);
 
@@ -70,6 +71,7 @@ public:
     size_t DynamicMemoryUsage() const { return nUsageSize; }
 
     bool GetSpendsCoinbase() const { return spendsCoinbase; }
+    uint32_t GetValidatedBranchId() const { return nBranchId; }
 };
 
 // extracts a TxMemPoolEntry's transaction hash
@@ -168,6 +170,7 @@ public:
     void removeConflicts(const CTransaction &tx, std::list<CTransaction>& removed);
     void removeForBlock(const std::vector<CTransaction>& vtx, unsigned int nBlockHeight,
                         std::list<CTransaction>& conflicts, bool fCurrentEstimate = true);
+    void removeWithoutBranchId(uint32_t nMemPoolBranchId);
     void clear();
     void queryHashes(std::vector<uint256>& vtxid);
     void pruneSpent(const uint256& hash, CCoins &coins);

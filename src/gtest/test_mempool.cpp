@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <gtest/gtest-spi.h>
 
+#include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "core_io.h"
 #include "main.h"
@@ -83,7 +84,7 @@ TEST(Mempool, PriorityStatsDoNotCrash) {
     unsigned int nHeight = 92045;
     double dPriority = view.GetPriority(tx, nHeight);
 
-    CTxMemPoolEntry entry(tx, nFees, nTime, dPriority, nHeight, true, false);
+    CTxMemPoolEntry entry(tx, nFees, nTime, dPriority, nHeight, true, false, SPROUT_BRANCH_ID);
 
     // Check it does not crash (ie. the death test fails)
     EXPECT_NONFATAL_FAILURE(EXPECT_DEATH(testPool.addUnchecked(tx.GetHash(), entry), ""), "");
