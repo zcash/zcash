@@ -45,10 +45,11 @@ private:
     double dPriority; //! Priority when entering the mempool
     unsigned int nHeight; //! Chain height when entering the mempool
     bool hadNoDependencies; //! Not dependent on any other txs when it entered the mempool
+    uint32_t nBranchId; //! Branch ID this transaction commits to
 
 public:
     CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
-                    int64_t _nTime, double _dPriority, unsigned int _nHeight, bool poolHasNoInputsOf = false);
+                    int64_t _nTime, double _dPriority, unsigned int _nHeight, bool poolHasNoInputsOf = false, uint32_t nBranchId = 0); // TODO: SPROUT_BRANCH_ID
     CTxMemPoolEntry();
     CTxMemPoolEntry(const CTxMemPoolEntry& other);
 
@@ -60,6 +61,8 @@ public:
     unsigned int GetHeight() const { return nHeight; }
     bool WasClearAtEntry() const { return hadNoDependencies; }
     size_t DynamicMemoryUsage() const { return nUsageSize; }
+
+    uint32_t GetBranchId() const { return nBranchId; }
 };
 
 class CBlockPolicyEstimator;
@@ -124,6 +127,7 @@ public:
     void removeConflicts(const CTransaction &tx, std::list<CTransaction>& removed);
     void removeForBlock(const std::vector<CTransaction>& vtx, unsigned int nBlockHeight,
                         std::list<CTransaction>& conflicts, bool fCurrentEstimate = true);
+    void removeWithoutBranchId(uint32_t nMemPoolBranchId);
     void clear();
     void queryHashes(std::vector<uint256>& vtxid);
     void pruneSpent(const uint256& hash, CCoins &coins);
