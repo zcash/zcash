@@ -26,6 +26,9 @@ struct NUInfo {
 
 extern const struct NUInfo NetworkUpgradeInfo[];
 
+// Consensus branch id to identify pre-overwinter (Sprout) consensus rules.
+static const uint32_t SPROUT_BRANCH_ID = NetworkUpgradeInfo[Consensus::BASE_SPROUT].nBranchId;
+
 /**
  * Checks the state of a given network upgrade based on block height.
  * Caller must check that the height is >= 0 (and handle unknown heights).

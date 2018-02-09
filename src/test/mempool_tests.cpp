@@ -2,6 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "consensus/upgrades.h"
 #include "main.h"
 #include "txmempool.h"
 #include "util.h"
@@ -154,6 +155,61 @@ BOOST_AUTO_TEST_CASE(MempoolIndexingTest)
     BOOST_CHECK_EQUAL(it++->GetTx().GetHash().ToString(), tx5.GetHash().ToString());
     BOOST_CHECK_EQUAL(it++->GetTx().GetHash().ToString(), tx3.GetHash().ToString());
     BOOST_CHECK(it == pool.mapTx.get<1>().end());
+}
+
+BOOST_AUTO_TEST_CASE(RemoveWithoutBranchId) {
+    CTxMemPool pool(CFeeRate(0));
+    TestMemPoolEntryHelper entry;
+    entry.nFee = 10000LL;
+    entry.hadNoDependencies = true;
+
+    // Add some Sprout transactions
+    for (auto i = 1; i < 11; i++) {
+        CMutableTransaction tx = CMutableTransaction();
+        tx.vout.resize(1);
+        tx.vout[0].scriptPubKey = CScript() << OP_11 << OP_EQUAL;
+        tx.vout[0].nValue = i * COIN;
+        pool.addUnchecked(tx.GetHash(), entry.BranchId(NetworkUpgradeInfo[Consensus::BASE_SPROUT].nBranchId).FromTx(tx));
+    }
+    BOOST_CHECK_EQUAL(pool.size(), 10);
+
+    // Check the pool only contains Sprout transactions
+    for (CTxMemPool::indexed_transaction_set::const_iterator it = pool.mapTx.begin(); it != pool.mapTx.end(); it++) {
+        BOOST_CHECK_EQUAL(it->GetValidatedBranchId(), NetworkUpgradeInfo[Consensus::BASE_SPROUT].nBranchId);
+    }
+
+    // Add some dummy transactions
+    for (auto i = 1; i < 11; i++) {
+        CMutableTransaction tx = CMutableTransaction();
+        tx.vout.resize(1);
+        tx.vout[0].scriptPubKey = CScript() << OP_11 << OP_EQUAL;
+        tx.vout[0].nValue = i * COIN + 100;
+        pool.addUnchecked(tx.GetHash(), entry.BranchId(NetworkUpgradeInfo[Consensus::UPGRADE_TESTDUMMY].nBranchId).FromTx(tx));
+    }
+    BOOST_CHECK_EQUAL(pool.size(), 20);
+
+    // Add some Overwinter transactions
+    for (auto i = 1; i < 11; i++) {
+        CMutableTransaction tx = CMutableTransaction();
+        tx.vout.resize(1);
+        tx.vout[0].scriptPubKey = CScript() << OP_11 << OP_EQUAL;
+        tx.vout[0].nValue = i * COIN + 200;
+        pool.addUnchecked(tx.GetHash(), entry.BranchId(NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId).FromTx(tx));
+    }
+    BOOST_CHECK_EQUAL(pool.size(), 30);
+
+    // Remove transactions that are not for Overwinter
+    pool.removeWithoutBranchId(NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId);
+    BOOST_CHECK_EQUAL(pool.size(), 10);
+
+    // Check the pool only contains Overwinter transactions
+    for (CTxMemPool::indexed_transaction_set::const_iterator it = pool.mapTx.begin(); it != pool.mapTx.end(); it++) {
+        BOOST_CHECK_EQUAL(it->GetValidatedBranchId(), NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId);
+    }
+
+    // Roll back to Sprout
+    pool.removeWithoutBranchId(NetworkUpgradeInfo[Consensus::BASE_SPROUT].nBranchId);
+    BOOST_CHECK_EQUAL(pool.size(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -28,10 +28,10 @@ CTxMemPoolEntry::CTxMemPoolEntry():
 CTxMemPoolEntry::CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
                                  int64_t _nTime, double _dPriority,
                                  unsigned int _nHeight, bool poolHasNoInputsOf,
-                                 bool _spendsCoinbase):
+                                 bool _spendsCoinbase, uint32_t _nBranchId):
     tx(_tx), nFee(_nFee), nTime(_nTime), dPriority(_dPriority), nHeight(_nHeight),
     hadNoDependencies(poolHasNoInputsOf),
-    spendsCoinbase(_spendsCoinbase)
+    spendsCoinbase(_spendsCoinbase), nBranchId(_nBranchId)
 {
     nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
     nModSize = tx.CalculateModifiedSize(nTxSize);
@@ -281,6 +281,28 @@ void CTxMemPool::removeForBlock(const std::vector<CTransaction>& vtx, unsigned i
     }
     // After the txs in the new block have been removed from the mempool, update policy estimates
     minerPolicyEstimator->processBlock(nBlockHeight, entries, fCurrentEstimate);
+}
+
+/**
+ * Called whenever the tip changes. Removes transactions which don't commit to
+ * the given branch ID from the mempool.
+ */
+void CTxMemPool::removeWithoutBranchId(uint32_t nMemPoolBranchId)
+{
+    LOCK(cs);
+    std::list<CTransaction> transactionsToRemove;
+
+    for (indexed_transaction_set::const_iterator it = mapTx.begin(); it != mapTx.end(); it++) {
+        const CTransaction& tx = it->GetTx();
+        if (it->GetValidatedBranchId() != nMemPoolBranchId) {
+            transactionsToRemove.push_back(tx);
+        }
+    }
+
+    for (const CTransaction& tx : transactionsToRemove) {
+        std::list<CTransaction> removed;
+        remove(tx, removed, true);
+    }
 }
 
 void CTxMemPool::clear()
