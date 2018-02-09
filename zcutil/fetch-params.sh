@@ -1,9 +1,11 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 export LC_ALL=C
 set -eu
 
-if [[ "$OSTYPE" == "darwin"* ]]; then
+uname_S=$(uname -s 2>/dev/null || echo not)
+
+if [ "$uname_S" = "Darwin" ]; then
     PARAMS_DIR="$HOME/Library/Application Support/ZcashParams"
 else
     PARAMS_DIR="$HOME/.zcash-params"
@@ -30,7 +32,7 @@ ZC_DISABLE_WGET="${ZC_DISABLE_WGET:-}"
 ZC_DISABLE_IPFS="${ZC_DISABLE_IPFS:-}"
 ZC_DISABLE_CURL="${ZC_DISABLE_CURL:-}"
 
-function fetch_wget {
+fetch_wget() {
     if [ -z "$WGETCMD" ] || ! [ -z "$ZC_DISABLE_WGET" ]; then
         return 1
     fi
@@ -51,7 +53,7 @@ EOF
         "$DOWNLOAD_URL/$filename"
 }
 
-function fetch_ipfs {
+fetch_ipfs() {
     if [ -z "$IPFSCMD" ] || ! [ -z "$ZC_DISABLE_IPFS" ]; then
         return 1
     fi
@@ -67,7 +69,7 @@ EOF
     ipfs get --output "$dlname" "$IPFS_HASH/$filename"
 }
 
-function fetch_curl {
+fetch_curl() {
     if [ -z "$CURLCMD" ] || ! [ -z "$ZC_DISABLE_CURL" ]; then
         return 1
     fi
@@ -87,7 +89,7 @@ EOF
 
 }
 
-function fetch_failure {
+fetch_failure() {
     cat >&2 <<EOF
 
 Failed to fetch the Zcash zkSNARK parameters!
@@ -101,7 +103,7 @@ EOF
     exit 1
 }
 
-function fetch_params {
+fetch_params() {
     local filename="$1"
     local output="$2"
     local dlname="${output}.dl"
@@ -146,9 +148,9 @@ EOF
 }
 
 # Use flock to prevent parallel execution.
-function lock() {
+lock() {
     local lockfile=/tmp/fetch_params.lock
-    if [[ "$OSTYPE" == "darwin"* ]]; then
+    if [ "$uname_S" = "Darwin" ]; then
         if shlock -f ${lockfile} -p $$; then
             return 0
         else
@@ -156,20 +158,20 @@ function lock() {
         fi
     else
         # create lock file
-        eval "exec 200>$lockfile"
+        eval "exec 9>$lockfile"
         # acquire the lock
-        flock -n 200 \
+        flock -n 9 \
             && return 0 \
             || return 1
     fi
 }
 
-function exit_locked_error {
+exit_locked_error() {
     echo "Only one instance of fetch-params.sh can be run at a time." >&2
     exit 1
 }
 
-function main() {
+main() {
 
     lock fetch-params.sh \
     || exit_locked_error

@@ -1,11 +1,11 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 export LC_ALL=C
-set -eu -o pipefail
+set -eu
 set +x
 
-function cmd_pref() {
-    if type -p "$2" > /dev/null; then
+cmd_pref() {
+    if command -v "$2" >/dev/null; then
         eval "$1=$2"
     else
         eval "$1=$3"
@@ -13,7 +13,7 @@ function cmd_pref() {
 }
 
 # If a g-prefixed version of the command exists, use it preferentially.
-function gprefix() {
+gprefix() {
     cmd_pref "$1" "g$2" "$2"
 }
 
@@ -22,21 +22,21 @@ cd "$(dirname "$("$READLINK" -f "$0")")/.."
 
 # Allow user overrides to $MAKE. Typical usage for users who need it:
 #   MAKE=gmake ./zcutil/build.sh -j$(nproc)
-if [[ -z "${MAKE-}" ]]; then
+if [ -z "${MAKE-}" ]; then
     MAKE=make
 fi
 
 # Allow overrides to $BUILD and $HOST for porters. Most users will not need it.
 #   BUILD=i686-pc-linux-gnu ./zcutil/build.sh
-if [[ -z "${BUILD-}" ]]; then
+if [ -z "${BUILD-}" ]; then
     BUILD="$(./depends/config.guess)"
 fi
-if [[ -z "${HOST-}" ]]; then
+if [ -z "${HOST-}" ]; then
     HOST="$BUILD"
 fi
 
 # Allow users to set arbitrary compile flags. Most users will not need this.
-if [[ -z "${CONFIGURE_FLAGS-}" ]]; then
+if [ -z "${CONFIGURE_FLAGS-}" ]; then
     CONFIGURE_FLAGS=""
 fi
 
@@ -69,13 +69,13 @@ set -x
 eval "$MAKE" --version
 as --version
 
-ENABLE_DEBUG_REGEX='^(.*\s)?--enable-debug(\s.*)?$'
-if [[ "$CONFIGURE_FLAGS" =~ $ENABLE_DEBUG_REGEX ]]
-then
+case "$CONFIGURE_FLAGS" in
+(*"--enable-debug"*)
     DEBUG=1
-else
+;;
+(*)
     DEBUG=
-fi
+;;esac
 
 HOST="$HOST" BUILD="$BUILD" "$MAKE" "$@" -C ./depends/ DEBUG="$DEBUG"
 

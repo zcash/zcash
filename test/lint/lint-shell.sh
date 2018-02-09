@@ -30,6 +30,7 @@ disabled=(
     SC2006 # Use $(..) instead of legacy `..`.
     SC2016 # Expressions don't expand in single quotes, use double quotes for that.
     SC2028 # echo won't expand escape sequences. Consider printf.
+    SC2039 # In POSIX sh, 'local' is undefined.
     SC2046 # Quote this to prevent word splitting.
     SC2048 # Use "$@" (with quotes) to prevent whitespace problems.
     SC2066 # Since you double quoted this, it will not word split, and the loop will only run once.
