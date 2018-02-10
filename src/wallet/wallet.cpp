@@ -2733,10 +2733,10 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                     //a chance at a free transaction.
                     //But mempool inputs might still be in the mempool, so their age stays 0
                     //fprintf(stderr,"nCredit %.8f interest %.8f\n",(double)nCredit/COIN,(double)pcoin.first->vout[pcoin.second].interest/COIN);
-                    if ( KOMODO_EXCHANGEWALLET == 0 )
+                    if ( KOMODO_EXCHANGEWALLET == 0 && ASSETCHAINS_SYMBOL[0] == 0 )
                     {
                         interest2 += pcoin.first->vout[pcoin.second].interest;
-                        fprintf(stderr,"%.8f ",(double)pcoin.first->vout[pcoin.second].interest/COIN);
+                        //fprintf(stderr,"%.8f ",(double)pcoin.first->vout[pcoin.second].interest/COIN);
                     }
                     int age = pcoin.first->GetDepthInMainChain();
                     if (age != 0)
