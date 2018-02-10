@@ -1188,7 +1188,12 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         CAmount nFees = nValueIn-nValueOut;
         double dPriority = view.GetPriority(tx, chainActive.Height());
 
-        CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height(), mempool.HasNoInputsOf(tx));
+        // Grab the branch ID we expect this transaction to commit to. We don't
+        // yet know if it does, but if the entry gets added to the mempool, then
+        // it has passed ContextualCheckInputs and therefore this is correct.
+        auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+
+        CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height(), mempool.HasNoInputsOf(tx), consensusBranchId);
         unsigned int nSize = entry.GetTxSize();
 
         // Accept a tx if it contains joinsplits and has at least the default fee specified by z_sendmany.
@@ -2458,6 +2463,8 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             mempool.removeWithAnchor(anchorBeforeDisconnect);
         }
         mempool.removeCoinbaseSpends(pcoinsTip, pindexDelete->nHeight);
+        mempool.removeWithoutBranchId(
+            CurrentEpochBranchId(pindexDelete->nHeight, Params().GetConsensus()));
         mempool.check(pcoinsTip);
     }
 
@@ -2528,6 +2535,8 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     // Remove conflicting transactions from the mempool.
     list<CTransaction> txConflicted;
     mempool.removeForBlock(pblock->vtx, pindexNew->nHeight, txConflicted, !IsInitialBlockDownload());
+    mempool.removeWithoutBranchId(
+        CurrentEpochBranchId(pindexNew->nHeight + 1, Params().GetConsensus()));
     mempool.check(pcoinsTip);
     // Update chainActive & related variables.
     UpdateTip(pindexNew);

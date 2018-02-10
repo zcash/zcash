@@ -83,7 +83,8 @@ TEST(Mempool, PriorityStatsDoNotCrash) {
     unsigned int nHeight = 92045;
     double dPriority = view.GetPriority(tx, nHeight);
 
-    CTxMemPoolEntry entry(tx, nFees, nTime, dPriority, nHeight, true);
+    // TODO: SPROUT_BRANCH_ID
+    CTxMemPoolEntry entry(tx, nFees, nTime, dPriority, nHeight, true, 0);
 
     // Check it does not crash (ie. the death test fails)
     EXPECT_NONFATAL_FAILURE(EXPECT_DEATH(testPool.addUnchecked(tx.GetHash(), entry), ""), "");
