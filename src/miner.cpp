@@ -554,7 +554,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     {
         for (i=0; i<65; i++)
             fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i,0));
-        fprintf(stderr," minerids.special %d from ht.%d\n",komodo_is_special(chainActive.Tip()->nHeight+1,NOTARY_PUBKEY33,chainActive.Tip()->GetBlockTime()),chainActive.Tip()->nHeight));
+        fprintf(stderr," minerids.special %d from ht.%d\n",komodo_is_special(chainActive.Tip()->nHeight+1,NOTARY_PUBKEY33,chainActive.Tip()->GetBlockTime()),chainActive.Tip()->nHeight);
     }
     return CreateNewBlock(scriptPubKey);
 }
