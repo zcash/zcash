@@ -1548,10 +1548,10 @@ void komodo_args(char *argv0)
         ASSETCHAINS_DECAY = GetArg("-ac_decay",0);
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
-        if ( ASSETCHAINS_HALVING != 0 && ASSETCHAINS_HALVING < 10000 )
+        if ( ASSETCHAINS_HALVING != 0 && ASSETCHAINS_HALVING < 1440 )
         {
-            ASSETCHAINS_HALVING = 10000;
-            printf("ASSETCHAINS_HALVING must be at least 10000 blocks\n");
+            ASSETCHAINS_HALVING = 1440;
+            printf("ASSETCHAINS_HALVING must be at least 1440 blocks\n");
         }
         if ( ASSETCHAINS_DECAY == 100000000 && ASSETCHAINS_ENDSUBSIDY == 0 )
         {
