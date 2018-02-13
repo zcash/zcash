@@ -321,7 +321,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
     struct knotary_entry *kp; int32_t numnotaries=0,htind,modval = -1;
     komodo_init(0);
     *notaryidp = -1;
-    if ( height < 0 || height >= KOMODO_MAXBLOCKS )
+    if ( height < 0 )//|| height >= KOMODO_MAXBLOCKS )
     {
         printf("komodo_chosennotary ht.%d illegal\n",height);
         return(-1);
