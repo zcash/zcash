@@ -646,7 +646,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         return;
     }
     //fprintf(stderr,"%s connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
-    numnotaries = komodo_notaries(pubkeys,pindex->nHeight);
+    numnotaries = komodo_notaries(pubkeys,pindex->nHeight,pindex->GetBlockTime());
     calc_rmd160_sha256(rmd160,pubkeys[0],33);
     if ( pindex->nHeight > hwmheight )
         hwmheight = pindex->nHeight;
