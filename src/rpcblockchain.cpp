@@ -638,13 +638,22 @@ UniValue minerids(const UniValue& params, bool fHelp)
 
 UniValue notaries(const UniValue& params, bool fHelp)
 {
-    UniValue a(UniValue::VARR); UniValue ret(UniValue::VOBJ); int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
+    UniValue a(UniValue::VARR); uint32_t timestamp=0; UniValue ret(UniValue::VOBJ); int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("notaries height\n");
     LOCK(cs_main);
     int32_t height = atoi(params[0].get_str().c_str());
     if ( height < 0 )
+    {
         height = chainActive.Tip()->nHeight;
+        timestamp = chainActive.Tip()->GetBlockTime();
+    }
+    else
+    {
+        CBlockIndex *pblockindex = chainActive[height];
+        if ( pblockindex != 0 )
+            timestamp = pblockindex->GetBlockTime();
+    }
     //fprintf(stderr,"notaries as of height.%d\n",height);
     //if ( height > chainActive.Height()+20000 )
     //    throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
