@@ -554,7 +554,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     {
         for (i=0; i<65; i++)
             fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i,0));
-        fprintf(stderr," minerids.special %d from ht.%d\n",komodo_is_special(chainActive.Tip()->nHeight+1,NOTARY_PUBKEY33),chainActive.Tip()->nHeight);
+        fprintf(stderr," minerids.special %d from ht.%d\n",komodo_is_special(chainActive.Tip()->nHeight+1,NOTARY_PUBKEY33,chainActive.Tip()->nHeight);
     }
     return CreateNewBlock(scriptPubKey);
 }
@@ -764,9 +764,9 @@ void static BitcoinMiner()
                     }
                     if ( (checktoshis = (total * ASSETCHAINS_COMMISSION) / COIN) != 0 )
                     {
-                        pblock->vtx[0].vout.resize(2);
+                        pblock->vtx[0].vout.resize((long)2);
                         pblock->vtx[0].vout[1].nValue = checktoshis;
-                        pblock->vtx[0].vout[1].scriptPubKey.resize(35);
+                        pblock->vtx[0].vout[1].scriptPubKey.resize((long)35);
                         script = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
                         script[0] = 33;
                         for (i=0; i<33; i++)
@@ -776,7 +776,7 @@ void static BitcoinMiner()
                 }
                 else
                 {
-                    pblock->vtx[0].vout.resize(1);
+                    pblock->vtx[0].vout.resize((long)1);
                 }
             }
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
