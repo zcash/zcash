@@ -659,7 +659,7 @@ UniValue notaries(const UniValue& params, bool fHelp)
     //    throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     //else
     {
-        if ( (n= komodo_notaries(pubkeys,height)) > 0 )
+        if ( (n= komodo_notaries(pubkeys,height,timestamp)) > 0 )
         {
             for (i=0; i<n; i++)
             {
