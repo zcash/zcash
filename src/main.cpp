@@ -1493,7 +1493,7 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
 //uint64_t komodo_moneysupply(int32_t height);
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint32_t ASSETCHAINS_MAGIC;
-extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_LINEAR,ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY = 10;
+extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_LINEAR,ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY;
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
@@ -1514,7 +1514,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
         {
             if ( ASSETCHAINS_REWARD == 0 )
                 return(10000);
-            else if ( ASSETCHAINS_ENDHEIGHT != 0 && nHeight >= ASSETCHAINS_ENDHEIGHT )
+            else if ( ASSETCHAINS_ENDSUBSIDY != 0 && nHeight >= ASSETCHAINS_ENDSUBSIDY )
                 return(0);
             else
             {
@@ -1527,10 +1527,10 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
                             return(0);
                         if ( ASSETCHAINS_DECAY == 0 )
                             nSubsidy >>= numhalvings;
-                        else if ( ASSETCHAINS_DECAY == 100000000 && ASSETCHAINS_ENDHEIGHT != 0 )
+                        else if ( ASSETCHAINS_DECAY == 100000000 && ASSETCHAINS_ENDSUBSIDY != 0 )
                         {
-                            numerator = (ASSETCHAINS_ENDHEIGHT - nHeight);
-                            nSubsidy = (nSubidy * numerator) / ASSETCHAINS_ENDHEIGHT;
+                            numerator = (ASSETCHAINS_ENDSUBSIDY - nHeight);
+                            nSubsidy = (nSubidy * numerator) / ASSETCHAINS_ENDSUBSIDY;
                         }
                         else
                         {
