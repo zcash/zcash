@@ -719,6 +719,27 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         return(0);
     }
+    if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_COMMISSION != 0 )
+    {
+        total = 0;
+        for (i=1; i<txn_count; i++)
+        {
+            n = block.vtx[i].vout.size();
+            for (j=0; j<n; j++)
+                total += block.vtx[i].vout[j].nValue;
+        }
+        if ( (checktoshis = (total * ASSETCHAINS_COMMISSION) / COIN) != 0 )
+        {
+            if ( block.vtx[0].vout.size() != 2 || block.vtx[0].vout[1].nValue != checktoshis )
+                return(-1);
+            if ( block.vtx[0].vout[1].scriptPubKey.size() != 35 )
+                return(-1);
+            script = (uint8_t *)block.vtx[0].vout[1].scriptPubKey.data();
+            if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
+                return(-1);
+        }
+    }
+
     //fprintf(stderr,"ht.%d n.%d nValue %.8f (%d %d %d)\n",height,n,dstr(block.vtx[0].vout[1].nValue),KOMODO_PAX,komodo_isrealtime(&ht),KOMODO_PASSPORT_INITDONE);
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
     //printf("offset.%d opretlen.%d [%02x %02x %02x %02x]\n",offset,opretlen,script[0],script[1],script[2],script[3]);

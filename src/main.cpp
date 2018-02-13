@@ -1493,11 +1493,11 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
 //uint64_t komodo_moneysupply(int32_t height);
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint32_t ASSETCHAINS_MAGIC;
-extern uint64_t ASSETCHAINS_SUPPLY;
+extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_LINEAR,ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY = 10;
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
-    CAmount nSubsidy = 3 * COIN;
+    int32_t numhalvings; uint64_t numerator; CAmount nSubsidy = 3 * COIN;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         if ( nHeight == 1 )
@@ -1510,7 +1510,38 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     {
         if ( nHeight == 1 )
             return(ASSETCHAINS_SUPPLY * COIN + (ASSETCHAINS_MAGIC & 0xffffff));
-        else return(10000);
+        else if ( ASSETCHAINS_ENDSUBSIDY == 0 || nHeight < ASSETCHAINS_ENDSUBSIDY )
+        {
+            if ( ASSETCHAINS_REWARD == 0 )
+                return(10000);
+            else if ( ASSETCHAINS_ENDHEIGHT != 0 && nHeight >= ASSETCHAINS_ENDHEIGHT )
+                return(0);
+            else
+            {
+                nSubsidy = ASSETCHAINS_REWARD;
+                if ( ASSETCHAINS_HALVING != 0 )
+                {
+                    if ( (numhalvings= (nHeight / ASSETCHAINS_HALVING)) > 0 )
+                    {
+                        if ( numhalvings >= 64 && ASSETCHAINS_DECAY == 0 )
+                            return(0);
+                        if ( ASSETCHAINS_DECAY == 0 )
+                            nSubsidy >>= numhalvings;
+                        else if ( ASSETCHAINS_DECAY == 100000000 && ASSETCHAINS_ENDHEIGHT != 0 )
+                        {
+                            numerator = (ASSETCHAINS_ENDHEIGHT - nHeight);
+                            nSubsidy = (nSubidy * numerator) / ASSETCHAINS_ENDHEIGHT;
+                        }
+                        else
+                        {
+                            for (i=0; i<numhalvings&&nSubsidy!=0; i++)
+                                nSubsidy = (nSubsidy * ASSETCHAINS_DECAY) / 100000000;
+                        }
+                    }
+                }
+            }
+            return(nSubsidy);
+        } else return(0);
     }
 /*
     // Mining slow start
