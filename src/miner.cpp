@@ -554,7 +554,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     {
         for (i=0; i<65; i++)
             fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i,0));
-        fprintf(stderr," minerids.special %d from ht.%d\n",komodo_is_special(chainActive.Tip()->nHeight+1,NOTARY_PUBKEY33,chainActive.Tip()->nHeight);
+        fprintf(stderr," minerids.special %d from ht.%d\n",komodo_is_special(chainActive.Tip()->nHeight+1,NOTARY_PUBKEY33,chainActive.Tip()->nHeight));
     }
     return CreateNewBlock(scriptPubKey);
 }
@@ -752,31 +752,6 @@ void static BitcoinMiner()
                         sleep(10);
                         continue;
                     } else fprintf(stderr,"%s vouts.%d mining.%d vs %d\n",ASSETCHAINS_SYMBOL,(int32_t)pblock->vtx[0].vout.size(),Mining_height,ASSETCHAINS_MINHEIGHT);
-                }
-                else if ( ASSETCHAINS_COMMISSION != 0 )
-                {
-                    total = 0;
-                    for (i=1; i<pblock->vtx.size(); i++)
-                    {
-                        n = pblock->vtx[i].vout.size();
-                        for (j=0; j<n; j++)
-                            total += pblock->vtx[i].vout[j].nValue;
-                    }
-                    if ( (checktoshis = (total * ASSETCHAINS_COMMISSION) / COIN) != 0 )
-                    {
-                        pblock->vtx[0].vout.resize((long)2);
-                        pblock->vtx[0].vout[1].nValue = checktoshis;
-                        pblock->vtx[0].vout[1].scriptPubKey.resize((long)35);
-                        script = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
-                        script[0] = 33;
-                        for (i=0; i<33; i++)
-                            script[i+1] = ASSETCHAINS_OVERRIDE_PUBKEY33[i];
-                        script[34] = OP_CHECKSIG;
-                    }
-                }
-                else
-                {
-                    pblock->vtx[0].vout.resize((long)1);
                 }
             }
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
