@@ -13,6 +13,7 @@
 #include "streams.h"
 #include "uint256.h"
 #include "util.h"
+#include "consensus/validation.h"
 
 #include "sodium.h"
 
