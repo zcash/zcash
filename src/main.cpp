@@ -1497,7 +1497,7 @@ extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,AS
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
-    int32_t numhalvings; uint64_t numerator; CAmount nSubsidy = 3 * COIN;
+    int32_t numhalvings,i; uint64_t numerator; CAmount nSubsidy = 3 * COIN;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         if ( nHeight == 1 )
@@ -1530,7 +1530,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
                         else if ( ASSETCHAINS_DECAY == 100000000 && ASSETCHAINS_ENDSUBSIDY != 0 )
                         {
                             numerator = (ASSETCHAINS_ENDSUBSIDY - nHeight);
-                            nSubsidy = (nSubidy * numerator) / ASSETCHAINS_ENDSUBSIDY;
+                            nSubsidy = (nSubsidy * numerator) / ASSETCHAINS_ENDSUBSIDY;
                         }
                         else
                         {
