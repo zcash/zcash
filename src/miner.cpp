@@ -109,9 +109,10 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 #include "komodo_defs.h"
 
 extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
+extern uint32_t ASSETCHAINS_REWARD,ASSETCHAINS_COMMISSION;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern std::string NOTARY_PUBKEY;
-extern uint8_t NOTARY_PUBKEY33[33];
+extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 uint32_t Mining_start,Mining_height;
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,uint32_t timestamp);
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp);
@@ -763,8 +764,8 @@ void static BitcoinMiner()
                     }
                     if ( (checktoshis = (total * ASSETCHAINS_COMMISSION) / COIN) != 0 )
                     {
-                        pblock->vtx[0].vout[1].nValue = checktoshis;
                         pblock->vtx[0].vout.resize(2);
+                        pblock->vtx[0].vout[1].nValue = checktoshis;
                         pblock->vtx[0].vout[1].scriptPubKey.resize(35);
                         script = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
                         script[0] = 33;
