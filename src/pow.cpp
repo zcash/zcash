@@ -13,13 +13,13 @@
 #include "streams.h"
 #include "uint256.h"
 #include "util.h"
-#include "consensus/validation.h"
 
 #include "sodium.h"
 
 #ifdef ENABLE_RUST
 #include "librustzcash.h"
 #endif // ENABLE_RUST
+uint32_t komodo_chainactive_timestamp();
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
@@ -136,8 +136,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     extern int32_t KOMODO_REWIND;
     bool fNegative,fOverflow; int32_t i,nonzpkeys=0,nonz=0,special=0,special2=0,notaryid=-1,duplicate,flag = 0, mids[66]; uint32_t timestamp = 0;
     arith_uint256 bnTarget; CBlockIndex *pindex; uint8_t pubkeys[66][33];
-    if ( (pindex= chainActive.Tip()) != 0 )
-        timestamp = (uint32_t)pindex->GetBlockTime();
+    timestamp = komodo_chainactive_timestamp();
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( height == 0 )
         height = komodo_currentheight() + 1;
