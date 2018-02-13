@@ -711,11 +711,11 @@ void komodo_connectpindex(CBlockIndex *pindex)
 }
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
-int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height,uint32_t timestamp);
+int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
 
 int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
 {
-    int32_t num,i; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t _pubkey33[33],pubkeys[64][33];
+    int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t _pubkey33[33],pubkeys[64][33];
     if ( pubkey33 == 0 && (pindex= chainActive[height]) != 0 )
     {
         timestamp = pindex->GetBlockTime();
@@ -731,7 +731,7 @@ int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
                     return(i);
         }
     }
-    return(komodo_electednotary(pubkey33,height,timestamp));
+    return(komodo_electednotary(&numnotaries,pubkey33,height,timestamp));
 }
 
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height)
