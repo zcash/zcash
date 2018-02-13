@@ -662,7 +662,7 @@ uint32_t komodo_chainactive_timestamp()
 {
     if ( chainActive.Tip() != 0 )
         return((uint32_t)chainActive.Tip()->GetBlockTime());
-    else return(0);
+    else return(0); 
 }
 
 CBlockIndex *komodo_chainactive(int32_t height)
