@@ -733,7 +733,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         if ( (checktoshis = (total * ASSETCHAINS_COMMISSION) / COIN) != 0 )
         {
-            subsidy = GetBlockSubsidy(height,chainparams.GetConsensus());
+            subsidy = GetBlockSubsidy(height,Params().GetConsensus());
             if ( block.vtx[0].vout.size() != 1 || block.vtx[0].vout[0].nValue != checktoshis+subsidy )
                 return(-1);
         }
