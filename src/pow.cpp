@@ -141,7 +141,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     if ( height == 0 )
         height = komodo_currentheight() + 1;
     special = komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
-    flag = komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,height,timestamp);
+    flag = komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,height);
     if ( height > 34000 && ASSETCHAINS_SYMBOL[0] == 0 ) // 0 -> non-special notary
     {
         for (i=0; i<33; i++)
