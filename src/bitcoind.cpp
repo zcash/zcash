@@ -101,7 +101,7 @@ bool AppInit(int argc, char* argv[])
         try
         {
             ReadConfigFile(mapArgs, mapMultiArgs);
-        } catch (const missing_zcash_conf& e) {
+        } catch (const missing_animecoin_conf& e) {
             fprintf(stderr,
                 (_("Before starting animecoind, you need to create a configuration file:\n"
                    "%s\n"
