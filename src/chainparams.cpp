@@ -101,6 +101,7 @@ public:
         vSeeds.push_back(CDNSSeedData("zclassic.org", "na1.zclassic.org")); // zclassic
         vSeeds.push_back(CDNSSeedData("zclassic.org", "eu1.zclassic.org")); // zclassic
         vSeeds.push_back(CDNSSeedData("zclassic.org", "as1.zclassic.org")); // zclassic
+        vSeeds.push_back(CDNSSeedData("chains.run", "seed.zcl.chains.run")); //rizkiwicaksono/bitcoin-seeder
 
         vSeeds.push_back(CDNSSeedData("indieonion.org", "dnsseed.indieonion.org")); // @IndieOnion
         vSeeds.push_back(CDNSSeedData("rotorproject.org", "dnsseed.rotorproject.org")); // @IndieOnion
