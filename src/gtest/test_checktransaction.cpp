@@ -704,3 +704,65 @@ TEST(checktransaction_tests, OverwinteredContextualCreateTx) {
     // Revert to default
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
+
+// Test a v1 transaction which has a malformed header, perhaps modified in-flight
+TEST(checktransaction_tests, BadTxReceivedOverNetwork)
+{
+    // First four bytes <01 00 00 00> have been modified to be <FC FF FF FF> (-4 as an int32)
+    std::string goodPrefix = "01000000";
+    std::string badPrefix = "fcffffff";
+    std::string hexTx = "0176c6541939b95f8d8b7779a77a0863b2a0267e281a050148326f0ea07c3608fb000000006a47304402207c68117a6263486281af0cc5d3bee6db565b6dce19ffacc4cb361906eece82f8022007f604382dee2c1fde41c4e6e7c1ae36cfa28b5b27350c4bfaa27f555529eace01210307ff9bef60f2ac4ceb1169a9f7d2c773d6c7f4ab6699e1e5ebc2e0c6d291c733feffffff02c0d45407000000001976a9145eaaf6718517ec8a291c6e64b16183292e7011f788ac5ef44534000000001976a91485e12fb9967c96759eae1c6b1e9c07ce977b638788acbe000000";
+
+    // Good v1 tx
+    {
+        std::vector<unsigned char> txData(ParseHex(goodPrefix + hexTx ));
+        CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
+        CTransaction tx;
+        ssData >> tx;
+        EXPECT_EQ(tx.nVersion, 1);
+        EXPECT_EQ(tx.fOverwintered, false);
+    }
+
+    // Good v1 mutable tx
+    {
+        std::vector<unsigned char> txData(ParseHex(goodPrefix + hexTx ));
+        CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
+        CMutableTransaction mtx;
+        ssData >> mtx;
+        EXPECT_EQ(mtx.nVersion, 1);
+    }
+
+    // Bad tx
+    {
+        std::vector<unsigned char> txData(ParseHex(badPrefix + hexTx ));
+        CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            CTransaction tx;
+            ssData >> tx;
+            FAIL() << "Expected std::ios_base::failure 'Unknown transaction format'";
+        }
+        catch(std::ios_base::failure & err) {
+            EXPECT_THAT(err.what(), testing::HasSubstr(std::string("Unknown transaction format")));
+        }
+        catch(...) {
+            FAIL() << "Expected std::ios_base::failure 'Unknown transaction format', got some other exception";
+        }
+    }
+
+    // Bad mutable tx
+    {
+        std::vector<unsigned char> txData(ParseHex(badPrefix + hexTx ));
+        CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
+        try {
+            CMutableTransaction mtx;
+            ssData >> mtx;
+            FAIL() << "Expected std::ios_base::failure 'Unknown transaction format'";
+        }
+        catch(std::ios_base::failure & err) {
+            EXPECT_THAT(err.what(), testing::HasSubstr(std::string("Unknown transaction format")));
+        }
+        catch(...) {
+            FAIL() << "Expected std::ios_base::failure 'Unknown transaction format', got some other exception";
+        }
+    }
+}
