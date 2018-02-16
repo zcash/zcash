@@ -7,6 +7,7 @@
 
 #include "base58.h"
 #include "netbase.h"
+#include "utilstrencodings.h"
 
 #include "test/test_bitcoin.h"
 
@@ -294,5 +295,45 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     adr = find_value(o1, "address");
     BOOST_CHECK_EQUAL(adr.get_str(), "2001:4d48:ac57:400:cacf:e9ff:fe1d:9c63/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
 }
+
+
+BOOST_AUTO_TEST_CASE(rpc_raw_create_overwinter_v3)
+{
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    // Sample regtest address:
+    // public: tmHU5HLMu3yS8eoNvbrU1NWeJaGf6jxehru
+    // private: cW1G4SxEm5rui2RQtBcSUZrERTVYPtyZXKbSi5MCwBqzbn5kqwbN
+
+    UniValue r;
+    std::string prevout =
+      "[{\"txid\":\"b4cc287e58f87cdae59417329f710f3ecd75a4ee1d2872b7248f50977c8493f3\","
+      "\"vout\":1}]";
+    r = CallRPC(string("createrawtransaction ") + prevout + " " +
+      "{\"tmHU5HLMu3yS8eoNvbrU1NWeJaGf6jxehru\":11}");
+    std::string rawhex = r.get_str();
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("decoderawtransaction ") + rawhex));
+    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "overwintered").get_bool(), true);
+    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "version").get_int(), 3);
+    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "expiryheight").get_int(), 0);
+    BOOST_CHECK_EQUAL(
+        ParseHexToUInt32(find_value(r.get_obj(), "versiongroupid").get_str()),
+        OVERWINTER_VERSION_GROUP_ID);
+
+    // Sanity check we can deserialize the raw hex
+    // 030000807082c40301f393847c97508f24b772281deea475cd3e0f719f321794e5da7cf8587e28ccb40100000000ffffffff0100ab9041000000001976a914550dc92d3ff8d1f0cb6499fddf2fe43b745330cd88ac000000000000000000
+    CDataStream ss(ParseHex(rawhex), SER_DISK, PROTOCOL_VERSION);
+    CTransaction tx;
+    ss >> tx;
+    CDataStream ss2(ParseHex(rawhex), SER_DISK, PROTOCOL_VERSION);
+    CMutableTransaction mtx;
+    ss2 >> mtx;
+    BOOST_CHECK_EQUAL(tx.GetHash().GetHex(), CTransaction(mtx).GetHash().GetHex());
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

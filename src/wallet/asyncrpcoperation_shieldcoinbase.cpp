@@ -52,12 +52,15 @@ static int find_output(UniValue obj, int n) {
 }
 
 AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
+        CMutableTransaction contextualTx,
         std::vector<ShieldCoinbaseUTXO> inputs,
         std::string toAddress,
         CAmount fee,
         UniValue contextInfo) :
-        inputs_(inputs), fee_(fee), contextinfo_(contextInfo)
+        tx_(contextualTx), inputs_(inputs), fee_(fee), contextinfo_(contextInfo)
 {
+    assert(contextualTx.nVersion >= 2);  // transaction format version must support vjoinsplit
+
     if (fee < 0 || fee > MAX_MONEY) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Fee is out of range");
     }
@@ -213,7 +216,6 @@ bool AsyncRPCOperation_shieldcoinbase::main_impl() {
 
     // Prepare raw transaction to handle JoinSplits
     CMutableTransaction mtx(tx_);
-    mtx.nVersion = 2;
     crypto_sign_keypair(joinSplitPubKey_.begin(), joinSplitPrivKey_);
     mtx.joinSplitPubKey = joinSplitPubKey_;
     tx_ = CTransaction(mtx);

@@ -234,7 +234,7 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           stream >> tx;
 
           CValidationState state;
-          if (tx.nVersion < MIN_TX_VERSION) {
+          if (tx.nVersion < SPROUT_MIN_TX_VERSION) {
               // Transaction must be invalid
               BOOST_CHECK_MESSAGE(!CheckTransactionWithoutProofVerification(tx, state), strTest);
               BOOST_CHECK(!state.IsValid());

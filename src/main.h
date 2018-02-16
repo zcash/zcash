@@ -15,6 +15,7 @@
 #include "chainparams.h"
 #include "coins.h"
 #include "consensus/consensus.h"
+#include "consensus/upgrades.h"
 #include "net.h"
 #include "primitives/block.h"
 #include "primitives/transaction.h"
@@ -332,6 +333,9 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
                            unsigned int flags, bool cacheStore, const Consensus::Params& consensusParams,
                            std::vector<CScriptCheck> *pvChecks = NULL);
 
+/** Check a transaction contextually against a set of consensus rules */
+bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state, int nHeight, int dosLevel);
+
 /** Apply the effects of this transaction on the UTXO set represented by view */
 void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, int nHeight);
 
@@ -342,7 +346,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
 /** Check for standard transaction types
  * @return True if all outputs (scriptPubKeys) use only standard transaction forms
  */
-bool IsStandardTx(const CTransaction& tx, std::string& reason);
+bool IsStandardTx(const CTransaction& tx, std::string& reason, int nHeight = 0);
 
 /**
  * Check if transaction is final and can be included in a block with the
@@ -533,5 +537,8 @@ int GetSpendHeight(const CCoinsViewCache& inputs);
 namespace Consensus {
 bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoinsViewCache& inputs, int nSpendHeight, const Consensus::Params& consensusParams);
 }
+
+/** Return a CMutableTransaction with contextual default values based on set of consensus rules at height */
+CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight);
 
 #endif // BITCOIN_MAIN_H

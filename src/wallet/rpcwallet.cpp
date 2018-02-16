@@ -3525,9 +3525,16 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     o.push_back(Pair("fee", std::stod(FormatMoney(nFee))));
     UniValue contextInfo = o;
 
+    // Contextual transaction we will build on
+    CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
+        Params().GetConsensus(), chainActive.Height() + 1);
+    if (contextualTx.nVersion == 1) {
+        contextualTx.nVersion = 2; // Tx format should support vjoinsplits 
+    }
+
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nFee, contextInfo) );
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(contextualTx, fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
     return operationId;
@@ -3709,9 +3716,17 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     contextInfo.push_back(Pair("toaddress", params[1]));
     contextInfo.push_back(Pair("fee", ValueFromAmount(nFee)));
 
+    // Contextual transaction we will build on
+    CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
+        Params().GetConsensus(),
+        chainActive.Height() + 1);
+    if (contextualTx.nVersion == 1) {
+        contextualTx.nVersion = 2; // Tx format should support vjoinsplits 
+    }
+
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(inputs, destaddress, nFee, contextInfo) );
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(contextualTx, inputs, destaddress, nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
 
