@@ -99,8 +99,14 @@ public:
 
         //vSeeds.push_back(CDNSSeedData("zclassic.org", "dnsseed.zclassic.org")); // zclassic
         vSeeds.push_back(CDNSSeedData("zclassic.org", "na1.zclassic.org")); // zclassic
+        vSeeds.push_back(CDNSSeedData("zclassic.org", "na2.zclassic.org")); // zclassic
+        vSeeds.push_back(CDNSSeedData("zclassic.org", "na3.zclassic.org")); // zclassic
         vSeeds.push_back(CDNSSeedData("zclassic.org", "eu1.zclassic.org")); // zclassic
+        vSeeds.push_back(CDNSSeedData("zclassic.org", "eu2.zclassic.org")); // zclassic
+        vSeeds.push_back(CDNSSeedData("zclassic.org", "eu3.zclassic.org")); // zclassic
         vSeeds.push_back(CDNSSeedData("zclassic.org", "as1.zclassic.org")); // zclassic
+        vSeeds.push_back(CDNSSeedData("zclassic.org", "as2.zclassic.org")); // zclassic
+        vSeeds.push_back(CDNSSeedData("zclassic.org", "as3.zclassic.org")); // zclassic
 
         vSeeds.push_back(CDNSSeedData("indieonion.org", "dnsseed.indieonion.org")); // @IndieOnion
         vSeeds.push_back(CDNSSeedData("rotorproject.org", "dnsseed.rotorproject.org")); // @IndieOnion
