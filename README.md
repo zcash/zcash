@@ -29,20 +29,63 @@ Install
 ```
 
 ### Windows
-Get dependencies
+There are two proven ways to build Zclassic for Windows:
+
+* On Linux using [Mingw-w64](https://mingw-w64.org/doku.php) cross compiler tool chain. Ubuntu 16.04 Xenial is proven to work and the instructions is for such release.
+* On Windows 10 (64-bit version) using [Windows Subsystem for Linux (WSL)](https://msdn.microsoft.com/commandline/wsl/about) and Mingw-w64 cross compiler tool chain.
+
+With Windows 10, Microsoft released a feature called WSL. It basically allows you to run a bash shell directly on Windows in an ubuntu environment. WSL can be installed with other Linux variants, but as mentioned before, the distro proven to work is Ubuntu.
+Follow this [link](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide) for installing WSL first
+
+### Building for Windows 64-Bit
+1. Get the usual dependencies:
 ```{r, engine='bash'}
 sudo apt-get install \
       build-essential pkg-config libc6-dev m4 g++-multilib \
       autoconf libtool ncurses-dev unzip git python \
-      zlib1g-dev wget bsdmainutils automake mingw-w64
+      zlib1g-dev wget bsdmainutils automake
 ```
 
-Install (Cross-Compiled, building on Windows is not supported yet)
+2. Get mingw-w64 and set the default ming32 gcc/g++ compiler option to posix
+
 ```{r, engine='bash'}
-# Build
+sudo apt install mingw-w64
+sudo update-alternatives --config x86_64-w64-mingw32-gcc
+sudo update-alternatives --config x86_64-w64-mingw32-g++
+```
+
+3. Install Rust
+```{r, engine='bash'}
+curl https://sh.rustup.rs -sSf | sh
+source ~/.cargo/env
+rustup install stable-x86_64-unknown-linux-gnu
+rustup install stable-x86_64-pc-windows-gnu
+rustup target add x86_64-pc-windows-gnu
+vi  ~/.cargo/config
+```
+and add:
+```
+[target.x86_64-pc-windows-gnu]
+linker = "/usr/bin/x86_64-w64-mingw32-gcc"
+```
+
+Note that in WSL, the Zclassic source code must be somewhere in the default mount file system. i.e `/usr/src/zclassic`, and not on `/mnt/d/`. What this means is that you cannot build directly on the windows system
+
+4. Build for Windows
+
+```{r, engine='bash'}
+PATH=$(echo "$PATH" | sed -e 's/:\/mnt.*//g') # strip out problematic Windows %PATH% imported var
 ./zcutil/build-win.sh -j$(nproc)
 ```
-The exe will save to `src` which you can then move to a windows machine
+
+5. Installation
+
+After building in WSL, you can make a copy of the compiled executables to a directory on your Windows file system. This is done the following way
+
+```{r, engine='bash'}
+make install DESTDIR=/mnt/c/zcl/zclassic
+```
+This will install the executables to `c:\zcl\zclassic`
 
 ### Mac
 Get dependencies
