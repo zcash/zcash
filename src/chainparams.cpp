@@ -19,6 +19,11 @@
 
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, const uint256& nNonce, const std::vector<unsigned char>& nSolution, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
+    // To create a genesis block for a new chain which is Overwintered:
+    //   txNew.nVersion = 3
+    //   txNew.fOverwintered = true
+    //   txNew.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID
+    //   txNew.nExpiryHeight = <default value>
     CMutableTransaction txNew;
     txNew.nVersion = 1;
     txNew.vin.resize(1);

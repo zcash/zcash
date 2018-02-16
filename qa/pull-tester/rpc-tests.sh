@@ -17,6 +17,7 @@ testScripts=(
     'wallet_protectcoinbase.py'
     'wallet_shieldcoinbase.py'
     'wallet.py'
+    'wallet_overwintertx.py'
     'wallet_nullifiers.py'
     'wallet_1941.py'
     'listtransactions.py'
