@@ -54,6 +54,13 @@ std::string HexInt(uint32_t val)
     return ss.str();
 }
 
+uint32_t ParseHexToUInt32(const std::string& str) {
+    std::istringstream converter(str);
+    uint32_t value;
+    converter >> std::hex >> value;
+    return value;
+}
+
 const signed char p_util_hexdigit[256] =
 { -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,

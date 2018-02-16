@@ -42,7 +42,7 @@ struct ShieldCoinbaseJSInfo
 
 class AsyncRPCOperation_shieldcoinbase : public AsyncRPCOperation {
 public:
-    AsyncRPCOperation_shieldcoinbase(std::vector<ShieldCoinbaseUTXO> inputs, std::string toAddress, CAmount fee = SHIELD_COINBASE_DEFAULT_MINERS_FEE, UniValue contextInfo = NullUniValue);
+    AsyncRPCOperation_shieldcoinbase(CMutableTransaction contextualTx, std::vector<ShieldCoinbaseUTXO> inputs, std::string toAddress, CAmount fee = SHIELD_COINBASE_DEFAULT_MINERS_FEE, UniValue contextInfo = NullUniValue);
     virtual ~AsyncRPCOperation_shieldcoinbase();
 
     // We don't want to be copied or moved around

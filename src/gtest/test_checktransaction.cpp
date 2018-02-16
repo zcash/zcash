@@ -391,3 +391,316 @@ TEST(checktransaction_tests, non_canonical_ed25519_signature) {
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
+
+TEST(checktransaction_tests, OverwinterConstructors) {
+    CMutableTransaction mtx;
+    mtx.fOverwintered = true;
+    mtx.nVersion = 3;
+    mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+    mtx.nExpiryHeight = 20;
+
+    // Check constructor with overwinter fields
+    CTransaction tx(mtx);
+    EXPECT_EQ(tx.nVersion, mtx.nVersion);
+    EXPECT_EQ(tx.fOverwintered, mtx.fOverwintered);
+    EXPECT_EQ(tx.nVersionGroupId, mtx.nVersionGroupId);
+    EXPECT_EQ(tx.nExpiryHeight, mtx.nExpiryHeight);
+
+    // Check constructor of mutable transaction struct
+    CMutableTransaction mtx2(tx);
+    EXPECT_EQ(mtx2.nVersion, mtx.nVersion);
+    EXPECT_EQ(mtx2.fOverwintered, mtx.fOverwintered);
+    EXPECT_EQ(mtx2.nVersionGroupId, mtx.nVersionGroupId);
+    EXPECT_EQ(mtx2.nExpiryHeight, mtx.nExpiryHeight);
+    EXPECT_TRUE(mtx2.GetHash() == mtx.GetHash());
+
+    // Check assignment of overwinter fields
+    CTransaction tx2 = tx;
+    EXPECT_EQ(tx2.nVersion, mtx.nVersion);
+    EXPECT_EQ(tx2.fOverwintered, mtx.fOverwintered);
+    EXPECT_EQ(tx2.nVersionGroupId, mtx.nVersionGroupId);
+    EXPECT_EQ(tx2.nExpiryHeight, mtx.nExpiryHeight);
+    EXPECT_TRUE(tx2 == tx);
+}
+
+TEST(checktransaction_tests, OverwinterSerialization) {
+    CMutableTransaction mtx;
+    mtx.fOverwintered = true;
+    mtx.nVersion = 3;
+    mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+    mtx.nExpiryHeight = 99;
+
+    // Check round-trip serialization and deserialization from mtx to tx.
+    {
+        CDataStream ss(SER_DISK, PROTOCOL_VERSION);
+        ss << mtx;
+        CTransaction tx;
+        ss >> tx;
+        EXPECT_EQ(mtx.nVersion, tx.nVersion);
+        EXPECT_EQ(mtx.fOverwintered, tx.fOverwintered);
+        EXPECT_EQ(mtx.nVersionGroupId, tx.nVersionGroupId);
+        EXPECT_EQ(mtx.nExpiryHeight, tx.nExpiryHeight);
+
+        EXPECT_EQ(mtx.GetHash(), CMutableTransaction(tx).GetHash());
+        EXPECT_EQ(tx.GetHash(), CTransaction(mtx).GetHash());
+    }
+
+    // Also check mtx to mtx
+    {
+        CDataStream ss(SER_DISK, PROTOCOL_VERSION);
+        ss << mtx;
+        CMutableTransaction mtx2;
+        ss >> mtx2;
+        EXPECT_EQ(mtx.nVersion, mtx2.nVersion);
+        EXPECT_EQ(mtx.fOverwintered, mtx2.fOverwintered);
+        EXPECT_EQ(mtx.nVersionGroupId, mtx2.nVersionGroupId);
+        EXPECT_EQ(mtx.nExpiryHeight, mtx2.nExpiryHeight);
+
+        EXPECT_EQ(mtx.GetHash(), mtx2.GetHash());
+    }
+
+    // Also check tx to tx
+    {
+        CTransaction tx(mtx);
+        CDataStream ss(SER_DISK, PROTOCOL_VERSION);
+        ss << tx;
+        CTransaction tx2;
+        ss >> tx2;
+        EXPECT_EQ(tx.nVersion, tx2.nVersion);
+        EXPECT_EQ(tx.fOverwintered, tx2.fOverwintered);
+        EXPECT_EQ(tx.nVersionGroupId, tx2.nVersionGroupId);
+        EXPECT_EQ(tx.nExpiryHeight, tx2.nExpiryHeight);
+
+        EXPECT_EQ(mtx.GetHash(), CMutableTransaction(tx).GetHash());
+        EXPECT_EQ(tx.GetHash(), tx2.GetHash());
+    }
+}
+
+TEST(checktransaction_tests, OverwinterDefaultValues) {
+    // Check default values (this will fail when defaults change; test should then be updated)
+    CTransaction tx;
+    EXPECT_EQ(tx.nVersion, 1);
+    EXPECT_EQ(tx.fOverwintered, false);
+    EXPECT_EQ(tx.nVersionGroupId, 0);
+    EXPECT_EQ(tx.nExpiryHeight, 0);
+}
+
+// A valid v3 transaction with no joinsplits
+TEST(checktransaction_tests, OverwinterValidTx) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vjoinsplit.resize(0);
+    mtx.fOverwintered = true;
+    mtx.nVersion = 3;
+    mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+    mtx.nExpiryHeight = 0;
+    CTransaction tx(mtx);
+    MockCValidationState state;
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+}
+
+TEST(checktransaction_tests, OverwinterExpiryHeight) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vjoinsplit.resize(0);
+    mtx.fOverwintered = true;
+    mtx.nVersion = 3;
+    mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+    mtx.nExpiryHeight = 0;
+
+    {
+        CTransaction tx(mtx);
+        MockCValidationState state;
+        EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+
+    {
+        mtx.nExpiryHeight = TX_EXPIRY_HEIGHT_THRESHOLD - 1;
+        CTransaction tx(mtx);
+        MockCValidationState state;
+        EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+
+    {
+        mtx.nExpiryHeight = TX_EXPIRY_HEIGHT_THRESHOLD;
+        CTransaction tx(mtx);
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-expiry-height-too-high", false)).Times(1);
+        CheckTransactionWithoutProofVerification(tx, state);
+    }
+
+    {
+        mtx.nExpiryHeight = std::numeric_limits<uint32_t>::max();
+        CTransaction tx(mtx);
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-expiry-height-too-high", false)).Times(1);
+        CheckTransactionWithoutProofVerification(tx, state);
+    }
+}
+
+
+// Test that a Sprout tx with a negative version number is detected
+// given the new Overwinter logic
+TEST(checktransaction_tests, SproutTxVersionTooLow) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vjoinsplit.resize(0);
+    mtx.fOverwintered = false;
+    mtx.nVersion = -1;
+
+    CTransaction tx(mtx);
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+
+
+// Subclass of CTransaction which doesn't call UpdateHash when constructing
+// from a CMutableTransaction.  This enables us to create a CTransaction
+// with bad values which normally trigger an exception during construction.
+class UNSAFE_CTransaction : public CTransaction {
+    public:
+        UNSAFE_CTransaction(const CMutableTransaction &tx) : CTransaction(tx, true) {}
+};
+
+
+// Test bad Overwinter version number in CheckTransactionWithoutProofVerification
+TEST(checktransaction_tests, OverwinterVersionNumberLow) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vjoinsplit.resize(0);
+    mtx.fOverwintered = true;
+    mtx.nVersion = OVERWINTER_MIN_TX_VERSION - 1;
+    mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+    mtx.nExpiryHeight = 0;
+
+    UNSAFE_CTransaction tx(mtx);
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-overwinter-version-too-low", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+// Test bad Overwinter version number in ContextualCheckTransaction
+TEST(checktransaction_tests, OverwinterVersionNumberHigh) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vjoinsplit.resize(0);
+    mtx.fOverwintered = true;
+    mtx.nVersion = OVERWINTER_MAX_TX_VERSION + 1;
+    mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+    mtx.nExpiryHeight = 0;
+
+    UNSAFE_CTransaction tx(mtx);
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-overwinter-version-too-high", false)).Times(1);
+    ContextualCheckTransaction(tx, state, 1, 100);
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
+
+// Test bad Overwinter version group id
+TEST(checktransaction_tests, OverwinterBadVersionGroupId) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vjoinsplit.resize(0);
+    mtx.fOverwintered = true;
+    mtx.nVersion = 3;
+    mtx.nExpiryHeight = 0;
+    mtx.nVersionGroupId = 0x12345678;
+
+    UNSAFE_CTransaction tx(mtx);
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-version-group-id", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+// This tests an Overwinter transaction checked against Sprout
+TEST(checktransaction_tests, OverwinterNotActive) {
+    SelectParams(CBaseChainParams::TESTNET);
+
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.fOverwintered = true;
+    mtx.nVersion = 3;
+    mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+    mtx.nExpiryHeight = 0;
+
+    CTransaction tx(mtx);
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-not-active", false)).Times(1);
+    ContextualCheckTransaction(tx, state, 1, 100);
+}
+
+// This tests a transaction without the fOverwintered flag set, against the Overwinter consensus rule set.
+TEST(checktransaction_tests, OverwinterFlagNotSet) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.fOverwintered = false;
+    mtx.nVersion = 3;
+    mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+    mtx.nExpiryHeight = 0;
+
+    CTransaction tx(mtx);
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-flag-not-set", false)).Times(1);
+    ContextualCheckTransaction(tx, state, 1, 100);
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
+
+// Overwinter (NU0) does not allow soft fork to version 4 Overwintered tx.
+TEST(checktransaction_tests, OverwinterInvalidSoftForkVersion) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.fOverwintered = true;
+    mtx.nVersion = 4; // This is not allowed
+    mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+    mtx.nExpiryHeight = 0;
+
+    CDataStream ss(SER_DISK, PROTOCOL_VERSION);
+    try {
+        ss << mtx;
+        FAIL() << "Expected std::ios_base::failure 'Unknown transaction format'";
+    }
+    catch(std::ios_base::failure & err) {
+        EXPECT_THAT(err.what(), testing::HasSubstr(std::string("Unknown transaction format")));
+    }
+    catch(...) {
+        FAIL() << "Expected std::ios_base::failure 'Unknown transaction format', got some other exception";
+    }
+}
+
+
+// Test CreateNewContextualCMutableTransaction sets default values based on height
+TEST(checktransaction_tests, OverwinteredContextualCreateTx) {
+    SelectParams(CBaseChainParams::REGTEST);
+    const Consensus::Params& consensusParams = Params().GetConsensus();
+    int activationHeight = 5;
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, activationHeight);
+
+    {
+        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
+            consensusParams, activationHeight - 1);
+
+        EXPECT_EQ(mtx.nVersion, 1);
+        EXPECT_EQ(mtx.fOverwintered, false);
+        EXPECT_EQ(mtx.nVersionGroupId, 0);
+        EXPECT_EQ(mtx.nExpiryHeight, 0);
+    }
+
+    // Overwinter activates
+    {
+        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
+            consensusParams, activationHeight );
+
+        EXPECT_EQ(mtx.nVersion, 3);
+        EXPECT_EQ(mtx.fOverwintered, true);
+        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
+        EXPECT_EQ(mtx.nExpiryHeight, 0);
+    }
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}

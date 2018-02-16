@@ -2572,7 +2572,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 
     wtxNew.fTimeReceivedIsTxTime = true;
     wtxNew.BindWallet(this);
-    CMutableTransaction txNew;
+    CMutableTransaction txNew = CreateNewContextualCMutableTransaction(
+        Params().GetConsensus(), chainActive.Height() + 1);
 
     // Discourage fee sniping.
     //

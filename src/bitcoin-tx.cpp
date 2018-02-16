@@ -157,7 +157,7 @@ static void RegisterLoad(const string& strInput)
 static void MutateTxVersion(CMutableTransaction& tx, const string& cmdVal)
 {
     int64_t newVersion = atoi64(cmdVal);
-    if (newVersion < CTransaction::MIN_CURRENT_VERSION || newVersion > CTransaction::MAX_CURRENT_VERSION)
+    if (newVersion < CTransaction::SPROUT_MIN_CURRENT_VERSION || newVersion > CTransaction::SPROUT_MAX_CURRENT_VERSION)
         throw runtime_error("Invalid TX version requested");
 
     tx.nVersion = (int) newVersion;
