@@ -68,6 +68,13 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
         return true;
     }
 
+    // Shortcut for pay-to-crypto-condition
+    if (scriptPubKey.IsPayToCryptoCondition()) {
+        typeRet = TX_CRYPTOCONDITION;
+        //vSolutionsRet.push_back("hello there");
+        return true;
+    }
+
     // Scan templates
     const CScript& script1 = scriptPubKey;
     BOOST_FOREACH(const PAIRTYPE(txnouttype, CScript)& tplate, mTemplates)
