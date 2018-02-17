@@ -56,7 +56,7 @@ src/univalue/gen
 *.pyc
 *.o
 *.o-*
-.zcash
+.zclassic
 *.a
 *.pb.cc
 *.pb.h

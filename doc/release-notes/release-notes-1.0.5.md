@@ -55,4 +55,3 @@ Simon Liu (13):
 
 Wladimir J. van der Laan (1):
       rpc: Implement random-cookie based authentication
-

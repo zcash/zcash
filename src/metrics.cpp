@@ -226,7 +226,7 @@ int printMiningStatus(bool mining)
         lines++;
     } else {
         std::cout << _("You are currently not mining.") << std::endl;
-        std::cout << _("To enable mining, add 'gen=1' to your zcash.conf and restart.") << std::endl;
+        std::cout << _("To enable mining, add 'gen=1' to your zclassic.conf and restart.") << std::endl;
         lines += 2;
     }
     std::cout << std::endl;
