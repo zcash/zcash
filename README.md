@@ -40,16 +40,16 @@ Follow this [link](https://msdn.microsoft.com/en-us/commandline/wsl/install_guid
 ### Building for Windows 64-Bit
 1. Get the usual dependencies:
 ```{r, engine='bash'}
+sudo apt-get update
 sudo apt-get install \
       build-essential pkg-config libc6-dev m4 g++-multilib \
       autoconf libtool ncurses-dev unzip git python \
-      zlib1g-dev wget bsdmainutils automake
+      zlib1g-dev wget bsdmainutils automake make cmake mingw-w64
 ```
 
-2. Get mingw-w64 and set the default ming32 gcc/g++ compiler option to posix
+2. Set the default ming32 gcc/g++ compiler option to posix
 
 ```{r, engine='bash'}
-sudo apt install mingw-w64
 sudo update-alternatives --config x86_64-w64-mingw32-gcc
 sudo update-alternatives --config x86_64-w64-mingw32-g++
 ```
