@@ -1,6 +1,7 @@
 *.tar.gz
 *.deb
 *.exe
+*.dSYM
 src/bitcoin
 src/zcashd
 src/zcash-cli
