@@ -1535,6 +1535,7 @@ void komodo_args(char *argv0)
             }
         }
     }
+    ASSETCHAINS_CC = GetArg("-ac_cc",0);
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
