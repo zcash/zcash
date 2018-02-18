@@ -1,3 +1,4 @@
+Copyright (c) 2016-2018 The Zclassic Team
 Copyright (c) 2016-2017 The Zcash developers
 Copyright (c) 2009-2017 The Bitcoin Core developers
 
@@ -32,7 +33,7 @@ software written by Eric Young (eay@cryptsoft.com),
 and UPnP software written by Thomas Bernard.
 
 
-Although almost all of the Zcash code is licensed under "permissive" open source
+Although almost all of the Zclassic code is licensed under "permissive" open source
 licenses, users and distributors should note that when built using the default
-build options, Zcash depends on Oracle Berkeley DB 6.2.x, which is licensed
+build options, Zclassic depends on Oracle Berkeley DB 6.2.x, which is licensed
 under the GNU Affero General Public License.

@@ -2,7 +2,7 @@
 
 What is Zclassic?
 ----------------
-Zclassic is a cryptocurrency with a focus on privacy. It uses the same initial ceremony parameters generated for [Zcash](https://github.com/zcash/zcash), as well as ZK-SNARKs for transaction shielding. The major change - there is no 20% [founders' fee]() taken for mining each block.
+Zclassic is a cryptocurrency with a focus on privacy. It uses the same initial ceremony parameters generated for [Zcash](https://github.com/zcash/zcash), as well as ZK-SNARKs for transaction shielding. The major change - there is no 20% [founders' fee](https://blog.z.cash/funding/) taken for mining each block.
 
 More technical details are available
 in the [Zcash Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf).
@@ -91,7 +91,7 @@ and add:
 linker = "/usr/bin/x86_64-w64-mingw32-gcc"
 ```
 
-Note that in WSL, the Zclassic source code must be somewhere in the default mount file system. i.e `/usr/src/zclassic`, and not on `/mnt/d/`. What this means is that you cannot build directly on the Windows system.
+Note that in WSL, the Zclassic source code must be somewhere in the default mount file system, i.e `/usr/src/zclassic`, and not on `/mnt/d/`. What this means is that you cannot build directly on the Windows system.
 
 4. Build for Windows
 
