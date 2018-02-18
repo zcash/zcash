@@ -940,7 +940,9 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 case OP_CHECKCRYPTOCONDITION:
                 case OP_CHECKCRYPTOCONDITIONVERIFY:
                 {
-                    // (fulfillment condition -- bool)
+                    if (!IsCryptoConditionsEnabled()) {
+                        goto INTERPRETER_DEFAULT;
+                    }
 
                     if (stack.size() < 2)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
@@ -982,6 +984,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                 }
                 break;
 
+INTERPRETER_DEFAULT:
                 default:
                     return set_error(serror, SCRIPT_ERR_BAD_OPCODE);
             }
