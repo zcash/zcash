@@ -1535,7 +1535,7 @@ void komodo_args(char *argv0)
             }
         }
     }
-    ASSETCHAINS_CC = GetArg("-ac_cc",0);
+    ASSETCHAINS_CC = GetArg("-ac_cc",0); // keep it outside the assetchains hashing so KMD can do it and we dont have two identical chains other than -ac_cc
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
