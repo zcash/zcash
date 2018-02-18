@@ -1,13 +1,34 @@
-Zclassic v1.0.10-1
-
-NOTICE, the default ports have changed! The p2p port is now 8033 and rpcport is 8023
+# Zclassic
 
 What is Zclassic?
 ----------------
-Zclassic is financial freedom.
+Zclassic is a cryptocurrency with a focus on privacy. It uses the same initial ceremony parameters generated for [Zcash](https://github.com/zcash/zcash), as well as ZK-SNARKs for transaction shielding. The major change - there is no 20% [founders' fee]() taken for mining each block.
 
-Install
------------------
+More technical details are available
+in the [Zcash Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf).
+
+This software is the Zclassic client. It downloads and stores the entire history
+of Zclassic transactions; depending on the speed of your computer and network
+connection, the synchronization process could take a day or more once the
+blockchain has reached a significant size.
+
+Two main files of interest in this repo are `zcashd` and `zcash-cli`, which should be renamed to `zcld` and `zcl-cli` for use in the full-node wallet. The project needs to be built (per the instructions) in order to generate them.
+
+**P2P Port -** 8033  
+**RPC Port -** 8023
+
+**Documentation is at the [Zclassic wiki](https://github.com/z-classic/zclassic/wiki)**
+
+**View unsolved problems on the [issue tracker](https://github.com/z-classic/zclassic/wiki)**
+
+**Join the conversation on Discord:
+https://discord.gg/NyPnDJS**
+
+Participation in the Zclassic project is subject to a
+[Code of Conduct](code_of_conduct.md). This is based on the original Zcash Code of Conduct.
+
+Build and Installation
+----------------------
 ### Linux
 
 Get dependencies
@@ -31,11 +52,11 @@ Install
 ### Windows
 There are two proven ways to build Zclassic for Windows:
 
-* On Linux using [Mingw-w64](https://mingw-w64.org/doku.php) cross compiler tool chain. Ubuntu 16.04 Xenial is proven to work and the instructions is for such release.
-* On Windows 10 (64-bit version) using [Windows Subsystem for Linux (WSL)](https://msdn.microsoft.com/commandline/wsl/about) and Mingw-w64 cross compiler tool chain.
+* On Linux using [MinGW-w64](https://mingw-w64.org/doku.php) cross compiler tool chain. Ubuntu 16.04 Xenial is proven to work and the instructions is for such release.
+* On Windows 10 (64-bit version) using [Windows Subsystem for Linux (WSL)](https://msdn.microsoft.com/commandline/wsl/about) and the MinGW-w64 cross-compiler toolchain.
 
-With Windows 10, Microsoft released a feature called WSL. It basically allows you to run a bash shell directly on Windows in an ubuntu environment. WSL can be installed with other Linux variants, but as mentioned before, the distro proven to work is Ubuntu.
-Follow this [link](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide) for installing WSL first
+With Windows 10, Microsoft released a feature called WSL. It basically allows you to run a bash shell directly on Windows in an Ubuntu environment. WSL can be installed with other Linux variants, but as mentioned before, the distro proven to work is Ubuntu.
+Follow [this link](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide) to install WSL (recommended method).
 
 ### Building for Windows 64-Bit
 1. Get the usual dependencies:
@@ -47,7 +68,7 @@ sudo apt-get install \
       zlib1g-dev wget bsdmainutils automake make cmake mingw-w64
 ```
 
-2. Set the default ming32 gcc/g++ compiler option to posix
+2. Set the default mingw32 gcc/g++ compiler option to posix
 
 ```{r, engine='bash'}
 sudo update-alternatives --config x86_64-w64-mingw32-gcc
@@ -61,6 +82,7 @@ source ~/.cargo/env
 rustup install stable-x86_64-unknown-linux-gnu
 rustup install stable-x86_64-pc-windows-gnu
 rustup target add x86_64-pc-windows-gnu
+
 vi  ~/.cargo/config
 ```
 and add:
@@ -69,7 +91,7 @@ and add:
 linker = "/usr/bin/x86_64-w64-mingw32-gcc"
 ```
 
-Note that in WSL, the Zclassic source code must be somewhere in the default mount file system. i.e `/usr/src/zclassic`, and not on `/mnt/d/`. What this means is that you cannot build directly on the windows system
+Note that in WSL, the Zclassic source code must be somewhere in the default mount file system. i.e `/usr/src/zclassic`, and not on `/mnt/d/`. What this means is that you cannot build directly on the Windows system.
 
 4. Build for Windows
 
@@ -109,27 +131,13 @@ Install
 ./src/zcashd
 ```
 
-About
---------------
-
-[Zclassic](http://zclassic.org/), like [Zcash](https://z.cash/), is an implementation of the "Zerocash" protocol.
-Based on Bitcoin's code, it intends to offer a far higher standard of privacy
-through a sophisticated zero-knowledge proving scheme that preserves
-confidentiality of transaction metadata. Technical details are available
-in the Zcash [Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf).
-
-This software is the Zclassic client. It downloads and stores the entire history
-of Zclassic transactions; depending on the speed of your computer and network
-connection, the synchronization process could take a day or more once the
-blockchain has reached a significant size.
-
 Security Warnings
 -----------------
 
 See important security warnings in
 [doc/security-warnings.md](doc/security-warnings.md).
 
-**Zclassic and Zcash are unfinished and highly experimental.** Use at your own risk.
+Zclassic and Zcash are **unfinished** and **highly experimental**. Use at your own risk.
 
 Deprecation Policy
 ------------------
@@ -139,31 +147,6 @@ is an automatic deprecation shutdown feature which will halt the node some
 time after this 16 week time period. The automatic feature is based on block
 height and can be explicitly disabled.
 
-Where do I begin?
------------------
-We have a guide for joining the main Zclassic network:
-https://github.com/z-classic/zclassic/wiki/1.0-User-Guide
-
-### Need Help?
-
-* See the documentation at the [Zclassic Wiki](https://github.com/z-classic/zclassic/wiki)
-  for help and more information.
-* Ask for help on the [Zclassic](http://zcltalk.tech/index.php) forum.
-
-### Want to participate in development?
-
-* Code review is welcome!
-* If you want to get to know us join our slack: http://zclassic.herokuapp.com/
-
-
-Participation in the Zcash project is subject to a
-[Code of Conduct](code_of_conduct.md).
-
-Building
---------
-
-Build Zcash along with most dependencies from source by running
-./zcutil/build.sh. Currently only Linux is officially supported.
 
 License
 -------
