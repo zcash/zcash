@@ -512,15 +512,17 @@ UniValue gettxoutsetinfo(const UniValue& params, bool fHelp)
     return ret;
 }
 
+#include "komodo_defs.h"
+
 #define IGUANA_MAXSCRIPTSIZE 10001
 #define KOMODO_KVDURATION 1440
 #define KOMODO_KVBINARY 2
-extern char ASSETCHAINS_SYMBOL[16];
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint32_t komodo_txtime(uint256 hash);
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume);
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel);
-int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
+int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
 //uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
@@ -579,17 +581,23 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
 
 UniValue minerids(const UniValue& params, bool fHelp)
 {
-    UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR); uint8_t minerids[2000],pubkeys[65][33]; int32_t i,j,n,numnotaries,tally[129];
+    uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR); uint8_t minerids[2000],pubkeys[65][33]; int32_t i,j,n,numnotaries,tally[129];
     if ( fHelp || params.size() != 1 )
         throw runtime_error("minerids needs height\n");
     LOCK(cs_main);
     int32_t height = atoi(params[0].get_str().c_str());
     if ( height <= 0 )
         height = chainActive.Tip()->nHeight;
+    else
+    {
+        CBlockIndex *pblockindex = chainActive[height];
+        if ( pblockindex != 0 )
+            timestamp = pblockindex->GetBlockTime();
+    }
     if ( (n= komodo_minerids(minerids,height,(int32_t)(sizeof(minerids)/sizeof(*minerids)))) > 0 )
     {
         memset(tally,0,sizeof(tally));
-        numnotaries = komodo_notaries(pubkeys,height);
+        numnotaries = komodo_notaries(pubkeys,height,timestamp);
         if ( numnotaries > 0 )
         {
             for (i=0; i<n; i++)
@@ -630,19 +638,28 @@ UniValue minerids(const UniValue& params, bool fHelp)
 
 UniValue notaries(const UniValue& params, bool fHelp)
 {
-    UniValue a(UniValue::VARR); UniValue ret(UniValue::VOBJ); int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
+    UniValue a(UniValue::VARR); uint32_t timestamp=0; UniValue ret(UniValue::VOBJ); int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("notaries height\n");
     LOCK(cs_main);
     int32_t height = atoi(params[0].get_str().c_str());
     if ( height < 0 )
+    {
         height = chainActive.Tip()->nHeight;
+        timestamp = chainActive.Tip()->GetBlockTime();
+    }
+    else
+    {
+        CBlockIndex *pblockindex = chainActive[height];
+        if ( pblockindex != 0 )
+            timestamp = pblockindex->GetBlockTime();
+    }
     //fprintf(stderr,"notaries as of height.%d\n",height);
     //if ( height > chainActive.Height()+20000 )
     //    throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     //else
     {
-        if ( (n= komodo_notaries(pubkeys,height)) > 0 )
+        if ( (n= komodo_notaries(pubkeys,height,timestamp)) > 0 )
         {
             for (i=0; i<n; i++)
             {

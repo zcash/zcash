@@ -26,7 +26,7 @@
 #include <netdb.h>
 #endif
 
-#ifndef WIN32
+#ifndef _WIN32
 #if HAVE_INET_PTON
 #include <arpa/inet.h>
 #endif
@@ -129,7 +129,7 @@ bool static LookupIntern(const char *pszName, std::vector<CNetAddr>& vIP, unsign
     aiHint.ai_socktype = SOCK_STREAM;
     aiHint.ai_protocol = IPPROTO_TCP;
     aiHint.ai_family = AF_UNSPEC;
-#ifdef WIN32
+#ifdef _WIN32
     aiHint.ai_flags = fAllowLookup ? 0 : AI_NUMERICHOST;
 #else
     aiHint.ai_flags = fAllowLookup ? AI_ADDRCONFIG : AI_NUMERICHOST;
@@ -454,7 +454,7 @@ bool static ConnectSocketDirectly(const CService &addrConnect, SOCKET& hSocketRe
 #endif
 
     //Disable Nagle's algorithm
-#ifdef WIN32
+#ifdef _WIN32
     setsockopt(hSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&set, sizeof(int));
 #else
     setsockopt(hSocket, IPPROTO_TCP, TCP_NODELAY, (void*)&set, sizeof(int));
@@ -488,7 +488,7 @@ bool static ConnectSocketDirectly(const CService &addrConnect, SOCKET& hSocketRe
                 return false;
             }
             socklen_t nRetSize = sizeof(nRet);
-#ifdef WIN32
+#ifdef _WIN32
             if (getsockopt(hSocket, SOL_SOCKET, SO_ERROR, (char*)(&nRet), &nRetSize) == SOCKET_ERROR)
 #else
             if (getsockopt(hSocket, SOL_SOCKET, SO_ERROR, &nRet, &nRetSize) == SOCKET_ERROR)
@@ -505,7 +505,7 @@ bool static ConnectSocketDirectly(const CService &addrConnect, SOCKET& hSocketRe
                 return false;
             }
         }
-#ifdef WIN32
+#ifdef _WIN32
         else if (WSAGetLastError() != WSAEISCONN)
 #else
         else
@@ -1348,7 +1348,7 @@ bool operator<(const CSubNet& a, const CSubNet& b)
     return (a.network < b.network || (a.network == b.network && memcmp(a.netmask, b.netmask, 16) < 0));
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 std::string NetworkErrorString(int err)
 {
     char buf[256];
@@ -1386,7 +1386,7 @@ bool CloseSocket(SOCKET& hSocket)
 {
     if (hSocket == INVALID_SOCKET)
         return false;
-#ifdef WIN32
+#ifdef _WIN32
     int ret = closesocket(hSocket);
 #else
     int ret = close(hSocket);
@@ -1398,7 +1398,7 @@ bool CloseSocket(SOCKET& hSocket)
 bool SetSocketNonBlocking(SOCKET& hSocket, bool fNonBlocking)
 {
     if (fNonBlocking) {
-#ifdef WIN32
+#ifdef _WIN32
         u_long nOne = 1;
         if (ioctlsocket(hSocket, FIONBIO, &nOne) == SOCKET_ERROR) {
 #else
@@ -1409,7 +1409,7 @@ bool SetSocketNonBlocking(SOCKET& hSocket, bool fNonBlocking)
             return false;
         }
     } else {
-#ifdef WIN32
+#ifdef _WIN32
         u_long nZero = 0;
         if (ioctlsocket(hSocket, FIONBIO, &nZero) == SOCKET_ERROR) {
 #else

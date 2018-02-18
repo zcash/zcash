@@ -13,11 +13,12 @@ ifeq ($(build_os),darwin)
 define $(package)_set_vars
   $(package)_build_env=MACOSX_DEPLOYMENT_TARGET="10.9"
 endef
-else
+endif
+
 define $(package)_config_cmds
   $($(package)_conf_tool) $($(package)_config_opts)
 endef
-endif
+
 
 ifeq ($(build_os),darwin)
 define $(package)_build_cmds

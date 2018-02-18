@@ -737,7 +737,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
         }
         else if (!txin.IsFinal())
         {
-            printf("non-final txin seq.%x locktime.%u vs nTime.%u\n",txin.nSequence,(uint32_t)tx.nLockTime,(uint32_t)nBlockTime);
+            //printf("non-final txin seq.%x locktime.%u vs nTime.%u\n",txin.nSequence,(uint32_t)tx.nLockTime,(uint32_t)nBlockTime);
             return false;
         }
     }
@@ -1490,19 +1490,20 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
     return true;
 }
 
-uint64_t komodo_moneysupply(int32_t height);
-extern char ASSETCHAINS_SYMBOL[16];
+//uint64_t komodo_moneysupply(int32_t height);
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint32_t ASSETCHAINS_MAGIC;
-extern uint64_t ASSETCHAINS_SUPPLY;
+extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_LINEAR,ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY;
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
-    CAmount nSubsidy = 3 * COIN;
+    static uint64_t cached_subsidy; static int32_t cached_numhalvings;
+    int32_t numhalvings,i; uint64_t numerator; CAmount nSubsidy = 3 * COIN;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         if ( nHeight == 1 )
             return(100000000 * COIN); // ICO allocation
-        else if ( komodo_moneysupply(nHeight) < MAX_MONEY )
+        else if ( nHeight < KOMODO_ENDOFERA ) //komodo_moneysupply(nHeight) < MAX_MONEY )
             return(3 * COIN);
         else return(0);
     }
@@ -1510,7 +1511,45 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     {
         if ( nHeight == 1 )
             return(ASSETCHAINS_SUPPLY * COIN + (ASSETCHAINS_MAGIC & 0xffffff));
-        else return(10000);
+        else if ( ASSETCHAINS_ENDSUBSIDY == 0 || nHeight < ASSETCHAINS_ENDSUBSIDY )
+        {
+            if ( ASSETCHAINS_REWARD == 0 )
+                return(10000);
+            else if ( ASSETCHAINS_ENDSUBSIDY != 0 && nHeight >= ASSETCHAINS_ENDSUBSIDY )
+                return(0);
+            else
+            {
+                nSubsidy = ASSETCHAINS_REWARD;
+                if ( ASSETCHAINS_HALVING != 0 )
+                {
+                    if ( (numhalvings= (nHeight / ASSETCHAINS_HALVING)) > 0 )
+                    {
+                        if ( numhalvings >= 64 && ASSETCHAINS_DECAY == 0 )
+                            return(0);
+                        if ( ASSETCHAINS_DECAY == 0 )
+                            nSubsidy >>= numhalvings;
+                        else if ( ASSETCHAINS_DECAY == 100000000 && ASSETCHAINS_ENDSUBSIDY != 0 )
+                        {
+                            numerator = (ASSETCHAINS_ENDSUBSIDY - nHeight);
+                            nSubsidy = (nSubsidy * numerator) / ASSETCHAINS_ENDSUBSIDY;
+                        }
+                        else
+                        {
+                            if ( cached_subsidy > 0 && cached_numhalvings == numhalvings )
+                                nSubsidy = cached_subsidy;
+                            else
+                            {
+                                for (i=0; i<numhalvings&&nSubsidy!=0; i++)
+                                    nSubsidy = (nSubsidy * ASSETCHAINS_DECAY) / 100000000;
+                                cached_subsidy = nSubsidy;
+                                cached_numhalvings = numhalvings;
+                            }
+                        }
+                    }
+                }
+            }
+            return(nSubsidy);
+        } else return(0);
     }
 /*
     // Mining slow start
@@ -2365,7 +2404,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 return false;
             control.Add(vChecks);
         }
-        komodo_earned_interest(pindex->nHeight,sum);
+        //if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        //    komodo_earned_interest(pindex->nHeight,sum);
         CTxUndo undoDummy;
         if (i > 0) {
             blockundo.vtxundo.push_back(CTxUndo());

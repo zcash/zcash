@@ -15,6 +15,7 @@
 #include "sync.h"
 #include "utilstrencodings.h"
 #include "utiltime.h"
+#include "komodo_defs.h"
 
 #include <stdarg.h>
 
@@ -23,7 +24,7 @@
 #include <pthread_np.h>
 #endif
 
-#ifndef WIN32
+#ifndef _WIN32
 // for posix_fallocate
 #ifdef __linux__
 
@@ -335,7 +336,7 @@ void ParseParameters(int argc, const char* const argv[])
             strValue = str.substr(is_index+1);
             str = str.substr(0, is_index);
         }
-#ifdef WIN32
+#ifdef _WIN32
         boost::to_lower(str);
         if (boost::algorithm::starts_with(str, "/"))
             str = "-" + str.substr(1);
@@ -419,7 +420,7 @@ std::string HelpMessageOpt(const std::string &option, const std::string &message
 
 static std::string FormatException(const std::exception* pex, const char* pszThread)
 {
-#ifdef WIN32
+#ifdef _WIN32
     char pszModule[MAX_PATH] = "";
     GetModuleFileNameA(NULL, pszModule, sizeof(pszModule));
 #else
@@ -441,13 +442,13 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
     strMiscWarning = message;
 }
 
-extern char ASSETCHAINS_SYMBOL[16];
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 //int64_t MAX_MONEY = 200000000 * 100000000LL;
 
 boost::filesystem::path GetDefaultDataDir()
 {
     namespace fs = boost::filesystem;
-    char symbol[16];
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN];
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         strcpy(symbol,ASSETCHAINS_SYMBOL);
     else symbol[0] = 0;
@@ -455,7 +456,7 @@ boost::filesystem::path GetDefaultDataDir()
     // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zcash
     // Mac: ~/Library/Application Support/Zcash
     // Unix: ~/.zcash
-#ifdef WIN32
+#ifdef _WIN32
     // Windows
     if ( symbol[0] == 0 )
         return GetSpecialFolderPath(CSIDL_APPDATA) / "Komodo";
@@ -502,7 +503,7 @@ static boost::filesystem::path ZC_GetBaseParamsDir()
     // Windows >= Vista: C:\Users\Username\AppData\Roaming\ZcashParams
     // Mac: ~/Library/Application Support/ZcashParams
     // Unix: ~/.zcash-params
-#ifdef WIN32
+#ifdef _WIN32
     // Windows
     return GetSpecialFolderPath(CSIDL_APPDATA) / "ZcashParams";
 #else
@@ -648,7 +649,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
     //fprintf(stderr,"from conf file %s RPC %u, used to be %u\n",ASSETCHAINS_SYMBOL,BITCOIND_PORT,BITCOIND_PORT);
 }
 
-#ifndef WIN32
+#ifndef _WIN32
 boost::filesystem::path GetPidFile()
 {
     boost::filesystem::path pathPidFile(GetArg("-pid", "komodod.pid"));
@@ -669,13 +670,13 @@ void CreatePidFile(const boost::filesystem::path &path, pid_t pid)
 
 bool RenameOver(boost::filesystem::path src, boost::filesystem::path dest)
 {
-#ifdef WIN32
+#ifdef _WIN32
     return MoveFileExA(src.string().c_str(), dest.string().c_str(),
                        MOVEFILE_REPLACE_EXISTING) != 0;
 #else
     int rc = std::rename(src.string().c_str(), dest.string().c_str());
     return (rc == 0);
-#endif /* WIN32 */
+#endif /* _WIN32 */
 }
 
 /**
@@ -700,7 +701,7 @@ bool TryCreateDirectory(const boost::filesystem::path& p)
 void FileCommit(FILE *fileout)
 {
     fflush(fileout); // harmless if redundantly called
-#ifdef WIN32
+#ifdef _WIN32
     HANDLE hFile = (HANDLE)_get_osfhandle(_fileno(fileout));
     FlushFileBuffers(hFile);
 #else
@@ -815,7 +816,7 @@ void ShrinkDebugFile()
         fclose(file);
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate)
 {
     namespace fs = boost::filesystem;
@@ -838,7 +839,7 @@ boost::filesystem::path GetTempPath() {
 #else
     // TODO: remove when we don't support filesystem v2 anymore
     boost::filesystem::path path;
-#ifdef WIN32
+#ifdef _WIN32
     char pszPath[MAX_PATH] = "";
 
     if (GetTempPathA(MAX_PATH, pszPath))
@@ -898,7 +899,7 @@ void SetupEnvironment()
 
 bool SetupNetworking()
 {
-#ifdef WIN32
+#ifdef _WIN32
     // Initialize Windows Sockets
     WSADATA wsadata;
     int ret = WSAStartup(MAKEWORD(2,2), &wsadata);
@@ -910,15 +911,15 @@ bool SetupNetworking()
 
 void SetThreadPriority(int nPriority)
 {
-#ifdef WIN32
+#ifdef _WIN32
     SetThreadPriority(GetCurrentThread(), nPriority);
-#else // WIN32
+#else // _WIN32
 #ifdef PRIO_THREAD
     setpriority(PRIO_THREAD, 0, nPriority);
 #else // PRIO_THREAD
     setpriority(PRIO_PROCESS, 0, nPriority);
 #endif // PRIO_THREAD
-#endif // WIN32
+#endif // _WIN32
 }
 
 std::string PrivacyInfo()

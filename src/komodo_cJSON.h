@@ -30,7 +30,6 @@
 #include <ctype.h>
 #include <float.h>
 #include <memory.h>
-#include "komodo_structs.h"
 
 #include "cJSON.h"
 

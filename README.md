@@ -12,7 +12,7 @@ It downloads and stores the entire history of Komodo transactions; depending on 
 - Komodo Platform public material: [Komodo Platform public material](https://docs.google.com/document/d/1AbhWrtagu4vYdkl-vsWz-HSNyNvK-W-ZasHCqe7CZy0)
 ## List of Komodo Platform Technologies
 Delayed Proof of Work (dPoW) - Additional security layer.
-zk-SNARKs - Komodo Platform�s privacy technology
+zk-SNARKs - Komodo Platform's privacy technology
 Jumblr - Decentralized tumbler for KMD and other cryptocurrencies
 Assetchains - Easy way to fork Komodo coin
 Pegged Assets - Chains that maintain a peg to fiat currencies
@@ -26,23 +26,37 @@ Block Time: 1M 2s
 Block Reward: 3KMD
 Mining Algorithm: Equihash 
 ## About this Project
-Komodo has being evolved from Zcash project, where we used some of their codebase and extended it with new technologies.
-Same Zcash is based on Bitcoin's code, with differnece Zcash intends to offer a far higher standard of privacy through a sophisticated zero-knowledge proving scheme that preserves confidentiality of transaction metadata. Technical details are available in our [Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf). 
+Komodo is based on Zcash and has been  by our innovative consensus algorithm called dPoW which utilizes Bitcoin's hashrate to store Komodo blockchain information into the Bitcoin blockchain. Other new and native Komodo features are the privacy technology called JUMBLR or our assetchain capabilities (one click plug and play blockchain solutions). More details are available under https://komodoplatform.com/. 
 ## Getting started
 Dependencies
 ------------
 
 ```
 #The following packages are needed:
-sudo apt-get install build-essential pkg-config libcurl3-gnutls-dev libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libboost-all-dev libssl-dev libprotobuf-dev protobuf-compiler libqt4-dev libqrencode-dev libdb++-dev ntp ntpdate
+sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python python-zmq zlib1g-dev wget libcurl3-gnutls-dev bsdmainutils automake
 ```
 
 Komodo
 ------
+We have a release process that goes through several stages before it reaches master. This allows the most conservative users just use the master branch, which is only updated after the other branches have signed off on a release.
+
+99% of the activity is in the dev branch, this is where I am testing each change one by one and there are literally thousands of updates. Only use this branch if you really want to be on the bleeding edge. I try to keep things stable, but there are times where necessarily there are bugs in the dev branch, since I am actively developing and debugging here. A good rule is to wait for at least 4 hours from the last update before using the dev branch (unless you know what you are doing)
+
+After things look good in the dev branch, it is propagated to the beta branch, this is the version the notary nodes use. They are knowledegable command line server guys and so they have a keen eye for anything that wasnt caught during the dev cycle.
+
+After the notary nodes verify things are working and the latest release is deemed stable, it is propagated to the dPoW branch. From here an automated Jenkins process builds it for all OS, and since the notary nodes are all unix, it is possible for some issues to be caught at this stage. The dPoW branch is what goes into the GUI installers.
+
+After the GUI are updated and released and it is verified that no significant support issues were created, the master branch is finally updated.
+
+Master branch: exchanges and users that build from the repo without changing branches
+dPoW branch: autobuild into GUI installers, unix, osx, windows
+beta branch: notary nodes, command line unix
+dev branch: bleeding edge, possibly wont even compile, multiple updates per hour
 
 ```
 git clone https://github.com/jl777/komodo
 cd komodo
+#you might want to: git checkout <branch>; git pull
 ./zcutil/fetch-params.sh
 # -j8 uses 8 threads - replace 8 with number of threads you want to use
 ./zcutil/build.sh -j8

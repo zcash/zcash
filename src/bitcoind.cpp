@@ -42,7 +42,8 @@
  */
 
 static bool fDaemon;
-extern char ASSETCHAINS_SYMBOL[16];
+#define KOMODO_ASSETCHAIN_MAXLEN 65
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 void komodo_passport_iteration();
 
 void WaitForShutdown(boost::thread_group* threadGroup)
@@ -173,7 +174,7 @@ bool AppInit(int argc, char* argv[])
             exit(1);
         }
 
-#ifndef WIN32
+#ifndef _WIN32
         fDaemon = GetBoolArg("-daemon", false);
         if (fDaemon)
         {
