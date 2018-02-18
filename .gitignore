@@ -1,6 +1,7 @@
 *.tar.gz
 *.deb
 *.exe
+*.dSYM
 src/bitcoin
 src/zcashd
 src/zcash-cli
@@ -56,7 +57,7 @@ src/univalue/gen
 *.pyc
 *.o
 *.o-*
-.zcash
+.zclassic
 *.a
 *.pb.cc
 *.pb.h

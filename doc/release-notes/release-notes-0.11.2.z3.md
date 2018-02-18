@@ -66,4 +66,3 @@ Taylor Hornby (7):
       Rename bitcoin.conf and bitcoind.pid to zcash.conf and zcashd.pid in qa/ and src/
       Trivial change: Capitalize the Z in Zerocash
       Remove the Merkle tree hash function's fixed point.
-

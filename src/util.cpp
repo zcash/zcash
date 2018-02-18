@@ -444,10 +444,10 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
 boost::filesystem::path GetDefaultDataDir()
 {
     namespace fs = boost::filesystem;
-    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Zcash
-    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zcash
-    // Mac: ~/Library/Application Support/Zcash
-    // Unix: ~/.zcash
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Zclassic
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zclassic
+    // Mac: ~/Library/Application Support/Zclassic
+    // Unix: ~/.zclassic
 #ifdef WIN32
     // Windows
     return GetSpecialFolderPath(CSIDL_APPDATA) / "Zclassic";
@@ -601,7 +601,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 
     for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
     {
-        // Don't overwrite existing settings so command line settings override zcash.conf
+        // Don't overwrite existing settings so command line settings override zclassic.conf
         string strKey = string("-") + it->string_key;
         if (mapSettingsRet.count(strKey) == 0)
         {

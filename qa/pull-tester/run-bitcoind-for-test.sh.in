@@ -4,10 +4,10 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
 ZCASH_LOAD_TIMEOUT=500
-DATADIR="@abs_top_builddir@/.zcash"
+DATADIR="@abs_top_builddir@/.zclassic"
 rm -rf "$DATADIR"
 mkdir -p "$DATADIR"/regtest
-touch "$DATADIR/zcash.conf"
+touch "$DATADIR/zclassic.conf"
 touch "$DATADIR/regtest/debug.log"
 tail -q -n 1 -F "$DATADIR/regtest/debug.log" | grep -m 1 -q "Done loading" &
 WAITER=$!

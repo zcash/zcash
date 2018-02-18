@@ -116,8 +116,8 @@ bool AppInit(int argc, char* argv[])
                  _("- Source code:  %s\n"
                    "- .deb package: %s\n")).c_str(),
                 GetConfigFile().string().c_str(),
-                "contrib/debian/examples/zcash.conf",
-                "/usr/share/doc/zcash/examples/zcash.conf");
+                "contrib/debian/examples/zclassic.conf",
+                "/usr/share/doc/zcash/examples/zclassic.conf");
             return false;
         } catch (const std::exception& e) {
             fprintf(stderr,"Error reading configuration file: %s\n", e.what());

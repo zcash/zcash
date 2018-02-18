@@ -48,4 +48,3 @@ Simon (4):
 
 bitcartel (1):
       Update payment-api.md
-
