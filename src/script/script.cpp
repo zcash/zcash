@@ -227,21 +227,26 @@ bool CScript::IsPayToCryptoCondition() const
 {
     const_iterator pc = this->begin();
     vector<unsigned char> data;
-    int i;
+    int i = 0;
     while (pc < this->end())
     {
         opcodetype opcode;
         if (!this->GetOp(pc, opcode, data))
             return 0;
-        if (0 == i)
-            if (opcode != OP_PUSHDATA1)
+        switch (i++) {
+            case 0:
+                // Binary condition should be less than 76 bytes
+                if (!(opcode > OP_0 && opcode < OP_PUSHDATA1))
+                    return 0;
+            break;
+            case 1:
+                if (opcode != OP_CHECKCRYPTOCONDITION)
+                    return 0;
+            break;
+            default:
                 return 0;
-        if (1 == i)
-            if (opcode != OP_CHECKCRYPTOCONDITION)
-                return 0;
-        if (i > 1)
-            return 0;
-        i++;
+            break;
+        }
     }
     return 1;
 }

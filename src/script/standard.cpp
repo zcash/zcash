@@ -71,7 +71,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
     // Shortcut for pay-to-crypto-condition
     if (scriptPubKey.IsPayToCryptoCondition()) {
         typeRet = TX_CRYPTOCONDITION;
-        //vSolutionsRet.push_back("hello there");
+        // TODO: Extract solutions
         return true;
     }
 
@@ -186,6 +186,8 @@ int ScriptSigArgsExpected(txnouttype t, const std::vector<std::vector<unsigned c
         return vSolutions[0][0] + 1;
     case TX_SCRIPTHASH:
         return 1; // doesn't include args needed by the script
+    case TX_CRYPTOCONDITION:
+        return 1;
     }
     return -1;
 }
