@@ -9,6 +9,7 @@
 #include "script/script.h"
 #include "util.h"
 #include "utilstrencodings.h"
+#include "komodo_cryptoconditions.h"
 
 #include <boost/foreach.hpp>
 
@@ -68,11 +69,13 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
         return true;
     }
 
-    // Shortcut for pay-to-crypto-condition
-    if (scriptPubKey.IsPayToCryptoCondition()) {
-        typeRet = TX_CRYPTOCONDITION;
-        // TODO: Extract solutions
-        return true;
+    if (IsCryptoConditionsEnabled()) {
+        // Shortcut for pay-to-crypto-condition
+        if (scriptPubKey.IsPayToCryptoCondition()) {
+            typeRet = TX_CRYPTOCONDITION;
+            // TODO: Extract solutions
+            return true;
+        }
     }
 
     // Scan templates
