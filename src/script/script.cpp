@@ -227,28 +227,15 @@ bool CScript::IsPayToCryptoCondition() const
 {
     const_iterator pc = this->begin();
     vector<unsigned char> data;
-    int i = 0;
-    while (pc < this->end())
-    {
-        opcodetype opcode;
-        if (!this->GetOp(pc, opcode, data))
-            return 0;
-        switch (i++) {
-            case 0:
-                // Binary condition should be less than 76 bytes
-                if (!(opcode > OP_0 && opcode < OP_PUSHDATA1))
-                    return 0;
-            break;
-            case 1:
-                if (opcode != OP_CHECKCRYPTOCONDITION)
-                    return 0;
-            break;
-            default:
-                return 0;
-            break;
-        }
-    }
-    return 1;
+    opcodetype opcode;
+    if (this->GetOp(pc, opcode, data))
+        // Sha256 conditions are <76 bytes
+        if (opcode > OP_0 && opcode < OP_PUSHDATA1)
+            if (this->GetOp(pc, opcode, data))
+                if (opcode == OP_CHECKCRYPTOCONDITION)
+                    if (pc == this->end())
+                        return 1;
+    return 0;
 }
 
 bool CScript::IsPushOnly() const
