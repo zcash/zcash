@@ -68,7 +68,7 @@ def wait_for_block(height):
 
 def sign(tx):
     signed = hoek.signTxBitcoin({'tx': tx, 'privateKeys': [notary_sk]})
-    return hoek.signTxEd25519({'tx': signed['tx'], 'privateKeys': [alice_sk]})
+    return hoek.signTxEd25519({'tx': signed['tx'], 'privateKeys': [alice_sk, bob_sk]})
 
 
 def submit(tx):
@@ -98,7 +98,7 @@ def get_fanout_txid():
             {'txid': reward_txid, 'idx': 0, 'script': {'pubkey': notary_pk}}
         ],
         "outputs": (100 * [
-            {"amount": 1000, "script": {"address": notary_addr}}
+            {"amount": 1000, "script": {"condition": cond_alice}}
         ] + [{"amount": remainder, 'script': {'address': notary_addr}}])
     }
 
@@ -110,7 +110,7 @@ def fanout_input(n):
         def wrapper():
             if not hasattr(fanout_input, 'txid'):
                 fanout_input.txid = get_fanout_txid()
-            inp = {'txid': fanout_input.txid, 'idx': n, 'script': {'address': notary_addr}}
+            inp = {'txid': fanout_input.txid, 'idx': n, 'script': {'fulfillment': cond_alice}}
             f(inp)
         return functools.wraps(f)(wrapper)
     return decorate
@@ -126,3 +126,4 @@ cond_alice = {"type": "ed25519-sha-256", "publicKey": alice_pk}
 bob_pk = 'C8MfEjKiFxDguacHvcM7MV83cRQ55RAHacC73xqg8qeu'
 bob_sk = 'GrP1fZdUxUc1NYmu7kiNkJV4p7PKpshp1yBY7hogPUWT'
 cond_bob = {"type": "ed25519-sha-256", "publicKey": bob_pk}
+nospend = {"amount": 1000, "script": {"address": notary_addr}}
