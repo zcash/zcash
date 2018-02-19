@@ -47,8 +47,3 @@ creating an issue in the [AnimeCoin repository](https://github.com/ANIME-AnimeCo
 
 Behavior outside of these expectations may be reasonable in some
 situations but should be discussed in public in advance.
-
-See also
-----------
-- [zcash-seeder](https://github.com/zcash/zcash-seeder) is a reference
-  implementation of a DNS seed.
