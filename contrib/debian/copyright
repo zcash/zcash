@@ -1,15 +1,15 @@
 Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?rev=174
-Upstream-Name: Zcash
-Upstream-Contact: Zcash Company <team@z.cash>
-Source: https://github.com/zcash/zcash
+Upstream-Name: AnimeCoin
+Upstream-Contact: AnimeCoin Company 
+Source: https://github.com/ANIME-AnimeCoin/AnimeCoin
 
 Files: *
-Copyright: 2016-2017, The Zcash developers
+Copyright: 2018, The AnimeCoin developers
  2009-2017, Bitcoin Core developers
 License: Expat
 Comment: The Bitcoin Core developers encompasses the current developers listed on bitcoin.org,
  as well as the numerous contributors to the project.
- The Zcash developers are listed at https://z.cash/team.html.
+ 
 
 Files: depends/sources/libsodium-*.tar.gz
 Copyright: 2013-2016 Frank Denis

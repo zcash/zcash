@@ -1,7 +1,7 @@
-# Zcash CI workers
+# AnimeCoin CI workers
 
 This folder contains the Ansible playbooks for configuring a fresh OS
-installation for use as a Buildbot worker in Zcash's CI.
+installation for use as a Buildbot worker in AnimeCoin's CI.
 
 # Criteria for Adding Workers
 
@@ -25,7 +25,7 @@ c. When adding workers start by adding workers for the "most common"
     connecting to the master.
 
 - Start a basic EC2 instance using the template AMI for the target OS.
-  - Choose the smallest instance size, it won't be used for building Zcash.
+  - Choose the smallest instance size, it won't be used for building AnimeCoin.
 
 - Figure out which user to log into the instance with.
   - E.g. for the Ubuntu template, use "ubuntu" instead of "root"
@@ -37,7 +37,7 @@ c. When adding workers start by adding workers for the "most common"
 
 - Create `inventory/hosts` containing the following:
 
-    [zcash-ci-worker-unix]
+    [animecoin-ci-worker-unix]
     some-name ansible_host=<INSTANCE_IP> ansible_ssh_user=<USERNAME>
 
 - Run `ansible-playbook -e buildbot_worker_host_template=templates/host.ec2.j2 -i inventory/hosts unix.yml`,
