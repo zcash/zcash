@@ -1,8 +1,10 @@
+from __future__ import print_function
 import sys
 import json
 import time
-import argparse
+import logging
 import subprocess
+import functools
 
 
 class RPCError(IOError):
@@ -11,12 +13,14 @@ class RPCError(IOError):
 
 class JsonClient(object):
     def __getattr__(self, method):
+        if method[0] == '_':
+            return getattr(super(JsonClient, self), method)
         def inner(*args):
             return self._exec(method, args)
         return inner
 
     def load_response(self, data):
-        data = json.loads(data)
+        data = json.loads(data.decode("utf-8"))
         if data.get('error'):
             raise RPCError(data['error'])
         if 'result' in data:
@@ -26,7 +30,6 @@ class JsonClient(object):
 
 def run_cmd(cmd):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    #print >>sys.stderr, "> %s" % repr(cmd)[1:-1]
     assert proc.wait() == 0
     return proc.stdout.read()
 
@@ -39,9 +42,13 @@ class Hoek(JsonClient):
 
 class Komodod(JsonClient):
     def _exec(self, method, args):
+        if not hasattr(self, '_url'):
+            urltpl = 'http://$rpcuser:$rpcpassword@${rpchost:-127.0.0.1}:$rpcport'
+            cmd = ['bash', '-c', '. $KOMODO_CONF_PATH && echo -n %s' % urltpl]
+            self._url = run_cmd(cmd)
+
         req = {'method': method, 'params': args, 'id': 1}
-        cmd = ['curl', '-s', '-H', 'Content-Type: application/json',
-               '-d', json.dumps(req), CONFIG['komodod_url']]
+        cmd = ['curl', '-s', '-H', 'Content-Type: application/json', '-d', json.dumps(req), self._url]
         return self.load_response(run_cmd(cmd))
 
 
@@ -50,7 +57,7 @@ hoek = Hoek()
 
 
 def wait_for_block(height):
-    print >>sys.stderr, "Waiting for block height %s" % height
+    logging.info("Waiting for block height %s" % height)
     for i in range(100):
         try:
             return rpc.getblock(str(height))
@@ -59,61 +66,55 @@ def wait_for_block(height):
     raise Exception('Time out waiting for block at height %s' % height)
 
 
-def sign_and_submit(tx):
+def sign(tx):
     signed = hoek.signTxBitcoin({'tx': tx, 'privateKeys': [notary_sk]})
-    signed = hoek.signTxEd25519({'tx': signed['tx'], 'privateKeys': [alice_sk]})
-    encoded = hoek.encodeTx(signed)
+    return hoek.signTxEd25519({'tx': signed['tx'], 'privateKeys': [alice_sk]})
+
+
+def submit(tx):
+    encoded = hoek.encodeTx(tx)
     try:
         rpc.getrawtransaction(encoded['txid'])
-        print >> sys.stderr, "Transaction already in chain: %s" % encoded['txid']
+        logging.info("Transaction already in chain: %s" % encoded['txid'])
         return encoded['txid']
     except RPCError:
         pass
-    print >> sys.stderr, "submit transaction: %s:%s" % (encoded['txid'], json.dumps(signed))
-    print encoded
+    logging.info("submit transaction: %s:%s" % (encoded['txid'], json.dumps(tx)))
     return rpc.sendrawtransaction(encoded['hex'])
 
 
+def get_fanout_txid():
+    block = wait_for_block(1)
+    reward_txid = block['tx'][0]
+    reward_tx_raw = rpc.getrawtransaction(reward_txid)
+    reward_tx = hoek.decodeTx({'hex': reward_tx_raw})
+    balance = reward_tx['tx']['outputs'][0]['amount']
 
-CONFIG = None
-FANOUT_TXID = None
+    n_outs = 100
+    remainder = balance - n_outs * 1000
+
+    fanout = {
+        'inputs': [
+            {'txid': reward_txid, 'idx': 0, 'script': {'pubkey': notary_pk}}
+        ],
+        "outputs": (100 * [
+            {"amount": 1000, "script": {"address": notary_addr}}
+        ] + [{"amount": remainder, 'script': {'address': notary_addr}}])
+    }
+
+    return submit(sign(fanout))
 
 
-def setup():
-    global CONFIG, FANOUT_TXID
-    if not CONFIG:
-        parser = argparse.ArgumentParser(description='Crypto-Condition integration suite.')
-        parser.add_argument('komodod_conf', help='Location of Komodod config file')
-        args = parser.parse_args()
+def fanout_input(n):
+    def decorate(f):
+        def wrapper():
+            if not hasattr(fanout_input, 'txid'):
+                fanout_input.txid = get_fanout_txid()
+            inp = {'txid': fanout_input.txid, 'idx': n, 'script': {'address': notary_addr}}
+            f(inp)
+        return functools.wraps(f)(wrapper)
+    return decorate
 
-        urltpl = 'http://$rpcuser:$rpcpassword@${rpchost:-127.0.0.1}:$rpcport'
-        cmd = ['bash', '-c', '. %s && echo -n %s' % (args.komodod_conf, urltpl)]
-        url = run_cmd(cmd)
-        
-        CONFIG = {'komodod_url': url}
-
-    if not FANOUT_TXID:
-        block = wait_for_block(1)
-        reward_txid = block['tx'][0]
-        reward_tx_raw = rpc.getrawtransaction(reward_txid)
-        reward_tx = hoek.decodeTx({'hex': reward_tx_raw})
-        balance = reward_tx['tx']['outputs'][0]['amount']
-
-        n_outs = 100
-        remainder = balance - n_outs * 1000
-
-        fanout = {
-            'inputs': [
-                {'txid': reward_txid, 'idx': 0, 'script': {'pubkey': notary_pk}}
-            ],
-            "outputs": (100 * [
-                {"amount": 1000, "script": {"address": notary_addr}}
-            ] + [{"amount": remainder, 'script': {'address': notary_addr}}])
-        }
-
-        FANOUT_TXID = sign_and_submit(fanout)
-
-    return FANOUT_TXID
 
 
 notary_addr = 'RXSwmXKtDURwXP7sdqNfsJ6Ga8RaxTchxE'
@@ -122,3 +123,6 @@ notary_sk = 'UxFWWxsf1d7w7K5TvAWSkeX4H95XQKwdwGv49DXwWUTzPTTjHBbU'
 alice_pk = '8ryTLBMnozUK4xUz7y49fjzZhxDDMK7c4mucLdbVY6jW'
 alice_sk = 'E4ER7uYvaSTdpQFzTXNNSTkR6jNRJyqhZPJMGuU899nY'
 cond_alice = {"type": "ed25519-sha-256", "publicKey": alice_pk}
+bob_pk = 'C8MfEjKiFxDguacHvcM7MV83cRQ55RAHacC73xqg8qeu'
+bob_sk = 'GrP1fZdUxUc1NYmu7kiNkJV4p7PKpshp1yBY7hogPUWT'
+cond_bob = {"type": "ed25519-sha-256", "publicKey": bob_pk}
