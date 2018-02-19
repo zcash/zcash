@@ -101,6 +101,8 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
 {
     static uint256 zeroes;
     uint32_t flags; uint256 pubkey,refpubkey,sig; int32_t i,refvaluesize,hassig,coresize,haspubkey,height,kvheight; uint16_t keylen,valuesize,newflag = 0; uint8_t *key,*valueptr,keyvalue[IGUANA_MAXSCRIPTSIZE]; struct komodo_kv *ptr; char *transferpubstr,*tstr; uint64_t fee;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 ) // disable KV for KMD
+        return;
     iguana_rwnum(0,&opretbuf[1],sizeof(keylen),&keylen);
     iguana_rwnum(0,&opretbuf[3],sizeof(valuesize),&valuesize);
     iguana_rwnum(0,&opretbuf[5],sizeof(height),&height);

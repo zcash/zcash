@@ -105,8 +105,8 @@ void WalletTxToJSON(const CWalletTx& wtx, UniValue& entry)
 string AccountFromValue(const UniValue& value)
 {
     string strAccount = value.get_str();
-    if (strAccount != "")
-        throw JSONRPCError(RPC_WALLET_ACCOUNTS_UNSUPPORTED, "Accounts are unsupported");
+    //if (strAccount != "")
+    //    throw JSONRPCError(RPC_WALLET_ACCOUNTS_UNSUPPORTED, "Accounts are unsupported");
     return strAccount;
 }
 
@@ -503,6 +503,8 @@ UniValue kvupdate(const UniValue& params, bool fHelp)
         throw runtime_error("kvupdate key value flags/passphrase");
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        return(0);
     haveprivkey = 0;
     memset(&sig,0,sizeof(sig));
     memset(&privkey,0,sizeof(privkey));
@@ -616,7 +618,7 @@ UniValue paxdeposit(const UniValue& params, bool fHelp)
     bool fSubtractFeeFromAmount = false;
     if ( KOMODO_PAX == 0 )
     {
-        throw runtime_error("paxdeposit dispabled without -pax");
+        throw runtime_error("paxdeposit disabled without -pax");
     }
     if ( komodo_is_issuer() != 0 )
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "paxdeposit only from KMD");
@@ -1239,8 +1241,8 @@ UniValue sendmany(const UniValue& params, bool fHelp)
         if (!address.IsValid())
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("Invalid Komodo address: ")+name_);
 
-        if (setAddress.count(address))
-            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+name_);
+        //if (setAddress.count(address))
+        //    throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+name_);
         setAddress.insert(address);
 
         CScript scriptPubKey = GetScriptForDestination(address.Get());
@@ -1263,7 +1265,8 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     EnsureWalletIsUnlocked();
 
     // Check funds
-    CAmount nBalance = GetAccountBalance(strAccount, nMinDepth, ISMINE_SPENDABLE);
+    CAmount nBalance = pwalletMain->GetBalance();
+    //CAmount nBalance = GetAccountBalance(strAccount, nMinDepth, ISMINE_SPENDABLE);
     if (totalAmount > nBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Account has insufficient funds");
 
