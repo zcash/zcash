@@ -3,6 +3,7 @@ import time
 import json
 import logging
 import binascii
+import struct
 from testsupport import *
 
 
@@ -20,7 +21,7 @@ def test_fulfillment_wrong_signature(inp):
     spend = {'inputs': [inp], 'outputs': [nospend]}
     signed = sign(spend)
 
-    # Set the correct pubkey, signature is wrong
+    # Set the correct pubkey, signature is bob's
     signed['tx']['inputs'][0]['script']['fulfillment']['publicKey'] = alice_pk
 
     try:
@@ -32,8 +33,8 @@ def test_fulfillment_wrong_signature(inp):
 @fanout_input(2)
 def test_fulfillment_wrong_pubkey(inp):
     spend = {'inputs': [inp], 'outputs': [nospend]}
-
     signed = sign(spend)
+
     # Set the wrong pubkey, signature is correct
     signed['tx']['inputs'][0]['script']['fulfillment']['publicKey'] = bob_pk
 
@@ -44,7 +45,7 @@ def test_fulfillment_wrong_pubkey(inp):
 
 
 @fanout_input(3)
-def test_fulfillment_invalid_fulfillment(inp):
+def test_invalid_fulfillment_binary(inp):
     # Create a valid script with an invalid fulfillment payload
     inp['script'] = binascii.hexlify(b"\007invalid").decode('utf-8')
     spend = {'inputs': [inp], 'outputs': [nospend]}
@@ -55,8 +56,41 @@ def test_fulfillment_invalid_fulfillment(inp):
         assert 'Crypto-Condition payload is invalid' in str(e), str(e)
 
 
+@fanout_input(4)
+def test_invalid_condition(inp):
+    # Create a valid output script with an invalid cryptocondition binary
+    outputscript = to_hex(b"\007invalid\xcc")
+    spend = {'inputs': [inp], 'outputs': [{'amount': 1000, 'script': outputscript}]}
+    spend_txid = submit(sign(spend))
+
+    spend1 = {
+        'inputs': [{'txid': spend_txid, 'idx': 0, 'script': {'fulfillment': cond_alice}}],
+        'outputs': [nospend],
+    }
+
+    try:
+        assert not submit(sign(spend1)), 'should raise an error'
+    except RPCError as e:
+        assert 'Script evaluated without error but finished with a false/empty top stack element' in str(e), str(e)
+
+
+@fanout_input(19)
+def test_oversize_fulfillment(inp):
+    # Create oversize fulfillment script where the total length is <2000
+    binscript = b'\x4d%s%s' % (struct.pack('h', 2000), b'a' * 2000)
+    inp['script'] = to_hex(binscript)
+    spend = {'inputs': [inp], 'outputs': [nospend]}
+
+    try:
+        assert not submit({'tx': spend}), 'should raise an error'
+    except RPCError as e:
+        assert 'scriptsig-size' in str(e), str(e)
+
+
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     for name, f in globals().items():
         if name.startswith('test_'):
             logging.info("Running test: %s" % name)
             f()
+            logging.info("Test OK: %s" % name)

@@ -2,9 +2,11 @@ from __future__ import print_function
 import sys
 import json
 import time
+import copy
+import base64
 import logging
-import subprocess
 import functools
+import subprocess
 
 
 class RPCError(IOError):
@@ -32,6 +34,10 @@ def run_cmd(cmd):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     assert proc.wait() == 0
     return proc.stdout.read()
+
+
+def to_hex(s):
+    return base64.b16encode(s).decode('utf-8')
 
 
 class Hoek(JsonClient):
@@ -111,7 +117,7 @@ def fanout_input(n):
             if not hasattr(fanout_input, 'txid'):
                 fanout_input.txid = get_fanout_txid()
             inp = {'txid': fanout_input.txid, 'idx': n, 'script': {'fulfillment': cond_alice}}
-            f(inp)
+            f(copy.deepcopy(inp))
         return functools.wraps(f)(wrapper)
     return decorate
 

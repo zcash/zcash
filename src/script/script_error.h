@@ -54,6 +54,7 @@ typedef enum ScriptError_t
 
     SCRIPT_ERR_ERROR_COUNT,
 
+    /* crypto-condition script errors */
     SCRIPT_ERR_CRYPTOCONDITION_VERIFY,
     SCRIPT_ERR_CRYPTOCONDITION_INVALID_FULFILLMENT
 } ScriptError;

@@ -949,11 +949,6 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     valtype& vchFulfillment = stacktop(-2);
                     valtype& vchCondition   = stacktop(-1);
 
-                    // Hard limit fulfillment size
-                    if (vchFulfillment.size() > 1024 * 10) {
-                        return set_error(serror, SCRIPT_ERR_CRYPTOCONDITION_INVALID_FULFILLMENT);
-                    }
-
                     CC *cond = (CC*) calloc(1, sizeof(CC));
                     char *fulfillmentBin = (char*) vchFulfillment.data();
                     int rc = cc_readFulfillmentBinary(cond, fulfillmentBin, vchFulfillment.size());
