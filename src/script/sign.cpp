@@ -168,7 +168,14 @@ void UpdateTransaction(CMutableTransaction& tx, unsigned int nIn, const Signatur
     tx.vin[nIn].scriptSig = data.scriptSig;
 }
 
-bool SignSignature(const CKeyStore &keystore, const CScript& fromPubKey, CMutableTransaction& txTo, unsigned int nIn, const CAmount& amount, int nHashType, uint32_t consensusBranchId)
+bool SignSignature(
+    const CKeyStore &keystore,
+    const CScript& fromPubKey,
+    CMutableTransaction& txTo,
+    unsigned int nIn,
+    const CAmount& amount,
+    int nHashType,
+    uint32_t consensusBranchId)
 {
     assert(nIn < txTo.vin.size());
 
@@ -181,7 +188,13 @@ bool SignSignature(const CKeyStore &keystore, const CScript& fromPubKey, CMutabl
     return ret;
 }
 
-bool SignSignature(const CKeyStore &keystore, const CTransaction& txFrom, CMutableTransaction& txTo, unsigned int nIn, int nHashType, uint32_t consensusBranchId)
+bool SignSignature(
+    const CKeyStore &keystore,
+    const CTransaction& txFrom,
+    CMutableTransaction& txTo,
+    unsigned int nIn,
+    int nHashType,
+    uint32_t consensusBranchId)
 {
     assert(nIn < txTo.vin.size());
     CTxIn& txin = txTo.vin[nIn];
@@ -319,7 +332,11 @@ SignatureData CombineSignatures(const CScript& scriptPubKey, const BaseSignature
     vector<vector<unsigned char> > vSolutions;
     Solver(scriptPubKey, txType, vSolutions);
 
-    return CombineSignatures(scriptPubKey, checker, txType, vSolutions, Stacks(scriptSig1, consensusBranchId), Stacks(scriptSig2, consensusBranchId), consensusBranchId).Output();
+    return CombineSignatures(
+        scriptPubKey, checker, txType, vSolutions,
+        Stacks(scriptSig1, consensusBranchId),
+        Stacks(scriptSig2, consensusBranchId),
+        consensusBranchId).Output();
 }
 
 namespace {
@@ -329,7 +346,11 @@ class DummySignatureChecker : public BaseSignatureChecker
 public:
     DummySignatureChecker() {}
 
-    bool CheckSig(const std::vector<unsigned char>& scriptSig, const std::vector<unsigned char>& vchPubKey, const CScript& scriptCode, uint32_t consensusBranchId) const
+    bool CheckSig(
+        const std::vector<unsigned char>& scriptSig,
+        const std::vector<unsigned char>& vchPubKey,
+        const CScript& scriptCode,
+        uint32_t consensusBranchId) const
     {
         return true;
     }
@@ -342,7 +363,11 @@ const BaseSignatureChecker& DummySignatureCreator::Checker() const
     return dummyChecker;
 }
 
-bool DummySignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, const CKeyID& keyid, const CScript& scriptCode, uint32_t consensusBranchId) const
+bool DummySignatureCreator::CreateSig(
+    std::vector<unsigned char>& vchSig,
+    const CKeyID& keyid,
+    const CScript& scriptCode,
+    uint32_t consensusBranchId) const
 {
     // Create a dummy signature that is a valid DER-encoding
     vchSig.assign(72, '\000');
