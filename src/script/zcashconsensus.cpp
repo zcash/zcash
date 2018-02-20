@@ -5,6 +5,7 @@
 
 #include "zcashconsensus.h"
 
+#include "consensus/upgrades.h"
 #include "primitives/transaction.h"
 #include "pubkey.h"
 #include "script/interpreter.h"
@@ -84,8 +85,16 @@ int zcashconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int
 
          // Regardless of the verification result, the tx did not error.
          set_error(err, zcashconsensus_ERR_OK);
-
-        return VerifyScript(tx.vin[nIn].scriptSig, CScript(scriptPubKey, scriptPubKey + scriptPubKeyLen), flags, TransactionSignatureChecker(&tx, nIn), NULL);
+        PrecomputedTransactionData txdata(tx);
+        CAmount am(0);
+        uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+        return VerifyScript(
+            tx.vin[nIn].scriptSig,
+            CScript(scriptPubKey, scriptPubKey + scriptPubKeyLen),
+            flags,
+            TransactionSignatureChecker(&tx, nIn, am, txdata),
+            consensusBranchId,
+            NULL);
     } catch (const std::exception&) {
         return set_error(err, zcashconsensus_ERR_TX_DESERIALIZE); // Error deserializing
     }

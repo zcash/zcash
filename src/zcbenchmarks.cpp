@@ -13,6 +13,7 @@
 #include "crypto/equihash.h"
 #include "chain.h"
 #include "chainparams.h"
+#include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "main.h"
 #include "miner.h"
@@ -221,11 +222,8 @@ double benchmark_verify_equihash()
     return timer_stop(tv_start);
 }
 
-double benchmark_large_tx()
+double benchmark_large_tx(size_t nInputs)
 {
-    // Number of inputs in the spending transaction that we will simulate
-    const size_t NUM_INPUTS = 555;
-
     // Create priv/pub key
     CKey priv;
     priv.MakeNewKey(false);
@@ -244,26 +242,20 @@ double benchmark_large_tx()
     auto orig_tx = CTransaction(m_orig_tx);
 
     CMutableTransaction spending_tx;
+    spending_tx.fOverwintered = true;
+    spending_tx.nVersion = 3;
+    spending_tx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+
     auto input_hash = orig_tx.GetHash();
-    // Add NUM_INPUTS inputs
-    for (size_t i = 0; i < NUM_INPUTS; i++) {
+    // Add nInputs inputs
+    for (size_t i = 0; i < nInputs; i++) {
         spending_tx.vin.emplace_back(input_hash, 0);
     }
 
     // Sign for all the inputs
-    for (size_t i = 0; i < NUM_INPUTS; i++) {
-        SignSignature(tempKeystore, prevPubKey, spending_tx, i, SIGHASH_ALL);
-    }
-
-    // Serialize:
-    {
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << spending_tx;
-        //std::cout << "SIZE OF SPENDING TX: " << ss.size() << std::endl;
-
-        auto error = MAX_TX_SIZE / 20; // 5% error
-        assert(ss.size() < MAX_TX_SIZE + error);
-        assert(ss.size() > MAX_TX_SIZE - error);
+    auto consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
+    for (size_t i = 0; i < nInputs; i++) {
+        SignSignature(tempKeystore, prevPubKey, spending_tx, i, 1000000, SIGHASH_ALL, consensusBranchId);
     }
 
     // Spending tx has all its inputs signed and does not need to be mutated anymore
@@ -272,12 +264,14 @@ double benchmark_large_tx()
     // Benchmark signature verification costs:
     struct timeval tv_start;
     timer_start(tv_start);
-    for (size_t i = 0; i < NUM_INPUTS; i++) {
+    PrecomputedTransactionData txdata(final_spending_tx);
+    for (size_t i = 0; i < nInputs; i++) {
         ScriptError serror = SCRIPT_ERR_OK;
         assert(VerifyScript(final_spending_tx.vin[i].scriptSig,
                             prevPubKey,
                             STANDARD_SCRIPT_VERIFY_FLAGS,
-                            TransactionSignatureChecker(&final_spending_tx, i),
+                            TransactionSignatureChecker(&final_spending_tx, i, 1000000, txdata),
+                            consensusBranchId,
                             &serror));
     }
     return timer_stop(tv_start);

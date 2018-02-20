@@ -73,6 +73,7 @@ private:
 
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 
+    uint32_t consensusBranchId_;
     CAmount fee_;
     int mindepth_;
     std::string fromaddress_;

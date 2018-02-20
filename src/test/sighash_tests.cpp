@@ -93,7 +93,7 @@ void static RandomScript(CScript &script) {
         script << oplist[insecure_rand() % (sizeof(oplist)/sizeof(oplist[0]))];
 }
 
-void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
+void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t consensusBranchId) {
     tx.fOverwintered = insecure_rand() % 2;
     if (tx.fOverwintered) {
         // Versions outside known ranges throw an exception during parsing
@@ -160,7 +160,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
         // Empty output script.
         CScript scriptCode;
         CTransaction signTx(tx);
-        uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
+        uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
 
         assert(crypto_sign_detached(&tx.joinSplitSig[0], NULL,
                                     dataToBeSigned.begin(), 32,
@@ -173,11 +173,12 @@ BOOST_FIXTURE_TEST_SUITE(sighash_tests, JoinSplitTestingSetup)
 
 BOOST_AUTO_TEST_CASE(sighash_test)
 {
+    uint32_t overwinterBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
     seed_insecure_rand(false);
 
     #if defined(PRINT_SIGHASH_JSON)
     std::cout << "[\n";
-    std::cout << "\t[\"raw_transaction, script, input_index, hashType, signature_hash (result)\"],\n";
+    std::cout << "\t[\"raw_transaction, script, input_index, hashType, branchId, signature_hash (result)\"],\n";
     #endif
     int nRandomTests = 50000;
 
@@ -186,15 +187,16 @@ BOOST_AUTO_TEST_CASE(sighash_test)
     #endif
     for (int i=0; i<nRandomTests; i++) {
         int nHashType = insecure_rand();
+        uint32_t consensusBranchId = insecure_rand() % 2 ? SPROUT_BRANCH_ID : overwinterBranchId;
         CMutableTransaction txTo;
-        RandomTransaction(txTo, (nHashType & 0x1f) == SIGHASH_SINGLE);
+        RandomTransaction(txTo, (nHashType & 0x1f) == SIGHASH_SINGLE, consensusBranchId);
         CScript scriptCode;
         RandomScript(scriptCode);
         int nIn = insecure_rand() % txTo.vin.size();
 
         uint256 sh, sho;
         sho = SignatureHashOld(scriptCode, txTo, nIn, nHashType);
-        sh = SignatureHash(scriptCode, txTo, nIn, nHashType);
+        sh = SignatureHash(scriptCode, txTo, nIn, nHashType, 0, consensusBranchId);
         #if defined(PRINT_SIGHASH_JSON)
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << txTo;
@@ -203,7 +205,8 @@ BOOST_AUTO_TEST_CASE(sighash_test)
         std::cout << HexStr(ss.begin(), ss.end()) << "\", \"";
         std::cout << HexStr(scriptCode) << "\", ";
         std::cout << nIn << ", ";
-        std::cout << nHashType << ", \"";
+        std::cout << nHashType << ", ";
+        std::cout << consensusBranchId << ", \"";
         std::cout << (txTo.fOverwintered ? sh.GetHex() : sho.GetHex()) << "\"]";
         if (i+1 != nRandomTests) {
           std::cout << ",";
@@ -236,6 +239,7 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
 
         std::string raw_tx, raw_script, sigHashHex;
         int nIn, nHashType;
+        uint32_t consensusBranchId;
         uint256 sh;
         CTransaction tx;
         CScript scriptCode = CScript();
@@ -246,7 +250,8 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           raw_script = test[1].get_str();
           nIn = test[2].get_int();
           nHashType = test[3].get_int();
-          sigHashHex = test[4].get_str();
+          consensusBranchId = test[4].get_int();
+          sigHashHex = test[5].get_str();
 
           uint256 sh;
           CDataStream stream(ParseHex(raw_tx), SER_NETWORK, PROTOCOL_VERSION);
@@ -278,7 +283,7 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           continue;
         }
 
-        sh = SignatureHash(scriptCode, tx, nIn, nHashType);
+        sh = SignatureHash(scriptCode, tx, nIn, nHashType, 0, consensusBranchId);
         BOOST_CHECK_MESSAGE(sh.GetHex() == sigHashHex, strTest);
     }
 }
