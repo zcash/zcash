@@ -11,6 +11,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, start_node, connect_nodes
 
+from decimal import Decimal
 
 # Create one-input, one-output, no-fee transaction:
 class MempoolCoinbaseTest(BitcoinTestFramework):
@@ -49,11 +50,14 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
         # 3. Indirect (coinbase and child both in chain) : spend_103 and spend_103_1
         # Use invalidatblock to make all of the above coinbase spends invalid (immature coinbase),
         # and make sure the mempool code behaves correctly.
+
+        amount = Decimal(self._coin)
+               
         b = [ self.nodes[0].getblockhash(n) for n in range(102, 105) ]
         coinbase_txids = [ self.nodes[0].getblock(h)['tx'][0] for h in b ]
-        spend_101_raw = self.create_tx(coinbase_txids[0], node1_address, 10)
-        spend_102_raw = self.create_tx(coinbase_txids[1], node0_address, 10)
-        spend_103_raw = self.create_tx(coinbase_txids[2], node0_address, 10)
+        spend_101_raw = self.create_tx(coinbase_txids[0], node1_address, amount)
+        spend_102_raw = self.create_tx(coinbase_txids[1], node0_address, amount)
+        spend_103_raw = self.create_tx(coinbase_txids[2], node0_address, amount)
 
         # Broadcast and mine spend_102 and 103:
         spend_102_id = self.nodes[0].sendrawtransaction(spend_102_raw)
@@ -61,8 +65,8 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
         self.nodes[0].generate(1)
 
         # Create 102_1 and 103_1:
-        spend_102_1_raw = self.create_tx(spend_102_id, node1_address, 10)
-        spend_103_1_raw = self.create_tx(spend_103_id, node1_address, 10)
+        spend_102_1_raw = self.create_tx(spend_102_id, node1_address, amount)
+        spend_103_1_raw = self.create_tx(spend_103_id, node1_address, amount)
 
         # Broadcast and mine 103_1:
         spend_103_1_id = self.nodes[0].sendrawtransaction(spend_103_1_raw)

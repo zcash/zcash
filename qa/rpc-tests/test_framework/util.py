@@ -392,6 +392,7 @@ def wait_and_assert_operationid_status(node, myopid, in_status='success', in_err
     assert_equal(in_status, status)
     if errormsg is not None:
         assert(in_errormsg is not None)
+        # print errormsg
         assert_equal(in_errormsg in errormsg, True)
     if os.getenv("PYTHON_DEBUG", ""):
         print('...returned status: {}'.format(status))

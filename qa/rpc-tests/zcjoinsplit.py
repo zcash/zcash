@@ -8,6 +8,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, start_node, \
     gather_inputs
 
+from decimal import Decimal
 
 class JoinSplitTest(BitcoinTestFramework):
     def setup_network(self):
@@ -20,9 +21,11 @@ class JoinSplitTest(BitcoinTestFramework):
         zcsecretkey = zckeypair["zcsecretkey"]
         zcaddress = zckeypair["zcaddress"]
 
-        (total_in, inputs) = gather_inputs(self.nodes[0], 40)
+        amount = Decimal(self._coin)*4
+        amount_less = amount - Decimal('0.01')
+        (total_in, inputs) = gather_inputs(self.nodes[0], amount )
         protect_tx = self.nodes[0].createrawtransaction(inputs, {})
-        joinsplit_result = self.nodes[0].zcrawjoinsplit(protect_tx, {}, {zcaddress:39.99}, 39.99, 0)
+        joinsplit_result = self.nodes[0].zcrawjoinsplit(protect_tx, {}, {zcaddress:amount_less}, amount_less, 0)
 
         receive_result = self.nodes[0].zcrawreceive(zcsecretkey, joinsplit_result["encryptednote1"])
         assert_equal(receive_result["exists"], False)
@@ -42,8 +45,9 @@ class JoinSplitTest(BitcoinTestFramework):
             for x in range(0,50):
                 self.nodes[0].sendtoaddress(addrtest, 0.01);
 
+        amount_less2 = amount_less - Decimal('0.01')
         joinsplit_tx = self.nodes[0].createrawtransaction([], {})
-        joinsplit_result = self.nodes[0].zcrawjoinsplit(joinsplit_tx, {receive_result["note"] : zcsecretkey}, {zcaddress: 39.98}, 0, 0.01)
+        joinsplit_result = self.nodes[0].zcrawjoinsplit(joinsplit_tx, {receive_result["note"] : zcsecretkey}, {zcaddress: amount_less2}, 0, 0.01)
 
         self.nodes[0].sendrawtransaction(joinsplit_result["rawtxn"])
         self.nodes[0].generate(1)

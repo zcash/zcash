@@ -19,14 +19,16 @@ from util import assert_equal, check_json_precision, \
     start_nodes, connect_nodes_bi, stop_nodes, \
     sync_blocks, sync_mempools, wait_bitcoinds
 
+from decimal import Decimal
 
 class BitcoinTestFramework(object):
+    _coin = 12.5
 
     # These may be over-ridden by subclasses:
     def run_test(self):
         for node in self.nodes:
             assert_equal(node.getblockcount(), 200)
-            assert_equal(node.getbalance(), 25*10)
+            assert_equal(node.getbalance(), 25*Decimal(self._coin))
 
     def add_options(self, parser):
         pass
