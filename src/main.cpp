@@ -1812,7 +1812,17 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 }
 }// namespace Consensus
 
-bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, PrecomputedTransactionData& txdata, const Consensus::Params& consensusParams, uint32_t consensusBranchId, std::vector<CScriptCheck> *pvChecks)
+bool ContextualCheckInputs(
+    const CTransaction& tx,
+    CValidationState &state,
+    const CCoinsViewCache &inputs,
+    bool fScriptChecks,
+    unsigned int flags,
+    bool cacheStore,
+    PrecomputedTransactionData& txdata,
+    const Consensus::Params& consensusParams,
+    uint32_t consensusBranchId,
+    std::vector<CScriptCheck> *pvChecks)
 {
     if (!tx.IsCoinBase())
     {

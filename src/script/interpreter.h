@@ -101,12 +101,23 @@ enum SigVersion
     SIGVERSION_OVERWINTER = 1,
 };
 
-uint256 SignatureHash(const CScript &scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType, const CAmount& amount, uint32_t consensusBranchId, const PrecomputedTransactionData* cache = NULL);
+uint256 SignatureHash(
+    const CScript &scriptCode,
+    const CTransaction& txTo,
+    unsigned int nIn,
+    int nHashType,
+    const CAmount& amount,
+    uint32_t consensusBranchId,
+    const PrecomputedTransactionData* cache = NULL);
 
 class BaseSignatureChecker
 {
 public:
-    virtual bool CheckSig(const std::vector<unsigned char>& scriptSig, const std::vector<unsigned char>& vchPubKey, const CScript& scriptCode, uint32_t consensusBranchId) const
+    virtual bool CheckSig(
+        const std::vector<unsigned char>& scriptSig,
+        const std::vector<unsigned char>& vchPubKey,
+        const CScript& scriptCode,
+        uint32_t consensusBranchId) const
     {
         return false;
     }
@@ -146,7 +157,19 @@ public:
     MutableTransactionSignatureChecker(const CMutableTransaction* txToIn, unsigned int nInIn, const CAmount& amount) : TransactionSignatureChecker(&txTo, nInIn, amount), txTo(*txToIn) {}
 };
 
-bool EvalScript(std::vector<std::vector<unsigned char> >& stack, const CScript& script, unsigned int flags, const BaseSignatureChecker& checker, uint32_t consensusBranchId, ScriptError* error = NULL);
-bool VerifyScript(const CScript& scriptSig, const CScript& scriptPubKey, unsigned int flags, const BaseSignatureChecker& checker, uint32_t consensusBranchId, ScriptError* serror = NULL);
+bool EvalScript(
+    std::vector<std::vector<unsigned char> >& stack,
+    const CScript& script,
+    unsigned int flags,
+    const BaseSignatureChecker& checker,
+    uint32_t consensusBranchId,
+    ScriptError* error = NULL);
+bool VerifyScript(
+    const CScript& scriptSig,
+    const CScript& scriptPubKey,
+    unsigned int flags,
+    const BaseSignatureChecker& checker,
+    uint32_t consensusBranchId,
+    ScriptError* serror = NULL);
 
 #endif // BITCOIN_SCRIPT_INTERPRETER_H
