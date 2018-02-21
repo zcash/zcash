@@ -313,6 +313,9 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nTx            = diskindex.nTx;
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
 
+                auto header = pindexNew->GetBlockHeader();
+                if (!CheckEquihashSolution(&header, Params()))
+                    return error("LoadBlockIndex(): CheckEquihashSolution failed: %s", pindexNew->ToString());
                 if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
                     return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
 
