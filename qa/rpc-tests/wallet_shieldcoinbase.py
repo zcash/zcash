@@ -38,7 +38,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
 
         self.nodes[0].generate(4)
         walletinfo = self.nodes[0].getwalletinfo()
-        assert_equal(walletinfo['immature_balance'], 50)
+        assert_equal(walletinfo['immature_balance'], Decimal(self._coin)*5)
         assert_equal(walletinfo['balance'], 0)
         self.sync_all()
         self.nodes[2].generate(1)
@@ -49,9 +49,9 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
         self.nodes[1].generate(101)
         self.sync_all()
-        assert_equal(self.nodes[0].getbalance(), 50)
-        assert_equal(self.nodes[1].getbalance(), 10)
-        assert_equal(self.nodes[2].getbalance(), 30)
+        assert_equal(self.nodes[0].getbalance(), Decimal(self._coin)*5)
+        assert_equal(self.nodes[1].getbalance(), Decimal(self._coin)*1)
+        assert_equal(self.nodes[2].getbalance(), Decimal(self._coin)*3)
 
         # Prepare to send taddr->zaddr
         mytaddr = self.nodes[0].getnewaddress()
@@ -108,11 +108,11 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
 
         # Confirm balances and that do_not_shield_taddr containing funds of 10 was left alone
-        assert_equal(self.nodes[0].getbalance(), 10)
-        assert_equal(self.nodes[0].z_getbalance(do_not_shield_taddr), Decimal('10.0'))
-        assert_equal(self.nodes[0].z_getbalance(myzaddr), Decimal('39.99990000'))
-        assert_equal(self.nodes[1].getbalance(), 20)
-        assert_equal(self.nodes[2].getbalance(), 30)
+        assert_equal(self.nodes[0].getbalance(), Decimal(self._coin))
+        assert_equal(self.nodes[0].z_getbalance(do_not_shield_taddr), Decimal(self._coin))
+        assert_equal(self.nodes[0].z_getbalance(myzaddr), Decimal(self._coin)*4 - Decimal('0.0001'))
+        assert_equal(self.nodes[1].getbalance(), Decimal(self._coin)*2)
+        assert_equal(self.nodes[2].getbalance(), Decimal(self._coin)*3)
 
         # Shield coinbase utxos from any node 2 taddr, and set fee to 0
         result = self.nodes[2].z_shieldcoinbase("*", myzaddr, 0)
@@ -121,9 +121,9 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.nodes[1].generate(1)
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbalance(), 10)
-        assert_equal(self.nodes[0].z_getbalance(myzaddr), Decimal('69.99990000'))
-        assert_equal(self.nodes[1].getbalance(), 30)
+        assert_equal(self.nodes[0].getbalance(), Decimal(self._coin))
+        assert_equal(self.nodes[0].z_getbalance(myzaddr), Decimal(self._coin)*7 - Decimal('0.0001'))
+        assert_equal(self.nodes[1].getbalance(), Decimal(self._coin)*3)
         assert_equal(self.nodes[2].getbalance(), 0)
 
         # Generate 800 coinbase utxos on node 0, and 20 coinbase utxos on node 2
