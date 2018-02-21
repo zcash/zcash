@@ -5,6 +5,7 @@ src/bitcoin
 src/animecoind
 src/animecoin-cli
 src/zcash-gtest
+src/animecoin-gtest
 src/animecoin-tx
 src/test/test_bitcoin
 
