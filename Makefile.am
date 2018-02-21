@@ -136,13 +136,13 @@ animecoin-gtest.coverage/.dirstamp:  animecoin-gtest_coverage.info
 	$(GENHTML) -s $< -o $(@D)
 	@touch $@
 
-cov-zcash: animecoin-gtest.coverage/.dirstamp
+cov-animecoin: animecoin-gtest.coverage/.dirstamp
 
 total.coverage/.dirstamp: total_coverage.info
 	$(GENHTML) -s $< -o $(@D)
 	@touch $@
 
-cov: test_bitcoin.coverage/.dirstamp cov-zcash total.coverage/.dirstamp
+cov: test_bitcoin.coverage/.dirstamp cov-animecoin total.coverage/.dirstamp
 
 endif
 
