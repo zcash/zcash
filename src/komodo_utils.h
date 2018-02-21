@@ -1399,7 +1399,7 @@ void komodo_configfile(char *symbol,uint16_t port)
         sprintf(KMDUSERPASS,"%s:%s",username,password);
         fclose(fp);
 //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
-    } else printf("couldnt open.(%s)\n",fname);
+    } //else printf("couldnt open.(%s)\n",fname);
 }
 
 uint16_t komodo_userpass(char *userpass,char *symbol)
@@ -1657,7 +1657,7 @@ void komodo_args(char *argv0)
                 sprintf(iter == 0 ? KMDUSERPASS : BTCUSERPASS,"%s:%s",username,password);
                 fclose(fp);
                 //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
-            } else printf("couldnt open.(%s)\n",fname);
+            } //else printf("couldnt open.(%s)\n",fname);
             if ( IS_KOMODO_NOTARY == 0 )
                 break;
         }
