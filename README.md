@@ -68,9 +68,13 @@ sudo apt-get install \
       zlib1g-dev wget bsdmainutils automake make cmake mingw-w64
 ```
 
-2. Set the default mingw32 gcc/g++ compiler option to posix
+2. Set the default mingw32 gcc/g++ compiler option to posix, and fix other packing problems with Xenial.
 
 ```{r, engine='bash'}
+sudo apt install software-properties-common
+sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu zesty universe"
+sudo apt update
+sudo apt upgrade
 sudo update-alternatives --config x86_64-w64-mingw32-gcc
 sudo update-alternatives --config x86_64-w64-mingw32-g++
 ```
@@ -96,7 +100,7 @@ Note that in WSL, the Zclassic source code must be somewhere in the default moun
 4. Build for Windows
 
 ```{r, engine='bash'}
-PATH=$(echo "$PATH" | sed -e 's/:\/mnt.*//g') # strip out problematic Windows %PATH% imported var
+PATH=$(echo "$PATH" | sed -e 's/:\/mnt.*//g') # strip out problematic Windows %PATH% imported var. ONLY FOR WSL
 ./zcutil/build-win.sh -j$(nproc)
 ```
 
