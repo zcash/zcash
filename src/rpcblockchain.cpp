@@ -726,6 +726,10 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
             "        \"status\": \"xxxx\",       (string) status of upgrade\n"
             "        \"info\": \"xxxx\",         (string) additional information about upgrade\n"
             "     }, ...\n"
+            "  },\n"
+            "  \"consensus\": {               (object) branch IDs of the current and upcoming consensus rules\n"
+            "     \"chaintip\": \"xxxxxxxx\",   (string) branch ID used to validate the current chain tip\n"
+            "     \"nextblock\": \"xxxxxxxx\"   (string) branch ID that the next block will be validated under\n"
             "  }\n"
             "}\n"
             "\nExamples:\n"
@@ -766,6 +770,11 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
         NetworkUpgradeDescPushBack(upgrades, consensusParams, Consensus::UpgradeIndex(i), tip->nHeight);
     }
     obj.push_back(Pair("upgrades", upgrades));
+
+    UniValue consensus(UniValue::VOBJ);
+    consensus.push_back(Pair("chaintip", HexInt(CurrentEpochBranchId(tip->nHeight, consensusParams))));
+    consensus.push_back(Pair("nextblock", HexInt(CurrentEpochBranchId(tip->nHeight + 1, consensusParams))));
+    obj.push_back(Pair("consensus", consensus));
 
     if (fPruneMode)
     {
