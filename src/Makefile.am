@@ -336,6 +336,7 @@ libbitcoin_common_a_SOURCES = \
   script/script_error.cpp \
   script/sign.cpp \
   script/standard.cpp \
+  komodo_cryptoconditions.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
@@ -505,6 +506,7 @@ libzcashconsensus_la_SOURCES = \
   script/zcashconsensus.cpp \
   script/interpreter.cpp \
   script/script.cpp \
+  komodo_cryptoconditions.cpp \
   uint256.cpp \
   utilstrencodings.cpp
 

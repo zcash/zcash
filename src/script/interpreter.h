@@ -8,6 +8,7 @@
 
 #include "script_error.h"
 #include "primitives/transaction.h"
+#include "komodo_cryptoconditions.h"
 
 #include <vector>
 #include <stdint.h>
@@ -102,10 +103,9 @@ public:
          return false;
     }
 
-    virtual uint256 GetMessage(const CScript& scriptCode, int nHashType) const
+    virtual bool CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode) const
     {
-        uint256 blob;
-        return blob;
+        return false;
     }
 
     virtual ~BaseSignatureChecker() {}
@@ -124,7 +124,7 @@ public:
     TransactionSignatureChecker(const CTransaction* txToIn, unsigned int nInIn) : txTo(txToIn), nIn(nInIn) {}
     bool CheckSig(const std::vector<unsigned char>& scriptSig, const std::vector<unsigned char>& vchPubKey, const CScript& scriptCode) const;
     bool CheckLockTime(const CScriptNum& nLockTime) const;
-    uint256 GetMessage(const CScript& scriptCode, int nHashType) const;
+    bool CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode) const;
 };
 
 class MutableTransactionSignatureChecker : public TransactionSignatureChecker
@@ -138,5 +138,11 @@ public:
 
 bool EvalScript(std::vector<std::vector<unsigned char> >& stack, const CScript& script, unsigned int flags, const BaseSignatureChecker& checker, ScriptError* error = NULL);
 bool VerifyScript(const CScript& scriptSig, const CScript& scriptPubKey, unsigned int flags, const BaseSignatureChecker& checker, ScriptError* error = NULL);
+
+class CryptoConditionChecker : public TransactionSignatureChecker
+{
+public:
+    int CheckAuxCondition(const CC *cond) const;
+};
 
 #endif // BITCOIN_SCRIPT_INTERPRETER_H

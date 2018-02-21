@@ -949,18 +949,15 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     valtype& vchFulfillment = stacktop(-2);
                     valtype& vchCondition   = stacktop(-1);
 
-                    char *fulfillmentBin = (char*) vchFulfillment.data();
-                    CC *cond = cc_readFulfillmentBinary(fulfillmentBin, vchFulfillment.size());
+                    CC *cond = cc_readFulfillmentBinary((unsigned char*)vchFulfillment.data(),
+                                                        vchFulfillment.size());
                     if (!cond) {
                         return set_error(serror, SCRIPT_ERR_CRYPTOCONDITION_INVALID_FULFILLMENT);
                     }
 
-                    char *condBin = (char*) &vchCondition[0];
-                    // TODO: Should nHashType be hardcoded?
-                    // Other types use the last byte of the signature
-                    char *msg = (char*) checker.GetMessage(script, SIGHASH_ALL).begin();
+                    bool fSuccess = checker.CheckCryptoCondition(cond, vchCondition, script);
 
-                    bool fSuccess = cc_verify(cond, msg, 32, condBin, vchCondition.size(), komodoCCAux, NULL);
+                    cc_free(cond);
 
                     popstack(stack);
                     popstack(stack);
@@ -1155,6 +1152,22 @@ bool TransactionSignatureChecker::CheckSig(const vector<unsigned char>& vchSigIn
     return true;
 }
 
+extern "C"
+{
+    static int komodoCCAux(CC *cond, void *transactionSignatureChecker);
+}
+
+static int komodoCCAux(CC *cond, void *checker) {
+    return ((CryptoConditionChecker*)checker)->CheckAuxCondition(cond);
+}
+
+bool TransactionSignatureChecker::CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode) const
+{
+    uint256 message = SignatureHash(scriptCode, *txTo, nIn, SIGHASH_ALL);
+    return cc_verify(cond, (const unsigned char*)&message, 32,
+            condBin.data(), condBin.size(), komodoCCAux, (void*)this);
+}
+
 bool TransactionSignatureChecker::CheckLockTime(const CScriptNum& nLockTime) const
 {
     // There are two times of nLockTime: lock-by-blockheight
@@ -1189,11 +1202,6 @@ bool TransactionSignatureChecker::CheckLockTime(const CScriptNum& nLockTime) con
         return false;
 
     return true;
-}
-
-uint256 TransactionSignatureChecker::GetMessage(const CScript& scriptCode, int nHashType) const
-{
-    return SignatureHash(scriptCode, *txTo, nIn, nHashType);
 }
 
 
