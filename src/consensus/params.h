@@ -29,6 +29,11 @@ enum UpgradeIndex {
 
 struct NetworkUpgrade {
     /**
+     * The first protocol version which will understand the new consensus rules
+     */
+    int nProtocolVersion;
+
+    /**
      * Height of the first block for which the new consensus rules will be active
      */
     int nActivationHeight;
