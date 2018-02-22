@@ -4217,7 +4217,6 @@ void static CheckBlockIndex()
     std::multimap<CBlockIndex*,CBlockIndex*> forward;
     for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); it++) {
             forward.insert(std::make_pair(it->second->pprev, it->second));
-        else break;
     }
 
     assert(forward.size() == mapBlockIndex.size());
