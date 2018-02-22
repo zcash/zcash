@@ -33,8 +33,13 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         self.sync_all()
         # Node 0 has reward from blocks 1 to 98 which are spendable.
 
-        #
-        # Sprout
+        taddr0 = self.nodes[0].getnewaddress()
+        taddr1 = self.nodes[1].getnewaddress()
+        taddr2 = self.nodes[2].getnewaddress()
+        zaddr2 = self.nodes[2].z_getnewaddress()
+        taddr3 = self.nodes[3].getnewaddress()
+        zaddr3 = self.nodes[3].z_getnewaddress()
+
         #
         # Currently at block 198. The next block to be mined 199 is a Sprout block
         #
@@ -43,17 +48,18 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         assert_equal(bci['consensus']['nextblock'], '00000000')
         assert_equal(bci['upgrades']['5ba81b19']['status'], 'pending')
 
-        taddr0 = self.nodes[0].getnewaddress()
-        taddr2 = self.nodes[2].getnewaddress()
-        zaddr2 = self.nodes[2].z_getnewaddress()
-        taddr3 = self.nodes[3].getnewaddress()
-        zaddr3 = self.nodes[3].z_getnewaddress()
-
-        # Send taddr to taddr
-        tsendamount = Decimal('1.23')
+        # Node 0 sends transparent funds to Node 2
+        tsendamount = Decimal('1.0')
         txid_transparent = self.nodes[0].sendtoaddress(taddr2, tsendamount)
+        self.sync_all()
 
-        # Send one coinbase utxo of value 10.0 less a fee of 0.00010000, with no change.
+        # Node 2 sends the zero-confirmation transparent funds to Node 1 using z_sendmany
+        recipients = []
+        recipients.append({"address":taddr1, "amount": Decimal('0.5')})
+        myopid = self.nodes[2].z_sendmany(taddr2, recipients, 0)
+        txid_zsendmany = wait_and_assert_operationid_status(self.nodes[2], myopid)
+
+        # Node 0 shields to Node 2, a coinbase utxo of value 10.0 less fee 0.00010000
         zsendamount = Decimal('10.0') - Decimal('0.0001')
         recipients = []
         recipients.append({"address":zaddr2, "amount": zsendamount})
@@ -65,19 +71,21 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         self.sync_all()
 
         # Verify balance
-        assert_equal(self.nodes[2].getbalance(), tsendamount)
+        assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('0.5'))
+        assert_equal(self.nodes[2].getbalance(), Decimal('0.4999'))
         assert_equal(self.nodes[2].z_getbalance(zaddr2), zsendamount)
 
-        # Verify transaction version is 1 or 2 (intended for Sprout)
+        # Verify transaction versions are 1 or 2 (intended for Sprout)
         result = self.nodes[0].getrawtransaction(txid_transparent, 1)
+        assert_equal(result["version"], 1)
+        assert_equal(result["overwintered"], False)
+        result = self.nodes[0].getrawtransaction(txid_zsendmany, 1)
         assert_equal(result["version"], 1)
         assert_equal(result["overwintered"], False)
         result = self.nodes[0].getrawtransaction(txid_shielded, 1)
         assert_equal(result["version"], 2)
         assert_equal(result["overwintered"], False)
 
-        #
-        # Overwinter
         #
         # Currently at block 199. The next block to be mined 200 is an Overwinter block
         #
@@ -86,12 +94,19 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         assert_equal(bci['consensus']['nextblock'], '5ba81b19')
         assert_equal(bci['upgrades']['5ba81b19']['status'], 'pending')
 
-        # Send taddr to taddr
-        tsendamount = Decimal('4.56')
+        # Node 0 sends transparent funds to Node 3
+        tsendamount = Decimal('1.0')
         txid_transparent = self.nodes[0].sendtoaddress(taddr3, tsendamount)
+        self.sync_all()
 
-        # Send one coinbase utxo of value 20.0 less a fee of 0.00010000, with no change.
-        zsendamount = Decimal('20.0') - Decimal('0.0001')
+        # Node 3 sends the zero-confirmation transparent funds to Node 1 using z_sendmany
+        recipients = []
+        recipients.append({"address":taddr1, "amount": Decimal('0.5')})
+        myopid = self.nodes[3].z_sendmany(taddr3, recipients, 0)
+        txid_zsendmany = wait_and_assert_operationid_status(self.nodes[3], myopid)
+
+        # Node 0 shields to Node 3, a coinbase utxo of value 10.0 less fee 0.00010000
+        zsendamount = Decimal('10.0') - Decimal('0.0001')
         recipients = []
         recipients.append({"address":zaddr3, "amount": zsendamount})
         myopid = self.nodes[0].z_sendmany(taddr0, recipients)
@@ -107,11 +122,16 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         assert_equal(bci['upgrades']['5ba81b19']['status'], 'active')
 
         # Verify balance
-        assert_equal(self.nodes[3].getbalance(), tsendamount)
+        assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('1.0'))
+        assert_equal(self.nodes[3].getbalance(), Decimal('0.4999'))
         assert_equal(self.nodes[3].z_getbalance(zaddr3), zsendamount)
 
         # Verify transaction version is 3 (intended for Overwinter)
         result = self.nodes[0].getrawtransaction(txid_transparent, 1)
+        assert_equal(result["version"], 3)
+        assert_equal(result["overwintered"], True)
+        assert_equal(result["versiongroupid"], "03c48270")
+        result = self.nodes[0].getrawtransaction(txid_zsendmany, 1)
         assert_equal(result["version"], 3)
         assert_equal(result["overwintered"], True)
         assert_equal(result["versiongroupid"], "03c48270")
