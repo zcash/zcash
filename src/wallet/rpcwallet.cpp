@@ -86,6 +86,7 @@ void WalletTxToJSON(const CWalletTx& wtx, UniValue& entry)
         entry.push_back(Pair("blockhash", wtx.hashBlock.GetHex()));
         entry.push_back(Pair("blockindex", wtx.nIndex));
         entry.push_back(Pair("blocktime", mapBlockIndex[wtx.hashBlock]->GetBlockTime()));
+        entry.push_back(Pair("expiryheight", (int64_t)wtx.nExpiryHeight));
     }
     uint256 hash = wtx.GetHash();
     entry.push_back(Pair("txid", hash.GetHex()));
@@ -3534,10 +3535,14 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     UniValue contextInfo = o;
 
     // Contextual transaction we will build on
-    CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
+    int nextBlockHeight = chainActive.Height() + 1;
+    CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextBlockHeight);
     bool isShielded = !fromTaddr || zaddrRecipients.size() > 0;
     if (contextualTx.nVersion == 1 && isShielded) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplits 
+    }
+    if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+        contextualTx.nExpiryHeight = nextBlockHeight + expiryDelta;
     }
 
     // Create operation and add to global queue
@@ -3725,11 +3730,14 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     contextInfo.push_back(Pair("fee", ValueFromAmount(nFee)));
 
     // Contextual transaction we will build on
+    int nextBlockHeight = chainActive.Height() + 1;
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
-        Params().GetConsensus(),
-        chainActive.Height() + 1);
+        Params().GetConsensus(), nextBlockHeight);
     if (contextualTx.nVersion == 1) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplits 
+    }
+    if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+        contextualTx.nExpiryHeight = nextBlockHeight + expiryDelta;
     }
 
     // Create operation and add to global queue

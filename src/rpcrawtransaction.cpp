@@ -198,6 +198,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "  \"txid\" : \"id\",        (string) The transaction id (same as provided)\n"
             "  \"version\" : n,          (numeric) The version\n"
             "  \"locktime\" : ttt,       (numeric) The lock time\n"
+            "  \"expiryheight\" : ttt,   (numeric, optional) The block height after which the transaction expires\n"
             "  \"vin\" : [               (array of json objects)\n"
             "     {\n"
             "       \"txid\": \"id\",    (string) The transaction id\n"
@@ -443,8 +444,16 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
     UniValue inputs = params[0].get_array();
     UniValue sendTo = params[1].get_obj();
 
+    int nextBlockHeight = chainActive.Height() + 1;
     CMutableTransaction rawTx = CreateNewContextualCMutableTransaction(
-        Params().GetConsensus(), chainActive.Height() + 1);
+        Params().GetConsensus(), nextBlockHeight);
+    
+    if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+        rawTx.nExpiryHeight = nextBlockHeight + expiryDelta;
+        if (rawTx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD){
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "nExpiryHeight must be less than TX_EXPIRY_HEIGHT_THRESHOLD.");
+        }
+    }
 
     for (size_t idx = 0; idx < inputs.size(); idx++) {
         const UniValue& input = inputs[idx];
@@ -497,7 +506,7 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"txid\" : \"id\",        (string) The transaction id\n"
-            "  \"overwintered\" : bool   (boolean) The Overwintered flag\n" 
+            "  \"overwintered\" : bool   (boolean) The Overwintered flag\n"
             "  \"version\" : n,          (numeric) The version\n"
             "  \"versiongroupid\": \"hex\"   (string, optional) The version group id (Overwintered txs)\n"
             "  \"locktime\" : ttt,       (numeric) The lock time\n"

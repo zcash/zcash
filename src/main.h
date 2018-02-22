@@ -68,6 +68,8 @@ static const unsigned int MAX_STANDARD_TX_SIGOPS = MAX_BLOCK_SIGOPS/5;
 static const unsigned int DEFAULT_MIN_RELAY_TX_FEE = 100;
 /** Default for -maxorphantx, maximum number of orphan transactions kept in memory */
 static const unsigned int DEFAULT_MAX_ORPHAN_TRANSACTIONS = 100;
+/** Default for -txexpirydelta, in number of blocks */
+static const unsigned int DEFAULT_TX_EXPIRY_DELTA = 20;
 /** The maximum size of a blk?????.dat file (since 0.8) */
 static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB
 /** The pre-allocation chunk size for blk?????.dat files (since 0.8) */
@@ -110,6 +112,7 @@ struct BlockHasher
     size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
 };
 
+extern unsigned int expiryDelta;
 extern CScript COINBASE_FLAGS;
 extern CCriticalSection cs_main;
 extern CTxMemPool mempool;
@@ -370,6 +373,12 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
  * specified height and time. Consensus critical.
  */
 bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime);
+
+/**
+ * Check if transaction is expired and can be included in a block with the
+ * specified height. Consensus critical.
+ */
+bool IsExpiredTx(const CTransaction &tx, int nBlockHeight);
 
 /**
  * Check if transaction will be final in the next block to be created.

@@ -22,6 +22,8 @@ static const unsigned int MAX_BLOCK_SIGOPS = 20000;
 static const unsigned int MAX_TX_SIZE = 100000;
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
 static const int COINBASE_MATURITY = 100;
+/** The minimum value which is invalid for expiry height, used by CTransaction and CMutableTransaction */
+static constexpr uint32_t TX_EXPIRY_HEIGHT_THRESHOLD = 500000000;
 
 /** Flags for LockTime() */
 enum {
