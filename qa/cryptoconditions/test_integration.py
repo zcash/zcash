@@ -74,7 +74,7 @@ def test_invalid_condition(inp):
         assert 'Script evaluated without error but finished with a false/empty top stack element' in str(e), str(e)
 
 
-@fanout_input(19)
+@fanout_input(5)
 def test_oversize_fulfillment(inp):
     # Create oversize fulfillment script where the total length is <2000
     binscript = b'\x4d%s%s' % (struct.pack('h', 2000), b'a' * 2000)
@@ -85,6 +85,46 @@ def test_oversize_fulfillment(inp):
         assert not submit({'tx': spend}), 'should raise an error'
     except RPCError as e:
         assert 'scriptsig-size' in str(e), str(e)
+
+
+@fanout_input(6)
+def test_aux_basic(inp):
+    aux_cond = {
+        'type': 'aux-sha-256',
+        'method': 'equals',
+        'conditionAux': 'LTE',
+        'fulfillmentAux': 'LTE'
+    }
+
+    # Setup some aux outputs
+    spend0 = {
+        'inputs': [inp],
+        'outputs': [
+            {'amount': 500, 'script': {'condition': aux_cond}},
+            {'amount': 500, 'script': {'condition': aux_cond}}
+        ]
+    }
+    spend0_txid = submit(sign(spend0))
+    assert rpc.getrawtransaction(spend0_txid)
+
+    # Test a good fulfillment
+    spend1 = {
+        'inputs': [{'txid': spend0_txid, 'idx': 0, 'script': {'fulfillment': aux_cond}}],
+        'outputs': [{'amount': 500, 'script': {'condition': aux_cond}}]
+    }
+    spend1_txid = submit(sign(spend1))
+    assert rpc.getrawtransaction(spend1_txid)
+
+    # Test a bad fulfillment
+    aux_cond['fulfillmentAux'] = 'WYW'
+    spend2 = {
+        'inputs': [{'txid': spend0_txid, 'idx': 1, 'script': {'fulfillment': aux_cond}}],
+        'outputs': [{'amount': 500, 'script': {'condition': aux_cond}}]
+    }
+    try:
+        assert not submit(sign(spend2)), 'should raise an error'
+    except RPCError as e:
+        assert 'Script evaluated without error but finished with a false/empty top stack element' in str(e), str(e)
 
 
 if __name__ == '__main__':

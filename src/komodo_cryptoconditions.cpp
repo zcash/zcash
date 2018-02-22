@@ -4,5 +4,10 @@
 
 
 int CryptoConditionChecker::CheckAuxCondition(const CC *cond) const {
-    return true;
+    if (0 == strcmp((const char*)cond->method, "equals")) {
+        return (cond->conditionAuxLength == cond->fulfillmentAuxLength) &&
+               (0 == memcmp(cond->conditionAux, cond->fulfillmentAux, cond->conditionAuxLength));
+    }
+    printf("no defined behaviour for method:%s\n", cond->method);
+    return 0;
 }
