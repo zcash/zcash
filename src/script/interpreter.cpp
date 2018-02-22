@@ -1158,7 +1158,7 @@ extern "C"
 }
 
 static int komodoCCAux(CC *cond, void *checker) {
-    return ((CryptoConditionChecker*)checker)->CheckAuxCondition(cond);
+    return ((TransactionSignatureChecker*)checker)->CheckAuxCondition(cond);
 }
 
 bool TransactionSignatureChecker::CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode) const

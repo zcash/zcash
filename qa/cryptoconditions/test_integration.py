@@ -127,6 +127,50 @@ def test_aux_basic(inp):
         assert 'Script evaluated without error but finished with a false/empty top stack element' in str(e), str(e)
 
 
+@fanout_input(7)
+def test_aux_complex(inp):
+    aux_cond = {
+        'type': 'aux-sha-256',
+        'method': 'inputIsReturn',
+        'conditionAux': '',
+        'fulfillmentAux': 'AQ' # \1 (tx.vout[1])
+    }
+
+    # Setup some aux outputs
+    spend0 = {
+        'inputs': [inp],
+        'outputs': [
+            {'amount': 500, 'script': {'condition': aux_cond}},
+            {'amount': 500, 'script': {'condition': aux_cond}}
+        ]
+    }
+    spend0_txid = submit(sign(spend0))
+    assert rpc.getrawtransaction(spend0_txid)
+
+    # Test a good fulfillment
+    spend1 = {
+        'inputs': [{'txid': spend0_txid, 'idx': 0, 'script': {'fulfillment': aux_cond}}],
+        'outputs': [
+            {'amount': 250, 'script': {'condition': aux_cond}},
+            {'amount': 250, 'script': "6A0B68656C6C6F207468657265"} # OP_RETURN somedata
+        ]
+    }
+    spend1_txid = submit(sign(spend1))
+    assert rpc.getrawtransaction(spend1_txid)
+
+    # Test a bad fulfillment
+    spend2 = {
+        'inputs': [{'txid': spend0_txid, 'idx': 1, 'script': {'fulfillment': aux_cond}}],
+        'outputs': [
+            {'amount': 500, 'script': "6A0B68656C6C6F207468657265"} # OP_RETURN somedata
+        ]
+    }
+    try:
+        assert not submit(sign(spend2)), 'should raise an error'
+    except RPCError as e:
+        assert 'Script evaluated without error but finished with a false/empty top stack element' in str(e), str(e)
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     for name, f in globals().items():

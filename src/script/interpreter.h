@@ -125,6 +125,7 @@ public:
     bool CheckSig(const std::vector<unsigned char>& scriptSig, const std::vector<unsigned char>& vchPubKey, const CScript& scriptCode) const;
     bool CheckLockTime(const CScriptNum& nLockTime) const;
     bool CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode) const;
+    int CheckAuxCondition(const CC *cond) const;
 };
 
 class MutableTransactionSignatureChecker : public TransactionSignatureChecker
@@ -138,11 +139,5 @@ public:
 
 bool EvalScript(std::vector<std::vector<unsigned char> >& stack, const CScript& script, unsigned int flags, const BaseSignatureChecker& checker, ScriptError* error = NULL);
 bool VerifyScript(const CScript& scriptSig, const CScript& scriptPubKey, unsigned int flags, const BaseSignatureChecker& checker, ScriptError* error = NULL);
-
-class CryptoConditionChecker : public TransactionSignatureChecker
-{
-public:
-    int CheckAuxCondition(const CC *cond) const;
-};
 
 #endif // BITCOIN_SCRIPT_INTERPRETER_H
