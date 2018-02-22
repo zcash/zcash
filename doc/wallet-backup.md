@@ -18,7 +18,7 @@ There are multiple ways to make sure you have at least one other copy of the pri
 
 For all methods, you will need to include an export directory setting in your config file (`zcash.conf` located in the data directory which is `~/.zcash/` unless it's been overridden with `datadir=` setting):
 
-`exportdir=/path/to/chosen/export/directory`
+`exportdir=path/to/chosen/export/directory`
 
 You may chose any directory within the home directory as the location for export & backup files. If the directory doesn't exist, it will be created.
 
@@ -46,7 +46,7 @@ This will generate a file in the export directory listing all transparent and sh
 
 To import keys into a wallet which were previously exported to a file, use:
 
-`zcash-cli z_importwallet </path/to/exportdir/nameofbackup>`
+`zcash-cli z_importwallet <path/to/exportdir/nameofbackup>`
 
 ### Using `z_exportkey`, `z_importkey`, `dumpprivkey` & `importprivkey`
 
