@@ -60,7 +60,6 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         UniValue contextInfo) :
         tx_(contextualTx), fromaddress_(fromAddress), t_outputs_(tOutputs), z_outputs_(zOutputs), mindepth_(minDepth), fee_(fee), contextinfo_(contextInfo)
 {
-    assert(contextualTx.nVersion >= 2);  // transaction format version must support vjoinsplit
     assert(fee_ >= 0);
 
     if (minDepth < 0) {
