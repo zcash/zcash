@@ -38,8 +38,10 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         #
         # Currently at block 198. The next block to be mined 199 is a Sprout block
         #
-        assert_equal(self.nodes[0].getblockchaininfo()['consensus']['chaintip'], '00000000')
-        assert_equal(self.nodes[0].getblockchaininfo()['consensus']['nextblock'], '00000000')
+        bci = self.nodes[0].getblockchaininfo()
+        assert_equal(bci['consensus']['chaintip'], '00000000')
+        assert_equal(bci['consensus']['nextblock'], '00000000')
+        assert_equal(bci['upgrades']['5ba81b19']['status'], 'pending')
 
         taddr0 = self.nodes[0].getnewaddress()
         taddr2 = self.nodes[2].getnewaddress()
@@ -79,8 +81,10 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         #
         # Currently at block 199. The next block to be mined 200 is an Overwinter block
         #
-        assert_equal(self.nodes[0].getblockchaininfo()['consensus']['chaintip'], '00000000')
-        assert_equal(self.nodes[0].getblockchaininfo()['consensus']['nextblock'], '5ba81b19')
+        bci = self.nodes[0].getblockchaininfo()
+        assert_equal(bci['consensus']['chaintip'], '00000000')
+        assert_equal(bci['consensus']['nextblock'], '5ba81b19')
+        assert_equal(bci['upgrades']['5ba81b19']['status'], 'pending')
 
         # Send taddr to taddr
         tsendamount = Decimal('4.56')
@@ -97,8 +101,10 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[0].getblockchaininfo()['consensus']['chaintip'], '5ba81b19')
-        assert_equal(self.nodes[0].getblockchaininfo()['consensus']['nextblock'], '5ba81b19')
+        bci = self.nodes[0].getblockchaininfo()
+        assert_equal(bci['consensus']['chaintip'], '5ba81b19')
+        assert_equal(bci['consensus']['nextblock'], '5ba81b19')
+        assert_equal(bci['upgrades']['5ba81b19']['status'], 'active')
 
         # Verify balance
         assert_equal(self.nodes[3].getbalance(), tsendamount)
