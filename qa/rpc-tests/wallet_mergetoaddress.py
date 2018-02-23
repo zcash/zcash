@@ -180,6 +180,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         assert_equal(result["mergingNotes"], Decimal('2'))
         assert_equal(result["remainingNotes"], Decimal('0'))
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
+        self.sync_all()
         blockhash = self.nodes[1].generate(1)
         self.sync_all()
 
@@ -331,6 +332,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         assert_equal(result["mergingNotes"], Decimal('2'))
         assert_equal(result["remainingNotes"], Decimal('3'))
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
+        self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
 
@@ -341,6 +343,9 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         assert_equal(result["mergingNotes"], Decimal('2'))
         assert_equal(result["remainingNotes"], Decimal('2'))
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
+        # Don't sync node 2 which rejects the tx due to its mempooltxinputlimit
+        sync_blocks(self.nodes[:2])
+        sync_mempools(self.nodes[:2])
         self.nodes[1].generate(1)
         self.sync_all()
 
