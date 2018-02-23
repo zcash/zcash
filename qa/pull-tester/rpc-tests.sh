@@ -32,6 +32,7 @@ testScripts=(
     'mempool_reorg.py'
     'mempool_tx_input_limit.py'
     'mempool_nu_activation.py'
+    'mempool_tx_expiry.py'
     'httpbasics.py'
     'zapwallettxes.py'
     'proxy_test.py'
