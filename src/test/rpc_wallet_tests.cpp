@@ -16,6 +16,7 @@
 #include "rpcserver.h"
 #include "asyncrpcqueue.h"
 #include "asyncrpcoperation.h"
+#include "wallet/asyncrpcoperation_mergetoaddress.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 
@@ -1406,6 +1407,314 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
         }
     }
 
+}
+
+
+BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
+{
+    SelectParams(CBaseChainParams::TESTNET);
+
+    LOCK(pwalletMain->cs_wallet);
+
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress toofewargs"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress just too many args present for this method"), runtime_error);
+
+    // bad from address
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
+            "[\"INVALIDtmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+
+    // bad from address
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
+    "** tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+
+    // bad from address
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
+    "[\"**\"] tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+
+    // bad from address
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
+    "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+
+    // bad from address
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
+            "[tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ] tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+
+    // bad to address
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
+    "[\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] INVALIDtnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+
+    // duplicate address
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
+            "[\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\", \"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] "
+            "tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn"
+            ), runtime_error);
+
+    // invalid fee amount, cannot be negative
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
+            "[\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] "
+            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
+            "-0.0001"
+            ), runtime_error);
+
+    // invalid fee amount, bigger than MAX_MONEY
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
+            "[\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] "
+            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
+            "21000001"
+            ), runtime_error);
+
+    // invalid transparent limit, must be at least 0
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
+            "[\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] "
+            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
+            "0.0001 -1"
+            ), runtime_error);
+
+    // invalid shielded limit, must be at least 0
+    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
+            "[\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] "
+            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
+            "0.0001 100 -1"
+            ), runtime_error);
+
+    // memo bigger than allowed length of ZC_MEMO_SIZE
+    std::vector<char> v (2 * (ZC_MEMO_SIZE+1));     // x2 for hexadecimal string format
+    std::fill(v.begin(),v.end(), 'A');
+    std::string badmemo(v.begin(), v.end());
+    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
+    std::string zaddr1 = pa.ToString();
+    BOOST_CHECK_THROW(CallRPC(string("z_mergetoaddress [\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] ")
+            + zaddr1 + " 0.0001 100 100 " + badmemo), runtime_error);
+
+    // Mutable tx containing contextual information we need to build tx
+    UniValue retValue = CallRPC("getblockcount");
+    int nHeight = retValue.get_int();
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1);
+
+    // Test constructor of AsyncRPCOperation_mergetoaddress
+    MergeToAddressRecipient testnetzaddr(
+        "ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP",
+        "testnet memo");
+    MergeToAddressRecipient mainnetzaddr(
+        "zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U",
+        "mainnet memo");
+
+    try {
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_mergetoaddress(mtx, {}, {}, testnetzaddr, -1 ));
+        BOOST_FAIL("Should have caused an error");
+    } catch (const UniValue& objError) {
+        BOOST_CHECK( find_error(objError, "Fee is out of range"));
+    }
+
+    try {
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_mergetoaddress(mtx, {}, {}, testnetzaddr, 1));
+        BOOST_FAIL("Should have caused an error");
+    } catch (const UniValue& objError) {
+        BOOST_CHECK( find_error(objError, "No inputs"));
+    }
+
+    std::vector<MergeToAddressInputUTXO> inputs = { MergeToAddressInputUTXO{ COutPoint{uint256(), 0}, 0} };
+
+    try {
+        MergeToAddressRecipient badaddr("", "memo");
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_mergetoaddress(mtx, inputs, {}, badaddr, 1));
+        BOOST_FAIL("Should have caused an error");
+    } catch (const UniValue& objError) {
+        BOOST_CHECK( find_error(objError, "Recipient parameter missing"));
+    }
+
+    // Testnet payment addresses begin with 'zt'.  This test detects an incorrect prefix.
+    try {
+        std::vector<MergeToAddressInputUTXO> inputs = { MergeToAddressInputUTXO{ COutPoint{uint256(), 0}, 0} };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_mergetoaddress(mtx, inputs, {}, mainnetzaddr, 1) );
+        BOOST_FAIL("Should have caused an error");
+    } catch (const UniValue& objError) {
+        BOOST_CHECK( find_error(objError, "payment address is for wrong network type"));
+    }
+}
+
+
+// TODO: test private methods
+BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
+{
+    SelectParams(CBaseChainParams::TESTNET);
+
+    LOCK(pwalletMain->cs_wallet);
+
+    // Mutable tx containing contextual information we need to build tx
+    UniValue retValue = CallRPC("getblockcount");
+    int nHeight = retValue.get_int();
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1);
+
+    // Test that option -mempooltxinputlimit is respected.
+    mapArgs["-mempooltxinputlimit"] = "1";
+
+    // Add keys manually
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
+    MergeToAddressRecipient taddr1(retValue.get_str(), "");
+    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
+    MergeToAddressRecipient zaddr1(pa.ToString(), "DEADBEEF");
+
+    // Supply 2 inputs when mempool limit is 1
+    {
+        std::vector<MergeToAddressInputUTXO> inputs = {
+            MergeToAddressInputUTXO{COutPoint{uint256(),0},0},
+            MergeToAddressInputUTXO{COutPoint{uint256(),0},0}
+        };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_mergetoaddress(mtx, inputs, {}, zaddr1) );
+        operation->main();
+        BOOST_CHECK(operation->isFailed());
+        std::string msg = operation->getErrorMessage();
+        BOOST_CHECK( msg.find("Number of transparent inputs 2 is greater than mempooltxinputlimit of 1") != string::npos);
+    }
+
+    // Insufficient funds
+    {
+        std::vector<MergeToAddressInputUTXO> inputs = { MergeToAddressInputUTXO{COutPoint{uint256(),0},0} };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_mergetoaddress(mtx, inputs, {}, zaddr1) );
+        operation->main();
+        BOOST_CHECK(operation->isFailed());
+        std::string msg = operation->getErrorMessage();
+        BOOST_CHECK( msg.find("Insufficient funds, have 0.00 and miners fee is 0.0001") != string::npos);
+    }
+
+    // get_memo_from_hex_string())
+    {
+        std::vector<MergeToAddressInputUTXO> inputs = { MergeToAddressInputUTXO{COutPoint{uint256(),0},100000} };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_mergetoaddress(mtx, inputs, {}, zaddr1) );
+        std::shared_ptr<AsyncRPCOperation_mergetoaddress> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_mergetoaddress> (operation);
+        TEST_FRIEND_AsyncRPCOperation_mergetoaddress proxy(ptr);
+
+        std::string memo = "DEADBEEF";
+        boost::array<unsigned char, ZC_MEMO_SIZE> array = proxy.get_memo_from_hex_string(memo);
+        BOOST_CHECK_EQUAL(array[0], 0xDE);
+        BOOST_CHECK_EQUAL(array[1], 0xAD);
+        BOOST_CHECK_EQUAL(array[2], 0xBE);
+        BOOST_CHECK_EQUAL(array[3], 0xEF);
+        for (int i=4; i<ZC_MEMO_SIZE; i++) {
+            BOOST_CHECK_EQUAL(array[i], 0x00);  // zero padding
+        }
+
+        // memo is longer than allowed
+        std::vector<char> v (2 * (ZC_MEMO_SIZE+1));
+        std::fill(v.begin(),v.end(), 'A');
+        std::string bigmemo(v.begin(), v.end());
+
+        try {
+            proxy.get_memo_from_hex_string(bigmemo);
+            BOOST_FAIL("Should have caused an error");
+        } catch (const UniValue& objError) {
+            BOOST_CHECK( find_error(objError, "too big"));
+        }
+
+        // invalid hexadecimal string
+        std::fill(v.begin(),v.end(), '@'); // not a hex character
+        std::string badmemo(v.begin(), v.end());
+
+        try {
+            proxy.get_memo_from_hex_string(badmemo);
+            BOOST_FAIL("Should have caused an error");
+        } catch (const UniValue& objError) {
+            BOOST_CHECK( find_error(objError, "hexadecimal format"));
+        }
+
+        // odd length hexadecimal string
+        std::fill(v.begin(),v.end(), 'A');
+        v.resize(v.size() - 1);
+        assert(v.size() %2 == 1); // odd length
+        std::string oddmemo(v.begin(), v.end());
+        try {
+            proxy.get_memo_from_hex_string(oddmemo);
+            BOOST_FAIL("Should have caused an error");
+        } catch (const UniValue& objError) {
+            BOOST_CHECK( find_error(objError, "hexadecimal format"));
+        }
+    }
+
+    // Test the perform_joinsplit methods.
+    {
+        // Dummy input so the operation object can be instantiated.
+        std::vector<MergeToAddressInputUTXO> inputs = { MergeToAddressInputUTXO{COutPoint{uint256(),0},100000} };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_mergetoaddress(mtx, inputs, {}, zaddr1) );
+        std::shared_ptr<AsyncRPCOperation_mergetoaddress> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_mergetoaddress> (operation);
+        TEST_FRIEND_AsyncRPCOperation_mergetoaddress proxy(ptr);
+
+        // Enable test mode so tx is not sent and proofs are not generated
+        static_cast<AsyncRPCOperation_sendmany *>(operation.get())->testmode = true;
+
+        MergeToAddressJSInfo info;
+        std::vector<boost::optional < ZCIncrementalWitness>> witnesses;
+        uint256 anchor;
+        try {
+            proxy.perform_joinsplit(info, witnesses, anchor);
+            BOOST_FAIL("Should have caused an error");
+        } catch (const std::runtime_error & e) {
+            BOOST_CHECK( string(e.what()).find("anchor is null")!= string::npos);
+        }
+
+        try {
+            std::vector<JSOutPoint> v;
+            proxy.perform_joinsplit(info, v);
+            BOOST_FAIL("Should have caused an error");
+        } catch (const std::runtime_error & e) {
+            BOOST_CHECK( string(e.what()).find("anchor is null")!= string::npos);
+        }
+
+        info.notes.push_back(Note());
+        try {
+            proxy.perform_joinsplit(info);
+            BOOST_FAIL("Should have caused an error");
+        } catch (const std::runtime_error & e) {
+            BOOST_CHECK( string(e.what()).find("number of notes")!= string::npos);
+        }
+
+        info.notes.clear();
+        info.vjsin.push_back(JSInput());
+        info.vjsin.push_back(JSInput());
+        info.vjsin.push_back(JSInput());
+        try {
+            proxy.perform_joinsplit(info);
+            BOOST_FAIL("Should have caused an error");
+        } catch (const std::runtime_error & e) {
+            BOOST_CHECK( string(e.what()).find("unsupported joinsplit input")!= string::npos);
+        }
+
+        info.vjsin.clear();
+        try {
+            proxy.perform_joinsplit(info);
+            BOOST_FAIL("Should have caused an error");
+        } catch (const std::runtime_error & e) {
+            BOOST_CHECK( string(e.what()).find("error verifying joinsplit")!= string::npos);
+        }
+    }
+
+    // Raw joinsplit is a zaddr->zaddr
+    {
+        std::string raw = "020000000000000000000100000000000000001027000000000000183a0d4c46c369078705e39bcfebee59a978dbd210ce8de3efc9555a03fbabfd3cea16693d730c63850d7e48ccde79854c19adcb7e9dcd7b7d18805ee09083f6b16e1860729d2d4a90e2f2acd009cf78b5eb0f4a6ee4bdb64b1262d7ce9eb910c460b02022991e968d0c50ee44908e4ccccbc591d0053bcca154dd6d6fc400a29fa686af4682339832ccea362a62aeb9df0d5aa74f86a1e75ac0f48a8ccc41e0a940643c6c33e1d09223b0a46eaf47a1bb4407cfc12b1dcf83a29c0cef51e45c7876ca5b9e5bae86d92976eb3ef68f29cd29386a8be8451b50f82bf9da10c04651868655194da8f6ed3d241bb5b5ff93a3e2bbe44644544d88bcde5cc35978032ee92699c7a61fcbb395e7583f47e698c4d53ede54f956629400bf510fb5e22d03158cc10bdcaaf29e418ef18eb6480dd9c8b9e2a377809f9f32a556ef872febd0021d4ad013aa9f0b7255e98e408d302abefd33a71180b720271835b487ab309e160b06dfe51932120fb84a7ede16b20c53599a11071592109e10260f265ee60d48c62bfe24074020e9b586ce9e9356e68f2ad1a9538258234afe4b83a209f178f45202270eaeaeecaf2ce3100b2c5a714f75f35777a9ebff5ebf47059d2bbf6f3726190216468f2b152673b766225b093f3a2f827c86d6b48b42117fec1d0ac38dd7af700308dcfb02eba821612b16a2c164c47715b9b0c93900893b1aba2ea03765c94d87022db5be06ab338d1912e0936dfe87586d0a8ee49144a6cd2e306abdcb652faa3e0222739deb23154d778b50de75069a4a2cce1208cd1ced3cb4744c9888ce1c2fcd2e66dc31e62d3aa9e423d7275882525e9981f92e84ac85975b8660739407efbe1e34c2249420fde7e17db3096d5b22e83d051d01f0e6e7690dca7d168db338aadf0897fedac10de310db2b1bff762d322935dddbb60c2efb8b15d231fa17b84630371cb275c209f0c4c7d0c68b150ea5cd514122215e3f7fcfb351d69514788d67c2f3c8922581946e3a04bdf1f07f15696ca76eb95b10698bf1188fd882945c57657515889d042a6fc45d38cbc943540c4f0f6d1c45a1574c81f3e42d1eb8702328b729909adee8a5cfed7c79d54627d1fd389af941d878376f7927b9830ca659bf9ab18c5ca5192d52d02723008728d03701b8ab3e1c4a3109409ec0b13df334c7deec3523eeef4c97b5603e643de3a647b873f4c1b47fbfc6586ba66724f112e51fc93839648005043620aa3ce458e246d77977b19c53d98e3e812de006afc1a79744df236582943631d04cc02941ac4be500e4ed9fb9e3e7cc187b1c4050fad1d9d09d5fd70d5d01d615b439d8c0015d2eb10398bcdbf8c4b2bd559dbe4c288a186aed3f86f608da4d582e120c4a896e015e2241900d1daeccd05db968852677c71d752bec46de9962174b46f980e8cc603654daf8b98a3ee92dac066033954164a89568b70b1780c2ce2410b2f816dbeddb2cd463e0c8f21a52cf6427d9647a6fd4bafa8fb4cd4d47ac057b0160bee86c6b2fb8adce214c2bcdda277512200adf0eaa5d2114a2c077b009836a68ec254bfe56f51d147b9afe2ddd9cb917c0c2de19d81b7b8fd9f4574f51fa1207630dc13976f4d7587c962f761af267de71f3909a576e6bedaf6311633910d291ac292c467cc8331ef577aef7646a5d949322fa0367a49f20597a13def53136ee31610395e3e48d291fd8f58504374031fe9dcfba5e06086ebcf01a9106f6a4d6e16e19e4c5bb893f7da79419c94eca31a384be6fa1747284dee0fc3bbc8b1b860172c10b29c1594bb8c747d7fe05827358ff2160f49050001625ffe2e880bd7fc26cd0ffd89750745379a8e862816e08a5a2008043921ab6a4976064ac18f7ee37b6628bc0127d8d5ebd3548e41d8881a082d86f20b32e33094f15a0e6ea6074b08c6cd28142de94713451640a55985051f5577eb54572699d838cb34a79c8939e981c0c277d06a6e2ce69ccb74f8a691ff08f81d8b99e6a86223d29a2b7c8e7b041aba44ea678ae654277f7e91cbfa79158b989164a3d549d9f4feb0cc43169699c13e321fe3f4b94258c75d198ff9184269cd6986c55409e07528c93f64942c6c283ce3917b4bf4c3be2fe3173c8c38cccb35f1fbda0ca88b35a599c0678cb22aa8eabea8249dbd2e4f849fffe69803d299e435ebcd7df95854003d8eda17a74d98b4be0e62d45d7fe48c06a6f464a14f8e0570077cc631279092802a89823f031eef5e1028a6d6fdbd502869a731ee7d28b4d6c71b419462a30d31442d3ee444ffbcbd16d558c9000c97e949c2b1f9d6f6d8db7b9131ebd963620d3fc8595278d6f8fdf49084325373196d53e64142fa5a23eccd6ef908c4d80b8b3e6cc334b7f7012103a3682e4678e9b518163d262a39a2c1a69bf88514c52b7ccd7cc8dc80e71f7c2ec0701cff982573eb0c2c4daeb47fa0b586f4451c10d1da2e5d182b03dd067a5e971b3a6138ca6667aaf853d2ac03b80a1d5870905f2cfb6c78ec3c3719c02f973d638a0f973424a2b0f2b0023f136d60092fe15fba4bc180b9176bd0ff576e053f1af6939fe9ca256203ffaeb3e569f09774d2a6cbf91873e56651f4d6ff77e0b5374b0a1a201d7e523604e0247644544cc571d48c458a4f96f45580b";
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("rawtxn", raw));
+
+        // we have the spending key for the dummy recipient zaddr1
+        std::vector<MergeToAddressInputUTXO> inputs = { MergeToAddressInputUTXO{COutPoint{uint256(),0},100000} };
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_mergetoaddress(mtx, inputs, {}, zaddr1) );
+        std::shared_ptr<AsyncRPCOperation_mergetoaddress> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_mergetoaddress> (operation);
+        TEST_FRIEND_AsyncRPCOperation_mergetoaddress proxy(ptr);
+
+        // Enable test mode so tx is not sent
+        static_cast<AsyncRPCOperation_sendmany *>(operation.get())->testmode = true;
+
+        // Pretend that the operation completed successfully
+        proxy.set_state(OperationStatus::SUCCESS);
+
+        // Verify test mode is returning output (since no input taddrs, signed and unsigned are the same).
+        BOOST_CHECK_NO_THROW( proxy.sign_send_raw_transaction(obj) );
+        UniValue result = operation->getResult();
+        BOOST_CHECK(!result.isNull());
+        UniValue resultObj = result.get_obj();
+        std::string hex = find_value(resultObj, "hex").get_str();
+        BOOST_CHECK_EQUAL(hex, raw);
+    }
 }
 
 
