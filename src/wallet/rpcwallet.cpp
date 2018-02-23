@@ -4065,12 +4065,16 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     contextInfo.push_back(Pair("fee", ValueFromAmount(nFee)));
 
     // Contextual transaction we will build on
+    int nextBlockHeight = chainActive.Height() + 1;
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(),
-        chainActive.Height() + 1);
+        nextBlockHeight);
     bool isShielded = numNotes > 0 || isToZaddr;
     if (contextualTx.nVersion == 1 && isShielded) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplit
+    }
+    if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+        contextualTx.nExpiryHeight = nextBlockHeight + expiryDelta;
     }
 
     // Create operation and add to global queue
