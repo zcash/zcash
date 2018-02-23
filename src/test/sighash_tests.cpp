@@ -16,6 +16,7 @@
 #include "sodium.h"
 
 #include <iostream>
+#include <random>
 
 #include <boost/test/unit_test.hpp>
 
@@ -93,27 +94,26 @@ void static RandomScript(CScript &script) {
         script << oplist[insecure_rand() % (sizeof(oplist)/sizeof(oplist[0]))];
 }
 
+// Overwinter tx version numbers are selected randomly from current version range.
+// http://en.cppreference.com/w/cpp/numeric/random/uniform_int_distribution
+// https://stackoverflow.com/a/19728404
+std::random_device rd;
+std::mt19937 rng(rd());
+std::uniform_int_distribution<int> version_dist(CTransaction::OVERWINTER_MIN_CURRENT_VERSION,
+                                                CTransaction::OVERWINTER_MAX_CURRENT_VERSION);
+
 void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t consensusBranchId) {
     tx.fOverwintered = insecure_rand() % 2;
     if (tx.fOverwintered) {
-        // Versions outside known ranges throw an exception during parsing
-        auto range =
-            CTransaction::OVERWINTER_MAX_CURRENT_VERSION - CTransaction::OVERWINTER_MIN_CURRENT_VERSION;
-        if (range > 0) {
-            tx.nVersion =
-                (insecure_rand() % range) +
-                CTransaction::OVERWINTER_MIN_CURRENT_VERSION;
-        } else {
-            tx.nVersion = CTransaction::OVERWINTER_MIN_CURRENT_VERSION;
-        }
+        tx.nVersion = version_dist(rng);
         tx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+        tx.nExpiryHeight = (insecure_rand() % 2) ? insecure_rand() : 0;
     } else {
         tx.nVersion = insecure_rand() & 0x7FFFFFFF;
     }
     tx.vin.clear();
     tx.vout.clear();
     tx.nLockTime = (insecure_rand() % 2) ? insecure_rand() : 0;
-    tx.nExpiryHeight = (insecure_rand() % 2) ? insecure_rand() : 0;
     int ins = (insecure_rand() % 4) + 1;
     int outs = fSingle ? ins : (insecure_rand() % 4) + 1;
     int joinsplits = (insecure_rand() % 4);
@@ -259,7 +259,11 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
 
           CValidationState state;
           if (tx.fOverwintered) {
-              if (tx.nVersion == 3 && tx.nExpiryHeight > TX_EXPIRY_HEIGHT_THRESHOLD) {
+              // Note that OVERWINTER_MIN_CURRENT_VERSION and OVERWINTER_MAX_CURRENT_VERSION
+              // are checked in IsStandardTx(), not in CheckTransactionWithoutProofVerification()
+              if (tx.nVersion < OVERWINTER_MIN_TX_VERSION ||
+                  tx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD)
+              {
                   // Transaction must be invalid
                   BOOST_CHECK_MESSAGE(!CheckTransactionWithoutProofVerification(tx, state), strTest);
                   BOOST_CHECK(!state.IsValid());
@@ -267,7 +271,7 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
                   BOOST_CHECK_MESSAGE(CheckTransactionWithoutProofVerification(tx, state), strTest);
                   BOOST_CHECK(state.IsValid());
               }
-          } else if (tx.nVersion < OVERWINTER_MIN_TX_VERSION) {
+          } else if (tx.nVersion < SPROUT_MIN_TX_VERSION) {
               // Transaction must be invalid
               BOOST_CHECK_MESSAGE(!CheckTransactionWithoutProofVerification(tx, state), strTest);
               BOOST_CHECK(!state.IsValid());
