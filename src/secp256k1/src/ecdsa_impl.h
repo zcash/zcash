@@ -47,12 +47,20 @@ static const secp256k1_fe_t secp256k1_ecdsa_const_p_minus_order = SECP256K1_FE_C
 );
 
 static int secp256k1_ecdsa_sig_parse(secp256k1_ecdsa_sig_t *r, const unsigned char *sig, int size) {
+
+    /* libscott had to add this to get this version of the library to read compact sigs */
+    int overflow = 0;
+    if (size == 64) {
+        secp256k1_scalar_set_b32(&r->r, sig, &overflow);
+        secp256k1_scalar_set_b32(&r->s, sig+32, &overflow);
+        return 1;
+    }
+
     unsigned char ra[32] = {0}, sa[32] = {0};
     const unsigned char *rp;
     const unsigned char *sp;
     int lenr;
     int lens;
-    int overflow;
     if (sig[0] != 0x30) {
         return 0;
     }

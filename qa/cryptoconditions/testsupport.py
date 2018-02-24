@@ -74,7 +74,8 @@ def wait_for_block(height):
 
 def sign(tx):
     signed = hoek.signTxBitcoin({'tx': tx, 'privateKeys': [notary_sk]})
-    return hoek.signTxEd25519({'tx': signed['tx'], 'privateKeys': [alice_sk, bob_sk]})
+    signed = hoek.signTxEd25519({'tx': signed['tx'], 'privateKeys': [alice_sk, bob_sk]})
+    return hoek.signTxSecp256k1({'tx': signed['tx'], 'privateKeys': [notary_sk]})
 
 
 def submit(tx):
@@ -96,14 +97,14 @@ def get_fanout_txid():
     reward_tx = hoek.decodeTx({'hex': reward_tx_raw})
     balance = reward_tx['tx']['outputs'][0]['amount']
 
-    n_outs = 100
+    n_outs = 16
     remainder = balance - n_outs * 1000
 
     fanout = {
         'inputs': [
             {'txid': reward_txid, 'idx': 0, 'script': {'pubkey': notary_pk}}
         ],
-        "outputs": (100 * [
+        "outputs": (n_outs * [
             {"amount": 1000, "script": {"condition": cond_alice}}
         ] + [{"amount": remainder, 'script': {'address': notary_addr}}])
     }
@@ -121,6 +122,21 @@ def fanout_input(n):
         return functools.wraps(f)(wrapper)
     return decorate
 
+
+def decode_base64(data):
+    """Decode base64, padding being optional.
+
+    :param data: Base64 data as an ASCII byte string
+    :returns: The decoded byte string.
+    """
+    missing_padding = len(data) % 4
+    if missing_padding:
+        data += '=' * (4 - missing_padding)
+    return base64.urlsafe_b64decode(data)
+
+
+def encode_base64(data):
+    return base64.urlsafe_b64encode(data).rstrip(b'=')
 
 
 notary_addr = 'RXSwmXKtDURwXP7sdqNfsJ6Ga8RaxTchxE'

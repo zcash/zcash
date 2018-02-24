@@ -1164,7 +1164,7 @@ static int komodoCCAux(CC *cond, void *checker) {
 bool TransactionSignatureChecker::CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode) const
 {
     uint256 message = SignatureHash(scriptCode, *txTo, nIn, SIGHASH_ALL);
-    return cc_verify(cond, (const unsigned char*)&message, 32,
+    return cc_verify(cond, (const unsigned char*)&message, 32, 0,
             condBin.data(), condBin.size(), komodoCCAux, (void*)this);
 }
 

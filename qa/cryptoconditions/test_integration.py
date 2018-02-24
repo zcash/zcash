@@ -7,6 +7,9 @@ import struct
 from testsupport import *
 
 
+SCRIPT_FALSE = 'Script evaluated without error but finished with a false/empty top stack element'
+
+
 @fanout_input(0)
 def test_basic_spend(inp):
     spend = {'inputs': [inp], "outputs": [nospend]}
@@ -27,7 +30,7 @@ def test_fulfillment_wrong_signature(inp):
     try:
         assert not submit(signed), 'should raise an error'
     except RPCError as e:
-        assert 'Script evaluated without error but finished with a false/empty top stack element' in str(e), str(e)
+        assert SCRIPT_FALSE in str(e), str(e)
 
 
 @fanout_input(2)
@@ -41,7 +44,7 @@ def test_fulfillment_wrong_pubkey(inp):
     try:
         assert not submit(signed), 'should raise an error'
     except RPCError as e:
-        assert 'Script evaluated without error but finished with a false/empty top stack element' in str(e), str(e)
+        assert SCRIPT_FALSE in str(e), str(e)
 
 
 @fanout_input(3)
@@ -71,7 +74,7 @@ def test_invalid_condition(inp):
     try:
         assert not submit(sign(spend1)), 'should raise an error'
     except RPCError as e:
-        assert 'Script evaluated without error but finished with a false/empty top stack element' in str(e), str(e)
+        assert SCRIPT_FALSE in str(e), str(e)
 
 
 @fanout_input(5)
@@ -124,7 +127,7 @@ def test_aux_basic(inp):
     try:
         assert not submit(sign(spend2)), 'should raise an error'
     except RPCError as e:
-        assert 'Script evaluated without error but finished with a false/empty top stack element' in str(e), str(e)
+        assert SCRIPT_FALSE in str(e), str(e)
 
 
 @fanout_input(7)
@@ -168,7 +171,47 @@ def test_aux_complex(inp):
     try:
         assert not submit(sign(spend2)), 'should raise an error'
     except RPCError as e:
-        assert 'Script evaluated without error but finished with a false/empty top stack element' in str(e), str(e)
+        assert SCRIPT_FALSE in str(e), str(e)
+
+
+@fanout_input(8)
+def test_secp256k1_condition(inp):
+    ec_cond = {
+        'type': 'secp256k1-sha-256',
+        'publicKey': notary_pk
+    }
+
+    # Create some secp256k1 outputs
+    spend0 = {
+        'inputs': [inp],
+        'outputs': [
+            {'amount': 500, 'script': {'condition': ec_cond}},
+            {'amount': 500, 'script': {'condition': ec_cond}}
+        ]
+    }
+    spend0_txid = submit(sign(spend0))
+    assert rpc.getrawtransaction(spend0_txid)
+
+    # Test a good fulfillment
+    spend1 = {
+        'inputs': [{'txid': spend0_txid, 'idx': 0, 'script': {'fulfillment': ec_cond}}],
+        'outputs': [{'amount': 500, 'script': {'condition': ec_cond}}]
+    }
+    spend1_txid = submit(sign(spend1))
+    assert rpc.getrawtransaction(spend1_txid)
+
+    # Test a bad fulfillment
+    spend2 = {
+        'inputs': [{'txid': spend0_txid, 'idx': 1, 'script': {'fulfillment': ec_cond}}],
+        'outputs': [{'amount': 500, 'script': {'condition': ec_cond}}]
+    }
+    signed = sign(spend2)
+    signed['tx']['inputs'][0]['script']['fulfillment']['publicKey'] = \
+            '0275cef12fc5c49be64f5aab3d1fbba08cd7b0d02908b5112fbd8504218d14bc7d'
+    try:
+        assert not submit(signed), 'should raise an error'
+    except RPCError as e:
+        assert SCRIPT_FALSE in str(e), str(e)
 
 
 if __name__ == '__main__':

@@ -3,8 +3,8 @@
 #include "script/interpreter.h"
 
 
-int TransactionSignatureChecker::CheckAuxCondition(const CC *cond) const {
-
+int TransactionSignatureChecker::CheckAuxCondition(const CC *cond) const
+{
     // Check that condition is equal to fulfillment
     if (0 == strcmp((const char*)cond->method, "equals")) {
         return (cond->conditionAuxLength == cond->fulfillmentAuxLength) &&
