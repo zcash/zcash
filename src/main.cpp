@@ -73,6 +73,8 @@ size_t nCoinCacheUsage = 5000 * 300;
 uint64_t nPruneTarget = 0;
 bool fAlerts = DEFAULT_ALERTS;
 
+unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
+
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying and mining) */
 CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
 
@@ -718,6 +720,14 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
     return true;
 }
 
+bool IsExpiredTx(const CTransaction &tx, int nBlockHeight)
+{
+    if (tx.nExpiryHeight == 0 || tx.IsCoinBase()) {
+        return false;
+    }
+    return static_cast<uint32_t>(nBlockHeight) > tx.nExpiryHeight;
+}
+
 bool CheckFinalTx(const CTransaction &tx, int flags)
 {
     AssertLockHeld(cs_main);
@@ -883,6 +893,11 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
         if (!tx.fOverwintered) {
             return state.DoS(dosLevel, error("ContextualCheckTransaction: overwinter is active"),
                             REJECT_INVALID, "tx-overwinter-active");
+        }
+    
+        // Check that all transactions are unexpired
+        if (IsExpiredTx(tx, nHeight)) {
+            return state.DoS(dosLevel, error("ContextualCheckTransaction(): transaction is expired"), REJECT_INVALID, "tx-overwinter-expired");
         }
     }
 
@@ -2659,6 +2674,10 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     // Remove conflicting transactions from the mempool.
     list<CTransaction> txConflicted;
     mempool.removeForBlock(pblock->vtx, pindexNew->nHeight, txConflicted, !IsInitialBlockDownload());
+
+    // Remove transactions that expire at new block height from mempool
+    mempool.removeExpired(pindexNew->nHeight);
+
     // Update chainActive & related variables.
     UpdateTip(pindexNew);
     // Tell wallet about transactions that went from mempool

@@ -10,6 +10,7 @@
 #include "coincontrol.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
+#include "consensus/consensus.h"
 #include "init.h"
 #include "main.h"
 #include "net.h"
@@ -2523,6 +2524,7 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount &nFeeRet, int& nC
 
     CReserveKey reservekey(this);
     CWalletTx wtx;
+    
     if (!CreateTransaction(vecSend, wtx, reservekey, nFeeRet, nChangePosRet, strFailReason, &coinControl, false))
         return false;
 
@@ -2573,9 +2575,21 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 
     wtxNew.fTimeReceivedIsTxTime = true;
     wtxNew.BindWallet(this);
+    int nextBlockHeight = chainActive.Height() + 1;
     CMutableTransaction txNew = CreateNewContextualCMutableTransaction(
-        Params().GetConsensus(), chainActive.Height() + 1);
+        Params().GetConsensus(), nextBlockHeight);
 
+    // Activates after Overwinter network upgrade
+    // Set nExpiryHeight to expiryDelta (default 20) blocks past current block height
+    if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+        if (nextBlockHeight + expiryDelta >= TX_EXPIRY_HEIGHT_THRESHOLD){
+            strFailReason = _("nExpiryHeight must be less than TX_EXPIRY_HEIGHT_THRESHOLD.");
+            return false;
+        } else {
+            txNew.nExpiryHeight = nextBlockHeight + expiryDelta;
+        }
+    }
+    
     // Discourage fee sniping.
     //
     // However because of a off-by-one-error in previous versions we need to
