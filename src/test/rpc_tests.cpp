@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE(rpc_raw_create_overwinter_v3)
     BOOST_CHECK_NO_THROW(r = CallRPC(string("decoderawtransaction ") + rawhex));
     BOOST_CHECK_EQUAL(find_value(r.get_obj(), "overwintered").get_bool(), true);
     BOOST_CHECK_EQUAL(find_value(r.get_obj(), "version").get_int(), 3);
-    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "expiryheight").get_int(), 0);
+    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "expiryheight").get_int(), 21);
     BOOST_CHECK_EQUAL(
         ParseHexToUInt32(find_value(r.get_obj(), "versiongroupid").get_str()),
         OVERWINTER_VERSION_GROUP_ID);
