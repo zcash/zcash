@@ -25,7 +25,7 @@ def test_fulfillment_wrong_signature(inp):
     signed = sign(spend)
 
     # Set the correct pubkey, signature is bob's
-    signed['tx']['inputs'][0]['script']['fulfillment']['publicKey'] = alice_pk
+    signed['inputs'][0]['script']['fulfillment']['publicKey'] = alice_pk
 
     try:
         assert not submit(signed), 'should raise an error'
@@ -39,7 +39,7 @@ def test_fulfillment_wrong_pubkey(inp):
     signed = sign(spend)
 
     # Set the wrong pubkey, signature is correct
-    signed['tx']['inputs'][0]['script']['fulfillment']['publicKey'] = bob_pk
+    signed['inputs'][0]['script']['fulfillment']['publicKey'] = bob_pk
 
     try:
         assert not submit(signed), 'should raise an error'
@@ -54,7 +54,7 @@ def test_invalid_fulfillment_binary(inp):
     spend = {'inputs': [inp], 'outputs': [nospend]}
 
     try:
-        assert not submit({'tx': spend}), 'should raise an error'
+        assert not submit(spend), 'should raise an error'
     except RPCError as e:
         assert 'Crypto-Condition payload is invalid' in str(e), str(e)
 
@@ -85,7 +85,7 @@ def test_oversize_fulfillment(inp):
     spend = {'inputs': [inp], 'outputs': [nospend]}
 
     try:
-        assert not submit({'tx': spend}), 'should raise an error'
+        assert not submit(spend), 'should raise an error'
     except RPCError as e:
         assert 'scriptsig-size' in str(e), str(e)
 
@@ -206,7 +206,7 @@ def test_secp256k1_condition(inp):
         'outputs': [{'amount': 500, 'script': {'condition': ec_cond}}]
     }
     signed = sign(spend2)
-    signed['tx']['inputs'][0]['script']['fulfillment']['publicKey'] = \
+    signed['inputs'][0]['script']['fulfillment']['publicKey'] = \
             '0275cef12fc5c49be64f5aab3d1fbba08cd7b0d02908b5112fbd8504218d14bc7d'
     try:
         assert not submit(signed), 'should raise an error'

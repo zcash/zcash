@@ -74,8 +74,8 @@ def wait_for_block(height):
 
 def sign(tx):
     signed = hoek.signTxBitcoin({'tx': tx, 'privateKeys': [notary_sk]})
-    signed = hoek.signTxEd25519({'tx': signed['tx'], 'privateKeys': [alice_sk, bob_sk]})
-    return hoek.signTxSecp256k1({'tx': signed['tx'], 'privateKeys': [notary_sk]})
+    signed = hoek.signTxEd25519({'tx': signed, 'privateKeys': [alice_sk, bob_sk]})
+    return hoek.signTxSecp256k1({'tx': signed, 'privateKeys': [notary_sk]})
 
 
 def submit(tx):
@@ -95,7 +95,7 @@ def get_fanout_txid():
     reward_txid = block['tx'][0]
     reward_tx_raw = rpc.getrawtransaction(reward_txid)
     reward_tx = hoek.decodeTx({'hex': reward_tx_raw})
-    balance = reward_tx['tx']['outputs'][0]['amount']
+    balance = reward_tx['outputs'][0]['amount']
 
     n_outs = 16
     remainder = balance - n_outs * 1000
