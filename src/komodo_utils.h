@@ -1455,11 +1455,13 @@ uint32_t komodo_assetmagic(char *symbol,uint64_t supply,uint8_t *extraptr,int32_
     return(shortflag);
 }*/
 
-uint16_t komodo_assetport(uint32_t magic)
+uint16_t komodo_assetport(uint32_t magic,int32_t extralen)
 {
     if ( magic == 0x8de4eef9 )
         return(7770);
-    else return(8000 + (magic % 7777));
+    else if ( extralen == 0 )
+        return(8000 + (magic % 7777));
+    else return(16000 + (magic % 49500));
 }
 
 uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp,uint8_t *extraptr,int32_t extralen)
@@ -1470,7 +1472,7 @@ uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp,uint8_t *extr
         return(7770);
     }
     *magicp = komodo_assetmagic(symbol,supply,extraptr,extralen);
-    return(komodo_assetport(*magicp));
+    return(komodo_assetport(*magicp,extralen));
 }
 
 /*void komodo_ports(uint16_t ports[MAX_CURRENCIES])
