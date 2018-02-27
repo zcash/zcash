@@ -34,7 +34,7 @@ long long get_nsec_time()
     return std::chrono::duration_cast<std::chrono::nanoseconds>(timepoint.time_since_epoch()).count();
 }
 
-/* Return total CPU time consumsed by all threads of the process, in nanoseconds. */
+/* Return total CPU time consumed by all threads of the process, in nanoseconds. */
 long long get_nsec_cpu_time()
 {
     ::timespec ts;
