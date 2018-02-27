@@ -1362,12 +1362,14 @@ void komodo_configfile(char *symbol,uint16_t port)
 #endif
         if ( (fp= fopen(fname,"rb")) == 0 )
         {
+#ifndef FROM_CLI
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
                 fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\nrpcworkqueue=64\n",crc,password,port);
                 fclose(fp);
                 printf("Created (%s)\n",fname);
             } else printf("Couldnt create (%s)\n",fname);
+#endif
         }
         else
         {
@@ -1619,6 +1621,7 @@ void komodo_args(char *argv0)
         for (i=0; i<4; i++)
             sprintf(&magicstr[i<<1],"%02x",magic[i]);
         magicstr[8] = 0;
+#ifndef FROM_CLI
         sprintf(fname,"gen%s",ASSETCHAINS_SYMBOL);
         if ( (fp= fopen(fname,"wb")) != 0 )
         {
@@ -1626,6 +1629,7 @@ void komodo_args(char *argv0)
             fclose(fp);
             //printf("created (%s)\n",fname);
         } else printf("error creating (%s)\n",fname);
+#endif
     }
     else
     {
