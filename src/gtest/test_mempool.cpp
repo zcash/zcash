@@ -118,7 +118,7 @@ TEST(Mempool, TxInputLimit) {
     // Set a limit
     mapArgs["-mempooltxinputlimit"] = "10";
 
-    // Check it stil fails as expected
+    // Check it still fails as expected
     CValidationState state2;
     EXPECT_FALSE(AcceptToMemoryPool(pool, state2, tx1, false, &missingInputs));
     EXPECT_EQ(state2.GetRejectReason(), "bad-txns-version-too-low");
