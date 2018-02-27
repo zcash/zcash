@@ -14,7 +14,7 @@ Copyright (c) 2012-2014 SCIPR Lab and contributors (see [AUTHORS] file).
 [TOC]
 
 <!---
-  NOTE: the file you are reading is in Markdown format, which is is fairly readable
+  NOTE: the file you are reading is in Markdown format, which is fairly readable
   directly, but can be converted into an HTML file with much nicer formatting.
   To do so, run "make doc" (this requires the python-markdown package) and view
   the resulting file README.html. Alternatively, view the latest HTML version at
@@ -84,7 +84,7 @@ The libsnark library currently provides a C++ implementation of:
        This is easily adapted to any other Random Access Machine that satisfies a
        simple load-store interface.
     3. A scalable for TinyRAM using Proof-Carrying Data, as explained in \[BCTV14b]
-    4. Zero-knowldge cluster MapReduce, as explained in \[CTV15].
+    4. Zero-knowledge cluster MapReduce, as explained in \[CTV15].
 
 The zkSNARK construction implemented by libsnark follows, extends, and
 optimizes the approach described in \[BCTV14], itself an extension of
@@ -272,7 +272,7 @@ To build just the static library `libsnark.a`, run:
     $ make lib STATIC=1
 
 Note that static compilation requires static versions of all libraries it depends on.
-It may help to minize these dependencies by appending
+It may help to minimize these dependencies by appending
 `CURVE=ALT_BN128 NO_PROCPS=1 NO_GTEST=1 NO_SUPERCOP=1`. On Fedora 21, the requisite 
 library RPM dependencies are then: 
 `boost-static glibc-static gmp-static libstdc++-static openssl-static zlib-static
@@ -399,7 +399,7 @@ The following flags change the behavior of the compiled code.
 *   `make MULTICORE=1`
 
      Enable parallelized execution of the ppzkSNARK generator and prover, using OpenMP.
-     This will utilize all cores on the CPU for heavyweight parallelizabe operations such as
+     This will utilize all cores on the CPU for heavyweight parallelizable operations such as
      FFT and multiexponentiation. The default is single-core.
 
      To override the maximum number of cores used, set the environment variable `OMP_NUM_THREADS`
