@@ -22,7 +22,7 @@ namespace libsnark {
 
 /*
  * @todo
- * The serialization is fragile. Shoud be rewritten using a standard, portable-format
+ * The serialization is fragile. Should be rewritten using a standard, portable-format
  * library like boost::serialize.
  *
  * However, for now the following conventions are used within the code.
