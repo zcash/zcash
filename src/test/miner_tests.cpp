@@ -422,7 +422,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 
     BOOST_CHECK(pblocktemplate = CreateNewBlock(scriptPubKey));
 
-    // Neither tx should have make it into the template.
+    // Neither tx should have made it into the template.
     BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 1);
     delete pblocktemplate;
 
