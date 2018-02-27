@@ -2695,7 +2695,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 
                 if (nChange > 0)
                 {
-                    // Fill a vout to ourself
+                    // Fill a vout to ourselves
                     // TODO: pass in scriptChange instead of reservekey so
                     // change transaction isn't always pay-to-bitcoin-address
                     CScript scriptChange;
