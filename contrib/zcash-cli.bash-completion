@@ -4,7 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 # call $animecoin-cli for RPC
-_zcash_rpc() {
+_animecoin_rpc() {
     # determine already specified args necessary for RPC
     local rpcargs=()
     for i in ${COMP_LINE}; do
@@ -18,10 +18,10 @@ _zcash_rpc() {
 }
 
 # Add wallet accounts to COMPREPLY
-_zcash_accounts() {
+_animecoin_accounts() {
     local accounts
-    # Accounts are deprecated in Zcash
-    #accounts=$(_zcash_rpc listaccounts | awk -F '"' '{ print $2 }')
+    # Accounts are deprecated in AnimeCoin
+    #accounts=$(_animecoin_rpc listaccounts | awk -F '"' '{ print $2 }')
     accounts="\\\"\\\""
     COMPREPLY=( "${COMPREPLY[@]}" $( compgen -W "$accounts" -- "$cur" ) )
 }
@@ -62,7 +62,7 @@ _animecoin_cli() {
     if ((cword > 3)); then
         case ${words[cword-3]} in
             addmultisigaddress)
-                _zcash_accounts
+                _animecoin_accounts
                 return 0
                 ;;
             getbalance|gettxout|importaddress|importpubkey|importprivkey|listreceivedbyaccount|listreceivedbyaddress|listsinceblock)
@@ -91,7 +91,7 @@ _animecoin_cli() {
                 return 0
                 ;;
             move|setaccount)
-                _zcash_accounts
+                _animecoin_accounts
                 return 0
                 ;;
         esac
@@ -107,7 +107,7 @@ _animecoin_cli() {
             return 0
             ;;
         getaccountaddress|getaddressesbyaccount|getbalance|getnewaddress|getreceivedbyaccount|listtransactions|move|sendfrom|sendmany)
-            _zcash_accounts
+            _animecoin_accounts
             return 0
             ;;
     esac
@@ -136,7 +136,7 @@ _animecoin_cli() {
 
             # only parse help if senseful
             if [[ -z "$cur" || "$cur" =~ ^[a-z] ]]; then
-                commands=$(_zcash_rpc help 2>/dev/null | awk '$1 ~ /^[a-z]/ { print $1; }')
+                commands=$(_animecoin_rpc help 2>/dev/null | awk '$1 ~ /^[a-z]/ { print $1; }')
             fi
 
             COMPREPLY=( $( compgen -W "$helpopts $commands" -- "$cur" ) )

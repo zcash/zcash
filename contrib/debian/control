@@ -1,16 +1,16 @@
-Source: zcash
+Source: animecoin
 Section: utils
 Priority: optional
-Maintainer: Zcash Company <team@z.cash>
-Homepage: https://z.cash
+Maintainer: AnimeCoin Company
+Homepage: http://anime-coin.com/
 Build-Depends: autoconf, automake, bsdmainutils, build-essential,
  git, g++-multilib, libc6-dev, libtool,
  m4, ncurses-dev, pkg-config, python,
  unzip, wget, zlib1g-dev
-Vcs-Git: https://github.com/zcash/zcash.git
-Vcs-Browser: https://github.com/zcash/zcash
+Vcs-Git: https://github.com/ANIME-AnimeCoin/AnimeCoin.git
+Vcs-Browser: https://github.com/ANIME-AnimeCoin/AnimeCoin
 
-Package: zcash
+Package: animecoin
 Architecture: amd64
 Depends: ${shlibs:Depends}
 Description: HTTPS for money.

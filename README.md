@@ -10,7 +10,7 @@ Security Warnings
 
 See important security warnings on the
 [ZCash Security Information page](https://z.cash/support/security/).
-[AnimeCoin Security Information page]().
+[AnimeCoin Security Information page](http://anime-coin.com/).
 
 **AnimeCoin is experimental and a work-in-progress.** Use at your own risk.
 

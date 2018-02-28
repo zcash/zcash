@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
     }
     // Changing the block interval from 10 to 2.5 minutes causes truncation
     // effects to occur earlier (from the 9th halving interval instead of the
-    // 11th), decreasing the total monetary supply by 0.0693 ZEC. If the
+    // 11th), decreasing the total monetary supply by 0.0693 ANI. If the
     // transaction output field is widened, this discrepancy will become smaller
     // or disappear entirely.
     //BOOST_CHECK_EQUAL(nSum, 2099999997690000ULL);

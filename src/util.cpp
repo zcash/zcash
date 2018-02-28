@@ -423,7 +423,7 @@ static std::string FormatException(const std::exception* pex, const char* pszThr
     char pszModule[MAX_PATH] = "";
     GetModuleFileNameA(NULL, pszModule, sizeof(pszModule));
 #else
-    const char* pszModule = "Zcash";
+    const char* pszModule = "AnimeCoin";
 #endif
     if (pex)
         return strprintf(
@@ -444,13 +444,13 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
 boost::filesystem::path GetDefaultDataDir()
 {
     namespace fs = boost::filesystem;
-    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Zcash
-    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zcash
-    // Mac: ~/Library/Application Support/Zcash
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\AnimeCoin
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\AnimeCoin
+    // Mac: ~/Library/Application Support/AnimeCoin
     // Unix: ~/.animecoin
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Zcash";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "AnimeCoin";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -462,7 +462,7 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    return pathRet / "Zcash";
+    return pathRet / "AnimeCoin";
 #else
     // Unix
     return pathRet / ".animecoin";
@@ -477,16 +477,16 @@ static CCriticalSection csPathCached;
 
 static boost::filesystem::path ZC_GetBaseParamsDir()
 {
-    // Copied from GetDefaultDataDir and adapter for zcash params.
+    // Copied from GetDefaultDataDir and adapter for animecoin params.
 
     namespace fs = boost::filesystem;
-    // Windows < Vista: C:\Documents and Settings\Username\Application Data\ZcashParams
-    // Windows >= Vista: C:\Users\Username\AppData\Roaming\ZcashParams
-    // Mac: ~/Library/Application Support/ZcashParams
-    // Unix: ~/.zcash-params
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\AnimeCoinParams
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\AnimeCoinParams
+    // Mac: ~/Library/Application Support/AnimeCoinParams
+    // Unix: ~/.animecoin-params
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "ZcashParams";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "AnimeCoinParams";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -498,10 +498,10 @@ static boost::filesystem::path ZC_GetBaseParamsDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    return pathRet / "ZcashParams";
+    return pathRet / "AnimeCoinParams";
 #else
     // Unix
-    return pathRet / ".zcash-params";
+    return pathRet / ".animecoin-params";
 #endif
 #endif
 }
@@ -594,7 +594,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 {
     boost::filesystem::ifstream streamConfig(GetConfigFile());
     if (!streamConfig.good())
-        throw missing_zcash_conf();
+        throw missing_animecoin_conf();
 
     set<string> setOptions;
     setOptions.insert("*");

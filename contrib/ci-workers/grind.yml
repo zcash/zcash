@@ -3,7 +3,7 @@
 - include: unix.yml
 
 - name: Install grind-specific worker dependencies
-  hosts: zcash-ci-worker-unix
+  hosts: animecoin-ci-worker-unix
   become: true
 
   vars_files:

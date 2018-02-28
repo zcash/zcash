@@ -10,7 +10,7 @@ Miners, Mining pools, Online wallets
 
 ## Background
 
-The current Zcash protocol includes a consensus rule that coinbase rewards must be sent to a shielded address.
+The current AnimeCoin protocol includes a consensus rule that coinbase rewards must be sent to a shielded address.
 
 ## User Experience Challenges
 
@@ -24,7 +24,7 @@ The z_shieldcoinbase call makes it easy to sweep up coinbase rewards from multip
 
     z_shieldcoinbase fromaddress toaddress (fee) (limit)
 
-The default fee is 0.0010000 ZEC and the default limit on the maximum number of UTXOs to shield is 50.
+The default fee is 0.0010000 ANI and the default limit on the maximum number of UTXOs to shield is 50.
 
 ## Examples
 
@@ -36,11 +36,11 @@ Sweep up coinbase UTXOs from multiple transparent addresses to a shielded addres
 
     animecoin-cli z_shieldcoinbase "*" zMyPrivateAddress
 
-Sweep up with a fee of 1.23 ZEC:
+Sweep up with a fee of 1.23 ANI:
 
     animecoin-cli z_shieldcoinbase tMyMiningAddress zMyPrivateAddress 1.23
 
-Sweep up with a fee of 0.1 ZEC and set limit on the maximum number of UTXOs to shield at 25:
+Sweep up with a fee of 0.1 ANI and set limit on the maximum number of UTXOs to shield at 25:
 
     animecoin-cli z_shieldcoinbase "*" zMyPrivateAddress 0.1 25
 
@@ -90,12 +90,5 @@ As a result, the maximum number of inputs that can be selected is:
 
 - P2PKH coinbase UTXOs ~ 662
 - 2-of-3 multisig P2SH coinbase UTXOs ~ 244.
-
-Here is an example of using `z_shieldcoinbase` on testnet to shield multi-sig coinbase UTXOs.
-
-- Block 141042 is almost ~2 MB in size (the maximum size for a block) and contains 1 coinbase reward transaction and 20 transactions, each indivually created by a call to z_shieldcoinbase.
-  - https://explorer.testnet.z.cash/block/0050552a78e97c89f666713c8448d49ad1d7263274422272696187dedf6c0d03
-- Drilling down into a transaction, you can see there is one joinsplit, with 244 inputs (vin) and 0 outputs (vout).
-  - https://explorer.testnet.z.cash/tx/cf4f3da2e434f68b6e361303403344e22a9ff9a8fda9abc180d9520d0ca6527d
 
 

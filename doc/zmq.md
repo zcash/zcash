@@ -5,8 +5,8 @@ connections, inter-process communication, and shared-memory,
 providing various message-oriented semantics such as publish/subcribe,
 request/reply, and push/pull.
 
-The Zcash daemon can be configured to act as a trusted "border
-router", implementing the zcash wire protocol and relay, making
+The AnimeCoin daemon can be configured to act as a trusted "border
+router", implementing the animecoin wire protocol and relay, making
 consensus decisions, maintaining the local blockchain database,
 broadcasting locally generated transactions into the network, and
 providing a queryable RPC interface to interact on a polled basis for
@@ -33,7 +33,7 @@ buffering or reassembly.
 
 ## Prerequisites
 
-The ZeroMQ feature in Zcash requires ZeroMQ API version 4.x or
+The ZeroMQ feature in AnimeCoin requires ZeroMQ API version 4.x or
 newer, which you will need to install if you are not using the depends
 system. Typically, it is packaged by distributions as something like
 *libzmq5-dev*. The C++ wrapper for ZeroMQ is *not* needed.

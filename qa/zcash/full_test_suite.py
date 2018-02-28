@@ -64,7 +64,7 @@ def check_security_hardening():
 
     ret &= test_rpath_runpath('src/animecoind')
     ret &= test_rpath_runpath('src/animecoin-cli')
-    ret &= test_rpath_runpath('src/zcash-gtest')
+    ret &= test_rpath_runpath('src/animecoin-gtest')
     ret &= test_rpath_runpath('src/animecoin-tx')
     ret &= test_rpath_runpath('src/test/test_bitcoin')
     ret &= test_rpath_runpath('src/zcash/GenerateParams')
@@ -73,7 +73,7 @@ def check_security_hardening():
     # is enabled for the entire binary. See issue #915.
     ret &= test_fortify_source('src/animecoind')
     ret &= test_fortify_source('src/animecoin-cli')
-    ret &= test_fortify_source('src/zcash-gtest')
+    ret &= test_fortify_source('src/animecoin-gtest')
     ret &= test_fortify_source('src/animecoin-tx')
     ret &= test_fortify_source('src/test/test_bitcoin')
     ret &= test_fortify_source('src/zcash/GenerateParams')
@@ -136,7 +136,7 @@ STAGES = [
 
 STAGE_COMMANDS = {
     'btest': [repofile('src/test/test_bitcoin'), '-p'],
-    'gtest': [repofile('src/zcash-gtest')],
+    'gtest': [repofile('src/animecoin-gtest')],
     'sec-hard': check_security_hardening,
     'no-dot-so': ensure_no_dot_so_in_depends,
     'util-test': util_test,

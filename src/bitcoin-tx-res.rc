@@ -16,8 +16,8 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "Zcash"
-            VALUE "FileDescription",    "animecoin-tx (CLI Zcash transaction editor utility)"
+            VALUE "CompanyName",        "AnimeCoin"
+            VALUE "FileDescription",    "animecoin-tx (CLI AnimeCoin transaction editor utility)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
             VALUE "InternalName",       "animecoin-tx"
             VALUE "LegalCopyright",     COPYRIGHT_STR
