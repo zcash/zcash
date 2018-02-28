@@ -24,6 +24,7 @@
 #include "asyncrpcoperation.h"
 #include "asyncrpcqueue.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
+#include "wallet/asyncrpcoperation_shieldcoinbase.h"
 
 #include "sodium.h"
 
@@ -2335,6 +2336,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "    \"txid\" : \"txid\",        (string) the transaction id \n"
             "    \"vout\" : n,               (numeric) the vout value\n"
             "    \"address\" : \"address\",  (string) the zcash address\n"
+            "    \"generated\" : true|false  (boolean) true if txout is a coinbase transaction output\n"
             "    \"account\" : \"account\",  (string) DEPRECATED. The associated account, or \"\" for the default account\n"
             "    \"scriptPubKey\" : \"key\", (string) the script key\n"
             "    \"amount\" : x.xxx,         (numeric) the transaction amount in btc\n"
@@ -2396,6 +2398,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
         UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
         entry.push_back(Pair("vout", out.i));
+        entry.push_back(Pair("generated", out.tx->IsCoinBase()));
         CTxDestination address;
         if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
             entry.push_back(Pair("address", CBitcoinAddress(address).ToString()));
@@ -3489,6 +3492,182 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
     return operationId;
+}
+
+
+/**
+When estimating the number of coinbase utxos we can shield in a single transaction:
+1. Joinsplit description is 1802 bytes.
+2. Transaction overhead ~ 100 bytes
+3. Spending a typical P2PKH is >=148 bytes, as defined in CTXIN_SPEND_DUST_SIZE.
+4. Spending a multi-sig P2SH address can vary greatly:
+   https://github.com/bitcoin/bitcoin/blob/c3ad56f4e0b587d8d763af03d743fdfc2d180c9b/src/main.cpp#L517
+   In real-world coinbase utxos, we consider a 3-of-3 multisig, where the size is roughly:
+    (3*(33+1))+3 = 105 byte redeem script
+    105 + 1 + 3*(73+1) = 328 bytes of scriptSig, rounded up to 400 based on testnet experiments.
+*/
+#define CTXIN_SPEND_P2SH_SIZE 400
+
+UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() < 2 || params.size() > 3)
+        throw runtime_error(
+            "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee )\n"
+            "\nShield transparent coinbase funds by sending to a shielded zaddr.  This is an asynchronous operation and utxos"
+            "\nselected for shielding will be locked.  If there is an error, they are unlocked.  The RPC call `listlockunspent`"
+            "\ncan be used to return a list of locked utxos.  The number of coinbase utxos selected for shielding is limited by"
+            "\nboth the -mempooltxinputlimit=xxx option and a consensus rule defining a maximum transaction size of "
+            + strprintf("%d bytes.", MAX_TX_SIZE)
+            + HelpRequiringPassphrase() + "\n"
+            "\nArguments:\n"
+            "1. \"fromaddress\"         (string, required) The address is a taddr or \"*\" for all taddrs belonging to the wallet.\n"
+            "2. \"toaddress\"           (string, required) The address is a zaddr.\n"
+            "3. fee                   (numeric, optional, default="
+            + strprintf("%s", FormatMoney(SHIELD_COINBASE_DEFAULT_MINERS_FEE)) + ") The fee amount to attach to this transaction.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"operationid\": xxx          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
+            "  \"shieldedUTXOs\": xxx        (numeric) Number of coinbase utxos being shielded.\n"
+            "  \"shieldedValue\": xxx        (numeric) Value of coinbase utxos being shielded.\n"
+            "  \"remainingUTXOs\": xxx       (numeric) Number of coinbase utxos still available for shielding.\n"
+            "  \"remainingValue\": xxx       (numeric) Value of coinbase utxos still available for shielding.\n"
+            "}\n"
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    // Validate the from address
+    auto fromaddress = params[0].get_str();
+    bool isFromWildcard = fromaddress == "*";
+    CBitcoinAddress taddr;
+    if (!isFromWildcard) {
+        taddr = CBitcoinAddress(fromaddress);
+        if (!taddr.IsValid()) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or \"*\".");
+        }
+    }
+
+    // Validate the destination address
+    auto destaddress = params[1].get_str();
+    try {
+        CZCPaymentAddress pa(destaddress);
+        libzcash::PaymentAddress zaddr = pa.Get();
+    } catch (const std::runtime_error&) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
+    }
+
+    // Convert fee from currency format to zatoshis
+    CAmount nFee = SHIELD_COINBASE_DEFAULT_MINERS_FEE;
+    if (params.size() > 2) {
+        if (params[2].get_real() == 0.0) {
+            nFee = 0;
+        } else {
+            nFee = AmountFromValue( params[2] );
+        }
+    }
+
+    // Prepare to get coinbase utxos
+    std::vector<ShieldCoinbaseUTXO> inputs;
+    CAmount shieldedValue = 0;
+    CAmount remainingValue = 0;
+    size_t estimatedTxSize = 2000;  // 1802 joinsplit description + tx overhead + wiggle room
+    size_t utxoCounter = 0;
+    bool maxedOutFlag = false;
+    size_t mempoolLimit = (size_t)GetArg("-mempooltxinputlimit", 0);
+
+    // Set of addresses to filter utxos by
+    set<CBitcoinAddress> setAddress = {};
+    if (!isFromWildcard) {
+        setAddress.insert(taddr);
+    }
+
+    // Get available utxos
+    vector<COutput> vecOutputs;
+    pwalletMain->AvailableCoins(vecOutputs, true, NULL, false, true);
+
+    // Find unspent coinbase utxos and update estimated size
+    BOOST_FOREACH(const COutput& out, vecOutputs) {
+        if (!out.fSpendable) {
+            continue;
+        }
+
+        CTxDestination address;
+        if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
+            continue;
+        }
+        // If taddr is not wildcard "*", filter utxos
+        if (setAddress.size()>0 && !setAddress.count(address)) {
+            continue;
+        }
+
+        if (!out.tx->IsCoinBase()) {
+            continue;
+        }
+
+        utxoCounter++;
+        CAmount nValue = out.tx->vout[out.i].nValue;
+
+        if (!maxedOutFlag) {
+            CBitcoinAddress ba(address);
+            size_t increase = (ba.IsScript()) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
+            if (estimatedTxSize + increase >= MAX_TX_SIZE ||
+                (mempoolLimit > 0 && utxoCounter > mempoolLimit))
+            {
+                maxedOutFlag = true;
+            } else {
+                estimatedTxSize += increase;
+                ShieldCoinbaseUTXO utxo = {out.tx->GetHash(), out.i, nValue};
+                inputs.push_back(utxo);
+                shieldedValue += nValue;
+            }
+        }
+
+        if (maxedOutFlag) {
+            remainingValue += nValue;
+        }
+    }
+
+    size_t numUtxos = inputs.size();
+
+    if (numUtxos == 0) {
+        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any coinbase funds to shield.");
+    }
+
+    if (shieldedValue < nFee) {
+        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
+            strprintf("Insufficient coinbase funds, have %s, which is less than miners fee %s",
+            FormatMoney(shieldedValue), FormatMoney(nFee)));
+    }
+
+    // Check that the user specified fee is sane (if too high, it can result in error -25 absurd fee)
+    CAmount netAmount = shieldedValue - nFee;
+    if (nFee > netAmount) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Fee %s is greater than the net amount to be shielded %s", FormatMoney(nFee), FormatMoney(netAmount)));
+    }
+
+    // Keep record of parameters in context object
+    UniValue contextInfo(UniValue::VOBJ);
+    contextInfo.push_back(Pair("fromaddress", params[0]));
+    contextInfo.push_back(Pair("toaddress", params[1]));
+    contextInfo.push_back(Pair("fee", ValueFromAmount(nFee)));
+
+    // Create operation and add to global queue
+    std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(inputs, destaddress, nFee, contextInfo) );
+    q->addOperation(operation);
+    AsyncRPCOperationId operationId = operation->getId();
+
+    // Return continuation information
+    UniValue o(UniValue::VOBJ);
+    o.push_back(Pair("remainingUTXOs", utxoCounter - numUtxos));
+    o.push_back(Pair("remainingValue", ValueFromAmount(remainingValue)));
+    o.push_back(Pair("shieldingUTXOs", numUtxos));
+    o.push_back(Pair("shieldingValue", ValueFromAmount(shieldedValue)));
+    o.push_back(Pair("opid", operationId));
+    return o;
 }
 
 
