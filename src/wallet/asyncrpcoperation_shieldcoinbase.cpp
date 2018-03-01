@@ -279,7 +279,12 @@ void AsyncRPCOperation_shieldcoinbase::sign_send_raw_transaction(UniValue obj)
 
 
 UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInfo & info) {
-    uint256 anchor = pcoinsTip->GetBestAnchor();
+    uint256 anchor;
+    {
+        LOCK(cs_main);
+        anchor = pcoinsTip->GetBestAnchor();
+    }
+
     if (anchor.IsNull()) {
         throw std::runtime_error("anchor is null");
     }
