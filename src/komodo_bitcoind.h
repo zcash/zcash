@@ -23,6 +23,8 @@
 #include <curl/easy.h>
 #endif
 
+#include "komodo_defs.h"
+
 //#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7776",0,0,(char *)(cmdstr))
 
 struct MemoryStruct { char *memory; size_t size; };
@@ -559,7 +561,7 @@ uint32_t komodo_txtime(uint256 hash)
 
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
-    char symbol[16],dest[16]; struct komodo_state *sp;
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
     //fprintf(stderr,"disconnect ht.%d\n",pindex->nHeight);
     komodo_init(pindex->nHeight);
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
@@ -656,6 +658,13 @@ int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex)
     return(0);
 }
 
+uint32_t komodo_chainactive_timestamp()
+{
+    if ( chainActive.Tip() != 0 )
+        return((uint32_t)chainActive.Tip()->GetBlockTime());
+    else return(0);
+}
+
 CBlockIndex *komodo_chainactive(int32_t height)
 {
     if ( chainActive.Tip() != 0 )
@@ -701,27 +710,28 @@ void komodo_connectpindex(CBlockIndex *pindex)
         komodo_connectblock(pindex,block);
 }
 
-int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
-int32_t komodo_electednotary(uint8_t *pubkey33,int32_t height);
+int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
+int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
 
 int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
 {
-    int32_t num,i; CBlockIndex *pindex; uint8_t _pubkey33[33],pubkeys[64][33];
+    int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t _pubkey33[33],pubkeys[64][33];
     if ( pubkey33 == 0 && (pindex= chainActive[height]) != 0 )
     {
+        timestamp = pindex->GetBlockTime();
         if ( pubkey33 == 0 )
         {
             pubkey33 = _pubkey33;
             komodo_index2pubkey33(pubkey33,pindex,height);
         }
-        if ( (num= komodo_notaries(pubkeys,height)) > 0 )
+        if ( (num= komodo_notaries(pubkeys,height,timestamp)) > 0 )
         {
             for (i=0; i<num; i++)
                 if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
                     return(i);
         }
     }
-    return(komodo_electednotary(pubkey33,height));
+    return(komodo_electednotary(&numnotaries,pubkey33,height,timestamp));
 }
 
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height)
@@ -761,11 +771,11 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width)
     return(n);
 }
 
-int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
+int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp)
 {
     int32_t i,notaryid=0,minerid,limit,nid; uint8_t _pubkey33[33];
     if ( height >= 225000 )
-        komodo_chosennotary(&notaryid,height,_pubkey33);
+        komodo_chosennotary(&notaryid,height,_pubkey33,timestamp);
     if ( height >= 34000 && notaryid >= 0 )
     {
         if ( height < 79693 )
@@ -775,7 +785,7 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33])
         else limit = 66;
         for (i=1; i<limit; i++)
         {
-            komodo_chosennotary(&nid,height-i,_pubkey33);
+            komodo_chosennotary(&nid,height-i,_pubkey33,timestamp);
             if ( nid == notaryid ) //komodo_minerid(height-i,_pubkey33)
             {
                 if ( (0) && notaryid > 0 )

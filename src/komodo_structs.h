@@ -13,6 +13,8 @@
  *                                                                            *
  ******************************************************************************/
 
+#include "komodo_defs.h"
+
 #include "uthash.h"
 #include "utlist.h"
 
@@ -24,7 +26,8 @@
 
 #define GENESIS_NBITS 0x1f00ffff
 #define KOMODO_MINRATIFY ((height < 90000) ? 7 : 11)
-#define KOMODO_MAXBLOCKS 5000000
+#define KOMODO_NOTARIES_HARDCODED 180000 // DONT CHANGE
+#define KOMODO_MAXBLOCKS 250000 // DONT CHANGE
 
 #define KOMODO_EVENT_RATIFY 'P'
 #define KOMODO_EVENT_NOTARIZED 'N'
@@ -40,6 +43,7 @@
 #define KOMODO_KVPROTECTED 1
 #define KOMODO_KVBINARY 2
 #define KOMODO_KVDURATION 1440
+#define KOMODO_ASSETCHAIN_MAXLEN 65
 
 union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
 typedef union _bits256 bits256;
@@ -60,7 +64,7 @@ struct komodo_event
     uint16_t len;
     int32_t height;
     uint8_t type,reorged;
-    char symbol[16];
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN];
     uint8_t space[];
 };
 
@@ -71,7 +75,7 @@ struct pax_transaction
     uint64_t komodoshis,fiatoshis,validated;
     int32_t marked,height,otherheight,approved,didstats,ready;
     uint16_t vout;
-    char symbol[16],source[16],coinaddr[64]; uint8_t rmd160[20],type,buf[35];
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN],source[KOMODO_ASSETCHAIN_MAXLEN],coinaddr[64]; uint8_t rmd160[20],type,buf[35];
 };
 
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
