@@ -287,7 +287,7 @@ std::istream& operator>>(std::istream &in, r1cs_ppzksnark_proof<ppT> &proof);
  * A proof for the R1CS ppzkSNARK.
  *
  * While the proof has a structure, externally one merely opaquely produces,
- * seralizes/deserializes, and verifies proofs. We only expose some information
+ * serializes/deserializes, and verifies proofs. We only expose some information
  * about the structure for statistics purposes.
  */
 template<typename ppT>

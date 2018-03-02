@@ -34,7 +34,7 @@ std::istream& operator>>(std::istream &, Fp_model<n, modulus> &);
  * The implementation is mostly a wrapper around GMP's MPN (constant-size integers).
  * But for the integer sizes of interest for libsnark (3 to 5 limbs of 64 bits each),
  * we implement performance-critical routines, like addition and multiplication,
- * using hand-optimzied assembly code.
+ * using hand-optimized assembly code.
 */
 template<mp_size_t n, const bigint<n>& modulus>
 class Fp_model {

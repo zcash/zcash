@@ -167,7 +167,7 @@ public:
         nSize += ::GetSerializeSize(VARINT(nCode), nType, nVersion);
         // spentness bitmask
         nSize += nMaskSize;
-        // txouts themself
+        // txouts
         for (unsigned int i = 0; i < vout.size(); i++)
             if (!vout[i].IsNull())
                 nSize += ::GetSerializeSize(CTxOutCompressor(REF(vout[i])), nType, nVersion);

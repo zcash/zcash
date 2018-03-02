@@ -42,7 +42,7 @@ Wallet encryption is disabled, for several reasons:
 
 You should use full-disk encryption (or encryption of your home directory) to
 protect your wallet at rest, and should assume (even unprivileged) users who are
-runnng on your OS can read your wallet.dat file.
+running on your OS can read your wallet.dat file.
 
 Side-Channel Attacks
 --------------------
