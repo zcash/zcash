@@ -405,7 +405,7 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
         boost::split(uriParts, strUriParams, boost::is_any_of("/"));
     }
 
-    // throw exception in case of a empty request
+    // throw exception in case of an empty request
     std::string strRequestMutable = req->ReadBody();
     if (strRequestMutable.length() == 0 && uriParts.size() == 0)
         return RESTERR(req, HTTP_INTERNAL_SERVER_ERROR, "Error: empty request");
@@ -485,7 +485,7 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
     if (vOutPoints.size() > MAX_GETUTXOS_OUTPOINTS)
         return RESTERR(req, HTTP_INTERNAL_SERVER_ERROR, strprintf("Error: max outpoints exceeded (max: %d, tried: %d)", MAX_GETUTXOS_OUTPOINTS, vOutPoints.size()));
 
-    // check spentness and form a bitmap (as well as a JSON capable human-readble string representation)
+    // check spentness and form a bitmap (as well as a JSON capable human-readable string representation)
     vector<unsigned char> bitmap;
     vector<CCoin> outs;
     std::string bitmapStringRepresentation;
