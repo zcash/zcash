@@ -1,18 +1,18 @@
-*** Warning: Do not assume Tor support does the correct thing in Zcash; better Tor support is a future feature goal. ***
+*** Warning: Do not assume Tor support does the correct thing in Komodo; better Tor support is a future feature goal. ***
 
 TOR SUPPORT IN ZCASH
 ====================
 
-It is possible to run Zcash as a Tor hidden service, and connect to such services.
+It is possible to run Komodo as a Tor hidden service, and connect to such services.
 
 The following directions assume you have a Tor proxy running on port 9050. Many distributions default to having a SOCKS proxy listening on port 9050, but others may not. In particular, the Tor Browser Bundle defaults to listening on port 9150. See [Tor Project FAQ:TBBSocksPort](https://www.torproject.org/docs/faq.html.en#TBBSocksPort) for how to properly
 configure Tor.
 
 
-1. Run Zcash behind a Tor proxy
+1. Run Komodo behind a Tor proxy
 -------------------------------
 
-The first step is running Zcash behind a Tor proxy. This will already make all
+The first step is running Komodo behind a Tor proxy. This will already make all
 outgoing connections be anonymized, but more is possible.
 
 	-proxy=ip:port  Set the proxy server. If SOCKS5 is selected (default), this proxy
@@ -36,7 +36,7 @@ In a typical situation, this suffices to run behind a Tor proxy:
 	./komodod -proxy=127.0.0.1:9050
 
 
-2. Run a Zcash hidden server
+2. Run a Komodo hidden server
 ----------------------------
 
 If you configure your Tor system accordingly, it is possible to make your node also
@@ -44,13 +44,13 @@ reachable from the Tor network. Add these lines to your /etc/tor/torrc (or equiv
 config file):
 
 	HiddenServiceDir /var/lib/tor/zcash-service/
-	HiddenServicePort 8233 127.0.0.1:8233
-	HiddenServicePort 18233 127.0.0.1:18233
+	HiddenServicePort 7771 127.0.0.1:7771
+	HiddenServicePort 17771 127.0.0.1:17771
 
 The directory can be different of course, but (both) port numbers should be equal to
-your komodod's P2P listen port (8233 by default).
+your komodod's P2P listen port (7771 by default).
 
-	-externalip=X   You can tell Zcash about its publicly reachable address using
+	-externalip=X   You can tell Komodo about its publicly reachable address using
 	                this option, and this can be a .onion address. Given the above
 	                configuration, you can find your onion address in
 	                /var/lib/tor/zcash-service/hostname. Onion addresses are given
@@ -83,7 +83,7 @@ as well, use `discover` instead:
 
 	./komodod ... -discover
 
-and open port 8233 on your firewall (or use -upnp).
+and open port 7771 on your firewall (or use -upnp).
 
 If you only want to use Tor to reach onion addresses, but not use it as a proxy
 for normal IPv4/IPv6 communication, use:
@@ -96,15 +96,15 @@ for normal IPv4/IPv6 communication, use:
 
 Starting with Tor version 0.2.7.1 it is possible, through Tor's control socket
 API, to create and destroy 'ephemeral' hidden services programmatically.
-Zcash has been updated to make use of this.
+Komodo has been updated to make use of this.
 
 This means that if Tor is running (and proper authentication has been configured),
-Zcash automatically creates a hidden service to listen on. Zcash will also use Tor
+Komodo automatically creates a hidden service to listen on. Komodo will also use Tor
 automatically to connect to other .onion nodes if the control socket can be
 successfully opened. This will positively affect the number of available .onion
 nodes and their usage.
 
-This new feature is enabled by default if Zcash is listening (`-listen`), and
+This new feature is enabled by default if Komodo is listening (`-listen`), and
 requires a Tor connection to work. It can be explicitly disabled with `-listenonion=0`
 and, if not disabled, configured using the `-torcontrol` and `-torpassword` settings.
 To show verbose debugging information, pass `-debug=tor`.
@@ -121,22 +121,22 @@ of the `-torpassword` flag and a `hash-password` which can be enabled and specif
 Tor configuration.
 
 
-4. Connect to a Zcash hidden server
+4. Connect to a Komodo hidden server
 -----------------------------------
 
 To test your set-up, you might want to try connecting via Tor on a different computer to just a
-a single Zcash hidden server. Launch komodod as follows:
+a single Komodo hidden server. Launch komodod as follows:
 
 	./komodod -onion=127.0.0.1:9050 -connect=zctestseie6wxgio.onion
 
-Now use zcash-cli to verify there is only a single peer connection.
+Now use komodo-cli to verify there is only a single peer connection.
 
-	zcash-cli getpeerinfo
+	komodo-cli getpeerinfo
 
 	[
 	    {
 	        "id" : 1,
-	        "addr" : "zctestseie6wxgio.onion:18233",
+	        "addr" : "zctestseie6wxgio.onion:17770",
 	        ...
 	        "version" : 170002,
 	        "subver" : "/MagicBean:1.0.0/",
