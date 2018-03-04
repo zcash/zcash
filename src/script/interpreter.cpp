@@ -1130,7 +1130,7 @@ bool TransactionSignatureChecker::CheckLockTime(const CScriptNum& nLockTime) con
     // comparison is a simple numeric one.
     if (nLockTime > (int64_t)txTo->nLockTime)
     {
-        fprintf(stderr,"CLTV error: nLockTime %u > %u txTo->nLockTime\n",(uint32_t)nLockTime,(uint32_t)txTo->nLockTime);
+        fprintf(stderr,"CLTV error: nLockTime %u > %u txTo->nLockTime\n",(uint32_t)(int64_t)nLockTime,(uint32_t)txTo->nLockTime);
         return false;
     }
 
