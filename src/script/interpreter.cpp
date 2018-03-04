@@ -1146,7 +1146,7 @@ bool TransactionSignatureChecker::CheckLockTime(const CScriptNum& nLockTime) con
     // required to prove correct CHECKLOCKTIMEVERIFY execution.
     if (txTo->vin[nIn].IsFinal())
     {
-        fprintf(stderr,"CLTV error: nonfinal vin.%d nSequence.%u\n",(int32_t)nIn,(uint32_t)txTo->vin[nIn].nSequence);
+        //fprintf(stderr,"CLTV error: nonfinal vin.%d nSequence.%u vs %u\n",(int32_t)nIn,(uint32_t)txTo->vin[nIn].nSequence,(uint32_t)std::numeric_limits<uint32_t>::max());
         return false;
     }
 
