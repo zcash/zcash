@@ -1129,7 +1129,10 @@ bool TransactionSignatureChecker::CheckLockTime(const CScriptNum& nLockTime) con
     // Now that we know we're comparing apples-to-apples, the
     // comparison is a simple numeric one.
     if (nLockTime > (int64_t)txTo->nLockTime)
+    {
+        fprintf(stderr,"CLTV error: nLockTime %u > %u txTo->nLockTime\n",(uint32_t)nLockTime,(uint32_t)txTo->nLockTime);
         return false;
+    }
 
     // Finally the nLockTime feature can be disabled and thus
     // CHECKLOCKTIMEVERIFY bypassed if every txin has been
@@ -1142,7 +1145,10 @@ bool TransactionSignatureChecker::CheckLockTime(const CScriptNum& nLockTime) con
     // inputs, but testing just this input minimizes the data
     // required to prove correct CHECKLOCKTIMEVERIFY execution.
     if (txTo->vin[nIn].IsFinal())
+    {
+        fprintf(stderr,"CLTV error: nonfinal vin.%d\n",(int32_t)nIn);
         return false;
+    }
 
     return true;
 }

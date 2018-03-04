@@ -1444,19 +1444,6 @@ uint32_t komodo_assetmagic(char *symbol,uint64_t supply,uint8_t *extraptr,int32_
     return(calc_crc32(crc0,buf,len));
 }
 
-/*int32_t komodo_shortflag(char *symbol)
-{
-    int32_t i,shortflag = 0;
-    if ( symbol[0] == '-' )
-    {
-        shortflag = 1;
-        for (i=0; symbol[i+1]!=0; i++)
-            symbol[i] = symbol[i+1];
-        symbol[i] = 0;
-    }
-    return(shortflag);
-}*/
-
 uint16_t komodo_assetport(uint32_t magic,int32_t extralen)
 {
     if ( magic == 0x8de4eef9 )
