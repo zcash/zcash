@@ -857,7 +857,7 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
 
 std::string HelpExampleCli(const std::string& methodname, const std::string& args)
 {
-    return "> zcash-cli " + methodname + " " + args + "\n";
+    return "> komodo-cli " + methodname + " " + args + "\n";
 }
 
 std::string HelpExampleRpc(const std::string& methodname, const std::string& args)
