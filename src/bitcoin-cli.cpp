@@ -65,6 +65,7 @@ public:
 
 };
 
+#define FROM_CLI
 #include "uint256.h"
 #include "arith_uint256.h"
 
