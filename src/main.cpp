@@ -3439,7 +3439,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
         if ( pindex != 0 ) // jl777 debug test
         {
-            if (!CheckBlockHeader(pindex->nHeight:0,pindex, block, state))
+            if (!CheckBlockHeader(pindex->nHeight,pindex, block, state))
             {
                 pindex->nStatus |= BLOCK_FAILED_MASK;
                 fprintf(stderr,"known block failing CheckBlockHeader %d\n",(int32_t)pindex->nHeight);
