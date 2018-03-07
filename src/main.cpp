@@ -3374,7 +3374,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         else if ( komodo_checkpoint(&notarized_height,nHeight,hash) < 0 )
         {
             CBlockIndex *heightblock = chainActive[nHeight];
-            if ( heightblock != 0 && pblockindex->GetBlockHash() == hash )
+            if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
             {
                 fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
                 return true;
