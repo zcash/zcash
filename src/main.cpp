@@ -3376,7 +3376,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
             CBlockIndex *heightblock = chainActive[nHeight];
             if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
             {
-                fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
+                //fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
                 return true;
             } else return state.DoS(100, error("%s: forked chain %d older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
         }
@@ -3437,39 +3437,39 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if (pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK)
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
-       if ( pindex != 0 ) // jl777 debug test
-       {
-           if (!CheckBlockHeader(pindex->nHeight:0,pindex, block, state))
-           {
-               pindex->nStatus |= BLOCK_FAILED_MASK;
-               fprintf(stderr,"known block failing CheckBlockHeader %d\n",(int32_t)pindex->nHeight);
-               return false;
-           }
-           CBlockIndex* pindexPrev = NULL;
-           if (hash != chainparams.GetConsensus().hashGenesisBlock)
-           {
-               BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
-               if (mi == mapBlockIndex.end())
-               {
-                   pindex->nStatus |= BLOCK_FAILED_MASK;
-                   fprintf(stderr,"known block.%d failing to find prevblock\n",(int32_t)pindex->nHeight);
-                   return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
-               }
-               pindexPrev = (*mi).second;
-               if (pindexPrev == 0 || (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
-               {
-                   pindex->nStatus |= BLOCK_FAILED_MASK;
-                   fprintf(stderr,"known block.%d found invalid prevblock\n",(int32_t)pindex->nHeight);
-                   return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
-               }
-           }
-           if (!ContextualCheckBlockHeader(block, state, pindexPrev))
-           {
-               pindex->nStatus |= BLOCK_FAILED_MASK;
-               fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
-               return false;
-           }
-       }
+        if ( pindex != 0 ) // jl777 debug test
+        {
+            if (!CheckBlockHeader(pindex->nHeight:0,pindex, block, state))
+            {
+                pindex->nStatus |= BLOCK_FAILED_MASK;
+                fprintf(stderr,"known block failing CheckBlockHeader %d\n",(int32_t)pindex->nHeight);
+                return false;
+            }
+            CBlockIndex* pindexPrev = NULL;
+            if (hash != chainparams.GetConsensus().hashGenesisBlock)
+            {
+                BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
+                if (mi == mapBlockIndex.end())
+                {
+                    pindex->nStatus |= BLOCK_FAILED_MASK;
+                    fprintf(stderr,"known block.%d failing to find prevblock\n",(int32_t)pindex->nHeight);
+                    return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
+                }
+                pindexPrev = (*mi).second;
+                if (pindexPrev == 0 || (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
+                {
+                    pindex->nStatus |= BLOCK_FAILED_MASK;
+                    fprintf(stderr,"known block.%d found invalid prevblock\n",(int32_t)pindex->nHeight);
+                    return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
+                }
+            }
+            if (!ContextualCheckBlockHeader(block, state, pindexPrev))
+            {
+                pindex->nStatus |= BLOCK_FAILED_MASK;
+                fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
+                return false;
+            }
+        }
         
         return true;
     }
