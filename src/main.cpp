@@ -3439,8 +3439,9 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
        if ( pindex != 0 ) // jl777 debug test
        {
-           if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state))
+           if (!CheckBlockHeader(pindex->nHeight:0,pindex, block, state))
            {
+               pindex->nStatus |= BLOCK_FAILED_MASK;
                fprintf(stderr,"known block failing CheckBlockHeader %d\n",(int32_t)pindex->nHeight);
                return false;
            }
@@ -3450,18 +3451,21 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
                BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
                if (mi == mapBlockIndex.end())
                {
+                   pindex->nStatus |= BLOCK_FAILED_MASK;
                    fprintf(stderr,"known block.%d failing to find prevblock\n",(int32_t)pindex->nHeight);
                    return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
                }
                pindexPrev = (*mi).second;
                if (pindexPrev == 0 || (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
                {
+                   pindex->nStatus |= BLOCK_FAILED_MASK;
                    fprintf(stderr,"known block.%d found invalid prevblock\n",(int32_t)pindex->nHeight);
                    return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
                }
            }
            if (!ContextualCheckBlockHeader(block, state, pindexPrev))
            {
+               pindex->nStatus |= BLOCK_FAILED_MASK;
                fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
                return false;
            }
