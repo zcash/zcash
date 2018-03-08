@@ -125,7 +125,7 @@ public:
     bool CheckSig(const std::vector<unsigned char>& scriptSig, const std::vector<unsigned char>& vchPubKey, const CScript& scriptCode) const;
     bool CheckLockTime(const CScriptNum& nLockTime) const;
     bool CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode) const;
-    int CheckAuxCondition(const CC *cond) const;
+    bool CheckEvalCondition(const CC *cond) const;
 };
 
 class MutableTransactionSignatureChecker : public TransactionSignatureChecker

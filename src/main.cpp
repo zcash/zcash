@@ -21,6 +21,8 @@
 #include "pow.h"
 #include "txdb.h"
 #include "txmempool.h"
+#include "replacementpool.h"
+#include "komodo_cryptoconditions.h"
 #include "ui_interface.h"
 #include "undo.h"
 #include "util.h"
@@ -53,6 +55,7 @@ extern uint8_t NOTARY_PUBKEY33[33];
 
 BlockMap mapBlockIndex;
 CChain chainActive;
+
 CBlockIndex *pindexBestHeader = NULL;
 int64_t nTimeBestReceived = 0;
 CWaitableCriticalSection csBestBlock;
@@ -1107,7 +1110,7 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
 }
 
 
-bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee)
+bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, bool fAcceptReplacement)
 {
     AssertLockHeld(cs_main);
     if (pfMissingInputs)
@@ -1177,6 +1180,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
     }
     }
+
+    CTxReplacementPoolResult rpr = RP_NotReplace;
 
     {
         CCoinsView dummy;
@@ -1331,13 +1336,35 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             return error("AcceptToMemoryPool: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s", hash.ToString());
         }
 
-        // Store transaction in memory
         if ( komodo_is_notarytx(tx) == 0 )
             KOMODO_ON_DEMAND++;
-        pool.addUnchecked(hash, entry, !IsInitialBlockDownload());
+
+        if (fAcceptReplacement) {
+            CTxReplacementPoolItem item(tx, GetHeight());
+            if (SetReplacementParams(item)) {
+                rpr = replacementPool.replace(item);
+            }
+        }
+
+        if (rpr == RP_Invalid) {
+            // already have a better one
+            // TODO: Shouldn't neccesary log this as invalid, not sure if punishing peers is the best idea
+            fprintf(stderr,"accept failure.20\n");
+            return error("AcceptToMemoryPool: Replacement is worse %s", hash.ToString());
+        }
+
+        // If there is no replacement action happening...
+        if (rpr == RP_NotReplace) {
+            // Store transaction in memory
+            pool.addUnchecked(hash, entry, !IsInitialBlockDownload());
+        }
     }
 
-    SyncWithWallets(tx, NULL);
+    // in order for replaceable transactions to sync with wallet, replacementpool should advise
+    // wallet of transaction eviction
+    if (rpr == RP_NotReplace) {
+        SyncWithWallets(tx, NULL);
+    }
 
     return true;
 }
@@ -1350,6 +1377,12 @@ bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock
     LOCK(cs_main);
 
     if (mempool.lookup(hash, txOut))
+    {
+        return true;
+    }
+
+    // replacementPool lookup is O(n) since there's no index by txid
+    if (fAllowSlow && replacementPool.lookup(hash, txOut))
     {
         return true;
     }
@@ -1401,6 +1434,17 @@ bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock
     }
 
     return false;
+}
+
+
+void ProcessReplacementPool(int newHeight)
+{
+    std::vector<CTransaction> pending;
+    replacementPool.removePending(newHeight, pending);
+    CValidationState stateDummy;
+    BOOST_FOREACH(CTransaction tx, pending) {
+        AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL, false, false);
+    }
 }
 
 /*char *komodo_getspendscript(uint256 hash,int32_t n)
@@ -2702,6 +2746,13 @@ bool static DisconnectTip(CValidationState &state) {
     // Update cached incremental witnesses
     //fprintf(stderr,"chaintip false\n");
     GetMainSignals().ChainTip(pindexDelete, &block, newTree, false);
+
+    /* if chain tip disconnects, some transactions may return to the replacementPool
+     * via AcceptToMemoryPool.
+     *
+     * No double send conflicts may result as the winning transaction will be picked.
+     */
+
     return true;
 }
 
@@ -2761,6 +2812,8 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     mempool.check(pcoinsTip);
     // Update chainActive & related variables.
     UpdateTip(pindexNew);
+    // Process pending replacements
+    ProcessReplacementPool(pindexNew->nHeight-1);
     // Tell wallet about transactions that went from mempool
     // to conflicted:
     BOOST_FOREACH(const CTransaction &tx, txConflicted) {
@@ -2770,6 +2823,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     BOOST_FOREACH(const CTransaction &tx, pblock->vtx) {
         SyncWithWallets(tx, pblock);
     }
+
     // Update cached incremental witnesses
     //fprintf(stderr,"chaintip true\n");
     GetMainSignals().ChainTip(pindexNew, pblock, oldTree, true);

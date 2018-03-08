@@ -97,7 +97,7 @@ def get_fanout_txid():
     reward_tx = hoek.decodeTx({'hex': reward_tx_raw})
     balance = reward_tx['outputs'][0]['amount']
 
-    n_outs = 16
+    n_outs = 40
     remainder = balance - n_outs * 1000
 
     fanout = {
@@ -109,7 +109,9 @@ def get_fanout_txid():
         ] + [{"amount": remainder, 'script': {'address': notary_addr}}])
     }
 
-    return submit(sign(fanout))
+    txid = submit(sign(fanout))
+    rpc.getrawtransaction(txid)
+    return txid
 
 
 def fanout_input(n):

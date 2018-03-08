@@ -137,6 +137,7 @@ BITCOIN_CORE_H = \
   init.h \
   key.h \
   keystore.h \
+  komodo_cryptoconditions.h \
   leveldbwrapper.h \
   limitedmap.h \
   main.h \
@@ -155,6 +156,7 @@ BITCOIN_CORE_H = \
   protocol.h \
   pubkey.h \
   random.h \
+  replacementpool.h \
   reverselock.h \
   rpcclient.h \
   rpcprotocol.h \
@@ -223,6 +225,7 @@ libbitcoin_server_a_SOURCES = \
   httprpc.cpp \
   httpserver.cpp \
   init.cpp \
+  komodo_cryptoconditions.cpp \
   leveldbwrapper.cpp \
   main.cpp \
   merkleblock.cpp \
@@ -232,6 +235,7 @@ libbitcoin_server_a_SOURCES = \
   noui.cpp \
   policy/fees.cpp \
   pow.cpp \
+  replacementpool.cpp \
   rest.cpp \
   rpcblockchain.cpp \
   rpcmining.cpp \
@@ -325,6 +329,7 @@ libbitcoin_common_a_SOURCES = \
   hash.cpp \
   key.cpp \
   keystore.cpp \
+  komodo_cryptoconditions.cpp \
   netbase.cpp \
   primitives/block.cpp \
   primitives/transaction.cpp \
@@ -336,7 +341,6 @@ libbitcoin_common_a_SOURCES = \
   script/script_error.cpp \
   script/sign.cpp \
   script/standard.cpp \
-  komodo_cryptoconditions.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
@@ -506,7 +510,6 @@ libzcashconsensus_la_SOURCES = \
   script/zcashconsensus.cpp \
   script/interpreter.cpp \
   script/script.cpp \
-  komodo_cryptoconditions.cpp \
   uint256.cpp \
   utilstrencodings.cpp
 
