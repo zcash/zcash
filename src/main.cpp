@@ -1602,10 +1602,10 @@ bool IsInitialBlockDownload()
         ptr = pindexBestHeader;
     else if ( pindexBestHeader != 0 && pindexBestHeader->nHeight > ptr->nHeight )
         ptr = pindexBestHeader;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    //if ( ASSETCHAINS_SYMBOL[0] == 0 )
         state = ((chainActive.Height() < ptr->nHeight - 24*60) ||
                     ptr->GetBlockTime() < (GetTime() - chainParams.MaxTipAge()));
-    else state = (chainActive.Height() < ptr->nHeight - 10);
+    //else state = (chainActive.Height() < ptr->nHeight - 24*60);
     //fprintf(stderr,"state.%d  ht.%d vs %d, t.%u %u\n",state,(int32_t)chainActive.Height(),(uint32_t)ptr->nHeight,(int32_t)ptr->GetBlockTime(),(uint32_t)(GetTime() - chainParams.MaxTipAge()));
     if (!state)
     {
