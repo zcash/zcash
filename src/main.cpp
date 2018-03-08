@@ -1181,7 +1181,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
     }
 
-    CTxReplacementPoolResult rpr = RP_NotReplace;
+    CTxReplacementPoolResult rpr = RP_NotReplaceable;
 
     {
         CCoinsView dummy;
@@ -1339,22 +1339,31 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         if ( komodo_is_notarytx(tx) == 0 )
             KOMODO_ON_DEMAND++;
 
-        if (fAcceptReplacement) {
+        if (fAcceptReplacement)
+        {
             CTxReplacementPoolItem item(tx, GetHeight());
             if (SetReplacementParams(item)) {
                 rpr = replacementPool.replace(item);
             }
         }
 
-        if (rpr == RP_Invalid) {
+        if (rpr == RP_HaveBetter)
+        {
             // already have a better one
-            // TODO: Shouldn't neccesary log this as invalid, not sure if punishing peers is the best idea
             fprintf(stderr,"accept failure.20\n");
-            return error("AcceptToMemoryPool: Replacement is worse %s", hash.ToString());
+            return state.DoS(0, error("AcceptToMemoryPool: Replacement is worse"), REJECT_HAVEBETTER, "replacement-is-worse");
+        }
+
+        if (rpr == RP_Invalid)
+        {
+            // Not valid according to replaceability rules
+            fprintf(stderr,"accept failure.21\n");
+            return state.DoS(0, error("AcceptToMemoryPool: Replacement is invalid"), REJECT_INVALID, "replacement-is-worse");
         }
 
         // If there is no replacement action happening...
-        if (rpr == RP_NotReplace) {
+        if (rpr == RP_NotReplaceable)
+        {
             // Store transaction in memory
             pool.addUnchecked(hash, entry, !IsInitialBlockDownload());
         }
@@ -1362,7 +1371,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
     // in order for replaceable transactions to sync with wallet, replacementpool should advise
     // wallet of transaction eviction
-    if (rpr == RP_NotReplace) {
+    if (rpr == RP_NotReplaceable) {
         SyncWithWallets(tx, NULL);
     }
 

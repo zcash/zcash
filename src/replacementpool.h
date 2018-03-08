@@ -5,11 +5,11 @@
 #ifndef KOMODO_REPLACEMENTCACHE_H
 #define KOMODO_REPLACEMENTCACHE_H
 
-#include "coins.h"
 #include "primitives/transaction.h"
 
 
-enum CTxReplacementPoolResult { RP_NotReplace, RP_Valid, RP_Invalid };
+enum CTxReplacementPoolResult { RP_Accepted, RP_HaveBetter, RP_Invalid, RP_NotReplaceable };
+
 
 class CTxReplacementPoolItem
 {
@@ -28,41 +28,43 @@ public:
         replacementWindow = 0;
     }
 
-    int GetTargetBlock()
-    {
-        return startBlock + replacementWindow;
-    }
+    int GetTargetBlock() { return startBlock + replacementWindow; }
 };
 
 /**
- * CTxReplacementPool stores valid-according-to-the-current-best-chain (??? do we need to do this?)
- * transactions that are valid but held for period of time during which
- * they may be replaced.
+ * CTxReplacementPool stores transactions that are valid but held for
+ * period of time during which they may be replaced.
  *
  * Transactions are added when they are found to be valid but not added
  * to the mempool until a timeout.
  *
  * Replacement pool is like another mempool before the main mempool.
+ *
+ * Transactions in the replacement pool are indexed by the output
+ * that they are spending. Once a replaceable transaction tries to
+ * spend an output, a countdown of blocks begins at the current block
+ * plus a window that is set by "userland" code. If another, better
+ * transaction replaces the spend that's already pending, the countdown
+ * start block remains the same.
  */
 class CTxReplacementPool
 {
 private:
-    // A potential replacement is first stored here, not in the replaceMap.
-    // This is in case some other checks fail, during AcceptToMemoryPool.
-    // Later on, if all checks pass, processReplacement() is called.
-    
     /* Index of spends that may be replaced */
     std::map<COutPoint, CTxReplacementPoolItem> replaceMap;
 public:
+    /* Try to replace a transaction in the index */
     CTxReplacementPoolResult replace(CTxReplacementPoolItem &item);
 
-    // Remove and return all transactions up to a given block height.
+    /* Remove and return all transactions up to a given block height */
     void removePending(int height, std::vector<CTransaction> &txs);
 
+    /* Find a transaction in the index by it's hash. */
     bool lookup(uint256 txHash, CTransaction &tx);
 };
 
 
+/* Global instance */
 extern CTxReplacementPool replacementPool;
 
 #endif // KOMODO_REPLACEMENTCACHE_H

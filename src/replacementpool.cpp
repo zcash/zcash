@@ -1,37 +1,9 @@
 
-#include <map>
-#include <string>
-#include <iterator>
-
 #include "main.h"
-#include "coins.h"
 #include "replacementpool.h"
 
 
 CTxReplacementPool replacementPool;
-
-
-/*
- * Add a transaction to the pool, with a priority.
- * Return true if valid, false if not valid. */
-bool ValidateReplacementPoolItem(CTxReplacementPoolItem item)
-{
-    // Perform some validations.
-    if (item.tx.vin.size() > 1) {
-        // Replaceable transactions with multiple inputs are disabled for now. It's not yet clear
-        // what edge cases may arise. It is speculated that it will "just work", since if
-        // replaceable transactions spend multiple outputs using the replacement protocol,
-        // they will never conflict in the replaceMap data structure. But for now, to be prudent, disable.
-        return false;
-    }
-
-    // A transaction with 0 priority is not valid.
-    if (item.priority == 0) {
-        return false;
-    }
-
-    return true;
-}
 
 
 /*
@@ -45,7 +17,17 @@ bool ValidateReplacementPoolItem(CTxReplacementPoolItem item)
  */
 CTxReplacementPoolResult CTxReplacementPool::replace(CTxReplacementPoolItem &item)
 {
-    if (!ValidateReplacementPoolItem(item)) {
+    AssertLockHeld(cs_main);
+
+    // Perform some validations.
+    if (item.tx.vin.size() > 1) {
+        // Replaceable transactions with multiple inputs are disabled.
+        // It seems like quite alot of additional complexity.
+        return RP_Invalid;
+    }
+
+    // A transaction with 0 priority is not valid.
+    if (item.priority == 0) {
         return RP_Invalid;
     }
 
@@ -53,22 +35,25 @@ CTxReplacementPoolResult CTxReplacementPool::replace(CTxReplacementPoolItem &ite
 
     if (it != replaceMap.end()) {
         if (it->second.priority >= item.priority) {
-            // Already have a transaction with equal or greater priority; this is not valid
-            return RP_Invalid;
+            return RP_HaveBetter; // (ThanksThough)
         }
-        // copy the previous starting block over
-        item.startBlock = it->second.startBlock;
     }
 
     // This transaction has higher priority
     replaceMap[item.tx.vin[0].prevout] = item;
+    replaceMap[item.tx.vin[0].prevout].startBlock = it->second.startBlock;
 
-    return RP_Valid;
+    return RP_Accepted;
 }
 
 
+/*
+ * Remove and return any spends that have matured
+ */
 void CTxReplacementPool::removePending(int height, std::vector<CTransaction> &txs)
 {
+    AssertLockHeld(cs_main);
+
     for (auto it = replaceMap.begin(); it != replaceMap.end(); /**/) {
         CTxReplacementPoolItem &rep = it->second;
         if (rep.GetTargetBlock() <= height) {
