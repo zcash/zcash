@@ -737,7 +737,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
         }
         else if (!txin.IsFinal())
         {
-            //printf("non-final txin seq.%x locktime.%u vs nTime.%u\n",txin.nSequence,(uint32_t)tx.nLockTime,(uint32_t)nBlockTime);
+            printf("non-final txin seq.%x locktime.%u vs nTime.%u\n",txin.nSequence,(uint32_t)tx.nLockTime,(uint32_t)nBlockTime);
             return false;
         }
     }
@@ -1602,10 +1602,10 @@ bool IsInitialBlockDownload()
         ptr = pindexBestHeader;
     else if ( pindexBestHeader != 0 && pindexBestHeader->nHeight > ptr->nHeight )
         ptr = pindexBestHeader;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    //if ( ASSETCHAINS_SYMBOL[0] == 0 )
         state = ((chainActive.Height() < ptr->nHeight - 24*60) ||
                     ptr->GetBlockTime() < (GetTime() - chainParams.MaxTipAge()));
-    else state = (chainActive.Height() < ptr->nHeight - 10);
+    //else state = (chainActive.Height() < ptr->nHeight - 24*60);
     //fprintf(stderr,"state.%d  ht.%d vs %d, t.%u %u\n",state,(int32_t)chainActive.Height(),(uint32_t)ptr->nHeight,(int32_t)ptr->GetBlockTime(),(uint32_t)(GetTime() - chainParams.MaxTipAge()));
     if (!state)
     {
@@ -3372,7 +3372,14 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         if (pcheckpoint && (nHeight < pcheckpoint->nHeight || nHeight == 1 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight > 1) )
             return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
         else if ( komodo_checkpoint(&notarized_height,nHeight,hash) < 0 )
-            return state.DoS(100, error("%s: forked chain %d older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
+        {
+            CBlockIndex *heightblock = chainActive[nHeight];
+            if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
+            {
+                //fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
+                return true;
+            } else return state.DoS(100, error("%s: forked chain %d older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
+        }
     }
     // Reject block.nVersion < 4 blocks
     if (block.nVersion < 4)
@@ -3430,6 +3437,40 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if (pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK)
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+        if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777 debug test
+        {
+            if (!CheckBlockHeader(pindex->nHeight,pindex, block, state))
+            {
+                pindex->nStatus |= BLOCK_FAILED_MASK;
+                fprintf(stderr,"known block failing CheckBlockHeader %d\n",(int32_t)pindex->nHeight);
+                return false;
+            }
+            CBlockIndex* pindexPrev = NULL;
+            if (hash != chainparams.GetConsensus().hashGenesisBlock)
+            {
+                BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
+                if (mi == mapBlockIndex.end())
+                {
+                    pindex->nStatus |= BLOCK_FAILED_MASK;
+                    fprintf(stderr,"known block.%d failing to find prevblock\n",(int32_t)pindex->nHeight);
+                    return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
+                }
+                pindexPrev = (*mi).second;
+                if (pindexPrev == 0 || (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
+                {
+                    pindex->nStatus |= BLOCK_FAILED_MASK;
+                    fprintf(stderr,"known block.%d found invalid prevblock\n",(int32_t)pindex->nHeight);
+                    return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
+                }
+            }
+            if (!ContextualCheckBlockHeader(block, state, pindexPrev))
+            {
+                pindex->nStatus |= BLOCK_FAILED_MASK;
+                fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
+                return false;
+            }
+        }
+        
         return true;
     }
 
@@ -3441,7 +3482,9 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     if (hash != chainparams.GetConsensus().hashGenesisBlock) {
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
         if (mi == mapBlockIndex.end())
+        {
             return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
+        }
         pindexPrev = (*mi).second;
         if (pindexPrev == 0 || (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
             return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
