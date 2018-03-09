@@ -2,26 +2,15 @@
 #include "replacementpool.h"
 #include "komodo_cryptoconditions.h"
 #include "cryptoconditions/include/cryptoconditions.h"
-#include "script/interpreter.h"
-#include "coins.h"
 
 
 #define REPLACEMENT_WINDOW_BLOCKS 2
 
 
-bool GetOpReturnData(const CScript &sig, std::vector<unsigned char> &data)
-{
-    auto pc = sig.begin();
-    opcodetype opcode;
-    if (sig.GetOp(pc, opcode))
-        if (opcode == OP_RETURN)
-            if (sig.GetOp(pc, opcode, data))
-                return opcode > OP_0 && opcode <= OP_PUSHDATA4;
-    return false;
-}
-
-
-bool EvalConditionBool(const CC *cond, const CTransaction *txTo)
+/*
+ * Evaluate the validity of an Eval node
+ */
+bool EvalConditionValidity(const CC *cond, const CTransaction *txTo)
 {
     if (strcmp(cond->method, "testEval") == 0) {
         return cond->paramsBinLength == 8 &&
@@ -35,7 +24,16 @@ bool EvalConditionBool(const CC *cond, const CTransaction *txTo)
 }
 
 
-bool GetConditionPriority(const CC *cond, CTxReplacementPoolItem *rep)
+/*
+ * Evaluate the priority of an eval node.
+ *
+ * This method should set the ->priority and ->replacementWindow (in blocks)
+ * of the provided replacement pool item. Priority is a 64 bit unsigned int and
+ * 0 is invalid.
+ *
+ * This method does not need to validate, that is done separately.
+ */
+bool EvalConditionPriority(const CC *cond, CTxReplacementPoolItem *rep)
 {
     if (strcmp((const char*)cond->method, "testReplace") == 0) {
         std::vector<unsigned char> data;
@@ -49,30 +47,18 @@ bool GetConditionPriority(const CC *cond, CTxReplacementPoolItem *rep)
 }
 
 
-bool TransactionSignatureChecker::CheckEvalCondition(const CC *cond) const
-{
-    return EvalConditionBool(cond, txTo);
-}
-
-
-extern "C"
-{
-    int visitConditionPriority(CC *cond, struct CCVisitor visitor);
-}
-
-
 int visitConditionPriority(CC *cond, struct CCVisitor visitor)
 {
-    if (cc_typeId(cond) == CC_Eval) {
-        if (GetConditionPriority(cond, (CTxReplacementPoolItem*)visitor.context)) {
-            return 0; // stop
-        }
-    }
-    return 1; // continue
+    auto rep = (CTxReplacementPoolItem*)visitor.context;
+    // visitor protocol is 1 for continue, 0 for stop
+    return !(cc_typeId(cond) == CC_Eval && EvalConditionPriority(cond, rep));
 }
 
 
-bool SetReplacementParams(CTxReplacementPoolItem &rep)
+/*
+ * Try to get replacement parameters from a transaction in &rep.
+ */
+bool PutReplacementParams(CTxReplacementPoolItem &rep)
 {
     // first, see if we have a cryptocondition
     const CScript &sig = rep.tx.vin[0].scriptSig;
@@ -82,6 +68,7 @@ bool SetReplacementParams(CTxReplacementPoolItem &rep)
     opcodetype opcode;
     if (!sig.GetOp(pc, opcode, data)) return false;
     CC *cond = cc_readFulfillmentBinary((unsigned char*)data.data(), data.size());
+    auto wat = {1, ""};
     if (!cond) return false;
 
     // now, see if it has a replacement node
@@ -90,4 +77,16 @@ bool SetReplacementParams(CTxReplacementPoolItem &rep)
     bool out = cc_visit(cond, visitor);
     cc_free(cond);
     return !out;
+}
+
+
+bool GetOpReturnData(const CScript &sig, std::vector<unsigned char> &data)
+{
+    auto pc = sig.begin();
+    opcodetype opcode;
+    if (sig.GetOp(pc, opcode))
+        if (opcode == OP_RETURN)
+            if (sig.GetOp(pc, opcode, data))
+                return opcode > OP_0 && opcode <= OP_PUSHDATA4;
+    return false;
 }

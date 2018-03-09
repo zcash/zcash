@@ -1152,14 +1152,18 @@ bool TransactionSignatureChecker::CheckSig(const vector<unsigned char>& vchSigIn
     return true;
 }
 
-extern "C"
+
+bool TransactionSignatureChecker::CheckEvalCondition(const CC *cond) const
 {
-    static int komodoCCEval(CC *cond, void *transactionSignatureChecker);
+    return EvalConditionValidity(cond, txTo);
 }
 
-static int komodoCCEval(CC *cond, void *checker) {
+
+static int komodoCCEval(CC *cond, void *checker)
+{
     return ((TransactionSignatureChecker*)checker)->CheckEvalCondition(cond);
 }
+
 
 bool TransactionSignatureChecker::CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode) const
 {
@@ -1167,6 +1171,7 @@ bool TransactionSignatureChecker::CheckCryptoCondition(const CC *cond, const std
     return cc_verify(cond, (const unsigned char*)&message, 32, 0,
             condBin.data(), condBin.size(), komodoCCEval, (void*)this);
 }
+
 
 bool TransactionSignatureChecker::CheckLockTime(const CScriptNum& nLockTime) const
 {
