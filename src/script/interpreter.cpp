@@ -1191,7 +1191,7 @@ uint256 SignatureHash(
             // The prevout may already be contained in hashPrevout, and the nSequence
             // may already be contained in hashSequence.
             ss << txTo.vin[nIn].prevout;
-            ss << scriptCode;
+            ss << static_cast<const CScriptBase&>(scriptCode);
             ss << amount;
             ss << txTo.vin[nIn].nSequence;
         }
