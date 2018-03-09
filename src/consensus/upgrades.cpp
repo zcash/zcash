@@ -26,6 +26,8 @@ const struct NUInfo NetworkUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
     }
 };
 
+const uint32_t SPROUT_BRANCH_ID = NetworkUpgradeInfo[Consensus::BASE_SPROUT].nBranchId;
+
 UpgradeState NetworkUpgradeState(
     int nHeight,
     const Consensus::Params& params,
