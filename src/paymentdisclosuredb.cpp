@@ -57,7 +57,7 @@ bool PaymentDisclosureDB::Put(const PaymentDisclosureKey& key, const PaymentDisc
     std::lock_guard<std::mutex> guard(lock_);
 
     CDataStream ssValue(SER_DISK, CLIENT_VERSION);
-    ssValue.reserve(ssValue.GetSerializeSize(info));
+    ssValue.reserve(GetSerializeSize(ssValue, info));
     ssValue << info;
     leveldb::Slice slice(&ssValue[0], ssValue.size());
 

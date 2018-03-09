@@ -99,7 +99,7 @@ public:
 
     template<typename K> void Seek(const K& key) {
         CDataStream ssKey(SER_DISK, CLIENT_VERSION);
-        ssKey.reserve(ssKey.GetSerializeSize(key));
+        ssKey.reserve(GetSerializeSize(ssKey, key));
         ssKey << key;
         leveldb::Slice slKey(&ssKey[0], ssKey.size());
         piter->Seek(slKey);

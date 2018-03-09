@@ -506,14 +506,12 @@ template<typename Stream, typename T, typename A> inline void Unserialize(Stream
 /**
  * optional
  */
-template<typename T> unsigned int GetSerializeSize(const boost::optional<T> &item, int nType, int nVersion);
 template<typename Stream, typename T> void Serialize(Stream& os, const boost::optional<T>& item, int nType, int nVersion);
 template<typename Stream, typename T> void Unserialize(Stream& is, boost::optional<T>& item, int nType, int nVersion);
 
 /**
  * array
  */
-template<typename T, std::size_t N> unsigned int GetSerializeSize(const boost::array<T, N> &item, int nType, int nVersion);
 template<typename Stream, typename T, std::size_t N> void Serialize(Stream& os, const boost::array<T, N>& item, int nType, int nVersion);
 template<typename Stream, typename T, std::size_t N> void Unserialize(Stream& is, boost::array<T, N>& item, int nType, int nVersion);
 
@@ -538,7 +536,6 @@ template<typename Stream, typename K, typename Pred, typename A> void Unserializ
 /**
  * list
  */
-template<typename T, typename A> unsigned int GetSerializeSize(const std::list<T, A>& m, int nType, int nVersion);
 template<typename Stream, typename T, typename A> void Serialize(Stream& os, const std::list<T, A>& m, int nType, int nVersion);
 template<typename Stream, typename T, typename A> void Unserialize(Stream& is, std::list<T, A>& m, int nType, int nVersion);
 
@@ -729,16 +726,6 @@ inline void Unserialize(Stream& is, std::vector<T, A>& v, int nType, int nVersio
 /**
  * optional
  */
-template<typename T>
-unsigned int GetSerializeSize(const boost::optional<T> &item, int nType, int nVersion)
-{
-    if (item) {
-        return 1 + GetSerializeSize(*item, nType, nVersion);
-    } else {
-        return 1;
-    }
-}
-
 template<typename Stream, typename T>
 void Serialize(Stream& os, const boost::optional<T>& item, int nType, int nVersion)
 {
@@ -776,16 +763,6 @@ void Unserialize(Stream& is, boost::optional<T>& item, int nType, int nVersion)
 /**
  * array
  */
-template<typename T, std::size_t N>
-unsigned int GetSerializeSize(const boost::array<T, N> &item, int nType, int nVersion)
-{
-    unsigned int size = 0;
-    for (size_t i = 0; i < N; i++) {
-        size += GetSerializeSize(item[0], nType, nVersion);
-    }
-    return size;
-}
-
 template<typename Stream, typename T, std::size_t N>
 void Serialize(Stream& os, const boost::array<T, N>& item, int nType, int nVersion)
 {
@@ -879,15 +856,6 @@ void Unserialize(Stream& is, std::set<K, Pred, A>& m, int nType, int nVersion)
 /**
  * list
  */
-template<typename T, typename A>
-unsigned int GetSerializeSize(const std::list<T, A>& l, int nType, int nVersion)
-{
-    unsigned int nSize = GetSizeOfCompactSize(l.size());
-    for (typename std::list<T, A>::const_iterator it = l.begin(); it != l.end(); ++it)
-        nSize += GetSerializeSize((*it), nType, nVersion);
-    return nSize;
-}
-
 template<typename Stream, typename T, typename A>
 void Serialize(Stream& os, const std::list<T, A>& l, int nType, int nVersion)
 {
