@@ -27,12 +27,12 @@ class SignOfflineTest (BitcoinTestFramework):
 
         assert_equal(0, len(offline_node.getpeerinfo())) # make sure node 1 has no peers
 
-        privkeys = [self.nodes[0].dumpprivkey(self.nodes[0].getnewaddress())]
         taddr = self.nodes[0].getnewaddress()
 
         tx = self.nodes[0].listunspent()[0]
         txid = tx['txid']
         scriptpubkey = tx['scriptPubKey']
+        privkeys = [self.nodes[0].dumpprivkey(tx['address'])]
 
         create_inputs = [{'txid': txid, 'vout': 0}]
         sign_inputs = [{'txid': txid, 'vout': 0, 'scriptPubKey': scriptpubkey, 'amount': 10}]
