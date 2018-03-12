@@ -1,0 +1,14 @@
+{
+  "json": {
+    "type": "eval-sha-256",
+    "method": "testEval",
+    "params": "dGVzdEV2YWw"
+  },
+  "cost": 131072,
+  "subtypes": [],
+  "fingerprintContents": "",
+  "fulfillment": "AF148008746573744576616C8108746573744576616C",
+  "conditionBinary": "AF27802062CC11575F91E1611379B5A0B53678805FC03858544FC28E72BB66A14629C08F8103100000",
+  "conditionUri": "ni:///sha-256;YswRV1-R4WETebWgtTZ4gF_AOFhUT8KOcrtmoUYpwI8?fpt=eval-sha-256&cost=1048576",
+  "message": ""
+}
