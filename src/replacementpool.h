@@ -12,8 +12,7 @@
 enum CTxReplacementPoolResult {
     RP_Accept,
     RP_HaveBetter,
-    RP_InvalidZeroPriority,
-    RP_InvalidStructure,
+    RP_Invalid,
     RP_NoReplace
 };
 

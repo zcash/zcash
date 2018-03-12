@@ -23,10 +23,7 @@ CTxReplacementPoolResult CTxReplacementPool::replace(CTxReplacementPoolItem &ite
 
     // Replaceable transactions with multiple inputs are disabled
     // until someone figures out how they would work.
-    if (item.tx.vin.size() > 1) return RP_InvalidStructure;
-
-    // A transaction with 0 priority is not valid.
-    if (item.priority == 0) return RP_InvalidZeroPriority;
+    if (item.tx.vin.size() > 1) return RP_Invalid;
 
     // replacementWindow of 0 goes direct to mempool
     if (item.replacementWindow == 0) 

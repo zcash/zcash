@@ -1130,17 +1130,11 @@ bool AcceptToReplacementPool(const CTransaction &tx, CValidationState &state)
         return state.Invalid(error("AcceptToMemoryPool: Replacement is worse"),
                 REJECT_HAVEBETTER, "replacement-is-worse");
 
-    case RP_InvalidZeroPriority:
-        // Not valid according to replaceability rules
-        fprintf(stderr,"accept failure.21\n");
-        return state.Invalid(error("AcceptToMemoryPool: Replacement has 0 priority"),
-                REJECT_INVALID, "replacement-invalid-zero-priority");
-
-    case RP_InvalidStructure:
+    case RP_Invalid:
         // Not valid according to replaceability rules
         fprintf(stderr,"accept failure.22\n");
         return state.Invalid(error("AcceptToMemoryPool: Replacement has multiple inputs"),
-                REJECT_INVALID, "replacement-has-invalid-structure");
+                REJECT_INVALID, "replacement-invalid");
 
     default:
         return false;

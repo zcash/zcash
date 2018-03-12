@@ -189,10 +189,10 @@ CScript getReplaceOut(unsigned char replacementWindow, unsigned char priority)
 
 
 CTransaction _txout;
-#define ASSERT_REPLACEMENT_POOL(hash) ASSERT_TRUE(replacementPool.lookup(hash, _txout)); \
-                                      ASSERT_FALSE(mempool.lookup(hash, _txout));
-#define ASSERT_MEM_POOL(hash) ASSERT_FALSE(replacementPool.lookup(hash, _txout)); \
-                              ASSERT_TRUE(mempool.lookup(hash, _txout));
+#define ONLY_REPLACEMENT_POOL(hash) ASSERT_TRUE(replacementPool.lookup(hash, _txout)); \
+                                    ASSERT_FALSE(mempool.lookup(hash, _txout));
+#define ONLY_MEM_POOL(hash) ASSERT_FALSE(replacementPool.lookup(hash, _txout)); \
+                            ASSERT_TRUE(mempool.lookup(hash, _txout));
                                       
 
 
@@ -207,7 +207,7 @@ TEST(replacementpool, 0_setup)
 
 
 // Perform replaceable spend
-TEST(replacementpool, 1_basic)
+TEST(replacementpool, basic)
 {
     CTransaction txIn;
     CC *cond = getReplaceCond();
@@ -220,18 +220,18 @@ TEST(replacementpool, 1_basic)
 
     acceptTx(mtx);
     
-    ASSERT_REPLACEMENT_POOL(mtx.GetHash());
+    ONLY_REPLACEMENT_POOL(mtx.GetHash());
     generateBlock();
-    ASSERT_REPLACEMENT_POOL(mtx.GetHash());
+    ONLY_REPLACEMENT_POOL(mtx.GetHash());
     generateBlock();
-    ASSERT_MEM_POOL(mtx.GetHash());
+    ONLY_MEM_POOL(mtx.GetHash());
 }
 
 
 /*
  * replacementWindow is 0, transaction should go direct to mempool
  */
-TEST(replacementpool, 2_noWindow)
+TEST(replacementpool, noWindow)
 {
     CTransaction txIn;
     CC *cond = getReplaceCond();
@@ -242,7 +242,7 @@ TEST(replacementpool, 2_noWindow)
     mtx.vout[0].scriptPubKey = getReplaceOut(1, 100);
     setFulfillment(mtx, cond, txIn.vout[0].scriptPubKey);
     acceptTx(mtx);
-    ASSERT_REPLACEMENT_POOL(mtx.GetHash());
+    ONLY_REPLACEMENT_POOL(mtx.GetHash());
 
     // Now set a transaction with a 0 block wait and higher priority.
     // It should go direct to the mem pool.
@@ -250,7 +250,7 @@ TEST(replacementpool, 2_noWindow)
     mtx2.vout[0].scriptPubKey = getReplaceOut(0, 101);
     setFulfillment(mtx2, cond, txIn.vout[0].scriptPubKey);
     acceptTx(mtx2);
-    ASSERT_MEM_POOL(mtx2.GetHash());
+    ONLY_MEM_POOL(mtx2.GetHash());
 
     // Additionally, there should be no replacement remaining for txIn in the mempool
     ASSERT_FALSE(replacementPool.lookup(mtx.GetHash(), _txout));
@@ -260,7 +260,7 @@ TEST(replacementpool, 2_noWindow)
 /*
  * Multiple replaceable transactions dont interfere
  */
-TEST(replacementpool, 3_noInterfere)
+TEST(replacementpool, noInterfere)
 {
     CTransaction txIn1, txIn2;
     CC *cond = getReplaceCond();
@@ -272,22 +272,22 @@ TEST(replacementpool, 3_noInterfere)
     mtx.vout[0].scriptPubKey = getReplaceOut(1, 100);
     setFulfillment(mtx, cond, txIn1.vout[0].scriptPubKey);
     acceptTx(mtx);
-    ASSERT_REPLACEMENT_POOL(mtx.GetHash());
+    ONLY_REPLACEMENT_POOL(mtx.GetHash());
 
     // Now, a different spend with a higher window
     auto mtx2 = spendTx(txIn2);
     mtx2.vout[0].scriptPubKey = getReplaceOut(10, 100);
     setFulfillment(mtx2, cond, txIn2.vout[0].scriptPubKey);
     acceptTx(mtx2);
-    ASSERT_REPLACEMENT_POOL(mtx2.GetHash());
+    ONLY_REPLACEMENT_POOL(mtx2.GetHash());
 
     generateBlock();
 
     // mtx has gone to mempool
-    ASSERT_MEM_POOL(mtx.GetHash());
+    ONLY_MEM_POOL(mtx.GetHash());
 
     // mtx2 still in replacementpool
-    ASSERT_REPLACEMENT_POOL(mtx2.GetHash());
+    ONLY_REPLACEMENT_POOL(mtx2.GetHash());
 
     // But 9 blocks later...
     for (int i=0; i<9; i++)
@@ -299,30 +299,9 @@ TEST(replacementpool, 3_noInterfere)
 
 
 /*
- * 0 priority is invalid
- */
-TEST(replacementpool, 4_invalidZeroPriority)
-{
-    LOCK(cs_main);
-
-    CTransaction txIn;
-    CC *cond = getReplaceCond();
-    getInputTx(condPK(cond), txIn);
-
-    auto mtx = spendTx(txIn);
-    mtx.vout[0].scriptPubKey = getReplaceOut(1, 0);
-    setFulfillment(mtx, cond, txIn.vout[0].scriptPubKey);
-
-    CValidationState state;
-    ASSERT_FALSE(AcceptToMemoryPool(mempool, state, mtx, false, NULL));
-    ASSERT_EQ("replacement-invalid-zero-priority", state.GetRejectReason());
-}
-
-
-/*
  * Multiple inputs is invalid
  */
-TEST(replacementpool, 5_invalidMultipleInputs)
+TEST(replacementpool, invalidMultipleInputs)
 {
     LOCK(cs_main);
 
@@ -345,7 +324,7 @@ TEST(replacementpool, 5_invalidMultipleInputs)
 
     CValidationState state;
     ASSERT_FALSE(AcceptToMemoryPool(mempool, state, mtx, false, NULL));
-    ASSERT_EQ("replacement-has-invalid-structure", state.GetRejectReason());
+    ASSERT_EQ("replacement-invalid", state.GetRejectReason());
 }
 
 
@@ -357,7 +336,7 @@ extern std::map<uint256, COrphanTx> mapOrphanTransactions;
 /*
  * Orphans are processed
  */
-TEST(replacementpool, 6_orphansAreProcessed)
+TEST(replacementpool, orphansAreProcessed)
 {
     LOCK(cs_main);
 
@@ -383,7 +362,7 @@ TEST(replacementpool, 6_orphansAreProcessed)
 
     // parent goes into replacement pool
     acceptTx(mtx);
-    ASSERT_REPLACEMENT_POOL(mtx.GetHash());
+    ONLY_REPLACEMENT_POOL(mtx.GetHash());
 
     // this should not result in the movement of any orphans
     ProcessOrphanTransactions(mtx.GetHash());
@@ -391,8 +370,8 @@ TEST(replacementpool, 6_orphansAreProcessed)
 
     // Processing of parent transaction also un-orphanises orphan
     generateBlock();
-    ASSERT_MEM_POOL(mtx.GetHash());
-    ASSERT_MEM_POOL(orphan.GetHash());
+    ONLY_MEM_POOL(mtx.GetHash());
+    ONLY_MEM_POOL(orphan.GetHash());
     ASSERT_EQ(0, mapOrphanTransactions.count(orphan.GetHash()));
 }
 
@@ -400,7 +379,7 @@ TEST(replacementpool, 6_orphansAreProcessed)
 /*
  * Add transaction with lower priority, already have better
  */
-TEST(replacementpool, 7_haveBetter)
+TEST(replacementpool, haveBetter)
 {
     LOCK(cs_main);
 
@@ -413,7 +392,7 @@ TEST(replacementpool, 7_haveBetter)
     mtx.vout[0].scriptPubKey = getReplaceOut(2, 100);
     setFulfillment(mtx, cond, txIn.vout[0].scriptPubKey);
     acceptTx(mtx);
-    ASSERT_REPLACEMENT_POOL(mtx.GetHash());
+    ONLY_REPLACEMENT_POOL(mtx.GetHash());
 
     // Another one, but not as good.
     auto mtx2 = spendTx(txIn);
@@ -422,14 +401,14 @@ TEST(replacementpool, 7_haveBetter)
     CValidationState state;
     ASSERT_FALSE(AcceptToMemoryPool(mempool, state, mtx, false, NULL));
     ASSERT_EQ("replacement-is-worse", state.GetRejectReason());
-    ASSERT_REPLACEMENT_POOL(mtx.GetHash());
+    ONLY_REPLACEMENT_POOL(mtx.GetHash());
 }
 
 
 /*
  * Add transaction with lower priority, but shorter replacementWindow
  */
-TEST(replacementpool, 8_shorterReplacementWindow)
+TEST(replacementpool, shorterReplacementWindow)
 {
     LOCK(cs_main);
 
@@ -442,14 +421,14 @@ TEST(replacementpool, 8_shorterReplacementWindow)
     mtx.vout[0].scriptPubKey = getReplaceOut(2, 100);
     setFulfillment(mtx, cond, txIn.vout[0].scriptPubKey);
     acceptTx(mtx);
-    ASSERT_REPLACEMENT_POOL(mtx.GetHash());
+    ONLY_REPLACEMENT_POOL(mtx.GetHash());
 
     // Another one, lower priority but shorter replacementWindow so wins.
     auto mtx2 = spendTx(txIn);
     mtx2.vout[0].scriptPubKey = getReplaceOut(1, 99);
     setFulfillment(mtx2, cond, txIn.vout[0].scriptPubKey);
     acceptTx(mtx2);
-    ASSERT_REPLACEMENT_POOL(mtx2.GetHash());
+    ONLY_REPLACEMENT_POOL(mtx2.GetHash());
     ASSERT_FALSE(replacementPool.lookup(mtx.GetHash(), _txout));
 
     // Shorter still, in fact direct to mem pool
@@ -457,5 +436,5 @@ TEST(replacementpool, 8_shorterReplacementWindow)
     mtx3.vout[0].scriptPubKey = getReplaceOut(0, 98);
     setFulfillment(mtx3, cond, txIn.vout[0].scriptPubKey);
     acceptTx(mtx3);
-    ASSERT_MEM_POOL(mtx3.GetHash());
+    ONLY_MEM_POOL(mtx3.GetHash());
 }
