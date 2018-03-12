@@ -129,7 +129,7 @@ public:
 class CTxMemPool
 {
 private:
-    uint32_t nCheckFrequency; //!< Value n means that n times in 2^32 we check.
+    uint32_t nCheckFrequency GUARDED_BY(cs); //!< Value n means that n times in 2^32 we check.
     unsigned int nTransactionsUpdated;
     CBlockPolicyEstimator* minerPolicyEstimator;
 
@@ -162,7 +162,7 @@ public:
     > indexed_transaction_set;
 
     mutable CCriticalSection cs;
-    indexed_transaction_set mapTx;
+    indexed_transaction_set mapTx GUARDED_BY(cs);
 
 private:
     // insightexplorer
