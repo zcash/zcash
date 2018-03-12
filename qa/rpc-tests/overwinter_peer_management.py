@@ -4,8 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 from test_framework.mininode import NodeConn, NodeConnCB, NetworkThread, \
-    EarlyDisconnectError, msg_inv, mininode_lock, msg_ping, \
-    MY_VERSION, OVERWINTER_PROTO_VERSION
+    msg_ping, MY_VERSION, OVERWINTER_PROTO_VERSION
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import initialize_chain_clean, start_nodes, \
     p2p_port, assert_equal
