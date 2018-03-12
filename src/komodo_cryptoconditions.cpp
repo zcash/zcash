@@ -4,7 +4,7 @@
 #include "cryptoconditions/include/cryptoconditions.h"
 
 
-#define REPLACEMENT_WINDOW_BLOCKS 2
+bool ASSETCHAINS_CC_TEST = false;
 
 
 /*
@@ -12,12 +12,16 @@
  */
 bool EvalConditionValidity(const CC *cond, const CTransaction *txTo)
 {
-    if (strcmp(cond->method, "testEval") == 0) {
-        return cond->paramsBinLength == 8 &&
-            memcmp(cond->paramsBin, "testEval", 8) == 0;
-    }
-    if (strcmp(cond->method, "testReplace") == 0) {
-        return true;
+    if (ASSETCHAINS_CC_TEST) {
+        if (strcmp(cond->method, "testEval") == 0) {
+            return cond->paramsBinLength == 8 &&
+                memcmp(cond->paramsBin, "testEval", 8) == 0;
+        }
+        if (strcmp(cond->method, "testReplace") == 0) {
+            std::vector<unsigned char> data;
+            auto out = txTo->vout[txTo->vout.size()-1];  // Last output is data
+            return GetOpReturnData(out.scriptPubKey, data) && data.size() == 2;
+        }
     }
     fprintf(stderr, "no defined behaviour for method: %s\n", cond->method);
     return 0;
@@ -31,16 +35,22 @@ bool EvalConditionValidity(const CC *cond, const CTransaction *txTo)
  * of the provided replacement pool item. Priority is a 64 bit unsigned int and
  * 0 is invalid.
  *
- * This method does not need to validate, that is done separately.
+ * This method does not need to validate, that is done separately. Actually,
+ * this method will nearly always be called with the same condition and transaction
+ * in sequence after EvalConditionValidity. If performance became an issue, a very
+ * small LRU cache could be used to cache a result.
  */
 bool EvalConditionPriority(const CC *cond, CTxReplacementPoolItem *rep)
 {
-    if (strcmp((const char*)cond->method, "testReplace") == 0) {
-        std::vector<unsigned char> data;
-        if (GetOpReturnData(rep->tx.vout[0].scriptPubKey, data)) {
-            rep->priority = (uint64_t) data[0];
-            rep->replacementWindow = REPLACEMENT_WINDOW_BLOCKS;
-            return true;
+    if (ASSETCHAINS_CC_TEST) {
+        if (strcmp((const char*)cond->method, "testReplace") == 0) {
+            std::vector<unsigned char> data;
+            auto out = rep->tx.vout[rep->tx.vout.size()-1];  // Last output is data
+            if (GetOpReturnData(out.scriptPubKey, data)) {
+                rep->replacementWindow = (int) data[0];
+                rep->priority = (uint64_t) data[1];
+                return true;
+            }
         }
     }
     return false;
@@ -58,7 +68,7 @@ int visitConditionPriority(CC *cond, struct CCVisitor visitor)
 /*
  * Try to get replacement parameters from a transaction in &rep.
  */
-bool PutReplacementParams(CTxReplacementPoolItem &rep)
+bool SetReplacementParams(CTxReplacementPoolItem &rep)
 {
     // first, see if we have a cryptocondition
     const CScript &sig = rep.tx.vin[0].scriptSig;
@@ -68,7 +78,6 @@ bool PutReplacementParams(CTxReplacementPoolItem &rep)
     opcodetype opcode;
     if (!sig.GetOp(pc, opcode, data)) return false;
     CC *cond = cc_readFulfillmentBinary((unsigned char*)data.data(), data.size());
-    auto wat = {1, ""};
     if (!cond) return false;
 
     // now, see if it has a replacement node

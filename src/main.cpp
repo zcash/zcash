@@ -1110,6 +1110,45 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
 }
 
 
+/*
+ * This should be called from AcceptToMemoryPool in order
+ * to perform all validations.
+ */
+bool AcceptToReplacementPool(const CTransaction &tx, CValidationState &state)
+{
+    CTxReplacementPoolItem item(tx, GetHeight());
+    if (!SetReplacementParams(item)) return false;
+
+    switch (replacementPool.replace(item)) {
+
+    case RP_Accept:
+        return true;
+
+    case RP_HaveBetter:
+        // already have a better one
+        fprintf(stderr,"accept failure.20\n");
+        return state.Invalid(error("AcceptToMemoryPool: Replacement is worse"),
+                REJECT_HAVEBETTER, "replacement-is-worse");
+
+    case RP_InvalidZeroPriority:
+        // Not valid according to replaceability rules
+        fprintf(stderr,"accept failure.21\n");
+        return state.Invalid(error("AcceptToMemoryPool: Replacement has 0 priority"),
+                REJECT_INVALID, "replacement-invalid-zero-priority");
+
+    case RP_InvalidStructure:
+        // Not valid according to replaceability rules
+        fprintf(stderr,"accept failure.22\n");
+        return state.Invalid(error("AcceptToMemoryPool: Replacement has multiple inputs"),
+                REJECT_INVALID, "replacement-has-invalid-structure");
+
+    default:
+        return false;
+    }
+}
+
+
+
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, bool fAcceptReplacement)
 {
     AssertLockHeld(cs_main);
@@ -1180,8 +1219,6 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
     }
     }
-
-    CTxReplacementPoolResult rpr = RP_NotReplaceable;
 
     {
         CCoinsView dummy;
@@ -1341,40 +1378,15 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
         if (fAcceptReplacement)
         {
-            CTxReplacementPoolItem item(tx, GetHeight());
-            if (SetReplacementParams(item)) {
-                rpr = replacementPool.replace(item);
-            }
+            if (AcceptToReplacementPool(tx, state)) return true;
+            if (state.IsInvalid()) return false;
         }
 
-        if (rpr == RP_HaveBetter)
-        {
-            // already have a better one
-            fprintf(stderr,"accept failure.20\n");
-            return state.DoS(0, error("AcceptToMemoryPool: Replacement is worse"), REJECT_HAVEBETTER, "replacement-is-worse");
-        }
-
-        if (rpr == RP_Invalid)
-        {
-            // Not valid according to replaceability rules
-            fprintf(stderr,"accept failure.21\n");
-            return state.DoS(0, error("AcceptToMemoryPool: Replacement is invalid"), REJECT_INVALID, "replacement-is-worse");
-        }
-
-        // If there is no replacement action happening...
-        if (rpr == RP_NotReplaceable)
-        {
-            // Store transaction in memory
-            pool.addUnchecked(hash, entry, !IsInitialBlockDownload());
-        }
+        // Store transaction in memory
+        pool.addUnchecked(hash, entry, !IsInitialBlockDownload());
     }
 
-    // in order for replaceable transactions to sync with wallet, replacementpool should advise
-    // wallet of transaction eviction
-    if (rpr == RP_NotReplaceable) {
-        SyncWithWallets(tx, NULL);
-    }
-
+    SyncWithWallets(tx, NULL);
     return true;
 }
 
@@ -1989,7 +2001,7 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
                     // as to the correct behavior - we may want to continue
                     // peering with non-upgraded nodes even after a soft-fork
                     // super-majority vote has passed.
-                    return state.DoS(100,false, REJECT_INVALID, strprintf("mandatory-script-verify-flag-failed (%s)", ScriptErrorString(check.GetScriptError())));
+                    return state.DoS(100, false, REJECT_INVALID, strprintf("mandatory-script-verify-flag-failed (%s)", ScriptErrorString(check.GetScriptError())));
                 }
             }
         }
@@ -2826,7 +2838,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     // Update chainActive & related variables.
     UpdateTip(pindexNew);
     // Process pending replacements
-    ProcessReplacementPool(pindexNew->nHeight-1);
+    ProcessReplacementPool(pindexNew->nHeight);
     // Tell wallet about transactions that went from mempool
     // to conflicted:
     BOOST_FOREACH(const CTransaction &tx, txConflicted) {

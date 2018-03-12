@@ -8,7 +8,14 @@
 #include "primitives/transaction.h"
 
 
-enum CTxReplacementPoolResult { RP_Accepted, RP_HaveBetter, RP_Invalid, RP_NotReplaceable };
+// My kingdom for a proper sum type...
+enum CTxReplacementPoolResult {
+    RP_Accept,
+    RP_HaveBetter,
+    RP_InvalidZeroPriority,
+    RP_InvalidStructure,
+    RP_NoReplace
+};
 
 
 class CTxReplacementPoolItem

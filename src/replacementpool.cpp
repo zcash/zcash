@@ -1,9 +1,11 @@
 
 #include "main.h"
 #include "replacementpool.h"
+#include "sync.h"
 
 
 CTxReplacementPool replacementPool;
+CCriticalSection cs_replacementPool;
 
 
 /*
@@ -17,33 +19,39 @@ CTxReplacementPool replacementPool;
  */
 CTxReplacementPoolResult CTxReplacementPool::replace(CTxReplacementPoolItem &item)
 {
-    AssertLockHeld(cs_main);
+    LOCK(cs_replacementPool);
 
-    // Perform some validations.
-    if (item.tx.vin.size() > 1) {
-        // Replaceable transactions with multiple inputs are disabled.
-        // It seems like quite alot of additional complexity.
-        return RP_Invalid;
-    }
+    // Replaceable transactions with multiple inputs are disabled
+    // until someone figures out how they would work.
+    if (item.tx.vin.size() > 1) return RP_InvalidStructure;
 
     // A transaction with 0 priority is not valid.
-    if (item.priority == 0) {
-        return RP_Invalid;
+    if (item.priority == 0) return RP_InvalidZeroPriority;
+
+    // replacementWindow of 0 goes direct to mempool
+    if (item.replacementWindow == 0) 
+    {
+        // But we also need to remove replacement candidates
+        replaceMap.erase(item.tx.vin[0].prevout);
+        return RP_NoReplace;
     }
 
-    auto it = replaceMap.find(item.tx.vin[0].prevout);
+    int startBlock = item.startBlock;
 
-    if (it != replaceMap.end()) {
-        if (it->second.priority >= item.priority) {
-            return RP_HaveBetter; // (ThanksThough)
+    auto it = replaceMap.find(item.tx.vin[0].prevout);
+    if (it != replaceMap.end())
+    {
+        if (it->second.replacementWindow <= item.replacementWindow &&
+                it->second.priority >= item.priority) {
+            return RP_HaveBetter;
         }
+        startBlock = it->second.startBlock;
     }
 
     // This transaction has higher priority
     replaceMap[item.tx.vin[0].prevout] = item;
-    replaceMap[item.tx.vin[0].prevout].startBlock = it->second.startBlock;
-
-    return RP_Accepted;
+    replaceMap[item.tx.vin[0].prevout].startBlock = startBlock;
+    return RP_Accept;
 }
 
 
@@ -52,10 +60,11 @@ CTxReplacementPoolResult CTxReplacementPool::replace(CTxReplacementPoolItem &ite
  */
 void CTxReplacementPool::removePending(int height, std::vector<CTransaction> &txs)
 {
-    AssertLockHeld(cs_main);
+    LOCK(cs_replacementPool);
 
     for (auto it = replaceMap.begin(); it != replaceMap.end(); /**/) {
         CTxReplacementPoolItem &rep = it->second;
+
         if (rep.GetTargetBlock() <= height) {
             txs.push_back(rep.tx);
             replaceMap.erase(it++);
@@ -71,6 +80,7 @@ void CTxReplacementPool::removePending(int height, std::vector<CTransaction> &tx
  */
 bool CTxReplacementPool::lookup(uint256 txHash, CTransaction &tx)
 {
+    LOCK(cs_replacementPool);
     for (auto it = replaceMap.begin(); it != replaceMap.end(); it++) {
         if (it->second.tx.GetHash() == txHash) {
             tx = it->second.tx;

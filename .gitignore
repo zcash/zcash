@@ -119,3 +119,4 @@ src/rpcmisc~.cpp
 src/komodo-cli
 src/komodod
 src/komodo-tx
+src/komodo-test

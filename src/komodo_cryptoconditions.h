@@ -7,6 +7,7 @@
 
 
 extern int32_t ASSETCHAINS_CC;
+extern bool ASSETCHAINS_CC_TEST;
 
 static bool IsCryptoConditionsEnabled() {
     return 0 != ASSETCHAINS_CC;
