@@ -1,4 +1,0 @@
-[submodule "cryptoconditions"]
-	path = src/cryptoconditions
-	url = https://github.com/libscott/libcryptoconditions.git
-    branch = komodo
