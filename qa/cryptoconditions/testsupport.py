@@ -32,7 +32,7 @@ class JsonClient(object):
 
 def run_cmd(cmd):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    assert proc.wait() == 0
+    assert proc.wait() == 0, cmd
     return proc.stdout.read()
 
 
@@ -68,7 +68,7 @@ def wait_for_block(height):
         try:
             return rpc.getblock(str(height))
         except RPCError as e:
-            time.sleep(3)
+            time.sleep(1)
     raise Exception('Time out waiting for block at height %s' % height)
 
 
