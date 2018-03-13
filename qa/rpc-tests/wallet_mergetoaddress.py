@@ -9,7 +9,6 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
     start_node, connect_nodes_bi, sync_blocks, sync_mempools, \
     wait_and_assert_operationid_status
 
-import time
 from decimal import Decimal
 
 class WalletMergeToAddressTest (BitcoinTestFramework):

@@ -11,8 +11,6 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     check_node,
     connect_nodes_bi,
-    initialize_chain_clean,
-    start_node,
     sync_blocks,
 )
 from time import sleep

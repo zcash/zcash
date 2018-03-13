@@ -4,10 +4,8 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_nodes, connect_nodes_bi, sync_blocks, sync_mempools, \
-    wait_and_assert_operationid_status
+    start_nodes, connect_nodes_bi, wait_and_assert_operationid_status
 
 from decimal import Decimal
 
