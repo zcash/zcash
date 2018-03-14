@@ -71,6 +71,14 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[0].getbalance("*"), 50-21)
         assert_equal(self.nodes[2].getbalance("*"), 21)
 
+        # Test listunspent limit paramter (0 means no limit)
+        node0utxos = self.nodes[0].listunspent(1, 999999, [], 0)
+        assert_equal(len(node0utxos), 3)
+        node0utxos = self.nodes[0].listunspent(1, 999999, [], 1)
+        assert_equal(len(node0utxos), 1)
+        node0utxos = self.nodes[0].listunspent(1, 999999, [], 2)
+        assert_equal(len(node0utxos), 2)
+
         # Node0 should have three unspent outputs.
         # Create a couple of transactions to send them to node2, submit them through
         # node1, and make sure both node0 and node2 pick them up properly:
