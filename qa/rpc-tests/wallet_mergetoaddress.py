@@ -325,8 +325,10 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
 
         # Verify maximum number of notes which node 0 can shield can be set by the limit parameter
         # Also check that we can set off a second merge before the first one is complete
-        result1 = self.nodes[0].z_mergetoaddress([myzaddr], myzaddr, 0, 50, 2)
-        result2 = self.nodes[0].z_mergetoaddress([myzaddr], myzaddr, 0, 50, 2)
+
+        # myzaddr has 5 notes at this point
+        result1 = self.nodes[0].z_mergetoaddress([myzaddr], myzaddr, 0.0001, 50, 2)
+        result2 = self.nodes[0].z_mergetoaddress([myzaddr], myzaddr, 0.0001, 50, 2)
 
         # First merge should select from all notes
         assert_equal(result1["mergingUTXOs"], Decimal('0'))
@@ -340,9 +342,9 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         assert_equal(result2["remainingUTXOs"], Decimal('0'))
         assert_equal(result2["mergingNotes"], Decimal('2'))
         assert_equal(result2["remainingNotes"], Decimal('1'))
-
         wait_and_assert_operationid_status(self.nodes[0], result1['opid'])
         wait_and_assert_operationid_status(self.nodes[0], result2['opid'])
+
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
