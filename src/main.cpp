@@ -4041,9 +4041,10 @@ bool RewindBlockIndex(const CChainParams& params)
             return false;
     }
 
-    // Reduce validity flag and have-data flags.
+    // Collect blocks to be removed (blocks in mapBlockIndex must be at least BLOCK_VALID_TREE).
     // We do this after actual disconnecting, otherwise we'll end up writing the lack of data
     // to disk before writing the chainstate, resulting in a failure to continue if interrupted.
+    std::vector<const CBlockIndex*> vBlocks;
     for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); it++) {
         CBlockIndex* pindexIter = it->second;
 
@@ -4053,27 +4054,8 @@ bool RewindBlockIndex(const CChainParams& params)
         // rewind all the way.  Blocks remaining on chainActive at this point
         // must not have their validity reduced.
         if (!sufficientlyValidated(pindexIter) && !chainActive.Contains(pindexIter)) {
-            // Reduce validity
-            pindexIter->nStatus =
-                std::min<unsigned int>(pindexIter->nStatus & BLOCK_VALID_MASK, BLOCK_VALID_TREE) |
-                (pindexIter->nStatus & ~BLOCK_VALID_MASK);
-            // Remove have-data flags
-            pindexIter->nStatus &= ~(BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO);
-            // Remove branch ID
-            pindexIter->nStatus &= ~BLOCK_ACTIVATES_UPGRADE;
-            pindexIter->nCachedBranchId = boost::none;
-            // Remove storage location
-            pindexIter->nFile = 0;
-            pindexIter->nDataPos = 0;
-            pindexIter->nUndoPos = 0;
-            // Remove various other things
-            pindexIter->nTx = 0;
-            pindexIter->nChainTx = 0;
-            pindexIter->nSproutValue = boost::none;
-            pindexIter->nChainSproutValue = boost::none;
-            pindexIter->nSequenceId = 0;
-            // Make sure it gets written
-            setDirtyBlockIndex.insert(pindexIter);
+            // Add to the list of blocks to remove
+            vBlocks.push_back(pindexIter);
             // Update indices
             setBlockIndexCandidates.erase(pindexIter);
             auto ret = mapBlocksUnlinked.equal_range(pindexIter->pprev);
@@ -4086,6 +4068,24 @@ bool RewindBlockIndex(const CChainParams& params)
             }
         } else if (pindexIter->IsValid(BLOCK_VALID_TRANSACTIONS) && pindexIter->nChainTx) {
             setBlockIndexCandidates.insert(pindexIter);
+        }
+    }
+
+    // Set pindexBestHeader to the current chain tip
+    // (since we are about to delete the block it is pointing to)
+    pindexBestHeader = chainActive.Tip();
+
+    // Erase block indices on-disk
+    if (!pblocktree->EraseBatchSync(vBlocks)) {
+        return AbortNode(state, "Failed to erase from block index database");
+    }
+
+    // Erase block indices in-memory
+    for (auto pindex : vBlocks) {
+        auto ret = mapBlockIndex.find(*pindex->phashBlock);
+        if (ret != mapBlockIndex.end()) {
+            mapBlockIndex.erase(ret);
+            delete pindex;
         }
     }
 
