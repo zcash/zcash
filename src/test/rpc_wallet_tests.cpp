@@ -47,6 +47,13 @@ bool find_error(const UniValue& objError, const std::string& expected) {
     return find_value(objError, "message").get_str().find(expected) != string::npos;
 }
 
+static UniValue ValueFromString(const std::string &str)
+{
+    UniValue value;
+    BOOST_CHECK(value.setNumStr(str));
+    return value;
+}
+
 BOOST_FIXTURE_TEST_SUITE(rpc_wallet_tests, TestingSetup)
 
 BOOST_AUTO_TEST_CASE(rpc_addmultisig)
@@ -1078,14 +1085,14 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         CTransaction tx = proxy.getTx();
         BOOST_CHECK(tx.vout.size() == 0);
 
-        CAmount amount = 123.456;
+        CAmount amount = AmountFromValue(ValueFromString("123.456"));
         proxy.add_taddr_change_output_to_tx(amount);
         tx = proxy.getTx();
         BOOST_CHECK(tx.vout.size() == 1);
         CTxOut out = tx.vout[0];
         BOOST_CHECK_EQUAL(out.nValue, amount);
 
-        amount = 1.111;
+        amount = AmountFromValue(ValueFromString("1.111"));
         proxy.add_taddr_change_output_to_tx(amount);
         tx = proxy.getTx();
         BOOST_CHECK(tx.vout.size() == 2);
