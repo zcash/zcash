@@ -1,4 +1,5 @@
-rust_packages := rust librustzcash
+rust_crates := crate_libc
+rust_packages := rust $(rust_crates) librustzcash
 proton_packages := proton
 zcash_packages := libgmp libsodium
 packages := boost openssl libevent zeromq $(zcash_packages) googletest

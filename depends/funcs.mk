@@ -30,6 +30,18 @@ define fetch_file
     rm -rf $$($(1)_download_dir) ))
 endef
 
+define generate_crate_checksum
+rm .gitignore && \
+$(BASEDIR)/cargo-checksum.sh "$($(1)_file_name)" "$(build_SHA256SUM)" "$($(1)_sha256_hash)"
+endef
+
+define vendor_crate_source
+mkdir -p $($(1)_staging_prefix_dir)/$(CRATE_REGISTRY) && \
+cp -r $($(1)_extract_dir) $($(1)_staging_prefix_dir)/$(CRATE_REGISTRY)/$($(1)_crate_name) && \
+cd $($(1)_staging_prefix_dir)/$(CRATE_REGISTRY)/$($(1)_crate_versioned_name) && \
+rm -r `basename $($(1)_patch_dir)` .stamp_* .$($(1)_file_name).hash
+endef
+
 define int_get_build_recipe_hash
 $(eval $(1)_all_file_checksums:=$(shell $(build_SHA256SUM) $(meta_depends) packages/$(1).mk $(addprefix $(PATCHES_PATH)/$(1)/,$($(1)_patches)) | cut -d" " -f1))
 $(eval $(1)_recipe_hash:=$(shell echo -n "$($(1)_all_file_checksums)" | $(build_SHA256SUM) | cut -d" " -f1))
