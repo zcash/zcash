@@ -6,6 +6,7 @@
 #include "init.h"
 #include "ui_interface.h"
 #include "util.h"
+#include "chainparams.h"
 
 using ::testing::StrictMock;
 
@@ -32,11 +33,13 @@ protected:
     virtual void SetUp() {
         uiInterface.ThreadSafeMessageBox.disconnect_all_slots();
         uiInterface.ThreadSafeMessageBox.connect(boost::bind(ThreadSafeMessageBox, &mock_, _1, _2, _3));
+        SelectParams(CBaseChainParams::MAIN);
+        
     }
 
     virtual void TearDown() {
         fRequestShutdown = false;
-        mapArgs["-disabledeprecation"] = "";
+        mapArgs.clear();
     }
 
     StrictMock<MockUIInterface> mock_;
@@ -101,5 +104,19 @@ TEST_F(DeprecationTest, DeprecatedNodeKeepsRunningIfCurrentVersionDisabled) {
     mapArgs["-disabledeprecation"] = CLIENT_VERSION_STR;
     EXPECT_CALL(mock_, ThreadSafeMessageBox(::testing::_, "", CClientUIInterface::MSG_ERROR));
     EnforceNodeDeprecation(DEPRECATION_HEIGHT);
+    EXPECT_FALSE(ShutdownRequested());
+}
+
+TEST_F(DeprecationTest, DeprecatedNodeIgnoredOnRegtest) {
+    SelectParams(CBaseChainParams::REGTEST);
+    EXPECT_FALSE(ShutdownRequested());
+    EnforceNodeDeprecation(DEPRECATION_HEIGHT+1);
+    EXPECT_FALSE(ShutdownRequested());
+}
+
+TEST_F(DeprecationTest, DeprecatedNodeIgnoredOnTestnet) {
+    SelectParams(CBaseChainParams::TESTNET);
+    EXPECT_FALSE(ShutdownRequested());
+    EnforceNodeDeprecation(DEPRECATION_HEIGHT+1);
     EXPECT_FALSE(ShutdownRequested());
 }

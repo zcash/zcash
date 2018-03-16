@@ -8,10 +8,16 @@
 #include "init.h"
 #include "ui_interface.h"
 #include "util.h"
+#include "chainparams.h"
 
 static const std::string CLIENT_VERSION_STR = FormatVersion(CLIENT_VERSION);
 
 void EnforceNodeDeprecation(int nHeight, bool forceLogging) {
+
+    // Do not enforce deprecation in regtest or on testnet
+    std::string networkID = Params().NetworkIDString();
+    if (networkID != "main") return;
+
     int blocksToDeprecation = DEPRECATION_HEIGHT - nHeight;
     bool disableDeprecation = (GetArg("-disabledeprecation", "") == CLIENT_VERSION_STR);
     if (blocksToDeprecation <= 0) {
