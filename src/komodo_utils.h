@@ -1362,12 +1362,14 @@ void komodo_configfile(char *symbol,uint16_t port)
 #endif
         if ( (fp= fopen(fname,"rb")) == 0 )
         {
+#ifndef FROM_CLI
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
                 fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\nrpcworkqueue=64\n",crc,password,port);
                 fclose(fp);
                 printf("Created (%s)\n",fname);
             } else printf("Couldnt create (%s)\n",fname);
+#endif
         }
         else
         {
@@ -1399,7 +1401,7 @@ void komodo_configfile(char *symbol,uint16_t port)
         sprintf(KMDUSERPASS,"%s:%s",username,password);
         fclose(fp);
 //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
-    } else printf("couldnt open.(%s)\n",fname);
+    } //else printf("couldnt open.(%s)\n",fname);
 }
 
 uint16_t komodo_userpass(char *userpass,char *symbol)
@@ -1442,24 +1444,13 @@ uint32_t komodo_assetmagic(char *symbol,uint64_t supply,uint8_t *extraptr,int32_
     return(calc_crc32(crc0,buf,len));
 }
 
-/*int32_t komodo_shortflag(char *symbol)
-{
-    int32_t i,shortflag = 0;
-    if ( symbol[0] == '-' )
-    {
-        shortflag = 1;
-        for (i=0; symbol[i+1]!=0; i++)
-            symbol[i] = symbol[i+1];
-        symbol[i] = 0;
-    }
-    return(shortflag);
-}*/
-
-uint16_t komodo_assetport(uint32_t magic)
+uint16_t komodo_assetport(uint32_t magic,int32_t extralen)
 {
     if ( magic == 0x8de4eef9 )
         return(7770);
-    else return(8000 + (magic % 7777));
+    else if ( extralen == 0 )
+        return(8000 + (magic % 7777));
+    else return(16000 + (magic % 49500));
 }
 
 uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp,uint8_t *extraptr,int32_t extralen)
@@ -1470,7 +1461,7 @@ uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp,uint8_t *extr
         return(7770);
     }
     *magicp = komodo_assetmagic(symbol,supply,extraptr,extralen);
-    return(komodo_assetport(*magicp));
+    return(komodo_assetport(*magicp,extralen));
 }
 
 /*void komodo_ports(uint16_t ports[MAX_CURRENCIES])
@@ -1535,7 +1526,7 @@ void komodo_args(char *argv0)
             }
         }
     }
-    ASSETCHAINS_CC = GetArg("-ac_cc",0);
+    ASSETCHAINS_CC = GetArg("-ac_cc",0); // keep it outside the assetchains hashing so KMD can do it and we dont have two identical chains other than -ac_cc
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
@@ -1617,6 +1608,7 @@ void komodo_args(char *argv0)
         for (i=0; i<4; i++)
             sprintf(&magicstr[i<<1],"%02x",magic[i]);
         magicstr[8] = 0;
+#ifndef FROM_CLI
         sprintf(fname,"gen%s",ASSETCHAINS_SYMBOL);
         if ( (fp= fopen(fname,"wb")) != 0 )
         {
@@ -1624,6 +1616,7 @@ void komodo_args(char *argv0)
             fclose(fp);
             //printf("created (%s)\n",fname);
         } else printf("error creating (%s)\n",fname);
+#endif
     }
     else
     {
@@ -1657,7 +1650,7 @@ void komodo_args(char *argv0)
                 sprintf(iter == 0 ? KMDUSERPASS : BTCUSERPASS,"%s:%s",username,password);
                 fclose(fp);
                 //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
-            } else printf("couldnt open.(%s)\n",fname);
+            } //else printf("couldnt open.(%s)\n",fname);
             if ( IS_KOMODO_NOTARY == 0 )
                 break;
         }

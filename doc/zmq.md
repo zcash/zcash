@@ -46,7 +46,7 @@ operation.
 
 By default, the ZeroMQ feature is automatically compiled in if the
 necessary prerequisites are found.  To disable, use --disable-zmq
-during the *configure* step of building zcashd:
+during the *configure* step of building komodod:
 
     $ ./configure --disable-zmq (other options)
 
@@ -67,8 +67,8 @@ address. The same address can be used in more than one notification.
 
 For instance:
 
-    $ zcashd -zmqpubhashtx=tcp://127.0.0.1:28332 \
-               -zmqpubrawtx=ipc:///tmp/zcashd.tx.raw
+    $ komodod -zmqpubhashtx=tcp://127.0.0.1:28332 \
+               -zmqpubrawtx=ipc:///tmp/komodod.tx.raw
 
 Each PUB notification has a topic and body, where the header
 corresponds to the notification type. For instance, for the
@@ -88,9 +88,9 @@ arriving. Please see `contrib/zmq/zmq_sub.py` for a working example.
 
 ## Remarks
 
-From the perspective of zcashd, the ZeroMQ socket is write-only; PUB
+From the perspective of komodod, the ZeroMQ socket is write-only; PUB
 sockets don't even have a read function. Thus, there is no state
-introduced into zcashd directly. Furthermore, no information is
+introduced into komodod directly. Furthermore, no information is
 broadcast that wasn't already received from the public P2P network.
 
 No authentication or authorization is done on connecting clients; it
