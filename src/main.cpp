@@ -1116,6 +1116,11 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
  */
 bool AcceptToReplacementPool(const CTransaction &tx, CValidationState &state)
 {
+    // This is not actually required; if crypto-conditions is disabled, then transactions
+    // with replaceable outputs will not be accepted as standard. However, just to be a
+    // bit more explicit.
+    if (!IsCryptoConditionsEnabled()) return false;
+
     CTxReplacementPoolItem item(tx, GetHeight());
     if (!SetReplacementParams(item)) return false;
 
