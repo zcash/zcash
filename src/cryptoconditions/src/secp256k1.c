@@ -77,7 +77,12 @@ int secp256k1Verify(CC *cond, CCVisitor visitor) {
     if (cond->type->typeId != cc_secp256k1Type.typeId) return 1;
     // TODO: test failure mode: empty sig / null pointer
     initVerify();
-    int rc = secp256k1_ecdsa_verify(ec_ctx_verify, visitor.msg, cond->signature, SECP256K1_SIG_SIZE,
+
+    // Test for non canonical S
+    int rc = secp256k1_ecdsa_check_canonical_sig(cond->signature, SECP256K1_SIG_SIZE);
+    if (rc == 1)
+        // Test for correct sig
+        rc = secp256k1_ecdsa_verify(ec_ctx_verify, visitor.msg, cond->signature, SECP256K1_SIG_SIZE,
                 cond->publicKey, SECP256K1_PK_SIZE);
     return rc == 1;
 }

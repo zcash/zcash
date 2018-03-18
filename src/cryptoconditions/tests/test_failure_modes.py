@@ -61,3 +61,18 @@ def test_decode_invalid_condition():
 def test_validate_empty_sigs():
     #// TODO: test failure mode: empty sig / null pointer
     pass
+
+
+def test_non_canonical_secp256k1():
+    cond = {
+        "type": "secp256k1-sha-256",
+        "publicKey": "AtXZaTBVNawpp3B5wR1PDdQGYc-W4E6XSl6NfjdO4iWq",
+        # Signature is correct, but non canonical; validation should fail
+        "signature": "nC1v8580C7r2XohL3_rnQ2p7dWiDnFuhF_poGCRfudrDITgwKywgjm5CTdnHAnkK4QskG4nI0KBrActwgzSrbg"
+    }
+    res = jsonRPC('verifyFulfillment', {
+        'fulfillment': jsonRPC('encodeFulfillment', cond)['fulfillment'],
+        'condition': jsonRPC('encodeCondition', cond)['bin'],
+        'message': ''
+        })
+    assert res['valid'] == False
