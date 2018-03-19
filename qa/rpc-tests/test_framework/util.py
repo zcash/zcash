@@ -393,12 +393,12 @@ def wait_and_assert_operationid_status(node, myopid, in_status='success', in_err
             elif status == "success":
                 txid = results[0]['result']['txid']
             break
-    assert_equal(in_status, status)
-    if errormsg is not None:
-        assert(in_errormsg is not None)
-        assert_equal(in_errormsg in errormsg, True)
     if os.getenv("PYTHON_DEBUG", ""):
         print('...returned status: {}'.format(status))
         if errormsg is not None:
             print('...returned error: {}'.format(errormsg))
+    assert_equal(in_status, status)
+    if errormsg is not None:
+        assert(in_errormsg is not None)
+        assert_equal(in_errormsg in errormsg, True)
     return txid
