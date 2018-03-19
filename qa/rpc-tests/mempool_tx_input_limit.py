@@ -17,7 +17,7 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
     alert_filename = None  # Set by setup_network
 
     def setup_network(self):
-        args = ["-checkmempool", "-debug=mempool", "-mempooltxinputlimit=2"]
+        args = ["-checkmempool", "-debug=mempool", "-mempooltxinputlimit=2", "-nuparams=5ba81b19:110"]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))
         self.nodes.append(start_node(1, self.options.tmpdir, args))
@@ -119,6 +119,32 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
 
         # Spend should be in the mempool
         assert_equal(set(self.nodes[1].getrawmempool()), set([ spend_taddr_id2 ]))
+
+        # Mine three blocks
+        self.nodes[1].generate(3)
+        self.sync_all()
+        # The next block to be mined, 109, is the last Sprout block
+        bci = self.nodes[0].getblockchaininfo()
+        assert_equal(bci['consensus']['chaintip'], '00000000')
+        assert_equal(bci['consensus']['nextblock'], '00000000')
+
+        # z_sendmany should be limited by -mempooltxinputlimit
+        recipients = []
+        recipients.append({"address":node0_zaddr, "amount":Decimal('30.0')-Decimal('0.0001')}) # utxo amount less fee
+        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients)
+        wait_and_assert_operationid_status(self.nodes[0], myopid, 'failed', 'Too many transparent inputs 3 > limit 2')
+
+        # Mine one block
+        self.nodes[1].generate(1)
+        self.sync_all()
+        # The next block to be mined, 110, is the first Overwinter block
+        bci = self.nodes[0].getblockchaininfo()
+        assert_equal(bci['consensus']['chaintip'], '00000000')
+        assert_equal(bci['consensus']['nextblock'], '5ba81b19')
+
+        # z_sendmany should no longer be limited by -mempooltxinputlimit
+        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients)
+        wait_and_assert_operationid_status(self.nodes[0], myopid)
 
 if __name__ == '__main__':
     MempoolTxInputLimitTest().main()
