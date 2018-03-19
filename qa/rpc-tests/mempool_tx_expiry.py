@@ -17,7 +17,7 @@ from decimal import Decimal
 class MempoolTxExpiryTest(BitcoinTestFramework):
 
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, [["-nuparams=5ba81b19:205", "-txexpirydelta=4"]] * 4)
+        return start_nodes(4, self.options.tmpdir, [["-nuparams=5ba81b19:205", "-txexpirydelta=4", "-debug=mempool"]] * 4)
 
     # Test before, at, and after expiry block
     # TODO: Test case of dependent txs in reorgs

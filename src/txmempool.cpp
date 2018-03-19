@@ -271,6 +271,7 @@ void CTxMemPool::removeExpired(unsigned int nBlockHeight)
     for (const CTransaction& tx : transactionsToRemove) {
         list<CTransaction> removed;
         remove(tx, removed, true);
+        LogPrint("mempool", "Removing expired txid: %s\n", tx.GetHash().ToString());
     }
 }
 
