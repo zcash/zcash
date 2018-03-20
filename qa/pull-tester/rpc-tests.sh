@@ -14,6 +14,7 @@ testScripts=(
     'paymentdisclosure.py'
     'prioritisetransaction.py'
     'wallet_treestate.py'
+    'wallet_anchorfork.py'
     'wallet_protectcoinbase.py'
     'wallet_shieldcoinbase.py'
     'wallet_mergetoaddress.py'
