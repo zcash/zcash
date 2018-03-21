@@ -607,15 +607,15 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             nTransactionsUpdatedLastLP = nTransactionsUpdatedLast;
         }
 
+        // Release the main lock while waiting
+        // Don't call chainActive->Tip() without holding cs_main
+        LEAVE_CRITICAL_SECTION(cs_main);
         {
             checktxtime = boost::get_system_time() + boost::posix_time::seconds(10);
 
             boost::unique_lock<boost::mutex> lock(csBestBlock);
-            while (chainActive.Tip()->GetBlockHash() == hashWatchedChain && IsRPCRunning())
+            while (hashBestBlock == hashWatchedChain && IsRPCRunning())
             {
-                // Release the main lock while waiting
-                LEAVE_CRITICAL_SECTION(cs_main);
-
                 // Before waiting, generate the coinbase for the block following the next
                 // block (since this is cpu-intensive), so that when next block arrives,
                 // we can quickly respond with a template for following block.
@@ -629,11 +629,10 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                     next_cb_mtx = cached_next_cb_mtx;
                 }
                 bool timedout = !cvBlockChange.timed_wait(lock, checktxtime);
-                ENTER_CRITICAL_SECTION(cs_main);
 
                 // Optimization: even if timed out, a new block may have arrived
                 // while waiting for cs_main; if so, don't discard next_cb_mtx.
-                if (chainActive.Tip()->GetBlockHash() != hashWatchedChain) break;
+                if (hashBestBlock != hashWatchedChain) break;
 
                 // Timeout: Check transactions for update
                 if (timedout && mempool.GetTransactionsUpdated() != nTransactionsUpdatedLastLP) {
@@ -643,11 +642,12 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 }
                 checktxtime += boost::posix_time::seconds(10);
             }
-            if (chainActive.Tip()->nHeight != nHeight + 1) {
+            if (heightBestBlock != nHeight + 1) {
                 // Unexpected height (reorg or >1 blocks arrived while waiting) invalidates coinbase tx.
                 next_cb_mtx = nullopt;
             }
         }
+        ENTER_CRITICAL_SECTION(cs_main);
 
         if (!IsRPCRunning())
             throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Shutting down");

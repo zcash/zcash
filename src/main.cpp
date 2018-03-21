@@ -68,6 +68,8 @@ CBlockIndex *pindexBestHeader = NULL;
 static std::atomic<int64_t> nTimeBestReceived(0); // Used only to inform the wallet of when we last received a block
 CWaitableCriticalSection csBestBlock;
 CConditionVariable cvBlockChange;
+uint256 hashBestBlock;
+int heightBestBlock;
 int nScriptCheckThreads = 0;
 std::atomic_bool fImporting(false);
 std::atomic_bool fReindex(false);
@@ -3757,7 +3759,12 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     RenderPoolMetrics("sapling", saplingPool);
     RenderPoolMetrics("transparent", transparentPool);
 
-    cvBlockChange.notify_all();
+    {
+        boost::unique_lock<boost::mutex> lock(csBestBlock);
+        hashBestBlock = pindexNew->GetBlockHash();
+        heightBestBlock = pindexNew->nHeight;
+        cvBlockChange.notify_all();
+    }
 }
 
 /**
