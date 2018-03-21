@@ -160,8 +160,13 @@ extern BlockMap mapBlockIndex;
 extern std::optional<uint64_t> last_block_num_txs;
 extern std::optional<uint64_t> last_block_size;
 extern const std::string strMessageMagic;
+
+// These prevent lock-ordering problems in getblocktemplate() RPC
 extern CWaitableCriticalSection csBestBlock;
 extern CConditionVariable cvBlockChange;
+extern uint256 hashBestBlock;
+extern int heightBestBlock;
+
 extern std::atomic_bool fImporting;
 extern std::atomic_bool fReindex;
 extern int nScriptCheckThreads;
