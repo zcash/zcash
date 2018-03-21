@@ -2628,6 +2628,252 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
     return results;
 }
 
+class ZCJSTestVector {
+public:
+    JSDescription jsdesc;
+
+    ZCJSTestVector(const JSDescription jsdesc) : jsdesc(jsdesc) {}
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(jsdesc.witness.phi);
+        READWRITE(jsdesc.witness.rt);
+        READWRITE(jsdesc.witness.h_sig);
+        for (auto input : jsdesc.witness.inputs) {
+            if (ser_action.ForRead()) {
+                // We can't yet read test vectors in, because ZCJSProofWitness
+                // uses a ZCIncrementalWitness internally, not a MerklePath
+                assert(false);
+            } else {
+                auto path = input.witness.path();
+                READWRITE(path);
+            }
+            READWRITE(input.note.a_pk);
+            READWRITE(input.note.value);
+            READWRITE(input.note.rho);
+            READWRITE(input.note.r);
+            READWRITE(input.key);
+        }
+        for (auto output : jsdesc.witness.outputs) {
+            READWRITE(output.a_pk);
+            READWRITE(output.value);
+            READWRITE(output.rho);
+            READWRITE(output.r);
+        }
+        READWRITE(jsdesc.vpub_old);
+        READWRITE(jsdesc.vpub_new);
+        READWRITE(jsdesc.nullifiers);
+        READWRITE(jsdesc.commitments);
+        READWRITE(jsdesc.macs);
+    }
+};
+
+UniValue JoinSplitTestVectorToJSON(const JSDescription& jsdesc)
+{
+    UniValue tv(UniValue::VOBJ);
+
+    tv.push_back(Pair("h_sig", jsdesc.witness.h_sig.GetHex()));
+
+    for (const auto input : jsdesc.witness.inputs) {
+        tv.push_back(Pair("apk", input.note.a_pk.GetHex()));
+    }
+
+    tv.push_back(Pair("vpub_old", ValueFromAmount(jsdesc.vpub_old)));
+    tv.push_back(Pair("vpub_new", ValueFromAmount(jsdesc.vpub_new)));
+
+    tv.push_back(Pair("anchor", jsdesc.anchor.GetHex()));
+
+    UniValue nullifiers(UniValue::VARR);
+    for (const uint256 nf : jsdesc.nullifiers) {
+        nullifiers.push_back(nf.GetHex());
+    }
+    tv.push_back(Pair("nullifiers", nullifiers));
+
+    UniValue commitments(UniValue::VARR);
+    for (const uint256 commitment : jsdesc.commitments) {
+        commitments.push_back(commitment.GetHex());
+    }
+    tv.push_back(Pair("commitments", commitments));
+
+    tv.push_back(Pair("onetimePubKey", jsdesc.ephemeralKey.GetHex()));
+    tv.push_back(Pair("randomSeed", jsdesc.randomSeed.GetHex()));
+
+    UniValue macs(UniValue::VARR);
+    for (const uint256 mac : jsdesc.macs) {
+        macs.push_back(mac.GetHex());
+    }
+    tv.push_back(Pair("macs", macs));
+
+    CDataStream ssProof(SER_NETWORK, PROTOCOL_VERSION);
+    ssProof << jsdesc.proof;
+    tv.push_back(Pair("proof", HexStr(ssProof.begin(), ssProof.end())));
+
+    UniValue ciphertexts(UniValue::VARR);
+    for (const ZCNoteEncryption::Ciphertext ct : jsdesc.ciphertexts) {
+        ciphertexts.push_back(HexStr(ct.begin(), ct.end()));
+    }
+    tv.push_back(Pair("ciphertexts", ciphertexts));
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << ZCJSTestVector(jsdesc);
+    tv.push_back(Pair("hex", HexStr(ss.begin(), ss.end())));
+
+    return tv;
+}
+
+UniValue zc_joinsplit_test_vectors(const UniValue& params, bool fHelp)
+{
+    if (fHelp) {
+        throw runtime_error(
+            "zcjoinsplittestvectors\n"
+            "\n"
+            "Generate valid JoinSplit test vectors.\n"
+            );
+    }
+
+    LOCK(cs_main);
+
+    UniValue tvs(UniValue::VARR);
+    auto tree = ZCIncrementalMerkleTree();
+
+    // First up, a complete dummy JoinSplit
+    {
+        uint256 pubKeyHash;
+        JSDescription jsdesc(
+            *pzcashParams,
+            pubKeyHash, tree.root(),
+            {JSInput(), JSInput()},
+            {JSOutput(), JSOutput()},
+            0, 0);
+        {
+            auto verifier = libzcash::ProofVerifier::Strict();
+            if (!(jsdesc.Verify(*pzcashParams, verifier, pubKeyHash))) {
+                throw std::runtime_error("error verifying joinsplit");
+            }
+        }
+        for (auto commitment : jsdesc.commitments) {
+            tree.append(commitment);
+        }
+        tvs.push_back(JoinSplitTestVectorToJSON(jsdesc));
+    }
+
+    // Generate some output notes
+    auto zkey = SpendingKey::random();
+    auto zaddr = zkey.address();
+    std::vector<Note> notes;
+    std::vector<ZCIncrementalWitness> witnesses;
+    {
+        // Test a value larger than 32 bits
+        uint64_t val0 = (uint64_t)1 << 50;
+        JSOutput out0(zaddr, val0);
+        JSOutput out1(zaddr, 1);
+
+        uint256 pubKeyHash;
+        JSDescription jsdesc(
+            *pzcashParams,
+            pubKeyHash, tree.root(),
+            {JSInput(), JSInput()},
+            {out0, out1},
+            val0 + 1, 0);
+        {
+            auto verifier = libzcash::ProofVerifier::Strict();
+            if (!(jsdesc.Verify(*pzcashParams, verifier, pubKeyHash))) {
+                throw std::runtime_error("error verifying joinsplit");
+            }
+        }
+
+        ZCNoteDecryption decryptor(zkey.receiving_key());
+        auto hSig = jsdesc.h_sig(*pzcashParams, pubKeyHash);
+        for (size_t i = 0; i < jsdesc.ciphertexts.size(); i++) {
+            NotePlaintext plaintext = NotePlaintext::decrypt(
+                    decryptor,
+                    jsdesc.ciphertexts[i],
+                    jsdesc.ephemeralKey,
+                    hSig,
+                    (unsigned char) i);
+            Note note = plaintext.note(zaddr);
+            notes.push_back(note);
+        }
+
+        for (auto commitment : jsdesc.commitments) {
+            tree.append(commitment);
+            for (size_t i = 0; i < witnesses.size(); i++) {
+                witnesses[i].append(commitment);
+            }
+            witnesses.push_back(tree.witness());
+        }
+
+        tvs.push_back(JoinSplitTestVectorToJSON(jsdesc));
+    }
+
+    // Simulate a shielded spend
+    auto zkey2 = SpendingKey::random();
+    auto zaddr2 = zkey2.address();
+    {
+        // Test a value with a long string of 1-bits
+        JSOutput out0(zaddr2, 1);
+        JSOutput out1(zaddr, ((uint64_t)1 << 50) - 1);
+
+        uint256 pubKeyHash;
+        JSDescription jsdesc(
+            *pzcashParams,
+            pubKeyHash, tree.root(),
+            {JSInput(witnesses[0], notes[0], zkey), JSInput(witnesses[1], notes[1], zkey)},
+            {out0, out1},
+            0, 1);
+        {
+            auto verifier = libzcash::ProofVerifier::Strict();
+            if (!(jsdesc.Verify(*pzcashParams, verifier, pubKeyHash))) {
+                throw std::runtime_error("error verifying joinsplit");
+            }
+        }
+
+        auto hSig = jsdesc.h_sig(*pzcashParams, pubKeyHash);
+        for (size_t i = 0; i < jsdesc.ciphertexts.size(); i++) {
+            ZCNoteDecryption decryptor(i == 0 ? zkey2.receiving_key() : zkey.receiving_key());
+            NotePlaintext plaintext = NotePlaintext::decrypt(
+                    decryptor,
+                    jsdesc.ciphertexts[i],
+                    jsdesc.ephemeralKey,
+                    hSig,
+                    (unsigned char) i);
+            Note note = plaintext.note(i == 0 ? zaddr2 : zaddr);
+            notes.push_back(note);
+        }
+
+        for (auto commitment : jsdesc.commitments) {
+            tree.append(commitment);
+            for (size_t i = 0; i < witnesses.size(); i++) {
+                witnesses[i].append(commitment);
+            }
+            witnesses.push_back(tree.witness());
+        }
+        tvs.push_back(JoinSplitTestVectorToJSON(jsdesc));
+    }
+
+    // Unshield the funds
+    {
+        uint256 pubKeyHash;
+        JSDescription jsdesc(
+            *pzcashParams,
+            pubKeyHash, tree.root(),
+            {JSInput(witnesses[2], notes[2], zkey2), JSInput(witnesses[3], notes[3], zkey)},
+            {JSOutput(), JSOutput()},
+            0, (uint64_t)1 << 50);
+        {
+            auto verifier = libzcash::ProofVerifier::Strict();
+            if (!(jsdesc.Verify(*pzcashParams, verifier, pubKeyHash))) {
+                throw std::runtime_error("error verifying joinsplit");
+            }
+        }
+        tvs.push_back(JoinSplitTestVectorToJSON(jsdesc));
+    }
+
+    return tvs;
+}
+
 UniValue zc_raw_receive(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {

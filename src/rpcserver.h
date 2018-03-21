@@ -242,6 +242,7 @@ extern UniValue getdeprecationinfo(const UniValue& params, bool fHelp);
 extern UniValue setmocktime(const UniValue& params, bool fHelp);
 extern UniValue resendwallettransactions(const UniValue& params, bool fHelp);
 extern UniValue zc_benchmark(const UniValue& params, bool fHelp);
+extern UniValue zc_joinsplit_test_vectors(const UniValue& params, bool fHelp);
 extern UniValue zc_raw_keygen(const UniValue& params, bool fHelp);
 extern UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp);
 extern UniValue zc_raw_receive(const UniValue& params, bool fHelp);

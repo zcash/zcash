@@ -54,6 +54,7 @@ public:
     uint64_t vpub_old;
     uint64_t vpub_new;
 
+    JSProofWitness() {}
     JSProofWitness(
         const uint252& phi,
         const uint256& rt,
