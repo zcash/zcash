@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(streams_buffered_file)
     BOOST_CHECK(bf.SetPos(11));
     {
         uint8_t a[40 - 11];
-        bf >> FLATDATA(a);
+        bf >> a;
         for (uint8_t j = 0; j < sizeof(a); ++j) {
             BOOST_CHECK_EQUAL(a[j], 11 + j);
         }
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(streams_buffered_file_rand)
                 if (currentPos + 1 > fileSize)
                     continue;
                 bf.SetLimit(currentPos + 1);
-                bf >> FLATDATA(a);
+                bf >> a;
                 for (uint8_t i = 0; i < 1; ++i) {
                     BOOST_CHECK_EQUAL(a[i], currentPos);
                     currentPos++;
@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE(streams_buffered_file_rand)
                 if (currentPos + 2 > fileSize)
                     continue;
                 bf.SetLimit(currentPos + 2);
-                bf >> FLATDATA(a);
+                bf >> a;
                 for (uint8_t i = 0; i < 2; ++i) {
                     BOOST_CHECK_EQUAL(a[i], currentPos);
                     currentPos++;
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(streams_buffered_file_rand)
                 if (currentPos + 5 > fileSize)
                     continue;
                 bf.SetLimit(currentPos + 5);
-                bf >> FLATDATA(a);
+                bf >> a;
                 for (uint8_t i = 0; i < 5; ++i) {
                     BOOST_CHECK_EQUAL(a[i], currentPos);
                     currentPos++;
