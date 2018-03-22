@@ -459,6 +459,7 @@ void komodo_init(int32_t height)
     static int didinit; uint256 zero; int32_t k,n; uint8_t pubkeys[64][33];
     if ( 0 && height != 0 )
         printf("komodo_init ht.%d didinit.%d\n",height,didinit);
+    memset(&zero,0,sizeof(zero));
     if ( didinit == 0 )
     {
         pthread_mutex_init(&komodo_mutex,NULL);
@@ -474,7 +475,6 @@ void komodo_init(int32_t height)
             }
             komodo_notarysinit(0,pubkeys,k);
         }
-        memset(&zero,0,sizeof(zero));
         //for (i=0; i<sizeof(Minerids); i++)
         //    Minerids[i] = -2;
         didinit = 1;
@@ -491,7 +491,7 @@ void komodo_init(int32_t height)
         printf("set MAINNET notaries.%d\n",k);
         komodo_notarysinit(KOMODO_MAINNET_START,pubkeys,k);
     }*/
-    komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0);
+    komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,zero,0);
 }
 
 /*void komodo_assetchain_pubkeys(char *jsonstr)
