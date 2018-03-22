@@ -400,7 +400,7 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
 
 int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,int32_t nHeight)
 {
-    struct komodo_state *sp; struct notarized_checkpoint *np = 0;
+    int32_t i; struct komodo_state *sp; struct notarized_checkpoint *np = 0;
     np = 0;
     for (i=sp->NUM_NPOINTS-1; i>=0; i--)
     {
