@@ -53,7 +53,7 @@ typedef union _bits320 bits320;
 
 struct komodo_kv { UT_hash_handle hh; bits256 pubkey; uint8_t *key,*value; int32_t height; uint32_t flags; uint16_t keylen,valuesize; };
 
-struct komodo_event_notarized { uint256 blockhash,desttxid; int32_t notarizedheight; char dest[16]; };
+struct komodo_event_notarized { uint256 blockhash,desttxid,MoM; int32_t notarizedheight,MoMdepth; char dest[16]; };
 struct komodo_event_pubkeys { uint8_t num; uint8_t pubkeys[64][33]; };
 struct komodo_event_opreturn { uint256 txid; uint64_t value; uint16_t vout,oplen; uint8_t opret[]; };
 struct komodo_event_pricefeed { uint8_t num; uint32_t prices[35]; };

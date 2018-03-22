@@ -480,7 +480,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             //printf("ht.%d func N ht.%d errs.%d\n",height,NOTARIZED_HEIGHT,errs);
             if ( sp != 0 )
             {
-                if ( sp->MoMdepth > 0 && bits256_nonz(sp->MoM) != 0 )
+                if ( sp->MoMdepth > 0 && sp->MoM != zero )
                     fputc('M',fp);
                 else fputc('N',fp);
                 if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
@@ -491,7 +491,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                     errs++;
                 if ( fwrite(&sp->NOTARIZED_DESTTXID,1,sizeof(sp->NOTARIZED_DESTTXID),fp) != sizeof(sp->NOTARIZED_DESTTXID) )
                     errs++;
-                if ( sp->MoMdepth > 0 && bits256_nonz(sp->MoM) != 0 )
+                if ( sp->MoMdepth > 0 && sp->MoM != zero )
                 {
                     if ( fwrite(&sp->MoM,1,sizeof(sp->MoM),fp) != sizeof(sp->MoM) )
                         errs++;
@@ -580,7 +580,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     len += iguana_rwbignum(0,&scriptbuf[len+nameoffset],32,(uint8_t *)&sp->MoM);
                     len += iguana_rwnum(0,&scriptbuf[len+nameoffset],sizeof(*notarizedheightp),(uint8_t *)&sp->MoMdepth);
                     printf("%s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,bits256_str(str,sp->MoM),sp->M<oMdepth);
-                    if ( bits256_nonz(sp->MoM) == 0 || sp->MoMdepth > 1440 || sp->MoMdepth < 0 )
+                    if ( sp->MoM == zero || sp->MoMdepth > 1440 || sp->MoMdepth < 0 )
                     {
                         memset(sp->MoM.bytes,0,sizeof(sp->MoM));
                         sp->MoMdepth = 0;
