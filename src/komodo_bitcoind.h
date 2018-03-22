@@ -471,7 +471,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
                 {
                     if ( (hexstr= jstr(skey,(char *)"hex")) != 0 )
                     {
-                        printf("HEX.(%s) vs hash.%s\n",hexstr,NOTARIZED_HASH.ToString().c_str());
+                        //printf("HEX.(%s) vs hash.%s\n",hexstr,NOTARIZED_HASH.ToString().c_str());
                         len = strlen(hexstr) >> 1;
                         decode_hex(script,len,hexstr);
                         retval = komodo_verifynotarizedscript(height,script,len,NOTARIZED_HASH);
