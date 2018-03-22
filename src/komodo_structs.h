@@ -80,12 +80,16 @@ struct pax_transaction
 
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; };
-struct notarized_checkpoint { uint256 notarized_hash,notarized_desttxid; int32_t nHeight,notarized_height; };
+struct notarized_checkpoint
+{
+    uint256 notarized_hash,notarized_desttxid,MoM;
+    int32_t nHeight,notarized_height,MoMdepth;
+};
 
 struct komodo_state
 {
-    uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
-    int32_t SAVEDHEIGHT,CURRENT_HEIGHT,NOTARIZED_HEIGHT;
+    uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID,MoM;
+    int32_t SAVEDHEIGHT,CURRENT_HEIGHT,NOTARIZED_HEIGHT,MoMdepth;
     uint32_t SAVEDTIMESTAMP;
     uint64_t deposited,issued,withdrawn,approved,redeemed,shorted;
     struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS,last_NPOINTSi;
