@@ -56,7 +56,7 @@ struct sparse_vector {
     size_t size() const; // return the number of indices (representing the number of non-zero entries)
     size_t size_in_bits() const; // return the number bits needed to store the sparse vector
 
-    /* return a pair consisting of the accumulated value and the sparse vector of non-accumuated values */
+    /* return a pair consisting of the accumulated value and the sparse vector of non-accumulated values */
     template<typename FieldT>
     std::pair<T, sparse_vector<T> > accumulate(const typename std::vector<FieldT>::const_iterator &it_begin,
                                                const typename std::vector<FieldT>::const_iterator &it_end,

@@ -33,7 +33,7 @@ public:
     mp_limb_t data[n] = {0};
 
     bigint() = default;
-    bigint(const unsigned long x); /// Initalize from a small integer
+    bigint(const unsigned long x); /// Initialize from a small integer
     bigint(const char* s); /// Initialize from a string containing an integer in decimal notation
     bigint(const mpz_t r); /// Initialize from MPZ element
 

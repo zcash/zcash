@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "main.h"
 #include "utiltest.h"
@@ -70,8 +71,10 @@ TEST(Validation, ContextualCheckInputsPassesWithCoinbase) {
     FakeCoinsViewDB fakeDB;
     CCoinsViewCache view(&fakeDB);
 
+    auto consensusBranchId = SPROUT_BRANCH_ID;
     CValidationState state;
-    EXPECT_TRUE(ContextualCheckInputs(tx, state, view, false, 0, false, Params(CBaseChainParams::MAIN).GetConsensus()));
+    PrecomputedTransactionData txdata(tx);
+    EXPECT_TRUE(ContextualCheckInputs(tx, state, view, false, 0, false, txdata, Params(CBaseChainParams::MAIN).GetConsensus(), consensusBranchId));
 }
 
 TEST(Validation, ReceivedBlockTransactions) {

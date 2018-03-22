@@ -39,6 +39,7 @@ from .equihash import (
     zcash_person,
 )
 
+OVERWINTER_PROTO_VERSION = 170003
 BIP0031_VERSION = 60000
 MY_VERSION = 170002  # past bip-31 for ping/pong
 MY_SUBVERSION = "/python-mininode-tester:0.0.1/"
@@ -868,8 +869,12 @@ class CAlert(object):
 class msg_version(object):
     command = "version"
 
-    def __init__(self):
-        self.nVersion = MY_VERSION
+    def __init__(self, overwintered=False):
+        if overwintered:
+            self.nVersion = OVERWINTER_PROTO_VERSION
+        else:
+            self.nVersion = MY_VERSION
+
         self.nServices = 1
         self.nTime = time.time()
         self.addrTo = CAddress()
@@ -1326,7 +1331,7 @@ class NodeConn(asyncore.dispatcher):
         "regtest": "\xaa\xe8\x3f\x5f"    # regtest
     }
 
-    def __init__(self, dstaddr, dstport, rpc, callback, net="regtest"):
+    def __init__(self, dstaddr, dstport, rpc, callback, net="regtest", overwintered=False):
         asyncore.dispatcher.__init__(self, map=mininode_socket_map)
         self.log = logging.getLogger("NodeConn(%s:%d)" % (dstaddr, dstport))
         self.dstaddr = dstaddr
@@ -1343,7 +1348,7 @@ class NodeConn(asyncore.dispatcher):
         self.disconnect = False
 
         # stuff version msg into sendbuf
-        vt = msg_version()
+        vt = msg_version(overwintered)
         vt.addrTo.ip = self.dstaddr
         vt.addrTo.port = self.dstport
         vt.addrFrom.ip = "0.0.0.0"

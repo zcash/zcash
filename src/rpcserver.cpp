@@ -265,6 +265,7 @@ static const CRPCCommand vRPCCommands[] =
 
     /* P2P networking */
     { "network",            "getnetworkinfo",         &getnetworkinfo,         true  },
+    { "network",            "getdeprecationinfo",     &getdeprecationinfo,     true  },
     { "network",            "addnode",                &addnode,                true  },
     { "network",            "disconnectnode",         &disconnectnode,         true  },
     { "network",            "getaddednodeinfo",       &getaddednodeinfo,       true  },
@@ -386,6 +387,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "z_listreceivedbyaddress",&z_listreceivedbyaddress,false },
     { "wallet",             "z_getbalance",           &z_getbalance,           false },
     { "wallet",             "z_gettotalbalance",      &z_gettotalbalance,      false },
+    { "wallet",             "z_mergetoaddress",       &z_mergetoaddress,       false },
     { "wallet",             "z_sendmany",             &z_sendmany,             false },
     { "wallet",             "z_shieldcoinbase",       &z_shieldcoinbase,       false },
     { "wallet",             "z_getoperationstatus",   &z_getoperationstatus,   true  },

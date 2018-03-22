@@ -8,7 +8,9 @@
 #include "base58.h"
 #include "checkpoints.h"
 #include "coincontrol.h"
+#include "consensus/upgrades.h"
 #include "consensus/validation.h"
+#include "consensus/consensus.h"
 #include "init.h"
 #include "main.h"
 #include "net.h"
@@ -2522,6 +2524,7 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount &nFeeRet, int& nC
 
     CReserveKey reservekey(this);
     CWalletTx wtx;
+    
     if (!CreateTransaction(vecSend, wtx, reservekey, nFeeRet, nChangePosRet, strFailReason, &coinControl, false))
         return false;
 
@@ -2572,8 +2575,21 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 
     wtxNew.fTimeReceivedIsTxTime = true;
     wtxNew.BindWallet(this);
-    CMutableTransaction txNew;
+    int nextBlockHeight = chainActive.Height() + 1;
+    CMutableTransaction txNew = CreateNewContextualCMutableTransaction(
+        Params().GetConsensus(), nextBlockHeight);
 
+    // Activates after Overwinter network upgrade
+    // Set nExpiryHeight to expiryDelta (default 20) blocks past current block height
+    if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+        if (nextBlockHeight + expiryDelta >= TX_EXPIRY_HEIGHT_THRESHOLD){
+            strFailReason = _("nExpiryHeight must be less than TX_EXPIRY_HEIGHT_THRESHOLD.");
+            return false;
+        } else {
+            txNew.nExpiryHeight = nextBlockHeight + expiryDelta;
+        }
+    }
+    
     // Discourage fee sniping.
     //
     // However because of a off-by-one-error in previous versions we need to
@@ -2767,6 +2783,9 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                     }
                 }
 
+                // Grab the current consensus branch ID
+                auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+
                 // Sign
                 int nIn = 0;
                 CTransaction txNewConst(txNew);
@@ -2774,17 +2793,20 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 {
                     bool signSuccess;
                     const CScript& scriptPubKey = coin.first->vout[coin.second].scriptPubKey;
-                    CScript& scriptSigRes = txNew.vin[nIn].scriptSig;
+                    SignatureData sigdata;
                     if (sign)
-                        signSuccess = ProduceSignature(TransactionSignatureCreator(this, &txNewConst, nIn, SIGHASH_ALL), scriptPubKey, scriptSigRes);
+                        signSuccess = ProduceSignature(TransactionSignatureCreator(this, &txNewConst, nIn, coin.first->vout[coin.second].nValue, SIGHASH_ALL), scriptPubKey, sigdata, consensusBranchId);
                     else
-                        signSuccess = ProduceSignature(DummySignatureCreator(this), scriptPubKey, scriptSigRes);
+                        signSuccess = ProduceSignature(DummySignatureCreator(this), scriptPubKey, sigdata, consensusBranchId);
 
                     if (!signSuccess)
                     {
                         strFailReason = _("Signing transaction failed");
                         return false;
+                    } else {
+                        UpdateTransaction(txNew, nIn, sigdata);
                     }
+
                     nIn++;
                 }
 
@@ -3650,13 +3672,26 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
  */
 void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, int minDepth, bool ignoreSpent, bool ignoreUnspendable)
 {
-    bool fFilterAddress = false;
-    libzcash::PaymentAddress filterPaymentAddress;
+    std::set<PaymentAddress> filterAddresses;
+
     if (address.length() > 0) {
-        filterPaymentAddress = CZCPaymentAddress(address).Get();
-        fFilterAddress = true;
+        filterAddresses.insert(CZCPaymentAddress(address).Get());
     }
 
+    GetFilteredNotes(outEntries, filterAddresses, minDepth, ignoreSpent, ignoreUnspendable);
+}
+
+/**
+ * Find notes in the wallet filtered by payment addresses, min depth and ability to spend.
+ * These notes are decrypted and added to the output parameter vector, outEntries.
+ */
+void CWallet::GetFilteredNotes(
+    std::vector<CNotePlaintextEntry>& outEntries,
+    std::set<PaymentAddress>& filterAddresses,
+    int minDepth,
+    bool ignoreSpent,
+    bool ignoreUnspendable)
+{
     LOCK2(cs_main, cs_wallet);
 
     for (auto & p : mapWallet) {
@@ -3677,7 +3712,7 @@ void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, st
             PaymentAddress pa = nd.address;
 
             // skip notes which belong to a different payment address in the wallet
-            if (fFilterAddress && !(pa == filterPaymentAddress)) {
+            if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
                 continue;
             }
 
@@ -3711,7 +3746,7 @@ void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, st
                         hSig,
                         (unsigned char) j);
 
-                outEntries.push_back(CNotePlaintextEntry{jsop, plaintext});
+                outEntries.push_back(CNotePlaintextEntry{jsop, pa, plaintext});
 
             } catch (const note_decryption_failed &err) {
                 // Couldn't decrypt with this spending key

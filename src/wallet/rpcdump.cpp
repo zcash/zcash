@@ -234,11 +234,11 @@ UniValue z_importwallet(const UniValue& params, bool fHelp)
             "1. \"filename\"    (string, required) The wallet file\n"
             "\nExamples:\n"
             "\nDump the wallet\n"
-            + HelpExampleCli("z_exportwallet", "\"test\"") +
+            + HelpExampleCli("z_exportwallet", "\"nameofbackup\"") +
             "\nImport the wallet\n"
-            + HelpExampleCli("z_importwallet", "\"test\"") +
+            + HelpExampleCli("z_importwallet", "\"path/to/exportdir/nameofbackup\"") +
             "\nImport using the json rpc call\n"
-            + HelpExampleRpc("z_importwallet", "\"test\"")
+            + HelpExampleRpc("z_importwallet", "\"path/to/exportdir/nameofbackup\"")
         );
 
 	return importwallet_impl(params, fHelp, true);
@@ -257,11 +257,11 @@ UniValue importwallet(const UniValue& params, bool fHelp)
             "1. \"filename\"    (string, required) The wallet file\n"
             "\nExamples:\n"
             "\nDump the wallet\n"
-            + HelpExampleCli("dumpwallet", "\"test\"") +
+            + HelpExampleCli("dumpwallet", "\"nameofbackup\"") +
             "\nImport the wallet\n"
-            + HelpExampleCli("importwallet", "\"test\"") +
+            + HelpExampleCli("importwallet", "\"path/to/exportdir/nameofbackup\"") +
             "\nImport using the json rpc call\n"
-            + HelpExampleRpc("importwallet", "\"test\"")
+            + HelpExampleRpc("importwallet", "\"path/to/exportdir/nameofbackup\"")
         );
 
 	return importwallet_impl(params, fHelp, false);
