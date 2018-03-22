@@ -474,6 +474,16 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
                         printf("HEX.(%s) vs hash.%s\n",hexstr,NOTARIZED_HASH.ToString().c_str());
                         len = strlen(hexstr) >> 1;
                         decode_hex(script,len,hexstr);
+                        if ( script[1] == 0x4c )
+                        {
+                            script++;
+                            len--;
+                        }
+                        else if ( script[1] == 0x4d )
+                        {
+                            script += 2;
+                            len -= 2;
+                        }
                         retval = komodo_verifynotarizedscript(height,script,len,NOTARIZED_HASH);
                     }
                 }
