@@ -571,13 +571,15 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
             if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height && (height < sp->CURRENT_HEIGHT-1000 || komodo_verifynotarization(ASSETCHAINS_SYMBOL[0]==0?(char *)"KMD":ASSETCHAINS_SYMBOL,(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "BTC" : "KMD"),height,*notarizedheightp,kmdtxid,desttxid) == 0) )
             {
+                int32_t nameoffset = (int32_t)strlen(ASSETCHAINS_SYMBOL) + 1;
                 sp->NOTARIZED_HEIGHT = *notarizedheightp;
                 sp->NOTARIZED_HASH = kmdtxid;
                 sp->NOTARIZED_DESTTXID = desttxid;
                 if ( len+36 <= opretlen )
                 {
-                    len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&sp->MoM);
-                    len += iguana_rwnum(0,&scriptbuf[len],sizeof(*notarizedheightp),(uint8_t *)&sp->MoMdepth);
+                    len += iguana_rwbignum(0,&scriptbuf[len+nameoffset],32,(uint8_t *)&sp->MoM);
+                    len += iguana_rwnum(0,&scriptbuf[len+nameoffset],sizeof(*notarizedheightp),(uint8_t *)&sp->MoMdepth);
+                    printf("%s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,bits256_str(str,sp->MoM),sp->M<oMdepth);
                     if ( bits256_nonz(sp->MoM) == 0 || sp->MoMdepth > 1440 || sp->MoMdepth < 0 )
                     {
                         memset(sp->MoM.bytes,0,sizeof(sp->MoM));
@@ -585,11 +587,11 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     }
                     else
                     {
-                        printf("%s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,bits256_str(str,sp->MoM),sp->M<oMdepth);
+                        printf("VALID %s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,bits256_str(str,sp->MoM),sp->M<oMdepth);
                     }
                 }
                 komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
-                len += 4;
+                len += nameoffset;
                 if ( ASSETCHAINS_SYMBOL[0] != 0 )
                     printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d)\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len);
                 if ( ASSETCHAINS_SYMBOL[0] == 0 )
