@@ -414,7 +414,7 @@ int32_t komodo_verifynotarizedscript(int32_t height,uint8_t *script,int32_t len,
     printf(" notarized, ");
     for (i=0; i<32; i++)
         printf("%02x",((uint8_t *)&hash)[i]);
-    printf(" opreturn from [%s] ht.%d\n",ASSETCHAINS_SYMBOL,height);
+    printf(" opreturn from [%s] ht.%d MISMATCHED\n",ASSETCHAINS_SYMBOL,height);
     return(-1);
 }
 
@@ -472,7 +472,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
                 {
                     if ( (hexstr= jstr(skey,(char *)"hex")) != 0 )
                     {
-                        printf("HEX.(%s) vs hash.%s\n",hexstr,NOTARIZED_HASH.ToString().c_str());
+                        //printf("HEX.(%s) vs hash.%s\n",hexstr,NOTARIZED_HASH.ToString().c_str());
                         len = strlen(hexstr) >> 1;
                         decode_hex(script,len,hexstr);
                         if ( script[1] == 0x4c )
