@@ -398,6 +398,26 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
     }
 }
 
+int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,int32_t nHeight)
+{
+    struct komodo_state *sp; struct notarized_checkpoint *np = 0;
+    np = 0;
+    for (i=sp->NUM_NPOINTS-1; i>=0; i--)
+    {
+        np = &sp->NPOINTS[i];
+        if ( np->MoMdepth > 0 && nHeight > np->nHeight-np->MoMdepth && nHeight <= np->nHeight )
+        {
+            printf("komodo_MoMdata %d i.%d np->ht %d MoMdepth.%d\n",nHeight,i,np->nHeight,np->MoMdepth);
+            *notarized_htp = np->nHeight;
+            *MoMp = np->MoM;
+            return(np->MoMdepth);
+        }
+    }
+    *notarized_htp = 0;
+    memset(MoMp,0,sizeof(*MoMp));
+    return(0);
+}
+
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
 {
     struct notarized_checkpoint *np = 0; int32_t i=0,flag = 0; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;

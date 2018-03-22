@@ -811,9 +811,23 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp
     return(0);
 }
 
+int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,int32_t nHeight)
+{
+    int32_t depth,notarized_ht; uint256 MoM;
+    depth = komodo_MoMdata(&notarized_ht,&MoM,nHeight);
+    memset(MoMp,0,sizeof(*MoMp));
+    *notarized_heightp = 0;
+    if ( depth > 0 && notarized_ht > 0 && nHeight > notarized_ht-depth && nHeight < notarized_ht )
+    {
+        *MoMp = MoM;
+        *notarized_heightp = notarized_ht;
+    }
+    return(depth);
+}
+
 int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
 {
-    int32_t notarized_height; uint256 notarized_hash,notarized_desttxid; CBlockIndex *notary; CBlockIndex *pindex;
+    int32_t notarized_height,MoMdepth; uint256 MoM,notarized_hash,notarized_desttxid; CBlockIndex *notary; CBlockIndex *pindex;
     if ( (pindex= chainActive.Tip()) == 0 )
         return(-1);
     notarized_height = komodo_notarizeddata(pindex->nHeight,&notarized_hash,&notarized_desttxid);
