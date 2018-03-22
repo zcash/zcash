@@ -581,7 +581,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 sp->NOTARIZED_DESTTXID = desttxid;
                 memset(&sp->MoM,0,sizeof(sp->MoM));
                 sp->MoMdepth = 0;
-                if ( len+36+nameoffset <= opretlen )
+                if ( len+36 <= opretlen )
                 {
                     len += iguana_rwbignum(0,&scriptbuf[len+nameoffset],32,(uint8_t *)&sp->MoM);
                     len += iguana_rwnum(0,&scriptbuf[len+nameoffset],sizeof(sp->MoMdepth),(uint8_t *)&sp->MoMdepth);
@@ -592,7 +592,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     }
                     else
                     {
-                        //printf("VALID %s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,sp->MoM.ToString().c_str(),sp->MoMdepth);
+                        printf("VALID %s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,sp->MoM.ToString().c_str(),sp->MoMdepth);
                     }
                 }
                 komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
