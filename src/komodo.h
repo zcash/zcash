@@ -579,6 +579,8 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 sp->NOTARIZED_HEIGHT = *notarizedheightp;
                 sp->NOTARIZED_HASH = kmdtxid;
                 sp->NOTARIZED_DESTTXID = desttxid;
+                memset(&sp->MoM,0,sizeof(sp->MoM));
+                sp->MoMdepth = 0;
                 if ( len+36+nameoffset <= opretlen )
                 {
                     len += iguana_rwbignum(0,&scriptbuf[len+nameoffset],32,(uint8_t *)&sp->MoM);
