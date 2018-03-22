@@ -4,8 +4,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef BITCOIN_KEYIO_H
-#define BITCOIN_KEYIO_H
+#ifndef BITCOIN_KEY_IO_H
+#define BITCOIN_KEY_IO_H
 
 #include <chainparams.h>
 #include <key.h>
@@ -47,4 +47,4 @@ public:
     libzcash::SpendingKey DecodeSpendingKey(const std::string& str);
 };
 
-#endif // BITCOIN_KEYIO_H
+#endif // BITCOIN_KEY_IO_H
