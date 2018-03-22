@@ -351,7 +351,7 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
 
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t KMDheight,uint32_t KMDtimestamp,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout,bits256 MoM,int32_t MoMdepth)
 {
-    static FILE *fp; static int32_t errs,didinit;
+    static FILE *fp; static int32_t errs,didinit; static uint256 zero;
     struct komodo_state *sp; char fname[512],symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; int32_t retval,ht,func; uint8_t num,pubkeys[64][33];
     if ( didinit == 0 )
     {
@@ -579,15 +579,15 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 {
                     len += iguana_rwbignum(0,&scriptbuf[len+nameoffset],32,(uint8_t *)&sp->MoM);
                     len += iguana_rwnum(0,&scriptbuf[len+nameoffset],sizeof(*notarizedheightp),(uint8_t *)&sp->MoMdepth);
-                    printf("%s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,bits256_str(str,sp->MoM),sp->M<oMdepth);
+                    printf("%s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,sp->MoM.ToString().c_str(),sp->M<oMdepth);
                     if ( sp->MoM == zero || sp->MoMdepth > 1440 || sp->MoMdepth < 0 )
                     {
-                        memset(sp->MoM.bytes,0,sizeof(sp->MoM));
+                        memset(&sp->MoM,0,sizeof(sp->MoM));
                         sp->MoMdepth = 0;
                     }
                     else
                     {
-                        printf("VALID %s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,bits256_str(str,sp->MoM),sp->M<oMdepth);
+                        printf("VALID %s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,sp->MoM.ToString().c_str(),sp->M<oMdepth);
                     }
                 }
                 komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
