@@ -1,4 +1,4 @@
-FROM debian:jessie
+FROM debian:stretch
 
 ENV ZCASH_CONF /home/zcash/.zcash/zcash.conf
 ENV ZCASH_DATA /home/zcash/.zcash
@@ -7,7 +7,7 @@ ENV GOSU_VERSION 1.10
 RUN set -e && \
   # Installing required debian packages
   apt-get update -q && \
-  apt-get install --no-install-recommends -q -y apt-transport-https ca-certificates wget && \
+  apt-get install --no-install-recommends -q -y apt-transport-https ca-certificates wget gnupg dirmngr && \
   # Installing gosu which will be used in entrypoint script to change permissions for data folder to zcash:zcash
 	wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)" && \
 	wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc" && \
@@ -29,7 +29,7 @@ RUN set -e && \
   mkdir -p /home/zcash/.zcash/ && \
   chown -R zcash:zcash /home/zcash && \
   # Cleanup
-  apt-get purge -q -y apt-transport-https ca-certificates wget && \
+  apt-get purge -q -y apt-transport-https ca-certificates wget gnupg dirmngr && \
   apt-get clean -q -y && \
   apt-get autoclean -q -y && \
   apt-get autoremove -q -y && \
