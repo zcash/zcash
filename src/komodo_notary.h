@@ -398,23 +398,28 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
     }
 }
 
-int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,int32_t nHeight)
+int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight)
 {
-    int32_t i; struct komodo_state *sp; struct notarized_checkpoint *np = 0;
+    int32_t i; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp; struct notarized_checkpoint *np = 0;
     np = 0;
-    for (i=sp->NUM_NPOINTS-1; i>=0; i--)
+    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
-        np = &sp->NPOINTS[i];
-        if ( np->MoMdepth > 0 && nHeight > np->nHeight-np->MoMdepth && nHeight <= np->nHeight )
+        for (i=sp->NUM_NPOINTS-1; i>=0; i--)
         {
-            printf("komodo_MoMdata %d i.%d np->ht %d MoMdepth.%d\n",nHeight,i,np->nHeight,np->MoMdepth);
-            *notarized_htp = np->nHeight;
-            *MoMp = np->MoM;
-            return(np->MoMdepth);
+            np = &sp->NPOINTS[i];
+            if ( np->MoMdepth > 0 && nHeight > np->nHeight-np->MoMdepth && nHeight <= np->nHeight )
+            {
+                printf("komodo_MoMdata.(%s -> %s) %d i.%d np->ht %d MoMdepth.%d\n",symbol,dest,nHeight,i,np->nHeight,np->MoMdepth);
+                *notarized_htp = np->nHeight;
+                *MoMp = np->MoM;
+                *kmdtxidp = np->NOTARIZED_DESTTXID;
+                return(np->MoMdepth);
+            }
         }
     }
     *notarized_htp = 0;
     memset(MoMp,0,sizeof(*MoMp));
+    memset(kmdtxidp,0,sizeof(*kmdtxidp));
     return(0);
 }
 
