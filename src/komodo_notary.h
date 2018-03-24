@@ -127,12 +127,12 @@ const char *Notaries_elected0[][2] =
 };
 
 #define KOMODO_NOTARIES_TIMESTAMP1 1600000000
-#define KOMODO_NOTARIES_HEIGHT1 ((800000 / KOMODO_ELECTION_GAP) * KOMODO_ELECTION_GAP)
+#define KOMODO_NOTARIES_HEIGHT1 ((900000 / KOMODO_ELECTION_GAP) * KOMODO_ELECTION_GAP)
 
 const char *Notaries_elected1[][2] =
 {
-    { "0_jl777_testA", "03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828" },
     { "0_jl777_testB", "02ebfc784a4ba768aad88d44d1045d240d47b26e248cafaf1c5169a42d7a61d344" },
+    { "0_jl777_testA", "03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828" },
     { "0_kolo_testA", "0287aa4b73988ba26cf6565d815786caf0d2c4af704d7883d163ee89cd9977edec" },
     { "artik_AR", "029acf1dcd9f5ff9c455f8bb717d4ae0c703e089d16cf8424619c491dff5994c90" },
     { "artik_EU", "03f54b2c24f82632e3cdebe4568ba0acf487a80f8a89779173cdb78f74514847ce" },
