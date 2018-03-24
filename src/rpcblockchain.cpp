@@ -590,8 +590,9 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
     if ( height <= 0 )
         height = chainActive.Tip()->nHeight;
     depth = komodo_MoMdata(&notarized_height,&MoM,height);
-    ret.push_back(Pair("coin",ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSSETCHAINS_SYMBOL));
+    ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
     ret.push_back(Pair("height",height));
+    ret.push_back(Pair("timestamp",(uint64_t)timestamp));
     if ( depth > 0 )
     {
         ret.push_back(Pair("depth",depth));
@@ -711,7 +712,7 @@ UniValue notaries(const UniValue& params, bool fHelp)
     ret.push_back(Pair("notaries", a));
     ret.push_back(Pair("numnotaries", n));
     ret.push_back(Pair("height", height));
-    ret.push_back(Pair("timestamp", timestamp));
+    ret.push_back(Pair("timestamp", (uint64_t)timestamp));
     return ret;
 }
 
