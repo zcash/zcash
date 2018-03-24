@@ -527,22 +527,7 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 //uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
-/*uint64_t conv_NXTpassword(unsigned char *mysecret,unsigned char *mypublic,uint8_t *pass,int32_t passlen);
-
-
-UniValue passphrasewif(const UniValue& params, bool fHelp)
-{
-    UniValue ret(UniValue::VOBJ); char *passphrase,wifstr[64],coinaddr[64]; uint8_t tmptype,pubkey33[33]; void *ctx; uint256 privkey,pubkey;
-    passphrase = params[0].get_str().c_str();
-    conv_NXTpassword((void *)&privkey,(void *)&pubkey,(uint8_t *)passphrase,(int32_t)strlen(passphrase));
-    ctx = bitcoin_ctx();
-    bitcoin_priv2pub(ctx,pubkey33,coinaddr,privkey,0,60);
-    bitcoin_priv2wif(0,wifstr,privkey,188);
-    free(ctx);
-    ret.push_back(Pair("address",coinaddr));
-    ret.push_back(Pair("wif",wifstr));
-    return ret;
-}*/
+int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight);
 
 UniValue kvsearch(const UniValue& params, bool fHelp)
 {
@@ -576,6 +561,38 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
             } else ret.push_back(Pair("error",(char *)"cant find key"));
         } else ret.push_back(Pair("error",(char *)"key too big"));
     } else ret.push_back(Pair("error",(char *)"null key"));
+    return ret;
+}
+
+UniValue height_MoM(const UniValue& params, bool fHelp)
+{
+    int32_t height,depth,notarized_height; uint256 MoM,kmdtxid; uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("height_MoM needs height\n");
+    LOCK(cs_main);
+    height = atoi(params[0].get_str().c_str());
+    if ( height <= 0 )
+    {
+        if ( chainActive.Tip() == 0 )
+        {
+            ret.push_back(Pair("error",(char *)"no active chain yet"));
+            return(ret);
+        }
+        height = chainActive.Tip()->nHeight;
+    }
+    //fprintf(stderr,"height_MoM height.%d\n",height);
+    depth = komodo_MoM(&notarized_height,&MoM,&kmdtxid,height);
+    ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
+    ret.push_back(Pair("height",height));
+    ret.push_back(Pair("timestamp",(uint64_t)timestamp));
+    if ( depth > 0 )
+    {
+        ret.push_back(Pair("depth",depth));
+        ret.push_back(Pair("notarized_height",notarized_height));
+        ret.push_back(Pair("MoM",MoM.GetHex()));
+        ret.push_back(Pair("kmdtxid",kmdtxid.GetHex()));
+    } else ret.push_back(Pair("error",(char *)"no MoM for height"));
+
     return ret;
 }
 
@@ -639,57 +656,56 @@ UniValue minerids(const UniValue& params, bool fHelp)
 UniValue notaries(const UniValue& params, bool fHelp)
 {
     UniValue a(UniValue::VARR); uint32_t timestamp=0; UniValue ret(UniValue::VOBJ); int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
-    if ( fHelp || params.size() != 1 )
-        throw runtime_error("notaries height\n");
+    if ( fHelp || (params.size() != 1 && params.size() != 2) )
+        throw runtime_error("notaries height timestamp\n");
     LOCK(cs_main);
     int32_t height = atoi(params[0].get_str().c_str());
+    if ( params.size() == 2 )
+        timestamp = (uint32_t)atol(params[1].get_str().c_str());
+    else timestamp = (uint32_t)time(NULL);
     if ( height < 0 )
     {
         height = chainActive.Tip()->nHeight;
         timestamp = chainActive.Tip()->GetBlockTime();
     }
-    else
+    else if ( params.size() < 2 )
     {
         CBlockIndex *pblockindex = chainActive[height];
         if ( pblockindex != 0 )
             timestamp = pblockindex->GetBlockTime();
     }
-    //fprintf(stderr,"notaries as of height.%d\n",height);
-    //if ( height > chainActive.Height()+20000 )
-    //    throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
-    //else
+    if ( (n= komodo_notaries(pubkeys,height,timestamp)) > 0 )
     {
-        if ( (n= komodo_notaries(pubkeys,height,timestamp)) > 0 )
+        for (i=0; i<n; i++)
         {
-            for (i=0; i<n; i++)
-            {
-                UniValue item(UniValue::VOBJ);
-                std::string btcaddress,kmdaddress,hex;
-                hex.resize(66);
-                hexstr = (char *)hex.data();
-                for (j=0; j<33; j++)
-                    sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
-                item.push_back(Pair("pubkey", hex));
-
-                bitcoin_address(btcaddr,0,pubkeys[i],33);
-                m = (int32_t)strlen(btcaddr);
-                btcaddress.resize(m);
-                ptr = (char *)btcaddress.data();
-                memcpy(ptr,btcaddr,m);
-                item.push_back(Pair("BTCaddress", btcaddress));
-
-                bitcoin_address(kmdaddr,60,pubkeys[i],33);
-                m = (int32_t)strlen(kmdaddr);
-                kmdaddress.resize(m);
-                ptr = (char *)kmdaddress.data();
-                memcpy(ptr,kmdaddr,m);
-                item.push_back(Pair("KMDaddress", kmdaddress));
-                a.push_back(item);
-            }
+            UniValue item(UniValue::VOBJ);
+            std::string btcaddress,kmdaddress,hex;
+            hex.resize(66);
+            hexstr = (char *)hex.data();
+            for (j=0; j<33; j++)
+                sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
+            item.push_back(Pair("pubkey", hex));
+            
+            bitcoin_address(btcaddr,0,pubkeys[i],33);
+            m = (int32_t)strlen(btcaddr);
+            btcaddress.resize(m);
+            ptr = (char *)btcaddress.data();
+            memcpy(ptr,btcaddr,m);
+            item.push_back(Pair("BTCaddress", btcaddress));
+            
+            bitcoin_address(kmdaddr,60,pubkeys[i],33);
+            m = (int32_t)strlen(kmdaddr);
+            kmdaddress.resize(m);
+            ptr = (char *)kmdaddress.data();
+            memcpy(ptr,kmdaddr,m);
+            item.push_back(Pair("KMDaddress", kmdaddress));
+            a.push_back(item);
         }
-        ret.push_back(Pair("notaries", a));
-        ret.push_back(Pair("numnotaries", n));
     }
+    ret.push_back(Pair("notaries", a));
+    ret.push_back(Pair("numnotaries", n));
+    ret.push_back(Pair("height", height));
+    ret.push_back(Pair("timestamp", (uint64_t)timestamp));
     return ret;
 }
 

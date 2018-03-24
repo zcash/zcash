@@ -2779,8 +2779,6 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                         extern int32_t USE_EXTERNAL_PUBKEY; extern std::string NOTARY_PUBKEY;
                         if ( USE_EXTERNAL_PUBKEY == 0 )
                         {
-                            //fprintf(stderr,"use notary pubkey\n");
-                            //scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
                             bool ret;
                             ret = reservekey.GetReservedKey(vchPubKey);
                             assert(ret); // should never fail, as we just unlocked
@@ -2788,6 +2786,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                         }
                         else
                         {
+                            //fprintf(stderr,"use notary pubkey\n");
                             scriptChange = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
                         }
                     }

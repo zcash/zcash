@@ -126,13 +126,13 @@ const char *Notaries_elected0[][2] =
     { "xxspot2_XX", "03d85b221ea72ebcd25373e7961f4983d12add66a92f899deaf07bab1d8b6f5573" }
 };
 
-#define KOMODO_NOTARIES_TIMESTAMP1 1600000000
-#define KOMODO_NOTARIES_HEIGHT1 ((800000 / KOMODO_ELECTION_GAP) * KOMODO_ELECTION_GAP)
+#define KOMODO_NOTARIES_TIMESTAMP1 1530921600 // 7/7/2017
+#define KOMODO_NOTARIES_HEIGHT1 ((900000 / KOMODO_ELECTION_GAP) * KOMODO_ELECTION_GAP)
 
 const char *Notaries_elected1[][2] =
 {
-    { "0_jl777_testA", "03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828" },
     { "0_jl777_testB", "02ebfc784a4ba768aad88d44d1045d240d47b26e248cafaf1c5169a42d7a61d344" },
+    { "0_jl777_testA", "03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828" },
     { "0_kolo_testA", "0287aa4b73988ba26cf6565d815786caf0d2c4af704d7883d163ee89cd9977edec" },
     { "artik_AR", "029acf1dcd9f5ff9c455f8bb717d4ae0c703e089d16cf8424619c491dff5994c90" },
     { "artik_EU", "03f54b2c24f82632e3cdebe4568ba0acf487a80f8a89779173cdb78f74514847ce" },
@@ -200,19 +200,25 @@ const char *Notaries_elected1[][2] =
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
 {
     int32_t i,htind,n; uint64_t mask = 0; struct knotary_entry *kp,*tmp;
+    if ( timestamp == 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+        timestamp = komodo_heightstamp(height);
     if ( height >= KOMODO_NOTARIES_HARDCODED || ASSETCHAINS_SYMBOL[0] != 0 )
     {
-        if ( timestamp < KOMODO_NOTARIES_TIMESTAMP1 || height < KOMODO_NOTARIES_HEIGHT1 )
+        if ( (timestamp != 0 && timestamp < KOMODO_NOTARIES_TIMESTAMP1) || height < KOMODO_NOTARIES_HEIGHT1 )
         {
             n = (int32_t)(sizeof(Notaries_elected0)/sizeof(*Notaries_elected0));
             for (i=0; i<n; i++)
                 decode_hex(pubkeys[i],33,(char *)Notaries_elected0[i][1]);
+            //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            //fprintf(stderr,"%s height.%d t.%u elected.%d notaries\n",ASSETCHAINS_SYMBOL,height,timestamp,n);
         }
-        else // if ( timestamp < KOMODO_NOTARIES_TIMESTAMP2 || height < KOMODO_NOTARIES_HEIGHT2 )
+        else //if ( (timestamp != 0 && timestamp < KOMODO_NOTARIES_TIMESTAMP2) || height < KOMODO_NOTARIES_HEIGHT2 )
         {
             n = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
             for (i=0; i<n; i++)
                 decode_hex(pubkeys[i],33,(char *)Notaries_elected1[i][1]);
+            if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                fprintf(stderr,"%s height.%d t.%u elected.%d notaries2\n",ASSETCHAINS_SYMBOL,height,timestamp,n);
         }
         return(n);
     }
@@ -221,6 +227,8 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
         htind = (KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP) - 1;
     pthread_mutex_lock(&komodo_mutex);
     n = Pubkeys[htind].numnotaries;
+    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+        fprintf(stderr,"%s height.%d t.%u genesis.%d\n",ASSETCHAINS_SYMBOL,height,timestamp,n);
     HASH_ITER(hh,Pubkeys[htind].Notaries,kp,tmp)
     {
         if ( kp->notaryid < n )
@@ -357,7 +365,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
     return(modval);
 }
 
-void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t notarized_height,uint256 notarized_hash,uint256 notarized_desttxid)
+void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t notarized_height,uint256 notarized_hash,uint256 notarized_desttxid,uint256 MoM,int32_t MoMdepth)
 {
     struct notarized_checkpoint *np;
     if ( notarized_height > nHeight )
@@ -375,6 +383,8 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
     sp->NOTARIZED_HEIGHT = np->notarized_height = notarized_height;
     sp->NOTARIZED_HASH = np->notarized_hash = notarized_hash;
     sp->NOTARIZED_DESTTXID = np->notarized_desttxid = notarized_desttxid;
+    sp->MoM = np->MoM = MoM;
+    sp->MoMdepth = np->MoMdepth = MoMdepth;
     portable_mutex_unlock(&komodo_mutex);
 }
 
@@ -394,6 +404,30 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
         memset(txidp,0,sizeof(*txidp));
         return(0);
     }
+}
+
+int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t height)
+{
+    int32_t i; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp; struct notarized_checkpoint *np = 0;
+    np = 0;
+    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
+    {
+        for (i=sp->NUM_NPOINTS-1; i>=0; i--)
+        {
+            np = &sp->NPOINTS[i];
+            if ( np->MoMdepth > 0 && height > np->notarized_height-np->MoMdepth && height <= np->notarized_height )
+            {
+                *notarized_htp = np->notarized_height;
+                *MoMp = np->MoM;
+                *kmdtxidp = np->notarized_desttxid;
+                return(np->MoMdepth);
+            }
+        }
+    }
+    *notarized_htp = 0;
+    memset(MoMp,0,sizeof(*MoMp));
+    memset(kmdtxidp,0,sizeof(*kmdtxidp));
+    return(0);
 }
 
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
@@ -457,6 +491,7 @@ void komodo_init(int32_t height)
     static int didinit; uint256 zero; int32_t k,n; uint8_t pubkeys[64][33];
     if ( 0 && height != 0 )
         printf("komodo_init ht.%d didinit.%d\n",height,didinit);
+    memset(&zero,0,sizeof(zero));
     if ( didinit == 0 )
     {
         pthread_mutex_init(&komodo_mutex,NULL);
@@ -472,7 +507,6 @@ void komodo_init(int32_t height)
             }
             komodo_notarysinit(0,pubkeys,k);
         }
-        memset(&zero,0,sizeof(zero));
         //for (i=0; i<sizeof(Minerids); i++)
         //    Minerids[i] = -2;
         didinit = 1;
@@ -489,7 +523,7 @@ void komodo_init(int32_t height)
         printf("set MAINNET notaries.%d\n",k);
         komodo_notarysinit(KOMODO_MAINNET_START,pubkeys,k);
     }*/
-    komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0);
+    komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,zero,0);
 }
 
 /*void komodo_assetchain_pubkeys(char *jsonstr)

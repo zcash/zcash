@@ -414,13 +414,14 @@ int32_t komodo_verifynotarizedscript(int32_t height,uint8_t *script,int32_t len,
     printf(" notarized, ");
     for (i=0; i<32; i++)
         printf("%02x",((uint8_t *)&hash)[i]);
-    printf(" opreturn from [%s] ht.%d\n",ASSETCHAINS_SYMBOL,height);
+    printf(" opreturn from [%s] ht.%d MISMATCHED\n",ASSETCHAINS_SYMBOL,height);
     return(-1);
 }
 
 int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 NOTARIZED_HASH,uint256 NOTARIZED_DESTTXID)
 {
-    char params[256],*jsonstr,*hexstr; uint8_t script[8192]; int32_t n,len,retval = -1; cJSON *json,*txjson,*vouts,*vout,*skey;
+    char params[256],*jsonstr,*hexstr; uint8_t *script,_script[8192]; int32_t n,len,retval = -1; cJSON *json,*txjson,*vouts,*vout,*skey;
+    script = _script;
     /*params[0] = '[';
     params[1] = '"';
     for (i=0; i<32; i++)
@@ -471,9 +472,19 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
                 {
                     if ( (hexstr= jstr(skey,(char *)"hex")) != 0 )
                     {
-                        //printf("HEX.(%s)\n",hexstr);
+                        //printf("HEX.(%s) vs hash.%s\n",hexstr,NOTARIZED_HASH.ToString().c_str());
                         len = strlen(hexstr) >> 1;
                         decode_hex(script,len,hexstr);
+                        if ( script[1] == 0x4c )
+                        {
+                            script++;
+                            len--;
+                        }
+                        else if ( script[1] == 0x4d )
+                        {
+                            script += 2;
+                            len -= 2;
+                        }
                         retval = komodo_verifynotarizedscript(height,script,len,NOTARIZED_HASH);
                     }
                 }
@@ -610,7 +621,7 @@ int32_t komodo_block2height(CBlock *block)
             //for (i=0; i<6; i++)
             //    printf("%02x",ptr[i]);
             n = ptr[0];
-            for (i=0; i<n; i++)
+            for (i=0; i<4; i++)
             {
                 //03bb81000101(bb 187) (81 48001) (00 12288256)  <- coinbase.6 ht.12288256
                 height += ((uint32_t)ptr[i+1] << (i*8));
@@ -682,7 +693,7 @@ uint32_t komodo_heightstamp(int32_t height)
     CBlockIndex *ptr;
     if ( height > 0 && (ptr= komodo_chainactive(height)) != 0 )
         return(ptr->nTime);
-    else fprintf(stderr,"komodo_heightstamp null ptr for block.%d\n",height);
+    //else fprintf(stderr,"komodo_heightstamp null ptr for block.%d\n",height);
     return(0);
 }
 
@@ -800,9 +811,25 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp
     return(0);
 }
 
+int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight)
+{
+    int32_t depth,notarized_ht; uint256 MoM,kmdtxid;
+    depth = komodo_MoMdata(&notarized_ht,&MoM,&kmdtxid,nHeight);
+    memset(MoMp,0,sizeof(*MoMp));
+    memset(kmdtxidp,0,sizeof(*kmdtxidp));
+    *notarized_heightp = 0;
+    if ( depth > 0 && notarized_ht > 0 && nHeight > notarized_ht-depth && nHeight <= notarized_ht )
+    {
+        *MoMp = MoM;
+        *notarized_heightp = notarized_ht;
+        *kmdtxidp = kmdtxid;
+    }
+    return(depth);
+}
+
 int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
 {
-    int32_t notarized_height; uint256 notarized_hash,notarized_desttxid; CBlockIndex *notary; CBlockIndex *pindex;
+    int32_t notarized_height,MoMdepth; uint256 MoM,notarized_hash,notarized_desttxid; CBlockIndex *notary; CBlockIndex *pindex;
     if ( (pindex= chainActive.Tip()) == 0 )
         return(-1);
     notarized_height = komodo_notarizeddata(pindex->nHeight,&notarized_hash,&notarized_desttxid);
