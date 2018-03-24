@@ -81,6 +81,11 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
     
 }
 
+uint32_t komodo_heightstamp(int32_t height)
+{
+    return(0);
+}
+
 static bool AppInitRPC(int argc, char* argv[])
 {
     //
