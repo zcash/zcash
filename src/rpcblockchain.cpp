@@ -582,7 +582,7 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
 
 UniValue height_MoM(const UniValue& params, bool fHelp)
 {
-    int32_t height,depth,notarized_height; uint256 MoM; uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    int32_t height,depth,notarized_height; uint256 MoM,kmdtxid; uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
     if ( fHelp || params.size() != 1 )
         throw runtime_error("height_MoM needs height\n");
     LOCK(cs_main);
@@ -597,7 +597,7 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
         height = chainActive.Tip()->nHeight;
     }
     fprintf(stderr,"height_MoM height.%d\n",height);
-    depth = komodo_MoMdata(&notarized_height,&MoM,height);
+    depth = komodo_MoMdata(&notarized_height,&MoM,&kmdtxid,height);
     ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
     ret.push_back(Pair("height",height));
     ret.push_back(Pair("timestamp",(uint64_t)timestamp));
@@ -606,6 +606,7 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
         ret.push_back(Pair("depth",depth));
         ret.push_back(Pair("notarized_height",notarized_height));
         ret.push_back(Pair("MoM",MoM.GetHex()));
+        ret.push_back(Pair("kmdtxid",kmdtxid.GetHex()));
     } else ret.push_back(Pair("error",(char *)"no MoM for height"));
 
     return ret;
