@@ -727,7 +727,7 @@ int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t hei
 int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
 {
     int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t _pubkey33[33],pubkeys[64][33];
-    if ( pubkey33 == 0 && (pindex= chainActive[height]) != 0 )
+    if ( (pindex= chainActive[height]) != 0 )
     {
         timestamp = pindex->GetBlockTime();
         if ( pubkey33 == 0 )
