@@ -409,8 +409,8 @@ int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,in
             np = &sp->NPOINTS[i];
             if ( np->MoMdepth > 0 && nHeight > np->nHeight-np->MoMdepth && nHeight <= np->nHeight )
             {
-                printf("komodo_MoMdata.(%s -> %s) %d i.%d np->ht %d MoMdepth.%d\n",symbol,dest,nHeight,i,np->nHeight,np->MoMdepth);
-                *notarized_htp = np->nHeight;
+                //printf("komodo_MoMdata.(%s -> %s) %d i.%d np->ht %d MoMdepth.%d\n",symbol,dest,nHeight,i,np->nHeight,np->MoMdepth);
+                *notarized_htp = np->notarized_height;
                 *MoMp = np->MoM;
                 *kmdtxidp = np->notarized_desttxid;
                 return(np->MoMdepth);

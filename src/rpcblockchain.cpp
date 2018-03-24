@@ -580,7 +580,7 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
         }
         height = chainActive.Tip()->nHeight;
     }
-    fprintf(stderr,"height_MoM height.%d\n",height);
+    //fprintf(stderr,"height_MoM height.%d\n",height);
     depth = komodo_MoM(&notarized_height,&MoM,&kmdtxid,height);
     ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
     ret.push_back(Pair("height",height));
