@@ -412,7 +412,7 @@ int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,in
                 printf("komodo_MoMdata.(%s -> %s) %d i.%d np->ht %d MoMdepth.%d\n",symbol,dest,nHeight,i,np->nHeight,np->MoMdepth);
                 *notarized_htp = np->nHeight;
                 *MoMp = np->MoM;
-                *kmdtxidp = np->NOTARIZED_DESTTXID;
+                *kmdtxidp = np->notarized_desttxid;
                 return(np->MoMdepth);
             }
         }
