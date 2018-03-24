@@ -592,7 +592,7 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
         if ( chainActive.Tip() == 0 )
         {
             ret.push_back(Pair("error",(char *)"no active chain yet"));
-            return(ret)
+            return(ret);
         }
         height = chainActive.Tip()->nHeight;
     }
