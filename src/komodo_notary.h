@@ -200,18 +200,16 @@ const char *Notaries_elected1[][2] =
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
 {
     int32_t i,htind,n; uint64_t mask = 0; struct knotary_entry *kp,*tmp;
-    if ( timestamp == 0 && (timestamp= komodo_heightstamp(height)) == 0 )
-        timestamp = (uint32_t)time(NULL) - 777;
     if ( height >= KOMODO_NOTARIES_HARDCODED || ASSETCHAINS_SYMBOL[0] != 0 )
     {
-        if ( timestamp < KOMODO_NOTARIES_TIMESTAMP1 || height < KOMODO_NOTARIES_HEIGHT1 )
+        if ( (timestamp != 0 && timestamp < KOMODO_NOTARIES_TIMESTAMP1) || height < KOMODO_NOTARIES_HEIGHT1 )
         {
             n = (int32_t)(sizeof(Notaries_elected0)/sizeof(*Notaries_elected0));
             for (i=0; i<n; i++)
                 decode_hex(pubkeys[i],33,(char *)Notaries_elected0[i][1]);
             fprintf(stderr,"height.%d t.%u elected.%d notaries\n",height,timestamp,n);
         }
-        else // if ( timestamp < KOMODO_NOTARIES_TIMESTAMP2 || height < KOMODO_NOTARIES_HEIGHT2 )
+        else //if ( (timestamp != 0 && timestamp < KOMODO_NOTARIES_TIMESTAMP2) || height < KOMODO_NOTARIES_HEIGHT2 )
         {
             n = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
             for (i=0; i<n; i++)

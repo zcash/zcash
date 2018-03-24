@@ -621,7 +621,7 @@ int32_t komodo_block2height(CBlock *block)
             //for (i=0; i<6; i++)
             //    printf("%02x",ptr[i]);
             n = ptr[0];
-            for (i=0; i<n; i++)
+            for (i=0; i<4; i++)
             {
                 //03bb81000101(bb 187) (81 48001) (00 12288256)  <- coinbase.6 ht.12288256
                 height += ((uint32_t)ptr[i+1] << (i*8));
@@ -727,7 +727,7 @@ int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t hei
 int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
 {
     int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t _pubkey33[33],pubkeys[64][33];
-    if ( (pindex= chainActive[height]) != 0 )
+    if ( pubkey33 == 0 && (pindex= chainActive[height]) != 0 )
     {
         timestamp = pindex->GetBlockTime();
         if ( pubkey33 == 0 )
