@@ -1,10 +1,10 @@
-# bash programmable completion for bitcoin-cli(1)
+# bash programmable completion for komodo-cli(1)
 # Copyright (c) 2012-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-# call $bitcoin-cli for RPC
-_zcash_rpc() {
+# call $komodo-cli for RPC
+_komodo_rpc() {
     # determine already specified args necessary for RPC
     local rpcargs=()
     for i in ${COMP_LINE}; do
@@ -14,25 +14,25 @@ _zcash_rpc() {
                 ;;
         esac
     done
-    $bitcoin_cli "${rpcargs[@]}" "$@"
+    $komodo_cli "${rpcargs[@]}" "$@"
 }
 
 # Add wallet accounts to COMPREPLY
-_zcash_accounts() {
+_komodo_accounts() {
     local accounts
-    # Accounts are deprecated in Zcash
-    #accounts=$(_zcash_rpc listaccounts | awk -F '"' '{ print $2 }')
+    # Accounts are deprecated in komodo
+    #accounts=$(_komodo_rpc listaccounts | awk -F '"' '{ print $2 }')
     accounts="\\\"\\\""
     COMPREPLY=( "${COMPREPLY[@]}" $( compgen -W "$accounts" -- "$cur" ) )
 }
 
-_zcash_cli() {
+_komodo_cli() {
     local cur prev words=() cword
-    local bitcoin_cli
+    local komodo_cli
 
-    # save and use original argument to invoke bitcoin-cli for -help, help and RPC
-    # as bitcoin-cli might not be in $PATH
-    bitcoin_cli="$1"
+    # save and use original argument to invoke komodo-cli for -help, help and RPC
+    # as komodo-cli might not be in $PATH
+    komodo_cli="$1"
 
     COMPREPLY=()
     _get_comp_words_by_ref -n = cur prev words cword
@@ -62,7 +62,7 @@ _zcash_cli() {
     if ((cword > 3)); then
         case ${words[cword-3]} in
             addmultisigaddress)
-                _zcash_accounts
+                _komodo_accounts
                 return 0
                 ;;
             getbalance|gettxout|importaddress|importpubkey|importprivkey|listreceivedbyaccount|listreceivedbyaddress|listsinceblock)
@@ -82,12 +82,17 @@ _zcash_cli() {
                 COMPREPLY=( $( compgen -W "add remove" -- "$cur" ) )
                 return 0
                 ;;
-            fundrawtransaction|getblock|getblockheader|getmempoolancestors|getmempooldescendants|getrawtransaction|gettransaction|listaccounts|listreceivedbyaccount|listreceivedbyaddress|sendrawtransaction|z_importkey)
+            fundrawtransaction|getblock|getblockheader|getmempoolancestors|getmempooldescendants|getrawtransaction|gettransaction|listaccounts|listreceivedbyaccount|listreceivedbyaddress|sendrawtransaction)
                 COMPREPLY=( $( compgen -W "true false" -- "$cur" ) )
                 return 0
                 ;;
+# KMD does not have viewing keys, yet
+#            z_importkey|z_importviewingkey)
+#                COMPREPLY=( $( compgen -W "yes no whenkeyisnew" -- "$cur" ) )
+#                return 0
+#                ;;
             move|setaccount)
-                _zcash_accounts
+                _komodo_accounts
                 return 0
                 ;;
         esac
@@ -103,7 +108,7 @@ _zcash_cli() {
             return 0
             ;;
         getaccountaddress|getaddressesbyaccount|getbalance|getnewaddress|getreceivedbyaccount|listtransactions|move|sendfrom|sendmany)
-            _zcash_accounts
+            _komodo_accounts
             return 0
             ;;
     esac
@@ -127,12 +132,12 @@ _zcash_cli() {
 
             # only parse -help if senseful
             if [[ -z "$cur" || "$cur" =~ ^- ]]; then
-                helpopts=$($bitcoin_cli -help 2>&1 | awk '$1 ~ /^-/ { sub(/=.*/, "="); print $1 }' )
+                helpopts=$($komodo_cli -help 2>&1 | awk '$1 ~ /^-/ { sub(/=.*/, "="); print $1 }' )
             fi
 
             # only parse help if senseful
             if [[ -z "$cur" || "$cur" =~ ^[a-z] ]]; then
-                commands=$(_zcash_rpc help 2>/dev/null | awk '$1 ~ /^[a-z]/ { print $1; }')
+                commands=$(_komodo_rpc help 2>/dev/null | awk '$1 ~ /^[a-z]/ { print $1; }')
             fi
 
             COMPREPLY=( $( compgen -W "$helpopts $commands" -- "$cur" ) )
@@ -145,7 +150,7 @@ _zcash_cli() {
             ;;
     esac
 } &&
-complete -F _zcash_cli zcash-cli
+complete -F _komodo_cli komodo-cli
 
 # Local variables:
 # mode: shell-script
