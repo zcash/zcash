@@ -811,16 +811,18 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp
     return(0);
 }
 
-int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,int32_t nHeight)
+int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight)
 {
-    int32_t depth,notarized_ht; uint256 MoM;
-    depth = komodo_MoMdata(&notarized_ht,&MoM,nHeight);
+    int32_t depth,notarized_ht; uint256 MoM,kmdtxid;
+    depth = komodo_MoMdata(&notarized_ht,&MoM,&kmdtxid,nHeight);
     memset(MoMp,0,sizeof(*MoMp));
+    memset(*kmdtxidp,0,sizeof(*kmdtxidp));
     *notarized_heightp = 0;
     if ( depth > 0 && notarized_ht > 0 && nHeight > notarized_ht-depth && nHeight < notarized_ht )
     {
         *MoMp = MoM;
         *notarized_heightp = notarized_ht;
+        *kmdtxidp = kmdtxid;
     }
     return(depth);
 }
