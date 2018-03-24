@@ -126,8 +126,8 @@ const char *Notaries_elected0[][2] =
     { "xxspot2_XX", "03d85b221ea72ebcd25373e7961f4983d12add66a92f899deaf07bab1d8b6f5573" }
 };
 
-#define KOMODO_NOTARIES_TIMESTAMP1 1600000000
-#define KOMODO_NOTARIES_HEIGHT1 ((900000 / KOMODO_ELECTION_GAP) * KOMODO_ELECTION_GAP)
+#define KOMODO_NOTARIES_TIMESTAMP1 1400000000
+#define KOMODO_NOTARIES_HEIGHT1 ((700000 / KOMODO_ELECTION_GAP) * KOMODO_ELECTION_GAP)
 
 const char *Notaries_elected1[][2] =
 {
@@ -214,6 +214,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             n = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
             for (i=0; i<n; i++)
                 decode_hex(pubkeys[i],33,(char *)Notaries_elected1[i][1]);
+            fprintf(stderr,"height.%d t.%u elected.%d notaries2\n",height,timestamp,n);
         }
         return(n);
     }
