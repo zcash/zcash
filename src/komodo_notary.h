@@ -207,6 +207,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             n = (int32_t)(sizeof(Notaries_elected0)/sizeof(*Notaries_elected0));
             for (i=0; i<n; i++)
                 decode_hex(pubkeys[i],33,(char *)Notaries_elected0[i][1]);
+            fprintf(stderr,"height.%d t.%u elected.%d notaries\n",height,timestamp,n);
         }
         else // if ( timestamp < KOMODO_NOTARIES_TIMESTAMP2 || height < KOMODO_NOTARIES_HEIGHT2 )
         {
