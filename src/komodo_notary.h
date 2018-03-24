@@ -126,7 +126,7 @@ const char *Notaries_elected0[][2] =
     { "xxspot2_XX", "03d85b221ea72ebcd25373e7961f4983d12add66a92f899deaf07bab1d8b6f5573" }
 };
 
-#define KOMODO_NOTARIES_TIMESTAMP1 1530921600 // 7/7/2017
+#define KOMODO_NOTARIES_TIMESTAMP1 1521902703 //1530921600 // 7/7/2017
 #define KOMODO_NOTARIES_HEIGHT1 ((900000 / KOMODO_ELECTION_GAP) * KOMODO_ELECTION_GAP)
 
 const char *Notaries_elected1[][2] =
@@ -207,8 +207,8 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             n = (int32_t)(sizeof(Notaries_elected0)/sizeof(*Notaries_elected0));
             for (i=0; i<n; i++)
                 decode_hex(pubkeys[i],33,(char *)Notaries_elected0[i][1]);
-            if ( ASSETCHAINS_SYMBOL[0] != 0 )
-            fprintf(stderr,"%s height.%d t.%u elected.%d notaries\n",ASSETCHAINS_SYMBOL,height,timestamp,n);
+            //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            //fprintf(stderr,"%s height.%d t.%u elected.%d notaries\n",ASSETCHAINS_SYMBOL,height,timestamp,n);
         }
         else //if ( (timestamp != 0 && timestamp < KOMODO_NOTARIES_TIMESTAMP2) || height < KOMODO_NOTARIES_HEIGHT2 )
         {
