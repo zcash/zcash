@@ -207,14 +207,16 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             n = (int32_t)(sizeof(Notaries_elected0)/sizeof(*Notaries_elected0));
             for (i=0; i<n; i++)
                 decode_hex(pubkeys[i],33,(char *)Notaries_elected0[i][1]);
-            fprintf(stderr,"height.%d t.%u elected.%d notaries\n",height,timestamp,n);
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            fprintf(stderr,"%s height.%d t.%u elected.%d notaries\n",ASSETCHAINS_SYMBOL,height,timestamp,n);
         }
         else //if ( (timestamp != 0 && timestamp < KOMODO_NOTARIES_TIMESTAMP2) || height < KOMODO_NOTARIES_HEIGHT2 )
         {
             n = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
             for (i=0; i<n; i++)
                 decode_hex(pubkeys[i],33,(char *)Notaries_elected1[i][1]);
-            fprintf(stderr,"height.%d t.%u elected.%d notaries2\n",height,timestamp,n);
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                fprintf(stderr,"%s height.%d t.%u elected.%d notaries2\n",ASSETCHAINS_SYMBOL,height,timestamp,n);
         }
         return(n);
     }
@@ -223,6 +225,8 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
         htind = (KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP) - 1;
     pthread_mutex_lock(&komodo_mutex);
     n = Pubkeys[htind].numnotaries;
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        fprintf(stderr,"%s height.%d t.%u genesis.%d\n",ASSETCHAINS_SYMBOL,height,timestamp,n);
     HASH_ITER(hh,Pubkeys[htind].Notaries,kp,tmp)
     {
         if ( kp->notaryid < n )
