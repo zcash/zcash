@@ -975,13 +975,13 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
             {info.vjsin[0], info.vjsin[1]};
     boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs
             {info.vjsout[0], info.vjsout[1]};
-    #ifdef __LP64__
+#ifdef __LP64__
     boost::array<uint64_t, ZC_NUM_JS_INPUTS> inputMap;
     boost::array<uint64_t, ZC_NUM_JS_OUTPUTS> outputMap;
-    #else
+#else
     boost::array<size_t, ZC_NUM_JS_INPUTS> inputMap;
     boost::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
-
+#endif
     uint256 esk; // payment disclosure - secret
 
     JSDescription jsdesc = JSDescription::Randomized(
