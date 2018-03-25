@@ -109,7 +109,6 @@ protected:
      //! Raw pub key bytes for the broadcast alert signing key.
     std::vector<unsigned char> vAlertPubKey;
     int nMinerThreads = 0;
-    int nDefaultPort = 0;
     long nMaxTipAge = 0;
     uint64_t nPruneAfterHeight = 0;
     unsigned int nEquihashN = 0;
