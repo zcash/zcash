@@ -93,7 +93,7 @@ public:
     void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
 
     void SetDefaultPort(uint16_t port) { nDefaultPort = port; }
-    void SetCheckpointData(Checkpoints::CCheckpointData checkpointData);
+    void SetCheckpointData(CCheckpointData checkpointData);
 
     //void setnonce(uint32_t nonce) { memcpy(&genesis.nNonce,&nonce,sizeof(nonce)); }
     //void settimestamp(uint32_t timestamp) { genesis.nTime = timestamp; }
