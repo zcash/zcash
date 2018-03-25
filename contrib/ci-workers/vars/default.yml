@@ -1,0 +1,49 @@
+---
+# These variables can be overridden in distribution files.
+
+# Dependencies required to install Buildbot
+buildbot_deps:
+  - python-pip # So we can install Python modules
+
+# Dependencies required to download files
+fetch_deps:
+  - git
+  - wget # For zcutil/fetch-params.sh
+
+# Dependencies required to configure Zcash
+conf_deps:
+  - autoconf
+  - automake
+  - m4
+
+# Dependencies required to compile Zcash
+build_deps:
+  - g++
+  - gcc
+  - make
+
+# Dependencies required to link Zcash
+link_deps:
+  - libtool
+
+# Additional distribution-specific dependencies
+dist_deps: []
+
+# Additional grind-specific dependencies
+grind_deps:
+  - lcov
+  - valgrind
+
+# Python modules required for a Zcash Buildbot worker
+buildbot_modules:
+  - pip # Needs to be updated first so Buildbot installs
+  - buildbot-worker
+  - pyflakes
+
+# Python modules required to run the Zcash RPC test suite
+rpc_test_modules:
+  - pyblake2
+  - pyzmq
+
+# Environment variables
+pip_bin_dir: /usr/local/bin

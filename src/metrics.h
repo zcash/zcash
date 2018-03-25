@@ -49,6 +49,8 @@ public:
 
     bool running();
 
+    uint64_t threadCount();
+
     double rate(const AtomicCounter& count);
 };
 
@@ -61,6 +63,9 @@ void TrackMinedBlock(uint256 hash);
 
 void MarkStartTime();
 double GetLocalSolPS();
+int EstimateNetHeightInner(int height, int64_t tipmediantime,
+                           int heightLastCheckpoint, int64_t timeLastCheckpoint,
+                           int64_t genesisTime, int64_t targetSpacing);
 
 void TriggerRefresh();
 

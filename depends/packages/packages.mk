@@ -1,4 +1,5 @@
 rust_packages := rust librustzcash
+<<<<<<< HEAD
 zcash_packages := libsnark libgmp libsodium
 
 ifeq ($(host_os),linux)
@@ -8,8 +9,11 @@ else
 endif
 
 
+=======
+proton_packages := proton
+zcash_packages := libgmp libsodium
+packages := boost openssl libevent zeromq $(zcash_packages) googletest
+>>>>>>> zcash/master
 native_packages := native_ccache
 
 wallet_packages=bdb
-
-upnp_packages=miniupnpc
