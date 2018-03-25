@@ -621,13 +621,13 @@ int32_t komodo_block2height(CBlock *block)
             //for (i=0; i<6; i++)
             //    printf("%02x",ptr[i]);
             n = ptr[0];
-            for (i=0; i<n; i++)
+            for (i=0; i<n; i++) // looks strange but this works
             {
                 //03bb81000101(bb 187) (81 48001) (00 12288256)  <- coinbase.6 ht.12288256
                 height += ((uint32_t)ptr[i+1] << (i*8));
                 //printf("(%02x %x %d) ",ptr[i+1],((uint32_t)ptr[i+1] << (i*8)),height);
             }
-            printf(" <- coinbase.%d ht.%d\n",(int32_t)block->vtx[0].vin[0].scriptSig.size(),height);
+            //printf(" <- coinbase.%d ht.%d\n",(int32_t)block->vtx[0].vin[0].scriptSig.size(),height);
         }
         //komodo_init(height);
     }
