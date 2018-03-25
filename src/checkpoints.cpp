@@ -23,7 +23,7 @@ namespace Checkpoints {
      * fast multicore CPU, it won't be much higher than 1.
      */
     static const double SIGCHECK_VERIFICATION_FACTOR = 5.0;
-    bool CheckBlock(const CCheckpointData& data, int nHeight, const uint256& hash)
+    bool CheckBlock(const CChainParams::CCheckpointData& data, int nHeight, const uint256& hash)
     {
         const MapCheckpoints& checkpoints = data.mapCheckpoints;
         
@@ -33,7 +33,7 @@ namespace Checkpoints {
     }
 
     //! Guess how far we are in the verification process at the given block index
-    double GuessVerificationProgress(const CCheckpointData& data, CBlockIndex *pindex, bool fSigchecks) {
+    double GuessVerificationProgress(const CChainParams::CCheckpointData& data, CBlockIndex *pindex, bool fSigchecks) {
         if (pindex==NULL)
             return 0.0;
 
@@ -62,7 +62,7 @@ namespace Checkpoints {
         return fWorkBefore / (fWorkBefore + fWorkAfter);
     }
 
-    int GetTotalBlocksEstimate(const CCheckpointData& data)
+    int GetTotalBlocksEstimate(const CChainParams::CCheckpointData& data)
     {
         const MapCheckpoints& checkpoints = data.mapCheckpoints;
 
@@ -72,7 +72,7 @@ namespace Checkpoints {
         return checkpoints.rbegin()->first;
     }
 
-    CBlockIndex* GetLastCheckpoint(const CCheckpointData& data)
+    CBlockIndex* GetLastCheckpoint(const CChainParams::CCheckpointData& data)
     {
         const MapCheckpoints& checkpoints = data.mapCheckpoints;
 
