@@ -507,13 +507,9 @@ if test x$use_hardening != xno; then
 
   if test x$TARGET_OS != xwindows; then
     # All windows code is PIC, forcing it on just adds useless compile warnings
-<<<<<<< HEAD
     AX_CHECK_LINK_FLAG([[-Wl,-z,relro]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,-z,relro"],[AC_MSG_ERROR(Cannot enable RELRO)])
     AX_CHECK_LINK_FLAG([[-Wl,-z,now]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,-z,now"],[AC_MSG_ERROR(Cannot enable BIND_NOW)])
     AX_CHECK_COMPILE_FLAG([-fPIE],[HARDENED_CXXFLAGS="$HARDENED_CXXFLAGS -fPIE"],[AC_MSG_ERROR(Cannot enable -fPIE)])
-=======
-    AX_CHECK_COMPILE_FLAG([-fPIE],[PIE_FLAGS="-fPIE"],[AC_MSG_ERROR(Cannot enable -fPIE)])
->>>>>>> zcash/master
     AX_CHECK_LINK_FLAG([[-pie]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -pie"],[AC_MSG_ERROR(Cannot enable -pie)])
   else
     # These are only available on Windows.
@@ -755,7 +751,6 @@ fi
 #AC_CHECK_HEADER([gmpxx.h],,AC_MSG_ERROR(libgmpxx headers missing))
 #AC_CHECK_LIB([gmpxx],[main],GMPXX_LIBS=-lgmpxx, [AC_MSG_ERROR(libgmpxx missing)])
 
-<<<<<<< HEAD
 # libsnark header layout is broken unless cpp's -I is passed with the
 # libsnark directory, so for now we use this hideous workaround:
 echo 'Hunting for libsnark include directory...'
@@ -776,8 +771,6 @@ fi
 #AC_CHECK_HEADER([libsnark/gadgetlib1/gadget.hpp],,AC_MSG_ERROR(libsnark headers missing))
 #AC_CHECK_LIB([snark],[main],LIBSNARK_LIBS=-lsnark, [AC_MSG_ERROR(libsnark missing)], [-lgmpxx])
 
-=======
->>>>>>> zcash/master
 RUST_LIBS=""
 if test x$enable_rust != xno; then
   RUST_LIBS="-lrustzcash"
