@@ -10,7 +10,6 @@
 #include "consensus/params.h"
 #include "primitives/block.h"
 #include "protocol.h"
-#include "checkpoints.h"
 
 #define KOMODO_MINDIFF_NBITS 0x200f0f0f
 
