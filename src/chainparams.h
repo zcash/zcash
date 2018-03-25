@@ -27,12 +27,6 @@ struct SeedSpec6 {
 
 typedef std::map<int, uint256> MapCheckpoints;
 
-struct CCheckpointData {
-    MapCheckpoints mapCheckpoints;
-    int64_t nTimeLastCheckpoint;
-    int64_t nTransactionsLastCheckpoint;
-    double fTransactionsPerDay;
-};
 
 /**
  * CChainParams defines various tweakable parameters of a given instance of the
@@ -56,6 +50,12 @@ public:
         ZCVIEWING_KEY,
 
         MAX_BASE58_TYPES
+    };
+    struct CCheckpointData {
+        MapCheckpoints mapCheckpoints;
+        int64_t nTimeLastCheckpoint;
+        int64_t nTransactionsLastCheckpoint;
+        double fTransactionsPerDay;
     };
 
     const Consensus::Params& GetConsensus() const { return consensus; }

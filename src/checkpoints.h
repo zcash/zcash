@@ -12,13 +12,6 @@
 class CBlockIndex;
 struct CCheckpointData;
 
-struct CCheckpointData {
-    MapCheckpoints mapCheckpoints;
-    int64_t nTimeLastCheckpoint;
-    int64_t nTransactionsLastCheckpoint;
-    double fTransactionsPerDay;
-};
-
 /**
  * Block-chain checkpoints are compiled-in sanity checks.
  * They are updated every release or three.
@@ -28,6 +21,12 @@ namespace Checkpoints
 
     typedef std::map<int, uint256> MapCheckpoints;
 
+struct CCheckpointData {
+    MapCheckpoints mapCheckpoints;
+    int64_t nTimeLastCheckpoint;
+    int64_t nTransactionsLastCheckpoint;
+    double fTransactionsPerDay;
+};
     bool CheckBlock(const CCheckpointData& data, int nHeight, const uint256& hash);
 
     
