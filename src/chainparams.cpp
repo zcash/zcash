@@ -208,7 +208,7 @@ void CChainParams::SetCheckpointData(Checkpoints::CCheckpointData checkpointData
 
 void *chainparams_commandline(void *ptr)
 {
-    Checkpoints::CCheckpointData checkpointData;
+    CChainParams::CCheckpointData checkpointData;
     while ( ASSETCHAINS_PORT == 0 )
     {
         #ifdef _WIN32
