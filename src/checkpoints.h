@@ -6,6 +6,7 @@
 #define BITCOIN_CHECKPOINTS_H
 
 #include "uint256.h"
+#include "chainparams.h"
 
 #include <map>
 
