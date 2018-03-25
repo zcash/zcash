@@ -87,6 +87,7 @@ struct Params {
     int nMajorityEnforceBlockUpgrade;
     int nMajorityRejectBlockOutdated;
     int nMajorityWindow;
+    int fPowAllowMinDifficultyBlocks;
     NetworkUpgrade vUpgrades[MAX_NETWORK_UPGRADES];
     /** Proof of work parameters */
     uint256 powLimit;
