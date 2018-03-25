@@ -12,7 +12,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libzcashconsensus.pc
 endif
 
-<<<<<<< HEAD
+
 BITCOIND_BIN=$(top_builddir)/src/zcashd$(EXEEXT)
 BITCOIN_CLI_BIN=$(top_builddir)/src/zcash-cli$(EXEEXT)
 BITCOIN_WIN_INSTALLER=$(PACKAGE)-$(PACKAGE_VERSION)-win$(WINDOWS_BITS)-setup$(EXEEXT)
@@ -28,17 +28,13 @@ OSX_INSTALLER_ICONS=$(top_srcdir)/src/qt/res/icons/bitcoin.icns
 OSX_PLIST=$(top_srcdir)/share/qt/Info.plist #not installed
 OSX_QT_TRANSLATIONS = da,de,es,hu,ru,uk,zh_CN,zh_TW
 endif
-=======
-BITCOIND_BIN=$(top_builddir)/src/$(BITCOIN_DAEMON_NAME)$(EXEEXT)
-BITCOIN_CLI_BIN=$(top_builddir)/src/$(BITCOIN_CLI_NAME)$(EXEEXT)
->>>>>>> zcash/master
 
 DIST_DOCS = $(wildcard doc/*.md) $(wildcard doc/release-notes/*.md)
 
 BIN_CHECKS=$(top_srcdir)/contrib/devtools/symbol-check.py \
            $(top_srcdir)/contrib/devtools/security-check.py
 
-<<<<<<< HEAD
+
 WINDOWS_PACKAGING = $(top_srcdir)/share/pixmaps/bitcoin.ico \
   $(top_srcdir)/share/pixmaps/nsis-header.bmp \
   $(top_srcdir)/share/pixmaps/nsis-wizard.bmp
@@ -59,9 +55,6 @@ COVERAGE_INFO = baseline_filtered_combined.info baseline.info block_test.info \
 #  zcash-gtest.info zcash-gtest_filtered.info zcash-gtest_coverage.info
 else
 COVERAGE_INFO = baseline_filtered_combined.info baseline.info block_test.info \
-=======
-COVERAGE_INFO = baseline_filtered_combined.info baseline.info \
->>>>>>> zcash/master
   leveldb_baseline.info test_bitcoin_filtered.info total_coverage.info \
   baseline_filtered.info \
   leveldb_baseline_filtered.info test_bitcoin_coverage.info test_bitcoin.info \
@@ -84,7 +77,6 @@ distcleancheck:
 $(if $(findstring src/,$(MAKECMDGOALS)),$(MAKECMDGOALS), none): FORCE
 	$(MAKE) -C src $(patsubst src/%,%,$@)
 
-<<<<<<< HEAD
 if TARGET_DARWIN
 
 $(OSX_APP)/Contents/PkgInfo:
@@ -157,8 +149,6 @@ if TARGET_WINDOWS
 deploy: $(BITCOIN_WIN_INSTALLER)
 endif
 
-=======
->>>>>>> zcash/master
 $(BITCOIND_BIN): FORCE
 	$(MAKE) -C src $(@F)
 
@@ -260,7 +250,7 @@ test_bitcoin_filtered.info: test_bitcoin.info
                       -o $@
 endif
 
-<<<<<<< HEAD
+
 block_test.info: test_bitcoin_filtered.info
 	$(MKDIR_P) qa/tmp
 	-@TIMEOUT=15 qa/pull-tester/run-bitcoind-for-test.sh $(JAVA) -jar $(JAVA_COMPARISON_TOOL) qa/tmp/compTool 0
@@ -294,8 +284,7 @@ block_test_filtered.info: block_test.info
                       -o $@
 endif
 
-=======
->>>>>>> zcash/master
+
 test_bitcoin_coverage.info: baseline_filtered_combined.info test_bitcoin_filtered.info
        $(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a test_bitcoin_filtered.info -o $@
 
@@ -304,7 +293,6 @@ zcash-gtest_coverage.info: baseline_filtered_combined.info zcash-gtest_filtered.
 	$(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a zcash-gtest_filtered.info -o $@
 endif
 
-<<<<<<< HEAD
 if BUILD_DARWIN
 total_coverage.info:  baseline_filtered_combined.info test_bitcoin_filtered.info zcash-gtest_filtered.info block_test_filtered.info
   $(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a test_bitcoin_filtered.info -a zcash-gtest_filtered.info -a block_test_filtered.info -o $@ | $(GREP) "\%" | $(AWK) '{ print substr($$3,2,50) "/" $$5 }' > coverage_percent.txt
@@ -313,10 +301,6 @@ total_coverage.info:  baseline_filtered_combined.info test_bitcoin_filtered.info
 	$(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a test_bitcoin_filtered.info -a zcash-gtest_filtered.info -a block_test_filtered.info -o $@ | $(GREP) "\%" | $(AWK) '{ print substr($$3,2,50) "/" $$5 }' > coverage_percent.txt
 endif
 
-=======
-total_coverage.info:  baseline_filtered_combined.info test_bitcoin_filtered.info zcash-gtest_filtered.info
-	$(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a test_bitcoin_filtered.info -a zcash-gtest_filtered.info -o $@ | $(GREP) "\%" | $(AWK) '{ print substr($$3,2,50) "/" $$5 }' > coverage_percent.txt
->>>>>>> zcash/master
 
 test_bitcoin.coverage/.dirstamp:  test_bitcoin_coverage.info
        $(GENHTML) -s $< -o $(@D)
