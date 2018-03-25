@@ -22,12 +22,12 @@ namespace Checkpoints
 
     typedef std::map<int, uint256> MapCheckpoints;
 
-/*struct CCheckpointData {
+struct CCheckpointData {
     MapCheckpoints mapCheckpoints;
     int64_t nTimeLastCheckpoint;
     int64_t nTransactionsLastCheckpoint;
     double fTransactionsPerDay;
-};*/
+};
     bool CheckBlock(const CChainParams::CCheckpointData& data, int nHeight, const uint256& hash);
 
     
