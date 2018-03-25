@@ -27,6 +27,12 @@ struct SeedSpec6 {
 
 typedef std::map<int, uint256> MapCheckpoints;
 
+/*struct CCheckpointData {
+    MapCheckpoints mapCheckpoints;
+    int64_t nTimeLastCheckpoint;
+    int64_t nTransactionsLastCheckpoint;
+    double fTransactionsPerDay;
+};*/
 
 /**
  * CChainParams defines various tweakable parameters of a given instance of the
@@ -50,12 +56,6 @@ public:
         ZCVIEWING_KEY,
 
         MAX_BASE58_TYPES
-    };
-    struct CCheckpointData {
-        MapCheckpoints mapCheckpoints;
-        int64_t nTimeLastCheckpoint;
-        int64_t nTransactionsLastCheckpoint;
-        double fTransactionsPerDay;
     };
 
     const Consensus::Params& GetConsensus() const { return consensus; }
@@ -93,7 +93,7 @@ public:
     void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
 
     void SetDefaultPort(uint16_t port) { nDefaultPort = port; }
-    void SetCheckpointData(CCheckpointData checkpointData);
+    void SetCheckpointData(Checkpoints::CCheckpointData checkpointData);
 
     //void setnonce(uint32_t nonce) { memcpy(&genesis.nNonce,&nonce,sizeof(nonce)); }
     //void settimestamp(uint32_t timestamp) { genesis.nTime = timestamp; }
