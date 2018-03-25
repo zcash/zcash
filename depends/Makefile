@@ -4,12 +4,8 @@ SOURCES_PATH ?= $(BASEDIR)/sources
 BASE_CACHE ?= $(BASEDIR)/built
 SDK_PATH ?= $(BASEDIR)/SDKs
 NO_WALLET ?=
-<<<<<<< HEAD
 NO_UPNP ?=
 FALLBACK_DOWNLOAD_PATH ?= https://supernet/depends-sources
-=======
-PRIORITY_DOWNLOAD_PATH ?= https://z.cash/depends-sources
->>>>>>> zcash/master
 
 BUILD ?= $(shell ./config.guess)
 HOST ?= $(BUILD)
