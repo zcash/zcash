@@ -759,7 +759,7 @@ if test -d "$LIBSNARK_INCDIR"; then
    echo "Found libsnark include directory: $LIBSNARK_INCDIR"
 else
 #AC_MSG_ERROR(libsnark include directory not found)
-echo "libsnark include directory not found"
+echo "libsnark include directory not found $LIBSNARK_INCDIR"
 fi
 
 CPPFLAGS="-I$LIBSNARK_INCDIR $CPPFLAGS"
