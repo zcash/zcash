@@ -20,8 +20,8 @@ struct CDiskTxPos;
 class uint256;
 
 //! -dbcache default (MiB)
-static const int64_t nDefaultDbCache = 100;
-//! max. -dbcache in (MiB)
+static const int64_t nDefaultDbCache = 450;
+//! max. -dbcache (MiB)
 static const int64_t nMaxDbCache = sizeof(void*) > 4 ? 16384 : 1024;
 //! min. -dbcache in (MiB)
 static const int64_t nMinDbCache = 4;
@@ -31,6 +31,7 @@ class CCoinsViewDB : public CCoinsView
 {
 protected:
     CLevelDBWrapper db;
+    CCoinsViewDB(std::string dbName, size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 public:
     CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 

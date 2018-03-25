@@ -204,7 +204,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
         timestamp = komodo_heightstamp(height);
     if ( height >= KOMODO_NOTARIES_HARDCODED || ASSETCHAINS_SYMBOL[0] != 0 )
     {
-        if ( (timestamp != 0 && timestamp < KOMODO_NOTARIES_TIMESTAMP1) || height < KOMODO_NOTARIES_HEIGHT1 )
+        if ( (timestamp != 0 && timestamp <= KOMODO_NOTARIES_TIMESTAMP1) || height <= KOMODO_NOTARIES_HEIGHT1 )
         {
             n = (int32_t)(sizeof(Notaries_elected0)/sizeof(*Notaries_elected0));
             for (i=0; i<n; i++)
@@ -212,7 +212,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             //if ( ASSETCHAINS_SYMBOL[0] != 0 )
             //fprintf(stderr,"%s height.%d t.%u elected.%d notaries\n",ASSETCHAINS_SYMBOL,height,timestamp,n);
         }
-        else //if ( (timestamp != 0 && timestamp < KOMODO_NOTARIES_TIMESTAMP2) || height < KOMODO_NOTARIES_HEIGHT2 )
+        else //if ( (timestamp != 0 && timestamp <= KOMODO_NOTARIES_TIMESTAMP2) || height <= KOMODO_NOTARIES_HEIGHT2 )
         {
             n = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
             for (i=0; i<n; i++)

@@ -16,6 +16,8 @@
 
 #include <boost/foreach.hpp>
 
+static const int SPROUT_VALUE_VERSION = 1001400;
+
 struct CDiskBlockPos
 {
     int nFile;
@@ -92,7 +94,13 @@ enum BlockStatus: uint32_t {
     BLOCK_FAILED_VALID       =   32, //! stage after last reached validness failed
     BLOCK_FAILED_CHILD       =   64, //! descends from failed block
     BLOCK_FAILED_MASK        =   BLOCK_FAILED_VALID | BLOCK_FAILED_CHILD,
+
+    BLOCK_ACTIVATES_UPGRADE  =   128, //! block activates a network upgrade
 };
+
+//! Short-hand for the highest consensus validity we implement.
+//! Blocks with this validity are assumed to satisfy all consensus rules.
+static const BlockStatus BLOCK_VALID_CONSENSUS = BLOCK_VALID_SCRIPTS;
 
 /** The block chain is a tree shaped structure starting with the
  * genesis block at the root, with each block potentially having multiple
@@ -138,11 +146,25 @@ public:
     //! Verification status of this block. See enum BlockStatus
     unsigned int nStatus;
 
+    //! Branch ID corresponding to the consensus rules used to validate this block.
+    //! Only cached if block validity is BLOCK_VALID_CONSENSUS.
+    //! Persisted at each activation height, memory-only for intervening blocks.
+    boost::optional<uint32_t> nCachedBranchId;
+
     //! The anchor for the tree state up to the start of this block
     uint256 hashAnchor;
 
     //! (memory only) The anchor for the tree state up to the end of this block
     uint256 hashAnchorEnd;
+
+    //! Change in value held by the Sprout circuit over this block.
+    //! Will be boost::none for older blocks on old nodes until a reindex has taken place.
+    boost::optional<CAmount> nSproutValue;
+
+    //! (memory only) Total value held by the Sprout circuit up to and including this block.
+    //! Will be boost::none for on old nodes until a reindex has taken place.
+    //! Will be boost::none if nChainTx is zero.
+    boost::optional<CAmount> nChainSproutValue;
 
     //! block header
     int nVersion;
@@ -169,9 +191,12 @@ public:
         nTx = 0;
         nChainTx = 0;
         nStatus = 0;
+        nCachedBranchId = boost::none;
         hashAnchor = uint256();
         hashAnchorEnd = uint256();
         nSequenceId = 0;
+        nSproutValue = boost::none;
+        nChainSproutValue = boost::none;
 
         nVersion       = 0;
         hashMerkleRoot = uint256();
@@ -328,6 +353,18 @@ public:
             READWRITE(VARINT(nDataPos));
         if (nStatus & BLOCK_HAVE_UNDO)
             READWRITE(VARINT(nUndoPos));
+        if (nStatus & BLOCK_ACTIVATES_UPGRADE) {
+            if (ser_action.ForRead()) {
+                uint32_t branchId;
+                READWRITE(branchId);
+                nCachedBranchId = branchId;
+            } else {
+                // nCachedBranchId must always be set if BLOCK_ACTIVATES_UPGRADE is set.
+                assert(nCachedBranchId);
+                uint32_t branchId = *nCachedBranchId;
+                READWRITE(branchId);
+            }
+        }
         READWRITE(hashAnchor);
 
         // block header
@@ -339,6 +376,12 @@ public:
         READWRITE(nBits);
         READWRITE(nNonce);
         READWRITE(nSolution);
+
+        // Only read/write nSproutValue if the client version used to create
+        // this index was storing them.
+        if ((nType & SER_DISK) && (nVersion >= SPROUT_VALUE_VERSION)) {
+            READWRITE(nSproutValue);
+        }
     }
 
     uint256 GetBlockHash() const
