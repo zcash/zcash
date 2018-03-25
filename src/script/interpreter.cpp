@@ -5,11 +5,11 @@
 
 #include "interpreter.h"
 
+#include "consensus/upgrades.h"
 #include "primitives/transaction.h"
 #include "crypto/ripemd160.h"
 #include "crypto/sha1.h"
 #include "crypto/sha256.h"
-#include "eccryptoverify.h"
 #include "pubkey.h"
 #include "script/script.h"
 #include "uint256.h"
@@ -102,7 +102,7 @@ bool static IsValidSignatureEncoding(const std::vector<unsigned char> &sig) {
     //   excluding the sighash byte.
     // * R-length: 1-byte length descriptor of the R value that follows.
     // * R: arbitrary-length big-endian encoded R value. It must use the shortest
-    //   possible encoding for a positive integers (which means no null bytes at
+    //   possible encoding for a positive integer (which means no null bytes at
     //   the start, except a single one when the next byte has its highest bit set).
     // * S-length: 1-byte length descriptor of the S value that follows.
     // * S: arbitrary-length big-endian encoded S value. The same rules apply.
@@ -165,16 +165,14 @@ bool static IsLowDERSignature(const valtype &vchSig, ScriptError* serror) {
     if (!IsValidSignatureEncoding(vchSig)) {
         return set_error(serror, SCRIPT_ERR_SIG_DER);
     }
-    unsigned int nLenR = vchSig[3];
-    unsigned int nLenS = vchSig[5+nLenR];
-    const unsigned char *S = &vchSig[6+nLenR];
+    // https://bitcoin.stackexchange.com/a/12556:
+    //     Also note that inside transaction signatures, an extra hashtype byte
+    //     follows the actual signature data.
+    std::vector<unsigned char> vchSigCopy(vchSig.begin(), vchSig.begin() + vchSig.size() - 1);
     // If the S value is above the order of the curve divided by two, its
     // complement modulo the order could have been used instead, which is
     // one byte shorter when encoded correctly.
-    if (!eccrypto::CheckSignatureElement(S, nLenS, true))
-        return set_error(serror, SCRIPT_ERR_SIG_HIGH_S);
-
-    return true;
+    return CPubKey::CheckLowS(vchSigCopy);
 }
 
 bool static IsDefinedHashtypeSignature(const valtype &vchSig) {
@@ -194,7 +192,7 @@ bool static CheckSignatureEncoding(const valtype &vchSig, unsigned int flags, Sc
     if (vchSig.size() == 0) {
         return true;
     }
-    if ((flags & (SCRIPT_VERIFY_DERSIG | SCRIPT_VERIFY_LOW_S | SCRIPT_VERIFY_STRICTENC)) != 0 && !IsValidSignatureEncoding(vchSig)) {
+    if (!IsValidSignatureEncoding(vchSig)) {
         return set_error(serror, SCRIPT_ERR_SIG_DER);
     } else if ((flags & SCRIPT_VERIFY_LOW_S) != 0 && !IsLowDERSignature(vchSig, serror)) {
         // serror is set
@@ -235,7 +233,13 @@ bool static CheckMinimalPush(const valtype& data, opcodetype opcode) {
     return true;
 }
 
-bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, unsigned int flags, const BaseSignatureChecker& checker, ScriptError* serror)
+bool EvalScript(
+    vector<vector<unsigned char> >& stack,
+    const CScript& script,
+    unsigned int flags,
+    const BaseSignatureChecker& checker,
+    uint32_t consensusBranchId,
+    ScriptError* serror)
 {
     static const CScriptNum bnZero(0);
     static const CScriptNum bnOne(1);
@@ -832,7 +836,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                         //serror is set
                         return false;
                     }
-                    bool fSuccess = checker.CheckSig(vchSig, vchPubKey, script);
+                    bool fSuccess = checker.CheckSig(vchSig, vchPubKey, script, consensusBranchId);
 
                     popstack(stack);
                     popstack(stack);
@@ -890,7 +894,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                         }
 
                         // Check signature
-                        bool fOk = checker.CheckSig(vchSig, vchPubKey, script);
+                        bool fOk = checker.CheckSig(vchSig, vchPubKey, script, consensusBranchId);
 
                         if (fOk) {
                             isig++;
@@ -1054,13 +1058,146 @@ public:
     }
 };
 
+const unsigned char ZCASH_PREVOUTS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+    {'Z','c','a','s','h','P','r','e','v','o','u','t','H','a','s','h'};
+const unsigned char ZCASH_SEQUENCE_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+    {'Z','c','a','s','h','S','e','q','u','e','n','c','H','a','s','h'};
+const unsigned char ZCASH_OUTPUTS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+    {'Z','c','a','s','h','O','u','t','p','u','t','s','H','a','s','h'};
+const unsigned char ZCASH_JOINSPLITS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+    {'Z','c','a','s','h','J','S','p','l','i','t','s','H','a','s','h'};
+
+uint256 GetPrevoutHash(const CTransaction& txTo) {
+    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_PREVOUTS_HASH_PERSONALIZATION);
+    for (unsigned int n = 0; n < txTo.vin.size(); n++) {
+        ss << txTo.vin[n].prevout;
+    }
+    return ss.GetHash();
+}
+
+uint256 GetSequenceHash(const CTransaction& txTo) {
+    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_SEQUENCE_HASH_PERSONALIZATION);
+    for (unsigned int n = 0; n < txTo.vin.size(); n++) {
+        ss << txTo.vin[n].nSequence;
+    }
+    return ss.GetHash();
+}
+
+uint256 GetOutputsHash(const CTransaction& txTo) {
+    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_OUTPUTS_HASH_PERSONALIZATION);
+    for (unsigned int n = 0; n < txTo.vout.size(); n++) {
+        ss << txTo.vout[n];
+    }
+    return ss.GetHash();
+}
+
+uint256 GetJoinSplitsHash(const CTransaction& txTo) {
+    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_JOINSPLITS_HASH_PERSONALIZATION);
+    for (unsigned int n = 0; n < txTo.vjoinsplit.size(); n++) {
+        ss << txTo.vjoinsplit[n];
+    }
+    ss << txTo.joinSplitPubKey;
+    return ss.GetHash();
+}
+
 } // anon namespace
 
-uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType)
+PrecomputedTransactionData::PrecomputedTransactionData(const CTransaction& txTo)
+{
+    hashPrevouts = GetPrevoutHash(txTo);
+    hashSequence = GetSequenceHash(txTo);
+    hashOutputs = GetOutputsHash(txTo);
+    hashJoinSplits = GetJoinSplitsHash(txTo);
+}
+
+SigVersion SignatureHashVersion(const CTransaction& txTo)
+{
+    if (txTo.fOverwintered) {
+        return SIGVERSION_OVERWINTER;
+    } else {
+        return SIGVERSION_SPROUT;
+    }
+}
+
+uint256 SignatureHash(
+    const CScript& scriptCode,
+    const CTransaction& txTo,
+    unsigned int nIn,
+    int nHashType,
+    const CAmount& amount,
+    uint32_t consensusBranchId,
+    const PrecomputedTransactionData* cache)
 {
     if (nIn >= txTo.vin.size() && nIn != NOT_AN_INPUT) {
         //  nIn out of range
         throw logic_error("input index is out of range");
+    }
+
+    auto sigversion = SignatureHashVersion(txTo);
+
+    if (sigversion == SIGVERSION_OVERWINTER) {
+        uint256 hashPrevouts;
+        uint256 hashSequence;
+        uint256 hashOutputs;
+        uint256 hashJoinSplits;
+
+        if (!(nHashType & SIGHASH_ANYONECANPAY)) {
+            hashPrevouts = cache ? cache->hashPrevouts : GetPrevoutHash(txTo);
+        }
+
+        if (!(nHashType & SIGHASH_ANYONECANPAY) && (nHashType & 0x1f) != SIGHASH_SINGLE && (nHashType & 0x1f) != SIGHASH_NONE) {
+            hashSequence = cache ? cache->hashSequence : GetSequenceHash(txTo);
+        }
+
+        if ((nHashType & 0x1f) != SIGHASH_SINGLE && (nHashType & 0x1f) != SIGHASH_NONE) {
+            hashOutputs = cache ? cache->hashOutputs : GetOutputsHash(txTo);
+        } else if ((nHashType & 0x1f) == SIGHASH_SINGLE && nIn < txTo.vout.size()) {
+            CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_OUTPUTS_HASH_PERSONALIZATION);
+            ss << txTo.vout[nIn];
+            hashOutputs = ss.GetHash();
+        }
+
+        if (!txTo.vjoinsplit.empty()) {
+            hashJoinSplits = cache ? cache->hashJoinSplits : GetJoinSplitsHash(txTo);
+        }
+
+        uint32_t leConsensusBranchId = htole32(consensusBranchId);
+        unsigned char personalization[16] = {};
+        memcpy(personalization, "ZcashSigHash", 12);
+        memcpy(personalization+12, &leConsensusBranchId, 4);
+
+        CBLAKE2bWriter ss(SER_GETHASH, 0, personalization);
+        // Header
+        ss << txTo.GetHeader();
+        // Version group ID
+        ss << txTo.nVersionGroupId;
+        // Input prevouts/nSequence (none/all, depending on flags)
+        ss << hashPrevouts;
+        ss << hashSequence;
+        // Outputs (none/one/all, depending on flags)
+        ss << hashOutputs;
+        // JoinSplits
+        ss << hashJoinSplits;
+        // Locktime
+        ss << txTo.nLockTime;
+        // Expiry height
+        ss << txTo.nExpiryHeight;
+        // Sighash type
+        ss << nHashType;
+
+        // If this hash is for a transparent input signature
+        // (i.e. not for txTo.joinSplitSig):
+        if (nIn != NOT_AN_INPUT){
+            // The input being signed (replacing the scriptSig with scriptCode + amount)
+            // The prevout may already be contained in hashPrevout, and the nSequence
+            // may already be contained in hashSequence.
+            ss << txTo.vin[nIn].prevout;
+            ss << scriptCode;
+            ss << amount;
+            ss << txTo.vin[nIn].nSequence;
+        }
+
+        return ss.GetHash();
     }
 
     // Check for invalid use of SIGHASH_SINGLE
@@ -1080,12 +1217,17 @@ uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsig
     return ss.GetHash();
 }
 
-bool TransactionSignatureChecker::VerifySignature(const std::vector<unsigned char>& vchSig, const CPubKey& pubkey, const uint256& sighash) const
+bool TransactionSignatureChecker::VerifySignature(
+    const std::vector<unsigned char>& vchSig, const CPubKey& pubkey, const uint256& sighash) const
 {
     return pubkey.Verify(sighash, vchSig);
 }
 
-bool TransactionSignatureChecker::CheckSig(const vector<unsigned char>& vchSigIn, const vector<unsigned char>& vchPubKey, const CScript& scriptCode) const
+bool TransactionSignatureChecker::CheckSig(
+    const vector<unsigned char>& vchSigIn,
+    const vector<unsigned char>& vchPubKey,
+    const CScript& scriptCode,
+    uint32_t consensusBranchId) const
 {
     CPubKey pubkey(vchPubKey);
     if (!pubkey.IsValid())
@@ -1100,7 +1242,7 @@ bool TransactionSignatureChecker::CheckSig(const vector<unsigned char>& vchSigIn
 
     uint256 sighash;
     try {
-        sighash = SignatureHash(scriptCode, *txTo, nIn, nHashType);
+        sighash = SignatureHash(scriptCode, *txTo, nIn, nHashType, amount, consensusBranchId, this->txdata);
     } catch (logic_error ex) {
         return false;
     }
@@ -1154,7 +1296,13 @@ bool TransactionSignatureChecker::CheckLockTime(const CScriptNum& nLockTime) con
 }
 
 
-bool VerifyScript(const CScript& scriptSig, const CScript& scriptPubKey, unsigned int flags, const BaseSignatureChecker& checker, ScriptError* serror)
+bool VerifyScript(
+    const CScript& scriptSig,
+    const CScript& scriptPubKey,
+    unsigned int flags,
+    const BaseSignatureChecker& checker,
+    uint32_t consensusBranchId,
+    ScriptError* serror)
 {
     set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
 
@@ -1163,12 +1311,12 @@ bool VerifyScript(const CScript& scriptSig, const CScript& scriptPubKey, unsigne
     }
 
     vector<vector<unsigned char> > stack, stackCopy;
-    if (!EvalScript(stack, scriptSig, flags, checker, serror))
+    if (!EvalScript(stack, scriptSig, flags, checker, consensusBranchId, serror))
         // serror is set
         return false;
     if (flags & SCRIPT_VERIFY_P2SH)
         stackCopy = stack;
-    if (!EvalScript(stack, scriptPubKey, flags, checker, serror))
+    if (!EvalScript(stack, scriptPubKey, flags, checker, consensusBranchId, serror))
         // serror is set
         return false;
     if (stack.empty())
@@ -1195,7 +1343,7 @@ bool VerifyScript(const CScript& scriptSig, const CScript& scriptPubKey, unsigne
         CScript pubKey2(pubKeySerialized.begin(), pubKeySerialized.end());
         popstack(stack);
 
-        if (!EvalScript(stack, pubKey2, flags, checker, serror))
+        if (!EvalScript(stack, pubKey2, flags, checker, consensusBranchId, serror))
             // serror is set
             return false;
         if (stack.empty())

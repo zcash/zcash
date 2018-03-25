@@ -65,6 +65,9 @@ void static BatchWriteHashBestAnchor(CLevelDBBatch &batch, const uint256 &hash) 
     batch.Write(DB_BEST_ANCHOR, hash);
 }
 
+CCoinsViewDB::CCoinsViewDB(std::string dbName, size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / dbName, nCacheSize, fMemory, fWipe) {
+}
+
 CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe) {
 }
 
@@ -304,12 +307,21 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nVersion       = diskindex.nVersion;
                 pindexNew->hashReserved   = diskindex.hashReserved;
                 pindexNew->hashMerkleRoot = diskindex.hashMerkleRoot;
+                pindexNew->hashReserved   = diskindex.hashReserved;
                 pindexNew->nTime          = diskindex.nTime;
                 pindexNew->nBits          = diskindex.nBits;
                 pindexNew->nNonce         = diskindex.nNonce;
                 pindexNew->nSolution      = diskindex.nSolution;
                 pindexNew->nStatus        = diskindex.nStatus;
+                pindexNew->nCachedBranchId = diskindex.nCachedBranchId;
                 pindexNew->nTx            = diskindex.nTx;
+                pindexNew->nSproutValue   = diskindex.nSproutValue;
+                
+                // Consistency checks
+                auto header = pindexNew->GetBlockHeader();
+                if (header.GetHash() != pindexNew->GetBlockHash())
+                    return error("LoadBlockIndex(): block header inconsistency detected: on-disk = %s, in-memory = %s",
+                                 diskindex.ToString(),  pindexNew->ToString());
                 uint8_t pubkey33[33];
                 komodo_index2pubkey33(pubkey33,pindexNew,pindexNew->nHeight);
                 if (!CheckProofOfWork(pindexNew->nHeight,pubkey33,pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
