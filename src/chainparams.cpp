@@ -201,7 +201,7 @@ public:
 };
 static CMainParams mainParams;
 
-void CChainParams::SetCheckpointData(Checkpoints::CCheckpointData checkpointData)
+void CChainParams::SetCheckpointData(CChainParams::CCheckpointData checkpointData)
 {
     CChainParams::checkpointData = checkpointData;
 }
