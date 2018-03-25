@@ -27,12 +27,12 @@ struct SeedSpec6 {
 
 typedef std::map<int, uint256> MapCheckpoints;
 
-/*struct CCheckpointData {
+struct CCheckpointData {
     MapCheckpoints mapCheckpoints;
     int64_t nTimeLastCheckpoint;
     int64_t nTransactionsLastCheckpoint;
     double fTransactionsPerDay;
-};*/
+};
 
 /**
  * CChainParams defines various tweakable parameters of a given instance of the
