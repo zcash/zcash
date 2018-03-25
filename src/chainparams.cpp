@@ -536,7 +536,6 @@ public:
         genesis.nSolution = ParseHex("0f2a976db4c4263da10fd5d38eb1790469cf19bdb4bf93450e09a72fdff17a3454326399");
         consensus.hashGenesisBlock = genesis.GetHash();
         nDefaultPort = 17779;
-        assert(consensus.hashGenesisBlock == uint256S("0x00a215b4fe36f5d2f829d43e587bf10e89e64f9f48a5b6ce18559089e8fd643d"));
         nPruneAfterHeight = 1000;
 
         vFixedSeeds.clear(); //! Regtest mode doesn't have any fixed seeds.
