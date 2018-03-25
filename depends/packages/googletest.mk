@@ -25,14 +25,9 @@ endef
 endif
 
 define $(package)_stage_cmds
-<<<<<<< HEAD
-  $($(package)_install) -D ./make/gtest.a $($(package)_staging_dir)$(host_prefix)/lib/libgtest.a && \
-  cp -a ./include $($(package)_staging_dir)$(host_prefix)/include
-=======
   mkdir -p $($(package)_staging_dir)$(host_prefix)/lib && \
   install ./googlemock/make/gmock.a $($(package)_staging_dir)$(host_prefix)/lib/libgmock.a && \
   install ./googletest/make/gtest.a $($(package)_staging_dir)$(host_prefix)/lib/libgtest.a && \
   cp -a ./googlemock/include $($(package)_staging_dir)$(host_prefix)/ && \
   cp -a ./googletest/include $($(package)_staging_dir)$(host_prefix)/
->>>>>>> zcash/master
 endef
