@@ -760,7 +760,7 @@ int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
                 if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
                 {
                     if ( pindex->pubkey33[0] != 0 && (memcmp(pindex->pubkey33,pubkey33,33) != 0 || pindex->notaryid != i) )
-                        printf("mismatched notaryid.%d\n",pindex->notaryid)
+                        printf("mismatched notaryid.%d\n",pindex->notaryid);
                     return(i);
                 }
         }
