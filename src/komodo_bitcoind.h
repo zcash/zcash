@@ -700,7 +700,7 @@ uint32_t komodo_heightstamp(int32_t height)
 
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
-    CBlock block;
+    CBlock block; int32_t numnotaries;
     //komodo_init(height);
     memset(pubkey33,0,33);
     if ( pindex != 0 )
@@ -778,7 +778,7 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
             }
             memcpy(pubkeys[i],pindex->pubkey33,33);
             if ( (mids[i]= pindex->notaryid) >= 0 )
-                (*nonzkeysp)++;
+                (*nonzpkeysp)++;
             if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
                 duplicate++;
         }
