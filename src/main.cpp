@@ -1993,7 +1993,7 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
                     int64_t interest; int32_t txheight; uint32_t locktime;
                     if ( (interest= komodo_accrued_interest(&txheight,&locktime,prevout.hash,prevout.n,0,coins->vout[prevout.n].nValue,(int32_t)nSpendHeight-1)) != 0 )
                     {
-fprintf(stderr,"checkResult %.8f += val %.8f interest %.8f ht.%d lock.%u tip.%u\n",(double)nValueIn/COIN,(double)coins->vout[prevout.n].nValue/COIN,(double)interest/COIN,txheight,locktime,chainActive.Tip()->nTime);
+//fprintf(stderr,"checkResult %.8f += val %.8f interest %.8f ht.%d lock.%u tip.%u\n",(double)nValueIn/COIN,(double)coins->vout[prevout.n].nValue/COIN,(double)interest/COIN,txheight,locktime,chainActive.Tip()->nTime);
                         nValueIn += interest;
                     }
                 }
@@ -2012,8 +2012,9 @@ fprintf(stderr,"checkResult %.8f += val %.8f interest %.8f ht.%d lock.%u tip.%u\
 
         if (nValueIn < tx.GetValueOut())
         {
-            fprintf(stderr,"valuein %s vs %s error\n",FormatMoney(nValueIn).c_str(), FormatMoney(tx.GetValueOut()).c_str());
-            return state.DoS(100, error("CheckInputs(): %s value in (%s) < value out (%s) diff %.8f",
+            fprintf(stderr,"spentheight.%d valuein %s vs %s error\n",nSpendHeight,FormatMoney(nValueIn).c_str(), FormatMoney(tx.GetValueOut()).c_str());
+            if ( nSpendHeight > 300000 )
+                return state.DoS(100, error("CheckInputs(): %s value in (%s) < value out (%s) diff %.8f",
                                         tx.GetHash().ToString(), FormatMoney(nValueIn), FormatMoney(tx.GetValueOut()),((double)nValueIn - tx.GetValueOut())/COIN),REJECT_INVALID, "bad-txns-in-belowout");
         }
         // Tally transaction fees
