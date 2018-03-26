@@ -169,7 +169,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( (height < 235300 || height >= 236000) && KOMODO_LOADINGBLOCKS == 0 && height > 188000 )
+        if ( 0 && (height < 235300 || height >= 236000) && KOMODO_LOADINGBLOCKS == 0 && height > 188000 )
             //&&  )//186269, 182507&& komodo_chainactive(height) != 0 && nonzpkeys > 0
         {
             for (i=31; i>=0; i--)
