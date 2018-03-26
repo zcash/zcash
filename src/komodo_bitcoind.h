@@ -585,7 +585,7 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 
 int32_t komodo_is_notarytx(const CTransaction& tx)
 {
-    uint8_t *ptr,crypto777[33];
+    uint8_t *ptr; static uint8_t crypto777[33];
     if ( tx.vout.size() > 0 )
     {
 #ifdef KOMODO_ZCASH
@@ -595,7 +595,8 @@ int32_t komodo_is_notarytx(const CTransaction& tx)
 #endif
         if ( ptr != 0 )
         {
-            decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
+            if ( crypto777[0] == 0 )
+                decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
             if ( memcmp(ptr+1,crypto777,33) == 0 )
             {
                 //printf("found notarytx\n");
@@ -697,15 +698,25 @@ uint32_t komodo_heightstamp(int32_t height)
     return(0);
 }
 
+int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
+int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
+
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
-    CBlock block;
+    CBlock block; int32_t numnotaries;
     //komodo_init(height);
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        if ( komodo_blockload(block,pindex) == 0 )
-            komodo_block2pubkey33(pubkey33,block);
+        if ( pindex->pubkey33[0] == 0 )
+        {
+            if ( komodo_blockload(block,pindex) == 0 )
+            {
+                komodo_block2pubkey33(pindex->pubkey33,block);
+                pindex->notaryid = komodo_electednotary(&numnotaries,pindex->pubkey33,height,pindex->nTime);
+            }
+        }
+        memcpy(pubkey33,pindex->pubkey33,33);
     }
     else
     {
@@ -714,53 +725,61 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     }
 }
 
-void komodo_connectpindex(CBlockIndex *pindex)
+/*void komodo_connectpindex(CBlockIndex *pindex)
 {
     CBlock block;
     if ( komodo_blockload(block,pindex) == 0 )
         komodo_connectblock(pindex,block);
-}
+}*/
 
-int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
-int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
 
 int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
 {
     int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t _pubkey33[33],pubkeys[64][33];
-    if ( pubkey33 == 0 && (pindex= chainActive[height]) != 0 )
+    if ( (pindex= chainActive[height]) != 0 )
     {
-        timestamp = pindex->GetBlockTime();
-        if ( pubkey33 == 0 )
+        if ( pindex->pubkey33[0] == 0 )
         {
-            pubkey33 = _pubkey33;
+            timestamp = pindex->GetBlockTime();
+            if ( pubkey33 == 0 )
+                pubkey33 = _pubkey33;
             komodo_index2pubkey33(pubkey33,pindex,height);
+            pindex->notaryid = komodo_electednotary(&numnotaries,pindex->pubkey33,height,pindex->nTime);
+            /*if ( (num= komodo_notaries(pubkeys,height,timestamp)) > 0 )
+            {
+                for (i=0; i<num; i++)
+                    if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
+                        return(i);
+            }*/
         }
-        if ( (num= komodo_notaries(pubkeys,height,timestamp)) > 0 )
-        {
-            for (i=0; i<num; i++)
-                if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
-                    return(i);
-        }
+        return(pindex->notaryid);
     }
     return(komodo_electednotary(&numnotaries,pubkey33,height,timestamp));
 }
 
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height)
 {
-    int32_t i,j,duplicate; CBlockIndex *pindex; uint8_t pubkey33[33];
+    int32_t i,j,duplicate,numnotaries; CBlockIndex *pindex; uint8_t pubkey33[33];
     memset(mids,-1,sizeof(*mids)*66);
     for (i=duplicate=0; i<66; i++)
     {
         if ( (pindex= komodo_chainactive(height-i)) != 0 )
         {
-            komodo_index2pubkey33(pubkey33,pindex,height-i);
-            for (j=0; j<33; j++)
-                pubkeys[i][j] = pubkey33[j];
-            if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
+            if ( pindex->pubkey33[0] == 0 )
             {
-                //mids[i] = *(int32_t *)pubkey33;
-                (*nonzpkeysp)++;
+                komodo_index2pubkey33(pubkey33,pindex,height-i);
+                pindex->notaryid = komodo_electednotary(&numnotaries,pindex->pubkey33,height,pindex->nTime);
+                //for (j=0; j<33; j++)
+                //    pubkeys[i][j] = pubkey33[j];
+                /*if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
+                {
+                    //mids[i] = *(int32_t *)pubkey33;
+                    (*nonzpkeysp)++;
+                }*/
             }
+            memcpy(pubkeys[i],pindex->pubkey33,33);
+            if ( (mids[i]= pindex->notaryid) >= 0 )
+                (*nonzpkeysp)++;
             if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
                 duplicate++;
         }
