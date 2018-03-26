@@ -81,7 +81,8 @@ CBlockIndex* CBlockIndex::GetAncestor(int height)
 
     CBlockIndex* pindexWalk = this;
     int heightWalk = nHeight;
-    while (heightWalk > height) {
+    while ( heightWalk > height && pindexWalk != 0 )
+    {
         int heightSkip = GetSkipHeight(heightWalk);
         int heightSkipPrev = GetSkipHeight(heightWalk - 1);
         if (pindexWalk->pskip != NULL &&

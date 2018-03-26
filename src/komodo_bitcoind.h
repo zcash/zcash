@@ -25,6 +25,9 @@
 
 #include "komodo_defs.h"
 
+int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
+int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
+
 //#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7776",0,0,(char *)(cmdstr))
 
 struct MemoryStruct { char *memory; size_t size; };
@@ -414,13 +417,14 @@ int32_t komodo_verifynotarizedscript(int32_t height,uint8_t *script,int32_t len,
     printf(" notarized, ");
     for (i=0; i<32; i++)
         printf("%02x",((uint8_t *)&hash)[i]);
-    printf(" opreturn from [%s] ht.%d\n",ASSETCHAINS_SYMBOL,height);
+    printf(" opreturn from [%s] ht.%d MISMATCHED\n",ASSETCHAINS_SYMBOL,height);
     return(-1);
 }
 
 int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 NOTARIZED_HASH,uint256 NOTARIZED_DESTTXID)
 {
-    char params[256],*jsonstr,*hexstr; uint8_t script[8192]; int32_t n,len,retval = -1; cJSON *json,*txjson,*vouts,*vout,*skey;
+    char params[256],*jsonstr,*hexstr; uint8_t *script,_script[8192]; int32_t n,len,retval = -1; cJSON *json,*txjson,*vouts,*vout,*skey;
+    script = _script;
     /*params[0] = '[';
     params[1] = '"';
     for (i=0; i<32; i++)
@@ -471,9 +475,19 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
                 {
                     if ( (hexstr= jstr(skey,(char *)"hex")) != 0 )
                     {
-                        //printf("HEX.(%s)\n",hexstr);
+                        //printf("HEX.(%s) vs hash.%s\n",hexstr,NOTARIZED_HASH.ToString().c_str());
                         len = strlen(hexstr) >> 1;
                         decode_hex(script,len,hexstr);
+                        if ( script[1] == 0x4c )
+                        {
+                            script++;
+                            len--;
+                        }
+                        else if ( script[1] == 0x4d )
+                        {
+                            script += 2;
+                            len -= 2;
+                        }
                         retval = komodo_verifynotarizedscript(height,script,len,NOTARIZED_HASH);
                     }
                 }
@@ -574,7 +588,7 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 
 int32_t komodo_is_notarytx(const CTransaction& tx)
 {
-    uint8_t *ptr,crypto777[33];
+    uint8_t *ptr; static uint8_t crypto777[33];
     if ( tx.vout.size() > 0 )
     {
 #ifdef KOMODO_ZCASH
@@ -584,7 +598,8 @@ int32_t komodo_is_notarytx(const CTransaction& tx)
 #endif
         if ( ptr != 0 )
         {
-            decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
+            if ( crypto777[0] == 0 )
+                decode_hex(crypto777,33,(char *)CRYPTO777_PUBSECPSTR);
             if ( memcmp(ptr+1,crypto777,33) == 0 )
             {
                 //printf("found notarytx\n");
@@ -610,7 +625,7 @@ int32_t komodo_block2height(CBlock *block)
             //for (i=0; i<6; i++)
             //    printf("%02x",ptr[i]);
             n = ptr[0];
-            for (i=0; i<n; i++)
+            for (i=0; i<n; i++) // looks strange but this works
             {
                 //03bb81000101(bb 187) (81 48001) (00 12288256)  <- coinbase.6 ht.12288256
                 height += ((uint32_t)ptr[i+1] << (i*8));
@@ -682,19 +697,42 @@ uint32_t komodo_heightstamp(int32_t height)
     CBlockIndex *ptr;
     if ( height > 0 && (ptr= komodo_chainactive(height)) != 0 )
         return(ptr->nTime);
-    else fprintf(stderr,"komodo_heightstamp null ptr for block.%d\n",height);
+    //else fprintf(stderr,"komodo_heightstamp null ptr for block.%d\n",height);
     return(0);
 }
 
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
-    CBlock block;
+    CBlock block; int32_t num,i; uint8_t pubkeys[64][33];
     //komodo_init(height);
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
+        if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 )
+        {
+            memcpy(pubkey33,pindex->pubkey33,33);
+            return;
+        }
         if ( komodo_blockload(block,pindex) == 0 )
+        {
             komodo_block2pubkey33(pubkey33,block);
+            if ( (pubkey33[0] == 2 || pubkey33[0] == 3) )
+            {
+                memcpy(pindex->pubkey33,pubkey33,33);
+                if ( (num= komodo_notaries(pubkeys,(int32_t)pindex->nHeight,(uint32_t)pindex->nTime)) > 0 )
+                {
+                    pindex->notaryid = -1;
+                    for (i=0; i<num; i++)
+                    {
+                        if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
+                        {
+                            pindex->notaryid = i;
+                            break;
+                        }
+                    }
+                }
+            } else pindex->notaryid = -1;
+       }
     }
     else
     {
@@ -703,27 +741,28 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     }
 }
 
-void komodo_connectpindex(CBlockIndex *pindex)
+/*void komodo_connectpindex(CBlockIndex *pindex)
 {
     CBlock block;
     if ( komodo_blockload(block,pindex) == 0 )
         komodo_connectblock(pindex,block);
-}
+}*/
 
-int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
-int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
 
 int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
 {
     int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t _pubkey33[33],pubkeys[64][33];
-    if ( pubkey33 == 0 && (pindex= chainActive[height]) != 0 )
+    if ( (pindex= chainActive[height]) != 0 )
     {
-        timestamp = pindex->GetBlockTime();
-        if ( pubkey33 == 0 )
+        if ( (pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3) )
         {
-            pubkey33 = _pubkey33;
-            komodo_index2pubkey33(pubkey33,pindex,height);
+            if ( pubkey33 != 0 )
+                memcpy(pubkey33,pindex->pubkey33,33);
+            return(pindex->notaryid);
         }
+        if ( pubkey33 != 0 )
+            komodo_index2pubkey33(pubkey33,pindex,height);
+        timestamp = pindex->GetBlockTime();
         if ( (num= komodo_notaries(pubkeys,height,timestamp)) > 0 )
         {
             for (i=0; i<num; i++)
@@ -742,13 +781,21 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
     {
         if ( (pindex= komodo_chainactive(height-i)) != 0 )
         {
-            komodo_index2pubkey33(pubkey33,pindex,height-i);
-            for (j=0; j<33; j++)
-                pubkeys[i][j] = pubkey33[j];
-            if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
+            if ( pindex->notaryid >= 0 && (pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3) )
             {
-                //mids[i] = *(int32_t *)pubkey33;
+                memcpy(pubkeys[i],pindex->pubkey33,33);
+                mids[i] = pindex->notaryid;
                 (*nonzpkeysp)++;
+            }
+            else
+            {
+                komodo_index2pubkey33(pubkey33,pindex,height-i);
+                memcpy(pubkeys[i],pubkey33,33);
+                if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
+                {
+                    //mids[i] = *(int32_t *)pubkey33;
+                    (*nonzpkeysp)++;
+                }
             }
             if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
                 duplicate++;
@@ -759,23 +806,24 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
     else return(0);
 }
 
-int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width)
+int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width) // deprecate
 {
-    int32_t i,n=0;
+    /*int32_t i,n=0;
     for (i=0; i<width; i++,n++)
     {
         if ( height-i <= 0 )
             break;
         minerids[i] = komodo_minerid(height - i,0);
     }
-    return(n);
+    return(n);*/
+    return(-1);
 }
 
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp)
 {
-    int32_t i,notaryid=0,minerid,limit,nid; uint8_t _pubkey33[33];
+    int32_t i,notaryid=0,minerid,limit,nid; //uint8_t _pubkey33[33];
     if ( height >= 225000 )
-        komodo_chosennotary(&notaryid,height,_pubkey33,timestamp);
+        komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
     if ( height >= 34000 && notaryid >= 0 )
     {
         if ( height < 79693 )
@@ -785,8 +833,8 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp
         else limit = 66;
         for (i=1; i<limit; i++)
         {
-            komodo_chosennotary(&nid,height-i,_pubkey33,timestamp);
-            if ( nid == notaryid ) //komodo_minerid(height-i,_pubkey33)
+            komodo_chosennotary(&nid,height-i,pubkey33,timestamp);
+            if ( nid == notaryid )
             {
                 if ( (0) && notaryid > 0 )
                     fprintf(stderr,"ht.%d notaryid.%d already mined -i.%d nid.%d\n",height,notaryid,i,nid);
@@ -800,9 +848,25 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp
     return(0);
 }
 
+int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight)
+{
+    int32_t depth,notarized_ht; uint256 MoM,kmdtxid;
+    depth = komodo_MoMdata(&notarized_ht,&MoM,&kmdtxid,nHeight);
+    memset(MoMp,0,sizeof(*MoMp));
+    memset(kmdtxidp,0,sizeof(*kmdtxidp));
+    *notarized_heightp = 0;
+    if ( depth > 0 && notarized_ht > 0 && nHeight > notarized_ht-depth && nHeight <= notarized_ht )
+    {
+        *MoMp = MoM;
+        *notarized_heightp = notarized_ht;
+        *kmdtxidp = kmdtxid;
+    }
+    return(depth);
+}
+
 int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
 {
-    int32_t notarized_height; uint256 notarized_hash,notarized_desttxid; CBlockIndex *notary; CBlockIndex *pindex;
+    int32_t notarized_height,MoMdepth; uint256 MoM,notarized_hash,notarized_desttxid; CBlockIndex *notary; CBlockIndex *pindex;
     if ( (pindex= chainActive.Tip()) == 0 )
         return(-1);
     notarized_height = komodo_notarizeddata(pindex->nHeight,&notarized_hash,&notarized_desttxid);
@@ -840,12 +904,13 @@ uint32_t komodo_interest_args(uint32_t *txheighttimep,int32_t *txheightp,uint32_
     uint32_t locktime = 0;
     if ( n < tx.vout.size() )
     {
-        if ( (pindex= mapBlockIndex[hashBlock]) != 0 && (tipindex= chainActive.Tip()) != 0 )
+        if ( (pindex= mapBlockIndex[hashBlock]) != 0 )
         {
             *valuep = tx.vout[n].nValue;
             *txheightp = pindex->nHeight;
             *txheighttimep = pindex->nTime;
-            *tiptimep = tipindex->nTime;
+            if ( *tiptimep == 0 && (tipindex= chainActive.Tip()) != 0 )
+                *tiptimep = (uint32_t)tipindex->nTime;
             locktime = tx.nLockTime;
             //fprintf(stderr,"tx locktime.%u %.8f height.%d | tiptime.%u\n",locktime,(double)*valuep/COIN,*txheightp,*tiptimep);
         }
@@ -854,9 +919,13 @@ uint32_t komodo_interest_args(uint32_t *txheighttimep,int32_t *txheightp,uint32_
 }
 
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
-uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue)
+
+uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight)
 {
-    uint64_t value; uint32_t tiptime,txheighttimep;
+    uint64_t value; uint32_t tiptime=0,txheighttimep; CBlockIndex *pindex;
+    if ( (pindex= chainActive[tipheight]) != 0 )
+        tiptime = (uint32_t)pindex->nTime;
+    else fprintf(stderr,"cant find height[%d]\n",tipheight);
     if ( (*locktimep= komodo_interest_args(&txheighttimep,txheightp,&tiptime,&value,hash,n)) != 0 )
     {
         if ( (checkvalue == 0 || value == checkvalue) && (checkheight == 0 || *txheightp == checkheight) )
@@ -891,7 +960,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
             {
                 if ( tx.nLockTime != 1477258935 || dispflag != 0 )
                 {
-                    //fprintf(stderr,"komodo_validate_interest.%d reject.%d [%d] locktime %u cmp2.%u\n",dispflag,txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,cmptime);
+                    fprintf(stderr,"komodo_validate_interest.%d reject.%d [%d] locktime %u cmp2.%u\n",dispflag,txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,cmptime);
                 }
                 return(-1);
             }

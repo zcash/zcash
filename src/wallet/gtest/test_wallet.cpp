@@ -281,7 +281,7 @@ TEST(wallet_tests, find_unspent_notes) {
     wallet.GetFilteredNotes(entries, "", 2, false);
     EXPECT_EQ(1, entries.size());
     entries.clear();    
-    // If we also ignore spent notes at thie depth, we won't find any notes.
+    // If we also ignore spent notes at this depth, we won't find any notes.
     wallet.GetFilteredNotes(entries, "", 2, true);
     EXPECT_EQ(0, entries.size());
     entries.clear(); 
@@ -328,7 +328,7 @@ TEST(wallet_tests, GetNoteNullifier) {
 
     auto sk = libzcash::SpendingKey::random();
     auto address = sk.address();
-    auto dec = ZCNoteDecryption(sk.viewing_key());
+    auto dec = ZCNoteDecryption(sk.receiving_key());
 
     auto wtx = GetValidReceive(sk, 10, true);
     auto note = GetNote(sk, wtx, 0, 1);
