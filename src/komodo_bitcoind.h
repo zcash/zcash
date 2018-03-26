@@ -754,23 +754,20 @@ int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
     int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t _pubkey33[33],pubkeys[64][33];
     if ( (pindex= chainActive[height]) != 0 )
     {
-        timestamp = pindex->GetBlockTime();
-        if ( pubkey33 == 0 )
-        {
-            pubkey33 = _pubkey33;
-            komodo_index2pubkey33(pubkey33,pindex,height);
-        }
         if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 )
+        {
+            if ( pubkey33 != 0 )
+                memcpy(pubkey33,pindex->pubkey33,33);
             return(pindex->notaryid);
+        }
+        if ( pubkey33 != 0 )
+            komodo_index2pubkey33(pubkey33,pindex,height);
+        timestamp = pindex->GetBlockTime();
         if ( (num= komodo_notaries(pubkeys,height,timestamp)) > 0 )
         {
             for (i=0; i<num; i++)
                 if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
-                {
-                    if ( pindex->pubkey33[0] != 0 && (memcmp(pindex->pubkey33,pubkey33,33) != 0 || pindex->notaryid != i) )
-                        printf("mismatched notaryid.%d\n",pindex->notaryid);
                     return(i);
-                }
         }
     }
     return(komodo_electednotary(&numnotaries,pubkey33,height,timestamp));
@@ -784,12 +781,21 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
     {
         if ( (pindex= komodo_chainactive(height-i)) != 0 )
         {
-            komodo_index2pubkey33(pubkey33,pindex,height-i);
-            memcpy(pubkeys[i],pubkey33,33);
-            if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
+            if ( pindex->notaryid >= 0 && (pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3) )
             {
-                //mids[i] = *(int32_t *)pubkey33;
+                memcpy(pubkeys[i],pindex->pubkey33,33);
+                mids[i] = pindex->notaryid;
                 (*nonzpkeysp)++;
+            }
+            else
+            {
+                komodo_index2pubkey33(pubkey33,pindex,height-i);
+                memcpy(pubkeys[i],pubkey33,33);
+                if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
+                {
+                    //mids[i] = *(int32_t *)pubkey33;
+                    (*nonzpkeysp)++;
+                }
             }
             if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
                 duplicate++;
