@@ -743,7 +743,7 @@ int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
     }
     if ( (pindex= chainActive[height]) != 0 )
     {
-        if ( pindex->pubkey33[0] == 0 )
+        //if ( pindex->pubkey33[0] == 0 )
         {
             timestamp = pindex->GetBlockTime();
             komodo_index2pubkey33(pubkey33,pindex,height);
@@ -768,7 +768,7 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
     {
         if ( (pindex= komodo_chainactive(height-i)) != 0 )
         {
-            if ( pindex->pubkey33[0] == 0 )
+            //if ( pindex->pubkey33[0] == 0 )
             {
                 komodo_index2pubkey33(pubkey33,pindex,height-i);
                 pindex->notaryid = komodo_electednotary(&numnotaries,pindex->pubkey33,height,pindex->nTime);
