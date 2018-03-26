@@ -700,13 +700,31 @@ uint32_t komodo_heightstamp(int32_t height)
 
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
-    CBlock block;
+    CBlock block; int32_t num,i; uint8_t pubkeys[64][33];
     //komodo_init(height);
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
         if ( komodo_blockload(block,pindex) == 0 )
+        {
             komodo_block2pubkey33(pubkey33,block);
+            if ( pubkey33[0] == 2 || pubkey33[0] == 3 )
+            {
+                memcpy(pindex->pubkey33,pubkey33,33);
+                if ( (num= komodo_notaries(pubkeys,height,timestamp)) > 0 )
+                {
+                    pindex->notaryid = -1;
+                    for (i=0; i<num; i++)
+                    {
+                        if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
+                        {
+                            pindex->notaryid = i;
+                            break;
+                        }
+                    }
+                }
+            } else pindex->notaryid = -1;
+       }
     }
     else
     {
@@ -740,7 +758,11 @@ int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
         {
             for (i=0; i<num; i++)
                 if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
+                {
+                    if ( pindex->pubkey33[0] != 0 && (memcmp(pindex->pubkey33,pubkey33,33) != 0 || pindex->notaryid != i) )
+                        printf("mismatched notaryid.%d\n",pindex->notaryid)
                     return(i);
+                }
         }
     }
     return(komodo_electednotary(&numnotaries,pubkey33,height,timestamp));
