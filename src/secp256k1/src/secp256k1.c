@@ -85,6 +85,14 @@ int secp256k1_ecdsa_verify(const secp256k1_context_t* ctx, const unsigned char *
     return ret;
 }
 
+
+int secp256k1_ecdsa_check_canonical_sig(const unsigned char *sig, int siglen) {
+    secp256k1_ecdsa_sig_t s;
+    if (!secp256k1_ecdsa_sig_parse(&s, sig, siglen)) return -1;
+    return !secp256k1_scalar_is_high(&s.s);
+}
+
+
 static int nonce_function_rfc6979(unsigned char *nonce32, const unsigned char *msg32, const unsigned char *key32, unsigned int counter, const void *data) {
    secp256k1_rfc6979_hmac_sha256_t rng;
    unsigned int i;

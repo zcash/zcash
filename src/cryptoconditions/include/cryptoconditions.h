@@ -1,4 +1,5 @@
 #include <cJSON.h>
+#include <stdint.h>
 
 
 #ifndef CRYPTOCONDITIONS_H

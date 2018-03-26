@@ -95,6 +95,18 @@ SECP256K1_WARN_UNUSED_RESULT int secp256k1_ecdsa_verify(
   int pubkeylen
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(5);
 
+/** Check that signature is in canonical form
+ *  Returns: 1: In canonical form
+ *           0: Non canonical
+ *          -1: invalid signature
+ * In:       sig:       the signature being verified (cannot be NULL)
+ *           siglen:    the length of the signature
+ */
+SECP256K1_WARN_UNUSED_RESULT int secp256k1_ecdsa_check_canonical_sig(
+  const unsigned char *sig,
+  int siglen
+) SECP256K1_ARG_NONNULL(1);
+
 /** A pointer to a function to deterministically generate a nonce.
  * Returns: 1 if a nonce was successfully generated. 0 will cause signing to fail.
  * In:      msg32:     the 32-byte message hash being verified (will not be NULL)

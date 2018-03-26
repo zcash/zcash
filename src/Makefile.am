@@ -39,7 +39,7 @@ LIBBITCOIN_CLI=libbitcoin_cli.a
 LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
-LIBCRYPTOCONDITIONS=cryptoconditions/libcryptoconditions.la
+LIBCRYPTOCONDITIONS=cryptoconditions/cryptoconditions_core.a
 LIBUNIVALUE=univalue/libunivalue.la
 LIBZCASH=libzcash.a -lcurl
 
@@ -156,7 +156,6 @@ BITCOIN_CORE_H = \
   protocol.h \
   pubkey.h \
   random.h \
-  replacementpool.h \
   reverselock.h \
   rpcclient.h \
   rpcprotocol.h \
@@ -235,7 +234,6 @@ libbitcoin_server_a_SOURCES = \
   noui.cpp \
   policy/fees.cpp \
   pow.cpp \
-  replacementpool.cpp \
   rest.cpp \
   rpcblockchain.cpp \
   rpcmining.cpp \
@@ -562,10 +560,9 @@ endif
 	@test -f $(PROTOC)
 	$(AM_V_GEN) $(PROTOC) --cpp_out=$(@D) --proto_path=$(abspath $(<D) $<)
 
-if ENABLE_TESTS
-include Makefile.ktest.include
+#if ENABLE_TESTS
 #include Makefile.test.include
 #include Makefile.gtest.include
-endif
+#endif
 
 include Makefile.zcash.include

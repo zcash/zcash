@@ -1,5 +1,11 @@
 lib_LTLIBRARIES=libcryptoconditions.la
+noinst_LTLIBRARIES=cryptoconditions_core.a
 SUBDIRS = src/include/secp256k1
+
+# Have a separate build target for cryptoconditions that does not contain secp256k1
+
+libcryptoconditions_la_SOURCES = 
+libcryptoconditions_la_LIBADD = $(CRYPTOCONDITIONS_CORE) $(LIBSECP256K1)
 
 AM_CFLAGS = -I$(top_srcdir)/src/asn -I$(top_srcdir)/include -I$(top_srcdir)/src/include \
 			-Wall -Wno-pointer-sign -Wno-discarded-qualifiers
@@ -7,10 +13,14 @@ AM_CFLAGS = -I$(top_srcdir)/src/asn -I$(top_srcdir)/include -I$(top_srcdir)/src/
 LIBSECP256K1=src/include/secp256k1/libsecp256k1.la
 
 $(LIBSECP256K1): $(wildcard src/secp256k1/*)
-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)                                             
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
 
-libcryptoconditions_la_LIBADD = $(LIBSECP256K1)
-libcryptoconditions_la_SOURCES = \
+CRYPTOCONDITIONS_CORE=cryptoconditions_core.a
+
+# libcryptoconditions_la_SOURCES = \
+cryptoconditions_core_a_CFLAGS = -I$(top_srcdir)/src/asn -I$(top_srcdir)/include -I$(top_srcdir)/src/include \
+			-Wall -Wno-pointer-sign -Wno-discarded-qualifiers
+cryptoconditions_core_a_SOURCES = \
 	src/cryptoconditions.c \
 	src/include/cJSON.c \
 	src/include/sha256.c \

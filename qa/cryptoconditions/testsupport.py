@@ -32,7 +32,7 @@ class JsonClient(object):
 
 def run_cmd(cmd):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    assert proc.wait() == 0, cmd
+    assert proc.wait() == 0
     return proc.stdout.read()
 
 
@@ -68,7 +68,7 @@ def wait_for_block(height):
         try:
             return rpc.getblock(str(height))
         except RPCError as e:
-            time.sleep(1)
+            time.sleep(3)
     raise Exception('Time out waiting for block at height %s' % height)
 
 
@@ -97,7 +97,7 @@ def get_fanout_txid():
     reward_tx = hoek.decodeTx({'hex': reward_tx_raw})
     balance = reward_tx['outputs'][0]['amount']
 
-    n_outs = 40
+    n_outs = 16
     remainder = balance - n_outs * 1000
 
     fanout = {
@@ -109,9 +109,7 @@ def get_fanout_txid():
         ] + [{"amount": remainder, 'script': {'address': notary_addr}}])
     }
 
-    txid = submit(sign(fanout))
-    rpc.getrawtransaction(txid)
-    return txid
+    return submit(sign(fanout))
 
 
 def fanout_input(n):

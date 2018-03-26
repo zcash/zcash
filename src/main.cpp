@@ -21,8 +21,6 @@
 #include "pow.h"
 #include "txdb.h"
 #include "txmempool.h"
-#include "replacementpool.h"
-#include "komodo_cryptoconditions.h"
 #include "ui_interface.h"
 #include "undo.h"
 #include "util.h"
@@ -55,7 +53,6 @@ extern uint8_t NOTARY_PUBKEY33[33];
 
 BlockMap mapBlockIndex;
 CChain chainActive;
-
 CBlockIndex *pindexBestHeader = NULL;
 int64_t nTimeBestReceived = 0;
 CWaitableCriticalSection csBestBlock;
@@ -1110,45 +1107,7 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
 }
 
 
-/*
- * This should be called from AcceptToMemoryPool in order
- * to perform all validations.
- */
-bool AcceptToReplacementPool(const CTransaction &tx, CValidationState &state)
-{
-    // This is not actually required; if crypto-conditions is disabled, then transactions
-    // with replaceable outputs will not be accepted as standard. However, just to be a
-    // bit more explicit.
-    if (!IsCryptoConditionsEnabled()) return false;
-
-    CTxReplacementPoolItem item(tx, GetHeight());
-    if (!SetReplacementParams(item)) return false;
-
-    switch (replacementPool.replace(item)) {
-
-    case RP_Accept:
-        return true;
-
-    case RP_HaveBetter:
-        // already have a better one
-        fprintf(stderr,"accept failure.20\n");
-        return state.Invalid(error("AcceptToMemoryPool: Replacement is worse"),
-                REJECT_HAVEBETTER, "replacement-is-worse");
-
-    case RP_Invalid:
-        // Not valid according to replaceability rules
-        fprintf(stderr,"accept failure.22\n");
-        return state.Invalid(error("AcceptToMemoryPool: Replacement has multiple inputs"),
-                REJECT_INVALID, "replacement-invalid");
-
-    default:
-        return false;
-    }
-}
-
-
-
-bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, bool fAcceptReplacement)
+bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee)
 {
     AssertLockHeld(cs_main);
     if (pfMissingInputs)
@@ -1372,20 +1331,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             return error("AcceptToMemoryPool: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s", hash.ToString());
         }
 
+        // Store transaction in memory
         if ( komodo_is_notarytx(tx) == 0 )
             KOMODO_ON_DEMAND++;
-
-        if (fAcceptReplacement)
-        {
-            if (AcceptToReplacementPool(tx, state)) return true;
-            if (state.IsInvalid()) return false;
-        }
-
-        // Store transaction in memory
         pool.addUnchecked(hash, entry, !IsInitialBlockDownload());
     }
 
     SyncWithWallets(tx, NULL);
+
     return true;
 }
 
@@ -1397,12 +1350,6 @@ bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock
     LOCK(cs_main);
 
     if (mempool.lookup(hash, txOut))
-    {
-        return true;
-    }
-
-    // replacementPool lookup is O(n) since there's no index by txid
-    if (fAllowSlow && replacementPool.lookup(hash, txOut))
     {
         return true;
     }
@@ -1454,21 +1401,6 @@ bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock
     }
 
     return false;
-}
-
-
-void ProcessOrphanTransactions(uint256 initialHash);
-
-void ProcessReplacementPool(int newHeight)
-{
-    std::vector<CTransaction> pending;
-    replacementPool.removePending(newHeight, pending);
-    CValidationState stateDummy;
-    BOOST_FOREACH(CTransaction tx, pending) {
-        if (AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL, false, false))
-            ProcessOrphanTransactions(tx.GetHash());
-        // otherwise silently drop. TODO: log
-    }
 }
 
 /*char *komodo_getspendscript(uint256 hash,int32_t n)
@@ -2000,7 +1932,7 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
                     // as to the correct behavior - we may want to continue
                     // peering with non-upgraded nodes even after a soft-fork
                     // super-majority vote has passed.
-                    return state.DoS(100, false, REJECT_INVALID, strprintf("mandatory-script-verify-flag-failed (%s)", ScriptErrorString(check.GetScriptError())));
+                    return state.DoS(100,false, REJECT_INVALID, strprintf("mandatory-script-verify-flag-failed (%s)", ScriptErrorString(check.GetScriptError())));
                 }
             }
         }
@@ -2770,13 +2702,6 @@ bool static DisconnectTip(CValidationState &state) {
     // Update cached incremental witnesses
     //fprintf(stderr,"chaintip false\n");
     GetMainSignals().ChainTip(pindexDelete, &block, newTree, false);
-
-    /* if chain tip disconnects, some transactions may return to the replacementPool
-     * via AcceptToMemoryPool.
-     *
-     * No double send conflicts may result as the winning transaction will be picked.
-     */
-
     return true;
 }
 
@@ -2836,8 +2761,6 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     mempool.check(pcoinsTip);
     // Update chainActive & related variables.
     UpdateTip(pindexNew);
-    // Process pending replacements
-    ProcessReplacementPool(pindexNew->nHeight);
     // Tell wallet about transactions that went from mempool
     // to conflicted:
     BOOST_FOREACH(const CTransaction &tx, txConflicted) {
@@ -2847,7 +2770,6 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     BOOST_FOREACH(const CTransaction &tx, pblock->vtx) {
         SyncWithWallets(tx, pblock);
     }
-
     // Update cached incremental witnesses
     //fprintf(stderr,"chaintip true\n");
     GetMainSignals().ChainTip(pindexNew, pblock, oldTree, true);
@@ -4748,70 +4670,6 @@ void static ProcessGetData(CNode* pfrom)
     }
 }
 
-
-void ProcessOrphanTransactions(uint256 parentHash)
-{
-    AssertLockHeld(cs_main);
-
-    vector<uint256> vWorkQueue, vEraseQueue;
-    // Recursively process any orphan transactions that depended on this one
-    vWorkQueue.push_back(parentHash);
-    set<NodeId> setMisbehaving;
-
-    for (unsigned int i = 0; i < vWorkQueue.size(); i++)
-    {
-        map<uint256, set<uint256> >::iterator itByPrev = mapOrphanTransactionsByPrev.find(vWorkQueue[i]);
-        if (itByPrev == mapOrphanTransactionsByPrev.end())
-            continue;
-        for (set<uint256>::iterator mi = itByPrev->second.begin();
-             mi != itByPrev->second.end();
-             ++mi)
-        {
-            const uint256& orphanHash = *mi;
-            const CTransaction& orphanTx = mapOrphanTransactions[orphanHash].tx;
-            NodeId fromPeer = mapOrphanTransactions[orphanHash].fromPeer;
-            bool fMissingInputs2 = false;
-            // Use a dummy CValidationState so someone can't setup nodes to counter-DoS based on orphan
-            // resolution (that is, feeding people an invalid transaction based on LegitTxX in order to get
-            // anyone relaying LegitTxX banned)
-            CValidationState stateDummy;
-
-
-            if (setMisbehaving.count(fromPeer))
-                continue;
-            if (AcceptToMemoryPool(mempool, stateDummy, orphanTx, true, &fMissingInputs2))
-            {
-                LogPrint("mempool", "   accepted orphan tx %s\n", orphanHash.ToString());
-                RelayTransaction(orphanTx);
-                vWorkQueue.push_back(orphanHash);
-                vEraseQueue.push_back(orphanHash);
-            }
-            else if (!fMissingInputs2)
-            {
-                int nDos = 0;
-                if (stateDummy.IsInvalid(nDos) && nDos > 0)
-                {
-                    // Punish peer that gave us an invalid orphan tx
-                    Misbehaving(fromPeer, nDos);
-                    setMisbehaving.insert(fromPeer);
-                    LogPrint("mempool", "   invalid orphan tx %s\n", orphanHash.ToString());
-                }
-                // Has inputs but not accepted to mempool
-                // Probably non-standard or insufficient fee/priority
-                LogPrint("mempool", "   removed orphan tx %s\n", orphanHash.ToString());
-                vEraseQueue.push_back(orphanHash);
-                assert(recentRejects);
-                recentRejects->insert(orphanHash);
-            }
-            mempool.check(pcoinsTip);
-        }
-    }
-
-    BOOST_FOREACH(uint256 hash, vEraseQueue)
-        EraseOrphanTx(hash);
-}
-
-
 bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, int64_t nTimeReceived)
 {
     const CChainParams& chainparams = Params();
@@ -5212,6 +5070,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
     else if (strCommand == "tx")
     {
+        vector<uint256> vWorkQueue;
+        vector<uint256> vEraseQueue;
         CTransaction tx;
         vRecv >> tx;
 
@@ -5230,14 +5090,66 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         {
             mempool.check(pcoinsTip);
             RelayTransaction(tx);
+            vWorkQueue.push_back(inv.hash);
 
             LogPrint("mempool", "AcceptToMemoryPool: peer=%d %s: accepted %s (poolsz %u)\n",
                 pfrom->id, pfrom->cleanSubVer,
                 tx.GetHash().ToString(),
                 mempool.mapTx.size());
 
-            ProcessOrphanTransactions(inv.hash);
+            // Recursively process any orphan transactions that depended on this one
+            set<NodeId> setMisbehaving;
+            for (unsigned int i = 0; i < vWorkQueue.size(); i++)
+            {
+                map<uint256, set<uint256> >::iterator itByPrev = mapOrphanTransactionsByPrev.find(vWorkQueue[i]);
+                if (itByPrev == mapOrphanTransactionsByPrev.end())
+                    continue;
+                for (set<uint256>::iterator mi = itByPrev->second.begin();
+                     mi != itByPrev->second.end();
+                     ++mi)
+                {
+                    const uint256& orphanHash = *mi;
+                    const CTransaction& orphanTx = mapOrphanTransactions[orphanHash].tx;
+                    NodeId fromPeer = mapOrphanTransactions[orphanHash].fromPeer;
+                    bool fMissingInputs2 = false;
+                    // Use a dummy CValidationState so someone can't setup nodes to counter-DoS based on orphan
+                    // resolution (that is, feeding people an invalid transaction based on LegitTxX in order to get
+                    // anyone relaying LegitTxX banned)
+                    CValidationState stateDummy;
 
+
+                    if (setMisbehaving.count(fromPeer))
+                        continue;
+                    if (AcceptToMemoryPool(mempool, stateDummy, orphanTx, true, &fMissingInputs2))
+                    {
+                        LogPrint("mempool", "   accepted orphan tx %s\n", orphanHash.ToString());
+                        RelayTransaction(orphanTx);
+                        vWorkQueue.push_back(orphanHash);
+                        vEraseQueue.push_back(orphanHash);
+                    }
+                    else if (!fMissingInputs2)
+                    {
+                        int nDos = 0;
+                        if (stateDummy.IsInvalid(nDos) && nDos > 0)
+                        {
+                            // Punish peer that gave us an invalid orphan tx
+                            Misbehaving(fromPeer, nDos);
+                            setMisbehaving.insert(fromPeer);
+                            LogPrint("mempool", "   invalid orphan tx %s\n", orphanHash.ToString());
+                        }
+                        // Has inputs but not accepted to mempool
+                        // Probably non-standard or insufficient fee/priority
+                        LogPrint("mempool", "   removed orphan tx %s\n", orphanHash.ToString());
+                        vEraseQueue.push_back(orphanHash);
+                        assert(recentRejects);
+                        recentRejects->insert(orphanHash);
+                    }
+                    mempool.check(pcoinsTip);
+                }
+            }
+
+            BOOST_FOREACH(uint256 hash, vEraseQueue)
+                EraseOrphanTx(hash);
         }
         // TODO: currently, prohibit joinsplits from entering mapOrphans
         else if (fMissingInputs && tx.vjoinsplit.size() == 0)
