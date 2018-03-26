@@ -257,11 +257,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
 
 int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp)
 {
-    char pubkeystr[67]; int32_t i,n; uint8_t pubkeys[64][33];
-    for (i=0; i<33; i++)
-        sprintf(&pubkeystr[i*2],"%02x",pubkey33[i]);
-    pubkeystr[66] = 0;
-    //printf("%s vs\n",pubkeystr);
+    int32_t i,n; uint8_t pubkeys[64][33];
     n = komodo_notaries(pubkeys,height,timestamp);
     *numnotariesp = n;
     for (i=0; i<n; i++)
@@ -521,6 +517,7 @@ void komodo_init(int32_t height)
         //for (i=0; i<sizeof(Minerids); i++)
         //    Minerids[i] = -2;
         didinit = 1;
+        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,zero,0);
     }
     /*else if ( 0 && height == KOMODO_MAINNET_START )
     {
@@ -534,7 +531,6 @@ void komodo_init(int32_t height)
         printf("set MAINNET notaries.%d\n",k);
         komodo_notarysinit(KOMODO_MAINNET_START,pubkeys,k);
     }*/
-    komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,zero,0);
 }
 
 /*void komodo_assetchain_pubkeys(char *jsonstr)
