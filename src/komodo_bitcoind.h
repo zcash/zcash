@@ -708,7 +708,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        if ( pindex->pubkey33[0] == 0 )
+        //if ( pindex->pubkey33[0] == 0 )
         {
             if ( komodo_blockload(block,pindex) == 0 )
             {
