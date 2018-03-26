@@ -236,6 +236,11 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
     htind = height / KOMODO_ELECTION_GAP;
     if ( htind >= KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP )
         htind = (KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP) - 1;
+    if ( Pubkeys == 0 )
+    {
+        komodo_init(height);
+        printf("Pubkeys.%p htind.%d vs max.%d\n",Pubkeys,htind,KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP);
+    }
     pthread_mutex_lock(&komodo_mutex);
     n = Pubkeys[htind].numnotaries;
     if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
@@ -288,7 +293,7 @@ void komodo_notarysinit(int32_t origheight,uint8_t pubkeys[64][33],int32_t num)
     static int32_t hwmheight;
     int32_t k,i,htind,height; struct knotary_entry *kp; struct knotaries_entry N;
     if ( Pubkeys == 0 )
-        Pubkeys = (struct knotaries_entry *)calloc(KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP,sizeof(*Pubkeys));
+        Pubkeys = (struct knotaries_entry *)calloc(1 + (KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP),sizeof(*Pubkeys));
     memset(&N,0,sizeof(N));
     if ( origheight > 0 )
     {
