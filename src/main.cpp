@@ -2012,7 +2012,7 @@ fprintf(stderr,"checkResult %.8f += val %.8f interest %.8f ht.%d lock.%u tip.%u\
 
         if (nValueIn < tx.GetValueOut())
         {
-            fprintf(stderr,"valuein %s vs %s error\n",FormatMoney(nValueIn), FormatMoney(tx.GetValueOut()));
+            fprintf(stderr,"valuein %s vs %s error\n",FormatMoney(nValueIn).c_str(), FormatMoney(tx.GetValueOut()).c_str());
             return state.DoS(100, error("CheckInputs(): %s value in (%s) < value out (%s) diff %.8f",
                                         tx.GetHash().ToString(), FormatMoney(nValueIn), FormatMoney(tx.GetValueOut()),((double)nValueIn - tx.GetValueOut())/COIN),REJECT_INVALID, "bad-txns-in-belowout");
         }
