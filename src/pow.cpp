@@ -120,7 +120,6 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp);
 int32_t komodo_currentheight();
 CBlockIndex *komodo_chainactive(int32_t height);
-//int8_t komodo_minerid(int32_t height,uint8_t *pubkey33);
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
 extern int32_t KOMODO_CHOSEN_ONE;
 extern char ASSETCHAINS_SYMBOL[];
@@ -169,7 +168,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( (height < 235300 || height >= 236000) && KOMODO_LOADINGBLOCKS == 0 && height > 188000 )
+        if ( 0 && (height < 235300 || height >= 236000) && KOMODO_LOADINGBLOCKS == 0 && height > 188000 )
             //&&  )//186269, 182507&& komodo_chainactive(height) != 0 && nonzpkeys > 0
         {
             for (i=31; i>=0; i--)

@@ -112,7 +112,6 @@ extern std::string NOTARY_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 uint32_t Mining_start,Mining_height;
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,uint32_t timestamp);
-int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp);
 int32_t komodo_pax_opreturn(int32_t height,uint8_t *opret,int32_t maxsize);
 uint64_t komodo_paxtotal();
 int32_t komodo_baseid(char *origbase);
@@ -524,7 +523,6 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 //
 // Internal miner
 //
-int8_t komodo_minerid(int32_t height,uint8_t *pubkey33);
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
@@ -548,12 +546,6 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
             script[i+1] = ptr[i];
         script[34] = OP_CHECKSIG;
         //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
-    }
-    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-    {
-        for (i=0; i<65; i++)
-            fprintf(stderr,"%d ",komodo_minerid(chainActive.Tip()->nHeight-i,0));
-        fprintf(stderr," minerids.special %d from ht.%d\n",komodo_is_special(chainActive.Tip()->nHeight+1,NOTARY_PUBKEY33,chainActive.Tip()->GetBlockTime()),chainActive.Tip()->nHeight);
     }
     return CreateNewBlock(scriptPubKey);
 }
@@ -762,7 +754,7 @@ void static BitcoinMiner()
             savebits = pblock->nBits;
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
             roundrobin_delay = ROUNDROBIN_DELAY;
-            if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )//komodo_is_special(pindexPrev->nHeight+1,NOTARY_PUBKEY33) > 0 )
+            if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )
             {
                 j = 65;
                 if ( (Mining_height >= 235300 && Mining_height < 236000) || (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 )
@@ -783,12 +775,6 @@ void static BitcoinMiner()
                                     break;
                             if ( externalflag == 0 && i != 66 )
                                 printf("VIOLATION at %d\n",i);
-                            for (i=0; i<66; i++)
-                            { break;
-                                for (j=0; j<33; j++)
-                                    printf("%02x",pubkeys[i][j]);
-                                printf(" p%d -> %d\n",i,komodo_minerid(pindexPrev->nHeight-i,pubkeys[i]));
-                            }
                             for (j=gpucount=0; j<65; j++)
                             {
                                 if ( mids[j] >= 0 || notaryid == 34 )
