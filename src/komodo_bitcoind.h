@@ -736,13 +736,16 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
 {
     int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t _pubkey33[33],pubkeys[64][33];
+    if ( pubkey33 == 0 )
+    {
+        pubkey33 = _pubkey33;
+        memset(pubkey33,0,33);
+    }
     if ( (pindex= chainActive[height]) != 0 )
     {
         if ( pindex->pubkey33[0] == 0 )
         {
             timestamp = pindex->GetBlockTime();
-            if ( pubkey33 == 0 )
-                pubkey33 = _pubkey33;
             komodo_index2pubkey33(pubkey33,pindex,height);
             pindex->notaryid = komodo_electednotary(&numnotaries,pindex->pubkey33,height,pindex->nTime);
             /*if ( (num= komodo_notaries(pubkeys,height,timestamp)) > 0 )
