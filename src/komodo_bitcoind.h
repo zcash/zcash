@@ -716,7 +716,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
         if ( komodo_blockload(block,pindex) == 0 )
         {
             komodo_block2pubkey33(pubkey33,block);
-            if ( 0 && (pubkey33[0] == 2 || pubkey33[0] == 3) )
+            if ( (pubkey33[0] == 2 || pubkey33[0] == 3) )
             {
                 memcpy(pindex->pubkey33,pubkey33,33);
                 if ( (num= komodo_notaries(pubkeys,(int32_t)pindex->nHeight,(uint32_t)pindex->nTime)) > 0 )
@@ -754,7 +754,7 @@ int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
     int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t _pubkey33[33],pubkeys[64][33];
     if ( (pindex= chainActive[height]) != 0 )
     {
-        if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 )
+        if ( (pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3) )
         {
             if ( pubkey33 != 0 )
                 memcpy(pubkey33,pindex->pubkey33,33);
@@ -806,16 +806,17 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
     else return(0);
 }
 
-int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width)
+int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width) // deprecate
 {
-    int32_t i,n=0;
+    /*int32_t i,n=0;
     for (i=0; i<width; i++,n++)
     {
         if ( height-i <= 0 )
             break;
         minerids[i] = komodo_minerid(height - i,0);
     }
-    return(n);
+    return(n);*/
+    return(-1);
 }
 
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp)
@@ -833,7 +834,7 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp
         for (i=1; i<limit; i++)
         {
             komodo_chosennotary(&nid,height-i,pubkey33,timestamp);
-            if ( nid == notaryid ) //komodo_minerid(height-i,_pubkey33)
+            if ( nid == notaryid )
             {
                 if ( (0) && notaryid > 0 )
                     fprintf(stderr,"ht.%d notaryid.%d already mined -i.%d nid.%d\n",height,notaryid,i,nid);
