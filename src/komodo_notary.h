@@ -236,7 +236,6 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
     htind = height / KOMODO_ELECTION_GAP;
     if ( htind >= KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP )
         htind = (KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP) - 1;
-    printf("Pubkeys.%p htind.%d vs max.%d\n",Pubkeys,htind,KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP);
     if ( Pubkeys == 0 )
     {
         komodo_init(height);
