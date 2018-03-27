@@ -640,8 +640,11 @@ int32_t komodo_block2height(CBlock *block)
     if ( height > 0 && height2 >= 0 )
     {
         static uint32_t match,mismatch;
-        if ( height != height2 || ((match+mismatch) % 1000) == 999 )
+        if ( height != height2 || ((match+mismatch) % 10) == 9 )
+        {
             mismatch++, fprintf(stderr,"block2height height.%d vs height2.%d, match.%d mismatch.%d\n",height,height2,match,mismatch);
+            height = height2;
+        }
         else match++;
     }
     return(height);
