@@ -19,7 +19,7 @@ DEPINST = depinst
 
 CXXFLAGS += -I$(DEPINST)/include -Ilibsnark
 LDFLAGS += -L$(DEPINST)/lib -Wl,-rpath,$(DEPINST)/lib
-LDLIBS += -lgmpxx -lgmp -lboost_program_options-mt -lsodium
+LDLIBS += -lgmpxx -lgmp -lboost_program_options -lsodium
 # List of .a files to include within libsnark.a and libsnark.so:
 AR_LIBS =
 # List of library files to install:
