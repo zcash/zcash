@@ -637,16 +637,14 @@ int32_t komodo_block2height(CBlock *block)
         }
         //komodo_init(height);
     }
-    if ( height > 0 && height2 >= 0 )
+    if ( height != height2 )
     {
         static uint32_t match,mismatch;
-        if ( height != height2 || ((match+mismatch) % 10) == 9 )
-        {
-            mismatch++, fprintf(stderr,"block2height height.%d vs height2.%d, match.%d mismatch.%d\n",height,height2,match,mismatch);
+        fprintf(stderr,"block2height height.%d vs height2.%d, match.%d mismatch.%d\n",height,height2,match,mismatch);
+        mismatch++;
+        if ( height2 >= 0 )
             height = height2;
-        }
-        else match++;
-    }
+    } else match++;
     return(height);
 }
 
