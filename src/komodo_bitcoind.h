@@ -612,6 +612,7 @@ int32_t komodo_is_notarytx(const CTransaction& tx)
 
 int32_t komodo_block2height(CBlock *block)
 {
+    static uint32_t match,mismatch;
     int32_t i,n,height2=-1,height = 0; uint8_t *ptr; CBlockIndex *pindex;
     if ( (pindex= mapBlockIndex[block->GetHash()]) != 0 )
         height2 = (int32_t)pindex->nHeight;
@@ -639,7 +640,6 @@ int32_t komodo_block2height(CBlock *block)
     }
     if ( height != height2 )
     {
-        static uint32_t match,mismatch;
         fprintf(stderr,"block2height height.%d vs height2.%d, match.%d mismatch.%d\n",height,height2,match,mismatch);
         mismatch++;
         if ( height2 >= 0 )
