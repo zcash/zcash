@@ -641,7 +641,7 @@ int32_t komodo_block2height(CBlock *block)
     {
         static uint32_t match,mismatch;
         if ( height != height2 || ((match+mismatch) % 1000) == 999 )
-            mismatch++, printf("block2height height.%d vs height2.%d, match.%d mismatch.%d\n",height,height2,match,mismatch);
+            mismatch++, fprintf(stderr,"block2height height.%d vs height2.%d, match.%d mismatch.%d\n",height,height2,match,mismatch);
         else match++;
     }
     return(height);
