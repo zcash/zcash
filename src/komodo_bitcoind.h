@@ -615,7 +615,11 @@ int32_t komodo_block2height(CBlock *block)
     static uint32_t match,mismatch;
     int32_t i,n,height2=-1,height = 0; uint8_t *ptr; CBlockIndex *pindex;
     if ( (pindex= mapBlockIndex[block->GetHash()]) != 0 )
+    {
         height2 = (int32_t)pindex->nHeight;
+        if ( height2 >= 0 )
+            return(height2);
+    }
     if ( block->vtx[0].vin.size() > 0 )
     {
 #ifdef KOMODO_ZCASH
